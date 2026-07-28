@@ -1,0 +1,25 @@
+{
+  "name": "worldforge-studio",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "concurrently -k -n client,server \"vite --host 0.0.0.0\" \"tsx watch src/server/index.ts -- --dev\"",
+    "build": "tsc --noEmit && vite build",
+    "test": "vitest run",
+    "server": "tsx src/server/index.ts -- --release",
+    "map": "tsx src/server/mapCli.ts"
+  },
+  "dependencies": {
+    "three": "^0.179.1"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "@types/three": "^0.179.0",
+    "concurrently": "^9.2.0",
+    "tsx": "^4.20.0",
+    "typescript": "^5.8.3",
+    "vite": "^7.0.0",
+    "vitest": "^3.2.0"
+  }
+}

@@ -1,0 +1,4 @@
+interface:
+  display_name: "WorldForge Map Agent"
+  short_description: "Build and validate WorldForge maps"
+  default_prompt: "Use $worldforge-map-agent to create or refine a map through the editor API or CLI, then visually validate it."

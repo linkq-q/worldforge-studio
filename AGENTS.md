@@ -1,0 +1,38 @@
+# WorldForge Studio Agent Guide
+
+## Scope
+
+This repository is a standalone Three.js scene editor. Do not add game rooms, multiplayer state, WebSocket gameplay, or Electron unless the user explicitly changes the product scope.
+
+## Architecture
+
+- `src/client/`: editor UI and Three.js rendering
+- `src/shared/`: map schema, math, bounds, and normalization
+- `src/server/`: local HTTP API, file store, model backend adapter, and CLI
+- `data/map-editor/`: runtime data; never commit it
+
+Client, server, and CLI must use the same types and normalization rules. Prefer a small direct change over a speculative abstraction.
+
+## Agent Editing
+
+Use `/api/editor`, `npm run map`, or the project skill. Do not directly rewrite files under `data/`. Treat one generation/refine request as one future transaction boundary; do not claim transactional undo exists until it is implemented.
+
+Map generation and render generation are separate stages. Do not put final rendering style into map data. Do not apply a render scheme before the user confirms the map.
+
+## Safety
+
+- Y-up; ground is `y=0`.
+- External agents must not modify core source by default.
+- New Shader code must follow the permission ladder in `docs/architecture.md`.
+- Do not push, publish, or contact external services unless the user explicitly asks.
+
+## Verification
+
+Run:
+
+```bash
+npm test
+npm run build
+```
+
+For editor changes, also verify the local API and the visible browser flow.
