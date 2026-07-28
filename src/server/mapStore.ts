@@ -1,4 +1,4 @@
-import { mkdir, readdir, readFile, rm, writeFile } from 'node:fs/promises';
+import { mkdir, readdir, readFile, rename, rm, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import {
   addPaintStroke,
@@ -19,6 +19,11 @@ import {
   type Transform3D
 } from '../shared/map';
 import type { Vec3 } from '../shared/protocol';
+import {
+  applyMapOperations,
+  type MapTransactionRequest,
+  type MapTransactionSummary
+} from '../shared/mapOperations';
 
 import { MAP_ASSET_COLLIDER_PROFILE, normalizeModelColliderPlan } from '../shared/modelBounds';
 
@@ -40,20 +45,30 @@ export interface GenerateAssetInput {
   provider?: string;
 }
 
+interface UndoTransaction {
+  summary: MapTransactionSummary;
+  map: EditableMap;
+}
+
 export class MapStore {
   readonly rootDir: string;
   private readonly mapsDir: string;
   private readonly assetsDir: string;
+  private readonly historyDir: string;
+  // ponytail: one global queue is enough for local single-user editing; split per map only if concurrency becomes measurable.
+  private transactionQueue: Promise<void> = Promise.resolve();
 
   constructor(options: MapStoreOptions = {}) {
     this.rootDir = options.rootDir ?? process.env.WORLDFORGE_DATA_DIR ?? path.join(process.cwd(), 'data', 'map-editor');
     this.mapsDir = path.join(this.rootDir, 'maps');
     this.assetsDir = path.join(this.rootDir, 'assets');
+    this.historyDir = path.join(this.rootDir, 'history');
   }
 
   async ensureReady(): Promise<void> {
     await mkdir(this.mapsDir, { recursive: true });
     await mkdir(this.assetsDir, { recursive: true });
+    await mkdir(this.historyDir, { recursive: true });
   }
 
   async listMapSummaries(): Promise<MapSummary[]> {
@@ -93,7 +108,9 @@ export class MapStore {
     });
     const hydrated = await this.hydrateMap(normalized);
     const persisted = normalizeMap({ ...hydrated, assets: undefined });
-    await writeFile(this.mapPath(persisted.id), `${JSON.stringify(persisted, null, 2)}\n`, 'utf8');
+    const destination = this.mapPath(persisted.id);
+    await atomicWriteJson(destination, persisted);
+    await rm(this.undoPath(persisted.id), { force: true });
     return hydrated;
   }
 
@@ -109,6 +126,43 @@ export class MapStore {
 
   async deleteMap(id: string): Promise<void> {
     await rm(this.mapPath(id), { force: true });
+    await rm(this.undoPath(id), { force: true });
+  }
+
+  async getUndoTransaction(mapId: string): Promise<MapTransactionSummary | null> {
+    return (await this.readUndoTransaction(mapId))?.summary ?? null;
+  }
+
+  async commitTransaction(
+    mapId: string,
+    request: MapTransactionRequest
+  ): Promise<{ map: EditableMap; transaction: MapTransactionSummary }> {
+    return this.withTransactionLock(async () => {
+      const before = await this.loadMap(mapId);
+      const next = applyMapOperations(before, request.operations);
+      const map = await this.replaceMap(mapId, next);
+      const transaction: MapTransactionSummary = {
+        id: createId('tx'),
+        label: cleanLabel(request.label),
+        source: request.source,
+        operationCount: request.operations.length,
+        createdAt: Date.now()
+      };
+      await atomicWriteJson(this.undoPath(mapId), {
+        summary: transaction,
+        map: normalizeMap({ ...before, assets: undefined })
+      });
+      return { map, transaction };
+    });
+  }
+
+  async undoTransaction(mapId: string): Promise<{ map: EditableMap; transaction: MapTransactionSummary }> {
+    return this.withTransactionLock(async () => {
+      const undo = await this.readUndoTransaction(mapId);
+      if (!undo) throw new Error('nothing_to_undo');
+      const map = await this.replaceMap(mapId, undo.map);
+      return { map, transaction: undo.summary };
+    });
   }
 
   async updateMapBox(id: string, patch: { size?: Vec3; colors?: Partial<MapBoxColors> }): Promise<EditableMap> {
@@ -181,6 +235,20 @@ export class MapStore {
   async applyTerrain(mapId: string, mode: TerrainBrushMode, point: Vec3, size: number, strength: number, targetHeight?: number): Promise<EditableMap> {
     const map = await this.loadMap(mapId);
     return this.saveMap(applyTerrainBrush(map, mode, point, size, strength, targetHeight));
+  }
+
+  private async withTransactionLock<T>(action: () => Promise<T>): Promise<T> {
+    const previous = this.transactionQueue;
+    let release = () => {};
+    this.transactionQueue = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    await previous;
+    try {
+      return await action();
+    } finally {
+      release();
+    }
   }
 
   async listAssets(): Promise<MapAsset[]> {
@@ -277,6 +345,25 @@ export class MapStore {
   private assetPath(id: string): string {
     return path.join(this.assetsDir, `${safeId(id)}.json`);
   }
+
+  private undoPath(id: string): string {
+    return path.join(this.historyDir, `${safeId(id)}.json`);
+  }
+
+  private async readUndoTransaction(id: string): Promise<UndoTransaction | null> {
+    try {
+      const text = await readFile(this.undoPath(id), 'utf8');
+      const input = JSON.parse(text) as Partial<UndoTransaction>;
+      if (!input.summary || !input.map) return null;
+      return {
+        summary: input.summary as MapTransactionSummary,
+        map: normalizeMap(input.map)
+      };
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code === 'ENOENT') return null;
+      throw error;
+    }
+  }
 }
 
 export function mapEditorCliManifest(): Record<string, string> {
@@ -284,6 +371,8 @@ export function mapEditorCliManifest(): Record<string, string> {
     list: '列出服务端地图',
     create: '创建地图：--name --width --height --depth',
     show: '输出完整地图 JSON：--map',
+    applyTransaction: '原子应用操作文件：--map --file --source agent|basic-ai --label',
+    undoTransaction: '撤销地图最近一次事务：--map',
     setBox: '调整地图盒子：--map --width --height --depth --floor --ceiling --north --south --east --west',
     spawn: '设置玩家出生点：--map --x --y --z',
     sun: '设置太阳位置：--map --x --y --z',
@@ -324,6 +413,22 @@ function sanitizePositiveVec3(value: unknown, fallback: Vec3): Vec3 {
 function finiteNumber(value: unknown, fallback: number): number {
   const numberValue = Number(value);
   return Number.isFinite(numberValue) ? numberValue : fallback;
+}
+
+function cleanLabel(value: unknown): string {
+  return typeof value === 'string' && value.trim()
+    ? value.trim().slice(0, 80)
+    : '地图事务';
+}
+
+async function atomicWriteJson(destination: string, value: unknown): Promise<void> {
+  const temporary = `${destination}.${createId('tmp')}`;
+  try {
+    await writeFile(temporary, `${JSON.stringify(value, null, 2)}\n`, 'utf8');
+    await rename(temporary, destination);
+  } finally {
+    await rm(temporary, { force: true });
+  }
 }
 
 function normalizeAsset(input: Partial<MapAsset>): MapAsset {

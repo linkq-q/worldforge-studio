@@ -9,11 +9,11 @@ description: Create or refine WorldForge Studio maps through the project HTTP AP
 
 This skill edits map-stage content only: heightfield, painted surfaces, lighting reference, vegetation, buildings, props, hierarchy, and object placement. Do not apply final rendering style. Save any visual or atmosphere language from the request as suggestions for the later render prompt.
 
-Use project HTTP APIs, CLI commands, or `MapStore`. Never edit files under `data/` directly. Current APIs save immediately and do not yet provide transactional undo, so state this limitation before a large mutation and keep changes focused.
+Use the shared transaction contract in `docs/map-transactions.md`. Never edit files under `data/` directly and do not assemble a second mutation format. Build the complete `MapOperation[]`, then submit it once through HTTP, CLI, or `MapStore`; the server validates all operations before saving and keeps the latest transaction undoable.
 
 ## Asset Workflow
 
-Read `docs/model-backend.md`, inspect existing assets, and reuse a suitable `assetId` before generating duplicates. Generate new assets through `/api/editor/assets/generate` or `npm run map -- generateAsset`.
+Read `docs/model-backend.md`, inspect existing assets, and reuse a suitable `assetId` before generating duplicates. Generate new assets through `/api/editor/assets/generate` or `npm run map -- generate-asset`.
 
 For repeated organic or prominent objects, create visually distinct variants:
 
@@ -30,11 +30,10 @@ Prompts should name the object, its silhouette, scale, intended placement, voxel
 2. Plan dimensions, terrain masses, routes, landmarks, object groups, and repeated-asset variants.
 3. Generate or select assets.
 4. Create or load the map.
-5. Sculpt terrain with smooth radial raise/lower/flatten brushes.
-6. Add painted surfaces and place objects with clear hierarchy and transforms.
-7. Set sun direction and the scene reference point when useful.
-8. Save through the API/CLI and reload the map.
-9. Visually inspect the complete scene. Make focused corrections and stop early when it satisfies the request; use at most three validation rounds unless the user requests otherwise.
+5. Build one ordered operation list for terrain, paint, objects, sun, and the scene reference point.
+6. Submit the list as one labeled `agent` transaction.
+7. Reload the map and verify that the transaction appears as undoable.
+8. Visually inspect the complete scene. Make focused corrections and stop early when it satisfies the request; use at most three validation rounds unless the user requests otherwise.
 
 Do not count scripts, object totals, or JSON inspection as visual validation. If browser inspection is unavailable, report that visual validation remains incomplete.
 
@@ -42,5 +41,6 @@ Do not count scripts, object totals, or JSON inspection as visual validation. If
 
 - Confirm the map appears in `GET /api/maps` or the CLI list.
 - Reload it and inspect object count, terrain stats, paint strokes, linked assets, hierarchy, and lighting.
+- Confirm `GET /api/editor/maps/:id/transactions` returns the committed transaction.
 - If code changed, run `npm test` and `npm run build`.
 - Summarize the map ID, assets used/generated, key edits, validation performed, and unresolved failures.

@@ -13,11 +13,14 @@ WorldForge Studio 是从 `hAIde-seek` 中独立提取的 Three.js 场景编辑�
 - 对象层级、变换与资产绑定
 - 调用现有 Voxel Studio 后端生成模型资产
 - 本地文件存储和供 Agent 使用的 HTTP/CLI 编辑接口
+- 基础 AI 与外部 Agent 共用的地图操作协议
+- 原子提交一批地图操作，并撤销最近一次事务
 
 还未实现：
 
-- 基础版自然语言地图生成
-- 专业版 Agent 事务执行、权限确认、取消与撤销
+- 基础版自然语言提示词编排
+- 专业版 Agent 权限确认与长任务取消
+- 多级事务历史（当前保存并撤销最近一次事务）
 - 地图确认后进入渲染阶段
 - 可复用 `renderSchemeId` 与渲染方案 refine
 - 结构化道路、湖泊与河流
@@ -56,6 +59,8 @@ npm run map -- help
 ```
 
 Agent 应优先使用 CLI 或 `/api/editor`，不要直接改写数据文件。
+
+事务操作格式和调用方式见 [docs/map-transactions.md](docs/map-transactions.md)。
 
 ## 来源
 

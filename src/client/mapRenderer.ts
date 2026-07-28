@@ -121,7 +121,8 @@ function makeSurfaceMesh(surface: MapSurface, geometry: THREE.BufferGeometry, ma
     emissiveMap: texture,
     emissiveIntensity: surface === 'ceiling' ? 0.52 : 0.28,
     roughness: 0.88,
-    side: THREE.DoubleSide
+    // The enclosure is visible from inside but does not block the editor camera outside the map.
+    side: THREE.FrontSide
   });
   const mesh = new THREE.Mesh(geometry, material);
   mesh.receiveShadow = true;
@@ -280,7 +281,7 @@ function buildFallbackObject(): THREE.Group {
 function buildPlayerSpawnGroup(map: EditableMap): THREE.Group {
   const spawn = getSpawnPoints(map)[0];
   const group = new THREE.Group();
-  group.name = '玩家出生点';
+  group.name = '场景参考点';
   group.position.set(spawn[0], spawn[1], spawn[2]);
   group.rotation.y = getPlayerSpawnYaw(map);
   group.userData.mapObjectId = PLAYER_SPAWN_OBJECT_ID;

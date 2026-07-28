@@ -1,11 +1,14 @@
+import { readFile } from 'node:fs/promises';
 import {
   createPaintStroke,
+  mapToSummary,
   surfaceUvFromPoint,
   type MapSurface,
   type TerrainBrushMode,
   type Transform3D
 } from '../shared/map';
 import type { Vec3 } from '../shared/protocol';
+import type { MapOperation, MapTransactionSource } from '../shared/mapOperations';
 import { generateModel } from './modelApi';
 import { MapStore, mapEditorCliManifest } from './mapStore';
 
@@ -37,6 +40,27 @@ async function main(): Promise<void> {
 
   if (command === 'show') {
     print({ map: await store.loadMap(required(args, 'map')) });
+    return;
+  }
+
+  if (command === 'apply-transaction') {
+    const source = stringArg(args, 'source', 'agent');
+    if (source !== 'agent' && source !== 'basic-ai') throw new Error('invalid_transaction_source');
+    const input = JSON.parse(await readFile(required(args, 'file'), 'utf8')) as MapOperation[] | { operations?: MapOperation[] };
+    const operations = Array.isArray(input) ? input : input.operations;
+    if (!Array.isArray(operations)) throw new Error('invalid_operations_file');
+    const result = await store.commitTransaction(required(args, 'map'), {
+      label: optionalString(args, 'label') ?? undefined,
+      source: source as MapTransactionSource,
+      operations
+    });
+    print({ map: mapToSummary(result.map), transaction: result.transaction });
+    return;
+  }
+
+  if (command === 'undo-transaction') {
+    const result = await store.undoTransaction(required(args, 'map'));
+    print({ map: mapToSummary(result.map), transaction: result.transaction });
     return;
   }
 

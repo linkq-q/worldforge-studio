@@ -29,6 +29,7 @@ import {
 import { buildEditableMapGroup, type RenderedMap } from './mapRenderer';
 import { configureSunLight } from './lighting';
 import { buildModelGroup } from './modelRenderer';
+import type { MapTransactionSummary } from '../shared/mapOperations';
 
 type EditorTool = 'select' | 'paint' | 'terrain';
 type TransformMode = 'translate' | 'rotate' | 'scale';
@@ -57,6 +58,7 @@ interface EditorState {
   dirty: boolean;
   busy: boolean;
   message: string;
+  undoTransaction: MapTransactionSummary | null;
 }
 
 export function startMapEditor(app: HTMLElement): void {
@@ -82,7 +84,8 @@ class MapEditor {
     uniformScale: false,
     dirty: false,
     busy: false,
-    message: ''
+    message: '',
+    undoTransaction: null
   };
 
   private scene: THREE.Scene | null = null;
@@ -115,6 +118,7 @@ class MapEditor {
   private previewOrbit: OrbitControls | null = null;
   private previewModelRoot: THREE.Group | null = null;
   private previewModel: THREE.Object3D | null = null;
+  private previewAssetId: string | null = null;
   private previewRequestId = 0;
 
   constructor(private readonly app: HTMLElement) {}
@@ -133,6 +137,10 @@ class MapEditor {
     this.app.innerHTML = `
       <main class="editor-shell">
         <aside class="editor-sidebar left">
+          <div class="studio-brand">
+            <span class="studio-brand-mark">W</span>
+            <span><strong>WorldForge</strong><small>SCENE STUDIO</small></span>
+          </div>
           <div class="editor-section map-loader">
             <select id="editor-map-select"></select>
             <button id="new-map" class="small">新建</button>
@@ -145,20 +153,31 @@ class MapEditor {
         </aside>
         <section class="editor-main">
           <header class="editor-toolbar">
-            <div class="segmented compact">
-              <button data-tool="select">选择</button>
-              <button data-tool="paint">绘制</button>
-              <button data-tool="terrain">地形</button>
+            <div class="toolbar-group">
+              <span class="toolbar-label">工具</span>
+              <div class="segmented compact">
+                <button data-tool="select">选择</button>
+                <button data-tool="paint">绘制</button>
+                <button data-tool="terrain">地形</button>
+              </div>
             </div>
-            <div class="segmented compact">
-              <button data-transform-mode="translate">移动</button>
-              <button data-transform-mode="rotate">旋转</button>
-              <button data-transform-mode="scale">缩放</button>
+            <div class="toolbar-group">
+              <span class="toolbar-label">变换</span>
+              <div class="segmented compact">
+                <button data-transform-mode="translate">移动</button>
+                <button data-transform-mode="rotate">旋转</button>
+                <button data-transform-mode="scale">缩放</button>
+              </div>
             </div>
-            <button id="save-map">保存</button>
+            <div class="toolbar-actions">
+              <button id="undo-transaction" class="secondary" disabled>撤销事务</button>
+              <button id="save-map">保存</button>
+            </div>
             <span id="editor-status"></span>
           </header>
-          <div id="editor-viewport" class="editor-viewport"></div>
+          <div id="editor-viewport" class="editor-viewport">
+            <div class="viewport-badge"><span></span>透视视图</div>
+          </div>
           <footer class="editor-shortcuts" aria-label="地图编辑器操作键">
             <span><kbd>左键</kbd>选择 / 绘制 / 地形</span>
             <span><kbd>中键拖动</kbd>旋转视角</span>
@@ -170,6 +189,7 @@ class MapEditor {
           </footer>
         </section>
         <aside class="editor-sidebar right">
+          <div class="inspector-heading"><strong>属性</strong><small>SCENE</small></div>
           <div id="map-inspector"></div>
           <div id="object-inspector"></div>
           <div id="asset-panel"></div>
@@ -180,6 +200,7 @@ class MapEditor {
     this.app.querySelector('#new-map')?.addEventListener('click', () => void this.createMap());
     this.app.querySelector('#add-object')?.addEventListener('click', () => this.addObject());
     this.app.querySelector('#save-map')?.addEventListener('click', () => void this.saveMap());
+    this.app.querySelector('#undo-transaction')?.addEventListener('click', () => void this.undoLatestTransaction());
     this.app.querySelector('#editor-map-select')?.addEventListener('change', (event) => {
       const id = (event.target as HTMLSelectElement).value;
       void this.loadMap(id);
@@ -187,6 +208,7 @@ class MapEditor {
     this.app.querySelectorAll<HTMLButtonElement>('[data-tool]').forEach((button) => {
       button.addEventListener('click', () => {
         this.state.tool = button.dataset.tool as EditorTool;
+        if (this.renderer) this.renderer.domElement.style.cursor = this.state.tool === 'select' ? 'default' : 'crosshair';
         this.renderPanels();
       });
     });
@@ -313,8 +335,12 @@ class MapEditor {
 
   private async loadMap(id: string): Promise<void> {
     if (!id) return;
-    const { map } = await editorFetch<{ map: EditableMap }>(`/api/editor/maps/${encodeURIComponent(id)}`);
+    const [{ map }, { transaction }] = await Promise.all([
+      editorFetch<{ map: EditableMap }>(`/api/editor/maps/${encodeURIComponent(id)}`),
+      editorFetch<{ transaction: MapTransactionSummary | null }>(`/api/editor/maps/${encodeURIComponent(id)}/transactions`)
+    ]);
     this.state.map = normalizeMap(map);
+    this.state.undoTransaction = transaction;
     this.state.selectedObjectId = null;
     this.state.dirty = false;
     await this.refreshScene();
@@ -329,6 +355,7 @@ class MapEditor {
     });
     await this.reloadLists();
     this.state.map = normalizeMap(map);
+    this.state.undoTransaction = null;
     await this.refreshScene();
     this.renderPanels();
   }
@@ -343,8 +370,29 @@ class MapEditor {
       });
       this.state.map = normalizeMap(map);
       this.state.dirty = false;
+      this.state.undoTransaction = null;
       await this.reloadLists();
       this.state.message = '已保存';
+      await this.refreshScene();
+      this.renderPanels();
+    } finally {
+      this.setBusy(false);
+    }
+  }
+
+  private async undoLatestTransaction(): Promise<void> {
+    if (!this.state.map || !this.state.undoTransaction || this.state.dirty) return;
+    this.setBusy(true, '撤销事务中...');
+    try {
+      const { map, transaction } = await editorFetch<{ map: EditableMap; transaction: MapTransactionSummary }>(
+        `/api/editor/maps/${encodeURIComponent(this.state.map.id)}/transactions/undo`,
+        { method: 'POST' }
+      );
+      this.state.map = normalizeMap(map);
+      this.state.undoTransaction = null;
+      this.state.selectedObjectId = null;
+      this.state.message = `已撤销：${transaction.label}`;
+      await this.reloadLists();
       await this.refreshScene();
       this.renderPanels();
     } finally {
@@ -400,19 +448,14 @@ class MapEditor {
       ${renderObjectTree(map.objects, null, this.state.selectedObjectId)}
     `;
     host.querySelector<HTMLButtonElement>('[data-spawn-object]')?.addEventListener('click', () => {
-      this.state.selectedObjectId = PLAYER_SPAWN_OBJECT_ID;
-      this.state.transformMode = 'translate';
-      this.renderPanels();
+      this.selectObject(PLAYER_SPAWN_OBJECT_ID);
     });
     host.querySelector<HTMLButtonElement>('[data-sun-object]')?.addEventListener('click', () => {
-      this.state.selectedObjectId = SUN_OBJECT_ID;
-      this.state.transformMode = 'translate';
-      this.renderPanels();
+      this.selectObject(SUN_OBJECT_ID);
     });
     host.querySelectorAll<HTMLButtonElement>('[data-object-id]').forEach((button) => {
       button.addEventListener('click', () => {
-        this.state.selectedObjectId = button.dataset.objectId ?? null;
-        this.renderPanels();
+        this.selectObject(button.dataset.objectId ?? null);
       });
     });
   }
@@ -679,12 +722,14 @@ class MapEditor {
   }
 
   private async renderAssetPreview(): Promise<void> {
-    const requestId = this.previewRequestId + 1;
-    this.previewRequestId = requestId;
     if (!this.previewScene || !this.previewCamera || !this.previewRenderer || !this.previewModelRoot) return;
-    this.clearAssetPreviewModel();
     const asset = this.state.assets.find((item) => item.id === this.state.selectedAssetId);
     const assetId = asset?.id ?? null;
+    if (this.previewAssetId === assetId && (assetId === null || this.previewModel)) return;
+    this.previewAssetId = assetId;
+    const requestId = this.previewRequestId + 1;
+    this.previewRequestId = requestId;
+    this.clearAssetPreviewModel();
     if (!asset?.modelJson) return;
     const model = await buildModelGroup(asset.modelJson);
     if (requestId !== this.previewRequestId || this.state.selectedAssetId !== assetId || !this.previewModelRoot) {
@@ -735,6 +780,12 @@ class MapEditor {
   private handlePointer(event: PointerEvent, first: boolean): void {
     if (!this.renderer || !this.camera || !this.renderedMap || !this.state.map) return;
     if (first && event.button !== 0) return;
+    if (!first && this.state.tool === 'select' && event.buttons === 0) {
+      const hits = this.raycast(event);
+      const objectHit = selectableObjectHit(hits);
+      this.renderer.domElement.style.cursor = objectHit ? 'pointer' : 'default';
+      return;
+    }
     if (!first && (!this.painting || (event.buttons & 1) === 0)) return;
     if (this.isTransformControlPointerActive()) {
       this.painting = false;
@@ -742,21 +793,14 @@ class MapEditor {
       return;
     }
     if (first) {
-      this.painting = true;
+      this.painting = this.state.tool !== 'select';
       event.preventDefault();
     }
-    const rect = this.renderer.domElement.getBoundingClientRect();
-    this.pointer.set(((event.clientX - rect.left) / rect.width) * 2 - 1, -((event.clientY - rect.top) / rect.height) * 2 + 1);
-    this.raycaster.setFromCamera(this.pointer, this.camera);
-    const hits = this.raycaster.intersectObjects(this.renderedMap.pickables, true);
+    const hits = this.raycast(event);
     if (this.state.tool === 'select') {
-      const hit = hits[0];
-      if (!hit) return;
       if (!first) return;
-      const objectId = findMapObjectId(hit.object);
-      this.state.selectedObjectId = objectId;
-      if (this.isTranslateOnlySelection()) this.state.transformMode = 'translate';
-      this.renderPanels();
+      const hit = selectableObjectHit(hits);
+      this.selectObject(hit ? findMapObjectId(hit.object) : null);
       return;
     }
     const hit = hits.find((item) => findMapSurface(item.object));
@@ -789,6 +833,26 @@ class MapEditor {
     );
     this.markDirty(false);
     void this.refreshScene();
+  }
+
+  private raycast(event: PointerEvent): THREE.Intersection[] {
+    if (!this.renderer || !this.camera || !this.renderedMap) return [];
+    const rect = this.renderer.domElement.getBoundingClientRect();
+    this.pointer.set(((event.clientX - rect.left) / rect.width) * 2 - 1, -((event.clientY - rect.top) / rect.height) * 2 + 1);
+    this.raycaster.setFromCamera(this.pointer, this.camera);
+    return this.raycaster.intersectObjects(this.renderedMap.pickables, true);
+  }
+
+  private selectObject(objectId: string | null): void {
+    if (this.state.selectedObjectId === objectId) return;
+    this.state.selectedObjectId = objectId;
+    if (this.isTranslateOnlySelection()) this.state.transformMode = 'translate';
+    this.renderHierarchy();
+    this.renderObjectInspector();
+    this.attachSelectedTransform();
+    const bindAsset = this.app.querySelector<HTMLButtonElement>('#bind-selected-asset');
+    if (bindAsset) bindAsset.disabled = !(this.selectedObject() && this.state.selectedAssetId);
+    this.updateToolbarState();
   }
 
   private syncSelectedTransform(): void {
@@ -993,6 +1057,17 @@ class MapEditor {
     });
     const status = this.app.querySelector<HTMLElement>('#editor-status');
     if (status) status.textContent = this.state.busy ? this.state.message : `${this.state.dirty ? '有未保存更改' : '已同步'}${this.state.message ? ` · ${this.state.message}` : ''}`;
+    const undo = this.app.querySelector<HTMLButtonElement>('#undo-transaction');
+    if (undo) {
+      undo.disabled = this.state.busy || this.state.dirty || !this.state.undoTransaction;
+      undo.title = this.state.dirty
+        ? '请先保存或放弃当前手工更改'
+        : this.state.undoTransaction
+          ? `撤销：${this.state.undoTransaction.label}`
+          : '当前没有可撤销的 AI/Agent 事务';
+    }
+    const save = this.app.querySelector<HTMLButtonElement>('#save-map');
+    if (save) save.disabled = this.state.busy || !this.state.map;
   }
 
   private markDirty(refreshStatus = true): void {
@@ -1161,6 +1236,13 @@ function findMapObjectId(object: THREE.Object3D): string | null {
     current = current.parent;
   }
   return null;
+}
+
+function selectableObjectHit(hits: THREE.Intersection[]): THREE.Intersection | null {
+  const surfaceDistance = hits.find((hit) => findMapSurface(hit.object))?.distance ?? Number.POSITIVE_INFINITY;
+  return hits.find((hit) => {
+    return findMapObjectId(hit.object) !== null && hit.distance <= surfaceDistance + 0.18;
+  }) ?? null;
 }
 
 function findMapSurface(object: THREE.Object3D): MapSurface | null {

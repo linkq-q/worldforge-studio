@@ -1,9 +1,6 @@
 import type http from 'node:http';
 import {
-  addPaintStroke,
-  applyTerrainBrush,
   createPaintStroke,
-  normalizeMap,
   surfaceUvFromPoint,
   type EditableMap,
   type MapPaintStroke,
@@ -11,6 +8,7 @@ import {
   type TerrainBrushMode
 } from '../shared/map';
 import type { Vec3 } from '../shared/protocol';
+import type { MapTransactionRequest, MapTransactionSource } from '../shared/mapOperations';
 import { generateModel } from './modelApi';
 import { MapStore, mapEditorCliManifest } from './mapStore';
 
@@ -131,6 +129,37 @@ async function handleEditorMaps(req: Req, res: Res, store: MapStore, parts: stri
     return;
   }
 
+  if (parts[4] === 'transactions') {
+    if (req.method === 'GET' && parts.length === 5) {
+      sendJson(res, 200, { transaction: await store.getUndoTransaction(mapId) });
+      return;
+    }
+    if (req.method === 'POST' && parts.length === 5) {
+      const body = await readJson<Partial<MapTransactionRequest>>(req);
+      if (!isTransactionSource(body.source)) throw new HttpError(400, 'invalid_transaction_source');
+      if (!Array.isArray(body.operations)) throw new HttpError(400, 'invalid_operations');
+      try {
+        sendJson(res, 200, await store.commitTransaction(mapId, {
+          label: body.label,
+          source: body.source,
+          operations: body.operations
+        }));
+      } catch (error) {
+        throw new HttpError(400, error instanceof Error ? error.message : 'invalid_transaction');
+      }
+      return;
+    }
+    if (req.method === 'POST' && parts[5] === 'undo' && parts.length === 6) {
+      try {
+        sendJson(res, 200, await store.undoTransaction(mapId));
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'undo_failed';
+        throw new HttpError(message === 'nothing_to_undo' ? 409 : 500, message);
+      }
+      return;
+    }
+  }
+
   if (parts[4] === 'box' && req.method === 'PATCH') {
     const body = await readJson<{ size?: Vec3; colors?: Record<string, string> }>(req);
     sendJson(res, 200, { map: await store.updateMapBox(mapId, body) });
@@ -170,16 +199,6 @@ async function handleEditorMaps(req: Req, res: Res, store: MapStore, parts: stri
   if (parts[4] === 'sun' && (req.method === 'POST' || req.method === 'PATCH')) {
     const body = await readJson<{ point?: Vec3 }>(req);
     sendJson(res, 200, { map: await store.setSunPosition(mapId, body.point ?? [-18, 24, 14]) });
-    return;
-  }
-
-  if (parts[4] === 'batch' && req.method === 'POST') {
-    const body = await readJson<{ operations?: MapEditorOperation[] }>(req);
-    let map = await store.loadMap(mapId);
-    for (const operation of body.operations ?? []) {
-      map = applyOperation(map, operation);
-    }
-    sendJson(res, 200, { map: await store.replaceMap(mapId, map) });
     return;
   }
 
@@ -235,26 +254,8 @@ async function handleEditorAssets(req: Req, res: Res, store: MapStore, parts: st
   throw new HttpError(404, 'not_found');
 }
 
-type MapEditorOperation =
-  | ({ type: 'paint' } & Partial<MapPaintStroke> & { surface: MapSurface; point: Vec3 })
-  | { type: 'terrain'; mode: TerrainBrushMode; point: Vec3; size?: number; strength?: number; targetHeight?: number }
-  | { type: 'spawn'; point: Vec3 }
-  | { type: 'sun'; point: Vec3 };
-
-function applyOperation(map: EditableMap, operation: MapEditorOperation): EditableMap {
-  if (operation.type === 'paint') {
-    return addPaintStroke(map, operation);
-  }
-  if (operation.type === 'terrain') {
-    return applyTerrainBrush(map, operation.mode, operation.point, operation.size ?? 1.5, operation.strength ?? 0.3, operation.targetHeight);
-  }
-  if (operation.type === 'spawn') {
-    return normalizeMap({ ...map, spawnPoints: [operation.point] });
-  }
-  if (operation.type === 'sun') {
-    return normalizeMap({ ...map, lighting: { ...map.lighting, sunPosition: operation.point } });
-  }
-  return map;
+function isTransactionSource(value: unknown): value is MapTransactionSource {
+  return value === 'basic-ai' || value === 'agent';
 }
 
 async function readJson<T>(req: Req): Promise<T> {
