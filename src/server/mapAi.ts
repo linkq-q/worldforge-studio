@@ -6,7 +6,9 @@ import {
 import {
   createId,
   getMapBounds,
+  getMapObjectAabbs,
   normalizeMap,
+  PLAYER_RADIUS,
   sampleTerrainHeight,
   type EditableMap,
   type MapAsset,
@@ -17,6 +19,13 @@ import {
   type ChatProvider,
   type Vec3
 } from '../shared/protocol';
+import { planLimits, type MapPlanLimits } from '../shared/mapPlanning';
+import {
+  expandMapScatter,
+  isNearWater,
+  terrainSlopeDegrees,
+  type MapScatterPlan
+} from '../shared/mapScatter';
 import { llmChat } from './modelApi';
 
 export interface MapAiOptions {
@@ -52,7 +61,11 @@ export async function runMapAgent(
   options: MapAgentOptions
 ): Promise<MapAiSuggestion> {
   const firstContent = await requestMapPlan(prompt, map, assets, options, false);
-  const requests = normalizeAssetRequests(parseJsonObject(firstContent).assetRequests);
+  const limits = planLimits(getMapBounds(map));
+  const requests = normalizeAssetRequests(
+    parseJsonObject(firstContent).assetRequests,
+    limits.assetRequestCount
+  );
   if (requests.length === 0) {
     const firstSuggestion = normalizeMapSuggestion(firstContent, map, assets);
     if (hasSpatialOperations(firstSuggestion)) return firstSuggestion;
@@ -70,7 +83,10 @@ export async function runMapAgent(
 
   const expandedAssets = [...assets, ...generatedAssets];
   const finalContent = await requestMapPlan(prompt, map, expandedAssets, options, true);
-  if (normalizeAssetRequests(parseJsonObject(finalContent).assetRequests).length > 0) {
+  if (normalizeAssetRequests(
+    parseJsonObject(finalContent).assetRequests,
+    limits.assetRequestCount
+  ).length > 0) {
     throw new Error('map_agent_asset_limit');
   }
   const suggestion = {
@@ -115,18 +131,34 @@ export function normalizeMapSuggestion(
   const input = parseJsonObject(content);
 
   const bounds = getMapBounds(map);
+  const limits = planLimits(bounds);
   const renderPromptSuggestions = normalizeTextList(input.renderPromptSuggestions, 8, 80);
   const operations: MapOperation[] = renderPromptSuggestions.length > 0
     ? [{ type: 'map.update', renderPromptSuggestions }]
     : [];
-  const terrainOperations = normalizeTerrainOperations(input.terrain, bounds);
+  const terrainOperations = normalizeTerrainOperations(input.terrain, bounds, limits);
   operations.push(...terrainOperations);
-  operations.push(...normalizeWaterOperations(input.waters, bounds));
-  const terrainPreview = terrainOperations.length > 0
-    ? applyMapOperations(map, terrainOperations)
-    : normalizeMap(map);
-  operations.push(...normalizeObjectOperations(input.objects, terrainPreview, assets));
-  const spawnOperation = normalizeSpawnOperation(input.spawn, terrainPreview);
+  const waterOperations = normalizeWaterOperations(input.waters, bounds, limits);
+  operations.push(...waterOperations);
+  const spatialPreview = terrainOperations.length > 0 || waterOperations.length > 0
+    ? applyMapOperations({ ...map, assets: [...assets] }, [...terrainOperations, ...waterOperations])
+    : normalizeMap({ ...map, assets: [...assets] });
+  const objectOperations = normalizeObjectOperations(input.objects, spatialPreview, assets, limits.objectCount);
+  operations.push(...objectOperations);
+  const scatterPreview = objectOperations.length > 0
+    ? applyMapOperations(spatialPreview, objectOperations)
+    : spatialPreview;
+  const scatterOperations = normalizeScatterOperations(
+    input.scatters ?? input.scatter,
+    scatterPreview,
+    assets,
+    Math.max(0, limits.objectCount - objectOperations.length)
+  );
+  operations.push(...scatterOperations);
+  const populatedPreview = scatterOperations.length > 0
+    ? applyMapOperations(scatterPreview, scatterOperations)
+    : scatterPreview;
+  const spawnOperation = normalizeSpawnOperation(input.spawn, populatedPreview);
   if (spawnOperation) operations.push(spawnOperation);
   if (operations.length === 0) throw new Error('empty_map_suggestion');
 
@@ -141,10 +173,11 @@ export function normalizeMapSuggestion(
 
 function normalizeWaterOperations(
   value: unknown,
-  bounds: ReturnType<typeof getMapBounds>
+  bounds: ReturnType<typeof getMapBounds>,
+  limits: MapPlanLimits
 ): MapOperation[] {
   if (!Array.isArray(value)) return [];
-  return value.slice(0, 16).map((item) => {
+  return value.slice(0, limits.waterCount).map((item) => {
     if (!item || typeof item !== 'object') throw new Error('invalid_water_plan');
     const input = item as Record<string, unknown>;
     const type = input.type;
@@ -179,9 +212,13 @@ function normalizeWaterOperations(
   });
 }
 
-function normalizeTerrainOperations(value: unknown, bounds: ReturnType<typeof getMapBounds>): MapOperation[] {
+function normalizeTerrainOperations(
+  value: unknown,
+  bounds: ReturnType<typeof getMapBounds>,
+  limits: MapPlanLimits
+): MapOperation[] {
   if (!Array.isArray(value)) return [];
-  return value.slice(0, 40).map((item) => {
+  return value.slice(0, limits.terrainBrushCount).map((item) => {
     if (!item || typeof item !== 'object') throw new Error('invalid_terrain_plan');
     const input = item as Record<string, unknown>;
     const mode = input.mode;
@@ -196,7 +233,7 @@ function normalizeTerrainOperations(value: unknown, bounds: ReturnType<typeof ge
         clamp(optionalNumber(input.targetHeight, 0), bounds.minY, bounds.maxY - 0.1),
         clamp(z, bounds.minZ, bounds.maxZ)
       ],
-      size: clamp(optionalNumber(input.size, 2), 0.3, 8),
+      size: clamp(optionalNumber(input.size, 2), 0.3, limits.brushRadiusMax),
       strength: clamp(optionalNumber(input.strength, 0.4), 0.02, 1.5)
     };
     if (mode === 'flatten') {
@@ -209,12 +246,13 @@ function normalizeTerrainOperations(value: unknown, bounds: ReturnType<typeof ge
 function normalizeObjectOperations(
   value: unknown,
   map: EditableMap,
-  assets: readonly MapAsset[]
+  assets: readonly MapAsset[],
+  maxCount: number
 ): MapOperation[] {
   if (!Array.isArray(value)) return [];
   const bounds = getMapBounds(map);
   const assetById = new Map(assets.map((asset) => [asset.id, asset]));
-  return value.slice(0, 60).map((item) => {
+  return value.slice(0, maxCount).map((item) => {
     if (!item || typeof item !== 'object') throw new Error('invalid_object_plan');
     const input = item as Record<string, unknown>;
     const assetId = typeof input.assetId === 'string' ? input.assetId : '';
@@ -240,13 +278,85 @@ function normalizeObjectOperations(
   });
 }
 
+function normalizeScatterOperations(
+  value: unknown,
+  map: EditableMap,
+  assets: readonly MapAsset[],
+  maxCount: number
+): MapOperation[] {
+  if (!Array.isArray(value) || maxCount <= 0) return [];
+  const assetIds = new Set(assets.map((asset) => asset.id));
+  const bounds = getMapBounds(map);
+  const operations: MapOperation[] = [];
+  let workingMap = map;
+  for (const [planIndex, item] of value.slice(0, 16).entries()) {
+    if (operations.length >= maxCount) break;
+    if (!item || typeof item !== 'object') throw new Error('invalid_scatter_plan');
+    const input = item as Record<string, unknown>;
+    const regionInput = input.region as Record<string, unknown> | undefined;
+    const rawAssetIds = Array.isArray(input.assetIds)
+      ? input.assetIds.filter((assetId): assetId is string => typeof assetId === 'string')
+      : [];
+    const selectedAssetIds = [...new Set(rawAssetIds)];
+    if (selectedAssetIds.length === 0 || selectedAssetIds.some((assetId) => !assetIds.has(assetId))) {
+      throw new Error('unknown_map_asset');
+    }
+    if (!regionInput || regionInput.kind !== 'circle') throw new Error('invalid_scatter_plan');
+    const rawScaleRange = Array.isArray(input.scaleRange) ? input.scaleRange : [1, 1];
+    const plan: MapScatterPlan = {
+      assetIds: selectedAssetIds,
+      region: {
+        kind: 'circle',
+        x: clamp(requiredNumber(regionInput.x, 'invalid_scatter_plan'), bounds.minX, bounds.maxX),
+        z: clamp(requiredNumber(regionInput.z, 'invalid_scatter_plan'), bounds.minZ, bounds.maxZ),
+        r: requiredNumber(regionInput.r, 'invalid_scatter_plan')
+      },
+      density: optionalNumber(input.density, 0.04),
+      avoidWater: optionalNumber(input.avoidWater, 1),
+      maxSlope: optionalNumber(input.maxSlope, 30),
+      minSpacing: optionalNumber(input.minSpacing, 2),
+      scaleRange: [
+        optionalNumber(rawScaleRange[0], 0.9),
+        optionalNumber(rawScaleRange[1], 1.1)
+      ],
+      seed: optionalNumber(input.seed, planIndex + 1)
+    };
+    const placements = expandMapScatter(
+      workingMap,
+      plan,
+      assets,
+      maxCount - operations.length,
+      `scatter-${map.id}-${map.updatedAt}-${planIndex}`
+    );
+    const placementOperations = placements.map((placement): MapOperation => ({
+      type: 'object.add',
+      object: {
+        id: placement.id,
+        name: placement.name,
+        assetId: placement.assetId,
+        transform: {
+          position: [placement.x, placement.y, placement.z],
+          rotation: [0, placement.rotationY, 0],
+          scale: [placement.scale, placement.scale, placement.scale]
+        }
+      }
+    }));
+    operations.push(...placementOperations);
+    if (placementOperations.length > 0) {
+      workingMap = applyMapOperations(workingMap, placementOperations);
+    }
+  }
+  return operations;
+}
+
 function normalizeSpawnOperation(value: unknown, map: EditableMap): MapOperation | null {
   if (!value || typeof value !== 'object') return null;
   const input = value as Record<string, unknown>;
   const bounds = getMapBounds(map);
   const x = clamp(requiredNumber(input.x, 'invalid_spawn_plan'), bounds.minX, bounds.maxX);
   const z = clamp(requiredNumber(input.z, 'invalid_spawn_plan'), bounds.minZ, bounds.maxZ);
-  const point: Vec3 = [x, sampleTerrainHeight(map, x, z), z];
+  const [safeX, safeZ] = findSafeSpawnPosition(map, x, z);
+  const point: Vec3 = [safeX, sampleTerrainHeight(map, safeX, safeZ), safeZ];
   return {
     type: 'reference.set',
     point,
@@ -254,8 +364,47 @@ function normalizeSpawnOperation(value: unknown, map: EditableMap): MapOperation
   };
 }
 
+function findSafeSpawnPosition(map: EditableMap, requestedX: number, requestedZ: number): [number, number] {
+  const bounds = getMapBounds(map);
+  const obstacles = getMapObjectAabbs(map);
+  const terrainStep = Math.max(
+    1,
+    Math.min(
+      map.box.size[0] / Math.max(1, map.terrain.resolutionX - 1),
+      map.box.size[2] / Math.max(1, map.terrain.resolutionZ - 1)
+    )
+  );
+  const maxRadius = Math.min(map.box.size[0], map.box.size[2]) / 3;
+  for (let radius = 0; radius <= maxRadius; radius += terrainStep) {
+    const candidateCount = radius === 0 ? 1 : Math.max(8, Math.ceil(Math.PI * 2 * radius / terrainStep));
+    for (let index = 0; index < candidateCount; index += 1) {
+      const angle = candidateCount === 1 ? 0 : index / candidateCount * Math.PI * 2;
+      const x = clamp(
+        requestedX + Math.cos(angle) * radius,
+        bounds.minX + PLAYER_RADIUS,
+        bounds.maxX - PLAYER_RADIUS
+      );
+      const z = clamp(
+        requestedZ + Math.sin(angle) * radius,
+        bounds.minZ + PLAYER_RADIUS,
+        bounds.maxZ - PLAYER_RADIUS
+      );
+      if (isNearWater(map, x, z, PLAYER_RADIUS + 0.2)) continue;
+      if (terrainSlopeDegrees(map, x, z) > 35) continue;
+      if (obstacles.some((obstacle) => {
+        const closestX = clamp(x, obstacle.min[0], obstacle.max[0]);
+        const closestZ = clamp(z, obstacle.min[2], obstacle.max[2]);
+        return Math.hypot(x - closestX, z - closestZ) < PLAYER_RADIUS + 0.1;
+      })) continue;
+      return [x, z];
+    }
+  }
+  return [requestedX, requestedZ];
+}
+
 function buildSystemPrompt(map: EditableMap, assets: readonly MapAsset[], finalPass: boolean): string {
   const bounds = getMapBounds(map);
+  const limits = planLimits(bounds);
   const assetLibrary = assets.map((asset) => ({
     id: asset.id,
     name: asset.name,
@@ -267,14 +416,16 @@ function buildSystemPrompt(map: EditableMap, assets: readonly MapAsset[], finalP
     '根据田园、峡谷、海岛等场景词主动推导一个简单、合理的空间构图，不要求用户提供坐标。',
     finalPass
       ? '这是最终规划轮次。assetRequests 必须为空；必须至少生成一项地形、物体摆放或出生点操作，使用现有资产完成地图，无法使用的内容直接省略。'
-      : '若场景需要的可复用物体在已有资产中找不到，在 assetRequests 中请求生成，最多 3 项；请求资产时不要提前编造其 assetId。',
+      : `若场景需要的可复用物体在已有资产中找不到，在 assetRequests 中请求生成，最多 ${limits.assetRequestCount} 项；请求资产时不要提前编造其 assetId。`,
     `地图范围：X ${bounds.minX} 到 ${bounds.maxX}，Z ${bounds.minZ} 到 ${bounds.maxZ}，最大高度 ${bounds.maxY}。`,
+    `本地图配额：terrain 最多 ${limits.terrainBrushCount} 笔、笔刷半径最多 ${limits.brushRadiusMax}、waters 最多 ${limits.waterCount} 个、最终物体总数最多 ${limits.objectCount} 个。`,
     'terrain 每项格式：{"mode":"raise|lower|flatten","x":0,"z":0,"size":2,"strength":0.4,"targetHeight":0}。',
     'waters 每项格式：{"type":"lake|river","name":"名称","level":0.2,"width":1.2,"points":[{"x":0,"z":0}]}。湖泊 points 是至少 3 点的边界；河流 points 是至少 2 点的中心线且 width 生效。需要时同时用 terrain 压低水域地形。',
-    'objects 每项格式：{"assetId":"已有ID","name":"名称","x":0,"z":0,"rotationYDeg":0,"scale":1}。',
+    'objects 只用于少量独立物体，格式：{"assetId":"已有ID","name":"名称","x":0,"z":0,"rotationYDeg":0,"scale":1}。',
+    '大量植被、岩石等重复物体必须优先使用 scatters，让代码生成坐标。scatters 每项格式：{"assetIds":["已有ID"],"region":{"kind":"circle","x":0,"z":0,"r":20},"density":0.04,"avoidWater":1,"maxSlope":30,"minSpacing":2,"scaleRange":[0.8,1.2],"seed":7}。',
     '若用户写了雾、光照、素描等氛围词，只放入 renderPromptSuggestions，不要用它改变地图。',
     '只返回一个 JSON 对象，不要 Markdown：',
-    '{"summary":"简短摘要","assetRequests":[{"name":"资产名","prompt":"独立低多边形物体描述，无地面和背景"}],"terrain":[],"waters":[],"objects":[],"spawn":null,"renderPromptSuggestions":[]}',
+    '{"summary":"简短摘要","assetRequests":[{"name":"资产名","prompt":"独立低多边形物体描述，无地面和背景"}],"terrain":[],"waters":[],"objects":[],"scatters":[],"spawn":null,"renderPromptSuggestions":[]}',
     `已有资产：${JSON.stringify(assetLibrary)}`
   ].join('\n');
 }
@@ -290,7 +441,7 @@ function parseJsonObject(content: string): Record<string, unknown> {
   }
 }
 
-function normalizeAssetRequests(value: unknown): AssetGenerationRequest[] {
+function normalizeAssetRequests(value: unknown, maxCount: number): AssetGenerationRequest[] {
   if (!Array.isArray(value)) return [];
   const requests: AssetGenerationRequest[] = [];
   const seen = new Set<string>();
@@ -303,7 +454,7 @@ function normalizeAssetRequests(value: unknown): AssetGenerationRequest[] {
     if (!name || !prompt || seen.has(key)) continue;
     seen.add(key);
     requests.push({ name, prompt });
-    if (requests.length === 3) break;
+    if (requests.length === maxCount) break;
   }
   return requests;
 }

@@ -1,8 +1,8 @@
 import {
-  addPaintStroke,
-  applyTerrainBrush,
+  applyTerrainBrushInPlace,
   createId,
   createMapObject,
+  createPaintStroke,
   normalizeMap,
   type EditableMap,
   type MapBoxColors,
@@ -86,15 +86,12 @@ export function applyMapOperations(map: EditableMap, operations: readonly MapOpe
       case 'map.update':
         if (operation.name !== undefined && typeof operation.name !== 'string') throw new Error('invalid_map_name');
         if (operation.size !== undefined) requireVec3(operation.size, 'invalid_map_size');
-        next = normalizeMap({
-          ...next,
-          name: operation.name ?? next.name,
-          renderPromptSuggestions: operation.renderPromptSuggestions ?? next.renderPromptSuggestions,
-          box: {
-            size: operation.size ?? next.box.size,
-            colors: { ...next.box.colors, ...operation.colors }
-          }
-        });
+        if (operation.name !== undefined) next.name = operation.name;
+        if (operation.renderPromptSuggestions !== undefined) {
+          next.renderPromptSuggestions = operation.renderPromptSuggestions;
+        }
+        if (operation.size !== undefined) next.box.size = operation.size;
+        if (operation.colors !== undefined) Object.assign(next.box.colors, operation.colors);
         break;
       case 'terrain.set':
         if (!operation.terrain || typeof operation.terrain !== 'object') throw new Error('invalid_terrain');
@@ -103,7 +100,7 @@ export function applyMapOperations(map: EditableMap, operations: readonly MapOpe
       case 'terrain.brush':
         requireVec3(operation.point, 'invalid_terrain_point');
         if (!TERRAIN_MODES.has(operation.mode)) throw new Error('invalid_terrain_mode');
-        next = applyTerrainBrush(
+        applyTerrainBrushInPlace(
           next,
           operation.mode,
           operation.point,
@@ -115,7 +112,7 @@ export function applyMapOperations(map: EditableMap, operations: readonly MapOpe
       case 'paint.add':
         if (!operation.stroke || !MAP_SURFACES.has(operation.stroke.surface)) throw new Error('invalid_paint');
         requireVec3(operation.stroke.point, 'invalid_paint_point');
-        next = addPaintStroke(next, operation.stroke);
+        next.paintStrokes.push(createPaintStroke(operation.stroke));
         break;
       case 'object.add': {
         if (!operation.object || typeof operation.object !== 'object') throw new Error('invalid_object');
@@ -127,7 +124,7 @@ export function applyMapOperations(map: EditableMap, operations: readonly MapOpe
           transform: { ...base.transform, ...operation.object.transform }
         };
         if (next.objects.some((item) => item.id === object.id)) throw new Error('duplicate_object_id');
-        next = normalizeMap({ ...next, objects: [...next.objects, object] });
+        next.objects.push(object);
         break;
       }
       case 'object.update': {
@@ -138,17 +135,13 @@ export function applyMapOperations(map: EditableMap, operations: readonly MapOpe
           id: object.id,
           transform: { ...object.transform, ...operation.patch.transform }
         });
-        next = normalizeMap(next);
         break;
       }
       case 'object.remove':
         if (!operation.objectId || !next.objects.some((item) => item.id === operation.objectId)) throw new Error('object_not_found');
-        next = normalizeMap({
-          ...next,
-          objects: next.objects
-            .filter((item) => item.id !== operation.objectId)
-            .map((item) => item.parentId === operation.objectId ? { ...item, parentId: null } : item)
-        });
+        next.objects = next.objects
+          .filter((item) => item.id !== operation.objectId)
+          .map((item) => item.parentId === operation.objectId ? { ...item, parentId: null } : item);
         break;
       case 'water.add': {
         requireWaterBody(operation.water);
@@ -161,7 +154,7 @@ export function applyMapOperations(map: EditableMap, operations: readonly MapOpe
           points: operation.water.points
         };
         if (next.waterBodies.some((item) => item.id === water.id)) throw new Error('duplicate_water_id');
-        next = normalizeMap({ ...next, waterBodies: [...next.waterBodies, water] });
+        next.waterBodies.push(water);
         break;
       }
       case 'water.update': {
@@ -172,32 +165,23 @@ export function applyMapOperations(map: EditableMap, operations: readonly MapOpe
         if (!water) throw new Error('water_not_found');
         const updated: MapWaterBody = { ...water, ...operation.patch, id: water.id };
         requireWaterBody(updated);
-        next = normalizeMap({
-          ...next,
-          waterBodies: next.waterBodies.map((item) => item.id === water.id ? updated : item)
-        });
+        next.waterBodies = next.waterBodies.map((item) => item.id === water.id ? updated : item);
         break;
       }
       case 'water.remove':
         if (!operation.waterId || !next.waterBodies.some((item) => item.id === operation.waterId)) {
           throw new Error('water_not_found');
         }
-        next = normalizeMap({
-          ...next,
-          waterBodies: next.waterBodies.filter((item) => item.id !== operation.waterId)
-        });
+        next.waterBodies = next.waterBodies.filter((item) => item.id !== operation.waterId);
         break;
       case 'reference.set':
         requireVec3(operation.point, 'invalid_reference_point');
-        next = normalizeMap({
-          ...next,
-          spawnPoints: [operation.point],
-          spawnYaw: operation.yaw ?? next.spawnYaw
-        });
+        next.spawnPoints = [operation.point];
+        next.spawnYaw = operation.yaw ?? next.spawnYaw;
         break;
       case 'sun.set':
         requireVec3(operation.point, 'invalid_sun_point');
-        next = normalizeMap({ ...next, lighting: { sunPosition: operation.point } });
+        next.lighting.sunPosition = operation.point;
         break;
       default:
         throw new Error('unsupported_operation');

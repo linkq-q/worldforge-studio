@@ -5,6 +5,7 @@ import { TransformControls } from 'three/examples/jsm/controls/TransformControls
 import { RenderStyleManager } from '@voxel-studio/render-runtime';
 import {
   DEFAULT_SUN_POSITION,
+  MAP_SIZE_PRESETS,
   PLAYER_HEIGHT,
   PLAYER_RADIUS,
   PLAYER_SPAWN_OBJECT_ID,
@@ -25,8 +26,10 @@ import {
   type MapObject,
   type MapSummary,
   type MapSurface,
+  type MapSizePresetKey,
   type TerrainBrushMode
 } from '../shared/map';
+import { planLimits } from '../shared/mapPlanning';
 import { buildEditableMapGroup, type RenderedMap } from './mapRenderer';
 import { configureSunLight } from './lighting';
 import { buildModelGroup } from './modelRenderer';
@@ -185,6 +188,7 @@ class MapEditor {
   private mapAiSuggestion: MapAiSuggestion | null = null;
   private mapAiPreviewMap: EditableMap | null = null;
   private mapAiAbortController: AbortController | null = null;
+  private newMapSizePreset: MapSizePresetKey = 'medium';
 
   constructor(private readonly app: HTMLElement) {}
 
@@ -209,6 +213,13 @@ class MapEditor {
           </div>
           <div class="editor-section map-loader">
             <select id="editor-map-select"></select>
+            <select id="new-map-size" aria-label="新地图尺寸">
+              ${MAP_SIZE_PRESETS.map((preset) => `
+                <option value="${preset.key}" ${preset.key === this.newMapSizePreset ? 'selected' : ''}>
+                  ${preset.label}
+                </option>
+              `).join('')}
+            </select>
             <button id="new-map" class="small">新建</button>
           </div>
           <div class="editor-section stage-switcher">
@@ -285,6 +296,9 @@ class MapEditor {
     `;
 
     this.app.querySelector('#new-map')?.addEventListener('click', () => void this.createMap());
+    this.app.querySelector<HTMLSelectElement>('#new-map-size')?.addEventListener('change', (event) => {
+      this.newMapSizePreset = (event.target as HTMLSelectElement).value as MapSizePresetKey;
+    });
     this.app.querySelector('#add-object')?.addEventListener('click', () => this.addObject());
     this.app.querySelector('#save-map')?.addEventListener('click', () => void this.saveMap());
     this.app.querySelector('#confirm-map')?.addEventListener('click', () => void this.confirmMap());
@@ -500,10 +514,12 @@ class MapEditor {
     if (!await this.confirmLeaveDirtyMap()) return;
     const name = prompt('地图名称', '新地图');
     if (name === null) return;
+    const preset = MAP_SIZE_PRESETS.find((item) => item.key === this.newMapSizePreset)
+      ?? MAP_SIZE_PRESETS[1];
     this.cancelAssetPlacement();
     const { map } = await editorFetch<{ map: EditableMap }>('/api/editor/maps', {
       method: 'POST',
-      body: JSON.stringify({ name: name.trim() || '新地图' })
+      body: JSON.stringify({ name: name.trim() || '新地图', size: preset.size })
     });
     await this.reloadLists();
     this.state.map = normalizeMap(map);
@@ -673,6 +689,7 @@ class MapEditor {
     const objectCount = suggestion?.operations.filter((operation) => operation.type === 'object.add').length ?? 0;
     const hasSpawn = suggestion?.operations.some((operation) => operation.type === 'reference.set') ?? false;
     const generationBlocked = this.state.busy || this.state.dirty || !this.mapAiPrompt.trim();
+    const limits = planLimits(getMapBounds(map));
     host.innerHTML = `
       <section class="editor-section map-ai">
         <h2>AI 生成地图</h2>
@@ -690,7 +707,7 @@ class MapEditor {
           </button>
           ${this.mapAiAbortController ? '<button id="cancel-map-ai" class="secondary">取消</button>' : ''}
         </div>
-        <p class="empty">${this.state.dirty ? '请先保存当前手工修改，再生成 AI 地图预览。' : 'Agent 会检查资产库、生成最多 3 类缺失资产，再规划地形、水域、摆放和出生点。'}</p>
+        <p class="empty">${this.state.dirty ? '请先保存当前手工修改，再生成 AI 地图预览。' : `Agent 会检查资产库、生成最多 ${limits.assetRequestCount} 类缺失资产，再规划地形、水域、摆放和出生点。`}</p>
       </section>
       ${suggestion && this.mapAiPreviewMap ? `
         <section class="editor-section map-ai-result">

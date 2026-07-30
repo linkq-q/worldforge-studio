@@ -1,10 +1,11 @@
 import { describe, expect, it, vi } from 'vitest';
-import { createEmptyMap, type MapAsset } from '../src/shared/map';
+import { createEmptyMap, getMapBounds, MAP_SIZE_PRESETS, type MapAsset } from '../src/shared/map';
 import {
   generateMapSuggestion,
   normalizeMapSuggestion,
   runMapAgent
 } from '../src/server/mapAi';
+import { planLimits } from '../src/shared/mapPlanning';
 
 const assets = [
   { id: 'asset-tree', name: '松树', prompt: 'low poly pine tree' },
@@ -12,6 +13,101 @@ const assets = [
 ] as MapAsset[];
 
 describe('map AI adapter', () => {
+  it('scales planning quotas with the selected map size', () => {
+    const small = createEmptyMap('small', 'map-small', [...MAP_SIZE_PRESETS[0].size]);
+    const large = createEmptyMap('large', 'map-large', [...MAP_SIZE_PRESETS[2].size]);
+    const smallLimits = planLimits(getMapBounds(small));
+    const largeLimits = planLimits(getMapBounds(large));
+
+    expect(smallLimits).toMatchObject({
+      terrainBrushCount: 12,
+      brushRadiusMax: 8,
+      objectCount: 25,
+      waterCount: 3,
+      assetRequestCount: 3
+    });
+    expect(largeLimits.terrainBrushCount).toBeGreaterThan(smallLimits.terrainBrushCount);
+    expect(largeLimits.objectCount).toBeGreaterThan(smallLimits.objectCount);
+    expect(largeLimits.assetRequestCount).toBe(8);
+  });
+
+  it('expands scatter intent into final object operations', () => {
+    const map = createEmptyMap('scatter', 'map-ai-scatter');
+    const suggestion = normalizeMapSuggestion(JSON.stringify({
+      summary: '树林环绕湖泊',
+      waters: [{
+        type: 'lake',
+        points: [{ x: -4, z: -4 }, { x: 4, z: -4 }, { x: 4, z: 4 }, { x: -4, z: 4 }]
+      }],
+      scatters: [{
+        assetIds: ['asset-tree'],
+        region: { kind: 'circle', x: 0, z: 0, r: 20 },
+        density: 0.04,
+        avoidWater: 1,
+        maxSlope: 30,
+        minSpacing: 2.5,
+        scaleRange: [0.8, 1.2],
+        seed: 9
+      }]
+    }), map, assets);
+
+    const objectOperations = suggestion.operations.filter((operation) => operation.type === 'object.add');
+    expect(objectOperations.length).toBeGreaterThan(0);
+    expect(objectOperations.length).toBeLessThanOrEqual(planLimits(getMapBounds(map)).objectCount);
+    expect(suggestion.operations.some((operation) => (operation as { type: string }).type === 'scatter')).toBe(false);
+  });
+
+  it('keeps spacing between placements from separate scatter plans', () => {
+    const suggestion = normalizeMapSuggestion(JSON.stringify({
+      scatters: [
+        {
+          assetIds: ['asset-tree'],
+          region: { kind: 'circle', x: 0, z: 0, r: 12 },
+          density: 0.01,
+          minSpacing: 3.5,
+          seed: 3
+        },
+        {
+          assetIds: ['asset-rock'],
+          region: { kind: 'circle', x: 0, z: 0, r: 12 },
+          density: 0.01,
+          minSpacing: 3.5,
+          seed: 5
+        }
+      ]
+    }), createEmptyMap('scatter', 'map-multi-scatter'), assets);
+    const positions = suggestion.operations
+      .filter((operation) => operation.type === 'object.add')
+      .map((operation) => operation.object.transform?.position)
+      .filter((position): position is [number, number, number] => Boolean(position));
+
+    expect(positions.length).toBeGreaterThan(1);
+    for (let index = 0; index < positions.length; index += 1) {
+      for (let other = index + 1; other < positions.length; other += 1) {
+        expect(Math.hypot(
+          positions[index][0] - positions[other][0],
+          positions[index][2] - positions[other][2]
+        )).toBeGreaterThanOrEqual(3.5);
+      }
+    }
+  });
+
+  it('moves a requested spawn away from water and placed objects', () => {
+    const suggestion = normalizeMapSuggestion(JSON.stringify({
+      waters: [{
+        type: 'lake',
+        points: [{ x: -4, z: -4 }, { x: 4, z: -4 }, { x: 4, z: 4 }, { x: -4, z: 4 }]
+      }],
+      objects: [{ assetId: 'asset-tree', x: 0, z: 0 }],
+      spawn: { x: 0, z: 0 }
+    }), createEmptyMap('safe spawn', 'map-safe-spawn'), assets);
+    const spawn = suggestion.operations.find((operation) => operation.type === 'reference.set');
+
+    expect(spawn?.type).toBe('reference.set');
+    if (spawn?.type !== 'reference.set') throw new Error('missing spawn');
+    expect(Math.hypot(spawn.point[0], spawn.point[2])).toBeGreaterThan(4.5);
+  });
+
   it('converts a bounded plan into the shared MapOperation protocol', () => {
     const map = createEmptyMap('test', 'map-ai-test');
     map.box.size = [20, 8, 20];
@@ -127,6 +223,41 @@ describe('map AI adapter', () => {
     ]));
     const secondRequest = JSON.parse(fetchImpl.mock.calls[1][1]?.body as string);
     expect(secondRequest.messages[0].content).toContain('asset-generated-tree');
+  });
+
+  it('allows the large preset to request up to eight reusable assets', async () => {
+    const requests = Array.from({ length: 10 }, (_, index) => ({
+      name: `Asset ${index}`,
+      prompt: `Reusable low poly asset ${index}`
+    }));
+    const fetchImpl = vi.fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify({
+        ok: true,
+        content: JSON.stringify({ summary: 'asset pass', assetRequests: requests })
+      }), { status: 200, headers: { 'Content-Type': 'application/json' } }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({
+        ok: true,
+        content: JSON.stringify({
+          summary: 'final pass',
+          assetRequests: [],
+          terrain: [{ mode: 'raise', x: 0, z: 0, size: 20, strength: 0.4 }]
+        })
+      }), { status: 200, headers: { 'Content-Type': 'application/json' } }));
+    const createAsset = vi.fn().mockImplementation(async (request: { name: string; prompt: string }) => ({
+      id: `generated-${request.name}`,
+      name: request.name,
+      prompt: request.prompt
+    } as MapAsset));
+    const map = createEmptyMap('large', 'map-large-agent', [...MAP_SIZE_PRESETS[2].size]);
+
+    await runMapAgent('生成大型地图', map, [], {
+      apiBase: 'https://example.test',
+      provider: 'gpt',
+      fetchImpl,
+      createAsset
+    });
+
+    expect(createAsset).toHaveBeenCalledTimes(8);
   });
 
   it('replans when the first pass only extracts render style', async () => {

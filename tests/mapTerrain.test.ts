@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
-  DEFAULT_TERRAIN_RESOLUTION,
   DEFAULT_SUN_POSITION,
+  MAP_SIZE_PRESETS,
   bakeMapCollisions,
   createMapObject,
   getPlayerSupportHeightForMap,
@@ -27,6 +27,15 @@ import {
 } from '../src/shared/protocol';
 
 describe('map terrain editing', () => {
+  it('creates each map size preset with its matching terrain resolution', () => {
+    for (const preset of MAP_SIZE_PRESETS) {
+      const map = createEmptyMap(preset.label, `map-${preset.key}`, [...preset.size]);
+      expect(map.box.size).toEqual(preset.size);
+      expect(map.terrain.resolutionX).toBe(preset.terrain);
+      expect(map.terrain.resolutionZ).toBe(preset.terrain);
+    }
+  });
+
   it('upgrades older low resolution terrain by resampling heights', () => {
     const map = normalizeMap({
       terrain: {
@@ -40,10 +49,10 @@ describe('map terrain editing', () => {
       }
     });
 
-    expect(map.terrain.resolutionX).toBe(DEFAULT_TERRAIN_RESOLUTION);
-    expect(map.terrain.resolutionZ).toBe(DEFAULT_TERRAIN_RESOLUTION);
+    expect(map.terrain.resolutionX).toBe(MAP_SIZE_PRESETS[0].terrain);
+    expect(map.terrain.resolutionZ).toBe(MAP_SIZE_PRESETS[0].terrain);
     expect(sampleTerrainHeight(map, 0, 0)).toBeCloseTo(4, 4);
-    expect(sampleTerrainHeight(map, 16, 16)).toBeCloseTo(0, 4);
+    expect(sampleTerrainHeight(map, 24, 24)).toBeCloseTo(0, 4);
   });
 
   it('raises smooth radial terrain from arbitrary world positions', () => {
@@ -52,12 +61,27 @@ describe('map terrain editing', () => {
     const center = sampleTerrainHeight(map, 0.37, -0.22);
     const shoulder = sampleTerrainHeight(map, 1.37, -0.22);
     const edge = sampleTerrainHeight(map, 2.85, -0.22);
-    const outside = sampleTerrainHeight(map, 4, -0.22);
+    const outside = sampleTerrainHeight(map, 5, -0.22);
 
     expect(center).toBeGreaterThan(shoulder);
     expect(shoulder).toBeGreaterThan(edge);
     expect(edge).toBeGreaterThan(0);
     expect(outside).toBeCloseTo(0, 4);
+  });
+
+  it('keeps the stored resolution of an existing 32 metre map', () => {
+    const existingResolution = 65;
+    const legacy = createEmptyMap();
+    legacy.box.size = [32, 8, 32];
+    legacy.terrain = {
+      resolutionX: existingResolution,
+      resolutionZ: existingResolution,
+      heights: Array(existingResolution * existingResolution).fill(0)
+    };
+    const map = normalizeMap(legacy);
+
+    expect(map.terrain.resolutionX).toBe(existingResolution);
+    expect(map.terrain.resolutionZ).toBe(existingResolution);
   });
 
   it('flattens terrain toward a locked target height with brush strength', () => {

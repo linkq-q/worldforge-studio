@@ -13,6 +13,15 @@ afterEach(async () => {
 });
 
 describe('map operation transactions', () => {
+  it('creates a large map with its matching terrain resolution', async () => {
+    const store = await createStore();
+    const map = await store.createMap({ name: 'large', size: [192, 24, 192] });
+
+    expect(map.box.size).toEqual([192, 24, 192]);
+    expect(map.terrain.resolutionX).toBe(129);
+    expect(map.terrain.resolutionZ).toBe(129);
+  });
+
   it('applies one shared operation list in order', () => {
     const map = createEmptyMap('before', 'map-test');
     map.confirmedAt = 123;
@@ -57,6 +66,23 @@ describe('map operation transactions', () => {
       { type: 'unknown' } as never
     ])).toThrow('unsupported_operation');
     expect(map.name).toBe('unchanged');
+  });
+
+  it('applies a large scatter transaction without mutating the source map', () => {
+    const map = createEmptyMap('large transaction', 'map-large-transaction', [192, 24, 192]);
+    const operations = Array.from({ length: 409 }, (_, index) => ({
+      type: 'object.add' as const,
+      object: {
+        id: `tree-${index}`,
+        name: `Tree ${index}`,
+        transform: { position: [index % 20, 0, Math.floor(index / 20)] as [number, number, number] }
+      }
+    }));
+
+    const result = applyMapOperations(map, operations);
+
+    expect(result.objects).toHaveLength(409);
+    expect(map.objects).toHaveLength(0);
   });
 
   it('adds, updates and removes structured lakes and rivers atomically', () => {

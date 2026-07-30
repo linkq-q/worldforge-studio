@@ -168,7 +168,7 @@ export const PLAYER_HEIGHT = 1.8;
 export const PLAYER_SPAWN_OBJECT_ID = '__player_spawn__';
 export const SUN_OBJECT_ID = '__sun__';
 export const DEFAULT_SUN_POSITION: Vec3 = [-18, 24, 14];
-export const DEFAULT_TERRAIN_RESOLUTION = 65;
+export const DEFAULT_TERRAIN_RESOLUTION = 33;
 const MAX_TERRAIN_RESOLUTION = 129;
 
 const DEFAULT_BOX_COLORS: MapBoxColors = {
@@ -180,7 +180,15 @@ const DEFAULT_BOX_COLORS: MapBoxColors = {
   west: '#344144'
 };
 
-const DEFAULT_MAP_SIZE: Vec3 = [32, 8, 32];
+export const MAP_SIZE_PRESETS = [
+  { key: 'small', label: '小', size: [48, 12, 48] as Vec3, terrain: 33 },
+  { key: 'medium', label: '中', size: [96, 16, 96] as Vec3, terrain: 65 },
+  { key: 'large', label: '大', size: [192, 24, 192] as Vec3, terrain: 129 }
+] as const;
+
+export type MapSizePresetKey = typeof MAP_SIZE_PRESETS[number]['key'];
+
+const DEFAULT_MAP_SIZE: Vec3 = [...MAP_SIZE_PRESETS[0].size];
 const DEFAULT_TRANSFORM: Transform3D = {
   position: [0, 0, 0],
   rotation: [0, 0, 0],
@@ -197,9 +205,15 @@ const MAP_COLLISION_CELL_SIZE = 4;
 const MAP_COLLISION_EPSILON = 0.00001;
 const BAKED_MAP_OBJECT_ID = '__baked_map__';
 
-export function createEmptyMap(name = '未命名地图', id = createId('map')): EditableMap {
+export function createEmptyMap(
+  name = '未命名地图',
+  id = createId('map'),
+  size: Vec3 = DEFAULT_MAP_SIZE
+): EditableMap {
   const now = Date.now();
-  const terrain = createFlatTerrain(DEFAULT_TERRAIN_RESOLUTION, DEFAULT_TERRAIN_RESOLUTION);
+  const safeSize = positiveVec3(size, DEFAULT_MAP_SIZE);
+  const terrainResolution = terrainResolutionForSize(safeSize);
+  const terrain = createFlatTerrain(terrainResolution, terrainResolution);
   return normalizeMap({
     id,
     name,
@@ -207,7 +221,7 @@ export function createEmptyMap(name = '未命名地图', id = createId('map')): 
     createdAt: now,
     updatedAt: now,
     box: {
-      size: [...DEFAULT_MAP_SIZE],
+      size: safeSize,
       colors: { ...DEFAULT_BOX_COLORS }
     },
     lighting: {
@@ -249,7 +263,8 @@ export function createPaintStroke(input: Partial<MapPaintStroke> & Pick<MapPaint
 
 export function normalizeMap(input: Partial<EditableMap>): EditableMap {
   const boxSize = positiveVec3(input.box?.size, DEFAULT_MAP_SIZE);
-  const terrain = normalizeTerrain(input.terrain, DEFAULT_TERRAIN_RESOLUTION, DEFAULT_TERRAIN_RESOLUTION);
+  const terrainFallback = terrainResolutionForSize(boxSize);
+  const terrain = normalizeTerrain(input.terrain, terrainFallback, terrainFallback);
   const map: EditableMap = {
     id: typeof input.id === 'string' && input.id ? input.id : createId('map'),
     name: cleanName(input.name, '未命名地图'),
@@ -403,15 +418,38 @@ export function applyTerrainBrush(
   strength: number,
   targetHeight?: number
 ): EditableMap {
-  const next = normalizeMap(map);
+  const next: EditableMap = {
+    ...map,
+    terrain: {
+      ...map.terrain,
+      heights: [...map.terrain.heights]
+    }
+  };
+  applyTerrainBrushInPlace(next, mode, point, radius, strength, targetHeight);
+  return next;
+}
+
+export function applyTerrainBrushInPlace(
+  map: EditableMap,
+  mode: TerrainBrushMode,
+  point: Vec3,
+  radius: number,
+  strength: number,
+  targetHeight?: number
+): void {
+  const next = map;
   const terrain = next.terrain;
   const [width, height, depth] = next.box.size;
   const brushRadius = clamp(Math.abs(radius), 0.15, Math.max(width, depth));
   const amount = clamp(Math.abs(strength), 0.01, height);
   const target = clamp(finiteNumber(targetHeight, point[1]), 0, height - 0.1);
+  const minX = clamp(Math.floor(worldToTerrainIndex(point[0] - brushRadius, width, terrain.resolutionX)), 0, terrain.resolutionX - 1);
+  const maxX = clamp(Math.ceil(worldToTerrainIndex(point[0] + brushRadius, width, terrain.resolutionX)), 0, terrain.resolutionX - 1);
+  const minZ = clamp(Math.floor(worldToTerrainIndex(point[2] - brushRadius, depth, terrain.resolutionZ)), 0, terrain.resolutionZ - 1);
+  const maxZ = clamp(Math.ceil(worldToTerrainIndex(point[2] + brushRadius, depth, terrain.resolutionZ)), 0, terrain.resolutionZ - 1);
 
-  for (let zIndex = 0; zIndex < terrain.resolutionZ; zIndex += 1) {
-    for (let xIndex = 0; xIndex < terrain.resolutionX; xIndex += 1) {
+  for (let zIndex = minZ; zIndex <= maxZ; zIndex += 1) {
+    for (let xIndex = minX; xIndex <= maxX; xIndex += 1) {
       const world = terrainPointAt(next, xIndex, zIndex);
       const dist = Math.hypot(world[0] - point[0], world[2] - point[2]);
       if (dist > brushRadius) continue;
@@ -426,7 +464,17 @@ export function applyTerrainBrush(
 
   next.updatedAt = Date.now();
   next.version += 1;
-  return next;
+}
+
+function worldToTerrainIndex(value: number, extent: number, resolution: number): number {
+  return ((value + extent / 2) / extent) * (resolution - 1);
+}
+
+export function terrainResolutionForSize(size: Vec3): number {
+  const extent = Math.max(size[0], size[2]);
+  if (extent <= MAP_SIZE_PRESETS[0].size[0]) return MAP_SIZE_PRESETS[0].terrain;
+  if (extent <= MAP_SIZE_PRESETS[1].size[0]) return MAP_SIZE_PRESETS[1].terrain;
+  return MAP_SIZE_PRESETS[2].terrain;
 }
 
 export function addPaintStroke(map: EditableMap, stroke: Partial<MapPaintStroke> & Pick<MapPaintStroke, 'surface' | 'point'>): EditableMap {

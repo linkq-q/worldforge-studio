@@ -102,8 +102,9 @@ export class MapStore {
   }
 
   async createMap(input: CreateMapInput = {}): Promise<EditableMap> {
-    const map = createEmptyMap(input.name ?? '未命名地图');
-    if (input.size) map.box.size = sanitizeVec3(input.size, map.box.size);
+    const fallback = createEmptyMap(input.name ?? '未命名地图');
+    const size = input.size ? sanitizeVec3(input.size, fallback.box.size) : fallback.box.size;
+    const map = createEmptyMap(input.name ?? '未命名地图', undefined, size);
     return this.saveMap(map);
   }
 
