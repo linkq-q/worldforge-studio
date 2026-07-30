@@ -4,6 +4,22 @@
 
 ## HTTP
 
+基础版地图 AI 生成预览：
+
+```http
+POST /api/editor/maps/:mapId/generate
+Content-Type: application/json
+
+{
+  "prompt": "起伏的田园，有一片树林，把出生点放在南侧",
+  "provider": "gpt"
+}
+```
+
+返回的 `suggestion.operations` 只是预览建议。前端先在内存中应用；用户确认后，再把同一批操作提交到事务入口。AI 输出中的视觉氛围词保存为 `renderPromptSuggestions`，留给第二阶段选择使用。
+
+地图生成接口内部运行最多两轮：第一轮可以通过 `assetRequests` 请求最多 3 类缺失资产，服务端调用 Voxel Studio 生成并保存到共享资产库；第二轮必须使用真实 `assetId` 输出最终地图操作。若第一轮只有风格标签而没有空间操作，也会触发第二轮自检，禁止返回可应用的空地图。
+
 提交：
 
 ```http
