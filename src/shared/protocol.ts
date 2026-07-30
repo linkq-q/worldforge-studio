@@ -21,6 +21,13 @@ export const DEFAULT_INPUT: InputState = {
 
 export const MODEL_API_BASE = 'https://voxel-studio-backend.zeabur.app';
 export const MODEL_PROVIDERS = ['fireworks', 'glm', 'gpt', 'deepseek'] as const;
+export const CHAT_PROVIDER_OPTIONS = [
+  { key: 'gpt', label: 'GPT', disabled: false },
+  { key: 'glm', label: 'GLM 5', disabled: true },
+  { key: 'fireworks', label: 'GLM 5.1', disabled: true },
+  { key: 'deepseek-v4-pro', label: 'DeepSeek V4 Pro', disabled: true }
+] as const;
+export type ChatProvider = typeof CHAT_PROVIDER_OPTIONS[number]['key'];
 
 export interface InputState {
   forward: boolean;

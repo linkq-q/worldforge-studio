@@ -1,6 +1,7 @@
 import {
   MODEL_API_BASE,
   MODEL_PROVIDERS,
+  type ChatProvider,
   type ModelJobState
 } from '../shared/protocol';
 
@@ -17,6 +18,20 @@ export interface ParsedSseResult {
   modelJson: unknown | null;
   error: string | null;
   stages: string[];
+}
+
+export interface ChatMessage {
+  role: 'system' | 'user' | 'assistant';
+  content: string;
+}
+
+export interface ChatApiOptions {
+  apiBase?: string;
+  provider?: ChatProvider;
+  temperature?: number;
+  maxTokens?: number;
+  fetchImpl?: typeof fetch;
+  signal?: AbortSignal;
 }
 
 export function parseSseModel(text: string): ParsedSseResult {
@@ -152,6 +167,25 @@ export async function refineModel(modelJson: unknown, description: string, optio
   }
 
   throw new Error(errors.join(' | ') || '所有 refine provider 均失败');
+}
+
+export async function llmChat(messages: readonly ChatMessage[], options: ChatApiOptions = {}): Promise<string> {
+  const response = await (options.fetchImpl ?? fetch)(`${options.apiBase ?? MODEL_API_BASE}/api/chat`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      messages,
+      temperature: options.temperature ?? 0.2,
+      maxTokens: options.maxTokens ?? 1000,
+      provider: options.provider ?? 'gpt'
+    }),
+    signal: options.signal
+  });
+  const data = await response.json() as { ok?: boolean; content?: string; error?: string };
+  if (!response.ok || !data.ok || typeof data.content !== 'string') {
+    throw new Error(data.error || `chat_http_${response.status}`);
+  }
+  return data.content;
 }
 
 function isAbortError(error: unknown): boolean {

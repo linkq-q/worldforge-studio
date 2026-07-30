@@ -58,6 +58,7 @@ export interface MapAsset {
   id: string;
   name: string;
   prompt: string;
+  tags?: string[];
   modelJson: unknown;
   colliderPlan: ModelColliderPlan;
   mode: string;
@@ -89,6 +90,9 @@ export interface EditableMap {
   objects: MapObject[];
   spawnPoints: Vec3[];
   spawnYaw: number;
+  confirmedAt: number | null;
+  renderSchemeId: string | null;
+  renderPromptSuggestions: string[];
   assets?: MapAsset[];
   collisionBake?: MapCollisionBake;
 }
@@ -102,6 +106,8 @@ export interface MapSummary {
   height: number;
   depth: number;
   objectCount: number;
+  confirmedAt: number | null;
+  renderSchemeId: string | null;
 }
 
 export interface MapBounds {
@@ -257,6 +263,13 @@ export function normalizeMap(input: Partial<EditableMap>): EditableMap {
     objects: Array.isArray(input.objects) ? input.objects.map(normalizeObject) : [],
     spawnPoints: normalizeSpawnPoints(input.spawnPoints, boxSize),
     spawnYaw: wrapAngle(finiteNumber(input.spawnYaw, 0)),
+    confirmedAt: typeof input.confirmedAt === 'number' && Number.isFinite(input.confirmedAt) && input.confirmedAt > 0
+      ? input.confirmedAt
+      : null,
+    renderSchemeId: typeof input.renderSchemeId === 'string' && input.renderSchemeId.trim()
+      ? input.renderSchemeId.trim().slice(0, 80)
+      : null,
+    renderPromptSuggestions: normalizeTextList(input.renderPromptSuggestions, 8, 80),
     assets: Array.isArray(input.assets) ? input.assets.map(normalizeAsset) : undefined,
     collisionBake: normalizeMapCollisionBake(input.collisionBake)
   };
@@ -272,7 +285,9 @@ export function mapToSummary(map: EditableMap): MapSummary {
     width: map.box.size[0],
     height: map.box.size[1],
     depth: map.box.size[2],
-    objectCount: map.objects.length
+    objectCount: map.objects.length,
+    confirmedAt: map.confirmedAt,
+    renderSchemeId: map.renderSchemeId
   };
 }
 
@@ -957,6 +972,15 @@ function normalizeAsset(input: Partial<MapAsset>): MapAsset {
     createdAt: finiteNumber(input.createdAt, now),
     updatedAt: finiteNumber(input.updatedAt, now)
   };
+}
+
+function normalizeTextList(value: unknown, maxItems: number, maxLength: number): string[] {
+  if (!Array.isArray(value)) return [];
+  return [...new Set(value
+    .filter((item): item is string => typeof item === 'string')
+    .map((item) => item.trim().slice(0, maxLength))
+    .filter(Boolean))]
+    .slice(0, maxItems);
 }
 
 function normalizeMapCollisionBake(input: Partial<MapCollisionBake> | undefined): MapCollisionBake | undefined {

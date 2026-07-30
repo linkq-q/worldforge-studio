@@ -26,6 +26,12 @@ import {
 } from '../shared/mapOperations';
 
 import { MAP_ASSET_COLLIDER_PROFILE, normalizeModelColliderPlan } from '../shared/modelBounds';
+import {
+  BUILTIN_RENDER_SCHEMES,
+  createRenderScheme,
+  normalizeRenderScheme,
+  type RenderScheme
+} from '../shared/renderScheme';
 
 export interface MapStoreOptions {
   rootDir?: string;
@@ -55,6 +61,7 @@ export class MapStore {
   private readonly mapsDir: string;
   private readonly assetsDir: string;
   private readonly historyDir: string;
+  private readonly renderSchemesDir: string;
   // ponytail: one global queue is enough for local single-user editing; split per map only if concurrency becomes measurable.
   private transactionQueue: Promise<void> = Promise.resolve();
 
@@ -63,12 +70,14 @@ export class MapStore {
     this.mapsDir = path.join(this.rootDir, 'maps');
     this.assetsDir = path.join(this.rootDir, 'assets');
     this.historyDir = path.join(this.rootDir, 'history');
+    this.renderSchemesDir = path.join(this.rootDir, 'render-schemes');
   }
 
   async ensureReady(): Promise<void> {
     await mkdir(this.mapsDir, { recursive: true });
     await mkdir(this.assetsDir, { recursive: true });
     await mkdir(this.historyDir, { recursive: true });
+    await mkdir(this.renderSchemesDir, { recursive: true });
   }
 
   async listMapSummaries(): Promise<MapSummary[]> {
@@ -169,18 +178,21 @@ export class MapStore {
     const map = await this.loadMap(id);
     if (patch.size) map.box.size = sanitizeVec3(patch.size, map.box.size);
     if (patch.colors) map.box.colors = { ...map.box.colors, ...patch.colors };
+    map.confirmedAt = null;
     return this.saveMap(map);
   }
 
   async setSpawnPoint(id: string, point: Vec3): Promise<EditableMap> {
     const map = await this.loadMap(id);
     map.spawnPoints = [sanitizeVec3(point, map.spawnPoints[0] ?? [0, 0, 0])];
+    map.confirmedAt = null;
     return this.saveMap(map);
   }
 
   async setSunPosition(id: string, point: Vec3): Promise<EditableMap> {
     const map = await this.loadMap(id);
     map.lighting.sunPosition = sanitizeVec3(point, map.lighting.sunPosition);
+    map.confirmedAt = null;
     return this.saveMap(map);
   }
 
@@ -196,6 +208,7 @@ export class MapStore {
       locked: input.locked === true
     };
     map.objects.push(object);
+    map.confirmedAt = null;
     return this.saveMap(map);
   }
 
@@ -216,6 +229,7 @@ export class MapStore {
         size: patch.transform.size ? sanitizePositiveVec3(patch.transform.size, object.transform.size) : object.transform.size
       };
     }
+    map.confirmedAt = null;
     return this.saveMap(map);
   }
 
@@ -224,17 +238,18 @@ export class MapStore {
     map.objects = map.objects
       .filter((object) => object.id !== objectId)
       .map((object) => object.parentId === objectId ? { ...object, parentId: null } : object);
+    map.confirmedAt = null;
     return this.saveMap(map);
   }
 
   async addPaint(mapId: string, stroke: Partial<MapPaintStroke> & Pick<MapPaintStroke, 'surface' | 'point'>): Promise<EditableMap> {
     const map = await this.loadMap(mapId);
-    return this.saveMap(addPaintStroke(map, stroke));
+    return this.saveMap({ ...addPaintStroke(map, stroke), confirmedAt: null });
   }
 
   async applyTerrain(mapId: string, mode: TerrainBrushMode, point: Vec3, size: number, strength: number, targetHeight?: number): Promise<EditableMap> {
     const map = await this.loadMap(mapId);
-    return this.saveMap(applyTerrainBrush(map, mode, point, size, strength, targetHeight));
+    return this.saveMap({ ...applyTerrainBrush(map, mode, point, size, strength, targetHeight), confirmedAt: null });
   }
 
   private async withTransactionLock<T>(action: () => Promise<T>): Promise<T> {
@@ -322,6 +337,38 @@ export class MapStore {
     return { scanned: files.length, updated };
   }
 
+  async listRenderSchemes(): Promise<RenderScheme[]> {
+    await this.ensureReady();
+    const files = await readdir(this.renderSchemesDir).catch(() => []);
+    const custom = await Promise.all(files.filter((file) => file.endsWith('.json')).map(async (file) => {
+      return this.loadRenderScheme(path.basename(file, '.json')).catch(() => null);
+    }));
+    return [
+      ...BUILTIN_RENDER_SCHEMES.map((scheme) => normalizeRenderScheme(scheme)),
+      ...custom.filter((scheme): scheme is RenderScheme => Boolean(scheme))
+        .sort((a, b) => b.updatedAt - a.updatedAt)
+    ];
+  }
+
+  async loadRenderScheme(id: string): Promise<RenderScheme> {
+    const builtin = BUILTIN_RENDER_SCHEMES.find((scheme) => scheme.id === id);
+    if (builtin) return normalizeRenderScheme(builtin);
+    const text = await readFile(this.renderSchemePath(id), 'utf8');
+    return normalizeRenderScheme(JSON.parse(text) as Partial<RenderScheme>);
+  }
+
+  async saveRenderScheme(input: Partial<RenderScheme>): Promise<RenderScheme> {
+    await this.ensureReady();
+    const scheme = createRenderScheme(input);
+    await atomicWriteJson(this.renderSchemePath(scheme.id), scheme);
+    return scheme;
+  }
+
+  async deleteRenderScheme(id: string): Promise<void> {
+    if (BUILTIN_RENDER_SCHEMES.some((scheme) => scheme.id === id)) throw new Error('builtin_scheme_readonly');
+    await rm(this.renderSchemePath(id), { force: true });
+  }
+
   async hydrateMap(map: EditableMap): Promise<EditableMap> {
     const normalized = normalizeMap(map);
     const ids = [...new Set(normalized.objects.map((object) => object.assetId).filter((id): id is string => Boolean(id)))];
@@ -344,6 +391,10 @@ export class MapStore {
 
   private assetPath(id: string): string {
     return path.join(this.assetsDir, `${safeId(id)}.json`);
+  }
+
+  private renderSchemePath(id: string): string {
+    return path.join(this.renderSchemesDir, `${safeId(id)}.json`);
   }
 
   private undoPath(id: string): string {
@@ -382,7 +433,8 @@ export function mapEditorCliManifest(): Record<string, string> {
     paint: '绘制表面：--map --surface --x --y --z --u --v --color --size --softness',
     terrain: '调整地形：--map --mode raise|lower|flatten --x --z --size --strength --height',
     listAssets: '列出服务端资产',
-    generateAsset: '生成资产：--prompt --name --mode'
+    generateAsset: '生成资产：--prompt --name --mode',
+    listRenderSchemes: '列出可复用渲染方案'
   };
 }
 
@@ -437,6 +489,12 @@ function normalizeAsset(input: Partial<MapAsset>): MapAsset {
     id: typeof input.id === 'string' && input.id ? input.id : createId('asset'),
     name: typeof input.name === 'string' && input.name.trim() ? input.name.trim().slice(0, 48) : '未命名资产',
     prompt: typeof input.prompt === 'string' ? input.prompt : '',
+    tags: Array.isArray(input.tags)
+      ? [...new Set(input.tags.filter((tag): tag is string => typeof tag === 'string')
+        .map((tag) => tag.trim().toLowerCase().replace(/[^a-z0-9_-]/g, '').slice(0, 48))
+        .filter(Boolean))]
+        .slice(0, 16)
+      : undefined,
     modelJson: input.modelJson ?? null,
     colliderPlan: normalizeModelColliderPlan(input.colliderPlan, input.modelJson, MAP_ASSET_COLLIDER_PROFILE),
     mode: typeof input.mode === 'string' && input.mode ? input.mode : 'voxel',

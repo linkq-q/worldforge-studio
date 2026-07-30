@@ -171,6 +171,11 @@ async function main(): Promise<void> {
     return;
   }
 
+  if (command === 'list-render-schemes') {
+    print({ renderSchemes: await store.listRenderSchemes() });
+    return;
+  }
+
   throw new Error(`unknown_command:${command}`);
 }
 

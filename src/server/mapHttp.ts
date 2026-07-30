@@ -7,9 +7,12 @@ import {
   type MapSurface,
   type TerrainBrushMode
 } from '../shared/map';
-import type { Vec3 } from '../shared/protocol';
+import { CHAT_PROVIDER_OPTIONS, type ChatProvider, type Vec3 } from '../shared/protocol';
 import type { MapTransactionRequest, MapTransactionSource } from '../shared/mapOperations';
+import type { RenderScheme } from '../shared/renderScheme';
+import { runMapAgent } from './mapAi';
 import { generateModel } from './modelApi';
+import { generateRenderSuggestion } from './renderAi';
 import { MapStore, mapEditorCliManifest } from './mapStore';
 
 type Req = http.IncomingMessage;
@@ -96,6 +99,11 @@ async function handleEditorRoute(req: Req, res: Res, store: MapStore, parts: str
     return;
   }
 
+  if (parts[2] === 'render-schemes') {
+    await handleEditorRenderSchemes(req, res, store, parts);
+    return;
+  }
+
   throw new HttpError(404, 'not_found');
 }
 
@@ -126,6 +134,50 @@ async function handleEditorMaps(req: Req, res: Res, store: MapStore, parts: stri
   if (req.method === 'DELETE' && parts.length === 4) {
     await store.deleteMap(mapId);
     sendJson(res, 200, { ok: true });
+    return;
+  }
+
+  if (parts[4] === 'generate' && req.method === 'POST' && parts.length === 5) {
+    const body = await readJson<{ prompt?: string; provider?: ChatProvider }>(req);
+    const prompt = body.prompt?.trim();
+    if (!prompt) throw new HttpError(400, 'missing_prompt');
+    const provider = body.provider ?? 'gpt';
+    const option = CHAT_PROVIDER_OPTIONS.find((item) => item.key === provider);
+    if (!option || option.disabled) throw new HttpError(400, 'provider_unavailable');
+    const controller = new AbortController();
+    const abort = () => controller.abort();
+    const abortIfOpen = () => {
+      if (!res.writableEnded) abort();
+    };
+    req.once('aborted', abort);
+    res.once('close', abortIfOpen);
+    try {
+      const [map, assets] = await Promise.all([store.loadMap(mapId), store.listAssets()]);
+      const modelProvider = provider === 'deepseek-v4-pro' ? 'deepseek' : provider;
+      sendJson(res, 200, {
+        suggestion: await runMapAgent(prompt, map, assets, {
+          provider,
+          signal: controller.signal,
+          createAsset: async (request) => {
+            const modelJson = await generateModel(request.prompt, {
+              mode: 'voxel',
+              providers: [modelProvider],
+              signal: controller.signal
+            });
+            return store.saveAsset({
+              name: request.name,
+              prompt: request.prompt,
+              modelJson,
+              mode: 'voxel',
+              provider: modelProvider
+            });
+          }
+        })
+      });
+    } finally {
+      req.off('aborted', abort);
+      res.off('close', abortIfOpen);
+    }
     return;
   }
 
@@ -249,6 +301,62 @@ async function handleEditorAssets(req: Req, res: Res, store: MapStore, parts: st
   if (req.method === 'DELETE' && parts.length === 4) {
     await store.deleteAsset(assetId);
     sendJson(res, 200, { ok: true });
+    return;
+  }
+  throw new HttpError(404, 'not_found');
+}
+
+async function handleEditorRenderSchemes(req: Req, res: Res, store: MapStore, parts: string[]): Promise<void> {
+  if (req.method === 'GET' && parts.length === 3) {
+    sendJson(res, 200, { renderSchemes: await store.listRenderSchemes() });
+    return;
+  }
+  if (req.method === 'POST' && parts.length === 3) {
+    const body = await readJson<Partial<RenderScheme>>(req);
+    sendJson(res, 201, { renderScheme: await store.saveRenderScheme(body) });
+    return;
+  }
+  if (req.method === 'POST' && parts[3] === 'generate' && parts.length === 4) {
+    const body = await readJson<{ prompt?: string; provider?: ChatProvider }>(req);
+    const prompt = body.prompt?.trim();
+    if (!prompt) throw new HttpError(400, 'missing_prompt');
+    const provider = body.provider ?? 'gpt';
+    const option = CHAT_PROVIDER_OPTIONS.find((item) => item.key === provider);
+    if (!option || option.disabled) throw new HttpError(400, 'provider_unavailable');
+    const controller = new AbortController();
+    const abort = () => controller.abort();
+    const abortIfOpen = () => {
+      if (!res.writableEnded) abort();
+    };
+    req.once('aborted', abort);
+    res.once('close', abortIfOpen);
+    try {
+      const suggestion = await generateRenderSuggestion(prompt, await store.listRenderSchemes(), {
+        provider,
+        signal: controller.signal
+      });
+      sendJson(res, 200, { suggestion });
+    } finally {
+      req.off('aborted', abort);
+      res.off('close', abortIfOpen);
+    }
+    return;
+  }
+
+  const schemeId = parts[3];
+  if (!schemeId) throw new HttpError(404, 'not_found');
+  if (req.method === 'GET' && parts.length === 4) {
+    sendJson(res, 200, { renderScheme: await store.loadRenderScheme(schemeId) });
+    return;
+  }
+  if (req.method === 'DELETE' && parts.length === 4) {
+    try {
+      await store.deleteRenderScheme(schemeId);
+      sendJson(res, 200, { ok: true });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'delete_failed';
+      throw new HttpError(message === 'builtin_scheme_readonly' ? 409 : 500, message);
+    }
     return;
   }
   throw new HttpError(404, 'not_found');

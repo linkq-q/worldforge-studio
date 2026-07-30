@@ -15,8 +15,10 @@ afterEach(async () => {
 describe('map operation transactions', () => {
   it('applies one shared operation list in order', () => {
     const map = createEmptyMap('before', 'map-test');
+    map.confirmedAt = 123;
     const result = applyMapOperations(map, [
       { type: 'map.update', name: 'after' },
+      { type: 'map.update', renderPromptSuggestions: ['morning mist', 'soft light'] },
       {
         type: 'object.add',
         object: {
@@ -39,9 +41,11 @@ describe('map operation transactions', () => {
     ]);
 
     expect(result.name).toBe('after');
+    expect(result.renderPromptSuggestions).toEqual(['morning mist', 'soft light']);
     expect(result.objects).toHaveLength(1);
     expect(result.objects[0].transform.position).toEqual([3, 0, -2]);
     expect(result.lighting.sunPosition).toEqual([8, 12, 4]);
+    expect(result.confirmedAt).toBeNull();
     expect(map.name).toBe('before');
     expect(map.objects).toHaveLength(0);
   });

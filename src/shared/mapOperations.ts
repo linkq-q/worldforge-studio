@@ -26,7 +26,7 @@ export type MapObjectPatch = Omit<Partial<MapObject>, 'id' | 'transform'> & {
 };
 
 export type MapOperation =
-  | { type: 'map.update'; name?: string; size?: Vec3; colors?: Partial<MapBoxColors> }
+  | { type: 'map.update'; name?: string; size?: Vec3; colors?: Partial<MapBoxColors>; renderPromptSuggestions?: string[] }
   | { type: 'terrain.set'; terrain: MapTerrain }
   | { type: 'terrain.brush'; mode: TerrainBrushMode; point: Vec3; size?: number; strength?: number; targetHeight?: number }
   | { type: 'paint.add'; stroke: Partial<MapPaintStroke> & Pick<MapPaintStroke, 'surface' | 'point'> }
@@ -50,6 +50,13 @@ export interface MapTransactionSummary {
   createdAt: number;
 }
 
+export interface MapAiSuggestion {
+  summary: string;
+  operations: MapOperation[];
+  renderPromptSuggestions: string[];
+  generatedAssets: Array<{ id: string; name: string }>;
+}
+
 const MAP_SURFACES = new Set<MapSurface>(['floor', 'ceiling', 'north', 'south', 'east', 'west', 'terrain']);
 const TERRAIN_MODES = new Set<TerrainBrushMode>(['raise', 'lower', 'flatten']);
 const MAX_OPERATIONS = 2_000;
@@ -71,6 +78,7 @@ export function applyMapOperations(map: EditableMap, operations: readonly MapOpe
         next = normalizeMap({
           ...next,
           name: operation.name ?? next.name,
+          renderPromptSuggestions: operation.renderPromptSuggestions ?? next.renderPromptSuggestions,
           box: {
             size: operation.size ?? next.box.size,
             colors: { ...next.box.colors, ...operation.colors }
@@ -147,7 +155,7 @@ export function applyMapOperations(map: EditableMap, operations: readonly MapOpe
         throw new Error('unsupported_operation');
     }
   }
-  return next;
+  return normalizeMap({ ...next, confirmedAt: null });
 }
 
 function requireVec3(value: unknown, error: string): asserts value is Vec3 {
