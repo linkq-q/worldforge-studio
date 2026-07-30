@@ -317,8 +317,8 @@ export const RENDER_CAPABILITIES: readonly RenderCapability[] = [
     label: '水体风格',
     priority: 'P1',
     repeatable: true,
-    availability: 'limited',
-    availabilityNote: '当前作用于带 water 标签的模型水面；地图湖泊/河流结构接入后沿用同一协议。',
+    availability: 'ready',
+    availabilityNote: '作用于结构化湖泊/河流和带 water 标签的模型水面。',
     params: {
       recipe: {
         type: 'enum',

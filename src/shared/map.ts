@@ -38,6 +38,17 @@ export interface MapTerrain {
   heights: number[];
 }
 
+export type MapWaterBodyType = 'lake' | 'river';
+
+export interface MapWaterBody {
+  id: string;
+  name: string;
+  type: MapWaterBodyType;
+  level: number;
+  width: number;
+  points: Array<[number, number]>;
+}
+
 export interface MapLighting {
   sunPosition: Vec3;
 }
@@ -86,6 +97,7 @@ export interface EditableMap {
   box: MapBox;
   lighting: MapLighting;
   terrain: MapTerrain;
+  waterBodies: MapWaterBody[];
   paintStrokes: MapPaintStroke[];
   objects: MapObject[];
   spawnPoints: Vec3[];
@@ -257,6 +269,7 @@ export function normalizeMap(input: Partial<EditableMap>): EditableMap {
     },
     lighting: normalizeLighting(input.lighting),
     terrain,
+    waterBodies: normalizeWaterBodies(input.waterBodies, boxSize),
     paintStrokes: Array.isArray(input.paintStrokes)
       ? input.paintStrokes.map((stroke) => createPaintStroke(stroke)).slice(-1200)
       : [],
@@ -274,6 +287,48 @@ export function normalizeMap(input: Partial<EditableMap>): EditableMap {
     collisionBake: normalizeMapCollisionBake(input.collisionBake)
   };
   return map;
+}
+
+function normalizeWaterBodies(value: unknown, boxSize: Vec3): MapWaterBody[] {
+  if (!Array.isArray(value)) return [];
+  const halfWidth = boxSize[0] / 2;
+  const halfDepth = boxSize[2] / 2;
+  const maxLevel = Math.max(0.05, boxSize[1] - 0.05);
+  const maxRiverWidth = Math.max(0.3, Math.min(boxSize[0], boxSize[2]) / 2);
+  const seen = new Set<string>();
+  const result: MapWaterBody[] = [];
+  for (const raw of value.slice(0, 64)) {
+    if (!raw || typeof raw !== 'object') continue;
+    const input = raw as Partial<MapWaterBody>;
+    const type = input.type === 'river' ? 'river' : input.type === 'lake' ? 'lake' : null;
+    if (!type || !Array.isArray(input.points)) continue;
+    const points = input.points.slice(0, 64)
+      .filter((point): point is [number, number] => (
+        Array.isArray(point)
+        && point.length >= 2
+        && Number.isFinite(Number(point[0]))
+        && Number.isFinite(Number(point[1]))
+      ))
+      .map((point): [number, number] => [
+        clamp(Number(point[0]), -halfWidth, halfWidth),
+        clamp(Number(point[1]), -halfDepth, halfDepth)
+      ]);
+    if (points.length < (type === 'lake' ? 3 : 2)) continue;
+    const id = typeof input.id === 'string' && input.id.trim()
+      ? input.id.trim().slice(0, 80)
+      : createId('water');
+    if (seen.has(id)) continue;
+    seen.add(id);
+    result.push({
+      id,
+      name: cleanName(input.name, type === 'lake' ? '湖泊' : '河流'),
+      type,
+      level: clamp(finiteNumber(input.level, 0.2), 0.02, maxLevel),
+      width: clamp(finiteNumber(input.width, 1.2), 0.3, maxRiverWidth),
+      points
+    });
+  }
+  return result;
 }
 
 export function mapToSummary(map: EditableMap): MapSummary {

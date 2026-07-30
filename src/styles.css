@@ -416,6 +416,12 @@ p {
   color: #d8ef75;
 }
 
+.hierarchy-row.water {
+  padding: 0 14px;
+  color: #75cdda;
+  cursor: default;
+}
+
 .hierarchy-row.active {
   background: linear-gradient(90deg, var(--accent), #c6e95d);
   color: #152018;

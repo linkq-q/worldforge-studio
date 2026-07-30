@@ -121,6 +121,7 @@ export function normalizeMapSuggestion(
     : [];
   const terrainOperations = normalizeTerrainOperations(input.terrain, bounds);
   operations.push(...terrainOperations);
+  operations.push(...normalizeWaterOperations(input.waters, bounds));
   const terrainPreview = terrainOperations.length > 0
     ? applyMapOperations(map, terrainOperations)
     : normalizeMap(map);
@@ -136,6 +137,46 @@ export function normalizeMapSuggestion(
     renderPromptSuggestions,
     generatedAssets: []
   };
+}
+
+function normalizeWaterOperations(
+  value: unknown,
+  bounds: ReturnType<typeof getMapBounds>
+): MapOperation[] {
+  if (!Array.isArray(value)) return [];
+  return value.slice(0, 16).map((item) => {
+    if (!item || typeof item !== 'object') throw new Error('invalid_water_plan');
+    const input = item as Record<string, unknown>;
+    const type = input.type;
+    if (type !== 'lake' && type !== 'river') throw new Error('invalid_water_plan');
+    if (!Array.isArray(input.points)) throw new Error('invalid_water_plan');
+    const points = input.points.slice(0, 64).map((raw): [number, number] => {
+      if (!raw || typeof raw !== 'object') throw new Error('invalid_water_plan');
+      if (Array.isArray(raw)) {
+        return [
+          clamp(requiredNumber(raw[0], 'invalid_water_plan'), bounds.minX, bounds.maxX),
+          clamp(requiredNumber(raw[1], 'invalid_water_plan'), bounds.minZ, bounds.maxZ)
+        ];
+      }
+      const point = raw as Record<string, unknown>;
+      return [
+        clamp(requiredNumber(point.x, 'invalid_water_plan'), bounds.minX, bounds.maxX),
+        clamp(requiredNumber(point.z, 'invalid_water_plan'), bounds.minZ, bounds.maxZ)
+      ];
+    });
+    if (points.length < (type === 'lake' ? 3 : 2)) throw new Error('invalid_water_plan');
+    return {
+      type: 'water.add',
+      water: {
+        id: createId('water'),
+        name: cleanText(input.name, type === 'lake' ? '湖泊' : '河流', 48),
+        type,
+        level: clamp(optionalNumber(input.level, 0.2), 0.02, bounds.maxY - 0.05),
+        width: clamp(optionalNumber(input.width, 1.2), 0.3, Math.min(bounds.maxX - bounds.minX, bounds.maxZ - bounds.minZ) / 2),
+        points
+      }
+    };
+  });
 }
 
 function normalizeTerrainOperations(value: unknown, bounds: ReturnType<typeof getMapBounds>): MapOperation[] {
@@ -222,17 +263,18 @@ function buildSystemPrompt(map: EditableMap, assets: readonly MapAsset[], finalP
   }));
   return [
     '你是 WorldForge 的地图规划器。只规划空间内容，不决定最终渲染风格。',
-    '你可以使用地形笔刷、放置已有资产，以及设置出生点；不得删除或修改已有物体，不得编造资产 ID。',
+    '你可以使用地形笔刷、创建湖泊/河流、放置已有资产，以及设置出生点；不得删除或修改已有物体，不得编造资产 ID。',
     '根据田园、峡谷、海岛等场景词主动推导一个简单、合理的空间构图，不要求用户提供坐标。',
     finalPass
       ? '这是最终规划轮次。assetRequests 必须为空；必须至少生成一项地形、物体摆放或出生点操作，使用现有资产完成地图，无法使用的内容直接省略。'
       : '若场景需要的可复用物体在已有资产中找不到，在 assetRequests 中请求生成，最多 3 项；请求资产时不要提前编造其 assetId。',
     `地图范围：X ${bounds.minX} 到 ${bounds.maxX}，Z ${bounds.minZ} 到 ${bounds.maxZ}，最大高度 ${bounds.maxY}。`,
     'terrain 每项格式：{"mode":"raise|lower|flatten","x":0,"z":0,"size":2,"strength":0.4,"targetHeight":0}。',
+    'waters 每项格式：{"type":"lake|river","name":"名称","level":0.2,"width":1.2,"points":[{"x":0,"z":0}]}。湖泊 points 是至少 3 点的边界；河流 points 是至少 2 点的中心线且 width 生效。需要时同时用 terrain 压低水域地形。',
     'objects 每项格式：{"assetId":"已有ID","name":"名称","x":0,"z":0,"rotationYDeg":0,"scale":1}。',
     '若用户写了雾、光照、素描等氛围词，只放入 renderPromptSuggestions，不要用它改变地图。',
     '只返回一个 JSON 对象，不要 Markdown：',
-    '{"summary":"简短摘要","assetRequests":[{"name":"资产名","prompt":"独立低多边形物体描述，无地面和背景"}],"terrain":[],"objects":[],"spawn":null,"renderPromptSuggestions":[]}',
+    '{"summary":"简短摘要","assetRequests":[{"name":"资产名","prompt":"独立低多边形物体描述，无地面和背景"}],"terrain":[],"waters":[],"objects":[],"spawn":null,"renderPromptSuggestions":[]}',
     `已有资产：${JSON.stringify(assetLibrary)}`
   ].join('\n');
 }
@@ -270,6 +312,7 @@ function hasSpatialOperations(suggestion: MapAiSuggestion): boolean {
   return suggestion.operations.some((operation) =>
     operation.type === 'terrain.brush'
     || operation.type === 'terrain.set'
+    || operation.type === 'water.add'
     || operation.type === 'object.add'
     || operation.type === 'reference.set'
   );

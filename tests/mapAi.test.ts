@@ -18,6 +18,12 @@ describe('map AI adapter', () => {
     const suggestion = normalizeMapSuggestion(JSON.stringify({
       summary: '中央小丘和两棵松树',
       terrain: [{ mode: 'raise', x: 0, z: 0, size: 4, strength: 1 }],
+      waters: [{
+        type: 'lake',
+        name: '丘边湖泊',
+        level: 0.35,
+        points: [{ x: -4, z: -2 }, { x: 1, z: -3 }, { x: 3, z: 2 }, { x: -3, z: 3 }]
+      }],
       objects: [
         { assetId: 'asset-tree', name: '松树 A', x: 1, z: 1, rotationYDeg: 90, scale: 1.2 },
         { assetId: 'asset-tree', name: '松树 B', x: -2, z: 2 }
@@ -31,11 +37,20 @@ describe('map AI adapter', () => {
     expect(suggestion.operations.map((operation) => operation.type)).toEqual([
       'map.update',
       'terrain.brush',
+      'water.add',
       'object.add',
       'object.add',
       'reference.set'
     ]);
     expect(suggestion.operations[2]).toMatchObject({
+      type: 'water.add',
+      water: {
+        type: 'lake',
+        level: 0.35,
+        points: [[-4, -2], [1, -3], [3, 2], [-3, 3]]
+      }
+    });
+    expect(suggestion.operations[3]).toMatchObject({
       type: 'object.add',
       object: {
         assetId: 'asset-tree',

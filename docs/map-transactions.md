@@ -20,6 +20,14 @@ Content-Type: application/json
 
 地图生成接口内部运行最多两轮：第一轮可以通过 `assetRequests` 请求最多 3 类缺失资产，服务端调用 Voxel Studio 生成并保存到共享资产库；第二轮必须使用真实 `assetId` 输出最终地图操作。若第一轮只有风格标签而没有空间操作，也会触发第二轮自检，禁止返回可应用的空地图。
 
+结构化水域使用同一事务协议：
+
+- `water.add`：新增湖泊边界或河流中心线
+- `water.update`：修改水位、宽度、名称或控制点
+- `water.remove`：移除水域
+
+湖泊至少 3 个边界点；河流至少 2 个中心线点并使用 `width`。服务端会校验并裁剪到地图范围，渲染阶段通过 `runtime.water-style` 统一控制。
+
 提交：
 
 ```http

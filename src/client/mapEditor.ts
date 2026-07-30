@@ -669,6 +669,7 @@ class MapEditor {
     }
     const suggestion = this.mapAiSuggestion;
     const terrainCount = suggestion?.operations.filter((operation) => operation.type === 'terrain.brush').length ?? 0;
+    const waterCount = suggestion?.operations.filter((operation) => operation.type === 'water.add').length ?? 0;
     const objectCount = suggestion?.operations.filter((operation) => operation.type === 'object.add').length ?? 0;
     const hasSpawn = suggestion?.operations.some((operation) => operation.type === 'reference.set') ?? false;
     const generationBlocked = this.state.busy || this.state.dirty || !this.mapAiPrompt.trim();
@@ -689,7 +690,7 @@ class MapEditor {
           </button>
           ${this.mapAiAbortController ? '<button id="cancel-map-ai" class="secondary">取消</button>' : ''}
         </div>
-        <p class="empty">${this.state.dirty ? '请先保存当前手工修改，再生成 AI 地图预览。' : 'Agent 会检查资产库、生成最多 3 类缺失资产，再规划地形、摆放和出生点。'}</p>
+        <p class="empty">${this.state.dirty ? '请先保存当前手工修改，再生成 AI 地图预览。' : 'Agent 会检查资产库、生成最多 3 类缺失资产，再规划地形、水域、摆放和出生点。'}</p>
       </section>
       ${suggestion && this.mapAiPreviewMap ? `
         <section class="editor-section map-ai-result">
@@ -697,6 +698,7 @@ class MapEditor {
           <h2>${escapeHtml(suggestion.summary)}</h2>
           <div class="map-ai-stats">
             <span>地形 <b>${terrainCount}</b></span>
+            <span>水域 <b>${waterCount}</b></span>
             <span>物体 <b>${objectCount}</b></span>
             <span>出生点 <b>${hasSpawn ? '有' : '无'}</b></span>
           </div>
@@ -848,6 +850,12 @@ class MapEditor {
         <span>太阳</span>
         <small>light</small>
       </button>
+      ${map.waterBodies.map((water) => `
+        <div class="hierarchy-row water">
+          <span>${escapeHtml(water.name)}</span>
+          <small>${water.type === 'lake' ? 'lake' : 'river'}</small>
+        </div>
+      `).join('')}
       ${renderObjectTree(map.objects, null, this.state.selectedObjectId)}
     `;
     if (this.mapAiPreviewMap) return;

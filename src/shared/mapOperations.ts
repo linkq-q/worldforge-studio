@@ -10,6 +10,7 @@ import {
   type MapPaintStroke,
   type MapSurface,
   type MapTerrain,
+  type MapWaterBody,
   type TerrainBrushMode,
   type Transform3D
 } from './map';
@@ -25,6 +26,13 @@ export type MapObjectPatch = Omit<Partial<MapObject>, 'id' | 'transform'> & {
   transform?: Partial<Transform3D>;
 };
 
+export type MapWaterBodyInput = Omit<Partial<MapWaterBody>, 'points'> & {
+  type: MapWaterBody['type'];
+  points: MapWaterBody['points'];
+};
+
+export type MapWaterBodyPatch = Omit<Partial<MapWaterBody>, 'id'>;
+
 export type MapOperation =
   | { type: 'map.update'; name?: string; size?: Vec3; colors?: Partial<MapBoxColors>; renderPromptSuggestions?: string[] }
   | { type: 'terrain.set'; terrain: MapTerrain }
@@ -33,6 +41,9 @@ export type MapOperation =
   | { type: 'object.add'; object: MapObjectInput }
   | { type: 'object.update'; objectId: string; patch: MapObjectPatch }
   | { type: 'object.remove'; objectId: string }
+  | { type: 'water.add'; water: MapWaterBodyInput }
+  | { type: 'water.update'; waterId: string; patch: MapWaterBodyPatch }
+  | { type: 'water.remove'; waterId: string }
   | { type: 'reference.set'; point: Vec3; yaw?: number }
   | { type: 'sun.set'; point: Vec3 };
 
@@ -139,6 +150,43 @@ export function applyMapOperations(map: EditableMap, operations: readonly MapOpe
             .map((item) => item.parentId === operation.objectId ? { ...item, parentId: null } : item)
         });
         break;
+      case 'water.add': {
+        requireWaterBody(operation.water);
+        const water: MapWaterBody = {
+          id: operation.water.id || createId('water'),
+          name: operation.water.name ?? (operation.water.type === 'lake' ? '湖泊' : '河流'),
+          type: operation.water.type,
+          level: operation.water.level ?? 0.2,
+          width: operation.water.width ?? 1.2,
+          points: operation.water.points
+        };
+        if (next.waterBodies.some((item) => item.id === water.id)) throw new Error('duplicate_water_id');
+        next = normalizeMap({ ...next, waterBodies: [...next.waterBodies, water] });
+        break;
+      }
+      case 'water.update': {
+        if (!operation.waterId || !operation.patch || typeof operation.patch !== 'object') {
+          throw new Error('invalid_water_body');
+        }
+        const water = next.waterBodies.find((item) => item.id === operation.waterId);
+        if (!water) throw new Error('water_not_found');
+        const updated: MapWaterBody = { ...water, ...operation.patch, id: water.id };
+        requireWaterBody(updated);
+        next = normalizeMap({
+          ...next,
+          waterBodies: next.waterBodies.map((item) => item.id === water.id ? updated : item)
+        });
+        break;
+      }
+      case 'water.remove':
+        if (!operation.waterId || !next.waterBodies.some((item) => item.id === operation.waterId)) {
+          throw new Error('water_not_found');
+        }
+        next = normalizeMap({
+          ...next,
+          waterBodies: next.waterBodies.filter((item) => item.id !== operation.waterId)
+        });
+        break;
       case 'reference.set':
         requireVec3(operation.point, 'invalid_reference_point');
         next = normalizeMap({
@@ -156,6 +204,29 @@ export function applyMapOperations(map: EditableMap, operations: readonly MapOpe
     }
   }
   return normalizeMap({ ...next, confirmedAt: null });
+}
+
+function requireWaterBody(value: unknown): asserts value is MapWaterBodyInput {
+  if (!value || typeof value !== 'object') throw new Error('invalid_water_body');
+  const water = value as Partial<MapWaterBody>;
+  if (water.type !== 'lake' && water.type !== 'river') throw new Error('invalid_water_body');
+  if (!Array.isArray(water.points) || water.points.length < (water.type === 'lake' ? 3 : 2)) {
+    throw new Error('invalid_water_body');
+  }
+  if (water.points.length > 64 || water.points.some((point) => (
+    !Array.isArray(point)
+    || point.length < 2
+    || !Number.isFinite(Number(point[0]))
+    || !Number.isFinite(Number(point[1]))
+  ))) {
+    throw new Error('invalid_water_body');
+  }
+  if (water.id !== undefined && (typeof water.id !== 'string' || !water.id.trim())) {
+    throw new Error('invalid_water_body');
+  }
+  if (water.name !== undefined && typeof water.name !== 'string') throw new Error('invalid_water_body');
+  if (water.level !== undefined && !Number.isFinite(Number(water.level))) throw new Error('invalid_water_body');
+  if (water.width !== undefined && !Number.isFinite(Number(water.width))) throw new Error('invalid_water_body');
 }
 
 function requireVec3(value: unknown, error: string): asserts value is Vec3 {

@@ -15,7 +15,8 @@ import {
   type MapAsset,
   type MapObject,
   type MapPaintStroke,
-  type MapSurface
+  type MapSurface,
+  type MapWaterBody
 } from '../shared/map';
 import { buildModelGroup } from './modelRenderer';
 
@@ -50,6 +51,7 @@ export async function buildEditableMapGroup(input: EditableMap, options: MapRend
   root.add(terrain);
   pickables.push(terrain);
 
+  modelsRoot.add(buildStructuredWaterGroup(map));
   const objectGroups = await buildObjectGroups(map, assets);
   if (options.editorHelpers) {
     const playerSpawnGroup = buildPlayerSpawnGroup(map);
@@ -153,6 +155,108 @@ function buildTerrain(map: EditableMap): THREE.Mesh {
   mesh.receiveShadow = true;
   mesh.userData.surface = 'terrain';
   return mesh;
+}
+
+export function buildStructuredWaterGroup(map: EditableMap): THREE.Group {
+  const group = new THREE.Group();
+  group.name = 'waterBodies';
+  group.userData.isStructuredWaterRoot = true;
+  for (const water of map.waterBodies) {
+    const geometry = water.type === 'lake'
+      ? buildLakeGeometry(water.points)
+      : buildRiverGeometry(water.points, water.width);
+    const material = new THREE.MeshStandardMaterial({
+      color: 0x4f96a8,
+      transparent: true,
+      opacity: 0.82,
+      roughness: 0.28,
+      metalness: 0.04,
+      depthWrite: false,
+      side: THREE.DoubleSide
+    });
+    const mesh = new THREE.Mesh(geometry, material);
+    mesh.name = `water:${water.id}`;
+    mesh.position.y = water.level;
+    mesh.renderOrder = 8;
+    mesh.userData.waterBodyId = water.id;
+    mesh.userData.waterBodyType = water.type;
+    mesh.userData.isWater = true;
+    mesh.userData.skipShaderApply = true;
+    mesh.userData.materialTags = ['water', water.type, water.id];
+    mesh.userData.assetTags = ['water', water.type];
+    group.add(mesh);
+  }
+  return group;
+}
+
+function buildLakeGeometry(input: MapWaterBody['points']): THREE.BufferGeometry {
+  const points = cleanWaterPoints(input);
+  const vertices = points.flatMap(([x, z]) => [x, 0, z]);
+  const contour = points.map(([x, z]) => new THREE.Vector2(x, z));
+  const faces = THREE.ShapeUtils.triangulateShape(contour, []);
+  const indices: number[] = [];
+  for (const [a, b, c] of faces) pushUpwardTriangle(indices, vertices, a, b, c);
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+  geometry.setIndex(indices);
+  geometry.computeVertexNormals();
+  return geometry;
+}
+
+function buildRiverGeometry(input: MapWaterBody['points'], width: number): THREE.BufferGeometry {
+  const points = cleanWaterPoints(input);
+  const vertices: number[] = [];
+  const halfWidth = width / 2;
+  for (let index = 0; index < points.length; index += 1) {
+    const previous = points[Math.max(0, index - 1)];
+    const next = points[Math.min(points.length - 1, index + 1)];
+    const dx = next[0] - previous[0];
+    const dz = next[1] - previous[1];
+    const length = Math.hypot(dx, dz) || 1;
+    const offsetX = -dz / length * halfWidth;
+    const offsetZ = dx / length * halfWidth;
+    vertices.push(
+      points[index][0] + offsetX, 0, points[index][1] + offsetZ,
+      points[index][0] - offsetX, 0, points[index][1] - offsetZ
+    );
+  }
+  const indices: number[] = [];
+  for (let index = 0; index < points.length - 1; index += 1) {
+    const left = index * 2;
+    const right = left + 1;
+    const nextLeft = left + 2;
+    const nextRight = left + 3;
+    pushUpwardTriangle(indices, vertices, left, nextLeft, right);
+    pushUpwardTriangle(indices, vertices, right, nextLeft, nextRight);
+  }
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+  geometry.setIndex(indices);
+  geometry.computeVertexNormals();
+  return geometry;
+}
+
+function cleanWaterPoints(points: MapWaterBody['points']): MapWaterBody['points'] {
+  return points.filter((point, index) => (
+    index === 0
+    || point[0] !== points[index - 1][0]
+    || point[1] !== points[index - 1][1]
+  ));
+}
+
+function pushUpwardTriangle(
+  indices: number[],
+  vertices: number[],
+  a: number,
+  b: number,
+  c: number
+): void {
+  const ax = vertices[b * 3] - vertices[a * 3];
+  const az = vertices[b * 3 + 2] - vertices[a * 3 + 2];
+  const bx = vertices[c * 3] - vertices[a * 3];
+  const bz = vertices[c * 3 + 2] - vertices[a * 3 + 2];
+  if (az * bx - ax * bz >= 0) indices.push(a, b, c);
+  else indices.push(a, c, b);
 }
 
 function buildTerrainGeometry(map: EditableMap): THREE.BufferGeometry {

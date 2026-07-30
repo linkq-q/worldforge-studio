@@ -375,14 +375,21 @@ export class RenderRuntimeAdapter {
       const meshes = scopedMeshes(this.modelsRoot, style.scope).filter((mesh) => !bound.has(mesh));
       for (const mesh of meshes) {
         const defaults = waterRecipe(style.recipe);
+        const waterColor = new THREE.Color(style.color ?? defaults.color);
+        const shallowColor = style.color
+          ? waterColor.clone().lerp(new THREE.Color('#ffffff'), 0.22)
+          : new THREE.Color(defaults.shallowColor);
+        const depthColor = style.color
+          ? waterColor.clone().multiplyScalar(0.5)
+          : new THREE.Color(defaults.depthColor);
         const root = new THREE.Group();
         const surface = new WaterSurface(this.scene, this.renderer, root, {
           size: 1,
           segments: 1,
           waterMode: defaults.mode,
-          waterColor: new THREE.Color(style.color ?? defaults.color),
-          shallowColor: new THREE.Color(defaults.shallowColor),
-          depthColor: new THREE.Color(defaults.depthColor),
+          waterColor,
+          shallowColor,
+          depthColor,
           waveHeight: (style.waveStrength ?? defaults.waveStrength) * 0.12,
           waveSpeed: defaults.waveSpeed,
           foamNoiseStrength: style.foamStrength ?? defaults.foamStrength

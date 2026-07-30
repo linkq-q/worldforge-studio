@@ -59,6 +59,60 @@ describe('map operation transactions', () => {
     expect(map.name).toBe('unchanged');
   });
 
+  it('adds, updates and removes structured lakes and rivers atomically', () => {
+    const map = createEmptyMap('waters', 'map-water-test');
+    const result = applyMapOperations(map, [
+      {
+        type: 'water.add',
+        water: {
+          id: 'lake-1',
+          name: '中央湖泊',
+          type: 'lake',
+          level: 0.45,
+          points: [[-4, -3], [4, -3], [5, 3], [-3, 4]]
+        }
+      },
+      {
+        type: 'water.add',
+        water: {
+          id: 'river-1',
+          name: '北侧河流',
+          type: 'river',
+          level: 0.32,
+          width: 1.4,
+          points: [[-7, -6], [-1, -2], [6, 5]]
+        }
+      },
+      { type: 'water.update', waterId: 'lake-1', patch: { level: 0.6 } },
+      { type: 'water.remove', waterId: 'river-1' }
+    ]);
+
+    expect(result.waterBodies).toHaveLength(1);
+    expect(result.waterBodies[0]).toMatchObject({
+      id: 'lake-1',
+      name: '中央湖泊',
+      type: 'lake',
+      level: 0.6
+    });
+    expect(map.waterBodies).toHaveLength(0);
+  });
+
+  it('rejects malformed structured water without mutating the map', () => {
+    const map = createEmptyMap('unchanged', 'map-water-invalid');
+
+    expect(() => applyMapOperations(map, [{
+      type: 'water.add',
+      water: {
+        id: 'bad-lake',
+        name: '坏湖泊',
+        type: 'lake',
+        level: 0.4,
+        points: [[0, 0], [1, 1]]
+      }
+    }])).toThrow('invalid_water_body');
+    expect(map.waterBodies).toHaveLength(0);
+  });
+
   it('commits atomically and can undo the latest transaction', async () => {
     const store = await createStore();
     const original = await store.createMap({ name: 'before' });
