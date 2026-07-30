@@ -48,6 +48,7 @@ export interface BuiltModelGroup {
 interface ModelNode {
   id: string;
   parent?: string;
+  tags?: unknown[];
   transform?: {
     pos?: [number, number, number];
     quat?: [number, number, number, number];
@@ -95,6 +96,7 @@ export async function buildModelGroupWithNodes(modelJson: unknown): Promise<Buil
       ? new THREE.Mesh(safeBuildGeometry(runtime, node.mesh.type, node.mesh.params ?? {}), makeMaterial(node.mesh))
       : new THREE.Group();
     object.name = node.id;
+    if (Array.isArray(node.tags)) object.userData.materialTags = structuredClone(node.tags);
     const transform = node.transform ?? {};
     const pos = transform.pos ?? [0, 0, 0];
     object.position.set(pos[0], pos[1], pos[2]);

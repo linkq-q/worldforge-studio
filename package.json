@@ -11,7 +11,7 @@
     "map": "tsx src/server/mapCli.ts"
   },
   "dependencies": {
-    "three": "^0.179.1"
+    "three": "^0.160.0"
   },
   "devDependencies": {
     "@types/node": "^24.0.0",

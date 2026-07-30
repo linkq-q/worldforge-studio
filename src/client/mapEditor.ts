@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { serverHttpBase } from './serverEndpoint';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { TransformControls } from 'three/examples/jsm/controls/TransformControls.js';
+import { RenderStyleManager } from '@voxel-studio/render-runtime';
 import {
   DEFAULT_SUN_POSITION,
   PLAYER_HEIGHT,
@@ -29,23 +30,62 @@ import {
 import { buildEditableMapGroup, type RenderedMap } from './mapRenderer';
 import { configureSunLight } from './lighting';
 import { buildModelGroup } from './modelRenderer';
-import type { MapTransactionSummary } from '../shared/mapOperations';
+import { RenderRuntimeAdapter } from './renderRuntimeAdapter';
+import {
+  applyMapOperations,
+  type MapAiSuggestion,
+  type MapTransactionSummary
+} from '../shared/mapOperations';
+import {
+  CHAT_PROVIDER_OPTIONS,
+  type ChatProvider
+} from '../shared/protocol';
+import type { RenderScheme, RenderSuggestion } from '../shared/renderScheme';
+import {
+  RENDER_CAPABILITIES,
+  compileRuntimeColorGrade,
+  compileRuntimeEffectRecipes,
+  compileRuntimeLightRig,
+  compileRuntimeMaterialThemes,
+  compileRuntimeOutline,
+  compileRuntimePostQuality,
+  compileRuntimePresentation,
+  compileRuntimeShaderExtension,
+  compileRuntimeStyle,
+  compileRuntimeWaterStyles,
+  createDefaultRenderAccessPolicy,
+  normalizeRenderAccessPolicy,
+  type RenderCapability,
+  type RuntimeLightRig,
+  type RenderModuleId,
+  type RenderModuleSelection,
+  type RenderParameterAccess,
+  type RenderPlan,
+  renderModuleLabel
+} from '../shared/renderPlan';
 
 type EditorTool = 'select' | 'paint' | 'terrain';
 type TransformMode = 'translate' | 'rotate' | 'scale';
+type EditorStage = 'map' | 'render';
 
-const CAMERA_MOVE_KEYS = new Set(['KeyW', 'KeyA', 'KeyS', 'KeyD', 'Space', 'ShiftLeft', 'ShiftRight']);
+const CAMERA_MOVE_KEYS = new Set(['KeyW', 'KeyA', 'KeyS', 'KeyD', 'ArrowUp', 'ArrowDown']);
 const CAMERA_BASE_SPEED = 8;
-const CAMERA_LOOK_SENSITIVITY = 0.003;
-const CAMERA_MIN_PITCH = -Math.PI / 2 + 0.02;
-const CAMERA_MAX_PITCH = Math.PI / 2 - 0.02;
+const MAX_HISTORY_STEPS = 50;
+const VIEW_DIRECTIONS = {
+  perspective: new THREE.Vector3(1, 0.72, 1),
+  top: new THREE.Vector3(0, 1, 0),
+  front: new THREE.Vector3(0, 0, 1),
+  right: new THREE.Vector3(1, 0, 0)
+} as const;
 
 interface EditorState {
   maps: MapSummary[];
   assets: MapAsset[];
+  renderSchemes: RenderScheme[];
   map: EditableMap | null;
   selectedObjectId: string | null;
   selectedAssetId: string | null;
+  stage: EditorStage;
   tool: EditorTool;
   transformMode: TransformMode;
   brushColor: string;
@@ -70,9 +110,11 @@ class MapEditor {
   private readonly state: EditorState = {
     maps: [],
     assets: [],
+    renderSchemes: [],
     map: null,
     selectedObjectId: null,
     selectedAssetId: null,
+    stage: 'map',
     tool: 'select',
     transformMode: 'translate',
     brushColor: '#d8ef75',
@@ -91,7 +133,11 @@ class MapEditor {
   private scene: THREE.Scene | null = null;
   private camera: THREE.PerspectiveCamera | null = null;
   private renderer: THREE.WebGLRenderer | null = null;
+  private renderStyleManager: RenderStyleManager | null = null;
+  private renderRuntimeAdapter: RenderRuntimeAdapter | null = null;
+  private readonly runtimeMeshes = new Map<string, THREE.Mesh>();
   private sunLight: THREE.DirectionalLight | null = null;
+  private hemisphereLight: THREE.HemisphereLight | null = null;
   private sunTarget: THREE.Object3D | null = null;
   private orbit: OrbitControls | null = null;
   private transform: TransformControls | null = null;
@@ -102,10 +148,6 @@ class MapEditor {
   private readonly cameraMove = new THREE.Vector3();
   private readonly cameraForward = new THREE.Vector3();
   private readonly cameraRight = new THREE.Vector3();
-  private readonly cameraEuler = new THREE.Euler(0, 0, 0, 'YXZ');
-  private readonly cameraLookDirection = new THREE.Vector3();
-  private cameraLookPointerId: number | null = null;
-  private cameraLookLast = { x: 0, y: 0 };
   private transformDragging = false;
   private transformPointerActive = false;
   private animationFrame = 0;
@@ -120,10 +162,34 @@ class MapEditor {
   private previewModel: THREE.Object3D | null = null;
   private previewAssetId: string | null = null;
   private previewRequestId = 0;
+  private selectionOutline: THREE.BoxHelper | null = null;
+  private brushPreview: THREE.Mesh<THREE.RingGeometry, THREE.MeshBasicMaterial> | null = null;
+  private placementPreview: THREE.Object3D | null = null;
+  private placingAssetId: string | null = null;
+  private placementRequestId = 0;
+  private savedMapSnapshot = '';
+  private historyPresent: EditableMap | null = null;
+  private readonly historyPast: EditableMap[] = [];
+  private readonly historyFuture: EditableMap[] = [];
+  private historyGestureStart: EditableMap | null = null;
+  private renderDraft: RenderScheme | null = null;
+  private renderDraftChanged = false;
+  private renderAiPrompt = '';
+  private renderAiProvider: ChatProvider = 'gpt';
+  private renderAiPreview = false;
+  private renderAiExplanation = '';
+  private renderAiAbortController: AbortController | null = null;
+  private developerMode = false;
+  private mapAiPrompt = '';
+  private mapAiProvider: ChatProvider = 'gpt';
+  private mapAiSuggestion: MapAiSuggestion | null = null;
+  private mapAiPreviewMap: EditableMap | null = null;
+  private mapAiAbortController: AbortController | null = null;
 
   constructor(private readonly app: HTMLElement) {}
 
   async start(): Promise<void> {
+    this.developerMode = localStorage.getItem('worldforge.developerMode') === 'on';
     this.renderShell();
     this.setupViewport();
     this.setupAssetPreview();
@@ -145,15 +211,22 @@ class MapEditor {
             <select id="editor-map-select"></select>
             <button id="new-map" class="small">新建</button>
           </div>
+          <div class="editor-section stage-switcher">
+            <span class="toolbar-label">制作阶段</span>
+            <div class="segmented compact">
+              <button data-stage="map">1 地图</button>
+              <button data-stage="render">2 渲染</button>
+            </div>
+          </div>
           <div class="editor-section hierarchy-head">
             <h2>层级</h2>
-            <button id="add-object" class="secondary small">添加物体</button>
+            <button id="add-object" class="secondary small" data-map-only>添加空物体</button>
           </div>
           <div id="hierarchy" class="hierarchy"></div>
         </aside>
         <section class="editor-main">
           <header class="editor-toolbar">
-            <div class="toolbar-group">
+            <div class="toolbar-group" data-map-only>
               <span class="toolbar-label">工具</span>
               <div class="segmented compact">
                 <button data-tool="select">选择</button>
@@ -161,38 +234,52 @@ class MapEditor {
                 <button data-tool="terrain">地形</button>
               </div>
             </div>
-            <div class="toolbar-group">
-              <span class="toolbar-label">变换</span>
+            <div class="toolbar-group" data-map-only>
+              <span class="toolbar-label">对象变换</span>
               <div class="segmented compact">
-                <button data-transform-mode="translate">移动</button>
-                <button data-transform-mode="rotate">旋转</button>
-                <button data-transform-mode="scale">缩放</button>
+                <button data-transform-mode="translate" title="移动物体">移动</button>
+                <button data-transform-mode="rotate" title="旋转物体">旋转</button>
+                <button data-transform-mode="scale" title="缩放物体">缩放</button>
               </div>
             </div>
             <div class="toolbar-actions">
-              <button id="undo-transaction" class="secondary" disabled>撤销事务</button>
+              <button id="undo-edit" class="secondary" disabled title="撤销手工编辑（Ctrl+Z）">撤销</button>
+              <button id="redo-edit" class="secondary" disabled title="重做手工编辑（Ctrl+Shift+Z）">重做</button>
+              <button id="undo-transaction" class="secondary" disabled title="撤销最近一次 AI/Agent 生成">撤销 AI</button>
+              <button id="confirm-map" title="进入渲染阶段">进入渲染</button>
               <button id="save-map">保存</button>
             </div>
             <span id="editor-status"></span>
           </header>
           <div id="editor-viewport" class="editor-viewport">
-            <div class="viewport-badge"><span></span>透视视图</div>
+            <div class="viewport-badge"><span></span><b id="viewport-view-name">透视视图</b></div>
+            <nav class="viewport-navigation" aria-label="视角导航">
+              <button data-view="perspective" title="透视视图">透视</button>
+              <button data-view="top" title="顶视图">顶</button>
+              <button data-view="front" title="前视图">前</button>
+              <button data-view="right" title="右视图">右</button>
+              <button data-frame="selection" title="聚焦选中物体（F）">选中</button>
+              <button data-frame="all" title="显示完整地图（Home）">全景</button>
+            </nav>
           </div>
           <footer class="editor-shortcuts" aria-label="地图编辑器操作键">
             <span><kbd>左键</kbd>选择 / 绘制 / 地形</span>
-            <span><kbd>中键拖动</kbd>旋转视角</span>
-            <span><kbd>右键拖动</kbd>平移视角</span>
+            <span><kbd>右键拖动</kbd>旋转视角</span>
+            <span><kbd>中键拖动</kbd>平移视角</span>
+            <span><kbd>Alt</kbd>+<kbd>左键</kbd>旋转视角</span>
             <span><kbd>滚轮</kbd>缩放视角</span>
+            <span><kbd>F</kbd>聚焦选中 <kbd>Home</kbd>显示全景</span>
             <span><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd>移动镜头</span>
-            <span><kbd>Space</kbd>/<kbd>Shift</kbd>上升 / 下沉镜头</span>
-            <span>选中物体后拖动指示器调整 Transform</span>
+            <span><kbd>↑</kbd>/<kbd>↓</kbd>上升 / 下沉镜头</span>
           </footer>
         </section>
         <aside class="editor-sidebar right">
           <div class="inspector-heading"><strong>属性</strong><small>SCENE</small></div>
+          <div id="map-ai-panel"></div>
           <div id="map-inspector"></div>
           <div id="object-inspector"></div>
           <div id="asset-panel"></div>
+          <div id="render-inspector"></div>
         </aside>
       </main>
     `;
@@ -200,15 +287,33 @@ class MapEditor {
     this.app.querySelector('#new-map')?.addEventListener('click', () => void this.createMap());
     this.app.querySelector('#add-object')?.addEventListener('click', () => this.addObject());
     this.app.querySelector('#save-map')?.addEventListener('click', () => void this.saveMap());
+    this.app.querySelector('#confirm-map')?.addEventListener('click', () => void this.confirmMap());
+    this.app.querySelector('#undo-edit')?.addEventListener('click', () => void this.undoManualEdit());
+    this.app.querySelector('#redo-edit')?.addEventListener('click', () => void this.redoManualEdit());
     this.app.querySelector('#undo-transaction')?.addEventListener('click', () => void this.undoLatestTransaction());
-    this.app.querySelector('#editor-map-select')?.addEventListener('change', (event) => {
+    this.app.querySelector('#editor-map-select')?.addEventListener('change', async (event) => {
       const id = (event.target as HTMLSelectElement).value;
-      void this.loadMap(id);
+      if (!await this.loadMap(id)) this.renderMapSelector();
+    });
+    this.app.querySelectorAll<HTMLButtonElement>('[data-view]').forEach((button) => {
+      button.addEventListener('click', () => this.setView(button.dataset.view as keyof typeof VIEW_DIRECTIONS));
+    });
+    this.app.querySelector<HTMLButtonElement>('[data-frame="selection"]')?.addEventListener('click', () => this.focusSelection());
+    this.app.querySelector<HTMLButtonElement>('[data-frame="all"]')?.addEventListener('click', () => this.frameMap());
+    this.app.querySelectorAll<HTMLButtonElement>('[data-stage]').forEach((button) => {
+      button.addEventListener('click', () => {
+        const stage = button.dataset.stage as EditorStage;
+        if (stage === this.state.stage) return;
+        if (stage === 'render') void this.confirmMap();
+        else this.setStage(stage);
+      });
     });
     this.app.querySelectorAll<HTMLButtonElement>('[data-tool]').forEach((button) => {
       button.addEventListener('click', () => {
+        this.cancelAssetPlacement();
         this.state.tool = button.dataset.tool as EditorTool;
         if (this.renderer) this.renderer.domElement.style.cursor = this.state.tool === 'select' ? 'default' : 'crosshair';
+        if (this.brushPreview) this.brushPreview.visible = false;
         this.renderPanels();
       });
     });
@@ -237,14 +342,14 @@ class MapEditor {
 
     this.orbit = new OrbitControls(this.camera, this.renderer.domElement);
     this.orbit.enableDamping = true;
-    this.orbit.enableRotate = false;
+    this.orbit.enableRotate = true;
     this.orbit.enablePan = true;
     this.orbit.enableZoom = true;
     this.orbit.screenSpacePanning = true;
     this.orbit.mouseButtons = {
       LEFT: null,
-      MIDDLE: null,
-      RIGHT: THREE.MOUSE.PAN
+      MIDDLE: THREE.MOUSE.PAN,
+      RIGHT: THREE.MOUSE.ROTATE
     };
     this.orbit.target.set(0, 1.5, 0);
 
@@ -255,34 +360,66 @@ class MapEditor {
     sun.target = sunTarget;
     sun.castShadow = true;
     this.sunLight = sun;
+    this.hemisphereLight = hemi;
     this.sunTarget = sunTarget;
+    this.scene.userData.directionalLight = sun;
+    this.renderStyleManager = new RenderStyleManager({
+      THREE,
+      renderer: this.renderer,
+      scene: this.scene,
+      meshRegistry: this.runtimeMeshes
+    });
+    this.renderRuntimeAdapter = new RenderRuntimeAdapter(this.renderer, this.scene, this.camera);
     this.scene.add(hemi, sun, sunTarget);
+    this.brushPreview = new THREE.Mesh(
+      new THREE.RingGeometry(0.86, 1, 64),
+      new THREE.MeshBasicMaterial({
+        color: 0xd9f47a,
+        transparent: true,
+        opacity: 0.9,
+        depthTest: false,
+        side: THREE.DoubleSide
+      })
+    );
+    this.brushPreview.visible = false;
+    this.brushPreview.renderOrder = 40;
+    this.scene.add(this.brushPreview);
 
     this.transform = new TransformControls(this.camera, this.renderer.domElement);
     this.transform.setMode(this.state.transformMode);
     this.transform.addEventListener('mouseDown', () => {
       this.transformPointerActive = true;
+      this.beginHistoryGesture();
     });
     this.transform.addEventListener('mouseUp', () => {
       this.transformPointerActive = false;
+      this.endHistoryGesture();
     });
     this.transform.addEventListener('dragging-changed', (event) => {
       this.transformDragging = Boolean(event.value);
-      if (this.orbit) this.orbit.enabled = !this.transformDragging && this.cameraLookPointerId === null;
+      if (this.orbit) this.orbit.enabled = !this.transformDragging;
     });
     this.transform.addEventListener('objectChange', () => this.syncSelectedTransform());
-    this.scene.add(this.transform.getHelper());
+    const transformWithHelper = this.transform as TransformControls & {
+      getHelper?: () => THREE.Object3D;
+    };
+    this.scene.add(
+      typeof transformWithHelper.getHelper === 'function'
+        ? transformWithHelper.getHelper()
+        : this.transform as unknown as THREE.Object3D
+    );
 
-    this.renderer.domElement.addEventListener('pointerdown', this.handleCameraLookPointerDown);
-    this.renderer.domElement.addEventListener('pointermove', this.handleCameraLookPointerMove);
+    this.renderer.domElement.addEventListener('pointerdown', this.handleOrbitPointerDownCapture, { capture: true });
     this.renderer.domElement.addEventListener('pointerdown', (event) => this.handlePointer(event, true));
     this.renderer.domElement.addEventListener('pointermove', (event) => this.handlePointer(event, false));
+    this.renderer.domElement.addEventListener('pointerleave', this.hidePointerPreviews);
     this.renderer.domElement.addEventListener('contextmenu', (event) => event.preventDefault());
     window.addEventListener('keydown', this.handleKeyDown);
     window.addEventListener('keyup', this.handleKeyUp);
     window.addEventListener('pointerup', this.handleGlobalPointerEnd);
     window.addEventListener('pointercancel', this.handleGlobalPointerEnd);
     window.addEventListener('blur', this.clearCameraKeys);
+    window.addEventListener('beforeunload', this.handleBeforeUnload);
     window.addEventListener('resize', () => this.resize());
     this.resize();
   }
@@ -303,12 +440,14 @@ class MapEditor {
   }
 
   private async reloadLists(): Promise<void> {
-    const [maps, assets] = await Promise.all([
+    const [maps, assets, renderSchemes] = await Promise.all([
       editorFetch<{ maps: MapSummary[] }>('/api/editor/maps'),
-      editorFetch<{ assets: MapAsset[] }>('/api/editor/assets')
+      editorFetch<{ assets: MapAsset[] }>('/api/editor/assets'),
+      editorFetch<{ renderSchemes: RenderScheme[] }>('/api/editor/render-schemes')
     ]);
     this.state.maps = maps.maps;
     this.state.assets = assets.assets;
+    this.state.renderSchemes = renderSchemes.renderSchemes;
     if (!this.state.map && this.state.maps[0]) {
       await this.loadMap(this.state.maps[0].id);
       return;
@@ -327,41 +466,69 @@ class MapEditor {
         width: map.box.size[0],
         height: map.box.size[1],
         depth: map.box.size[2],
-        objectCount: map.objects.length
+        objectCount: map.objects.length,
+        confirmedAt: map.confirmedAt,
+        renderSchemeId: map.renderSchemeId
       }];
+      this.resetManualHistory(this.state.map, true);
       await this.refreshScene();
     }
   }
 
-  private async loadMap(id: string): Promise<void> {
-    if (!id) return;
+  private async loadMap(id: string): Promise<boolean> {
+    if (!id || id === this.state.map?.id) return true;
+    if (!await this.confirmLeaveDirtyMap()) return false;
+    this.cancelAssetPlacement();
     const [{ map }, { transaction }] = await Promise.all([
       editorFetch<{ map: EditableMap }>(`/api/editor/maps/${encodeURIComponent(id)}`),
       editorFetch<{ transaction: MapTransactionSummary | null }>(`/api/editor/maps/${encodeURIComponent(id)}/transactions`)
     ]);
     this.state.map = normalizeMap(map);
+    this.clearMapAiPreview();
     this.state.undoTransaction = transaction;
     this.state.selectedObjectId = null;
+    this.state.stage = 'map';
+    this.resetRenderDraft();
     this.state.dirty = false;
+    this.resetManualHistory(this.state.map, true);
     await this.refreshScene();
     this.renderPanels();
+    return true;
   }
 
   private async createMap(): Promise<void> {
-    const name = prompt('地图名称', '新地图') ?? '新地图';
+    if (!await this.confirmLeaveDirtyMap()) return;
+    const name = prompt('地图名称', '新地图');
+    if (name === null) return;
+    this.cancelAssetPlacement();
     const { map } = await editorFetch<{ map: EditableMap }>('/api/editor/maps', {
       method: 'POST',
-      body: JSON.stringify({ name })
+      body: JSON.stringify({ name: name.trim() || '新地图' })
     });
     await this.reloadLists();
     this.state.map = normalizeMap(map);
+    this.clearMapAiPreview();
     this.state.undoTransaction = null;
+    this.state.selectedObjectId = null;
+    this.state.stage = 'map';
+    this.resetRenderDraft();
+    this.resetManualHistory(this.state.map, true);
     await this.refreshScene();
     this.renderPanels();
   }
 
-  private async saveMap(): Promise<void> {
-    if (!this.state.map) return;
+  private async saveMap(): Promise<boolean> {
+    if (!this.state.map) return false;
+    if (this.mapAiPreviewMap) {
+      this.state.message = '请先应用或放弃 AI 地图预览';
+      this.updateToolbarState();
+      return false;
+    }
+    if (this.renderDraftChanged) {
+      this.state.message = '请先保存渲染微调，或切换方案放弃预览';
+      this.updateToolbarState();
+      return false;
+    }
     this.setBusy(true, '保存中...');
     try {
       const { map } = await editorFetch<{ map: EditableMap }>(`/api/editor/maps/${encodeURIComponent(this.state.map.id)}`, {
@@ -371,17 +538,22 @@ class MapEditor {
       this.state.map = normalizeMap(map);
       this.state.dirty = false;
       this.state.undoTransaction = null;
+      this.resetManualHistory(this.state.map, true);
       await this.reloadLists();
       this.state.message = '已保存';
       await this.refreshScene();
       this.renderPanels();
+      return true;
+    } catch (error) {
+      this.state.message = `保存失败：${error instanceof Error ? error.message : '未知错误'}`;
+      return false;
     } finally {
       this.setBusy(false);
     }
   }
 
   private async undoLatestTransaction(): Promise<void> {
-    if (!this.state.map || !this.state.undoTransaction || this.state.dirty) return;
+    if (!this.state.map || !this.state.undoTransaction || this.state.dirty || this.mapAiPreviewMap) return;
     this.setBusy(true, '撤销事务中...');
     try {
       const { map, transaction } = await editorFetch<{ map: EditableMap; transaction: MapTransactionSummary }>(
@@ -389,9 +561,11 @@ class MapEditor {
         { method: 'POST' }
       );
       this.state.map = normalizeMap(map);
+      this.clearMapAiPreview();
       this.state.undoTransaction = null;
       this.state.selectedObjectId = null;
       this.state.message = `已撤销：${transaction.label}`;
+      this.resetManualHistory(this.state.map, true);
       await this.reloadLists();
       await this.refreshScene();
       this.renderPanels();
@@ -401,10 +575,52 @@ class MapEditor {
   }
 
   private addObject(): void {
-    if (!this.state.map) return;
-    const object = createMapObject(`物体 ${this.state.map.objects.length + 1}`, this.state.selectedAssetId);
+    if (!this.state.map || this.mapAiPreviewMap) return;
+    const object = createMapObject(`物体 ${this.state.map.objects.length + 1}`, null);
+    const target = this.orbit?.target;
+    if (target) {
+      object.transform.position = [
+        target.x,
+        sampleTerrainHeight(this.state.map, target.x, target.z),
+        target.z
+      ];
+    }
     this.state.map.objects.push(object);
     this.state.selectedObjectId = object.id;
+    this.markDirty();
+    void this.refreshScene();
+    this.renderPanels();
+  }
+
+  private deleteSelectedObject(): void {
+    const map = this.state.map;
+    const object = this.selectedObject();
+    if (!map || !object || this.mapAiPreviewMap) return;
+    map.objects = map.objects
+      .filter((item) => item.id !== object.id)
+      .map((item) => item.parentId === object.id ? { ...item, parentId: null } : item);
+    this.state.selectedObjectId = null;
+    this.markDirty();
+    void this.refreshScene();
+    this.renderPanels();
+  }
+
+  private duplicateSelectedObject(): void {
+    const map = this.state.map;
+    const source = this.selectedObject();
+    if (!map || !source || this.mapAiPreviewMap) return;
+    const copy = createMapObject(`${source.name} 副本`, source.assetId);
+    copy.parentId = source.parentId;
+    copy.visible = source.visible;
+    copy.locked = source.locked;
+    copy.transform = {
+      position: [source.transform.position[0] + 0.5, source.transform.position[1], source.transform.position[2] + 0.5],
+      rotation: [...source.transform.rotation],
+      scale: [...source.transform.scale],
+      size: [...source.transform.size]
+    };
+    map.objects.push(copy);
+    this.state.selectedObjectId = copy.id;
     this.markDirty();
     void this.refreshScene();
     this.renderPanels();
@@ -413,11 +629,198 @@ class MapEditor {
   private renderPanels(): void {
     this.renderMapSelector();
     this.renderHierarchy();
-    this.renderMapInspector();
-    this.renderObjectInspector();
-    this.renderAssetPanel();
+    const mapStage = this.state.stage === 'map';
+    const mapAiHost = this.app.querySelector<HTMLElement>('#map-ai-panel');
+    if (mapAiHost) mapAiHost.hidden = !mapStage;
+    const mapEditorHidden = !mapStage || Boolean(this.mapAiPreviewMap);
+    for (const id of ['map-inspector', 'object-inspector', 'asset-panel']) {
+      const host = this.app.querySelector<HTMLElement>(`#${id}`);
+      if (host) host.hidden = mapEditorHidden;
+    }
+    const renderHost = this.app.querySelector<HTMLElement>('#render-inspector');
+    if (renderHost) renderHost.hidden = mapStage;
+    if (mapStage) {
+      this.renderMapAiPanel();
+      if (!this.mapAiPreviewMap) {
+        this.renderMapInspector();
+        this.renderObjectInspector();
+        this.renderAssetPanel();
+      }
+    } else {
+      this.renderRenderInspector();
+    }
+    const heading = this.app.querySelector<HTMLElement>('.inspector-heading strong');
+    const headingMode = this.app.querySelector<HTMLElement>('.inspector-heading small');
+    if (heading) heading.textContent = mapStage
+      ? this.mapAiPreviewMap ? '地图预览' : '属性'
+      : '渲染方案';
+    if (headingMode) headingMode.textContent = mapStage ? 'MAP' : 'RENDER';
     this.attachSelectedTransform();
     this.updateToolbarState();
+  }
+
+  private renderMapAiPanel(): void {
+    const host = this.app.querySelector<HTMLElement>('#map-ai-panel');
+    if (!host) return;
+    const map = this.state.map;
+    if (!map) {
+      host.innerHTML = '';
+      return;
+    }
+    const suggestion = this.mapAiSuggestion;
+    const terrainCount = suggestion?.operations.filter((operation) => operation.type === 'terrain.brush').length ?? 0;
+    const objectCount = suggestion?.operations.filter((operation) => operation.type === 'object.add').length ?? 0;
+    const hasSpawn = suggestion?.operations.some((operation) => operation.type === 'reference.set') ?? false;
+    const generationBlocked = this.state.busy || this.state.dirty || !this.mapAiPrompt.trim();
+    host.innerHTML = `
+      <section class="editor-section map-ai">
+        <h2>AI 生成地图</h2>
+        <textarea id="map-ai-prompt" rows="3" maxlength="1200" placeholder="例如：中央有缓坡小丘，周围放置树木和岩石">${escapeHtml(this.mapAiPrompt)}</textarea>
+        <div class="map-ai-controls">
+          <select id="map-ai-provider" aria-label="地图 AI 模型" ${this.state.busy ? 'disabled' : ''}>
+            ${CHAT_PROVIDER_OPTIONS.map((option) => `
+              <option value="${option.key}" ${option.key === this.mapAiProvider ? 'selected' : ''} ${option.disabled ? 'disabled' : ''}>
+                ${escapeHtml(option.label)}${option.disabled ? '（暂不可用）' : ''}
+              </option>
+            `).join('')}
+          </select>
+          <button id="generate-map-ai" ${generationBlocked ? 'disabled' : ''}>
+            ${this.mapAiAbortController ? 'Agent 规划中…' : suggestion ? '重新生成' : '生成预览'}
+          </button>
+          ${this.mapAiAbortController ? '<button id="cancel-map-ai" class="secondary">取消</button>' : ''}
+        </div>
+        <p class="empty">${this.state.dirty ? '请先保存当前手工修改，再生成 AI 地图预览。' : 'Agent 会检查资产库、生成最多 3 类缺失资产，再规划地形、摆放和出生点。'}</p>
+      </section>
+      ${suggestion && this.mapAiPreviewMap ? `
+        <section class="editor-section map-ai-result">
+          <span class="stage-kicker">AI 地图建议</span>
+          <h2>${escapeHtml(suggestion.summary)}</h2>
+          <div class="map-ai-stats">
+            <span>地形 <b>${terrainCount}</b></span>
+            <span>物体 <b>${objectCount}</b></span>
+            <span>出生点 <b>${hasSpawn ? '有' : '无'}</b></span>
+          </div>
+          ${suggestion.renderPromptSuggestions.length > 0 ? `
+            <div>
+              <p class="empty">留给渲染阶段的建议</p>
+              <div class="style-tags">${suggestion.renderPromptSuggestions.map((item) => `<span>${escapeHtml(item)}</span>`).join('')}</div>
+            </div>
+          ` : ''}
+          ${suggestion.generatedAssets.length > 0 ? `
+            <div>
+              <p class="empty">本次自动生成的共享资产</p>
+              <div class="style-tags">${suggestion.generatedAssets.map((asset) => `<span>${escapeHtml(asset.name)}</span>`).join('')}</div>
+            </div>
+          ` : ''}
+          <div class="map-ai-actions">
+            <button id="discard-map-ai" class="secondary">放弃预览</button>
+            <button id="apply-map-ai">应用到地图</button>
+          </div>
+        </section>
+      ` : ''}
+    `;
+    host.querySelector<HTMLTextAreaElement>('#map-ai-prompt')?.addEventListener('input', (event) => {
+      this.mapAiPrompt = (event.target as HTMLTextAreaElement).value;
+      const button = host.querySelector<HTMLButtonElement>('#generate-map-ai');
+      if (button) button.disabled = this.state.busy || this.state.dirty || !this.mapAiPrompt.trim();
+    });
+    host.querySelector<HTMLSelectElement>('#map-ai-provider')?.addEventListener('change', (event) => {
+      this.mapAiProvider = (event.target as HTMLSelectElement).value as ChatProvider;
+    });
+    host.querySelector('#generate-map-ai')?.addEventListener('click', () => void this.generateMapAiPreview());
+    host.querySelector('#cancel-map-ai')?.addEventListener('click', () => {
+      this.mapAiAbortController?.abort();
+      this.state.message = '正在取消地图 Agent...';
+      this.updateToolbarState();
+    });
+    host.querySelector('#discard-map-ai')?.addEventListener('click', () => void this.discardMapAiPreview());
+    host.querySelector('#apply-map-ai')?.addEventListener('click', () => void this.applyMapAiPreview());
+  }
+
+  private async generateMapAiPreview(): Promise<void> {
+    const map = this.state.map;
+    const prompt = this.mapAiPrompt.trim();
+    if (!map || !prompt || this.state.busy) return;
+    if (this.state.dirty) {
+      this.state.message = '请先保存当前手工修改';
+      this.updateToolbarState();
+      return;
+    }
+    const controller = new AbortController();
+    this.mapAiAbortController = controller;
+    this.setBusy(true, '地图 Agent 正在检查资产并规划场景...');
+    this.renderMapAiPanel();
+    try {
+      const { suggestion } = await editorFetch<{ suggestion: MapAiSuggestion }>(
+        `/api/editor/maps/${encodeURIComponent(map.id)}/generate`,
+        {
+          method: 'POST',
+          body: JSON.stringify({ prompt, provider: this.mapAiProvider }),
+          signal: controller.signal
+        }
+      );
+      if (suggestion.generatedAssets.length > 0) await this.reloadLists();
+      this.mapAiSuggestion = suggestion;
+      this.mapAiPreviewMap = applyMapOperations(this.mapWithEditorAssets(map), suggestion.operations);
+      this.state.selectedObjectId = null;
+      this.state.message = 'AI 地图预览已生成，尚未应用';
+      await this.refreshScene();
+    } catch (error) {
+      this.state.message = error instanceof Error && error.name === 'AbortError'
+        ? '已取消地图 Agent'
+        : `AI 地图生成失败：${error instanceof Error ? error.message : '未知错误'}`;
+    } finally {
+      if (this.mapAiAbortController === controller) this.mapAiAbortController = null;
+      this.setBusy(false);
+      this.renderPanels();
+    }
+  }
+
+  private async discardMapAiPreview(): Promise<void> {
+    if (!this.mapAiPreviewMap) return;
+    this.clearMapAiPreview();
+    this.state.message = '已放弃 AI 地图预览';
+    await this.refreshScene();
+    this.renderPanels();
+  }
+
+  private async applyMapAiPreview(): Promise<void> {
+    const map = this.state.map;
+    const suggestion = this.mapAiSuggestion;
+    if (!map || !suggestion || this.state.busy || this.state.dirty) return;
+    this.setBusy(true, '正在应用 AI 地图...');
+    try {
+      const result = await editorFetch<{ map: EditableMap; transaction: MapTransactionSummary }>(
+        `/api/editor/maps/${encodeURIComponent(map.id)}/transactions`,
+        {
+          method: 'POST',
+          body: JSON.stringify({
+            source: 'basic-ai',
+            label: suggestion.summary,
+            operations: suggestion.operations
+          })
+        }
+      );
+      this.state.map = normalizeMap(result.map);
+      this.state.undoTransaction = result.transaction;
+      this.state.selectedObjectId = null;
+      this.clearMapAiPreview();
+      this.resetRenderDraft();
+      this.resetManualHistory(this.state.map, true);
+      await this.reloadLists();
+      await this.refreshScene();
+      this.state.message = `已应用：${result.transaction.label}`;
+    } catch (error) {
+      this.state.message = `应用 AI 地图失败：${error instanceof Error ? error.message : '未知错误'}`;
+    } finally {
+      this.setBusy(false);
+      this.renderPanels();
+    }
+  }
+
+  private clearMapAiPreview(): void {
+    this.mapAiSuggestion = null;
+    this.mapAiPreviewMap = null;
   }
 
   private renderMapSelector(): void {
@@ -447,6 +850,7 @@ class MapEditor {
       </button>
       ${renderObjectTree(map.objects, null, this.state.selectedObjectId)}
     `;
+    if (this.mapAiPreviewMap) return;
     host.querySelector<HTMLButtonElement>('[data-spawn-object]')?.addEventListener('click', () => {
       this.selectObject(PLAYER_SPAWN_OBJECT_ID);
     });
@@ -456,6 +860,10 @@ class MapEditor {
     host.querySelectorAll<HTMLButtonElement>('[data-object-id]').forEach((button) => {
       button.addEventListener('click', () => {
         this.selectObject(button.dataset.objectId ?? null);
+      });
+      button.addEventListener('dblclick', () => {
+        this.selectObject(button.dataset.objectId ?? null);
+        this.focusSelection();
       });
     });
   }
@@ -491,13 +899,13 @@ class MapEditor {
           ${colorField('西墙', 'west', map.box.colors.west)}
         </div>
       </section>
-      <section class="editor-section">
+      ${this.state.tool === 'paint' ? `<section class="editor-section">
         <h2>画笔</h2>
         <label class="field compact"><span>颜色</span><input data-brush-color type="color" value="${this.state.brushColor}" /></label>
         <label class="field compact"><span>大小</span><input data-brush-size type="range" min="0.1" max="8" step="0.1" value="${this.state.brushSize}" /></label>
         <label class="field compact"><span>边缘模糊</span><input data-brush-softness type="range" min="0" max="1" step="0.05" value="${this.state.brushSoftness}" /></label>
-      </section>
-      <section class="editor-section">
+      </section>` : ''}
+      ${this.state.tool === 'terrain' ? `<section class="editor-section">
         <h2>地形</h2>
         <select data-terrain-mode>
           <option value="raise" ${this.state.terrainMode === 'raise' ? 'selected' : ''}>抬高</option>
@@ -506,7 +914,7 @@ class MapEditor {
         </select>
         <label class="field compact"><span>大小</span><input data-terrain-size type="range" min="0.3" max="8" step="0.1" value="${this.state.terrainSize}" /></label>
         <label class="field compact"><span>强度</span><input data-terrain-strength type="range" min="0.02" max="1.5" step="0.02" value="${this.state.terrainStrength}" /></label>
-      </section>
+      </section>` : ''}
     `;
     host.querySelector<HTMLInputElement>('[data-map-name]')?.addEventListener('input', (event) => {
       map.name = (event.target as HTMLInputElement).value;
@@ -649,11 +1057,7 @@ class MapEditor {
       void this.refreshScene();
     }, true);
     host.querySelector('#delete-object')?.addEventListener('click', () => {
-      map.objects = map.objects.filter((item) => item.id !== object.id).map((item) => item.parentId === object.id ? { ...item, parentId: null } : item);
-      this.state.selectedObjectId = null;
-      this.markDirty();
-      void this.refreshScene();
-      this.renderPanels();
+      this.deleteSelectedObject();
     });
   }
 
@@ -674,6 +1078,7 @@ class MapEditor {
         <p class="empty">${selectedAsset
           ? `自动碰撞箱：${selectedAsset.colliderPlan.boxes.length} 个 · 候选 ${selectedAsset.colliderPlan.candidateCount} 个${selectedAsset.colliderPlan.fallbackUsed ? ' · 已回退整体边界' : ''}`
           : '尚未选择资产'}</p>
+        <button id="place-selected-asset" ${selectedAsset ? '' : 'disabled'}>${this.placingAssetId === selectedAsset?.id ? '取消放置' : '放入地图'}</button>
         <button id="bind-selected-asset" class="secondary small" ${this.selectedObject() && selectedAsset ? '' : 'disabled'}>绑定到选中物体</button>
       </section>
     `;
@@ -684,8 +1089,17 @@ class MapEditor {
     }
     host.querySelector('#generate-asset')?.addEventListener('click', () => void this.generateAsset());
     host.querySelector<HTMLSelectElement>('#asset-list')?.addEventListener('change', (event) => {
+      this.cancelAssetPlacement();
       this.state.selectedAssetId = (event.target as HTMLSelectElement).value;
       this.renderPanels();
+    });
+    host.querySelector('#place-selected-asset')?.addEventListener('click', () => {
+      if (this.placingAssetId === this.state.selectedAssetId) {
+        this.cancelAssetPlacement();
+        this.renderPanels();
+        return;
+      }
+      void this.beginAssetPlacement();
     });
     host.querySelector('#bind-selected-asset')?.addEventListener('click', () => {
       const object = this.selectedObject();
@@ -696,6 +1110,459 @@ class MapEditor {
       this.renderPanels();
     });
     void this.renderAssetPreview();
+  }
+
+  private renderDeveloperPresetEditor(draft: RenderScheme): string {
+    const shader = draft.renderPlan ? compileRuntimeShaderExtension(draft.renderPlan) : { mode: 'off' as const };
+    return `
+      <section class="editor-section developer-render-panel">
+        <span class="stage-kicker">开发者模式</span>
+        <h2>预设与开放策略</h2>
+        <p class="empty">“预设值”决定方案当前效果；“AI / 开发者”决定谁能调整，以及可调整的范围和控件形式。保存时始终生成新方案。</p>
+        <label class="field compact">
+          <span>方案名称</span>
+          <input data-dev-scheme-field="name" maxlength="48" value="${escapeHtml(draft.name)}" />
+        </label>
+        <label class="field compact">
+          <span>方案说明</span>
+          <textarea data-dev-scheme-field="description" rows="2" maxlength="160">${escapeHtml(draft.description)}</textarea>
+        </label>
+        <div class="developer-capability-list">
+          ${RENDER_CAPABILITIES.map((capability) => renderDeveloperCapability(capability, draft)).join('')}
+        </div>
+        ${shader.mode === 'isolated-glsl' ? `
+          <p class="developer-warning">完整 GLSL 只作为隔离扩展保存在方案中；当前基础编辑器不会执行它，也不会修改核心源码。</p>
+        ` : ''}
+      </section>
+    `;
+  }
+
+  private renderRenderInspector(): void {
+    const host = this.app.querySelector<HTMLElement>('#render-inspector');
+    if (!host) return;
+    const map = this.mapAiPreviewMap ?? this.state.map;
+    if (!map?.confirmedAt) {
+      host.innerHTML = '<section class="editor-section"><h2>渲染方案</h2><p class="empty">请先确认地图。</p></section>';
+      return;
+    }
+    const selected = this.selectedRenderScheme();
+    if (!this.renderAiPreview && (!this.renderDraft || this.renderDraft.id !== selected?.id)) this.resetRenderDraft();
+    const draft = this.renderDraft;
+    const activeSchemeId = this.renderAiPreview ? draft?.id : selected?.id;
+    host.innerHTML = `
+      <section class="editor-section render-stage-summary">
+        <span class="stage-kicker">第二阶段</span>
+        <h2>为地图选择视觉氛围</h2>
+        <p class="empty">地图空间内容保持不变。这里保存的是可被其他地图复用的独立渲染方案。</p>
+        <button id="toggle-developer-mode" class="${this.developerMode ? '' : 'secondary'}">
+          ${this.developerMode ? '退出开发者模式' : '开发者模式'}
+        </button>
+      </section>
+      <section class="editor-section render-ai">
+        <h2>AI 生成风格</h2>
+        <textarea id="render-ai-prompt" rows="3" maxlength="1000" placeholder="例如：素描风格的宁静田园，带有柔和晨雾">${escapeHtml(this.renderAiPrompt)}</textarea>
+        ${map.renderPromptSuggestions.length > 0 ? `
+          <div class="render-prompt-suggestions">
+            <small>地图阶段提取的氛围建议</small>
+            <div class="style-tags">
+              ${map.renderPromptSuggestions.map((suggestion) => `
+                <button type="button" data-render-prompt-suggestion="${escapeHtml(suggestion)}">${escapeHtml(suggestion)}</button>
+              `).join('')}
+            </div>
+          </div>
+        ` : ''}
+        <div class="render-ai-controls">
+          <select id="render-ai-provider" aria-label="AI 模型">
+            ${CHAT_PROVIDER_OPTIONS.map((option) => `
+              <option value="${option.key}" ${option.key === this.renderAiProvider ? 'selected' : ''} ${option.disabled ? 'disabled' : ''}>
+                ${escapeHtml(option.label)}${option.disabled ? '（暂不可用）' : ''}
+              </option>
+            `).join('')}
+          </select>
+          <button id="generate-render-ai" ${this.state.busy || !this.renderAiPrompt.trim() ? 'disabled' : ''}>
+            ${this.renderAiAbortController ? 'Agent 编排中…' : this.renderAiPreview ? '重新生成' : '生成预览'}
+          </button>
+          ${this.renderAiAbortController ? '<button id="cancel-render-ai" class="secondary">取消</button>' : ''}
+        </div>
+        <p class="empty">AI 会选择基础方案，并编排环境、雾、光照和 runtime 表面/画面风格模块；不会修改地图或生成 Shader。</p>
+      </section>
+      ${this.renderAiPreview && draft ? `
+        <section class="editor-section render-ai-result">
+          <span class="stage-kicker">AI 建议 · ${escapeHtml(draft.name)}</span>
+          <p>${escapeHtml(this.renderAiExplanation || '已根据提示词生成可预览的渲染方案。')}</p>
+          ${draft.styleTags.length > 0 ? `
+            <div class="style-tags">${draft.styleTags.map((tag) => `<span>${escapeHtml(tag)}</span>`).join('')}</div>
+          ` : ''}
+          ${draft.renderPlan?.modules.length ? `
+            <p class="empty">已编排模块</p>
+            <div class="style-tags">${draft.renderPlan.modules.map((module) => `<span>${escapeHtml(renderModuleLabel(module.id))}</span>`).join('')}</div>
+          ` : ''}
+          <div class="render-ai-actions">
+            <button id="discard-render-ai" class="secondary">放弃预览</button>
+            <button id="apply-render-ai">应用并另存</button>
+          </div>
+        </section>
+      ` : ''}
+      <section class="editor-section">
+        <h2>方案库</h2>
+        <div class="render-scheme-list">
+          ${this.state.renderSchemes.map((scheme) => `
+            <button class="render-scheme-card ${scheme.id === activeSchemeId ? 'active' : ''}" data-render-scheme="${scheme.id}">
+              <span class="scheme-swatch" style="--scheme-bg:${scheme.settings.background};--scheme-sun:${scheme.settings.sunColor}"></span>
+              <span><strong>${escapeHtml(scheme.name)}</strong><small>${escapeHtml(scheme.description)}</small></span>
+              <em>${scheme.kind === 'builtin' ? '预设' : '自定义'}</em>
+            </button>
+          `).join('')}
+        </div>
+      </section>
+      ${draft && this.developerMode ? this.renderDeveloperPresetEditor(draft) : ''}
+      ${draft ? `
+        <section class="editor-section render-tuning">
+          <h2>安全微调</h2>
+          <label class="field compact">
+            <span>曝光 <output data-render-output="exposure">${draft.settings.exposure.toFixed(2)}</output></span>
+            <input data-render-number="exposure" type="range" min="0.2" max="2" step="0.02" value="${draft.settings.exposure}" />
+          </label>
+          <label class="field compact">
+            <span>雾浓度 <output data-render-output="fogDensity">${draft.settings.fogDensity.toFixed(3)}</output></span>
+            <input data-render-number="fogDensity" type="range" min="0" max="0.05" step="0.001" value="${draft.settings.fogDensity}" />
+          </label>
+          <label class="field compact">
+            <span>主光强度 <output data-render-output="sunIntensity">${draft.settings.sunIntensity.toFixed(1)}</output></span>
+            <input data-render-number="sunIntensity" type="range" min="0" max="8" step="0.1" value="${draft.settings.sunIntensity}" />
+          </label>
+          <p id="render-tuning-note" class="empty">${this.renderDraftChanged ? '微调正在预览，保存后会生成新的渲染方案，不会改动原预设。' : '只开放普通用户容易理解的白名单参数。'}</p>
+          ${this.renderAiPreview ? '' : `<button id="save-render-scheme">${this.renderDraftChanged ? '保存为新方案' : '复制为新方案'}</button>`}
+        </section>
+      ` : ''}
+    `;
+    host.querySelector('#toggle-developer-mode')?.addEventListener('click', () => {
+      this.developerMode = !this.developerMode;
+      localStorage.setItem('worldforge.developerMode', this.developerMode ? 'on' : 'off');
+      this.state.message = this.developerMode ? '已进入开发者模式' : '已退出开发者模式';
+      this.renderRenderInspector();
+      this.updateToolbarState();
+    });
+    host.querySelectorAll<HTMLInputElement | HTMLTextAreaElement>('[data-dev-scheme-field]').forEach((input) => {
+      input.addEventListener('input', () => {
+        if (!this.renderDraft) return;
+        const field = input.dataset.devSchemeField as 'name' | 'description';
+        this.renderDraft[field] = input.value;
+        this.markRenderDraftChanged();
+      });
+    });
+    host.querySelectorAll<HTMLInputElement>('[data-dev-module-enable]').forEach((input) => {
+      input.addEventListener('change', () => {
+        const plan = this.ensureRenderDraftPlan();
+        const id = input.dataset.devModuleEnable as RenderModuleId;
+        if (!plan) return;
+        if (input.checked && !plan.modules.some((module) => module.id === id)) {
+          const capability = RENDER_CAPABILITIES.find((entry) => entry.id === id);
+          if (capability) plan.modules.push(defaultRenderModule(capability, plan.modules.length));
+        } else if (!input.checked) {
+          plan.modules = plan.modules.filter((module) => module.id !== id);
+        }
+        this.markRenderDraftChanged(true);
+        this.renderRenderInspector();
+      });
+    });
+    host.querySelectorAll<HTMLButtonElement>('[data-dev-add-module]').forEach((button) => {
+      button.addEventListener('click', () => {
+        const plan = this.ensureRenderDraftPlan();
+        const capability = RENDER_CAPABILITIES.find((entry) => entry.id === button.dataset.devAddModule);
+        if (!plan || !capability) return;
+        plan.modules.push(defaultRenderModule(capability, plan.modules.length));
+        this.markRenderDraftChanged(true);
+        this.renderRenderInspector();
+      });
+    });
+    host.querySelectorAll<HTMLButtonElement>('[data-dev-remove-module]').forEach((button) => {
+      button.addEventListener('click', () => {
+        const plan = this.ensureRenderDraftPlan();
+        const index = Number(button.dataset.devRemoveModule);
+        if (!plan || !Number.isInteger(index)) return;
+        plan.modules.splice(index, 1);
+        this.markRenderDraftChanged(true);
+        this.renderRenderInspector();
+      });
+    });
+    host.querySelectorAll<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>('[data-dev-module-index][data-dev-param]').forEach((input) => {
+      input.addEventListener('input', () => {
+        const plan = this.ensureRenderDraftPlan();
+        const index = Number(input.dataset.devModuleIndex);
+        const parameter = input.dataset.devParam;
+        const module = plan?.modules[index];
+        const capability = module && RENDER_CAPABILITIES.find((entry) => entry.id === module.id);
+        const rule = capability && parameter ? capability.params[parameter] : null;
+        if (!module || !parameter || !rule) return;
+        if (rule.type === 'number') {
+          const value = Number(input.value);
+          if (!Number.isFinite(value)) return;
+          module.params[parameter] = value;
+          host.querySelectorAll<HTMLInputElement>(
+            `[data-dev-module-index="${index}"][data-dev-param="${parameter}"]`
+          ).forEach((peer) => {
+            if (peer !== input) peer.value = String(value);
+          });
+          const output = host.querySelector<HTMLOutputElement>(
+            `[data-dev-value-output="${index}:${parameter}"]`
+          );
+          if (output) {
+            output.value = String(value);
+            output.textContent = String(value);
+          }
+        } else {
+          module.params[parameter] = input.value;
+        }
+        this.markRenderDraftChanged(rule.type !== 'code');
+      });
+    });
+    host.querySelectorAll<HTMLInputElement | HTMLSelectElement>('[data-dev-module-index][data-dev-scope]').forEach((input) => {
+      input.addEventListener(input.dataset.devScope === 'tag' ? 'input' : 'change', () => {
+        const plan = this.ensureRenderDraftPlan();
+        const index = Number(input.dataset.devModuleIndex);
+        const module = plan?.modules[index];
+        if (!module) return;
+        module.scope ??= { target: 'material-tag', tag: 'base' };
+        if (input.dataset.devScope === 'target') {
+          module.scope.target = input.value as 'water' | 'material-tag' | 'asset-tag';
+        } else {
+          module.scope.tag = input.value.trim().toLowerCase().replace(/[^a-z0-9_-]/g, '').slice(0, 48);
+        }
+        this.markRenderDraftChanged(true);
+      });
+    });
+    host.querySelectorAll<HTMLInputElement>('[data-policy-enabled]').forEach((input) => {
+      input.addEventListener('change', () => {
+        const entry = this.renderPolicyEntry(input.dataset.policyModule, input.dataset.policyParam);
+        const side = input.dataset.policyEnabled as 'ai' | 'developer';
+        if (!entry || (side !== 'ai' && side !== 'developer')) return;
+        entry[side].enabled = input.checked;
+        this.markRenderDraftChanged();
+      });
+    });
+    host.querySelectorAll<HTMLSelectElement>('[data-policy-control]').forEach((input) => {
+      input.addEventListener('change', () => {
+        const entry = this.renderPolicyEntry(input.dataset.policyModule, input.dataset.policyParam);
+        if (!entry) return;
+        entry.control = input.value as RenderParameterAccess['control'];
+        this.markRenderDraftChanged();
+      });
+    });
+    host.querySelectorAll<HTMLInputElement>('[data-policy-range]').forEach((input) => {
+      input.addEventListener('input', () => {
+        const entry = this.renderPolicyEntry(input.dataset.policyModule, input.dataset.policyParam);
+        const side = input.dataset.policySide as 'ai' | 'developer';
+        const edge = input.dataset.policyRange as 'min' | 'max';
+        const value = Number(input.value);
+        if (!entry || !Number.isFinite(value) || (side !== 'ai' && side !== 'developer')) return;
+        entry[side][edge] = value;
+        this.markRenderDraftChanged();
+      });
+    });
+    host.querySelectorAll<HTMLInputElement>('[data-policy-enum-value]').forEach((input) => {
+      input.addEventListener('change', () => {
+        const entry = this.renderPolicyEntry(input.dataset.policyModule, input.dataset.policyParam);
+        const side = input.dataset.policySide as 'ai' | 'developer';
+        const value = input.dataset.policyEnumValue;
+        if (!entry || !value || (side !== 'ai' && side !== 'developer')) return;
+        const values = new Set(entry[side].values ?? []);
+        if (input.checked) values.add(value);
+        else values.delete(value);
+        entry[side].values = [...values];
+        this.markRenderDraftChanged();
+      });
+    });
+    host.querySelector<HTMLTextAreaElement>('#render-ai-prompt')?.addEventListener('input', (event) => {
+      this.renderAiPrompt = (event.target as HTMLTextAreaElement).value;
+      const button = host.querySelector<HTMLButtonElement>('#generate-render-ai');
+      if (button) button.disabled = this.state.busy || !this.renderAiPrompt.trim();
+    });
+    host.querySelector<HTMLSelectElement>('#render-ai-provider')?.addEventListener('change', (event) => {
+      this.renderAiProvider = (event.target as HTMLSelectElement).value as ChatProvider;
+    });
+    host.querySelectorAll<HTMLButtonElement>('[data-render-prompt-suggestion]').forEach((button) => {
+      button.addEventListener('click', () => {
+        const suggestion = button.dataset.renderPromptSuggestion?.trim();
+        if (!suggestion) return;
+        const current = this.renderAiPrompt.trim();
+        if (!current.includes(suggestion)) this.renderAiPrompt = current ? `${current}，${suggestion}` : suggestion;
+        this.renderRenderInspector();
+      });
+    });
+    host.querySelector('#generate-render-ai')?.addEventListener('click', () => void this.generateRenderAiPreview());
+    host.querySelector('#cancel-render-ai')?.addEventListener('click', () => {
+      this.renderAiAbortController?.abort();
+      this.state.message = '正在取消渲染 Agent...';
+      this.updateToolbarState();
+    });
+    host.querySelector('#discard-render-ai')?.addEventListener('click', () => {
+      this.resetRenderDraft();
+      this.state.message = '已放弃 AI 渲染预览';
+      this.applyCurrentRenderScheme();
+      this.renderPanels();
+    });
+    host.querySelector('#apply-render-ai')?.addEventListener('click', () => void this.saveRenderDraft());
+    host.querySelectorAll<HTMLButtonElement>('[data-render-scheme]').forEach((button) => {
+      button.addEventListener('click', () => {
+        if (!this.state.map) return;
+        this.state.map.renderSchemeId = button.dataset.renderScheme ?? null;
+        this.resetRenderDraft();
+        this.markDirty(true, false);
+        this.applyCurrentRenderScheme();
+        this.renderRenderInspector();
+      });
+    });
+    host.querySelectorAll<HTMLInputElement>('[data-render-number]').forEach((input) => {
+      input.addEventListener('input', () => {
+        if (!this.renderDraft) return;
+        const key = input.dataset.renderNumber as 'exposure' | 'fogDensity' | 'sunIntensity';
+        const value = Number(input.value);
+        if (!Number.isFinite(value)) return;
+        this.renderDraft.settings[key] = value;
+        if (this.renderDraft.renderPlan) {
+          const [moduleId, parameter] = key === 'exposure'
+            ? ['presentation.exposure', 'value'] as const
+            : key === 'fogDensity'
+              ? ['atmosphere.fog', 'density'] as const
+              : ['lighting.sun', 'intensity'] as const;
+          let module = this.renderDraft.renderPlan.modules.find((item) => item.id === moduleId);
+          if (!module) {
+            module = { id: moduleId, params: {} };
+            this.renderDraft.renderPlan.modules.push(module);
+          }
+          module.params[parameter] = value;
+        }
+        this.renderDraftChanged = true;
+        const output = host.querySelector<HTMLOutputElement>(`[data-render-output="${key}"]`);
+        if (output) output.value = key === 'fogDensity' ? value.toFixed(3) : key === 'sunIntensity' ? value.toFixed(1) : value.toFixed(2);
+        const note = host.querySelector<HTMLElement>('#render-tuning-note');
+        if (note) note.textContent = '微调正在预览，保存后会生成新的渲染方案，不会改动原预设。';
+        const saveButton = host.querySelector<HTMLButtonElement>('#save-render-scheme');
+        if (saveButton) saveButton.textContent = '保存为新方案';
+        this.applyCurrentRenderScheme();
+        this.updateToolbarState();
+      });
+    });
+    host.querySelector('#save-render-scheme')?.addEventListener('click', () => void this.saveRenderDraft());
+  }
+
+  private selectedRenderScheme(): RenderScheme | null {
+    const id = this.state.map?.renderSchemeId;
+    return this.state.renderSchemes.find((scheme) => scheme.id === id) ?? this.state.renderSchemes[0] ?? null;
+  }
+
+  private ensureRenderDraftPlan(): RenderPlan | null {
+    if (!this.renderDraft) return null;
+    this.renderDraft.renderPlan ??= {
+      version: 2,
+      baseSchemeId: this.renderDraft.id,
+      modules: []
+    };
+    this.renderDraft.renderPlan.version = 2;
+    return this.renderDraft.renderPlan;
+  }
+
+  private renderPolicyEntry(moduleId?: string, parameter?: string): RenderParameterAccess | null {
+    if (!this.renderDraft || !moduleId || !parameter) return null;
+    this.renderDraft.accessPolicy = normalizeRenderAccessPolicy(
+      this.renderDraft.accessPolicy ?? createDefaultRenderAccessPolicy()
+    );
+    return this.renderDraft.accessPolicy.parameters.find((entry) => (
+      entry.moduleId === moduleId && entry.parameter === parameter
+    )) ?? null;
+  }
+
+  private markRenderDraftChanged(applyPreview = false): void {
+    this.renderDraftChanged = true;
+    if (applyPreview) this.applyCurrentRenderScheme();
+    const note = this.app.querySelector<HTMLElement>('#render-tuning-note');
+    if (note) note.textContent = '当前修改正在预览；保存后会生成新方案，不会改动原预设。';
+    const saveButton = this.app.querySelector<HTMLButtonElement>('#save-render-scheme');
+    if (saveButton) saveButton.textContent = '保存为新方案';
+    this.updateToolbarState();
+  }
+
+  private resetRenderDraft(): void {
+    const selected = this.selectedRenderScheme();
+    this.renderDraft = selected ? structuredClone(selected) : null;
+    this.renderDraftChanged = false;
+    this.renderAiPreview = false;
+    this.renderAiExplanation = '';
+  }
+
+  private async generateRenderAiPreview(): Promise<void> {
+    const prompt = this.renderAiPrompt.trim();
+    if (!prompt || !this.state.map?.confirmedAt || this.state.busy) return;
+    const controller = new AbortController();
+    this.renderAiAbortController = controller;
+    this.setBusy(true, 'AI 正在生成渲染预览...');
+    this.renderRenderInspector();
+    try {
+      const { suggestion } = await editorFetch<{ suggestion: RenderSuggestion }>('/api/editor/render-schemes/generate', {
+        method: 'POST',
+        body: JSON.stringify({ prompt, provider: this.renderAiProvider }),
+        signal: controller.signal
+      });
+      const base = this.state.renderSchemes.find((scheme) => scheme.id === suggestion.baseSchemeId);
+      if (!base) throw new Error('AI 返回了不存在的渲染方案');
+      this.renderDraft = {
+        ...structuredClone(base),
+        description: suggestion.explanation || base.description,
+        settings: { ...base.settings, ...suggestion.settings },
+        renderPlan: suggestion.plan,
+        sourcePrompt: prompt,
+        styleTags: suggestion.styleTags,
+        provider: this.renderAiProvider
+      };
+      this.renderDraftChanged = true;
+      this.renderAiPreview = true;
+      this.renderAiExplanation = suggestion.explanation;
+      this.state.message = 'AI 渲染预览已生成，尚未应用';
+      this.applyCurrentRenderScheme();
+    } catch (error) {
+      this.state.message = error instanceof Error && error.name === 'AbortError'
+        ? '已取消渲染 Agent'
+        : `AI 渲染生成失败：${error instanceof Error ? error.message : '未知错误'}`;
+    } finally {
+      if (this.renderAiAbortController === controller) this.renderAiAbortController = null;
+      this.setBusy(false);
+      this.renderPanels();
+    }
+  }
+
+  private async saveRenderDraft(): Promise<void> {
+    if (!this.renderDraft || !this.state.map) return;
+    const defaultName = this.renderDraft.sourcePrompt
+      ? this.renderDraft.sourcePrompt.slice(0, 24)
+      : `${this.renderDraft.name} 副本`;
+    const name = this.developerMode
+      ? this.renderDraft.name
+      : prompt('新渲染方案名称', defaultName);
+    if (name === null) return;
+    this.setBusy(true, '正在保存渲染方案...');
+    try {
+      const { renderScheme } = await editorFetch<{ renderScheme: RenderScheme }>('/api/editor/render-schemes', {
+        method: 'POST',
+        body: JSON.stringify({
+          ...this.renderDraft,
+          name: name.trim() || `${this.renderDraft.name} 副本`,
+          kind: 'custom'
+        })
+      });
+      this.state.renderSchemes.push(renderScheme);
+      this.state.map.renderSchemeId = renderScheme.id;
+      this.renderDraft = structuredClone(renderScheme);
+      this.renderDraftChanged = false;
+      this.renderAiPreview = false;
+      this.renderAiExplanation = '';
+      this.markDirty(true, false);
+      this.state.message = '新渲染方案已保存，记得保存地图引用';
+      this.applyCurrentRenderScheme();
+      this.renderPanels();
+    } finally {
+      this.setBusy(false);
+    }
   }
 
   private async generateAsset(): Promise<void> {
@@ -759,10 +1626,125 @@ class MapEditor {
     }
   }
 
+  private async confirmMap(): Promise<void> {
+    if (!this.state.map || this.state.busy || this.mapAiPreviewMap) return;
+    if (this.state.map.confirmedAt && !this.state.dirty) {
+      this.state.message = '已进入渲染阶段';
+      this.setStage('render');
+      return;
+    }
+    const previousConfirmedAt = this.state.map.confirmedAt;
+    const previousRenderSchemeId = this.state.map.renderSchemeId;
+    this.state.map.confirmedAt = Date.now();
+    this.state.map.renderSchemeId ??= this.state.renderSchemes[0]?.id ?? null;
+    this.state.dirty = true;
+    this.updateToolbarState();
+    this.setBusy(true, '正在确认地图...');
+    try {
+      if (!await this.saveMap()) {
+        this.state.map.confirmedAt = previousConfirmedAt;
+        this.state.map.renderSchemeId = previousRenderSchemeId;
+        this.state.dirty = mapSnapshot(this.state.map) !== this.savedMapSnapshot;
+        this.applyCurrentRenderScheme();
+        this.renderPanels();
+        return;
+      }
+      this.state.message = '地图已保存，已进入渲染阶段';
+      this.setStage('render');
+    } finally {
+      this.setBusy(false);
+    }
+  }
+
+  private setStage(stage: EditorStage): void {
+    if (this.mapAiPreviewMap) {
+      this.state.message = '请先应用或放弃 AI 地图预览';
+      this.updateToolbarState();
+      return;
+    }
+    if (stage === 'render' && !this.state.map?.confirmedAt) {
+      this.state.message = '请先确认地图，再进入渲染阶段';
+      this.updateToolbarState();
+      return;
+    }
+    if (this.state.stage === 'render' && stage !== 'render' && this.renderDraftChanged) {
+      if (!confirm('当前渲染微调尚未保存。\n\n确定：放弃预览并返回地图\n取消：继续调整渲染')) return;
+      this.resetRenderDraft();
+    }
+    this.cancelAssetPlacement();
+    this.state.stage = stage;
+    this.state.tool = 'select';
+    this.painting = false;
+    if (this.brushPreview) this.brushPreview.visible = false;
+    if (this.renderer) this.renderer.domElement.style.cursor = 'default';
+    if (stage === 'render') this.resetRenderDraft();
+    this.applyCurrentRenderScheme();
+    this.renderPanels();
+  }
+
+  private async beginAssetPlacement(): Promise<void> {
+    const asset = this.state.assets.find((item) => item.id === this.state.selectedAssetId);
+    if (!asset?.modelJson || !this.scene) return;
+    this.cancelAssetPlacement();
+    this.placingAssetId = asset.id;
+    this.state.tool = 'select';
+    const requestId = ++this.placementRequestId;
+    this.state.message = '移动鼠标预览位置，左键放置，Esc 取消';
+    this.renderPanels();
+    const preview = await buildModelGroup(asset.modelJson);
+    if (requestId !== this.placementRequestId || this.placingAssetId !== asset.id || !this.scene) {
+      disposeObject(preview);
+      return;
+    }
+    makePlacementPreview(preview);
+    preview.visible = false;
+    this.placementPreview = preview;
+    this.scene.add(preview);
+  }
+
+  private cancelAssetPlacement(): void {
+    this.placementRequestId += 1;
+    this.placingAssetId = null;
+    if (!this.placementPreview) return;
+    this.placementPreview.parent?.remove(this.placementPreview);
+    disposeObject(this.placementPreview);
+    this.placementPreview = null;
+  }
+
+  private updatePlacementPreview(hit: THREE.Intersection | null): void {
+    if (!this.placementPreview || !this.state.map) return;
+    this.placementPreview.visible = Boolean(hit);
+    if (!hit) return;
+    const y = sampleTerrainHeight(this.state.map, hit.point.x, hit.point.z);
+    this.placementPreview.position.set(hit.point.x, y, hit.point.z);
+  }
+
+  private placeAssetAt(point: THREE.Vector3): void {
+    if (!this.state.map || !this.placingAssetId) return;
+    const asset = this.state.assets.find((item) => item.id === this.placingAssetId);
+    if (!asset) return;
+    const object = createMapObject(asset.name, asset.id);
+    object.transform.position = [
+      point.x,
+      sampleTerrainHeight(this.state.map, point.x, point.z),
+      point.z
+    ];
+    this.state.map.objects.push(object);
+    this.state.selectedObjectId = object.id;
+    this.markDirty();
+    this.cancelAssetPlacement();
+    this.state.message = `${asset.name} 已放入地图`;
+    void this.refreshScene();
+    this.renderPanels();
+  }
+
   private async refreshScene(): Promise<void> {
     if (!this.scene) return;
+    this.clearSelectionOutline();
     const previous = this.renderedMap;
     if (previous) {
+      this.runtimeMeshes.clear();
+      this.renderRuntimeAdapter?.setSceneRoots(null, null);
       this.scene.remove(previous.group);
       previous.dispose();
       this.renderedMap = null;
@@ -774,14 +1756,33 @@ class MapEditor {
     this.updateSceneLighting();
     this.renderedMap = await buildEditableMapGroup(this.mapWithEditorAssets(), { editorHelpers: true });
     this.scene.add(this.renderedMap.group);
+    this.renderRuntimeAdapter?.setSceneRoots(this.renderedMap.group, this.renderedMap.modelsRoot);
+    this.renderedMap.modelsRoot.traverse((object) => {
+      const mesh = object as THREE.Mesh;
+      if (mesh.isMesh) this.runtimeMeshes.set(mesh.uuid, mesh);
+    });
     this.attachSelectedTransform();
+    this.applyCurrentRenderScheme();
   }
 
   private handlePointer(event: PointerEvent, first: boolean): void {
     if (!this.renderer || !this.camera || !this.renderedMap || !this.state.map) return;
+    if (this.mapAiPreviewMap) return;
+    if (event.altKey) return;
     if (first && event.button !== 0) return;
-    if (!first && this.state.tool === 'select' && event.buttons === 0) {
+    const hoverOnly = !first && event.buttons === 0;
+    if (hoverOnly) {
       const hits = this.raycast(event);
+      if (this.placingAssetId) {
+        const hit = groundSurfaceHit(hits);
+        this.updatePlacementPreview(hit);
+        this.renderer.domElement.style.cursor = hit ? 'copy' : 'not-allowed';
+        return;
+      }
+      if (this.state.tool !== 'select') {
+        this.updateBrushPreview(surfaceHit(hits));
+        return;
+      }
       const objectHit = selectableObjectHit(hits);
       this.renderer.domElement.style.cursor = objectHit ? 'pointer' : 'default';
       return;
@@ -792,8 +1793,15 @@ class MapEditor {
       event.preventDefault();
       return;
     }
+    if (first && this.placingAssetId) {
+      const hit = groundSurfaceHit(this.raycast(event));
+      if (hit) this.placeAssetAt(hit.point);
+      event.preventDefault();
+      return;
+    }
     if (first) {
       this.painting = this.state.tool !== 'select';
+      if (this.painting) this.beginHistoryGesture();
       event.preventDefault();
     }
     const hits = this.raycast(event);
@@ -803,8 +1811,9 @@ class MapEditor {
       this.selectObject(hit ? findMapObjectId(hit.object) : null);
       return;
     }
-    const hit = hits.find((item) => findMapSurface(item.object));
+    const hit = surfaceHit(hits);
     if (!hit) return;
+    this.updateBrushPreview(hit);
     if (this.state.tool === 'paint') {
       const surface = findMapSurface(hit.object) ?? 'terrain';
       this.state.map = addPaintStroke(this.state.map, createPaintStroke({
@@ -841,6 +1850,42 @@ class MapEditor {
     this.pointer.set(((event.clientX - rect.left) / rect.width) * 2 - 1, -((event.clientY - rect.top) / rect.height) * 2 + 1);
     this.raycaster.setFromCamera(this.pointer, this.camera);
     return this.raycaster.intersectObjects(this.renderedMap.pickables, true);
+  }
+
+  private updateBrushPreview(hit: THREE.Intersection | null): void {
+    if (!this.brushPreview) return;
+    this.brushPreview.visible = Boolean(hit) && this.state.tool !== 'select';
+    if (!hit || this.state.tool === 'select') return;
+    const normal = hit.face
+      ? hit.face.normal.clone().transformDirection(hit.object.matrixWorld)
+      : new THREE.Vector3(0, 1, 0);
+    const radius = this.state.tool === 'terrain' ? this.state.terrainSize : this.state.brushSize;
+    this.brushPreview.position.copy(hit.point).addScaledVector(normal, 0.025);
+    this.brushPreview.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), normal);
+    this.brushPreview.scale.setScalar(radius);
+    this.brushPreview.material.color.set(this.state.tool === 'paint' ? this.state.brushColor : 0xd9f47a);
+  }
+
+  private clearSelectionOutline(): void {
+    if (!this.selectionOutline) return;
+    this.selectionOutline.parent?.remove(this.selectionOutline);
+    this.selectionOutline.geometry.dispose();
+    (this.selectionOutline.material as THREE.Material).dispose();
+    this.selectionOutline = null;
+  }
+
+  private updateSelectionOutline(): void {
+    this.clearSelectionOutline();
+    const group = this.renderedMap?.objectGroups.get(this.state.selectedObjectId ?? '');
+    if (!group || !this.scene) return;
+    const outline = new THREE.BoxHelper(group, 0xd9f47a);
+    const material = outline.material as THREE.LineBasicMaterial;
+    material.depthTest = false;
+    material.transparent = true;
+    material.opacity = 0.9;
+    outline.renderOrder = 30;
+    this.selectionOutline = outline;
+    this.scene.add(outline);
   }
 
   private selectObject(objectId: string | null): void {
@@ -924,6 +1969,11 @@ class MapEditor {
   }
 
   private attachSelectedTransform(): void {
+    this.updateSelectionOutline();
+    if (this.mapAiPreviewMap || this.state.stage !== 'map' || this.state.tool !== 'select') {
+      this.transform?.detach();
+      return;
+    }
     if (this.isTranslateOnlySelection()) {
       const group = this.renderedMap?.objectGroups.get(this.state.selectedObjectId ?? '');
       if (!group || !this.transform) {
@@ -949,13 +1999,13 @@ class MapEditor {
     return this.state.map?.objects.find((object) => object.id === this.state.selectedObjectId) ?? null;
   }
 
-  private mapWithEditorAssets(): EditableMap {
-    if (!this.state.map) throw new Error('missing_map');
+  private mapWithEditorAssets(source = this.mapAiPreviewMap ?? this.state.map): EditableMap {
+    if (!source) throw new Error('missing_map');
     const assets = new Map<string, MapAsset>();
-    for (const asset of this.state.map.assets ?? []) assets.set(asset.id, asset);
+    for (const asset of source.assets ?? []) assets.set(asset.id, asset);
     for (const asset of this.state.assets) assets.set(asset.id, asset);
     return {
-      ...this.state.map,
+      ...source,
       assets: [...assets.values()]
     };
   }
@@ -1008,6 +2058,90 @@ class MapEditor {
     configureSunLight(this.sunLight, this.sunTarget, this.state.map);
   }
 
+  private applyCurrentRenderScheme(): void {
+    if (!this.scene || !this.renderer || !this.sunLight || !this.hemisphereLight) return;
+    const scheme = !this.mapAiPreviewMap && this.state.map?.confirmedAt
+      ? this.renderDraft ?? this.selectedRenderScheme()
+      : null;
+    this.renderRuntimeAdapter?.resetScopedCapabilities();
+    if (!scheme) {
+      this.renderStyleManager?.applyStyle({ renderMode: 'pbr' });
+      this.renderRuntimeAdapter?.applyOutline({ mode: 'none', params: {} });
+      this.renderRuntimeAdapter?.applyPresentation({
+        mode: 'none',
+        sketch: {},
+        paper: {},
+        comic: {}
+      });
+      this.scene.background = new THREE.Color(0x111719);
+      this.scene.fog = null;
+      this.hemisphereLight.color.set(0xeaf6ff);
+      this.hemisphereLight.groundColor.set(0x30382f);
+      this.hemisphereLight.intensity = 1.6;
+      this.sunLight.color.set(0xfff0ce);
+      this.sunLight.intensity = 2.5;
+      this.renderer.toneMapping = THREE.NoToneMapping;
+      this.renderer.toneMappingExposure = 1;
+      this.renderRuntimeAdapter?.applyColorGrade({ recipe: 'neutral' });
+      this.renderRuntimeAdapter?.applyPostQuality({
+        bloom: 'off',
+        ssao: 'off',
+        depthOfField: 'off'
+      });
+      this.updateSceneLighting();
+      return;
+    }
+    const settings = scheme.settings;
+    this.scene.background = new THREE.Color(settings.background);
+    this.scene.fog = settings.fogDensity > 0
+      ? new THREE.FogExp2(settings.fogColor, settings.fogDensity)
+      : null;
+    this.hemisphereLight.color.set(settings.hemisphereSkyColor);
+    this.hemisphereLight.groundColor.set(settings.hemisphereGroundColor);
+    this.hemisphereLight.intensity = settings.hemisphereIntensity;
+    this.sunLight.color.set(settings.sunColor);
+    this.sunLight.intensity = settings.sunIntensity;
+    this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    this.renderer.toneMappingExposure = settings.exposure;
+    const runtimeStyle = scheme.renderPlan
+      ? compileRuntimeStyle(scheme.renderPlan)
+      : { mode: 'pbr' as const, cartoon: {} };
+    this.renderStyleManager?.applyStyle({
+      renderMode: runtimeStyle.mode,
+      cartoon: runtimeStyle.cartoon
+    });
+    if (runtimeStyle.mode === 'cel') this.renderStyleManager?.setCartoonParams(runtimeStyle.cartoon);
+    const runtimeOutline = scheme.renderPlan
+      ? compileRuntimeOutline(scheme.renderPlan)
+      : { mode: 'none' as const, params: {} };
+    this.renderRuntimeAdapter?.applyOutline(runtimeOutline);
+    const runtimePresentation = scheme.renderPlan
+      ? compileRuntimePresentation(scheme.renderPlan)
+      : { mode: 'none' as const, sketch: {}, paper: {}, comic: {} };
+    this.renderRuntimeAdapter?.applyPresentation(runtimePresentation);
+    const colorGrade = scheme.renderPlan
+      ? compileRuntimeColorGrade(scheme.renderPlan)
+      : { recipe: 'neutral' as const };
+    this.renderRuntimeAdapter?.applyColorGrade(colorGrade);
+    const postQuality = scheme.renderPlan
+      ? compileRuntimePostQuality(scheme.renderPlan)
+      : { bloom: 'off' as const, ssao: 'off' as const, depthOfField: 'off' as const };
+    this.renderRuntimeAdapter?.applyPostQuality(postQuality);
+    if (scheme.renderPlan) {
+      applyLightRig(
+        compileRuntimeLightRig(scheme.renderPlan),
+        this.sunLight,
+        this.hemisphereLight,
+        settings
+      );
+      this.renderRuntimeAdapter?.applyScopedCapabilities(
+        compileRuntimeMaterialThemes(scheme.renderPlan),
+        compileRuntimeWaterStyles(scheme.renderPlan),
+        compileRuntimeEffectRecipes(scheme.renderPlan)
+      );
+    }
+  }
+
   private animate(): void {
     this.animationFrame = requestAnimationFrame(() => this.animate());
     const now = performance.now();
@@ -1016,7 +2150,9 @@ class MapEditor {
     this.resize();
     this.updateKeyboardCamera(dt);
     this.orbit?.update();
-    if (this.renderer && this.scene && this.camera) this.renderer.render(this.scene, this.camera);
+    this.selectionOutline?.update();
+    this.renderRuntimeAdapter?.tick(dt, now / 1000);
+    this.renderRuntimeAdapter?.render();
     this.previewOrbit?.update();
     this.resizePreview();
     if (this.previewRenderer && this.previewScene && this.previewCamera) this.previewRenderer.render(this.previewScene, this.previewCamera);
@@ -1031,6 +2167,7 @@ class MapEditor {
     this.camera.aspect = width / height;
     this.camera.updateProjectionMatrix();
     this.renderer.setSize(width, height, false);
+    this.renderRuntimeAdapter?.setSize(width, height);
   }
 
   private resizePreview(): void {
@@ -1044,22 +2181,45 @@ class MapEditor {
   }
 
   private updateToolbarState(): void {
+    const mapStage = this.state.stage === 'map';
+    this.app.querySelectorAll<HTMLElement>('[data-map-only]').forEach((element) => {
+      element.hidden = !mapStage;
+    });
+    this.app.querySelectorAll<HTMLButtonElement>('[data-stage]').forEach((button) => {
+      const stage = button.dataset.stage as EditorStage;
+      button.classList.toggle('active', stage === this.state.stage);
+      button.disabled = this.state.busy || Boolean(this.mapAiPreviewMap) || (stage === 'render' && !this.state.map);
+    });
     this.app.querySelectorAll<HTMLButtonElement>('[data-tool]').forEach((button) => {
       button.classList.toggle('active', button.dataset.tool === this.state.tool);
+      button.disabled = this.state.busy || Boolean(this.mapAiPreviewMap);
     });
     this.app.querySelectorAll<HTMLButtonElement>('[data-transform-mode]').forEach((button) => {
       const mode = button.dataset.transformMode as TransformMode;
       const activeMode = this.isTranslateOnlySelection() ? 'translate' : this.state.transformMode;
-      const disabled = this.isTranslateOnlySelection() && mode !== 'translate';
+      const noEditableSelection = Boolean(this.mapAiPreviewMap) || !mapStage || this.state.tool !== 'select' || !this.state.selectedObjectId;
+      const disabled = noEditableSelection || (this.isTranslateOnlySelection() && mode !== 'translate');
       button.classList.toggle('active', mode === activeMode);
       button.disabled = disabled;
-      button.title = disabled ? '系统参考物只允许移动位置' : '';
+      if (noEditableSelection) button.title = '请先使用选择工具选中物体';
+      else if (disabled) button.title = '系统参考物只允许移动位置';
     });
     const status = this.app.querySelector<HTMLElement>('#editor-status');
-    if (status) status.textContent = this.state.busy ? this.state.message : `${this.state.dirty ? '有未保存更改' : '已同步'}${this.state.message ? ` · ${this.state.message}` : ''}`;
+    if (status) {
+      const syncState = this.mapAiPreviewMap
+        ? '地图 AI 预览未应用'
+        : this.renderDraftChanged
+          ? '渲染预览未保存'
+          : this.state.dirty
+            ? '未保存'
+            : '已同步';
+      status.textContent = this.state.busy ? this.state.message : `${syncState}${this.state.message ? ` · ${this.state.message}` : ''}`;
+      status.title = status.textContent;
+    }
     const undo = this.app.querySelector<HTMLButtonElement>('#undo-transaction');
     if (undo) {
-      undo.disabled = this.state.busy || this.state.dirty || !this.state.undoTransaction;
+      undo.hidden = !mapStage;
+      undo.disabled = this.state.busy || Boolean(this.mapAiPreviewMap) || this.state.dirty || !this.state.undoTransaction;
       undo.title = this.state.dirty
         ? '请先保存或放弃当前手工更改'
         : this.state.undoTransaction
@@ -1067,13 +2227,184 @@ class MapEditor {
           : '当前没有可撤销的 AI/Agent 事务';
     }
     const save = this.app.querySelector<HTMLButtonElement>('#save-map');
-    if (save) save.disabled = this.state.busy || !this.state.map;
+    if (save) {
+      save.disabled = this.state.busy || !this.state.map || this.renderDraftChanged || Boolean(this.mapAiPreviewMap);
+      save.title = this.mapAiPreviewMap
+        ? '请先应用或放弃 AI 地图预览'
+        : this.renderDraftChanged
+          ? '请先保存渲染微调'
+          : '保存当前地图';
+    }
+    const confirmMapButton = this.app.querySelector<HTMLButtonElement>('#confirm-map');
+    if (confirmMapButton) {
+      confirmMapButton.hidden = !mapStage;
+      confirmMapButton.disabled = this.state.busy || !this.state.map || Boolean(this.mapAiPreviewMap);
+      confirmMapButton.textContent = '进入渲染';
+      confirmMapButton.title = this.state.map?.confirmedAt && !this.state.dirty
+        ? '直接进入渲染阶段'
+        : '保存当前地图并进入渲染阶段';
+    }
+    const undoEdit = this.app.querySelector<HTMLButtonElement>('#undo-edit');
+    if (undoEdit) undoEdit.disabled = this.state.busy || Boolean(this.mapAiPreviewMap) || this.historyPast.length === 0;
+    const redoEdit = this.app.querySelector<HTMLButtonElement>('#redo-edit');
+    if (redoEdit) redoEdit.disabled = this.state.busy || Boolean(this.mapAiPreviewMap) || this.historyFuture.length === 0;
   }
 
-  private markDirty(refreshStatus = true): void {
-    this.state.dirty = true;
+  private markDirty(refreshStatus = true, invalidateConfirmation = true): void {
+    if (this.state.map && invalidateConfirmation && this.state.map.confirmedAt !== null) {
+      this.state.map.confirmedAt = null;
+      this.renderDraft = null;
+      this.renderDraftChanged = false;
+      this.applyCurrentRenderScheme();
+    }
+    if (this.state.map && !this.historyGestureStart) {
+      const current = cloneMap(this.state.map);
+      if (this.historyPresent && mapSnapshot(this.historyPresent) !== mapSnapshot(current)) {
+        this.historyPast.push(this.historyPresent);
+        if (this.historyPast.length > MAX_HISTORY_STEPS) this.historyPast.shift();
+        this.historyFuture.length = 0;
+      }
+      this.historyPresent = current;
+    }
+    this.state.dirty = this.state.map ? mapSnapshot(this.state.map) !== this.savedMapSnapshot : false;
     this.state.message = '';
     if (refreshStatus) this.updateToolbarState();
+  }
+
+  private resetManualHistory(map: EditableMap, markSaved: boolean): void {
+    this.historyPast.length = 0;
+    this.historyFuture.length = 0;
+    this.historyGestureStart = null;
+    this.historyPresent = cloneMap(map);
+    if (markSaved) this.savedMapSnapshot = mapSnapshot(map);
+    this.state.dirty = false;
+  }
+
+  private beginHistoryGesture(): void {
+    if (!this.state.map || this.historyGestureStart) return;
+    this.historyGestureStart = cloneMap(this.state.map);
+  }
+
+  private endHistoryGesture(): void {
+    if (!this.state.map || !this.historyGestureStart) return;
+    const before = this.historyGestureStart;
+    this.historyGestureStart = null;
+    if (mapSnapshot(before) === mapSnapshot(this.state.map)) return;
+    this.historyPast.push(before);
+    if (this.historyPast.length > MAX_HISTORY_STEPS) this.historyPast.shift();
+    this.historyFuture.length = 0;
+    this.historyPresent = cloneMap(this.state.map);
+    this.state.dirty = mapSnapshot(this.state.map) !== this.savedMapSnapshot;
+    this.updateToolbarState();
+  }
+
+  private async undoManualEdit(): Promise<void> {
+    if (!this.state.map || this.state.busy || this.mapAiPreviewMap) return;
+    this.endHistoryGesture();
+    const previous = this.historyPast.pop();
+    if (!previous) return;
+    this.historyFuture.push(cloneMap(this.state.map));
+    this.state.map = cloneMap(previous);
+    this.historyPresent = cloneMap(previous);
+    this.state.dirty = mapSnapshot(previous) !== this.savedMapSnapshot;
+    if (!this.state.map.confirmedAt) this.state.stage = 'map';
+    this.resetRenderDraft();
+    this.keepValidSelection();
+    this.state.message = '已撤销手工编辑';
+    await this.refreshScene();
+    this.renderPanels();
+  }
+
+  private async redoManualEdit(): Promise<void> {
+    if (!this.state.map || this.state.busy || this.mapAiPreviewMap) return;
+    const next = this.historyFuture.pop();
+    if (!next) return;
+    this.historyPast.push(cloneMap(this.state.map));
+    this.state.map = cloneMap(next);
+    this.historyPresent = cloneMap(next);
+    this.state.dirty = mapSnapshot(next) !== this.savedMapSnapshot;
+    if (!this.state.map.confirmedAt) this.state.stage = 'map';
+    this.resetRenderDraft();
+    this.keepValidSelection();
+    this.state.message = '已重做手工编辑';
+    await this.refreshScene();
+    this.renderPanels();
+  }
+
+  private keepValidSelection(): void {
+    if (!this.state.selectedObjectId || this.isTranslateOnlySelection()) return;
+    if (!this.state.map?.objects.some((object) => object.id === this.state.selectedObjectId)) {
+      this.state.selectedObjectId = null;
+    }
+  }
+
+  private async confirmLeaveDirtyMap(): Promise<boolean> {
+    if (this.mapAiPreviewMap) {
+      if (!confirm('当前 AI 地图预览尚未应用。\n\n确定：放弃预览并继续\n取消：留在当前地图')) return false;
+      this.clearMapAiPreview();
+    }
+    if (this.renderDraftChanged) {
+      if (!confirm('当前渲染微调尚未保存。\n\n确定：放弃预览并继续\n取消：留在当前地图')) return false;
+      this.resetRenderDraft();
+    }
+    if (!this.state.dirty) return true;
+    if (confirm('当前地图有未保存更改。\n\n确定：保存并继续\n取消：选择是否放弃')) {
+      return this.saveMap();
+    }
+    return confirm('放弃当前未保存更改并继续吗？\n\n确定：放弃\n取消：留在当前地图');
+  }
+
+  private frameMap(): void {
+    if (!this.state.map) return;
+    const bounds = getMapBounds(this.state.map);
+    const box = new THREE.Box3(
+      new THREE.Vector3(bounds.minX, bounds.minY, bounds.minZ),
+      new THREE.Vector3(bounds.maxX, bounds.maxY, bounds.maxZ)
+    );
+    this.frameBox(box);
+    this.setViewName('全景视图');
+  }
+
+  private focusSelection(): void {
+    const group = this.renderedMap?.objectGroups.get(this.state.selectedObjectId ?? '');
+    if (!group) return;
+    this.frameBox(new THREE.Box3().setFromObject(group));
+    this.setViewName('聚焦选中');
+  }
+
+  private setView(view: keyof typeof VIEW_DIRECTIONS): void {
+    if (!this.state.map) return;
+    const bounds = getMapBounds(this.state.map);
+    this.frameBox(
+      new THREE.Box3(
+        new THREE.Vector3(bounds.minX, bounds.minY, bounds.minZ),
+        new THREE.Vector3(bounds.maxX, bounds.maxY, bounds.maxZ)
+      ),
+      VIEW_DIRECTIONS[view]
+    );
+    this.setViewName(view === 'top' ? '顶视图' : view === 'front' ? '前视图' : view === 'right' ? '右视图' : '透视视图');
+  }
+
+  private frameBox(box: THREE.Box3, direction?: THREE.Vector3): void {
+    if (!this.camera || !this.orbit || box.isEmpty()) return;
+    const center = box.getCenter(new THREE.Vector3());
+    const size = box.getSize(new THREE.Vector3());
+    const radius = Math.max(1, size.length() * 0.5);
+    const currentDirection = this.camera.position.clone().sub(this.orbit.target);
+    const viewDirection = (direction ?? currentDirection).clone();
+    if (viewDirection.lengthSq() < 0.0001) viewDirection.set(1, 0.72, 1);
+    viewDirection.normalize();
+    const distance = radius / Math.sin(THREE.MathUtils.degToRad(this.camera.fov * 0.5)) * 1.15;
+    this.camera.up.set(0, Math.abs(viewDirection.y) > 0.999 ? 0 : 1, Math.abs(viewDirection.y) > 0.999 ? -1 : 0);
+    this.camera.position.copy(center).addScaledVector(viewDirection, distance);
+    this.orbit.target.copy(center);
+    this.camera.lookAt(center);
+    this.orbit.update();
+  }
+
+  private setViewName(name: string): void {
+    const label = this.app.querySelector<HTMLElement>('#viewport-view-name');
+    if (label) label.textContent = name;
   }
 
   private setBusy(busy: boolean, message = ''): void {
@@ -1083,7 +2414,39 @@ class MapEditor {
   }
 
   private handleKeyDown = (event: KeyboardEvent): void => {
-    if (!CAMERA_MOVE_KEYS.has(event.code) || isEditableTarget(event.target)) return;
+    if (isEditableTarget(event.target)) return;
+    if ((event.ctrlKey || event.metaKey) && event.code === 'KeyZ') {
+      void (event.shiftKey ? this.redoManualEdit() : this.undoManualEdit());
+      event.preventDefault();
+      return;
+    }
+    if ((event.ctrlKey || event.metaKey) && event.code === 'KeyD') {
+      this.duplicateSelectedObject();
+      event.preventDefault();
+      return;
+    }
+    if (event.code === 'Escape' && this.placingAssetId) {
+      this.cancelAssetPlacement();
+      this.state.message = '已取消放置';
+      this.renderPanels();
+      return;
+    }
+    if (event.code === 'Delete' || event.code === 'Backspace') {
+      this.deleteSelectedObject();
+      event.preventDefault();
+      return;
+    }
+    if (event.code === 'KeyF') {
+      this.focusSelection();
+      event.preventDefault();
+      return;
+    }
+    if (event.code === 'Home') {
+      this.frameMap();
+      event.preventDefault();
+      return;
+    }
+    if (!CAMERA_MOVE_KEYS.has(event.code)) return;
     this.cameraKeys.add(event.code);
     event.preventDefault();
   };
@@ -1098,51 +2461,29 @@ class MapEditor {
     this.cameraKeys.clear();
   };
 
-  private handleCameraLookPointerDown = (event: PointerEvent): void => {
-    if (event.button !== 1 || !this.camera || !this.orbit || !this.renderer || this.transformDragging) return;
-    this.cameraLookPointerId = event.pointerId;
-    this.cameraLookLast = { x: event.clientX, y: event.clientY };
-    this.orbit.enabled = false;
-    this.renderer.domElement.setPointerCapture(event.pointerId);
-    event.preventDefault();
+  private handleOrbitPointerDownCapture = (event: PointerEvent): void => {
+    if (!this.orbit || event.button !== 0) return;
+    this.orbit.mouseButtons.LEFT = event.altKey ? THREE.MOUSE.ROTATE : null;
   };
 
-  private handleCameraLookPointerMove = (event: PointerEvent): void => {
-    if (this.cameraLookPointerId !== event.pointerId) return;
-    const dx = event.clientX - this.cameraLookLast.x;
-    const dy = event.clientY - this.cameraLookLast.y;
-    this.cameraLookLast = { x: event.clientX, y: event.clientY };
-    this.rotateCameraInPlace(dx, dy);
-    event.preventDefault();
-  };
-
-  private handleGlobalPointerEnd = (event: PointerEvent): void => {
+  private handleGlobalPointerEnd = (): void => {
     this.painting = false;
     this.terrainFlattenHeight = null;
     this.transformPointerActive = false;
-    if (this.cameraLookPointerId !== event.pointerId) return;
-    this.cameraLookPointerId = null;
-    if (this.renderer?.domElement.hasPointerCapture(event.pointerId)) {
-      this.renderer.domElement.releasePointerCapture(event.pointerId);
-    }
-    if (this.orbit && !this.transformDragging) this.orbit.enabled = true;
+    if (this.orbit) this.orbit.mouseButtons.LEFT = null;
+    this.endHistoryGesture();
   };
 
-  private rotateCameraInPlace(dx: number, dy: number): void {
-    if (!this.camera || !this.orbit) return;
-    const targetDistance = Math.max(1, this.camera.position.distanceTo(this.orbit.target));
-    this.cameraEuler.setFromQuaternion(this.camera.quaternion, 'YXZ');
-    this.cameraEuler.y -= dx * CAMERA_LOOK_SENSITIVITY;
-    this.cameraEuler.x = THREE.MathUtils.clamp(
-      this.cameraEuler.x - dy * CAMERA_LOOK_SENSITIVITY,
-      CAMERA_MIN_PITCH,
-      CAMERA_MAX_PITCH
-    );
-    this.cameraEuler.z = 0;
-    this.camera.quaternion.setFromEuler(this.cameraEuler);
-    this.camera.getWorldDirection(this.cameraLookDirection);
-    this.orbit.target.copy(this.camera.position).addScaledVector(this.cameraLookDirection, targetDistance);
-  }
+  private hidePointerPreviews = (): void => {
+    if (this.brushPreview) this.brushPreview.visible = false;
+    if (this.placementPreview) this.placementPreview.visible = false;
+  };
+
+  private handleBeforeUnload = (event: BeforeUnloadEvent): void => {
+    if (!this.state.dirty && !this.renderDraftChanged && !this.mapAiPreviewMap) return;
+    event.preventDefault();
+    event.returnValue = '';
+  };
 
   private updateKeyboardCamera(dt: number): void {
     if (!this.camera || !this.orbit || this.cameraKeys.size === 0 || dt <= 0) return;
@@ -1159,8 +2500,8 @@ class MapEditor {
     if (this.cameraKeys.has('KeyS')) this.cameraMove.sub(this.cameraForward);
     if (this.cameraKeys.has('KeyD')) this.cameraMove.add(this.cameraRight);
     if (this.cameraKeys.has('KeyA')) this.cameraMove.sub(this.cameraRight);
-    if (this.cameraKeys.has('Space')) this.cameraMove.y += 1;
-    if (this.cameraKeys.has('ShiftLeft') || this.cameraKeys.has('ShiftRight')) this.cameraMove.y -= 1;
+    if (this.cameraKeys.has('ArrowUp')) this.cameraMove.y += 1;
+    if (this.cameraKeys.has('ArrowDown')) this.cameraMove.y -= 1;
     if (this.cameraMove.lengthSq() < 0.0001) return;
 
     const distanceScale = Math.max(1, this.camera.position.distanceTo(this.orbit.target) * 0.08);
@@ -1245,6 +2586,17 @@ function selectableObjectHit(hits: THREE.Intersection[]): THREE.Intersection | n
   }) ?? null;
 }
 
+function surfaceHit(hits: THREE.Intersection[]): THREE.Intersection | null {
+  return hits.find((item) => findMapSurface(item.object)) ?? null;
+}
+
+function groundSurfaceHit(hits: THREE.Intersection[]): THREE.Intersection | null {
+  return hits.find((item) => {
+    const surface = findMapSurface(item.object);
+    return surface === 'terrain' || surface === 'floor';
+  }) ?? null;
+}
+
 function findMapSurface(object: THREE.Object3D): MapSurface | null {
   let current: THREE.Object3D | null = object;
   while (current) {
@@ -1252,6 +2604,19 @@ function findMapSurface(object: THREE.Object3D): MapSurface | null {
     current = current.parent;
   }
   return null;
+}
+
+function makePlacementPreview(object: THREE.Object3D): void {
+  object.traverse((child) => {
+    const mesh = child as THREE.Mesh;
+    if (!mesh.isMesh) return;
+    const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+    for (const material of materials) {
+      material.transparent = true;
+      material.opacity = 0.48;
+      material.depthWrite = false;
+    }
+  });
 }
 
 function disposeObject(object: THREE.Object3D): void {
@@ -1262,6 +2627,14 @@ function disposeObject(object: THREE.Object3D): void {
     const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
     for (const material of materials) material.dispose();
   });
+}
+
+function cloneMap(map: EditableMap): EditableMap {
+  return normalizeMap(structuredClone(map));
+}
+
+function mapSnapshot(map: EditableMap): string {
+  return JSON.stringify(map);
 }
 
 function buildColliderPreview(boxes: MapAsset['colliderPlan']['boxes']): THREE.Group {
@@ -1306,6 +2679,224 @@ function degreesToRadians(value: number): number {
 function clampNumber(value: number, min: number, max: number): number {
   if (!Number.isFinite(value)) return min;
   return Math.min(max, Math.max(min, value));
+}
+
+function renderDeveloperCapability(capability: RenderCapability, draft: RenderScheme): string {
+  const modules = (draft.renderPlan?.modules ?? [])
+    .map((module, index) => ({ module, index }))
+    .filter((entry) => entry.module.id === capability.id);
+  const policy = draft.accessPolicy ?? createDefaultRenderAccessPolicy();
+  const availability = capability.availability ?? 'ready';
+  return `
+    <details class="developer-capability ${modules.length ? 'active' : ''}" ${modules.length ? 'open' : ''}>
+      <summary>
+        <span><strong>${escapeHtml(capability.label)}</strong><small>${capability.id}</small></span>
+        <em class="capability-status ${availability}">${availability === 'ready' ? '可用' : availability === 'limited' ? '部分可用' : '不可用'}</em>
+      </summary>
+      <div class="developer-capability-body">
+        ${capability.availabilityNote ? `<p class="empty">${escapeHtml(capability.availabilityNote)}</p>` : ''}
+        <div class="developer-capability-actions">
+          ${capability.repeatable
+            ? `<button type="button" class="secondary small" data-dev-add-module="${capability.id}">添加作用域</button>`
+            : `<label class="developer-toggle"><input type="checkbox" data-dev-module-enable="${capability.id}" ${modules.length ? 'checked' : ''} /> 在此预设中启用</label>`}
+        </div>
+        <h3>开放策略</h3>
+        <div class="developer-policy-table">
+          ${Object.entries(capability.params).map(([parameter, rule]) => {
+            const entry = policy.parameters.find((item) => (
+              item.moduleId === capability.id && item.parameter === parameter
+            ));
+            if (!entry) return '';
+            return renderDeveloperPolicyRow(capability, parameter, rule, entry);
+          }).join('')}
+        </div>
+        <h3>预设值${capability.repeatable ? '与作用域' : ''}</h3>
+        ${modules.length
+          ? modules.map(({ module, index }) => renderDeveloperModuleInstance(capability, module, index, policy)).join('')
+          : '<p class="empty">此方案尚未启用该能力。</p>'}
+      </div>
+    </details>
+  `;
+}
+
+function renderDeveloperPolicyRow(
+  capability: RenderCapability,
+  parameter: string,
+  rule: RenderCapability['params'][string],
+  entry: RenderParameterAccess
+): string {
+  const controls: RenderParameterAccess['control'][] = rule.type === 'number'
+    ? ['range', 'number']
+    : rule.type === 'enum'
+      ? ['select', 'toggle']
+      : rule.type === 'color'
+        ? ['color']
+        : ['code'];
+  return `
+    <div class="developer-policy-row">
+      <strong>${escapeHtml(parameter)}</strong>
+      <label>形式
+        <select data-policy-control data-policy-module="${capability.id}" data-policy-param="${parameter}">
+          ${controls.map((control) => `<option value="${control}" ${entry.control === control ? 'selected' : ''}>${control}</option>`).join('')}
+        </select>
+      </label>
+      <label class="developer-toggle"><input type="checkbox" data-policy-enabled="ai" data-policy-module="${capability.id}" data-policy-param="${parameter}" ${entry.ai.enabled ? 'checked' : ''} ${capability.developerOnly ? 'disabled' : ''} /> AI</label>
+      <label class="developer-toggle"><input type="checkbox" data-policy-enabled="developer" data-policy-module="${capability.id}" data-policy-param="${parameter}" ${entry.developer.enabled ? 'checked' : ''} /> 开发者</label>
+      ${rule.type === 'number' ? `
+        <div class="developer-ranges">
+          ${renderPolicyRange(capability.id, parameter, 'ai', entry.ai, rule.min, rule.max)}
+          ${renderPolicyRange(capability.id, parameter, 'developer', entry.developer, rule.min, rule.max)}
+        </div>
+      ` : ''}
+      ${rule.type === 'enum' ? `
+        <div class="developer-enum-access">
+          ${(['ai', 'developer'] as const).map((side) => `
+            <span><b>${side === 'ai' ? 'AI' : '开发者'}</b>${rule.values.map((value) => `
+              <label><input type="checkbox" data-policy-enum-value="${escapeHtml(value)}" data-policy-side="${side}" data-policy-module="${capability.id}" data-policy-param="${parameter}" ${(entry[side].values ?? []).includes(value) ? 'checked' : ''} ${side === 'ai' && capability.developerOnly ? 'disabled' : ''} />${escapeHtml(value)}</label>
+            `).join('')}</span>
+          `).join('')}
+        </div>
+      ` : ''}
+    </div>
+  `;
+}
+
+function renderPolicyRange(
+  moduleId: string,
+  parameter: string,
+  side: 'ai' | 'developer',
+  access: RenderParameterAccess['ai'],
+  hardMin: number,
+  hardMax: number
+): string {
+  return `
+    <span><b>${side === 'ai' ? 'AI' : '开发者'}</b>
+      <input type="number" data-policy-range="min" data-policy-side="${side}" data-policy-module="${moduleId}" data-policy-param="${parameter}" min="${hardMin}" max="${hardMax}" value="${access.min ?? hardMin}" />
+      <i>—</i>
+      <input type="number" data-policy-range="max" data-policy-side="${side}" data-policy-module="${moduleId}" data-policy-param="${parameter}" min="${hardMin}" max="${hardMax}" value="${access.max ?? hardMax}" />
+    </span>
+  `;
+}
+
+function renderDeveloperModuleInstance(
+  capability: RenderCapability,
+  module: RenderModuleSelection,
+  index: number,
+  policy: RenderScheme['accessPolicy']
+): string {
+  return `
+    <div class="developer-module-instance">
+      <div class="developer-module-head">
+        <strong>${capability.repeatable ? escapeHtml(module.key ?? `作用域 ${index + 1}`) : escapeHtml(capability.label)}</strong>
+        ${capability.repeatable ? `<button type="button" class="danger small" data-dev-remove-module="${index}">移除</button>` : ''}
+      </div>
+      ${capability.repeatable ? `
+        <div class="developer-scope">
+          <label>目标
+            <select data-dev-module-index="${index}" data-dev-scope="target">
+              ${['water', 'material-tag', 'asset-tag'].map((target) => `<option value="${target}" ${module.scope?.target === target ? 'selected' : ''}>${target}</option>`).join('')}
+            </select>
+          </label>
+          <label>标签
+            <input data-dev-module-index="${index}" data-dev-scope="tag" value="${escapeHtml(module.scope?.tag ?? '')}" placeholder="foliage / stone / tree" />
+          </label>
+        </div>
+      ` : ''}
+      <div class="developer-preset-grid">
+        ${Object.entries(capability.params).map(([parameter, rule]) => {
+          const access = policy.parameters.find((entry) => (
+            entry.moduleId === capability.id && entry.parameter === parameter
+          ))?.developer;
+          return renderDeveloperPresetInput(parameter, rule, module.params[parameter], index, access);
+        }).join('')}
+      </div>
+    </div>
+  `;
+}
+
+function renderDeveloperPresetInput(
+  parameter: string,
+  rule: RenderCapability['params'][string],
+  current: string | number | undefined,
+  index: number,
+  access?: RenderParameterAccess['developer']
+): string {
+  const value = current ?? rule.default ?? '';
+  const disabled = access?.enabled === false ? 'disabled' : '';
+  if (rule.type === 'enum') {
+    const values = access?.values?.length ? rule.values.filter((option) => access.values?.includes(option)) : rule.values;
+    return `<label><span>${escapeHtml(parameter)}</span><select data-dev-module-index="${index}" data-dev-param="${parameter}" ${disabled}>${values.map((option) => `<option value="${escapeHtml(option)}" ${value === option ? 'selected' : ''}>${escapeHtml(option)}</option>`).join('')}</select></label>`;
+  }
+  if (rule.type === 'color') {
+    return `<label><span>${escapeHtml(parameter)}</span><input type="color" data-dev-module-index="${index}" data-dev-param="${parameter}" value="${escapeHtml(String(value || '#ffffff'))}" ${disabled} /></label>`;
+  }
+  if (rule.type === 'code') {
+    return `<label class="developer-code"><span>${escapeHtml(parameter)}</span><textarea rows="7" maxlength="${rule.maxLength}" data-dev-module-index="${index}" data-dev-param="${parameter}" placeholder="隔离 GLSL 扩展" ${disabled}>${escapeHtml(String(value))}</textarea></label>`;
+  }
+  const min = access?.min ?? rule.min;
+  const max = access?.max ?? rule.max;
+  const step = Math.max(0.001, (max - min) / 100);
+  return `
+    <label class="developer-number-control">
+      <span><span>${escapeHtml(parameter)}</span><output data-dev-value-output="${index}:${escapeHtml(parameter)}">${value}</output></span>
+      <input class="developer-value-range" type="range" min="${min}" max="${max}" step="${step}" data-dev-module-index="${index}" data-dev-param="${parameter}" value="${value}" ${disabled} />
+      <input class="developer-value-number" type="number" min="${min}" max="${max}" step="${step}" data-dev-module-index="${index}" data-dev-param="${parameter}" value="${value}" ${disabled} />
+    </label>
+  `;
+}
+
+function defaultRenderModule(capability: RenderCapability, index: number): RenderModuleSelection {
+  const params: Record<string, string | number> = {};
+  for (const [parameter, rule] of Object.entries(capability.params)) {
+    if (rule.default !== undefined) params[parameter] = rule.default;
+  }
+  const scope = capability.id === 'runtime.water-style'
+    ? { target: 'water' as const, tag: 'water' }
+    : capability.id === 'runtime.effect-recipe'
+      ? { target: 'material-tag' as const, tag: 'emissive' }
+      : { target: 'material-tag' as const, tag: 'foliage' };
+  return {
+    ...(capability.repeatable ? { key: `${capability.id.replaceAll('.', '-')}-${index}` } : {}),
+    id: capability.id,
+    ...(capability.repeatable ? { scope } : {}),
+    params
+  };
+}
+
+function applyLightRig(
+  rig: RuntimeLightRig,
+  sun: THREE.DirectionalLight,
+  hemisphere: THREE.HemisphereLight,
+  base: RenderScheme['settings']
+): void {
+  const recipes: Record<RuntimeLightRig['recipe'], {
+    key: number;
+    fill: number;
+    sun: string;
+    sky: string;
+    ground: string;
+    softness: number;
+  }> = {
+    neutral: { key: 1, fill: 1, sun: base.sunColor, sky: base.hemisphereSkyColor, ground: base.hemisphereGroundColor, softness: 0.55 },
+    'soft-morning': { key: 0.72, fill: 1.08, sun: '#ffe5bd', sky: '#e7f2f2', ground: '#46554d', softness: 0.92 },
+    'hard-day': { key: 1.35, fill: 0.7, sun: '#fff4dc', sky: '#dff3ff', ground: '#34443a', softness: 0.16 },
+    backlit: { key: 1.18, fill: 0.76, sun: '#ffd5a1', sky: '#dbe9f1', ground: '#3d4347', softness: 0.42 },
+    overcast: { key: 0.36, fill: 1.28, sun: '#e8eef0', sky: '#d9e2e4', ground: '#59605d', softness: 1 },
+    sunset: { key: 1.08, fill: 0.72, sun: '#ff9c5a', sky: '#c99691', ground: '#40373d', softness: 0.72 }
+  };
+  const recipe = recipes[rig.recipe];
+  const strength = rig.strength ?? 1;
+  const warmth = THREE.MathUtils.clamp(rig.warmth ?? 0, -1, 1);
+  sun.intensity = base.sunIntensity * recipe.key * strength;
+  hemisphere.intensity = base.hemisphereIntensity * recipe.fill * Math.sqrt(strength);
+  sun.color.set(recipe.sun).lerp(
+    new THREE.Color(warmth >= 0 ? '#ffb56b' : '#9fc9ff'),
+    Math.abs(warmth) * 0.28
+  );
+  hemisphere.color.set(recipe.sky);
+  hemisphere.groundColor.set(recipe.ground);
+  sun.shadow.radius = 1 + (rig.shadowSoftness ?? recipe.softness) * 4;
+  sun.shadow.needsUpdate = true;
 }
 
 function averageScale(scale: [number, number, number]): number {

@@ -21,6 +21,7 @@ import { buildModelGroup } from './modelRenderer';
 
 export interface RenderedMap {
   group: THREE.Group;
+  modelsRoot: THREE.Group;
   objectGroups: Map<string, THREE.Group>;
   pickables: THREE.Object3D[];
   dispose: () => void;
@@ -34,6 +35,10 @@ export async function buildEditableMapGroup(input: EditableMap, options: MapRend
   const map = normalizeMap(input);
   const root = new THREE.Group();
   root.name = `map:${map.id}`;
+  const modelsRoot = new THREE.Group();
+  modelsRoot.name = 'modelsRoot';
+  modelsRoot.userData.isModelRoot = true;
+  root.add(modelsRoot);
   const pickables: THREE.Object3D[] = [];
   const assets = new Map((map.assets ?? []).map((asset) => [asset.id, asset]));
 
@@ -58,7 +63,7 @@ export async function buildEditableMapGroup(input: EditableMap, options: MapRend
     if (!group) continue;
     const parent = object.parentId ? objectGroups.get(object.parentId) : null;
     if (parent && parent !== group) parent.add(group);
-    else root.add(group);
+    else modelsRoot.add(group);
   }
   for (const group of objectGroups.values()) {
     group.traverse((child) => {
@@ -68,6 +73,7 @@ export async function buildEditableMapGroup(input: EditableMap, options: MapRend
 
   return {
     group: root,
+    modelsRoot,
     objectGroups,
     pickables,
     dispose: () => disposeObject(root)
@@ -245,6 +251,7 @@ async function buildObjectGroups(map: EditableMap, assets: Map<string, MapAsset>
     applyObjectTransform(group, object);
     if (object.visible) {
       const asset = object.assetId ? assets.get(object.assetId) : undefined;
+      if (asset) group.userData.assetTags = deriveAssetTags(asset);
       const visual = asset?.modelJson ? await buildModelGroup(asset.modelJson) : buildFallbackObject();
       visual.traverse((child) => {
         child.userData.mapObjectId = object.id;
@@ -258,6 +265,24 @@ async function buildObjectGroups(map: EditableMap, assets: Map<string, MapAsset>
     groups.set(object.id, group);
   }
   return groups;
+}
+
+function deriveAssetTags(asset: MapAsset): string[] {
+  const source = `${asset.name} ${asset.prompt}`.toLowerCase();
+  const tags = new Set<string>([asset.id, ...(asset.tags ?? [])]);
+  for (const token of source.split(/[^a-z0-9_-]+/).filter((item) => item.length > 2)) tags.add(token.slice(0, 48));
+  const semantic: Array<[RegExp, string[]]> = [
+    [/(树|tree|forest)/i, ['tree', 'vegetation']],
+    [/(石|岩|rock|stone)/i, ['rock', 'stone']],
+    [/(草|花|植被|grass|flower|plant)/i, ['vegetation']],
+    [/(建筑|房|屋|building|house)/i, ['building']],
+    [/(金属|metal)/i, ['metal']],
+    [/(水|湖|河|water|lake|river)/i, ['water']]
+  ];
+  for (const [pattern, values] of semantic) {
+    if (pattern.test(source)) values.forEach((value) => tags.add(value));
+  }
+  return [...tags].slice(0, 24);
 }
 
 function applyObjectTransform(group: THREE.Group, object: MapObject): void {
@@ -282,6 +307,9 @@ function buildPlayerSpawnGroup(map: EditableMap): THREE.Group {
   const spawn = getSpawnPoints(map)[0];
   const group = new THREE.Group();
   group.name = '场景参考点';
+  group.userData.skipShaderApply = true;
+  group.userData.skipNormalDepthPrePass = true;
+  group.userData.isEditorObject = true;
   group.position.set(spawn[0], spawn[1], spawn[2]);
   group.rotation.y = getPlayerSpawnYaw(map);
   group.userData.mapObjectId = PLAYER_SPAWN_OBJECT_ID;
@@ -334,6 +362,9 @@ function buildSunGroup(map: EditableMap): THREE.Group {
   const position = getSunPosition(map);
   const group = new THREE.Group();
   group.name = '太阳';
+  group.userData.skipShaderApply = true;
+  group.userData.skipNormalDepthPrePass = true;
+  group.userData.isEditorObject = true;
   group.position.set(position[0], position[1], position[2]);
   group.userData.mapObjectId = SUN_OBJECT_ID;
 
