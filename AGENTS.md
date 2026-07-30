@@ -19,6 +19,8 @@ Use `/api/editor`, `npm run map`, or the project skill. Do not directly rewrite 
 
 Map generation and render generation are separate stages. Do not put final rendering style into map data. Do not apply a render scheme before the user confirms the map.
 
+Map AI should express repeated placement as bounded `scatters`; the server expands them into deterministic `object.add` operations before preview. Keep map-size quotas derived from bounds, and preserve stored terrain resolution when loading older maps.
+
 Render schemes own their `RenderPlan` and `accessPolicy`. Developer edits must preview live and save as a new scheme; do not overwrite built-in presets. AI and developer permissions/ranges are validated separately. Scoped material, water, and effect changes must stay under `modelsRoot`.
 
 ## Safety
