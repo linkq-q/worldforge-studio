@@ -21,6 +21,8 @@ Map generation and render generation are separate stages. Do not put final rende
 
 Map AI should express repeated placement as bounded `scatters`; the server expands them into deterministic `object.add` operations before preview. Keep map-size quotas derived from bounds, and preserve stored terrain resolution when loading older maps.
 
+Map AI should express the base height field as one `terrain.generate` operation and use brushes only for local refinement. PCG derives from the persisted map `seed`; keep terrain generation and terrain analysis in shared modules instead of adding coordinate algorithms to `mapAi.ts`.
+
 Render schemes own their `RenderPlan` and `accessPolicy`. Developer edits must preview live and save as a new scheme; do not overwrite built-in presets. AI and developer permissions/ranges are validated separately. Scoped material, water, and effect changes must stay under `modelsRoot`.
 
 ## Safety

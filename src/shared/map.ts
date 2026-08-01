@@ -7,6 +7,7 @@ import {
 } from './modelBounds';
 import { rayAabbIntersection, stepVerticalMotion, wrapAngle, type VerticalMotionState } from './math';
 import type { Vec3 } from './protocol';
+import { seedFromString } from './mapSeed';
 
 export type MapSurface = 'floor' | 'ceiling' | 'north' | 'south' | 'east' | 'west' | 'terrain';
 export type TerrainBrushMode = 'raise' | 'lower' | 'flatten';
@@ -93,6 +94,7 @@ export interface MapObject {
 export interface EditableMap {
   id: string;
   name: string;
+  seed: number;
   version: number;
   createdAt: number;
   updatedAt: number;
@@ -271,11 +273,13 @@ export function createPaintStroke(input: Partial<MapPaintStroke> & Pick<MapPaint
 }
 
 export function normalizeMap(input: Partial<EditableMap>): EditableMap {
+  const id = typeof input.id === 'string' && input.id ? input.id : createId('map');
   const boxSize = positiveVec3(input.box?.size, DEFAULT_MAP_SIZE);
   const terrainFallback = terrainResolutionForSize(boxSize);
   const terrain = normalizeTerrain(input.terrain, terrainFallback, terrainFallback);
   const map: EditableMap = {
-    id: typeof input.id === 'string' && input.id ? input.id : createId('map'),
+    id,
+    seed: Number.isFinite(Number(input.seed)) ? Math.trunc(Number(input.seed)) >>> 0 : seedFromString(id),
     name: cleanName(input.name, '未命名地图'),
     version: Math.max(1, Math.round(finiteNumber(input.version, 1))),
     createdAt: finiteNumber(input.createdAt, Date.now()),

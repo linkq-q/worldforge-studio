@@ -2,9 +2,9 @@ import { describe, expect, it } from 'vitest';
 import { createEmptyMap, type MapAsset } from '../src/shared/map';
 import {
   expandMapScatter,
-  terrainSlopeDegrees,
   type MapScatterPlan
 } from '../src/shared/mapScatter';
+import { terrainSlopeDegrees } from '../src/shared/mapTerrainAnalysis';
 import { isNearWater } from '../src/shared/mapWater';
 
 const treeAsset = {

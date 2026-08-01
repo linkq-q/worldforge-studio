@@ -19,6 +19,7 @@ import {
   type MapWaterBody
 } from '../shared/map';
 import { buildModelGroup } from './modelRenderer';
+import { terrainVertexColor } from './terrainAppearance';
 
 export interface RenderedMap {
   group: THREE.Group;
@@ -85,6 +86,7 @@ function buildTerrain(map: EditableMap): THREE.Mesh {
     map: texture,
     color: 0xffffff,
     roughness: 0.92,
+    vertexColors: true,
     side: THREE.FrontSide
   });
   const mesh = new THREE.Mesh(geometry, material);
@@ -223,9 +225,14 @@ function buildTerrainGeometry(map: EditableMap): THREE.BufferGeometry {
   }
 
   addBorderSides(vertices, uvs, indices, map);
+  const colors: number[] = [];
+  for (let index = 0; index < vertices.length; index += 3) {
+    colors.push(...terrainVertexColor(map, vertices[index], vertices[index + 1], vertices[index + 2]));
+  }
   const geometry = new THREE.BufferGeometry();
   geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
   geometry.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
+  geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
   geometry.setIndex(indices);
   geometry.computeVertexNormals();
   return geometry;
@@ -451,7 +458,9 @@ function createSurfaceTexture(map: EditableMap, surface: MapSurface): THREE.Canv
   canvas.height = 768;
   const ctx = canvas.getContext('2d');
   if (!ctx) return new THREE.CanvasTexture(canvas);
-  ctx.fillStyle = surface === 'terrain' ? map.box.colors.floor : map.box.colors[surface as keyof typeof map.box.colors];
+  // Vertex colors own the terrain palette; a neutral base keeps paint strokes
+  // and the editor grid from multiplying the surface darker.
+  ctx.fillStyle = surface === 'terrain' ? '#ffffff' : map.box.colors[surface as keyof typeof map.box.colors];
   ctx.fillRect(0, 0, canvas.width, canvas.height);
   drawSubtleGrid(ctx, canvas.width, canvas.height);
   for (const stroke of map.paintStrokes) {

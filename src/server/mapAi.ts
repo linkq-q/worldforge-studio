@@ -25,9 +25,10 @@ import {
 import { planLimits, type MapPlanLimits } from '../shared/mapPlanning';
 import {
   expandMapScatter,
-  terrainSlopeDegrees,
   type MapScatterPlan
 } from '../shared/mapScatter';
+import { terrainSlopeDegrees } from '../shared/mapTerrainAnalysis';
+import { normalizeTerrainGenerationParams } from '../shared/terrainGeneration';
 import { isNearWater } from '../shared/mapWater';
 import { llmChat } from './modelApi';
 
@@ -167,6 +168,12 @@ export function normalizeMapSuggestion(
   const operations: MapOperation[] = renderPromptSuggestions.length > 0
     ? [{ type: 'map.update', renderPromptSuggestions }]
     : [];
+  if (input.terrainGeneration !== undefined && input.terrainGeneration !== null) {
+    operations.push({
+      type: 'terrain.generate',
+      ...normalizeTerrainGenerationParams(input.terrainGeneration, map)
+    });
+  }
   const terrainOperations = normalizeTerrainOperations(input.terrain, bounds, limits);
   operations.push(...terrainOperations);
   const waterRefineOperations = mode === 'refine'
@@ -175,7 +182,13 @@ export function normalizeMapSuggestion(
   operations.push(...waterRefineOperations);
   const waterOperations = normalizeWaterOperations(input.waters, bounds, limits);
   operations.push(...waterOperations);
-  const earlyOperations = [...terrainOperations, ...waterRefineOperations, ...waterOperations];
+  const earlyOperations = operations.filter((operation) => (
+    operation.type === 'terrain.generate'
+    || operation.type === 'terrain.brush'
+    || operation.type === 'water.update'
+    || operation.type === 'water.remove'
+    || operation.type === 'water.add'
+  ));
   const spatialPreview = earlyOperations.length > 0
     ? applyMapOperations({ ...map, assets: [...assets] }, earlyOperations)
     : normalizeMap({ ...map, assets: [...assets] });
@@ -596,21 +609,22 @@ function buildSystemPrompt(
   return [
     ...refineInstructions,
     '你是 WorldForge 的地图规划器。只规划空间内容，不决定最终渲染风格。',
-    '你可以使用地形笔刷、创建湖泊/河流、放置已有资产，以及设置出生点；不得删除或修改已有物体，不得编造资产 ID。',
+    '你可以选择确定性地形基底、使用地形笔刷微调、创建湖泊/河流、放置已有资产，以及设置出生点；不得删除或修改已有物体，不得编造资产 ID。',
     '根据田园、峡谷、海岛等场景词主动推导一个简单、合理的空间构图，不要求用户提供坐标。',
     finalPass
       ? '这是最终规划轮次。assetRequests 必须为空；必须至少生成一项地形、物体摆放或出生点操作，使用现有资产完成地图，无法使用的内容直接省略。'
       : `若场景需要的可复用物体在已有资产中找不到，在 assetRequests 中请求生成，最多 ${limits.assetRequestCount} 项；请求资产时不要提前编造其 assetId。`,
     `地图范围：X ${bounds.minX} 到 ${bounds.maxX}，Z ${bounds.minZ} 到 ${bounds.maxZ}，最大高度 ${bounds.maxY}。`,
     `本地图配额：terrain 最多 ${limits.terrainBrushCount} 笔、笔刷半径最多 ${limits.brushRadiusMax}、waters 最多 ${limits.waterCount} 个、最终物体总数最多 ${limits.objectCount} 个。`,
-    'terrain 每项格式：{"mode":"raise|lower|flatten","x":0,"z":0,"size":2,"strength":0.4,"targetHeight":0}。',
+    'terrainGeneration 是地形基底，格式：{"preset":"plain|hills|valley|island|canyon","amplitude":5,"roughness":0.55}。新地图应优先选择一个基底；坐标由代码根据地图 seed 确定性生成。',
+    'terrain 每项格式：{"mode":"raise|lower|flatten","x":0,"z":0,"size":2,"strength":0.4,"targetHeight":0}，只用于地形基底之后的局部微调。',
     `waters 每项格式：{"type":"lake|river","name":"名称","level":0.2,"depth":${DEFAULT_WATER_DEPTH},"width":1.2,"points":[{"x":0,"z":0}]}。湖泊 points 是至少 3 点的边界；河流 points 是至少 2 点的中心线且 width 生效。`,
     `湖泊的 depth 是水面以下的盆地深度（0.1 到 ${MAX_WATER_DEPTH}），代码会自动把湖底挖进地形，不要再用 terrain 笔刷压低湖区。小水塘用 0.6 左右，深湖用 3 以上。`,
     'objects 只用于少量独立物体，格式：{"assetId":"已有ID","name":"名称","x":0,"z":0,"rotationYDeg":0,"scale":1}。',
     '大量植被、岩石等重复物体必须优先使用 scatters，让代码生成坐标。scatters 每项格式：{"assetIds":["已有ID"],"region":{"kind":"circle","x":0,"z":0,"r":20},"density":0.04,"avoidWater":1,"maxSlope":30,"minSpacing":2,"scaleRange":[0.8,1.2],"seed":7}。',
     '若用户写了雾、光照、素描等氛围词，只放入 renderPromptSuggestions，不要用它改变地图。',
     '只返回一个 JSON 对象，不要 Markdown：',
-    '{"summary":"简短摘要","assetRequests":[{"name":"资产名","prompt":"独立低多边形物体描述，无地面和背景"}],"terrain":[],"waters":[],"waterUpdates":[],"waterRemovals":[],"objects":[],"objectUpdates":[],"objectRemovals":[],"scatters":[],"spawn":null,"renderPromptSuggestions":[]}',
+    '{"summary":"简短摘要","assetRequests":[{"name":"资产名","prompt":"独立低多边形物体描述，无地面和背景"}],"terrainGeneration":{"preset":"hills","amplitude":5,"roughness":0.55},"terrain":[],"waters":[],"waterUpdates":[],"waterRemovals":[],"objects":[],"objectUpdates":[],"objectRemovals":[],"scatters":[],"spawn":null,"renderPromptSuggestions":[]}',
     `已有资产：${JSON.stringify(assetLibrary)}`
   ].join('\n');
 }
@@ -647,6 +661,7 @@ function normalizeAssetRequests(value: unknown, maxCount: number): AssetGenerati
 function hasSpatialOperations(suggestion: MapAiSuggestion): boolean {
   return suggestion.operations.some((operation) =>
     operation.type === 'terrain.brush'
+    || operation.type === 'terrain.generate'
     || operation.type === 'terrain.set'
     || operation.type === 'water.add'
     || operation.type === 'water.update'

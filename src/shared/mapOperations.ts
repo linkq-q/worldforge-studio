@@ -16,6 +16,7 @@ import {
   type Transform3D
 } from './map';
 import { carveWaterBasinInPlace } from './mapWater';
+import { generateTerrainInPlace, type TerrainGenerationParams } from './terrainGeneration';
 import type { Vec3 } from './protocol';
 
 export type MapTransactionSource = 'basic-ai' | 'agent';
@@ -38,6 +39,7 @@ export type MapWaterBodyPatch = Omit<Partial<MapWaterBody>, 'id'>;
 export type MapOperation =
   | { type: 'map.update'; name?: string; size?: Vec3; colors?: Partial<MapBoxColors>; renderPromptSuggestions?: string[] }
   | { type: 'terrain.set'; terrain: MapTerrain }
+  | ({ type: 'terrain.generate' } & Partial<TerrainGenerationParams> & Pick<TerrainGenerationParams, 'preset'>)
   | { type: 'terrain.brush'; mode: TerrainBrushMode; point: Vec3; size?: number; strength?: number; targetHeight?: number }
   | { type: 'paint.add'; stroke: Partial<MapPaintStroke> & Pick<MapPaintStroke, 'surface' | 'point'> }
   | { type: 'object.add'; object: MapObjectInput }
@@ -98,6 +100,9 @@ export function applyMapOperations(map: EditableMap, operations: readonly MapOpe
       case 'terrain.set':
         if (!operation.terrain || typeof operation.terrain !== 'object') throw new Error('invalid_terrain');
         next = normalizeMap({ ...next, terrain: operation.terrain });
+        break;
+      case 'terrain.generate':
+        generateTerrainInPlace(next, operation);
         break;
       case 'terrain.brush':
         requireVec3(operation.point, 'invalid_terrain_point');

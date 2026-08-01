@@ -20,6 +20,21 @@ const assets = [
 ] as MapAsset[];
 
 describe('map AI adapter', () => {
+  it('places the deterministic terrain base before local terrain and water operations', () => {
+    const map = createEmptyMap('terrain plan', 'map-terrain-plan');
+    const suggestion = normalizeMapSuggestion(JSON.stringify({
+      summary: 'terrain',
+      terrainGeneration: { preset: 'valley', amplitude: 5, roughness: 0.6 },
+      terrain: [{ mode: 'raise', x: 0, z: 0, size: 2, strength: 0.3 }],
+      waters: [{ type: 'lake', points: [[-2, -2], [2, -2], [2, 2], [-2, 2]] }],
+      spawn: { x: 0, z: 4 }
+    }), map, []);
+    const spatialTypes = suggestion.operations
+      .map((operation) => operation.type)
+      .filter((type) => type !== 'map.update');
+    expect(spatialTypes.slice(0, 3)).toEqual(['terrain.generate', 'terrain.brush', 'water.add']);
+  });
+
   it('scales planning quotas with the selected map size', () => {
     const small = createEmptyMap('small', 'map-small', [...MAP_SIZE_PRESETS[0].size]);
     const large = createEmptyMap('large', 'map-large', [...MAP_SIZE_PRESETS[2].size]);
