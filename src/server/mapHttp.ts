@@ -24,6 +24,7 @@ import {
 import type { RenderScheme } from '../shared/renderScheme';
 import type { RenderPlan } from '../shared/renderPlan';
 import { runMapAgent } from './mapAi';
+import { generateMapAssetWithRetry } from './mapAssetGenerationRetry';
 import { generateModel } from './modelApi';
 import {
   normalizeModelGenerationMode,
@@ -236,15 +237,19 @@ async function handleEditorMaps(req: Req, res: Res, store: MapStore, parts: stri
           mode: parts[4] === 'refine' ? 'refine' : 'generate',
           onProgress,
           createAsset: async (request) => {
-            const modelJson = await generateModel(request.prompt, {
-              mode: request.mode,
-              providers: [modelProvider],
+            const modelJson = await generateMapAssetWithRetry(request.name, () => generateModel(request.prompt, {
+                mode: request.mode,
+                providers: [modelProvider],
+                signal: controller.signal,
+                onStage: (stage) => onProgress?.({
+                  phase: 'generating-asset',
+                  label: `生成资产：${request.name}`,
+                  detail: stage.stage
+                })
+              }), {
+              attempts: 3,
               signal: controller.signal,
-              onStage: (stage) => onProgress?.({
-                phase: 'generating-asset',
-                label: `生成资产：${request.name}`,
-                detail: stage.stage
-              })
+              onProgress
             });
             return store.saveAsset({
               name: request.name,

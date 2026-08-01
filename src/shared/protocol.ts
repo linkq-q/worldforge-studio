@@ -55,6 +55,7 @@ export interface AgentProgressEvent {
     | 'checking-assets'
     | 'resolving-assets'
     | 'generating-asset'
+    | 'asset-retrying'
     | 'replanning'
     | 'compiling'
     | 'reviewing'

@@ -611,6 +611,84 @@ p {
   line-height: 1.55;
 }
 
+.agent-run {
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid rgba(217, 244, 122, 0.3);
+  border-radius: 12px;
+  background: linear-gradient(145deg, rgba(35, 54, 49, 0.92), rgba(8, 20, 22, 0.96));
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.2);
+}
+
+.agent-run.failed {
+  border-color: rgba(255, 125, 114, 0.45);
+  background: linear-gradient(145deg, rgba(74, 31, 29, 0.8), rgba(20, 14, 16, 0.96));
+}
+
+.agent-run-heading,
+.agent-run-current {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: center;
+}
+
+.agent-run-heading strong {
+  color: var(--accent);
+  font-size: 0.86rem;
+}
+
+.agent-run.failed .agent-run-heading strong {
+  color: #ffb4ad;
+}
+
+.agent-run-heading span,
+.agent-run-current span,
+.agent-run > small {
+  color: var(--muted);
+  font-size: 0.7rem;
+}
+
+.agent-run-current b {
+  color: #f3f8f6;
+  font-size: 0.78rem;
+  line-height: 1.45;
+}
+
+.agent-progress-bar {
+  height: 9px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.09);
+}
+
+.agent-progress-bar i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #94bf35, #ddf66f, #b7db45);
+  background-size: 180% 100%;
+  transition: width 260ms ease;
+  animation: agent-progress-shimmer 1.4s linear infinite;
+}
+
+.agent-run.failed .agent-progress-bar i {
+  background: #ff7d72;
+  animation: none;
+}
+
+.agent-progress-hint {
+  margin: 0;
+  color: #c7d8d2;
+  font-size: 0.7rem;
+  line-height: 1.45;
+}
+
+@keyframes agent-progress-shimmer {
+  to { background-position: -180% 0; }
+}
+
 .agent-progress {
   display: grid;
   gap: 6px;

@@ -32,6 +32,11 @@ import {
 import { planLimits } from '../shared/mapPlanning';
 import { isCompositionEmptyMap, SCENE_COMPOSITION_LIMITS } from '../shared/sceneComposition';
 import { renderMapCompositionSummary } from './mapCompositionPanel';
+import {
+  humanizeAgentError,
+  renderAgentProgress,
+  updateAgentProgress
+} from './agentProgressPanel';
 import { buildEditableMapGroup, type RenderedMap } from './mapRenderer';
 import { configureSunLight } from './lighting';
 import { buildModelGroup } from './modelRenderer';
@@ -207,6 +212,9 @@ class MapEditor {
   private mapAiPreviewMap: EditableMap | null = null;
   private mapAiAbortController: AbortController | null = null;
   private mapAgentProgress: AgentProgressEvent[] = [];
+  private mapAgentStartedAt = 0;
+  private mapAgentElapsedMs = 0;
+  private mapAgentProgressTimer: number | null = null;
   private newMapSizePreset: MapSizePresetKey = 'medium';
 
   constructor(private readonly app: HTMLElement) {}
@@ -747,7 +755,7 @@ class MapEditor {
     host.innerHTML = `
       <section class="editor-section map-ai">
         <h2>AI 生成地图</h2>
-        <textarea id="map-ai-prompt" rows="3" maxlength="1200" placeholder="例如：中央有缓坡小丘，周围放置树木和岩石">${escapeHtml(this.mapAiPrompt)}</textarea>
+        <textarea id="map-ai-prompt" rows="3" maxlength="1200" placeholder="例如：中央有缓坡小丘，周围放置树木和岩石" ${this.state.busy ? 'disabled' : ''}>${escapeHtml(this.mapAiPrompt)}</textarea>
         <div class="map-ai-controls">
           <select id="map-ai-provider" aria-label="地图 AI 模型" ${this.state.busy ? 'disabled' : ''}>
             ${CHAT_PROVIDER_OPTIONS.map((option) => `
@@ -760,7 +768,11 @@ class MapEditor {
           <button id="refine-map-ai" class="secondary" ${refinementBlocked ? 'disabled' : ''}>调整当前地图</button>
           ${this.mapAiAbortController ? '<button id="cancel-map-ai" class="secondary">取消</button>' : ''}
         </div>
-        ${renderAgentProgress(this.mapAgentProgress)}
+        ${renderAgentProgress(this.mapAgentProgress, {
+          running: Boolean(this.mapAiAbortController),
+          elapsedMs: this.mapAgentElapsedMs,
+          slowAssetMode: map.assetGenerationMode === 'standard' || map.assetGenerationMode === 'voxel-pro'
+        })}
         <p class="empty">模型风格 ${map.assetGenerationMode.toUpperCase()} · ${this.state.dirty
           ? '请先保存当前手工修改，再生成 AI 地图预览。'
           : !compositionAvailable
@@ -839,6 +851,7 @@ class MapEditor {
     const controller = new AbortController();
     this.mapAiAbortController = controller;
     this.mapAgentProgress = [];
+    this.startMapAgentProgressTimer();
     const previousSuggestion = mode === 'refine' ? this.mapAiSuggestion : null;
     this.setBusy(true, mode === 'refine' ? '地图 Agent 正在调整当前地图...' : '地图 Agent 正在检查资产并规划场景...');
     this.renderMapAiPanel();
@@ -874,16 +887,18 @@ class MapEditor {
       await this.refreshScene();
     } catch (error) {
       const cancelled = error instanceof Error && error.name === 'AbortError';
+      const detail = humanizeAgentError(error);
       updateAgentProgress(this.mapAgentProgress, {
         phase: 'failed',
         label: cancelled ? '地图 Agent 已取消' : '地图 Agent 执行失败',
-        detail: cancelled ? undefined : error instanceof Error ? error.message : 'unknown_error'
+        detail
       });
       this.state.message = error instanceof Error && error.name === 'AbortError'
         ? '已取消地图 Agent'
-        : `AI 地图生成失败：${error instanceof Error ? error.message : '未知错误'}`;
+        : `AI 地图生成失败：${detail}`;
     } finally {
       if (this.mapAiAbortController === controller) this.mapAiAbortController = null;
+      this.stopMapAgentProgressTimer();
       this.setBusy(false);
       this.renderPanels();
     }
@@ -1312,7 +1327,10 @@ class MapEditor {
           </button>
           ${this.renderAiAbortController ? '<button id="cancel-render-ai" class="secondary">取消</button>' : ''}
         </div>
-        ${renderAgentProgress(this.renderAgentProgress)}
+        ${renderAgentProgress(this.renderAgentProgress, {
+          running: Boolean(this.renderAiAbortController),
+          elapsedMs: 0
+        })}
         <p class="empty">AI 会选择基础方案，并编排环境、雾、光照和 runtime 表面/画面风格模块；不会修改地图或生成 Shader。</p>
       </section>
       ${this.renderAiPreview && draft ? `
@@ -2581,6 +2599,22 @@ class MapEditor {
     this.updateToolbarState();
   }
 
+  private startMapAgentProgressTimer(): void {
+    if (this.mapAgentProgressTimer !== null) window.clearInterval(this.mapAgentProgressTimer);
+    this.mapAgentStartedAt = Date.now();
+    this.mapAgentElapsedMs = 0;
+    this.mapAgentProgressTimer = window.setInterval(() => {
+      this.mapAgentElapsedMs = Date.now() - this.mapAgentStartedAt;
+      this.renderMapAiPanel();
+    }, 1_000);
+  }
+
+  private stopMapAgentProgressTimer(): void {
+    if (this.mapAgentStartedAt > 0) this.mapAgentElapsedMs = Date.now() - this.mapAgentStartedAt;
+    if (this.mapAgentProgressTimer !== null) window.clearInterval(this.mapAgentProgressTimer);
+    this.mapAgentProgressTimer = null;
+  }
+
   private handleKeyDown = (event: KeyboardEvent): void => {
     if (isEditableTarget(event.target)) return;
     if ((event.ctrlKey || event.metaKey) && event.code === 'KeyZ') {
@@ -2740,49 +2774,6 @@ async function editorAgentFetch<T>(
   consume(buffer);
   if (!result) throw new Error('agent_result_missing');
   return result;
-}
-
-function updateAgentProgress(list: AgentProgressEvent[], event: AgentProgressEvent): void {
-  const previous = list.at(-1);
-  if (
-    previous
-    && previous.phase === event.phase
-    && event.current === undefined
-    && event.total === undefined
-  ) {
-    previous.detail = event.detail ?? previous.detail;
-    return;
-  }
-  list.push({ ...event });
-  if (list.length > 8) list.splice(0, list.length - 8);
-}
-
-function renderAgentProgress(events: readonly AgentProgressEvent[]): string {
-  if (events.length === 0) return '';
-  return `
-    <ol class="agent-progress" aria-live="polite">
-      ${events.map((event, index) => `
-        <li class="${event.phase === 'failed' ? 'failed' : index === events.length - 1 && event.phase !== 'complete' ? 'active' : 'done'}">
-          <span></span>
-          <div>
-            <strong>${escapeHtml(event.label)}</strong>
-            ${event.detail ? `<small>${escapeHtml(agentStageLabel(event.detail))}</small>` : ''}
-          </div>
-        </li>
-      `).join('')}
-    </ol>
-  `;
-}
-
-function agentStageLabel(stage: string): string {
-  if (stage.startsWith('provider:')) return `调用 ${stage.slice('provider:'.length)} 模型`;
-  const labels: Record<string, string> = {
-    thinking: '分析资产结构',
-    code: '生成模型结构',
-    validate: '校验模型',
-    result: '资产完成'
-  };
-  return labels[stage] ?? stage;
 }
 
 function hasRefinableMapContent(map: EditableMap): boolean {
