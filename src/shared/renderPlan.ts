@@ -2,6 +2,7 @@ import type { RenderEnvironmentSettings } from './renderScheme';
 
 export type RenderModuleId =
   | 'environment.palette'
+  | 'environment.hdri'
   | 'atmosphere.fog'
   | 'lighting.hemisphere'
   | 'lighting.sun'
@@ -193,6 +194,19 @@ export interface RuntimeEffectRecipe {
   color?: string;
 }
 
+export interface RuntimeHdriSky {
+  /** Empty means "no HDRI"; the scheme's solid background stays in charge. */
+  texture: string;
+  rotation: number;
+  exposure: number;
+  saturation: number;
+  intensity: number;
+  tint?: string;
+  tintStrength: number;
+  /** Also feed the panorama to `scene.environment` through PMREM. */
+  useAsEnvironment: boolean;
+}
+
 export interface RuntimeShaderExtension {
   mode: 'off' | 'whitelist-fragment' | 'isolated-glsl';
   fragmentId?: string;
@@ -204,6 +218,25 @@ export const RENDER_CAPABILITIES: readonly RenderCapability[] = [
     id: 'environment.palette',
     label: '环境色板',
     params: { background: { type: 'color' }, fogColor: { type: 'color' } }
+  },
+  {
+    id: 'environment.hdri',
+    label: 'HDRI 天空',
+    priority: 'P1',
+    availability: 'ready',
+    availabilityNote: '贴图取自 data/map-editor/hdri 目录，同时作为背景天空球与 PMREM 环境光。',
+    params: {
+      // ponytail: `code` type means "free string, developer only" — exactly the
+      // access rule wanted here, so the AI cannot invent a filename.
+      texture: { type: 'code', maxLength: 120, default: '', control: 'select' },
+      rotation: { type: 'number', min: -180, max: 180, default: 0 },
+      exposure: { type: 'number', min: 0.05, max: 4, default: 1 },
+      saturation: { type: 'number', min: 0, max: 2, default: 1 },
+      intensity: { type: 'number', min: 0, max: 4, default: 1 },
+      tint: { type: 'color', default: '#ffffff' },
+      tintStrength: { type: 'number', min: 0, max: 1, default: 0 },
+      useAsEnvironment: { type: 'enum', values: ['on', 'off'], default: 'on' }
+    }
   },
   {
     id: 'atmosphere.fog',
@@ -660,6 +693,20 @@ export function compileRuntimeEffectRecipes(plan: RenderPlan): RuntimeEffectReci
       speed: numericValue(item.params.speed),
       color: stringValue(item.params.color)
     }));
+}
+
+export function compileRuntimeHdriSky(plan: RenderPlan): RuntimeHdriSky {
+  const params = plan.modules.find((item) => item.id === 'environment.hdri')?.params ?? {};
+  return {
+    texture: stringValue(params.texture)?.trim() ?? '',
+    rotation: numericValue(params.rotation) ?? 0,
+    exposure: numericValue(params.exposure) ?? 1,
+    saturation: numericValue(params.saturation) ?? 1,
+    intensity: numericValue(params.intensity) ?? 1,
+    tint: stringValue(params.tint),
+    tintStrength: numericValue(params.tintStrength) ?? 0,
+    useAsEnvironment: params.useAsEnvironment !== 'off'
+  };
 }
 
 export function compileRuntimeShaderExtension(plan: RenderPlan): RuntimeShaderExtension {

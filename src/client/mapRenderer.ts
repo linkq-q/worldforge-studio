@@ -43,10 +43,6 @@ export async function buildEditableMapGroup(input: EditableMap, options: MapRend
   const pickables: THREE.Object3D[] = [];
   const assets = new Map((map.assets ?? []).map((asset) => [asset.id, asset]));
 
-  const box = buildBoxSurfaces(map);
-  root.add(box.group);
-  pickables.push(...box.pickables);
-
   const terrain = buildTerrain(map);
   root.add(terrain);
   pickables.push(terrain);
@@ -80,62 +76,6 @@ export async function buildEditableMapGroup(input: EditableMap, options: MapRend
     pickables,
     dispose: () => disposeObject(root)
   };
-}
-
-function buildBoxSurfaces(map: EditableMap): { group: THREE.Group; pickables: THREE.Object3D[] } {
-  const bounds = getMapBounds(map);
-  const [width, height, depth] = map.box.size;
-  const group = new THREE.Group();
-  const pickables: THREE.Object3D[] = [];
-
-  const ceiling = makeSurfaceMesh('ceiling', new THREE.PlaneGeometry(width, depth), map);
-  ceiling.rotation.x = Math.PI / 2;
-  ceiling.position.set(0, height, 0);
-  group.add(ceiling);
-  pickables.push(ceiling);
-
-  const north = makeSurfaceMesh('north', new THREE.PlaneGeometry(width, height), map);
-  north.position.set(0, height / 2, bounds.minZ);
-  group.add(north);
-  pickables.push(north);
-
-  const south = makeSurfaceMesh('south', new THREE.PlaneGeometry(width, height), map);
-  south.rotation.y = Math.PI;
-  south.position.set(0, height / 2, bounds.maxZ);
-  group.add(south);
-  pickables.push(south);
-
-  const east = makeSurfaceMesh('east', new THREE.PlaneGeometry(depth, height), map);
-  east.rotation.y = -Math.PI / 2;
-  east.position.set(bounds.maxX, height / 2, 0);
-  group.add(east);
-  pickables.push(east);
-
-  const west = makeSurfaceMesh('west', new THREE.PlaneGeometry(depth, height), map);
-  west.rotation.y = Math.PI / 2;
-  west.position.set(bounds.minX, height / 2, 0);
-  group.add(west);
-  pickables.push(west);
-
-  return { group, pickables };
-}
-
-function makeSurfaceMesh(surface: MapSurface, geometry: THREE.BufferGeometry, map: EditableMap): THREE.Mesh {
-  const texture = createSurfaceTexture(map, surface);
-  const material = new THREE.MeshStandardMaterial({
-    map: texture,
-    color: 0xffffff,
-    emissive: 0xffffff,
-    emissiveMap: texture,
-    emissiveIntensity: surface === 'ceiling' ? 0.52 : 0.28,
-    roughness: 0.88,
-    // The enclosure is visible from inside but does not block the editor camera outside the map.
-    side: THREE.FrontSide
-  });
-  const mesh = new THREE.Mesh(geometry, material);
-  mesh.receiveShadow = true;
-  mesh.userData.surface = surface;
-  return mesh;
 }
 
 function buildTerrain(map: EditableMap): THREE.Mesh {
@@ -295,18 +235,21 @@ function buildTerrainGeometry(map: EditableMap): THREE.BufferGeometry {
 
 function addBorderSides(vertices: number[], uvs: number[], indices: number[], map: EditableMap): void {
   const terrain = map.terrain;
+  // Carved lake basins push heights below zero, so the skirt has to reach the
+  // lowest point on the map instead of always stopping at y=0.
+  const base = terrain.heights.reduce((lowest, height) => Math.min(lowest, height), 0);
   for (let x = 0; x < terrain.resolutionX - 1; x += 1) {
-    addSideToBase(vertices, uvs, indices, map, terrainPointAt(map, x, 0), terrainPointAt(map, x + 1, 0));
-    addSideToBase(vertices, uvs, indices, map, terrainPointAt(map, x, terrain.resolutionZ - 1), terrainPointAt(map, x + 1, terrain.resolutionZ - 1));
+    addSideToBase(vertices, uvs, indices, map, base, terrainPointAt(map, x, 0), terrainPointAt(map, x + 1, 0));
+    addSideToBase(vertices, uvs, indices, map, base, terrainPointAt(map, x, terrain.resolutionZ - 1), terrainPointAt(map, x + 1, terrain.resolutionZ - 1));
   }
   for (let z = 0; z < terrain.resolutionZ - 1; z += 1) {
-    addSideToBase(vertices, uvs, indices, map, terrainPointAt(map, 0, z), terrainPointAt(map, 0, z + 1));
-    addSideToBase(vertices, uvs, indices, map, terrainPointAt(map, terrain.resolutionX - 1, z), terrainPointAt(map, terrain.resolutionX - 1, z + 1));
+    addSideToBase(vertices, uvs, indices, map, base, terrainPointAt(map, 0, z), terrainPointAt(map, 0, z + 1));
+    addSideToBase(vertices, uvs, indices, map, base, terrainPointAt(map, terrain.resolutionX - 1, z), terrainPointAt(map, terrain.resolutionX - 1, z + 1));
   }
 }
 
-function addSideToBase(vertices: number[], uvs: number[], indices: number[], map: EditableMap, a: number[], b: number[]): void {
-  if (a[1] < 0.08 && b[1] < 0.08) return;
+function addSideToBase(vertices: number[], uvs: number[], indices: number[], map: EditableMap, base: number, a: number[], b: number[]): void {
+  if (a[1] - base < 0.08 && b[1] - base < 0.08) return;
   addQuad(
     vertices,
     uvs,
@@ -314,8 +257,8 @@ function addSideToBase(vertices: number[], uvs: number[], indices: number[], map
     map,
     [a[0], a[1], a[2]],
     [b[0], b[1], b[2]],
-    [a[0], 0, a[2]],
-    [b[0], 0, b[2]]
+    [a[0], base, a[2]],
+    [b[0], base, b[2]]
   );
 }
 

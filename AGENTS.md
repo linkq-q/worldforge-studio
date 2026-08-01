@@ -25,7 +25,7 @@ Render schemes own their `RenderPlan` and `accessPolicy`. Developer edits must p
 
 ## Safety
 
-- Y-up; ground is `y=0`.
+- Y-up; `y=0` is sea level. Terrain heights may go negative down to `TERRAIN_MIN_HEIGHT`: adding or updating a lake carves its basin into the height field so the water plane sits inside the terrain.
 - External agents must not modify core source by default.
 - New Shader code must follow the permission ladder in `docs/architecture.md`.
 - Do not push, publish, or contact external services unless the user explicitly asks.

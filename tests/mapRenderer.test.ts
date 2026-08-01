@@ -1,9 +1,34 @@
 import * as THREE from 'three';
-import { describe, expect, it } from 'vitest';
-import { buildStructuredWaterGroup } from '../src/client/mapRenderer';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { buildEditableMapGroup, buildStructuredWaterGroup } from '../src/client/mapRenderer';
 import { createEmptyMap } from '../src/shared/map';
 
 describe('structured map water rendering', () => {
+  beforeEach(() => {
+    vi.stubGlobal('document', {
+      createElement: () => ({
+        width: 0,
+        height: 0,
+        getContext: () => null
+      })
+    });
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('renders the map as an open terrain plane without enclosure faces', async () => {
+    const rendered = await buildEditableMapGroup(createEmptyMap('open-map', 'map-open-plane'));
+    const surfaces: string[] = [];
+    rendered.group.traverse((object) => {
+      if (typeof object.userData.surface === 'string') surfaces.push(object.userData.surface);
+    });
+
+    expect(surfaces).toEqual(['terrain']);
+    rendered.dispose();
+  });
+
   it('builds tagged lake and river geometry under the model root', async () => {
     const map = createEmptyMap('waters', 'map-render-water');
     map.waterBodies = [
@@ -12,6 +37,7 @@ describe('structured map water rendering', () => {
         name: '湖泊',
         type: 'lake',
         level: 0.4,
+        depth: 1.5,
         width: 1.2,
         points: [[-4, -3], [4, -3], [4, 3], [-4, 3]]
       },
@@ -20,6 +46,7 @@ describe('structured map water rendering', () => {
         name: '河流',
         type: 'river',
         level: 0.5,
+        depth: 1.5,
         width: 1.2,
         points: [[-6, -5], [-1, 0], [6, 5]]
       }

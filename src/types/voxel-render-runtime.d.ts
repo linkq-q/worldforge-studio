@@ -88,6 +88,29 @@ declare module '@voxel-studio/render-runtime/outline' {
 }
 
 declare module '@voxel-studio/render-runtime/environment' {
+  export const PANORAMA_EXTENSIONS: string[];
+  export function loadPanoramaTexture(
+    url: string,
+    extension: string
+  ): Promise<import('three').Texture>;
+  export class HDRISkyDome {
+    mesh: import('three').Mesh;
+    material: import('three').ShaderMaterial;
+    uniforms: Record<string, { value: unknown }>;
+    constructor(radius?: number);
+    setTexture(texture: import('three').Texture | null): void;
+    getTexture(): import('three').Texture | null;
+    setRotationY(radians: number): void;
+    setIntensity(value: number): void;
+    setExposure(value: number): void;
+    setSaturation(value: number): void;
+    setTint(enabled: boolean, color?: string | import('three').Color, strength?: number): void;
+    setVisible(visible: boolean): void;
+    isVisible(): boolean;
+    addTo(parent: import('three').Object3D): void;
+    removeFromParent(): void;
+    dispose(disposeTexture?: boolean): void;
+  }
   export class WaterSurface {
     mesh: import('three').Mesh;
     material: import('three').ShaderMaterial;
@@ -102,12 +125,60 @@ declare module '@voxel-studio/render-runtime/environment' {
       camera: import('three').Camera,
       depthTexture: import('three').DepthTexture | null
     ): void;
+    importState(state: Record<string, unknown>): void;
     setWaterMode(mode: 'cartoon' | 'realistic' | 'hybrid'): void;
+    setWaterReflectionParams(params: Record<string, unknown>): void;
+    dispose(): void;
+  }
+  export class WaterfallSurface {
+    mesh: import('three').Mesh;
+    material: import('three').ShaderMaterial;
+    splashGroup?: import('three').Group | null;
+    constructor(
+      scene: import('three').Scene,
+      renderer: import('three').WebGLRenderer,
+      environmentRoot?: import('three').Group | null,
+      options?: Record<string, unknown>
+    );
+    update(
+      deltaTime: number,
+      camera: import('three').Camera,
+      depthTexture?: import('three').DepthTexture | null
+    ): void;
     dispose(): void;
   }
 }
 
 declare module '@voxel-studio/render-runtime/effects' {
+  export class EffectSlotManager {
+    constructor(options?: Record<string, unknown>);
+    applyPackage(
+      target: Record<string, unknown>,
+      effectPackage: Record<string, unknown>,
+      runtimeContext?: Record<string, unknown>
+    ): unknown;
+    clearEffects(target: import('three').Object3D, options?: Record<string, unknown>): unknown;
+  }
+  export function applyMaterialSurfaceBinding(
+    target: import('three').Object3D,
+    binding: Record<string, unknown>,
+    environmentMap?: import('three').Texture | null
+  ): number;
+  export function compileModelMaterialTags(
+    model: Record<string, unknown>,
+    vocabulary: Record<string, unknown>
+  ): {
+    byPartId: Map<string, {
+      part?: { mesh?: { type?: string } };
+      effectiveTags: unknown[];
+      effectPackage?: { materialLayers?: unknown[] };
+      materialBindings?: {
+        surface?: Record<string, unknown>;
+        matcap?: Record<string, unknown>;
+      };
+    }>;
+    diagnostics: unknown[];
+  };
   export function createEffectRuntime(): {
     runtime: {
       applyToObject3D(root: import('three').Object3D, effectPackage: Record<string, unknown>): unknown;
@@ -115,4 +186,9 @@ declare module '@voxel-studio/render-runtime/effects' {
       updateRuntimeUniforms(root: import('three').Object3D, values: Record<string, number>): number;
     };
   };
+}
+
+declare module '@voxel-studio/render-runtime/model/material-tags-v1.json' {
+  const vocabulary: Record<string, unknown>;
+  export default vocabulary;
 }

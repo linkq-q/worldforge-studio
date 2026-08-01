@@ -46,3 +46,18 @@ export interface ModelJobState {
   stage?: string;
   message?: string;
 }
+
+export interface AgentProgressEvent {
+  phase:
+    | 'planning'
+    | 'checking-assets'
+    | 'generating-asset'
+    | 'replanning'
+    | 'validating'
+    | 'repairing'
+    | 'complete';
+  label: string;
+  current?: number;
+  total?: number;
+  detail?: string;
+}

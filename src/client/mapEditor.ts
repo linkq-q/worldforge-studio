@@ -34,6 +34,7 @@ import { buildEditableMapGroup, type RenderedMap } from './mapRenderer';
 import { configureSunLight } from './lighting';
 import { buildModelGroup } from './modelRenderer';
 import { RenderRuntimeAdapter } from './renderRuntimeAdapter';
+import { HDRI_DOME_RADIUS, HdriSkyController } from './hdriSky';
 import {
   applyMapOperations,
   type MapAiSuggestion,
@@ -41,13 +42,16 @@ import {
 } from '../shared/mapOperations';
 import {
   CHAT_PROVIDER_OPTIONS,
+  type AgentProgressEvent,
   type ChatProvider
 } from '../shared/protocol';
+import type { HdriTexture } from '../shared/hdri';
 import type { RenderScheme, RenderSuggestion } from '../shared/renderScheme';
 import {
   RENDER_CAPABILITIES,
   compileRuntimeColorGrade,
   compileRuntimeEffectRecipes,
+  compileRuntimeHdriSky,
   compileRuntimeLightRig,
   compileRuntimeMaterialThemes,
   compileRuntimeOutline,
@@ -138,6 +142,8 @@ class MapEditor {
   private renderer: THREE.WebGLRenderer | null = null;
   private renderStyleManager: RenderStyleManager | null = null;
   private renderRuntimeAdapter: RenderRuntimeAdapter | null = null;
+  private hdriSky: HdriSkyController | null = null;
+  private hdriFiles: string[] = [];
   private readonly runtimeMeshes = new Map<string, THREE.Mesh>();
   private sunLight: THREE.DirectionalLight | null = null;
   private hemisphereLight: THREE.HemisphereLight | null = null;
@@ -182,12 +188,14 @@ class MapEditor {
   private renderAiPreview = false;
   private renderAiExplanation = '';
   private renderAiAbortController: AbortController | null = null;
+  private renderAgentProgress: AgentProgressEvent[] = [];
   private developerMode = false;
   private mapAiPrompt = '';
   private mapAiProvider: ChatProvider = 'gpt';
   private mapAiSuggestion: MapAiSuggestion | null = null;
   private mapAiPreviewMap: EditableMap | null = null;
   private mapAiAbortController: AbortController | null = null;
+  private mapAgentProgress: AgentProgressEvent[] = [];
   private newMapSizePreset: MapSizePresetKey = 'medium';
 
   constructor(private readonly app: HTMLElement) {}
@@ -346,7 +354,9 @@ class MapEditor {
     if (!host) return;
     this.scene = new THREE.Scene();
     this.scene.background = new THREE.Color(0x111719);
-    this.camera = new THREE.PerspectiveCamera(55, 1, 0.05, 300);
+    // The HDRI dome is a fixed-radius sphere centred on the origin, so the far
+    // plane has to clear HDRI_DOME_RADIUS plus however far the camera orbits out.
+    this.camera = new THREE.PerspectiveCamera(55, 1, 0.1, HDRI_DOME_RADIUS * 3);
     this.camera.position.set(22, 18, 24);
     this.renderer = new THREE.WebGLRenderer({ antialias: true });
     this.renderer.setPixelRatio(Math.min(2, window.devicePixelRatio));
@@ -384,6 +394,12 @@ class MapEditor {
       meshRegistry: this.runtimeMeshes
     });
     this.renderRuntimeAdapter = new RenderRuntimeAdapter(this.renderer, this.scene, this.camera);
+    this.hdriSky = new HdriSkyController(
+      this.renderer,
+      this.scene,
+      (file) => `${serverHttpBase(location, import.meta.env.DEV)}/api/editor/hdri/${encodeURIComponent(file)}`
+    );
+    void this.reloadHdriTextures();
     this.scene.add(hemi, sun, sunTarget);
     this.brushPreview = new THREE.Mesh(
       new THREE.RingGeometry(0.86, 1, 64),
@@ -685,10 +701,11 @@ class MapEditor {
     }
     const suggestion = this.mapAiSuggestion;
     const terrainCount = suggestion?.operations.filter((operation) => operation.type === 'terrain.brush').length ?? 0;
-    const waterCount = suggestion?.operations.filter((operation) => operation.type === 'water.add').length ?? 0;
-    const objectCount = suggestion?.operations.filter((operation) => operation.type === 'object.add').length ?? 0;
+    const waterCount = suggestion?.operations.filter((operation) => operation.type.startsWith('water.')).length ?? 0;
+    const objectCount = suggestion?.operations.filter((operation) => operation.type.startsWith('object.')).length ?? 0;
     const hasSpawn = suggestion?.operations.some((operation) => operation.type === 'reference.set') ?? false;
     const generationBlocked = this.state.busy || this.state.dirty || !this.mapAiPrompt.trim();
+    const refinementBlocked = generationBlocked || !hasRefinableMapContent(map);
     const limits = planLimits(getMapBounds(map));
     host.innerHTML = `
       <section class="editor-section map-ai">
@@ -702,11 +719,11 @@ class MapEditor {
               </option>
             `).join('')}
           </select>
-          <button id="generate-map-ai" ${generationBlocked ? 'disabled' : ''}>
-            ${this.mapAiAbortController ? 'Agent 规划中…' : suggestion ? '重新生成' : '生成预览'}
-          </button>
+          <button id="generate-map-ai" ${generationBlocked ? 'disabled' : ''}>生成新规划</button>
+          <button id="refine-map-ai" class="secondary" ${refinementBlocked ? 'disabled' : ''}>调整当前地图</button>
           ${this.mapAiAbortController ? '<button id="cancel-map-ai" class="secondary">取消</button>' : ''}
         </div>
+        ${renderAgentProgress(this.mapAgentProgress)}
         <p class="empty">${this.state.dirty ? '请先保存当前手工修改，再生成 AI 地图预览。' : `Agent 会检查资产库、生成最多 ${limits.assetRequestCount} 类缺失资产，再规划地形、水域、摆放和出生点。`}</p>
       </section>
       ${suggestion && this.mapAiPreviewMap ? `
@@ -715,8 +732,8 @@ class MapEditor {
           <h2>${escapeHtml(suggestion.summary)}</h2>
           <div class="map-ai-stats">
             <span>地形 <b>${terrainCount}</b></span>
-            <span>水域 <b>${waterCount}</b></span>
-            <span>物体 <b>${objectCount}</b></span>
+            <span>水域修改 <b>${waterCount}</b></span>
+            <span>物体修改 <b>${objectCount}</b></span>
             <span>出生点 <b>${hasSpawn ? '有' : '无'}</b></span>
           </div>
           ${suggestion.renderPromptSuggestions.length > 0 ? `
@@ -740,13 +757,17 @@ class MapEditor {
     `;
     host.querySelector<HTMLTextAreaElement>('#map-ai-prompt')?.addEventListener('input', (event) => {
       this.mapAiPrompt = (event.target as HTMLTextAreaElement).value;
-      const button = host.querySelector<HTMLButtonElement>('#generate-map-ai');
-      if (button) button.disabled = this.state.busy || this.state.dirty || !this.mapAiPrompt.trim();
+      const blocked = this.state.busy || this.state.dirty || !this.mapAiPrompt.trim();
+      const generateButton = host.querySelector<HTMLButtonElement>('#generate-map-ai');
+      const refineButton = host.querySelector<HTMLButtonElement>('#refine-map-ai');
+      if (generateButton) generateButton.disabled = blocked;
+      if (refineButton) refineButton.disabled = blocked || !hasRefinableMapContent(map);
     });
     host.querySelector<HTMLSelectElement>('#map-ai-provider')?.addEventListener('change', (event) => {
       this.mapAiProvider = (event.target as HTMLSelectElement).value as ChatProvider;
     });
-    host.querySelector('#generate-map-ai')?.addEventListener('click', () => void this.generateMapAiPreview());
+    host.querySelector('#generate-map-ai')?.addEventListener('click', () => void this.generateMapAiPreview('generate'));
+    host.querySelector('#refine-map-ai')?.addEventListener('click', () => void this.generateMapAiPreview('refine'));
     host.querySelector('#cancel-map-ai')?.addEventListener('click', () => {
       this.mapAiAbortController?.abort();
       this.state.message = '正在取消地图 Agent...';
@@ -756,7 +777,7 @@ class MapEditor {
     host.querySelector('#apply-map-ai')?.addEventListener('click', () => void this.applyMapAiPreview());
   }
 
-  private async generateMapAiPreview(): Promise<void> {
+  private async generateMapAiPreview(mode: 'generate' | 'refine'): Promise<void> {
     const map = this.state.map;
     const prompt = this.mapAiPrompt.trim();
     if (!map || !prompt || this.state.busy) return;
@@ -767,20 +788,37 @@ class MapEditor {
     }
     const controller = new AbortController();
     this.mapAiAbortController = controller;
-    this.setBusy(true, '地图 Agent 正在检查资产并规划场景...');
+    this.mapAgentProgress = [];
+    const previousSuggestion = mode === 'refine' ? this.mapAiSuggestion : null;
+    this.setBusy(true, mode === 'refine' ? '地图 Agent 正在调整当前地图...' : '地图 Agent 正在检查资产并规划场景...');
     this.renderMapAiPanel();
     try {
-      const { suggestion } = await editorFetch<{ suggestion: MapAiSuggestion }>(
-        `/api/editor/maps/${encodeURIComponent(map.id)}/generate`,
+      const { suggestion } = await editorAgentFetch<{ suggestion: MapAiSuggestion }>(
+        `/api/editor/maps/${encodeURIComponent(map.id)}/${mode}`,
         {
           method: 'POST',
-          body: JSON.stringify({ prompt, provider: this.mapAiProvider }),
+          body: JSON.stringify({
+            prompt,
+            provider: this.mapAiProvider,
+            ...(previousSuggestion ? { baseOperations: previousSuggestion.operations } : {})
+          }),
           signal: controller.signal
+        },
+        (event) => {
+          updateAgentProgress(this.mapAgentProgress, event);
+          this.renderMapAiPanel();
         }
       );
       if (suggestion.generatedAssets.length > 0) await this.reloadLists();
-      this.mapAiSuggestion = suggestion;
-      this.mapAiPreviewMap = applyMapOperations(this.mapWithEditorAssets(map), suggestion.operations);
+      const combinedSuggestion = previousSuggestion
+        ? {
+            ...suggestion,
+            operations: [...previousSuggestion.operations, ...suggestion.operations],
+            generatedAssets: [...previousSuggestion.generatedAssets, ...suggestion.generatedAssets]
+          }
+        : suggestion;
+      this.mapAiSuggestion = combinedSuggestion;
+      this.mapAiPreviewMap = applyMapOperations(this.mapWithEditorAssets(map), combinedSuggestion.operations);
       this.state.selectedObjectId = null;
       this.state.message = 'AI 地图预览已生成，尚未应用';
       await this.refreshScene();
@@ -917,11 +955,6 @@ class MapEditor {
         </div>
         <div class="color-grid">
           ${colorField('地板', 'floor', map.box.colors.floor)}
-          ${colorField('天花板', 'ceiling', map.box.colors.ceiling)}
-          ${colorField('北墙', 'north', map.box.colors.north)}
-          ${colorField('南墙', 'south', map.box.colors.south)}
-          ${colorField('东墙', 'east', map.box.colors.east)}
-          ${colorField('西墙', 'west', map.box.colors.west)}
         </div>
       </section>
       ${this.state.tool === 'paint' ? `<section class="editor-section">
@@ -1153,7 +1186,7 @@ class MapEditor {
           <textarea data-dev-scheme-field="description" rows="2" maxlength="160">${escapeHtml(draft.description)}</textarea>
         </label>
         <div class="developer-capability-list">
-          ${RENDER_CAPABILITIES.map((capability) => renderDeveloperCapability(capability, draft)).join('')}
+          ${RENDER_CAPABILITIES.map((capability) => renderDeveloperCapability(capability, draft, this.hdriFiles)).join('')}
         </div>
         ${shader.mode === 'isolated-glsl' ? `
           <p class="developer-warning">完整 GLSL 只作为隔离扩展保存在方案中；当前基础编辑器不会执行它，也不会修改核心源码。</p>
@@ -1204,11 +1237,13 @@ class MapEditor {
               </option>
             `).join('')}
           </select>
-          <button id="generate-render-ai" ${this.state.busy || !this.renderAiPrompt.trim() ? 'disabled' : ''}>
-            ${this.renderAiAbortController ? 'Agent 编排中…' : this.renderAiPreview ? '重新生成' : '生成预览'}
+          <button id="generate-render-ai" ${this.state.busy || !this.renderAiPrompt.trim() ? 'disabled' : ''}>生成新风格</button>
+          <button id="refine-render-ai" class="secondary" ${this.state.busy || !this.renderAiPrompt.trim() || !draft ? 'disabled' : ''}>
+            ${this.renderAiPreview ? '继续调整预览' : '调整当前方案'}
           </button>
           ${this.renderAiAbortController ? '<button id="cancel-render-ai" class="secondary">取消</button>' : ''}
         </div>
+        ${renderAgentProgress(this.renderAgentProgress)}
         <p class="empty">AI 会选择基础方案，并编排环境、雾、光照和 runtime 表面/画面风格模块；不会修改地图或生成 Shader。</p>
       </section>
       ${this.renderAiPreview && draft ? `
@@ -1339,7 +1374,9 @@ class MapEditor {
         } else {
           module.params[parameter] = input.value;
         }
-        this.markRenderDraftChanged(rule.type !== 'code');
+        // Free-form GLSL must not re-apply on every keystroke, but the HDRI
+        // picker is a select — the sky should change the moment it is chosen.
+        this.markRenderDraftChanged(rule.type !== 'code' || rule.control === 'select');
       });
     });
     host.querySelectorAll<HTMLInputElement | HTMLSelectElement>('[data-dev-module-index][data-dev-scope]').forEach((input) => {
@@ -1400,8 +1437,11 @@ class MapEditor {
     });
     host.querySelector<HTMLTextAreaElement>('#render-ai-prompt')?.addEventListener('input', (event) => {
       this.renderAiPrompt = (event.target as HTMLTextAreaElement).value;
-      const button = host.querySelector<HTMLButtonElement>('#generate-render-ai');
-      if (button) button.disabled = this.state.busy || !this.renderAiPrompt.trim();
+      const blocked = this.state.busy || !this.renderAiPrompt.trim();
+      const generateButton = host.querySelector<HTMLButtonElement>('#generate-render-ai');
+      const refineButton = host.querySelector<HTMLButtonElement>('#refine-render-ai');
+      if (generateButton) generateButton.disabled = blocked;
+      if (refineButton) refineButton.disabled = blocked || !this.renderDraft;
     });
     host.querySelector<HTMLSelectElement>('#render-ai-provider')?.addEventListener('change', (event) => {
       this.renderAiProvider = (event.target as HTMLSelectElement).value as ChatProvider;
@@ -1415,7 +1455,8 @@ class MapEditor {
         this.renderRenderInspector();
       });
     });
-    host.querySelector('#generate-render-ai')?.addEventListener('click', () => void this.generateRenderAiPreview());
+    host.querySelector('#generate-render-ai')?.addEventListener('click', () => void this.generateRenderAiPreview('generate'));
+    host.querySelector('#refine-render-ai')?.addEventListener('click', () => void this.generateRenderAiPreview('refine'));
     host.querySelector('#cancel-render-ai')?.addEventListener('click', () => {
       this.renderAiAbortController?.abort();
       this.state.message = '正在取消渲染 Agent...';
@@ -1516,19 +1557,33 @@ class MapEditor {
     this.renderAiExplanation = '';
   }
 
-  private async generateRenderAiPreview(): Promise<void> {
+  private async generateRenderAiPreview(mode: 'generate' | 'refine'): Promise<void> {
     const prompt = this.renderAiPrompt.trim();
     if (!prompt || !this.state.map?.confirmedAt || this.state.busy) return;
+    const currentPlan = mode === 'refine' ? structuredClone(this.ensureRenderDraftPlan()) : null;
+    if (mode === 'refine' && !currentPlan) return;
     const controller = new AbortController();
     this.renderAiAbortController = controller;
-    this.setBusy(true, 'AI 正在生成渲染预览...');
+    this.renderAgentProgress = [];
+    this.setBusy(true, mode === 'refine' ? 'AI 正在调整当前渲染方案...' : 'AI 正在生成渲染预览...');
     this.renderRenderInspector();
     try {
-      const { suggestion } = await editorFetch<{ suggestion: RenderSuggestion }>('/api/editor/render-schemes/generate', {
-        method: 'POST',
-        body: JSON.stringify({ prompt, provider: this.renderAiProvider }),
-        signal: controller.signal
-      });
+      const { suggestion } = await editorAgentFetch<{ suggestion: RenderSuggestion }>(
+        `/api/editor/render-schemes/${mode}`,
+        {
+          method: 'POST',
+          body: JSON.stringify({
+            prompt,
+            provider: this.renderAiProvider,
+            ...(currentPlan ? { currentPlan } : {})
+          }),
+          signal: controller.signal
+        },
+        (event) => {
+          updateAgentProgress(this.renderAgentProgress, event);
+          this.renderRenderInspector();
+        }
+      );
       const base = this.state.renderSchemes.find((scheme) => scheme.id === suggestion.baseSchemeId);
       if (!base) throw new Error('AI 返回了不存在的渲染方案');
       this.renderDraft = {
@@ -2083,6 +2138,12 @@ class MapEditor {
     configureSunLight(this.sunLight, this.sunTarget, this.state.map);
   }
 
+  private async reloadHdriTextures(): Promise<void> {
+    const result = await editorFetch<{ hdriTextures?: HdriTexture[] }>('/api/editor/hdri')
+      .catch(() => null);
+    this.hdriFiles = (result?.hdriTextures ?? []).map((texture) => texture.file);
+  }
+
   private applyCurrentRenderScheme(): void {
     if (!this.scene || !this.renderer || !this.sunLight || !this.hemisphereLight) return;
     const scheme = !this.mapAiPreviewMap && this.state.map?.confirmedAt
@@ -2113,6 +2174,8 @@ class MapEditor {
         ssao: 'off',
         depthOfField: 'off'
       });
+      this.renderRuntimeAdapter?.applyScopedCapabilities([], [], []);
+      this.hdriSky?.clear();
       this.updateSceneLighting();
       return;
     }
@@ -2159,12 +2222,14 @@ class MapEditor {
         this.hemisphereLight,
         settings
       );
-      this.renderRuntimeAdapter?.applyScopedCapabilities(
-        compileRuntimeMaterialThemes(scheme.renderPlan),
-        compileRuntimeWaterStyles(scheme.renderPlan),
-        compileRuntimeEffectRecipes(scheme.renderPlan)
-      );
     }
+    this.renderRuntimeAdapter?.applyScopedCapabilities(
+      scheme.renderPlan ? compileRuntimeMaterialThemes(scheme.renderPlan) : [],
+      scheme.renderPlan ? compileRuntimeWaterStyles(scheme.renderPlan) : [],
+      scheme.renderPlan ? compileRuntimeEffectRecipes(scheme.renderPlan) : []
+    );
+    if (scheme.renderPlan) void this.hdriSky?.apply(compileRuntimeHdriSky(scheme.renderPlan));
+    else this.hdriSky?.clear();
   }
 
   private animate(): void {
@@ -2546,6 +2611,108 @@ async function editorFetch<T>(path: string, init: RequestInit = {}): Promise<T> 
   return json as T;
 }
 
+async function editorAgentFetch<T>(
+  path: string,
+  init: RequestInit,
+  onProgress: (event: AgentProgressEvent) => void
+): Promise<T> {
+  const response = await fetch(`${serverHttpBase(location, import.meta.env.DEV)}${path}`, {
+    ...init,
+    headers: {
+      'Content-Type': 'application/json',
+      Accept: 'text/event-stream',
+      ...(init.headers ?? {})
+    }
+  });
+  if (!response.ok) {
+    const json = await response.json().catch(() => ({})) as { error?: string };
+    throw new Error(json.error ?? `HTTP ${response.status}`);
+  }
+  if (!response.body || !String(response.headers.get('content-type')).includes('text/event-stream')) {
+    return await response.json() as T;
+  }
+
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = '';
+  let result: T | null = null;
+  const consume = (block: string) => {
+    if (!block.trim()) return;
+    let event = 'message';
+    const data: string[] = [];
+    for (const line of block.split(/\r?\n/)) {
+      if (line.startsWith('event:')) event = line.slice(6).trim();
+      if (line.startsWith('data:')) data.push(line.slice(5).trim());
+    }
+    if (data.length === 0) return;
+    const payload = JSON.parse(data.join('\n')) as T & { error?: string };
+    if (event === 'progress') onProgress(payload as unknown as AgentProgressEvent);
+    else if (event === 'result') result = payload;
+    else if (event === 'error') throw new Error(payload.error ?? 'agent_failed');
+  };
+
+  while (true) {
+    const { done, value } = await reader.read();
+    buffer += decoder.decode(value, { stream: !done });
+    const blocks = buffer.split(/\r?\n\r?\n/);
+    buffer = blocks.pop() ?? '';
+    for (const block of blocks) consume(block);
+    if (done) break;
+  }
+  consume(buffer);
+  if (!result) throw new Error('agent_result_missing');
+  return result;
+}
+
+function updateAgentProgress(list: AgentProgressEvent[], event: AgentProgressEvent): void {
+  const previous = list.at(-1);
+  if (
+    previous
+    && previous.phase === event.phase
+    && event.current === undefined
+    && event.total === undefined
+  ) {
+    previous.detail = event.detail ?? previous.detail;
+    return;
+  }
+  list.push({ ...event });
+  if (list.length > 8) list.splice(0, list.length - 8);
+}
+
+function renderAgentProgress(events: readonly AgentProgressEvent[]): string {
+  if (events.length === 0) return '';
+  return `
+    <ol class="agent-progress" aria-live="polite">
+      ${events.map((event, index) => `
+        <li class="${index === events.length - 1 && event.phase !== 'complete' ? 'active' : 'done'}">
+          <span></span>
+          <div>
+            <strong>${escapeHtml(event.label)}</strong>
+            ${event.detail ? `<small>${escapeHtml(agentStageLabel(event.detail))}</small>` : ''}
+          </div>
+        </li>
+      `).join('')}
+    </ol>
+  `;
+}
+
+function agentStageLabel(stage: string): string {
+  if (stage.startsWith('provider:')) return `调用 ${stage.slice('provider:'.length)} 模型`;
+  const labels: Record<string, string> = {
+    thinking: '分析资产结构',
+    code: '生成模型结构',
+    validate: '校验模型',
+    result: '资产完成'
+  };
+  return labels[stage] ?? stage;
+}
+
+function hasRefinableMapContent(map: EditableMap): boolean {
+  return map.objects.length > 0
+    || map.waterBodies.length > 0
+    || map.terrain.heights.some((height) => Math.abs(height) > 0.001);
+}
+
 function renderObjectTree(objects: MapObject[], parentId: string | null, selectedId: string | null, depth = 0): string {
   return objects
     .filter((object) => object.parentId === parentId)
@@ -2706,7 +2873,11 @@ function clampNumber(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value));
 }
 
-function renderDeveloperCapability(capability: RenderCapability, draft: RenderScheme): string {
+function renderDeveloperCapability(
+  capability: RenderCapability,
+  draft: RenderScheme,
+  hdriFiles: string[]
+): string {
   const modules = (draft.renderPlan?.modules ?? [])
     .map((module, index) => ({ module, index }))
     .filter((entry) => entry.module.id === capability.id);
@@ -2737,7 +2908,7 @@ function renderDeveloperCapability(capability: RenderCapability, draft: RenderSc
         </div>
         <h3>预设值${capability.repeatable ? '与作用域' : ''}</h3>
         ${modules.length
-          ? modules.map(({ module, index }) => renderDeveloperModuleInstance(capability, module, index, policy)).join('')
+          ? modules.map(({ module, index }) => renderDeveloperModuleInstance(capability, module, index, policy, hdriFiles)).join('')
           : '<p class="empty">此方案尚未启用该能力。</p>'}
       </div>
     </details>
@@ -2807,7 +2978,8 @@ function renderDeveloperModuleInstance(
   capability: RenderCapability,
   module: RenderModuleSelection,
   index: number,
-  policy: RenderScheme['accessPolicy']
+  policy: RenderScheme['accessPolicy'],
+  hdriFiles: string[]
 ): string {
   return `
     <div class="developer-module-instance">
@@ -2832,7 +3004,7 @@ function renderDeveloperModuleInstance(
           const access = policy.parameters.find((entry) => (
             entry.moduleId === capability.id && entry.parameter === parameter
           ))?.developer;
-          return renderDeveloperPresetInput(parameter, rule, module.params[parameter], index, access);
+          return renderDeveloperPresetInput(parameter, rule, module.params[parameter], index, access, hdriFiles);
         }).join('')}
       </div>
     </div>
@@ -2844,10 +3016,15 @@ function renderDeveloperPresetInput(
   rule: RenderCapability['params'][string],
   current: string | number | undefined,
   index: number,
-  access?: RenderParameterAccess['developer']
+  access?: RenderParameterAccess['developer'],
+  hdriFiles: string[] = []
 ): string {
   const value = current ?? rule.default ?? '';
   const disabled = access?.enabled === false ? 'disabled' : '';
+  if (rule.type === 'code' && rule.control === 'select') {
+    const options = ['', ...hdriFiles];
+    return `<label><span>${escapeHtml(parameter)}</span><select data-dev-module-index="${index}" data-dev-param="${parameter}" ${disabled}>${options.map((option) => `<option value="${escapeHtml(option)}" ${value === option ? 'selected' : ''}>${escapeHtml(option || '（不使用 HDRI）')}</option>`).join('')}</select></label>${hdriFiles.length ? '' : '<p class="empty">把 .hdr/.exr/.jpg 放进 data/map-editor/hdri 目录后重新打开此面板。</p>'}`;
+  }
   if (rule.type === 'enum') {
     const values = access?.values?.length ? rule.values.filter((option) => access.values?.includes(option)) : rule.values;
     return `<label><span>${escapeHtml(parameter)}</span><select data-dev-module-index="${index}" data-dev-param="${parameter}" ${disabled}>${values.map((option) => `<option value="${escapeHtml(option)}" ${value === option ? 'selected' : ''}>${escapeHtml(option)}</option>`).join('')}</select></label>`;

@@ -4,11 +4,13 @@ import {
   compileRuntimeOutline,
   compileRuntimePresentation,
   compileRuntimeStyle,
-  RENDER_CAPABILITIES
+  RENDER_CAPABILITIES,
+  type RenderPlan
 } from '../src/shared/renderPlan';
 import {
   generateRenderSuggestion,
-  normalizeRenderSuggestion
+  normalizeRenderSuggestion,
+  refineRenderSuggestion
 } from '../src/server/renderAi';
 
 describe('render AI adapter', () => {
@@ -104,6 +106,7 @@ describe('render AI adapter', () => {
   it('exposes only capabilities that the current renderer can apply', () => {
     expect(RENDER_CAPABILITIES.map((capability) => capability.id)).toEqual([
       'environment.palette',
+      'environment.hdri',
       'atmosphere.fog',
       'lighting.hemisphere',
       'lighting.sun',
@@ -311,5 +314,43 @@ describe('render AI adapter', () => {
     expect(suggestion.plan.modules[0]?.id).toBe('presentation.exposure');
     const repairRequest = JSON.parse(String(fetchImpl.mock.calls[1][1]?.body));
     expect(repairRequest.messages[3].content).toContain('unknown_render_module');
+  });
+
+  it('refines the current render plan without switching its base scheme', async () => {
+    const currentPlan: RenderPlan = {
+      version: 2,
+      baseSchemeId: 'render-morning-mist',
+      modules: [
+        { id: 'atmosphere.fog', params: { density: 0.012 } },
+        { id: 'runtime.presentation-style', params: { mode: 'sketch' } }
+      ]
+    };
+    const progress: string[] = [];
+    const fetchImpl = vi.fn().mockResolvedValue(new Response(JSON.stringify({
+      ok: true,
+      content: JSON.stringify({
+        plan: {
+          ...currentPlan,
+          modules: [
+            { id: 'atmosphere.fog', params: { density: 0.024 } },
+            { id: 'runtime.presentation-style', params: { mode: 'sketch' } }
+          ]
+        },
+        explanation: '只增强晨雾'
+      })
+    }), { status: 200, headers: { 'Content-Type': 'application/json' } }));
+
+    const suggestion = await refineRenderSuggestion(
+      '雾再浓一点，其他不变',
+      currentPlan,
+      BUILTIN_RENDER_SCHEMES,
+      { fetchImpl, onProgress: (event) => progress.push(event.phase) }
+    );
+
+    expect(suggestion.baseSchemeId).toBe(currentPlan.baseSchemeId);
+    expect(suggestion.settings.fogDensity).toBe(0.024);
+    expect(progress).toEqual(['planning', 'validating', 'complete']);
+    const request = JSON.parse(String(fetchImpl.mock.calls[0][1]?.body));
+    expect(request.messages[0].content).toContain('当前 RenderPlan');
   });
 });

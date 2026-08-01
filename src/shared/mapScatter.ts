@@ -5,6 +5,7 @@ import {
   type EditableMap,
   type MapAsset
 } from './map';
+import { isNearWater } from './mapWater';
 
 export interface MapScatterPlan {
   assetIds: string[];
@@ -117,21 +118,6 @@ export function terrainSlopeDegrees(map: EditableMap, x: number, z: number): num
   return Math.atan(Math.hypot(riseX, riseZ)) * 180 / Math.PI;
 }
 
-export function isNearWater(map: EditableMap, x: number, z: number, padding: number): boolean {
-  return map.waterBodies.some((water) => {
-    if (water.type === 'river') {
-      const safeDistance = Math.max(0, water.width / 2 + padding);
-      return water.points.slice(1).some((point, index) =>
-        distanceToSegment(x, z, water.points[index], point) <= safeDistance
-      );
-    }
-    if (pointInPolygon(x, z, water.points)) return true;
-    return water.points.some((point, index) =>
-      distanceToSegment(x, z, point, water.points[(index + 1) % water.points.length]) <= padding
-    );
-  });
-}
-
 function existingOccupiedCircles(map: EditableMap): OccupiedCircle[] {
   return getMapObjectAabbs(map).map((box) => ({
     x: (box.min[0] + box.max[0]) / 2,
@@ -149,33 +135,6 @@ function assetFootprintRadius(asset: MapAsset): number {
     Math.abs(box.min[2]),
     Math.abs(box.max[2])
   )));
-}
-
-function pointInPolygon(x: number, z: number, points: Array<[number, number]>): boolean {
-  let inside = false;
-  for (let index = 0, previous = points.length - 1; index < points.length; previous = index, index += 1) {
-    const [xi, zi] = points[index];
-    const [xj, zj] = points[previous];
-    if ((zi > z) !== (zj > z)
-      && x < ((xj - xi) * (z - zi)) / (zj - zi) + xi) {
-      inside = !inside;
-    }
-  }
-  return inside;
-}
-
-function distanceToSegment(
-  x: number,
-  z: number,
-  start: [number, number],
-  end: [number, number]
-): number {
-  const dx = end[0] - start[0];
-  const dz = end[1] - start[1];
-  const lengthSquared = dx * dx + dz * dz;
-  if (lengthSquared <= 0.000001) return Math.hypot(x - start[0], z - start[1]);
-  const t = clamp(((x - start[0]) * dx + (z - start[1]) * dz) / lengthSquared, 0, 1);
-  return Math.hypot(x - (start[0] + t * dx), z - (start[1] + t * dz));
 }
 
 function mulberry32(seed: number): () => number {

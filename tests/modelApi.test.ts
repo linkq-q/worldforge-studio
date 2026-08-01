@@ -6,6 +6,7 @@ import {
 } from '../src/server/modelApi';
 
 describe('model API adapter', () => {
+  const materialTags = { version: 'material-tags-test', tags: {} };
   it('parses SSE model result and errors', () => {
     const parsed = parseSseModel([
       'event: blockout',
@@ -28,7 +29,8 @@ describe('model API adapter', () => {
     const model = await generateModel('crate', {
       apiBase: 'https://example.test',
       providers: ['fireworks', 'glm'],
-      fetchImpl
+      fetchImpl,
+      materialTags
     });
 
     expect(model).toEqual({ name: 'crate' });
@@ -46,7 +48,13 @@ describe('model API adapter', () => {
       ''
     ].join('\n'), { status: 200 }));
 
-    await generateModel('crate', { apiBase: 'https://example.test', providers: ['gpt'], fetchImpl, onStage });
+    await generateModel('crate', {
+      apiBase: 'https://example.test',
+      providers: ['gpt'],
+      fetchImpl,
+      onStage,
+      materialTags
+    });
 
     expect(onStage).toHaveBeenCalledWith({ status: 'stage', stage: 'blockout' });
     expect(onStage).toHaveBeenCalledWith({ status: 'stage', stage: 'thinking_start' });
@@ -73,8 +81,42 @@ describe('model API adapter', () => {
     await expect(refineModel({ nodes: [] }, 'make it blue', {
       apiBase: 'https://example.test',
       providers: ['fireworks'],
-      fetchImpl
+      fetchImpl,
+      materialTags
     })).rejects.toThrow('no_metadata');
+  });
+
+  it('sends the Voxel Studio material tag vocabulary with model generation', async () => {
+    const fetchImpl = vi.fn().mockResolvedValue(new Response(
+      'data: {"stage":"result","done":true,"modelJson":{"name":"tagged"}}\n\n',
+      { status: 200 }
+    ));
+
+    await generateModel('tagged tree', {
+      apiBase: 'https://example.test',
+      providers: ['gpt'],
+      fetchImpl,
+      materialTags
+    });
+
+    const init = fetchImpl.mock.calls[0]?.[1] as RequestInit;
+    expect(JSON.parse(String(init.body))).toMatchObject({ materialTags });
+  });
+
+  it('uses the bundled runtime vocabulary by default', async () => {
+    const fetchImpl = vi.fn().mockResolvedValue(new Response(
+      'data: {"stage":"result","done":true,"modelJson":{"name":"tagged"}}\n\n',
+      { status: 200 }
+    ));
+
+    await generateModel('tagged stone', {
+      apiBase: 'https://example.test',
+      providers: ['gpt'],
+      fetchImpl
+    });
+
+    const init = fetchImpl.mock.calls[0]?.[1] as RequestInit;
+    expect(JSON.parse(String(init.body)).materialTags.version).toBe('material-tags-v1');
   });
 
 });

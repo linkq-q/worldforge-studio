@@ -18,8 +18,10 @@ import {
   createSketchHatchPass,
   createToneMapPass
 } from '@voxel-studio/render-runtime/postprocess';
-import { WaterSurface } from '@voxel-studio/render-runtime/environment';
+import { WaterSurface, WaterfallSurface } from '@voxel-studio/render-runtime/environment';
 import { createEffectRuntime } from '@voxel-studio/render-runtime/effects';
+import { applyDefaultWaterState, DEFAULT_WATER_STATE } from './defaultWaterState';
+import { WorldForgeMaterialTagRuntime } from './materialTagRuntimeAdapter';
 import type {
   RuntimeColorGrade,
   RuntimeEffectRecipe,
@@ -42,7 +44,7 @@ interface MaterialBaseline {
 interface WaterBinding {
   mesh: THREE.Mesh;
   originalMaterial: THREE.Material | THREE.Material[];
-  surface: WaterSurface;
+  surface: WaterSurface | WaterfallSurface;
 }
 
 export class RenderRuntimeAdapter {
@@ -62,6 +64,7 @@ export class RenderRuntimeAdapter {
   private readonly ssaoPass: SharedSSAOPass;
   private readonly bloomPass = new GlobalBloomPass(new THREE.Vector2(1, 1), 0.4, 0.35, 0.82);
   private readonly effectRuntime = createEffectRuntime().runtime;
+  private readonly materialTagRuntime: WorldForgeMaterialTagRuntime;
   private readonly materialBaselines = new Map<THREE.Material, MaterialBaseline>();
   private readonly waterBindings: WaterBinding[] = [];
   private contentRoot: THREE.Object3D | null = null;
@@ -76,6 +79,7 @@ export class RenderRuntimeAdapter {
     private readonly scene: THREE.Scene,
     private readonly camera: THREE.PerspectiveCamera
   ) {
+    this.materialTagRuntime = new WorldForgeMaterialTagRuntime(scene, this.effectRuntime);
     this.curvaturePass = createCurvatureEdgePass(renderer);
     this.inkPass = createInkEdgePass(renderer);
     this.ssaoPass = new SharedSSAOPass(scene, camera, 1, 1, 16);
@@ -190,13 +194,13 @@ export class RenderRuntimeAdapter {
   ): void {
     this.resetScopedCapabilities();
     if (!this.modelsRoot) return;
+    this.materialTagRuntime.apply(this.modelsRoot);
     for (const theme of materialThemes) this.applyMaterialTheme(theme);
     this.applyWaterStyles(waterStyles);
     this.applyEffectRecipes(effects);
   }
 
   resetScopedCapabilities(): void {
-    if (this.modelsRoot) this.effectRuntime.removeFromObject3D(this.modelsRoot);
     for (const binding of this.waterBindings.splice(0)) {
       binding.mesh.material = binding.originalMaterial;
       binding.surface.dispose();
@@ -209,6 +213,10 @@ export class RenderRuntimeAdapter {
       material.needsUpdate = true;
     }
     this.materialBaselines.clear();
+    if (this.modelsRoot) {
+      this.materialTagRuntime.clear(this.modelsRoot);
+      this.effectRuntime.removeFromObject3D(this.modelsRoot);
+    }
   }
 
   tick(deltaTime: number, elapsedSeconds: number): void {
@@ -370,45 +378,66 @@ export class RenderRuntimeAdapter {
 
   private applyWaterStyles(styles: RuntimeWaterStyle[]): void {
     if (!this.modelsRoot) return;
-    const bound = new Set<THREE.Mesh>();
-    for (const style of styles) {
-      const meshes = scopedMeshes(this.modelsRoot, style.scope).filter((mesh) => !bound.has(mesh));
-      for (const mesh of meshes) {
-        const defaults = waterRecipe(style.recipe);
-        const waterColor = new THREE.Color(style.color ?? defaults.color);
-        const shallowColor = style.color
-          ? waterColor.clone().lerp(new THREE.Color('#ffffff'), 0.22)
-          : new THREE.Color(defaults.shallowColor);
-        const depthColor = style.color
-          ? waterColor.clone().multiplyScalar(0.5)
-          : new THREE.Color(defaults.depthColor);
-        const root = new THREE.Group();
-        const surface = new WaterSurface(this.scene, this.renderer, root, {
-          size: 1,
-          segments: 1,
-          waterMode: defaults.mode,
-          waterColor,
-          shallowColor,
-          depthColor,
-          waveHeight: (style.waveStrength ?? defaults.waveStrength) * 0.12,
-          waveSpeed: defaults.waveSpeed,
-          foamNoiseStrength: style.foamStrength ?? defaults.foamStrength
-        });
-        root.remove(surface.mesh);
-        surface.mesh.geometry.dispose();
-        surface.setWaterMode(defaults.mode);
-        const uniforms = surface.material.uniforms;
-        if (uniforms.uOpacity) uniforms.uOpacity.value = style.opacity ?? defaults.opacity;
-        if (uniforms.uFoamStrength) uniforms.uFoamStrength.value = style.foamStrength ?? defaults.foamStrength;
-        if (uniforms.uWaterReflectionStrength) {
-          uniforms.uWaterReflectionStrength.value = style.reflectionStrength ?? defaults.reflectionStrength;
+    const meshes = scopedMeshes(this.modelsRoot, { target: 'water', tag: 'water' });
+    for (const mesh of meshes) {
+      const style = styles.find((candidate) => matchesScope(mesh, candidate.scope));
+      const recipe = waterRecipe(style?.recipe ?? defaultWaterStyle(mesh).recipe);
+      const waterColor = new THREE.Color(style?.color ?? DEFAULT_WATER_STATE.uWaterColor);
+      const shallowColor = style?.color
+        ? waterColor.clone().lerp(new THREE.Color('#ffffff'), 0.22)
+        : new THREE.Color(DEFAULT_WATER_STATE.uShallowColor);
+      const depthColor = style?.color
+        ? waterColor.clone().multiplyScalar(0.5)
+        : new THREE.Color(DEFAULT_WATER_STATE.uDepthColor);
+      const root = new THREE.Group();
+      const surface = hasMaterialTag(mesh, 'water:fall') || hasMaterialTag(mesh, 'fall')
+        ? new WaterfallSurface(this.scene, this.renderer, root, {
+            width: 1,
+            height: 1,
+            segmentsX: 1,
+            segmentsY: 1,
+            topColor: shallowColor,
+            bottomColor: depthColor,
+            foamColor: new THREE.Color(DEFAULT_WATER_STATE.uFoamColor),
+            opacity: style?.opacity ?? DEFAULT_WATER_STATE.uOpacity,
+            flowSpeed: style ? recipe.waveSpeed : DEFAULT_WATER_STATE.uWaveSpeed,
+            flowNoiseStrength: style?.waveStrength ?? DEFAULT_WATER_STATE.uWaveHeight,
+            bottomFoamIntensity: style?.foamStrength ?? DEFAULT_WATER_STATE.uFoamStrength,
+            splashEnabled: false
+          })
+        : new WaterSurface(this.scene, this.renderer, root, {
+            size: 1,
+            segments: 1
+          });
+      root.remove(surface.mesh);
+      surface.mesh.geometry.dispose();
+      if (surface instanceof WaterSurface) {
+        applyDefaultWaterState(surface);
+        if (style) {
+          surface.importState({
+            waterMode: recipe.mode,
+            uWaterColor: `#${waterColor.getHexString()}`,
+            uShallowColor: `#${shallowColor.getHexString()}`,
+            uDepthColor: `#${depthColor.getHexString()}`,
+            uWaveHeight: (style.waveStrength ?? recipe.waveStrength) * 0.12,
+            uWaveSpeed: recipe.waveSpeed,
+            uFoamStrength: style.foamStrength ?? recipe.foamStrength,
+            uOpacity: style.opacity ?? recipe.opacity
+          });
+          surface.setWaterReflectionParams({
+            strength: style.reflectionStrength ?? recipe.reflectionStrength
+          });
         }
-        const originalMaterial = mesh.material;
-        mesh.material = surface.material;
-        mesh.renderOrder = Math.max(mesh.renderOrder, 8);
-        this.waterBindings.push({ mesh, originalMaterial, surface });
-        bound.add(mesh);
       }
+      const uniforms = surface.material.uniforms;
+      if (style && uniforms.uOpacity) uniforms.uOpacity.value = style.opacity ?? recipe.opacity;
+      if (style && uniforms.uFoamStrength) uniforms.uFoamStrength.value = style.foamStrength ?? recipe.foamStrength;
+      const originalMaterial = mesh.material;
+      mesh.material = surface.material;
+      mesh.renderOrder = Math.max(mesh.renderOrder, 8);
+      mesh.userData.skipShaderApply = true;
+      mesh.userData.isWater = true;
+      this.waterBindings.push({ mesh, originalMaterial, surface });
     }
   }
 
@@ -783,6 +812,16 @@ function waterRecipe(recipe: RuntimeWaterStyle['recipe']): {
     stormy: { mode: 'hybrid', color: '#344d5d', shallowColor: '#567784', depthColor: '#152735', opacity: 0.96, waveStrength: 1.05, waveSpeed: 1.15, foamStrength: 1.1, reflectionStrength: 0.25 }
   };
   return recipes[recipe];
+}
+
+function defaultWaterStyle(mesh: THREE.Mesh): RuntimeWaterStyle {
+  const flowing = hasMaterialTag(mesh, 'river')
+    || hasMaterialTag(mesh, 'water:fall')
+    || hasMaterialTag(mesh, 'fall');
+  return {
+    scope: { target: 'water', tag: 'water' },
+    recipe: flowing ? 'clear-river' : 'calm-lake'
+  };
 }
 
 function effectLayers(recipe: RuntimeEffectRecipe): Array<{ type: string; params: Record<string, unknown> }> {

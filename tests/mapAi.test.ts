@@ -1,5 +1,12 @@
 import { describe, expect, it, vi } from 'vitest';
-import { createEmptyMap, getMapBounds, MAP_SIZE_PRESETS, type MapAsset } from '../src/shared/map';
+import {
+  createEmptyMap,
+  createMapObject,
+  getMapBounds,
+  MAP_SIZE_PRESETS,
+  type MapAsset
+} from '../src/shared/map';
+import { applyMapOperations } from '../src/shared/mapOperations';
 import {
   generateMapSuggestion,
   normalizeMapSuggestion,
@@ -29,6 +36,34 @@ describe('map AI adapter', () => {
     expect(largeLimits.terrainBrushCount).toBeGreaterThan(smallLimits.terrainBrushCount);
     expect(largeLimits.objectCount).toBeGreaterThan(smallLimits.objectCount);
     expect(largeLimits.assetRequestCount).toBe(8);
+  });
+
+  it('refines existing objects and water with deterministic delta operations', () => {
+    const map = createEmptyMap('refine', 'map-refine');
+    map.objects = Array.from({ length: 5 }, (_, index) => ({
+      ...createMapObject(`Tree ${index + 1}`, 'asset-tree'),
+      id: `tree-${index + 1}`
+    }));
+    map.waterBodies = [{
+      id: 'lake-1',
+      name: 'Lake',
+      type: 'lake',
+      level: 0.2,
+      depth: 1.5,
+      width: 2,
+      points: [[-3, -3], [3, -3], [0, 3]]
+    }];
+
+    const suggestion = normalizeMapSuggestion(JSON.stringify({
+      summary: '树少一点，湖面更高',
+      objectRemovals: [{ assetId: 'asset-tree', count: 2, seed: 7 }],
+      waterUpdates: [{ waterId: 'lake-1', level: 0.6 }]
+    }), map, assets, 'refine');
+    const refined = applyMapOperations(map, suggestion.operations);
+
+    expect(suggestion.operations.filter((operation) => operation.type === 'object.remove')).toHaveLength(2);
+    expect(refined.objects).toHaveLength(3);
+    expect(refined.waterBodies[0]?.level).toBe(0.6);
   });
 
   it('expands scatter intent into final object operations', () => {
@@ -181,6 +216,7 @@ describe('map AI adapter', () => {
   });
 
   it('generates missing assets and replans with their real ids', async () => {
+    const progress: string[] = [];
     const fetchImpl = vi.fn()
       .mockResolvedValueOnce(new Response(JSON.stringify({
         ok: true,
@@ -209,7 +245,13 @@ describe('map AI adapter', () => {
       '素描风格的宁静田园，有一些树木',
       createEmptyMap(),
       [],
-      { apiBase: 'https://example.test', provider: 'gpt', fetchImpl, createAsset }
+      {
+        apiBase: 'https://example.test',
+        provider: 'gpt',
+        fetchImpl,
+        createAsset,
+        onProgress: (event) => progress.push(event.phase)
+      }
     );
 
     expect(fetchImpl).toHaveBeenCalledTimes(2);
@@ -223,6 +265,14 @@ describe('map AI adapter', () => {
     ]));
     const secondRequest = JSON.parse(fetchImpl.mock.calls[1][1]?.body as string);
     expect(secondRequest.messages[0].content).toContain('asset-generated-tree');
+    expect(progress).toEqual(expect.arrayContaining([
+      'planning',
+      'checking-assets',
+      'generating-asset',
+      'replanning',
+      'validating',
+      'complete'
+    ]));
   });
 
   it('allows the large preset to request up to eight reusable assets', async () => {

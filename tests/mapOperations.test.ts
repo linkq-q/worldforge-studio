@@ -1,8 +1,8 @@
-import { mkdtemp, rm } from 'node:fs/promises';
+import { mkdtemp, rm, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
-import { createEmptyMap } from '../src/shared/map';
+import { createEmptyMap, sampleTerrainHeight } from '../src/shared/map';
 import { applyMapOperations } from '../src/shared/mapOperations';
 import { MapStore } from '../src/server/mapStore';
 
@@ -123,6 +123,35 @@ describe('map operation transactions', () => {
     expect(map.waterBodies).toHaveLength(0);
   });
 
+  it('carves a lake basin into the terrain so the water plane sits inside it', () => {
+    const map = createEmptyMap('lake basin', 'map-lake-basin');
+    const lake = {
+      id: 'lake-1',
+      name: '湖泊',
+      type: 'lake' as const,
+      level: 1,
+      depth: 2,
+      points: [[-6, -6], [6, -6], [6, 6], [-6, 6]] as Array<[number, number]>
+    };
+    const result = applyMapOperations(map, [{ type: 'water.add', water: lake }]);
+
+    // Basin floor reaches level - depth, and nothing inside the lake pokes
+    // above the water plane.
+    expect(sampleTerrainHeight(result, 0, 0)).toBeCloseTo(-1, 4);
+    for (const [x, z] of [[0, 0], [4, 4], [-5.5, 0], [0, 5.5]]) {
+      expect(sampleTerrainHeight(result, x, z)).toBeLessThan(lake.level);
+    }
+    // Terrain outside the polygon is untouched.
+    expect(sampleTerrainHeight(result, 12, 12)).toBeCloseTo(0, 4);
+
+    // Re-applying the same geometry must not dig progressively deeper.
+    const recarved = applyMapOperations(result, [
+      { type: 'water.update', waterId: 'lake-1', patch: { level: 1 } }
+    ]);
+    expect(sampleTerrainHeight(recarved, 0, 0)).toBeCloseTo(-1, 4);
+    expect(sampleTerrainHeight(recarved, 4, 4)).toBeCloseTo(sampleTerrainHeight(result, 4, 4), 4);
+  });
+
   it('rejects malformed structured water without mutating the map', () => {
     const map = createEmptyMap('unchanged', 'map-water-invalid');
 
@@ -173,6 +202,23 @@ describe('map operation transactions', () => {
 
     expect((await store.loadMap(original.id)).name).toBe('before');
     expect(await store.getUndoTransaction(original.id)).toBeNull();
+  });
+
+  it('lists only supported panoramas from the hdri directory and resolves them by name', async () => {
+    const store = await createStore();
+    const hdriDir = path.join(store.rootDir, 'hdri');
+    await writeFile(path.join(hdriDir, 'meadow.hdr'), 'not-a-real-hdr');
+    await writeFile(path.join(hdriDir, 'studio.jpg'), 'not-a-real-jpg');
+    await writeFile(path.join(hdriDir, 'notes.txt'), 'ignored');
+
+    const textures = await store.listHdriTextures();
+
+    expect(textures.map((texture) => texture.file)).toEqual(['meadow.hdr', 'studio.jpg']);
+    expect(textures[0]).toMatchObject({ id: 'meadow', extension: 'hdr' });
+    expect(await store.resolveHdriFile('meadow.hdr')).toBe(path.join(hdriDir, 'meadow.hdr'));
+    // Unlisted names must not become a path, or the route turns into a file read primitive.
+    expect(await store.resolveHdriFile('../../maps/secret.json')).toBeNull();
+    expect(await store.resolveHdriFile('notes.txt')).toBeNull();
   });
 
   it('clears the undo snapshot after a later direct save', async () => {

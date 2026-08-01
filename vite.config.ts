@@ -8,6 +8,10 @@ export default defineConfig({
   resolve: {
     alias: [
       {
+        find: '@voxel-studio/render-runtime/model/material-tags-v1.json',
+        replacement: `${voxelStudioRoot}/packages/voxel-render-runtime/model/material-tags-v1.json`
+      },
+      {
         find: '@voxel-studio/render-runtime/postprocess',
         replacement: `${voxelStudioRoot}/packages/voxel-render-runtime/src/postprocess.js`
       },

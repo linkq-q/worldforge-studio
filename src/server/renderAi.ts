@@ -1,5 +1,6 @@
 import {
   CHAT_PROVIDER_OPTIONS,
+  type AgentProgressEvent,
   type ChatProvider
 } from '../shared/protocol';
 import type { RenderScheme, RenderSuggestion } from '../shared/renderScheme';
@@ -10,7 +11,8 @@ import {
   compileRuntimeStyle,
   compileRenderPlan,
   normalizeRenderPlan,
-  renderCapabilitySummary
+  renderCapabilitySummary,
+  type RenderPlan
 } from '../shared/renderPlan';
 import { llmChat } from './modelApi';
 
@@ -19,6 +21,8 @@ export interface RenderAiOptions {
   provider?: ChatProvider;
   fetchImpl?: typeof fetch;
   signal?: AbortSignal;
+  currentPlan?: RenderPlan;
+  onProgress?: (event: AgentProgressEvent) => void;
 }
 
 export async function generateRenderSuggestion(
@@ -32,8 +36,12 @@ export async function generateRenderSuggestion(
   const providerOption = CHAT_PROVIDER_OPTIONS.find((item) => item.key === provider);
   if (!providerOption || providerOption.disabled) throw new Error('provider_unavailable');
 
+  options.onProgress?.({
+    phase: 'planning',
+    label: options.currentPlan ? '理解渲染调整要求' : '选择并编排渲染能力'
+  });
   const messages = [
-    { role: 'system', content: buildSystemPrompt(schemes) },
+    { role: 'system', content: buildSystemPrompt(schemes, options.currentPlan) },
     { role: 'user', content: cleanPrompt }
   ] as const;
   const requestOptions = {
@@ -46,21 +54,36 @@ export async function generateRenderSuggestion(
   };
   const content = await llmChat(messages, requestOptions);
   try {
+    options.onProgress?.({ phase: 'validating', label: '校验渲染白名单与参数范围' });
     const suggestion = normalizeRenderSuggestion(content, schemes);
+    assertRefineBase(options.currentPlan, suggestion);
     assertRequestedStyle(cleanPrompt, suggestion);
+    options.onProgress?.({ phase: 'complete', label: '渲染方案已完成' });
     return suggestion;
   } catch (error) {
     options.signal?.throwIfAborted();
     const reason = error instanceof Error ? error.message : 'invalid_render_plan';
+    options.onProgress?.({ phase: 'repairing', label: '修正不符合白名单的渲染计划', detail: reason });
     const repaired = await llmChat([
       ...messages,
       { role: 'assistant', content },
       { role: 'user', content: `上一份 RenderPlan 校验失败：${reason}。只使用能力清单中的模块修正后，重新返回完整 JSON。` }
     ], requestOptions);
     const suggestion = normalizeRenderSuggestion(repaired, schemes);
+    assertRefineBase(options.currentPlan, suggestion);
     assertRequestedStyle(cleanPrompt, suggestion);
+    options.onProgress?.({ phase: 'complete', label: '渲染方案已完成' });
     return suggestion;
   }
+}
+
+export function refineRenderSuggestion(
+  prompt: string,
+  currentPlan: RenderPlan,
+  schemes: readonly RenderScheme[],
+  options: Omit<RenderAiOptions, 'currentPlan'> = {}
+): Promise<RenderSuggestion> {
+  return generateRenderSuggestion(prompt, schemes, { ...options, currentPlan });
 }
 
 export function normalizeRenderSuggestion(
@@ -100,7 +123,7 @@ export function normalizeRenderSuggestion(
   };
 }
 
-function buildSystemPrompt(schemes: readonly RenderScheme[]): string {
+function buildSystemPrompt(schemes: readonly RenderScheme[], currentPlan?: RenderPlan): string {
   const library = schemes.map((scheme) => ({
     id: scheme.id,
     name: scheme.name,
@@ -110,6 +133,11 @@ function buildSystemPrompt(schemes: readonly RenderScheme[]): string {
   }));
   const publicCapabilities = renderCapabilitySummary().filter((_, index) => !RENDER_CAPABILITIES[index]?.developerOnly);
   return [
+    ...(currentPlan ? [
+      '这是一次 Refine。只修改用户明确要求变化的渲染语义，保留其余模块和参数。',
+      '必须保持 currentPlan.baseSchemeId 不变，并返回合并后的完整 RenderPlan，而不是只返回差异。',
+      `当前 RenderPlan：${JSON.stringify(currentPlan)}`
+    ] : []),
     '你是 WorldForge 的渲染风格规划器。用户只描述视觉风格，不得改变地形、物体或资产。',
     '从方案库选择一个基础方案，然后组合该方案 aiAccess 允许的能力与参数。不得输出未列出的模块、参数、Shader 或 GLSL。',
     '模块可以只覆盖需要改变的参数；其余参数继承基础方案。颜色必须是 #RRGGBB。',
@@ -121,6 +149,12 @@ function buildSystemPrompt(schemes: readonly RenderScheme[]): string {
     `能力清单：${JSON.stringify(publicCapabilities)}`,
     `方案库：${JSON.stringify(library)}`
   ].join('\n');
+}
+
+function assertRefineBase(currentPlan: RenderPlan | undefined, suggestion: RenderSuggestion): void {
+  if (currentPlan && suggestion.plan.baseSchemeId !== currentPlan.baseSchemeId) {
+    throw new Error('refine_base_scheme_changed');
+  }
 }
 
 function summarizeAiAccess(scheme: RenderScheme): Record<string, Record<string, unknown>> {

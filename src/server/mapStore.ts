@@ -1,4 +1,4 @@
-import { mkdir, readdir, readFile, rename, rm, writeFile } from 'node:fs/promises';
+import { mkdir, readdir, readFile, rename, rm, stat, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import {
   addPaintStroke,
@@ -32,6 +32,7 @@ import {
   normalizeRenderScheme,
   type RenderScheme
 } from '../shared/renderScheme';
+import { hdriExtensionOf, type HdriTexture } from '../shared/hdri';
 
 export interface MapStoreOptions {
   rootDir?: string;
@@ -62,6 +63,7 @@ export class MapStore {
   private readonly assetsDir: string;
   private readonly historyDir: string;
   private readonly renderSchemesDir: string;
+  private readonly hdriDir: string;
   // ponytail: one global queue is enough for local single-user editing; split per map only if concurrency becomes measurable.
   private transactionQueue: Promise<void> = Promise.resolve();
 
@@ -71,6 +73,7 @@ export class MapStore {
     this.assetsDir = path.join(this.rootDir, 'assets');
     this.historyDir = path.join(this.rootDir, 'history');
     this.renderSchemesDir = path.join(this.rootDir, 'render-schemes');
+    this.hdriDir = path.join(this.rootDir, 'hdri');
   }
 
   async ensureReady(): Promise<void> {
@@ -78,6 +81,7 @@ export class MapStore {
     await mkdir(this.assetsDir, { recursive: true });
     await mkdir(this.historyDir, { recursive: true });
     await mkdir(this.renderSchemesDir, { recursive: true });
+    await mkdir(this.hdriDir, { recursive: true });
   }
 
   async listMapSummaries(): Promise<MapSummary[]> {
@@ -368,6 +372,38 @@ export class MapStore {
   async deleteRenderScheme(id: string): Promise<void> {
     if (BUILTIN_RENDER_SCHEMES.some((scheme) => scheme.id === id)) throw new Error('builtin_scheme_readonly');
     await rm(this.renderSchemePath(id), { force: true });
+  }
+
+  /**
+   * Lists the panoramas dropped into `<data>/hdri`. There is no upload path —
+   * the directory is the library, so adding a sky is a file copy.
+   */
+  async listHdriTextures(): Promise<HdriTexture[]> {
+    await this.ensureReady();
+    const files = await readdir(this.hdriDir).catch(() => []);
+    const textures = await Promise.all(files.map(async (file) => {
+      const extension = hdriExtensionOf(file);
+      if (!extension) return null;
+      const info = await stat(path.join(this.hdriDir, file)).catch(() => null);
+      if (!info?.isFile()) return null;
+      return {
+        id: path.basename(file, path.extname(file)),
+        file,
+        extension,
+        bytes: info.size
+      } satisfies HdriTexture;
+    }));
+    return textures
+      .filter((texture): texture is HdriTexture => Boolean(texture))
+      .sort((a, b) => a.id.localeCompare(b.id));
+  }
+
+  /** Resolves a listed panorama to its absolute path, or null when unknown. */
+  async resolveHdriFile(file: string): Promise<string | null> {
+    const textures = await this.listHdriTextures();
+    return textures.some((texture) => texture.file === file)
+      ? path.join(this.hdriDir, file)
+      : null;
   }
 
   async hydrateMap(map: EditableMap): Promise<EditableMap> {

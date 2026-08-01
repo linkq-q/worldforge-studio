@@ -2,10 +2,10 @@ import { describe, expect, it } from 'vitest';
 import { createEmptyMap, type MapAsset } from '../src/shared/map';
 import {
   expandMapScatter,
-  isNearWater,
   terrainSlopeDegrees,
   type MapScatterPlan
 } from '../src/shared/mapScatter';
+import { isNearWater } from '../src/shared/mapWater';
 
 const treeAsset = {
   id: 'asset-tree',
@@ -33,6 +33,7 @@ describe('deterministic map scatter', () => {
       name: 'Lake',
       type: 'lake',
       level: 0.3,
+      depth: 1.5,
       width: 1,
       points: [[-5, -5], [5, -5], [5, 5], [-5, 5]]
     }];

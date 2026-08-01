@@ -45,6 +45,8 @@ export interface MapWaterBody {
   name: string;
   type: MapWaterBodyType;
   level: number;
+  /** Lake basin depth below `level`. Rivers keep their flat plane for now. */
+  depth: number;
   width: number;
   points: Array<[number, number]>;
 }
@@ -170,6 +172,13 @@ export const SUN_OBJECT_ID = '__sun__';
 export const DEFAULT_SUN_POSITION: Vec3 = [-18, 24, 14];
 export const DEFAULT_TERRAIN_RESOLUTION = 33;
 const MAX_TERRAIN_RESOLUTION = 129;
+/**
+ * Terrain height 0 is sea level, not the floor. Lake basins are carved below it,
+ * so the height field has to be allowed to go negative.
+ */
+export const TERRAIN_MIN_HEIGHT = -16;
+export const MAX_WATER_DEPTH = 12;
+export const DEFAULT_WATER_DEPTH = 1.5;
 
 const DEFAULT_BOX_COLORS: MapBoxColors = {
   floor: '#3b4741',
@@ -339,6 +348,7 @@ function normalizeWaterBodies(value: unknown, boxSize: Vec3): MapWaterBody[] {
       name: cleanName(input.name, type === 'lake' ? '湖泊' : '河流'),
       type,
       level: clamp(finiteNumber(input.level, 0.2), 0.02, maxLevel),
+      depth: clamp(finiteNumber(input.depth, DEFAULT_WATER_DEPTH), 0.1, MAX_WATER_DEPTH),
       width: clamp(finiteNumber(input.width, 1.2), 0.3, maxRiverWidth),
       points
     });
@@ -442,7 +452,7 @@ export function applyTerrainBrushInPlace(
   const [width, height, depth] = next.box.size;
   const brushRadius = clamp(Math.abs(radius), 0.15, Math.max(width, depth));
   const amount = clamp(Math.abs(strength), 0.01, height);
-  const target = clamp(finiteNumber(targetHeight, point[1]), 0, height - 0.1);
+  const target = clamp(finiteNumber(targetHeight, point[1]), TERRAIN_MIN_HEIGHT, height - 0.1);
   const minX = clamp(Math.floor(worldToTerrainIndex(point[0] - brushRadius, width, terrain.resolutionX)), 0, terrain.resolutionX - 1);
   const maxX = clamp(Math.ceil(worldToTerrainIndex(point[0] + brushRadius, width, terrain.resolutionX)), 0, terrain.resolutionX - 1);
   const minZ = clamp(Math.floor(worldToTerrainIndex(point[2] - brushRadius, depth, terrain.resolutionZ)), 0, terrain.resolutionZ - 1);
@@ -456,8 +466,8 @@ export function applyTerrainBrushInPlace(
       const weight = terrainBrushFalloff(dist / brushRadius);
       const index = terrainIndex(terrain, xIndex, zIndex);
       const current = terrain.heights[index] ?? 0;
-      if (mode === 'raise') terrain.heights[index] = clamp(current + amount * weight, 0, height - 0.1);
-      else if (mode === 'lower') terrain.heights[index] = clamp(current - amount * weight, 0, height - 0.1);
+      if (mode === 'raise') terrain.heights[index] = clamp(current + amount * weight, TERRAIN_MIN_HEIGHT, height - 0.1);
+      else if (mode === 'lower') terrain.heights[index] = clamp(current - amount * weight, TERRAIN_MIN_HEIGHT, height - 0.1);
       else terrain.heights[index] = lerp(current, target, clamp(weight * amount, 0, 1));
     }
   }
@@ -1138,7 +1148,7 @@ function normalizeTerrain(input: Partial<MapTerrain> | undefined, fallbackX: num
   const resolutionZ = clamp(Math.max(sourceZ, fallbackZ), 2, MAX_TERRAIN_RESOLUTION);
   const sourceLength = sourceX * sourceZ;
   const sourceHeights = Array.isArray(input?.heights)
-    ? input.heights.slice(0, sourceLength).map((value) => clamp(finiteNumber(value, 0), 0, 64))
+    ? input.heights.slice(0, sourceLength).map((value) => clamp(finiteNumber(value, 0), TERRAIN_MIN_HEIGHT, 64))
     : [];
   while (sourceHeights.length < sourceLength) sourceHeights.push(0);
   const heights = sourceX === resolutionX && sourceZ === resolutionZ

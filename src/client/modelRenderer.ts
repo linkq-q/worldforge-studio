@@ -96,6 +96,7 @@ export async function buildModelGroupWithNodes(modelJson: unknown): Promise<Buil
       ? new THREE.Mesh(safeBuildGeometry(runtime, node.mesh.type, node.mesh.params ?? {}), makeMaterial(node.mesh))
       : new THREE.Group();
     object.name = node.id;
+    object.userData.nodeId = node.id;
     if (Array.isArray(node.tags)) object.userData.materialTags = structuredClone(node.tags);
     const transform = node.transform ?? {};
     const pos = transform.pos ?? [0, 0, 0];
@@ -142,6 +143,7 @@ export async function buildModelGroupWithNodes(modelJson: unknown): Promise<Buil
   }
 
   centerGroup(group);
+  group.userData.materialTagSource = modelJson;
   enableObjectShadows(group);
   return { group, objects, runtime, motionLookups };
 }

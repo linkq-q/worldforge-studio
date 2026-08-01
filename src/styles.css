@@ -561,6 +561,7 @@ p {
   gap: 8px;
 }
 
+.render-ai-controls,
 .map-ai-controls {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto auto;
@@ -587,6 +588,54 @@ p {
   color: #dbe7e3;
   font-size: 0.82rem;
   line-height: 1.55;
+}
+
+.agent-progress {
+  display: grid;
+  gap: 6px;
+  margin: 2px 0 0;
+  padding: 9px 10px;
+  list-style: none;
+  border: 1px solid rgba(217, 244, 122, 0.14);
+  border-radius: 10px;
+  background: rgba(7, 17, 19, 0.42);
+}
+
+.agent-progress li {
+  display: grid;
+  grid-template-columns: 9px minmax(0, 1fr);
+  align-items: start;
+  gap: 8px;
+  color: var(--muted);
+}
+
+.agent-progress li > span {
+  width: 7px;
+  height: 7px;
+  margin-top: 5px;
+  border-radius: 50%;
+  background: rgba(217, 244, 122, 0.38);
+}
+
+.agent-progress li.active > span {
+  background: var(--accent);
+  box-shadow: 0 0 0 4px rgba(217, 244, 122, 0.08);
+}
+
+.agent-progress li div {
+  display: grid;
+  gap: 1px;
+}
+
+.agent-progress strong {
+  color: #dce9e4;
+  font-size: 0.75rem;
+  font-weight: 650;
+}
+
+.agent-progress small {
+  color: var(--muted);
+  font-size: 0.68rem;
 }
 
 .map-ai-stats {

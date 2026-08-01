@@ -1,4 +1,6 @@
+import { readFile } from 'node:fs/promises';
 import type http from 'node:http';
+import { hdriExtensionOf } from '../shared/hdri';
 import {
   createPaintStroke,
   surfaceUvFromPoint,
@@ -7,12 +9,23 @@ import {
   type MapSurface,
   type TerrainBrushMode
 } from '../shared/map';
-import { CHAT_PROVIDER_OPTIONS, type ChatProvider, type Vec3 } from '../shared/protocol';
-import type { MapTransactionRequest, MapTransactionSource } from '../shared/mapOperations';
+import {
+  CHAT_PROVIDER_OPTIONS,
+  type AgentProgressEvent,
+  type ChatProvider,
+  type Vec3
+} from '../shared/protocol';
+import {
+  applyMapOperations,
+  type MapOperation,
+  type MapTransactionRequest,
+  type MapTransactionSource
+} from '../shared/mapOperations';
 import type { RenderScheme } from '../shared/renderScheme';
+import type { RenderPlan } from '../shared/renderPlan';
 import { runMapAgent } from './mapAi';
 import { generateModel } from './modelApi';
-import { generateRenderSuggestion } from './renderAi';
+import { generateRenderSuggestion, refineRenderSuggestion } from './renderAi';
 import { MapStore, mapEditorCliManifest } from './mapStore';
 
 type Req = http.IncomingMessage;
@@ -57,6 +70,11 @@ export async function handleMapHttp(req: Req, res: Res, store: MapStore): Promis
       return true;
     }
   } catch (error) {
+    if (res.headersSent) {
+      sendSse(res, 'error', { error: error instanceof Error ? error.message : String(error) });
+      res.end();
+      return true;
+    }
     sendJson(res, error instanceof HttpError ? error.status : 500, {
       error: error instanceof Error ? error.message : String(error)
     });
@@ -104,6 +122,40 @@ async function handleEditorRoute(req: Req, res: Res, store: MapStore, parts: str
     return;
   }
 
+  if (parts[2] === 'hdri') {
+    await handleEditorHdri(req, res, store, parts);
+    return;
+  }
+
+  throw new HttpError(404, 'not_found');
+}
+
+const HDRI_CONTENT_TYPES: Record<string, string> = {
+  hdr: 'image/vnd.radiance',
+  exr: 'image/x-exr',
+  jpg: 'image/jpeg',
+  jpeg: 'image/jpeg',
+  png: 'image/png'
+};
+
+async function handleEditorHdri(req: Req, res: Res, store: MapStore, parts: string[]): Promise<void> {
+  if (req.method === 'GET' && parts.length === 3) {
+    sendJson(res, 200, { hdriTextures: await store.listHdriTextures() });
+    return;
+  }
+  if (req.method === 'GET' && parts.length === 4) {
+    const filePath = await store.resolveHdriFile(decodeURIComponent(parts[3]));
+    if (!filePath) throw new HttpError(404, 'unknown_hdri_texture');
+    const body = await readFile(filePath);
+    res.writeHead(200, {
+      'Cache-Control': 'public, max-age=3600',
+      'Content-Length': body.byteLength,
+      'Content-Type': HDRI_CONTENT_TYPES[hdriExtensionOf(filePath) ?? ''] ?? 'application/octet-stream',
+      'X-Content-Type-Options': 'nosniff'
+    });
+    res.end(body);
+    return;
+  }
   throw new HttpError(404, 'not_found');
 }
 
@@ -137,14 +189,23 @@ async function handleEditorMaps(req: Req, res: Res, store: MapStore, parts: stri
     return;
   }
 
-  if (parts[4] === 'generate' && req.method === 'POST' && parts.length === 5) {
-    const body = await readJson<{ prompt?: string; provider?: ChatProvider }>(req);
+  if ((parts[4] === 'generate' || parts[4] === 'refine') && req.method === 'POST' && parts.length === 5) {
+    const body = await readJson<{
+      prompt?: string;
+      provider?: ChatProvider;
+      baseOperations?: MapOperation[];
+    }>(req);
     const prompt = body.prompt?.trim();
     if (!prompt) throw new HttpError(400, 'missing_prompt');
     const provider = body.provider ?? 'gpt';
     const option = CHAT_PROVIDER_OPTIONS.find((item) => item.key === provider);
     if (!option || option.disabled) throw new HttpError(400, 'provider_unavailable');
     const controller = new AbortController();
+    const stream = acceptsEventStream(req);
+    if (stream) beginSse(res);
+    const onProgress = stream
+      ? (event: AgentProgressEvent) => sendSse(res, 'progress', event)
+      : undefined;
     const abort = () => controller.abort();
     const abortIfOpen = () => {
       if (!res.writableEnded) abort();
@@ -153,16 +214,25 @@ async function handleEditorMaps(req: Req, res: Res, store: MapStore, parts: stri
     res.once('close', abortIfOpen);
     try {
       const [map, assets] = await Promise.all([store.loadMap(mapId), store.listAssets()]);
+      const planningMap = parts[4] === 'refine' && Array.isArray(body.baseOperations) && body.baseOperations.length > 0
+        ? applyMapOperations(map, body.baseOperations)
+        : map;
       const modelProvider = provider === 'deepseek-v4-pro' ? 'deepseek' : provider;
-      sendJson(res, 200, {
-        suggestion: await runMapAgent(prompt, map, assets, {
+      const suggestion = await runMapAgent(prompt, planningMap, assets, {
           provider,
           signal: controller.signal,
+          mode: parts[4] === 'refine' ? 'refine' : 'generate',
+          onProgress,
           createAsset: async (request) => {
             const modelJson = await generateModel(request.prompt, {
               mode: 'voxel',
               providers: [modelProvider],
-              signal: controller.signal
+              signal: controller.signal,
+              onStage: (stage) => onProgress?.({
+                phase: 'generating-asset',
+                label: `生成资产：${request.name}`,
+                detail: stage.stage
+              })
             });
             return store.saveAsset({
               name: request.name,
@@ -172,8 +242,13 @@ async function handleEditorMaps(req: Req, res: Res, store: MapStore, parts: stri
               provider: modelProvider
             });
           }
-        })
-      });
+        });
+      if (stream) {
+        sendSse(res, 'result', { suggestion });
+        res.end();
+      } else {
+        sendJson(res, 200, { suggestion });
+      }
     } finally {
       req.off('aborted', abort);
       res.off('close', abortIfOpen);
@@ -316,14 +391,23 @@ async function handleEditorRenderSchemes(req: Req, res: Res, store: MapStore, pa
     sendJson(res, 201, { renderScheme: await store.saveRenderScheme(body) });
     return;
   }
-  if (req.method === 'POST' && parts[3] === 'generate' && parts.length === 4) {
-    const body = await readJson<{ prompt?: string; provider?: ChatProvider }>(req);
+  if (
+    req.method === 'POST'
+    && (parts[3] === 'generate' || parts[3] === 'refine')
+    && parts.length === 4
+  ) {
+    const body = await readJson<{ prompt?: string; provider?: ChatProvider; currentPlan?: RenderPlan }>(req);
     const prompt = body.prompt?.trim();
     if (!prompt) throw new HttpError(400, 'missing_prompt');
     const provider = body.provider ?? 'gpt';
     const option = CHAT_PROVIDER_OPTIONS.find((item) => item.key === provider);
     if (!option || option.disabled) throw new HttpError(400, 'provider_unavailable');
     const controller = new AbortController();
+    const stream = acceptsEventStream(req);
+    if (stream) beginSse(res);
+    const onProgress = stream
+      ? (event: AgentProgressEvent) => sendSse(res, 'progress', event)
+      : undefined;
     const abort = () => controller.abort();
     const abortIfOpen = () => {
       if (!res.writableEnded) abort();
@@ -331,11 +415,25 @@ async function handleEditorRenderSchemes(req: Req, res: Res, store: MapStore, pa
     req.once('aborted', abort);
     res.once('close', abortIfOpen);
     try {
-      const suggestion = await generateRenderSuggestion(prompt, await store.listRenderSchemes(), {
-        provider,
-        signal: controller.signal
-      });
-      sendJson(res, 200, { suggestion });
+      const schemes = await store.listRenderSchemes();
+      const suggestion = parts[3] === 'refine'
+        ? await refineRenderSuggestion(
+            prompt,
+            requireRenderPlan(body.currentPlan),
+            schemes,
+            { provider, signal: controller.signal, onProgress }
+          )
+        : await generateRenderSuggestion(prompt, schemes, {
+            provider,
+            signal: controller.signal,
+            onProgress
+          });
+      if (stream) {
+        sendSse(res, 'result', { suggestion });
+        res.end();
+      } else {
+        sendJson(res, 200, { suggestion });
+      }
     } finally {
       req.off('aborted', abort);
       res.off('close', abortIfOpen);
@@ -378,10 +476,33 @@ function sendJson(res: Res, status: number, body: unknown): void {
   res.end(JSON.stringify(body));
 }
 
+function acceptsEventStream(req: Req): boolean {
+  return String(req.headers.accept ?? '').includes('text/event-stream');
+}
+
+function beginSse(res: Res): void {
+  res.writeHead(200, {
+    'Content-Type': 'text/event-stream; charset=utf-8',
+    'Cache-Control': 'no-cache, no-transform',
+    Connection: 'keep-alive'
+  });
+  res.flushHeaders();
+}
+
+function sendSse(res: Res, event: string, body: unknown): void {
+  if (res.writableEnded) return;
+  res.write(`event: ${event}\ndata: ${JSON.stringify(body)}\n\n`);
+}
+
+function requireRenderPlan(value: unknown): RenderPlan {
+  if (!value || typeof value !== 'object') throw new HttpError(400, 'missing_current_render_plan');
+  return value as RenderPlan;
+}
+
 function setCorsHeaders(res: Res): void {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,PATCH,DELETE,OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Accept');
 }
 
 function isLoopbackRequest(req: Req): boolean {

@@ -1,6 +1,7 @@
 import {
   applyTerrainBrushInPlace,
   createId,
+  DEFAULT_WATER_DEPTH,
   createMapObject,
   createPaintStroke,
   normalizeMap,
@@ -14,6 +15,7 @@ import {
   type TerrainBrushMode,
   type Transform3D
 } from './map';
+import { carveWaterBasinInPlace } from './mapWater';
 import type { Vec3 } from './protocol';
 
 export type MapTransactionSource = 'basic-ai' | 'agent';
@@ -150,11 +152,13 @@ export function applyMapOperations(map: EditableMap, operations: readonly MapOpe
           name: operation.water.name ?? (operation.water.type === 'lake' ? '湖泊' : '河流'),
           type: operation.water.type,
           level: operation.water.level ?? 0.2,
+          depth: operation.water.depth ?? DEFAULT_WATER_DEPTH,
           width: operation.water.width ?? 1.2,
           points: operation.water.points
         };
         if (next.waterBodies.some((item) => item.id === water.id)) throw new Error('duplicate_water_id');
         next.waterBodies.push(water);
+        carveWaterBasinInPlace(next, water);
         break;
       }
       case 'water.update': {
@@ -166,6 +170,7 @@ export function applyMapOperations(map: EditableMap, operations: readonly MapOpe
         const updated: MapWaterBody = { ...water, ...operation.patch, id: water.id };
         requireWaterBody(updated);
         next.waterBodies = next.waterBodies.map((item) => item.id === water.id ? updated : item);
+        carveWaterBasinInPlace(next, updated);
         break;
       }
       case 'water.remove':
@@ -210,6 +215,7 @@ function requireWaterBody(value: unknown): asserts value is MapWaterBodyInput {
   }
   if (water.name !== undefined && typeof water.name !== 'string') throw new Error('invalid_water_body');
   if (water.level !== undefined && !Number.isFinite(Number(water.level))) throw new Error('invalid_water_body');
+  if (water.depth !== undefined && !Number.isFinite(Number(water.depth))) throw new Error('invalid_water_body');
   if (water.width !== undefined && !Number.isFinite(Number(water.width))) throw new Error('invalid_water_body');
 }
 

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   compileRuntimeColorGrade,
   compileRuntimeEffectRecipes,
+  compileRuntimeHdriSky,
   compileRuntimeLightRig,
   compileRuntimeMaterialThemes,
   compileRuntimePostQuality,
@@ -87,6 +88,53 @@ describe('RenderPlan V2 capabilities', () => {
       bloomStrength: undefined,
       ssao: 'soft',
       depthOfField: 'off'
+    });
+  });
+
+  it('compiles an HDRI sky for developers and blocks the AI from picking a texture', () => {
+    const params = {
+      texture: 'sunset_meadow.hdr',
+      rotation: 120,
+      exposure: 1.3,
+      saturation: 0.9,
+      intensity: 1.1,
+      tint: '#ffe9d0',
+      tintStrength: 0.25,
+      useAsEnvironment: 'on'
+    };
+    const plan = normalizeRenderPlan({
+      version: 2,
+      baseSchemeId: 'render-natural-day',
+      modules: [{ id: 'environment.hdri', params }]
+    }, ['render-natural-day'], undefined, 'developer');
+
+    expect(compileRuntimeHdriSky(plan)).toEqual({
+      texture: 'sunset_meadow.hdr',
+      rotation: 120,
+      exposure: 1.3,
+      saturation: 0.9,
+      intensity: 1.1,
+      tint: '#ffe9d0',
+      tintStrength: 0.25,
+      useAsEnvironment: true
+    });
+
+    // The texture list is local to the machine, so the AI must not name files.
+    expect(() => normalizeRenderPlan({
+      version: 2,
+      baseSchemeId: 'render-natural-day',
+      modules: [{ id: 'environment.hdri', params }]
+    }, ['render-natural-day'], undefined, 'ai')).toThrow('invalid_render_code:environment.hdri.texture');
+  });
+
+  it('falls back to no HDRI when the plan does not declare one', () => {
+    const plan = normalizeRenderPlan({ version: 2, baseSchemeId: 'render-natural-day', modules: [] });
+
+    expect(compileRuntimeHdriSky(plan)).toMatchObject({
+      texture: '',
+      rotation: 0,
+      exposure: 1,
+      useAsEnvironment: true
     });
   });
 

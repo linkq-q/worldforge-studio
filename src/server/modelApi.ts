@@ -4,11 +4,13 @@ import {
   type ChatProvider,
   type ModelJobState
 } from '../shared/protocol';
+import materialTagVocabulary from '../../../3d-generate/packages/voxel-render-runtime/model/material-tags-v1.json';
 
 export interface ModelApiOptions {
   apiBase?: string;
   providers?: readonly string[];
   mode?: 'standard' | 'lite' | 'voxel' | 'voxel-pro' | 'curve' | 'wire';
+  materialTags?: unknown | false;
   fetchImpl?: typeof fetch;
   onStage?: (stage: Partial<ModelJobState>) => void;
   signal?: AbortSignal;
@@ -105,10 +107,12 @@ async function readSseModelResponse(
 }
 
 export async function generateModel(description: string, options: ModelApiOptions = {}): Promise<unknown> {
+  options.signal?.throwIfAborted();
   const fetcher = options.fetchImpl ?? fetch;
   const apiBase = options.apiBase ?? MODEL_API_BASE;
   const providers = options.providers ?? MODEL_PROVIDERS;
   const mode = options.mode ?? 'voxel';
+  const materialTags = resolveMaterialTags(options.materialTags);
   const errors: string[] = [];
 
   for (const provider of providers) {
@@ -118,7 +122,12 @@ export async function generateModel(description: string, options: ModelApiOption
       const resp = await fetcher(`${apiBase}/api/generate/model`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ description, provider, mode }),
+        body: JSON.stringify({
+          description,
+          provider,
+          mode,
+          ...(materialTags ? { materialTags } : {})
+        }),
         signal: options.signal
       });
       if (!resp.ok) {
@@ -142,9 +151,11 @@ export async function generateModel(description: string, options: ModelApiOption
 }
 
 export async function refineModel(modelJson: unknown, description: string, options: ModelApiOptions = {}): Promise<unknown> {
+  options.signal?.throwIfAborted();
   const fetcher = options.fetchImpl ?? fetch;
   const apiBase = options.apiBase ?? MODEL_API_BASE;
   const providers = options.providers ?? MODEL_PROVIDERS;
+  const materialTags = resolveMaterialTags(options.materialTags);
   const errors: string[] = [];
 
   for (const provider of providers) {
@@ -154,7 +165,12 @@ export async function refineModel(modelJson: unknown, description: string, optio
       const resp = await fetcher(`${apiBase}/api/refine/model`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ modelJson, description, provider }),
+        body: JSON.stringify({
+          modelJson,
+          description,
+          provider,
+          ...(materialTags ? { materialTags } : {})
+        }),
         signal: options.signal
       });
       const json = await resp.json() as { ok?: boolean; modelJson?: unknown; error?: string };
@@ -190,5 +206,11 @@ export async function llmChat(messages: readonly ChatMessage[], options: ChatApi
 
 function isAbortError(error: unknown): boolean {
   return error instanceof Error && error.name === 'AbortError';
+}
+
+function resolveMaterialTags(value: unknown | false | undefined): unknown | null {
+  if (value === false) return null;
+  if (value && typeof value === 'object') return value;
+  return materialTagVocabulary;
 }
 

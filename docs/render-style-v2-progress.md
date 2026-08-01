@@ -76,4 +76,4 @@ Stylized Outline 合并提交为 `5ca6b29`，公共入口包括：
 - 每个渲染方案新增独立 `accessPolicy`，分别限制 AI 与开发者的参数、范围、枚举值和控件形式。
 - 开发者模式可编辑预设值与权限；数值参数提供滑条、精确数值和当前值，修改后实时刷新画面。
 - Shader 扩展只对专业开发者开放；当前只保存隔离代码，不编译执行。
-- 结构化湖泊/河流已接入 `runtime.water-style`；景深执行仍待后续宿主接线。
+- 结构化湖泊/河流与模型 `water:pool` / `water:fall` 标签已接入 `WaterSurface` / `WaterfallSurface`；`runtime.water-style` 在同一材质上做白名单调整。景深执行仍待后续宿主接线。
