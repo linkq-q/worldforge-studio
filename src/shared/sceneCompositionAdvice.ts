@@ -4,6 +4,7 @@ import {
   SCENE_COMPOSITION_LIMITS,
   type SceneCompositionPlan,
   type SceneDistribution,
+  type SceneZoneGrassLayer,
   type SceneZoneLayer
 } from './sceneComposition';
 
@@ -34,6 +35,17 @@ export type ScenePlanPatch =
     }
   | { type: 'layer.add'; zoneId: string; layer: SceneZoneLayer }
   | { type: 'layer.remove'; zoneId: string; familyId: string }
+  | {
+      type: 'grass.update';
+      zoneId: string;
+      grassFamilyId: string;
+      density?: number;
+      variation?: number;
+      edgeFalloff?: number;
+      residualDensity?: number;
+    }
+  | { type: 'grass.add'; zoneId: string; layer: SceneZoneGrassLayer }
+  | { type: 'grass.remove'; zoneId: string; grassFamilyId: string }
   | { type: 'water.update'; zoneId: string; level?: number; depth?: number }
   | { type: 'water.remove'; zoneId: string };
 
@@ -113,6 +125,21 @@ export function applySceneAdvice(
       case 'layer.remove':
         zone.layers = zone.layers.filter((item) => item.familyId !== patch.familyId);
         break;
+      case 'grass.update': {
+        const layer = zone.grassLayers.find((item) => item.grassFamilyId === patch.grassFamilyId);
+        if (!layer) throw new Error('unknown_scene_advice_grass_layer');
+        if (patch.density !== undefined) layer.density = patch.density;
+        if (patch.variation !== undefined) layer.variation = patch.variation;
+        if (patch.edgeFalloff !== undefined) layer.edgeFalloff = patch.edgeFalloff;
+        if (patch.residualDensity !== undefined) layer.residualDensity = patch.residualDensity;
+        break;
+      }
+      case 'grass.add':
+        zone.grassLayers.push(patch.layer);
+        break;
+      case 'grass.remove':
+        zone.grassLayers = zone.grassLayers.filter((item) => item.grassFamilyId !== patch.grassFamilyId);
+        break;
       case 'water.update':
         if (!zone.water) throw new Error('unknown_scene_advice_water');
         if (patch.level !== undefined) zone.water.level = patch.level;
@@ -165,6 +192,29 @@ function normalizePatch(value: unknown, plan: SceneCompositionPlan, map: Editabl
       ...(input.edgeFalloff === undefined ? {} : { edgeFalloff: clamp(finiteNumber(input.edgeFalloff, 0.25), 0, 1) })
     };
   }
+  if (input.type === 'grass.add') {
+    const layer = normalizeGrassLayerPatch(input.layer, plan);
+    if (zone.grassLayers.some((item) => item.grassFamilyId === layer.grassFamilyId)) {
+      throw new Error('duplicate_scene_advice_grass_layer');
+    }
+    return { type: 'grass.add', zoneId, layer };
+  }
+  if (input.type === 'grass.update' || input.type === 'grass.remove') {
+    const grassFamilyId = requireId(input.grassFamilyId, 'invalid_scene_advice_patch');
+    if (!zone.grassLayers.some((layer) => layer.grassFamilyId === grassFamilyId)) {
+      throw new Error('unknown_scene_advice_grass_layer');
+    }
+    if (input.type === 'grass.remove') return { type: 'grass.remove', zoneId, grassFamilyId };
+    return {
+      type: 'grass.update',
+      zoneId,
+      grassFamilyId,
+      ...(input.density === undefined ? {} : { density: clamp(finiteNumber(input.density, 0.65), 0, 1) }),
+      ...(input.variation === undefined ? {} : { variation: clamp(finiteNumber(input.variation, 0.2), 0, 1) }),
+      ...(input.edgeFalloff === undefined ? {} : { edgeFalloff: clamp(finiteNumber(input.edgeFalloff, 0.25), 0, 1) }),
+      ...(input.residualDensity === undefined ? {} : { residualDensity: clamp(finiteNumber(input.residualDensity, 0.08), 0, 1) })
+    };
+  }
   if (input.type === 'water.update') {
     if (!zone.water) throw new Error('unknown_scene_advice_water');
     return {
@@ -191,6 +241,21 @@ function normalizeLayerPatch(value: unknown, plan: SceneCompositionPlan): SceneZ
     scaleRange: normalizeScaleRange(input.scaleRange ?? [0.9, 1.1]),
     distribution: isDistribution(input.distribution) ? input.distribution : 'even',
     edgeFalloff: clamp(finiteNumber(input.edgeFalloff, 0.25), 0, 1)
+  };
+}
+
+function normalizeGrassLayerPatch(value: unknown, plan: SceneCompositionPlan): SceneZoneGrassLayer {
+  const input = requireRecord(value, 'invalid_scene_advice_grass_layer');
+  const grassFamilyId = requireId(input.grassFamilyId, 'invalid_scene_advice_grass_layer');
+  if (!plan.grassFamilies.some((family) => family.id === grassFamilyId)) {
+    throw new Error('unknown_scene_advice_grass_family');
+  }
+  return {
+    grassFamilyId,
+    density: clamp(finiteNumber(input.density, 0.65), 0, 1),
+    variation: clamp(finiteNumber(input.variation, 0.2), 0, 1),
+    edgeFalloff: clamp(finiteNumber(input.edgeFalloff, 0.25), 0, 1),
+    residualDensity: clamp(finiteNumber(input.residualDensity, 0.08), 0, 1)
   };
 }
 

@@ -36,6 +36,7 @@ export function compileSceneComposition(
   operations.push({ type: 'terrain.generate', ...plan.globalBrief.terrainBase });
   operations.push(...compileZoneTerrain(map, plan));
   operations.push(...compileZoneWater(map, plan));
+  operations.push(...compileZoneGrass(map, plan));
 
   let workingMap = applyMapOperations(map, operations);
   const limits = planLimits(getMapBounds(map));
@@ -45,7 +46,7 @@ export function compileSceneComposition(
   if (accentOperations.length > 0) {
     operations.push(...accentOperations);
     workingMap = applyMapOperations(workingMap, accentOperations);
-    remaining -= accentOperations.length;
+    remaining -= accentOperations.filter((operation) => operation.type === 'object.add').length;
   }
 
   const scatterLayers = plan.zones
@@ -113,6 +114,33 @@ export function compileSceneComposition(
       unresolvedFamilyIds
     }
   };
+}
+
+function compileZoneGrass(map: EditableMap, plan: SceneCompositionPlan): MapOperation[] {
+  const operations: MapOperation[] = plan.grassFamilies.map((family, index) => ({
+    type: 'grass.layer.add',
+    layer: {
+      id: grassLayerId(family.id),
+      name: family.label,
+      seed: derivedSeed(map.seed, `grass:${family.id}:${index}`),
+      mix: family.mix
+    }
+  }));
+  for (const zone of plan.zones) {
+    const region = sceneZoneWorldRegion(zone, map);
+    for (const layer of zone.grassLayers) {
+      operations.push({
+        type: 'grass.generate',
+        layerId: grassLayerId(layer.grassFamilyId),
+        region: { kind: 'circle', center: [region.x, region.z], radius: region.r },
+        density: layer.density,
+        variation: layer.variation,
+        softness: Math.max(layer.edgeFalloff, transitionFalloff(plan, zone.id)),
+        seed: derivedSeed(map.seed, `grass:${zone.id}:${layer.grassFamilyId}`)
+      });
+    }
+  }
+  return operations;
 }
 
 function compileZoneTerrain(map: EditableMap, plan: SceneCompositionPlan): MapOperation[] {
@@ -193,11 +221,12 @@ function compileAccents(
   zoneCounts: Record<string, number>
 ): MapOperation[] {
   const operations: MapOperation[] = [];
+  let objectCount = 0;
   let workingMap = map;
   const zones = [...plan.zones].sort((left, right) => right.importance - left.importance);
   for (const zone of zones) {
     for (const layer of zone.layers) {
-      if (layer.distribution !== 'accent' || operations.length >= maxCount || zone.water) continue;
+      if (layer.distribution !== 'accent' || objectCount >= maxCount || zone.water) continue;
       const assets = familyAssets.get(layer.familyId) ?? [];
       if (assets.length === 0) continue;
       const region = sceneZoneWorldRegion(zone, map);
@@ -234,12 +263,35 @@ function compileAccents(
         }
       };
       operations.push(operation);
-      workingMap = applyMapOperations(workingMap, [operation]);
+      objectCount += 1;
+      const family = plan.assetFamilies.find((item) => item.id === layer.familyId);
+      const grassResidualOperations = family && shouldClearGrass(family)
+        ? zone.grassLayers.map((grass): MapOperation => ({
+            type: 'grass.brush',
+            layerId: grassLayerId(grass.grassFamilyId),
+            mode: 'density',
+            point: [placement.x, placement.z],
+            size: Math.max(1.2, footprint * 2.4),
+            strength: 1,
+            targetDensity: grass.residualDensity
+          }))
+        : [];
+      operations.push(...grassResidualOperations);
+      workingMap = applyMapOperations(workingMap, [operation, ...grassResidualOperations]);
       familyCounts[layer.familyId] = (familyCounts[layer.familyId] ?? 0) + 1;
       zoneCounts[zone.id] = (zoneCounts[zone.id] ?? 0) + 1;
     }
   }
   return operations;
+}
+
+function shouldClearGrass(family: SceneCompositionPlan['assetFamilies'][number]): boolean {
+  const semantic = `${family.role} ${family.tags.join(' ')}`.toLowerCase();
+  return /\b(building|structure|house|cabin|camp|road|path|trail)\b/.test(semantic);
+}
+
+function grassLayerId(familyId: string): string {
+  return `composition-grass-${familyId}`.slice(0, 80);
 }
 
 function estimateZoneCoverage(plan: SceneCompositionPlan): number {

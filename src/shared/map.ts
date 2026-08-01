@@ -15,6 +15,7 @@ import {
   type MapAssetSizeClass
 } from './mapAssetMetadata';
 import { normalizeModelGenerationMode, type ModelGenerationMode } from './modelGenerationMode';
+import { normalizeGrassLayers, type MapGrassLayer } from './mapGrass';
 
 export type MapSurface = 'floor' | 'ceiling' | 'north' | 'south' | 'east' | 'west' | 'terrain';
 export type TerrainBrushMode = 'raise' | 'lower' | 'flatten';
@@ -111,6 +112,7 @@ export interface EditableMap {
   box: MapBox;
   lighting: MapLighting;
   terrain: MapTerrain;
+  grassLayers: MapGrassLayer[];
   waterBodies: MapWaterBody[];
   paintStrokes: MapPaintStroke[];
   objects: MapObject[];
@@ -311,6 +313,7 @@ export function normalizeMap(input: Partial<EditableMap>): EditableMap {
     },
     lighting: normalizeLighting(input.lighting),
     terrain,
+    grassLayers: normalizeGrassLayers(input.grassLayers, terrain.resolutionX, terrain.resolutionZ),
     waterBodies: normalizeWaterBodies(input.waterBodies, boxSize),
     paintStrokes: Array.isArray(input.paintStrokes)
       ? input.paintStrokes.map((stroke) => createPaintStroke(stroke)).slice(-1200)

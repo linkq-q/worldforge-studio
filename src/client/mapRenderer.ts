@@ -9,6 +9,7 @@ import {
   getSpawnPoints,
   getSunPosition,
   normalizeMap,
+  sampleTerrainHeight,
   terrainIndex,
   terrainPointAt,
   type EditableMap,
@@ -21,6 +22,12 @@ import {
 import { buildModelGroup } from './modelRenderer';
 import { buildMapAssetInstances } from './mapAssetInstancing';
 import { terrainVertexColor } from './terrainAppearance';
+import { buildMapGrassField } from './mapGrassRenderer';
+import { combinedGrassDensity } from '../shared/mapGrass';
+import {
+  DEFAULT_RUNTIME_GRASS_STYLE,
+  type RuntimeGrassStyle,
+} from '../shared/renderPlan';
 
 export interface RenderedMap {
   group: THREE.Group;
@@ -28,6 +35,8 @@ export interface RenderedMap {
   objectGroups: Map<string, THREE.Group>;
   pickables: THREE.Object3D[];
   syncObjectTransform: (objectId: string) => void;
+  update: (deltaTime: number) => void;
+  setGrassStyle: (style: RuntimeGrassStyle) => void;
   dispose: () => void;
 }
 
@@ -47,8 +56,12 @@ export async function buildEditableMapGroup(input: EditableMap, options: MapRend
   const assets = new Map((map.assets ?? []).map((asset) => [asset.id, asset]));
 
   const terrain = buildTerrain(map);
+  applyTerrainGrassTint(terrain, map, DEFAULT_RUNTIME_GRASS_STYLE);
   root.add(terrain);
   pickables.push(terrain);
+
+  const grass = buildMapGrassField(map);
+  if (grass) root.add(grass.group);
 
   modelsRoot.add(buildStructuredWaterGroup(map));
   const objectGroups = createObjectGroups(map);
@@ -89,8 +102,37 @@ export async function buildEditableMapGroup(input: EditableMap, options: MapRend
     objectGroups,
     pickables,
     syncObjectTransform: instancing.syncObjectTransform,
-    dispose: () => disposeObject(root)
+    update: (deltaTime) => grass?.update(deltaTime),
+    setGrassStyle: (style) => {
+      grass?.setStyle(style);
+      applyTerrainGrassTint(terrain, map, style);
+    },
+    dispose: () => {
+      grass?.dispose();
+      disposeObject(root);
+    }
   };
+}
+
+function applyTerrainGrassTint(mesh: THREE.Mesh, map: EditableMap, style: RuntimeGrassStyle): void {
+  const geometry = mesh.geometry;
+  const positions = geometry.getAttribute('position');
+  const colors = geometry.getAttribute('color') as THREE.BufferAttribute;
+  const grassColor = new THREE.Color(style.groundColor);
+  const color = new THREE.Color();
+  for (let index = 0; index < positions.count; index += 1) {
+    const x = positions.getX(index);
+    const y = positions.getY(index);
+    const z = positions.getZ(index);
+    const base = terrainVertexColor(map, x, y, z);
+    color.setRGB(base[0], base[1], base[2]);
+    const isSurface = y >= sampleTerrainHeight(map, x, z) - 0.05;
+    if (style.groundTint && isSurface) {
+      color.lerp(grassColor, combinedGrassDensity(map, x, z) * style.groundTintStrength);
+    }
+    colors.setXYZ(index, color.r, color.g, color.b);
+  }
+  colors.needsUpdate = true;
 }
 
 function buildTerrain(map: EditableMap): THREE.Mesh {

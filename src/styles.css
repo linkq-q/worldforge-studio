@@ -621,6 +621,23 @@ p {
   box-shadow: 0 12px 28px rgba(0, 0, 0, 0.2);
 }
 
+.grass-editor-panel {
+  background:
+    radial-gradient(circle at 100% 0, rgba(127, 190, 76, 0.12), transparent 48%),
+    rgba(16, 31, 30, 0.68);
+}
+
+.grass-layer-row,
+.grass-action-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: 7px;
+}
+
+.grass-action-row {
+  grid-template-columns: 1fr 1fr;
+}
+
 .agent-run.failed {
   border-color: rgba(255, 125, 114, 0.45);
   background: linear-gradient(145deg, rgba(74, 31, 29, 0.8), rgba(20, 14, 16, 0.96));

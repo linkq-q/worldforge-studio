@@ -32,6 +32,13 @@ import {
 import { planLimits } from '../shared/mapPlanning';
 import { isCompositionEmptyMap, SCENE_COMPOSITION_LIMITS } from '../shared/sceneComposition';
 import { renderMapCompositionSummary } from './mapCompositionPanel';
+import {
+  bindGrassEditorPanel,
+  ensureGrassLayerSelection,
+  renderGrassEditorPanel,
+  type GrassEditorState,
+} from './grassEditorPanel';
+import { applyGrassBrushInPlace } from '../shared/mapGrass';
 import { defaultRenderModule, renderDeveloperCapability } from './developerRenderControls';
 import {
   humanizeAgentError,
@@ -66,6 +73,7 @@ import {
   RENDER_CAPABILITIES,
   compileRuntimeColorGrade,
   compileRuntimeEffectRecipes,
+  compileRuntimeGrassStyle,
   compileRuntimeHdriSky,
   compileRuntimeLightRig,
   compileRuntimeMaterialThemes,
@@ -76,6 +84,7 @@ import {
   compileRuntimeStyle,
   compileRuntimeWaterStyles,
   createDefaultRenderAccessPolicy,
+  DEFAULT_RUNTIME_GRASS_STYLE,
   normalizeRenderAccessPolicy,
   type RuntimeLightRig,
   type RenderModuleId,
@@ -84,7 +93,7 @@ import {
   renderModuleLabel
 } from '../shared/renderPlan';
 
-type EditorTool = 'select' | 'paint' | 'terrain';
+type EditorTool = 'select' | 'paint' | 'terrain' | 'grass';
 type TransformMode = 'translate' | 'rotate' | 'scale';
 type EditorStage = 'map' | 'render';
 
@@ -215,6 +224,17 @@ class MapEditor {
   private mapAgentElapsedMs = 0;
   private mapAgentProgressTimer: number | null = null;
   private newMapSizePreset: MapSizePresetKey = 'medium';
+  private readonly grassEditorState: GrassEditorState = {
+    selectedLayerId: null,
+    brushMode: 'add',
+    brushSize: 3,
+    brushStrength: 0.35,
+    targetDensity: 0.65,
+    fillDensity: 0.72,
+    regionX: 0,
+    regionZ: 0,
+    regionRadius: 12,
+  };
 
   constructor(private readonly app: HTMLElement) {}
 
@@ -275,6 +295,7 @@ class MapEditor {
                 <button data-tool="select">选择</button>
                 <button data-tool="paint">绘制</button>
                 <button data-tool="terrain">地形</button>
+                <button data-tool="grass">草地</button>
               </div>
             </div>
             <div class="toolbar-group" data-map-only>
@@ -1043,6 +1064,7 @@ class MapEditor {
         <label class="field compact"><span>大小</span><input data-terrain-size type="range" min="0.3" max="8" step="0.1" value="${this.state.terrainSize}" /></label>
         <label class="field compact"><span>强度</span><input data-terrain-strength type="range" min="0.02" max="1.5" step="0.02" value="${this.state.terrainStrength}" /></label>
       </section>` : ''}
+      ${this.state.tool === 'grass' ? renderGrassEditorPanel(map, this.grassEditorState) : ''}
     `;
     host.querySelector<HTMLInputElement>('[data-map-name]')?.addEventListener('input', (event) => {
       map.name = (event.target as HTMLInputElement).value;
@@ -1070,6 +1092,17 @@ class MapEditor {
     });
     bindNumberState(host, '[data-terrain-size]', (value) => { this.state.terrainSize = value; });
     bindNumberState(host, '[data-terrain-strength]', (value) => { this.state.terrainStrength = value; });
+    if (this.state.tool === 'grass') {
+      bindGrassEditorPanel(host, map, this.grassEditorState, {
+        changed: (message) => {
+          this.markDirty();
+          this.state.message = message;
+          void this.refreshScene();
+          this.renderPanels();
+        },
+        selectionChanged: () => this.renderMapInspector(),
+      });
+    }
   }
 
   private renderObjectInspector(): void {
@@ -1995,6 +2028,27 @@ class MapEditor {
       void this.refreshScene();
       return;
     }
+    if (this.state.tool === 'grass') {
+      ensureGrassLayerSelection(this.state.map, this.grassEditorState);
+      const layerId = this.grassEditorState.selectedLayerId;
+      if (!layerId) {
+        this.state.message = '请先新增一个草地层';
+        this.renderPanels();
+        return;
+      }
+      applyGrassBrushInPlace(
+        this.state.map,
+        layerId,
+        this.grassEditorState.brushMode,
+        [hit.point.x, hit.point.z],
+        this.grassEditorState.brushSize,
+        this.grassEditorState.brushStrength,
+        this.grassEditorState.targetDensity
+      );
+      this.markDirty(false);
+      void this.refreshScene();
+      return;
+    }
     if (first && this.state.terrainMode === 'flatten') this.terrainFlattenHeight = hit.point.y;
     const targetHeight = this.state.terrainMode === 'flatten'
       ? this.terrainFlattenHeight ?? hit.point.y
@@ -2026,7 +2080,11 @@ class MapEditor {
     const normal = hit.face
       ? hit.face.normal.clone().transformDirection(hit.object.matrixWorld)
       : new THREE.Vector3(0, 1, 0);
-    const radius = this.state.tool === 'terrain' ? this.state.terrainSize : this.state.brushSize;
+    const radius = this.state.tool === 'terrain'
+      ? this.state.terrainSize
+      : this.state.tool === 'grass'
+        ? this.grassEditorState.brushSize
+        : this.state.brushSize;
     this.brushPreview.position.copy(hit.point).addScaledVector(normal, 0.025);
     this.brushPreview.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), normal);
     this.brushPreview.scale.setScalar(radius);
@@ -2268,6 +2326,7 @@ class MapEditor {
       });
       this.renderRuntimeAdapter?.applyDistanceFog('#111719', 0);
       this.renderRuntimeAdapter?.applyScopedCapabilities([], [], []);
+      this.renderedMap?.setGrassStyle(DEFAULT_RUNTIME_GRASS_STYLE);
       this.hdriSky?.clear();
       this.updateSceneLighting();
       return;
@@ -2307,6 +2366,9 @@ class MapEditor {
       ? compileRuntimePostQuality(scheme.renderPlan)
       : { bloom: 'off' as const, ssao: 'off' as const, depthOfField: 'off' as const };
     this.renderRuntimeAdapter?.applyPostQuality(postQuality);
+    this.renderedMap?.setGrassStyle(
+      scheme.renderPlan ? compileRuntimeGrassStyle(scheme.renderPlan) : DEFAULT_RUNTIME_GRASS_STYLE
+    );
     if (scheme.renderPlan) {
       applyLightRig(
         compileRuntimeLightRig(scheme.renderPlan),
@@ -2334,6 +2396,7 @@ class MapEditor {
     this.updateKeyboardCamera(dt);
     this.orbit?.update();
     this.selectionOutline?.update();
+    this.renderedMap?.update(dt);
     this.renderRuntimeAdapter?.tick(dt, now / 1000);
     this.renderStats?.beginFrame();
     this.renderRuntimeAdapter?.render();

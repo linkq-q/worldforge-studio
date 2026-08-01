@@ -21,6 +21,18 @@ import type { Vec3 } from './protocol';
 import type { MapLintIssue } from './mapLint';
 import type { SceneCompositionMetrics, SceneCompositionPlan } from './sceneComposition';
 import type { SceneAdviceFinding, SceneReviewResult } from './sceneCompositionAdvice';
+import {
+  MAX_GRASS_LAYERS,
+  applyGrassBrushInPlace,
+  createGrassLayer,
+  fillGrassLayerInPlace,
+  generateGrassRegionInPlace,
+  updateGrassLayer,
+  type GrassBrushMode,
+  type GrassLayerInput,
+  type GrassLayerPatch,
+  type GrassRegion
+} from './mapGrass';
 
 export type MapTransactionSource = 'basic-ai' | 'agent';
 
@@ -45,6 +57,12 @@ export type MapOperation =
   | ({ type: 'terrain.generate' } & Partial<TerrainGenerationParams> & Pick<TerrainGenerationParams, 'preset'>)
   | { type: 'terrain.brush'; mode: TerrainBrushMode; point: Vec3; size?: number; strength?: number; targetHeight?: number }
   | { type: 'paint.add'; stroke: Partial<MapPaintStroke> & Pick<MapPaintStroke, 'surface' | 'point'> }
+  | { type: 'grass.layer.add'; layer: GrassLayerInput }
+  | { type: 'grass.layer.update'; layerId: string; patch: GrassLayerPatch }
+  | { type: 'grass.layer.remove'; layerId: string }
+  | { type: 'grass.fill'; layerId: string; density: number }
+  | { type: 'grass.brush'; layerId: string; mode: GrassBrushMode; point: [number, number]; size?: number; strength?: number; targetDensity?: number }
+  | { type: 'grass.generate'; layerId: string; region: GrassRegion; density?: number; variation?: number; softness?: number; seed?: number }
   | { type: 'object.add'; object: MapObjectInput }
   | { type: 'object.update'; objectId: string; patch: MapObjectPatch }
   | { type: 'object.remove'; objectId: string }
@@ -85,6 +103,7 @@ export interface MapAiSuggestion {
 
 const MAP_SURFACES = new Set<MapSurface>(['floor', 'ceiling', 'north', 'south', 'east', 'west', 'terrain']);
 const TERRAIN_MODES = new Set<TerrainBrushMode>(['raise', 'lower', 'flatten']);
+const GRASS_BRUSH_MODES = new Set<GrassBrushMode>(['add', 'erase', 'density', 'smooth']);
 const MAX_OPERATIONS = 2_000;
 
 export function applyMapOperations(map: EditableMap, operations: readonly MapOperation[]): EditableMap {
@@ -131,6 +150,59 @@ export function applyMapOperations(map: EditableMap, operations: readonly MapOpe
         if (!operation.stroke || !MAP_SURFACES.has(operation.stroke.surface)) throw new Error('invalid_paint');
         requireVec3(operation.stroke.point, 'invalid_paint_point');
         next.paintStrokes.push(createPaintStroke(operation.stroke));
+        break;
+      case 'grass.layer.add': {
+        if (!operation.layer || typeof operation.layer !== 'object') throw new Error('invalid_grass_layer');
+        if (next.grassLayers.length >= MAX_GRASS_LAYERS) throw new Error('too_many_grass_layers');
+        const layer = createGrassLayer(
+          operation.layer,
+          next.terrain.resolutionX,
+          next.terrain.resolutionZ,
+          next.seed + next.grassLayers.length + 1
+        );
+        if (next.grassLayers.some((item) => item.id === layer.id)) throw new Error('duplicate_grass_layer_id');
+        next.grassLayers.push(layer);
+        break;
+      }
+      case 'grass.layer.update': {
+        const index = next.grassLayers.findIndex((item) => item.id === operation.layerId);
+        if (index < 0) throw new Error('grass_layer_not_found');
+        if (!operation.patch || typeof operation.patch !== 'object') throw new Error('invalid_grass_layer');
+        next.grassLayers[index] = updateGrassLayer(next.grassLayers[index], operation.patch);
+        break;
+      }
+      case 'grass.layer.remove':
+        if (!next.grassLayers.some((item) => item.id === operation.layerId)) throw new Error('grass_layer_not_found');
+        next.grassLayers = next.grassLayers.filter((item) => item.id !== operation.layerId);
+        break;
+      case 'grass.fill':
+        requireFinite(operation.density, 'invalid_grass_density');
+        fillGrassLayerInPlace(next, operation.layerId, operation.density);
+        break;
+      case 'grass.brush':
+        requirePoint2(operation.point, 'invalid_grass_point');
+        if (!GRASS_BRUSH_MODES.has(operation.mode)) throw new Error('invalid_grass_brush_mode');
+        applyGrassBrushInPlace(
+          next,
+          operation.layerId,
+          operation.mode,
+          operation.point,
+          operation.size,
+          operation.strength,
+          operation.targetDensity
+        );
+        break;
+      case 'grass.generate':
+        requireGrassRegion(operation.region);
+        generateGrassRegionInPlace(
+          next,
+          operation.layerId,
+          operation.region,
+          operation.density,
+          operation.variation,
+          operation.softness,
+          operation.seed
+        );
         break;
       case 'object.add': {
         if (!operation.object || typeof operation.object !== 'object') throw new Error('invalid_object');
@@ -233,6 +305,32 @@ function requireWaterBody(value: unknown): asserts value is MapWaterBodyInput {
   if (water.level !== undefined && !Number.isFinite(Number(water.level))) throw new Error('invalid_water_body');
   if (water.depth !== undefined && !Number.isFinite(Number(water.depth))) throw new Error('invalid_water_body');
   if (water.width !== undefined && !Number.isFinite(Number(water.width))) throw new Error('invalid_water_body');
+}
+
+function requireGrassRegion(value: unknown): asserts value is GrassRegion {
+  if (!value || typeof value !== 'object') throw new Error('invalid_grass_region');
+  const region = value as Partial<GrassRegion>;
+  if (region.kind === 'circle') {
+    requirePoint2(region.center, 'invalid_grass_region');
+    requireFinite(region.radius, 'invalid_grass_region');
+    if (Number(region.radius) <= 0) throw new Error('invalid_grass_region');
+    return;
+  }
+  if (region.kind === 'polygon' && Array.isArray(region.points) && region.points.length >= 3) {
+    for (const point of region.points) requirePoint2(point, 'invalid_grass_region');
+    return;
+  }
+  throw new Error('invalid_grass_region');
+}
+
+function requirePoint2(value: unknown, message: string): asserts value is [number, number] {
+  if (!Array.isArray(value) || value.length < 2 || !value.slice(0, 2).every((item) => Number.isFinite(Number(item)))) {
+    throw new Error(message);
+  }
+}
+
+function requireFinite(value: unknown, message: string): void {
+  if (!Number.isFinite(Number(value))) throw new Error(message);
 }
 
 function requireVec3(value: unknown, error: string): asserts value is Vec3 {

@@ -30,6 +30,9 @@ export function buildSceneDirectorPrompt(map: EditableMap, assets: readonly MapA
     `Use 1-${SCENE_COMPOSITION_LIMITS.zoneCount} zones. A one-zone composition is valid when the request genuinely calls for it.`,
     'Cover the map deliberately. Any large uncovered area must be intentional negative space described by a zone, not an accidental omission.',
     'Asset family role is free semantic text. Tags should be reusable lower-case search terms.',
+    'Grass is editable ground vegetation, not a generated model asset. When appropriate, define reusable grassFamilies and assign grassLayers to zones.',
+    'For each grass zone decide short/tall/flower proportions, density, variation, edge falloff, and residualDensity around structures (0 tidy, larger abandoned).',
+    'Grass may intentionally continue to pond edges or underwater. Do not remove it merely because a zone contains water; slope fading is deterministic.',
     `Use consultations only when a genuinely difficult local relationship would benefit from an independent specialist. Use 0-${SCENE_COMPOSITION_LIMITS.consultationCount}; do not create one per zone.`,
     'A consultation may improve the plan but cannot directly create assets or map operations.',
     'Rendering is a later stage. Only provide short renderPromptSuggestions; do not choose or edit a render scheme.',
@@ -54,6 +57,7 @@ export function buildSceneDirectorPrompt(map: EditableMap, assets: readonly MapA
         terrain: { elevation: 0.1, roughness: 0.5, flatness: 0.2 },
         water: null,
         layers: [{ familyId: 'family-id', density: 0.04, scaleRange: [0.8, 1.2], distribution: 'even|clustered|accent', edgeFalloff: 0.25 }],
+        grassLayers: [{ grassFamilyId: 'grass-family-id', density: 0.7, variation: 0.2, edgeFalloff: 0.25, residualDensity: 0.08 }],
         excludeZoneIds: ['other-zone-id']
       }],
       transitions: [{ fromZoneId: 'zone-a', toZoneId: 'zone-b', kind: 'soft|buffer|shore', width: 0.15 }],
@@ -61,6 +65,7 @@ export function buildSceneDirectorPrompt(map: EditableMap, assets: readonly MapA
         id: 'family-id', label: 'human label', role: 'free semantic role', tags: ['tag'],
         sizeClass: 'small|medium|large', desiredVariants: 1, priority: 0.8, generationBrief: 'single reusable asset brief'
       }],
+      grassFamilies: [{ id: 'grass-family-id', label: 'Meadow mix', mix: { short: 0.7, tall: 0.2, flowers: 0.1 } }],
       consultations: [{
         id: 'consultation-id', discipline: 'free specialist discipline', targetZoneIds: ['zone-id'],
         question: 'specific relationship to improve', priority: 0.8
@@ -79,12 +84,13 @@ export function buildSceneSpecialistPrompt(
     `You are an independent ${consultation.discipline} specialist advising a 3D scene director.`,
     `Question: ${consultation.question}`,
     'Review only the requested zones and their relationship to the whole plan.',
-    'Improve visual hierarchy, natural transitions, local terrain intent, density, scale, and use of existing asset families.',
+    'Improve visual hierarchy, natural transitions, local terrain intent, object and grass density, scale, and use of existing families.',
     'Do not create new asset families, request assets, output map operations, or add gameplay/spawn logic.',
     `Your changes must be small structured patches. Return no more than ${SCENE_COMPOSITION_LIMITS.specialistPatchCount} patches.`,
     `Global brief: ${JSON.stringify(plan.globalBrief)}.`,
     `Target zones: ${JSON.stringify(targetZones)}.`,
     `Available asset families: ${JSON.stringify(plan.assetFamilies)}.`,
+    `Available grass families: ${JSON.stringify(plan.grassFamilies)}.`,
     'Return JSON only: {"summary":"...","findings":[{"code":"...","severity":"info|warning|error","message":"..."}],"patches":[...]}.',
     patchSchemaText()
   ].join('\n');
@@ -132,6 +138,9 @@ function patchSchemaText(): string {
     '- layer.update: {type,zoneId,familyId,density?,scaleRange?,distribution?,edgeFalloff?}',
     '- layer.add: {type,zoneId,layer:{familyId,density,scaleRange,distribution,edgeFalloff}}',
     '- layer.remove: {type,zoneId,familyId}',
+    '- grass.update: {type,zoneId,grassFamilyId,density?,variation?,edgeFalloff?,residualDensity?}',
+    '- grass.add: {type,zoneId,layer:{grassFamilyId,density,variation,edgeFalloff,residualDensity}}',
+    '- grass.remove: {type,zoneId,grassFamilyId}',
     '- water.update: {type,zoneId,level?,depth?}',
     '- water.remove: {type,zoneId}'
   ].join('\n');

@@ -27,6 +27,49 @@ declare module '@voxel-studio/render-runtime' {
     render(): void;
     dispose(): void;
   }
+  export interface CartoonGrassStyle {
+    cellSize?: number;
+    bladeWidth?: number;
+    bladeHeight?: number;
+    rootColor?: string;
+    tipColor?: string;
+    flowerColors?: string[];
+    paletteVariation?: number;
+    bands?: 2 | 3;
+    normalFlatten?: number;
+    rootDarken?: number;
+    gradientBias?: number;
+    windStrength?: number;
+    windDirection?: [number, number];
+    windSpeed?: number;
+    waveFrequency?: number;
+    fadeStart?: number;
+    fadeEnd?: number;
+    maxInstances?: number;
+  }
+  export class CartoonGrassField {
+    group: import('three').Group;
+    constructor(options: {
+      layers: Array<{
+        id: string;
+        visible: boolean;
+        seed: number;
+        resolutionX: number;
+        resolutionZ: number;
+        densities: number[];
+        mix: { short: number; tall: number; flowers: number };
+      }>;
+      width: number;
+      depth: number;
+      sampleHeight: (x: number, z: number) => number;
+      sampleNormal: (x: number, z: number) => [number, number, number];
+      style?: CartoonGrassStyle;
+    });
+    update(deltaTime: number): void;
+    setStyle(style: CartoonGrassStyle): CartoonGrassStyle;
+    getStats(): { layerCount: number; bladeCount: number; flowerCount: number; drawCalls: number };
+    dispose(): void;
+  }
 }
 
 declare module '@voxel-studio/render-runtime/postprocess' {

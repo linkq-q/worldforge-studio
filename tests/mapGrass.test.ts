@@ -1,0 +1,110 @@
+import { describe, expect, it } from 'vitest';
+import { createEmptyMap, normalizeMap } from '../src/shared/map';
+import { combinedGrassDensity, sampleGrassDensity } from '../src/shared/mapGrass';
+import { applyMapOperations } from '../src/shared/mapOperations';
+
+describe('map grass layers', () => {
+  it('normalizes multiple density layers and variant ratios at terrain resolution', () => {
+    const map = normalizeMap({
+      grassLayers: [
+        {
+          id: 'meadow',
+          visible: true,
+          seed: 1,
+          name: '林间草地',
+          resolutionX: 2,
+          resolutionZ: 2,
+          densities: [0, 1, 1, 0],
+          mix: { short: 7, tall: 2, flowers: 1 }
+        },
+        {
+          id: 'shore',
+          visible: true,
+          seed: 2,
+          name: '水边草地',
+          resolutionX: 2,
+          resolutionZ: 2,
+          densities: [0.4, 0.4, 0.4, 0.4],
+          mix: { short: 1, tall: 3, flowers: 1 }
+        }
+      ]
+    });
+
+    expect(map.grassLayers).toHaveLength(2);
+    expect(map.grassLayers[0].resolutionX).toBe(map.terrain.resolutionX);
+    expect(map.grassLayers[0].mix).toEqual({ short: 0.7, tall: 0.2, flowers: 0.1 });
+    expect(sampleGrassDensity(map.grassLayers[1], map, 0, 0)).toBeCloseTo(0.4, 3);
+    expect(combinedGrassDensity(map, 0, 0)).toBeGreaterThan(0.4);
+  });
+
+  it('applies layer, fill, brush, update and remove operations atomically', () => {
+    const map = createEmptyMap('grass operations', 'grass-ops');
+    const filled = applyMapOperations(map, [
+      {
+        type: 'grass.layer.add',
+        layer: { id: 'meadow', name: '草甸', mix: { short: 0.6, tall: 0.3, flowers: 0.1 } }
+      },
+      { type: 'grass.fill', layerId: 'meadow', density: 0.25 },
+      { type: 'grass.brush', layerId: 'meadow', mode: 'add', point: [0, 0], size: 4, strength: 0.7 },
+      { type: 'grass.layer.update', layerId: 'meadow', patch: { name: '花草甸', visible: false } }
+    ]);
+
+    expect(filled.grassLayers).toHaveLength(1);
+    expect(filled.grassLayers[0].name).toBe('花草甸');
+    expect(filled.grassLayers[0].visible).toBe(false);
+    expect(filled.grassLayers[0].densities.some((density) => density > 0.25)).toBe(true);
+    expect(map.grassLayers).toEqual([]);
+
+    const removed = applyMapOperations(filled, [{ type: 'grass.layer.remove', layerId: 'meadow' }]);
+    expect(removed.grassLayers).toEqual([]);
+  });
+
+  it('generates deterministic soft regions, fades on slopes, and does not exclude underwater terrain', () => {
+    const base = createEmptyMap('grass generation', 'grass-generation');
+    base.terrain.heights.fill(-1.5);
+    const withLayer = applyMapOperations(base, [{ type: 'grass.layer.add', layer: { id: 'mixed', seed: 77 } }]);
+    const operation = {
+      type: 'grass.generate' as const,
+      layerId: 'mixed',
+      region: { kind: 'circle' as const, center: [0, 0] as [number, number], radius: 12 },
+      density: 0.8,
+      variation: 0.2,
+      softness: 0.25,
+      seed: 123
+    };
+    const first = applyMapOperations(withLayer, [operation]);
+    const second = applyMapOperations(withLayer, [operation]);
+
+    expect(first.grassLayers[0].densities).toEqual(second.grassLayers[0].densities);
+    expect(sampleGrassDensity(first.grassLayers[0], first, 0, 0)).toBeGreaterThan(0.5);
+    expect(sampleGrassDensity(first.grassLayers[0], first, 20, 20)).toBe(0);
+
+    const steep = createEmptyMap('steep grass', 'steep-grass');
+    const middle = Math.floor(steep.terrain.resolutionX / 2);
+    for (let z = 0; z < steep.terrain.resolutionZ; z += 1) {
+      for (let x = middle; x < steep.terrain.resolutionX; x += 1) {
+        steep.terrain.heights[z * steep.terrain.resolutionX + x] = 10;
+      }
+    }
+    const steepLayer = applyMapOperations(steep, [
+      { type: 'grass.layer.add', layer: { id: 'slope' } },
+      { type: 'grass.generate', layerId: 'slope', region: { kind: 'circle', center: [0, 0], radius: 20 }, density: 1, variation: 0 }
+    ]);
+    const centerIndex = Math.floor(steepLayer.terrain.resolutionZ / 2) * steepLayer.terrain.resolutionX + middle;
+    expect(steepLayer.grassLayers[0].densities[centerIndex]).toBe(0);
+  });
+
+  it('smooths a hard density boundary without changing unrelated cells', () => {
+    const map = applyMapOperations(createEmptyMap(), [
+      { type: 'grass.layer.add', layer: { id: 'smooth' } },
+      { type: 'grass.brush', layerId: 'smooth', mode: 'add', point: [0, 0], size: 1, strength: 1 }
+    ]);
+    const beforeFar = sampleGrassDensity(map.grassLayers[0], map, 15, 15);
+    const smoothed = applyMapOperations(map, [
+      { type: 'grass.brush', layerId: 'smooth', mode: 'smooth', point: [0, 0], size: 3, strength: 1 }
+    ]);
+
+    expect(sampleGrassDensity(smoothed.grassLayers[0], smoothed, 0, 0)).toBeLessThan(sampleGrassDensity(map.grassLayers[0], map, 0, 0));
+    expect(sampleGrassDensity(smoothed.grassLayers[0], smoothed, 15, 15)).toBe(beforeFar);
+  });
+});

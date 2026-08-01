@@ -12,6 +12,7 @@ export type RenderModuleId =
   | 'runtime.presentation-style'
   | 'runtime.color-grade'
   | 'runtime.water-style'
+  | 'runtime.grass-style'
   | 'runtime.material-theme'
   | 'runtime.light-rig'
   | 'runtime.post-quality'
@@ -165,6 +166,35 @@ export interface RuntimeWaterStyle {
   reflectionDistortion?: number;
   reflectionFresnel?: number;
 }
+
+export interface RuntimeGrassStyle {
+  rootColor: string;
+  tipColor: string;
+  paletteVariation: number;
+  bands: 2 | 3;
+  bladeHeight: number;
+  bladeWidth: number;
+  windStrength: number;
+  windDirection: [number, number];
+  normalFlatten: number;
+  rootDarken: number;
+  gradientBias: number;
+  cellSize: number;
+  fadeStart: number;
+  fadeEnd: number;
+  maxInstances: number;
+  groundTint: boolean;
+  groundColor: string;
+  groundTintStrength: number;
+}
+
+export const DEFAULT_RUNTIME_GRASS_STYLE: RuntimeGrassStyle = {
+  rootColor: '#72ad49', tipColor: '#c4f07f', paletteVariation: 0.14, bands: 3,
+  bladeHeight: 0.95, bladeWidth: 0.18, windStrength: 0.22, windDirection: [1, 0.25],
+  normalFlatten: 0.8, rootDarken: 0.8, gradientBias: 0.7, cellSize: 0.8,
+  fadeStart: 18, fadeEnd: 34, maxInstances: 15000,
+  groundTint: true, groundColor: '#4f7f3a', groundTintStrength: 0.72
+};
 
 export interface RuntimeMaterialTheme {
   key: string;
@@ -373,6 +403,33 @@ export const RENDER_CAPABILITIES: readonly RenderCapability[] = [
       reflectionStrength: { type: 'number', min: 0, max: 1.5, default: 0.6 },
       reflectionDistortion: { type: 'number', min: 0, max: 0.2, default: 0.04 },
       reflectionFresnel: { type: 'number', min: 0, max: 3, default: 1 }
+    }
+  },
+  {
+    id: 'runtime.grass-style',
+    label: '卡通草地风格',
+    priority: 'P1',
+    availability: 'ready',
+    availabilityNote: '草地分布属于地图；这里调整所有草层的叶片、风与远景地表染色。',
+    params: {
+      rootColor: { type: 'color', default: DEFAULT_RUNTIME_GRASS_STYLE.rootColor },
+      tipColor: { type: 'color', default: DEFAULT_RUNTIME_GRASS_STYLE.tipColor },
+      paletteVariation: { type: 'number', min: 0, max: 0.5, default: DEFAULT_RUNTIME_GRASS_STYLE.paletteVariation },
+      bands: { type: 'enum', values: ['2', '3'], default: '3' },
+      bladeHeight: { type: 'number', min: 0.5, max: 1.4, default: DEFAULT_RUNTIME_GRASS_STYLE.bladeHeight },
+      bladeWidth: { type: 'number', min: 0.1, max: 0.28, default: DEFAULT_RUNTIME_GRASS_STYLE.bladeWidth },
+      windStrength: { type: 'number', min: 0, max: 0.65, default: DEFAULT_RUNTIME_GRASS_STYLE.windStrength },
+      windAngle: { type: 'number', min: -180, max: 180, default: 14 },
+      normalFlatten: { type: 'number', min: 0, max: 1, default: DEFAULT_RUNTIME_GRASS_STYLE.normalFlatten },
+      rootDarken: { type: 'number', min: 0.15, max: 1, default: DEFAULT_RUNTIME_GRASS_STYLE.rootDarken },
+      gradientBias: { type: 'number', min: 0.2, max: 2, default: DEFAULT_RUNTIME_GRASS_STYLE.gradientBias },
+      cellSize: { type: 'number', min: 0.55, max: 1.4, default: DEFAULT_RUNTIME_GRASS_STYLE.cellSize },
+      fadeStart: { type: 'number', min: 10, max: 120, default: DEFAULT_RUNTIME_GRASS_STYLE.fadeStart },
+      fadeEnd: { type: 'number', min: 15, max: 180, default: DEFAULT_RUNTIME_GRASS_STYLE.fadeEnd },
+      maxInstances: { type: 'number', min: 1000, max: 30000, default: DEFAULT_RUNTIME_GRASS_STYLE.maxInstances },
+      groundTint: { type: 'enum', values: ['on', 'off'], default: 'on', control: 'toggle' },
+      groundColor: { type: 'color', default: DEFAULT_RUNTIME_GRASS_STYLE.groundColor },
+      groundTintStrength: { type: 'number', min: 0, max: 1, default: DEFAULT_RUNTIME_GRASS_STYLE.groundTintStrength }
     }
   },
   {
@@ -663,6 +720,32 @@ export function compileRuntimeWaterStyles(plan: RenderPlan): RuntimeWaterStyle[]
     }));
 }
 
+export function compileRuntimeGrassStyle(plan: RenderPlan): RuntimeGrassStyle {
+  const params = plan.modules.find((item) => item.id === 'runtime.grass-style')?.params ?? {};
+  const angle = (numericValue(params.windAngle) ?? 14) * Math.PI / 180;
+  return {
+    ...DEFAULT_RUNTIME_GRASS_STYLE,
+    rootColor: stringValue(params.rootColor) ?? DEFAULT_RUNTIME_GRASS_STYLE.rootColor,
+    tipColor: stringValue(params.tipColor) ?? DEFAULT_RUNTIME_GRASS_STYLE.tipColor,
+    paletteVariation: numericValue(params.paletteVariation) ?? DEFAULT_RUNTIME_GRASS_STYLE.paletteVariation,
+    bands: params.bands === '2' ? 2 : 3,
+    bladeHeight: numericValue(params.bladeHeight) ?? DEFAULT_RUNTIME_GRASS_STYLE.bladeHeight,
+    bladeWidth: numericValue(params.bladeWidth) ?? DEFAULT_RUNTIME_GRASS_STYLE.bladeWidth,
+    windStrength: numericValue(params.windStrength) ?? DEFAULT_RUNTIME_GRASS_STYLE.windStrength,
+    windDirection: [Math.cos(angle), Math.sin(angle)],
+    normalFlatten: numericValue(params.normalFlatten) ?? DEFAULT_RUNTIME_GRASS_STYLE.normalFlatten,
+    rootDarken: numericValue(params.rootDarken) ?? DEFAULT_RUNTIME_GRASS_STYLE.rootDarken,
+    gradientBias: numericValue(params.gradientBias) ?? DEFAULT_RUNTIME_GRASS_STYLE.gradientBias,
+    cellSize: numericValue(params.cellSize) ?? DEFAULT_RUNTIME_GRASS_STYLE.cellSize,
+    fadeStart: numericValue(params.fadeStart) ?? DEFAULT_RUNTIME_GRASS_STYLE.fadeStart,
+    fadeEnd: numericValue(params.fadeEnd) ?? DEFAULT_RUNTIME_GRASS_STYLE.fadeEnd,
+    maxInstances: numericValue(params.maxInstances) ?? DEFAULT_RUNTIME_GRASS_STYLE.maxInstances,
+    groundTint: params.groundTint !== 'off',
+    groundColor: stringValue(params.groundColor) ?? DEFAULT_RUNTIME_GRASS_STYLE.groundColor,
+    groundTintStrength: numericValue(params.groundTintStrength) ?? DEFAULT_RUNTIME_GRASS_STYLE.groundTintStrength
+  };
+}
+
 export function compileRuntimeMaterialThemes(plan: RenderPlan): RuntimeMaterialTheme[] {
   return plan.modules
     .filter((item) => item.id === 'runtime.material-theme')
@@ -745,7 +828,10 @@ export function createDefaultRenderAccessPolicy(): RenderAccessPolicy {
       );
       const range: RenderAccessRange = {
         enabled: !capability.developerOnly
-          && !(capability.id === 'runtime.post-quality' && parameter === 'depthOfField'),
+          && !(capability.id === 'runtime.post-quality' && parameter === 'depthOfField')
+          && !(capability.id === 'runtime.grass-style' && [
+            'normalFlatten', 'rootDarken', 'gradientBias', 'cellSize', 'fadeStart', 'fadeEnd', 'maxInstances'
+          ].includes(parameter)),
         ...(rule.type === 'number' ? { min: rule.min, max: rule.max } : {}),
         ...(rule.type === 'enum' ? { values: [...rule.values] } : {})
       };

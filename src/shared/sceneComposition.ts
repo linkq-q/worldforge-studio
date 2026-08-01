@@ -12,6 +12,7 @@ export const SCENE_COMPOSITION_VERSION = 1 as const;
 export const SCENE_COMPOSITION_LIMITS = Object.freeze({
   zoneCount: 12,
   assetFamilyCount: 12,
+  grassFamilyCount: 4,
   transitionCount: 16,
   consultationCount: 2,
   specialistPatchCount: 6,
@@ -36,6 +37,7 @@ export interface SceneCompositionPlan {
   zones: SceneCompositionZone[];
   transitions: SceneTransition[];
   assetFamilies: SceneAssetFamily[];
+  grassFamilies: SceneGrassFamily[];
   consultations: SceneConsultationRequest[];
   renderPromptSuggestions: string[];
 }
@@ -67,6 +69,7 @@ export interface SceneCompositionZone {
     depth: number;
   };
   layers: SceneZoneLayer[];
+  grassLayers: SceneZoneGrassLayer[];
   excludeZoneIds: string[];
 }
 
@@ -76,6 +79,21 @@ export interface SceneZoneLayer {
   scaleRange: [number, number];
   distribution: SceneDistribution;
   edgeFalloff: number;
+}
+
+export interface SceneGrassFamily {
+  id: string;
+  label: string;
+  mix: { short: number; tall: number; flowers: number };
+}
+
+export interface SceneZoneGrassLayer {
+  grassFamilyId: string;
+  density: number;
+  variation: number;
+  edgeFalloff: number;
+  /** Density deliberately left around structures: 0 tidy, larger values abandoned. */
+  residualDensity: number;
 }
 
 export interface SceneTransition {
@@ -121,9 +139,13 @@ export function normalizeSceneCompositionPlan(value: unknown, map: EditableMap):
     .slice(0, SCENE_COMPOSITION_LIMITS.assetFamilyCount);
   const assetFamilies = familyValues.map(normalizeFamily);
   const familyIds = uniqueIds(assetFamilies, 'duplicate_scene_family_id');
+  const grassFamilies = Array.isArray(input.grassFamilies)
+    ? input.grassFamilies.slice(0, SCENE_COMPOSITION_LIMITS.grassFamilyCount).map(normalizeGrassFamily)
+    : [];
+  const grassFamilyIds = uniqueIds(grassFamilies, 'duplicate_scene_grass_family_id');
   const zoneValues = requireArray(input.zones, 'invalid_scene_zones').slice(0, SCENE_COMPOSITION_LIMITS.zoneCount);
   if (zoneValues.length < 1) throw new Error('scene_composition_requires_zones');
-  const zones = zoneValues.map((zone) => normalizeZone(zone, map, familyIds));
+  const zones = zoneValues.map((zone) => normalizeZone(zone, map, familyIds, grassFamilyIds));
   const zoneIds = uniqueIds(zones, 'duplicate_scene_zone_id');
   for (const zone of zones) {
     if (zone.excludeZoneIds.some((id) => !zoneIds.has(id) || id === zone.id)) {
@@ -155,6 +177,7 @@ export function normalizeSceneCompositionPlan(value: unknown, map: EditableMap):
     zones,
     transitions,
     assetFamilies,
+    grassFamilies,
     consultations,
     renderPromptSuggestions: normalizeTextList(input.renderPromptSuggestions, 8, 80)
   };
@@ -175,6 +198,7 @@ export function isCompositionEmptyMap(map: EditableMap): boolean {
   return map.objects.length === 0
     && map.waterBodies.length === 0
     && map.paintStrokes.length === 0
+    && map.grassLayers.every((layer) => layer.densities.every((density) => density <= 0.001))
     && map.terrain.heights.every((height) => Math.abs(height) < 0.001);
 }
 
@@ -209,7 +233,12 @@ function normalizeConsultation(value: unknown, zoneIds: Set<string>): SceneConsu
   };
 }
 
-function normalizeZone(value: unknown, map: EditableMap, familyIds: Set<string>): SceneCompositionZone {
+function normalizeZone(
+  value: unknown,
+  map: EditableMap,
+  familyIds: Set<string>,
+  grassFamilyIds: Set<string>
+): SceneCompositionZone {
   const input = requireRecord(value, 'invalid_scene_zone');
   const role = SCENE_ZONE_ROLES.includes(input.role as SceneZoneRole) ? input.role as SceneZoneRole : null;
   if (!role) throw new Error('invalid_scene_zone');
@@ -219,6 +248,10 @@ function normalizeZone(value: unknown, map: EditableMap, familyIds: Set<string>)
   const terrainInput = requireRecord(input.terrain, 'invalid_scene_zone_terrain');
   const layers = Array.isArray(input.layers)
     ? input.layers.slice(0, 8).map((layer) => normalizeLayer(layer, familyIds))
+    : [];
+  const grassLayers = Array.isArray(input.grassLayers)
+    ? input.grassLayers.slice(0, SCENE_COMPOSITION_LIMITS.grassFamilyCount)
+      .map((layer) => normalizeZoneGrassLayer(layer, grassFamilyIds))
     : [];
   const water = input.water === undefined || input.water === null
     ? undefined
@@ -246,7 +279,35 @@ function normalizeZone(value: unknown, map: EditableMap, familyIds: Set<string>)
     },
     water,
     layers,
+    grassLayers,
     excludeZoneIds: normalizeIds(input.excludeZoneIds, 8)
+  };
+}
+
+function normalizeGrassFamily(value: unknown): SceneGrassFamily {
+  const input = requireRecord(value, 'invalid_scene_grass_family');
+  const mixInput = input.mix === undefined ? {} : requireRecord(input.mix, 'invalid_scene_grass_family');
+  const short = Math.max(0, finiteNumber(mixInput.short, 0.7));
+  const tall = Math.max(0, finiteNumber(mixInput.tall, 0.2));
+  const flowers = Math.max(0, finiteNumber(mixInput.flowers, 0.1));
+  const total = short + tall + flowers || 1;
+  return {
+    id: requireId(input.id, 'invalid_scene_grass_family'),
+    label: cleanText(input.label, String(input.id ?? ''), 64),
+    mix: { short: short / total, tall: tall / total, flowers: flowers / total }
+  };
+}
+
+function normalizeZoneGrassLayer(value: unknown, familyIds: Set<string>): SceneZoneGrassLayer {
+  const input = requireRecord(value, 'invalid_scene_grass_layer');
+  const grassFamilyId = requireId(input.grassFamilyId, 'invalid_scene_grass_layer');
+  if (!familyIds.has(grassFamilyId)) throw new Error('unknown_scene_grass_family');
+  return {
+    grassFamilyId,
+    density: clamp(finiteNumber(input.density, 0.65), 0, 1),
+    variation: clamp(finiteNumber(input.variation, 0.2), 0, 1),
+    edgeFalloff: clamp(finiteNumber(input.edgeFalloff, 0.25), 0, 1),
+    residualDensity: clamp(finiteNumber(input.residualDensity, 0.08), 0, 1)
   };
 }
 

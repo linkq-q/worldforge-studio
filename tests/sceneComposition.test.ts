@@ -14,6 +14,7 @@ import { resolveSceneFamilies } from '../src/shared/sceneCompositionAssets';
 import { compileSceneComposition } from '../src/shared/sceneCompositionCompiler';
 import { applyMapOperations } from '../src/shared/mapOperations';
 import { isNearWater } from '../src/shared/mapWater';
+import { sampleGrassDensity } from '../src/shared/mapGrass';
 
 describe('scene composition contract', () => {
   it('keeps creative roles free-form while validating references and bounded consultations', () => {
@@ -64,6 +65,8 @@ describe('scene composition contract', () => {
     expect(first.metrics.waterCount).toBe(1);
     expect(first.operations.some((operation) => operation.type === 'terrain.generate')).toBe(true);
     expect(first.operations.some((operation) => operation.type === 'water.add')).toBe(true);
+    expect(first.operations.some((operation) => operation.type === 'grass.layer.add')).toBe(true);
+    expect(first.operations.some((operation) => operation.type === 'grass.generate')).toBe(true);
     expect(first.operations.some((operation) => operation.type === 'reference.set')).toBe(false);
     const clearing = sceneZoneWorldRegion(plan.zones.find((zone) => zone.id === 'clearing')!, map);
     const objects = first.operations.filter((operation) => operation.type === 'object.add');
@@ -74,6 +77,8 @@ describe('scene composition contract', () => {
     const applied = applyMapOperations(map, first.operations);
     expect(applied.objects).toHaveLength(first.metrics.objectCount);
     expect(applied.waterBodies).toHaveLength(1);
+    expect(applied.grassLayers).toHaveLength(1);
+    expect(sampleGrassDensity(applied.grassLayers[0], applied, clearing.x, clearing.z)).toBeGreaterThan(0.45);
     expect(applied.renderPromptSuggestions).toEqual(['soft morning haze', 'warm low-contrast light']);
     expect(applied.objects.every((object) => !isNearWater(applied, object.transform.position[0], object.transform.position[2], 0.5)))
       .toBe(true);
@@ -145,6 +150,9 @@ function planInput(): unknown {
         generationBrief: 'One reusable cozy forest cabin.'
       }
     ],
+    grassFamilies: [
+      { id: 'meadow', label: 'Forest meadow', mix: { short: 0.7, tall: 0.2, flowers: 0.1 } }
+    ],
     zones: [
       {
         id: 'forest', label: 'Main forest', role: 'primary', importance: 0.9,
@@ -155,6 +163,7 @@ function planInput(): unknown {
           { familyId: 'trees', density: 0.045, scaleRange: [0.85, 1.3], distribution: 'clustered', edgeFalloff: 0.25 },
           { familyId: 'shrubs', density: 0.08, scaleRange: [0.7, 1.15], distribution: 'clustered', edgeFalloff: 0.35 }
         ],
+        grassLayers: [{ grassFamilyId: 'meadow', density: 0.35, variation: 0.25, edgeFalloff: 0.3, residualDensity: 0.12 }],
         excludeZoneIds: ['pond', 'clearing', 'camp']
       },
       {
@@ -163,14 +172,18 @@ function planInput(): unknown {
         brief: { atmosphere: 'Quiet reflective water', hierarchy: 'Open water with a soft planted shore', openness: 0.9, transitionIntent: 'Feather vegetation at the shore' },
         terrain: { elevation: -0.25, roughness: 0.25, flatness: 0.8 },
         water: { type: 'lake', level: 0.35, depth: 1.8 },
-        layers: [], excludeZoneIds: []
+        layers: [],
+        grassLayers: [{ grassFamilyId: 'meadow', density: 0.62, variation: 0.3, edgeFalloff: 0.18, residualDensity: 0.1 }],
+        excludeZoneIds: []
       },
       {
         id: 'clearing', label: 'Forest clearing', role: 'negative-space', importance: 0.55,
         region: { kind: 'circle', center: [0.03, -0.22], radius: 0.19 },
         brief: { atmosphere: 'Breathing room', hierarchy: 'Low ground cover only', openness: 0.9, transitionIntent: 'Tree density fades toward center' },
         terrain: { elevation: 0, roughness: 0.15, flatness: 0.75 },
-        layers: [], excludeZoneIds: []
+        layers: [],
+        grassLayers: [{ grassFamilyId: 'meadow', density: 0.82, variation: 0.14, edgeFalloff: 0.22, residualDensity: 0.04 }],
+        excludeZoneIds: []
       },
       {
         id: 'camp', label: 'Cabin camp', role: 'secondary', importance: 1,
@@ -178,6 +191,7 @@ function planInput(): unknown {
         brief: { atmosphere: 'Warm and lived-in', hierarchy: 'Cabin anchors the scene', openness: 0.7, transitionIntent: 'A sparse buffer separates cabin from forest' },
         terrain: { elevation: 0.02, roughness: 0.1, flatness: 0.9 },
         layers: [{ familyId: 'cabin', density: 0.01, scaleRange: [1, 1.1], distribution: 'accent', edgeFalloff: 0 }],
+        grassLayers: [{ grassFamilyId: 'meadow', density: 0.5, variation: 0.2, edgeFalloff: 0.2, residualDensity: 0.14 }],
         excludeZoneIds: []
       }
     ],

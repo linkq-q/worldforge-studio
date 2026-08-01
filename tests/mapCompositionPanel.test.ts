@@ -26,11 +26,12 @@ describe('map composition preview panel', () => {
               region: { kind: 'circle', center: [0, 0], radius: 0.3 },
               brief: { atmosphere: '', hierarchy: '', openness: 0.5, transitionIntent: '' },
               terrain: { elevation: 0, roughness: 0.3, flatness: 0.5 },
-              layers: [], excludeZoneIds: []
+              layers: [], grassLayers: [], excludeZoneIds: []
             }
           ],
           transitions: [],
           assetFamilies: [],
+          grassFamilies: [],
           consultations: [],
           renderPromptSuggestions: []
         },
