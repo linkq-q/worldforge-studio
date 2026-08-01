@@ -22,6 +22,14 @@ export interface MapScatterPlan {
   minSpacing: number;
   scaleRange: [number, number];
   seed: number;
+  edgeFalloff?: number;
+  clusterStrength?: number;
+  excludeRegions?: Array<{
+    kind: 'circle';
+    x: number;
+    z: number;
+    r: number;
+  }>;
 }
 
 export interface MapScatterPlacement {
@@ -63,6 +71,9 @@ export function expandMapScatter(
   const regionRadius = clamp(plan.region.r, cellSize / 2, Math.min(map.box.size[0], map.box.size[2]) / 2);
   const minScale = clamp(Math.min(...plan.scaleRange), 0.1, 8);
   const maxScale = clamp(Math.max(...plan.scaleRange), minScale, 8);
+  const edgeFalloff = clamp(plan.edgeFalloff ?? 0, 0, 1);
+  const clusterStrength = clamp(plan.clusterStrength ?? 0, 0, 1);
+  const excludeRegions = plan.excludeRegions ?? [];
   const occupied = existingOccupiedCircles(map);
   const accepted: MapScatterPlacement[] = [];
   const minGridX = Math.floor((plan.region.x - regionRadius) / cellSize);
@@ -80,7 +91,15 @@ export function expandMapScatter(
       const footprintRadius = assetFootprintRadius(asset) * scale;
       candidateIndex += 1;
 
-      if (Math.hypot(x - plan.region.x, z - plan.region.z) > regionRadius) continue;
+      const normalizedDistance = Math.hypot(x - plan.region.x, z - plan.region.z) / regionRadius;
+      if (normalizedDistance > 1) continue;
+      if (excludeRegions.some((region) => Math.hypot(x - region.x, z - region.z) <= Math.max(0, region.r))) continue;
+      const edgeProbability = edgeFalloff <= 0
+        ? 1
+        : clamp((1 - normalizedDistance) / edgeFalloff, 0, 1);
+      const clusterProbability = 1 - clusterStrength
+        + clusterStrength * clusterNoise(x / Math.max(1, cellSize * 4), z / Math.max(1, cellSize * 4), plan.seed);
+      if (random() > edgeProbability * clusterProbability) continue;
       if (x < bounds.minX + footprintRadius || x > bounds.maxX - footprintRadius) continue;
       if (z < bounds.minZ + footprintRadius || z > bounds.maxZ - footprintRadius) continue;
       if (isNearWater(map, x, z, Math.max(0, plan.avoidWater))) continue;
@@ -103,6 +122,32 @@ export function expandMapScatter(
     }
   }
   return accepted;
+}
+
+function clusterNoise(x: number, z: number, seed: number): number {
+  const x0 = Math.floor(x);
+  const z0 = Math.floor(z);
+  const tx = smooth(x - x0);
+  const tz = smooth(z - z0);
+  return lerp(
+    lerp(hashNoise(x0, z0, seed), hashNoise(x0 + 1, z0, seed), tx),
+    lerp(hashNoise(x0, z0 + 1, seed), hashNoise(x0 + 1, z0 + 1, seed), tx),
+    tz
+  );
+}
+
+function hashNoise(x: number, z: number, seed: number): number {
+  let value = Math.imul(x, 374761393) + Math.imul(z, 668265263) + Math.imul(seed, 69069);
+  value = Math.imul(value ^ value >>> 13, 1274126177);
+  return ((value ^ value >>> 16) >>> 0) / 4294967295;
+}
+
+function smooth(value: number): number {
+  return value * value * (3 - 2 * value);
+}
+
+function lerp(left: number, right: number, amount: number): number {
+  return left + (right - left) * amount;
 }
 
 function existingOccupiedCircles(map: EditableMap): OccupiedCircle[] {

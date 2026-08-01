@@ -30,6 +30,8 @@ import {
   type TerrainBrushMode
 } from '../shared/map';
 import { planLimits } from '../shared/mapPlanning';
+import { isCompositionEmptyMap, SCENE_COMPOSITION_LIMITS } from '../shared/sceneComposition';
+import { renderMapCompositionSummary } from './mapCompositionPanel';
 import { buildEditableMapGroup, type RenderedMap } from './mapRenderer';
 import { configureSunLight } from './lighting';
 import { buildModelGroup } from './modelRenderer';
@@ -613,6 +615,7 @@ class MapEditor {
       return false;
     } finally {
       this.setBusy(false);
+      this.renderPanels();
     }
   }
 
@@ -737,7 +740,8 @@ class MapEditor {
     const waterCount = suggestion?.operations.filter((operation) => operation.type.startsWith('water.')).length ?? 0;
     const objectCount = suggestion?.operations.filter((operation) => operation.type.startsWith('object.')).length ?? 0;
     const hasSpawn = suggestion?.operations.some((operation) => operation.type === 'reference.set') ?? false;
-    const generationBlocked = this.state.busy || this.state.dirty || !this.mapAiPrompt.trim();
+    const compositionAvailable = isCompositionEmptyMap(map);
+    const generationBlocked = this.state.busy || this.state.dirty || !this.mapAiPrompt.trim() || !compositionAvailable;
     const refinementBlocked = generationBlocked || !hasRefinableMapContent(map);
     const limits = planLimits(getMapBounds(map));
     host.innerHTML = `
@@ -757,7 +761,11 @@ class MapEditor {
           ${this.mapAiAbortController ? '<button id="cancel-map-ai" class="secondary">取消</button>' : ''}
         </div>
         ${renderAgentProgress(this.mapAgentProgress)}
-        <p class="empty">模型风格 ${map.assetGenerationMode.toUpperCase()} · ${this.state.dirty ? '请先保存当前手工修改，再生成 AI 地图预览。' : `Agent 会检查资产库、生成最多 ${limits.assetRequestCount} 类同风格缺失资产，再规划地形、水域、摆放和出生点。`}</p>
+        <p class="empty">模型风格 ${map.assetGenerationMode.toUpperCase()} · ${this.state.dirty
+          ? '请先保存当前手工修改，再生成 AI 地图预览。'
+          : !compositionAvailable
+            ? '当前地图已有内容，请使用“调整当前地图”继续 Refine。'
+            : `总导演会先组织完整场景，按需调用最多 ${SCENE_COMPOSITION_LIMITS.consultationCount} 个专家，并生成最多 ${limits.assetRequestCount} 类同风格缺失资产；合成审查后再进入预览。`}</p>
       </section>
       ${suggestion && this.mapAiPreviewMap ? `
         <section class="editor-section map-ai-result">
@@ -769,6 +777,7 @@ class MapEditor {
             <span>物体修改 <b>${objectCount}</b></span>
             <span>出生点 <b>${hasSpawn ? '有' : '无'}</b></span>
           </div>
+          ${renderMapCompositionSummary(suggestion)}
           ${suggestion.renderPromptSuggestions.length > 0 ? `
             <div>
               <p class="empty">留给渲染阶段的建议</p>
@@ -801,7 +810,7 @@ class MapEditor {
       const blocked = this.state.busy || this.state.dirty || !this.mapAiPrompt.trim();
       const generateButton = host.querySelector<HTMLButtonElement>('#generate-map-ai');
       const refineButton = host.querySelector<HTMLButtonElement>('#refine-map-ai');
-      if (generateButton) generateButton.disabled = blocked;
+      if (generateButton) generateButton.disabled = blocked || !isCompositionEmptyMap(map);
       if (refineButton) refineButton.disabled = blocked || !hasRefinableMapContent(map);
     });
     host.querySelector<HTMLSelectElement>('#map-ai-provider')?.addEventListener('change', (event) => {

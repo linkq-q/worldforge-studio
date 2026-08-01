@@ -34,6 +34,7 @@ import {
   normalizeModelGenerationMode,
   type ModelGenerationMode
 } from '../shared/modelGenerationMode';
+import { runMapCompositionWorkflow } from './mapCompositionWorkflow';
 
 export interface MapAiOptions {
   apiBase?: string;
@@ -72,6 +73,12 @@ export async function runMapAgent(
   options: MapAgentOptions
 ): Promise<MapAiSuggestion> {
   const mode = options.mode ?? 'generate';
+  if (mode === 'generate') {
+    const result = await runMapCompositionWorkflow(prompt, map, assets, options);
+    const validated = finalizeMapAgentSuggestion(map, result.assets, result.suggestion, options);
+    options.onProgress?.({ phase: 'complete', label: '场景构图、合成审查与地图预览已完成' });
+    return validated;
+  }
   options.onProgress?.({ phase: 'planning', label: mode === 'refine' ? '理解地图调整要求' : '规划地图内容' });
   const firstContent = await requestMapPlan(prompt, map, assets, options, false, mode);
   const limits = planLimits(getMapBounds(map));

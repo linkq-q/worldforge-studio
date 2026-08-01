@@ -14,10 +14,10 @@ import {
 } from '../src/server/mapAi';
 import { planLimits } from '../src/shared/mapPlanning';
 
-const assets = [
-  { id: 'asset-tree', name: '松树', prompt: 'low poly pine tree' },
-  { id: 'asset-rock', name: '岩石', prompt: 'gray rock' }
-] as MapAsset[];
+const assets: MapAsset[] = [
+  testAsset('asset-tree', 'Pine tree', ['tree', 'vegetation'], 'large'),
+  testAsset('asset-rock', 'Rock', ['rock', 'stone'], 'medium')
+];
 
 describe('map AI adapter', () => {
   it('places the deterministic terrain base before local terrain and water operations', () => {
@@ -230,38 +230,20 @@ describe('map AI adapter', () => {
     expect(fetchImpl.mock.calls[0][0]).toBe('https://example.test/api/chat');
   });
 
-  it('generates missing assets and replans with their real ids', async () => {
+  it('generates missing same-mode assets before compiling and reviewing the composition', async () => {
     const progress: string[] = [];
     const fetchImpl = vi.fn()
-      .mockResolvedValueOnce(new Response(JSON.stringify({
-        ok: true,
-        content: JSON.stringify({
-          summary: '需要一棵田园树木',
-          assetRequests: [{
-            name: '田园树',
-            prompt: '低多边形田园树木，无地面和背景',
-            tags: ['tree', 'vegetation']
-          }]
-        })
-      }), { status: 200, headers: { 'Content-Type': 'application/json' } }))
-      .mockResolvedValueOnce(new Response(JSON.stringify({
-        ok: true,
-        content: JSON.stringify({
-          summary: '带树木的缓坡田园',
-          terrain: [{ mode: 'raise', x: 0, z: 0, size: 5, strength: 0.5 }],
-          objects: [{ assetId: 'asset-generated-tree', name: '田园树', x: 2, z: 1 }],
-          spawn: { x: 0, z: -4 },
-          renderPromptSuggestions: ['素描风格']
-        })
-      }), { status: 200, headers: { 'Content-Type': 'application/json' } }));
+      .mockResolvedValueOnce(chatResponse(compositionPlan({
+        assetFamilies: [family('trees', ['tree', 'vegetation'], 'large')],
+        zones: [zone('grove', [{ familyId: 'trees', distribution: 'clustered' }])]
+      })))
+      .mockResolvedValueOnce(chatResponse(reviewPass()));
     const createAsset = vi.fn().mockResolvedValue({
-      id: 'asset-generated-tree',
-      name: '田园树',
-      prompt: '低多边形田园树木，无地面和背景'
-    } as MapAsset);
+      ...testAsset('asset-generated-tree', 'Pastoral tree', ['tree', 'vegetation'], 'large', 'curve')
+    });
 
     const suggestion = await runMapAgent(
-      '素描风格的宁静田园，有一些树木',
+      'A quiet pastoral grove',
       { ...createEmptyMap(), assetGenerationMode: 'curve' },
       [],
       {
@@ -279,7 +261,7 @@ describe('map AI adapter', () => {
       tags: ['tree', 'vegetation'],
       mode: 'curve'
     }));
-    expect(suggestion.generatedAssets).toEqual([{ id: 'asset-generated-tree', name: '田园树' }]);
+    expect(suggestion.generatedAssets).toEqual([{ id: 'asset-generated-tree', name: 'Pastoral tree' }]);
     expect(suggestion.operations).toEqual(expect.arrayContaining([
       expect.objectContaining({
         type: 'object.add',
@@ -289,38 +271,24 @@ describe('map AI adapter', () => {
     const secondRequest = JSON.parse(fetchImpl.mock.calls[1][1]?.body as string);
     expect(secondRequest.messages[0].content).toContain('asset-generated-tree');
     expect(progress).toEqual(expect.arrayContaining([
-      'planning',
-      'checking-assets',
+      'composing',
+      'resolving-assets',
       'generating-asset',
-      'replanning',
+      'compiling',
+      'reviewing',
       'validating',
       'complete'
     ]));
   });
 
   it('allows the large preset to request up to eight reusable assets', async () => {
-    const requests = Array.from({ length: 10 }, (_, index) => ({
-      name: `Asset ${index}`,
-      prompt: `Reusable low poly asset ${index}`
-    }));
+    const families = Array.from({ length: 10 }, (_, index) => family(`asset-${index}`, [`tag-${index}`], 'small'));
     const fetchImpl = vi.fn()
-      .mockResolvedValueOnce(new Response(JSON.stringify({
-        ok: true,
-        content: JSON.stringify({ summary: 'asset pass', assetRequests: requests })
-      }), { status: 200, headers: { 'Content-Type': 'application/json' } }))
-      .mockResolvedValueOnce(new Response(JSON.stringify({
-        ok: true,
-        content: JSON.stringify({
-          summary: 'final pass',
-          assetRequests: [],
-          terrain: [{ mode: 'raise', x: 0, z: 0, size: 20, strength: 0.4 }]
-        })
-      }), { status: 200, headers: { 'Content-Type': 'application/json' } }));
-    const createAsset = vi.fn().mockImplementation(async (request: { name: string; prompt: string }) => ({
-      id: `generated-${request.name}`,
-      name: request.name,
-      prompt: request.prompt
-    } as MapAsset));
+      .mockResolvedValueOnce(chatResponse(compositionPlan({ assetFamilies: families })))
+      .mockResolvedValueOnce(chatResponse(reviewPass()));
+    const createAsset = vi.fn().mockImplementation(async (request: { name: string; prompt: string; tags: string[] }) => (
+      testAsset(`generated-${request.name}`, request.name, request.tags, 'small')
+    ));
     const map = createEmptyMap('large', 'map-large-agent', [...MAP_SIZE_PRESETS[2].size]);
 
     await runMapAgent('生成大型地图', map, [], {
@@ -333,24 +301,11 @@ describe('map AI adapter', () => {
     expect(createAsset).toHaveBeenCalledTimes(8);
   });
 
-  it('replans when the first pass only extracts render style', async () => {
+  it('repairs an invalid director response once before continuing', async () => {
     const fetchImpl = vi.fn()
-      .mockResolvedValueOnce(new Response(JSON.stringify({
-        ok: true,
-        content: JSON.stringify({
-          summary: '只识别到素描田园氛围',
-          renderPromptSuggestions: ['素描风格', '柔和晨雾']
-        })
-      }), { status: 200, headers: { 'Content-Type': 'application/json' } }))
-      .mockResolvedValueOnce(new Response(JSON.stringify({
-        ok: true,
-        content: JSON.stringify({
-          summary: '推导出缓坡田园空间',
-          terrain: [{ mode: 'raise', x: 0, z: 0, size: 6, strength: 0.35 }],
-          spawn: { x: 0, z: -5 },
-          renderPromptSuggestions: ['素描风格', '柔和晨雾']
-        })
-      }), { status: 200, headers: { 'Content-Type': 'application/json' } }));
+      .mockResolvedValueOnce(chatResponse({ summary: 'style only', renderPromptSuggestions: ['sketch'] }))
+      .mockResolvedValueOnce(chatResponse(compositionPlan()))
+      .mockResolvedValueOnce(chatResponse(reviewPass()));
 
     const suggestion = await runMapAgent('素描风格的宁静田园，带有柔和晨雾', createEmptyMap(), [], {
       apiBase: 'https://example.test',
@@ -359,24 +314,59 @@ describe('map AI adapter', () => {
       createAsset: vi.fn()
     });
 
-    expect(fetchImpl).toHaveBeenCalledTimes(2);
-    expect(suggestion.operations.some((operation) => operation.type === 'terrain.brush')).toBe(true);
-    expect(suggestion.operations.some((operation) => operation.type === 'reference.set')).toBe(true);
+    expect(fetchImpl).toHaveBeenCalledTimes(3);
+    expect(suggestion.operations.some((operation) => operation.type === 'terrain.generate')).toBe(true);
+    expect(suggestion.operations.some((operation) => operation.type === 'reference.set')).toBe(false);
   });
 
-  it('reports deterministic lint repairs as a real agent progress stage', async () => {
+  it('runs only director-requested specialists and applies their bounded advice before review', async () => {
+    const plan = compositionPlan({
+      consultations: [{
+        id: 'shore-specialist',
+        discipline: 'shoreline ecology',
+        targetZoneIds: ['main'],
+        question: 'How should the region edge become more natural?',
+        priority: 0.9
+      }]
+    });
+    const fetchImpl = vi.fn()
+      .mockResolvedValueOnce(chatResponse(plan))
+      .mockResolvedValueOnce(chatResponse({
+        summary: 'Use a softer transition.',
+        findings: [{ code: 'edge.hard', severity: 'warning', message: 'The region edge is abrupt.' }],
+        patches: [{ type: 'zone.update', zoneId: 'main', radius: 0.72 }]
+      }))
+      .mockResolvedValueOnce(chatResponse(reviewPass()));
     const progress: string[] = [];
-    const fetchImpl = vi.fn().mockResolvedValue(new Response(JSON.stringify({
-      ok: true,
-      content: JSON.stringify({
-        summary: 'duplicate placement',
-        objects: [
-          { assetId: 'asset-tree', name: 'Tree A', x: 5, z: 5 },
-          { assetId: 'asset-tree', name: 'Tree B', x: 5, z: 5 }
-        ],
-        spawn: { x: 0, z: -5 }
-      })
-    }), { status: 200, headers: { 'Content-Type': 'application/json' } }));
+
+    const suggestion = await runMapAgent('a natural scene', createEmptyMap(), assets, {
+      apiBase: 'https://example.test',
+      provider: 'gpt',
+      fetchImpl,
+      createAsset: vi.fn(),
+      onProgress: (event) => progress.push(event.phase)
+    });
+
+    expect(fetchImpl).toHaveBeenCalledTimes(3);
+    expect(progress).toContain('consulting');
+    expect(suggestion.composition?.consultations).toHaveLength(1);
+    expect(suggestion.composition?.plan.zones[0].region.radius).toBe(0.72);
+  });
+
+  it('places multiple accents safely before deterministic validation', async () => {
+    const progress: string[] = [];
+    const duplicatePlan = compositionPlan({
+      assetFamilies: [
+        family('trees', ['tree'], 'large'),
+        family('rocks', ['rock'], 'medium')
+      ],
+      zones: [zone('focus', [
+        { familyId: 'trees', distribution: 'accent' },
+        { familyId: 'rocks', distribution: 'accent' }
+      ])]
+    });
+    const responses = [chatResponse(duplicatePlan), chatResponse(reviewPass())];
+    const fetchImpl = vi.fn().mockImplementation(async () => responses.shift());
 
     const suggestion = await runMapAgent('place trees', createEmptyMap(), assets, {
       apiBase: 'https://example.test',
@@ -387,10 +377,106 @@ describe('map AI adapter', () => {
     });
     const applied = applyMapOperations(createEmptyMap(), suggestion.operations);
 
-    expect(progress).toContain('repairing');
-    expect(suggestion.diagnostics).toEqual(expect.arrayContaining([
-      expect.objectContaining({ code: 'object.duplicate', repaired: true })
-    ]));
-    expect(applied.objects).toHaveLength(1);
+    expect(progress).toContain('validating');
+    expect(suggestion.diagnostics?.some((issue) => issue.code === 'object.overlap')).toBe(false);
+    expect(applied.objects).toHaveLength(2);
   });
 });
+
+function compositionPlan(overrides: {
+  assetFamilies?: unknown[];
+  zones?: unknown[];
+  consultations?: unknown[];
+} = {}): unknown {
+  const zones = overrides.zones ?? [zone('main', [])];
+  const focalZoneId = (zones[0] as { id: string }).id;
+  return {
+    version: 1,
+    summary: 'A coherent generated scene',
+    globalBrief: {
+      spatialTheme: 'A scene organized around one readable visual idea.',
+      visualHierarchy: 'The focal zone is framed by quieter surrounding space.',
+      assetArtDirection: 'Consistent silhouettes, palette, proportions, and generation mode.',
+      focalZoneId,
+      terrainBase: { preset: 'hills', seed: 17, amplitude: 3, roughness: 0.45 }
+    },
+    zones,
+    transitions: [],
+    assetFamilies: overrides.assetFamilies ?? [],
+    consultations: overrides.consultations ?? [],
+    renderPromptSuggestions: ['soft morning atmosphere']
+  };
+}
+
+function family(id: string, tags: string[], sizeClass: 'small' | 'medium' | 'large'): unknown {
+  return {
+    id,
+    label: id,
+    role: `${id} scene role`,
+    tags,
+    sizeClass,
+    desiredVariants: 1,
+    priority: 0.8,
+    generationBrief: `One reusable ${id} asset.`
+  };
+}
+
+function zone(
+  id: string,
+  layers: Array<{ familyId: string; distribution: 'even' | 'clustered' | 'accent' }>
+): unknown {
+  return {
+    id,
+    label: id,
+    role: 'primary',
+    importance: 1,
+    region: { kind: 'circle', center: [0, 0], radius: 0.65 },
+    brief: {
+      atmosphere: 'coherent',
+      hierarchy: 'readable focal structure',
+      openness: 0.45,
+      transitionIntent: 'soft edge'
+    },
+    terrain: { elevation: 0.1, roughness: 0.5, flatness: 0.2 },
+    layers: layers.map((layer) => ({
+      ...layer,
+      density: layer.distribution === 'accent' ? 0.01 : 0.05,
+      scaleRange: [0.9, 1.1],
+      edgeFalloff: 0.25
+    })),
+    excludeZoneIds: []
+  };
+}
+
+function reviewPass(): unknown {
+  return { status: 'pass', summary: 'Composition is coherent.', findings: [], patches: [] };
+}
+
+function chatResponse(content: unknown): Response {
+  return new Response(JSON.stringify({ ok: true, content: JSON.stringify(content) }), {
+    status: 200,
+    headers: { 'Content-Type': 'application/json' }
+  });
+}
+
+function testAsset(
+  id: string,
+  name: string,
+  tags: string[],
+  sizeClass: 'small' | 'medium' | 'large',
+  mode = 'voxel'
+): MapAsset {
+  return {
+    id,
+    name,
+    prompt: name,
+    tags,
+    sizeClass,
+    footprintRadius: sizeClass === 'large' ? 1.2 : 0.6,
+    modelJson: {},
+    colliderPlan: { version: 1, boxes: [], sourceMeshCount: 0, candidateCount: 0, fallbackUsed: true },
+    mode,
+    createdAt: 1,
+    updatedAt: 1
+  };
+}

@@ -19,6 +19,8 @@ import { carveWaterBasinInPlace } from './mapWater';
 import { generateTerrainInPlace, type TerrainGenerationParams } from './terrainGeneration';
 import type { Vec3 } from './protocol';
 import type { MapLintIssue } from './mapLint';
+import type { SceneCompositionMetrics, SceneCompositionPlan } from './sceneComposition';
+import type { SceneAdviceFinding, SceneReviewResult } from './sceneCompositionAdvice';
 
 export type MapTransactionSource = 'basic-ai' | 'agent';
 
@@ -72,6 +74,13 @@ export interface MapAiSuggestion {
   renderPromptSuggestions: string[];
   generatedAssets: Array<{ id: string; name: string }>;
   diagnostics?: MapLintIssue[];
+  /** Preview-only reasoning artifact. Map transactions persist only compiled operations. */
+  composition?: {
+    plan: SceneCompositionPlan;
+    metrics: SceneCompositionMetrics;
+    consultations: Array<{ id: string; summary: string; findings: SceneAdviceFinding[] }>;
+    review: SceneReviewResult;
+  };
 }
 
 const MAP_SURFACES = new Set<MapSurface>(['floor', 'ceiling', 'north', 'south', 'east', 'west', 'terrain']);

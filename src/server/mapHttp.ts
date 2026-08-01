@@ -31,6 +31,7 @@ import {
 } from '../shared/modelGenerationMode';
 import { generateRenderSuggestion, refineRenderSuggestion } from './renderAi';
 import { MapStore, mapEditorCliManifest } from './mapStore';
+import { isCompositionEmptyMap } from '../shared/sceneComposition';
 
 type Req = http.IncomingMessage;
 type Res = http.ServerResponse;
@@ -222,6 +223,9 @@ async function handleEditorMaps(req: Req, res: Res, store: MapStore, parts: stri
     res.once('close', abortIfOpen);
     try {
       const [map, assets] = await Promise.all([store.loadMap(mapId), store.listAssets()]);
+      if (parts[4] === 'generate' && !isCompositionEmptyMap(map)) {
+        throw new HttpError(409, 'map_composition_requires_empty_map');
+      }
       const planningMap = parts[4] === 'refine' && Array.isArray(body.baseOperations) && body.baseOperations.length > 0
         ? applyMapOperations(map, body.baseOperations)
         : map;
