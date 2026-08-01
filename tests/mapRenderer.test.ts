@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { buildEditableMapGroup, buildStructuredWaterGroup } from '../src/client/mapRenderer';
 import { createEmptyMap } from '../src/shared/map';
+import type { MapAsset } from '../src/shared/map';
 
 describe('structured map water rendering', () => {
   beforeEach(() => {
@@ -81,4 +82,153 @@ describe('structured map water rendering', () => {
       materials.forEach((material) => material.dispose());
     });
   });
+
+  it('builds one asset template, shares geometry, and keeps per-instance materials isolated', async () => {
+    const map = createEmptyMap('instances', 'map-shared-geometry');
+    const now = Date.now();
+    const asset: MapAsset = {
+      id: 'asset-tree',
+      name: 'tree',
+      prompt: 'tree',
+      modelJson: {
+        nodes: [{
+          id: 'trunk',
+          mesh: { type: 'box', params: { width: 1, height: 2, depth: 1 }, color: 0x445522 }
+        }]
+      },
+      colliderPlan: {
+        version: 1,
+        boxes: [],
+        sourceMeshCount: 1,
+        candidateCount: 1,
+        fallbackUsed: false
+      },
+      mode: 'test',
+      createdAt: now,
+      updatedAt: now
+    };
+    map.assets = [asset];
+    map.objects = [
+      { ...createTestObject('tree-a', asset.id), transform: { ...createTestObject('tree-a', asset.id).transform, position: [0, 0, 0] } },
+      { ...createTestObject('tree-b', asset.id), transform: { ...createTestObject('tree-b', asset.id).transform, position: [4, 0, 0] } }
+    ];
+
+    const rendered = await buildEditableMapGroup(map);
+    const first = rendered.objectGroups.get('tree-a')?.getObjectByName('trunk') as THREE.Mesh;
+    const second = rendered.objectGroups.get('tree-b')?.getObjectByName('trunk') as THREE.Mesh;
+    expect(first.geometry).toBe(second.geometry);
+    expect(first.material).not.toBe(second.material);
+    expect(first.userData.mapObjectId).toBe('tree-a');
+    expect(second.userData.mapObjectId).toBe('tree-b');
+
+    let geometryDisposals = 0;
+    first.geometry.addEventListener('dispose', () => { geometryDisposals += 1; });
+    rendered.dispose();
+    expect(geometryDisposals).toBe(1);
+  });
+
+  it('instances four safe copies and keeps editable object transform bindings', async () => {
+    const map = createEmptyMap('dense', 'map-instanced-assets');
+    const now = Date.now();
+    const asset: MapAsset = {
+      id: 'asset-shrub',
+      name: 'shrub',
+      prompt: 'shrub',
+      modelJson: {
+        nodes: [{
+          id: 'leaf',
+          mesh: { type: 'box', params: { width: 1, height: 1, depth: 1 }, color: 0x447733 }
+        }]
+      },
+      colliderPlan: {
+        version: 1,
+        boxes: [],
+        sourceMeshCount: 1,
+        candidateCount: 1,
+        fallbackUsed: false
+      },
+      mode: 'voxel',
+      createdAt: now,
+      updatedAt: now
+    };
+    map.assets = [asset];
+    map.objects = Array.from({ length: 4 }, (_, index) => {
+      const object = createTestObject(`shrub-${index}`, asset.id);
+      object.transform.position = [index * 3, 0, 0];
+      return object;
+    });
+
+    const rendered = await buildEditableMapGroup(map);
+    const batch = rendered.modelsRoot.getObjectByProperty('isInstancedMesh', true) as THREE.InstancedMesh;
+    expect(batch.count).toBe(4);
+    expect(batch.userData.instanceObjectIds).toEqual(['shrub-0', 'shrub-1', 'shrub-2', 'shrub-3']);
+    expect(rendered.pickables).toContain(batch);
+
+    const selected = rendered.objectGroups.get('shrub-2') as THREE.Group;
+    selected.position.x = 20;
+    rendered.syncObjectTransform('shrub-2');
+    const matrix = new THREE.Matrix4();
+    batch.getMatrixAt(2, matrix);
+    expect(new THREE.Vector3().setFromMatrixPosition(matrix).x).toBeCloseTo(20);
+    rendered.dispose();
+  });
+
+  it('keeps material-tagged copies on the isolated material path', async () => {
+    const map = createEmptyMap('tagged', 'map-tagged-assets');
+    const now = Date.now();
+    const asset: MapAsset = {
+      id: 'asset-tagged-tree',
+      name: 'tagged tree',
+      prompt: 'tagged tree',
+      modelJson: {
+        nodes: [{
+          id: 'leaf',
+          tags: [{ tag: 'base', value: 'foliage' }],
+          mesh: { type: 'box', params: { width: 1, height: 1, depth: 1 }, color: 0x447733 }
+        }]
+      },
+      colliderPlan: {
+        version: 1,
+        boxes: [],
+        sourceMeshCount: 1,
+        candidateCount: 1,
+        fallbackUsed: false
+      },
+      mode: 'voxel',
+      createdAt: now,
+      updatedAt: now
+    };
+    map.assets = [asset];
+    map.objects = Array.from({ length: 4 }, (_, index) => {
+      const object = createTestObject(`tagged-${index}`, asset.id);
+      object.transform.position = [index * 3, 0, 0];
+      return object;
+    });
+
+    const rendered = await buildEditableMapGroup(map);
+    expect(rendered.modelsRoot.getObjectByProperty('isInstancedMesh', true)).toBeUndefined();
+
+    const materials = map.objects.map((object) => (
+      rendered.objectGroups.get(object.id)?.getObjectByName('leaf') as THREE.Mesh
+    ).material);
+    expect(new Set(materials).size).toBe(4);
+    rendered.dispose();
+  });
 });
+
+function createTestObject(id: string, assetId: string) {
+  return {
+    id,
+    name: id,
+    parentId: null,
+    assetId,
+    transform: {
+      position: [0, 0, 0] as [number, number, number],
+      rotation: [0, 0, 0] as [number, number, number],
+      scale: [1, 1, 1] as [number, number, number],
+      size: [1, 1, 1] as [number, number, number]
+    },
+    visible: true,
+    locked: false
+  };
+}

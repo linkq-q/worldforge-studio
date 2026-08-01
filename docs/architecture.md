@@ -40,6 +40,8 @@
 
 资产标签与模型内部材质标签分开保存：Agent 在 `assetRequests.tags` 中输出 `tree/rock/building/landmark` 等对象语义，生成完成后直接写入 `MapAsset.tags`；代码根据实际碰撞体计算 `footprintRadius` 与 `sizeClass`。后续 AI 规划和散布优先读取这些结构化字段，名称正则仅保留为旧资产兼容回退。
 
+重复资产的性能优化由宿主 `mapAssetInstancing` 模块负责，不把 WorldForge 对象协议塞进 Voxel Runtime。四个及以上、无 `nodes[].tags` 且全部不透明的同一资产可合并为 `InstancedMesh`，并保留不可见的逐对象选择代理和实例变换同步；带材质标签或透明材质的资产继续走独立 Mesh/Material 路径，避免材质主题、特效和水体语义串到其他实例。开发者模式显示 draw calls、triangles 与 frame ms，作为提高地图物体配额前的验收依据。
+
 ### 专业版
 
 外部 Agent 通过稳定的 HTTP/CLI/Skill 契约编辑同一份数据。Agent 默认只能创建隔离扩展，不得修改核心源码。执行期间编辑器锁定，但允许用户取消；每次执行最终作为一个可撤销事务提交。

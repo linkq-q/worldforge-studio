@@ -19,6 +19,7 @@ import {
   type MapWaterBody
 } from '../shared/map';
 import { buildModelGroup } from './modelRenderer';
+import { buildMapAssetInstances } from './mapAssetInstancing';
 import { terrainVertexColor } from './terrainAppearance';
 
 export interface RenderedMap {
@@ -26,6 +27,7 @@ export interface RenderedMap {
   modelsRoot: THREE.Group;
   objectGroups: Map<string, THREE.Group>;
   pickables: THREE.Object3D[];
+  syncObjectTransform: (objectId: string) => void;
   dispose: () => void;
 }
 
@@ -49,7 +51,7 @@ export async function buildEditableMapGroup(input: EditableMap, options: MapRend
   pickables.push(terrain);
 
   modelsRoot.add(buildStructuredWaterGroup(map));
-  const objectGroups = await buildObjectGroups(map, assets);
+  const objectGroups = createObjectGroups(map);
   if (options.editorHelpers) {
     const playerSpawnGroup = buildPlayerSpawnGroup(map);
     const sunGroup = buildSunGroup(map);
@@ -64,17 +66,29 @@ export async function buildEditableMapGroup(input: EditableMap, options: MapRend
     if (parent && parent !== group) parent.add(group);
     else modelsRoot.add(group);
   }
+  modelsRoot.updateMatrixWorld(true);
+  const instancing = await buildMapAssetInstances(map.objects.flatMap((object) => {
+    const asset = object.visible && object.assetId ? assets.get(object.assetId) : undefined;
+    const objectGroup = objectGroups.get(object.id);
+    return asset && objectGroup
+      ? [{ objectId: object.id, objectGroup, asset, assetTags: deriveAssetTags(asset) }]
+      : [];
+  }));
+  modelsRoot.add(instancing.root);
+  await populateObjectVisuals(map, assets, objectGroups, instancing.handledObjectIds);
   for (const group of objectGroups.values()) {
     group.traverse((child) => {
-      if ((child as THREE.Mesh).isMesh) pickables.push(child);
+      if ((child as THREE.Mesh).isMesh && child.userData.editorHelper !== true) pickables.push(child);
     });
   }
+  pickables.push(...instancing.pickables);
 
   return {
     group: root,
     modelsRoot,
     objectGroups,
     pickables,
+    syncObjectTransform: instancing.syncObjectTransform,
     dispose: () => disposeObject(root)
   };
 }
@@ -294,29 +308,71 @@ function terrainUv(map: EditableMap, x: number, z: number): [number, number] {
   ];
 }
 
-async function buildObjectGroups(map: EditableMap, assets: Map<string, MapAsset>): Promise<Map<string, THREE.Group>> {
+function createObjectGroups(map: EditableMap): Map<string, THREE.Group> {
   const groups = new Map<string, THREE.Group>();
   for (const object of map.objects) {
     const group = new THREE.Group();
     group.name = object.name;
     group.userData.mapObjectId = object.id;
     applyObjectTransform(group, object);
-    if (object.visible) {
-      const asset = object.assetId ? assets.get(object.assetId) : undefined;
-      if (asset) group.userData.assetTags = deriveAssetTags(asset);
-      const visual = asset?.modelJson ? await buildModelGroup(asset.modelJson) : buildFallbackObject();
-      visual.traverse((child) => {
-        child.userData.mapObjectId = object.id;
-        if ((child as THREE.Mesh).isMesh) {
-          child.castShadow = true;
-          child.receiveShadow = true;
-        }
-      });
-      group.add(visual);
-    }
     groups.set(object.id, group);
   }
   return groups;
+}
+
+async function populateObjectVisuals(
+  map: EditableMap,
+  assets: Map<string, MapAsset>,
+  groups: Map<string, THREE.Group>,
+  handledObjectIds: Set<string>
+): Promise<void> {
+  const templates = new Map<string, { group: THREE.Group; used: boolean }>();
+  for (const object of map.objects) {
+    if (!object.visible || handledObjectIds.has(object.id)) continue;
+    const group = groups.get(object.id);
+    if (!group) continue;
+    const asset = object.assetId ? assets.get(object.assetId) : undefined;
+    if (asset) group.userData.assetTags = deriveAssetTags(asset);
+    const visual = asset?.modelJson
+      ? await takeAssetVisual(asset, templates)
+      : buildFallbackObject();
+    visual.traverse((child) => {
+      child.userData.mapObjectId = object.id;
+      if ((child as THREE.Mesh).isMesh) {
+        child.castShadow = true;
+        child.receiveShadow = true;
+      }
+    });
+    group.add(visual);
+  }
+}
+
+async function takeAssetVisual(
+  asset: MapAsset,
+  templates: Map<string, { group: THREE.Group; used: boolean }>
+): Promise<THREE.Group> {
+  let entry = templates.get(asset.id);
+  if (!entry) {
+    entry = { group: await buildModelGroup(asset.modelJson), used: false };
+    templates.set(asset.id, entry);
+  }
+  if (!entry.used) {
+    entry.used = true;
+    return entry.group;
+  }
+  return cloneAssetVisual(entry.group);
+}
+
+function cloneAssetVisual(template: THREE.Group): THREE.Group {
+  const clone = template.clone(true);
+  clone.traverse((child) => {
+    const mesh = child as THREE.Mesh;
+    if (!mesh.isMesh) return;
+    mesh.material = Array.isArray(mesh.material)
+      ? mesh.material.map((material) => material.clone())
+      : mesh.material.clone();
+  });
+  return clone;
 }
 
 function deriveAssetTags(asset: MapAsset): string[] {
@@ -517,15 +573,21 @@ function withOpacity(color: string, opacity: number): string {
 }
 
 function disposeObject(object: THREE.Object3D): void {
+  const geometries = new Set<THREE.BufferGeometry>();
+  const materials = new Set<THREE.Material>();
+  const textures = new Set<THREE.Texture>();
   object.traverse((child) => {
     const mesh = child as THREE.Mesh;
     if (!mesh.isMesh) return;
-    mesh.geometry?.dispose();
-    const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
-    for (const material of materials) {
+    if (mesh.geometry) geometries.add(mesh.geometry);
+    const meshMaterials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+    for (const material of meshMaterials) {
+      materials.add(material);
       const maybe = material as THREE.MeshStandardMaterial;
-      maybe.map?.dispose();
-      material.dispose();
+      if (maybe.map) textures.add(maybe.map);
     }
   });
+  for (const texture of textures) texture.dispose();
+  for (const material of materials) material.dispose();
+  for (const geometry of geometries) geometry.dispose();
 }

@@ -281,6 +281,21 @@ p {
   box-shadow: 0 0 10px rgba(217, 244, 122, 0.7);
 }
 
+.viewport-stats {
+  position: absolute;
+  z-index: 2;
+  left: 14px;
+  bottom: 14px;
+  padding: 6px 9px;
+  border: 1px solid rgba(170, 197, 191, 0.13);
+  border-radius: 7px;
+  color: #c8d8d4;
+  background: rgba(9, 16, 18, 0.76);
+  backdrop-filter: blur(8px);
+  font: 700 0.7rem/1.2 ui-monospace, SFMono-Regular, Consolas, monospace;
+  pointer-events: none;
+}
+
 .viewport-navigation {
   position: absolute;
   z-index: 3;

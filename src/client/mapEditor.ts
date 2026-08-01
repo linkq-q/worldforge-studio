@@ -36,6 +36,7 @@ import { buildModelGroup } from './modelRenderer';
 import { RenderRuntimeAdapter } from './renderRuntimeAdapter';
 import { HDRI_DOME_RADIUS, HdriSkyController } from './hdriSky';
 import { configureRendererOutput } from './renderOutputPipeline';
+import { RenderStats } from './renderStats';
 import {
   applyMapOperations,
   type MapAiSuggestion,
@@ -146,6 +147,7 @@ class MapEditor {
   private scene: THREE.Scene | null = null;
   private camera: THREE.PerspectiveCamera | null = null;
   private renderer: THREE.WebGLRenderer | null = null;
+  private renderStats: RenderStats | null = null;
   private renderStyleManager: RenderStyleManager | null = null;
   private renderRuntimeAdapter: RenderRuntimeAdapter | null = null;
   private hdriSky: HdriSkyController | null = null;
@@ -285,6 +287,7 @@ class MapEditor {
           </header>
           <div id="editor-viewport" class="editor-viewport">
             <div class="viewport-badge"><span></span><b id="viewport-view-name">透视视图</b></div>
+            <div id="viewport-stats" class="viewport-stats" hidden></div>
             <nav class="viewport-navigation" aria-label="视角导航">
               <button data-view="perspective" title="透视视图">透视</button>
               <button data-view="top" title="顶视图">顶</button>
@@ -380,6 +383,11 @@ class MapEditor {
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     configureRendererOutput(this.renderer);
+    const statsElement = host.querySelector<HTMLElement>('#viewport-stats');
+    if (statsElement) {
+      this.renderStats = new RenderStats(this.renderer.info, statsElement);
+      this.renderStats.setVisible(this.developerMode);
+    }
     host.appendChild(this.renderer.domElement);
 
     this.orbit = new OrbitControls(this.camera, this.renderer.domElement);
@@ -683,6 +691,7 @@ class MapEditor {
   }
 
   private renderPanels(): void {
+    this.renderStats?.setVisible(this.developerMode);
     this.renderMapSelector();
     this.renderHierarchy();
     const mapStage = this.state.stage === 'map';
@@ -1336,6 +1345,7 @@ class MapEditor {
     host.querySelector('#toggle-developer-mode')?.addEventListener('click', () => {
       this.developerMode = !this.developerMode;
       localStorage.setItem('worldforge.developerMode', this.developerMode ? 'on' : 'off');
+      this.renderStats?.setVisible(this.developerMode);
       this.state.message = this.developerMode ? '已进入开发者模式' : '已退出开发者模式';
       this.renderRenderInspector();
       this.updateToolbarState();
@@ -1876,7 +1886,7 @@ class MapEditor {
     this.renderRuntimeAdapter?.setSceneRoots(this.renderedMap.group, this.renderedMap.modelsRoot);
     this.renderedMap.modelsRoot.traverse((object) => {
       const mesh = object as THREE.Mesh;
-      if (mesh.isMesh) this.runtimeMeshes.set(mesh.uuid, mesh);
+      if (mesh.isMesh && object.userData.editorHelper !== true) this.runtimeMeshes.set(mesh.uuid, mesh);
     });
     this.attachSelectedTransform();
     this.applyCurrentRenderScheme();
@@ -1925,7 +1935,7 @@ class MapEditor {
     if (this.state.tool === 'select') {
       if (!first) return;
       const hit = selectableObjectHit(hits);
-      this.selectObject(hit ? findMapObjectId(hit.object) : null);
+      this.selectObject(hit ? findMapObjectIdFromHit(hit) : null);
       return;
     }
     const hit = surfaceHit(hits);
@@ -2055,6 +2065,7 @@ class MapEditor {
     } else {
       object.transform.scale = nextScale;
     }
+    this.renderedMap?.syncObjectTransform(object.id);
     this.markDirty(false);
     this.renderObjectInspector();
   }
@@ -2271,14 +2282,17 @@ class MapEditor {
   private animate(): void {
     this.animationFrame = requestAnimationFrame(() => this.animate());
     const now = performance.now();
-    const dt = Math.min(0.05, Math.max(0, (now - this.lastFrameAt) / 1000));
+    const frameMs = Math.max(0, now - this.lastFrameAt);
+    const dt = Math.min(0.05, frameMs / 1000);
     this.lastFrameAt = now;
     this.resize();
     this.updateKeyboardCamera(dt);
     this.orbit?.update();
     this.selectionOutline?.update();
     this.renderRuntimeAdapter?.tick(dt, now / 1000);
+    this.renderStats?.beginFrame();
     this.renderRuntimeAdapter?.render();
+    this.renderStats?.endFrame(frameMs, now);
     this.previewOrbit?.update();
     this.resizePreview();
     if (this.previewRenderer && this.previewScene && this.previewCamera) this.previewRenderer.render(this.previewScene, this.previewCamera);
@@ -2807,10 +2821,19 @@ function findMapObjectId(object: THREE.Object3D): string | null {
   return null;
 }
 
+function findMapObjectIdFromHit(hit: THREE.Intersection): string | null {
+  if (Number.isInteger(hit.instanceId)) {
+    const objectIds = hit.object.userData.instanceObjectIds;
+    const objectId = Array.isArray(objectIds) ? objectIds[hit.instanceId as number] : null;
+    if (typeof objectId === 'string') return objectId;
+  }
+  return findMapObjectId(hit.object);
+}
+
 function selectableObjectHit(hits: THREE.Intersection[]): THREE.Intersection | null {
   const surfaceDistance = hits.find((hit) => findMapSurface(hit.object))?.distance ?? Number.POSITIVE_INFINITY;
   return hits.find((hit) => {
-    return findMapObjectId(hit.object) !== null && hit.distance <= surfaceDistance + 0.18;
+    return findMapObjectIdFromHit(hit) !== null && hit.distance <= surfaceDistance + 0.18;
   }) ?? null;
 }
 
