@@ -25,6 +25,10 @@ import type { RenderScheme } from '../shared/renderScheme';
 import type { RenderPlan } from '../shared/renderPlan';
 import { runMapAgent } from './mapAi';
 import { generateModel } from './modelApi';
+import {
+  normalizeModelGenerationMode,
+  type ModelGenerationMode
+} from '../shared/modelGenerationMode';
 import { generateRenderSuggestion, refineRenderSuggestion } from './renderAi';
 import { MapStore, mapEditorCliManifest } from './mapStore';
 
@@ -165,7 +169,11 @@ async function handleEditorMaps(req: Req, res: Res, store: MapStore, parts: stri
     return;
   }
   if (req.method === 'POST' && parts.length === 3) {
-    const body = await readJson<{ name?: string; size?: Vec3 }>(req);
+    const body = await readJson<{
+      name?: string;
+      size?: Vec3;
+      assetGenerationMode?: ModelGenerationMode;
+    }>(req);
     sendJson(res, 201, { map: await store.createMap(body) });
     return;
   }
@@ -225,7 +233,7 @@ async function handleEditorMaps(req: Req, res: Res, store: MapStore, parts: stri
           onProgress,
           createAsset: async (request) => {
             const modelJson = await generateModel(request.prompt, {
-              mode: 'voxel',
+              mode: request.mode,
               providers: [modelProvider],
               signal: controller.signal,
               onStage: (stage) => onProgress?.({
@@ -239,7 +247,7 @@ async function handleEditorMaps(req: Req, res: Res, store: MapStore, parts: stri
               prompt: request.prompt,
               tags: request.tags,
               modelJson,
-              mode: 'voxel',
+              mode: request.mode,
               provider: modelProvider
             });
           }
@@ -362,11 +370,11 @@ async function handleEditorAssets(req: Req, res: Res, store: MapStore, parts: st
       prompt?: string;
       name?: string;
       tags?: string[];
-      mode?: 'standard' | 'lite' | 'voxel' | 'voxel-pro' | 'curve' | 'wire';
+      mode?: ModelGenerationMode;
     }>(req);
     const prompt = body.prompt?.trim();
     if (!prompt) throw new HttpError(400, 'missing_prompt');
-    const mode = body.mode ?? 'voxel';
+    const mode = normalizeModelGenerationMode(body.mode);
     const modelJson = await generateModel(prompt, { mode });
     const asset = await store.saveAsset({ prompt, name: body.name, tags: body.tags, modelJson, mode });
     sendJson(res, 201, { asset });

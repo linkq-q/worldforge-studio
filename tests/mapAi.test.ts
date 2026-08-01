@@ -262,7 +262,7 @@ describe('map AI adapter', () => {
 
     const suggestion = await runMapAgent(
       '素描风格的宁静田园，有一些树木',
-      createEmptyMap(),
+      { ...createEmptyMap(), assetGenerationMode: 'curve' },
       [],
       {
         apiBase: 'https://example.test',
@@ -276,7 +276,8 @@ describe('map AI adapter', () => {
     expect(fetchImpl).toHaveBeenCalledTimes(2);
     expect(createAsset).toHaveBeenCalledOnce();
     expect(createAsset).toHaveBeenCalledWith(expect.objectContaining({
-      tags: ['tree', 'vegetation']
+      tags: ['tree', 'vegetation'],
+      mode: 'curve'
     }));
     expect(suggestion.generatedAssets).toEqual([{ id: 'asset-generated-tree', name: '田园树' }]);
     expect(suggestion.operations).toEqual(expect.arrayContaining([

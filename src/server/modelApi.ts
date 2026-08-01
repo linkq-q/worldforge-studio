@@ -5,11 +5,12 @@ import {
   type ModelJobState
 } from '../shared/protocol';
 import materialTagVocabulary from '../../../3d-generate/packages/voxel-render-runtime/model/material-tags-v1.json';
+import type { ModelGenerationMode } from '../shared/modelGenerationMode';
 
 export interface ModelApiOptions {
   apiBase?: string;
   providers?: readonly string[];
-  mode?: 'standard' | 'lite' | 'voxel' | 'voxel-pro' | 'curve' | 'wire';
+  mode?: ModelGenerationMode;
   materialTags?: unknown | false;
   fetchImpl?: typeof fetch;
   onStage?: (stage: Partial<ModelJobState>) => void;

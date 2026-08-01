@@ -49,6 +49,11 @@ import {
 import type { HdriTexture } from '../shared/hdri';
 import type { RenderScheme, RenderSuggestion } from '../shared/renderScheme';
 import {
+  MODEL_GENERATION_MODES,
+  normalizeModelGenerationMode,
+  type ModelGenerationMode
+} from '../shared/modelGenerationMode';
+import {
   RENDER_CAPABILITIES,
   compileRuntimeColorGrade,
   compileRuntimeEffectRecipes,
@@ -193,6 +198,7 @@ class MapEditor {
   private developerMode = false;
   private mapAiPrompt = '';
   private mapAiProvider: ChatProvider = 'gpt';
+  private newMapAssetGenerationMode: ModelGenerationMode = 'voxel';
   private mapAiSuggestion: MapAiSuggestion | null = null;
   private mapAiPreviewMap: EditableMap | null = null;
   private mapAiAbortController: AbortController | null = null;
@@ -203,6 +209,7 @@ class MapEditor {
 
   async start(): Promise<void> {
     this.developerMode = localStorage.getItem('worldforge.developerMode') === 'on';
+    this.newMapAssetGenerationMode = normalizeModelGenerationMode(localStorage.getItem('worldforge.newMapAssetMode'));
     this.renderShell();
     this.setupViewport();
     this.setupAssetPreview();
@@ -227,6 +234,11 @@ class MapEditor {
                 <option value="${preset.key}" ${preset.key === this.newMapSizePreset ? 'selected' : ''}>
                   ${preset.label}
                 </option>
+              `).join('')}
+            </select>
+            <select id="new-map-asset-mode" aria-label="新地图模型风格">
+              ${MODEL_GENERATION_MODES.map((mode) => `
+                <option value="${mode.key}" ${mode.key === this.newMapAssetGenerationMode ? 'selected' : ''}>${mode.label}</option>
               `).join('')}
             </select>
             <button id="new-map" class="small">新建</button>
@@ -307,6 +319,10 @@ class MapEditor {
     this.app.querySelector('#new-map')?.addEventListener('click', () => void this.createMap());
     this.app.querySelector<HTMLSelectElement>('#new-map-size')?.addEventListener('change', (event) => {
       this.newMapSizePreset = (event.target as HTMLSelectElement).value as MapSizePresetKey;
+    });
+    this.app.querySelector<HTMLSelectElement>('#new-map-asset-mode')?.addEventListener('change', (event) => {
+      this.newMapAssetGenerationMode = normalizeModelGenerationMode((event.target as HTMLSelectElement).value);
+      localStorage.setItem('worldforge.newMapAssetMode', this.newMapAssetGenerationMode);
     });
     this.app.querySelector('#add-object')?.addEventListener('click', () => this.addObject());
     this.app.querySelector('#save-map')?.addEventListener('click', () => void this.saveMap());
@@ -500,6 +516,7 @@ class MapEditor {
         height: map.box.size[1],
         depth: map.box.size[2],
         objectCount: map.objects.length,
+        assetGenerationMode: map.assetGenerationMode,
         confirmedAt: map.confirmedAt,
         renderSchemeId: map.renderSchemeId
       }];
@@ -538,7 +555,11 @@ class MapEditor {
     this.cancelAssetPlacement();
     const { map } = await editorFetch<{ map: EditableMap }>('/api/editor/maps', {
       method: 'POST',
-      body: JSON.stringify({ name: name.trim() || '新地图', size: preset.size })
+      body: JSON.stringify({
+        name: name.trim() || '新地图',
+        size: preset.size,
+        assetGenerationMode: this.newMapAssetGenerationMode
+      })
     });
     await this.reloadLists();
     this.state.map = normalizeMap(map);
@@ -727,7 +748,7 @@ class MapEditor {
           ${this.mapAiAbortController ? '<button id="cancel-map-ai" class="secondary">取消</button>' : ''}
         </div>
         ${renderAgentProgress(this.mapAgentProgress)}
-        <p class="empty">${this.state.dirty ? '请先保存当前手工修改，再生成 AI 地图预览。' : `Agent 会检查资产库、生成最多 ${limits.assetRequestCount} 类缺失资产，再规划地形、水域、摆放和出生点。`}</p>
+        <p class="empty">模型风格 ${map.assetGenerationMode.toUpperCase()} · ${this.state.dirty ? '请先保存当前手工修改，再生成 AI 地图预览。' : `Agent 会检查资产库、生成最多 ${limits.assetRequestCount} 类同风格缺失资产，再规划地形、水域、摆放和出生点。`}</p>
       </section>
       ${suggestion && this.mapAiPreviewMap ? `
         <section class="editor-section map-ai-result">
@@ -1139,6 +1160,7 @@ class MapEditor {
       <section class="editor-section asset-tools">
         <h2>资产</h2>
         <textarea id="asset-prompt" placeholder="输入提示词生成模型资产"></textarea>
+        <p class="empty">当前地图的新资产统一使用 ${this.state.map?.assetGenerationMode.toUpperCase() ?? 'VOXEL'} 模式。</p>
         <button id="generate-asset" ${this.state.busy ? 'disabled' : ''}>生成资产</button>
         <select id="asset-list">
           ${this.state.assets.map((asset) => `<option value="${asset.id}" ${selectedAsset?.id === asset.id ? 'selected' : ''}>${escapeHtml(asset.name)}</option>`).join('')}
@@ -1149,7 +1171,7 @@ class MapEditor {
             .map((tag) => `<span>${escapeHtml(tag)}</span>`).join('')}</div>
         ` : ''}
         <p class="empty">${selectedAsset
-          ? `尺寸 ${selectedAsset.sizeClass ?? '未分类'} · 占地半径 ${(selectedAsset.footprintRadius ?? 0.5).toFixed(2)}m · 自动碰撞箱 ${selectedAsset.colliderPlan.boxes.length} 个${selectedAsset.colliderPlan.fallbackUsed ? ' · 已回退整体边界' : ''}`
+          ? `模式 ${selectedAsset.mode.toUpperCase()} · 尺寸 ${selectedAsset.sizeClass ?? '未分类'} · 占地半径 ${(selectedAsset.footprintRadius ?? 0.5).toFixed(2)}m · 自动碰撞箱 ${selectedAsset.colliderPlan.boxes.length} 个${selectedAsset.colliderPlan.fallbackUsed ? ' · 已回退整体边界' : ''}`
           : '尚未选择资产'}</p>
         <button id="place-selected-asset" ${selectedAsset ? '' : 'disabled'}>${this.placingAssetId === selectedAsset?.id ? '取消放置' : '放入地图'}</button>
         <button id="bind-selected-asset" class="secondary small" ${this.selectedObject() && selectedAsset ? '' : 'disabled'}>绑定到选中物体</button>
@@ -1672,7 +1694,7 @@ class MapEditor {
     try {
       const { asset } = await editorFetch<{ asset: MapAsset }>('/api/editor/assets/generate', {
         method: 'POST',
-        body: JSON.stringify({ prompt, mode: 'voxel' })
+        body: JSON.stringify({ prompt, mode: this.state.map?.assetGenerationMode ?? 'voxel' })
       });
       this.state.assets.unshift(asset);
       this.state.selectedAssetId = asset.id;

@@ -396,6 +396,12 @@ p {
   padding-inline: 7px;
 }
 
+#new-map-asset-mode {
+  flex: 0 0 78px;
+  width: 78px;
+  padding-inline: 7px;
+}
+
 .hierarchy {
   display: grid;
   gap: 3px;

@@ -14,6 +14,7 @@ import {
   normalizeAssetTags,
   type MapAssetSizeClass
 } from './mapAssetMetadata';
+import { normalizeModelGenerationMode, type ModelGenerationMode } from './modelGenerationMode';
 
 export type MapSurface = 'floor' | 'ceiling' | 'north' | 'south' | 'east' | 'west' | 'terrain';
 export type TerrainBrushMode = 'raise' | 'lower' | 'flatten';
@@ -103,6 +104,7 @@ export interface EditableMap {
   id: string;
   name: string;
   seed: number;
+  assetGenerationMode: ModelGenerationMode;
   version: number;
   createdAt: number;
   updatedAt: number;
@@ -130,6 +132,7 @@ export interface MapSummary {
   height: number;
   depth: number;
   objectCount: number;
+  assetGenerationMode: ModelGenerationMode;
   confirmedAt: number | null;
   renderSchemeId: string | null;
 }
@@ -227,7 +230,8 @@ const BAKED_MAP_OBJECT_ID = '__baked_map__';
 export function createEmptyMap(
   name = '未命名地图',
   id = createId('map'),
-  size: Vec3 = DEFAULT_MAP_SIZE
+  size: Vec3 = DEFAULT_MAP_SIZE,
+  assetGenerationMode: ModelGenerationMode = 'voxel'
 ): EditableMap {
   const now = Date.now();
   const safeSize = positiveVec3(size, DEFAULT_MAP_SIZE);
@@ -236,6 +240,7 @@ export function createEmptyMap(
   return normalizeMap({
     id,
     name,
+    assetGenerationMode,
     version: 1,
     createdAt: now,
     updatedAt: now,
@@ -289,6 +294,7 @@ export function normalizeMap(input: Partial<EditableMap>): EditableMap {
     id,
     seed: Number.isFinite(Number(input.seed)) ? Math.trunc(Number(input.seed)) >>> 0 : seedFromString(id),
     name: cleanName(input.name, '未命名地图'),
+    assetGenerationMode: normalizeModelGenerationMode(input.assetGenerationMode),
     version: Math.max(1, Math.round(finiteNumber(input.version, 1))),
     createdAt: finiteNumber(input.createdAt, Date.now()),
     updatedAt: finiteNumber(input.updatedAt, Date.now()),
@@ -378,6 +384,7 @@ export function mapToSummary(map: EditableMap): MapSummary {
     height: map.box.size[1],
     depth: map.box.size[2],
     objectCount: map.objects.length,
+    assetGenerationMode: map.assetGenerationMode,
     confirmedAt: map.confirmedAt,
     renderSchemeId: map.renderSchemeId
   };

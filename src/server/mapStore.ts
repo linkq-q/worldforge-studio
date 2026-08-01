@@ -19,6 +19,7 @@ import {
   type Transform3D
 } from '../shared/map';
 import type { Vec3 } from '../shared/protocol';
+import { normalizeModelGenerationMode, type ModelGenerationMode } from '../shared/modelGenerationMode';
 import {
   applyMapOperations,
   type MapTransactionRequest,
@@ -42,6 +43,7 @@ export interface MapStoreOptions {
 export interface CreateMapInput {
   name?: string;
   size?: Vec3;
+  assetGenerationMode?: ModelGenerationMode;
 }
 
 export interface GenerateAssetInput {
@@ -110,7 +112,12 @@ export class MapStore {
   async createMap(input: CreateMapInput = {}): Promise<EditableMap> {
     const fallback = createEmptyMap(input.name ?? '未命名地图');
     const size = input.size ? sanitizeVec3(input.size, fallback.box.size) : fallback.box.size;
-    const map = createEmptyMap(input.name ?? '未命名地图', undefined, size);
+    const map = createEmptyMap(
+      input.name ?? '未命名地图',
+      undefined,
+      size,
+      normalizeModelGenerationMode(input.assetGenerationMode)
+    );
     return this.saveMap(map);
   }
 
