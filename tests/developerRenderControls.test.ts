@@ -60,6 +60,8 @@ describe('developer render controls', () => {
     const currentHeading = html.indexOf('当前效果 · 实时预览');
     const policyHeading = html.indexOf('开放策略');
     const reflectionSlider = html.match(/<input class="developer-value-range"[^>]+data-dev-param="reflectionStrength"[^>]+>/)?.[0];
+    const waveSlider = html.match(/<input class="developer-value-range"[^>]+data-dev-param="waveStrength"[^>]+>/)?.[0];
+    const fresnelSlider = html.match(/<input class="developer-value-range"[^>]+data-dev-param="reflectionFresnel"[^>]+>/)?.[0];
 
     expect(currentHeading).toBeGreaterThan(-1);
     expect(policyHeading).toBeGreaterThan(currentHeading);
@@ -67,6 +69,8 @@ describe('developer render controls', () => {
     expect(reflectionSlider).toContain('max="1.5"');
     expect(reflectionSlider).toContain('value="0.9"');
     expect(reflectionSlider).not.toContain('disabled');
+    expect(waveSlider).toContain('step="0.01"');
+    expect(fresnelSlider).toContain('step="0.01"');
     expect(html).toContain('反射强度');
     expect(html).toContain('反射扰动');
     expect(html).toContain('反射 Fresnel');

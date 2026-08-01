@@ -201,7 +201,7 @@ function renderDeveloperPresetInput(
   if (rule.type === 'code') {
     return `<label class="developer-code"><span>${parameterLabel(parameter)}</span><textarea rows="7" maxlength="${rule.maxLength}" data-dev-module-index="${index}" data-dev-param="${parameter}" placeholder="隔离 GLSL 扩展">${escapeHtml(String(value))}</textarea></label>`;
   }
-  const step = Math.max(0.001, (rule.max - rule.min) / 100);
+  const step = numericStep(rule.min, rule.max);
   return `
     <label class="developer-number-control">
       <span><span>${parameterLabel(parameter)}</span><output data-dev-value-output="${index}:${escapeHtml(parameter)}">${value}</output></span>
@@ -209,6 +209,13 @@ function renderDeveloperPresetInput(
       <input class="developer-value-number" type="number" min="${rule.min}" max="${rule.max}" step="${step}" data-dev-module-index="${index}" data-dev-param="${parameter}" value="${value}" />
     </label>
   `;
+}
+
+function numericStep(min: number, max: number): number {
+  const span = Math.max(0, max - min);
+  if (span === 0) return 0.001;
+  const magnitude = 10 ** Math.floor(Math.log10(span));
+  return Math.max(0.001, magnitude / 100);
 }
 
 function parameterLabel(parameter: string): string {
