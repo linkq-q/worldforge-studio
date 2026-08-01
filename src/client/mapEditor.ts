@@ -32,7 +32,12 @@ import {
 import { planLimits } from '../shared/mapPlanning';
 import { isCompositionEmptyMap, SCENE_COMPOSITION_LIMITS } from '../shared/sceneComposition';
 import { renderMapCompositionSummary } from './mapCompositionPanel';
-import { defaultRenderModule, renderDeveloperCapability } from './developerRenderControls';
+import {
+  defaultRenderModule,
+  renderDeveloperWorkspace,
+  type DeveloperRenderView
+} from './developerRenderControls';
+import type { RenderInspectorCategoryId } from './renderInspectorCatalog';
 import {
   humanizeAgentError,
   renderAgentProgress,
@@ -78,7 +83,7 @@ import {
   createDefaultRenderAccessPolicy,
   normalizeRenderAccessPolicy,
   type RuntimeLightRig,
-  type RenderModuleId,
+  type RenderModuleSelection,
   type RenderParameterAccess,
   type RenderPlan,
   renderModuleLabel
@@ -204,6 +209,8 @@ class MapEditor {
   private renderAiAbortController: AbortController | null = null;
   private renderAgentProgress: AgentProgressEvent[] = [];
   private developerMode = false;
+  private developerRenderView: DeveloperRenderView = 'tuning';
+  private developerRenderCategory: RenderInspectorCategoryId = 'lighting';
   private mapAiPrompt = '';
   private mapAiProvider: ChatProvider = 'gpt';
   private newMapAssetGenerationMode: ModelGenerationMode = 'voxel';
@@ -238,29 +245,6 @@ class MapEditor {
             <span class="studio-brand-mark">W</span>
             <span><strong>WorldForge</strong><small>SCENE STUDIO</small></span>
           </div>
-          <div class="editor-section map-loader">
-            <select id="editor-map-select"></select>
-            <select id="new-map-size" aria-label="新地图尺寸">
-              ${MAP_SIZE_PRESETS.map((preset) => `
-                <option value="${preset.key}" ${preset.key === this.newMapSizePreset ? 'selected' : ''}>
-                  ${preset.label}
-                </option>
-              `).join('')}
-            </select>
-            <select id="new-map-asset-mode" aria-label="新地图模型风格">
-              ${MODEL_GENERATION_MODES.map((mode) => `
-                <option value="${mode.key}" ${mode.key === this.newMapAssetGenerationMode ? 'selected' : ''}>${mode.label}</option>
-              `).join('')}
-            </select>
-            <button id="new-map" class="small">新建</button>
-          </div>
-          <div class="editor-section stage-switcher">
-            <span class="toolbar-label">制作阶段</span>
-            <div class="segmented compact">
-              <button data-stage="map">1 地图</button>
-              <button data-stage="render">2 渲染</button>
-            </div>
-          </div>
           <div class="editor-section hierarchy-head">
             <h2>层级</h2>
             <button id="add-object" class="secondary small" data-map-only>添加空物体</button>
@@ -269,6 +253,24 @@ class MapEditor {
         </aside>
         <section class="editor-main">
           <header class="editor-toolbar">
+            <div class="toolbar-project" aria-label="地图项目">
+              <select id="editor-map-select" aria-label="当前地图"></select>
+              <select id="new-map-size" aria-label="新地图尺寸">
+                ${MAP_SIZE_PRESETS.map((preset) => `
+                  <option value="${preset.key}" ${preset.key === this.newMapSizePreset ? 'selected' : ''}>${preset.label}</option>
+                `).join('')}
+              </select>
+              <select id="new-map-asset-mode" aria-label="新地图模型风格">
+                ${MODEL_GENERATION_MODES.map((mode) => `
+                  <option value="${mode.key}" ${mode.key === this.newMapAssetGenerationMode ? 'selected' : ''}>${mode.label}</option>
+                `).join('')}
+              </select>
+              <button id="new-map" class="small">新建</button>
+            </div>
+            <div class="stage-switcher segmented compact" aria-label="制作阶段">
+              <button data-stage="map">地图</button>
+              <button data-stage="render">渲染</button>
+            </div>
             <div class="toolbar-group" data-map-only>
               <span class="toolbar-label">工具</span>
               <div class="segmented compact">
@@ -305,17 +307,20 @@ class MapEditor {
               <button data-frame="selection" title="聚焦选中物体（F）">选中</button>
               <button data-frame="all" title="显示完整地图（Home）">全景</button>
             </nav>
+            <details class="shortcut-help">
+              <summary>快捷键</summary>
+              <div class="shortcut-help-panel" aria-label="地图编辑器操作键">
+                <span><kbd>左键</kbd>选择 / 绘制 / 地形</span>
+                <span><kbd>右键拖动</kbd>旋转视角</span>
+                <span><kbd>中键拖动</kbd>平移视角</span>
+                <span><kbd>Alt</kbd>+<kbd>左键</kbd>旋转视角</span>
+                <span><kbd>滚轮</kbd>缩放视角</span>
+                <span><kbd>F</kbd>聚焦选中 <kbd>Home</kbd>显示全景</span>
+                <span><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd>移动镜头</span>
+                <span><kbd>↑</kbd>/<kbd>↓</kbd>上升 / 下沉镜头</span>
+              </div>
+            </details>
           </div>
-          <footer class="editor-shortcuts" aria-label="地图编辑器操作键">
-            <span><kbd>左键</kbd>选择 / 绘制 / 地形</span>
-            <span><kbd>右键拖动</kbd>旋转视角</span>
-            <span><kbd>中键拖动</kbd>平移视角</span>
-            <span><kbd>Alt</kbd>+<kbd>左键</kbd>旋转视角</span>
-            <span><kbd>滚轮</kbd>缩放视角</span>
-            <span><kbd>F</kbd>聚焦选中 <kbd>Home</kbd>显示全景</span>
-            <span><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd>移动镜头</span>
-            <span><kbd>↑</kbd>/<kbd>↓</kbd>上升 / 下沉镜头</span>
-          </footer>
         </section>
         <aside class="editor-sidebar right">
           <div class="inspector-heading"><strong>属性</strong><small>SCENE</small></div>
@@ -1257,19 +1262,36 @@ class MapEditor {
     const shader = draft.renderPlan ? compileRuntimeShaderExtension(draft.renderPlan) : { mode: 'off' as const };
     return `
       <section class="editor-section developer-render-panel">
-        <span class="stage-kicker">开发者模式</span>
-        <h2>预设与开放策略</h2>
-        <p class="empty">“预设值”决定方案当前效果；“AI / 开发者”决定谁能调整，以及可调整的范围和控件形式。保存时始终生成新方案。</p>
-        <label class="field compact">
-          <span>方案名称</span>
-          <input data-dev-scheme-field="name" maxlength="48" value="${escapeHtml(draft.name)}" />
-        </label>
-        <label class="field compact">
-          <span>方案说明</span>
-          <textarea data-dev-scheme-field="description" rows="2" maxlength="160">${escapeHtml(draft.description)}</textarea>
-        </label>
-        <div class="developer-capability-list">
-          ${RENDER_CAPABILITIES.map((capability) => renderDeveloperCapability(capability, draft, this.hdriFiles)).join('')}
+        <div class="developer-panel-heading">
+          <span><b>开发者调节</b><small>修改时实时预览，保存时创建新方案</small></span>
+          <div class="segmented compact developer-view-switcher">
+            <button type="button" data-dev-view="tuning" class="${this.developerRenderView === 'tuning' ? 'active' : ''}">效果调节</button>
+            <button type="button" data-dev-view="access" class="${this.developerRenderView === 'access' ? 'active' : ''}">开放范围</button>
+          </div>
+        </div>
+        ${this.developerRenderView === 'access' ? `
+          <div class="developer-scheme-fields">
+            <label class="field compact">
+              <span>方案名称</span>
+              <input data-dev-scheme-field="name" maxlength="48" value="${escapeHtml(draft.name)}" />
+            </label>
+            <label class="field compact">
+              <span>方案说明</span>
+              <textarea data-dev-scheme-field="description" rows="2" maxlength="160">${escapeHtml(draft.description)}</textarea>
+            </label>
+          </div>
+        ` : ''}
+        ${renderDeveloperWorkspace(
+          draft,
+          this.hdriFiles,
+          this.developerRenderCategory,
+          this.developerRenderView
+        )}
+        <div class="developer-save-bar">
+          <p id="render-tuning-note" class="empty">${this.renderDraftChanged
+            ? '当前修改正在预览；保存后会生成新方案，不会改动原预设。'
+            : '调节参数不会覆盖原预设。'}</p>
+          ${this.renderAiPreview ? '' : `<button id="save-render-scheme">${this.renderDraftChanged ? '保存为新方案' : '复制为新方案'}</button>`}
         </div>
         ${shader.mode === 'isolated-glsl' ? `
           <p class="developer-warning">完整 GLSL 只作为隔离扩展保存在方案中；当前基础编辑器不会执行它，也不会修改核心源码。</p>
@@ -1299,6 +1321,7 @@ class MapEditor {
           ${this.developerMode ? '退出开发者模式' : '开发者模式'}
         </button>
       </section>
+      ${draft && this.developerMode ? this.renderDeveloperPresetEditor(draft) : ''}
       <section class="editor-section render-ai">
         <h2>AI 生成风格</h2>
         <textarea id="render-ai-prompt" rows="3" maxlength="1000" placeholder="例如：素描风格的宁静田园，带有柔和晨雾">${escapeHtml(this.renderAiPrompt)}</textarea>
@@ -1361,8 +1384,7 @@ class MapEditor {
           `).join('')}
         </div>
       </section>
-      ${draft && this.developerMode ? this.renderDeveloperPresetEditor(draft) : ''}
-      ${draft ? `
+      ${draft && !this.developerMode ? `
         <section class="editor-section render-tuning">
           <h2>安全微调</h2>
           <label class="field compact">
@@ -1390,27 +1412,24 @@ class MapEditor {
       this.renderRenderInspector();
       this.updateToolbarState();
     });
+    host.querySelectorAll<HTMLButtonElement>('[data-dev-view]').forEach((button) => {
+      button.addEventListener('click', () => {
+        this.developerRenderView = button.dataset.devView === 'access' ? 'access' : 'tuning';
+        this.renderRenderInspector();
+      });
+    });
+    host.querySelectorAll<HTMLButtonElement>('[data-dev-category]').forEach((button) => {
+      button.addEventListener('click', () => {
+        this.developerRenderCategory = button.dataset.devCategory as RenderInspectorCategoryId;
+        this.renderRenderInspector();
+      });
+    });
     host.querySelectorAll<HTMLInputElement | HTMLTextAreaElement>('[data-dev-scheme-field]').forEach((input) => {
       input.addEventListener('input', () => {
         if (!this.renderDraft) return;
         const field = input.dataset.devSchemeField as 'name' | 'description';
         this.renderDraft[field] = input.value;
         this.markRenderDraftChanged();
-      });
-    });
-    host.querySelectorAll<HTMLInputElement>('[data-dev-module-enable]').forEach((input) => {
-      input.addEventListener('change', () => {
-        const plan = this.ensureRenderDraftPlan();
-        const id = input.dataset.devModuleEnable as RenderModuleId;
-        if (!plan) return;
-        if (input.checked && !plan.modules.some((module) => module.id === id)) {
-          const capability = RENDER_CAPABILITIES.find((entry) => entry.id === id);
-          if (capability) plan.modules.push(defaultRenderModule(capability, plan.modules.length));
-        } else if (!input.checked) {
-          plan.modules = plan.modules.filter((module) => module.id !== id);
-        }
-        this.markRenderDraftChanged(true);
-        this.renderRenderInspector();
       });
     });
     host.querySelectorAll<HTMLButtonElement>('[data-dev-add-module]').forEach((button) => {
@@ -1435,10 +1454,11 @@ class MapEditor {
     });
     host.querySelectorAll<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>('[data-dev-module-index][data-dev-param]').forEach((input) => {
       input.addEventListener('input', () => {
-        const plan = this.ensureRenderDraftPlan();
-        const index = Number(input.dataset.devModuleIndex);
+        const requestedIndex = Number(input.dataset.devModuleIndex);
+        const resolved = this.ensureDeveloperModule(requestedIndex, input.dataset.devModuleId);
         const parameter = input.dataset.devParam;
-        const module = plan?.modules[index];
+        const module = resolved?.module;
+        const index = resolved?.index ?? requestedIndex;
         const capability = module && RENDER_CAPABILITIES.find((entry) => entry.id === module.id);
         const rule = capability && parameter ? capability.params[parameter] : null;
         if (!module || !parameter || !rule) return;
@@ -1447,12 +1467,12 @@ class MapEditor {
           if (!Number.isFinite(value)) return;
           module.params[parameter] = value;
           host.querySelectorAll<HTMLInputElement>(
-            `[data-dev-module-index="${index}"][data-dev-param="${parameter}"]`
+            `[data-dev-module-index="${requestedIndex}"][data-dev-param="${parameter}"]`
           ).forEach((peer) => {
             if (peer !== input) peer.value = String(value);
           });
           const output = host.querySelector<HTMLOutputElement>(
-            `[data-dev-value-output="${index}:${parameter}"]`
+            `[data-dev-value-output="${requestedIndex}:${parameter}"]`
           );
           if (output) {
             output.value = String(value);
@@ -1468,9 +1488,11 @@ class MapEditor {
     });
     host.querySelectorAll<HTMLInputElement | HTMLSelectElement>('[data-dev-module-index][data-dev-scope]').forEach((input) => {
       input.addEventListener(input.dataset.devScope === 'tag' ? 'input' : 'change', () => {
-        const plan = this.ensureRenderDraftPlan();
-        const index = Number(input.dataset.devModuleIndex);
-        const module = plan?.modules[index];
+        const resolved = this.ensureDeveloperModule(
+          Number(input.dataset.devModuleIndex),
+          input.dataset.devModuleId
+        );
+        const module = resolved?.module;
         if (!module) return;
         module.scope ??= { target: 'material-tag', tag: 'base' };
         if (input.dataset.devScope === 'target') {
@@ -1614,6 +1636,25 @@ class MapEditor {
     };
     this.renderDraft.renderPlan.version = 2;
     return this.renderDraft.renderPlan;
+  }
+
+  private ensureDeveloperModule(
+    requestedIndex: number,
+    moduleId?: string
+  ): { module: RenderModuleSelection; index: number } | null {
+    const plan = this.ensureRenderDraftPlan();
+    if (!plan) return null;
+    if (requestedIndex >= 0) {
+      const module = plan.modules[requestedIndex];
+      return module ? { module, index: requestedIndex } : null;
+    }
+    const capability = RENDER_CAPABILITIES.find((entry) => entry.id === moduleId);
+    if (!capability) return null;
+    const existingIndex = plan.modules.findIndex((module) => module.id === capability.id);
+    if (existingIndex >= 0) return { module: plan.modules[existingIndex], index: existingIndex };
+    const module = defaultRenderModule(capability, plan.modules.length, this.renderDraft ?? undefined);
+    plan.modules.push(module);
+    return { module, index: plan.modules.length - 1 };
   }
 
   private renderPolicyEntry(moduleId?: string, parameter?: string): RenderParameterAccess | null {
@@ -2367,6 +2408,7 @@ class MapEditor {
 
   private updateToolbarState(): void {
     const mapStage = this.state.stage === 'map';
+    this.app.dataset.stage = this.state.stage;
     this.app.querySelectorAll<HTMLElement>('[data-map-only]').forEach((element) => {
       element.hidden = !mapStage;
     });
