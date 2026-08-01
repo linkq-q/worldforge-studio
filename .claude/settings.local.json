@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(echo \"=== Old project structure ===\" && find \"/c/Users/31483/Documents/GitHub/hAIde-seek/src\" -type f -name \"*.ts\" | head -50)",
+      "Bash(cd \"C:\\\\Users\\\\31483\\\\Documents\\\\GitHub\\\\hAIde-seek\" && wc -l src/client/mapEditor.ts src/shared/map.ts)",
+      "Read(//c/Users/31483/Documents/GitHub/3d-generate/packages/voxel-render-runtime/src/**)",
+      "Read(//c/Users/31483/Documents/GitHub/**)",
+      "Read(//c/Users/31483/Documents/GitHub/3d-generate/**)",
+      "WebFetch(domain:github.com)"
+    ]
+  }
+}
