@@ -156,9 +156,14 @@ export interface RuntimeWaterStyle {
   recipe: 'calm-lake' | 'clear-river' | 'stylized' | 'stormy';
   opacity?: number;
   color?: string;
+  shallowColor?: string;
+  depthColor?: string;
   waveStrength?: number;
+  waveSpeed?: number;
   foamStrength?: number;
   reflectionStrength?: number;
+  reflectionDistortion?: number;
+  reflectionFresnel?: number;
 }
 
 export interface RuntimeMaterialTheme {
@@ -360,9 +365,14 @@ export const RENDER_CAPABILITIES: readonly RenderCapability[] = [
       },
       opacity: { type: 'number', min: 0.25, max: 1, default: 0.88 },
       color: { type: 'color', default: '#4f96a8' },
+      shallowColor: { type: 'color', default: '#71b8bd' },
+      depthColor: { type: 'color', default: '#173b50' },
       waveStrength: { type: 'number', min: 0, max: 1.5, default: 0.35 },
+      waveSpeed: { type: 'number', min: 0, max: 2, default: 0.3 },
       foamStrength: { type: 'number', min: 0, max: 1.5, default: 0.45 },
-      reflectionStrength: { type: 'number', min: 0, max: 1, default: 0.5 }
+      reflectionStrength: { type: 'number', min: 0, max: 1.5, default: 0.6 },
+      reflectionDistortion: { type: 'number', min: 0, max: 0.2, default: 0.04 },
+      reflectionFresnel: { type: 'number', min: 0, max: 3, default: 1 }
     }
   },
   {
@@ -642,9 +652,14 @@ export function compileRuntimeWaterStyles(plan: RenderPlan): RuntimeWaterStyle[]
       recipe: enumValue(item.params.recipe, ['calm-lake', 'clear-river', 'stylized', 'stormy'], 'calm-lake'),
       opacity: numericValue(item.params.opacity),
       color: stringValue(item.params.color),
+      shallowColor: stringValue(item.params.shallowColor),
+      depthColor: stringValue(item.params.depthColor),
       waveStrength: numericValue(item.params.waveStrength),
+      waveSpeed: numericValue(item.params.waveSpeed),
       foamStrength: numericValue(item.params.foamStrength),
-      reflectionStrength: numericValue(item.params.reflectionStrength)
+      reflectionStrength: numericValue(item.params.reflectionStrength),
+      reflectionDistortion: numericValue(item.params.reflectionDistortion),
+      reflectionFresnel: numericValue(item.params.reflectionFresnel)
     }));
 }
 

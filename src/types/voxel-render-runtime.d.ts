@@ -147,6 +147,7 @@ declare module '@voxel-studio/render-runtime/environment' {
     setWaterMode(mode: 'cartoon' | 'realistic' | 'hybrid'): void;
     setWaterEnvMap(texture: import('three').Texture | null): void;
     setWaterReflectionParams(params: Record<string, unknown>): void;
+    setPlanarReflectionParams(params: Record<string, unknown>): void;
     setPlanarReflectionTexture(texture: import('three').Texture | null): void;
     setPlanarReflectionMatrix(matrix: import('three').Matrix4): void;
     dispose(): void;

@@ -26,6 +26,7 @@ import { WorldForgeMaterialTagRuntime } from './materialTagRuntimeAdapter';
 import { compileEffectRecipeLayers } from './effectRecipeCompiler';
 import {
   bindDistanceFogDepth,
+  configureWaterReflection,
   configureDistanceFogPass,
   syncWaterSurfaceEnvironment
 } from './renderEnvironmentBridge';
@@ -416,11 +417,15 @@ export class RenderRuntimeAdapter {
       const style = styles.find((candidate) => matchesScope(mesh, candidate.scope));
       const recipe = waterRecipe(style?.recipe ?? defaultWaterStyle(mesh).recipe);
       const waterColor = new THREE.Color(style?.color ?? DEFAULT_WATER_STATE.uWaterColor);
-      const shallowColor = style?.color
-        ? waterColor.clone().lerp(new THREE.Color('#ffffff'), 0.22)
+      const shallowColor = style?.shallowColor
+        ? new THREE.Color(style.shallowColor)
+        : style?.color
+          ? waterColor.clone().lerp(new THREE.Color('#ffffff'), 0.22)
         : new THREE.Color(DEFAULT_WATER_STATE.uShallowColor);
-      const depthColor = style?.color
-        ? waterColor.clone().multiplyScalar(0.5)
+      const depthColor = style?.depthColor
+        ? new THREE.Color(style.depthColor)
+        : style?.color
+          ? waterColor.clone().multiplyScalar(0.5)
         : new THREE.Color(DEFAULT_WATER_STATE.uDepthColor);
       const root = new THREE.Group();
       const surface = hasMaterialTag(mesh, 'water:fall') || hasMaterialTag(mesh, 'fall')
@@ -433,7 +438,7 @@ export class RenderRuntimeAdapter {
             bottomColor: depthColor,
             foamColor: new THREE.Color(DEFAULT_WATER_STATE.uFoamColor),
             opacity: style?.opacity ?? DEFAULT_WATER_STATE.uOpacity,
-            flowSpeed: style ? recipe.waveSpeed : DEFAULT_WATER_STATE.uWaveSpeed,
+            flowSpeed: style?.waveSpeed ?? (style ? recipe.waveSpeed : DEFAULT_WATER_STATE.uWaveSpeed),
             flowNoiseStrength: style?.waveStrength ?? DEFAULT_WATER_STATE.uWaveHeight,
             bottomFoamIntensity: style?.foamStrength ?? DEFAULT_WATER_STATE.uFoamStrength,
             splashEnabled: false
@@ -453,12 +458,14 @@ export class RenderRuntimeAdapter {
             uShallowColor: `#${shallowColor.getHexString()}`,
             uDepthColor: `#${depthColor.getHexString()}`,
             uWaveHeight: (style.waveStrength ?? recipe.waveStrength) * 0.12,
-            uWaveSpeed: recipe.waveSpeed,
+            uWaveSpeed: style.waveSpeed ?? recipe.waveSpeed,
             uFoamStrength: style.foamStrength ?? recipe.foamStrength,
             uOpacity: style.opacity ?? recipe.opacity
           });
-          surface.setWaterReflectionParams({
-            strength: style.reflectionStrength ?? recipe.reflectionStrength
+          configureWaterReflection(surface, {
+            strength: style.reflectionStrength ?? recipe.reflectionStrength,
+            distortion: style.reflectionDistortion,
+            fresnelBoost: style.reflectionFresnel
           });
         }
         syncWaterSurfaceEnvironment(surface, this.scene.environment);

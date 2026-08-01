@@ -32,6 +32,7 @@ import {
 import { planLimits } from '../shared/mapPlanning';
 import { isCompositionEmptyMap, SCENE_COMPOSITION_LIMITS } from '../shared/sceneComposition';
 import { renderMapCompositionSummary } from './mapCompositionPanel';
+import { defaultRenderModule, renderDeveloperCapability } from './developerRenderControls';
 import {
   humanizeAgentError,
   renderAgentProgress,
@@ -76,10 +77,8 @@ import {
   compileRuntimeWaterStyles,
   createDefaultRenderAccessPolicy,
   normalizeRenderAccessPolicy,
-  type RenderCapability,
   type RuntimeLightRig,
   type RenderModuleId,
-  type RenderModuleSelection,
   type RenderParameterAccess,
   type RenderPlan,
   renderModuleLabel
@@ -2949,198 +2948,6 @@ function degreesToRadians(value: number): number {
 function clampNumber(value: number, min: number, max: number): number {
   if (!Number.isFinite(value)) return min;
   return Math.min(max, Math.max(min, value));
-}
-
-function renderDeveloperCapability(
-  capability: RenderCapability,
-  draft: RenderScheme,
-  hdriFiles: string[]
-): string {
-  const modules = (draft.renderPlan?.modules ?? [])
-    .map((module, index) => ({ module, index }))
-    .filter((entry) => entry.module.id === capability.id);
-  const policy = draft.accessPolicy ?? createDefaultRenderAccessPolicy();
-  const availability = capability.availability ?? 'ready';
-  return `
-    <details class="developer-capability ${modules.length ? 'active' : ''}" ${modules.length ? 'open' : ''}>
-      <summary>
-        <span><strong>${escapeHtml(capability.label)}</strong><small>${capability.id}</small></span>
-        <em class="capability-status ${availability}">${availability === 'ready' ? '可用' : availability === 'limited' ? '部分可用' : '不可用'}</em>
-      </summary>
-      <div class="developer-capability-body">
-        ${capability.availabilityNote ? `<p class="empty">${escapeHtml(capability.availabilityNote)}</p>` : ''}
-        <div class="developer-capability-actions">
-          ${capability.repeatable
-            ? `<button type="button" class="secondary small" data-dev-add-module="${capability.id}">添加作用域</button>`
-            : `<label class="developer-toggle"><input type="checkbox" data-dev-module-enable="${capability.id}" ${modules.length ? 'checked' : ''} /> 在此预设中启用</label>`}
-        </div>
-        <h3>开放策略</h3>
-        <div class="developer-policy-table">
-          ${Object.entries(capability.params).map(([parameter, rule]) => {
-            const entry = policy.parameters.find((item) => (
-              item.moduleId === capability.id && item.parameter === parameter
-            ));
-            if (!entry) return '';
-            return renderDeveloperPolicyRow(capability, parameter, rule, entry);
-          }).join('')}
-        </div>
-        <h3>预设值${capability.repeatable ? '与作用域' : ''}</h3>
-        ${modules.length
-          ? modules.map(({ module, index }) => renderDeveloperModuleInstance(capability, module, index, policy, hdriFiles)).join('')
-          : '<p class="empty">此方案尚未启用该能力。</p>'}
-      </div>
-    </details>
-  `;
-}
-
-function renderDeveloperPolicyRow(
-  capability: RenderCapability,
-  parameter: string,
-  rule: RenderCapability['params'][string],
-  entry: RenderParameterAccess
-): string {
-  const controls: RenderParameterAccess['control'][] = rule.type === 'number'
-    ? ['range', 'number']
-    : rule.type === 'enum'
-      ? ['select', 'toggle']
-      : rule.type === 'color'
-        ? ['color']
-        : ['code'];
-  return `
-    <div class="developer-policy-row">
-      <strong>${escapeHtml(parameter)}</strong>
-      <label>形式
-        <select data-policy-control data-policy-module="${capability.id}" data-policy-param="${parameter}">
-          ${controls.map((control) => `<option value="${control}" ${entry.control === control ? 'selected' : ''}>${control}</option>`).join('')}
-        </select>
-      </label>
-      <label class="developer-toggle"><input type="checkbox" data-policy-enabled="ai" data-policy-module="${capability.id}" data-policy-param="${parameter}" ${entry.ai.enabled ? 'checked' : ''} ${capability.developerOnly ? 'disabled' : ''} /> AI</label>
-      <label class="developer-toggle"><input type="checkbox" data-policy-enabled="developer" data-policy-module="${capability.id}" data-policy-param="${parameter}" ${entry.developer.enabled ? 'checked' : ''} /> 开发者</label>
-      ${rule.type === 'number' ? `
-        <div class="developer-ranges">
-          ${renderPolicyRange(capability.id, parameter, 'ai', entry.ai, rule.min, rule.max)}
-          ${renderPolicyRange(capability.id, parameter, 'developer', entry.developer, rule.min, rule.max)}
-        </div>
-      ` : ''}
-      ${rule.type === 'enum' ? `
-        <div class="developer-enum-access">
-          ${(['ai', 'developer'] as const).map((side) => `
-            <span><b>${side === 'ai' ? 'AI' : '开发者'}</b>${rule.values.map((value) => `
-              <label><input type="checkbox" data-policy-enum-value="${escapeHtml(value)}" data-policy-side="${side}" data-policy-module="${capability.id}" data-policy-param="${parameter}" ${(entry[side].values ?? []).includes(value) ? 'checked' : ''} ${side === 'ai' && capability.developerOnly ? 'disabled' : ''} />${escapeHtml(value)}</label>
-            `).join('')}</span>
-          `).join('')}
-        </div>
-      ` : ''}
-    </div>
-  `;
-}
-
-function renderPolicyRange(
-  moduleId: string,
-  parameter: string,
-  side: 'ai' | 'developer',
-  access: RenderParameterAccess['ai'],
-  hardMin: number,
-  hardMax: number
-): string {
-  return `
-    <span><b>${side === 'ai' ? 'AI' : '开发者'}</b>
-      <input type="number" data-policy-range="min" data-policy-side="${side}" data-policy-module="${moduleId}" data-policy-param="${parameter}" min="${hardMin}" max="${hardMax}" value="${access.min ?? hardMin}" />
-      <i>—</i>
-      <input type="number" data-policy-range="max" data-policy-side="${side}" data-policy-module="${moduleId}" data-policy-param="${parameter}" min="${hardMin}" max="${hardMax}" value="${access.max ?? hardMax}" />
-    </span>
-  `;
-}
-
-function renderDeveloperModuleInstance(
-  capability: RenderCapability,
-  module: RenderModuleSelection,
-  index: number,
-  policy: RenderScheme['accessPolicy'],
-  hdriFiles: string[]
-): string {
-  return `
-    <div class="developer-module-instance">
-      <div class="developer-module-head">
-        <strong>${capability.repeatable ? escapeHtml(module.key ?? `作用域 ${index + 1}`) : escapeHtml(capability.label)}</strong>
-        ${capability.repeatable ? `<button type="button" class="danger small" data-dev-remove-module="${index}">移除</button>` : ''}
-      </div>
-      ${capability.repeatable ? `
-        <div class="developer-scope">
-          <label>目标
-            <select data-dev-module-index="${index}" data-dev-scope="target">
-              ${['water', 'material-tag', 'asset-tag'].map((target) => `<option value="${target}" ${module.scope?.target === target ? 'selected' : ''}>${target}</option>`).join('')}
-            </select>
-          </label>
-          <label>标签
-            <input data-dev-module-index="${index}" data-dev-scope="tag" value="${escapeHtml(module.scope?.tag ?? '')}" placeholder="foliage / stone / tree" />
-          </label>
-        </div>
-      ` : ''}
-      <div class="developer-preset-grid">
-        ${Object.entries(capability.params).map(([parameter, rule]) => {
-          const access = policy.parameters.find((entry) => (
-            entry.moduleId === capability.id && entry.parameter === parameter
-          ))?.developer;
-          return renderDeveloperPresetInput(parameter, rule, module.params[parameter], index, access, hdriFiles);
-        }).join('')}
-      </div>
-    </div>
-  `;
-}
-
-function renderDeveloperPresetInput(
-  parameter: string,
-  rule: RenderCapability['params'][string],
-  current: string | number | undefined,
-  index: number,
-  access?: RenderParameterAccess['developer'],
-  hdriFiles: string[] = []
-): string {
-  const value = current ?? rule.default ?? '';
-  const disabled = access?.enabled === false ? 'disabled' : '';
-  if (rule.type === 'code' && rule.control === 'select') {
-    const options = ['', ...hdriFiles];
-    return `<label><span>${escapeHtml(parameter)}</span><select data-dev-module-index="${index}" data-dev-param="${parameter}" ${disabled}>${options.map((option) => `<option value="${escapeHtml(option)}" ${value === option ? 'selected' : ''}>${escapeHtml(option || '（不使用 HDRI）')}</option>`).join('')}</select></label>${hdriFiles.length ? '' : '<p class="empty">把 .hdr/.exr/.jpg 放进 data/map-editor/hdri 目录后重新打开此面板。</p>'}`;
-  }
-  if (rule.type === 'enum') {
-    const values = access?.values?.length ? rule.values.filter((option) => access.values?.includes(option)) : rule.values;
-    return `<label><span>${escapeHtml(parameter)}</span><select data-dev-module-index="${index}" data-dev-param="${parameter}" ${disabled}>${values.map((option) => `<option value="${escapeHtml(option)}" ${value === option ? 'selected' : ''}>${escapeHtml(option)}</option>`).join('')}</select></label>`;
-  }
-  if (rule.type === 'color') {
-    return `<label><span>${escapeHtml(parameter)}</span><input type="color" data-dev-module-index="${index}" data-dev-param="${parameter}" value="${escapeHtml(String(value || '#ffffff'))}" ${disabled} /></label>`;
-  }
-  if (rule.type === 'code') {
-    return `<label class="developer-code"><span>${escapeHtml(parameter)}</span><textarea rows="7" maxlength="${rule.maxLength}" data-dev-module-index="${index}" data-dev-param="${parameter}" placeholder="隔离 GLSL 扩展" ${disabled}>${escapeHtml(String(value))}</textarea></label>`;
-  }
-  const min = access?.min ?? rule.min;
-  const max = access?.max ?? rule.max;
-  const step = Math.max(0.001, (max - min) / 100);
-  return `
-    <label class="developer-number-control">
-      <span><span>${escapeHtml(parameter)}</span><output data-dev-value-output="${index}:${escapeHtml(parameter)}">${value}</output></span>
-      <input class="developer-value-range" type="range" min="${min}" max="${max}" step="${step}" data-dev-module-index="${index}" data-dev-param="${parameter}" value="${value}" ${disabled} />
-      <input class="developer-value-number" type="number" min="${min}" max="${max}" step="${step}" data-dev-module-index="${index}" data-dev-param="${parameter}" value="${value}" ${disabled} />
-    </label>
-  `;
-}
-
-function defaultRenderModule(capability: RenderCapability, index: number): RenderModuleSelection {
-  const params: Record<string, string | number> = {};
-  for (const [parameter, rule] of Object.entries(capability.params)) {
-    if (rule.default !== undefined) params[parameter] = rule.default;
-  }
-  const scope = capability.id === 'runtime.water-style'
-    ? { target: 'water' as const, tag: 'water' }
-    : capability.id === 'runtime.effect-recipe'
-      ? { target: 'material-tag' as const, tag: 'emissive' }
-      : { target: 'material-tag' as const, tag: 'foliage' };
-  return {
-    ...(capability.repeatable ? { key: `${capability.id.replaceAll('.', '-')}-${index}` } : {}),
-    id: capability.id,
-    ...(capability.repeatable ? { scope } : {}),
-    params
-  };
 }
 
 function applyLightRig(

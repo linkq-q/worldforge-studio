@@ -80,9 +80,14 @@ describe('RenderPlan V2 capabilities', () => {
           params: {
             recipe: 'calm-lake',
             opacity: 0.82,
+            shallowColor: '#9bdbe0',
+            depthColor: '#16354a',
             waveStrength: 0.2,
+            waveSpeed: 0.45,
             foamStrength: 0.3,
-            reflectionStrength: 0.55
+            reflectionStrength: 0.55,
+            reflectionDistortion: 0.06,
+            reflectionFresnel: 1.2
           }
         },
         { id: 'runtime.light-rig', params: { recipe: 'soft-morning', strength: 0.8 } },
@@ -94,7 +99,16 @@ describe('RenderPlan V2 capabilities', () => {
     });
 
     expect(compileRuntimeColorGrade(plan)).toMatchObject({ recipe: 'misty', contrast: 0.82 });
-    expect(compileRuntimeWaterStyles(plan)[0]).toMatchObject({ recipe: 'calm-lake', opacity: 0.82 });
+    expect(compileRuntimeWaterStyles(plan)[0]).toMatchObject({
+      recipe: 'calm-lake',
+      opacity: 0.82,
+      shallowColor: '#9bdbe0',
+      depthColor: '#16354a',
+      waveSpeed: 0.45,
+      reflectionStrength: 0.55,
+      reflectionDistortion: 0.06,
+      reflectionFresnel: 1.2
+    });
     expect(compileRuntimeLightRig(plan)).toMatchObject({ recipe: 'soft-morning', strength: 0.8 });
     expect(compileRuntimePostQuality(plan)).toEqual({
       bloom: 'soft',
