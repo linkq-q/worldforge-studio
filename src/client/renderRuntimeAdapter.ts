@@ -22,6 +22,7 @@ import { WaterSurface, WaterfallSurface } from '@voxel-studio/render-runtime/env
 import { createEffectRuntime } from '@voxel-studio/render-runtime/effects';
 import { applyDefaultWaterState, DEFAULT_WATER_STATE } from './defaultWaterState';
 import { WorldForgeMaterialTagRuntime } from './materialTagRuntimeAdapter';
+import { createComposerRenderTarget } from './renderOutputPipeline';
 import type {
   RuntimeColorGrade,
   RuntimeEffectRecipe,
@@ -108,17 +109,18 @@ export class RenderRuntimeAdapter {
     this.boundaryTarget.texture.colorSpace = THREE.NoColorSpace;
     this.boundaryTarget.texture.generateMipmaps = false;
 
-    this.composer = new EffectComposer(renderer);
+    this.composer = new EffectComposer(renderer, createComposerRenderTarget());
     this.composer.setPixelRatio(renderer.getPixelRatio());
     this.composer.addPass(new RenderPass(scene, camera));
     this.composer.addPass(this.ssaoPass);
     this.composer.addPass(this.toneMapPass);
+    // Stylization stays last so bloom cannot soften finished ink/sketch lines.
+    this.composer.addPass(this.bloomPass);
     this.composer.addPass(this.curvaturePass);
     this.composer.addPass(this.inkPass);
     this.composer.addPass(this.paperPass);
     this.composer.addPass(this.comicPass);
     this.composer.addPass(this.sketchPass);
-    this.composer.addPass(this.bloomPass);
     this.composer.addPass(new OutputPass());
 
     this.ssaoPass.enabled = false;

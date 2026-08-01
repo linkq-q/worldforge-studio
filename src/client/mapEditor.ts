@@ -35,6 +35,7 @@ import { configureSunLight } from './lighting';
 import { buildModelGroup } from './modelRenderer';
 import { RenderRuntimeAdapter } from './renderRuntimeAdapter';
 import { HDRI_DOME_RADIUS, HdriSkyController } from './hdriSky';
+import { configureRendererOutput } from './renderOutputPipeline';
 import {
   applyMapOperations,
   type MapAiSuggestion,
@@ -362,6 +363,7 @@ class MapEditor {
     this.renderer.setPixelRatio(Math.min(2, window.devicePixelRatio));
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    configureRendererOutput(this.renderer);
     host.appendChild(this.renderer.domElement);
 
     this.orbit = new OrbitControls(this.camera, this.renderer.domElement);
@@ -2166,8 +2168,7 @@ class MapEditor {
       this.hemisphereLight.intensity = 1.6;
       this.sunLight.color.set(0xfff0ce);
       this.sunLight.intensity = 2.5;
-      this.renderer.toneMapping = THREE.NoToneMapping;
-      this.renderer.toneMappingExposure = 1;
+      configureRendererOutput(this.renderer);
       this.renderRuntimeAdapter?.applyColorGrade({ recipe: 'neutral' });
       this.renderRuntimeAdapter?.applyPostQuality({
         bloom: 'off',
@@ -2189,8 +2190,7 @@ class MapEditor {
     this.hemisphereLight.intensity = settings.hemisphereIntensity;
     this.sunLight.color.set(settings.sunColor);
     this.sunLight.intensity = settings.sunIntensity;
-    this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    this.renderer.toneMappingExposure = settings.exposure;
+    configureRendererOutput(this.renderer, settings.exposure);
     const runtimeStyle = scheme.renderPlan
       ? compileRuntimeStyle(scheme.renderPlan)
       : { mode: 'pbr' as const, cartoon: {} };

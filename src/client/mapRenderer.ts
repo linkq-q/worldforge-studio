@@ -84,14 +84,12 @@ function buildTerrain(map: EditableMap): THREE.Mesh {
   const material = new THREE.MeshStandardMaterial({
     map: texture,
     color: 0xffffff,
-    emissive: 0xffffff,
-    emissiveMap: texture,
-    emissiveIntensity: 0.16,
     roughness: 0.92,
-    side: THREE.DoubleSide
+    side: THREE.FrontSide
   });
   const mesh = new THREE.Mesh(geometry, material);
   mesh.name = 'terrain';
+  mesh.castShadow = true;
   mesh.receiveShadow = true;
   mesh.userData.surface = 'terrain';
   return mesh;

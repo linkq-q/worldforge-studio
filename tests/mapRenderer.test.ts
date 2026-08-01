@@ -26,6 +26,12 @@ describe('structured map water rendering', () => {
     });
 
     expect(surfaces).toEqual(['terrain']);
+    const terrain = rendered.group.getObjectByName('terrain') as THREE.Mesh;
+    const material = terrain.material as THREE.MeshStandardMaterial;
+    expect(terrain.castShadow).toBe(true);
+    expect(terrain.receiveShadow).toBe(true);
+    expect(material.emissive.getHex()).toBe(0x000000);
+    expect(material.side).toBe(THREE.FrontSide);
     rendered.dispose();
   });
 
