@@ -27,7 +27,8 @@ export class HdriSkyController {
   constructor(
     private readonly renderer: THREE.WebGLRenderer,
     private readonly scene: THREE.Scene,
-    private readonly fileUrl: (file: string) => string
+    private readonly fileUrl: (file: string) => string,
+    private readonly onEnvironmentChange: (texture: THREE.Texture | null) => void = () => {}
   ) {
     this.dome.setVisible(false);
     this.dome.addTo(scene);
@@ -89,12 +90,14 @@ export class HdriSkyController {
     this.environmentMap?.dispose();
     this.environmentMap = generated;
     this.scene.environment = generated;
+    this.onEnvironmentChange(generated);
   }
 
   private clearEnvironment(): void {
     if (this.scene.environment === this.environmentMap) this.scene.environment = null;
     this.environmentMap?.dispose();
     this.environmentMap = null;
+    this.onEnvironmentChange(null);
   }
 
   private loadTexture(file: string): Promise<THREE.Texture> {

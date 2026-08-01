@@ -399,7 +399,8 @@ class MapEditor {
     this.hdriSky = new HdriSkyController(
       this.renderer,
       this.scene,
-      (file) => `${serverHttpBase(location, import.meta.env.DEV)}/api/editor/hdri/${encodeURIComponent(file)}`
+      (file) => `${serverHttpBase(location, import.meta.env.DEV)}/api/editor/hdri/${encodeURIComponent(file)}`,
+      (environmentMap) => this.renderRuntimeAdapter?.syncEnvironment(environmentMap)
     );
     void this.reloadHdriTextures();
     this.scene.add(hemi, sun, sunTarget);
@@ -2187,6 +2188,7 @@ class MapEditor {
         ssao: 'off',
         depthOfField: 'off'
       });
+      this.renderRuntimeAdapter?.applyDistanceFog('#111719', 0);
       this.renderRuntimeAdapter?.applyScopedCapabilities([], [], []);
       this.hdriSky?.clear();
       this.updateSceneLighting();
@@ -2194,9 +2196,9 @@ class MapEditor {
     }
     const settings = scheme.settings;
     this.scene.background = new THREE.Color(settings.background);
-    this.scene.fog = settings.fogDensity > 0
-      ? new THREE.FogExp2(settings.fogColor, settings.fogDensity)
-      : null;
+    // One depth-based fog pass also covers custom ShaderMaterials such as water.
+    this.scene.fog = null;
+    this.renderRuntimeAdapter?.applyDistanceFog(settings.fogColor, settings.fogDensity);
     this.hemisphereLight.color.set(settings.hemisphereSkyColor);
     this.hemisphereLight.groundColor.set(settings.hemisphereGroundColor);
     this.hemisphereLight.intensity = settings.hemisphereIntensity;

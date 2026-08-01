@@ -16,12 +16,19 @@ import {
   createComicPrintPass,
   createPaperTexturePass,
   createSketchHatchPass,
-  createToneMapPass
+  createToneMapPass,
+  createExponentialFogPass
 } from '@voxel-studio/render-runtime/postprocess';
 import { WaterSurface, WaterfallSurface } from '@voxel-studio/render-runtime/environment';
 import { createEffectRuntime } from '@voxel-studio/render-runtime/effects';
 import { applyDefaultWaterState, DEFAULT_WATER_STATE } from './defaultWaterState';
 import { WorldForgeMaterialTagRuntime } from './materialTagRuntimeAdapter';
+import { compileEffectRecipeLayers } from './effectRecipeCompiler';
+import {
+  bindDistanceFogDepth,
+  configureDistanceFogPass,
+  syncWaterSurfaceEnvironment
+} from './renderEnvironmentBridge';
 import { createComposerRenderTarget } from './renderOutputPipeline';
 import type {
   RuntimeColorGrade,
@@ -62,6 +69,7 @@ export class RenderRuntimeAdapter {
   private readonly comicPass = createComicPrintPass();
   private readonly sketchPass = createSketchHatchPass();
   private readonly toneMapPass = createToneMapPass();
+  private readonly fogPass = createExponentialFogPass();
   private readonly ssaoPass: SharedSSAOPass;
   private readonly bloomPass = new GlobalBloomPass(new THREE.Vector2(1, 1), 0.4, 0.35, 0.82);
   private readonly effectRuntime = createEffectRuntime().runtime;
@@ -80,7 +88,11 @@ export class RenderRuntimeAdapter {
     private readonly scene: THREE.Scene,
     private readonly camera: THREE.PerspectiveCamera
   ) {
-    this.materialTagRuntime = new WorldForgeMaterialTagRuntime(scene, this.effectRuntime);
+    this.materialTagRuntime = new WorldForgeMaterialTagRuntime(
+      scene,
+      this.effectRuntime,
+      () => this.scene.environment
+    );
     this.curvaturePass = createCurvatureEdgePass(renderer);
     this.inkPass = createInkEdgePass(renderer);
     this.ssaoPass = new SharedSSAOPass(scene, camera, 1, 1, 16);
@@ -121,6 +133,8 @@ export class RenderRuntimeAdapter {
     this.composer.addPass(this.paperPass);
     this.composer.addPass(this.comicPass);
     this.composer.addPass(this.sketchPass);
+    // Fog is last so water, outlines and presentation effects share one depth fade.
+    this.composer.addPass(this.fogPass);
     this.composer.addPass(new OutputPass());
 
     this.ssaoPass.enabled = false;
@@ -131,6 +145,7 @@ export class RenderRuntimeAdapter {
     this.paperPass.enabled = false;
     this.comicPass.enabled = false;
     this.sketchPass.enabled = false;
+    this.fogPass.enabled = false;
     this.setNumber(this.toneMapPass, 'uLUTStrength', 0);
     this.applyOutline({ mode: 'none', params: {} });
     this.applyPresentation({ mode: 'none', sketch: {}, paper: {}, comic: {} });
@@ -187,6 +202,18 @@ export class RenderRuntimeAdapter {
       ?? (quality.bloom === 'strong' ? 0.85 : quality.bloom === 'soft' ? 0.38 : 0);
     this.bloomPass.radius = quality.bloom === 'strong' ? 0.55 : 0.32;
     this.bloomPass.threshold = quality.bloom === 'strong' ? 0.72 : 0.86;
+  }
+
+  applyDistanceFog(color: string, density: number): void {
+    configureDistanceFogPass(this.fogPass, color, density);
+  }
+
+  syncEnvironment(environmentMap: THREE.Texture | null = this.scene.environment): void {
+    this.materialTagRuntime.syncEnvironment(environmentMap);
+    for (const binding of this.waterBindings) {
+      if (!(binding.surface instanceof WaterSurface)) continue;
+      syncWaterSurfaceEnvironment(binding.surface, environmentMap);
+    }
   }
 
   applyScopedCapabilities(
@@ -430,6 +457,7 @@ export class RenderRuntimeAdapter {
             strength: style.reflectionStrength ?? recipe.reflectionStrength
           });
         }
+        syncWaterSurfaceEnvironment(surface, this.scene.environment);
       }
       const uniforms = surface.material.uniforms;
       if (style && uniforms.uOpacity) uniforms.uOpacity.value = style.opacity ?? recipe.opacity;
@@ -455,7 +483,7 @@ export class RenderRuntimeAdapter {
     }
     for (const [target, targetRecipes] of byTarget) {
       const materialLayers: Array<{ type: string; params: Record<string, unknown> }> = [];
-      for (const recipe of targetRecipes) materialLayers.push(...effectLayers(recipe));
+      for (const recipe of targetRecipes) materialLayers.push(...compileEffectRecipeLayers(recipe));
       if (materialLayers.length) {
         this.effectRuntime.applyToObject3D(target, {
           schemaVersion: 2,
@@ -497,7 +525,8 @@ export class RenderRuntimeAdapter {
       || this.presentationMode !== 'none'
       || this.toneMapPass.enabled
       || this.ssaoPass.enabled
-      || this.bloomPass.enabled;
+      || this.bloomPass.enabled
+      || this.fogPass.enabled;
   }
 
   private renderPrePass(): void {
@@ -506,7 +535,11 @@ export class RenderRuntimeAdapter {
     const needsComicEdge = this.comicPass.enabled
       && Number(this.comicPass.uniforms.uLineBoost?.value ?? 0) > 0;
     const needsEdgeMask = this.inkPass.enabled || needsComicEdge;
-    const needsNormalDepth = needsEdgeMask || this.curvaturePass.enabled || needsSketchWorld || this.ssaoPass.enabled;
+    const needsNormalDepth = needsEdgeMask
+      || this.curvaturePass.enabled
+      || needsSketchWorld
+      || this.ssaoPass.enabled
+      || this.fogPass.enabled;
     if (!needsNormalDepth || !this.contentRoot) return;
 
     this.renderNormalDepth(this.contentRoot);
@@ -515,6 +548,9 @@ export class RenderRuntimeAdapter {
 
     if (this.ssaoPass.enabled && depthTexture) {
       this.ssaoPass.setSharedNormalDepth(normalTexture, depthTexture);
+    }
+    if (this.fogPass.enabled && depthTexture) {
+      bindDistanceFogDepth(this.fogPass, depthTexture, this.camera);
     }
 
     if (this.curvaturePass.enabled) {
@@ -826,26 +862,6 @@ function defaultWaterStyle(mesh: THREE.Mesh): RuntimeWaterStyle {
   };
 }
 
-function effectLayers(recipe: RuntimeEffectRecipe): Array<{ type: string; params: Record<string, unknown> }> {
-  const color = new THREE.Color(recipe.color ?? '#88bbff');
-  const colorArray = [color.r, color.g, color.b];
-  const intensity = recipe.intensity ?? 1;
-  const speed = recipe.speed ?? 1;
-  if (recipe.recipe === 'fresnel') {
-    return [{ type: 'FresnelRim', params: { color: colorArray, intensity, power: 2.5 } }];
-  }
-  if (recipe.recipe === 'flame') {
-    return [{ type: 'Flame', params: { color: colorArray, intensity, speed } }];
-  }
-  if (recipe.recipe === 'magic') {
-    return [
-      { type: 'FresnelRim', params: { color: colorArray, intensity: intensity * 0.8, power: 2.2 } },
-      { type: 'EmissivePulse', params: { color: colorArray, intensity, speed } }
-    ];
-  }
-  return [{ type: 'EmissivePulse', params: { color: colorArray, intensity, speed } }];
-}
-
 function temperatureTint(value: number): THREE.Color {
   const t = THREE.MathUtils.clamp(value, -1, 1);
   return t >= 0
@@ -884,11 +900,12 @@ function outlineOverrides(params: RuntimeOutlineStyle['params']): Record<string,
 
 function isPrePassMesh(mesh: THREE.Mesh): boolean {
   if (!mesh.visible) return false;
+  const isWater = mesh.userData.isWater === true;
   let current: THREE.Object3D | null = mesh;
   while (current) {
     if (
-      current.userData.skipShaderApply
-      || current.userData.skipNormalDepthPrePass
+      (!isWater && current.userData.skipShaderApply)
+      || (!isWater && current.userData.skipNormalDepthPrePass)
       || current.userData.noNormalDepth
       || current.userData.isEditorObject
       || current.userData.isEnvironmentObject
@@ -899,6 +916,7 @@ function isPrePassMesh(mesh: THREE.Mesh): boolean {
     ) return false;
     current = current.parent;
   }
+  if (isWater) return true;
   const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
   return !materials.some((material) => material?.transparent || Number(material?.opacity ?? 1) < 1);
 }

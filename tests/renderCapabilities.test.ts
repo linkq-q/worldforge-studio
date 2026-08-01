@@ -47,6 +47,19 @@ describe('RenderPlan V2 capabilities', () => {
     })]);
   });
 
+  it('keeps aura and vegetation sway inside the effect recipe whitelist', () => {
+    const plan = normalizeRenderPlan({
+      version: 2,
+      baseSchemeId: 'render-natural-day',
+      modules: [
+        { id: 'runtime.effect-recipe', params: { recipe: 'aura' } },
+        { id: 'runtime.effect-recipe', params: { recipe: 'sway' } }
+      ]
+    });
+
+    expect(compileRuntimeEffectRecipes(plan).map((recipe) => recipe.recipe)).toEqual(['aura', 'sway']);
+  });
+
   it('compiles the new scene-level runtime modules', () => {
     const plan = normalizeRenderPlan({
       version: 2,

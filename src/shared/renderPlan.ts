@@ -188,7 +188,7 @@ export interface RuntimePostQuality {
 export interface RuntimeEffectRecipe {
   key: string;
   scope: RenderModuleScope;
-  recipe: 'glow' | 'fresnel' | 'flame' | 'magic';
+  recipe: 'glow' | 'fresnel' | 'flame' | 'magic' | 'aura' | 'sway';
   intensity?: number;
   speed?: number;
   color?: string;
@@ -421,7 +421,7 @@ export const RENDER_CAPABILITIES: readonly RenderCapability[] = [
     params: {
       recipe: {
         type: 'enum',
-        values: ['glow', 'fresnel', 'flame', 'magic'],
+        values: ['glow', 'fresnel', 'flame', 'magic', 'aura', 'sway'],
         default: 'glow'
       },
       intensity: { type: 'number', min: 0, max: 2.5, default: 1 },
@@ -688,7 +688,7 @@ export function compileRuntimeEffectRecipes(plan: RenderPlan): RuntimeEffectReci
     .map((item, index) => ({
       key: item.key ?? `effect-recipe-${index}`,
       scope: item.scope ?? { target: 'material-tag', tag: 'emissive' },
-      recipe: enumValue(item.params.recipe, ['glow', 'fresnel', 'flame', 'magic'], 'glow'),
+      recipe: enumValue(item.params.recipe, ['glow', 'fresnel', 'flame', 'magic', 'aura', 'sway'], 'glow'),
       intensity: numericValue(item.params.intensity),
       speed: numericValue(item.params.speed),
       color: stringValue(item.params.color)

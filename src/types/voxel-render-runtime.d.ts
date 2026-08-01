@@ -26,6 +26,7 @@ declare module '@voxel-studio/render-runtime/postprocess' {
   }): ShaderPass;
   export function createSketchHatchPass(): ShaderPass;
   export function createToneMapPass(): ShaderPass;
+  export function createExponentialFogPass(): ShaderPass;
   export class GlobalBloomPass extends Pass {
     strength: number;
     radius: number;
@@ -127,6 +128,7 @@ declare module '@voxel-studio/render-runtime/environment' {
     ): void;
     importState(state: Record<string, unknown>): void;
     setWaterMode(mode: 'cartoon' | 'realistic' | 'hybrid'): void;
+    setWaterEnvMap(texture: import('three').Texture | null): void;
     setWaterReflectionParams(params: Record<string, unknown>): void;
     dispose(): void;
   }

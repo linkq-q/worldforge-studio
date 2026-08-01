@@ -44,4 +44,38 @@ describe('WorldForge material tag runtime', () => {
     mesh.geometry.dispose();
     (mesh.material as THREE.Material).dispose();
   });
+
+  it('rebinds tag-authored reflective surfaces when the HDRI environment changes', () => {
+    const scene = new THREE.Scene();
+    const modelsRoot = new THREE.Group();
+    const modelRoot = new THREE.Group();
+    modelRoot.userData.materialTagSource = {
+      name: 'marble',
+      nodes: [{
+        id: 'marble',
+        mesh: { type: 'box' },
+        tags: [{ tag: 'base', value: 'stone', variant: 'marble' }]
+      }]
+    };
+    const material = new THREE.MeshStandardMaterial();
+    const mesh = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), material);
+    mesh.userData.nodeId = 'marble';
+    modelRoot.add(mesh);
+    modelsRoot.add(modelRoot);
+    scene.add(modelsRoot);
+
+    const runtime = new WorldForgeMaterialTagRuntime(scene, createEffectRuntime().runtime);
+    runtime.apply(modelsRoot);
+    const environment = new THREE.Texture();
+
+    expect(runtime.syncEnvironment(environment)).toBeGreaterThan(0);
+    expect(material.envMap).toBe(environment);
+    expect(runtime.syncEnvironment(null)).toBeGreaterThan(0);
+    expect(material.envMap).toBeNull();
+
+    runtime.clear(modelsRoot);
+    environment.dispose();
+    mesh.geometry.dispose();
+    material.dispose();
+  });
 });

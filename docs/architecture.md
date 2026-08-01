@@ -27,7 +27,7 @@
 
 每张地图保存一个全局 `seed`；旧地图按地图 ID 确定性补齐。AI 先输出高层 `terrain.generate`（`plain/hills/valley/island/canyon`），共享 PCG 模块用四层 fBm 烘焙进现有高度场，再依次执行局部笔刷、湖泊刻蚀和散布。LLM 不再负责枚举基础地形坐标。坡度分析与地形生成分属独立共享模块，渲染端只消费最终高度场，并按高度、坡度和水线生成顶点颜色。
 
-渲染生成同样使用受限协议，而不是让模型直接修改 Three.js：AI 选择基础方案并组合 `RenderPlan` 能力模块，服务端按该方案的 `accessPolicy` 校验模块、参数、角色权限和范围。非法结果或明确风格遗漏只允许自动修正一次。当前模块覆盖环境、HDRI 天空、表面、描边、世界空间素描、漫画、色彩分级、标签材质、命名灯光、Bloom/SSAO、标签特效，以及结构化湖泊/河流与模型水面。`environment.hdri` 的贴图来自 `data/map-editor/hdri/` 目录扫描，同一张全景图既作为 `HDRISkyDome` 背景，也经 PMREM 成为 `scene.environment`；贴图名是开发者专用参数，AI 只能调旋转、曝光、饱和度、强度和色调。材质与特效只接收 `modelsRoot`；后处理 normal/depth 预通道只接收地图内容根，物体/材质 ID 只遍历 `modelsRoot`，编辑器 gizmo 和辅助物不会进入风格链。景深仅保留高层协议。
+渲染生成同样使用受限协议，而不是让模型直接修改 Three.js：AI 选择基础方案并组合 `RenderPlan` 能力模块，服务端按该方案的 `accessPolicy` 校验模块、参数、角色权限和范围。非法结果或明确风格遗漏只允许自动修正一次。当前模块覆盖环境、HDRI 天空、表面、描边、世界空间素描、漫画、色彩分级、标签材质、命名灯光、Bloom/SSAO、标签特效，以及结构化湖泊/河流与模型水面。`environment.hdri` 的贴图来自 `data/map-editor/hdri/` 目录扫描，同一张全景图既作为 `HDRISkyDome` 背景，也经 PMREM 成为 `scene.environment`；环境变更由宿主桥同步给 Voxel 材质标签表面绑定和 `WaterSurface`，清除 HDRI 时也同步解绑。距离雾统一使用 Runtime 的深度后处理，覆盖普通材质、透明水体和风格化输出，避免自定义 Shader 绕开 Three 内建雾；水体参与该深度预通道，但仍不进入普通材质替换。贴图名是开发者专用参数，AI 只能调旋转、曝光、饱和度、强度和色调。材质与特效只接收 `modelsRoot`；后处理 normal/depth 预通道只接收地图内容根，物体/材质 ID 只遍历 `modelsRoot`，编辑器 gizmo 和辅助物不会进入风格链。景深仅保留高层协议。
 渲染 Refine 以当前完整 `RenderPlan` 为输入，强制保持 `baseSchemeId` 不变并返回合并后的完整计划，因此“雾再浓一点”不会重新选择预设或丢失素描、漫画等既有模块。
 
 基础版 Agent API 使用 SSE 返回真实执行阶段。地图链路公开规划、资产检查、逐个资产生成、重新规划与校验；渲染链路公开规划、校验和自动修正。客户端只展示后端已发生的阶段，不模拟定时进度。

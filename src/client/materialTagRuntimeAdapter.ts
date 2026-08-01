@@ -31,12 +31,17 @@ export interface MaterialTagApplyResult {
 
 export class WorldForgeMaterialTagRuntime {
   private readonly slotManager: EffectSlotManager;
+  private readonly surfaceBindings: Array<{
+    object: THREE.Object3D;
+    binding: Record<string, unknown>;
+  }> = [];
 
   constructor(
     scene: THREE.Scene,
     private readonly effectRuntime: {
       applyToObject3D(root: THREE.Object3D, effectPackage: Record<string, unknown>): unknown;
-    }
+    },
+    private readonly getEnvironmentMap: () => THREE.Texture | null = () => scene.environment
   ) {
     this.slotManager = new EffectSlotManager({
       scene,
@@ -45,6 +50,7 @@ export class WorldForgeMaterialTagRuntime {
   }
 
   apply(modelsRoot: THREE.Object3D): MaterialTagApplyResult {
+    this.surfaceBindings.length = 0;
     const result: MaterialTagApplyResult = {
       taggedParts: 0,
       appliedParts: 0,
@@ -86,10 +92,11 @@ export class WorldForgeMaterialTagRuntime {
           applied = true;
         }
         if (entry.materialBindings?.surface) {
-          applied = applyMaterialSurfaceBinding(
+          this.surfaceBindings.push({ object, binding: entry.materialBindings.surface });
+          applied = applySurfaceBinding(
             object,
             entry.materialBindings.surface,
-            modelRoot.parent?.parent?.userData.environmentMap ?? null
+            this.getEnvironmentMap()
           ) > 0 || applied;
         }
         if (entry.materialBindings?.matcap) result.skippedMatcaps += 1;
@@ -100,8 +107,38 @@ export class WorldForgeMaterialTagRuntime {
   }
 
   clear(modelsRoot: THREE.Object3D): void {
+    this.surfaceBindings.length = 0;
     this.slotManager.clearEffects(modelsRoot);
   }
+
+  syncEnvironment(environmentMap: THREE.Texture | null): number {
+    let updated = 0;
+    for (const entry of this.surfaceBindings) {
+      updated += applySurfaceBinding(entry.object, entry.binding, environmentMap);
+    }
+    return updated;
+  }
+}
+
+function applySurfaceBinding(
+  object: THREE.Object3D,
+  binding: Record<string, unknown>,
+  environmentMap: THREE.Texture | null
+): number {
+  let updated = applyMaterialSurfaceBinding(object, binding, environmentMap);
+  if (binding.environment !== true || environmentMap) return updated;
+  object.traverse((target) => {
+    const mesh = target as THREE.Mesh;
+    if (!mesh.isMesh) return;
+    const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+    for (const material of materials) {
+      if (!material || !('envMap' in material) || material.envMap === null) continue;
+      material.envMap = null;
+      material.needsUpdate = true;
+      updated += 1;
+    }
+  });
+  return updated;
 }
 
 function toCompilerModel(source: TaggedModelSource): {
