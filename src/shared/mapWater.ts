@@ -61,6 +61,15 @@ export function isNearWater(map: EditableMap, x: number, z: number, padding: num
   });
 }
 
+export function isPointInsideWaterBody(water: MapWaterBody, x: number, z: number): boolean {
+  if (water.type === 'river') {
+    return water.points.slice(1).some((point, index) =>
+      distanceToSegment(x, z, water.points[index], point) <= water.width / 2
+    );
+  }
+  return pointInPolygon(x, z, water.points);
+}
+
 function polygonEdgeDistance(x: number, z: number, points: Array<[number, number]>): number {
   let closest = Number.POSITIVE_INFINITY;
   for (let index = 0; index < points.length; index += 1) {

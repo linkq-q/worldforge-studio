@@ -7,10 +7,8 @@ import {
   createId,
   DEFAULT_WATER_DEPTH,
   getMapBounds,
-  getMapObjectAabbs,
   MAX_WATER_DEPTH,
   normalizeMap,
-  PLAYER_RADIUS,
   sampleTerrainHeight,
   type EditableMap,
   type MapAsset,
@@ -27,9 +25,10 @@ import {
   expandMapScatter,
   type MapScatterPlan
 } from '../shared/mapScatter';
-import { terrainSlopeDegrees } from '../shared/mapTerrainAnalysis';
 import { normalizeTerrainGenerationParams } from '../shared/terrainGeneration';
-import { isNearWater } from '../shared/mapWater';
+import { findSafeSpawnPosition } from '../shared/mapSpawnSafety';
+import { normalizeAssetTags } from '../shared/mapAssetMetadata';
+import { validateMapSuggestion } from './mapSuggestionValidation';
 import { llmChat } from './modelApi';
 
 export interface MapAiOptions {
@@ -43,6 +42,7 @@ export interface MapAiOptions {
 export interface AssetGenerationRequest {
   name: string;
   prompt: string;
+  tags: string[];
 }
 
 export interface MapAgentOptions extends MapAiOptions {
@@ -81,19 +81,19 @@ export async function runMapAgent(
     total: requests.length
   });
   if (requests.length === 0) {
-    options.onProgress?.({ phase: 'validating', label: '校验地图操作与安全范围' });
     const firstSuggestion = normalizeMapSuggestion(firstContent, map, assets, mode);
     if (hasSpatialOperations(firstSuggestion)) {
+      const validated = finalizeMapAgentSuggestion(map, assets, firstSuggestion, options);
       options.onProgress?.({ phase: 'complete', label: '地图修改方案已完成' });
-      return firstSuggestion;
+      return validated;
     }
     options.onProgress?.({ phase: 'replanning', label: '补充空间操作' });
     const retryContent = await requestMapPlan(prompt, map, assets, options, true, mode);
-    options.onProgress?.({ phase: 'validating', label: '校验地图操作' });
     const retrySuggestion = normalizeMapSuggestion(retryContent, map, assets, mode);
     if (!hasSpatialOperations(retrySuggestion)) throw new Error('map_agent_no_spatial_plan');
+    const validated = finalizeMapAgentSuggestion(map, assets, retrySuggestion, options);
     options.onProgress?.({ phase: 'complete', label: '地图修改方案已完成' });
-    return retrySuggestion;
+    return validated;
   }
 
   const generatedAssets: MapAsset[] = [];
@@ -117,14 +117,34 @@ export async function runMapAgent(
   ).length > 0) {
     throw new Error('map_agent_asset_limit');
   }
-  options.onProgress?.({ phase: 'validating', label: '校验地图操作与安全范围' });
   const suggestion = {
     ...normalizeMapSuggestion(finalContent, map, expandedAssets, mode),
     generatedAssets: generatedAssets.map((asset) => ({ id: asset.id, name: asset.name }))
   };
   if (!hasSpatialOperations(suggestion)) throw new Error('map_agent_no_spatial_plan');
+  const validated = finalizeMapAgentSuggestion(map, expandedAssets, suggestion, options);
   options.onProgress?.({ phase: 'complete', label: '地图修改方案已完成' });
-  return suggestion;
+  return validated;
+}
+
+function finalizeMapAgentSuggestion(
+  map: EditableMap,
+  assets: readonly MapAsset[],
+  suggestion: MapAiSuggestion,
+  options: MapAiOptions
+): MapAiSuggestion {
+  options.onProgress?.({ phase: 'validating', label: '检查出生点、贴地、水体与物体重叠' });
+  const validated = validateMapSuggestion(normalizeMap({ ...map, assets: [...assets] }), suggestion);
+  if (validated.repairCount > 0) {
+    options.onProgress?.({
+      phase: 'repairing',
+      label: `自动修复 ${validated.repairCount} 项确定性问题`,
+      current: validated.repairCount,
+      total: validated.repairCount,
+      detail: validated.issues.filter((issue) => issue.repaired).map((issue) => issue.code).join(', ')
+    });
+  }
+  return validated.suggestion;
 }
 
 async function requestMapPlan(
@@ -530,44 +550,6 @@ function normalizeSpawnOperation(value: unknown, map: EditableMap): MapOperation
   };
 }
 
-function findSafeSpawnPosition(map: EditableMap, requestedX: number, requestedZ: number): [number, number] {
-  const bounds = getMapBounds(map);
-  const obstacles = getMapObjectAabbs(map);
-  const terrainStep = Math.max(
-    1,
-    Math.min(
-      map.box.size[0] / Math.max(1, map.terrain.resolutionX - 1),
-      map.box.size[2] / Math.max(1, map.terrain.resolutionZ - 1)
-    )
-  );
-  const maxRadius = Math.min(map.box.size[0], map.box.size[2]) / 3;
-  for (let radius = 0; radius <= maxRadius; radius += terrainStep) {
-    const candidateCount = radius === 0 ? 1 : Math.max(8, Math.ceil(Math.PI * 2 * radius / terrainStep));
-    for (let index = 0; index < candidateCount; index += 1) {
-      const angle = candidateCount === 1 ? 0 : index / candidateCount * Math.PI * 2;
-      const x = clamp(
-        requestedX + Math.cos(angle) * radius,
-        bounds.minX + PLAYER_RADIUS,
-        bounds.maxX - PLAYER_RADIUS
-      );
-      const z = clamp(
-        requestedZ + Math.sin(angle) * radius,
-        bounds.minZ + PLAYER_RADIUS,
-        bounds.maxZ - PLAYER_RADIUS
-      );
-      if (isNearWater(map, x, z, PLAYER_RADIUS + 0.2)) continue;
-      if (terrainSlopeDegrees(map, x, z) > 35) continue;
-      if (obstacles.some((obstacle) => {
-        const closestX = clamp(x, obstacle.min[0], obstacle.max[0]);
-        const closestZ = clamp(z, obstacle.min[2], obstacle.max[2]);
-        return Math.hypot(x - closestX, z - closestZ) < PLAYER_RADIUS + 0.1;
-      })) continue;
-      return [x, z];
-    }
-  }
-  return [requestedX, requestedZ];
-}
-
 function buildSystemPrompt(
   map: EditableMap,
   assets: readonly MapAsset[],
@@ -579,7 +561,10 @@ function buildSystemPrompt(
   const assetLibrary = assets.map((asset) => ({
     id: asset.id,
     name: asset.name,
-    description: asset.prompt
+    description: asset.prompt,
+    tags: asset.tags ?? [],
+    sizeClass: asset.sizeClass,
+    footprintRadius: asset.footprintRadius
   }));
   const objectsByAsset = new Map<string, EditableMap['objects']>();
   for (const object of map.objects) {
@@ -614,6 +599,7 @@ function buildSystemPrompt(
     finalPass
       ? '这是最终规划轮次。assetRequests 必须为空；必须至少生成一项地形、物体摆放或出生点操作，使用现有资产完成地图，无法使用的内容直接省略。'
       : `若场景需要的可复用物体在已有资产中找不到，在 assetRequests 中请求生成，最多 ${limits.assetRequestCount} 项；请求资产时不要提前编造其 assetId。`,
+    'assetRequests.tags 必须使用简短英文语义标签，例如 tree、vegetation、rock、building、prop、landmark、shrub、grass、fence 或 bridge；不要把 bark、foliage 等模型内部材质标签写进资产标签。',
     `地图范围：X ${bounds.minX} 到 ${bounds.maxX}，Z ${bounds.minZ} 到 ${bounds.maxZ}，最大高度 ${bounds.maxY}。`,
     `本地图配额：terrain 最多 ${limits.terrainBrushCount} 笔、笔刷半径最多 ${limits.brushRadiusMax}、waters 最多 ${limits.waterCount} 个、最终物体总数最多 ${limits.objectCount} 个。`,
     'terrainGeneration 是地形基底，格式：{"preset":"plain|hills|valley|island|canyon","amplitude":5,"roughness":0.55}。新地图应优先选择一个基底；坐标由代码根据地图 seed 确定性生成。',
@@ -624,7 +610,7 @@ function buildSystemPrompt(
     '大量植被、岩石等重复物体必须优先使用 scatters，让代码生成坐标。scatters 每项格式：{"assetIds":["已有ID"],"region":{"kind":"circle","x":0,"z":0,"r":20},"density":0.04,"avoidWater":1,"maxSlope":30,"minSpacing":2,"scaleRange":[0.8,1.2],"seed":7}。',
     '若用户写了雾、光照、素描等氛围词，只放入 renderPromptSuggestions，不要用它改变地图。',
     '只返回一个 JSON 对象，不要 Markdown：',
-    '{"summary":"简短摘要","assetRequests":[{"name":"资产名","prompt":"独立低多边形物体描述，无地面和背景"}],"terrainGeneration":{"preset":"hills","amplitude":5,"roughness":0.55},"terrain":[],"waters":[],"waterUpdates":[],"waterRemovals":[],"objects":[],"objectUpdates":[],"objectRemovals":[],"scatters":[],"spawn":null,"renderPromptSuggestions":[]}',
+    '{"summary":"简短摘要","assetRequests":[{"name":"资产名","prompt":"独立低多边形物体描述，无地面和背景","tags":["tree","vegetation"]}],"terrainGeneration":{"preset":"hills","amplitude":5,"roughness":0.55},"terrain":[],"waters":[],"waterUpdates":[],"waterRemovals":[],"objects":[],"objectUpdates":[],"objectRemovals":[],"scatters":[],"spawn":null,"renderPromptSuggestions":[]}',
     `已有资产：${JSON.stringify(assetLibrary)}`
   ].join('\n');
 }
@@ -649,10 +635,11 @@ function normalizeAssetRequests(value: unknown, maxCount: number): AssetGenerati
     const input = item as Record<string, unknown>;
     const name = cleanText(input.name, '', 42);
     const prompt = cleanText(input.prompt, '', 500);
+    const tags = normalizeAssetTags(input.tags) ?? [];
     const key = `${name}\n${prompt}`;
     if (!name || !prompt || seen.has(key)) continue;
     seen.add(key);
-    requests.push({ name, prompt });
+    requests.push({ name, prompt, tags });
     if (requests.length === maxCount) break;
   }
   return requests;

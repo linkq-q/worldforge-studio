@@ -237,6 +237,7 @@ async function handleEditorMaps(req: Req, res: Res, store: MapStore, parts: stri
             return store.saveAsset({
               name: request.name,
               prompt: request.prompt,
+              tags: request.tags,
               modelJson,
               mode: 'voxel',
               provider: modelProvider
@@ -357,12 +358,17 @@ async function handleEditorAssets(req: Req, res: Res, store: MapStore, parts: st
     return;
   }
   if (req.method === 'POST' && parts[3] === 'generate') {
-    const body = await readJson<{ prompt?: string; name?: string; mode?: 'standard' | 'lite' | 'voxel' | 'voxel-pro' | 'curve' | 'wire' }>(req);
+    const body = await readJson<{
+      prompt?: string;
+      name?: string;
+      tags?: string[];
+      mode?: 'standard' | 'lite' | 'voxel' | 'voxel-pro' | 'curve' | 'wire';
+    }>(req);
     const prompt = body.prompt?.trim();
     if (!prompt) throw new HttpError(400, 'missing_prompt');
     const mode = body.mode ?? 'voxel';
     const modelJson = await generateModel(prompt, { mode });
-    const asset = await store.saveAsset({ prompt, name: body.name, modelJson, mode });
+    const asset = await store.saveAsset({ prompt, name: body.name, tags: body.tags, modelJson, mode });
     sendJson(res, 201, { asset });
     return;
   }

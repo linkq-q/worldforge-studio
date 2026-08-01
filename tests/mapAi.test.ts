@@ -237,7 +237,11 @@ describe('map AI adapter', () => {
         ok: true,
         content: JSON.stringify({
           summary: '需要一棵田园树木',
-          assetRequests: [{ name: '田园树', prompt: '低多边形田园树木，无地面和背景' }]
+          assetRequests: [{
+            name: '田园树',
+            prompt: '低多边形田园树木，无地面和背景',
+            tags: ['tree', 'vegetation']
+          }]
         })
       }), { status: 200, headers: { 'Content-Type': 'application/json' } }))
       .mockResolvedValueOnce(new Response(JSON.stringify({
@@ -271,6 +275,9 @@ describe('map AI adapter', () => {
 
     expect(fetchImpl).toHaveBeenCalledTimes(2);
     expect(createAsset).toHaveBeenCalledOnce();
+    expect(createAsset).toHaveBeenCalledWith(expect.objectContaining({
+      tags: ['tree', 'vegetation']
+    }));
     expect(suggestion.generatedAssets).toEqual([{ id: 'asset-generated-tree', name: '田园树' }]);
     expect(suggestion.operations).toEqual(expect.arrayContaining([
       expect.objectContaining({
@@ -354,5 +361,35 @@ describe('map AI adapter', () => {
     expect(fetchImpl).toHaveBeenCalledTimes(2);
     expect(suggestion.operations.some((operation) => operation.type === 'terrain.brush')).toBe(true);
     expect(suggestion.operations.some((operation) => operation.type === 'reference.set')).toBe(true);
+  });
+
+  it('reports deterministic lint repairs as a real agent progress stage', async () => {
+    const progress: string[] = [];
+    const fetchImpl = vi.fn().mockResolvedValue(new Response(JSON.stringify({
+      ok: true,
+      content: JSON.stringify({
+        summary: 'duplicate placement',
+        objects: [
+          { assetId: 'asset-tree', name: 'Tree A', x: 5, z: 5 },
+          { assetId: 'asset-tree', name: 'Tree B', x: 5, z: 5 }
+        ],
+        spawn: { x: 0, z: -5 }
+      })
+    }), { status: 200, headers: { 'Content-Type': 'application/json' } }));
+
+    const suggestion = await runMapAgent('place trees', createEmptyMap(), assets, {
+      apiBase: 'https://example.test',
+      provider: 'gpt',
+      fetchImpl,
+      createAsset: vi.fn(),
+      onProgress: (event) => progress.push(event.phase)
+    });
+    const applied = applyMapOperations(createEmptyMap(), suggestion.operations);
+
+    expect(progress).toContain('repairing');
+    expect(suggestion.diagnostics).toEqual(expect.arrayContaining([
+      expect.objectContaining({ code: 'object.duplicate', repaired: true })
+    ]));
+    expect(applied.objects).toHaveLength(1);
   });
 });

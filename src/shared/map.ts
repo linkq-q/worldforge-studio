@@ -8,6 +8,12 @@ import {
 import { rayAabbIntersection, stepVerticalMotion, wrapAngle, type VerticalMotionState } from './math';
 import type { Vec3 } from './protocol';
 import { seedFromString } from './mapSeed';
+import {
+  assetFootprintRadius,
+  assetSizeClass,
+  normalizeAssetTags,
+  type MapAssetSizeClass
+} from './mapAssetMetadata';
 
 export type MapSurface = 'floor' | 'ceiling' | 'north' | 'south' | 'east' | 'west' | 'terrain';
 export type TerrainBrushMode = 'raise' | 'lower' | 'flatten';
@@ -75,6 +81,8 @@ export interface MapAsset {
   tags?: string[];
   modelJson: unknown;
   colliderPlan: ModelColliderPlan;
+  footprintRadius?: number;
+  sizeClass?: MapAssetSizeClass;
   mode: string;
   provider?: string;
   createdAt: number;
@@ -1078,12 +1086,21 @@ function normalizeObject(input: Partial<MapObject>): MapObject {
 
 function normalizeAsset(input: Partial<MapAsset>): MapAsset {
   const now = Date.now();
+  const colliderPlan = normalizeModelColliderPlan(input.colliderPlan, input.modelJson, MAP_ASSET_COLLIDER_PROFILE);
+  const footprintRadius = Number.isFinite(Number(input.footprintRadius))
+    ? Math.max(0.1, Number(input.footprintRadius))
+    : assetFootprintRadius(colliderPlan);
   return {
     id: typeof input.id === 'string' && input.id ? input.id : createId('asset'),
     name: cleanName(input.name, '未命名资产'),
     prompt: typeof input.prompt === 'string' ? input.prompt : '',
+    tags: normalizeAssetTags(input.tags),
     modelJson: input.modelJson ?? null,
-    colliderPlan: normalizeModelColliderPlan(input.colliderPlan, input.modelJson, MAP_ASSET_COLLIDER_PROFILE),
+    colliderPlan,
+    footprintRadius,
+    sizeClass: input.sizeClass === 'small' || input.sizeClass === 'medium' || input.sizeClass === 'large'
+      ? input.sizeClass
+      : assetSizeClass(footprintRadius),
     mode: typeof input.mode === 'string' && input.mode ? input.mode : 'voxel',
     provider: typeof input.provider === 'string' && input.provider ? input.provider : undefined,
     createdAt: finiteNumber(input.createdAt, now),

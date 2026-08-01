@@ -114,6 +114,8 @@ function existingOccupiedCircles(map: EditableMap): OccupiedCircle[] {
 }
 
 function assetFootprintRadius(asset: MapAsset): number {
+  const storedRadius = asset.footprintRadius;
+  if (typeof storedRadius === 'number' && Number.isFinite(storedRadius)) return Math.max(0.1, storedRadius);
   const boxes = asset.colliderPlan?.boxes ?? [];
   if (boxes.length === 0) return 0.5;
   return Math.max(0.1, ...boxes.map((box) => Math.max(

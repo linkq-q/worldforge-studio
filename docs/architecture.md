@@ -32,7 +32,11 @@
 
 基础版 Agent API 使用 SSE 返回真实执行阶段。地图链路公开规划、资产检查、逐个资产生成、重新规划与校验；渲染链路公开规划、校验和自动修正。客户端只展示后端已发生的阶段，不模拟定时进度。
 
+地图 Agent 的最终规划会先在内存中应用，再交给独立 `mapLint` 做确定性验收。出生点不安全、根物体越界/悬空、完全重复物体和湖面穿地会转换为追加在同一事务后的修复操作；明显重叠和内容稀疏只报告，不做有审美判断的自动修改。预览面板显示质检结果，SSE 在确实产生修复时才发送 `repairing` 阶段。
+
 模型生成请求默认携带 `packages/voxel-render-runtime/model/material-tags-v1.json` 的单一真值。WorldForge 将 `nodes[].tags` 适配为 Voxel Studio 材质标签编译输入，标签继承、材质层和表面绑定沿用 runtime 公共入口；材质遍历仍只限 `modelsRoot`。水是路由标签：结构化湖泊/河流和 `water:pool` 使用 `WaterSurface`，`water:fall` 使用 `WaterfallSurface`，不会作为普通材质层处理。
+
+资产标签与模型内部材质标签分开保存：Agent 在 `assetRequests.tags` 中输出 `tree/rock/building/landmark` 等对象语义，生成完成后直接写入 `MapAsset.tags`；代码根据实际碰撞体计算 `footprintRadius` 与 `sizeClass`。后续 AI 规划和散布优先读取这些结构化字段，名称正则仅保留为旧资产兼容回退。
 
 ### 专业版
 

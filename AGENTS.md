@@ -23,6 +23,8 @@ Map AI should express repeated placement as bounded `scatters`; the server expan
 
 Map AI should express the base height field as one `terrain.generate` operation and use brushes only for local refinement. PCG derives from the persisted map `seed`; keep terrain generation and terrain analysis in shared modules instead of adding coordinate algorithms to `mapAi.ts`.
 
+Run deterministic map lint after the proposed operations are applied in memory. Safe repairs must be appended to the same transaction; aesthetic findings stay diagnostic-only. Keep asset-level tags separate from model node/material tags, and derive footprint metadata from the actual collider plan.
+
 Render schemes own their `RenderPlan` and `accessPolicy`. Developer edits must preview live and save as a new scheme; do not overwrite built-in presets. AI and developer permissions/ranges are validated separately. Scoped material, water, and effect changes must stay under `modelsRoot`.
 
 ## Safety

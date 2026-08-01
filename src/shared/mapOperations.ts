@@ -18,6 +18,7 @@ import {
 import { carveWaterBasinInPlace } from './mapWater';
 import { generateTerrainInPlace, type TerrainGenerationParams } from './terrainGeneration';
 import type { Vec3 } from './protocol';
+import type { MapLintIssue } from './mapLint';
 
 export type MapTransactionSource = 'basic-ai' | 'agent';
 
@@ -70,6 +71,7 @@ export interface MapAiSuggestion {
   operations: MapOperation[];
   renderPromptSuggestions: string[];
   generatedAssets: Array<{ id: string; name: string }>;
+  diagnostics?: MapLintIssue[];
 }
 
 const MAP_SURFACES = new Set<MapSurface>(['floor', 'ceiling', 'north', 'south', 'east', 'west', 'terrain']);

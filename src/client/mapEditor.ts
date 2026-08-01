@@ -702,7 +702,7 @@ class MapEditor {
       return;
     }
     const suggestion = this.mapAiSuggestion;
-    const terrainCount = suggestion?.operations.filter((operation) => operation.type === 'terrain.brush').length ?? 0;
+    const terrainCount = suggestion?.operations.filter((operation) => operation.type.startsWith('terrain.')).length ?? 0;
     const waterCount = suggestion?.operations.filter((operation) => operation.type.startsWith('water.')).length ?? 0;
     const objectCount = suggestion?.operations.filter((operation) => operation.type.startsWith('object.')).length ?? 0;
     const hasSpawn = suggestion?.operations.some((operation) => operation.type === 'reference.set') ?? false;
@@ -748,6 +748,14 @@ class MapEditor {
             <div>
               <p class="empty">本次自动生成的共享资产</p>
               <div class="style-tags">${suggestion.generatedAssets.map((asset) => `<span>${escapeHtml(asset.name)}</span>`).join('')}</div>
+            </div>
+          ` : ''}
+          ${(suggestion.diagnostics?.length ?? 0) > 0 ? `
+            <div>
+              <p class="empty">自动质检</p>
+              <div class="style-tags">${suggestion.diagnostics?.map((issue) => `
+                <span>${issue.repaired ? '已修复' : '建议'} · ${escapeHtml(issue.message)}</span>
+              `).join('')}</div>
             </div>
           ` : ''}
           <div class="map-ai-actions">
@@ -1135,8 +1143,12 @@ class MapEditor {
           ${this.state.assets.map((asset) => `<option value="${asset.id}" ${selectedAsset?.id === asset.id ? 'selected' : ''}>${escapeHtml(asset.name)}</option>`).join('')}
         </select>
         <div id="asset-preview" class="asset-preview"></div>
+        ${selectedAsset ? `
+          <div class="style-tags">${(selectedAsset.tags?.length ? selectedAsset.tags : ['未标注'])
+            .map((tag) => `<span>${escapeHtml(tag)}</span>`).join('')}</div>
+        ` : ''}
         <p class="empty">${selectedAsset
-          ? `自动碰撞箱：${selectedAsset.colliderPlan.boxes.length} 个 · 候选 ${selectedAsset.colliderPlan.candidateCount} 个${selectedAsset.colliderPlan.fallbackUsed ? ' · 已回退整体边界' : ''}`
+          ? `尺寸 ${selectedAsset.sizeClass ?? '未分类'} · 占地半径 ${(selectedAsset.footprintRadius ?? 0.5).toFixed(2)}m · 自动碰撞箱 ${selectedAsset.colliderPlan.boxes.length} 个${selectedAsset.colliderPlan.fallbackUsed ? ' · 已回退整体边界' : ''}`
           : '尚未选择资产'}</p>
         <button id="place-selected-asset" ${selectedAsset ? '' : 'disabled'}>${this.placingAssetId === selectedAsset?.id ? '取消放置' : '放入地图'}</button>
         <button id="bind-selected-asset" class="secondary small" ${this.selectedObject() && selectedAsset ? '' : 'disabled'}>绑定到选中物体</button>
