@@ -26,10 +26,12 @@ import { WorldForgeMaterialTagRuntime } from './materialTagRuntimeAdapter';
 import { compileEffectRecipeLayers } from './effectRecipeCompiler';
 import {
   bindDistanceFogDepth,
+  configureWaterReflection,
   configureDistanceFogPass,
   syncWaterSurfaceEnvironment
 } from './renderEnvironmentBridge';
 import { createComposerRenderTarget } from './renderOutputPipeline';
+import { PlanarWaterReflection } from './planarWaterReflection';
 import type {
   RuntimeColorGrade,
   RuntimeEffectRecipe,
@@ -74,6 +76,7 @@ export class RenderRuntimeAdapter {
   private readonly bloomPass = new GlobalBloomPass(new THREE.Vector2(1, 1), 0.4, 0.35, 0.82);
   private readonly effectRuntime = createEffectRuntime().runtime;
   private readonly materialTagRuntime: WorldForgeMaterialTagRuntime;
+  private readonly planarWaterReflection: PlanarWaterReflection;
   private readonly materialBaselines = new Map<THREE.Material, MaterialBaseline>();
   private readonly waterBindings: WaterBinding[] = [];
   private contentRoot: THREE.Object3D | null = null;
@@ -93,6 +96,7 @@ export class RenderRuntimeAdapter {
       this.effectRuntime,
       () => this.scene.environment
     );
+    this.planarWaterReflection = new PlanarWaterReflection(renderer, scene, camera);
     this.curvaturePass = createCurvatureEdgePass(renderer);
     this.inkPass = createInkEdgePass(renderer);
     this.ssaoPass = new SharedSSAOPass(scene, camera, 1, 1, 16);
@@ -230,6 +234,7 @@ export class RenderRuntimeAdapter {
   }
 
   resetScopedCapabilities(): void {
+    this.planarWaterReflection.setBindings([]);
     for (const binding of this.waterBindings.splice(0)) {
       binding.mesh.material = binding.originalMaterial;
       binding.surface.dispose();
@@ -412,11 +417,15 @@ export class RenderRuntimeAdapter {
       const style = styles.find((candidate) => matchesScope(mesh, candidate.scope));
       const recipe = waterRecipe(style?.recipe ?? defaultWaterStyle(mesh).recipe);
       const waterColor = new THREE.Color(style?.color ?? DEFAULT_WATER_STATE.uWaterColor);
-      const shallowColor = style?.color
-        ? waterColor.clone().lerp(new THREE.Color('#ffffff'), 0.22)
+      const shallowColor = style?.shallowColor
+        ? new THREE.Color(style.shallowColor)
+        : style?.color
+          ? waterColor.clone().lerp(new THREE.Color('#ffffff'), 0.22)
         : new THREE.Color(DEFAULT_WATER_STATE.uShallowColor);
-      const depthColor = style?.color
-        ? waterColor.clone().multiplyScalar(0.5)
+      const depthColor = style?.depthColor
+        ? new THREE.Color(style.depthColor)
+        : style?.color
+          ? waterColor.clone().multiplyScalar(0.5)
         : new THREE.Color(DEFAULT_WATER_STATE.uDepthColor);
       const root = new THREE.Group();
       const surface = hasMaterialTag(mesh, 'water:fall') || hasMaterialTag(mesh, 'fall')
@@ -429,7 +438,7 @@ export class RenderRuntimeAdapter {
             bottomColor: depthColor,
             foamColor: new THREE.Color(DEFAULT_WATER_STATE.uFoamColor),
             opacity: style?.opacity ?? DEFAULT_WATER_STATE.uOpacity,
-            flowSpeed: style ? recipe.waveSpeed : DEFAULT_WATER_STATE.uWaveSpeed,
+            flowSpeed: style?.waveSpeed ?? (style ? recipe.waveSpeed : DEFAULT_WATER_STATE.uWaveSpeed),
             flowNoiseStrength: style?.waveStrength ?? DEFAULT_WATER_STATE.uWaveHeight,
             bottomFoamIntensity: style?.foamStrength ?? DEFAULT_WATER_STATE.uFoamStrength,
             splashEnabled: false
@@ -449,12 +458,14 @@ export class RenderRuntimeAdapter {
             uShallowColor: `#${shallowColor.getHexString()}`,
             uDepthColor: `#${depthColor.getHexString()}`,
             uWaveHeight: (style.waveStrength ?? recipe.waveStrength) * 0.12,
-            uWaveSpeed: recipe.waveSpeed,
+            uWaveSpeed: style.waveSpeed ?? recipe.waveSpeed,
             uFoamStrength: style.foamStrength ?? recipe.foamStrength,
             uOpacity: style.opacity ?? recipe.opacity
           });
-          surface.setWaterReflectionParams({
-            strength: style.reflectionStrength ?? recipe.reflectionStrength
+          configureWaterReflection(surface, {
+            strength: style.reflectionStrength ?? recipe.reflectionStrength,
+            distortion: style.reflectionDistortion,
+            fresnelBoost: style.reflectionFresnel
           });
         }
         syncWaterSurfaceEnvironment(surface, this.scene.environment);
@@ -469,6 +480,9 @@ export class RenderRuntimeAdapter {
       mesh.userData.isWater = true;
       this.waterBindings.push({ mesh, originalMaterial, surface });
     }
+    this.planarWaterReflection.setBindings(this.waterBindings.flatMap((binding) => (
+      binding.surface instanceof WaterSurface ? [{ mesh: binding.mesh, surface: binding.surface }] : []
+    )));
   }
 
   private applyEffectRecipes(recipes: RuntimeEffectRecipe[]): void {
@@ -509,9 +523,11 @@ export class RenderRuntimeAdapter {
     this.setVector2(this.comicPass, 'uResolution', drawWidth, drawHeight);
     this.setVector2(this.sketchPass, 'uResolution', drawWidth, drawHeight);
     this.setVector2(this.curvaturePass, 'uTexelSize', 1 / drawWidth, 1 / drawHeight);
+    this.planarWaterReflection.syncSize();
   }
 
   render(): void {
+    this.planarWaterReflection.render();
     if (!this.hasActiveEffect()) {
       this.renderer.render(this.scene, this.camera);
       return;

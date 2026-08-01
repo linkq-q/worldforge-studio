@@ -22,6 +22,7 @@ import type { Vec3 } from '../shared/protocol';
 import { normalizeModelGenerationMode, type ModelGenerationMode } from '../shared/modelGenerationMode';
 import {
   applyMapOperations,
+  type MapOperation,
   type MapTransactionRequest,
   type MapTransactionSummary
 } from '../shared/mapOperations';
@@ -162,6 +163,7 @@ export class MapStore {
   ): Promise<{ map: EditableMap; transaction: MapTransactionSummary }> {
     return this.withTransactionLock(async () => {
       const before = await this.loadMap(mapId);
+      await this.requireCompatibleOperationAssets(before, request.operations);
       const next = applyMapOperations(before, request.operations);
       const map = await this.replaceMap(mapId, next);
       const transaction: MapTransactionSummary = {
@@ -212,6 +214,7 @@ export class MapStore {
 
   async addObject(mapId: string, input: Partial<MapObject>): Promise<EditableMap> {
     const map = await this.loadMap(mapId);
+    await this.requireCompatibleAsset(map, input.assetId ?? null);
     const object = {
       ...createMapObject(input.name, input.assetId ?? null),
       ...input,
@@ -228,6 +231,7 @@ export class MapStore {
 
   async patchObject(mapId: string, objectId: string, patch: Omit<Partial<MapObject>, 'transform'> & { transform?: Partial<Transform3D> }): Promise<EditableMap> {
     const map = await this.loadMap(mapId);
+    if ('assetId' in patch) await this.requireCompatibleAsset(map, patch.assetId ?? null);
     const object = map.objects.find((item) => item.id === objectId);
     if (!object) throw new Error('object_not_found');
     if (typeof patch.name === 'string') object.name = patch.name;
@@ -278,6 +282,22 @@ export class MapStore {
     } finally {
       release();
     }
+  }
+
+  private async requireCompatibleOperationAssets(map: EditableMap, operations: readonly MapOperation[]): Promise<void> {
+    const ids = new Set<string>();
+    for (const operation of operations) {
+      if (operation.type === 'object.add' && operation.object.assetId) ids.add(operation.object.assetId);
+      if (operation.type === 'object.update' && operation.patch.assetId) ids.add(operation.patch.assetId);
+    }
+    await Promise.all([...ids].map((id) => this.requireCompatibleAsset(map, id)));
+  }
+
+  private async requireCompatibleAsset(map: EditableMap, assetId: string | null): Promise<void> {
+    if (!assetId) return;
+    const asset = await this.loadAsset(assetId).catch(() => null);
+    if (!asset) throw new Error('unknown_map_asset');
+    if (asset.mode !== map.assetGenerationMode) throw new Error('map_asset_mode_mismatch');
   }
 
   async listAssets(): Promise<MapAsset[]> {

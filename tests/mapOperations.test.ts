@@ -204,6 +204,27 @@ describe('map operation transactions', () => {
     expect(await store.getUndoTransaction(original.id)).toBeNull();
   });
 
+  it('rejects assets from a different map generation mode at the transaction boundary', async () => {
+    const store = await createStore();
+    const map = await store.createMap({ name: 'PRO map', assetGenerationMode: 'standard' });
+    const voxelAsset = await store.saveAsset({
+      name: 'Voxel tree',
+      prompt: 'tree',
+      modelJson: {},
+      mode: 'voxel'
+    });
+
+    await expect(store.commitTransaction(map.id, {
+      source: 'basic-ai',
+      operations: [{
+        type: 'object.add',
+        object: { name: 'Wrong style tree', assetId: voxelAsset.id }
+      }]
+    })).rejects.toThrow('map_asset_mode_mismatch');
+
+    expect((await store.loadMap(map.id)).objects).toHaveLength(0);
+  });
+
   it('lists only supported panoramas from the hdri directory and resolves them by name', async () => {
     const store = await createStore();
     const hdriDir = path.join(store.rootDir, 'hdri');

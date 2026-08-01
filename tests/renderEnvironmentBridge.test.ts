@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { describe, expect, it, vi } from 'vitest';
 import {
   bindDistanceFogDepth,
+  configureWaterReflection,
   configureDistanceFogPass,
   syncWaterSurfaceEnvironment
 } from '../src/client/renderEnvironmentBridge';
@@ -54,5 +55,25 @@ describe('render environment bridge', () => {
     expect(surface.setWaterEnvMap).toHaveBeenNthCalledWith(2, null);
     expect(surface.setWaterReflectionParams).toHaveBeenCalledWith({ useSceneEnvironment: true });
     environment.dispose();
+  });
+
+  it('keeps environment and planar reflection strengths in sync', () => {
+    const surface = {
+      setWaterReflectionParams: vi.fn(),
+      setPlanarReflectionParams: vi.fn()
+    };
+
+    configureWaterReflection(surface, {
+      strength: 0.9,
+      distortion: 0.07,
+      fresnelBoost: 1.4
+    });
+
+    expect(surface.setWaterReflectionParams).toHaveBeenCalledWith({ strength: 0.9 });
+    expect(surface.setPlanarReflectionParams).toHaveBeenCalledWith({
+      strength: 0.9,
+      distortion: 0.07,
+      fresnelBoost: 1.4
+    });
   });
 });

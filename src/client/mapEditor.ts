@@ -30,6 +30,21 @@ import {
   type TerrainBrushMode
 } from '../shared/map';
 import { planLimits } from '../shared/mapPlanning';
+import { isCompositionEmptyMap, SCENE_COMPOSITION_LIMITS } from '../shared/sceneComposition';
+import { renderMapCompositionSummary } from './mapCompositionPanel';
+import {
+  bindGrassEditorPanel,
+  ensureGrassLayerSelection,
+  renderGrassEditorPanel,
+  type GrassEditorState,
+} from './grassEditorPanel';
+import { applyGrassBrushInPlace } from '../shared/mapGrass';
+import { defaultRenderModule, renderDeveloperCapability } from './developerRenderControls';
+import {
+  humanizeAgentError,
+  renderAgentProgress,
+  updateAgentProgress
+} from './agentProgressPanel';
 import { buildEditableMapGroup, type RenderedMap } from './mapRenderer';
 import { configureSunLight } from './lighting';
 import { buildModelGroup } from './modelRenderer';
@@ -58,6 +73,7 @@ import {
   RENDER_CAPABILITIES,
   compileRuntimeColorGrade,
   compileRuntimeEffectRecipes,
+  compileRuntimeGrassStyle,
   compileRuntimeHdriSky,
   compileRuntimeLightRig,
   compileRuntimeMaterialThemes,
@@ -68,17 +84,16 @@ import {
   compileRuntimeStyle,
   compileRuntimeWaterStyles,
   createDefaultRenderAccessPolicy,
+  DEFAULT_RUNTIME_GRASS_STYLE,
   normalizeRenderAccessPolicy,
-  type RenderCapability,
   type RuntimeLightRig,
   type RenderModuleId,
-  type RenderModuleSelection,
   type RenderParameterAccess,
   type RenderPlan,
   renderModuleLabel
 } from '../shared/renderPlan';
 
-type EditorTool = 'select' | 'paint' | 'terrain';
+type EditorTool = 'select' | 'paint' | 'terrain' | 'grass';
 type TransformMode = 'translate' | 'rotate' | 'scale';
 type EditorStage = 'map' | 'render';
 
@@ -205,7 +220,21 @@ class MapEditor {
   private mapAiPreviewMap: EditableMap | null = null;
   private mapAiAbortController: AbortController | null = null;
   private mapAgentProgress: AgentProgressEvent[] = [];
+  private mapAgentStartedAt = 0;
+  private mapAgentElapsedMs = 0;
+  private mapAgentProgressTimer: number | null = null;
   private newMapSizePreset: MapSizePresetKey = 'medium';
+  private readonly grassEditorState: GrassEditorState = {
+    selectedLayerId: null,
+    brushMode: 'add',
+    brushSize: 3,
+    brushStrength: 0.35,
+    targetDensity: 0.65,
+    fillDensity: 0.72,
+    regionX: 0,
+    regionZ: 0,
+    regionRadius: 12,
+  };
 
   constructor(private readonly app: HTMLElement) {}
 
@@ -266,6 +295,7 @@ class MapEditor {
                 <button data-tool="select">选择</button>
                 <button data-tool="paint">绘制</button>
                 <button data-tool="terrain">地形</button>
+                <button data-tool="grass">草地</button>
               </div>
             </div>
             <div class="toolbar-group" data-map-only>
@@ -613,6 +643,7 @@ class MapEditor {
       return false;
     } finally {
       this.setBusy(false);
+      this.renderPanels();
     }
   }
 
@@ -737,13 +768,14 @@ class MapEditor {
     const waterCount = suggestion?.operations.filter((operation) => operation.type.startsWith('water.')).length ?? 0;
     const objectCount = suggestion?.operations.filter((operation) => operation.type.startsWith('object.')).length ?? 0;
     const hasSpawn = suggestion?.operations.some((operation) => operation.type === 'reference.set') ?? false;
-    const generationBlocked = this.state.busy || this.state.dirty || !this.mapAiPrompt.trim();
+    const compositionAvailable = isCompositionEmptyMap(map);
+    const generationBlocked = this.state.busy || this.state.dirty || !this.mapAiPrompt.trim() || !compositionAvailable;
     const refinementBlocked = generationBlocked || !hasRefinableMapContent(map);
     const limits = planLimits(getMapBounds(map));
     host.innerHTML = `
       <section class="editor-section map-ai">
         <h2>AI 生成地图</h2>
-        <textarea id="map-ai-prompt" rows="3" maxlength="1200" placeholder="例如：中央有缓坡小丘，周围放置树木和岩石">${escapeHtml(this.mapAiPrompt)}</textarea>
+        <textarea id="map-ai-prompt" rows="3" maxlength="1200" placeholder="例如：中央有缓坡小丘，周围放置树木和岩石" ${this.state.busy ? 'disabled' : ''}>${escapeHtml(this.mapAiPrompt)}</textarea>
         <div class="map-ai-controls">
           <select id="map-ai-provider" aria-label="地图 AI 模型" ${this.state.busy ? 'disabled' : ''}>
             ${CHAT_PROVIDER_OPTIONS.map((option) => `
@@ -756,8 +788,16 @@ class MapEditor {
           <button id="refine-map-ai" class="secondary" ${refinementBlocked ? 'disabled' : ''}>调整当前地图</button>
           ${this.mapAiAbortController ? '<button id="cancel-map-ai" class="secondary">取消</button>' : ''}
         </div>
-        ${renderAgentProgress(this.mapAgentProgress)}
-        <p class="empty">模型风格 ${map.assetGenerationMode.toUpperCase()} · ${this.state.dirty ? '请先保存当前手工修改，再生成 AI 地图预览。' : `Agent 会检查资产库、生成最多 ${limits.assetRequestCount} 类同风格缺失资产，再规划地形、水域、摆放和出生点。`}</p>
+        ${renderAgentProgress(this.mapAgentProgress, {
+          running: Boolean(this.mapAiAbortController),
+          elapsedMs: this.mapAgentElapsedMs,
+          slowAssetMode: map.assetGenerationMode === 'standard' || map.assetGenerationMode === 'voxel-pro'
+        })}
+        <p class="empty">模型风格 ${map.assetGenerationMode.toUpperCase()} · ${this.state.dirty
+          ? '请先保存当前手工修改，再生成 AI 地图预览。'
+          : !compositionAvailable
+            ? '当前地图已有内容，请使用“调整当前地图”继续 Refine。'
+            : `总导演会先组织完整场景，按需调用最多 ${SCENE_COMPOSITION_LIMITS.consultationCount} 个专家，并生成最多 ${limits.assetRequestCount} 类同风格缺失资产；合成审查后再进入预览。`}</p>
       </section>
       ${suggestion && this.mapAiPreviewMap ? `
         <section class="editor-section map-ai-result">
@@ -769,6 +809,7 @@ class MapEditor {
             <span>物体修改 <b>${objectCount}</b></span>
             <span>出生点 <b>${hasSpawn ? '有' : '无'}</b></span>
           </div>
+          ${renderMapCompositionSummary(suggestion)}
           ${suggestion.renderPromptSuggestions.length > 0 ? `
             <div>
               <p class="empty">留给渲染阶段的建议</p>
@@ -801,7 +842,7 @@ class MapEditor {
       const blocked = this.state.busy || this.state.dirty || !this.mapAiPrompt.trim();
       const generateButton = host.querySelector<HTMLButtonElement>('#generate-map-ai');
       const refineButton = host.querySelector<HTMLButtonElement>('#refine-map-ai');
-      if (generateButton) generateButton.disabled = blocked;
+      if (generateButton) generateButton.disabled = blocked || !isCompositionEmptyMap(map);
       if (refineButton) refineButton.disabled = blocked || !hasRefinableMapContent(map);
     });
     host.querySelector<HTMLSelectElement>('#map-ai-provider')?.addEventListener('change', (event) => {
@@ -830,6 +871,7 @@ class MapEditor {
     const controller = new AbortController();
     this.mapAiAbortController = controller;
     this.mapAgentProgress = [];
+    this.startMapAgentProgressTimer();
     const previousSuggestion = mode === 'refine' ? this.mapAiSuggestion : null;
     this.setBusy(true, mode === 'refine' ? '地图 Agent 正在调整当前地图...' : '地图 Agent 正在检查资产并规划场景...');
     this.renderMapAiPanel();
@@ -864,11 +906,19 @@ class MapEditor {
       this.state.message = 'AI 地图预览已生成，尚未应用';
       await this.refreshScene();
     } catch (error) {
+      const cancelled = error instanceof Error && error.name === 'AbortError';
+      const detail = humanizeAgentError(error);
+      updateAgentProgress(this.mapAgentProgress, {
+        phase: 'failed',
+        label: cancelled ? '地图 Agent 已取消' : '地图 Agent 执行失败',
+        detail
+      });
       this.state.message = error instanceof Error && error.name === 'AbortError'
         ? '已取消地图 Agent'
-        : `AI 地图生成失败：${error instanceof Error ? error.message : '未知错误'}`;
+        : `AI 地图生成失败：${detail}`;
     } finally {
       if (this.mapAiAbortController === controller) this.mapAiAbortController = null;
+      this.stopMapAgentProgressTimer();
       this.setBusy(false);
       this.renderPanels();
     }
@@ -1014,6 +1064,7 @@ class MapEditor {
         <label class="field compact"><span>大小</span><input data-terrain-size type="range" min="0.3" max="8" step="0.1" value="${this.state.terrainSize}" /></label>
         <label class="field compact"><span>强度</span><input data-terrain-strength type="range" min="0.02" max="1.5" step="0.02" value="${this.state.terrainStrength}" /></label>
       </section>` : ''}
+      ${this.state.tool === 'grass' ? renderGrassEditorPanel(map, this.grassEditorState) : ''}
     `;
     host.querySelector<HTMLInputElement>('[data-map-name]')?.addEventListener('input', (event) => {
       map.name = (event.target as HTMLInputElement).value;
@@ -1041,6 +1092,17 @@ class MapEditor {
     });
     bindNumberState(host, '[data-terrain-size]', (value) => { this.state.terrainSize = value; });
     bindNumberState(host, '[data-terrain-strength]', (value) => { this.state.terrainStrength = value; });
+    if (this.state.tool === 'grass') {
+      bindGrassEditorPanel(host, map, this.grassEditorState, {
+        changed: (message) => {
+          this.markDirty();
+          this.state.message = message;
+          void this.refreshScene();
+          this.renderPanels();
+        },
+        selectionChanged: () => this.renderMapInspector(),
+      });
+    }
   }
 
   private renderObjectInspector(): void {
@@ -1095,6 +1157,11 @@ class MapEditor {
       host.innerHTML = '<section class="editor-section"><h2>Transform</h2><p class="empty">选择一个物体。</p></section>';
       return;
     }
+    const compatibleAssets = this.compatibleAssets();
+    const currentAsset = this.state.assets.find((asset) => asset.id === object.assetId) ?? null;
+    const legacyAssetOption = currentAsset && currentAsset.mode !== map.assetGenerationMode
+      ? `<option value="${currentAsset.id}" selected disabled>${escapeHtml(currentAsset.name)}（旧 ${escapeHtml(currentAsset.mode.toUpperCase())}，不可继续复用）</option>`
+      : '';
     host.innerHTML = `
       <section class="editor-section">
         <h2>Transform</h2>
@@ -1115,7 +1182,8 @@ class MapEditor {
           <span>资产</span>
           <select data-object-asset>
             <option value="">未绑定</option>
-            ${this.state.assets.map((asset) => `<option value="${asset.id}" ${object.assetId === asset.id ? 'selected' : ''}>${escapeHtml(asset.name)}</option>`).join('')}
+            ${legacyAssetOption}
+            ${compatibleAssets.map((asset) => `<option value="${asset.id}" ${object.assetId === asset.id ? 'selected' : ''}>${escapeHtml(asset.name)}</option>`).join('')}
           </select>
         </label>
         <button id="delete-object" class="secondary small">删除物体</button>
@@ -1163,16 +1231,18 @@ class MapEditor {
   private renderAssetPanel(): void {
     const host = this.app.querySelector<HTMLElement>('#asset-panel');
     if (!host) return;
-    const selectedAsset = this.state.assets.find((asset) => asset.id === this.state.selectedAssetId) ?? this.state.assets[0] ?? null;
-    if (selectedAsset && this.state.selectedAssetId !== selectedAsset.id) this.state.selectedAssetId = selectedAsset.id;
+    const compatibleAssets = this.compatibleAssets();
+    const selectedAsset = compatibleAssets.find((asset) => asset.id === this.state.selectedAssetId) ?? compatibleAssets[0] ?? null;
+    if (this.state.selectedAssetId !== selectedAsset?.id) this.state.selectedAssetId = selectedAsset?.id ?? null;
     host.innerHTML = `
       <section class="editor-section asset-tools">
         <h2>资产</h2>
         <textarea id="asset-prompt" placeholder="输入提示词生成模型资产"></textarea>
         <p class="empty">当前地图的新资产统一使用 ${this.state.map?.assetGenerationMode.toUpperCase() ?? 'VOXEL'} 模式。</p>
         <button id="generate-asset" ${this.state.busy ? 'disabled' : ''}>生成资产</button>
-        <select id="asset-list">
-          ${this.state.assets.map((asset) => `<option value="${asset.id}" ${selectedAsset?.id === asset.id ? 'selected' : ''}>${escapeHtml(asset.name)}</option>`).join('')}
+        <p class="empty">资产列表只显示与当前地图相同模式的可复用资产。</p>
+        <select id="asset-list" ${selectedAsset ? '' : 'disabled'}>
+          ${compatibleAssets.map((asset) => `<option value="${asset.id}" ${selectedAsset?.id === asset.id ? 'selected' : ''}>${escapeHtml(asset.name)}</option>`).join('')}
         </select>
         <div id="asset-preview" class="asset-preview"></div>
         ${selectedAsset ? `
@@ -1289,7 +1359,10 @@ class MapEditor {
           </button>
           ${this.renderAiAbortController ? '<button id="cancel-render-ai" class="secondary">取消</button>' : ''}
         </div>
-        ${renderAgentProgress(this.renderAgentProgress)}
+        ${renderAgentProgress(this.renderAgentProgress, {
+          running: Boolean(this.renderAiAbortController),
+          elapsedMs: 0
+        })}
         <p class="empty">AI 会选择基础方案，并编排环境、雾、光照和 runtime 表面/画面风格模块；不会修改地图或生成 Shader。</p>
       </section>
       ${this.renderAiPreview && draft ? `
@@ -1955,6 +2028,27 @@ class MapEditor {
       void this.refreshScene();
       return;
     }
+    if (this.state.tool === 'grass') {
+      ensureGrassLayerSelection(this.state.map, this.grassEditorState);
+      const layerId = this.grassEditorState.selectedLayerId;
+      if (!layerId) {
+        this.state.message = '请先新增一个草地层';
+        this.renderPanels();
+        return;
+      }
+      applyGrassBrushInPlace(
+        this.state.map,
+        layerId,
+        this.grassEditorState.brushMode,
+        [hit.point.x, hit.point.z],
+        this.grassEditorState.brushSize,
+        this.grassEditorState.brushStrength,
+        this.grassEditorState.targetDensity
+      );
+      this.markDirty(false);
+      void this.refreshScene();
+      return;
+    }
     if (first && this.state.terrainMode === 'flatten') this.terrainFlattenHeight = hit.point.y;
     const targetHeight = this.state.terrainMode === 'flatten'
       ? this.terrainFlattenHeight ?? hit.point.y
@@ -1986,7 +2080,11 @@ class MapEditor {
     const normal = hit.face
       ? hit.face.normal.clone().transformDirection(hit.object.matrixWorld)
       : new THREE.Vector3(0, 1, 0);
-    const radius = this.state.tool === 'terrain' ? this.state.terrainSize : this.state.brushSize;
+    const radius = this.state.tool === 'terrain'
+      ? this.state.terrainSize
+      : this.state.tool === 'grass'
+        ? this.grassEditorState.brushSize
+        : this.state.brushSize;
     this.brushPreview.position.copy(hit.point).addScaledVector(normal, 0.025);
     this.brushPreview.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), normal);
     this.brushPreview.scale.setScalar(radius);
@@ -2138,6 +2236,11 @@ class MapEditor {
     };
   }
 
+  private compatibleAssets(): MapAsset[] {
+    const mode = this.state.map?.assetGenerationMode;
+    return mode ? this.state.assets.filter((asset) => asset.mode === mode) : [];
+  }
+
   private isPlayerSpawnSelected(): boolean {
     return this.state.selectedObjectId === PLAYER_SPAWN_OBJECT_ID;
   }
@@ -2223,6 +2326,7 @@ class MapEditor {
       });
       this.renderRuntimeAdapter?.applyDistanceFog('#111719', 0);
       this.renderRuntimeAdapter?.applyScopedCapabilities([], [], []);
+      this.renderedMap?.setGrassStyle(DEFAULT_RUNTIME_GRASS_STYLE);
       this.hdriSky?.clear();
       this.updateSceneLighting();
       return;
@@ -2262,6 +2366,9 @@ class MapEditor {
       ? compileRuntimePostQuality(scheme.renderPlan)
       : { bloom: 'off' as const, ssao: 'off' as const, depthOfField: 'off' as const };
     this.renderRuntimeAdapter?.applyPostQuality(postQuality);
+    this.renderedMap?.setGrassStyle(
+      scheme.renderPlan ? compileRuntimeGrassStyle(scheme.renderPlan) : DEFAULT_RUNTIME_GRASS_STYLE
+    );
     if (scheme.renderPlan) {
       applyLightRig(
         compileRuntimeLightRig(scheme.renderPlan),
@@ -2289,6 +2396,7 @@ class MapEditor {
     this.updateKeyboardCamera(dt);
     this.orbit?.update();
     this.selectionOutline?.update();
+    this.renderedMap?.update(dt);
     this.renderRuntimeAdapter?.tick(dt, now / 1000);
     this.renderStats?.beginFrame();
     this.renderRuntimeAdapter?.render();
@@ -2553,6 +2661,22 @@ class MapEditor {
     this.updateToolbarState();
   }
 
+  private startMapAgentProgressTimer(): void {
+    if (this.mapAgentProgressTimer !== null) window.clearInterval(this.mapAgentProgressTimer);
+    this.mapAgentStartedAt = Date.now();
+    this.mapAgentElapsedMs = 0;
+    this.mapAgentProgressTimer = window.setInterval(() => {
+      this.mapAgentElapsedMs = Date.now() - this.mapAgentStartedAt;
+      this.renderMapAiPanel();
+    }, 1_000);
+  }
+
+  private stopMapAgentProgressTimer(): void {
+    if (this.mapAgentStartedAt > 0) this.mapAgentElapsedMs = Date.now() - this.mapAgentStartedAt;
+    if (this.mapAgentProgressTimer !== null) window.clearInterval(this.mapAgentProgressTimer);
+    this.mapAgentProgressTimer = null;
+  }
+
   private handleKeyDown = (event: KeyboardEvent): void => {
     if (isEditableTarget(event.target)) return;
     if ((event.ctrlKey || event.metaKey) && event.code === 'KeyZ') {
@@ -2712,49 +2836,6 @@ async function editorAgentFetch<T>(
   consume(buffer);
   if (!result) throw new Error('agent_result_missing');
   return result;
-}
-
-function updateAgentProgress(list: AgentProgressEvent[], event: AgentProgressEvent): void {
-  const previous = list.at(-1);
-  if (
-    previous
-    && previous.phase === event.phase
-    && event.current === undefined
-    && event.total === undefined
-  ) {
-    previous.detail = event.detail ?? previous.detail;
-    return;
-  }
-  list.push({ ...event });
-  if (list.length > 8) list.splice(0, list.length - 8);
-}
-
-function renderAgentProgress(events: readonly AgentProgressEvent[]): string {
-  if (events.length === 0) return '';
-  return `
-    <ol class="agent-progress" aria-live="polite">
-      ${events.map((event, index) => `
-        <li class="${index === events.length - 1 && event.phase !== 'complete' ? 'active' : 'done'}">
-          <span></span>
-          <div>
-            <strong>${escapeHtml(event.label)}</strong>
-            ${event.detail ? `<small>${escapeHtml(agentStageLabel(event.detail))}</small>` : ''}
-          </div>
-        </li>
-      `).join('')}
-    </ol>
-  `;
-}
-
-function agentStageLabel(stage: string): string {
-  if (stage.startsWith('provider:')) return `调用 ${stage.slice('provider:'.length)} 模型`;
-  const labels: Record<string, string> = {
-    thinking: '分析资产结构',
-    code: '生成模型结构',
-    validate: '校验模型',
-    result: '资产完成'
-  };
-  return labels[stage] ?? stage;
 }
 
 function hasRefinableMapContent(map: EditableMap): boolean {
@@ -2930,198 +3011,6 @@ function degreesToRadians(value: number): number {
 function clampNumber(value: number, min: number, max: number): number {
   if (!Number.isFinite(value)) return min;
   return Math.min(max, Math.max(min, value));
-}
-
-function renderDeveloperCapability(
-  capability: RenderCapability,
-  draft: RenderScheme,
-  hdriFiles: string[]
-): string {
-  const modules = (draft.renderPlan?.modules ?? [])
-    .map((module, index) => ({ module, index }))
-    .filter((entry) => entry.module.id === capability.id);
-  const policy = draft.accessPolicy ?? createDefaultRenderAccessPolicy();
-  const availability = capability.availability ?? 'ready';
-  return `
-    <details class="developer-capability ${modules.length ? 'active' : ''}" ${modules.length ? 'open' : ''}>
-      <summary>
-        <span><strong>${escapeHtml(capability.label)}</strong><small>${capability.id}</small></span>
-        <em class="capability-status ${availability}">${availability === 'ready' ? '可用' : availability === 'limited' ? '部分可用' : '不可用'}</em>
-      </summary>
-      <div class="developer-capability-body">
-        ${capability.availabilityNote ? `<p class="empty">${escapeHtml(capability.availabilityNote)}</p>` : ''}
-        <div class="developer-capability-actions">
-          ${capability.repeatable
-            ? `<button type="button" class="secondary small" data-dev-add-module="${capability.id}">添加作用域</button>`
-            : `<label class="developer-toggle"><input type="checkbox" data-dev-module-enable="${capability.id}" ${modules.length ? 'checked' : ''} /> 在此预设中启用</label>`}
-        </div>
-        <h3>开放策略</h3>
-        <div class="developer-policy-table">
-          ${Object.entries(capability.params).map(([parameter, rule]) => {
-            const entry = policy.parameters.find((item) => (
-              item.moduleId === capability.id && item.parameter === parameter
-            ));
-            if (!entry) return '';
-            return renderDeveloperPolicyRow(capability, parameter, rule, entry);
-          }).join('')}
-        </div>
-        <h3>预设值${capability.repeatable ? '与作用域' : ''}</h3>
-        ${modules.length
-          ? modules.map(({ module, index }) => renderDeveloperModuleInstance(capability, module, index, policy, hdriFiles)).join('')
-          : '<p class="empty">此方案尚未启用该能力。</p>'}
-      </div>
-    </details>
-  `;
-}
-
-function renderDeveloperPolicyRow(
-  capability: RenderCapability,
-  parameter: string,
-  rule: RenderCapability['params'][string],
-  entry: RenderParameterAccess
-): string {
-  const controls: RenderParameterAccess['control'][] = rule.type === 'number'
-    ? ['range', 'number']
-    : rule.type === 'enum'
-      ? ['select', 'toggle']
-      : rule.type === 'color'
-        ? ['color']
-        : ['code'];
-  return `
-    <div class="developer-policy-row">
-      <strong>${escapeHtml(parameter)}</strong>
-      <label>形式
-        <select data-policy-control data-policy-module="${capability.id}" data-policy-param="${parameter}">
-          ${controls.map((control) => `<option value="${control}" ${entry.control === control ? 'selected' : ''}>${control}</option>`).join('')}
-        </select>
-      </label>
-      <label class="developer-toggle"><input type="checkbox" data-policy-enabled="ai" data-policy-module="${capability.id}" data-policy-param="${parameter}" ${entry.ai.enabled ? 'checked' : ''} ${capability.developerOnly ? 'disabled' : ''} /> AI</label>
-      <label class="developer-toggle"><input type="checkbox" data-policy-enabled="developer" data-policy-module="${capability.id}" data-policy-param="${parameter}" ${entry.developer.enabled ? 'checked' : ''} /> 开发者</label>
-      ${rule.type === 'number' ? `
-        <div class="developer-ranges">
-          ${renderPolicyRange(capability.id, parameter, 'ai', entry.ai, rule.min, rule.max)}
-          ${renderPolicyRange(capability.id, parameter, 'developer', entry.developer, rule.min, rule.max)}
-        </div>
-      ` : ''}
-      ${rule.type === 'enum' ? `
-        <div class="developer-enum-access">
-          ${(['ai', 'developer'] as const).map((side) => `
-            <span><b>${side === 'ai' ? 'AI' : '开发者'}</b>${rule.values.map((value) => `
-              <label><input type="checkbox" data-policy-enum-value="${escapeHtml(value)}" data-policy-side="${side}" data-policy-module="${capability.id}" data-policy-param="${parameter}" ${(entry[side].values ?? []).includes(value) ? 'checked' : ''} ${side === 'ai' && capability.developerOnly ? 'disabled' : ''} />${escapeHtml(value)}</label>
-            `).join('')}</span>
-          `).join('')}
-        </div>
-      ` : ''}
-    </div>
-  `;
-}
-
-function renderPolicyRange(
-  moduleId: string,
-  parameter: string,
-  side: 'ai' | 'developer',
-  access: RenderParameterAccess['ai'],
-  hardMin: number,
-  hardMax: number
-): string {
-  return `
-    <span><b>${side === 'ai' ? 'AI' : '开发者'}</b>
-      <input type="number" data-policy-range="min" data-policy-side="${side}" data-policy-module="${moduleId}" data-policy-param="${parameter}" min="${hardMin}" max="${hardMax}" value="${access.min ?? hardMin}" />
-      <i>—</i>
-      <input type="number" data-policy-range="max" data-policy-side="${side}" data-policy-module="${moduleId}" data-policy-param="${parameter}" min="${hardMin}" max="${hardMax}" value="${access.max ?? hardMax}" />
-    </span>
-  `;
-}
-
-function renderDeveloperModuleInstance(
-  capability: RenderCapability,
-  module: RenderModuleSelection,
-  index: number,
-  policy: RenderScheme['accessPolicy'],
-  hdriFiles: string[]
-): string {
-  return `
-    <div class="developer-module-instance">
-      <div class="developer-module-head">
-        <strong>${capability.repeatable ? escapeHtml(module.key ?? `作用域 ${index + 1}`) : escapeHtml(capability.label)}</strong>
-        ${capability.repeatable ? `<button type="button" class="danger small" data-dev-remove-module="${index}">移除</button>` : ''}
-      </div>
-      ${capability.repeatable ? `
-        <div class="developer-scope">
-          <label>目标
-            <select data-dev-module-index="${index}" data-dev-scope="target">
-              ${['water', 'material-tag', 'asset-tag'].map((target) => `<option value="${target}" ${module.scope?.target === target ? 'selected' : ''}>${target}</option>`).join('')}
-            </select>
-          </label>
-          <label>标签
-            <input data-dev-module-index="${index}" data-dev-scope="tag" value="${escapeHtml(module.scope?.tag ?? '')}" placeholder="foliage / stone / tree" />
-          </label>
-        </div>
-      ` : ''}
-      <div class="developer-preset-grid">
-        ${Object.entries(capability.params).map(([parameter, rule]) => {
-          const access = policy.parameters.find((entry) => (
-            entry.moduleId === capability.id && entry.parameter === parameter
-          ))?.developer;
-          return renderDeveloperPresetInput(parameter, rule, module.params[parameter], index, access, hdriFiles);
-        }).join('')}
-      </div>
-    </div>
-  `;
-}
-
-function renderDeveloperPresetInput(
-  parameter: string,
-  rule: RenderCapability['params'][string],
-  current: string | number | undefined,
-  index: number,
-  access?: RenderParameterAccess['developer'],
-  hdriFiles: string[] = []
-): string {
-  const value = current ?? rule.default ?? '';
-  const disabled = access?.enabled === false ? 'disabled' : '';
-  if (rule.type === 'code' && rule.control === 'select') {
-    const options = ['', ...hdriFiles];
-    return `<label><span>${escapeHtml(parameter)}</span><select data-dev-module-index="${index}" data-dev-param="${parameter}" ${disabled}>${options.map((option) => `<option value="${escapeHtml(option)}" ${value === option ? 'selected' : ''}>${escapeHtml(option || '（不使用 HDRI）')}</option>`).join('')}</select></label>${hdriFiles.length ? '' : '<p class="empty">把 .hdr/.exr/.jpg 放进 data/map-editor/hdri 目录后重新打开此面板。</p>'}`;
-  }
-  if (rule.type === 'enum') {
-    const values = access?.values?.length ? rule.values.filter((option) => access.values?.includes(option)) : rule.values;
-    return `<label><span>${escapeHtml(parameter)}</span><select data-dev-module-index="${index}" data-dev-param="${parameter}" ${disabled}>${values.map((option) => `<option value="${escapeHtml(option)}" ${value === option ? 'selected' : ''}>${escapeHtml(option)}</option>`).join('')}</select></label>`;
-  }
-  if (rule.type === 'color') {
-    return `<label><span>${escapeHtml(parameter)}</span><input type="color" data-dev-module-index="${index}" data-dev-param="${parameter}" value="${escapeHtml(String(value || '#ffffff'))}" ${disabled} /></label>`;
-  }
-  if (rule.type === 'code') {
-    return `<label class="developer-code"><span>${escapeHtml(parameter)}</span><textarea rows="7" maxlength="${rule.maxLength}" data-dev-module-index="${index}" data-dev-param="${parameter}" placeholder="隔离 GLSL 扩展" ${disabled}>${escapeHtml(String(value))}</textarea></label>`;
-  }
-  const min = access?.min ?? rule.min;
-  const max = access?.max ?? rule.max;
-  const step = Math.max(0.001, (max - min) / 100);
-  return `
-    <label class="developer-number-control">
-      <span><span>${escapeHtml(parameter)}</span><output data-dev-value-output="${index}:${escapeHtml(parameter)}">${value}</output></span>
-      <input class="developer-value-range" type="range" min="${min}" max="${max}" step="${step}" data-dev-module-index="${index}" data-dev-param="${parameter}" value="${value}" ${disabled} />
-      <input class="developer-value-number" type="number" min="${min}" max="${max}" step="${step}" data-dev-module-index="${index}" data-dev-param="${parameter}" value="${value}" ${disabled} />
-    </label>
-  `;
-}
-
-function defaultRenderModule(capability: RenderCapability, index: number): RenderModuleSelection {
-  const params: Record<string, string | number> = {};
-  for (const [parameter, rule] of Object.entries(capability.params)) {
-    if (rule.default !== undefined) params[parameter] = rule.default;
-  }
-  const scope = capability.id === 'runtime.water-style'
-    ? { target: 'water' as const, tag: 'water' }
-    : capability.id === 'runtime.effect-recipe'
-      ? { target: 'material-tag' as const, tag: 'emissive' }
-      : { target: 'material-tag' as const, tag: 'foliage' };
-  return {
-    ...(capability.repeatable ? { key: `${capability.id.replaceAll('.', '-')}-${index}` } : {}),
-    id: capability.id,
-    ...(capability.repeatable ? { scope } : {}),
-    params
-  };
 }
 
 function applyLightRig(

@@ -3,6 +3,7 @@ import {
   compileRuntimeColorGrade,
   compileRuntimeEffectRecipes,
   compileRuntimeHdriSky,
+  compileRuntimeGrassStyle,
   compileRuntimeLightRig,
   compileRuntimeMaterialThemes,
   compileRuntimePostQuality,
@@ -80,9 +81,22 @@ describe('RenderPlan V2 capabilities', () => {
           params: {
             recipe: 'calm-lake',
             opacity: 0.82,
+            shallowColor: '#9bdbe0',
+            depthColor: '#16354a',
             waveStrength: 0.2,
+            waveSpeed: 0.45,
             foamStrength: 0.3,
-            reflectionStrength: 0.55
+            reflectionStrength: 0.55,
+            reflectionDistortion: 0.06,
+            reflectionFresnel: 1.2
+          }
+        },
+        {
+          id: 'runtime.grass-style',
+          params: {
+            rootColor: '#284f22', tipColor: '#a4df72', paletteVariation: 0.2,
+            bands: '2', bladeHeight: 1.1, bladeWidth: 0.21,
+            windStrength: 0.4, windAngle: 90, groundTint: 'off'
           }
         },
         { id: 'runtime.light-rig', params: { recipe: 'soft-morning', strength: 0.8 } },
@@ -94,7 +108,23 @@ describe('RenderPlan V2 capabilities', () => {
     });
 
     expect(compileRuntimeColorGrade(plan)).toMatchObject({ recipe: 'misty', contrast: 0.82 });
-    expect(compileRuntimeWaterStyles(plan)[0]).toMatchObject({ recipe: 'calm-lake', opacity: 0.82 });
+    expect(compileRuntimeWaterStyles(plan)[0]).toMatchObject({
+      recipe: 'calm-lake',
+      opacity: 0.82,
+      shallowColor: '#9bdbe0',
+      depthColor: '#16354a',
+      waveSpeed: 0.45,
+      reflectionStrength: 0.55,
+      reflectionDistortion: 0.06,
+      reflectionFresnel: 1.2
+    });
+    expect(compileRuntimeGrassStyle(plan)).toMatchObject({
+      rootColor: '#284f22', tipColor: '#a4df72', paletteVariation: 0.2,
+      bands: 2, bladeHeight: 1.1, bladeWidth: 0.21,
+      windStrength: 0.4, groundTint: false
+    });
+    expect(compileRuntimeGrassStyle(plan).windDirection[0]).toBeCloseTo(0, 5);
+    expect(compileRuntimeGrassStyle(plan).windDirection[1]).toBeCloseTo(1, 5);
     expect(compileRuntimeLightRig(plan)).toMatchObject({ recipe: 'soft-morning', strength: 0.8 });
     expect(compileRuntimePostQuality(plan)).toEqual({
       bloom: 'soft',
@@ -153,6 +183,9 @@ describe('RenderPlan V2 capabilities', () => {
 
   it('enforces each scheme policy for AI plans while retaining developer ranges', () => {
     const defaults = createDefaultRenderAccessPolicy();
+    expect(defaults.parameters.find((entry) => (
+      entry.moduleId === 'runtime.grass-style' && entry.parameter === 'normalFlatten'
+    ))?.ai.enabled).toBe(false);
     const policy = normalizeRenderAccessPolicy({
       version: 1,
       parameters: defaults.parameters.map((entry) => entry.moduleId === 'runtime.color-grade'

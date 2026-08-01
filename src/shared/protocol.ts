@@ -50,12 +50,19 @@ export interface ModelJobState {
 export interface AgentProgressEvent {
   phase:
     | 'planning'
+    | 'composing'
+    | 'consulting'
     | 'checking-assets'
+    | 'resolving-assets'
     | 'generating-asset'
+    | 'asset-retrying'
     | 'replanning'
+    | 'compiling'
+    | 'reviewing'
     | 'validating'
     | 'repairing'
-    | 'complete';
+    | 'complete'
+    | 'failed';
   label: string;
   current?: number;
   total?: number;

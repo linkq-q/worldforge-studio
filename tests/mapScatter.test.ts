@@ -70,4 +70,30 @@ describe('deterministic map scatter', () => {
       }
     }
   });
+
+  it('supports deterministic clustering, soft edges, and composition exclusion regions', () => {
+    const map = createEmptyMap('scatter-v2', 'map-scatter-v2');
+    map.assets = [treeAsset];
+    const plan: MapScatterPlan = {
+      assetIds: [treeAsset.id],
+      region: { kind: 'circle', x: 0, z: 0, r: 20 },
+      density: 0.12,
+      avoidWater: 0,
+      maxSlope: 89,
+      minSpacing: 1.8,
+      scaleRange: [0.8, 1.2],
+      seed: 29,
+      edgeFalloff: 0.3,
+      clusterStrength: 0.75,
+      excludeRegions: [{ kind: 'circle', x: 4, z: -3, r: 5 }]
+    };
+
+    const first = expandMapScatter(map, plan, [treeAsset], 120, 'clustered');
+    const second = expandMapScatter(map, plan, [treeAsset], 120, 'clustered');
+
+    expect(first.length).toBeGreaterThan(15);
+    expect(second).toEqual(first);
+    expect(first.every((placement) => Math.hypot(placement.x - 4, placement.z + 3) > 5)).toBe(true);
+    expect(first.every((placement) => Math.hypot(placement.x, placement.z) <= 20)).toBe(true);
+  });
 });

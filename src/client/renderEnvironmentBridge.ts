@@ -10,6 +10,17 @@ interface WaterEnvironmentSurface {
   setWaterReflectionParams(params: Record<string, unknown>): void;
 }
 
+interface WaterReflectionSurface {
+  setWaterReflectionParams(params: Record<string, unknown>): void;
+  setPlanarReflectionParams(params: Record<string, unknown>): void;
+}
+
+export interface WaterReflectionSettings {
+  strength: number;
+  distortion?: number;
+  fresnelBoost?: number;
+}
+
 export function configureDistanceFogPass(pass: UniformPass, color: string, density: number): void {
   const normalizedDensity = Math.max(0, Number.isFinite(density) ? density : 0);
   pass.enabled = normalizedDensity > 0;
@@ -38,4 +49,16 @@ export function syncWaterSurfaceEnvironment(
 ): void {
   surface.setWaterEnvMap(environmentMap);
   surface.setWaterReflectionParams({ useSceneEnvironment: true });
+}
+
+export function configureWaterReflection(
+  surface: WaterReflectionSurface,
+  settings: WaterReflectionSettings
+): void {
+  surface.setWaterReflectionParams({ strength: settings.strength });
+  surface.setPlanarReflectionParams({
+    strength: settings.strength,
+    distortion: settings.distortion,
+    fresnelBoost: settings.fresnelBoost
+  });
 }
