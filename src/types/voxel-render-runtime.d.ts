@@ -10,6 +10,23 @@ declare module '@voxel-studio/render-runtime' {
     applyStyle(preset: { renderMode: 'pbr' | 'cel'; cartoon?: Record<string, number> }): void;
     setCartoonParams(params: Record<string, number>): void;
   }
+  export interface PlanarReflectionSurface {
+    mesh: import('three').Mesh;
+    setPlanarReflectionTexture(texture: import('three').Texture | null): void;
+    setPlanarReflectionMatrix(matrix: import('three').Matrix4): void;
+  }
+  export class PlanarReflectionPass {
+    constructor(options: {
+      renderer: import('three').WebGLRenderer;
+      scene: import('three').Scene;
+      camera: import('three').PerspectiveCamera;
+      waterMesh?: import('three').Mesh | null;
+    });
+    setWaterSurfaces(surfaces: PlanarReflectionSurface[]): void;
+    syncToRendererSize(): void;
+    render(): void;
+    dispose(): void;
+  }
 }
 
 declare module '@voxel-studio/render-runtime/postprocess' {
@@ -130,6 +147,8 @@ declare module '@voxel-studio/render-runtime/environment' {
     setWaterMode(mode: 'cartoon' | 'realistic' | 'hybrid'): void;
     setWaterEnvMap(texture: import('three').Texture | null): void;
     setWaterReflectionParams(params: Record<string, unknown>): void;
+    setPlanarReflectionTexture(texture: import('three').Texture | null): void;
+    setPlanarReflectionMatrix(matrix: import('three').Matrix4): void;
     dispose(): void;
   }
   export class WaterfallSurface {

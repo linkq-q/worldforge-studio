@@ -245,7 +245,7 @@ describe('map AI adapter', () => {
     const suggestion = await runMapAgent(
       'A quiet pastoral grove',
       { ...createEmptyMap(), assetGenerationMode: 'curve' },
-      [],
+      [testAsset('asset-voxel-tree', 'Old voxel tree', ['tree', 'vegetation'], 'large', 'voxel')],
       {
         apiBase: 'https://example.test',
         provider: 'gpt',
@@ -261,6 +261,7 @@ describe('map AI adapter', () => {
       tags: ['tree', 'vegetation'],
       mode: 'curve'
     }));
+    expect(JSON.stringify(suggestion.operations)).not.toContain('asset-voxel-tree');
     expect(suggestion.generatedAssets).toEqual([{ id: 'asset-generated-tree', name: 'Pastoral tree' }]);
     expect(suggestion.operations).toEqual(expect.arrayContaining([
       expect.objectContaining({

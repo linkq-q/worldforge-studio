@@ -873,6 +873,12 @@ class MapEditor {
       this.state.message = 'AI 地图预览已生成，尚未应用';
       await this.refreshScene();
     } catch (error) {
+      const cancelled = error instanceof Error && error.name === 'AbortError';
+      updateAgentProgress(this.mapAgentProgress, {
+        phase: 'failed',
+        label: cancelled ? '地图 Agent 已取消' : '地图 Agent 执行失败',
+        detail: cancelled ? undefined : error instanceof Error ? error.message : 'unknown_error'
+      });
       this.state.message = error instanceof Error && error.name === 'AbortError'
         ? '已取消地图 Agent'
         : `AI 地图生成失败：${error instanceof Error ? error.message : '未知错误'}`;
@@ -1104,6 +1110,11 @@ class MapEditor {
       host.innerHTML = '<section class="editor-section"><h2>Transform</h2><p class="empty">选择一个物体。</p></section>';
       return;
     }
+    const compatibleAssets = this.compatibleAssets();
+    const currentAsset = this.state.assets.find((asset) => asset.id === object.assetId) ?? null;
+    const legacyAssetOption = currentAsset && currentAsset.mode !== map.assetGenerationMode
+      ? `<option value="${currentAsset.id}" selected disabled>${escapeHtml(currentAsset.name)}（旧 ${escapeHtml(currentAsset.mode.toUpperCase())}，不可继续复用）</option>`
+      : '';
     host.innerHTML = `
       <section class="editor-section">
         <h2>Transform</h2>
@@ -1124,7 +1135,8 @@ class MapEditor {
           <span>资产</span>
           <select data-object-asset>
             <option value="">未绑定</option>
-            ${this.state.assets.map((asset) => `<option value="${asset.id}" ${object.assetId === asset.id ? 'selected' : ''}>${escapeHtml(asset.name)}</option>`).join('')}
+            ${legacyAssetOption}
+            ${compatibleAssets.map((asset) => `<option value="${asset.id}" ${object.assetId === asset.id ? 'selected' : ''}>${escapeHtml(asset.name)}</option>`).join('')}
           </select>
         </label>
         <button id="delete-object" class="secondary small">删除物体</button>
@@ -1172,16 +1184,18 @@ class MapEditor {
   private renderAssetPanel(): void {
     const host = this.app.querySelector<HTMLElement>('#asset-panel');
     if (!host) return;
-    const selectedAsset = this.state.assets.find((asset) => asset.id === this.state.selectedAssetId) ?? this.state.assets[0] ?? null;
-    if (selectedAsset && this.state.selectedAssetId !== selectedAsset.id) this.state.selectedAssetId = selectedAsset.id;
+    const compatibleAssets = this.compatibleAssets();
+    const selectedAsset = compatibleAssets.find((asset) => asset.id === this.state.selectedAssetId) ?? compatibleAssets[0] ?? null;
+    if (this.state.selectedAssetId !== selectedAsset?.id) this.state.selectedAssetId = selectedAsset?.id ?? null;
     host.innerHTML = `
       <section class="editor-section asset-tools">
         <h2>资产</h2>
         <textarea id="asset-prompt" placeholder="输入提示词生成模型资产"></textarea>
         <p class="empty">当前地图的新资产统一使用 ${this.state.map?.assetGenerationMode.toUpperCase() ?? 'VOXEL'} 模式。</p>
         <button id="generate-asset" ${this.state.busy ? 'disabled' : ''}>生成资产</button>
-        <select id="asset-list">
-          ${this.state.assets.map((asset) => `<option value="${asset.id}" ${selectedAsset?.id === asset.id ? 'selected' : ''}>${escapeHtml(asset.name)}</option>`).join('')}
+        <p class="empty">资产列表只显示与当前地图相同模式的可复用资产。</p>
+        <select id="asset-list" ${selectedAsset ? '' : 'disabled'}>
+          ${compatibleAssets.map((asset) => `<option value="${asset.id}" ${selectedAsset?.id === asset.id ? 'selected' : ''}>${escapeHtml(asset.name)}</option>`).join('')}
         </select>
         <div id="asset-preview" class="asset-preview"></div>
         ${selectedAsset ? `
@@ -2147,6 +2161,11 @@ class MapEditor {
     };
   }
 
+  private compatibleAssets(): MapAsset[] {
+    const mode = this.state.map?.assetGenerationMode;
+    return mode ? this.state.assets.filter((asset) => asset.mode === mode) : [];
+  }
+
   private isPlayerSpawnSelected(): boolean {
     return this.state.selectedObjectId === PLAYER_SPAWN_OBJECT_ID;
   }
@@ -2743,7 +2762,7 @@ function renderAgentProgress(events: readonly AgentProgressEvent[]): string {
   return `
     <ol class="agent-progress" aria-live="polite">
       ${events.map((event, index) => `
-        <li class="${index === events.length - 1 && event.phase !== 'complete' ? 'active' : 'done'}">
+        <li class="${event.phase === 'failed' ? 'failed' : index === events.length - 1 && event.phase !== 'complete' ? 'active' : 'done'}">
           <span></span>
           <div>
             <strong>${escapeHtml(event.label)}</strong>

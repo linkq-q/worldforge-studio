@@ -30,6 +30,7 @@ import {
   syncWaterSurfaceEnvironment
 } from './renderEnvironmentBridge';
 import { createComposerRenderTarget } from './renderOutputPipeline';
+import { PlanarWaterReflection } from './planarWaterReflection';
 import type {
   RuntimeColorGrade,
   RuntimeEffectRecipe,
@@ -74,6 +75,7 @@ export class RenderRuntimeAdapter {
   private readonly bloomPass = new GlobalBloomPass(new THREE.Vector2(1, 1), 0.4, 0.35, 0.82);
   private readonly effectRuntime = createEffectRuntime().runtime;
   private readonly materialTagRuntime: WorldForgeMaterialTagRuntime;
+  private readonly planarWaterReflection: PlanarWaterReflection;
   private readonly materialBaselines = new Map<THREE.Material, MaterialBaseline>();
   private readonly waterBindings: WaterBinding[] = [];
   private contentRoot: THREE.Object3D | null = null;
@@ -93,6 +95,7 @@ export class RenderRuntimeAdapter {
       this.effectRuntime,
       () => this.scene.environment
     );
+    this.planarWaterReflection = new PlanarWaterReflection(renderer, scene, camera);
     this.curvaturePass = createCurvatureEdgePass(renderer);
     this.inkPass = createInkEdgePass(renderer);
     this.ssaoPass = new SharedSSAOPass(scene, camera, 1, 1, 16);
@@ -230,6 +233,7 @@ export class RenderRuntimeAdapter {
   }
 
   resetScopedCapabilities(): void {
+    this.planarWaterReflection.setBindings([]);
     for (const binding of this.waterBindings.splice(0)) {
       binding.mesh.material = binding.originalMaterial;
       binding.surface.dispose();
@@ -469,6 +473,9 @@ export class RenderRuntimeAdapter {
       mesh.userData.isWater = true;
       this.waterBindings.push({ mesh, originalMaterial, surface });
     }
+    this.planarWaterReflection.setBindings(this.waterBindings.flatMap((binding) => (
+      binding.surface instanceof WaterSurface ? [{ mesh: binding.mesh, surface: binding.surface }] : []
+    )));
   }
 
   private applyEffectRecipes(recipes: RuntimeEffectRecipe[]): void {
@@ -509,9 +516,11 @@ export class RenderRuntimeAdapter {
     this.setVector2(this.comicPass, 'uResolution', drawWidth, drawHeight);
     this.setVector2(this.sketchPass, 'uResolution', drawWidth, drawHeight);
     this.setVector2(this.curvaturePass, 'uTexelSize', 1 / drawWidth, 1 / drawHeight);
+    this.planarWaterReflection.syncSize();
   }
 
   render(): void {
+    this.planarWaterReflection.render();
     if (!this.hasActiveEffect()) {
       this.renderer.render(this.scene, this.camera);
       return;

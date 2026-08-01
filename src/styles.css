@@ -643,6 +643,15 @@ p {
   box-shadow: 0 0 0 4px rgba(217, 244, 122, 0.08);
 }
 
+.agent-progress li.failed > span {
+  background: #ff7d72;
+  box-shadow: 0 0 0 4px rgba(255, 125, 114, 0.1);
+}
+
+.agent-progress li.failed strong {
+  color: #ffb4ad;
+}
+
 .agent-progress li div {
   display: grid;
   gap: 1px;

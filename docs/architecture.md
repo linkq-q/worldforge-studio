@@ -32,9 +32,12 @@
 
 创建地图时还必须选择一个 Voxel Studio 模型生成模式（`standard/lite/voxel/voxel-pro/curve/wire/math`），保存为地图级 `assetGenerationMode`。地图 Agent、地图 Refine 和手工生成当前地图资产都只能使用该模式，LLM 不负责逐资产选择模式；旧地图缺少该字段时确定性回退为 `voxel`。该约束保证同一地图的 AI 资产具有统一建模语言，同时不影响共享资产库中其他模式的存量资产。
 
+模式一致性由两层共同保证：Agent 资产解析只看同模式资产，地图存储事务在 `object.add/object.update` 落盘前再次校验 `assetGenerationMode`。客户端资产库也只展示当前地图可用的同模式资产；旧地图中的异类引用暂时可见但不可重新选择，避免历史数据被静默删除。
+
 每张地图保存一个全局 `seed`；旧地图按地图 ID 确定性补齐。AI 先输出高层 `terrain.generate`（`plain/hills/valley/island/canyon`），共享 PCG 模块用四层 fBm 烘焙进现有高度场，再依次执行局部笔刷、湖泊刻蚀和散布。LLM 不再负责枚举基础地形坐标。坡度分析与地形生成分属独立共享模块，渲染端只消费最终高度场，并按高度、坡度和水线生成顶点颜色。
 
 渲染生成同样使用受限协议，而不是让模型直接修改 Three.js：AI 选择基础方案并组合 `RenderPlan` 能力模块，服务端按该方案的 `accessPolicy` 校验模块、参数、角色权限和范围。非法结果或明确风格遗漏只允许自动修正一次。当前模块覆盖环境、HDRI 天空、表面、描边、世界空间素描、漫画、色彩分级、标签材质、命名灯光、Bloom/SSAO、标签特效，以及结构化湖泊/河流与模型水面。`environment.hdri` 的贴图来自 `data/map-editor/hdri/` 目录扫描，同一张全景图既作为 `HDRISkyDome` 背景，也经 PMREM 成为 `scene.environment`；环境变更由宿主桥同步给 Voxel 材质标签表面绑定和 `WaterSurface`，清除 HDRI 时也同步解绑。距离雾统一使用 Runtime 的深度后处理，覆盖普通材质、透明水体和风格化输出，避免自定义 Shader 绕开 Three 内建雾；水体参与该深度预通道，但仍不进入普通材质替换。贴图名是开发者专用参数，AI 只能调旋转、曝光、饱和度、强度和色调。材质与特效只接收 `modelsRoot`；后处理 normal/depth 预通道只接收地图内容根，物体/材质 ID 只遍历 `modelsRoot`，编辑器 gizmo 和辅助物不会进入风格链。景深仅保留高层协议。
+结构化湖泊和河流在启用水体方案时还会注册到 Runtime 的 `PlanarReflectionPass`：反射相机先渲染场景到共享纹理，再把纹理和投影矩阵送入各个 `WaterSurface`。HDRI 环境反射与场景平面反射是两条独立输入，前者负责远景环境，后者负责岸边地形、树木和建筑。
 渲染 Refine 以当前完整 `RenderPlan` 为输入，强制保持 `baseSchemeId` 不变并返回合并后的完整计划，因此“雾再浓一点”不会重新选择预设或丢失素描、漫画等既有模块。
 
 基础版 Agent API 使用 SSE 返回真实执行阶段。空地图链路公开场景构图、按需专家会诊、资产解析、逐个资产生成、确定性编译、合成审查、校验与修复；Refine 与渲染链路继续公开自己的规划、校验和自动修正。客户端只展示后端已发生的阶段，不模拟定时进度。

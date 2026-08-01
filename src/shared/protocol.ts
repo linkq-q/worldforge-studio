@@ -60,7 +60,8 @@ export interface AgentProgressEvent {
     | 'reviewing'
     | 'validating'
     | 'repairing'
-    | 'complete';
+    | 'complete'
+    | 'failed';
   label: string;
   current?: number;
   total?: number;
