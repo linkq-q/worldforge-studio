@@ -9,7 +9,7 @@ export interface RenderedGrassField {
   dispose(): void;
 }
 
-export function buildMapGrassField(map: EditableMap): RenderedGrassField | null {
+export function buildMapGrassField(map: EditableMap, style?: RuntimeGrassStyle): RenderedGrassField | null {
   if (!map.grassLayers.some((layer) => layer.visible && layer.densities.some((density) => density > 0.001))) {
     return null;
   }
@@ -19,6 +19,8 @@ export function buildMapGrassField(map: EditableMap): RenderedGrassField | null 
     depth: map.box.size[2],
     sampleHeight: (x, z) => sampleTerrainHeight(map, x, z),
     sampleNormal: (x, z) => sampleTerrainNormal(map, x, z),
+    // Building with the style avoids a second full rebuild from setStyle.
+    ...(style ? { style } : {}),
   });
   return {
     group: field.group,

@@ -39,6 +39,17 @@ export interface RenderedMap {
   syncObjectTransform: (objectId: string) => void;
   update: (deltaTime: number, camera: THREE.Camera, maxDistance: number) => void;
   setGrassStyle: (style: RuntimeGrassStyle) => void;
+  /**
+   * Rebuilds only the grass field and the terrain tint that follows it. Grass
+   * edits touch nothing else, so they must not pay for a whole scene rebuild.
+   */
+  refreshGrass: (map: EditableMap) => void;
+  /**
+   * Rebuilds only the terrain mesh — geometry, vertex colours and the painted
+   * surface texture — plus the grass that rides on it. Paint and terrain
+   * strokes touch nothing else, so they must not pay for asset re-batching.
+   */
+  refreshTerrain: (map: EditableMap) => void;
   dispose: () => void;
 }
 
@@ -62,8 +73,19 @@ export async function buildEditableMapGroup(input: EditableMap, options: MapRend
   root.add(terrain);
   pickables.push(terrain);
 
-  const grass = buildMapGrassField(map);
+  // Grass is rebuilt on its own, so it keeps its own map snapshot and style.
+  let grassMap = map;
+  let grassStyle = DEFAULT_RUNTIME_GRASS_STYLE;
+  let grass = buildMapGrassField(map);
   if (grass) root.add(grass.group);
+
+  const rebuildGrass = (next: EditableMap): void => {
+    grassMap = next;
+    grass?.dispose();
+    grass = buildMapGrassField(grassMap, grassStyle);
+    if (grass) root.add(grass.group);
+    applyTerrainGrassTint(terrain, grassMap, grassStyle);
+  };
 
   modelsRoot.add(buildStructuredWaterGroup(map));
   const objectGroups = createObjectGroups(map);
@@ -110,8 +132,21 @@ export async function buildEditableMapGroup(input: EditableMap, options: MapRend
       instancing.updateCulling(camera, maxDistance);
     },
     setGrassStyle: (style) => {
+      grassStyle = style;
       grass?.setStyle(style);
-      applyTerrainGrassTint(terrain, map, style);
+      applyTerrainGrassTint(terrain, grassMap, style);
+    },
+    refreshGrass: rebuildGrass,
+    refreshTerrain: (next) => {
+      terrain.geometry.dispose();
+      terrain.geometry = buildTerrainGeometry(next);
+      // Keep the live material so an applied render scheme survives the swap.
+      const material = terrain.material as THREE.MeshStandardMaterial;
+      material.map?.dispose();
+      material.map = createSurfaceTexture(next, 'terrain');
+      material.needsUpdate = true;
+      // Blades sample terrain height, so they have to follow the new surface.
+      rebuildGrass(next);
     },
     dispose: () => {
       grass?.dispose();

@@ -190,6 +190,10 @@ class MapEditor {
   private transformDragging = false;
   private transformPointerActive = false;
   private animationFrame = 0;
+  private grassRefreshHandle = 0;
+  private terrainRefreshHandle = 0;
+  private sceneRefresh: Promise<void> | null = null;
+  private sceneRefreshQueued: Promise<void> | null = null;
   private lastFrameAt = performance.now();
   private painting = false;
   private terrainFlattenHeight: number | null = null;
@@ -1110,7 +1114,7 @@ class MapEditor {
         changed: (message) => {
           this.markDirty();
           this.state.message = message;
-          void this.refreshScene();
+          this.scheduleGrassRefresh();
           this.renderPanels();
         },
         selectionChanged: () => this.renderMapInspector(),
@@ -1987,8 +1991,59 @@ class MapEditor {
     this.renderPanels();
   }
 
-  private async refreshScene(): Promise<void> {
+  /**
+   * A grass stroke only edits the density field, so it rebuilds the grass field
+   * instead of the whole scene. Pointer moves fire far faster than a rebuild
+   * finishes, so collapse every sample in a frame into one rebuild.
+   */
+  private scheduleGrassRefresh(): void {
+    if (this.grassRefreshHandle) return;
+    this.grassRefreshHandle = requestAnimationFrame(() => {
+      this.grassRefreshHandle = 0;
+      if (this.state.map) this.renderedMap?.refreshGrass(this.state.map);
+    });
+  }
+
+  /**
+   * A paint or terrain stroke only changes the terrain mesh, so it rebuilds
+   * that instead of the whole scene, one rebuild per frame at most.
+   */
+  private scheduleTerrainRefresh(): void {
+    if (this.terrainRefreshHandle) return;
+    this.terrainRefreshHandle = requestAnimationFrame(() => {
+      this.terrainRefreshHandle = 0;
+      if (this.state.map) this.renderedMap?.refreshTerrain(this.state.map);
+    });
+  }
+
+  /**
+   * A rebuild detaches and re-adds the scene root, so two runs in flight can
+   * interleave and leave a stale group attached. Serialize them, and collapse
+   * everything requested mid-flight into a single trailing rebuild.
+   */
+  private refreshScene(): Promise<void> {
+    if (this.sceneRefresh) {
+      this.sceneRefreshQueued ??= this.sceneRefresh.then(() => this.refreshScene());
+      return this.sceneRefreshQueued;
+    }
+    this.sceneRefresh = this.rebuildScene().finally(() => {
+      this.sceneRefresh = null;
+      this.sceneRefreshQueued = null;
+    });
+    return this.sceneRefresh;
+  }
+
+  private async rebuildScene(): Promise<void> {
     if (!this.scene) return;
+    // A full rebuild already replaces both; drop any pending partial refresh.
+    if (this.grassRefreshHandle) {
+      cancelAnimationFrame(this.grassRefreshHandle);
+      this.grassRefreshHandle = 0;
+    }
+    if (this.terrainRefreshHandle) {
+      cancelAnimationFrame(this.terrainRefreshHandle);
+      this.terrainRefreshHandle = 0;
+    }
     this.clearSelectionOutline();
     const previous = this.renderedMap;
     if (previous) {
@@ -2076,7 +2131,7 @@ class MapEditor {
         softness: this.state.brushSoftness
       }));
       this.markDirty(false);
-      void this.refreshScene();
+      this.scheduleTerrainRefresh();
       return;
     }
     if (this.state.tool === 'grass') {
@@ -2097,7 +2152,7 @@ class MapEditor {
         this.grassEditorState.targetDensity
       );
       this.markDirty(false);
-      void this.refreshScene();
+      this.scheduleGrassRefresh();
       return;
     }
     if (first && this.state.terrainMode === 'flatten') this.terrainFlattenHeight = hit.point.y;
@@ -2113,7 +2168,7 @@ class MapEditor {
       targetHeight
     );
     this.markDirty(false);
-    void this.refreshScene();
+    this.scheduleTerrainRefresh();
   }
 
   private raycast(event: PointerEvent): THREE.Intersection[] {

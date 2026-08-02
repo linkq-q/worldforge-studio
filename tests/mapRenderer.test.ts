@@ -3,22 +3,24 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { buildEditableMapGroup, buildStructuredWaterGroup } from '../src/client/mapRenderer';
 import { createEmptyMap } from '../src/shared/map';
 import type { MapAsset } from '../src/shared/map';
+import { createGrassLayer, fillGrassLayerInPlace } from '../src/shared/mapGrass';
+import { DEFAULT_RUNTIME_GRASS_STYLE } from '../src/shared/renderPlan';
+
+beforeEach(() => {
+  vi.stubGlobal('document', {
+    createElement: () => ({
+      width: 0,
+      height: 0,
+      getContext: () => null
+    })
+  });
+});
+
+afterEach(() => {
+  vi.unstubAllGlobals();
+});
 
 describe('structured map water rendering', () => {
-  beforeEach(() => {
-    vi.stubGlobal('document', {
-      createElement: () => ({
-        width: 0,
-        height: 0,
-        getContext: () => null
-      })
-    });
-  });
-
-  afterEach(() => {
-    vi.unstubAllGlobals();
-  });
-
   it('renders the map as an open terrain plane without enclosure faces', async () => {
     const rendered = await buildEditableMapGroup(createEmptyMap('open-map', 'map-open-plane'));
     const surfaces: string[] = [];
@@ -308,6 +310,67 @@ describe('structured map water rendering', () => {
     rendered.update(0, camera, 20);
     expect(nearMesh.visible).toBe(false);
     expect(farMesh.visible).toBe(true);
+    rendered.dispose();
+  });
+});
+
+describe('terrain-only refresh', () => {
+  it('rebuilds terrain geometry and surface texture in place, leaving asset batches alone', async () => {
+    const map = createEmptyMap('terrain', 'map-terrain-refresh');
+    const rendered = await buildEditableMapGroup(map);
+    const terrain = rendered.group.getObjectByName('terrain') as THREE.Mesh;
+    const material = terrain.material as THREE.MeshStandardMaterial;
+    const firstGeometry = terrain.geometry;
+    const firstTexture = material.map;
+    const firstIndex = rendered.runtimeIndex;
+
+    map.terrain.heights = map.terrain.heights.map(() => 3);
+    rendered.refreshTerrain(map);
+
+    // The mesh itself must survive: it is the raycast target for the brushes.
+    expect(rendered.group.getObjectByName('terrain')).toBe(terrain);
+    expect(terrain.geometry).not.toBe(firstGeometry);
+    expect(terrain.geometry.getAttribute('position').getY(0)).toBeCloseTo(3, 5);
+    expect(terrain.geometry.getAttribute('color').count).toBe(terrain.geometry.getAttribute('position').count);
+    expect(material.map).not.toBe(firstTexture);
+    expect(rendered.runtimeIndex).toBe(firstIndex);
+    rendered.dispose();
+  });
+});
+
+describe('grass-only refresh', () => {
+  it('replaces just the grass field, keeps the applied style and picks up new density', async () => {
+    const map = createEmptyMap('grass', 'map-grass-refresh');
+    const layer = createGrassLayer({ seed: 3 }, map.terrain.resolutionX, map.terrain.resolutionZ);
+    map.grassLayers = [layer];
+    fillGrassLayerInPlace(map, layer.id, 0.4);
+
+    const rendered = await buildEditableMapGroup(map);
+    const fields = () => rendered.group.children.filter((child) => child.name === 'CartoonGrassField');
+    const blades = () => rendered.group.getObjectByName(`grass:${layer.id}`) as THREE.InstancedMesh;
+    const bladeHeightOf = (mesh: THREE.InstancedMesh): number => {
+      const matrix = new THREE.Matrix4();
+      const scale = new THREE.Vector3();
+      mesh.getMatrixAt(0, matrix);
+      matrix.decompose(new THREE.Vector3(), new THREE.Quaternion(), scale);
+      return scale.y;
+    };
+    const first = blades();
+    const firstHeight = bladeHeightOf(first);
+
+    rendered.setGrassStyle({ ...DEFAULT_RUNTIME_GRASS_STYLE, bladeHeight: 1.4 });
+    rendered.refreshGrass(map);
+    const restyled = blades();
+
+    expect(restyled).not.toBe(first);
+    expect(fields()).toHaveLength(1);
+    expect(bladeHeightOf(restyled) / firstHeight).toBeCloseTo(1.4 / DEFAULT_RUNTIME_GRASS_STYLE.bladeHeight, 5);
+
+    fillGrassLayerInPlace(map, layer.id, 0.95);
+    rendered.refreshGrass(map);
+
+    expect(fields()).toHaveLength(1);
+    expect(blades().count).toBeGreaterThan(restyled.count);
     rendered.dispose();
   });
 });
