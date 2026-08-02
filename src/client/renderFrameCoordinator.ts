@@ -19,6 +19,12 @@ export interface RenderFrameCoordinatorOptions {
   updateWater(deltaTime: number, depthTexture: THREE.DepthTexture | null): void;
 }
 
+export interface RenderPipelineStats {
+  stages: Array<{ name: string; ms: number }>;
+  passes: Array<{ id: string; name: string; enabled: boolean }>;
+  composerTrace: null | { total: number; unknown: number; passes: Array<{ name: string; ms: number }> };
+}
+
 /**
  * WorldForge host wiring for the shared render runtime frame scheduler.
  * Capability modules own their resources; this class only declares ordering
@@ -64,6 +70,10 @@ export class RenderFrameCoordinator {
 
   syncPasses(): void {
     this.pipeline.syncComposer();
+  }
+
+  getStats(): RenderPipelineStats {
+    return this.pipeline.getStats();
   }
 
   notifySceneLoaded(protectionFrames = 2): void {

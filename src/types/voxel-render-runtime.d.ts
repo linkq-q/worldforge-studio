@@ -27,6 +27,11 @@ declare module '@voxel-studio/render-runtime' {
       camera: import('three').PerspectiveCamera;
       composer: EffectComposer | null;
       debug?: boolean;
+      timer?: {
+        begin(name: string): void;
+        end(name: string): void;
+        getStats(): { frameMs?: number; smoothFrameMs?: number };
+      } | null;
     });
     setPlanarReflectionPass(pass: { render(): void; enabled?: boolean } | null): void;
     registerPass(
@@ -44,6 +49,11 @@ declare module '@voxel-studio/render-runtime' {
     syncComposer(): void;
     notifySceneLoaded(protectionFrames?: number): void;
     renderFrame(deltaTime: number, elapsedSeconds: number, context?: Record<string, unknown>): void;
+    getStats(): {
+      stages: Array<{ name: string; ms: number }>;
+      passes: Array<{ id: string; name: string; enabled: boolean }>;
+      composerTrace: null | { total: number; unknown: number; passes: Array<{ name: string; ms: number }> };
+    };
     dispose(): void;
   }
   export class CSMController {
@@ -125,6 +135,15 @@ declare module '@voxel-studio/render-runtime' {
     stagePart(part: object, assessment: object, modelId: string, parentChain?: import('three').Matrix4): boolean;
     compile(modelId: string, rootGroup: import('three').Object3D): unknown;
     updateModelInstanceMatrices(modelId: string): unknown;
+    getSceneAudit(): {
+      totalParts?: number;
+      batchableParts?: number;
+      instancedParts?: number;
+      batchedMeshParts?: number;
+      fallbackMeshParts?: number;
+      fallbackParts?: number;
+      batchCount?: number;
+    };
     getInstancedMeshes(): import('three').Object3D[];
     getBatchedMeshes(): import('three').Object3D[];
     dispose(): void;

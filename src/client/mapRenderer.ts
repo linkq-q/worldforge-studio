@@ -29,6 +29,14 @@ import {
   type RuntimeGrassStyle,
 } from '../shared/renderPlan';
 import type { RuntimeIndex } from '@voxel-studio/render-runtime';
+import type { MapPrimitiveBatchStats } from './mapPrimitiveBatching';
+
+export interface RenderedMapDebugStats extends MapPrimitiveBatchStats {
+  grassLayers: number;
+  grassBlades: number;
+  grassFlowers: number;
+  grassDrawCalls: number;
+}
 
 export interface RenderedMap {
   group: THREE.Group;
@@ -39,6 +47,7 @@ export interface RenderedMap {
   syncObjectTransform: (objectId: string) => void;
   update: (deltaTime: number, camera: THREE.Camera, maxDistance: number) => void;
   setGrassStyle: (style: RuntimeGrassStyle) => void;
+  getDebugStats: () => RenderedMapDebugStats;
   /**
    * Rebuilds only the grass field and the terrain tint that follows it. Grass
    * edits touch nothing else, so they must not pay for a whole scene rebuild.
@@ -135,6 +144,16 @@ export async function buildEditableMapGroup(input: EditableMap, options: MapRend
       grassStyle = style;
       grass?.setStyle(style);
       applyTerrainGrassTint(terrain, grassMap, style);
+    },
+    getDebugStats: () => {
+      const grassStats = grass?.getStats() ?? { layerCount: 0, bladeCount: 0, flowerCount: 0, drawCalls: 0 };
+      return {
+        ...instancing.getStats(),
+        grassLayers: grassStats.layerCount,
+        grassBlades: grassStats.bladeCount,
+        grassFlowers: grassStats.flowerCount,
+        grassDrawCalls: grassStats.drawCalls
+      };
     },
     refreshGrass: rebuildGrass,
     refreshTerrain: (next) => {

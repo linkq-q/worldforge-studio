@@ -322,7 +322,76 @@ p {
   background: rgba(9, 16, 18, 0.76);
   backdrop-filter: blur(8px);
   font: 700 0.7rem/1.2 ui-monospace, SFMono-Regular, Consolas, monospace;
-  pointer-events: none;
+  pointer-events: auto;
+  min-width: 270px;
+}
+
+.viewport-stats .perf-summary {
+  display: flex;
+  width: 100%;
+  gap: 9px;
+  align-items: center;
+  padding: 0;
+  border: 0;
+  color: inherit;
+  background: transparent;
+  font: inherit;
+  cursor: pointer;
+}
+
+.viewport-stats .perf-summary b {
+  color: var(--accent);
+}
+
+.viewport-stats .perf-details {
+  margin-top: 7px;
+  padding-top: 7px;
+  border-top: 1px solid rgba(170, 197, 191, 0.13);
+}
+
+.viewport-stats .perf-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px 12px;
+}
+
+.viewport-stats .perf-grid span,
+.viewport-stats .perf-pass-list div {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.viewport-stats .perf-pass-list,
+.viewport-stats .perf-pass-toggles {
+  display: grid;
+  gap: 4px;
+  margin-top: 8px;
+}
+
+.viewport-stats .perf-pass-toggles {
+  grid-template-columns: 1fr 1fr;
+}
+
+.viewport-stats .perf-pass-toggles strong {
+  grid-column: 1 / -1;
+}
+
+.viewport-stats .perf-pass-toggles button,
+.viewport-stats .perf-capture {
+  padding: 4px 6px;
+  font: inherit;
+}
+
+.viewport-stats .perf-capture {
+  width: 100%;
+  margin-top: 8px;
+}
+
+.viewport-stats small {
+  display: block;
+  margin-top: 5px;
+  color: #8fa39e;
 }
 
 .viewport-navigation {

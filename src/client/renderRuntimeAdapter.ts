@@ -216,6 +216,14 @@ export class RenderRuntimeAdapter {
     this.bloomPass.threshold = quality.bloom === 'strong' ? 0.72 : 0.86;
   }
 
+  getPerformanceStats() {
+    return this.frameCoordinator.getStats();
+  }
+
+  setDebugPassEnabled(id: string, enabled: boolean): void {
+    this.frameCoordinator.setPassEnabled(id, enabled);
+  }
+
   applyDistanceFog(color: string, density: number): void {
     this.fogDensity = Math.max(0, Number.isFinite(density) ? density : 0);
     configureDistanceFogPass(this.fogPass, color, density);

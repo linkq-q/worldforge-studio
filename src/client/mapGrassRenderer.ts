@@ -6,6 +6,7 @@ export interface RenderedGrassField {
   group: import('three').Group;
   update(deltaTime: number): void;
   setStyle(style: RuntimeGrassStyle): void;
+  getStats(): { layerCount: number; bladeCount: number; flowerCount: number; drawCalls: number };
   dispose(): void;
 }
 
@@ -26,6 +27,7 @@ export function buildMapGrassField(map: EditableMap, style?: RuntimeGrassStyle):
     group: field.group,
     update: (deltaTime) => field.update(deltaTime),
     setStyle: (style) => { field.setStyle(style); },
+    getStats: () => field.getStats(),
     dispose: () => field.dispose(),
   };
 }

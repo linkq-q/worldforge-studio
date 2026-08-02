@@ -51,7 +51,7 @@ import {
 import { buildEditableMapGroup, type RenderedMap } from './mapRenderer';
 import { buildModelGroup } from './modelRenderer';
 import { RenderSceneRuntime } from './renderSceneRuntime';
-import { RenderStats } from './renderStats';
+import { RenderStats, type RenderDebugDetails } from './renderStats';
 import {
   applyMapOperations,
   type MapAiSuggestion,
@@ -403,8 +403,12 @@ class MapEditor {
     this.renderer = renderScene.renderer;
     const statsElement = host.querySelector<HTMLElement>('#viewport-stats');
     if (statsElement) {
-      this.renderStats = new RenderStats(this.renderer.info, statsElement);
-      this.renderStats.setVisible(this.developerMode);
+      this.renderStats = new RenderStats(this.renderer.info, statsElement, 250, {
+        details: () => this.renderDebugDetails(),
+        canExpand: () => this.developerMode,
+        onTogglePass: (id, enabled) => this.renderScene?.adapter.setDebugPassEnabled(id, enabled)
+      });
+      this.renderStats.setVisible(true);
     }
     host.appendChild(this.renderer.domElement);
 
@@ -686,7 +690,7 @@ class MapEditor {
   }
 
   private renderPanels(): void {
-    this.renderStats?.setVisible(this.developerMode);
+    this.renderStats?.setVisible(true);
     this.renderMapSelector();
     this.renderHierarchy();
     const mapStage = this.state.stage === 'map';
@@ -1403,7 +1407,7 @@ class MapEditor {
     host.querySelector('#toggle-developer-mode')?.addEventListener('click', () => {
       this.developerMode = !this.developerMode;
       localStorage.setItem('worldforge.developerMode', this.developerMode ? 'on' : 'off');
-      this.renderStats?.setVisible(this.developerMode);
+      this.renderStats?.setVisible(true);
       this.state.message = this.developerMode ? '已进入开发者模式' : '已退出开发者模式';
       this.renderRenderInspector();
       this.updateToolbarState();
@@ -2377,6 +2381,28 @@ class MapEditor {
       ? this.renderDraft ?? this.selectedRenderScheme()
       : null;
     this.renderScene?.applyScheme(scheme);
+  }
+
+  private renderDebugDetails(): RenderDebugDetails {
+    const mapStats = this.renderedMap?.getDebugStats();
+    const pipeline = this.renderScene?.adapter.getPerformanceStats();
+    return {
+      objects: this.state.map?.objects.length ?? 0,
+      waters: this.state.map?.waterBodies.length ?? 0,
+      batchableParts: mapStats?.batchableParts ?? 0,
+      instancedParts: mapStats?.instancedParts ?? 0,
+      batchedMeshParts: mapStats?.batchedMeshParts ?? 0,
+      fallbackParts: mapStats?.fallbackMeshParts ?? 0,
+      batchCount: mapStats?.batchCount ?? 0,
+      culled: mapStats?.culled ?? 0,
+      tested: mapStats?.tested ?? 0,
+      grassBlades: mapStats?.grassBlades ?? 0,
+      grassFlowers: mapStats?.grassFlowers ?? 0,
+      grassDrawCalls: mapStats?.grassDrawCalls ?? 0,
+      stages: pipeline?.stages ?? [],
+      passes: pipeline?.passes ?? [],
+      composerPasses: pipeline?.composerTrace?.passes ?? []
+    };
   }
 
   private animate(): void {

@@ -27,7 +27,19 @@ export interface MapPrimitiveBatchResult {
   pickables: THREE.Object3D[];
   syncObjectTransform: (objectId: string) => void;
   updateCulling: (camera: THREE.Camera, maxDistance: number) => MapObjectCullingStats;
+  getStats: () => MapPrimitiveBatchStats;
   dispose: () => void;
+}
+
+export interface MapPrimitiveBatchStats {
+  totalParts: number;
+  batchableParts: number;
+  instancedParts: number;
+  batchedMeshParts: number;
+  fallbackMeshParts: number;
+  batchCount: number;
+  culled: number;
+  tested: number;
 }
 
 interface ModelNode {
@@ -85,6 +97,7 @@ export async function buildMapPrimitiveBatches(inputs: MapPrimitiveBatchInput[])
   root.name = 'mapPrimitiveBatches';
   const runtimeIndex = new RuntimeIndex();
   const objectCulling = new MapObjectCulling(runtimeIndex);
+  let cullingStats: MapObjectCullingStats = { tested: 0, culled: 0 };
   const surfaceBindings: Array<{ material: THREE.Material; binding: Record<string, unknown> }> = [];
   const effectRuntime = createEffectRuntime().runtime;
   const batcher = new AIPrimitiveBatcher({
@@ -142,7 +155,22 @@ export async function buildMapPrimitiveBatches(inputs: MapPrimitiveBatchInput[])
         if (group === changed || isDescendantOf(group, changed)) batcher.updateModelInstanceMatrices(candidateId);
       }
     },
-    updateCulling: (camera, maxDistance) => objectCulling.update(camera, maxDistance),
+    updateCulling: (camera, maxDistance) => {
+      cullingStats = objectCulling.update(camera, maxDistance);
+      return cullingStats;
+    },
+    getStats: () => {
+      const audit = batcher.getSceneAudit();
+      return {
+        totalParts: audit.totalParts ?? 0,
+        batchableParts: audit.batchableParts ?? 0,
+        instancedParts: audit.instancedParts ?? 0,
+        batchedMeshParts: audit.batchedMeshParts ?? 0,
+        fallbackMeshParts: audit.fallbackMeshParts ?? audit.fallbackParts ?? 0,
+        batchCount: audit.batchCount ?? 0,
+        ...cullingStats
+      };
+    },
     dispose: () => {
       objectCulling.dispose();
       surfaceBindings.length = 0;
