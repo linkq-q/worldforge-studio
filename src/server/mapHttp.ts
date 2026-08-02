@@ -33,6 +33,10 @@ import {
 import { generateRenderSuggestion, refineRenderSuggestion } from './renderAi';
 import { MapStore, mapEditorCliManifest } from './mapStore';
 import { isCompositionEmptyMap } from '../shared/sceneComposition';
+import {
+  decodeWorldForgeTransfer,
+  replaceRenderSchemeHdriFile
+} from '../shared/scenePackage';
 
 type Req = http.IncomingMessage;
 type Res = http.ServerResponse;
@@ -133,7 +137,41 @@ async function handleEditorRoute(req: Req, res: Res, store: MapStore, parts: str
     return;
   }
 
+  if (parts[2] === 'import' && req.method === 'POST' && parts.length === 3) {
+    await handleEditorImport(req, res, store);
+    return;
+  }
+
   throw new HttpError(404, 'not_found');
+}
+
+async function handleEditorImport(req: Req, res: Res, store: MapStore): Promise<void> {
+  const transfer = decodeWorldForgeTransfer(new Uint8Array(await readBody(req, 512 * 1024 * 1024)));
+  if (transfer.kind === 'render-scheme') {
+    const renderScheme = await store.saveRenderScheme(transfer.renderScheme);
+    sendJson(res, 201, { kind: transfer.kind, renderScheme });
+    return;
+  }
+  if (transfer.kind === 'map') {
+    const map = await store.importMap(transfer.map);
+    sendJson(res, 201, { kind: transfer.kind, map });
+    return;
+  }
+
+  let renderScheme = transfer.renderScheme;
+  let hdriImported: string | null = null;
+  if (transfer.hdri) {
+    hdriImported = await store.importHdri(transfer.hdri.file, transfer.hdri.bytes);
+    renderScheme = replaceRenderSchemeHdriFile(renderScheme, hdriImported);
+  }
+  const savedScheme = await store.saveRenderScheme(renderScheme);
+  const map = await store.importMap(transfer.map, savedScheme.id);
+  sendJson(res, 201, {
+    kind: transfer.kind,
+    map,
+    renderScheme: savedScheme,
+    hdriImported
+  });
 }
 
 const HDRI_CONTENT_TYPES: Record<string, string> = {
@@ -497,10 +535,21 @@ function isTransactionSource(value: unknown): value is MapTransactionSource {
 }
 
 async function readJson<T>(req: Req): Promise<T> {
+  const body = await readBody(req, 16 * 1024 * 1024);
+  if (body.length === 0) return {} as T;
+  return JSON.parse(body.toString('utf8')) as T;
+}
+
+async function readBody(req: Req, maxBytes: number): Promise<Buffer> {
   const chunks: Buffer[] = [];
-  for await (const chunk of req) chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
-  if (chunks.length === 0) return {} as T;
-  return JSON.parse(Buffer.concat(chunks).toString('utf8')) as T;
+  let bytes = 0;
+  for await (const chunk of req) {
+    const buffer = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk);
+    bytes += buffer.byteLength;
+    if (bytes > maxBytes) throw new HttpError(413, 'request_too_large');
+    chunks.push(buffer);
+  }
+  return Buffer.concat(chunks);
 }
 
 function sendJson(res: Res, status: number, body: unknown): void {

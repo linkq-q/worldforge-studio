@@ -53,6 +53,11 @@ import { buildModelGroup } from './modelRenderer';
 import { RenderSceneRuntime } from './renderSceneRuntime';
 import { RenderStats, type RenderDebugDetails } from './renderStats';
 import {
+  exportWorldForge,
+  importWorldForgeFile,
+  type EditorExportKind
+} from './editorTransfer';
+import {
   applyMapOperations,
   type MapAiSuggestion,
   type MapTransactionSummary
@@ -299,6 +304,16 @@ class MapEditor {
               <button id="undo-transaction" class="secondary" disabled title="撤销最近一次 AI/Agent 生成">撤销 AI</button>
               <button id="confirm-map" title="进入渲染阶段">进入渲染</button>
               <button id="save-map">保存</button>
+              <details class="toolbar-transfer">
+                <summary>导出</summary>
+                <div class="toolbar-transfer-menu">
+                  <button type="button" data-editor-export="map">地图数据</button>
+                  <button type="button" data-editor-export="render-scheme">渲染方案</button>
+                  <button type="button" data-editor-export="scene">完整场景包</button>
+                  <button type="button" id="import-transfer">导入文件…</button>
+                </div>
+              </details>
+              <input id="import-transfer-file" type="file" accept=".json,.zip,application/json,application/zip" hidden>
             </div>
             <span id="editor-status"></span>
           </header>
@@ -353,6 +368,19 @@ class MapEditor {
     this.app.querySelector('#undo-edit')?.addEventListener('click', () => void this.undoManualEdit());
     this.app.querySelector('#redo-edit')?.addEventListener('click', () => void this.redoManualEdit());
     this.app.querySelector('#undo-transaction')?.addEventListener('click', () => void this.undoLatestTransaction());
+    this.app.querySelectorAll<HTMLButtonElement>('[data-editor-export]').forEach((button) => {
+      button.addEventListener('click', () => {
+        void this.exportTransfer(button.dataset.editorExport as EditorExportKind);
+        button.closest('details')?.removeAttribute('open');
+      });
+    });
+    const importInput = this.app.querySelector<HTMLInputElement>('#import-transfer-file');
+    this.app.querySelector('#import-transfer')?.addEventListener('click', () => importInput?.click());
+    importInput?.addEventListener('change', () => {
+      const file = importInput.files?.[0];
+      importInput.value = '';
+      if (file) void this.importTransfer(file);
+    });
     this.app.querySelector('#editor-map-select')?.addEventListener('change', async (event) => {
       const id = (event.target as HTMLSelectElement).value;
       if (!await this.loadMap(id)) this.renderMapSelector();
@@ -1628,6 +1656,60 @@ class MapEditor {
   private selectedRenderScheme(): RenderScheme | null {
     const id = this.state.map?.renderSchemeId;
     return this.state.renderSchemes.find((scheme) => scheme.id === id) ?? this.state.renderSchemes[0] ?? null;
+  }
+
+  private async exportTransfer(kind: EditorExportKind): Promise<void> {
+    const map = this.state.map;
+    if (!map || this.state.busy) return;
+    if (this.state.dirty || this.mapAiPreviewMap || this.renderDraftChanged) {
+      this.state.message = '请先保存或确认当前预览，再导出稳定版本';
+      this.updateToolbarState();
+      return;
+    }
+    if (kind !== 'render-scheme' && !map.confirmedAt) {
+      this.state.message = '请先确认地图，再导出地图或完整场景包';
+      this.updateToolbarState();
+      return;
+    }
+    this.setBusy(true, '正在打包导出文件...');
+    try {
+      const file = await exportWorldForge(kind, map, this.selectedRenderScheme(), {
+        hdriUrl: (name) => `${serverHttpBase(location, import.meta.env.DEV)}/api/editor/hdri/${encodeURIComponent(name)}`
+      });
+      this.state.message = `已导出：${file}`;
+    } catch (error) {
+      this.state.message = `导出失败：${error instanceof Error ? error.message : '未知错误'}`;
+    } finally {
+      this.setBusy(false);
+    }
+  }
+
+  private async importTransfer(file: File): Promise<void> {
+    if (this.state.busy) return;
+    if (this.state.dirty || this.mapAiPreviewMap || this.renderDraftChanged) {
+      this.state.message = '请先保存或放弃当前预览，再导入文件';
+      this.updateToolbarState();
+      return;
+    }
+    this.setBusy(true, `正在导入 ${file.name}...`);
+    try {
+      const result = await importWorldForgeFile(
+        file,
+        `${serverHttpBase(location, import.meta.env.DEV)}/api/editor/import`
+      );
+      await this.reloadLists();
+      if (result.map) await this.loadMap(result.map.id);
+      this.state.message = result.kind === 'scene'
+        ? '完整场景包已导入为新项目'
+        : result.kind === 'map'
+          ? '地图已导入为新项目'
+          : '渲染方案已导入';
+    } catch (error) {
+      this.state.message = `导入失败：${error instanceof Error ? error.message : '未知错误'}`;
+    } finally {
+      this.setBusy(false);
+      this.renderPanels();
+    }
   }
 
   private ensureRenderDraftPlan(): RenderPlan | null {

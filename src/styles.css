@@ -263,6 +263,51 @@ p {
   font-size: 0.8rem;
 }
 
+.toolbar-transfer {
+  position: relative;
+}
+
+.toolbar-transfer > summary {
+  min-height: 34px;
+  display: grid;
+  place-items: center;
+  padding: 0 10px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: var(--panel-raised);
+  color: var(--text);
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-weight: 800;
+  list-style: none;
+}
+
+.toolbar-transfer > summary::-webkit-details-marker {
+  display: none;
+}
+
+.toolbar-transfer-menu {
+  position: absolute;
+  z-index: 12;
+  top: calc(100% + 7px);
+  right: 0;
+  width: 168px;
+  display: grid;
+  gap: 4px;
+  padding: 6px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: rgba(13, 25, 28, 0.98);
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.36);
+}
+
+.toolbar-transfer-menu button {
+  width: 100%;
+  justify-content: flex-start;
+  background: transparent;
+  text-align: left;
+}
+
 .stage-switcher {
   flex: 0 0 auto;
 }

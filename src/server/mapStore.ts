@@ -452,6 +452,60 @@ export class MapStore {
     return { ...hydrated, collisionBake: getMapCollisionBake(hydrated) };
   }
 
+  /** Imports a portable map as a new project and remaps embedded assets. */
+  async importMap(input: EditableMap, renderSchemeId: string | null = null): Promise<EditableMap> {
+    await this.ensureReady();
+    const source = normalizeMap(input);
+    const now = Date.now();
+    const embeddedAssetIds = new Set((source.assets ?? []).map((asset) => asset.id));
+    if (source.objects.some((object) => object.assetId && !embeddedAssetIds.has(object.assetId))) {
+      throw new Error('import_missing_embedded_asset');
+    }
+    const assetIds = new Map<string, string>();
+    for (const rawAsset of source.assets ?? []) {
+      const asset = normalizeAsset(rawAsset);
+      const imported = {
+        ...asset,
+        id: createId('asset'),
+        createdAt: now,
+        updatedAt: now
+      };
+      await atomicWriteJson(this.assetPath(imported.id), imported);
+      assetIds.set(asset.id, imported.id);
+    }
+    const objects = source.objects.map((object) => ({
+      ...object,
+      assetId: object.assetId ? assetIds.get(object.assetId) ?? null : null
+    }));
+    const imported = normalizeMap({
+      ...source,
+      id: createId('map'),
+      name: `${source.name}（导入）`,
+      version: 1,
+      createdAt: now,
+      updatedAt: now,
+      renderSchemeId,
+      objects,
+      assets: undefined
+    });
+    await atomicWriteJson(this.mapPath(imported.id), imported);
+    return this.hydrateMap(imported);
+  }
+
+  /** Adds an EXR from a portable scene package without overwriting a different file. */
+  async importHdri(file: string, bytes: Uint8Array): Promise<string> {
+    await this.ensureReady();
+    const requested = path.basename(file);
+    if (hdriExtensionOf(requested) !== 'exr') throw new Error('import_hdri_requires_exr');
+    let actual = requested;
+    const existing = await readFile(path.join(this.hdriDir, actual)).catch(() => null);
+    if (existing && !existing.equals(Buffer.from(bytes))) {
+      actual = `${path.basename(requested, '.exr')}-import-${Date.now()}.exr`;
+    }
+    if (!existing || actual !== requested) await writeFile(path.join(this.hdriDir, actual), bytes);
+    return actual;
+  }
+
   private async readMapFile(id: string): Promise<EditableMap> {
     const text = await readFile(this.mapPath(id), 'utf8');
     return normalizeMap(JSON.parse(text) as Partial<EditableMap>);
