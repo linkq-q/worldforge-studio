@@ -11,7 +11,21 @@ declare module '@voxel-studio/render-runtime' {
     setCartoonParams(params: Record<string, number>): void;
   }
   export class RuntimeIndex {
+    renderRevision: number;
+    partToRender: Map<string, { object?: import('three').Object3D }>;
+    registerMesh(
+      partId: string,
+      object: import('three').Object3D,
+      options?: Record<string, unknown>
+    ): unknown;
     getPartIdFromHit(hit: import('three').Intersection): string | null;
+    clear(): void;
+  }
+  export class ObjectDistanceCuller {
+    constructor(options?: { hysteresis?: number });
+    syncRuntimeIndex(runtimeIndex: RuntimeIndex): boolean;
+    update(camera: import('three').Camera, maxDistance: number): { tested: number; culled: number };
+    dispose(): void;
   }
   export class AIPrimitiveBatcher {
     constructor(options?: {

@@ -4,6 +4,7 @@ import {
   bindDistanceFogDepth,
   configureWaterReflection,
   configureDistanceFogPass,
+  distanceAtFogOpacity,
   syncWaterSurfaceEnvironment
 } from '../src/client/renderEnvironmentBridge';
 
@@ -39,6 +40,11 @@ describe('render environment bridge', () => {
     expect(pass.uniforms.uCameraNear.value).toBe(0.25);
     expect(pass.uniforms.uCameraFar.value).toBe(900);
     depth.dispose();
+  });
+
+  it('derives a conservative culling distance from the same exponential fog curve', () => {
+    expect(distanceAtFogOpacity(0)).toBe(Number.POSITIVE_INFINITY);
+    expect(distanceAtFogOpacity(0.018, 0.995)).toBeCloseTo(127.86, 1);
   });
 
   it('feeds and clears the same HDRI environment on WaterSurface', () => {

@@ -28,14 +28,16 @@ import {
   DEFAULT_RUNTIME_GRASS_STYLE,
   type RuntimeGrassStyle,
 } from '../shared/renderPlan';
+import type { RuntimeIndex } from '@voxel-studio/render-runtime';
 
 export interface RenderedMap {
   group: THREE.Group;
   modelsRoot: THREE.Group;
+  runtimeIndex: RuntimeIndex;
   objectGroups: Map<string, THREE.Group>;
   pickables: THREE.Object3D[];
   syncObjectTransform: (objectId: string) => void;
-  update: (deltaTime: number) => void;
+  update: (deltaTime: number, camera: THREE.Camera, maxDistance: number) => void;
   setGrassStyle: (style: RuntimeGrassStyle) => void;
   dispose: () => void;
 }
@@ -99,10 +101,14 @@ export async function buildEditableMapGroup(input: EditableMap, options: MapRend
   return {
     group: root,
     modelsRoot,
+    runtimeIndex: instancing.runtimeIndex,
     objectGroups,
     pickables,
     syncObjectTransform: instancing.syncObjectTransform,
-    update: (deltaTime) => grass?.update(deltaTime),
+    update: (deltaTime, camera, maxDistance) => {
+      grass?.update(deltaTime);
+      instancing.updateCulling(camera, maxDistance);
+    },
     setGrassStyle: (style) => {
       grass?.setStyle(style);
       applyTerrainGrassTint(terrain, map, style);

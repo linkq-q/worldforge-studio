@@ -236,6 +236,80 @@ describe('structured map water rendering', () => {
     expect(rendered.objectGroups.get('flame-0')?.getObjectByName('flame')).toBeDefined();
     rendered.dispose();
   });
+
+  it('keeps mixed standalone siblings without mutating the fallback tree during traversal', async () => {
+    const map = createEmptyMap('mixed-runtime', 'map-mixed-runtime-assets');
+    const now = Date.now();
+    const asset: MapAsset = {
+      id: 'asset-campfire',
+      name: 'campfire',
+      prompt: 'campfire',
+      modelJson: {
+        nodes: [
+          { id: 'root' },
+          {
+            id: 'wood',
+            parent: 'root',
+            mesh: { type: 'box', params: { width: 1, height: 0.5, depth: 1 }, color: 0x553311 }
+          },
+          {
+            id: 'flame',
+            parent: 'root',
+            tags: [{ tag: 'fire', value: 1 }],
+            mesh: { type: 'box', params: { width: 0.4, height: 0.8, depth: 0.4 }, color: 0xff8822 }
+          }
+        ]
+      },
+      colliderPlan: { version: 1, boxes: [], sourceMeshCount: 2, candidateCount: 2, fallbackUsed: false },
+      mode: 'voxel', createdAt: now, updatedAt: now
+    };
+    map.assets = [asset];
+    map.objects = [createTestObject('campfire-0', asset.id)];
+
+    const rendered = await buildEditableMapGroup(map);
+    expect(rendered.objectGroups.get('campfire-0')?.getObjectByName('wood')).toBeUndefined();
+    expect(rendered.objectGroups.get('campfire-0')?.getObjectByName('flame')).toBeDefined();
+    rendered.dispose();
+  });
+
+  it('distance-culls indexed standalone parts and restores them near the camera', async () => {
+    const map = createEmptyMap('culling-runtime', 'map-culling-runtime');
+    const now = Date.now();
+    const asset: MapAsset = {
+      id: 'asset-flame',
+      name: 'flame',
+      prompt: 'flame',
+      modelJson: {
+        nodes: [{
+          id: 'flame',
+          tags: [{ tag: 'fire', value: 1 }],
+          mesh: { type: 'box', params: { width: 1, height: 1, depth: 1 }, color: 0xff8822 }
+        }]
+      },
+      colliderPlan: { version: 1, boxes: [], sourceMeshCount: 1, candidateCount: 1, fallbackUsed: false },
+      mode: 'voxel', createdAt: now, updatedAt: now
+    };
+    const near = createTestObject('flame-near', asset.id);
+    const far = createTestObject('flame-far', asset.id);
+    far.transform.position = [100, 0, 0];
+    map.assets = [asset];
+    map.objects = [near, far];
+
+    const rendered = await buildEditableMapGroup(map);
+    const camera = new THREE.PerspectiveCamera(55, 1, 0.1, 1000);
+    const nearMesh = rendered.objectGroups.get('flame-near')?.getObjectByName('flame') as THREE.Mesh;
+    const farMesh = rendered.objectGroups.get('flame-far')?.getObjectByName('flame') as THREE.Mesh;
+
+    rendered.update(0, camera, 20);
+    expect(nearMesh.visible).toBe(true);
+    expect(farMesh.visible).toBe(false);
+
+    camera.position.x = 100;
+    rendered.update(0, camera, 20);
+    expect(nearMesh.visible).toBe(false);
+    expect(farMesh.visible).toBe(true);
+    rendered.dispose();
+  });
 });
 
 function createTestObject(id: string, assetId: string) {

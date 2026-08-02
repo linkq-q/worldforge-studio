@@ -11,6 +11,7 @@ import {
 import materialTagVocabulary from '@voxel-studio/render-runtime/model/material-tags-v1.json';
 import type { MapAsset } from '../shared/map';
 import { buildModelGroup } from './modelRenderer';
+import { MapObjectCulling, type MapObjectCullingStats } from './mapObjectCulling';
 
 export interface MapPrimitiveBatchInput {
   objectId: string;
@@ -21,9 +22,11 @@ export interface MapPrimitiveBatchInput {
 
 export interface MapPrimitiveBatchResult {
   root: THREE.Group;
+  runtimeIndex: RuntimeIndex;
   handledObjectIds: Set<string>;
   pickables: THREE.Object3D[];
   syncObjectTransform: (objectId: string) => void;
+  updateCulling: (camera: THREE.Camera, maxDistance: number) => MapObjectCullingStats;
   dispose: () => void;
 }
 
@@ -81,6 +84,7 @@ export async function buildMapPrimitiveBatches(inputs: MapPrimitiveBatchInput[])
   const root = new THREE.Group();
   root.name = 'mapPrimitiveBatches';
   const runtimeIndex = new RuntimeIndex();
+  const objectCulling = new MapObjectCulling(runtimeIndex);
   const surfaceBindings: Array<{ material: THREE.Material; binding: Record<string, unknown> }> = [];
   const effectRuntime = createEffectRuntime().runtime;
   const batcher = new AIPrimitiveBatcher({
@@ -113,7 +117,7 @@ export async function buildMapPrimitiveBatches(inputs: MapPrimitiveBatchInput[])
     }
     input.objectGroup.updateWorldMatrix(true, false);
     batcher.compile(input.objectId, input.objectGroup);
-    template.usedByFallback = addFallbackVisual(input, template.group, batchableNodeIds) || template.usedByFallback;
+    template.usedByFallback = addFallbackVisual(input, template.group, batchableNodeIds, runtimeIndex) || template.usedByFallback;
     handledObjectIds.add(input.objectId);
   }
 
@@ -128,6 +132,7 @@ export async function buildMapPrimitiveBatches(inputs: MapPrimitiveBatchInput[])
 
   return {
     root,
+    runtimeIndex,
     handledObjectIds,
     pickables,
     syncObjectTransform: (objectId) => {
@@ -137,9 +142,12 @@ export async function buildMapPrimitiveBatches(inputs: MapPrimitiveBatchInput[])
         if (group === changed || isDescendantOf(group, changed)) batcher.updateModelInstanceMatrices(candidateId);
       }
     },
+    updateCulling: (camera, maxDistance) => objectCulling.update(camera, maxDistance),
     dispose: () => {
+      objectCulling.dispose();
       surfaceBindings.length = 0;
       batcher.dispose();
+      runtimeIndex.clear();
       for (const template of preparedTemplates) disposeUnusedTemplateResources(template);
     }
   };
@@ -221,11 +229,20 @@ function matrixForPart(part: BatchPart): THREE.Matrix4 {
   );
 }
 
-function addFallbackVisual(input: MapPrimitiveBatchInput, template: THREE.Group, batchableNodeIds: Set<string>): boolean {
+function addFallbackVisual(
+  input: MapPrimitiveBatchInput,
+  template: THREE.Group,
+  batchableNodeIds: Set<string>,
+  runtimeIndex: RuntimeIndex
+): boolean {
   const visual = cloneAssetVisual(template);
+  const batchedMeshes: THREE.Object3D[] = [];
   visual.traverse((child) => {
-    if ((child as THREE.Mesh).isMesh && batchableNodeIds.has(String(child.userData.nodeId ?? ''))) child.removeFromParent();
+    if ((child as THREE.Mesh).isMesh && batchableNodeIds.has(String(child.userData.nodeId ?? ''))) {
+      batchedMeshes.push(child);
+    }
   });
+  for (const mesh of batchedMeshes) mesh.removeFromParent();
   if (!hasVisibleMesh(visual)) {
     addSelectionProxy(input.objectGroup, template);
     return false;
@@ -235,6 +252,15 @@ function addFallbackVisual(input: MapPrimitiveBatchInput, template: THREE.Group,
     if ((child as THREE.Mesh).isMesh) {
       child.castShadow = true;
       child.receiveShadow = true;
+      const rawPartId = String(child.userData.nodeId ?? '');
+      if (rawPartId) {
+        runtimeIndex.registerMesh(`${input.objectId}:${rawPartId}`, child, {
+          modelId: input.objectId,
+          rawPartId,
+          source: 'worldforge-map-fallback',
+          mode: 'fallback'
+        });
+      }
     }
   });
   input.objectGroup.add(visual);

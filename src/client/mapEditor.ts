@@ -2437,7 +2437,13 @@ class MapEditor {
     this.updateKeyboardCamera(dt);
     this.orbit?.update();
     this.selectionOutline?.update();
-    this.renderedMap?.update(dt);
+    if (this.renderedMap && this.camera) {
+      this.renderedMap.update(
+        dt,
+        this.camera,
+        this.renderRuntimeAdapter?.getContentVisibilityDistance() ?? this.camera.far
+      );
+    }
     this.renderRuntimeAdapter?.tick(dt, now / 1000);
     this.renderStats?.beginFrame();
     this.renderRuntimeAdapter?.render();

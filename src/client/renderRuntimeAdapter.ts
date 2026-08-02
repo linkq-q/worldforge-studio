@@ -28,6 +28,7 @@ import {
   bindDistanceFogDepth,
   configureWaterReflection,
   configureDistanceFogPass,
+  distanceAtFogOpacity,
   syncWaterSurfaceEnvironment
 } from './renderEnvironmentBridge';
 import { createComposerRenderTarget } from './renderOutputPipeline';
@@ -77,6 +78,7 @@ export class RenderRuntimeAdapter {
   private readonly effectRuntime = createEffectRuntime().runtime;
   private readonly materialTagRuntime: WorldForgeMaterialTagRuntime;
   private readonly planarWaterReflection: PlanarWaterReflection;
+  private fogDensity = 0;
   private readonly materialBaselines = new Map<THREE.Material, MaterialBaseline>();
   private readonly waterBindings: WaterBinding[] = [];
   private contentRoot: THREE.Object3D | null = null;
@@ -209,7 +211,12 @@ export class RenderRuntimeAdapter {
   }
 
   applyDistanceFog(color: string, density: number): void {
+    this.fogDensity = Math.max(0, Number.isFinite(density) ? density : 0);
     configureDistanceFogPass(this.fogPass, color, density);
+  }
+
+  getContentVisibilityDistance(): number {
+    return Math.min(this.camera.far, distanceAtFogOpacity(this.fogDensity));
   }
 
   syncEnvironment(environmentMap: THREE.Texture | null = this.scene.environment): void {

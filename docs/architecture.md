@@ -5,6 +5,14 @@
 Place `.exr` files in `data/map-editor/hdri/` and copy `docs/hdri-catalog.example.json` there as `catalog.json`.
 Each entry gives the AI curated mood tags plus optional `skyColor` and `groundColor` swatches. The AI may select only an indexed filename; the selected ground swatch harmonizes distance fog and hemisphere light. Do not rely on random filenames for atmosphere matching.
 
+## Render runtime lifecycle
+
+Each rendered map owns one `RuntimeIndex` for the whole map lifetime. `AIPrimitiveBatcher` registers shared primitive batches in it, while standalone fallback meshes are registered with the same `${mapObjectId}:${partId}` identity. Picking, future material isolation, and object culling must consume this shared index instead of building parallel object maps.
+
+`ObjectDistanceCuller` runs after camera controls update and before the render runtime tick. Its maximum distance follows the active exponential-fog curve at 99.5% opacity; with fog disabled it falls back to the camera far plane. Disposal restores culler-owned visibility before batches and the index are cleared.
+
+Never remove children during `Object3D.traverse()`. Collect targets first and detach them after traversal so Three.js does not iterate a shortened `children` array with its original length.
+
 ## 目标
 
 一个面向非技术创作者与专业开发者的场景编辑器。两种模式编辑同一份地图数据，用户可以在两种模式间继续编辑，而不是导入导出两个不兼容项目。
