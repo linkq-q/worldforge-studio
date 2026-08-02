@@ -6,7 +6,9 @@
       "Read(//c/Users/31483/Documents/GitHub/3d-generate/packages/voxel-render-runtime/src/**)",
       "Read(//c/Users/31483/Documents/GitHub/**)",
       "Read(//c/Users/31483/Documents/GitHub/3d-generate/**)",
-      "WebFetch(domain:github.com)"
+      "WebFetch(domain:github.com)",
+      "PowerShell(npx tsc --noEmit -p tsconfig.json)",
+      "Bash(cd \"C:/Users/31483/Documents/GitHub/worldforge-studio\" && cat vite.config.* 2>/dev/null; echo \"--- tsconfig paths ---\"; cat tsconfig.json; echo \"--- runtime pkg? ---\"; ls ../ | head -30; ls packages 2>/dev/null)"
     ]
   }
 }
