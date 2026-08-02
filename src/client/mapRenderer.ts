@@ -30,6 +30,7 @@ import {
 } from '../shared/renderPlan';
 import type { RuntimeIndex } from '@voxel-studio/render-runtime';
 import type { MapPrimitiveBatchStats } from './mapPrimitiveBatching';
+import type { Vec3 } from '../shared/protocol';
 
 export interface RenderedMapDebugStats extends MapPrimitiveBatchStats {
   grassLayers: number;
@@ -50,6 +51,8 @@ export interface RenderedMap {
   syncMaterialEnvironment: (environmentMap: THREE.Texture | null) => void;
   getRuntimeBatchMeshes: () => THREE.Object3D[];
   setGrassStyle: (style: RuntimeGrassStyle) => void;
+  interactGrass: (position: Vec3, elapsedSeconds: number) => void;
+  clearGrassInteraction: () => void;
   getDebugStats: () => RenderedMapDebugStats;
   /**
    * Rebuilds only the grass field and the terrain tint that follows it. Grass
@@ -158,6 +161,8 @@ export async function buildEditableMapGroup(input: EditableMap, options: MapRend
       grass?.setStyle(style);
       applyTerrainGrassTint(terrain, grassMap, style);
     },
+    interactGrass: (position, elapsedSeconds) => grass?.interact(position, elapsedSeconds),
+    clearGrassInteraction: () => grass?.clearInteraction(),
     getDebugStats: () => {
       const grassStats = grass?.getStats() ?? { layerCount: 0, bladeCount: 0, flowerCount: 0, drawCalls: 0 };
       return {

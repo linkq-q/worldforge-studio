@@ -59,6 +59,11 @@ interface WaterBinding {
   surface: WaterSurface | WaterfallSurface;
 }
 
+type InteractiveWaterSurface = WaterSurface & {
+  setRippleDecalParams(params: Record<string, unknown>): void;
+  addRippleDecalPoint(x: number, z: number): number;
+};
+
 export class RenderRuntimeAdapter {
   private readonly composer: EffectComposer;
   private readonly frameCoordinator: RenderFrameCoordinator;
@@ -82,6 +87,7 @@ export class RenderRuntimeAdapter {
   private fogDensity = 0;
   private readonly materialBaselines = new Map<THREE.Material, MaterialBaseline>();
   private readonly waterBindings: WaterBinding[] = [];
+  private readonly waterInteractionAt = new Map<string, number>();
   private contentRoot: THREE.Object3D | null = null;
   private modelsRoot: THREE.Object3D | null = null;
   private restoreMaterialEffects: (() => void) | null = null;
@@ -259,6 +265,25 @@ export class RenderRuntimeAdapter {
     }
   }
 
+  addWaterInteraction(waterBodyId: string, x: number, z: number, elapsedSeconds: number): void {
+    const last = this.waterInteractionAt.get(waterBodyId) ?? -Infinity;
+    if (elapsedSeconds - last < 0.24) return;
+    const binding = this.waterBindings.find((candidate) => candidate.mesh.userData.waterBodyId === waterBodyId);
+    if (!binding || !(binding.surface instanceof WaterSurface)) return;
+    const surface = binding.surface as InteractiveWaterSurface;
+    surface.setRippleDecalParams({
+      enabled: true,
+      radius: 0.72,
+      speed: 1.35,
+      width: 0.13,
+      strength: 0.7,
+      lifetime: 1.25,
+      normalStrength: 0.42
+    });
+    surface.addRippleDecalPoint(x, z);
+    this.waterInteractionAt.set(waterBodyId, elapsedSeconds);
+  }
+
   applyScopedCapabilities(
     materialThemes: RuntimeMaterialTheme[],
     waterStyles: RuntimeWaterStyle[],
@@ -272,6 +297,7 @@ export class RenderRuntimeAdapter {
   }
 
   resetScopedCapabilities(): void {
+    this.waterInteractionAt.clear();
     this.planarWaterReflection.setBindings([]);
     for (const binding of this.waterBindings.splice(0)) {
       binding.mesh.material = binding.originalMaterial;

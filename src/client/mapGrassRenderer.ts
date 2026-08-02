@@ -1,11 +1,15 @@
 import { CartoonGrassField } from '@voxel-studio/render-runtime';
 import { sampleTerrainHeight, type EditableMap } from '../shared/map';
 import type { RuntimeGrassStyle } from '../shared/renderPlan';
+import type { Vec3 } from '../shared/protocol';
+import { MapGrassInteraction } from './mapGrassInteraction';
 
 export interface RenderedGrassField {
   group: import('three').Group;
   update(deltaTime: number): void;
   setStyle(style: RuntimeGrassStyle): void;
+  interact(position: Vec3, elapsedSeconds: number): void;
+  clearInteraction(): void;
   getStats(): { layerCount: number; bladeCount: number; flowerCount: number; drawCalls: number };
   dispose(): void;
 }
@@ -23,12 +27,22 @@ export function buildMapGrassField(map: EditableMap, style?: RuntimeGrassStyle):
     // Building with the style avoids a second full rebuild from setStyle.
     ...(style ? { style } : {}),
   });
+  let interaction = new MapGrassInteraction(field.group);
   return {
     group: field.group,
     update: (deltaTime) => field.update(deltaTime),
-    setStyle: (style) => { field.setStyle(style); },
+    setStyle: (style) => {
+      interaction.restore();
+      field.setStyle(style);
+      interaction = new MapGrassInteraction(field.group);
+    },
+    interact: (position, elapsedSeconds) => interaction.update(position, elapsedSeconds),
+    clearInteraction: () => interaction.restore(),
     getStats: () => field.getStats(),
-    dispose: () => field.dispose(),
+    dispose: () => {
+      interaction.restore();
+      field.dispose();
+    },
   };
 }
 

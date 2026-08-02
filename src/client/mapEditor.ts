@@ -52,6 +52,7 @@ import { buildEditableMapGroup, type RenderedMap } from './mapRenderer';
 import { buildModelGroup } from './modelRenderer';
 import { RenderSceneRuntime } from './renderSceneRuntime';
 import { RenderStats, type RenderDebugDetails } from './renderStats';
+import { PlayModeController } from './playModeController';
 import {
   exportWorldForge,
   importWorldForgeFile,
@@ -160,6 +161,7 @@ class MapEditor {
   private camera: THREE.PerspectiveCamera | null = null;
   private renderer: THREE.WebGLRenderer | null = null;
   private renderStats: RenderStats | null = null;
+  private playMode: PlayModeController | null = null;
   private hdriFiles: string[] = [];
   private orbit: OrbitControls | null = null;
   private transform: TransformControls | null = null;
@@ -327,7 +329,12 @@ class MapEditor {
               <button data-view="right" title="右视图">右</button>
               <button data-frame="selection" title="聚焦选中物体（F）">选中</button>
               <button data-frame="all" title="显示完整地图（Home）">全景</button>
+              <button data-play-mode title="从出生点进入第一人称游玩视角">游玩</button>
             </nav>
+            <div class="play-mode-hud" hidden>
+              <span class="play-crosshair" aria-hidden="true"></span>
+              <div class="play-mode-help"><b>游玩视角</b><span>WASD 移动 · Shift 冲刺 · Space 跳跃 · Esc 退出</span></div>
+            </div>
             <details class="shortcut-help">
               <summary>快捷键</summary>
               <div class="shortcut-help-panel" aria-label="地图编辑器操作键">
@@ -390,6 +397,7 @@ class MapEditor {
     });
     this.app.querySelector<HTMLButtonElement>('[data-frame="selection"]')?.addEventListener('click', () => this.focusSelection());
     this.app.querySelector<HTMLButtonElement>('[data-frame="all"]')?.addEventListener('click', () => this.frameMap());
+    this.app.querySelector<HTMLButtonElement>('[data-play-mode]')?.addEventListener('click', () => this.enterPlayMode());
     this.app.querySelectorAll<HTMLButtonElement>('[data-stage]').forEach((button) => {
       button.addEventListener('click', () => {
         const stage = button.dataset.stage as EditorStage;
@@ -439,6 +447,17 @@ class MapEditor {
       this.renderStats.setVisible(true);
     }
     host.appendChild(this.renderer.domElement);
+
+    this.playMode = new PlayModeController({
+      canvas: this.renderer.domElement,
+      camera: this.camera,
+      getMap: () => this.state.map ? this.mapWithEditorAssets(this.state.map) : null,
+      onActiveChange: (active) => this.setPlayModeActive(active),
+      onInteraction: (position, speed, waterBodyId) => {
+        if (speed <= 0.02) return;
+        this.renderScene?.interact(position, performance.now() / 1000, waterBodyId);
+      }
+    });
 
     this.orbit = new OrbitControls(this.camera, this.renderer.domElement);
     this.orbit.enableDamping = true;
@@ -2129,6 +2148,7 @@ class MapEditor {
   }
 
   private handlePointer(event: PointerEvent, first: boolean): void {
+    if (this.playMode?.isActive) return;
     if (!this.renderer || !this.camera || !this.renderedMap || !this.state.map) return;
     if (this.mapAiPreviewMap) return;
     if (event.altKey) return;
@@ -2502,8 +2522,11 @@ class MapEditor {
     const dt = Math.min(0.05, frameMs / 1000);
     this.lastFrameAt = now;
     this.resize();
-    this.updateKeyboardCamera(dt);
-    this.orbit?.update();
+    this.playMode?.update(dt);
+    if (!this.playMode?.isActive) {
+      this.updateKeyboardCamera(dt);
+      this.orbit?.update();
+    }
     this.selectionOutline?.update();
     this.renderStats?.beginFrame();
     this.renderScene?.renderFrame(dt, now / 1000);
@@ -2547,6 +2570,11 @@ class MapEditor {
       button.classList.toggle('active', button.dataset.tool === this.state.tool);
       button.disabled = this.state.busy || Boolean(this.mapAiPreviewMap);
     });
+    const playButton = this.app.querySelector<HTMLButtonElement>('[data-play-mode]');
+    if (playButton) {
+      playButton.classList.toggle('active', Boolean(this.playMode?.isActive));
+      playButton.disabled = this.state.busy || !this.state.map || Boolean(this.mapAiPreviewMap);
+    }
     this.app.querySelectorAll<HTMLButtonElement>('[data-transform-mode]').forEach((button) => {
       const mode = button.dataset.transformMode as TransformMode;
       const activeMode = this.isTranslateOnlySelection() ? 'translate' : this.state.transformMode;
@@ -2783,6 +2811,7 @@ class MapEditor {
   }
 
   private handleKeyDown = (event: KeyboardEvent): void => {
+    if (this.playMode?.isActive) return;
     if (isEditableTarget(event.target)) return;
     if ((event.ctrlKey || event.metaKey) && event.code === 'KeyZ') {
       void (event.shiftKey ? this.redoManualEdit() : this.undoManualEdit());
@@ -2877,6 +2906,32 @@ class MapEditor {
     this.cameraMove.normalize().multiplyScalar(CAMERA_BASE_SPEED * distanceScale * dt);
     this.camera.position.add(this.cameraMove);
     this.orbit.target.add(this.cameraMove);
+  }
+
+  private enterPlayMode(): void {
+    if (!this.state.map || this.state.busy || this.mapAiPreviewMap) return;
+    if (!this.playMode?.enter()) return;
+    this.state.message = '游玩视角：Esc 退出';
+    this.updateToolbarState();
+  }
+
+  private setPlayModeActive(active: boolean): void {
+    this.app.dataset.playMode = String(active);
+    if (this.orbit) this.orbit.enabled = !active;
+    const hud = this.app.querySelector<HTMLElement>('.play-mode-hud');
+    if (hud) hud.hidden = !active;
+    const spawn = this.renderedMap?.objectGroups.get(PLAYER_SPAWN_OBJECT_ID);
+    if (spawn) spawn.visible = !active;
+    if (active) {
+      this.transform?.detach();
+      this.clearSelectionOutline();
+      this.cameraKeys.clear();
+    } else {
+      this.renderScene?.clearInteraction();
+      this.attachSelectedTransform();
+      this.state.message = '已退出游玩视角';
+    }
+    this.updateToolbarState();
   }
 }
 

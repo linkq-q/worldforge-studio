@@ -464,10 +464,68 @@ p {
   font-size: 0.72rem;
 }
 
-.viewport-navigation button:nth-last-child(-n + 2) {
+.viewport-navigation [data-frame] {
   grid-column: span 2;
   color: #172018;
   background: linear-gradient(180deg, #e3f88f, #bddf50);
+}
+
+.viewport-navigation [data-play-mode] {
+  grid-column: 1 / -1;
+  color: #172018;
+  background: linear-gradient(180deg, #efffa4, #b6df43);
+}
+
+.play-mode-hud {
+  position: absolute;
+  z-index: 8;
+  inset: 0;
+  pointer-events: none;
+}
+
+.play-crosshair {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 5px;
+  height: 5px;
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.45);
+}
+
+.play-mode-help {
+  position: absolute;
+  left: 50%;
+  bottom: 22px;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding: 8px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 9px;
+  color: #eaf3f0;
+  background: rgba(7, 12, 14, 0.72);
+  backdrop-filter: blur(8px);
+  transform: translateX(-50%);
+  font-size: 0.75rem;
+}
+
+.app[data-play-mode="true"] .editor-shell {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.app[data-play-mode="true"] .editor-sidebar,
+.app[data-play-mode="true"] .editor-toolbar,
+.app[data-play-mode="true"] .viewport-navigation,
+.app[data-play-mode="true"] .shortcut-help,
+.app[data-play-mode="true"] .viewport-badge {
+  display: none;
+}
+
+.app[data-play-mode="true"] .editor-main {
+  grid-template-rows: minmax(0, 1fr);
 }
 
 .shortcut-help {

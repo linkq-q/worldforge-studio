@@ -6,6 +6,7 @@ import { MapShadowRuntime } from './mapShadowRuntime';
 import { RenderRuntimeAdapter } from './renderRuntimeAdapter';
 import { configureRendererOutput } from './renderOutputPipeline';
 import type { RenderedMap } from './mapRenderer';
+import type { Vec3 } from '../shared/protocol';
 import { DEFAULT_SUN_POSITION, type EditableMap } from '../shared/map';
 import type { RenderScheme } from '../shared/renderScheme';
 import {
@@ -165,6 +166,15 @@ export class RenderSceneRuntime {
     this.shadows.update();
     this.adapter.tick(deltaTime, elapsedSeconds);
     this.adapter.render();
+  }
+
+  interact(position: Vec3, elapsedSeconds: number, waterBodyId: string | null): void {
+    this.rendered?.interactGrass(position, elapsedSeconds);
+    if (waterBodyId) this.adapter.addWaterInteraction(waterBodyId, position[0], position[2], elapsedSeconds);
+  }
+
+  clearInteraction(): void {
+    this.rendered?.clearGrassInteraction();
   }
 
   /**
