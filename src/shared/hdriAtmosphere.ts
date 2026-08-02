@@ -6,7 +6,10 @@ import type { RenderModuleSelection, RenderPlan } from './renderPlan';
  * hemisphere colours. AI still controls the HDRI tint and atmospheric density;
  * this only keeps the three environment inputs visually coherent.
  */
-export function harmonizeHdriAtmosphere(plan: RenderPlan, textures: readonly HdriTexture[]): RenderPlan {
+export function harmonizeHdriAtmosphere(
+  plan: RenderPlan,
+  textures: readonly Pick<HdriTexture, 'file' | 'skyColor' | 'groundColor'>[]
+): RenderPlan {
   const hdri = plan.modules.find((module) => module.id === 'environment.hdri');
   const texture = typeof hdri?.params.texture === 'string' ? hdri.params.texture : '';
   const source = textures.find((entry) => entry.file === texture);

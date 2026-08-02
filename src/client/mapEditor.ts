@@ -75,8 +75,10 @@ import {
   normalizeModelGenerationMode,
   type ModelGenerationMode
 } from '../shared/modelGenerationMode';
+import { harmonizeHdriAtmosphere } from '../shared/hdriAtmosphere';
 import {
   RENDER_CAPABILITIES,
+  compileRenderPlan,
   compileRuntimeColorGrade,
   compileRuntimeEffectRecipes,
   compileRuntimeGrassStyle,
@@ -219,6 +221,7 @@ class MapEditor {
   private renderDraftChanged = false;
   private renderAiPrompt = '';
   private renderAiProvider: ChatProvider = 'gpt';
+  private renderAiUseHdri = false;
   private renderAiPreview = false;
   private renderAiExplanation = '';
   private renderAiAbortController: AbortController | null = null;
@@ -1380,6 +1383,10 @@ class MapEditor {
             </div>
           </div>
         ` : ''}
+        <label class="developer-toggle" title="勾选后本轮 AI 会从 HDRI 目录挑一张全景图作为天空，并用它下半区的平均色设定距离雾与环境光">
+          <input id="render-ai-use-hdri" type="checkbox" ${this.renderAiUseHdri ? 'checked' : ''} />
+          <span>使用 HDRI 作为天空</span>
+        </label>
         <div class="render-ai-controls">
           <select id="render-ai-provider" aria-label="AI 模型">
             ${CHAT_PROVIDER_OPTIONS.map((option) => `
@@ -1600,6 +1607,9 @@ class MapEditor {
     host.querySelector<HTMLSelectElement>('#render-ai-provider')?.addEventListener('change', (event) => {
       this.renderAiProvider = (event.target as HTMLSelectElement).value as ChatProvider;
     });
+    host.querySelector<HTMLInputElement>('#render-ai-use-hdri')?.addEventListener('change', (event) => {
+      this.renderAiUseHdri = (event.target as HTMLInputElement).checked;
+    });
     host.querySelectorAll<HTMLButtonElement>('[data-render-prompt-suggestion]').forEach((button) => {
       button.addEventListener('click', () => {
         const suggestion = button.dataset.renderPromptSuggestion?.trim();
@@ -1748,6 +1758,7 @@ class MapEditor {
           body: JSON.stringify({
             prompt,
             provider: this.renderAiProvider,
+            useHdriSky: this.renderAiUseHdri,
             ...(currentPlan ? { currentPlan } : {})
           }),
           signal: controller.signal
@@ -1773,6 +1784,7 @@ class MapEditor {
       this.renderAiExplanation = suggestion.explanation;
       this.state.message = 'AI 渲染预览已生成，尚未应用';
       this.applyCurrentRenderScheme();
+      await this.harmonizeDraftFromHdri();
     } catch (error) {
       this.state.message = error instanceof Error && error.name === 'AbortError'
         ? '已取消渲染 Agent'
@@ -1782,6 +1794,25 @@ class MapEditor {
       this.setBusy(false);
       this.renderPanels();
     }
+  }
+
+  /**
+   * Distance fog and hemisphere light follow the panorama's lower half. The
+   * HDRI catalog may carry those swatches, but the loaded texture always does,
+   * so sample what the sky dome just decoded and re-harmonize the draft with it.
+   */
+  private async harmonizeDraftFromHdri(): Promise<void> {
+    const draft = this.renderDraft;
+    const plan = draft?.renderPlan;
+    if (!draft || !plan) return;
+    const file = compileRuntimeHdriSky(plan).texture;
+    if (!file) return;
+    const swatch = await this.hdriSky?.swatch(file);
+    if (!swatch || this.renderDraft !== draft) return;
+    draft.renderPlan = harmonizeHdriAtmosphere(plan, [{ file, ...swatch }]);
+    draft.settings = { ...draft.settings, ...compileRenderPlan(draft.renderPlan) };
+    this.applyCurrentRenderScheme();
+    this.renderRenderInspector();
   }
 
   private async saveRenderDraft(): Promise<void> {

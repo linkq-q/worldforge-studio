@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { HDRISkyDome, loadPanoramaTexture } from '@voxel-studio/render-runtime/environment';
 import { hdriExtensionOf } from '../shared/hdri';
+import { panoramaSwatch, type HdriSwatch } from './hdriSwatch';
 import type { RuntimeHdriSky } from '../shared/renderPlan';
 
 /**
@@ -62,6 +63,24 @@ export class HdriSkyController {
     if (style.useAsEnvironment) this.applyEnvironment(texture, style.texture);
     else this.clearEnvironment();
     this.appliedFile = style.texture;
+  }
+
+  /**
+   * Sky/ground swatches of a panorama, sampled from the texture the dome
+   * already loaded. Returns null for formats that decode to an image element
+   * instead of a pixel buffer (jpg/png), which have no readable data here.
+   */
+  async swatch(file: string): Promise<HdriSwatch | null> {
+    const texture = await this.loadTexture(file).catch(() => null);
+    const image = texture?.image as { data?: ArrayLike<number>; width?: number; height?: number } | undefined;
+    if (!texture || !image?.data || !image.width || !image.height) return null;
+    return panoramaSwatch({
+      data: image.data,
+      width: image.width,
+      height: image.height,
+      flipY: texture.flipY,
+      halfFloat: texture.type === THREE.HalfFloatType
+    });
   }
 
   clear(): void {

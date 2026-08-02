@@ -27,6 +27,8 @@ export interface RenderAiOptions {
   signal?: AbortSignal;
   currentPlan?: RenderPlan;
   hdriTextures?: readonly HdriTexture[];
+  /** User asked this round to dress the sky with a panorama from the library. */
+  requireHdriSky?: boolean;
   onProgress?: (event: AgentProgressEvent) => void;
 }
 
@@ -46,7 +48,10 @@ export async function generateRenderSuggestion(
     label: options.currentPlan ? '理解渲染调整要求' : '选择并编排渲染能力'
   });
   const messages = [
-    { role: 'system', content: buildSystemPrompt(schemes, options.currentPlan, options.hdriTextures) },
+    {
+      role: 'system',
+      content: buildSystemPrompt(schemes, options.currentPlan, options.hdriTextures, options.requireHdriSky)
+    },
     { role: 'user', content: cleanPrompt }
   ] as const;
   const requestOptions = {
@@ -63,6 +68,7 @@ export async function generateRenderSuggestion(
     const suggestion = normalizeRenderSuggestion(content, schemes, options.hdriTextures);
     assertRefineBase(options.currentPlan, suggestion);
     assertRequestedStyle(cleanPrompt, suggestion);
+    assertHdriSky(options.requireHdriSky, suggestion);
     options.onProgress?.({ phase: 'complete', label: '渲染方案已完成' });
     return suggestion;
   } catch (error) {
@@ -77,6 +83,7 @@ export async function generateRenderSuggestion(
     const suggestion = normalizeRenderSuggestion(repaired, schemes, options.hdriTextures);
     assertRefineBase(options.currentPlan, suggestion);
     assertRequestedStyle(cleanPrompt, suggestion);
+    assertHdriSky(options.requireHdriSky, suggestion);
     options.onProgress?.({ phase: 'complete', label: '渲染方案已完成' });
     return suggestion;
   }
@@ -133,7 +140,8 @@ export function normalizeRenderSuggestion(
 function buildSystemPrompt(
   schemes: readonly RenderScheme[],
   currentPlan?: RenderPlan,
-  hdriTextures: readonly HdriTexture[] = []
+  hdriTextures: readonly HdriTexture[] = [],
+  requireHdriSky = false
 ): string {
   const library = schemes.map((scheme) => ({
     id: scheme.id,
@@ -156,6 +164,10 @@ function buildSystemPrompt(
     }
   ];
   return [
+    ...(requireHdriSky ? [
+      '本轮用户勾选了「HDRI 天空」：必须输出 environment.hdri 模块，texture 从能力清单的 environment.hdri-library 中挑一个最贴合提示词的文件名，不得留空或自造文件名。',
+      '不要自己写 environment.palette.fogColor 和 lighting.hemisphere 的颜色，系统会用该全景图下半区（地面）的平均色统一设定距离雾与环境光。'
+    ] : []),
     ...(currentPlan ? [
       '这是一次 Refine。只修改用户明确要求变化的渲染语义，保留其余模块和参数。',
       '必须保持 currentPlan.baseSchemeId 不变，并返回合并后的完整 RenderPlan，而不是只返回差异。',
@@ -188,6 +200,14 @@ function withHdriTextureChoices(
         : entry
     ))
   };
+}
+
+function assertHdriSky(required: boolean | undefined, suggestion: RenderSuggestion): void {
+  if (!required) return;
+  const hdri = suggestion.plan.modules.find((module) => module.id === 'environment.hdri');
+  if (typeof hdri?.params.texture !== 'string' || !hdri.params.texture.trim()) {
+    throw new Error('missing_requested_hdri_sky');
+  }
 }
 
 function assertRefineBase(currentPlan: RenderPlan | undefined, suggestion: RenderSuggestion): void {

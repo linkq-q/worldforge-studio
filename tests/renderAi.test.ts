@@ -129,6 +129,32 @@ describe('render AI adapter', () => {
     expect(requestBody.messages[0].content).toContain('sketch');
   });
 
+  it('retries until the plan carries an HDRI sky when the user asked for one', async () => {
+    const reply = (modules: unknown[]) => new Response(JSON.stringify({
+      ok: true,
+      content: JSON.stringify({ plan: { version: 2, baseSchemeId: 'render-natural-day', modules } })
+    }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+    const fetchImpl = vi.fn()
+      .mockResolvedValueOnce(reply([{ id: 'atmosphere.fog', params: { density: 0.01 } }]))
+      .mockResolvedValueOnce(reply([{ id: 'environment.hdri', params: { texture: 'forest-day.exr' } }]));
+
+    const suggestion = await generateRenderSuggestion('黄昏森林', BUILTIN_RENDER_SCHEMES, {
+      apiBase: 'https://example.test',
+      fetchImpl,
+      requireHdriSky: true,
+      hdriTextures: [{ id: 'forest-day', file: 'forest-day.exr', extension: 'exr', bytes: 1, tags: ['forest'] }]
+    });
+
+    expect(fetchImpl).toHaveBeenCalledTimes(2);
+    expect(String(JSON.parse(String(fetchImpl.mock.calls[0][1]?.body)).messages[0].content))
+      .toContain('environment.hdri-library');
+    expect(String(JSON.parse(String(fetchImpl.mock.calls[1][1]?.body)).messages[3].content))
+      .toContain('missing_requested_hdri_sky');
+    expect(suggestion.plan.modules).toEqual(expect.arrayContaining([
+      expect.objectContaining({ id: 'environment.hdri', params: expect.objectContaining({ texture: 'forest-day.exr' }) })
+    ]));
+  });
+
   it('exposes only capabilities that the current renderer can apply', () => {
     expect(RENDER_CAPABILITIES.map((capability) => capability.id)).toEqual([
       'environment.palette',

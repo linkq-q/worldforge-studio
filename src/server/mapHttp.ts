@@ -419,7 +419,12 @@ async function handleEditorRenderSchemes(req: Req, res: Res, store: MapStore, pa
     && (parts[3] === 'generate' || parts[3] === 'refine')
     && parts.length === 4
   ) {
-    const body = await readJson<{ prompt?: string; provider?: ChatProvider; currentPlan?: RenderPlan }>(req);
+    const body = await readJson<{
+      prompt?: string;
+      provider?: ChatProvider;
+      currentPlan?: RenderPlan;
+      useHdriSky?: boolean;
+    }>(req);
     const prompt = body.prompt?.trim();
     if (!prompt) throw new HttpError(400, 'missing_prompt');
     const provider = body.provider ?? 'gpt';
@@ -440,18 +445,20 @@ async function handleEditorRenderSchemes(req: Req, res: Res, store: MapStore, pa
     try {
       const schemes = await store.listRenderSchemes();
       const hdriTextures = await store.listHdriTextures();
+      const requireHdriSky = body.useHdriSky === true;
       const suggestion = parts[3] === 'refine'
         ? await refineRenderSuggestion(
             prompt,
             requireRenderPlan(body.currentPlan),
             schemes,
-            { provider, signal: controller.signal, onProgress, hdriTextures }
+            { provider, signal: controller.signal, onProgress, hdriTextures, requireHdriSky }
           )
         : await generateRenderSuggestion(prompt, schemes, {
             provider,
             signal: controller.signal,
             onProgress,
-            hdriTextures
+            hdriTextures,
+            requireHdriSky
           });
       if (stream) {
         sendSse(res, 'result', { suggestion });

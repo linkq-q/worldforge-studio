@@ -5,6 +5,8 @@
 Place `.exr` files in `data/map-editor/hdri/` and copy `docs/hdri-catalog.example.json` there as `catalog.json`.
 Each entry gives the AI curated mood tags plus optional `skyColor` and `groundColor` swatches. The AI may select only an indexed filename; the selected ground swatch harmonizes distance fog and hemisphere light. Do not rely on random filenames for atmosphere matching.
 
+The 「使用 HDRI 作为天空」 checkbox in the render panel makes one AI round mandatory-HDRI: the system prompt requires an `environment.hdri` module and the plan is rejected (then repaired) when it comes back without a texture. Swatches do not have to be catalogued for that round — the client samples the panorama the sky dome already decoded and re-runs `harmonizeHdriAtmosphere` on the draft. Which data half is sky depends on the format, so read `texture.flipY` (three sets it true for `.hdr`, false for `.exr`) instead of assuming a row order.
+
 ## Render runtime lifecycle
 
 Each rendered map owns one `RuntimeIndex` for the whole map lifetime. `AIPrimitiveBatcher` registers shared primitive batches in it, while standalone fallback meshes are registered with the same `${mapObjectId}:${partId}` identity. Picking, future material isolation, and object culling must consume this shared index instead of building parallel object maps.
