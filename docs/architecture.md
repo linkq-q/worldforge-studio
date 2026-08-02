@@ -17,6 +17,8 @@ Frame rendering is scheduled through the runtime `RenderPipeline` and `RenderGra
 
 Water meshes never write the shared normal/depth target. They consume the depth of terrain and opaque scene objects so shallow/deep blending, shore fading, SSAO, distance fog, and presentation passes share one coherent screen-space scene description.
 
+Large-map directional shadows use the runtime `CSMController` through `mapShadowRuntime.ts`. The controller owns one map lifetime, patches both `modelsRoot` (including primitive batches) and the terrain material, and restores the fallback directional shadow when the map is replaced. Editor helpers, sky and other scene-level objects remain outside its material scope.
+
 ## 目标
 
 一个面向非技术创作者与专业开发者的场景编辑器。两种模式编辑同一份地图数据，用户可以在两种模式间继续编辑，而不是导入导出两个不兼容项目。

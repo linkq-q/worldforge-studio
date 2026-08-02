@@ -57,6 +57,7 @@ import { RenderRuntimeAdapter } from './renderRuntimeAdapter';
 import { HDRI_DOME_RADIUS, HdriSkyController } from './hdriSky';
 import { configureRendererOutput } from './renderOutputPipeline';
 import { RenderStats } from './renderStats';
+import { MapShadowRuntime } from './mapShadowRuntime';
 import {
   applyMapOperations,
   type MapAiSuggestion,
@@ -170,6 +171,7 @@ class MapEditor {
   private renderStats: RenderStats | null = null;
   private renderStyleManager: RenderStyleManager | null = null;
   private renderRuntimeAdapter: RenderRuntimeAdapter | null = null;
+  private mapShadowRuntime: MapShadowRuntime | null = null;
   private hdriSky: HdriSkyController | null = null;
   private hdriFiles: string[] = [];
   private readonly runtimeMeshes = new Map<string, THREE.Mesh>();
@@ -455,6 +457,12 @@ class MapEditor {
       meshRegistry: this.runtimeMeshes
     });
     this.renderRuntimeAdapter = new RenderRuntimeAdapter(this.renderer, this.scene, this.camera);
+    this.mapShadowRuntime = new MapShadowRuntime(
+      this.scene,
+      this.camera,
+      sun,
+      () => this.updateSceneLighting()
+    );
     this.hdriSky = new HdriSkyController(
       this.renderer,
       this.scene,
@@ -1986,6 +1994,7 @@ class MapEditor {
     if (previous) {
       this.runtimeMeshes.clear();
       this.renderRuntimeAdapter?.setSceneRoots(null, null);
+      this.mapShadowRuntime?.setSceneRoots(null, null);
       this.scene.remove(previous.group);
       previous.dispose();
       this.renderedMap = null;
@@ -1998,6 +2007,7 @@ class MapEditor {
     this.renderedMap = await buildEditableMapGroup(this.mapWithEditorAssets(), { editorHelpers: true });
     this.scene.add(this.renderedMap.group);
     this.renderRuntimeAdapter?.setSceneRoots(this.renderedMap.group, this.renderedMap.modelsRoot);
+    this.mapShadowRuntime?.setSceneRoots(this.renderedMap.group, this.renderedMap.modelsRoot);
     this.renderedMap.modelsRoot.traverse((object) => {
       const mesh = object as THREE.Mesh;
       if (mesh.isMesh && object.userData.editorHelper !== true) this.runtimeMeshes.set(mesh.uuid, mesh);
@@ -2444,6 +2454,7 @@ class MapEditor {
         this.renderRuntimeAdapter?.getContentVisibilityDistance() ?? this.camera.far
       );
     }
+    this.mapShadowRuntime?.update();
     this.renderRuntimeAdapter?.tick(dt, now / 1000);
     this.renderStats?.beginFrame();
     this.renderRuntimeAdapter?.render();

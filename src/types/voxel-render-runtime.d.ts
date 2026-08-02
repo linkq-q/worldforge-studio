@@ -46,6 +46,36 @@ declare module '@voxel-studio/render-runtime' {
     renderFrame(deltaTime: number, elapsedSeconds: number, context?: Record<string, unknown>): void;
     dispose(): void;
   }
+  export class CSMController {
+    csm: {
+      update(): void;
+      updateFrustums(): void;
+    } | null;
+    enabled: boolean;
+    constructor(options: {
+      sun: import('three').DirectionalLight;
+      camera: import('three').PerspectiveCamera;
+      scene: import('three').Scene;
+      modelRoot: import('three').Object3D;
+      updateSceneShadowCameraFit: () => void;
+      useCsmShadows?: boolean;
+    });
+    applyCsmParams(params: {
+      enabled?: boolean;
+      cascades?: number;
+      shadowMapSize?: number;
+      maxFar?: number;
+      mode?: 'practical' | 'uniform' | 'logarithmic';
+      fade?: boolean;
+      lightMargin?: number;
+      bias?: number;
+      normalBias?: number;
+    }): Record<string, unknown>;
+    setupCsmMaterials(root?: import('three').Object3D | null): unknown;
+    removeCsmPatches(root?: import('three').Object3D | null): void;
+    syncCsmFromSun(): void;
+    disposeCsm(): void;
+  }
   export class RenderStyleManager {
     mode: 'pbr' | 'cel' | 'ink';
     constructor(options: {
