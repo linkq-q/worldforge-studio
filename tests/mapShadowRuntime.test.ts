@@ -28,14 +28,19 @@ describe('MapShadowRuntime', () => {
     runtime.setSceneRoots(contentRoot, modelsRoot);
 
     expect(sun.visible).toBe(false);
-    expect((model.material as THREE.Material).defines?.USE_CSM).toBeDefined();
-    expect((terrain.material as THREE.Material).defines?.USE_CSM).toBeDefined();
-    expect((helper.material as THREE.Material).defines?.USE_CSM).toBeUndefined();
+    expect(csmDefine(model)).toBeDefined();
+    expect(csmDefine(terrain)).toBeDefined();
+    expect(csmDefine(helper)).toBeUndefined();
 
     runtime.dispose();
 
     expect(sun.visible).toBe(true);
-    expect((model.material as THREE.Material).defines?.USE_CSM).toBeUndefined();
-    expect((terrain.material as THREE.Material).defines?.USE_CSM).toBeUndefined();
+    expect(csmDefine(model)).toBeUndefined();
+    expect(csmDefine(terrain)).toBeUndefined();
   });
 });
+
+// three only types `defines` on ShaderMaterial; CSM patches it onto standard ones.
+function csmDefine(mesh: THREE.Mesh): unknown {
+  return (mesh.material as THREE.ShaderMaterial).defines?.USE_CSM;
+}
