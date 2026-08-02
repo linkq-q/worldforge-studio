@@ -439,17 +439,19 @@ async function handleEditorRenderSchemes(req: Req, res: Res, store: MapStore, pa
     res.once('close', abortIfOpen);
     try {
       const schemes = await store.listRenderSchemes();
+      const hdriTextures = await store.listHdriTextures();
       const suggestion = parts[3] === 'refine'
         ? await refineRenderSuggestion(
             prompt,
             requireRenderPlan(body.currentPlan),
             schemes,
-            { provider, signal: controller.signal, onProgress }
+            { provider, signal: controller.signal, onProgress, hdriTextures }
           )
         : await generateRenderSuggestion(prompt, schemes, {
             provider,
             signal: controller.signal,
-            onProgress
+            onProgress,
+            hdriTextures
           });
       if (stream) {
         sendSse(res, 'result', { suggestion });

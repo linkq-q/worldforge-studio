@@ -1,0 +1,16 @@
+{
+  "textures": [
+    {
+      "file": "forest-day.exr",
+      "tags": ["day", "blue-sky", "forest"],
+      "skyColor": "#aaccff",
+      "groundColor": "#61745a"
+    },
+    {
+      "file": "forest-sunset.exr",
+      "tags": ["sunset", "warm", "forest"],
+      "skyColor": "#f6b479",
+      "groundColor": "#79543d"
+    }
+  ]
+}

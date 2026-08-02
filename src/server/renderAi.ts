@@ -4,14 +4,18 @@ import {
   type ChatProvider
 } from '../shared/protocol';
 import type { RenderScheme, RenderSuggestion } from '../shared/renderScheme';
+import type { HdriTexture } from '../shared/hdri';
+import { harmonizeHdriAtmosphere } from '../shared/hdriAtmosphere';
 import {
   RENDER_CAPABILITIES,
   compileRuntimeOutline,
   compileRuntimePresentation,
   compileRuntimeStyle,
   compileRenderPlan,
+  createDefaultRenderAccessPolicy,
   normalizeRenderPlan,
   renderCapabilitySummary,
+  type RenderAccessPolicy,
   type RenderPlan
 } from '../shared/renderPlan';
 import { llmChat } from './modelApi';
@@ -22,6 +26,7 @@ export interface RenderAiOptions {
   fetchImpl?: typeof fetch;
   signal?: AbortSignal;
   currentPlan?: RenderPlan;
+  hdriTextures?: readonly HdriTexture[];
   onProgress?: (event: AgentProgressEvent) => void;
 }
 
@@ -41,7 +46,7 @@ export async function generateRenderSuggestion(
     label: options.currentPlan ? '理解渲染调整要求' : '选择并编排渲染能力'
   });
   const messages = [
-    { role: 'system', content: buildSystemPrompt(schemes, options.currentPlan) },
+    { role: 'system', content: buildSystemPrompt(schemes, options.currentPlan, options.hdriTextures) },
     { role: 'user', content: cleanPrompt }
   ] as const;
   const requestOptions = {
@@ -55,7 +60,7 @@ export async function generateRenderSuggestion(
   const content = await llmChat(messages, requestOptions);
   try {
     options.onProgress?.({ phase: 'validating', label: '校验渲染白名单与参数范围' });
-    const suggestion = normalizeRenderSuggestion(content, schemes);
+    const suggestion = normalizeRenderSuggestion(content, schemes, options.hdriTextures);
     assertRefineBase(options.currentPlan, suggestion);
     assertRequestedStyle(cleanPrompt, suggestion);
     options.onProgress?.({ phase: 'complete', label: '渲染方案已完成' });
@@ -69,7 +74,7 @@ export async function generateRenderSuggestion(
       { role: 'assistant', content },
       { role: 'user', content: `上一份 RenderPlan 校验失败：${reason}。只使用能力清单中的模块修正后，重新返回完整 JSON。` }
     ], requestOptions);
-    const suggestion = normalizeRenderSuggestion(repaired, schemes);
+    const suggestion = normalizeRenderSuggestion(repaired, schemes, options.hdriTextures);
     assertRefineBase(options.currentPlan, suggestion);
     assertRequestedStyle(cleanPrompt, suggestion);
     options.onProgress?.({ phase: 'complete', label: '渲染方案已完成' });
@@ -88,7 +93,8 @@ export function refineRenderSuggestion(
 
 export function normalizeRenderSuggestion(
   content: string,
-  schemes: readonly RenderScheme[]
+  schemes: readonly RenderScheme[],
+  hdriTextures: readonly HdriTexture[] = []
 ): RenderSuggestion {
   const input = parseJsonObject(content);
   const planInput = input.plan ?? legacyPlanInput(input);
@@ -96,12 +102,13 @@ export function normalizeRenderSuggestion(
     ? planInput as Record<string, unknown>
     : {};
   const baseScheme = schemes.find((scheme) => scheme.id === rawPlan.baseSchemeId);
-  const plan = normalizeRenderPlan(
+  const normalizedPlan = normalizeRenderPlan(
     planInput,
     schemes.map((scheme) => scheme.id),
-    baseScheme?.accessPolicy,
+    withHdriTextureChoices(baseScheme?.accessPolicy, hdriTextures),
     'ai'
   );
+  const plan = harmonizeHdriAtmosphere(normalizedPlan, hdriTextures);
   const settings = compileRenderPlan(plan);
 
   const styleTags = Array.isArray(input.styleTags)
@@ -123,7 +130,11 @@ export function normalizeRenderSuggestion(
   };
 }
 
-function buildSystemPrompt(schemes: readonly RenderScheme[], currentPlan?: RenderPlan): string {
+function buildSystemPrompt(
+  schemes: readonly RenderScheme[],
+  currentPlan?: RenderPlan,
+  hdriTextures: readonly HdriTexture[] = []
+): string {
   const library = schemes.map((scheme) => ({
     id: scheme.id,
     name: scheme.name,
@@ -131,7 +142,19 @@ function buildSystemPrompt(schemes: readonly RenderScheme[], currentPlan?: Rende
     settings: scheme.settings,
     aiAccess: summarizeAiAccess(scheme)
   }));
-  const publicCapabilities = renderCapabilitySummary().filter((_, index) => !RENDER_CAPABILITIES[index]?.developerOnly);
+  const publicCapabilities = [
+    ...renderCapabilitySummary().filter((_, index) => !RENDER_CAPABILITIES[index]?.developerOnly),
+    {
+      id: 'environment.hdri-library',
+      instruction: 'Choose texture only from this library. Prefer matching tags; avoid an unclassified file when a tagged choice matches.',
+      textures: hdriTextures.map((texture) => ({
+        file: texture.file,
+        tags: texture.tags,
+        skyColor: texture.skyColor,
+        groundColor: texture.groundColor
+      }))
+    }
+  ];
   return [
     ...(currentPlan ? [
       '这是一次 Refine。只修改用户明确要求变化的渲染语义，保留其余模块和参数。',
@@ -149,6 +172,22 @@ function buildSystemPrompt(schemes: readonly RenderScheme[], currentPlan?: Rende
     `能力清单：${JSON.stringify(publicCapabilities)}`,
     `方案库：${JSON.stringify(library)}`
   ].join('\n');
+}
+
+function withHdriTextureChoices(
+  policy: RenderAccessPolicy | undefined,
+  textures: readonly HdriTexture[]
+): RenderAccessPolicy {
+  const files = [...new Set(textures.map((texture) => texture.file).filter(Boolean))];
+  const source = policy ?? createDefaultRenderAccessPolicy();
+  return {
+    ...source,
+    parameters: source.parameters.map((entry) => (
+      entry.moduleId === 'environment.hdri' && entry.parameter === 'texture'
+        ? { ...entry, ai: { ...entry.ai, values: files } }
+        : entry
+    ))
+  };
 }
 
 function assertRefineBase(currentPlan: RenderPlan | undefined, suggestion: RenderSuggestion): void {

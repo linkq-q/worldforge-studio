@@ -192,7 +192,7 @@ export const DEFAULT_RUNTIME_GRASS_STYLE: RuntimeGrassStyle = {
   rootColor: '#72ad49', tipColor: '#c4f07f', paletteVariation: 0.14, bands: 3,
   bladeHeight: 0.95, bladeWidth: 0.18, windStrength: 0.22, windDirection: [1, 0.25],
   normalFlatten: 0.8, rootDarken: 0.8, gradientBias: 0.7, cellSize: 0.8,
-  fadeStart: 18, fadeEnd: 34, maxInstances: 15000,
+  fadeStart: 48, fadeEnd: 84, maxInstances: 15000,
   groundTint: true, groundColor: '#4f7f3a', groundTintStrength: 0.72
 };
 
@@ -933,10 +933,14 @@ function normalizeParams(
       continue;
     }
     if (rule.type === 'code') {
-      if (actor !== 'developer' || typeof input[key] !== 'string') {
+      const candidate = input[key];
+      const isApprovedAiLibraryValue = actor === 'ai'
+        && typeof candidate === 'string'
+        && (access?.values ?? []).includes(candidate);
+      if ((actor !== 'developer' && !isApprovedAiLibraryValue) || typeof candidate !== 'string') {
         throw new Error(`invalid_render_code:${capability.id}.${key}`);
       }
-      output[key] = input[key].slice(0, rule.maxLength);
+      output[key] = candidate.slice(0, rule.maxLength);
       continue;
     }
     const number = Number(input[key]);

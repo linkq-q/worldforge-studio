@@ -71,6 +71,32 @@ describe('render AI adapter', () => {
     }), BUILTIN_RENDER_SCHEMES)).toThrow('unsupported_render_plan_version');
   });
 
+  it('allows AI to choose only a catalogued HDRI and harmonizes fog with its ground swatch', () => {
+    const suggestion = normalizeRenderSuggestion(JSON.stringify({
+      plan: {
+        version: 2,
+        baseSchemeId: 'render-natural-day',
+        modules: [{
+          id: 'environment.hdri',
+          params: { texture: 'forest-day.exr', tint: '#ffffff', tintStrength: 0 }
+        }]
+      }
+    }), BUILTIN_RENDER_SCHEMES, [{
+      id: 'forest-day', file: 'forest-day.exr', extension: 'exr', bytes: 1,
+      tags: ['day', 'forest'], skyColor: '#aaccff', groundColor: '#61745a'
+    }]);
+
+    expect(suggestion.plan.modules).toEqual(expect.arrayContaining([
+      expect.objectContaining({ id: 'environment.palette', params: expect.objectContaining({ fogColor: '#61745a' }) }),
+      expect.objectContaining({ id: 'lighting.hemisphere', params: expect.objectContaining({ skyColor: '#aaccff' }) })
+    ]));
+    expect(() => normalizeRenderSuggestion(JSON.stringify({
+      plan: { version: 2, baseSchemeId: 'render-natural-day', modules: [{ id: 'environment.hdri', params: { texture: 'unknown.exr' } }] }
+    }), BUILTIN_RENDER_SCHEMES, [{
+      id: 'forest-day', file: 'forest-day.exr', extension: 'exr', bytes: 1, tags: []
+    }])).toThrow('invalid_render_code:environment.hdri.texture');
+  });
+
   it('calls the existing Voxel Studio chat API with the selected provider', async () => {
     const fetchImpl = vi.fn().mockResolvedValue(new Response(JSON.stringify({
       ok: true,

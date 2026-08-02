@@ -35,7 +35,7 @@ import {
   normalizeRenderScheme,
   type RenderScheme
 } from '../shared/renderScheme';
-import { hdriExtensionOf, type HdriTexture } from '../shared/hdri';
+import { HDRI_CATALOG_FILE, hdriExtensionOf, parseHdriCatalog, type HdriTexture } from '../shared/hdri';
 
 export interface MapStoreOptions {
   rootDir?: string;
@@ -411,16 +411,21 @@ export class MapStore {
   async listHdriTextures(): Promise<HdriTexture[]> {
     await this.ensureReady();
     const files = await readdir(this.hdriDir).catch(() => []);
+    const catalog = await readHdriCatalog(path.join(this.hdriDir, HDRI_CATALOG_FILE));
     const textures = await Promise.all(files.map(async (file) => {
       const extension = hdriExtensionOf(file);
       if (!extension) return null;
       const info = await stat(path.join(this.hdriDir, file)).catch(() => null);
       if (!info?.isFile()) return null;
+      const metadata = catalog.get(file);
       return {
         id: path.basename(file, path.extname(file)),
         file,
         extension,
-        bytes: info.size
+        bytes: info.size,
+        tags: metadata?.tags ?? [],
+        ...(metadata?.skyColor ? { skyColor: metadata.skyColor } : {}),
+        ...(metadata?.groundColor ? { groundColor: metadata.groundColor } : {})
       } satisfies HdriTexture;
     }));
     return textures
@@ -532,6 +537,15 @@ function sanitizePositiveVec3(value: unknown, fallback: Vec3): Vec3 {
 function finiteNumber(value: unknown, fallback: number): number {
   const numberValue = Number(value);
   return Number.isFinite(numberValue) ? numberValue : fallback;
+}
+
+async function readHdriCatalog(file: string): Promise<ReturnType<typeof parseHdriCatalog>> {
+  try {
+    return parseHdriCatalog(JSON.parse(await readFile(file, 'utf8')));
+  } catch {
+    // An optional malformed catalog must not make the actual HDRI files disappear.
+    return new Map();
+  }
 }
 
 function cleanLabel(value: unknown): string {

@@ -231,11 +231,21 @@ describe('map operation transactions', () => {
     await writeFile(path.join(hdriDir, 'meadow.hdr'), 'not-a-real-hdr');
     await writeFile(path.join(hdriDir, 'studio.jpg'), 'not-a-real-jpg');
     await writeFile(path.join(hdriDir, 'notes.txt'), 'ignored');
+    await writeFile(path.join(hdriDir, 'catalog.json'), JSON.stringify({
+      textures: [{
+        file: 'meadow.hdr',
+        tags: ['day', 'forest'],
+        skyColor: '#aaccff',
+        groundColor: '#61745a'
+      }]
+    }));
 
     const textures = await store.listHdriTextures();
 
     expect(textures.map((texture) => texture.file)).toEqual(['meadow.hdr', 'studio.jpg']);
-    expect(textures[0]).toMatchObject({ id: 'meadow', extension: 'hdr' });
+    expect(textures[0]).toMatchObject({
+      id: 'meadow', extension: 'hdr', tags: ['day', 'forest'], skyColor: '#aaccff', groundColor: '#61745a'
+    });
     expect(await store.resolveHdriFile('meadow.hdr')).toBe(path.join(hdriDir, 'meadow.hdr'));
     // Unlisted names must not become a path, or the route turns into a file read primitive.
     expect(await store.resolveHdriFile('../../maps/secret.json')).toBeNull();

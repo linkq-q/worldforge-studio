@@ -1,5 +1,10 @@
 # WorldForge Studio 产品与架构边界
 
+## HDRI catalog
+
+Place `.exr` files in `data/map-editor/hdri/` and copy `docs/hdri-catalog.example.json` there as `catalog.json`.
+Each entry gives the AI curated mood tags plus optional `skyColor` and `groundColor` swatches. The AI may select only an indexed filename; the selected ground swatch harmonizes distance fog and hemisphere light. Do not rely on random filenames for atmosphere matching.
+
 ## 目标
 
 一个面向非技术创作者与专业开发者的场景编辑器。两种模式编辑同一份地图数据，用户可以在两种模式间继续编辑，而不是导入导出两个不兼容项目。
