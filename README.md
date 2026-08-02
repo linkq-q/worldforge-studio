@@ -47,7 +47,7 @@ WorldForge Studio 是从 `hAIde-seek` 中独立提取的 Three.js 场景编辑�
 
 ## 启动
 
-需要 Node.js 20 或更高版本。
+需要 Node.js 20 或更高版本，**以及一份 Voxel Studio（`3d-generate`）检出**。
 
 ```bash
 npm install
@@ -55,6 +55,72 @@ npm run dev
 ```
 
 浏览器打开 `http://localhost:5173`。本地编辑 API 运行在 `http://localhost:8787`。
+
+### 为什么需要 3d-generate
+
+`3d-generate` 提供两样东西：`@voxel-studio/render-runtime`（描边、卡通、漫画、水体、CSM 等能力模块），以及**两个仓库共用的那一份 `three`**。
+
+`vite.config.ts` 把 `three` 指向 `3d-generate/node_modules/three` 看起来很怪，但**不要"顺手修好"它**：两份 three 实例会让 runtime 的 `instanceof` 判断失效，材质和后处理会以很难排查的方式坏掉。
+
+默认按并列目录查找（`../3d-generate`）。目录结构不同时用环境变量指定：
+
+```bash
+VOXEL_STUDIO_ROOT=../../3d-generate npm run dev
+```
+
+路径不对时启动会直接报错并列出缺哪个文件，不会白屏。
+
+## 对外交付
+
+两个可以被下游项目直接依赖的入口。下游项目按 `file:` 或 git 依赖引入本仓库即可：
+
+```bash
+npm install file:../worldforge-studio
+```
+
+### `worldforge-studio/map-core` — 玩法与服务端
+
+`src/shared/` 打包成的**零依赖 ESM**：没有 `three`、没有 DOM、没有 Node 内置模块。地图 schema、地形采样、碰撞烘焙、出生点安全检查、水体查询都在里面，浏览器和 Node 服务端都能直接跑。
+
+```bash
+npm run build:map-core   # 产物在 dist-map-core/，构建后会跑一次 Node 冒烟检查
+```
+
+```js
+import { bakeMapCollisions, movePlayerPositionForMap, findSafeSpawnPosition } from 'worldforge-studio/map-core';
+
+const obstacles = bakeMapCollisions(map);
+const [x, z] = findSafeSpawnPosition(map, 0, 0);
+const next = movePlayerPositionForMap(position, delta, map, obstacles);
+```
+
+地图/渲染 AI 流水线和编辑器事务协议**不在**导出范围内，它们是 Studio 内部实现。
+
+### `worldforge-studio/viewer` — 渲染这张图
+
+把 `EditableMap + RenderScheme` 渲染成编辑器里看到的样子。以 TypeScript 源码形式导出，所以下游必须是 Vite/同栈项目，并复用同一套别名：
+
+```ts
+// 下游项目的 vite.config.ts
+import { voxelStudioAliases } from 'worldforge-studio/vite';
+
+export default defineConfig({
+  resolve: { alias: voxelStudioAliases(process.env.VOXEL_STUDIO_ROOT) }
+});
+```
+
+```ts
+import { createMapViewer } from 'worldforge-studio/viewer';
+
+const viewer = await createMapViewer({ canvas, map, scheme });
+viewer.camera.position.set(20, 14, 20);
+// 默认自带 requestAnimationFrame 循环；要接自己的游戏主循环就传 autoStart: false，
+// 然后每帧调用 viewer.tick(deltaTime)。
+```
+
+资产随 `map.assets[].modelJson` 一起传输，不需要额外下载；渲染方案引用的 HDRI 全景图是唯一的外部文件，用 `hdriUrl` 选项告诉 viewer 去哪里取。
+
+编辑器和 viewer 共用 `src/client/renderSceneRuntime.ts`：场景、灯光、阴影、后处理和渲染方案的应用只有这一份实现，所以两边的画面不会分叉。
 
 生产构建：
 

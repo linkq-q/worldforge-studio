@@ -2,9 +2,7 @@ import * as THREE from 'three';
 import { serverHttpBase } from './serverEndpoint';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { TransformControls } from 'three/examples/jsm/controls/TransformControls.js';
-import { RenderStyleManager } from '@voxel-studio/render-runtime';
 import {
-  DEFAULT_SUN_POSITION,
   MAP_SIZE_PRESETS,
   PLAYER_HEIGHT,
   PLAYER_RADIUS,
@@ -51,13 +49,9 @@ import {
   updateAgentProgress
 } from './agentProgressPanel';
 import { buildEditableMapGroup, type RenderedMap } from './mapRenderer';
-import { configureSunLight } from './lighting';
 import { buildModelGroup } from './modelRenderer';
-import { RenderRuntimeAdapter } from './renderRuntimeAdapter';
-import { HDRI_DOME_RADIUS, HdriSkyController } from './hdriSky';
-import { configureRendererOutput } from './renderOutputPipeline';
+import { RenderSceneRuntime } from './renderSceneRuntime';
 import { RenderStats } from './renderStats';
-import { MapShadowRuntime } from './mapShadowRuntime';
 import {
   applyMapOperations,
   type MapAiSuggestion,
@@ -79,22 +73,10 @@ import { harmonizeHdriAtmosphere } from '../shared/hdriAtmosphere';
 import {
   RENDER_CAPABILITIES,
   compileRenderPlan,
-  compileRuntimeColorGrade,
-  compileRuntimeEffectRecipes,
-  compileRuntimeGrassStyle,
   compileRuntimeHdriSky,
-  compileRuntimeLightRig,
-  compileRuntimeMaterialThemes,
-  compileRuntimeOutline,
-  compileRuntimePostQuality,
-  compileRuntimePresentation,
   compileRuntimeShaderExtension,
-  compileRuntimeStyle,
-  compileRuntimeWaterStyles,
   createDefaultRenderAccessPolicy,
-  DEFAULT_RUNTIME_GRASS_STYLE,
   normalizeRenderAccessPolicy,
-  type RuntimeLightRig,
   type RenderModuleSelection,
   type RenderParameterAccess,
   type RenderPlan,
@@ -167,19 +149,13 @@ class MapEditor {
     undoTransaction: null
   };
 
+  /** Scene, lights, shadows and post-processing, shared with the map viewer. */
+  private renderScene: RenderSceneRuntime | null = null;
   private scene: THREE.Scene | null = null;
   private camera: THREE.PerspectiveCamera | null = null;
   private renderer: THREE.WebGLRenderer | null = null;
   private renderStats: RenderStats | null = null;
-  private renderStyleManager: RenderStyleManager | null = null;
-  private renderRuntimeAdapter: RenderRuntimeAdapter | null = null;
-  private mapShadowRuntime: MapShadowRuntime | null = null;
-  private hdriSky: HdriSkyController | null = null;
   private hdriFiles: string[] = [];
-  private readonly runtimeMeshes = new Map<string, THREE.Mesh>();
-  private sunLight: THREE.DirectionalLight | null = null;
-  private hemisphereLight: THREE.HemisphereLight | null = null;
-  private sunTarget: THREE.Object3D | null = null;
   private orbit: OrbitControls | null = null;
   private transform: TransformControls | null = null;
   private renderedMap: RenderedMap | null = null;
@@ -416,17 +392,15 @@ class MapEditor {
   private setupViewport(): void {
     const host = this.app.querySelector<HTMLElement>('#editor-viewport');
     if (!host) return;
-    this.scene = new THREE.Scene();
-    this.scene.background = new THREE.Color(0x111719);
-    // The HDRI dome is a fixed-radius sphere centred on the origin, so the far
-    // plane has to clear HDRI_DOME_RADIUS plus however far the camera orbits out.
-    this.camera = new THREE.PerspectiveCamera(55, 1, 0.1, HDRI_DOME_RADIUS * 3);
-    this.camera.position.set(22, 18, 24);
-    this.renderer = new THREE.WebGLRenderer({ antialias: true });
-    this.renderer.setPixelRatio(Math.min(2, window.devicePixelRatio));
-    this.renderer.shadowMap.enabled = true;
-    this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-    configureRendererOutput(this.renderer);
+    // Identical wiring to `createMapViewer`, so what the editor previews is
+    // what a downstream game renders.
+    const renderScene = new RenderSceneRuntime({
+      hdriUrl: (file) => `${serverHttpBase(location, import.meta.env.DEV)}/api/editor/hdri/${encodeURIComponent(file)}`
+    });
+    this.renderScene = renderScene;
+    this.scene = renderScene.scene;
+    this.camera = renderScene.camera;
+    this.renderer = renderScene.renderer;
     const statsElement = host.querySelector<HTMLElement>('#viewport-stats');
     if (statsElement) {
       this.renderStats = new RenderStats(this.renderer.info, statsElement);
@@ -447,37 +421,7 @@ class MapEditor {
     };
     this.orbit.target.set(0, 1.5, 0);
 
-    const hemi = new THREE.HemisphereLight(0xeaf6ff, 0x30382f, 1.6);
-    const sun = new THREE.DirectionalLight(0xfff0ce, 2.5);
-    const sunTarget = new THREE.Object3D();
-    sun.position.set(...DEFAULT_SUN_POSITION);
-    sun.target = sunTarget;
-    sun.castShadow = true;
-    this.sunLight = sun;
-    this.hemisphereLight = hemi;
-    this.sunTarget = sunTarget;
-    this.scene.userData.directionalLight = sun;
-    this.renderStyleManager = new RenderStyleManager({
-      THREE,
-      renderer: this.renderer,
-      scene: this.scene,
-      meshRegistry: this.runtimeMeshes
-    });
-    this.renderRuntimeAdapter = new RenderRuntimeAdapter(this.renderer, this.scene, this.camera);
-    this.mapShadowRuntime = new MapShadowRuntime(
-      this.scene,
-      this.camera,
-      sun,
-      () => this.updateSceneLighting()
-    );
-    this.hdriSky = new HdriSkyController(
-      this.renderer,
-      this.scene,
-      (file) => `${serverHttpBase(location, import.meta.env.DEV)}/api/editor/hdri/${encodeURIComponent(file)}`,
-      (environmentMap) => this.renderRuntimeAdapter?.syncEnvironment(environmentMap)
-    );
     void this.reloadHdriTextures();
-    this.scene.add(hemi, sun, sunTarget);
     this.brushPreview = new THREE.Mesh(
       new THREE.RingGeometry(0.86, 1, 64),
       new THREE.MeshBasicMaterial({
@@ -1807,7 +1751,7 @@ class MapEditor {
     if (!draft || !plan) return;
     const file = compileRuntimeHdriSky(plan).texture;
     if (!file) return;
-    const swatch = await this.hdriSky?.swatch(file);
+    const swatch = await this.renderScene?.hdriSky.swatch(file);
     if (!swatch || this.renderDraft !== draft) return;
     draft.renderPlan = harmonizeHdriAtmosphere(plan, [{ file, ...swatch }]);
     draft.settings = { ...draft.settings, ...compileRenderPlan(draft.renderPlan) };
@@ -2078,9 +2022,7 @@ class MapEditor {
     this.clearSelectionOutline();
     const previous = this.renderedMap;
     if (previous) {
-      this.runtimeMeshes.clear();
-      this.renderRuntimeAdapter?.setSceneRoots(null, null);
-      this.mapShadowRuntime?.setSceneRoots(null, null);
+      this.renderScene?.attach(null);
       this.scene.remove(previous.group);
       previous.dispose();
       this.renderedMap = null;
@@ -2092,12 +2034,7 @@ class MapEditor {
     this.updateSceneLighting();
     this.renderedMap = await buildEditableMapGroup(this.mapWithEditorAssets(), { editorHelpers: true });
     this.scene.add(this.renderedMap.group);
-    this.renderRuntimeAdapter?.setSceneRoots(this.renderedMap.group, this.renderedMap.modelsRoot);
-    this.mapShadowRuntime?.setSceneRoots(this.renderedMap.group, this.renderedMap.modelsRoot);
-    this.renderedMap.modelsRoot.traverse((object) => {
-      const mesh = object as THREE.Mesh;
-      if (mesh.isMesh && object.userData.editorHelper !== true) this.runtimeMeshes.set(mesh.uuid, mesh);
-    });
+    this.renderScene?.attach(this.renderedMap);
     this.attachSelectedTransform();
     this.applyCurrentRenderScheme();
   }
@@ -2422,8 +2359,11 @@ class MapEditor {
   }
 
   private updateSceneLighting(): void {
-    if (!this.state.map || !this.sunLight || !this.sunTarget) return;
-    configureSunLight(this.sunLight, this.sunTarget, this.state.map);
+    if (!this.renderScene) return;
+    // Every map swap goes through `rebuildScene`, which calls this — so this is
+    // also where the runtime learns which map its shadow fit should follow.
+    this.renderScene.map = this.state.map;
+    this.renderScene.updateLighting();
   }
 
   private async reloadHdriTextures(): Promise<void> {
@@ -2433,94 +2373,10 @@ class MapEditor {
   }
 
   private applyCurrentRenderScheme(): void {
-    if (!this.scene || !this.renderer || !this.sunLight || !this.hemisphereLight) return;
     const scheme = !this.mapAiPreviewMap && this.state.map?.confirmedAt
       ? this.renderDraft ?? this.selectedRenderScheme()
       : null;
-    this.renderRuntimeAdapter?.resetScopedCapabilities();
-    if (!scheme) {
-      this.renderStyleManager?.applyStyle({ renderMode: 'pbr' });
-      this.renderRuntimeAdapter?.applyOutline({ mode: 'none', params: {} });
-      this.renderRuntimeAdapter?.applyPresentation({
-        mode: 'none',
-        sketch: {},
-        paper: {},
-        comic: {}
-      });
-      this.scene.background = new THREE.Color(0x111719);
-      this.scene.fog = null;
-      this.hemisphereLight.color.set(0xeaf6ff);
-      this.hemisphereLight.groundColor.set(0x30382f);
-      this.hemisphereLight.intensity = 1.6;
-      this.sunLight.color.set(0xfff0ce);
-      this.sunLight.intensity = 2.5;
-      configureRendererOutput(this.renderer);
-      this.renderRuntimeAdapter?.applyColorGrade({ recipe: 'neutral' });
-      this.renderRuntimeAdapter?.applyPostQuality({
-        bloom: 'off',
-        ssao: 'off',
-        depthOfField: 'off'
-      });
-      this.renderRuntimeAdapter?.applyDistanceFog('#111719', 0);
-      this.renderRuntimeAdapter?.applyScopedCapabilities([], [], []);
-      this.renderedMap?.setGrassStyle(DEFAULT_RUNTIME_GRASS_STYLE);
-      this.hdriSky?.clear();
-      this.updateSceneLighting();
-      return;
-    }
-    const settings = scheme.settings;
-    this.scene.background = new THREE.Color(settings.background);
-    // One depth-based fog pass also covers custom ShaderMaterials such as water.
-    this.scene.fog = null;
-    this.renderRuntimeAdapter?.applyDistanceFog(settings.fogColor, settings.fogDensity);
-    this.hemisphereLight.color.set(settings.hemisphereSkyColor);
-    this.hemisphereLight.groundColor.set(settings.hemisphereGroundColor);
-    this.hemisphereLight.intensity = settings.hemisphereIntensity;
-    this.sunLight.color.set(settings.sunColor);
-    this.sunLight.intensity = settings.sunIntensity;
-    configureRendererOutput(this.renderer, settings.exposure);
-    const runtimeStyle = scheme.renderPlan
-      ? compileRuntimeStyle(scheme.renderPlan)
-      : { mode: 'pbr' as const, cartoon: {} };
-    this.renderStyleManager?.applyStyle({
-      renderMode: runtimeStyle.mode,
-      cartoon: runtimeStyle.cartoon
-    });
-    if (runtimeStyle.mode === 'cel') this.renderStyleManager?.setCartoonParams(runtimeStyle.cartoon);
-    const runtimeOutline = scheme.renderPlan
-      ? compileRuntimeOutline(scheme.renderPlan)
-      : { mode: 'none' as const, params: {} };
-    this.renderRuntimeAdapter?.applyOutline(runtimeOutline);
-    const runtimePresentation = scheme.renderPlan
-      ? compileRuntimePresentation(scheme.renderPlan)
-      : { mode: 'none' as const, sketch: {}, paper: {}, comic: {} };
-    this.renderRuntimeAdapter?.applyPresentation(runtimePresentation);
-    const colorGrade = scheme.renderPlan
-      ? compileRuntimeColorGrade(scheme.renderPlan)
-      : { recipe: 'neutral' as const };
-    this.renderRuntimeAdapter?.applyColorGrade(colorGrade);
-    const postQuality = scheme.renderPlan
-      ? compileRuntimePostQuality(scheme.renderPlan)
-      : { bloom: 'off' as const, ssao: 'off' as const, depthOfField: 'off' as const };
-    this.renderRuntimeAdapter?.applyPostQuality(postQuality);
-    this.renderedMap?.setGrassStyle(
-      scheme.renderPlan ? compileRuntimeGrassStyle(scheme.renderPlan) : DEFAULT_RUNTIME_GRASS_STYLE
-    );
-    if (scheme.renderPlan) {
-      applyLightRig(
-        compileRuntimeLightRig(scheme.renderPlan),
-        this.sunLight,
-        this.hemisphereLight,
-        settings
-      );
-    }
-    this.renderRuntimeAdapter?.applyScopedCapabilities(
-      scheme.renderPlan ? compileRuntimeMaterialThemes(scheme.renderPlan) : [],
-      scheme.renderPlan ? compileRuntimeWaterStyles(scheme.renderPlan) : [],
-      scheme.renderPlan ? compileRuntimeEffectRecipes(scheme.renderPlan) : []
-    );
-    if (scheme.renderPlan) void this.hdriSky?.apply(compileRuntimeHdriSky(scheme.renderPlan));
-    else this.hdriSky?.clear();
+    this.renderScene?.applyScheme(scheme);
   }
 
   private animate(): void {
@@ -2533,17 +2389,8 @@ class MapEditor {
     this.updateKeyboardCamera(dt);
     this.orbit?.update();
     this.selectionOutline?.update();
-    if (this.renderedMap && this.camera) {
-      this.renderedMap.update(
-        dt,
-        this.camera,
-        this.renderRuntimeAdapter?.getContentVisibilityDistance() ?? this.camera.far
-      );
-    }
-    this.mapShadowRuntime?.update();
-    this.renderRuntimeAdapter?.tick(dt, now / 1000);
     this.renderStats?.beginFrame();
-    this.renderRuntimeAdapter?.render();
+    this.renderScene?.renderFrame(dt, now / 1000);
     this.renderStats?.endFrame(frameMs, now);
     this.previewOrbit?.update();
     this.resizePreview();
@@ -2556,10 +2403,7 @@ class MapEditor {
     const rect = host.getBoundingClientRect();
     const width = Math.max(1, Math.floor(rect.width));
     const height = Math.max(1, Math.floor(rect.height));
-    this.camera.aspect = width / height;
-    this.camera.updateProjectionMatrix();
-    this.renderer.setSize(width, height, false);
-    this.renderRuntimeAdapter?.setSize(width, height);
+    this.renderScene?.setSize(width, height);
   }
 
   private resizePreview(): void {
@@ -3161,42 +3005,6 @@ function degreesToRadians(value: number): number {
 function clampNumber(value: number, min: number, max: number): number {
   if (!Number.isFinite(value)) return min;
   return Math.min(max, Math.max(min, value));
-}
-
-function applyLightRig(
-  rig: RuntimeLightRig,
-  sun: THREE.DirectionalLight,
-  hemisphere: THREE.HemisphereLight,
-  base: RenderScheme['settings']
-): void {
-  const recipes: Record<RuntimeLightRig['recipe'], {
-    key: number;
-    fill: number;
-    sun: string;
-    sky: string;
-    ground: string;
-    softness: number;
-  }> = {
-    neutral: { key: 1, fill: 1, sun: base.sunColor, sky: base.hemisphereSkyColor, ground: base.hemisphereGroundColor, softness: 0.55 },
-    'soft-morning': { key: 0.72, fill: 1.08, sun: '#ffe5bd', sky: '#e7f2f2', ground: '#46554d', softness: 0.92 },
-    'hard-day': { key: 1.35, fill: 0.7, sun: '#fff4dc', sky: '#dff3ff', ground: '#34443a', softness: 0.16 },
-    backlit: { key: 1.18, fill: 0.76, sun: '#ffd5a1', sky: '#dbe9f1', ground: '#3d4347', softness: 0.42 },
-    overcast: { key: 0.36, fill: 1.28, sun: '#e8eef0', sky: '#d9e2e4', ground: '#59605d', softness: 1 },
-    sunset: { key: 1.08, fill: 0.72, sun: '#ff9c5a', sky: '#c99691', ground: '#40373d', softness: 0.72 }
-  };
-  const recipe = recipes[rig.recipe];
-  const strength = rig.strength ?? 1;
-  const warmth = THREE.MathUtils.clamp(rig.warmth ?? 0, -1, 1);
-  sun.intensity = base.sunIntensity * recipe.key * strength;
-  hemisphere.intensity = base.hemisphereIntensity * recipe.fill * Math.sqrt(strength);
-  sun.color.set(recipe.sun).lerp(
-    new THREE.Color(warmth >= 0 ? '#ffb56b' : '#9fc9ff'),
-    Math.abs(warmth) * 0.28
-  );
-  hemisphere.color.set(recipe.sky);
-  hemisphere.groundColor.set(recipe.ground);
-  sun.shadow.radius = 1 + (rig.shadowSoftness ?? recipe.softness) * 4;
-  sun.shadow.needsUpdate = true;
 }
 
 function averageScale(scale: [number, number, number]): number {

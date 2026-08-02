@@ -1,0 +1,94 @@
+import * as THREE from 'three';
+import { describe, expect, it, vi } from 'vitest';
+import { applyRenderScheme, type RenderSchemeTargets } from '../src/client/renderSceneRuntime';
+import { BUILTIN_RENDER_SCHEMES, createRenderScheme } from '../src/shared/renderScheme';
+
+const PLAIN_SCHEME = BUILTIN_RENDER_SCHEMES[0];
+/** A builtin that actually carries a `RenderPlan`, so styling is observable. */
+const STYLED_SCHEME = BUILTIN_RENDER_SCHEMES.find((scheme) => scheme.id === 'render-runtime-comic-print')!;
+
+function createTargets() {
+  const adapter = {
+    resetScopedCapabilities: vi.fn(),
+    applyOutline: vi.fn(),
+    applyPresentation: vi.fn(),
+    applyColorGrade: vi.fn(),
+    applyPostQuality: vi.fn(),
+    applyDistanceFog: vi.fn(),
+    applyScopedCapabilities: vi.fn()
+  };
+  const styleManager = { applyStyle: vi.fn(), setCartoonParams: vi.fn() };
+  const hdriSky = { apply: vi.fn(async () => {}), clear: vi.fn() };
+  const rendered = { setGrassStyle: vi.fn() };
+  const updateLighting = vi.fn();
+  const targets: RenderSchemeTargets = {
+    scene: new THREE.Scene(),
+    // `configureRendererOutput` only writes two tone-mapping fields.
+    renderer: { toneMapping: 0, toneMappingExposure: 1 } as unknown as THREE.WebGLRenderer,
+    sunLight: new THREE.DirectionalLight(0xffffff, 1),
+    hemisphereLight: new THREE.HemisphereLight(0xffffff, 0x000000, 1),
+    styleManager,
+    adapter,
+    hdriSky,
+    rendered,
+    updateLighting
+  };
+  return { targets, adapter, styleManager, hdriSky, rendered, updateLighting };
+}
+
+describe('applyRenderScheme', () => {
+  it('pushes a scheme onto lights, exposure, fog and the runtime adapter', () => {
+    const { targets, adapter, styleManager, rendered } = createTargets();
+    const scheme = STYLED_SCHEME;
+
+    applyRenderScheme(targets, scheme);
+
+    const settings = scheme.settings;
+    expect((targets.scene.background as THREE.Color).getHexString())
+      .toBe(new THREE.Color(settings.background).getHexString());
+    expect(targets.renderer.toneMappingExposure).toBe(settings.exposure);
+    expect(targets.hemisphereLight.intensity).toBe(settings.hemisphereIntensity);
+    expect(adapter.applyDistanceFog).toHaveBeenCalledWith(settings.fogColor, settings.fogDensity);
+    expect(adapter.resetScopedCapabilities).toHaveBeenCalled();
+    expect(rendered.setGrassStyle).toHaveBeenCalled();
+    // The plan names an outline and a presentation module; both must arrive.
+    expect(styleManager.applyStyle).toHaveBeenCalledWith(
+      expect.objectContaining({ renderMode: 'cel' })
+    );
+    expect(adapter.applyOutline).not.toHaveBeenLastCalledWith({ mode: 'none', params: {} });
+    expect(adapter.applyPresentation.mock.lastCall?.[0].mode).not.toBe('none');
+  });
+
+  it('restores the neutral look and drops the sky when no scheme is selected', () => {
+    const { targets, adapter, styleManager, hdriSky, updateLighting } = createTargets();
+
+    // Start from a styled scheme so a leftover capability would be visible.
+    applyRenderScheme(targets, STYLED_SCHEME);
+    applyRenderScheme(targets, null);
+
+    expect(styleManager.applyStyle).toHaveBeenLastCalledWith({ renderMode: 'pbr' });
+    expect(adapter.applyPostQuality)
+      .toHaveBeenLastCalledWith({ bloom: 'off', ssao: 'off', depthOfField: 'off' });
+    expect(adapter.applyDistanceFog).toHaveBeenLastCalledWith('#111719', 0);
+    expect(adapter.applyScopedCapabilities).toHaveBeenLastCalledWith([], [], []);
+    expect(targets.sunLight.intensity).toBe(2.5);
+    // The styled pass applied a sky; clearing the scheme has to take it back off.
+    expect(hdriSky.apply).toHaveBeenCalledTimes(1);
+    expect(hdriSky.clear).toHaveBeenCalledTimes(1);
+    expect(updateLighting).toHaveBeenCalled();
+  });
+
+  it('leaves the scene unstyled when the scheme carries no render plan', () => {
+    const { targets, adapter, hdriSky } = createTargets();
+    const scheme = createRenderScheme({ name: 'plain', settings: PLAIN_SCHEME.settings });
+    expect(scheme.renderPlan).toBeUndefined();
+
+    applyRenderScheme(targets, scheme);
+
+    expect(adapter.applyOutline).toHaveBeenLastCalledWith({ mode: 'none', params: {} });
+    expect(adapter.applyColorGrade).toHaveBeenLastCalledWith({ recipe: 'neutral' });
+    expect(adapter.applyScopedCapabilities).toHaveBeenLastCalledWith([], [], []);
+    // A scheme without a plan must not leave a previous panorama on the dome.
+    expect(hdriSky.clear).toHaveBeenCalled();
+  });
+});

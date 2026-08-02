@@ -1,0 +1,18 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": false,
+    "declaration": true,
+    "emitDeclarationOnly": true,
+    "outDir": "dist-map-core",
+    "rootDir": "src/shared",
+    // DOM is here only for the *types* of web-standard globals the sources use
+    // (`globalThis.crypto`, `structuredClone`). Node 20+ provides both, so the
+    // emitted package still runs on a server.
+    "lib": ["ES2022", "DOM"],
+    "types": []
+  },
+  // Only the entry point: tsc follows its imports, so studio-internal modules
+  // that map-core does not export stay out of the published declarations.
+  "include": ["src/shared/index.ts"]
+}

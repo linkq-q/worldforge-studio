@@ -3,9 +3,18 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
+  "exports": {
+    "./map-core": {
+      "types": "./dist-map-core/index.d.ts",
+      "default": "./dist-map-core/index.js"
+    },
+    "./viewer": "./src/client/mapViewer.ts",
+    "./vite": "./voxelStudioVite.mjs"
+  },
   "scripts": {
     "dev": "concurrently -k -n client,server \"vite --host 0.0.0.0\" \"tsx watch src/server/index.ts -- --dev\"",
     "build": "tsc --noEmit && vite build",
+    "build:map-core": "vite build --config vite.map-core.config.ts && tsc -p tsconfig.map-core.json && node scripts/mapCoreSmoke.mjs",
     "test": "vitest run",
     "server": "tsx src/server/index.ts -- --release",
     "map": "tsx src/server/mapCli.ts"
