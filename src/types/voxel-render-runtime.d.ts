@@ -1,4 +1,51 @@
 declare module '@voxel-studio/render-runtime' {
+  import type { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
+  import type { Pass } from 'three/examples/jsm/postprocessing/Pass.js';
+
+  export class RenderGraph {
+    registerProducer(spec: {
+      id: string;
+      writes?: string[];
+      reads?: string[];
+      phase?: 'default' | 'prePass';
+      policy?: 'everyFrame' | 'onDirty';
+      run(context: Record<string, unknown>, blackboard: Map<string, unknown>): void;
+    }): void;
+    registerConsumer(spec: {
+      id: string;
+      reads?: string[];
+      enabled?: boolean | (() => boolean);
+    }): void;
+    getResource(name: string): unknown;
+    dispose(): void;
+  }
+  export class RenderPipeline {
+    graph: RenderGraph;
+    constructor(options: {
+      renderer: import('three').WebGLRenderer;
+      scene: import('three').Scene;
+      camera: import('three').PerspectiveCamera;
+      composer: EffectComposer | null;
+      debug?: boolean;
+    });
+    setPlanarReflectionPass(pass: { render(): void; enabled?: boolean } | null): void;
+    registerPass(
+      pass: Pass,
+      slot: 'mainComposer' | 'presentation' | 'overlay',
+      order?: number,
+      metadata?: {
+        id: string;
+        enabled?: boolean;
+        name?: string;
+        tiers?: Array<'low' | 'medium' | 'high' | 'ultra'>;
+      }
+    ): unknown;
+    setPassEnabled(id: string, enabled: boolean): void;
+    syncComposer(): void;
+    notifySceneLoaded(protectionFrames?: number): void;
+    renderFrame(deltaTime: number, elapsedSeconds: number, context?: Record<string, unknown>): void;
+    dispose(): void;
+  }
   export class RenderStyleManager {
     mode: 'pbr' | 'cel' | 'ink';
     constructor(options: {

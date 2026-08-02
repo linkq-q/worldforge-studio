@@ -33,6 +33,8 @@ import {
 } from './renderEnvironmentBridge';
 import { createComposerRenderTarget } from './renderOutputPipeline';
 import { PlanarWaterReflection } from './planarWaterReflection';
+import { RenderFrameCoordinator, type RenderPrePassResources } from './renderFrameCoordinator';
+import { isNormalDepthPrePassMesh } from './renderPrePassPolicy';
 import type {
   RuntimeColorGrade,
   RuntimeEffectRecipe,
@@ -60,6 +62,7 @@ interface WaterBinding {
 
 export class RenderRuntimeAdapter {
   private readonly composer: EffectComposer;
+  private readonly frameCoordinator: RenderFrameCoordinator;
   private readonly normalTarget: THREE.WebGLRenderTarget;
   private readonly edgeTarget: THREE.WebGLRenderTarget;
   private readonly boundaryTarget: THREE.WebGLRenderTarget;
@@ -83,8 +86,8 @@ export class RenderRuntimeAdapter {
   private readonly waterBindings: WaterBinding[] = [];
   private contentRoot: THREE.Object3D | null = null;
   private modelsRoot: THREE.Object3D | null = null;
-  private outlineMode: RuntimeOutlineStyle['mode'] = 'none';
-  private presentationMode: RuntimePresentationStyle['mode'] = 'none';
+  private pendingDeltaTime = 0;
+  private pendingElapsedSeconds = 0;
   private width = 1;
   private height = 1;
 
@@ -129,29 +132,30 @@ export class RenderRuntimeAdapter {
 
     this.composer = new EffectComposer(renderer, createComposerRenderTarget());
     this.composer.setPixelRatio(renderer.getPixelRatio());
-    this.composer.addPass(new RenderPass(scene, camera));
-    this.composer.addPass(this.ssaoPass);
-    this.composer.addPass(this.toneMapPass);
+    this.frameCoordinator = new RenderFrameCoordinator({
+      renderer,
+      scene,
+      camera,
+      composer: this.composer,
+      planarReflection: this.planarWaterReflection,
+      needsPrePass: () => this.needsPrePass(),
+      producePrePass: () => this.producePrePass(),
+      updateWater: (deltaTime, depthTexture) => this.updateWater(deltaTime, depthTexture)
+    });
+    this.frameCoordinator.registerPass(new RenderPass(scene, camera), 'scene', 0, true);
+    this.frameCoordinator.registerPass(this.ssaoPass, 'ssao', 10, false);
+    this.frameCoordinator.registerPass(this.toneMapPass, 'toneMap', 20, false);
     // Stylization stays last so bloom cannot soften finished ink/sketch lines.
-    this.composer.addPass(this.bloomPass);
-    this.composer.addPass(this.curvaturePass);
-    this.composer.addPass(this.inkPass);
-    this.composer.addPass(this.paperPass);
-    this.composer.addPass(this.comicPass);
-    this.composer.addPass(this.sketchPass);
+    this.frameCoordinator.registerPass(this.bloomPass, 'bloom', 30, false);
+    this.frameCoordinator.registerPass(this.curvaturePass, 'curvature', 40, false);
+    this.frameCoordinator.registerPass(this.inkPass, 'ink', 41, false);
+    this.frameCoordinator.registerPass(this.paperPass, 'paper', 50, false);
+    this.frameCoordinator.registerPass(this.comicPass, 'comic', 51, false);
+    this.frameCoordinator.registerPass(this.sketchPass, 'sketch', 52, false);
     // Fog is last so water, outlines and presentation effects share one depth fade.
-    this.composer.addPass(this.fogPass);
-    this.composer.addPass(new OutputPass());
-
-    this.ssaoPass.enabled = false;
-    this.toneMapPass.enabled = false;
-    this.bloomPass.enabled = false;
-    this.curvaturePass.enabled = false;
-    this.inkPass.enabled = false;
-    this.paperPass.enabled = false;
-    this.comicPass.enabled = false;
-    this.sketchPass.enabled = false;
-    this.fogPass.enabled = false;
+    this.frameCoordinator.registerPass(this.fogPass, 'fog', 60, false);
+    this.frameCoordinator.registerPass(new OutputPass(), 'output', 100, true);
+    this.frameCoordinator.syncPasses();
     this.setNumber(this.toneMapPass, 'uLUTStrength', 0);
     this.applyOutline({ mode: 'none', params: {} });
     this.applyPresentation({ mode: 'none', sketch: {}, paper: {}, comic: {} });
@@ -159,8 +163,10 @@ export class RenderRuntimeAdapter {
 
   setSceneRoots(contentRoot: THREE.Object3D | null, modelsRoot: THREE.Object3D | null): void {
     if (this.modelsRoot && this.modelsRoot !== modelsRoot) this.resetScopedCapabilities();
+    const sceneChanged = this.contentRoot !== contentRoot;
     this.contentRoot = contentRoot;
     this.modelsRoot = modelsRoot;
+    if (sceneChanged && contentRoot) this.frameCoordinator.notifySceneLoaded();
   }
 
   applyColorGrade(grade: RuntimeColorGrade): void {
@@ -188,7 +194,7 @@ export class RenderRuntimeAdapter {
       && grade.saturation === undefined
       && grade.shadowLift === undefined
       && grade.tint === undefined;
-    this.toneMapPass.enabled = !neutral;
+    this.frameCoordinator.setPassEnabled('toneMap', !neutral);
     this.setNumber(this.toneMapPass, 'uLUTStrength', 0);
     this.setNumber(this.toneMapPass, 'uContrast', grade.contrast ?? preset.contrast);
     this.setNumber(this.toneMapPass, 'uSaturation', grade.saturation ?? preset.saturation);
@@ -197,13 +203,13 @@ export class RenderRuntimeAdapter {
   }
 
   applyPostQuality(quality: RuntimePostQuality): void {
-    this.ssaoPass.enabled = quality.ssao !== 'off';
+    this.frameCoordinator.setPassEnabled('ssao', quality.ssao !== 'off');
     if (this.ssaoPass.enabled) {
       this.ssaoPass.kernelRadius = quality.ssao === 'strong' ? 7 : 4;
       this.ssaoPass.minDistance = 0.004;
       this.ssaoPass.maxDistance = quality.ssao === 'strong' ? 0.085 : 0.045;
     }
-    this.bloomPass.enabled = quality.bloom !== 'off';
+    this.frameCoordinator.setPassEnabled('bloom', quality.bloom !== 'off');
     this.bloomPass.strength = quality.bloomStrength
       ?? (quality.bloom === 'strong' ? 0.85 : quality.bloom === 'soft' ? 0.38 : 0);
     this.bloomPass.radius = quality.bloom === 'strong' ? 0.55 : 0.32;
@@ -213,6 +219,7 @@ export class RenderRuntimeAdapter {
   applyDistanceFog(color: string, density: number): void {
     this.fogDensity = Math.max(0, Number.isFinite(density) ? density : 0);
     configureDistanceFogPass(this.fogPass, color, density);
+    this.frameCoordinator.setPassEnabled('fog', this.fogPass.enabled);
   }
 
   getContentVisibilityDistance(): number {
@@ -274,7 +281,8 @@ export class RenderRuntimeAdapter {
   }
 
   tick(deltaTime: number, elapsedSeconds: number): void {
-    for (const binding of this.waterBindings) binding.surface.update(deltaTime, this.camera, null);
+    this.pendingDeltaTime = deltaTime;
+    this.pendingElapsedSeconds = elapsedSeconds;
     if (this.modelsRoot) {
       this.effectRuntime.updateRuntimeUniforms(this.modelsRoot, {
         uTime: elapsedSeconds,
@@ -284,21 +292,19 @@ export class RenderRuntimeAdapter {
   }
 
   applyOutline(style: RuntimeOutlineStyle): void {
-    this.outlineMode = style.mode;
     const preset = {
       ...(ARTISTIC_OUTLINE_PRESETS[style.mode] ?? ARTISTIC_OUTLINE_PRESETS.none),
       ...outlineOverrides(style.params)
     };
 
-    this.inkPass.enabled = style.mode === 'clean' || style.mode === 'ink' || style.mode === 'echo';
-    this.curvaturePass.enabled = style.mode === 'curvature';
+    this.frameCoordinator.setPassEnabled('ink', style.mode === 'clean' || style.mode === 'ink' || style.mode === 'echo');
+    this.frameCoordinator.setPassEnabled('curvature', style.mode === 'curvature');
     this.setEdgeMaskValues(preset);
     this.setInkValues(preset);
     this.setCurvatureValues(preset);
   }
 
   applyPresentation(style: RuntimePresentationStyle): void {
-    this.presentationMode = style.mode;
     const sketchEnabled = style.mode === 'sketch';
     const comicId = style.mode === 'comic-clean'
       ? 'clean'
@@ -306,9 +312,9 @@ export class RenderRuntimeAdapter {
         ? 'print'
         : null;
 
-    this.sketchPass.enabled = sketchEnabled;
-    this.paperPass.enabled = sketchEnabled;
-    this.comicPass.enabled = comicId !== null;
+    this.frameCoordinator.setPassEnabled('sketch', sketchEnabled);
+    this.frameCoordinator.setPassEnabled('paper', sketchEnabled);
+    this.frameCoordinator.setPassEnabled('comic', comicId !== null);
 
     if (sketchEnabled) {
       const params = style.sketch;
@@ -547,40 +553,31 @@ export class RenderRuntimeAdapter {
   }
 
   render(): void {
-    this.planarWaterReflection.render();
-    if (!this.hasActiveEffect()) {
-      this.renderer.render(this.scene, this.camera);
-      return;
-    }
-    this.renderPrePass();
-    this.composer.render();
+    this.frameCoordinator.renderFrame(this.pendingDeltaTime, this.pendingElapsedSeconds);
   }
 
-  private hasActiveEffect(): boolean {
-    return this.outlineMode !== 'none'
-      || this.presentationMode !== 'none'
-      || this.toneMapPass.enabled
-      || this.ssaoPass.enabled
-      || this.bloomPass.enabled
-      || this.fogPass.enabled;
-  }
-
-  private renderPrePass(): void {
+  private needsPrePass(): boolean {
     const needsSketchWorld = this.sketchPass.enabled
       && Number(this.sketchPass.uniforms.uHatchSpaceMode?.value ?? 1) > 0.5;
     const needsComicEdge = this.comicPass.enabled
       && Number(this.comicPass.uniforms.uLineBoost?.value ?? 0) > 0;
-    const needsEdgeMask = this.inkPass.enabled || needsComicEdge;
-    const needsNormalDepth = needsEdgeMask
+    return this.waterBindings.length > 0
+      || this.inkPass.enabled
+      || needsComicEdge
       || this.curvaturePass.enabled
       || needsSketchWorld
       || this.ssaoPass.enabled
       || this.fogPass.enabled;
-    if (!needsNormalDepth || !this.contentRoot) return;
+  }
+
+  private producePrePass(): RenderPrePassResources | null {
+    if (!this.contentRoot) return null;
 
     this.renderNormalDepth(this.contentRoot);
     const normalTexture = this.normalTarget.texture;
     const depthTexture = this.normalTarget.depthTexture;
+    const needsSketchWorld = this.sketchPass.enabled
+      && Number(this.sketchPass.uniforms.uHatchSpaceMode?.value ?? 1) > 0.5;
 
     if (this.ssaoPass.enabled && depthTexture) {
       this.ssaoPass.setSharedNormalDepth(normalTexture, depthTexture);
@@ -601,7 +598,10 @@ export class RenderRuntimeAdapter {
       this.sketchPass.uniforms.uProjectionMatrixInverse.value.copy(this.camera.projectionMatrixInverse);
       this.sketchPass.uniforms.uCameraMatrixWorld.value.copy(this.camera.matrixWorld);
     }
-    if (!needsEdgeMask) return;
+    const needsComicEdge = this.comicPass.enabled
+      && Number(this.comicPass.uniforms.uLineBoost?.value ?? 0) > 0;
+    const needsEdgeMask = this.inkPass.enabled || needsComicEdge;
+    if (!needsEdgeMask) return { normal: normalTexture, depth: depthTexture };
 
     const edgeUniforms = this.edgePass.material.uniforms;
     const needsBoundaryIds = Number(edgeUniforms.uObjectWeight.value) > 0
@@ -641,13 +641,20 @@ export class RenderRuntimeAdapter {
       this.inkPass.uniforms.uTime.value = performance.now() / 1000;
     }
     if (needsComicEdge) this.comicPass.uniforms.tEdgeMask.value = this.edgeTarget.texture;
+    return { normal: normalTexture, depth: depthTexture };
+  }
+
+  private updateWater(deltaTime: number, depthTexture: THREE.DepthTexture | null): void {
+    for (const binding of this.waterBindings) {
+      binding.surface.update(deltaTime, this.camera, depthTexture);
+    }
   }
 
   private renderNormalDepth(root: THREE.Object3D): void {
     const meshes: THREE.Mesh[] = [];
     root.traverse((object) => {
       const mesh = object as THREE.Mesh;
-      if (!mesh.isMesh || !isPrePassMesh(mesh)) return;
+      if (!mesh.isMesh || !isNormalDepthPrePassMesh(mesh)) return;
       meshes.push(mesh);
     });
     if (!meshes.length) {
@@ -932,29 +939,6 @@ function outlineOverrides(params: RuntimeOutlineStyle['params']): Record<string,
     ...(params.echoStrength === undefined ? {} : { inkEchoStrength: params.echoStrength }),
     ...(params.echoColor === undefined ? {} : { inkEchoColor: params.echoColor })
   };
-}
-
-function isPrePassMesh(mesh: THREE.Mesh): boolean {
-  if (!mesh.visible) return false;
-  const isWater = mesh.userData.isWater === true;
-  let current: THREE.Object3D | null = mesh;
-  while (current) {
-    if (
-      (!isWater && current.userData.skipShaderApply)
-      || (!isWater && current.userData.skipNormalDepthPrePass)
-      || current.userData.noNormalDepth
-      || current.userData.isEditorObject
-      || current.userData.isEnvironmentObject
-      || current.userData.isHelper
-      || current.userData.shaderOutline
-      || current.userData.isOutline
-      || current.name === '__outlineMesh__'
-    ) return false;
-    current = current.parent;
-  }
-  if (isWater) return true;
-  const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
-  return !materials.some((material) => material?.transparent || Number(material?.opacity ?? 1) < 1);
 }
 
 function numberValue(value: unknown, fallback: number): number {

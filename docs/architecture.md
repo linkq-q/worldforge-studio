@@ -13,6 +13,10 @@ Each rendered map owns one `RuntimeIndex` for the whole map lifetime. `AIPrimiti
 
 Never remove children during `Object3D.traverse()`. Collect targets first and detach them after traversal so Three.js does not iterate a shortened `children` array with its original length.
 
+Frame rendering is scheduled through the runtime `RenderPipeline` and `RenderGraph`: planar reflections run first, the shared normal/depth producer runs only when demanded, water then consumes the scene depth, and the registered composer passes run last. WorldForge owns only the host callbacks in `renderFrameCoordinator.ts`; it must not rebuild a second pass scheduler inside `RenderRuntimeAdapter`.
+
+Water meshes never write the shared normal/depth target. They consume the depth of terrain and opaque scene objects so shallow/deep blending, shore fading, SSAO, distance fog, and presentation passes share one coherent screen-space scene description.
+
 ## 目标
 
 一个面向非技术创作者与专业开发者的场景编辑器。两种模式编辑同一份地图数据，用户可以在两种模式间继续编辑，而不是导入导出两个不兼容项目。
