@@ -14,6 +14,7 @@ import {
   normalizeMap,
   sampleTerrainHeight,
   stepPlayerVerticalMotionForMap,
+  PLAYER_HEIGHT,
   PLAYER_RADIUS,
   type MapObjectAabb
 } from '../src/shared/map';
@@ -298,15 +299,17 @@ describe('map terrain editing', () => {
 
   it('stops upward motion at the underside of an elevated collider', () => {
     const map = createEmptyMap('Ceiling collision map');
+    // Keep the underside inside the first jump sweep as the player capsule changes size.
+    const ceilingBottom = PLAYER_HEIGHT + 0.3;
     const obstacles: MapObjectAabb[] = [{
       objectId: 'low-ceiling',
-      min: [-1, 2, -1],
-      max: [1, 3, 1]
+      min: [-1, ceilingBottom, -1],
+      max: [1, ceilingBottom + 1, 1]
     }];
 
     const vertical = stepPlayerVerticalMotionForMap([0, 0, 0], 0, 0.1, true, map, obstacles);
 
-    expect(vertical.y).toBeCloseTo(2 - 1.8, 4);
+    expect(vertical.y).toBeCloseTo(ceilingBottom - PLAYER_HEIGHT, 4);
     expect(vertical.velocity).toBe(0);
     expect(vertical.grounded).toBe(false);
   });

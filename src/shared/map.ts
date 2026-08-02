@@ -181,7 +181,9 @@ export interface PlayerVerticalMotionSweep {
 }
 
 export const PLAYER_RADIUS = 0.45;
-export const PLAYER_HEIGHT = 1.8;
+// The editor spawn marker, play capsule, camera and collision all share this
+// world-space height. Keep it as the single source of truth.
+export const PLAYER_HEIGHT = 2.7;
 export const PLAYER_SPAWN_OBJECT_ID = '__player_spawn__';
 export const SUN_OBJECT_ID = '__sun__';
 export const DEFAULT_SUN_POSITION: Vec3 = [-18, 24, 14];
