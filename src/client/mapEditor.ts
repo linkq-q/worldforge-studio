@@ -2945,6 +2945,11 @@ function findMapObjectId(object: THREE.Object3D): string | null {
 }
 
 function findMapObjectIdFromHit(hit: THREE.Intersection): string | null {
+  const resolveBatchHit = hit.object.userData.resolveMapObjectId;
+  if (typeof resolveBatchHit === 'function') {
+    const objectId = resolveBatchHit(hit);
+    if (typeof objectId === 'string') return objectId;
+  }
   if (Number.isInteger(hit.instanceId)) {
     const objectIds = hit.object.userData.instanceObjectIds;
     const objectId = Array.isArray(objectIds) ? objectIds[hit.instanceId as number] : null;

@@ -20,7 +20,7 @@ import {
   createExponentialFogPass
 } from '@voxel-studio/render-runtime/postprocess';
 import { WaterSurface, WaterfallSurface } from '@voxel-studio/render-runtime/environment';
-import { createEffectRuntime } from '@voxel-studio/render-runtime/effects';
+import { applyMaterialSurfaceBinding, createEffectRuntime } from '@voxel-studio/render-runtime/effects';
 import { applyDefaultWaterState, DEFAULT_WATER_STATE } from './defaultWaterState';
 import { WorldForgeMaterialTagRuntime } from './materialTagRuntimeAdapter';
 import { compileEffectRecipeLayers } from './effectRecipeCompiler';
@@ -214,6 +214,19 @@ export class RenderRuntimeAdapter {
 
   syncEnvironment(environmentMap: THREE.Texture | null = this.scene.environment): void {
     this.materialTagRuntime.syncEnvironment(environmentMap);
+    // Shared primitive batches carry their tag base recipe on the material,
+    // rather than on a per-node mesh, so HDRI changes need this parallel sync.
+    this.modelsRoot?.traverse((object) => {
+      const mesh = object as THREE.Mesh;
+      if (!mesh.isMesh) return;
+      const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+      for (const material of materials) {
+        const binding = material.userData.worldforgeMaterialSurfaceBinding;
+        if (binding && typeof binding === 'object') {
+          applyMaterialSurfaceBinding(material, binding as Record<string, unknown>, environmentMap);
+        }
+      }
+    });
     for (const binding of this.waterBindings) {
       if (!(binding.surface instanceof WaterSurface)) continue;
       syncWaterSurfaceEnvironment(binding.surface, environmentMap);

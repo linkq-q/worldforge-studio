@@ -83,7 +83,7 @@ describe('structured map water rendering', () => {
     });
   });
 
-  it('builds one asset template, shares geometry, and keeps per-instance materials isolated', async () => {
+  it('compiles even two matching asset copies into one scene-level primitive batch', async () => {
     const map = createEmptyMap('instances', 'map-shared-geometry');
     const now = Date.now();
     const asset: MapAsset = {
@@ -114,17 +114,12 @@ describe('structured map water rendering', () => {
     ];
 
     const rendered = await buildEditableMapGroup(map);
-    const first = rendered.objectGroups.get('tree-a')?.getObjectByName('trunk') as THREE.Mesh;
-    const second = rendered.objectGroups.get('tree-b')?.getObjectByName('trunk') as THREE.Mesh;
-    expect(first.geometry).toBe(second.geometry);
-    expect(first.material).not.toBe(second.material);
-    expect(first.userData.mapObjectId).toBe('tree-a');
-    expect(second.userData.mapObjectId).toBe('tree-b');
-
-    let geometryDisposals = 0;
-    first.geometry.addEventListener('dispose', () => { geometryDisposals += 1; });
+    const batch = rendered.modelsRoot.getObjectByProperty('isInstancedMesh', true) as THREE.InstancedMesh;
+    expect(batch.count).toBe(2);
+    expect(rendered.objectGroups.get('tree-a')?.getObjectByName('trunk')).toBeUndefined();
+    expect(rendered.objectGroups.get('tree-b')?.getObjectByName('trunk')).toBeUndefined();
+    expect(rendered.pickables).toContain(batch);
     rendered.dispose();
-    expect(geometryDisposals).toBe(1);
   });
 
   it('instances four safe copies and keeps editable object transform bindings', async () => {
@@ -161,7 +156,7 @@ describe('structured map water rendering', () => {
     const rendered = await buildEditableMapGroup(map);
     const batch = rendered.modelsRoot.getObjectByProperty('isInstancedMesh', true) as THREE.InstancedMesh;
     expect(batch.count).toBe(4);
-    expect(batch.userData.instanceObjectIds).toEqual(['shrub-0', 'shrub-1', 'shrub-2', 'shrub-3']);
+    expect(batch.userData.resolveMapObjectId({ object: batch, instanceId: 2 })).toBe('shrub-2');
     expect(rendered.pickables).toContain(batch);
 
     const selected = rendered.objectGroups.get('shrub-2') as THREE.Group;
@@ -173,7 +168,7 @@ describe('structured map water rendering', () => {
     rendered.dispose();
   });
 
-  it('keeps material-tagged copies on the isolated material path', async () => {
+  it('batches material-tagged copies when their tag only needs a shared base recipe', async () => {
     const map = createEmptyMap('tagged', 'map-tagged-assets');
     const now = Date.now();
     const asset: MapAsset = {
@@ -206,12 +201,39 @@ describe('structured map water rendering', () => {
     });
 
     const rendered = await buildEditableMapGroup(map);
-    expect(rendered.modelsRoot.getObjectByProperty('isInstancedMesh', true)).toBeUndefined();
+    const batch = rendered.modelsRoot.getObjectByProperty('isInstancedMesh', true) as THREE.InstancedMesh;
+    expect(batch.count).toBe(4);
+    expect(rendered.objectGroups.get('tagged-0')?.getObjectByName('leaf')).toBeUndefined();
+    rendered.dispose();
+  });
 
-    const materials = map.objects.map((object) => (
-      rendered.objectGroups.get(object.id)?.getObjectByName('leaf') as THREE.Mesh
-    ).material);
-    expect(new Set(materials).size).toBe(4);
+  it('keeps tags with per-object runtime effects on the standalone mesh path', async () => {
+    const map = createEmptyMap('tagged-runtime', 'map-tagged-runtime-assets');
+    const now = Date.now();
+    const asset: MapAsset = {
+      id: 'asset-fire',
+      name: 'torch flame',
+      prompt: 'torch flame',
+      modelJson: {
+        nodes: [{
+          id: 'flame',
+          tags: [{ tag: 'fire', value: 1 }],
+          mesh: { type: 'box', params: { width: 1, height: 1, depth: 1 }, color: 0xff8822 }
+        }]
+      },
+      colliderPlan: { version: 1, boxes: [], sourceMeshCount: 1, candidateCount: 1, fallbackUsed: false },
+      mode: 'voxel', createdAt: now, updatedAt: now
+    };
+    map.assets = [asset];
+    map.objects = Array.from({ length: 2 }, (_, index) => {
+      const object = createTestObject(`flame-${index}`, asset.id);
+      object.transform.position = [index * 3, 0, 0];
+      return object;
+    });
+
+    const rendered = await buildEditableMapGroup(map);
+    expect(rendered.modelsRoot.getObjectByProperty('isInstancedMesh', true)).toBeUndefined();
+    expect(rendered.objectGroups.get('flame-0')?.getObjectByName('flame')).toBeDefined();
     rendered.dispose();
   });
 });

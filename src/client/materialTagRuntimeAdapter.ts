@@ -85,7 +85,9 @@ export class WorldForgeMaterialTagRuntime {
             entry.effectPackage,
             {
               runtime: this.effectRuntime,
-              geometryFamily: object.userData.geometryFamily ?? entry.part?.mesh?.type ?? null,
+              geometryFamily: object.userData.geometryFamily
+                ?? (entry.part as { mesh?: { type?: string } } | undefined)?.mesh?.type
+                ?? null,
               source: 'material-tags'
             }
           );

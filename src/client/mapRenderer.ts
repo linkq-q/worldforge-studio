@@ -20,7 +20,7 @@ import {
   type MapWaterBody
 } from '../shared/map';
 import { buildModelGroup } from './modelRenderer';
-import { buildMapAssetInstances } from './mapAssetInstancing';
+import { buildMapPrimitiveBatches } from './mapPrimitiveBatching';
 import { terrainVertexColor } from './terrainAppearance';
 import { buildMapGrassField } from './mapGrassRenderer';
 import { combinedGrassDensity } from '../shared/mapGrass';
@@ -80,7 +80,7 @@ export async function buildEditableMapGroup(input: EditableMap, options: MapRend
     else modelsRoot.add(group);
   }
   modelsRoot.updateMatrixWorld(true);
-  const instancing = await buildMapAssetInstances(map.objects.flatMap((object) => {
+  const instancing = await buildMapPrimitiveBatches(map.objects.flatMap((object) => {
     const asset = object.visible && object.assetId ? assets.get(object.assetId) : undefined;
     const objectGroup = objectGroups.get(object.id);
     return asset && objectGroup
@@ -109,6 +109,7 @@ export async function buildEditableMapGroup(input: EditableMap, options: MapRend
     },
     dispose: () => {
       grass?.dispose();
+      instancing.dispose();
       disposeObject(root);
     }
   };

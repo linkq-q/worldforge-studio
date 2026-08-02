@@ -10,6 +10,34 @@ declare module '@voxel-studio/render-runtime' {
     applyStyle(preset: { renderMode: 'pbr' | 'cel'; cartoon?: Record<string, number> }): void;
     setCartoonParams(params: Record<string, number>): void;
   }
+  export class RuntimeIndex {
+    getPartIdFromHit(hit: import('three').Intersection): string | null;
+  }
+  export class AIPrimitiveBatcher {
+    constructor(options?: {
+      runtimeIndex?: RuntimeIndex;
+      celBatchable?: boolean;
+      batchedMeshable?: boolean;
+      onBatchMaterialReady?: (
+        material: import('three').Material,
+        sourceMaterial: unknown,
+        baseRecipe: Record<string, unknown> | null,
+        mesh: import('three').Object3D
+      ) => void;
+    });
+    reset(): void;
+    resetScene(root: import('three').Object3D): void;
+    canBatch(part: object, options?: Record<string, unknown>): {
+      eligible: boolean;
+      reason?: string;
+    };
+    stagePart(part: object, assessment: object, modelId: string, parentChain?: import('three').Matrix4): boolean;
+    compile(modelId: string, rootGroup: import('three').Object3D): unknown;
+    updateModelInstanceMatrices(modelId: string): unknown;
+    getInstancedMeshes(): import('three').Object3D[];
+    getBatchedMeshes(): import('three').Object3D[];
+    dispose(): void;
+  }
   export interface PlanarReflectionSurface {
     mesh: import('three').Mesh;
     setPlanarReflectionTexture(texture: import('three').Texture | null): void;
@@ -225,7 +253,7 @@ declare module '@voxel-studio/render-runtime/effects' {
     clearEffects(target: import('three').Object3D, options?: Record<string, unknown>): unknown;
   }
   export function applyMaterialSurfaceBinding(
-    target: import('three').Object3D,
+    target: import('three').Object3D | import('three').Material,
     binding: Record<string, unknown>,
     environmentMap?: import('three').Texture | null
   ): number;
@@ -234,9 +262,10 @@ declare module '@voxel-studio/render-runtime/effects' {
     vocabulary: Record<string, unknown>
   ): {
     byPartId: Map<string, {
-      part?: { mesh?: { type?: string } };
+      part?: Record<string, unknown>;
       effectiveTags: unknown[];
       effectPackage?: { materialLayers?: unknown[] };
+      baseRecipe?: Record<string, unknown>;
       materialBindings?: {
         surface?: Record<string, unknown>;
         matcap?: Record<string, unknown>;
@@ -246,6 +275,7 @@ declare module '@voxel-studio/render-runtime/effects' {
   };
   export function createEffectRuntime(): {
     runtime: {
+      applyToMaterial(material: import('three').Material, effectPackage: Record<string, unknown>): unknown;
       applyToObject3D(root: import('three').Object3D, effectPackage: Record<string, unknown>): unknown;
       removeFromObject3D(root: import('three').Object3D): void;
       updateRuntimeUniforms(root: import('three').Object3D, values: Record<string, number>): number;
