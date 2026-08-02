@@ -24,6 +24,7 @@ const PARAMETER_LABELS: Record<string, string> = {
   groundColor: '地面颜色',
   rootColor: '草根颜色',
   tipColor: '草尖颜色',
+  visibilityDistance: '可视距离（米）',
   paletteVariation: '调色板变化',
   bladeHeight: '叶片高度',
   bladeWidth: '叶片宽度',
@@ -413,7 +414,7 @@ function renderDeveloperPresetInput(
   const identity = `data-dev-module-index="${index}" data-dev-module-id="${moduleId}" data-dev-param="${parameter}"`;
   if (rule.type === 'code' && rule.control === 'select') {
     const options = ['', ...hdriFiles];
-    return `<label><span>${parameterLabel(parameter)}</span><select ${identity}>${options.map((option) => `<option value="${escapeHtml(option)}" ${value === option ? 'selected' : ''}>${escapeHtml(option || '不使用 HDRI')}</option>`).join('')}</select></label>${hdriFiles.length ? '' : '<p class="empty">把 .hdr/.exr/.jpg 放进 data/map-editor/hdri 后重新打开面板。</p>'}`;
+    return `<label><span>${parameterLabel(parameter)}</span><select ${identity}>${options.map((option) => `<option value="${escapeHtml(option)}" ${value === option ? 'selected' : ''}>${escapeHtml(option || '不使用 HDRI')}</option>`).join('')}</select></label>${hdriFiles.length ? '' : '<p class="empty">把 .exr 放进 data/map-editor/hdri 后重新打开面板。</p>'}`;
   }
   if (rule.type === 'enum') {
     return `<label><span>${parameterLabel(parameter)}</span><select ${identity}>${rule.values.map((option) => `<option value="${escapeHtml(option)}" ${value === option ? 'selected' : ''}>${optionLabel(option)}</option>`).join('')}</select></label>`;

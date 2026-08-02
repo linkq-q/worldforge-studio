@@ -198,6 +198,8 @@ function applyTerrainGrassTint(mesh: THREE.Mesh, map: EditableMap, style: Runtim
   const positions = geometry.getAttribute('position');
   const colors = geometry.getAttribute('color') as THREE.BufferAttribute;
   const grassColor = new THREE.Color(style.groundColor);
+  const rootColor = new THREE.Color(style.rootColor);
+  grassColor.lerp(rootColor, 0.58);
   const color = new THREE.Color();
   for (let index = 0; index < positions.count; index += 1) {
     const x = positions.getX(index);
@@ -207,7 +209,9 @@ function applyTerrainGrassTint(mesh: THREE.Mesh, map: EditableMap, style: Runtim
     color.setRGB(base[0], base[1], base[2]);
     const isSurface = y >= sampleTerrainHeight(map, x, z) - 0.05;
     if (style.groundTint && isSurface) {
-      color.lerp(grassColor, combinedGrassDensity(map, x, z) * style.groundTintStrength);
+      const density = combinedGrassDensity(map, x, z);
+      const transition = density * density * (3 - 2 * density);
+      color.lerp(grassColor, transition * style.groundTintStrength);
     }
     colors.setXYZ(index, color.r, color.g, color.b);
   }

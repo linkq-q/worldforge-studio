@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { describe, expect, it } from 'vitest';
 import { panoramaSwatch } from '../src/client/hdriSwatch';
+import { harmonizeHdriAtmosphere } from '../src/shared/hdriAtmosphere';
 
 const WIDTH = 8;
 const HEIGHT = 8;
@@ -47,5 +48,25 @@ describe('panoramaSwatch', () => {
 
   it('refuses buffers that are too small to hold the declared image', () => {
     expect(swatch(new Float32Array(4), true)).toBeNull();
+  });
+});
+
+describe('harmonizeHdriAtmosphere', () => {
+  it('uses the tinted panorama swatches for fog, environment and sunlight', () => {
+    const result = harmonizeHdriAtmosphere({
+      version: 2,
+      baseSchemeId: 'render-natural-day',
+      modules: [{
+        id: 'environment.hdri',
+        params: { texture: 'morning.exr', tint: '#ff8040', tintStrength: 0.5 }
+      }]
+    }, [{ file: 'morning.exr', skyColor: '#4080ff', groundColor: '#204020' }]);
+
+    expect(result.modules.find((module) => module.id === 'environment.palette')?.params.fogColor)
+      .toBe('#906030');
+    expect(result.modules.find((module) => module.id === 'lighting.hemisphere')?.params)
+      .toMatchObject({ skyColor: '#a080a0', groundColor: '#906030' });
+    expect(result.modules.find((module) => module.id === 'lighting.sun')?.params.color)
+      .toMatch(/^#[0-9a-f]{6}$/);
   });
 });

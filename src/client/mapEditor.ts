@@ -163,6 +163,7 @@ class MapEditor {
   private renderStats: RenderStats | null = null;
   private playMode: PlayModeController | null = null;
   private hdriFiles: string[] = [];
+  private hdriTextures: HdriTexture[] = [];
   private orbit: OrbitControls | null = null;
   private transform: TransformControls | null = null;
   private renderedMap: RenderedMap | null = null;
@@ -204,7 +205,6 @@ class MapEditor {
   private renderDraftChanged = false;
   private renderAiPrompt = '';
   private renderAiProvider: ChatProvider = 'gpt';
-  private renderAiUseHdri = false;
   private renderAiPreview = false;
   private renderAiExplanation = '';
   private renderAiAbortController: AbortController | null = null;
@@ -1330,6 +1330,7 @@ class MapEditor {
           this.developerRenderCategory,
           this.developerRenderView
         )}
+        ${this.renderHdriClassificationEditor(draft)}
         <div class="developer-save-bar">
           <p id="render-tuning-note" class="empty">${this.renderDraftChanged
             ? '当前修改正在预览；保存后会生成新方案，不会改动原预设。'
@@ -1339,6 +1340,31 @@ class MapEditor {
         ${shader.mode === 'isolated-glsl' ? `
           <p class="developer-warning">完整 GLSL 只作为隔离扩展保存在方案中；当前基础编辑器不会执行它，也不会修改核心源码。</p>
         ` : ''}
+      </section>
+    `;
+  }
+
+  private renderHdriClassificationEditor(draft: RenderScheme): string {
+    if (this.developerRenderView !== 'tuning' || this.developerRenderCategory !== 'environment' || !draft.renderPlan) return '';
+    const file = compileRuntimeHdriSky(draft.renderPlan).texture;
+    const texture = this.hdriTextures.find((entry) => entry.file === file);
+    if (!texture) return '';
+    const time = ['morning', 'day', 'evening'].find((tag) => texture.tags.includes(tag)) ?? '';
+    const temperature = ['cool', 'warm'].find((tag) => texture.tags.includes(tag)) ?? '';
+    return `
+      <section class="hdri-classification" data-hdri-file="${escapeHtml(file)}">
+        <div><b>天空分类</b><small>${escapeHtml(file)} · 供 AI 软匹配，不锁死随机性</small></div>
+        <label><span>时间</span><select data-hdri-category="timeOfDay">
+          <option value="" ${time ? '' : 'selected'}>未分类</option>
+          <option value="morning" ${time === 'morning' ? 'selected' : ''}>早晨</option>
+          <option value="day" ${time === 'day' ? 'selected' : ''}>白天</option>
+          <option value="evening" ${time === 'evening' ? 'selected' : ''}>傍晚</option>
+        </select></label>
+        <label><span>色温</span><select data-hdri-category="temperature">
+          <option value="" ${temperature ? '' : 'selected'}>未分类</option>
+          <option value="cool" ${temperature === 'cool' ? 'selected' : ''}>冷</option>
+          <option value="warm" ${temperature === 'warm' ? 'selected' : ''}>暖</option>
+        </select></label>
       </section>
     `;
   }
@@ -1378,10 +1404,7 @@ class MapEditor {
             </div>
           </div>
         ` : ''}
-        <label class="developer-toggle" title="勾选后本轮 AI 会从 HDRI 目录挑一张全景图作为天空，并用它下半区的平均色设定距离雾与环境光">
-          <input id="render-ai-use-hdri" type="checkbox" ${this.renderAiUseHdri ? 'checked' : ''} />
-          <span>使用 HDRI 作为天空</span>
-        </label>
+        <p class="empty">HDRI 天空会自动从分类库选择；AI 可调整曝光、饱和度与叠加颜色，并同步环境光、太阳光和距离雾。</p>
         <div class="render-ai-controls">
           <select id="render-ai-provider" aria-label="AI 模型">
             ${CHAT_PROVIDER_OPTIONS.map((option) => `
@@ -1531,7 +1554,11 @@ class MapEditor {
         // Free-form GLSL must not re-apply on every keystroke, but the HDRI
         // picker is a select — the sky should change the moment it is chosen.
         this.markRenderDraftChanged(rule.type !== 'code' || rule.control === 'select');
+        if (module.id === 'environment.hdri' && parameter === 'texture') this.renderRenderInspector();
       });
+    });
+    host.querySelectorAll<HTMLSelectElement>('[data-hdri-category]').forEach((input) => {
+      input.addEventListener('change', () => void this.saveHdriClassification(host));
     });
     host.querySelectorAll<HTMLInputElement | HTMLSelectElement>('[data-dev-module-index][data-dev-scope]').forEach((input) => {
       input.addEventListener(input.dataset.devScope === 'tag' ? 'input' : 'change', () => {
@@ -1601,9 +1628,6 @@ class MapEditor {
     });
     host.querySelector<HTMLSelectElement>('#render-ai-provider')?.addEventListener('change', (event) => {
       this.renderAiProvider = (event.target as HTMLSelectElement).value as ChatProvider;
-    });
-    host.querySelector<HTMLInputElement>('#render-ai-use-hdri')?.addEventListener('change', (event) => {
-      this.renderAiUseHdri = (event.target as HTMLInputElement).checked;
     });
     host.querySelectorAll<HTMLButtonElement>('[data-render-prompt-suggestion]').forEach((button) => {
       button.addEventListener('click', () => {
@@ -1807,7 +1831,7 @@ class MapEditor {
           body: JSON.stringify({
             prompt,
             provider: this.renderAiProvider,
-            useHdriSky: this.renderAiUseHdri,
+            useHdriSky: true,
             ...(currentPlan ? { currentPlan } : {})
           }),
           signal: controller.signal
@@ -2478,7 +2502,27 @@ class MapEditor {
   private async reloadHdriTextures(): Promise<void> {
     const result = await editorFetch<{ hdriTextures?: HdriTexture[] }>('/api/editor/hdri')
       .catch(() => null);
-    this.hdriFiles = (result?.hdriTextures ?? []).map((texture) => texture.file);
+    this.hdriTextures = result?.hdriTextures ?? [];
+    this.hdriFiles = this.hdriTextures.map((texture) => texture.file);
+  }
+
+  private async saveHdriClassification(host: HTMLElement): Promise<void> {
+    const panel = host.querySelector<HTMLElement>('[data-hdri-file]');
+    const file = panel?.dataset.hdriFile;
+    if (!file) return;
+    const timeOfDay = panel.querySelector<HTMLSelectElement>('[data-hdri-category="timeOfDay"]')?.value ?? '';
+    const temperature = panel.querySelector<HTMLSelectElement>('[data-hdri-category="temperature"]')?.value ?? '';
+    try {
+      await editorFetch(`/api/editor/hdri/${encodeURIComponent(file)}`, {
+        method: 'PUT',
+        body: JSON.stringify({ timeOfDay, temperature })
+      });
+      await this.reloadHdriTextures();
+      this.state.message = `已更新天空分类：${file}`;
+    } catch (error) {
+      this.state.message = `天空分类保存失败：${error instanceof Error ? error.message : '未知错误'}`;
+    }
+    this.updateToolbarState();
   }
 
   private applyCurrentRenderScheme(): void {

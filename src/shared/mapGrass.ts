@@ -35,7 +35,7 @@ export interface GrassLayerInput {
 export type GrassLayerPatch = Pick<GrassLayerInput, 'name' | 'visible' | 'seed' | 'mix'>;
 
 export const MAX_GRASS_LAYERS = 8;
-export const DEFAULT_GRASS_MIX: GrassVariantMix = { short: 0.7, tall: 0.2, flowers: 0.1 };
+export const DEFAULT_GRASS_MIX: GrassVariantMix = { short: 0.76, tall: 0.2, flowers: 0.04 };
 
 export function normalizeGrassLayers(
   value: unknown,

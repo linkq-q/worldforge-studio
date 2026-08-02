@@ -22,12 +22,13 @@ export function harmonizeHdriAtmosphere(
   const modules = plan.modules.map((module) => ({ ...module, params: { ...module.params } }));
   upsertSceneModule(modules, 'environment.palette', { fogColor: ground });
   upsertSceneModule(modules, 'lighting.hemisphere', { skyColor: sky, groundColor: ground });
+  upsertSceneModule(modules, 'lighting.sun', { color: tintColor(sky, '#fff1d2', 0.28) });
   return { ...plan, modules };
 }
 
 function upsertSceneModule(
   modules: RenderModuleSelection[],
-  id: 'environment.palette' | 'lighting.hemisphere',
+  id: 'environment.palette' | 'lighting.hemisphere' | 'lighting.sun',
   params: Record<string, string>
 ): void {
   const existing = modules.find((module) => module.id === id);

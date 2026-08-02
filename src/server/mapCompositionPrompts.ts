@@ -34,6 +34,7 @@ export function buildSceneDirectorPrompt(map: EditableMap, assets: readonly MapA
     'Asset family role is free semantic text. Tags should be reusable lower-case search terms.',
     'Grass is editable ground vegetation, not a generated model asset. When appropriate, define reusable grassFamilies and assign grassLayers to zones.',
     'For each grass zone decide short/tall/flower proportions, density, variation, edge falloff, and residualDensity around structures (0 tidy, larger abandoned).',
+    'Keep flower accents sparse and readable: usually 0.02-0.08 of a grass mix, unless the user explicitly requests a flower field.',
     'Grass may intentionally continue to pond edges or underwater. Do not remove it merely because a zone contains water; slope fading is deterministic.',
     `Use consultations only when a genuinely difficult local relationship would benefit from an independent specialist. Use 0-${SCENE_COMPOSITION_LIMITS.consultationCount}; do not create one per zone.`,
     'A consultation may improve the plan but cannot directly create assets or map operations.',

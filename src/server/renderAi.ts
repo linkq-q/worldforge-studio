@@ -166,7 +166,8 @@ function buildSystemPrompt(
   return [
     ...(requireHdriSky ? [
       '本轮用户勾选了「HDRI 天空」：必须输出 environment.hdri 模块，texture 从能力清单的 environment.hdri-library 中挑一个最贴合提示词的文件名，不得留空或自造文件名。',
-      '不要自己写 environment.palette.fogColor 和 lighting.hemisphere 的颜色，系统会用该全景图下半区（地面）的平均色统一设定距离雾与环境光。'
+      '可以按氛围调整 HDRI 的 exposure、saturation、rotation、tint、tintStrength 和 intensity，把日间天空重塑为清晨或黄昏，但不要自造 texture。',
+      '不要自己写 environment.palette.fogColor、lighting.hemisphere 或 lighting.sun 的颜色，系统会用经过 tint 后的天空/地面平均色统一设定距离雾、环境光和太阳光。'
     ] : []),
     ...(currentPlan ? [
       '这是一次 Refine。只修改用户明确要求变化的渲染语义，保留其余模块和参数。',
@@ -178,6 +179,7 @@ function buildSystemPrompt(
     '模块可以只覆盖需要改变的参数；其余参数继承基础方案。颜色必须是 #RRGGBB。',
     '输出 RenderPlan V2。runtime.material-theme、runtime.water-style、runtime.effect-recipe 可以重复；每项必须提供唯一 key 和 scope。scope.target 只能是 water、material-tag 或 asset-tag，标签使用 foliage、bark、wood、stone、metal、water、emissive、fire、tree、rock、building 等已存在语义。',
     '色彩语义使用 runtime.color-grade；水体语义使用 runtime.water-style；草叶颜色、胖瘦、高度、风和地表染色使用 runtime.grass-style；树叶/树皮/石头/金属批量改材质使用 runtime.material-theme；柔光/硬光/逆光/阴天/黄昏使用 runtime.light-rig；Bloom/SSAO 使用 runtime.post-quality；发光/Fresnel/火焰/魔法光环/植被摇摆使用 runtime.effect-recipe。',
+    '雾优先使用 atmosphere.fog.visibilityDistance（米），不要猜底层 density：薄雾 240-450，普通雾 120-220，浓雾 40-90；“清晨薄雾”不得低于 260。',
     '明确风格必须选择对应能力：素描/铅笔/手绘排线使用 runtime.presentation-style=sketch（默认 coordinateSpace=world），通常组合 runtime.outline-style=ink；水墨使用 outline=ink；漫画使用 comic-clean 或 comic-print；卡通/赛璐璐使用 surface-style=cel。',
     '只返回一个 JSON 对象，不要 Markdown，不要额外文字：',
     '{"plan":{"version":2,"baseSchemeId":"方案ID","modules":[{"key":"可选唯一键","id":"能力ID","scope":{"target":"material-tag","tag":"foliage"},"params":{}}]},"styleTags":["tag"],"explanation":"简短说明"}',

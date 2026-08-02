@@ -2,10 +2,11 @@
 
 ## HDRI catalog
 
-Place `.exr` files in `data/map-editor/hdri/` and copy `docs/hdri-catalog.example.json` there as `catalog.json`.
-Each entry gives the AI curated mood tags plus optional `skyColor` and `groundColor` swatches. The AI may select only an indexed filename; the selected ground swatch harmonizes distance fog and hemisphere light. Do not rely on random filenames for atmosphere matching.
+Place `.exr` files in `data/map-editor/hdri/`. The render developer panel writes each selected panorama's two small classification axes (`morning/day/evening` and `cool/warm`) to `catalog.json`; unrelated free-form tags and optional `skyColor` / `groundColor` swatches are preserved.
 
-The 「使用 HDRI 作为天空」 checkbox in the render panel makes one AI round mandatory-HDRI: the system prompt requires an `environment.hdri` module and the plan is rejected (then repaired) when it comes back without a texture. Swatches do not have to be catalogued for that round — the client samples the panorama the sky dome already decoded and re-runs `harmonizeHdriAtmosphere` on the draft. Which data half is sky depends on the format, so read `texture.flipY` (three sets it true for `.hdr`, false for `.exr`) instead of assuming a row order.
+When the library is non-empty, every UI render-generation request requires the AI to choose one indexed panorama. It may tune rotation, exposure, saturation, intensity, tint and tint strength, but may not invent a filename. The selected/tinted lower-panorama swatch harmonizes distance fog and hemisphere ground light, while the upper swatch drives sky light and a restrained sun tint. Swatches do not have to be catalogued beforehand: the client samples the panorama decoded by the sky dome and re-runs `harmonizeHdriAtmosphere` on the draft. Which data half is sky depends on `texture.flipY` (three sets it true for `.hdr`, false for `.exr`).
+
+AI-authored fog uses `atmosphere.fog.visibilityDistance` in metres; the compiler converts it to exponential density at 95% opacity. Human-facing language therefore maps to stable ranges (`thin 240-450m`, `normal 120-220m`, `dense 40-90m`) instead of asking the model to guess a renderer-specific density.
 
 ## Render runtime lifecycle
 

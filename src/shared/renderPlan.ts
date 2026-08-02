@@ -189,11 +189,11 @@ export interface RuntimeGrassStyle {
 }
 
 export const DEFAULT_RUNTIME_GRASS_STYLE: RuntimeGrassStyle = {
-  rootColor: '#72ad49', tipColor: '#c4f07f', paletteVariation: 0.14, bands: 3,
+  rootColor: '#72ad49', tipColor: '#b7df76', paletteVariation: 0.1, bands: 3,
   bladeHeight: 0.95, bladeWidth: 0.18, windStrength: 0.22, windDirection: [1, 0.25],
   normalFlatten: 0.8, rootDarken: 0.8, gradientBias: 0.7, cellSize: 0.8,
   fadeStart: 48, fadeEnd: 84, maxInstances: 15000,
-  groundTint: true, groundColor: '#4f7f3a', groundTintStrength: 0.72
+  groundTint: true, groundColor: '#669746', groundTintStrength: 0.82
 };
 
 export interface RuntimeMaterialTheme {
@@ -276,7 +276,10 @@ export const RENDER_CAPABILITIES: readonly RenderCapability[] = [
   {
     id: 'atmosphere.fog',
     label: '全局雾',
-    params: { density: { type: 'number', min: 0, max: 0.08 } }
+    params: {
+      visibilityDistance: { type: 'number', min: 40, max: 800, default: 300 },
+      density: { type: 'number', min: 0, max: 0.045, default: 0.006 }
+    }
   },
   {
     id: 'lighting.hemisphere',
@@ -571,7 +574,9 @@ export function compileRenderPlan(plan: RenderPlan): Partial<RenderEnvironmentSe
         if (typeof params.fogColor === 'string') settings.fogColor = params.fogColor;
         break;
       case 'atmosphere.fog':
-        if (typeof params.density === 'number') settings.fogDensity = params.density;
+        if (typeof params.visibilityDistance === 'number') {
+          settings.fogDensity = fogDensityForVisibilityDistance(params.visibilityDistance);
+        } else if (typeof params.density === 'number') settings.fogDensity = params.density;
         break;
       case 'lighting.hemisphere':
         if (typeof params.skyColor === 'string') settings.hemisphereSkyColor = params.skyColor;
@@ -588,6 +593,12 @@ export function compileRenderPlan(plan: RenderPlan): Partial<RenderEnvironmentSe
     }
   }
   return settings;
+}
+
+/** Density for 95% fog opacity at a user-facing visibility distance. */
+export function fogDensityForVisibilityDistance(distance: number): number {
+  const safeDistance = Math.max(1, Number.isFinite(distance) ? distance : 300);
+  return Math.sqrt(-Math.log(0.05)) / safeDistance;
 }
 
 export function compileRuntimeStyle(plan: RenderPlan): RuntimeSurfaceStyle {

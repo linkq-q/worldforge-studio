@@ -200,6 +200,12 @@ async function handleEditorHdri(req: Req, res: Res, store: MapStore, parts: stri
     res.end(body);
     return;
   }
+  if (req.method === 'PUT' && parts.length === 4) {
+    const body = await readJson<{ timeOfDay?: string; temperature?: string }>(req);
+    const hdriTexture = await store.updateHdriClassification(decodeURIComponent(parts[3]), body);
+    sendJson(res, 200, { hdriTexture });
+    return;
+  }
   throw new HttpError(404, 'not_found');
 }
 
@@ -483,7 +489,7 @@ async function handleEditorRenderSchemes(req: Req, res: Res, store: MapStore, pa
     try {
       const schemes = await store.listRenderSchemes();
       const hdriTextures = await store.listHdriTextures();
-      const requireHdriSky = body.useHdriSky === true;
+      const requireHdriSky = body.useHdriSky !== false && hdriTextures.length > 0;
       const suggestion = parts[3] === 'refine'
         ? await refineRenderSuggestion(
             prompt,

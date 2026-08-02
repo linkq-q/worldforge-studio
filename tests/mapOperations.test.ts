@@ -252,6 +252,34 @@ describe('map operation transactions', () => {
     expect(await store.resolveHdriFile('notes.txt')).toBeNull();
   });
 
+  it('persists one time and temperature category per HDRI without losing swatches', async () => {
+    const store = await createStore();
+    const hdriDir = path.join(store.rootDir, 'hdri');
+    await writeFile(path.join(hdriDir, 'forest.exr'), 'not-a-real-exr');
+    await writeFile(path.join(hdriDir, 'catalog.json'), JSON.stringify({
+      textures: [{
+        file: 'forest.exr',
+        tags: ['forest', 'morning', 'cool'],
+        skyColor: '#aaccff',
+        groundColor: '#61745a'
+      }]
+    }));
+
+    const updated = await store.updateHdriClassification('forest.exr', {
+      timeOfDay: 'evening',
+      temperature: 'warm'
+    });
+    const restarted = new MapStore({ rootDir: store.rootDir });
+    const [persisted] = await restarted.listHdriTextures();
+
+    expect(updated.tags).toEqual(['forest', 'evening', 'warm']);
+    expect(persisted).toMatchObject({
+      tags: ['forest', 'evening', 'warm'],
+      skyColor: '#aaccff',
+      groundColor: '#61745a'
+    });
+  });
+
   it('clears the undo snapshot after a later direct save', async () => {
     const store = await createStore();
     const original = await store.createMap({ name: 'before' });

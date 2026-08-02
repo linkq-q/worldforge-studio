@@ -452,6 +452,29 @@ export class MapStore {
     return { ...hydrated, collisionBake: getMapCollisionBake(hydrated) };
   }
 
+  async updateHdriClassification(
+    file: string,
+    input: { timeOfDay?: string; temperature?: string }
+  ): Promise<HdriTexture> {
+    const textures = await this.listHdriTextures();
+    const selected = textures.find((texture) => texture.file === file);
+    if (!selected) throw new Error('unknown_hdri_texture');
+    const timeOfDay = ['morning', 'day', 'evening'].includes(input.timeOfDay ?? '') ? input.timeOfDay! : '';
+    const temperature = ['cool', 'warm'].includes(input.temperature ?? '') ? input.temperature! : '';
+    const categoryTags = new Set(['morning', 'day', 'evening', 'cool', 'warm']);
+    const tags = selected.tags.filter((tag) => !categoryTags.has(tag));
+    if (timeOfDay) tags.push(timeOfDay);
+    if (temperature) tags.push(temperature);
+    const entries = textures.map((texture) => ({
+      file: texture.file,
+      tags: texture.file === file ? tags : texture.tags,
+      ...(texture.skyColor ? { skyColor: texture.skyColor } : {}),
+      ...(texture.groundColor ? { groundColor: texture.groundColor } : {})
+    }));
+    await atomicWriteJson(path.join(this.hdriDir, HDRI_CATALOG_FILE), { version: 1, textures: entries });
+    return { ...selected, tags };
+  }
+
   /** Imports a portable map as a new project and remaps embedded assets. */
   async importMap(input: EditableMap, renderSchemeId: string | null = null): Promise<EditableMap> {
     await this.ensureReady();

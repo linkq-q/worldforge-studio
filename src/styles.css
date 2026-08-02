@@ -1434,6 +1434,30 @@ p {
   backdrop-filter: blur(10px);
 }
 
+.hdri-classification {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) repeat(2, minmax(92px, 120px));
+  gap: 8px;
+  align-items: end;
+  margin: 10px 0;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: rgba(25, 43, 46, 0.7);
+}
+
+.hdri-classification > div,
+.hdri-classification label {
+  display: grid;
+  gap: 4px;
+}
+
+.hdri-classification small,
+.hdri-classification label > span {
+  color: var(--muted);
+  font-size: 0.7rem;
+}
+
 .developer-save-bar p {
   margin: 0;
 }

@@ -8,7 +8,9 @@ import {
   compileRuntimeMaterialThemes,
   compileRuntimePostQuality,
   compileRuntimeWaterStyles,
+  compileRenderPlan,
   createDefaultRenderAccessPolicy,
+  fogDensityForVisibilityDistance,
   normalizeRenderAccessPolicy,
   normalizeRenderPlan
 } from '../src/shared/renderPlan';
@@ -179,6 +181,20 @@ describe('RenderPlan V2 capabilities', () => {
       exposure: 1,
       useAsEnvironment: true
     });
+  });
+
+  it('compiles semantic fog visibility before the legacy density control', () => {
+    const plan = normalizeRenderPlan({
+      version: 2,
+      baseSchemeId: 'render-natural-day',
+      modules: [{
+        id: 'atmosphere.fog',
+        params: { visibilityDistance: 300, density: 0.04 }
+      }]
+    });
+
+    expect(compileRenderPlan(plan).fogDensity).toBeCloseTo(fogDensityForVisibilityDistance(300), 8);
+    expect(compileRenderPlan(plan).fogDensity).toBeLessThan(0.006);
   });
 
   it('enforces each scheme policy for AI plans while retaining developer ranges', () => {
