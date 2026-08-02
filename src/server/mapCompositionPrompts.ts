@@ -26,6 +26,8 @@ export function buildSceneDirectorPrompt(map: EditableMap, assets: readonly MapA
     'You decide what this world looks like: regions, hierarchy, focal areas, transitions, terrain intent, asset families, density, scale, and negative space.',
     'Do not output object coordinates, low-level map operations, spawn points, combat rules, cover, quests, or gameplay logic.',
     'Do not use a fixed forest/camp template. Choose regions and asset roles that specifically fit this request.',
+    'Extract every explicitly named physical requirement (for example terrain, pond, cabin, landmark) into intentRequirements. These are acceptance criteria, not suggestions.',
+    'A water requirement must point to a zone that contains structured water. An asset-family requirement must name its familyId.',
     'Use normalized XZ coordinates in [-1,1]. Region radius is relative to the shorter map half-extent.',
     `Use 1-${SCENE_COMPOSITION_LIMITS.zoneCount} zones. A one-zone composition is valid when the request genuinely calls for it.`,
     'Cover the map deliberately. Any large uncovered area must be intentional negative space described by a zone, not an accidental omission.',
@@ -50,6 +52,11 @@ export function buildSceneDirectorPrompt(map: EditableMap, assets: readonly MapA
         focalZoneId: 'zone-id',
         terrainBase: { preset: 'plain|hills|valley|island|canyon', seed: map.seed, amplitude: 4, roughness: 0.5 }
       },
+      intentRequirements: [
+        { id: 'terrain-foundation', kind: 'terrain', description: 'visible terrain foundation', targetZoneId: 'zone-id', minCount: 1 },
+        { id: 'named-water', kind: 'water', description: 'pond requested by the user', targetZoneId: 'water-zone-id', minCount: 1 },
+        { id: 'named-focus', kind: 'asset-family', description: 'focal cabin requested by the user', familyId: 'family-id', targetZoneId: 'zone-id', minCount: 1 }
+      ],
       zones: [{
         id: 'zone-id', label: 'human label', role: 'primary|secondary|transition|negative-space', importance: 0.8,
         region: { kind: 'circle', center: [0, 0], radius: 0.35 },
@@ -111,6 +118,7 @@ export function buildSceneReviewerPrompt(
     'Review visual and technical composition only: continuity, focal hierarchy, empty or repetitive areas, scale balance, and terrain/water transitions.',
     'Do not add gameplay, spawn, combat, cover, quests, or navigation requirements.',
     'Do not request or invent new assets. You may only redistribute existing families and adjust bounded plan fields.',
+    'The plan intentRequirements are mandatory acceptance criteria. Never remove or invalidate a required water or asset family.',
     'The renderer will be handled in a separate stage.',
     `Return pass when no meaningful correction is needed. Otherwise return no more than ${SCENE_COMPOSITION_LIMITS.reviewPatchCount} differential patches.`,
     `Plan: ${JSON.stringify(plan)}.`,

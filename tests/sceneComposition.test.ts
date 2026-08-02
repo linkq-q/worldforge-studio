@@ -15,6 +15,7 @@ import { compileSceneComposition } from '../src/shared/sceneCompositionCompiler'
 import { applyMapOperations } from '../src/shared/mapOperations';
 import { isNearWater } from '../src/shared/mapWater';
 import { sampleGrassDensity } from '../src/shared/mapGrass';
+import { ensureSceneCompositionOutcome } from '../src/shared/sceneCompositionOutcome';
 
 describe('scene composition contract', () => {
   it('keeps creative roles free-form while validating references and bounded consultations', () => {
@@ -119,6 +120,69 @@ describe('scene composition contract', () => {
       patches: [],
       assetRequests: [{ prompt: 'new building' }]
     }, plan, map)).toThrow('forbidden_scene_advice_capability');
+  });
+
+  it('repairs missing physical outcomes without asking the model for coordinates', () => {
+    const map = createEmptyMap('Outcome guard', 'map-outcome', [96, 16, 96], 'voxel-pro');
+    const plan = normalizeSceneCompositionPlan({
+      version: 1,
+      summary: 'A cabin on deliberately shaped ground.',
+      globalBrief: {
+        spatialTheme: 'single focal clearing',
+        visualHierarchy: 'the cabin is the focus',
+        assetArtDirection: 'rounded voxel forms',
+        focalZoneId: 'focus',
+        terrainBase: { preset: 'plain', seed: 7, amplitude: 0, roughness: 0 }
+      },
+      intentRequirements: [
+        { id: 'terrain', kind: 'terrain', description: 'visible ground shape', targetZoneId: 'focus', minCount: 1 },
+        { id: 'cabin', kind: 'asset-family', description: 'the requested cabin', targetZoneId: 'focus', familyId: 'cabin', minCount: 1 }
+      ],
+      zones: [{
+        id: 'focus', label: 'Focus', role: 'primary', importance: 1,
+        region: { kind: 'circle', center: [0, 0], radius: 0.3 },
+        brief: { atmosphere: 'quiet', hierarchy: 'single focus', openness: 0.8, transitionIntent: 'soft edge' },
+        terrain: { elevation: 0, roughness: 0, flatness: 0 },
+        layers: [], grassLayers: [], excludeZoneIds: []
+      }],
+      transitions: [],
+      assetFamilies: [{
+        id: 'cabin', label: 'Cabin', role: 'focal structure', tags: ['cabin', 'structure'],
+        sizeClass: 'large', desiredVariants: 1, priority: 1, generationBrief: 'one cabin'
+      }],
+      grassFamilies: [], consultations: [], renderPromptSuggestions: []
+    }, map);
+    const cabin = asset('cabin-a', 'Cabin', ['cabin', 'structure'], 'large', 'voxel-pro');
+    const resolved = resolveSceneFamilies(plan, map, [cabin], 0).families;
+    const compiled = compileSceneComposition(map, plan, resolved);
+    expect(compiled.metrics.terrainChangedCells).toBe(0);
+    expect(compiled.metrics.familyCounts.cabin ?? 0).toBe(0);
+
+    const outcome = ensureSceneCompositionOutcome(map, plan, resolved, compiled);
+    const applied = applyMapOperations(map, outcome.compiled.operations);
+    expect(outcome.repairCount).toBe(2);
+    expect(outcome.checks.every((check) => check.status === 'repaired')).toBe(true);
+    expect(outcome.compiled.metrics.terrainChangedCells).toBeGreaterThan(8);
+    expect(applied.objects.some((object) => object.assetId === cabin.id)).toBe(true);
+  });
+
+  it('restores a required structured pond if it disappears from compiled operations', () => {
+    const map = createEmptyMap('Forest', 'map-water-outcome', [96, 16, 96], 'voxel-pro');
+    const plan = normalizeSceneCompositionPlan(planInput(), map);
+    const assets = [
+      asset('tree-a', 'Pine', ['tree'], 'large', 'voxel-pro'),
+      asset('shrub-a', 'Fern', ['fern'], 'small', 'voxel-pro'),
+      asset('cabin-a', 'Cabin', ['cabin'], 'large', 'voxel-pro')
+    ];
+    const resolved = resolveSceneFamilies(plan, map, assets, 0).families;
+    const compiled = compileSceneComposition(map, plan, resolved);
+    compiled.operations = compiled.operations.filter((operation) => operation.type !== 'water.add');
+    compiled.metrics.waterCount = 0;
+
+    const outcome = ensureSceneCompositionOutcome(map, plan, resolved, compiled);
+    const applied = applyMapOperations(map, outcome.compiled.operations);
+    expect(applied.waterBodies.map((water) => water.id)).toContain('composition-water-pond');
+    expect(outcome.checks.find((check) => check.requirementId === 'water-pond')?.status).toBe('repaired');
   });
 });
 

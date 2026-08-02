@@ -16,7 +16,8 @@ export const SCENE_COMPOSITION_LIMITS = Object.freeze({
   transitionCount: 16,
   consultationCount: 2,
   specialistPatchCount: 6,
-  reviewPatchCount: 8
+  reviewPatchCount: 8,
+  requirementCount: 16
 });
 export const SCENE_ZONE_ROLES = ['primary', 'secondary', 'transition', 'negative-space'] as const;
 export const SCENE_DISTRIBUTIONS = ['even', 'clustered', 'accent'] as const;
@@ -34,12 +35,22 @@ export interface SceneCompositionPlan {
     focalZoneId: string;
     terrainBase: TerrainGenerationParams;
   };
+  intentRequirements: SceneIntentRequirement[];
   zones: SceneCompositionZone[];
   transitions: SceneTransition[];
   assetFamilies: SceneAssetFamily[];
   grassFamilies: SceneGrassFamily[];
   consultations: SceneConsultationRequest[];
   renderPromptSuggestions: string[];
+}
+
+export interface SceneIntentRequirement {
+  id: string;
+  kind: 'terrain' | 'water' | 'asset-family';
+  description: string;
+  targetZoneId?: string;
+  familyId?: string;
+  minCount: number;
 }
 
 export interface SceneCompositionZone {
@@ -128,6 +139,8 @@ export interface SceneCompositionMetrics {
   zoneCount: number;
   objectCount: number;
   waterCount: number;
+  terrainRelief?: number;
+  terrainChangedCells?: number;
   familyCounts: Record<string, number>;
   zoneCounts: Record<string, number>;
   unresolvedFamilyIds: string[];
@@ -164,6 +177,11 @@ export function normalizeSceneCompositionPlan(value: unknown, map: EditableMap):
   const globalInput = requireRecord(input.globalBrief, 'invalid_scene_global_brief');
   const focalZoneId = cleanId(globalInput.focalZoneId);
   if (!zoneIds.has(focalZoneId)) throw new Error('unknown_scene_focal_zone');
+  const intentRequirements = Array.isArray(input.intentRequirements)
+    ? input.intentRequirements.slice(0, SCENE_COMPOSITION_LIMITS.requirementCount)
+      .map((requirement) => normalizeRequirement(requirement, zones, assetFamilies))
+    : derivePlanRequirements(zones, assetFamilies, focalZoneId);
+  uniqueIds(intentRequirements, 'duplicate_scene_requirement_id');
   return {
     version: SCENE_COMPOSITION_VERSION,
     summary: cleanText(input.summary, 'AI 场景构图', 200),
@@ -174,6 +192,7 @@ export function normalizeSceneCompositionPlan(value: unknown, map: EditableMap):
       focalZoneId,
       terrainBase: normalizeTerrainGenerationParams(globalInput.terrainBase, map)
     },
+    intentRequirements,
     zones,
     transitions,
     assetFamilies,
@@ -181,6 +200,65 @@ export function normalizeSceneCompositionPlan(value: unknown, map: EditableMap):
     consultations,
     renderPromptSuggestions: normalizeTextList(input.renderPromptSuggestions, 8, 80)
   };
+}
+
+function normalizeRequirement(
+  value: unknown,
+  zones: SceneCompositionZone[],
+  families: SceneAssetFamily[]
+): SceneIntentRequirement {
+  const input = requireRecord(value, 'invalid_scene_requirement');
+  const kind = input.kind === 'water' || input.kind === 'asset-family' ? input.kind : input.kind === 'terrain' ? 'terrain' : null;
+  if (!kind) throw new Error('invalid_scene_requirement');
+  const targetZoneId = input.targetZoneId === undefined ? undefined : requireId(input.targetZoneId, 'invalid_scene_requirement');
+  const familyId = input.familyId === undefined ? undefined : requireId(input.familyId, 'invalid_scene_requirement');
+  const zone = targetZoneId ? zones.find((item) => item.id === targetZoneId) : undefined;
+  if (targetZoneId && !zone) throw new Error('unknown_scene_requirement_zone');
+  if (kind === 'water' && (!zone || !zone.water)) throw new Error('scene_water_requirement_requires_water_zone');
+  if (kind === 'asset-family' && (!familyId || !families.some((family) => family.id === familyId))) {
+    throw new Error('unknown_scene_requirement_family');
+  }
+  return {
+    id: requireId(input.id, 'invalid_scene_requirement'),
+    kind,
+    description: cleanText(input.description, kind, 160),
+    ...(targetZoneId ? { targetZoneId } : {}),
+    ...(familyId ? { familyId } : {}),
+    minCount: Math.round(clamp(finiteNumber(input.minCount, 1), 1, 24))
+  };
+}
+
+function derivePlanRequirements(
+  zones: SceneCompositionZone[],
+  families: SceneAssetFamily[],
+  focalZoneId: string
+): SceneIntentRequirement[] {
+  const requirements: SceneIntentRequirement[] = [{
+    id: 'terrain-foundation',
+    kind: 'terrain',
+    description: 'The planned terrain foundation must produce visible height-field data.',
+    targetZoneId: focalZoneId,
+    minCount: 1
+  }];
+  for (const zone of zones.filter((item) => item.water)) {
+    requirements.push({
+      id: `water-${zone.id}`,
+      kind: 'water',
+      description: `${zone.label} must exist as editable structured water.`,
+      targetZoneId: zone.id,
+      minCount: 1
+    });
+  }
+  for (const family of families.filter((item) => item.priority >= 0.85)) {
+    requirements.push({
+      id: `family-${family.id}`,
+      kind: 'asset-family',
+      description: `${family.label} must appear in the scene.`,
+      familyId: family.id,
+      minCount: 1
+    });
+  }
+  return requirements.slice(0, SCENE_COMPOSITION_LIMITS.requirementCount);
 }
 
 export function sceneZoneWorldRegion(zone: SceneCompositionZone, map: EditableMap): { x: number; z: number; r: number } {

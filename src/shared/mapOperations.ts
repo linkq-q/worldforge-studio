@@ -21,6 +21,7 @@ import type { Vec3 } from './protocol';
 import type { MapLintIssue } from './mapLint';
 import type { SceneCompositionMetrics, SceneCompositionPlan } from './sceneComposition';
 import type { SceneAdviceFinding, SceneReviewResult } from './sceneCompositionAdvice';
+import type { SceneOutcomeCheck } from './sceneCompositionOutcome';
 import {
   MAX_GRASS_LAYERS,
   applyGrassBrushInPlace,
@@ -98,6 +99,7 @@ export interface MapAiSuggestion {
     metrics: SceneCompositionMetrics;
     consultations: Array<{ id: string; summary: string; findings: SceneAdviceFinding[] }>;
     review: SceneReviewResult;
+    outcome: { checks: SceneOutcomeCheck[]; repairCount: number };
   };
 }
 

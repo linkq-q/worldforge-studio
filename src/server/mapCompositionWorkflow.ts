@@ -19,6 +19,7 @@ import {
   resolveSceneFamilies
 } from '../shared/sceneCompositionAssets';
 import { compileSceneComposition } from '../shared/sceneCompositionCompiler';
+import { ensureSceneCompositionOutcome } from '../shared/sceneCompositionOutcome';
 import type { ModelGenerationMode } from '../shared/modelGenerationMode';
 import { llmChat } from './modelApi';
 import {
@@ -135,6 +136,16 @@ export async function runMapCompositionWorkflow(
 
   options.onProgress?.({ phase: 'compiling', label: '将场景意图编译为可编辑地形、水体和资产操作' });
   let compiled = compileSceneComposition(map, plan, resolvedFamilies);
+  let outcome = ensureSceneCompositionOutcome(map, plan, resolvedFamilies, compiled);
+  compiled = outcome.compiled;
+  options.onProgress?.({
+    phase: outcome.repairCount > 0 ? 'repairing' : 'validating',
+    label: outcome.repairCount > 0
+      ? `实体结果审查补齐 ${outcome.repairCount} 项必要内容`
+      : '实体结果审查已确认地形、水体与必要资产均已落地',
+    current: outcome.checks.length,
+    total: outcome.checks.length
+  });
 
   options.onProgress?.({ phase: 'reviewing', label: '合成审查正在检查焦点、留白、重复和尺度关系' });
   let review: SceneReviewResult;
@@ -162,6 +173,8 @@ export async function runMapCompositionWorkflow(
   if (review.status === 'revise' && review.patches.length > 0) {
     plan = applySceneAdvice(plan, review, map);
     compiled = compileSceneComposition(map, plan, resolvedFamilies);
+    outcome = ensureSceneCompositionOutcome(map, plan, resolvedFamilies, compiled);
+    compiled = outcome.compiled;
   }
 
   return {
@@ -175,7 +188,8 @@ export async function runMapCompositionWorkflow(
         plan,
         metrics: compiled.metrics,
         consultations: consultationTrace,
-        review
+        review,
+        outcome: { checks: outcome.checks, repairCount: outcome.repairCount }
       }
     }
   };

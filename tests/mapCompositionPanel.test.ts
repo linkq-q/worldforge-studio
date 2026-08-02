@@ -20,6 +20,9 @@ describe('map composition preview panel', () => {
             focalZoneId: 'camp',
             terrainBase: { preset: 'hills', seed: 1, amplitude: 3, roughness: 0.5 }
           },
+          intentRequirements: [{
+            id: 'terrain-foundation', kind: 'terrain', description: 'terrain', targetZoneId: 'camp', minCount: 1
+          }],
           zones: [
             {
               id: 'camp', label: '<Cabin>', role: 'primary', importance: 1,
@@ -49,7 +52,11 @@ describe('map composition preview panel', () => {
           summary: 'improved',
           findings: [{ code: 'focus', severity: 'info', message: 'Cabin is readable.' }]
         }],
-        review: { status: 'pass', summary: 'coherent', findings: [], patches: [] }
+        review: { status: 'pass', summary: 'coherent', findings: [], patches: [] },
+        outcome: {
+          checks: [{ requirementId: 'terrain-foundation', kind: 'terrain', status: 'pass', message: '地形高度场已生成。' }],
+          repairCount: 0
+        }
       }
     } satisfies MapAiSuggestion);
 

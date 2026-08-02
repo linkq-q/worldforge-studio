@@ -84,7 +84,11 @@ export function normalizeSceneReview(
   map: EditableMap
 ): SceneReviewResult {
   const input = requireRecord(value, 'invalid_scene_review');
-  const advice = normalizeScenePlanAdvice(input, plan, map);
+  const advice = normalizeScenePlanAdvice(
+    input.status === 'revise' ? input : { ...input, patches: [] },
+    plan,
+    map
+  );
   return {
     ...advice,
     status: input.status === 'revise' ? 'revise' : 'pass',
@@ -226,6 +230,9 @@ function normalizePatch(value: unknown, plan: SceneCompositionPlan, map: Editabl
   }
   if (input.type === 'water.remove') {
     if (!zone.water) throw new Error('unknown_scene_advice_water');
+    if (plan.intentRequirements.some((requirement) => (
+      requirement.kind === 'water' && requirement.targetZoneId === zoneId
+    ))) throw new Error('required_scene_water_cannot_be_removed');
     return { type: 'water.remove', zoneId };
   }
   throw new Error('invalid_scene_advice_patch');

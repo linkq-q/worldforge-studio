@@ -16,6 +16,7 @@ export function renderMapCompositionSummary(suggestion: MapAiSuggestion): string
         <span>覆盖 <b>${Math.round(composition.metrics.zoneCoverage * 100)}%</b></span>
         <span>焦点 <b>${escapeHtml(focalZone?.label ?? composition.plan.globalBrief.focalZoneId)}</b></span>
         <span>审查 <b>${composition.review.status === 'pass' ? '通过' : '已修正'}</b></span>
+        <span>实体验收 <b>${composition.outcome.repairCount > 0 ? `补齐 ${composition.outcome.repairCount}` : '通过'}</b></span>
       </div>
       <p class="empty">${escapeHtml(composition.plan.globalBrief.visualHierarchy)}</p>
       <div class="style-tags">
@@ -29,6 +30,7 @@ export function renderMapCompositionSummary(suggestion: MapAiSuggestion): string
           ${findings.map((finding) => `<span>${escapeHtml(finding.message)}</span>`).join('')}
         </div>
       ` : ''}
+      <p class="empty">${composition.outcome.checks.map((check) => escapeHtml(check.message)).join(' · ')}</p>
     </div>
   `;
 }

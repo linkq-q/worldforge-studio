@@ -102,13 +102,18 @@ export function compileSceneComposition(
     zoneCounts[entry.zone.id] = (zoneCounts[entry.zone.id] ?? 0) + placementOperations.length;
   }
 
+  const changedHeights = workingMap.terrain.heights.filter((height, index) => (
+    Math.abs(height - (map.terrain.heights[index] ?? 0)) > 0.01
+  ));
   return {
     operations,
     metrics: {
       zoneCoverage: estimateZoneCoverage(plan),
       zoneCount: plan.zones.length,
-      objectCount: limits.objectCount - remaining,
-      waterCount: plan.zones.filter((zone) => Boolean(zone.water)).length,
+      objectCount: Math.max(0, workingMap.objects.length - map.objects.length),
+      waterCount: Math.max(0, workingMap.waterBodies.length - map.waterBodies.length),
+      terrainRelief: Math.max(...workingMap.terrain.heights) - Math.min(...workingMap.terrain.heights),
+      terrainChangedCells: changedHeights.length,
       familyCounts,
       zoneCounts,
       unresolvedFamilyIds
@@ -187,7 +192,7 @@ function compileZoneTerrain(map: EditableMap, plan: SceneCompositionPlan): MapOp
   return operations;
 }
 
-function compileZoneWater(map: EditableMap, plan: SceneCompositionPlan): MapOperation[] {
+export function compileZoneWater(map: EditableMap, plan: SceneCompositionPlan): MapOperation[] {
   return plan.zones.flatMap((zone): MapOperation[] => {
     if (!zone.water) return [];
     const region = sceneZoneWorldRegion(zone, map);
