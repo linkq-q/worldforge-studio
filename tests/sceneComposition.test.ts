@@ -122,6 +122,19 @@ describe('scene composition contract', () => {
     }, plan, map)).toThrow('forbidden_scene_advice_capability');
   });
 
+  it('normalizes natural pond vocabulary into the canonical editable lake basin', () => {
+    const map = createEmptyMap('Pond', 'map-pond-vocabulary', [96, 16, 96], 'voxel-pro');
+    const input = planInput() as { zones: Array<{ id: string; water?: { type?: string; kind?: string } }> };
+    const pond = input.zones.find((zone) => zone.id === 'pond')!;
+    pond.water = { type: 'pond' };
+
+    const plan = normalizeSceneCompositionPlan(input, map);
+
+    expect(plan.zones.find((zone) => zone.id === 'pond')?.water).toMatchObject({
+      type: 'lake', level: 0.2, depth: 1.5
+    });
+  });
+
   it('repairs missing physical outcomes without asking the model for coordinates', () => {
     const map = createEmptyMap('Outcome guard', 'map-outcome', [96, 16, 96], 'voxel-pro');
     const plan = normalizeSceneCompositionPlan({

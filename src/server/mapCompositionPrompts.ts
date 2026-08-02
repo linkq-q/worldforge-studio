@@ -28,6 +28,7 @@ export function buildSceneDirectorPrompt(map: EditableMap, assets: readonly MapA
     'Do not use a fixed forest/camp template. Choose regions and asset roles that specifically fit this request.',
     'Extract every explicitly named physical requirement (for example terrain, pond, cabin, landmark) into intentRequirements. These are acceptance criteria, not suggestions.',
     'A water requirement must point to a zone that contains structured water. An asset-family requirement must name its familyId.',
+    'For a pond, lake, or pool zone, set water to {"type":"lake","level":0.35,"depth":1.8}; use null when the zone has no water.',
     'Use normalized XZ coordinates in [-1,1]. Region radius is relative to the shorter map half-extent.',
     `Use 1-${SCENE_COMPOSITION_LIMITS.zoneCount} zones. A one-zone composition is valid when the request genuinely calls for it.`,
     'Cover the map deliberately. Any large uncovered area must be intentional negative space described by a zone, not an accidental omission.',

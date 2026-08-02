@@ -411,7 +411,11 @@ function normalizeLayer(value: unknown, familyIds: Set<string>): SceneZoneLayer 
 
 function normalizeZoneWater(value: unknown, map: EditableMap): SceneCompositionZone['water'] {
   const input = requireRecord(value, 'invalid_scene_zone_water');
-  if (input.type !== 'lake') throw new Error('invalid_scene_zone_water');
+  // A pond is represented by the same editable basin as a lake. Accept the
+  // natural planning vocabulary the director is likely to use, then persist
+  // the one canonical runtime type.
+  const type = String(input.type ?? input.kind ?? 'lake').trim().toLowerCase();
+  if (!['lake', 'pond', 'pool'].includes(type)) throw new Error('invalid_scene_zone_water');
   return {
     type: 'lake',
     level: clamp(finiteNumber(input.level, 0.2), 0.02, map.box.size[1] - 0.05),
