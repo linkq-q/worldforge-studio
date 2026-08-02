@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { describe, expect, it } from 'vitest';
-import { createEffectRuntime } from '@voxel-studio/render-runtime/effects';
+import { RuntimeIndex } from '@voxel-studio/render-runtime';
 import { WorldForgeMaterialTagRuntime } from '../src/client/materialTagRuntimeAdapter';
 
 describe('WorldForge material tag runtime', () => {
@@ -8,6 +8,7 @@ describe('WorldForge material tag runtime', () => {
     const scene = new THREE.Scene();
     const modelsRoot = new THREE.Group();
     const modelRoot = new THREE.Group();
+    modelRoot.userData.mapObjectId = 'rock-object';
     modelRoot.userData.materialTagSource = {
       name: 'tagged-rock',
       nodes: [
@@ -32,15 +33,14 @@ describe('WorldForge material tag runtime', () => {
     modelsRoot.add(modelRoot);
     scene.add(modelsRoot);
 
-    const effectRuntime = createEffectRuntime().runtime;
-    const runtime = new WorldForgeMaterialTagRuntime(scene, effectRuntime);
+    const runtime = createRuntime(scene, modelsRoot, new Map([['rock-object', modelRoot]]));
     const result = runtime.apply(modelsRoot);
 
     expect(result.taggedParts).toBe(1);
     expect(result.appliedParts).toBe(1);
     expect(mesh.userData.effectSlots?.length).toBeGreaterThan(0);
 
-    runtime.clear(modelsRoot);
+    runtime.dispose();
     mesh.geometry.dispose();
     (mesh.material as THREE.Material).dispose();
   });
@@ -49,6 +49,7 @@ describe('WorldForge material tag runtime', () => {
     const scene = new THREE.Scene();
     const modelsRoot = new THREE.Group();
     const modelRoot = new THREE.Group();
+    modelRoot.userData.mapObjectId = 'marble-object';
     modelRoot.userData.materialTagSource = {
       name: 'marble',
       nodes: [{
@@ -64,7 +65,7 @@ describe('WorldForge material tag runtime', () => {
     modelsRoot.add(modelRoot);
     scene.add(modelsRoot);
 
-    const runtime = new WorldForgeMaterialTagRuntime(scene, createEffectRuntime().runtime);
+    const runtime = createRuntime(scene, modelsRoot, new Map([['marble-object', modelRoot]]));
     runtime.apply(modelsRoot);
     const environment = new THREE.Texture();
 
@@ -73,9 +74,25 @@ describe('WorldForge material tag runtime', () => {
     expect(runtime.syncEnvironment(null)).toBeGreaterThan(0);
     expect(material.envMap).toBeNull();
 
-    runtime.clear(modelsRoot);
+    runtime.dispose();
     environment.dispose();
     mesh.geometry.dispose();
     material.dispose();
   });
 });
+
+function createRuntime(
+  scene: THREE.Scene,
+  modelsRoot: THREE.Group,
+  objectGroups: Map<string, THREE.Group>
+): WorldForgeMaterialTagRuntime {
+  const batchParent = new THREE.Group();
+  modelsRoot.add(batchParent);
+  return new WorldForgeMaterialTagRuntime({
+    scene,
+    runtimeIndex: new RuntimeIndex(),
+    batchParent,
+    objectGroups,
+    effectBatchMinGroupSize: 8
+  });
+}

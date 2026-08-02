@@ -12,12 +12,18 @@ import materialTagVocabulary from '@voxel-studio/render-runtime/model/material-t
 import type { MapAsset } from '../shared/map';
 import { buildModelGroup } from './modelRenderer';
 import { MapObjectCulling, type MapObjectCullingStats } from './mapObjectCulling';
+import { WorldForgeMaterialTagRuntime } from './materialTagRuntimeAdapter';
 
 export interface MapPrimitiveBatchInput {
   objectId: string;
   objectGroup: THREE.Group;
   asset: MapAsset;
   assetTags: string[];
+}
+
+export interface MapPrimitiveBatchOptions {
+  scene: THREE.Scene;
+  modelsRoot: THREE.Group;
 }
 
 export interface MapPrimitiveBatchResult {
@@ -27,6 +33,10 @@ export interface MapPrimitiveBatchResult {
   pickables: THREE.Object3D[];
   syncObjectTransform: (objectId: string) => void;
   updateCulling: (camera: THREE.Camera, maxDistance: number) => MapObjectCullingStats;
+  updateMaterialEffects: (elapsedSeconds: number) => void;
+  restoreMaterialEffects: () => void;
+  syncEnvironment: (environmentMap: THREE.Texture | null) => void;
+  getBatchMeshes: () => THREE.Object3D[];
   getStats: () => MapPrimitiveBatchStats;
   dispose: () => void;
 }
@@ -38,6 +48,11 @@ export interface MapPrimitiveBatchStats {
   batchedMeshParts: number;
   fallbackMeshParts: number;
   batchCount: number;
+  effectBatchCount: number;
+  effectBatchParts: number;
+  runtimeIndexPartRefs: number;
+  orphanPartRefs: number;
+  orphanInstanceRefs: number;
   culled: number;
   tested: number;
 }
@@ -92,7 +107,10 @@ interface PreparedTemplate {
  * batch key includes the material-tag base recipe, and tag effects that need a
  * per-object runtime deliberately stay as regular meshes.
  */
-export async function buildMapPrimitiveBatches(inputs: MapPrimitiveBatchInput[]): Promise<MapPrimitiveBatchResult> {
+export async function buildMapPrimitiveBatches(
+  inputs: MapPrimitiveBatchInput[],
+  options: MapPrimitiveBatchOptions
+): Promise<MapPrimitiveBatchResult> {
   const root = new THREE.Group();
   root.name = 'mapPrimitiveBatches';
   const runtimeIndex = new RuntimeIndex();
@@ -134,7 +152,20 @@ export async function buildMapPrimitiveBatches(inputs: MapPrimitiveBatchInput[])
     handledObjectIds.add(input.objectId);
   }
 
-  const pickables = [...batcher.getInstancedMeshes(), ...batcher.getBatchedMeshes()];
+  const materialTagRuntime = new WorldForgeMaterialTagRuntime({
+    scene: options.scene,
+    runtimeIndex,
+    batchParent: root,
+    objectGroups,
+    effectBatchMinGroupSize: 8
+  });
+  materialTagRuntime.apply(options.modelsRoot);
+  const getBatchMeshes = (): THREE.Object3D[] => [
+    ...batcher.getInstancedMeshes(),
+    ...batcher.getBatchedMeshes(),
+    ...materialTagRuntime.getBatchMeshes()
+  ];
+  const pickables = getBatchMeshes();
   const resolveHit = (hit: THREE.Intersection): string | null => {
     const partId = runtimeIndex.getPartIdFromHit(hit);
     if (typeof partId !== 'string') return null;
@@ -152,28 +183,50 @@ export async function buildMapPrimitiveBatches(inputs: MapPrimitiveBatchInput[])
       const changed = objectGroups.get(objectId);
       if (!changed) return;
       for (const [candidateId, group] of objectGroups) {
-        if (group === changed || isDescendantOf(group, changed)) batcher.updateModelInstanceMatrices(candidateId);
+        if (group !== changed && !isDescendantOf(group, changed)) continue;
+        batcher.updateModelInstanceMatrices(candidateId);
+        materialTagRuntime.syncObjectTransform(candidateId);
       }
     },
     updateCulling: (camera, maxDistance) => {
       cullingStats = objectCulling.update(camera, maxDistance);
       return cullingStats;
     },
+    updateMaterialEffects: (elapsedSeconds) => {
+      materialTagRuntime.updateRuntimeUniforms(elapsedSeconds);
+    },
+    restoreMaterialEffects: () => {
+      materialTagRuntime.restoreShaderEffects();
+    },
+    syncEnvironment: (environmentMap) => {
+      materialTagRuntime.syncEnvironment(environmentMap);
+    },
+    getBatchMeshes,
     getStats: () => {
       const audit = batcher.getSceneAudit();
+      const materialStats = materialTagRuntime.getStats();
+      const runtimeAudit = auditRuntimeIndex(runtimeIndex);
       return {
         totalParts: audit.totalParts ?? 0,
-        batchableParts: audit.batchableParts ?? 0,
+        batchableParts: (audit.batchableParts ?? 0) + materialStats.effectBatchParts,
         instancedParts: audit.instancedParts ?? 0,
-        batchedMeshParts: audit.batchedMeshParts ?? 0,
-        fallbackMeshParts: audit.fallbackMeshParts ?? audit.fallbackParts ?? 0,
-        batchCount: audit.batchCount ?? 0,
+        batchedMeshParts: (audit.batchedMeshParts ?? 0) + materialStats.effectBatchParts,
+        fallbackMeshParts: Math.max(
+          0,
+          (audit.fallbackMeshParts ?? audit.fallbackParts ?? 0) - materialStats.effectBatchParts
+        ),
+        batchCount: (audit.batchCount ?? 0) + materialStats.effectBatchCount,
+        ...materialStats,
+        runtimeIndexPartRefs: runtimeAudit.partToRenderCount,
+        orphanPartRefs: runtimeAudit.orphanPartRefs,
+        orphanInstanceRefs: runtimeAudit.orphanInstanceRefs,
         ...cullingStats
       };
     },
     dispose: () => {
       objectCulling.dispose();
       surfaceBindings.length = 0;
+      materialTagRuntime.dispose();
       batcher.dispose();
       runtimeIndex.clear();
       for (const template of preparedTemplates) disposeUnusedTemplateResources(template);
@@ -369,4 +422,31 @@ function disposeUnusedTemplateResources(template: PreparedTemplate): void {
     const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
     materials.forEach((material) => material.dispose());
   });
+}
+
+function auditRuntimeIndex(runtimeIndex: RuntimeIndex): {
+  partToRenderCount: number;
+  orphanPartRefs: number;
+  orphanInstanceRefs: number;
+} {
+  let orphanPartRefs = 0;
+  let orphanInstanceRefs = 0;
+  for (const [batchId, partIds] of runtimeIndex.batchToParts) {
+    for (const partId of partIds) {
+      const ref = runtimeIndex.partToRender.get(partId);
+      if (!ref || ref.batchId !== batchId) orphanPartRefs += 1;
+    }
+  }
+  for (const [partId, ref] of runtimeIndex.partToRender) {
+    if (ref.mode !== 'instanced') continue;
+    if (!ref.batchId || !runtimeIndex.batchToParts.get(ref.batchId)?.has(partId)) orphanPartRefs += 1;
+    if (!ref.object?.isInstancedMesh || typeof ref.instanceId !== 'number' || !Number.isInteger(ref.instanceId) || ref.instanceId < 0) {
+      orphanInstanceRefs += 1;
+    }
+  }
+  return {
+    partToRenderCount: runtimeIndex.partToRender.size,
+    orphanPartRefs,
+    orphanInstanceRefs
+  };
 }

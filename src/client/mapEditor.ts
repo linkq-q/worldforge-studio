@@ -2036,7 +2036,10 @@ class MapEditor {
       return;
     }
     this.updateSceneLighting();
-    this.renderedMap = await buildEditableMapGroup(this.mapWithEditorAssets(), { editorHelpers: true });
+    this.renderedMap = await buildEditableMapGroup(this.mapWithEditorAssets(), {
+      editorHelpers: true,
+      scene: this.scene
+    });
     this.scene.add(this.renderedMap.group);
     this.renderScene?.attach(this.renderedMap);
     this.attachSelectedTransform();
@@ -2394,6 +2397,11 @@ class MapEditor {
       batchedMeshParts: mapStats?.batchedMeshParts ?? 0,
       fallbackParts: mapStats?.fallbackMeshParts ?? 0,
       batchCount: mapStats?.batchCount ?? 0,
+      effectBatchCount: mapStats?.effectBatchCount ?? 0,
+      effectBatchParts: mapStats?.effectBatchParts ?? 0,
+      runtimeIndexPartRefs: mapStats?.runtimeIndexPartRefs ?? 0,
+      orphanPartRefs: mapStats?.orphanPartRefs ?? 0,
+      orphanInstanceRefs: mapStats?.orphanInstanceRefs ?? 0,
       culled: mapStats?.culled ?? 0,
       tested: mapStats?.tested ?? 0,
       grassBlades: mapStats?.grassBlades ?? 0,

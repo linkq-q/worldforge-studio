@@ -88,6 +88,7 @@ declare module '@voxel-studio/render-runtime' {
   }
   export class RenderStyleManager {
     mode: 'pbr' | 'cel' | 'ink';
+    getBatchMeshes: (() => import('three').Object3D[]) | null;
     constructor(options: {
       THREE: typeof import('three');
       renderer: import('three').WebGLRenderer;
@@ -99,13 +100,20 @@ declare module '@voxel-studio/render-runtime' {
   }
   export class RuntimeIndex {
     renderRevision: number;
-    partToRender: Map<string, { object?: import('three').Object3D }>;
+    partToRender: Map<string, {
+      mode?: string;
+      batchId?: string;
+      instanceId?: number;
+      object?: import('three').Object3D & { isInstancedMesh?: boolean };
+    }>;
+    batchToParts: Map<string, Set<string>>;
     registerMesh(
       partId: string,
       object: import('three').Object3D,
       options?: Record<string, unknown>
     ): unknown;
     getPartIdFromHit(hit: import('three').Intersection): string | null;
+    audit(options?: { table?: boolean }): Record<string, number>;
     clear(): void;
   }
   export class ObjectDistanceCuller {

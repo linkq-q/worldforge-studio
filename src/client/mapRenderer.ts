@@ -46,6 +46,9 @@ export interface RenderedMap {
   pickables: THREE.Object3D[];
   syncObjectTransform: (objectId: string) => void;
   update: (deltaTime: number, camera: THREE.Camera, maxDistance: number) => void;
+  restoreMaterialEffects: () => void;
+  syncMaterialEnvironment: (environmentMap: THREE.Texture | null) => void;
+  getRuntimeBatchMeshes: () => THREE.Object3D[];
   setGrassStyle: (style: RuntimeGrassStyle) => void;
   getDebugStats: () => RenderedMapDebugStats;
   /**
@@ -64,6 +67,7 @@ export interface RenderedMap {
 
 export interface MapRenderOptions {
   editorHelpers?: boolean;
+  scene?: THREE.Scene;
 }
 
 export async function buildEditableMapGroup(input: EditableMap, options: MapRenderOptions = {}): Promise<RenderedMap> {
@@ -85,6 +89,7 @@ export async function buildEditableMapGroup(input: EditableMap, options: MapRend
   // Grass is rebuilt on its own, so it keeps its own map snapshot and style.
   let grassMap = map;
   let grassStyle = DEFAULT_RUNTIME_GRASS_STYLE;
+  let materialElapsedSeconds = 0;
   let grass = buildMapGrassField(map);
   if (grass) root.add(grass.group);
 
@@ -119,7 +124,10 @@ export async function buildEditableMapGroup(input: EditableMap, options: MapRend
     return asset && objectGroup
       ? [{ objectId: object.id, objectGroup, asset, assetTags: deriveAssetTags(asset) }]
       : [];
-  }));
+  }), {
+    scene: options.scene ?? new THREE.Scene(),
+    modelsRoot
+  });
   modelsRoot.add(instancing.root);
   await populateObjectVisuals(map, assets, objectGroups, instancing.handledObjectIds);
   for (const group of objectGroups.values()) {
@@ -137,9 +145,14 @@ export async function buildEditableMapGroup(input: EditableMap, options: MapRend
     pickables,
     syncObjectTransform: instancing.syncObjectTransform,
     update: (deltaTime, camera, maxDistance) => {
+      materialElapsedSeconds += deltaTime;
       grass?.update(deltaTime);
       instancing.updateCulling(camera, maxDistance);
+      instancing.updateMaterialEffects(materialElapsedSeconds);
     },
+    restoreMaterialEffects: instancing.restoreMaterialEffects,
+    syncMaterialEnvironment: instancing.syncEnvironment,
+    getRuntimeBatchMeshes: instancing.getBatchMeshes,
     setGrassStyle: (style) => {
       grassStyle = style;
       grass?.setStyle(style);

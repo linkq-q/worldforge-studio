@@ -19,6 +19,11 @@ export interface RenderDebugDetails {
   batchedMeshParts: number;
   fallbackParts: number;
   batchCount: number;
+  effectBatchCount: number;
+  effectBatchParts: number;
+  runtimeIndexPartRefs: number;
+  orphanPartRefs: number;
+  orphanInstanceRefs: number;
   culled: number;
   tested: number;
   grassBlades: number;
@@ -51,6 +56,11 @@ const EMPTY_DETAILS: RenderDebugDetails = {
   batchedMeshParts: 0,
   fallbackParts: 0,
   batchCount: 0,
+  effectBatchCount: 0,
+  effectBatchParts: 0,
+  runtimeIndexPartRefs: 0,
+  orphanPartRefs: 0,
+  orphanInstanceRefs: 0,
   culled: 0,
   tested: 0,
   grassBlades: 0,
@@ -149,6 +159,8 @@ export class RenderStats {
           <span>批次 <b>${details.batchCount}</b></span><span>合批覆盖 <b>${batchCoverage.toFixed(0)}%</b></span>
           <span>Instanced <b>${details.instancedParts}</b></span><span>BatchedMesh <b>${details.batchedMeshParts}</b></span>
           <span>Fallback <b>${details.fallbackParts}</b></span><span>剔除 <b>${details.culled}/${details.tested}</b></span>
+          <span>特效批次 <b>${details.effectBatchCount}/${details.effectBatchParts}</b></span><span>Index <b>${details.runtimeIndexPartRefs}</b></span>
+          <span>孤儿 Part <b>${details.orphanPartRefs}</b></span><span>孤儿实例 <b>${details.orphanInstanceRefs}</b></span>
           <span>草叶 <b>${formatCount(details.grassBlades)}</b></span><span>碎花 <b>${formatCount(details.grassFlowers)}</b></span>
           <span>草 Draw <b>${details.grassDrawCalls}</b></span><span>纹理 <b>${this.info.memory?.textures ?? 0}</b></span>
         </div>
@@ -218,6 +230,11 @@ export function buildPerformanceReport(
     `batches: ${details.batchCount}`,
     `batchCoverage: ${batchCoverage.toFixed(1)}%`,
     `fallbackParts: ${details.fallbackParts}`,
+    `effectBatches: ${details.effectBatchCount}`,
+    `effectBatchParts: ${details.effectBatchParts}`,
+    `runtimeIndexPartRefs: ${details.runtimeIndexPartRefs}`,
+    `orphanPartRefs: ${details.orphanPartRefs}`,
+    `orphanInstanceRefs: ${details.orphanInstanceRefs}`,
     `grassBlades: ${details.grassBlades}`,
     `grassFlowers: ${details.grassFlowers}`,
     `composer: ${details.composerPasses.map((pass) => `${pass.name}=${pass.ms.toFixed(2)}ms`).join(', ') || 'none'}`

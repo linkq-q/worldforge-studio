@@ -22,7 +22,6 @@ import {
 import { WaterSurface, WaterfallSurface } from '@voxel-studio/render-runtime/environment';
 import { applyMaterialSurfaceBinding, createEffectRuntime } from '@voxel-studio/render-runtime/effects';
 import { applyDefaultWaterState, DEFAULT_WATER_STATE } from './defaultWaterState';
-import { WorldForgeMaterialTagRuntime } from './materialTagRuntimeAdapter';
 import { compileEffectRecipeLayers } from './effectRecipeCompiler';
 import {
   bindDistanceFogDepth,
@@ -79,13 +78,14 @@ export class RenderRuntimeAdapter {
   private readonly ssaoPass: SharedSSAOPass;
   private readonly bloomPass = new GlobalBloomPass(new THREE.Vector2(1, 1), 0.4, 0.35, 0.82);
   private readonly effectRuntime = createEffectRuntime().runtime;
-  private readonly materialTagRuntime: WorldForgeMaterialTagRuntime;
   private readonly planarWaterReflection: PlanarWaterReflection;
   private fogDensity = 0;
   private readonly materialBaselines = new Map<THREE.Material, MaterialBaseline>();
   private readonly waterBindings: WaterBinding[] = [];
   private contentRoot: THREE.Object3D | null = null;
   private modelsRoot: THREE.Object3D | null = null;
+  private restoreMaterialEffects: (() => void) | null = null;
+  private syncMaterialEnvironment: ((environmentMap: THREE.Texture | null) => void) | null = null;
   private pendingDeltaTime = 0;
   private pendingElapsedSeconds = 0;
   private width = 1;
@@ -96,11 +96,6 @@ export class RenderRuntimeAdapter {
     private readonly scene: THREE.Scene,
     private readonly camera: THREE.PerspectiveCamera
   ) {
-    this.materialTagRuntime = new WorldForgeMaterialTagRuntime(
-      scene,
-      this.effectRuntime,
-      () => this.scene.environment
-    );
     this.planarWaterReflection = new PlanarWaterReflection(renderer, scene, camera);
     this.curvaturePass = createCurvatureEdgePass(renderer);
     this.inkPass = createInkEdgePass(renderer);
@@ -161,11 +156,20 @@ export class RenderRuntimeAdapter {
     this.applyPresentation({ mode: 'none', sketch: {}, paper: {}, comic: {} });
   }
 
-  setSceneRoots(contentRoot: THREE.Object3D | null, modelsRoot: THREE.Object3D | null): void {
+  setSceneRoots(
+    contentRoot: THREE.Object3D | null,
+    modelsRoot: THREE.Object3D | null,
+    materialRuntime?: {
+      restore: () => void;
+      syncEnvironment: (environmentMap: THREE.Texture | null) => void;
+    }
+  ): void {
     if (this.modelsRoot && this.modelsRoot !== modelsRoot) this.resetScopedCapabilities();
     const sceneChanged = this.contentRoot !== contentRoot;
     this.contentRoot = contentRoot;
     this.modelsRoot = modelsRoot;
+    this.restoreMaterialEffects = materialRuntime?.restore ?? null;
+    this.syncMaterialEnvironment = materialRuntime?.syncEnvironment ?? null;
     if (sceneChanged && contentRoot) this.frameCoordinator.notifySceneLoaded();
   }
 
@@ -235,7 +239,7 @@ export class RenderRuntimeAdapter {
   }
 
   syncEnvironment(environmentMap: THREE.Texture | null = this.scene.environment): void {
-    this.materialTagRuntime.syncEnvironment(environmentMap);
+    this.syncMaterialEnvironment?.(environmentMap);
     // Shared primitive batches carry their tag base recipe on the material,
     // rather than on a per-node mesh, so HDRI changes need this parallel sync.
     this.modelsRoot?.traverse((object) => {
@@ -262,7 +266,6 @@ export class RenderRuntimeAdapter {
   ): void {
     this.resetScopedCapabilities();
     if (!this.modelsRoot) return;
-    this.materialTagRuntime.apply(this.modelsRoot);
     for (const theme of materialThemes) this.applyMaterialTheme(theme);
     this.applyWaterStyles(waterStyles);
     this.applyEffectRecipes(effects);
@@ -283,8 +286,8 @@ export class RenderRuntimeAdapter {
     }
     this.materialBaselines.clear();
     if (this.modelsRoot) {
-      this.materialTagRuntime.clear(this.modelsRoot);
       this.effectRuntime.removeFromObject3D(this.modelsRoot);
+      this.restoreMaterialEffects?.();
     }
   }
 

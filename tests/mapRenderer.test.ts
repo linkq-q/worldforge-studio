@@ -209,7 +209,7 @@ describe('structured map water rendering', () => {
     rendered.dispose();
   });
 
-  it('keeps tags with per-object runtime effects on the standalone mesh path', async () => {
+  it('keeps tags with per-object runtime effects standalone while below the effect-batch threshold', async () => {
     const map = createEmptyMap('tagged-runtime', 'map-tagged-runtime-assets');
     const now = Date.now();
     const asset: MapAsset = {
@@ -236,6 +236,54 @@ describe('structured map water rendering', () => {
     const rendered = await buildEditableMapGroup(map);
     expect(rendered.modelsRoot.getObjectByProperty('isInstancedMesh', true)).toBeUndefined();
     expect(rendered.objectGroups.get('flame-0')?.getObjectByName('flame')).toBeDefined();
+    rendered.dispose();
+  });
+
+  it('regroups matching material-tag effects and keeps their RuntimeIndex transform binding', async () => {
+    const map = createEmptyMap('tagged-effect-batch', 'map-tagged-effect-batch');
+    const now = Date.now();
+    const asset: MapAsset = {
+      id: 'asset-shared-flame',
+      name: 'shared flame',
+      prompt: 'shared flame',
+      modelJson: {
+        nodes: [{
+          id: 'flame',
+          tags: [{ tag: 'fire', value: 1 }],
+          mesh: { type: 'box', params: { width: 1, height: 1, depth: 1 }, color: 0xff8822 }
+        }]
+      },
+      colliderPlan: { version: 1, boxes: [], sourceMeshCount: 1, candidateCount: 1, fallbackUsed: false },
+      mode: 'voxel', createdAt: now, updatedAt: now
+    };
+    map.assets = [asset];
+    map.objects = Array.from({ length: 8 }, (_, index) => {
+      const object = createTestObject(`flame-${index}`, asset.id);
+      object.transform.position = [index * 3, 0, 0];
+      return object;
+    });
+
+    const rendered = await buildEditableMapGroup(map);
+    const effectBatch = rendered.getRuntimeBatchMeshes().find(
+      (object): object is THREE.InstancedMesh => object.userData.isEffectBatch === true
+    );
+    expect(effectBatch?.count).toBe(8);
+    expect(rendered.getDebugStats()).toMatchObject({
+      effectBatchCount: 1,
+      effectBatchParts: 8,
+      runtimeIndexPartRefs: 8,
+      orphanPartRefs: 0,
+      orphanInstanceRefs: 0
+    });
+    expect(rendered.pickables).toContain(effectBatch);
+    expect(effectBatch?.userData.resolveMapObjectId({ object: effectBatch, instanceId: 3 })).toBe('flame-3');
+
+    const selected = rendered.objectGroups.get('flame-3') as THREE.Group;
+    selected.position.x = 30;
+    rendered.syncObjectTransform('flame-3');
+    const matrix = new THREE.Matrix4();
+    effectBatch?.getMatrixAt(3, matrix);
+    expect(new THREE.Vector3().setFromMatrixPosition(matrix).x).toBeCloseTo(30);
     rendered.dispose();
   });
 

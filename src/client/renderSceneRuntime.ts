@@ -110,6 +110,9 @@ export class RenderSceneRuntime {
       scene: this.scene,
       meshRegistry: this.meshRegistry
     });
+    // EffectBatchCoordinator creates regrouped tag batches after the base
+    // primitive cache. Keep them in the same PBR/Cel refresh path as Scene Builder.
+    this.styleManager.getBatchMeshes = () => this.rendered?.getRuntimeBatchMeshes() ?? [];
     this.adapter = new RenderRuntimeAdapter(this.renderer, this.scene, this.camera);
     this.shadows = new MapShadowRuntime(this.scene, this.camera, this.sunLight, () => this.updateLighting());
     this.hdriSky = new HdriSkyController(
@@ -132,7 +135,14 @@ export class RenderSceneRuntime {
    */
   attach(rendered: RenderedMap | null): void {
     this.meshRegistry.clear();
-    this.adapter.setSceneRoots(rendered?.group ?? null, rendered?.modelsRoot ?? null);
+    this.adapter.setSceneRoots(
+      rendered?.group ?? null,
+      rendered?.modelsRoot ?? null,
+      rendered ? {
+        restore: rendered.restoreMaterialEffects,
+        syncEnvironment: rendered.syncMaterialEnvironment
+      } : undefined
+    );
     this.shadows.setSceneRoots(rendered?.group ?? null, rendered?.modelsRoot ?? null);
     this.rendered = rendered;
     if (!rendered) return;
