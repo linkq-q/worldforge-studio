@@ -3,9 +3,10 @@ import path from 'node:path';
 import { handleMapHttp } from './mapHttp';
 import { MapStore } from './mapStore';
 import { handleStaticClient } from './staticClient';
+import { WORLD_FORGE_DEV_API_PORT } from '../shared/network';
 
 const development = process.argv.includes('--dev');
-const port = Number(process.env.PORT ?? 8787);
+const port = Number(process.env.PORT ?? WORLD_FORGE_DEV_API_PORT);
 const host = process.env.HOST ?? '127.0.0.1';
 const store = new MapStore();
 

@@ -2980,13 +2980,23 @@ class MapEditor {
 }
 
 async function editorFetch<T>(path: string, init: RequestInit = {}): Promise<T> {
-  const resp = await fetch(`${serverHttpBase(location, import.meta.env.DEV)}${path}`, {
+  const baseUrl = serverHttpBase(location, import.meta.env.DEV);
+  const resp = await fetch(`${baseUrl}${path}`, {
     ...init,
     headers: { 'Content-Type': 'application/json', ...(init.headers ?? {}) }
   });
-  const json = await resp.json().catch(() => ({})) as { error?: string };
-  if (!resp.ok) throw new Error(json.error ?? `HTTP ${resp.status}`);
+  const json = await resp.json().catch(() => ({})) as { error?: unknown };
+  if (!resp.ok) throw new Error(describeEditorResponseError(json.error, resp.status, baseUrl));
   return json as T;
+}
+
+function describeEditorResponseError(error: unknown, status: number, baseUrl: string): string {
+  const detail = typeof error === 'string'
+    ? error
+    : error && typeof error === 'object' && 'message' in error && typeof error.message === 'string'
+      ? error.message
+      : `HTTP ${status}`;
+  return `编辑器 API 请求失败（${detail}）：${baseUrl}`;
 }
 
 async function editorAgentFetch<T>(

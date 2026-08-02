@@ -9,7 +9,7 @@ function location(origin: string): BrowserServerLocation {
 describe('server endpoint selection', () => {
   it('uses the local API port during Vite development', () => {
     expect(serverHttpBase(location('http://192.168.1.20:5173'), true))
-      .toBe('http://192.168.1.20:8787');
+      .toBe('http://192.168.1.20:8797');
   });
 
   it('uses the current origin in a production build', () => {

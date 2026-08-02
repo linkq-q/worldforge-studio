@@ -54,7 +54,7 @@ npm install
 npm run dev
 ```
 
-浏览器打开 `http://localhost:5173`。本地编辑 API 运行在 `http://localhost:8787`。
+浏览器打开 `http://localhost:5173`。本地编辑 API 默认运行在 `http://localhost:8797`。
 
 ### 为什么需要 3d-generate
 
@@ -129,7 +129,7 @@ npm run build
 npm run server
 ```
 
-此时打开 `http://127.0.0.1:8787`。
+此时打开 `http://127.0.0.1:8797`。
 
 ## 数据
 
