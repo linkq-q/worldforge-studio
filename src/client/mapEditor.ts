@@ -808,11 +808,11 @@ class MapEditor {
           elapsedMs: this.mapAgentElapsedMs,
           slowAssetMode: map.assetGenerationMode === 'standard' || map.assetGenerationMode === 'voxel-pro'
         })}
-        <p class="empty">模型风格 ${map.assetGenerationMode.toUpperCase()} · ${this.state.dirty
+        <p class="empty">新资产默认 ${map.assetGenerationMode.toUpperCase()} · ${this.state.dirty
           ? '请先保存当前手工修改，再生成 AI 地图预览。'
           : !compositionAvailable
             ? '当前地图已有内容，请使用“调整当前地图”继续 Refine。'
-            : `总导演会先组织完整场景，按需调用最多 ${SCENE_COMPOSITION_LIMITS.consultationCount} 个专家，并组织 ${limits.assetVariantMin}-${limits.assetVariantMax} 个同模式可辨识资产；缺失资产会按需生成，合成审查后再进入预览。`}</p>
+            : `总导演会先组织完整场景，按需调用最多 ${SCENE_COMPOSITION_LIMITS.consultationCount} 个专家，并组织 ${limits.assetVariantMin}-${limits.assetVariantMax} 个可辨识资产；可复用不同模式的已有资产，缺失资产按当前默认模式生成。`}</p>
       </section>
       ${suggestion && this.mapAiPreviewMap ? `
         <section class="editor-section map-ai-result">
@@ -1172,11 +1172,7 @@ class MapEditor {
       host.innerHTML = '<section class="editor-section"><h2>Transform</h2><p class="empty">选择一个物体。</p></section>';
       return;
     }
-    const compatibleAssets = this.compatibleAssets();
-    const currentAsset = this.state.assets.find((asset) => asset.id === object.assetId) ?? null;
-    const legacyAssetOption = currentAsset && currentAsset.mode !== map.assetGenerationMode
-      ? `<option value="${currentAsset.id}" selected disabled>${escapeHtml(currentAsset.name)}（旧 ${escapeHtml(currentAsset.mode.toUpperCase())}，不可继续复用）</option>`
-      : '';
+    const availableAssets = this.state.assets;
     host.innerHTML = `
       <section class="editor-section">
         <h2>Transform</h2>
@@ -1197,8 +1193,7 @@ class MapEditor {
           <span>资产</span>
           <select data-object-asset>
             <option value="">未绑定</option>
-            ${legacyAssetOption}
-            ${compatibleAssets.map((asset) => `<option value="${asset.id}" ${object.assetId === asset.id ? 'selected' : ''}>${escapeHtml(asset.name)}</option>`).join('')}
+            ${availableAssets.map((asset) => `<option value="${asset.id}" ${object.assetId === asset.id ? 'selected' : ''}>${escapeHtml(asset.name)} · ${escapeHtml(asset.mode.toUpperCase())}</option>`).join('')}
           </select>
         </label>
         <button id="delete-object" class="secondary small">删除物体</button>
@@ -1246,18 +1241,18 @@ class MapEditor {
   private renderAssetPanel(): void {
     const host = this.app.querySelector<HTMLElement>('#asset-panel');
     if (!host) return;
-    const compatibleAssets = this.compatibleAssets();
-    const selectedAsset = compatibleAssets.find((asset) => asset.id === this.state.selectedAssetId) ?? compatibleAssets[0] ?? null;
+    const availableAssets = this.state.assets;
+    const selectedAsset = availableAssets.find((asset) => asset.id === this.state.selectedAssetId) ?? availableAssets[0] ?? null;
     if (this.state.selectedAssetId !== selectedAsset?.id) this.state.selectedAssetId = selectedAsset?.id ?? null;
     host.innerHTML = `
       <section class="editor-section asset-tools">
         <h2>资产</h2>
         <textarea id="asset-prompt" placeholder="输入提示词生成模型资产"></textarea>
-        <p class="empty">当前地图的新资产统一使用 ${this.state.map?.assetGenerationMode.toUpperCase() ?? 'VOXEL'} 模式。</p>
+        <p class="empty">新生成资产默认使用 ${this.state.map?.assetGenerationMode.toUpperCase() ?? 'VOXEL'}；已有资产可跨模式混合使用。</p>
         <button id="generate-asset" ${this.state.busy ? 'disabled' : ''}>生成资产</button>
-        <p class="empty">资产列表只显示与当前地图相同模式的可复用资产。</p>
+        <p class="empty">资产列表显示全部模式，名称后会标注生成模式。</p>
         <select id="asset-list" ${selectedAsset ? '' : 'disabled'}>
-          ${compatibleAssets.map((asset) => `<option value="${asset.id}" ${selectedAsset?.id === asset.id ? 'selected' : ''}>${escapeHtml(asset.name)}</option>`).join('')}
+          ${availableAssets.map((asset) => `<option value="${asset.id}" ${selectedAsset?.id === asset.id ? 'selected' : ''}>${escapeHtml(asset.name)} · ${escapeHtml(asset.mode.toUpperCase())}</option>`).join('')}
         </select>
         <div id="asset-preview" class="asset-preview"></div>
         ${selectedAsset ? `
@@ -2441,11 +2436,6 @@ class MapEditor {
       ...source,
       assets: [...assets.values()]
     };
-  }
-
-  private compatibleAssets(): MapAsset[] {
-    const mode = this.state.map?.assetGenerationMode;
-    return mode ? this.state.assets.filter((asset) => asset.mode === mode) : [];
   }
 
   private isPlayerSpawnSelected(): boolean {

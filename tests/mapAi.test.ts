@@ -233,7 +233,7 @@ describe('map AI adapter', () => {
     expect(fetchImpl.mock.calls[0][0]).toBe('https://example.test/api/chat');
   });
 
-  it('generates missing same-mode assets before compiling and reviewing the composition', async () => {
+  it('reuses mixed-mode assets and generates missing variants in the map default mode', async () => {
     const progress: string[] = [];
     const fetchImpl = vi.fn()
       .mockResolvedValueOnce(chatResponse(compositionPlan({
@@ -267,16 +267,15 @@ describe('map AI adapter', () => {
     );
 
     expect(fetchImpl).toHaveBeenCalledTimes(2);
-    expect(createAsset).toHaveBeenCalledTimes(2);
+    expect(createAsset).toHaveBeenCalledOnce();
     expect(createAsset).toHaveBeenCalledWith(expect.objectContaining({
       tags: ['tree', 'vegetation'],
       mode: 'curve'
     }));
-    expect(JSON.stringify(suggestion.operations)).not.toContain('asset-voxel-tree');
-    expect(suggestion.generatedAssets).toHaveLength(2);
+    expect(JSON.stringify(suggestion.operations)).toContain('asset-voxel-tree');
+    expect(suggestion.generatedAssets).toHaveLength(1);
     expect(suggestion.generatedAssets?.map((asset) => asset.id)).toEqual([
-      'asset-generated-tree-1',
-      'asset-generated-tree-2'
+      'asset-generated-tree-1'
     ]);
     expect(suggestion.operations).toEqual(expect.arrayContaining([
       expect.objectContaining({

@@ -28,7 +28,7 @@ describe('scene composition contract', () => {
     expect(isCompositionEmptyMap(map)).toBe(true);
   });
 
-  it('resolves only assets from the map generation mode and reports semantic gaps', () => {
+  it('resolves reusable assets across generation modes and reports semantic gaps', () => {
     const map = createEmptyMap('Forest', 'map-assets', [96, 16, 96], 'voxel-pro');
     const plan = normalizeSceneCompositionPlan(planInput(), map);
     const assets = [
@@ -40,9 +40,9 @@ describe('scene composition contract', () => {
     const resolved = resolveSceneFamilies(plan, map, assets, 4);
 
     expect(resolved.families.find((item) => item.family.id === 'trees')?.assets.map((item) => item.id))
-      .toEqual(['tree-a']);
+      .toEqual(['tree-a', 'tree-wrong-mode']);
     expect(resolved.gaps.map((gap) => gap.familyId)).toContain('cabin');
-    expect(resolved.gaps).toHaveLength(2);
+    expect(resolved.gaps).toHaveLength(1);
   });
 
   it('passes the medium Animal-Crossing-like forest golden composition deterministically', () => {

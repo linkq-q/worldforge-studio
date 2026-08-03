@@ -55,12 +55,11 @@ export function resolveSceneFamilies(
   assets: readonly MapAsset[],
   generationBudget: number
 ): { families: ResolvedSceneFamily[]; gaps: SceneAssetGap[] } {
-  const compatible = assets.filter((asset) => asset.mode === map.assetGenerationMode);
   const claimed = new Set<string>();
   const families = [...plan.assetFamilies]
     .sort((left, right) => right.priority - left.priority)
     .map((family): ResolvedSceneFamily => {
-      const candidates = compatible
+      const candidates = assets
         .filter((asset) => !claimed.has(asset.id) && matchesFamily(asset, family))
         .sort((left, right) => scoreAsset(right, family) - scoreAsset(left, family) || left.id.localeCompare(right.id));
       const selected = candidates.slice(0, family.desiredVariants);

@@ -11,8 +11,7 @@ import type { ResolvedSceneFamily } from '../shared/sceneCompositionAssets';
 export function buildSceneDirectorPrompt(map: EditableMap, assets: readonly MapAsset[]): string {
   const bounds = getMapBounds(map);
   const limits = planLimits(bounds);
-  const compatibleAssets = assets
-    .filter((asset) => asset.mode === map.assetGenerationMode)
+  const catalogAssets = assets
     .slice(0, 80)
     .map((asset) => ({
       id: asset.id,
@@ -40,10 +39,10 @@ export function buildSceneDirectorPrompt(map: EditableMap, assets: readonly MapA
     `Use consultations only when a genuinely difficult local relationship would benefit from an independent specialist. Use 0-${SCENE_COMPOSITION_LIMITS.consultationCount}; do not create one per zone.`,
     'A consultation may improve the plan but cannot directly create assets or map operations.',
     'Rendering is a later stage. Only provide short renderPromptSuggestions; do not choose or edit a render scheme.',
-    `Map: ${map.box.size[0]} x ${map.box.size[1]} x ${map.box.size[2]}, seed ${map.seed}, asset mode ${map.assetGenerationMode}.`,
-    `Execution budgets: about ${limits.objectCount} objects and ${limits.assetVariantMin}-${limits.assetVariantMax} distinct same-mode asset variants in total. Existing compatible assets count toward this range; generate no more than ${limits.assetRequestCount} missing variants.`,
+    `Map: ${map.box.size[0]} x ${map.box.size[1]} x ${map.box.size[2]}, seed ${map.seed}, default new-asset mode ${map.assetGenerationMode}.`,
+    `Execution budgets: about ${limits.objectCount} objects and ${limits.assetVariantMin}-${limits.assetVariantMax} distinct reusable asset variants in total. Existing assets from any generation mode count toward this range; generate no more than ${limits.assetRequestCount} missing variants.`,
     'Use several semantically useful asset families and silhouette variants. Do not satisfy the range with near-duplicate recolors or unnecessary variants of one landmark.',
-    `Compatible asset catalog: ${JSON.stringify(compatibleAssets)}.`,
+    `Reusable mixed-mode asset catalog: ${JSON.stringify(catalogAssets)}.`,
     'Return JSON only with this shape:',
     JSON.stringify({
       version: 1,
