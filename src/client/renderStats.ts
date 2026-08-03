@@ -84,6 +84,7 @@ export class RenderStats {
   private captureStartedAt: number | null = null;
   private captureSamples: FramePerformanceSample[] = [];
   private status = '';
+  private interacting = false;
 
   constructor(
     private readonly info: RendererInfoSource,
@@ -92,7 +93,13 @@ export class RenderStats {
     private readonly options?: RenderStatsOptions
   ) {
     this.info.autoReset = false;
-    if (options) this.element.classList.add('viewport-debug-panel');
+    if (options) {
+      this.element.classList.add('viewport-debug-panel');
+      // The panel refreshes frequently. Freeze its DOM while the pointer is
+      // inside so buttons cannot be detached between pointer-down and click.
+      this.element.addEventListener('pointerenter', () => { this.interacting = true; });
+      this.element.addEventListener('pointerleave', () => { this.interacting = false; });
+    }
   }
 
   setVisible(visible: boolean): void {
@@ -123,6 +130,7 @@ export class RenderStats {
       this.element.textContent = this.compactText();
       return;
     }
+    if (this.interacting) return;
     this.renderPanel();
   }
 

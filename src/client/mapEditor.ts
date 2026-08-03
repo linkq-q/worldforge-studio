@@ -441,7 +441,7 @@ class MapEditor {
     this.renderer = renderScene.renderer;
     const statsElement = host.querySelector<HTMLElement>('#viewport-stats');
     if (statsElement) {
-      this.renderStats = new RenderStats(this.renderer.info, statsElement, 250, {
+      this.renderStats = new RenderStats(this.renderer.info, statsElement, 1000, {
         details: () => this.renderDebugDetails(),
         canExpand: () => this.developerMode,
         onTogglePass: (id, enabled) => this.renderScene?.adapter.setDebugPassEnabled(id, enabled)

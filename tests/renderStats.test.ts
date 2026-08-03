@@ -64,4 +64,37 @@ describe('render stats', () => {
     expect(report).toContain('fallbackParts: 50');
     expect(report).toContain('RenderPass=4.25ms');
   });
+
+  it('does not replace interactive controls while the pointer is inside', () => {
+    const handlers = new Map<string, () => void>();
+    const element = {
+      hidden: false,
+      innerHTML: 'stable',
+      classList: { add: vi.fn() },
+      addEventListener: (name: string, handler: () => void) => handlers.set(name, handler),
+      querySelector: () => null,
+      querySelectorAll: () => []
+    } as unknown as HTMLElement;
+    const info: RendererInfoSource = {
+      autoReset: true,
+      reset: vi.fn(),
+      render: { calls: 1, triangles: 2 }
+    };
+    const stats = new RenderStats(info, element, 1, {
+      details: () => ({
+        objects: 0, waters: 0, batchableParts: 0, instancedParts: 0, batchedMeshParts: 0,
+        fallbackParts: 0, batchCount: 0, effectBatchCount: 0, effectBatchParts: 0,
+        runtimeIndexPartRefs: 0, orphanPartRefs: 0, orphanInstanceRefs: 0, culled: 0, tested: 0,
+        grassBlades: 0, grassFlowers: 0, grassDrawCalls: 0, atmosphereParticles: 0,
+        atmosphereDrawCalls: 0, adaptiveQuality: 1, stages: [], passes: [], composerPasses: []
+      })
+    });
+
+    handlers.get('pointerenter')?.();
+    stats.endFrame(16, 100);
+    expect(element.innerHTML).toBe('stable');
+    handlers.get('pointerleave')?.();
+    stats.endFrame(16, 102);
+    expect(element.innerHTML).toContain('perf-summary');
+  });
 });
