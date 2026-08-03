@@ -16,6 +16,7 @@
     "build": "tsc --noEmit && vite build",
     "build:map-core": "vite build --config vite.map-core.config.ts && tsc -p tsconfig.map-core.json && node scripts/mapCoreSmoke.mjs",
     "handoff:goldens": "tsx scripts/exportGoldenPack.ts",
+    "handoff:verify": "tsx scripts/verifyGoldenPack.ts",
     "backup:data": "tsx scripts/backupMapData.ts",
     "test": "vitest run",
     "server": "tsx src/server/index.ts -- --release",

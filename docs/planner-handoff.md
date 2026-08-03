@@ -52,6 +52,12 @@ npm run handoff:goldens
 npm run handoff:goldens -- --output 'D:\Share\worldforge-golden-pack.zip'
 ```
 
+在交付前可执行一次无损回环检查；它会导入临时空数据目录并在结束时自动删除：
+
+```powershell
+npm run handoff:verify -- data/exports/worldforge-golden-pack-YYYY-MM-DD.zip
+```
+
 备份完整工作数据（地图、资产、渲染方案、HDRI、历史记录）：
 
 ```powershell
