@@ -1006,6 +1006,50 @@ p {
   border-bottom: 0;
 }
 
+.material-tag-options {
+  display: grid;
+  gap: 6px;
+}
+
+.material-tag-option {
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr);
+  align-items: center;
+  gap: 9px;
+  min-height: 44px;
+  padding: 7px 9px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--panel-soft) 76%, transparent);
+  cursor: pointer;
+}
+
+.material-tag-option:hover {
+  border-color: color-mix(in srgb, var(--accent) 55%, transparent);
+}
+
+.material-tag-option input {
+  margin: 0;
+}
+
+.material-tag-option span {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.material-tag-option b,
+.material-tag-option small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.material-tag-option small {
+  color: var(--muted);
+  font-size: 10px;
+}
+
 .contextual-editor-section {
   background: rgba(217, 244, 122, 0.025);
 }

@@ -129,7 +129,8 @@ export async function buildEditableMapGroup(input: EditableMap, options: MapRend
       : [];
   }), {
     scene: options.scene ?? new THREE.Scene(),
-    modelsRoot
+    modelsRoot,
+    materialTagPolicy: map.materialTagPolicy
   });
   modelsRoot.add(instancing.root);
   await populateObjectVisuals(map, assets, objectGroups, instancing.handledObjectIds);

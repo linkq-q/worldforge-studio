@@ -16,6 +16,10 @@ import {
 } from './mapAssetMetadata';
 import { normalizeModelGenerationMode, type ModelGenerationMode } from './modelGenerationMode';
 import { normalizeGrassLayers, type MapGrassLayer } from './mapGrass';
+import {
+  normalizeMaterialTagPolicy,
+  type MapMaterialTagPolicy
+} from './materialTagPolicy';
 import { normalizeMapVisualSemantics, type MapVisualSemantics } from './visualDirection';
 
 export type MapSurface = 'floor' | 'ceiling' | 'north' | 'south' | 'east' | 'west' | 'terrain';
@@ -122,6 +126,7 @@ export interface EditableMap {
   confirmedAt: number | null;
   renderSchemeId: string | null;
   renderPromptSuggestions: string[];
+  materialTagPolicy: MapMaterialTagPolicy;
   visualSemantics: MapVisualSemantics;
   assets?: MapAsset[];
   collisionBake?: MapCollisionBake;
@@ -332,6 +337,7 @@ export function normalizeMap(input: Partial<EditableMap>): EditableMap {
       ? input.renderSchemeId.trim().slice(0, 80)
       : null,
     renderPromptSuggestions: normalizeTextList(input.renderPromptSuggestions, 8, 80),
+    materialTagPolicy: normalizeMaterialTagPolicy(input.materialTagPolicy),
     visualSemantics: normalizeMapVisualSemantics(input.visualSemantics),
     assets: Array.isArray(input.assets) ? input.assets.map(normalizeAsset) : undefined,
     collisionBake: normalizeMapCollisionBake(input.collisionBake)

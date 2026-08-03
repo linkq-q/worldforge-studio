@@ -31,6 +31,10 @@ import { planLimits } from '../shared/mapPlanning';
 import { isCompositionEmptyMap, SCENE_COMPOSITION_LIMITS } from '../shared/sceneComposition';
 import { renderMapCompositionSummary } from './mapCompositionPanel';
 import {
+  bindMaterialTagScenePanel,
+  renderMaterialTagScenePanel
+} from './materialTagScenePanel';
+import {
   bindGrassEditorPanel,
   ensureGrassLayerSelection,
   renderGrassEditorPanel,
@@ -1176,6 +1180,7 @@ class MapEditor {
       return;
     }
     const mapSettingsOpen = host.querySelector<HTMLDetailsElement>('[data-inspector-section="map-settings"]')?.open ?? false;
+    const materialTagsOpen = host.querySelector<HTMLDetailsElement>('[data-inspector-section="material-tags"]')?.open ?? false;
     host.innerHTML = `
       <details class="inspector-disclosure" data-inspector-section="map-settings" ${mapSettingsOpen ? 'open' : ''}>
         <summary><span><b>地图</b><small>${escapeHtml(map.name)} · ${map.box.size.map((value) => value.toFixed(0)).join(' × ')}</small></span></summary>
@@ -1191,6 +1196,7 @@ class MapEditor {
         </div>
         </section>
       </details>
+      ${renderMaterialTagScenePanel(map, this.state.assets, materialTagsOpen)}
       ${this.state.tool === 'paint' ? `<section class="editor-section contextual-editor-section">
         <h2>画笔</h2>
         <label class="field compact"><span>颜色</span><input data-brush-color type="color" value="${this.state.brushColor}" /></label>
@@ -1223,6 +1229,13 @@ class MapEditor {
         this.markDirty();
         void this.refreshScene();
       });
+    });
+    bindMaterialTagScenePanel(host, map, (label, enabled) => {
+      this.markDirty();
+      this.state.message = `${label}材质 Tag 已${enabled ? '开启' : '关闭'}`;
+      void this.refreshScene();
+      this.renderMapInspector();
+      this.updateToolbarState();
     });
     host.querySelector<HTMLInputElement>('[data-brush-color]')?.addEventListener('input', (event) => {
       this.state.brushColor = (event.target as HTMLInputElement).value;

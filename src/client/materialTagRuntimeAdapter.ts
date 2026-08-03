@@ -7,6 +7,10 @@ import {
   compileModelMaterialTags,
   createEffectRuntime
 } from '@voxel-studio/render-runtime/effects';
+import {
+  filterMaterialTags,
+  type MapMaterialTagPolicy
+} from '../shared/materialTagPolicy';
 
 interface TaggedNode {
   id: string;
@@ -52,6 +56,7 @@ export interface WorldForgeMaterialTagRuntimeOptions {
   runtimeIndex: RuntimeIndex;
   batchParent: THREE.Group;
   objectGroups: Map<string, THREE.Group>;
+  materialTagPolicy: MapMaterialTagPolicy;
   effectBatchMinGroupSize?: number;
 }
 
@@ -97,7 +102,7 @@ export class WorldForgeMaterialTagRuntime {
     for (const modelRoot of modelRoots) {
       const source = modelRoot.userData.materialTagSource as TaggedModelSource;
       const modelId = String(modelRoot.userData.mapObjectId ?? '');
-      const model = toCompilerModel(source);
+      const model = toCompilerModel(source, this.options.materialTagPolicy);
       if (model.parts.length === 0) continue;
       const objects = new Map<string, THREE.Object3D>();
       modelRoot.traverse((object) => {
@@ -334,7 +339,7 @@ function emptyResult(): MaterialTagApplyResult {
   };
 }
 
-function toCompilerModel(source: TaggedModelSource): {
+function toCompilerModel(source: TaggedModelSource, materialTagPolicy: MapMaterialTagPolicy): {
   name: string;
   style?: string;
   parts: Array<{
@@ -352,7 +357,7 @@ function toCompilerModel(source: TaggedModelSource): {
       id: node.id,
       ...(node.parent ? { parent: node.parent } : {}),
       isGroup: !node.mesh,
-      tags: Array.isArray(node.tags) ? node.tags : [],
+      tags: filterMaterialTags(node.tags, materialTagPolicy),
       ...(node.mesh ? { mesh: node.mesh } : {})
     }))
   };

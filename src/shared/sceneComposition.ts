@@ -120,6 +120,8 @@ export interface SceneAssetFamily {
   /** Free semantic role selected by the director, not an editor preset. */
   role: string;
   tags: string[];
+  /** Specific identity required for reuse; broad tags such as `tree` are not enough. */
+  identityTags: string[];
   sizeClass: MapAssetSizeClass;
   desiredVariants: number;
   priority: number;
@@ -287,11 +289,17 @@ function normalizeFamily(value: unknown): SceneAssetFamily {
     ? input.sizeClass
     : null;
   if (!sizeClass) throw new Error('invalid_scene_asset_family');
+  const tags = normalizeTags(input.tags);
+  const identityTags = Array.isArray(input.identityTags)
+    ? normalizeTags(input.identityTags)
+    : deriveIdentityTags(tags);
+  const requiredIdentityTags = identityTags.length > 0 ? identityTags : tags.slice(0, 1);
   return {
     id: requireId(input.id, 'invalid_scene_asset_family'),
     label: cleanText(input.label, String(input.id ?? ''), 64),
     role: cleanText(input.role, 'scene asset', 80),
-    tags: normalizeTags(input.tags),
+    tags: [...new Set([...tags, ...requiredIdentityTags])],
+    identityTags: requiredIdentityTags,
     sizeClass,
     desiredVariants: Math.round(clamp(finiteNumber(input.desiredVariants, 1), 1, 3)),
     priority: clamp(finiteNumber(input.priority, 0.5), 0, 1),
@@ -431,6 +439,17 @@ function normalizeZoneGrassLayer(
     edgeFalloff: clamp(finiteNumber(input.edgeFalloff, 0.25), 0, 1),
     residualDensity: clamp(finiteNumber(input.residualDensity, 0.08), 0, 1)
   };
+}
+
+const BROAD_ASSET_TAGS = new Set([
+  'animal', 'architecture', 'building', 'decor', 'environment', 'forest',
+  'landmark', 'nature', 'organic', 'outdoor', 'plant', 'prop', 'structure',
+  'tree', 'vegetation', 'voxel', 'voxel-pro', 'woodland'
+]);
+
+function deriveIdentityTags(tags: string[]): string[] {
+  const specific = tags.filter((tag) => !BROAD_ASSET_TAGS.has(tag));
+  return specific.length > 0 ? specific.slice(0, 3) : tags.slice(0, 1);
 }
 
 function resolveGrassFamilyReference(references: ReadonlyMap<string, string>, id: string): string | undefined {

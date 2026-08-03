@@ -13,6 +13,7 @@
 
 // Map schema, bounds, terrain sampling, collision bake and player movement.
 export * from './map';
+export * from './materialTagPolicy';
 
 // Spawn placement safety checks that go with `getSpawnPoints`.
 export * from './mapSpawnSafety';

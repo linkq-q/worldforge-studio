@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { describe, expect, it } from 'vitest';
 import { RuntimeIndex } from '@voxel-studio/render-runtime';
 import { WorldForgeMaterialTagRuntime } from '../src/client/materialTagRuntimeAdapter';
+import { normalizeMaterialTagPolicy, type MapMaterialTagPolicy } from '../src/shared/materialTagPolicy';
 
 describe('WorldForge material tag runtime', () => {
   it('compiles inherited Voxel Studio tags onto the matching model mesh', () => {
@@ -79,12 +80,43 @@ describe('WorldForge material tag runtime', () => {
     mesh.geometry.dispose();
     material.dispose();
   });
+
+  it('filters disabled tag values before compiling runtime effects', () => {
+    const scene = new THREE.Scene();
+    const modelsRoot = new THREE.Group();
+    const modelRoot = new THREE.Group();
+    modelRoot.userData.mapObjectId = 'deer-object';
+    modelRoot.userData.materialTagSource = {
+      name: 'deer',
+      nodes: [{ id: 'body', mesh: { type: 'box' }, tags: [{ tag: 'base', value: 'fur' }] }]
+    };
+    const mesh = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshStandardMaterial());
+    mesh.userData.nodeId = 'body';
+    modelRoot.add(mesh);
+    modelsRoot.add(modelRoot);
+    scene.add(modelsRoot);
+
+    const runtime = createRuntime(
+      scene,
+      modelsRoot,
+      new Map([['deer-object', modelRoot]]),
+      normalizeMaterialTagPolicy(undefined)
+    );
+    const result = runtime.apply(modelsRoot);
+
+    expect(result.taggedParts).toBe(0);
+    expect(mesh.userData.effectSlots).toBeUndefined();
+    runtime.dispose();
+    mesh.geometry.dispose();
+    (mesh.material as THREE.Material).dispose();
+  });
 });
 
 function createRuntime(
   scene: THREE.Scene,
   modelsRoot: THREE.Group,
-  objectGroups: Map<string, THREE.Group>
+  objectGroups: Map<string, THREE.Group>,
+  materialTagPolicy: MapMaterialTagPolicy = { disabled: [] }
 ): WorldForgeMaterialTagRuntime {
   const batchParent = new THREE.Group();
   modelsRoot.add(batchParent);
@@ -93,6 +125,7 @@ function createRuntime(
     runtimeIndex: new RuntimeIndex(),
     batchParent,
     objectGroups,
+    materialTagPolicy,
     effectBatchMinGroupSize: 8
   });
 }

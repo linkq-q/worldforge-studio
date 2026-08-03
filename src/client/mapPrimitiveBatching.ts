@@ -10,6 +10,7 @@ import {
 } from '@voxel-studio/render-runtime/effects';
 import materialTagVocabulary from '@voxel-studio/render-runtime/model/material-tags-v1.json';
 import type { MapAsset } from '../shared/map';
+import { filterMaterialTags, type MapMaterialTagPolicy } from '../shared/materialTagPolicy';
 import { buildModelGroup } from './modelRenderer';
 import { MapObjectCulling, type MapObjectCullingStats } from './mapObjectCulling';
 import { requiresRuntimeStandaloneMaterialTag } from './mapMaterialTagBatchPolicy';
@@ -25,6 +26,7 @@ export interface MapPrimitiveBatchInput {
 export interface MapPrimitiveBatchOptions {
   scene: THREE.Scene;
   modelsRoot: THREE.Group;
+  materialTagPolicy: MapMaterialTagPolicy;
 }
 
 export interface MapPrimitiveBatchResult {
@@ -136,7 +138,7 @@ export async function buildMapPrimitiveBatches(
 
   for (const input of inputs) {
     objectGroups.set(input.objectId, input.objectGroup);
-    const template = await takeTemplate(input.asset, templates);
+    const template = await takeTemplate(input.asset, templates, options.materialTagPolicy);
     preparedTemplates.add(template);
     const batchableNodeIds = new Set<string>();
     batcher.reset();
@@ -158,6 +160,7 @@ export async function buildMapPrimitiveBatches(
     runtimeIndex,
     batchParent: root,
     objectGroups,
+    materialTagPolicy: options.materialTagPolicy,
     effectBatchMinGroupSize: 8
   });
   materialTagRuntime.apply(options.modelsRoot);
@@ -246,20 +249,21 @@ export async function buildMapPrimitiveBatches(
 
 async function takeTemplate(
   asset: MapAsset,
-  templates: Map<string, Promise<PreparedTemplate>>
+  templates: Map<string, Promise<PreparedTemplate>>,
+  materialTagPolicy: MapMaterialTagPolicy
 ): Promise<PreparedTemplate> {
   let template = templates.get(asset.id);
   if (!template) {
-    template = prepareTemplate(asset);
+    template = prepareTemplate(asset, materialTagPolicy);
     templates.set(asset.id, template);
   }
   return template;
 }
 
-async function prepareTemplate(asset: MapAsset): Promise<PreparedTemplate> {
+async function prepareTemplate(asset: MapAsset, materialTagPolicy: MapMaterialTagPolicy): Promise<PreparedTemplate> {
   const group = await buildModelGroup(asset.modelJson);
   const nodes = readNodes(asset.modelJson);
-  const parts = nodes.map(toBatchPart);
+  const parts = nodes.map((node) => toBatchPart(node, materialTagPolicy));
   const compilerModel = { name: asset.name, parts };
   const compiled = compileModelMaterialTags(compilerModel, materialTagVocabulary);
   for (const entry of compiled.byPartId.values()) {
@@ -294,7 +298,7 @@ function readNodes(modelJson: unknown): ModelNode[] {
   return Array.isArray(nodes) ? nodes.filter((node): node is ModelNode => Boolean(node && typeof node === 'object' && typeof (node as ModelNode).id === 'string')) : [];
 }
 
-function toBatchPart(node: ModelNode): BatchPart {
+function toBatchPart(node: ModelNode, materialTagPolicy: MapMaterialTagPolicy): BatchPart {
   const position = node.transform?.pos ?? [0, 0, 0];
   const quaternion = node.transform?.quat ?? [0, 0, 0, 1];
   const scale = node.transform?.scale ?? [1, 1, 1];
@@ -304,7 +308,7 @@ function toBatchPart(node: ModelNode): BatchPart {
     id: node.id,
     ...(node.parent ? { parent: node.parent } : {}),
     isGroup: !node.mesh,
-    tags: Array.isArray(node.tags) ? node.tags : [],
+    tags: filterMaterialTags(node.tags, materialTagPolicy),
     offset: { x: position[0], y: position[1], z: position[2] },
     position: { x: position[0], y: position[1], z: position[2] },
     quaternion: { x: quaternion[0], y: quaternion[1], z: quaternion[2], w: quaternion[3] },

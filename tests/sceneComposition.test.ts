@@ -70,6 +70,33 @@ describe('scene composition contract', () => {
     expect(resolved.gaps).toHaveLength(1);
   });
 
+  it('does not let generic category assets impersonate a named family identity', () => {
+    const map = createEmptyMap('Named families', 'map-named-assets', [96, 16, 96], 'voxel-pro');
+    const input = structuredClone(planInput()) as {
+      assetFamilies: Array<{ id: string; tags: string[]; identityTags?: string[] }>;
+    };
+    const trees = input.assetFamilies.find((family) => family.id === 'trees')!;
+    trees.tags = ['tree', 'vegetation', 'maple'];
+    trees.identityTags = ['maple'];
+    const cabin = input.assetFamilies.find((family) => family.id === 'cabin')!;
+    cabin.tags = ['building', 'landmark', 'castle'];
+    cabin.identityTags = ['castle'];
+    const plan = normalizeSceneCompositionPlan(input, map);
+    const assets = [
+      asset('generic-tree', 'Generic tree', ['tree', 'vegetation'], 'large', 'voxel-pro'),
+      asset('generic-building', 'Generic cabin', ['building', 'structure'], 'large', 'voxel-pro'),
+      asset('shrub-a', 'Fern', ['fern', 'understory'], 'small', 'voxel-pro')
+    ];
+
+    const resolved = resolveSceneFamilies(plan, map, assets, 4);
+
+    expect(resolved.families.find((item) => item.family.id === 'trees')?.assets).toHaveLength(0);
+    expect(resolved.families.find((item) => item.family.id === 'cabin')?.assets).toHaveLength(0);
+    expect(resolved.gaps.map((gap) => gap.familyId)).toEqual(expect.arrayContaining(['trees', 'cabin']));
+    expect(resolved.gaps.find((gap) => gap.familyId === 'trees')?.tags).toContain('maple');
+    expect(resolved.gaps.find((gap) => gap.familyId === 'cabin')?.tags).toContain('castle');
+  });
+
   it('passes the medium Animal-Crossing-like forest golden composition deterministically', () => {
     const map = createEmptyMap('Forest', 'map-compile', [96, 16, 96], 'voxel-pro');
     const plan = normalizeSceneCompositionPlan(planInput(), map);

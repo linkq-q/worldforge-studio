@@ -8,6 +8,12 @@ When the library is non-empty, every UI render-generation request requires the A
 
 AI-authored fog uses `atmosphere.fog.visibilityDistance` in metres; the compiler converts it to exponential density at 95% opacity. Human-facing language therefore maps to stable ranges (`thin 240-450m`, `normal 120-220m`, `dense 40-90m`) instead of asking the model to guess a renderer-specific density.
 
+## Scene asset identity and material-tag policy
+
+Scene composition keeps broad search tags separate from `SceneAssetFamily.identityTags`. Reuse requires a matching specific identity, so a generic `tree` cannot satisfy a requested `maple` family and a generic `building` cannot satisfy `castle`. Every explicitly named reusable object must own an asset family, an intent requirement, and at least one zone layer; missing identity matches consume the bounded asset-generation budget.
+
+Each map persists `materialTagPolicy.disabled`. Selectors are value-specific for mutually exclusive base materials (`base:fur`, `base:wood`, and so on) and tag-wide for continuous effects (`vegetation`, `mossy`, etc.). `base:fur` is disabled by default. The policy filters model-node tags before both primitive-batch recipe compilation and runtime effect compilation, so the visible result, batching path, and saved scene configuration cannot disagree. The editor panel lists only tags referenced by visible assets in the current map and applies changes live under `modelsRoot`.
+
 ## Render runtime lifecycle
 
 Each rendered map owns one `RuntimeIndex` for the whole map lifetime. `AIPrimitiveBatcher` registers shared primitive batches in it, while standalone fallback meshes are registered with the same `${mapObjectId}:${partId}` identity. Picking, future material isolation, and object culling must consume this shared index instead of building parallel object maps.

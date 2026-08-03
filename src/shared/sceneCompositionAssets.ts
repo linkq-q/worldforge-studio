@@ -108,7 +108,10 @@ export function attachGeneratedSceneAssets(
 
 function matchesFamily(asset: MapAsset, family: SceneAssetFamily): boolean {
   const tags = new Set(asset.tags ?? []);
-  const tagMatch = family.tags.length === 0 || family.tags.some((tag) => tags.has(tag));
+  const identityMatch = family.identityTags.length === 0
+    || family.identityTags.some((tag) => tags.has(tag));
+  const tagMatch = identityMatch
+    && (family.tags.length === 0 || family.tags.some((tag) => tags.has(tag)));
   const sizeMatch = !asset.sizeClass || asset.sizeClass === family.sizeClass;
   return tagMatch && sizeMatch;
 }
@@ -116,7 +119,8 @@ function matchesFamily(asset: MapAsset, family: SceneAssetFamily): boolean {
 function scoreAsset(asset: MapAsset, family: SceneAssetFamily): number {
   const tags = new Set(asset.tags ?? []);
   const matchingTags = family.tags.filter((tag) => tags.has(tag)).length;
-  return matchingTags * 10 + (asset.sizeClass === family.sizeClass ? 4 : 0);
+  const matchingIdentityTags = family.identityTags.filter((tag) => tags.has(tag)).length;
+  return matchingIdentityTags * 100 + matchingTags * 10 + (asset.sizeClass === family.sizeClass ? 4 : 0);
 }
 
 function buildFamilyPrompt(family: SceneAssetFamily, artDirection: string, variantIndex: number): string {
