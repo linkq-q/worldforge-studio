@@ -268,7 +268,7 @@ function applyLightRig(
   }> = {
     neutral: { key: 1, fill: 1, sun: base.sunColor, sky: base.hemisphereSkyColor, ground: base.hemisphereGroundColor, softness: 0.55 },
     'soft-morning': { key: 0.72, fill: 1.08, sun: '#ffe5bd', sky: '#e7f2f2', ground: '#46554d', softness: 0.92 },
-    'hard-day': { key: 1.35, fill: 0.7, sun: '#fff4dc', sky: '#dff3ff', ground: '#34443a', softness: 0.16 },
+    'hard-day': { key: 1.18, fill: 0.92, sun: '#fff0cf', sky: '#d9efff', ground: '#657266', softness: 0.3 },
     backlit: { key: 1.18, fill: 0.76, sun: '#ffd5a1', sky: '#dbe9f1', ground: '#3d4347', softness: 0.42 },
     overcast: { key: 0.36, fill: 1.28, sun: '#e8eef0', sky: '#d9e2e4', ground: '#59605d', softness: 1 },
     sunset: { key: 1.08, fill: 0.72, sun: '#ff9c5a', sky: '#c99691', ground: '#40373d', softness: 0.72 }

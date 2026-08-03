@@ -191,6 +191,7 @@ function buildSystemPrompt(
     '输出 RenderPlan V2。runtime.material-theme、runtime.water-style、runtime.effect-recipe 可以重复；每项必须提供唯一 key 和 scope。scope.target 只能是 water、material-tag 或 asset-tag，标签使用 foliage、bark、wood、stone、metal、water、emissive、fire、tree、rock、building 等已存在语义。',
     '色彩语义使用 runtime.color-grade；水体语义使用 runtime.water-style；草叶颜色、胖瘦、高度、风和地表染色使用 runtime.grass-style；树叶/树皮/石头/金属批量改材质使用 runtime.material-theme；柔光/硬光/逆光/阴天/黄昏使用 runtime.light-rig；Bloom/SSAO 使用 runtime.post-quality；发光/Fresnel/火焰/魔法光环/植被摇摆使用 runtime.effect-recipe。',
     '“柔和/柔光”默认只表示柔和灯光：选择 runtime.light-rig=soft-morning，保留清晰的中等对比度。只有用户明确说雾、朦胧、低对比、低饱和或粉彩时，才选择晨雾基础方案或 runtime.color-grade=misty/pastel。',
+    '“艳阳/烈日/高对比”应通过暖色主光、偏冷环境补光和清晰色彩倾向实现，不得把暗部压成黑块；使用 runtime.light-rig=hard-day，并让 color-grade 保持中等对比和可读暗部。',
     '雾优先使用 atmosphere.fog.visibilityDistance（米），不要猜底层 density：薄雾 240-450，普通雾 120-220，浓雾 40-90；“清晨薄雾”不得低于 260。',
     '明确风格必须选择对应能力：素描/铅笔/手绘排线使用 runtime.presentation-style=sketch（默认 coordinateSpace=world），通常组合 runtime.outline-style=ink；水墨使用 outline=ink；漫画使用 comic-clean 或 comic-print；卡通/赛璐璐使用 surface-style=cel。',
     '只返回一个 JSON 对象，不要 Markdown，不要额外文字：',
