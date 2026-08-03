@@ -197,6 +197,7 @@ export async function buildMapPrimitiveBatches(
       materialTagRuntime.updateRuntimeUniforms(elapsedSeconds);
     },
     restoreMaterialEffects: () => {
+      restoreBaseMaterialEffects(root, effectRuntime);
       materialTagRuntime.restoreShaderEffects();
     },
     syncEnvironment: (environmentMap) => {
@@ -357,11 +358,12 @@ function addFallbackVisual(
 function applyBaseRecipe(
   material: THREE.Material,
   recipe: Record<string, unknown> | null,
-  mesh: THREE.Object3D,
+  mesh: THREE.Object3D | null,
   effectRuntime: ReturnType<typeof createEffectRuntime>['runtime'],
-  surfaceBindings: Array<{ material: THREE.Material; binding: Record<string, unknown> }>
+  surfaceBindings?: Array<{ material: THREE.Material; binding: Record<string, unknown> }>
 ): void {
   if (!recipe) return;
+  material.userData.worldforgeBaseMaterialTagRecipe = recipe;
   const effectPackage = recipe.effectPackage as { materialLayers?: Array<{ type: string; params?: Record<string, unknown> }> } | undefined;
   const layers = effectPackage?.materialLayers ?? [];
   if (layers.length) {
@@ -375,9 +377,26 @@ function applyBaseRecipe(
   if (bindings?.surface) {
     applyMaterialSurfaceBinding(material, bindings.surface, null);
     material.userData.worldforgeMaterialSurfaceBinding = bindings.surface;
-    mesh.userData.materialTags = material.userData.materialTags ?? [];
-    surfaceBindings.push({ material, binding: bindings.surface });
+    if (mesh) mesh.userData.materialTags = mesh.userData.materialTags ?? [];
+    surfaceBindings?.push({ material, binding: bindings.surface });
   }
+}
+
+/** Reinstall base tag patches after a render-scheme reset removes shared material patches. */
+function restoreBaseMaterialEffects(
+  root: THREE.Object3D,
+  effectRuntime: ReturnType<typeof createEffectRuntime>['runtime']
+): void {
+  root.traverse((object) => {
+    const mesh = object as THREE.Mesh;
+    if (!mesh.isMesh) return;
+    const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+    for (const material of materials) {
+      const recipe = material.userData?.worldforgeBaseMaterialTagRecipe;
+      if (!recipe || typeof recipe !== 'object') continue;
+      applyBaseRecipe(material, recipe as Record<string, unknown>, mesh, effectRuntime);
+    }
+  });
 }
 
 function cloneAssetVisual(template: THREE.Group): THREE.Group {

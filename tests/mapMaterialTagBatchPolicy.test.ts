@@ -13,4 +13,11 @@ describe('map material-tag batching policy', () => {
       runtimeEffectPackage: { materialLayers: [{ type: 'Glass' }] }
     })).toBe(true);
   });
+
+  it('does not confuse a base recipe with a runtime effect package', () => {
+    expect(requiresRuntimeStandaloneMaterialTag({
+      effectPackage: { materialLayers: [{ type: 'Triplanar' }] },
+      runtimeEffectPackage: null
+    })).toBe(false);
+  });
 });
