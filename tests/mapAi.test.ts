@@ -46,11 +46,14 @@ describe('map AI adapter', () => {
       brushRadiusMax: 8,
       objectCount: 25,
       waterCount: 3,
-      assetRequestCount: 3
+      assetRequestCount: 4,
+      assetVariantMin: 2,
+      assetVariantMax: 4
     });
     expect(largeLimits.terrainBrushCount).toBeGreaterThan(smallLimits.terrainBrushCount);
     expect(largeLimits.objectCount).toBeGreaterThan(smallLimits.objectCount);
-    expect(largeLimits.assetRequestCount).toBe(8);
+    expect(largeLimits.assetRequestCount).toBe(14);
+    expect(largeLimits.assetVariantMin).toBe(8);
   });
 
   it('refines existing objects and water with deterministic delta operations', () => {
@@ -238,8 +241,16 @@ describe('map AI adapter', () => {
         zones: [zone('grove', [{ familyId: 'trees', distribution: 'clustered' }])]
       })))
       .mockResolvedValueOnce(chatResponse(reviewPass()));
-    const createAsset = vi.fn().mockResolvedValue({
-      ...testAsset('asset-generated-tree', 'Pastoral tree', ['tree', 'vegetation'], 'large', 'curve')
+    let generatedIndex = 0;
+    const createAsset = vi.fn().mockImplementation(async () => {
+      generatedIndex += 1;
+      return testAsset(
+        `asset-generated-tree-${generatedIndex}`,
+        `Pastoral tree ${generatedIndex}`,
+        ['tree', 'vegetation'],
+        'large',
+        'curve'
+      );
     });
 
     const suggestion = await runMapAgent(
@@ -256,17 +267,21 @@ describe('map AI adapter', () => {
     );
 
     expect(fetchImpl).toHaveBeenCalledTimes(2);
-    expect(createAsset).toHaveBeenCalledOnce();
+    expect(createAsset).toHaveBeenCalledTimes(2);
     expect(createAsset).toHaveBeenCalledWith(expect.objectContaining({
       tags: ['tree', 'vegetation'],
       mode: 'curve'
     }));
     expect(JSON.stringify(suggestion.operations)).not.toContain('asset-voxel-tree');
-    expect(suggestion.generatedAssets).toEqual([{ id: 'asset-generated-tree', name: 'Pastoral tree' }]);
+    expect(suggestion.generatedAssets).toHaveLength(2);
+    expect(suggestion.generatedAssets?.map((asset) => asset.id)).toEqual([
+      'asset-generated-tree-1',
+      'asset-generated-tree-2'
+    ]);
     expect(suggestion.operations).toEqual(expect.arrayContaining([
       expect.objectContaining({
         type: 'object.add',
-        object: expect.objectContaining({ assetId: 'asset-generated-tree' })
+        object: expect.objectContaining({ assetId: 'asset-generated-tree-1' })
       })
     ]));
     const secondRequest = JSON.parse(fetchImpl.mock.calls[1][1]?.body as string);
@@ -282,7 +297,7 @@ describe('map AI adapter', () => {
     ]));
   });
 
-  it('allows the large preset to request up to eight reusable assets', async () => {
+  it('allows the large preset to generate all ten requested reusable assets', async () => {
     const families = Array.from({ length: 10 }, (_, index) => family(`asset-${index}`, [`tag-${index}`], 'small'));
     const fetchImpl = vi.fn()
       .mockResolvedValueOnce(chatResponse(compositionPlan({ assetFamilies: families })))
@@ -299,7 +314,7 @@ describe('map AI adapter', () => {
       createAsset
     });
 
-    expect(createAsset).toHaveBeenCalledTimes(8);
+    expect(createAsset).toHaveBeenCalledTimes(10);
   });
 
   it('repairs an invalid director response once before continuing', async () => {

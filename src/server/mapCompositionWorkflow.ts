@@ -16,6 +16,7 @@ import {
 } from '../shared/sceneCompositionAdvice';
 import {
   attachGeneratedSceneAssets,
+  fitSceneAssetVariantBudget,
   resolveSceneFamilies
 } from '../shared/sceneCompositionAssets';
 import { compileSceneComposition } from '../shared/sceneCompositionCompiler';
@@ -60,13 +61,18 @@ export async function runMapCompositionWorkflow(
   const provider = options.provider ?? 'gpt';
   const providerOption = CHAT_PROVIDER_OPTIONS.find((item) => item.key === provider);
   if (!providerOption || providerOption.disabled) throw new Error('provider_unavailable');
+  const limits = planLimits(getMapBounds(map));
 
   options.onProgress?.({ phase: 'composing', label: '场景总导演正在组织区域、主次与资产家族' });
   let plan = await requestStructured(
     'scene composition plan',
     buildSceneDirectorPrompt(map, assets),
     cleanPrompt,
-    (value) => normalizeSceneCompositionPlan(value, map),
+    (value) => fitSceneAssetVariantBudget(
+      normalizeSceneCompositionPlan(value, map),
+      limits.assetVariantMin,
+      limits.assetVariantMax
+    ),
     options,
     0.45
   );
@@ -110,7 +116,6 @@ export async function runMapCompositionWorkflow(
     }
   }
 
-  const limits = planLimits(getMapBounds(map));
   options.onProgress?.({ phase: 'resolving-assets', label: '按语义标签和地图建模模式匹配可复用资产' });
   const initialResolution = resolveSceneFamilies(plan, map, assets, limits.assetRequestCount);
   const generated: Array<{ familyId: string; asset: MapAsset }> = [];

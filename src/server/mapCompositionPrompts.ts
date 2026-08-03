@@ -41,7 +41,8 @@ export function buildSceneDirectorPrompt(map: EditableMap, assets: readonly MapA
     'A consultation may improve the plan but cannot directly create assets or map operations.',
     'Rendering is a later stage. Only provide short renderPromptSuggestions; do not choose or edit a render scheme.',
     `Map: ${map.box.size[0]} x ${map.box.size[1]} x ${map.box.size[2]}, seed ${map.seed}, asset mode ${map.assetGenerationMode}.`,
-    `Execution budgets: about ${limits.objectCount} objects and at most ${limits.assetRequestCount} newly generated reusable assets.`,
+    `Execution budgets: about ${limits.objectCount} objects and ${limits.assetVariantMin}-${limits.assetVariantMax} distinct same-mode asset variants in total. Existing compatible assets count toward this range; generate no more than ${limits.assetRequestCount} missing variants.`,
+    'Use several semantically useful asset families and silhouette variants. Do not satisfy the range with near-duplicate recolors or unnecessary variants of one landmark.',
     `Compatible asset catalog: ${JSON.stringify(compatibleAssets)}.`,
     'Return JSON only with this shape:',
     JSON.stringify({

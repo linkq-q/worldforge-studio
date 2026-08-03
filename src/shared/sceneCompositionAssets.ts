@@ -14,6 +14,41 @@ export interface SceneAssetGap {
   tags: string[];
 }
 
+export function fitSceneAssetVariantBudget(
+  plan: SceneCompositionPlan,
+  minimum: number,
+  maximum: number
+): SceneCompositionPlan {
+  if (plan.assetFamilies.length === 0) return plan;
+  if (plan.assetFamilies.length > maximum) throw new Error('scene_asset_family_count_above_max');
+
+  const families = plan.assetFamilies.map((family) => ({ ...family }));
+  let total = families.reduce((sum, family) => sum + family.desiredVariants, 0);
+  const byPriority = [...families].sort((left, right) => right.priority - left.priority);
+
+  while (total < minimum) {
+    let changed = false;
+    for (const family of byPriority) {
+      if (family.desiredVariants >= 3 || total >= minimum) continue;
+      family.desiredVariants += 1;
+      total += 1;
+      changed = true;
+    }
+    if (!changed) throw new Error('scene_asset_variant_count_below_min');
+  }
+
+  while (total > maximum) {
+    const family = [...families]
+      .sort((left, right) => left.priority - right.priority)
+      .find((item) => item.desiredVariants > 1);
+    if (!family) throw new Error('scene_asset_variant_count_above_max');
+    family.desiredVariants -= 1;
+    total -= 1;
+  }
+
+  return { ...plan, assetFamilies: families };
+}
+
 export function resolveSceneFamilies(
   plan: SceneCompositionPlan,
   map: EditableMap,

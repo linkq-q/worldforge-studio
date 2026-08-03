@@ -812,7 +812,7 @@ class MapEditor {
           ? '请先保存当前手工修改，再生成 AI 地图预览。'
           : !compositionAvailable
             ? '当前地图已有内容，请使用“调整当前地图”继续 Refine。'
-            : `总导演会先组织完整场景，按需调用最多 ${SCENE_COMPOSITION_LIMITS.consultationCount} 个专家，并生成最多 ${limits.assetRequestCount} 类同风格缺失资产；合成审查后再进入预览。`}</p>
+            : `总导演会先组织完整场景，按需调用最多 ${SCENE_COMPOSITION_LIMITS.consultationCount} 个专家，并组织 ${limits.assetVariantMin}-${limits.assetVariantMax} 个同模式可辨识资产；缺失资产会按需生成，合成审查后再进入预览。`}</p>
       </section>
       ${suggestion && this.mapAiPreviewMap ? `
         <section class="editor-section map-ai-result">
