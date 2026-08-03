@@ -22,6 +22,7 @@ import type { MapLintIssue } from './mapLint';
 import type { SceneCompositionMetrics, SceneCompositionPlan } from './sceneComposition';
 import type { SceneAdviceFinding, SceneReviewResult } from './sceneCompositionAdvice';
 import type { SceneOutcomeCheck } from './sceneCompositionOutcome';
+import type { MapVisualSemantics } from './visualDirection';
 import {
   MAX_GRASS_LAYERS,
   applyGrassBrushInPlace,
@@ -53,7 +54,7 @@ export type MapWaterBodyInput = Omit<Partial<MapWaterBody>, 'points'> & {
 export type MapWaterBodyPatch = Omit<Partial<MapWaterBody>, 'id'>;
 
 export type MapOperation =
-  | { type: 'map.update'; name?: string; size?: Vec3; colors?: Partial<MapBoxColors>; renderPromptSuggestions?: string[] }
+  | { type: 'map.update'; name?: string; size?: Vec3; colors?: Partial<MapBoxColors>; renderPromptSuggestions?: string[]; visualSemantics?: MapVisualSemantics }
   | { type: 'terrain.set'; terrain: MapTerrain }
   | ({ type: 'terrain.generate' } & Partial<TerrainGenerationParams> & Pick<TerrainGenerationParams, 'preset'>)
   | { type: 'terrain.brush'; mode: TerrainBrushMode; point: Vec3; size?: number; strength?: number; targetHeight?: number }
@@ -126,6 +127,7 @@ export function applyMapOperations(map: EditableMap, operations: readonly MapOpe
         if (operation.renderPromptSuggestions !== undefined) {
           next.renderPromptSuggestions = operation.renderPromptSuggestions;
         }
+        if (operation.visualSemantics !== undefined) next.visualSemantics = operation.visualSemantics;
         if (operation.size !== undefined) next.box.size = operation.size;
         if (operation.colors !== undefined) Object.assign(next.box.colors, operation.colors);
         break;

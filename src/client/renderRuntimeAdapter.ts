@@ -33,6 +33,11 @@ import {
 import { createComposerRenderTarget } from './renderOutputPipeline';
 import { PlanarWaterReflection } from './planarWaterReflection';
 import { RenderFrameCoordinator, type RenderPrePassResources } from './renderFrameCoordinator';
+import {
+  configureAtmosphereFxPass,
+  createAtmosphereFxPass,
+  type AtmosphereFxPass
+} from './atmosphereFxPass';
 import { isNormalDepthPrePassMesh } from './renderPrePassPolicy';
 import type {
   RuntimeColorGrade,
@@ -43,6 +48,7 @@ import type {
   RuntimeWaterStyle,
   RuntimePresentationStyle
 } from '../shared/renderPlan';
+import type { CompiledAtmosphereFx } from '../shared/atmosphereFx';
 
 const NORMAL_PREPASS_LAYER = 29;
 
@@ -80,6 +86,7 @@ export class RenderRuntimeAdapter {
   private readonly sketchPass = createSketchHatchPass();
   private readonly toneMapPass = createToneMapPass();
   private readonly fogPass = createExponentialFogPass();
+  private readonly atmosphereFxPass: AtmosphereFxPass = createAtmosphereFxPass();
   private readonly ssaoPass: SharedSSAOPass;
   private readonly bloomPass = new GlobalBloomPass(new THREE.Vector2(1, 1), 0.4, 0.35, 0.82);
   private readonly effectRuntime = createEffectRuntime().runtime;
@@ -153,6 +160,7 @@ export class RenderRuntimeAdapter {
     this.frameCoordinator.registerPass(this.paperPass, 'paper', 50, false);
     this.frameCoordinator.registerPass(this.comicPass, 'comic', 51, false);
     this.frameCoordinator.registerPass(this.sketchPass, 'sketch', 52, false);
+    this.frameCoordinator.registerPass(this.atmosphereFxPass, 'atmosphereFx', 55, false);
     // Fog is last so water, outlines and presentation effects share one depth fade.
     this.frameCoordinator.registerPass(this.fogPass, 'fog', 60, false);
     this.frameCoordinator.registerPass(new OutputPass(), 'output', 100, true);
@@ -320,6 +328,12 @@ export class RenderRuntimeAdapter {
   tick(deltaTime: number, elapsedSeconds: number): void {
     this.pendingDeltaTime = deltaTime;
     this.pendingElapsedSeconds = elapsedSeconds;
+    this.atmosphereFxPass.uniforms.uTime.value = elapsedSeconds;
+    const sun = this.scene.userData.directionalLight as THREE.DirectionalLight | undefined;
+    if (sun) {
+      const projected = sun.position.clone().project(this.camera);
+      this.atmosphereFxPass.uniforms.uSunUv.value.set(projected.x * 0.5 + 0.5, projected.y * 0.5 + 0.5);
+    }
     if (this.modelsRoot) {
       this.effectRuntime.updateRuntimeUniforms(this.modelsRoot, {
         uTime: elapsedSeconds,
@@ -340,6 +354,11 @@ export class RenderRuntimeAdapter {
     this.setInkValues(preset);
     this.setCurvatureValues(preset);
     this.setOutlineDistanceValues(style.params.fadeStart ?? 120, style.params.fadeEnd ?? 260);
+  }
+
+  applyAtmosphereFx(state: CompiledAtmosphereFx | null): void {
+    configureAtmosphereFxPass(this.atmosphereFxPass, state);
+    this.frameCoordinator.setPassEnabled('atmosphereFx', this.atmosphereFxPass.enabled);
   }
 
   applyPresentation(style: RuntimePresentationStyle): void {
@@ -608,6 +627,7 @@ export class RenderRuntimeAdapter {
       || this.curvaturePass.enabled
       || needsSketchWorld
       || this.ssaoPass.enabled
+      || this.atmosphereFxPass.enabled
       || this.fogPass.enabled;
   }
 
@@ -625,6 +645,9 @@ export class RenderRuntimeAdapter {
     }
     if (this.fogPass.enabled && depthTexture) {
       bindDistanceFogDepth(this.fogPass, depthTexture, this.camera);
+    }
+    if (this.atmosphereFxPass.enabled && depthTexture) {
+      this.atmosphereFxPass.uniforms.tDepth.value = depthTexture;
     }
 
     if (this.curvaturePass.enabled) {

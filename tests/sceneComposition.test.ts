@@ -76,6 +76,12 @@ describe('scene composition contract', () => {
       return Math.hypot(x - clearing.x, z - clearing.z) > clearing.r;
     })).toBe(true);
     const applied = applyMapOperations(map, first.operations);
+    expect(applied.visualSemantics.zones.find((zone) => zone.id === 'forest')?.tags).toEqual(
+      expect.arrayContaining(['forest', 'grass'])
+    );
+    expect(applied.visualSemantics.zones.find((zone) => zone.id === 'pond')?.tags).toEqual(
+      expect.arrayContaining(['water', 'lowland'])
+    );
     expect(applied.objects).toHaveLength(first.metrics.objectCount);
     expect(applied.waterBodies).toHaveLength(1);
     expect(applied.grassLayers).toHaveLength(1);

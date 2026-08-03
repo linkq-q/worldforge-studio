@@ -12,6 +12,7 @@ import {
   type SceneCompositionPlan
 } from './sceneComposition';
 import type { ResolvedSceneFamily } from './sceneCompositionAssets';
+import { compileMapVisualSemantics } from './mapVisualSemantics';
 
 export interface CompiledSceneComposition {
   operations: MapOperation[];
@@ -30,9 +31,11 @@ export function compileSceneComposition(
   const unresolvedFamilyIds = resolvedFamilies
     .filter((resolved) => resolved.assets.length === 0)
     .map((resolved) => resolved.family.id);
-  if (plan.renderPromptSuggestions.length > 0) {
-    operations.push({ type: 'map.update', renderPromptSuggestions: plan.renderPromptSuggestions });
-  }
+  operations.push({
+    type: 'map.update',
+    renderPromptSuggestions: plan.renderPromptSuggestions,
+    visualSemantics: compileMapVisualSemantics(map, plan)
+  });
   operations.push({ type: 'terrain.generate', ...plan.globalBrief.terrainBase });
   operations.push(...compileZoneTerrain(map, plan));
   operations.push(...compileZoneWater(map, plan));

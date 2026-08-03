@@ -3,12 +3,14 @@ import { RenderStyleManager } from '@voxel-studio/render-runtime';
 import { configureSunLight } from './lighting';
 import { HDRI_DOME_RADIUS, HdriSkyController } from './hdriSky';
 import { MapShadowRuntime } from './mapShadowRuntime';
+import { AtmosphereFxRuntime } from './atmosphereFxRuntime';
 import { RenderRuntimeAdapter } from './renderRuntimeAdapter';
 import { configureRendererOutput } from './renderOutputPipeline';
 import type { RenderedMap } from './mapRenderer';
 import type { Vec3 } from '../shared/protocol';
 import { DEFAULT_SUN_POSITION, type EditableMap } from '../shared/map';
 import type { RenderScheme } from '../shared/renderScheme';
+import { compileAtmosphereFx } from '../shared/atmosphereFx';
 import {
   DEFAULT_RUNTIME_GRASS_STYLE,
   compileRenderPlan,
@@ -51,6 +53,7 @@ export interface RenderSchemeTargets {
   >;
   hdriSky: Pick<HdriSkyController, 'apply' | 'clear'>;
   rendered: Pick<RenderedMap, 'setGrassStyle'> | null;
+  map?: EditableMap | null;
   updateLighting(): void;
 }
 
@@ -85,10 +88,12 @@ export class RenderSceneRuntime {
   readonly adapter: RenderRuntimeAdapter;
   readonly shadows: MapShadowRuntime;
   readonly hdriSky: HdriSkyController;
+  readonly atmosphereFx: AtmosphereFxRuntime;
 
   /** Source of truth for sun placement and shadow fit. */
   map: EditableMap | null = null;
   rendered: RenderedMap | null = null;
+  private currentScheme: RenderScheme | null = null;
 
   constructor(options: RenderSceneRuntimeOptions) {
     this.scene.background = new THREE.Color(NEUTRAL_BACKGROUND);
@@ -123,6 +128,7 @@ export class RenderSceneRuntime {
       options.hdriUrl,
       (environmentMap) => this.adapter.syncEnvironment(environmentMap)
     );
+    this.atmosphereFx = new AtmosphereFxRuntime(this.scene);
   }
 
   /** Re-fits the sun and its shadow camera to the current map. */
@@ -147,6 +153,7 @@ export class RenderSceneRuntime {
     );
     this.shadows.setSceneRoots(rendered?.group ?? null, rendered?.modelsRoot ?? null);
     this.rendered = rendered;
+    this.syncAtmosphereFx();
     if (!rendered) return;
     rendered.modelsRoot.traverse((object) => {
       const mesh = object as THREE.Mesh;
@@ -164,6 +171,7 @@ export class RenderSceneRuntime {
   /** Advances animated capabilities (grass, water, effects) and draws a frame. */
   renderFrame(deltaTime: number, elapsedSeconds: number): void {
     this.rendered?.update(deltaTime, this.camera, this.adapter.getContentVisibilityDistance());
+    this.atmosphereFx.update(deltaTime, elapsedSeconds);
     this.shadows.update();
     this.adapter.tick(deltaTime, elapsedSeconds);
     this.adapter.render();
@@ -183,7 +191,28 @@ export class RenderSceneRuntime {
    * scheme is `null`.
    */
   applyScheme(scheme: RenderScheme | null): void {
+    this.currentScheme = scheme;
     applyRenderScheme(this, scheme);
+    this.syncAtmosphereFx();
+  }
+
+  getAtmosphereFxStats(): { particles: number; drawCalls: number; quality: number } {
+    return this.atmosphereFx.getStats();
+  }
+
+  setAtmosphereFxQuality(quality: number): void {
+    this.atmosphereFx.setQuality(quality);
+    this.syncAtmosphereFx();
+  }
+
+  private syncAtmosphereFx(): void {
+    if (!this.map) {
+      this.adapter.applyAtmosphereFx(null);
+      return;
+    }
+    const state = compileAtmosphereFx(this.map, this.currentScheme?.renderPlan);
+    this.atmosphereFx.apply(this.map, state);
+    this.adapter.applyAtmosphereFx(state);
   }
 }
 
@@ -212,7 +241,7 @@ export function applyRenderScheme(targets: RenderSchemeTargets, scheme: RenderSc
     adapter.applyPostQuality({ bloom: 'off', ssao: 'off', depthOfField: 'off' });
     adapter.applyDistanceFog('#111719', 0);
     adapter.applyScopedCapabilities([], [], []);
-    targets.rendered?.setGrassStyle(DEFAULT_RUNTIME_GRASS_STYLE);
+    targets.rendered?.setGrassStyle(grassStyleWithSharedWind(DEFAULT_RUNTIME_GRASS_STYLE, targets.map));
     hdriSky.clear();
     targets.updateLighting();
     return;
@@ -244,15 +273,53 @@ export function applyRenderScheme(targets: RenderSchemeTargets, scheme: RenderSc
   adapter.applyPostQuality(
     plan ? compileRuntimePostQuality(plan) : { bloom: 'off', ssao: 'off', depthOfField: 'off' }
   );
-  targets.rendered?.setGrassStyle(plan ? compileRuntimeGrassStyle(plan) : DEFAULT_RUNTIME_GRASS_STYLE);
+  targets.rendered?.setGrassStyle(grassStyleWithSharedWind(
+    plan ? compileRuntimeGrassStyle(plan) : DEFAULT_RUNTIME_GRASS_STYLE,
+    targets.map,
+    plan
+  ));
   if (plan) applyLightRig(compileRuntimeLightRig(plan), sunLight, hemisphereLight, settings);
   adapter.applyScopedCapabilities(
     plan ? compileRuntimeMaterialThemes(plan) : [],
-    plan ? compileRuntimeWaterStyles(plan) : [],
+    waterStylesWithSharedWind(plan ? compileRuntimeWaterStyles(plan) : [], targets.map, plan),
     plan ? compileRuntimeEffectRecipes(plan) : []
   );
   if (plan) void hdriSky.apply(compileRuntimeHdriSky(plan));
   else hdriSky.clear();
+}
+
+function grassStyleWithSharedWind(
+  style: typeof DEFAULT_RUNTIME_GRASS_STYLE,
+  map?: EditableMap | null,
+  plan?: RenderScheme['renderPlan']
+): typeof DEFAULT_RUNTIME_GRASS_STYLE {
+  if (!map) return style;
+  const explicit = plan?.modules.find((module) => module.id === 'runtime.grass-style')?.params ?? {};
+  return {
+    ...style,
+    windDirection: typeof explicit.windAngle === 'number' ? style.windDirection : map.visualSemantics.wind.direction,
+    windStrength: typeof explicit.windStrength === 'number'
+      ? style.windStrength
+      : Math.min(0.65, 0.12 + map.visualSemantics.wind.speed * 0.35 + map.visualSemantics.wind.gustStrength * 0.2)
+  };
+}
+
+function waterStylesWithSharedWind(
+  styles: ReturnType<typeof compileRuntimeWaterStyles>,
+  map?: EditableMap | null,
+  plan?: RenderScheme['renderPlan']
+): ReturnType<typeof compileRuntimeWaterStyles> {
+  if (!map) return styles;
+  const modules = plan?.modules.filter((module) => module.id === 'runtime.water-style') ?? [];
+  return styles.map((style, index) => ({
+    ...style,
+    waveStrength: typeof modules[index]?.params.waveStrength === 'number'
+      ? style.waveStrength
+      : Math.min(1.5, 0.12 + map.visualSemantics.wind.speed * 0.25 + map.visualSemantics.wind.gustStrength * 0.2),
+    waveSpeed: typeof modules[index]?.params.waveSpeed === 'number'
+      ? style.waveSpeed
+      : Math.min(2, 0.2 + map.visualSemantics.wind.speed * 0.7)
+  }));
 }
 
 function applyLightRig(
