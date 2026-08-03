@@ -15,7 +15,7 @@ Client, server, and CLI must use the same types and normalization rules. Prefer 
 
 ## Agent Editing
 
-Use `/api/editor`, `npm run map`, or the project skill. Do not directly rewrite files under `data/`. Submit one generation/refine result as one `MapOperation[]` transaction. The server applies it atomically and persists one undo snapshot; a later direct/manual save clears that snapshot.
+Use `/api/editor`, `npm run map`, or the project skill. Do not directly rewrite files under `data/`. Submit one generation/refine result as one `MapOperation[]` transaction. The server applies it atomically and persists one undo snapshot; undo creates the matching one-step redo snapshot, while a later direct/manual save clears both.
 
 Map generation and render generation are separate stages. Do not put final rendering style into map data. Do not apply a render scheme before the user confirms the map.
 

@@ -84,6 +84,12 @@ GET /api/editor/maps/:mapId/transactions
 POST /api/editor/maps/:mapId/transactions/undo
 ```
 
+重做刚撤销的事务：
+
+```http
+POST /api/editor/maps/:mapId/transactions/redo
+```
+
 ## CLI
 
 把操作数组保存为 JSON 文件后执行：
@@ -91,6 +97,7 @@ POST /api/editor/maps/:mapId/transactions/undo
 ```bash
 npm run map -- apply-transaction --map <mapId> --file <operations.json> --source agent --label "生成田园场景"
 npm run map -- undo-transaction --map <mapId>
+npm run map -- redo-transaction --map <mapId>
 ```
 
 ## 操作类型
@@ -107,4 +114,4 @@ npm run map -- undo-transaction --map <mapId>
 
 ## 当前限制
 
-每张地图只保存最近一次 AI/Agent 事务的撤销快照。新的事务会替换旧快照；任何普通编辑和保存都会清除快照，避免撤销时覆盖之后的手工修改。
+每张地图只保存最近一次 AI/Agent 事务的撤销快照；撤销后保存对应的一步重做快照。新的事务会替换旧快照；任何普通编辑和保存都会清除撤销与重做快照，避免历史操作覆盖之后的手工修改。

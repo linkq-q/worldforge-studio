@@ -64,6 +64,12 @@ async function main(): Promise<void> {
     return;
   }
 
+  if (command === 'redo-transaction') {
+    const result = await store.redoTransaction(required(args, 'map'));
+    print({ map: mapToSummary(result.map), transaction: result.transaction });
+    return;
+  }
+
   if (command === 'set-box') {
     const colors = Object.fromEntries(['floor', 'ceiling', 'north', 'south', 'east', 'west']
       .filter((key) => typeof args[key] === 'string')

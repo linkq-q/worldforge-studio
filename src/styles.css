@@ -8,6 +8,7 @@
   --panel-raised: #152225;
   --panel-soft: #19282c;
   --line: rgba(150, 181, 176, 0.14);
+  --text: #edf4f1;
   --muted: #91a6a1;
   --accent: #d9f47a;
   --accent-strong: #bfe84d;
@@ -376,8 +377,16 @@ p {
 .toolbar-transfer-menu button {
   width: 100%;
   justify-content: flex-start;
-  background: transparent;
+  border-color: #34484d;
+  color: #edf5f2;
+  background: #18272b;
   text-align: left;
+}
+
+.toolbar-project-menu #new-map {
+  border-color: var(--accent);
+  color: #142018;
+  background: linear-gradient(180deg, var(--accent), var(--accent-strong));
 }
 
 .toolbar-project-menu > summary {
@@ -1240,6 +1249,15 @@ p {
   position: relative;
 }
 
+.preview-comparison {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.preview-comparison button {
+  width: 100%;
+}
+
 .render-prompt-suggestions > summary {
   padding: 5px 8px;
   border: 1px solid #34484d;
@@ -1825,6 +1843,18 @@ button.danger {
     display: none;
   }
 
+}
+
+button:disabled,
+button.secondary:disabled,
+button.danger:disabled,
+.toolbar-transfer-menu button:disabled,
+.toolbar-project-menu #new-map:disabled {
+  border-color: #2b3d41;
+  color: #71847f;
+  background: #172326;
+  opacity: 1;
+  box-shadow: none;
 }
 
 @media (max-width: 1250px) {

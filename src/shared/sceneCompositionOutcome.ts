@@ -19,7 +19,7 @@ import {
 
 export interface SceneOutcomeCheck {
   requirementId: string;
-  kind: SceneIntentRequirement['kind'];
+  kind: SceneIntentRequirement['kind'] | 'population';
   status: 'pass' | 'repaired';
   message: string;
 }
@@ -39,6 +39,7 @@ export function ensureSceneCompositionOutcome(
 ): SceneCompositionOutcome {
   const operations = [...compiled.operations];
   const familyCounts = { ...compiled.metrics.familyCounts };
+  const zoneCounts = { ...compiled.metrics.zoneCounts };
   let candidate = applyMapOperations(map, operations);
   const checks: SceneOutcomeCheck[] = [];
   let repairCount = 0;
@@ -108,6 +109,35 @@ export function ensureSceneCompositionOutcome(
     });
   }
 
+  const population = repairNaturalPopulation(map, candidate, plan, resolvedFamilies);
+  if (population.target > 0) {
+    const currentCount = candidate.objects.length - map.objects.length;
+    if (currentCount < population.target && population.operations.length > 0) {
+      operations.push(...population.operations);
+      candidate = applyMapOperations(candidate, population.operations);
+      repairCount += population.operations.length;
+      for (const [familyId, count] of Object.entries(population.familyCounts)) {
+        familyCounts[familyId] = (familyCounts[familyId] ?? 0) + count;
+      }
+      for (const [zoneId, count] of Object.entries(population.zoneCounts)) {
+        zoneCounts[zoneId] = (zoneCounts[zoneId] ?? 0) + count;
+      }
+      checks.push({
+        requirementId: 'scene-population',
+        kind: 'population',
+        status: 'repaired',
+        message: `可重复自然资产密度不足，已按区块简报补充 ${population.operations.length} 个散布实例。`
+      });
+    } else {
+      checks.push({
+        requirementId: 'scene-population',
+        kind: 'population',
+        status: 'pass',
+        message: '可重复自然资产的散布密度已达到场景规模下限。'
+      });
+    }
+  }
+
   return {
     compiled: {
       operations,
@@ -117,12 +147,113 @@ export function ensureSceneCompositionOutcome(
         waterCount: Math.max(0, candidate.waterBodies.length - map.waterBodies.length),
         terrainRelief: Math.max(...candidate.terrain.heights) - Math.min(...candidate.terrain.heights),
         terrainChangedCells: terrainChangedCellCount(map, candidate),
-        familyCounts
+        familyCounts,
+        zoneCounts
       }
     },
     checks,
     repairCount
   };
+}
+
+function repairNaturalPopulation(
+  baseMap: EditableMap,
+  candidate: EditableMap,
+  plan: SceneCompositionPlan,
+  resolvedFamilies: readonly ResolvedSceneFamily[]
+): {
+  target: number;
+  operations: MapOperation[];
+  familyCounts: Record<string, number>;
+  zoneCounts: Record<string, number>;
+} {
+  const assetsByFamily = new Map(resolvedFamilies.map((resolved) => [resolved.family.id, resolved]));
+  const entries = plan.zones
+    .filter((zone) => zone.role !== 'negative-space' && !zone.water)
+    .flatMap((zone) => zone.layers.map((layer) => {
+      const resolved = assetsByFamily.get(layer.familyId);
+      return resolved ? { zone, layer, resolved } : null;
+    }))
+    .filter((entry): entry is { zone: SceneCompositionPlan['zones'][number]; layer: SceneCompositionPlan['zones'][number]['layers'][number]; resolved: ResolvedSceneFamily } => (
+      entry !== null
+      && entry.resolved.assets.length > 0
+      && isRepeatableNaturalFamily(entry.resolved.family)
+      && (entry.layer.distribution !== 'accent' || isPopulationZone(entry.zone))
+    ))
+    .sort((left, right) => (
+      Number(left.layer.distribution === 'accent') - Number(right.layer.distribution === 'accent')
+      || right.zone.importance - left.zone.importance
+      || right.resolved.family.priority - left.resolved.family.priority
+    ));
+  if (entries.length === 0) return { target: 0, operations: [], familyCounts: {}, zoneCounts: {} };
+
+  const limits = planLimits(getMapBounds(baseMap));
+  const target = Math.min(limits.objectCount, Math.max(10, Math.round(limits.objectCount * Math.min(0.52, 0.14 + entries.length * 0.12))));
+  let remaining = Math.max(0, target - (candidate.objects.length - baseMap.objects.length));
+  let workingMap = candidate;
+  const operations: MapOperation[] = [];
+  const familyCounts: Record<string, number> = {};
+  const zoneCounts: Record<string, number> = {};
+
+  for (const [index, entry] of entries.entries()) {
+    if (remaining <= 0) break;
+    const region = sceneZoneWorldRegion(entry.zone, baseMap);
+    const footprint = Math.max(...entry.resolved.assets.map((asset) => asset.footprintRadius ?? 0.5));
+    const remainingEntries = entries.length - index;
+    const quota = Math.max(1, Math.ceil(remaining / remainingEntries));
+    const density = Math.max(entry.layer.density, quota / Math.max(1, Math.PI * region.r * region.r));
+    const placements = expandMapScatter(workingMap, {
+      assetIds: entry.resolved.assets.map((asset) => asset.id),
+      region: { kind: 'circle', ...region },
+      density,
+      avoidWater: 0.8,
+      maxSlope: 34,
+      minSpacing: Math.max(0.8, footprint * 1.8),
+      scaleRange: entry.layer.scaleRange,
+      seed: hashSeed(baseMap.seed, `population:${entry.zone.id}:${entry.layer.familyId}`),
+      edgeFalloff: Math.max(0.08, entry.layer.edgeFalloff),
+      clusterStrength: entry.layer.distribution === 'even' ? 0.2 : 0.68,
+      excludeRegions: entry.zone.excludeZoneIds
+        .map((zoneId) => plan.zones.find((zone) => zone.id === zoneId))
+        .filter((zone): zone is SceneCompositionPlan['zones'][number] => Boolean(zone))
+        .map((zone) => ({ kind: 'circle' as const, ...sceneZoneWorldRegion(zone, baseMap) }))
+    }, entry.resolved.assets as MapAsset[], quota, `population-${entry.zone.id}-${entry.layer.familyId}`)
+      .map((placement): MapOperation => ({
+        type: 'object.add',
+        object: {
+          id: placement.id,
+          name: placement.name,
+          assetId: placement.assetId,
+          transform: {
+            position: [placement.x, placement.y, placement.z],
+            rotation: [0, placement.rotationY, 0],
+            scale: [placement.scale, placement.scale, placement.scale]
+          }
+        }
+      }));
+    if (placements.length === 0) continue;
+    operations.push(...placements);
+    workingMap = applyMapOperations(workingMap, placements);
+    remaining -= placements.length;
+    familyCounts[entry.layer.familyId] = (familyCounts[entry.layer.familyId] ?? 0) + placements.length;
+    zoneCounts[entry.zone.id] = (zoneCounts[entry.zone.id] ?? 0) + placements.length;
+  }
+  return { target, operations, familyCounts, zoneCounts };
+}
+
+function isRepeatableNaturalFamily(family: ResolvedSceneFamily['family']): boolean {
+  return /tree|forest|wood|pine|oak|bush|shrub|fern|vegetation|plant|foliage|rock|stone|flower|grass|树|林|灌|蕨|植|岩|石|花|草/i
+    .test(`${family.label} ${family.role} ${family.tags.join(' ')}`);
+}
+
+function isPopulationZone(zone: SceneCompositionPlan['zones'][number]): boolean {
+  return /forest|woodland|grove|thicket|meadow|shrubland|vegetation|林|森林|林地|树林|树丛|灌木|草甸/i.test([
+    zone.label,
+    zone.role,
+    zone.brief.atmosphere,
+    zone.brief.hierarchy,
+    zone.brief.transitionIntent
+  ].join(' '));
 }
 
 function terrainRepair(

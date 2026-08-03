@@ -135,6 +135,7 @@ export class MapStore {
     const destination = this.mapPath(persisted.id);
     await atomicWriteJson(destination, persisted);
     await rm(this.undoPath(persisted.id), { force: true });
+    await rm(this.redoPath(persisted.id), { force: true });
     return hydrated;
   }
 
@@ -151,10 +152,15 @@ export class MapStore {
   async deleteMap(id: string): Promise<void> {
     await rm(this.mapPath(id), { force: true });
     await rm(this.undoPath(id), { force: true });
+    await rm(this.redoPath(id), { force: true });
   }
 
   async getUndoTransaction(mapId: string): Promise<MapTransactionSummary | null> {
     return (await this.readUndoTransaction(mapId))?.summary ?? null;
+  }
+
+  async getRedoTransaction(mapId: string): Promise<MapTransactionSummary | null> {
+    return (await this.readTransactionSnapshot(this.redoPath(mapId)))?.summary ?? null;
   }
 
   async commitTransaction(
@@ -185,8 +191,27 @@ export class MapStore {
     return this.withTransactionLock(async () => {
       const undo = await this.readUndoTransaction(mapId);
       if (!undo) throw new Error('nothing_to_undo');
+      const current = await this.loadMap(mapId);
       const map = await this.replaceMap(mapId, undo.map);
+      await atomicWriteJson(this.redoPath(mapId), {
+        summary: undo.summary,
+        map: normalizeMap({ ...current, assets: undefined })
+      });
       return { map, transaction: undo.summary };
+    });
+  }
+
+  async redoTransaction(mapId: string): Promise<{ map: EditableMap; transaction: MapTransactionSummary }> {
+    return this.withTransactionLock(async () => {
+      const redo = await this.readTransactionSnapshot(this.redoPath(mapId));
+      if (!redo) throw new Error('nothing_to_redo');
+      const current = await this.loadMap(mapId);
+      const map = await this.replaceMap(mapId, redo.map);
+      await atomicWriteJson(this.undoPath(mapId), {
+        summary: redo.summary,
+        map: normalizeMap({ ...current, assets: undefined })
+      });
+      return { map, transaction: redo.summary };
     });
   }
 
@@ -561,9 +586,17 @@ export class MapStore {
     return path.join(this.historyDir, `${safeId(id)}.json`);
   }
 
+  private redoPath(id: string): string {
+    return path.join(this.historyDir, `${safeId(id)}.redo.json`);
+  }
+
   private async readUndoTransaction(id: string): Promise<UndoTransaction | null> {
+    return this.readTransactionSnapshot(this.undoPath(id));
+  }
+
+  private async readTransactionSnapshot(file: string): Promise<UndoTransaction | null> {
     try {
-      const text = await readFile(this.undoPath(id), 'utf8');
+      const text = await readFile(file, 'utf8');
       const input = JSON.parse(text) as Partial<UndoTransaction>;
       if (!input.summary || !input.map) return null;
       return {
@@ -584,6 +617,7 @@ export function mapEditorCliManifest(): Record<string, string> {
     show: '输出完整地图 JSON：--map',
     applyTransaction: '原子应用操作文件：--map --file --source agent|basic-ai --label',
     undoTransaction: '撤销地图最近一次事务：--map',
+    redoTransaction: '重做地图最近一次撤销事务：--map',
     setBox: '调整地图盒子：--map --width --height --depth --floor --ceiling --north --south --east --west',
     spawn: '设置玩家出生点：--map --x --y --z',
     sun: '设置太阳位置：--map --x --y --z',

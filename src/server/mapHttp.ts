@@ -320,7 +320,11 @@ async function handleEditorMaps(req: Req, res: Res, store: MapStore, parts: stri
 
   if (parts[4] === 'transactions') {
     if (req.method === 'GET' && parts.length === 5) {
-      sendJson(res, 200, { transaction: await store.getUndoTransaction(mapId) });
+      const [transaction, redoTransaction] = await Promise.all([
+        store.getUndoTransaction(mapId),
+        store.getRedoTransaction(mapId)
+      ]);
+      sendJson(res, 200, { transaction, redoTransaction });
       return;
     }
     if (req.method === 'POST' && parts.length === 5) {
@@ -344,6 +348,15 @@ async function handleEditorMaps(req: Req, res: Res, store: MapStore, parts: stri
       } catch (error) {
         const message = error instanceof Error ? error.message : 'undo_failed';
         throw new HttpError(message === 'nothing_to_undo' ? 409 : 500, message);
+      }
+      return;
+    }
+    if (req.method === 'POST' && parts[5] === 'redo' && parts.length === 6) {
+      try {
+        sendJson(res, 200, await store.redoTransaction(mapId));
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'redo_failed';
+        throw new HttpError(message === 'nothing_to_redo' ? 409 : 500, message);
       }
       return;
     }

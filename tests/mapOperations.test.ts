@@ -168,7 +168,7 @@ describe('map operation transactions', () => {
     expect(map.waterBodies).toHaveLength(0);
   });
 
-  it('commits atomically and can undo the latest transaction', async () => {
+  it('commits atomically and can undo then redo the latest transaction', async () => {
     const store = await createStore();
     const original = await store.createMap({ name: 'before' });
 
@@ -186,6 +186,13 @@ describe('map operation transactions', () => {
     expect(undone.map.name).toBe('before');
     expect(undone.transaction.id).toBe(committed.transaction.id);
     expect(await restartedStore.getUndoTransaction(original.id)).toBeNull();
+    expect((await restartedStore.getRedoTransaction(original.id))?.id).toBe(committed.transaction.id);
+
+    const redone = await restartedStore.redoTransaction(original.id);
+    expect(redone.map.name).toBe('after');
+    expect(redone.transaction.id).toBe(committed.transaction.id);
+    expect((await restartedStore.getUndoTransaction(original.id))?.id).toBe(committed.transaction.id);
+    expect(await restartedStore.getRedoTransaction(original.id)).toBeNull();
   });
 
   it('does not save a partially applied invalid transaction', async () => {
@@ -291,7 +298,9 @@ describe('map operation transactions', () => {
     await store.replaceMap(original.id, { ...committed.map, name: 'manual edit' });
 
     expect(await store.getUndoTransaction(original.id)).toBeNull();
+    expect(await store.getRedoTransaction(original.id)).toBeNull();
     await expect(store.undoTransaction(original.id)).rejects.toThrow('nothing_to_undo');
+    await expect(store.redoTransaction(original.id)).rejects.toThrow('nothing_to_redo');
   });
 });
 

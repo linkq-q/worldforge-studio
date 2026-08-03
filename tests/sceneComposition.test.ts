@@ -210,6 +210,31 @@ describe('scene composition contract', () => {
     expect(applied.objects.some((object) => object.assetId === cabin.id)).toBe(true);
   });
 
+  it('recovers a sparse forest when the director misclassifies repeatable trees as accents', () => {
+    const map = createEmptyMap('Sparse forest', 'map-sparse-forest', [96, 16, 96], 'voxel-pro');
+    const input = structuredClone(planInput()) as {
+      zones: Array<{ id: string; layers: Array<Record<string, unknown>> }>;
+    };
+    const forest = input.zones.find((zone) => zone.id === 'forest')!;
+    forest.layers = [{ ...forest.layers[0], density: 0.0001, distribution: 'accent' }];
+    const plan = normalizeSceneCompositionPlan(input, map);
+    const assets = [
+      asset('tree-a', 'Round canopy tree', ['tree', 'forest'], 'large', 'voxel-pro'),
+      asset('cabin-a', 'Cabin', ['cabin'], 'large', 'voxel-pro')
+    ];
+    const resolved = resolveSceneFamilies(plan, map, assets, 0).families;
+    const compiled = compileSceneComposition(map, plan, resolved);
+
+    const first = ensureSceneCompositionOutcome(map, plan, resolved, compiled);
+    const second = ensureSceneCompositionOutcome(map, plan, resolved, compiled);
+
+    expect(second).toEqual(first);
+    expect(first.checks).toEqual(expect.arrayContaining([
+      expect.objectContaining({ requirementId: 'scene-population', status: 'repaired' })
+    ]));
+    expect(first.compiled.metrics.objectCount).toBeGreaterThanOrEqual(10);
+  });
+
   it('restores a required structured pond if it disappears from compiled operations', () => {
     const map = createEmptyMap('Forest', 'map-water-outcome', [96, 16, 96], 'voxel-pro');
     const plan = normalizeSceneCompositionPlan(planInput(), map);

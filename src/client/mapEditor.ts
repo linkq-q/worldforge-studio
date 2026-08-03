@@ -125,6 +125,7 @@ interface EditorState {
   busy: boolean;
   message: string;
   undoTransaction: MapTransactionSummary | null;
+  redoTransaction: MapTransactionSummary | null;
 }
 
 export function startMapEditor(app: HTMLElement): void {
@@ -153,7 +154,8 @@ class MapEditor {
     dirty: false,
     busy: false,
     message: '',
-    undoTransaction: null
+    undoTransaction: null,
+    redoTransaction: null
   };
 
   /** Scene, lights, shadows and post-processing, shared with the map viewer. */
@@ -208,6 +210,8 @@ class MapEditor {
   private renderAiPrompt = '';
   private renderAiProvider: ChatProvider = 'gpt';
   private renderAiPreview = false;
+  private renderAiPreviewVisible = true;
+  private renderAiComparisonScheme: RenderScheme | null = null;
   private renderAiExplanation = '';
   private renderAiAbortController: AbortController | null = null;
   private renderAgentProgress: AgentProgressEvent[] = [];
@@ -223,6 +227,8 @@ class MapEditor {
   private newMapAssetGenerationMode: ModelGenerationMode = 'voxel';
   private mapAiSuggestion: MapAiSuggestion | null = null;
   private mapAiPreviewMap: EditableMap | null = null;
+  private mapAiPreviewVisible = true;
+  private mapAiComparisonMap: EditableMap | null = null;
   private mapAiAbortController: AbortController | null = null;
   private mapAgentProgress: AgentProgressEvent[] = [];
   private mapAgentStartedAt = 0;
@@ -332,6 +338,7 @@ class MapEditor {
               <button id="undo-edit" class="secondary" disabled title="撤销手工编辑（Ctrl+Z）">撤销</button>
               <button id="redo-edit" class="secondary" disabled title="重做手工编辑（Ctrl+Shift+Z）">重做</button>
               <button id="undo-transaction" class="secondary" disabled title="撤销最近一次 AI/Agent 生成">撤销 AI</button>
+              <button id="redo-transaction" class="secondary" disabled title="重做最近一次撤销的 AI/Agent 生成">重做 AI</button>
               <button id="confirm-map" title="进入渲染阶段">进入渲染</button>
               <button id="save-map" class="secondary toolbar-save">保存</button>
               <details class="toolbar-transfer toolbar-more">
@@ -404,6 +411,7 @@ class MapEditor {
     this.app.querySelector('#undo-edit')?.addEventListener('click', () => void this.undoManualEdit());
     this.app.querySelector('#redo-edit')?.addEventListener('click', () => void this.redoManualEdit());
     this.app.querySelector('#undo-transaction')?.addEventListener('click', () => void this.undoLatestTransaction());
+    this.app.querySelector('#redo-transaction')?.addEventListener('click', () => void this.redoLatestTransaction());
     this.app.querySelectorAll<HTMLButtonElement>('[data-editor-export]').forEach((button) => {
       button.addEventListener('click', () => {
         void this.exportTransfer(button.dataset.editorExport as EditorExportKind);
@@ -623,13 +631,16 @@ class MapEditor {
     if (!id || id === this.state.map?.id) return true;
     if (!await this.confirmLeaveDirtyMap()) return false;
     this.cancelAssetPlacement();
-    const [{ map }, { transaction }] = await Promise.all([
+    const [{ map }, { transaction, redoTransaction }] = await Promise.all([
       editorFetch<{ map: EditableMap }>(`/api/editor/maps/${encodeURIComponent(id)}`),
-      editorFetch<{ transaction: MapTransactionSummary | null }>(`/api/editor/maps/${encodeURIComponent(id)}/transactions`)
+      editorFetch<{ transaction: MapTransactionSummary | null; redoTransaction: MapTransactionSummary | null }>(
+        `/api/editor/maps/${encodeURIComponent(id)}/transactions`
+      )
     ]);
     this.state.map = normalizeMap(map);
     this.clearMapAiPreview();
     this.state.undoTransaction = transaction;
+    this.state.redoTransaction = redoTransaction;
     this.state.selectedObjectId = null;
     this.state.stage = 'map';
     this.resetRenderDraft();
@@ -659,6 +670,7 @@ class MapEditor {
     this.state.map = normalizeMap(map);
     this.clearMapAiPreview();
     this.state.undoTransaction = null;
+    this.state.redoTransaction = null;
     this.state.selectedObjectId = null;
     this.state.stage = 'map';
     this.resetRenderDraft();
@@ -714,6 +726,7 @@ class MapEditor {
       this.state.map = normalizeMap(map);
       this.state.dirty = false;
       this.state.undoTransaction = null;
+      this.state.redoTransaction = null;
       this.resetManualHistory(this.state.map, true);
       await this.reloadLists();
       this.state.message = '已保存';
@@ -740,8 +753,32 @@ class MapEditor {
       this.state.map = normalizeMap(map);
       this.clearMapAiPreview();
       this.state.undoTransaction = null;
+      this.state.redoTransaction = transaction;
       this.state.selectedObjectId = null;
       this.state.message = `已撤销：${transaction.label}`;
+      this.resetManualHistory(this.state.map, true);
+      await this.reloadLists();
+      await this.refreshScene();
+      this.renderPanels();
+    } finally {
+      this.setBusy(false);
+    }
+  }
+
+  private async redoLatestTransaction(): Promise<void> {
+    if (!this.state.map || !this.state.redoTransaction || this.state.dirty || this.mapAiPreviewMap) return;
+    this.setBusy(true, '正在重做事务...');
+    try {
+      const { map, transaction } = await editorFetch<{ map: EditableMap; transaction: MapTransactionSummary }>(
+        `/api/editor/maps/${encodeURIComponent(this.state.map.id)}/transactions/redo`,
+        { method: 'POST' }
+      );
+      this.state.map = normalizeMap(map);
+      this.clearMapAiPreview();
+      this.state.undoTransaction = transaction;
+      this.state.redoTransaction = null;
+      this.state.selectedObjectId = null;
+      this.state.message = `已重做：${transaction.label}`;
       this.resetManualHistory(this.state.map, true);
       await this.reloadLists();
       await this.refreshScene();
@@ -881,6 +918,10 @@ class MapEditor {
         <section class="editor-section map-ai-result">
           <span class="stage-kicker">AI 地图建议</span>
           <h2>${escapeHtml(suggestion.summary)}</h2>
+          <div class="preview-comparison segmented compact" aria-label="地图 Refine 前后对比">
+            <button type="button" data-map-preview-view="before" class="${this.mapAiPreviewVisible ? '' : 'active'}">修改前</button>
+            <button type="button" data-map-preview-view="after" class="${this.mapAiPreviewVisible ? 'active' : ''}">修改后预览</button>
+          </div>
           <div class="map-ai-stats">
             <span>地形 <b>${terrainCount}</b></span>
             <span>水域修改 <b>${waterCount}</b></span>
@@ -932,6 +973,14 @@ class MapEditor {
     });
     host.querySelector('#discard-map-ai')?.addEventListener('click', () => void this.discardMapAiPreview());
     host.querySelector('#apply-map-ai')?.addEventListener('click', () => void this.applyMapAiPreview());
+    host.querySelectorAll<HTMLButtonElement>('[data-map-preview-view]').forEach((button) => {
+      button.addEventListener('click', async () => {
+        this.mapAiPreviewVisible = button.dataset.mapPreviewView === 'after';
+        await this.refreshScene();
+        this.renderMapAiPanel();
+        this.updateToolbarState();
+      });
+    });
   }
 
   private async generateMapAiPreview(mode: 'generate' | 'refine'): Promise<void> {
@@ -948,6 +997,7 @@ class MapEditor {
     this.mapAgentProgress = [];
     this.startMapAgentProgressTimer();
     const previousSuggestion = mode === 'refine' ? this.mapAiSuggestion : null;
+    const comparisonMap = mode === 'refine' && this.mapAiPreviewMap ? this.mapAiPreviewMap : map;
     this.setBusy(true, mode === 'refine' ? '地图 Agent 正在调整当前地图...' : '地图 Agent 正在检查资产并规划场景...');
     this.renderMapAiPanel();
     try {
@@ -977,6 +1027,8 @@ class MapEditor {
         : suggestion;
       this.mapAiSuggestion = combinedSuggestion;
       this.mapAiPreviewMap = applyMapOperations(this.mapWithEditorAssets(map), combinedSuggestion.operations);
+      this.mapAiComparisonMap = comparisonMap;
+      this.mapAiPreviewVisible = true;
       this.state.selectedObjectId = null;
       this.state.message = 'AI 地图预览已生成，尚未应用';
       await this.refreshScene();
@@ -1026,6 +1078,7 @@ class MapEditor {
       );
       this.state.map = normalizeMap(result.map);
       this.state.undoTransaction = result.transaction;
+      this.state.redoTransaction = null;
       this.state.selectedObjectId = null;
       this.clearMapAiPreview();
       this.resetRenderDraft();
@@ -1044,6 +1097,8 @@ class MapEditor {
   private clearMapAiPreview(): void {
     this.mapAiSuggestion = null;
     this.mapAiPreviewMap = null;
+    this.mapAiPreviewVisible = true;
+    this.mapAiComparisonMap = null;
   }
 
   private renderMapSelector(): void {
@@ -1460,7 +1515,9 @@ class MapEditor {
     const selected = this.selectedRenderScheme();
     if (!this.renderAiPreview && (!this.renderDraft || this.renderDraft.id !== selected?.id)) this.resetRenderDraft();
     const draft = this.renderDraft;
-    const activeSchemeId = this.renderAiPreview ? draft?.id : selected?.id;
+    const activeSchemeId = this.renderAiPreview
+      ? this.renderAiPreviewVisible ? draft?.id : this.renderAiComparisonScheme?.id
+      : selected?.id;
     const renderAiOpen = host.querySelector<HTMLDetailsElement>('[data-inspector-section="render-ai"]')?.open ?? true;
     const schemeLibraryOpen = host.querySelector<HTMLDetailsElement>('[data-inspector-section="scheme-library"]')?.open ?? true;
     const renderTuningOpen = host.querySelector<HTMLDetailsElement>('[data-inspector-section="render-tuning"]')?.open ?? false;
@@ -1499,6 +1556,10 @@ class MapEditor {
         <section class="editor-section render-ai-result">
           <span class="stage-kicker">AI 建议 · ${escapeHtml(draft.name)}</span>
           <p>${escapeHtml(this.renderAiExplanation || '已根据提示词生成可预览的渲染方案。')}</p>
+          <div class="preview-comparison segmented compact" aria-label="渲染 Refine 前后对比">
+            <button type="button" data-render-preview-view="before" class="${this.renderAiPreviewVisible ? '' : 'active'}">修改前</button>
+            <button type="button" data-render-preview-view="after" class="${this.renderAiPreviewVisible ? 'active' : ''}">修改后预览</button>
+          </div>
           ${draft.styleTags.length > 0 ? `
             <div class="style-tags">${draft.styleTags.map((tag) => `<span>${escapeHtml(tag)}</span>`).join('')}</div>
           ` : ''}
@@ -1722,6 +1783,14 @@ class MapEditor {
       this.renderPanels();
     });
     host.querySelector('#apply-render-ai')?.addEventListener('click', () => void this.saveRenderDraft());
+    host.querySelectorAll<HTMLButtonElement>('[data-render-preview-view]').forEach((button) => {
+      button.addEventListener('click', () => {
+        this.renderAiPreviewVisible = button.dataset.renderPreviewView === 'after';
+        this.applyCurrentRenderScheme();
+        this.renderRenderInspector();
+        this.updateToolbarState();
+      });
+    });
     host.querySelectorAll<HTMLButtonElement>('[data-render-scheme]').forEach((button) => {
       button.addEventListener('click', () => {
         if (!this.state.map) return;
@@ -1898,6 +1967,8 @@ class MapEditor {
     this.renderDraft = selected ? structuredClone(selected) : null;
     this.renderDraftChanged = false;
     this.renderAiPreview = false;
+    this.renderAiPreviewVisible = true;
+    this.renderAiComparisonScheme = null;
     this.renderAiExplanation = '';
   }
 
@@ -1906,6 +1977,9 @@ class MapEditor {
     if (!prompt || !this.state.map?.confirmedAt || this.state.busy) return;
     const currentPlan = mode === 'refine' ? structuredClone(this.ensureRenderDraftPlan()) : null;
     if (mode === 'refine' && !currentPlan) return;
+    const comparisonScheme = mode === 'refine' && this.renderDraft
+      ? structuredClone(this.renderDraft)
+      : this.selectedRenderScheme() ? structuredClone(this.selectedRenderScheme()!) : null;
     const controller = new AbortController();
     this.renderAiAbortController = controller;
     this.renderAgentProgress = [];
@@ -1943,6 +2017,8 @@ class MapEditor {
       };
       this.renderDraftChanged = true;
       this.renderAiPreview = true;
+      this.renderAiPreviewVisible = true;
+      this.renderAiComparisonScheme = comparisonScheme;
       this.renderAiExplanation = suggestion.explanation;
       this.state.message = 'AI 渲染预览已生成，尚未应用';
       this.applyCurrentRenderScheme();
@@ -2007,6 +2083,8 @@ class MapEditor {
       this.renderDraft = structuredClone(renderScheme);
       this.renderDraftChanged = false;
       this.renderAiPreview = false;
+      this.renderAiPreviewVisible = true;
+      this.renderAiComparisonScheme = null;
       this.renderAiExplanation = '';
       this.markDirty(true, false);
       this.state.message = '新渲染方案已保存，记得保存地图引用';
@@ -2558,7 +2636,12 @@ class MapEditor {
     return this.state.map?.objects.find((object) => object.id === this.state.selectedObjectId) ?? null;
   }
 
-  private mapWithEditorAssets(source = this.mapAiPreviewMap ?? this.state.map): EditableMap {
+  private displayedMap(): EditableMap | null {
+    if (!this.mapAiPreviewMap) return this.state.map;
+    return this.mapAiPreviewVisible ? this.mapAiPreviewMap : this.mapAiComparisonMap ?? this.state.map;
+  }
+
+  private mapWithEditorAssets(source = this.displayedMap()): EditableMap {
     if (!source) throw new Error('missing_map');
     const assets = new Map<string, MapAsset>();
     for (const asset of source.assets ?? []) assets.set(asset.id, asset);
@@ -2648,7 +2731,9 @@ class MapEditor {
 
   private applyCurrentRenderScheme(): void {
     const scheme = !this.mapAiPreviewMap && this.state.map?.confirmedAt
-      ? this.renderDraft ?? this.selectedRenderScheme()
+      ? this.renderAiPreview && !this.renderAiPreviewVisible
+        ? this.renderAiComparisonScheme ?? this.selectedRenderScheme()
+        : this.renderDraft ?? this.selectedRenderScheme()
       : null;
     this.renderScene?.applyScheme(scheme);
   }
@@ -2790,6 +2875,16 @@ class MapEditor {
         : this.state.undoTransaction
           ? `撤销：${this.state.undoTransaction.label}`
           : '当前没有可撤销的 AI/Agent 事务';
+    }
+    const redo = this.app.querySelector<HTMLButtonElement>('#redo-transaction');
+    if (redo) {
+      redo.hidden = !mapStage;
+      redo.disabled = this.state.busy || Boolean(this.mapAiPreviewMap) || this.state.dirty || !this.state.redoTransaction;
+      redo.title = this.state.dirty
+        ? '请先保存或放弃当前手工更改'
+        : this.state.redoTransaction
+          ? `重做：${this.state.redoTransaction.label}`
+          : '当前没有可重做的 AI/Agent 事务';
     }
     const save = this.app.querySelector<HTMLButtonElement>('#save-map');
     if (save) {
