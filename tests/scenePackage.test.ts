@@ -49,6 +49,25 @@ describe('portable WorldForge scene packages', () => {
     expect([...decoded.hdri!.bytes]).toEqual([1, 2, 3, 4]);
   });
 
+  it('keeps an HDR panorama referenced by a render scheme portable', () => {
+    const map = createEmptyMap('HDR scene');
+    map.confirmedAt = 123;
+    const scheme = createRenderScheme({
+      name: 'HDR scheme',
+      renderPlan: {
+        version: 2,
+        baseSchemeId: 'render-natural',
+        modules: [{ id: 'environment.hdri', params: { texture: 'sunset.hdr' } }]
+      }
+    });
+    const bytes = encodeScenePackage({ map, renderScheme: scheme, hdri: { file: 'sunset.hdr', bytes: new Uint8Array([5, 6]) } });
+    const decoded = decodeWorldForgeTransfer(bytes);
+    expect(decoded.kind).toBe('scene');
+    if (decoded.kind !== 'scene') return;
+    expect(renderSchemeHdriFile(decoded.renderScheme)).toBe('sunset.hdr');
+    expect(decoded.hdri?.file).toBe('sunset.hdr');
+  });
+
   it('imports as a new project, remaps assets, and avoids overwriting a different EXR', async () => {
     const store = await createStore();
     const asset = await store.saveAsset({
@@ -75,6 +94,7 @@ describe('portable WorldForge scene packages', () => {
     const renamed = await store.importHdri('sky.exr', new Uint8Array([3, 4]));
     expect(renamed).toMatch(/^sky-import-\d+\.exr$/);
     expect([...await readFile(path.join(store.rootDir, 'hdri', renamed))]).toEqual([3, 4]);
+    expect(await store.importHdri('dusk.hdr', new Uint8Array([5, 6]))).toBe('dusk.hdr');
   });
 
   it('rejects a map whose referenced assets are not embedded', async () => {

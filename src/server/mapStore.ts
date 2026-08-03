@@ -551,15 +551,16 @@ export class MapStore {
     return this.hydrateMap(imported);
   }
 
-  /** Adds an EXR from a portable scene package without overwriting a different file. */
+  /** Adds a supported panorama from a portable scene package without overwriting a different file. */
   async importHdri(file: string, bytes: Uint8Array): Promise<string> {
     await this.ensureReady();
     const requested = path.basename(file);
-    if (hdriExtensionOf(requested) !== 'exr') throw new Error('import_hdri_requires_exr');
+    const extension = hdriExtensionOf(requested);
+    if (!extension) throw new Error('import_hdri_requires_supported_format');
     let actual = requested;
     const existing = await readFile(path.join(this.hdriDir, actual)).catch(() => null);
     if (existing && !existing.equals(Buffer.from(bytes))) {
-      actual = `${path.basename(requested, '.exr')}-import-${Date.now()}.exr`;
+      actual = `${path.basename(requested, path.extname(requested))}-import-${Date.now()}.${extension}`;
     }
     if (!existing || actual !== requested) await writeFile(path.join(this.hdriDir, actual), bytes);
     return actual;

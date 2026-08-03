@@ -15,6 +15,8 @@
     "dev": "concurrently -k -n client,server \"vite --host 0.0.0.0\" \"tsx watch src/server/index.ts -- --dev\"",
     "build": "tsc --noEmit && vite build",
     "build:map-core": "vite build --config vite.map-core.config.ts && tsc -p tsconfig.map-core.json && node scripts/mapCoreSmoke.mjs",
+    "handoff:goldens": "tsx scripts/exportGoldenPack.ts",
+    "backup:data": "tsx scripts/backupMapData.ts",
     "test": "vitest run",
     "server": "tsx src/server/index.ts -- --release",
     "map": "tsx src/server/mapCli.ts"

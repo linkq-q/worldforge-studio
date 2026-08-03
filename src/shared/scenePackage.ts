@@ -1,4 +1,5 @@
 import { strFromU8, strToU8, unzipSync, zipSync } from 'fflate';
+import { hdriExtensionOf } from './hdri';
 import { normalizeMap, type EditableMap } from './map';
 import { normalizeRenderScheme, type RenderScheme } from './renderScheme';
 
@@ -88,7 +89,7 @@ export function renderSchemeHdriFile(renderScheme: RenderScheme): string | null 
   const texture = module?.params && typeof module.params.texture === 'string'
     ? module.params.texture.trim()
     : '';
-  return texture && /^.+\.exr$/i.test(texture) ? safeHdriFile(texture) : null;
+  return safeHdriFileOrNull(texture);
 }
 
 export function replaceRenderSchemeHdriFile(renderScheme: RenderScheme, file: string): RenderScheme {
@@ -110,7 +111,10 @@ function decodeScenePackage(bytes: Uint8Array): WorldForgeTransfer {
   );
   const hdriPath = manifest.files.hdri;
   const hdriBytes = hdriPath ? files[hdriPath] : undefined;
-  if (hdriPath && (!hdriBytes || !/^hdri\/[^/]+\.exr$/i.test(hdriPath))) {
+  const hdriFile = hdriPath?.startsWith('hdri/')
+    ? hdriPath.slice('hdri/'.length)
+    : '';
+  if (hdriPath && (!hdriBytes || !safeHdriFileOrNull(hdriFile))) {
     throw new Error('invalid_scene_package_hdri');
   }
   return {
@@ -118,7 +122,7 @@ function decodeScenePackage(bytes: Uint8Array): WorldForgeTransfer {
     map,
     renderScheme,
     ...(hdriPath && hdriBytes ? {
-      hdri: { file: safeHdriFile(hdriPath.slice('hdri/'.length)), bytes: hdriBytes }
+      hdri: { file: safeHdriFile(hdriFile), bytes: hdriBytes }
     } : {})
   };
 }
@@ -147,6 +151,12 @@ function isZip(bytes: Uint8Array): boolean {
 
 function safeHdriFile(file: string): string {
   const normalized = file.replaceAll('\\', '/').split('/').pop()?.trim() ?? '';
-  if (!normalized || !/^[^<>:"|?*]+\.exr$/i.test(normalized)) throw new Error('invalid_hdri_file');
+  if (!safeHdriFileOrNull(normalized)) throw new Error('invalid_hdri_file');
+  return normalized;
+}
+
+function safeHdriFileOrNull(file: string): string | null {
+  const normalized = file.replaceAll('\\', '/').split('/').pop()?.trim() ?? '';
+  if (!normalized || !/^[^<>:"|?*]+$/.test(normalized) || !hdriExtensionOf(normalized)) return null;
   return normalized;
 }

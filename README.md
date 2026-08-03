@@ -141,6 +141,8 @@ npm run server
 npm run map -- help
 ```
 
+策划交接、金样场景包、备份和 HDRI 分发方式见 [docs/planner-handoff.md](docs/planner-handoff.md)。
+
 Agent 应优先使用 CLI 或 `/api/editor`，不要直接改写数据文件。
 
 事务操作格式和调用方式见 [docs/map-transactions.md](docs/map-transactions.md)。
