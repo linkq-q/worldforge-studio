@@ -291,6 +291,8 @@ class MapEditor {
                 <summary><span id="toolbar-map-name">选择地图</span></summary>
                 <div class="toolbar-transfer-menu">
                   <label><span>当前地图</span><select id="editor-map-select" aria-label="当前地图"></select></label>
+                  <label><span>重命名当前地图</span><input id="rename-current-map-input" maxlength="80" aria-label="重命名当前地图" placeholder="输入地图名称"></label>
+                  <button id="rename-current-map" class="secondary" type="button">重命名</button>
                   <button id="delete-map" class="secondary danger" type="button">删除当前地图</button>
                   <label><span>地图尺寸</span><select id="new-map-size" aria-label="新地图尺寸">
                     ${MAP_SIZE_PRESETS.map((preset) => `
@@ -402,6 +404,15 @@ class MapEditor {
       void this.createMap();
     });
     this.app.querySelector('#delete-map')?.addEventListener('click', () => void this.deleteCurrentMap());
+    this.app.querySelector('#rename-current-map')?.addEventListener('click', () => {
+      const input = this.app.querySelector<HTMLInputElement>('#rename-current-map-input');
+      this.renameCurrentMap(input?.value ?? '');
+    });
+    this.app.querySelector<HTMLInputElement>('#rename-current-map-input')?.addEventListener('keydown', (event) => {
+      if (event.key !== 'Enter') return;
+      event.preventDefault();
+      this.renameCurrentMap((event.currentTarget as HTMLInputElement).value);
+    });
     this.app.querySelector<HTMLSelectElement>('#new-map-size')?.addEventListener('change', (event) => {
       this.newMapSizePreset = (event.target as HTMLSelectElement).value as MapSizePresetKey;
     });
@@ -1109,10 +1120,23 @@ class MapEditor {
     const select = this.app.querySelector<HTMLSelectElement>('#editor-map-select');
     if (!select) return;
     select.innerHTML = this.state.maps.length
-      ? this.state.maps.map((map) => `<option value="${map.id}" ${this.state.map?.id === map.id ? 'selected' : ''}>${escapeHtml(map.name)}</option>`).join('')
+      ? this.state.maps.map((map) => `<option value="${map.id}" ${this.state.map?.id === map.id ? 'selected' : ''}>${escapeHtml(map.id === this.state.map?.id ? this.state.map.name : map.name)}</option>`).join('')
       : '<option value="">暂无地图</option>';
     const name = this.app.querySelector<HTMLElement>('#toolbar-map-name');
     if (name) name.textContent = this.state.map?.name ?? '选择地图';
+    const renameInput = this.app.querySelector<HTMLInputElement>('#rename-current-map-input');
+    if (renameInput) renameInput.value = this.state.map?.name ?? '';
+  }
+
+  private renameCurrentMap(value: string): void {
+    const map = this.state.map;
+    const nextName = value.trim().slice(0, 80);
+    if (!map || !nextName || nextName === map.name || this.state.busy || this.mapAiPreviewMap) return;
+    map.name = nextName;
+    this.markDirty();
+    this.renderMapSelector();
+    this.renderMapInspector();
+    this.updateToolbarState();
   }
 
   private updateHierarchyLayout(): void {
@@ -2855,6 +2879,10 @@ class MapEditor {
     }
     const deleteMapButton = this.app.querySelector<HTMLButtonElement>('#delete-map');
     if (deleteMapButton) deleteMapButton.disabled = this.state.busy || !this.state.map;
+    const renameMapButton = this.app.querySelector<HTMLButtonElement>('#rename-current-map');
+    if (renameMapButton) renameMapButton.disabled = this.state.busy || !this.state.map || Boolean(this.mapAiPreviewMap);
+    const renameMapInput = this.app.querySelector<HTMLInputElement>('#rename-current-map-input');
+    if (renameMapInput) renameMapInput.disabled = this.state.busy || !this.state.map || Boolean(this.mapAiPreviewMap);
     const noEditableSelection = Boolean(this.mapAiPreviewMap) || !mapStage || this.state.tool !== 'select' || !this.state.selectedObjectId;
     const transformTools = this.app.querySelector<HTMLElement>('[data-transform-tools]');
     if (transformTools) transformTools.hidden = noEditableSelection;

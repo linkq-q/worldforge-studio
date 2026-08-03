@@ -424,6 +424,7 @@ p {
 }
 
 .toolbar-project-menu #editor-map-select,
+.toolbar-project-menu #rename-current-map-input,
 .toolbar-project-menu #new-map-size,
 .toolbar-project-menu #new-map-asset-mode {
   flex: 1 1 auto;
