@@ -132,6 +132,22 @@ describe('render schemes', () => {
     expect(loaded.renderSchemeId).toBe(BUILTIN_RENDER_SCHEMES[1].id);
     expect(summary?.renderSchemeId).toBe(BUILTIN_RENDER_SCHEMES[1].id);
   });
+
+  it('moves maps back to the default preset when a custom scheme is deleted', async () => {
+    const store = await createStore();
+    const custom = await store.saveRenderScheme({
+      ...BUILTIN_RENDER_SCHEMES[1],
+      name: '待删除方案',
+      kind: 'custom'
+    });
+    const map = await store.createMap({ name: '引用自定义方案' });
+    await store.replaceMap(map.id, { ...map, renderSchemeId: custom.id });
+
+    await store.deleteRenderScheme(custom.id);
+
+    await expect(store.loadRenderScheme(custom.id)).rejects.toThrow();
+    expect((await store.loadMap(map.id)).renderSchemeId).toBe(BUILTIN_RENDER_SCHEMES[0].id);
+  });
 });
 
 async function createStore(): Promise<MapStore> {

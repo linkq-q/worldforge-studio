@@ -400,6 +400,18 @@ export class MapStore {
 
   async deleteRenderScheme(id: string): Promise<void> {
     if (BUILTIN_RENDER_SCHEMES.some((scheme) => scheme.id === id)) throw new Error('builtin_scheme_readonly');
+    const fallbackId = BUILTIN_RENDER_SCHEMES[0]?.id ?? null;
+    const maps = await this.listMaps();
+    for (const map of maps) {
+      if (map.renderSchemeId !== id) continue;
+      await atomicWriteJson(this.mapPath(map.id), normalizeMap({
+        ...map,
+        assets: undefined,
+        renderSchemeId: fallbackId,
+        updatedAt: Date.now(),
+        version: map.version + 1
+      }));
+    }
     await rm(this.renderSchemePath(id), { force: true });
   }
 

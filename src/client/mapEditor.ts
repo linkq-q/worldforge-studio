@@ -216,6 +216,7 @@ class MapEditor {
   private renderAgentElapsedMs = 0;
   private renderAgentProgressTimer: number | null = null;
   private developerMode = false;
+  private hierarchyOpen = false;
   private developerRenderView: DeveloperRenderView = 'tuning';
   private developerRenderCategory: RenderInspectorCategoryId = 'lighting';
   private mapAiPrompt = '';
@@ -263,27 +264,38 @@ class MapEditor {
             <span class="studio-brand-mark">W</span>
             <span><strong>WorldForge</strong><small>SCENE STUDIO</small></span>
           </div>
-          <div class="editor-section hierarchy-head">
-            <h2>层级</h2>
-            <button id="add-object" class="secondary small" data-map-only>添加空物体</button>
+          <button id="toggle-hierarchy" class="hierarchy-toggle secondary" type="button" aria-expanded="false" title="展开层级">
+            <span>层级</span>
+          </button>
+          <div class="hierarchy-panel">
+            <div class="editor-section hierarchy-head">
+              <h2>层级</h2>
+              <button id="add-object" class="secondary small" data-map-only>添加空物体</button>
+            </div>
+            <div id="hierarchy" class="hierarchy"></div>
           </div>
-          <div id="hierarchy" class="hierarchy"></div>
         </aside>
         <section class="editor-main">
           <header class="editor-toolbar">
             <div class="toolbar-project" aria-label="地图项目">
-              <select id="editor-map-select" aria-label="当前地图"></select>
-              <select id="new-map-size" aria-label="新地图尺寸">
-                ${MAP_SIZE_PRESETS.map((preset) => `
-                  <option value="${preset.key}" ${preset.key === this.newMapSizePreset ? 'selected' : ''}>${preset.label}</option>
-                `).join('')}
-              </select>
-              <select id="new-map-asset-mode" aria-label="新地图模型风格">
-                ${MODEL_GENERATION_MODES.map((mode) => `
-                  <option value="${mode.key}" ${mode.key === this.newMapAssetGenerationMode ? 'selected' : ''}>${mode.label}</option>
-                `).join('')}
-              </select>
-              <button id="new-map" class="small">新建</button>
+              <details class="toolbar-transfer toolbar-project-menu">
+                <summary><span id="toolbar-map-name">选择地图</span></summary>
+                <div class="toolbar-transfer-menu">
+                  <label><span>当前地图</span><select id="editor-map-select" aria-label="当前地图"></select></label>
+                  <button id="delete-map" class="secondary danger" type="button">删除当前地图</button>
+                  <label><span>地图尺寸</span><select id="new-map-size" aria-label="新地图尺寸">
+                    ${MAP_SIZE_PRESETS.map((preset) => `
+                      <option value="${preset.key}" ${preset.key === this.newMapSizePreset ? 'selected' : ''}>${preset.label}</option>
+                    `).join('')}
+                  </select></label>
+                  <label><span>资产风格</span><select id="new-map-asset-mode" aria-label="新地图模型风格">
+                    ${MODEL_GENERATION_MODES.map((mode) => `
+                      <option value="${mode.key}" ${mode.key === this.newMapAssetGenerationMode ? 'selected' : ''}>${mode.label}</option>
+                    `).join('')}
+                  </select></label>
+                  <button id="new-map" type="button">创建地图</button>
+                </div>
+              </details>
             </div>
             <div class="stage-switcher segmented compact" aria-label="制作阶段">
               <button data-stage="map">地图</button>
@@ -306,6 +318,17 @@ class MapEditor {
                 <button data-transform-mode="scale" title="缩放物体">缩放</button>
               </div>
             </div>
+            <details class="toolbar-transfer toolbar-view-menu">
+              <summary>视角</summary>
+              <div class="toolbar-transfer-menu">
+                <button type="button" data-view="perspective">透视</button>
+                <button type="button" data-view="top">顶视图</button>
+                <button type="button" data-view="front">前视图</button>
+                <button type="button" data-view="right">右视图</button>
+              </div>
+            </details>
+            <button data-play-mode class="secondary toolbar-utility" title="从出生点进入第一人称游玩视角">游玩</button>
+            <button id="toggle-developer-mode" class="secondary toolbar-utility" data-render-only>开发者</button>
             <div class="toolbar-actions">
               <button id="undo-edit" class="secondary" disabled title="撤销手工编辑（Ctrl+Z）">撤销</button>
               <button id="redo-edit" class="secondary" disabled title="重做手工编辑（Ctrl+Shift+Z）">重做</button>
@@ -323,20 +346,11 @@ class MapEditor {
               </details>
               <input id="import-transfer-file" type="file" accept=".json,.zip,application/json,application/zip" hidden>
             </div>
-            <span id="editor-status"></span>
           </header>
           <div id="editor-viewport" class="editor-viewport">
             <div class="viewport-badge"><span></span><b id="viewport-view-name">透视视图</b></div>
+            <div id="editor-status" class="viewport-status" role="status"></div>
             <div id="viewport-stats" class="viewport-stats" hidden></div>
-            <nav class="viewport-navigation" aria-label="视角导航">
-              <button data-view="perspective" title="透视视图">透视</button>
-              <button data-view="top" title="顶视图">顶</button>
-              <button data-view="front" title="前视图">前</button>
-              <button data-view="right" title="右视图">右</button>
-              <button data-frame="selection" title="聚焦选中物体（F）">选中</button>
-              <button data-frame="all" title="显示完整地图（Home）">全景</button>
-              <button data-play-mode title="从出生点进入第一人称游玩视角">游玩</button>
-            </nav>
             <div class="play-mode-hud" hidden>
               <span class="play-crosshair" aria-hidden="true"></span>
               <div class="play-mode-help"><b>游玩视角</b><span>WASD 移动 · Shift 冲刺 · Space 跳跃 · Esc 退出</span></div>
@@ -367,7 +381,17 @@ class MapEditor {
       </main>
     `;
 
-    this.app.querySelector('#new-map')?.addEventListener('click', () => void this.createMap());
+    this.updateHierarchyLayout();
+    this.app.querySelector('#toggle-hierarchy')?.addEventListener('click', () => {
+      this.hierarchyOpen = !this.hierarchyOpen;
+      this.updateHierarchyLayout();
+      requestAnimationFrame(() => this.resize());
+    });
+    this.app.querySelector('#new-map')?.addEventListener('click', (event) => {
+      (event.currentTarget as HTMLElement).closest('details')?.removeAttribute('open');
+      void this.createMap();
+    });
+    this.app.querySelector('#delete-map')?.addEventListener('click', () => void this.deleteCurrentMap());
     this.app.querySelector<HTMLSelectElement>('#new-map-size')?.addEventListener('change', (event) => {
       this.newMapSizePreset = (event.target as HTMLSelectElement).value as MapSizePresetKey;
     });
@@ -395,15 +419,27 @@ class MapEditor {
       if (file) void this.importTransfer(file);
     });
     this.app.querySelector('#editor-map-select')?.addEventListener('change', async (event) => {
-      const id = (event.target as HTMLSelectElement).value;
+      const select = event.currentTarget as HTMLSelectElement;
+      const menu = select.closest('details');
+      const id = select.value;
       if (!await this.loadMap(id)) this.renderMapSelector();
+      else menu?.removeAttribute('open');
     });
     this.app.querySelectorAll<HTMLButtonElement>('[data-view]').forEach((button) => {
-      button.addEventListener('click', () => this.setView(button.dataset.view as keyof typeof VIEW_DIRECTIONS));
+      button.addEventListener('click', () => {
+        this.setView(button.dataset.view as keyof typeof VIEW_DIRECTIONS);
+        button.closest('details')?.removeAttribute('open');
+      });
     });
-    this.app.querySelector<HTMLButtonElement>('[data-frame="selection"]')?.addEventListener('click', () => this.focusSelection());
-    this.app.querySelector<HTMLButtonElement>('[data-frame="all"]')?.addEventListener('click', () => this.frameMap());
     this.app.querySelector<HTMLButtonElement>('[data-play-mode]')?.addEventListener('click', () => this.enterPlayMode());
+    this.app.querySelector<HTMLButtonElement>('#toggle-developer-mode')?.addEventListener('click', () => {
+      this.developerMode = !this.developerMode;
+      localStorage.setItem('worldforge.developerMode', this.developerMode ? 'on' : 'off');
+      this.renderStats?.setVisible(true);
+      this.state.message = this.developerMode ? '已进入开发者模式' : '已退出开发者模式';
+      this.renderRenderInspector();
+      this.updateToolbarState();
+    });
     this.app.querySelectorAll<HTMLButtonElement>('[data-stage]').forEach((button) => {
       button.addEventListener('click', () => {
         const stage = button.dataset.stage as EditorStage;
@@ -630,6 +666,32 @@ class MapEditor {
     this.resetManualHistory(this.state.map, true);
     await this.refreshScene();
     this.renderPanels();
+  }
+
+  private async deleteCurrentMap(): Promise<void> {
+    const map = this.state.map;
+    if (!map || this.state.busy) return;
+    if (!confirm(`确定删除地图“${map.name}”吗？\n\n地图内容无法撤销，但不会删除公共资产和渲染方案。`)) return;
+    this.setBusy(true, '正在删除地图...');
+    try {
+      await editorFetch(`/api/editor/maps/${encodeURIComponent(map.id)}`, { method: 'DELETE' });
+      this.state.map = null;
+      this.state.selectedObjectId = null;
+      this.clearMapAiPreview();
+      this.resetRenderDraft();
+      this.historyPast.length = 0;
+      this.historyFuture.length = 0;
+      this.historyPresent = null;
+      await this.reloadLists();
+      this.app.querySelector('.toolbar-project-menu')?.removeAttribute('open');
+      this.state.message = '地图已删除';
+      this.renderPanels();
+    } catch (error) {
+      this.state.message = `删除地图失败：${error instanceof Error ? error.message : '未知错误'}`;
+      this.renderPanels();
+    } finally {
+      this.setBusy(false);
+    }
   }
 
   private async saveMap(): Promise<boolean> {
@@ -998,6 +1060,16 @@ class MapEditor {
     select.innerHTML = this.state.maps.length
       ? this.state.maps.map((map) => `<option value="${map.id}" ${this.state.map?.id === map.id ? 'selected' : ''}>${escapeHtml(map.name)}</option>`).join('')
       : '<option value="">暂无地图</option>';
+    const name = this.app.querySelector<HTMLElement>('#toolbar-map-name');
+    if (name) name.textContent = this.state.map?.name ?? '选择地图';
+  }
+
+  private updateHierarchyLayout(): void {
+    this.app.dataset.hierarchyOpen = this.hierarchyOpen ? 'true' : 'false';
+    const toggle = this.app.querySelector<HTMLButtonElement>('#toggle-hierarchy');
+    if (!toggle) return;
+    toggle.setAttribute('aria-expanded', String(this.hierarchyOpen));
+    toggle.title = this.hierarchyOpen ? '收起层级' : '展开层级';
   }
 
   private renderHierarchy(): void {
@@ -1383,37 +1455,23 @@ class MapEditor {
     const draft = this.renderDraft;
     const activeSchemeId = this.renderAiPreview ? draft?.id : selected?.id;
     host.innerHTML = `
-      <section class="editor-section render-stage-summary">
-        <span class="stage-kicker">第二阶段</span>
-        <h2>为地图选择视觉氛围</h2>
-        <p class="empty">地图空间内容保持不变。这里保存的是可被其他地图复用的独立渲染方案。</p>
-        <button id="toggle-developer-mode" class="${this.developerMode ? '' : 'secondary'}">
-          ${this.developerMode ? '退出开发者模式' : '开发者模式'}
-        </button>
-      </section>
       ${draft && this.developerMode ? this.renderDeveloperPresetEditor(draft) : ''}
       <section class="editor-section render-ai">
-        <h2>AI 生成风格</h2>
+        <div class="section-title-row">
+          <h2>AI 生成风格</h2>
+          ${map.renderPromptSuggestions.length > 0 ? `
+            <details class="render-prompt-suggestions">
+              <summary>氛围建议</summary>
+              <div class="render-prompt-suggestion-menu">
+                ${map.renderPromptSuggestions.map((suggestion) => `
+                  <button type="button" data-render-prompt-suggestion="${escapeHtml(suggestion)}">${escapeHtml(suggestion)}</button>
+                `).join('')}
+              </div>
+            </details>
+          ` : ''}
+        </div>
         <textarea id="render-ai-prompt" rows="3" maxlength="1000" placeholder="例如：素描风格的宁静田园，带有柔和晨雾">${escapeHtml(this.renderAiPrompt)}</textarea>
-        ${map.renderPromptSuggestions.length > 0 ? `
-          <div class="render-prompt-suggestions">
-            <small>地图阶段提取的氛围建议</small>
-            <div class="style-tags">
-              ${map.renderPromptSuggestions.map((suggestion) => `
-                <button type="button" data-render-prompt-suggestion="${escapeHtml(suggestion)}">${escapeHtml(suggestion)}</button>
-              `).join('')}
-            </div>
-          </div>
-        ` : ''}
-        <p class="empty">HDRI 天空会自动从分类库选择；AI 可调整曝光、饱和度与叠加颜色，并同步环境光、太阳光和距离雾。</p>
         <div class="render-ai-controls">
-          <select id="render-ai-provider" aria-label="AI 模型">
-            ${CHAT_PROVIDER_OPTIONS.map((option) => `
-              <option value="${option.key}" ${option.key === this.renderAiProvider ? 'selected' : ''} ${option.disabled ? 'disabled' : ''}>
-                ${escapeHtml(option.label)}${option.disabled ? '（暂不可用）' : ''}
-              </option>
-            `).join('')}
-          </select>
           <button id="generate-render-ai" ${this.state.busy || !this.renderAiPrompt.trim() ? 'disabled' : ''}>生成新风格</button>
           <button id="refine-render-ai" class="secondary" ${this.state.busy || !this.renderAiPrompt.trim() || !draft ? 'disabled' : ''}>
             ${this.renderAiPreview ? '继续调整预览' : '调整当前方案'}
@@ -1424,7 +1482,6 @@ class MapEditor {
           running: Boolean(this.renderAiAbortController),
           elapsedMs: this.renderAgentElapsedMs
         })}
-        <p class="empty">AI 会选择基础方案，并编排环境、雾、光照和 runtime 表面/画面风格模块；不会修改地图或生成 Shader。</p>
       </section>
       ${this.renderAiPreview && draft ? `
         <section class="editor-section render-ai-result">
@@ -1447,11 +1504,13 @@ class MapEditor {
         <h2>方案库</h2>
         <div class="render-scheme-list">
           ${this.state.renderSchemes.map((scheme) => `
-            <button class="render-scheme-card ${scheme.id === activeSchemeId ? 'active' : ''}" data-render-scheme="${scheme.id}">
-              <span class="scheme-swatch" style="--scheme-bg:${scheme.settings.background};--scheme-sun:${scheme.settings.sunColor}"></span>
-              <span><strong>${escapeHtml(scheme.name)}</strong><small>${escapeHtml(scheme.description)}</small></span>
-              <em>${scheme.kind === 'builtin' ? '预设' : '自定义'}</em>
-            </button>
+            <div class="render-scheme-item">
+              <button class="render-scheme-card ${scheme.id === activeSchemeId ? 'active' : ''}" data-render-scheme="${scheme.id}" title="${escapeHtml(scheme.description || scheme.name)}">
+                <span class="scheme-swatch" style="--scheme-bg:${scheme.settings.background};--scheme-sun:${scheme.settings.sunColor}"></span>
+                <strong>${escapeHtml(scheme.name)}</strong>
+              </button>
+              ${scheme.kind === 'custom' ? `<button class="render-scheme-delete danger" data-delete-render-scheme="${scheme.id}" title="删除 ${escapeHtml(scheme.name)}" aria-label="删除 ${escapeHtml(scheme.name)}" ${this.state.dirty || this.renderDraftChanged ? 'disabled' : ''}>×</button>` : ''}
+            </div>
           `).join('')}
         </div>
       </section>
@@ -1479,14 +1538,6 @@ class MapEditor {
         </section>
       ` : ''}
     `;
-    host.querySelector('#toggle-developer-mode')?.addEventListener('click', () => {
-      this.developerMode = !this.developerMode;
-      localStorage.setItem('worldforge.developerMode', this.developerMode ? 'on' : 'off');
-      this.renderStats?.setVisible(true);
-      this.state.message = this.developerMode ? '已进入开发者模式' : '已退出开发者模式';
-      this.renderRenderInspector();
-      this.updateToolbarState();
-    });
     host.querySelectorAll<HTMLButtonElement>('[data-dev-view]').forEach((button) => {
       button.addEventListener('click', () => {
         this.developerRenderView = button.dataset.devView === 'access' ? 'access' : 'tuning';
@@ -1631,15 +1682,13 @@ class MapEditor {
       if (generateButton) generateButton.disabled = blocked;
       if (refineButton) refineButton.disabled = blocked || !this.renderDraft;
     });
-    host.querySelector<HTMLSelectElement>('#render-ai-provider')?.addEventListener('change', (event) => {
-      this.renderAiProvider = (event.target as HTMLSelectElement).value as ChatProvider;
-    });
     host.querySelectorAll<HTMLButtonElement>('[data-render-prompt-suggestion]').forEach((button) => {
       button.addEventListener('click', () => {
         const suggestion = button.dataset.renderPromptSuggestion?.trim();
         if (!suggestion) return;
         const current = this.renderAiPrompt.trim();
         if (!current.includes(suggestion)) this.renderAiPrompt = current ? `${current}，${suggestion}` : suggestion;
+        button.closest('details')?.removeAttribute('open');
         this.renderRenderInspector();
       });
     });
@@ -1666,6 +1715,9 @@ class MapEditor {
         this.applyCurrentRenderScheme();
         this.renderRenderInspector();
       });
+    });
+    host.querySelectorAll<HTMLButtonElement>('[data-delete-render-scheme]').forEach((button) => {
+      button.addEventListener('click', () => void this.deleteRenderScheme(button.dataset.deleteRenderScheme ?? ''));
     });
     host.querySelectorAll<HTMLInputElement>('[data-render-number]').forEach((input) => {
       input.addEventListener('input', () => {
@@ -1943,6 +1995,37 @@ class MapEditor {
       this.markDirty(true, false);
       this.state.message = '新渲染方案已保存，记得保存地图引用';
       this.applyCurrentRenderScheme();
+      this.renderPanels();
+    } finally {
+      this.setBusy(false);
+    }
+  }
+
+  private async deleteRenderScheme(id: string): Promise<void> {
+    const scheme = this.state.renderSchemes.find((entry) => entry.id === id);
+    if (!scheme || scheme.kind !== 'custom' || this.state.busy) return;
+    if (this.state.dirty || this.renderDraftChanged || this.mapAiPreviewMap) {
+      this.state.message = '请先保存或放弃当前预览，再删除渲染方案';
+      this.updateToolbarState();
+      return;
+    }
+    if (!confirm(`确定删除渲染方案“${scheme.name}”吗？\n\n引用它的地图会自动切换到默认方案。`)) return;
+    this.setBusy(true, '正在删除渲染方案...');
+    try {
+      await editorFetch(`/api/editor/render-schemes/${encodeURIComponent(id)}`, { method: 'DELETE' });
+      const { renderSchemes } = await editorFetch<{ renderSchemes: RenderScheme[] }>('/api/editor/render-schemes');
+      this.state.renderSchemes = renderSchemes;
+      if (this.state.map?.renderSchemeId === id) {
+        const { map } = await editorFetch<{ map: EditableMap }>(`/api/editor/maps/${encodeURIComponent(this.state.map.id)}`);
+        this.state.map = normalizeMap(map);
+        this.resetManualHistory(this.state.map, true);
+      }
+      this.resetRenderDraft();
+      this.applyCurrentRenderScheme();
+      this.state.message = '渲染方案已删除';
+      this.renderPanels();
+    } catch (error) {
+      this.state.message = `删除渲染方案失败：${error instanceof Error ? error.message : '未知错误'}`;
       this.renderPanels();
     } finally {
       this.setBusy(false);
@@ -2633,6 +2716,9 @@ class MapEditor {
     this.app.querySelectorAll<HTMLElement>('[data-map-only]').forEach((element) => {
       element.hidden = !mapStage;
     });
+    this.app.querySelectorAll<HTMLElement>('[data-render-only]').forEach((element) => {
+      element.hidden = mapStage;
+    });
     this.app.querySelectorAll<HTMLButtonElement>('[data-stage]').forEach((button) => {
       const stage = button.dataset.stage as EditorStage;
       button.classList.toggle('active', stage === this.state.stage);
@@ -2647,6 +2733,14 @@ class MapEditor {
       playButton.classList.toggle('active', Boolean(this.playMode?.isActive));
       playButton.disabled = this.state.busy || !this.state.map || Boolean(this.mapAiPreviewMap);
     }
+    const developerButton = this.app.querySelector<HTMLButtonElement>('#toggle-developer-mode');
+    if (developerButton) {
+      developerButton.classList.toggle('active', this.developerMode);
+      developerButton.textContent = this.developerMode ? '退出开发者' : '开发者';
+      developerButton.disabled = this.state.busy || !this.state.map?.confirmedAt;
+    }
+    const deleteMapButton = this.app.querySelector<HTMLButtonElement>('#delete-map');
+    if (deleteMapButton) deleteMapButton.disabled = this.state.busy || !this.state.map;
     this.app.querySelectorAll<HTMLButtonElement>('[data-transform-mode]').forEach((button) => {
       const mode = button.dataset.transformMode as TransformMode;
       const activeMode = this.isTranslateOnlySelection() ? 'translate' : this.state.transformMode;
