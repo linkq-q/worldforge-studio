@@ -1,4 +1,5 @@
 import type { RenderEnvironmentSettings } from './renderScheme';
+import { normalizeVisualDirection, type VisualDirection } from './visualDirection';
 
 export type RenderModuleId =
   | 'environment.palette'
@@ -37,6 +38,7 @@ export interface RenderPlan {
   version: 1 | 2;
   baseSchemeId: string;
   modules: RenderModuleSelection[];
+  visualDirection?: VisualDirection;
 }
 
 export type RenderControlType = 'range' | 'number' | 'select' | 'color' | 'toggle' | 'code';
@@ -569,7 +571,12 @@ export function normalizeRenderPlan(
       params: normalizeParams(moduleInput.params, capability, accessPolicy, actor)
     });
   }
-  return { version: raw.version, baseSchemeId, modules };
+  return {
+    version: raw.version,
+    baseSchemeId,
+    modules,
+    ...(raw.visualDirection === undefined ? {} : { visualDirection: normalizeVisualDirection(raw.visualDirection) })
+  };
 }
 
 export function compileRenderPlan(plan: RenderPlan): Partial<RenderEnvironmentSettings> {
