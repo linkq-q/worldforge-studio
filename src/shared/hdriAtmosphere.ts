@@ -1,5 +1,6 @@
 import type { HdriTexture } from './hdri';
 import type { RenderModuleSelection, RenderPlan } from './renderPlan';
+import { mixHexColors } from './colorDirector';
 
 /**
  * Turns a curated panorama's sky/ground swatches into matching fog and
@@ -17,12 +18,23 @@ export function harmonizeHdriAtmosphere(
 
   const tint = typeof hdri?.params.tint === 'string' ? hdri.params.tint : '#ffffff';
   const tintStrength = numeric(hdri?.params.tintStrength, 0);
-  const sky = tintColor(source.skyColor ?? source.groundColor!, tint, tintStrength);
-  const ground = tintColor(source.groundColor ?? source.skyColor!, tint, tintStrength);
+  const tintedSky = tintColor(source.skyColor ?? source.groundColor!, tint, tintStrength);
+  const tintedGround = tintColor(source.groundColor ?? source.skyColor!, tint, tintStrength);
+  // Curated swatches describe the panorama; visual direction remains the
+  // stronger art-direction source while preserving some panorama identity.
+  const sky = plan.visualDirection
+    ? mixHexColors(tintedSky, plan.visualDirection.palette.fillLight, 0.68)
+    : tintedSky;
+  const ground = plan.visualDirection
+    ? mixHexColors(tintedGround, plan.visualDirection.palette.fog, 0.68)
+    : tintedGround;
+  const sun = plan.visualDirection
+    ? plan.visualDirection.palette.keyLight
+    : tintColor(sky, '#fff1d2', 0.28);
   const modules = plan.modules.map((module) => ({ ...module, params: { ...module.params } }));
   upsertSceneModule(modules, 'environment.palette', { fogColor: ground });
   upsertSceneModule(modules, 'lighting.hemisphere', { skyColor: sky, groundColor: ground });
-  upsertSceneModule(modules, 'lighting.sun', { color: tintColor(sky, '#fff1d2', 0.28) });
+  upsertSceneModule(modules, 'lighting.sun', { color: sun });
   return { ...plan, modules };
 }
 
@@ -33,7 +45,9 @@ function upsertSceneModule(
 ): void {
   const existing = modules.find((module) => module.id === id);
   if (existing) {
-    Object.assign(existing.params, params);
+    for (const [key, value] of Object.entries(params)) {
+      if (existing.params[key] === undefined) existing.params[key] = value;
+    }
     return;
   }
   modules.push({ id, params });

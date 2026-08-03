@@ -1,6 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import { createEmptyMap, normalizeMap } from '../src/shared/map';
-import { normalizeRenderPlan } from '../src/shared/renderPlan';
+import {
+  compileRenderPlan,
+  compileRuntimeColorGrade,
+  compileRuntimeLightRig,
+  compileRuntimeMaterialThemes,
+  compileRuntimeStyle,
+  compileRuntimeWaterStyles,
+  normalizeRenderPlan
+} from '../src/shared/renderPlan';
 import {
   compileVisualDirection,
   normalizeMapVisualSemantics,
@@ -50,6 +58,47 @@ describe('visual direction contract', () => {
     expect(bright.surfaceShadowFloor).toBeGreaterThan(colored.surfaceShadowFloor);
     expect(colored.surfaceShadowFloor).toBeGreaterThan(dramatic.surfaceShadowFloor);
     expect(dramatic.lightRig.recipe).toBe('backlit');
+  });
+
+  it('coordinates environment, water, light and tagged materials while explicit values win', () => {
+    const plan = normalizeRenderPlan({
+      version: 2,
+      baseSchemeId: 'render-runtime-cel-day',
+      visualDirection: {
+        contrastMode: 'bright-cartoon',
+        palette: {
+          sky: '#88bbdd', keyLight: '#ffe0aa', fillLight: '#bbddff', shadow: '#405070',
+          fog: '#99bbcc', waterBias: '#4488aa', accent: '#77bb55'
+        }
+      },
+      modules: [
+        { id: 'runtime.surface-style', params: { mode: 'cel' } },
+        { id: 'lighting.sun', params: { color: '#ffffff' } },
+        { id: 'runtime.water-style', params: { shallowColor: '#abcdef' } },
+        {
+          id: 'runtime.material-theme',
+          scope: { target: 'material-tag', tag: 'foliage' },
+          params: { recipe: 'natural' }
+        }
+      ]
+    });
+
+    expect(compileRenderPlan(plan)).toMatchObject({
+      background: '#88bbdd',
+      hemisphereSkyColor: '#bbddff',
+      sunColor: '#ffffff'
+    });
+    expect(compileRuntimeStyle(plan).cartoon.shadowFloor).toBe(0.42);
+    expect(compileRuntimeColorGrade(plan)).toMatchObject({ contrast: 1.08, shadowLift: 0.07 });
+    expect(compileRuntimeLightRig(plan)).toMatchObject({ recipe: 'hard-day', shadowSoftness: 0.42 });
+    expect(compileRuntimeWaterStyles(plan)[0]).toMatchObject({
+      color: '#4488aa',
+      shallowColor: '#abcdef'
+    });
+    expect(compileRuntimeMaterialThemes(plan)[0]).toMatchObject({
+      color: '#77bb55',
+      strength: 0.1
+    });
   });
 });
 

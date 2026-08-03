@@ -1,5 +1,10 @@
 import type { RenderEnvironmentSettings } from './renderScheme';
-import { normalizeVisualDirection, type VisualDirection } from './visualDirection';
+import {
+  compileVisualEnvironment,
+  compileVisualWaterPalette,
+  visualMaterialTint
+} from './colorDirector';
+import { compileVisualDirection, normalizeVisualDirection, type VisualDirection } from './visualDirection';
 
 export type RenderModuleId =
   | 'environment.palette'
@@ -580,7 +585,9 @@ export function normalizeRenderPlan(
 }
 
 export function compileRenderPlan(plan: RenderPlan): Partial<RenderEnvironmentSettings> {
-  const settings: Partial<RenderEnvironmentSettings> = {};
+  const settings: Partial<RenderEnvironmentSettings> = plan.visualDirection
+    ? compileVisualEnvironment(plan.visualDirection)
+    : {};
   for (const module of plan.modules) {
     const params = module.params;
     switch (module.id) {
@@ -619,7 +626,9 @@ export function fogDensityForVisibilityDistance(distance: number): number {
 export function compileRuntimeStyle(plan: RenderPlan): RuntimeSurfaceStyle {
   const module = plan.modules.find((item) => item.id === 'runtime.surface-style');
   const params = module?.params ?? {};
-  const cartoon: RuntimeSurfaceStyle['cartoon'] = {};
+  const cartoon: RuntimeSurfaceStyle['cartoon'] = plan.visualDirection
+    ? { shadowFloor: compileVisualDirection(plan.visualDirection).surfaceShadowFloor }
+    : {};
   for (const key of ['bands', 'shadowFloor', 'highlightFactor', 'rampStrength', 'transitionSoftness'] as const) {
     if (typeof params[key] === 'number') cartoon[key] = params[key];
   }
@@ -719,26 +728,31 @@ export function compileRuntimePresentation(plan: RenderPlan): RuntimePresentatio
 
 export function compileRuntimeColorGrade(plan: RenderPlan): RuntimeColorGrade {
   const params = plan.modules.find((item) => item.id === 'runtime.color-grade')?.params ?? {};
+  const directed = plan.visualDirection ? compileVisualDirection(plan.visualDirection).colorGrade : undefined;
   return {
     recipe: enumValue(params.recipe, ['neutral', 'warm', 'cool', 'misty', 'cinematic', 'pastel'], 'neutral'),
-    temperature: numericValue(params.temperature),
-    contrast: numericValue(params.contrast),
-    saturation: numericValue(params.saturation),
-    shadowLift: numericValue(params.shadowLift),
-    tint: stringValue(params.tint)
+    temperature: numericValue(params.temperature) ?? directed?.temperature,
+    contrast: numericValue(params.contrast) ?? directed?.contrast,
+    saturation: numericValue(params.saturation) ?? directed?.saturation,
+    shadowLift: numericValue(params.shadowLift) ?? directed?.shadowLift,
+    tint: stringValue(params.tint) ?? directed?.tint
   };
 }
 
 export function compileRuntimeWaterStyles(plan: RenderPlan): RuntimeWaterStyle[] {
-  return plan.modules
+  const directed = plan.visualDirection ? compileVisualWaterPalette(plan.visualDirection) : undefined;
+  const modules = plan.modules
     .filter((item) => item.id === 'runtime.water-style')
-    .map((item) => ({
+  if (modules.length === 0 && directed) {
+    return [{ scope: { target: 'water', tag: 'water' }, recipe: 'calm-lake', ...directed }];
+  }
+  return modules.map((item) => ({
       scope: item.scope ?? { target: 'water', tag: 'water' },
       recipe: enumValue(item.params.recipe, ['calm-lake', 'clear-river', 'stylized', 'stormy'], 'calm-lake'),
       opacity: numericValue(item.params.opacity),
-      color: stringValue(item.params.color),
-      shallowColor: stringValue(item.params.shallowColor),
-      depthColor: stringValue(item.params.depthColor),
+      color: stringValue(item.params.color) ?? directed?.color,
+      shallowColor: stringValue(item.params.shallowColor) ?? directed?.shallowColor,
+      depthColor: stringValue(item.params.depthColor) ?? directed?.depthColor,
       waveStrength: numericValue(item.params.waveStrength),
       waveSpeed: numericValue(item.params.waveSpeed),
       foamStrength: numericValue(item.params.foamStrength),
@@ -779,24 +793,29 @@ export function compileRuntimeGrassStyle(plan: RenderPlan): RuntimeGrassStyle {
 export function compileRuntimeMaterialThemes(plan: RenderPlan): RuntimeMaterialTheme[] {
   return plan.modules
     .filter((item) => item.id === 'runtime.material-theme')
-    .map((item, index) => ({
-      key: item.key ?? `material-theme-${index}`,
-      scope: item.scope ?? { target: 'material-tag', tag: 'base' },
-      recipe: enumValue(item.params.recipe, ['natural', 'autumn', 'winter', 'weathered', 'polished', 'pastel'], 'natural'),
-      strength: numericValue(item.params.strength),
-      color: stringValue(item.params.color),
-      roughness: numericValue(item.params.roughness),
-      metalness: numericValue(item.params.metalness)
-    }));
+    .map((item, index) => {
+      const scope = item.scope ?? { target: 'material-tag' as const, tag: 'base' };
+      const directed = plan.visualDirection ? visualMaterialTint(plan.visualDirection, scope.tag) : undefined;
+      return {
+        key: item.key ?? `material-theme-${index}`,
+        scope,
+        recipe: enumValue(item.params.recipe, ['natural', 'autumn', 'winter', 'weathered', 'polished', 'pastel'], 'natural'),
+        strength: numericValue(item.params.strength) ?? directed?.strength,
+        color: stringValue(item.params.color) ?? directed?.color,
+        roughness: numericValue(item.params.roughness),
+        metalness: numericValue(item.params.metalness)
+      };
+    });
 }
 
 export function compileRuntimeLightRig(plan: RenderPlan): RuntimeLightRig {
   const params = plan.modules.find((item) => item.id === 'runtime.light-rig')?.params ?? {};
+  const directed = plan.visualDirection ? compileVisualDirection(plan.visualDirection).lightRig : undefined;
   return {
-    recipe: enumValue(params.recipe, ['neutral', 'soft-morning', 'hard-day', 'backlit', 'overcast', 'sunset'], 'neutral'),
-    strength: numericValue(params.strength),
-    warmth: numericValue(params.warmth),
-    shadowSoftness: numericValue(params.shadowSoftness)
+    recipe: enumValue(params.recipe, ['neutral', 'soft-morning', 'hard-day', 'backlit', 'overcast', 'sunset'], directed?.recipe ?? 'neutral'),
+    strength: numericValue(params.strength) ?? directed?.strength,
+    warmth: numericValue(params.warmth) ?? directed?.warmth,
+    shadowSoftness: numericValue(params.shadowSoftness) ?? directed?.shadowSoftness
   };
 }
 

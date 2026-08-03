@@ -1,10 +1,13 @@
 import { compileRenderPlan, type RenderModuleSelection, type RenderPlan } from '../shared/renderPlan';
 import type { RenderScheme, RenderSuggestion } from '../shared/renderScheme';
+import { normalizeVisualDirection } from '../shared/visualDirection';
 
 const SOFT_LIGHT = /柔和|柔光|soft\s*(?:light|morning|sun|lighting)?/i;
 const EXPLICIT_LOW_CONTRAST = /雾|薄雾|晨雾|mist|haze|朦胧|低对比|低饱和|粉彩|pastel|泛白|褪色/i;
 const STRONG_DAYLIGHT = /艳阳|烈日|强烈阳光|阳光强烈|高对比|hard\s*(?:sun|light)|bright\s*sun|high\s*contrast/i;
 const COOL_DIRECTION = /冷调|冷色|蓝调|cool\s*(?:tone|palette)|blue\s*(?:tone|palette)/i;
+const DRAMATIC_DIRECTION = /戏剧|史诗|强烈剪影|dramatic|epic|silhouette/i;
+const COLORED_SHADOW_DIRECTION = /彩色阴影|色彩丰富|通透|colored?\s*shadow|rich\s*colou?r/i;
 
 /**
  * "Soft light" is a lighting request, not permission to wash out the image.
@@ -26,6 +29,11 @@ export function stabilizeRenderSemantics(
     ...suggestion.plan,
     modules: suggestion.plan.modules.map((module) => ({ ...module, params: { ...module.params } }))
   };
+  plan.visualDirection = normalizeVisualDirection({
+    ...plan.visualDirection,
+    contrastMode: plan.visualDirection?.contrastMode ?? 'bright-cartoon',
+    timeOfDay: plan.visualDirection?.timeOfDay ?? 'morning'
+  });
   const grade = plan.modules.find((module) => module.id === 'runtime.color-grade');
   if (grade) stabilizeColorGrade(grade);
   ensureSoftLightRig(plan.modules);
@@ -53,6 +61,16 @@ function stabilizeStrongDaylight(
     ...suggestion.plan,
     modules: suggestion.plan.modules.map((module) => ({ ...module, params: { ...module.params } }))
   };
+  plan.visualDirection = normalizeVisualDirection({
+    ...plan.visualDirection,
+    contrastMode: DRAMATIC_DIRECTION.test(prompt)
+      ? 'dramatic'
+      : COLORED_SHADOW_DIRECTION.test(prompt)
+        ? 'colored-shadow'
+        : 'bright-cartoon',
+    timeOfDay: plan.visualDirection?.timeOfDay ?? 'noon',
+    temperature: COOL_DIRECTION.test(prompt) ? 'cool' : plan.visualDirection?.temperature ?? 'warm'
+  });
   let grade = plan.modules.find((module) => module.id === 'runtime.color-grade');
   if (!grade) {
     grade = { id: 'runtime.color-grade', params: {} };

@@ -69,4 +69,30 @@ describe('harmonizeHdriAtmosphere', () => {
     expect(result.modules.find((module) => module.id === 'lighting.sun')?.params.color)
       .toMatch(/^#[0-9a-f]{6}$/);
   });
+
+  it('lets explicit controls win and blends visual direction over HDRI swatches', () => {
+    const result = harmonizeHdriAtmosphere({
+      version: 2,
+      baseSchemeId: 'render-natural-day',
+      visualDirection: {
+        version: 1,
+        contrastMode: 'bright-cartoon',
+        timeOfDay: 'evening',
+        temperature: 'warm',
+        palette: {
+          sky: '#6688aa', keyLight: '#ffcc88', fillLight: '#aaccdd', shadow: '#443344',
+          fog: '#aa8877', waterBias: '#446688', accent: '#dd8844'
+        },
+        atmosphereFx: { masterStrength: 0.3, sunShafts: 0, pollen: 0, vapor: 0, dust: 0, windStreaks: 0 }
+      },
+      modules: [
+        { id: 'environment.hdri', params: { texture: 'evening.exr' } },
+        { id: 'lighting.sun', params: { color: '#123456' } }
+      ]
+    }, [{ file: 'evening.exr', skyColor: '#80a0c0', groundColor: '#705040' }]);
+
+    expect(result.modules.find((module) => module.id === 'lighting.sun')?.params.color).toBe('#123456');
+    expect(result.modules.find((module) => module.id === 'environment.palette')?.params.fogColor)
+      .not.toBe('#705040');
+  });
 });

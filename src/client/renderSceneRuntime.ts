@@ -11,6 +11,7 @@ import { DEFAULT_SUN_POSITION, type EditableMap } from '../shared/map';
 import type { RenderScheme } from '../shared/renderScheme';
 import {
   DEFAULT_RUNTIME_GRASS_STYLE,
+  compileRenderPlan,
   compileRuntimeColorGrade,
   compileRuntimeEffectRecipes,
   compileRuntimeGrassStyle,
@@ -217,7 +218,10 @@ export function applyRenderScheme(targets: RenderSchemeTargets, scheme: RenderSc
     return;
   }
 
-  const settings = scheme.settings;
+  const plan = scheme.renderPlan;
+  // The persisted settings remain the legacy fallback. A V2 plan is compiled
+  // on every apply so developer sliders and visual direction stay live.
+  const settings = { ...scheme.settings, ...(plan ? compileRenderPlan(plan) : {}) };
   scene.background = new THREE.Color(settings.background);
   // One depth-based fog pass also covers custom ShaderMaterials such as water.
   scene.fog = null;
@@ -229,7 +233,6 @@ export function applyRenderScheme(targets: RenderSchemeTargets, scheme: RenderSc
   sunLight.intensity = settings.sunIntensity;
   configureRendererOutput(renderer, settings.exposure);
 
-  const plan = scheme.renderPlan;
   const runtimeStyle = plan ? compileRuntimeStyle(plan) : { mode: 'pbr' as const, cartoon: {} };
   styleManager.applyStyle({ renderMode: runtimeStyle.mode, cartoon: runtimeStyle.cartoon });
   if (runtimeStyle.mode === 'cel') styleManager.setCartoonParams(runtimeStyle.cartoon);
