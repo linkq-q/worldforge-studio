@@ -53,6 +53,20 @@ export function humanizeAgentError(error: unknown): string {
   return labels[message] ?? message;
 }
 
+export function humanizeRenderAgentError(error: unknown): string {
+  if (error instanceof Error && error.name === 'AbortError') {
+    return '用户已取消，本次渲染预览没有应用。';
+  }
+  const message = error instanceof Error ? error.message : String(error || 'unknown_error');
+  if (/fetch failed|failed to fetch/i.test(message)) {
+    return '无法连接 Voxel Studio 后端。本次渲染预览没有应用，请检查网络后重试。';
+  }
+  if (message === 'invalid_render_ai_json') {
+    return 'AI 连续两次未返回完整的渲染计划 JSON，本次预览没有应用。';
+  }
+  return message;
+}
+
 export function renderAgentProgress(
   events: readonly AgentProgressEvent[],
   options: AgentProgressViewOptions
@@ -132,6 +146,7 @@ function agentStageLabel(stage: string): string {
   if (stage.startsWith('attempt:')) return `第 ${stage.slice('attempt:'.length)} 次尝试`;
   if (/fetch failed|failed to fetch/i.test(stage)) return '无法连接 Voxel Studio 后端';
   const labels: Record<string, string> = {
+    invalid_render_ai_json: '模型返回的 JSON 不完整，正在进行最后一次自动修正',
     thinking: '分析资产结构',
     code: '生成模型结构',
     validate: '校验模型',

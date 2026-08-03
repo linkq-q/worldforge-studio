@@ -9,4 +9,12 @@ describe('render agent progress timer', () => {
     expect(source).toMatch(/this\.startRenderAgentProgressTimer\(\);[\s\S]*?await editorAgentFetch/);
     expect(source).toMatch(/finally\s*\{[\s\S]*?this\.stopRenderAgentProgressTimer\(\);/);
   });
+
+  it('records a terminal render-agent failure instead of leaving the repair step active', () => {
+    const start = source.indexOf("private async generateRenderAiPreview(mode: 'generate' | 'refine')");
+    const end = source.indexOf('/**', start);
+    const flow = source.slice(start, end);
+    expect(flow).toContain('humanizeRenderAgentError(error)');
+    expect(flow).toMatch(/updateAgentProgress\(this\.renderAgentProgress,\s*\{\s*phase: 'failed'/);
+  });
 });

@@ -123,7 +123,7 @@ describe('render AI adapter', () => {
     expect(requestBody).toMatchObject({
       provider: 'gpt',
       temperature: 0.2,
-      maxTokens: 1000
+      maxTokens: 4096
     });
     expect(requestBody.messages[0].content).toContain('runtime.presentation-style');
     expect(requestBody.messages[0].content).toContain('sketch');
@@ -366,8 +366,31 @@ describe('render AI adapter', () => {
 
     expect(fetchImpl).toHaveBeenCalledTimes(2);
     expect(suggestion.plan.modules[0]?.id).toBe('presentation.exposure');
+    const initialRequest = JSON.parse(String(fetchImpl.mock.calls[0][1]?.body));
     const repairRequest = JSON.parse(String(fetchImpl.mock.calls[1][1]?.body));
+    expect(initialRequest.maxTokens).toBe(4096);
+    expect(repairRequest.maxTokens).toBe(4096);
+    expect(repairRequest.temperature).toBe(0);
     expect(repairRequest.messages[3].content).toContain('unknown_render_module');
+  });
+
+  it('accepts a valid render plan with a stray trailing brace without a repair request', async () => {
+    const content = JSON.stringify({
+      plan: {
+        version: 2,
+        baseSchemeId: 'render-natural-day',
+        modules: [{ id: 'presentation.exposure', params: { value: 0.9 } }]
+      }
+    }) + '}';
+    const fetchImpl = vi.fn().mockResolvedValue(new Response(JSON.stringify({ ok: true, content }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' }
+    }));
+
+    const suggestion = await generateRenderSuggestion('warm morning light', BUILTIN_RENDER_SCHEMES, { fetchImpl });
+
+    expect(fetchImpl).toHaveBeenCalledTimes(1);
+    expect(suggestion.plan.baseSchemeId).toBe('render-natural-day');
   });
 
   it('refines the current render plan without switching its base scheme', async () => {

@@ -19,6 +19,7 @@ import {
   type RenderPlan
 } from '../shared/renderPlan';
 import { llmChat } from './modelApi';
+import { parseLlmJsonObject } from './llmJson';
 import { stabilizeRenderSemantics } from './renderSemantics';
 
 export interface RenderAiOptions {
@@ -59,7 +60,9 @@ export async function generateRenderSuggestion(
     apiBase: options.apiBase,
     provider,
     temperature: 0.2,
-    maxTokens: 1000,
+    // RenderPlan V2 now carries visual direction, HDRI and atmosphere modules.
+    // 1000 tokens can truncate an otherwise valid plan before its closing brace.
+    maxTokens: 4096,
     fetchImpl: options.fetchImpl,
     signal: options.signal
   };
@@ -80,12 +83,18 @@ export async function generateRenderSuggestion(
   } catch (error) {
     options.signal?.throwIfAborted();
     const reason = error instanceof Error ? error.message : 'invalid_render_plan';
-    options.onProgress?.({ phase: 'repairing', label: '修正不符合白名单的渲染计划', detail: reason });
+    options.onProgress?.({
+      phase: 'repairing',
+      label: '首次返回不完整，正在进行最后一次自动修正',
+      current: 2,
+      total: 2,
+      detail: reason
+    });
     const repaired = await llmChat([
       ...messages,
       { role: 'assistant', content },
       { role: 'user', content: `上一份 RenderPlan 校验失败：${reason}。只使用能力清单中的模块修正后，重新返回完整 JSON。` }
-    ], requestOptions);
+    ], { ...requestOptions, temperature: 0 });
     const suggestion = stabilizeRenderSemantics(
       cleanPrompt,
       normalizeRenderSuggestion(repaired, schemes, options.hdriTextures),
@@ -114,7 +123,7 @@ export function normalizeRenderSuggestion(
   schemes: readonly RenderScheme[],
   hdriTextures: readonly HdriTexture[] = []
 ): RenderSuggestion {
-  const input = parseJsonObject(content);
+  const input = parseLlmJsonObject(content, 'invalid_render_ai_json');
   const planInput = input.plan ?? legacyPlanInput(input);
   const rawPlan = planInput && typeof planInput === 'object'
     ? planInput as Record<string, unknown>
@@ -262,17 +271,6 @@ function assertRequestedStyle(prompt: string, suggestion: RenderSuggestion): voi
   }
   if (/(卡通|赛璐璐|\btoon\b|cel[- ]?shad)/i.test(prompt) && surface !== 'cel') {
     throw new Error('missing_requested_style:cel');
-  }
-}
-
-function parseJsonObject(content: string): Record<string, unknown> {
-  const start = content.indexOf('{');
-  const end = content.lastIndexOf('}');
-  if (start < 0 || end <= start) throw new Error('invalid_render_ai_json');
-  try {
-    return JSON.parse(content.slice(start, end + 1)) as Record<string, unknown>;
-  } catch {
-    throw new Error('invalid_render_ai_json');
   }
 }
 

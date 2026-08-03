@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   humanizeAgentError,
+  humanizeRenderAgentError,
   renderAgentProgress,
   updateAgentProgress
 } from '../src/client/agentProgressPanel';
@@ -32,6 +33,10 @@ describe('agent progress panel', () => {
     expect(html).toContain('生成失败');
     expect(html).toContain('无法连接 Voxel Studio 后端');
     expect(html).toContain('组织场景');
+  });
+
+  it('explains a render JSON repair failure as a terminal two-attempt failure', () => {
+    expect(humanizeRenderAgentError(new Error('invalid_render_ai_json'))).toContain('连续两次');
   });
 
   it('uses asset counters to advance the workflow bar', () => {

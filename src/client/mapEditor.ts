@@ -45,6 +45,7 @@ import {
 import type { RenderInspectorCategoryId } from './renderInspectorCatalog';
 import {
   humanizeAgentError,
+  humanizeRenderAgentError,
   renderAgentProgress,
   updateAgentProgress
 } from './agentProgressPanel';
@@ -1879,9 +1880,14 @@ class MapEditor {
       this.applyCurrentRenderScheme();
       await this.harmonizeDraftFromHdri();
     } catch (error) {
-      this.state.message = error instanceof Error && error.name === 'AbortError'
-        ? '已取消渲染 Agent'
-        : `AI 渲染生成失败：${error instanceof Error ? error.message : '未知错误'}`;
+      const cancelled = error instanceof Error && error.name === 'AbortError';
+      const detail = humanizeRenderAgentError(error);
+      updateAgentProgress(this.renderAgentProgress, {
+        phase: 'failed',
+        label: cancelled ? '渲染 Agent 已取消' : '渲染 Agent 执行失败',
+        detail
+      });
+      this.state.message = cancelled ? '已取消渲染 Agent' : `AI 渲染生成失败：${detail}`;
     } finally {
       if (this.renderAiAbortController === controller) this.renderAiAbortController = null;
       this.stopRenderAgentProgressTimer();
