@@ -152,13 +152,14 @@ export function normalizeSceneCompositionPlan(value: unknown, map: EditableMap):
     .slice(0, SCENE_COMPOSITION_LIMITS.assetFamilyCount);
   const assetFamilies = familyValues.map(normalizeFamily);
   const familyIds = uniqueIds(assetFamilies, 'duplicate_scene_family_id');
-  const grassFamilies = Array.isArray(input.grassFamilies)
+  const declaredGrassFamilies = Array.isArray(input.grassFamilies)
     ? input.grassFamilies.slice(0, SCENE_COMPOSITION_LIMITS.grassFamilyCount).map(normalizeGrassFamily)
     : [];
-  const grassFamilyIds = uniqueIds(grassFamilies, 'duplicate_scene_grass_family_id');
   const zoneValues = requireArray(input.zones, 'invalid_scene_zones').slice(0, SCENE_COMPOSITION_LIMITS.zoneCount);
   if (zoneValues.length < 1) throw new Error('scene_composition_requires_zones');
-  const zones = zoneValues.map((zone) => normalizeZone(zone, map, familyIds, grassFamilyIds));
+  const { grassFamilies, grassFamilyReferences } = completeGrassFamilyReferences(declaredGrassFamilies, zoneValues);
+  uniqueIds(grassFamilies, 'duplicate_scene_grass_family_id');
+  const zones = zoneValues.map((zone) => normalizeZone(zone, map, familyIds, grassFamilyReferences));
   const zoneIds = uniqueIds(zones, 'duplicate_scene_zone_id');
   for (const zone of zones) {
     if (zone.excludeZoneIds.some((id) => !zoneIds.has(id) || id === zone.id)) {
@@ -315,7 +316,7 @@ function normalizeZone(
   value: unknown,
   map: EditableMap,
   familyIds: Set<string>,
-  grassFamilyIds: Set<string>
+  grassFamilyReferences: ReadonlyMap<string, string>
 ): SceneCompositionZone {
   const input = requireRecord(value, 'invalid_scene_zone');
   const role = SCENE_ZONE_ROLES.includes(input.role as SceneZoneRole) ? input.role as SceneZoneRole : null;
@@ -329,7 +330,7 @@ function normalizeZone(
     : [];
   const grassLayers = Array.isArray(input.grassLayers)
     ? input.grassLayers.slice(0, SCENE_COMPOSITION_LIMITS.grassFamilyCount)
-      .map((layer) => normalizeZoneGrassLayer(layer, grassFamilyIds))
+      .map((layer) => normalizeZoneGrassLayer(layer, grassFamilyReferences))
     : [];
   const water = input.water === undefined || input.water === null
     ? undefined
@@ -376,10 +377,53 @@ function normalizeGrassFamily(value: unknown): SceneGrassFamily {
   };
 }
 
-function normalizeZoneGrassLayer(value: unknown, familyIds: Set<string>): SceneZoneGrassLayer {
+function completeGrassFamilyReferences(
+  declared: readonly SceneGrassFamily[],
+  zoneValues: readonly unknown[]
+): { grassFamilies: SceneGrassFamily[]; grassFamilyReferences: Map<string, string> } {
+  const grassFamilies = [...declared];
+  const references = new Map<string, string>();
+  const addAliases = (family: SceneGrassFamily) => {
+    references.set(family.id, family.id);
+    references.set(grassReferenceKey(family.id), family.id);
+    references.set(grassReferenceKey(family.label), family.id);
+  };
+  grassFamilies.forEach(addAliases);
+
+  for (const zoneValue of zoneValues) {
+    if (!zoneValue || typeof zoneValue !== 'object' || Array.isArray(zoneValue)) continue;
+    const layers = (zoneValue as Record<string, unknown>).grassLayers;
+    if (!Array.isArray(layers)) continue;
+    for (const layerValue of layers) {
+      if (!layerValue || typeof layerValue !== 'object' || Array.isArray(layerValue)) continue;
+      const sourceId = cleanId((layerValue as Record<string, unknown>).grassFamilyId);
+      if (!sourceId || resolveGrassFamilyReference(references, sourceId)) continue;
+
+      if (grassFamilies.length < SCENE_COMPOSITION_LIMITS.grassFamilyCount) {
+        const family: SceneGrassFamily = {
+          id: sourceId,
+          label: sourceId.replace(/[-_]+/g, ' '),
+          mix: { short: 0.72, tall: 0.23, flowers: 0.05 }
+        };
+        grassFamilies.push(family);
+        addAliases(family);
+      } else if (grassFamilies[0]) {
+        references.set(sourceId, grassFamilies[0].id);
+        references.set(grassReferenceKey(sourceId), grassFamilies[0].id);
+      }
+    }
+  }
+  return { grassFamilies, grassFamilyReferences: references };
+}
+
+function normalizeZoneGrassLayer(
+  value: unknown,
+  familyReferences: ReadonlyMap<string, string>
+): SceneZoneGrassLayer {
   const input = requireRecord(value, 'invalid_scene_grass_layer');
-  const grassFamilyId = requireId(input.grassFamilyId, 'invalid_scene_grass_layer');
-  if (!familyIds.has(grassFamilyId)) throw new Error('unknown_scene_grass_family');
+  const sourceId = requireId(input.grassFamilyId, 'invalid_scene_grass_layer');
+  const grassFamilyId = resolveGrassFamilyReference(familyReferences, sourceId);
+  if (!grassFamilyId) throw new Error('unknown_scene_grass_family');
   return {
     grassFamilyId,
     density: clamp(finiteNumber(input.density, 0.65), 0, 1),
@@ -387,6 +431,14 @@ function normalizeZoneGrassLayer(value: unknown, familyIds: Set<string>): SceneZ
     edgeFalloff: clamp(finiteNumber(input.edgeFalloff, 0.25), 0, 1),
     residualDensity: clamp(finiteNumber(input.residualDensity, 0.08), 0, 1)
   };
+}
+
+function resolveGrassFamilyReference(references: ReadonlyMap<string, string>, id: string): string | undefined {
+  return references.get(id) ?? references.get(grassReferenceKey(id));
+}
+
+function grassReferenceKey(value: string): string {
+  return cleanId(value).replace(/[-_]/g, '');
 }
 
 function normalizeLayer(value: unknown, familyIds: Set<string>): SceneZoneLayer {

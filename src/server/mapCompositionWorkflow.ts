@@ -23,6 +23,7 @@ import { compileSceneComposition } from '../shared/sceneCompositionCompiler';
 import { ensureSceneCompositionOutcome } from '../shared/sceneCompositionOutcome';
 import type { ModelGenerationMode } from '../shared/modelGenerationMode';
 import { llmChat } from './modelApi';
+import { parseLlmJsonObject } from './llmJson';
 import {
   buildSceneDirectorPrompt,
   buildSceneReviewerPrompt,
@@ -43,7 +44,6 @@ export interface MapCompositionWorkflowOptions {
     mode: ModelGenerationMode;
   }) => Promise<MapAsset>;
 }
-
 export interface MapCompositionWorkflowResult {
   suggestion: MapAiSuggestion;
   assets: MapAsset[];
@@ -210,7 +210,7 @@ async function requestStructured<T>(
 ): Promise<T> {
   const first = await requestModel(systemPrompt, userPrompt, options, temperature);
   try {
-    return normalize(parseJsonObject(first));
+    return normalize(parseLlmJsonObject(first, 'invalid_agent_json'));
   } catch (error) {
     options.signal?.throwIfAborted();
     const repaired = await requestModel(
@@ -219,7 +219,7 @@ async function requestStructured<T>(
       options,
       Math.min(temperature, 0.15)
     );
-    return normalize(parseJsonObject(repaired));
+    return normalize(parseLlmJsonObject(repaired, 'invalid_agent_json'));
   }
 }
 
@@ -240,14 +240,4 @@ function requestModel(
     fetchImpl: options.fetchImpl,
     signal: options.signal
   });
-}
-
-function parseJsonObject(content: string): Record<string, unknown> {
-  const trimmed = content.trim().replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '');
-  const first = trimmed.indexOf('{');
-  const last = trimmed.lastIndexOf('}');
-  if (first < 0 || last <= first) throw new Error('invalid_agent_json');
-  const parsed = JSON.parse(trimmed.slice(first, last + 1)) as unknown;
-  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) throw new Error('invalid_agent_json');
-  return parsed as Record<string, unknown>;
 }

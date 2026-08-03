@@ -28,6 +28,31 @@ describe('scene composition contract', () => {
     expect(isCompositionEmptyMap(map)).toBe(true);
   });
 
+  it('repairs an undeclared procedural grass family instead of rejecting the whole scene', () => {
+    const map = createEmptyMap('Grass repair', 'map-grass-repair', [96, 16, 96], 'voxel-pro');
+    const input = structuredClone(planInput()) as {
+      grassFamilies: unknown[];
+      zones: Array<{ grassLayers: unknown[] }>;
+    };
+    input.grassFamilies = [];
+    input.zones[0].grassLayers = [{
+      grassFamilyId: 'woodland-floor', density: 0.5, variation: 0.2, edgeFalloff: 0.3, residualDensity: 0.08
+    }];
+
+    const plan = normalizeSceneCompositionPlan(input, map);
+    const compiled = compileSceneComposition(map, plan, []);
+
+    expect(plan.grassFamilies).toEqual(expect.arrayContaining([
+      expect.objectContaining({ id: 'woodland-floor' }),
+      expect.objectContaining({ id: 'meadow' })
+    ]));
+    expect(plan.zones[0].grassLayers[0].grassFamilyId).toBe('woodland-floor');
+    expect(compiled.operations).toEqual(expect.arrayContaining([
+      expect.objectContaining({ type: 'grass.layer.add' }),
+      expect.objectContaining({ type: 'grass.generate' })
+    ]));
+  });
+
   it('resolves reusable assets across generation modes and reports semantic gaps', () => {
     const map = createEmptyMap('Forest', 'map-assets', [96, 16, 96], 'voxel-pro');
     const plan = normalizeSceneCompositionPlan(planInput(), map);

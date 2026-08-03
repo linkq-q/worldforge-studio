@@ -33,6 +33,7 @@ export function buildSceneDirectorPrompt(map: EditableMap, assets: readonly MapA
     'Cover the map deliberately. Any large uncovered area must be intentional negative space described by a zone, not an accidental omission.',
     'Asset family role is free semantic text. Tags should be reusable lower-case search terms.',
     'Grass is editable ground vegetation, not a generated model asset. When appropriate, define reusable grassFamilies and assign grassLayers to zones.',
+    'Every grassLayers[].grassFamilyId must exactly match one grassFamilies[].id. Reuse the same declared grass family ID across zones.',
     'For each grass zone decide short/tall/flower proportions, density, variation, edge falloff, and residualDensity around structures (0 tidy, larger abandoned).',
     'Keep flower accents sparse and readable: usually 0.02-0.08 of a grass mix, unless the user explicitly requests a flower field.',
     'Grass may intentionally continue to pond edges or underwater. Do not remove it merely because a zone contains water; slope fading is deterministic.',
