@@ -211,6 +211,9 @@ class MapEditor {
   private renderAiExplanation = '';
   private renderAiAbortController: AbortController | null = null;
   private renderAgentProgress: AgentProgressEvent[] = [];
+  private renderAgentStartedAt = 0;
+  private renderAgentElapsedMs = 0;
+  private renderAgentProgressTimer: number | null = null;
   private developerMode = false;
   private developerRenderView: DeveloperRenderView = 'tuning';
   private developerRenderCategory: RenderInspectorCategoryId = 'lighting';
@@ -1418,7 +1421,7 @@ class MapEditor {
         </div>
         ${renderAgentProgress(this.renderAgentProgress, {
           running: Boolean(this.renderAiAbortController),
-          elapsedMs: 0
+          elapsedMs: this.renderAgentElapsedMs
         })}
         <p class="empty">AI 会选择基础方案，并编排环境、雾、光照和 runtime 表面/画面风格模块；不会修改地图或生成 Shader。</p>
       </section>
@@ -1837,6 +1840,7 @@ class MapEditor {
     const controller = new AbortController();
     this.renderAiAbortController = controller;
     this.renderAgentProgress = [];
+    this.startRenderAgentProgressTimer();
     this.setBusy(true, mode === 'refine' ? 'AI 正在调整当前渲染方案...' : 'AI 正在生成渲染预览...');
     this.renderRenderInspector();
     try {
@@ -1880,6 +1884,7 @@ class MapEditor {
         : `AI 渲染生成失败：${error instanceof Error ? error.message : '未知错误'}`;
     } finally {
       if (this.renderAiAbortController === controller) this.renderAiAbortController = null;
+      this.stopRenderAgentProgressTimer();
       this.setBusy(false);
       this.renderPanels();
     }
@@ -2869,6 +2874,22 @@ class MapEditor {
     if (this.mapAgentStartedAt > 0) this.mapAgentElapsedMs = Date.now() - this.mapAgentStartedAt;
     if (this.mapAgentProgressTimer !== null) window.clearInterval(this.mapAgentProgressTimer);
     this.mapAgentProgressTimer = null;
+  }
+
+  private startRenderAgentProgressTimer(): void {
+    if (this.renderAgentProgressTimer !== null) window.clearInterval(this.renderAgentProgressTimer);
+    this.renderAgentStartedAt = Date.now();
+    this.renderAgentElapsedMs = 0;
+    this.renderAgentProgressTimer = window.setInterval(() => {
+      this.renderAgentElapsedMs = Date.now() - this.renderAgentStartedAt;
+      this.renderRenderInspector();
+    }, 1_000);
+  }
+
+  private stopRenderAgentProgressTimer(): void {
+    if (this.renderAgentStartedAt > 0) this.renderAgentElapsedMs = Date.now() - this.renderAgentStartedAt;
+    if (this.renderAgentProgressTimer !== null) window.clearInterval(this.renderAgentProgressTimer);
+    this.renderAgentProgressTimer = null;
   }
 
   private handleKeyDown = (event: KeyboardEvent): void => {
