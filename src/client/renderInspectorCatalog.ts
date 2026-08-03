@@ -48,7 +48,7 @@ export const RENDER_INSPECTOR_CATEGORIES: readonly RenderInspectorCategory[] = [
     id: 'environment',
     label: '环境',
     description: '天空、环境色、距离雾和草地表现',
-    moduleIds: ['environment.palette', 'environment.hdri', 'atmosphere.fog', 'runtime.grass-style']
+    moduleIds: ['environment.palette', 'environment.hdri', 'atmosphere.fog', 'runtime.atmosphere-fx', 'runtime.grass-style']
   },
   {
     id: 'water',

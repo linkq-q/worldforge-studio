@@ -46,6 +46,9 @@ describe('render stats', () => {
       grassBlades: 20_000,
       grassFlowers: 900,
       grassDrawCalls: 3,
+      atmosphereParticles: 120,
+      atmosphereDrawCalls: 2,
+      adaptiveQuality: 0.68,
       stages: [],
       passes: [],
       composerPasses: [{ name: 'RenderPass', ms: 4.25 }]

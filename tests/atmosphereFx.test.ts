@@ -35,4 +35,21 @@ describe('semantic atmosphere effects', () => {
     expect(state.channels.sunShafts).toBeCloseTo(0.56);
     expect(state.channels.windStreaks).toBeCloseTo(0.2);
   });
+
+  it('uses the developer module as the explicit live override', () => {
+    const map = createEmptyMap('effects');
+    map.visualSemantics.zones = [
+      { id: 'meadow', tags: ['grass'], center: [0, 0], radius: 8, intensity: 1 }
+    ];
+    const plan = normalizeRenderPlan({
+      version: 2,
+      baseSchemeId: 'render-natural-day',
+      modules: [{
+        id: 'runtime.atmosphere-fx',
+        params: { masterStrength: 1, semanticStrength: 0, pollen: 0.65 }
+      }]
+    });
+
+    expect(compileAtmosphereFx(map, plan).channels.pollen).toBeCloseTo(0.65);
+  });
 });

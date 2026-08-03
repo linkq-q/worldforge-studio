@@ -29,6 +29,9 @@ export interface RenderDebugDetails {
   grassBlades: number;
   grassFlowers: number;
   grassDrawCalls: number;
+  atmosphereParticles: number;
+  atmosphereDrawCalls: number;
+  adaptiveQuality: number;
   stages: Array<{ name: string; ms: number }>;
   passes: Array<{ id: string; name: string; enabled: boolean }>;
   composerPasses: Array<{ name: string; ms: number }>;
@@ -66,6 +69,9 @@ const EMPTY_DETAILS: RenderDebugDetails = {
   grassBlades: 0,
   grassFlowers: 0,
   grassDrawCalls: 0,
+  atmosphereParticles: 0,
+  atmosphereDrawCalls: 0,
+  adaptiveQuality: 1,
   stages: [],
   passes: [],
   composerPasses: []
@@ -163,6 +169,8 @@ export class RenderStats {
           <span>孤儿 Part <b>${details.orphanPartRefs}</b></span><span>孤儿实例 <b>${details.orphanInstanceRefs}</b></span>
           <span>草叶 <b>${formatCount(details.grassBlades)}</b></span><span>碎花 <b>${formatCount(details.grassFlowers)}</b></span>
           <span>草 Draw <b>${details.grassDrawCalls}</b></span><span>纹理 <b>${this.info.memory?.textures ?? 0}</b></span>
+          <span>氛围粒子 <b>${formatCount(details.atmosphereParticles)}</b></span><span>氛围 Draw <b>${details.atmosphereDrawCalls}</b></span>
+          <span>自适应质量 <b>${Math.round(details.adaptiveQuality * 100)}%</b></span><span>未合批 Part <b>${details.fallbackParts}</b></span>
         </div>
         ${passRows ? `<div class="perf-pass-list"><strong>Pass Timing</strong>${passRows}</div>` : ''}
         ${passToggles ? `<div class="perf-pass-toggles"><strong>临时 Pass 开关</strong>${passToggles}</div>` : ''}
@@ -237,6 +245,8 @@ export function buildPerformanceReport(
     `orphanInstanceRefs: ${details.orphanInstanceRefs}`,
     `grassBlades: ${details.grassBlades}`,
     `grassFlowers: ${details.grassFlowers}`,
+    `atmosphereParticles: ${details.atmosphereParticles}`,
+    `adaptiveQuality: ${details.adaptiveQuality.toFixed(2)}`,
     `composer: ${details.composerPasses.map((pass) => `${pass.name}=${pass.ms.toFixed(2)}ms`).join(', ') || 'none'}`
   ].join('\n');
 }

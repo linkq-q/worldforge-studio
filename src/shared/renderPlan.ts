@@ -23,6 +23,7 @@ export type RenderModuleId =
   | 'runtime.light-rig'
   | 'runtime.post-quality'
   | 'runtime.effect-recipe'
+  | 'runtime.atmosphere-fx'
   | 'runtime.shader-extension';
 
 export type RenderScopeTarget = 'scene' | 'water' | 'material-tag' | 'asset-tag';
@@ -495,6 +496,22 @@ export const RENDER_CAPABILITIES: readonly RenderCapability[] = [
       bloomStrength: { type: 'number', min: 0, max: 1.5, default: 0.4 },
       ssao: { type: 'enum', values: ['off', 'soft', 'strong'], default: 'off' },
       depthOfField: { type: 'enum', values: ['off', 'soft', 'portrait'], default: 'off' }
+    }
+  },
+  {
+    id: 'runtime.atmosphere-fx',
+    label: '环境动态特效',
+    priority: 'P2',
+    availability: 'ready',
+    availabilityNote: '语义自动触发保持微弱；这里调节总量与各通道上限。',
+    params: {
+      masterStrength: { type: 'number', min: 0, max: 1, default: 0.35 },
+      semanticStrength: { type: 'number', min: 0, max: 1, default: 1 },
+      sunShafts: { type: 'number', min: 0, max: 1, default: 0 },
+      pollen: { type: 'number', min: 0, max: 1, default: 0 },
+      vapor: { type: 'number', min: 0, max: 1, default: 0 },
+      dust: { type: 'number', min: 0, max: 1, default: 0 },
+      windStreaks: { type: 'number', min: 0, max: 1, default: 0 }
     }
   },
   {

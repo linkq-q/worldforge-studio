@@ -94,13 +94,16 @@ export class RenderSceneRuntime {
   map: EditableMap | null = null;
   rendered: RenderedMap | null = null;
   private currentScheme: RenderScheme | null = null;
+  private readonly basePixelRatio: number;
+  private adaptiveQuality = 1;
 
   constructor(options: RenderSceneRuntimeOptions) {
     this.scene.background = new THREE.Color(NEUTRAL_BACKGROUND);
     this.camera.position.set(22, 18, 24);
 
     this.renderer = new THREE.WebGLRenderer({ antialias: true, canvas: options.canvas });
-    this.renderer.setPixelRatio(options.pixelRatio ?? Math.min(2, globalThis.devicePixelRatio ?? 1));
+    this.basePixelRatio = options.pixelRatio ?? Math.min(2, globalThis.devicePixelRatio ?? 1);
+    this.renderer.setPixelRatio(this.basePixelRatio);
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     configureRendererOutput(this.renderer);
@@ -203,6 +206,17 @@ export class RenderSceneRuntime {
   setAtmosphereFxQuality(quality: number): void {
     this.atmosphereFx.setQuality(quality);
     this.syncAtmosphereFx();
+  }
+
+  setAdaptiveQuality(quality: number): void {
+    this.adaptiveQuality = THREE.MathUtils.clamp(quality, 0.4, 1);
+    this.setAtmosphereFxQuality(this.adaptiveQuality);
+    const ratioScale = 0.74 + this.adaptiveQuality * 0.26;
+    this.renderer.setPixelRatio(Math.max(0.85, this.basePixelRatio * ratioScale));
+  }
+
+  getAdaptiveQuality(): number {
+    return this.adaptiveQuality;
   }
 
   private syncAtmosphereFx(): void {

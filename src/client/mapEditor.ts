@@ -52,6 +52,7 @@ import { buildEditableMapGroup, type RenderedMap } from './mapRenderer';
 import { buildModelGroup } from './modelRenderer';
 import { RenderSceneRuntime } from './renderSceneRuntime';
 import { RenderStats, type RenderDebugDetails } from './renderStats';
+import { AdaptiveRenderQuality } from './adaptiveRenderQuality';
 import { PlayModeController } from './playModeController';
 import {
   exportWorldForge,
@@ -161,6 +162,7 @@ class MapEditor {
   private camera: THREE.PerspectiveCamera | null = null;
   private renderer: THREE.WebGLRenderer | null = null;
   private renderStats: RenderStats | null = null;
+  private readonly adaptiveQuality = new AdaptiveRenderQuality();
   private playMode: PlayModeController | null = null;
   private hdriFiles: string[] = [];
   private hdriTextures: HdriTexture[] = [];
@@ -1464,6 +1466,10 @@ class MapEditor {
             <span>主光强度 <output data-render-output="sunIntensity">${draft.settings.sunIntensity.toFixed(1)}</output></span>
             <input data-render-number="sunIntensity" type="range" min="0" max="8" step="0.1" value="${draft.settings.sunIntensity}" />
           </label>
+          <label class="field compact">
+            <span>动态氛围 <output data-render-atmosphere-output>${atmosphereMasterStrength(draft).toFixed(2)}</output></span>
+            <input data-render-atmosphere type="range" min="0" max="1" step="0.01" value="${atmosphereMasterStrength(draft)}" />
+          </label>
           <p id="render-tuning-note" class="empty">${this.renderDraftChanged ? '微调正在预览，保存后会生成新的渲染方案，不会改动原预设。' : '只开放普通用户容易理解的白名单参数。'}</p>
           ${this.renderAiPreview ? '' : `<button id="save-render-scheme">${this.renderDraftChanged ? '保存为新方案' : '复制为新方案'}</button>`}
         </section>
@@ -1687,6 +1693,21 @@ class MapEditor {
         this.applyCurrentRenderScheme();
         this.updateToolbarState();
       });
+    });
+    host.querySelector<HTMLInputElement>('[data-render-atmosphere]')?.addEventListener('input', (event) => {
+      const value = Number((event.target as HTMLInputElement).value);
+      const plan = this.ensureRenderDraftPlan();
+      if (!plan || !Number.isFinite(value)) return;
+      let module = plan.modules.find((item) => item.id === 'runtime.atmosphere-fx');
+      if (!module) {
+        module = { id: 'runtime.atmosphere-fx', params: {} };
+        plan.modules.push(module);
+      }
+      module.params.masterStrength = value;
+      this.renderDraftChanged = true;
+      const output = host.querySelector<HTMLOutputElement>('[data-render-atmosphere-output]');
+      if (output) output.value = value.toFixed(2);
+      this.applyCurrentRenderScheme();
     });
     host.querySelector('#save-render-scheme')?.addEventListener('click', () => void this.saveRenderDraft());
   }
@@ -2525,6 +2546,7 @@ class MapEditor {
   private renderDebugDetails(): RenderDebugDetails {
     const mapStats = this.renderedMap?.getDebugStats();
     const pipeline = this.renderScene?.adapter.getPerformanceStats();
+    const atmosphere = this.renderScene?.getAtmosphereFxStats();
     return {
       objects: this.state.map?.objects.length ?? 0,
       waters: this.state.map?.waterBodies.length ?? 0,
@@ -2543,6 +2565,9 @@ class MapEditor {
       grassBlades: mapStats?.grassBlades ?? 0,
       grassFlowers: mapStats?.grassFlowers ?? 0,
       grassDrawCalls: mapStats?.grassDrawCalls ?? 0,
+      atmosphereParticles: atmosphere?.particles ?? 0,
+      atmosphereDrawCalls: atmosphere?.drawCalls ?? 0,
+      adaptiveQuality: this.renderScene?.getAdaptiveQuality() ?? 1,
       stages: pipeline?.stages ?? [],
       passes: pipeline?.passes ?? [],
       composerPasses: pipeline?.composerTrace?.passes ?? []
@@ -2563,6 +2588,8 @@ class MapEditor {
     }
     this.selectionOutline?.update();
     this.renderStats?.beginFrame();
+    const quality = this.adaptiveQuality.update(frameMs, dt);
+    if (quality) this.renderScene?.setAdaptiveQuality(quality.scale);
     this.renderScene?.renderFrame(dt, now / 1000);
     this.renderStats?.endFrame(frameMs, now);
     this.previewOrbit?.update();
@@ -3241,6 +3268,14 @@ function uniformScaleFromAxes(nextScale: [number, number, number], previousScale
     }
   }
   return Math.max(0.01, nextScale[index]);
+}
+
+function atmosphereMasterStrength(scheme: RenderScheme): number {
+  const value = scheme.renderPlan?.modules.find((module) => module.id === 'runtime.atmosphere-fx')
+    ?.params.masterStrength;
+  return typeof value === 'number'
+    ? value
+    : scheme.renderPlan?.visualDirection?.atmosphereFx.masterStrength ?? 0.35;
 }
 
 function escapeHtml(value: string): string {
