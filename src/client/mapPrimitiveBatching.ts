@@ -12,6 +12,7 @@ import materialTagVocabulary from '@voxel-studio/render-runtime/model/material-t
 import type { MapAsset } from '../shared/map';
 import { buildModelGroup } from './modelRenderer';
 import { MapObjectCulling, type MapObjectCullingStats } from './mapObjectCulling';
+import { requiresRuntimeStandaloneMaterialTag } from './mapMaterialTagBatchPolicy';
 import { WorldForgeMaterialTagRuntime } from './materialTagRuntimeAdapter';
 
 export interface MapPrimitiveBatchInput {
@@ -260,7 +261,8 @@ async function prepareTemplate(asset: MapAsset): Promise<PreparedTemplate> {
     const part = entry.part as BatchPart | undefined;
     if (!part) continue;
     if (entry.baseRecipe) part.materialTagBaseRecipe = entry.baseRecipe as Record<string, unknown>;
-    if (entry.effectPackage) part.materialTagRequiresRuntimeStandalone = true;
+    if (requiresRuntimeStandaloneMaterialTag(entry)) part.materialTagRequiresRuntimeStandalone = true;
+    else delete part.materialTagRequiresRuntimeStandalone;
   }
 
   const rootOffset = new THREE.Matrix4().makeTranslation(group.position.x, group.position.y, group.position.z);
