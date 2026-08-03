@@ -1,0 +1,1900 @@
+{
+  "id": "asset-6c7a9b83-8bf9-4418",
+  "name": "林地细节组合",
+  "prompt": "制作一组低矮林地细节簇，以小树桩、圆帽蘑菇、落叶和简化灌丛组成，暖棕与柔绿配色，可通过旋转形成多样性。\n全局资产美术方向：voxel-pro动森式比例，造型圆润简化，树冠饱满、树干略粗，木屋尺度亲切；使用柔和苔绿、嫩绿、暖棕、奶油黄与低饱和水蓝，细节清晰但避免写实杂乱。\n资产角色：用于森林、空地和木屋周围的树桩、蘑菇、落叶与低矮灌丛点缀；目标尺度：small。\n只生成一个可复用的独立物体，不要生成地面、背景、天空、完整场景或多个分散物体。",
+  "tags": [
+    "voxel",
+    "woodland",
+    "stump",
+    "mushroom",
+    "shrub",
+    "leaf-litter"
+  ],
+  "modelJson": {
+    "name": "Untitled",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "woodlandDetailCluster",
+        "description": "中央偏后放置低矮粗树桩-暖棕[9a6b43]，顶部切面-奶油黄[e8d39a]，一侧附着柔和苔绿苔块-苔绿[78966b]；树桩前侧聚集三只高矮不同的圆帽蘑菇，短粗菌柄-奶油黄，圆润菌帽-暖棕；左右两侧各有一簇低矮饱满灌丛，大小不等、前低后高，叶团-嫩绿[9fbd72]与苔绿；底部用数片大小不同的落叶连接各部分，叶片-暖棕与奶油黄，整体保持单一紧密底盘、无地面",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "woodlandDetailCluster",
+        "transform": {
+          "pos": [
+            0,
+            0.92,
+            -0.34
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.25,
+            "height": 1.72,
+            "depth": 1.18
+          },
+          "color": 10120003
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "bark"
+          }
+        ]
+      },
+      {
+        "id": "m1",
+        "parent": "woodlandDetailCluster",
+        "transform": {
+          "pos": [
+            -0.66,
+            0.74,
+            -0.32
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.42,
+            "height": 1.42,
+            "depth": 1.02
+          },
+          "color": 7950904
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "bark"
+          }
+        ]
+      },
+      {
+        "id": "m2",
+        "parent": "woodlandDetailCluster",
+        "transform": {
+          "pos": [
+            0.68,
+            0.8,
+            -0.34
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.38,
+            "height": 1.52,
+            "depth": 0.94
+          },
+          "color": 10120003
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "bark"
+          }
+        ]
+      },
+      {
+        "id": "m3",
+        "parent": "woodlandDetailCluster",
+        "transform": {
+          "pos": [
+            0,
+            0.75,
+            -0.96
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.02,
+            "height": 1.4,
+            "depth": 0.38
+          },
+          "color": 7950904
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "bark"
+          }
+        ]
+      },
+      {
+        "id": "m4",
+        "parent": "woodlandDetailCluster",
+        "transform": {
+          "pos": [
+            0,
+            0.72,
+            0.28
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.08,
+            "height": 1.34,
+            "depth": 0.38
+          },
+          "color": 10120003
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "bark"
+          }
+        ]
+      },
+      {
+        "id": "m5",
+        "parent": "woodlandDetailCluster",
+        "transform": {
+          "pos": [
+            0,
+            1.82,
+            -0.34
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.22,
+            "height": 0.18,
+            "depth": 1.14
+          },
+          "color": 15258522
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ]
+      },
+      {
+        "id": "m6",
+        "parent": "woodlandDetailCluster",
+        "transform": {
+          "pos": [
+            -0.64,
+            1.06,
+            0.25
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.24,
+            "height": 0.84,
+            "depth": 0.16
+          },
+          "color": 7950904
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "bark"
+          }
+        ]
+      },
+      {
+        "id": "m7",
+        "parent": "woodlandDetailCluster",
+        "transform": {
+          "pos": [
+            0.63,
+            0.88,
+            -0.92
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.18,
+            "height": 0.68,
+            "depth": 0.18
+          },
+          "color": 7950904
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "bark"
+          }
+        ]
+      },
+      {
+        "id": "m8",
+        "parent": "woodlandDetailCluster",
+        "transform": {
+          "pos": [
+            -0.58,
+            0.18,
+            -0.18
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.05,
+            "height": 0.26,
+            "depth": 0.42
+          },
+          "color": 7950904
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "bark"
+          }
+        ]
+      },
+      {
+        "id": "m9",
+        "parent": "woodlandDetailCluster",
+        "transform": {
+          "pos": [
+            0.58,
+            0.17,
+            -0.22
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.98,
+            "height": 0.24,
+            "depth": 0.42
+          },
+          "color": 10120003
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "bark"
+          }
+        ]
+      },
+      {
+        "id": "m10",
+        "parent": "woodlandDetailCluster",
+        "transform": {
+          "pos": [
+            -0.18,
+            0.18,
+            0.22
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.46,
+            "height": 0.25,
+            "depth": 0.96
+          },
+          "color": 10120003
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "bark"
+          }
+        ]
+      },
+      {
+        "id": "m11",
+        "parent": "woodlandDetailCluster",
+        "transform": {
+          "pos": [
+            0.22,
+            0.16,
+            -0.78
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.44,
+            "height": 0.22,
+            "depth": 0.88
+          },
+          "color": 7950904
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "bark"
+          }
+        ]
+      },
+      {
+        "id": "m12",
+        "parent": "woodlandDetailCluster",
+        "transform": {
+          "pos": [
+            0.58,
+            1.72,
+            -0.18
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.62,
+            "height": 0.3,
+            "depth": 0.48
+          },
+          "color": 7902827
+        },
+        "tags": [
+          {
+            "tag": "mossy",
+            "value": 1
+          }
+        ]
+      },
+      {
+        "id": "m13",
+        "parent": "woodlandDetailCluster",
+        "transform": {
+          "pos": [
+            0.72,
+            1.43,
+            -0.15
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.36,
+            "height": 0.48,
+            "depth": 0.52
+          },
+          "color": 7902827
+        },
+        "tags": [
+          {
+            "tag": "mossy",
+            "value": 1
+          }
+        ]
+      },
+      {
+        "id": "m14",
+        "parent": "woodlandDetailCluster",
+        "transform": {
+          "pos": [
+            0.65,
+            1.68,
+            -0.58
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.48,
+            "height": 0.28,
+            "depth": 0.38
+          },
+          "color": 7902827
+        },
+        "tags": [
+          {
+            "tag": "mossy",
+            "value": 1
+          }
+        ]
+      },
+      {
+        "id": "m15",
+        "parent": "woodlandDetailCluster",
+        "transform": {
+          "pos": [
+            0.72,
+            1.28,
+            -0.48
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.34,
+            "height": 0.34,
+            "depth": 0.44
+          },
+          "color": 7902827
+        },
+        "tags": [
+          {
+            "tag": "mossy",
+            "value": 1
+          }
+        ]
+      },
+      {
+        "id": "m16",
+        "parent": "woodlandDetailCluster",
+        "transform": {
+          "pos": [
+            -0.62,
+            0.43,
+            0.86
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.28,
+            "height": 0.62,
+            "depth": 0.28
+          },
+          "color": 15258522
+        }
+      },
+      {
+        "id": "m17",
+        "parent": "woodlandDetailCluster",
+        "transform": {
+          "pos": [
+            -0.62,
+            0.74,
+            0.86
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.74,
+            "height": 0.28,
+            "depth": 0.68
+          },
+          "color": 10120003
+        }
+      },
+      {
+        "id": "m18",
+        "parent": "woodlandDetailCluster",
+        "transform": {
+          "pos": [
+            -0.9,
+            0.7,
+            0.86
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.46,
+            "height": 0.2,
+            "depth": 0.72
+          },
+          "color": 10120003
+        }
+      },
+      {
+        "id": "m19",
+        "parent": "woodlandDetailCluster",
+        "transform": {
+          "pos": [
+            -0.34,
+            0.7,
+            0.86
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.46,
+            "height": 0.2,
+            "depth": 0.72
+          },
+          "color": 10120003
+        }
+      },
+      {
+        "id": "m20",
+        "parent": "woodlandDetailCluster",
+        "transform": {
+          "pos": [
+            0.1,
+            0.55,
+            1.02
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.24640000000000004,
+            "height": 0.86,
+            "depth": 0.24640000000000004
+          },
+          "color": 15258522
+        }
+      },
+      {
+        "id": "m21",
+        "parent": "woodlandDetailCluster",
+        "transform": {
+          "pos": [
+            0.1,
+            0.98,
+            1.02
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.6512,
+            "height": 0.24640000000000004,
+            "depth": 0.5984
+          },
+          "color": 7950904
+        }
+      },
+      {
+        "id": "m22",
+        "parent": "woodlandDetailCluster",
+        "transform": {
+          "pos": [
+            -0.1464,
+            0.9448,
+            1.02
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.4048,
+            "height": 0.17600000000000002,
+            "depth": 0.6335999999999999
+          },
+          "color": 7950904
+        }
+      },
+      {
+        "id": "m23",
+        "parent": "woodlandDetailCluster",
+        "transform": {
+          "pos": [
+            0.3464,
+            0.9448,
+            1.02
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.4048,
+            "height": 0.17600000000000002,
+            "depth": 0.6335999999999999
+          },
+          "color": 7950904
+        }
+      },
+      {
+        "id": "m24",
+        "parent": "woodlandDetailCluster",
+        "transform": {
+          "pos": [
+            0.72,
+            0.36,
+            0.78
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.21280000000000002,
+            "height": 0.48,
+            "depth": 0.21280000000000002
+          },
+          "color": 15258522
+        }
+      },
+      {
+        "id": "m25",
+        "parent": "woodlandDetailCluster",
+        "transform": {
+          "pos": [
+            0.72,
+            0.6,
+            0.78
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.5624,
+            "height": 0.21280000000000002,
+            "depth": 0.5168
+          },
+          "color": 10120003
+        }
+      },
+      {
+        "id": "m26",
+        "parent": "woodlandDetailCluster",
+        "transform": {
+          "pos": [
+            0.5072,
+            0.5696,
+            0.78
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.3496,
+            "height": 0.15200000000000002,
+            "depth": 0.5472
+          },
+          "color": 10120003
+        }
+      },
+      {
+        "id": "m27",
+        "parent": "woodlandDetailCluster",
+        "transform": {
+          "pos": [
+            0.9328,
+            0.5696,
+            0.78
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.3496,
+            "height": 0.15200000000000002,
+            "depth": 0.5472
+          },
+          "color": 10120003
+        }
+      },
+      {
+        "id": "m28",
+        "parent": "woodlandDetailCluster",
+        "transform": {
+          "pos": [
+            -1.72,
+            0.48,
+            0.03
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.18,
+            "height": 0.82,
+            "depth": 0.92
+          },
+          "color": 10468722
+        },
+        "tags": [
+          {
+            "tag": "foliage",
+            "value": "leaf"
+          }
+        ]
+      },
+      {
+        "id": "m29",
+        "parent": "woodlandDetailCluster",
+        "transform": {
+          "pos": [
+            -1.36,
+            0.62,
+            -0.1
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.08,
+            "height": 1.02,
+            "depth": 0.94
+          },
+          "color": 7902827
+        },
+        "tags": [
+          {
+            "tag": "foliage",
+            "value": "leaf"
+          }
+        ]
+      },
+      {
+        "id": "m30",
+        "parent": "woodlandDetailCluster",
+        "transform": {
+          "pos": [
+            -2.04,
+            0.58,
+            -0.18
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.96,
+            "height": 1,
+            "depth": 0.9
+          },
+          "color": 10468722
+        },
+        "tags": [
+          {
+            "tag": "foliage",
+            "value": "leaf"
+          }
+        ]
+      },
+      {
+        "id": "m31",
+        "parent": "woodlandDetailCluster",
+        "transform": {
+          "pos": [
+            -1.7,
+            0.82,
+            -0.34
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.02,
+            "height": 1.02,
+            "depth": 0.88
+          },
+          "color": 10468722
+        },
+        "tags": [
+          {
+            "tag": "foliage",
+            "value": "leaf"
+          }
+        ]
+      },
+      {
+        "id": "m32",
+        "parent": "woodlandDetailCluster",
+        "transform": {
+          "pos": [
+            -1.34,
+            0.86,
+            -0.46
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.86,
+            "height": 1.08,
+            "depth": 0.84
+          },
+          "color": 7902827
+        },
+        "tags": [
+          {
+            "tag": "foliage",
+            "value": "leaf"
+          }
+        ]
+      },
+      {
+        "id": "m33",
+        "parent": "woodlandDetailCluster",
+        "transform": {
+          "pos": [
+            -2.08,
+            0.84,
+            -0.48
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.84,
+            "height": 1.04,
+            "depth": 0.82
+          },
+          "color": 7902827
+        },
+        "tags": [
+          {
+            "tag": "foliage",
+            "value": "leaf"
+          }
+        ]
+      },
+      {
+        "id": "m34",
+        "parent": "woodlandDetailCluster",
+        "transform": {
+          "pos": [
+            -1.7,
+            1.08,
+            -0.62
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.96,
+            "height": 1.02,
+            "depth": 0.9
+          },
+          "color": 10468722
+        },
+        "tags": [
+          {
+            "tag": "foliage",
+            "value": "leaf"
+          }
+        ]
+      },
+      {
+        "id": "m35",
+        "parent": "woodlandDetailCluster",
+        "transform": {
+          "pos": [
+            -2.22,
+            0.38,
+            0.22
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.72,
+            "height": 0.64,
+            "depth": 0.72
+          },
+          "color": 7902827
+        },
+        "tags": [
+          {
+            "tag": "foliage",
+            "value": "leaf"
+          }
+        ]
+      },
+      {
+        "id": "m36",
+        "parent": "woodlandDetailCluster",
+        "transform": {
+          "pos": [
+            -1.22,
+            0.38,
+            0.28
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.76,
+            "height": 0.66,
+            "depth": 0.72
+          },
+          "color": 10468722
+        },
+        "tags": [
+          {
+            "tag": "foliage",
+            "value": "leaf"
+          }
+        ]
+      },
+      {
+        "id": "m37",
+        "parent": "woodlandDetailCluster",
+        "transform": {
+          "pos": [
+            -2.24,
+            0.64,
+            -0.82
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.68,
+            "height": 0.78,
+            "depth": 0.7
+          },
+          "color": 10468722
+        },
+        "tags": [
+          {
+            "tag": "foliage",
+            "value": "leaf"
+          }
+        ]
+      },
+      {
+        "id": "m38",
+        "parent": "woodlandDetailCluster",
+        "transform": {
+          "pos": [
+            -1.22,
+            0.66,
+            -0.86
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.7,
+            "height": 0.84,
+            "depth": 0.72
+          },
+          "color": 7902827
+        },
+        "tags": [
+          {
+            "tag": "foliage",
+            "value": "leaf"
+          }
+        ]
+      },
+      {
+        "id": "m39",
+        "parent": "woodlandDetailCluster",
+        "transform": {
+          "pos": [
+            -1.92,
+            1.22,
+            -0.74
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.72,
+            "height": 0.74,
+            "depth": 0.7
+          },
+          "color": 7902827
+        },
+        "tags": [
+          {
+            "tag": "foliage",
+            "value": "leaf"
+          }
+        ]
+      },
+      {
+        "id": "m40",
+        "parent": "woodlandDetailCluster",
+        "transform": {
+          "pos": [
+            -1.48,
+            1.3,
+            -0.72
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.68,
+            "height": 0.7,
+            "depth": 0.66
+          },
+          "color": 10468722
+        },
+        "tags": [
+          {
+            "tag": "foliage",
+            "value": "leaf"
+          }
+        ]
+      },
+      {
+        "id": "m41",
+        "parent": "woodlandDetailCluster",
+        "transform": {
+          "pos": [
+            -2.2,
+            0.96,
+            -0.68
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.62,
+            "height": 0.7,
+            "depth": 0.64
+          },
+          "color": 10468722
+        },
+        "tags": [
+          {
+            "tag": "foliage",
+            "value": "leaf"
+          }
+        ]
+      },
+      {
+        "id": "m42",
+        "parent": "woodlandDetailCluster",
+        "transform": {
+          "pos": [
+            1.52,
+            0.44,
+            0.1
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.14,
+            "height": 0.76,
+            "depth": 0.9
+          },
+          "color": 7902827
+        },
+        "tags": [
+          {
+            "tag": "foliage",
+            "value": "leaf"
+          }
+        ]
+      },
+      {
+        "id": "m43",
+        "parent": "woodlandDetailCluster",
+        "transform": {
+          "pos": [
+            1.9,
+            0.54,
+            -0.06
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.08,
+            "height": 0.94,
+            "depth": 0.92
+          },
+          "color": 10468722
+        },
+        "tags": [
+          {
+            "tag": "foliage",
+            "value": "leaf"
+          }
+        ]
+      },
+      {
+        "id": "m44",
+        "parent": "woodlandDetailCluster",
+        "transform": {
+          "pos": [
+            1.18,
+            0.62,
+            -0.2
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.94,
+            "height": 1,
+            "depth": 0.86
+          },
+          "color": 10468722
+        },
+        "tags": [
+          {
+            "tag": "foliage",
+            "value": "leaf"
+          }
+        ]
+      },
+      {
+        "id": "m45",
+        "parent": "woodlandDetailCluster",
+        "transform": {
+          "pos": [
+            1.58,
+            0.82,
+            -0.4
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.04,
+            "height": 1.04,
+            "depth": 0.9
+          },
+          "color": 7902827
+        },
+        "tags": [
+          {
+            "tag": "foliage",
+            "value": "leaf"
+          }
+        ]
+      },
+      {
+        "id": "m46",
+        "parent": "woodlandDetailCluster",
+        "transform": {
+          "pos": [
+            2.08,
+            0.82,
+            -0.4
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.92,
+            "height": 1.02,
+            "depth": 0.84
+          },
+          "color": 10468722
+        },
+        "tags": [
+          {
+            "tag": "foliage",
+            "value": "leaf"
+          }
+        ]
+      },
+      {
+        "id": "m47",
+        "parent": "woodlandDetailCluster",
+        "transform": {
+          "pos": [
+            1.38,
+            1.04,
+            -0.62
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.88,
+            "height": 1.02,
+            "depth": 0.82
+          },
+          "color": 10468722
+        },
+        "tags": [
+          {
+            "tag": "foliage",
+            "value": "leaf"
+          }
+        ]
+      },
+      {
+        "id": "m48",
+        "parent": "woodlandDetailCluster",
+        "transform": {
+          "pos": [
+            1.86,
+            1.12,
+            -0.66
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.94,
+            "height": 1.02,
+            "depth": 0.86
+          },
+          "color": 7902827
+        },
+        "tags": [
+          {
+            "tag": "foliage",
+            "value": "leaf"
+          }
+        ]
+      },
+      {
+        "id": "m49",
+        "parent": "woodlandDetailCluster",
+        "transform": {
+          "pos": [
+            2.3,
+            0.34,
+            0.2
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.72,
+            "height": 0.6,
+            "depth": 0.7
+          },
+          "color": 7902827
+        },
+        "tags": [
+          {
+            "tag": "foliage",
+            "value": "leaf"
+          }
+        ]
+      },
+      {
+        "id": "m50",
+        "parent": "woodlandDetailCluster",
+        "transform": {
+          "pos": [
+            1.02,
+            0.34,
+            0.26
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.68,
+            "height": 0.58,
+            "depth": 0.68
+          },
+          "color": 10468722
+        },
+        "tags": [
+          {
+            "tag": "foliage",
+            "value": "leaf"
+          }
+        ]
+      },
+      {
+        "id": "m51",
+        "parent": "woodlandDetailCluster",
+        "transform": {
+          "pos": [
+            2.3,
+            0.64,
+            -0.72
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.68,
+            "height": 0.78,
+            "depth": 0.68
+          },
+          "color": 10468722
+        },
+        "tags": [
+          {
+            "tag": "foliage",
+            "value": "leaf"
+          }
+        ]
+      },
+      {
+        "id": "m52",
+        "parent": "woodlandDetailCluster",
+        "transform": {
+          "pos": [
+            1.04,
+            0.72,
+            -0.82
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.66,
+            "height": 0.82,
+            "depth": 0.66
+          },
+          "color": 7902827
+        },
+        "tags": [
+          {
+            "tag": "foliage",
+            "value": "leaf"
+          }
+        ]
+      },
+      {
+        "id": "m53",
+        "parent": "woodlandDetailCluster",
+        "transform": {
+          "pos": [
+            2.12,
+            1.12,
+            -0.7
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.7,
+            "height": 0.72,
+            "depth": 0.68
+          },
+          "color": 10468722
+        },
+        "tags": [
+          {
+            "tag": "foliage",
+            "value": "leaf"
+          }
+        ]
+      },
+      {
+        "id": "m54",
+        "parent": "woodlandDetailCluster",
+        "transform": {
+          "pos": [
+            1.62,
+            1.34,
+            -0.78
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.72,
+            "height": 0.68,
+            "depth": 0.68
+          },
+          "color": 10468722
+        },
+        "tags": [
+          {
+            "tag": "foliage",
+            "value": "leaf"
+          }
+        ]
+      },
+      {
+        "id": "m55",
+        "parent": "woodlandDetailCluster",
+        "transform": {
+          "pos": [
+            -1.08,
+            0.12,
+            0.72
+          ],
+          "quat": [
+            0,
+            -0.17,
+            0,
+            0.98
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.82,
+            "height": 0.12,
+            "depth": 0.38
+          },
+          "color": 10120003
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m56",
+        "parent": "woodlandDetailCluster",
+        "transform": {
+          "pos": [
+            -1.52,
+            0.11,
+            0.55
+          ],
+          "quat": [
+            0,
+            0.27,
+            0,
+            0.96
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.66,
+            "height": 0.12,
+            "depth": 0.34
+          },
+          "color": 15258522
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m57",
+        "parent": "woodlandDetailCluster",
+        "transform": {
+          "pos": [
+            -2.02,
+            0.1,
+            0.46
+          ],
+          "quat": [
+            0,
+            -0.37,
+            0,
+            0.93
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.74,
+            "height": 0.12,
+            "depth": 0.36
+          },
+          "color": 7950904
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m58",
+        "parent": "woodlandDetailCluster",
+        "transform": {
+          "pos": [
+            -0.42,
+            0.11,
+            1.34
+          ],
+          "quat": [
+            0,
+            0.11,
+            0,
+            0.99
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.76,
+            "height": 0.12,
+            "depth": 0.38
+          },
+          "color": 15258522
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m59",
+        "parent": "woodlandDetailCluster",
+        "transform": {
+          "pos": [
+            0.38,
+            0.1,
+            1.42
+          ],
+          "quat": [
+            0,
+            -0.24,
+            0,
+            0.97
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.84,
+            "height": 0.12,
+            "depth": 0.4
+          },
+          "color": 10120003
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m60",
+        "parent": "woodlandDetailCluster",
+        "transform": {
+          "pos": [
+            1.04,
+            0.11,
+            0.82
+          ],
+          "quat": [
+            0,
+            0.33,
+            0,
+            0.94
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.72,
+            "height": 0.12,
+            "depth": 0.36
+          },
+          "color": 15258522
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m61",
+        "parent": "woodlandDetailCluster",
+        "transform": {
+          "pos": [
+            1.58,
+            0.1,
+            0.58
+          ],
+          "quat": [
+            0,
+            -0.13,
+            0,
+            0.99
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.8,
+            "height": 0.12,
+            "depth": 0.38
+          },
+          "color": 7950904
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m62",
+        "parent": "woodlandDetailCluster",
+        "transform": {
+          "pos": [
+            2.04,
+            0.11,
+            0.42
+          ],
+          "quat": [
+            0,
+            0.21,
+            0,
+            0.98
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.68,
+            "height": 0.12,
+            "depth": 0.34
+          },
+          "color": 15258522
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m63",
+        "parent": "woodlandDetailCluster",
+        "transform": {
+          "pos": [
+            -0.92,
+            0.1,
+            -0.94
+          ],
+          "quat": [
+            0,
+            -0.31,
+            0,
+            0.95
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.72,
+            "height": 0.12,
+            "depth": 0.34
+          },
+          "color": 10120003
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m64",
+        "parent": "woodlandDetailCluster",
+        "transform": {
+          "pos": [
+            0.86,
+            0.1,
+            -1
+          ],
+          "quat": [
+            0,
+            0.17,
+            0,
+            0.99
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.78,
+            "height": 0.12,
+            "depth": 0.36
+          },
+          "color": 15258522
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1785643642174,
+        "provider": "gpt",
+        "data": "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",
+        "edits": ""
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -0.6649999999999998,
+          0.030000000000000027,
+          -1.176489641796689
+        ],
+        "max": [
+          0.5850000000000002,
+          1.75,
+          0.0035103582033108593
+        ],
+        "sourceNodeId": "m0"
+      },
+      {
+        "min": [
+          -1.94,
+          0.07999999999999996,
+          -0.816489641796689
+        ],
+        "max": [
+          -0.8599999999999999,
+          1.0999999999999999,
+          0.12351035820331091
+        ],
+        "sourceNodeId": "m29"
+      },
+      {
+        "min": [
+          1.0200000000000002,
+          0.2699999999999999,
+          -1.0964896417966892
+        ],
+        "max": [
+          2.0600000000000005,
+          1.3099999999999998,
+          -0.1964896417966891
+        ],
+        "sourceNodeId": "m45"
+      },
+      {
+        "min": [
+          1.32,
+          0.040000000000000036,
+          -0.7664896417966891
+        ],
+        "max": [
+          2.4000000000000004,
+          0.98,
+          0.15351035820331094
+        ],
+        "sourceNodeId": "m43"
+      },
+      {
+        "min": [
+          -2.25,
+          0.2799999999999999,
+          -1.0264896417966891
+        ],
+        "max": [
+          -1.2299999999999998,
+          1.3,
+          -0.1464896417966891
+        ],
+        "sourceNodeId": "m31"
+      },
+      {
+        "min": [
+          -2.3499999999999996,
+          0.03999999999999998,
+          -0.6764896417966891
+        ],
+        "max": [
+          -1.1699999999999997,
+          0.8599999999999999,
+          0.2435103582033109
+        ],
+        "sourceNodeId": "m28"
+      },
+      {
+        "min": [
+          -2.2199999999999998,
+          0.54,
+          -1.3164896417966891
+        ],
+        "max": [
+          -1.2599999999999998,
+          1.56,
+          -0.41648964179668907
+        ],
+        "sourceNodeId": "m34"
+      },
+      {
+        "min": [
+          -2.5599999999999996,
+          0.04999999999999993,
+          -0.8764896417966891
+        ],
+        "max": [
+          -1.5999999999999999,
+          1.05,
+          0.023510358203310933
+        ],
+        "sourceNodeId": "m30"
+      },
+      {
+        "min": [
+          1.3500000000000003,
+          0.5800000000000001,
+          -1.3364896417966892
+        ],
+        "max": [
+          2.29,
+          1.6,
+          -0.4764896417966891
+        ],
+        "sourceNodeId": "m48"
+      },
+      {
+        "min": [
+          0.6700000000000002,
+          0.08999999999999997,
+          -0.8764896417966891
+        ],
+        "max": [
+          1.61,
+          1.09,
+          -0.016489641796689103
+        ],
+        "sourceNodeId": "m44"
+      },
+      {
+        "min": [
+          1.5800000000000003,
+          0.2799999999999999,
+          -1.0664896417966891
+        ],
+        "max": [
+          2.5,
+          1.3,
+          -0.22648964179668912
+        ],
+        "sourceNodeId": "m46"
+      },
+      {
+        "min": [
+          -1.8099999999999998,
+          0.2899999999999999,
+          -1.126489641796689
+        ],
+        "max": [
+          -0.95,
+          1.3699999999999999,
+          -0.2864896417966891
+        ],
+        "sourceNodeId": "m32"
+      }
+    ],
+    "sourceMeshCount": 65,
+    "candidateCount": 42,
+    "fallbackUsed": false
+  },
+  "footprintRadius": 2.5599999999999996,
+  "sizeClass": "large",
+  "mode": "voxel-pro",
+  "provider": "gpt",
+  "createdAt": 1785643648252,
+  "updatedAt": 1785643648252
+}

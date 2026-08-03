@@ -1,0 +1,2296 @@
+{
+  "id": "asset-3f2f4aff-1a45-4bab",
+  "name": "池塘岸边组合",
+  "prompt": "制作可重复使用的紧凑池岸组合，包含少量圆石、芦苇和阔叶水边植物，轮廓不对称且底部适合贴合缓坡岸线。\n全局资产美术方向：voxel-pro动森式比例，造型圆润简化，树冠饱满、树干略粗，木屋尺度亲切；使用柔和苔绿、嫩绿、暖棕、奶油黄与低饱和水蓝，细节清晰但避免写实杂乱。\n资产角色：塑造柔软自然岸线的芦苇、圆石与矮水生植物组合；目标尺度：small。\n只生成一个可复用的独立物体，不要生成地面、背景、天空、完整场景或多个分散物体。",
+  "tags": [
+    "voxel",
+    "pond",
+    "reeds",
+    "water-plants",
+    "round-rock"
+  ],
+  "modelJson": {
+    "name": "Untitled",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "reedCluster1",
+        "description": "位于后侧偏左，5根高低不一的细长芦苇紧密成簇，茎秆略向外张开、底部收拢，叶片-苔绿[718566]，顶端穗饰-奶油黄[e6d59a]",
+        "transform": {
+          "pos": [
+            -0.55,
+            0.24,
+            0.35
+          ]
+        }
+      },
+      {
+        "id": "reedCluster2",
+        "description": "位于后侧中央，3根较矮芦苇与左侧芦苇交叠，整体轻微右倾，叶片-苔绿，茎秆-暖棕[8b6f4e]",
+        "parent": "reedCluster1",
+        "transform": {
+          "pos": [
+            0.9,
+            -0.02,
+            0.23
+          ]
+        }
+      },
+      {
+        "id": "broadleafPlant1",
+        "description": "位于前侧偏右，矮小饱满叶丛，6片宽叶从共同根部向四周展开，中央叶较直立、外围叶压低，叶片-嫩绿[9fbd72]",
+        "parent": "reedCluster1",
+        "transform": {
+          "pos": [
+            1.33,
+            -0.1,
+            -0.69
+          ]
+        }
+      },
+      {
+        "id": "broadleafPlant2",
+        "description": "位于左前侧，较小叶丛，4片宽叶朝左前方展开，与芦苇根部连接，叶片-嫩绿",
+        "parent": "reedCluster1",
+        "transform": {
+          "pos": [
+            -0.45,
+            -0.07,
+            -0.77
+          ]
+        }
+      },
+      {
+        "id": "stone1",
+        "description": "位于前侧中央，最大圆石，宽而低，部分嵌入植物根部，石体-低饱和水蓝[829da0]",
+        "parent": "reedCluster1",
+        "transform": {
+          "pos": [
+            0.5,
+            -0.16,
+            -1.13
+          ]
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "stone"
+          },
+          {
+            "tag": "wet",
+            "value": 0.25
+          }
+        ]
+      },
+      {
+        "id": "stone2",
+        "description": "位于右侧边缘，中等圆石，略高于最大圆石并向内贴靠，石体-低饱和水蓝",
+        "parent": "reedCluster1",
+        "transform": {
+          "pos": [
+            1.9,
+            -0.19,
+            -0.75
+          ]
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "stone"
+          },
+          {
+            "tag": "wet",
+            "value": 0.25
+          }
+        ]
+      },
+      {
+        "id": "stone3",
+        "description": "位于左前侧叶丛旁，小圆石，低矮并被叶片部分遮挡，石体-低饱和水蓝",
+        "parent": "reedCluster1",
+        "transform": {
+          "pos": [
+            -1,
+            -0.11,
+            -1.07
+          ]
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "stone"
+          },
+          {
+            "tag": "wet",
+            "value": 0.25
+          }
+        ]
+      },
+      {
+        "id": "rootCluster",
+        "description": "隐藏在芦苇、叶丛与圆石下方的紧凑连接根部，底缘左侧略高、右侧略低，纵向厚度薄并顺应缓坡，根部-暖棕",
+        "parent": "reedCluster1",
+        "transform": {
+          "pos": [
+            0.55,
+            -0.16,
+            -0.35
+          ]
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ]
+      },
+      {
+        "id": "m0",
+        "parent": "reedCluster1",
+        "transform": {
+          "pos": [
+            -0.19,
+            0.69,
+            -0.01
+          ],
+          "quat": [
+            -0.06,
+            0.7,
+            0.7,
+            -0.06
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.11,
+            "height": 0.11,
+            "depth": 1.4
+          },
+          "color": 9137998
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m1",
+        "parent": "reedCluster1",
+        "transform": {
+          "pos": [
+            -0.44,
+            2.08,
+            -0.02
+          ],
+          "quat": [
+            -0.07,
+            0.71,
+            0.7,
+            -0.07
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.1,
+            "height": 0.1,
+            "depth": 1.43
+          },
+          "color": 9137998
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m2",
+        "parent": "reedCluster1",
+        "transform": {
+          "pos": [
+            -0.6,
+            2.86,
+            -0.04
+          ],
+          "quat": [
+            -0.07,
+            0.71,
+            0.7,
+            -0.07
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.25,
+            "height": 0.2,
+            "depth": 0.41
+          },
+          "color": 15127962
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m3",
+        "parent": "reedCluster1",
+        "transform": {
+          "pos": [
+            -0.43,
+            0.85,
+            0.05
+          ],
+          "quat": [
+            -0.25,
+            -0.58,
+            -0.2,
+            0.75
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.19,
+            "height": 0.08,
+            "depth": 0.62
+          },
+          "color": 7439718
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m4",
+        "parent": "reedCluster1",
+        "transform": {
+          "pos": [
+            -0.04,
+            1.07,
+            -0.07
+          ],
+          "quat": [
+            -0.18,
+            0.77,
+            0.26,
+            0.55
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.17,
+            "height": 0.07,
+            "depth": 0.5
+          },
+          "color": 6650203
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m5",
+        "parent": "reedCluster1",
+        "transform": {
+          "pos": [
+            -0.05,
+            0.62,
+            0.07
+          ],
+          "quat": [
+            -0.03,
+            0.7,
+            0.71,
+            -0.03
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.11,
+            "height": 0.11,
+            "depth": 1.25
+          },
+          "color": 9137998
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m6",
+        "parent": "reedCluster1",
+        "transform": {
+          "pos": [
+            -0.16,
+            1.86,
+            0.1
+          ],
+          "quat": [
+            -0.03,
+            0.69,
+            0.72,
+            -0.03
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.1,
+            "height": 0.1,
+            "depth": 1.25
+          },
+          "color": 9137998
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m7",
+        "parent": "reedCluster1",
+        "transform": {
+          "pos": [
+            -0.22,
+            2.56,
+            0.13
+          ],
+          "quat": [
+            -0.03,
+            0.69,
+            0.72,
+            -0.03
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.25,
+            "height": 0.2,
+            "depth": 0.4
+          },
+          "color": 15127962
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m8",
+        "parent": "reedCluster1",
+        "transform": {
+          "pos": [
+            0.19,
+            0.79,
+            0.12
+          ],
+          "quat": [
+            -0.25,
+            0.58,
+            0.2,
+            0.75
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.19,
+            "height": 0.08,
+            "depth": 0.62
+          },
+          "color": 7439718
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m9",
+        "parent": "reedCluster1",
+        "transform": {
+          "pos": [
+            -0.26,
+            0.98,
+            0.01
+          ],
+          "quat": [
+            -0.18,
+            -0.77,
+            -0.26,
+            0.55
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.17,
+            "height": 0.07,
+            "depth": 0.5
+          },
+          "color": 6650203
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m10",
+        "parent": "reedCluster1",
+        "transform": {
+          "pos": [
+            0.08,
+            0.75,
+            -0.06
+          ],
+          "quat": [
+            0,
+            0.71,
+            0.7,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.11,
+            "height": 0.11,
+            "depth": 1.47
+          },
+          "color": 9137998
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m11",
+        "parent": "reedCluster1",
+        "transform": {
+          "pos": [
+            0.1,
+            2.25,
+            -0.09
+          ],
+          "quat": [
+            0.01,
+            0.71,
+            0.7,
+            0.01
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.1,
+            "height": 0.1,
+            "depth": 1.53
+          },
+          "color": 9137998
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m12",
+        "parent": "reedCluster1",
+        "transform": {
+          "pos": [
+            0.12,
+            3.09,
+            -0.11
+          ],
+          "quat": [
+            0.01,
+            0.71,
+            0.7,
+            0.01
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.25,
+            "height": 0.2,
+            "depth": 0.4
+          },
+          "color": 15127962
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m13",
+        "parent": "reedCluster1",
+        "transform": {
+          "pos": [
+            -0.17,
+            0.91,
+            0
+          ],
+          "quat": [
+            -0.25,
+            -0.58,
+            -0.2,
+            0.75
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.19,
+            "height": 0.08,
+            "depth": 0.62
+          },
+          "color": 7439718
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m14",
+        "parent": "reedCluster1",
+        "transform": {
+          "pos": [
+            0.27,
+            1.14,
+            -0.14
+          ],
+          "quat": [
+            -0.18,
+            0.77,
+            0.26,
+            0.55
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.17,
+            "height": 0.07,
+            "depth": 0.5
+          },
+          "color": 6650203
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m15",
+        "parent": "reedCluster1",
+        "transform": {
+          "pos": [
+            0.23,
+            0.64,
+            0.09
+          ],
+          "quat": [
+            0.04,
+            0.7,
+            0.71,
+            0.04
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.11,
+            "height": 0.11,
+            "depth": 1.29
+          },
+          "color": 9137998
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m16",
+        "parent": "reedCluster1",
+        "transform": {
+          "pos": [
+            0.39,
+            1.96,
+            0.11
+          ],
+          "quat": [
+            0.04,
+            0.7,
+            0.71,
+            0.04
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.1,
+            "height": 0.1,
+            "depth": 1.37
+          },
+          "color": 9137998
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m17",
+        "parent": "reedCluster1",
+        "transform": {
+          "pos": [
+            0.48,
+            2.72,
+            0.12
+          ],
+          "quat": [
+            0.04,
+            0.7,
+            0.71,
+            0.04
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.25,
+            "height": 0.2,
+            "depth": 0.4
+          },
+          "color": 15127962
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m18",
+        "parent": "reedCluster1",
+        "transform": {
+          "pos": [
+            0.47,
+            0.8,
+            0.15
+          ],
+          "quat": [
+            -0.25,
+            0.58,
+            0.2,
+            0.75
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.19,
+            "height": 0.08,
+            "depth": 0.62
+          },
+          "color": 7439718
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m19",
+        "parent": "reedCluster1",
+        "transform": {
+          "pos": [
+            0.06,
+            1.01,
+            0.03
+          ],
+          "quat": [
+            -0.18,
+            -0.77,
+            -0.26,
+            0.55
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.17,
+            "height": 0.07,
+            "depth": 0.5
+          },
+          "color": 6650203
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m20",
+        "parent": "reedCluster1",
+        "transform": {
+          "pos": [
+            0.36,
+            0.56,
+            0
+          ],
+          "quat": [
+            0.07,
+            0.71,
+            0.7,
+            0.07
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.11,
+            "height": 0.11,
+            "depth": 1.15
+          },
+          "color": 9137998
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m21",
+        "parent": "reedCluster1",
+        "transform": {
+          "pos": [
+            0.6,
+            1.72,
+            -0.02
+          ],
+          "quat": [
+            0.08,
+            0.71,
+            0.69,
+            0.07
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.1,
+            "height": 0.1,
+            "depth": 1.22
+          },
+          "color": 9137998
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m22",
+        "parent": "reedCluster1",
+        "transform": {
+          "pos": [
+            0.75,
+            2.39,
+            -0.04
+          ],
+          "quat": [
+            0.08,
+            0.71,
+            0.69,
+            0.07
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.25,
+            "height": 0.2,
+            "depth": 0.41
+          },
+          "color": 15127962
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m23",
+        "parent": "reedCluster1",
+        "transform": {
+          "pos": [
+            0.59,
+            0.72,
+            0.06
+          ],
+          "quat": [
+            -0.25,
+            0.58,
+            0.2,
+            0.75
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.19,
+            "height": 0.08,
+            "depth": 0.62
+          },
+          "color": 7439718
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m24",
+        "parent": "reedCluster1",
+        "transform": {
+          "pos": [
+            0.2,
+            0.9,
+            -0.07
+          ],
+          "quat": [
+            -0.18,
+            -0.77,
+            -0.26,
+            0.55
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.17,
+            "height": 0.07,
+            "depth": 0.5
+          },
+          "color": 6650203
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m25",
+        "parent": "reedCluster2",
+        "transform": {
+          "pos": [
+            -0.17,
+            0.49,
+            -0.02
+          ],
+          "quat": [
+            0.05,
+            0.69,
+            0.72,
+            0.05
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.11,
+            "height": 0.11,
+            "depth": 0.99
+          },
+          "color": 9137998
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m26",
+        "parent": "reedCluster2",
+        "transform": {
+          "pos": [
+            0,
+            1.47,
+            0.01
+          ],
+          "quat": [
+            0.07,
+            0.7,
+            0.71,
+            0.07
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.1,
+            "height": 0.1,
+            "depth": 1
+          },
+          "color": 9137998
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m27",
+        "parent": "reedCluster2",
+        "transform": {
+          "pos": [
+            0.12,
+            2.04,
+            0.02
+          ],
+          "quat": [
+            0.07,
+            0.7,
+            0.71,
+            0.07
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.25,
+            "height": 0.2,
+            "depth": 0.41
+          },
+          "color": 15127962
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m28",
+        "parent": "reedCluster2",
+        "transform": {
+          "pos": [
+            0.06,
+            0.66,
+            0.04
+          ],
+          "quat": [
+            -0.25,
+            0.58,
+            0.2,
+            0.75
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.19,
+            "height": 0.08,
+            "depth": 0.62
+          },
+          "color": 7439718
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m29",
+        "parent": "reedCluster2",
+        "transform": {
+          "pos": [
+            -0.34,
+            0.81,
+            -0.07
+          ],
+          "quat": [
+            -0.18,
+            -0.77,
+            -0.26,
+            0.55
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.17,
+            "height": 0.07,
+            "depth": 0.5
+          },
+          "color": 6650203
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m30",
+        "parent": "reedCluster2",
+        "transform": {
+          "pos": [
+            0.08,
+            0.44,
+            0.07
+          ],
+          "quat": [
+            0.07,
+            0.69,
+            0.71,
+            0.07
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.11,
+            "height": 0.11,
+            "depth": 0.94
+          },
+          "color": 9137998
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m31",
+        "parent": "reedCluster2",
+        "transform": {
+          "pos": [
+            0.28,
+            1.35,
+            0.1
+          ],
+          "quat": [
+            0.08,
+            0.69,
+            0.71,
+            0.08
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.1,
+            "height": 0.1,
+            "depth": 0.92
+          },
+          "color": 9137998
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m32",
+        "parent": "reedCluster2",
+        "transform": {
+          "pos": [
+            0.4,
+            1.88,
+            0.11
+          ],
+          "quat": [
+            0.08,
+            0.69,
+            0.71,
+            0.08
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.25,
+            "height": 0.2,
+            "depth": 0.41
+          },
+          "color": 15127962
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m33",
+        "parent": "reedCluster2",
+        "transform": {
+          "pos": [
+            -0.16,
+            0.61,
+            0.12
+          ],
+          "quat": [
+            -0.25,
+            -0.58,
+            -0.2,
+            0.75
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.19,
+            "height": 0.08,
+            "depth": 0.62
+          },
+          "color": 7439718
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m34",
+        "parent": "reedCluster2",
+        "transform": {
+          "pos": [
+            0.3,
+            0.75,
+            0.01
+          ],
+          "quat": [
+            -0.18,
+            0.77,
+            0.26,
+            0.55
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.17,
+            "height": 0.07,
+            "depth": 0.5
+          },
+          "color": 6650203
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m35",
+        "parent": "reedCluster2",
+        "transform": {
+          "pos": [
+            0.29,
+            0.39,
+            0.02
+          ],
+          "quat": [
+            0.07,
+            0.69,
+            0.72,
+            0.07
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.11,
+            "height": 0.11,
+            "depth": 0.85
+          },
+          "color": 9137998
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m36",
+        "parent": "reedCluster2",
+        "transform": {
+          "pos": [
+            0.48,
+            1.21,
+            0.05
+          ],
+          "quat": [
+            0.09,
+            0.68,
+            0.72,
+            0.09
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.1,
+            "height": 0.1,
+            "depth": 0.85
+          },
+          "color": 9137998
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m37",
+        "parent": "reedCluster2",
+        "transform": {
+          "pos": [
+            0.61,
+            1.7,
+            0.07
+          ],
+          "quat": [
+            0.09,
+            0.68,
+            0.72,
+            0.09
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.25,
+            "height": 0.2,
+            "depth": 0.41
+          },
+          "color": 15127962
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m38",
+        "parent": "reedCluster2",
+        "transform": {
+          "pos": [
+            0.52,
+            0.56,
+            0.07
+          ],
+          "quat": [
+            -0.25,
+            0.58,
+            0.2,
+            0.75
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.19,
+            "height": 0.08,
+            "depth": 0.62
+          },
+          "color": 7439718
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m39",
+        "parent": "reedCluster2",
+        "transform": {
+          "pos": [
+            0.12,
+            0.68,
+            -0.04
+          ],
+          "quat": [
+            -0.18,
+            -0.77,
+            -0.26,
+            0.55
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.17,
+            "height": 0.07,
+            "depth": 0.5
+          },
+          "color": 6650203
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m40",
+        "parent": "broadleafPlant1",
+        "transform": {
+          "pos": [
+            0,
+            0.13,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.55,
+            "height": 0.28,
+            "depth": 0.5
+          },
+          "color": 6650203
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m41",
+        "parent": "broadleafPlant1",
+        "transform": {
+          "pos": [
+            -0.02,
+            0.33,
+            0.03
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.38,
+            "height": 0.5,
+            "depth": 0.38
+          },
+          "color": 10468722
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m42",
+        "parent": "broadleafPlant1",
+        "transform": {
+          "pos": [
+            -0.04,
+            0.68,
+            0.05
+          ],
+          "quat": [
+            -0.01,
+            0.69,
+            0.72,
+            -0.01
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.48,
+            "height": 0.13,
+            "depth": 1
+          },
+          "color": 10468722
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m43",
+        "parent": "broadleafPlant1",
+        "transform": {
+          "pos": [
+            0.33,
+            0.42,
+            -0.01
+          ],
+          "quat": [
+            -0.21,
+            0.69,
+            0.22,
+            0.66
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.5,
+            "height": 0.13,
+            "depth": 0.9
+          },
+          "color": 10468722
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m44",
+        "parent": "broadleafPlant1",
+        "transform": {
+          "pos": [
+            -0.36,
+            0.38,
+            -0.04
+          ],
+          "quat": [
+            -0.21,
+            -0.71,
+            -0.24,
+            0.62
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.48,
+            "height": 0.12,
+            "depth": 0.76
+          },
+          "color": 10468722
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m45",
+        "parent": "broadleafPlant1",
+        "transform": {
+          "pos": [
+            0.25,
+            0.31,
+            -0.33
+          ],
+          "quat": [
+            -0.07,
+            0.92,
+            0.19,
+            0.35
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.5,
+            "height": 0.12,
+            "depth": 0.84
+          },
+          "color": 10468722
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m46",
+        "parent": "broadleafPlant1",
+        "transform": {
+          "pos": [
+            -0.29,
+            0.29,
+            -0.35
+          ],
+          "quat": [
+            0.06,
+            0.93,
+            0.18,
+            -0.31
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.46,
+            "height": 0.11,
+            "depth": 0.82
+          },
+          "color": 10468722
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m47",
+        "parent": "broadleafPlant1",
+        "transform": {
+          "pos": [
+            0.18,
+            0.36,
+            0.31
+          ],
+          "quat": [
+            -0.28,
+            0.28,
+            0.08,
+            0.92
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.43,
+            "height": 0.11,
+            "depth": 0.72
+          },
+          "color": 10468722
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m48",
+        "parent": "broadleafPlant2",
+        "transform": {
+          "pos": [
+            0.04,
+            0.12,
+            0.03
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.44,
+            "height": 0.25,
+            "depth": 0.42
+          },
+          "color": 6650203
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m49",
+        "parent": "broadleafPlant2",
+        "transform": {
+          "pos": [
+            -0.25,
+            0.34,
+            -0.14
+          ],
+          "quat": [
+            0.14,
+            0.83,
+            0.24,
+            -0.49
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.43,
+            "height": 0.12,
+            "depth": 0.79
+          },
+          "color": 10468722
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m50",
+        "parent": "broadleafPlant2",
+        "transform": {
+          "pos": [
+            -0.09,
+            0.29,
+            -0.34
+          ],
+          "quat": [
+            0.04,
+            0.96,
+            0.2,
+            -0.22
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.45,
+            "height": 0.11,
+            "depth": 0.81
+          },
+          "color": 10468722
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m51",
+        "parent": "broadleafPlant2",
+        "transform": {
+          "pos": [
+            -0.17,
+            0.4,
+            0.13
+          ],
+          "quat": [
+            -0.31,
+            -0.55,
+            -0.23,
+            0.74
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.4,
+            "height": 0.11,
+            "depth": 0.76
+          },
+          "color": 10468722
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m52",
+        "parent": "broadleafPlant2",
+        "transform": {
+          "pos": [
+            0.19,
+            0.51,
+            -0.04
+          ],
+          "quat": [
+            0.09,
+            0.77,
+            0.63,
+            0.08
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.38,
+            "height": 0.11,
+            "depth": 0.77
+          },
+          "color": 10468722
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m53",
+        "parent": "stone1",
+        "transform": {
+          "pos": [
+            0,
+            0.17,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.42,
+            "height": 0.34,
+            "depth": 0.9
+          },
+          "color": 8560032
+        }
+      },
+      {
+        "id": "m54",
+        "parent": "stone1",
+        "transform": {
+          "pos": [
+            -0.04,
+            0.42,
+            0.02
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.12,
+            "height": 0.34,
+            "depth": 0.76
+          },
+          "color": 8560032
+        }
+      },
+      {
+        "id": "m55",
+        "parent": "stone1",
+        "transform": {
+          "pos": [
+            -0.13,
+            0.64,
+            0.04
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.74,
+            "height": 0.2,
+            "depth": 0.56
+          },
+          "color": 9283239
+        }
+      },
+      {
+        "id": "m56",
+        "parent": "stone2",
+        "transform": {
+          "pos": [
+            -0.01,
+            0.17,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.92,
+            "height": 0.35,
+            "depth": 0.76
+          },
+          "color": 8560032
+        }
+      },
+      {
+        "id": "m57",
+        "parent": "stone2",
+        "transform": {
+          "pos": [
+            -0.06,
+            0.43,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.72,
+            "height": 0.36,
+            "depth": 0.62
+          },
+          "color": 9151653
+        }
+      },
+      {
+        "id": "m58",
+        "parent": "stone2",
+        "transform": {
+          "pos": [
+            -0.14,
+            0.67,
+            0.02
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.45,
+            "height": 0.2,
+            "depth": 0.42
+          },
+          "color": 9677483
+        }
+      },
+      {
+        "id": "m59",
+        "parent": "stone3",
+        "transform": {
+          "pos": [
+            0,
+            0.14,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.7,
+            "height": 0.28,
+            "depth": 0.56
+          },
+          "color": 8560032
+        }
+      },
+      {
+        "id": "m60",
+        "parent": "stone3",
+        "transform": {
+          "pos": [
+            -0.04,
+            0.33,
+            0.02
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.48,
+            "height": 0.25,
+            "depth": 0.4
+          },
+          "color": 9282982
+        }
+      },
+      {
+        "id": "m61",
+        "parent": "rootCluster",
+        "transform": {
+          "pos": [
+            -0.03,
+            0.07,
+            0.08
+          ],
+          "quat": [
+            0.02,
+            0.72,
+            -0.02,
+            0.7
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.66,
+            "height": 0.22,
+            "depth": 2.85
+          },
+          "color": 9137998
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ]
+      },
+      {
+        "id": "m62",
+        "parent": "rootCluster",
+        "transform": {
+          "pos": [
+            -0.03,
+            0.06,
+            -0.38
+          ],
+          "quat": [
+            0.02,
+            0.72,
+            -0.02,
+            0.69
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.58,
+            "height": 0.2,
+            "depth": 2.35
+          },
+          "color": 7757122
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ]
+      },
+      {
+        "id": "m63",
+        "parent": "rootCluster",
+        "transform": {
+          "pos": [
+            0.08,
+            0.07,
+            -0.01
+          ],
+          "quat": [
+            0.01,
+            0.88,
+            -0.02,
+            0.48
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.46,
+            "height": 0.18,
+            "depth": 2.13
+          },
+          "color": 9137998
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ]
+      },
+      {
+        "id": "m64",
+        "parent": "rootCluster",
+        "transform": {
+          "pos": [
+            -0.29,
+            0.06,
+            0.52
+          ],
+          "quat": [
+            0.01,
+            0.69,
+            -0.01,
+            0.73
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.42,
+            "height": 0.18,
+            "depth": 2.03
+          },
+          "color": 7757122
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ]
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1785643518760,
+        "provider": "gpt",
+        "data": "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",
+        "edits": ""
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -0.892368447229683,
+          0.05255234415741636,
+          -0.5970312183653127
+        ],
+        "max": [
+          1.1523684472296831,
+          0.3280263320217355,
+          0.9462702836738807
+        ],
+        "sourceNodeId": "m63"
+      },
+      {
+        "min": [
+          -1.4176535869996036,
+          0,
+          -0.10543793861008383
+        ],
+        "max": [
+          1.4576535869996037,
+          0.3805786761791518,
+          0.6346770039186518
+        ],
+        "sourceNodeId": "m61"
+      },
+      {
+        "min": [
+          -1.1700401888877723,
+          0.013517510499904434,
+          -0.535176006379173
+        ],
+        "max": [
+          1.2100401888877723,
+          0.3470611656792474,
+          0.14441507168774093
+        ],
+        "sourceNodeId": "m62"
+      },
+      {
+        "min": [
+          -0.71,
+          0.1202893380895759,
+          -1.045380467345716
+        ],
+        "max": [
+          0.71,
+          0.46028933808957595,
+          -0.1453804673457159
+        ],
+        "sourceNodeId": "m53"
+      },
+      {
+        "min": [
+          0.6207555203485494,
+          0.2683505322672173,
+          -0.9573281849415175
+        ],
+        "max": [
+          1.5392444796514508,
+          0.7122281439119345,
+          -0.013432749749914374
+        ],
+        "sourceNodeId": "m45"
+      },
+      {
+        "min": [
+          -1.6248330351818725,
+          0.2886395666723627,
+          -0.7403844426985285
+        ],
+        "max": [
+          -0.7751669648181275,
+          0.8119391095067892,
+          -0.01037649199290358
+        ],
+        "sourceNodeId": "m49"
+      },
+      {
+        "min": [
+          0.11545235707121365,
+          0.26628231702638633,
+          -0.9641106579174311
+        ],
+        "max": [
+          0.9645476429287865,
+          0.6742963591527653,
+          -0.0466502767740008
+        ],
+        "sourceNodeId": "m46"
+      },
+      {
+        "min": [
+          -0.6000000000000001,
+          0.37028933808957587,
+          -0.9553804673457159
+        ],
+        "max": [
+          0.52,
+          0.710289338089576,
+          -0.1953804673457159
+        ],
+        "sourceNodeId": "m54"
+      },
+      {
+        "min": [
+          -1.4144226967180704,
+          0.2865388438230674,
+          -1.0270273633520426
+        ],
+        "max": [
+          -0.6655773032819297,
+          0.7140398323560844,
+          -0.12373357133938956
+        ],
+        "sourceNodeId": "m50"
+      },
+      {
+        "min": [
+          0.6468225039619652,
+          0.29280122398498,
+          -0.23843910442970967
+        ],
+        "max": [
+          1.373177496038035,
+          0.7877774521941718,
+          0.5476781697382778
+        ],
+        "sourceNodeId": "m47"
+      },
+      {
+        "min": [
+          0.7445518820952003,
+          0.2868477925807131,
+          -0.4330622040515515
+        ],
+        "max": [
+          1.5754481179048,
+          0.9137308835984386,
+          0.10230126936011952
+        ],
+        "sourceNodeId": "m43"
+      },
+      {
+        "min": [
+          -1.2673404676971856,
+          0.061595323028141094,
+          0.4377546892139349
+        ],
+        "max": [
+          0.7873404676971856,
+          0.2989833531510107,
+          0.9714843760946331
+        ],
+        "sourceNodeId": "m64"
+      }
+    ],
+    "sourceMeshCount": 65,
+    "candidateCount": 28,
+    "fallbackUsed": false
+  },
+  "footprintRadius": 1.6248330351818725,
+  "sizeClass": "medium",
+  "mode": "voxel-pro",
+  "provider": "gpt",
+  "createdAt": 1785643526394,
+  "updatedAt": 1785643526394
+}

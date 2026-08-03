@@ -1,0 +1,2263 @@
+{
+  "id": "asset-1195ac28-f853-4580",
+  "name": "林中小鹿群 2",
+  "prompt": "温和自然比例的林中小鹿，棕褐毛色带浅色腹部和少量白斑，制作站立抬头与低头觅食两种清晰姿态剪影，适合重复组成数量较多但仍有变化的鹿群。\n全局资产美术方向：统一采用voxel-pro童话写实风格；城堡使用厚重灰石墙、深红屋顶和修长塔楼，枫树采用高树干与宽阔红橙金树冠，鹿保持温和自然比例并提供站立、低头等清晰剪影，地表使用暖褐土壤、苔藓绿和稀疏秋季花草。\n资产角色：枫林居民；在草地形成主要鹿群并在林缘提供少量分散个体；目标尺度：medium。\n这是同一家族的第 2 个可辨识变体，轮廓应有变化但风格一致。\n只生成一个可复用的独立物体，不要生成地面、背景、天空、完整场景或多个分散物体。",
+  "tags": [
+    "deer",
+    "fawn",
+    "woodland-animal",
+    "herd",
+    "autumn-forest",
+    "gentle"
+  ],
+  "modelJson": {
+    "name": "Untitled",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "body",
+        "description": "胸腹适中、背线平缓、腰腹略收，主体-棕褐，腹部与胸口-浅褐，背部和臀侧附着少量分散白斑-米白[f2ead8]",
+        "transform": {
+          "pos": [
+            0,
+            2.35,
+            -0.55
+          ]
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "fur"
+          }
+        ]
+      },
+      {
+        "id": "head",
+        "description": "头部低垂接近前蹄，口鼻朝向下方，脸部-棕褐[8a6042]，口鼻与眼周-浅褐[d8bd91]，双耳向两侧斜上伸展，鼻端-深棕[3b2a22]，眼睛-黑[171411]",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0,
+            -1.1,
+            3.5
+          ]
+        }
+      },
+      {
+        "id": "neck",
+        "description": "细长颈部从肩部向前下方伸出，上侧-棕褐，下侧-浅褐",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0,
+            0.4,
+            2
+          ]
+        }
+      },
+      {
+        "id": "neckRoot",
+        "name": "wp0",
+        "parent": "neck",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        }
+      },
+      {
+        "id": "neckUpper",
+        "name": "wp1",
+        "parent": "neckRoot",
+        "transform": {
+          "pos": [
+            0,
+            -0.5,
+            0.5
+          ]
+        }
+      },
+      {
+        "id": "neckLower",
+        "name": "wp2",
+        "parent": "neckUpper",
+        "transform": {
+          "pos": [
+            0,
+            -0.5,
+            0.5
+          ]
+        }
+      },
+      {
+        "id": "neckHeadJoint",
+        "name": "wp3",
+        "parent": "neckLower",
+        "transform": {
+          "pos": [
+            0,
+            -0.5,
+            0.5
+          ]
+        }
+      },
+      {
+        "id": "frontLeftLeg",
+        "description": "细长前腿，近乎直立支撑，腿部-棕褐，下段与蹄部-深棕",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0.52,
+            0.1,
+            1.73
+          ]
+        }
+      },
+      {
+        "id": "frontLeftShoulder",
+        "name": "wp0",
+        "parent": "frontLeftLeg",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        }
+      },
+      {
+        "id": "frontLeftKnee",
+        "name": "wp1",
+        "parent": "frontLeftShoulder",
+        "transform": {
+          "pos": [
+            0,
+            -0.9,
+            0
+          ]
+        }
+      },
+      {
+        "id": "frontLeftAnkle",
+        "name": "wp2",
+        "parent": "frontLeftKnee",
+        "transform": {
+          "pos": [
+            0,
+            -0.93,
+            0
+          ]
+        }
+      },
+      {
+        "id": "frontRightLeg",
+        "description": "细长前腿，略向前迈出以配合觅食姿态，腿部-棕褐，下段与蹄部-深棕",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            -0.52,
+            0.1,
+            1.73
+          ]
+        }
+      },
+      {
+        "id": "frontRightShoulder",
+        "name": "wp0",
+        "parent": "frontRightLeg",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        }
+      },
+      {
+        "id": "frontRightKnee",
+        "name": "wp1",
+        "parent": "frontRightShoulder",
+        "transform": {
+          "pos": [
+            0,
+            -0.7,
+            0.7
+          ]
+        }
+      },
+      {
+        "id": "frontRightAnkle",
+        "name": "wp2",
+        "parent": "frontRightKnee",
+        "transform": {
+          "pos": [
+            0,
+            -1.08,
+            0
+          ]
+        }
+      },
+      {
+        "id": "backLeftLeg",
+        "description": "后腿上段略厚、下段纤细，向后轻微倾斜支撑，腿部-棕褐，蹄部-深棕",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0.48,
+            0.07,
+            -1.63
+          ]
+        }
+      },
+      {
+        "id": "backLeftHip",
+        "name": "wp0",
+        "parent": "backLeftLeg",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        }
+      },
+      {
+        "id": "backLeftKnee",
+        "name": "wp1",
+        "parent": "backLeftHip",
+        "transform": {
+          "pos": [
+            0.2,
+            -0.2,
+            -0.2
+          ]
+        }
+      },
+      {
+        "id": "backLeftHock",
+        "name": "wp2",
+        "parent": "backLeftKnee",
+        "transform": {
+          "pos": [
+            0,
+            -1,
+            0
+          ]
+        }
+      },
+      {
+        "id": "backLeftAnkle",
+        "name": "wp3",
+        "parent": "backLeftHock",
+        "transform": {
+          "pos": [
+            0,
+            -0.7,
+            -0.7
+          ]
+        }
+      },
+      {
+        "id": "backRightLeg",
+        "description": "后腿上段略厚、膝部微弯，位置略靠前形成自然重心变化，腿部-棕褐，蹄部-深棕",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            -0.48,
+            0.07,
+            -1.37
+          ]
+        }
+      },
+      {
+        "id": "backRightHip",
+        "name": "wp0",
+        "parent": "backRightLeg",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        }
+      },
+      {
+        "id": "backRightKnee",
+        "name": "wp1",
+        "parent": "backRightHip",
+        "transform": {
+          "pos": [
+            0,
+            -0.4,
+            0.4
+          ]
+        }
+      },
+      {
+        "id": "backRightHock",
+        "name": "wp2",
+        "parent": "backRightKnee",
+        "transform": {
+          "pos": [
+            0,
+            -1,
+            0
+          ]
+        }
+      },
+      {
+        "id": "backRightAnkle",
+        "name": "wp3",
+        "parent": "backRightHock",
+        "transform": {
+          "pos": [
+            0,
+            -0.54,
+            0.54
+          ]
+        }
+      },
+      {
+        "id": "tail",
+        "description": "短尾微微抬起，外侧-棕褐，尾端与内侧-米白",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0,
+            0.23,
+            -2.27
+          ]
+        }
+      },
+      {
+        "id": "tailRoot",
+        "name": "wp0",
+        "parent": "tail",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        }
+      },
+      {
+        "id": "tailMid",
+        "name": "wp1",
+        "parent": "tailRoot",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            -0.36
+          ]
+        }
+      },
+      {
+        "id": "tailLift",
+        "name": "wp2",
+        "parent": "tailMid",
+        "transform": {
+          "pos": [
+            0.18,
+            0.18,
+            -0.18
+          ]
+        }
+      },
+      {
+        "id": "tailEnd",
+        "name": "wp3",
+        "parent": "tailLift",
+        "transform": {
+          "pos": [
+            -0.19,
+            -0.19,
+            -0.19
+          ]
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "head",
+        "transform": {
+          "pos": [
+            0,
+            -0.13,
+            0.13
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.82,
+            "height": 0.68,
+            "depth": 0.78
+          },
+          "color": 9068610
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "fur"
+          }
+        ]
+      },
+      {
+        "id": "m1",
+        "parent": "head",
+        "transform": {
+          "pos": [
+            0,
+            -0.39,
+            0.47
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.68,
+            "height": 0.58,
+            "depth": 0.58
+          },
+          "color": 9068610
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "fur"
+          }
+        ]
+      },
+      {
+        "id": "m2",
+        "parent": "head",
+        "transform": {
+          "pos": [
+            0,
+            -0.6,
+            0.75
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.56,
+            "height": 0.4,
+            "depth": 0.56
+          },
+          "color": 14204305
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "fur"
+          }
+        ]
+      },
+      {
+        "id": "m3",
+        "parent": "head",
+        "transform": {
+          "pos": [
+            0,
+            -0.72,
+            1.01
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.48,
+            "height": 0.25,
+            "depth": 0.25
+          },
+          "color": 3877410
+        }
+      },
+      {
+        "id": "m4",
+        "parent": "head",
+        "transform": {
+          "pos": [
+            0.31,
+            -0.2,
+            0.48
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.31,
+            "height": 0.27,
+            "depth": 0.08
+          },
+          "color": 14204305
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "fur"
+          }
+        ]
+      },
+      {
+        "id": "m5",
+        "parent": "head",
+        "transform": {
+          "pos": [
+            -0.31,
+            -0.2,
+            0.48
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.31,
+            "height": 0.27,
+            "depth": 0.08
+          },
+          "color": 14204305
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "fur"
+          }
+        ]
+      },
+      {
+        "id": "m6",
+        "parent": "head",
+        "transform": {
+          "pos": [
+            0.39,
+            -0.15,
+            0.53
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.13,
+            "height": 0.13,
+            "depth": 0.1
+          },
+          "color": 1512465
+        }
+      },
+      {
+        "id": "m7",
+        "parent": "head",
+        "transform": {
+          "pos": [
+            -0.39,
+            -0.15,
+            0.53
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.13,
+            "height": 0.13,
+            "depth": 0.1
+          },
+          "color": 1512465
+        }
+      },
+      {
+        "id": "m8",
+        "parent": "head",
+        "transform": {
+          "pos": [
+            0.58,
+            0.38,
+            0.17
+          ],
+          "quat": [
+            -0.65,
+            -0.27,
+            0.27,
+            0.65
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.71,
+            "height": 0.18,
+            "depth": 0.23
+          },
+          "color": 9068610
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "fur"
+          }
+        ]
+      },
+      {
+        "id": "m9",
+        "parent": "head",
+        "transform": {
+          "pos": [
+            -0.58,
+            0.38,
+            0.17
+          ],
+          "quat": [
+            0.27,
+            0.65,
+            0.65,
+            0.27
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.71,
+            "height": 0.18,
+            "depth": 0.23
+          },
+          "color": 9068610
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "fur"
+          }
+        ]
+      },
+      {
+        "id": "m10",
+        "parent": "head",
+        "transform": {
+          "pos": [
+            0.53,
+            0.34,
+            0.18
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.3,
+            "height": 0.24,
+            "depth": 0.12
+          },
+          "color": 14204305
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "fur"
+          }
+        ]
+      },
+      {
+        "id": "m11",
+        "parent": "head",
+        "transform": {
+          "pos": [
+            -0.53,
+            0.34,
+            0.18
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.3,
+            "height": 0.24,
+            "depth": 0.12
+          },
+          "color": 14204305
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "fur"
+          }
+        ]
+      },
+      {
+        "id": "m12",
+        "parent": "neckRoot",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.68,
+            "height": 0.68,
+            "depth": 0.68
+          },
+          "color": 9068610
+        }
+      },
+      {
+        "id": "m13",
+        "parent": "neckRoot",
+        "transform": {
+          "pos": [
+            0,
+            -0.25,
+            0.25
+          ],
+          "quat": [
+            0.92,
+            0,
+            0,
+            0.38
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.62,
+            "height": 0.48,
+            "depth": 0.62
+          },
+          "color": 9068610,
+          "boneFrom": "neckRoot",
+          "boneTo": "neckUpper"
+        }
+      },
+      {
+        "id": "m14",
+        "parent": "neckUpper",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.62,
+            "height": 0.62,
+            "depth": 0.62
+          },
+          "color": 9068610
+        }
+      },
+      {
+        "id": "m15",
+        "parent": "neckUpper",
+        "transform": {
+          "pos": [
+            0,
+            -0.25,
+            0.25
+          ],
+          "quat": [
+            0.92,
+            0,
+            0,
+            0.38
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.62,
+            "height": 0.49,
+            "depth": 0.62
+          },
+          "color": 9068610,
+          "boneFrom": "neckUpper",
+          "boneTo": "neckLower"
+        }
+      },
+      {
+        "id": "m16",
+        "parent": "neckLower",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.62,
+            "height": 0.62,
+            "depth": 0.62
+          },
+          "color": 9068610
+        }
+      },
+      {
+        "id": "m17",
+        "parent": "neckLower",
+        "transform": {
+          "pos": [
+            0,
+            -0.25,
+            0.25
+          ],
+          "quat": [
+            0.92,
+            0,
+            0,
+            0.38
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.62,
+            "height": 0.48,
+            "depth": 0.62
+          },
+          "color": 9068610,
+          "boneFrom": "neckLower",
+          "boneTo": "neckHeadJoint"
+        }
+      },
+      {
+        "id": "m18",
+        "parent": "neckHeadJoint",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.68,
+            "height": 0.68,
+            "depth": 0.68
+          },
+          "color": 9068610
+        }
+      },
+      {
+        "id": "m19",
+        "parent": "neck",
+        "transform": {
+          "pos": [
+            0,
+            -0.79,
+            0.76
+          ],
+          "quat": [
+            0.65,
+            -0.27,
+            0.65,
+            -0.27
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.73,
+            "height": 0.15,
+            "depth": 0.62
+          },
+          "color": 14204305
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "fur"
+          }
+        ]
+      },
+      {
+        "id": "m20",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0,
+            0.03,
+            1.4
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.35,
+            "height": 1.45,
+            "depth": 1.45
+          },
+          "color": 9068610
+        }
+      },
+      {
+        "id": "m21",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0,
+            -0.01,
+            0.2
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.28,
+            "height": 1.28,
+            "depth": 1.45
+          },
+          "color": 9068610
+        }
+      },
+      {
+        "id": "m22",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0,
+            -0.08,
+            -0.87
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.12,
+            "height": 1.12,
+            "depth": 1.2
+          },
+          "color": 9068610
+        }
+      },
+      {
+        "id": "m23",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0,
+            0.03,
+            -1.7
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.3,
+            "height": 1.3,
+            "depth": 1.3
+          },
+          "color": 9068610
+        }
+      },
+      {
+        "id": "m24",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0,
+            -0.62,
+            1.27
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.94,
+            "height": 0.4,
+            "depth": 0.92
+          },
+          "color": 14204305
+        }
+      },
+      {
+        "id": "m25",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0,
+            -0.61,
+            0.17
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.88,
+            "height": 0.34,
+            "depth": 1.32
+          },
+          "color": 14204305
+        }
+      },
+      {
+        "id": "m26",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0,
+            -0.57,
+            -0.83
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.72,
+            "height": 0.3,
+            "depth": 0.82
+          },
+          "color": 14204305
+        }
+      },
+      {
+        "id": "m27",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0.63,
+            0.38,
+            1
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.34,
+            "height": 0.28,
+            "depth": 0.13
+          },
+          "color": 15919832
+        }
+      },
+      {
+        "id": "m28",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0.65,
+            0.13,
+            0.35
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.31,
+            "height": 0.31,
+            "depth": 0.13
+          },
+          "color": 15919832
+        }
+      },
+      {
+        "id": "m29",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0.57,
+            0.32,
+            -0.27
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.36,
+            "height": 0.27,
+            "depth": 0.13
+          },
+          "color": 15919832
+        }
+      },
+      {
+        "id": "m30",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0.54,
+            0.18,
+            -1.17
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.32,
+            "height": 0.3,
+            "depth": 0.13
+          },
+          "color": 15919832
+        }
+      },
+      {
+        "id": "m31",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            -0.64,
+            0.31,
+            -1.41
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.37,
+            "height": 0.29,
+            "depth": 0.13
+          },
+          "color": 15919832
+        }
+      },
+      {
+        "id": "m32",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            -0.59,
+            0.07,
+            -1.85
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.31,
+            "height": 0.32,
+            "depth": 0.13
+          },
+          "color": 15919832
+        }
+      },
+      {
+        "id": "m33",
+        "parent": "frontLeftShoulder",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.36,
+            "height": 0.36,
+            "depth": 0.36
+          },
+          "color": 9068610
+        }
+      },
+      {
+        "id": "m34",
+        "parent": "frontLeftShoulder",
+        "transform": {
+          "pos": [
+            0,
+            -0.45,
+            0
+          ],
+          "quat": [
+            1,
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.31,
+            "height": 0.78,
+            "depth": 0.31
+          },
+          "color": 9068610,
+          "boneFrom": "frontLeftShoulder",
+          "boneTo": "frontLeftKnee"
+        }
+      },
+      {
+        "id": "m35",
+        "parent": "frontLeftKnee",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.32,
+            "height": 0.32,
+            "depth": 0.32
+          },
+          "color": 9068610
+        }
+      },
+      {
+        "id": "m36",
+        "parent": "frontLeftKnee",
+        "transform": {
+          "pos": [
+            0,
+            -0.47,
+            0
+          ],
+          "quat": [
+            1,
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.31,
+            "height": 0.81,
+            "depth": 0.31
+          },
+          "color": 9068610,
+          "boneFrom": "frontLeftKnee",
+          "boneTo": "frontLeftAnkle"
+        }
+      },
+      {
+        "id": "m37",
+        "parent": "frontLeftAnkle",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.36,
+            "height": 0.36,
+            "depth": 0.36
+          },
+          "color": 9068610
+        }
+      },
+      {
+        "id": "m38",
+        "parent": "frontLeftLeg",
+        "transform": {
+          "pos": [
+            0,
+            -2.06,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.34,
+            "height": 0.62,
+            "depth": 0.34
+          },
+          "color": 3877410
+        }
+      },
+      {
+        "id": "m39",
+        "parent": "frontLeftLeg",
+        "transform": {
+          "pos": [
+            0,
+            -2.34,
+            0.07
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.38,
+            "height": 0.22,
+            "depth": 0.52
+          },
+          "color": 3877410
+        }
+      },
+      {
+        "id": "m40",
+        "parent": "frontRightShoulder",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.36,
+            "height": 0.36,
+            "depth": 0.36
+          },
+          "color": 9068610
+        }
+      },
+      {
+        "id": "m41",
+        "parent": "frontRightShoulder",
+        "transform": {
+          "pos": [
+            0,
+            -0.35,
+            0.35
+          ],
+          "quat": [
+            0.92,
+            0,
+            0,
+            0.38
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.31,
+            "height": 0.87,
+            "depth": 0.31
+          },
+          "color": 9068610,
+          "boneFrom": "frontRightShoulder",
+          "boneTo": "frontRightKnee"
+        }
+      },
+      {
+        "id": "m42",
+        "parent": "frontRightKnee",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.32,
+            "height": 0.32,
+            "depth": 0.32
+          },
+          "color": 9068610
+        }
+      },
+      {
+        "id": "m43",
+        "parent": "frontRightKnee",
+        "transform": {
+          "pos": [
+            0,
+            -0.54,
+            0
+          ],
+          "quat": [
+            1,
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.31,
+            "height": 0.96,
+            "depth": 0.31
+          },
+          "color": 9068610,
+          "boneFrom": "frontRightKnee",
+          "boneTo": "frontRightAnkle"
+        }
+      },
+      {
+        "id": "m44",
+        "parent": "frontRightAnkle",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.36,
+            "height": 0.36,
+            "depth": 0.36
+          },
+          "color": 9068610
+        }
+      },
+      {
+        "id": "m45",
+        "parent": "frontRightLeg",
+        "transform": {
+          "pos": [
+            0,
+            -2.05,
+            0.7
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.34,
+            "height": 0.64,
+            "depth": 0.34
+          },
+          "color": 3877410
+        }
+      },
+      {
+        "id": "m46",
+        "parent": "frontRightLeg",
+        "transform": {
+          "pos": [
+            0,
+            -2.34,
+            0.8
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.38,
+            "height": 0.22,
+            "depth": 0.54
+          },
+          "color": 3877410
+        }
+      },
+      {
+        "id": "m47",
+        "parent": "backLeftHip",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.4,
+            "height": 0.4,
+            "depth": 0.4
+          },
+          "color": 9068610
+        }
+      },
+      {
+        "id": "m48",
+        "parent": "backLeftHip",
+        "transform": {
+          "pos": [
+            0.1,
+            -0.1,
+            -0.1
+          ],
+          "quat": [
+            -0.63,
+            0,
+            -0.63,
+            0.46
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.35,
+            "height": 0.22,
+            "depth": 0.35
+          },
+          "color": 9068610,
+          "boneFrom": "backLeftHip",
+          "boneTo": "backLeftKnee"
+        }
+      },
+      {
+        "id": "m49",
+        "parent": "backLeftKnee",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.36,
+            "height": 0.36,
+            "depth": 0.36
+          },
+          "color": 9068610
+        }
+      },
+      {
+        "id": "m50",
+        "parent": "backLeftKnee",
+        "transform": {
+          "pos": [
+            0,
+            -0.5,
+            0
+          ],
+          "quat": [
+            1,
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.35,
+            "height": 0.88,
+            "depth": 0.35
+          },
+          "color": 9068610,
+          "boneFrom": "backLeftKnee",
+          "boneTo": "backLeftHock"
+        }
+      },
+      {
+        "id": "m51",
+        "parent": "backLeftHock",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.36,
+            "height": 0.36,
+            "depth": 0.36
+          },
+          "color": 9068610
+        }
+      },
+      {
+        "id": "m52",
+        "parent": "backLeftHock",
+        "transform": {
+          "pos": [
+            0,
+            -0.35,
+            -0.35
+          ],
+          "quat": [
+            -0.92,
+            0,
+            0,
+            0.38
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.35,
+            "height": 0.86,
+            "depth": 0.35
+          },
+          "color": 9068610,
+          "boneFrom": "backLeftHock",
+          "boneTo": "backLeftAnkle"
+        }
+      },
+      {
+        "id": "m53",
+        "parent": "backLeftAnkle",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.4,
+            "height": 0.4,
+            "depth": 0.4
+          },
+          "color": 9068610
+        }
+      },
+      {
+        "id": "m54",
+        "parent": "backLeftLeg",
+        "transform": {
+          "pos": [
+            0.2,
+            -2.09,
+            -0.9
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.36,
+            "height": 0.48,
+            "depth": 0.36
+          },
+          "color": 3877410
+        }
+      },
+      {
+        "id": "m55",
+        "parent": "backLeftLeg",
+        "transform": {
+          "pos": [
+            0.2,
+            -2.31,
+            -0.98
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.42,
+            "height": 0.22,
+            "depth": 0.55
+          },
+          "color": 3877410
+        }
+      },
+      {
+        "id": "m56",
+        "parent": "backRightHip",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.4,
+            "height": 0.4,
+            "depth": 0.4
+          },
+          "color": 9068610
+        }
+      },
+      {
+        "id": "m57",
+        "parent": "backRightHip",
+        "transform": {
+          "pos": [
+            0,
+            -0.21,
+            0.21
+          ],
+          "quat": [
+            0.92,
+            0,
+            0,
+            0.38
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.35,
+            "height": 0.44,
+            "depth": 0.35
+          },
+          "color": 9068610,
+          "boneFrom": "backRightHip",
+          "boneTo": "backRightKnee"
+        }
+      },
+      {
+        "id": "m58",
+        "parent": "backRightKnee",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.36,
+            "height": 0.36,
+            "depth": 0.36
+          },
+          "color": 9068610
+        }
+      },
+      {
+        "id": "m59",
+        "parent": "backRightKnee",
+        "transform": {
+          "pos": [
+            0,
+            -0.5,
+            0
+          ],
+          "quat": [
+            1,
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.35,
+            "height": 0.88,
+            "depth": 0.35
+          },
+          "color": 9068610,
+          "boneFrom": "backRightKnee",
+          "boneTo": "backRightHock"
+        }
+      },
+      {
+        "id": "m60",
+        "parent": "backRightHock",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.36,
+            "height": 0.36,
+            "depth": 0.36
+          },
+          "color": 9068610
+        }
+      },
+      {
+        "id": "m61",
+        "parent": "backRightHock",
+        "transform": {
+          "pos": [
+            0,
+            -0.27,
+            0.27
+          ],
+          "quat": [
+            0.92,
+            0,
+            0,
+            0.38
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.35,
+            "height": 0.63,
+            "depth": 0.35
+          },
+          "color": 9068610,
+          "boneFrom": "backRightHock",
+          "boneTo": "backRightAnkle"
+        }
+      },
+      {
+        "id": "m62",
+        "parent": "backRightAnkle",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.4,
+            "height": 0.4,
+            "depth": 0.4
+          },
+          "color": 9068610
+        }
+      },
+      {
+        "id": "m63",
+        "parent": "backRightLeg",
+        "transform": {
+          "pos": [
+            0,
+            -2.12,
+            0.94
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.36,
+            "height": 0.44,
+            "depth": 0.36
+          },
+          "color": 3877410
+        }
+      },
+      {
+        "id": "m64",
+        "parent": "backRightLeg",
+        "transform": {
+          "pos": [
+            0,
+            -2.31,
+            1.02
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.42,
+            "height": 0.22,
+            "depth": 0.55
+          },
+          "color": 3877410
+        }
+      },
+      {
+        "id": "m65",
+        "parent": "tailRoot",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.4,
+            "height": 0.4,
+            "depth": 0.4
+          },
+          "color": 9068610
+        }
+      },
+      {
+        "id": "m66",
+        "parent": "tailRoot",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            -0.19
+          ],
+          "quat": [
+            -0.71,
+            0,
+            0,
+            0.71
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.35,
+            "height": 0.23,
+            "depth": 0.35
+          },
+          "color": 9068610,
+          "boneFrom": "tailRoot",
+          "boneTo": "tailMid"
+        }
+      },
+      {
+        "id": "m67",
+        "parent": "tailMid",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.36,
+            "height": 0.36,
+            "depth": 0.36
+          },
+          "color": 9068610
+        }
+      },
+      {
+        "id": "m68",
+        "parent": "tailMid",
+        "transform": {
+          "pos": [
+            0.09,
+            0.09,
+            -0.09
+          ],
+          "quat": [
+            -0.33,
+            0,
+            -0.33,
+            0.89
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.35,
+            "height": 0.19,
+            "depth": 0.35
+          },
+          "color": 9068610,
+          "boneFrom": "tailMid",
+          "boneTo": "tailLift"
+        }
+      },
+      {
+        "id": "m69",
+        "parent": "tailLift",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.36,
+            "height": 0.36,
+            "depth": 0.36
+          },
+          "color": 9068610
+        }
+      },
+      {
+        "id": "m70",
+        "parent": "tailLift",
+        "transform": {
+          "pos": [
+            -0.09,
+            -0.09,
+            -0.09
+          ],
+          "quat": [
+            -0.63,
+            0,
+            0.63,
+            0.46
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.35,
+            "height": 0.2,
+            "depth": 0.35
+          },
+          "color": 9068610,
+          "boneFrom": "tailLift",
+          "boneTo": "tailEnd"
+        }
+      },
+      {
+        "id": "m71",
+        "parent": "tailEnd",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.4,
+            "height": 0.4,
+            "depth": 0.4
+          },
+          "color": 9068610
+        }
+      },
+      {
+        "id": "m72",
+        "parent": "tail",
+        "transform": {
+          "pos": [
+            0,
+            0.11,
+            -0.78
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.36,
+            "height": 0.28,
+            "depth": 0.45
+          },
+          "color": 15919832
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "fur"
+          }
+        ]
+      },
+      {
+        "id": "m73",
+        "parent": "tail",
+        "transform": {
+          "pos": [
+            0,
+            0.03,
+            -0.9
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.26,
+            "height": 0.2,
+            "depth": 0.32
+          },
+          "color": 15919832
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "fur"
+          }
+        ]
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1785746997595,
+        "provider": "gpt",
+        "data": "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",
+        "edits": ""
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -0.675,
+          1.655,
+          0.022500000000000075
+        ],
+        "max": [
+          0.675,
+          3.105,
+          1.4725
+        ],
+        "sourceNodeId": "m20"
+      },
+      {
+        "min": [
+          -0.64,
+          1.7000000000000004,
+          -1.1774999999999998
+        ],
+        "max": [
+          0.64,
+          2.9800000000000004,
+          0.27250000000000013
+        ],
+        "sourceNodeId": "m21"
+      },
+      {
+        "min": [
+          -0.65,
+          1.7300000000000002,
+          -3.0024999999999995
+        ],
+        "max": [
+          0.65,
+          3.03,
+          -1.7025
+        ],
+        "sourceNodeId": "m23"
+      },
+      {
+        "min": [
+          -0.56,
+          1.7100000000000002,
+          -2.1224999999999996
+        ],
+        "max": [
+          0.56,
+          2.83,
+          -0.9224999999999998
+        ],
+        "sourceNodeId": "m22"
+      },
+      {
+        "min": [
+          -0.31000000000000005,
+          1.2942046830843765,
+          1.4439372224465081
+        ],
+        "max": [
+          0.31000000000000005,
+          2.6257953169156236,
+          2.7710627775534924
+        ],
+        "sourceNodeId": "m19"
+      },
+      {
+        "min": [
+          -0.41,
+          0.7800000000000001,
+          2.5875000000000004
+        ],
+        "max": [
+          0.41,
+          1.4600000000000004,
+          3.3675000000000006
+        ],
+        "sourceNodeId": "m0"
+      },
+      {
+        "min": [
+          -0.44,
+          1.5700000000000005,
+          -1.1424999999999998
+        ],
+        "max": [
+          0.44,
+          1.9100000000000004,
+          0.1775000000000002
+        ],
+        "sourceNodeId": "m25"
+      },
+      {
+        "min": [
+          -0.31,
+          1.6076483649576103,
+          1.7049646750100933
+        ],
+        "max": [
+          0.31,
+          2.39235163504239,
+          2.4900353249899077
+        ],
+        "sourceNodeId": "m15"
+      },
+      {
+        "min": [
+          -0.31,
+          1.111190956802584,
+          2.2084931368591043
+        ],
+        "max": [
+          0.31,
+          1.8888090431974165,
+          2.986506863140897
+        ],
+        "sourceNodeId": "m17"
+      },
+      {
+        "min": [
+          -0.31,
+          2.111190956802584,
+          1.208493136859104
+        ],
+        "max": [
+          0.31,
+          2.888809043197416,
+          1.9865068631408962
+        ],
+        "sourceNodeId": "m13"
+      },
+      {
+        "min": [
+          -0.47,
+          1.5300000000000002,
+          0.15750000000000014
+        ],
+        "max": [
+          0.47,
+          1.9300000000000002,
+          1.0775000000000001
+        ],
+        "sourceNodeId": "m24"
+      },
+      {
+        "min": [
+          -0.34,
+          2.41,
+          1.0075
+        ],
+        "max": [
+          0.34,
+          3.09,
+          1.6875000000000002
+        ],
+        "sourceNodeId": "m12"
+      }
+    ],
+    "sourceMeshCount": 74,
+    "candidateCount": 28,
+    "fallbackUsed": false
+  },
+  "footprintRadius": 3.3675000000000006,
+  "sizeClass": "large",
+  "mode": "voxel-pro",
+  "provider": "gpt",
+  "createdAt": 1785747001735,
+  "updatedAt": 1785747001735
+}

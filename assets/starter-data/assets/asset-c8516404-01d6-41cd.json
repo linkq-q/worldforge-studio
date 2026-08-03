@@ -1,0 +1,3163 @@
+{
+  "id": "asset-c8516404-01d6-41cd",
+  "name": "竹林组 1",
+  "prompt": "两种可重复竹林组合：一组高而密集、杆径有变化；一组较疏并带低矮竹叶层，使用深浅翡翠绿和自然倾斜，保持清晰竖向轮廓。\n全局资产美术方向：voxel-pro风格的精致日式山林建筑群；旅馆与商店采用暖木、白墙、深灰瓦顶和克制的朱红细节，樱花使用柔和粉白色层叠树冠，竹林使用深浅翡翠绿，温泉岸石以湿润灰褐色为主，整体比例略写实且轮廓清晰。\n资产角色：形成高密度竖向屏障、温泉背景和樱花林中的翠绿对比；目标尺度：large。\n这是同一家族的第 1 个可辨识变体，轮廓应有变化但风格一致。\n只生成一个可复用的独立物体，不要生成地面、背景、天空、完整场景或多个分散物体。",
+  "tags": [
+    "bamboo",
+    "grove",
+    "japanese",
+    "tall-vegetation",
+    "green"
+  ],
+  "modelJson": {
+    "name": "Untitled",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "bamboo_cluster",
+        "name": "大型高密度竹簇",
+        "description": "大型高密度竹林组合，九株深浅翡翠绿竹竿高低错落、粗细变化，以清晰竖向屏障轮廓形成可复用独立物体",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        }
+      },
+      {
+        "id": "bamboo1",
+        "description": "位于中央，高度最高，粗竹竿-深翡翠绿[176b4d]，竹节均匀，近乎直立，顶部带收拢叶枝、竹叶-浅翡翠绿[55a86f]",
+        "parent": "bamboo_cluster",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        }
+      },
+      {
+        "id": "bamboo1_base",
+        "name": "wp0",
+        "parent": "bamboo1",
+        "transform": {
+          "pos": [
+            0,
+            0.18,
+            0
+          ]
+        }
+      },
+      {
+        "id": "bamboo1_lower",
+        "name": "wp1",
+        "parent": "bamboo1_base",
+        "transform": {
+          "pos": [
+            0,
+            3.52,
+            0
+          ]
+        }
+      },
+      {
+        "id": "bamboo1_bend",
+        "name": "wp2",
+        "parent": "bamboo1_lower",
+        "transform": {
+          "pos": [
+            0.28,
+            0.28,
+            0.28
+          ]
+        }
+      },
+      {
+        "id": "bamboo1_upper",
+        "name": "wp3",
+        "parent": "bamboo1_bend",
+        "transform": {
+          "pos": [
+            0,
+            3.12,
+            0
+          ]
+        }
+      },
+      {
+        "id": "bamboo2",
+        "description": "位于中央后侧，略低于bamboo1，中粗竹竿-深翡翠绿，向左轻微倾斜，中上部带两组紧凑叶枝、竹叶-浅翡翠绿",
+        "parent": "bamboo_cluster",
+        "transform": {
+          "pos": [
+            -0.48,
+            0,
+            -0.62
+          ]
+        }
+      },
+      {
+        "id": "bamboo2_base",
+        "name": "wp0",
+        "parent": "bamboo2",
+        "transform": {
+          "pos": [
+            0,
+            0.16,
+            0
+          ]
+        }
+      },
+      {
+        "id": "bamboo2_lower",
+        "name": "wp1",
+        "parent": "bamboo2_base",
+        "transform": {
+          "pos": [
+            0,
+            3.09,
+            0
+          ]
+        }
+      },
+      {
+        "id": "bamboo2_bend",
+        "name": "wp2",
+        "parent": "bamboo2_lower",
+        "transform": {
+          "pos": [
+            -0.34,
+            0.34,
+            -0.34
+          ]
+        }
+      },
+      {
+        "id": "bamboo2_upper",
+        "name": "wp3",
+        "parent": "bamboo2_bend",
+        "transform": {
+          "pos": [
+            0,
+            3.06,
+            0
+          ]
+        }
+      },
+      {
+        "id": "bamboo3",
+        "description": "位于左侧，高挑细竹竿-中翡翠绿[2f8b62]，向外自然倾斜，竹节间距较长，顶部带小型叶簇、竹叶-浅翡翠绿",
+        "parent": "bamboo_cluster",
+        "transform": {
+          "pos": [
+            -1.35,
+            0,
+            0.08
+          ]
+        }
+      },
+      {
+        "id": "bamboo3_base",
+        "name": "wp0",
+        "parent": "bamboo3",
+        "transform": {
+          "pos": [
+            0,
+            0.14,
+            0
+          ]
+        }
+      },
+      {
+        "id": "bamboo3_lower",
+        "name": "wp1",
+        "parent": "bamboo3_base",
+        "transform": {
+          "pos": [
+            0,
+            3.41,
+            0
+          ]
+        }
+      },
+      {
+        "id": "bamboo3_bend",
+        "name": "wp2",
+        "parent": "bamboo3_lower",
+        "transform": {
+          "pos": [
+            -0.37,
+            0.37,
+            0.37
+          ]
+        }
+      },
+      {
+        "id": "bamboo3_upper",
+        "name": "wp3",
+        "parent": "bamboo3_bend",
+        "transform": {
+          "pos": [
+            0,
+            2.53,
+            0
+          ]
+        }
+      },
+      {
+        "id": "bamboo4",
+        "description": "位于右侧，高挑粗竹竿-深翡翠绿，向右轻微倾斜，竹节清晰，中上部带竖向展开的叶枝、竹叶-中翡翠绿",
+        "parent": "bamboo_cluster",
+        "transform": {
+          "pos": [
+            1.28,
+            0,
+            0.02
+          ]
+        }
+      },
+      {
+        "id": "bamboo4_base",
+        "name": "wp0",
+        "parent": "bamboo4",
+        "transform": {
+          "pos": [
+            0,
+            0.18,
+            0
+          ]
+        }
+      },
+      {
+        "id": "bamboo4_lower",
+        "name": "wp1",
+        "parent": "bamboo4_base",
+        "transform": {
+          "pos": [
+            0,
+            3.17,
+            0
+          ]
+        }
+      },
+      {
+        "id": "bamboo4_bend",
+        "name": "wp2",
+        "parent": "bamboo4_lower",
+        "transform": {
+          "pos": [
+            0.36,
+            0.36,
+            0.36
+          ]
+        }
+      },
+      {
+        "id": "bamboo4_upper",
+        "name": "wp3",
+        "parent": "bamboo4_bend",
+        "transform": {
+          "pos": [
+            0,
+            2.84,
+            0
+          ]
+        }
+      },
+      {
+        "id": "bamboo5",
+        "description": "位于左前侧，中等高度且较粗，竹竿-中翡翠绿，近乎直立，中段与顶部各带一组短叶枝、竹叶-浅翡翠绿",
+        "parent": "bamboo_cluster",
+        "transform": {
+          "pos": [
+            -1.02,
+            0,
+            0.78
+          ]
+        }
+      },
+      {
+        "id": "bamboo5_base",
+        "name": "wp0",
+        "parent": "bamboo5",
+        "transform": {
+          "pos": [
+            0,
+            0.18,
+            0
+          ]
+        }
+      },
+      {
+        "id": "bamboo5_lower",
+        "name": "wp1",
+        "parent": "bamboo5_base",
+        "transform": {
+          "pos": [
+            0,
+            2.47,
+            0
+          ]
+        }
+      },
+      {
+        "id": "bamboo5_bend",
+        "name": "wp2",
+        "parent": "bamboo5_lower",
+        "transform": {
+          "pos": [
+            0.24,
+            0.24,
+            0.24
+          ]
+        }
+      },
+      {
+        "id": "bamboo5_upper",
+        "name": "wp3",
+        "parent": "bamboo5_bend",
+        "transform": {
+          "pos": [
+            0,
+            2.46,
+            0
+          ]
+        }
+      },
+      {
+        "id": "bamboo6",
+        "description": "位于右前侧，中等高度细竹竿-浅翡翠绿，向中央轻微倾斜，竹节较密，上半部带窄幅叶簇、竹叶-深翡翠绿",
+        "parent": "bamboo_cluster",
+        "transform": {
+          "pos": [
+            1.04,
+            0,
+            0.88
+          ]
+        }
+      },
+      {
+        "id": "bamboo6_base",
+        "name": "wp0",
+        "parent": "bamboo6",
+        "transform": {
+          "pos": [
+            0,
+            0.14,
+            0
+          ]
+        }
+      },
+      {
+        "id": "bamboo6_lower",
+        "name": "wp1",
+        "parent": "bamboo6_base",
+        "transform": {
+          "pos": [
+            0,
+            2.36,
+            0
+          ]
+        }
+      },
+      {
+        "id": "bamboo6_bend",
+        "name": "wp2",
+        "parent": "bamboo6_lower",
+        "transform": {
+          "pos": [
+            -0.32,
+            0.32,
+            -0.32
+          ]
+        }
+      },
+      {
+        "id": "bamboo6_upper",
+        "name": "wp3",
+        "parent": "bamboo6_bend",
+        "transform": {
+          "pos": [
+            0,
+            2.36,
+            0
+          ]
+        }
+      },
+      {
+        "id": "bamboo7",
+        "description": "位于中央前侧，较矮中粗竹竿-深翡翠绿，直立并填补底部竖向轮廓，顶端带紧凑叶枝、嫩叶-黄绿色[8fbd63]",
+        "parent": "bamboo_cluster",
+        "transform": {
+          "pos": [
+            0.05,
+            0,
+            1.18
+          ]
+        }
+      },
+      {
+        "id": "bamboo7_base",
+        "name": "wp0",
+        "parent": "bamboo7",
+        "transform": {
+          "pos": [
+            0,
+            0.17,
+            0
+          ]
+        }
+      },
+      {
+        "id": "bamboo7_lower",
+        "name": "wp1",
+        "parent": "bamboo7_base",
+        "transform": {
+          "pos": [
+            0,
+            1.93,
+            0
+          ]
+        }
+      },
+      {
+        "id": "bamboo7_bend",
+        "name": "wp2",
+        "parent": "bamboo7_lower",
+        "transform": {
+          "pos": [
+            0.23,
+            0.23,
+            0.23
+          ]
+        }
+      },
+      {
+        "id": "bamboo7_upper",
+        "name": "wp3",
+        "parent": "bamboo7_bend",
+        "transform": {
+          "pos": [
+            0,
+            2.02,
+            0
+          ]
+        }
+      },
+      {
+        "id": "bamboo8",
+        "description": "位于左后侧，中高细竹竿-中翡翠绿，向右轻微倾斜，顶部越过相邻竹竿，带稀疏长叶枝、竹叶-浅翡翠绿",
+        "parent": "bamboo_cluster",
+        "transform": {
+          "pos": [
+            -1.12,
+            0,
+            -1.12
+          ]
+        }
+      },
+      {
+        "id": "bamboo8_base",
+        "name": "wp0",
+        "parent": "bamboo8",
+        "transform": {
+          "pos": [
+            0,
+            0.14,
+            0
+          ]
+        }
+      },
+      {
+        "id": "bamboo8_lower",
+        "name": "wp1",
+        "parent": "bamboo8_base",
+        "transform": {
+          "pos": [
+            0,
+            2.91,
+            0
+          ]
+        }
+      },
+      {
+        "id": "bamboo8_bend",
+        "name": "wp2",
+        "parent": "bamboo8_lower",
+        "transform": {
+          "pos": [
+            0.37,
+            0.37,
+            0.37
+          ]
+        }
+      },
+      {
+        "id": "bamboo8_upper",
+        "name": "wp3",
+        "parent": "bamboo8_bend",
+        "transform": {
+          "pos": [
+            0,
+            2.53,
+            0
+          ]
+        }
+      },
+      {
+        "id": "bamboo9",
+        "description": "位于右后侧，较高中粗竹竿-深翡翠绿，向左轻微倾斜，与中央竹竿交叠但保持轮廓可辨，中上部带两组叶枝、竹叶-中翡翠绿",
+        "parent": "bamboo_cluster",
+        "transform": {
+          "pos": [
+            0.94,
+            0,
+            -0.94
+          ]
+        }
+      },
+      {
+        "id": "bamboo9_base",
+        "name": "wp0",
+        "parent": "bamboo9",
+        "transform": {
+          "pos": [
+            0,
+            0.16,
+            0
+          ]
+        }
+      },
+      {
+        "id": "bamboo9_lower",
+        "name": "wp1",
+        "parent": "bamboo9_base",
+        "transform": {
+          "pos": [
+            0,
+            3.02,
+            0
+          ]
+        }
+      },
+      {
+        "id": "bamboo9_bend",
+        "name": "wp2",
+        "parent": "bamboo9_lower",
+        "transform": {
+          "pos": [
+            -0.33,
+            0.33,
+            0.33
+          ]
+        }
+      },
+      {
+        "id": "bamboo9_upper",
+        "name": "wp3",
+        "parent": "bamboo9_bend",
+        "transform": {
+          "pos": [
+            0,
+            2.71,
+            0
+          ]
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "bamboo1_base",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.44,
+            "height": 0.44,
+            "depth": 0.44
+          },
+          "color": 1534797
+        }
+      },
+      {
+        "id": "m1",
+        "parent": "bamboo1_base",
+        "transform": {
+          "pos": [
+            0,
+            1.77,
+            0
+          ],
+          "quat": [
+            0,
+            0,
+            0,
+            1
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.385,
+            "height": 3.37,
+            "depth": 0.385
+          },
+          "color": 1534797,
+          "boneFrom": "bamboo1_base",
+          "boneTo": "bamboo1_lower"
+        }
+      },
+      {
+        "id": "m2",
+        "parent": "bamboo1_lower",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.4,
+            "height": 0.4,
+            "depth": 0.4
+          },
+          "color": 1534797
+        }
+      },
+      {
+        "id": "m3",
+        "parent": "bamboo1_lower",
+        "transform": {
+          "pos": [
+            0.14,
+            0.14,
+            0.14
+          ],
+          "quat": [
+            0.33,
+            0,
+            -0.33,
+            0.89
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.385,
+            "height": 0.34,
+            "depth": 0.385
+          },
+          "color": 1534797,
+          "boneFrom": "bamboo1_lower",
+          "boneTo": "bamboo1_bend"
+        }
+      },
+      {
+        "id": "m4",
+        "parent": "bamboo1_bend",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.4,
+            "height": 0.4,
+            "depth": 0.4
+          },
+          "color": 1534797
+        }
+      },
+      {
+        "id": "m5",
+        "parent": "bamboo1_bend",
+        "transform": {
+          "pos": [
+            0,
+            1.55,
+            0
+          ],
+          "quat": [
+            0,
+            0,
+            0,
+            1
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.385,
+            "height": 2.97,
+            "depth": 0.385
+          },
+          "color": 1534797,
+          "boneFrom": "bamboo1_bend",
+          "boneTo": "bamboo1_upper"
+        }
+      },
+      {
+        "id": "m6",
+        "parent": "bamboo1_upper",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.44,
+            "height": 0.44,
+            "depth": 0.44
+          },
+          "color": 1534797
+        }
+      },
+      {
+        "id": "m7",
+        "parent": "bamboo1",
+        "transform": {
+          "pos": [
+            0.28,
+            6.35,
+            0.28
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.05,
+            "height": 0.12,
+            "depth": 0.12
+          },
+          "color": 1534797
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m8",
+        "parent": "bamboo1",
+        "transform": {
+          "pos": [
+            -0.26,
+            6.48,
+            0.28
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.86,
+            "height": 0.14,
+            "depth": 0.24
+          },
+          "color": 5613679
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m9",
+        "parent": "bamboo1",
+        "transform": {
+          "pos": [
+            0.42,
+            6.76,
+            0.54
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.24,
+            "height": 0.14,
+            "depth": 0.82
+          },
+          "color": 5613679
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m10",
+        "parent": "bamboo1",
+        "transform": {
+          "pos": [
+            0.16,
+            6.92,
+            0.14
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.22,
+            "height": 0.76,
+            "depth": 0.16
+          },
+          "color": 5613679
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m11",
+        "parent": "bamboo2_base",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.38,
+            "height": 0.38,
+            "depth": 0.38
+          },
+          "color": 1534797
+        }
+      },
+      {
+        "id": "m12",
+        "parent": "bamboo2_base",
+        "transform": {
+          "pos": [
+            0,
+            1.55,
+            0
+          ],
+          "quat": [
+            0,
+            0,
+            0,
+            1
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.3325,
+            "height": 2.96,
+            "depth": 0.3325
+          },
+          "color": 1534797,
+          "boneFrom": "bamboo2_base",
+          "boneTo": "bamboo2_lower"
+        }
+      },
+      {
+        "id": "m13",
+        "parent": "bamboo2_lower",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.34,
+            "height": 0.34,
+            "depth": 0.34
+          },
+          "color": 1534797
+        }
+      },
+      {
+        "id": "m14",
+        "parent": "bamboo2_lower",
+        "transform": {
+          "pos": [
+            -0.17,
+            0.17,
+            -0.17
+          ],
+          "quat": [
+            -0.33,
+            0,
+            0.33,
+            0.89
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.3325,
+            "height": 0.47,
+            "depth": 0.3325
+          },
+          "color": 1534797,
+          "boneFrom": "bamboo2_lower",
+          "boneTo": "bamboo2_bend"
+        }
+      },
+      {
+        "id": "m15",
+        "parent": "bamboo2_bend",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.34,
+            "height": 0.34,
+            "depth": 0.34
+          },
+          "color": 1534797
+        }
+      },
+      {
+        "id": "m16",
+        "parent": "bamboo2_bend",
+        "transform": {
+          "pos": [
+            0,
+            1.53,
+            0
+          ],
+          "quat": [
+            0,
+            0,
+            0,
+            1
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.3325,
+            "height": 2.93,
+            "depth": 0.3325
+          },
+          "color": 1534797,
+          "boneFrom": "bamboo2_bend",
+          "boneTo": "bamboo2_upper"
+        }
+      },
+      {
+        "id": "m17",
+        "parent": "bamboo2_upper",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.38,
+            "height": 0.38,
+            "depth": 0.38
+          },
+          "color": 1534797
+        }
+      },
+      {
+        "id": "m18",
+        "parent": "bamboo2",
+        "transform": {
+          "pos": [
+            -0.34,
+            5.35,
+            -0.34
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.9,
+            "height": 0.12,
+            "depth": 0.12
+          },
+          "color": 1534797
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m19",
+        "parent": "bamboo2",
+        "transform": {
+          "pos": [
+            -0.77,
+            5.47,
+            -0.34
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.72,
+            "height": 0.14,
+            "depth": 0.24
+          },
+          "color": 5613679
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m20",
+        "parent": "bamboo2",
+        "transform": {
+          "pos": [
+            -0.34,
+            6.05,
+            -0.2
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.12,
+            "height": 0.12,
+            "depth": 0.74
+          },
+          "color": 1534797
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m21",
+        "parent": "bamboo2",
+        "transform": {
+          "pos": [
+            -0.34,
+            6.2,
+            0.17
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.24,
+            "height": 0.14,
+            "depth": 0.82
+          },
+          "color": 5613679
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m22",
+        "parent": "bamboo3_base",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.28,
+            "height": 0.28,
+            "depth": 0.28
+          },
+          "color": 3115874
+        }
+      },
+      {
+        "id": "m23",
+        "parent": "bamboo3_base",
+        "transform": {
+          "pos": [
+            0,
+            1.7,
+            0
+          ],
+          "quat": [
+            0,
+            0,
+            0,
+            1
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.24500000000000002,
+            "height": 3.31,
+            "depth": 0.24500000000000002
+          },
+          "color": 3115874,
+          "boneFrom": "bamboo3_base",
+          "boneTo": "bamboo3_lower"
+        }
+      },
+      {
+        "id": "m24",
+        "parent": "bamboo3_lower",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.26,
+            "height": 0.26,
+            "depth": 0.26
+          },
+          "color": 3115874
+        }
+      },
+      {
+        "id": "m25",
+        "parent": "bamboo3_lower",
+        "transform": {
+          "pos": [
+            -0.18,
+            0.18,
+            0.18
+          ],
+          "quat": [
+            0.33,
+            0,
+            0.33,
+            0.89
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.24500000000000002,
+            "height": 0.54,
+            "depth": 0.24500000000000002
+          },
+          "color": 3115874,
+          "boneFrom": "bamboo3_lower",
+          "boneTo": "bamboo3_bend"
+        }
+      },
+      {
+        "id": "m26",
+        "parent": "bamboo3_bend",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.26,
+            "height": 0.26,
+            "depth": 0.26
+          },
+          "color": 3115874
+        }
+      },
+      {
+        "id": "m27",
+        "parent": "bamboo3_bend",
+        "transform": {
+          "pos": [
+            0,
+            1.27,
+            0
+          ],
+          "quat": [
+            0,
+            0,
+            0,
+            1
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.24500000000000002,
+            "height": 2.43,
+            "depth": 0.24500000000000002
+          },
+          "color": 3115874,
+          "boneFrom": "bamboo3_bend",
+          "boneTo": "bamboo3_upper"
+        }
+      },
+      {
+        "id": "m28",
+        "parent": "bamboo3_upper",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.28,
+            "height": 0.28,
+            "depth": 0.28
+          },
+          "color": 3115874
+        }
+      },
+      {
+        "id": "m29",
+        "parent": "bamboo3",
+        "transform": {
+          "pos": [
+            -0.37,
+            5.92,
+            0.37
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.78,
+            "height": 0.12,
+            "depth": 0.12
+          },
+          "color": 3115874
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m30",
+        "parent": "bamboo3",
+        "transform": {
+          "pos": [
+            -0.73,
+            6.05,
+            0.37
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.72,
+            "height": 0.14,
+            "depth": 0.24
+          },
+          "color": 5613679
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m31",
+        "parent": "bamboo3",
+        "transform": {
+          "pos": [
+            -0.22,
+            6.2,
+            0.65
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.24,
+            "height": 0.14,
+            "depth": 0.68
+          },
+          "color": 5613679
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m32",
+        "parent": "bamboo3",
+        "transform": {
+          "pos": [
+            -0.47,
+            6.18,
+            0.22
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.22,
+            "height": 0.62,
+            "depth": 0.16
+          },
+          "color": 5613679
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m33",
+        "parent": "bamboo4_base",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.42,
+            "height": 0.42,
+            "depth": 0.42
+          },
+          "color": 1534797
+        }
+      },
+      {
+        "id": "m34",
+        "parent": "bamboo4_base",
+        "transform": {
+          "pos": [
+            0,
+            1.59,
+            0
+          ],
+          "quat": [
+            0,
+            0,
+            0,
+            1
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.3675,
+            "height": 3.03,
+            "depth": 0.3675
+          },
+          "color": 1534797,
+          "boneFrom": "bamboo4_base",
+          "boneTo": "bamboo4_lower"
+        }
+      },
+      {
+        "id": "m35",
+        "parent": "bamboo4_lower",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.38,
+            "height": 0.38,
+            "depth": 0.38
+          },
+          "color": 1534797
+        }
+      },
+      {
+        "id": "m36",
+        "parent": "bamboo4_lower",
+        "transform": {
+          "pos": [
+            0.18,
+            0.18,
+            0.18
+          ],
+          "quat": [
+            0.33,
+            0,
+            -0.33,
+            0.89
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.3675,
+            "height": 0.48,
+            "depth": 0.3675
+          },
+          "color": 1534797,
+          "boneFrom": "bamboo4_lower",
+          "boneTo": "bamboo4_bend"
+        }
+      },
+      {
+        "id": "m37",
+        "parent": "bamboo4_bend",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.38,
+            "height": 0.38,
+            "depth": 0.38
+          },
+          "color": 1534797
+        }
+      },
+      {
+        "id": "m38",
+        "parent": "bamboo4_bend",
+        "transform": {
+          "pos": [
+            0,
+            1.42,
+            0
+          ],
+          "quat": [
+            0,
+            0,
+            0,
+            1
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.3675,
+            "height": 2.7,
+            "depth": 0.3675
+          },
+          "color": 1534797,
+          "boneFrom": "bamboo4_bend",
+          "boneTo": "bamboo4_upper"
+        }
+      },
+      {
+        "id": "m39",
+        "parent": "bamboo4_upper",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.42,
+            "height": 0.42,
+            "depth": 0.42
+          },
+          "color": 1534797
+        }
+      },
+      {
+        "id": "m40",
+        "parent": "bamboo4",
+        "transform": {
+          "pos": [
+            0.36,
+            5.18,
+            0.36
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.12,
+            "height": 0.12,
+            "depth": 0.86
+          },
+          "color": 1534797
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m41",
+        "parent": "bamboo4",
+        "transform": {
+          "pos": [
+            0.36,
+            5.62,
+            0.8
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.22,
+            "height": 0.76,
+            "depth": 0.16
+          },
+          "color": 3115874
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m42",
+        "parent": "bamboo4",
+        "transform": {
+          "pos": [
+            0.36,
+            6,
+            0.36
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.76,
+            "height": 0.12,
+            "depth": 0.12
+          },
+          "color": 1534797
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m43",
+        "parent": "bamboo4",
+        "transform": {
+          "pos": [
+            0.74,
+            6.23,
+            0.36
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.22,
+            "height": 0.8,
+            "depth": 0.16
+          },
+          "color": 3115874
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m44",
+        "parent": "bamboo5_base",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.4,
+            "height": 0.4,
+            "depth": 0.4
+          },
+          "color": 3115874
+        }
+      },
+      {
+        "id": "m45",
+        "parent": "bamboo5_base",
+        "transform": {
+          "pos": [
+            0,
+            1.24,
+            0
+          ],
+          "quat": [
+            0,
+            0,
+            0,
+            1
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.35000000000000003,
+            "height": 2.34,
+            "depth": 0.35000000000000003
+          },
+          "color": 3115874,
+          "boneFrom": "bamboo5_base",
+          "boneTo": "bamboo5_lower"
+        }
+      },
+      {
+        "id": "m46",
+        "parent": "bamboo5_lower",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.36,
+            "height": 0.36,
+            "depth": 0.36
+          },
+          "color": 3115874
+        }
+      },
+      {
+        "id": "m47",
+        "parent": "bamboo5_lower",
+        "transform": {
+          "pos": [
+            0.12,
+            0.12,
+            0.12
+          ],
+          "quat": [
+            0.33,
+            0,
+            -0.33,
+            0.89
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.35000000000000003,
+            "height": 0.3,
+            "depth": 0.35000000000000003
+          },
+          "color": 3115874,
+          "boneFrom": "bamboo5_lower",
+          "boneTo": "bamboo5_bend"
+        }
+      },
+      {
+        "id": "m48",
+        "parent": "bamboo5_bend",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.36,
+            "height": 0.36,
+            "depth": 0.36
+          },
+          "color": 3115874
+        }
+      },
+      {
+        "id": "m49",
+        "parent": "bamboo5_bend",
+        "transform": {
+          "pos": [
+            0,
+            1.22,
+            0
+          ],
+          "quat": [
+            0,
+            0,
+            0,
+            1
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.35000000000000003,
+            "height": 2.33,
+            "depth": 0.35000000000000003
+          },
+          "color": 3115874,
+          "boneFrom": "bamboo5_bend",
+          "boneTo": "bamboo5_upper"
+        }
+      },
+      {
+        "id": "m50",
+        "parent": "bamboo5_upper",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.4,
+            "height": 0.4,
+            "depth": 0.4
+          },
+          "color": 3115874
+        }
+      },
+      {
+        "id": "m51",
+        "parent": "bamboo5",
+        "transform": {
+          "pos": [
+            0.12,
+            3.62,
+            0.12
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.82,
+            "height": 0.12,
+            "depth": 0.12
+          },
+          "color": 3115874
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m52",
+        "parent": "bamboo5",
+        "transform": {
+          "pos": [
+            -0.28,
+            3.75,
+            0.12
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.68,
+            "height": 0.14,
+            "depth": 0.24
+          },
+          "color": 5613679
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m53",
+        "parent": "bamboo5",
+        "transform": {
+          "pos": [
+            0.24,
+            4.82,
+            0.24
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.12,
+            "height": 0.12,
+            "depth": 0.72
+          },
+          "color": 3115874
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m54",
+        "parent": "bamboo5",
+        "transform": {
+          "pos": [
+            0.24,
+            4.96,
+            0.58
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.24,
+            "height": 0.14,
+            "depth": 0.72
+          },
+          "color": 5613679
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m55",
+        "parent": "bamboo6_base",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.28,
+            "height": 0.28,
+            "depth": 0.28
+          },
+          "color": 5613679
+        }
+      },
+      {
+        "id": "m56",
+        "parent": "bamboo6_base",
+        "transform": {
+          "pos": [
+            0,
+            1.18,
+            0
+          ],
+          "quat": [
+            0,
+            0,
+            0,
+            1
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.24500000000000002,
+            "height": 2.26,
+            "depth": 0.24500000000000002
+          },
+          "color": 5613679,
+          "boneFrom": "bamboo6_base",
+          "boneTo": "bamboo6_lower"
+        }
+      },
+      {
+        "id": "m57",
+        "parent": "bamboo6_lower",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.26,
+            "height": 0.26,
+            "depth": 0.26
+          },
+          "color": 5613679
+        }
+      },
+      {
+        "id": "m58",
+        "parent": "bamboo6_lower",
+        "transform": {
+          "pos": [
+            -0.16,
+            0.16,
+            -0.16
+          ],
+          "quat": [
+            -0.33,
+            0,
+            0.33,
+            0.89
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.24500000000000002,
+            "height": 0.45,
+            "depth": 0.24500000000000002
+          },
+          "color": 5613679,
+          "boneFrom": "bamboo6_lower",
+          "boneTo": "bamboo6_bend"
+        }
+      },
+      {
+        "id": "m59",
+        "parent": "bamboo6_bend",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.26,
+            "height": 0.26,
+            "depth": 0.26
+          },
+          "color": 5613679
+        }
+      },
+      {
+        "id": "m60",
+        "parent": "bamboo6_bend",
+        "transform": {
+          "pos": [
+            0,
+            1.18,
+            0
+          ],
+          "quat": [
+            0,
+            0,
+            0,
+            1
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.24500000000000002,
+            "height": 2.26,
+            "depth": 0.24500000000000002
+          },
+          "color": 5613679,
+          "boneFrom": "bamboo6_bend",
+          "boneTo": "bamboo6_upper"
+        }
+      },
+      {
+        "id": "m61",
+        "parent": "bamboo6_upper",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.28,
+            "height": 0.28,
+            "depth": 0.28
+          },
+          "color": 5613679
+        }
+      },
+      {
+        "id": "m62",
+        "parent": "bamboo6",
+        "transform": {
+          "pos": [
+            -0.32,
+            4.18,
+            -0.32
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.12,
+            "height": 0.12,
+            "depth": 0.7
+          },
+          "color": 5613679
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m63",
+        "parent": "bamboo6",
+        "transform": {
+          "pos": [
+            -0.32,
+            4.32,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.24,
+            "height": 0.14,
+            "depth": 0.72
+          },
+          "color": 1534797
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m64",
+        "parent": "bamboo6",
+        "transform": {
+          "pos": [
+            -0.46,
+            4.7,
+            -0.32
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.22,
+            "height": 0.7,
+            "depth": 0.16
+          },
+          "color": 1534797
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m65",
+        "parent": "bamboo6",
+        "transform": {
+          "pos": [
+            -0.11,
+            4.86,
+            -0.32
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.64,
+            "height": 0.14,
+            "depth": 0.24
+          },
+          "color": 1534797
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m66",
+        "parent": "bamboo7_base",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.36,
+            "height": 0.36,
+            "depth": 0.36
+          },
+          "color": 1534797
+        }
+      },
+      {
+        "id": "m67",
+        "parent": "bamboo7_base",
+        "transform": {
+          "pos": [
+            0,
+            0.97,
+            0
+          ],
+          "quat": [
+            0,
+            0,
+            0,
+            1
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.315,
+            "height": 1.81,
+            "depth": 0.315
+          },
+          "color": 1534797,
+          "boneFrom": "bamboo7_base",
+          "boneTo": "bamboo7_lower"
+        }
+      },
+      {
+        "id": "m68",
+        "parent": "bamboo7_lower",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.32,
+            "height": 0.32,
+            "depth": 0.32
+          },
+          "color": 1534797
+        }
+      },
+      {
+        "id": "m69",
+        "parent": "bamboo7_lower",
+        "transform": {
+          "pos": [
+            0.12,
+            0.12,
+            0.12
+          ],
+          "quat": [
+            0.33,
+            0,
+            -0.33,
+            0.89
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.315,
+            "height": 0.28,
+            "depth": 0.315
+          },
+          "color": 1534797,
+          "boneFrom": "bamboo7_lower",
+          "boneTo": "bamboo7_bend"
+        }
+      },
+      {
+        "id": "m70",
+        "parent": "bamboo7_bend",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.32,
+            "height": 0.32,
+            "depth": 0.32
+          },
+          "color": 1534797
+        }
+      },
+      {
+        "id": "m71",
+        "parent": "bamboo7_bend",
+        "transform": {
+          "pos": [
+            0,
+            1.01,
+            0
+          ],
+          "quat": [
+            0,
+            0,
+            0,
+            1
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.315,
+            "height": 1.9,
+            "depth": 0.315
+          },
+          "color": 1534797,
+          "boneFrom": "bamboo7_bend",
+          "boneTo": "bamboo7_upper"
+        }
+      },
+      {
+        "id": "m72",
+        "parent": "bamboo7_upper",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.36,
+            "height": 0.36,
+            "depth": 0.36
+          },
+          "color": 1534797
+        }
+      },
+      {
+        "id": "m73",
+        "parent": "bamboo7",
+        "transform": {
+          "pos": [
+            0.23,
+            3.9,
+            0.23
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.74,
+            "height": 0.12,
+            "depth": 0.12
+          },
+          "color": 1534797
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m74",
+        "parent": "bamboo7",
+        "transform": {
+          "pos": [
+            -0.12,
+            4.02,
+            0.23
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.66,
+            "height": 0.14,
+            "depth": 0.24
+          },
+          "color": 9420131
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m75",
+        "parent": "bamboo7",
+        "transform": {
+          "pos": [
+            0.37,
+            4.1,
+            0.5
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.24,
+            "height": 0.14,
+            "depth": 0.64
+          },
+          "color": 9420131
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m76",
+        "parent": "bamboo7",
+        "transform": {
+          "pos": [
+            0.15,
+            4.17,
+            0.09
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.22,
+            "height": 0.58,
+            "depth": 0.16
+          },
+          "color": 9420131
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m77",
+        "parent": "bamboo8_base",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.28,
+            "height": 0.28,
+            "depth": 0.28
+          },
+          "color": 3115874
+        }
+      },
+      {
+        "id": "m78",
+        "parent": "bamboo8_base",
+        "transform": {
+          "pos": [
+            0,
+            1.45,
+            0
+          ],
+          "quat": [
+            0,
+            0,
+            0,
+            1
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.24500000000000002,
+            "height": 2.81,
+            "depth": 0.24500000000000002
+          },
+          "color": 3115874,
+          "boneFrom": "bamboo8_base",
+          "boneTo": "bamboo8_lower"
+        }
+      },
+      {
+        "id": "m79",
+        "parent": "bamboo8_lower",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.26,
+            "height": 0.26,
+            "depth": 0.26
+          },
+          "color": 3115874
+        }
+      },
+      {
+        "id": "m80",
+        "parent": "bamboo8_lower",
+        "transform": {
+          "pos": [
+            0.18,
+            0.18,
+            0.18
+          ],
+          "quat": [
+            0.33,
+            0,
+            -0.33,
+            0.89
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.24500000000000002,
+            "height": 0.54,
+            "depth": 0.24500000000000002
+          },
+          "color": 3115874,
+          "boneFrom": "bamboo8_lower",
+          "boneTo": "bamboo8_bend"
+        }
+      },
+      {
+        "id": "m81",
+        "parent": "bamboo8_bend",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.26,
+            "height": 0.26,
+            "depth": 0.26
+          },
+          "color": 3115874
+        }
+      },
+      {
+        "id": "m82",
+        "parent": "bamboo8_bend",
+        "transform": {
+          "pos": [
+            0,
+            1.27,
+            0
+          ],
+          "quat": [
+            0,
+            0,
+            0,
+            1
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.24500000000000002,
+            "height": 2.43,
+            "depth": 0.24500000000000002
+          },
+          "color": 3115874,
+          "boneFrom": "bamboo8_bend",
+          "boneTo": "bamboo8_upper"
+        }
+      },
+      {
+        "id": "m83",
+        "parent": "bamboo8_upper",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.28,
+            "height": 0.28,
+            "depth": 0.28
+          },
+          "color": 3115874
+        }
+      },
+      {
+        "id": "m84",
+        "parent": "bamboo8",
+        "transform": {
+          "pos": [
+            0.37,
+            5.18,
+            0.37
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.1,
+            "height": 0.12,
+            "depth": 0.12
+          },
+          "color": 3115874
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m85",
+        "parent": "bamboo8",
+        "transform": {
+          "pos": [
+            0.88,
+            5.31,
+            0.37
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.92,
+            "height": 0.14,
+            "depth": 0.24
+          },
+          "color": 5613679
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m86",
+        "parent": "bamboo8",
+        "transform": {
+          "pos": [
+            0.2,
+            5.52,
+            0.7
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.24,
+            "height": 0.14,
+            "depth": 0.86
+          },
+          "color": 5613679
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m87",
+        "parent": "bamboo8",
+        "transform": {
+          "pos": [
+            -0.06,
+            5.72,
+            0.37
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.78,
+            "height": 0.14,
+            "depth": 0.24
+          },
+          "color": 5613679
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m88",
+        "parent": "bamboo9_base",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.36,
+            "height": 0.36,
+            "depth": 0.36
+          },
+          "color": 1534797
+        }
+      },
+      {
+        "id": "m89",
+        "parent": "bamboo9_base",
+        "transform": {
+          "pos": [
+            0,
+            1.51,
+            0
+          ],
+          "quat": [
+            0,
+            0,
+            0,
+            1
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.315,
+            "height": 2.9,
+            "depth": 0.315
+          },
+          "color": 1534797,
+          "boneFrom": "bamboo9_base",
+          "boneTo": "bamboo9_lower"
+        }
+      },
+      {
+        "id": "m90",
+        "parent": "bamboo9_lower",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.32,
+            "height": 0.32,
+            "depth": 0.32
+          },
+          "color": 1534797
+        }
+      },
+      {
+        "id": "m91",
+        "parent": "bamboo9_lower",
+        "transform": {
+          "pos": [
+            -0.17,
+            0.17,
+            0.17
+          ],
+          "quat": [
+            0.33,
+            0,
+            0.33,
+            0.89
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.315,
+            "height": 0.45,
+            "depth": 0.315
+          },
+          "color": 1534797,
+          "boneFrom": "bamboo9_lower",
+          "boneTo": "bamboo9_bend"
+        }
+      },
+      {
+        "id": "m92",
+        "parent": "bamboo9_bend",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.32,
+            "height": 0.32,
+            "depth": 0.32
+          },
+          "color": 1534797
+        }
+      },
+      {
+        "id": "m93",
+        "parent": "bamboo9_bend",
+        "transform": {
+          "pos": [
+            0,
+            1.36,
+            0
+          ],
+          "quat": [
+            0,
+            0,
+            0,
+            1
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.315,
+            "height": 2.59,
+            "depth": 0.315
+          },
+          "color": 1534797,
+          "boneFrom": "bamboo9_bend",
+          "boneTo": "bamboo9_upper"
+        }
+      },
+      {
+        "id": "m94",
+        "parent": "bamboo9_upper",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.36,
+            "height": 0.36,
+            "depth": 0.36
+          },
+          "color": 1534797
+        }
+      },
+      {
+        "id": "m95",
+        "parent": "bamboo9",
+        "transform": {
+          "pos": [
+            -0.33,
+            4.92,
+            0.33
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.82,
+            "height": 0.12,
+            "depth": 0.12
+          },
+          "color": 1534797
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m96",
+        "parent": "bamboo9",
+        "transform": {
+          "pos": [
+            -0.72,
+            5.05,
+            0.33
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.7,
+            "height": 0.14,
+            "depth": 0.24
+          },
+          "color": 3115874
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m97",
+        "parent": "bamboo9",
+        "transform": {
+          "pos": [
+            -0.33,
+            5.68,
+            0.33
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.12,
+            "height": 0.12,
+            "depth": 0.78
+          },
+          "color": 1534797
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m98",
+        "parent": "bamboo9",
+        "transform": {
+          "pos": [
+            -0.33,
+            5.82,
+            0.7
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.24,
+            "height": 0.14,
+            "depth": 0.78
+          },
+          "color": 3115874
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1785743396269,
+        "provider": "gpt",
+        "data": "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",
+        "edits": ""
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -0.03749999999999998,
+          0.30499999999999994,
+          -0.5624999999999999
+        ],
+        "max": [
+          0.34750000000000003,
+          3.675,
+          -0.17749999999999988
+        ],
+        "sourceNodeId": "m1"
+      },
+      {
+        "min": [
+          0.24250000000000005,
+          4.085,
+          -0.28249999999999986
+        ],
+        "max": [
+          0.6275000000000001,
+          7.055000000000001,
+          0.10250000000000015
+        ],
+        "sourceNodeId": "m5"
+      },
+      {
+        "min": [
+          1.25125,
+          0.29500000000000015,
+          -0.53375
+        ],
+        "max": [
+          1.6187500000000001,
+          3.325,
+          -0.1662499999999999
+        ],
+        "sourceNodeId": "m34"
+      },
+      {
+        "min": [
+          1.61125,
+          3.82,
+          -0.17374999999999988
+        ],
+        "max": [
+          1.9787500000000002,
+          6.5200000000000005,
+          0.1937500000000001
+        ],
+        "sourceNodeId": "m38"
+      },
+      {
+        "min": [
+          -0.49124999999999996,
+          0.27,
+          -1.15625
+        ],
+        "max": [
+          -0.15874999999999995,
+          3.23,
+          -0.8237499999999999
+        ],
+        "sourceNodeId": "m12"
+      },
+      {
+        "min": [
+          -0.83125,
+          3.6950000000000003,
+          -1.4962499999999999
+        ],
+        "max": [
+          -0.49875,
+          6.625,
+          -1.1637499999999998
+        ],
+        "sourceNodeId": "m16"
+      },
+      {
+        "min": [
+          1.2916559807901773,
+          3.2197658183978612,
+          -0.4933440192098226
+        ],
+        "max": [
+          1.9383440192098227,
+          3.9202341816021393,
+          0.15334401920982288
+        ],
+        "sourceNodeId": "m36"
+      },
+      {
+        "min": [
+          0.9375,
+          0.26,
+          -1.4674999999999998
+        ],
+        "max": [
+          1.2525,
+          3.16,
+          -1.1524999999999999
+        ],
+        "sourceNodeId": "m89"
+      },
+      {
+        "min": [
+          -1.04,
+          0.29000000000000004,
+          0.2350000000000001
+        ],
+        "max": [
+          -0.69,
+          2.63,
+          0.5850000000000002
+        ],
+        "sourceNodeId": "m45"
+      },
+      {
+        "min": [
+          -0.8,
+          2.9850000000000003,
+          0.4750000000000001
+        ],
+        "max": [
+          -0.44999999999999996,
+          5.315,
+          0.8250000000000002
+        ],
+        "sourceNodeId": "m49"
+      },
+      {
+        "min": [
+          0.6074999999999999,
+          3.615,
+          -1.1374999999999997
+        ],
+        "max": [
+          0.9224999999999999,
+          6.205,
+          -0.8224999999999998
+        ],
+        "sourceNodeId": "m93"
+      },
+      {
+        "min": [
+          -0.7979358104762848,
+          3.1329666303594417,
+          -1.4629358104762848
+        ],
+        "max": [
+          -0.19206418952371518,
+          3.7870333696405583,
+          -0.8570641895237151
+        ],
+        "sourceNodeId": "m14"
+      }
+    ],
+    "sourceMeshCount": 99,
+    "candidateCount": 29,
+    "fallbackUsed": false
+  },
+  "footprintRadius": 1.9787500000000002,
+  "sizeClass": "medium",
+  "mode": "voxel-pro",
+  "provider": "gpt",
+  "createdAt": 1785743399682,
+  "updatedAt": 1785743399682
+}

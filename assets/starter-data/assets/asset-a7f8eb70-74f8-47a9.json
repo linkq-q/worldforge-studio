@@ -1,0 +1,4029 @@
+{
+  "id": "asset-a7f8eb70-74f8-47a9",
+  "name": "林中村庄小屋 2",
+  "prompt": "紧凑的手工木屋，陡坡深褐屋顶，粗木墙体与石质基脚，带少量苔藓和不规则修补痕迹；轮廓清晰，适合重复组成环形林中村落。\n全局资产美术方向：质朴的林中村落风格，采用粗木、深褐屋顶、苔藓石材和温暖火光；建筑比例紧凑，树木高而略带不规则轮廓，整体色彩以深绿、湿土棕和灰石色为主。\n资产角色：围绕中央公共空间排列的主要建筑，可通过屋顶坡度、木墙拼接和小型附属棚产生变化。；目标尺度：large。\n这是同一家族的第 2 个可辨识变体，轮廓应有变化但风格一致。\n只生成一个可复用的独立物体，不要生成地面、背景、天空、完整场景或多个分散物体。",
+  "tags": [
+    "wooden-hut",
+    "forest-village",
+    "rustic",
+    "mossy-roof",
+    "timber"
+  ],
+  "modelJson": {
+    "name": "林中手工木屋·偏棚变体",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "stoneBase",
+        "description": "低矮连续的石质基脚，略宽于墙体，灰石色[68706a]；前侧入口处断开，少量深绿苔藓块-深绿[35543a]附着在转角和石块间",
+        "transform": {
+          "pos": [
+            0,
+            0.52,
+            0.12
+          ]
+        }
+      },
+      {
+        "id": "mainWalls",
+        "description": "紧凑宽厚的粗木墙体-湿土棕[604632]，前立面略高，左右墙较短；墙面由宽窄不一的木段拼接，转角有外露加固木柱，局部附加不规则修补木板",
+        "parent": "stoneBase",
+        "transform": {
+          "pos": [
+            0,
+            1.7167,
+            0
+          ]
+        }
+      },
+      {
+        "id": "mainRoof",
+        "description": "占比突出的陡坡双面屋顶-深褐[33251f]，屋脊偏高，檐口短而厚；朝附属棚一侧的屋面略长，形成不对称轮廓，屋脊与背阴檐角附着少量苔藓块",
+        "parent": "stoneBase",
+        "transform": {
+          "pos": [
+            0,
+            2.67,
+            0
+          ]
+        }
+      },
+      {
+        "id": "frontEntrance",
+        "description": "位于前立面偏左的窄木门-暗棕[493326]，门框粗厚，门上有简短遮雨檐；门板带横向加固条和小型铁把手-暗铁灰[3f4442]",
+        "parent": "stoneBase",
+        "transform": {
+          "pos": [
+            -0.21,
+            1.7167,
+            1.84
+          ]
+        }
+      },
+      {
+        "id": "windows",
+        "description": "前墙偏右一个小窗，侧墙靠后一个更窄小窗；窗框为粗木色，内部透出温暖火光-琥珀橙[d98732]，窗外各有简短上沿挡板",
+        "parent": "stoneBase",
+        "transform": {
+          "pos": [
+            0,
+            1.7167,
+            0
+          ]
+        }
+      },
+      {
+        "id": "sideShed",
+        "description": "紧贴右侧墙体的低矮附属棚，宽度约为主体三分之一；木墙与主体同色但拼接更简略，单坡屋顶从主墙向外降低，棚前有半开放堆放口和两根支撑柱",
+        "parent": "stoneBase",
+        "transform": {
+          "pos": [
+            2.7,
+            1.7167,
+            0
+          ]
+        }
+      },
+      {
+        "id": "chimney",
+        "description": "从后侧屋面偏左穿出的短粗石烟囱，颜色与石质基脚一致，顶部略宽，位置偏置以强化变体轮廓",
+        "parent": "stoneBase",
+        "transform": {
+          "pos": [
+            -0.91,
+            4.1,
+            -0.73
+          ]
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "stoneBase",
+        "transform": {
+          "pos": [
+            -2.45,
+            -0.3046,
+            1.7843
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.68,
+            "height": 0.368528142992,
+            "depth": 0.58
+          },
+          "color": 7962745
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "stone"
+          },
+          {
+            "tag": "mossy",
+            "value": 0.25
+          }
+        ]
+      },
+      {
+        "id": "m1",
+        "parent": "stoneBase",
+        "transform": {
+          "pos": [
+            -1.75,
+            -0.2999,
+            1.7901
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.64,
+            "height": 0.38021975104187056,
+            "depth": 0.58
+          },
+          "color": 6844522
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "stone"
+          }
+        ]
+      },
+      {
+        "id": "m2",
+        "parent": "stoneBase",
+        "transform": {
+          "pos": [
+            -1.18,
+            -0.3083,
+            1.7797
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.42,
+            "height": 0.359316382387838,
+            "depth": 0.58
+          },
+          "color": 5594456
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "stone"
+          }
+        ]
+      },
+      {
+        "id": "m3",
+        "parent": "stoneBase",
+        "transform": {
+          "pos": [
+            0.15,
+            -0.3081,
+            1.7798
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.58,
+            "height": 0.35969516552963277,
+            "depth": 0.58
+          },
+          "color": 7962745
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "stone"
+          }
+        ]
+      },
+      {
+        "id": "m4",
+        "parent": "stoneBase",
+        "transform": {
+          "pos": [
+            0.73,
+            -0.2934,
+            1.7983
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.56,
+            "height": 0.3965223664004629,
+            "depth": 0.58
+          },
+          "color": 6844522
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "stone"
+          }
+        ]
+      },
+      {
+        "id": "m5",
+        "parent": "stoneBase",
+        "transform": {
+          "pos": [
+            1.31,
+            -0.3043,
+            1.7846
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.62,
+            "height": 0.36914258939831796,
+            "depth": 0.58
+          },
+          "color": 5594456
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "stone"
+          }
+        ]
+      },
+      {
+        "id": "m6",
+        "parent": "stoneBase",
+        "transform": {
+          "pos": [
+            1.93,
+            -0.3051,
+            1.7836
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.58,
+            "height": 0.3672197295825001,
+            "depth": 0.58
+          },
+          "color": 7962745
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "stone"
+          },
+          {
+            "tag": "mossy",
+            "value": 0.25
+          }
+        ]
+      },
+      {
+        "id": "m7",
+        "parent": "stoneBase",
+        "transform": {
+          "pos": [
+            2.45,
+            -0.2971,
+            1.7937
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.48,
+            "height": 0.3873475076487021,
+            "depth": 0.58
+          },
+          "color": 6844522
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "stone"
+          }
+        ]
+      },
+      {
+        "id": "m8",
+        "parent": "stoneBase",
+        "transform": {
+          "pos": [
+            -2.45,
+            -0.3,
+            -2.0332
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.711354863616,
+            "height": 0.395677431808,
+            "depth": 0.58
+          },
+          "color": 5594456
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "stone"
+          }
+        ]
+      },
+      {
+        "id": "m9",
+        "parent": "stoneBase",
+        "transform": {
+          "pos": [
+            -1.75,
+            -0.3,
+            -2.0429
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.6854941598696179,
+            "height": 0.382747079934809,
+            "depth": 0.58
+          },
+          "color": 6844522
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "stone"
+          },
+          {
+            "tag": "mossy",
+            "value": 0.25
+          }
+        ]
+      },
+      {
+        "id": "m10",
+        "parent": "stoneBase",
+        "transform": {
+          "pos": [
+            -1.05,
+            -0.3,
+            -2.0306
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.7184543466927883,
+            "height": 0.3992271733463942,
+            "depth": 0.58
+          },
+          "color": 5594456
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "stone"
+          }
+        ]
+      },
+      {
+        "id": "m11",
+        "parent": "stoneBase",
+        "transform": {
+          "pos": [
+            -0.35,
+            -0.3,
+            -2.0329
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.7123910707832132,
+            "height": 0.3961955353916066,
+            "depth": 0.58
+          },
+          "color": 6844522
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "stone"
+          }
+        ]
+      },
+      {
+        "id": "m12",
+        "parent": "stoneBase",
+        "transform": {
+          "pos": [
+            0.35,
+            -0.3,
+            -2.0376
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.6996312927970993,
+            "height": 0.3898156463985497,
+            "depth": 0.58
+          },
+          "color": 5594456
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "stone"
+          }
+        ]
+      },
+      {
+        "id": "m13",
+        "parent": "stoneBase",
+        "transform": {
+          "pos": [
+            1.05,
+            -0.3,
+            -2.0239
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.7363219439488943,
+            "height": 0.4081609719744472,
+            "depth": 0.58
+          },
+          "color": 6844522
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "stone"
+          }
+        ]
+      },
+      {
+        "id": "m14",
+        "parent": "stoneBase",
+        "transform": {
+          "pos": [
+            1.75,
+            -0.3,
+            -2.0172
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.7541626383037309,
+            "height": 0.41708131915186547,
+            "depth": 0.58
+          },
+          "color": 5594456
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "stone"
+          }
+        ]
+      },
+      {
+        "id": "m15",
+        "parent": "stoneBase",
+        "transform": {
+          "pos": [
+            2.45,
+            -0.3,
+            -2.0404
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.6921753076839747,
+            "height": 0.3860876538419874,
+            "depth": 0.58
+          },
+          "color": 6844522
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "stone"
+          },
+          {
+            "tag": "mossy",
+            "value": 0.25
+          }
+        ]
+      },
+      {
+        "id": "m16",
+        "parent": "stoneBase",
+        "transform": {
+          "pos": [
+            2.6531,
+            -0.3,
+            -1.62
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.58,
+            "height": 0.3761693,
+            "depth": 0.64063702
+          },
+          "color": 7962745
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "stone"
+          },
+          {
+            "tag": "mossy",
+            "value": 0.25
+          }
+        ]
+      },
+      {
+        "id": "m17",
+        "parent": "stoneBase",
+        "transform": {
+          "pos": [
+            2.6552,
+            -0.3,
+            -1.02
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.58,
+            "height": 0.380344981792,
+            "depth": 0.6464829745088
+          },
+          "color": 6844522
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "stone"
+          }
+        ]
+      },
+      {
+        "id": "m18",
+        "parent": "stoneBase",
+        "transform": {
+          "pos": [
+            2.6511,
+            -0.3,
+            -0.42
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.58,
+            "height": 0.37213259856,
+            "depth": 0.634985637984
+          },
+          "color": 6844522
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "stone"
+          }
+        ]
+      },
+      {
+        "id": "m19",
+        "parent": "stoneBase",
+        "transform": {
+          "pos": [
+            2.6612,
+            -0.3,
+            0.18
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.58,
+            "height": 0.39247411152000006,
+            "depth": 0.663463756128
+          },
+          "color": 7962745
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "stone"
+          }
+        ]
+      },
+      {
+        "id": "m20",
+        "parent": "stoneBase",
+        "transform": {
+          "pos": [
+            2.664,
+            -0.3,
+            0.78
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.58,
+            "height": 0.397980578368,
+            "depth": 0.6711728097152
+          },
+          "color": 6844522
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "stone"
+          }
+        ]
+      },
+      {
+        "id": "m21",
+        "parent": "stoneBase",
+        "transform": {
+          "pos": [
+            2.6625,
+            -0.3,
+            1.38
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.58,
+            "height": 0.3950538,
+            "depth": 0.66707532
+          },
+          "color": 6844522
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "stone"
+          },
+          {
+            "tag": "mossy",
+            "value": 0.25
+          }
+        ]
+      },
+      {
+        "id": "m22",
+        "parent": "stoneBase",
+        "transform": {
+          "pos": [
+            -2.6592,
+            -0.3,
+            -1.62
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.58,
+            "height": 0.3915232,
+            "depth": 0.66213248
+          },
+          "color": 7962745
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "stone"
+          },
+          {
+            "tag": "mossy",
+            "value": 0.25
+          }
+        ]
+      },
+      {
+        "id": "m23",
+        "parent": "stoneBase",
+        "transform": {
+          "pos": [
+            -2.6615,
+            -0.3,
+            -1.02
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.58,
+            "height": 0.386964851712,
+            "depth": 0.6557507923968
+          },
+          "color": 6844522
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "stone"
+          }
+        ]
+      },
+      {
+        "id": "m24",
+        "parent": "stoneBase",
+        "transform": {
+          "pos": [
+            -2.6612,
+            -0.3,
+            -0.42
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.58,
+            "height": 0.387571072512,
+            "depth": 0.6565995015168
+          },
+          "color": 6844522
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "stone"
+          }
+        ]
+      },
+      {
+        "id": "m25",
+        "parent": "stoneBase",
+        "transform": {
+          "pos": [
+            -2.6652,
+            -0.3,
+            0.18
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.58,
+            "height": 0.379509229056,
+            "depth": 0.6453129206784001
+          },
+          "color": 7962745
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "stone"
+          }
+        ]
+      },
+      {
+        "id": "m26",
+        "parent": "stoneBase",
+        "transform": {
+          "pos": [
+            -2.6603,
+            -0.3,
+            0.78
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.58,
+            "height": 0.389499735616,
+            "depth": 0.6592996298624
+          },
+          "color": 6844522
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "stone"
+          }
+        ]
+      },
+      {
+        "id": "m27",
+        "parent": "stoneBase",
+        "transform": {
+          "pos": [
+            -2.6642,
+            -0.3,
+            1.38
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.58,
+            "height": 0.381577,
+            "depth": 0.6482078
+          },
+          "color": 6844522
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "stone"
+          },
+          {
+            "tag": "mossy",
+            "value": 0.25
+          }
+        ]
+      },
+      {
+        "id": "m28",
+        "parent": "stoneBase",
+        "transform": {
+          "pos": [
+            -2.61,
+            0,
+            1.86
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.5,
+            "height": 0.2,
+            "depth": 0.34
+          },
+          "color": 3494970
+        }
+      },
+      {
+        "id": "m29",
+        "parent": "stoneBase",
+        "transform": {
+          "pos": [
+            2.62,
+            -0.02,
+            -2.03
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.36,
+            "height": 0.16,
+            "depth": 0.28
+          },
+          "color": 4350792
+        }
+      },
+      {
+        "id": "m30",
+        "parent": "stoneBase",
+        "transform": {
+          "pos": [
+            -2.72,
+            -0.07,
+            -1.89
+          ]
+        },
+        "mesh": {
+          "type": "icosahedron",
+          "params": {
+            "radius": 0.19,
+            "detail": 0
+          },
+          "color": 3494970
+        }
+      },
+      {
+        "id": "m31",
+        "parent": "stoneBase",
+        "transform": {
+          "pos": [
+            1.97,
+            -0.04,
+            1.86
+          ]
+        },
+        "mesh": {
+          "type": "icosahedron",
+          "params": {
+            "radius": 0.16,
+            "detail": 0
+          },
+          "color": 3494970
+        }
+      },
+      {
+        "id": "m32",
+        "parent": "mainWalls",
+        "transform": {
+          "pos": [
+            0,
+            -0.4167,
+            1.56
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 5.15,
+            "height": 2.75,
+            "depth": 0.38
+          },
+          "color": 6309426
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          },
+          {
+            "tag": "dirty",
+            "value": 0.25
+          }
+        ]
+      },
+      {
+        "id": "m33",
+        "parent": "mainWalls",
+        "transform": {
+          "pos": [
+            0,
+            -0.5167,
+            -1.8
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 5.15,
+            "height": 2.55,
+            "depth": 0.38
+          },
+          "color": 4797222
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          },
+          {
+            "tag": "dirty",
+            "value": 0.25
+          }
+        ]
+      },
+      {
+        "id": "m34",
+        "parent": "mainWalls",
+        "transform": {
+          "pos": [
+            -2.4,
+            -0.4867,
+            -0.12
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.4,
+            "height": 2.62,
+            "depth": 3.05
+          },
+          "color": 6309426
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          },
+          {
+            "tag": "dirty",
+            "value": 0.25
+          }
+        ]
+      },
+      {
+        "id": "m35",
+        "parent": "mainWalls",
+        "transform": {
+          "pos": [
+            2.4,
+            -0.4867,
+            -0.12
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.4,
+            "height": 2.62,
+            "depth": 3.05
+          },
+          "color": 7492411
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          },
+          {
+            "tag": "dirty",
+            "value": 0.25
+          }
+        ]
+      },
+      {
+        "id": "m36",
+        "parent": "mainWalls",
+        "transform": {
+          "pos": [
+            0,
+            1.5767,
+            1.58
+          ]
+        },
+        "mesh": {
+          "type": "tri",
+          "params": {
+            "a": [
+              -2.57,
+              -0.6333333333333337,
+              0
+            ],
+            "b": [
+              2.57,
+              -0.6333333333333337,
+              0
+            ],
+            "c": [
+              0,
+              1.2666666666666662,
+              0
+            ],
+            "d": 0.36
+          },
+          "color": 6309426
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          },
+          {
+            "tag": "dirty",
+            "value": 0.25
+          }
+        ]
+      },
+      {
+        "id": "m37",
+        "parent": "mainWalls",
+        "transform": {
+          "pos": [
+            0,
+            1.47,
+            -1.82
+          ]
+        },
+        "mesh": {
+          "type": "tri",
+          "params": {
+            "a": [
+              2.57,
+              -0.686666666666667,
+              0
+            ],
+            "b": [
+              -2.57,
+              -0.686666666666667,
+              0
+            ],
+            "c": [
+              0,
+              1.373333333333333,
+              0
+            ],
+            "d": 0.36
+          },
+          "color": 4797222
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          },
+          {
+            "tag": "dirty",
+            "value": 0.25
+          }
+        ]
+      },
+      {
+        "id": "m38",
+        "parent": "mainWalls",
+        "transform": {
+          "pos": [
+            0.0232,
+            -1.5767,
+            1.8
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 4.9803055869951995,
+            "height": 0.166539338752,
+            "depth": 0.12
+          },
+          "color": 7492411
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          },
+          {
+            "tag": "dirty",
+            "value": 0.25
+          }
+        ]
+      },
+      {
+        "id": "m39",
+        "parent": "mainWalls",
+        "transform": {
+          "pos": [
+            -0.0009,
+            -1.1867,
+            1.8
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 5.018488677324016,
+            "height": 0.15062971778165987,
+            "depth": 0.12
+          },
+          "color": 6309426
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          },
+          {
+            "tag": "dirty",
+            "value": 0.25
+          }
+        ]
+      },
+      {
+        "id": "m40",
+        "parent": "mainWalls",
+        "transform": {
+          "pos": [
+            -0.0428,
+            -0.7967,
+            1.8
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 4.9466138676119815,
+            "height": 0.180577555161674,
+            "depth": 0.12
+          },
+          "color": 4797222
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          },
+          {
+            "tag": "dirty",
+            "value": 0.25
+          }
+        ]
+      },
+      {
+        "id": "m41",
+        "parent": "mainWalls",
+        "transform": {
+          "pos": [
+            -0.0035,
+            -0.4067,
+            1.8
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 5.013960204467241,
+            "height": 0.1525165814719824,
+            "depth": 0.12
+          },
+          "color": 7492411
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          },
+          {
+            "tag": "dirty",
+            "value": 0.25
+          }
+        ]
+      },
+      {
+        "id": "m42",
+        "parent": "mainWalls",
+        "transform": {
+          "pos": [
+            -0.0051,
+            -0.0167,
+            1.8
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 5.011205627716138,
+            "height": 0.15366432178494235,
+            "depth": 0.12
+          },
+          "color": 6309426
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          },
+          {
+            "tag": "dirty",
+            "value": 0.25
+          }
+        ]
+      },
+      {
+        "id": "m43",
+        "parent": "mainWalls",
+        "transform": {
+          "pos": [
+            -0.0122,
+            0.3733,
+            1.8
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 4.999112233671087,
+            "height": 0.1587032359703803,
+            "depth": 0.12
+          },
+          "color": 4797222
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          },
+          {
+            "tag": "dirty",
+            "value": 0.25
+          }
+        ]
+      },
+      {
+        "id": "m44",
+        "parent": "mainWalls",
+        "transform": {
+          "pos": [
+            -0.0431,
+            0.7633,
+            1.8
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 4.9460354824138575,
+            "height": 0.18081854899422603,
+            "depth": 0.12
+          },
+          "color": 7492411
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          },
+          {
+            "tag": "dirty",
+            "value": 0.25
+          }
+        ]
+      },
+      {
+        "id": "m45",
+        "parent": "mainWalls",
+        "transform": {
+          "pos": [
+            2.58,
+            -0.4067,
+            1.54
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.34,
+            "height": 3.05,
+            "depth": 0.46
+          },
+          "color": 4797222
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          },
+          {
+            "tag": "dirty",
+            "value": 0.25
+          }
+        ]
+      },
+      {
+        "id": "m46",
+        "parent": "mainWalls",
+        "transform": {
+          "pos": [
+            2.58,
+            -0.5267,
+            -1.78
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.34,
+            "height": 2.82,
+            "depth": 0.46
+          },
+          "color": 4797222
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          },
+          {
+            "tag": "dirty",
+            "value": 0.25
+          }
+        ]
+      },
+      {
+        "id": "m47",
+        "parent": "mainWalls",
+        "transform": {
+          "pos": [
+            2.63,
+            -1.5167,
+            -0.16
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.12,
+            "height": 0.17,
+            "depth": 2.72
+          },
+          "color": 4797222
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          },
+          {
+            "tag": "dirty",
+            "value": 0.25
+          }
+        ]
+      },
+      {
+        "id": "m48",
+        "parent": "mainWalls",
+        "transform": {
+          "pos": [
+            2.63,
+            -1.0167,
+            -0.16
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.12,
+            "height": 0.17,
+            "depth": 2.54
+          },
+          "color": 7492411
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          },
+          {
+            "tag": "dirty",
+            "value": 0.25
+          }
+        ]
+      },
+      {
+        "id": "m49",
+        "parent": "mainWalls",
+        "transform": {
+          "pos": [
+            2.63,
+            -0.5167,
+            -0.16
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.12,
+            "height": 0.17,
+            "depth": 2.72
+          },
+          "color": 4797222
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          },
+          {
+            "tag": "dirty",
+            "value": 0.25
+          }
+        ]
+      },
+      {
+        "id": "m50",
+        "parent": "mainWalls",
+        "transform": {
+          "pos": [
+            2.63,
+            -0.0167,
+            -0.16
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.12,
+            "height": 0.17,
+            "depth": 2.54
+          },
+          "color": 7492411
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          },
+          {
+            "tag": "dirty",
+            "value": 0.25
+          }
+        ]
+      },
+      {
+        "id": "m51",
+        "parent": "mainWalls",
+        "transform": {
+          "pos": [
+            2.63,
+            0.4833,
+            -0.16
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.12,
+            "height": 0.17,
+            "depth": 2.72
+          },
+          "color": 4797222
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          },
+          {
+            "tag": "dirty",
+            "value": 0.25
+          }
+        ]
+      },
+      {
+        "id": "m52",
+        "parent": "mainWalls",
+        "transform": {
+          "pos": [
+            -2.58,
+            -0.4067,
+            1.54
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.34,
+            "height": 3.05,
+            "depth": 0.46
+          },
+          "color": 4797222
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          },
+          {
+            "tag": "dirty",
+            "value": 0.25
+          }
+        ]
+      },
+      {
+        "id": "m53",
+        "parent": "mainWalls",
+        "transform": {
+          "pos": [
+            -2.58,
+            -0.5267,
+            -1.78
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.34,
+            "height": 2.82,
+            "depth": 0.46
+          },
+          "color": 4797222
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          },
+          {
+            "tag": "dirty",
+            "value": 0.25
+          }
+        ]
+      },
+      {
+        "id": "m54",
+        "parent": "mainWalls",
+        "transform": {
+          "pos": [
+            -2.63,
+            -1.5167,
+            -0.16
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.12,
+            "height": 0.17,
+            "depth": 2.72
+          },
+          "color": 4797222
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          },
+          {
+            "tag": "dirty",
+            "value": 0.25
+          }
+        ]
+      },
+      {
+        "id": "m55",
+        "parent": "mainWalls",
+        "transform": {
+          "pos": [
+            -2.63,
+            -1.0167,
+            -0.16
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.12,
+            "height": 0.17,
+            "depth": 2.54
+          },
+          "color": 7492411
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          },
+          {
+            "tag": "dirty",
+            "value": 0.25
+          }
+        ]
+      },
+      {
+        "id": "m56",
+        "parent": "mainWalls",
+        "transform": {
+          "pos": [
+            -2.63,
+            -0.5167,
+            -0.16
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.12,
+            "height": 0.17,
+            "depth": 2.72
+          },
+          "color": 4797222
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          },
+          {
+            "tag": "dirty",
+            "value": 0.25
+          }
+        ]
+      },
+      {
+        "id": "m57",
+        "parent": "mainWalls",
+        "transform": {
+          "pos": [
+            -2.63,
+            -0.0167,
+            -0.16
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.12,
+            "height": 0.17,
+            "depth": 2.54
+          },
+          "color": 7492411
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          },
+          {
+            "tag": "dirty",
+            "value": 0.25
+          }
+        ]
+      },
+      {
+        "id": "m58",
+        "parent": "mainWalls",
+        "transform": {
+          "pos": [
+            -2.63,
+            0.4833,
+            -0.16
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.12,
+            "height": 0.17,
+            "depth": 2.72
+          },
+          "color": 4797222
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          },
+          {
+            "tag": "dirty",
+            "value": 0.25
+          }
+        ]
+      },
+      {
+        "id": "m59",
+        "parent": "mainWalls",
+        "transform": {
+          "pos": [
+            1,
+            -0.4667,
+            1.82
+          ],
+          "quat": [
+            -0.7,
+            -0.07,
+            0.06,
+            0.7
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.81,
+            "height": 0.09,
+            "depth": 0.51
+          },
+          "color": 7492411
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          },
+          {
+            "tag": "damage",
+            "value": 0.5
+          }
+        ]
+      },
+      {
+        "id": "m60",
+        "parent": "mainWalls",
+        "transform": {
+          "pos": [
+            -2.63,
+            -0.8867,
+            -0.11
+          ],
+          "quat": [
+            0.5,
+            0.5,
+            0.5,
+            -0.5
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.93,
+            "height": 0.09,
+            "depth": 0.54
+          },
+          "color": 4797222
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          },
+          {
+            "tag": "damage",
+            "value": 0.5
+          }
+        ]
+      },
+      {
+        "id": "m61",
+        "parent": "mainRoof",
+        "transform": {
+          "pos": [
+            -1.51,
+            1.1,
+            -0.12
+          ],
+          "quat": [
+            -0.67,
+            -0.23,
+            0.67,
+            -0.23
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 4.5,
+            "height": 0.24,
+            "depth": 3.81
+          },
+          "color": 3351839
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          },
+          {
+            "tag": "dirty",
+            "value": 0.5
+          }
+        ]
+      },
+      {
+        "id": "m62",
+        "parent": "mainRoof",
+        "transform": {
+          "pos": [
+            1.63,
+            1.06,
+            -0.12
+          ],
+          "quat": [
+            0.95,
+            -0.31,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 4.04,
+            "height": 0.25,
+            "depth": 4.5
+          },
+          "color": 2628889
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          },
+          {
+            "tag": "dirty",
+            "value": 0.5
+          }
+        ]
+      },
+      {
+        "id": "m63",
+        "parent": "mainRoof",
+        "transform": {
+          "pos": [
+            -0.59,
+            1.81,
+            -0.12
+          ],
+          "quat": [
+            -0.67,
+            -0.23,
+            0.67,
+            -0.23
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 4.58,
+            "height": 0.055,
+            "depth": 0.21
+          },
+          "color": 4403240
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          },
+          {
+            "tag": "dirty",
+            "value": 0.5
+          }
+        ]
+      },
+      {
+        "id": "m64",
+        "parent": "mainRoof",
+        "transform": {
+          "pos": [
+            0.63,
+            1.79,
+            -0.12
+          ],
+          "quat": [
+            0.95,
+            -0.31,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.22,
+            "height": 0.055,
+            "depth": 4.58
+          },
+          "color": 3351839
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          },
+          {
+            "tag": "dirty",
+            "value": 0.5
+          }
+        ]
+      },
+      {
+        "id": "m65",
+        "parent": "mainRoof",
+        "transform": {
+          "pos": [
+            -1.09,
+            1.42,
+            -0.12
+          ],
+          "quat": [
+            -0.67,
+            -0.23,
+            0.67,
+            -0.23
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 4.58,
+            "height": 0.055,
+            "depth": 0.21
+          },
+          "color": 2628889
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          },
+          {
+            "tag": "dirty",
+            "value": 0.5
+          }
+        ]
+      },
+      {
+        "id": "m66",
+        "parent": "mainRoof",
+        "transform": {
+          "pos": [
+            1.17,
+            1.39,
+            -0.12
+          ],
+          "quat": [
+            0.95,
+            -0.31,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.22,
+            "height": 0.055,
+            "depth": 4.58
+          },
+          "color": 4403240
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          },
+          {
+            "tag": "dirty",
+            "value": 0.5
+          }
+        ]
+      },
+      {
+        "id": "m67",
+        "parent": "mainRoof",
+        "transform": {
+          "pos": [
+            -1.59,
+            1.03,
+            -0.12
+          ],
+          "quat": [
+            -0.67,
+            -0.23,
+            0.67,
+            -0.23
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 4.58,
+            "height": 0.055,
+            "depth": 0.21
+          },
+          "color": 4403240
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          },
+          {
+            "tag": "dirty",
+            "value": 0.5
+          }
+        ]
+      },
+      {
+        "id": "m68",
+        "parent": "mainRoof",
+        "transform": {
+          "pos": [
+            1.71,
+            0.99,
+            -0.12
+          ],
+          "quat": [
+            0.95,
+            -0.31,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.22,
+            "height": 0.055,
+            "depth": 4.58
+          },
+          "color": 3351839
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          },
+          {
+            "tag": "dirty",
+            "value": 0.5
+          }
+        ]
+      },
+      {
+        "id": "m69",
+        "parent": "mainRoof",
+        "transform": {
+          "pos": [
+            -2.1,
+            0.64,
+            -0.12
+          ],
+          "quat": [
+            -0.67,
+            -0.23,
+            0.67,
+            -0.23
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 4.58,
+            "height": 0.055,
+            "depth": 0.21
+          },
+          "color": 2628889
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          },
+          {
+            "tag": "dirty",
+            "value": 0.5
+          }
+        ]
+      },
+      {
+        "id": "m70",
+        "parent": "mainRoof",
+        "transform": {
+          "pos": [
+            2.26,
+            0.59,
+            -0.12
+          ],
+          "quat": [
+            0.95,
+            -0.31,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.22,
+            "height": 0.055,
+            "depth": 4.58
+          },
+          "color": 4403240
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          },
+          {
+            "tag": "dirty",
+            "value": 0.5
+          }
+        ]
+      },
+      {
+        "id": "m71",
+        "parent": "mainRoof",
+        "transform": {
+          "pos": [
+            -2.6,
+            0.25,
+            -0.12
+          ],
+          "quat": [
+            -0.67,
+            -0.23,
+            0.67,
+            -0.23
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 4.58,
+            "height": 0.055,
+            "depth": 0.21
+          },
+          "color": 4403240
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          },
+          {
+            "tag": "dirty",
+            "value": 0.5
+          }
+        ]
+      },
+      {
+        "id": "m72",
+        "parent": "mainRoof",
+        "transform": {
+          "pos": [
+            2.8,
+            0.19,
+            -0.12
+          ],
+          "quat": [
+            0.95,
+            -0.31,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.22,
+            "height": 0.055,
+            "depth": 4.58
+          },
+          "color": 3351839
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          },
+          {
+            "tag": "dirty",
+            "value": 0.5
+          }
+        ]
+      },
+      {
+        "id": "m73",
+        "parent": "mainRoof",
+        "transform": {
+          "pos": [
+            0,
+            2.36,
+            -0.12
+          ],
+          "quat": [
+            0.71,
+            0,
+            0,
+            0.71
+          ]
+        },
+        "mesh": {
+          "type": "cylinder",
+          "params": {
+            "radiusTop": 0.16,
+            "radiusBottom": 0.16,
+            "height": 4.48,
+            "radialSegments": 10
+          },
+          "color": 2628889
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          },
+          {
+            "tag": "dirty",
+            "value": 0.5
+          }
+        ]
+      },
+      {
+        "id": "m74",
+        "parent": "mainRoof",
+        "transform": {
+          "pos": [
+            -0.28,
+            2.39,
+            -0.98
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.7,
+            "height": 0.13,
+            "depth": 0.34
+          },
+          "color": 3494970
+        }
+      },
+      {
+        "id": "m75",
+        "parent": "mainRoof",
+        "transform": {
+          "pos": [
+            0.18,
+            2.39,
+            0.42
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.46,
+            "height": 0.12,
+            "depth": 0.28
+          },
+          "color": 4350792
+        }
+      },
+      {
+        "id": "m76",
+        "parent": "mainRoof",
+        "transform": {
+          "pos": [
+            2.94,
+            0,
+            -1.84
+          ]
+        },
+        "mesh": {
+          "type": "icosahedron",
+          "params": {
+            "radius": 0.18,
+            "detail": 0
+          },
+          "color": 3494970
+        }
+      },
+      {
+        "id": "m77",
+        "parent": "mainRoof",
+        "transform": {
+          "pos": [
+            -2.8,
+            0.03,
+            -1.92
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.52,
+            "height": 0.14,
+            "depth": 0.3
+          },
+          "color": 3494970
+        }
+      },
+      {
+        "id": "m78",
+        "parent": "frontEntrance",
+        "transform": {
+          "pos": [
+            -0.65,
+            -0.7367,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.12,
+            "height": 2.18,
+            "depth": 0.18
+          },
+          "color": 4797222
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          },
+          {
+            "tag": "dirty",
+            "value": 0.25
+          }
+        ]
+      },
+      {
+        "id": "m79",
+        "parent": "frontEntrance",
+        "transform": {
+          "pos": [
+            -1.3,
+            -0.6967,
+            0.06
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.18,
+            "height": 2.42,
+            "depth": 0.27
+          },
+          "color": 7492411
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          },
+          {
+            "tag": "dirty",
+            "value": 0.25
+          }
+        ]
+      },
+      {
+        "id": "m80",
+        "parent": "frontEntrance",
+        "transform": {
+          "pos": [
+            0,
+            -0.6967,
+            0.06
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.18,
+            "height": 2.42,
+            "depth": 0.27
+          },
+          "color": 7492411
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          },
+          {
+            "tag": "dirty",
+            "value": 0.25
+          }
+        ]
+      },
+      {
+        "id": "m81",
+        "parent": "frontEntrance",
+        "transform": {
+          "pos": [
+            -0.65,
+            0.5033,
+            0.07
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.48,
+            "height": 0.2,
+            "depth": 0.28
+          },
+          "color": 7492411
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          },
+          {
+            "tag": "dirty",
+            "value": 0.25
+          }
+        ]
+      },
+      {
+        "id": "m82",
+        "parent": "frontEntrance",
+        "transform": {
+          "pos": [
+            -0.65,
+            -1.4167,
+            0.13
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1,
+            "height": 0.14,
+            "depth": 0.11
+          },
+          "color": 7492411
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          },
+          {
+            "tag": "dirty",
+            "value": 0.25
+          }
+        ]
+      },
+      {
+        "id": "m83",
+        "parent": "frontEntrance",
+        "transform": {
+          "pos": [
+            -0.65,
+            -0.8367,
+            0.13
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1,
+            "height": 0.14,
+            "depth": 0.11
+          },
+          "color": 7492411
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          },
+          {
+            "tag": "dirty",
+            "value": 0.25
+          }
+        ]
+      },
+      {
+        "id": "m84",
+        "parent": "frontEntrance",
+        "transform": {
+          "pos": [
+            -0.65,
+            -0.2567,
+            0.13
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1,
+            "height": 0.14,
+            "depth": 0.11
+          },
+          "color": 7492411
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          },
+          {
+            "tag": "dirty",
+            "value": 0.25
+          }
+        ]
+      },
+      {
+        "id": "m85",
+        "parent": "frontEntrance",
+        "transform": {
+          "pos": [
+            -0.65,
+            0.5333,
+            0.27
+          ],
+          "quat": [
+            0.14,
+            0,
+            0,
+            0.99
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.52,
+            "height": 0.13,
+            "depth": 0.73
+          },
+          "color": 3351839
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          },
+          {
+            "tag": "dirty",
+            "value": 0.5
+          }
+        ]
+      },
+      {
+        "id": "m86",
+        "parent": "frontEntrance",
+        "transform": {
+          "pos": [
+            -0.27,
+            -0.7567,
+            0.22
+          ]
+        },
+        "mesh": {
+          "type": "sphere",
+          "params": {
+            "radius": 0.11,
+            "widthSegments": 10,
+            "heightSegments": 7
+          },
+          "color": 4146242
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m87",
+        "parent": "frontEntrance",
+        "transform": {
+          "pos": [
+            -0.27,
+            -0.7567,
+            0.25
+          ],
+          "quat": [
+            0.71,
+            0,
+            0,
+            0.71
+          ]
+        },
+        "mesh": {
+          "type": "cylinder",
+          "params": {
+            "radiusTop": 0.045,
+            "radiusBottom": 0.045,
+            "height": 0.18,
+            "radialSegments": 10
+          },
+          "color": 4146242
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m88",
+        "parent": "windows",
+        "transform": {
+          "pos": [
+            1.15,
+            -0.3967,
+            1.9
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.82,
+            "height": 0.78,
+            "depth": 0.12
+          },
+          "color": 14255922
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass",
+            "variant": "amber"
+          },
+          {
+            "tag": "emissive",
+            "value": 1
+          }
+        ]
+      },
+      {
+        "id": "m89",
+        "parent": "windows",
+        "transform": {
+          "pos": [
+            1.15,
+            0.0533,
+            1.96
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.15,
+            "height": 0.16,
+            "depth": 0.22
+          },
+          "color": 4797222
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          },
+          {
+            "tag": "dirty",
+            "value": 0.25
+          }
+        ]
+      },
+      {
+        "id": "m90",
+        "parent": "windows",
+        "transform": {
+          "pos": [
+            1.15,
+            -0.8467,
+            1.96
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.15,
+            "height": 0.16,
+            "depth": 0.22
+          },
+          "color": 4797222
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          },
+          {
+            "tag": "dirty",
+            "value": 0.25
+          }
+        ]
+      },
+      {
+        "id": "m91",
+        "parent": "windows",
+        "transform": {
+          "pos": [
+            0.62,
+            -0.3967,
+            1.96
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.16,
+            "height": 1.06,
+            "depth": 0.22
+          },
+          "color": 4797222
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          },
+          {
+            "tag": "dirty",
+            "value": 0.25
+          }
+        ]
+      },
+      {
+        "id": "m92",
+        "parent": "windows",
+        "transform": {
+          "pos": [
+            1.68,
+            -0.3967,
+            1.96
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.16,
+            "height": 1.06,
+            "depth": 0.22
+          },
+          "color": 4797222
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          },
+          {
+            "tag": "dirty",
+            "value": 0.25
+          }
+        ]
+      },
+      {
+        "id": "m93",
+        "parent": "windows",
+        "transform": {
+          "pos": [
+            1.15,
+            -0.3967,
+            1.98
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.1,
+            "height": 0.78,
+            "depth": 0.24
+          },
+          "color": 4797222
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          },
+          {
+            "tag": "dirty",
+            "value": 0.25
+          }
+        ]
+      },
+      {
+        "id": "m94",
+        "parent": "windows",
+        "transform": {
+          "pos": [
+            1.15,
+            -0.3967,
+            1.98
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.82,
+            "height": 0.1,
+            "depth": 0.24
+          },
+          "color": 4797222
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          },
+          {
+            "tag": "dirty",
+            "value": 0.25
+          }
+        ]
+      },
+      {
+        "id": "m95",
+        "parent": "windows",
+        "transform": {
+          "pos": [
+            1.15,
+            0.1333,
+            2.07
+          ],
+          "quat": [
+            0.1,
+            0,
+            0,
+            0.99
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.3,
+            "height": 0.1,
+            "depth": 0.48
+          },
+          "color": 3351839
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          },
+          {
+            "tag": "dirty",
+            "value": 0.5
+          }
+        ]
+      },
+      {
+        "id": "m96",
+        "parent": "windows",
+        "transform": {
+          "pos": [
+            -2.64,
+            -0.4667,
+            -0.88
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.12,
+            "height": 0.68,
+            "depth": 0.56
+          },
+          "color": 16757583
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass",
+            "variant": "amber"
+          },
+          {
+            "tag": "emissive",
+            "value": 0.75
+          }
+        ]
+      },
+      {
+        "id": "m97",
+        "parent": "windows",
+        "transform": {
+          "pos": [
+            -2.71,
+            -0.4667,
+            -1.23
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.22,
+            "height": 0.92,
+            "depth": 0.14
+          },
+          "color": 4797222
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          },
+          {
+            "tag": "dirty",
+            "value": 0.25
+          }
+        ]
+      },
+      {
+        "id": "m98",
+        "parent": "windows",
+        "transform": {
+          "pos": [
+            -2.71,
+            -0.4667,
+            -0.53
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.22,
+            "height": 0.92,
+            "depth": 0.14
+          },
+          "color": 4797222
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          },
+          {
+            "tag": "dirty",
+            "value": 0.25
+          }
+        ]
+      },
+      {
+        "id": "m99",
+        "parent": "windows",
+        "transform": {
+          "pos": [
+            -2.71,
+            -0.0767,
+            -0.88
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.22,
+            "height": 0.14,
+            "depth": 0.86
+          },
+          "color": 4797222
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          },
+          {
+            "tag": "dirty",
+            "value": 0.25
+          }
+        ]
+      },
+      {
+        "id": "m100",
+        "parent": "windows",
+        "transform": {
+          "pos": [
+            -2.71,
+            -0.8567,
+            -0.88
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.22,
+            "height": 0.14,
+            "depth": 0.86
+          },
+          "color": 4797222
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          },
+          {
+            "tag": "dirty",
+            "value": 0.25
+          }
+        ]
+      },
+      {
+        "id": "m101",
+        "parent": "windows",
+        "transform": {
+          "pos": [
+            -2.97,
+            0.0133,
+            -0.88
+          ],
+          "quat": [
+            0.08,
+            -0.7,
+            0.08,
+            0.7
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.08,
+            "height": 0.1,
+            "depth": 0.43
+          },
+          "color": 2628889
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          },
+          {
+            "tag": "dirty",
+            "value": 0.5
+          }
+        ]
+      },
+      {
+        "id": "m102",
+        "parent": "sideShed",
+        "transform": {
+          "pos": [
+            0.76,
+            -1.0167,
+            -1.57
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.76,
+            "height": 1.72,
+            "depth": 0.28
+          },
+          "color": 4797222
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          },
+          {
+            "tag": "dirty",
+            "value": 0.25
+          }
+        ]
+      },
+      {
+        "id": "m103",
+        "parent": "sideShed",
+        "transform": {
+          "pos": [
+            1.65,
+            -1.0167,
+            -0.14
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.26,
+            "height": 1.7,
+            "depth": 2.8
+          },
+          "color": 6309426
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          },
+          {
+            "tag": "dirty",
+            "value": 0.25
+          }
+        ]
+      },
+      {
+        "id": "m104",
+        "parent": "sideShed",
+        "transform": {
+          "pos": [
+            0,
+            -0.8167,
+            1.28
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.3,
+            "height": 2.05,
+            "depth": 0.32
+          },
+          "color": 4797222
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          },
+          {
+            "tag": "dirty",
+            "value": 0.25
+          }
+        ]
+      },
+      {
+        "id": "m105",
+        "parent": "sideShed",
+        "transform": {
+          "pos": [
+            1.6,
+            -0.9167,
+            1.28
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.3,
+            "height": 1.9,
+            "depth": 0.32
+          },
+          "color": 4797222
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          },
+          {
+            "tag": "dirty",
+            "value": 0.25
+          }
+        ]
+      },
+      {
+        "id": "m106",
+        "parent": "sideShed",
+        "transform": {
+          "pos": [
+            0.8,
+            0.0433,
+            1.28
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.9,
+            "height": 0.25,
+            "depth": 0.3
+          },
+          "color": 4797222
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          },
+          {
+            "tag": "dirty",
+            "value": 0.25
+          }
+        ]
+      },
+      {
+        "id": "m107",
+        "parent": "sideShed",
+        "transform": {
+          "pos": [
+            0.85,
+            0.6033,
+            -0.17
+          ],
+          "quat": [
+            0.12,
+            0.7,
+            -0.12,
+            0.7
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 3.54,
+            "height": 0.22,
+            "depth": 2.41
+          },
+          "color": 2628889
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          },
+          {
+            "tag": "dirty",
+            "value": 0.5
+          }
+        ]
+      },
+      {
+        "id": "m108",
+        "parent": "sideShed",
+        "transform": {
+          "pos": [
+            0.1,
+            0.7533,
+            -0.17
+          ],
+          "quat": [
+            0.12,
+            0.7,
+            -0.12,
+            0.7
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 3.6,
+            "height": 0.05,
+            "depth": 0.11
+          },
+          "color": 4403240
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          },
+          {
+            "tag": "dirty",
+            "value": 0.5
+          }
+        ]
+      },
+      {
+        "id": "m109",
+        "parent": "sideShed",
+        "transform": {
+          "pos": [
+            0.66,
+            0.5533,
+            -0.17
+          ],
+          "quat": [
+            0.12,
+            0.7,
+            -0.12,
+            0.7
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 3.6,
+            "height": 0.05,
+            "depth": 0.11
+          },
+          "color": 4403240
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          },
+          {
+            "tag": "dirty",
+            "value": 0.5
+          }
+        ]
+      },
+      {
+        "id": "m110",
+        "parent": "sideShed",
+        "transform": {
+          "pos": [
+            1.22,
+            0.3433,
+            -0.17
+          ],
+          "quat": [
+            0.12,
+            0.7,
+            -0.12,
+            0.7
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 3.6,
+            "height": 0.05,
+            "depth": 0.11
+          },
+          "color": 4403240
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          },
+          {
+            "tag": "dirty",
+            "value": 0.5
+          }
+        ]
+      },
+      {
+        "id": "m111",
+        "parent": "sideShed",
+        "transform": {
+          "pos": [
+            0.85,
+            -1.7567,
+            1.4
+          ],
+          "quat": [
+            0,
+            0,
+            -0.71,
+            0.71
+          ]
+        },
+        "mesh": {
+          "type": "cylinder",
+          "params": {
+            "radiusTop": 0.13,
+            "radiusBottom": 0.13,
+            "height": 1.06,
+            "radialSegments": 10
+          },
+          "color": 4797222
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          },
+          {
+            "tag": "dirty",
+            "value": 0.25
+          }
+        ]
+      },
+      {
+        "id": "m112",
+        "parent": "sideShed",
+        "transform": {
+          "pos": [
+            0.86,
+            -1.7567,
+            1.16
+          ],
+          "quat": [
+            0,
+            0,
+            -0.71,
+            0.71
+          ]
+        },
+        "mesh": {
+          "type": "cylinder",
+          "params": {
+            "radiusTop": 0.12,
+            "radiusBottom": 0.12,
+            "height": 0.88,
+            "radialSegments": 10
+          },
+          "color": 6309426
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          },
+          {
+            "tag": "dirty",
+            "value": 0.25
+          }
+        ]
+      },
+      {
+        "id": "m113",
+        "parent": "sideShed",
+        "transform": {
+          "pos": [
+            0.85,
+            -1.4267,
+            1.4
+          ],
+          "quat": [
+            0,
+            0,
+            -0.71,
+            0.71
+          ]
+        },
+        "mesh": {
+          "type": "cylinder",
+          "params": {
+            "radiusTop": 0.13,
+            "radiusBottom": 0.13,
+            "height": 1.06,
+            "radialSegments": 10
+          },
+          "color": 7492411
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          },
+          {
+            "tag": "dirty",
+            "value": 0.25
+          }
+        ]
+      },
+      {
+        "id": "m114",
+        "parent": "sideShed",
+        "transform": {
+          "pos": [
+            0.86,
+            -1.4267,
+            1.16
+          ],
+          "quat": [
+            0,
+            0,
+            -0.71,
+            0.71
+          ]
+        },
+        "mesh": {
+          "type": "cylinder",
+          "params": {
+            "radiusTop": 0.12,
+            "radiusBottom": 0.12,
+            "height": 0.88,
+            "radialSegments": 10
+          },
+          "color": 6309426
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          },
+          {
+            "tag": "dirty",
+            "value": 0.25
+          }
+        ]
+      },
+      {
+        "id": "m115",
+        "parent": "sideShed",
+        "transform": {
+          "pos": [
+            0.85,
+            -1.0967,
+            1.4
+          ],
+          "quat": [
+            0,
+            0,
+            -0.71,
+            0.71
+          ]
+        },
+        "mesh": {
+          "type": "cylinder",
+          "params": {
+            "radiusTop": 0.13,
+            "radiusBottom": 0.13,
+            "height": 1.06,
+            "radialSegments": 10
+          },
+          "color": 4797222
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          },
+          {
+            "tag": "dirty",
+            "value": 0.25
+          }
+        ]
+      },
+      {
+        "id": "m116",
+        "parent": "sideShed",
+        "transform": {
+          "pos": [
+            0.86,
+            -1.0967,
+            1.16
+          ],
+          "quat": [
+            0,
+            0,
+            -0.71,
+            0.71
+          ]
+        },
+        "mesh": {
+          "type": "cylinder",
+          "params": {
+            "radiusTop": 0.12,
+            "radiusBottom": 0.12,
+            "height": 0.88,
+            "radialSegments": 10
+          },
+          "color": 6309426
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          },
+          {
+            "tag": "dirty",
+            "value": 0.25
+          }
+        ]
+      },
+      {
+        "id": "m117",
+        "parent": "sideShed",
+        "transform": {
+          "pos": [
+            0.85,
+            -0.7667,
+            1.4
+          ],
+          "quat": [
+            0,
+            0,
+            -0.71,
+            0.71
+          ]
+        },
+        "mesh": {
+          "type": "cylinder",
+          "params": {
+            "radiusTop": 0.13,
+            "radiusBottom": 0.13,
+            "height": 1.06,
+            "radialSegments": 10
+          },
+          "color": 7492411
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          },
+          {
+            "tag": "dirty",
+            "value": 0.25
+          }
+        ]
+      },
+      {
+        "id": "m118",
+        "parent": "sideShed",
+        "transform": {
+          "pos": [
+            0.86,
+            -0.7667,
+            1.16
+          ],
+          "quat": [
+            0,
+            0,
+            -0.71,
+            0.71
+          ]
+        },
+        "mesh": {
+          "type": "cylinder",
+          "params": {
+            "radiusTop": 0.12,
+            "radiusBottom": 0.12,
+            "height": 0.88,
+            "radialSegments": 10
+          },
+          "color": 6309426
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          },
+          {
+            "tag": "dirty",
+            "value": 0.25
+          }
+        ]
+      },
+      {
+        "id": "m119",
+        "parent": "sideShed",
+        "transform": {
+          "pos": [
+            1.69,
+            0.2433,
+            -1.59
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.55,
+            "height": 0.13,
+            "depth": 0.28
+          },
+          "color": 3494970
+        }
+      },
+      {
+        "id": "m120",
+        "parent": "chimney",
+        "transform": {
+          "pos": [
+            -0.29,
+            0,
+            -0.25
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.68,
+            "height": 1.38,
+            "depth": 0.7
+          },
+          "color": 6844522
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "stone"
+          },
+          {
+            "tag": "dirty",
+            "value": 0.5
+          },
+          {
+            "tag": "mossy",
+            "value": 0.25
+          }
+        ]
+      },
+      {
+        "id": "m121",
+        "parent": "chimney",
+        "transform": {
+          "pos": [
+            -0.29,
+            0.76,
+            -0.25
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.83,
+            "height": 0.28,
+            "depth": 0.84
+          },
+          "color": 5594456
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "stone"
+          },
+          {
+            "tag": "dirty",
+            "value": 0.5
+          }
+        ]
+      },
+      {
+        "id": "m122",
+        "parent": "chimney",
+        "transform": {
+          "pos": [
+            -0.55,
+            0.93,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.32,
+            "height": 0.12,
+            "depth": 0.3
+          },
+          "color": 3494970
+        }
+      },
+      {
+        "id": "m123",
+        "parent": "chimney",
+        "transform": {
+          "pos": [
+            0,
+            0.9,
+            -0.48
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.26,
+            "height": 0.1,
+            "depth": 0.24
+          },
+          "color": 4350792
+        }
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1785659192732,
+        "provider": "gpt",
+        "data": "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",
+        "edits": ""
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -0.8409887873443918,
+          2.9461513144928158,
+          -2.404355556667001
+        ],
+        "max": [
+          2.568891044420078,
+          5.53093000465905,
+          2.0956444433330024
+        ],
+        "sourceNodeId": "m62"
+      },
+      {
+        "min": [
+          -3.8530994892381636,
+          3.0138116838884077,
+          -2.4043555566669994
+        ],
+        "max": [
+          -0.6989982536861497,
+          5.543269635263457,
+          2.0956444433330006
+        ],
+        "sourceNodeId": "m61"
+      },
+      {
+        "min": [
+          1.611116076991451,
+          2.323473252755948,
+          -1.9743555566670008
+        ],
+        "max": [
+          3.956786180084236,
+          3.3336080663959167,
+          1.5656444433330015
+        ],
+        "sourceNodeId": "m107"
+      },
+      {
+        "min": [
+          -3.341048871462157,
+          0.4335406595759326,
+          1.3356444433330006
+        ],
+        "max": [
+          1.8089511285378435,
+          3.1835406595759324,
+          1.7156444433330005
+        ],
+        "sourceNodeId": "m32"
+      },
+      {
+        "min": [
+          -3.341048871462157,
+          0.4335406595759326,
+          -2.0243555566669995
+        ],
+        "max": [
+          1.8089511285378435,
+          2.983540659575932,
+          -1.6443555566669998
+        ],
+        "sourceNodeId": "m33"
+      },
+      {
+        "min": [
+          -3.5160488714621567,
+          2.828573992909265,
+          -2.0343555566669997
+        ],
+        "max": [
+          1.9839511285378433,
+          5.248573992909265,
+          -1.6743555566669999
+        ],
+        "sourceNodeId": "m37"
+      },
+      {
+        "min": [
+          -3.5160488714621567,
+          2.9886073262425987,
+          1.3656444433330006
+        ],
+        "max": [
+          1.9839511285378433,
+          5.248607326242599,
+          1.7256444433330005
+        ],
+        "sourceNodeId": "m36"
+      },
+      {
+        "min": [
+          -3.366048871462157,
+          0.4285406595759327,
+          -1.6793555566669995
+        ],
+        "max": [
+          -2.9660488714621565,
+          3.0485406595759326,
+          1.3706444433330003
+        ],
+        "sourceNodeId": "m34"
+      },
+      {
+        "min": [
+          1.433951128537843,
+          0.4285406595759327,
+          -1.6793555566669995
+        ],
+        "max": [
+          1.8339511285378434,
+          3.0485406595759326,
+          1.3706444433330003
+        ],
+        "sourceNodeId": "m35"
+      },
+      {
+        "min": [
+          3.453951128537843,
+          0.35854065957593273,
+          -1.5743555566669996
+        ],
+        "max": [
+          3.713951128537843,
+          2.0585406595759324,
+          1.2256444433330003
+        ],
+        "sourceNodeId": "m103"
+      },
+      {
+        "min": [
+          1.8139511285378433,
+          0.3485406595759327,
+          -1.744355556667
+        ],
+        "max": [
+          3.573951128537843,
+          2.0685406595759326,
+          -1.4643555566669997
+        ],
+        "sourceNodeId": "m102"
+      },
+      {
+        "min": [
+          -2.3060488714621568,
+          3.918540659575932,
+          -1.3643555566669996
+        ],
+        "max": [
+          -1.6260488714621566,
+          5.298540659575932,
+          -0.6643555566669996
+        ],
+        "sourceNodeId": "m120"
+      }
+    ],
+    "sourceMeshCount": 124,
+    "candidateCount": 73,
+    "fallbackUsed": false
+  },
+  "footprintRadius": 3.956786180084236,
+  "sizeClass": "large",
+  "mode": "standard",
+  "provider": "gpt",
+  "createdAt": 1785659222782,
+  "updatedAt": 1785659222782
+}

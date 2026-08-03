@@ -1,0 +1,281 @@
+{
+  "id": "asset-41681ce3-fb81-425c",
+  "name": "木制围栏段",
+  "prompt": "独立低多边形乡村木制围栏段，横向木梁与粗糙立柱，可重复拼接，无地面，无背景",
+  "modelJson": {
+    "name": "乡村木制围栏段",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "fence",
+        "name": "可拼接围栏",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "fence",
+        "transform": {
+          "pos": [
+            -3,
+            1.61,
+            0
+          ],
+          "quat": [
+            -0.71,
+            -0.02,
+            0.02,
+            0.71
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.62,
+            "height": 0.6,
+            "depth": 3.11
+          },
+          "color": 7030055
+        }
+      },
+      {
+        "id": "m1",
+        "parent": "fence",
+        "transform": {
+          "pos": [
+            3,
+            1.61,
+            0
+          ],
+          "quat": [
+            -0.71,
+            0.02,
+            -0.02,
+            0.71
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.62,
+            "height": 0.6,
+            "depth": 3.11
+          },
+          "color": 7753779
+        }
+      },
+      {
+        "id": "m2",
+        "parent": "fence",
+        "transform": {
+          "pos": [
+            0,
+            1,
+            0.2
+          ],
+          "quat": [
+            -0.71,
+            -0.01,
+            0.01,
+            0.71
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 5.5,
+            "height": 0.34,
+            "depth": 0.33
+          },
+          "color": 9067314
+        }
+      },
+      {
+        "id": "m3",
+        "parent": "fence",
+        "transform": {
+          "pos": [
+            0,
+            2.05,
+            0.2
+          ],
+          "quat": [
+            -0.71,
+            0.01,
+            -0.01,
+            0.71
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 5.5,
+            "height": 0.34,
+            "depth": 0.33
+          },
+          "color": 9791035
+        }
+      },
+      {
+        "id": "m4",
+        "parent": "fence",
+        "transform": {
+          "pos": [
+            -2.48,
+            0.94,
+            0.41
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.12,
+            "height": 0.12,
+            "depth": 0.08
+          },
+          "color": 3878952
+        }
+      },
+      {
+        "id": "m5",
+        "parent": "fence",
+        "transform": {
+          "pos": [
+            -2.48,
+            2.07,
+            0.41
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.12,
+            "height": 0.12,
+            "depth": 0.08
+          },
+          "color": 3878952
+        }
+      },
+      {
+        "id": "m6",
+        "parent": "fence",
+        "transform": {
+          "pos": [
+            2.48,
+            1.03,
+            0.41
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.12,
+            "height": 0.12,
+            "depth": 0.08
+          },
+          "color": 3878952
+        }
+      },
+      {
+        "id": "m7",
+        "parent": "fence",
+        "transform": {
+          "pos": [
+            2.48,
+            1.99,
+            0.41
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.12,
+            "height": 0.12,
+            "depth": 0.08
+          },
+          "color": 3878952
+        }
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1785333747041,
+        "provider": "gpt",
+        "data": "/qPSfPAG07UC7A/LjXAvhq7NV8US+wP0tqWGqwPWPN0jmHsH7YZzOV00wIEWbCP7C1mtcYk/ay01HWpUGnIsC5AGCfTHu3SgEQU8of7tyz9SfxGEO5w5iCopxpRtcLpX8J0CuUIREtjt9SN5DG8mgjRiOj/lbgXGDJw/T82hgpGJ9KkCvQyvNhQKlH3syKGPXF1eciq8pnckDV0gR7fG4CJDrZ0rdEsGeoT8DmcvJi+vt5PnRX9FugC3lYyYFIERgDMr18r8ID7YBsuExPWRyeVwSZBBir0JcUcqtMkvRUCigufPjOt5FqwRxc7Yh6pULcDs/vXr/0mP4V9SwLbuIAkF2p/IcjNwIVSnIlxmpZdx77mtqDDWq8HRPu6KFmM0o/2exFldIuRTuGcb/ASfETHy9DuceZDtbAtLekgw4qlEQ60kW7Z30f0qyKa82l2G472c8KDsjpbVGOAO4WmxUak2hUjza+QyXjQfx8JqGJ3ROprgN0zCfvXoT3Ai0TL/oYl4McXWumTfH5i7exJSRFiR9DfN5jRYOVY3DK4RLXrcUOdQSVsG7fVgf/4CzRIYX0zTu4/JVN9znpVGL+bvDYhqbWcK3aLvJPcYboTEU8VVK8CJjDRlrMK6yDYlCkuu7FtaS8aLSTgonyUOKX0nSX1w54PjeKdPUKDqxxWViGL0nm/kINTVsY0kByiAd4/7/4ML74Prz3hPPEhG",
+        "edits": ""
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -3.3970445986124878,
+          0,
+          -0.3750000000000002
+        ],
+        "max": [
+          -2.6029554013875122,
+          3.139970267591676,
+          0.22500000000000075
+        ],
+        "sourceNodeId": "m0"
+      },
+      {
+        "min": [
+          2.6029554013875122,
+          0,
+          -0.3750000000000002
+        ],
+        "max": [
+          3.3970445986124878,
+          3.139970267591676,
+          0.22500000000000075
+        ],
+        "sourceNodeId": "m1"
+      },
+      {
+        "min": [
+          -2.753556128520428,
+          0.717601159182589,
+          -0.044999999999999735
+        ],
+        "max": [
+          2.753556128520428,
+          1.2023691084090866,
+          0.29500000000000026
+        ],
+        "sourceNodeId": "m2"
+      },
+      {
+        "min": [
+          -2.753556128520428,
+          1.7676011591825889,
+          -0.044999999999999735
+        ],
+        "max": [
+          2.753556128520428,
+          2.252369108409086,
+          0.29500000000000026
+        ],
+        "sourceNodeId": "m3"
+      }
+    ],
+    "sourceMeshCount": 8,
+    "candidateCount": 4,
+    "fallbackUsed": false
+  },
+  "mode": "voxel",
+  "provider": "gpt",
+  "createdAt": 1785333747101,
+  "updatedAt": 1785333747101
+}

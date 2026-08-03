@@ -1,0 +1,51 @@
+{
+  "schemaVersion": 1,
+  "kind": "worldforge-starter-data",
+  "maps": [
+    {
+      "id": "map-7bb9ef04-6e49-4f39",
+      "name": "开阔平原"
+    },
+    {
+      "id": "map-39a2f074-ec20-4fdf",
+      "name": "清新树林"
+    },
+    {
+      "id": "map-535216ce-49a2-45b2",
+      "name": "樱花竹林"
+    },
+    {
+      "id": "map-ae8c8e55-bfa2-4217",
+      "name": "夕阳草原"
+    }
+  ],
+  "assets": [
+    "asset-0251f944-62d8-42d3",
+    "asset-0b6a74ad-9276-4f3f",
+    "asset-0dbcfe73-bf57-4866",
+    "asset-1195ac28-f853-4580",
+    "asset-16041b92-fdd9-4929",
+    "asset-3be8bae6-d5d0-4c33",
+    "asset-3f2f4aff-1a45-4bab",
+    "asset-41681ce3-fb81-425c",
+    "asset-5886eccd-2b68-49ed",
+    "asset-595328f1-28a3-4c0f",
+    "asset-688f47a6-c633-48c1",
+    "asset-6c7a9b83-8bf9-4418",
+    "asset-7282104e-8c10-4f11",
+    "asset-7e54fa22-b75d-465e",
+    "asset-7fb70790-b58d-4ff7",
+    "asset-9358ce28-d3a6-4715",
+    "asset-9e7927ba-ade4-4d25",
+    "asset-a7f8eb70-74f8-47a9",
+    "asset-c8516404-01d6-41cd",
+    "asset-d426dadd-9465-46fc",
+    "asset-e3e228d2-ae12-4bac"
+  ],
+  "renderSchemes": [
+    "render-02f563f4-c0ea-4ed8",
+    "render-6d04102b-0cf0-4a5c",
+    "render-afa7aa1e-0e86-4de0",
+    "render-e79c36e1-c0d0-406a"
+  ]
+}

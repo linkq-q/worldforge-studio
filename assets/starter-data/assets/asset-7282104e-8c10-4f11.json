@@ -1,0 +1,2644 @@
+{
+  "id": "asset-7282104e-8c10-4f11",
+  "name": "深林树冠树木 1",
+  "prompt": "高大而略弯曲的混合林树木，深绿色不规则树冠、粗糙深色树皮和少量苔藓；变体包含宽冠阔叶树、窄冠针叶树与古老粗干树。\n全局资产美术方向：质朴的林中村落风格，采用粗木、深褐屋顶、苔藓石材和温暖火光；建筑比例紧凑，树木高而略带不规则轮廓，整体色彩以深绿、湿土棕和灰石色为主。\n资产角色：构成外围封闭树冠、村缘疏林和高低错落森林背景的主植被。；目标尺度：large。\n这是同一家族的第 1 个可辨识变体，轮廓应有变化但风格一致。\n只生成一个可复用的独立物体，不要生成地面、背景、天空、完整场景或多个分散物体。",
+  "tags": [
+    "forest-tree",
+    "broadleaf",
+    "conifer",
+    "old-growth",
+    "mossy"
+  ],
+  "modelJson": {
+    "name": "宽冠混合林阔叶树",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "lowerBranches",
+        "description": "数根粗枝从主干中上部向两侧伸展，一侧较长且略下垂，另一侧较短并向上抬起，枝条-湿土棕",
+        "transform": {
+          "pos": [
+            -0.305,
+            6.21,
+            0.155
+          ]
+        }
+      },
+      {
+        "id": "trunk",
+        "description": "粗壮主干向一侧缓弯，根部宽大、向上逐渐收窄，深褐树皮-湿土棕[3b2a20]，少量苔藓簇附着在根部与背阴侧-苔绿[65734b]",
+        "parent": "lowerBranches",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        }
+      },
+      {
+        "id": "upperCrown",
+        "description": "宽大不规则阔叶树冠，由高低错落且相互连接的叶簇组成，顶部偏斜、两侧不对称，主体叶簇-深绿[263f2b]，少量外缘叶簇-暗苔绿[465b38]",
+        "parent": "lowerBranches",
+        "transform": {
+          "pos": [
+            0,
+            0.7904,
+            0
+          ]
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "trunk",
+        "transform": {
+          "pos": [
+            0.295,
+            -5.66,
+            -0.145
+          ],
+          "quat": [
+            0.02,
+            0,
+            0.02,
+            1
+          ]
+        },
+        "mesh": {
+          "type": "cylinder",
+          "params": {
+            "radiusTop": 0.7648162621235923,
+            "radiusBottom": 0.8183427669730292,
+            "height": 0.79,
+            "radialSegments": 10
+          },
+          "color": 3877408
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "bark"
+          },
+          {
+            "tag": "mossy",
+            "value": 0.25
+          },
+          {
+            "tag": "wet",
+            "value": 0.25
+          }
+        ]
+      },
+      {
+        "id": "m1",
+        "parent": "trunk",
+        "transform": {
+          "pos": [
+            0.295,
+            -4.87,
+            -0.125
+          ],
+          "quat": [
+            0,
+            0,
+            -0.02,
+            1
+          ]
+        },
+        "mesh": {
+          "type": "cylinder",
+          "params": {
+            "radiusTop": 0.7030568244964649,
+            "radiusBottom": 0.7534795542950509,
+            "height": 0.79,
+            "radialSegments": 10
+          },
+          "color": 4797223
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "bark"
+          },
+          {
+            "tag": "mossy",
+            "value": 0.25
+          },
+          {
+            "tag": "wet",
+            "value": 0.25
+          }
+        ]
+      },
+      {
+        "id": "m2",
+        "parent": "trunk",
+        "transform": {
+          "pos": [
+            0.335,
+            -4.08,
+            -0.135
+          ],
+          "quat": [
+            -0.01,
+            0,
+            -0.04,
+            1
+          ]
+        },
+        "mesh": {
+          "type": "cylinder",
+          "params": {
+            "radiusTop": 0.6510967579707165,
+            "radiusBottom": 0.7023354611590032,
+            "height": 0.79,
+            "radialSegments": 10
+          },
+          "color": 3877408
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "bark"
+          },
+          {
+            "tag": "mossy",
+            "value": 0.25
+          },
+          {
+            "tag": "wet",
+            "value": 0.25
+          }
+        ]
+      },
+      {
+        "id": "m3",
+        "parent": "trunk",
+        "transform": {
+          "pos": [
+            0.425,
+            -3.29,
+            -0.145
+          ],
+          "quat": [
+            -0.01,
+            0,
+            -0.06,
+            1
+          ]
+        },
+        "mesh": {
+          "type": "cylinder",
+          "params": {
+            "radiusTop": 0.603883699632331,
+            "radiusBottom": 0.6578371794852633,
+            "height": 0.79,
+            "radialSegments": 10
+          },
+          "color": 5718068
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "bark"
+          },
+          {
+            "tag": "mossy",
+            "value": 0.25
+          },
+          {
+            "tag": "wet",
+            "value": 0.25
+          }
+        ]
+      },
+      {
+        "id": "m4",
+        "parent": "trunk",
+        "transform": {
+          "pos": [
+            0.525,
+            -2.51,
+            -0.175
+          ],
+          "quat": [
+            -0.02,
+            0,
+            -0.07,
+            1
+          ]
+        },
+        "mesh": {
+          "type": "cylinder",
+          "params": {
+            "radiusTop": 0.5522213584517267,
+            "radiusBottom": 0.6071099018324173,
+            "height": 0.79,
+            "radialSegments": 10
+          },
+          "color": 3877408
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "bark"
+          },
+          {
+            "tag": "mossy",
+            "value": 0.25
+          },
+          {
+            "tag": "wet",
+            "value": 0.25
+          }
+        ]
+      },
+      {
+        "id": "m5",
+        "parent": "trunk",
+        "transform": {
+          "pos": [
+            0.635,
+            -1.72,
+            -0.205
+          ],
+          "quat": [
+            -0.02,
+            0,
+            -0.07,
+            1
+          ]
+        },
+        "mesh": {
+          "type": "cylinder",
+          "params": {
+            "radiusTop": 0.49546510969446683,
+            "radiusBottom": 0.5492511535722536,
+            "height": 0.79,
+            "radialSegments": 10
+          },
+          "color": 4797223
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "bark"
+          },
+          {
+            "tag": "mossy",
+            "value": 0.25
+          },
+          {
+            "tag": "wet",
+            "value": 0.25
+          }
+        ]
+      },
+      {
+        "id": "m6",
+        "parent": "trunk",
+        "transform": {
+          "pos": [
+            0.735,
+            -0.94,
+            -0.225
+          ],
+          "quat": [
+            -0.02,
+            0,
+            -0.06,
+            1
+          ]
+        },
+        "mesh": {
+          "type": "cylinder",
+          "params": {
+            "radiusTop": 0.4396637054011045,
+            "radiusBottom": 0.49272918756154627,
+            "height": 0.79,
+            "radialSegments": 10
+          },
+          "color": 3877408
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "bark"
+          },
+          {
+            "tag": "mossy",
+            "value": 0.25
+          },
+          {
+            "tag": "wet",
+            "value": 0.25
+          }
+        ]
+      },
+      {
+        "id": "m7",
+        "parent": "trunk",
+        "transform": {
+          "pos": [
+            0.825,
+            -0.16,
+            -0.245
+          ],
+          "quat": [
+            -0.01,
+            0,
+            -0.04,
+            1
+          ]
+        },
+        "mesh": {
+          "type": "cylinder",
+          "params": {
+            "radiusTop": 0.3931976095425702,
+            "radiusBottom": 0.44927665335959827,
+            "height": 0.78,
+            "radialSegments": 10
+          },
+          "color": 5718068
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "bark"
+          },
+          {
+            "tag": "mossy",
+            "value": 0.25
+          },
+          {
+            "tag": "wet",
+            "value": 0.25
+          }
+        ]
+      },
+      {
+        "id": "m8",
+        "parent": "trunk",
+        "transform": {
+          "pos": [
+            0.865,
+            0.62,
+            -0.255
+          ],
+          "quat": [
+            0,
+            0,
+            -0.02,
+            1
+          ]
+        },
+        "mesh": {
+          "type": "cylinder",
+          "params": {
+            "radiusTop": 0.3316867231845054,
+            "radiusBottom": 0.3847614124583076,
+            "height": 0.78,
+            "radialSegments": 10
+          },
+          "color": 3877408
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "bark"
+          },
+          {
+            "tag": "mossy",
+            "value": 0.25
+          },
+          {
+            "tag": "wet",
+            "value": 0.25
+          }
+        ]
+      },
+      {
+        "id": "m9",
+        "parent": "trunk",
+        "transform": {
+          "pos": [
+            0.865,
+            1.4,
+            -0.245
+          ],
+          "quat": [
+            0.01,
+            0,
+            0.02,
+            1
+          ]
+        },
+        "mesh": {
+          "type": "cylinder",
+          "params": {
+            "radiusTop": 0.27843218226501665,
+            "radiusBottom": 0.33180505517102327,
+            "height": 0.78,
+            "radialSegments": 10
+          },
+          "color": 4797223
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "bark"
+          },
+          {
+            "tag": "mossy",
+            "value": 0.25
+          },
+          {
+            "tag": "wet",
+            "value": 0.25
+          }
+        ]
+      },
+      {
+        "id": "m10",
+        "parent": "trunk",
+        "transform": {
+          "pos": [
+            1.305,
+            -6,
+            0.025
+          ],
+          "quat": [
+            0.13,
+            0,
+            -0.75,
+            0.64
+          ]
+        },
+        "mesh": {
+          "type": "cone",
+          "params": {
+            "radius": 0.48,
+            "height": 2.06,
+            "radialSegments": 10
+          },
+          "color": 3877408
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "bark"
+          },
+          {
+            "tag": "mossy",
+            "value": 0.25
+          },
+          {
+            "tag": "wet",
+            "value": 0.25
+          }
+        ]
+      },
+      {
+        "id": "m11",
+        "parent": "trunk",
+        "transform": {
+          "pos": [
+            1.265,
+            -5.98,
+            0.013
+          ]
+        },
+        "mesh": {
+          "type": "icosahedron",
+          "params": {
+            "radius": 0.22,
+            "detail": 0
+          },
+          "color": 6648651
+        }
+      },
+      {
+        "id": "m12",
+        "parent": "trunk",
+        "transform": {
+          "pos": [
+            -0.515,
+            -6,
+            0.275
+          ],
+          "quat": [
+            0.35,
+            0,
+            0.68,
+            0.64
+          ]
+        },
+        "mesh": {
+          "type": "cone",
+          "params": {
+            "radius": 0.44499999999999995,
+            "height": 1.89,
+            "radialSegments": 10
+          },
+          "color": 4797223
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "bark"
+          },
+          {
+            "tag": "mossy",
+            "value": 0.25
+          },
+          {
+            "tag": "wet",
+            "value": 0.25
+          }
+        ]
+      },
+      {
+        "id": "m13",
+        "parent": "trunk",
+        "transform": {
+          "pos": [
+            -0.487,
+            -5.98,
+            0.253
+          ]
+        },
+        "mesh": {
+          "type": "icosahedron",
+          "params": {
+            "radius": 0.27,
+            "detail": 0
+          },
+          "color": 5398847
+        }
+      },
+      {
+        "id": "m14",
+        "parent": "trunk",
+        "transform": {
+          "pos": [
+            0.535,
+            -6,
+            0.675
+          ],
+          "quat": [
+            0.75,
+            0,
+            -0.2,
+            0.63
+          ]
+        },
+        "mesh": {
+          "type": "cone",
+          "params": {
+            "radius": 0.41,
+            "height": 1.75,
+            "radialSegments": 10
+          },
+          "color": 3877408
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "bark"
+          },
+          {
+            "tag": "mossy",
+            "value": 0.25
+          },
+          {
+            "tag": "wet",
+            "value": 0.25
+          }
+        ]
+      },
+      {
+        "id": "m15",
+        "parent": "trunk",
+        "transform": {
+          "pos": [
+            0.521,
+            -5.98,
+            0.637
+          ]
+        },
+        "mesh": {
+          "type": "icosahedron",
+          "params": {
+            "radius": 0.22,
+            "detail": 0
+          },
+          "color": 6648651
+        }
+      },
+      {
+        "id": "m16",
+        "parent": "trunk",
+        "transform": {
+          "pos": [
+            -0.015,
+            -6,
+            -0.925
+          ],
+          "quat": [
+            -0.72,
+            0,
+            0.3,
+            0.63
+          ]
+        },
+        "mesh": {
+          "type": "cone",
+          "params": {
+            "radius": 0.375,
+            "height": 1.72,
+            "radialSegments": 10
+          },
+          "color": 4797223
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "bark"
+          },
+          {
+            "tag": "mossy",
+            "value": 0.25
+          },
+          {
+            "tag": "wet",
+            "value": 0.25
+          }
+        ]
+      },
+      {
+        "id": "m17",
+        "parent": "trunk",
+        "transform": {
+          "pos": [
+            -0.007,
+            -5.98,
+            -0.899
+          ]
+        },
+        "mesh": {
+          "type": "icosahedron",
+          "params": {
+            "radius": 0.27,
+            "detail": 0
+          },
+          "color": 5398847
+        }
+      },
+      {
+        "id": "m18",
+        "parent": "trunk",
+        "transform": {
+          "pos": [
+            0.935,
+            -6,
+            -0.675
+          ],
+          "quat": [
+            -0.5,
+            0,
+            -0.59,
+            0.63
+          ]
+        },
+        "mesh": {
+          "type": "cone",
+          "params": {
+            "radius": 0.33999999999999997,
+            "height": 1.67,
+            "radialSegments": 10
+          },
+          "color": 3877408
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "bark"
+          },
+          {
+            "tag": "mossy",
+            "value": 0.25
+          },
+          {
+            "tag": "wet",
+            "value": 0.25
+          }
+        ]
+      },
+      {
+        "id": "m19",
+        "parent": "trunk",
+        "transform": {
+          "pos": [
+            0.905,
+            -5.98,
+            -0.659
+          ]
+        },
+        "mesh": {
+          "type": "icosahedron",
+          "params": {
+            "radius": 0.22,
+            "detail": 0
+          },
+          "color": 6648651
+        }
+      },
+      {
+        "id": "m20",
+        "parent": "trunk",
+        "transform": {
+          "pos": [
+            -0.375,
+            -5.46,
+            -0.095
+          ]
+        },
+        "mesh": {
+          "type": "icosahedron",
+          "params": {
+            "radius": 0.28,
+            "detail": 0
+          },
+          "color": 6648651
+        }
+      },
+      {
+        "id": "m21",
+        "parent": "trunk",
+        "transform": {
+          "pos": [
+            -0.495,
+            -5.3,
+            -0.065
+          ]
+        },
+        "mesh": {
+          "type": "icosahedron",
+          "params": {
+            "radius": 0.18200000000000002,
+            "detail": 0
+          },
+          "color": 6648651
+        }
+      },
+      {
+        "id": "m22",
+        "parent": "trunk",
+        "transform": {
+          "pos": [
+            -0.335,
+            -4.96,
+            -0.355
+          ]
+        },
+        "mesh": {
+          "type": "icosahedron",
+          "params": {
+            "radius": 0.22,
+            "detail": 0
+          },
+          "color": 5398847
+        }
+      },
+      {
+        "id": "m23",
+        "parent": "trunk",
+        "transform": {
+          "pos": [
+            -0.455,
+            -4.8,
+            -0.325
+          ]
+        },
+        "mesh": {
+          "type": "icosahedron",
+          "params": {
+            "radius": 0.14300000000000002,
+            "detail": 0
+          },
+          "color": 6648651
+        }
+      },
+      {
+        "id": "m24",
+        "parent": "trunk",
+        "transform": {
+          "pos": [
+            -0.245,
+            -4.36,
+            -0.455
+          ]
+        },
+        "mesh": {
+          "type": "icosahedron",
+          "params": {
+            "radius": 0.19,
+            "detail": 0
+          },
+          "color": 6648651
+        }
+      },
+      {
+        "id": "m25",
+        "parent": "trunk",
+        "transform": {
+          "pos": [
+            -0.365,
+            -4.2,
+            -0.425
+          ]
+        },
+        "mesh": {
+          "type": "icosahedron",
+          "params": {
+            "radius": 0.12350000000000001,
+            "detail": 0
+          },
+          "color": 6648651
+        }
+      },
+      {
+        "id": "m26",
+        "parent": "trunk",
+        "transform": {
+          "pos": [
+            -0.035,
+            -3.66,
+            -0.615
+          ]
+        },
+        "mesh": {
+          "type": "icosahedron",
+          "params": {
+            "radius": 0.16,
+            "detail": 0
+          },
+          "color": 5398847
+        }
+      },
+      {
+        "id": "m27",
+        "parent": "trunk",
+        "transform": {
+          "pos": [
+            0.325,
+            -2.86,
+            -0.655
+          ]
+        },
+        "mesh": {
+          "type": "icosahedron",
+          "params": {
+            "radius": 0.14,
+            "detail": 0
+          },
+          "color": 6648651
+        }
+      },
+      {
+        "id": "m28",
+        "parent": "lowerBranches",
+        "transform": {
+          "pos": [
+            0.445,
+            -1.04,
+            -0.195
+          ],
+          "quat": [
+            0.04,
+            0,
+            0.42,
+            0.91
+          ]
+        },
+        "mesh": {
+          "type": "cylinder",
+          "params": {
+            "radiusTop": 0.30501629798211366,
+            "radiusBottom": 0.34935615050829244,
+            "height": 0.66,
+            "radialSegments": 10
+          },
+          "color": 3877408
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "bark"
+          }
+        ]
+      },
+      {
+        "id": "m29",
+        "parent": "lowerBranches",
+        "transform": {
+          "pos": [
+            -0.095,
+            -0.7,
+            -0.145
+          ],
+          "quat": [
+            0.06,
+            0,
+            0.55,
+            0.84
+          ]
+        },
+        "mesh": {
+          "type": "cylinder",
+          "params": {
+            "radiusTop": 0.2680557510089005,
+            "radiusBottom": 0.3142780514124607,
+            "height": 0.65,
+            "radialSegments": 10
+          },
+          "color": 4797223
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "bark"
+          }
+        ]
+      },
+      {
+        "id": "m30",
+        "parent": "lowerBranches",
+        "transform": {
+          "pos": [
+            -0.715,
+            -0.51,
+            -0.075
+          ],
+          "quat": [
+            0.08,
+            0,
+            0.62,
+            0.78
+          ]
+        },
+        "mesh": {
+          "type": "cylinder",
+          "params": {
+            "radiusTop": 0.21643399828679322,
+            "radiusBottom": 0.2586742642681772,
+            "height": 0.66,
+            "radialSegments": 10
+          },
+          "color": 3877408
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "bark"
+          }
+        ]
+      },
+      {
+        "id": "m31",
+        "parent": "lowerBranches",
+        "transform": {
+          "pos": [
+            -1.355,
+            -0.41,
+            0.015
+          ],
+          "quat": [
+            0.09,
+            0,
+            0.66,
+            0.74
+          ]
+        },
+        "mesh": {
+          "type": "cylinder",
+          "params": {
+            "radiusTop": 0.1773810361271561,
+            "radiusBottom": 0.2206667839113519,
+            "height": 0.66,
+            "radialSegments": 10
+          },
+          "color": 4797223
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "bark"
+          }
+        ]
+      },
+      {
+        "id": "m32",
+        "parent": "lowerBranches",
+        "transform": {
+          "pos": [
+            -1.985,
+            -0.35,
+            0.095
+          ],
+          "quat": [
+            0.1,
+            0,
+            0.67,
+            0.73
+          ]
+        },
+        "mesh": {
+          "type": "cylinder",
+          "params": {
+            "radiusTop": 0.13005474851494114,
+            "radiusBottom": 0.1710766479209176,
+            "height": 0.62,
+            "radialSegments": 10
+          },
+          "color": 3877408
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "bark"
+          }
+        ]
+      },
+      {
+        "id": "m33",
+        "parent": "lowerBranches",
+        "transform": {
+          "pos": [
+            -2.575,
+            -0.3,
+            0.185
+          ],
+          "quat": [
+            0.1,
+            0,
+            0.65,
+            0.75
+          ]
+        },
+        "mesh": {
+          "type": "cylinder",
+          "params": {
+            "radiusTop": 0.07850952689706764,
+            "radiusBottom": 0.11558000432256134,
+            "height": 0.56,
+            "radialSegments": 10
+          },
+          "color": 4797223
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "bark"
+          }
+        ]
+      },
+      {
+        "id": "m34",
+        "parent": "lowerBranches",
+        "transform": {
+          "pos": [
+            0.985,
+            -0.34,
+            -0.235
+          ],
+          "quat": [
+            0.01,
+            0,
+            -0.31,
+            0.95
+          ]
+        },
+        "mesh": {
+          "type": "cylinder",
+          "params": {
+            "radiusTop": 0.26809570221409285,
+            "radiusBottom": 0.31573398309973,
+            "height": 0.71,
+            "radialSegments": 10
+          },
+          "color": 4797223
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "bark"
+          }
+        ]
+      },
+      {
+        "id": "m35",
+        "parent": "lowerBranches",
+        "transform": {
+          "pos": [
+            1.395,
+            0.18,
+            -0.235
+          ],
+          "quat": [
+            -0.01,
+            0,
+            -0.36,
+            0.93
+          ]
+        },
+        "mesh": {
+          "type": "cylinder",
+          "params": {
+            "radiusTop": 0.22394184281177973,
+            "radiusBottom": 0.27231857993649167,
+            "height": 0.62,
+            "radialSegments": 10
+          },
+          "color": 3877408
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "bark"
+          }
+        ]
+      },
+      {
+        "id": "m36",
+        "parent": "lowerBranches",
+        "transform": {
+          "pos": [
+            1.815,
+            0.6,
+            -0.255
+          ],
+          "quat": [
+            -0.02,
+            0,
+            -0.4,
+            0.91
+          ]
+        },
+        "mesh": {
+          "type": "cylinder",
+          "params": {
+            "radiusTop": 0.1651165383460158,
+            "radiusBottom": 0.2083631536844221,
+            "height": 0.55,
+            "radialSegments": 10
+          },
+          "color": 4797223
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "bark"
+          }
+        ]
+      },
+      {
+        "id": "m37",
+        "parent": "lowerBranches",
+        "transform": {
+          "pos": [
+            2.205,
+            0.93,
+            -0.285
+          ],
+          "quat": [
+            -0.04,
+            0,
+            -0.44,
+            0.9
+          ]
+        },
+        "mesh": {
+          "type": "cylinder",
+          "params": {
+            "radiusTop": 0.12534960399762346,
+            "radiusBottom": 0.17108944559667286,
+            "height": 0.49,
+            "radialSegments": 10
+          },
+          "color": 3877408
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "bark"
+          }
+        ]
+      },
+      {
+        "id": "m38",
+        "parent": "lowerBranches",
+        "transform": {
+          "pos": [
+            2.575,
+            1.21,
+            -0.315
+          ],
+          "quat": [
+            -0.05,
+            0,
+            -0.45,
+            0.89
+          ]
+        },
+        "mesh": {
+          "type": "cylinder",
+          "params": {
+            "radiusTop": 0.08844622282706065,
+            "radiusBottom": 0.13782471195788487,
+            "height": 0.44,
+            "radialSegments": 10
+          },
+          "color": 4797223
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "bark"
+          }
+        ]
+      },
+      {
+        "id": "m39",
+        "parent": "lowerBranches",
+        "transform": {
+          "pos": [
+            0.605,
+            -1.42,
+            0.005
+          ],
+          "quat": [
+            0.3,
+            0,
+            0.05,
+            0.95
+          ]
+        },
+        "mesh": {
+          "type": "cylinder",
+          "params": {
+            "radiusTop": 0.23716238827661518,
+            "radiusBottom": 0.2800273435872612,
+            "height": 0.75,
+            "radialSegments": 10
+          },
+          "color": 3877408
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "bark"
+          }
+        ]
+      },
+      {
+        "id": "m40",
+        "parent": "lowerBranches",
+        "transform": {
+          "pos": [
+            0.485,
+            -0.88,
+            0.425
+          ],
+          "quat": [
+            0.35,
+            0,
+            0.13,
+            0.93
+          ]
+        },
+        "mesh": {
+          "type": "cylinder",
+          "params": {
+            "radiusTop": 0.19722393094592144,
+            "radiusBottom": 0.24011350332429005,
+            "height": 0.64,
+            "radialSegments": 10
+          },
+          "color": 5718068
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "bark"
+          }
+        ]
+      },
+      {
+        "id": "m41",
+        "parent": "lowerBranches",
+        "transform": {
+          "pos": [
+            0.295,
+            -0.48,
+            0.825
+          ],
+          "quat": [
+            0.38,
+            0,
+            0.22,
+            0.9
+          ]
+        },
+        "mesh": {
+          "type": "cylinder",
+          "params": {
+            "radiusTop": 0.14447826820446216,
+            "radiusBottom": 0.182269575486247,
+            "height": 0.56,
+            "radialSegments": 10
+          },
+          "color": 3877408
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "bark"
+          }
+        ]
+      },
+      {
+        "id": "m42",
+        "parent": "lowerBranches",
+        "transform": {
+          "pos": [
+            0.055,
+            -0.18,
+            1.175
+          ],
+          "quat": [
+            0.39,
+            0,
+            0.3,
+            0.87
+          ]
+        },
+        "mesh": {
+          "type": "cylinder",
+          "params": {
+            "radiusTop": 0.11681724822374934,
+            "radiusBottom": 0.1595441475132491,
+            "height": 0.49,
+            "radialSegments": 10
+          },
+          "color": 5718068
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "bark"
+          }
+        ]
+      },
+      {
+        "id": "m43",
+        "parent": "lowerBranches",
+        "transform": {
+          "pos": [
+            -0.205,
+            0.04,
+            1.465
+          ],
+          "quat": [
+            0.35,
+            0,
+            0.38,
+            0.86
+          ]
+        },
+        "mesh": {
+          "type": "cylinder",
+          "params": {
+            "radiusTop": 0.06481038500988319,
+            "radiusBottom": 0.10273453901383645,
+            "height": 0.42,
+            "radialSegments": 10
+          },
+          "color": 3877408
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "bark"
+          }
+        ]
+      },
+      {
+        "id": "m44",
+        "parent": "lowerBranches",
+        "transform": {
+          "pos": [
+            0.885,
+            0.15,
+            -0.395
+          ],
+          "quat": [
+            -0.27,
+            0,
+            -0.09,
+            0.96
+          ]
+        },
+        "mesh": {
+          "type": "cylinder",
+          "params": {
+            "radiusTop": 0.21653005106446083,
+            "radiusBottom": 0.25354207149024516,
+            "height": 0.56,
+            "radialSegments": 10
+          },
+          "color": 4797223
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "bark"
+          }
+        ]
+      },
+      {
+        "id": "m45",
+        "parent": "lowerBranches",
+        "transform": {
+          "pos": [
+            1.005,
+            0.57,
+            -0.695
+          ],
+          "quat": [
+            -0.33,
+            0,
+            -0.15,
+            0.93
+          ]
+        },
+        "mesh": {
+          "type": "cylinder",
+          "params": {
+            "radiusTop": 0.18223807948404733,
+            "radiusBottom": 0.21993331127766624,
+            "height": 0.5,
+            "radialSegments": 10
+          },
+          "color": 3877408
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "bark"
+          }
+        ]
+      },
+      {
+        "id": "m46",
+        "parent": "lowerBranches",
+        "transform": {
+          "pos": [
+            1.165,
+            0.9,
+            -0.995
+          ],
+          "quat": [
+            -0.37,
+            0,
+            -0.21,
+            0.91
+          ]
+        },
+        "mesh": {
+          "type": "cylinder",
+          "params": {
+            "radiusTop": 0.14429096196918847,
+            "radiusBottom": 0.18120734675686384,
+            "height": 0.46,
+            "radialSegments": 10
+          },
+          "color": 4797223
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "bark"
+          }
+        ]
+      },
+      {
+        "id": "m47",
+        "parent": "lowerBranches",
+        "transform": {
+          "pos": [
+            1.345,
+            1.17,
+            -1.295
+          ],
+          "quat": [
+            -0.38,
+            0,
+            -0.25,
+            0.89
+          ]
+        },
+        "mesh": {
+          "type": "cylinder",
+          "params": {
+            "radiusTop": 0.1023260050218338,
+            "radiusBottom": 0.1368564070305673,
+            "height": 0.43,
+            "radialSegments": 10
+          },
+          "color": 3877408
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "bark"
+          }
+        ]
+      },
+      {
+        "id": "m48",
+        "parent": "lowerBranches",
+        "transform": {
+          "pos": [
+            1.555,
+            1.42,
+            -1.575
+          ],
+          "quat": [
+            -0.36,
+            0,
+            -0.29,
+            0.89
+          ]
+        },
+        "mesh": {
+          "type": "cylinder",
+          "params": {
+            "radiusTop": 0.07579021553729885,
+            "radiusBottom": 0.1141063017522184,
+            "height": 0.41,
+            "radialSegments": 10
+          },
+          "color": 4797223
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "bark"
+          }
+        ]
+      },
+      {
+        "id": "m49",
+        "parent": "lowerBranches",
+        "transform": {
+          "pos": [
+            -1.695,
+            -0.39,
+            0.065
+          ]
+        },
+        "mesh": {
+          "type": "sphere",
+          "params": {
+            "radius": 0.15400000000000003,
+            "widthSegments": 10,
+            "heightSegments": 7
+          },
+          "color": 4797223
+        }
+      },
+      {
+        "id": "m50",
+        "parent": "lowerBranches",
+        "transform": {
+          "pos": [
+            -2.045,
+            0.02,
+            0.075
+          ],
+          "quat": [
+            0.01,
+            0,
+            0.34,
+            0.94
+          ]
+        },
+        "mesh": {
+          "type": "cylinder",
+          "params": {
+            "radiusTop": 0.14,
+            "radiusBottom": 0.14,
+            "height": 1.09,
+            "radialSegments": 10
+          },
+          "color": 4797223
+        }
+      },
+      {
+        "id": "m51",
+        "parent": "lowerBranches",
+        "transform": {
+          "pos": [
+            -2.165,
+            -0.57,
+            0.275
+          ],
+          "quat": [
+            0.34,
+            0,
+            0.74,
+            0.58
+          ]
+        },
+        "mesh": {
+          "type": "cylinder",
+          "params": {
+            "radiusTop": 0.14,
+            "radiusBottom": 0.14,
+            "height": 1.11,
+            "radialSegments": 10
+          },
+          "color": 4797223
+        }
+      },
+      {
+        "id": "m52",
+        "parent": "lowerBranches",
+        "transform": {
+          "pos": [
+            -1.865,
+            -0.2,
+            -0.315
+          ],
+          "quat": [
+            -0.49,
+            0,
+            0.22,
+            0.84
+          ]
+        },
+        "mesh": {
+          "type": "cylinder",
+          "params": {
+            "radiusTop": 0.14,
+            "radiusBottom": 0.14,
+            "height": 0.93,
+            "radialSegments": 10
+          },
+          "color": 4797223
+        }
+      },
+      {
+        "id": "m53",
+        "parent": "lowerBranches",
+        "transform": {
+          "pos": [
+            1.955,
+            0.79,
+            -0.275
+          ]
+        },
+        "mesh": {
+          "type": "sphere",
+          "params": {
+            "radius": 0.12100000000000001,
+            "widthSegments": 10,
+            "heightSegments": 7
+          },
+          "color": 3877408
+        }
+      },
+      {
+        "id": "m54",
+        "parent": "lowerBranches",
+        "transform": {
+          "pos": [
+            2.185,
+            1.22,
+            -0.135
+          ],
+          "quat": [
+            0.14,
+            0,
+            -0.23,
+            0.96
+          ]
+        },
+        "mesh": {
+          "type": "cylinder",
+          "params": {
+            "radiusTop": 0.11,
+            "radiusBottom": 0.11,
+            "height": 1,
+            "radialSegments": 10
+          },
+          "color": 3877408
+        }
+      },
+      {
+        "id": "m55",
+        "parent": "lowerBranches",
+        "transform": {
+          "pos": [
+            2.455,
+            0.92,
+            -0.455
+          ],
+          "quat": [
+            -0.21,
+            0,
+            -0.58,
+            0.78
+          ]
+        },
+        "mesh": {
+          "type": "cylinder",
+          "params": {
+            "radiusTop": 0.11,
+            "radiusBottom": 0.11,
+            "height": 1.09,
+            "radialSegments": 10
+          },
+          "color": 3877408
+        }
+      },
+      {
+        "id": "m56",
+        "parent": "lowerBranches",
+        "transform": {
+          "pos": [
+            0.105,
+            -0.16,
+            1.245
+          ]
+        },
+        "mesh": {
+          "type": "sphere",
+          "params": {
+            "radius": 0.12100000000000001,
+            "widthSegments": 10,
+            "heightSegments": 7
+          },
+          "color": 4797223
+        }
+      },
+      {
+        "id": "m57",
+        "parent": "lowerBranches",
+        "transform": {
+          "pos": [
+            -0.245,
+            0.24,
+            1.395
+          ],
+          "quat": [
+            0.15,
+            0,
+            0.34,
+            0.93
+          ]
+        },
+        "mesh": {
+          "type": "cylinder",
+          "params": {
+            "radiusTop": 0.11,
+            "radiusBottom": 0.11,
+            "height": 1.1,
+            "radialSegments": 10
+          },
+          "color": 4797223
+        }
+      },
+      {
+        "id": "m58",
+        "parent": "lowerBranches",
+        "transform": {
+          "pos": [
+            0.335,
+            0.14,
+            1.575
+          ],
+          "quat": [
+            0.37,
+            0,
+            -0.25,
+            0.9
+          ]
+        },
+        "mesh": {
+          "type": "cylinder",
+          "params": {
+            "radiusTop": 0.11,
+            "radiusBottom": 0.11,
+            "height": 0.99,
+            "radialSegments": 10
+          },
+          "color": 4797223
+        }
+      },
+      {
+        "id": "m59",
+        "parent": "upperCrown",
+        "transform": {
+          "pos": [
+            0.1812,
+            0,
+            0.0748
+          ]
+        },
+        "mesh": {
+          "type": "icosahedron",
+          "params": {
+            "radius": 1.4737675842111608,
+            "detail": 0
+          },
+          "color": 3164721
+        },
+        "tags": [
+          {
+            "tag": "foliage",
+            "value": "leaf"
+          }
+        ]
+      },
+      {
+        "id": "m60",
+        "parent": "upperCrown",
+        "transform": {
+          "pos": [
+            -1.0911,
+            0.2062,
+            -0.086
+          ]
+        },
+        "mesh": {
+          "type": "icosahedron",
+          "params": {
+            "radius": 1.3954394174020501,
+            "detail": 0
+          },
+          "color": 2506539
+        },
+        "tags": [
+          {
+            "tag": "foliage",
+            "value": "leaf"
+          }
+        ]
+      },
+      {
+        "id": "m61",
+        "parent": "upperCrown",
+        "transform": {
+          "pos": [
+            1.5234,
+            0.3475,
+            -0.3275
+          ]
+        },
+        "mesh": {
+          "type": "icosahedron",
+          "params": {
+            "radius": 1.4598542717813148,
+            "detail": 0
+          },
+          "color": 2506539
+        },
+        "tags": [
+          {
+            "tag": "foliage",
+            "value": "leaf"
+          }
+        ]
+      },
+      {
+        "id": "m62",
+        "parent": "upperCrown",
+        "transform": {
+          "pos": [
+            -1.9806,
+            0.5278,
+            0.0858
+          ]
+        },
+        "mesh": {
+          "type": "icosahedron",
+          "params": {
+            "radius": 1.248289462145436,
+            "detail": 0
+          },
+          "color": 4610872
+        },
+        "tags": [
+          {
+            "tag": "foliage",
+            "value": "leaf"
+          }
+        ]
+      },
+      {
+        "id": "m63",
+        "parent": "upperCrown",
+        "transform": {
+          "pos": [
+            2.4797,
+            0.7578,
+            -0.3237
+          ]
+        },
+        "mesh": {
+          "type": "icosahedron",
+          "params": {
+            "radius": 1.1982386667092901,
+            "detail": 0
+          },
+          "color": 4610872
+        },
+        "tags": [
+          {
+            "tag": "foliage",
+            "value": "leaf"
+          }
+        ]
+      },
+      {
+        "id": "m64",
+        "parent": "upperCrown",
+        "transform": {
+          "pos": [
+            -0.5248,
+            1.1156,
+            0.2042
+          ]
+        },
+        "mesh": {
+          "type": "icosahedron",
+          "params": {
+            "radius": 1.4726548107507371,
+            "detail": 0
+          },
+          "color": 2506539
+        },
+        "tags": [
+          {
+            "tag": "foliage",
+            "value": "leaf"
+          }
+        ]
+      },
+      {
+        "id": "m65",
+        "parent": "upperCrown",
+        "transform": {
+          "pos": [
+            0.9552,
+            1.1314,
+            -0.4018
+          ]
+        },
+        "mesh": {
+          "type": "icosahedron",
+          "params": {
+            "radius": 1.472694083199944,
+            "detail": 0
+          },
+          "color": 2506539
+        },
+        "tags": [
+          {
+            "tag": "foliage",
+            "value": "leaf"
+          }
+        ]
+      },
+      {
+        "id": "m66",
+        "parent": "upperCrown",
+        "transform": {
+          "pos": [
+            -1.8737,
+            1.4375,
+            -0.3719
+          ]
+        },
+        "mesh": {
+          "type": "icosahedron",
+          "params": {
+            "radius": 1.3787977273258705,
+            "detail": 0
+          },
+          "color": 2506539
+        },
+        "tags": [
+          {
+            "tag": "foliage",
+            "value": "leaf"
+          }
+        ]
+      },
+      {
+        "id": "m67",
+        "parent": "upperCrown",
+        "transform": {
+          "pos": [
+            2.8059,
+            1.5662,
+            -0.0588
+          ]
+        },
+        "mesh": {
+          "type": "icosahedron",
+          "params": {
+            "radius": 1.279474613093696,
+            "detail": 0
+          },
+          "color": 3164721
+        },
+        "tags": [
+          {
+            "tag": "foliage",
+            "value": "leaf"
+          }
+        ]
+      },
+      {
+        "id": "m68",
+        "parent": "upperCrown",
+        "transform": {
+          "pos": [
+            -0.9588,
+            2.2204,
+            -0.267
+          ]
+        },
+        "mesh": {
+          "type": "icosahedron",
+          "params": {
+            "radius": 1.407796443376657,
+            "detail": 0
+          },
+          "color": 2506539
+        },
+        "tags": [
+          {
+            "tag": "foliage",
+            "value": "leaf"
+          }
+        ]
+      },
+      {
+        "id": "m69",
+        "parent": "upperCrown",
+        "transform": {
+          "pos": [
+            0.5711,
+            2.2999,
+            0.023
+          ]
+        },
+        "mesh": {
+          "type": "icosahedron",
+          "params": {
+            "radius": 1.565603476984645,
+            "detail": 0
+          },
+          "color": 2506539
+        },
+        "tags": [
+          {
+            "tag": "foliage",
+            "value": "leaf"
+          }
+        ]
+      },
+      {
+        "id": "m70",
+        "parent": "upperCrown",
+        "transform": {
+          "pos": [
+            2.0181,
+            2.1361,
+            -0.2898
+          ]
+        },
+        "mesh": {
+          "type": "icosahedron",
+          "params": {
+            "radius": 1.2602268047408058,
+            "detail": 0
+          },
+          "color": 2506539
+        },
+        "tags": [
+          {
+            "tag": "foliage",
+            "value": "leaf"
+          }
+        ]
+      },
+      {
+        "id": "m71",
+        "parent": "upperCrown",
+        "transform": {
+          "pos": [
+            -0.261,
+            3.0876,
+            -0.1251
+          ]
+        },
+        "mesh": {
+          "type": "icosahedron",
+          "params": {
+            "radius": 1.1682017285687767,
+            "detail": 0
+          },
+          "color": 3164721
+        },
+        "tags": [
+          {
+            "tag": "foliage",
+            "value": "leaf"
+          }
+        ]
+      },
+      {
+        "id": "m72",
+        "parent": "upperCrown",
+        "transform": {
+          "pos": [
+            1.1974,
+            3.1635,
+            -0.025
+          ]
+        },
+        "mesh": {
+          "type": "icosahedron",
+          "params": {
+            "radius": 1.0450101780238719,
+            "detail": 0
+          },
+          "color": 2506539
+        },
+        "tags": [
+          {
+            "tag": "foliage",
+            "value": "leaf"
+          }
+        ]
+      },
+      {
+        "id": "m73",
+        "parent": "upperCrown",
+        "transform": {
+          "pos": [
+            -2.4418,
+            0.9436,
+            -0.047
+          ]
+        },
+        "mesh": {
+          "type": "icosahedron",
+          "params": {
+            "radius": 0.9092794177741109,
+            "detail": 0
+          },
+          "color": 4610872
+        },
+        "tags": [
+          {
+            "tag": "foliage",
+            "value": "leaf"
+          }
+        ]
+      },
+      {
+        "id": "m74",
+        "parent": "upperCrown",
+        "transform": {
+          "pos": [
+            3.3221,
+            1.1535,
+            -0.2009
+          ]
+        },
+        "mesh": {
+          "type": "icosahedron",
+          "params": {
+            "radius": 0.8335568294120309,
+            "detail": 0
+          },
+          "color": 4610872
+        },
+        "tags": [
+          {
+            "tag": "foliage",
+            "value": "leaf"
+          }
+        ]
+      },
+      {
+        "id": "m75",
+        "parent": "upperCrown",
+        "transform": {
+          "pos": [
+            -1.5791,
+            2.622,
+            -0.0725
+          ]
+        },
+        "mesh": {
+          "type": "icosahedron",
+          "params": {
+            "radius": 0.9594124146570054,
+            "detail": 0
+          },
+          "color": 4610872
+        },
+        "tags": [
+          {
+            "tag": "foliage",
+            "value": "leaf"
+          }
+        ]
+      },
+      {
+        "id": "m76",
+        "parent": "upperCrown",
+        "transform": {
+          "pos": [
+            -2.875,
+            1.3496,
+            0.045
+          ]
+        },
+        "mesh": {
+          "type": "icosahedron",
+          "params": {
+            "radius": 0.5630118399999999,
+            "detail": 0
+          },
+          "color": 4610872
+        },
+        "tags": [
+          {
+            "tag": "foliage",
+            "value": "leaf"
+          }
+        ]
+      },
+      {
+        "id": "m77",
+        "parent": "upperCrown",
+        "transform": {
+          "pos": [
+            -2.345,
+            2.0496,
+            -0.205
+          ]
+        },
+        "mesh": {
+          "type": "icosahedron",
+          "params": {
+            "radius": 0.57629312,
+            "detail": 0
+          },
+          "color": 3164721
+        },
+        "tags": [
+          {
+            "tag": "foliage",
+            "value": "leaf"
+          }
+        ]
+      },
+      {
+        "id": "m78",
+        "parent": "upperCrown",
+        "transform": {
+          "pos": [
+            3.355,
+            1.7196,
+            -0.035
+          ]
+        },
+        "mesh": {
+          "type": "icosahedron",
+          "params": {
+            "radius": 0.52724352,
+            "detail": 0
+          },
+          "color": 4610872
+        },
+        "tags": [
+          {
+            "tag": "foliage",
+            "value": "leaf"
+          }
+        ]
+      },
+      {
+        "id": "m79",
+        "parent": "upperCrown",
+        "transform": {
+          "pos": [
+            2.505,
+            2.6996,
+            -0.335
+          ]
+        },
+        "mesh": {
+          "type": "icosahedron",
+          "params": {
+            "radius": 0.55107328,
+            "detail": 0
+          },
+          "color": 3164721
+        },
+        "tags": [
+          {
+            "tag": "foliage",
+            "value": "leaf"
+          }
+        ]
+      },
+      {
+        "id": "m80",
+        "parent": "upperCrown",
+        "transform": {
+          "pos": [
+            -0.945,
+            3.6496,
+            -0.155
+          ]
+        },
+        "mesh": {
+          "type": "icosahedron",
+          "params": {
+            "radius": 0.5686950399999999,
+            "detail": 0
+          },
+          "color": 4610872
+        },
+        "tags": [
+          {
+            "tag": "foliage",
+            "value": "leaf"
+          }
+        ]
+      },
+      {
+        "id": "m81",
+        "parent": "upperCrown",
+        "transform": {
+          "pos": [
+            0.655,
+            3.8496,
+            -0.235
+          ]
+        },
+        "mesh": {
+          "type": "icosahedron",
+          "params": {
+            "radius": 0.60898816,
+            "detail": 0
+          },
+          "color": 3164721
+        },
+        "tags": [
+          {
+            "tag": "foliage",
+            "value": "leaf"
+          }
+        ]
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1785659658348,
+        "provider": "gpt",
+        "data": "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",
+        "edits": ""
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -1.35332597169066,
+          8.281203813110881,
+          -1.6063178976394779
+        ],
+        "max": [
+          1.77788098227863,
+          11.412410767080171,
+          1.524889056329812
+        ],
+        "sourceNodeId": "m69"
+      },
+      {
+        "min": [
+          -1.6513900789171758,
+          6.073139705884365,
+          -1.4626820048659936
+        ],
+        "max": [
+          1.2961450895051458,
+          9.020674874306685,
+          1.484853163556328
+        ],
+        "sourceNodeId": "m59"
+      },
+      {
+        "min": [
+          -0.876316577905959,
+          7.205613206895582,
+          -1.9382085038547767
+        ],
+        "max": [
+          2.0690715884939292,
+          10.151001373295468,
+          1.0071796625451113
+        ],
+        "sourceNodeId": "m65"
+      },
+      {
+        "min": [
+          -2.3562773054567523,
+          7.189852479344788,
+          -1.33216923140557
+        ],
+        "max": [
+          0.589032316044722,
+          10.135162100846262,
+          1.6131403900959043
+        ],
+        "sourceNodeId": "m64"
+      },
+      {
+        "min": [
+          -0.2952767664873297,
+          6.434553018314211,
+          -1.8510686924361477
+        ],
+        "max": [
+          2.6244317770752996,
+          9.35426156187684,
+          1.0686398511264819
+        ],
+        "sourceNodeId": "m61"
+      },
+      {
+        "min": [
+          -2.7254189380826723,
+          8.35951084671887,
+          -1.73851086403149
+        ],
+        "max": [
+          0.09017394867064188,
+          11.175103733472184,
+          1.077082022721824
+        ],
+        "sourceNodeId": "m68"
+      },
+      {
+        "min": [
+          -2.845361912108065,
+          6.357667872693475,
+          -1.545153838056883
+        ],
+        "max": [
+          -0.054483077303964844,
+          9.148546707497577,
+          1.2457249967472173
+        ],
+        "sourceNodeId": "m60"
+      },
+      {
+        "min": [
+          -3.6113202220318854,
+          7.605609562769654,
+          -1.8144121479807034
+        ],
+        "max": [
+          -0.8537247673801447,
+          10.363205017421397,
+          0.9431833066710376
+        ],
+        "sourceNodeId": "m66"
+      },
+      {
+        "min": [
+          1.1676028922002886,
+          7.8336326770018285,
+          -1.4019890337485288
+        ],
+        "max": [
+          3.726552118387681,
+          10.392581903189221,
+          1.1569601924388633
+        ],
+        "sourceNodeId": "m67"
+      },
+      {
+        "min": [
+          0.39905070055317915,
+          8.42278048535472,
+          -1.6137412253956387
+        ],
+        "max": [
+          2.9195043100347906,
+          10.943234094836331,
+          0.906712384085973
+        ],
+        "sourceNodeId": "m70"
+      },
+      {
+        "min": [
+          -3.587711956851451,
+          6.826417827950089,
+          -1.2262038828002686
+        ],
+        "max": [
+          -1.0911330325605793,
+          9.322996752240961,
+          1.2703750414906032
+        ],
+        "sourceNodeId": "m62"
+      },
+      {
+        "min": [
+          0.9226388385846944,
+          7.1064686233862355,
+          -1.585653087364123
+        ],
+        "max": [
+          3.319116172003275,
+          9.502945956804815,
+          0.8108242460544572
+        ],
+        "sourceNodeId": "m63"
+      }
+    ],
+    "sourceMeshCount": 82,
+    "candidateCount": 72,
+    "fallbackUsed": false
+  },
+  "footprintRadius": 3.726552118387681,
+  "sizeClass": "large",
+  "mode": "standard",
+  "provider": "gpt",
+  "createdAt": 1785659694873,
+  "updatedAt": 1785659694873
+}

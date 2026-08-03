@@ -1,0 +1,617 @@
+{
+  "id": "asset-d426dadd-9465-46fc",
+  "name": "田园小屋",
+  "prompt": "独立低多边形乡村小屋，简洁木石结构，斜屋顶，小烟囱和门窗，无地面，无背景",
+  "modelJson": {
+    "name": "乡村木石小屋",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "cottage",
+        "name": "小屋主体",
+        "transform": {
+          "pos": [
+            0.145,
+            1.39,
+            0.785
+          ]
+        }
+      },
+      {
+        "id": "roof",
+        "name": "斜屋顶",
+        "parent": "cottage",
+        "transform": {
+          "pos": [
+            0,
+            2.05,
+            -0.785
+          ]
+        }
+      },
+      {
+        "id": "chimney",
+        "name": "烟囱",
+        "parent": "cottage",
+        "transform": {
+          "pos": [
+            1.205,
+            2.66,
+            -1.535
+          ]
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "cottage",
+        "transform": {
+          "pos": [
+            -0.145,
+            -1.065,
+            -0.785
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 5.2,
+            "height": 0.65,
+            "depth": 4.1
+          },
+          "color": 7827817
+        }
+      },
+      {
+        "id": "m1",
+        "parent": "cottage",
+        "transform": {
+          "pos": [
+            -0.145,
+            0.36,
+            -0.785
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 4.8,
+            "height": 2.25,
+            "depth": 3.8
+          },
+          "color": 12159831
+        }
+      },
+      {
+        "id": "m2",
+        "parent": "cottage",
+        "transform": {
+          "pos": [
+            -2.295,
+            0.36,
+            1.195
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.22,
+            "height": 2.3,
+            "depth": 0.22
+          },
+          "color": 6043683
+        }
+      },
+      {
+        "id": "m3",
+        "parent": "cottage",
+        "transform": {
+          "pos": [
+            2.005,
+            0.36,
+            1.195
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.22,
+            "height": 2.3,
+            "depth": 0.22
+          },
+          "color": 6043683
+        }
+      },
+      {
+        "id": "m4",
+        "parent": "cottage",
+        "transform": {
+          "pos": [
+            -0.145,
+            1.39,
+            1.195
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 4.6,
+            "height": 0.2,
+            "depth": 0.22
+          },
+          "color": 6043683
+        }
+      },
+      {
+        "id": "m5",
+        "parent": "cottage",
+        "transform": {
+          "pos": [
+            -0.895,
+            -0.11,
+            1.195
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.15,
+            "height": 1.9,
+            "depth": 0.16
+          },
+          "color": 6832424
+        }
+      },
+      {
+        "id": "m6",
+        "parent": "cottage",
+        "transform": {
+          "pos": [
+            -0.895,
+            -0.11,
+            1.305
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.1,
+            "height": 1.72,
+            "depth": 0.08
+          },
+          "color": 9132852
+        }
+      },
+      {
+        "id": "m7",
+        "parent": "cottage",
+        "transform": {
+          "pos": [
+            -0.495,
+            -0.11,
+            1.335
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.12,
+            "height": 0.12,
+            "depth": 0.12
+          },
+          "color": 13673292
+        }
+      },
+      {
+        "id": "m8",
+        "parent": "cottage",
+        "transform": {
+          "pos": [
+            0.905,
+            0.33,
+            1.195
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.2,
+            "height": 0.9,
+            "depth": 0.14
+          },
+          "color": 5077120
+        }
+      },
+      {
+        "id": "m9",
+        "parent": "cottage",
+        "transform": {
+          "pos": [
+            0.905,
+            0.33,
+            1.295
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.1,
+            "height": 0.9,
+            "depth": 0.08
+          },
+          "color": 14206619
+        }
+      },
+      {
+        "id": "m10",
+        "parent": "cottage",
+        "transform": {
+          "pos": [
+            0.905,
+            0.33,
+            1.295
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.2,
+            "height": 0.1,
+            "depth": 0.08
+          },
+          "color": 14206619
+        }
+      },
+      {
+        "id": "m11",
+        "parent": "cottage",
+        "transform": {
+          "pos": [
+            0.905,
+            0.33,
+            1.155
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.18,
+            "height": 1.12,
+            "depth": 0.3
+          },
+          "color": 6043683
+        }
+      },
+      {
+        "id": "m12",
+        "parent": "cottage",
+        "transform": {
+          "pos": [
+            2.295,
+            0.26,
+            -1.335
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.14,
+            "height": 0.9,
+            "depth": 1.15
+          },
+          "color": 5077120
+        }
+      },
+      {
+        "id": "m13",
+        "parent": "cottage",
+        "transform": {
+          "pos": [
+            2.285,
+            0.26,
+            -1.335
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.22,
+            "height": 1.1,
+            "depth": 1.38
+          },
+          "color": 6043683
+        }
+      },
+      {
+        "id": "m14",
+        "parent": "roof",
+        "transform": {
+          "pos": [
+            1.355,
+            0,
+            0
+          ],
+          "quat": [
+            0.69,
+            -0.16,
+            0.69,
+            0.16
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 4.9,
+            "height": 0.22,
+            "depth": 3.32
+          },
+          "color": 7685431
+        }
+      },
+      {
+        "id": "m15",
+        "parent": "roof",
+        "transform": {
+          "pos": [
+            -1.645,
+            0,
+            0
+          ],
+          "quat": [
+            0,
+            0,
+            0.98,
+            -0.22
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 3.32,
+            "height": 0.22,
+            "depth": 4.9
+          },
+          "color": 7685431
+        }
+      },
+      {
+        "id": "m16",
+        "parent": "roof",
+        "transform": {
+          "pos": [
+            -0.145,
+            0.71,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.28,
+            "height": 0.25,
+            "depth": 5.05
+          },
+          "color": 5189672
+        }
+      },
+      {
+        "id": "m17",
+        "parent": "chimney",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.7,
+            "height": 1.45,
+            "depth": 0.7
+          },
+          "color": 7431517
+        }
+      },
+      {
+        "id": "m18",
+        "parent": "chimney",
+        "transform": {
+          "pos": [
+            0,
+            0.77,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.86,
+            "height": 0.18,
+            "depth": 0.86
+          },
+          "color": 5261636
+        }
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1785333657369,
+        "provider": "gpt",
+        "data": "qXXkgv52vMJ/VVsXgYsGN33OSPlgsQVZa/f40d81GCkNv8y+Hr6vHLXQhU+BxyH3J8NQlcPE3lHeHRESpzDMr4q7QErn8Ts8dngD+jtNILYVgheUDj3Iua/dHmDgZevv9EYUnDxJf7n3wRJYharpkerJ2egHEvP0cnM/9sfc4QvGWtnrTV4AGKUqgUb7On10QyV5xXOal2u86r90Dzj1yXopxkIJzoV+A7P+CnypJHMITxxdKCcuKLIchjKQ2BbxKR73iI/mt6N7+kLBF6GZHJ1/Fvc+hrYT5Z3qhCVDb/QVXP10BZ3TAPkxfaFgQ56pLUhnexvnmK/9AdKRfgDgY53mVKOfLvC/mEU4B4LGhdgrfZlKMn7yBONr+8TQzI3E8MGamADjqMZ0eQfZAEFPajIXnpxG7k9pympKxpWXBqSA8pbLj1epRpi43/cwAW1FNBRLh4J9uKth3wgvDiELglbKNaleXdmoPCxiSDXUqIZcl7vzEEJc25fG8FpXs3Rg20uLBtDFNulGyIDJjD8QiqVYmkQOl4QiYL9kUBLe1VuTukrxkxSUOMbeohQz3V+GJPrgZAQu7gMixiyiTYmJmWIZY4SCUBjFY+loD83qBj7wYnL4I2OUfr23L/9rBz7xwjCOJKIAUq/cxZcdoRwRZrYGgX2HN53JivCFH+dAse8JRMs32uA1NHyFFRUsaZzoy/TlFU/zkw511DmbiILyAzddhfWbZ2VqCKRzmPCSGif+1Zy2K3prGfizWOdu7drgA1L1/lyPTPEMinsipw6YgZIV7JQfLR5hhAfEDZ0WDCjPlbUNFtEddaMG9NuPx0ClHIXam3JEZqepRDevyV/9G3s4pa/z9uMH4Ck2MkKM11iB0SCSAl0ctW3VoG8VUFFazmPQvAGC5yhFLTB07sOOXfjjtmrTs62LkEKs5vldUQMhuBkt",
+        "edits": ""
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -2.3956357148581415,
+          0.625,
+          -1.9
+        ],
+        "max": [
+          2.4043642851418583,
+          2.875,
+          1.9
+        ],
+        "sourceNodeId": "m1"
+      },
+      {
+        "min": [
+          -0.03463910333731235,
+          2.6106537771576637,
+          -2.45
+        ],
+        "max": [
+          3.043367673621029,
+          4.269346222842335,
+          2.45
+        ],
+        "sourceNodeId": "m14"
+      },
+      {
+        "min": [
+          -3.043367673621029,
+          2.6310071371927037,
+          -2.45
+        ],
+        "max": [
+          0.052096243904745654,
+          4.248992862807295,
+          2.45
+        ],
+        "sourceNodeId": "m15"
+      },
+      {
+        "min": [
+          -2.5956357148581417,
+          0,
+          -2.05
+        ],
+        "max": [
+          2.6043642851418585,
+          0.6499999999999999,
+          2.05
+        ],
+        "sourceNodeId": "m0"
+      },
+      {
+        "min": [
+          1.0043642851418584,
+          3.3249999999999997,
+          -1.0999999999999999
+        ],
+        "max": [
+          1.7043642851418586,
+          4.7749999999999995,
+          -0.3999999999999999
+        ],
+        "sourceNodeId": "m17"
+      },
+      {
+        "min": [
+          -0.13563571485814163,
+          4.0249999999999995,
+          -2.525
+        ],
+        "max": [
+          0.1443642851418584,
+          4.2749999999999995,
+          2.525
+        ],
+        "sourceNodeId": "m16"
+      },
+      {
+        "min": [
+          -1.3206357148581416,
+          0.3299999999999999,
+          1.9
+        ],
+        "max": [
+          -0.17063571485814166,
+          2.2299999999999995,
+          2.06
+        ],
+        "sourceNodeId": "m5"
+      },
+      {
+        "min": [
+          2.3243642851418587,
+          1.0999999999999999,
+          -1.2399999999999998
+        ],
+        "max": [
+          2.5443642851418584,
+          2.2,
+          0.14
+        ],
+        "sourceNodeId": "m13"
+      },
+      {
+        "min": [
+          -2.2956357148581414,
+          2.6799999999999997,
+          1.8699999999999999
+        ],
+        "max": [
+          2.304364285141858,
+          2.88,
+          2.09
+        ],
+        "sourceNodeId": "m4"
+      },
+      {
+        "min": [
+          0.45436428514185845,
+          1.27,
+          1.91
+        ],
+        "max": [
+          1.6543642851418583,
+          2.17,
+          2.05
+        ],
+        "sourceNodeId": "m8"
+      },
+      {
+        "min": [
+          2.3743642851418585,
+          1.2,
+          -1.125
+        ],
+        "max": [
+          2.514364285141858,
+          2.1,
+          0.025000000000000022
+        ],
+        "sourceNodeId": "m12"
+      },
+      {
+        "min": [
+          0.9243642851418585,
+          4.73,
+          -1.18
+        ],
+        "max": [
+          1.7843642851418584,
+          4.91,
+          -0.3199999999999999
+        ],
+        "sourceNodeId": "m18"
+      }
+    ],
+    "sourceMeshCount": 19,
+    "candidateCount": 14,
+    "fallbackUsed": false
+  },
+  "mode": "voxel",
+  "provider": "gpt",
+  "createdAt": 1785333658019,
+  "updatedAt": 1785333658019
+}
