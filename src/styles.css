@@ -150,11 +150,11 @@ p {
 }
 
 .studio-brand {
-  height: 58px;
+  height: 48px;
   display: flex;
   gap: 11px;
   align-items: center;
-  padding: 9px 12px;
+  padding: 6px 9px;
   border-bottom: 1px solid var(--line);
 }
 
@@ -242,6 +242,7 @@ p {
 .editor-toolbar select,
 .editor-toolbar summary {
   font-size: 0.74rem;
+  line-height: 1;
 }
 
 .editor-toolbar button,
@@ -280,6 +281,28 @@ p {
 .toolbar-group {
   display: flex;
   flex: 0 0 auto;
+}
+
+.toolbar-workspace,
+.toolbar-tools,
+.toolbar-navigation,
+.toolbar-actions {
+  position: relative;
+  margin-left: 5px;
+  padding-left: 10px;
+}
+
+.toolbar-workspace::before,
+.toolbar-tools::before,
+.toolbar-navigation::before,
+.toolbar-actions::before {
+  content: '';
+  position: absolute;
+  top: 4px;
+  bottom: 4px;
+  left: 0;
+  width: 1px;
+  background: var(--line);
 }
 
 .toolbar-label {
@@ -359,10 +382,23 @@ p {
 
 .toolbar-project-menu > summary {
   width: clamp(110px, 13vw, 158px);
-  display: block;
+  display: flex;
+  align-items: center;
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
+}
+
+.toolbar-project-menu > summary span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.toolbar-save.dirty {
+  border-color: rgba(217, 244, 122, 0.62);
+  color: var(--accent);
+  box-shadow: inset 0 0 0 1px rgba(217, 244, 122, 0.08);
 }
 
 .toolbar-project-menu .toolbar-transfer-menu {
@@ -685,8 +721,8 @@ p {
 
 .editor-section {
   display: grid;
-  gap: 10px;
-  padding: 12px;
+  gap: 8px;
+  padding: 10px 12px;
   border-bottom: 1px solid var(--line);
 }
 
@@ -702,7 +738,7 @@ p {
   position: sticky;
   z-index: 3;
   top: 0;
-  height: 58px;
+  height: 48px;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -897,6 +933,80 @@ p {
   min-height: 84px;
 }
 
+.inspector-disclosure {
+  border-bottom: 1px solid var(--line);
+}
+
+.inspector-disclosure > summary {
+  min-height: 45px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 12px;
+  color: #f0f6f4;
+  background: rgba(18, 31, 34, 0.72);
+  cursor: pointer;
+  list-style: none;
+}
+
+.inspector-disclosure > summary::-webkit-details-marker {
+  display: none;
+}
+
+.inspector-disclosure > summary:hover {
+  background: rgba(28, 45, 49, 0.8);
+}
+
+.inspector-disclosure > summary > span {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.inspector-disclosure > summary b,
+.inspector-disclosure > summary small {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.inspector-disclosure > summary b {
+  font-size: 0.84rem;
+}
+
+.inspector-disclosure > summary small {
+  color: var(--muted);
+  font-size: 0.68rem;
+  font-weight: 650;
+}
+
+.inspector-disclosure > summary::after {
+  content: '›';
+  margin-left: auto;
+  color: #819590;
+  font-size: 1rem;
+  transform: rotate(90deg);
+  transition: transform 120ms ease;
+}
+
+.inspector-disclosure[open] > summary::after {
+  transform: rotate(-90deg);
+}
+
+.inspector-disclosure > .inspector-body {
+  border-bottom: 0;
+}
+
+.contextual-editor-section {
+  background: rgba(217, 244, 122, 0.025);
+}
+
+.inspector-note {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
 .section-title-row {
   position: relative;
   display: flex;
@@ -922,6 +1032,14 @@ p {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto auto;
   gap: 8px;
+}
+
+.map-ai-controls {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.map-ai-controls button {
+  width: 100%;
 }
 
 .render-ai-controls {
@@ -1198,31 +1316,30 @@ p {
 
 .render-scheme-list {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 5px;
-  margin-top: 7px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 7px;
 }
 
 .render-scheme-item {
   min-width: 0;
-  display: flex;
-  gap: 3px;
+  position: relative;
 }
 
 .render-scheme-card {
   min-width: 0;
-  flex: 1 1 auto;
-  min-height: 38px;
+  width: 100%;
+  min-height: 92px;
   display: grid;
-  grid-template-columns: 24px minmax(0, 1fr);
-  gap: 6px;
+  grid-template-rows: 38px auto;
+  gap: 7px;
+  justify-items: center;
   align-items: center;
-  padding: 5px 6px;
+  padding: 9px 7px 8px;
   border: 1px solid #2f4448;
   border-radius: 9px;
   background: #132024;
   color: #edf6f3;
-  text-align: left;
+  text-align: center;
 }
 
 .render-scheme-card:hover {
@@ -1233,28 +1350,33 @@ p {
 .render-scheme-card.active {
   border-color: rgba(217, 244, 122, 0.55);
   background: rgba(217, 244, 122, 0.09);
-  box-shadow: inset 3px 0 0 var(--accent);
+  box-shadow: inset 0 3px 0 var(--accent);
 }
 
 .render-scheme-card strong {
   min-width: 0;
   overflow: hidden;
+  width: 100%;
   font-size: 0.74rem;
   white-space: nowrap;
   text-overflow: ellipsis;
-  font-size: 0.72rem;
 }
 
 .render-scheme-delete {
-  flex: 0 0 28px;
-  min-height: 38px;
+  position: absolute;
+  z-index: 2;
+  top: 5px;
+  right: 5px;
+  width: 24px;
+  min-height: 24px;
   padding: 0;
-  font-size: 1rem;
+  border-radius: 999px;
+  font-size: 0.86rem;
 }
 
 .scheme-swatch {
-  width: 24px;
-  height: 24px;
+  width: 38px;
+  height: 38px;
   border: 1px solid rgba(255, 255, 255, 0.16);
   border-radius: 8px;
   background:

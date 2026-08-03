@@ -66,7 +66,6 @@ import {
   type MapTransactionSummary
 } from '../shared/mapOperations';
 import {
-  CHAT_PROVIDER_OPTIONS,
   type AgentProgressEvent,
   type ChatProvider
 } from '../shared/protocol';
@@ -297,11 +296,11 @@ class MapEditor {
                 </div>
               </details>
             </div>
-            <div class="stage-switcher segmented compact" aria-label="制作阶段">
+            <div class="stage-switcher segmented compact toolbar-workspace" aria-label="制作阶段">
               <button data-stage="map">地图</button>
               <button data-stage="render">渲染</button>
             </div>
-            <div class="toolbar-group" data-map-only>
+            <div class="toolbar-group toolbar-tools" data-map-only>
               <span class="toolbar-label">工具</span>
               <div class="segmented compact">
                 <button data-tool="select">选择</button>
@@ -310,7 +309,7 @@ class MapEditor {
                 <button data-tool="grass">草地</button>
               </div>
             </div>
-            <div class="toolbar-group" data-map-only>
+            <div class="toolbar-group toolbar-transform" data-transform-tools data-map-only>
               <span class="toolbar-label">对象变换</span>
               <div class="segmented compact">
                 <button data-transform-mode="translate" title="移动物体">移动</button>
@@ -318,7 +317,7 @@ class MapEditor {
                 <button data-transform-mode="scale" title="缩放物体">缩放</button>
               </div>
             </div>
-            <details class="toolbar-transfer toolbar-view-menu">
+            <details class="toolbar-transfer toolbar-view-menu toolbar-navigation">
               <summary>视角</summary>
               <div class="toolbar-transfer-menu">
                 <button type="button" data-view="perspective">透视</button>
@@ -334,9 +333,9 @@ class MapEditor {
               <button id="redo-edit" class="secondary" disabled title="重做手工编辑（Ctrl+Shift+Z）">重做</button>
               <button id="undo-transaction" class="secondary" disabled title="撤销最近一次 AI/Agent 生成">撤销 AI</button>
               <button id="confirm-map" title="进入渲染阶段">进入渲染</button>
-              <button id="save-map">保存</button>
-              <details class="toolbar-transfer">
-                <summary>导出</summary>
+              <button id="save-map" class="secondary toolbar-save">保存</button>
+              <details class="toolbar-transfer toolbar-more">
+                <summary>更多</summary>
                 <div class="toolbar-transfer-menu">
                   <button type="button" data-editor-export="map">地图数据</button>
                   <button type="button" data-editor-export="render-scheme">渲染方案</button>
@@ -855,18 +854,13 @@ class MapEditor {
     const generationBlocked = this.state.busy || this.state.dirty || !this.mapAiPrompt.trim() || !compositionAvailable;
     const refinementBlocked = generationBlocked || !hasRefinableMapContent(map);
     const limits = planLimits(getMapBounds(map));
+    const mapAiOpen = host.querySelector<HTMLDetailsElement>('[data-inspector-section="map-ai"]')?.open ?? true;
     host.innerHTML = `
-      <section class="editor-section map-ai">
-        <h2>AI 生成地图</h2>
+      <details class="inspector-disclosure" data-inspector-section="map-ai" ${mapAiOpen || this.state.busy || Boolean(suggestion) ? 'open' : ''}>
+        <summary><span><b>AI 生成地图</b><small>一句话生成或继续调整</small></span></summary>
+        <section class="editor-section inspector-body map-ai">
         <textarea id="map-ai-prompt" rows="3" maxlength="1200" placeholder="例如：中央有缓坡小丘，周围放置树木和岩石" ${this.state.busy ? 'disabled' : ''}>${escapeHtml(this.mapAiPrompt)}</textarea>
         <div class="map-ai-controls">
-          <select id="map-ai-provider" aria-label="地图 AI 模型" ${this.state.busy ? 'disabled' : ''}>
-            ${CHAT_PROVIDER_OPTIONS.map((option) => `
-              <option value="${option.key}" ${option.key === this.mapAiProvider ? 'selected' : ''} ${option.disabled ? 'disabled' : ''}>
-                ${escapeHtml(option.label)}${option.disabled ? '（暂不可用）' : ''}
-              </option>
-            `).join('')}
-          </select>
           <button id="generate-map-ai" ${generationBlocked ? 'disabled' : ''}>生成新规划</button>
           <button id="refine-map-ai" class="secondary" ${refinementBlocked ? 'disabled' : ''}>调整当前地图</button>
           ${this.mapAiAbortController ? '<button id="cancel-map-ai" class="secondary">取消</button>' : ''}
@@ -876,12 +870,13 @@ class MapEditor {
           elapsedMs: this.mapAgentElapsedMs,
           slowAssetMode: map.assetGenerationMode === 'standard' || map.assetGenerationMode === 'voxel-pro'
         })}
-        <p class="empty">新资产默认 ${map.assetGenerationMode.toUpperCase()} · ${this.state.dirty
+        <p class="empty inspector-note" title="总导演会先组织完整场景，按需调用最多 ${SCENE_COMPOSITION_LIMITS.consultationCount} 个专家，并组织 ${limits.assetVariantMin}-${limits.assetVariantMax} 个可辨识资产。">默认 ${map.assetGenerationMode.toUpperCase()} · ${this.state.dirty
           ? '请先保存当前手工修改，再生成 AI 地图预览。'
           : !compositionAvailable
             ? '当前地图已有内容，请使用“调整当前地图”继续 Refine。'
-            : `总导演会先组织完整场景，按需调用最多 ${SCENE_COMPOSITION_LIMITS.consultationCount} 个专家，并组织 ${limits.assetVariantMin}-${limits.assetVariantMax} 个可辨识资产；可复用不同模式的已有资产，缺失资产按当前默认模式生成。`}</p>
-      </section>
+            : `总导演编排场景 · 预计 ${limits.assetVariantMin}-${limits.assetVariantMax} 类资产`}</p>
+        </section>
+      </details>
       ${suggestion && this.mapAiPreviewMap ? `
         <section class="editor-section map-ai-result">
           <span class="stage-kicker">AI 地图建议</span>
@@ -927,9 +922,6 @@ class MapEditor {
       const refineButton = host.querySelector<HTMLButtonElement>('#refine-map-ai');
       if (generateButton) generateButton.disabled = blocked || !isCompositionEmptyMap(map);
       if (refineButton) refineButton.disabled = blocked || !hasRefinableMapContent(map);
-    });
-    host.querySelector<HTMLSelectElement>('#map-ai-provider')?.addEventListener('change', (event) => {
-      this.mapAiProvider = (event.target as HTMLSelectElement).value as ChatProvider;
     });
     host.querySelector('#generate-map-ai')?.addEventListener('click', () => void this.generateMapAiPreview('generate'));
     host.querySelector('#refine-map-ai')?.addEventListener('click', () => void this.generateMapAiPreview('refine'));
@@ -1128,9 +1120,11 @@ class MapEditor {
       `;
       return;
     }
+    const mapSettingsOpen = host.querySelector<HTMLDetailsElement>('[data-inspector-section="map-settings"]')?.open ?? false;
     host.innerHTML = `
-      <section class="editor-section">
-        <h2>地图</h2>
+      <details class="inspector-disclosure" data-inspector-section="map-settings" ${mapSettingsOpen ? 'open' : ''}>
+        <summary><span><b>地图</b><small>${escapeHtml(map.name)} · ${map.box.size.map((value) => value.toFixed(0)).join(' × ')}</small></span></summary>
+        <section class="editor-section inspector-body">
         <label class="field compact"><span>名称</span><input data-map-name value="${escapeHtml(map.name)}" /></label>
         <div class="triple">
           ${numberField('宽', 'box-size', 0, map.box.size[0])}
@@ -1140,14 +1134,15 @@ class MapEditor {
         <div class="color-grid">
           ${colorField('地板', 'floor', map.box.colors.floor)}
         </div>
-      </section>
-      ${this.state.tool === 'paint' ? `<section class="editor-section">
+        </section>
+      </details>
+      ${this.state.tool === 'paint' ? `<section class="editor-section contextual-editor-section">
         <h2>画笔</h2>
         <label class="field compact"><span>颜色</span><input data-brush-color type="color" value="${this.state.brushColor}" /></label>
         <label class="field compact"><span>大小</span><input data-brush-size type="range" min="0.1" max="8" step="0.1" value="${this.state.brushSize}" /></label>
         <label class="field compact"><span>边缘模糊</span><input data-brush-softness type="range" min="0" max="1" step="0.05" value="${this.state.brushSoftness}" /></label>
       </section>` : ''}
-      ${this.state.tool === 'terrain' ? `<section class="editor-section">
+      ${this.state.tool === 'terrain' ? `<section class="editor-section contextual-editor-section">
         <h2>地形</h2>
         <select data-terrain-mode>
           <option value="raise" ${this.state.terrainMode === 'raise' ? 'selected' : ''}>抬高</option>
@@ -1204,14 +1199,17 @@ class MapEditor {
     const map = this.state.map;
     if (map && this.isPlayerSpawnSelected()) {
       const spawn = this.playerSpawnPoint();
+      const selectionOpen = host.querySelector<HTMLDetailsElement>('[data-selection-id="player-spawn"]')?.open ?? true;
       host.innerHTML = `
-        <section class="editor-section">
-          <h2>场景参考点</h2>
+        <details class="inspector-disclosure" data-inspector-section="selection" data-selection-id="player-spawn" ${selectionOpen ? 'open' : ''}>
+          <summary><span><b>场景参考点</b><small>${spawn.map((value) => value.toFixed(2)).join(', ')}</small></span></summary>
+          <section class="editor-section inspector-body">
           <p class="empty">用于预览、导航或后续运行时接入的默认空间参考点。</p>
           <div class="triple">${numberField('X', 'spawn-pos', 0, spawn[0])}${numberField('Y', 'spawn-pos', 1, spawn[1])}${numberField('Z', 'spawn-pos', 2, spawn[2])}</div>
           <label class="field compact"><span>朝向 Yaw（度）</span><input data-spawn-yaw type="number" step="1" value="${radiansToDegrees(getPlayerSpawnYaw(map)).toFixed(1)}" /></label>
           <div class="triple">${readonlyNumberField('宽', PLAYER_RADIUS * 2)}${readonlyNumberField('高', PLAYER_HEIGHT)}${readonlyNumberField('深', PLAYER_RADIUS * 2)}</div>
-        </section>
+          </section>
+        </details>
       `;
       const nextSpawn: [number, number, number] = [...spawn];
       bindVectorInputs(host, 'spawn-pos', nextSpawn, () => {
@@ -1230,12 +1228,15 @@ class MapEditor {
     }
     if (map && this.isSunSelected()) {
       const sunPosition = getSunPosition(map);
+      const selectionOpen = host.querySelector<HTMLDetailsElement>('[data-selection-id="sun"]')?.open ?? true;
       host.innerHTML = `
-        <section class="editor-section">
-          <h2>太阳</h2>
+        <details class="inspector-disclosure" data-inspector-section="selection" data-selection-id="sun" ${selectionOpen ? 'open' : ''}>
+          <summary><span><b>太阳</b><small>${sunPosition.map((value) => value.toFixed(1)).join(', ')}</small></span></summary>
+          <section class="editor-section inspector-body">
           <p class="empty">调整太阳的位置会改变地图中的主方向光照。太阳始终朝向地图中心。</p>
           <div class="triple">${numberField('X', 'sun-pos', 0, sunPosition[0])}${numberField('Y', 'sun-pos', 1, sunPosition[1])}${numberField('Z', 'sun-pos', 2, sunPosition[2])}</div>
-        </section>
+          </section>
+        </details>
       `;
       const nextSun: [number, number, number] = [...sunPosition];
       bindVectorInputs(host, 'sun-pos', nextSun, () => {
@@ -1247,13 +1248,15 @@ class MapEditor {
     }
     const object = this.selectedObject();
     if (!object || !map) {
-      host.innerHTML = '<section class="editor-section"><h2>Transform</h2><p class="empty">选择一个物体。</p></section>';
+      host.innerHTML = '';
       return;
     }
     const availableAssets = this.state.assets;
+    const selectionOpen = host.querySelector<HTMLDetailsElement>(`[data-selection-id="${CSS.escape(object.id)}"]`)?.open ?? true;
     host.innerHTML = `
-      <section class="editor-section">
-        <h2>Transform</h2>
+      <details class="inspector-disclosure" data-inspector-section="selection" data-selection-id="${escapeHtml(object.id)}" ${selectionOpen ? 'open' : ''}>
+        <summary><span><b>物体</b><small>${escapeHtml(object.name)}</small></span></summary>
+        <section class="editor-section inspector-body">
         <label class="field compact"><span>名称</span><input data-object-name value="${escapeHtml(object.name)}" /></label>
         <label class="field compact">
           <span>父级</span>
@@ -1275,7 +1278,8 @@ class MapEditor {
           </select>
         </label>
         <button id="delete-object" class="secondary small">删除物体</button>
-      </section>
+        </section>
+      </details>
     `;
     host.querySelector<HTMLInputElement>('[data-object-name]')?.addEventListener('input', (event) => {
       object.name = (event.target as HTMLInputElement).value;
@@ -1322,9 +1326,11 @@ class MapEditor {
     const availableAssets = this.state.assets;
     const selectedAsset = availableAssets.find((asset) => asset.id === this.state.selectedAssetId) ?? availableAssets[0] ?? null;
     if (this.state.selectedAssetId !== selectedAsset?.id) this.state.selectedAssetId = selectedAsset?.id ?? null;
+    const assetPanelOpen = host.querySelector<HTMLDetailsElement>('[data-inspector-section="assets"]')?.open ?? Boolean(this.placingAssetId);
     host.innerHTML = `
-      <section class="editor-section asset-tools">
-        <h2>资产</h2>
+      <details class="inspector-disclosure" data-inspector-section="assets" ${assetPanelOpen || Boolean(this.placingAssetId) ? 'open' : ''}>
+        <summary><span><b>资产</b><small>${selectedAsset ? escapeHtml(`${selectedAsset.name} · ${selectedAsset.mode.toUpperCase()}`) : `${availableAssets.length} 个可用`}</small></span></summary>
+        <section class="editor-section inspector-body asset-tools">
         <textarea id="asset-prompt" placeholder="输入提示词生成模型资产"></textarea>
         <p class="empty">新生成资产默认使用 ${this.state.map?.assetGenerationMode.toUpperCase() ?? 'VOXEL'}；已有资产可跨模式混合使用。</p>
         <button id="generate-asset" ${this.state.busy ? 'disabled' : ''}>生成资产</button>
@@ -1342,7 +1348,8 @@ class MapEditor {
           : '尚未选择资产'}</p>
         <button id="place-selected-asset" ${selectedAsset ? '' : 'disabled'}>${this.placingAssetId === selectedAsset?.id ? '取消放置' : '放入地图'}</button>
         <button id="bind-selected-asset" class="secondary small" ${this.selectedObject() && selectedAsset ? '' : 'disabled'}>绑定到选中物体</button>
-      </section>
+        </section>
+      </details>
     `;
     const previewHost = host.querySelector<HTMLElement>('#asset-preview');
     if (previewHost && this.previewRenderer) {
@@ -1454,11 +1461,15 @@ class MapEditor {
     if (!this.renderAiPreview && (!this.renderDraft || this.renderDraft.id !== selected?.id)) this.resetRenderDraft();
     const draft = this.renderDraft;
     const activeSchemeId = this.renderAiPreview ? draft?.id : selected?.id;
+    const renderAiOpen = host.querySelector<HTMLDetailsElement>('[data-inspector-section="render-ai"]')?.open ?? true;
+    const schemeLibraryOpen = host.querySelector<HTMLDetailsElement>('[data-inspector-section="scheme-library"]')?.open ?? true;
+    const renderTuningOpen = host.querySelector<HTMLDetailsElement>('[data-inspector-section="render-tuning"]')?.open ?? false;
     host.innerHTML = `
       ${draft && this.developerMode ? this.renderDeveloperPresetEditor(draft) : ''}
-      <section class="editor-section render-ai">
-        <div class="section-title-row">
-          <h2>AI 生成风格</h2>
+      <details class="inspector-disclosure" data-inspector-section="render-ai" ${renderAiOpen || this.state.busy || Boolean(this.renderAiPreview) ? 'open' : ''}>
+        <summary><span><b>AI 生成风格</b><small>一句话编排光照与氛围</small></span></summary>
+        <section class="editor-section inspector-body render-ai">
+          <div class="section-title-row">
           ${map.renderPromptSuggestions.length > 0 ? `
             <details class="render-prompt-suggestions">
               <summary>氛围建议</summary>
@@ -1469,7 +1480,7 @@ class MapEditor {
               </div>
             </details>
           ` : ''}
-        </div>
+          </div>
         <textarea id="render-ai-prompt" rows="3" maxlength="1000" placeholder="例如：素描风格的宁静田园，带有柔和晨雾">${escapeHtml(this.renderAiPrompt)}</textarea>
         <div class="render-ai-controls">
           <button id="generate-render-ai" ${this.state.busy || !this.renderAiPrompt.trim() ? 'disabled' : ''}>生成新风格</button>
@@ -1482,7 +1493,8 @@ class MapEditor {
           running: Boolean(this.renderAiAbortController),
           elapsedMs: this.renderAgentElapsedMs
         })}
-      </section>
+        </section>
+      </details>
       ${this.renderAiPreview && draft ? `
         <section class="editor-section render-ai-result">
           <span class="stage-kicker">AI 建议 · ${escapeHtml(draft.name)}</span>
@@ -1500,11 +1512,12 @@ class MapEditor {
           </div>
         </section>
       ` : ''}
-      <section class="editor-section">
-        <h2>方案库</h2>
+      <details class="inspector-disclosure scheme-library" data-inspector-section="scheme-library" ${schemeLibraryOpen ? 'open' : ''}>
+        <summary><span><b>方案库</b><small>${this.state.renderSchemes.length} 个方案</small></span></summary>
+        <section class="editor-section inspector-body">
         <div class="render-scheme-list">
           ${this.state.renderSchemes.map((scheme) => `
-            <div class="render-scheme-item">
+            <div class="render-scheme-item ${scheme.kind}">
               <button class="render-scheme-card ${scheme.id === activeSchemeId ? 'active' : ''}" data-render-scheme="${scheme.id}" title="${escapeHtml(scheme.description || scheme.name)}">
                 <span class="scheme-swatch" style="--scheme-bg:${scheme.settings.background};--scheme-sun:${scheme.settings.sunColor}"></span>
                 <strong>${escapeHtml(scheme.name)}</strong>
@@ -1513,10 +1526,12 @@ class MapEditor {
             </div>
           `).join('')}
         </div>
-      </section>
+        </section>
+      </details>
       ${draft && !this.developerMode ? `
-        <section class="editor-section render-tuning">
-          <h2>安全微调</h2>
+        <details class="inspector-disclosure" data-inspector-section="render-tuning" ${renderTuningOpen ? 'open' : ''}>
+          <summary><span><b>安全微调</b><small>${escapeHtml(draft.name)}</small></span></summary>
+          <section class="editor-section inspector-body render-tuning">
           <label class="field compact">
             <span>曝光 <output data-render-output="exposure">${draft.settings.exposure.toFixed(2)}</output></span>
             <input data-render-number="exposure" type="range" min="0.2" max="2" step="0.02" value="${draft.settings.exposure}" />
@@ -1535,7 +1550,8 @@ class MapEditor {
           </label>
           <p id="render-tuning-note" class="empty">${this.renderDraftChanged ? '微调正在预览，保存后会生成新的渲染方案，不会改动原预设。' : '只开放普通用户容易理解的白名单参数。'}</p>
           ${this.renderAiPreview ? '' : `<button id="save-render-scheme">${this.renderDraftChanged ? '保存为新方案' : '复制为新方案'}</button>`}
-        </section>
+          </section>
+        </details>
       ` : ''}
     `;
     host.querySelectorAll<HTMLButtonElement>('[data-dev-view]').forEach((button) => {
@@ -2741,10 +2757,12 @@ class MapEditor {
     }
     const deleteMapButton = this.app.querySelector<HTMLButtonElement>('#delete-map');
     if (deleteMapButton) deleteMapButton.disabled = this.state.busy || !this.state.map;
+    const noEditableSelection = Boolean(this.mapAiPreviewMap) || !mapStage || this.state.tool !== 'select' || !this.state.selectedObjectId;
+    const transformTools = this.app.querySelector<HTMLElement>('[data-transform-tools]');
+    if (transformTools) transformTools.hidden = noEditableSelection;
     this.app.querySelectorAll<HTMLButtonElement>('[data-transform-mode]').forEach((button) => {
       const mode = button.dataset.transformMode as TransformMode;
       const activeMode = this.isTranslateOnlySelection() ? 'translate' : this.state.transformMode;
-      const noEditableSelection = Boolean(this.mapAiPreviewMap) || !mapStage || this.state.tool !== 'select' || !this.state.selectedObjectId;
       const disabled = noEditableSelection || (this.isTranslateOnlySelection() && mode !== 'translate');
       button.classList.toggle('active', mode === activeMode);
       button.disabled = disabled;
@@ -2776,6 +2794,7 @@ class MapEditor {
     const save = this.app.querySelector<HTMLButtonElement>('#save-map');
     if (save) {
       save.disabled = this.state.busy || !this.state.map || this.renderDraftChanged || Boolean(this.mapAiPreviewMap);
+      save.classList.toggle('dirty', this.state.dirty);
       save.title = this.mapAiPreviewMap
         ? '请先应用或放弃 AI 地图预览'
         : this.renderDraftChanged
