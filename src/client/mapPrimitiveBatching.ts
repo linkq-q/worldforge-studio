@@ -194,6 +194,10 @@ export async function buildMapPrimitiveBatches(
       return cullingStats;
     },
     updateMaterialEffects: (elapsedSeconds) => {
+      effectRuntime.updateRuntimeUniforms(root, {
+        uTime: elapsedSeconds,
+        uChargeLevel: 1
+      });
       materialTagRuntime.updateRuntimeUniforms(elapsedSeconds);
     },
     restoreMaterialEffects: () => {
