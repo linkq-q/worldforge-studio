@@ -68,6 +68,8 @@ Large-map directional shadows use the runtime `CSMController` through `mapShadow
 
 全局视觉方法由 `src/shared/visualDirection.ts` 维护：渲染方案拥有对比模式、时间/冷暖、语义色板和环境特效意图；地图拥有区域标签与共享风场。AI 只表达这层意图，确定性的编译器再协调 HDRI、灯光、雾、水、材质 Tag 与环境特效。冲突顺序固定为显式用户参数 > 视觉导演 > 地图区域语义 > HDRI 采样 > 默认值。
 
+地图模型使用与 Scene Builder 相同的 `AIPrimitiveBatcher + RuntimeIndex + EffectBatchCoordinator + ObjectDistanceCuller` 链路。普通/基础材质基元进入共享批，带运行时材质层的同构 Part 达到阈值后再次合批；两类批次都参加 PBR/Cel 刷新、选择、变换同步、距离剔除与材质环境同步。Debug 面板的覆盖率以 `RuntimeIndex` 的实时 Part 数为分母，不能混用模板级 audit 计数与展开后的实例计数。
+
 基础版 Agent API 使用 SSE 返回真实执行阶段。空地图链路公开场景构图、按需专家会诊、资产解析、逐个资产生成、失败重试、确定性编译、合成审查、校验与修复；单个资产生成最多尝试三次，前端展示当前资产、尝试次数和失败原因。Refine 与渲染链路继续公开自己的规划、校验和自动修正。客户端进度条只根据后端已发生的阶段推进，耗时只用于解释等待时间，不伪造完成百分比。
 
 地图 Agent 的最终规划会先在内存中应用，再交给独立 `mapLint` 做确定性验收。出生点不安全、根物体越界/悬空、完全重复物体和湖面穿地会转换为追加在同一事务后的修复操作；明显重叠和内容稀疏只报告，不做有审美判断的自动修改。预览面板显示质检结果，SSE 在确实产生修复时才发送 `repairing` 阶段。

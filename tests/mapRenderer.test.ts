@@ -236,6 +236,11 @@ describe('structured map water rendering', () => {
     const rendered = await buildEditableMapGroup(map);
     expect(rendered.modelsRoot.getObjectByProperty('isInstancedMesh', true)).toBeUndefined();
     expect(rendered.objectGroups.get('flame-0')?.getObjectByName('flame')).toBeDefined();
+    expect(rendered.getDebugStats()).toMatchObject({
+      totalParts: 2,
+      effectBatchParts: 0,
+      fallbackMeshParts: 2
+    });
     rendered.dispose();
   });
 

@@ -206,15 +206,19 @@ export async function buildMapPrimitiveBatches(
       const audit = batcher.getSceneAudit();
       const materialStats = materialTagRuntime.getStats();
       const runtimeAudit = auditRuntimeIndex(runtimeIndex);
+      const instancedParts = audit.instancedParts ?? 0;
+      const batchedMeshParts = (audit.batchedMeshParts ?? 0) + materialStats.effectBatchParts;
+      // RuntimeIndex is the only count whose unit is consistently a live map
+      // part. AIPrimitiveBatcher audit fields are source-template counts while
+      // EffectBatchCoordinator reports expanded instances, so subtracting one
+      // from the other used to hide hundreds of real standalone draws.
+      const totalParts = runtimeAudit.partToRenderCount;
       return {
-        totalParts: audit.totalParts ?? 0,
-        batchableParts: (audit.batchableParts ?? 0) + materialStats.effectBatchParts,
-        instancedParts: audit.instancedParts ?? 0,
-        batchedMeshParts: (audit.batchedMeshParts ?? 0) + materialStats.effectBatchParts,
-        fallbackMeshParts: Math.max(
-          0,
-          (audit.fallbackMeshParts ?? audit.fallbackParts ?? 0) - materialStats.effectBatchParts
-        ),
+        totalParts,
+        batchableParts: totalParts,
+        instancedParts,
+        batchedMeshParts,
+        fallbackMeshParts: Math.max(0, totalParts - instancedParts - batchedMeshParts),
         batchCount: (audit.batchCount ?? 0) + materialStats.effectBatchCount,
         ...materialStats,
         runtimeIndexPartRefs: runtimeAudit.partToRenderCount,
