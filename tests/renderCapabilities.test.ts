@@ -89,6 +89,8 @@ describe('RenderPlan V2 capabilities', () => {
             waveSpeed: 0.45,
             foamStrength: 0.3,
             reflectionStrength: 0.55,
+            environmentReflectionStrength: 0.24,
+            environmentReflectionExposure: 0.5,
             reflectionDistortion: 0.06,
             reflectionFresnel: 1.2
           }
@@ -117,6 +119,8 @@ describe('RenderPlan V2 capabilities', () => {
       depthColor: '#16354a',
       waveSpeed: 0.45,
       reflectionStrength: 0.55,
+      environmentReflectionStrength: 0.24,
+      environmentReflectionExposure: 0.5,
       reflectionDistortion: 0.06,
       reflectionFresnel: 1.2
     });
@@ -201,6 +205,9 @@ describe('RenderPlan V2 capabilities', () => {
     const defaults = createDefaultRenderAccessPolicy();
     expect(defaults.parameters.find((entry) => (
       entry.moduleId === 'runtime.grass-style' && entry.parameter === 'normalFlatten'
+    ))?.ai.enabled).toBe(false);
+    expect(defaults.parameters.find((entry) => (
+      entry.moduleId === 'runtime.outline-style' && entry.parameter === 'fadeEnd'
     ))?.ai.enabled).toBe(false);
     const policy = normalizeRenderAccessPolicy({
       version: 1,

@@ -74,7 +74,9 @@ describe('developer render controls', () => {
     expect(reflectionSlider).not.toContain('disabled');
     expect(waveSlider).toContain('step="0.01"');
     expect(fresnelSlider).toContain('step="0.01"');
-    expect(html).toContain('反射强度');
+    expect(html).toContain('场景倒影强度');
+    expect(html).toContain('HDRI 环境反射');
+    expect(html).toContain('HDRI 反射曝光');
     expect(html).toContain('反射扰动');
     expect(html).toContain('反射 Fresnel');
     expect(html).toContain('全局结构化水体');

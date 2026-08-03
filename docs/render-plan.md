@@ -29,13 +29,13 @@ V1 方案仍可读取；一旦在开发者模式中增加新能力，方案会�
 - `lighting.hemisphere`、`lighting.sun`
 - `presentation.exposure`
 - `runtime.surface-style`
-- `runtime.outline-style`
+- `runtime.outline-style`：统一描边模式、线条外观和开发者控制的世界距离淡出；AI 不直接修改 LOD 阈值
 - `runtime.presentation-style`
 
 新增能力：
 
 - `runtime.color-grade`：冷暖、对比度、饱和度、暗部抬升、Tint 和命名配方
-- `runtime.water-style`：湖泊/河流配方、透明度、浅水/深水颜色、波纹、泡沫、环境/平面反射强度、平面反射扰动和 Fresnel
+- `runtime.water-style`：湖泊/河流配方、透明度、浅水/深水颜色、波纹、泡沫、独立的 HDRI 环境反射与场景平面倒影强度、反射曝光、扰动和 Fresnel
 - `runtime.material-theme`：按 `material-tag` 或 `asset-tag` 批量应用材质主题
 - `runtime.light-rig`：柔和晨光、硬日光、逆光、阴天和黄昏等灯光配方
 - `runtime.post-quality`：Bloom、SSAO 和景深的高层选择

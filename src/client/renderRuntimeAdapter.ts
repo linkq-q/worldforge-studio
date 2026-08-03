@@ -339,6 +339,7 @@ export class RenderRuntimeAdapter {
     this.setEdgeMaskValues(preset);
     this.setInkValues(preset);
     this.setCurvatureValues(preset);
+    this.setOutlineDistanceValues(style.params.fadeStart ?? 120, style.params.fadeEnd ?? 260);
   }
 
   applyPresentation(style: RuntimePresentationStyle): void {
@@ -525,12 +526,15 @@ export class RenderRuntimeAdapter {
             uFoamStrength: style.foamStrength ?? recipe.foamStrength,
             uOpacity: style.opacity ?? recipe.opacity
           });
-          configureWaterReflection(surface, {
-            strength: style.reflectionStrength ?? recipe.reflectionStrength,
-            distortion: style.reflectionDistortion,
-            fresnelBoost: style.reflectionFresnel
-          });
         }
+        const planarStrength = style?.reflectionStrength ?? recipe.reflectionStrength;
+        configureWaterReflection(surface, {
+          planarStrength,
+          environmentStrength: style?.environmentReflectionStrength ?? Math.min(0.35, planarStrength * 0.5),
+          environmentExposure: style?.environmentReflectionExposure ?? 0.55,
+          distortion: style?.reflectionDistortion,
+          fresnelBoost: style?.reflectionFresnel
+        });
         syncWaterSurfaceEnvironment(surface, this.scene.environment);
       }
       const uniforms = surface.material.uniforms;
@@ -786,6 +790,20 @@ export class RenderRuntimeAdapter {
     this.setNumber(this.curvaturePass, 'uWidth', numberValue(values.curvatureWidth, 1));
     this.setNumber(this.curvaturePass, 'uPower', numberValue(values.curvaturePower, 2));
     this.setNumber(this.curvaturePass, 'uThreshold', numberValue(values.curvatureThreshold, 0.1));
+  }
+
+  private setOutlineDistanceValues(start: number, end: number): void {
+    const fadeStart = Math.max(1, start);
+    const fadeEnd = Math.max(fadeStart + 1, end);
+    this.setNumber(this.inkPass, 'uDepthFadeStart', fadeStart);
+    this.setNumber(this.inkPass, 'uDepthFadeEnd', fadeEnd);
+    this.setNumber(this.inkPass, 'uMinEdgeStrength', 0.2);
+    this.setNumber(this.inkPass, 'uWidthFadeStart', fadeStart * 0.8);
+    this.setNumber(this.inkPass, 'uWidthFadeEnd', fadeEnd);
+    this.setNumber(this.inkPass, 'uLodFadeStart', fadeEnd * 0.82);
+    this.setNumber(this.inkPass, 'uLodFadeEnd', fadeEnd * 1.15);
+    this.setNumber(this.curvaturePass, 'uDepthFadeStart', fadeStart);
+    this.setNumber(this.curvaturePass, 'uDepthFadeEnd', fadeEnd);
   }
 
   private setNumber(

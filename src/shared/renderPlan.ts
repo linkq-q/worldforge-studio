@@ -106,6 +106,8 @@ export interface RuntimeOutlineStyle {
     echoAngle: number;
     echoStrength: number;
     echoColor: string;
+    fadeStart: number;
+    fadeEnd: number;
   }>;
 }
 
@@ -163,6 +165,8 @@ export interface RuntimeWaterStyle {
   waveSpeed?: number;
   foamStrength?: number;
   reflectionStrength?: number;
+  environmentReflectionStrength?: number;
+  environmentReflectionExposure?: number;
   reflectionDistortion?: number;
   reflectionFresnel?: number;
 }
@@ -192,7 +196,7 @@ export const DEFAULT_RUNTIME_GRASS_STYLE: RuntimeGrassStyle = {
   rootColor: '#72ad49', tipColor: '#b7df76', paletteVariation: 0.1, bands: 3,
   bladeHeight: 0.95, bladeWidth: 0.18, windStrength: 0.22, windDirection: [1, 0.25],
   normalFlatten: 0.8, rootDarken: 0.8, gradientBias: 0.7, cellSize: 0.8,
-  fadeStart: 48, fadeEnd: 84, maxInstances: 15000,
+  fadeStart: 72, fadeEnd: 140, maxInstances: 15000,
   groundTint: true, groundColor: '#669746', groundTintStrength: 0.82
 };
 
@@ -331,7 +335,9 @@ export const RENDER_CAPABILITIES: readonly RenderCapability[] = [
       echoSpacing: { type: 'number', min: 1, max: 6 },
       echoAngle: { type: 'number', min: -180, max: 180 },
       echoStrength: { type: 'number', min: 0, max: 1 },
-      echoColor: { type: 'color' }
+      echoColor: { type: 'color' },
+      fadeStart: { type: 'number', min: 20, max: 400, default: 120 },
+      fadeEnd: { type: 'number', min: 30, max: 600, default: 260 }
     }
   },
   {
@@ -404,6 +410,8 @@ export const RENDER_CAPABILITIES: readonly RenderCapability[] = [
       waveSpeed: { type: 'number', min: 0, max: 2, default: 0.3 },
       foamStrength: { type: 'number', min: 0, max: 1.5, default: 0.45 },
       reflectionStrength: { type: 'number', min: 0, max: 1.5, default: 0.6 },
+      environmentReflectionStrength: { type: 'number', min: 0, max: 1, default: 0.3 },
+      environmentReflectionExposure: { type: 'number', min: 0.1, max: 1.5, default: 0.55 },
       reflectionDistortion: { type: 'number', min: 0, max: 0.2, default: 0.04 },
       reflectionFresnel: { type: 'number', min: 0, max: 3, default: 1 }
     }
@@ -631,7 +639,9 @@ export function compileRuntimeOutline(plan: RenderPlan): RuntimeOutlineStyle {
     'echoCount',
     'echoSpacing',
     'echoAngle',
-    'echoStrength'
+    'echoStrength',
+    'fadeStart',
+    'fadeEnd'
   ] as const) {
     if (typeof params[key] === 'number') compiled[key] = params[key];
   }
@@ -726,6 +736,8 @@ export function compileRuntimeWaterStyles(plan: RenderPlan): RuntimeWaterStyle[]
       waveSpeed: numericValue(item.params.waveSpeed),
       foamStrength: numericValue(item.params.foamStrength),
       reflectionStrength: numericValue(item.params.reflectionStrength),
+      environmentReflectionStrength: numericValue(item.params.environmentReflectionStrength),
+      environmentReflectionExposure: numericValue(item.params.environmentReflectionExposure),
       reflectionDistortion: numericValue(item.params.reflectionDistortion),
       reflectionFresnel: numericValue(item.params.reflectionFresnel)
     }));
@@ -840,6 +852,7 @@ export function createDefaultRenderAccessPolicy(): RenderAccessPolicy {
       const range: RenderAccessRange = {
         enabled: !capability.developerOnly
           && !(capability.id === 'runtime.post-quality' && parameter === 'depthOfField')
+          && !(capability.id === 'runtime.outline-style' && ['fadeStart', 'fadeEnd'].includes(parameter))
           && !(capability.id === 'runtime.grass-style' && [
             'normalFlatten', 'rootDarken', 'gradientBias', 'cellSize', 'fadeStart', 'fadeEnd', 'maxInstances'
           ].includes(parameter)),

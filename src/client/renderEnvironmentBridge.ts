@@ -16,7 +16,9 @@ interface WaterReflectionSurface {
 }
 
 export interface WaterReflectionSettings {
-  strength: number;
+  planarStrength: number;
+  environmentStrength: number;
+  environmentExposure?: number;
   distortion?: number;
   fresnelBoost?: number;
 }
@@ -68,9 +70,12 @@ export function configureWaterReflection(
   surface: WaterReflectionSurface,
   settings: WaterReflectionSettings
 ): void {
-  surface.setWaterReflectionParams({ strength: settings.strength });
+  surface.setWaterReflectionParams({
+    strength: settings.environmentStrength,
+    exposure: settings.environmentExposure
+  });
   surface.setPlanarReflectionParams({
-    strength: settings.strength,
+    strength: settings.planarStrength,
     distortion: settings.distortion,
     fresnelBoost: settings.fresnelBoost
   });

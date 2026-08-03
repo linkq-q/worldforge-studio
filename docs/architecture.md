@@ -18,7 +18,7 @@ Never remove children during `Object3D.traverse()`. Collect targets first and de
 
 Frame rendering is scheduled through the runtime `RenderPipeline` and `RenderGraph`: planar reflections run first, the shared normal/depth producer runs only when demanded, water then consumes the scene depth, and the registered composer passes run last. WorldForge owns only the host callbacks in `renderFrameCoordinator.ts`; it must not rebuild a second pass scheduler inside `RenderRuntimeAdapter`.
 
-Water meshes never write the shared normal/depth target. They consume the depth of terrain and opaque scene objects so shallow/deep blending, shore fading, SSAO, distance fog, and presentation passes share one coherent screen-space scene description.
+Water meshes never write the shared normal/depth target. They consume the depth of terrain and opaque scene objects so shallow/deep blending, shore fading, SSAO, distance fog, and presentation passes share one coherent screen-space scene description. HDRI environment reflection and planar scene reflection have separate strengths; a bright panorama must not wash out the local scene reflection.
 
 Large-map directional shadows use the runtime `CSMController` through `mapShadowRuntime.ts`. The controller owns one map lifetime, patches both `modelsRoot` (including primitive batches) and the terrain material, and restores the fallback directional shadow when the map is replaced. Editor helpers, sky and other scene-level objects remain outside its material scope.
 

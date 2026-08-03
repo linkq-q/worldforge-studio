@@ -63,19 +63,21 @@ describe('render environment bridge', () => {
     environment.dispose();
   });
 
-  it('keeps environment and planar reflection strengths in sync', () => {
+  it('keeps HDRI reflection restrained without weakening the planar scene reflection', () => {
     const surface = {
       setWaterReflectionParams: vi.fn(),
       setPlanarReflectionParams: vi.fn()
     };
 
     configureWaterReflection(surface, {
-      strength: 0.9,
+      planarStrength: 0.9,
+      environmentStrength: 0.28,
+      environmentExposure: 0.55,
       distortion: 0.07,
       fresnelBoost: 1.4
     });
 
-    expect(surface.setWaterReflectionParams).toHaveBeenCalledWith({ strength: 0.9 });
+    expect(surface.setWaterReflectionParams).toHaveBeenCalledWith({ strength: 0.28, exposure: 0.55 });
     expect(surface.setPlanarReflectionParams).toHaveBeenCalledWith({
       strength: 0.9,
       distortion: 0.07,
