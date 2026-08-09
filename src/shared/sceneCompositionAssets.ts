@@ -51,7 +51,7 @@ export function fitSceneAssetVariantBudget(
 
 export function resolveSceneFamilies(
   plan: SceneCompositionPlan,
-  map: EditableMap,
+  _map: EditableMap,
   assets: readonly MapAsset[],
   generationBudget: number
 ): { families: ResolvedSceneFamily[]; gaps: SceneAssetGap[] } {
@@ -60,7 +60,7 @@ export function resolveSceneFamilies(
     .sort((left, right) => right.priority - left.priority)
     .map((family): ResolvedSceneFamily => {
       const candidates = assets
-        .filter((asset) => !claimed.has(asset.id) && matchesFamily(asset, family))
+        .filter((asset) => !claimed.has(asset.id) && matchesFamily(asset, family, familyZoneTags(plan, family.id)))
         .sort((left, right) => scoreAsset(right, family) - scoreAsset(left, family) || left.id.localeCompare(right.id));
       const selected = candidates.slice(0, family.desiredVariants);
       selected.forEach((asset) => claimed.add(asset.id));
@@ -106,21 +106,43 @@ export function attachGeneratedSceneAssets(
   }));
 }
 
-function matchesFamily(asset: MapAsset, family: SceneAssetFamily): boolean {
-  const tags = new Set(asset.tags ?? []);
+function matchesFamily(asset: MapAsset, family: SceneAssetFamily, zoneTags: ReadonlySet<string>): boolean {
+  const tags = new Set([...(asset.tags ?? []), ...(asset.libraryMetadata?.tags ?? [])]);
   const identityMatch = family.identityTags.length === 0
     || family.identityTags.some((tag) => tags.has(tag));
   const tagMatch = identityMatch
     && (family.tags.length === 0 || family.tags.some((tag) => tags.has(tag)));
   const sizeMatch = !asset.sizeClass || asset.sizeClass === family.sizeClass;
-  return tagMatch && sizeMatch;
+  const applicableZones = asset.libraryMetadata?.applicableZones ?? ['any'];
+  const zoneMatch = applicableZones.includes('any') || applicableZones.some((zone) => zoneTags.has(zone));
+  return tagMatch && sizeMatch && zoneMatch;
 }
 
 function scoreAsset(asset: MapAsset, family: SceneAssetFamily): number {
-  const tags = new Set(asset.tags ?? []);
+  const tags = new Set([...(asset.tags ?? []), ...(asset.libraryMetadata?.tags ?? [])]);
   const matchingTags = family.tags.filter((tag) => tags.has(tag)).length;
   const matchingIdentityTags = family.identityTags.filter((tag) => tags.has(tag)).length;
-  return matchingIdentityTags * 100 + matchingTags * 10 + (asset.sizeClass === family.sizeClass ? 4 : 0);
+  return (asset.libraryMetadata?.priority ?? 0.5) * 1_000
+    + matchingIdentityTags * 100
+    + matchingTags * 10
+    + (asset.sizeClass === family.sizeClass ? 4 : 0)
+    + Math.min(3, asset.updatedAt / 1e15);
+}
+
+function familyZoneTags(plan: SceneCompositionPlan, familyId: string): Set<string> {
+  const result = new Set<string>();
+  for (const zone of plan.zones.filter((item) => item.layers.some((layer) => layer.familyId === familyId))) {
+    const text = `${zone.label} ${zone.brief.atmosphere} ${zone.brief.hierarchy}`.toLowerCase();
+    if (zone.water) result.add('water');
+    if (/forest|wood|grove|tree/.test(text)) result.add('forest');
+    if (/grass|meadow|field|plain/.test(text)) result.add('grass');
+    if (/rock|cliff|mountain|canyon/.test(text)) result.add('rocky');
+    if (/village|town|city|settlement|camp|ruin/.test(text)) result.add('settlement');
+    if (/dry|desert|dune|arid/.test(text)) result.add('dry');
+    if (/lowland|valley|basin/.test(text)) result.add('lowland');
+  }
+  if (result.size === 0) result.add('any');
+  return result;
 }
 
 function buildFamilyPrompt(family: SceneAssetFamily, artDirection: string, variantIndex: number): string {

@@ -233,7 +233,7 @@ describe('map AI adapter', () => {
     expect(fetchImpl.mock.calls[0][0]).toBe('https://example.test/api/chat');
   });
 
-  it('reuses mixed-mode assets and generates missing variants in the map default mode', async () => {
+  it('reuses a specifically matching existing asset only when reuse is enabled', async () => {
     const progress: string[] = [];
     const fetchImpl = vi.fn()
       .mockResolvedValueOnce(chatResponse(compositionPlan({
@@ -262,38 +262,102 @@ describe('map AI adapter', () => {
         provider: 'gpt',
         fetchImpl,
         createAsset,
+        reuseExistingAssets: true,
         onProgress: (event) => progress.push(event.phase)
       }
     );
 
     expect(fetchImpl).toHaveBeenCalledTimes(2);
-    expect(createAsset).toHaveBeenCalledOnce();
-    expect(createAsset).toHaveBeenCalledWith(expect.objectContaining({
-      tags: ['tree', 'vegetation'],
-      mode: 'curve'
-    }));
+    expect(createAsset).not.toHaveBeenCalled();
     expect(JSON.stringify(suggestion.operations)).toContain('asset-voxel-tree');
-    expect(suggestion.generatedAssets).toHaveLength(1);
-    expect(suggestion.generatedAssets?.map((asset) => asset.id)).toEqual([
-      'asset-generated-tree-1'
-    ]);
-    expect(suggestion.operations).toEqual(expect.arrayContaining([
-      expect.objectContaining({
-        type: 'object.add',
-        object: expect.objectContaining({ assetId: 'asset-generated-tree-1' })
-      })
-    ]));
-    const secondRequest = JSON.parse(fetchImpl.mock.calls[1][1]?.body as string);
-    expect(secondRequest.messages[0].content).toContain('asset-generated-tree');
+    expect(suggestion.generatedAssets).toHaveLength(0);
     expect(progress).toEqual(expect.arrayContaining([
       'composing',
       'resolving-assets',
-      'generating-asset',
       'compiling',
       'reviewing',
       'validating',
       'complete'
     ]));
+  });
+
+  it('generates a fresh asset by default even when an old asset has matching broad tags', async () => {
+    const fetchImpl = vi.fn()
+      .mockResolvedValueOnce(chatResponse(compositionPlan({
+        assetFamilies: [family('trees', ['tree', 'vegetation'], 'large')],
+        zones: [zone('grove', [{ familyId: 'trees', distribution: 'clustered' }])]
+      })))
+      .mockResolvedValueOnce(chatResponse(reviewPass()));
+    const createAsset = vi.fn().mockResolvedValue(
+      testAsset('asset-fresh-tree', 'Fresh tree', ['tree', 'vegetation'], 'large', 'curve')
+    );
+
+    const suggestion = await runMapAgent(
+      'A quiet pastoral grove',
+      { ...createEmptyMap(), assetGenerationMode: 'curve' },
+      [testAsset('asset-old-tree', 'Old tree', ['tree', 'vegetation'], 'large')],
+      { apiBase: 'https://example.test', provider: 'gpt', fetchImpl, createAsset }
+    );
+
+    expect(createAsset).toHaveBeenCalledOnce();
+    expect(JSON.stringify(suggestion.operations)).toContain('asset-fresh-tree');
+    expect(JSON.stringify(suggestion.operations)).not.toContain('asset-old-tree');
+  });
+
+  it('repairs a malformed scene zone twice before rejecting the composition', async () => {
+    const malformedPlan = compositionPlan({
+      zones: [{ id: 'main', label: 'Main zone', role: 'focal' }]
+    });
+    const fetchImpl = vi.fn()
+      .mockResolvedValueOnce(chatResponse(malformedPlan))
+      .mockResolvedValueOnce(chatResponse(malformedPlan))
+      .mockResolvedValueOnce(chatResponse(compositionPlan()))
+      .mockResolvedValueOnce(chatResponse(reviewPass()));
+
+    await expect(runMapAgent(
+      'A quiet pastoral grove',
+      createEmptyMap(),
+      [],
+      { apiBase: 'https://example.test', provider: 'gpt', fetchImpl, createAsset: vi.fn() }
+    )).resolves.toEqual(expect.objectContaining({ operations: expect.any(Array) }));
+    expect(fetchImpl).toHaveBeenCalledTimes(4);
+  });
+
+  it('exposes only the explicitly selected asset-library ids for reuse', async () => {
+    const fetchImpl = vi.fn()
+      .mockResolvedValueOnce(chatResponse(compositionPlan({
+        assetFamilies: [family('trees', ['pine', 'tree'], 'large')],
+        zones: [zone('forest grove', [{ familyId: 'trees', distribution: 'accent' }])]
+      })))
+      .mockResolvedValueOnce(chatResponse(reviewPass()));
+    const selected: MapAsset = {
+      ...testAsset('asset-selected-pine', 'Selected pine', ['pine', 'tree'], 'large'),
+      libraryId: 'library-forest',
+      libraryMetadata: {
+        tags: ['pine', 'tree'],
+        applicableZones: ['forest'],
+        repeatable: true,
+        landmark: false,
+        enabled: true,
+        priority: 1,
+        analysisStatus: 'ready' as const,
+        rotation: 'random' as const
+      }
+    };
+    const unselected = testAsset('asset-unselected-pine', 'Unselected pine', ['pine', 'tree'], 'large');
+
+    const suggestion = await runMapAgent('pine forest', createEmptyMap(), [selected, unselected], {
+      apiBase: 'https://example.test',
+      provider: 'gpt',
+      fetchImpl,
+      createAsset: vi.fn(),
+      reuseExistingAssets: true,
+      reusableAssetIds: [selected.id]
+    });
+
+    expect(JSON.stringify(suggestion.operations)).toContain(selected.id);
+    expect(JSON.stringify(suggestion.operations)).not.toContain(unselected.id);
+    expect(suggestion.reusedAssets).toEqual([{ id: selected.id, name: selected.name, libraryId: 'library-forest' }]);
   });
 
   it('allows the large preset to generate all ten requested reusable assets', async () => {
@@ -359,6 +423,7 @@ describe('map AI adapter', () => {
       provider: 'gpt',
       fetchImpl,
       createAsset: vi.fn(),
+      reuseExistingAssets: true,
       onProgress: (event) => progress.push(event.phase)
     });
 
@@ -388,6 +453,7 @@ describe('map AI adapter', () => {
       provider: 'gpt',
       fetchImpl,
       createAsset: vi.fn(),
+      reuseExistingAssets: true,
       onProgress: (event) => progress.push(event.phase)
     });
     const applied = applyMapOperations(createEmptyMap(), suggestion.operations);

@@ -10,6 +10,15 @@ export interface MapPlanLimits {
   assetVariantMax: number;
 }
 
+export const DEFAULT_MAP_AI_MAX_NEW_ASSETS = 16;
+export const MAP_AI_MAX_NEW_ASSETS = 32;
+
+export function normalizeMapAiMaxNewAssets(value: unknown): number {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) return DEFAULT_MAP_AI_MAX_NEW_ASSETS;
+  return Math.round(Math.min(MAP_AI_MAX_NEW_ASSETS, Math.max(1, parsed)));
+}
+
 export function planLimits(bounds: MapBounds): MapPlanLimits {
   const width = bounds.maxX - bounds.minX;
   const depth = bounds.maxZ - bounds.minZ;

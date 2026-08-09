@@ -21,6 +21,7 @@ import {
   type MapMaterialTagPolicy
 } from './materialTagPolicy';
 import { normalizeMapVisualSemantics, type MapVisualSemantics } from './visualDirection';
+import type { AssetLibraryMetadata } from './assetLibrary';
 
 export type MapSurface = 'floor' | 'ceiling' | 'north' | 'south' | 'east' | 'west' | 'terrain';
 export type TerrainBrushMode = 'raise' | 'lower' | 'flatten';
@@ -92,6 +93,8 @@ export interface MapAsset {
   sizeClass?: MapAssetSizeClass;
   mode: string;
   provider?: string;
+  libraryId?: string;
+  libraryMetadata?: AssetLibraryMetadata;
   createdAt: number;
   updatedAt: number;
 }
@@ -1124,6 +1127,8 @@ function normalizeAsset(input: Partial<MapAsset>): MapAsset {
       : assetSizeClass(footprintRadius),
     mode: typeof input.mode === 'string' && input.mode ? input.mode : 'voxel',
     provider: typeof input.provider === 'string' && input.provider ? input.provider : undefined,
+    libraryId: typeof input.libraryId === 'string' && input.libraryId ? input.libraryId : undefined,
+    libraryMetadata: input.libraryMetadata,
     createdAt: finiteNumber(input.createdAt, now),
     updatedAt: finiteNumber(input.updatedAt, now)
   };

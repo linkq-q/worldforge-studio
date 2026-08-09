@@ -45,6 +45,39 @@ export function compileMapVisualSemantics(
   };
 }
 
+/** Adds deterministic spatial facts for structured content created outside the director workflow. */
+export function completeMapVisualSemantics(map: EditableMap): MapVisualSemantics {
+  const zones = map.visualSemantics.zones.map((zone) => ({ ...zone, tags: [...zone.tags] }));
+  for (const water of map.waterBodies) {
+    const center: [number, number] = [
+      water.points.reduce((sum, point) => sum + point[0], 0) / water.points.length,
+      water.points.reduce((sum, point) => sum + point[1], 0) / water.points.length
+    ];
+    const radius = Math.max(
+      1,
+      ...water.points.map((point) => Math.hypot(point[0] - center[0], point[1] - center[1]))
+    ) + (water.type === 'river' ? water.width / 2 : 0);
+    const covered = zones.some((zone) => (
+      zone.tags.includes('water')
+      && Math.hypot(zone.center[0] - center[0], zone.center[1] - center[1]) <= zone.radius + radius * 0.5
+    ));
+    if (!covered) {
+      zones.push({
+        id: `structured-water:${water.id}`,
+        tags: ['water', 'lowland'],
+        center,
+        radius,
+        intensity: 0.75
+      });
+    }
+  }
+  return {
+    version: 1,
+    zones: zones.slice(0, 24),
+    wind: { ...map.visualSemantics.wind, direction: [...map.visualSemantics.wind.direction] }
+  };
+}
+
 function has(text: string, tokens: readonly string[]): boolean {
   return tokens.some((token) => text.includes(token));
 }

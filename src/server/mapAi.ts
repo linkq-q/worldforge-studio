@@ -20,7 +20,11 @@ import {
   type ChatProvider,
   type Vec3
 } from '../shared/protocol';
-import { planLimits, type MapPlanLimits } from '../shared/mapPlanning';
+import {
+  normalizeMapAiMaxNewAssets,
+  planLimits,
+  type MapPlanLimits
+} from '../shared/mapPlanning';
 import {
   expandMapScatter,
   type MapScatterPlan
@@ -35,6 +39,7 @@ import {
   type ModelGenerationMode
 } from '../shared/modelGenerationMode';
 import { runMapCompositionWorkflow } from './mapCompositionWorkflow';
+import { completeMapVisualSemantics } from '../shared/mapVisualSemantics';
 
 export interface MapAiOptions {
   apiBase?: string;
@@ -42,6 +47,9 @@ export interface MapAiOptions {
   fetchImpl?: typeof fetch;
   signal?: AbortSignal;
   onProgress?: (event: AgentProgressEvent) => void;
+  reuseExistingAssets?: boolean;
+  reusableAssetIds?: readonly string[];
+  maxNewAssets?: number;
 }
 
 export interface AssetGenerationRequest {
@@ -81,10 +89,10 @@ export async function runMapAgent(
   }
   options.onProgress?.({ phase: 'planning', label: mode === 'refine' ? '理解地图调整要求' : '规划地图内容' });
   const firstContent = await requestMapPlan(prompt, map, assets, options, false, mode);
-  const limits = planLimits(getMapBounds(map));
+  const maxNewAssets = normalizeMapAiMaxNewAssets(options.maxNewAssets);
   const requests = normalizeAssetRequests(
     parseJsonObject(firstContent).assetRequests,
-    limits.assetRequestCount,
+    maxNewAssets,
     map.assetGenerationMode
   );
   options.onProgress?.({
@@ -95,6 +103,7 @@ export async function runMapAgent(
   });
   if (requests.length === 0) {
     const firstSuggestion = normalizeMapSuggestion(firstContent, map, assets, mode);
+    assertNoForbiddenAssetReuse(firstSuggestion, new Set(), options);
     if (hasSpatialOperations(firstSuggestion)) {
       const validated = finalizeMapAgentSuggestion(map, assets, firstSuggestion, options);
       options.onProgress?.({ phase: 'complete', label: '地图修改方案已完成' });
@@ -103,6 +112,7 @@ export async function runMapAgent(
     options.onProgress?.({ phase: 'replanning', label: '补充空间操作' });
     const retryContent = await requestMapPlan(prompt, map, assets, options, true, mode);
     const retrySuggestion = normalizeMapSuggestion(retryContent, map, assets, mode);
+    assertNoForbiddenAssetReuse(retrySuggestion, new Set(), options);
     if (!hasSpatialOperations(retrySuggestion)) throw new Error('map_agent_no_spatial_plan');
     const validated = finalizeMapAgentSuggestion(map, assets, retrySuggestion, options);
     options.onProgress?.({ phase: 'complete', label: '地图修改方案已完成' });
@@ -122,11 +132,12 @@ export async function runMapAgent(
   }
 
   const expandedAssets = [...assets, ...generatedAssets];
+  const generatedAssetIds = new Set(generatedAssets.map((asset) => asset.id));
   options.onProgress?.({ phase: 'replanning', label: '使用新资产重新规划地图' });
-  const finalContent = await requestMapPlan(prompt, map, expandedAssets, options, true, mode);
+  const finalContent = await requestMapPlan(prompt, map, expandedAssets, options, true, mode, generatedAssetIds);
   if (normalizeAssetRequests(
     parseJsonObject(finalContent).assetRequests,
-    limits.assetRequestCount,
+    maxNewAssets,
     map.assetGenerationMode
   ).length > 0) {
     throw new Error('map_agent_asset_limit');
@@ -135,6 +146,7 @@ export async function runMapAgent(
     ...normalizeMapSuggestion(finalContent, map, expandedAssets, mode),
     generatedAssets: generatedAssets.map((asset) => ({ id: asset.id, name: asset.name }))
   };
+  assertNoForbiddenAssetReuse(suggestion, generatedAssetIds, options);
   if (!hasSpatialOperations(suggestion)) throw new Error('map_agent_no_spatial_plan');
   const validated = finalizeMapAgentSuggestion(map, expandedAssets, suggestion, options);
   options.onProgress?.({ phase: 'complete', label: '地图修改方案已完成' });
@@ -149,6 +161,7 @@ function finalizeMapAgentSuggestion(
 ): MapAiSuggestion {
   options.onProgress?.({ phase: 'validating', label: '检查出生点、贴地、水体与物体重叠' });
   const validated = validateMapSuggestion(normalizeMap({ ...map, assets: [...assets] }), suggestion);
+  validated.suggestion.reusedAssets = collectReusedAssets(validated.suggestion, assets, options);
   if (validated.repairCount > 0) {
     options.onProgress?.({
       phase: 'repairing',
@@ -158,7 +171,16 @@ function finalizeMapAgentSuggestion(
       detail: validated.issues.filter((issue) => issue.repaired).map((issue) => issue.code).join(', ')
     });
   }
-  return validated.suggestion;
+  const preview = applyMapOperations(
+    normalizeMap({ ...map, assets: [...assets] }),
+    validated.suggestion.operations
+  );
+  const visualSemantics = completeMapVisualSemantics(preview);
+  if (JSON.stringify(visualSemantics) === JSON.stringify(preview.visualSemantics)) return validated.suggestion;
+  return {
+    ...validated.suggestion,
+    operations: [...validated.suggestion.operations, { type: 'map.update', visualSemantics }]
+  };
 }
 
 async function requestMapPlan(
@@ -167,7 +189,8 @@ async function requestMapPlan(
   assets: readonly MapAsset[],
   options: MapAiOptions,
   finalPass: boolean,
-  mode: 'generate' | 'refine'
+  mode: 'generate' | 'refine',
+  generatedAssetIds: ReadonlySet<string> = new Set()
 ): Promise<string> {
   const cleanPrompt = prompt.trim().slice(0, 1200);
   if (!cleanPrompt) throw new Error('missing_prompt');
@@ -175,7 +198,7 @@ async function requestMapPlan(
   const providerOption = CHAT_PROVIDER_OPTIONS.find((item) => item.key === provider);
   if (!providerOption || providerOption.disabled) throw new Error('provider_unavailable');
   const content = await llmChat([
-    { role: 'system', content: buildSystemPrompt(map, assets, finalPass, mode) },
+    { role: 'system', content: buildSystemPrompt(map, assets, finalPass, mode, options, generatedAssetIds) },
     { role: 'user', content: cleanPrompt }
   ], {
     apiBase: options.apiBase,
@@ -259,6 +282,37 @@ export function normalizeMapSuggestion(
     renderPromptSuggestions,
     generatedAssets: []
   };
+}
+
+function assertNoForbiddenAssetReuse(
+  suggestion: MapAiSuggestion,
+  generatedAssetIds: ReadonlySet<string>,
+  options: Pick<MapAiOptions, 'reuseExistingAssets' | 'reusableAssetIds'>
+): void {
+  const explicit = options.reusableAssetIds ? new Set(options.reusableAssetIds) : null;
+  if (options.reuseExistingAssets && !explicit) return;
+  const reused = suggestion.operations.find((operation) => (
+    operation.type === 'object.add'
+    && Boolean(operation.object.assetId)
+    && !generatedAssetIds.has(operation.object.assetId as string)
+    && !(explicit?.has(operation.object.assetId as string) ?? false)
+  ));
+  if (reused) throw new Error('map_agent_existing_asset_reuse_disabled');
+}
+
+function collectReusedAssets(
+  suggestion: MapAiSuggestion,
+  assets: readonly MapAsset[],
+  options: Pick<MapAiOptions, 'reusableAssetIds'>
+): Array<{ id: string; name: string; libraryId: string }> {
+  const allowed = new Set(options.reusableAssetIds ?? []);
+  if (allowed.size === 0) return [];
+  const used = new Set(suggestion.operations
+    .filter((operation) => operation.type === 'object.add' && operation.object.assetId)
+    .map((operation) => operation.type === 'object.add' ? operation.object.assetId as string : ''));
+  return assets
+    .filter((asset) => allowed.has(asset.id) && used.has(asset.id) && asset.libraryId)
+    .map((asset) => ({ id: asset.id, name: asset.name, libraryId: asset.libraryId as string }));
 }
 
 function normalizeObjectRefineOperations(
@@ -568,11 +622,18 @@ function buildSystemPrompt(
   map: EditableMap,
   assets: readonly MapAsset[],
   finalPass: boolean,
-  mode: 'generate' | 'refine'
+  mode: 'generate' | 'refine',
+  options: Pick<MapAiOptions, 'reuseExistingAssets' | 'reusableAssetIds' | 'maxNewAssets'> = {},
+  generatedAssetIds: ReadonlySet<string> = new Set()
 ): string {
   const bounds = getMapBounds(map);
   const limits = planLimits(bounds);
-  const assetLibrary = assets.map((asset) => ({
+  const placedAssetIds = new Set(map.objects.map((object) => object.assetId).filter((id): id is string => Boolean(id)));
+  const reusableIds = options.reusableAssetIds ? new Set(options.reusableAssetIds) : null;
+  const visibleAssets = options.reuseExistingAssets
+    ? assets.filter((asset) => !reusableIds || reusableIds.has(asset.id) || placedAssetIds.has(asset.id) || generatedAssetIds.has(asset.id))
+    : assets.filter((asset) => placedAssetIds.has(asset.id) || generatedAssetIds.has(asset.id));
+  const assetLibrary = visibleAssets.map((asset) => ({
     id: asset.id,
     name: asset.name,
     description: asset.prompt,
@@ -592,6 +653,16 @@ function buildSystemPrompt(
     count: objects.length,
     objectIds: objects.slice(0, 80).map((object) => object.id)
   }));
+  const maxNewAssets = normalizeMapAiMaxNewAssets(options.maxNewAssets);
+  const assetReuseInstructions = options.reuseExistingAssets
+    ? [
+        'Existing asset reuse is enabled. Reuse only when the asset identity, scale, and scene role genuinely fit; broad category tags alone are insufficient.'
+      ]
+    : [
+        'Existing asset reuse is disabled for this request.',
+        'Existing asset IDs listed because they are already placed may only be used by objectUpdates/objectRemovals. Never use them in objects or scatters.',
+        'Every newly introduced reusable object type must be requested in assetRequests, then placed with the newly generated asset ID during the final pass.'
+      ];
   const refineInstructions = mode === 'refine'
     ? [
         'This is a refinement pass over the current map. The refinement rules below replace the earlier generate-only restriction on editing existing content.',
@@ -607,12 +678,13 @@ function buildSystemPrompt(
       ];
   return [
     ...refineInstructions,
+    ...assetReuseInstructions,
     '你是 WorldForge 的地图规划器。只规划空间内容，不决定最终渲染风格。',
     '你可以选择确定性地形基底、使用地形笔刷微调、创建湖泊/河流、放置已有资产，以及设置出生点；不得删除或修改已有物体，不得编造资产 ID。',
     '根据田园、峡谷、海岛等场景词主动推导一个简单、合理的空间构图，不要求用户提供坐标。',
     finalPass
       ? '这是最终规划轮次。assetRequests 必须为空；必须至少生成一项地形、物体摆放或出生点操作，使用现有资产完成地图，无法使用的内容直接省略。'
-      : `若场景需要的可复用物体在已有资产中找不到，在 assetRequests 中请求生成，最多 ${limits.assetRequestCount} 项；请求资产时不要提前编造其 assetId。`,
+      : `若场景需要新的可复用物体，在 assetRequests 中请求生成，最多 ${maxNewAssets} 项；请求资产时不要提前编造其 assetId。`,
     'assetRequests.tags 必须使用简短英文语义标签，例如 tree、vegetation、rock、building、prop、landmark、shrub、grass、fence 或 bridge；不要把 bark、foliage 等模型内部材质标签写进资产标签。',
     `本地图新资产的默认生成模式是 ${map.assetGenerationMode}；缺失资产由代码使用这个模式生成，但摆放时允许复用资产库中的其他模式资产。`,
     `地图范围：X ${bounds.minX} 到 ${bounds.maxX}，Z ${bounds.minZ} 到 ${bounds.maxZ}，最大高度 ${bounds.maxY}。`,

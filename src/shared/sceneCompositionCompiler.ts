@@ -71,19 +71,23 @@ export function compileSceneComposition(
       .filter((zone): zone is SceneCompositionPlan['zones'][number] => Boolean(zone))
       .map((zone) => ({ kind: 'circle' as const, ...sceneZoneWorldRegion(zone, map) }));
     const footprint = Math.max(...assets.map((asset) => asset.footprintRadius ?? 0.5));
+    const libraryMetadata = assets[0]?.libraryMetadata;
+    const placementLimit = libraryMetadata && (!libraryMetadata.repeatable || libraryMetadata.landmark)
+      ? Math.min(1, remaining)
+      : remaining;
     const placements = expandMapScatter(workingMap, {
       assetIds: assets.map((asset) => asset.id),
       region: { kind: 'circle', ...region },
-      density: entry.layer.density,
+      density: libraryMetadata?.density ?? entry.layer.density,
       avoidWater: 1,
       maxSlope: 32,
-      minSpacing: Math.max(0.8, footprint * 1.8),
-      scaleRange: entry.layer.scaleRange,
+      minSpacing: Math.max(libraryMetadata?.minSpacing ?? 0, 0.8, footprint * 1.8),
+      scaleRange: libraryMetadata?.scaleRange ?? entry.layer.scaleRange,
       seed: derivedSeed(map.seed, `${entry.zone.id}:${entry.layer.familyId}:${index}`),
       edgeFalloff: Math.max(entry.layer.edgeFalloff, transitionFalloff(plan, entry.zone.id)),
       clusterStrength: entry.layer.distribution === 'clustered' ? 0.72 : 0,
       excludeRegions: excluded
-    }, assets, remaining, `composition-${entry.zone.id}-${entry.layer.familyId}`);
+    }, assets, placementLimit, `composition-${entry.zone.id}-${entry.layer.familyId}`);
     const placementOperations = placements.map((placement): MapOperation => ({
       type: 'object.add',
       object: {
@@ -92,7 +96,7 @@ export function compileSceneComposition(
         assetId: placement.assetId,
         transform: {
           position: [placement.x, placement.y, placement.z],
-          rotation: [0, placement.rotationY, 0],
+          rotation: [0, libraryMetadata?.rotation === 'fixed' ? 0 : placement.rotationY, 0],
           scale: [placement.scale, placement.scale, placement.scale]
         }
       }
@@ -238,15 +242,17 @@ function compileAccents(
       const assets = familyAssets.get(layer.familyId) ?? [];
       if (assets.length === 0) continue;
       const region = sceneZoneWorldRegion(zone, map);
-      const scale = (layer.scaleRange[0] + layer.scaleRange[1]) / 2;
+      const libraryMetadata = assets[0]?.libraryMetadata;
+      const chosenScaleRange = libraryMetadata?.scaleRange ?? layer.scaleRange;
+      const scale = (chosenScaleRange[0] + chosenScaleRange[1]) / 2;
       const footprint = Math.max(...assets.map((asset) => asset.footprintRadius ?? 0.5)) * scale;
       const placement = expandMapScatter(workingMap, {
         assetIds: assets.map((asset) => asset.id),
         region: { kind: 'circle', ...region },
-        density: Math.max(0.02, layer.density),
+        density: Math.max(0.02, libraryMetadata?.density ?? layer.density),
         avoidWater: 1,
         maxSlope: 28,
-        minSpacing: Math.max(1, footprint * 1.8),
+        minSpacing: Math.max(libraryMetadata?.minSpacing ?? 0, 1, footprint * 1.8),
         scaleRange: [scale, scale],
         seed: derivedSeed(map.seed, `${zone.id}:${layer.familyId}:accent`),
         edgeFalloff: Math.max(layer.edgeFalloff, transitionFalloff(plan, zone.id)),
@@ -265,7 +271,7 @@ function compileAccents(
           assetId: placement.assetId,
           transform: {
             position: [placement.x, placement.y, placement.z],
-            rotation: [0, placement.rotationY, 0],
+            rotation: [0, libraryMetadata?.rotation === 'fixed' ? 0 : placement.rotationY, 0],
             scale: [placement.scale, placement.scale, placement.scale]
           }
         }

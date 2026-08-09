@@ -93,6 +93,7 @@ export interface MapAiSuggestion {
   operations: MapOperation[];
   renderPromptSuggestions: string[];
   generatedAssets: Array<{ id: string; name: string }>;
+  reusedAssets?: Array<{ id: string; name: string; libraryId: string }>;
   diagnostics?: MapLintIssue[];
   /** Preview-only reasoning artifact. Map transactions persist only compiled operations. */
   composition?: {

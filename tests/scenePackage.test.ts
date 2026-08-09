@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { mkdtemp, readFile, rm } from 'node:fs/promises';
+import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { createEmptyMap, createMapObject } from '../src/shared/map';
@@ -95,6 +95,47 @@ describe('portable WorldForge scene packages', () => {
     expect(renamed).toMatch(/^sky-import-\d+\.exr$/);
     expect([...await readFile(path.join(store.rootDir, 'hdri', renamed))]).toEqual([3, 4]);
     expect(await store.importHdri('dusk.hdr', new Uint8Array([5, 6]))).toBe('dusk.hdr');
+  });
+
+  it('reads a shared HDRI library and keeps imported overrides local', async () => {
+    const rootDir = await mkdtemp(path.join(os.tmpdir(), 'worldforge-shared-hdri-data-'));
+    const sharedHdriDir = await mkdtemp(path.join(os.tmpdir(), 'worldforge-shared-hdri-library-'));
+    tempDirs.push(rootDir, sharedHdriDir);
+    await mkdir(sharedHdriDir, { recursive: true });
+    await writeFile(path.join(sharedHdriDir, 'shared.exr'), new Uint8Array([1, 2]));
+    const store = new MapStore({ rootDir, sharedHdriDir });
+
+    expect((await store.listHdriTextures()).map((texture) => texture.file)).toContain('shared.exr');
+    expect(await store.resolveHdriFile('shared.exr')).toBe(path.join(sharedHdriDir, 'shared.exr'));
+    expect(await store.importHdri('shared.exr', new Uint8Array([1, 2]))).toBe('shared.exr');
+    expect(await store.resolveHdriFile('shared.exr')).toBe(path.join(sharedHdriDir, 'shared.exr'));
+
+    const renamed = await store.importHdri('shared.exr', new Uint8Array([3, 4]));
+    expect(renamed).toMatch(/^shared-import-\d+\.exr$/);
+    expect(await store.resolveHdriFile(renamed)).toBe(path.join(rootDir, 'hdri', renamed));
+  });
+
+  it('seeds golden starter data exactly once for a new data directory', async () => {
+    const rootDir = await mkdtemp(path.join(os.tmpdir(), 'worldforge-starter-data-'));
+    const starterDataDir = await mkdtemp(path.join(os.tmpdir(), 'worldforge-starter-source-'));
+    tempDirs.push(rootDir, starterDataDir);
+    await Promise.all(['maps', 'assets', 'render-schemes'].map((directory) => mkdir(path.join(starterDataDir, directory), { recursive: true })));
+
+    const map = createEmptyMap('Starter meadow');
+    const scheme = renderScheme();
+    map.renderSchemeId = scheme.id;
+    await Promise.all([
+      writeFile(path.join(starterDataDir, 'maps', `${map.id}.json`), JSON.stringify(map)),
+      writeFile(path.join(starterDataDir, 'render-schemes', `${scheme.id}.json`), JSON.stringify(scheme)),
+      writeFile(path.join(starterDataDir, 'manifest.json'), JSON.stringify({ kind: 'worldforge-starter-data' }))
+    ]);
+
+    const store = new MapStore({ rootDir, starterDataDir });
+    expect((await store.listMapSummaries()).map((summary) => summary.name)).toEqual(['Starter meadow']);
+    await store.deleteMap(map.id);
+    await store.ensureReady();
+    expect(await store.listMapSummaries()).toEqual([]);
+    expect(JSON.parse(await readFile(path.join(rootDir, '.starter-seed.json'), 'utf8'))).toMatchObject({ status: 'seeded' });
   });
 
   it('rejects a map whose referenced assets are not embedded', async () => {

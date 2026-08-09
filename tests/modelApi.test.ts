@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
   generateModel,
+  llmChat,
   parseSseModel,
   refineModel
 } from '../src/server/modelApi';
@@ -73,6 +74,44 @@ describe('model API adapter', () => {
       signal: controller.signal
     })).rejects.toMatchObject({ name: 'AbortError' });
     expect(fetchImpl).not.toHaveBeenCalled();
+  });
+
+  it('retries a transient transport failure for a planning chat', async () => {
+    const fetchImpl = vi.fn()
+      .mockRejectedValueOnce(new TypeError('fetch failed'))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ ok: true, content: '{"plan":{}}' }), { status: 200 }));
+
+    await expect(llmChat([{ role: 'user', content: 'plan a grove' }], {
+      apiBase: 'https://example.test',
+      fetchImpl
+    })).resolves.toBe('{"plan":{}}');
+    expect(fetchImpl).toHaveBeenCalledTimes(2);
+    expect(fetchImpl.mock.calls[0][1]?.headers).toEqual(expect.objectContaining({ Connection: 'close' }));
+    expect(fetchImpl.mock.calls[1][1]?.headers).toEqual(expect.objectContaining({ Connection: 'close' }));
+  });
+
+  it('retries when the model backend returns an empty chat response', async () => {
+    const fetchImpl = vi.fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify({ ok: false, error: 'Empty AI response' }), { status: 502 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ ok: true, content: '{"plan":{}}' }), { status: 200 }));
+
+    await expect(llmChat([{ role: 'user', content: 'plan a grove' }], {
+      apiBase: 'https://example.test',
+      fetchImpl
+    })).resolves.toBe('{"plan":{}}');
+    expect(fetchImpl).toHaveBeenCalledTimes(2);
+  });
+
+  it('does not retry a non-transient chat error', async () => {
+    const fetchImpl = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify({ ok: false, error: 'provider_unavailable' }), { status: 400 })
+    );
+
+    await expect(llmChat([{ role: 'user', content: 'plan a grove' }], {
+      apiBase: 'https://example.test',
+      fetchImpl
+    })).rejects.toThrow('provider_unavailable');
+    expect(fetchImpl).toHaveBeenCalledOnce();
   });
 
   it('surfaces refine metadata errors', async () => {

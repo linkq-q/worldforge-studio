@@ -14,8 +14,27 @@ import {
   normalizeMapVisualSemantics,
   normalizeVisualDirection
 } from '../src/shared/visualDirection';
+import { completeMapVisualSemantics } from '../src/shared/mapVisualSemantics';
 
 describe('visual direction contract', () => {
+  it('derives a stable water zone for structured water added during refine', () => {
+    const map = createEmptyMap('water semantics', 'map-water-semantics');
+    map.waterBodies = [{
+      id: 'pond', name: 'Pond', type: 'lake', level: 0.2, depth: 1.5, width: 1,
+      points: [[-3, -2], [3, -2], [3, 2], [-3, 2]]
+    }];
+
+    const first = completeMapVisualSemantics(map);
+    const second = completeMapVisualSemantics({ ...map, visualSemantics: first });
+
+    expect(first.zones).toEqual([expect.objectContaining({
+      id: 'structured-water:pond',
+      tags: ['water', 'lowland'],
+      center: [0, 0]
+    })]);
+    expect(second).toEqual(first);
+  });
+
   it('keeps legacy render plans compatible', () => {
     const plan = normalizeRenderPlan({
       version: 2,

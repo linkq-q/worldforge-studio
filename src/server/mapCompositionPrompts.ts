@@ -8,7 +8,11 @@ import type {
 import { SCENE_COMPOSITION_LIMITS } from '../shared/sceneComposition';
 import type { ResolvedSceneFamily } from '../shared/sceneCompositionAssets';
 
-export function buildSceneDirectorPrompt(map: EditableMap, assets: readonly MapAsset[]): string {
+export function buildSceneDirectorPrompt(
+  map: EditableMap,
+  assets: readonly MapAsset[],
+  options: { reuseExistingAssets?: boolean; maxNewAssets?: number } = {}
+): string {
   const bounds = getMapBounds(map);
   const limits = planLimits(bounds);
   const catalogAssets = assets
@@ -43,9 +47,11 @@ export function buildSceneDirectorPrompt(map: EditableMap, assets: readonly MapA
     'A consultation may improve the plan but cannot directly create assets or map operations.',
     'Rendering is a later stage. Only provide short renderPromptSuggestions; do not choose or edit a render scheme.',
     `Map: ${map.box.size[0]} x ${map.box.size[1]} x ${map.box.size[2]}, seed ${map.seed}, default new-asset mode ${map.assetGenerationMode}.`,
-    `Execution budgets: about ${limits.objectCount} objects and ${limits.assetVariantMin}-${limits.assetVariantMax} distinct reusable asset variants in total. Existing assets from any generation mode count toward this range; generate no more than ${limits.assetRequestCount} missing variants.`,
-    'Use several semantically useful asset families and silhouette variants. Do not satisfy the range with near-duplicate recolors or unnecessary variants of one landmark.',
-    `Reusable mixed-mode asset catalog: ${JSON.stringify(catalogAssets)}.`,
+    `Execution budgets: about ${limits.objectCount} objects and at most ${options.maxNewAssets ?? limits.assetRequestCount} newly generated assets. Use one asset per semantic family; systematic family variants are not part of this phase.`,
+    'Use several semantically useful asset families. Do not create near-duplicate recolors or unnecessary variants of one landmark.',
+    options.reuseExistingAssets
+      ? `Existing assets may be reused only when their specific identity and size fit: ${JSON.stringify(catalogAssets)}.`
+      : 'Existing asset reuse is disabled for this request. Define the asset families the scene actually needs; the server will generate them as new assets.',
     'Return JSON only with this shape:',
     JSON.stringify({
       version: 1,
@@ -139,6 +145,9 @@ export function buildStructuredRepairPrompt(kind: string, invalidOutput: string,
     `Repair the invalid ${kind} JSON below.`,
     `Validation error: ${error instanceof Error ? error.message : String(error)}`,
     'Preserve the intended scene. Change only what is necessary to satisfy the schema and references.',
+    kind === 'scene composition plan'
+      ? 'Every zones[] entry must be a JSON object with id, label, role (primary|secondary|transition|negative-space), region {center:[x,z],radius}, brief, terrain, layers, and excludeZoneIds.'
+      : '',
     'Return corrected JSON only. Do not use markdown fences.',
     invalidOutput.slice(0, 12_000)
   ].join('\n');

@@ -1,6 +1,6 @@
-import { getMapBounds, type EditableMap, type MapAsset } from '../shared/map';
+import type { EditableMap, MapAsset } from '../shared/map';
 import type { MapAiSuggestion } from '../shared/mapOperations';
-import { planLimits } from '../shared/mapPlanning';
+import { normalizeMapAiMaxNewAssets } from '../shared/mapPlanning';
 import { CHAT_PROVIDER_OPTIONS, type AgentProgressEvent, type ChatProvider } from '../shared/protocol';
 import {
   isCompositionEmptyMap,
@@ -16,7 +16,6 @@ import {
 } from '../shared/sceneCompositionAdvice';
 import {
   attachGeneratedSceneAssets,
-  fitSceneAssetVariantBudget,
   resolveSceneFamilies
 } from '../shared/sceneCompositionAssets';
 import { compileSceneComposition } from '../shared/sceneCompositionCompiler';
@@ -37,6 +36,9 @@ export interface MapCompositionWorkflowOptions {
   fetchImpl?: typeof fetch;
   signal?: AbortSignal;
   onProgress?: (event: AgentProgressEvent) => void;
+  reuseExistingAssets?: boolean;
+  reusableAssetIds?: readonly string[];
+  maxNewAssets?: number;
   createAsset: (request: {
     name: string;
     prompt: string;
@@ -61,18 +63,31 @@ export async function runMapCompositionWorkflow(
   const provider = options.provider ?? 'gpt';
   const providerOption = CHAT_PROVIDER_OPTIONS.find((item) => item.key === provider);
   if (!providerOption || providerOption.disabled) throw new Error('provider_unavailable');
-  const limits = planLimits(getMapBounds(map));
+  const maxNewAssets = normalizeMapAiMaxNewAssets(options.maxNewAssets);
+  const reusableIds = options.reusableAssetIds ? new Set(options.reusableAssetIds) : null;
+  const reusableAssets = options.reuseExistingAssets
+    ? assets.filter((asset) => (
+        (!reusableIds || reusableIds.has(asset.id))
+        && asset.libraryMetadata?.analysisStatus !== 'pending'
+        && asset.libraryMetadata?.enabled !== false
+      ))
+    : [];
 
   options.onProgress?.({ phase: 'composing', label: '场景总导演正在组织区域、主次与资产家族' });
   let plan = await requestStructured(
     'scene composition plan',
-    buildSceneDirectorPrompt(map, assets),
+    buildSceneDirectorPrompt(map, reusableAssets, {
+      reuseExistingAssets: options.reuseExistingAssets === true,
+      maxNewAssets
+    }),
     cleanPrompt,
-    (value) => fitSceneAssetVariantBudget(
-      normalizeSceneCompositionPlan(value, map),
-      limits.assetVariantMin,
-      limits.assetVariantMax
-    ),
+    (value) => {
+      const normalized = normalizeSceneCompositionPlan(value, map);
+      return {
+        ...normalized,
+        assetFamilies: normalized.assetFamilies.map((family) => ({ ...family, desiredVariants: 1 }))
+      };
+    },
     options,
     0.45
   );
@@ -117,7 +132,7 @@ export async function runMapCompositionWorkflow(
   }
 
   options.onProgress?.({ phase: 'resolving-assets', label: '按语义标签和地图建模模式匹配可复用资产' });
-  const initialResolution = resolveSceneFamilies(plan, map, assets, limits.assetRequestCount);
+  const initialResolution = resolveSceneFamilies(plan, map, reusableAssets, maxNewAssets);
   const generated: Array<{ familyId: string; asset: MapAsset }> = [];
   for (const [index, gap] of initialResolution.gaps.entries()) {
     options.signal?.throwIfAborted();
@@ -208,19 +223,22 @@ async function requestStructured<T>(
   options: MapCompositionWorkflowOptions,
   temperature: number
 ): Promise<T> {
-  const first = await requestModel(systemPrompt, userPrompt, options, temperature);
-  try {
-    return normalize(parseLlmJsonObject(first, 'invalid_agent_json'));
-  } catch (error) {
-    options.signal?.throwIfAborted();
-    const repaired = await requestModel(
-      systemPrompt,
-      buildStructuredRepairPrompt(kind, first, error),
-      options,
-      Math.min(temperature, 0.15)
-    );
-    return normalize(parseLlmJsonObject(repaired, 'invalid_agent_json'));
+  let content = await requestModel(systemPrompt, userPrompt, options, temperature);
+  for (let attempt = 1; attempt <= 3; attempt += 1) {
+    try {
+      return normalize(parseLlmJsonObject(content, 'invalid_agent_json'));
+    } catch (error) {
+      options.signal?.throwIfAborted();
+      if (attempt === 3) throw error;
+      content = await requestModel(
+        systemPrompt,
+        buildStructuredRepairPrompt(kind, content, error),
+        options,
+        Math.min(temperature, 0.15)
+      );
+    }
   }
+  throw new Error('invalid_agent_json');
 }
 
 function requestModel(

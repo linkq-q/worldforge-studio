@@ -4,7 +4,7 @@ import {
   type ChatProvider,
   type ModelJobState
 } from '../shared/protocol';
-import materialTagVocabulary from '../../../3d-generate/packages/voxel-render-runtime/model/material-tags-v1.json';
+import materialTagVocabulary from '@voxel-studio/render-runtime/model/material-tags-v1.json';
 import type { ModelGenerationMode } from '../shared/modelGenerationMode';
 
 export interface ModelApiOptions {
@@ -187,9 +187,14 @@ export async function refineModel(modelJson: unknown, description: string, optio
 }
 
 export async function llmChat(messages: readonly ChatMessage[], options: ChatApiOptions = {}): Promise<string> {
-  const response = await (options.fetchImpl ?? fetch)(`${options.apiBase ?? MODEL_API_BASE}/api/chat`, {
+  const fetcher = options.fetchImpl ?? fetch;
+  const url = `${options.apiBase ?? MODEL_API_BASE}/api/chat`;
+  const init: RequestInit = {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      Connection: 'close'
+    },
     body: JSON.stringify({
       messages,
       temperature: options.temperature ?? 0.2,
@@ -197,12 +202,47 @@ export async function llmChat(messages: readonly ChatMessage[], options: ChatApi
       provider: options.provider ?? 'gpt'
     }),
     signal: options.signal
-  });
-  const data = await response.json() as { ok?: boolean; content?: string; error?: string };
-  if (!response.ok || !data.ok || typeof data.content !== 'string') {
-    throw new Error(data.error || `chat_http_${response.status}`);
+  };
+  let lastError: unknown;
+  for (let attempt = 1; attempt <= 3; attempt += 1) {
+    options.signal?.throwIfAborted();
+    let response: Response;
+    let data: { ok?: boolean; content?: string; error?: string };
+    try {
+      response = await fetcher(url, init);
+      data = await response.json() as { ok?: boolean; content?: string; error?: string };
+    } catch (error) {
+      if (options.signal?.aborted || isAbortError(error)) throw error;
+      if (attempt === 3) throw error;
+      lastError = error;
+      await abortableDelay(300, options.signal);
+      continue;
+    }
+
+    if (response.ok && data.ok && typeof data.content === 'string' && data.content.trim()) {
+      return data.content;
+    }
+    const error = new Error(data.error || (typeof data.content === 'string' ? 'Empty AI response' : `chat_http_${response.status}`));
+    if (!isRetryableEmptyChatResponse(data) || attempt === 3) throw error;
+    lastError = error;
+    await abortableDelay(300, options.signal);
   }
-  return data.content;
+  throw lastError instanceof Error ? lastError : new Error(String(lastError ?? 'chat_fetch_failed'));
+}
+
+function isRetryableEmptyChatResponse(data: { ok?: boolean; content?: string; error?: string }): boolean {
+  return /empty ai response/i.test(data.error ?? '')
+    || (data.ok === true && typeof data.content === 'string' && !data.content.trim());
+}
+
+function abortableDelay(milliseconds: number, signal?: AbortSignal): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(resolve, milliseconds);
+    signal?.addEventListener('abort', () => {
+      clearTimeout(timer);
+      reject(signal.reason ?? new DOMException('Aborted', 'AbortError'));
+    }, { once: true });
+  });
 }
 
 function isAbortError(error: unknown): boolean {
