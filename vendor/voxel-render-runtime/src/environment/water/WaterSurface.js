@@ -549,47 +549,6 @@ const WATER_FRAGMENT_SHADER = /* glsl */ `
   uniform float uWaterNormalMix;
   uniform bool uNormalMapIsDirectX;
 
-  vec2 wavedxNormal(vec2 position, vec2 direction, float frequency, float timeshift) {
-    float x = dot(direction, position) * frequency + timeshift;
-    float wave = exp(sin(x) - 1.0);
-    float dx = wave * cos(x);
-    return vec2(wave, -dx);
-  }
-
-  float getwavesNormal(vec2 position) {
-    float wavePhaseShift = length(position) * 0.1;
-
-    float iter = 0.0;
-    float frequency = 1.0;
-    float timeMultiplier = 2.0;
-    float weight = 1.0;
-    float sumOfValues = 0.0;
-    float sumOfWeights = 0.0;
-
-    for (int i = 0; i < 12; i++) {
-      if (i >= uIterationsNormal) break;
-
-      vec2 direction = normalize(vec2(sin(iter), cos(iter)));
-      vec2 res = wavedxNormal(
-        position,
-        direction,
-        frequency,
-        uTime * uWaveSpeed * timeMultiplier + wavePhaseShift
-      );
-
-      position += direction * res.y * weight * uDragMult;
-      sumOfValues += res.x * weight;
-      sumOfWeights += weight;
-
-      weight = mix(weight, 0.0, 0.2);
-      frequency *= 1.18;
-      timeMultiplier *= 1.07;
-      iter += 1232.399963;
-    }
-
-    return sumOfValues / max(sumOfWeights, 0.0001);
-  }
-
   vec2 normalizeDirection(vec2 direction, vec2 fallback) {
     float lenSq = dot(direction, direction);
     return lenSq > 0.000001 ? normalize(direction) : normalize(fallback);
@@ -621,79 +580,6 @@ const WATER_FRAGMENT_SHADER = /* glsl */ `
       + uTime * speed;
   }
 
-  float directionalWaveLayer(
-    vec2 position,
-    vec2 direction,
-    float scale,
-    float speed,
-    float stretch,
-    float sharpness
-  ) {
-    float phase = directionalWavePhase(position, direction, scale, speed, stretch);
-    float w = exp(sin(phase) - 1.0);
-    w = (w - uWaveCenter) * uWaveAmplitudeBoost;
-    w = sign(w) * pow(abs(w), max(sharpness, 0.001));
-    return w;
-  }
-
-  float computeDirectionalDetailHeight(vec2 worldXZ) {
-    vec2 detailDir = normalizeDirection(uPrimaryWaveDirection + uSecondaryWaveDirection, vec2(0.6, 1.0));
-    return directionalWaveLayer(
-      worldXZ,
-      detailDir,
-      uDetailWaveScale,
-      uDetailWaveSpeed,
-      max(uLargeWaveStretch * 0.25, 0.25),
-      0.8
-    );
-  }
-
-  float computeDirectionalWaveHeight(vec2 worldXZ) {
-    float randomOctave = getwavesNormal(worldXZ * uWaveScale);
-
-    float largeA = directionalWaveLayer(
-      worldXZ,
-      uPrimaryWaveDirection,
-      uLargeWaveScale,
-      uLargeWaveSpeed,
-      uLargeWaveStretch,
-      uWaveRidgeSharpness
-    ) * uLargeWaveStrength;
-
-    float largeB = directionalWaveLayer(
-      worldXZ,
-      uSecondaryWaveDirection,
-      uSecondaryWaveScale,
-      uSecondaryWaveSpeed,
-      uLargeWaveStretch * 0.75,
-      max(uWaveRidgeSharpness * 0.85, 0.5)
-    ) * uSecondaryWaveStrength;
-
-    float mid = directionalWaveLayer(
-      worldXZ,
-      normalizeDirection(uPrimaryWaveDirection + uSecondaryWaveDirection * 0.35, vec2(1.0, 0.0)),
-      uMidWaveScale,
-      uMidWaveSpeed,
-      max(uLargeWaveStretch * 0.55, 0.5),
-      1.0
-    ) * uMidWaveStrength;
-
-    float detail = computeDirectionalDetailHeight(worldXZ) * uDetailWaveStrength;
-    float directional = largeA + largeB + mid + detail * 0.2;
-    return mix(randomOctave, directional, clamp(uDirectionalWaveBlend, 0.0, 1.0));
-  }
-
-  float computeWaveHeightAt(vec2 worldXZ) {
-    float h;
-    if (uUseDirectionalWaves) {
-      h = computeDirectionalWaveHeight(worldXZ);
-    } else {
-      float waveRaw = getwavesNormal(worldXZ * uWaveScale);
-      h = (waveRaw - uWaveCenter) * uWaveAmplitudeBoost;
-    }
-    return h * uWaveHeight;
-  }
-
   float computePrimaryCrestProfile(vec2 worldXZ, out float phase) {
     phase = directionalWavePhase(
       worldXZ,
@@ -710,26 +596,6 @@ const WATER_FRAGMENT_SHADER = /* glsl */ `
     float phase;
     float ridge = computePrimaryCrestProfile(worldXZ, phase);
     return clamp(mix(slope, ridge, uHighlightRidgeBias), 0.0, 1.0);
-  }
-
-  vec3 computeWaveNormal(vec3 worldPos) {
-    float dist = length(worldPos - cameraPosition);
-    float eWorld = 0.05 + dist * 0.0002;
-
-    float hC = computeWaveHeightAt(worldPos.xz);
-    float hR = computeWaveHeightAt(worldPos.xz + vec2(eWorld, 0.0));
-    float hU = computeWaveHeightAt(worldPos.xz + vec2(0.0, eWorld));
-
-    vec3 n = normalize(vec3(
-      (hC - hR) / eWorld,
-      1.0,
-      (hC - hU) / eWorld
-    ));
-
-    float fade = clamp(sqrt(dist * 0.002) * 0.3 * uWaveNormalDistanceFade, 0.0, 1.0);
-    n = normalize(mix(n, vec3(0.0, 1.0, 0.0), fade));
-
-    return n;
   }
 
   vec3 unpackNormalMap(vec3 c) {
@@ -922,12 +788,20 @@ const WATER_FRAGMENT_SHADER = /* glsl */ `
       float distortedDist = shoreDist + (shoreNoise - 0.5) * uShoreWaveNoiseStrength;
       float waveCoord = distortedDist * uShoreWaveFrequency - uTime * uShoreWaveSpeed;
       float stripe = fract(waveCoord);
+      float stripeAa = max(fwidth(waveCoord), 0.002);
       float waveLine;
       if (uWaterMode < 0.5) {
         // cartoon：硬边浪线（Wind Waker 式白圈），前缘微软化抗锯齿
-        waveLine = 1.0 - smoothstep(uShoreWaveWidth * 0.85, uShoreWaveWidth, stripe);
+        float lineWidth = max(uShoreWaveWidth, 0.001);
+        waveLine = smoothstep(0.0, stripeAa, stripe)
+          * (1.0 - smoothstep(lineWidth - stripeAa, lineWidth + stripeAa, stripe));
+        waveLine *= 1.0 - smoothstep(lineWidth * 0.8, lineWidth * 1.6, stripeAa);
       } else {
-        waveLine = 1.0 - smoothstep(0.0, uShoreWaveWidth, stripe);
+        waveLine = 1.0 - smoothstep(
+          max(uShoreWaveWidth - stripeAa, 0.0),
+          uShoreWaveWidth + stripeAa,
+          stripe
+        );
       }
       shoreWave = waveLine * shoreRangeMask * shoreBreakup * uShoreWaveStrength;
       float shoreShadowStart = uShoreWaveWidth;
@@ -977,7 +851,11 @@ const WATER_FRAGMENT_SHADER = /* glsl */ `
       rippleSlope *= uRippleDecalNormalStrength;
     }
 
-    vec3 waveNormal = computeWaveNormal(vWorldPosition);
+    // The displaced surface normal is already evaluated per vertex above.
+    // Re-evaluating the complete wave field three times per fragment made
+    // large water bodies fill-rate bound and let two normal paths disagree
+    // while the camera moved.
+    vec3 waveNormal = normalize(vWorldNormal);
     float waveWhitecap = 0.0;
     float waveWhitecapShadow = 0.0;
     if (uWaterMode < 0.5 && uWhitecapEnabled && uUseDirectionalWaves) {
@@ -1035,7 +913,9 @@ const WATER_FRAGMENT_SHADER = /* glsl */ `
     // === v3: Realistic/Hybrid — Beer-Lambert 吸收近似，景深越大越偏深水色 ===
     float absorb = 0.0;
     if (uWaterMode > 0.5) {
-      absorb = 1.0 - exp(-depthDiff * uRealisticAbsorptionStrength);
+      absorb = uHasDepthTexture
+        ? 1.0 - exp(-depthDiff * uRealisticAbsorptionStrength)
+        : (uUseShoreDistance ? shoreDist : 0.0);
       waterColor = mix(waterColor, uDepthColor, absorb * uRealisticDepthTintStrength);
     }
 
@@ -1307,7 +1187,13 @@ const WATER_FRAGMENT_SHADER = /* glsl */ `
       float n1 = noise2D(sUv + sFlowUv + sDir * uTime * 0.35);
       float n2 = noise2D((sUv + sFlowUv) * 1.9 - sDir * uTime * 0.55 + vec2(17.0));
       float glint = n1 * n2 * mix(0.6, 1.0, ridgeMask);
-      toonSparkle = step(uToonSparkleThreshold, glint) * uToonSparkleIntensity;
+      float sparkleAa = max(fwidth(glint), 0.002);
+      float sparkleDetail = 1.0 - smoothstep(0.08, 0.22, sparkleAa);
+      toonSparkle = smoothstep(
+        uToonSparkleThreshold - sparkleAa,
+        uToonSparkleThreshold + sparkleAa,
+        glint
+      ) * uToonSparkleIntensity * sparkleDetail;
       waterColor += uToonSparkleColor * toonSparkle;
     }
 
@@ -1323,7 +1209,12 @@ const WATER_FRAGMENT_SHADER = /* glsl */ `
         float texturePattern = texture2D(tToonPattern, patternUv).r;
         pn = mix(pn, texturePattern, clamp(uToonPatternTextureMix, 0.0, 1.0));
       }
-      float isoBand = step(0.5 - uToonPatternWidth, pn) * step(pn, 0.5 + uToonPatternWidth);
+      float patternAa = max(fwidth(pn), 0.001);
+      float patternWidth = max(uToonPatternWidth, 0.001);
+      float isoDistance = abs(pn - 0.5);
+      float isoBand = 1.0 - smoothstep(patternWidth, patternWidth + patternAa, isoDistance);
+      float patternDetail = 1.0 - smoothstep(patternWidth * 2.0, patternWidth * 6.0, patternAa);
+      isoBand *= patternDetail;
       foam = clamp(foam + isoBand * uToonPatternIntensity, 0.0, 1.0);
     }
 
@@ -1471,6 +1362,7 @@ export class WaterSurface {
     this.material = new THREE.ShaderMaterial({
       vertexShader: WATER_VERTEX_SHADER,
       fragmentShader: WATER_FRAGMENT_SHADER,
+      extensions: { derivatives: true },
       uniforms: {
         tDepth: { value: null },
         uTime: { value: 0 },
