@@ -1,0 +1,910 @@
+{
+  "version": "material-tags-v1",
+  "supersedes": "material-tags-v0",
+  "changelog": [
+    "gold/silver/metal/glass four flags merged into one exclusive 'base' enum tag (D1)",
+    "'heated' removed — low-intensity 'fire' covers the glowing-hot-no-flame look (D2)",
+    "params mode removed — fire/electric/poison are now blend(+variant); their complexity moved into engine-side 'runtime' blocks (layers/companion presets), AI never fills render params",
+    "blend values quantized to 0.25 steps to keep effect batch keys mergeable (D3)",
+    "added engine-side static blocks: runtime / sim / status — NOT part of AI output",
+    "added 'smoke' as its own blend tag, independent from 'fire' — chimneys/incense/steam kettles smoke without burning; a part MAY carry both fire and smoke together for an active flame (D4)",
+    "wood/stone implemented via a new shared 'Triplanar' effect layer (world-space, no UV/texture asset needed) instead of MatCap — MatCap only encodes lighting response, not the spatially-varying grain/speckle pattern wood/stone need (D5)",
+    "base tag gained a variantEnum (birch/brick/marble/cobblestone) — Triplanar pattern extended with brick(2)/marble(3)/cobblestone(4) alongside grain(0)/cellular(1); compileEnum now merges presetByVariant on top of the vocab preset + generation style + saved tuning, variant always wins last for the fields it declares (D6)",
+    "base.wood variantEnum extended with oak/pine/walnut/bark (D7): added warpAmount/warpScale params to parametrize the previously-hardcoded grain warp (default/birch unchanged, new variants use low warpScale + high warpAmount to avoid the striped/regular look); added knotStrength for pine knots; added Triplanar pattern=5 (bark) — 1D voronoi grooves along the dominant axis instead of evenly-spaced plank seams, since tree bark has no regular seam spacing",
+    "base gained a new top-level value 'fur' (D8, 2026-07-24): reuses the Triplanar layer with a new pattern=6 (wool) — v1 was voronoi tufts and read as dense cell-like bumps (uncanny/stone-like, rejected on real-model visual review); v2 rewrote it as marble-style contour-line extraction from a domain-warped noise field (fract() of the field for repeated curled yarn lines instead of marble's single vein), narrow ±10% color range, and a cheap pow()-based contrast compression on the tint approximating subsurface-scattering softness. No new uniforms; no variantEnum yet (single default look).",
+    "Triplanar gained 'frayAmount' (D9, 2026-07-24, wool-only): flat color texture alone cannot read as volumetric fur — a cube face's normal is uniform across the whole face, so no amount of surface pattern breaks the hard silhouette. frayAmount>0 discards fragments probabilistically near a part's local-bbox edges (noise-weighted by proximity to the nearest non-normal-aligned border), fraying the cube's hard edges instead of leaving a straight line. Default 0 for every other pattern (zero cost, zero behavior change); fur preset ships frayAmount=0.65. Known limits shared with FoliageLayer's cutout: assumes local axes ~= world axes (rotated parts degrade to an approximation), and shadow/depth passes are unpatched so shadows stay hard-edged.",
+    "D9 fray-width bug fix (same day, real-model visual review): the edge zone was originally a FRACTION of each part's own local size, so small parts (legs/ears — exactly the thin bits fur matters most on) had the zone eat nearly their whole face and mostly vanished, and two differently-sized adjacent parts fraying at mismatched physical widths left a gap at their shared seam ('穿帮'). Fixed by converting the border distance to real world units (border01 * boundsSize) before comparing against a world-unit zone width, so fray width is consistent across part sizes.",
+    "D9 shell extrusion (same day, follow-up): the width fix above narrowed the seam crack but couldn't eliminate it — a part's fragment shader has no idea a neighbor is flush against it. Fixed properly by growing the wool mesh outward in the vertex shader (getVertexBody, gated behind frayAmount like the fragment discard): two parts that are genuinely touching now grow INTO each other, so whichever side's fray randomly drops a pixel, the other side's grown geometry backs it — no shared 'which faces are exposed' data needed. Verified on a synthetic flush-joint test: zero background bleed-through at the seam. Extrusion is position-relative-to-local-bbox-center (sign(transformed - center) * width), not normal-based — box geometry duplicates vertices per face for normals, so a normal-based push would tear the box open at every hard edge (the classic inverted-hull-outline gap bug); position-based stays seam-free by construction since coincident vertices always share the same position regardless of which face they belong to. This also happens to be the cheapest possible 'volumetric' fur (the pet now genuinely bulges outward, not just a flat texture) and is the natural first shell if multi-shell fur is ever built later.",
+    "D10 fray param split — fixed 'shell always looks hollow' bug (2026-07-24, real-model visual review): frayReach (fragment discard falloff distance) and frayShellWidth (vertex extrusion distance, D9) used to be the SAME derived value. That's a real bug, not a style choice: the discard 'safe zone' is measured as a distance from the ORIGINAL (pre-extrusion) edge, and the entire extruded shell only spans from that edge out to shellWidth — when shellWidth == the reach needed to count as 'safe', the shell's own base never reaches the safe threshold, so the WHOLE shell (tip to base) stays in high-discard-probability territory forever, reading as permanently patchy/hollow instead of tapering tip-frayed → base-solid. Fixed by splitting into three independent params — frayReach (0.01-0.5, default 0.16), frayShellWidth (0-0.3, default 0.05), frayDensity (0-1, default 0.85, replaces the old hardcoded *0.9 max-discard-probability constant) — with frayReach shipped meaningfully larger than frayShellWidth by default so the shell's base sits well past the halfway point of the falloff curve. frayAmount keeps its old role as the master on/off gate (>0.001) and an overall multiplier on frayDensity; the three new params are exposed in the material-tag texture panel for per-model tuning, since the 'right' absolute world-unit widths depend on how large the model's parts actually are and there's no single correct default across every voxel scale.",
+    "D11 per-part reach/shell clamp (2026-07-24, real cat-model review): even after D10, the whole model was still speckled — frayReach is an absolute world length (0.16) but real generated parts are often only 0.1-0.3 world units, so for those parts EVERY fragment sits within frayReach of some border and even face centers carry discard probability (numerically: a 0.15-wide part's face center had edgeZone≈0.55). The earlier 1.2-unit verification cube happened to sit in the center-safe size range and masked the bug. No fixed absolute length can suit every part size, so the effective reach is now clamped per-axis to that axis's half-extent * 0.5 (band eats at most 1/4 of the width from each side — the central half of every face is provably solid at any part size). Per-axis, not global-min, so thin parts (legs) tighten across their narrow axis but keep fray along their long axis. The vertex shell width gets the same treatment (clamped to smallest-half-extent * 0.5) so the 0.05 default no longer fattens a 0.15-wide leg by 2/3. Clamps use the same boundsSize the distances are measured in, so standalone (real-size geometry) and batched (unit geometry) paths are both self-consistent.",
+    "D12 discard-hole realism (2026-07-24, real bear-model review): after D9-D11 fixed the scale/taper math, the model still showed a 'frosting' look — the root issue was never the probability math, it was what's behind the hole. Every discarded fragment was a window straight to the background (single-sided FrontSide rendering), and faces pointed nearly straight at the camera (a top-down bear head) got punched at the same rate as grazing silhouette faces, so a flat-facing top read as vandalized rather than furry. Also: opposite/adjacent faces share the same 2D projected UV via triplanarDominantUv, so their fray noise sampled identical values at mirrored positions — holes on the front and back face were pixel-aligned, guaranteeing full punch-through. Three fixes: (a) view-gated discard — multiply the discard chance by a grazing-angle term (1-|dot(normal,viewDir)|)² using cameraPosition (already relied on by FresnelRimLayer, no new uniform) so faces nearly facing the camera stay solid and only true silhouette-forming faces fray; (b) DoubleSide + backface darkening — EffectLayerInjector now flips material.side to DoubleSide specifically when pattern=6 and frayAmount>0 (a targeted special-case, not a new generic layer→material binding channel — YAGNI, single consumer), and the wool fragment branch darkens backfacing fragments via gl_FrontFacing so a hole reveals a dimmed interior surface instead of the sky; (c) per-face noise decorrelation — the fray noise seed gets an offset derived from sign(worldNormal), giving each of the 6 axis-directions an independent noise field so opposite faces no longer punch through at the same spot. Known remaining limits: view-gating sacrifices fray entirely at the rare dead-perpendicular camera angle (silhouette IS that face's own border in that case) — accepted tradeoff, the common oblique-view case is what matters; DoubleSide is not reverted if a part is re-tagged away from wool later in the same session (rare, deferred).",
+    "D13 fray grain size (2026-07-24, user-requested control): the fray noise frequency (the 16.0 multiplier from D11) was hardcoded, so the fleck size was fixed. Exposed as frayGrainSize (0.2-5.0, default 1.0) — the shader computes an effective frequency as 16.0/frayGrainSize, so the default reproduces the old hardcoded 16.0 exactly (pixel-identical) while larger values give bigger/blockier flecks and smaller values give finer fuzz. Purely a fragment-side noise-frequency knob — does not affect the geometric clamps from D11, so the 'central portion of every face stays solid' guarantee is untouched regardless of grain size.",
+    "D14 polished marble surface (2026-07-24): stone:marble compiles a base-recipe surface binding and opts into the host environment map. Triplanar's shared marble field now perturbs pre-lighting roughness and normals, so reflections break along mineral structure instead of forming one uniform light-shaped blob. The material panel keeps satin, polished, and showcase presets and saves the selected marble surface plus micro-surface overrides.",
+    "D15 solid core plus one fur shell (2026-07-24): discard can only remove silhouette pixels, so applying it to the only rendered mesh inevitably reads as torn material. EffectLayerInjector now keeps the original wool mesh solid by forcing its frayAmount to zero and creates one derived shell sharing the same geometry with the requested extrusion/discard values. Live tuning preserves that split. The shell mask uses narrow edge-aligned fiber cells with only a small 2D jitter contribution instead of blob-shaped value noise. Since the core can no longer be punched through, the old front-view protection is relaxed to a 0.8 floor so camera-facing voxel silhouettes keep a visible fine fringe. The visually verified preset is amount=0.85, reach=0.12, shellWidth=0.05, density=0.8, grainSize=0.25. Mesh and InstancedMesh are supported; BatchedMesh deliberately stays on the legacy single-pass path until its per-geometry matrix lifecycle has a measured need.",
+    "D16 structured stone micro normals (2026-07-24): default rubble, brick, and cobblestone share one stoneNormalStrength control but derive different height fields from their authored structure. Rubble uses Voronoi F2-F1 edge distance plus low face noise, brick uses raised brick faces and recessed mortar, and cobblestone uses rounded F1 domes gated by the same cell-edge distance. Marble keeps its separate vein-driven micro-normal control.",
+    "D17 colored glass and balanced glass surface (2026-07-26): base:glass accepts red/amber/green/blue/purple/pink variants through the same finite-palette mechanism as colored fire. compileEnum now applies presetByVariant to every layer type, not only Triplanar. Glass keeps standaloneOnly and uses color plus attenuation presets; the shared physical material adds cheap world-space roughness variation and edge absorption without textures or an additional render pass. Transmission glass stays transparent=true and depthWrite=false so transparent water inside bottles and tanks remains visible."
+  ],
+  "README": {
+    "purpose": "Closed vocabulary of material tags for the AI model-generation backend. The AI annotates model parts with semantic tags only; all rendering decisions (shader layers, presets, particles) are compiled from this file by the engine.",
+    "ai_output_format": {
+      "attach_point": "model.json v2: optional 'tags' array on any entry of nodes[]. By default a group node's tags are inherited by all descendants, and a leaf node re-declaring the same tag overrides the inherited one. EXCEPTION: tags with inherits=false (currently only emissive) never cascade to children — tag every part that should glow individually, even directly under an already-tagged parent. Real generated models commonly wrap fire/smoke/electric/poison targets in a container group with the actual mesh as a child, so those tags keep default inheritance (2026-07-22: non-inheriting fire broke real generation output — reverted to emissive-only).",
+      "enum_mode_example": {
+        "tag": "base",
+        "value": "gold"
+      },
+      "blend_mode_example": {
+        "tag": "fire",
+        "value": 0.75,
+        "variant": "green"
+      },
+      "notes": [
+        "'variant' is optional and only valid on tags that declare variantEnum.",
+        "AI output contains ONLY: tag, value, optional variant. Never layer names, colors, or shader parameters."
+      ]
+    },
+    "output_rules": [
+      "mode=enum  -> output { tag, value } where value is one of the tag's 'values' list. At most ONE enum tag of each kind per part.",
+      "mode=blend -> output { tag, value } where value MUST be one of 0, 0.25, 0.5, 0.75, 1. Never output other decimals.",
+      "If a tag declares variantEnum, you MAY add \"variant\": one of the listed names. Omit for the default look.",
+      "Only tag parts where the material is semantically important (a torch head burns, a blade is gold). Leave ordinary parts untagged — untagged parts use the default material and are cheapest to render.",
+      "NEVER invent tag names, enum values, or variants not listed in this file.",
+      "emissive does NOT inherit to child parts — tag the exact part that should glow (a lamp, an eye), not a parent container hoping it spreads. fire/smoke/electric/poison DO inherit normally.",
+      "Keep the model root neutral. A group carrying fire/smoke/electric/poison must be below the root and contain the affected mesh parts directly, with no nested groups. Put structural groups (blade, guard, handle) and effect groups (flame_fx) as siblings under the neutral root.",
+      "Never put base/water on an ancestor of a fire/smoke/electric/poison group or on that effect group's mesh children. There is no limit on how many direct mesh children an effect group may contain.",
+      "Use base:silver only when the user explicitly requests silver. For generic metal, steel, or an unspecified reflective metallic surface, use base:metal so the original part color is preserved."
+    ],
+    "budgets": {
+      "_comment": "These limits protect per-part complexity and particle cost. Extract them verbatim into the system prompt emphasis section.",
+      "perPartMax": "1 enum 'base' tag + optional enum 'water' routing tag + at most 3 blend tags per part",
+      "blendQuantization": 0.25
+    },
+    "prompt_extraction_guide": "For the generation backend: (1) output_rules + budgets go into the system-prompt emphasis section; (2) each tag's 'description' goes into the vocabulary list section; (3) 'runtime', 'sim', 'status' are engine-side fields — never include them in prompts."
+  },
+  "architecture": {
+    "_comment": "工程侧说明，不进 prompt。",
+    "dual_path": {
+      "A_mass_content": "建筑/角色等批量内容走本词表：AI 只做语义判断（哪个部件、什么 tag、几档强度），引擎查表把 tag 编译成预制的 effect layer 组合。同 tag 同档位的部件 effectBatchKey 相同 → EffectBatchCoordinator 可回批，draw call 成本 = O(用到的 tag 种类 × 几何族)，不随部件数增长。",
+      "B_unique_items": "专属武器/宠物等单件内容不走词表：运行时跑 EffectGenerationPipeline（IntentParser → LayerPlanner → EffectSchemaValidator），AI 在 manifest min/max 与 cost 预算约束内现场规划完整 effect package。产物 standalonePreferred，永不进合批协调器。",
+      "routing": "由产品入口决定走 A 还是 B（建筑生成入口=A，装备定制入口=B）。不让 AI 自行选择路径。"
+    },
+    "batching_contract": "EffectBatchKeyBuilder 把 layer.params 整体纳入 batch key。因此路径 A 的一切渲染参数必须来自本文件的固定 preset + 由量化 value 推导的 drive 表达式 —— 这是回批的前提，任何让 AI 直接填参数的改动都会击碎它。",
+    "sim_layer": "各 tag 可携带 'sim' 块（温度/燃点等玩法属性，status=design）。唯一判定规则：接触时 source.emitsTemperature >= target.ignitionPoint → 目标运行时追加 fire tag。wet 抬高燃点、metal 不可燃但导电，组合全是数据，判定逻辑只有一条。渲染与 sim 正交：sim 字段渲染端一律忽略。",
+    "tag_inherits": "每个 tag 定义可选 'inherits'（缺省 true）。MaterialTagResolver 按 tag 逐个检查：inherits:false 的 tag 只在打标签的那个部件本身生效，不会被子部件继承，哪怕子部件没有再次声明。2026-07-22 定案：本想把 fire/emissive/smoke/electric/poison 全部设成 inherits:false（都是点状特效，理论上不该被继承稀释），但真机验收发现 fire 直接失效——真实生成模型里 fire 常见挂在一个容器 group 上、实际网格是子节点，inherits:false 后 tag 传不到叶节点，粒子火焰完全不触发。已改回：只有 emissive 保持 inherits:false（发光常直接打在叶节点如眼睛/宝石本身，不受影响）；fire/smoke/electric/poison 恢复默认继承。base/water/rust/mossy/dirty/wet/damage 从未改动，继续默认继承。"
+  },
+  "tags": {
+    "base": {
+      "mode": "enum",
+      "status": "implemented",
+      "exclusiveRenderSlot": "baseShading",
+      "values": [
+        "gold",
+        "silver",
+        "metal",
+        "glass",
+        "wood",
+        "stone",
+        "fur"
+      ],
+      "variantEnum": [
+        "default",
+        "birch",
+        "oak",
+        "pine",
+        "walnut",
+        "bark",
+        "brick",
+        "marble",
+        "cobblestone",
+        "red",
+        "amber",
+        "green",
+        "blue",
+        "purple",
+        "pink"
+      ],
+      "description": "Base material of the part. Exactly one value, mutually exclusive. Use for parts whose material identity matters (a gold blade, a glass bottle). Use silver only when the user explicitly says silver; use metal for generic metal/steel or an unspecified reflective metallic surface so the part keeps its original color. Ordinary painted/colored parts need NO base tag. Variant is optional and scoped by value: 'birch'/'oak'/'pine'/'walnut'/'bark' only valid with value='wood' — omit unless the description explicitly names that wood species/tree bark, otherwise leave the default look (most prompts never name a wood species, and guessing fragments batching); 'bark' is for tree trunks/branches (rough, irregular vertical grooves), the others are for milled lumber (furniture, crates, planks); 'brick'/'marble'/'cobblestone' only valid with value='stone' — these have strong textual signals (a described brick wall, marble pillar, cobblestone street) so use them whenever the prompt clearly implies that stone structure, default is loose rubble; 'red'/'amber'/'green'/'blue'/'purple'/'pink' only valid with value='glass' — use the explicitly requested glass color, map yellow/orange glass to amber, and omit the variant for clear/colorless glass. Use 'fur' for plush/furry cartoon surfaces (a pet's body, a plush toy) — no variants yet.",
+      "runtime": {
+        "_comment": "gold/silver/metal → 本地 MatCap 贴图槽位（反光身份，与空间位置无关）。glass → Glass override 层，standaloneOnly 永不合批。wood/stone → Triplanar 层：世界空间三投影程序化纹理，无需 UV/贴图资源，天然适配 AI 生成 primitive 与 InstancedMesh 合批；同一 layer 靠 params 区分木纹（各向异性拉丝）与石纹（各向同性斑驳）。colorLo/colorHi 是围绕 1.0 的乘法调制系数（不是绝对颜色），部件原本涂色始终保留，噪声只叠加明暗/色偏细节。",
+        "presets": {
+          "gold": {
+            "matcap": {
+              "enabled": true,
+              "textureName": "gold",
+              "blend": 0.65,
+              "strength": 1.0,
+              "mode": "lerp"
+            },
+            "status": "implemented"
+          },
+          "silver": {
+            "matcap": {
+              "enabled": true,
+              "textureName": "silver",
+              "blend": 0.65,
+              "strength": 1.0,
+              "mode": "lerp"
+            },
+            "status": "implemented"
+          },
+          "metal": {
+            "matcap": {
+              "enabled": true,
+              "textureName": "metal",
+              "blend": 0.55,
+              "strength": 1.0,
+              "mode": "tint"
+            },
+            "status": "implemented"
+          },
+          "glass": {
+            "layer": "Glass",
+            "presetByVariant": {
+              "red": {
+                "color": [1.0, 0.62, 0.62],
+                "attenuationColor": [1.0, 0.18, 0.12],
+                "attenuationDistance": 2.8
+              },
+              "amber": {
+                "color": [1.0, 0.78, 0.38],
+                "attenuationColor": [1.0, 0.42, 0.05],
+                "attenuationDistance": 2.5
+              },
+              "green": {
+                "color": [0.48, 1.0, 0.62],
+                "attenuationColor": [0.08, 0.85, 0.22],
+                "attenuationDistance": 2.8
+              },
+              "blue": {
+                "color": [0.42, 0.68, 1.0],
+                "attenuationColor": [0.08, 0.32, 1.0],
+                "attenuationDistance": 3.0
+              },
+              "purple": {
+                "color": [0.75, 0.52, 1.0],
+                "attenuationColor": [0.48, 0.12, 1.0],
+                "attenuationDistance": 2.8
+              },
+              "pink": {
+                "color": [1.0, 0.62, 0.82],
+                "attenuationColor": [1.0, 0.18, 0.55],
+                "attenuationDistance": 2.8
+              }
+            },
+            "status": "implemented",
+            "note": "standaloneOnly — never rebatched"
+          },
+          "wood": {
+            "layer": "Triplanar",
+            "params": {
+              "pattern": 0,
+              "strength": 0.9,
+              "scale": 5.1,
+              "stretch": 9.0,
+              "grainContrast": 0.22,
+              "plankScale": 0.55,
+              "edge": 0.32,
+              "cellVariance": 0.1,
+              "macroStrength": 0.14,
+              "fineNoise": 0.05,
+              "colorLo": [
+                0.55,
+                0.48,
+                0.4
+              ],
+              "colorHi": [
+                1.22,
+                1.0,
+                0.85
+              ]
+            },
+            "tuning": {
+              "strength": 0.78,
+              "scale": 7.5,
+              "stretch": 2.1,
+              "grainContrast": 0.03,
+              "plankScale": 0.64,
+              "edge": 0.47,
+              "cellVariance": 0.32,
+              "macroStrength": 0.5,
+              "fineNoise": 0.14
+            },
+            "presetByVariant": {
+              "birch": {
+                "strength": 0.5,
+                "scale": 2.0,
+                "stretch": 8.1,
+                "grainContrast": 0.43,
+                "plankScale": 0.98,
+                "edge": 0.4,
+                "cellVariance": 0.5,
+                "macroStrength": 0.2,
+                "fineNoise": 0.1,
+                "warpAmount": 3.2,
+                "warpScale": 1.59,
+                "knotStrength": 0.2,
+                "colorLo": [
+                  0.5,
+                  0.46,
+                  0.4
+                ],
+                "colorHi": [
+                  1.35,
+                  1.32,
+                  1.22
+                ]
+              },
+              "oak": {
+                "strength": 0.5,
+                "scale": 2.0,
+                "stretch": 8.1,
+                "grainContrast": 0.43,
+                "plankScale": 0.98,
+                "edge": 0.4,
+                "cellVariance": 0.5,
+                "macroStrength": 0.2,
+                "fineNoise": 0.1,
+                "warpAmount": 3.2,
+                "warpScale": 1.59,
+                "knotStrength": 0.2,
+                "colorLo": [
+                  0.42,
+                  0.3,
+                  0.2
+                ],
+                "colorHi": [
+                  0.95,
+                  0.68,
+                  0.42
+                ]
+              },
+              "pine": {
+                "strength": 0.5,
+                "scale": 2.0,
+                "stretch": 8.1,
+                "grainContrast": 0.43,
+                "plankScale": 0.98,
+                "edge": 0.4,
+                "cellVariance": 0.5,
+                "macroStrength": 0.2,
+                "fineNoise": 0.1,
+                "warpAmount": 3.2,
+                "warpScale": 1.59,
+                "knotStrength": 0.2,
+                "colorLo": [
+                  0.62,
+                  0.52,
+                  0.3
+                ],
+                "colorHi": [
+                  1.3,
+                  1.15,
+                  0.75
+                ]
+              },
+              "walnut": {
+                "strength": 0.5,
+                "scale": 2.0,
+                "stretch": 8.1,
+                "grainContrast": 0.43,
+                "plankScale": 0.98,
+                "edge": 0.4,
+                "cellVariance": 0.5,
+                "macroStrength": 0.2,
+                "fineNoise": 0.1,
+                "warpAmount": 3.2,
+                "warpScale": 1.59,
+                "knotStrength": 0.2,
+                "colorLo": [
+                  0.28,
+                  0.18,
+                  0.12
+                ],
+                "colorHi": [
+                  0.7,
+                  0.46,
+                  0.3
+                ]
+              },
+              "bark": {
+                "pattern": 5,
+                "strength": 0.88,
+                "scale": 3.2,
+                "stretch": 8.5,
+                "grainContrast": 0.23,
+                "plankScale": 0.71,
+                "edge": 0.31,
+                "cellVariance": 0.26,
+                "macroStrength": 0.5,
+                "fineNoise": 0.08,
+                "warpAmount": 2.2,
+                "warpScale": 0.28,
+                "barkNormalStrength": 0.035,
+                "colorLo": [
+                  0.38,
+                  0.32,
+                  0.26
+                ],
+                "colorHi": [
+                  0.85,
+                  0.72,
+                  0.58
+                ]
+              }
+            },
+            "status": "implemented"
+          },
+          "stone": {
+            "layer": "Triplanar",
+            "params": {
+              "pattern": 1,
+              "strength": 0.55,
+              "scale": 3.5,
+              "stretch": 1.0,
+              "edge": 0.1,
+              "cellVariance": 0.09,
+              "macroStrength": 0.16,
+              "fineNoise": 0.04,
+              "stoneNormalStrength": 0.035,
+              "colorLo": [
+                0.6,
+                0.6,
+                0.62
+              ],
+              "colorHi": [
+                1.1,
+                1.08,
+                1.05
+              ]
+            },
+            "tuning": {
+              "strength": 0.8,
+              "scale": 3.7,
+              "edge": 0.15,
+              "cellVariance": 0.15,
+              "macroStrength": 0.13,
+              "fineNoise": 0.12,
+              "stoneNormalStrength": 0.01
+            },
+            "presetByVariant": {
+              "brick": {
+                "pattern": 2,
+                "plankScale": 0.4,
+                "edge": 0.14,
+                "cellVariance": 0.12,
+                "stoneNormalStrength": 0.025,
+                "colorLo": [
+                  0.55,
+                  0.32,
+                  0.26
+                ],
+                "colorHi": [
+                  1.15,
+                  0.75,
+                  0.6
+                ]
+              },
+              "marble": {
+                "pattern": 3,
+                "scale": 2.0,
+                "colorLo": [
+                  0.5,
+                  0.5,
+                  0.55
+                ],
+                "colorHi": [
+                  1.25,
+                  1.22,
+                  1.2
+                ]
+              },
+              "cobblestone": {
+                "pattern": 4,
+                "scale": 4.0,
+                "edge": 0.16,
+                "cellVariance": 0.13,
+                "macroStrength": 0.22,
+                "stoneNormalStrength": 0.045,
+                "colorLo": [
+                  0.55,
+                  0.55,
+                  0.58
+                ],
+                "colorHi": [
+                  1.15,
+                  1.12,
+                  1.08
+                ]
+              }
+            },
+            "surfaceByVariant": {
+              "marble": {
+                "roughness": 0.53,
+                "metalness": 0,
+                "envMapIntensity": 0.2,
+                "environment": true
+              }
+            },
+            "status": "implemented",
+            "tuningByVariant": {
+              "brick": {
+                "strength": 0.59,
+                "scale": 2.4,
+                "edge": 0.1,
+                "cellVariance": 0.12,
+                "macroStrength": 0.16,
+                "fineNoise": 0.1,
+                "stoneNormalStrength": 0.02
+              },
+              "marble": {
+                "strength": 0.55,
+                "edge": 0.24,
+                "cellVariance": 0.08,
+                "macroStrength": 0.5,
+                "fineNoise": 0.04,
+                "marbleRoughnessVariation": 0.3,
+                "marbleNormalStrength": 0.01
+              },
+              "cobblestone": {
+                "strength": 0.58,
+                "scale": 3.6,
+                "edge": 0.17,
+                "cellVariance": 0.23,
+                "macroStrength": 0.24,
+                "fineNoise": 0,
+                "stoneNormalStrength": 0.13
+              }
+            }
+          },
+          "fur": {
+            "layer": "Triplanar",
+            "params": {
+              "pattern": 6,
+              "strength": 0.9,
+              "scale": 3.7,
+              "edge": 0.35,
+              "cellVariance": 0.15,
+              "macroStrength": 0.31,
+              "fineNoise": 0.06,
+              "warpAmount": 2.2,
+              "warpScale": 0.6,
+              "frayAmount": 0.85,
+              "frayReach": 0.12,
+              "frayShellWidth": 0.05,
+              "frayDensity": 0.8,
+              "frayGrainSize": 0.25,
+              "colorLo": [
+                0.9,
+                0.87,
+                0.82
+              ],
+              "colorHi": [
+                1.08,
+                1.06,
+                1.02
+              ]
+            },
+            "tuning": {},
+            "status": "implemented"
+          }
+        }
+      },
+      "sim": {
+        "status": "design",
+        "perValue": {
+          "gold": {
+            "ignitionPoint": 1.2,
+            "conductive": true
+          },
+          "silver": {
+            "ignitionPoint": 1.2,
+            "conductive": true
+          },
+          "metal": {
+            "ignitionPoint": 1.1,
+            "conductive": true
+          },
+          "glass": {
+            "ignitionPoint": 1.5,
+            "conductive": false
+          },
+          "wood": {
+            "ignitionPoint": 0.4,
+            "conductive": false
+          },
+          "stone": {
+            "ignitionPoint": 1.5,
+            "conductive": false
+          }
+        }
+      }
+    },
+    "water": {
+      "mode": "enum",
+      "status": "implemented",
+      "values": [
+        "pool",
+        "fall"
+      ],
+      "description": "Water routing tag. Use 'pool' for a horizontal, flattened water body. Use 'fall' ONLY for a waterfall: model it as a vertical thin box/board primitive, with thickness no more than one quarter of its width. This tag selects the runtime water replacement; never provide water shader parameters.",
+      "runtime": {
+        "routingOnly": true,
+        "target": "ModelWaterInstances",
+        "poolTuning": {
+          "uOpacity": 0.7,
+          "uWaveHeight": 0.13,
+          "uWaveSpeed": 0.7,
+          "uFoamStrength": 1,
+          "uToonPatternIntensity": 0.81,
+          "uShoreEdgeAlpha": 0.31,
+          "uWaveScale": 1.95,
+          "uDetailWaveStrength": 0.46,
+          "uDetailWaveScale": 12.4,
+          "uDetailWaveSpeed": -3.8,
+          "uWaveRidgeSharpness": 1.75,
+          "uWaveSpacingVariation": 0,
+          "uWaveSpacingScale": 0.11,
+          "uFoamNoiseStrength": 0.29,
+          "uWhitecapNoiseScale": 1.5,
+          "uUseDirectionalWaves": 1,
+          "uPrimaryWaveDirection_x": 1,
+          "uPrimaryWaveDirection_y": 0.25,
+          "uSecondaryWaveDirection_x": -0.35,
+          "uSecondaryWaveDirection_y": 1,
+          "uLargeWaveStrength": 1,
+          "uLargeWaveScale": 0.85,
+          "uLargeWaveSpeed": 0.85,
+          "uLargeWaveStretch": 2.2,
+          "uSecondaryWaveStrength": 0.35,
+          "uSecondaryWaveScale": 1.4,
+          "uSecondaryWaveSpeed": 1.15,
+          "uMidWaveStrength": 0.35,
+          "uMidWaveScale": 2.1,
+          "uMidWaveSpeed": 1.2,
+          "uWaveCrestStretch": 1.8,
+          "uDirectionalWaveBlend": 0.75,
+          "uDirectionalAnisotropy": 0.8,
+          "uWaveCrossDamping": 0.45,
+          "uRippleDecalEnabled": 1,
+          "uRippleDecalRadius": 0.8,
+          "uRippleDecalFrequency": 8,
+          "uRippleDecalSpeed": 1.35,
+          "uRippleDecalWidth": 0.29,
+          "uRippleDecalStrength": 0.8,
+          "uRippleDecalLifetime": 2.7,
+          "uRippleDecalNormalStrength": 2,
+          "uRippleDecalNoiseScale": 2.3,
+          "uRippleDecalNoiseStrength": 0.15,
+          "uRippleDecalFrontWidth": 0.58,
+          "uRippleDecalAttenuation": 4.3,
+          "uRippleDecalFadeStart": 0.65,
+          "uFoamThreshold": 0.08,
+          "uFoamWidth": 1,
+          "uFoamOpacity": 0.8,
+          "uFoamSpeed": 1.5,
+          "uFoamPulse": 0.3,
+          "uUseFoamNoise": 1,
+          "uContactFoamEnabled": 1,
+          "uContactFoamStrength": 2.45,
+          "uContactFoamStart": 0.26,
+          "uContactFoamEnd": 0.73,
+          "uContactFoamWidth": 1.9,
+          "uContactFoamNoiseScale": 0.6,
+          "uContactFoamBreakup": 0.32,
+          "uContactFoamPulse": 1.2,
+          "uShoreFoamWidth": 0.11,
+          "uShoreFoamStrength": 1.8,
+          "uFoamShadowWidth": 0.36,
+          "uFoamShadowStrength": 0.5,
+          "uWhitecapEnabled": 0,
+          "uWhitecapThreshold": 0,
+          "uWhitecapSoftness": 0.86,
+          "uWhitecapStrength": 0.65,
+          "uWhitecapBreakup": 0.58,
+          "uToonFoamHardCut": 0,
+          "uUseShoreDistance": 1,
+          "uShoreDistanceScale": 0.9,
+          "uShoreClipThreshold": 0.02,
+          "uInvertShoreDistance": 0,
+          "uShoreWorldSpace": 0,
+          "uShoreWorldCenter_x": 0,
+          "uShoreWorldCenter_y": -5,
+          "uShoreWorldSize": 0.1,
+          "uShoreWaveEnabled": 1,
+          "uShoreWaveStrength": 0.75,
+          "uShoreWaveRange": 0.36,
+          "uShoreWaveFrequency": 6,
+          "uShoreWaveSpeed": -0.2,
+          "uShoreWaveWidth": 0.48,
+          "uShoreWaveNoiseScale": 3.7,
+          "uShoreWaveNoiseStrength": 0.22,
+          "uShoreWaveBreakup": 0.44,
+          "uShoreWaveCrestHeight": 0.05,
+          "uUseWaterEnvReflection": 1,
+          "uToonEnvReflection": 1,
+          "uWaterReflectionStrength": 0.55,
+          "uWaterReflectionRoughness": 0.25,
+          "uWaterReflectionNormalInfluence": 1,
+          "uWaterReflectionExposure": 1
+        },
+        "fallTuning": {
+          "uOpacity": 0.7,
+          "uEdgeAlpha": 0.3,
+          "uBulge": 0.6,
+          "uColumnCount": 6,
+          "uColumnStyle": 1,
+          "uEdgeWobble": 0.19,
+          "uEdgeWobbleScale": 1.8,
+          "uFlowSpeed": -2.3,
+          "uFallAcceleration": 0,
+          "uSheetDrift": 0.04,
+          "uSheetTurbulence": 0.08,
+          "uFlowWarp": 0.32,
+          "uStrandBreakup": 0.41
+        }
+      }
+    },
+    "foliage": {
+      "mode": "enum",
+      "status": "implemented",
+      "exclusiveRenderSlot": "baseShading",
+      "values": [
+        "leaf"
+      ],
+      "description": "Block-canopy foliage material. Use ONLY when a tree canopy, bush/shrub or hedge is modeled as a simple chunky box/volume that still needs runtime leaf silhouettes, color breakup, puffed canopy lighting and backlight transmission. It automatically includes plant sway. Do NOT use on geometry whose silhouette already looks like an individual plant part: lotus/water-lily leaves, bamboo leaves, palm fronds, grass blades, flowers, vines or explicitly modeled leaves must use vegetation:sway instead. Do NOT use for solid trunks/branches (use base:wood variant 'bark').",
+      "runtime": {
+        "_comment": "Foliage only owns the block-canopy material treatment. VegetationSway is composed as a second base layer so wind motion is shared with non-block plant geometry. The compiler also reroutes a mistaken foliage:leaf tag to vegetation:sway when the target geometry is not a chunky box.",
+        "presets": {
+          "leaf": {
+            "layers": [
+              {
+                "type": "Foliage",
+                "params": {}
+              },
+              {
+                "type": "VegetationSway",
+                "params": {}
+              }
+            ],
+            "status": "implemented"
+          }
+        }
+      }
+    },
+    "vegetation": {
+      "mode": "enum",
+      "status": "implemented",
+      "values": [
+        "sway"
+      ],
+      "description": "Vertex-only plant sway that preserves the authored material, color, normals and silhouette. Use for non-block plant geometry whose shape is already modeled: lotus/water-lily leaves, bamboo leaves, palm fronds, grass blades, flowers, vines and explicit individual leaves. It adds motion only—no procedural leaf texture, cutout, highlight, puff normal or transmission. Do not combine it with foliage:leaf because foliage:leaf already includes this sway layer.",
+      "runtime": {
+        "_comment": "Pure vertex motion in the base batch recipe; safe for authored plant materials and geometry.",
+        "presets": {
+          "sway": {
+            "layer": "VegetationSway",
+            "params": {},
+            "status": "implemented"
+          }
+        }
+      }
+    },
+    "emissive": {
+      "mode": "blend",
+      "status": "implemented",
+      "inherits": false,
+      "description": "Self-illumination / glow, 0 (none) to 1 (full glow). Use for lamps, runes, magic crystals, eyes. Do NOT combine with 'fire' on the same part — fire already glows.",
+      "runtime": {
+        "layers": [
+          {
+            "type": "EmissivePulse",
+            "preset": {
+              "color": [
+                1.0,
+                0.8,
+                0.2
+              ],
+              "speed": 0.6
+            },
+            "drive": {
+              "intensity": "value * 2.0"
+            }
+          }
+        ]
+      }
+    },
+    "fire": {
+      "mode": "blend",
+      "status": "implemented",
+      "variantEnum": [
+        "normal",
+        "blue",
+        "green"
+      ],
+      "description": "Fire routing tag. IMPORTANT: declare this tag on a non-mesh effect group below the neutral root, never directly on a mesh; place simple placeholder mesh children directly inside that group. The runtime replaces those placeholders with particle flame, so a rough box or blocky silhouette is enough and there is no need to sculpt flame geometry. For a directed nozzle/thruster flame, arrange the direct placeholder meshes as one elongated guide extending from the group origin along the intended local firing axis. For a mixed jet plus source plume, author two sibling fire effect groups under the nozzle: one elongated jet guide and one compact plume cluster; do not merge both silhouettes into one ambiguous group. The same color variant applies to plume, directed jet, and open or closed path/ring forms. 0.25 = glowing embers (a few faint sparks, no flame body), 0.5 = small flames, 0.75-1 = fully ablaze. Use variant 'blue' for magic/arcane fire, 'green' for ghost/spirit fire. Typical targets: torch heads, braziers, campfires, flaming blades. Never provide flame shader/particle parameters.",
+      "runtime": {
+        "_comment": "value<=0.25 只点亮 Flame 的灼热底色不出火舌（threshold 由 drive 拉高实现）；companion 仅 value>=0.5 时挂。",
+        "layers": [
+          {
+            "type": "Flame",
+            "presetByVariant": {
+              "normal": {
+                "color": [
+                  1.0,
+                  0.45,
+                  0.1
+                ]
+              },
+              "blue": {
+                "color": [
+                  0.2,
+                  0.5,
+                  1.0
+                ]
+              },
+              "green": {
+                "color": [
+                  0.3,
+                  1.0,
+                  0.4
+                ]
+              }
+            },
+            "drive": {
+              "intensity": "0.45 + value * 0.75",
+              "threshold": "0.82 - value * 0.32",
+              "glowStrength": "0.25 + value * 0.65"
+            }
+          }
+        ],
+        "companion": {
+          "type": "FlameAura",
+          "when": "value >= 0.5",
+          "overridesByVariant": {
+            "normal": {
+              "innerColor": [
+                1.0,
+                0.88,
+                0.42
+              ],
+              "outerColor": [
+                1.0,
+                0.16,
+                0.03
+              ]
+            },
+            "blue": {
+              "innerColor": [
+                0.72,
+                0.94,
+                1.0
+              ],
+              "outerColor": [
+                0.05,
+                0.2,
+                0.95
+              ]
+            },
+            "green": {
+              "innerColor": [
+                0.78,
+                1.0,
+                0.58
+              ],
+              "outerColor": [
+                0.05,
+                0.62,
+                0.16
+              ]
+            }
+          },
+          "drive": {
+            "sizeMultiplier": "0.75 + value * 0.55",
+            "intensity": "0.75 + value * 0.55",
+            "alpha": "0.3 + value * 0.3"
+          }
+        }
+      },
+      "sim": {
+        "status": "design",
+        "emitsTemperature": "0.3 + 0.7 * value"
+      }
+    },
+    "smoke": {
+      "mode": "blend",
+      "status": "implemented",
+      "variantEnum": [
+        "normal",
+        "steam"
+      ],
+      "description": "Smoke routing tag. IMPORTANT: declare this tag on a non-mesh effect group below the neutral root, never directly on a mesh; place its placeholder mesh children directly inside that group. It is independent from 'fire' — an effect group can smoke without burning (chimneys, incense, steam kettles, snuffed-out torches) or carry BOTH fire and smoke for an active flame. 0.25 = a faint wisp, 1 = billowing. Use variant 'steam' for white water-vapor puffs (kettles, hot springs, vents); default is grey smoke. Typical targets: chimneys, censers, kettles, ruined/smoldering props.",
+      "runtime": {
+        "_comment": "纯 companion，不带材质层——冒烟本身不改变部件表面材质。variant='steam' 覆写 smoke 预设的 colorStart/colorEnd 为偏白色。",
+        "layers": [],
+        "companion": {
+          "type": "Particles:smoke",
+          "when": "value >= 0.25",
+          "drive": {
+            "rate": "3 + value * 15"
+          },
+          "overridesByVariant": {
+            "steam": {
+              "colorStart": [
+                0.85,
+                0.87,
+                0.9
+              ],
+              "colorEnd": [
+                0.95,
+                0.96,
+                1.0
+              ]
+            }
+          }
+        }
+      }
+    },
+    "electric": {
+      "mode": "blend",
+      "status": "notImplemented",
+      "variantEnum": [
+        "blue",
+        "purple",
+        "red"
+      ],
+      "description": "Electric / lightning energy arcs. 0.25 = faint static shimmer, 1 = violent arcing. Typical targets: enchanted weapons, tesla devices, storm creatures.",
+      "runtime": {
+        "_comment": "专用 arc 层未实现；过渡期可用 EmissivePulse(高speed) + FresnelRim 近似。companion 电弧粒子未实现。",
+        "layers": [],
+        "companion": null
+      },
+      "sim": {
+        "status": "design",
+        "conductsTo": "parts with base.conductive=true"
+      }
+    },
+    "poison": {
+      "mode": "blend",
+      "status": "notImplemented",
+      "description": "Toxic / venomous coating. 0.25 = faint green sheen, 1 = dripping with venom. Typical targets: blades, fangs, cauldron contents.",
+      "runtime": {
+        "layers": [],
+        "companion": null,
+        "_comment": "滴落粒子 companion 未实现"
+      }
+    },
+    "ice": {
+      "mode": "blend",
+      "status": "notImplemented",
+      "description": "Frozen / frost-covered, 0 (none) to 1 (fully encased in ice)."
+    },
+    "wet": {
+      "mode": "blend",
+      "status": "notImplemented",
+      "description": "Wetness, 0 (dry) to 1 (soaked). Also raises ignition resistance in gameplay.",
+      "sim": {
+        "status": "design",
+        "ignitionPointBonus": "+0.5 * value"
+      }
+    },
+    "rust": {
+      "mode": "blend",
+      "status": "notImplemented",
+      "description": "Rust / oxidation on metallic parts, 0 (pristine) to 1 (heavily corroded). Only meaningful on parts with a metallic base tag."
+    },
+    "mossy": {
+      "mode": "blend",
+      "status": "notImplemented",
+      "description": "Moss / overgrowth coverage, 0 (clean) to 1 (overgrown). Typical targets: ruins, old stone, forest props."
+    },
+    "dirty": {
+      "mode": "blend",
+      "status": "notImplemented",
+      "description": "Dirt / grime, 0 (clean) to 1 (filthy)."
+    },
+    "damage": {
+      "mode": "blend",
+      "status": "notImplemented",
+      "description": "Persistent wear / damage state, 0 (intact) to 1 (broken). Note: this is static damage decoration; the dynamic hit-flash feedback is a runtime effect (HitFlash) and is NOT tagged by AI."
+    }
+  }
+}

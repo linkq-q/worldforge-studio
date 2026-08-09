@@ -17,12 +17,14 @@
     "build:map-core": "vite build --config vite.map-core.config.ts && tsc -p tsconfig.map-core.json && node scripts/mapCoreSmoke.mjs",
     "handoff:goldens": "tsx scripts/exportGoldenPack.ts",
     "handoff:verify": "tsx scripts/verifyGoldenPack.ts",
+    "seed:goldens": "tsx scripts/buildStarterSeed.ts",
     "backup:data": "tsx scripts/backupMapData.ts",
     "test": "vitest run",
     "server": "tsx src/server/index.ts -- --release",
     "map": "tsx src/server/mapCli.ts"
   },
   "dependencies": {
+    "@voxel-studio/render-runtime": "file:vendor/voxel-render-runtime",
     "fflate": "^0.8.2",
     "three": "^0.160.0"
   },

@@ -1,0 +1,176 @@
+{
+  "_comment": "VFX 词汇表 v1 — 动画生成端使用。结构和契约对齐 material-tags-v1.json：前端持有并通过 vfxTags 字段发送给后端，后端 buildVfxPrompt() 序列化进 system prompt。runtime 字段被 strip 不会进 prompt。",
+  "README": {
+    "purpose": "Animation VFX vocabulary — closed preset/event catalog. Animation AI references these names; runtime resolves to ParticlePresets.",
+    "ai_output_format": {
+      "quick_mode": "Motion Plan group 上加 vfx 字段，与 swing/bounce 等模板平级",
+      "quick_shape": {
+        "group_id": {
+          "vfx": {
+            "preset": "preset_name",
+            "params": "object (匹配 preset 的 params schema)",
+            "anchor": "optional { offset: [x,y,z] } 或 { worldPos: [x,y,z] }",
+            "dir": "optional [x,y,z] 世界方向，或 { meshId: 'mXX' }",
+            "times": "optional [tStart, tEnd] 时间窗口（秒）。省略 = 整个动画。用于火灭/喷射间歇等场景"
+          }
+        }
+      },
+      "pro_mode": "api.vfx(targetId, {preset, params?, anchor?, dir?}) 持续效果 / api.emit(eventName, {target, ...payload}) 事件触发",
+      "notes": [
+        "preset 名必须来自词表，不要发明",
+        "params 字段必须匹配词表声明的 schema",
+        "不要在 materialtag 已有 fire/smoke 标签的部位重复挂同名持续效果"
+      ]
+    },
+    "output_rules": [
+      "trigger=continuous 的 preset 用 group.vfx 字段或 api.vfx() 挂持续效果",
+      "trigger=event 的 preset 用 api.emit() 在指定时刻触发（Pro 模式）",
+      "Quick 模式只能挂 continuous；事件触发是 Pro 独有能力",
+      "同事件 50ms 内不要重复触发（cooldown）",
+      "持续效果每个模型最多 4 个，事件类型最多 8 种"
+    ],
+    "budgets": {
+      "continuousMaxPerModel": 4,
+      "eventTypesMaxPerModel": 8,
+      "anchorPrecisionDigits": 1
+    },
+    "anchor_choosing_heuristic": {
+      "step_1": "group 末端（手、脚、武器尖）→ 省略 anchor，直接用 group 原点",
+      "step_2": "group 内子位置（嘴、胸口、眼）→ 看 group 的 mesh 大小估算 offset",
+      "examples": [
+        "head 是 sphere r=0.7，嘴约在底部前方 → offset [0, -0.4, 0.6]",
+        "chest 是 box h=1.5，胸口约在前面上方 → offset [0, 0.3, 0.4]"
+      ],
+      "step_3": "需要精确世界位置 → Pro 模式用 api.groupPos() 算"
+    }
+  },
+  "presets": {
+    "flame": {
+      "description": "持续火焰（适合火把、燃烧部位、火墙）。带贴图的渲染——和 materialtag 的火视觉一致。",
+      "trigger": "continuous",
+      "params": {
+        "scale": { "type": "number", "min": 0.3, "max": 2.0, "default": 1.0, "description": "整体尺寸缩放" }
+      },
+      "recommended_events": [],
+      "runtime": {
+        "particlePreset": "flame",
+        "effectProgram": "flameDefault"
+      }
+    },
+    "flame_jet": {
+      "description": "定向喷射的柱状火焰（适合嘴吐火、火枪、火柱）。需要 dir 字段指定喷射方向。",
+      "trigger": "continuous",
+      "params": {
+        "intensity": { "type": "string", "default": "medium", "description": "weak|medium|strong" },
+        "length": { "type": "number", "min": 0.5, "max": 5.0, "description": "喷射长度（省略时按 anchor 估算）" },
+        "width": { "type": "number", "min": 0.1, "max": 1.5, "description": "喷射宽度（省略时按 anchor 估算）" }
+      },
+      "recommended_events": ["cast"],
+      "runtime": {
+        "particlePreset": "flame",
+        "effectProgram": "flameJet"
+      }
+    },
+    "smoke": {
+      "description": "持续烟雾（适合烟囱、损坏部位、灭火余烬）。缓慢上升、扩散、淡出。",
+      "trigger": "continuous",
+      "params": {
+        "scale": { "type": "number", "min": 0.3, "max": 2.0, "default": 1.0 }
+      },
+      "recommended_events": [],
+      "runtime": { "particlePreset": "smoke" }
+    },
+    "embers": {
+      "description": "稀疏火星（火焰点缀、炉膛余烬）。少量飘移的发光颗粒。",
+      "trigger": "continuous",
+      "params": {
+        "scale": { "type": "number", "min": 0.3, "max": 2.0, "default": 1.0 }
+      },
+      "recommended_events": [],
+      "runtime": { "particlePreset": "embers" }
+    },
+    "hit_spark": {
+      "description": "火花爆发（撞击、金属碰撞、武器命中）。一次性径向放射火花。",
+      "trigger": "event",
+      "params": {
+        "power": { "type": "number", "min": 0.3, "max": 1.5, "default": 1.0, "description": "爆发强度（控制数量和速度）" }
+      },
+      "recommended_events": ["impact", "attack_peak"],
+      "runtime": { "particlePreset": "hit_spark" }
+    },
+    "hit_debris": {
+      "description": "碎屑飞溅（脚步尘土、撞击碎片、落地）。带重力和触地消亡的小块状粒子。",
+      "trigger": "event",
+      "params": {
+        "power": { "type": "number", "min": 0.3, "max": 1.5, "default": 0.6 }
+      },
+      "recommended_events": ["footstep", "land", "impact"],
+      "runtime": { "particlePreset": "hit_debris" }
+    },
+    "charge_motes": {
+      "description": "能量汇集（施法蓄力、装备充能）。从环形向中心收敛的发光颗粒。",
+      "trigger": "continuous",
+      "params": {
+        "scale": { "type": "number", "min": 0.3, "max": 2.0, "default": 1.0 }
+      },
+      "recommended_events": ["cast"],
+      "runtime": { "particlePreset": "charge_motes" }
+    },
+    "sparkle": {
+      "description": "闪烁光环（魔法装备、宝石、附魔武器）。体积内的随机闪烁星点。",
+      "trigger": "continuous",
+      "params": {
+        "scale": { "type": "number", "min": 0.3, "max": 2.0, "default": 1.0 }
+      },
+      "recommended_events": [],
+      "runtime": { "particlePreset": "sparkle" }
+    },
+    "slash_trail": {
+      "description": "挥砍拖尾（武器轨迹、快速挥动物体末端）。世界空间残留的拖影。",
+      "trigger": "event",
+      "params": {
+        "power": { "type": "number", "min": 0.3, "max": 1.5, "default": 1.0 }
+      },
+      "recommended_events": ["attack_peak"],
+      "runtime": { "particlePreset": "slash_trail" }
+    }
+  },
+  "events": {
+    "footstep": {
+      "description": "脚落地（脚步声、地面尘土）",
+      "payload_schema": {
+        "power": "number 0-1，控制喷发强度（默认 0.5）",
+        "foot": "0=左脚，1=右脚（可选）"
+      },
+      "default_preset": "hit_debris"
+    },
+    "land": {
+      "description": "整体落地（跳跃落地、猛扑落地）—— 比脚步更大",
+      "payload_schema": {
+        "power": "number 0-1，默认 0.8"
+      },
+      "default_preset": "hit_debris"
+    },
+    "attack_peak": {
+      "description": "攻击动作到达峰值（挥砍最快点、刺击最远点）",
+      "payload_schema": {
+        "power": "number 0-1，默认 1.0"
+      },
+      "default_preset": "slash_trail"
+    },
+    "impact": {
+      "description": "撞击/受击（武器命中、被打击、碰撞）",
+      "payload_schema": {
+        "power": "number 0-1，默认 0.8"
+      },
+      "default_preset": "hit_spark"
+    },
+    "cast": {
+      "description": "施法/技能释放（法术起手或发出瞬间）",
+      "payload_schema": {
+        "color": "可选：'blue' | 'purple' | 'green' | 'red'，提示颜色倾向"
+      },
+      "default_preset": "charge_motes"
+    }
+  }
+}

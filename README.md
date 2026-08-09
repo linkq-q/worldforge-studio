@@ -47,28 +47,19 @@ WorldForge Studio 是从 `hAIde-seek` 中独立提取的 Three.js 场景编辑�
 
 ## 启动
 
-需要 Node.js 20 或更高版本，**以及一份 Voxel Studio（`3d-generate`）检出**。
+需要 Node.js 20 或更高版本，以及 Git LFS（用于完整 HDRI 天空库）。不再需要同级的 `3d-generate` 仓库。
 
 ```bash
+git lfs install
 npm install
 npm run dev
 ```
 
 浏览器打开 `http://localhost:5173`。本地编辑 API 默认运行在 `http://localhost:8797`。
 
-### 为什么需要 3d-generate
+渲染 Runtime 已作为固定快照随本仓库发布，并与本仓库的同一份 `three` 一起安装，避免出现两个 Three.js 实例导致的材质、后处理异常。首次启动空白数据目录时，会自动导入四张金样地图及其引用资产、渲染方案；已有 `data/map-editor` 不会被覆盖。
 
-`3d-generate` 提供两样东西：`@voxel-studio/render-runtime`（描边、卡通、漫画、水体、CSM 等能力模块），以及**两个仓库共用的那一份 `three`**。
-
-`vite.config.ts` 把 `three` 指向 `3d-generate/node_modules/three` 看起来很怪，但**不要"顺手修好"它**：两份 three 实例会让 runtime 的 `instanceof` 判断失效，材质和后处理会以很难排查的方式坏掉。
-
-默认按并列目录查找（`../3d-generate`）。目录结构不同时用环境变量指定：
-
-```bash
-VOXEL_STUDIO_ROOT=../../3d-generate npm run dev
-```
-
-路径不对时启动会直接报错并列出缺哪个文件，不会白屏。
+若克隆时使用了 `GIT_LFS_SKIP_SMUDGE=1`，请在启动前补跑 `git lfs pull`，否则 HDRI 仍只是占位指针文件。
 
 ## 对外交付
 
