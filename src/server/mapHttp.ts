@@ -5,6 +5,7 @@ import {
   createPaintStroke,
   surfaceUvFromPoint,
   type EditableMap,
+  type MapAsset,
   type MapPaintStroke,
   type MapSurface,
   type TerrainBrushMode
@@ -33,6 +34,8 @@ import {
 import { generateRenderSuggestion, refineRenderSuggestion } from './renderAi';
 import { MapStore, mapEditorCliManifest } from './mapStore';
 import { isCompositionEmptyMap } from '../shared/sceneComposition';
+import type { AssetLibraryMetadata } from '../shared/assetLibrary';
+import { analyzeAssetForLibrary, pendingAssetLibraryMetadata } from './assetLibraryAi';
 import {
   decodeWorldForgeTransfer,
   replaceRenderSchemeHdriFile
@@ -124,6 +127,11 @@ async function handleEditorRoute(req: Req, res: Res, store: MapStore, parts: str
 
   if (parts[2] === 'assets') {
     await handleEditorAssets(req, res, store, parts);
+    return;
+  }
+
+  if (parts[2] === 'asset-libraries') {
+    await handleEditorAssetLibraries(req, res, store, parts);
     return;
   }
 
@@ -248,6 +256,9 @@ async function handleEditorMaps(req: Req, res: Res, store: MapStore, parts: stri
       prompt?: string;
       provider?: ChatProvider;
       baseOperations?: MapOperation[];
+      reuseExistingAssets?: boolean;
+      assetLibraryId?: string;
+      maxNewAssets?: number;
     }>(req);
     const prompt = body.prompt?.trim();
     if (!prompt) throw new HttpError(400, 'missing_prompt');
@@ -267,7 +278,13 @@ async function handleEditorMaps(req: Req, res: Res, store: MapStore, parts: stri
     req.once('aborted', abort);
     res.once('close', abortIfOpen);
     try {
-      const [map, assets] = await Promise.all([store.loadMap(mapId), store.listAssets()]);
+      const [map, assets, libraryAssets] = await Promise.all([
+        store.loadMap(mapId),
+        store.listAssets(),
+        body.reuseExistingAssets === true && body.assetLibraryId
+          ? store.listAssetLibraryAssets(body.assetLibraryId)
+          : Promise.resolve([])
+      ]);
       if (parts[4] === 'generate' && !isCompositionEmptyMap(map)) {
         throw new HttpError(409, 'map_composition_requires_empty_map');
       }
@@ -275,10 +292,18 @@ async function handleEditorMaps(req: Req, res: Res, store: MapStore, parts: stri
         ? applyMapOperations(map, body.baseOperations)
         : map;
       const modelProvider = provider === 'deepseek-v4-pro' ? 'deepseek' : provider;
-      const suggestion = await runMapAgent(prompt, planningMap, assets, {
+      const planningAssets = dedupeAssets([
+        ...assets,
+        ...(planningMap.assets ?? []),
+        ...libraryAssets
+      ]);
+      const suggestion = await runMapAgent(prompt, planningMap, planningAssets, {
           provider,
           signal: controller.signal,
           mode: parts[4] === 'refine' ? 'refine' : 'generate',
+          reuseExistingAssets: body.reuseExistingAssets === true,
+          reusableAssetIds: libraryAssets.map((asset) => asset.id),
+          maxNewAssets: body.maxNewAssets,
           onProgress,
           createAsset: async (request) => {
             const modelJson = await generateMapAssetWithRetry(request.name, () => generateModel(request.prompt, {
@@ -461,6 +486,117 @@ async function handleEditorAssets(req: Req, res: Res, store: MapStore, parts: st
   throw new HttpError(404, 'not_found');
 }
 
+async function handleEditorAssetLibraries(
+  req: Req,
+  res: Res,
+  store: MapStore,
+  parts: string[]
+): Promise<void> {
+  if (parts.length === 3 && req.method === 'GET') {
+    sendJson(res, 200, { libraries: await store.listAssetLibraries() });
+    return;
+  }
+  if (parts.length === 3 && req.method === 'POST') {
+    const body = await readJson<{ name?: string; description?: string }>(req);
+    sendJson(res, 201, { library: await store.createAssetLibrary(body) });
+    return;
+  }
+  if (parts[3] === 'import' && parts.length === 4 && req.method === 'POST') {
+    sendJson(res, 201, await store.importAssetLibrary(await readJson(req, 512 * 1024 * 1024)));
+    return;
+  }
+
+  const libraryId = parts[3];
+  if (!libraryId) throw new HttpError(404, 'not_found');
+  if (parts.length === 4 && req.method === 'GET') {
+    sendJson(res, 200, {
+      library: await store.loadAssetLibrary(libraryId),
+      assets: await store.listAssetLibraryAssets(libraryId)
+    });
+    return;
+  }
+  if (parts.length === 4 && req.method === 'PATCH') {
+    const body = await readJson<{ name?: string; description?: string }>(req);
+    sendJson(res, 200, { library: await store.updateAssetLibrary(libraryId, body) });
+    return;
+  }
+  if (parts.length === 4 && req.method === 'DELETE') {
+    await store.deleteAssetLibrary(libraryId);
+    sendJson(res, 200, { ok: true });
+    return;
+  }
+  if (parts[4] === 'export' && parts.length === 5 && req.method === 'GET') {
+    sendJson(res, 200, await store.exportAssetLibrary(libraryId));
+    return;
+  }
+  if (parts[4] === 'assets' && parts.length === 5 && req.method === 'POST') {
+    const body = await readJson<{ assetId?: string; provider?: ChatProvider }>(req);
+    if (!body.assetId) throw new HttpError(400, 'missing_asset_id');
+    const source = await store.loadAsset(body.assetId);
+    const metadata = await analyzeAssetMetadataOrPending(source, body.provider);
+    sendJson(res, 201, await store.addAssetLibrarySnapshot(libraryId, source, metadata));
+    return;
+  }
+  if (parts[4] === 'import-asset' && parts.length === 5 && req.method === 'POST') {
+    const body = await readJson<{
+      name?: string;
+      prompt?: string;
+      tags?: string[];
+      modelJson?: unknown;
+      mode?: string;
+      provider?: ChatProvider;
+    }>(req, 512 * 1024 * 1024);
+    if (!body.modelJson) throw new HttpError(400, 'missing_model_json');
+    const created = await store.addImportedAssetLibrarySnapshot(libraryId, {
+      name: body.name,
+      prompt: body.prompt?.trim() || body.name?.trim() || 'Imported model',
+      tags: body.tags,
+      modelJson: body.modelJson,
+      mode: body.mode || 'voxel'
+    }, pendingAssetLibraryMetadata({ tags: body.tags }));
+    const metadata = await analyzeAssetMetadataOrPending(created.asset, body.provider);
+    const asset = await store.updateAssetLibraryEntry(libraryId, created.asset.id, { metadata });
+    sendJson(res, 201, { library: created.library, asset });
+    return;
+  }
+
+  const assetId = parts[5];
+  if (parts[4] === 'assets' && assetId && parts.length === 6 && req.method === 'PATCH') {
+    const body = await readJson<{
+      name?: string;
+      prompt?: string;
+      metadata?: Partial<AssetLibraryMetadata>;
+    }>(req);
+    sendJson(res, 200, { asset: await store.updateAssetLibraryEntry(libraryId, assetId, body) });
+    return;
+  }
+  if (parts[4] === 'assets' && assetId && parts.length === 6 && req.method === 'DELETE') {
+    sendJson(res, 200, { library: await store.removeAssetLibraryEntry(libraryId, assetId) });
+    return;
+  }
+  if (parts[4] === 'assets' && assetId && parts[6] === 'analyze' && parts.length === 7 && req.method === 'POST') {
+    const body = await readJson<{ provider?: ChatProvider }>(req);
+    const asset = await store.loadAsset(assetId);
+    const metadata = await analyzeAssetMetadataOrPending(asset, body.provider);
+    sendJson(res, 200, {
+      asset: await store.updateAssetLibraryEntry(libraryId, assetId, { metadata })
+    });
+    return;
+  }
+  throw new HttpError(404, 'not_found');
+}
+
+async function analyzeAssetMetadataOrPending(
+  asset: Awaited<ReturnType<MapStore['loadAsset']>>,
+  provider?: ChatProvider
+): Promise<AssetLibraryMetadata> {
+  try {
+    return await analyzeAssetForLibrary(asset, { provider });
+  } catch {
+    return pendingAssetLibraryMetadata(asset);
+  }
+}
+
 async function handleEditorRenderSchemes(req: Req, res: Res, store: MapStore, parts: string[]): Promise<void> {
   if (req.method === 'GET' && parts.length === 3) {
     sendJson(res, 200, { renderSchemes: await store.listRenderSchemes() });
@@ -553,10 +689,14 @@ function isTransactionSource(value: unknown): value is MapTransactionSource {
   return value === 'basic-ai' || value === 'agent';
 }
 
-async function readJson<T>(req: Req): Promise<T> {
-  const body = await readBody(req, 16 * 1024 * 1024);
+async function readJson<T>(req: Req, maxBytes = 16 * 1024 * 1024): Promise<T> {
+  const body = await readBody(req, maxBytes);
   if (body.length === 0) return {} as T;
   return JSON.parse(body.toString('utf8')) as T;
+}
+
+function dedupeAssets(assets: readonly MapAsset[]): MapAsset[] {
+  return [...new Map(assets.map((asset) => [asset.id, asset])).values()];
 }
 
 async function readBody(req: Req, maxBytes: number): Promise<Buffer> {

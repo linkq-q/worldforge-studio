@@ -1,4 +1,5 @@
-import { mkdir, readdir, readFile, rename, rm, stat, writeFile } from 'node:fs/promises';
+import { copyFile, mkdir, readdir, readFile, rename, rm, stat, writeFile } from 'node:fs/promises';
+import { constants as fsConstants } from 'node:fs';
 import path from 'node:path';
 import {
   addPaintStroke,
@@ -36,9 +37,21 @@ import {
   type RenderScheme
 } from '../shared/renderScheme';
 import { HDRI_CATALOG_FILE, hdriExtensionOf, parseHdriCatalog, type HdriTexture } from '../shared/hdri';
+import {
+  normalizeAssetLibrary,
+  normalizeAssetLibraryMetadata,
+  normalizeAssetLibraryPack,
+  type AssetLibrary,
+  type AssetLibraryMetadata,
+  type AssetLibraryPack
+} from '../shared/assetLibrary';
 
 export interface MapStoreOptions {
   rootDir?: string;
+  /** Read-only, Git LFS-managed panoramas shipped with this checkout. */
+  sharedHdriDir?: string;
+  /** Golden maps/assets copied only when a new data directory is empty. */
+  starterDataDir?: string | null;
 }
 
 export interface CreateMapInput {
@@ -55,6 +68,8 @@ export interface GenerateAssetInput {
   tags?: string[];
   mode?: string;
   provider?: string;
+  libraryId?: string;
+  libraryMetadata?: Partial<AssetLibraryMetadata>;
 }
 
 interface UndoTransaction {
@@ -66,9 +81,13 @@ export class MapStore {
   readonly rootDir: string;
   private readonly mapsDir: string;
   private readonly assetsDir: string;
+  private readonly assetLibrariesDir: string;
   private readonly historyDir: string;
   private readonly renderSchemesDir: string;
   private readonly hdriDir: string;
+  private readonly sharedHdriDir: string;
+  private readonly starterDataDir: string | null;
+  private readonly starterSeedPath: string;
   // ponytail: one global queue is enough for local single-user editing; split per map only if concurrency becomes measurable.
   private transactionQueue: Promise<void> = Promise.resolve();
 
@@ -76,17 +95,55 @@ export class MapStore {
     this.rootDir = options.rootDir ?? process.env.WORLDFORGE_DATA_DIR ?? path.join(process.cwd(), 'data', 'map-editor');
     this.mapsDir = path.join(this.rootDir, 'maps');
     this.assetsDir = path.join(this.rootDir, 'assets');
+    this.assetLibrariesDir = path.join(this.rootDir, 'asset-libraries');
     this.historyDir = path.join(this.rootDir, 'history');
     this.renderSchemesDir = path.join(this.rootDir, 'render-schemes');
     this.hdriDir = path.join(this.rootDir, 'hdri');
+    this.sharedHdriDir = options.sharedHdriDir ?? path.join(process.cwd(), 'assets', 'hdri');
+    this.starterDataDir = options.starterDataDir === undefined
+      ? (options.rootDir ? null : path.join(process.cwd(), 'assets', 'starter-data'))
+      : options.starterDataDir;
+    this.starterSeedPath = path.join(this.rootDir, '.starter-seed.json');
   }
 
   async ensureReady(): Promise<void> {
     await mkdir(this.mapsDir, { recursive: true });
     await mkdir(this.assetsDir, { recursive: true });
+    await mkdir(this.assetLibrariesDir, { recursive: true });
     await mkdir(this.historyDir, { recursive: true });
     await mkdir(this.renderSchemesDir, { recursive: true });
     await mkdir(this.hdriDir, { recursive: true });
+    await this.seedStarterDataIfEmpty();
+  }
+
+  private async seedStarterDataIfEmpty(): Promise<void> {
+    if (!this.starterDataDir) return;
+    if (await readFile(this.starterSeedPath).catch(() => null)) return;
+    const [maps, assets, schemes] = await Promise.all([
+      readdir(this.mapsDir).catch(() => []),
+      readdir(this.assetsDir).catch(() => []),
+      readdir(this.renderSchemesDir).catch(() => [])
+    ]);
+    if ([...maps, ...assets, ...schemes].some((file) => file.endsWith('.json'))) {
+      await atomicWriteJson(this.starterSeedPath, { status: 'existing-data', createdAt: Date.now() });
+      return;
+    }
+    const manifest = await readFile(path.join(this.starterDataDir, 'manifest.json')).catch(() => null);
+    if (!manifest) return;
+
+    for (const directory of ['maps', 'assets', 'render-schemes']) {
+      const source = path.join(this.starterDataDir, directory);
+      const target = path.join(this.rootDir, directory);
+      const files = await readdir(source).catch(() => []);
+      await Promise.all(files.filter((file) => file.endsWith('.json')).map((file) => copyFile(
+        path.join(source, file),
+        path.join(target, file),
+        fsConstants.COPYFILE_EXCL
+      ).catch((error: NodeJS.ErrnoException) => {
+        if (error.code !== 'EEXIST') throw error;
+      })));
+    }
+    await atomicWriteJson(this.starterSeedPath, { status: 'seeded', createdAt: Date.now() });
   }
 
   async listMapSummaries(): Promise<MapSummary[]> {
@@ -334,7 +391,9 @@ export class MapStore {
         return null;
       }
     }));
-    return assets.filter((asset): asset is MapAsset => Boolean(asset)).sort((a, b) => b.updatedAt - a.updatedAt);
+    return assets
+      .filter((asset): asset is MapAsset => asset !== null && !asset.libraryId)
+      .sort((a, b) => b.updatedAt - a.updatedAt);
   }
 
   async loadAsset(id: string): Promise<MapAsset> {
@@ -354,6 +413,10 @@ export class MapStore {
       colliderPlan: input.colliderPlan,
       mode: input.mode ?? 'voxel',
       provider: input.provider,
+      libraryId: input.libraryId,
+      libraryMetadata: input.libraryId
+        ? normalizeAssetLibraryMetadata(input.libraryMetadata, input.tags)
+        : undefined,
       createdAt: now,
       updatedAt: now
     });
@@ -440,20 +503,203 @@ export class MapStore {
     await rm(this.renderSchemePath(id), { force: true });
   }
 
+  async listAssetLibraries(): Promise<AssetLibrary[]> {
+    await this.ensureReady();
+    const files = await readdir(this.assetLibrariesDir).catch(() => []);
+    const libraries = await Promise.all(files.filter((file) => file.endsWith('.json')).map(async (file) => (
+      this.loadAssetLibrary(path.basename(file, '.json')).catch(() => null)
+    )));
+    return libraries
+      .filter((library): library is AssetLibrary => Boolean(library))
+      .sort((left, right) => right.updatedAt - left.updatedAt);
+  }
+
+  async loadAssetLibrary(id: string): Promise<AssetLibrary> {
+    const text = await readFile(this.assetLibraryPath(id), 'utf8');
+    return normalizeAssetLibrary(JSON.parse(text) as Partial<AssetLibrary>);
+  }
+
+  async createAssetLibrary(input: { name?: string; description?: string }): Promise<AssetLibrary> {
+    await this.ensureReady();
+    const now = Date.now();
+    const library = normalizeAssetLibrary({
+      id: createId('library'),
+      name: input.name,
+      description: input.description,
+      assetIds: [],
+      createdAt: now,
+      updatedAt: now
+    });
+    await atomicWriteJson(this.assetLibraryPath(library.id), library);
+    return library;
+  }
+
+  async updateAssetLibrary(id: string, input: { name?: string; description?: string }): Promise<AssetLibrary> {
+    const current = await this.loadAssetLibrary(id);
+    const library = normalizeAssetLibrary({
+      ...current,
+      ...(typeof input.name === 'string' ? { name: input.name } : {}),
+      ...(typeof input.description === 'string' ? { description: input.description } : {}),
+      updatedAt: Date.now()
+    });
+    await atomicWriteJson(this.assetLibraryPath(library.id), library);
+    return library;
+  }
+
+  async deleteAssetLibrary(id: string): Promise<void> {
+    await this.loadAssetLibrary(id);
+    await rm(this.assetLibraryPath(id), { force: true });
+    // ponytail: keep detached snapshots because existing maps may still reference them.
+  }
+
+  async listAssetLibraryAssets(id: string): Promise<MapAsset[]> {
+    const library = await this.loadAssetLibrary(id);
+    const assets = await Promise.all(library.assetIds.map((assetId) => this.loadAsset(assetId).catch(() => null)));
+    return assets.filter((asset): asset is MapAsset => Boolean(asset));
+  }
+
+  async addAssetLibrarySnapshot(
+    libraryId: string,
+    source: MapAsset,
+    metadata: Partial<AssetLibraryMetadata>
+  ): Promise<{ library: AssetLibrary; asset: MapAsset }> {
+    const library = await this.loadAssetLibrary(libraryId);
+    const asset = await this.saveAsset({
+      name: source.name,
+      prompt: source.prompt,
+      tags: source.tags,
+      modelJson: source.modelJson,
+      colliderPlan: source.colliderPlan,
+      mode: source.mode,
+      provider: source.provider,
+      libraryId,
+      libraryMetadata: metadata
+    });
+    const updatedLibrary = normalizeAssetLibrary({
+      ...library,
+      assetIds: [...library.assetIds, asset.id],
+      updatedAt: Date.now()
+    });
+    await atomicWriteJson(this.assetLibraryPath(library.id), updatedLibrary);
+    return { library: updatedLibrary, asset };
+  }
+
+  async addImportedAssetLibrarySnapshot(
+    libraryId: string,
+    input: GenerateAssetInput,
+    metadata: Partial<AssetLibraryMetadata>
+  ): Promise<{ library: AssetLibrary; asset: MapAsset }> {
+    const library = await this.loadAssetLibrary(libraryId);
+    const asset = await this.saveAsset({ ...input, libraryId, libraryMetadata: metadata });
+    const updatedLibrary = normalizeAssetLibrary({
+      ...library,
+      assetIds: [...library.assetIds, asset.id],
+      updatedAt: Date.now()
+    });
+    await atomicWriteJson(this.assetLibraryPath(library.id), updatedLibrary);
+    return { library: updatedLibrary, asset };
+  }
+
+  async updateAssetLibraryEntry(
+    libraryId: string,
+    assetId: string,
+    input: { name?: string; prompt?: string; metadata?: Partial<AssetLibraryMetadata> }
+  ): Promise<MapAsset> {
+    const library = await this.loadAssetLibrary(libraryId);
+    if (!library.assetIds.includes(assetId)) throw new Error('asset_not_in_library');
+    const current = await this.loadAsset(assetId);
+    const asset = normalizeAsset({
+      ...current,
+      ...(typeof input.name === 'string' ? { name: input.name } : {}),
+      ...(typeof input.prompt === 'string' ? { prompt: input.prompt } : {}),
+      libraryId,
+      libraryMetadata: normalizeAssetLibraryMetadata(
+        { ...current.libraryMetadata, ...input.metadata },
+        current.tags
+      ),
+      updatedAt: Date.now()
+    });
+    await atomicWriteJson(this.assetPath(asset.id), asset);
+    return asset;
+  }
+
+  async removeAssetLibraryEntry(libraryId: string, assetId: string): Promise<AssetLibrary> {
+    const library = await this.loadAssetLibrary(libraryId);
+    if (!library.assetIds.includes(assetId)) throw new Error('asset_not_in_library');
+    const updated = normalizeAssetLibrary({
+      ...library,
+      assetIds: library.assetIds.filter((id) => id !== assetId),
+      updatedAt: Date.now()
+    });
+    await atomicWriteJson(this.assetLibraryPath(library.id), updated);
+    return updated;
+  }
+
+  async exportAssetLibrary(id: string): Promise<AssetLibraryPack> {
+    const library = await this.loadAssetLibrary(id);
+    return {
+      kind: 'worldforge-asset-library',
+      version: 1,
+      library,
+      assets: await this.listAssetLibraryAssets(id)
+    };
+  }
+
+  async importAssetLibrary(input: unknown): Promise<{ library: AssetLibrary; assets: MapAsset[] }> {
+    await this.ensureReady();
+    const pack = normalizeAssetLibraryPack(input);
+    const now = Date.now();
+    const library = normalizeAssetLibrary({
+      ...pack.library,
+      id: createId('library'),
+      name: `${pack.library.name}（导入）`,
+      assetIds: [],
+      createdAt: now,
+      updatedAt: now
+    });
+    const importedAssets: MapAsset[] = [];
+    for (const raw of pack.assets.filter((asset) => pack.library.assetIds.includes(asset.id))) {
+      const source = normalizeAsset(raw);
+      const imported = normalizeAsset({
+        ...source,
+        id: createId('asset'),
+        libraryId: library.id,
+        createdAt: now,
+        updatedAt: now
+      });
+      await atomicWriteJson(this.assetPath(imported.id), imported);
+      importedAssets.push(imported);
+    }
+    const completed = normalizeAssetLibrary({
+      ...library,
+      assetIds: importedAssets.map((asset) => asset.id)
+    });
+    await atomicWriteJson(this.assetLibraryPath(completed.id), completed);
+    return { library: completed, assets: importedAssets };
+  }
+
   /**
    * Lists the panoramas dropped into `<data>/hdri`. There is no upload path —
    * the directory is the library, so adding a sky is a file copy.
    */
   async listHdriTextures(): Promise<HdriTexture[]> {
     await this.ensureReady();
-    const files = await readdir(this.hdriDir).catch(() => []);
-    const catalog = await readHdriCatalog(path.join(this.hdriDir, HDRI_CATALOG_FILE));
-    const textures = await Promise.all(files.map(async (file) => {
+    const [sharedFiles, localFiles, sharedCatalog, localCatalog] = await Promise.all([
+      readdir(this.sharedHdriDir).catch(() => []),
+      readdir(this.hdriDir).catch(() => []),
+      readHdriCatalog(path.join(this.sharedHdriDir, HDRI_CATALOG_FILE)),
+      readHdriCatalog(path.join(this.hdriDir, HDRI_CATALOG_FILE))
+    ]);
+    // Local imports deliberately win over shipped files with the same name.
+    const sources = new Map<string, string>();
+    for (const file of sharedFiles) sources.set(file, this.sharedHdriDir);
+    for (const file of localFiles) sources.set(file, this.hdriDir);
+    const textures = await Promise.all([...sources].map(async ([file, source]) => {
       const extension = hdriExtensionOf(file);
       if (!extension) return null;
-      const info = await stat(path.join(this.hdriDir, file)).catch(() => null);
+      const info = await stat(path.join(source, file)).catch(() => null);
       if (!info?.isFile()) return null;
-      const metadata = catalog.get(file);
+      const metadata = localCatalog.get(file) ?? sharedCatalog.get(file);
       return {
         id: path.basename(file, path.extname(file)),
         file,
@@ -472,9 +718,13 @@ export class MapStore {
   /** Resolves a listed panorama to its absolute path, or null when unknown. */
   async resolveHdriFile(file: string): Promise<string | null> {
     const textures = await this.listHdriTextures();
-    return textures.some((texture) => texture.file === file)
-      ? path.join(this.hdriDir, file)
-      : null;
+    if (!textures.some((texture) => texture.file === file)) return null;
+    const localPath = path.join(this.hdriDir, file);
+    const local = await stat(localPath).catch(() => null);
+    if (local?.isFile()) return localPath;
+    const sharedPath = path.join(this.sharedHdriDir, file);
+    const shared = await stat(sharedPath).catch(() => null);
+    return shared?.isFile() ? sharedPath : null;
   }
 
   async hydrateMap(map: EditableMap): Promise<EditableMap> {
@@ -558,7 +808,8 @@ export class MapStore {
     const extension = hdriExtensionOf(requested);
     if (!extension) throw new Error('import_hdri_requires_supported_format');
     let actual = requested;
-    const existing = await readFile(path.join(this.hdriDir, actual)).catch(() => null);
+    const existingPath = await this.resolveHdriFile(actual);
+    const existing = existingPath ? await readFile(existingPath).catch(() => null) : null;
     if (existing && !existing.equals(Buffer.from(bytes))) {
       actual = `${path.basename(requested, path.extname(requested))}-import-${Date.now()}.${extension}`;
     }
@@ -585,6 +836,10 @@ export class MapStore {
 
   private undoPath(id: string): string {
     return path.join(this.historyDir, `${safeId(id)}.json`);
+  }
+
+  private assetLibraryPath(id: string): string {
+    return path.join(this.assetLibrariesDir, `${safeId(id)}.json`);
   }
 
   private redoPath(id: string): string {
@@ -706,6 +961,10 @@ function normalizeAsset(input: Partial<MapAsset>): MapAsset {
       : assetSizeClass(footprintRadius),
     mode: typeof input.mode === 'string' && input.mode ? input.mode : 'voxel',
     provider: typeof input.provider === 'string' && input.provider ? input.provider : undefined,
+    libraryId: typeof input.libraryId === 'string' && input.libraryId ? input.libraryId : undefined,
+    libraryMetadata: input.libraryId
+      ? normalizeAssetLibraryMetadata(input.libraryMetadata, input.tags)
+      : undefined,
     createdAt: finiteNumber(input.createdAt, now),
     updatedAt: finiteNumber(input.updatedAt, now)
   };
