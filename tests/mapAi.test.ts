@@ -84,6 +84,35 @@ describe('map AI adapter', () => {
     expect(refined.waterBodies[0]?.level).toBe(0.6);
   });
 
+  it('bounds refine operations to one visual zone and preserves locked zone fields', () => {
+    const map = createEmptyMap('zone refine', 'map-zone-refine');
+    map.visualSemantics.zones = [{
+      id: 'focus', tags: ['grass'], center: [0, 0], radius: 5, intensity: 0.8,
+      locks: { radius: true }
+    }];
+    const inside = { ...createMapObject('Inside', 'asset-tree'), id: 'inside' };
+    inside.transform.position = [0, 0, 0];
+    const outside = { ...createMapObject('Outside', 'asset-tree'), id: 'outside' };
+    outside.transform.position = [12, 0, 0];
+    map.objects = [inside, outside];
+
+    const suggestion = normalizeMapSuggestion(JSON.stringify({
+      summary: 'only focus',
+      terrainGeneration: { preset: 'hills', amplitude: 4 },
+      visualZoneUpdates: [{ zoneId: 'focus', radius: 12, intensity: 0.4 }],
+      objectUpdates: [
+        { objectId: 'inside', x: 1, z: 1 },
+        { objectId: 'outside', x: 0, z: 0 }
+      ]
+    }), map, assets, 'refine', 'focus');
+    const refined = applyMapOperations(map, suggestion.operations);
+
+    expect(suggestion.operations.some((operation) => operation.type === 'terrain.generate')).toBe(false);
+    expect(suggestion.operations.filter((operation) => operation.type === 'object.update')).toHaveLength(1);
+    expect(refined.objects.find((object) => object.id === 'outside')?.transform.position[0]).toBe(12);
+    expect(refined.visualSemantics.zones[0]).toMatchObject({ radius: 5, intensity: 0.4 });
+  });
+
   it('expands scatter intent into final object operations', () => {
     const map = createEmptyMap('scatter', 'map-ai-scatter');
     const suggestion = normalizeMapSuggestion(JSON.stringify({
