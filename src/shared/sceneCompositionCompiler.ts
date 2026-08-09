@@ -7,6 +7,7 @@ import { applyMapOperations, type MapOperation } from './mapOperations';
 import { planLimits } from './mapPlanning';
 import { expandMapScatter } from './mapScatter';
 import {
+  estimateSceneZoneCoverage,
   sceneZoneWorldRegion,
   type SceneCompositionMetrics,
   type SceneCompositionPlan
@@ -115,7 +116,7 @@ export function compileSceneComposition(
   return {
     operations,
     metrics: {
-      zoneCoverage: estimateZoneCoverage(plan),
+      zoneCoverage: estimateSceneZoneCoverage(plan),
       zoneCount: plan.zones.length,
       objectCount: Math.max(0, workingMap.objects.length - map.objects.length),
       waterCount: Math.max(0, workingMap.waterBodies.length - map.waterBodies.length),
@@ -306,21 +307,6 @@ function shouldClearGrass(family: SceneCompositionPlan['assetFamilies'][number])
 
 function grassLayerId(familyId: string): string {
   return `composition-grass-${familyId}`.slice(0, 80);
-}
-
-function estimateZoneCoverage(plan: SceneCompositionPlan): number {
-  const samples = 24;
-  let covered = 0;
-  for (let z = 0; z < samples; z += 1) {
-    for (let x = 0; x < samples; x += 1) {
-      const nx = x / (samples - 1) * 2 - 1;
-      const nz = z / (samples - 1) * 2 - 1;
-      if (plan.zones.some((zone) => Math.hypot(nx - zone.region.center[0], nz - zone.region.center[1]) <= zone.region.radius)) {
-        covered += 1;
-      }
-    }
-  }
-  return covered / (samples * samples);
 }
 
 function transitionFalloff(plan: SceneCompositionPlan, zoneId: string): number {

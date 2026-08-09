@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { createEmptyMap, type MapAsset } from '../src/shared/map';
 import {
+  ensureMinimumSceneCoverage,
+  estimateSceneZoneCoverage,
   isCompositionEmptyMap,
   normalizeSceneCompositionPlan,
   sceneZoneWorldRegion
@@ -18,6 +20,40 @@ import { sampleGrassDensity } from '../src/shared/mapGrass';
 import { ensureSceneCompositionOutcome } from '../src/shared/sceneCompositionOutcome';
 
 describe('scene composition contract', () => {
+  it('adds real editable ground cover when the director leaves most of the map blank', () => {
+    const map = createEmptyMap('Sparse valley', 'map-sparse-valley', [96, 16, 96], 'voxel-pro');
+    const sparse = structuredClone(planInput()) as {
+      grassFamilies: Array<Record<string, unknown>>;
+      zones: Array<Record<string, unknown>>;
+      transitions: unknown[];
+      consultations: unknown[];
+    };
+    sparse.grassFamilies = [];
+    sparse.zones = [sparse.zones[3]];
+    sparse.transitions = [];
+    sparse.consultations = [];
+    const camp = sparse.zones[0] as { id: string; region: { center: [number, number]; radius: number }; grassLayers: unknown[] };
+    camp.region = { center: [0.38, -0.3], radius: 0.16 };
+    camp.grassLayers = [];
+    const normalized = normalizeSceneCompositionPlan(sparse, map);
+
+    expect(estimateSceneZoneCoverage(normalized)).toBeLessThan(0.2);
+
+    const covered = ensureMinimumSceneCoverage(normalized);
+    const compiled = compileSceneComposition(map, covered, []);
+
+    expect(estimateSceneZoneCoverage(covered)).toBeGreaterThanOrEqual(0.8);
+    expect(covered.zones).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        id: 'ambient-ground-cover',
+        grassLayers: [expect.objectContaining({ density: 0.42 })]
+      })
+    ]));
+    expect(compiled.operations).toEqual(expect.arrayContaining([
+      expect.objectContaining({ type: 'grass.generate' })
+    ]));
+  });
+
   it('keeps creative roles free-form while validating references and bounded consultations', () => {
     const map = createEmptyMap('Forest', 'map-composition', [96, 16, 96], 'voxel-pro');
     const plan = normalizeSceneCompositionPlan(planInput(), map);

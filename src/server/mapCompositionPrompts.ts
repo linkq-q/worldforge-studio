@@ -35,7 +35,7 @@ export function buildSceneDirectorPrompt(
     'For a pond, lake, or pool zone, set water to {"type":"lake","level":0.35,"depth":1.8}; use null when the zone has no water.',
     'Use normalized XZ coordinates in [-1,1]. Region radius is relative to the shorter map half-extent.',
     `Use 1-${SCENE_COMPOSITION_LIMITS.zoneCount} zones. A one-zone composition is valid when the request genuinely calls for it.`,
-    'Cover the map deliberately. Any large uncovered area must be intentional negative space described by a zone, not an accidental omission.',
+    'The union of all zones must cover at least 80% of the normalized map square. Any remaining large open area must be intentional negative space described by a zone, not an accidental omission.',
     'Asset family role is free semantic text. Tags should be reusable lower-case search terms.',
     'For each asset family provide 1-3 identityTags containing the specific identity required for reuse (for example maple, castle, deer, sakura). Do not put broad category tags such as tree, vegetation, building, structure, animal, forest, or landmark in identityTags.',
     'Grass is editable ground vegetation, not a generated model asset. When appropriate, define reusable grassFamilies and assign grassLayers to zones.',

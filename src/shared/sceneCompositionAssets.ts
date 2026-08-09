@@ -146,11 +146,17 @@ function familyZoneTags(plan: SceneCompositionPlan, familyId: string): Set<strin
 }
 
 function buildFamilyPrompt(family: SceneAssetFamily, artDirection: string, variantIndex: number): string {
+  const foliage = /tree|forest|woodland|grove|foliage|leaf|树|林|叶/i.test(
+    `${family.label} ${family.role} ${family.tags.join(' ')}`
+  );
   return [
     family.generationBrief,
     artDirection ? `全局资产美术方向：${artDirection}` : '',
     `资产角色：${family.role}；目标尺度：${family.sizeClass}。`,
     family.desiredVariants > 1 ? `这是同一家族的第 ${variantIndex + 1} 个可辨识变体，轮廓应有变化但风格一致。` : '',
+    foliage
+      ? 'Keep foliage base colors clearly chromatic rather than gray, with enough brightness to remain readable after normal self-shadowing; do not use near-black leaf colors.'
+      : '',
     '只生成一个可复用的独立物体，不要生成地面、背景、天空、完整场景或多个分散物体。'
   ].filter(Boolean).join('\n').slice(0, 900);
 }

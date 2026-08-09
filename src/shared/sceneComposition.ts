@@ -9,6 +9,7 @@ import {
 } from './terrainGeneration';
 
 export const SCENE_COMPOSITION_VERSION = 1 as const;
+export const MIN_SCENE_COVERAGE = 0.8;
 export const SCENE_COMPOSITION_LIMITS = Object.freeze({
   zoneCount: 12,
   assetFamilyCount: 16,
@@ -205,6 +206,78 @@ export function normalizeSceneCompositionPlan(value: unknown, map: EditableMap):
   };
 }
 
+export function estimateSceneZoneCoverage(plan: SceneCompositionPlan): number {
+  const samples = 24;
+  let covered = 0;
+  for (let z = 0; z < samples; z += 1) {
+    for (let x = 0; x < samples; x += 1) {
+      const nx = x / (samples - 1) * 2 - 1;
+      const nz = z / (samples - 1) * 2 - 1;
+      if (plan.zones.some((zone) => (
+        Math.hypot(nx - zone.region.center[0], nz - zone.region.center[1]) <= zone.region.radius
+      ))) covered += 1;
+    }
+  }
+  return covered / (samples * samples);
+}
+
+/** Adds editable low ground cover when the director accidentally leaves most of the map undescribed. */
+export function ensureMinimumSceneCoverage(plan: SceneCompositionPlan): SceneCompositionPlan {
+  if (estimateSceneZoneCoverage(plan) >= MIN_SCENE_COVERAGE) return plan;
+
+  const grassFamily = plan.grassFamilies[0] ?? {
+    id: 'ambient-ground-cover',
+    label: 'Ambient ground cover',
+    mix: { short: 0.82, tall: 0.15, flowers: 0.03 }
+  };
+  const grassLayer = {
+    grassFamilyId: grassFamily.id,
+    density: 0.42,
+    variation: 0.22,
+    edgeFalloff: 0.08,
+    residualDensity: 0.12
+  };
+  const grassFamilies = plan.grassFamilies.length > 0 ? plan.grassFamilies : [grassFamily];
+
+  if (plan.zones.length < SCENE_COMPOSITION_LIMITS.zoneCount) {
+    const usedIds = new Set(plan.zones.map((zone) => zone.id));
+    let id = 'ambient-ground-cover';
+    for (let suffix = 2; usedIds.has(id); suffix += 1) id = `ambient-ground-cover-${suffix}`;
+    return {
+      ...plan,
+      grassFamilies,
+      zones: [...plan.zones, {
+        id,
+        label: 'Ambient ground cover',
+        role: 'transition',
+        importance: 0.1,
+        region: { kind: 'circle', center: [0, 0], radius: 1.2 },
+        brief: {
+          atmosphere: 'Continuous natural ground cover',
+          hierarchy: 'Low vegetation fills otherwise blank ground without competing with focal areas',
+          openness: 0.82,
+          transitionIntent: 'Blend softly beneath the authored zones'
+        },
+        terrain: { elevation: 0, roughness: 0, flatness: 0 },
+        layers: [],
+        grassLayers: [grassLayer],
+        excludeZoneIds: []
+      }]
+    };
+  }
+
+  const candidateIndex = plan.zones.findIndex((zone) => !zone.water && zone.grassLayers.length > 0);
+  const fallbackIndex = plan.zones.findIndex((zone) => !zone.water);
+  const index = candidateIndex >= 0 ? candidateIndex : fallbackIndex;
+  if (index < 0) throw new Error('scene_composition_insufficient_coverage');
+  const zones = plan.zones.map((zone, zoneIndex) => zoneIndex === index ? {
+    ...zone,
+    region: { kind: 'circle' as const, center: [0, 0] as [number, number], radius: 1.2 },
+    grassLayers: zone.grassLayers.length > 0 ? zone.grassLayers : [grassLayer]
+  } : zone);
+  return { ...plan, grassFamilies, zones };
+}
+
 function normalizeRequirement(
   value: unknown,
   zones: SceneCompositionZone[],
@@ -351,7 +424,7 @@ function normalizeZone(
     region: {
       kind: 'circle',
       center: [clamp(center[0], -1, 1), clamp(center[1], -1, 1)],
-      radius: clamp(finiteNumber(regionInput.radius, 0.25), 0.05, 0.9)
+      radius: clamp(finiteNumber(regionInput.radius, 0.25), 0.05, 1.2)
     },
     brief: {
       atmosphere: cleanText(briefInput.atmosphere, '', 160),

@@ -3,6 +3,7 @@ import type { MapAiSuggestion } from '../shared/mapOperations';
 import { normalizeMapAiMaxNewAssets } from '../shared/mapPlanning';
 import { CHAT_PROVIDER_OPTIONS, type AgentProgressEvent, type ChatProvider } from '../shared/protocol';
 import {
+  ensureMinimumSceneCoverage,
   isCompositionEmptyMap,
   normalizeSceneCompositionPlan,
   SCENE_COMPOSITION_LIMITS,
@@ -83,10 +84,10 @@ export async function runMapCompositionWorkflow(
     cleanPrompt,
     (value) => {
       const normalized = normalizeSceneCompositionPlan(value, map);
-      return {
+      return ensureMinimumSceneCoverage({
         ...normalized,
         assetFamilies: normalized.assetFamilies.map((family) => ({ ...family, desiredVariants: 1 }))
-      };
+      });
     },
     options,
     0.45
@@ -112,7 +113,7 @@ export async function runMapCompositionWorkflow(
         options,
         0.3
       );
-      plan = applySceneAdvice(plan, advice, map);
+      plan = ensureMinimumSceneCoverage(applySceneAdvice(plan, advice, map));
       consultationTrace.push({
         id: consultation.id,
         summary: advice.summary,
@@ -191,7 +192,7 @@ export async function runMapCompositionWorkflow(
     };
   }
   if (review.status === 'revise' && review.patches.length > 0) {
-    plan = applySceneAdvice(plan, review, map);
+    plan = ensureMinimumSceneCoverage(applySceneAdvice(plan, review, map));
     compiled = compileSceneComposition(map, plan, resolvedFamilies);
     outcome = ensureSceneCompositionOutcome(map, plan, resolvedFamilies, compiled);
     compiled = outcome.compiled;

@@ -3,8 +3,12 @@ import { sceneZoneWorldRegion, type SceneCompositionPlan } from './sceneComposit
 import {
   DEFAULT_MAP_VISUAL_SEMANTICS,
   type MapVisualSemantics,
+  type SceneVisualZone,
+  type VisualZoneField,
   type VisualZoneTag
 } from './visualDirection';
+
+export type VisualZonePatch = Partial<Pick<SceneVisualZone, 'center' | 'radius' | 'tags' | 'intensity'>>;
 
 /** Compiles the director's free-form composition into stable spatial tags. */
 export function compileMapVisualSemantics(
@@ -47,7 +51,11 @@ export function compileMapVisualSemantics(
 
 /** Adds deterministic spatial facts for structured content created outside the director workflow. */
 export function completeMapVisualSemantics(map: EditableMap): MapVisualSemantics {
-  const zones = map.visualSemantics.zones.map((zone) => ({ ...zone, tags: [...zone.tags] }));
+  const zones = map.visualSemantics.zones.map((zone) => ({
+    ...zone,
+    tags: [...zone.tags],
+    ...(zone.locks ? { locks: { ...zone.locks } } : {})
+  }));
   for (const water of map.waterBodies) {
     const center: [number, number] = [
       water.points.reduce((sum, point) => sum + point[0], 0) / water.points.length,
@@ -76,6 +84,38 @@ export function completeMapVisualSemantics(map: EditableMap): MapVisualSemantics
     zones: zones.slice(0, 24),
     wind: { ...map.visualSemantics.wind, direction: [...map.visualSemantics.wind.direction] }
   };
+}
+
+/** Applies an AI-derived zone patch without overwriting user-locked fields. */
+export function patchMapVisualZone(
+  semantics: MapVisualSemantics,
+  zoneId: string,
+  patch: VisualZonePatch,
+  options: { respectLocks?: boolean; lockFields?: readonly VisualZoneField[] } = {}
+): MapVisualSemantics {
+  const respectLocks = options.respectLocks !== false;
+  const lockFields = new Set(options.lockFields ?? []);
+  let found = false;
+  const zones = semantics.zones.map((zone) => {
+    if (zone.id !== zoneId) return zone;
+    found = true;
+    const locks = { ...(zone.locks ?? {}) };
+    for (const field of lockFields) locks[field] = true;
+    const next = { ...zone, tags: [...zone.tags] };
+    for (const field of ['center', 'radius', 'tags', 'intensity'] as const) {
+      if (patch[field] === undefined || (respectLocks && zone.locks?.[field])) continue;
+      if (field === 'center') next.center = [...patch.center!] as [number, number];
+      else if (field === 'tags') next.tags = [...patch.tags!];
+      else if (field === 'radius') next.radius = patch.radius!;
+      else next.intensity = patch.intensity!;
+    }
+    return {
+      ...next,
+      ...(Object.keys(locks).length > 0 ? { locks } : { locks: undefined })
+    };
+  });
+  if (!found) throw new Error('unknown_visual_zone');
+  return { ...semantics, zones };
 }
 
 function has(text: string, tokens: readonly string[]): boolean {

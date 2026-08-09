@@ -40,6 +40,8 @@ import {
 } from '../shared/modelGenerationMode';
 import { runMapCompositionWorkflow } from './mapCompositionWorkflow';
 import { completeMapVisualSemantics } from '../shared/mapVisualSemantics';
+import { patchMapVisualZone, type VisualZonePatch } from '../shared/mapVisualSemantics';
+import { VISUAL_ZONE_TAGS, normalizeMapVisualSemantics, type VisualZoneTag } from '../shared/visualDirection';
 
 export interface MapAiOptions {
   apiBase?: string;
@@ -50,6 +52,8 @@ export interface MapAiOptions {
   reuseExistingAssets?: boolean;
   reusableAssetIds?: readonly string[];
   maxNewAssets?: number;
+  /** Optional persisted visual-zone ID used to bound a refine pass. */
+  targetVisualZoneId?: string;
 }
 
 export interface AssetGenerationRequest {
@@ -102,7 +106,7 @@ export async function runMapAgent(
     total: requests.length
   });
   if (requests.length === 0) {
-    const firstSuggestion = normalizeMapSuggestion(firstContent, map, assets, mode);
+    const firstSuggestion = normalizeMapSuggestion(firstContent, map, assets, mode, options.targetVisualZoneId);
     assertNoForbiddenAssetReuse(firstSuggestion, new Set(), options);
     if (hasSpatialOperations(firstSuggestion)) {
       const validated = finalizeMapAgentSuggestion(map, assets, firstSuggestion, options);
@@ -111,7 +115,7 @@ export async function runMapAgent(
     }
     options.onProgress?.({ phase: 'replanning', label: '补充空间操作' });
     const retryContent = await requestMapPlan(prompt, map, assets, options, true, mode);
-    const retrySuggestion = normalizeMapSuggestion(retryContent, map, assets, mode);
+    const retrySuggestion = normalizeMapSuggestion(retryContent, map, assets, mode, options.targetVisualZoneId);
     assertNoForbiddenAssetReuse(retrySuggestion, new Set(), options);
     if (!hasSpatialOperations(retrySuggestion)) throw new Error('map_agent_no_spatial_plan');
     const validated = finalizeMapAgentSuggestion(map, assets, retrySuggestion, options);
@@ -143,7 +147,7 @@ export async function runMapAgent(
     throw new Error('map_agent_asset_limit');
   }
   const suggestion = {
-    ...normalizeMapSuggestion(finalContent, map, expandedAssets, mode),
+    ...normalizeMapSuggestion(finalContent, map, expandedAssets, mode, options.targetVisualZoneId),
     generatedAssets: generatedAssets.map((asset) => ({ id: asset.id, name: asset.name }))
   };
   assertNoForbiddenAssetReuse(suggestion, generatedAssetIds, options);
@@ -215,7 +219,8 @@ export function normalizeMapSuggestion(
   content: string,
   map: EditableMap,
   assets: readonly MapAsset[],
-  mode: 'generate' | 'refine' = 'generate'
+  mode: 'generate' | 'refine' = 'generate',
+  targetVisualZoneId?: string
 ): MapAiSuggestion {
   const input = parseJsonObject(content);
 
@@ -225,6 +230,7 @@ export function normalizeMapSuggestion(
   const operations: MapOperation[] = renderPromptSuggestions.length > 0
     ? [{ type: 'map.update', renderPromptSuggestions }]
     : [];
+  operations.push(...normalizeVisualZoneUpdateOperations(input.visualZoneUpdates, map, targetVisualZoneId));
   if (input.terrainGeneration !== undefined && input.terrainGeneration !== null) {
     operations.push({
       type: 'terrain.generate',
@@ -273,12 +279,15 @@ export function normalizeMapSuggestion(
     : scatterPreview;
   const spawnOperation = normalizeSpawnOperation(input.spawn, populatedPreview);
   if (spawnOperation) operations.push(spawnOperation);
-  if (operations.length === 0) throw new Error('empty_map_suggestion');
+  const scopedOperations = targetVisualZoneId
+    ? scopeMapOperationsToVisualZone(operations, map, targetVisualZoneId)
+    : operations;
+  if (scopedOperations.length === 0) throw new Error('empty_map_suggestion');
 
-  applyMapOperations(map, operations);
+  applyMapOperations(map, scopedOperations);
   return {
     summary: cleanText(input.summary, 'AI 地图建议', 200),
-    operations,
+    operations: scopedOperations,
     renderPromptSuggestions,
     generatedAssets: []
   };
@@ -313,6 +322,95 @@ function collectReusedAssets(
   return assets
     .filter((asset) => allowed.has(asset.id) && used.has(asset.id) && asset.libraryId)
     .map((asset) => ({ id: asset.id, name: asset.name, libraryId: asset.libraryId as string }));
+}
+
+function normalizeVisualZoneUpdateOperations(
+  value: unknown,
+  map: EditableMap,
+  targetVisualZoneId?: string
+): MapOperation[] {
+  if (!Array.isArray(value)) return [];
+  let semantics = map.visualSemantics;
+  for (const item of value.slice(0, 16)) {
+    if (!item || typeof item !== 'object') throw new Error('invalid_visual_zone_update');
+    const input = item as Record<string, unknown>;
+    const zoneId = typeof input.zoneId === 'string' ? input.zoneId.trim() : '';
+    if (!zoneId || (targetVisualZoneId && zoneId !== targetVisualZoneId)) continue;
+    const patch: VisualZonePatch = {};
+    if (Array.isArray(input.center) && input.center.length >= 2) {
+      patch.center = [
+        requiredNumber(input.center[0], 'invalid_visual_zone_update'),
+        requiredNumber(input.center[1], 'invalid_visual_zone_update')
+      ];
+    }
+    if (input.radius !== undefined) patch.radius = requiredNumber(input.radius, 'invalid_visual_zone_update');
+    if (input.intensity !== undefined) patch.intensity = requiredNumber(input.intensity, 'invalid_visual_zone_update');
+    if (Array.isArray(input.tags)) {
+      patch.tags = input.tags.filter((tag): tag is VisualZoneTag => (
+        typeof tag === 'string'
+        && VISUAL_ZONE_TAGS.includes(tag as VisualZoneTag)
+      ));
+    }
+    semantics = normalizeMapVisualSemantics(patchMapVisualZone(semantics, zoneId, patch));
+  }
+  return JSON.stringify(semantics) === JSON.stringify(map.visualSemantics)
+    ? []
+    : [{ type: 'map.update', visualSemantics: semantics }];
+}
+
+function scopeMapOperationsToVisualZone(
+  operations: readonly MapOperation[],
+  map: EditableMap,
+  zoneId: string
+): MapOperation[] {
+  const zone = map.visualSemantics.zones.find((item) => item.id === zoneId);
+  if (!zone) throw new Error('unknown_visual_zone');
+  const contains = (x: number, z: number) => Math.hypot(x - zone.center[0], z - zone.center[1]) <= zone.radius;
+  const objectInside = (objectId: string, nextPosition?: Vec3) => {
+    const object = map.objects.find((item) => item.id === objectId);
+    const current = object?.transform.position;
+    return Boolean(
+      current
+      && contains(current[0], current[2])
+      && (!nextPosition || contains(nextPosition[0], nextPosition[2]))
+    );
+  };
+  const waterInside = (waterId: string) => {
+    const water = map.waterBodies.find((item) => item.id === waterId);
+    if (!water || water.points.length === 0) return false;
+    const x = water.points.reduce((sum, point) => sum + point[0], 0) / water.points.length;
+    const z = water.points.reduce((sum, point) => sum + point[1], 0) / water.points.length;
+    return contains(x, z);
+  };
+  return operations.filter((operation) => {
+    switch (operation.type) {
+      case 'map.update': return true;
+      case 'terrain.brush': return contains(operation.point[0], operation.point[2]);
+      case 'paint.add': return contains(operation.stroke.point[0], operation.stroke.point[2]);
+      case 'object.add': return contains(operation.object.transform?.position?.[0] ?? 0, operation.object.transform?.position?.[2] ?? 0);
+      case 'object.update': return objectInside(operation.objectId, operation.patch.transform?.position);
+      case 'object.remove': return objectInside(operation.objectId);
+      case 'water.add': {
+        const points = operation.water.points ?? [];
+        if (points.length === 0) return false;
+        const x = points.reduce((sum, point) => sum + point[0], 0) / points.length;
+        const z = points.reduce((sum, point) => sum + point[1], 0) / points.length;
+        return contains(x, z);
+      }
+      case 'water.update':
+      case 'water.remove': return waterInside(operation.waterId);
+      case 'reference.set': return contains(operation.point[0], operation.point[2]);
+      case 'terrain.generate':
+      case 'terrain.set':
+      case 'grass.layer.add':
+      case 'grass.layer.update':
+      case 'grass.layer.remove':
+      case 'grass.fill':
+      case 'grass.brush':
+      case 'grass.generate':
+      case 'sun.set': return false;
+    }
+  });
 }
 
 function normalizeObjectRefineOperations(
@@ -623,7 +721,7 @@ function buildSystemPrompt(
   assets: readonly MapAsset[],
   finalPass: boolean,
   mode: 'generate' | 'refine',
-  options: Pick<MapAiOptions, 'reuseExistingAssets' | 'reusableAssetIds' | 'maxNewAssets'> = {},
+  options: Pick<MapAiOptions, 'reuseExistingAssets' | 'reusableAssetIds' | 'maxNewAssets' | 'targetVisualZoneId'> = {},
   generatedAssetIds: ReadonlySet<string> = new Set()
 ): string {
   const bounds = getMapBounds(map);
@@ -654,6 +752,10 @@ function buildSystemPrompt(
     objectIds: objects.slice(0, 80).map((object) => object.id)
   }));
   const maxNewAssets = normalizeMapAiMaxNewAssets(options.maxNewAssets);
+  const targetZone = options.targetVisualZoneId
+    ? map.visualSemantics.zones.find((zone) => zone.id === options.targetVisualZoneId)
+    : null;
+  if (options.targetVisualZoneId && !targetZone) throw new Error('unknown_visual_zone');
   const assetReuseInstructions = options.reuseExistingAssets
     ? [
         'Existing asset reuse is enabled. Reuse only when the asset identity, scale, and scene role genuinely fit; broad category tags alone are insufficient.'
@@ -671,7 +773,15 @@ function buildSystemPrompt(
         'To move, rotate, or scale an existing object, use objectUpdates: [{"objectId":"existing object id","x":0,"z":0,"rotationYDeg":0,"scale":1}].',
         'To adjust water, use waterUpdates: [{"waterId":"existing water id","level":0.2,"depth":1.5,"width":2}]. To delete water, use waterRemovals: ["existing water id"].',
         `Current object groups: ${JSON.stringify(currentObjects)}`,
-        `Current waters: ${JSON.stringify(map.waterBodies)}`
+        `Current waters: ${JSON.stringify(map.waterBodies)}`,
+        `Current visual zones: ${JSON.stringify(map.visualSemantics.zones)}`,
+        ...(targetZone ? [
+          `This refine is strictly scoped to visual zone "${targetZone.id}" (${JSON.stringify(targetZone)}).`,
+          'Only change content whose position lies inside that zone. Do not regenerate the terrain base or change content in other zones.',
+          'Use visualZoneUpdates only for this exact zone ID. Locked zone fields are user-authored and will be preserved by the server.'
+        ] : [
+          'When the user names a visual zone ID, use visualZoneUpdates to adjust only that persisted zone.'
+        ])
       ]
     : [
         'This is a new-content planning pass. objectUpdates, objectRemovals, waterUpdates, and waterRemovals must be empty.'
@@ -679,6 +789,7 @@ function buildSystemPrompt(
   return [
     ...refineInstructions,
     ...assetReuseInstructions,
+    'visualZoneUpdates format: [{"zoneId":"existing-zone-id","center":[0,0],"radius":8,"tags":["grass"],"intensity":0.8}]. Omit unchanged fields.',
     '你是 WorldForge 的地图规划器。只规划空间内容，不决定最终渲染风格。',
     '你可以选择确定性地形基底、使用地形笔刷微调、创建湖泊/河流、放置已有资产，以及设置出生点；不得删除或修改已有物体，不得编造资产 ID。',
     '根据田园、峡谷、海岛等场景词主动推导一个简单、合理的空间构图，不要求用户提供坐标。',
@@ -739,7 +850,8 @@ function normalizeAssetRequests(
 
 function hasSpatialOperations(suggestion: MapAiSuggestion): boolean {
   return suggestion.operations.some((operation) =>
-    operation.type === 'terrain.brush'
+    (operation.type === 'map.update' && operation.visualSemantics !== undefined)
+    || operation.type === 'terrain.brush'
     || operation.type === 'terrain.generate'
     || operation.type === 'terrain.set'
     || operation.type === 'water.add'

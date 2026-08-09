@@ -259,6 +259,7 @@ async function handleEditorMaps(req: Req, res: Res, store: MapStore, parts: stri
       reuseExistingAssets?: boolean;
       assetLibraryId?: string;
       maxNewAssets?: number;
+      targetVisualZoneId?: string;
     }>(req);
     const prompt = body.prompt?.trim();
     if (!prompt) throw new HttpError(400, 'missing_prompt');
@@ -304,6 +305,7 @@ async function handleEditorMaps(req: Req, res: Res, store: MapStore, parts: stri
           reuseExistingAssets: body.reuseExistingAssets === true,
           reusableAssetIds: libraryAssets.map((asset) => asset.id),
           maxNewAssets: body.maxNewAssets,
+          targetVisualZoneId: parts[4] === 'refine' ? body.targetVisualZoneId : undefined,
           onProgress,
           createAsset: async (request) => {
             const modelJson = await generateMapAssetWithRetry(request.name, () => generateModel(request.prompt, {

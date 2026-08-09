@@ -15,6 +15,7 @@ import {
   normalizeVisualDirection
 } from '../src/shared/visualDirection';
 import { completeMapVisualSemantics } from '../src/shared/mapVisualSemantics';
+import { patchMapVisualZone } from '../src/shared/mapVisualSemantics';
 
 describe('visual direction contract', () => {
   it('derives a stable water zone for structured water added during refine', () => {
@@ -122,6 +123,23 @@ describe('visual direction contract', () => {
 });
 
 describe('map visual semantics contract', () => {
+  it('preserves user-locked fields while AI-derived fields continue to update', () => {
+    const semantics = normalizeMapVisualSemantics({
+      zones: [{
+        id: 'grove', tags: ['forest'], center: [0, 0], radius: 8, intensity: 1,
+        locks: { center: true }
+      }]
+    });
+
+    const patched = normalizeMapVisualSemantics(patchMapVisualZone(semantics, 'grove', {
+      center: [12, 4], radius: 18, tags: ['forest', 'grass']
+    }));
+
+    expect(patched.zones[0]).toMatchObject({
+      center: [0, 0], radius: 18, tags: ['forest', 'grass'], locks: { center: true }
+    });
+  });
+
   it('adds a deterministic default wind field to old and new maps', () => {
     expect(createEmptyMap('wind').visualSemantics.wind.speed).toBeGreaterThan(0);
     expect(normalizeMap({ id: 'legacy-map' }).visualSemantics.zones).toEqual([]);

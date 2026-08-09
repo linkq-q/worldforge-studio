@@ -9,6 +9,8 @@ export type ContrastMode = typeof CONTRAST_MODES[number];
 export type VisualTimeOfDay = typeof VISUAL_TIMES_OF_DAY[number];
 export type VisualTemperature = typeof VISUAL_TEMPERATURES[number];
 export type VisualZoneTag = typeof VISUAL_ZONE_TAGS[number];
+export const VISUAL_ZONE_FIELDS = ['center', 'radius', 'tags', 'intensity'] as const;
+export type VisualZoneField = typeof VISUAL_ZONE_FIELDS[number];
 
 export interface VisualPalette {
   sky: string;
@@ -45,6 +47,8 @@ export interface SceneVisualZone {
   center: [number, number];
   radius: number;
   intensity: number;
+  /** Fields manually edited by the user and therefore preserved during AI recompute. */
+  locks?: Partial<Record<VisualZoneField, true>>;
 }
 
 export interface SceneWindField {
@@ -211,12 +215,17 @@ function normalizeVisualZone(value: unknown): SceneVisualZone | null {
   const tags = Array.isArray(raw.tags)
     ? [...new Set(raw.tags.filter((tag): tag is VisualZoneTag => VISUAL_ZONE_TAGS.includes(tag as VisualZoneTag)))].slice(0, 8)
     : [];
+  const rawLocks = objectValue(raw.locks);
+  const locks = Object.fromEntries(VISUAL_ZONE_FIELDS
+    .filter((field) => rawLocks[field] === true)
+    .map((field) => [field, true])) as Partial<Record<VisualZoneField, true>>;
   return {
     id,
     tags,
     center: pairValue(raw.center, [0, 0]),
     radius: numberValue(raw.radius, 8, 0.5, 512),
-    intensity: numberValue(raw.intensity, 1, 0, 1)
+    intensity: numberValue(raw.intensity, 1, 0, 1),
+    ...(Object.keys(locks).length > 0 ? { locks } : {})
   };
 }
 
