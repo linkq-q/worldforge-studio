@@ -64,26 +64,17 @@ describe('render environment bridge', () => {
     environment.dispose();
   });
 
-  it('keeps HDRI reflection restrained without weakening the planar scene reflection', () => {
+  it('configures the single HDRI water reflection input', () => {
     const surface = {
-      setWaterReflectionParams: vi.fn(),
-      setPlanarReflectionParams: vi.fn()
+      setWaterReflectionParams: vi.fn()
     };
 
     configureWaterReflection(surface, {
-      planarStrength: 0.9,
       environmentStrength: 0.28,
-      environmentExposure: 0.55,
-      distortion: 0.07,
-      fresnelBoost: 1.4
+      environmentExposure: 0.55
     });
 
     expect(surface.setWaterReflectionParams).toHaveBeenCalledWith({ strength: 0.28, exposure: 0.55 });
-    expect(surface.setPlanarReflectionParams).toHaveBeenCalledWith({
-      strength: 0.9,
-      distortion: 0.07,
-      fresnelBoost: 1.4
-    });
   });
 
   it('binds the generated shore-distance texture in the same world region as the map water', () => {

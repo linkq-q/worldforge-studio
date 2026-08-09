@@ -14,9 +14,6 @@ function createHarness(needsPrePass = true) {
     passes: [] as Array<{ enabled: boolean; renderToScreen: boolean }>,
     render: vi.fn(() => order.push('composer'))
   };
-  const planarReflection = {
-    render: vi.fn(() => order.push('reflection'))
-  };
   const normal = new THREE.Texture();
   const depth = new THREE.DepthTexture(1, 1);
   const coordinator = new RenderFrameCoordinator({
@@ -24,7 +21,6 @@ function createHarness(needsPrePass = true) {
     scene,
     camera,
     composer: composer as unknown as EffectComposer,
-    planarReflection,
     needsPrePass: () => needsPrePass,
     producePrePass: () => {
       order.push('prepass');
@@ -39,13 +35,13 @@ function createHarness(needsPrePass = true) {
 }
 
 describe('RenderFrameCoordinator', () => {
-  it('runs reflection, demanded pre-pass, water and the composer in runtime order', () => {
+  it('runs the demanded pre-pass, water and the composer in runtime order', () => {
     const { coordinator, order } = createHarness(true);
     coordinator.registerPass({ name: 'base', enabled: true } as never, 'base', 0, true);
 
     coordinator.renderFrame(1 / 60, 2);
 
-    expect(order).toEqual(['reflection', 'prepass', 'water:depth', 'composer']);
+    expect(order).toEqual(['prepass', 'water:depth', 'composer']);
   });
 
   it('keeps pass membership behind the pipeline registry', () => {
@@ -69,6 +65,6 @@ describe('RenderFrameCoordinator', () => {
 
     coordinator.renderFrame(1 / 60, 2);
 
-    expect(order).toEqual(['reflection', 'water:none', 'composer']);
+    expect(order).toEqual(['water:none', 'composer']);
   });
 });

@@ -13,9 +13,9 @@ describe('developer render controls', () => {
   it('previews the current water value across the hard range before access policy limits', () => {
     const accessPolicy = createDefaultRenderAccessPolicy();
     const reflectionAccess = accessPolicy.parameters.find((entry) => (
-      entry.moduleId === 'runtime.water-style' && entry.parameter === 'reflectionStrength'
+      entry.moduleId === 'runtime.water-style' && entry.parameter === 'environmentReflectionStrength'
     ));
-    if (!reflectionAccess) throw new Error('missing reflectionStrength policy');
+    if (!reflectionAccess) throw new Error('missing environmentReflectionStrength policy');
     reflectionAccess.developer = { enabled: true, min: 0.2, max: 0.4 };
 
     const scheme: RenderScheme = {
@@ -33,9 +33,8 @@ describe('developer render controls', () => {
           scope: { target: 'water', tag: 'water' },
           params: {
             recipe: 'calm-lake',
-            reflectionStrength: 0.9,
-            reflectionDistortion: 0.07,
-            reflectionFresnel: 1.4
+            environmentReflectionStrength: 0.9,
+            environmentReflectionExposure: 0.7
           }
         }]
       },
@@ -62,23 +61,21 @@ describe('developer render controls', () => {
     const html = renderDeveloperCapability(capability, scheme, []);
     const currentControls = html.indexOf('developer-preset-grid');
     const policyControls = html.indexOf('developer-policy-table');
-    const reflectionSlider = html.match(/<input class="developer-value-range"[^>]+data-dev-param="reflectionStrength"[^>]+>/)?.[0];
+    const reflectionSlider = html.match(/<input class="developer-value-range"[^>]+data-dev-param="environmentReflectionStrength"[^>]+>/)?.[0];
     const waveSlider = html.match(/<input class="developer-value-range"[^>]+data-dev-param="waveStrength"[^>]+>/)?.[0];
-    const fresnelSlider = html.match(/<input class="developer-value-range"[^>]+data-dev-param="reflectionFresnel"[^>]+>/)?.[0];
 
     expect(currentControls).toBeGreaterThan(-1);
     expect(policyControls).toBeGreaterThan(currentControls);
     expect(reflectionSlider).toContain('min="0"');
-    expect(reflectionSlider).toContain('max="1.5"');
+    expect(reflectionSlider).toContain('max="1"');
     expect(reflectionSlider).toContain('value="0.9"');
     expect(reflectionSlider).not.toContain('disabled');
     expect(waveSlider).toContain('step="0.01"');
-    expect(fresnelSlider).toContain('step="0.01"');
-    expect(html).toContain('场景倒影强度');
     expect(html).toContain('HDRI 环境反射');
     expect(html).toContain('HDRI 反射曝光');
-    expect(html).toContain('反射扰动');
-    expect(html).toContain('反射 Fresnel');
+    expect(html).not.toContain('data-dev-param="reflectionStrength"');
+    expect(html).not.toContain('data-dev-param="reflectionDistortion"');
+    expect(html).not.toContain('data-dev-param="reflectionFresnel"');
     expect(html).toContain('全局结构化水体');
     expect(html).not.toContain('添加作用域');
     expect(html).not.toContain('在此预设中启用');

@@ -74,6 +74,8 @@ describe('structured map water rendering', () => {
     expect(river.position.y).toBeCloseTo(0.5);
     expect(lake.userData.materialTags).toEqual(expect.arrayContaining(['water', 'lake', 'lake-1']));
     expect(river.userData.materialTags).toEqual(expect.arrayContaining(['water', 'river', 'river-1']));
+    expect(lake.userData.excludeFromPlanarReflection).toBe(true);
+    expect(river.userData.excludeFromPlanarReflection).toBe(true);
     expect(lake.geometry.getAttribute('position').count).toBeGreaterThanOrEqual(3);
     expect(river.geometry.getAttribute('position').count).toBeGreaterThanOrEqual(6);
     for (const water of [lake, river]) {
@@ -96,6 +98,57 @@ describe('structured map water rendering', () => {
       const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
       materials.forEach((material) => material.dispose());
       (mesh.userData.waterShore?.texture as THREE.Texture | undefined)?.dispose();
+    });
+  });
+
+  it('uses one outer shoreline field for overlapping water blocks at the same level', () => {
+    const map = createEmptyMap('joined-water', 'map-joined-water');
+    map.waterBodies = [
+      {
+        id: 'left-water', name: '左侧水块', type: 'lake', level: 0.35, depth: 1.8, width: 1.2,
+        points: [[-6, -4], [2, -4], [2, 4], [-6, 4]]
+      },
+      {
+        id: 'right-water', name: '右侧水块', type: 'lake', level: 0.35, depth: 1.8, width: 1.2,
+        points: [[-2, -4], [6, -4], [6, 4], [-2, 4]]
+      },
+      {
+        id: 'separate-pond', name: '独立池塘', type: 'lake', level: 0.35, depth: 1.2, width: 1.2,
+        points: [[20, -2], [24, -2], [24, 2], [20, 2]]
+      }
+    ];
+
+    const waterRoot = buildStructuredWaterGroup(map);
+    const left = waterRoot.getObjectByName('water:left-water') as THREE.Mesh;
+    const right = waterRoot.getObjectByName('water:right-water') as THREE.Mesh;
+    const separate = waterRoot.getObjectByName('water:separate-pond') as THREE.Mesh;
+    const leftShore = left.userData.waterShore as {
+      texture: THREE.DataTexture;
+      center: [number, number];
+      size: number;
+    };
+    const rightShore = right.userData.waterShore as typeof leftShore;
+    const separateShore = separate.userData.waterShore as typeof leftShore;
+    const image = leftShore.texture.image as { data: Uint8Array; width: number; height: number };
+    const seamColumn = Math.floor((0.5 + (0 - leftShore.center[0]) / leftShore.size) * image.width);
+    const seamRow = Math.floor((0.5 - (0 - leftShore.center[1]) / leftShore.size) * image.height);
+
+    expect(rightShore.texture).toBe(leftShore.texture);
+    expect(separateShore.texture).not.toBe(leftShore.texture);
+    expect(image.data[seamRow * image.width + seamColumn]).toBeGreaterThan(128);
+
+    const disposed = new Set<THREE.Texture>();
+    waterRoot.traverse((object) => {
+      const mesh = object as THREE.Mesh;
+      if (!mesh.isMesh) return;
+      mesh.geometry.dispose();
+      const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+      materials.forEach((material) => material.dispose());
+      const texture = mesh.userData.waterShore?.texture as THREE.Texture | undefined;
+      if (texture && !disposed.has(texture)) {
+        disposed.add(texture);
+        texture.dispose();
+      }
     });
   });
 

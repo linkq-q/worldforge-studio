@@ -2,7 +2,6 @@ import * as THREE from 'three';
 import { RenderStyleManager } from '@voxel-studio/render-runtime';
 import { configureSunLight } from './lighting';
 import { HDRI_DOME_RADIUS, HdriSkyController } from './hdriSky';
-import { MapShadowRuntime } from './mapShadowRuntime';
 import { AtmosphereFxRuntime } from './atmosphereFxRuntime';
 import { RenderRuntimeAdapter } from './renderRuntimeAdapter';
 import { configureRendererOutput } from './renderOutputPipeline';
@@ -69,7 +68,7 @@ export interface RenderSceneRuntimeOptions {
 /**
  * Everything needed to show a WorldForge map exactly the way the editor does,
  * with no editor UI attached: scene, lights, the runtime style/post adapter,
- * cascaded shadows and the HDRI sky.
+ * fitted map shadows and the HDRI sky.
  *
  * The editor and `createMapViewer` both drive one of these, so a render
  * capability added for one can never be silently missing from the other.
@@ -87,7 +86,6 @@ export class RenderSceneRuntime {
   readonly meshRegistry = new Map<string, THREE.Mesh>();
   readonly styleManager: RenderStyleManager;
   readonly adapter: RenderRuntimeAdapter;
-  readonly shadows: MapShadowRuntime;
   readonly hdriSky: HdriSkyController;
   readonly atmosphereFx: AtmosphereFxRuntime;
 
@@ -125,7 +123,6 @@ export class RenderSceneRuntime {
     // primitive cache. Keep them in the same PBR/Cel refresh path as Scene Builder.
     this.styleManager.getBatchMeshes = () => this.rendered?.getRuntimeBatchMeshes() ?? [];
     this.adapter = new RenderRuntimeAdapter(this.renderer, this.scene, this.camera);
-    this.shadows = new MapShadowRuntime(this.scene, this.camera, this.sunLight, () => this.updateLighting());
     this.hdriSky = new HdriSkyController(
       this.renderer,
       this.scene,
@@ -155,7 +152,6 @@ export class RenderSceneRuntime {
         syncEnvironment: rendered.syncMaterialEnvironment
       } : undefined
     );
-    this.shadows.setSceneRoots(rendered?.group ?? null, rendered?.modelsRoot ?? null);
     this.rendered = rendered;
     this.syncAtmosphereFx();
     if (!rendered) return;
@@ -176,7 +172,6 @@ export class RenderSceneRuntime {
   renderFrame(deltaTime: number, elapsedSeconds: number): void {
     this.rendered?.update(deltaTime, this.camera, this.adapter.getContentVisibilityDistance());
     this.atmosphereFx.update(deltaTime, elapsedSeconds);
-    this.shadows.update();
     this.adapter.tick(deltaTime, elapsedSeconds);
     this.adapter.render();
   }

@@ -12,7 +12,6 @@ interface WaterEnvironmentSurface {
 
 interface WaterReflectionSurface {
   setWaterReflectionParams(params: Record<string, unknown>): void;
-  setPlanarReflectionParams(params: Record<string, unknown>): void;
 }
 
 interface WaterShoreSurface {
@@ -27,11 +26,8 @@ export interface WaterShoreBinding {
 }
 
 export interface WaterReflectionSettings {
-  planarStrength: number;
   environmentStrength: number;
   environmentExposure?: number;
-  distortion?: number;
-  fresnelBoost?: number;
 }
 
 export function distanceAtFogOpacity(
@@ -92,10 +88,5 @@ export function configureWaterReflection(
   surface.setWaterReflectionParams({
     strength: settings.environmentStrength,
     exposure: settings.environmentExposure
-  });
-  surface.setPlanarReflectionParams({
-    strength: settings.planarStrength,
-    distortion: settings.distortion,
-    fresnelBoost: settings.fresnelBoost
   });
 }

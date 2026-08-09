@@ -169,14 +169,20 @@ export interface RuntimeWaterStyle {
   color?: string;
   shallowColor?: string;
   depthColor?: string;
+  foamColor?: string;
   waveStrength?: number;
   waveSpeed?: number;
+  waveScale?: number;
+  waveDirection?: number;
+  waveSharpness?: number;
   foamStrength?: number;
-  reflectionStrength?: number;
+  shoreFoamWidth?: number;
+  shoreWaveRange?: number;
+  shoreWaveFrequency?: number;
+  shoreWaveWidth?: number;
+  shoreWaveBreakup?: number;
   environmentReflectionStrength?: number;
   environmentReflectionExposure?: number;
-  reflectionDistortion?: number;
-  reflectionFresnel?: number;
 }
 
 export interface RuntimeGrassStyle {
@@ -410,18 +416,24 @@ export const RENDER_CAPABILITIES: readonly RenderCapability[] = [
         values: ['calm-lake', 'clear-river', 'stylized', 'stormy'],
         default: 'calm-lake'
       },
-      opacity: { type: 'number', min: 0.25, max: 1, default: 0.88 },
-      color: { type: 'color', default: '#4f96a8' },
-      shallowColor: { type: 'color', default: '#71b8bd' },
-      depthColor: { type: 'color', default: '#173b50' },
+      opacity: { type: 'number', min: 0.25, max: 1, default: 0.62 },
+      color: { type: 'color', default: '#347f7c' },
+      shallowColor: { type: 'color', default: '#67aaa0' },
+      depthColor: { type: 'color', default: '#173f49' },
+      foamColor: { type: 'color', default: '#ffffff' },
       waveStrength: { type: 'number', min: 0, max: 1.5, default: 0.35 },
       waveSpeed: { type: 'number', min: 0, max: 2, default: 0.3 },
+      waveScale: { type: 'number', min: 0.25, max: 4, default: 1.3 },
+      waveDirection: { type: 'number', min: -180, max: 180, default: 28 },
+      waveSharpness: { type: 'number', min: 0.5, max: 4, default: 2.1 },
       foamStrength: { type: 'number', min: 0, max: 1.5, default: 0.45 },
-      reflectionStrength: { type: 'number', min: 0, max: 1.5, default: 0.6 },
-      environmentReflectionStrength: { type: 'number', min: 0, max: 1, default: 0.3 },
-      environmentReflectionExposure: { type: 'number', min: 0.1, max: 1.5, default: 0.55 },
-      reflectionDistortion: { type: 'number', min: 0, max: 0.2, default: 0.04 },
-      reflectionFresnel: { type: 'number', min: 0, max: 3, default: 1 }
+      shoreFoamWidth: { type: 'number', min: 0.02, max: 0.25, default: 0.06 },
+      shoreWaveRange: { type: 'number', min: 0.12, max: 1, default: 0.44 },
+      shoreWaveFrequency: { type: 'number', min: 1, max: 16, default: 6 },
+      shoreWaveWidth: { type: 'number', min: 0.1, max: 0.9, default: 0.5 },
+      shoreWaveBreakup: { type: 'number', min: 0, max: 0.8, default: 0.39 },
+      environmentReflectionStrength: { type: 'number', min: 0, max: 1, default: 0.22 },
+      environmentReflectionExposure: { type: 'number', min: 0.1, max: 1.5, default: 0.5 }
     }
   },
   {
@@ -770,14 +782,20 @@ export function compileRuntimeWaterStyles(plan: RenderPlan): RuntimeWaterStyle[]
       color: stringValue(item.params.color) ?? directed?.color,
       shallowColor: stringValue(item.params.shallowColor) ?? directed?.shallowColor,
       depthColor: stringValue(item.params.depthColor) ?? directed?.depthColor,
+      foamColor: stringValue(item.params.foamColor),
       waveStrength: numericValue(item.params.waveStrength),
       waveSpeed: numericValue(item.params.waveSpeed),
+      waveScale: numericValue(item.params.waveScale),
+      waveDirection: numericValue(item.params.waveDirection),
+      waveSharpness: numericValue(item.params.waveSharpness),
       foamStrength: numericValue(item.params.foamStrength),
-      reflectionStrength: numericValue(item.params.reflectionStrength),
+      shoreFoamWidth: numericValue(item.params.shoreFoamWidth),
+      shoreWaveRange: numericValue(item.params.shoreWaveRange),
+      shoreWaveFrequency: numericValue(item.params.shoreWaveFrequency),
+      shoreWaveWidth: numericValue(item.params.shoreWaveWidth),
+      shoreWaveBreakup: numericValue(item.params.shoreWaveBreakup),
       environmentReflectionStrength: numericValue(item.params.environmentReflectionStrength),
-      environmentReflectionExposure: numericValue(item.params.environmentReflectionExposure),
-      reflectionDistortion: numericValue(item.params.reflectionDistortion),
-      reflectionFresnel: numericValue(item.params.reflectionFresnel)
+      environmentReflectionExposure: numericValue(item.params.environmentReflectionExposure)
     }));
 }
 
@@ -902,11 +920,15 @@ export function createDefaultRenderAccessPolicy(): RenderAccessPolicy {
         ...(rule.type === 'number' ? { min: rule.min, max: rule.max } : {}),
         ...(rule.type === 'enum' ? { values: [...rule.values] } : {})
       };
+      const aiMax = aiSafetyMaximum(capability.id, parameter);
+      const aiRange = aiMax === undefined || range.max === undefined
+        ? range
+        : { ...range, max: Math.min(range.max, aiMax) };
       return {
         moduleId: capability.id,
         parameter,
         control,
-        ai: { ...range },
+        ai: { ...aiRange },
         developer: {
           ...range,
           enabled: true
@@ -914,6 +936,21 @@ export function createDefaultRenderAccessPolicy(): RenderAccessPolicy {
       };
     }))
   };
+}
+
+function aiSafetyMaximum(moduleId: RenderModuleId, parameter: string): number | undefined {
+  const limits: Partial<Record<RenderModuleId, Record<string, number>>> = {
+    'environment.hdri': { exposure: 1.5, intensity: 1.8 },
+    'lighting.hemisphere': { intensity: 2.4 },
+    'lighting.sun': { intensity: 5 },
+    'presentation.exposure': { value: 1.5 },
+    'runtime.water-style': {
+      opacity: 0.78,
+      environmentReflectionStrength: 0.35,
+      environmentReflectionExposure: 0.7
+    }
+  };
+  return limits[moduleId]?.[parameter];
 }
 
 export function normalizeRenderAccessPolicy(input: unknown): RenderAccessPolicy {
@@ -975,11 +1012,15 @@ function normalizeParams(
   const output: Record<string, string | number> = {};
   for (const key of Object.keys(input)) {
     const rule = capability.params[key];
-    if (!rule) throw new Error(`unknown_render_parameter:${capability.id}.${key}`);
+    if (!rule) {
+      if (isRetiredRenderParameter(capability.id, key)) continue;
+      throw new Error(`unknown_render_parameter:${capability.id}.${key}`);
+    }
     const access = accessPolicy?.parameters.find((entry) => (
       entry.moduleId === capability.id && entry.parameter === key
     ))?.[actor];
     if (access && !access.enabled) {
+      if (actor === 'ai') continue;
       throw new Error(`render_parameter_forbidden:${capability.id}.${key}`);
     }
     if (rule.type === 'color') {
@@ -1017,6 +1058,11 @@ function normalizeParams(
     output[key] = Math.min(max, Math.max(min, number));
   }
   return output;
+}
+
+function isRetiredRenderParameter(moduleId: RenderModuleId, parameter: string): boolean {
+  return moduleId === 'runtime.water-style'
+    && ['reflectionStrength', 'reflectionDistortion', 'reflectionFresnel'].includes(parameter);
 }
 
 function normalizeScope(value: unknown, capability: RenderCapability): RenderModuleScope {

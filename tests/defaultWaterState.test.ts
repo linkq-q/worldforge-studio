@@ -1,7 +1,9 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
   DEFAULT_WATER_STATE,
-  applyDefaultWaterState
+  RENDER_PLAN_WATER_BASE_STATE,
+  applyDefaultWaterState,
+  applyRenderPlanWaterBaseState
 } from '../src/client/defaultWaterState';
 
 describe('default water state', () => {
@@ -26,6 +28,22 @@ describe('default water state', () => {
         enabled: true,
         largeStrength: 1.33
       }
+    });
+  });
+
+  it('starts generated render plans without broad white surface foam', () => {
+    const importState = vi.fn();
+
+    applyRenderPlanWaterBaseState({ importState });
+
+    expect(importState).toHaveBeenNthCalledWith(1, DEFAULT_WATER_STATE);
+    expect(importState).toHaveBeenNthCalledWith(2, RENDER_PLAN_WATER_BASE_STATE);
+    expect(RENDER_PLAN_WATER_BASE_STATE).toEqual({
+      uFoamStrength: 0,
+      uContactFoamEnabled: false,
+      uWhitecapEnabled: false,
+      uToonPatternEnabled: true,
+      uRippleDecalEnabled: false
     });
   });
 });

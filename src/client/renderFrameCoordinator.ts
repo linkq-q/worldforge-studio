@@ -13,7 +13,6 @@ export interface RenderFrameCoordinatorOptions {
   scene: THREE.Scene;
   camera: THREE.PerspectiveCamera;
   composer: EffectComposer;
-  planarReflection: { render(): void; enabled?: boolean };
   needsPrePass(): boolean;
   producePrePass(): RenderPrePassResources | null;
   updateWater(deltaTime: number, depthTexture: THREE.DepthTexture | null): void;
@@ -40,7 +39,6 @@ export class RenderFrameCoordinator {
       camera: options.camera,
       composer: options.composer
     });
-    this.pipeline.setPlanarReflectionPass(options.planarReflection);
     this.pipeline.graph.registerProducer({
       id: 'worldforgePrePass',
       phase: 'prePass',

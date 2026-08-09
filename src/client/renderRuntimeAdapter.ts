@@ -21,7 +21,7 @@ import {
 } from '@voxel-studio/render-runtime/postprocess';
 import { WaterSurface, WaterfallSurface } from '@voxel-studio/render-runtime/environment';
 import { applyMaterialSurfaceBinding, createEffectRuntime } from '@voxel-studio/render-runtime/effects';
-import { applyDefaultWaterState, DEFAULT_WATER_STATE } from './defaultWaterState';
+import { applyRenderPlanWaterBaseState, DEFAULT_WATER_STATE } from './defaultWaterState';
 import { compileEffectRecipeLayers } from './effectRecipeCompiler';
 import {
   bindDistanceFogDepth,
@@ -33,7 +33,6 @@ import {
   type WaterShoreBinding
 } from './renderEnvironmentBridge';
 import { createComposerRenderTarget } from './renderOutputPipeline';
-import { PlanarWaterReflection } from './planarWaterReflection';
 import { RenderFrameCoordinator, type RenderPrePassResources } from './renderFrameCoordinator';
 import {
   configureAtmosphereFxPass,
@@ -92,7 +91,6 @@ export class RenderRuntimeAdapter {
   private readonly ssaoPass: SharedSSAOPass;
   private readonly bloomPass = new GlobalBloomPass(new THREE.Vector2(1, 1), 0.4, 0.35, 0.82);
   private readonly effectRuntime = createEffectRuntime().runtime;
-  private readonly planarWaterReflection: PlanarWaterReflection;
   private fogDensity = 0;
   private readonly materialBaselines = new Map<THREE.Material, MaterialBaseline>();
   private readonly waterBindings: WaterBinding[] = [];
@@ -105,13 +103,13 @@ export class RenderRuntimeAdapter {
   private pendingElapsedSeconds = 0;
   private width = 1;
   private height = 1;
+  private pixelRatio = 0;
 
   constructor(
     private readonly renderer: THREE.WebGLRenderer,
     private readonly scene: THREE.Scene,
     private readonly camera: THREE.PerspectiveCamera
   ) {
-    this.planarWaterReflection = new PlanarWaterReflection(renderer, scene, camera);
     this.curvaturePass = createCurvatureEdgePass(renderer);
     this.inkPass = createInkEdgePass(renderer);
     this.ssaoPass = new SharedSSAOPass(scene, camera, 1, 1, 16);
@@ -147,7 +145,6 @@ export class RenderRuntimeAdapter {
       scene,
       camera,
       composer: this.composer,
-      planarReflection: this.planarWaterReflection,
       needsPrePass: () => this.needsPrePass(),
       producePrePass: () => this.producePrePass(),
       updateWater: (deltaTime, depthTexture) => this.updateWater(deltaTime, depthTexture)
@@ -308,7 +305,6 @@ export class RenderRuntimeAdapter {
 
   resetScopedCapabilities(): void {
     this.waterInteractionAt.clear();
-    this.planarWaterReflection.setBindings([]);
     for (const binding of this.waterBindings.splice(0)) {
       binding.mesh.material = binding.originalMaterial;
       binding.surface.dispose();
@@ -501,17 +497,17 @@ export class RenderRuntimeAdapter {
     for (const mesh of meshes) {
       const style = styles.find((candidate) => matchesScope(mesh, candidate.scope));
       const recipe = waterRecipe(style?.recipe ?? defaultWaterStyle(mesh).recipe);
-      const waterColor = new THREE.Color(style?.color ?? DEFAULT_WATER_STATE.uWaterColor);
+      const waterColor = new THREE.Color(style?.color ?? recipe.color);
       const shallowColor = style?.shallowColor
         ? new THREE.Color(style.shallowColor)
         : style?.color
           ? waterColor.clone().lerp(new THREE.Color('#ffffff'), 0.22)
-        : new THREE.Color(DEFAULT_WATER_STATE.uShallowColor);
+        : new THREE.Color(recipe.shallowColor);
       const depthColor = style?.depthColor
         ? new THREE.Color(style.depthColor)
         : style?.color
           ? waterColor.clone().multiplyScalar(0.5)
-        : new THREE.Color(DEFAULT_WATER_STATE.uDepthColor);
+        : new THREE.Color(recipe.depthColor);
       const root = new THREE.Group();
       const surface = hasMaterialTag(mesh, 'water:fall') || hasMaterialTag(mesh, 'fall')
         ? new WaterfallSurface(this.scene, this.renderer, root, {
@@ -535,32 +531,64 @@ export class RenderRuntimeAdapter {
       root.remove(surface.mesh);
       surface.mesh.geometry.dispose();
       if (surface instanceof WaterSurface) {
-        applyDefaultWaterState(surface);
-        if (style) {
-          const waveStrength = style.waveStrength ?? recipe.waveStrength;
-          const waveSpeed = style.waveSpeed ?? recipe.waveSpeed;
-          const foamStrength = style.foamStrength ?? recipe.foamStrength;
-          surface.importState({
-            waterMode: recipe.mode,
-            uWaterColor: `#${waterColor.getHexString()}`,
-            uShallowColor: `#${shallowColor.getHexString()}`,
-            uDepthColor: `#${depthColor.getHexString()}`,
-            uWaveHeight: waveStrength * 0.12,
-            uWaveSpeed: waveSpeed,
-            uFoamStrength: foamStrength,
-            uShoreFoamStrength: foamStrength,
-            uShoreWaveStrength: Math.min(2.5, waveStrength * 2),
-            uShoreWaveSpeed: waveSpeed,
-            uOpacity: style.opacity ?? recipe.opacity
-          });
-        }
-        const planarStrength = style?.reflectionStrength ?? recipe.reflectionStrength;
+        applyRenderPlanWaterBaseState(surface);
+        const waveStrength = style?.waveStrength ?? recipe.waveStrength;
+        const waveSpeed = style?.waveSpeed ?? recipe.waveSpeed;
+        const foamStrength = style?.foamStrength ?? recipe.foamStrength;
+        const waveDirection = style?.waveDirection === undefined
+          ? undefined
+          : THREE.MathUtils.degToRad(style.waveDirection);
+        surface.importState({
+          waterMode: recipe.mode,
+          uWaterColor: `#${waterColor.getHexString()}`,
+          uShallowColor: `#${shallowColor.getHexString()}`,
+          uDepthColor: `#${depthColor.getHexString()}`,
+          uFoamColor: style?.foamColor,
+          uWaveHeight: waveStrength * 0.12,
+          uWaveSpeed: waveSpeed,
+          uWaveScale: style?.waveScale,
+          uShoreFoamStrength: foamStrength,
+          uShoreFoamWidth: style?.shoreFoamWidth,
+          uShoreWaveEnabled: true,
+          uShoreWaveStrength: Math.min(2.5, waveStrength * 2),
+          uShoreWaveSpeed: waveSpeed,
+          uShoreWaveRange: style?.shoreWaveRange,
+          uShoreWaveFrequency: style?.shoreWaveFrequency,
+          uShoreWaveWidth: style?.shoreWaveWidth,
+          uShoreWaveBreakup: style?.shoreWaveBreakup,
+          uHighlightIntensity: 0.18,
+          uHighlightMax: 0.3,
+          uToonSparkleIntensity: 0.22,
+          uRealisticFresnelStrength: 0.38,
+          uRealisticFresnelOpacity: 0.26,
+          uRealisticSpecularStrength: 0.22,
+          uRealisticAbsorptionStrength: 0.88,
+          uRealisticDepthTintStrength: 0.82,
+          uDepthStrength: 0.95,
+          absorption: {
+            ...DEFAULT_WATER_STATE.absorption,
+            strength: 0.62,
+            shallowTint: `#${shallowColor.getHexString()}`,
+            deepTint: `#${depthColor.getHexString()}`,
+            tintStrength: 0.72,
+            reflectionDamping: 0.65
+          },
+          directionalWaves: waveDirection === undefined && style?.waveSharpness === undefined
+            ? undefined
+            : {
+                primaryDirection: waveDirection === undefined
+                  ? undefined
+                  : [Math.cos(waveDirection), Math.sin(waveDirection)],
+                secondaryDirection: waveDirection === undefined
+                  ? undefined
+                  : [-Math.sin(waveDirection), Math.cos(waveDirection)],
+                ridgeSharpness: style?.waveSharpness
+              },
+          uOpacity: style?.opacity ?? recipe.opacity
+        });
         configureWaterReflection(surface, {
-          planarStrength,
-          environmentStrength: style?.environmentReflectionStrength ?? Math.min(0.35, planarStrength * 0.5),
-          environmentExposure: style?.environmentReflectionExposure ?? 0.55,
-          distortion: style?.reflectionDistortion,
-          fresnelBoost: style?.reflectionFresnel
+          environmentStrength: style?.environmentReflectionStrength ?? recipe.environmentReflectionStrength,
+          environmentExposure: style?.environmentReflectionExposure ?? 0.55
         });
         syncWaterSurfaceEnvironment(surface, this.scene.environment);
         const shore = mesh.userData.waterShore as WaterShoreBinding | undefined;
@@ -570,7 +598,6 @@ export class RenderRuntimeAdapter {
       }
       const uniforms = surface.material.uniforms;
       if (style && uniforms.uOpacity) uniforms.uOpacity.value = style.opacity ?? recipe.opacity;
-      if (style && uniforms.uFoamStrength) uniforms.uFoamStrength.value = style.foamStrength ?? recipe.foamStrength;
       const originalMaterial = mesh.material;
       mesh.material = surface.material;
       mesh.renderOrder = Math.max(mesh.renderOrder, 8);
@@ -578,9 +605,6 @@ export class RenderRuntimeAdapter {
       mesh.userData.isWater = true;
       this.waterBindings.push({ mesh, originalMaterial, surface });
     }
-    this.planarWaterReflection.setBindings(this.waterBindings.flatMap((binding) => (
-      binding.surface instanceof WaterSurface ? [{ mesh: binding.mesh, surface: binding.surface }] : []
-    )));
   }
 
   private applyEffectRecipes(recipes: RuntimeEffectRecipe[]): void {
@@ -607,8 +631,11 @@ export class RenderRuntimeAdapter {
   }
 
   setSize(width: number, height: number): void {
+    const pixelRatio = this.renderer.getPixelRatio();
+    if (width === this.width && height === this.height && pixelRatio === this.pixelRatio) return;
     this.width = Math.max(1, width);
     this.height = Math.max(1, height);
+    this.pixelRatio = pixelRatio;
     this.composer.setSize(this.width, this.height);
     const drawingSize = this.renderer.getDrawingBufferSize(new THREE.Vector2());
     const drawWidth = Math.max(1, drawingSize.x);
@@ -621,7 +648,6 @@ export class RenderRuntimeAdapter {
     this.setVector2(this.comicPass, 'uResolution', drawWidth, drawHeight);
     this.setVector2(this.sketchPass, 'uResolution', drawWidth, drawHeight);
     this.setVector2(this.curvaturePass, 'uTexelSize', 1 / drawWidth, 1 / drawHeight);
-    this.planarWaterReflection.syncSize();
   }
 
   render(): void {
@@ -964,7 +990,7 @@ function waterRecipe(recipe: RuntimeWaterStyle['recipe']): {
   waveStrength: number;
   waveSpeed: number;
   foamStrength: number;
-  reflectionStrength: number;
+  environmentReflectionStrength: number;
 } {
   const recipes: Record<RuntimeWaterStyle['recipe'], {
     mode: 'cartoon' | 'realistic' | 'hybrid';
@@ -975,12 +1001,12 @@ function waterRecipe(recipe: RuntimeWaterStyle['recipe']): {
     waveStrength: number;
     waveSpeed: number;
     foamStrength: number;
-    reflectionStrength: number;
+    environmentReflectionStrength: number;
   }> = {
-    'calm-lake': { mode: 'realistic', color: '#3f7f91', shallowColor: '#71b8bd', depthColor: '#173b50', opacity: 0.86, waveStrength: 0.2, waveSpeed: 0.3, foamStrength: 0.18, reflectionStrength: 0.65 },
-    'clear-river': { mode: 'hybrid', color: '#4b9caf', shallowColor: '#84ced0', depthColor: '#1e5265', opacity: 0.78, waveStrength: 0.42, waveSpeed: 0.75, foamStrength: 0.38, reflectionStrength: 0.48 },
-    stylized: { mode: 'cartoon', color: '#3c9bb4', shallowColor: '#78d2cc', depthColor: '#19506d', opacity: 0.92, waveStrength: 0.32, waveSpeed: 0.48, foamStrength: 0.72, reflectionStrength: 0.38 },
-    stormy: { mode: 'hybrid', color: '#344d5d', shallowColor: '#567784', depthColor: '#152735', opacity: 0.96, waveStrength: 1.05, waveSpeed: 1.15, foamStrength: 1.1, reflectionStrength: 0.25 }
+    'calm-lake': { mode: 'realistic', color: '#347f7c', shallowColor: '#67aaa0', depthColor: '#173f49', opacity: 0.58, waveStrength: 0.2, waveSpeed: 0.3, foamStrength: 0.18, environmentReflectionStrength: 0.22 },
+    'clear-river': { mode: 'hybrid', color: '#318a9a', shallowColor: '#6ebbb5', depthColor: '#1b4d60', opacity: 0.52, waveStrength: 0.42, waveSpeed: 0.75, foamStrength: 0.38, environmentReflectionStrength: 0.2 },
+    stylized: { mode: 'cartoon', color: '#3689b2', shallowColor: '#62b8bd', depthColor: '#1a4c68', opacity: 0.62, waveStrength: 0.32, waveSpeed: 0.48, foamStrength: 0.72, environmentReflectionStrength: 0.18 },
+    stormy: { mode: 'hybrid', color: '#344d5d', shallowColor: '#55717a', depthColor: '#152735', opacity: 0.68, waveStrength: 1.05, waveSpeed: 1.15, foamStrength: 1.1, environmentReflectionStrength: 0.16 }
   };
   return recipes[recipe];
 }

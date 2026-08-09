@@ -245,6 +245,7 @@ export function buildStructuredWaterGroup(map: EditableMap): THREE.Group {
   const group = new THREE.Group();
   group.name = 'waterBodies';
   group.userData.isStructuredWaterRoot = true;
+  const shoreBindings = createWaterShoreBindings(map.waterBodies);
   for (const water of map.waterBodies) {
     const geometry = water.type === 'lake'
       ? buildLakeGeometry(water.points)
@@ -266,54 +267,177 @@ export function buildStructuredWaterGroup(map: EditableMap): THREE.Group {
     mesh.userData.waterBodyType = water.type;
     mesh.userData.isWater = true;
     mesh.userData.skipShaderApply = true;
+    mesh.userData.excludeFromPlanarReflection = true;
     mesh.userData.materialTags = ['water', water.type, water.id];
     mesh.userData.assetTags = ['water', water.type];
-    mesh.userData.waterShore = createWaterShoreBinding(water);
+    mesh.userData.waterShore = shoreBindings.get(water.id);
     group.add(mesh);
   }
   return group;
 }
 
-function createWaterShoreBinding(water: MapWaterBody): {
+interface WaterShoreBinding {
   texture: THREE.DataTexture;
   center: [number, number];
   size: number;
-} {
-  const boundary = water.type === 'lake'
-    ? cleanWaterPoints(water.points)
-    : riverBoundaryPoints(water.points, water.width);
-  const minX = Math.min(...boundary.map((point) => point[0]));
-  const maxX = Math.max(...boundary.map((point) => point[0]));
-  const minZ = Math.min(...boundary.map((point) => point[1]));
-  const maxZ = Math.max(...boundary.map((point) => point[1]));
+}
+
+function createWaterShoreBindings(waters: readonly MapWaterBody[]): Map<string, WaterShoreBinding> {
+  const bindings = new Map<string, WaterShoreBinding>();
+  const boundaries = waters.map(waterBoundary);
+  const parents = waters.map((_, index) => index);
+  const find = (index: number): number => {
+    while (parents[index] !== index) {
+      parents[index] = parents[parents[index]];
+      index = parents[index];
+    }
+    return index;
+  };
+  for (let left = 0; left < waters.length; left += 1) {
+    for (let right = left + 1; right < waters.length; right += 1) {
+      if (Math.abs(waters[left].level - waters[right].level) > 0.05) continue;
+      if (!waterBoundariesTouch(boundaries[left], boundaries[right])) continue;
+      parents[find(right)] = find(left);
+    }
+  }
+  const groups = new Map<number, MapWaterBody[]>();
+  for (let index = 0; index < waters.length; index += 1) {
+    const root = find(index);
+    const group = groups.get(root) ?? [];
+    group.push(waters[index]);
+    groups.set(root, group);
+  }
+  for (const group of groups.values()) {
+    const binding = createCompositeWaterShoreBinding(group);
+    for (const water of group) bindings.set(water.id, binding);
+  }
+  return bindings;
+}
+
+function createCompositeWaterShoreBinding(waters: readonly MapWaterBody[]): WaterShoreBinding {
+  const boundaries = waters.map(waterBoundary);
+  const points = boundaries.flat();
+  const minX = Math.min(...points.map((point) => point[0]));
+  const maxX = Math.max(...points.map((point) => point[0]));
+  const minZ = Math.min(...points.map((point) => point[1]));
+  const maxZ = Math.max(...points.map((point) => point[1]));
   const center: [number, number] = [(minX + maxX) / 2, (minZ + maxZ) / 2];
-  const size = Math.max(1, maxX - minX, maxZ - minZ) * 1.04;
-  const resolution = 128;
-  const distances = new Float32Array(resolution * resolution);
+  const size = Math.max(1, maxX - minX, maxZ - minZ) * 1.12;
+  const resolution = THREE.MathUtils.clamp(THREE.MathUtils.ceilPowerOfTwo(size * 4), 128, 512);
+  const inside = new Uint8Array(resolution * resolution);
   const data = new Uint8Array(resolution * resolution);
-  let maxDistance = 0;
   for (let row = 0; row < resolution; row += 1) {
     const v = (row + 0.5) / resolution;
     const z = center[1] + (0.5 - v) * size;
     for (let column = 0; column < resolution; column += 1) {
       const u = (column + 0.5) / resolution;
       const x = center[0] + (u - 0.5) * size;
-      if (!pointInPolygon(x, z, boundary)) continue;
-      const distance = polygonEdgeDistance(x, z, boundary);
-      distances[row * resolution + column] = distance;
-      maxDistance = Math.max(maxDistance, distance);
+      if (boundaries.some((boundary) => pointInPolygon(x, z, boundary))) {
+        inside[row * resolution + column] = 1;
+      }
     }
+  }
+  const distances = distanceFromOutside(inside, resolution);
+  let maxDistance = 0;
+  for (let index = 0; index < distances.length; index += 1) {
+    if (inside[index]) maxDistance = Math.max(maxDistance, distances[index]);
   }
   const distanceScale = maxDistance > 0 ? 255 / maxDistance : 0;
   for (let index = 0; index < data.length; index += 1) {
-    data[index] = Math.round(Math.min(255, distances[index] * distanceScale));
+    if (inside[index]) data[index] = Math.round(Math.min(255, distances[index] * distanceScale));
   }
   const texture = new THREE.DataTexture(data, resolution, resolution, THREE.RedFormat, THREE.UnsignedByteType);
-  texture.name = `water-shore:${water.id}`;
+  texture.name = `water-shore:${waters[0]?.id ?? 'empty'}+${waters.length}`;
   texture.colorSpace = THREE.NoColorSpace;
   texture.flipY = false;
   texture.needsUpdate = true;
   return { texture, center, size };
+}
+
+function waterBoundary(water: MapWaterBody): Array<[number, number]> {
+  return water.type === 'lake'
+    ? cleanWaterPoints(water.points)
+    : riverBoundaryPoints(water.points, water.width);
+}
+
+function waterBoundariesTouch(
+  left: readonly [number, number][],
+  right: readonly [number, number][]
+): boolean {
+  const leftX = left.map((point) => point[0]);
+  const leftZ = left.map((point) => point[1]);
+  const rightX = right.map((point) => point[0]);
+  const rightZ = right.map((point) => point[1]);
+  if (Math.max(...leftX) < Math.min(...rightX) || Math.max(...rightX) < Math.min(...leftX)
+    || Math.max(...leftZ) < Math.min(...rightZ) || Math.max(...rightZ) < Math.min(...leftZ)) {
+    return false;
+  }
+  if (left.some(([x, z]) => pointInPolygon(x, z, right))
+    || right.some(([x, z]) => pointInPolygon(x, z, left))) {
+    return true;
+  }
+  for (let leftIndex = 0; leftIndex < left.length; leftIndex += 1) {
+    const a = left[leftIndex];
+    const b = left[(leftIndex + 1) % left.length];
+    for (let rightIndex = 0; rightIndex < right.length; rightIndex += 1) {
+      const c = right[rightIndex];
+      const d = right[(rightIndex + 1) % right.length];
+      if (segmentsTouch(a, b, c, d)) return true;
+    }
+  }
+  return false;
+}
+
+function segmentsTouch(
+  a: readonly [number, number],
+  b: readonly [number, number],
+  c: readonly [number, number],
+  d: readonly [number, number]
+): boolean {
+  const cross = (p: readonly [number, number], q: readonly [number, number], r: readonly [number, number]) => (
+    (q[0] - p[0]) * (r[1] - p[1]) - (q[1] - p[1]) * (r[0] - p[0])
+  );
+  const onSegment = (p: readonly [number, number], q: readonly [number, number], r: readonly [number, number]) => (
+    Math.abs(cross(p, q, r)) <= 1e-6
+    && r[0] >= Math.min(p[0], q[0]) - 1e-6 && r[0] <= Math.max(p[0], q[0]) + 1e-6
+    && r[1] >= Math.min(p[1], q[1]) - 1e-6 && r[1] <= Math.max(p[1], q[1]) + 1e-6
+  );
+  const ac = cross(a, b, c);
+  const ad = cross(a, b, d);
+  const ca = cross(c, d, a);
+  const cb = cross(c, d, b);
+  return ((ac > 0 && ad < 0) || (ac < 0 && ad > 0))
+    && ((ca > 0 && cb < 0) || (ca < 0 && cb > 0))
+    || onSegment(a, b, c) || onSegment(a, b, d) || onSegment(c, d, a) || onSegment(c, d, b);
+}
+
+function distanceFromOutside(inside: Uint8Array, resolution: number): Float32Array {
+  const distances = new Float32Array(inside.length);
+  const diagonal = Math.SQRT2;
+  for (let index = 0; index < inside.length; index += 1) {
+    distances[index] = inside[index] ? Number.POSITIVE_INFINITY : 0;
+  }
+  for (let row = 0; row < resolution; row += 1) {
+    for (let column = 0; column < resolution; column += 1) {
+      const index = row * resolution + column;
+      if (!inside[index]) continue;
+      if (column > 0) distances[index] = Math.min(distances[index], distances[index - 1] + 1);
+      if (row > 0) distances[index] = Math.min(distances[index], distances[index - resolution] + 1);
+      if (column > 0 && row > 0) distances[index] = Math.min(distances[index], distances[index - resolution - 1] + diagonal);
+      if (column + 1 < resolution && row > 0) distances[index] = Math.min(distances[index], distances[index - resolution + 1] + diagonal);
+    }
+  }
+  for (let row = resolution - 1; row >= 0; row -= 1) {
+    for (let column = resolution - 1; column >= 0; column -= 1) {
+      const index = row * resolution + column;
+      if (!inside[index]) continue;
+      if (column + 1 < resolution) distances[index] = Math.min(distances[index], distances[index + 1] + 1);
+      if (row + 1 < resolution) distances[index] = Math.min(distances[index], distances[index + resolution] + 1);
+      if (column + 1 < resolution && row + 1 < resolution) distances[index] = Math.min(distances[index], distances[index + resolution + 1] + diagonal);
+      if (column > 0 && row + 1 < resolution) distances[index] = Math.min(distances[index], distances[index + resolution - 1] + diagonal);
+    }
+  }
+  return distances;
 }
 
 function buildLakeGeometry(input: MapWaterBody['points']): THREE.BufferGeometry {
@@ -390,22 +514,6 @@ function pointInPolygon(x: number, z: number, points: readonly [number, number][
     }
   }
   return inside;
-}
-
-function polygonEdgeDistance(x: number, z: number, points: readonly [number, number][]): number {
-  let distance = Number.POSITIVE_INFINITY;
-  for (let index = 0; index < points.length; index += 1) {
-    const a = points[index];
-    const b = points[(index + 1) % points.length];
-    const dx = b[0] - a[0];
-    const dz = b[1] - a[1];
-    const lengthSquared = dx * dx + dz * dz;
-    const t = lengthSquared > 0
-      ? Math.max(0, Math.min(1, ((x - a[0]) * dx + (z - a[1]) * dz) / lengthSquared))
-      : 0;
-    distance = Math.min(distance, Math.hypot(x - (a[0] + dx * t), z - (a[1] + dz * t)));
-  }
-  return Number.isFinite(distance) ? distance : 0;
 }
 
 function cleanWaterPoints(points: MapWaterBody['points']): MapWaterBody['points'] {

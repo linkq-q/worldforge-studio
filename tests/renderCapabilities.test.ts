@@ -85,14 +85,20 @@ describe('RenderPlan V2 capabilities', () => {
             opacity: 0.82,
             shallowColor: '#9bdbe0',
             depthColor: '#16354a',
+            foamColor: '#fff4d6',
             waveStrength: 0.2,
             waveSpeed: 0.45,
+            waveScale: 2.4,
+            waveDirection: 135,
+            waveSharpness: 3.1,
             foamStrength: 0.3,
-            reflectionStrength: 0.55,
+            shoreFoamWidth: 0.12,
+            shoreWaveRange: 0.72,
+            shoreWaveFrequency: 10,
+            shoreWaveWidth: 0.32,
+            shoreWaveBreakup: 0.55,
             environmentReflectionStrength: 0.24,
-            environmentReflectionExposure: 0.5,
-            reflectionDistortion: 0.06,
-            reflectionFresnel: 1.2
+            environmentReflectionExposure: 0.5
           }
         },
         {
@@ -117,12 +123,18 @@ describe('RenderPlan V2 capabilities', () => {
       opacity: 0.82,
       shallowColor: '#9bdbe0',
       depthColor: '#16354a',
+      foamColor: '#fff4d6',
       waveSpeed: 0.45,
-      reflectionStrength: 0.55,
+      waveScale: 2.4,
+      waveDirection: 135,
+      waveSharpness: 3.1,
+      shoreFoamWidth: 0.12,
+      shoreWaveRange: 0.72,
+      shoreWaveFrequency: 10,
+      shoreWaveWidth: 0.32,
+      shoreWaveBreakup: 0.55,
       environmentReflectionStrength: 0.24,
-      environmentReflectionExposure: 0.5,
-      reflectionDistortion: 0.06,
-      reflectionFresnel: 1.2
+      environmentReflectionExposure: 0.5
     });
     expect(compileRuntimeGrassStyle(plan)).toMatchObject({
       rootColor: '#284f22', tipColor: '#a4df72', paletteVariation: 0.2,
@@ -209,6 +221,15 @@ describe('RenderPlan V2 capabilities', () => {
     expect(defaults.parameters.find((entry) => (
       entry.moduleId === 'runtime.outline-style' && entry.parameter === 'fadeEnd'
     ))?.ai.enabled).toBe(false);
+    expect(defaults.parameters.find((entry) => (
+      entry.moduleId === 'runtime.water-style' && entry.parameter === 'opacity'
+    ))).toMatchObject({ ai: { max: 0.78 }, developer: { max: 1 } });
+    expect(defaults.parameters.find((entry) => (
+      entry.moduleId === 'runtime.water-style' && entry.parameter === 'environmentReflectionStrength'
+    ))).toMatchObject({ ai: { max: 0.35 }, developer: { max: 1 } });
+    expect(defaults.parameters.find((entry) => (
+      entry.moduleId === 'presentation.exposure' && entry.parameter === 'value'
+    ))).toMatchObject({ ai: { max: 1.5 }, developer: { max: 3 } });
     const policy = normalizeRenderAccessPolicy({
       version: 1,
       parameters: defaults.parameters.map((entry) => entry.moduleId === 'runtime.color-grade'
@@ -234,5 +255,48 @@ describe('RenderPlan V2 capabilities', () => {
     expect(policy.parameters.find((entry) => (
       entry.moduleId === 'runtime.color-grade' && entry.parameter === 'contrast'
     ))?.developer.max).toBe(1.5);
+  });
+
+  it('keeps non-blue AI water palettes while clamping opacity and environment reflection', () => {
+    const plan = normalizeRenderPlan({
+      version: 2,
+      baseSchemeId: 'render-natural-day',
+      modules: [{
+        id: 'runtime.water-style',
+        params: {
+          color: '#61733c',
+          shallowColor: '#91a85e',
+          depthColor: '#29351d',
+          opacity: 1,
+          environmentReflectionStrength: 1
+        }
+      }]
+    }, ['render-natural-day'], createDefaultRenderAccessPolicy(), 'ai');
+
+    expect(plan.modules[0]?.params).toMatchObject({
+      color: '#61733c',
+      shallowColor: '#91a85e',
+      depthColor: '#29351d',
+      opacity: 0.78,
+      environmentReflectionStrength: 0.35
+    });
+  });
+
+  it('drops retired planar reflection parameters from stored plans', () => {
+    const plan = normalizeRenderPlan({
+      version: 2,
+      baseSchemeId: 'render-natural-day',
+      modules: [{
+        id: 'runtime.water-style',
+        params: {
+          environmentReflectionStrength: 0.2,
+          reflectionStrength: 0.8,
+          reflectionDistortion: 0.06,
+          reflectionFresnel: 1.4
+        }
+      }]
+    });
+
+    expect(plan.modules[0]?.params).toEqual({ environmentReflectionStrength: 0.2 });
   });
 });
