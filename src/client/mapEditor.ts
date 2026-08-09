@@ -91,6 +91,15 @@ import {
   type ModelGenerationMode
 } from '../shared/modelGenerationMode';
 import { harmonizeHdriAtmosphere } from '../shared/hdriAtmosphere';
+import { patchMapVisualZone, type VisualZonePatch } from '../shared/mapVisualSemantics';
+import {
+  VISUAL_ZONE_FIELDS,
+  VISUAL_ZONE_TAGS,
+  normalizeMapVisualSemantics,
+  type VisualZoneField,
+  type VisualZoneTag
+} from '../shared/visualDirection';
+import { inspectMapDerivedResults } from './mapDerivedInspection';
 import {
   RENDER_CAPABILITIES,
   compileRenderPlan,
@@ -247,6 +256,8 @@ class MapEditor {
   private selectedLibraryAssetId = '';
   private previewingLibraryAsset = false;
   private mapAiMaxNewAssets = DEFAULT_MAP_AI_MAX_NEW_ASSETS;
+  private mapAiTargetVisualZoneId = '';
+  private selectedVisualZoneId = '';
   private newMapAssetGenerationMode: ModelGenerationMode = 'voxel';
   private mapAiSuggestion: MapAiSuggestion | null = null;
   private mapAiPreviewMap: EditableMap | null = null;
@@ -934,6 +945,10 @@ class MapEditor {
     const objectCount = suggestion?.operations.filter((operation) => operation.type.startsWith('object.')).length ?? 0;
     const hasSpawn = suggestion?.operations.some((operation) => operation.type === 'reference.set') ?? false;
     const compositionAvailable = isCompositionEmptyMap(map);
+    const visualZones = map.visualSemantics.zones;
+    if (this.mapAiTargetVisualZoneId && !visualZones.some((zone) => zone.id === this.mapAiTargetVisualZoneId)) {
+      this.mapAiTargetVisualZoneId = '';
+    }
     const generationBlocked = this.state.busy || this.state.dirty || !this.mapAiPrompt.trim() || !compositionAvailable;
     const refinementBlocked = generationBlocked || !hasRefinableMapContent(map);
     const mapAiOpen = host.querySelector<HTMLDetailsElement>('[data-inspector-section="map-ai"]')?.open ?? true;
@@ -959,6 +974,13 @@ class MapEditor {
             <span>本次最多生成新资产</span>
             <input id="map-ai-max-new-assets" type="number" min="1" max="${MAP_AI_MAX_NEW_ASSETS}" step="1" value="${this.mapAiMaxNewAssets}" ${this.state.busy ? 'disabled' : ''} />
           </label>
+          ${visualZones.length > 0 ? `<label class="field compact">
+            <span>Refine 适用区域</span>
+            <select id="map-ai-target-zone" ${this.state.busy ? 'disabled' : ''}>
+              <option value="">整张地图</option>
+              ${visualZones.map((zone) => `<option value="${escapeHtml(zone.id)}" ${zone.id === this.mapAiTargetVisualZoneId ? 'selected' : ''}>${escapeHtml(zone.id)} · ${escapeHtml(zone.tags.join(', ') || '未标记')}</option>`).join('')}
+            </select>
+          </label>` : ''}
         </div>
         <div class="map-ai-controls">
           <button id="generate-map-ai" ${generationBlocked ? 'disabled' : ''}>生成新规划</button>
@@ -1045,6 +1067,9 @@ class MapEditor {
       this.mapAiMaxNewAssets = normalizeMapAiMaxNewAssets(input.value);
       input.value = String(this.mapAiMaxNewAssets);
     });
+    host.querySelector<HTMLSelectElement>('#map-ai-target-zone')?.addEventListener('change', (event) => {
+      this.mapAiTargetVisualZoneId = (event.target as HTMLSelectElement).value;
+    });
     host.querySelector('#generate-map-ai')?.addEventListener('click', () => void this.generateMapAiPreview('generate'));
     host.querySelector('#refine-map-ai')?.addEventListener('click', () => void this.generateMapAiPreview('refine'));
     host.querySelector('#cancel-map-ai')?.addEventListener('click', () => {
@@ -1092,6 +1117,7 @@ class MapEditor {
             reuseExistingAssets: this.mapAiReuseExistingAssets,
             assetLibraryId: this.mapAiReuseExistingAssets ? this.activeAssetLibraryId : undefined,
             maxNewAssets: this.mapAiMaxNewAssets,
+            targetVisualZoneId: mode === 'refine' ? this.mapAiTargetVisualZoneId || undefined : undefined,
             ...(previousSuggestion ? { baseOperations: previousSuggestion.operations } : {})
           }),
           signal: controller.signal
@@ -1274,6 +1300,12 @@ class MapEditor {
     }
     const mapSettingsOpen = host.querySelector<HTMLDetailsElement>('[data-inspector-section="map-settings"]')?.open ?? false;
     const materialTagsOpen = host.querySelector<HTMLDetailsElement>('[data-inspector-section="material-tags"]')?.open ?? false;
+    const visualSemanticsOpen = host.querySelector<HTMLDetailsElement>('[data-inspector-section="visual-semantics"]')?.open ?? false;
+    if (!map.visualSemantics.zones.some((zone) => zone.id === this.selectedVisualZoneId)) {
+      this.selectedVisualZoneId = map.visualSemantics.zones[0]?.id ?? '';
+    }
+    const selectedZone = map.visualSemantics.zones.find((zone) => zone.id === this.selectedVisualZoneId) ?? null;
+    const derived = inspectMapDerivedResults(map);
     host.innerHTML = `
       <details class="inspector-disclosure" data-inspector-section="map-settings" ${mapSettingsOpen ? 'open' : ''}>
         <summary><span><b>地图</b><small>${escapeHtml(map.name)} · ${map.box.size.map((value) => value.toFixed(0)).join(' × ')}</small></span></summary>
@@ -1287,6 +1319,43 @@ class MapEditor {
         <div class="color-grid">
           ${colorField('地板', 'floor', map.box.colors.floor)}
         </div>
+        </section>
+      </details>
+      <details class="inspector-disclosure" data-inspector-section="visual-semantics" ${visualSemanticsOpen ? 'open' : ''}>
+        <summary><span><b>区域语义</b><small>${map.visualSemantics.zones.length} 个区域 · 手调字段自动保留</small></span></summary>
+        <section class="editor-section inspector-body">
+          ${selectedZone ? `
+            <label class="field compact"><span>区域 ID</span><select data-visual-zone-select>
+              ${map.visualSemantics.zones.map((zone) => `<option value="${escapeHtml(zone.id)}" ${zone.id === selectedZone.id ? 'selected' : ''}>${escapeHtml(zone.id)}</option>`).join('')}
+            </select></label>
+            <div class="triple">
+              ${numberField('中心 X', 'visual-zone-center', 0, selectedZone.center[0])}
+              ${numberField('中心 Z', 'visual-zone-center', 1, selectedZone.center[1])}
+              <label><span>半径</span><input data-visual-zone-number="radius" type="number" min="0.5" max="512" step="0.5" value="${selectedZone.radius}" /></label>
+            </div>
+            <label class="field compact"><span>强度</span><input data-visual-zone-number="intensity" type="range" min="0" max="1" step="0.05" value="${selectedZone.intensity}" /></label>
+            <fieldset class="asset-library-zones"><legend>区域标签</legend>
+              ${VISUAL_ZONE_TAGS.map((tag) => `<label><input type="checkbox" data-visual-zone-tag="${tag}" ${selectedZone.tags.includes(tag) ? 'checked' : ''} />${tag}</label>`).join('')}
+            </fieldset>
+            <details class="inspector-disclosure compact">
+              <summary><span><b>更多详情</b><small>控制哪些手调字段不被 AI 重算</small></span></summary>
+              <fieldset class="asset-library-zones"><legend>保留手调</legend>
+                ${VISUAL_ZONE_FIELDS.map((field) => `<label><input type="checkbox" data-visual-zone-lock="${field}" ${selectedZone.locks?.[field] ? 'checked' : ''} />${field}</label>`).join('')}
+              </fieldset>
+              <p class="empty">修改字段时会自动锁定；取消勾选后，该字段可再次跟随 AI 重算。</p>
+            </details>
+          ` : '<p class="empty">当前地图还没有可编辑的语义区域；AI 生成地图后会自动补充。</p>'}
+          <details class="inspector-disclosure compact">
+            <summary><span><b>派生结果检查</b><small>只读，不阻断生成</small></span></summary>
+            <div class="map-ai-stats">
+              <span>地表语义 <b>${derived.semanticZoneCount}</b></span>
+              <span>湿岸 <b>${derived.wetShoreCount}</b></span>
+              <span>草地退让格 <b>${derived.grassRetreatedCells}</b></span>
+              <span>局部灯光候选 <b>${derived.localLightCandidateCount}/${derived.localLightVisibleLimit}</b></span>
+            </div>
+            <div class="style-tags">${map.visualSemantics.zones.map((zone) => `<span>${escapeHtml(zone.id)} · ${escapeHtml(zone.tags.join(', ') || '未标记')}</span>`).join('')}</div>
+            <p class="empty">湿岸与草地退让只在渲染时自动计算，不改写手工密度；局部灯光从可见自发光/火焰材质中选取，当前最多显示 ${derived.localLightVisibleLimit} 个。</p>
+          </details>
         </section>
       </details>
       ${renderMaterialTagScenePanel(map, this.state.assets, materialTagsOpen)}
@@ -1321,6 +1390,64 @@ class MapEditor {
         map.box.colors[input.dataset.color as keyof typeof map.box.colors] = input.value;
         this.markDirty();
         void this.refreshScene();
+      });
+    });
+    host.querySelector<HTMLSelectElement>('[data-visual-zone-select]')?.addEventListener('change', (event) => {
+      this.selectedVisualZoneId = (event.target as HTMLSelectElement).value;
+      this.renderMapInspector();
+    });
+    const updateSelectedZone = (patch: VisualZonePatch, field: VisualZoneField): void => {
+      if (!this.selectedVisualZoneId) return;
+      map.visualSemantics = normalizeMapVisualSemantics(patchMapVisualZone(
+        map.visualSemantics,
+        this.selectedVisualZoneId,
+        patch,
+        { respectLocks: false, lockFields: [field] }
+      ));
+      this.markDirty();
+      void this.refreshScene();
+      this.renderMapInspector();
+    };
+    host.querySelectorAll<HTMLInputElement>('[data-vector="visual-zone-center"]').forEach((input) => {
+      input.addEventListener('change', () => {
+        const zone = map.visualSemantics.zones.find((item) => item.id === this.selectedVisualZoneId);
+        const value = Number(input.value);
+        if (!zone || !Number.isFinite(value)) return;
+        const center = [...zone.center] as [number, number];
+        center[Number(input.dataset.index)] = value;
+        updateSelectedZone({ center }, 'center');
+      });
+    });
+    host.querySelectorAll<HTMLInputElement>('[data-visual-zone-number]').forEach((input) => {
+      input.addEventListener('change', () => {
+        const value = Number(input.value);
+        const field = input.dataset.visualZoneNumber as 'radius' | 'intensity';
+        if (!Number.isFinite(value)) return;
+        updateSelectedZone({ [field]: value }, field);
+      });
+    });
+    host.querySelectorAll<HTMLInputElement>('[data-visual-zone-tag]').forEach((input) => {
+      input.addEventListener('change', () => {
+        const tags = [...host.querySelectorAll<HTMLInputElement>('[data-visual-zone-tag]:checked')]
+          .map((item) => item.dataset.visualZoneTag as VisualZoneTag);
+        updateSelectedZone({ tags }, 'tags');
+      });
+    });
+    host.querySelectorAll<HTMLInputElement>('[data-visual-zone-lock]').forEach((input) => {
+      input.addEventListener('change', () => {
+        const field = input.dataset.visualZoneLock as VisualZoneField;
+        map.visualSemantics = normalizeMapVisualSemantics({
+          ...map.visualSemantics,
+          zones: map.visualSemantics.zones.map((zone) => {
+            if (zone.id !== this.selectedVisualZoneId) return zone;
+            const locks = { ...(zone.locks ?? {}) };
+            if (input.checked) locks[field] = true;
+            else delete locks[field];
+            return { ...zone, locks };
+          })
+        });
+        this.markDirty(false);
+        this.renderMapInspector();
       });
     });
     bindMaterialTagScenePanel(host, map, (label, enabled) => {
