@@ -28,6 +28,7 @@ import {
   configureWaterReflection,
   configureDistanceFogPass,
   distanceAtFogOpacity,
+  shouldUseSceneDepthForWater,
   syncWaterSurfaceEnvironment,
   syncWaterSurfaceShore,
   type WaterShoreBinding
@@ -64,6 +65,7 @@ interface WaterBinding {
   mesh: THREE.Mesh;
   originalMaterial: THREE.Material | THREE.Material[];
   surface: WaterSurface | WaterfallSurface;
+  usesSceneDepth: boolean;
 }
 
 type InteractiveWaterSurface = WaterSurface & {
@@ -275,7 +277,11 @@ export class RenderRuntimeAdapter {
   addWaterInteraction(waterBodyId: string, x: number, z: number, elapsedSeconds: number): void {
     const last = this.waterInteractionAt.get(waterBodyId) ?? -Infinity;
     if (elapsedSeconds - last < 0.24) return;
-    const binding = this.waterBindings.find((candidate) => candidate.mesh.userData.waterBodyId === waterBodyId);
+    const binding = this.waterBindings.find((candidate) => (
+      candidate.mesh.userData.waterBodyId === waterBodyId
+      || (Array.isArray(candidate.mesh.userData.waterBodyIds)
+        && candidate.mesh.userData.waterBodyIds.includes(waterBodyId))
+    ));
     if (!binding || !(binding.surface instanceof WaterSurface)) return;
     const surface = binding.surface as InteractiveWaterSurface;
     surface.setRippleDecalParams({
@@ -603,7 +609,12 @@ export class RenderRuntimeAdapter {
       mesh.renderOrder = Math.max(mesh.renderOrder, 8);
       mesh.userData.skipShaderApply = true;
       mesh.userData.isWater = true;
-      this.waterBindings.push({ mesh, originalMaterial, surface });
+      this.waterBindings.push({
+        mesh,
+        originalMaterial,
+        surface,
+        usesSceneDepth: shouldUseSceneDepthForWater(mesh.userData.waterShore as WaterShoreBinding | undefined)
+      });
     }
   }
 
@@ -659,7 +670,7 @@ export class RenderRuntimeAdapter {
       && Number(this.sketchPass.uniforms.uHatchSpaceMode?.value ?? 1) > 0.5;
     const needsComicEdge = this.comicPass.enabled
       && Number(this.comicPass.uniforms.uLineBoost?.value ?? 0) > 0;
-    return this.waterBindings.length > 0
+    return this.waterBindings.some((binding) => binding.usesSceneDepth)
       || this.inkPass.enabled
       || needsComicEdge
       || this.curvaturePass.enabled
@@ -748,7 +759,7 @@ export class RenderRuntimeAdapter {
 
   private updateWater(deltaTime: number, depthTexture: THREE.DepthTexture | null): void {
     for (const binding of this.waterBindings) {
-      binding.surface.update(deltaTime, this.camera, depthTexture);
+      binding.surface.update(deltaTime, this.camera, binding.usesSceneDepth ? depthTexture : null);
     }
   }
 

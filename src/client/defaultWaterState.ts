@@ -7,6 +7,7 @@ export const DEFAULT_WATER_STATE = waterState;
 // generated water owns shore foam separately through uShoreFoamStrength.
 export const RENDER_PLAN_WATER_BASE_STATE = {
   uFoamStrength: 0,
+  uFoamShadowStrength: 0,
   uContactFoamEnabled: false,
   uWhitecapEnabled: false,
   uToonPatternEnabled: true,

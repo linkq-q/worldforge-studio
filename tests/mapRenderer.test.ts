@@ -101,7 +101,7 @@ describe('structured map water rendering', () => {
     });
   });
 
-  it('uses one outer shoreline field for overlapping water blocks at the same level', () => {
+  it('renders overlapping same-level water blocks as one clipped surface', () => {
     const map = createEmptyMap('joined-water', 'map-joined-water');
     map.waterBodies = [
       {
@@ -120,20 +120,22 @@ describe('structured map water rendering', () => {
 
     const waterRoot = buildStructuredWaterGroup(map);
     const left = waterRoot.getObjectByName('water:left-water') as THREE.Mesh;
-    const right = waterRoot.getObjectByName('water:right-water') as THREE.Mesh;
     const separate = waterRoot.getObjectByName('water:separate-pond') as THREE.Mesh;
     const leftShore = left.userData.waterShore as {
       texture: THREE.DataTexture;
       center: [number, number];
       size: number;
     };
-    const rightShore = right.userData.waterShore as typeof leftShore;
     const separateShore = separate.userData.waterShore as typeof leftShore;
     const image = leftShore.texture.image as { data: Uint8Array; width: number; height: number };
     const seamColumn = Math.floor((0.5 + (0 - leftShore.center[0]) / leftShore.size) * image.width);
     const seamRow = Math.floor((0.5 - (0 - leftShore.center[1]) / leftShore.size) * image.height);
 
-    expect(rightShore.texture).toBe(leftShore.texture);
+    expect(waterRoot.children).toHaveLength(2);
+    expect(waterRoot.getObjectByName('water:right-water')).toBeUndefined();
+    expect(left.userData.waterBodyIds).toEqual(['left-water', 'right-water']);
+    expect(left.userData.waterShore.worldSpace).toBe(false);
+    expect(left.geometry).toBeInstanceOf(THREE.PlaneGeometry);
     expect(separateShore.texture).not.toBe(leftShore.texture);
     expect(image.data[seamRow * image.width + seamColumn]).toBeGreaterThan(128);
 

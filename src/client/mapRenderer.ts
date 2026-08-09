@@ -245,11 +245,15 @@ export function buildStructuredWaterGroup(map: EditableMap): THREE.Group {
   const group = new THREE.Group();
   group.name = 'waterBodies';
   group.userData.isStructuredWaterRoot = true;
-  const shoreBindings = createWaterShoreBindings(map.waterBodies);
-  for (const water of map.waterBodies) {
-    const geometry = water.type === 'lake'
-      ? buildLakeGeometry(water.points)
-      : buildRiverGeometry(water.points, water.width);
+  for (const waters of groupConnectedWaterBodies(map.waterBodies)) {
+    const water = waters[0];
+    const shore = createCompositeWaterShoreBinding(waters);
+    const isComposite = waters.length > 1;
+    const geometry = isComposite
+      ? buildCompositeWaterGeometry(shore.size)
+      : water.type === 'lake'
+        ? buildLakeGeometry(water.points)
+        : buildRiverGeometry(water.points, water.width);
     const material = new THREE.MeshStandardMaterial({
       color: 0x4f96a8,
       transparent: true,
@@ -261,16 +265,26 @@ export function buildStructuredWaterGroup(map: EditableMap): THREE.Group {
     });
     const mesh = new THREE.Mesh(geometry, material);
     mesh.name = `water:${water.id}`;
-    mesh.position.y = water.level;
+    mesh.position.set(
+      isComposite ? shore.center[0] : 0,
+      waters.reduce((sum, candidate) => sum + candidate.level, 0) / waters.length,
+      isComposite ? shore.center[1] : 0
+    );
     mesh.renderOrder = 8;
     mesh.userData.waterBodyId = water.id;
-    mesh.userData.waterBodyType = water.type;
+    mesh.userData.waterBodyIds = waters.map((candidate) => candidate.id);
+    mesh.userData.waterBodyType = waters.every((candidate) => candidate.type === water.type)
+      ? water.type
+      : 'mixed';
     mesh.userData.isWater = true;
     mesh.userData.skipShaderApply = true;
     mesh.userData.excludeFromPlanarReflection = true;
-    mesh.userData.materialTags = ['water', water.type, water.id];
-    mesh.userData.assetTags = ['water', water.type];
-    mesh.userData.waterShore = shoreBindings.get(water.id);
+    mesh.userData.materialTags = [
+      'water',
+      ...new Set(waters.flatMap((candidate) => [candidate.type, candidate.id]))
+    ];
+    mesh.userData.assetTags = ['water', ...new Set(waters.map((candidate) => candidate.type))];
+    mesh.userData.waterShore = { ...shore, worldSpace: !isComposite };
     group.add(mesh);
   }
   return group;
@@ -280,10 +294,10 @@ interface WaterShoreBinding {
   texture: THREE.DataTexture;
   center: [number, number];
   size: number;
+  worldSpace?: boolean;
 }
 
-function createWaterShoreBindings(waters: readonly MapWaterBody[]): Map<string, WaterShoreBinding> {
-  const bindings = new Map<string, WaterShoreBinding>();
+function groupConnectedWaterBodies(waters: readonly MapWaterBody[]): MapWaterBody[][] {
   const boundaries = waters.map(waterBoundary);
   const parents = waters.map((_, index) => index);
   const find = (index: number): number => {
@@ -307,11 +321,7 @@ function createWaterShoreBindings(waters: readonly MapWaterBody[]): Map<string, 
     group.push(waters[index]);
     groups.set(root, group);
   }
-  for (const group of groups.values()) {
-    const binding = createCompositeWaterShoreBinding(group);
-    for (const water of group) bindings.set(water.id, binding);
-  }
-  return bindings;
+  return [...groups.values()];
 }
 
 function createCompositeWaterShoreBinding(waters: readonly MapWaterBody[]): WaterShoreBinding {
@@ -352,6 +362,13 @@ function createCompositeWaterShoreBinding(waters: readonly MapWaterBody[]): Wate
   texture.flipY = false;
   texture.needsUpdate = true;
   return { texture, center, size };
+}
+
+function buildCompositeWaterGeometry(size: number): THREE.BufferGeometry {
+  const segments = THREE.MathUtils.clamp(Math.ceil(size / 4), 8, 32);
+  const geometry = new THREE.PlaneGeometry(size, size, segments, segments);
+  geometry.rotateX(-Math.PI / 2);
+  return geometry;
 }
 
 function waterBoundary(water: MapWaterBody): Array<[number, number]> {

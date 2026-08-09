@@ -5,6 +5,7 @@ import {
   configureWaterReflection,
   configureDistanceFogPass,
   distanceAtFogOpacity,
+  shouldUseSceneDepthForWater,
   syncWaterSurfaceEnvironment,
   syncWaterSurfaceShore
 } from '../src/client/renderEnvironmentBridge';
@@ -88,6 +89,28 @@ describe('render environment bridge', () => {
 
     expect(surface.setShoreDistanceTexture).toHaveBeenCalledWith(texture);
     expect(surface.setShoreWorldRegion).toHaveBeenCalledWith({ x: 4, y: -7 }, 18);
+    texture.dispose();
+  });
+
+  it('uses mesh UV clipping for a composite water surface', () => {
+    const surface = {
+      setShoreDistanceTexture: vi.fn(),
+      setShoreWorldRegion: vi.fn()
+    };
+    const texture = new THREE.DataTexture(new Uint8Array([0, 255, 255, 0]), 2, 2, THREE.RedFormat);
+
+    syncWaterSurfaceShore(surface, { texture, center: [4, -7], size: 18, worldSpace: false });
+
+    expect(surface.setShoreDistanceTexture).toHaveBeenCalledWith(texture);
+    expect(surface.setShoreWorldRegion).toHaveBeenCalledWith(null);
+    texture.dispose();
+  });
+
+  it('uses the stable shore field instead of screen depth for structured water', () => {
+    const texture = new THREE.DataTexture(new Uint8Array([255]), 1, 1, THREE.RedFormat);
+
+    expect(shouldUseSceneDepthForWater({ texture, center: [0, 0], size: 8 })).toBe(false);
+    expect(shouldUseSceneDepthForWater(undefined)).toBe(true);
     texture.dispose();
   });
 });

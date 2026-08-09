@@ -23,6 +23,11 @@ export interface WaterShoreBinding {
   texture: THREE.Texture;
   center: [number, number];
   size: number;
+  worldSpace?: boolean;
+}
+
+export function shouldUseSceneDepthForWater(binding: WaterShoreBinding | undefined): boolean {
+  return !binding?.texture?.isTexture;
 }
 
 export interface WaterReflectionSettings {
@@ -78,7 +83,8 @@ export function syncWaterSurfaceShore(
   binding: WaterShoreBinding
 ): void {
   surface.setShoreDistanceTexture(binding.texture);
-  surface.setShoreWorldRegion({ x: binding.center[0], y: binding.center[1] }, binding.size);
+  if (binding.worldSpace === false) surface.setShoreWorldRegion(null);
+  else surface.setShoreWorldRegion({ x: binding.center[0], y: binding.center[1] }, binding.size);
 }
 
 export function configureWaterReflection(

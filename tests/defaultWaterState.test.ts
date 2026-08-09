@@ -40,6 +40,7 @@ describe('default water state', () => {
     expect(importState).toHaveBeenNthCalledWith(2, RENDER_PLAN_WATER_BASE_STATE);
     expect(RENDER_PLAN_WATER_BASE_STATE).toEqual({
       uFoamStrength: 0,
+      uFoamShadowStrength: 0,
       uContactFoamEnabled: false,
       uWhitecapEnabled: false,
       uToonPatternEnabled: true,
