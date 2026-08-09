@@ -2,24 +2,19 @@
 
 ## 交付内容
 
-- `worldforge-golden-pack-YYYY-MM-DD.zip`：四张可直接导入的金样场景；每张内含地图、模型资产、渲染方案，以及它实际使用的 HDRI。
-- `data/map-editor/`：本机工作数据。它不进入 Git；新机器只导入金样即可开始，不必复制整个目录。
+- `worldforge-golden-pack-YYYY-MM-DD.zip`：四张可直接导入的金样场景；每张内含地图、模型资产、渲染方案，以及它实际使用的 HDRI。适合通过微信等渠道单独发送。
+- `assets/starter-data/`：Git 跟踪的首次启动种子；空白数据目录会自动获得四张金样及其引用资源。
+- `assets/hdri/`：Git LFS 跟踪的完整共享 HDRI 库；克隆并完成 LFS 下载后可直接使用。
+- `data/map-editor/`：本机工作数据。它不进入 Git，并且优先覆盖同名共享 HDRI；已有数据目录不会被首次启动种子覆盖。
 
 金样不是“唯一正确的地图”，而是稳定的验收基线：新同学导入后，应能看到与当前版本相同的草、水、模型、HDRI、材质 Tag、渲染方案和游玩视角。后续版本变更后，也可用它们快速检查是否发生明显回退。
 
 ## Windows 启动
 
-1. 安装 Node.js 20 或更高版本，并准备好相邻目录中的 `3d-generate`。
-2. PowerShell 进入 `worldforge-studio`：`npm install`（首次一次）。
+1. 安装 Node.js 20 或更高版本，以及 Git LFS；无需安装或检出 `3d-generate`。
+2. PowerShell 进入 `worldforge-studio`：依次执行 `git lfs install`、`git lfs pull`、`npm install`（首次一次）。
 3. 启动：`npm run dev`。
-4. 浏览器打开 `http://localhost:5173`。
-
-如 `3d-generate` 不在同级目录，启动前设置：
-
-```powershell
-$env:VOXEL_STUDIO_ROOT = 'D:\path\to\3d-generate'
-npm run dev
-```
+4. 浏览器打开 `http://localhost:5173`；若本机没有既有工作数据，会自动出现四张金样。
 
 ## 策划日常操作
 

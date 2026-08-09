@@ -1,6 +1,7 @@
 import { CartoonGrassField } from '@voxel-studio/render-runtime';
 import * as THREE from 'three';
 import { sampleTerrainHeight, type EditableMap } from '../shared/map';
+import { isNearWater } from '../shared/mapWater';
 import type { RuntimeGrassStyle } from '../shared/renderPlan';
 import type { Vec3 } from '../shared/protocol';
 import { MapGrassInteraction } from './mapGrassInteraction';
@@ -49,6 +50,43 @@ export function buildMapGrassField(map: EditableMap, style?: RuntimeGrassStyle):
       field.dispose();
     },
   };
+}
+
+/** Render-only contact mask. Persisted/manual grass densities remain untouched. */
+export function deriveContactAwareGrassMap(map: EditableMap): EditableMap {
+  if (map.waterBodies.length === 0 && map.objects.length === 0) return map;
+  const assets = new Map((map.assets ?? []).map((asset) => [asset.id, asset]));
+  const obstacles = map.objects
+    .filter((object) => object.visible)
+    .map((object) => {
+      const asset = object.assetId ? assets.get(object.assetId) : undefined;
+      const scale = Math.max(object.transform.scale[0], object.transform.scale[2]);
+      return {
+        x: object.transform.position[0],
+        z: object.transform.position[2],
+        radius: Math.max(0.25, (asset?.footprintRadius ?? Math.max(object.transform.size[0], object.transform.size[2]) * 0.5) * scale)
+      };
+    });
+  const grassLayers = map.grassLayers.map((layer) => {
+    const densities = [...layer.densities];
+    for (let zIndex = 0; zIndex < layer.resolutionZ; zIndex += 1) {
+      const z = indexToWorld(zIndex, map.box.size[2], layer.resolutionZ);
+      for (let xIndex = 0; xIndex < layer.resolutionX; xIndex += 1) {
+        const index = zIndex * layer.resolutionX + xIndex;
+        if ((densities[index] ?? 0) <= 0.001) continue;
+        const x = indexToWorld(xIndex, map.box.size[0], layer.resolutionX);
+        let factor = isNearWater(map, x, z, 0.2) ? 0 : isNearWater(map, x, z, 1.25) ? 0.28 : 1;
+        for (const obstacle of obstacles) {
+          const edgeDistance = Math.hypot(x - obstacle.x, z - obstacle.z) - obstacle.radius;
+          if (edgeDistance <= 0) factor = Math.min(factor, 0.08);
+          else if (edgeDistance < 1.2) factor = Math.min(factor, 0.08 + edgeDistance / 1.2 * 0.92);
+        }
+        densities[index] *= factor;
+      }
+    }
+    return { ...layer, densities };
+  });
+  return { ...map, grassLayers };
 }
 
 function refineFlowerGeometry(root: import('three').Object3D): void {
@@ -102,4 +140,8 @@ function sampleTerrainNormal(map: EditableMap, x: number, z: number): [number, n
   const nz = -dz / Math.max(0.001, stepZ * 2);
   const length = Math.hypot(nx, 1, nz) || 1;
   return [nx / length, 1 / length, nz / length];
+}
+
+function indexToWorld(index: number, extent: number, resolution: number): number {
+  return resolution <= 1 ? 0 : index / (resolution - 1) * extent - extent / 2;
 }

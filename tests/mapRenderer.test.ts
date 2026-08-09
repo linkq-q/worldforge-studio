@@ -5,6 +5,7 @@ import { createEmptyMap } from '../src/shared/map';
 import type { MapAsset } from '../src/shared/map';
 import { createGrassLayer, fillGrassLayerInPlace } from '../src/shared/mapGrass';
 import { DEFAULT_RUNTIME_GRASS_STYLE } from '../src/shared/renderPlan';
+import { MAX_VISIBLE_MAP_LOCAL_LIGHTS } from '../src/client/mapLocalLights';
 
 beforeEach(() => {
   vi.stubGlobal('document', {
@@ -387,6 +388,37 @@ describe('terrain-only refresh', () => {
     expect(terrain.geometry.getAttribute('color').count).toBe(terrain.geometry.getAttribute('position').count);
     expect(material.map).not.toBe(firstTexture);
     expect(rendered.runtimeIndex).toBe(firstIndex);
+    rendered.dispose();
+  });
+});
+
+describe('derived local lights', () => {
+  it('caps visible emissive-object lights at eight', async () => {
+    const map = createEmptyMap('local lights', 'map-local-lights');
+    const now = Date.now();
+    const asset: MapAsset = {
+      id: 'asset-lamp', name: 'lamp', prompt: 'glowing lamp',
+      modelJson: { nodes: [{ id: 'bulb', tags: [{ tag: 'emissive', value: 1 }], mesh: { type: 'box' } }] },
+      colliderPlan: { version: 1, boxes: [], sourceMeshCount: 1, candidateCount: 1, fallbackUsed: false },
+      mode: 'voxel', createdAt: now, updatedAt: now
+    };
+    map.assets = [asset];
+    map.objects = Array.from({ length: 12 }, (_, index) => {
+      const object = createTestObject(`lamp-${index}`, asset.id);
+      object.transform.position = [(index % 4) * 2 - 3, 0, Math.floor(index / 4) * 2 - 2];
+      return object;
+    });
+
+    const rendered = await buildEditableMapGroup(map);
+    const lightRoot = rendered.group.getObjectByName('mapLocalLights') as THREE.Group;
+    const camera = new THREE.PerspectiveCamera(60, 1, 0.1, 100);
+    camera.position.set(0, 8, 16);
+    camera.lookAt(0, 0, 0);
+    camera.updateProjectionMatrix();
+    rendered.update(0.016, camera, 100);
+
+    expect(lightRoot.children).toHaveLength(MAX_VISIBLE_MAP_LOCAL_LIGHTS);
+    expect(lightRoot.children.filter((child) => child.visible)).toHaveLength(MAX_VISIBLE_MAP_LOCAL_LIGHTS);
     rendered.dispose();
   });
 });

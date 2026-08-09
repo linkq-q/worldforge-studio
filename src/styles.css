@@ -943,6 +943,45 @@ p {
   min-height: 84px;
 }
 
+.asset-library-inline,
+.asset-library-actions,
+.asset-library-flags {
+  display: flex;
+  gap: 8px;
+  align-items: end;
+  flex-wrap: wrap;
+}
+
+.asset-library-inline > input,
+.asset-library-inline > .field {
+  flex: 1 1 120px;
+  min-width: 0;
+}
+
+.asset-library-zones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 10px;
+  margin: 0;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+.asset-library-zones label,
+.asset-library-flags label {
+  display: inline-flex;
+  gap: 5px;
+  align-items: center;
+  font-size: 12px;
+}
+
+.asset-library-details {
+  display: grid;
+  gap: 10px;
+  padding-top: 10px;
+}
+
 .inspector-disclosure {
   border-bottom: 1px solid var(--line);
 }
@@ -1090,6 +1129,18 @@ p {
 
 .map-ai-controls {
   grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.map-ai-options {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 8px;
+  margin: 10px 0;
+}
+
+.map-ai-toggle {
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
 }
 
 .map-ai-controls button {

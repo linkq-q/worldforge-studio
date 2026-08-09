@@ -22,7 +22,7 @@ import {
 import { buildModelGroup } from './modelRenderer';
 import { buildMapPrimitiveBatches } from './mapPrimitiveBatching';
 import { terrainVertexColor } from './terrainAppearance';
-import { buildMapGrassField } from './mapGrassRenderer';
+import { buildMapGrassField, deriveContactAwareGrassMap } from './mapGrassRenderer';
 import { combinedGrassDensity } from '../shared/mapGrass';
 import {
   DEFAULT_RUNTIME_GRASS_STYLE,
@@ -31,6 +31,7 @@ import {
 import type { RuntimeIndex } from '@voxel-studio/render-runtime';
 import type { MapPrimitiveBatchStats } from './mapPrimitiveBatching';
 import type { Vec3 } from '../shared/protocol';
+import { buildMapLocalLights } from './mapLocalLights';
 
 export interface RenderedMapDebugStats extends MapPrimitiveBatchStats {
   grassLayers: number;
@@ -84,20 +85,20 @@ export async function buildEditableMapGroup(input: EditableMap, options: MapRend
   const pickables: THREE.Object3D[] = [];
   const assets = new Map((map.assets ?? []).map((asset) => [asset.id, asset]));
 
+  let grassMap = deriveContactAwareGrassMap(map);
   const terrain = buildTerrain(map);
-  applyTerrainGrassTint(terrain, map, DEFAULT_RUNTIME_GRASS_STYLE);
+  applyTerrainGrassTint(terrain, grassMap, DEFAULT_RUNTIME_GRASS_STYLE);
   root.add(terrain);
   pickables.push(terrain);
 
   // Grass is rebuilt on its own, so it keeps its own map snapshot and style.
-  let grassMap = map;
   let grassStyle = DEFAULT_RUNTIME_GRASS_STYLE;
   let materialElapsedSeconds = 0;
-  let grass = buildMapGrassField(map);
+  let grass = buildMapGrassField(grassMap);
   if (grass) root.add(grass.group);
 
   const rebuildGrass = (next: EditableMap): void => {
-    grassMap = next;
+    grassMap = deriveContactAwareGrassMap(next);
     grass?.dispose();
     grass = buildMapGrassField(grassMap, grassStyle);
     if (grass) root.add(grass.group);
@@ -134,6 +135,8 @@ export async function buildEditableMapGroup(input: EditableMap, options: MapRend
   });
   modelsRoot.add(instancing.root);
   await populateObjectVisuals(map, assets, objectGroups, instancing.handledObjectIds);
+  const localLights = buildMapLocalLights(map, objectGroups);
+  root.add(localLights.group);
   for (const group of objectGroups.values()) {
     group.traverse((child) => {
       if ((child as THREE.Mesh).isMesh && child.userData.editorHelper !== true) pickables.push(child);
@@ -153,6 +156,7 @@ export async function buildEditableMapGroup(input: EditableMap, options: MapRend
       grass?.update(deltaTime);
       instancing.updateCulling(camera, maxDistance);
       instancing.updateMaterialEffects(materialElapsedSeconds);
+      localLights.update(camera);
     },
     restoreMaterialEffects: instancing.restoreMaterialEffects,
     syncMaterialEnvironment: instancing.syncEnvironment,
@@ -644,6 +648,7 @@ function createSurfaceTexture(map: EditableMap, surface: MapSurface): THREE.Canv
   // and the editor grid from multiplying the surface darker.
   ctx.fillStyle = surface === 'terrain' ? '#ffffff' : map.box.colors[surface as keyof typeof map.box.colors];
   ctx.fillRect(0, 0, canvas.width, canvas.height);
+  if (surface === 'terrain') drawSemanticTerrainSurface(ctx, map, canvas.width, canvas.height);
   drawSubtleGrid(ctx, canvas.width, canvas.height);
   for (const stroke of map.paintStrokes) {
     if (stroke.surface !== surface && !(surface === 'terrain' && stroke.surface === 'floor')) continue;
@@ -655,6 +660,83 @@ function createSurfaceTexture(map: EditableMap, surface: MapSurface): THREE.Canv
   texture.wrapT = THREE.ClampToEdgeWrapping;
   texture.needsUpdate = true;
   return texture;
+}
+
+const SEMANTIC_SURFACE_COLORS = {
+  grass: '#dceab7',
+  forest: '#b5cda0',
+  water: '#a8c8bd',
+  lowland: '#bdcfb8',
+  dry: '#dfc692',
+  settlement: '#d7c5a6',
+  rocky: '#c3c0b2'
+} as const;
+
+function drawSemanticTerrainSurface(
+  ctx: CanvasRenderingContext2D,
+  map: EditableMap,
+  width: number,
+  height: number
+): void {
+  for (const zone of map.visualSemantics.zones) {
+    const tag = [...zone.tags].reverse().find((item) => item in SEMANTIC_SURFACE_COLORS);
+    if (!tag) continue;
+    const center = surfaceCanvasPoint(map, zone.center, width, height);
+    const radiusX = zone.radius / map.box.size[0] * width;
+    const radiusY = zone.radius / map.box.size[2] * height;
+    const opacity = Math.min(0.24, 0.08 + zone.intensity * 0.12);
+    ctx.save();
+    ctx.translate(center[0], center[1]);
+    ctx.scale(Math.max(0.001, radiusX), Math.max(0.001, radiusY));
+    const gradient = ctx.createRadialGradient(0, 0, 0.05, 0, 0, 1);
+    gradient.addColorStop(0, withOpacity(SEMANTIC_SURFACE_COLORS[tag], opacity));
+    gradient.addColorStop(0.72, withOpacity(SEMANTIC_SURFACE_COLORS[tag], opacity * 0.78));
+    gradient.addColorStop(1, withOpacity(SEMANTIC_SURFACE_COLORS[tag], 0));
+    ctx.fillStyle = gradient;
+    ctx.beginPath();
+    ctx.arc(0, 0, 1, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
+  for (const water of map.waterBodies) drawWetShore(ctx, map, water, width, height);
+}
+
+function drawWetShore(
+  ctx: CanvasRenderingContext2D,
+  map: EditableMap,
+  water: MapWaterBody,
+  width: number,
+  height: number
+): void {
+  const points = water.points.map((point) => surfaceCanvasPoint(map, point, width, height));
+  if (points.length < 2) return;
+  ctx.save();
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  ctx.beginPath();
+  ctx.moveTo(points[0][0], points[0][1]);
+  points.slice(1).forEach((point) => ctx.lineTo(point[0], point[1]));
+  if (water.type === 'lake') ctx.closePath();
+  const pixelsPerMetre = (width / map.box.size[0] + height / map.box.size[2]) * 0.5;
+  ctx.strokeStyle = 'rgba(88, 91, 70, 0.16)';
+  ctx.lineWidth = Math.max(3, (water.type === 'river' ? water.width + 1.8 : 2.4) * pixelsPerMetre);
+  ctx.stroke();
+  ctx.strokeStyle = 'rgba(164, 151, 109, 0.14)';
+  ctx.lineWidth = Math.max(2, (water.type === 'river' ? water.width + 0.7 : 1.1) * pixelsPerMetre);
+  ctx.stroke();
+  ctx.restore();
+}
+
+function surfaceCanvasPoint(
+  map: EditableMap,
+  point: readonly [number, number],
+  width: number,
+  height: number
+): [number, number] {
+  return [
+    (point[0] / map.box.size[0] + 0.5) * width,
+    (0.5 - point[1] / map.box.size[2]) * height
+  ];
 }
 
 function drawSubtleGrid(ctx: CanvasRenderingContext2D, width: number, height: number): void {

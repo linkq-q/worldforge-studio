@@ -27,7 +27,11 @@ import {
   type MapSizePresetKey,
   type TerrainBrushMode
 } from '../shared/map';
-import { planLimits } from '../shared/mapPlanning';
+import {
+  DEFAULT_MAP_AI_MAX_NEW_ASSETS,
+  MAP_AI_MAX_NEW_ASSETS,
+  normalizeMapAiMaxNewAssets
+} from '../shared/mapPlanning';
 import { isCompositionEmptyMap, SCENE_COMPOSITION_LIMITS } from '../shared/sceneComposition';
 import { renderMapCompositionSummary } from './mapCompositionPanel';
 import {
@@ -76,6 +80,12 @@ import {
 import type { HdriTexture } from '../shared/hdri';
 import type { RenderScheme, RenderSuggestion } from '../shared/renderScheme';
 import {
+  ASSET_LIBRARY_ZONE_TAGS,
+  type AssetLibrary,
+  type AssetLibraryMetadata,
+  type AssetLibraryPack
+} from '../shared/assetLibrary';
+import {
   MODEL_GENERATION_MODES,
   normalizeModelGenerationMode,
   type ModelGenerationMode
@@ -111,6 +121,8 @@ const VIEW_DIRECTIONS = {
 interface EditorState {
   maps: MapSummary[];
   assets: MapAsset[];
+  assetLibraries: AssetLibrary[];
+  libraryAssets: MapAsset[];
   renderSchemes: RenderScheme[];
   map: EditableMap | null;
   selectedObjectId: string | null;
@@ -141,6 +153,8 @@ class MapEditor {
   private readonly state: EditorState = {
     maps: [],
     assets: [],
+    assetLibraries: [],
+    libraryAssets: [],
     renderSchemes: [],
     map: null,
     selectedObjectId: null,
@@ -228,6 +242,11 @@ class MapEditor {
   private developerRenderCategory: RenderInspectorCategoryId = 'lighting';
   private mapAiPrompt = '';
   private mapAiProvider: ChatProvider = 'gpt';
+  private mapAiReuseExistingAssets = false;
+  private activeAssetLibraryId = '';
+  private selectedLibraryAssetId = '';
+  private previewingLibraryAsset = false;
+  private mapAiMaxNewAssets = DEFAULT_MAP_AI_MAX_NEW_ASSETS;
   private newMapAssetGenerationMode: ModelGenerationMode = 'voxel';
   private mapAiSuggestion: MapAiSuggestion | null = null;
   private mapAiPreviewMap: EditableMap | null = null;
@@ -256,6 +275,7 @@ class MapEditor {
   async start(): Promise<void> {
     this.developerMode = localStorage.getItem('worldforge.developerMode') === 'on';
     this.newMapAssetGenerationMode = normalizeModelGenerationMode(localStorage.getItem('worldforge.newMapAssetMode'));
+    this.activeAssetLibraryId = localStorage.getItem('worldforge.activeAssetLibraryId') ?? '';
     this.renderShell();
     this.setupViewport();
     this.setupAssetPreview();
@@ -606,14 +626,25 @@ class MapEditor {
   }
 
   private async reloadLists(): Promise<void> {
-    const [maps, assets, renderSchemes] = await Promise.all([
+    const [maps, assets, renderSchemes, assetLibraries] = await Promise.all([
       editorFetch<{ maps: MapSummary[] }>('/api/editor/maps'),
       editorFetch<{ assets: MapAsset[] }>('/api/editor/assets'),
-      editorFetch<{ renderSchemes: RenderScheme[] }>('/api/editor/render-schemes')
+      editorFetch<{ renderSchemes: RenderScheme[] }>('/api/editor/render-schemes'),
+      editorFetch<{ libraries: AssetLibrary[] }>('/api/editor/asset-libraries')
     ]);
     this.state.maps = maps.maps;
     this.state.assets = assets.assets;
     this.state.renderSchemes = renderSchemes.renderSchemes;
+    this.state.assetLibraries = assetLibraries.libraries;
+    if (!this.state.assetLibraries.some((library) => library.id === this.activeAssetLibraryId)) {
+      this.activeAssetLibraryId = this.state.assetLibraries[0]?.id ?? '';
+    }
+    this.state.libraryAssets = this.activeAssetLibraryId
+      ? (await editorFetch<{ assets: MapAsset[] }>(`/api/editor/asset-libraries/${encodeURIComponent(this.activeAssetLibraryId)}`)).assets
+      : [];
+    if (!this.state.libraryAssets.some((asset) => asset.id === this.selectedLibraryAssetId)) {
+      this.selectedLibraryAssetId = this.state.libraryAssets[0]?.id ?? '';
+    }
     if (!this.state.map && this.state.maps[0]) {
       await this.loadMap(this.state.maps[0].id);
       return;
@@ -905,13 +936,30 @@ class MapEditor {
     const compositionAvailable = isCompositionEmptyMap(map);
     const generationBlocked = this.state.busy || this.state.dirty || !this.mapAiPrompt.trim() || !compositionAvailable;
     const refinementBlocked = generationBlocked || !hasRefinableMapContent(map);
-    const limits = planLimits(getMapBounds(map));
     const mapAiOpen = host.querySelector<HTMLDetailsElement>('[data-inspector-section="map-ai"]')?.open ?? true;
     host.innerHTML = `
       <details class="inspector-disclosure" data-inspector-section="map-ai" ${mapAiOpen || this.state.busy || Boolean(suggestion) ? 'open' : ''}>
         <summary><span><b>AI 生成地图</b><small>一句话生成或继续调整</small></span></summary>
         <section class="editor-section inspector-body map-ai">
         <textarea id="map-ai-prompt" rows="3" maxlength="1200" placeholder="例如：中央有缓坡小丘，周围放置树木和岩石" ${this.state.busy ? 'disabled' : ''}>${escapeHtml(this.mapAiPrompt)}</textarea>
+        <div class="map-ai-options">
+          <label class="field compact map-ai-toggle">
+            <span>允许使用所选资产库</span>
+            <input id="map-ai-reuse-assets" type="checkbox" ${this.mapAiReuseExistingAssets ? 'checked' : ''} ${this.state.busy || !this.activeAssetLibraryId ? 'disabled' : ''} />
+          </label>
+          <label class="field compact">
+            <span>本次使用的资产库</span>
+            <select id="map-ai-asset-library" ${this.state.busy || this.state.assetLibraries.length === 0 ? 'disabled' : ''}>
+              ${this.state.assetLibraries.length === 0 ? '<option value="">尚未创建资产库</option>' : this.state.assetLibraries.map((library) => `
+                <option value="${library.id}" ${library.id === this.activeAssetLibraryId ? 'selected' : ''}>${escapeHtml(library.name)} · ${library.assetIds.length} 个</option>
+              `).join('')}
+            </select>
+          </label>
+          <label class="field compact">
+            <span>本次最多生成新资产</span>
+            <input id="map-ai-max-new-assets" type="number" min="1" max="${MAP_AI_MAX_NEW_ASSETS}" step="1" value="${this.mapAiMaxNewAssets}" ${this.state.busy ? 'disabled' : ''} />
+          </label>
+        </div>
         <div class="map-ai-controls">
           <button id="generate-map-ai" ${generationBlocked ? 'disabled' : ''}>生成新规划</button>
           <button id="refine-map-ai" class="secondary" ${refinementBlocked ? 'disabled' : ''}>调整当前地图</button>
@@ -922,11 +970,11 @@ class MapEditor {
           elapsedMs: this.mapAgentElapsedMs,
           slowAssetMode: map.assetGenerationMode === 'standard' || map.assetGenerationMode === 'voxel-pro'
         })}
-        <p class="empty inspector-note" title="总导演会先组织完整场景，按需调用最多 ${SCENE_COMPOSITION_LIMITS.consultationCount} 个专家，并组织 ${limits.assetVariantMin}-${limits.assetVariantMax} 个可辨识资产。">默认 ${map.assetGenerationMode.toUpperCase()} · ${this.state.dirty
+        <p class="empty inspector-note" title="总导演会先组织完整场景，按需调用最多 ${SCENE_COMPOSITION_LIMITS.consultationCount} 个专家；未开启复用时，新内容只使用本次生成的资产。">默认 ${map.assetGenerationMode.toUpperCase()} · ${this.state.dirty
           ? '请先保存当前手工修改，再生成 AI 地图预览。'
           : !compositionAvailable
             ? '当前地图已有内容，请使用“调整当前地图”继续 Refine。'
-            : `总导演编排场景 · 预计 ${limits.assetVariantMin}-${limits.assetVariantMax} 类资产`}</p>
+            : `总导演编排场景 · 最多生成 ${this.mapAiMaxNewAssets} 个新资产`}</p>
         </section>
       </details>
       ${suggestion && this.mapAiPreviewMap ? `
@@ -956,6 +1004,12 @@ class MapEditor {
               <div class="style-tags">${suggestion.generatedAssets.map((asset) => `<span>${escapeHtml(asset.name)}</span>`).join('')}</div>
             </div>
           ` : ''}
+          ${(suggestion.reusedAssets?.length ?? 0) > 0 ? `
+            <details class="inspector-disclosure compact">
+              <summary><span><b>高级详情</b><small>资产来源</small></span></summary>
+              <div class="style-tags">${suggestion.reusedAssets?.map((asset) => `<span>资产库 · ${escapeHtml(asset.name)}</span>`).join('')}</div>
+            </details>
+          ` : ''}
           ${(suggestion.diagnostics?.length ?? 0) > 0 ? `
             <div>
               <p class="empty">自动质检</p>
@@ -978,6 +1032,18 @@ class MapEditor {
       const refineButton = host.querySelector<HTMLButtonElement>('#refine-map-ai');
       if (generateButton) generateButton.disabled = blocked || !isCompositionEmptyMap(map);
       if (refineButton) refineButton.disabled = blocked || !hasRefinableMapContent(map);
+    });
+    host.querySelector<HTMLInputElement>('#map-ai-reuse-assets')?.addEventListener('change', (event) => {
+      this.mapAiReuseExistingAssets = (event.target as HTMLInputElement).checked;
+    });
+    host.querySelector<HTMLSelectElement>('#map-ai-asset-library')?.addEventListener('change', async (event) => {
+      await this.selectAssetLibrary((event.target as HTMLSelectElement).value);
+      this.renderPanels();
+    });
+    host.querySelector<HTMLInputElement>('#map-ai-max-new-assets')?.addEventListener('change', (event) => {
+      const input = event.target as HTMLInputElement;
+      this.mapAiMaxNewAssets = normalizeMapAiMaxNewAssets(input.value);
+      input.value = String(this.mapAiMaxNewAssets);
     });
     host.querySelector('#generate-map-ai')?.addEventListener('click', () => void this.generateMapAiPreview('generate'));
     host.querySelector('#refine-map-ai')?.addEventListener('click', () => void this.generateMapAiPreview('refine'));
@@ -1023,6 +1089,9 @@ class MapEditor {
           body: JSON.stringify({
             prompt,
             provider: this.mapAiProvider,
+            reuseExistingAssets: this.mapAiReuseExistingAssets,
+            assetLibraryId: this.mapAiReuseExistingAssets ? this.activeAssetLibraryId : undefined,
+            maxNewAssets: this.mapAiMaxNewAssets,
             ...(previousSuggestion ? { baseOperations: previousSuggestion.operations } : {})
           }),
           signal: controller.signal
@@ -1419,6 +1488,7 @@ class MapEditor {
     const selectedAsset = availableAssets.find((asset) => asset.id === this.state.selectedAssetId) ?? availableAssets[0] ?? null;
     if (this.state.selectedAssetId !== selectedAsset?.id) this.state.selectedAssetId = selectedAsset?.id ?? null;
     const assetPanelOpen = host.querySelector<HTMLDetailsElement>('[data-inspector-section="assets"]')?.open ?? Boolean(this.placingAssetId);
+    const assetLibraryOpen = host.querySelector<HTMLDetailsElement>('[data-inspector-section="asset-library"]')?.open ?? this.previewingLibraryAsset;
     host.innerHTML = `
       <details class="inspector-disclosure" data-inspector-section="assets" ${assetPanelOpen || Boolean(this.placingAssetId) ? 'open' : ''}>
         <summary><span><b>资产</b><small>${selectedAsset ? escapeHtml(`${selectedAsset.name} · ${selectedAsset.mode.toUpperCase()}`) : `${availableAssets.length} 个可用`}</small></span></summary>
@@ -1442,8 +1512,9 @@ class MapEditor {
         <button id="bind-selected-asset" class="secondary small" ${this.selectedObject() && selectedAsset ? '' : 'disabled'}>绑定到选中物体</button>
         </section>
       </details>
+      ${this.renderAssetLibraryManager(selectedAsset, assetLibraryOpen)}
     `;
-    const previewHost = host.querySelector<HTMLElement>('#asset-preview');
+    const previewHost = host.querySelector<HTMLElement>(this.previewingLibraryAsset ? '#library-asset-preview' : '#asset-preview');
     if (previewHost && this.previewRenderer) {
       previewHost.appendChild(this.previewRenderer.domElement);
       this.resizePreview();
@@ -1451,6 +1522,7 @@ class MapEditor {
     host.querySelector('#generate-asset')?.addEventListener('click', () => void this.generateAsset());
     host.querySelector<HTMLSelectElement>('#asset-list')?.addEventListener('change', (event) => {
       this.cancelAssetPlacement();
+      this.previewingLibraryAsset = false;
       this.state.selectedAssetId = (event.target as HTMLSelectElement).value;
       this.renderPanels();
     });
@@ -1470,7 +1542,290 @@ class MapEditor {
       void this.refreshScene();
       this.renderPanels();
     });
+    this.bindAssetLibraryManager(host);
     void this.renderAssetPreview();
+  }
+
+  private renderAssetLibraryManager(selectedAsset: MapAsset | null, open: boolean): string {
+    const selectedLibrary = this.state.assetLibraries.find((library) => library.id === this.activeAssetLibraryId) ?? null;
+    const libraryAsset = this.state.libraryAssets.find((asset) => asset.id === this.selectedLibraryAssetId) ?? null;
+    const metadata = libraryAsset?.libraryMetadata;
+    return `
+      <details class="inspector-disclosure" data-inspector-section="asset-library" ${open ? 'open' : ''}>
+        <summary><span><b>资产库</b><small>${selectedLibrary ? `${escapeHtml(selectedLibrary.name)} · ${this.state.libraryAssets.length} 个` : '创建或导入资产库'}</small></span></summary>
+        <section class="editor-section inspector-body asset-library-tools">
+          <label class="field compact"><span>当前资产库</span>
+            <select id="asset-library-list" ${this.state.assetLibraries.length ? '' : 'disabled'}>
+              ${this.state.assetLibraries.length ? this.state.assetLibraries.map((library) => `
+                <option value="${library.id}" ${library.id === this.activeAssetLibraryId ? 'selected' : ''}>${escapeHtml(library.name)} · ${library.assetIds.length} 个</option>
+              `).join('') : '<option value="">尚无资产库</option>'}
+            </select>
+          </label>
+          <div class="asset-library-inline">
+            <input id="new-asset-library-name" maxlength="48" placeholder="新资产库名称" />
+            <button id="create-asset-library" class="secondary small" type="button">新建</button>
+          </div>
+          <div class="asset-library-actions">
+            <button id="add-asset-to-library" class="secondary small" type="button" ${selectedLibrary && selectedAsset ? '' : 'disabled'}>收藏当前资产</button>
+            <button id="import-library-asset" class="secondary small" type="button" ${selectedLibrary ? '' : 'disabled'}>导入模型 JSON</button>
+            <button id="export-asset-library" class="secondary small" type="button" ${selectedLibrary ? '' : 'disabled'}>分享导出</button>
+            <button id="import-asset-library" class="secondary small" type="button">导入资产库</button>
+          </div>
+          <input id="library-asset-file" type="file" accept="application/json,.json" hidden />
+          <input id="asset-library-file" type="file" accept="application/json,.json" hidden />
+          ${selectedLibrary ? `
+            <label class="field compact"><span>库内资产</span>
+              <select id="library-asset-list" ${libraryAsset ? '' : 'disabled'}>
+                ${this.state.libraryAssets.length ? this.state.libraryAssets.map((asset) => `
+                  <option value="${asset.id}" ${asset.id === libraryAsset?.id ? 'selected' : ''}>${escapeHtml(asset.name)}${asset.libraryMetadata?.analysisStatus === 'pending' ? ' · 待分析' : ''}</option>
+                `).join('') : '<option value="">资产库为空</option>'}
+              </select>
+            </label>
+          ` : ''}
+          ${libraryAsset && metadata ? `
+            <div id="library-asset-preview" class="asset-preview"></div>
+            <label class="field compact"><span>名称</span><input id="library-asset-name" maxlength="48" value="${escapeHtml(libraryAsset.name)}" /></label>
+            <label class="field compact"><span>语义标签（逗号分隔）</span><input id="library-asset-tags" value="${escapeHtml(metadata.tags.join(', '))}" /></label>
+            <fieldset class="asset-library-zones"><legend>适用区域</legend>
+              ${ASSET_LIBRARY_ZONE_TAGS.map((zone) => `<label><input type="checkbox" data-library-zone="${zone}" ${metadata.applicableZones.includes(zone) ? 'checked' : ''} />${zone}</label>`).join('')}
+            </fieldset>
+            <p class="empty">尺寸 ${libraryAsset.sizeClass ?? '未分类'} · 占地半径 ${(libraryAsset.footprintRadius ?? 0.5).toFixed(2)}m · ${metadata.analysisStatus === 'ready' ? 'AI 标签已就绪' : 'AI 分析待重试，当前不会供生成使用'}</p>
+            <div class="asset-library-flags">
+              <label><input id="library-asset-repeatable" type="checkbox" ${metadata.repeatable ? 'checked' : ''} />可重复</label>
+              <label><input id="library-asset-landmark" type="checkbox" ${metadata.landmark ? 'checked' : ''} />地标</label>
+              <label><input id="library-asset-enabled" type="checkbox" ${metadata.enabled ? 'checked' : ''} />启用</label>
+            </div>
+            <label class="field compact"><span>推荐优先级</span><input id="library-asset-priority" type="range" min="0" max="1" step="0.05" value="${metadata.priority}" /></label>
+            <details class="inspector-disclosure compact">
+              <summary><span><b>更多详细参数</b><small>摆放约束与来源</small></span></summary>
+              <div class="asset-library-details">
+                <label class="field compact"><span>推荐密度</span><input id="library-asset-density" type="number" min="0.01" max="1" step="0.01" value="${metadata.density ?? ''}" placeholder="自动" /></label>
+                <label class="field compact"><span>最小间距（m）</span><input id="library-asset-spacing" type="number" min="0.1" max="100" step="0.1" value="${metadata.minSpacing ?? ''}" placeholder="自动" /></label>
+                <div class="asset-library-inline"><label class="field compact"><span>最小缩放</span><input id="library-asset-scale-min" type="number" min="0.05" max="20" step="0.05" value="${metadata.scaleRange?.[0] ?? ''}" placeholder="自动" /></label><label class="field compact"><span>最大缩放</span><input id="library-asset-scale-max" type="number" min="0.05" max="20" step="0.05" value="${metadata.scaleRange?.[1] ?? ''}" placeholder="自动" /></label></div>
+                <label class="field compact"><span>旋转策略</span><select id="library-asset-rotation"><option value="random" ${metadata.rotation === 'random' ? 'selected' : ''}>随机朝向</option><option value="fixed" ${metadata.rotation === 'fixed' ? 'selected' : ''}>固定朝向</option></select></label>
+                <p class="empty">来源：独立资产库快照 · ${escapeHtml(libraryAsset.mode.toUpperCase())}</p>
+              </div>
+            </details>
+            <div class="asset-library-actions">
+              <button id="save-library-asset" type="button">保存标签</button>
+              <button id="analyze-library-asset" class="secondary small" type="button">重新 AI 分析</button>
+              <button id="remove-library-asset" class="secondary small" type="button">从库移除</button>
+            </div>
+          ` : ''}
+          ${selectedLibrary ? `<button id="delete-asset-library" class="secondary small" type="button">删除当前库</button>` : ''}
+        </section>
+      </details>
+    `;
+  }
+
+  private bindAssetLibraryManager(host: HTMLElement): void {
+    host.querySelector<HTMLSelectElement>('#asset-library-list')?.addEventListener('change', async (event) => {
+      await this.selectAssetLibrary((event.target as HTMLSelectElement).value);
+      this.previewingLibraryAsset = true;
+      this.renderPanels();
+    });
+    host.querySelector('#create-asset-library')?.addEventListener('click', () => void this.createAssetLibrary());
+    host.querySelector('#add-asset-to-library')?.addEventListener('click', () => void this.addSelectedAssetToLibrary());
+    host.querySelector('#import-library-asset')?.addEventListener('click', () => host.querySelector<HTMLInputElement>('#library-asset-file')?.click());
+    host.querySelector<HTMLInputElement>('#library-asset-file')?.addEventListener('change', (event) => {
+      const file = (event.target as HTMLInputElement).files?.[0];
+      if (file) void this.importModelIntoLibrary(file);
+    });
+    host.querySelector('#export-asset-library')?.addEventListener('click', () => void this.exportAssetLibrary());
+    host.querySelector('#import-asset-library')?.addEventListener('click', () => host.querySelector<HTMLInputElement>('#asset-library-file')?.click());
+    host.querySelector<HTMLInputElement>('#asset-library-file')?.addEventListener('change', (event) => {
+      const file = (event.target as HTMLInputElement).files?.[0];
+      if (file) void this.importAssetLibrary(file);
+    });
+    host.querySelector<HTMLSelectElement>('#library-asset-list')?.addEventListener('change', (event) => {
+      this.selectedLibraryAssetId = (event.target as HTMLSelectElement).value;
+      this.previewingLibraryAsset = true;
+      this.renderPanels();
+    });
+    host.querySelector('#save-library-asset')?.addEventListener('click', () => void this.saveLibraryAssetMetadata(host));
+    host.querySelector('#analyze-library-asset')?.addEventListener('click', () => void this.analyzeLibraryAsset());
+    host.querySelector('#remove-library-asset')?.addEventListener('click', () => void this.removeLibraryAsset());
+    host.querySelector('#delete-asset-library')?.addEventListener('click', () => void this.deleteAssetLibrary());
+  }
+
+  private async selectAssetLibrary(id: string): Promise<void> {
+    this.activeAssetLibraryId = id;
+    localStorage.setItem('worldforge.activeAssetLibraryId', id);
+    this.state.libraryAssets = id
+      ? (await editorFetch<{ assets: MapAsset[] }>(`/api/editor/asset-libraries/${encodeURIComponent(id)}`)).assets
+      : [];
+    this.selectedLibraryAssetId = this.state.libraryAssets[0]?.id ?? '';
+    if (!id) this.mapAiReuseExistingAssets = false;
+  }
+
+  private async refreshAssetLibraries(preferredLibraryId = this.activeAssetLibraryId): Promise<void> {
+    const { libraries } = await editorFetch<{ libraries: AssetLibrary[] }>('/api/editor/asset-libraries');
+    this.state.assetLibraries = libraries;
+    const selected = libraries.some((library) => library.id === preferredLibraryId)
+      ? preferredLibraryId
+      : libraries[0]?.id ?? '';
+    await this.selectAssetLibrary(selected);
+  }
+
+  private async createAssetLibrary(): Promise<void> {
+    const name = this.app.querySelector<HTMLInputElement>('#new-asset-library-name')?.value.trim() ?? '';
+    if (!name || this.state.busy) return;
+    this.setBusy(true, '正在创建资产库...');
+    try {
+      const { library } = await editorFetch<{ library: AssetLibrary }>('/api/editor/asset-libraries', {
+        method: 'POST', body: JSON.stringify({ name })
+      });
+      await this.refreshAssetLibraries(library.id);
+      this.state.message = `资产库“${library.name}”已创建`;
+    } catch (error) {
+      this.state.message = `创建资产库失败：${error instanceof Error ? error.message : '未知错误'}`;
+    } finally {
+      this.setBusy(false);
+      this.renderPanels();
+    }
+  }
+
+  private async addSelectedAssetToLibrary(): Promise<void> {
+    if (!this.activeAssetLibraryId || !this.state.selectedAssetId || this.state.busy) return;
+    this.setBusy(true, 'AI 正在为资产补充标签...');
+    try {
+      const result = await editorFetch<{ asset: MapAsset }>(`/api/editor/asset-libraries/${encodeURIComponent(this.activeAssetLibraryId)}/assets`, {
+        method: 'POST',
+        body: JSON.stringify({ assetId: this.state.selectedAssetId, provider: this.mapAiProvider })
+      });
+      await this.refreshAssetLibraries(this.activeAssetLibraryId);
+      this.selectedLibraryAssetId = result.asset.id;
+      this.previewingLibraryAsset = true;
+      this.state.message = result.asset.libraryMetadata?.analysisStatus === 'ready'
+        ? '资产已收藏，AI 标签已自动填写'
+        : '资产已收藏；AI 标签暂时待分析，当前不会用于生成';
+    } catch (error) {
+      this.state.message = `收藏资产失败：${error instanceof Error ? error.message : '未知错误'}`;
+    } finally {
+      this.setBusy(false);
+      this.renderPanels();
+    }
+  }
+
+  private async importModelIntoLibrary(file: File): Promise<void> {
+    if (!this.activeAssetLibraryId || this.state.busy) return;
+    this.setBusy(true, '正在导入模型并分析标签...');
+    try {
+      const input = JSON.parse(await file.text()) as { name?: string; prompt?: string; tags?: string[]; modelJson?: unknown; mode?: string };
+      const result = await editorFetch<{ asset: MapAsset }>(`/api/editor/asset-libraries/${encodeURIComponent(this.activeAssetLibraryId)}/import-asset`, {
+        method: 'POST',
+        body: JSON.stringify({
+          name: input.name ?? file.name.replace(/\.json$/i, ''),
+          prompt: input.prompt,
+          tags: input.tags,
+          modelJson: input.modelJson ?? input,
+          mode: input.mode,
+          provider: this.mapAiProvider
+        })
+      });
+      await this.refreshAssetLibraries(this.activeAssetLibraryId);
+      this.selectedLibraryAssetId = result.asset.id;
+      this.previewingLibraryAsset = true;
+      this.state.message = '模型已导入资产库';
+    } catch (error) {
+      this.state.message = `导入模型失败：${error instanceof Error ? error.message : '文件不是有效 JSON'}`;
+    } finally {
+      this.setBusy(false);
+      this.renderPanels();
+    }
+  }
+
+  private async exportAssetLibrary(): Promise<void> {
+    if (!this.activeAssetLibraryId) return;
+    const library = this.state.assetLibraries.find((item) => item.id === this.activeAssetLibraryId);
+    const pack = await editorFetch<AssetLibraryPack>(`/api/editor/asset-libraries/${encodeURIComponent(this.activeAssetLibraryId)}/export`);
+    downloadJson(`${safeDownloadName(library?.name ?? 'asset-library')}.worldforge-assets.json`, pack);
+    this.state.message = '资产库分享包已导出';
+    this.updateToolbarState();
+  }
+
+  private async importAssetLibrary(file: File): Promise<void> {
+    if (this.state.busy) return;
+    this.setBusy(true, '正在导入资产库...');
+    try {
+      const result = await editorFetch<{ library: AssetLibrary }>('/api/editor/asset-libraries/import', {
+        method: 'POST', body: await file.text()
+      });
+      await this.refreshAssetLibraries(result.library.id);
+      this.previewingLibraryAsset = true;
+      this.state.message = `资产库“${result.library.name}”已导入，资产 ID 已安全重建`;
+    } catch (error) {
+      this.state.message = `导入资产库失败：${error instanceof Error ? error.message : '未知错误'}`;
+    } finally {
+      this.setBusy(false);
+      this.renderPanels();
+    }
+  }
+
+  private async saveLibraryAssetMetadata(host: HTMLElement): Promise<void> {
+    if (!this.activeAssetLibraryId || !this.selectedLibraryAssetId) return;
+    const assetId = this.selectedLibraryAssetId;
+    const numberOrUndefined = (selector: string): number | undefined => {
+      const value = host.querySelector<HTMLInputElement>(selector)?.value.trim();
+      return value && Number.isFinite(Number(value)) ? Number(value) : undefined;
+    };
+    const scaleMin = numberOrUndefined('#library-asset-scale-min');
+    const scaleMax = numberOrUndefined('#library-asset-scale-max');
+    const metadata: Partial<AssetLibraryMetadata> = {
+      tags: (host.querySelector<HTMLInputElement>('#library-asset-tags')?.value ?? '').split(',').map((tag) => tag.trim()).filter(Boolean),
+      applicableZones: [...host.querySelectorAll<HTMLInputElement>('[data-library-zone]:checked')].map((input) => input.dataset.libraryZone as AssetLibraryMetadata['applicableZones'][number]),
+      repeatable: host.querySelector<HTMLInputElement>('#library-asset-repeatable')?.checked === true,
+      landmark: host.querySelector<HTMLInputElement>('#library-asset-landmark')?.checked === true,
+      enabled: host.querySelector<HTMLInputElement>('#library-asset-enabled')?.checked === true,
+      priority: numberOrUndefined('#library-asset-priority'),
+      density: numberOrUndefined('#library-asset-density'),
+      minSpacing: numberOrUndefined('#library-asset-spacing'),
+      ...(scaleMin !== undefined && scaleMax !== undefined ? { scaleRange: [scaleMin, scaleMax] } : {}),
+      rotation: host.querySelector<HTMLSelectElement>('#library-asset-rotation')?.value === 'fixed' ? 'fixed' : 'random'
+    };
+    await editorFetch(`/api/editor/asset-libraries/${encodeURIComponent(this.activeAssetLibraryId)}/assets/${encodeURIComponent(assetId)}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ name: host.querySelector<HTMLInputElement>('#library-asset-name')?.value, metadata })
+    });
+    await this.selectAssetLibrary(this.activeAssetLibraryId);
+    this.selectedLibraryAssetId = this.state.libraryAssets.find((asset) => asset.id === assetId)?.id ?? this.state.libraryAssets[0]?.id ?? '';
+    this.state.message = '资产库标签已保存';
+    this.renderPanels();
+  }
+
+  private async analyzeLibraryAsset(): Promise<void> {
+    if (!this.activeAssetLibraryId || !this.selectedLibraryAssetId || this.state.busy) return;
+    const assetId = this.selectedLibraryAssetId;
+    this.setBusy(true, 'AI 正在重新分析资产...');
+    try {
+      await editorFetch(`/api/editor/asset-libraries/${encodeURIComponent(this.activeAssetLibraryId)}/assets/${encodeURIComponent(assetId)}/analyze`, {
+        method: 'POST', body: JSON.stringify({ provider: this.mapAiProvider })
+      });
+      await this.selectAssetLibrary(this.activeAssetLibraryId);
+      this.selectedLibraryAssetId = assetId;
+      this.state.message = '资产标签分析已更新';
+    } finally {
+      this.setBusy(false);
+      this.renderPanels();
+    }
+  }
+
+  private async removeLibraryAsset(): Promise<void> {
+    if (!this.activeAssetLibraryId || !this.selectedLibraryAssetId) return;
+    await editorFetch(`/api/editor/asset-libraries/${encodeURIComponent(this.activeAssetLibraryId)}/assets/${encodeURIComponent(this.selectedLibraryAssetId)}`, { method: 'DELETE' });
+    await this.refreshAssetLibraries(this.activeAssetLibraryId);
+    this.previewingLibraryAsset = true;
+    this.state.message = '资产已从库中移除；已使用它的地图不受影响';
+    this.renderPanels();
+  }
+
+  private async deleteAssetLibrary(): Promise<void> {
+    if (!this.activeAssetLibraryId) return;
+    await editorFetch(`/api/editor/asset-libraries/${encodeURIComponent(this.activeAssetLibraryId)}`, { method: 'DELETE' });
+    await this.refreshAssetLibraries('');
+    this.mapAiReuseExistingAssets = false;
+    this.state.message = '资产库已删除；已有地图中的资产快照仍然保留';
+    this.renderPanels();
   }
 
   private renderDeveloperPresetEditor(draft: RenderScheme): string {
@@ -2188,7 +2543,9 @@ class MapEditor {
 
   private async renderAssetPreview(): Promise<void> {
     if (!this.previewScene || !this.previewCamera || !this.previewRenderer || !this.previewModelRoot) return;
-    const asset = this.state.assets.find((item) => item.id === this.state.selectedAssetId);
+    const asset = this.previewingLibraryAsset
+      ? this.state.libraryAssets.find((item) => item.id === this.selectedLibraryAssetId)
+      : this.state.assets.find((item) => item.id === this.state.selectedAssetId);
     const assetId = asset?.id ?? null;
     if (this.previewAssetId === assetId && (assetId === null || this.previewModel)) return;
     this.previewAssetId = assetId;
@@ -2197,7 +2554,8 @@ class MapEditor {
     this.clearAssetPreviewModel();
     if (!asset?.modelJson) return;
     const model = await buildModelGroup(asset.modelJson);
-    if (requestId !== this.previewRequestId || this.state.selectedAssetId !== assetId || !this.previewModelRoot) {
+    const selectedPreviewAssetId = this.previewingLibraryAsset ? this.selectedLibraryAssetId : this.state.selectedAssetId;
+    if (requestId !== this.previewRequestId || selectedPreviewAssetId !== assetId || !this.previewModelRoot) {
       disposeObject(model);
       return;
     }
@@ -3556,4 +3914,17 @@ function atmosphereMasterStrength(scheme: RenderScheme): number {
 
 function escapeHtml(value: string): string {
   return value.replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char] ?? char));
+}
+
+function downloadJson(file: string, value: unknown): void {
+  const url = URL.createObjectURL(new Blob([JSON.stringify(value, null, 2)], { type: 'application/json' }));
+  const anchor = document.createElement('a');
+  anchor.href = url;
+  anchor.download = file;
+  anchor.click();
+  queueMicrotask(() => URL.revokeObjectURL(url));
+}
+
+function safeDownloadName(value: string): string {
+  return value.trim().replace(/[<>:"/\\|?*\u0000-\u001f]+/g, '-').replace(/[. ]+$/g, '').slice(0, 80) || 'asset-library';
 }

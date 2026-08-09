@@ -2,8 +2,32 @@ import { describe, expect, it } from 'vitest';
 import { createEmptyMap, normalizeMap } from '../src/shared/map';
 import { combinedGrassDensity, sampleGrassDensity } from '../src/shared/mapGrass';
 import { applyMapOperations } from '../src/shared/mapOperations';
+import { deriveContactAwareGrassMap } from '../src/client/mapGrassRenderer';
 
 describe('map grass layers', () => {
+  it('derives contact clearance without mutating authored grass densities', () => {
+    const map = createEmptyMap('contact grass', 'map-contact-grass');
+    const layer = {
+      id: 'meadow', name: 'Meadow', visible: true, seed: 1,
+      resolutionX: map.terrain.resolutionX,
+      resolutionZ: map.terrain.resolutionZ,
+      densities: Array(map.terrain.resolutionX * map.terrain.resolutionZ).fill(1),
+      mix: { short: 0.8, tall: 0.18, flowers: 0.02 }
+    };
+    map.grassLayers = [layer];
+    map.waterBodies = [{
+      id: 'pond', name: 'Pond', type: 'lake', level: 0.2, depth: 1.5, width: 1,
+      points: [[-2, -2], [2, -2], [2, 2], [-2, 2]]
+    }];
+    const before = [...layer.densities];
+
+    const derived = deriveContactAwareGrassMap(map);
+    const center = Math.floor(layer.resolutionZ / 2) * layer.resolutionX + Math.floor(layer.resolutionX / 2);
+
+    expect(derived.grassLayers[0].densities[center]).toBe(0);
+    expect(map.grassLayers[0].densities).toEqual(before);
+  });
+
   it('normalizes multiple density layers and variant ratios at terrain resolution', () => {
     const map = normalizeMap({
       grassLayers: [
