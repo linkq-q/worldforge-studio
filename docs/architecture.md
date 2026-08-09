@@ -22,7 +22,7 @@ Each rendered map owns one `RuntimeIndex` for the whole map lifetime. `AIPrimiti
 
 Never remove children during `Object3D.traverse()`. Collect targets first and detach them after traversal so Three.js does not iterate a shortened `children` array with its original length.
 
-Frame rendering is scheduled through the runtime `RenderPipeline` and `RenderGraph`: planar reflections run first, the shared normal/depth producer runs only when demanded, water then consumes the scene depth, and the registered composer passes run last. WorldForge owns only the host callbacks in `renderFrameCoordinator.ts`; it must not rebuild a second pass scheduler inside `RenderRuntimeAdapter`.
+Frame rendering is scheduled through the runtime `RenderPipeline` and `RenderGraph`: the shared normal/depth producer runs only when demanded, water then consumes the current-frame scene depth, and the registered composer passes run last. WorldForge owns only the host callbacks in `renderFrameCoordinator.ts`; it must not rebuild a second pass scheduler inside `RenderRuntimeAdapter`. Camera-dependent resources are never frozen during editor interaction.
 
 Scene composition also compiles map-owned `visualSemantics`: bounded world-space zones tagged as grass, forest, water, lowland, dry, settlement or rocky, plus one shared wind field. Render schemes own only high-level atmosphere intent. `compileAtmosphereFx` combines both sources into weak semantic defaults and explicit boosts; region particles, grass and water consume the same wind direction and strength. Particles are capped to three draw calls, while sun shafts and wind streaks share one depth-aware composer pass.
 
@@ -30,9 +30,9 @@ Scene composition also compiles map-owned `visualSemantics`: bounded world-space
 
 The initial visual goldens are contract tests rather than brittle screenshots: bright-cartoon, colored-shadow and dramatic must retain non-black shadow floors and coordinated light/color direction; the medium forest/pond/camp semantic fixture must activate pollen and shore vapor only in matching regions. Browser acceptance remains the final check for composition, water reflection and effect subtlety.
 
-Water meshes never write the shared normal/depth target. They consume the depth of terrain and opaque scene objects so shallow/deep blending, shore fading, SSAO, distance fog, and presentation passes share one coherent screen-space scene description. HDRI environment reflection and planar scene reflection have separate strengths; a bright panorama must not wash out the local scene reflection.
+Water meshes never write the shared normal/depth target. They consume the depth of terrain and opaque scene objects so shallow/deep blending, shore fading, SSAO, distance fog, and presentation passes share one coherent screen-space scene description. Water reflection comes from the shared HDRI environment and is bounded separately from water opacity and highlight strength.
 
-Large-map directional shadows use the runtime `CSMController` through `mapShadowRuntime.ts`. The controller owns one map lifetime, patches both `modelsRoot` (including primitive batches) and the terrain material, and restores the fallback directional shadow when the map is replaced. Editor helpers, sky and other scene-level objects remain outside its material scope.
+Directional shadows use one map-fitted shadow camera configured by `lighting.ts`. The shadow bounds come from the persisted map bounds, so editor and viewer share the same fixed-cost shadow path without multiplying scene renders by cascade count.
 
 ## 目标
 
@@ -72,10 +72,10 @@ Large-map directional shadows use the runtime `CSMController` through `mapShadow
 
 每张地图保存一个全局 `seed`；旧地图按地图 ID 确定性补齐。AI 先输出高层 `terrain.generate`（`plain/hills/valley/island/canyon`），共享 PCG 模块用四层 fBm 烘焙进现有高度场，再依次执行局部笔刷、湖泊刻蚀和散布。LLM 不再负责枚举基础地形坐标。坡度分析与地形生成分属独立共享模块，渲染端只消费最终高度场，并按高度、坡度和水线生成顶点颜色。
 
-渲染生成同样使用受限协议，而不是让模型直接修改 Three.js：AI 选择基础方案并组合 `RenderPlan` 能力模块，服务端按该方案的 `accessPolicy` 校验模块、参数、角色权限和范围。非法结果或明确风格遗漏只允许自动修正一次。当前模块覆盖环境、HDRI 天空、表面、描边、世界空间素描、漫画、色彩分级、标签材质、命名灯光、Bloom/SSAO、标签特效，以及结构化湖泊/河流与模型水面。`environment.hdri` 的贴图来自 `data/map-editor/hdri/` 目录扫描，同一张全景图既作为 `HDRISkyDome` 背景，也经 PMREM 成为 `scene.environment`；环境变更由宿主桥同步给 Voxel 材质标签表面绑定和 `WaterSurface`，清除 HDRI 时也同步解绑。距离雾统一使用 Runtime 的深度后处理，覆盖普通材质、透明水体和风格化输出，避免自定义 Shader 绕开 Three 内建雾；水体参与该深度预通道，但仍不进入普通材质替换。统一描边的距离淡出使用世界米制阈值，默认从 120m 到 260m，且只向开发者开放。水体的 HDRI 环境反射与场景平面倒影使用独立强度，切换方案时都重新绑定，避免亮天空洗白局部倒影。贴图名是开发者专用参数，AI 只能调旋转、曝光、饱和度、强度和色调。材质与特效只接收 `modelsRoot`；后处理 normal/depth 预通道只接收地图内容根，物体/材质 ID 只遍历 `modelsRoot`，编辑器 gizmo 和辅助物不会进入风格链。景深仅保留高层协议。
+渲染生成同样使用受限协议，而不是让模型直接修改 Three.js：AI 选择基础方案并组合 `RenderPlan` 能力模块，服务端按该方案的 `accessPolicy` 校验模块、参数、角色权限和范围。非法结果或明确风格遗漏只允许自动修正一次。当前模块覆盖环境、HDRI 天空、表面、描边、世界空间素描、漫画、色彩分级、标签材质、命名灯光、Bloom/SSAO、标签特效，以及结构化湖泊/河流与模型水面。`environment.hdri` 的贴图来自 `data/map-editor/hdri/` 目录扫描，同一张全景图既作为 `HDRISkyDome` 背景，也经 PMREM 成为 `scene.environment`；环境变更由宿主桥同步给 Voxel 材质标签表面绑定和 `WaterSurface`，清除 HDRI 时也同步解绑。距离雾统一使用 Runtime 的深度后处理，覆盖普通材质、透明水体和风格化输出，避免自定义 Shader 绕开 Three 内建雾；水体参与该深度预通道，但仍不进入普通材质替换。统一描边的距离淡出使用世界米制阈值，默认从 120m 到 260m，且只向开发者开放。水体复用 HDRI 环境反射，切换方案时重新绑定，并独立限制反射强度和曝光以避免亮天空洗白水色。贴图名是开发者专用参数，AI 只能调旋转、曝光、饱和度、强度和色调。材质与特效只接收 `modelsRoot`；后处理 normal/depth 预通道只接收地图内容根，物体/材质 ID 只遍历 `modelsRoot`，编辑器 gizmo 和辅助物不会进入风格链。景深仅保留高层协议。
 
 “艳阳/烈日/高对比”采用方向性色彩契约：暖色太阳主光、偏冷天空补光、中等后处理对比和非零暗部下限共同塑造清晰度，不能用压黑阴影替代光照层次；明确冷调时才反转整体色彩倾向。
-结构化湖泊和河流在启用水体方案时还会注册到 Runtime 的 `PlanarReflectionPass`：反射相机先渲染场景到共享纹理，再把纹理和投影矩阵送入各个 `WaterSurface`。HDRI 环境反射与场景平面反射是两条独立输入，前者负责远景环境，后者负责岸边地形、树木和建筑。
+结构化湖泊和河流复用当前 HDRI 环境纹理作为水面反射输入，不为水位或水体额外创建整场景平面反射捕获。这样水体数量和水位数量不会放大每帧场景渲染次数；透明度、深浅色、波纹、岸浪与岸线泡沫仍由 `WaterSurface` 独立控制。
 渲染 Refine 以当前完整 `RenderPlan` 为输入，强制保持 `baseSchemeId` 不变并返回合并后的完整计划，因此“雾再浓一点”不会重新选择预设或丢失素描、漫画等既有模块。
 内置渲染方案保持只读；用户创建的自定义方案可以删除。删除时，存储层会把所有引用它的地图切换到第一个内置默认方案，避免持久化悬空的 `renderSchemeId`。
 
@@ -118,7 +118,7 @@ Large-map directional shadows use the runtime `CSMController` through `mapShadow
 
 ## 渲染开发者模式
 
-开发者模式编辑的仍是普通渲染方案，不生成第二套数据。每个方案可以独立决定参数是否向 AI/开发者开放、开放范围、枚举白名单和控件形式。“当前效果”与“开放策略”分离：数值参数先在 capability 的完整安全范围内用滑条和精确数值框实时预览，再由开发者填写允许 AI/开发者使用的子区间。水体当前值同时控制 HDRI 环境反射与场景平面反射，并额外开放平面反射扰动和 Fresnel。保存时复制为新方案，不覆盖内置预设。
+开发者模式编辑的仍是普通渲染方案，不生成第二套数据。每个方案可以独立决定参数是否向 AI/开发者开放、开放范围、枚举白名单和控件形式。“当前效果”与“开放策略”分离：数值参数先在 capability 的完整安全范围内用滑条和精确数值框实时预览，再由开发者填写允许 AI/开发者使用的子区间。水体开放 HDRI 环境反射强度和曝光；不会展示没有运行通道的平面反射参数。保存时复制为新方案，不覆盖内置预设。
 
 ## 初版暂不实现
 
