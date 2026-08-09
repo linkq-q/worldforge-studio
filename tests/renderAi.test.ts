@@ -39,7 +39,7 @@ describe('render AI adapter', () => {
       settings: {
         background: '#d7d2c4',
         fogColor: '#c9c5b8',
-        exposure: 3,
+        exposure: 1.5,
         fogDensity: 0,
         sunIntensity: 4.2
       },
@@ -52,7 +52,7 @@ describe('render AI adapter', () => {
           { id: 'environment.palette', params: { background: '#d7d2c4', fogColor: '#c9c5b8' } },
           { id: 'atmosphere.fog', params: { density: 0 } },
           { id: 'lighting.sun', params: { intensity: 4.2 } },
-          { id: 'presentation.exposure', params: { value: 3 } }
+          { id: 'presentation.exposure', params: { value: 1.5 } }
         ]
       }
     });
@@ -127,6 +127,8 @@ describe('render AI adapter', () => {
     });
     expect(requestBody.messages[0].content).toContain('runtime.presentation-style');
     expect(requestBody.messages[0].content).toContain('sketch');
+    expect(requestBody.messages[0].content).toContain('青绿、松石、翡翠、深蓝、灰蓝、茶绿');
+    expect(requestBody.messages[0].content).toContain('opacity 默认保持在 0.45-0.72');
   });
 
   it('retries until the plan carries an HDRI sky when the user asked for one', async () => {
@@ -328,6 +330,46 @@ describe('render AI adapter', () => {
 
     expect(fetchImpl).toHaveBeenCalledTimes(2);
     expect(compileRuntimePresentation(suggestion.plan).mode).toBe('sketch');
+  });
+
+  it('treats cartoon water as a water style and drops AI-only forbidden quality fields', async () => {
+    const fetchImpl = vi.fn().mockResolvedValue(new Response(JSON.stringify({
+      ok: true,
+      content: JSON.stringify({
+        plan: {
+          version: 2,
+          baseSchemeId: 'render-natural-day',
+          modules: [
+            {
+              key: 'sea-water',
+              id: 'runtime.water-style',
+              scope: { target: 'water', tag: 'water' },
+              params: { recipe: 'stylized', waveStrength: 0.65, waveSpeed: 0.5 }
+            },
+            {
+              id: 'runtime.post-quality',
+              params: { bloom: 'soft', ssao: 'soft', depthOfField: 'soft' }
+            }
+          ]
+        }
+      })
+    }), { status: 200, headers: { 'Content-Type': 'application/json' } }));
+
+    const suggestion = await generateRenderSuggestion(
+      '宁静的海边渔村，清新夏日氛围，卡通风格的水面渲染，清晰的波纹，夏日微风。',
+      BUILTIN_RENDER_SCHEMES,
+      { fetchImpl }
+    );
+
+    expect(fetchImpl).toHaveBeenCalledTimes(1);
+    expect(compileRuntimeStyle(suggestion.plan).mode).toBe('pbr');
+    expect(suggestion.plan.modules).toEqual(expect.arrayContaining([
+      expect.objectContaining({ id: 'runtime.water-style', params: expect.objectContaining({ recipe: 'stylized' }) }),
+      expect.objectContaining({
+        id: 'runtime.post-quality',
+        params: { bloom: 'soft', ssao: 'soft' }
+      })
+    ]));
   });
 
   it('repairs an invalid module plan once', async () => {
