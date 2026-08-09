@@ -6,6 +6,7 @@ import {
 } from '../shared/protocol';
 import materialTagVocabulary from '@voxel-studio/render-runtime/model/material-tags-v1.json';
 import type { ModelGenerationMode } from '../shared/modelGenerationMode';
+import { enforceReadableFoliageColors } from '../shared/modelColorPolicy';
 
 export interface ModelApiOptions {
   apiBase?: string;
@@ -140,7 +141,7 @@ export async function generateModel(description: string, options: ModelApiOption
         errors.push(`${provider}: ${parsed.error}`);
         continue;
       }
-      if (parsed.modelJson) return parsed.modelJson;
+      if (parsed.modelJson) return enforceReadableFoliageColors(parsed.modelJson);
       errors.push(`${provider}: 未返回模型数据`);
     } catch (error) {
       if (options.signal?.aborted || isAbortError(error)) throw error;
@@ -175,7 +176,7 @@ export async function refineModel(modelJson: unknown, description: string, optio
         signal: options.signal
       });
       const json = await resp.json() as { ok?: boolean; modelJson?: unknown; error?: string };
-      if (resp.ok && json.ok && json.modelJson) return json.modelJson;
+      if (resp.ok && json.ok && json.modelJson) return enforceReadableFoliageColors(json.modelJson);
       errors.push(`${provider}: ${json.error ?? `HTTP ${resp.status}`}`);
     } catch (error) {
       if (options.signal?.aborted || isAbortError(error)) throw error;

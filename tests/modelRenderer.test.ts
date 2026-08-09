@@ -1,8 +1,21 @@
 import * as THREE from 'three';
 import { describe, expect, it } from 'vitest';
-import { setRevealHighlight } from '../src/client/modelRenderer';
+import { buildModelGroup, setRevealHighlight } from '../src/client/modelRenderer';
 
 describe('reveal model highlight', () => {
+  it('keeps legacy dark foliage readable while preserving non-foliage source colors', async () => {
+    const group = await buildModelGroup({ nodes: [
+      { id: 'crown', tags: [{ tag: 'foliage', value: 'leaf' }] },
+      { id: 'leaf', parent: 'crown', mesh: { type: 'box', params: { width: 1, height: 1, depth: 1 }, color: 0x27483a } },
+      { id: 'trunk', mesh: { type: 'box', params: { width: 1, height: 1, depth: 1 }, color: 0x4e4942 } }
+    ] });
+    const leaf = group.getObjectByName('leaf') as THREE.Mesh<THREE.BufferGeometry, THREE.MeshStandardMaterial>;
+    const trunk = group.getObjectByName('trunk') as THREE.Mesh<THREE.BufferGeometry, THREE.MeshStandardMaterial>;
+
+    expect(leaf.material.color.getHex()).toBeGreaterThan(0x27483a);
+    expect(trunk.material.color.getHex()).toBe(0x4e4942);
+  });
+
   it('breathes a red overlay from fully transparent to half transparent without changing the model', () => {
     const material = new THREE.MeshStandardMaterial({
       color: 0x336699,

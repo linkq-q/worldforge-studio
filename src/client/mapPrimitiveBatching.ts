@@ -10,6 +10,7 @@ import {
 } from '@voxel-studio/render-runtime/effects';
 import materialTagVocabulary from '@voxel-studio/render-runtime/model/material-tags-v1.json';
 import type { MapAsset } from '../shared/map';
+import { enforceReadableFoliageColors } from '../shared/modelColorPolicy';
 import { filterMaterialTags, type MapMaterialTagPolicy } from '../shared/materialTagPolicy';
 import { buildModelGroup } from './modelRenderer';
 import { MapObjectCulling, type MapObjectCullingStats } from './mapObjectCulling';
@@ -261,8 +262,9 @@ async function takeTemplate(
 }
 
 async function prepareTemplate(asset: MapAsset, materialTagPolicy: MapMaterialTagPolicy): Promise<PreparedTemplate> {
-  const group = await buildModelGroup(asset.modelJson);
-  const nodes = readNodes(asset.modelJson);
+  const modelJson = enforceReadableFoliageColors(asset.modelJson);
+  const group = await buildModelGroup(modelJson);
+  const nodes = readNodes(modelJson);
   const parts = nodes.map((node) => toBatchPart(node, materialTagPolicy));
   const compilerModel = { name: asset.name, parts };
   const compiled = compileModelMaterialTags(compilerModel, materialTagVocabulary);

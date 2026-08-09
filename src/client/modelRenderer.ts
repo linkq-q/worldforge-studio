@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { enforceReadableFoliageColors } from '../shared/modelColorPolicy';
 import { MODEL_API_BASE } from '../shared/protocol';
 
 export interface MotionDelta {
@@ -81,7 +82,7 @@ export async function buildModelGroup(modelJson: unknown): Promise<THREE.Group> 
 
 export async function buildModelGroupWithNodes(modelJson: unknown): Promise<BuiltModelGroup> {
   const group = new THREE.Group();
-  const data = modelJson as ModelJson;
+  const data = enforceReadableFoliageColors(modelJson) as ModelJson;
   const nodes = Array.isArray(data?.nodes) ? data.nodes : [];
   if (nodes.length === 0) {
     group.add(makeFallbackProp());
@@ -143,7 +144,7 @@ export async function buildModelGroupWithNodes(modelJson: unknown): Promise<Buil
   }
 
   centerGroup(group);
-  group.userData.materialTagSource = modelJson;
+  group.userData.materialTagSource = data;
   enableObjectShadows(group);
   return { group, objects, runtime, motionLookups };
 }

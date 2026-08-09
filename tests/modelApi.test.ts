@@ -158,4 +158,24 @@ describe('model API adapter', () => {
     expect(JSON.parse(String(init.body)).materialTags.version).toBe('material-tags-v1');
   });
 
+  it('lifts dark inherited foliage colors without changing bark colors', async () => {
+    const fetchImpl = vi.fn().mockResolvedValue(new Response([
+      'data: {"stage":"result","done":true,"modelJson":{"nodes":[',
+      '{"id":"crown","tags":[{"tag":"foliage","value":"leaf"}]},',
+      '{"id":"leaf","parent":"crown","mesh":{"type":"box","color":2574394}},',
+      '{"id":"muted-leaf","parent":"crown","mesh":{"type":"box","color":7438938}},',
+      '{"id":"trunk","tags":[{"tag":"base","value":"wood"}],"mesh":{"type":"box","color":5130562}}',
+      ']}}',
+      ''
+    ].join(''), { status: 200 }));
+
+    const model = await generateModel('tree', {
+      apiBase: 'https://example.test', providers: ['gpt'], fetchImpl, materialTags
+    }) as { nodes: Array<{ id: string; mesh?: { color?: number } }> };
+
+    expect(model.nodes.find((node) => node.id === 'leaf')?.mesh?.color).toBeGreaterThan(2574394);
+    expect(model.nodes.find((node) => node.id === 'muted-leaf')?.mesh?.color).not.toBe(7438938);
+    expect(model.nodes.find((node) => node.id === 'trunk')?.mesh?.color).toBe(5130562);
+  });
+
 });
