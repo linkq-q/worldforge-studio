@@ -28,7 +28,9 @@ import {
   configureWaterReflection,
   configureDistanceFogPass,
   distanceAtFogOpacity,
-  syncWaterSurfaceEnvironment
+  syncWaterSurfaceEnvironment,
+  syncWaterSurfaceShore,
+  type WaterShoreBinding
 } from './renderEnvironmentBridge';
 import { createComposerRenderTarget } from './renderOutputPipeline';
 import { PlanarWaterReflection } from './planarWaterReflection';
@@ -535,14 +537,20 @@ export class RenderRuntimeAdapter {
       if (surface instanceof WaterSurface) {
         applyDefaultWaterState(surface);
         if (style) {
+          const waveStrength = style.waveStrength ?? recipe.waveStrength;
+          const waveSpeed = style.waveSpeed ?? recipe.waveSpeed;
+          const foamStrength = style.foamStrength ?? recipe.foamStrength;
           surface.importState({
             waterMode: recipe.mode,
             uWaterColor: `#${waterColor.getHexString()}`,
             uShallowColor: `#${shallowColor.getHexString()}`,
             uDepthColor: `#${depthColor.getHexString()}`,
-            uWaveHeight: (style.waveStrength ?? recipe.waveStrength) * 0.12,
-            uWaveSpeed: style.waveSpeed ?? recipe.waveSpeed,
-            uFoamStrength: style.foamStrength ?? recipe.foamStrength,
+            uWaveHeight: waveStrength * 0.12,
+            uWaveSpeed: waveSpeed,
+            uFoamStrength: foamStrength,
+            uShoreFoamStrength: foamStrength,
+            uShoreWaveStrength: Math.min(2.5, waveStrength * 2),
+            uShoreWaveSpeed: waveSpeed,
             uOpacity: style.opacity ?? recipe.opacity
           });
         }
@@ -555,6 +563,10 @@ export class RenderRuntimeAdapter {
           fresnelBoost: style?.reflectionFresnel
         });
         syncWaterSurfaceEnvironment(surface, this.scene.environment);
+        const shore = mesh.userData.waterShore as WaterShoreBinding | undefined;
+        if (shore?.texture?.isTexture && Array.isArray(shore.center) && shore.size > 0) {
+          syncWaterSurfaceShore(surface, shore);
+        }
       }
       const uniforms = surface.material.uniforms;
       if (style && uniforms.uOpacity) uniforms.uOpacity.value = style.opacity ?? recipe.opacity;

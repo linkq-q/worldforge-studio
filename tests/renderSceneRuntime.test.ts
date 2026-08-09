@@ -79,8 +79,17 @@ describe('applyRenderScheme', () => {
   });
 
   it('leaves the scene unstyled when the scheme carries no render plan', () => {
-    const { targets, adapter, hdriSky } = createTargets();
-    const scheme = createRenderScheme({ name: 'plain', settings: PLAIN_SCHEME.settings });
+    const { targets, adapter, hdriSky, rendered } = createTargets();
+    const scheme = createRenderScheme({
+      name: 'plain',
+      settings: {
+        ...PLAIN_SCHEME.settings,
+        fogColor: '#8899aa',
+        hemisphereSkyColor: '#ccddee',
+        hemisphereGroundColor: '#252b35',
+        sunColor: '#ffd0a0'
+      }
+    });
     expect(scheme.renderPlan).toBeUndefined();
 
     applyRenderScheme(targets, scheme);
@@ -88,7 +97,32 @@ describe('applyRenderScheme', () => {
     expect(adapter.applyOutline).toHaveBeenLastCalledWith({ mode: 'none', params: {} });
     expect(adapter.applyColorGrade).toHaveBeenLastCalledWith({ recipe: 'neutral' });
     expect(adapter.applyScopedCapabilities).toHaveBeenLastCalledWith([], [], []);
+    expect(rendered.setGrassStyle.mock.lastCall?.[0]).toMatchObject({
+      rootColor: expect.not.stringMatching(/^#72ad49$/i),
+      tipColor: expect.not.stringMatching(/^#b7df76$/i),
+      groundColor: expect.not.stringMatching(/^#669746$/i)
+    });
     // A scheme without a plan must not leave a previous panorama on the dome.
     expect(hdriSky.clear).toHaveBeenCalled();
+  });
+
+  it('keeps explicit grass colors while deriving the remaining colors from the environment', () => {
+    const { targets, rendered } = createTargets();
+    const scheme = createRenderScheme({
+      name: 'manual grass',
+      settings: { ...PLAIN_SCHEME.settings, hemisphereGroundColor: '#182536', sunColor: '#ffbb88' },
+      renderPlan: {
+        version: 2,
+        baseSchemeId: PLAIN_SCHEME.id,
+        modules: [{ id: 'runtime.grass-style', params: { rootColor: '#123456' } }]
+      }
+    });
+
+    applyRenderScheme(targets, scheme);
+
+    expect(rendered.setGrassStyle.mock.lastCall?.[0]).toMatchObject({
+      rootColor: '#123456',
+      tipColor: expect.not.stringMatching(/^#b7df76$/i)
+    });
   });
 });

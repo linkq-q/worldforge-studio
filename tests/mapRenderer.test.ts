@@ -76,6 +76,18 @@ describe('structured map water rendering', () => {
     expect(river.userData.materialTags).toEqual(expect.arrayContaining(['water', 'river', 'river-1']));
     expect(lake.geometry.getAttribute('position').count).toBeGreaterThanOrEqual(3);
     expect(river.geometry.getAttribute('position').count).toBeGreaterThanOrEqual(6);
+    for (const water of [lake, river]) {
+      const shore = water.userData.waterShore as {
+        texture: THREE.DataTexture;
+        center: [number, number];
+        size: number;
+      };
+      const pixels = shore.texture.image.data as Uint8Array;
+      expect(shore.texture.isDataTexture).toBe(true);
+      expect(shore.size).toBeGreaterThan(0);
+      expect(pixels).toContain(0);
+      expect(Math.max(...pixels)).toBe(255);
+    }
 
     waterRoot.traverse((object) => {
       const mesh = object as THREE.Mesh;
@@ -83,6 +95,7 @@ describe('structured map water rendering', () => {
       mesh.geometry.dispose();
       const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
       materials.forEach((material) => material.dispose());
+      (mesh.userData.waterShore?.texture as THREE.Texture | undefined)?.dispose();
     });
   });
 

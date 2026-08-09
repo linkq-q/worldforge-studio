@@ -20,4 +20,17 @@ describe('normal/depth pre-pass policy', () => {
 
     expect(isNormalDepthPrePassMesh(mesh)).toBe(false);
   });
+
+  it('lets explicitly participating grass write depth without entering general shader scope', () => {
+    const grassRoot = new THREE.Group();
+    grassRoot.userData.isEnvironmentObject = true;
+    grassRoot.userData.skipShaderApply = true;
+    const grass = new THREE.Mesh(new THREE.PlaneGeometry(), new THREE.MeshBasicMaterial());
+    grass.userData.forceNormalDepthPrePass = true;
+    grassRoot.add(grass);
+
+    expect(isNormalDepthPrePassMesh(grass)).toBe(true);
+    grassRoot.userData.isWater = true;
+    expect(isNormalDepthPrePassMesh(grass)).toBe(false);
+  });
 });

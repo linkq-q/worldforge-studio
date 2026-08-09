@@ -10,6 +10,7 @@ import type { RenderedMap } from './mapRenderer';
 import type { Vec3 } from '../shared/protocol';
 import { DEFAULT_SUN_POSITION, type EditableMap } from '../shared/map';
 import type { RenderScheme } from '../shared/renderScheme';
+import { mixHexColors } from '../shared/colorDirector';
 import { compileAtmosphereFx } from '../shared/atmosphereFx';
 import {
   DEFAULT_RUNTIME_GRASS_STYLE,
@@ -287,12 +288,19 @@ export function applyRenderScheme(targets: RenderSchemeTargets, scheme: RenderSc
   adapter.applyPostQuality(
     plan ? compileRuntimePostQuality(plan) : { bloom: 'off', ssao: 'off', depthOfField: 'off' }
   );
+  if (plan) applyLightRig(compileRuntimeLightRig(plan), sunLight, hemisphereLight, settings);
   targets.rendered?.setGrassStyle(grassStyleWithSharedWind(
     plan ? compileRuntimeGrassStyle(plan) : DEFAULT_RUNTIME_GRASS_STYLE,
     targets.map,
-    plan
+    plan,
+    {
+      fogColor: settings.fogColor,
+      hemisphereSkyColor: `#${hemisphereLight.color.getHexString()}`,
+      hemisphereGroundColor: `#${hemisphereLight.groundColor.getHexString()}`,
+      sunColor: `#${sunLight.color.getHexString()}`,
+      exposure: settings.exposure
+    }
   ));
-  if (plan) applyLightRig(compileRuntimeLightRig(plan), sunLight, hemisphereLight, settings);
   adapter.applyScopedCapabilities(
     plan ? compileRuntimeMaterialThemes(plan) : [],
     waterStylesWithSharedWind(plan ? compileRuntimeWaterStyles(plan) : [], targets.map, plan),
@@ -305,17 +313,42 @@ export function applyRenderScheme(targets: RenderSchemeTargets, scheme: RenderSc
 function grassStyleWithSharedWind(
   style: typeof DEFAULT_RUNTIME_GRASS_STYLE,
   map?: EditableMap | null,
-  plan?: RenderScheme['renderPlan']
+  plan?: RenderScheme['renderPlan'],
+  environment?: Pick<RenderScheme['settings'], 'fogColor' | 'hemisphereSkyColor' | 'hemisphereGroundColor' | 'sunColor' | 'exposure'>
 ): typeof DEFAULT_RUNTIME_GRASS_STYLE {
-  if (!map) return style;
   const explicit = plan?.modules.find((module) => module.id === 'runtime.grass-style')?.params ?? {};
+  const environmentStyle: Partial<Pick<typeof DEFAULT_RUNTIME_GRASS_STYLE, 'rootColor' | 'tipColor' | 'groundColor'>> = environment
+    ? deriveEnvironmentGrassColors(environment)
+    : {};
   return {
     ...style,
-    windDirection: typeof explicit.windAngle === 'number' ? style.windDirection : map.visualSemantics.wind.direction,
-    windStrength: typeof explicit.windStrength === 'number'
+    ...environmentStyle,
+    rootColor: typeof explicit.rootColor === 'string' ? style.rootColor : environmentStyle.rootColor ?? style.rootColor,
+    tipColor: typeof explicit.tipColor === 'string' ? style.tipColor : environmentStyle.tipColor ?? style.tipColor,
+    groundColor: typeof explicit.groundColor === 'string' ? style.groundColor : environmentStyle.groundColor ?? style.groundColor,
+    windDirection: typeof explicit.windAngle === 'number' || !map ? style.windDirection : map.visualSemantics.wind.direction,
+    windStrength: typeof explicit.windStrength === 'number' || !map
       ? style.windStrength
       : Math.min(0.65, 0.12 + map.visualSemantics.wind.speed * 0.35 + map.visualSemantics.wind.gustStrength * 0.2)
   };
+}
+
+function deriveEnvironmentGrassColors(
+  environment: Pick<RenderScheme['settings'], 'fogColor' | 'hemisphereSkyColor' | 'hemisphereGroundColor' | 'sunColor' | 'exposure'>
+): Pick<typeof DEFAULT_RUNTIME_GRASS_STYLE, 'rootColor' | 'tipColor' | 'groundColor'> {
+  const exposureMix = Math.min(0.16, Math.max(0, (environment.exposure - 0.75) * 0.12));
+  const groundColor = mixHexColors(DEFAULT_RUNTIME_GRASS_STYLE.groundColor, environment.hemisphereGroundColor, 0.38);
+  const rootColor = mixHexColors(
+    mixHexColors(DEFAULT_RUNTIME_GRASS_STYLE.rootColor, environment.hemisphereGroundColor, 0.3),
+    environment.fogColor,
+    0.08 + exposureMix
+  );
+  const tipColor = mixHexColors(
+    mixHexColors(DEFAULT_RUNTIME_GRASS_STYLE.tipColor, environment.hemisphereSkyColor, 0.16),
+    environment.sunColor,
+    0.18 + exposureMix
+  );
+  return { rootColor, tipColor, groundColor };
 }
 
 function waterStylesWithSharedWind(

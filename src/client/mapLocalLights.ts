@@ -4,11 +4,11 @@ import { isMaterialTagEnabled } from '../shared/materialTagPolicy';
 
 export const MAX_VISIBLE_MAP_LOCAL_LIGHTS = 8;
 
-interface LightCandidate {
-  group: THREE.Object3D;
-  height: number;
+export interface MapLocalLightCandidateInfo {
+  objectId: string;
   color: THREE.ColorRepresentation;
   intensity: number;
+  height: number;
 }
 
 export interface MapLocalLights {
@@ -23,17 +23,13 @@ export function buildMapLocalLights(
 ): MapLocalLights {
   const group = new THREE.Group();
   group.name = 'mapLocalLights';
-  const assets = new Map((map.assets ?? []).map((asset) => [asset.id, asset]));
-  const candidates = map.objects.flatMap((object) => {
-    const objectGroup = objectGroups.get(object.id);
-    const asset = object.assetId ? assets.get(object.assetId) : undefined;
-    if (!object.visible || !objectGroup || !asset) return [];
-    const glow = modelGlow(asset, map);
-    return glow ? [{
+  const candidates = analyzeMapLocalLightCandidates(map).flatMap((info) => {
+    const objectGroup = objectGroups.get(info.objectId);
+    return objectGroup ? [{
       group: objectGroup,
-      height: localLightHeight(object, asset),
-      color: glow.color,
-      intensity: glow.intensity
+      height: info.height,
+      color: info.color,
+      intensity: info.intensity
     }] : [];
   });
   const lights = Array.from({ length: Math.min(MAX_VISIBLE_MAP_LOCAL_LIGHTS, candidates.length) }, () => {
@@ -72,6 +68,22 @@ export function buildMapLocalLights(
       });
     }
   };
+}
+
+/** Pure candidate analysis shared by the renderer and the derived-results inspector. */
+export function analyzeMapLocalLightCandidates(map: EditableMap): MapLocalLightCandidateInfo[] {
+  const assets = new Map((map.assets ?? []).map((asset) => [asset.id, asset]));
+  return map.objects.flatMap((object) => {
+    const asset = object.assetId ? assets.get(object.assetId) : undefined;
+    if (!object.visible || !asset) return [];
+    const glow = modelGlow(asset, map);
+    return glow ? [{
+      objectId: object.id,
+      height: localLightHeight(object, asset),
+      color: glow.color,
+      intensity: glow.intensity
+    }] : [];
+  });
 }
 
 function modelGlow(asset: MapAsset, map: EditableMap): { color: THREE.ColorRepresentation; intensity: number } | null {

@@ -268,9 +268,52 @@ export function buildStructuredWaterGroup(map: EditableMap): THREE.Group {
     mesh.userData.skipShaderApply = true;
     mesh.userData.materialTags = ['water', water.type, water.id];
     mesh.userData.assetTags = ['water', water.type];
+    mesh.userData.waterShore = createWaterShoreBinding(water);
     group.add(mesh);
   }
   return group;
+}
+
+function createWaterShoreBinding(water: MapWaterBody): {
+  texture: THREE.DataTexture;
+  center: [number, number];
+  size: number;
+} {
+  const boundary = water.type === 'lake'
+    ? cleanWaterPoints(water.points)
+    : riverBoundaryPoints(water.points, water.width);
+  const minX = Math.min(...boundary.map((point) => point[0]));
+  const maxX = Math.max(...boundary.map((point) => point[0]));
+  const minZ = Math.min(...boundary.map((point) => point[1]));
+  const maxZ = Math.max(...boundary.map((point) => point[1]));
+  const center: [number, number] = [(minX + maxX) / 2, (minZ + maxZ) / 2];
+  const size = Math.max(1, maxX - minX, maxZ - minZ) * 1.04;
+  const resolution = 128;
+  const distances = new Float32Array(resolution * resolution);
+  const data = new Uint8Array(resolution * resolution);
+  let maxDistance = 0;
+  for (let row = 0; row < resolution; row += 1) {
+    const v = (row + 0.5) / resolution;
+    const z = center[1] + (0.5 - v) * size;
+    for (let column = 0; column < resolution; column += 1) {
+      const u = (column + 0.5) / resolution;
+      const x = center[0] + (u - 0.5) * size;
+      if (!pointInPolygon(x, z, boundary)) continue;
+      const distance = polygonEdgeDistance(x, z, boundary);
+      distances[row * resolution + column] = distance;
+      maxDistance = Math.max(maxDistance, distance);
+    }
+  }
+  const distanceScale = maxDistance > 0 ? 255 / maxDistance : 0;
+  for (let index = 0; index < data.length; index += 1) {
+    data[index] = Math.round(Math.min(255, distances[index] * distanceScale));
+  }
+  const texture = new THREE.DataTexture(data, resolution, resolution, THREE.RedFormat, THREE.UnsignedByteType);
+  texture.name = `water-shore:${water.id}`;
+  texture.colorSpace = THREE.NoColorSpace;
+  texture.flipY = false;
+  texture.needsUpdate = true;
+  return { texture, center, size };
 }
 
 function buildLakeGeometry(input: MapWaterBody['points']): THREE.BufferGeometry {
@@ -288,24 +331,11 @@ function buildLakeGeometry(input: MapWaterBody['points']): THREE.BufferGeometry 
 }
 
 function buildRiverGeometry(input: MapWaterBody['points'], width: number): THREE.BufferGeometry {
-  const points = cleanWaterPoints(input);
+  const edges = riverEdgePairs(input, width);
   const vertices: number[] = [];
-  const halfWidth = width / 2;
-  for (let index = 0; index < points.length; index += 1) {
-    const previous = points[Math.max(0, index - 1)];
-    const next = points[Math.min(points.length - 1, index + 1)];
-    const dx = next[0] - previous[0];
-    const dz = next[1] - previous[1];
-    const length = Math.hypot(dx, dz) || 1;
-    const offsetX = -dz / length * halfWidth;
-    const offsetZ = dx / length * halfWidth;
-    vertices.push(
-      points[index][0] + offsetX, 0, points[index][1] + offsetZ,
-      points[index][0] - offsetX, 0, points[index][1] - offsetZ
-    );
-  }
+  for (const edge of edges) vertices.push(edge.left[0], 0, edge.left[1], edge.right[0], 0, edge.right[1]);
   const indices: number[] = [];
-  for (let index = 0; index < points.length - 1; index += 1) {
+  for (let index = 0; index < edges.length - 1; index += 1) {
     const left = index * 2;
     const right = left + 1;
     const nextLeft = left + 2;
@@ -318,6 +348,64 @@ function buildRiverGeometry(input: MapWaterBody['points'], width: number): THREE
   geometry.setIndex(indices);
   geometry.computeVertexNormals();
   return geometry;
+}
+
+function riverBoundaryPoints(input: MapWaterBody['points'], width: number): Array<[number, number]> {
+  const edges = riverEdgePairs(input, width);
+  return [
+    ...edges.map((edge) => edge.left),
+    ...edges.slice().reverse().map((edge) => edge.right)
+  ];
+}
+
+function riverEdgePairs(input: MapWaterBody['points'], width: number): Array<{
+  left: [number, number];
+  right: [number, number];
+}> {
+  const points = cleanWaterPoints(input);
+  const halfWidth = width / 2;
+  return points.map((point, index) => {
+    const previous = points[Math.max(0, index - 1)];
+    const next = points[Math.min(points.length - 1, index + 1)];
+    const dx = next[0] - previous[0];
+    const dz = next[1] - previous[1];
+    const length = Math.hypot(dx, dz) || 1;
+    const offsetX = -dz / length * halfWidth;
+    const offsetZ = dx / length * halfWidth;
+    return {
+      left: [point[0] + offsetX, point[1] + offsetZ],
+      right: [point[0] - offsetX, point[1] - offsetZ]
+    };
+  });
+}
+
+function pointInPolygon(x: number, z: number, points: readonly [number, number][]): boolean {
+  let inside = false;
+  for (let current = 0, previous = points.length - 1; current < points.length; previous = current, current += 1) {
+    const a = points[current];
+    const b = points[previous];
+    if ((a[1] > z) !== (b[1] > z)
+      && x < (b[0] - a[0]) * (z - a[1]) / ((b[1] - a[1]) || Number.EPSILON) + a[0]) {
+      inside = !inside;
+    }
+  }
+  return inside;
+}
+
+function polygonEdgeDistance(x: number, z: number, points: readonly [number, number][]): number {
+  let distance = Number.POSITIVE_INFINITY;
+  for (let index = 0; index < points.length; index += 1) {
+    const a = points[index];
+    const b = points[(index + 1) % points.length];
+    const dx = b[0] - a[0];
+    const dz = b[1] - a[1];
+    const lengthSquared = dx * dx + dz * dz;
+    const t = lengthSquared > 0
+      ? Math.max(0, Math.min(1, ((x - a[0]) * dx + (z - a[1]) * dz) / lengthSquared))
+      : 0;
+    distance = Math.min(distance, Math.hypot(x - (a[0] + dx * t), z - (a[1] + dz * t)));
+  }
+  return Number.isFinite(distance) ? distance : 0;
 }
 
 function cleanWaterPoints(points: MapWaterBody['points']): MapWaterBody['points'] {
@@ -794,6 +882,8 @@ function disposeObject(object: THREE.Object3D): void {
       const maybe = material as THREE.MeshStandardMaterial;
       if (maybe.map) textures.add(maybe.map);
     }
+    const shore = mesh.userData.waterShore as { texture?: THREE.Texture } | undefined;
+    if (shore?.texture?.isTexture) textures.add(shore.texture);
   });
   for (const texture of textures) texture.dispose();
   for (const material of materials) material.dispose();

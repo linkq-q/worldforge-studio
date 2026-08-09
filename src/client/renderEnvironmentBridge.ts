@@ -15,6 +15,17 @@ interface WaterReflectionSurface {
   setPlanarReflectionParams(params: Record<string, unknown>): void;
 }
 
+interface WaterShoreSurface {
+  setShoreDistanceTexture(texture: THREE.Texture | null): void;
+  setShoreWorldRegion(centerXZ: { x: number; y: number } | null, size?: number): void;
+}
+
+export interface WaterShoreBinding {
+  texture: THREE.Texture;
+  center: [number, number];
+  size: number;
+}
+
 export interface WaterReflectionSettings {
   planarStrength: number;
   environmentStrength: number;
@@ -64,6 +75,14 @@ export function syncWaterSurfaceEnvironment(
 ): void {
   surface.setWaterEnvMap(environmentMap);
   surface.setWaterReflectionParams({ useSceneEnvironment: true });
+}
+
+export function syncWaterSurfaceShore(
+  surface: WaterShoreSurface,
+  binding: WaterShoreBinding
+): void {
+  surface.setShoreDistanceTexture(binding.texture);
+  surface.setShoreWorldRegion({ x: binding.center[0], y: binding.center[1] }, binding.size);
 }
 
 export function configureWaterReflection(

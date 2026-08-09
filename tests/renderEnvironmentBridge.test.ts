@@ -5,7 +5,8 @@ import {
   configureWaterReflection,
   configureDistanceFogPass,
   distanceAtFogOpacity,
-  syncWaterSurfaceEnvironment
+  syncWaterSurfaceEnvironment,
+  syncWaterSurfaceShore
 } from '../src/client/renderEnvironmentBridge';
 
 function fogPass() {
@@ -83,5 +84,19 @@ describe('render environment bridge', () => {
       distortion: 0.07,
       fresnelBoost: 1.4
     });
+  });
+
+  it('binds the generated shore-distance texture in the same world region as the map water', () => {
+    const surface = {
+      setShoreDistanceTexture: vi.fn(),
+      setShoreWorldRegion: vi.fn()
+    };
+    const texture = new THREE.DataTexture(new Uint8Array([0, 255, 255, 0]), 2, 2, THREE.RedFormat);
+
+    syncWaterSurfaceShore(surface, { texture, center: [4, -7], size: 18 });
+
+    expect(surface.setShoreDistanceTexture).toHaveBeenCalledWith(texture);
+    expect(surface.setShoreWorldRegion).toHaveBeenCalledWith({ x: 4, y: -7 }, 18);
+    texture.dispose();
   });
 });
