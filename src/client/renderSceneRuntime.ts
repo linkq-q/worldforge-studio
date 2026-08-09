@@ -95,6 +95,9 @@ export class RenderSceneRuntime {
   private currentScheme: RenderScheme | null = null;
   private readonly basePixelRatio: number;
   private adaptiveQuality = 1;
+  private width = 0;
+  private height = 0;
+  private pixelRatio = 0;
 
   constructor(options: RenderSceneRuntimeOptions) {
     this.scene.background = new THREE.Color(NEUTRAL_BACKGROUND);
@@ -162,10 +165,20 @@ export class RenderSceneRuntime {
   }
 
   setSize(width: number, height: number): void {
-    this.camera.aspect = width / height;
-    this.camera.updateProjectionMatrix();
-    this.renderer.setSize(width, height, false);
-    this.adapter.setSize(width, height);
+    const nextWidth = Math.max(1, Math.floor(width));
+    const nextHeight = Math.max(1, Math.floor(height));
+    const nextPixelRatio = this.renderer.getPixelRatio();
+    const sizeChanged = nextWidth !== this.width || nextHeight !== this.height;
+    if (!sizeChanged && nextPixelRatio === this.pixelRatio) return;
+    if (sizeChanged) {
+      this.camera.aspect = nextWidth / nextHeight;
+      this.camera.updateProjectionMatrix();
+      this.renderer.setSize(nextWidth, nextHeight, false);
+    }
+    this.adapter.setSize(nextWidth, nextHeight);
+    this.width = nextWidth;
+    this.height = nextHeight;
+    this.pixelRatio = nextPixelRatio;
   }
 
   /** Advances animated capabilities (grass, water, effects) and draws a frame. */
@@ -209,6 +222,7 @@ export class RenderSceneRuntime {
     this.setAtmosphereFxQuality(this.adaptiveQuality);
     const ratioScale = 0.74 + this.adaptiveQuality * 0.26;
     this.renderer.setPixelRatio(Math.max(0.85, this.basePixelRatio * ratioScale));
+    if (this.width > 0 && this.height > 0) this.setSize(this.width, this.height);
   }
 
   getAdaptiveQuality(): number {

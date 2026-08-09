@@ -11,6 +11,20 @@ import type { RuntimeHdriSky } from '../shared/renderPlan';
  */
 export const HDRI_DOME_RADIUS = 500;
 
+const HDRI_ENVIRONMENT_RADIUS = 10;
+
+export function createRotatedHdriEnvironmentScene(
+  texture: THREE.Texture,
+  rotationDegrees: number
+): { scene: THREE.Scene; dispose(): void } {
+  const scene = new THREE.Scene();
+  const dome = new HDRISkyDome(HDRI_ENVIRONMENT_RADIUS);
+  dome.setTexture(texture);
+  dome.setRotationY(THREE.MathUtils.degToRad(rotationDegrees));
+  dome.addTo(scene);
+  return { scene, dispose: () => dome.dispose() };
+}
+
 /**
  * Binds one panorama to both the background dome and `scene.environment`.
  * Textures are cached per file so switching schemes back and forth does not
@@ -20,8 +34,8 @@ export class HdriSkyController {
   private readonly dome = new HDRISkyDome(HDRI_DOME_RADIUS);
   private readonly textures = new Map<string, Promise<THREE.Texture>>();
   private pmrem: THREE.PMREMGenerator | null = null;
-  private environmentMap: THREE.Texture | null = null;
-  private appliedFile: string | null = null;
+  private environmentTarget: THREE.WebGLRenderTarget | null = null;
+  private environmentKey: string | null = null;
   /** Guards against an out-of-order apply when a slow load resolves late. */
   private generation = 0;
 
@@ -60,9 +74,8 @@ export class HdriSkyController {
     this.dome.setTint(style.tintStrength > 0, style.tint ?? '#ffffff', style.tintStrength);
     this.dome.setVisible(true);
 
-    if (style.useAsEnvironment) this.applyEnvironment(texture, style.texture);
+    if (style.useAsEnvironment) this.applyEnvironment(texture, style.texture, style.rotation);
     else this.clearEnvironment();
-    this.appliedFile = style.texture;
   }
 
   /**
@@ -88,7 +101,6 @@ export class HdriSkyController {
     this.dome.setVisible(false);
     this.dome.setTexture(null);
     this.clearEnvironment();
-    this.appliedFile = null;
   }
 
   dispose(): void {
@@ -102,20 +114,31 @@ export class HdriSkyController {
     this.pmrem = null;
   }
 
-  private applyEnvironment(texture: THREE.Texture, file: string): void {
-    if (this.environmentMap && this.appliedFile === file && this.scene.environment === this.environmentMap) return;
+  private applyEnvironment(texture: THREE.Texture, file: string, rotationDegrees: number): void {
+    const rotation = THREE.MathUtils.euclideanModulo(rotationDegrees, 360);
+    const key = `${file}:${rotation.toFixed(4)}`;
+    if (this.environmentTarget && this.environmentKey === key
+      && this.scene.environment === this.environmentTarget.texture) return;
     this.pmrem ??= new THREE.PMREMGenerator(this.renderer);
-    const generated = this.pmrem.fromEquirectangular(texture).texture;
-    this.environmentMap?.dispose();
-    this.environmentMap = generated;
-    this.scene.environment = generated;
-    this.onEnvironmentChange(generated);
+    const prepared = createRotatedHdriEnvironmentScene(texture, rotation);
+    let generated: THREE.WebGLRenderTarget;
+    try {
+      generated = this.pmrem.fromScene(prepared.scene, 0, 0.1, HDRI_ENVIRONMENT_RADIUS * 2);
+    } finally {
+      prepared.dispose();
+    }
+    this.environmentTarget?.dispose();
+    this.environmentTarget = generated;
+    this.environmentKey = key;
+    this.scene.environment = generated.texture;
+    this.onEnvironmentChange(generated.texture);
   }
 
   private clearEnvironment(): void {
-    if (this.scene.environment === this.environmentMap) this.scene.environment = null;
-    this.environmentMap?.dispose();
-    this.environmentMap = null;
+    if (this.scene.environment === this.environmentTarget?.texture) this.scene.environment = null;
+    this.environmentTarget?.dispose();
+    this.environmentTarget = null;
+    this.environmentKey = null;
     this.onEnvironmentChange(null);
   }
 

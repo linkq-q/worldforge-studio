@@ -1,6 +1,10 @@
 import * as THREE from 'three';
 import { describe, expect, it, vi } from 'vitest';
-import { applyRenderScheme, type RenderSchemeTargets } from '../src/client/renderSceneRuntime';
+import {
+  RenderSceneRuntime,
+  applyRenderScheme,
+  type RenderSchemeTargets
+} from '../src/client/renderSceneRuntime';
 import { BUILTIN_RENDER_SCHEMES, createRenderScheme } from '../src/shared/renderScheme';
 
 const PLAIN_SCHEME = BUILTIN_RENDER_SCHEMES[0];
@@ -124,5 +128,68 @@ describe('applyRenderScheme', () => {
       rootColor: '#123456',
       tipColor: expect.not.stringMatching(/^#b7df76$/i)
     });
+  });
+});
+
+describe('RenderSceneRuntime sizing', () => {
+  it('does not reset the WebGL canvas when its size is unchanged', () => {
+    let pixelRatio = 2;
+    const camera = {
+      aspect: 1,
+      updateProjectionMatrix: vi.fn()
+    };
+    const renderer = {
+      getPixelRatio: () => pixelRatio,
+      setSize: vi.fn()
+    };
+    const adapter = { setSize: vi.fn() };
+    const runtime = Object.assign(Object.create(RenderSceneRuntime.prototype), {
+      camera,
+      renderer,
+      adapter
+    }) as RenderSceneRuntime;
+
+    runtime.setSize(800, 600);
+    runtime.setSize(800, 600);
+
+    expect(renderer.setSize).toHaveBeenCalledTimes(1);
+    expect(camera.updateProjectionMatrix).toHaveBeenCalledTimes(1);
+    expect(adapter.setSize).toHaveBeenCalledTimes(1);
+
+    pixelRatio = 1;
+    runtime.setSize(800, 600);
+
+    expect(renderer.setSize).toHaveBeenCalledTimes(1);
+    expect(adapter.setSize).toHaveBeenCalledTimes(2);
+  });
+
+  it('resizes post-process targets in the same frame as an adaptive pixel-ratio change', () => {
+    let pixelRatio = 2;
+    const renderer = {
+      getPixelRatio: () => pixelRatio,
+      setPixelRatio: vi.fn((value: number) => { pixelRatio = value; }),
+      setSize: vi.fn()
+    };
+    const adapter = {
+      setSize: vi.fn(),
+      applyAtmosphereFx: vi.fn()
+    };
+    const runtime = Object.assign(Object.create(RenderSceneRuntime.prototype), {
+      renderer,
+      adapter,
+      atmosphereFx: { setQuality: vi.fn() },
+      camera: { aspect: 1, updateProjectionMatrix: vi.fn() },
+      basePixelRatio: 2,
+      adaptiveQuality: 1,
+      width: 800,
+      height: 600,
+      pixelRatio: 2,
+      map: null
+    }) as RenderSceneRuntime;
+
+    runtime.setAdaptiveQuality(0.68);
+
+    expect(renderer.setPixelRatio).toHaveBeenCalledOnce();
+    expect(adapter.setSize).toHaveBeenCalledWith(800, 600);
   });
 });

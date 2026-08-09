@@ -136,7 +136,7 @@ export function normalizeRenderSuggestion(
     withHdriTextureChoices(baseScheme?.accessPolicy, hdriTextures),
     'ai'
   );
-  const plan = harmonizeHdriAtmosphere(normalizedPlan, hdriTextures);
+  const plan = stabilizeDirectionalContrast(harmonizeHdriAtmosphere(normalizedPlan, hdriTextures));
   const settings = compileRenderPlan(plan);
 
   const styleTags = Array.isArray(input.styleTags)
@@ -156,6 +156,40 @@ export function normalizeRenderSuggestion(
       : '',
     plan
   };
+}
+
+const MAX_DIRECTIONAL_CONTRAST_BUDGET = 1.9;
+
+function stabilizeDirectionalContrast(plan: RenderPlan): RenderPlan {
+  const hdri = plan.modules.find((module) => module.id === 'environment.hdri');
+  const texture = typeof hdri?.params.texture === 'string' ? hdri.params.texture : '';
+  const light = plan.modules.find((module) => module.id === 'runtime.light-rig');
+  if (!hdri || !texture || light?.params.recipe !== 'hard-day') return plan;
+
+  const grade = plan.modules.find((module) => module.id === 'runtime.color-grade');
+  const presentation = plan.modules.find((module) => module.id === 'presentation.exposure');
+  const hdriExposure = positiveNumber(hdri.params.exposure, 1);
+  const hdriIntensity = positiveNumber(hdri.params.intensity, 1);
+  const lightStrength = positiveNumber(light.params.strength, 1);
+  const contrast = positiveNumber(grade?.params.contrast, 1);
+  const exposure = positiveNumber(presentation?.params.value, 1);
+  const budget = hdriExposure * hdriIntensity * lightStrength * contrast * exposure;
+  if (budget <= MAX_DIRECTIONAL_CONTRAST_BUDGET) return plan;
+
+  const safeIntensity = Math.floor(
+    hdriIntensity * MAX_DIRECTIONAL_CONTRAST_BUDGET / budget * 1000
+  ) / 1000;
+  return {
+    ...plan,
+    modules: plan.modules.map((module) => module === hdri
+      ? { ...module, params: { ...module.params, intensity: safeIntensity } }
+      : module)
+  };
+}
+
+function positiveNumber(value: unknown, fallback: number): number {
+  const number = Number(value);
+  return Number.isFinite(number) && number > 0 ? number : fallback;
 }
 
 function buildSystemPrompt(

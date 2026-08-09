@@ -131,6 +131,40 @@ describe('render AI adapter', () => {
     expect(requestBody.messages[0].content).toContain('opacity 默认保持在 0.45-0.72');
   });
 
+  it('caps the combined HDRI, hard-day and color-grade contrast budget', () => {
+    const suggestion = normalizeRenderSuggestion(JSON.stringify({
+      plan: {
+        version: 2,
+        baseSchemeId: 'render-natural-day',
+        modules: [
+          {
+            id: 'environment.hdri',
+            params: { texture: 'bright-day.exr', exposure: 1.12, intensity: 1.3 }
+          },
+          {
+            id: 'runtime.light-rig',
+            params: { recipe: 'hard-day', strength: 1.35 }
+          },
+          {
+            id: 'runtime.color-grade',
+            params: { recipe: 'neutral', contrast: 1.14 }
+          }
+        ]
+      }
+    }), BUILTIN_RENDER_SCHEMES, [{
+      id: 'bright-day', file: 'bright-day.exr', extension: 'exr', bytes: 1,
+      tags: ['day'], skyColor: '#dcecff', groundColor: '#71808a'
+    }]);
+    const hdri = suggestion.plan.modules.find((module) => module.id === 'environment.hdri')!;
+    const light = suggestion.plan.modules.find((module) => module.id === 'runtime.light-rig')!;
+    const grade = suggestion.plan.modules.find((module) => module.id === 'runtime.color-grade')!;
+    const budget = Number(hdri.params.exposure) * Number(hdri.params.intensity)
+      * Number(light.params.strength) * Number(grade.params.contrast);
+
+    expect(budget).toBeLessThanOrEqual(1.9);
+    expect(Number(hdri.params.intensity)).toBeLessThan(1.3);
+  });
+
   it('retries until the plan carries an HDRI sky when the user asked for one', async () => {
     const reply = (modules: unknown[]) => new Response(JSON.stringify({
       ok: true,
