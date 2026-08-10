@@ -53,7 +53,8 @@ export function resolveSceneFamilies(
   plan: SceneCompositionPlan,
   _map: EditableMap,
   assets: readonly MapAsset[],
-  generationBudget: number
+  generationBudget: number,
+  minimumGeneration = 0
 ): { families: ResolvedSceneFamily[]; gaps: SceneAssetGap[] } {
   const claimed = new Set<string>();
   const families = [...plan.assetFamilies]
@@ -70,6 +71,15 @@ export function resolveSceneFamilies(
         missingCount: Math.max(0, family.desiredVariants - selected.length)
       };
     });
+
+  let missingTotal = families.reduce((sum, family) => sum + family.missingCount, 0);
+  for (const resolved of [...families].sort((left, right) => left.family.priority - right.family.priority)) {
+    while (missingTotal < minimumGeneration && resolved.assets.length > 0) {
+      resolved.assets.pop();
+      resolved.missingCount += 1;
+      missingTotal += 1;
+    }
+  }
 
   const gaps: SceneAssetGap[] = [];
   for (const resolved of families) {

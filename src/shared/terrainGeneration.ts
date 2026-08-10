@@ -18,7 +18,7 @@ export const TERRAIN_GENERATION_PRESETS = [
 ] as const;
 export type TerrainGenerationPreset = typeof TERRAIN_GENERATION_PRESETS[number];
 
-export const TERRAIN_MODIFIERS = ['cliff', 'terrace', 'dune', 'island'] as const;
+export const TERRAIN_MODIFIERS = ['mountain', 'cliff', 'terrace', 'dune', 'island'] as const;
 export type TerrainModifier = typeof TERRAIN_MODIFIERS[number];
 
 export const TERRAIN_SURFACES = ['grass', 'sand', 'rock'] as const;
@@ -83,6 +83,7 @@ export const TERRAIN_CAPABILITIES: readonly TerrainCapabilityDefinition[] = Obje
     ['cliff-plateau', '峭壁高原'],
     ['dune-desert', '沙丘荒漠']
   ].map(([id, label]) => ({ id: `base.${id}`, label, category: 'base' as const, regionKinds: [] })),
+  { id: 'modifier.mountain', label: '山峦', category: 'modifier', regionKinds: ALL_REGIONS },
   { id: 'modifier.cliff', label: '峭壁', category: 'modifier', regionKinds: ALL_REGIONS },
   { id: 'modifier.terrace', label: '梯田', category: 'modifier', regionKinds: ALL_REGIONS },
   { id: 'modifier.dune', label: '沙丘', category: 'modifier', regionKinds: ALL_REGIONS },
@@ -251,6 +252,24 @@ export function applyTerrainModifierInPlace(map: EditableMap, value: unknown): T
       let next = current;
 
       switch (params.modifier) {
+        case 'mountain': {
+          const roundedWeight = mountainRegionWeight(params.region, point[0], point[2], params.softness);
+          const broadNoise = (fbm(
+            point[0] / Math.max(1, scale) * 4,
+            point[2] / Math.max(1, scale) * 4,
+            params.seed + 4049,
+            0.25 + params.variation * 0.5
+          ) + 1) / 2;
+          const peakNoise = (fbm(
+            point[0] / Math.max(1, scale) * 9,
+            point[2] / Math.max(1, scale) * 9,
+            params.seed + 8087,
+            params.variation
+          ) + 1) / 2;
+          const rollingPeaks = smoothstep(0.22, 0.82, broadNoise);
+          next = current + params.amplitude * roundedWeight * (0.22 + rollingPeaks * 0.65 + peakNoise * 0.13);
+          break;
+        }
         case 'cliff': {
           if (params.layout === 'terraces') {
             const lifted = current + params.amplitude * weight;
@@ -366,6 +385,17 @@ function regionWeight(region: TerrainRegion, x: number, z: number, softness: num
   if (softness <= 0) return 1;
   const feather = Math.max(0.05, regionScale(region) * softness * 0.2);
   return smoothstep(0, feather, polygonEdgeDistance(x, z, region.points));
+}
+
+function mountainRegionWeight(region: TerrainRegion, x: number, z: number, softness: number): number {
+  const profilePower = lerp(1.6, 0.7, softness);
+  if (region.kind === 'circle') {
+    return Math.pow(smoothstep(0, 1, 1 - Math.hypot(x - region.x, z - region.z) / Math.max(0.05, region.radius)), profilePower);
+  }
+  if (region.kind === 'path') {
+    return Math.pow(smoothstep(0, 1, 1 - distanceToPath(x, z, region.points) / Math.max(0.05, region.width / 2)), profilePower);
+  }
+  return regionWeight(region, x, z, Math.max(0.45, softness));
 }
 
 function regionBounds(region: TerrainRegion): { center: [number, number]; radius: number } {

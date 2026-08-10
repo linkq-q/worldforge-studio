@@ -152,6 +152,27 @@ describe('map operation transactions', () => {
     expect(sampleTerrainHeight(recarved, 4, 4)).toBeCloseTo(sampleTerrainHeight(result, 4, 4), 4);
   });
 
+  it('carves a sloped river bed and smooth banks along the full centerline', () => {
+    const map = createEmptyMap('river bed', 'map-river-bed');
+    map.terrain.heights.fill(4);
+    const result = applyMapOperations(map, [{
+      type: 'water.add',
+      water: {
+        id: 'river-bed-1', name: '河流', type: 'river', level: 1, depth: 1.5, width: 4,
+        points: [[-10, 0], [0, 3], [10, 0]],
+        levels: [3, 2, 1],
+        shorelineSmoothness: 0.8,
+        shorelineIrregularity: 0,
+        seed: 11
+      }
+    }]);
+
+    expect(sampleTerrainHeight(result, -9, 0)).toBeLessThan(2);
+    expect(sampleTerrainHeight(result, 0, 3)).toBeLessThan(1.2);
+    expect(sampleTerrainHeight(result, 9, 0)).toBeLessThan(0.2);
+    expect(sampleTerrainHeight(result, 0, 12)).toBeCloseTo(4, 4);
+  });
+
   it('rejects malformed structured water without mutating the map', () => {
     const map = createEmptyMap('unchanged', 'map-water-invalid');
 

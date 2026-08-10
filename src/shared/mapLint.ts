@@ -9,7 +9,7 @@ import {
 import { assetFootprintRadius } from './mapAssetMetadata';
 import type { MapOperation } from './mapOperations';
 import { findSafeSpawnPosition, isSpawnPositionSafe } from './mapSpawnSafety';
-import { isPointInsideWaterBody } from './mapWater';
+import { isPointInsideWaterBody, waterSurfaceLevelAt } from './mapWater';
 
 export type MapLintSeverity = 'info' | 'warning' | 'error';
 
@@ -33,7 +33,7 @@ export function lintMap(map: EditableMap): MapLintResult {
   const removedIds = findExactDuplicates(map, issues, repairOperations);
   lintObjectPlacement(map, removedIds, issues, repairOperations);
   lintSpawn(map, issues, repairOperations);
-  lintLakeExposure(map, issues, repairOperations);
+  lintWaterExposure(map, issues, repairOperations);
   lintOverlaps(map, removedIds, issues);
   if (map.objects.length < Math.max(2, Math.floor(map.box.size[0] * map.box.size[2] / 3000))) {
     issues.push({
@@ -125,14 +125,15 @@ function lintSpawn(map: EditableMap, issues: MapLintIssue[], repairs: MapOperati
   });
 }
 
-function lintLakeExposure(map: EditableMap, issues: MapLintIssue[], repairs: MapOperation[]): void {
+function lintWaterExposure(map: EditableMap, issues: MapLintIssue[], repairs: MapOperation[]): void {
   for (const water of map.waterBodies) {
-    if (water.type !== 'lake') continue;
+    if (water.type === 'ocean') continue;
     let exposed = false;
     for (let z = 0; z < map.terrain.resolutionZ && !exposed; z += 1) {
       for (let x = 0; x < map.terrain.resolutionX; x += 1) {
         const point = terrainPointAt(map, x, z);
-        if (isPointInsideWaterBody(water, point[0], point[2], map) && point[1] > water.level + 0.001) {
+        if (isPointInsideWaterBody(water, point[0], point[2], map)
+          && point[1] > waterSurfaceLevelAt(water, point[0], point[2]) + 0.001) {
           exposed = true;
           break;
         }
@@ -141,7 +142,7 @@ function lintLakeExposure(map: EditableMap, issues: MapLintIssue[], repairs: Map
     if (!exposed) continue;
     repairs.push({ type: 'water.update', waterId: water.id, patch: {} });
     issues.push({
-      code: 'water.exposed-terrain', severity: 'error', message: '湖泊盆地已重新刻蚀，修复水面穿地。', repaired: true
+      code: 'water.exposed-terrain', severity: 'error', message: '水体盆地或河床已重新刻蚀，修复水面穿地。', repaired: true
     });
   }
 }

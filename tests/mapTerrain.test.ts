@@ -13,6 +13,7 @@ import {
   movePlayerPositionForMap,
   normalizeMap,
   sampleTerrainHeight,
+  superMapSizeFromMediumCount,
   stepPlayerVerticalMotionForMap,
   PLAYER_HEIGHT,
   PLAYER_RADIUS,
@@ -28,6 +29,12 @@ import {
 } from '../src/shared/protocol';
 
 describe('map terrain editing', () => {
+  it('expresses a super map as a bounded number of medium-map areas', () => {
+    expect(superMapSizeFromMediumCount(4)).toEqual([192, 32, 192]);
+    expect(superMapSizeFromMediumCount(16)).toEqual([384, 32, 384]);
+    expect(superMapSizeFromMediumCount(999)).toEqual([768, 32, 768]);
+  });
+
   it('creates each map size preset with its matching terrain resolution', () => {
     for (const preset of MAP_SIZE_PRESETS) {
       const map = createEmptyMap(preset.label, `map-${preset.key}`, [...preset.size]);

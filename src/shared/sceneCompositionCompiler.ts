@@ -242,7 +242,10 @@ export function compileZoneWater(map: EditableMap, plan: SceneCompositionPlan): 
         level: zone.water.level,
         depth: zone.water.depth,
         width: 1.2,
-        points
+        points,
+        shorelineSmoothness: 0.86,
+        shorelineIrregularity: 0.16,
+        seed: derivedSeed(map.seed, `water:${zone.id}`)
       }
     }];
   });

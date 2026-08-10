@@ -61,7 +61,9 @@ describe('structured map water rendering', () => {
         level: 0.5,
         depth: 1.5,
         width: 1.2,
-        points: [[-6, -5], [-1, 0], [6, 5]]
+        points: [[-6, -5], [-1, 0], [6, 5]],
+        levels: [1.1, 0.8, 0.5],
+        shorelineSmoothness: 0.8
       }
     ];
 
@@ -79,6 +81,9 @@ describe('structured map water rendering', () => {
     expect(river.userData.excludeFromPlanarReflection).toBe(true);
     expect(lake.geometry.getAttribute('position').count).toBeGreaterThanOrEqual(3);
     expect(river.geometry.getAttribute('position').count).toBeGreaterThanOrEqual(6);
+    const riverHeights = Array.from(river.geometry.getAttribute('position').array as Float32Array)
+      .filter((_, index) => index % 3 === 1);
+    expect(Math.max(...riverHeights) - Math.min(...riverHeights)).toBeGreaterThan(0.5);
     for (const water of [lake, river]) {
       const shore = water.userData.waterShore as {
         texture: THREE.DataTexture;

@@ -6,6 +6,7 @@ import type { RuntimeGrassStyle } from '../shared/renderPlan';
 import type { Vec3 } from '../shared/protocol';
 import { MapGrassInteraction } from './mapGrassInteraction';
 import { terrainSemanticSurfaceWeight } from './terrainAppearance';
+import { isPointInsidePlayableArea } from '../shared/mapLayout';
 
 export interface RenderedGrassField {
   group: import('three').Group;
@@ -63,7 +64,7 @@ export function deriveContactAwareGrassMap(map: EditableMap): EditableMap {
   const hasNonGrassSurface = map.visualSemantics.zones.some(
     (zone) => zone.tags.includes('sand') || zone.tags.includes('rocky')
   );
-  if (map.waterBodies.length === 0 && map.objects.length === 0 && !hasNonGrassSurface) return map;
+  if (map.waterBodies.length === 0 && map.objects.length === 0 && !hasNonGrassSurface && map.layout.edgeMask.kind === 'none') return map;
   const assets = new Map((map.assets ?? []).map((asset) => [asset.id, asset]));
   const obstacles = map.objects
     .filter((object) => object.visible)
@@ -84,6 +85,10 @@ export function deriveContactAwareGrassMap(map: EditableMap): EditableMap {
         const index = zIndex * layer.resolutionX + xIndex;
         if ((densities[index] ?? 0) <= 0.001) continue;
         const x = indexToWorld(xIndex, map.box.size[0], layer.resolutionX);
+        if (!isPointInsidePlayableArea(map.layout, map.box.size, x, z)) {
+          densities[index] = 0;
+          continue;
+        }
         let factor = 1 - terrainSemanticSurfaceWeight(map, x, z, ['sand', 'rocky']);
         factor = Math.min(factor, isNearWater(map, x, z, 0.2) ? 0 : isNearWater(map, x, z, 1.25) ? 0.28 : 1);
         for (const obstacle of obstacles) {

@@ -16,7 +16,7 @@ import {
   type TerrainBrushMode,
   type Transform3D
 } from './map';
-import { carveWaterBasinInPlace } from './mapWater';
+import { carveWaterBasinInPlace, ensureRiverSurfaceLevels } from './mapWater';
 import {
   applyTerrainModifierInPlace,
   applyTerrainSurfaceInPlace,
@@ -31,6 +31,7 @@ import type { SceneCompositionMetrics, SceneCompositionPlan } from './sceneCompo
 import type { SceneAdviceFinding, SceneReviewResult } from './sceneCompositionAdvice';
 import type { SceneOutcomeCheck } from './sceneCompositionOutcome';
 import type { MapVisualSemantics } from './visualDirection';
+import type { MapLayout } from './mapLayout';
 import {
   MAX_GRASS_LAYERS,
   applyGrassBrushInPlace,
@@ -62,7 +63,7 @@ export type MapWaterBodyInput = Omit<Partial<MapWaterBody>, 'points'> & {
 export type MapWaterBodyPatch = Omit<Partial<MapWaterBody>, 'id'>;
 
 export type MapOperation =
-  | { type: 'map.update'; name?: string; size?: Vec3; colors?: Partial<MapBoxColors>; renderPromptSuggestions?: string[]; visualSemantics?: MapVisualSemantics }
+  | { type: 'map.update'; name?: string; size?: Vec3; colors?: Partial<MapBoxColors>; renderPromptSuggestions?: string[]; visualSemantics?: MapVisualSemantics; layout?: MapLayout }
   | { type: 'terrain.set'; terrain: MapTerrain }
   | ({ type: 'terrain.generate' } & Partial<TerrainGenerationParams> & Pick<TerrainGenerationParams, 'preset'>)
   | ({ type: 'terrain.modify' } & Partial<TerrainModifierParams> & Pick<TerrainModifierParams, 'modifier' | 'region'>)
@@ -140,6 +141,7 @@ export function applyMapOperations(map: EditableMap, operations: readonly MapOpe
           next.renderPromptSuggestions = operation.renderPromptSuggestions;
         }
         if (operation.visualSemantics !== undefined) next.visualSemantics = operation.visualSemantics;
+        if (operation.layout !== undefined) next.layout = operation.layout;
         if (operation.size !== undefined) next.box.size = operation.size;
         if (operation.colors !== undefined) Object.assign(next.box.colors, operation.colors);
         break;
@@ -273,15 +275,23 @@ export function applyMapOperations(map: EditableMap, operations: readonly MapOpe
         break;
       case 'water.add': {
         requireWaterBody(operation.water);
-        const water: MapWaterBody = {
+        let water: MapWaterBody = {
           id: operation.water.id || createId('water'),
           name: operation.water.name ?? (operation.water.type === 'lake' ? '湖泊' : operation.water.type === 'ocean' ? '海面' : '河流'),
           type: operation.water.type,
           level: operation.water.level ?? 0.2,
           depth: operation.water.depth ?? DEFAULT_WATER_DEPTH,
           width: operation.water.width ?? 1.2,
-          points: operation.water.points
+          points: operation.water.points,
+          levels: operation.water.levels,
+          shorelineSmoothness: operation.water.shorelineSmoothness
+            ?? (operation.water.type === 'ocean' ? 0 : 0.82),
+          shorelineIrregularity: operation.water.shorelineIrregularity
+            ?? (operation.water.type === 'lake' ? 0.16 : 0),
+          seed: operation.water.seed ?? next.seed,
+          generation: operation.water.generation
         };
+        water = ensureRiverSurfaceLevels(next, water);
         if (next.waterBodies.some((item) => item.id === water.id)) throw new Error('duplicate_water_id');
         next.waterBodies.push(water);
         carveWaterBasinInPlace(next, water);
@@ -293,7 +303,13 @@ export function applyMapOperations(map: EditableMap, operations: readonly MapOpe
         }
         const water = next.waterBodies.find((item) => item.id === operation.waterId);
         if (!water) throw new Error('water_not_found');
-        const updated: MapWaterBody = { ...water, ...operation.patch, id: water.id };
+        let updated: MapWaterBody = { ...water, ...operation.patch, id: water.id };
+        if (water.type === 'river' && operation.patch.level !== undefined && operation.patch.levels === undefined
+          && water.levels?.length === water.points.length) {
+          const offset = updated.level - water.level;
+          updated = { ...updated, levels: water.levels.map((level) => level + offset) };
+        }
+        updated = ensureRiverSurfaceLevels(next, updated);
         requireWaterBody(updated);
         next.waterBodies = next.waterBodies.map((item) => item.id === water.id ? updated : item);
         carveWaterBasinInPlace(next, updated);
@@ -347,6 +363,19 @@ function requireWaterBody(value: unknown): asserts value is MapWaterBodyInput {
   if (water.level !== undefined && !Number.isFinite(Number(water.level))) throw new Error('invalid_water_body');
   if (water.depth !== undefined && !Number.isFinite(Number(water.depth))) throw new Error('invalid_water_body');
   if (water.width !== undefined && !Number.isFinite(Number(water.width))) throw new Error('invalid_water_body');
+  if (water.levels !== undefined && (
+    water.type !== 'river'
+    || !Array.isArray(water.levels)
+    || water.levels.length !== water.points.length
+    || water.levels.some((level) => !Number.isFinite(Number(level)))
+  )) throw new Error('invalid_water_body');
+  if (water.shorelineSmoothness !== undefined && !Number.isFinite(Number(water.shorelineSmoothness))) {
+    throw new Error('invalid_water_body');
+  }
+  if (water.shorelineIrregularity !== undefined && !Number.isFinite(Number(water.shorelineIrregularity))) {
+    throw new Error('invalid_water_body');
+  }
+  if (water.seed !== undefined && !Number.isFinite(Number(water.seed))) throw new Error('invalid_water_body');
 }
 
 function ensureTerrainOcean(map: EditableMap): void {
