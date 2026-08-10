@@ -35,6 +35,16 @@ describe('agent progress panel', () => {
     expect(html).toContain('组织场景');
   });
 
+  it('classifies map generation failures with a cause and next action', () => {
+    expect(humanizeAgentError(new Error('map_agent_asset_minimum_not_met'))).toContain('【资产数量不足】');
+    expect(humanizeAgentError(new Error('map_agent_generated_assets_not_placed'))).toContain('【区块没有合法落点】');
+    expect(humanizeAgentError(new Error('invalid_agent_json'))).toContain('【AI 输出格式错误】');
+    expect(humanizeAgentError(new Error('invalid_scatter_plan'))).toContain('【散布范围无效】');
+    expect(humanizeAgentError(new Error('scene_outcome_missing_asset_family:ancient-tree'))).toContain('【空间放置失败】');
+    expect(humanizeAgentError(new Error('map_asset_generation_failed:松树:gpt: HTTP 500'))).toContain('【资产生成失败】');
+    expect(humanizeAgentError(new Error('unknown_ecology_region'))).toContain('【目标区块失效】');
+  });
+
   it('explains a render JSON repair failure as a terminal two-attempt failure', () => {
     expect(humanizeRenderAgentError(new Error('invalid_render_ai_json'))).toContain('连续两次');
   });

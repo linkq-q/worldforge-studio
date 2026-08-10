@@ -1138,6 +1138,115 @@ p {
   margin: 10px 0;
 }
 
+.map-layout-panel,
+.map-layout-planner,
+.map-layout-subpanel,
+.map-region-editor,
+.map-layout-suggestion {
+  display: grid;
+  gap: 8px;
+}
+
+.map-layout-planner {
+  grid-template-columns: minmax(0, 1fr);
+  align-items: stretch;
+}
+
+.map-layout-canvas {
+  display: block;
+  width: 100%;
+  min-height: 190px;
+  overflow: hidden;
+  border: 1px solid rgba(179, 215, 211, 0.22);
+  border-radius: 10px;
+  background: #0b1518;
+  touch-action: none;
+}
+
+.map-layout-canvas polygon {
+  stroke: rgba(232, 248, 244, 0.72);
+  stroke-width: 0.65;
+  opacity: 0.65;
+  transition: opacity 120ms ease, stroke-width 120ms ease;
+}
+
+.map-layout-canvas polygon.selected {
+  stroke: #d9f47a;
+  stroke-width: 1.25;
+  opacity: 0.92;
+}
+
+.map-layout-vertex {
+  fill: #d9f47a;
+  stroke: #101b1d;
+  stroke-width: 0.5;
+  cursor: move;
+}
+
+.map-layout-suggestion {
+  padding: 10px;
+  border: 1px solid rgba(217, 244, 122, 0.28);
+  border-radius: 10px;
+  background: rgba(217, 244, 122, 0.06);
+}
+
+.map-layout-suggestion > span {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.map-layout-suggestion > div,
+.map-layout-locks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+}
+
+.map-layout-suggestion button {
+  margin-right: 8px;
+}
+
+.map-layout-suggestion .map-layout-actions {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: stretch;
+  gap: 8px;
+}
+
+.map-layout-suggestion .map-layout-confirm {
+  min-height: 44px;
+  font-weight: 800;
+  box-shadow: 0 0 0 2px rgba(217, 244, 122, 0.18), 0 8px 22px rgba(0, 0, 0, 0.24);
+}
+
+.map-layout-subpanel {
+  padding: 10px 0 2px;
+}
+
+.map-layout-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.map-stitch-seam-editor {
+  display: grid;
+  gap: 8px;
+  margin-top: 6px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(179, 215, 211, 0.18);
+}
+
+.map-stitch-lock {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  align-self: end;
+  min-height: 34px;
+  color: var(--muted);
+  font-size: 11px;
+}
+
 .map-ai-toggle {
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;

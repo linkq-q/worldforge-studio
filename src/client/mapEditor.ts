@@ -4,6 +4,8 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { TransformControls } from 'three/examples/jsm/controls/TransformControls.js';
 import {
   MAP_SIZE_PRESETS,
+  SUPER_MAP_MEDIUM_COUNT_MAX,
+  SUPER_MAP_MEDIUM_COUNT_MIN,
   PLAYER_HEIGHT,
   PLAYER_RADIUS,
   PLAYER_SPAWN_OBJECT_ID,
@@ -17,7 +19,9 @@ import {
   getSpawnPoints,
   getSunPosition,
   normalizeMap,
+  reassignRegionGenerationOwnersInPlace,
   sampleTerrainHeight,
+  superMapSizeFromMediumCount,
   surfaceUvFromPoint,
   type EditableMap,
   type MapAsset,
@@ -28,9 +32,10 @@ import {
   type TerrainBrushMode
 } from '../shared/map';
 import {
+  DEFAULT_MAP_AI_MIN_NEW_ASSETS,
   DEFAULT_MAP_AI_MAX_NEW_ASSETS,
   MAP_AI_MAX_NEW_ASSETS,
-  normalizeMapAiMaxNewAssets
+  normalizeMapAiNewAssetRange
 } from '../shared/mapPlanning';
 import { isCompositionEmptyMap, SCENE_COMPOSITION_LIMITS } from '../shared/sceneComposition';
 import { renderMapCompositionSummary } from './mapCompositionPanel';
@@ -111,6 +116,18 @@ import {
   type VisualZoneTag
 } from '../shared/visualDirection';
 import { inspectMapDerivedResults } from './mapDerivedInspection';
+import {
+  createMapEdgeMask,
+  findAdjacentMapRegion,
+  maxMapRegionCount,
+  measureMapLayoutCoverage,
+  mergeMapRegions,
+  rectanglePolygon,
+  splitMapRegion,
+  type MapEcologyRegion,
+  type MapLayout,
+  type MapEdgeMaskKind
+} from '../shared/mapLayout';
 import {
   RENDER_CAPABILITIES,
   compileRenderPlan,
@@ -282,11 +299,23 @@ class MapEditor {
   private developerRenderView: DeveloperRenderView = 'tuning';
   private developerRenderCategory: RenderInspectorCategoryId = 'lighting';
   private mapAiPrompt = '';
+  private mapLayoutPrompt = '';
+  private mapLayoutSuggestion: { summary: string; layout: MapLayout } | null = null;
+  private mapLayoutAbortController: AbortController | null = null;
+  private mapLayoutProgress: AgentProgressEvent[] = [];
+  private mapLayoutStartedAt = 0;
+  private mapLayoutElapsedMs = 0;
+  private mapLayoutProgressTimer: number | null = null;
+  private selectedEcologyRegionId = '';
+  private selectedStitchSeamId = '';
+  private mapAiTargetRegionId = '';
+  private mapAiBaseTerrainOnly = false;
   private mapAiProvider: ChatProvider = 'gpt';
   private mapAiReuseExistingAssets = false;
   private activeAssetLibraryId = '';
   private selectedLibraryAssetId = '';
   private previewingLibraryAsset = false;
+  private mapAiMinNewAssets = DEFAULT_MAP_AI_MIN_NEW_ASSETS;
   private mapAiMaxNewAssets = DEFAULT_MAP_AI_MAX_NEW_ASSETS;
   private mapAiTargetVisualZoneId = '';
   private selectedVisualZoneId = '';
@@ -302,6 +331,7 @@ class MapEditor {
   private mapAgentElapsedMs = 0;
   private mapAgentProgressTimer: number | null = null;
   private newMapSizePreset: MapSizePresetKey = 'medium';
+  private newMapSuperMediumCount = 16;
   private readonly grassEditorState: GrassEditorState = {
     selectedLayerId: null,
     brushMode: 'add',
@@ -363,6 +393,11 @@ class MapEditor {
                       <option value="${preset.key}" ${preset.key === this.newMapSizePreset ? 'selected' : ''}>${preset.label}</option>
                     `).join('')}
                   </select></label>
+                  <label id="new-map-super-size" ${this.newMapSizePreset === 'super' ? '' : 'hidden'}>
+                    <span>超大地图面积（中地图数量）</span>
+                    <input id="new-map-super-units" type="number" min="${SUPER_MAP_MEDIUM_COUNT_MIN}" max="${SUPER_MAP_MEDIUM_COUNT_MAX}" step="1" value="${this.newMapSuperMediumCount}" />
+                    <small id="new-map-super-size-hint"></small>
+                  </label>
                   <label><span>资产风格</span><select id="new-map-asset-mode" aria-label="新地图模型风格">
                     ${MODEL_GENERATION_MODES.map((mode) => `
                       <option value="${mode.key}" ${mode.key === this.newMapAssetGenerationMode ? 'selected' : ''}>${mode.label}</option>
@@ -477,9 +512,27 @@ class MapEditor {
       event.preventDefault();
       this.renameCurrentMap((event.currentTarget as HTMLInputElement).value);
     });
+    const updateSuperMapSizeControls = () => {
+      const field = this.app.querySelector<HTMLElement>('#new-map-super-size');
+      const input = this.app.querySelector<HTMLInputElement>('#new-map-super-units');
+      const hint = this.app.querySelector<HTMLElement>('#new-map-super-size-hint');
+      if (field) field.hidden = this.newMapSizePreset !== 'super';
+      if (input) input.value = String(this.newMapSuperMediumCount);
+      const size = superMapSizeFromMediumCount(this.newMapSuperMediumCount);
+      if (hint) hint.textContent = `约 ${this.newMapSuperMediumCount} 个中地图面积 · ${size[0]} × ${size[2]}`;
+    };
     this.app.querySelector<HTMLSelectElement>('#new-map-size')?.addEventListener('change', (event) => {
       this.newMapSizePreset = (event.target as HTMLSelectElement).value as MapSizePresetKey;
+      updateSuperMapSizeControls();
     });
+    this.app.querySelector<HTMLInputElement>('#new-map-super-units')?.addEventListener('change', (event) => {
+      this.newMapSuperMediumCount = Math.min(
+        SUPER_MAP_MEDIUM_COUNT_MAX,
+        Math.max(SUPER_MAP_MEDIUM_COUNT_MIN, Math.round(Number((event.target as HTMLInputElement).value) || 16))
+      );
+      updateSuperMapSizeControls();
+    });
+    updateSuperMapSizeControls();
     this.app.querySelector<HTMLSelectElement>('#new-map-asset-mode')?.addEventListener('change', (event) => {
       this.newMapAssetGenerationMode = normalizeModelGenerationMode((event.target as HTMLSelectElement).value);
       localStorage.setItem('worldforge.newMapAssetMode', this.newMapAssetGenerationMode);
@@ -752,7 +805,7 @@ class MapEditor {
       method: 'POST',
       body: JSON.stringify({
         name: name.trim() || '新地图',
-        size: preset.size,
+        size: preset.key === 'super' ? superMapSizeFromMediumCount(this.newMapSuperMediumCount) : preset.size,
         assetGenerationMode: this.newMapAssetGenerationMode
       })
     });
@@ -986,11 +1039,14 @@ class MapEditor {
     const generationBlocked = this.state.busy || this.state.dirty || !this.mapAiPrompt.trim() || !compositionAvailable;
     const refinementBlocked = generationBlocked || !hasRefinableMapContent(map);
     const mapAiOpen = host.querySelector<HTMLDetailsElement>('[data-inspector-section="map-ai"]')?.open ?? true;
+    const layoutHtml = this.renderMapLayoutHtml(map);
     host.innerHTML = `
+      ${layoutHtml}
       <details class="inspector-disclosure" data-inspector-section="map-ai" ${mapAiOpen || this.state.busy || Boolean(suggestion) ? 'open' : ''}>
         <summary><span><b>AI 生成地图</b><small>一句话生成或继续调整</small></span></summary>
         <section class="editor-section inspector-body map-ai">
-        <textarea id="map-ai-prompt" rows="3" maxlength="1200" placeholder="例如：中央有缓坡小丘，周围放置树木和岩石" ${this.state.busy ? 'disabled' : ''}>${escapeHtml(this.mapAiPrompt)}</textarea>
+        <textarea id="map-ai-prompt" rows="2" maxlength="1200" placeholder="例如：一片树林里散布着许多小木屋" ${this.state.busy ? 'disabled' : ''}>${escapeHtml(this.mapAiPrompt)}</textarea>
+        <p class="empty inspector-note">建议只写一句场景描述；AI 会自行安排坐标、数量、密度和空间关系。</p>
         <div class="map-ai-options">
           <label class="field compact map-ai-toggle">
             <span>允许使用所选资产库</span>
@@ -1005,8 +1061,12 @@ class MapEditor {
             </select>
           </label>
           <label class="field compact">
+            <span>本次最少生成新资产</span>
+            <input id="map-ai-min-new-assets" type="number" min="0" max="${this.mapAiMaxNewAssets}" step="1" value="${this.mapAiMinNewAssets}" ${this.state.busy ? 'disabled' : ''} />
+          </label>
+          <label class="field compact">
             <span>本次最多生成新资产</span>
-            <input id="map-ai-max-new-assets" type="number" min="1" max="${MAP_AI_MAX_NEW_ASSETS}" step="1" value="${this.mapAiMaxNewAssets}" ${this.state.busy ? 'disabled' : ''} />
+            <input id="map-ai-max-new-assets" type="number" min="0" max="${MAP_AI_MAX_NEW_ASSETS}" step="1" value="${this.mapAiMaxNewAssets}" ${this.state.busy ? 'disabled' : ''} />
           </label>
           ${visualZones.length > 0 ? `<label class="field compact">
             <span>Refine 适用区域</span>
@@ -1030,7 +1090,7 @@ class MapEditor {
           ? '请先保存当前手工修改，再生成 AI 地图预览。'
           : !compositionAvailable
             ? '当前地图已有内容，请使用“调整当前地图”继续 Refine。'
-            : `总导演编排场景 · 最多生成 ${this.mapAiMaxNewAssets} 个新资产`}</p>
+            : `总导演编排场景 · 生成 ${this.mapAiMinNewAssets}-${this.mapAiMaxNewAssets} 个新资产`}</p>
         </section>
       </details>
       ${suggestion && this.mapAiPreviewMap ? `
@@ -1081,6 +1141,7 @@ class MapEditor {
         </section>
       ` : ''}
     `;
+    this.bindMapLayoutPanel(host, map);
     host.querySelector<HTMLTextAreaElement>('#map-ai-prompt')?.addEventListener('input', (event) => {
       this.mapAiPrompt = (event.target as HTMLTextAreaElement).value;
       const blocked = this.state.busy || this.state.dirty || !this.mapAiPrompt.trim();
@@ -1096,16 +1157,36 @@ class MapEditor {
       await this.selectAssetLibrary((event.target as HTMLSelectElement).value);
       this.renderPanels();
     });
-    host.querySelector<HTMLInputElement>('#map-ai-max-new-assets')?.addEventListener('change', (event) => {
-      const input = event.target as HTMLInputElement;
-      this.mapAiMaxNewAssets = normalizeMapAiMaxNewAssets(input.value);
-      input.value = String(this.mapAiMaxNewAssets);
-    });
+    const updateAssetRange = () => {
+      const minInput = host.querySelector<HTMLInputElement>('#map-ai-min-new-assets');
+      const maxInput = host.querySelector<HTMLInputElement>('#map-ai-max-new-assets');
+      const range = normalizeMapAiNewAssetRange(minInput?.value, maxInput?.value);
+      this.mapAiMinNewAssets = range.min;
+      this.mapAiMaxNewAssets = range.max;
+      if (minInput) {
+        minInput.max = String(range.max);
+        minInput.value = String(range.min);
+      }
+      if (maxInput) maxInput.value = String(range.max);
+    };
+    for (const selector of ['#map-ai-min-new-assets', '#map-ai-max-new-assets']) {
+      const input = host.querySelector<HTMLInputElement>(selector);
+      input?.addEventListener('change', updateAssetRange);
+      input?.addEventListener('blur', updateAssetRange);
+    }
     host.querySelector<HTMLSelectElement>('#map-ai-target-zone')?.addEventListener('change', (event) => {
       this.mapAiTargetVisualZoneId = (event.target as HTMLSelectElement).value;
     });
-    host.querySelector('#generate-map-ai')?.addEventListener('click', () => void this.generateMapAiPreview('generate'));
-    host.querySelector('#refine-map-ai')?.addEventListener('click', () => void this.generateMapAiPreview('refine'));
+    host.querySelector('#generate-map-ai')?.addEventListener('click', () => {
+      this.mapAiBaseTerrainOnly = false;
+      this.mapAiTargetRegionId = '';
+      void this.generateMapAiPreview('generate');
+    });
+    host.querySelector('#refine-map-ai')?.addEventListener('click', () => {
+      this.mapAiBaseTerrainOnly = false;
+      this.mapAiTargetRegionId = '';
+      void this.generateMapAiPreview('refine');
+    });
     host.querySelector('#cancel-map-ai')?.addEventListener('click', () => {
       this.mapAiAbortController?.abort();
       this.state.message = '正在取消地图 Agent...';
@@ -1120,6 +1201,471 @@ class MapEditor {
         this.renderMapAiPanel();
         this.updateToolbarState();
       });
+    });
+  }
+
+  private renderMapLayoutHtml(map: EditableMap): string {
+    const layout = this.mapLayoutSuggestion?.layout ?? map.layout;
+    const regionLimit = maxMapRegionCount(map.box.size);
+    const selected = layout.regions.find((region) => region.id === this.selectedEcologyRegionId)
+      ?? layout.regions[0];
+    if (selected && !this.selectedEcologyRegionId) this.selectedEcologyRegionId = selected.id;
+    const halfWidth = map.box.size[0] / 2;
+    const halfDepth = map.box.size[2] / 2;
+    const svgPoints = (region: MapEcologyRegion) => region.points
+      .map(([x, z]) => `${((x + halfWidth) / map.box.size[0]) * 100},${((z + halfDepth) / map.box.size[2]) * 100}`)
+      .join(' ');
+    const regionOptions = layout.regions.map((region) => `
+      <option value="${escapeHtml(region.id)}" ${region.id === selected?.id ? 'selected' : ''}>${escapeHtml(region.name)}</option>
+    `).join('');
+    const stitchedSourceIds = new Set(map.layout.stitchSources.map((source) => source.mapId));
+    const stitchMaps = this.state.maps.filter((item) => item.id !== map.id && !stitchedSourceIds.has(item.id));
+    const selectedSeam = map.layout.seams.find((seam) => seam.id === this.selectedStitchSeamId)
+      ?? map.layout.seams[0];
+    const compositeEdgeMask = map.layout.edgeMask.kind === 'composite';
+    if (selectedSeam && !this.selectedStitchSeamId) this.selectedStitchSeamId = selectedSeam.id;
+    const layoutOpen = this.app.querySelector<HTMLDetailsElement>('[data-inspector-section="map-layout"]')?.open ?? true;
+    return `
+      <details class="inspector-disclosure" data-inspector-section="map-layout" ${layoutOpen ? 'open' : ''}>
+        <summary><span><b>生态分区与地图拼接</b><small>先规划区块，再分别生成</small></span></summary>
+        <section class="editor-section inspector-body map-layout-panel">
+          <label class="field compact">
+            <span>全地图提示词（建议一句话）</span>
+            <textarea id="map-layout-global-prompt" rows="2" maxlength="1200" placeholder="例如：群山环绕的森林谷地，林中散布许多小木屋，东侧有湖泊" ${this.state.busy || Boolean(this.mapLayoutSuggestion) ? 'disabled' : ''}>${escapeHtml(layout.globalPrompt)}</textarea>
+          </label>
+          <p class="empty inspector-note">写整体环境、2–3 个主要内容和大致关系；不写坐标、数量参数或生成步骤。</p>
+          <button id="generate-map-base-terrain" class="secondary" ${this.state.busy || this.state.dirty || !map.layout.globalPrompt.trim() || Boolean(this.mapLayoutSuggestion) || Boolean(this.mapAiPreviewMap) ? 'disabled' : ''}>生成全局基础地形</button>
+          <div class="map-layout-planner">
+            <textarea id="map-layout-prompt" rows="2" maxlength="800" placeholder="例如：四等分，右上角区域更大" ${this.state.busy ? 'disabled' : ''}>${escapeHtml(this.mapLayoutPrompt)}</textarea>
+            <div class="map-ai-controls">
+              <button id="plan-map-layout" ${this.state.busy || this.state.dirty || !this.mapLayoutPrompt.trim() ? 'disabled' : ''}>AI 规划分区</button>
+              ${this.mapLayoutAbortController ? '<button id="cancel-map-layout" class="secondary">中断</button>' : ''}
+            </div>
+          </div>
+          ${renderAgentProgress(this.mapLayoutProgress, {
+            running: Boolean(this.mapLayoutAbortController),
+            elapsedMs: this.mapLayoutElapsedMs
+          })}
+          ${this.mapLayoutSuggestion ? `<div class="map-layout-suggestion"><b>${escapeHtml(this.mapLayoutSuggestion.summary)}</b><span>先检查轮廓；确认后才会显示各区块的建议提示词和生成工具。</span><div class="map-layout-actions"><button id="apply-map-layout" class="map-layout-confirm">确认并使用此分区</button><button id="discard-map-layout" class="secondary">放弃这次规划</button></div></div>` : ''}
+          <svg class="map-layout-canvas" viewBox="0 0 100 100" role="img" aria-label="生态分区预览">
+            ${layout.regions.map((region, regionIndex) => `
+              <polygon data-layout-region="${escapeHtml(region.id)}" points="${svgPoints(region)}" fill="${escapeHtml(region.color)}" class="${region.id === selected?.id ? 'selected' : ''}" />
+              ${this.mapLayoutSuggestion ? '' : region.points.map(([x, z], pointIndex) => `<circle class="map-layout-vertex" data-region-index="${regionIndex}" data-point-index="${pointIndex}" cx="${((x + halfWidth) / map.box.size[0]) * 100}" cy="${((z + halfDepth) / map.box.size[2]) * 100}" r="1.3" />`).join('')}
+            `).join('')}
+          </svg>
+          <p class="empty inspector-note">${this.mapLayoutSuggestion ? `${layout.regions.length} 个区块待确认 · 当前只显示分区轮廓` : `${layout.regions.length}/${regionLimit} 个区块 · 拖动公共顶点可调整边界 · 空提示词只保留基础地形`}</p>
+          ${this.mapLayoutSuggestion ? '' : `<div class="map-ai-controls"><button id="add-map-region" class="secondary" ${layout.regions.length >= regionLimit ? 'disabled' : ''}>新增区块</button><button id="delete-map-region" class="secondary" ${!selected ? 'disabled' : ''}>删除区块</button></div>`}
+          ${!this.mapLayoutSuggestion && selected ? `<div class="map-region-editor">
+            <label class="field compact"><span>当前区块</span><select id="map-layout-region-select">${regionOptions}</select></label>
+            <label class="field compact"><span>名称</span><input id="map-layout-region-name" value="${escapeHtml(selected.name)}" ${this.mapLayoutSuggestion ? 'disabled' : ''} /></label>
+            <label class="field compact"><span>区块提示词（建议一句话）</span><textarea id="map-layout-region-prompt" rows="2" maxlength="1200" placeholder="例如：针叶林里散布小木屋，靠湖一侧逐渐稀疏" ${this.mapLayoutSuggestion ? 'disabled' : ''}>${escapeHtml(selected.prompt)}</textarea></label>
+            <p class="empty inspector-note">只写这个区块的生态或地标；AI 会决定密度、位置和边界过渡。</p>
+            <label class="field compact"><span>生态组</span><input id="map-layout-region-group" value="${escapeHtml(selected.groupId ?? '')}" placeholder="例如：湿地" ${this.mapLayoutSuggestion ? 'disabled' : ''} /></label>
+            <div class="map-layout-locks">
+              <label><input id="map-layout-boundary-lock" type="checkbox" ${selected.boundaryLocked ? 'checked' : ''} ${this.mapLayoutSuggestion ? 'disabled' : ''}/> 锁定边界</label>
+              <label><input id="map-layout-content-lock" type="checkbox" ${selected.contentLocked ? 'checked' : ''} ${this.mapLayoutSuggestion ? 'disabled' : ''}/> 锁定内容</label>
+            </div>
+            <div class="map-ai-controls">
+              <button id="split-map-region-x" class="secondary" ${this.mapLayoutSuggestion || layout.regions.length >= regionLimit ? 'disabled' : ''}>横向拆分</button>
+              <button id="split-map-region-z" class="secondary" ${this.mapLayoutSuggestion || layout.regions.length >= regionLimit ? 'disabled' : ''}>纵向拆分</button>
+              <button id="merge-map-region" class="secondary" ${this.mapLayoutSuggestion || layout.regions.length < 2 ? 'disabled' : ''}>与下一块合并</button>
+              <button id="generate-map-region" ${this.mapLayoutSuggestion || selected.contentLocked || !selected.prompt.trim() || this.state.busy || this.mapAiPreviewMap ? 'disabled' : ''}>生成此区块</button>
+            </div>
+          </div>` : ''}
+          <details class="inspector-disclosure compact">
+            <summary><span><b>边缘裁切</b><small>非破坏式遮罩</small></span></summary>
+            <div class="map-layout-subpanel">
+              <label class="field compact"><span>形状</span><select id="map-edge-mask-kind" ${this.mapLayoutSuggestion ? 'disabled' : ''}>
+                ${(['none', 'circle', 'heart', 'noise', 'polygon', ...(map.layout.edgeMask.kind === 'composite' ? ['composite' as const] : [])] as MapEdgeMaskKind[]).map((kind) => `<option value="${kind}" ${map.layout.edgeMask.kind === kind ? 'selected' : ''}>${({ none: '不裁切', circle: '圆形', heart: '爱心形', noise: '噪声边缘', polygon: '自定义多边形', composite: '保留拼接轮廓' })[kind]}</option>`).join('')}
+              </select></label>
+              <label class="field compact"><span>噪声强度</span><input id="map-edge-irregularity" type="range" min="0" max="0.45" step="0.01" value="${map.layout.edgeMask.irregularity}" ${this.mapLayoutSuggestion || compositeEdgeMask ? 'disabled' : ''}/></label>
+              <label class="field compact"><span>随机种子</span><input id="map-edge-seed" type="number" value="${map.layout.edgeMask.seed}" ${this.mapLayoutSuggestion || compositeEdgeMask ? 'disabled' : ''}/></label>
+              <button id="edge-from-selected-region" class="secondary" ${!selected || this.mapLayoutSuggestion ? 'disabled' : ''}>用当前区块轮廓裁切</button>
+            </div>
+          </details>
+          <details class="inspector-disclosure compact">
+            <summary><span><b>拼接地图</b><small>源地图保持不变</small></span></summary>
+            <div class="map-layout-subpanel">
+              <label class="field compact"><span>另一张地图</span><select id="stitch-source-map" ${stitchMaps.length === 0 ? 'disabled' : ''}>${stitchMaps.map((item) => `<option value="${escapeHtml(item.id)}">${escapeHtml(item.name)}</option>`).join('') || '<option>没有其他地图</option>'}</select></label>
+              <div class="map-layout-grid">
+                <label class="field compact"><span>方向</span><select id="stitch-direction"><option value="east">右侧</option><option value="west">左侧</option><option value="north">上侧</option><option value="south">下侧</option></select></label>
+                <label class="field compact"><span>连接</span><select id="stitch-mode"><option value="contact">直接接触</option><option value="corridor">生成过渡带</option></select></label>
+                <label class="field compact"><span>过渡宽度</span><input id="stitch-width" type="number" min="8" max="96" value="24" /></label>
+                <label class="field compact"><span>接缝抖动</span><input id="stitch-irregularity" type="number" min="0" max="0.65" step="0.05" value="0.2" /></label>
+              </div>
+              <label class="field compact"><span>过渡带语义备注（可空）</span><input id="stitch-prompt" placeholder="例如：稀疏灌木与碎石坡" /></label>
+              <button id="stitch-map" ${this.state.busy || this.state.dirty || stitchMaps.length === 0 ? 'disabled' : ''}>拼接为新地图</button>
+              ${selectedSeam ? `<div class="map-stitch-seam-editor">
+                <b>已有接缝单独调整</b>
+                <label class="field compact"><span>接缝</span><select id="stitch-seam-select">${map.layout.seams.map((seam) => `<option value="${escapeHtml(seam.id)}" ${seam.id === selectedSeam.id ? 'selected' : ''}>${escapeHtml(seam.name)}</option>`).join('')}</select></label>
+                <div class="map-layout-grid">
+                  <label class="field compact"><span>宽度</span><input id="stitch-seam-width" type="number" min="8" max="96" value="${selectedSeam.width}" ${selectedSeam.locked ? 'disabled' : ''}/></label>
+                  <label class="field compact"><span>抖动</span><input id="stitch-seam-irregularity" type="number" min="0" max="0.65" step="0.05" value="${selectedSeam.irregularity}" ${selectedSeam.locked ? 'disabled' : ''}/></label>
+                  <label class="field compact"><span>种子</span><input id="stitch-seam-seed" type="number" value="${selectedSeam.seed}" ${selectedSeam.locked ? 'disabled' : ''}/></label>
+                  <label class="map-stitch-lock"><input id="stitch-seam-lock" type="checkbox" ${selectedSeam.locked ? 'checked' : ''}/> 锁定接缝</label>
+                </div>
+                <label class="field compact"><span>接缝语义备注</span><input id="stitch-seam-prompt" value="${escapeHtml(selectedSeam.prompt)}" ${selectedSeam.locked ? 'disabled' : ''}/></label>
+                <button id="retune-stitch-seam" class="secondary" ${this.state.busy || this.state.dirty ? 'disabled' : ''}>${selectedSeam.locked ? '解锁接缝' : '重新计算接缝高度'}</button>
+              </div>` : ''}
+            </div>
+          </details>
+        </section>
+      </details>
+    `;
+  }
+
+  private bindMapLayoutPanel(host: HTMLElement, map: EditableMap): void {
+    const activeLayout = () => map.layout;
+    const commitLayoutChange = async () => {
+      reassignRegionGenerationOwnersInPlace(map);
+      this.markDirty();
+      await this.refreshScene();
+      this.renderMapAiPanel();
+      this.updateToolbarState();
+    };
+    host.querySelector<HTMLTextAreaElement>('#map-layout-prompt')?.addEventListener('input', (event) => {
+      this.mapLayoutPrompt = (event.target as HTMLTextAreaElement).value;
+      const button = host.querySelector<HTMLButtonElement>('#plan-map-layout');
+      if (button) button.disabled = this.state.busy || this.state.dirty || !this.mapLayoutPrompt.trim();
+    });
+    host.querySelector<HTMLTextAreaElement>('#map-layout-global-prompt')?.addEventListener('change', (event) => {
+      map.layout.globalPrompt = (event.target as HTMLTextAreaElement).value.trim();
+      void commitLayoutChange();
+    });
+    host.querySelector('#generate-map-base-terrain')?.addEventListener('click', async () => {
+      if (!map.layout.globalPrompt.trim() || this.state.dirty) return;
+      this.mapAiBaseTerrainOnly = true;
+      this.mapAiTargetRegionId = '';
+      this.mapAiPrompt = map.layout.globalPrompt;
+      await this.generateMapAiPreview('refine');
+    });
+    host.querySelector('#plan-map-layout')?.addEventListener('click', async () => {
+      if (!this.mapLayoutPrompt.trim() || this.state.dirty || this.state.busy) return;
+      const controller = new AbortController();
+      this.mapLayoutAbortController = controller;
+      this.mapLayoutProgress = [];
+      this.startMapLayoutProgressTimer();
+      this.setBusy(true, 'AI 正在规划生态分区...');
+      this.renderMapAiPanel();
+      try {
+        const result = await editorAgentFetch<{ suggestion: { summary: string; layout: MapLayout } }>(
+          `/api/editor/maps/${encodeURIComponent(map.id)}/layout`,
+          {
+            method: 'POST',
+            body: JSON.stringify({ prompt: this.mapLayoutPrompt, provider: this.mapAiProvider }),
+            signal: controller.signal
+          },
+          (event) => {
+            updateAgentProgress(this.mapLayoutProgress, event);
+            this.renderMapAiPanel();
+          }
+        );
+        this.mapLayoutSuggestion = result.suggestion;
+        this.selectedEcologyRegionId = result.suggestion.layout.regions[0]?.id ?? '';
+        this.state.message = '生态分区预览已生成，尚未应用';
+      } catch (error) {
+        const cancelled = error instanceof Error && error.name === 'AbortError';
+        const detail = humanizeAgentError(error);
+        updateAgentProgress(this.mapLayoutProgress, {
+          phase: 'failed',
+          label: cancelled ? '分区规划已取消' : '分区规划失败',
+          detail
+        });
+        this.state.message = cancelled ? '已取消分区规划' : `分区规划失败：${detail}`;
+      } finally {
+        if (this.mapLayoutAbortController === controller) this.mapLayoutAbortController = null;
+        this.stopMapLayoutProgressTimer();
+        this.setBusy(false);
+        this.renderMapAiPanel();
+      }
+    });
+    host.querySelector('#cancel-map-layout')?.addEventListener('click', () => {
+      this.mapLayoutAbortController?.abort();
+      this.state.message = '正在中断分区规划...';
+      this.updateToolbarState();
+    });
+    host.querySelector('#discard-map-layout')?.addEventListener('click', () => {
+      this.mapLayoutSuggestion = null;
+      this.selectedEcologyRegionId = map.layout.regions[0]?.id ?? '';
+      this.renderMapAiPanel();
+    });
+    host.querySelector('#apply-map-layout')?.addEventListener('click', () => {
+      if (!this.mapLayoutSuggestion) return;
+      map.layout = this.mapLayoutSuggestion.layout;
+      this.mapLayoutSuggestion = null;
+      this.selectedEcologyRegionId = map.layout.regions[0]?.id ?? '';
+      void commitLayoutChange();
+    });
+    host.querySelector<HTMLSelectElement>('#map-layout-region-select')?.addEventListener('change', (event) => {
+      this.selectedEcologyRegionId = (event.target as HTMLSelectElement).value;
+      this.renderMapAiPanel();
+    });
+    const selectedRegion = () => activeLayout().regions.find((region) => region.id === this.selectedEcologyRegionId)
+      ?? activeLayout().regions[0];
+    host.querySelector('#add-map-region')?.addEventListener('click', () => {
+      const selected = selectedRegion();
+      if (!selected) {
+        const index = map.layout.regions.length + 1;
+        map.layout.regions.push({
+          id: `region-${index}`,
+          name: `区块 ${index}`,
+          prompt: '',
+          groupId: null,
+          color: '#4f8fdd',
+          points: rectanglePolygon(map.box.size),
+          boundaryLocked: false,
+          contentLocked: false
+        });
+        this.selectedEcologyRegionId = map.layout.regions[0]?.id ?? '';
+        void commitLayoutChange();
+        return;
+      }
+      const xs = selected.points.map((point) => point[0]);
+      const zs = selected.points.map((point) => point[1]);
+      const axis = Math.max(...xs) - Math.min(...xs) >= Math.max(...zs) - Math.min(...zs) ? 'x' : 'z';
+      const next = splitMapRegion(selected, axis);
+      if (!next) return;
+      map.layout.regions.splice(map.layout.regions.indexOf(selected), 1, ...next);
+      this.selectedEcologyRegionId = next[1].id;
+      void commitLayoutChange();
+    });
+    host.querySelector('#delete-map-region')?.addEventListener('click', () => {
+      const selected = selectedRegion();
+      if (!selected) return;
+      const previousRegions = structuredClone(map.layout.regions);
+      if (map.layout.regions.length === 1) {
+        map.layout.regions = [];
+        this.selectedEcologyRegionId = '';
+      } else {
+        const index = map.layout.regions.indexOf(selected);
+        const neighbor = findAdjacentMapRegion(map.layout.regions, selected);
+        if (!neighbor) {
+          this.state.message = '当前区块没有可合并的公共边界';
+          this.updateToolbarState();
+          return;
+        }
+        if (selected.boundaryLocked || neighbor.boundaryLocked) return;
+        const merged = mergeMapRegions(neighbor, selected);
+        map.layout.regions = map.layout.regions.filter((region) => region !== selected && region !== neighbor);
+        map.layout.regions.splice(Math.min(index, map.layout.regions.length), 0, merged);
+        this.selectedEcologyRegionId = merged.id;
+      }
+      if (map.layout.regions.length > 0 && !measureMapLayoutCoverage(map.layout, map.box.size).valid) {
+        map.layout.regions = previousRegions;
+        this.state.message = '删除会破坏完整分区，已取消';
+        this.renderMapAiPanel();
+        return;
+      }
+      void commitLayoutChange();
+    });
+    const bindRegionField = (selector: string, update: (region: MapEcologyRegion, value: string) => void) => {
+      host.querySelector<HTMLInputElement | HTMLTextAreaElement>(selector)?.addEventListener('change', (event) => {
+        const region = selectedRegion();
+        if (!region) return;
+        update(region, (event.target as HTMLInputElement).value.trim());
+        void commitLayoutChange();
+      });
+    };
+    bindRegionField('#map-layout-region-name', (region, value) => { region.name = value || region.name; });
+    bindRegionField('#map-layout-region-prompt', (region, value) => { region.prompt = value; });
+    bindRegionField('#map-layout-region-group', (region, value) => { region.groupId = value || null; });
+    host.querySelector<HTMLInputElement>('#map-layout-boundary-lock')?.addEventListener('change', (event) => {
+      const region = selectedRegion();
+      if (region) region.boundaryLocked = (event.target as HTMLInputElement).checked;
+      void commitLayoutChange();
+    });
+    host.querySelector<HTMLInputElement>('#map-layout-content-lock')?.addEventListener('change', (event) => {
+      const region = selectedRegion();
+      if (region) region.contentLocked = (event.target as HTMLInputElement).checked;
+      void commitLayoutChange();
+    });
+    (['x', 'z'] as const).forEach((axis) => host.querySelector(`#split-map-region-${axis}`)?.addEventListener('click', () => {
+      const region = selectedRegion();
+      if (!region || map.layout.regions.length >= maxMapRegionCount(map.box.size)) return;
+      const next = splitMapRegion(region, axis);
+      if (!next) return;
+      map.layout.regions.splice(map.layout.regions.indexOf(region), 1, ...next);
+      this.selectedEcologyRegionId = next[0]?.id ?? '';
+      void commitLayoutChange();
+    }));
+    host.querySelector('#merge-map-region')?.addEventListener('click', () => {
+      const region = selectedRegion();
+      if (!region || map.layout.regions.length < 2) return;
+      const index = map.layout.regions.indexOf(region);
+      const previousRegions = structuredClone(map.layout.regions);
+      const neighbor = findAdjacentMapRegion(map.layout.regions, region);
+      if (!neighbor) {
+        this.state.message = '当前区块没有可合并的公共边界';
+        this.updateToolbarState();
+        return;
+      }
+      const merged = mergeMapRegions(region, neighbor);
+      map.layout.regions = map.layout.regions.filter((item) => item !== region && item !== neighbor);
+      map.layout.regions.splice(Math.min(index, map.layout.regions.length), 0, merged);
+      this.selectedEcologyRegionId = merged.id;
+      if (!measureMapLayoutCoverage(map.layout, map.box.size).valid) {
+        map.layout.regions = previousRegions;
+        this.state.message = '合并会造成区块重叠或缺口，已取消';
+        this.renderMapAiPanel();
+        return;
+      }
+      void commitLayoutChange();
+    });
+    host.querySelector('#generate-map-region')?.addEventListener('click', async () => {
+      const region = selectedRegion();
+      if (!region?.prompt.trim()) return;
+      const regionId = region.id;
+      if (this.state.dirty && !await this.saveMap()) return;
+      const savedMap = this.state.map;
+      const savedRegion = savedMap?.layout.regions.find((item) => item.id === regionId);
+      if (!savedMap || !savedRegion?.prompt.trim()) return;
+      this.mapAiBaseTerrainOnly = false;
+      this.mapAiTargetRegionId = savedRegion.id;
+      this.mapAiPrompt = [savedMap.layout.globalPrompt, `${savedRegion.name}：${savedRegion.prompt}`].filter(Boolean).join('\n\n');
+      await this.generateMapAiPreview('refine');
+    });
+    const updateEdgeMask = () => {
+      const kind = (host.querySelector<HTMLSelectElement>('#map-edge-mask-kind')?.value ?? 'none') as MapEdgeMaskKind;
+      if (kind === 'composite') return;
+      const irregularity = Number(host.querySelector<HTMLInputElement>('#map-edge-irregularity')?.value ?? 0);
+      const seed = Number(host.querySelector<HTMLInputElement>('#map-edge-seed')?.value ?? map.seed);
+      map.layout.edgeMask = createMapEdgeMask(kind, map.box.size, seed, irregularity);
+      void commitLayoutChange();
+    };
+    host.querySelector('#map-edge-mask-kind')?.addEventListener('change', updateEdgeMask);
+    host.querySelector('#map-edge-irregularity')?.addEventListener('change', updateEdgeMask);
+    host.querySelector('#map-edge-seed')?.addEventListener('change', updateEdgeMask);
+    host.querySelector('#edge-from-selected-region')?.addEventListener('click', () => {
+      const region = selectedRegion();
+      if (!region) return;
+      map.layout.edgeMask = createMapEdgeMask('polygon', map.box.size, map.seed, 0, region.points);
+      void commitLayoutChange();
+    });
+    host.querySelectorAll<SVGCircleElement>('.map-layout-vertex').forEach((vertex) => {
+      vertex.addEventListener('pointerdown', (event) => {
+        const regionIndex = Number(vertex.dataset.regionIndex);
+        const pointIndex = Number(vertex.dataset.pointIndex);
+        const sourceRegion = map.layout.regions[regionIndex];
+        const sourcePoint = sourceRegion?.points[pointIndex];
+        const svg = host.querySelector<SVGSVGElement>('.map-layout-canvas');
+        if (!sourceRegion || !sourcePoint || !svg || sourceRegion.boundaryLocked) return;
+        const touching = map.layout.regions.filter((region) => region.points.some((point) => (
+          Math.abs(point[0] - sourcePoint[0]) < 0.001 && Math.abs(point[1] - sourcePoint[1]) < 0.001
+        )));
+        if (touching.some((region) => region.boundaryLocked)) {
+          this.state.message = '该公共顶点连接着已锁定区块';
+          this.updateToolbarState();
+          return;
+        }
+        event.preventDefault();
+        const original: [number, number] = [...sourcePoint];
+        const sharedPoints = touching.flatMap((region) => region.points.filter((point) => (
+          Math.abs(point[0] - original[0]) < 0.001 && Math.abs(point[1] - original[1]) < 0.001
+        )));
+        const move = (moveEvent: PointerEvent) => {
+          const rect = svg.getBoundingClientRect();
+          const halfWidth = map.box.size[0] / 2;
+          const halfDepth = map.box.size[2] / 2;
+          const freeX = Math.max(-halfWidth, Math.min(halfWidth, ((moveEvent.clientX - rect.left) / rect.width - 0.5) * map.box.size[0]));
+          const freeZ = Math.max(-halfDepth, Math.min(halfDepth, ((moveEvent.clientY - rect.top) / rect.height - 0.5) * map.box.size[2]));
+          const x = Math.abs(Math.abs(original[0]) - halfWidth) < 0.001 ? original[0] : freeX;
+          const z = Math.abs(Math.abs(original[1]) - halfDepth) < 0.001 ? original[1] : freeZ;
+          for (const point of sharedPoints) {
+            point[0] = x;
+            point[1] = z;
+          }
+          host.querySelectorAll<SVGPolygonElement>('[data-layout-region]').forEach((polygon) => {
+            const region = map.layout.regions.find((item) => item.id === polygon.dataset.layoutRegion);
+            if (region) polygon.setAttribute('points', region.points.map(([px, pz]) => `${((px + halfWidth) / map.box.size[0]) * 100},${((pz + halfDepth) / map.box.size[2]) * 100}`).join(' '));
+          });
+        };
+        const stop = () => {
+          window.removeEventListener('pointermove', move);
+          window.removeEventListener('pointerup', stop);
+          if (!measureMapLayoutCoverage(map.layout, map.box.size).valid) {
+            for (const point of sharedPoints) {
+              point[0] = original[0];
+              point[1] = original[1];
+            }
+            this.state.message = '这次拖动会造成区块重叠或缺口，已恢复原边界';
+            this.renderMapAiPanel();
+            this.updateToolbarState();
+            return;
+          }
+          void commitLayoutChange();
+        };
+        window.addEventListener('pointermove', move);
+        window.addEventListener('pointerup', stop, { once: true });
+      });
+    });
+    host.querySelector('#stitch-map')?.addEventListener('click', async () => {
+      const sourceMapId = host.querySelector<HTMLSelectElement>('#stitch-source-map')?.value;
+      if (!sourceMapId || this.state.dirty || this.state.busy) return;
+      this.setBusy(true, '正在拼接并平滑接缝...');
+      try {
+        const result = await editorFetch<{ map: EditableMap }>(`/api/editor/maps/${encodeURIComponent(map.id)}/stitch`, {
+          method: 'POST',
+          body: JSON.stringify({
+            sourceMapId,
+            direction: host.querySelector<HTMLSelectElement>('#stitch-direction')?.value,
+            mode: host.querySelector<HTMLSelectElement>('#stitch-mode')?.value,
+            width: Number(host.querySelector<HTMLInputElement>('#stitch-width')?.value ?? 24),
+            irregularity: Number(host.querySelector<HTMLInputElement>('#stitch-irregularity')?.value ?? 0.2),
+            prompt: host.querySelector<HTMLInputElement>('#stitch-prompt')?.value.trim()
+          })
+        });
+        this.state.map = normalizeMap(result.map);
+        this.state.dirty = false;
+        this.clearMapAiPreview();
+        this.mapLayoutSuggestion = null;
+        this.resetManualHistory(this.state.map, true);
+        await this.reloadLists();
+        await this.refreshScene();
+        this.state.message = `已创建拼接地图：${result.map.name}`;
+      } catch (error) {
+        const detail = error instanceof Error ? error.message : '未知错误';
+        this.state.message = detail.includes('duplicate_stitch_source')
+          ? '地图拼接失败：同一个源地图不能在一张拼接地图中重复使用'
+          : `地图拼接失败：${detail}`;
+      } finally {
+        this.setBusy(false);
+        this.renderPanels();
+      }
+    });
+    host.querySelector<HTMLSelectElement>('#stitch-seam-select')?.addEventListener('change', (event) => {
+      this.selectedStitchSeamId = (event.target as HTMLSelectElement).value;
+      this.renderMapAiPanel();
+    });
+    host.querySelector('#retune-stitch-seam')?.addEventListener('click', async () => {
+      const seam = map.layout.seams.find((item) => item.id === this.selectedStitchSeamId) ?? map.layout.seams[0];
+      if (!seam || this.state.busy || this.state.dirty) return;
+      this.setBusy(true, seam.locked ? '正在解锁接缝...' : '正在重新计算接缝高度...');
+      try {
+        const locked = host.querySelector<HTMLInputElement>('#stitch-seam-lock')?.checked === true;
+        const result = await editorFetch<{ map: EditableMap }>(`/api/editor/maps/${encodeURIComponent(map.id)}/seams/${encodeURIComponent(seam.id)}`, {
+          method: 'PATCH',
+          body: JSON.stringify({
+            width: Number(host.querySelector<HTMLInputElement>('#stitch-seam-width')?.value ?? seam.width),
+            irregularity: Number(host.querySelector<HTMLInputElement>('#stitch-seam-irregularity')?.value ?? seam.irregularity),
+            seed: Number(host.querySelector<HTMLInputElement>('#stitch-seam-seed')?.value ?? seam.seed),
+            prompt: host.querySelector<HTMLInputElement>('#stitch-seam-prompt')?.value ?? seam.prompt,
+            locked
+          })
+        });
+        this.state.map = normalizeMap(result.map);
+        this.state.dirty = false;
+        this.resetManualHistory(this.state.map, true);
+        await this.refreshScene();
+        this.state.message = locked ? '接缝已锁定' : '接缝高度已重新计算并保存';
+      } catch (error) {
+        const detail = error instanceof Error ? error.message : '未知错误';
+        this.state.message = detail.includes('stitch_seam_source_changed')
+          ? '接缝调整失败：源地图在拼接后已发生变化，请重新拼接以避免意外覆盖'
+          : `接缝调整失败：${detail}`;
+      } finally {
+        this.setBusy(false);
+        this.renderPanels();
+      }
     });
   }
 
@@ -1150,8 +1696,11 @@ class MapEditor {
             provider: this.mapAiProvider,
             reuseExistingAssets: this.mapAiReuseExistingAssets,
             assetLibraryId: this.mapAiReuseExistingAssets ? this.activeAssetLibraryId : undefined,
+            minNewAssets: this.mapAiMinNewAssets,
             maxNewAssets: this.mapAiMaxNewAssets,
             targetVisualZoneId: mode === 'refine' ? this.mapAiTargetVisualZoneId || undefined : undefined,
+            targetRegionId: mode === 'refine' ? this.mapAiTargetRegionId || undefined : undefined,
+            baseTerrainOnly: mode === 'refine' && this.mapAiBaseTerrainOnly,
             ...(previousSuggestion ? { baseOperations: previousSuggestion.operations } : {})
           }),
           signal: controller.signal
@@ -1796,7 +2345,7 @@ class MapEditor {
       <details class="inspector-disclosure" data-inspector-section="assets" ${assetPanelOpen || Boolean(this.placingAssetId) ? 'open' : ''}>
         <summary><span><b>资产</b><small>${selectedAsset ? escapeHtml(`${selectedAsset.name} · ${selectedAsset.mode.toUpperCase()}`) : `${availableAssets.length} 个可用`}</small></span></summary>
         <section class="editor-section inspector-body asset-tools">
-        <textarea id="asset-prompt" placeholder="输入提示词生成模型资产"></textarea>
+        <textarea id="asset-prompt" placeholder="例如：一座低多边形林间小木屋"></textarea>
         <p class="empty">新生成资产默认使用 ${this.state.map?.assetGenerationMode.toUpperCase() ?? 'VOXEL'}；已有资产可跨模式混合使用。</p>
         <button id="generate-asset" ${this.state.busy ? 'disabled' : ''}>生成资产</button>
         <p class="empty">资产列表显示全部模式，名称后会标注生成模式。</p>
@@ -3808,6 +4357,22 @@ class MapEditor {
     this.mapAgentProgressTimer = null;
   }
 
+  private startMapLayoutProgressTimer(): void {
+    if (this.mapLayoutProgressTimer !== null) window.clearInterval(this.mapLayoutProgressTimer);
+    this.mapLayoutStartedAt = Date.now();
+    this.mapLayoutElapsedMs = 0;
+    this.mapLayoutProgressTimer = window.setInterval(() => {
+      this.mapLayoutElapsedMs = Date.now() - this.mapLayoutStartedAt;
+      this.renderMapAiPanel();
+    }, 1_000);
+  }
+
+  private stopMapLayoutProgressTimer(): void {
+    if (this.mapLayoutStartedAt > 0) this.mapLayoutElapsedMs = Date.now() - this.mapLayoutStartedAt;
+    if (this.mapLayoutProgressTimer !== null) window.clearInterval(this.mapLayoutProgressTimer);
+    this.mapLayoutProgressTimer = null;
+  }
+
   private startRenderAgentProgressTimer(): void {
     if (this.renderAgentProgressTimer !== null) window.clearInterval(this.renderAgentProgressTimer);
     this.renderAgentStartedAt = Date.now();
@@ -4053,7 +4618,7 @@ function terrainPresetLabel(value: TerrainGenerationPreset): string {
 }
 
 function terrainModifierLabel(value: TerrainModifier): string {
-  return ({ cliff: '峭壁', terrace: '梯田', dune: '沙丘', island: '局部小岛' } as const)[value];
+  return ({ mountain: '山峦', cliff: '峭壁', terrace: '梯田', dune: '沙丘', island: '局部小岛' } as const)[value];
 }
 
 function terrainSurfaceLabel(value: TerrainSurfaceKind): string {
