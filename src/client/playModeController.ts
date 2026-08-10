@@ -217,7 +217,7 @@ export function stepPlayMotion(
 }
 
 function waterAt(map: EditableMap, x: number, z: number): MapWaterBody | null {
-  return map.waterBodies.find((water) => isPointInsideWaterBody(water, x, z)) ?? null;
+  return map.waterBodies.find((water) => isPointInsideWaterBody(water, x, z, map)) ?? null;
 }
 
 const PLAY_KEYS = new Set(['KeyW', 'KeyA', 'KeyS', 'KeyD', 'ShiftLeft', 'ShiftRight', 'Space']);

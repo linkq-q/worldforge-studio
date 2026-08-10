@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { buildEditableMapGroup, buildStructuredWaterGroup } from '../src/client/mapRenderer';
 import { createEmptyMap } from '../src/shared/map';
+import { applyMapOperations } from '../src/shared/mapOperations';
 import type { MapAsset } from '../src/shared/map';
 import { createGrassLayer, fillGrassLayerInPlace } from '../src/shared/mapGrass';
 import { DEFAULT_RUNTIME_GRASS_STYLE } from '../src/shared/renderPlan';
@@ -310,6 +311,32 @@ describe('structured map water rendering', () => {
       effectBatchParts: 0,
       fallbackMeshParts: 2
     });
+    rendered.dispose();
+  });
+
+  it('keeps cliffs in the terrain mesh without detached vertical wall sheets', async () => {
+    const map = applyMapOperations(createEmptyMap('cliff', 'map-cliff-render'), [{
+      type: 'terrain.modify', modifier: 'cliff', layout: 'wall',
+      region: { kind: 'path', points: [[0, -15], [0, 15]], width: 5 },
+      amplitude: 7, softness: 0
+    }]);
+    const rendered = await buildEditableMapGroup(map);
+    expect(rendered.group.getObjectByName('terrain-cliff-walls')).toBeUndefined();
+    expect((rendered.group.getObjectByName('terrain') as THREE.Mesh).geometry.getAttribute('position').count).toBeGreaterThan(0);
+    rendered.dispose();
+  });
+
+  it('installs animated sand uniforms for semantic sand regions', async () => {
+    const map = applyMapOperations(createEmptyMap('sand', 'map-sand-render'), [{
+      type: 'terrain.surface', surface: 'sand',
+      region: { kind: 'circle', x: 0, z: 0, radius: 8 }, zoneId: 'sand-zone'
+    }]);
+    const rendered = await buildEditableMapGroup(map);
+    const terrain = rendered.group.getObjectByName('terrain') as THREE.Mesh;
+    const sandFlow = terrain.userData.sandFlow as { zones: unknown[] };
+
+    expect(sandFlow.zones).toHaveLength(1);
+    expect((terrain.material as THREE.MeshStandardMaterial).onBeforeCompile).toBeTypeOf('function');
     rendered.dispose();
   });
 

@@ -21,7 +21,7 @@ import {
 } from '../shared/map';
 import { buildModelGroup } from './modelRenderer';
 import { buildMapPrimitiveBatches } from './mapPrimitiveBatching';
-import { terrainVertexColor } from './terrainAppearance';
+import { terrainSemanticSurfaceWeight, terrainVertexColor } from './terrainAppearance';
 import { buildMapGrassField, deriveContactAwareGrassMap } from './mapGrassRenderer';
 import { combinedGrassDensity } from '../shared/mapGrass';
 import {
@@ -52,6 +52,7 @@ export interface RenderedMap {
   syncMaterialEnvironment: (environmentMap: THREE.Texture | null) => void;
   getRuntimeBatchMeshes: () => THREE.Object3D[];
   setGrassStyle: (style: RuntimeGrassStyle) => void;
+  setSandFlowStrength: (strength: number) => void;
   interactGrass: (position: Vec3, elapsedSeconds: number) => void;
   clearGrassInteraction: () => void;
   getDebugStats: () => RenderedMapDebugStats;
@@ -87,6 +88,7 @@ export async function buildEditableMapGroup(input: EditableMap, options: MapRend
 
   let grassMap = deriveContactAwareGrassMap(map);
   const terrain = buildTerrain(map);
+  const sandFlow = terrain.userData.sandFlow as TerrainSandFlowState;
   applyTerrainGrassTint(terrain, grassMap, DEFAULT_RUNTIME_GRASS_STYLE);
   root.add(terrain);
   pickables.push(terrain);
@@ -153,6 +155,8 @@ export async function buildEditableMapGroup(input: EditableMap, options: MapRend
     syncObjectTransform: instancing.syncObjectTransform,
     update: (deltaTime, camera, maxDistance) => {
       materialElapsedSeconds += deltaTime;
+      sandFlow.time += deltaTime;
+      syncTerrainSandShader(sandFlow);
       grass?.update(deltaTime);
       instancing.updateCulling(camera, maxDistance);
       instancing.updateMaterialEffects(materialElapsedSeconds);
@@ -165,6 +169,10 @@ export async function buildEditableMapGroup(input: EditableMap, options: MapRend
       grassStyle = style;
       grass?.setStyle(style);
       applyTerrainGrassTint(terrain, grassMap, style);
+    },
+    setSandFlowStrength: (strength) => {
+      sandFlow.strength = THREE.MathUtils.clamp(strength, 0, 1);
+      syncTerrainSandShader(sandFlow);
     },
     interactGrass: (position, elapsedSeconds) => grass?.interact(position, elapsedSeconds),
     clearGrassInteraction: () => grass?.clearInteraction(),
@@ -187,6 +195,7 @@ export async function buildEditableMapGroup(input: EditableMap, options: MapRend
       material.map?.dispose();
       material.map = createSurfaceTexture(next, 'terrain');
       material.needsUpdate = true;
+      updateTerrainSandZones(sandFlow, next);
       // Blades sample terrain height, so they have to follow the new surface.
       rebuildGrass(next);
     },
@@ -214,7 +223,8 @@ function applyTerrainGrassTint(mesh: THREE.Mesh, map: EditableMap, style: Runtim
     color.setRGB(base[0], base[1], base[2]);
     const isSurface = y >= sampleTerrainHeight(map, x, z) - 0.05;
     if (style.groundTint && isSurface) {
-      const density = combinedGrassDensity(map, x, z);
+      const nonGrassWeight = terrainSemanticSurfaceWeight(map, x, z, ['sand', 'rocky']);
+      const density = combinedGrassDensity(map, x, z) * (1 - nonGrassWeight);
       const transition = density * density * (3 - 2 * density);
       color.lerp(grassColor, transition * style.groundTintStrength);
     }
@@ -238,7 +248,74 @@ function buildTerrain(map: EditableMap): THREE.Mesh {
   mesh.castShadow = true;
   mesh.receiveShadow = true;
   mesh.userData.surface = 'terrain';
+  mesh.userData.sandFlow = installTerrainSandShader(material, map);
   return mesh;
+}
+
+interface TerrainSandFlowState {
+  time: number;
+  strength: number;
+  zones: THREE.Vector4[];
+  shader: THREE.WebGLProgramParametersWithUniforms | null;
+}
+
+function installTerrainSandShader(material: THREE.MeshStandardMaterial, map: EditableMap): TerrainSandFlowState {
+  const state: TerrainSandFlowState = { time: 0, strength: 0, zones: [], shader: null };
+  updateTerrainSandZones(state, map);
+  material.onBeforeCompile = (shader) => {
+    state.shader = shader;
+    shader.uniforms.uTerrainSandTime = { value: state.time };
+    shader.uniforms.uTerrainSandStrength = { value: state.strength };
+    shader.uniforms.uTerrainSandZoneCount = { value: state.zones.length };
+    shader.uniforms.uTerrainSandZones = { value: paddedSandZones(state.zones) };
+    shader.vertexShader = shader.vertexShader
+      .replace('#include <common>', '#include <common>\nvarying vec3 vTerrainSandPosition;')
+      .replace('#include <begin_vertex>', '#include <begin_vertex>\nvTerrainSandPosition = position;');
+    shader.fragmentShader = shader.fragmentShader
+      .replace('#include <common>', `#include <common>
+        varying vec3 vTerrainSandPosition;
+        uniform float uTerrainSandTime;
+        uniform float uTerrainSandStrength;
+        uniform int uTerrainSandZoneCount;
+        uniform vec4 uTerrainSandZones[8];
+      `)
+      .replace('#include <map_fragment>', `#include <map_fragment>
+        float terrainSandMask = 0.0;
+        for (int i = 0; i < 8; i++) {
+          if (i >= uTerrainSandZoneCount) break;
+          vec4 zone = uTerrainSandZones[i];
+          float distanceToZone = length(vTerrainSandPosition.xz - zone.xy);
+          terrainSandMask = max(terrainSandMask, (1.0 - smoothstep(zone.z * 0.72, zone.z, distanceToZone)) * zone.w);
+        }
+        float terrainSandFlow = sin(dot(vTerrainSandPosition.xz, vec2(0.72, 0.38)) * 3.2 - uTerrainSandTime * 1.7);
+        terrainSandFlow = smoothstep(0.35, 0.92, terrainSandFlow) * terrainSandMask * uTerrainSandStrength;
+        diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.94, 0.76, 0.38), terrainSandFlow * 0.16);
+      `);
+    syncTerrainSandShader(state);
+  };
+  material.customProgramCacheKey = () => 'worldforge-terrain-sand-v1';
+  return state;
+}
+
+function updateTerrainSandZones(state: TerrainSandFlowState, map: EditableMap): void {
+  state.zones = map.visualSemantics.zones
+    .filter((zone) => zone.tags.includes('sand'))
+    .slice(0, 8)
+    .map((zone) => new THREE.Vector4(zone.center[0], zone.center[1], zone.radius, zone.intensity));
+  syncTerrainSandShader(state);
+}
+
+function syncTerrainSandShader(state: TerrainSandFlowState): void {
+  const uniforms = state.shader?.uniforms;
+  if (!uniforms) return;
+  uniforms.uTerrainSandTime.value = state.time;
+  uniforms.uTerrainSandStrength.value = state.strength;
+  uniforms.uTerrainSandZoneCount.value = state.zones.length;
+  uniforms.uTerrainSandZones.value = paddedSandZones(state.zones);
+}
+
+function paddedSandZones(zones: readonly THREE.Vector4[]): THREE.Vector4[] {
+  return Array.from({ length: 8 }, (_, index) => zones[index]?.clone() ?? new THREE.Vector4());
 }
 
 export function buildStructuredWaterGroup(map: EditableMap): THREE.Group {
@@ -251,7 +328,7 @@ export function buildStructuredWaterGroup(map: EditableMap): THREE.Group {
     const isComposite = waters.length > 1;
     const geometry = isComposite
       ? buildCompositeWaterGeometry(shore.size)
-      : water.type === 'lake'
+      : water.type !== 'river'
         ? buildLakeGeometry(water.points)
         : buildRiverGeometry(water.points, water.width);
     const material = new THREE.MeshStandardMaterial({
@@ -309,6 +386,7 @@ function groupConnectedWaterBodies(waters: readonly MapWaterBody[]): MapWaterBod
   };
   for (let left = 0; left < waters.length; left += 1) {
     for (let right = left + 1; right < waters.length; right += 1) {
+      if (waters[left].type === 'ocean' || waters[right].type === 'ocean') continue;
       if (Math.abs(waters[left].level - waters[right].level) > 0.05) continue;
       if (!waterBoundariesTouch(boundaries[left], boundaries[right])) continue;
       parents[find(right)] = find(left);
@@ -372,7 +450,7 @@ function buildCompositeWaterGeometry(size: number): THREE.BufferGeometry {
 }
 
 function waterBoundary(water: MapWaterBody): Array<[number, number]> {
-  return water.type === 'lake'
+  return water.type !== 'river'
     ? cleanWaterPoints(water.points)
     : riverBoundaryPoints(water.points, water.width);
 }
@@ -881,6 +959,7 @@ const SEMANTIC_SURFACE_COLORS = {
   water: '#a8c8bd',
   lowland: '#bdcfb8',
   dry: '#dfc692',
+  sand: '#e6c77d',
   settlement: '#d7c5a6',
   rocky: '#c3c0b2'
 } as const;
@@ -929,7 +1008,7 @@ function drawWetShore(
   ctx.beginPath();
   ctx.moveTo(points[0][0], points[0][1]);
   points.slice(1).forEach((point) => ctx.lineTo(point[0], point[1]));
-  if (water.type === 'lake') ctx.closePath();
+  if (water.type !== 'river') ctx.closePath();
   const pixelsPerMetre = (width / map.box.size[0] + height / map.box.size[2]) * 0.5;
   ctx.strokeStyle = 'rgba(88, 91, 70, 0.16)';
   ctx.lineWidth = Math.max(3, (water.type === 'river' ? water.width + 1.8 : 2.4) * pixelsPerMetre);

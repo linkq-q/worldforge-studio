@@ -71,8 +71,19 @@ import {
 import {
   applyMapOperations,
   type MapAiSuggestion,
+  type MapOperation,
   type MapTransactionSummary
 } from '../shared/mapOperations';
+import {
+  TERRAIN_CLIFF_LAYOUTS,
+  TERRAIN_GENERATION_PRESETS,
+  TERRAIN_MODIFIERS,
+  TERRAIN_SURFACES,
+  type TerrainCliffLayout,
+  type TerrainGenerationPreset,
+  type TerrainModifier,
+  type TerrainSurfaceKind
+} from '../shared/terrainGeneration';
 import {
   type AgentProgressEvent,
   type ChatProvider
@@ -116,6 +127,7 @@ import {
 type EditorTool = 'select' | 'paint' | 'terrain' | 'grass';
 type TransformMode = 'translate' | 'rotate' | 'scale';
 type EditorStage = 'map' | 'render';
+type TerrainEditorAction = 'brush' | 'modifier' | 'surface';
 
 const CAMERA_MOVE_KEYS = new Set(['KeyW', 'KeyA', 'KeyS', 'KeyD', 'ArrowUp', 'ArrowDown']);
 const CAMERA_BASE_SPEED = 8;
@@ -143,8 +155,17 @@ interface EditorState {
   brushSize: number;
   brushSoftness: number;
   terrainMode: TerrainBrushMode;
+  terrainAction: TerrainEditorAction;
+  terrainPreset: TerrainGenerationPreset;
+  terrainModifier: TerrainModifier;
+  terrainCliffLayout: TerrainCliffLayout;
+  terrainSurface: TerrainSurfaceKind;
   terrainSize: number;
   terrainStrength: number;
+  terrainAmplitude: number;
+  terrainSoftness: number;
+  terrainDirection: number;
+  terrainLayers: number;
   uniformScale: boolean;
   dirty: boolean;
   busy: boolean;
@@ -175,8 +196,17 @@ class MapEditor {
     brushSize: 1.2,
     brushSoftness: 0.35,
     terrainMode: 'raise',
+    terrainAction: 'brush',
+    terrainPreset: 'hills',
+    terrainModifier: 'cliff',
+    terrainCliffLayout: 'plateau',
+    terrainSurface: 'sand',
     terrainSize: 1.8,
     terrainStrength: 0.3,
+    terrainAmplitude: 5,
+    terrainSoftness: 0.2,
+    terrainDirection: 90,
+    terrainLayers: 4,
     uniformScale: false,
     dirty: false,
     busy: false,
@@ -214,6 +244,8 @@ class MapEditor {
   private lastFrameAt = performance.now();
   private painting = false;
   private terrainFlattenHeight: number | null = null;
+  private terrainSeed: number | null = null;
+  private terrainGesturePoints: Array<[number, number]> = [];
   private previewRenderer: THREE.WebGLRenderer | null = null;
   private previewScene: THREE.Scene | null = null;
   private previewCamera: THREE.PerspectiveCamera | null = null;
@@ -260,6 +292,7 @@ class MapEditor {
   private selectedVisualZoneId = '';
   private newMapAssetGenerationMode: ModelGenerationMode = 'voxel';
   private mapAiSuggestion: MapAiSuggestion | null = null;
+  private mapPreviewKind: 'ai' | 'terrain' = 'ai';
   private mapAiPreviewMap: EditableMap | null = null;
   private mapAiPreviewVisible = true;
   private mapAiComparisonMap: EditableMap | null = null;
@@ -940,6 +973,7 @@ class MapEditor {
       return;
     }
     const suggestion = this.mapAiSuggestion;
+    const isTerrainPreview = this.mapPreviewKind === 'terrain';
     const terrainCount = suggestion?.operations.filter((operation) => operation.type.startsWith('terrain.')).length ?? 0;
     const waterCount = suggestion?.operations.filter((operation) => operation.type.startsWith('water.')).length ?? 0;
     const objectCount = suggestion?.operations.filter((operation) => operation.type.startsWith('object.')).length ?? 0;
@@ -1001,7 +1035,7 @@ class MapEditor {
       </details>
       ${suggestion && this.mapAiPreviewMap ? `
         <section class="editor-section map-ai-result">
-          <span class="stage-kicker">AI 地图建议</span>
+          <span class="stage-kicker">${isTerrainPreview ? '地形编辑预览' : 'AI 地图建议'}</span>
           <h2>${escapeHtml(suggestion.summary)}</h2>
           <div class="preview-comparison segmented compact" aria-label="地图 Refine 前后对比">
             <button type="button" data-map-preview-view="before" class="${this.mapAiPreviewVisible ? '' : 'active'}">修改前</button>
@@ -1135,6 +1169,7 @@ class MapEditor {
             generatedAssets: [...previousSuggestion.generatedAssets, ...suggestion.generatedAssets]
           }
         : suggestion;
+      this.mapPreviewKind = 'ai';
       this.mapAiSuggestion = combinedSuggestion;
       this.mapAiPreviewMap = applyMapOperations(this.mapWithEditorAssets(map), combinedSuggestion.operations);
       this.mapAiComparisonMap = comparisonMap;
@@ -1161,10 +1196,77 @@ class MapEditor {
     }
   }
 
+  private async previewTerrainBase(): Promise<void> {
+    const map = this.state.map;
+    if (!map) return;
+    const operation: MapOperation = {
+      type: 'terrain.generate',
+      preset: this.state.terrainPreset,
+      seed: this.terrainSeed ?? map.seed,
+      amplitude: this.state.terrainPreset === 'plain' ? 0 : this.state.terrainAmplitude,
+      roughness: 0.55,
+      direction: this.state.terrainDirection
+    };
+    await this.previewTerrainOperations(`整体地貌：${terrainPresetLabel(this.state.terrainPreset)}`, [operation]);
+  }
+
+  private async previewTerrainGesture(): Promise<void> {
+    const map = this.state.map;
+    const points = this.terrainGesturePoints;
+    this.terrainGesturePoints = [];
+    if (!map || points.length === 0 || this.state.terrainAction === 'brush') return;
+    const useCircle = points.length < 2 || this.state.terrainModifier === 'island';
+    const region = useCircle
+      ? { kind: 'circle' as const, x: points[0][0], z: points[0][1], radius: this.state.terrainSize }
+      : { kind: 'path' as const, points, width: Math.max(0.3, this.state.terrainSize * 2) };
+    if (this.state.terrainAction === 'modifier') {
+      await this.previewTerrainOperations(`局部地貌：${terrainModifierLabel(this.state.terrainModifier)}`, [{
+        type: 'terrain.modify',
+        modifier: this.state.terrainModifier,
+        region,
+        seed: this.terrainSeed ?? map.seed,
+        amplitude: this.state.terrainAmplitude,
+        softness: this.state.terrainSoftness,
+        direction: this.state.terrainDirection,
+        variation: 0.45,
+        layers: this.state.terrainLayers,
+        layout: this.state.terrainCliffLayout
+      }]);
+      return;
+    }
+    await this.previewTerrainOperations(`地表区域：${terrainSurfaceLabel(this.state.terrainSurface)}`, [{
+      type: 'terrain.surface',
+      surface: this.state.terrainSurface,
+      region,
+      intensity: 1,
+      zoneId: `manual-${this.state.terrainSurface}-${Math.round(points[0][0] * 10)}-${Math.round(points[0][1] * 10)}`
+    }]);
+  }
+
+  private async previewTerrainOperations(summary: string, operations: MapOperation[]): Promise<void> {
+    const map = this.state.map;
+    if (!map || this.state.busy || this.mapAiPreviewMap) return;
+    if (this.state.dirty) {
+      this.state.message = '请先保存当前手工修改，再生成地形预览';
+      this.renderPanels();
+      return;
+    }
+    this.mapPreviewKind = 'terrain';
+    this.mapAiSuggestion = { summary, operations, renderPromptSuggestions: [], generatedAssets: [] };
+    this.mapAiComparisonMap = map;
+    this.mapAiPreviewMap = applyMapOperations(this.mapWithEditorAssets(map), operations);
+    this.mapAiPreviewVisible = true;
+    this.state.selectedObjectId = null;
+    this.state.message = `${summary}预览已生成，尚未应用`;
+    await this.refreshScene();
+    this.renderPanels();
+  }
+
   private async discardMapAiPreview(): Promise<void> {
     if (!this.mapAiPreviewMap) return;
+    const wasTerrainPreview = this.mapPreviewKind === 'terrain';
     this.clearMapAiPreview();
-    this.state.message = '已放弃 AI 地图预览';
+    this.state.message = wasTerrainPreview ? '已放弃地形预览' : '已放弃 AI 地图预览';
     await this.refreshScene();
     this.renderPanels();
   }
@@ -1173,14 +1275,15 @@ class MapEditor {
     const map = this.state.map;
     const suggestion = this.mapAiSuggestion;
     if (!map || !suggestion || this.state.busy || this.state.dirty) return;
-    this.setBusy(true, '正在应用 AI 地图...');
+    const isTerrainPreview = this.mapPreviewKind === 'terrain';
+    this.setBusy(true, isTerrainPreview ? '正在应用地形编辑...' : '正在应用 AI 地图...');
     try {
       const result = await editorFetch<{ map: EditableMap; transaction: MapTransactionSummary }>(
         `/api/editor/maps/${encodeURIComponent(map.id)}/transactions`,
         {
           method: 'POST',
           body: JSON.stringify({
-            source: 'basic-ai',
+            source: isTerrainPreview ? 'manual' : 'basic-ai',
             label: suggestion.summary,
             operations: suggestion.operations
           })
@@ -1197,7 +1300,7 @@ class MapEditor {
       await this.refreshScene();
       this.state.message = `已应用：${result.transaction.label}`;
     } catch (error) {
-      this.state.message = `应用 AI 地图失败：${error instanceof Error ? error.message : '未知错误'}`;
+      this.state.message = `应用${isTerrainPreview ? '地形编辑' : ' AI 地图'}失败：${error instanceof Error ? error.message : '未知错误'}`;
     } finally {
       this.setBusy(false);
       this.renderPanels();
@@ -1209,6 +1312,7 @@ class MapEditor {
     this.mapAiPreviewMap = null;
     this.mapAiPreviewVisible = true;
     this.mapAiComparisonMap = null;
+    this.mapPreviewKind = 'ai';
   }
 
   private renderMapSelector(): void {
@@ -1262,7 +1366,7 @@ class MapEditor {
       ${map.waterBodies.map((water) => `
         <div class="hierarchy-row water">
           <span>${escapeHtml(water.name)}</span>
-          <small>${water.type === 'lake' ? 'lake' : 'river'}</small>
+          <small>${water.type}</small>
         </div>
       `).join('')}
       ${renderObjectTree(map.objects, null, this.state.selectedObjectId)}
@@ -1367,13 +1471,47 @@ class MapEditor {
       </section>` : ''}
       ${this.state.tool === 'terrain' ? `<section class="editor-section contextual-editor-section">
         <h2>地形</h2>
-        <select data-terrain-mode>
+        <label class="field compact"><span>整体地貌</span><select data-terrain-preset>
+          ${TERRAIN_GENERATION_PRESETS.map((preset) => `<option value="${preset}" ${this.state.terrainPreset === preset ? 'selected' : ''}>${terrainPresetLabel(preset)}</option>`).join('')}
+        </select></label>
+        <div class="map-ai-controls">
+          <button type="button" data-terrain-preview-base ${this.state.dirty || this.state.busy || Boolean(this.mapAiPreviewMap) ? 'disabled' : ''}>预览整体替换</button>
+          <button type="button" class="secondary" data-terrain-reroll ${this.state.busy || Boolean(this.mapAiPreviewMap) ? 'disabled' : ''}>换一个种子</button>
+        </div>
+        <p class="empty">种子 ${this.terrainSeed ?? map.seed} · 岛屿自动生成海面；沙漠自动附加沙地与飞沙语义。</p>
+        <label class="field compact"><span>局部工具</span><select data-terrain-action>
+          <option value="brush" ${this.state.terrainAction === 'brush' ? 'selected' : ''}>基础画笔</option>
+          <option value="modifier" ${this.state.terrainAction === 'modifier' ? 'selected' : ''}>地貌修改器</option>
+          <option value="surface" ${this.state.terrainAction === 'surface' ? 'selected' : ''}>地表区域</option>
+        </select></label>
+        ${this.state.terrainAction === 'brush' ? `<select data-terrain-mode>
           <option value="raise" ${this.state.terrainMode === 'raise' ? 'selected' : ''}>抬高</option>
           <option value="lower" ${this.state.terrainMode === 'lower' ? 'selected' : ''}>降低</option>
           <option value="flatten" ${this.state.terrainMode === 'flatten' ? 'selected' : ''}>平整</option>
-        </select>
+        </select>` : ''}
+        ${this.state.terrainAction === 'modifier' ? `
+          <label class="field compact"><span>修改器</span><select data-terrain-modifier>
+            ${TERRAIN_MODIFIERS.map((modifier) => `<option value="${modifier}" ${this.state.terrainModifier === modifier ? 'selected' : ''}>${terrainModifierLabel(modifier)}</option>`).join('')}
+          </select></label>
+          ${this.state.terrainModifier === 'cliff' ? `<label class="field compact"><span>峭壁形态</span><select data-terrain-cliff-layout>
+            ${TERRAIN_CLIFF_LAYOUTS.map((layout) => `<option value="${layout}" ${this.state.terrainCliffLayout === layout ? 'selected' : ''}>${terrainCliffLayoutLabel(layout)}</option>`).join('')}
+          </select></label>` : ''}
+        ` : ''}
+        ${this.state.terrainAction === 'surface' ? `<label class="field compact"><span>地表</span><select data-terrain-surface>
+          ${TERRAIN_SURFACES.map((surface) => `<option value="${surface}" ${this.state.terrainSurface === surface ? 'selected' : ''}>${terrainSurfaceLabel(surface)}</option>`).join('')}
+        </select></label>` : ''}
         <label class="field compact"><span>大小</span><input data-terrain-size type="range" min="0.3" max="8" step="0.1" value="${this.state.terrainSize}" /></label>
-        <label class="field compact"><span>强度</span><input data-terrain-strength type="range" min="0.02" max="1.5" step="0.02" value="${this.state.terrainStrength}" /></label>
+        ${this.state.terrainAction === 'brush'
+          ? `<label class="field compact"><span>强度</span><input data-terrain-strength type="range" min="0.02" max="1.5" step="0.02" value="${this.state.terrainStrength}" /></label>`
+          : this.state.terrainAction === 'modifier'
+            ? `<label class="field compact"><span>高度</span><input data-terrain-amplitude type="range" min="0.2" max="${Math.max(1, map.box.size[1] - 0.1)}" step="0.1" value="${this.state.terrainAmplitude}" /></label>`
+            : ''}
+        ${this.state.terrainAction === 'modifier' ? `
+          <label class="field compact"><span>过渡柔和</span><input data-terrain-softness type="range" min="0" max="1" step="0.05" value="${this.state.terrainSoftness}" /></label>
+          <label class="field compact"><span>方向</span><input data-terrain-direction type="range" min="0" max="359" step="1" value="${this.state.terrainDirection}" /></label>
+          ${this.state.terrainModifier === 'terrace' ? `<label class="field compact"><span>层数</span><input data-terrain-layers type="range" min="2" max="12" step="1" value="${this.state.terrainLayers}" /></label>` : ''}
+        ` : ''}
+        ${this.state.terrainAction !== 'brush' ? '<p class="empty">在地形上单击盖章，或按住拖动绘制路径；松开后先预览，再统一应用。</p>' : ''}
       </section>` : ''}
       ${this.state.tool === 'grass' ? renderGrassEditorPanel(map, this.grassEditorState) : ''}
     `;
@@ -1466,8 +1604,34 @@ class MapEditor {
     host.querySelector<HTMLSelectElement>('[data-terrain-mode]')?.addEventListener('change', (event) => {
       this.state.terrainMode = (event.target as HTMLSelectElement).value as TerrainBrushMode;
     });
+    host.querySelector<HTMLSelectElement>('[data-terrain-preset]')?.addEventListener('change', (event) => {
+      this.state.terrainPreset = (event.target as HTMLSelectElement).value as TerrainGenerationPreset;
+    });
+    host.querySelector<HTMLSelectElement>('[data-terrain-action]')?.addEventListener('change', (event) => {
+      this.state.terrainAction = (event.target as HTMLSelectElement).value as TerrainEditorAction;
+      this.renderMapInspector();
+    });
+    host.querySelector<HTMLSelectElement>('[data-terrain-modifier]')?.addEventListener('change', (event) => {
+      this.state.terrainModifier = (event.target as HTMLSelectElement).value as TerrainModifier;
+      this.renderMapInspector();
+    });
+    host.querySelector<HTMLSelectElement>('[data-terrain-cliff-layout]')?.addEventListener('change', (event) => {
+      this.state.terrainCliffLayout = (event.target as HTMLSelectElement).value as TerrainCliffLayout;
+    });
+    host.querySelector<HTMLSelectElement>('[data-terrain-surface]')?.addEventListener('change', (event) => {
+      this.state.terrainSurface = (event.target as HTMLSelectElement).value as TerrainSurfaceKind;
+    });
+    host.querySelector('[data-terrain-preview-base]')?.addEventListener('click', () => void this.previewTerrainBase());
+    host.querySelector('[data-terrain-reroll]')?.addEventListener('click', () => {
+      this.terrainSeed = nextTerrainSeed(this.terrainSeed ?? map.seed);
+      this.renderMapInspector();
+    });
     bindNumberState(host, '[data-terrain-size]', (value) => { this.state.terrainSize = value; });
     bindNumberState(host, '[data-terrain-strength]', (value) => { this.state.terrainStrength = value; });
+    bindNumberState(host, '[data-terrain-amplitude]', (value) => { this.state.terrainAmplitude = value; });
+    bindNumberState(host, '[data-terrain-softness]', (value) => { this.state.terrainSoftness = value; });
+    bindNumberState(host, '[data-terrain-direction]', (value) => { this.state.terrainDirection = value; });
+    bindNumberState(host, '[data-terrain-layers]', (value) => { this.state.terrainLayers = Math.round(value); });
     if (this.state.tool === 'grass') {
       bindGrassEditorPanel(host, map, this.grassEditorState, {
         changed: (message) => {
@@ -1553,6 +1717,10 @@ class MapEditor {
             ${map.objects.filter((item) => item.id !== object.id).map((item) => `<option value="${item.id}" ${object.parentId === item.id ? 'selected' : ''}>${escapeHtml(item.name)}</option>`).join('')}
           </select>
         </label>
+        <label class="field compact"><span>地形高度</span><select data-object-height-mode>
+          <option value="terrain" ${object.heightMode === 'terrain' ? 'selected' : ''}>随地形重贴地</option>
+          <option value="fixed" ${object.heightMode === 'fixed' ? 'selected' : ''}>固定 Y 高度</option>
+        </select></label>
         <div class="triple">${numberField('X', 'pos', 0, object.transform.position[0])}${numberField('Y', 'pos', 1, object.transform.position[1])}${numberField('Z', 'pos', 2, object.transform.position[2])}</div>
         <div class="triple">${numberField('RX', 'rot', 0, radiansToDegrees(object.transform.rotation[0]))}${numberField('RY', 'rot', 1, radiansToDegrees(object.transform.rotation[1]))}${numberField('RZ', 'rot', 2, radiansToDegrees(object.transform.rotation[2]))}</div>
         <label class="field compact"><span>等比例缩放</span><input data-uniform-scale type="checkbox" ${this.state.uniformScale ? 'checked' : ''} /></label>
@@ -1581,6 +1749,14 @@ class MapEditor {
     });
     host.querySelector<HTMLSelectElement>('[data-object-asset]')?.addEventListener('change', (event) => {
       object.assetId = (event.target as HTMLSelectElement).value || null;
+      this.markDirty();
+      void this.refreshScene();
+    });
+    host.querySelector<HTMLSelectElement>('[data-object-height-mode]')?.addEventListener('change', (event) => {
+      object.heightMode = (event.target as HTMLSelectElement).value === 'fixed' ? 'fixed' : 'terrain';
+      if (object.heightMode === 'terrain' && !object.parentId) {
+        object.transform.position[1] = sampleTerrainHeight(map, object.transform.position[0], object.transform.position[2]);
+      }
       this.markDirty();
       void this.refreshScene();
     });
@@ -2934,7 +3110,15 @@ class MapEditor {
     }
     if (first) {
       this.painting = this.state.tool !== 'select';
-      if (this.painting) this.beginHistoryGesture();
+      const terrainPreviewGesture = this.state.tool === 'terrain' && this.state.terrainAction !== 'brush';
+      if (terrainPreviewGesture && this.state.dirty) {
+        this.painting = false;
+        this.state.message = '请先保存当前手工修改，再绘制地貌预览';
+        this.updateToolbarState();
+        return;
+      }
+      if (this.painting && !terrainPreviewGesture) this.beginHistoryGesture();
+      if (terrainPreviewGesture) this.terrainGesturePoints = [];
       event.preventDefault();
     }
     const hits = this.raycast(event);
@@ -2947,6 +3131,14 @@ class MapEditor {
     const hit = surfaceHit(hits);
     if (!hit) return;
     this.updateBrushPreview(hit);
+    if (this.state.tool === 'terrain' && this.state.terrainAction !== 'brush') {
+      const point: [number, number] = [hit.point.x, hit.point.z];
+      const previous = this.terrainGesturePoints[this.terrainGesturePoints.length - 1];
+      if (!previous || Math.hypot(previous[0] - point[0], previous[1] - point[1]) >= Math.max(0.15, this.state.terrainSize * 0.2)) {
+        this.terrainGesturePoints.push(point);
+      }
+      return;
+    }
     if (this.state.tool === 'paint') {
       const surface = findMapSurface(hit.object) ?? 'terrain';
       this.state.map = addPaintStroke(this.state.map, createPaintStroke({
@@ -3687,11 +3879,16 @@ class MapEditor {
   };
 
   private handleGlobalPointerEnd = (): void => {
+    const shouldPreviewTerrainGesture = this.painting
+      && this.state.tool === 'terrain'
+      && this.state.terrainAction !== 'brush'
+      && this.terrainGesturePoints.length > 0;
     this.painting = false;
     this.terrainFlattenHeight = null;
     this.transformPointerActive = false;
     if (this.orbit) this.orbit.mouseButtons.LEFT = null;
     this.endHistoryGesture();
+    if (shouldPreviewTerrainGesture) void this.previewTerrainGesture();
   };
 
   private hidePointerPreviews = (): void => {
@@ -3846,6 +4043,29 @@ function renderObjectTree(objects: MapObject[], parentId: string | null, selecte
       </button>
       ${renderObjectTree(objects, object.id, selectedId, depth + 1)}
     `).join('');
+}
+
+function terrainPresetLabel(value: TerrainGenerationPreset): string {
+  return ({
+    plain: '平原', hills: '丘陵', valley: '山谷', island: '小岛', archipelago: '群岛', canyon: '峡谷',
+    'cliff-plateau': '峭壁高原', 'dune-desert': '沙丘荒漠'
+  } as const)[value];
+}
+
+function terrainModifierLabel(value: TerrainModifier): string {
+  return ({ cliff: '峭壁', terrace: '梯田', dune: '沙丘', island: '局部小岛' } as const)[value];
+}
+
+function terrainSurfaceLabel(value: TerrainSurfaceKind): string {
+  return ({ grass: '草地', sand: '沙地', rock: '岩地' } as const)[value];
+}
+
+function terrainCliffLayoutLabel(value: TerrainCliffLayout): string {
+  return ({ plateau: '台地', coast: '海岸峭壁', canyon: '峡谷壁', wall: '独立岩壁', terraces: '多层断崖' } as const)[value];
+}
+
+function nextTerrainSeed(value: number): number {
+  return (Math.imul(Math.trunc(value) >>> 0, 1_664_525) + 1_013_904_223) >>> 0;
 }
 
 function numberField(label: string, group: string, index: number, value: number): string {

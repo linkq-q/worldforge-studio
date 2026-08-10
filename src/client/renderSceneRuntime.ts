@@ -232,11 +232,13 @@ export class RenderSceneRuntime {
   private syncAtmosphereFx(): void {
     if (!this.map) {
       this.adapter.applyAtmosphereFx(null);
+      this.rendered?.setSandFlowStrength(0);
       return;
     }
     const state = compileAtmosphereFx(this.map, this.currentScheme?.renderPlan);
     this.atmosphereFx.apply(this.map, state);
     this.adapter.applyAtmosphereFx(state);
+    this.rendered?.setSandFlowStrength(state.channels.sand);
   }
 }
 

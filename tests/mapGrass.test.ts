@@ -28,6 +28,26 @@ describe('map grass layers', () => {
     expect(map.grassLayers[0].densities).toEqual(before);
   });
 
+  it('hides authored grass inside semantic sand without changing saved densities', () => {
+    const map = createEmptyMap('desert grass mask', 'map-desert-grass-mask');
+    const layer = {
+      id: 'meadow', name: 'Meadow', visible: true, seed: 1,
+      resolutionX: map.terrain.resolutionX,
+      resolutionZ: map.terrain.resolutionZ,
+      densities: Array(map.terrain.resolutionX * map.terrain.resolutionZ).fill(1),
+      mix: { short: 0.8, tall: 0.18, flowers: 0.02 }
+    };
+    map.grassLayers = [layer];
+    const desert = applyMapOperations(map, [{
+      type: 'terrain.surface', surface: 'sand',
+      region: { kind: 'circle', x: 0, z: 0, radius: 12 }, zoneId: 'sand-center'
+    }]);
+
+    const derived = deriveContactAwareGrassMap(desert);
+    expect(combinedGrassDensity(derived, 0, 0)).toBe(0);
+    expect(combinedGrassDensity(desert, 0, 0)).toBe(1);
+  });
+
   it('normalizes multiple density layers and variant ratios at terrain resolution', () => {
     const map = normalizeMap({
       grassLayers: [

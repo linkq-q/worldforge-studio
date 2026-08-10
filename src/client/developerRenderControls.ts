@@ -45,6 +45,7 @@ const PARAMETER_LABELS: Record<string, string> = {
   pollen: '花粉微粒',
   vapor: '水汽',
   dust: '尘埃',
+  sand: '飞沙',
   windStreaks: '风痕',
   value: '当前值',
   texture: 'HDRI 贴图',

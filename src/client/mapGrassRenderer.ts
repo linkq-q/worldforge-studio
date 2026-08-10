@@ -5,6 +5,7 @@ import { isNearWater } from '../shared/mapWater';
 import type { RuntimeGrassStyle } from '../shared/renderPlan';
 import type { Vec3 } from '../shared/protocol';
 import { MapGrassInteraction } from './mapGrassInteraction';
+import { terrainSemanticSurfaceWeight } from './terrainAppearance';
 
 export interface RenderedGrassField {
   group: import('three').Group;
@@ -59,7 +60,10 @@ export function buildMapGrassField(map: EditableMap, style?: RuntimeGrassStyle):
 
 /** Render-only contact mask. Persisted/manual grass densities remain untouched. */
 export function deriveContactAwareGrassMap(map: EditableMap): EditableMap {
-  if (map.waterBodies.length === 0 && map.objects.length === 0) return map;
+  const hasNonGrassSurface = map.visualSemantics.zones.some(
+    (zone) => zone.tags.includes('sand') || zone.tags.includes('rocky')
+  );
+  if (map.waterBodies.length === 0 && map.objects.length === 0 && !hasNonGrassSurface) return map;
   const assets = new Map((map.assets ?? []).map((asset) => [asset.id, asset]));
   const obstacles = map.objects
     .filter((object) => object.visible)
@@ -80,7 +84,8 @@ export function deriveContactAwareGrassMap(map: EditableMap): EditableMap {
         const index = zIndex * layer.resolutionX + xIndex;
         if ((densities[index] ?? 0) <= 0.001) continue;
         const x = indexToWorld(xIndex, map.box.size[0], layer.resolutionX);
-        let factor = isNearWater(map, x, z, 0.2) ? 0 : isNearWater(map, x, z, 1.25) ? 0.28 : 1;
+        let factor = 1 - terrainSemanticSurfaceWeight(map, x, z, ['sand', 'rocky']);
+        factor = Math.min(factor, isNearWater(map, x, z, 0.2) ? 0 : isNearWater(map, x, z, 1.25) ? 0.28 : 1);
         for (const obstacle of obstacles) {
           const edgeDistance = Math.hypot(x - obstacle.x, z - obstacle.z) - obstacle.radius;
           if (edgeDistance <= 0) factor = Math.min(factor, 0.08);
