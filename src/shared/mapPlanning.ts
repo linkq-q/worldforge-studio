@@ -11,12 +11,25 @@ export interface MapPlanLimits {
 }
 
 export const DEFAULT_MAP_AI_MAX_NEW_ASSETS = 16;
+export const DEFAULT_MAP_AI_MIN_NEW_ASSETS = 0;
 export const MAP_AI_MAX_NEW_ASSETS = 32;
 
 export function normalizeMapAiMaxNewAssets(value: unknown): number {
   const parsed = Number(value);
   if (!Number.isFinite(parsed)) return DEFAULT_MAP_AI_MAX_NEW_ASSETS;
-  return Math.round(Math.min(MAP_AI_MAX_NEW_ASSETS, Math.max(1, parsed)));
+  return Math.round(Math.min(MAP_AI_MAX_NEW_ASSETS, Math.max(0, parsed)));
+}
+
+export function normalizeMapAiNewAssetRange(
+  minimum: unknown,
+  maximum: unknown
+): { min: number; max: number } {
+  const max = normalizeMapAiMaxNewAssets(maximum);
+  const parsedMin = Number(minimum);
+  const min = Number.isFinite(parsedMin)
+    ? Math.round(Math.min(max, Math.max(0, parsedMin)))
+    : Math.min(DEFAULT_MAP_AI_MIN_NEW_ASSETS, max);
+  return { min, max };
 }
 
 export function planLimits(bounds: MapBounds): MapPlanLimits {

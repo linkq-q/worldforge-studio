@@ -22,6 +22,13 @@ import {
 } from './materialTagPolicy';
 import { normalizeMapVisualSemantics, type MapVisualSemantics } from './visualDirection';
 import type { AssetLibraryMetadata } from './assetLibrary';
+import {
+  isPointInsidePlayableArea,
+  normalizeMapLayout,
+  pointInMapRegion,
+  type MapGenerationOwner,
+  type MapLayout
+} from './mapLayout';
 
 export type MapSurface = 'floor' | 'ceiling' | 'north' | 'south' | 'east' | 'west' | 'terrain';
 export type TerrainBrushMode = 'raise' | 'lower' | 'flatten';
@@ -67,10 +74,18 @@ export interface MapWaterBody {
   name: string;
   type: MapWaterBodyType;
   level: number;
-  /** Lake basin depth below `level`. Rivers keep their flat plane for now. */
+  /** Basin or channel depth below the local water surface. */
   depth: number;
   width: number;
   points: Array<[number, number]>;
+  /** Optional river surface elevation at each control point, ordered upstream to downstream. */
+  levels?: number[];
+  /** 0 keeps control-point corners; 1 produces rounded arc segments. */
+  shorelineSmoothness?: number;
+  /** Deterministic shoreline displacement relative to the local radius. */
+  shorelineIrregularity?: number;
+  seed?: number;
+  generation?: MapGenerationOwner;
 }
 
 export interface MapLighting {
@@ -116,6 +131,7 @@ export interface MapObject {
   heightMode?: 'terrain' | 'fixed';
   visible: boolean;
   locked: boolean;
+  generation?: MapGenerationOwner;
 }
 
 export interface EditableMap {
@@ -140,6 +156,7 @@ export interface EditableMap {
   renderPromptSuggestions: string[];
   materialTagPolicy: MapMaterialTagPolicy;
   visualSemantics: MapVisualSemantics;
+  layout: MapLayout;
   assets?: MapAsset[];
   collisionBake?: MapCollisionBake;
 }
@@ -207,7 +224,7 @@ export const PLAYER_SPAWN_OBJECT_ID = '__player_spawn__';
 export const SUN_OBJECT_ID = '__sun__';
 export const DEFAULT_SUN_POSITION: Vec3 = [-18, 24, 14];
 export const DEFAULT_TERRAIN_RESOLUTION = 33;
-const MAX_TERRAIN_RESOLUTION = 129;
+const MAX_TERRAIN_RESOLUTION = 513;
 /**
  * Terrain height 0 is sea level, not the floor. Lake basins are carved below it,
  * so the height field has to be allowed to go negative.
@@ -228,8 +245,18 @@ const DEFAULT_BOX_COLORS: MapBoxColors = {
 export const MAP_SIZE_PRESETS = [
   { key: 'small', label: '小', size: [48, 12, 48] as Vec3, terrain: 33 },
   { key: 'medium', label: '中', size: [96, 16, 96] as Vec3, terrain: 65 },
-  { key: 'large', label: '大', size: [192, 24, 192] as Vec3, terrain: 129 }
+  { key: 'large', label: '大', size: [192, 24, 192] as Vec3, terrain: 129 },
+  { key: 'super', label: '超大', size: [768, 32, 768] as Vec3, terrain: 513 }
 ] as const;
+
+export const SUPER_MAP_MEDIUM_COUNT_MIN = 2;
+export const SUPER_MAP_MEDIUM_COUNT_MAX = 64;
+
+export function superMapSizeFromMediumCount(value: number): Vec3 {
+  const count = clamp(Math.round(value), SUPER_MAP_MEDIUM_COUNT_MIN, SUPER_MAP_MEDIUM_COUNT_MAX);
+  const extent = Math.round(MAP_SIZE_PRESETS[1].size[0] * Math.sqrt(count));
+  return [extent, MAP_SIZE_PRESETS[3].size[1], extent];
+}
 
 export type MapSizePresetKey = typeof MAP_SIZE_PRESETS[number]['key'];
 
@@ -352,6 +379,7 @@ export function normalizeMap(input: Partial<EditableMap>): EditableMap {
     renderPromptSuggestions: normalizeTextList(input.renderPromptSuggestions, 8, 80),
     materialTagPolicy: normalizeMaterialTagPolicy(input.materialTagPolicy),
     visualSemantics: normalizeMapVisualSemantics(input.visualSemantics),
+    layout: normalizeMapLayout(input.layout, boxSize),
     assets: Array.isArray(input.assets) ? input.assets.map(normalizeAsset) : undefined,
     collisionBake: normalizeMapCollisionBake(input.collisionBake)
   };
@@ -383,6 +411,9 @@ function normalizeWaterBodies(value: unknown, boxSize: Vec3): MapWaterBody[] {
         clamp(Number(point[1]), -halfDepth, halfDepth)
       ]);
     if (points.length < (type === 'river' ? 2 : 3)) continue;
+    const levels = type === 'river' && Array.isArray(input.levels) && input.levels.length === points.length
+      ? input.levels.map((level) => clamp(finiteNumber(level, input.level ?? 0.2), 0.02, maxLevel))
+      : undefined;
     const id = typeof input.id === 'string' && input.id.trim()
       ? input.id.trim().slice(0, 80)
       : createId('water');
@@ -395,7 +426,16 @@ function normalizeWaterBodies(value: unknown, boxSize: Vec3): MapWaterBody[] {
       level: clamp(finiteNumber(input.level, type === 'ocean' ? 0 : 0.2), type === 'ocean' ? 0 : 0.02, maxLevel),
       depth: clamp(finiteNumber(input.depth, DEFAULT_WATER_DEPTH), 0.1, MAX_WATER_DEPTH),
       width: clamp(finiteNumber(input.width, 1.2), 0.3, maxRiverWidth),
-      points
+      points,
+      ...(levels ? { levels } : {}),
+      ...(input.shorelineSmoothness === undefined ? {} : {
+        shorelineSmoothness: clamp(finiteNumber(input.shorelineSmoothness, 0), 0, 1)
+      }),
+      ...(input.shorelineIrregularity === undefined ? {} : {
+        shorelineIrregularity: clamp(finiteNumber(input.shorelineIrregularity, 0), 0, 0.4)
+      }),
+      ...(input.seed === undefined ? {} : { seed: Math.trunc(finiteNumber(input.seed, 0)) }),
+      generation: normalizeGenerationOwner(input.generation)
     });
   }
   return result;
@@ -464,6 +504,22 @@ export function sampleTerrainHeight(map: EditableMap, x: number, z: number): num
   const h01 = terrain.heights[terrainIndex(terrain, x0, z1)] ?? 0;
   const h11 = terrain.heights[terrainIndex(terrain, x1, z1)] ?? 0;
   return lerp(lerp(h00, h10, tx), lerp(h01, h11, tx), tz);
+}
+
+export function reassignRegionGenerationOwnersInPlace(map: EditableMap): void {
+  const ownerAt = (x: number, z: number) => map.layout.regions.find((region) => pointInMapRegion(region, x, z));
+  for (const object of map.objects) {
+    if (object.generation?.kind !== 'region') continue;
+    const owner = ownerAt(object.transform.position[0], object.transform.position[2]);
+    object.generation = owner ? { ...object.generation, id: owner.id } : undefined;
+  }
+  for (const water of map.waterBodies) {
+    if (water.generation?.kind !== 'region' || water.points.length === 0) continue;
+    const x = water.points.reduce((sum, point) => sum + point[0], 0) / water.points.length;
+    const z = water.points.reduce((sum, point) => sum + point[1], 0) / water.points.length;
+    const owner = ownerAt(x, z);
+    water.generation = owner ? { ...water.generation, id: owner.id } : undefined;
+  }
 }
 
 export function snapTerrainObjectsInPlace(map: EditableMap): void {
@@ -541,9 +597,7 @@ function worldToTerrainIndex(value: number, extent: number, resolution: number):
 
 export function terrainResolutionForSize(size: Vec3): number {
   const extent = Math.max(size[0], size[2]);
-  if (extent <= MAP_SIZE_PRESETS[0].size[0]) return MAP_SIZE_PRESETS[0].terrain;
-  if (extent <= MAP_SIZE_PRESETS[1].size[0]) return MAP_SIZE_PRESETS[1].terrain;
-  return MAP_SIZE_PRESETS[2].terrain;
+  return clamp(Math.round(extent / 1.5) + 1, DEFAULT_TERRAIN_RESOLUTION, MAX_TERRAIN_RESOLUTION);
 }
 
 export function addPaintStroke(map: EditableMap, stroke: Partial<MapPaintStroke> & Pick<MapPaintStroke, 'surface' | 'point'>): EditableMap {
@@ -742,6 +796,9 @@ function sweepPlayerAxis(
   const worldMin = axis === 'x' ? bounds.minX : bounds.minZ;
   const worldMax = axis === 'x' ? bounds.maxX : bounds.maxZ;
   const requestedTarget = clamp(primary + delta, worldMin + PLAYER_RADIUS, worldMax - PLAYER_RADIUS);
+  const candidateX = axis === 'x' ? requestedTarget : secondary;
+  const candidateZ = axis === 'z' ? requestedTarget : secondary;
+  if (!isPointInsidePlayableArea(map.layout, map.box.size, candidateX, candidateZ)) return primary;
   if (Math.abs(requestedTarget - primary) <= 0.000001) return requestedTarget;
   let target = requestedTarget;
   const minPrimary = Math.min(primary, requestedTarget) - PLAYER_RADIUS;
@@ -1197,7 +1254,21 @@ function normalizeObject(input: Partial<MapObject>): MapObject {
       ? input.heightMode
       : input.assetId ? 'terrain' : 'fixed',
     visible: input.visible !== false,
-    locked: input.locked === true
+    locked: input.locked === true,
+    generation: normalizeGenerationOwner(input.generation)
+  };
+}
+
+function normalizeGenerationOwner(value: unknown): MapGenerationOwner | undefined {
+  if (!value || typeof value !== 'object') return undefined;
+  const input = value as Partial<MapGenerationOwner>;
+  if ((input.kind !== 'region' && input.kind !== 'seam')
+    || typeof input.id !== 'string' || !input.id.trim()
+    || typeof input.generationId !== 'string' || !input.generationId.trim()) return undefined;
+  return {
+    kind: input.kind,
+    id: input.id.trim().slice(0, 80),
+    generationId: input.generationId.trim().slice(0, 80)
   };
 }
 

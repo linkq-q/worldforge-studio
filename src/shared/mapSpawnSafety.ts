@@ -7,11 +7,22 @@ import {
 } from './map';
 import { terrainSlopeDegrees } from './mapTerrainAnalysis';
 import { isNearWater } from './mapWater';
+import { isPointInsidePlayableArea } from './mapLayout';
 
 export function isSpawnPositionSafe(map: EditableMap, x: number, z: number): boolean {
   const bounds = getMapBounds(map);
   if (x < bounds.minX + PLAYER_RADIUS || x > bounds.maxX - PLAYER_RADIUS) return false;
   if (z < bounds.minZ + PLAYER_RADIUS || z > bounds.maxZ - PLAYER_RADIUS) return false;
+  if (!isPointInsidePlayableArea(map.layout, map.box.size, x, z)) return false;
+  for (let index = 0; index < 8; index += 1) {
+    const angle = index / 8 * Math.PI * 2;
+    if (!isPointInsidePlayableArea(
+      map.layout,
+      map.box.size,
+      x + Math.cos(angle) * PLAYER_RADIUS,
+      z + Math.sin(angle) * PLAYER_RADIUS
+    )) return false;
+  }
   if (isNearWater(map, x, z, PLAYER_RADIUS + 0.2)) return false;
   if (terrainSlopeDegrees(map, x, z) > 35) return false;
   return ![...getMapObjectAabbs(map), ...getTerrainCliffAabbs(map)].some((obstacle) => {
