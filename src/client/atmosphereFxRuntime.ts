@@ -2,15 +2,15 @@ import * as THREE from 'three';
 import type { EditableMap } from '../shared/map';
 import type { AtmosphereFxKind, CompiledAtmosphereFx } from '../shared/atmosphereFx';
 
-type ParticleKind = 'pollen' | 'vapor' | 'dust';
+type ParticleKind = 'pollen' | 'vapor' | 'dust' | 'sand';
 
 interface ParticleLayer {
-  points: THREE.Points<THREE.BufferGeometry, THREE.PointsMaterial>;
+  points: THREE.Points<THREE.BufferGeometry, THREE.PointsMaterial | THREE.ShaderMaterial>;
   origins: Float32Array;
   zoneRadii: Float32Array;
 }
 
-const BUDGETS: Record<ParticleKind, number> = { pollen: 240, vapor: 96, dust: 140 };
+const BUDGETS: Record<ParticleKind, number> = { pollen: 240, vapor: 96, dust: 140, sand: 220 };
 
 /** Three bounded particle draws for map-owned regional ambience. */
 export class AtmosphereFxRuntime {
@@ -30,7 +30,7 @@ export class AtmosphereFxRuntime {
   apply(map: EditableMap, state: CompiledAtmosphereFx): void {
     this.clearLayers();
     this.state = state;
-    for (const kind of ['pollen', 'vapor', 'dust'] as const) {
+    for (const kind of ['pollen', 'vapor', 'dust', 'sand'] as const) {
       if (state.channels[kind] <= 0 || state.zones[kind].length === 0) continue;
       const count = Math.max(1, Math.round(BUDGETS[kind] * state.channels[kind] * this.quality));
       const positions = new Float32Array(count * 3);
@@ -49,15 +49,7 @@ export class AtmosphereFxRuntime {
       }
       const geometry = new THREE.BufferGeometry();
       geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-      const material = new THREE.PointsMaterial({
-        color: particleColor(kind),
-        size: particleSize(kind),
-        sizeAttenuation: true,
-        transparent: true,
-        opacity: 0.34 + state.channels[kind] * 0.38,
-        depthWrite: false,
-        blending: kind === 'vapor' ? THREE.NormalBlending : THREE.AdditiveBlending
-      });
+      const material = particleMaterial(kind, state.channels[kind]);
       const points = new THREE.Points(geometry, material);
       points.name = `atmosphere-${kind}`;
       points.frustumCulled = false;
@@ -75,8 +67,11 @@ export class AtmosphereFxRuntime {
     const wind = this.state.wind;
     const gust = 1 + Math.sin(elapsedSeconds * wind.gustFrequency * Math.PI * 2) * wind.gustStrength;
     for (const [kind, layer] of this.layers) {
+      if (layer.points.material instanceof THREE.ShaderMaterial) {
+        layer.points.material.uniforms.uTime.value = elapsedSeconds;
+      }
       const positions = layer.points.geometry.getAttribute('position') as THREE.BufferAttribute;
-      const drift = wind.speed * gust * deltaTime * (kind === 'vapor' ? 0.18 : 0.55);
+      const drift = wind.speed * gust * deltaTime * (kind === 'vapor' ? 0.18 : kind === 'sand' ? 0.9 : 0.55);
       for (let index = 0; index < positions.count; index += 1) {
         let x = positions.getX(index) + wind.direction[0] * drift;
         let y = positions.getY(index) + Math.sin(elapsedSeconds * 0.8 + index) * deltaTime * 0.025;
@@ -119,15 +114,61 @@ export class AtmosphereFxRuntime {
 
 function particleHeight(kind: ParticleKind, unit: number): number {
   if (kind === 'vapor') return 0.2 + unit * 0.75;
+  if (kind === 'sand') return 0.08 + unit * 1.15;
   return 0.35 + unit * (kind === 'pollen' ? 3.8 : 2.6);
 }
 
 function particleColor(kind: ParticleKind): string {
-  return kind === 'pollen' ? '#f3d58a' : kind === 'vapor' ? '#d8edf0' : '#d3ae78';
+  return kind === 'pollen' ? '#f3d58a' : kind === 'vapor' ? '#d8edf0' : kind === 'sand' ? '#e7c276' : '#d3ae78';
 }
 
 function particleSize(kind: ParticleKind): number {
-  return kind === 'pollen' ? 0.12 : kind === 'vapor' ? 0.55 : 0.16;
+  return kind === 'pollen' ? 0.12 : kind === 'vapor' ? 0.55 : kind === 'sand' ? 0.2 : 0.16;
+}
+
+function particleMaterial(kind: ParticleKind, strength: number): THREE.PointsMaterial | THREE.ShaderMaterial {
+  if (kind !== 'sand') {
+    return new THREE.PointsMaterial({
+      color: particleColor(kind),
+      size: particleSize(kind),
+      sizeAttenuation: true,
+      transparent: true,
+      opacity: 0.34 + strength * 0.38,
+      depthWrite: false,
+      blending: kind === 'vapor' ? THREE.NormalBlending : THREE.AdditiveBlending
+    });
+  }
+  return new THREE.ShaderMaterial({
+    uniforms: {
+      uTime: { value: 0 },
+      uColor: { value: new THREE.Color(particleColor(kind)) },
+      uOpacity: { value: 0.3 + strength * 0.5 },
+      uSize: { value: particleSize(kind) * 420 }
+    },
+    vertexShader: `
+      uniform float uSize;
+      void main() {
+        vec4 viewPosition = modelViewMatrix * vec4(position, 1.0);
+        gl_PointSize = uSize / max(1.0, -viewPosition.z);
+        gl_Position = projectionMatrix * viewPosition;
+      }
+    `,
+    fragmentShader: `
+      uniform float uTime;
+      uniform vec3 uColor;
+      uniform float uOpacity;
+      void main() {
+        vec2 point = gl_PointCoord - 0.5;
+        float streak = length(vec2(point.x * 0.42, point.y * 2.6));
+        float alpha = smoothstep(0.5, 0.08, streak) * (0.82 + 0.18 * sin(uTime * 3.0));
+        if (alpha < 0.01) discard;
+        gl_FragColor = vec4(uColor, alpha * uOpacity);
+      }
+    `,
+    transparent: true,
+    depthWrite: false,
+    blending: THREE.NormalBlending
+  });
 }
 
 function random(seed: number, key: string): number {

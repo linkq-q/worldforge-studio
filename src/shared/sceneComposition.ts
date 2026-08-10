@@ -4,8 +4,14 @@ import {
 } from './map';
 import type { MapAssetSizeClass } from './mapAssetMetadata';
 import {
+  TERRAIN_CLIFF_LAYOUTS,
+  TERRAIN_MODIFIERS,
+  TERRAIN_SURFACES,
   normalizeTerrainGenerationParams,
-  type TerrainGenerationParams
+  type TerrainCliffLayout,
+  type TerrainGenerationParams,
+  type TerrainModifier,
+  type TerrainSurfaceKind
 } from './terrainGeneration';
 
 export const SCENE_COMPOSITION_VERSION = 1 as const;
@@ -74,6 +80,14 @@ export interface SceneCompositionZone {
     elevation: number;
     roughness: number;
     flatness: number;
+    modifier?: TerrainModifier;
+    layout?: TerrainCliffLayout;
+    surface?: TerrainSurfaceKind;
+    amplitude?: number;
+    softness?: number;
+    direction?: number;
+    variation?: number;
+    layers?: number;
   };
   water?: {
     type: 'lake';
@@ -406,6 +420,15 @@ function normalizeZone(
   const center = requirePair(regionInput.center, 'invalid_scene_zone_region');
   const briefInput = requireRecord(input.brief, 'invalid_scene_zone_brief');
   const terrainInput = requireRecord(input.terrain, 'invalid_scene_zone_terrain');
+  const modifier = TERRAIN_MODIFIERS.includes(terrainInput.modifier as TerrainModifier)
+    ? terrainInput.modifier as TerrainModifier
+    : undefined;
+  const layout = TERRAIN_CLIFF_LAYOUTS.includes(terrainInput.layout as TerrainCliffLayout)
+    ? terrainInput.layout as TerrainCliffLayout
+    : undefined;
+  const surface = TERRAIN_SURFACES.includes(terrainInput.surface as TerrainSurfaceKind)
+    ? terrainInput.surface as TerrainSurfaceKind
+    : undefined;
   const layers = Array.isArray(input.layers)
     ? input.layers.slice(0, 8).map((layer) => normalizeLayer(layer, familyIds))
     : [];
@@ -435,7 +458,17 @@ function normalizeZone(
     terrain: {
       elevation: clamp(finiteNumber(terrainInput.elevation, 0), -1, 1),
       roughness: clamp(finiteNumber(terrainInput.roughness, 0.5), 0, 1),
-      flatness: clamp(finiteNumber(terrainInput.flatness, 0), 0, 1)
+      flatness: clamp(finiteNumber(terrainInput.flatness, 0), 0, 1),
+      modifier,
+      layout,
+      surface,
+      amplitude: modifier
+        ? clamp(finiteNumber(terrainInput.amplitude, map.box.size[1] * 0.3), 0.05, map.box.size[1] - 0.05)
+        : undefined,
+      softness: modifier ? clamp(finiteNumber(terrainInput.softness, 0.2), 0, 1) : undefined,
+      direction: modifier ? finiteNumber(terrainInput.direction, map.seed % 360) : undefined,
+      variation: modifier ? clamp(finiteNumber(terrainInput.variation, 0.45), 0, 1) : undefined,
+      layers: modifier ? Math.round(clamp(finiteNumber(terrainInput.layers, 4), 2, 12)) : undefined
     },
     water,
     layers,

@@ -20,6 +20,24 @@ import { sampleGrassDensity } from '../src/shared/mapGrass';
 import { ensureSceneCompositionOutcome } from '../src/shared/sceneCompositionOutcome';
 
 describe('scene composition contract', () => {
+  it('compiles director-selected terrain modifiers and surfaces as reusable operations', () => {
+    const map = createEmptyMap('Cliff terraces', 'map-cliff-terraces', [96, 16, 96], 'voxel-pro');
+    const input = structuredClone(planInput()) as {
+      zones: Array<{ terrain: Record<string, unknown> }>;
+    };
+    input.zones[0].terrain = {
+      ...input.zones[0].terrain,
+      modifier: 'terrace', surface: 'rock', amplitude: 5, layers: 6, softness: 0.1
+    };
+    const plan = normalizeSceneCompositionPlan(input, map);
+    const compiled = compileSceneComposition(map, plan, []);
+
+    expect(compiled.operations).toEqual(expect.arrayContaining([
+      expect.objectContaining({ type: 'terrain.modify', modifier: 'terrace', layers: 6 }),
+      expect.objectContaining({ type: 'terrain.surface', surface: 'rock', zoneId: 'composition-surface-forest' })
+    ]));
+  });
+
   it('adds real editable ground cover when the director leaves most of the map blank', () => {
     const map = createEmptyMap('Sparse valley', 'map-sparse-valley', [96, 16, 96], 'voxel-pro');
     const sparse = structuredClone(planInput()) as {

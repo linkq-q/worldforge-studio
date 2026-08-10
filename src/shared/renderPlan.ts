@@ -523,6 +523,7 @@ export const RENDER_CAPABILITIES: readonly RenderCapability[] = [
       pollen: { type: 'number', min: 0, max: 1, default: 0 },
       vapor: { type: 'number', min: 0, max: 1, default: 0 },
       dust: { type: 'number', min: 0, max: 1, default: 0 },
+      sand: { type: 'number', min: 0, max: 1, default: 0 },
       windStreaks: { type: 'number', min: 0, max: 1, default: 0 }
     }
   },

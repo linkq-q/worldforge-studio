@@ -163,8 +163,31 @@ function compileZoneTerrain(map: EditableMap, plan: SceneCompositionPlan): MapOp
   const operations: MapOperation[] = [];
   for (const zone of plan.zones) {
     if (operations.length >= maxBrushes) break;
-    if (zone.water) continue;
     const region = sceneZoneWorldRegion(zone, map);
+    if (zone.terrain.modifier) {
+      operations.push({
+        type: 'terrain.modify',
+        modifier: zone.terrain.modifier,
+        region: { kind: 'circle', x: region.x, z: region.z, radius: region.r },
+        seed: derivedSeed(map.seed, `terrain:${zone.id}:${zone.terrain.modifier}`),
+        amplitude: zone.terrain.amplitude,
+        softness: zone.terrain.softness,
+        direction: zone.terrain.direction,
+        variation: zone.terrain.variation,
+        layers: zone.terrain.layers,
+        layout: zone.terrain.layout
+      });
+    }
+    if (zone.terrain.surface) {
+      operations.push({
+        type: 'terrain.surface',
+        surface: zone.terrain.surface,
+        region: { kind: 'circle', x: region.x, z: region.z, radius: region.r },
+        intensity: 1,
+        zoneId: `composition-surface-${zone.id}`
+      });
+    }
+    if (zone.water) continue;
     const targetHeight = clamp(baseHeight + zone.terrain.elevation * map.box.size[1] * 0.22, 0, maxHeight);
     if (zone.terrain.flatness >= 0.25) {
       operations.push({

@@ -3,7 +3,7 @@ export const VISUAL_DIRECTION_VERSION = 1 as const;
 export const CONTRAST_MODES = ['bright-cartoon', 'colored-shadow', 'dramatic'] as const;
 export const VISUAL_TIMES_OF_DAY = ['morning', 'noon', 'evening'] as const;
 export const VISUAL_TEMPERATURES = ['cool', 'warm'] as const;
-export const VISUAL_ZONE_TAGS = ['grass', 'forest', 'water', 'lowland', 'dry', 'settlement', 'rocky'] as const;
+export const VISUAL_ZONE_TAGS = ['grass', 'forest', 'water', 'lowland', 'dry', 'sand', 'settlement', 'rocky'] as const;
 
 export type ContrastMode = typeof CONTRAST_MODES[number];
 export type VisualTimeOfDay = typeof VISUAL_TIMES_OF_DAY[number];
@@ -28,6 +28,7 @@ export interface AtmosphereFxIntent {
   pollen: number;
   vapor: number;
   dust: number;
+  sand?: number;
   windStreaks: number;
 }
 
@@ -107,6 +108,7 @@ export const DEFAULT_VISUAL_DIRECTION: VisualDirection = Object.freeze({
     pollen: 0,
     vapor: 0,
     dust: 0,
+    sand: 0,
     windStreaks: 0
   })
 });
@@ -146,6 +148,7 @@ export function normalizeVisualDirection(input: unknown): VisualDirection {
       pollen: numberValue(atmosphereFx.pollen, 0, 0, 1),
       vapor: numberValue(atmosphereFx.vapor, 0, 0, 1),
       dust: numberValue(atmosphereFx.dust, 0, 0, 1),
+      sand: numberValue(atmosphereFx.sand, 0, 0, 1),
       windStreaks: numberValue(atmosphereFx.windStreaks, 0, 0, 1)
     }
   };

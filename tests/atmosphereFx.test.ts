@@ -52,4 +52,16 @@ describe('semantic atmosphere effects', () => {
 
     expect(compileAtmosphereFx(map, plan).channels.pollen).toBeCloseTo(0.65);
   });
+
+  it('only enables regional flying sand after the map is confirmed', () => {
+    const map = createEmptyMap('sand');
+    map.visualSemantics.zones = [
+      { id: 'dunes', tags: ['sand', 'dry'], center: [0, 0], radius: 12, intensity: 1 }
+    ];
+    expect(compileAtmosphereFx(map).channels.sand).toBe(0);
+    map.confirmedAt = Date.now();
+    const state = compileAtmosphereFx(map);
+    expect(state.channels.sand).toBeGreaterThan(0);
+    expect(state.zones.sand.map((zone) => zone.id)).toEqual(['dunes']);
+  });
 });
