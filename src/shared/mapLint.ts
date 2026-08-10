@@ -132,7 +132,7 @@ function lintLakeExposure(map: EditableMap, issues: MapLintIssue[], repairs: Map
     for (let z = 0; z < map.terrain.resolutionZ && !exposed; z += 1) {
       for (let x = 0; x < map.terrain.resolutionX; x += 1) {
         const point = terrainPointAt(map, x, z);
-        if (isPointInsideWaterBody(water, point[0], point[2]) && point[1] > water.level + 0.001) {
+        if (isPointInsideWaterBody(water, point[0], point[2], map) && point[1] > water.level + 0.001) {
           exposed = true;
           break;
         }

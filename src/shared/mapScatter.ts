@@ -1,6 +1,7 @@
 import {
   getMapBounds,
   getMapObjectAabbs,
+  getTerrainCliffAabbs,
   sampleTerrainHeight,
   type EditableMap,
   type MapAsset
@@ -151,7 +152,7 @@ function lerp(left: number, right: number, amount: number): number {
 }
 
 function existingOccupiedCircles(map: EditableMap): OccupiedCircle[] {
-  return getMapObjectAabbs(map).map((box) => ({
+  return [...getMapObjectAabbs(map), ...getTerrainCliffAabbs(map)].map((box) => ({
     x: (box.min[0] + box.max[0]) / 2,
     z: (box.min[2] + box.max[2]) / 2,
     radius: Math.hypot(box.max[0] - box.min[0], box.max[2] - box.min[2]) / 2

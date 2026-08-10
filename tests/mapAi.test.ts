@@ -35,6 +35,30 @@ describe('map AI adapter', () => {
     expect(spatialTypes.slice(0, 3)).toEqual(['terrain.generate', 'terrain.brush', 'water.add']);
   });
 
+  it('normalizes reusable terrain modifiers and surfaces independently of the base preset', () => {
+    const map = createEmptyMap('composable terrain', 'map-composable-terrain');
+    const suggestion = normalizeMapSuggestion(JSON.stringify({
+      summary: 'cliff mountain with sand below',
+      terrainGeneration: { preset: 'hills', amplitude: 6, roughness: 0.45 },
+      terrainModifiers: [{
+        modifier: 'cliff', layout: 'wall',
+        region: { kind: 'path', points: [[-8, 0], [8, 0]], width: 5 },
+        amplitude: 7, softness: 0
+      }],
+      terrainSurfaces: [{
+        surface: 'sand', region: { kind: 'circle', x: 0, z: -8, radius: 6 }, zoneId: 'lower-sand'
+      }]
+    }), map, []);
+
+    expect(suggestion.operations.map((operation) => operation.type)).toEqual([
+      'terrain.generate', 'terrain.modify', 'terrain.surface'
+    ]);
+    const applied = applyMapOperations(map, suggestion.operations);
+    expect(applied.visualSemantics.zones).toContainEqual(expect.objectContaining({
+      id: 'lower-sand', tags: expect.arrayContaining(['sand'])
+    }));
+  });
+
   it('scales planning quotas with the selected map size', () => {
     const small = createEmptyMap('small', 'map-small', [...MAP_SIZE_PRESETS[0].size]);
     const large = createEmptyMap('large', 'map-large', [...MAP_SIZE_PRESETS[2].size]);

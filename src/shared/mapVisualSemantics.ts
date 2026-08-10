@@ -35,6 +35,7 @@ export function compileMapVisualSemantics(
       if (zone.grassLayers.length > 0 || has(words, ['grass', 'meadow', 'lawn', '草', '花田'])) tags.add('grass');
       if (has(words, ['forest', 'tree', 'woodland', '树林', '森林', '树木', '林地'])) tags.add('forest');
       if (has(words, ['dry', 'desert', 'dust', 'arid', '沙漠', '干燥', '荒地'])) tags.add('dry');
+      if (has(words, ['sand', 'dune', 'desert', '沙', '沙丘', '沙漠'])) tags.add('sand');
       if (has(words, ['house', 'camp', 'settlement', 'village', 'cabin', '木屋', '营地', '村庄'])) tags.add('settlement');
       if (has(words, ['rock', 'stone', 'cliff', '岩石', '山崖', '石头'])) tags.add('rocky');
       return {

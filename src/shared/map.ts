@@ -53,7 +53,14 @@ export interface MapTerrain {
   heights: number[];
 }
 
-export type MapWaterBodyType = 'lake' | 'river';
+export interface TerrainCliffSegment {
+  start: Vec3;
+  end: Vec3;
+  lowStart: number;
+  lowEnd: number;
+}
+
+export type MapWaterBodyType = 'lake' | 'river' | 'ocean';
 
 export interface MapWaterBody {
   id: string;
@@ -105,6 +112,8 @@ export interface MapObject {
   parentId: string | null;
   assetId: string | null;
   transform: Transform3D;
+  /** Terrain-following objects are re-grounded after generated terrain changes. */
+  heightMode?: 'terrain' | 'fixed';
   visible: boolean;
   locked: boolean;
 }
@@ -279,6 +288,7 @@ export function createMapObject(name = '新物体', assetId: string | null = nul
     parentId: null,
     assetId,
     transform: cloneTransform(DEFAULT_TRANSFORM),
+    heightMode: assetId ? 'terrain' : 'fixed',
     visible: true,
     locked: false
   };
@@ -359,7 +369,7 @@ function normalizeWaterBodies(value: unknown, boxSize: Vec3): MapWaterBody[] {
   for (const raw of value.slice(0, 64)) {
     if (!raw || typeof raw !== 'object') continue;
     const input = raw as Partial<MapWaterBody>;
-    const type = input.type === 'river' ? 'river' : input.type === 'lake' ? 'lake' : null;
+    const type = input.type === 'river' ? 'river' : input.type === 'lake' ? 'lake' : input.type === 'ocean' ? 'ocean' : null;
     if (!type || !Array.isArray(input.points)) continue;
     const points = input.points.slice(0, 64)
       .filter((point): point is [number, number] => (
@@ -372,7 +382,7 @@ function normalizeWaterBodies(value: unknown, boxSize: Vec3): MapWaterBody[] {
         clamp(Number(point[0]), -halfWidth, halfWidth),
         clamp(Number(point[1]), -halfDepth, halfDepth)
       ]);
-    if (points.length < (type === 'lake' ? 3 : 2)) continue;
+    if (points.length < (type === 'river' ? 2 : 3)) continue;
     const id = typeof input.id === 'string' && input.id.trim()
       ? input.id.trim().slice(0, 80)
       : createId('water');
@@ -380,9 +390,9 @@ function normalizeWaterBodies(value: unknown, boxSize: Vec3): MapWaterBody[] {
     seen.add(id);
     result.push({
       id,
-      name: cleanName(input.name, type === 'lake' ? '湖泊' : '河流'),
+      name: cleanName(input.name, type === 'lake' ? '湖泊' : type === 'ocean' ? '海面' : '河流'),
       type,
-      level: clamp(finiteNumber(input.level, 0.2), 0.02, maxLevel),
+      level: clamp(finiteNumber(input.level, type === 'ocean' ? 0 : 0.2), type === 'ocean' ? 0 : 0.02, maxLevel),
       depth: clamp(finiteNumber(input.depth, DEFAULT_WATER_DEPTH), 0.1, MAX_WATER_DEPTH),
       width: clamp(finiteNumber(input.width, 1.2), 0.3, maxRiverWidth),
       points
@@ -456,6 +466,18 @@ export function sampleTerrainHeight(map: EditableMap, x: number, z: number): num
   return lerp(lerp(h00, h10, tx), lerp(h01, h11, tx), tz);
 }
 
+export function snapTerrainObjectsInPlace(map: EditableMap): void {
+  for (const object of map.objects) {
+    const heightMode = object.heightMode ?? (object.assetId ? 'terrain' : 'fixed');
+    if (heightMode !== 'terrain' || object.parentId) continue;
+    object.transform.position[1] = sampleTerrainHeight(
+      map,
+      object.transform.position[0],
+      object.transform.position[2]
+    );
+  }
+}
+
 export function applyTerrainBrush(
   map: EditableMap,
   mode: TerrainBrushMode,
@@ -472,6 +494,7 @@ export function applyTerrainBrush(
     }
   };
   applyTerrainBrushInPlace(next, mode, point, radius, strength, targetHeight);
+  snapTerrainObjectsInPlace(next);
   return next;
 }
 
@@ -817,13 +840,36 @@ export function getMapObjectAabbs(map: EditableMap): MapObjectAabb[] {
   return boxes;
 }
 
+export function getTerrainCliffAabbs(map: EditableMap): MapObjectAabb[] {
+  const thickness = Math.max(
+    0.08,
+    Math.min(
+      map.box.size[0] / Math.max(1, map.terrain.resolutionX - 1),
+      map.box.size[2] / Math.max(1, map.terrain.resolutionZ - 1)
+    ) * 0.18
+  );
+  return deriveTerrainCliffSegments(map).map((segment, index) => ({
+    objectId: `__terrain_cliff__:${index}`,
+    min: [
+      Math.min(segment.start[0], segment.end[0]) - thickness,
+      Math.min(segment.lowStart, segment.lowEnd),
+      Math.min(segment.start[2], segment.end[2]) - thickness
+    ],
+    max: [
+      Math.max(segment.start[0], segment.end[0]) + thickness,
+      Math.max(segment.start[1], segment.end[1]),
+      Math.max(segment.start[2], segment.end[2]) + thickness
+    ]
+  }));
+}
+
 /**
  * Bakes every visible map object's local collider into one immutable world-space
  * collision set. Aligned/overlapping boxes are merged without filling doorways
  * or gaps, then indexed into a broad-phase grid for cheap runtime queries.
  */
 export function bakeMapCollisions(map: EditableMap): MapCollisionBake {
-  const sourceBoxes = getMapObjectAabbs(map);
+  const sourceBoxes = [...getMapObjectAabbs(map), ...getTerrainCliffAabbs(map)];
   return bakeCollisionBoxes(sourceBoxes, mapCollisionSourceHash(map));
 }
 
@@ -993,7 +1039,13 @@ function mapCollisionSourceHash(map: EditableMap): string {
       object.transform.scale,
       object.transform.size
     ]),
-    assets
+    assets,
+    terrainCliffs: deriveTerrainCliffSegments(map).map((segment) => [
+      segment.start,
+      segment.end,
+      segment.lowStart,
+      segment.lowEnd
+    ])
   });
   let hash = 0x811c9dc5;
   for (let index = 0; index < source.length; index += 1) {
@@ -1086,6 +1138,44 @@ export function terrainPointAt(map: EditableMap, xIndex: number, zIndex: number)
   return [x, y, z];
 }
 
+/** Derives vertical faces from height-field steps; no duplicate cliff state is persisted. */
+export function deriveTerrainCliffSegments(map: EditableMap): TerrainCliffSegment[] {
+  const terrain = map.terrain;
+  const stepX = map.box.size[0] / Math.max(1, terrain.resolutionX - 1);
+  const stepZ = map.box.size[2] / Math.max(1, terrain.resolutionZ - 1);
+  const segments: TerrainCliffSegment[] = [];
+  const thresholdX = stepX * 1.15;
+  const thresholdZ = stepZ * 1.15;
+
+  for (let xIndex = 0; xIndex < terrain.resolutionX - 1; xIndex += 1) {
+    for (let zIndex = 0; zIndex < terrain.resolutionZ - 1; zIndex += 1) {
+      const leftA = terrainPointAt(map, xIndex, zIndex);
+      const leftB = terrainPointAt(map, xIndex, zIndex + 1);
+      const rightA = terrainPointAt(map, xIndex + 1, zIndex);
+      const rightB = terrainPointAt(map, xIndex + 1, zIndex + 1);
+      if (Math.abs((leftA[1] + leftB[1]) - (rightA[1] + rightB[1])) * 0.5 >= thresholdX) {
+        const leftHigh = leftA[1] + leftB[1] >= rightA[1] + rightB[1];
+        segments.push({
+          start: [(leftA[0] + rightA[0]) * 0.5, leftHigh ? leftA[1] : rightA[1], leftA[2]],
+          end: [(leftB[0] + rightB[0]) * 0.5, leftHigh ? leftB[1] : rightB[1], leftB[2]],
+          lowStart: leftHigh ? rightA[1] : leftA[1],
+          lowEnd: leftHigh ? rightB[1] : leftB[1]
+        });
+      }
+      if (Math.abs((leftA[1] + rightA[1]) - (leftB[1] + rightB[1])) * 0.5 >= thresholdZ) {
+        const nearHigh = leftA[1] + rightA[1] >= leftB[1] + rightB[1];
+        segments.push({
+          start: [leftA[0], nearHigh ? leftA[1] : leftB[1], (leftA[2] + leftB[2]) * 0.5],
+          end: [rightA[0], nearHigh ? rightA[1] : rightB[1], (rightA[2] + rightB[2]) * 0.5],
+          lowStart: nearHigh ? leftB[1] : leftA[1],
+          lowEnd: nearHigh ? rightB[1] : rightA[1]
+        });
+      }
+    }
+  }
+  return segments;
+}
+
 function terrainBrushFalloff(normalizedDistance: number): number {
   const t = clamp(normalizedDistance, 0, 1);
   return (1 - t * t) ** 2;
@@ -1103,6 +1193,9 @@ function normalizeObject(input: Partial<MapObject>): MapObject {
     parentId: typeof input.parentId === 'string' && input.parentId ? input.parentId : null,
     assetId: typeof input.assetId === 'string' && input.assetId ? input.assetId : null,
     transform: normalizeTransform(input.transform),
+    heightMode: input.heightMode === 'terrain' || input.heightMode === 'fixed'
+      ? input.heightMode
+      : input.assetId ? 'terrain' : 'fixed',
     visible: input.visible !== false,
     locked: input.locked === true
   };

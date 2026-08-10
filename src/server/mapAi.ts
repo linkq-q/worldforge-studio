@@ -29,7 +29,12 @@ import {
   expandMapScatter,
   type MapScatterPlan
 } from '../shared/mapScatter';
-import { normalizeTerrainGenerationParams } from '../shared/terrainGeneration';
+import {
+  normalizeTerrainGenerationParams,
+  normalizeTerrainModifierParams,
+  normalizeTerrainSurfaceParams,
+  terrainCapabilitySummary
+} from '../shared/terrainGeneration';
 import { findSafeSpawnPosition } from '../shared/mapSpawnSafety';
 import { normalizeAssetTags } from '../shared/mapAssetMetadata';
 import { validateMapSuggestion } from './mapSuggestionValidation';
@@ -239,6 +244,8 @@ export function normalizeMapSuggestion(
   }
   const terrainOperations = normalizeTerrainOperations(input.terrain, bounds, limits);
   operations.push(...terrainOperations);
+  operations.push(...normalizeTerrainModifierOperations(input.terrainModifiers, map, limits));
+  operations.push(...normalizeTerrainSurfaceOperations(input.terrainSurfaces, map));
   const waterRefineOperations = mode === 'refine'
     ? normalizeWaterRefineOperations(input.waterUpdates, input.waterRemovals, map, bounds)
     : [];
@@ -248,6 +255,8 @@ export function normalizeMapSuggestion(
   const earlyOperations = operations.filter((operation) => (
     operation.type === 'terrain.generate'
     || operation.type === 'terrain.brush'
+    || operation.type === 'terrain.modify'
+    || operation.type === 'terrain.surface'
     || operation.type === 'water.update'
     || operation.type === 'water.remove'
     || operation.type === 'water.add'
@@ -382,10 +391,19 @@ function scopeMapOperationsToVisualZone(
     const z = water.points.reduce((sum, point) => sum + point[1], 0) / water.points.length;
     return contains(x, z);
   };
+  const regionInside = (region: Extract<MapOperation, { type: 'terrain.modify' | 'terrain.surface' }>['region']) => {
+    if (region.kind === 'circle') return contains(region.x, region.z);
+    if (region.points.length === 0) return false;
+    const x = region.points.reduce((sum, point) => sum + point[0], 0) / region.points.length;
+    const z = region.points.reduce((sum, point) => sum + point[1], 0) / region.points.length;
+    return contains(x, z);
+  };
   return operations.filter((operation) => {
     switch (operation.type) {
       case 'map.update': return true;
       case 'terrain.brush': return contains(operation.point[0], operation.point[2]);
+      case 'terrain.modify': return regionInside(operation.region);
+      case 'terrain.surface': return regionInside(operation.region);
       case 'paint.add': return contains(operation.stroke.point[0], operation.stroke.point[2]);
       case 'object.add': return contains(operation.object.transform?.position?.[0] ?? 0, operation.object.transform?.position?.[2] ?? 0);
       case 'object.update': return objectInside(operation.objectId, operation.patch.transform?.position);
@@ -595,6 +613,26 @@ function normalizeTerrainOperations(
   });
 }
 
+function normalizeTerrainModifierOperations(
+  value: unknown,
+  map: EditableMap,
+  limits: MapPlanLimits
+): MapOperation[] {
+  if (!Array.isArray(value)) return [];
+  return value.slice(0, limits.terrainBrushCount).map((item) => ({
+    type: 'terrain.modify' as const,
+    ...normalizeTerrainModifierParams(item, map)
+  }));
+}
+
+function normalizeTerrainSurfaceOperations(value: unknown, map: EditableMap): MapOperation[] {
+  if (!Array.isArray(value)) return [];
+  return value.slice(0, 16).map((item) => ({
+    type: 'terrain.surface' as const,
+    ...normalizeTerrainSurfaceParams(item, map)
+  }));
+}
+
 function normalizeObjectOperations(
   value: unknown,
   map: EditableMap,
@@ -800,15 +838,17 @@ function buildSystemPrompt(
     `本地图新资产的默认生成模式是 ${map.assetGenerationMode}；缺失资产由代码使用这个模式生成，但摆放时允许复用资产库中的其他模式资产。`,
     `地图范围：X ${bounds.minX} 到 ${bounds.maxX}，Z ${bounds.minZ} 到 ${bounds.maxZ}，最大高度 ${bounds.maxY}。`,
     `本地图配额：terrain 最多 ${limits.terrainBrushCount} 笔、笔刷半径最多 ${limits.brushRadiusMax}、waters 最多 ${limits.waterCount} 个、最终物体总数最多 ${limits.objectCount} 个。`,
-    'terrainGeneration 是地形基底，格式：{"preset":"plain|hills|valley|island|canyon","amplitude":5,"roughness":0.55}。新地图应优先选择一个基底；坐标由代码根据地图 seed 确定性生成。',
+    `terrainGeneration 是整体地形基底；可用能力：${JSON.stringify(terrainCapabilitySummary())}。新地图应优先选择一个基底；坐标由代码根据地图 seed 确定性生成。`,
     'terrain 每项格式：{"mode":"raise|lower|flatten","x":0,"z":0,"size":2,"strength":0.4,"targetHeight":0}，只用于地形基底之后的局部微调。',
+    'terrainModifiers 用于可复用的局部地貌能力，每项格式：{"modifier":"cliff|terrace|dune|island","region":{"kind":"circle","x":0,"z":0,"radius":8},"amplitude":5,"softness":0.2,"direction":90,"variation":0.45,"layers":4,"layout":"plateau|coast|canyon|wall|terraces"}。region 也可为 path（points + width）或 polygon（points）；island 只用 circle/polygon。高山、梯田、峡谷等组合场景应主动调用合适的 modifier，不要把它们绑定到某个固定 preset。',
+    'terrainSurfaces 用于局部地表语义，每项格式：{"surface":"grass|sand|rock","region":{"kind":"circle","x":0,"z":0,"radius":8},"intensity":1,"zoneId":"stable-zone-id"}。沙漠或沙丘区域应同时选择 sand。',
     `waters 每项格式：{"type":"lake|river","name":"名称","level":0.2,"depth":${DEFAULT_WATER_DEPTH},"width":1.2,"points":[{"x":0,"z":0}]}。湖泊 points 是至少 3 点的边界；河流 points 是至少 2 点的中心线且 width 生效。`,
     `湖泊的 depth 是水面以下的盆地深度（0.1 到 ${MAX_WATER_DEPTH}），代码会自动把湖底挖进地形，不要再用 terrain 笔刷压低湖区。小水塘用 0.6 左右，深湖用 3 以上。`,
     'objects 只用于少量独立物体，格式：{"assetId":"已有ID","name":"名称","x":0,"z":0,"rotationYDeg":0,"scale":1}。',
     '大量植被、岩石等重复物体必须优先使用 scatters，让代码生成坐标。scatters 每项格式：{"assetIds":["已有ID"],"region":{"kind":"circle","x":0,"z":0,"r":20},"density":0.04,"avoidWater":1,"maxSlope":30,"minSpacing":2,"scaleRange":[0.8,1.2],"seed":7}。',
     '若用户写了雾、光照、素描等氛围词，只放入 renderPromptSuggestions，不要用它改变地图。',
     '只返回一个 JSON 对象，不要 Markdown：',
-    '{"summary":"简短摘要","assetRequests":[{"name":"资产名","prompt":"独立低多边形物体描述，无地面和背景","tags":["tree","vegetation"]}],"terrainGeneration":{"preset":"hills","amplitude":5,"roughness":0.55},"terrain":[],"waters":[],"waterUpdates":[],"waterRemovals":[],"objects":[],"objectUpdates":[],"objectRemovals":[],"scatters":[],"spawn":null,"renderPromptSuggestions":[]}',
+    '{"summary":"简短摘要","assetRequests":[{"name":"资产名","prompt":"独立低多边形物体描述，无地面和背景","tags":["tree","vegetation"]}],"terrainGeneration":{"preset":"hills","amplitude":5,"roughness":0.55},"terrain":[],"terrainModifiers":[],"terrainSurfaces":[],"waters":[],"waterUpdates":[],"waterRemovals":[],"objects":[],"objectUpdates":[],"objectRemovals":[],"scatters":[],"spawn":null,"renderPromptSuggestions":[]}',
     `已有资产：${JSON.stringify(assetLibrary)}`
   ].join('\n');
 }
@@ -852,6 +892,8 @@ function hasSpatialOperations(suggestion: MapAiSuggestion): boolean {
   return suggestion.operations.some((operation) =>
     (operation.type === 'map.update' && operation.visualSemantics !== undefined)
     || operation.type === 'terrain.brush'
+    || operation.type === 'terrain.modify'
+    || operation.type === 'terrain.surface'
     || operation.type === 'terrain.generate'
     || operation.type === 'terrain.set'
     || operation.type === 'water.add'

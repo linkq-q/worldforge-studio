@@ -871,7 +871,7 @@ export function mapEditorCliManifest(): Record<string, string> {
     list: '列出服务端地图',
     create: '创建地图：--name --width --height --depth',
     show: '输出完整地图 JSON：--map',
-    applyTransaction: '原子应用操作文件：--map --file --source agent|basic-ai --label',
+    applyTransaction: '原子应用操作文件：--map --file --source agent|basic-ai|manual --label',
     undoTransaction: '撤销地图最近一次事务：--map',
     redoTransaction: '重做地图最近一次撤销事务：--map',
     setBox: '调整地图盒子：--map --width --height --depth --floor --ceiling --north --south --east --west',
@@ -882,6 +882,7 @@ export function mapEditorCliManifest(): Record<string, string> {
     bindAsset: '绑定资产：--map --object --asset',
     paint: '绘制表面：--map --surface --x --y --z --u --v --color --size --softness',
     terrain: '调整地形：--map --mode raise|lower|flatten --x --z --size --strength --height',
+    terrainCapabilities: '列出可组合的整体地貌、局部修改器与地表能力：terrain-capabilities',
     listAssets: '列出服务端资产',
     generateAsset: '生成资产：--prompt --name --mode',
     listRenderSchemes: '列出可复用渲染方案'

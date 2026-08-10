@@ -5,6 +5,7 @@ import {
   createMapObject,
   createPaintStroke,
   normalizeMap,
+  snapTerrainObjectsInPlace,
   type EditableMap,
   type MapBoxColors,
   type MapObject,
@@ -16,7 +17,14 @@ import {
   type Transform3D
 } from './map';
 import { carveWaterBasinInPlace } from './mapWater';
-import { generateTerrainInPlace, type TerrainGenerationParams } from './terrainGeneration';
+import {
+  applyTerrainModifierInPlace,
+  applyTerrainSurfaceInPlace,
+  generateTerrainInPlace,
+  type TerrainGenerationParams,
+  type TerrainModifierParams,
+  type TerrainSurfaceParams
+} from './terrainGeneration';
 import type { Vec3 } from './protocol';
 import type { MapLintIssue } from './mapLint';
 import type { SceneCompositionMetrics, SceneCompositionPlan } from './sceneComposition';
@@ -36,7 +44,7 @@ import {
   type GrassRegion
 } from './mapGrass';
 
-export type MapTransactionSource = 'basic-ai' | 'agent';
+export type MapTransactionSource = 'basic-ai' | 'agent' | 'manual';
 
 export type MapObjectInput = Omit<Partial<MapObject>, 'transform'> & {
   transform?: Partial<Transform3D>;
@@ -57,6 +65,8 @@ export type MapOperation =
   | { type: 'map.update'; name?: string; size?: Vec3; colors?: Partial<MapBoxColors>; renderPromptSuggestions?: string[]; visualSemantics?: MapVisualSemantics }
   | { type: 'terrain.set'; terrain: MapTerrain }
   | ({ type: 'terrain.generate' } & Partial<TerrainGenerationParams> & Pick<TerrainGenerationParams, 'preset'>)
+  | ({ type: 'terrain.modify' } & Partial<TerrainModifierParams> & Pick<TerrainModifierParams, 'modifier' | 'region'>)
+  | ({ type: 'terrain.surface' } & Partial<TerrainSurfaceParams> & Pick<TerrainSurfaceParams, 'surface' | 'region'>)
   | { type: 'terrain.brush'; mode: TerrainBrushMode; point: Vec3; size?: number; strength?: number; targetHeight?: number }
   | { type: 'paint.add'; stroke: Partial<MapPaintStroke> & Pick<MapPaintStroke, 'surface' | 'point'> }
   | { type: 'grass.layer.add'; layer: GrassLayerInput }
@@ -115,6 +125,7 @@ export function applyMapOperations(map: EditableMap, operations: readonly MapOpe
   if (operations.length > MAX_OPERATIONS) throw new Error('too_many_operations');
 
   let next = normalizeMap(map);
+  let terrainChanged = false;
   for (const operation of operations) {
     if (!operation || typeof operation !== 'object' || typeof operation.type !== 'string') {
       throw new Error('invalid_operation');
@@ -135,9 +146,30 @@ export function applyMapOperations(map: EditableMap, operations: readonly MapOpe
       case 'terrain.set':
         if (!operation.terrain || typeof operation.terrain !== 'object') throw new Error('invalid_terrain');
         next = normalizeMap({ ...next, terrain: operation.terrain });
+        terrainChanged = true;
         break;
-      case 'terrain.generate':
-        generateTerrainInPlace(next, operation);
+      case 'terrain.generate': {
+        const params = generateTerrainInPlace(next, operation);
+        terrainChanged = true;
+        if (params.preset === 'island' || params.preset === 'archipelago') ensureTerrainOcean(next);
+        if (params.preset === 'dune-desert') {
+          applyTerrainSurfaceInPlace(next, {
+            surface: 'sand',
+            zoneId: 'terrain-surface:desert',
+            intensity: 1,
+            region: mapBoundsPolygon(next)
+          });
+        }
+        break;
+      }
+      case 'terrain.modify': {
+        const params = applyTerrainModifierInPlace(next, operation);
+        if (params.modifier === 'island') ensureTerrainOcean(next);
+        terrainChanged = true;
+        break;
+      }
+      case 'terrain.surface':
+        applyTerrainSurfaceInPlace(next, operation);
         break;
       case 'terrain.brush':
         requireVec3(operation.point, 'invalid_terrain_point');
@@ -150,6 +182,7 @@ export function applyMapOperations(map: EditableMap, operations: readonly MapOpe
           operation.strength ?? 0.3,
           operation.targetHeight
         );
+        terrainChanged = true;
         break;
       case 'paint.add':
         if (!operation.stroke || !MAP_SURFACES.has(operation.stroke.surface)) throw new Error('invalid_paint');
@@ -242,7 +275,7 @@ export function applyMapOperations(map: EditableMap, operations: readonly MapOpe
         requireWaterBody(operation.water);
         const water: MapWaterBody = {
           id: operation.water.id || createId('water'),
-          name: operation.water.name ?? (operation.water.type === 'lake' ? '湖泊' : '河流'),
+          name: operation.water.name ?? (operation.water.type === 'lake' ? '湖泊' : operation.water.type === 'ocean' ? '海面' : '河流'),
           type: operation.water.type,
           level: operation.water.level ?? 0.2,
           depth: operation.water.depth ?? DEFAULT_WATER_DEPTH,
@@ -285,14 +318,18 @@ export function applyMapOperations(map: EditableMap, operations: readonly MapOpe
         throw new Error('unsupported_operation');
     }
   }
+  if (terrainChanged) {
+    for (const water of next.waterBodies) carveWaterBasinInPlace(next, water);
+    snapTerrainObjectsInPlace(next);
+  }
   return normalizeMap({ ...next, confirmedAt: null });
 }
 
 function requireWaterBody(value: unknown): asserts value is MapWaterBodyInput {
   if (!value || typeof value !== 'object') throw new Error('invalid_water_body');
   const water = value as Partial<MapWaterBody>;
-  if (water.type !== 'lake' && water.type !== 'river') throw new Error('invalid_water_body');
-  if (!Array.isArray(water.points) || water.points.length < (water.type === 'lake' ? 3 : 2)) {
+  if (water.type !== 'lake' && water.type !== 'river' && water.type !== 'ocean') throw new Error('invalid_water_body');
+  if (!Array.isArray(water.points) || water.points.length < (water.type === 'river' ? 2 : 3)) {
     throw new Error('invalid_water_body');
   }
   if (water.points.length > 64 || water.points.some((point) => (
@@ -310,6 +347,36 @@ function requireWaterBody(value: unknown): asserts value is MapWaterBodyInput {
   if (water.level !== undefined && !Number.isFinite(Number(water.level))) throw new Error('invalid_water_body');
   if (water.depth !== undefined && !Number.isFinite(Number(water.depth))) throw new Error('invalid_water_body');
   if (water.width !== undefined && !Number.isFinite(Number(water.width))) throw new Error('invalid_water_body');
+}
+
+function ensureTerrainOcean(map: EditableMap): void {
+  const existing = map.waterBodies.find((water) => water.type === 'ocean');
+  const points = mapBoundsPolygon(map).points;
+  const ocean: MapWaterBody = {
+    id: existing?.id ?? 'terrain-ocean',
+    name: existing?.name ?? '海面',
+    type: 'ocean',
+    level: 0,
+    depth: 0.1,
+    width: 1,
+    points
+  };
+  if (existing) map.waterBodies = map.waterBodies.map((water) => water.id === existing.id ? ocean : water);
+  else map.waterBodies.push(ocean);
+}
+
+function mapBoundsPolygon(map: EditableMap): { kind: 'polygon'; points: Array<[number, number]> } {
+  const halfWidth = map.box.size[0] / 2;
+  const halfDepth = map.box.size[2] / 2;
+  return {
+    kind: 'polygon',
+    points: [
+      [-halfWidth, -halfDepth],
+      [halfWidth, -halfDepth],
+      [halfWidth, halfDepth],
+      [-halfWidth, halfDepth]
+    ]
+  };
 }
 
 function requireGrassRegion(value: unknown): asserts value is GrassRegion {

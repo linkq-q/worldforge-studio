@@ -688,7 +688,7 @@ async function handleEditorRenderSchemes(req: Req, res: Res, store: MapStore, pa
 }
 
 function isTransactionSource(value: unknown): value is MapTransactionSource {
-  return value === 'basic-ai' || value === 'agent';
+  return value === 'basic-ai' || value === 'agent' || value === 'manual';
 }
 
 async function readJson<T>(req: Req, maxBytes = 16 * 1024 * 1024): Promise<T> {

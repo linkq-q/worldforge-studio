@@ -1,5 +1,6 @@
 import {
   TERRAIN_MIN_HEIGHT,
+  sampleTerrainHeight,
   terrainIndex,
   terrainPointAt,
   type EditableMap,
@@ -50,6 +51,9 @@ export function carveWaterBasinInPlace(map: EditableMap, water: MapWaterBody): v
 
 export function isNearWater(map: EditableMap, x: number, z: number, padding: number): boolean {
   return map.waterBodies.some((water) => {
+    if (water.type === 'ocean') {
+      return sampleTerrainHeight(map, x, z) <= water.level + Math.max(0, padding);
+    }
     if (water.type === 'river') {
       const safeDistance = Math.max(0, water.width / 2 + padding);
       return water.points.slice(1).some((point, index) =>
@@ -61,7 +65,8 @@ export function isNearWater(map: EditableMap, x: number, z: number, padding: num
   });
 }
 
-export function isPointInsideWaterBody(water: MapWaterBody, x: number, z: number): boolean {
+export function isPointInsideWaterBody(water: MapWaterBody, x: number, z: number, map?: EditableMap): boolean {
+  if (water.type === 'ocean') return map ? sampleTerrainHeight(map, x, z) <= water.level + 0.02 : false;
   if (water.type === 'river') {
     return water.points.slice(1).some((point, index) =>
       distanceToSegment(x, z, water.points[index], point) <= water.width / 2

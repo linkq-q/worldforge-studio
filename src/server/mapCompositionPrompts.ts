@@ -7,6 +7,7 @@ import type {
 } from '../shared/sceneComposition';
 import { SCENE_COMPOSITION_LIMITS } from '../shared/sceneComposition';
 import type { ResolvedSceneFamily } from '../shared/sceneCompositionAssets';
+import { terrainCapabilitySummary } from '../shared/terrainGeneration';
 
 export function buildSceneDirectorPrompt(
   map: EditableMap,
@@ -27,6 +28,7 @@ export function buildSceneDirectorPrompt(
     'You are the scene director for a 3D world editor.',
     'Transform the user request into one coherent environment composition plan before any terrain or objects are generated.',
     'You decide what this world looks like: regions, hierarchy, focal areas, transitions, terrain intent, asset families, density, scale, and negative space.',
+    `Terrain capabilities are composable and independent: ${JSON.stringify(terrainCapabilitySummary())}. Choose a global terrainBase, then add a zone terrain.modifier and terrain.surface when the request calls for cliffs, terraces, dunes, islands, sand, grass, or rock. For example, a mountain can use a cliff modifier even when the base is hills; never assume a modifier belongs only to one preset.`,
     'Do not output object coordinates, low-level map operations, spawn points, combat rules, cover, quests, or gameplay logic.',
     'Do not use a fixed forest/camp template. Choose regions and asset roles that specifically fit this request.',
     'Extract every explicitly named physical requirement (for example terrain, pond, cabin, castle, a named tree species, or an animal) into intentRequirements. These are acceptance criteria, not suggestions.',
@@ -61,7 +63,7 @@ export function buildSceneDirectorPrompt(
         visualHierarchy: 'primary/secondary visual relationship',
         assetArtDirection: 'shared asset style, proportions and palette',
         focalZoneId: 'zone-id',
-        terrainBase: { preset: 'plain|hills|valley|island|canyon', seed: map.seed, amplitude: 4, roughness: 0.5 }
+        terrainBase: { preset: 'plain|hills|valley|island|archipelago|canyon|cliff-plateau|dune-desert', seed: map.seed, amplitude: 4, roughness: 0.5, direction: 90 }
       },
       intentRequirements: [
         { id: 'terrain-foundation', kind: 'terrain', description: 'visible terrain foundation', targetZoneId: 'zone-id', minCount: 1 },
@@ -72,7 +74,11 @@ export function buildSceneDirectorPrompt(
         id: 'zone-id', label: 'human label', role: 'primary|secondary|transition|negative-space', importance: 0.8,
         region: { kind: 'circle', center: [0, 0], radius: 0.35 },
         brief: { atmosphere: 'text', hierarchy: 'text', openness: 0.4, transitionIntent: 'text' },
-        terrain: { elevation: 0.1, roughness: 0.5, flatness: 0.2 },
+        terrain: {
+          elevation: 0.1, roughness: 0.5, flatness: 0.2,
+          modifier: 'cliff|terrace|dune|island|null', layout: 'plateau|coast|canyon|wall|terraces|null',
+          surface: 'grass|sand|rock|null', amplitude: 4, softness: 0.2, direction: 90, variation: 0.45, layers: 4
+        },
         water: null,
         layers: [{ familyId: 'family-id', density: 0.04, scaleRange: [0.8, 1.2], distribution: 'even|clustered|accent', edgeFalloff: 0.25 }],
         grassLayers: [{ grassFamilyId: 'grass-family-id', density: 0.7, variation: 0.2, edgeFalloff: 0.25, residualDensity: 0.08 }],

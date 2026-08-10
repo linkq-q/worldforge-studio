@@ -2,6 +2,7 @@ import {
   PLAYER_RADIUS,
   getMapBounds,
   getMapObjectAabbs,
+  getTerrainCliffAabbs,
   type EditableMap
 } from './map';
 import { terrainSlopeDegrees } from './mapTerrainAnalysis';
@@ -13,7 +14,7 @@ export function isSpawnPositionSafe(map: EditableMap, x: number, z: number): boo
   if (z < bounds.minZ + PLAYER_RADIUS || z > bounds.maxZ - PLAYER_RADIUS) return false;
   if (isNearWater(map, x, z, PLAYER_RADIUS + 0.2)) return false;
   if (terrainSlopeDegrees(map, x, z) > 35) return false;
-  return !getMapObjectAabbs(map).some((obstacle) => {
+  return ![...getMapObjectAabbs(map), ...getTerrainCliffAabbs(map)].some((obstacle) => {
     const closestX = clamp(x, obstacle.min[0], obstacle.max[0]);
     const closestZ = clamp(z, obstacle.min[2], obstacle.max[2]);
     return Math.hypot(x - closestX, z - closestZ) < PLAYER_RADIUS + 0.1;

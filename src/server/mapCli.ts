@@ -11,6 +11,7 @@ import type { Vec3 } from '../shared/protocol';
 import type { MapOperation, MapTransactionSource } from '../shared/mapOperations';
 import { generateModel } from './modelApi';
 import { MapStore, mapEditorCliManifest } from './mapStore';
+import { terrainCapabilitySummary } from '../shared/terrainGeneration';
 
 const store = new MapStore();
 
@@ -25,6 +26,11 @@ async function main(): Promise<void> {
 
   if (command === 'help') {
     print({ commands: mapEditorCliManifest() });
+    return;
+  }
+
+  if (command === 'terrain-capabilities') {
+    print({ capabilities: terrainCapabilitySummary() });
     return;
   }
 
@@ -45,7 +51,7 @@ async function main(): Promise<void> {
 
   if (command === 'apply-transaction') {
     const source = stringArg(args, 'source', 'agent');
-    if (source !== 'agent' && source !== 'basic-ai') throw new Error('invalid_transaction_source');
+    if (source !== 'agent' && source !== 'basic-ai' && source !== 'manual') throw new Error('invalid_transaction_source');
     const input = JSON.parse(await readFile(required(args, 'file'), 'utf8')) as MapOperation[] | { operations?: MapOperation[] };
     const operations = Array.isArray(input) ? input : input.operations;
     if (!Array.isArray(operations)) throw new Error('invalid_operations_file');
