@@ -27,6 +27,7 @@ import {
   type MapTransactionRequest,
   type MapTransactionSummary
 } from '../shared/mapOperations';
+import { prepareStructuredWaterInPlace } from '../shared/mapWater';
 
 import { MAP_ASSET_COLLIDER_PROFILE, normalizeModelColliderPlan } from '../shared/modelBounds';
 import { assetFootprintRadius, assetSizeClass, normalizeAssetTags } from '../shared/mapAssetMetadata';
@@ -729,6 +730,7 @@ export class MapStore {
 
   async hydrateMap(map: EditableMap): Promise<EditableMap> {
     const normalized = normalizeMap(map);
+    prepareStructuredWaterInPlace(normalized);
     const ids = [...new Set(normalized.objects.map((object) => object.assetId).filter((id): id is string => Boolean(id)))];
     const assets = await Promise.all(ids.map(async (id) => this.loadAsset(id).catch(() => null)));
     const hydrated: EditableMap = {

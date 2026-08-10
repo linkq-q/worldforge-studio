@@ -1,7 +1,8 @@
 import {
   applyMapOperations,
   type MapAiSuggestion,
-  type MapOperation
+  type MapOperation,
+  type MapWaterBodyPatch
 } from '../shared/mapOperations';
 import {
   createId,
@@ -21,7 +22,7 @@ import {
   type Vec3
 } from '../shared/protocol';
 import {
-  normalizeMapAiMaxNewAssets,
+  normalizeMapAiNewAssetRange,
   planLimits,
   type MapPlanLimits
 } from '../shared/mapPlanning';
@@ -47,6 +48,12 @@ import { runMapCompositionWorkflow } from './mapCompositionWorkflow';
 import { completeMapVisualSemantics } from '../shared/mapVisualSemantics';
 import { patchMapVisualZone, type VisualZonePatch } from '../shared/mapVisualSemantics';
 import { VISUAL_ZONE_TAGS, normalizeMapVisualSemantics, type VisualZoneTag } from '../shared/visualDirection';
+import {
+  findAdjacentMapRegion,
+  isPointInsidePlayableArea,
+  pointInMapRegion,
+  regionCenter
+} from '../shared/mapLayout';
 
 export interface MapAiOptions {
   apiBase?: string;
@@ -56,9 +63,14 @@ export interface MapAiOptions {
   onProgress?: (event: AgentProgressEvent) => void;
   reuseExistingAssets?: boolean;
   reusableAssetIds?: readonly string[];
+  minNewAssets?: number;
   maxNewAssets?: number;
   /** Optional persisted visual-zone ID used to bound a refine pass. */
   targetVisualZoneId?: string;
+  /** Optional editable ecology region used for independent generation. */
+  targetRegionId?: string;
+  /** Restrict a refine pass to the one shared terrain height field. */
+  baseTerrainOnly?: boolean;
 }
 
 export interface AssetGenerationRequest {
@@ -97,13 +109,27 @@ export async function runMapAgent(
     return validated;
   }
   options.onProgress?.({ phase: 'planning', label: mode === 'refine' ? '理解地图调整要求' : '规划地图内容' });
-  const firstContent = await requestMapPlan(prompt, map, assets, options, false, mode);
-  const maxNewAssets = normalizeMapAiMaxNewAssets(options.maxNewAssets);
-  const requests = normalizeAssetRequests(
+  let firstContent = await requestMapPlan(prompt, map, assets, options, false, mode);
+  const assetRange = normalizeMapAiNewAssetRange(options.minNewAssets, options.maxNewAssets);
+  const maxNewAssets = assetRange.max;
+  let requests = normalizeAssetRequests(
     parseJsonObject(firstContent).assetRequests,
     maxNewAssets,
     map.assetGenerationMode
   );
+  if (requests.length < assetRange.min) {
+    options.onProgress?.({ phase: 'replanning', label: `补足至少 ${assetRange.min} 个新资产请求` });
+    firstContent = await requestMapPlan(
+      `${prompt}\n\nThe user requires at least ${assetRange.min} genuinely new reusable assets in assetRequests.`,
+      map,
+      assets,
+      options,
+      false,
+      mode
+    );
+    requests = normalizeAssetRequests(parseJsonObject(firstContent).assetRequests, maxNewAssets, map.assetGenerationMode);
+    if (requests.length < assetRange.min) throw new Error('map_agent_asset_minimum_not_met');
+  }
   options.onProgress?.({
     phase: 'checking-assets',
     label: requests.length > 0 ? `发现 ${requests.length} 个缺失资产` : '现有资产可以完成规划',
@@ -111,7 +137,22 @@ export async function runMapAgent(
     total: requests.length
   });
   if (requests.length === 0) {
-    const firstSuggestion = normalizeMapSuggestion(firstContent, map, assets, mode, options.targetVisualZoneId);
+    let firstSuggestion: MapAiSuggestion;
+    try {
+      firstSuggestion = normalizeMapSuggestion(firstContent, map, assets, mode, options.targetVisualZoneId, options.targetRegionId, options.baseTerrainOnly);
+    } catch (error) {
+      if (!options.baseTerrainOnly || !(error instanceof Error) || error.message !== 'empty_map_suggestion') throw error;
+      options.onProgress?.({ phase: 'replanning', label: '补充全局基础地形参数' });
+      firstContent = await requestMapPlan(
+        `${prompt}\n\nYour previous response omitted terrainGeneration. Return exactly one terrainGeneration and leave every other operation array empty.`,
+        map,
+        assets,
+        options,
+        true,
+        mode
+      );
+      firstSuggestion = normalizeMapSuggestion(firstContent, map, assets, mode, options.targetVisualZoneId, options.targetRegionId, options.baseTerrainOnly);
+    }
     assertNoForbiddenAssetReuse(firstSuggestion, new Set(), options);
     if (hasSpatialOperations(firstSuggestion)) {
       const validated = finalizeMapAgentSuggestion(map, assets, firstSuggestion, options);
@@ -120,7 +161,7 @@ export async function runMapAgent(
     }
     options.onProgress?.({ phase: 'replanning', label: '补充空间操作' });
     const retryContent = await requestMapPlan(prompt, map, assets, options, true, mode);
-    const retrySuggestion = normalizeMapSuggestion(retryContent, map, assets, mode, options.targetVisualZoneId);
+    const retrySuggestion = normalizeMapSuggestion(retryContent, map, assets, mode, options.targetVisualZoneId, options.targetRegionId, options.baseTerrainOnly);
     assertNoForbiddenAssetReuse(retrySuggestion, new Set(), options);
     if (!hasSpatialOperations(retrySuggestion)) throw new Error('map_agent_no_spatial_plan');
     const validated = finalizeMapAgentSuggestion(map, assets, retrySuggestion, options);
@@ -143,23 +184,132 @@ export async function runMapAgent(
   const expandedAssets = [...assets, ...generatedAssets];
   const generatedAssetIds = new Set(generatedAssets.map((asset) => asset.id));
   options.onProgress?.({ phase: 'replanning', label: '使用新资产重新规划地图' });
-  const finalContent = await requestMapPlan(prompt, map, expandedAssets, options, true, mode, generatedAssetIds);
-  if (normalizeAssetRequests(
-    parseJsonObject(finalContent).assetRequests,
-    maxNewAssets,
-    map.assetGenerationMode
-  ).length > 0) {
-    throw new Error('map_agent_asset_limit');
-  }
-  const suggestion = {
-    ...normalizeMapSuggestion(finalContent, map, expandedAssets, mode, options.targetVisualZoneId),
+  let finalContent = await requestMapPlan(prompt, map, expandedAssets, options, true, mode, generatedAssetIds);
+  assertFinalPassRequestsNoAssets(finalContent, maxNewAssets, map.assetGenerationMode);
+  let suggestion = {
+    ...normalizeMapSuggestion(finalContent, map, expandedAssets, mode, options.targetVisualZoneId, options.targetRegionId, options.baseTerrainOnly),
     generatedAssets: generatedAssets.map((asset) => ({ id: asset.id, name: asset.name }))
   };
+  let missingAssetIds = missingPlacedAssetIds(suggestion, generatedAssetIds);
+  if (missingAssetIds.length > 0) {
+    options.onProgress?.({ phase: 'replanning', label: '补充新资产的区块摆放' });
+    finalContent = await requestMapPlan(
+      `${prompt}\n\nReturn the complete final map plan again. Every generated asset ID must be placed at least once with objects or scatters. Missing IDs: ${missingAssetIds.join(', ')}.`,
+      map,
+      expandedAssets,
+      options,
+      true,
+      mode,
+      generatedAssetIds
+    );
+    assertFinalPassRequestsNoAssets(finalContent, maxNewAssets, map.assetGenerationMode);
+    suggestion = {
+      ...normalizeMapSuggestion(finalContent, map, expandedAssets, mode, options.targetVisualZoneId, options.targetRegionId, options.baseTerrainOnly),
+      generatedAssets: generatedAssets.map((asset) => ({ id: asset.id, name: asset.name }))
+    };
+    missingAssetIds = missingPlacedAssetIds(suggestion, generatedAssetIds);
+    if (missingAssetIds.length > 0) {
+      const operationCount = suggestion.operations.length;
+      suggestion = addDeterministicGeneratedAssetPlacements(
+        map,
+        expandedAssets,
+        suggestion,
+        generatedAssetIds,
+        options.targetRegionId
+      );
+      options.onProgress?.({
+        phase: 'repairing',
+        label: `自动补摆 ${suggestion.operations.length - operationCount} 个遗漏的新资产`
+      });
+    }
+  }
   assertNoForbiddenAssetReuse(suggestion, generatedAssetIds, options);
   if (!hasSpatialOperations(suggestion)) throw new Error('map_agent_no_spatial_plan');
   const validated = finalizeMapAgentSuggestion(map, expandedAssets, suggestion, options);
   options.onProgress?.({ phase: 'complete', label: '地图修改方案已完成' });
   return validated;
+}
+
+function assertFinalPassRequestsNoAssets(
+  content: string,
+  maxNewAssets: number,
+  mode: ModelGenerationMode
+): void {
+  if (normalizeAssetRequests(parseJsonObject(content).assetRequests, maxNewAssets, mode).length > 0) {
+    throw new Error('map_agent_asset_limit');
+  }
+}
+
+function missingPlacedAssetIds(
+  suggestion: Pick<MapAiSuggestion, 'operations'>,
+  generatedAssetIds: ReadonlySet<string>
+): string[] {
+  const placed = new Set(suggestion.operations.flatMap((operation) => (
+    operation.type === 'object.add' && operation.object.assetId ? [operation.object.assetId] : []
+  )));
+  return [...generatedAssetIds].filter((assetId) => !placed.has(assetId));
+}
+
+function addDeterministicGeneratedAssetPlacements(
+  map: EditableMap,
+  assets: readonly MapAsset[],
+  suggestion: MapAiSuggestion,
+  generatedAssetIds: ReadonlySet<string>,
+  targetRegionId?: string
+): MapAiSuggestion {
+  const missingAssetIds = missingPlacedAssetIds(suggestion, generatedAssetIds);
+  if (missingAssetIds.length === 0) return suggestion;
+  const region = targetRegionId ? map.layout.regions.find((item) => item.id === targetRegionId) : null;
+  const center = region ? regionCenter(region) : [0, 0] as [number, number];
+  const radius = region
+    ? Math.max(1, ...region.points.map(([x, z]) => Math.hypot(x - center[0], z - center[1])))
+    : Math.hypot(map.box.size[0], map.box.size[2]) / 2;
+  const generationId = region ? createId('generation') : '';
+  let workingMap = applyMapOperations(normalizeMap({ ...map, assets: [...assets] }), suggestion.operations);
+  const operations: MapOperation[] = [];
+
+  for (const [index, assetId] of missingAssetIds.entries()) {
+    const asset = assets.find((item) => item.id === assetId);
+    if (!asset) continue;
+    const footprint = Math.max(0.5, asset.footprintRadius ?? 0.5);
+    const candidates = expandMapScatter(workingMap, {
+      assetIds: [assetId],
+      region: { kind: 'circle', x: center[0], z: center[1], r: radius },
+      density: 1,
+      avoidWater: 0.8,
+      maxSlope: 34,
+      minSpacing: footprint * 2 + 0.25,
+      scaleRange: [1, 1],
+      seed: map.seed + index * 977 + 1
+    }, assets, 96, `generated-fallback-${assetId}`);
+    const placement = candidates.find((candidate) => (
+      isPointInsidePlayableArea(map.layout, map.box.size, candidate.x, candidate.z)
+      && (!region || pointInMapRegion(region, candidate.x, candidate.z))
+    ));
+    if (!placement) continue;
+    const operation: MapOperation = {
+      type: 'object.add',
+      object: {
+        id: placement.id,
+        name: placement.name,
+        assetId: placement.assetId,
+        transform: {
+          position: [placement.x, placement.y, placement.z],
+          rotation: [0, placement.rotationY, 0],
+          scale: [placement.scale, placement.scale, placement.scale]
+        },
+        ...(region ? { generation: { kind: 'region' as const, id: region.id, generationId } } : {})
+      }
+    };
+    operations.push(operation);
+    workingMap = applyMapOperations(workingMap, [operation]);
+  }
+
+  const repaired = { ...suggestion, operations: [...suggestion.operations, ...operations] };
+  if (missingPlacedAssetIds(repaired, generatedAssetIds).length > 0) {
+    throw new Error('map_agent_generated_assets_not_placed');
+  }
+  return repaired;
 }
 
 function finalizeMapAgentSuggestion(
@@ -225,7 +375,9 @@ export function normalizeMapSuggestion(
   map: EditableMap,
   assets: readonly MapAsset[],
   mode: 'generate' | 'refine' = 'generate',
-  targetVisualZoneId?: string
+  targetVisualZoneId?: string,
+  targetRegionId?: string,
+  baseTerrainOnly = false
 ): MapAiSuggestion {
   const input = parseJsonObject(content);
 
@@ -250,7 +402,7 @@ export function normalizeMapSuggestion(
     ? normalizeWaterRefineOperations(input.waterUpdates, input.waterRemovals, map, bounds)
     : [];
   operations.push(...waterRefineOperations);
-  const waterOperations = normalizeWaterOperations(input.waters, bounds, limits);
+  const waterOperations = normalizeWaterOperations(input.waters, bounds, limits, map.seed);
   operations.push(...waterOperations);
   const earlyOperations = operations.filter((operation) => (
     operation.type === 'terrain.generate'
@@ -280,7 +432,8 @@ export function normalizeMapSuggestion(
     input.scatters ?? input.scatter,
     scatterPreview,
     assets,
-    Math.max(0, limits.objectCount - objectOperations.length)
+    Math.max(0, limits.objectCount - objectOperations.length),
+    targetRegionId
   );
   operations.push(...scatterOperations);
   const populatedPreview = scatterOperations.length > 0
@@ -288,7 +441,11 @@ export function normalizeMapSuggestion(
     : scatterPreview;
   const spawnOperation = normalizeSpawnOperation(input.spawn, populatedPreview);
   if (spawnOperation) operations.push(spawnOperation);
-  const scopedOperations = targetVisualZoneId
+  const scopedOperations = baseTerrainOnly
+    ? operations.filter((operation) => operation.type === 'terrain.generate')
+    : targetRegionId
+    ? scopeMapOperationsToEcologyRegion(operations, map, targetRegionId)
+    : targetVisualZoneId
     ? scopeMapOperationsToVisualZone(operations, map, targetVisualZoneId)
     : operations;
   if (scopedOperations.length === 0) throw new Error('empty_map_suggestion');
@@ -370,11 +527,16 @@ function normalizeVisualZoneUpdateOperations(
 function scopeMapOperationsToVisualZone(
   operations: readonly MapOperation[],
   map: EditableMap,
-  zoneId: string
+  zoneId: string,
+  containsOverride?: (x: number, z: number) => boolean,
+  strictFootprints = false,
+  allowMapUpdate = true,
+  allowTerrainOverlap = false
 ): MapOperation[] {
   const zone = map.visualSemantics.zones.find((item) => item.id === zoneId);
-  if (!zone) throw new Error('unknown_visual_zone');
-  const contains = (x: number, z: number) => Math.hypot(x - zone.center[0], z - zone.center[1]) <= zone.radius;
+  if (!zone && !containsOverride) throw new Error('unknown_visual_zone');
+  const contains = containsOverride
+    ?? ((x: number, z: number) => Math.hypot(x - zone!.center[0], z - zone!.center[1]) <= zone!.radius);
   const objectInside = (objectId: string, nextPosition?: Vec3) => {
     const object = map.objects.find((item) => item.id === objectId);
     const current = object?.transform.position;
@@ -391,18 +553,27 @@ function scopeMapOperationsToVisualZone(
     const z = water.points.reduce((sum, point) => sum + point[1], 0) / water.points.length;
     return contains(x, z);
   };
-  const regionInside = (region: Extract<MapOperation, { type: 'terrain.modify' | 'terrain.surface' }>['region']) => {
-    if (region.kind === 'circle') return contains(region.x, region.z);
+  const regionInside = (
+    region: Extract<MapOperation, { type: 'terrain.modify' | 'terrain.surface' }>['region'],
+    allowOverlap = false
+  ) => {
+    if (region.kind === 'circle') {
+      if (!contains(region.x, region.z)) return false;
+      return !strictFootprints || allowOverlap || circleInside(region.x, region.z, region.radius, contains);
+    }
     if (region.points.length === 0) return false;
+    if (strictFootprints && !allowOverlap && !region.points.every((point) => contains(point[0], point[1]))) return false;
     const x = region.points.reduce((sum, point) => sum + point[0], 0) / region.points.length;
     const z = region.points.reduce((sum, point) => sum + point[1], 0) / region.points.length;
     return contains(x, z);
   };
   return operations.filter((operation) => {
     switch (operation.type) {
-      case 'map.update': return true;
-      case 'terrain.brush': return contains(operation.point[0], operation.point[2]);
-      case 'terrain.modify': return regionInside(operation.region);
+      case 'map.update': return allowMapUpdate;
+      case 'terrain.brush': return strictFootprints && !allowTerrainOverlap
+        ? circleInside(operation.point[0], operation.point[2], operation.size ?? 1, contains)
+        : contains(operation.point[0], operation.point[2]);
+      case 'terrain.modify': return regionInside(operation.region, allowTerrainOverlap);
       case 'terrain.surface': return regionInside(operation.region);
       case 'paint.add': return contains(operation.stroke.point[0], operation.stroke.point[2]);
       case 'object.add': return contains(operation.object.transform?.position?.[0] ?? 0, operation.object.transform?.position?.[2] ?? 0);
@@ -411,6 +582,7 @@ function scopeMapOperationsToVisualZone(
       case 'water.add': {
         const points = operation.water.points ?? [];
         if (points.length === 0) return false;
+        if (strictFootprints && !points.every((point) => contains(point[0], point[1]))) return false;
         const x = points.reduce((sum, point) => sum + point[0], 0) / points.length;
         const z = points.reduce((sum, point) => sum + point[1], 0) / points.length;
         return contains(x, z);
@@ -429,6 +601,69 @@ function scopeMapOperationsToVisualZone(
       case 'sun.set': return false;
     }
   });
+}
+
+function scopeMapOperationsToEcologyRegion(
+  operations: readonly MapOperation[],
+  map: EditableMap,
+  regionId: string
+): MapOperation[] {
+  const region = map.layout.regions.find((item) => item.id === regionId);
+  if (!region) throw new Error('unknown_ecology_region');
+  if (region.contentLocked) throw new Error('ecology_region_content_locked');
+  const generationId = createId('generation');
+  const cleanup: MapOperation[] = [
+    ...map.objects
+      .filter((object) => !object.locked && object.generation?.kind === 'region' && object.generation.id === regionId)
+      .map((object) => ({ type: 'object.remove' as const, objectId: object.id })),
+    ...map.waterBodies
+      .filter((water) => water.generation?.kind === 'region' && water.generation.id === regionId)
+      .map((water) => ({ type: 'water.remove' as const, waterId: water.id }))
+  ];
+  const cleanupObjectIds = new Set(cleanup.flatMap((operation) => operation.type === 'object.remove' ? [operation.objectId] : []));
+  const cleanupWaterIds = new Set(cleanup.flatMap((operation) => operation.type === 'water.remove' ? [operation.waterId] : []));
+  const scoped = scopeMapOperationsToVisualZone(
+    operations,
+    map,
+    '',
+    (x, z) => pointInMapRegion(region, x, z),
+    true,
+    false,
+    true
+  ).filter((operation) => (
+    !(operation.type === 'object.remove' && cleanupObjectIds.has(operation.objectId))
+    && !(operation.type === 'water.remove' && cleanupWaterIds.has(operation.waterId))
+  )).map((operation): MapOperation => {
+    if (operation.type === 'object.add') {
+      return {
+        ...operation,
+        object: { ...operation.object, generation: { kind: 'region', id: regionId, generationId } }
+      };
+    }
+    if (operation.type === 'water.add') {
+      return {
+        ...operation,
+        water: { ...operation.water, generation: { kind: 'region', id: regionId, generationId } }
+      };
+    }
+    return operation;
+  });
+  return [...cleanup, ...scoped];
+}
+
+function circleInside(
+  x: number,
+  z: number,
+  radius: number,
+  contains: (x: number, z: number) => boolean
+): boolean {
+  if (!contains(x, z)) return false;
+  const safeRadius = Math.max(0, radius);
+  for (let index = 0; index < 8; index += 1) {
+    const angle = index / 8 * Math.PI * 2;
+    if (!contains(x + Math.cos(angle) * safeRadius, z + Math.sin(angle) * safeRadius)) return false;
+  }
+  return true;
 }
 
 function normalizeObjectRefineOperations(
@@ -524,7 +759,7 @@ function normalizeWaterRefineOperations(
       const waterId = typeof input.waterId === 'string' ? input.waterId : '';
       const water = watersById.get(waterId);
       if (!water || removed.has(waterId)) throw new Error('unknown_water_refine_target');
-      const patch: { level?: number; depth?: number; width?: number } = {};
+      const patch: MapWaterBodyPatch = {};
       if (input.level !== undefined) patch.level = clamp(requiredNumber(input.level, 'invalid_water_refine_plan'), 0.02, bounds.maxY - 0.05);
       if (input.depth !== undefined) patch.depth = clamp(requiredNumber(input.depth, 'invalid_water_refine_plan'), 0.1, MAX_WATER_DEPTH);
       if (input.width !== undefined) {
@@ -533,6 +768,32 @@ function normalizeWaterRefineOperations(
           0.3,
           Math.min(bounds.maxX - bounds.minX, bounds.maxZ - bounds.minZ) / 2
         );
+      }
+      if (input.shorelineSmoothness !== undefined) {
+        patch.shorelineSmoothness = clamp(
+          requiredNumber(input.shorelineSmoothness, 'invalid_water_refine_plan'),
+          0,
+          1
+        );
+      }
+      if (input.shorelineIrregularity !== undefined) {
+        patch.shorelineIrregularity = clamp(
+          requiredNumber(input.shorelineIrregularity, 'invalid_water_refine_plan'),
+          0,
+          water.type === 'lake' ? 0.4 : 0
+        );
+      }
+      if (input.seed !== undefined) {
+        patch.seed = Math.trunc(requiredNumber(input.seed, 'invalid_water_refine_plan'));
+      }
+      if (input.levels !== undefined) {
+        if (water.type !== 'river' || !Array.isArray(input.levels)
+          || input.levels.length !== water.points.length) {
+          throw new Error('invalid_water_refine_plan');
+        }
+        patch.levels = descendingLevels(input.levels.map((level) => (
+          clamp(requiredNumber(level, 'invalid_water_refine_plan'), 0.02, bounds.maxY - 0.05)
+        )));
       }
       if (Object.keys(patch).length > 0) operations.push({ type: 'water.update', waterId, patch });
     }
@@ -543,7 +804,8 @@ function normalizeWaterRefineOperations(
 function normalizeWaterOperations(
   value: unknown,
   bounds: ReturnType<typeof getMapBounds>,
-  limits: MapPlanLimits
+  limits: MapPlanLimits,
+  mapSeed: number
 ): MapOperation[] {
   if (!Array.isArray(value)) return [];
   return value.slice(0, limits.waterCount).map((item) => {
@@ -567,6 +829,10 @@ function normalizeWaterOperations(
       ];
     });
     if (points.length < (type === 'lake' ? 3 : 2)) throw new Error('invalid_water_plan');
+    const levels = type === 'river' && Array.isArray(input.levels)
+      ? descendingLevels(input.levels.map((level) => clamp(requiredNumber(level, 'invalid_water_plan'), 0.02, bounds.maxY - 0.05)))
+      : undefined;
+    if (levels && levels.length !== points.length) throw new Error('invalid_water_plan');
     return {
       type: 'water.add',
       water: {
@@ -576,7 +842,11 @@ function normalizeWaterOperations(
         level: clamp(optionalNumber(input.level, 0.2), 0.02, bounds.maxY - 0.05),
         depth: clamp(optionalNumber(input.depth, DEFAULT_WATER_DEPTH), 0.1, MAX_WATER_DEPTH),
         width: clamp(optionalNumber(input.width, 1.2), 0.3, Math.min(bounds.maxX - bounds.minX, bounds.maxZ - bounds.minZ) / 2),
-        points
+        points,
+        ...(levels ? { levels } : {}),
+        shorelineSmoothness: clamp(optionalNumber(input.shorelineSmoothness, type === 'lake' ? 0.85 : 0.8), 0, 1),
+        shorelineIrregularity: clamp(optionalNumber(input.shorelineIrregularity, type === 'lake' ? 0.16 : 0), 0, 0.4),
+        seed: Math.trunc(optionalNumber(input.seed, mapSeed))
       }
     };
   });
@@ -672,18 +942,17 @@ function normalizeScatterOperations(
   value: unknown,
   map: EditableMap,
   assets: readonly MapAsset[],
-  maxCount: number
+  maxCount: number,
+  targetRegionId?: string
 ): MapOperation[] {
   if (!Array.isArray(value) || maxCount <= 0) return [];
   const assetIds = new Set(assets.map((asset) => asset.id));
-  const bounds = getMapBounds(map);
   const operations: MapOperation[] = [];
   let workingMap = map;
   for (const [planIndex, item] of value.slice(0, 16).entries()) {
     if (operations.length >= maxCount) break;
     if (!item || typeof item !== 'object') throw new Error('invalid_scatter_plan');
     const input = item as Record<string, unknown>;
-    const regionInput = input.region as Record<string, unknown> | undefined;
     const rawAssetIds = Array.isArray(input.assetIds)
       ? input.assetIds.filter((assetId): assetId is string => typeof assetId === 'string')
       : [];
@@ -691,16 +960,10 @@ function normalizeScatterOperations(
     if (selectedAssetIds.length === 0 || selectedAssetIds.some((assetId) => !assetIds.has(assetId))) {
       throw new Error('unknown_map_asset');
     }
-    if (!regionInput || regionInput.kind !== 'circle') throw new Error('invalid_scatter_plan');
     const rawScaleRange = Array.isArray(input.scaleRange) ? input.scaleRange : [1, 1];
     const plan: MapScatterPlan = {
       assetIds: selectedAssetIds,
-      region: {
-        kind: 'circle',
-        x: clamp(requiredNumber(regionInput.x, 'invalid_scatter_plan'), bounds.minX, bounds.maxX),
-        z: clamp(requiredNumber(regionInput.z, 'invalid_scatter_plan'), bounds.minZ, bounds.maxZ),
-        r: requiredNumber(regionInput.r, 'invalid_scatter_plan')
-      },
+      region: normalizeScatterRegion(input.region, map, targetRegionId),
       density: optionalNumber(input.density, 0.04),
       avoidWater: optionalNumber(input.avoidWater, 1),
       maxSlope: optionalNumber(input.maxSlope, 30),
@@ -739,6 +1002,76 @@ function normalizeScatterOperations(
   return operations;
 }
 
+function normalizeScatterRegion(
+  value: unknown,
+  map: EditableMap,
+  targetRegionId?: string
+): MapScatterPlan['region'] {
+  const bounds = getMapBounds(map);
+  const input = value && typeof value === 'object' ? value as Record<string, unknown> : null;
+  const center = normalizeScatterPoint(input?.center);
+  const x = finiteNumber(input?.x) ?? center?.[0] ?? null;
+  const z = finiteNumber(input?.z) ?? center?.[1] ?? null;
+  const radius = finiteNumber(input?.r) ?? finiteNumber(input?.radius);
+  if ((input?.kind === undefined || input.kind === 'circle') && x !== null && z !== null && radius !== null) {
+    return {
+      kind: 'circle',
+      x: clamp(x, bounds.minX, bounds.maxX),
+      z: clamp(z, bounds.minZ, bounds.maxZ),
+      r: Math.max(0.1, radius)
+    };
+  }
+
+  const points = Array.isArray(input?.points)
+    ? input.points.map(normalizeScatterPoint).filter((point): point is [number, number] => Boolean(point))
+    : [];
+  if (points.length >= (input?.kind === 'path' ? 2 : 3)) {
+    return scatterCircleFromPoints(points, bounds, input?.kind === 'path' ? Math.max(0, finiteNumber(input.width) ?? 0) / 2 : 0);
+  }
+
+  const targetRegion = targetRegionId
+    ? map.layout.regions.find((region) => region.id === targetRegionId)
+    : null;
+  if (targetRegion && targetRegion.points.length >= 3) {
+    return scatterCircleFromPoints(targetRegion.points, bounds);
+  }
+  throw new Error('invalid_scatter_plan');
+}
+
+function scatterCircleFromPoints(
+  points: readonly [number, number][],
+  bounds: ReturnType<typeof getMapBounds>,
+  padding = 0
+): MapScatterPlan['region'] {
+  const x = points.reduce((sum, point) => sum + point[0], 0) / points.length;
+  const z = points.reduce((sum, point) => sum + point[1], 0) / points.length;
+  return {
+    kind: 'circle',
+    x: clamp(x, bounds.minX, bounds.maxX),
+    z: clamp(z, bounds.minZ, bounds.maxZ),
+    r: Math.max(0.1, ...points.map((point) => Math.hypot(point[0] - x, point[1] - z) + padding))
+  };
+}
+
+function normalizeScatterPoint(value: unknown): [number, number] | null {
+  if (Array.isArray(value)) {
+    const x = finiteNumber(value[0]);
+    const z = finiteNumber(value[1]);
+    return x !== null && z !== null ? [x, z] : null;
+  }
+  if (!value || typeof value !== 'object') return null;
+  const input = value as Record<string, unknown>;
+  const x = finiteNumber(input.x);
+  const z = finiteNumber(input.z);
+  return x !== null && z !== null ? [x, z] : null;
+}
+
+function finiteNumber(value: unknown): number | null {
+  if (typeof value !== 'number' && (typeof value !== 'string' || !value.trim())) return null;
+  const number = Number(value);
+  return Number.isFinite(number) ? number : null;
+}
+
 function normalizeSpawnOperation(value: unknown, map: EditableMap): MapOperation | null {
   if (!value || typeof value !== 'object') return null;
   const input = value as Record<string, unknown>;
@@ -759,7 +1092,7 @@ function buildSystemPrompt(
   assets: readonly MapAsset[],
   finalPass: boolean,
   mode: 'generate' | 'refine',
-  options: Pick<MapAiOptions, 'reuseExistingAssets' | 'reusableAssetIds' | 'maxNewAssets' | 'targetVisualZoneId'> = {},
+  options: Pick<MapAiOptions, 'reuseExistingAssets' | 'reusableAssetIds' | 'minNewAssets' | 'maxNewAssets' | 'targetVisualZoneId' | 'targetRegionId' | 'baseTerrainOnly'> = {},
   generatedAssetIds: ReadonlySet<string> = new Set()
 ): string {
   const bounds = getMapBounds(map);
@@ -789,11 +1122,16 @@ function buildSystemPrompt(
     count: objects.length,
     objectIds: objects.slice(0, 80).map((object) => object.id)
   }));
-  const maxNewAssets = normalizeMapAiMaxNewAssets(options.maxNewAssets);
+  const assetRange = normalizeMapAiNewAssetRange(options.minNewAssets, options.maxNewAssets);
   const targetZone = options.targetVisualZoneId
     ? map.visualSemantics.zones.find((zone) => zone.id === options.targetVisualZoneId)
     : null;
+  const targetRegion = options.targetRegionId
+    ? map.layout.regions.find((region) => region.id === options.targetRegionId)
+    : null;
+  const adjacentRegion = targetRegion ? findAdjacentMapRegion(map.layout.regions, targetRegion) : null;
   if (options.targetVisualZoneId && !targetZone) throw new Error('unknown_visual_zone');
+  if (options.targetRegionId && !targetRegion) throw new Error('unknown_ecology_region');
   const assetReuseInstructions = options.reuseExistingAssets
     ? [
         'Existing asset reuse is enabled. Reuse only when the asset identity, scale, and scene role genuinely fit; broad category tags alone are insufficient.'
@@ -809,7 +1147,7 @@ function buildSystemPrompt(
         'Preserve everything the user did not ask to change. Prefer small delta operations instead of rebuilding the scene.',
         'To reduce repeated objects, use objectRemovals: [{"assetId":"existing asset id","count":3,"seed":1}]. You may instead provide exact objectIds.',
         'To move, rotate, or scale an existing object, use objectUpdates: [{"objectId":"existing object id","x":0,"z":0,"rotationYDeg":0,"scale":1}].',
-        'To adjust water, use waterUpdates: [{"waterId":"existing water id","level":0.2,"depth":1.5,"width":2}]. To delete water, use waterRemovals: ["existing water id"].',
+        'To adjust water, use waterUpdates: [{"waterId":"existing water id","level":0.2,"depth":1.5,"width":2,"shorelineSmoothness":0.85,"shorelineIrregularity":0.16,"seed":7}]. River updates may also include levels matching the existing centerline point count. To delete water, use waterRemovals: ["existing water id"].',
         `Current object groups: ${JSON.stringify(currentObjects)}`,
         `Current waters: ${JSON.stringify(map.waterBodies)}`,
         `Current visual zones: ${JSON.stringify(map.visualSemantics.zones)}`,
@@ -819,31 +1157,49 @@ function buildSystemPrompt(
           'Use visualZoneUpdates only for this exact zone ID. Locked zone fields are user-authored and will be preserved by the server.'
         ] : [
           'When the user names a visual zone ID, use visualZoneUpdates to adjust only that persisted zone.'
-        ])
+        ]),
+        ...(targetRegion ? [
+          `This generation is strictly scoped to ecology region "${targetRegion.id}" (${JSON.stringify(targetRegion.points)}).`,
+          `The region-specific prompt is: ${targetRegion.prompt || '(empty: base terrain only)'}.`,
+          'Keep water and objects inside this polygon. Local height brushes and terrain modifiers may softly overlap the shared boundary to form a natural transition, but never regenerate the terrain base.',
+          'Use broad, soft terrain masses and low-density edge content up to the shared boundary. Do not leave an artificial empty strip between ecology regions unless the user explicitly asks for open negative space.',
+          ...(adjacentRegion ? [
+            `The primary adjacent region is "${adjacentRegion.name}": ${adjacentRegion.prompt || '(base terrain only)'}. Blend elevation and ground density naturally toward that neighbor without copying its focal content.`
+          ] : [])
+        ] : [])
       ]
     : [
         'This is a new-content planning pass. objectUpdates, objectRemovals, waterUpdates, and waterRemovals must be empty.'
       ];
+  const baseTerrainInstructions = options.baseTerrainOnly
+    ? [
+        'This pass creates only the one shared base height field for the complete map before ecology-region content generation.',
+        'Return exactly one terrainGeneration operation. Keep assetRequests, terrain, terrainModifiers, terrainSurfaces, waters, objects, scatters and spawn empty.',
+        'Do not place vegetation, buildings, props, water, local landmarks or region-specific content.'
+      ]
+    : [];
   return [
+    ...baseTerrainInstructions,
     ...refineInstructions,
     ...assetReuseInstructions,
     'visualZoneUpdates format: [{"zoneId":"existing-zone-id","center":[0,0],"radius":8,"tags":["grass"],"intensity":0.8}]. Omit unchanged fields.',
-    '你是 WorldForge 的地图规划器。只规划空间内容，不决定最终渲染风格。',
-    '你可以选择确定性地形基底、使用地形笔刷微调、创建湖泊/河流、放置已有资产，以及设置出生点；不得删除或修改已有物体，不得编造资产 ID。',
-    '根据田园、峡谷、海岛等场景词主动推导一个简单、合理的空间构图，不要求用户提供坐标。',
+    '你是 WorldForge 的地图规划器。玩家通常只写一句简短场景描述；请自行推导整体构图、坐标、数量、密度、留白和自然过渡，不要求玩家补充技术参数。',
+    '只规划空间内容，不决定最终渲染风格。你可以选择地形、湖泊/河流、已有资产和出生点；不得删除或修改未授权内容，不得编造资产 ID。',
     finalPass
       ? '这是最终规划轮次。assetRequests 必须为空；必须至少生成一项地形、物体摆放或出生点操作，使用现有资产完成地图，无法使用的内容直接省略。'
-      : `若场景需要新的可复用物体，在 assetRequests 中请求生成，最多 ${maxNewAssets} 项；请求资产时不要提前编造其 assetId。`,
+      : `若场景需要新的可复用物体，在 assetRequests 中请求生成 ${assetRange.min}-${assetRange.max} 项；请求资产时不要提前编造其 assetId。`,
     'assetRequests.tags 必须使用简短英文语义标签，例如 tree、vegetation、rock、building、prop、landmark、shrub、grass、fence 或 bridge；不要把 bark、foliage 等模型内部材质标签写进资产标签。',
     `本地图新资产的默认生成模式是 ${map.assetGenerationMode}；缺失资产由代码使用这个模式生成，但摆放时允许复用资产库中的其他模式资产。`,
     `地图范围：X ${bounds.minX} 到 ${bounds.maxX}，Z ${bounds.minZ} 到 ${bounds.maxZ}，最大高度 ${bounds.maxY}。`,
     `本地图配额：terrain 最多 ${limits.terrainBrushCount} 笔、笔刷半径最多 ${limits.brushRadiusMax}、waters 最多 ${limits.waterCount} 个、最终物体总数最多 ${limits.objectCount} 个。`,
     `terrainGeneration 是整体地形基底；可用能力：${JSON.stringify(terrainCapabilitySummary())}。新地图应优先选择一个基底；坐标由代码根据地图 seed 确定性生成。`,
     'terrain 每项格式：{"mode":"raise|lower|flatten","x":0,"z":0,"size":2,"strength":0.4,"targetHeight":0}，只用于地形基底之后的局部微调。',
-    'terrainModifiers 用于可复用的局部地貌能力，每项格式：{"modifier":"cliff|terrace|dune|island","region":{"kind":"circle","x":0,"z":0,"radius":8},"amplitude":5,"softness":0.2,"direction":90,"variation":0.45,"layers":4,"layout":"plateau|coast|canyon|wall|terraces"}。region 也可为 path（points + width）或 polygon（points）；island 只用 circle/polygon。高山、梯田、峡谷等组合场景应主动调用合适的 modifier，不要把它们绑定到某个固定 preset。',
+    'terrainModifiers 用于可复用的局部地貌能力，每项格式：{"modifier":"mountain|cliff|terrace|dune|island","region":{"kind":"circle","x":0,"z":0,"radius":8},"amplitude":5,"softness":0.2,"direction":90,"variation":0.45,"layers":4,"layout":"plateau|coast|canyon|wall|terraces"}。region 也可为 path（points + width）或 polygon（points）；island 只用 circle/polygon。山脉、群山必须使用 mountain 生成多峰宽肩的柔和山体；cliff 只用于真正的峭壁、断崖和峡谷墙。',
     'terrainSurfaces 用于局部地表语义，每项格式：{"surface":"grass|sand|rock","region":{"kind":"circle","x":0,"z":0,"radius":8},"intensity":1,"zoneId":"stable-zone-id"}。沙漠或沙丘区域应同时选择 sand。',
-    `waters 每项格式：{"type":"lake|river","name":"名称","level":0.2,"depth":${DEFAULT_WATER_DEPTH},"width":1.2,"points":[{"x":0,"z":0}]}。湖泊 points 是至少 3 点的边界；河流 points 是至少 2 点的中心线且 width 生效。`,
-    `湖泊的 depth 是水面以下的盆地深度（0.1 到 ${MAX_WATER_DEPTH}），代码会自动把湖底挖进地形，不要再用 terrain 笔刷压低湖区。小水塘用 0.6 左右，深湖用 3 以上。`,
+    `waters 每项格式：{"type":"lake|river","name":"名称","level":0.2,"depth":${DEFAULT_WATER_DEPTH},"width":1.2,"shorelineSmoothness":0.85,"shorelineIrregularity":0.16,"seed":7,"points":[{"x":0,"z":0}],"levels":[1.2,0.8]}。`,
+    '湖泊用 5-10 个粗略边界控制点组合出多个圆弧岸湾，shorelineSmoothness 建议 0.7-0.95，shorelineIrregularity 建议 0.08-0.28；代码会用 seed 生成连续噪声并平滑成不规则圆弧，不要手写密集锯齿点。',
+    `河流用 4-10 个从上游到下游排列的中心线控制点，width 是完整河宽，shorelineSmoothness 建议 0.65-0.9。可选 levels 必须与 points 等长并从上游到下游逐渐降低；省略时代码会根据源头地形与终点 level 自动生成沿程水位。河床会按 depth（0.1 到 ${MAX_WATER_DEPTH}）自动开槽并生成平滑河岸。`,
+    `湖泊的 depth 是水面以下的盆地深度，代码会自动把湖底挖进地形，不要再用 terrain 笔刷压低水区。小水塘用 0.6 左右，深湖用 3 以上。`,
     'objects 只用于少量独立物体，格式：{"assetId":"已有ID","name":"名称","x":0,"z":0,"rotationYDeg":0,"scale":1}。',
     '大量植被、岩石等重复物体必须优先使用 scatters，让代码生成坐标。scatters 每项格式：{"assetIds":["已有ID"],"region":{"kind":"circle","x":0,"z":0,"r":20},"density":0.04,"avoidWater":1,"maxSlope":30,"minSpacing":2,"scaleRange":[0.8,1.2],"seed":7}。',
     '若用户写了雾、光照、素描等氛围词，只放入 renderPromptSuggestions，不要用它改变地图。',
@@ -869,7 +1225,7 @@ function normalizeAssetRequests(
   maxCount: number,
   selectedMode: ModelGenerationMode
 ): AssetGenerationRequest[] {
-  if (!Array.isArray(value)) return [];
+  if (!Array.isArray(value) || maxCount <= 0) return [];
   const requests: AssetGenerationRequest[] = [];
   const seen = new Set<string>();
   for (const item of value) {
@@ -949,4 +1305,12 @@ function optionalNumber(value: unknown, fallback: number): number {
 
 function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value));
+}
+
+function descendingLevels(levels: number[]): number[] {
+  let previous = Number.POSITIVE_INFINITY;
+  return levels.map((level) => {
+    previous = Math.min(previous, level);
+    return previous;
+  });
 }

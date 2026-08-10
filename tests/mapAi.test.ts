@@ -4,6 +4,7 @@ import {
   createMapObject,
   getMapBounds,
   MAP_SIZE_PRESETS,
+  sampleTerrainHeight,
   type MapAsset
 } from '../src/shared/map';
 import { applyMapOperations } from '../src/shared/mapOperations';
@@ -13,6 +14,7 @@ import {
   runMapAgent
 } from '../src/server/mapAi';
 import { planLimits } from '../src/shared/mapPlanning';
+import { isSpawnPositionSafe } from '../src/shared/mapSpawnSafety';
 
 const assets: MapAsset[] = [
   testAsset('asset-tree', 'Pine tree', ['tree', 'vegetation'], 'large'),
@@ -26,13 +28,19 @@ describe('map AI adapter', () => {
       summary: 'terrain',
       terrainGeneration: { preset: 'valley', amplitude: 5, roughness: 0.6 },
       terrain: [{ mode: 'raise', x: 0, z: 0, size: 2, strength: 0.3 }],
-      waters: [{ type: 'lake', points: [[-2, -2], [2, -2], [2, 2], [-2, 2]] }],
+      waters: [{
+        type: 'lake', points: [[-2, -2], [2, -2], [2, 2], [-2, 2]],
+        shorelineSmoothness: 0.9, shorelineIrregularity: 0.2, seed: 17
+      }],
       spawn: { x: 0, z: 4 }
     }), map, []);
     const spatialTypes = suggestion.operations
       .map((operation) => operation.type)
       .filter((type) => type !== 'map.update');
     expect(spatialTypes.slice(0, 3)).toEqual(['terrain.generate', 'terrain.brush', 'water.add']);
+    expect(suggestion.operations.find((operation) => operation.type === 'water.add')).toMatchObject({
+      water: { shorelineSmoothness: 0.9, shorelineIrregularity: 0.2, seed: 17 }
+    });
   });
 
   it('normalizes reusable terrain modifiers and surfaces independently of the base preset', () => {
@@ -99,13 +107,24 @@ describe('map AI adapter', () => {
     const suggestion = normalizeMapSuggestion(JSON.stringify({
       summary: '树少一点，湖面更高',
       objectRemovals: [{ assetId: 'asset-tree', count: 2, seed: 7 }],
-      waterUpdates: [{ waterId: 'lake-1', level: 0.6 }]
+      waterUpdates: [{
+        waterId: 'lake-1',
+        level: 0.6,
+        shorelineSmoothness: 0.9,
+        shorelineIrregularity: 0.22,
+        seed: 11
+      }]
     }), map, assets, 'refine');
     const refined = applyMapOperations(map, suggestion.operations);
 
     expect(suggestion.operations.filter((operation) => operation.type === 'object.remove')).toHaveLength(2);
     expect(refined.objects).toHaveLength(3);
     expect(refined.waterBodies[0]?.level).toBe(0.6);
+    expect(refined.waterBodies[0]).toMatchObject({
+      shorelineSmoothness: 0.9,
+      shorelineIrregularity: 0.22,
+      seed: 11
+    });
   });
 
   it('bounds refine operations to one visual zone and preserves locked zone fields', () => {
@@ -137,6 +156,74 @@ describe('map AI adapter', () => {
     expect(refined.visualSemantics.zones[0]).toMatchObject({ radius: 5, intensity: 0.4 });
   });
 
+  it('restricts the global base-terrain pass to one shared height field', () => {
+    const map = createEmptyMap('base terrain', 'map-base-terrain');
+    const suggestion = normalizeMapSuggestion(JSON.stringify({
+      summary: 'shared hills',
+      terrainGeneration: { preset: 'hills', amplitude: 5 },
+      terrainModifiers: [{ modifier: 'dune', region: { kind: 'circle', x: 0, z: 0, radius: 8 } }],
+      objects: [{ assetId: 'asset-tree', x: 0, z: 0 }],
+      renderPromptSuggestions: ['misty']
+    }), map, assets, 'refine', undefined, undefined, true);
+
+    expect(suggestion.operations.map((operation) => operation.type)).toEqual(['terrain.generate']);
+  });
+
+  it('retries once when the global base-terrain response omits terrain generation', async () => {
+    const fetchImpl = vi.fn()
+      .mockResolvedValueOnce(chatResponse({ summary: 'no terrain yet', renderPromptSuggestions: ['misty'] }))
+      .mockResolvedValueOnce(chatResponse({
+        summary: 'shared valley',
+        terrainGeneration: { preset: 'valley', amplitude: 5, roughness: 0.5 }
+      }));
+
+    const suggestion = await runMapAgent('a shared valley base', createEmptyMap(), [], {
+      apiBase: 'https://example.test', provider: 'gpt', fetchImpl, createAsset: vi.fn(),
+      mode: 'refine', baseTerrainOnly: true, minNewAssets: 0, maxNewAssets: 0
+    });
+
+    expect(fetchImpl).toHaveBeenCalledTimes(2);
+    expect(suggestion.operations.some((operation) => operation.type === 'terrain.generate')).toBe(true);
+  });
+
+  it('regenerates one ecology region with terrain overlap at its shared boundary', () => {
+    const map = createEmptyMap('regions', 'map-regions');
+    map.layout.regions = [{
+      id: 'left', name: 'Left', prompt: 'forest', groupId: null, color: '#49a078',
+      points: [[-24, -24], [0, -24], [0, 24], [-24, 24]],
+      boundaryLocked: false, contentLocked: false
+    }, {
+      id: 'right', name: 'Right', prompt: 'desert', groupId: null, color: '#db8a4b',
+      points: [[0, -24], [24, -24], [24, 24], [0, 24]],
+      boundaryLocked: false, contentLocked: false
+    }];
+    const old = { ...createMapObject('old tree', 'asset-tree'), id: 'old-tree' };
+    old.transform.position = [-8, 0, 0];
+    old.generation = { kind: 'region', id: 'left', generationId: 'old-generation' };
+    map.objects = [old];
+
+    const suggestion = normalizeMapSuggestion(JSON.stringify({
+      summary: 'replace left',
+      renderPromptSuggestions: ['global style must not change'],
+      objectRemovals: [{ objectIds: ['old-tree'] }],
+      terrain: [{ mode: 'raise', x: -1, z: 0, size: 5, strength: 1 }],
+      terrainModifiers: [{ modifier: 'dune', region: { kind: 'circle', x: -1, z: 0, radius: 5 } }],
+      waters: [{ type: 'lake', points: [[-3, -3], [2, -3], [-3, 2]] }],
+      objects: [{ assetId: 'asset-tree', x: -10, z: 0 }]
+    }), map, assets, 'refine', undefined, 'left');
+
+    expect(suggestion.operations.filter((operation) => operation.type === 'object.remove')).toHaveLength(1);
+    expect(suggestion.operations.some((operation) => operation.type === 'map.update')).toBe(false);
+    expect(suggestion.operations.some((operation) => operation.type === 'terrain.brush')).toBe(true);
+    expect(suggestion.operations.some((operation) => operation.type === 'terrain.modify')).toBe(true);
+    expect(suggestion.operations.some((operation) => operation.type === 'water.add')).toBe(false);
+    expect(suggestion.operations.find((operation) => operation.type === 'object.add')).toEqual(expect.objectContaining({
+      object: expect.objectContaining({ generation: expect.objectContaining({ kind: 'region', id: 'left' }) })
+    }));
+    const applied = applyMapOperations(map, suggestion.operations);
+    expect(sampleTerrainHeight(applied, 1, 0)).toBeGreaterThan(0);
+  });
+
   it('expands scatter intent into final object operations', () => {
     const map = createEmptyMap('scatter', 'map-ai-scatter');
     const suggestion = normalizeMapSuggestion(JSON.stringify({
@@ -161,6 +248,38 @@ describe('map AI adapter', () => {
     expect(objectOperations.length).toBeGreaterThan(0);
     expect(objectOperations.length).toBeLessThanOrEqual(planLimits(getMapBounds(map)).objectCount);
     expect(suggestion.operations.some((operation) => (operation as { type: string }).type === 'scatter')).toBe(false);
+  });
+
+  it.each([
+    ['radius alias', { kind: 'circle', x: -12, z: 0, radius: 8 }],
+    ['polygon region', { kind: 'polygon', points: [[-22, -12], [-2, -12], [-2, 12], [-22, 12]] }],
+    ['path region', { kind: 'path', points: [[-20, -8], [-8, 0], [-4, 10]], width: 5 }],
+    ['omitted region', undefined]
+  ])('normalizes the %s scatter form inside a targeted ecology region', (_label, region) => {
+    const map = createEmptyMap('region scatter', 'map-region-scatter');
+    map.layout.regions = [{
+      id: 'left', name: 'Left', prompt: 'forest', groupId: null, color: '#49a078',
+      points: [[-24, -24], [0, -24], [0, 24], [-24, 24]],
+      boundaryLocked: false, contentLocked: false
+    }, {
+      id: 'right', name: 'Right', prompt: 'desert', groupId: null, color: '#db8a4b',
+      points: [[0, -24], [24, -24], [24, 24], [0, 24]],
+      boundaryLocked: false, contentLocked: false
+    }];
+    const suggestion = normalizeMapSuggestion(JSON.stringify({
+      summary: 'fill the left region',
+      scatters: [{
+        assetIds: ['asset-tree'],
+        ...(region ? { region } : {}),
+        density: 0.04,
+        minSpacing: 2,
+        seed: 13
+      }]
+    }), map, assets, 'refine', undefined, 'left');
+    const additions = suggestion.operations.filter((operation) => operation.type === 'object.add');
+
+    expect(additions.length).toBeGreaterThan(0);
+    expect(additions.every((operation) => (operation.object.transform?.position?.[0] ?? 1) <= 0)).toBe(true);
   });
 
   it('keeps spacing between placements from separate scatter plans', () => {
@@ -199,6 +318,7 @@ describe('map AI adapter', () => {
   });
 
   it('moves a requested spawn away from water and placed objects', () => {
+    const map = createEmptyMap('safe spawn', 'map-safe-spawn');
     const suggestion = normalizeMapSuggestion(JSON.stringify({
       waters: [{
         type: 'lake',
@@ -206,12 +326,13 @@ describe('map AI adapter', () => {
       }],
       objects: [{ assetId: 'asset-tree', x: 0, z: 0 }],
       spawn: { x: 0, z: 0 }
-    }), createEmptyMap('safe spawn', 'map-safe-spawn'), assets);
+    }), map, assets);
     const spawn = suggestion.operations.find((operation) => operation.type === 'reference.set');
 
     expect(spawn?.type).toBe('reference.set');
     if (spawn?.type !== 'reference.set') throw new Error('missing spawn');
-    expect(Math.hypot(spawn.point[0], spawn.point[2])).toBeGreaterThan(4.5);
+    const preview = applyMapOperations(map, suggestion.operations);
+    expect(isSpawnPositionSafe(preview, spawn.point[0], spawn.point[2])).toBe(true);
   });
 
   it('converts a bounded plan into the shared MapOperation protocol', () => {
@@ -332,6 +453,91 @@ describe('map AI adapter', () => {
       'validating',
       'complete'
     ]));
+  });
+
+  it('retries a refine plan once when it misses the requested minimum new assets', async () => {
+    const fetchImpl = vi.fn()
+      .mockResolvedValueOnce(chatResponse({ summary: 'too few', assetRequests: [], terrain: [{ mode: 'raise', x: 0, z: 0 }] }))
+      .mockResolvedValueOnce(chatResponse({
+        summary: 'request one',
+        assetRequests: [{ name: 'Pine', prompt: 'one reusable pine tree', tags: ['tree'] }],
+        terrain: [{ mode: 'raise', x: 0, z: 0 }]
+      }))
+      .mockResolvedValueOnce(chatResponse({
+        summary: 'place generated asset',
+        assetRequests: [],
+        objects: [{ assetId: 'asset-new-pine', x: 0, z: 0 }]
+      }));
+    const createAsset = vi.fn().mockResolvedValue(testAsset('asset-new-pine', 'Pine', ['tree'], 'large'));
+
+    const suggestion = await runMapAgent('add a pine', createEmptyMap(), [], {
+      apiBase: 'https://example.test', provider: 'gpt', fetchImpl, createAsset,
+      mode: 'refine', minNewAssets: 1, maxNewAssets: 2
+    });
+
+    expect(fetchImpl).toHaveBeenCalledTimes(3);
+    expect(createAsset).toHaveBeenCalledOnce();
+    expect(JSON.stringify(suggestion.operations)).toContain('asset-new-pine');
+  });
+
+  it('replans once when generated assets were not placed by the final refine pass', async () => {
+    const fetchImpl = vi.fn()
+      .mockResolvedValueOnce(chatResponse({
+        summary: 'request one',
+        assetRequests: [{ name: 'Pine', prompt: 'one reusable pine tree', tags: ['tree'] }]
+      }))
+      .mockResolvedValueOnce(chatResponse({
+        summary: 'terrain only by mistake',
+        assetRequests: [],
+        terrain: [{ mode: 'raise', x: 0, z: 0 }]
+      }))
+      .mockResolvedValueOnce(chatResponse({
+        summary: 'place generated asset',
+        assetRequests: [],
+        objects: [{ assetId: 'asset-new-pine', x: 0, z: 0 }]
+      }));
+    const createAsset = vi.fn().mockResolvedValue(testAsset('asset-new-pine', 'Pine', ['tree'], 'large'));
+
+    const suggestion = await runMapAgent('add a pine', createEmptyMap(), [], {
+      apiBase: 'https://example.test', provider: 'gpt', fetchImpl, createAsset,
+      mode: 'refine', minNewAssets: 0, maxNewAssets: 2
+    });
+
+    expect(fetchImpl).toHaveBeenCalledTimes(3);
+    expect(JSON.stringify(suggestion.operations)).toContain('asset-new-pine');
+  });
+
+  it('deterministically places generated assets inside the target region when the retry still omits them', async () => {
+    const map = createEmptyMap('regions', 'map-region-fallback');
+    map.layout.regions = [{
+      id: 'left', name: 'Left', prompt: 'forest', groupId: null, color: '#49a078',
+      points: [[-24, -24], [0, -24], [0, 24], [-24, 24]],
+      boundaryLocked: false, contentLocked: false
+    }, {
+      id: 'right', name: 'Right', prompt: 'desert', groupId: null, color: '#db8a4b',
+      points: [[0, -24], [24, -24], [24, 24], [0, 24]],
+      boundaryLocked: false, contentLocked: false
+    }];
+    const fetchImpl = vi.fn()
+      .mockResolvedValueOnce(chatResponse({
+        assetRequests: [{ name: 'Pine', prompt: 'one reusable pine tree', tags: ['tree'] }]
+      }))
+      .mockResolvedValueOnce(chatResponse({ terrain: [{ mode: 'raise', x: -10, z: 0 }] }))
+      .mockResolvedValueOnce(chatResponse({ terrain: [{ mode: 'raise', x: -10, z: 0 }] }));
+    const createAsset = vi.fn().mockResolvedValue(testAsset('asset-new-pine', 'Pine', ['tree'], 'small'));
+
+    const suggestion = await runMapAgent('add a pine forest', map, [], {
+      apiBase: 'https://example.test', provider: 'gpt', fetchImpl, createAsset,
+      mode: 'refine', minNewAssets: 0, maxNewAssets: 2, targetRegionId: 'left'
+    });
+    const placement = suggestion.operations.find((operation) => (
+      operation.type === 'object.add' && operation.object.assetId === 'asset-new-pine'
+    ));
+
+    expect(placement?.type).toBe('object.add');
+    if (placement?.type !== 'object.add') throw new Error('missing deterministic placement');
+    expect(placement.object.transform?.position?.[0]).toBeLessThanOrEqual(0);
+    expect(placement.object.generation).toMatchObject({ kind: 'region', id: 'left' });
   });
 
   it('generates a fresh asset by default even when an old asset has matching broad tags', async () => {

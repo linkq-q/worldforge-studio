@@ -8,7 +8,11 @@ import {
   sampleTerrainHeight
 } from '../src/shared/map';
 import { applyMapOperations } from '../src/shared/mapOperations';
-import { TERRAIN_CAPABILITIES, generateTerrainInPlace } from '../src/shared/terrainGeneration';
+import {
+  applyTerrainModifierInPlace,
+  TERRAIN_CAPABILITIES,
+  generateTerrainInPlace
+} from '../src/shared/terrainGeneration';
 
 describe('deterministic terrain generation', () => {
   it('derives a stable global seed for legacy maps', () => {
@@ -49,6 +53,7 @@ describe('deterministic terrain generation', () => {
     expect(TERRAIN_CAPABILITIES.map((item) => item.id)).toEqual(expect.arrayContaining([
       'base.cliff-plateau',
       'base.dune-desert',
+      'modifier.mountain',
       'modifier.cliff',
       'modifier.terrace',
       'modifier.dune',
@@ -82,6 +87,24 @@ describe('deterministic terrain generation', () => {
     expect(Math.abs(sampleTerrainHeight(result, 10, 0) - sampleTerrainHeight(result, 6, 0))).toBeGreaterThan(4);
     expect(deriveTerrainCliffSegments(result).length).toBeGreaterThan(0);
     expect(getTerrainCliffAabbs(result).length).toBeGreaterThan(0);
+  });
+
+  it('builds a soft multi-peak mountain range instead of one uniform ridge', () => {
+    const map = createEmptyMap('mountain range', 'terrain-mountain-range');
+    applyTerrainModifierInPlace(map, {
+      modifier: 'mountain',
+      region: { kind: 'path', points: [[-20, 0], [20, 0]], width: 18 },
+      amplitude: 8,
+      softness: 0.75,
+      variation: 0.7,
+      seed: 29
+    });
+    const peaks = [-16, -8, 0, 8, 16].map((x) => sampleTerrainHeight(map, x, 0));
+    const shoulders = [-12, 0, 12].map((x) => sampleTerrainHeight(map, x, 5));
+
+    expect(Math.max(...peaks) - Math.min(...peaks)).toBeGreaterThan(1);
+    expect(Math.min(...shoulders)).toBeGreaterThan(0.4);
+    expect(sampleTerrainHeight(map, 0, 11)).toBeLessThan(sampleTerrainHeight(map, 0, 5));
   });
 
   it('adds sand semantics for the desert base and an ocean for island bases', () => {

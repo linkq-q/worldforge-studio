@@ -25,6 +25,7 @@ import {
 import type { RenderScheme } from '../shared/renderScheme';
 import type { RenderPlan } from '../shared/renderPlan';
 import { runMapAgent } from './mapAi';
+import { generateMapLayoutSuggestion } from './mapLayoutAi';
 import { generateMapAssetWithRetry } from './mapAssetGenerationRetry';
 import { generateModel } from './modelApi';
 import {
@@ -40,6 +41,7 @@ import {
   decodeWorldForgeTransfer,
   replaceRenderSchemeHdriFile
 } from '../shared/scenePackage';
+import { retuneMapStitchSeam, stitchMaps, type MapStitchDirection, type MapStitchSeamPatch } from '../shared/mapStitch';
 
 type Req = http.IncomingMessage;
 type Res = http.ServerResponse;
@@ -251,6 +253,86 @@ async function handleEditorMaps(req: Req, res: Res, store: MapStore, parts: stri
     return;
   }
 
+  if (parts[4] === 'layout' && req.method === 'POST' && parts.length === 5) {
+    const body = await readJson<{ prompt?: string; provider?: ChatProvider }>(req);
+    const prompt = body.prompt?.trim();
+    if (!prompt) throw new HttpError(400, 'missing_layout_prompt');
+    const provider = body.provider ?? 'gpt';
+    const option = CHAT_PROVIDER_OPTIONS.find((item) => item.key === provider);
+    if (!option || option.disabled) throw new HttpError(400, 'provider_unavailable');
+    const controller = new AbortController();
+    const stream = acceptsEventStream(req);
+    if (stream) beginSse(res);
+    const onProgress = stream
+      ? (event: AgentProgressEvent) => sendSse(res, 'progress', event)
+      : undefined;
+    const abort = () => controller.abort();
+    const abortIfOpen = () => {
+      if (!res.writableEnded) abort();
+    };
+    req.once('aborted', abort);
+    res.once('close', abortIfOpen);
+    try {
+      const suggestion = await generateMapLayoutSuggestion(prompt, await store.loadMap(mapId), {
+        provider,
+        signal: controller.signal,
+        onProgress
+      });
+      if (stream) {
+        sendSse(res, 'result', { suggestion });
+        res.end();
+      } else {
+        sendJson(res, 200, { suggestion });
+      }
+    } finally {
+      req.off('aborted', abort);
+      res.off('close', abortIfOpen);
+    }
+    return;
+  }
+
+  if (parts[4] === 'stitch' && req.method === 'POST' && parts.length === 5) {
+    const body = await readJson<{
+      sourceMapId?: string;
+      name?: string;
+      direction?: MapStitchDirection;
+      mode?: 'contact' | 'corridor';
+      width?: number;
+      irregularity?: number;
+      seed?: number;
+      prompt?: string;
+    }>(req);
+    if (!body.sourceMapId || body.sourceMapId === mapId) throw new HttpError(400, 'invalid_stitch_source');
+    const [primary, secondary] = await Promise.all([store.loadMap(mapId), store.loadMap(body.sourceMapId)]);
+    const primarySources = new Set([primary.id, ...primary.layout.stitchSources.map((source) => source.mapId)]);
+    const secondarySources = new Set([secondary.id, ...secondary.layout.stitchSources.map((source) => source.mapId)]);
+    if ([...primarySources].some((id) => secondarySources.has(id))) {
+      throw new HttpError(409, 'duplicate_stitch_source');
+    }
+    const combined = stitchMaps(primary, secondary, body);
+    let saved = await store.importMap(combined);
+    saved = await store.replaceMap(saved.id, { ...saved, name: combined.name });
+    sendJson(res, 201, { map: saved });
+    return;
+  }
+
+  if (parts[4] === 'seams' && req.method === 'PATCH' && parts.length === 6) {
+    const seamId = parts[5];
+    const body = await readJson<MapStitchSeamPatch>(req);
+    const map = await store.loadMap(mapId);
+    const seam = map.layout.seams.find((item) => item.id === seamId);
+    if (!seam) throw new HttpError(404, 'unknown_stitch_seam');
+    const [firstSource, secondSource] = await Promise.all(seam.sourceMapIds.map((id) => store.loadMap(id)));
+    const sourceVersions = new Map(map.layout.stitchSources.map((source) => [source.mapId, source.version]));
+    if (sourceVersions.get(firstSource.id) !== firstSource.version
+      || sourceVersions.get(secondSource.id) !== secondSource.version) {
+      throw new HttpError(409, 'stitch_seam_source_changed');
+    }
+    const updated = retuneMapStitchSeam(map, firstSource, secondSource, seamId, body);
+    sendJson(res, 200, { map: await store.replaceMap(mapId, updated) });
+    return;
+  }
+
   if ((parts[4] === 'generate' || parts[4] === 'refine') && req.method === 'POST' && parts.length === 5) {
     const body = await readJson<{
       prompt?: string;
@@ -258,8 +340,11 @@ async function handleEditorMaps(req: Req, res: Res, store: MapStore, parts: stri
       baseOperations?: MapOperation[];
       reuseExistingAssets?: boolean;
       assetLibraryId?: string;
+      minNewAssets?: number;
       maxNewAssets?: number;
       targetVisualZoneId?: string;
+      targetRegionId?: string;
+      baseTerrainOnly?: boolean;
     }>(req);
     const prompt = body.prompt?.trim();
     if (!prompt) throw new HttpError(400, 'missing_prompt');
@@ -304,8 +389,11 @@ async function handleEditorMaps(req: Req, res: Res, store: MapStore, parts: stri
           mode: parts[4] === 'refine' ? 'refine' : 'generate',
           reuseExistingAssets: body.reuseExistingAssets === true,
           reusableAssetIds: libraryAssets.map((asset) => asset.id),
-          maxNewAssets: body.maxNewAssets,
+          minNewAssets: body.baseTerrainOnly ? 0 : body.minNewAssets,
+          maxNewAssets: body.baseTerrainOnly ? 0 : body.maxNewAssets,
           targetVisualZoneId: parts[4] === 'refine' ? body.targetVisualZoneId : undefined,
+          targetRegionId: parts[4] === 'refine' ? body.targetRegionId : undefined,
+          baseTerrainOnly: parts[4] === 'refine' && body.baseTerrainOnly === true,
           onProgress,
           createAsset: async (request) => {
             const modelJson = await generateMapAssetWithRetry(request.name, () => generateModel(request.prompt, {

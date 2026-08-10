@@ -38,7 +38,8 @@ export async function generateMapAssetWithRetry<T>(
     }
   }
 
-  throw lastError instanceof Error ? lastError : new Error(String(lastError ?? 'asset_generation_failed'));
+  const detail = lastError instanceof Error ? lastError.message : String(lastError ?? 'asset_generation_failed');
+  throw new Error(`map_asset_generation_failed:${name.replaceAll(':', '：')}:${detail}`);
 }
 
 function abortableDelay(milliseconds: number, signal?: AbortSignal): Promise<void> {

@@ -1,6 +1,6 @@
 import type { EditableMap, MapAsset } from '../shared/map';
 import type { MapAiSuggestion } from '../shared/mapOperations';
-import { normalizeMapAiMaxNewAssets } from '../shared/mapPlanning';
+import { normalizeMapAiNewAssetRange } from '../shared/mapPlanning';
 import { CHAT_PROVIDER_OPTIONS, type AgentProgressEvent, type ChatProvider } from '../shared/protocol';
 import {
   ensureMinimumSceneCoverage,
@@ -17,6 +17,7 @@ import {
 } from '../shared/sceneCompositionAdvice';
 import {
   attachGeneratedSceneAssets,
+  fitSceneAssetVariantBudget,
   resolveSceneFamilies
 } from '../shared/sceneCompositionAssets';
 import { compileSceneComposition } from '../shared/sceneCompositionCompiler';
@@ -39,6 +40,7 @@ export interface MapCompositionWorkflowOptions {
   onProgress?: (event: AgentProgressEvent) => void;
   reuseExistingAssets?: boolean;
   reusableAssetIds?: readonly string[];
+  minNewAssets?: number;
   maxNewAssets?: number;
   createAsset: (request: {
     name: string;
@@ -64,7 +66,7 @@ export async function runMapCompositionWorkflow(
   const provider = options.provider ?? 'gpt';
   const providerOption = CHAT_PROVIDER_OPTIONS.find((item) => item.key === provider);
   if (!providerOption || providerOption.disabled) throw new Error('provider_unavailable');
-  const maxNewAssets = normalizeMapAiMaxNewAssets(options.maxNewAssets);
+  const assetRange = normalizeMapAiNewAssetRange(options.minNewAssets, options.maxNewAssets);
   const reusableIds = options.reusableAssetIds ? new Set(options.reusableAssetIds) : null;
   const reusableAssets = options.reuseExistingAssets
     ? assets.filter((asset) => (
@@ -79,15 +81,20 @@ export async function runMapCompositionWorkflow(
     'scene composition plan',
     buildSceneDirectorPrompt(map, reusableAssets, {
       reuseExistingAssets: options.reuseExistingAssets === true,
-      maxNewAssets
+      minNewAssets: assetRange.min,
+      maxNewAssets: assetRange.max
     }),
     cleanPrompt,
     (value) => {
       const normalized = normalizeSceneCompositionPlan(value, map);
-      return ensureMinimumSceneCoverage({
+      const budgeted = fitSceneAssetVariantBudget(ensureMinimumSceneCoverage({
         ...normalized,
         assetFamilies: normalized.assetFamilies.map((family) => ({ ...family, desiredVariants: 1 }))
-      });
+      }), assetRange.min, SCENE_COMPOSITION_LIMITS.assetFamilyCount * 3);
+      if (assetRange.min > 0 && budgeted.assetFamilies.length === 0) {
+        throw new Error('scene_asset_variant_count_below_min');
+      }
+      return budgeted;
     },
     options,
     0.45
@@ -133,7 +140,13 @@ export async function runMapCompositionWorkflow(
   }
 
   options.onProgress?.({ phase: 'resolving-assets', label: '按语义标签和地图建模模式匹配可复用资产' });
-  const initialResolution = resolveSceneFamilies(plan, map, reusableAssets, maxNewAssets);
+  const initialResolution = resolveSceneFamilies(
+    plan,
+    map,
+    reusableAssets,
+    assetRange.max,
+    assetRange.min
+  );
   const generated: Array<{ familyId: string; asset: MapAsset }> = [];
   for (const [index, gap] of initialResolution.gaps.entries()) {
     options.signal?.throwIfAborted();

@@ -12,7 +12,7 @@ import { terrainCapabilitySummary } from '../shared/terrainGeneration';
 export function buildSceneDirectorPrompt(
   map: EditableMap,
   assets: readonly MapAsset[],
-  options: { reuseExistingAssets?: boolean; maxNewAssets?: number } = {}
+  options: { reuseExistingAssets?: boolean; minNewAssets?: number; maxNewAssets?: number } = {}
 ): string {
   const bounds = getMapBounds(map);
   const limits = planLimits(bounds);
@@ -49,7 +49,7 @@ export function buildSceneDirectorPrompt(
     'A consultation may improve the plan but cannot directly create assets or map operations.',
     'Rendering is a later stage. Only provide short renderPromptSuggestions; do not choose or edit a render scheme.',
     `Map: ${map.box.size[0]} x ${map.box.size[1]} x ${map.box.size[2]}, seed ${map.seed}, default new-asset mode ${map.assetGenerationMode}.`,
-    `Execution budgets: about ${limits.objectCount} objects and at most ${options.maxNewAssets ?? limits.assetRequestCount} newly generated assets. Use one asset per semantic family; systematic family variants are not part of this phase.`,
+    `Execution budgets: about ${limits.objectCount} objects and ${options.minNewAssets ?? 0}-${options.maxNewAssets ?? limits.assetRequestCount} newly generated assets. Define enough useful families or variants to satisfy the minimum; never exceed the maximum.`,
     'Use several semantically useful asset families. Do not create near-duplicate recolors or unnecessary variants of one landmark.',
     options.reuseExistingAssets
       ? `Existing assets may be reused only when their specific identity and size fit: ${JSON.stringify(catalogAssets)}.`

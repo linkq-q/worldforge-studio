@@ -29,4 +29,13 @@ describe('map asset generation retry', () => {
     })).rejects.toMatchObject({ name: 'AbortError' });
     expect(generate).toHaveBeenCalledOnce();
   });
+
+  it('keeps the failed asset name and final cause after all retries', async () => {
+    const generate = vi.fn().mockRejectedValue(new Error('gpt: HTTP 500'));
+
+    await expect(generateMapAssetWithRetry('松树', generate, {
+      attempts: 1,
+      wait: async () => undefined
+    })).rejects.toThrow('map_asset_generation_failed:松树:gpt: HTTP 500');
+  });
 });
