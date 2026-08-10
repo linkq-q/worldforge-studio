@@ -40,6 +40,25 @@ const U_BOUNDS_MIN = 'uEffLayerBoundsMin';
 const U_BOUNDS_SIZE = 'uEffLayerBoundsSize';
 const U_OBJECT_PHASE = 'uEffLayerObjectPhase';
 
+const EFFECT_WORLD_VARYINGS = `{
+vec4 effLayerWorldPosition = vec4(transformed, 1.0);
+vec3 effLayerWorldNormal = objectNormal;
+#ifdef USE_BATCHING
+effLayerWorldPosition = batchingMatrix * effLayerWorldPosition;
+mat3 batchingNormalMatrix = mat3(batchingMatrix);
+effLayerWorldNormal /= vec3(dot(batchingNormalMatrix[0], batchingNormalMatrix[0]), dot(batchingNormalMatrix[1], batchingNormalMatrix[1]), dot(batchingNormalMatrix[2], batchingNormalMatrix[2]));
+effLayerWorldNormal = batchingNormalMatrix * effLayerWorldNormal;
+#endif
+#ifdef USE_INSTANCING
+effLayerWorldPosition = instanceMatrix * effLayerWorldPosition;
+mat3 instanceNormalMatrix = mat3(instanceMatrix);
+effLayerWorldNormal /= vec3(dot(instanceNormalMatrix[0], instanceNormalMatrix[0]), dot(instanceNormalMatrix[1], instanceNormalMatrix[1]), dot(instanceNormalMatrix[2], instanceNormalMatrix[2]));
+effLayerWorldNormal = instanceNormalMatrix * effLayerWorldNormal;
+#endif
+${V_WORLD_POS} = (modelMatrix * effLayerWorldPosition).xyz;
+${V_WORLD_NORMAL} = normalize(inverseTransformDirection(normalMatrix * effLayerWorldNormal, viewMatrix));
+}`;
+
 // patch order：> ShaderLibrary pbrOverlay(100)，确保 FresnelRim 的 gl_FragColor 叠加在 cartoon 覆写之后
 function patchOrderForStage(stage) {
   return stage === 'base' || stage === 'surface' ? 50 : 200;
@@ -161,8 +180,7 @@ function makePatchFn(layer, uniformsObj) {
     // 3) 世界空间计算（vertex，begin_vertex 后；transformed + objectNormal 就绪）
     //    + Layer 自定义 vertex body（FresnelRim 为空）
     const worldCalc = `${BEGIN_VERTEX_INCLUDE}
-${V_WORLD_POS} = (modelMatrix * vec4(transformed, 1.0)).xyz;
-${V_WORLD_NORMAL} = mat3(modelMatrix) * objectNormal;
+${EFFECT_WORLD_VARYINGS}
 ${V_LOCAL_POS} = transformed;${vertexBody ? `\n${vertexBody}` : ''}`;
     shader.vertexShader = shader.vertexShader.replace(BEGIN_VERTEX_INCLUDE, worldCalc);
 
@@ -388,8 +406,7 @@ function makeVariantPatchFn(descriptor, uniformsObj) {
 
     // 世界空间计算 + 合并的 vertex body
     const worldCalc = `${BEGIN_VERTEX_INCLUDE}
-${V_WORLD_POS} = (modelMatrix * vec4(transformed, 1.0)).xyz;
-${V_WORLD_NORMAL} = mat3(modelMatrix) * objectNormal;
+${EFFECT_WORLD_VARYINGS}
 ${V_LOCAL_POS} = transformed;${vertexBody ? `\n${vertexBody}` : ''}`;
     shader.vertexShader = shader.vertexShader.replace(BEGIN_VERTEX_INCLUDE, worldCalc);
 

@@ -273,6 +273,63 @@ describe('scene composition contract', () => {
     expect(applied.objects.some((object) => object.assetId === cabin.id)).toBe(true);
   });
 
+  it('keeps a generated required landmark when its requested zone is too close to the map edge', () => {
+    const map = createEmptyMap('Landmark edge guard', 'map-landmark-edge', [96, 16, 96], 'voxel');
+    const plan = normalizeSceneCompositionPlan({
+      version: 1,
+      summary: 'A giant luminous tree anchors the forest edge.',
+      globalBrief: {
+        spatialTheme: 'edge sanctuary',
+        visualHierarchy: 'the luminous tree is the focus',
+        assetArtDirection: 'voxel fantasy',
+        focalZoneId: 'sanctuary',
+        terrainBase: { preset: 'plain', seed: 11, amplitude: 0, roughness: 0 }
+      },
+      intentRequirements: [{
+        id: 'glowing-ancient-tree', kind: 'asset-family', description: 'required landmark',
+        targetZoneId: 'sanctuary', familyId: 'glowing-ancient-tree', minCount: 1
+      }],
+      zones: [{
+        id: 'sanctuary', label: 'Sanctuary', role: 'primary', importance: 1,
+        region: { kind: 'circle', center: [1, 1], radius: 0.05 },
+        brief: { atmosphere: 'luminous', hierarchy: 'single landmark', openness: 0.8, transitionIntent: 'hard edge' },
+        terrain: { elevation: 0, roughness: 0, flatness: 1 },
+        layers: [{
+          familyId: 'glowing-ancient-tree', density: 0.01, scaleRange: [1, 1],
+          distribution: 'accent', edgeFalloff: 0
+        }],
+        grassLayers: [], excludeZoneIds: []
+      }],
+      transitions: [],
+      assetFamilies: [{
+        id: 'glowing-ancient-tree', label: 'Giant luminous ancient tree', role: 'landmark',
+        tags: ['ancient-tree', 'luminous-bark'], sizeClass: 'large', desiredVariants: 1,
+        priority: 1, generationBrief: 'one giant luminous tree'
+      }],
+      grassFamilies: [], consultations: [], renderPromptSuggestions: []
+    }, map);
+    const landmark = asset(
+      'generated-landmark',
+      'Giant luminous ancient tree',
+      ['ancient-tree', 'luminous-bark'],
+      'large',
+      'voxel'
+    );
+    landmark.footprintRadius = 8.15;
+    const resolved = resolveSceneFamilies(plan, map, [landmark], 0).families;
+    const compiled = compileSceneComposition(map, plan, resolved);
+
+    const outcome = ensureSceneCompositionOutcome(map, plan, resolved, compiled);
+    const repeated = ensureSceneCompositionOutcome(map, plan, resolved, compiled);
+    const applied = applyMapOperations(map, outcome.compiled.operations);
+    const placed = applied.objects.find((object) => object.assetId === landmark.id);
+
+    expect(repeated).toEqual(outcome);
+    expect(placed).toBeDefined();
+    expect(Math.abs(placed!.transform.position[0])).toBeLessThanOrEqual(48 - 8.15 * placed!.transform.scale[0]);
+    expect(Math.abs(placed!.transform.position[2])).toBeLessThanOrEqual(48 - 8.15 * placed!.transform.scale[2]);
+  });
+
   it('recovers a sparse forest when the director misclassifies repeatable trees as accents', () => {
     const map = createEmptyMap('Sparse forest', 'map-sparse-forest', [96, 16, 96], 'voxel-pro');
     const input = structuredClone(planInput()) as {

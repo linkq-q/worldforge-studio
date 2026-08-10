@@ -285,25 +285,27 @@ function requiredFamilyRepairs(
 ): MapOperation[] {
   const resolved = resolvedFamilies.find((entry) => entry.family.id === requirement.familyId);
   if (!resolved || resolved.assets.length === 0) return [];
-  const zone = plan.zones.find((item) => item.id === requirement.targetZoneId)
-    ?? plan.zones.find((item) => item.layers.some((layer) => layer.familyId === requirement.familyId))
-    ?? plan.zones.find((item) => item.id === plan.globalBrief.focalZoneId);
-  if (!zone) return [];
-  const region = sceneZoneWorldRegion(zone, baseMap);
-  const footprint = Math.max(...resolved.assets.map((asset) => asset.footprintRadius ?? 0.5));
-  return expandMapScatter(candidate, {
-    assetIds: resolved.assets.map((asset) => asset.id),
-    region: { kind: 'circle', ...region },
-    density: 0.04,
-    avoidWater: 0.8,
-    maxSlope: 34,
-    minSpacing: Math.max(0.8, footprint * 1.5),
-    scaleRange: [0.9, 1.1],
-    seed: hashSeed(baseMap.seed, requirement.id),
-    edgeFalloff: 0.15,
-    clusterStrength: 0
-  }, resolved.assets as MapAsset[], Math.min(missing, planLimits(getMapBounds(baseMap)).objectCount), `required-${requirement.id}`)
-    .map((placement): MapOperation => ({
+  const footprint = Math.max(...resolved.assets.map((asset) => asset.footprintRadius ?? 0.5)) * 1.1;
+  const regions = requiredPlacementRegions(baseMap, plan, requirement, footprint);
+  const operations: MapOperation[] = [];
+  let workingMap = candidate;
+  let remaining = Math.min(missing, planLimits(getMapBounds(baseMap)).objectCount);
+
+  for (const [regionIndex, region] of regions.entries()) {
+    if (remaining <= 0) break;
+    const placements = expandMapScatter(workingMap, {
+      assetIds: resolved.assets.map((asset) => asset.id),
+      region: { kind: 'circle', ...region },
+      density: 0.25,
+      avoidWater: 0.8,
+      maxSlope: 34,
+      minSpacing: 0.8,
+      scaleRange: [0.9, 1.1],
+      seed: hashSeed(baseMap.seed, `${requirement.id}:${regionIndex}`),
+      edgeFalloff: 0,
+      clusterStrength: 0
+    }, resolved.assets as MapAsset[], remaining, `required-${requirement.id}-${regionIndex}`);
+    const placementOperations = placements.map((placement): MapOperation => ({
       type: 'object.add',
       object: {
         id: placement.id,
@@ -316,6 +318,60 @@ function requiredFamilyRepairs(
         }
       }
     }));
+    operations.push(...placementOperations);
+    workingMap = applyMapOperations(workingMap, placementOperations);
+    remaining -= placementOperations.length;
+  }
+  return operations;
+}
+
+function requiredPlacementRegions(
+  map: EditableMap,
+  plan: SceneCompositionPlan,
+  requirement: SceneIntentRequirement,
+  footprint: number
+): Array<{ x: number; z: number; r: number }> {
+  const preferredZones = [
+    plan.zones.find((zone) => zone.id === requirement.targetZoneId),
+    ...plan.zones.filter((zone) => zone.layers.some((layer) => layer.familyId === requirement.familyId)),
+    plan.zones.find((zone) => zone.id === plan.globalBrief.focalZoneId),
+    ...[...plan.zones]
+      .filter((zone) => !zone.water && zone.role !== 'negative-space')
+      .sort((left, right) => right.importance - left.importance)
+  ].filter((zone): zone is SceneCompositionPlan['zones'][number] => Boolean(zone));
+  const seen = new Set<string>();
+  const regions = preferredZones.flatMap((zone) => {
+    if (seen.has(zone.id)) return [];
+    seen.add(zone.id);
+    const fitted = fitRequiredRegion(map, sceneZoneWorldRegion(zone, map), footprint);
+    return fitted ? [fitted] : [];
+  });
+  const bounds = getMapBounds(map);
+  const mapRegion = fitRequiredRegion(map, {
+    x: (bounds.minX + bounds.maxX) / 2,
+    z: (bounds.minZ + bounds.maxZ) / 2,
+    r: Math.min(bounds.maxX - bounds.minX, bounds.maxZ - bounds.minZ) / 2
+  }, footprint);
+  return mapRegion ? [...regions, mapRegion] : regions;
+}
+
+function fitRequiredRegion(
+  map: EditableMap,
+  region: { x: number; z: number; r: number },
+  footprint: number
+): { x: number; z: number; r: number } | null {
+  const bounds = getMapBounds(map);
+  const maximumRadius = Math.min(
+    (bounds.maxX - bounds.minX) / 2 - footprint,
+    (bounds.maxZ - bounds.minZ) / 2 - footprint
+  );
+  if (maximumRadius <= 0) return null;
+  const r = Math.min(region.r, maximumRadius);
+  return {
+    x: clamp(region.x, bounds.minX + footprint + r, bounds.maxX - footprint - r),
+    z: clamp(region.z, bounds.minZ + footprint + r, bounds.maxZ - footprint - r),
+    r
+  };
 }
 
 function terrainChangedCellCount(before: EditableMap, after: EditableMap): number {
@@ -332,4 +388,8 @@ function hashSeed(seed: number, value: string): number {
   let result = seed >>> 0;
   for (let index = 0; index < value.length; index += 1) result = Math.imul(result ^ value.charCodeAt(index), 16777619) >>> 0;
   return result;
+}
+
+function clamp(value: number, minimum: number, maximum: number): number {
+  return Math.min(maximum, Math.max(minimum, value));
 }
