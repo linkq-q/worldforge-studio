@@ -1,5 +1,5 @@
 import type * as THREE from 'three';
-import { buildEditableMapGroup } from './mapRenderer';
+import { buildEditableMapGroup, type MapMotionAdapter } from './mapRenderer';
 import { RenderSceneRuntime } from './renderSceneRuntime';
 import type { EditableMap } from '../shared/map';
 import type { RenderScheme } from '../shared/renderScheme';
@@ -20,6 +20,8 @@ export interface MapViewerOptions {
   pixelRatio?: number;
   /** Drive frames from your own game loop instead of `requestAnimationFrame`. */
   autoStart?: boolean;
+  /** Optional semantic-animation bridge, for example a 3d-generate adapter. */
+  motionAdapter?: MapMotionAdapter;
 }
 
 export interface MapViewer {
@@ -71,7 +73,10 @@ export async function createMapViewer(options: MapViewerOptions): Promise<MapVie
     }
     runtime.map = map;
     runtime.updateLighting();
-    const rendered = await buildEditableMapGroup(map, { scene: runtime.scene });
+    const rendered = await buildEditableMapGroup(map, {
+      scene: runtime.scene,
+      motionAdapter: options.motionAdapter
+    });
     runtime.scene.add(rendered.group);
     runtime.attach(rendered);
     runtime.applyScheme(scheme);

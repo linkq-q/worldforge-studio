@@ -333,11 +333,6 @@ export class RenderRuntimeAdapter {
     this.pendingDeltaTime = deltaTime;
     this.pendingElapsedSeconds = elapsedSeconds;
     this.atmosphereFxPass.uniforms.uTime.value = elapsedSeconds;
-    const sun = this.scene.userData.directionalLight as THREE.DirectionalLight | undefined;
-    if (sun) {
-      const projected = sun.position.clone().project(this.camera);
-      this.atmosphereFxPass.uniforms.uSunUv.value.set(projected.x * 0.5 + 0.5, projected.y * 0.5 + 0.5);
-    }
     if (this.modelsRoot) {
       this.effectRuntime.updateRuntimeUniforms(this.modelsRoot, {
         uTime: elapsedSeconds,
@@ -676,7 +671,6 @@ export class RenderRuntimeAdapter {
       || this.curvaturePass.enabled
       || needsSketchWorld
       || this.ssaoPass.enabled
-      || this.atmosphereFxPass.enabled
       || this.fogPass.enabled;
   }
 
@@ -695,10 +689,6 @@ export class RenderRuntimeAdapter {
     if (this.fogPass.enabled && depthTexture) {
       bindDistanceFogDepth(this.fogPass, depthTexture, this.camera);
     }
-    if (this.atmosphereFxPass.enabled && depthTexture) {
-      this.atmosphereFxPass.uniforms.tDepth.value = depthTexture;
-    }
-
     if (this.curvaturePass.enabled) {
       this.curvaturePass.uniforms.tNormal.value = normalTexture;
       this.curvaturePass.uniforms.tDepth.value = depthTexture;

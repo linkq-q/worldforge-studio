@@ -75,6 +75,24 @@ export interface RenderedMap {
 export interface MapRenderOptions {
   editorHelpers?: boolean;
   scene?: THREE.Scene;
+  motionAdapter?: MapMotionAdapter;
+}
+
+export interface MapMotionController {
+  update(deltaTime: number, elapsedSeconds: number): void;
+  dispose(): void;
+}
+
+/**
+ * Optional bridge for external animation systems, including 3d-generate.
+ * WorldForge owns semantic intent; the adapter owns clips, rigs, and playback.
+ */
+export interface MapMotionAdapter {
+  attach(context: {
+    object: MapObject;
+    asset: MapAsset;
+    group: THREE.Group;
+  }): MapMotionController | void | Promise<MapMotionController | void>;
 }
 
 export async function buildEditableMapGroup(input: EditableMap, options: MapRenderOptions = {}): Promise<RenderedMap> {
@@ -98,6 +116,7 @@ export async function buildEditableMapGroup(input: EditableMap, options: MapRend
   // Grass is rebuilt on its own, so it keeps its own map snapshot and style.
   let grassStyle = DEFAULT_RUNTIME_GRASS_STYLE;
   let materialElapsedSeconds = 0;
+  const motionControllers: MapMotionController[] = [];
   let grass = buildMapGrassField(grassMap);
   if (grass) root.add(grass.group);
 
@@ -129,7 +148,7 @@ export async function buildEditableMapGroup(input: EditableMap, options: MapRend
   const instancing = await buildMapPrimitiveBatches(map.objects.flatMap((object) => {
     const asset = object.visible && object.assetId ? assets.get(object.assetId) : undefined;
     const objectGroup = objectGroups.get(object.id);
-    return asset && objectGroup
+    return asset && objectGroup && !object.behavior?.animation
       ? [{ objectId: object.id, objectGroup, asset, assetTags: deriveAssetTags(asset) }]
       : [];
   }), {
@@ -139,6 +158,16 @@ export async function buildEditableMapGroup(input: EditableMap, options: MapRend
   });
   modelsRoot.add(instancing.root);
   await populateObjectVisuals(map, assets, objectGroups, instancing.handledObjectIds);
+  if (options.motionAdapter) {
+    for (const object of map.objects) {
+      if (!object.visible || !object.behavior?.animation || !object.assetId) continue;
+      const asset = assets.get(object.assetId);
+      const group = objectGroups.get(object.id);
+      if (!asset || !group) continue;
+      const controller = await options.motionAdapter.attach({ object, asset, group });
+      if (controller) motionControllers.push(controller);
+    }
+  }
   const localLights = buildMapLocalLights(map, objectGroups);
   root.add(localLights.group);
   for (const group of objectGroups.values()) {
@@ -160,6 +189,7 @@ export async function buildEditableMapGroup(input: EditableMap, options: MapRend
       sandFlow.time += deltaTime;
       syncTerrainSandShader(sandFlow);
       grass?.update(deltaTime);
+      motionControllers.forEach((controller) => controller.update(deltaTime, materialElapsedSeconds));
       instancing.updateCulling(camera, maxDistance);
       instancing.updateMaterialEffects(materialElapsedSeconds);
       localLights.update(camera);
@@ -202,6 +232,7 @@ export async function buildEditableMapGroup(input: EditableMap, options: MapRend
       rebuildGrass(next);
     },
     dispose: () => {
+      motionControllers.forEach((controller) => controller.dispose());
       grass?.dispose();
       instancing.dispose();
       disposeObject(root);

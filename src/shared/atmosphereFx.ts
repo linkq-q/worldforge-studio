@@ -2,7 +2,7 @@ import type { EditableMap } from './map';
 import type { RenderPlan } from './renderPlan';
 import { normalizeVisualDirection, type SceneVisualZone, type SceneWindField } from './visualDirection';
 
-export type AtmosphereFxKind = 'sunShafts' | 'pollen' | 'vapor' | 'dust' | 'sand' | 'windStreaks';
+export type AtmosphereFxKind = 'pollen' | 'vapor' | 'dust' | 'sand' | 'windStreaks';
 
 export interface CompiledAtmosphereFx {
   masterStrength: number;
@@ -24,12 +24,10 @@ export function compileAtmosphereFx(map: EditableMap, plan?: RenderPlan | null):
   const vaporZones = zones.filter((zone) => zone.tags.includes('water') || zone.tags.includes('lowland'));
   const dustZones = zones.filter((zone) => zone.tags.includes('dry'));
   const sandZones = map.confirmedAt ? zones.filter((zone) => zone.tags.includes('sand')) : [];
-  const daylight = direction?.timeOfDay === 'noon' || direction?.timeOfDay === 'morning';
   const wind = map.visualSemantics.wind;
   return {
     masterStrength,
     channels: {
-      sunShafts: clamp(Math.max(number('sunShafts') ?? intent?.sunShafts ?? 0, daylight ? 0.1 * semanticStrength : 0) * masterStrength),
       pollen: clamp(Math.max(number('pollen') ?? intent?.pollen ?? 0, pollenZones.length ? 0.16 * semanticStrength : 0) * masterStrength),
       vapor: clamp(Math.max(number('vapor') ?? intent?.vapor ?? 0, vaporZones.length ? 0.14 * semanticStrength : 0) * masterStrength),
       dust: clamp(Math.max(number('dust') ?? intent?.dust ?? 0, dustZones.length ? 0.1 * semanticStrength : 0) * masterStrength),

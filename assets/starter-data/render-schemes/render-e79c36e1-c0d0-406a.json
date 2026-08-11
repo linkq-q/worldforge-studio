@@ -88,7 +88,6 @@
         "params": {
           "masterStrength": 0.52,
           "semanticStrength": 0.9,
-          "sunShafts": 0.28,
           "pollen": 0.42,
           "vapor": 0.14,
           "dust": 0,
@@ -131,7 +130,6 @@
       },
       "atmosphereFx": {
         "masterStrength": 0.52,
-        "sunShafts": 0.28,
         "pollen": 0.42,
         "vapor": 0.14,
         "dust": 0,
@@ -1935,21 +1933,6 @@
       {
         "moduleId": "runtime.atmosphere-fx",
         "parameter": "semanticStrength",
-        "control": "range",
-        "ai": {
-          "enabled": true,
-          "min": 0,
-          "max": 1
-        },
-        "developer": {
-          "enabled": true,
-          "min": 0,
-          "max": 1
-        }
-      },
-      {
-        "moduleId": "runtime.atmosphere-fx",
-        "parameter": "sunShafts",
         "control": "range",
         "ai": {
           "enabled": true,

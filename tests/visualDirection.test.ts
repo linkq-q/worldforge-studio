@@ -66,8 +66,9 @@ describe('visual direction contract', () => {
       contrastMode: 'dramatic',
       timeOfDay: 'evening',
       palette: { sky: '#abcdef', fog: '#a9c8ce' },
-      atmosphereFx: { masterStrength: 1, pollen: 0, sunShafts: 0.7 }
+      atmosphereFx: { masterStrength: 1, pollen: 0 }
     });
+    expect(plan.visualDirection?.atmosphereFx).not.toHaveProperty('sunShafts');
   });
 
   it('compiles distinct bounded contrast methods', () => {

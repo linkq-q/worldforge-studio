@@ -83,7 +83,7 @@ describe('harmonizeHdriAtmosphere', () => {
           sky: '#6688aa', keyLight: '#ffcc88', fillLight: '#aaccdd', shadow: '#443344',
           fog: '#aa8877', waterBias: '#446688', accent: '#dd8844'
         },
-        atmosphereFx: { masterStrength: 0.3, sunShafts: 0, pollen: 0, vapor: 0, dust: 0, windStreaks: 0 }
+        atmosphereFx: { masterStrength: 0.3, pollen: 0, vapor: 0, dust: 0, windStreaks: 0 }
       },
       modules: [
         { id: 'environment.hdri', params: { texture: 'evening.exr' } },

@@ -24,7 +24,6 @@ export interface VisualPalette {
 
 export interface AtmosphereFxIntent {
   masterStrength: number;
-  sunShafts: number;
   pollen: number;
   vapor: number;
   dust: number;
@@ -104,7 +103,6 @@ export const DEFAULT_VISUAL_DIRECTION: VisualDirection = Object.freeze({
   palette: Object.freeze({ ...DEFAULT_PALETTE }),
   atmosphereFx: Object.freeze({
     masterStrength: 0.35,
-    sunShafts: 0,
     pollen: 0,
     vapor: 0,
     dust: 0,
@@ -144,7 +142,6 @@ export function normalizeVisualDirection(input: unknown): VisualDirection {
     },
     atmosphereFx: {
       masterStrength: numberValue(atmosphereFx.masterStrength, DEFAULT_VISUAL_DIRECTION.atmosphereFx.masterStrength, 0, 1),
-      sunShafts: numberValue(atmosphereFx.sunShafts, 0, 0, 1),
       pollen: numberValue(atmosphereFx.pollen, 0, 0, 1),
       vapor: numberValue(atmosphereFx.vapor, 0, 0, 1),
       dust: numberValue(atmosphereFx.dust, 0, 0, 1),

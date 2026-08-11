@@ -27,12 +27,11 @@ describe('semantic atmosphere effects', () => {
       modules: [],
       visualDirection: {
         timeOfDay: 'noon',
-        atmosphereFx: { masterStrength: 0.8, sunShafts: 0.7, windStreaks: 0.25 }
+        atmosphereFx: { masterStrength: 0.8, windStreaks: 0.25 }
       }
     });
 
     const state = compileAtmosphereFx(map, plan);
-    expect(state.channels.sunShafts).toBeCloseTo(0.56);
     expect(state.channels.windStreaks).toBeCloseTo(0.2);
   });
 

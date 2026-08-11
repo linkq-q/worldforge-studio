@@ -519,7 +519,6 @@ export const RENDER_CAPABILITIES: readonly RenderCapability[] = [
     params: {
       masterStrength: { type: 'number', min: 0, max: 1, default: 0.35 },
       semanticStrength: { type: 'number', min: 0, max: 1, default: 1 },
-      sunShafts: { type: 'number', min: 0, max: 1, default: 0 },
       pollen: { type: 'number', min: 0, max: 1, default: 0 },
       vapor: { type: 'number', min: 0, max: 1, default: 0 },
       dust: { type: 'number', min: 0, max: 1, default: 0 },

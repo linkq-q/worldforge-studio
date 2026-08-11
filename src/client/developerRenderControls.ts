@@ -41,7 +41,6 @@ const PARAMETER_LABELS: Record<string, string> = {
   groundTintStrength: '地表染色强度',
   masterStrength: '动态特效总强度',
   semanticStrength: '语义自动触发强度',
-  sunShafts: '阳光束',
   pollen: '花粉微粒',
   vapor: '水汽',
   dust: '尘埃',

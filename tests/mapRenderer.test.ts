@@ -319,6 +319,44 @@ describe('structured map water rendering', () => {
     rendered.dispose();
   });
 
+  it('keeps animated objects standalone and drives them through the optional motion adapter', async () => {
+    const map = createEmptyMap('motion', 'map-motion-adapter');
+    const now = Date.now();
+    const asset: MapAsset = {
+      id: 'asset-gull', name: 'gull', prompt: 'gull', tags: ['bird'],
+      modelJson: { nodes: [{ id: 'body', mesh: { type: 'box', params: { width: 1, height: 1, depth: 1 } } }] },
+      colliderPlan: { version: 1, boxes: [], sourceMeshCount: 1, candidateCount: 1, fallbackUsed: false },
+      mode: 'test', createdAt: now, updatedAt: now
+    };
+    const animated = {
+      ...createTestObject('gull-flying', asset.id),
+      behavior: {
+        kind: 'flock' as const, locomotion: 'air' as const, groupRole: 'outlier' as const,
+        animation: { state: 'fly', speed: 1.1, phase: 0.25 }
+      }
+    };
+    map.assets = [asset];
+    map.objects = [animated, createTestObject('gull-static', asset.id)];
+    const update = vi.fn();
+    const dispose = vi.fn();
+    const attach = vi.fn(() => ({ update, dispose }));
+
+    const rendered = await buildEditableMapGroup(map, { motionAdapter: { attach } });
+    rendered.update(0.25, new THREE.PerspectiveCamera(), 100);
+
+    expect(attach).toHaveBeenCalledOnce();
+    expect(attach).toHaveBeenCalledWith(expect.objectContaining({
+      object: expect.objectContaining({ id: 'gull-flying' }),
+      asset: expect.objectContaining({ id: asset.id }),
+      group: rendered.objectGroups.get('gull-flying')
+    }));
+    expect(rendered.objectGroups.get('gull-flying')?.getObjectByName('body')).toBeDefined();
+    expect(update).toHaveBeenCalledWith(0.25, 0.25);
+
+    rendered.dispose();
+    expect(dispose).toHaveBeenCalledOnce();
+  });
+
   it('keeps cliffs in the terrain mesh without detached vertical wall sheets', async () => {
     const map = applyMapOperations(createEmptyMap('cliff', 'map-cliff-render'), [{
       type: 'terrain.modify', modifier: 'cliff', layout: 'wall',
@@ -524,6 +562,42 @@ describe('derived local lights', () => {
 });
 
 describe('grass-only refresh', () => {
+  it('builds distinct farm and moss silhouettes and keeps flower accents visible', async () => {
+    const map = createEmptyMap('grass families', 'map-grass-families');
+    const meadow = createGrassLayer(
+      { id: 'meadow', seed: 7, preset: 'meadow', height: 0.8 },
+      map.terrain.resolutionX,
+      map.terrain.resolutionZ
+    );
+    const farm = createGrassLayer(
+      { id: 'farm', seed: 8, preset: 'farm', height: 1.55, mix: { short: 0, tall: 0, flowers: 1 } },
+      map.terrain.resolutionX,
+      map.terrain.resolutionZ
+    );
+    const moss = createGrassLayer(
+      { id: 'moss', seed: 9, preset: 'alpine-moss', height: 0.45 },
+      map.terrain.resolutionX,
+      map.terrain.resolutionZ
+    );
+    map.grassLayers = [meadow, farm, moss];
+    map.grassLayers.forEach((layer) => fillGrassLayerInPlace(map, layer.id, 0.55));
+
+    const rendered = await buildEditableMapGroup(map);
+    const meadowMesh = rendered.group.getObjectByName('grass:meadow') as THREE.InstancedMesh;
+    const farmMesh = rendered.group.getObjectByName('grass:farm') as THREE.InstancedMesh;
+    const mossMesh = rendered.group.getObjectByName('grass:moss') as THREE.InstancedMesh;
+    const flowers = rendered.group.getObjectByName('grass-flowers:farm') as THREE.InstancedMesh;
+
+    expect(meadowMesh.userData).toMatchObject({ grassPreset: 'meadow', grassHeight: 0.8 });
+    expect(farmMesh.userData).toMatchObject({ grassPreset: 'farm', grassHeight: 1.55 });
+    expect(mossMesh.userData).toMatchObject({ grassPreset: 'alpine-moss', grassHeight: 0.45 });
+    expect(farmMesh.geometry.getAttribute('position').count).toBeGreaterThan(meadowMesh.geometry.getAttribute('position').count);
+    expect(mossMesh.geometry.boundingBox?.max.y).toBeLessThan(meadowMesh.geometry.boundingBox?.max.y ?? 0);
+    expect(flowers.count).toBeGreaterThan(0);
+    expect(flowers.geometry.getAttribute('position').count).toBeGreaterThan(10);
+    rendered.dispose();
+  });
+
   it('replaces just the grass field, keeps the applied style and picks up new density', async () => {
     const map = createEmptyMap('grass', 'map-grass-refresh');
     const layer = createGrassLayer({ seed: 3 }, map.terrain.resolutionX, map.terrain.resolutionZ);

@@ -203,6 +203,8 @@ declare module '@voxel-studio/render-runtime' {
         resolutionX: number;
         resolutionZ: number;
         densities: number[];
+        preset?: 'meadow' | 'sand' | 'wetland' | 'farm' | 'magic' | 'alpine-moss';
+        height?: number;
         mix: { short: number; tall: number; flowers: number };
       }>;
       width: number;
