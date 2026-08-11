@@ -1,14 +1,26 @@
 import { describe, expect, it } from 'vitest';
 import { createEmptyMap, normalizeMap } from '../src/shared/map';
-import { combinedGrassDensity, sampleGrassDensity } from '../src/shared/mapGrass';
+import { combinedGrassDensity, inferGrassPreset, normalizeGrassLayers, sampleGrassDensity } from '../src/shared/mapGrass';
 import { applyMapOperations } from '../src/shared/mapOperations';
 import { deriveContactAwareGrassMap } from '../src/client/mapGrassRenderer';
 
 describe('map grass layers', () => {
+  it('maps distinct natural and fantasy forms to bounded grass presets', () => {
+    expect([
+      inferGrassPreset('ordinary meadow'),
+      inferGrassPreset('dune desert grass'),
+      inferGrassPreset('shore reeds'),
+      inferGrassPreset('wheat crop field'),
+      inferGrassPreset('enchanted glowing grass'),
+      inferGrassPreset('高山苔藓')
+    ]).toEqual(['meadow', 'sand', 'wetland', 'farm', 'magic', 'alpine-moss']);
+  });
+
   it('derives contact clearance without mutating authored grass densities', () => {
     const map = createEmptyMap('contact grass', 'map-contact-grass');
     const layer = {
       id: 'meadow', name: 'Meadow', visible: true, seed: 1,
+      preset: 'meadow' as const, height: 1,
       resolutionX: map.terrain.resolutionX,
       resolutionZ: map.terrain.resolutionZ,
       densities: Array(map.terrain.resolutionX * map.terrain.resolutionZ).fill(1),
@@ -32,6 +44,7 @@ describe('map grass layers', () => {
     const map = createEmptyMap('desert grass mask', 'map-desert-grass-mask');
     const layer = {
       id: 'meadow', name: 'Meadow', visible: true, seed: 1,
+      preset: 'meadow' as const, height: 1,
       resolutionX: map.terrain.resolutionX,
       resolutionZ: map.terrain.resolutionZ,
       densities: Array(map.terrain.resolutionX * map.terrain.resolutionZ).fill(1),
@@ -56,6 +69,8 @@ describe('map grass layers', () => {
           visible: true,
           seed: 1,
           name: '林间草地',
+          preset: 'meadow',
+          height: 1,
           resolutionX: 2,
           resolutionZ: 2,
           densities: [0, 1, 1, 0],
@@ -66,6 +81,8 @@ describe('map grass layers', () => {
           visible: true,
           seed: 2,
           name: '水边草地',
+          preset: 'wetland',
+          height: 1.65,
           resolutionX: 2,
           resolutionZ: 2,
           densities: [0.4, 0.4, 0.4, 0.4],
@@ -77,8 +94,48 @@ describe('map grass layers', () => {
     expect(map.grassLayers).toHaveLength(2);
     expect(map.grassLayers[0].resolutionX).toBe(map.terrain.resolutionX);
     expect(map.grassLayers[0].mix).toEqual({ short: 0.7, tall: 0.2, flowers: 0.1 });
+    expect(map.grassLayers[0]).toMatchObject({ preset: 'meadow', height: 1 });
+    expect(map.grassLayers[1]).toMatchObject({ preset: 'wetland', height: 1.65 });
     expect(sampleGrassDensity(map.grassLayers[1], map, 0, 0)).toBeCloseTo(0.4, 3);
     expect(combinedGrassDensity(map, 0, 0)).toBeGreaterThan(0.4);
+  });
+
+  it('upgrades legacy grass layers to the classic meadow without changing density data', () => {
+    const [legacy] = normalizeGrassLayers([{
+      id: 'legacy', name: 'Legacy grass', visible: true, seed: 1,
+      resolutionX: 2, resolutionZ: 2, densities: [0, 1, 1, 0],
+      mix: { short: 0.7, tall: 0.2, flowers: 0.1 }
+    }], 2, 2);
+
+    expect(legacy).toMatchObject({ preset: 'meadow', height: 1 });
+    expect(legacy.densities).toEqual([0, 1, 1, 0]);
+  });
+
+  it('keeps terrain-specific grass on its intended surface while ordinary grass retreats', () => {
+    const base = createEmptyMap('terrain grass', 'terrain-grass');
+    const meadow = {
+      id: 'meadow', name: 'Meadow', visible: true, seed: 1, preset: 'meadow' as const, height: 1,
+      resolutionX: base.terrain.resolutionX, resolutionZ: base.terrain.resolutionZ,
+      densities: Array(base.terrain.resolutionX * base.terrain.resolutionZ).fill(1),
+      mix: { short: 0.8, tall: 0.18, flowers: 0.02 }
+    };
+    base.grassLayers = [
+      meadow,
+      { ...meadow, id: 'sand-grass', preset: 'sand' as const },
+      { ...meadow, id: 'moss', preset: 'alpine-moss' as const }
+    ];
+    const sand = applyMapOperations(base, [{
+      type: 'terrain.surface', surface: 'sand',
+      region: { kind: 'circle', x: 0, z: 0, radius: 12 }, zoneId: 'sand-center'
+    }]);
+    sand.visualSemantics.zones.push({ id: 'rock-edge', tags: ['rocky'], center: [16, 0], radius: 4, intensity: 1 });
+
+    const derived = deriveContactAwareGrassMap(sand);
+    const byId = (id: string) => derived.grassLayers.find((layer) => layer.id === id)!;
+
+    expect(sampleGrassDensity(byId('meadow'), derived, 0, 0)).toBe(0);
+    expect(sampleGrassDensity(byId('sand-grass'), derived, 0, 0)).toBeGreaterThan(0.8);
+    expect(sampleGrassDensity(byId('moss'), derived, 16, 0)).toBeGreaterThan(0.8);
   });
 
   it('applies layer, fill, brush, update and remove operations atomically', () => {

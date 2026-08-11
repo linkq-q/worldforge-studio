@@ -1,9 +1,10 @@
 import { CartoonGrassField } from '@voxel-studio/render-runtime';
 import * as THREE from 'three';
 import { sampleTerrainHeight, type EditableMap } from '../shared/map';
-import { isNearWater } from '../shared/mapWater';
+import { distanceToWater, isPointInsideWaterBody, waterSurfaceLevelAt } from '../shared/mapWater';
 import type { RuntimeGrassStyle } from '../shared/renderPlan';
 import type { Vec3 } from '../shared/protocol';
+import { normalizeGrassPreset, type GrassPresetId } from '../shared/mapGrass';
 import { MapGrassInteraction } from './mapGrassInteraction';
 import { terrainSemanticSurfaceWeight } from './terrainAppearance';
 import { isPointInsidePlayableArea } from '../shared/mapLayout';
@@ -89,8 +90,9 @@ export function deriveContactAwareGrassMap(map: EditableMap): EditableMap {
           densities[index] = 0;
           continue;
         }
-        let factor = 1 - terrainSemanticSurfaceWeight(map, x, z, ['sand', 'rocky']);
-        factor = Math.min(factor, isNearWater(map, x, z, 0.2) ? 0 : isNearWater(map, x, z, 1.25) ? 0.28 : 1);
+        const preset = normalizeGrassPreset(layer.preset);
+        let factor = grassSurfaceFactor(map, x, z, preset);
+        factor = Math.min(factor, grassWaterFactor(map, x, z, preset));
         for (const obstacle of obstacles) {
           const edgeDistance = Math.hypot(x - obstacle.x, z - obstacle.z) - obstacle.radius;
           if (edgeDistance <= 0) factor = Math.min(factor, 0.08);
@@ -102,6 +104,29 @@ export function deriveContactAwareGrassMap(map: EditableMap): EditableMap {
     return { ...layer, densities };
   });
   return { ...map, grassLayers };
+}
+
+function grassSurfaceFactor(map: EditableMap, x: number, z: number, preset: GrassPresetId): number {
+  const sand = terrainSemanticSurfaceWeight(map, x, z, ['sand']);
+  const rocky = terrainSemanticSurfaceWeight(map, x, z, ['rocky']);
+  if (preset === 'sand') return 1 - rocky;
+  if (preset === 'alpine-moss') return 1 - sand;
+  if (preset === 'magic') return 1;
+  return 1 - Math.max(sand, rocky);
+}
+
+function grassWaterFactor(map: EditableMap, x: number, z: number, preset: GrassPresetId): number {
+  const containingWater = map.waterBodies.find((water) => isPointInsideWaterBody(water, x, z, map));
+  if (containingWater) {
+    if (preset !== 'wetland') return 0;
+    const waterDepth = waterSurfaceLevelAt(containingWater, x, z) - sampleTerrainHeight(map, x, z);
+    return waterDepth <= 0.45 ? 0.65 : 0;
+  }
+  if (preset === 'wetland') return 1;
+  const distance = distanceToWater(map, x, z);
+  if (!Number.isFinite(distance)) return 1;
+  if (distance <= 0.2) return 0;
+  return distance <= 1.25 ? 0.28 : 1;
 }
 
 function refineFlowerGeometry(root: import('three').Object3D): void {

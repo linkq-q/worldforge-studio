@@ -23,7 +23,9 @@ export function collectGrassPlacements({
 
   const seed = Math.trunc(finite(layer?.seed, 1));
   const mix = normalizeMix(layer?.mix);
-  const anchorSpacing = spacing * 1.55;
+  const preset = normalizePreset(layer?.preset);
+  const profile = PLACEMENT_PROFILES[preset];
+  const anchorSpacing = spacing * 1.55 * profile.spacing;
   const minimumDistance = anchorSpacing * 0.45;
   const clusterScale = Math.max(spacing * 7, Math.min(safeWidth, safeDepth) * 0.09);
   const estimatedAnchors = Math.ceil((safeWidth * safeDepth) / (anchorSpacing * anchorSpacing));
@@ -44,14 +46,14 @@ export function collectGrassPlacements({
     if (density <= 0.001) continue;
 
     const cluster = clusterField(anchorX / clusterScale, anchorZ / clusterScale, seed);
-    const patchWeight = mixNumber(0.25, 1.15, smoothstep(0.2, 0.8, cluster));
+    const patchWeight = mixNumber(profile.patchMin, profile.patchMax, smoothstep(0.2, 0.8, cluster));
     const acceptance = clamp(density * patchWeight, 0, 1);
     if (hash01(candidateIndex, seed, 191) > acceptance) continue;
     if (!acceptAnchor(anchorGrid, anchorX, anchorZ, minimumDistance)) continue;
 
     const tuftId = `${seed}:${candidateIndex}`;
-    const tuftSize = 2 + Math.floor(hash01(candidateIndex, seed, 211) * 4);
-    const tuftRadius = spacing * mixNumber(0.22, 0.42, hash01(candidateIndex, seed, 223));
+    const tuftSize = profile.tuftMin + Math.floor(hash01(candidateIndex, seed, 211) * (profile.tuftMax - profile.tuftMin + 1));
+    const tuftRadius = spacing * profile.radius * mixNumber(0.8, 1.2, hash01(candidateIndex, seed, 223));
     const tuftYaw = hash01(candidateIndex, seed, 227) * Math.PI * 2;
     const tuftScale = mixNumber(0.82, 1.18, hash01(candidateIndex, seed, 229));
     const hasFlower = hash01(candidateIndex, seed, 233) < mix.flowers;
@@ -79,10 +81,10 @@ export function collectGrassPlacements({
         y: Number(sampleHeight(x, z)) || 0,
         z,
         yaw: hash01(candidateIndex, bladeIndex, seed + 269) * Math.PI * 2,
-        widthScale: bladeScale * (variant === 'tall' ? 0.92 : variant === 'flowers' ? 0.8 : 1),
-        heightScale: bladeScale * (variant === 'tall' ? 1.28 : variant === 'flowers' ? 0.82 : 1),
+        widthScale: bladeScale * profile.width * (variant === 'tall' ? 0.92 : variant === 'flowers' ? 0.8 : 1),
+        heightScale: bladeScale * profile.height * (variant === 'tall' ? 1.28 : variant === 'flowers' ? 0.82 : 1),
         paletteScale: paletteScale(hash01(candidateIndex, bladeIndex, seed + 271), paletteVariation),
-        flowerPalette: Math.floor(hash01(candidateIndex, bladeIndex, seed + 277) * 3),
+        flowerPalette: Math.floor(hash01(candidateIndex, bladeIndex, seed + 277) * 6),
         normal: normalizeNormal(sampleNormal(x, z)),
         variant,
       });
@@ -90,6 +92,19 @@ export function collectGrassPlacements({
   }
 
   return placements;
+}
+
+const PLACEMENT_PROFILES = Object.freeze({
+  meadow: { spacing: 1, tuftMin: 2, tuftMax: 5, radius: 0.32, width: 1, height: 1, patchMin: 0.25, patchMax: 1.15 },
+  sand: { spacing: 1.35, tuftMin: 1, tuftMax: 3, radius: 0.24, width: 0.8, height: 0.86, patchMin: 0.12, patchMax: 0.88 },
+  wetland: { spacing: 0.9, tuftMin: 3, tuftMax: 6, radius: 0.38, width: 0.9, height: 1.12, patchMin: 0.38, patchMax: 1.18 },
+  farm: { spacing: 1.05, tuftMin: 2, tuftMax: 4, radius: 0.22, width: 0.9, height: 1.04, patchMin: 0.72, patchMax: 1.08 },
+  magic: { spacing: 1.08, tuftMin: 2, tuftMax: 5, radius: 0.42, width: 1, height: 1.08, patchMin: 0.2, patchMax: 1.2 },
+  'alpine-moss': { spacing: 1.18, tuftMin: 1, tuftMax: 2, radius: 0.48, width: 1.25, height: 0.78, patchMin: 0.3, patchMax: 1.05 },
+});
+
+function normalizePreset(value) {
+  return Object.prototype.hasOwnProperty.call(PLACEMENT_PROFILES, value) ? value : 'meadow';
 }
 
 function acceptAnchor(grid, x, z, minimumDistance) {

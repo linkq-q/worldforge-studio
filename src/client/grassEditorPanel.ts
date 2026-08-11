@@ -3,7 +3,9 @@ import {
   createGrassLayer,
   fillGrassLayerInPlace,
   generateGrassRegionInPlace,
+  GRASS_PRESET_DEFINITIONS,
   normalizeGrassMix,
+  normalizeGrassPreset,
   type GrassBrushMode,
 } from '../shared/mapGrass';
 
@@ -36,7 +38,7 @@ export function renderGrassEditorPanel(map: EditableMap, state: GrassEditorState
   return `
     <section class="editor-section grass-editor-panel">
       <h2>草地层</h2>
-      <p class="empty">地图保存草的分布；短草、高草和花草按比例混合。水边与水下不会被自动排除。</p>
+      <p class="empty">每层是一种草形；让多层区域重叠即可混合草种，并分别控制密度、高度与鲜花比例。</p>
       <div class="grass-layer-row">
         <select data-grass-layer ${map.grassLayers.length ? '' : 'disabled'}>
           ${map.grassLayers.map((item) => `<option value="${escapeAttribute(item.id)}" ${item.id === state.selectedLayerId ? 'selected' : ''}>${escapeHtml(item.name)}</option>`).join('')}
@@ -47,10 +49,14 @@ export function renderGrassEditorPanel(map: EditableMap, state: GrassEditorState
       ${layer ? `
         <label class="field compact"><span>名称</span><input data-grass-name maxlength="80" value="${escapeAttribute(layer.name)}" /></label>
         <label class="field compact"><span>显示</span><input data-grass-visible type="checkbox" ${layer.visible ? 'checked' : ''} /></label>
+        <label class="field compact"><span>草形预设</span><select data-grass-preset>
+          ${GRASS_PRESET_DEFINITIONS.map((item) => `<option value="${item.id}" ${item.id === layer.preset ? 'selected' : ''}>${item.label}</option>`).join('')}
+        </select></label>
+        ${rangeField('高度', 'height', 0.2, 2.5, 0.05, layer.height)}
         <div class="triple">
           ${ratioField('短草', 'short', layer.mix.short)}
           ${ratioField('高草', 'tall', layer.mix.tall)}
-          ${ratioField('花草', 'flowers', layer.mix.flowers)}
+          ${ratioField('鲜花', 'flowers', layer.mix.flowers)}
         </div>
         <h3>草刷</h3>
         <select data-grass-brush-mode>
@@ -121,6 +127,22 @@ export function bindGrassEditorPanel(
     if (!layer) return;
     layer.visible = (event.target as HTMLInputElement).checked;
     callbacks.changed(layer.visible ? '已显示草地层' : '已隐藏草地层');
+  });
+  host.querySelector<HTMLSelectElement>('[data-grass-preset]')?.addEventListener('change', (event) => {
+    const layer = current();
+    if (!layer) return;
+    const preset = normalizeGrassPreset((event.target as HTMLSelectElement).value);
+    const definition = GRASS_PRESET_DEFINITIONS.find((item) => item.id === preset) ?? GRASS_PRESET_DEFINITIONS[0];
+    layer.preset = preset;
+    layer.height = definition.defaultHeight;
+    layer.mix = { ...definition.defaultMix };
+    callbacks.changed(`已切换为${definition.label}`);
+  });
+  host.querySelector<HTMLInputElement>('[data-grass-height]')?.addEventListener('change', (event) => {
+    const layer = current();
+    if (!layer) return;
+    layer.height = Math.min(2.5, Math.max(0.2, numberValue((event.target as HTMLInputElement).value, layer.height)));
+    callbacks.changed('已更新草形高度');
   });
   host.querySelectorAll<HTMLInputElement>('[data-grass-ratio]').forEach((input) => {
     input.addEventListener('change', () => {

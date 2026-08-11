@@ -2,6 +2,9 @@ import type { EditableMap } from './map';
 
 export type GrassBrushMode = 'add' | 'erase' | 'density' | 'smooth';
 
+export const GRASS_PRESET_IDS = ['meadow', 'sand', 'wetland', 'farm', 'magic', 'alpine-moss'] as const;
+export type GrassPresetId = typeof GRASS_PRESET_IDS[number];
+
 export interface GrassVariantMix {
   short: number;
   tall: number;
@@ -16,6 +19,8 @@ export interface MapGrassLayer {
   resolutionX: number;
   resolutionZ: number;
   densities: number[];
+  preset: GrassPresetId;
+  height: number;
   mix: GrassVariantMix;
 }
 
@@ -29,13 +34,28 @@ export interface GrassLayerInput {
   visible?: boolean;
   seed?: number;
   densities?: number[];
+  preset?: GrassPresetId;
+  height?: number;
   mix?: Partial<GrassVariantMix>;
 }
 
-export type GrassLayerPatch = Pick<GrassLayerInput, 'name' | 'visible' | 'seed' | 'mix'>;
+export type GrassLayerPatch = Pick<GrassLayerInput, 'name' | 'visible' | 'seed' | 'preset' | 'height' | 'mix'>;
 
 export const MAX_GRASS_LAYERS = 8;
 export const DEFAULT_GRASS_MIX: GrassVariantMix = { short: 0.76, tall: 0.2, flowers: 0.04 };
+export const GRASS_PRESET_DEFINITIONS: ReadonlyArray<{
+  id: GrassPresetId;
+  label: string;
+  defaultHeight: number;
+  defaultMix: GrassVariantMix;
+}> = [
+  { id: 'meadow', label: '普通草地', defaultHeight: 1, defaultMix: DEFAULT_GRASS_MIX },
+  { id: 'sand', label: '沙地硬草', defaultHeight: 0.72, defaultMix: { short: 0.72, tall: 0.25, flowers: 0.03 } },
+  { id: 'wetland', label: '湿地长草', defaultHeight: 1.45, defaultMix: { short: 0.4, tall: 0.56, flowers: 0.04 } },
+  { id: 'farm', label: '农田作物草', defaultHeight: 1.25, defaultMix: { short: 0.48, tall: 0.5, flowers: 0.02 } },
+  { id: 'magic', label: '魔幻草', defaultHeight: 1.15, defaultMix: { short: 0.56, tall: 0.32, flowers: 0.12 } },
+  { id: 'alpine-moss', label: '高山苔藓', defaultHeight: 0.42, defaultMix: { short: 0.94, tall: 0.04, flowers: 0.02 } }
+];
 
 export function normalizeGrassLayers(
   value: unknown,
@@ -54,6 +74,8 @@ export function normalizeGrassLayers(
     const sourceX = positiveInt(input.resolutionX, resolutionX);
     const sourceZ = positiveInt(input.resolutionZ, resolutionZ);
     const source = normalizeDensityArray(input.densities, sourceX * sourceZ);
+    const preset = normalizeGrassPreset(input.preset);
+    const definition = grassPresetDefinition(preset);
     layers.push({
       id,
       name: cleanText(input.name, `草地 ${layers.length + 1}`),
@@ -64,7 +86,9 @@ export function normalizeGrassLayers(
       densities: sourceX === resolutionX && sourceZ === resolutionZ
         ? normalizeDensityArray(source, resolutionX * resolutionZ)
         : resampleDensity(source, sourceX, sourceZ, resolutionX, resolutionZ),
-      mix: normalizeGrassMix(input.mix)
+      preset,
+      height: normalizeGrassHeight(input.height, definition.defaultHeight),
+      mix: normalizeGrassMix(input.mix, definition.defaultMix)
     });
   }
   return layers;
@@ -91,6 +115,8 @@ export function updateGrassLayer(layer: MapGrassLayer, patch: GrassLayerPatch): 
     name: patch.name === undefined ? layer.name : cleanText(patch.name, layer.name),
     visible: patch.visible === undefined ? layer.visible : patch.visible !== false,
     seed: patch.seed === undefined ? layer.seed : finiteSeed(patch.seed, layer.seed),
+    preset: patch.preset === undefined ? layer.preset : normalizeGrassPreset(patch.preset),
+    height: patch.height === undefined ? layer.height : normalizeGrassHeight(patch.height, layer.height),
     mix: patch.mix === undefined ? layer.mix : normalizeGrassMix({ ...layer.mix, ...patch.mix })
   };
 }
@@ -156,7 +182,7 @@ export function generateGrassRegionInPlace(
       const worldZ = indexToWorld(z, depth, layer.resolutionZ);
       const regionWeight = grassRegionWeight(region, worldX, worldZ, edgeSoftness);
       if (regionWeight <= 0) continue;
-      const slopeWeight = grassSlopeWeight(map, x, z);
+      const slopeWeight = grassSlopeWeight(map, x, z, layer.preset);
       const noise = hash01(x, z, effectiveSeed) * 2 - 1;
       const generated = clamp01(baseDensity * (1 + noise * densityVariation) * regionWeight * slopeWeight);
       const index = z * layer.resolutionX + x;
@@ -179,16 +205,33 @@ export function combinedGrassDensity(map: Pick<EditableMap, 'box' | 'grassLayers
   return 1 - remaining;
 }
 
-export function normalizeGrassMix(value: Partial<GrassVariantMix> | undefined): GrassVariantMix {
-  const short = Math.max(0, finite(value?.short, DEFAULT_GRASS_MIX.short));
-  const tall = Math.max(0, finite(value?.tall, DEFAULT_GRASS_MIX.tall));
-  const flowers = Math.max(0, finite(value?.flowers, DEFAULT_GRASS_MIX.flowers));
+export function normalizeGrassMix(
+  value: Partial<GrassVariantMix> | undefined,
+  fallback: GrassVariantMix = DEFAULT_GRASS_MIX
+): GrassVariantMix {
+  const short = Math.max(0, finite(value?.short, fallback.short));
+  const tall = Math.max(0, finite(value?.tall, fallback.tall));
+  const flowers = Math.max(0, finite(value?.flowers, fallback.flowers));
   const total = short + tall + flowers;
-  if (total <= 0.0001) return { ...DEFAULT_GRASS_MIX };
+  if (total <= 0.0001) return { ...fallback };
   return { short: short / total, tall: tall / total, flowers: flowers / total };
 }
 
-function grassSlopeWeight(map: EditableMap, x: number, z: number): number {
+export function normalizeGrassPreset(value: unknown): GrassPresetId {
+  return GRASS_PRESET_IDS.includes(value as GrassPresetId) ? value as GrassPresetId : 'meadow';
+}
+
+export function inferGrassPreset(value: unknown): GrassPresetId {
+  const text = typeof value === 'string' ? value.toLowerCase() : '';
+  if (/moss|alpine|tundra|mountain|苔|高山|冻原/.test(text)) return 'alpine-moss';
+  if (/magic|fantasy|enchanted|glow|魔|幻|发光/.test(text)) return 'magic';
+  if (/farm|crop|wheat|rice|field|田|麦|稻|作物/.test(text)) return 'farm';
+  if (/wet|marsh|swamp|shore|reed|水岸|湿地|沼泽|芦苇/.test(text)) return 'wetland';
+  if (/sand|desert|dune|arid|沙|荒漠|沙丘/.test(text)) return 'sand';
+  return 'meadow';
+}
+
+function grassSlopeWeight(map: EditableMap, x: number, z: number, preset: GrassPresetId): number {
   const terrain = map.terrain;
   const left = terrain.heights[z * terrain.resolutionX + Math.max(0, x - 1)] ?? 0;
   const right = terrain.heights[z * terrain.resolutionX + Math.min(terrain.resolutionX - 1, x + 1)] ?? 0;
@@ -197,10 +240,28 @@ function grassSlopeWeight(map: EditableMap, x: number, z: number): number {
   const stepX = map.box.size[0] / Math.max(1, terrain.resolutionX - 1);
   const stepZ = map.box.size[2] / Math.max(1, terrain.resolutionZ - 1);
   const slope = Math.atan(Math.hypot((right - left) / Math.max(stepX * 2, 0.001), (up - down) / Math.max(stepZ * 2, 0.001))) * 180 / Math.PI;
-  if (slope <= 20) return 1;
-  if (slope >= 55) return 0;
-  const t = (slope - 20) / 35;
+  const [full, none] = grassSlopeBand(preset);
+  if (slope <= full) return 1;
+  if (slope >= none) return 0;
+  const t = (slope - full) / (none - full);
   return 1 - t * t * (3 - 2 * t);
+}
+
+function grassSlopeBand(preset: GrassPresetId): [number, number] {
+  if (preset === 'farm') return [10, 32];
+  if (preset === 'wetland') return [15, 42];
+  if (preset === 'sand') return [18, 52];
+  if (preset === 'magic') return [28, 72];
+  if (preset === 'alpine-moss') return [38, 88];
+  return [20, 55];
+}
+
+function grassPresetDefinition(preset: GrassPresetId) {
+  return GRASS_PRESET_DEFINITIONS.find((item) => item.id === preset) ?? GRASS_PRESET_DEFINITIONS[0];
+}
+
+function normalizeGrassHeight(value: unknown, fallback: number): number {
+  return Math.min(2.5, Math.max(0.2, finite(value, fallback)));
 }
 
 function grassRegionWeight(region: GrassRegion, x: number, z: number, softness: number): number {

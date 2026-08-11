@@ -22,6 +22,15 @@ const DEFAULT_STYLE = Object.freeze({
   maxInstances: 15000,
 });
 
+const GRASS_PRESETS = Object.freeze({
+  meadow: { rootColor: '#72ad49', tipColor: '#c4f07f', width: 1, flowerScale: 1 },
+  sand: { rootColor: '#81713f', tipColor: '#d8c878', width: 0.62, flowerScale: 0.8 },
+  wetland: { rootColor: '#376f52', tipColor: '#8fcb75', width: 0.78, flowerScale: 0.9 },
+  farm: { rootColor: '#6f8138', tipColor: '#dfc568', width: 0.72, flowerScale: 0.82 },
+  magic: { rootColor: '#5350a8', tipColor: '#6ff0d2', width: 1.08, flowerScale: 1.15 },
+  'alpine-moss': { rootColor: '#3f5f3e', tipColor: '#9cbd72', width: 1.75, flowerScale: 0.65 },
+});
+
 /**
  * Runtime-only cartoon grass renderer. The host owns editable density fields and
  * terrain data; this class only turns generic layer samples into reusable batches.
@@ -77,7 +86,8 @@ export class CartoonGrassField {
       || next.rootDarken !== this._style.rootDarken
       || next.gradientBias !== this._style.gradientBias
       || next.bands !== this._style.bands
-      || next.paletteVariation !== this._style.paletteVariation;
+      || next.paletteVariation !== this._style.paletteVariation
+      || next.flowerColors.join('|') !== this._style.flowerColors.join('|');
     this._style = next;
     if (rebuild) this._build();
     else this._syncUniforms();
@@ -98,6 +108,9 @@ export class CartoonGrassField {
   }
 
   _buildLayer(layer, budget) {
+    const preset = normalizePreset(layer?.preset);
+    const layerHeight = clamp(positive(layer?.height, 1), 0.2, 2.5);
+    const layerStyle = resolveLayerStyle(this._style, preset);
     const placements = collectGrassPlacements({
       layer,
       width: this._width,
@@ -110,8 +123,8 @@ export class CartoonGrassField {
     });
     if (placements.length === 0) return;
 
-    const bladeGeometry = createBladeGeometry(this._style);
-    const bladeMaterial = createGrassMaterial(this._style);
+    const bladeGeometry = createBladeGeometry(layerStyle, preset);
+    const bladeMaterial = createGrassMaterial(layerStyle);
     const blades = new THREE.InstancedMesh(bladeGeometry, bladeMaterial, placements.length);
     blades.name = `grass:${layer.id || 'layer'}`;
     blades.castShadow = false;
@@ -121,6 +134,8 @@ export class CartoonGrassField {
     blades.userData.skipShaderApply = true;
     blades.userData.materialTags = ['vegetation', 'grass'];
     blades.userData.grassBladeCount = placements.length;
+    blades.userData.grassPreset = preset;
+    blades.userData.grassHeight = layerHeight;
     blades.instanceMatrix.setUsage(THREE.StaticDrawUsage);
     const groundNormals = new Float32Array(placements.length * 3);
     const matrix = new THREE.Matrix4();
@@ -132,8 +147,8 @@ export class CartoonGrassField {
       const placement = placements[index];
       rotation.setFromAxisAngle(THREE.Object3D.DEFAULT_UP, placement.yaw);
       scale.set(
-        placement.widthScale * this._style.bladeWidth,
-        placement.heightScale * this._style.bladeHeight,
+        placement.widthScale * layerStyle.bladeWidth,
+        placement.heightScale * layerStyle.bladeHeight * layerHeight,
         1
       );
       matrix.compose(new THREE.Vector3(placement.x, placement.y + 0.015, placement.z), rotation, scale);
@@ -149,10 +164,10 @@ export class CartoonGrassField {
     this._track(blades, bladeGeometry, bladeMaterial);
 
     const flowers = placements.filter((placement) => placement.variant === 'flowers');
-    if (flowers.length > 0) this._buildFlowers(layer, flowers);
+    if (flowers.length > 0) this._buildFlowers(layer, flowers, layerStyle, preset, layerHeight);
   }
 
-  _buildFlowers(layer, placements) {
+  _buildFlowers(layer, placements, layerStyle, preset, layerHeight) {
     const geometry = new THREE.OctahedronGeometry(0.11, 0);
     // `vertexColors` is what makes the fragment shader read vColor at all, and
     // vColor is `color * instanceColor`. Without a geometry colour attribute the
@@ -176,17 +191,19 @@ export class CartoonGrassField {
     mesh.userData.skipShaderApply = true;
     mesh.userData.materialTags = ['vegetation', 'grass', 'flower'];
     mesh.userData.grassFlowerCount = placements.length;
+    mesh.userData.grassPreset = preset;
     const matrix = new THREE.Matrix4();
     const color = new THREE.Color();
     for (let index = 0; index < placements.length; index += 1) {
       const placement = placements[index];
       matrix.makeTranslation(
         placement.x,
-        placement.y + 0.015 + this._style.bladeHeight * placement.heightScale,
+        placement.y + 0.015 + layerStyle.bladeHeight * layerHeight * placement.heightScale * bladeTipHeight(preset),
         placement.z
       );
+      matrix.scale(new THREE.Vector3(GRASS_PRESETS[preset].flowerScale, GRASS_PRESETS[preset].flowerScale, GRASS_PRESETS[preset].flowerScale));
       mesh.setMatrixAt(index, matrix);
-      color.set(this._style.flowerColors[placement.flowerPalette % this._style.flowerColors.length]);
+      color.set(layerStyle.flowerColors[placement.flowerPalette % layerStyle.flowerColors.length]);
       mesh.setColorAt(index, color);
     }
     mesh.instanceMatrix.needsUpdate = true;
@@ -274,34 +291,88 @@ if (vGrassFade < 0.015) discard;`);
   return material;
 }
 
-function createBladeGeometry(style) {
+function createBladeGeometry(style, preset) {
   const geometry = new THREE.BufferGeometry();
-  const levels = [
-    { y: 0, width: 0.5 },
-    { y: 0.5, width: 0.47 },
-    { y: 0.82, width: 0.3 },
-    { y: 1, width: 0 },
-  ];
   const positions = [];
   const normals = [];
   const uvs = [];
   const colors = [];
+  const indices = [];
   const root = new THREE.Color(style.rootColor);
   const tip = new THREE.Color(style.tipColor);
-  for (const level of levels) {
-    positions.push(-level.width, level.y, 0, level.width, level.y, 0);
-    normals.push(0, 0, 1, 0, 0, 1);
-    uvs.push(0, level.y, 1, level.y);
-    let gradient = Math.pow(level.y, style.gradientBias);
-    gradient = Math.round(gradient * (style.bands - 1)) / Math.max(1, style.bands - 1);
-    const shade = new THREE.Color().copy(root).lerp(tip, gradient)
-      .multiplyScalar(mix(style.rootDarken, 1, smoothstep(0, 0.35, level.y)));
-    colors.push(shade.r, shade.g, shade.b, shade.r, shade.g, shade.b);
-  }
-  const indices = [];
-  for (let index = 0; index < levels.length - 1; index += 1) {
-    const a = index * 2;
-    indices.push(a, a + 2, a + 1, a + 1, a + 2, a + 3);
+
+  const appendStrip = (levels, yaw = 0, widthScale = 1) => {
+    const base = positions.length / 3;
+    const cos = Math.cos(yaw);
+    const sin = Math.sin(yaw);
+    for (const level of levels) {
+      const centerX = level.x || 0;
+      const centerZ = level.z || 0;
+      for (const side of [-1, 1]) {
+        const localX = centerX + side * level.width * widthScale;
+        positions.push(localX * cos - centerZ * sin, level.y, localX * sin + centerZ * cos);
+        normals.push(-sin, 0, cos);
+        uvs.push(side < 0 ? 0 : 1, level.t ?? level.y);
+      }
+      let gradient = Math.pow(level.t ?? level.y, style.gradientBias);
+      gradient = Math.round(gradient * (style.bands - 1)) / Math.max(1, style.bands - 1);
+      const shade = new THREE.Color().copy(root).lerp(tip, gradient)
+        .multiplyScalar(mix(style.rootDarken, 1, smoothstep(0, 0.35, level.t ?? level.y)));
+      colors.push(shade.r, shade.g, shade.b, shade.r, shade.g, shade.b);
+    }
+    for (let index = 0; index < levels.length - 1; index += 1) {
+      const a = base + index * 2;
+      indices.push(a, a + 2, a + 1, a + 1, a + 2, a + 3);
+    }
+  };
+
+  const meadow = [
+    { y: 0, width: 0.5, x: 0 },
+    { y: 0.5, width: 0.47, x: 0.02 },
+    { y: 0.82, width: 0.3, x: 0.08 },
+    { y: 1, width: 0, x: 0.16 }
+  ];
+  if (preset === 'sand') {
+    appendStrip([
+      { y: 0, width: 0.28 }, { y: 0.58, width: 0.22 }, { y: 0.88, width: 0.13, x: 0.03 }, { y: 1, width: 0, x: 0.08 }
+    ]);
+  } else if (preset === 'wetland') {
+    appendStrip([
+      { y: 0, width: 0.34 }, { y: 0.58, width: 0.31, x: 0.03 }, { y: 0.9, width: 0.16, x: 0.1 }, { y: 1, width: 0, x: 0.16 }
+    ], -0.18);
+    appendStrip([
+      { y: 0, width: 0.25 }, { y: 0.46, width: 0.23, x: -0.02 }, { y: 0.72, width: 0.1, x: -0.08 }, { y: 0.8, width: 0, x: -0.12, t: 1 }
+    ], 0.58, 0.82);
+  } else if (preset === 'farm') {
+    appendStrip([
+      { y: 0, width: 0.18 }, { y: 0.62, width: 0.16 }, { y: 0.82, width: 0.1 }, { y: 1, width: 0.04 }
+    ]);
+    for (const side of [-1, 1]) {
+      appendStrip([
+        { y: 0.58, width: 0.08, x: side * 0.05, t: 0.58 },
+        { y: 0.76, width: 0.12, x: side * 0.13, t: 0.76 },
+        { y: 0.94, width: 0.04, x: side * 0.08, t: 0.94 }
+      ], side * 0.08, 0.72);
+    }
+  } else if (preset === 'magic') {
+    appendStrip([
+      { y: 0, width: 0.48 }, { y: 0.45, width: 0.42, x: -0.02 }, { y: 0.76, width: 0.26, x: -0.13 }, { y: 1, width: 0, x: -0.32 }
+    ], -0.18);
+    appendStrip([
+      { y: 0, width: 0.36 }, { y: 0.42, width: 0.32, x: 0.03 }, { y: 0.72, width: 0.2, x: 0.16 }, { y: 0.92, width: 0, x: 0.34, t: 1 }
+    ], 0.42, 0.84);
+  } else if (preset === 'alpine-moss') {
+    const cushion = [
+      { y: 0, width: 0.72, t: 0 },
+      { y: 0.2, width: 0.68, x: 0.04, t: 0.45 },
+      { y: 0.38, width: 0.34, x: 0.08, t: 0.78 },
+      { y: 0.46, width: 0, x: 0.12, t: 1 }
+    ];
+    appendStrip(cushion, 0);
+    appendStrip(cushion, Math.PI * 2 / 3, 0.86);
+    appendStrip(cushion, Math.PI * 4 / 3, 0.74);
+  } else {
+    appendStrip(meadow);
   }
   geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
   geometry.setAttribute('normal', new THREE.Float32BufferAttribute(normals, 3));
@@ -310,6 +381,7 @@ function createBladeGeometry(style) {
   geometry.setIndex(indices);
   geometry.computeBoundingBox();
   geometry.computeBoundingSphere();
+  geometry.userData.grassPreset = preset;
   return geometry;
 }
 
@@ -345,6 +417,28 @@ function syncGrassUniformValues(uniforms, style) {
   uniforms.uGrassRootDarken.value = style.rootDarken;
   uniforms.uGrassGradientBias.value = style.gradientBias;
   uniforms.uGrassBands.value = style.bands;
+}
+
+function resolveLayerStyle(style, preset) {
+  const profile = GRASS_PRESETS[preset];
+  return {
+    ...style,
+    bladeWidth: style.bladeWidth * profile.width,
+    rootColor: mixColor(profile.rootColor, style.rootColor, 0.28),
+    tipColor: mixColor(profile.tipColor, style.tipColor, 0.28),
+  };
+}
+
+function mixColor(a, b, amount) {
+  return `#${new THREE.Color(a).lerp(new THREE.Color(b), amount).getHexString()}`;
+}
+
+function normalizePreset(value) {
+  return Object.prototype.hasOwnProperty.call(GRASS_PRESETS, value) ? value : 'meadow';
+}
+
+function bladeTipHeight(preset) {
+  return preset === 'alpine-moss' ? 0.46 : 1;
 }
 
 function normalizeStyle(value = {}) {
