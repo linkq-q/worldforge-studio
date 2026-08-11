@@ -74,6 +74,61 @@ describe('scene composition contract', () => {
     }
   });
 
+  it('reserves the object budget for required families before optional layout layers', () => {
+    const map = createEmptyMap('Island park', 'map-required-family-budget', [96, 16, 96], 'voxel');
+    const plan = normalizeSceneCompositionPlan({
+      version: 1,
+      summary: 'A tree-filled island park with a paved plaza.',
+      globalBrief: {
+        spatialTheme: 'open island park', visualHierarchy: 'trees frame the plaza',
+        assetArtDirection: 'warm voxel park', focalZoneId: 'park',
+        terrainBase: { preset: 'plain', seed: 23, amplitude: 0, roughness: 0 }
+      },
+      intentRequirements: [{
+        id: 'park-trees', kind: 'asset-family', description: 'required park trees',
+        targetZoneId: 'park', familyId: 'park-trees', minCount: 1
+      }],
+      assetFamilies: [
+        {
+          id: 'pavers', label: 'Pavers', role: 'optional plaza paving', tags: ['paving'],
+          sizeClass: 'small', desiredVariants: 1, priority: 0.5, generationBrief: 'small paving stone'
+        },
+        {
+          id: 'park-trees', label: 'Park trees', role: 'park shade trees', tags: ['tree', 'park'],
+          sizeClass: 'large', desiredVariants: 1, priority: 1, generationBrief: 'large park tree'
+        }
+      ],
+      grassFamilies: [],
+      zones: [{
+        id: 'park', label: 'Park', role: 'primary', importance: 1,
+        region: { kind: 'circle', center: [0, 0], radius: 0.8 },
+        brief: { atmosphere: 'open park', hierarchy: 'trees around paving', openness: 0.7, transitionIntent: 'soft edge' },
+        terrain: { elevation: 0, roughness: 0, flatness: 1 },
+        layers: [
+          {
+            familyId: 'pavers', density: 1, scaleRange: [1, 1], distribution: 'even', edgeFalloff: 0,
+            placement: { mode: 'layout', pattern: 'grid', spacing: 0.8, offset: 0, direction: 0, facing: 'guide' }
+          },
+          {
+            familyId: 'park-trees', density: 0.03, scaleRange: [0.9, 1.1], distribution: 'clustered', edgeFalloff: 0.2,
+            placement: { mode: 'patch' }
+          }
+        ],
+        grassLayers: [], excludeZoneIds: []
+      }],
+      transitions: [], consultations: [], renderPromptSuggestions: []
+    }, map);
+    const paver = asset('asset-paver', 'Paver', ['paving'], 'small', 'voxel');
+    paver.footprintRadius = 0.1;
+    const tree = asset('asset-park-tree', 'Park tree', ['tree', 'park'], 'large', 'voxel');
+    tree.footprintRadius = 3.8125;
+    const resolved = resolveSceneFamilies(plan, map, [paver, tree], 0).families;
+
+    const compiled = compileSceneComposition(map, plan, resolved);
+
+    expect(compiled.metrics.familyCounts['park-trees']).toBeGreaterThanOrEqual(1);
+  });
+
   it('adds real editable ground cover when the director leaves most of the map blank', () => {
     const map = createEmptyMap('Sparse valley', 'map-sparse-valley', [96, 16, 96], 'voxel-pro');
     const sparse = structuredClone(planInput()) as {
@@ -382,6 +437,119 @@ describe('scene composition contract', () => {
     expect(placed).toBeDefined();
     expect(Math.abs(placed!.transform.position[0])).toBeLessThanOrEqual(48 - 8.15 * placed!.transform.scale[0]);
     expect(Math.abs(placed!.transform.position[2])).toBeLessThanOrEqual(48 - 8.15 * placed!.transform.scale[2]);
+  });
+
+  it('tries a fallback land region when a required asset has no valid point in its water target', () => {
+    const map = createEmptyMap('Island park', 'map-water-target-fallback', [96, 16, 96], 'voxel');
+    const plan = normalizeSceneCompositionPlan({
+      version: 1,
+      summary: 'A lighthouse overlooks an island park.',
+      globalBrief: {
+        spatialTheme: 'small island park beside open water',
+        visualHierarchy: 'the lighthouse is the focus',
+        assetArtDirection: 'readable voxel silhouettes',
+        focalZoneId: 'park',
+        terrainBase: { preset: 'plain', seed: 13, amplitude: 0, roughness: 0 }
+      },
+      intentRequirements: [{
+        id: 'lighthouse', kind: 'asset-family', description: 'required lighthouse',
+        targetZoneId: 'water', familyId: 'lighthouse', minCount: 1
+      }],
+      zones: [
+        {
+          id: 'water', label: 'Water', role: 'secondary', importance: 0.7,
+          region: { kind: 'circle', center: [-0.55, 0], radius: 0.05 },
+          brief: { atmosphere: 'open sea', hierarchy: 'water foreground', openness: 1, transitionIntent: 'shore' },
+          terrain: { elevation: -0.2, roughness: 0, flatness: 1 },
+          water: { type: 'lake', level: 0.2, depth: 1.5 },
+          layers: [], grassLayers: [], excludeZoneIds: []
+        },
+        {
+          id: 'park', label: 'Park', role: 'primary', importance: 1,
+          region: { kind: 'circle', center: [0.45, 0], radius: 0.35 },
+          brief: { atmosphere: 'quiet park', hierarchy: 'lighthouse focus', openness: 0.8, transitionIntent: 'open lawn' },
+          terrain: { elevation: 0, roughness: 0, flatness: 1 },
+          layers: [], grassLayers: [], excludeZoneIds: []
+        }
+      ],
+      assetFamilies: [{
+        id: 'lighthouse', label: 'Red roof lighthouse', role: 'landmark', tags: ['lighthouse', 'landmark'],
+        sizeClass: 'large', desiredVariants: 1, priority: 1, generationBrief: 'one red roof lighthouse'
+      }],
+      grassFamilies: [], transitions: [], consultations: [], renderPromptSuggestions: []
+    }, map);
+    const lighthouse = asset('generated-lighthouse', 'Red roof lighthouse', ['lighthouse', 'landmark'], 'large', 'voxel');
+    const resolved = resolveSceneFamilies(plan, map, [lighthouse], 0).families;
+    const compiled = compileSceneComposition(map, plan, resolved);
+
+    const outcome = ensureSceneCompositionOutcome(map, plan, resolved, compiled);
+    const applied = applyMapOperations(map, outcome.compiled.operations);
+    const placed = applied.objects.find((object) => object.assetId === lighthouse.id);
+
+    expect(placed).toBeDefined();
+    expect(placed!.transform.position[0]).toBeGreaterThan(0);
+    expect(isNearWater(applied, placed!.transform.position[0], placed!.transform.position[2], 0.8)).toBe(false);
+  });
+
+  it('keeps an island park placeable when the sea surrounds its land zone', () => {
+    const map = createEmptyMap('Island park', 'map-island-sea-overlap', [96, 16, 96], 'voxel');
+    const plan = normalizeSceneCompositionPlan({
+      version: 1,
+      summary: 'A wooded park on an island surrounded by sea.',
+      globalBrief: {
+        spatialTheme: 'island park', visualHierarchy: 'woodland over the shore',
+        assetArtDirection: 'readable voxel park', focalZoneId: 'park',
+        terrainBase: { preset: 'island', seed: 1098549212, amplitude: 6, roughness: 0.45 }
+      },
+      intentRequirements: [
+        {
+          id: 'sea-water', kind: 'water', description: 'required surrounding sea',
+          targetZoneId: 'sea', minCount: 1
+        },
+        {
+          id: 'park-trees', kind: 'asset-family', description: 'required park trees',
+          targetZoneId: 'park', familyId: 'park-trees', minCount: 1
+        }
+      ],
+      assetFamilies: [{
+        id: 'park-trees', label: 'Park trees', role: 'woodland canopy', tags: ['tree', 'park'],
+        sizeClass: 'large', desiredVariants: 1, priority: 1, generationBrief: 'large coastal park tree'
+      }],
+      grassFamilies: [],
+      zones: [
+        {
+          id: 'sea', label: 'Sea', role: 'secondary', importance: 0.7,
+          region: { kind: 'circle', center: [0, 0], radius: 1.2 },
+          brief: { atmosphere: 'open sea', hierarchy: 'surrounding water', openness: 1, transitionIntent: 'shore' },
+          terrain: { elevation: -0.4, roughness: 0, flatness: 0 },
+          water: { type: 'lake', level: 0.2, depth: 2 },
+          layers: [], grassLayers: [], excludeZoneIds: []
+        },
+        {
+          id: 'park', label: 'Island park', role: 'primary', importance: 1,
+          region: { kind: 'circle', center: [0, 0], radius: 0.65 },
+          brief: { atmosphere: 'wooded park', hierarchy: 'tree canopy', openness: 0.45, transitionIntent: 'sandy shore' },
+          terrain: { elevation: 0.3, roughness: 0.15, flatness: 0.55, modifier: 'island', amplitude: 5, access: 'walkable' },
+          layers: [{
+            familyId: 'park-trees', density: 0.04, scaleRange: [0.9, 1.1],
+            distribution: 'clustered', edgeFalloff: 0.2, placement: { mode: 'patch' }
+          }],
+          grassLayers: [], excludeZoneIds: []
+        }
+      ],
+      transitions: [], consultations: [], renderPromptSuggestions: []
+    }, map);
+    const tree = asset('asset-park-tree', 'Coastal park tree', ['tree', 'park'], 'large', 'voxel');
+    tree.footprintRadius = 4.55;
+    const resolved = resolveSceneFamilies(plan, map, [tree], 0).families;
+    const compiled = compileSceneComposition(map, plan, resolved);
+
+    const outcome = ensureSceneCompositionOutcome(map, plan, resolved, compiled);
+    const applied = applyMapOperations(map, outcome.compiled.operations);
+
+    expect(applied.waterBodies.filter((water) => water.type === 'ocean')).toHaveLength(1);
+    expect(applied.waterBodies.some((water) => water.id === 'composition-water-sea')).toBe(false);
+    expect(applied.objects.some((object) => object.assetId === tree.id)).toBe(true);
   });
 
   it('recovers a sparse forest when the director misclassifies repeatable trees as accents', () => {

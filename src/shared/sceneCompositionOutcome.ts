@@ -14,6 +14,7 @@ import {
 import type { ResolvedSceneFamily } from './sceneCompositionAssets';
 import {
   compileZoneWater,
+  isImplicitOceanZone,
   type CompiledSceneComposition
 } from './sceneCompositionCompiler';
 
@@ -65,8 +66,12 @@ export function ensureSceneCompositionOutcome(
     }
 
     if (requirement.kind === 'water') {
+      const targetZone = plan.zones.find((zone) => zone.id === requirement.targetZoneId);
+      const usesTerrainOcean = targetZone ? isImplicitOceanZone(plan, targetZone) : false;
       const expectedId = requirement.targetZoneId ? `composition-water-${requirement.targetZoneId}` : null;
-      const count = expectedId
+      const count = usesTerrainOcean
+        ? candidate.waterBodies.filter((water) => water.type === 'ocean').length
+        : expectedId
         ? candidate.waterBodies.filter((water) => water.id === expectedId).length
         : candidate.waterBodies.length - map.waterBodies.length;
       if (count < requirement.minCount) {
@@ -318,6 +323,7 @@ function requiredFamilyRepairs(
         }
       }
     }));
+    if (placementOperations.length === 0) continue;
     operations.push(...placementOperations);
     workingMap = applyMapOperations(workingMap, placementOperations);
     remaining -= placementOperations.length;

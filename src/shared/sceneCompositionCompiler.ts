@@ -32,6 +32,9 @@ export function compileSceneComposition(
   const familyCounts: Record<string, number> = {};
   const zoneCounts: Record<string, number> = Object.fromEntries(plan.zones.map((zone) => [zone.id, 0]));
   const familyAssets = new Map(resolvedFamilies.map((resolved) => [resolved.family.id, resolved.assets]));
+  const requiredFamilyIds = new Set(plan.intentRequirements.flatMap((requirement) => (
+    requirement.kind === 'asset-family' && requirement.familyId ? [requirement.familyId] : []
+  )));
   const unresolvedFamilyIds = resolvedFamilies
     .filter((resolved) => resolved.assets.length === 0)
     .map((resolved) => resolved.family.id);
@@ -65,7 +68,8 @@ export function compileSceneComposition(
       .filter((layer) => placementMode(layer) !== 'anchor')
       .map((layer) => ({ zone, layer })))
     .sort((left, right) => (
-      placementOrder(placementMode(left.layer)) - placementOrder(placementMode(right.layer))
+      Number(requiredFamilyIds.has(right.layer.familyId)) - Number(requiredFamilyIds.has(left.layer.familyId))
+      || placementOrder(placementMode(left.layer)) - placementOrder(placementMode(right.layer))
       || right.zone.importance - left.zone.importance
     ));
   for (const [index, entry] of scatterLayers.entries()) {
@@ -83,9 +87,14 @@ export function compileSceneComposition(
       .map((zone) => ({ kind: 'circle' as const, ...sceneZoneWorldRegion(zone, map) }));
     const footprint = Math.max(...assets.map((asset) => asset.footprintRadius ?? 0.5));
     const libraryMetadata = assets[0]?.libraryMetadata;
+    const requiredLayerBudget = requiredFamilyIds.has(entry.layer.familyId)
+      ? Math.max(1, Math.floor(remaining / scatterLayers.slice(index).filter((item) => (
+          requiredFamilyIds.has(item.layer.familyId)
+        )).length))
+      : remaining;
     const placementLimit = libraryMetadata && (!libraryMetadata.repeatable || libraryMetadata.landmark)
       ? Math.min(1, remaining)
-      : remaining;
+      : requiredLayerBudget;
     const mode = placementMode(entry.layer);
     const spacing = Math.max(
       entry.layer.placement?.spacing ?? 0,
@@ -265,7 +274,7 @@ function compileZoneTerrain(map: EditableMap, plan: SceneCompositionPlan): MapOp
 
 export function compileZoneWater(map: EditableMap, plan: SceneCompositionPlan): MapOperation[] {
   return plan.zones.flatMap((zone): MapOperation[] => {
-    if (!zone.water) return [];
+    if (!zone.water || isImplicitOceanZone(plan, zone)) return [];
     const region = sceneZoneWorldRegion(zone, map);
     const radius = region.r * 0.82;
     const points = Array.from({ length: 12 }, (_, index): [number, number] => {
@@ -289,6 +298,19 @@ export function compileZoneWater(map: EditableMap, plan: SceneCompositionPlan): 
       }
     }];
   });
+}
+
+export function isImplicitOceanZone(
+  plan: SceneCompositionPlan,
+  zone: SceneCompositionPlan['zones'][number]
+): boolean {
+  const hasIslandTerrain = plan.globalBrief.terrainBase.preset === 'island'
+    || plan.globalBrief.terrainBase.preset === 'archipelago'
+    || plan.zones.some((item) => item.terrain.modifier === 'island');
+  if (!hasIslandTerrain || !zone.water) return false;
+  const identity = `${zone.id} ${zone.label}`;
+  const namesInlandWater = /pond|lake|pool|lagoon|池|湖|塘|泻湖/i.test(identity);
+  return !namesInlandWater && /sea|ocean|marine|海/i.test(identity);
 }
 
 function compileAccents(
