@@ -28,7 +28,8 @@ export function buildSceneDirectorPrompt(
     'You are the scene director for a 3D world editor.',
     'Transform the user request into one coherent environment composition plan before any terrain or objects are generated.',
     'You decide what this world looks like: regions, hierarchy, focal areas, transitions, terrain intent, asset families, density, scale, and negative space.',
-    `Terrain capabilities are composable and independent: ${JSON.stringify(terrainCapabilitySummary())}. Choose a global terrainBase, then add a zone terrain.modifier and terrain.surface when the request calls for cliffs, terraces, dunes, islands, sand, grass, or rock. For example, a mountain can use a cliff modifier even when the base is hills; never assume a modifier belongs only to one preset.`,
+    `Terrain capabilities are composable and independent: ${JSON.stringify(terrainCapabilitySummary())}. Choose a global terrainBase and terrainRefinement, then add a zone terrain.modifier and terrain.surface when the request calls for ridges, valleys, basins, cliffs, terraces, dunes, islands, sand, grass, or rock. For example, a mountain can use a cliff modifier even when the base is hills; never assume a modifier belongs only to one preset.`,
+    'Use terrainRefinement to remove synthetic cuts after all sculpting. Keep erosion around 0.12-0.35 and drainage around 0.04-0.16 unless the request explicitly needs heavily eroded terrain. Cliff softness below 0.16 is automatically given a natural shoulder; prefer 0.25-0.6 for broad formations.',
     'Do not output object coordinates, low-level map operations, spawn points, combat rules, cover, quests, or gameplay logic.',
     'Do not use a fixed forest/camp template. Choose regions and asset roles that specifically fit this request.',
     'Extract every explicitly named physical requirement (for example terrain, pond, cabin, castle, a named tree species, or an animal) into intentRequirements. These are acceptance criteria, not suggestions.',
@@ -40,6 +41,10 @@ export function buildSceneDirectorPrompt(
     'The union of all zones must cover at least 80% of the normalized map square. Any remaining large open area must be intentional negative space described by a zone, not an accidental omission.',
     'Asset family role is free semantic text. Tags should be reusable lower-case search terms.',
     'For each asset family provide 1-3 identityTags containing the specific identity required for reuse (for example maple, castle, deer, sakura). Do not put broad category tags such as tree, vegetation, building, structure, animal, forest, or landmark in identityTags.',
+    'Choose a placement.mode for each object layer: anchor for landmarks, field for even natural cover, patch for mixed ecological communities, linear for fences/lights/roadside objects, layout for buildings/camps/courtyards, and attached for props dependent on another family.',
+    'Buildings and structures must use anchor, linear, or layout; never field or patch. Use layout.pattern row|courtyard|radial|grid to establish order. Attached placement must name targetFamilyId. Related plant patch layers should share the zone habitat and use spacingByFamily when their ecological separation differs.',
+    'On mountains, give vegetation an explicit habitat.slope band. Keep large trees off cliff shoulders and narrow ridge crests; let shrubs and rocks tolerate progressively steeper ground.',
+    'Every mountain or ridge must choose terrain.access walkable|scenic. Walkable mountains are broad massifs; scenic mountains may be steeper but still require a wide region. A ridge is only valid inside a large region. Use layout terraces when traversal should happen by jumping between geometric platforms.',
     'Grass is editable ground vegetation, not a generated model asset. When appropriate, define reusable grassFamilies and assign grassLayers to zones.',
     'Every grassLayers[].grassFamilyId must exactly match one grassFamilies[].id. Reuse the same declared grass family ID across zones.',
     'For each grass zone decide short/tall/flower proportions, density, variation, edge falloff, and residualDensity around structures (0 tidy, larger abandoned).',
@@ -63,7 +68,8 @@ export function buildSceneDirectorPrompt(
         visualHierarchy: 'primary/secondary visual relationship',
         assetArtDirection: 'shared asset style, proportions and palette',
         focalZoneId: 'zone-id',
-        terrainBase: { preset: 'plain|hills|valley|island|archipelago|canyon|cliff-plateau|dune-desert', seed: map.seed, amplitude: 4, roughness: 0.5, direction: 90 }
+        terrainBase: { preset: 'plain|hills|valley|island|archipelago|canyon|cliff-plateau|dune-desert', seed: map.seed, amplitude: 4, roughness: 0.5, direction: 90 },
+        terrainRefinement: { erosion: 0.22, drainage: 0.08, iterations: 3, talus: 46 }
       },
       intentRequirements: [
         { id: 'terrain-foundation', kind: 'terrain', description: 'visible terrain foundation', targetZoneId: 'zone-id', minCount: 1 },
@@ -76,11 +82,19 @@ export function buildSceneDirectorPrompt(
         brief: { atmosphere: 'text', hierarchy: 'text', openness: 0.4, transitionIntent: 'text' },
         terrain: {
           elevation: 0.1, roughness: 0.5, flatness: 0.2,
-          modifier: 'cliff|terrace|dune|island|null', layout: 'plateau|coast|canyon|wall|terraces|null',
+          modifier: 'mountain|ridge|valley|basin|cliff|terrace|dune|island|null', layout: 'plateau|coast|canyon|wall|terraces|null', access: 'walkable|scenic',
           surface: 'grass|sand|rock|null', amplitude: 4, softness: 0.2, direction: 90, variation: 0.45, layers: 4
         },
         water: null,
-        layers: [{ familyId: 'family-id', density: 0.04, scaleRange: [0.8, 1.2], distribution: 'even|clustered|accent', edgeFalloff: 0.25 }],
+        layers: [{
+          familyId: 'family-id', density: 0.04, scaleRange: [0.8, 1.2], distribution: 'even|clustered|accent', edgeFalloff: 0.25,
+          placement: {
+            mode: 'anchor|field|patch|linear|layout|attached', pattern: 'row|courtyard|radial|grid',
+            direction: 0, spacing: 3, offset: 0, facing: 'random|guide|inward|outward',
+            targetFamilyId: null, spacingByFamily: { 'other-family-id': 2.5 },
+            habitat: { height: [-2, 0, 6, 10], slope: [0, 0, 20, 35], waterDistance: [0, 1, 5, 9] }
+          }
+        }],
         grassLayers: [{ grassFamilyId: 'grass-family-id', density: 0.7, variation: 0.2, edgeFalloff: 0.25, residualDensity: 0.08 }],
         excludeZoneIds: ['other-zone-id']
       }],

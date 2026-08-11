@@ -5,12 +5,15 @@ import {
 } from './map';
 import { applyMapOperations, type MapOperation } from './mapOperations';
 import { planLimits } from './mapPlanning';
+import { expandStructuredMapPlacement } from './mapPlacement';
 import { expandMapScatter } from './mapScatter';
 import {
   estimateSceneZoneCoverage,
   sceneZoneWorldRegion,
   type SceneCompositionMetrics,
-  type SceneCompositionPlan
+  type SceneCompositionPlan,
+  type ScenePlacementMode,
+  type SceneZoneLayer
 } from './sceneComposition';
 import type { ResolvedSceneFamily } from './sceneCompositionAssets';
 import { compileMapVisualSemantics } from './mapVisualSemantics';
@@ -39,6 +42,10 @@ export function compileSceneComposition(
   });
   operations.push({ type: 'terrain.generate', ...plan.globalBrief.terrainBase });
   operations.push(...compileZoneTerrain(map, plan));
+  operations.push({
+    type: 'terrain.refine',
+    ...(plan.globalBrief.terrainRefinement ?? { erosion: 0.2, drainage: 0.08, iterations: 3, talus: 46 })
+  });
   operations.push(...compileZoneWater(map, plan));
   operations.push(...compileZoneGrass(map, plan));
 
@@ -55,9 +62,12 @@ export function compileSceneComposition(
 
   const scatterLayers = plan.zones
     .flatMap((zone) => zone.layers
-      .filter((layer) => layer.distribution !== 'accent')
+      .filter((layer) => placementMode(layer) !== 'anchor')
       .map((layer) => ({ zone, layer })))
-    .sort((left, right) => right.zone.importance - left.zone.importance);
+    .sort((left, right) => (
+      placementOrder(placementMode(left.layer)) - placementOrder(placementMode(right.layer))
+      || right.zone.importance - left.zone.importance
+    ));
   for (const [index, entry] of scatterLayers.entries()) {
     if (remaining <= 0) break;
     const assets = familyAssets.get(entry.layer.familyId) ?? [];
@@ -76,19 +86,48 @@ export function compileSceneComposition(
     const placementLimit = libraryMetadata && (!libraryMetadata.repeatable || libraryMetadata.landmark)
       ? Math.min(1, remaining)
       : remaining;
-    const placements = expandMapScatter(workingMap, {
-      assetIds: assets.map((asset) => asset.id),
-      region: { kind: 'circle', ...region },
-      density: libraryMetadata?.density ?? entry.layer.density,
-      avoidWater: 1,
-      maxSlope: 32,
-      minSpacing: Math.max(libraryMetadata?.minSpacing ?? 0, 0.8, footprint * 1.8),
-      scaleRange: libraryMetadata?.scaleRange ?? entry.layer.scaleRange,
-      seed: derivedSeed(map.seed, `${entry.zone.id}:${entry.layer.familyId}:${index}`),
-      edgeFalloff: Math.max(entry.layer.edgeFalloff, transitionFalloff(plan, entry.zone.id)),
-      clusterStrength: entry.layer.distribution === 'clustered' ? 0.72 : 0,
-      excludeRegions: excluded
-    }, assets, placementLimit, `composition-${entry.zone.id}-${entry.layer.familyId}`);
+    const mode = placementMode(entry.layer);
+    const spacing = Math.max(
+      entry.layer.placement?.spacing ?? 0,
+      libraryMetadata?.minSpacing ?? 0,
+      0.8,
+      footprint * 1.8
+    );
+    const seed = derivedSeed(map.seed, `${entry.zone.id}:${entry.layer.familyId}:${index}`);
+    const placements = mode === 'linear' || mode === 'layout' || mode === 'attached'
+      ? expandStructuredMapPlacement(workingMap, {
+          mode,
+          pattern: entry.layer.placement?.pattern,
+          assetIds: assets.map((asset) => asset.id),
+          region: { kind: 'circle', ...region },
+          density: libraryMetadata?.density ?? entry.layer.density,
+          spacing,
+          offset: entry.layer.placement?.offset ?? 0,
+          direction: entry.layer.placement?.direction ?? 0,
+          facing: entry.layer.placement?.facing ?? (mode === 'layout' ? 'inward' : 'guide'),
+          avoidWater: 1,
+          maxSlope: mode === 'layout' ? 18 : 24,
+          scaleRange: libraryMetadata?.scaleRange ?? entry.layer.scaleRange,
+          seed,
+          targets: attachmentTargets(workingMap, entry.layer, familyAssets),
+          excludeRegions: excluded
+        }, assets, placementLimit, `composition-${entry.zone.id}-${entry.layer.familyId}`)
+      : expandMapScatter(workingMap, {
+          assetIds: assets.map((asset) => asset.id),
+          region: { kind: 'circle', ...region },
+          density: libraryMetadata?.density ?? entry.layer.density,
+          avoidWater: 1,
+          maxSlope: 28,
+          minSpacing: spacing,
+          spacingByAssetId: spacingByAssetId(entry.layer, familyAssets),
+          habitat: entry.layer.placement?.habitat,
+          scaleRange: libraryMetadata?.scaleRange ?? entry.layer.scaleRange,
+          seed,
+          patchSeed: derivedSeed(map.seed, `${entry.zone.id}:shared-habitat`),
+          edgeFalloff: Math.max(entry.layer.edgeFalloff, transitionFalloff(plan, entry.zone.id)),
+          clusterStrength: mode === 'patch' ? 0.72 : 0,
+          excludeRegions: excluded
+        }, assets, placementLimit, `composition-${entry.zone.id}-${entry.layer.familyId}`);
     const placementOperations = placements.map((placement): MapOperation => ({
       type: 'object.add',
       object: {
@@ -175,7 +214,8 @@ function compileZoneTerrain(map: EditableMap, plan: SceneCompositionPlan): MapOp
         direction: zone.terrain.direction,
         variation: zone.terrain.variation,
         layers: zone.terrain.layers,
-        layout: zone.terrain.layout
+        layout: zone.terrain.layout,
+        access: zone.terrain.access
       });
     }
     if (zone.terrain.surface) {
@@ -187,7 +227,7 @@ function compileZoneTerrain(map: EditableMap, plan: SceneCompositionPlan): MapOp
         zoneId: `composition-surface-${zone.id}`
       });
     }
-    if (zone.water) continue;
+    if (zone.water || zone.terrain.modifier) continue;
     const targetHeight = clamp(baseHeight + zone.terrain.elevation * map.box.size[1] * 0.22, 0, maxHeight);
     if (zone.terrain.flatness >= 0.25) {
       operations.push({
@@ -265,7 +305,7 @@ function compileAccents(
   const zones = [...plan.zones].sort((left, right) => right.importance - left.importance);
   for (const zone of zones) {
     for (const layer of zone.layers) {
-      if (layer.distribution !== 'accent' || objectCount >= maxCount || zone.water) continue;
+      if (placementMode(layer) !== 'anchor' || objectCount >= maxCount || zone.water) continue;
       const assets = familyAssets.get(layer.familyId) ?? [];
       if (assets.length === 0) continue;
       const region = sceneZoneWorldRegion(zone, map);
@@ -329,6 +369,45 @@ function compileAccents(
 function shouldClearGrass(family: SceneCompositionPlan['assetFamilies'][number]): boolean {
   const semantic = `${family.role} ${family.tags.join(' ')}`.toLowerCase();
   return /\b(building|structure|house|cabin|camp|road|path|trail)\b/.test(semantic);
+}
+
+function placementMode(layer: SceneZoneLayer): ScenePlacementMode {
+  return layer.placement?.mode
+    ?? (layer.distribution === 'accent' ? 'anchor' : layer.distribution === 'clustered' ? 'patch' : 'field');
+}
+
+function placementOrder(mode: ScenePlacementMode): number {
+  if (mode === 'layout') return 0;
+  if (mode === 'linear') return 1;
+  if (mode === 'field' || mode === 'patch') return 2;
+  if (mode === 'attached') return 3;
+  return -1;
+}
+
+function spacingByAssetId(
+  layer: SceneZoneLayer,
+  familyAssets: ReadonlyMap<string, MapAsset[]>
+): Record<string, number> | undefined {
+  const byFamily = layer.placement?.spacingByFamily;
+  if (!byFamily) return undefined;
+  const result: Record<string, number> = {};
+  for (const [familyId, spacing] of Object.entries(byFamily)) {
+    for (const asset of familyAssets.get(familyId) ?? []) result[asset.id] = spacing;
+  }
+  return Object.keys(result).length > 0 ? result : undefined;
+}
+
+function attachmentTargets(
+  map: EditableMap,
+  layer: SceneZoneLayer,
+  familyAssets: ReadonlyMap<string, MapAsset[]>
+): Array<{ x: number; z: number }> | undefined {
+  const targetFamilyId = layer.placement?.targetFamilyId;
+  if (!targetFamilyId) return undefined;
+  const targetAssetIds = new Set((familyAssets.get(targetFamilyId) ?? []).map((asset) => asset.id));
+  return map.objects
+    .filter((object) => object.assetId && targetAssetIds.has(object.assetId))
+    .map((object) => ({ x: object.transform.position[0], z: object.transform.position[2] }));
 }
 
 function grassLayerId(familyId: string): string {

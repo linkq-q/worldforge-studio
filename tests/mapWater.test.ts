@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { createEmptyMap, sampleTerrainHeight, type MapWaterBody } from '../src/shared/map';
 import {
+  distanceToWater,
   prepareStructuredWaterInPlace,
   riverPathSamples,
   waterBoundaryPoints,
@@ -56,5 +57,18 @@ describe('structured water geometry', () => {
     expect(map.waterBodies[0].levels).toHaveLength(3);
     expect(map.waterBodies[0].shorelineSmoothness).toBeGreaterThan(0.7);
     expect(sampleTerrainHeight(map, 0, 2)).toBeLessThan(waterSurfaceLevelAt(map.waterBodies[0], 0, 2));
+  });
+
+  it('measures habitat distance from the actual water boundary', () => {
+    const map = createEmptyMap('lake distance', 'lake-distance');
+    map.waterBodies = [{
+      id: 'lake', name: 'Lake', type: 'lake', level: 0, depth: 2, width: 1,
+      points: [[-3, -3], [3, -3], [3, 3], [-3, 3]],
+      shorelineSmoothness: 0,
+      shorelineIrregularity: 0
+    }];
+
+    expect(distanceToWater(map, 0, 0)).toBe(0);
+    expect(distanceToWater(map, 5, 0)).toBeCloseTo(2);
   });
 });

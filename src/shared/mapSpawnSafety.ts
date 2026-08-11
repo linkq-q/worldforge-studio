@@ -1,5 +1,6 @@
 import {
   PLAYER_RADIUS,
+  PLAYER_MAX_WALKABLE_SLOPE,
   getMapBounds,
   getMapObjectAabbs,
   getTerrainCliffAabbs,
@@ -24,7 +25,7 @@ export function isSpawnPositionSafe(map: EditableMap, x: number, z: number): boo
     )) return false;
   }
   if (isNearWater(map, x, z, PLAYER_RADIUS + 0.2)) return false;
-  if (terrainSlopeDegrees(map, x, z) > 35) return false;
+  if (terrainSlopeDegrees(map, x, z) > PLAYER_MAX_WALKABLE_SLOPE) return false;
   return ![...getMapObjectAabbs(map), ...getTerrainCliffAabbs(map)].some((obstacle) => {
     const closestX = clamp(x, obstacle.min[0], obstacle.max[0]);
     const closestZ = clamp(z, obstacle.min[2], obstacle.max[2]);

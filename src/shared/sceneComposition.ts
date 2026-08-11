@@ -1,16 +1,21 @@
 import {
   getMapBounds,
+  TERRAIN_MIN_HEIGHT,
   type EditableMap
 } from './map';
 import type { MapAssetSizeClass } from './mapAssetMetadata';
 import {
   TERRAIN_CLIFF_LAYOUTS,
+  TERRAIN_ACCESS_MODES,
   TERRAIN_MODIFIERS,
   TERRAIN_SURFACES,
   normalizeTerrainGenerationParams,
+  normalizeTerrainRefinementParams,
   type TerrainCliffLayout,
+  type TerrainAccessMode,
   type TerrainGenerationParams,
   type TerrainModifier,
+  type TerrainRefinementParams,
   type TerrainSurfaceKind
 } from './terrainGeneration';
 
@@ -28,9 +33,13 @@ export const SCENE_COMPOSITION_LIMITS = Object.freeze({
 });
 export const SCENE_ZONE_ROLES = ['primary', 'secondary', 'transition', 'negative-space'] as const;
 export const SCENE_DISTRIBUTIONS = ['even', 'clustered', 'accent'] as const;
+export const SCENE_PLACEMENT_MODES = ['anchor', 'field', 'patch', 'linear', 'layout', 'attached'] as const;
+export const SCENE_LAYOUT_PATTERNS = ['row', 'courtyard', 'radial', 'grid'] as const;
 
 export type SceneZoneRole = typeof SCENE_ZONE_ROLES[number];
 export type SceneDistribution = typeof SCENE_DISTRIBUTIONS[number];
+export type ScenePlacementMode = typeof SCENE_PLACEMENT_MODES[number];
+export type SceneLayoutPattern = typeof SCENE_LAYOUT_PATTERNS[number];
 
 export interface SceneCompositionPlan {
   version: 1;
@@ -41,6 +50,7 @@ export interface SceneCompositionPlan {
     assetArtDirection: string;
     focalZoneId: string;
     terrainBase: TerrainGenerationParams;
+    terrainRefinement?: TerrainRefinementParams;
   };
   intentRequirements: SceneIntentRequirement[];
   zones: SceneCompositionZone[];
@@ -82,6 +92,7 @@ export interface SceneCompositionZone {
     flatness: number;
     modifier?: TerrainModifier;
     layout?: TerrainCliffLayout;
+    access?: TerrainAccessMode;
     surface?: TerrainSurfaceKind;
     amplitude?: number;
     softness?: number;
@@ -105,6 +116,21 @@ export interface SceneZoneLayer {
   scaleRange: [number, number];
   distribution: SceneDistribution;
   edgeFalloff: number;
+  placement?: {
+    mode: ScenePlacementMode;
+    pattern?: SceneLayoutPattern;
+    direction: number;
+    spacing?: number;
+    offset: number;
+    facing: 'random' | 'guide' | 'inward' | 'outward';
+    targetFamilyId?: string;
+    spacingByFamily?: Record<string, number>;
+    habitat?: {
+      height?: [number, number, number, number];
+      slope?: [number, number, number, number];
+      waterDistance?: [number, number, number, number];
+    };
+  };
 }
 
 export interface SceneGrassFamily {
@@ -208,7 +234,8 @@ export function normalizeSceneCompositionPlan(value: unknown, map: EditableMap):
       visualHierarchy: cleanText(globalInput.visualHierarchy, '', 240),
       assetArtDirection: cleanText(globalInput.assetArtDirection, '', 240),
       focalZoneId,
-      terrainBase: normalizeTerrainGenerationParams(globalInput.terrainBase, map)
+      terrainBase: normalizeTerrainGenerationParams(globalInput.terrainBase, map),
+      terrainRefinement: normalizeTerrainRefinementParams(globalInput.terrainRefinement)
     },
     intentRequirements,
     zones,
@@ -430,7 +457,7 @@ function normalizeZone(
     ? terrainInput.surface as TerrainSurfaceKind
     : undefined;
   const layers = Array.isArray(input.layers)
-    ? input.layers.slice(0, 8).map((layer) => normalizeLayer(layer, familyIds))
+    ? input.layers.slice(0, 8).map((layer) => normalizeLayer(layer, familyIds, map))
     : [];
   const grassLayers = Array.isArray(input.grassLayers)
     ? input.grassLayers.slice(0, SCENE_COMPOSITION_LIMITS.grassFamilyCount)
@@ -461,6 +488,9 @@ function normalizeZone(
       flatness: clamp(finiteNumber(terrainInput.flatness, 0), 0, 1),
       modifier,
       layout,
+      access: modifier && TERRAIN_ACCESS_MODES.includes(terrainInput.access as TerrainAccessMode)
+        ? terrainInput.access as TerrainAccessMode
+        : modifier ? 'walkable' : undefined,
       surface,
       amplitude: modifier
         ? clamp(finiteNumber(terrainInput.amplitude, map.box.size[1] * 0.3), 0.05, map.box.size[1] - 0.05)
@@ -566,7 +596,7 @@ function grassReferenceKey(value: string): string {
   return cleanId(value).replace(/[-_]/g, '');
 }
 
-function normalizeLayer(value: unknown, familyIds: Set<string>): SceneZoneLayer {
+function normalizeLayer(value: unknown, familyIds: Set<string>, map: EditableMap): SceneZoneLayer {
   const input = requireRecord(value, 'invalid_scene_layer');
   const familyId = requireId(input.familyId, 'invalid_scene_layer');
   if (!familyIds.has(familyId)) throw new Error('unknown_scene_family');
@@ -574,6 +604,7 @@ function normalizeLayer(value: unknown, familyIds: Set<string>): SceneZoneLayer 
     ? input.distribution as SceneDistribution
     : 'even';
   const scaleRange = requirePair(input.scaleRange ?? [0.9, 1.1], 'invalid_scene_layer');
+  const placement = normalizePlacement(input.placement, familyIds, map);
   return {
     familyId,
     density: clamp(finiteNumber(input.density, 0.04), 0.0001, 1),
@@ -582,8 +613,72 @@ function normalizeLayer(value: unknown, familyIds: Set<string>): SceneZoneLayer 
       clamp(Math.max(scaleRange[0], scaleRange[1]), 0.1, 8)
     ],
     distribution,
-    edgeFalloff: clamp(finiteNumber(input.edgeFalloff, 0.25), 0, 1)
+    edgeFalloff: clamp(finiteNumber(input.edgeFalloff, 0.25), 0, 1),
+    ...(placement ? { placement } : {})
   };
+}
+
+function normalizePlacement(
+  value: unknown,
+  familyIds: Set<string>,
+  map: EditableMap
+): SceneZoneLayer['placement'] | undefined {
+  if (value === undefined || value === null) return undefined;
+  const input = requireRecord(value, 'invalid_scene_placement');
+  const mode = SCENE_PLACEMENT_MODES.includes(input.mode as ScenePlacementMode)
+    ? input.mode as ScenePlacementMode
+    : null;
+  if (!mode) throw new Error('invalid_scene_placement');
+  const pattern = SCENE_LAYOUT_PATTERNS.includes(input.pattern as SceneLayoutPattern)
+    ? input.pattern as SceneLayoutPattern
+    : undefined;
+  const facing = input.facing === 'guide' || input.facing === 'inward' || input.facing === 'outward'
+    ? input.facing
+    : 'random';
+  const targetFamilyId = cleanId(input.targetFamilyId);
+  if (mode === 'attached' && (!targetFamilyId || !familyIds.has(targetFamilyId))) {
+    throw new Error('invalid_scene_attachment_target');
+  }
+  const spacingByFamily: Record<string, number> = {};
+  if (input.spacingByFamily && typeof input.spacingByFamily === 'object' && !Array.isArray(input.spacingByFamily)) {
+    for (const [familyId, spacing] of Object.entries(input.spacingByFamily as Record<string, unknown>)) {
+      if (familyIds.has(familyId)) spacingByFamily[familyId] = clamp(finiteNumber(spacing, 1), 0.1, 64);
+    }
+  }
+  const habitatInput = input.habitat && typeof input.habitat === 'object' && !Array.isArray(input.habitat)
+    ? input.habitat as Record<string, unknown>
+    : null;
+  const habitat = habitatInput ? {
+    ...(habitatInput.height === undefined ? {} : {
+      height: normalizeBand(habitatInput.height, TERRAIN_MIN_HEIGHT, map.box.size[1] - 0.05)
+    }),
+    ...(habitatInput.slope === undefined ? {} : { slope: normalizeBand(habitatInput.slope, 0, 89) }),
+    ...(habitatInput.waterDistance === undefined ? {} : {
+      waterDistance: normalizeBand(
+        habitatInput.waterDistance,
+        0,
+        Math.hypot(map.box.size[0], map.box.size[2])
+      )
+    })
+  } : undefined;
+  return {
+    mode,
+    ...(pattern ? { pattern } : {}),
+    direction: ((finiteNumber(input.direction, 0) % 360) + 360) % 360,
+    ...(input.spacing === undefined ? {} : { spacing: clamp(finiteNumber(input.spacing, 2), 0.1, 64) }),
+    offset: clamp(finiteNumber(input.offset, 0), -64, 64),
+    facing,
+    ...(targetFamilyId ? { targetFamilyId } : {}),
+    ...(Object.keys(spacingByFamily).length > 0 ? { spacingByFamily } : {}),
+    ...(habitat && Object.keys(habitat).length > 0 ? { habitat } : {})
+  };
+}
+
+function normalizeBand(value: unknown, minimum: number, maximum: number): [number, number, number, number] {
+  if (!Array.isArray(value) || value.length < 4) throw new Error('invalid_scene_habitat_band');
+  const values = value.slice(0, 4).map((item) => clamp(finiteNumber(item, minimum), minimum, maximum));
+  values.sort((left, right) => left - right);
+  return values as [number, number, number, number];
 }
 
 function normalizeZoneWater(value: unknown, map: EditableMap): SceneCompositionZone['water'] {

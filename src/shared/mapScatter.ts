@@ -6,8 +6,8 @@ import {
   type EditableMap,
   type MapAsset
 } from './map';
-import { isNearWater } from './mapWater';
-import { terrainSlopeDegrees } from './mapTerrainAnalysis';
+import { distanceToWater, isNearWater } from './mapWater';
+import { terrainFootprintSlopeDegrees } from './mapTerrainAnalysis';
 
 export interface MapScatterPlan {
   assetIds: string[];
@@ -25,6 +25,16 @@ export interface MapScatterPlan {
   seed: number;
   edgeFalloff?: number;
   clusterStrength?: number;
+  /** Shared by related families so they occupy one habitat instead of separate obvious blobs. */
+  patchSeed?: number;
+  /** Pair-specific ecological spacing; hard collider separation still applies. */
+  spacingByAssetId?: Record<string, number>;
+  habitat?: {
+    /** Outer minimum, preferred minimum, preferred maximum, outer maximum. */
+    height?: [number, number, number, number];
+    slope?: [number, number, number, number];
+    waterDistance?: [number, number, number, number];
+  };
   excludeRegions?: Array<{
     kind: 'circle';
     x: number;
@@ -48,6 +58,7 @@ interface OccupiedCircle {
   x: number;
   z: number;
   radius: number;
+  assetId?: string;
 }
 
 export function expandMapScatter(
@@ -74,6 +85,7 @@ export function expandMapScatter(
   const maxScale = clamp(Math.max(...plan.scaleRange), minScale, 8);
   const edgeFalloff = clamp(plan.edgeFalloff ?? 0, 0, 1);
   const clusterStrength = clamp(plan.clusterStrength ?? 0, 0, 1);
+  const maxSlope = clamp(plan.maxSlope, 0, 89);
   const excludeRegions = plan.excludeRegions ?? [];
   const occupied = existingOccupiedCircles(map);
   const accepted: MapScatterPlacement[] = [];
@@ -89,7 +101,7 @@ export function expandMapScatter(
       const z = (gridZ + 0.15 + random() * 0.7) * cellSize;
       const asset = selectedAssets[Math.floor(random() * selectedAssets.length)];
       const scale = minScale + (maxScale - minScale) * random();
-      const footprintRadius = assetFootprintRadius(asset) * scale;
+      const footprintRadius = mapAssetFootprintRadius(asset) * scale;
       candidateIndex += 1;
 
       const normalizedDistance = Math.hypot(x - plan.region.x, z - plan.region.z) / regionRadius;
@@ -98,15 +110,32 @@ export function expandMapScatter(
       const edgeProbability = edgeFalloff <= 0
         ? 1
         : clamp((1 - normalizedDistance) / edgeFalloff, 0, 1);
+      const patchX = x / Math.max(1, cellSize * 4);
+      const patchZ = z / Math.max(1, cellSize * 4);
+      const sharedPatch = clusterNoise(patchX, patchZ, plan.patchSeed ?? plan.seed);
+      const familyDetail = clusterNoise(patchX * 1.9, patchZ * 1.9, plan.seed + 7919);
+      const habitatPatch = sharedPatch * 0.72 + familyDetail * 0.28;
       const clusterProbability = 1 - clusterStrength
-        + clusterStrength * clusterNoise(x / Math.max(1, cellSize * 4), z / Math.max(1, cellSize * 4), plan.seed);
-      if (random() > edgeProbability * clusterProbability) continue;
+        + clusterStrength * (0.35 + smooth(habitatPatch) * 0.65);
+      const y = sampleTerrainHeight(map, x, z);
+      const slope = terrainFootprintSlopeDegrees(map, x, z, footprintRadius);
+      if (slope > maxSlope) continue;
+      const waterSuitability = plan.habitat?.waterDistance
+        ? bandSuitability(distanceToWater(map, x, z), plan.habitat.waterDistance)
+        : 1;
+      const habitatProbability = bandSuitability(y, plan.habitat?.height)
+        * bandSuitability(slope, plan.habitat?.slope)
+        * waterSuitability
+        * slopeSuitability(slope, maxSlope);
+      if (random() > edgeProbability * clusterProbability * habitatProbability) continue;
       if (x < bounds.minX + footprintRadius || x > bounds.maxX - footprintRadius) continue;
       if (z < bounds.minZ + footprintRadius || z > bounds.maxZ - footprintRadius) continue;
       if (isNearWater(map, x, z, Math.max(0, plan.avoidWater))) continue;
-      if (terrainSlopeDegrees(map, x, z) > clamp(plan.maxSlope, 0, 89)) continue;
       if (occupied.some((item) =>
-        Math.hypot(x - item.x, z - item.z) < Math.max(minSpacing, footprintRadius + item.radius)
+        Math.hypot(x - item.x, z - item.z) < Math.max(
+          item.assetId ? Math.max(0, plan.spacingByAssetId?.[item.assetId] ?? minSpacing) : minSpacing,
+          footprintRadius + item.radius
+        )
       )) continue;
 
       accepted.push({
@@ -114,12 +143,12 @@ export function expandMapScatter(
         assetId: asset.id,
         name: asset.name,
         x,
-        y: sampleTerrainHeight(map, x, z),
+        y,
         z,
         rotationY: random() * Math.PI * 2,
         scale
       });
-      occupied.push({ x, z, radius: footprintRadius });
+      occupied.push({ x, z, radius: footprintRadius, assetId: asset.id });
     }
   }
   return accepted;
@@ -152,14 +181,31 @@ function lerp(left: number, right: number, amount: number): number {
 }
 
 function existingOccupiedCircles(map: EditableMap): OccupiedCircle[] {
+  const assetByObjectId = new Map(map.objects.map((object) => [object.id, object.assetId ?? undefined]));
   return [...getMapObjectAabbs(map), ...getTerrainCliffAabbs(map)].map((box) => ({
     x: (box.min[0] + box.max[0]) / 2,
     z: (box.min[2] + box.max[2]) / 2,
-    radius: Math.hypot(box.max[0] - box.min[0], box.max[2] - box.min[2]) / 2
+    radius: Math.hypot(box.max[0] - box.min[0], box.max[2] - box.min[2]) / 2,
+    assetId: assetByObjectId.get(box.objectId)
   }));
 }
 
-function assetFootprintRadius(asset: MapAsset): number {
+function bandSuitability(value: number, band: [number, number, number, number] | undefined): number {
+  if (!band) return 1;
+  const [outerMin, preferredMin, preferredMax, outerMax] = band;
+  if (value <= outerMin || value >= outerMax) return 0;
+  if (value >= preferredMin && value <= preferredMax) return 1;
+  if (value < preferredMin) return smooth((value - outerMin) / Math.max(0.0001, preferredMin - outerMin));
+  return smooth((outerMax - value) / Math.max(0.0001, outerMax - preferredMax));
+}
+
+function slopeSuitability(slope: number, maxSlope: number): number {
+  const fadeStart = maxSlope * 0.55;
+  if (slope <= fadeStart) return 1;
+  return smooth((maxSlope - slope) / Math.max(0.0001, maxSlope - fadeStart));
+}
+
+export function mapAssetFootprintRadius(asset: MapAsset): number {
   const storedRadius = asset.footprintRadius;
   if (typeof storedRadius === 'number' && Number.isFinite(storedRadius)) return Math.max(0.1, storedRadius);
   const boxes = asset.colliderPlan?.boxes ?? [];

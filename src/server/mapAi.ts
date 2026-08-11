@@ -33,6 +33,7 @@ import {
 import {
   normalizeTerrainGenerationParams,
   normalizeTerrainModifierParams,
+  normalizeTerrainRefinementParams,
   normalizeTerrainSurfaceParams,
   terrainCapabilitySummary
 } from '../shared/terrainGeneration';
@@ -397,6 +398,9 @@ export function normalizeMapSuggestion(
   const terrainOperations = normalizeTerrainOperations(input.terrain, bounds, limits);
   operations.push(...terrainOperations);
   operations.push(...normalizeTerrainModifierOperations(input.terrainModifiers, map, limits));
+  if (input.terrainRefinement !== undefined && input.terrainRefinement !== null) {
+    operations.push({ type: 'terrain.refine', ...normalizeTerrainRefinementParams(input.terrainRefinement) });
+  }
   operations.push(...normalizeTerrainSurfaceOperations(input.terrainSurfaces, map));
   const waterRefineOperations = mode === 'refine'
     ? normalizeWaterRefineOperations(input.waterUpdates, input.waterRemovals, map, bounds)
@@ -408,6 +412,7 @@ export function normalizeMapSuggestion(
     operation.type === 'terrain.generate'
     || operation.type === 'terrain.brush'
     || operation.type === 'terrain.modify'
+    || operation.type === 'terrain.refine'
     || operation.type === 'terrain.surface'
     || operation.type === 'water.update'
     || operation.type === 'water.remove'
@@ -591,6 +596,7 @@ function scopeMapOperationsToVisualZone(
       case 'water.remove': return waterInside(operation.waterId);
       case 'reference.set': return contains(operation.point[0], operation.point[2]);
       case 'terrain.generate':
+      case 'terrain.refine':
       case 'terrain.set':
       case 'grass.layer.add':
       case 'grass.layer.update':
@@ -972,7 +978,12 @@ function normalizeScatterOperations(
         optionalNumber(rawScaleRange[0], 0.9),
         optionalNumber(rawScaleRange[1], 1.1)
       ],
-      seed: optionalNumber(input.seed, planIndex + 1)
+      seed: optionalNumber(input.seed, planIndex + 1),
+      edgeFalloff: optionalNumber(input.edgeFalloff, 0),
+      clusterStrength: optionalNumber(input.clusterStrength, 0),
+      patchSeed: optionalNumber(input.patchSeed, optionalNumber(input.seed, planIndex + 1)),
+      spacingByAssetId: normalizeScatterSpacing(input.spacingByAssetId, assetIds),
+      habitat: normalizeScatterHabitat(input.habitat)
     };
     const placements = expandMapScatter(
       workingMap,
@@ -1000,6 +1011,33 @@ function normalizeScatterOperations(
     }
   }
   return operations;
+}
+
+function normalizeScatterSpacing(value: unknown, assetIds: ReadonlySet<string>): Record<string, number> | undefined {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return undefined;
+  const result: Record<string, number> = {};
+  for (const [assetId, spacing] of Object.entries(value as Record<string, unknown>)) {
+    if (!assetIds.has(assetId)) continue;
+    result[assetId] = clamp(optionalNumber(spacing, 1), 0.1, 64);
+  }
+  return Object.keys(result).length > 0 ? result : undefined;
+}
+
+function normalizeScatterHabitat(value: unknown): MapScatterPlan['habitat'] | undefined {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return undefined;
+  const input = value as Record<string, unknown>;
+  const band = (raw: unknown, minimum: number, maximum: number) => {
+    if (!Array.isArray(raw) || raw.length < 4) return undefined;
+    const values = raw.slice(0, 4).map((item) => clamp(optionalNumber(item, minimum), minimum, maximum));
+    values.sort((left, right) => left - right);
+    return values as [number, number, number, number];
+  };
+  const height = band(input.height, -32, 32);
+  const slope = band(input.slope, 0, 89);
+  const waterDistance = band(input.waterDistance, 0, 2048);
+  return height || slope || waterDistance
+    ? { ...(height ? { height } : {}), ...(slope ? { slope } : {}), ...(waterDistance ? { waterDistance } : {}) }
+    : undefined;
 }
 
 function normalizeScatterRegion(
@@ -1194,17 +1232,18 @@ function buildSystemPrompt(
     `本地图配额：terrain 最多 ${limits.terrainBrushCount} 笔、笔刷半径最多 ${limits.brushRadiusMax}、waters 最多 ${limits.waterCount} 个、最终物体总数最多 ${limits.objectCount} 个。`,
     `terrainGeneration 是整体地形基底；可用能力：${JSON.stringify(terrainCapabilitySummary())}。新地图应优先选择一个基底；坐标由代码根据地图 seed 确定性生成。`,
     'terrain 每项格式：{"mode":"raise|lower|flatten","x":0,"z":0,"size":2,"strength":0.4,"targetHeight":0}，只用于地形基底之后的局部微调。',
-    'terrainModifiers 用于可复用的局部地貌能力，每项格式：{"modifier":"mountain|cliff|terrace|dune|island","region":{"kind":"circle","x":0,"z":0,"radius":8},"amplitude":5,"softness":0.2,"direction":90,"variation":0.45,"layers":4,"layout":"plateau|coast|canyon|wall|terraces"}。region 也可为 path（points + width）或 polygon（points）；island 只用 circle/polygon。山脉、群山必须使用 mountain 生成多峰宽肩的柔和山体；cliff 只用于真正的峭壁、断崖和峡谷墙。',
+    'terrainModifiers 用于可复用的局部地貌能力，每项格式：{"modifier":"mountain|ridge|valley|basin|cliff|terrace|dune|island","region":{"kind":"circle","x":0,"z":0,"radius":18},"amplitude":5,"softness":0.3,"direction":90,"variation":0.45,"layers":4,"layout":"plateau|coast|canyon|wall|terraces","access":"walkable|scenic"}。region 也可为 path（points + width）或 polygon（points）；island 只用 circle/polygon。山脉必须有宽阔连续的山地区域；walkable 使用低矮宽坡或 terraces 跳跃平台，scenic 才能使用更陡的装饰山。只有宽度足够时才生成 ridge，否则自动降级为山丘；cliff 只用于真正的峭壁、断崖和峡谷墙。',
+    'terrainRefinement 在所有地形塑形后执行，格式：{"erosion":0.22,"drainage":0.08,"iterations":3,"talus":46}。新地图通常应提供一次，用轻量坡面松弛和汇流雕刻消除规则刀切感；不要对局部区域重做全图 refinement。',
     'terrainSurfaces 用于局部地表语义，每项格式：{"surface":"grass|sand|rock","region":{"kind":"circle","x":0,"z":0,"radius":8},"intensity":1,"zoneId":"stable-zone-id"}。沙漠或沙丘区域应同时选择 sand。',
     `waters 每项格式：{"type":"lake|river","name":"名称","level":0.2,"depth":${DEFAULT_WATER_DEPTH},"width":1.2,"shorelineSmoothness":0.85,"shorelineIrregularity":0.16,"seed":7,"points":[{"x":0,"z":0}],"levels":[1.2,0.8]}。`,
     '湖泊用 5-10 个粗略边界控制点组合出多个圆弧岸湾，shorelineSmoothness 建议 0.7-0.95，shorelineIrregularity 建议 0.08-0.28；代码会用 seed 生成连续噪声并平滑成不规则圆弧，不要手写密集锯齿点。',
     `河流用 4-10 个从上游到下游排列的中心线控制点，width 是完整河宽，shorelineSmoothness 建议 0.65-0.9。可选 levels 必须与 points 等长并从上游到下游逐渐降低；省略时代码会根据源头地形与终点 level 自动生成沿程水位。河床会按 depth（0.1 到 ${MAX_WATER_DEPTH}）自动开槽并生成平滑河岸。`,
     `湖泊的 depth 是水面以下的盆地深度，代码会自动把湖底挖进地形，不要再用 terrain 笔刷压低水区。小水塘用 0.6 左右，深湖用 3 以上。`,
     'objects 只用于少量独立物体，格式：{"assetId":"已有ID","name":"名称","x":0,"z":0,"rotationYDeg":0,"scale":1}。',
-    '大量植被、岩石等重复物体必须优先使用 scatters，让代码生成坐标。scatters 每项格式：{"assetIds":["已有ID"],"region":{"kind":"circle","x":0,"z":0,"r":20},"density":0.04,"avoidWater":1,"maxSlope":30,"minSpacing":2,"scaleRange":[0.8,1.2],"seed":7}。',
+    '大量植被、岩石等重复物体必须优先使用 scatters，让代码生成坐标。scatters 每项格式：{"assetIds":["已有ID"],"region":{"kind":"circle","x":0,"z":0,"r":20},"density":0.04,"avoidWater":1,"maxSlope":30,"minSpacing":2,"scaleRange":[0.8,1.2],"seed":7,"patchSeed":99,"clusterStrength":0.6,"edgeFalloff":0.25,"spacingByAssetId":{"另一已有ID":3},"habitat":{"height":[-2,0,6,10],"slope":[0,0,20,35],"waterDistance":[0,1,5,9]}}。同一植物群落的多个 scatter 使用相同 patchSeed，让物种共享群落而不是各自形成圆团。',
     '若用户写了雾、光照、素描等氛围词，只放入 renderPromptSuggestions，不要用它改变地图。',
     '只返回一个 JSON 对象，不要 Markdown：',
-    '{"summary":"简短摘要","assetRequests":[{"name":"资产名","prompt":"独立低多边形物体描述，无地面和背景","tags":["tree","vegetation"]}],"terrainGeneration":{"preset":"hills","amplitude":5,"roughness":0.55},"terrain":[],"terrainModifiers":[],"terrainSurfaces":[],"waters":[],"waterUpdates":[],"waterRemovals":[],"objects":[],"objectUpdates":[],"objectRemovals":[],"scatters":[],"spawn":null,"renderPromptSuggestions":[]}',
+    '{"summary":"简短摘要","assetRequests":[{"name":"资产名","prompt":"独立低多边形物体描述，无地面和背景","tags":["tree","vegetation"]}],"terrainGeneration":{"preset":"hills","amplitude":5,"roughness":0.55},"terrain":[],"terrainModifiers":[],"terrainRefinement":{"erosion":0.22,"drainage":0.08,"iterations":3,"talus":46},"terrainSurfaces":[],"waters":[],"waterUpdates":[],"waterRemovals":[],"objects":[],"objectUpdates":[],"objectRemovals":[],"scatters":[],"spawn":null,"renderPromptSuggestions":[]}',
     `已有资产：${JSON.stringify(assetLibrary)}`
   ].join('\n');
 }
@@ -1249,6 +1288,7 @@ function hasSpatialOperations(suggestion: MapAiSuggestion): boolean {
     (operation.type === 'map.update' && operation.visualSemantics !== undefined)
     || operation.type === 'terrain.brush'
     || operation.type === 'terrain.modify'
+    || operation.type === 'terrain.refine'
     || operation.type === 'terrain.surface'
     || operation.type === 'terrain.generate'
     || operation.type === 'terrain.set'

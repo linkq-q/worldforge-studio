@@ -196,6 +196,30 @@ export function isNearWater(map: EditableMap, x: number, z: number, padding: num
   });
 }
 
+export function distanceToWater(map: EditableMap, x: number, z: number): number {
+  let closest = Number.POSITIVE_INFINITY;
+  for (const water of map.waterBodies) {
+    if (water.type === 'ocean') {
+      if (sampleTerrainHeight(map, x, z) <= water.level) return 0;
+      continue;
+    }
+    if (water.type === 'river') {
+      const samples = riverPathSamples(water);
+      for (let index = 1; index < samples.length; index += 1) {
+        closest = Math.min(
+          closest,
+          Math.max(0, distanceToSegment(x, z, samples[index - 1].point, samples[index].point) - water.width / 2)
+        );
+      }
+      continue;
+    }
+    const boundary = waterBoundaryPoints(water);
+    if (pointInPolygon(x, z, boundary)) return 0;
+    closest = Math.min(closest, polygonEdgeDistance(x, z, boundary));
+  }
+  return closest;
+}
+
 export function isPointInsideWaterBody(water: MapWaterBody, x: number, z: number, map?: EditableMap): boolean {
   if (water.type === 'ocean') return map ? sampleTerrainHeight(map, x, z) <= water.level + 0.02 : false;
   if (water.type === 'river') {

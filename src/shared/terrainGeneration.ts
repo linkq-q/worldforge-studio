@@ -4,6 +4,7 @@ import {
   terrainPointAt,
   type EditableMap
 } from './map';
+import { PLAYER_GRAVITY, PLAYER_JUMP_SPEED } from './protocol';
 import type { VisualZoneTag } from './visualDirection';
 
 export const TERRAIN_GENERATION_PRESETS = [
@@ -18,8 +19,13 @@ export const TERRAIN_GENERATION_PRESETS = [
 ] as const;
 export type TerrainGenerationPreset = typeof TERRAIN_GENERATION_PRESETS[number];
 
-export const TERRAIN_MODIFIERS = ['mountain', 'cliff', 'terrace', 'dune', 'island'] as const;
+export const TERRAIN_MODIFIERS = [
+  'mountain', 'ridge', 'valley', 'basin', 'cliff', 'terrace', 'dune', 'island'
+] as const;
 export type TerrainModifier = typeof TERRAIN_MODIFIERS[number];
+
+export const TERRAIN_ACCESS_MODES = ['walkable', 'scenic'] as const;
+export type TerrainAccessMode = typeof TERRAIN_ACCESS_MODES[number];
 
 export const TERRAIN_SURFACES = ['grass', 'sand', 'rock'] as const;
 export type TerrainSurfaceKind = typeof TERRAIN_SURFACES[number];
@@ -53,6 +59,14 @@ export interface TerrainModifierParams {
   variation: number;
   layers: number;
   layout: TerrainCliffLayout;
+  access: TerrainAccessMode;
+}
+
+export interface TerrainRefinementParams {
+  erosion: number;
+  drainage: number;
+  iterations: number;
+  talus: number;
 }
 
 export interface TerrainSurfaceParams {
@@ -84,6 +98,9 @@ export const TERRAIN_CAPABILITIES: readonly TerrainCapabilityDefinition[] = Obje
     ['dune-desert', '沙丘荒漠']
   ].map(([id, label]) => ({ id: `base.${id}`, label, category: 'base' as const, regionKinds: [] })),
   { id: 'modifier.mountain', label: '山峦', category: 'modifier', regionKinds: ALL_REGIONS },
+  { id: 'modifier.ridge', label: '山脊', category: 'modifier', regionKinds: ALL_REGIONS },
+  { id: 'modifier.valley', label: '谷地', category: 'modifier', regionKinds: ALL_REGIONS },
+  { id: 'modifier.basin', label: '盆地', category: 'modifier', regionKinds: ALL_REGIONS },
   { id: 'modifier.cliff', label: '峭壁', category: 'modifier', regionKinds: ALL_REGIONS },
   { id: 'modifier.terrace', label: '梯田', category: 'modifier', regionKinds: ALL_REGIONS },
   { id: 'modifier.dune', label: '沙丘', category: 'modifier', regionKinds: ALL_REGIONS },
@@ -136,7 +153,20 @@ export function normalizeTerrainModifierParams(value: unknown, map: EditableMap)
     direction: wrapDegrees(finiteNumber(input.direction, map.seed % 360)),
     variation: clamp(finiteNumber(input.variation, 0.45), 0, 1),
     layers: Math.round(clamp(finiteNumber(input.layers, 4), 2, 12)),
-    layout
+    layout,
+    access: TERRAIN_ACCESS_MODES.includes(input.access as TerrainAccessMode)
+      ? input.access as TerrainAccessMode
+      : 'walkable'
+  };
+}
+
+export function normalizeTerrainRefinementParams(value: unknown): TerrainRefinementParams {
+  const input = value && typeof value === 'object' ? value as Record<string, unknown> : {};
+  return {
+    erosion: clamp(finiteNumber(input.erosion, 0.2), 0, 1),
+    drainage: clamp(finiteNumber(input.drainage, 0.08), 0, 1),
+    iterations: Math.round(clamp(finiteNumber(input.iterations, 3), 1, 12)),
+    talus: clamp(finiteNumber(input.talus, 46), 20, 75)
   };
 }
 
@@ -157,7 +187,6 @@ export function generateTerrainInPlace(map: EditableMap, value: unknown): Terrai
   const params = normalizeTerrainGenerationParams(value, map);
   const terrain = map.terrain;
   const maxHeight = map.box.size[1] - 0.05;
-  const rotateAxis = (params.seed & 1) === 1;
   const angle = (params.direction ?? 0) * Math.PI / 180;
   const directionX = Math.cos(angle);
   const directionZ = Math.sin(angle);
@@ -167,8 +196,8 @@ export function generateTerrainInPlace(map: EditableMap, value: unknown): Terrai
     const nz = z / Math.max(1, terrain.resolutionZ - 1) * 2 - 1;
     for (let x = 0; x < terrain.resolutionX; x += 1) {
       const nx = x / Math.max(1, terrain.resolutionX - 1) * 2 - 1;
-      const axis = rotateAxis ? nz : nx;
-      const crossAxis = rotateAxis ? nx : nz;
+      const axis = nx * directionX + nz * directionZ;
+      const crossAxis = -nx * directionZ + nz * directionX;
       const noise = fbm((nx + 1) * 1.7, (nz + 1) * 1.7, params.seed, params.roughness);
       const detail = (noise + 1) / 2;
       let height = 0;
@@ -206,9 +235,20 @@ export function generateTerrainInPlace(map: EditableMap, value: unknown): Terrai
           break;
         }
         case 'cliff-plateau': {
-          const edge = axis + noise * (0.025 + params.roughness * 0.055);
-          const plateau = smoothstep(-0.025, 0.025, edge);
-          height = params.amplitude * (0.06 + plateau * 0.86 + detail * 0.06);
+          const broad = fbm((nx + 1) * 0.9, (nz + 1) * 0.9, params.seed + 4049, 0.35);
+          const edge = axis
+            + broad * (0.045 + params.roughness * 0.07)
+            + noise * (0.012 + params.roughness * 0.025);
+          const shoulder = 0.095 + params.roughness * 0.07;
+          const plateau = smoothstep(-shoulder, shoulder, edge);
+          const faceDetail = 1 - Math.abs(plateau * 2 - 1);
+          const strata = Math.sin((crossAxis * 18 + broad * 2.5) * Math.PI) * faceDetail;
+          height = params.amplitude * (
+            0.06
+            + plateau * 0.82
+            + detail * 0.055
+            + strata * params.roughness * 0.018
+          );
           break;
         }
         case 'dune-desert': {
@@ -234,12 +274,35 @@ export function applyTerrainModifierInPlace(map: EditableMap, value: unknown): T
   const directionX = Math.cos(angle);
   const directionZ = Math.sin(angle);
   const scale = regionScale(params.region);
-  const terraceStep = params.amplitude / params.layers;
+  const thickness = regionThickness(params.region);
+  const cellSize = Math.min(
+    map.box.size[0] / Math.max(1, terrain.resolutionX - 1),
+    map.box.size[2] / Math.max(1, terrain.resolutionZ - 1)
+  );
+  const widthHeightRatio = params.access === 'walkable' ? 7 : 3.5;
+  const reliefLimitedModifier = params.modifier === 'mountain'
+    || params.modifier === 'ridge'
+    || params.modifier === 'terrace';
+  const effectiveAmplitude = reliefLimitedModifier
+    ? Math.min(params.amplitude, Math.max(cellSize * 0.5, thickness / widthHeightRatio))
+    : params.amplitude;
+  const ridgeFitsRegion = thickness >= Math.max(
+    cellSize * 8,
+    params.amplitude * (params.access === 'walkable' ? 6 : 4)
+  );
+  const effectiveModifier = params.modifier === 'ridge' && !ridgeFitsRegion
+    ? 'mountain'
+    : params.modifier;
+  const jumpApex = PLAYER_JUMP_SPEED ** 2 / (2 * PLAYER_GRAVITY);
+  const terraceStep = Math.min(effectiveAmplitude / params.layers, jumpApex * 0.68);
 
   for (let zIndex = 0; zIndex < terrain.resolutionZ; zIndex += 1) {
     for (let xIndex = 0; xIndex < terrain.resolutionX; xIndex += 1) {
       const point = terrainPointAt(map, xIndex, zIndex);
-      const weight = regionWeight(params.region, point[0], point[2], params.softness);
+      const effectiveSoftness = params.modifier === 'cliff'
+        ? Math.max(0.16, params.softness)
+        : params.softness;
+      const weight = regionWeight(params.region, point[0], point[2], effectiveSoftness);
       if (weight <= 0) continue;
       const index = terrainIndex(terrain, xIndex, zIndex);
       const current = terrain.heights[index] ?? 0;
@@ -251,12 +314,17 @@ export function applyTerrainModifierInPlace(map: EditableMap, value: unknown): T
       );
       let next = current;
 
-      switch (params.modifier) {
+      switch (effectiveModifier) {
         case 'mountain': {
-          const roundedWeight = mountainRegionWeight(params.region, point[0], point[2], params.softness);
+          const roundedWeight = mountainRegionWeight(
+            params.region,
+            point[0],
+            point[2],
+            Math.max(params.access === 'walkable' ? 0.65 : 0.45, params.softness)
+          );
           const broadNoise = (fbm(
-            point[0] / Math.max(1, scale) * 4,
-            point[2] / Math.max(1, scale) * 4,
+            point[0] / Math.max(1, scale) * 2.4,
+            point[2] / Math.max(1, scale) * 2.4,
             params.seed + 4049,
             0.25 + params.variation * 0.5
           ) + 1) / 2;
@@ -267,29 +335,82 @@ export function applyTerrainModifierInPlace(map: EditableMap, value: unknown): T
             params.variation
           ) + 1) / 2;
           const rollingPeaks = smoothstep(0.22, 0.82, broadNoise);
-          next = current + params.amplitude * roundedWeight * (0.22 + rollingPeaks * 0.65 + peakNoise * 0.13);
+          const massif = roundedWeight * (0.58 + broadNoise * 0.24)
+            + smoothstep(0.42, 0.84, roundedWeight) * (rollingPeaks * 0.1 + peakNoise * 0.08);
+          const target = current + effectiveAmplitude * clamp(massif, 0, 1);
+          if (params.layout === 'terraces') {
+            next = lerp(
+              target,
+              softTerrace(target, terraceStep, clamp(params.softness, 0.04, 0.22)),
+              smoothstep(0.12, 0.5, roundedWeight)
+            );
+          } else if (params.access === 'walkable' && params.layout === 'plateau') {
+            const upperShelf = smoothstep(0.58, 0.88, roundedWeight) * 0.55;
+            next = lerp(target, current + effectiveAmplitude * (0.8 + broadNoise * 0.06), upperShelf);
+          } else {
+            next = target;
+          }
+          break;
+        }
+        case 'ridge': {
+          const ridgeWeight = mountainRegionWeight(
+            params.region, point[0], point[2], Math.max(0.3, params.softness)
+          );
+          const crest = Math.pow(clamp(1 - Math.abs(noise) * params.variation * 0.45, 0, 1), 1.4);
+          const target = current + effectiveAmplitude * ridgeWeight * (0.58 + crest * 0.42);
+          next = params.layout === 'terraces'
+            ? lerp(
+                target,
+                softTerrace(target, terraceStep, clamp(params.softness, 0.04, 0.22)),
+                smoothstep(0.12, 0.5, ridgeWeight)
+              )
+            : target;
+          break;
+        }
+        case 'valley': {
+          const valleyWeight = mountainRegionWeight(
+            params.region, point[0], point[2], Math.max(0.4, params.softness)
+          );
+          next = current - params.amplitude * valleyWeight * (0.72 + noise * params.variation * 0.12);
+          break;
+        }
+        case 'basin': {
+          const bowl = Math.pow(mountainRegionWeight(
+            params.region, point[0], point[2], Math.max(0.55, params.softness)
+          ), 1.35);
+          next = current - params.amplitude * bowl * (0.78 + noise * params.variation * 0.08);
           break;
         }
         case 'cliff': {
+          const contourNoise = noise * params.variation;
           if (params.layout === 'terraces') {
             const lifted = current + params.amplitude * weight;
-            next = lerp(current, Math.round(lifted / terraceStep) * terraceStep, weight);
+            next = lerp(current, softTerrace(lifted, terraceStep, Math.max(0.08, params.softness)), weight);
           } else if (params.layout === 'canyon') {
-            next = current - params.amplitude * weight;
+            next = current - params.amplitude * weight * (0.9 + contourNoise * 0.06);
           } else if (params.layout === 'wall') {
-            next = current + params.amplitude * Math.pow(weight, 0.45);
+            next = current + params.amplitude * Math.pow(weight, 0.72) * (0.92 + contourNoise * 0.08);
           } else if (params.region.kind === 'path') {
-            const side = signedDistanceToPath(point[0], point[2], params.region.points);
-            const sideWeight = smoothstep(-Math.max(0.05, params.region.width * params.softness), Math.max(0.05, params.region.width * params.softness), side);
-            next = current + params.amplitude * weight * sideWeight;
+            const warpedSide = signedDistanceToPath(point[0], point[2], params.region.points)
+              + contourNoise * params.region.width * 0.1;
+            const faceWidth = params.region.width * (0.055 + Math.max(0.16, params.softness) * 0.18);
+            const sideWeight = smoothstep(-faceWidth, faceWidth, warpedSide);
+            const shoulder = lerp(sideWeight, smoothstep(0.08, 0.92, sideWeight), 0.58);
+            next = current + params.amplitude * weight * shoulder * (0.94 + contourNoise * 0.06);
           } else {
-            next = current + params.amplitude * weight;
+            const brokenEdge = clamp(
+              weight + contourNoise * 0.07 * (1 - Math.abs(weight * 2 - 1)),
+              0,
+              1
+            );
+            const shoulder = lerp(brokenEdge, smoothstep(0.08, 0.92, brokenEdge), 0.58);
+            next = current + params.amplitude * shoulder;
           }
           break;
         }
         case 'terrace': {
-          const lifted = current + params.amplitude * weight;
-          const terraced = Math.round(lifted / terraceStep) * terraceStep;
+          const lifted = current + effectiveAmplitude * weight;
+          const terraced = softTerrace(lifted, terraceStep, Math.max(0.06, params.softness));
           next = lerp(current, terraced, weight);
           break;
         }
@@ -307,6 +428,18 @@ export function applyTerrainModifierInPlace(map: EditableMap, value: unknown): T
       }
       terrain.heights[index] = clamp(next, TERRAIN_MIN_HEIGHT, maxHeight);
     }
+  }
+  return params;
+}
+
+export function refineTerrainInPlace(map: EditableMap, value: unknown): TerrainRefinementParams {
+  const params = normalizeTerrainRefinementParams(value);
+  if (params.erosion > 0) {
+    thermalErodeInPlace(map, params.iterations, params.talus, params.erosion);
+  }
+  if (params.drainage > 0) {
+    carveDrainageInPlace(map, params.drainage);
+    thermalErodeInPlace(map, 1, Math.min(70, params.talus + 8), params.erosion * 0.25);
   }
   return params;
 }
@@ -398,6 +531,116 @@ function mountainRegionWeight(region: TerrainRegion, x: number, z: number, softn
   return regionWeight(region, x, z, Math.max(0.45, softness));
 }
 
+function softTerrace(height: number, step: number, softness: number): number {
+  const level = height / Math.max(0.001, step);
+  const lower = Math.floor(level);
+  const fraction = level - lower;
+  const halfRamp = clamp(softness, 0.04, 0.48);
+  return (lower + smoothstep(0.5 - halfRamp, 0.5 + halfRamp, fraction)) * step;
+}
+
+function thermalErodeInPlace(
+  map: EditableMap,
+  iterations: number,
+  talusDegrees: number,
+  strength: number
+): void {
+  if (strength <= 0) return;
+  const terrain = map.terrain;
+  const width = terrain.resolutionX;
+  const depth = terrain.resolutionZ;
+  const stepX = map.box.size[0] / Math.max(1, width - 1);
+  const stepZ = map.box.size[2] / Math.max(1, depth - 1);
+  const neighbors = [
+    [-1, 0, stepX], [1, 0, stepX], [0, -1, stepZ], [0, 1, stepZ],
+    [-1, -1, Math.hypot(stepX, stepZ)], [1, -1, Math.hypot(stepX, stepZ)],
+    [-1, 1, Math.hypot(stepX, stepZ)], [1, 1, Math.hypot(stepX, stepZ)]
+  ] as const;
+  const tangent = Math.tan(talusDegrees * Math.PI / 180);
+  const maxHeight = map.box.size[1] - 0.05;
+
+  for (let iteration = 0; iteration < iterations; iteration += 1) {
+    const delta = new Float64Array(terrain.heights.length);
+    for (let z = 1; z < depth - 1; z += 1) {
+      for (let x = 1; x < width - 1; x += 1) {
+        const index = z * width + x;
+        const height = terrain.heights[index] ?? 0;
+        let target = -1;
+        let excess = 0;
+        for (const [dx, dz, distance] of neighbors) {
+          const other = (z + dz) * width + x + dx;
+          const candidate = height - (terrain.heights[other] ?? 0) - tangent * distance;
+          if (candidate > excess) {
+            excess = candidate;
+            target = other;
+          }
+        }
+        if (target < 0) continue;
+        const transfer = excess * strength * 0.22;
+        delta[index] -= transfer;
+        delta[target] += transfer;
+      }
+    }
+    for (let index = 0; index < terrain.heights.length; index += 1) {
+      terrain.heights[index] = clamp(
+        (terrain.heights[index] ?? 0) + delta[index],
+        TERRAIN_MIN_HEIGHT,
+        maxHeight
+      );
+    }
+  }
+}
+
+function carveDrainageInPlace(map: EditableMap, strength: number): void {
+  const terrain = map.terrain;
+  const width = terrain.resolutionX;
+  const depth = terrain.resolutionZ;
+  const cellCount = width * depth;
+  const flowTo = new Int32Array(cellCount).fill(-1);
+  const accumulation = new Float64Array(cellCount).fill(1);
+  const neighbors = [
+    [-1, 0], [1, 0], [0, -1], [0, 1],
+    [-1, -1], [1, -1], [-1, 1], [1, 1]
+  ] as const;
+
+  for (let z = 1; z < depth - 1; z += 1) {
+    for (let x = 1; x < width - 1; x += 1) {
+      const index = z * width + x;
+      const height = terrain.heights[index] ?? 0;
+      let lowest = height;
+      for (const [dx, dz] of neighbors) {
+        const other = (z + dz) * width + x + dx;
+        const otherHeight = terrain.heights[other] ?? 0;
+        if (otherHeight < lowest) {
+          lowest = otherHeight;
+          flowTo[index] = other;
+        }
+      }
+    }
+  }
+
+  const descending = Array.from({ length: cellCount }, (_, index) => index)
+    .sort((left, right) => (terrain.heights[right] ?? 0) - (terrain.heights[left] ?? 0) || left - right);
+  for (const index of descending) {
+    const target = flowTo[index];
+    if (target >= 0) accumulation[target] += accumulation[index];
+  }
+
+  const cellSize = Math.min(
+    map.box.size[0] / Math.max(1, width - 1),
+    map.box.size[2] / Math.max(1, depth - 1)
+  );
+  const threshold = Math.max(10, Math.sqrt(cellCount) * 0.45);
+  for (let index = 0; index < cellCount; index += 1) {
+    if (accumulation[index] <= threshold) continue;
+    const carve = Math.min(
+      cellSize * 0.32,
+      Math.log1p(accumulation[index] / threshold) * cellSize * strength * 0.16
+    );
+    terrain.heights[index] = Math.max(TERRAIN_MIN_HEIGHT, (terrain.heights[index] ?? 0) - carve);
+  }
+}
+
 function regionBounds(region: TerrainRegion): { center: [number, number]; radius: number } {
   if (region.kind === 'circle') return { center: [region.x, region.z], radius: region.radius };
   const xs = region.points.map((point) => point[0]);
@@ -412,6 +655,14 @@ function regionBounds(region: TerrainRegion): { center: [number, number]; radius
 
 function regionScale(region: TerrainRegion): number {
   return regionBounds(region).radius * 2;
+}
+
+function regionThickness(region: TerrainRegion): number {
+  if (region.kind === 'circle') return region.radius * 2;
+  if (region.kind === 'path') return region.width;
+  const xs = region.points.map((point) => point[0]);
+  const zs = region.points.map((point) => point[1]);
+  return Math.max(0.5, Math.min(Math.max(...xs) - Math.min(...xs), Math.max(...zs) - Math.min(...zs)));
 }
 
 function createArchipelagoCenters(seed: number): Array<{ x: number; z: number; radius: number; height: number }> {

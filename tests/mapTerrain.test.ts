@@ -166,6 +166,22 @@ describe('map terrain editing', () => {
     expect(oneStep[2]).toBeCloseTo(manySteps[2], 5);
   });
 
+  it('requires a jump to climb a steep terrain platform', () => {
+    const map = createEmptyMap('Jumpable terrain platform');
+    for (let z = 0; z < map.terrain.resolutionZ; z += 1) {
+      for (let x = 0; x < map.terrain.resolutionX; x += 1) {
+        const worldX = x / (map.terrain.resolutionX - 1) * map.box.size[0] - map.box.size[0] / 2;
+        map.terrain.heights[z * map.terrain.resolutionX + x] = worldX >= 0 ? 1.2 : 0;
+      }
+    }
+
+    const grounded = movePlayerPositionForMap([-2, 0, 0], [4, 0, 0], map, []);
+    const airborne = movePlayerPositionForMap([-2, 1.3, 0], [4, 0, 0], map, []);
+
+    expect(grounded[0]).toBeLessThan(0);
+    expect(airborne[0]).toBeGreaterThan(0);
+  });
+
   it('resolves a jump over a collider identically at client and server step sizes', () => {
     const map = createEmptyMap('Jump collision determinism');
     const obstacles: MapObjectAabb[] = [{

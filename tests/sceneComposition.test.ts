@@ -14,7 +14,7 @@ import {
 } from '../src/shared/sceneCompositionAdvice';
 import { resolveSceneFamilies } from '../src/shared/sceneCompositionAssets';
 import { compileSceneComposition } from '../src/shared/sceneCompositionCompiler';
-import { applyMapOperations } from '../src/shared/mapOperations';
+import { applyMapOperations, type MapOperation } from '../src/shared/mapOperations';
 import { isNearWater } from '../src/shared/mapWater';
 import { sampleGrassDensity } from '../src/shared/mapGrass';
 import { ensureSceneCompositionOutcome } from '../src/shared/sceneCompositionOutcome';
@@ -27,15 +27,51 @@ describe('scene composition contract', () => {
     };
     input.zones[0].terrain = {
       ...input.zones[0].terrain,
-      modifier: 'terrace', surface: 'rock', amplitude: 5, layers: 6, softness: 0.1
+      modifier: 'terrace', surface: 'rock', amplitude: 5, layers: 6, softness: 0.1, access: 'walkable'
     };
     const plan = normalizeSceneCompositionPlan(input, map);
     const compiled = compileSceneComposition(map, plan, []);
 
     expect(compiled.operations).toEqual(expect.arrayContaining([
-      expect.objectContaining({ type: 'terrain.modify', modifier: 'terrace', layers: 6 }),
+      expect.objectContaining({ type: 'terrain.modify', modifier: 'terrace', layers: 6, access: 'walkable' }),
+      expect.objectContaining({ type: 'terrain.refine', erosion: 0.2, drainage: 0.08 }),
       expect.objectContaining({ type: 'terrain.surface', surface: 'rock', zoneId: 'composition-surface-forest' })
     ]));
+  });
+
+  it('routes architecture through an ordered layout instead of vegetation scatter', () => {
+    const map = createEmptyMap('Village court', 'map-village-court', [96, 16, 96], 'voxel-pro');
+    const input = structuredClone(planInput()) as {
+      zones: Array<{ id: string; layers: Array<Record<string, unknown>>; region: { radius: number } }>;
+    };
+    const camp = input.zones.find((zone) => zone.id === 'camp')!;
+    camp.region.radius = 0.32;
+    camp.layers = [{
+      familyId: 'cabin', density: 0.03, scaleRange: [1, 1], distribution: 'even', edgeFalloff: 0,
+      placement: {
+        mode: 'layout', pattern: 'courtyard', direction: 20, spacing: 4,
+        offset: 0, facing: 'inward'
+      }
+    }];
+    const plan = normalizeSceneCompositionPlan(input, map);
+    const cabin = asset('cabin-a', 'Cabin', ['cabin', 'structure'], 'large', 'voxel-pro');
+    const resolved = resolveSceneFamilies(plan, map, [cabin], 0).families;
+
+    const compiled = compileSceneComposition(map, plan, resolved);
+    const cabins = compiled.operations.filter((operation): operation is Extract<MapOperation, { type: 'object.add' }> => (
+      operation.type === 'object.add' && operation.object.assetId === cabin.id
+    ));
+
+    expect(plan.zones.find((zone) => zone.id === 'camp')?.layers[0].placement?.mode).toBe('layout');
+    expect(cabins.length).toBeGreaterThanOrEqual(4);
+    const center = sceneZoneWorldRegion(plan.zones.find((zone) => zone.id === 'camp')!, map);
+    for (const operation of cabins) {
+      const [x, , z] = operation.object.transform?.position ?? [0, 0, 0];
+      const yaw = operation.object.transform?.rotation?.[1] ?? 0;
+      const distance = Math.hypot(center.x - x, center.z - z);
+      const dot = Math.sin(yaw) * (center.x - x) / distance + Math.cos(yaw) * (center.z - z) / distance;
+      expect(dot).toBeGreaterThan(0.98);
+    }
   });
 
   it('adds real editable ground cover when the director leaves most of the map blank', () => {

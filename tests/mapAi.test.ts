@@ -67,6 +67,29 @@ describe('map AI adapter', () => {
     }));
   });
 
+  it('normalizes ridge, basin and post-sculpt terrain refinement in execution order', () => {
+    const map = createEmptyMap('refined landforms', 'map-refined-landforms');
+    const suggestion = normalizeMapSuggestion(JSON.stringify({
+      summary: 'soft ridge and basin',
+      terrainGeneration: { preset: 'hills', amplitude: 4, roughness: 0.4 },
+      terrainModifiers: [
+        { modifier: 'ridge', access: 'scenic', region: { kind: 'path', points: [[-12, -4], [12, -4]], width: 8 }, amplitude: 4 },
+        { modifier: 'basin', region: { kind: 'circle', x: 7, z: 8, radius: 5 }, amplitude: 2 }
+      ],
+      terrainRefinement: { erosion: 0.28, drainage: 0.1, iterations: 4, talus: 44 }
+    }), map, []);
+
+    expect(suggestion.operations.map((operation) => operation.type)).toEqual([
+      'terrain.generate', 'terrain.modify', 'terrain.modify', 'terrain.refine'
+    ]);
+    expect(suggestion.operations.at(-1)).toMatchObject({
+      type: 'terrain.refine', erosion: 0.28, drainage: 0.1, iterations: 4, talus: 44
+    });
+    expect(suggestion.operations.find((operation) => operation.type === 'terrain.modify')).toMatchObject({
+      type: 'terrain.modify', modifier: 'ridge', access: 'scenic'
+    });
+  });
+
   it('scales planning quotas with the selected map size', () => {
     const small = createEmptyMap('small', 'map-small', [...MAP_SIZE_PRESETS[0].size]);
     const large = createEmptyMap('large', 'map-large', [...MAP_SIZE_PRESETS[2].size]);

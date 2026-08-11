@@ -21,8 +21,10 @@ import {
   applyTerrainModifierInPlace,
   applyTerrainSurfaceInPlace,
   generateTerrainInPlace,
+  refineTerrainInPlace,
   type TerrainGenerationParams,
   type TerrainModifierParams,
+  type TerrainRefinementParams,
   type TerrainSurfaceParams
 } from './terrainGeneration';
 import type { Vec3 } from './protocol';
@@ -67,6 +69,7 @@ export type MapOperation =
   | { type: 'terrain.set'; terrain: MapTerrain }
   | ({ type: 'terrain.generate' } & Partial<TerrainGenerationParams> & Pick<TerrainGenerationParams, 'preset'>)
   | ({ type: 'terrain.modify' } & Partial<TerrainModifierParams> & Pick<TerrainModifierParams, 'modifier' | 'region'>)
+  | ({ type: 'terrain.refine' } & Partial<TerrainRefinementParams>)
   | ({ type: 'terrain.surface' } & Partial<TerrainSurfaceParams> & Pick<TerrainSurfaceParams, 'surface' | 'region'>)
   | { type: 'terrain.brush'; mode: TerrainBrushMode; point: Vec3; size?: number; strength?: number; targetHeight?: number }
   | { type: 'paint.add'; stroke: Partial<MapPaintStroke> & Pick<MapPaintStroke, 'surface' | 'point'> }
@@ -170,6 +173,10 @@ export function applyMapOperations(map: EditableMap, operations: readonly MapOpe
         terrainChanged = true;
         break;
       }
+      case 'terrain.refine':
+        refineTerrainInPlace(next, operation);
+        terrainChanged = true;
+        break;
       case 'terrain.surface':
         applyTerrainSurfaceInPlace(next, operation);
         break;

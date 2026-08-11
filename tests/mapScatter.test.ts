@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { createEmptyMap, type MapAsset } from '../src/shared/map';
+import { createEmptyMap, createMapObject, type MapAsset } from '../src/shared/map';
 import {
   expandMapScatter,
   type MapScatterPlan
 } from '../src/shared/mapScatter';
-import { terrainSlopeDegrees } from '../src/shared/mapTerrainAnalysis';
+import { terrainFootprintSlopeDegrees, terrainSlopeDegrees } from '../src/shared/mapTerrainAnalysis';
 import { isNearWater } from '../src/shared/mapWater';
 
 const treeAsset = {
@@ -22,6 +22,16 @@ const treeAsset = {
   mode: 'asset',
   createdAt: 1,
   updatedAt: 1
+} satisfies MapAsset;
+
+const shrubAsset = {
+  ...treeAsset,
+  id: 'asset-shrub',
+  name: 'Shrub',
+  colliderPlan: {
+    ...treeAsset.colliderPlan,
+    boxes: [{ min: [-0.25, 0, -0.25], max: [0.25, 0.8, 0.25] }]
+  }
 } satisfies MapAsset;
 
 describe('deterministic map scatter', () => {
@@ -95,5 +105,94 @@ describe('deterministic map scatter', () => {
     expect(second).toEqual(first);
     expect(first.every((placement) => Math.hypot(placement.x - 4, placement.z + 3) > 5)).toBe(true);
     expect(first.every((placement) => Math.hypot(placement.x, placement.z) <= 20)).toBe(true);
+  });
+
+  it('enforces cross-family spacing and terrain habitat bands', () => {
+    const map = createEmptyMap('mixed habitat', 'map-mixed-habitat');
+    map.assets = [treeAsset, shrubAsset];
+    const tree = createMapObject('Tree', treeAsset.id);
+    tree.transform.position = [0, 0, 0];
+    map.objects = [tree];
+    for (let z = 0; z < map.terrain.resolutionZ; z += 1) {
+      for (let x = 0; x < map.terrain.resolutionX; x += 1) {
+        map.terrain.heights[z * map.terrain.resolutionX + x] = x / (map.terrain.resolutionX - 1) * 6;
+      }
+    }
+    const placements = expandMapScatter(map, {
+      assetIds: [shrubAsset.id],
+      region: { kind: 'circle', x: 0, z: 0, r: 20 },
+      density: 0.14,
+      avoidWater: 0,
+      maxSlope: 89,
+      minSpacing: 0.8,
+      spacingByAssetId: { [treeAsset.id]: 6 },
+      habitat: { height: [1.5, 2, 4, 4.5] },
+      scaleRange: [0.9, 1.1],
+      seed: 41,
+      patchSeed: 9001,
+      clusterStrength: 0.65
+    }, [treeAsset, shrubAsset], 100, 'mixed');
+
+    expect(placements.length).toBeGreaterThan(8);
+    expect(placements.every((placement) => Math.hypot(placement.x, placement.z) >= 6)).toBe(true);
+    expect(placements.every((placement) => placement.y >= 1.5 && placement.y <= 4.5)).toBe(true);
+  });
+
+  it('does not balance large assets on narrow mountain ridges', () => {
+    const mountainTree = { ...treeAsset, footprintRadius: 3 } satisfies MapAsset;
+    const map = createEmptyMap('mountain ridge', 'map-mountain-ridge');
+    map.assets = [mountainTree];
+    for (let z = 0; z < map.terrain.resolutionZ; z += 1) {
+      for (let x = 0; x < map.terrain.resolutionX; x += 1) {
+        const worldX = x / (map.terrain.resolutionX - 1) * map.box.size[0] - map.box.size[0] / 2;
+        map.terrain.heights[z * map.terrain.resolutionX + x] = Math.abs(worldX) <= 3 ? 10 : 0;
+      }
+    }
+    const maxSlope = 24;
+    const placements = expandMapScatter(map, {
+      assetIds: [mountainTree.id],
+      region: { kind: 'circle', x: 0, z: 0, r: 10 },
+      density: 0.35,
+      avoidWater: 0,
+      maxSlope,
+      minSpacing: 1,
+      scaleRange: [1, 1],
+      seed: 73
+    }, [mountainTree], 80, 'mountain');
+
+    expect(placements.length).toBeGreaterThan(0);
+    expect(placements.every((placement) => (
+      terrainFootprintSlopeDegrees(map, placement.x, placement.z, mountainTree.footprintRadius) <= maxSlope
+    ))).toBe(true);
+  });
+
+  it('thins vegetation gradually across steep mountain shoulders', () => {
+    const flatMap = createEmptyMap('flat shoulder', 'map-flat-shoulder');
+    const slopeMap = createEmptyMap('steep shoulder', 'map-steep-shoulder');
+    flatMap.assets = [treeAsset];
+    slopeMap.assets = [treeAsset];
+    const rise = Math.tan(22 * Math.PI / 180);
+    for (let z = 0; z < slopeMap.terrain.resolutionZ; z += 1) {
+      for (let x = 0; x < slopeMap.terrain.resolutionX; x += 1) {
+        const worldX = x / (slopeMap.terrain.resolutionX - 1) * slopeMap.box.size[0] - slopeMap.box.size[0] / 2;
+        slopeMap.terrain.heights[z * slopeMap.terrain.resolutionX + x] = worldX * rise;
+      }
+    }
+    const plan: MapScatterPlan = {
+      assetIds: [treeAsset.id],
+      region: { kind: 'circle', x: 0, z: 0, r: 18 },
+      density: 0.12,
+      avoidWater: 0,
+      maxSlope: 30,
+      minSpacing: 1.5,
+      scaleRange: [1, 1],
+      seed: 101
+    };
+
+    const flat = expandMapScatter(flatMap, plan, [treeAsset], 160, 'flat');
+    const steep = expandMapScatter(slopeMap, plan, [treeAsset], 160, 'steep');
+
+    expect(steep.length).toBeGreaterThan(0);
+    expect(steep.length).toBeLessThan(flat.length);
   });
 });

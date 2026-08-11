@@ -217,6 +217,7 @@ export interface PlayerVerticalMotionSweep {
 }
 
 export const PLAYER_RADIUS = 0.45;
+export const PLAYER_MAX_WALKABLE_SLOPE = 30;
 // The editor spawn marker, play capsule, camera and collision all share this
 // world-space height. Keep it as the single source of truth.
 export const PLAYER_HEIGHT = 2.7;
@@ -800,6 +801,27 @@ function sweepPlayerAxis(
   const candidateZ = axis === 'z' ? requestedTarget : secondary;
   if (!isPointInsidePlayableArea(map.layout, map.box.size, candidateX, candidateZ)) return primary;
   if (Math.abs(requestedTarget - primary) <= 0.000001) return requestedTarget;
+  const currentX = axis === 'x' ? primary : secondary;
+  const currentZ = axis === 'z' ? primary : secondary;
+  const currentTerrainY = sampleTerrainHeight(map, currentX, currentZ);
+  const targetTerrainY = sampleTerrainHeight(map, candidateX, candidateZ);
+  const uphillSlope = Math.atan2(
+    Math.max(0, targetTerrainY - currentTerrainY),
+    Math.abs(requestedTarget - primary)
+  ) * 180 / Math.PI;
+  if (uphillSlope > PLAYER_MAX_WALKABLE_SLOPE) {
+    const targetTime = stepStartsAt + stepDuration;
+    const sweptPlayerY = verticalMotion
+      ? stepVerticalMotion(
+          playerY,
+          initialSupportY,
+          verticalMotion.velocity,
+          targetTime,
+          verticalMotion.jumpRequested
+        ).y
+      : playerY;
+    if (targetTerrainY > sweptPlayerY + MAP_COLLISION_EPSILON) return primary;
+  }
   let target = requestedTarget;
   const minPrimary = Math.min(primary, requestedTarget) - PLAYER_RADIUS;
   const maxPrimary = Math.max(primary, requestedTarget) + PLAYER_RADIUS;
