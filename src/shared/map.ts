@@ -54,6 +54,52 @@ export interface MapBox {
   colors: MapBoxColors;
 }
 
+export const MAP_SCENE_MODES = ['outdoor', 'indoor', 'mixed'] as const;
+export type MapSceneMode = typeof MAP_SCENE_MODES[number];
+export const ROOM_WALLS = ['north', 'south', 'east', 'west'] as const;
+export type RoomWall = typeof ROOM_WALLS[number];
+export const ROOM_SURFACES = ['floor', 'ceiling', ...ROOM_WALLS] as const;
+export type RoomSurface = typeof ROOM_SURFACES[number];
+export type RoomWallDisplayMode = 'full' | 'cutaway' | 'half' | 'hidden';
+
+export interface MapRoomOpening {
+  id: string;
+  kind: 'door' | 'window';
+  wall: RoomWall;
+  /** Horizontal offset from the wall centre in metres. */
+  offset: number;
+  /** Height above the room floor in metres. */
+  bottom: number;
+  width: number;
+  height: number;
+}
+
+export interface MapRoom {
+  /** Floor-centre position. */
+  position: Vec3;
+  size: Vec3;
+  wallThickness: number;
+  openings: MapRoomOpening[];
+}
+
+export interface RoomShellSegment {
+  surface: RoomSurface;
+  center: Vec3;
+  size: Vec3;
+  /** Wall-local horizontal interval, used by deterministic visibility tests. */
+  uMin: number;
+  uMax: number;
+  /** Height interval above the room floor. */
+  yMin: number;
+  yMax: number;
+}
+
+export const ROOM_OBJECT_ID = '__room__';
+
+export function roomSurfaceObjectId(surface: RoomSurface): string {
+  return `${ROOM_OBJECT_ID}:${surface}`;
+}
+
 export interface MapTerrain {
   resolutionX: number;
   resolutionZ: number;
@@ -147,6 +193,8 @@ export interface MapObject {
   heightMode?: 'terrain' | 'fixed';
   visible: boolean;
   locked: boolean;
+  /** Optional parameterized room opening that owns this door/window object. */
+  roomOpeningId?: string;
   behavior?: MapObjectBehavior;
   generation?: MapGenerationOwner;
 }
@@ -160,6 +208,8 @@ export interface EditableMap {
   createdAt: number;
   updatedAt: number;
   box: MapBox;
+  sceneMode: MapSceneMode;
+  room: MapRoom | null;
   lighting: MapLighting;
   terrain: MapTerrain;
   grassLayers: MapGrassLayer[];
@@ -187,6 +237,7 @@ export interface MapSummary {
   height: number;
   depth: number;
   objectCount: number;
+  sceneMode: MapSceneMode;
   assetGenerationMode: ModelGenerationMode;
   confirmedAt: number | null;
   renderSchemeId: string | null;
@@ -260,6 +311,15 @@ const DEFAULT_BOX_COLORS: MapBoxColors = {
   west: '#344144'
 };
 
+const DEFAULT_INDOOR_BOX_COLORS: MapBoxColors = {
+  floor: '#8a765e',
+  ceiling: '#ded8ca',
+  north: '#c9c0ae',
+  south: '#c9c0ae',
+  east: '#d1c8b7',
+  west: '#d1c8b7'
+};
+
 export const MAP_SIZE_PRESETS = [
   { key: 'small', label: '小', size: [48, 12, 48] as Vec3, terrain: 33 },
   { key: 'medium', label: '中', size: [96, 16, 96] as Vec3, terrain: 65 },
@@ -299,7 +359,9 @@ export function createEmptyMap(
   name = '未命名地图',
   id = createId('map'),
   size: Vec3 = DEFAULT_MAP_SIZE,
-  assetGenerationMode: ModelGenerationMode = 'voxel'
+  assetGenerationMode: ModelGenerationMode = 'voxel',
+  sceneMode: MapSceneMode = 'outdoor',
+  roomSize?: Vec3
 ): EditableMap {
   const now = Date.now();
   const safeSize = positiveVec3(size, DEFAULT_MAP_SIZE);
@@ -314,8 +376,14 @@ export function createEmptyMap(
     updatedAt: now,
     box: {
       size: safeSize,
-      colors: { ...DEFAULT_BOX_COLORS }
+      colors: { ...(sceneMode === 'indoor' ? DEFAULT_INDOOR_BOX_COLORS : DEFAULT_BOX_COLORS) }
     },
+    sceneMode,
+    room: sceneMode === 'outdoor'
+      ? null
+      : createDefaultRoom(roomSize ?? (sceneMode === 'indoor'
+        ? safeSize
+        : [Math.min(10, safeSize[0]), Math.min(3, safeSize[1]), Math.min(8, safeSize[2])])),
     lighting: {
       sunPosition: [...DEFAULT_SUN_POSITION]
     },
@@ -324,6 +392,229 @@ export function createEmptyMap(
     objects: [],
     spawnPoints: defaultSpawnPoints(DEFAULT_MAP_SIZE)
   });
+}
+
+export function createDefaultRoom(size: Vec3 = [10, 3, 8]): MapRoom {
+  return {
+    position: [0, 0, 0],
+    size: positiveVec3(size, [10, 3, 8]),
+    wallThickness: 0.16,
+    openings: []
+  };
+}
+
+export function normalizeMapSceneMode(value: unknown): MapSceneMode {
+  return value === 'indoor' || value === 'mixed' ? value : 'outdoor';
+}
+
+export function normalizeMapRoom(
+  value: Partial<MapRoom> | null | undefined,
+  boxSize: Vec3,
+  fallback: MapRoom = createDefaultRoom([
+    Math.min(10, boxSize[0]),
+    Math.min(3, boxSize[1]),
+    Math.min(8, boxSize[2])
+  ])
+): MapRoom {
+  const input = value ?? fallback;
+  const rawSize = positiveVec3(input.size, fallback.size);
+  const size: Vec3 = [
+    clamp(rawSize[0], Math.min(3, boxSize[0]), boxSize[0]),
+    clamp(rawSize[1], Math.min(2.2, boxSize[1]), boxSize[1]),
+    clamp(rawSize[2], Math.min(3, boxSize[2]), boxSize[2])
+  ];
+  const rawPosition = validVec3(input.position, fallback.position);
+  const position: Vec3 = [
+    clamp(rawPosition[0], -boxSize[0] / 2 + size[0] / 2, boxSize[0] / 2 - size[0] / 2),
+    clamp(rawPosition[1], 0, Math.max(0, boxSize[1] - size[1])),
+    clamp(rawPosition[2], -boxSize[2] / 2 + size[2] / 2, boxSize[2] / 2 - size[2] / 2)
+  ];
+  const wallThickness = clamp(
+    finiteNumber(input.wallThickness, fallback.wallThickness),
+    0.05,
+    Math.min(0.5, size[0] / 4, size[2] / 4)
+  );
+  const openings: MapRoomOpening[] = [];
+  const seen = new Set<string>();
+  const rawOpenings = Array.isArray(input.openings) ? input.openings : fallback.openings;
+  for (const raw of rawOpenings.slice(0, 32)) {
+    if (!raw || typeof raw !== 'object') continue;
+    const id = typeof raw.id === 'string' && raw.id.trim()
+      ? raw.id.trim().slice(0, 80)
+      : createId('opening');
+    if (seen.has(id)) continue;
+    const wall = ROOM_WALLS.includes(raw.wall as RoomWall) ? raw.wall as RoomWall : 'north';
+    const kind = raw.kind === 'window' ? 'window' : 'door';
+    const wallLength = wall === 'north' || wall === 'south' ? size[0] : size[2];
+    const width = clamp(finiteNumber(raw.width, kind === 'door' ? 1.2 : 1.8), 0.4, Math.max(0.4, wallLength - wallThickness * 2));
+    const height = clamp(finiteNumber(raw.height, kind === 'door' ? 2.1 : 1.2), 0.4, Math.max(0.4, size[1] - wallThickness));
+    const bottom = kind === 'door'
+      ? 0
+      : clamp(finiteNumber(raw.bottom, 1), 0, Math.max(0, size[1] - wallThickness - height));
+    openings.push({
+      id,
+      kind,
+      wall,
+      offset: clamp(
+        finiteNumber(raw.offset, 0),
+        -wallLength / 2 + width / 2 + wallThickness,
+        wallLength / 2 - width / 2 - wallThickness
+      ),
+      bottom,
+      width,
+      height
+    });
+    seen.add(id);
+  }
+  return { position, size, wallThickness, openings };
+}
+
+export function buildRoomShellSegments(map: Pick<EditableMap, 'room'>): RoomShellSegment[] {
+  const room = map.room;
+  if (!room) return [];
+  const [width, height, depth] = room.size;
+  const [x, y, z] = room.position;
+  const thickness = room.wallThickness;
+  const result: RoomShellSegment[] = [
+    {
+      surface: 'floor',
+      center: [x, y - thickness / 2, z],
+      size: [width, thickness, depth],
+      uMin: -width / 2,
+      uMax: width / 2,
+      yMin: -thickness,
+      yMax: 0
+    },
+    {
+      surface: 'ceiling',
+      center: [x, y + height - thickness / 2, z],
+      size: [width, thickness, depth],
+      uMin: -width / 2,
+      uMax: width / 2,
+      yMin: height - thickness,
+      yMax: height
+    }
+  ];
+
+  for (const wall of ROOM_WALLS) {
+    const length = wall === 'north' || wall === 'south' ? width : depth;
+    let rectangles: RoomWallRectangle[] = [{ uMin: -length / 2, uMax: length / 2, yMin: 0, yMax: height }];
+    for (const opening of room.openings.filter((item) => item.wall === wall)) {
+      rectangles = rectangles.flatMap((rectangle) => subtractRoomOpening(rectangle, opening));
+    }
+    for (const rectangle of rectangles) {
+      if (rectangle.uMax - rectangle.uMin <= 0.001 || rectangle.yMax - rectangle.yMin <= 0.001) continue;
+      const u = (rectangle.uMin + rectangle.uMax) / 2;
+      const centreY = y + (rectangle.yMin + rectangle.yMax) / 2;
+      const segmentWidth = rectangle.uMax - rectangle.uMin;
+      const segmentHeight = rectangle.yMax - rectangle.yMin;
+      const center: Vec3 = wall === 'north'
+        ? [x + u, centreY, z - depth / 2 + thickness / 2]
+        : wall === 'south'
+          ? [x + u, centreY, z + depth / 2 - thickness / 2]
+          : wall === 'east'
+            ? [x + width / 2 - thickness / 2, centreY, z + u]
+            : [x - width / 2 + thickness / 2, centreY, z + u];
+      result.push({
+        surface: wall,
+        center,
+        size: wall === 'north' || wall === 'south'
+          ? [segmentWidth, segmentHeight, thickness]
+          : [thickness, segmentHeight, segmentWidth],
+        ...rectangle
+      });
+    }
+  }
+  return result;
+}
+
+export function getRoomShellAabbs(map: Pick<EditableMap, 'room'>): MapObjectAabb[] {
+  return buildRoomShellSegments(map).map((segment, index) => ({
+    objectId: `${ROOM_OBJECT_ID}:${segment.surface}:${index}`,
+    min: [
+      segment.center[0] - segment.size[0] / 2,
+      segment.center[1] - segment.size[1] / 2,
+      segment.center[2] - segment.size[2] / 2
+    ],
+    max: [
+      segment.center[0] + segment.size[0] / 2,
+      segment.center[1] + segment.size[1] / 2,
+      segment.center[2] + segment.size[2] / 2
+    ]
+  }));
+}
+
+export function placeRoomOpeningObjectInPlace(map: EditableMap, object: MapObject): void {
+  const room = map.room;
+  if (!room || !object.roomOpeningId) return;
+  const opening = room.openings.find((item) => item.id === object.roomOpeningId);
+  if (!opening) {
+    object.roomOpeningId = undefined;
+    return;
+  }
+  const [x, y, z] = room.position;
+  const [width, , depth] = room.size;
+  const inset = room.wallThickness;
+  object.heightMode = 'fixed';
+  object.transform.position = opening.wall === 'north'
+    ? [x + opening.offset, y + opening.bottom, z - depth / 2 + inset]
+    : opening.wall === 'south'
+      ? [x + opening.offset, y + opening.bottom, z + depth / 2 - inset]
+      : opening.wall === 'east'
+        ? [x + width / 2 - inset, y + opening.bottom, z + opening.offset]
+        : [x - width / 2 + inset, y + opening.bottom, z + opening.offset];
+  object.transform.rotation[1] = opening.wall === 'north'
+    ? 0
+    : opening.wall === 'south'
+      ? Math.PI
+      : opening.wall === 'east'
+        ? -Math.PI / 2
+        : Math.PI / 2;
+}
+
+export function syncRoomOpeningFromObjectInPlace(map: EditableMap, object: MapObject): void {
+  const room = map.room;
+  if (!room || !object.roomOpeningId) return;
+  const opening = room.openings.find((item) => item.id === object.roomOpeningId);
+  if (!opening) return;
+  const horizontal = opening.wall === 'north' || opening.wall === 'south'
+    ? object.transform.position[0] - room.position[0]
+    : object.transform.position[2] - room.position[2];
+  const wallLength = opening.wall === 'north' || opening.wall === 'south' ? room.size[0] : room.size[2];
+  opening.offset = clamp(
+    horizontal,
+    -wallLength / 2 + opening.width / 2 + room.wallThickness,
+    wallLength / 2 - opening.width / 2 - room.wallThickness
+  );
+  opening.bottom = opening.kind === 'door'
+    ? 0
+    : clamp(object.transform.position[1] - room.position[1], 0, room.size[1] - room.wallThickness - opening.height);
+  placeRoomOpeningObjectInPlace(map, object);
+}
+
+interface RoomWallRectangle {
+  uMin: number;
+  uMax: number;
+  yMin: number;
+  yMax: number;
+}
+
+function subtractRoomOpening(rectangle: RoomWallRectangle, opening: MapRoomOpening): RoomWallRectangle[] {
+  const uMin = opening.offset - opening.width / 2;
+  const uMax = opening.offset + opening.width / 2;
+  const yMin = opening.bottom;
+  const yMax = opening.bottom + opening.height;
+  const overlapUMin = Math.max(rectangle.uMin, uMin);
+  const overlapUMax = Math.min(rectangle.uMax, uMax);
+  const overlapYMin = Math.max(rectangle.yMin, yMin);
+  const overlapYMax = Math.min(rectangle.yMax, yMax);
+  if (overlapUMin >= overlapUMax || overlapYMin >= overlapYMax) return [rectangle];
+  return [
+    { ...rectangle, uMax: overlapUMin },
+    { ...rectangle, uMin: overlapUMax },
+    { uMin: overlapUMin, uMax: overlapUMax, yMin: rectangle.yMin, yMax: overlapYMin },
+    { uMin: overlapUMin, uMax: overlapUMax, yMin: overlapYMax, yMax: rectangle.yMax }
+  ].filter((item) => item.uMax - item.uMin > 0.001 && item.yMax - item.yMin > 0.001);
 }
 
 export function createMapObject(name = '新物体', assetId: string | null = null): MapObject {
@@ -357,6 +648,8 @@ export function createPaintStroke(input: Partial<MapPaintStroke> & Pick<MapPaint
 export function normalizeMap(input: Partial<EditableMap>): EditableMap {
   const id = typeof input.id === 'string' && input.id ? input.id : createId('map');
   const boxSize = positiveVec3(input.box?.size, DEFAULT_MAP_SIZE);
+  const sceneMode = normalizeMapSceneMode(input.sceneMode);
+  const defaultBoxColors = sceneMode === 'indoor' ? DEFAULT_INDOOR_BOX_COLORS : DEFAULT_BOX_COLORS;
   const terrainFallback = terrainResolutionForSize(boxSize);
   const terrain = normalizeTerrain(input.terrain, terrainFallback, terrainFallback);
   const map: EditableMap = {
@@ -370,14 +663,16 @@ export function normalizeMap(input: Partial<EditableMap>): EditableMap {
     box: {
       size: boxSize,
       colors: {
-        floor: normalizeColor(input.box?.colors?.floor, DEFAULT_BOX_COLORS.floor),
-        ceiling: normalizeColor(input.box?.colors?.ceiling, DEFAULT_BOX_COLORS.ceiling),
-        north: normalizeColor(input.box?.colors?.north, DEFAULT_BOX_COLORS.north),
-        south: normalizeColor(input.box?.colors?.south, DEFAULT_BOX_COLORS.south),
-        east: normalizeColor(input.box?.colors?.east, DEFAULT_BOX_COLORS.east),
-        west: normalizeColor(input.box?.colors?.west, DEFAULT_BOX_COLORS.west)
+        floor: normalizeColor(input.box?.colors?.floor, defaultBoxColors.floor),
+        ceiling: normalizeColor(input.box?.colors?.ceiling, defaultBoxColors.ceiling),
+        north: normalizeColor(input.box?.colors?.north, defaultBoxColors.north),
+        south: normalizeColor(input.box?.colors?.south, defaultBoxColors.south),
+        east: normalizeColor(input.box?.colors?.east, defaultBoxColors.east),
+        west: normalizeColor(input.box?.colors?.west, defaultBoxColors.west)
       }
     },
+    sceneMode,
+    room: sceneMode === 'outdoor' ? null : normalizeMapRoom(input.room, boxSize),
     lighting: normalizeLighting(input.lighting),
     terrain,
     grassLayers: normalizeGrassLayers(input.grassLayers, terrain.resolutionX, terrain.resolutionZ),
@@ -469,6 +764,7 @@ export function mapToSummary(map: EditableMap): MapSummary {
     height: map.box.size[1],
     depth: map.box.size[2],
     objectCount: map.objects.length,
+    sceneMode: map.sceneMode,
     assetGenerationMode: map.assetGenerationMode,
     confirmedAt: map.confirmedAt,
     renderSchemeId: map.renderSchemeId
@@ -965,7 +1261,11 @@ export function getTerrainCliffAabbs(map: EditableMap): MapObjectAabb[] {
  * or gaps, then indexed into a broad-phase grid for cheap runtime queries.
  */
 export function bakeMapCollisions(map: EditableMap): MapCollisionBake {
-  const sourceBoxes = [...getMapObjectAabbs(map), ...getTerrainCliffAabbs(map)];
+  const sourceBoxes = [
+    ...getMapObjectAabbs(map),
+    ...getTerrainCliffAabbs(map),
+    ...getRoomShellAabbs(map)
+  ];
   return bakeCollisionBoxes(sourceBoxes, mapCollisionSourceHash(map));
 }
 
@@ -1136,6 +1436,7 @@ function mapCollisionSourceHash(map: EditableMap): string {
       object.transform.size
     ]),
     assets,
+    room: map.room,
     terrainCliffs: deriveTerrainCliffSegments(map).map((segment) => [
       segment.start,
       segment.end,
@@ -1294,6 +1595,9 @@ function normalizeObject(input: Partial<MapObject>): MapObject {
       : input.assetId ? 'terrain' : 'fixed',
     visible: input.visible !== false,
     locked: input.locked === true,
+    roomOpeningId: typeof input.roomOpeningId === 'string' && input.roomOpeningId.trim()
+      ? input.roomOpeningId.trim().slice(0, 80)
+      : undefined,
     behavior: normalizeObjectBehavior(input.behavior),
     generation: normalizeGenerationOwner(input.generation)
   };

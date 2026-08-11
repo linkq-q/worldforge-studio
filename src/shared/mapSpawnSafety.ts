@@ -3,6 +3,7 @@ import {
   PLAYER_MAX_WALKABLE_SLOPE,
   getMapBounds,
   getMapObjectAabbs,
+  getRoomShellAabbs,
   getTerrainCliffAabbs,
   type EditableMap
 } from './map';
@@ -26,7 +27,10 @@ export function isSpawnPositionSafe(map: EditableMap, x: number, z: number): boo
   }
   if (isNearWater(map, x, z, PLAYER_RADIUS + 0.2)) return false;
   if (terrainSlopeDegrees(map, x, z) > PLAYER_MAX_WALKABLE_SLOPE) return false;
-  return ![...getMapObjectAabbs(map), ...getTerrainCliffAabbs(map)].some((obstacle) => {
+  const roomWalls = getRoomShellAabbs(map).filter((obstacle) => (
+    !obstacle.objectId.includes(':floor:') && !obstacle.objectId.includes(':ceiling:')
+  ));
+  return ![...getMapObjectAabbs(map), ...getTerrainCliffAabbs(map), ...roomWalls].some((obstacle) => {
     const closestX = clamp(x, obstacle.min[0], obstacle.max[0]);
     const closestZ = clamp(z, obstacle.min[2], obstacle.max[2]);
     return Math.hypot(x - closestX, z - closestZ) < PLAYER_RADIUS + 0.1;

@@ -5,11 +5,14 @@ import {
   createMapObject,
   createPaintStroke,
   normalizeMap,
+  normalizeMapRoom,
+  placeRoomOpeningObjectInPlace,
   snapTerrainObjectsInPlace,
   type EditableMap,
   type MapBoxColors,
   type MapObject,
   type MapPaintStroke,
+  type MapRoom,
   type MapSurface,
   type MapTerrain,
   type MapWaterBody,
@@ -66,6 +69,7 @@ export type MapWaterBodyPatch = Omit<Partial<MapWaterBody>, 'id'>;
 
 export type MapOperation =
   | { type: 'map.update'; name?: string; size?: Vec3; colors?: Partial<MapBoxColors>; renderPromptSuggestions?: string[]; visualSemantics?: MapVisualSemantics; layout?: MapLayout }
+  | { type: 'room.set'; room: Partial<MapRoom> }
   | { type: 'terrain.set'; terrain: MapTerrain }
   | ({ type: 'terrain.generate' } & Partial<TerrainGenerationParams> & Pick<TerrainGenerationParams, 'preset'>)
   | ({ type: 'terrain.modify' } & Partial<TerrainModifierParams> & Pick<TerrainModifierParams, 'modifier' | 'region'>)
@@ -147,6 +151,12 @@ export function applyMapOperations(map: EditableMap, operations: readonly MapOpe
         if (operation.layout !== undefined) next.layout = operation.layout;
         if (operation.size !== undefined) next.box.size = operation.size;
         if (operation.colors !== undefined) Object.assign(next.box.colors, operation.colors);
+        break;
+      case 'room.set':
+        if (next.sceneMode === 'outdoor') throw new Error('room_requires_indoor_map');
+        if (!operation.room || typeof operation.room !== 'object') throw new Error('invalid_room');
+        next.room = normalizeMapRoom(operation.room, next.box.size, next.room ?? undefined);
+        next.objects.forEach((object) => placeRoomOpeningObjectInPlace(next, object));
         break;
       case 'terrain.set':
         if (!operation.terrain || typeof operation.terrain !== 'object') throw new Error('invalid_terrain');
@@ -261,6 +271,7 @@ export function applyMapOperations(map: EditableMap, operations: readonly MapOpe
           transform: { ...base.transform, ...operation.object.transform }
         };
         if (next.objects.some((item) => item.id === object.id)) throw new Error('duplicate_object_id');
+        placeRoomOpeningObjectInPlace(next, object);
         next.objects.push(object);
         break;
       }
@@ -272,6 +283,7 @@ export function applyMapOperations(map: EditableMap, operations: readonly MapOpe
           id: object.id,
           transform: { ...object.transform, ...operation.patch.transform }
         });
+        placeRoomOpeningObjectInPlace(next, object);
         break;
       }
       case 'object.remove':
