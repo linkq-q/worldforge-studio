@@ -110,6 +110,29 @@ describe('applyRenderScheme', () => {
     expect(hdriSky.clear).toHaveBeenCalled();
   });
 
+  it('keeps a legacy plan\'s HDRI after discarding removed streak settings', () => {
+    const { targets, hdriSky } = createTargets();
+    const scheme = createRenderScheme({
+      name: 'legacy HDRI',
+      settings: PLAIN_SCHEME.settings,
+      renderPlan: {
+        version: 2,
+        baseSchemeId: PLAIN_SCHEME.id,
+        modules: [
+          { id: 'environment.hdri', params: { texture: 'night-forest.hdr' } },
+          { id: 'runtime.atmosphere-fx', params: { masterStrength: 0.5, sunShafts: 0.8, windStreaks: 0.6 } }
+        ]
+      }
+    });
+
+    expect(scheme.renderPlan?.modules.find((module) => module.id === 'runtime.atmosphere-fx')?.params)
+      .toEqual({ masterStrength: 0.5 });
+
+    applyRenderScheme(targets, scheme);
+
+    expect(hdriSky.apply).toHaveBeenCalledWith(expect.objectContaining({ texture: 'night-forest.hdr' }));
+  });
+
   it('keeps explicit grass colors while deriving the remaining colors from the environment', () => {
     const { targets, rendered } = createTargets();
     const scheme = createRenderScheme({

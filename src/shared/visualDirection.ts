@@ -28,7 +28,6 @@ export interface AtmosphereFxIntent {
   vapor: number;
   dust: number;
   sand?: number;
-  windStreaks: number;
 }
 
 /** Render-scheme-owned semantic source of truth. */
@@ -106,8 +105,7 @@ export const DEFAULT_VISUAL_DIRECTION: VisualDirection = Object.freeze({
     pollen: 0,
     vapor: 0,
     dust: 0,
-    sand: 0,
-    windStreaks: 0
+    sand: 0
   })
 });
 
@@ -145,8 +143,7 @@ export function normalizeVisualDirection(input: unknown): VisualDirection {
       pollen: numberValue(atmosphereFx.pollen, 0, 0, 1),
       vapor: numberValue(atmosphereFx.vapor, 0, 0, 1),
       dust: numberValue(atmosphereFx.dust, 0, 0, 1),
-      sand: numberValue(atmosphereFx.sand, 0, 0, 1),
-      windStreaks: numberValue(atmosphereFx.windStreaks, 0, 0, 1)
+      sand: numberValue(atmosphereFx.sand, 0, 0, 1)
     }
   };
 }

@@ -43,6 +43,7 @@ describe('agent progress panel', () => {
     expect(humanizeAgentError(new Error('scene_outcome_missing_asset_family:ancient-tree'))).toContain('【空间放置失败】');
     expect(humanizeAgentError(new Error('map_asset_generation_failed:松树:gpt: HTTP 500'))).toContain('【资产生成失败】');
     expect(humanizeAgentError(new Error('unknown_ecology_region'))).toContain('【目标区块失效】');
+    expect(humanizeAgentError(new Error('indoor_prompt_requires_indoor_map'))).toContain('【场景类型不匹配】');
   });
 
   it('explains a render JSON repair failure as a terminal two-attempt failure', () => {

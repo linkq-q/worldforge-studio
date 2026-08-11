@@ -8,8 +8,14 @@ export function renderMapCompositionSummary(suggestion: MapAiSuggestion): string
     ...composition.consultations.flatMap((consultation) => consultation.findings),
     ...composition.review.findings
   ];
+  const diagnostics = [...new Map((suggestion.diagnostics ?? []).map((issue) => [
+    `${issue.repaired}:${issue.message}`,
+    issue
+  ])).values()];
   return `
-    <div>
+    <details class="inspector-disclosure compact map-ai-composition-details">
+      <summary><span><b>生成结果详情</b><small>构图、分区与自动验收</small></span></summary>
+      <div class="inspector-body asset-library-details">
       <p class="empty">场景构图</p>
       <div class="map-ai-stats">
         <span>区块 <b>${composition.metrics.zoneCount}</b></span>
@@ -31,7 +37,16 @@ export function renderMapCompositionSummary(suggestion: MapAiSuggestion): string
         </div>
       ` : ''}
       <p class="empty">${composition.outcome.checks.map((check) => escapeHtml(check.message)).join(' · ')}</p>
-    </div>
+      ${diagnostics.length > 0 ? `
+        <div class="map-ai-composition-quality">
+          <p class="empty">自动质检</p>
+          <div class="style-tags">${diagnostics.map((issue) => `
+            <span>${issue.repaired ? '已修复' : '建议'} · ${escapeHtml(issue.message)}</span>
+          `).join('')}</div>
+        </div>
+      ` : ''}
+      </div>
+    </details>
   `;
 }
 

@@ -19,22 +19,6 @@ describe('semantic atmosphere effects', () => {
     expect(state.zones.vapor.map((zone) => zone.id)).toEqual(['pond']);
   });
 
-  it('lets bounded render intent strengthen a semantic baseline', () => {
-    const map = createEmptyMap('effects');
-    const plan = normalizeRenderPlan({
-      version: 2,
-      baseSchemeId: 'render-natural-day',
-      modules: [],
-      visualDirection: {
-        timeOfDay: 'noon',
-        atmosphereFx: { masterStrength: 0.8, windStreaks: 0.25 }
-      }
-    });
-
-    const state = compileAtmosphereFx(map, plan);
-    expect(state.channels.windStreaks).toBeCloseTo(0.2);
-  });
-
   it('uses the developer module as the explicit live override', () => {
     const map = createEmptyMap('effects');
     map.visualSemantics.zones = [
@@ -60,7 +44,7 @@ describe('semantic atmosphere effects', () => {
     expect(compileAtmosphereFx(map).channels.sand).toBe(0);
     map.confirmedAt = Date.now();
     const state = compileAtmosphereFx(map);
-    expect(state.channels.sand).toBeGreaterThan(0);
+    expect(state.channels.sand).toBeGreaterThanOrEqual(0.15);
     expect(state.zones.sand.map((zone) => zone.id)).toEqual(['dunes']);
   });
 });

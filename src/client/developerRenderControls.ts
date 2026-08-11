@@ -45,7 +45,6 @@ const PARAMETER_LABELS: Record<string, string> = {
   vapor: '水汽',
   dust: '尘埃',
   sand: '飞沙',
-  windStreaks: '风痕',
   value: '当前值',
   texture: 'HDRI 贴图',
   opacity: '透明度',

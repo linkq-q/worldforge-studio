@@ -3,7 +3,9 @@ import {
   PLAYER_HEIGHT,
   PLAYER_RADIUS,
   PLAYER_SPAWN_OBJECT_ID,
+  ROOM_SURFACES,
   SUN_OBJECT_ID,
+  buildRoomShellSegments,
   getMapBounds,
   getPlayerSpawnYaw,
   getSpawnPoints,
@@ -17,7 +19,9 @@ import {
   type MapObject,
   type MapPaintStroke,
   type MapSurface,
-  type MapWaterBody
+  type MapWaterBody,
+  type RoomSurface,
+  type RoomWallDisplayMode
 } from '../shared/map';
 import { buildModelGroup } from './modelRenderer';
 import { buildMapPrimitiveBatches } from './mapPrimitiveBatching';
@@ -55,6 +59,7 @@ export interface RenderedMap {
   getRuntimeBatchMeshes: () => THREE.Object3D[];
   setGrassStyle: (style: RuntimeGrassStyle) => void;
   setSandFlowStrength: (strength: number) => void;
+  setRoomWallDisplayMode: (mode: RoomWallDisplayMode, camera: THREE.Camera) => void;
   interactGrass: (position: Vec3, elapsedSeconds: number) => void;
   clearGrassInteraction: () => void;
   getDebugStats: () => RenderedMapDebugStats;
@@ -105,9 +110,12 @@ export async function buildEditableMapGroup(input: EditableMap, options: MapRend
   root.add(modelsRoot);
   const pickables: THREE.Object3D[] = [];
   const assets = new Map((map.assets ?? []).map((asset) => [asset.id, asset]));
+  const roomShell = buildRoomShell(map);
+  if (roomShell) modelsRoot.add(roomShell.group);
 
   let grassMap = deriveContactAwareGrassMap(map);
   const terrain = buildTerrain(map);
+  terrain.visible = map.sceneMode !== 'indoor';
   const sandFlow = terrain.userData.sandFlow as TerrainSandFlowState;
   applyTerrainGrassTint(terrain, grassMap, DEFAULT_RUNTIME_GRASS_STYLE);
   root.add(terrain);
@@ -117,7 +125,7 @@ export async function buildEditableMapGroup(input: EditableMap, options: MapRend
   let grassStyle = DEFAULT_RUNTIME_GRASS_STYLE;
   let materialElapsedSeconds = 0;
   const motionControllers: MapMotionController[] = [];
-  let grass = buildMapGrassField(grassMap);
+  let grass = map.sceneMode === 'indoor' ? null : buildMapGrassField(grassMap);
   if (grass) root.add(grass.group);
 
   const rebuildGrass = (next: EditableMap): void => {
@@ -128,8 +136,18 @@ export async function buildEditableMapGroup(input: EditableMap, options: MapRend
     applyTerrainGrassTint(terrain, grassMap, grassStyle);
   };
 
-  modelsRoot.add(buildStructuredWaterGroup(map));
+  const waterRoot = buildStructuredWaterGroup(map);
+  waterRoot.visible = map.sceneMode !== 'indoor';
+  modelsRoot.add(waterRoot);
   const objectGroups = createObjectGroups(map);
+  if (roomShell) {
+    for (const [surface, group] of roomShell.surfaceGroups) {
+      objectGroups.set(`__room__:${surface}`, group);
+      group.traverse((child) => {
+        if ((child as THREE.Mesh).isMesh) pickables.push(child);
+      });
+    }
+  }
   if (options.editorHelpers) {
     const playerSpawnGroup = buildPlayerSpawnGroup(map);
     const sunGroup = buildSunGroup(map);
@@ -206,6 +224,7 @@ export async function buildEditableMapGroup(input: EditableMap, options: MapRend
       sandFlow.strength = THREE.MathUtils.clamp(strength, 0, 1);
       syncTerrainSandShader(sandFlow);
     },
+    setRoomWallDisplayMode: (mode, camera) => roomShell?.setDisplayMode(mode, camera),
     interactGrass: (position, elapsedSeconds) => grass?.interact(position, elapsedSeconds),
     clearGrassInteraction: () => grass?.clearInteraction(),
     getDebugStats: () => {
@@ -238,6 +257,90 @@ export async function buildEditableMapGroup(input: EditableMap, options: MapRend
       disposeObject(root);
     }
   };
+}
+
+interface RoomShellRender {
+  group: THREE.Group;
+  surfaceGroups: Map<RoomSurface, THREE.Group>;
+  setDisplayMode(mode: RoomWallDisplayMode, camera: THREE.Camera): void;
+}
+
+function buildRoomShell(map: EditableMap): RoomShellRender | null {
+  if (!map.room) return null;
+  const group = new THREE.Group();
+  group.name = 'room';
+  group.userData.isRoomShell = true;
+  const surfaceGroups = new Map<RoomSurface, THREE.Group>();
+  for (const surface of ROOM_SURFACES) {
+    const surfaceGroup = new THREE.Group();
+    surfaceGroup.name = `room:${surface}`;
+    surfaceGroup.userData.surface = surface;
+    surfaceGroup.userData.mapObjectId = `__room__:${surface}`;
+    surfaceGroups.set(surface, surfaceGroup);
+    group.add(surfaceGroup);
+  }
+
+  for (const segment of buildRoomShellSegments(map)) {
+    const material = new THREE.MeshStandardMaterial({
+      color: map.box.colors[segment.surface],
+      map: createSurfaceTexture(map, segment.surface),
+      roughness: 0.82,
+      metalness: 0,
+      side: THREE.DoubleSide
+    });
+    const mesh = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), material);
+    mesh.position.set(...segment.center);
+    mesh.scale.set(...segment.size);
+    mesh.castShadow = segment.surface !== 'floor';
+    mesh.receiveShadow = true;
+    mesh.userData.surface = segment.surface;
+    mesh.userData.mapObjectId = `__room__:${segment.surface}`;
+    mesh.userData.roomFullCenterY = segment.center[1];
+    mesh.userData.roomFullHeight = segment.size[1];
+    mesh.userData.roomYMin = segment.yMin;
+    mesh.userData.roomYMax = segment.yMax;
+    surfaceGroups.get(segment.surface)?.add(mesh);
+  }
+
+  const setDisplayMode = (mode: RoomWallDisplayMode, camera: THREE.Camera): void => {
+    const room = map.room!;
+    const cameraX = camera.position.x - room.position[0];
+    const cameraZ = camera.position.z - room.position[2];
+    const hiddenCutaway = new Set<RoomSurface>();
+    if (mode === 'cutaway') {
+      hiddenCutaway.add('ceiling');
+      if (Math.abs(cameraX) > 0.05) hiddenCutaway.add(cameraX > 0 ? 'east' : 'west');
+      if (Math.abs(cameraZ) > 0.05) hiddenCutaway.add(cameraZ > 0 ? 'south' : 'north');
+    }
+    for (const [surface, surfaceGroup] of surfaceGroups) {
+      const isWall = surface !== 'floor' && surface !== 'ceiling';
+      surfaceGroup.visible = surface === 'floor'
+        || (mode === 'full')
+        || (mode === 'cutaway' && !hiddenCutaway.has(surface))
+        || (mode === 'half' && isWall);
+      surfaceGroup.traverse((object) => {
+        const mesh = object as THREE.Mesh;
+        if (!mesh.isMesh) return;
+        const fullHeight = Number(mesh.userData.roomFullHeight);
+        const fullCenterY = Number(mesh.userData.roomFullCenterY);
+        mesh.scale.y = fullHeight;
+        mesh.position.y = fullCenterY;
+        mesh.visible = true;
+        if (mode !== 'half' || !isWall) return;
+        const yMin = Number(mesh.userData.roomYMin);
+        const yMax = Math.min(Number(mesh.userData.roomYMax), room.size[1] / 2);
+        const visibleHeight = yMax - yMin;
+        if (visibleHeight <= 0.001) {
+          mesh.visible = false;
+          return;
+        }
+        mesh.scale.y = visibleHeight;
+        mesh.position.y = room.position[1] + (yMin + yMax) / 2;
+      });
+    }
+  };
+  setDisplayMode('full', new THREE.PerspectiveCamera());
+  return { group, surfaceGroups, setDisplayMode };
 }
 
 function applyTerrainGrassTint(mesh: THREE.Mesh, map: EditableMap, style: RuntimeGrassStyle): void {
@@ -320,13 +423,15 @@ function installTerrainSandShader(material: THREE.MeshStandardMaterial, map: Edi
           float distanceToZone = length(vTerrainSandPosition.xz - zone.xy);
           terrainSandMask = max(terrainSandMask, (1.0 - smoothstep(zone.z * 0.72, zone.z, distanceToZone)) * zone.w);
         }
-        float terrainSandFlow = sin(dot(vTerrainSandPosition.xz, vec2(0.72, 0.38)) * 3.2 - uTerrainSandTime * 1.7);
-        terrainSandFlow = smoothstep(0.35, 0.92, terrainSandFlow) * terrainSandMask * uTerrainSandStrength;
-        diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.94, 0.76, 0.38), terrainSandFlow * 0.16);
+        float terrainSandRipple = sin(dot(vTerrainSandPosition.xz, vec2(0.72, 0.38)) * 3.2 - uTerrainSandTime * 1.7) * 0.58;
+        terrainSandRipple += sin(dot(vTerrainSandPosition.xz, vec2(-0.31, 0.95)) * 5.1 - uTerrainSandTime * 1.15) * 0.42;
+        float terrainSandFlow = smoothstep(0.08, 0.82, terrainSandRipple) * terrainSandMask * uTerrainSandStrength;
+        diffuseColor.rgb = mix(diffuseColor.rgb, vec3(1.0, 0.78, 0.34), terrainSandFlow * 0.42);
+        diffuseColor.rgb *= 1.0 - smoothstep(0.52, 0.92, terrainSandRipple) * terrainSandMask * uTerrainSandStrength * 0.12;
       `);
     syncTerrainSandShader(state);
   };
-  material.customProgramCacheKey = () => 'worldforge-terrain-sand-v1';
+  material.customProgramCacheKey = () => 'worldforge-terrain-sand-v2';
   return state;
 }
 

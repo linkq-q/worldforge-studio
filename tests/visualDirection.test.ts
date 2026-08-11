@@ -57,7 +57,7 @@ describe('visual direction contract', () => {
         timeOfDay: 'evening',
         temperature: 'warm',
         palette: { sky: '#ABCDEF', fog: 'invalid' },
-        atmosphereFx: { masterStrength: 4, pollen: -1, sunShafts: 0.7 }
+        atmosphereFx: { masterStrength: 4, pollen: -1, sunShafts: 0.7, windStreaks: 0.8 }
       }
     }, undefined, undefined, 'ai');
 
@@ -69,6 +69,7 @@ describe('visual direction contract', () => {
       atmosphereFx: { masterStrength: 1, pollen: 0 }
     });
     expect(plan.visualDirection?.atmosphereFx).not.toHaveProperty('sunShafts');
+    expect(plan.visualDirection?.atmosphereFx).not.toHaveProperty('windStreaks');
   });
 
   it('compiles distinct bounded contrast methods', () => {

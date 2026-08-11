@@ -51,6 +51,7 @@ export function humanizeAgentError(error: unknown): string {
     map_agent_asset_minimum_not_met: '【资产数量不足】AI 没有满足“最少新资产”设置。请降低最少值，或在提示词中明确列出需要的新资产种类后重试。',
     map_agent_asset_limit: '【资产数量超限】AI 在达到本次新资产上限后仍要求更多资产。请提高最大值、减少场景种类，或允许复用所选资产库。',
     map_agent_generated_assets_not_placed: '【区块没有合法落点】AI 重规划和确定性补摆都已执行，但目标区块内仍没有满足资产足迹、水体距离、坡度与碰撞约束的位置。请扩大区块、减少新资产数量或降低区块内已有内容密度后重试。',
+    indoor_prompt_requires_indoor_map: '【场景类型不匹配】提示词明确要求室内空间，但当前是室外地图。请新建或切换为“室内”地图后再生成，系统会使用参数化房间、墙面和室内家具布局。',
     scene_asset_family_count_above_max: '【资产数量超限】场景规划包含过多资产家族，超过当前地图额度。请减少生态/建筑种类或提高最大新资产数。',
     scene_asset_variant_count_above_max: '【资产数量超限】AI 为同类资产规划了过多变体。请减少变体要求或提高最大新资产数。',
     scene_asset_variant_count_below_min: '【资产数量不足】场景规划无法在当前上下限内满足最少资产数。请检查资产最少/最多值是否冲突。',

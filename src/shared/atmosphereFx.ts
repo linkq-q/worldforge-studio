@@ -2,7 +2,7 @@ import type { EditableMap } from './map';
 import type { RenderPlan } from './renderPlan';
 import { normalizeVisualDirection, type SceneVisualZone, type SceneWindField } from './visualDirection';
 
-export type AtmosphereFxKind = 'pollen' | 'vapor' | 'dust' | 'sand' | 'windStreaks';
+export type AtmosphereFxKind = 'pollen' | 'vapor' | 'dust' | 'sand';
 
 export interface CompiledAtmosphereFx {
   masterStrength: number;
@@ -31,8 +31,7 @@ export function compileAtmosphereFx(map: EditableMap, plan?: RenderPlan | null):
       pollen: clamp(Math.max(number('pollen') ?? intent?.pollen ?? 0, pollenZones.length ? 0.16 * semanticStrength : 0) * masterStrength),
       vapor: clamp(Math.max(number('vapor') ?? intent?.vapor ?? 0, vaporZones.length ? 0.14 * semanticStrength : 0) * masterStrength),
       dust: clamp(Math.max(number('dust') ?? intent?.dust ?? 0, dustZones.length ? 0.1 * semanticStrength : 0) * masterStrength),
-      sand: clamp(Math.max(number('sand') ?? intent?.sand ?? 0, sandZones.length ? 0.18 * semanticStrength : 0) * masterStrength),
-      windStreaks: clamp(Math.max(number('windStreaks') ?? intent?.windStreaks ?? 0, wind.speed + wind.gustStrength > 0.8 ? 0.08 * semanticStrength : 0) * masterStrength)
+      sand: clamp(Math.max(number('sand') ?? intent?.sand ?? 0, sandZones.length ? 0.5 * semanticStrength : 0) * masterStrength)
     },
     zones: { pollen: pollenZones, vapor: vaporZones, dust: dustZones, sand: sandZones },
     wind

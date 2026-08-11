@@ -27,7 +27,7 @@ const GRASS_PRESETS = Object.freeze({
   sand: { rootColor: '#81713f', tipColor: '#d8c878', width: 0.62, flowerScale: 0.8 },
   wetland: { rootColor: '#376f52', tipColor: '#8fcb75', width: 0.78, flowerScale: 0.9 },
   farm: { rootColor: '#6f8138', tipColor: '#dfc568', width: 0.72, flowerScale: 0.82 },
-  magic: { rootColor: '#5350a8', tipColor: '#6ff0d2', width: 1.08, flowerScale: 1.15 },
+  magic: { rootColor: '#4430bd', tipColor: '#59ffe4', width: 1.2, flowerScale: 1.35 },
   'alpine-moss': { rootColor: '#3f5f3e', tipColor: '#9cbd72', width: 1.75, flowerScale: 0.65 },
 });
 
@@ -103,14 +103,18 @@ export class CartoonGrassField {
     this._clear();
     const visibleLayers = this._layers.filter((layer) => layer?.visible !== false);
     if (visibleLayers.length === 0) return;
-    const perLayerBudget = Math.max(1, Math.floor(this._style.maxInstances / visibleLayers.length));
-    for (const layer of visibleLayers) this._buildLayer(layer, perLayerBudget);
+    const weights = visibleLayers.map((layer) => grassLayerBudgetWeight(normalizePreset(layer?.preset)));
+    const totalWeight = weights.reduce((sum, weight) => sum + weight, 0);
+    for (const [index, layer] of visibleLayers.entries()) {
+      const budget = Math.max(1, Math.floor(this._style.maxInstances * weights[index] / totalWeight));
+      this._buildLayer(layer, budget);
+    }
   }
 
   _buildLayer(layer, budget) {
     const preset = normalizePreset(layer?.preset);
     const layerHeight = clamp(positive(layer?.height, 1), 0.2, 2.5);
-    const layerStyle = resolveLayerStyle(this._style, preset);
+    const layerStyle = resolveLayerStyle(this._style, preset, layer?.seed);
     const placements = collectGrassPlacements({
       layer,
       width: this._width,
@@ -123,7 +127,7 @@ export class CartoonGrassField {
     });
     if (placements.length === 0) return;
 
-    const bladeGeometry = createBladeGeometry(layerStyle, preset);
+    const bladeGeometry = createBladeGeometry(layerStyle, preset, layer?.seed);
     const bladeMaterial = createGrassMaterial(layerStyle);
     const blades = new THREE.InstancedMesh(bladeGeometry, bladeMaterial, placements.length);
     blades.name = `grass:${layer.id || 'layer'}`;
@@ -291,7 +295,7 @@ if (vGrassFade < 0.015) discard;`);
   return material;
 }
 
-function createBladeGeometry(style, preset) {
+function createBladeGeometry(style, preset, seed = 1) {
   const geometry = new THREE.BufferGeometry();
   const positions = [];
   const normals = [];
@@ -355,12 +359,22 @@ function createBladeGeometry(style, preset) {
       ], side * 0.08, 0.72);
     }
   } else if (preset === 'magic') {
+    const forkSpread = 0.26 + seededUnit(seed, 11) * 0.18;
+    const leftLean = -0.24 - seededUnit(seed, 17) * 0.22;
+    const rightLean = 0.3 + seededUnit(seed, 23) * 0.28;
+    const crownTwist = -0.55 + seededUnit(seed, 29) * 1.1;
     appendStrip([
-      { y: 0, width: 0.48 }, { y: 0.45, width: 0.42, x: -0.02 }, { y: 0.76, width: 0.26, x: -0.13 }, { y: 1, width: 0, x: -0.32 }
-    ], -0.18);
+      { y: 0, width: 0.52 }, { y: 0.42, width: 0.46, x: -0.02 }, { y: 0.72, width: 0.28, x: leftLean * 0.45 }, { y: 1, width: 0, x: leftLean }
+    ], crownTwist - 0.22);
     appendStrip([
-      { y: 0, width: 0.36 }, { y: 0.42, width: 0.32, x: 0.03 }, { y: 0.72, width: 0.2, x: 0.16 }, { y: 0.92, width: 0, x: 0.34, t: 1 }
-    ], 0.42, 0.84);
+      { y: 0, width: 0.4 }, { y: 0.4, width: 0.34, x: 0.03 }, { y: 0.68, width: 0.22, x: rightLean * 0.42 }, { y: 0.94, width: 0, x: rightLean, t: 1 }
+    ], crownTwist + 0.48, 0.88);
+    appendStrip([
+      { y: 0.32, width: 0.18, x: 0, t: 0.32 },
+      { y: 0.58, width: 0.2, x: forkSpread * 0.35, t: 0.58 },
+      { y: 0.8, width: 0.1, x: forkSpread * 0.72, t: 0.8 },
+      { y: 0.9, width: 0, x: forkSpread, t: 1 }
+    ], crownTwist - 0.9, 0.68);
   } else if (preset === 'alpine-moss') {
     const cushion = [
       { y: 0, width: 0.72, t: 0 },
@@ -419,14 +433,28 @@ function syncGrassUniformValues(uniforms, style) {
   uniforms.uGrassBands.value = style.bands;
 }
 
-function resolveLayerStyle(style, preset) {
+function resolveLayerStyle(style, preset, seed = 1) {
   const profile = GRASS_PRESETS[preset];
+  const magicHueShift = preset === 'magic' ? (seededUnit(seed, 41) - 0.5) * 0.18 : 0;
+  const rootColor = new THREE.Color(profile.rootColor).offsetHSL(magicHueShift, 0, 0);
+  const tipColor = new THREE.Color(profile.tipColor).offsetHSL(-magicHueShift * 0.65, 0, 0);
+  const hostMix = preset === 'magic' ? 0.12 : 0.28;
   return {
     ...style,
     bladeWidth: style.bladeWidth * profile.width,
-    rootColor: mixColor(profile.rootColor, style.rootColor, 0.28),
-    tipColor: mixColor(profile.tipColor, style.tipColor, 0.28),
+    rootColor: mixColor(`#${rootColor.getHexString()}`, style.rootColor, hostMix),
+    tipColor: mixColor(`#${tipColor.getHexString()}`, style.tipColor, hostMix),
   };
+}
+
+function seededUnit(seed, salt) {
+  let value = (Math.round(finite(seed, 1)) ^ Math.imul(salt, 0x9e3779b1)) >>> 0;
+  value ^= value >>> 16;
+  value = Math.imul(value, 0x7feb352d) >>> 0;
+  value ^= value >>> 15;
+  value = Math.imul(value, 0x846ca68b) >>> 0;
+  value ^= value >>> 16;
+  return value / 0xffffffff;
 }
 
 function mixColor(a, b, amount) {
@@ -435,6 +463,13 @@ function mixColor(a, b, amount) {
 
 function normalizePreset(value) {
   return Object.prototype.hasOwnProperty.call(GRASS_PRESETS, value) ? value : 'meadow';
+}
+
+function grassLayerBudgetWeight(preset) {
+  if (preset === 'farm') return 2.5;
+  if (preset === 'wetland' || preset === 'magic') return 1.2;
+  if (preset === 'sand') return 0.8;
+  return 1;
 }
 
 function bladeTipHeight(preset) {

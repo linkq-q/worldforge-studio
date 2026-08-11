@@ -376,10 +376,19 @@ describe('structured map water rendering', () => {
     }]);
     const rendered = await buildEditableMapGroup(map);
     const terrain = rendered.group.getObjectByName('terrain') as THREE.Mesh;
-    const sandFlow = terrain.userData.sandFlow as { zones: unknown[] };
+    const sandFlow = terrain.userData.sandFlow as { zones: unknown[]; strength: number };
 
     expect(sandFlow.zones).toHaveLength(1);
     expect((terrain.material as THREE.MeshStandardMaterial).onBeforeCompile).toBeTypeOf('function');
+    rendered.setSandFlowStrength(0.5);
+    expect(sandFlow.strength).toBe(0.5);
+    const shader = {
+      uniforms: {},
+      vertexShader: '#include <common>\n#include <begin_vertex>',
+      fragmentShader: '#include <common>\n#include <map_fragment>'
+    } as unknown as THREE.WebGLProgramParametersWithUniforms;
+    (terrain.material as THREE.MeshStandardMaterial).onBeforeCompile(shader, {} as THREE.WebGLRenderer);
+    expect(shader.fragmentShader).toContain('terrainSandRipple');
     rendered.dispose();
   });
 
@@ -562,7 +571,7 @@ describe('derived local lights', () => {
 });
 
 describe('grass-only refresh', () => {
-  it('builds distinct farm and moss silhouettes and keeps flower accents visible', async () => {
+  it('builds dense farm clumps, seeded magic variants, distinct moss, and visible flowers', async () => {
     const map = createEmptyMap('grass families', 'map-grass-families');
     const meadow = createGrassLayer(
       { id: 'meadow', seed: 7, preset: 'meadow', height: 0.8 },
@@ -579,20 +588,36 @@ describe('grass-only refresh', () => {
       map.terrain.resolutionX,
       map.terrain.resolutionZ
     );
-    map.grassLayers = [meadow, farm, moss];
-    map.grassLayers.forEach((layer) => fillGrassLayerInPlace(map, layer.id, 0.55));
+    const magicA = createGrassLayer(
+      { id: 'magic-a', seed: 10, preset: 'magic', height: 1.2 },
+      map.terrain.resolutionX,
+      map.terrain.resolutionZ
+    );
+    const magicB = createGrassLayer(
+      { id: 'magic-b', seed: 11, preset: 'magic', height: 1.2 },
+      map.terrain.resolutionX,
+      map.terrain.resolutionZ
+    );
+    map.grassLayers = [meadow, farm, moss, magicA, magicB];
+    map.grassLayers.forEach((layer) => fillGrassLayerInPlace(map, layer.id, 0.12));
 
     const rendered = await buildEditableMapGroup(map);
     const meadowMesh = rendered.group.getObjectByName('grass:meadow') as THREE.InstancedMesh;
     const farmMesh = rendered.group.getObjectByName('grass:farm') as THREE.InstancedMesh;
     const mossMesh = rendered.group.getObjectByName('grass:moss') as THREE.InstancedMesh;
+    const magicMeshA = rendered.group.getObjectByName('grass:magic-a') as THREE.InstancedMesh;
+    const magicMeshB = rendered.group.getObjectByName('grass:magic-b') as THREE.InstancedMesh;
     const flowers = rendered.group.getObjectByName('grass-flowers:farm') as THREE.InstancedMesh;
 
     expect(meadowMesh.userData).toMatchObject({ grassPreset: 'meadow', grassHeight: 0.8 });
     expect(farmMesh.userData).toMatchObject({ grassPreset: 'farm', grassHeight: 1.55 });
     expect(mossMesh.userData).toMatchObject({ grassPreset: 'alpine-moss', grassHeight: 0.45 });
     expect(farmMesh.geometry.getAttribute('position').count).toBeGreaterThan(meadowMesh.geometry.getAttribute('position').count);
+    expect(farmMesh.count).toBeGreaterThan(meadowMesh.count * 2.5);
     expect(mossMesh.geometry.boundingBox?.max.y).toBeLessThan(meadowMesh.geometry.boundingBox?.max.y ?? 0);
+    expect(Array.from(magicMeshA.geometry.getAttribute('position').array)).not.toEqual(
+      Array.from(magicMeshB.geometry.getAttribute('position').array)
+    );
     expect(flowers.count).toBeGreaterThan(0);
     expect(flowers.geometry.getAttribute('position').count).toBeGreaterThan(10);
     rendered.dispose();

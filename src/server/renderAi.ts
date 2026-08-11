@@ -242,7 +242,7 @@ function buildSystemPrompt(
     '雾优先使用 atmosphere.fog.visibilityDistance（米），不要猜底层 density：薄雾 240-450，普通雾 120-220，浓雾 40-90；“清晨薄雾”不得低于 260。',
     '明确风格必须选择对应能力：素描/铅笔/手绘排线使用 runtime.presentation-style=sketch（默认 coordinateSpace=world），通常组合 runtime.outline-style=ink；水墨使用 outline=ink；漫画使用 comic-clean 或 comic-print；全场景卡通/赛璐璐使用 surface-style=cel；卡通水面只使用 runtime.water-style=stylized。',
     '只返回一个 JSON 对象，不要 Markdown，不要额外文字：',
-    '{"plan":{"version":2,"baseSchemeId":"方案ID","visualDirection":{"version":1,"contrastMode":"bright-cartoon","timeOfDay":"noon","temperature":"warm","palette":{"sky":"#RRGGBB","keyLight":"#RRGGBB","fillLight":"#RRGGBB","shadow":"#RRGGBB","fog":"#RRGGBB","waterBias":"#RRGGBB","accent":"#RRGGBB"},"atmosphereFx":{"masterStrength":0.35,"pollen":0,"vapor":0,"dust":0,"windStreaks":0}},"modules":[{"key":"可选唯一键","id":"能力ID","scope":{"target":"material-tag","tag":"foliage"},"params":{}}]},"styleTags":["tag"],"explanation":"简短说明"}',
+    '{"plan":{"version":2,"baseSchemeId":"方案ID","visualDirection":{"version":1,"contrastMode":"bright-cartoon","timeOfDay":"noon","temperature":"warm","palette":{"sky":"#RRGGBB","keyLight":"#RRGGBB","fillLight":"#RRGGBB","shadow":"#RRGGBB","fog":"#RRGGBB","waterBias":"#RRGGBB","accent":"#RRGGBB"},"atmosphereFx":{"masterStrength":0.35,"pollen":0,"vapor":0,"dust":0}},"modules":[{"key":"可选唯一键","id":"能力ID","scope":{"target":"material-tag","tag":"foliage"},"params":{}}]},"styleTags":["tag"],"explanation":"简短说明"}',
     `能力清单：${JSON.stringify(publicCapabilities)}`,
     `方案库：${JSON.stringify(library)}`
   ].join('\n');

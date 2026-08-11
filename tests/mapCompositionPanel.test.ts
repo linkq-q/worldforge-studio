@@ -9,6 +9,10 @@ describe('map composition preview panel', () => {
       operations: [],
       renderPromptSuggestions: [],
       generatedAssets: [],
+      diagnostics: [
+        { code: 'object.overlap', severity: 'warning', message: 'Bench overlap', repaired: false },
+        { code: 'object.overlap', severity: 'warning', message: 'Bench overlap', repaired: false }
+      ],
       composition: {
         plan: {
           version: 1,
@@ -65,5 +69,9 @@ describe('map composition preview panel', () => {
     expect(html).toContain('The cabin is framed by the pond and forest.');
     expect(html).toContain('&lt;Cabin&gt;');
     expect(html).not.toContain('<Cabin>');
+    expect(html).toContain('<details class="inspector-disclosure compact map-ai-composition-details">');
+    expect(html).not.toContain('map-ai-composition-details" open');
+    expect(html).toContain('map-ai-composition-quality');
+    expect(html.match(/Bench overlap/g)).toHaveLength(1);
   });
 });

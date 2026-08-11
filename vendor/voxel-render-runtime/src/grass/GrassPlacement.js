@@ -98,8 +98,8 @@ const PLACEMENT_PROFILES = Object.freeze({
   meadow: { spacing: 1, tuftMin: 2, tuftMax: 5, radius: 0.32, width: 1, height: 1, patchMin: 0.25, patchMax: 1.15 },
   sand: { spacing: 1.35, tuftMin: 1, tuftMax: 3, radius: 0.24, width: 0.8, height: 0.86, patchMin: 0.12, patchMax: 0.88 },
   wetland: { spacing: 0.9, tuftMin: 3, tuftMax: 6, radius: 0.38, width: 0.9, height: 1.12, patchMin: 0.38, patchMax: 1.18 },
-  farm: { spacing: 1.05, tuftMin: 2, tuftMax: 4, radius: 0.22, width: 0.9, height: 1.04, patchMin: 0.72, patchMax: 1.08 },
-  magic: { spacing: 1.08, tuftMin: 2, tuftMax: 5, radius: 0.42, width: 1, height: 1.08, patchMin: 0.2, patchMax: 1.2 },
+  farm: { spacing: 0.62, tuftMin: 12, tuftMax: 20, radius: 0.42, width: 0.9, height: 1.04, patchMin: 0.9, patchMax: 1.3 },
+  magic: { spacing: 0.96, tuftMin: 3, tuftMax: 6, radius: 0.46, width: 1, height: 1.08, patchMin: 0.2, patchMax: 1.2 },
   'alpine-moss': { spacing: 1.18, tuftMin: 1, tuftMax: 2, radius: 0.48, width: 1.25, height: 0.78, patchMin: 0.3, patchMax: 1.05 },
 });
 

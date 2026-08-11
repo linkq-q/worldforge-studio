@@ -9,6 +9,8 @@ import {
   PLAYER_HEIGHT,
   PLAYER_RADIUS,
   PLAYER_SPAWN_OBJECT_ID,
+  ROOM_OBJECT_ID,
+  ROOM_SURFACES,
   SUN_OBJECT_ID,
   addPaintStroke,
   applyTerrainBrush,
@@ -19,16 +21,24 @@ import {
   getSpawnPoints,
   getSunPosition,
   normalizeMap,
+  normalizeMapRoom,
+  normalizeMapSceneMode,
+  placeRoomOpeningObjectInPlace,
   reassignRegionGenerationOwnersInPlace,
   sampleTerrainHeight,
+  roomSurfaceObjectId,
+  syncRoomOpeningFromObjectInPlace,
   superMapSizeFromMediumCount,
   surfaceUvFromPoint,
   type EditableMap,
   type MapAsset,
   type MapObject,
+  type MapSceneMode,
   type MapSummary,
   type MapSurface,
   type MapSizePresetKey,
+  type RoomSurface,
+  type RoomWallDisplayMode,
   type TerrainBrushMode
 } from '../shared/map';
 import {
@@ -320,6 +330,9 @@ class MapEditor {
   private mapAiTargetVisualZoneId = '';
   private selectedVisualZoneId = '';
   private newMapAssetGenerationMode: ModelGenerationMode = 'voxel';
+  private newMapSceneMode: MapSceneMode = 'outdoor';
+  private newRoomSize: [number, number, number] = [10, 3, 8];
+  private roomWallDisplayMode: RoomWallDisplayMode = 'cutaway';
   private mapAiSuggestion: MapAiSuggestion | null = null;
   private mapPreviewKind: 'ai' | 'terrain' = 'ai';
   private mapAiPreviewMap: EditableMap | null = null;
@@ -349,6 +362,7 @@ class MapEditor {
   async start(): Promise<void> {
     this.developerMode = localStorage.getItem('worldforge.developerMode') === 'on';
     this.newMapAssetGenerationMode = normalizeModelGenerationMode(localStorage.getItem('worldforge.newMapAssetMode'));
+    this.roomWallDisplayMode = normalizeRoomWallDisplayMode(localStorage.getItem('worldforge.roomWallDisplayMode'));
     this.activeAssetLibraryId = localStorage.getItem('worldforge.activeAssetLibraryId') ?? '';
     this.renderShell();
     this.setupViewport();
@@ -388,7 +402,12 @@ class MapEditor {
                   <label><span>重命名当前地图</span><input id="rename-current-map-input" maxlength="80" aria-label="重命名当前地图" placeholder="输入地图名称"></label>
                   <button id="rename-current-map" class="secondary" type="button">重命名</button>
                   <button id="delete-map" class="secondary danger" type="button">删除当前地图</button>
-                  <label><span>地图尺寸</span><select id="new-map-size" aria-label="新地图尺寸">
+                  <label><span>场景类型</span><select id="new-map-scene-mode" aria-label="新地图场景类型">
+                    <option value="outdoor" ${this.newMapSceneMode === 'outdoor' ? 'selected' : ''}>室外</option>
+                    <option value="indoor" ${this.newMapSceneMode === 'indoor' ? 'selected' : ''}>室内</option>
+                    <option value="mixed" ${this.newMapSceneMode === 'mixed' ? 'selected' : ''}>室内 + 室外</option>
+                  </select></label>
+                  <label id="new-map-size-field"><span>地图尺寸</span><select id="new-map-size" aria-label="新地图尺寸">
                     ${MAP_SIZE_PRESETS.map((preset) => `
                       <option value="${preset.key}" ${preset.key === this.newMapSizePreset ? 'selected' : ''}>${preset.label}</option>
                     `).join('')}
@@ -397,6 +416,14 @@ class MapEditor {
                     <span>超大地图面积（中地图数量）</span>
                     <input id="new-map-super-units" type="number" min="${SUPER_MAP_MEDIUM_COUNT_MIN}" max="${SUPER_MAP_MEDIUM_COUNT_MAX}" step="1" value="${this.newMapSuperMediumCount}" />
                     <small id="new-map-super-size-hint"></small>
+                  </label>
+                  <label id="new-room-size-field" ${this.newMapSceneMode === 'outdoor' ? 'hidden' : ''}>
+                    <span>房间宽 × 高 × 深（米）</span>
+                    <div class="triple">
+                      <input data-new-room-size="0" type="number" min="3" max="40" step="0.5" value="${this.newRoomSize[0]}" aria-label="房间宽度" />
+                      <input data-new-room-size="1" type="number" min="2.2" max="12" step="0.1" value="${this.newRoomSize[1]}" aria-label="房间高度" />
+                      <input data-new-room-size="2" type="number" min="3" max="40" step="0.5" value="${this.newRoomSize[2]}" aria-label="房间深度" />
+                    </div>
                   </label>
                   <label><span>资产风格</span><select id="new-map-asset-mode" aria-label="新地图模型风格">
                     ${MODEL_GENERATION_MODES.map((mode) => `
@@ -435,6 +462,12 @@ class MapEditor {
                 <button type="button" data-view="top">顶视图</button>
                 <button type="button" data-view="front">前视图</button>
                 <button type="button" data-view="right">右视图</button>
+                <label id="room-wall-display-field" hidden><span>房间显示</span><select id="room-wall-display-mode">
+                  <option value="full" ${this.roomWallDisplayMode === 'full' ? 'selected' : ''}>完整墙体</option>
+                  <option value="cutaway" ${this.roomWallDisplayMode === 'cutaway' ? 'selected' : ''}>自动剖切</option>
+                  <option value="half" ${this.roomWallDisplayMode === 'half' ? 'selected' : ''}>半墙</option>
+                  <option value="hidden" ${this.roomWallDisplayMode === 'hidden' ? 'selected' : ''}>隐藏墙体</option>
+                </select></label>
               </div>
             </details>
             <button data-play-mode class="secondary toolbar-utility" title="从出生点进入第一人称游玩视角">游玩</button>
@@ -514,13 +547,21 @@ class MapEditor {
     });
     const updateSuperMapSizeControls = () => {
       const field = this.app.querySelector<HTMLElement>('#new-map-super-size');
+      const sizeField = this.app.querySelector<HTMLElement>('#new-map-size-field');
+      const roomField = this.app.querySelector<HTMLElement>('#new-room-size-field');
       const input = this.app.querySelector<HTMLInputElement>('#new-map-super-units');
       const hint = this.app.querySelector<HTMLElement>('#new-map-super-size-hint');
-      if (field) field.hidden = this.newMapSizePreset !== 'super';
+      if (sizeField) sizeField.hidden = this.newMapSceneMode === 'indoor';
+      if (roomField) roomField.hidden = this.newMapSceneMode === 'outdoor';
+      if (field) field.hidden = this.newMapSceneMode === 'indoor' || this.newMapSizePreset !== 'super';
       if (input) input.value = String(this.newMapSuperMediumCount);
       const size = superMapSizeFromMediumCount(this.newMapSuperMediumCount);
       if (hint) hint.textContent = `约 ${this.newMapSuperMediumCount} 个中地图面积 · ${size[0]} × ${size[2]}`;
     };
+    this.app.querySelector<HTMLSelectElement>('#new-map-scene-mode')?.addEventListener('change', (event) => {
+      this.newMapSceneMode = normalizeMapSceneMode((event.target as HTMLSelectElement).value);
+      updateSuperMapSizeControls();
+    });
     this.app.querySelector<HTMLSelectElement>('#new-map-size')?.addEventListener('change', (event) => {
       this.newMapSizePreset = (event.target as HTMLSelectElement).value as MapSizePresetKey;
       updateSuperMapSizeControls();
@@ -533,9 +574,29 @@ class MapEditor {
       updateSuperMapSizeControls();
     });
     updateSuperMapSizeControls();
+    this.app.querySelectorAll<HTMLInputElement>('[data-new-room-size]').forEach((input) => {
+      input.addEventListener('change', () => {
+        const index = Number(input.dataset.newRoomSize);
+        const fallback = this.newRoomSize[index];
+        const value = Number(input.value);
+        if (!Number.isFinite(value)) {
+          input.value = String(fallback);
+          return;
+        }
+        const minimum = index === 1 ? 2.2 : 3;
+        const maximum = index === 1 ? 12 : 40;
+        this.newRoomSize[index] = clampNumber(value, minimum, maximum);
+        input.value = String(this.newRoomSize[index]);
+      });
+    });
     this.app.querySelector<HTMLSelectElement>('#new-map-asset-mode')?.addEventListener('change', (event) => {
       this.newMapAssetGenerationMode = normalizeModelGenerationMode((event.target as HTMLSelectElement).value);
       localStorage.setItem('worldforge.newMapAssetMode', this.newMapAssetGenerationMode);
+    });
+    this.app.querySelector<HTMLSelectElement>('#room-wall-display-mode')?.addEventListener('change', (event) => {
+      this.roomWallDisplayMode = normalizeRoomWallDisplayMode((event.target as HTMLSelectElement).value);
+      localStorage.setItem('worldforge.roomWallDisplayMode', this.roomWallDisplayMode);
+      this.applyRoomWallDisplayMode();
     });
     this.app.querySelector('#add-object')?.addEventListener('click', () => this.addObject());
     this.app.querySelector('#save-map')?.addEventListener('click', () => void this.saveMap());
@@ -677,6 +738,7 @@ class MapEditor {
     this.transform.addEventListener('mouseUp', () => {
       this.transformPointerActive = false;
       this.endHistoryGesture();
+      if (this.selectedObject()?.roomOpeningId) void this.refreshScene();
     });
     this.transform.addEventListener('dragging-changed', (event) => {
       this.transformDragging = Boolean(event.value);
@@ -761,6 +823,7 @@ class MapEditor {
         height: map.box.size[1],
         depth: map.box.size[2],
         objectCount: map.objects.length,
+        sceneMode: map.sceneMode,
         assetGenerationMode: map.assetGenerationMode,
         confirmedAt: map.confirmedAt,
         renderSchemeId: map.renderSchemeId
@@ -800,12 +863,17 @@ class MapEditor {
     if (name === null) return;
     const preset = MAP_SIZE_PRESETS.find((item) => item.key === this.newMapSizePreset)
       ?? MAP_SIZE_PRESETS[1];
+    const mapSize = this.newMapSceneMode === 'indoor'
+      ? [...this.newRoomSize]
+      : preset.key === 'super' ? superMapSizeFromMediumCount(this.newMapSuperMediumCount) : preset.size;
     this.cancelAssetPlacement();
     const { map } = await editorFetch<{ map: EditableMap }>('/api/editor/maps', {
       method: 'POST',
       body: JSON.stringify({
         name: name.trim() || '新地图',
-        size: preset.key === 'super' ? superMapSizeFromMediumCount(this.newMapSuperMediumCount) : preset.size,
+        size: mapSize,
+        sceneMode: this.newMapSceneMode,
+        roomSize: this.newMapSceneMode === 'outdoor' ? undefined : this.newRoomSize,
         assetGenerationMode: this.newMapAssetGenerationMode
       })
     });
@@ -1039,13 +1107,13 @@ class MapEditor {
     const generationBlocked = this.state.busy || this.state.dirty || !this.mapAiPrompt.trim() || !compositionAvailable;
     const refinementBlocked = generationBlocked || !hasRefinableMapContent(map);
     const mapAiOpen = host.querySelector<HTMLDetailsElement>('[data-inspector-section="map-ai"]')?.open ?? true;
-    const layoutHtml = this.renderMapLayoutHtml(map);
+    const layoutHtml = map.sceneMode === 'indoor' ? '' : this.renderMapLayoutHtml(map);
     host.innerHTML = `
       ${layoutHtml}
       <details class="inspector-disclosure" data-inspector-section="map-ai" ${mapAiOpen || this.state.busy || Boolean(suggestion) ? 'open' : ''}>
-        <summary><span><b>AI 生成地图</b><small>一句话生成或继续调整</small></span></summary>
+        <summary><span><b>${map.sceneMode === 'indoor' ? 'AI 生成室内场景' : 'AI 生成地图'}</b><small>一句话生成或继续调整</small></span></summary>
         <section class="editor-section inspector-body map-ai">
-        <textarea id="map-ai-prompt" rows="2" maxlength="1200" placeholder="例如：一片树林里散布着许多小木屋" ${this.state.busy ? 'disabled' : ''}>${escapeHtml(this.mapAiPrompt)}</textarea>
+        <textarea id="map-ai-prompt" rows="2" maxlength="1200" placeholder="${map.sceneMode === 'indoor' ? '例如：一间 1980 年代的教室' : '例如：一片树林里散布着许多小木屋'}" ${this.state.busy ? 'disabled' : ''}>${escapeHtml(this.mapAiPrompt)}</textarea>
         <p class="empty inspector-note">建议只写一句场景描述；AI 会自行安排坐标、数量、密度和空间关系。</p>
         <div class="map-ai-options">
           <label class="field compact map-ai-toggle">
@@ -1126,7 +1194,7 @@ class MapEditor {
               <div class="style-tags">${suggestion.reusedAssets?.map((asset) => `<span>资产库 · ${escapeHtml(asset.name)}</span>`).join('')}</div>
             </details>
           ` : ''}
-          ${(suggestion.diagnostics?.length ?? 0) > 0 ? `
+          ${!suggestion.composition && (suggestion.diagnostics?.length ?? 0) > 0 ? `
             <div>
               <p class="empty">自动质检</p>
               <div class="style-tags">${suggestion.diagnostics?.map((issue) => `
@@ -1904,6 +1972,14 @@ class MapEditor {
       return;
     }
     host.innerHTML = `
+      ${map.room ? `
+        <div class="hierarchy-row system"><span>房间外壳</span><small>${map.room.size.map((value) => value.toFixed(1)).join(' × ')}</small></div>
+        ${ROOM_SURFACES.map((surface) => `
+          <button class="hierarchy-row system ${this.isRoomSurfaceSelected(surface) ? 'active' : ''}" data-room-surface="${surface}">
+            <span>${roomSurfaceLabel(surface)}</span><small>room</small>
+          </button>
+        `).join('')}
+      ` : ''}
       <button class="hierarchy-row system ${this.isPlayerSpawnSelected() ? 'active' : ''}" data-spawn-object="${PLAYER_SPAWN_OBJECT_ID}">
         <span>场景参考点</span>
         <small>origin</small>
@@ -1921,6 +1997,12 @@ class MapEditor {
       ${renderObjectTree(map.objects, null, this.state.selectedObjectId)}
     `;
     if (this.mapAiPreviewMap) return;
+    host.querySelectorAll<HTMLButtonElement>('[data-room-surface]').forEach((button) => {
+      button.addEventListener('click', () => {
+        const surface = button.dataset.roomSurface as RoomSurface;
+        this.selectObject(roomSurfaceObjectId(surface));
+      });
+    });
     host.querySelector<HTMLButtonElement>('[data-spawn-object]')?.addEventListener('click', () => {
       this.selectObject(PLAYER_SPAWN_OBJECT_ID);
     });
@@ -1952,6 +2034,7 @@ class MapEditor {
       return;
     }
     const mapSettingsOpen = host.querySelector<HTMLDetailsElement>('[data-inspector-section="map-settings"]')?.open ?? false;
+    const roomSettingsOpen = host.querySelector<HTMLDetailsElement>('[data-inspector-section="room-settings"]')?.open ?? Boolean(map.room);
     const materialTagsOpen = host.querySelector<HTMLDetailsElement>('[data-inspector-section="material-tags"]')?.open ?? false;
     const visualSemanticsOpen = host.querySelector<HTMLDetailsElement>('[data-inspector-section="visual-semantics"]')?.open ?? false;
     if (!map.visualSemantics.zones.some((zone) => zone.id === this.selectedVisualZoneId)) {
@@ -1964,6 +2047,11 @@ class MapEditor {
         <summary><span><b>地图</b><small>${escapeHtml(map.name)} · ${map.box.size.map((value) => value.toFixed(0)).join(' × ')}</small></span></summary>
         <section class="editor-section inspector-body">
         <label class="field compact"><span>名称</span><input data-map-name value="${escapeHtml(map.name)}" /></label>
+        <label class="field compact"><span>场景类型</span><select data-map-scene-mode>
+          <option value="outdoor" ${map.sceneMode === 'outdoor' ? 'selected' : ''}>室外</option>
+          <option value="indoor" ${map.sceneMode === 'indoor' ? 'selected' : ''}>室内</option>
+          <option value="mixed" ${map.sceneMode === 'mixed' ? 'selected' : ''}>室内 + 室外</option>
+        </select></label>
         <div class="triple">
           ${numberField('宽', 'box-size', 0, map.box.size[0])}
           ${numberField('高', 'box-size', 1, map.box.size[1])}
@@ -1971,9 +2059,54 @@ class MapEditor {
         </div>
         <div class="color-grid">
           ${colorField('地板', 'floor', map.box.colors.floor)}
+          ${map.room ? `
+            ${colorField('天花板', 'ceiling', map.box.colors.ceiling)}
+            ${colorField('北墙', 'north', map.box.colors.north)}
+            ${colorField('南墙', 'south', map.box.colors.south)}
+            ${colorField('东墙', 'east', map.box.colors.east)}
+            ${colorField('西墙', 'west', map.box.colors.west)}
+          ` : ''}
         </div>
         </section>
       </details>
+      ${map.room ? `
+        <details class="inspector-disclosure" data-inspector-section="room-settings" ${roomSettingsOpen ? 'open' : ''}>
+          <summary><span><b>参数化房间</b><small>${map.room.size.map((value) => value.toFixed(1)).join(' × ')} · ${map.room.openings.length} 个门窗位</small></span></summary>
+          <section class="editor-section inspector-body">
+            <p class="empty">墙体由模块化墙段围绕门窗预留位拼成，不执行布尔切割。</p>
+            <div class="triple">
+              ${numberField('位置 X', 'room-position', 0, map.room.position[0])}
+              ${numberField('地板 Y', 'room-position', 1, map.room.position[1])}
+              ${numberField('位置 Z', 'room-position', 2, map.room.position[2])}
+            </div>
+            <div class="triple">
+              ${numberField('宽', 'room-size', 0, map.room.size[0])}
+              ${numberField('高', 'room-size', 1, map.room.size[1])}
+              ${numberField('深', 'room-size', 2, map.room.size[2])}
+            </div>
+            <label class="field compact"><span>墙厚</span><input data-room-thickness type="number" min="0.05" max="0.5" step="0.01" value="${map.room.wallThickness}" /></label>
+            <div class="map-ai-controls">
+              <button type="button" class="secondary small" data-add-room-opening="door">添加门位</button>
+              <button type="button" class="secondary small" data-add-room-opening="window">添加窗位</button>
+            </div>
+            ${map.room.openings.map((opening) => `
+              <details class="inspector-disclosure compact" data-room-opening-row="${escapeHtml(opening.id)}">
+                <summary><span><b>${opening.kind === 'door' ? '门位' : '窗位'}</b><small>${escapeHtml(opening.id)} · ${roomSurfaceLabel(opening.wall)}</small></span></summary>
+                <label class="field compact"><span>墙面</span><select data-room-opening-wall="${escapeHtml(opening.id)}">
+                  ${(['north', 'south', 'east', 'west'] as const).map((wall) => `<option value="${wall}" ${opening.wall === wall ? 'selected' : ''}>${roomSurfaceLabel(wall)}</option>`).join('')}
+                </select></label>
+                <div class="triple">
+                  <label><span>横向偏移</span><input data-room-opening-number="offset" data-room-opening-id="${escapeHtml(opening.id)}" type="number" step="0.1" value="${opening.offset}" /></label>
+                  <label><span>离地</span><input data-room-opening-number="bottom" data-room-opening-id="${escapeHtml(opening.id)}" type="number" min="0" step="0.1" value="${opening.bottom}" ${opening.kind === 'door' ? 'disabled' : ''} /></label>
+                  <label><span>宽</span><input data-room-opening-number="width" data-room-opening-id="${escapeHtml(opening.id)}" type="number" min="0.4" step="0.1" value="${opening.width}" /></label>
+                </div>
+                <label class="field compact"><span>高</span><input data-room-opening-number="height" data-room-opening-id="${escapeHtml(opening.id)}" type="number" min="0.4" step="0.1" value="${opening.height}" /></label>
+                <button type="button" class="secondary danger small" data-remove-room-opening="${escapeHtml(opening.id)}">删除预留位</button>
+              </details>
+            `).join('') || '<p class="empty">尚未规划门窗；AI 生成室内场景时可同时创建并绑定模型。</p>'}
+          </section>
+        </details>
+      ` : ''}
       <details class="inspector-disclosure" data-inspector-section="visual-semantics" ${visualSemanticsOpen ? 'open' : ''}>
         <summary><span><b>区域语义</b><small>${map.visualSemantics.zones.length} 个区域 · 手调字段自动保留</small></span></summary>
         <section class="editor-section inspector-body">
@@ -2068,10 +2201,102 @@ class MapEditor {
       map.name = (event.target as HTMLInputElement).value;
       this.markDirty(false);
     });
+    host.querySelector<HTMLSelectElement>('[data-map-scene-mode]')?.addEventListener('change', (event) => {
+      const sceneMode = normalizeMapSceneMode((event.target as HTMLSelectElement).value);
+      const room = sceneMode === 'outdoor'
+        ? null
+        : normalizeMapRoom(map.room, map.box.size);
+      this.state.map = normalizeMap({ ...map, sceneMode, room });
+      this.markDirty();
+      void this.refreshScene();
+      this.renderPanels();
+    });
     bindVectorInputs(host, 'box-size', map.box.size, () => {
+      if (map.room) map.room = normalizeMapRoom(map.room, map.box.size, map.room);
       this.markDirty();
       void this.refreshScene();
     });
+    if (map.room) {
+      bindVectorInputs(host, 'room-position', map.room.position, () => {
+        map.room = normalizeMapRoom(map.room, map.box.size, map.room!);
+        map.objects.forEach((object) => placeRoomOpeningObjectInPlace(map, object));
+        this.markDirty();
+        void this.refreshScene();
+        this.renderMapInspector();
+      });
+      bindVectorInputs(host, 'room-size', map.room.size, () => {
+        if (map.sceneMode === 'indoor') map.box.size = [...map.room!.size];
+        map.room = normalizeMapRoom(map.room, map.box.size, map.room!);
+        map.objects.forEach((object) => placeRoomOpeningObjectInPlace(map, object));
+        this.markDirty();
+        void this.refreshScene();
+        this.renderMapInspector();
+      }, true);
+      host.querySelector<HTMLInputElement>('[data-room-thickness]')?.addEventListener('change', (event) => {
+        map.room!.wallThickness = Number((event.target as HTMLInputElement).value);
+        map.room = normalizeMapRoom(map.room, map.box.size, map.room!);
+        map.objects.forEach((object) => placeRoomOpeningObjectInPlace(map, object));
+        this.markDirty();
+        void this.refreshScene();
+        this.renderMapInspector();
+      });
+      host.querySelectorAll<HTMLButtonElement>('[data-add-room-opening]').forEach((button) => {
+        button.addEventListener('click', () => {
+          const kind = button.dataset.addRoomOpening === 'window' ? 'window' : 'door';
+          map.room!.openings.push({
+            id: `opening-${crypto.randomUUID().slice(0, 8)}`,
+            kind,
+            wall: 'north',
+            offset: 0,
+            bottom: kind === 'door' ? 0 : 1,
+            width: kind === 'door' ? 1.2 : 1.8,
+            height: kind === 'door' ? 2.1 : 1.2
+          });
+          map.room = normalizeMapRoom(map.room, map.box.size, map.room!);
+          this.markDirty();
+          void this.refreshScene();
+          this.renderPanels();
+        });
+      });
+      host.querySelectorAll<HTMLSelectElement>('[data-room-opening-wall]').forEach((select) => {
+        select.addEventListener('change', () => {
+          const opening = map.room!.openings.find((item) => item.id === select.dataset.roomOpeningWall);
+          if (!opening) return;
+          opening.wall = select.value as typeof opening.wall;
+          map.room = normalizeMapRoom(map.room, map.box.size, map.room!);
+          map.objects.forEach((object) => placeRoomOpeningObjectInPlace(map, object));
+          this.markDirty();
+          void this.refreshScene();
+          this.renderMapInspector();
+        });
+      });
+      host.querySelectorAll<HTMLInputElement>('[data-room-opening-number]').forEach((input) => {
+        input.addEventListener('change', () => {
+          const opening = map.room!.openings.find((item) => item.id === input.dataset.roomOpeningId);
+          const field = input.dataset.roomOpeningNumber as 'offset' | 'bottom' | 'width' | 'height';
+          const value = Number(input.value);
+          if (!opening || !Number.isFinite(value)) return;
+          opening[field] = value;
+          map.room = normalizeMapRoom(map.room, map.box.size, map.room!);
+          map.objects.forEach((object) => placeRoomOpeningObjectInPlace(map, object));
+          this.markDirty();
+          void this.refreshScene();
+          this.renderMapInspector();
+        });
+      });
+      host.querySelectorAll<HTMLButtonElement>('[data-remove-room-opening]').forEach((button) => {
+        button.addEventListener('click', () => {
+          const openingId = button.dataset.removeRoomOpening;
+          map.room!.openings = map.room!.openings.filter((opening) => opening.id !== openingId);
+          map.objects.forEach((object) => {
+            if (object.roomOpeningId === openingId) object.roomOpeningId = undefined;
+          });
+          this.markDirty();
+          void this.refreshScene();
+          this.renderPanels();
+        });
+      });
+    }
     host.querySelectorAll<HTMLInputElement>('[data-color]').forEach((input) => {
       input.addEventListener('input', () => {
         map.box.colors[input.dataset.color as keyof typeof map.box.colors] = input.value;
@@ -2198,6 +2423,25 @@ class MapEditor {
     const host = this.app.querySelector<HTMLElement>('#object-inspector');
     if (!host) return;
     const map = this.state.map;
+    const roomSurface = this.selectedRoomSurface();
+    if (map?.room && roomSurface) {
+      const selectionOpen = host.querySelector<HTMLDetailsElement>(`[data-selection-id="room-${roomSurface}"]`)?.open ?? true;
+      host.innerHTML = `
+        <details class="inspector-disclosure" data-inspector-section="selection" data-selection-id="room-${roomSurface}" ${selectionOpen ? 'open' : ''}>
+          <summary><span><b>${roomSurfaceLabel(roomSurface)}</b><small>参数化房间表面</small></span></summary>
+          <section class="editor-section inspector-body">
+            <p class="empty">该表面属于房间外壳；尺寸由房间参数控制，可独立选择、绘制和修改基础颜色。</p>
+            ${colorField('基础颜色', roomSurface, map.box.colors[roomSurface])}
+          </section>
+        </details>
+      `;
+      host.querySelector<HTMLInputElement>('[data-color]')?.addEventListener('input', (event) => {
+        map.box.colors[roomSurface] = (event.target as HTMLInputElement).value;
+        this.markDirty();
+        void this.refreshScene();
+      });
+      return;
+    }
     if (map && this.isPlayerSpawnSelected()) {
       const spawn = this.playerSpawnPoint();
       const selectionOpen = host.querySelector<HTMLDetailsElement>('[data-selection-id="player-spawn"]')?.open ?? true;
@@ -2270,6 +2514,10 @@ class MapEditor {
           <option value="terrain" ${object.heightMode === 'terrain' ? 'selected' : ''}>随地形重贴地</option>
           <option value="fixed" ${object.heightMode === 'fixed' ? 'selected' : ''}>固定 Y 高度</option>
         </select></label>
+        ${map.room ? `<label class="field compact"><span>门窗预留绑定</span><select data-room-opening-link>
+          <option value="">无</option>
+          ${map.room.openings.map((opening) => `<option value="${escapeHtml(opening.id)}" ${object.roomOpeningId === opening.id ? 'selected' : ''}>${escapeHtml(opening.id)} · ${opening.kind === 'door' ? '门' : '窗'} · ${roomSurfaceLabel(opening.wall)}</option>`).join('')}
+        </select></label>` : ''}
         <div class="triple">${numberField('X', 'pos', 0, object.transform.position[0])}${numberField('Y', 'pos', 1, object.transform.position[1])}${numberField('Z', 'pos', 2, object.transform.position[2])}</div>
         <div class="triple">${numberField('RX', 'rot', 0, radiansToDegrees(object.transform.rotation[0]))}${numberField('RY', 'rot', 1, radiansToDegrees(object.transform.rotation[1]))}${numberField('RZ', 'rot', 2, radiansToDegrees(object.transform.rotation[2]))}</div>
         <label class="field compact"><span>等比例缩放</span><input data-uniform-scale type="checkbox" ${this.state.uniformScale ? 'checked' : ''} /></label>
@@ -2309,7 +2557,15 @@ class MapEditor {
       this.markDirty();
       void this.refreshScene();
     });
+    host.querySelector<HTMLSelectElement>('[data-room-opening-link]')?.addEventListener('change', (event) => {
+      object.roomOpeningId = (event.target as HTMLSelectElement).value || undefined;
+      if (object.roomOpeningId) placeRoomOpeningObjectInPlace(map, object);
+      this.markDirty();
+      void this.refreshScene();
+      this.renderObjectInspector();
+    });
     bindVectorInputs(host, 'pos', object.transform.position, () => {
+      syncRoomOpeningFromObjectInPlace(map, object);
       this.markDirty();
       void this.refreshScene();
     });
@@ -3624,6 +3880,7 @@ class MapEditor {
     this.renderedMap = next;
     this.scene.add(next.group);
     this.renderScene?.attach(next);
+    this.applyRoomWallDisplayMode();
     this.attachSelectedTransform();
     this.applyCurrentRenderScheme();
   }
@@ -3843,6 +4100,7 @@ class MapEditor {
     } else {
       object.transform.scale = nextScale;
     }
+    syncRoomOpeningFromObjectInPlace(this.state.map!, object);
     this.renderedMap?.syncObjectTransform(object.id);
     this.markDirty(false);
     this.renderObjectInspector();
@@ -3923,6 +4181,17 @@ class MapEditor {
 
   private isPlayerSpawnSelected(): boolean {
     return this.state.selectedObjectId === PLAYER_SPAWN_OBJECT_ID;
+  }
+
+  private selectedRoomSurface(): RoomSurface | null {
+    const id = this.state.selectedObjectId;
+    if (!id?.startsWith(`${ROOM_OBJECT_ID}:`)) return null;
+    const surface = id.slice(ROOM_OBJECT_ID.length + 1) as RoomSurface;
+    return ROOM_SURFACES.includes(surface) ? surface : null;
+  }
+
+  private isRoomSurfaceSelected(surface: RoomSurface): boolean {
+    return this.selectedRoomSurface() === surface;
   }
 
   private isSunSelected(): boolean {
@@ -4050,6 +4319,7 @@ class MapEditor {
       this.updateKeyboardCamera(dt);
       this.orbit?.update();
     }
+    this.applyRoomWallDisplayMode();
     this.selectionOutline?.update();
     this.renderStats?.beginFrame();
     const quality = this.adaptiveQuality.update(frameMs, dt);
@@ -4096,8 +4366,12 @@ class MapEditor {
     });
     this.app.querySelectorAll<HTMLButtonElement>('[data-tool]').forEach((button) => {
       button.classList.toggle('active', button.dataset.tool === this.state.tool);
-      button.disabled = this.state.busy || Boolean(this.mapAiPreviewMap);
+      const indoorTerrainTool = this.state.map?.sceneMode === 'indoor'
+        && (button.dataset.tool === 'terrain' || button.dataset.tool === 'grass');
+      button.disabled = this.state.busy || Boolean(this.mapAiPreviewMap) || indoorTerrainTool;
     });
+    const roomWallField = this.app.querySelector<HTMLElement>('#room-wall-display-field');
+    if (roomWallField) roomWallField.hidden = !this.state.map?.room;
     const playButton = this.app.querySelector<HTMLButtonElement>('[data-play-mode]');
     if (playButton) {
       playButton.classList.toggle('active', Boolean(this.playMode?.isActive));
@@ -4521,7 +4795,16 @@ class MapEditor {
       this.attachSelectedTransform();
       this.state.message = '已退出游玩视角';
     }
+    this.applyRoomWallDisplayMode();
     this.updateToolbarState();
+  }
+
+  private applyRoomWallDisplayMode(): void {
+    if (!this.camera) return;
+    this.renderedMap?.setRoomWallDisplayMode(
+      this.playMode?.isActive ? 'full' : this.roomWallDisplayMode,
+      this.camera
+    );
   }
 }
 
@@ -4621,6 +4904,21 @@ function terrainPresetLabel(value: TerrainGenerationPreset): string {
     plain: '平原', hills: '丘陵', valley: '山谷', island: '小岛', archipelago: '群岛', canyon: '峡谷',
     'cliff-plateau': '峭壁高原', 'dune-desert': '沙丘荒漠'
   } as const)[value];
+}
+
+function roomSurfaceLabel(surface: RoomSurface): string {
+  return ({
+    floor: '地板',
+    ceiling: '天花板',
+    north: '北墙',
+    south: '南墙',
+    east: '东墙',
+    west: '西墙'
+  } as const)[surface];
+}
+
+function normalizeRoomWallDisplayMode(value: unknown): RoomWallDisplayMode {
+  return value === 'full' || value === 'half' || value === 'hidden' ? value : 'cutaway';
 }
 
 function terrainModifierLabel(value: TerrainModifier): string {
