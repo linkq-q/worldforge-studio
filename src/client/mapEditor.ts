@@ -3601,23 +3601,29 @@ class MapEditor {
     }
     this.clearSelectionOutline();
     const previous = this.renderedMap;
-    if (previous) {
-      this.renderScene?.attach(null);
-      this.scene.remove(previous.group);
-      previous.dispose();
-      this.renderedMap = null;
-    }
     if (!this.state.map) {
+      if (previous) {
+        this.renderScene?.attach(null);
+        this.scene.remove(previous.group);
+        previous.dispose();
+        this.renderedMap = null;
+      }
       this.transform?.detach();
       return;
     }
     this.updateSceneLighting();
-    this.renderedMap = await buildEditableMapGroup(this.mapWithEditorAssets(), {
+    const next = await buildEditableMapGroup(this.mapWithEditorAssets(), {
       editorHelpers: true,
       scene: this.scene
     });
-    this.scene.add(this.renderedMap.group);
-    this.renderScene?.attach(this.renderedMap);
+    if (previous) {
+      this.renderScene?.attach(null);
+      this.scene.remove(previous.group);
+      previous.dispose();
+    }
+    this.renderedMap = next;
+    this.scene.add(next.group);
+    this.renderScene?.attach(next);
     this.attachSelectedTransform();
     this.applyCurrentRenderScheme();
   }
@@ -4618,7 +4624,10 @@ function terrainPresetLabel(value: TerrainGenerationPreset): string {
 }
 
 function terrainModifierLabel(value: TerrainModifier): string {
-  return ({ mountain: '山峦', cliff: '峭壁', terrace: '梯田', dune: '沙丘', island: '局部小岛' } as const)[value];
+  return ({
+    mountain: '山峦', ridge: '山脊', valley: '谷地', basin: '盆地',
+    cliff: '峭壁', terrace: '梯田', dune: '沙丘', island: '局部小岛'
+  } as const)[value];
 }
 
 function terrainSurfaceLabel(value: TerrainSurfaceKind): string {

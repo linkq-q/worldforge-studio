@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { linearizePerspectiveDepth } from '@voxel-studio/render-runtime/postprocess';
 import { describe, expect, it, vi } from 'vitest';
 import {
   bindDistanceFogDepth,
@@ -27,6 +28,15 @@ function fogPass() {
 }
 
 describe('render environment bridge', () => {
+  it('reconstructs perspective depth without doubling the fog distance', () => {
+    const near = 0.1;
+    const far = 3_000;
+    const expectedDistance = 150;
+    const depthSample = far * (expectedDistance - near) / (expectedDistance * (far - near));
+
+    expect(linearizePerspectiveDepth(depthSample, near, far)).toBeCloseTo(expectedDistance, 4);
+  });
+
   it('configures one depth fog pass for custom and standard materials', () => {
     const pass = fogPass();
     const camera = new THREE.PerspectiveCamera(55, 1, 0.25, 900);

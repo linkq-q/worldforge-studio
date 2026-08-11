@@ -233,6 +233,7 @@ declare module '@voxel-studio/render-runtime/postprocess' {
   export function createSketchHatchPass(): ShaderPass;
   export function createToneMapPass(): ShaderPass;
   export function createExponentialFogPass(): ShaderPass;
+  export function linearizePerspectiveDepth(depthSample: number, cameraNear: number, cameraFar: number): number;
   export class GlobalBloomPass extends Pass {
     strength: number;
     radius: number;

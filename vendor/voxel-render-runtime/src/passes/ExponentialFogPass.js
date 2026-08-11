@@ -16,6 +16,12 @@
 import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
 import * as THREE from 'three';
 
+export function linearizePerspectiveDepth(depthSample, cameraNear, cameraFar) {
+  if (depthSample >= 0.9999) return cameraFar;
+  return (cameraNear * cameraFar)
+    / (cameraFar - depthSample * (cameraFar - cameraNear));
+}
+
 const ExponentialFogShader = {
   uniforms: {
     tDiffuse:          { value: null },
@@ -54,8 +60,8 @@ const ExponentialFogShader = {
 
     float linearizeDepth(float depthSample) {
       if (depthSample >= 0.9999) return uCameraFar;
-      return (2.0 * uCameraNear * uCameraFar)
-        / (uCameraFar + uCameraNear - depthSample * (uCameraFar - uCameraNear));
+      return (uCameraNear * uCameraFar)
+        / (uCameraFar - depthSample * (uCameraFar - uCameraNear));
     }
 
     void main() {
