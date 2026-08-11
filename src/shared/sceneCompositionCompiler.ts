@@ -6,12 +6,19 @@ import {
 import { applyMapOperations, type MapOperation } from './mapOperations';
 import { planLimits } from './mapPlanning';
 import { expandStructuredMapPlacement } from './mapPlacement';
-import { expandMapScatter } from './mapScatter';
+import {
+  evaluateMapScatterQuality,
+  expandMapScatter,
+  type MapScatterPlan,
+  type MapScatterPlacement,
+  type MapScatterQuality
+} from './mapScatter';
 import {
   estimateSceneZoneCoverage,
   sceneZoneWorldRegion,
   type SceneCompositionMetrics,
   type SceneCompositionPlan,
+  type SceneBehaviorProfile,
   type ScenePlacementMode,
   type SceneZoneLayer
 } from './sceneComposition';
@@ -31,7 +38,9 @@ export function compileSceneComposition(
   const operations: MapOperation[] = [];
   const familyCounts: Record<string, number> = {};
   const zoneCounts: Record<string, number> = Object.fromEntries(plan.zones.map((zone) => [zone.id, 0]));
+  const behaviorQuality: Record<string, MapScatterQuality> = {};
   const familyAssets = new Map(resolvedFamilies.map((resolved) => [resolved.family.id, resolved.assets]));
+  const families = new Map(plan.assetFamilies.map((family) => [family.id, family]));
   const requiredFamilyIds = new Set(plan.intentRequirements.flatMap((requirement) => (
     requirement.kind === 'asset-family' && requirement.familyId ? [requirement.familyId] : []
   )));
@@ -103,6 +112,12 @@ export function compileSceneComposition(
       footprint * 1.8
     );
     const seed = derivedSeed(map.seed, `${entry.zone.id}:${entry.layer.familyId}:${index}`);
+    const family = families.get(entry.layer.familyId);
+    const grouping = sceneBehaviorGrouping(family?.behavior);
+    const scatterTarget = grouping
+      ? Math.min(placementLimit, Math.max(1, Math.round(Math.PI * region.r * region.r * (libraryMetadata?.density ?? entry.layer.density))))
+      : placementLimit;
+    let scatterPlan: MapScatterPlan | undefined;
     const placements = mode === 'linear' || mode === 'layout' || mode === 'attached'
       ? expandStructuredMapPlacement(workingMap, {
           mode,
@@ -121,7 +136,7 @@ export function compileSceneComposition(
           targets: attachmentTargets(workingMap, entry.layer, familyAssets),
           excludeRegions: excluded
         }, assets, placementLimit, `composition-${entry.zone.id}-${entry.layer.familyId}`)
-      : expandMapScatter(workingMap, {
+      : expandMapScatter(workingMap, scatterPlan = {
           assetIds: assets.map((asset) => asset.id),
           region: { kind: 'circle', ...region },
           density: libraryMetadata?.density ?? entry.layer.density,
@@ -135,8 +150,16 @@ export function compileSceneComposition(
           patchSeed: derivedSeed(map.seed, `${entry.zone.id}:shared-habitat`),
           edgeFalloff: Math.max(entry.layer.edgeFalloff, transitionFalloff(plan, entry.zone.id)),
           clusterStrength: mode === 'patch' ? 0.72 : 0,
+          grouping,
           excludeRegions: excluded
-        }, assets, placementLimit, `composition-${entry.zone.id}-${entry.layer.familyId}`);
+        }, assets, scatterTarget, `composition-${entry.zone.id}-${entry.layer.familyId}`);
+    if (scatterPlan && family?.behavior) {
+      const quality = evaluateMapScatterQuality(scatterPlan, placements, scatterTarget);
+      const previous = behaviorQuality[entry.layer.familyId];
+      if (!previous || previous.status === 'pass' && quality.status === 'warning') {
+        behaviorQuality[entry.layer.familyId] = quality;
+      }
+    }
     const placementOperations = placements.map((placement): MapOperation => ({
       type: 'object.add',
       object: {
@@ -144,10 +167,11 @@ export function compileSceneComposition(
         name: placement.name,
         assetId: placement.assetId,
         transform: {
-          position: [placement.x, placement.y, placement.z],
+          position: [placement.x, placement.y + scenePlacementAltitude(family?.behavior, placement), placement.z],
           rotation: [0, libraryMetadata?.rotation === 'fixed' ? 0 : placement.rotationY, 0],
           scale: [placement.scale, placement.scale, placement.scale]
-        }
+        },
+        ...compileScenePlacementBehavior(family?.behavior, placement, seed)
       }
     }));
     if (placementOperations.length === 0) continue;
@@ -172,9 +196,54 @@ export function compileSceneComposition(
       terrainChangedCells: changedHeights.length,
       familyCounts,
       zoneCounts,
-      unresolvedFamilyIds
+      unresolvedFamilyIds,
+      ...(Object.keys(behaviorQuality).length > 0 ? { behaviorQuality } : {})
     }
   };
+}
+
+export function sceneBehaviorGrouping(behavior: SceneBehaviorProfile | undefined): MapScatterPlan['grouping'] | undefined {
+  if (!behavior || behavior.kind === 'static' || behavior.kind === 'solitary' || behavior.kind === 'territorial') return undefined;
+  return {
+    groupCount: behavior.groupCount,
+    coreRatio: behavior.coreRatio,
+    outlierMinDistance: behavior.outlierMinDistance
+  };
+}
+
+export function scenePlacementAltitude(behavior: SceneBehaviorProfile | undefined, placement: MapScatterPlacement): number {
+  if (!behavior || !isAirbornePlacement(behavior, placement)) return 0;
+  const [min, max] = behavior.altitudeRange;
+  return min + (max - min) * deterministicUnit(`altitude:${placement.id}`);
+}
+
+export function compileScenePlacementBehavior(
+  behavior: SceneBehaviorProfile | undefined,
+  placement: MapScatterPlacement,
+  seed: number
+): Pick<NonNullable<Extract<MapOperation, { type: 'object.add' }>['object']>, 'heightMode' | 'behavior'> {
+  if (!behavior) return {};
+  const airborne = isAirbornePlacement(behavior, placement);
+  const state = placement.groupRole === 'outlier' ? behavior.outlierState : behavior.coreState;
+  return {
+    heightMode: airborne ? 'fixed' : 'terrain',
+    behavior: {
+      kind: behavior.kind,
+      locomotion: airborne ? 'air' : behavior.locomotion === 'mixed' ? 'ground' : behavior.locomotion,
+      groupRole: placement.groupRole,
+      groupIndex: placement.groupIndex,
+      ...(behavior.kind !== 'static' && behavior.locomotion !== 'static' ? { animation: {
+        state,
+        speed: 0.85 + deterministicUnit(`${seed}:${placement.id}:speed`) * 0.3,
+        phase: deterministicUnit(`${seed}:${placement.id}:phase`)
+      } } : {})
+    }
+  };
+}
+
+function isAirbornePlacement(behavior: SceneBehaviorProfile, placement: MapScatterPlacement): boolean {
+  return behavior.locomotion === 'air'
+    || behavior.locomotion === 'mixed' && placement.groupRole === 'outlier';
 }
 
 function compileZoneGrass(map: EditableMap, plan: SceneCompositionPlan): MapOperation[] {
@@ -184,6 +253,8 @@ function compileZoneGrass(map: EditableMap, plan: SceneCompositionPlan): MapOper
       id: grassLayerId(family.id),
       name: family.label,
       seed: derivedSeed(map.seed, `grass:${family.id}:${index}`),
+      preset: family.preset,
+      height: family.height,
       mix: family.mix
     }
   }));

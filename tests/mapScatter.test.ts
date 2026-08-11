@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { createEmptyMap, createMapObject, type MapAsset } from '../src/shared/map';
 import {
+  evaluateMapScatterQuality,
   expandMapScatter,
   type MapScatterPlan
 } from '../src/shared/mapScatter';
@@ -105,6 +106,57 @@ describe('deterministic map scatter', () => {
     expect(second).toEqual(first);
     expect(first.every((placement) => Math.hypot(placement.x - 4, placement.z + 3) > 5)).toBe(true);
     expect(first.every((placement) => Math.hypot(placement.x, placement.z) <= 20)).toBe(true);
+  });
+
+  it('spreads a small flock across its region instead of filling the first scanned edge', () => {
+    const map = createEmptyMap('small flock', 'map-small-flock');
+    map.assets = [shrubAsset];
+    const plan: MapScatterPlan = {
+      assetIds: [shrubAsset.id],
+      region: { kind: 'circle', x: 0, z: 0, r: 20 },
+      density: 0.12,
+      avoidWater: 0,
+      maxSlope: 89,
+      minSpacing: 1.8,
+      scaleRange: [1, 1],
+      seed: 57
+    };
+
+    const first = expandMapScatter(map, plan, [shrubAsset], 6, 'flock');
+    const second = expandMapScatter(map, plan, [shrubAsset], 6, 'flock');
+    const zValues = first.map((placement) => placement.z);
+
+    expect(first).toHaveLength(6);
+    expect(second).toEqual(first);
+    expect(Math.max(...zValues) - Math.min(...zValues)).toBeGreaterThan(12);
+  });
+
+  it('builds deterministic flock cores plus reserved outliers and reports their quality', () => {
+    const map = createEmptyMap('grouped flock', 'map-grouped-flock');
+    map.assets = [shrubAsset];
+    const plan: MapScatterPlan = {
+      assetIds: [shrubAsset.id],
+      region: { kind: 'circle', x: 0, z: 0, r: 24 },
+      density: 0.16,
+      avoidWater: 0,
+      maxSlope: 89,
+      minSpacing: 1.8,
+      scaleRange: [1, 1],
+      seed: 71,
+      grouping: { groupCount: 2, coreRatio: 0.7, outlierMinDistance: 8 }
+    };
+
+    const first = expandMapScatter(map, plan, [shrubAsset], 10, 'flock');
+    const second = expandMapScatter(map, plan, [shrubAsset], 10, 'flock');
+    const quality = evaluateMapScatterQuality(plan, first, 10);
+
+    expect(second).toEqual(first);
+    expect(first.filter((placement) => placement.groupRole === 'core')).toHaveLength(7);
+    expect(first.filter((placement) => placement.groupRole === 'outlier')).toHaveLength(3);
+    expect(new Set(first.flatMap((placement) => placement.groupIndex ?? [])).size).toBe(2);
+    expect(quality.status).toBe('pass');
+    expect(quality.coverage).toBeGreaterThan(0.35);
+    expect(quality.issues).toEqual([]);
   });
 
   it('enforces cross-family spacing and terrain habitat bands', () => {

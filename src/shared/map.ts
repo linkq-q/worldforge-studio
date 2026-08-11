@@ -121,6 +121,22 @@ export interface MapAsset {
   updatedAt: number;
 }
 
+export type MapBehaviorKind = 'static' | 'solitary' | 'pair' | 'flock' | 'herd' | 'school' | 'territorial';
+export type MapLocomotion = 'static' | 'ground' | 'air' | 'water' | 'mixed';
+
+export interface MapObjectBehavior {
+  kind: MapBehaviorKind;
+  locomotion: MapLocomotion;
+  groupRole?: 'core' | 'outlier';
+  groupIndex?: number;
+  /** Semantic state only. A runtime adapter decides how this maps to an animation system. */
+  animation?: {
+    state: string;
+    speed: number;
+    phase: number;
+  };
+}
+
 export interface MapObject {
   id: string;
   name: string;
@@ -131,6 +147,7 @@ export interface MapObject {
   heightMode?: 'terrain' | 'fixed';
   visible: boolean;
   locked: boolean;
+  behavior?: MapObjectBehavior;
   generation?: MapGenerationOwner;
 }
 
@@ -1277,7 +1294,29 @@ function normalizeObject(input: Partial<MapObject>): MapObject {
       : input.assetId ? 'terrain' : 'fixed',
     visible: input.visible !== false,
     locked: input.locked === true,
+    behavior: normalizeObjectBehavior(input.behavior),
     generation: normalizeGenerationOwner(input.generation)
+  };
+}
+
+function normalizeObjectBehavior(value: unknown): MapObjectBehavior | undefined {
+  if (!value || typeof value !== 'object') return undefined;
+  const input = value as Partial<MapObjectBehavior>;
+  const kinds: MapBehaviorKind[] = ['static', 'solitary', 'pair', 'flock', 'herd', 'school', 'territorial'];
+  const locomotions: MapLocomotion[] = ['static', 'ground', 'air', 'water', 'mixed'];
+  if (!kinds.includes(input.kind as MapBehaviorKind) || !locomotions.includes(input.locomotion as MapLocomotion)) return undefined;
+  const animationInput = input.animation;
+  const state = typeof animationInput?.state === 'string' ? animationInput.state.trim().slice(0, 48) : '';
+  return {
+    kind: input.kind as MapBehaviorKind,
+    locomotion: input.locomotion as MapLocomotion,
+    groupRole: input.groupRole === 'core' || input.groupRole === 'outlier' ? input.groupRole : undefined,
+    groupIndex: Number.isInteger(input.groupIndex) ? Math.max(0, Number(input.groupIndex)) : undefined,
+    animation: state ? {
+      state,
+      speed: clamp(finiteNumber(animationInput?.speed, 1), 0, 4),
+      phase: clamp(finiteNumber(animationInput?.phase, 0), 0, 1)
+    } : undefined
   };
 }
 

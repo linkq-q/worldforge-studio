@@ -129,6 +129,61 @@ describe('scene composition contract', () => {
     expect(compiled.metrics.familyCounts['park-trees']).toBeGreaterThanOrEqual(1);
   });
 
+  it('compiles mixed-locomotion flocks into grounded cores, airborne outliers, and quality metrics', () => {
+    const map = createEmptyMap('Seaside flock', 'map-seaside-flock', [96, 20, 96], 'voxel');
+    const input = structuredClone(planInput()) as {
+      assetFamilies: Array<Record<string, unknown>>;
+      zones: Array<Record<string, unknown>>;
+      transitions: unknown[];
+      consultations: unknown[];
+      intentRequirements?: unknown[];
+    };
+    input.assetFamilies = [{
+      id: 'gulls', label: 'Seagulls', role: 'shore wildlife', tags: ['animal', 'bird', 'seagull'],
+      sizeClass: 'small', desiredVariants: 1, priority: 1, generationBrief: 'low-poly seagull',
+      behavior: {
+        kind: 'flock', locomotion: 'mixed', groupCount: 2, coreRatio: 0.7,
+        outlierMinDistance: 8, altitudeRange: [4, 8], coreState: 'feed', outlierState: 'fly'
+      }
+    }];
+    input.zones = [{
+      id: 'shore', label: 'Shore', role: 'primary', importance: 1,
+      region: { kind: 'circle', center: [0, 0], radius: 0.7 },
+      brief: { atmosphere: 'open coast', hierarchy: 'birds cross the shore', openness: 0.9, transitionIntent: 'soft edge' },
+      terrain: { elevation: 0, roughness: 0, flatness: 1 },
+      layers: [{
+        familyId: 'gulls', density: 0.004, scaleRange: [1, 1], distribution: 'clustered', edgeFalloff: 0.1,
+        placement: { mode: 'patch' }
+      }],
+      grassLayers: [], excludeZoneIds: []
+    }];
+    input.transitions = [];
+    input.consultations = [];
+    input.intentRequirements = [];
+    (input as unknown as { globalBrief: { focalZoneId: string } }).globalBrief.focalZoneId = 'shore';
+    const plan = normalizeSceneCompositionPlan(input, map);
+    const gull = asset('gull-a', 'Seagull', ['animal', 'bird', 'seagull'], 'small', 'voxel');
+    gull.footprintRadius = 0.25;
+    const resolved = resolveSceneFamilies(plan, map, [gull], 0).families;
+
+    const compiled = compileSceneComposition(map, plan, resolved);
+    const gulls = compiled.operations.filter((operation): operation is Extract<MapOperation, { type: 'object.add' }> => (
+      operation.type === 'object.add' && operation.object.assetId === gull.id
+    ));
+    const cores = gulls.filter((operation) => operation.object.behavior?.groupRole === 'core');
+    const outliers = gulls.filter((operation) => operation.object.behavior?.groupRole === 'outlier');
+
+    expect(gulls.length).toBeGreaterThanOrEqual(6);
+    expect(new Set(cores.map((operation) => operation.object.behavior?.groupIndex)).size).toBe(2);
+    expect(cores.every((operation) => operation.object.heightMode === 'terrain')).toBe(true);
+    expect(cores.every((operation) => operation.object.behavior?.animation?.state === 'feed')).toBe(true);
+    expect(outliers.length).toBeGreaterThanOrEqual(2);
+    expect(outliers.every((operation) => operation.object.heightMode === 'fixed')).toBe(true);
+    expect(outliers.every((operation) => (operation.object.transform?.position?.[1] ?? 0) >= 4)).toBe(true);
+    expect(outliers.every((operation) => operation.object.behavior?.animation?.state === 'fly')).toBe(true);
+    expect(compiled.metrics.behaviorQuality?.gulls?.status).toBe('pass');
+  });
+
   it('adds real editable ground cover when the director leaves most of the map blank', () => {
     const map = createEmptyMap('Sparse valley', 'map-sparse-valley', [96, 16, 96], 'voxel-pro');
     const sparse = structuredClone(planInput()) as {
@@ -171,6 +226,27 @@ describe('scene composition contract', () => {
     expect(plan.consultations).toHaveLength(2);
     expect(plan.globalBrief.focalZoneId).toBe('camp');
     expect(isCompositionEmptyMap(map)).toBe(true);
+  });
+
+  it('compiles director-selected grass morphology and height into editable layers', () => {
+    const map = createEmptyMap('Wet farm', 'map-grass-morphology', [96, 16, 96], 'voxel-pro');
+    const input = structuredClone(planInput()) as { grassFamilies: Array<Record<string, unknown>> };
+    input.grassFamilies[0] = {
+      ...input.grassFamilies[0],
+      preset: 'wetland',
+      height: 1.7
+    };
+
+    const plan = normalizeSceneCompositionPlan(input, map);
+    const compiled = compileSceneComposition(map, plan, []);
+
+    expect(plan.grassFamilies[0]).toMatchObject({ preset: 'wetland', height: 1.7 });
+    expect(compiled.operations).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        type: 'grass.layer.add',
+        layer: expect.objectContaining({ preset: 'wetland', height: 1.7 })
+      })
+    ]));
   });
 
   it('repairs an undeclared procedural grass family instead of rejecting the whole scene', () => {

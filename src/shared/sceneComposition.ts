@@ -1,9 +1,17 @@
 import {
   getMapBounds,
   TERRAIN_MIN_HEIGHT,
-  type EditableMap
+  type EditableMap,
+  type MapBehaviorKind,
+  type MapLocomotion
 } from './map';
+import type { MapScatterQuality } from './mapScatter';
 import type { MapAssetSizeClass } from './mapAssetMetadata';
+import {
+  inferGrassPreset,
+  normalizeGrassPreset,
+  type GrassPresetId
+} from './mapGrass';
 import {
   TERRAIN_CLIFF_LAYOUTS,
   TERRAIN_ACCESS_MODES,
@@ -24,7 +32,7 @@ export const MIN_SCENE_COVERAGE = 0.8;
 export const SCENE_COMPOSITION_LIMITS = Object.freeze({
   zoneCount: 12,
   assetFamilyCount: 16,
-  grassFamilyCount: 4,
+  grassFamilyCount: 6,
   transitionCount: 16,
   consultationCount: 2,
   specialistPatchCount: 6,
@@ -136,6 +144,8 @@ export interface SceneZoneLayer {
 export interface SceneGrassFamily {
   id: string;
   label: string;
+  preset: GrassPresetId;
+  height: number;
   mix: { short: number; tall: number; flowers: number };
 }
 
@@ -167,6 +177,18 @@ export interface SceneAssetFamily {
   desiredVariants: number;
   priority: number;
   generationBrief: string;
+  behavior?: SceneBehaviorProfile;
+}
+
+export interface SceneBehaviorProfile {
+  kind: MapBehaviorKind;
+  locomotion: MapLocomotion;
+  groupCount: number;
+  coreRatio: number;
+  outlierMinDistance: number;
+  altitudeRange: [number, number];
+  coreState: string;
+  outlierState: string;
 }
 
 export interface SceneConsultationRequest {
@@ -187,6 +209,7 @@ export interface SceneCompositionMetrics {
   familyCounts: Record<string, number>;
   zoneCounts: Record<string, number>;
   unresolvedFamilyIds: string[];
+  behaviorQuality?: Record<string, MapScatterQuality>;
 }
 
 export function normalizeSceneCompositionPlan(value: unknown, map: EditableMap): SceneCompositionPlan {
@@ -269,6 +292,8 @@ export function ensureMinimumSceneCoverage(plan: SceneCompositionPlan): SceneCom
   const grassFamily = plan.grassFamilies[0] ?? {
     id: 'ambient-ground-cover',
     label: 'Ambient ground cover',
+    preset: 'meadow' as const,
+    height: 1,
     mix: { short: 0.82, tall: 0.15, flowers: 0.03 }
   };
   const grassLayer = {
@@ -408,16 +433,76 @@ function normalizeFamily(value: unknown): SceneAssetFamily {
     ? normalizeTags(input.identityTags)
     : deriveIdentityTags(tags);
   const requiredIdentityTags = identityTags.length > 0 ? identityTags : tags.slice(0, 1);
+  const label = cleanText(input.label, String(input.id ?? ''), 64);
+  const role = cleanText(input.role, 'scene asset', 80);
+  const behavior = normalizeBehaviorProfile(input.behavior, `${label} ${role} ${tags.join(' ')}`);
   return {
     id: requireId(input.id, 'invalid_scene_asset_family'),
-    label: cleanText(input.label, String(input.id ?? ''), 64),
-    role: cleanText(input.role, 'scene asset', 80),
+    label,
+    role,
     tags: [...new Set([...tags, ...requiredIdentityTags])],
     identityTags: requiredIdentityTags,
     sizeClass,
     desiredVariants: Math.round(clamp(finiteNumber(input.desiredVariants, 1), 1, 3)),
     priority: clamp(finiteNumber(input.priority, 0.5), 0, 1),
-    generationBrief: cleanText(input.generationBrief, '', 320)
+    generationBrief: cleanText(input.generationBrief, '', 320),
+    ...(behavior ? { behavior } : {})
+  };
+}
+
+function normalizeBehaviorProfile(value: unknown, semantic: string): SceneBehaviorProfile | undefined {
+  const inferred = inferBehaviorProfile(semantic);
+  if (!value || typeof value !== 'object') return inferred;
+  const input = value as Record<string, unknown>;
+  const kinds: MapBehaviorKind[] = ['static', 'solitary', 'pair', 'flock', 'herd', 'school', 'territorial'];
+  const locomotions: MapLocomotion[] = ['static', 'ground', 'air', 'water', 'mixed'];
+  const kind = kinds.includes(input.kind as MapBehaviorKind)
+    ? input.kind as MapBehaviorKind
+    : inferred?.kind ?? 'solitary';
+  const locomotion = locomotions.includes(input.locomotion as MapLocomotion)
+    ? input.locomotion as MapLocomotion
+    : inferred?.locomotion ?? 'ground';
+  const altitude = Array.isArray(input.altitudeRange) && input.altitudeRange.length >= 2
+    ? [finiteNumber(input.altitudeRange[0], 0), finiteNumber(input.altitudeRange[1], 0)] as [number, number]
+    : inferred?.altitudeRange ?? [0, 0];
+  const fallback = inferred ?? defaultBehaviorProfile(kind, locomotion);
+  return {
+    kind,
+    locomotion,
+    groupCount: Math.round(clamp(finiteNumber(input.groupCount, fallback.groupCount), 1, 4)),
+    coreRatio: clamp(finiteNumber(input.coreRatio, fallback.coreRatio), 0.5, 1),
+    outlierMinDistance: clamp(finiteNumber(input.outlierMinDistance, fallback.outlierMinDistance), 0.5, 64),
+    altitudeRange: [clamp(Math.min(...altitude), 0, 64), clamp(Math.max(...altitude), 0, 64)],
+    coreState: cleanText(input.coreState, fallback.coreState, 48),
+    outlierState: cleanText(input.outlierState, fallback.outlierState, 48)
+  };
+}
+
+function inferBehaviorProfile(semantic: string): SceneBehaviorProfile | undefined {
+  const text = semantic.toLowerCase();
+  if (/\b(bird|gull|seagull|crow|eagle|海鸥|鸟)\b/.test(text)) {
+    return { kind: 'flock', locomotion: 'mixed', groupCount: 2, coreRatio: 0.72, outlierMinDistance: 7, altitudeRange: [3, 8], coreState: 'feed', outlierState: 'fly' };
+  }
+  if (/\b(fish|school|鱼群|鱼)\b/.test(text)) {
+    return { kind: 'school', locomotion: 'water', groupCount: 2, coreRatio: 0.82, outlierMinDistance: 4, altitudeRange: [0, 0], coreState: 'swim', outlierState: 'swim' };
+  }
+  if (/\b(herd|deer|sheep|cattle|cow|鹿|羊|牛)\b/.test(text)) {
+    return { kind: 'herd', locomotion: 'ground', groupCount: 2, coreRatio: 0.85, outlierMinDistance: 6, altitudeRange: [0, 0], coreState: 'graze', outlierState: 'walk' };
+  }
+  if (/\b(animal|creature|wildlife|动物|生物)\b/.test(text)) return defaultBehaviorProfile('solitary', 'ground');
+  return undefined;
+}
+
+function defaultBehaviorProfile(kind: MapBehaviorKind, locomotion: MapLocomotion): SceneBehaviorProfile {
+  return {
+    kind,
+    locomotion,
+    groupCount: kind === 'pair' ? 2 : 1,
+    coreRatio: kind === 'solitary' || kind === 'territorial' ? 1 : 0.8,
+    outlierMinDistance: 5,
+    altitudeRange: locomotion === 'air' || locomotion === 'mixed' ? [3, 8] : [0, 0],
+    coreState: locomotion === 'air' ? 'fly' : locomotion === 'water' ? 'swim' : 'idle',
+    outlierState: locomotion === 'air' || locomotion === 'mixed' ? 'fly' : locomotion === 'water' ? 'swim' : 'walk'
   };
 }
 
@@ -509,14 +594,18 @@ function normalizeZone(
 
 function normalizeGrassFamily(value: unknown): SceneGrassFamily {
   const input = requireRecord(value, 'invalid_scene_grass_family');
+  const id = requireId(input.id, 'invalid_scene_grass_family');
+  const label = cleanText(input.label, String(input.id ?? ''), 64);
   const mixInput = input.mix === undefined ? {} : requireRecord(input.mix, 'invalid_scene_grass_family');
   const short = Math.max(0, finiteNumber(mixInput.short, 0.7));
   const tall = Math.max(0, finiteNumber(mixInput.tall, 0.2));
   const flowers = Math.max(0, finiteNumber(mixInput.flowers, 0.1));
   const total = short + tall + flowers || 1;
   return {
-    id: requireId(input.id, 'invalid_scene_grass_family'),
-    label: cleanText(input.label, String(input.id ?? ''), 64),
+    id,
+    label,
+    preset: input.preset === undefined ? inferGrassPreset(`${id} ${label}`) : normalizeGrassPreset(input.preset),
+    height: clamp(finiteNumber(input.height, 1), 0.2, 2.5),
     mix: { short: short / total, tall: tall / total, flowers: flowers / total }
   };
 }
@@ -547,6 +636,8 @@ function completeGrassFamilyReferences(
         const family: SceneGrassFamily = {
           id: sourceId,
           label: sourceId.replace(/[-_]+/g, ' '),
+          preset: inferGrassPreset(sourceId),
+          height: 1,
           mix: { short: 0.72, tall: 0.23, flowers: 0.05 }
         };
         grassFamilies.push(family);

@@ -13,8 +13,11 @@ import {
 } from './sceneComposition';
 import type { ResolvedSceneFamily } from './sceneCompositionAssets';
 import {
+  compileScenePlacementBehavior,
   compileZoneWater,
   isImplicitOceanZone,
+  sceneBehaviorGrouping,
+  scenePlacementAltitude,
   type CompiledSceneComposition
 } from './sceneCompositionCompiler';
 
@@ -298,6 +301,7 @@ function requiredFamilyRepairs(
 
   for (const [regionIndex, region] of regions.entries()) {
     if (remaining <= 0) break;
+    const seed = hashSeed(baseMap.seed, `${requirement.id}:${regionIndex}`);
     const placements = expandMapScatter(workingMap, {
       assetIds: resolved.assets.map((asset) => asset.id),
       region: { kind: 'circle', ...region },
@@ -306,9 +310,10 @@ function requiredFamilyRepairs(
       maxSlope: 34,
       minSpacing: 0.8,
       scaleRange: [0.9, 1.1],
-      seed: hashSeed(baseMap.seed, `${requirement.id}:${regionIndex}`),
+      seed,
       edgeFalloff: 0,
-      clusterStrength: 0
+      clusterStrength: 0,
+      grouping: sceneBehaviorGrouping(resolved.family.behavior)
     }, resolved.assets as MapAsset[], remaining, `required-${requirement.id}-${regionIndex}`);
     const placementOperations = placements.map((placement): MapOperation => ({
       type: 'object.add',
@@ -317,10 +322,11 @@ function requiredFamilyRepairs(
         name: placement.name,
         assetId: placement.assetId,
         transform: {
-          position: [placement.x, placement.y, placement.z],
+          position: [placement.x, placement.y + scenePlacementAltitude(resolved.family.behavior, placement), placement.z],
           rotation: [0, placement.rotationY, 0],
           scale: [placement.scale, placement.scale, placement.scale]
-        }
+        },
+        ...compileScenePlacementBehavior(resolved.family.behavior, placement, seed)
       }
     }));
     if (placementOperations.length === 0) continue;

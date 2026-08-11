@@ -45,9 +45,13 @@ export function buildSceneDirectorPrompt(
     'Choose a placement.mode for each object layer: anchor for landmarks, field for even natural cover, patch for mixed ecological communities, linear for fences/lights/roadside objects, layout for buildings/camps/courtyards, and attached for props dependent on another family.',
     'Buildings and structures must use anchor, linear, or layout; never field or patch. Use layout.pattern row|courtyard|radial|grid to establish order. Attached placement must name targetFamilyId. Related plant patch layers should share the zone habitat and use spacingByFamily when their ecological separation differs.',
     'On mountains, give vegetation an explicit habitat.slope band. Keep large trees off cliff shoulders and narrow ridge crests; let shrubs and rocks tolerate progressively steeper ground.',
+    'For every animal family, provide behavior. kind is static|solitary|pair|flock|herd|school|territorial; locomotion is static|ground|air|water|mixed. Use groupCount, coreRatio, and outlierMinDistance to create several readable cores plus reserved separated individuals. For mixed birds, coreState is usually feed or rest and outlierState is fly; set an altitudeRange for airborne members.',
+    'Treat ecology at three scales: zone habitat, family patches or social cores, then individually spaced instances. Do not represent a flock, herd, or mixed plant community as one undifferentiated cluster.',
     'Every mountain or ridge must choose terrain.access walkable|scenic. Walkable mountains are broad massifs; scenic mountains may be steeper but still require a wide region. A ridge is only valid inside a large region. Use layout terraces when traversal should happen by jumping between geometric platforms.',
     'Grass is editable ground vegetation, not a generated model asset. When appropriate, define reusable grassFamilies and assign grassLayers to zones.',
     'Every grassLayers[].grassFamilyId must exactly match one grassFamilies[].id. Reuse the same declared grass family ID across zones.',
+    'Choose every grass family from these visibly distinct presets: meadow ordinary blades, sand sparse rigid spikes, wetland tall reeds, farm cereal-like crop grass, magic forked luminous-looking grass, alpine-moss low cushion moss.',
+    'For every grass family set preset to meadow|sand|wetland|farm|magic|alpine-moss and height to 0.2-2.5. Different families mixed in one zone should normally use different heights and densities.',
     'For each grass zone decide short/tall/flower proportions, density, variation, edge falloff, and residualDensity around structures (0 tidy, larger abandoned).',
     'Keep flower accents sparse and readable: usually 0.02-0.08 of a grass mix, unless the user explicitly requests a flower field.',
     'Grass may intentionally continue to pond edges or underwater. Do not remove it merely because a zone contains water; slope fading is deterministic.',
@@ -102,9 +106,13 @@ export function buildSceneDirectorPrompt(
       transitions: [{ fromZoneId: 'zone-a', toZoneId: 'zone-b', kind: 'soft|buffer|shore', width: 0.15 }],
       assetFamilies: [{
         id: 'family-id', label: 'human label', role: 'free semantic role', tags: ['broad-tag', 'specific-tag'], identityTags: ['specific-tag'],
-        sizeClass: 'small|medium|large', desiredVariants: 1, priority: 0.8, generationBrief: 'single reusable asset brief'
+        sizeClass: 'small|medium|large', desiredVariants: 1, priority: 0.8, generationBrief: 'single reusable asset brief',
+        behavior: {
+          kind: 'static|solitary|pair|flock|herd|school|territorial', locomotion: 'static|ground|air|water|mixed',
+          groupCount: 2, coreRatio: 0.72, outlierMinDistance: 7, altitudeRange: [3, 8], coreState: 'feed', outlierState: 'fly'
+        }
       }],
-      grassFamilies: [{ id: 'grass-family-id', label: 'Meadow mix', mix: { short: 0.7, tall: 0.2, flowers: 0.1 } }],
+      grassFamilies: [{ id: 'grass-family-id', label: 'Meadow mix', preset: 'meadow|sand|wetland|farm|magic|alpine-moss', height: 1, mix: { short: 0.7, tall: 0.2, flowers: 0.1 } }],
       consultations: [{
         id: 'consultation-id', discipline: 'free specialist discipline', targetZoneIds: ['zone-id'],
         question: 'specific relationship to improve', priority: 0.8
