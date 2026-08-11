@@ -2,6 +2,7 @@ import { readFile } from 'node:fs/promises';
 import {
   createPaintStroke,
   mapToSummary,
+  normalizeMapSceneMode,
   surfaceUvFromPoint,
   type MapSurface,
   type TerrainBrushMode,
@@ -40,7 +41,14 @@ async function main(): Promise<void> {
   }
 
   if (command === 'create') {
-    print({ map: await store.createMap({ name: stringArg(args, 'name', '未命名地图'), size: optionalSize(args) }) });
+    print({
+      map: await store.createMap({
+        name: stringArg(args, 'name', '未命名地图'),
+        size: optionalSize(args),
+        sceneMode: normalizeMapSceneMode(optionalString(args, 'scene')),
+        roomSize: optionalVec3(args, ['room-width', 'room-height', 'room-depth'])
+      })
+    });
     return;
   }
 

@@ -22,6 +22,18 @@ const assets: MapAsset[] = [
 ];
 
 describe('map AI adapter', () => {
+  it('rejects an explicit interior prompt on an outdoor map before calling the model', async () => {
+    const fetchImpl = vi.fn();
+
+    await expect(runMapAgent(
+      '小教堂内部，木椅整齐分排，中间留出过道，全部朝向讲台。',
+      createEmptyMap(),
+      [],
+      { apiBase: 'https://example.test', provider: 'gpt', fetchImpl, createAsset: vi.fn() }
+    )).rejects.toThrow('indoor_prompt_requires_indoor_map');
+    expect(fetchImpl).not.toHaveBeenCalled();
+  });
+
   it('places the deterministic terrain base before local terrain and water operations', () => {
     const map = createEmptyMap('terrain plan', 'map-terrain-plan');
     const suggestion = normalizeMapSuggestion(JSON.stringify({

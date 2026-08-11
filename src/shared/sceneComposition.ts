@@ -42,12 +42,17 @@ export const SCENE_COMPOSITION_LIMITS = Object.freeze({
 export const SCENE_ZONE_ROLES = ['primary', 'secondary', 'transition', 'negative-space'] as const;
 export const SCENE_DISTRIBUTIONS = ['even', 'clustered', 'accent'] as const;
 export const SCENE_PLACEMENT_MODES = ['anchor', 'field', 'patch', 'linear', 'layout', 'attached'] as const;
-export const SCENE_LAYOUT_PATTERNS = ['row', 'courtyard', 'radial', 'grid'] as const;
+export const SCENE_LAYOUT_PATTERNS = ['row', 'courtyard', 'radial', 'grid', 'arc'] as const;
+export const SCENE_PLACEMENT_INTENTS = [
+  'landmark', 'settlement', 'street-edge', 'audience', 'social',
+  'viewpoint', 'wall', 'attached-service', 'playground'
+] as const;
 
 export type SceneZoneRole = typeof SCENE_ZONE_ROLES[number];
 export type SceneDistribution = typeof SCENE_DISTRIBUTIONS[number];
 export type ScenePlacementMode = typeof SCENE_PLACEMENT_MODES[number];
 export type SceneLayoutPattern = typeof SCENE_LAYOUT_PATTERNS[number];
+export type ScenePlacementIntent = typeof SCENE_PLACEMENT_INTENTS[number];
 
 export interface SceneCompositionPlan {
   version: 1;
@@ -127,11 +132,17 @@ export interface SceneZoneLayer {
   placement?: {
     mode: ScenePlacementMode;
     pattern?: SceneLayoutPattern;
+    intent?: ScenePlacementIntent;
     direction: number;
     spacing?: number;
     offset: number;
     facing: 'random' | 'guide' | 'inward' | 'outward';
     targetFamilyId?: string;
+    focusFamilyId?: string;
+    guidePoints?: Array<[number, number]>;
+    maxPerGroup?: number;
+    arcDegrees?: number;
+    aisleEvery?: number;
     spacingByFamily?: Record<string, number>;
     habitat?: {
       height?: [number, number, number, number];
@@ -268,6 +279,241 @@ export function normalizeSceneCompositionPlan(value: unknown, map: EditableMap):
     consultations,
     renderPromptSuggestions: normalizeTextList(input.renderPromptSuggestions, 8, 80)
   };
+}
+
+export type SceneAssetCategory = 'architecture' | 'furniture' | 'facility' | 'prop' | 'nature' | 'creature';
+
+export function sceneAssetCategory(family: SceneAssetFamily): SceneAssetCategory {
+  const semantic = sceneFamilySemantic(family);
+  if (/animal|creature|bird|fish|deer|sheep|动物|生物|鸟|鱼|鹿|羊/i.test(semantic)) return 'creature';
+  if (/tree|plant|grass|flower|shrub|rock|stone|forest|树|植物|草|花|灌木|岩|石|森林/i.test(semantic)) return 'nature';
+  if (/swing|slide|playground|gym|fountain|monument|秋千|滑梯|游乐|健身|喷泉|纪念碑/i.test(semantic)) return 'facility';
+  if (/bench|chair|seat|pew|sofa|bed|cabinet|shelf|table|desk|stool|长椅|椅|座椅|长凳|沙发|床|柜|架|桌/i.test(semantic)) return 'furniture';
+  if (/building|structure|house|cabin|church|shop|tower|pavilion|建筑|房|屋|教堂|商店|塔|亭/i.test(semantic)) return 'architecture';
+  return 'prop';
+}
+
+/** Converts unsafe model-selected furniture patterns into bounded relationship layouts. */
+export function enforceScenePlacementContracts(
+  plan: SceneCompositionPlan,
+  map: EditableMap,
+  prompt = ''
+): SceneCompositionPlan {
+  void map;
+  const families = new Map(plan.assetFamilies.map((family) => [family.id, family]));
+  const zones = plan.zones.map((zone) => {
+    const zoneSemantic = `${zone.label} ${zone.brief.atmosphere} ${zone.brief.hierarchy} ${prompt}`;
+    const audienceFocusFamilyId = findAudienceFocusFamilyId(zone, families);
+    return {
+      ...zone,
+      layers: zone.layers.map((layer): SceneZoneLayer => {
+      const family = families.get(layer.familyId);
+      if (!family) return layer;
+      const category = sceneAssetCategory(family);
+      const semantic = sceneFamilySemantic(family);
+      const current = layer.placement ?? {
+        mode: layer.distribution === 'accent' ? 'anchor' as const : 'layout' as const,
+        direction: plan.globalBrief.terrainBase.seed % 360,
+        offset: 0,
+        facing: 'random' as const
+      };
+
+      if (category === 'facility' && /swing|slide|playground|gym|秋千|滑梯|游乐|健身/i.test(semantic)) {
+        return {
+          ...layer,
+          distribution: 'even' as const,
+          placement: {
+            ...current,
+            mode: 'layout', pattern: 'arc', intent: 'playground', maxPerGroup: 2, arcDegrees: 36,
+            direction: familyPlacementDirection(plan.globalBrief.terrainBase.seed, family.id)
+          }
+        };
+      }
+      if (category !== 'furniture') return layer;
+
+      const explicitCircle = /amphitheater|circular seating|ceremony|ritual|圆形剧场|环形座位|仪式/i.test(semantic);
+      let intent = current.intent ?? inferFurnitureIntent(semantic, current.targetFamilyId, zoneSemantic);
+      if ((current.pattern === 'courtyard' || current.pattern === 'radial') && !explicitCircle) intent = 'viewpoint';
+      if ((intent === 'social' || intent === 'attached-service') && !current.targetFamilyId) {
+        intent = /road|street|path|walkway|道路|街道|步道|沿路/i.test(semantic) ? 'street-edge' : 'viewpoint';
+      }
+
+      if (intent === 'audience') return {
+        ...layer,
+        distribution: 'even' as const,
+        placement: {
+          ...current, mode: 'layout', pattern: 'grid', intent,
+          facing: current.facing === 'random' ? 'inward' : current.facing,
+          focusFamilyId: current.focusFamilyId ?? audienceFocusFamilyId,
+          maxPerGroup: Math.min(current.maxPerGroup ?? 24, 24), aisleEvery: current.aisleEvery ?? 4
+        }
+      };
+      if (intent === 'street-edge') return {
+        ...layer,
+        distribution: 'even' as const,
+        placement: {
+          ...current, mode: 'linear', pattern: 'row', intent, facing: 'guide',
+          maxPerGroup: Math.min(current.maxPerGroup ?? 4, 6),
+          offset: Math.abs(current.offset) < 0.8 ? 1.5 : current.offset
+        }
+      };
+      if (intent === 'social' || intent === 'attached-service') return {
+        ...layer,
+        distribution: 'clustered' as const,
+        placement: {
+          ...current, mode: 'attached', pattern: undefined, intent, facing: 'inward',
+          maxPerGroup: Math.min(current.maxPerGroup ?? (intent === 'social' ? 6 : 1), intent === 'social' ? 8 : 2)
+        }
+      };
+      if (intent === 'wall') return {
+        ...layer,
+        distribution: 'even' as const,
+        placement: {
+          ...current, mode: 'linear', pattern: 'row', intent, facing: 'inward',
+          maxPerGroup: Math.min(current.maxPerGroup ?? 6, 10)
+        }
+      };
+      if (explicitCircle) return {
+        ...layer,
+        placement: { ...current, intent: 'viewpoint', maxPerGroup: Math.min(current.maxPerGroup ?? 12, 16) }
+      };
+      return {
+        ...layer,
+        distribution: 'even' as const,
+        placement: {
+          ...current, mode: 'layout', pattern: 'arc', intent: 'viewpoint', facing: 'inward',
+          maxPerGroup: Math.min(current.maxPerGroup ?? 5, 5), arcDegrees: Math.min(current.arcDegrees ?? 110, 140)
+        }
+      };
+      })
+    };
+  });
+  return { ...plan, zones };
+}
+
+function inferFurnitureIntent(semantic: string, targetFamilyId?: string, zoneSemantic = ''): ScenePlacementIntent {
+  if (/bench|chair|seat|pew|长椅|椅子|座椅|长凳/i.test(semantic)
+    && /church|chapel|classroom|cinema|theater|altar|stage|教堂|礼拜堂|教室|影院|礼堂|祭坛|舞台/i.test(zoneSemantic)) {
+    return 'audience';
+  }
+  if (/pew|audience|church|classroom|cinema|theater|altar|stage|教堂|观众|教室|影院|礼堂|祭坛|舞台/i.test(semantic)) return 'audience';
+  if (/road|street|path|walkway|roadside|道路|街道|步道|路边|沿路/i.test(semantic)) return 'street-edge';
+  if (/sofa|bed|cabinet|shelf|wardrobe|wall|沙发|床|柜|书架|衣柜|靠墙/i.test(semantic)) return 'wall';
+  if (/table|dining|cafe|campfire|firepit|餐桌|咖啡|篝火|火坑/i.test(semantic)) return targetFamilyId ? 'social' : 'viewpoint';
+  if (/bin|planter|umbrella|service|垃圾桶|花盆|遮阳伞|附属/i.test(semantic)) return targetFamilyId ? 'attached-service' : 'street-edge';
+  return 'viewpoint';
+}
+
+function findAudienceFocusFamilyId(
+  zone: SceneCompositionZone,
+  families: ReadonlyMap<string, SceneAssetFamily>
+): string | undefined {
+  return zone.layers
+    .map((layer) => families.get(layer.familyId))
+    .filter((family): family is SceneAssetFamily => Boolean(family))
+    .sort((left, right) => Number(sceneAssetCategory(right) === 'architecture') - Number(sceneAssetCategory(left) === 'architecture'))
+    .find((family) => /altar|stage|pulpit|lectern|church|chapel|祭坛|舞台|讲台|教堂|礼拜堂/i.test(sceneFamilySemantic(family)))?.id;
+}
+
+function familyPlacementDirection(seed: number, familyId: string): number {
+  let hash = Math.trunc(seed) >>> 0;
+  for (const character of familyId) hash = Math.imul(hash ^ character.charCodeAt(0), 16777619) >>> 0;
+  return hash % 360;
+}
+
+function sceneFamilySemantic(family: SceneAssetFamily): string {
+  return `${family.label} ${family.role} ${family.tags.join(' ')} ${family.generationBrief}`;
+}
+
+/**
+ * Preserve explicit, high-level terrain intent after model-authored revisions.
+ * This only tightens a clearly requested high mountain; generic hills and
+ * valleys remain entirely model-directed.
+ */
+export function enforcePromptSceneIntent(
+  plan: SceneCompositionPlan,
+  prompt: string,
+  map: EditableMap
+): SceneCompositionPlan {
+  plan = enforceScenePlacementContracts(plan, map, prompt);
+  if (!/高山|雪山|山峰|巍峨|峻峭|high[ -]?mountain|mountain peak|alpine massif/i.test(prompt)) return plan;
+
+  const rockFamilyIds = new Set(plan.assetFamilies
+    .filter((family) => isNaturalRockFamily(family))
+    .map((family) => family.id));
+  const target = [...plan.zones].sort((left, right) => (
+    mountainZoneScore(right, rockFamilyIds) - mountainZoneScore(left, rockFamilyIds)
+  ))[0];
+  if (!target) return plan;
+
+  const mapHeight = map.box.size[1];
+  const zones = plan.zones.map((zone) => {
+    if (zone.id !== target.id) return zone;
+    const layers = [...zone.layers];
+    for (const familyId of rockFamilyIds) {
+      const index = layers.findIndex((layer) => layer.familyId === familyId);
+      const current = index >= 0 ? layers[index] : undefined;
+      const placement = current?.placement;
+      const next: SceneZoneLayer = {
+        familyId,
+        density: Math.max(current?.density ?? 0, 0.018),
+        scaleRange: current?.scaleRange ?? [0.8, 1.3],
+        distribution: 'clustered',
+        edgeFalloff: Math.max(current?.edgeFalloff ?? 0, 0.16),
+        placement: {
+          ...placement,
+          mode: 'patch',
+          pattern: placement?.pattern,
+          direction: placement?.direction ?? plan.globalBrief.terrainBase.seed % 360,
+          spacing: placement?.spacing,
+          offset: placement?.offset ?? 0,
+          facing: placement?.facing ?? 'random',
+          targetFamilyId: placement?.targetFamilyId,
+          spacingByFamily: placement?.spacingByFamily,
+          habitat: {
+            ...placement?.habitat,
+            height: [mapHeight * 0.14, mapHeight * 0.22, mapHeight * 0.82, mapHeight - 0.05],
+            slope: [6, 14, 58, 78]
+          }
+        }
+      };
+      if (index >= 0) layers[index] = next;
+      else layers.push(next);
+    }
+    return {
+      ...zone,
+      region: { ...zone.region, radius: Math.max(zone.region.radius, 0.62) },
+      terrain: {
+        ...zone.terrain,
+        elevation: Math.max(zone.terrain.elevation, 0.55),
+        roughness: Math.max(zone.terrain.roughness, 0.55),
+        flatness: Math.min(zone.terrain.flatness, 0.12),
+        modifier: 'mountain' as const,
+        access: 'scenic' as const,
+        surface: 'rock' as const,
+        amplitude: Math.max(zone.terrain.amplitude ?? 0, mapHeight * 0.48),
+        softness: Math.min(zone.terrain.softness ?? 0.38, 0.38),
+        variation: Math.max(zone.terrain.variation ?? 0, 0.55)
+      },
+      layers
+    };
+  });
+  return { ...plan, zones };
+}
+
+function mountainZoneScore(zone: SceneCompositionZone, rockFamilyIds: ReadonlySet<string>): number {
+  const semantic = `${zone.label} ${zone.brief.atmosphere} ${zone.brief.hierarchy}`;
+  return (zone.terrain.modifier === 'mountain' ? 8 : zone.terrain.modifier === 'ridge' ? 5 : 0)
+    + (/mountain|peak|ridge|alpine|高山|山峰|山脊|裸岩/i.test(semantic) ? 6 : 0)
+    + (zone.layers.some((layer) => rockFamilyIds.has(layer.familyId)) ? 4 : 0)
+    + zone.region.radius * 2
+    + zone.importance;
+}
+
+function isNaturalRockFamily(family: SceneAssetFamily): boolean {
+  const semantic = `${family.label} ${family.role} ${family.tags.join(' ')}`;
+  return /rock|stone|boulder|outcrop|岩|石/i.test(semantic)
+    && !/boundary|border|marker|fence|边界|界石|围栏/i.test(semantic);
 }
 
 export function estimateSceneZoneCoverage(plan: SceneCompositionPlan): number {
@@ -723,13 +969,31 @@ function normalizePlacement(
   const pattern = SCENE_LAYOUT_PATTERNS.includes(input.pattern as SceneLayoutPattern)
     ? input.pattern as SceneLayoutPattern
     : undefined;
+  const intent = SCENE_PLACEMENT_INTENTS.includes(input.intent as ScenePlacementIntent)
+    ? input.intent as ScenePlacementIntent
+    : undefined;
   const facing = input.facing === 'guide' || input.facing === 'inward' || input.facing === 'outward'
     ? input.facing
     : 'random';
   const targetFamilyId = cleanId(input.targetFamilyId);
+  const focusFamilyId = cleanId(input.focusFamilyId);
   if (mode === 'attached' && (!targetFamilyId || !familyIds.has(targetFamilyId))) {
     throw new Error('invalid_scene_attachment_target');
   }
+  if (focusFamilyId && !familyIds.has(focusFamilyId)) throw new Error('invalid_scene_focus_target');
+  const normalizedGuidePoints = Array.isArray(input.guidePoints)
+    ? input.guidePoints.slice(0, 16).flatMap((point): Array<[number, number]> => {
+      if (!Array.isArray(point) || point.length < 2) return [];
+      const x = Number(point[0]);
+      const z = Number(point[1]);
+      return Number.isFinite(x) && Number.isFinite(z)
+        ? [[clamp(x, -1, 1), clamp(z, -1, 1)]]
+        : [];
+    })
+    : undefined;
+  const guidePoints = normalizedGuidePoints && normalizedGuidePoints.length >= 2
+    ? normalizedGuidePoints
+    : undefined;
   const spacingByFamily: Record<string, number> = {};
   if (input.spacingByFamily && typeof input.spacingByFamily === 'object' && !Array.isArray(input.spacingByFamily)) {
     for (const [familyId, spacing] of Object.entries(input.spacingByFamily as Record<string, unknown>)) {
@@ -755,11 +1019,17 @@ function normalizePlacement(
   return {
     mode,
     ...(pattern ? { pattern } : {}),
+    ...(intent ? { intent } : {}),
     direction: ((finiteNumber(input.direction, 0) % 360) + 360) % 360,
     ...(input.spacing === undefined ? {} : { spacing: clamp(finiteNumber(input.spacing, 2), 0.1, 64) }),
     offset: clamp(finiteNumber(input.offset, 0), -64, 64),
     facing,
     ...(targetFamilyId ? { targetFamilyId } : {}),
+    ...(focusFamilyId ? { focusFamilyId } : {}),
+    ...(guidePoints ? { guidePoints } : {}),
+    ...(input.maxPerGroup === undefined ? {} : { maxPerGroup: Math.round(clamp(finiteNumber(input.maxPerGroup, 4), 1, 24)) }),
+    ...(input.arcDegrees === undefined ? {} : { arcDegrees: clamp(finiteNumber(input.arcDegrees, 110), 20, 320) }),
+    ...(input.aisleEvery === undefined ? {} : { aisleEvery: Math.round(clamp(finiteNumber(input.aisleEvery, 4), 2, 12)) }),
     ...(Object.keys(spacingByFamily).length > 0 ? { spacingByFamily } : {}),
     ...(habitat && Object.keys(habitat).length > 0 ? { habitat } : {})
   };

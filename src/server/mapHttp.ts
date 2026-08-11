@@ -7,6 +7,7 @@ import {
   type EditableMap,
   type MapAsset,
   type MapPaintStroke,
+  type MapSceneMode,
   type MapSurface,
   type TerrainBrushMode
 } from '../shared/map';
@@ -228,6 +229,8 @@ async function handleEditorMaps(req: Req, res: Res, store: MapStore, parts: stri
     const body = await readJson<{
       name?: string;
       size?: Vec3;
+      sceneMode?: MapSceneMode;
+      roomSize?: Vec3;
       assetGenerationMode?: ModelGenerationMode;
     }>(req);
     sendJson(res, 201, { map: await store.createMap(body) });

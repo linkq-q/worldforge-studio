@@ -10,12 +10,14 @@ import {
   getMapCollisionBake,
   mapToSummary,
   normalizeMap,
+  normalizeMapSceneMode,
   type EditableMap,
   type MapAsset,
   type MapBoxColors,
   type MapObject,
   type MapPaintStroke,
   type MapSummary,
+  type MapSceneMode,
   type TerrainBrushMode,
   type Transform3D
 } from '../shared/map';
@@ -58,6 +60,8 @@ export interface MapStoreOptions {
 export interface CreateMapInput {
   name?: string;
   size?: Vec3;
+  sceneMode?: MapSceneMode;
+  roomSize?: Vec3;
   assetGenerationMode?: ModelGenerationMode;
 }
 
@@ -175,7 +179,9 @@ export class MapStore {
       input.name ?? '未命名地图',
       undefined,
       size,
-      normalizeModelGenerationMode(input.assetGenerationMode)
+      normalizeModelGenerationMode(input.assetGenerationMode),
+      normalizeMapSceneMode(input.sceneMode),
+      input.roomSize ? sanitizeVec3(input.roomSize, [10, 3, 8]) : undefined
     );
     return this.saveMap(map);
   }
@@ -871,7 +877,7 @@ export class MapStore {
 export function mapEditorCliManifest(): Record<string, string> {
   return {
     list: '列出服务端地图',
-    create: '创建地图：--name --width --height --depth',
+    create: '创建地图：--name --scene outdoor|indoor|mixed --width --height --depth --room-width --room-height --room-depth',
     show: '输出完整地图 JSON：--map',
     applyTransaction: '原子应用操作文件：--map --file --source agent|basic-ai|manual --label',
     undoTransaction: '撤销地图最近一次事务：--map',

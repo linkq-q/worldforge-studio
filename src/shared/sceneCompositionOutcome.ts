@@ -7,6 +7,7 @@ import { applyMapOperations, type MapOperation } from './mapOperations';
 import { expandMapScatter } from './mapScatter';
 import { planLimits } from './mapPlanning';
 import {
+  sceneAssetCategory,
   sceneZoneWorldRegion,
   type SceneCompositionPlan,
   type SceneIntentRequirement
@@ -23,8 +24,8 @@ import {
 
 export interface SceneOutcomeCheck {
   requirementId: string;
-  kind: SceneIntentRequirement['kind'] | 'population';
-  status: 'pass' | 'repaired';
+  kind: SceneIntentRequirement['kind'] | 'population' | 'furniture';
+  status: 'pass' | 'repaired' | 'warning';
   message: string;
 }
 
@@ -117,6 +118,51 @@ export function ensureSceneCompositionOutcome(
     });
   }
 
+  for (const resolved of resolvedFamilies) {
+    if (resolved.assets.length === 0) continue;
+    const zone = plan.zones.find((item) => (
+      item.role !== 'negative-space'
+      && item.layers.some((layer) => layer.familyId === resolved.family.id)
+    ));
+    if (!zone) continue;
+    const layers = zone.layers.filter((layer) => layer.familyId === resolved.family.id);
+    const minimum = sceneAssetCategory(resolved.family) === 'facility'
+      && layers.some((layer) => layer.placement?.intent === 'playground')
+      ? 2
+      : 1;
+    const currentCount = familyCounts[resolved.family.id] ?? 0;
+    if (currentCount >= minimum) continue;
+    const available = Math.max(0, planLimits(getMapBounds(map)).objectCount - (candidate.objects.length - map.objects.length));
+    const missing = Math.min(minimum - currentCount, available);
+    const requirement: SceneIntentRequirement = {
+      id: `family-presence-${resolved.family.id}`,
+      kind: 'asset-family',
+      description: `${resolved.family.label} must be represented in the compiled scene.`,
+      targetZoneId: zone.id,
+      familyId: resolved.family.id,
+      minCount: minimum
+    };
+    const repairs = missing > 0
+      ? requiredFamilyRepairs(map, candidate, plan, resolvedFamilies, requirement, missing)
+      : [];
+    if (repairs.length > 0) {
+      operations.push(...repairs);
+      candidate = applyMapOperations(candidate, repairs);
+      familyCounts[resolved.family.id] = currentCount + repairs.length;
+      zoneCounts[zone.id] = (zoneCounts[zone.id] ?? 0) + repairs.length;
+      repairCount += repairs.length;
+    }
+    const repairedCount = currentCount + repairs.length;
+    checks.push({
+      requirementId: requirement.id,
+      kind: 'asset-family',
+      status: repairedCount >= minimum ? 'repaired' : 'warning',
+      message: repairedCount >= minimum
+        ? `${resolved.family.label} 未进入初始布局，已补入 ${repairs.length} 个实例。`
+        : `${resolved.family.label} 仍缺少可用落位空间。`
+    });
+  }
+
   const population = repairNaturalPopulation(map, candidate, plan, resolvedFamilies);
   if (population.target > 0) {
     const currentCount = candidate.objects.length - map.objects.length;
@@ -145,6 +191,7 @@ export function ensureSceneCompositionOutcome(
       });
     }
   }
+  checks.push(...auditFurnitureOutcome(plan, candidate, resolvedFamilies));
 
   return {
     compiled: {
@@ -162,6 +209,86 @@ export function ensureSceneCompositionOutcome(
     checks,
     repairCount
   };
+}
+
+function auditFurnitureOutcome(
+  plan: SceneCompositionPlan,
+  candidate: EditableMap,
+  resolvedFamilies: readonly ResolvedSceneFamily[]
+): SceneOutcomeCheck[] {
+  const assetsByFamily = new Map(resolvedFamilies.map((resolved) => [
+    resolved.family.id,
+    new Set(resolved.assets.map((asset) => asset.id))
+  ]));
+  return plan.assetFamilies.flatMap((family): SceneOutcomeCheck[] => {
+    const category = sceneAssetCategory(family);
+    if (category !== 'furniture' && category !== 'facility') return [];
+    const layers = plan.zones.flatMap((zone) => zone.layers.filter((layer) => layer.familyId === family.id));
+    if (layers.length === 0) return [];
+    const semantic = `${family.label} ${family.role} ${family.tags.join(' ')} ${family.generationBrief}`;
+    const explicitCircle = /amphitheater|circular seating|ceremony|ritual|圆形剧场|环形座位|仪式/i.test(semantic);
+    const assetIds = assetsByFamily.get(family.id) ?? new Set<string>();
+    const objects = candidate.objects.filter((object) => object.assetId && assetIds.has(object.assetId));
+    const issues: string[] = [];
+
+    if (category === 'furniture' && layers.some((layer) => (
+      !layer.placement?.intent
+      || layer.placement.mode === 'field'
+      || layer.placement.mode === 'patch'
+      || !explicitCircle && (layer.placement.pattern === 'courtyard' || layer.placement.pattern === 'radial')
+    ))) issues.push('家具仍在使用未声明用途的散布或完整环形布局');
+    if (category === 'facility' && layers.some((layer) => (
+      layer.placement?.intent === 'playground'
+      && (layer.placement.mode !== 'layout' || layer.placement.pattern !== 'arc')
+    ))) issues.push('游乐设施没有使用分组稀疏布局');
+
+    const expectedMax = layers.reduce((sum, layer) => sum + furnitureLayerLimit(layer), 0);
+    if (objects.length > expectedMax) issues.push(`实例数 ${objects.length} 超过关系布局上限 ${expectedMax}`);
+    if (!explicitCircle && formsClosedFurnitureRing(objects)) issues.push('实例围成了未经请求的近似完整闭环');
+
+    return [{
+      requirementId: `furniture-${family.id}`,
+      kind: 'furniture',
+      status: issues.length > 0 ? 'warning' : 'pass',
+      message: issues.length > 0
+        ? `${family.label}：${issues.join('；')}。`
+        : `${family.label} 的数量、用途和朝向布局已通过家具验收。`
+    }];
+  });
+}
+
+function furnitureLayerLimit(layer: SceneCompositionPlan['zones'][number]['layers'][number]): number {
+  const intent = layer.placement?.intent;
+  if (intent === 'playground') return 2;
+  if (intent === 'viewpoint') return layer.placement?.maxPerGroup ?? 5;
+  if (intent === 'street-edge') return (layer.placement?.maxPerGroup ?? 4) * 3;
+  if (intent === 'audience') return layer.placement?.maxPerGroup ?? 24;
+  if (intent === 'social' || intent === 'attached-service') return (layer.placement?.maxPerGroup ?? 6) * 8;
+  if (intent === 'wall') return layer.placement?.maxPerGroup ?? 10;
+  return 5;
+}
+
+function formsClosedFurnitureRing(objects: EditableMap['objects']): boolean {
+  if (objects.length < 6) return false;
+  const centerX = objects.reduce((sum, object) => sum + object.transform.position[0], 0) / objects.length;
+  const centerZ = objects.reduce((sum, object) => sum + object.transform.position[2], 0) / objects.length;
+  const radii = objects.map((object) => Math.hypot(
+    object.transform.position[0] - centerX,
+    object.transform.position[2] - centerZ
+  ));
+  const meanRadius = radii.reduce((sum, radius) => sum + radius, 0) / radii.length;
+  if (meanRadius < 0.5) return false;
+  const deviation = Math.sqrt(radii.reduce((sum, radius) => sum + (radius - meanRadius) ** 2, 0) / radii.length);
+  if (deviation / meanRadius > 0.28) return false;
+  const angles = objects.map((object) => Math.atan2(
+    object.transform.position[2] - centerZ,
+    object.transform.position[0] - centerX
+  )).sort((left, right) => left - right);
+  const gaps = angles.map((angle, index) => {
+    const next = angles[(index + 1) % angles.length] + (index === angles.length - 1 ? Math.PI * 2 : 0);
+    return next - angle;
+  });
+  return Math.max(...gaps) < Math.PI * 0.56;
 }
 
 function repairNaturalPopulation(
@@ -185,7 +312,7 @@ function repairNaturalPopulation(
     .filter((entry): entry is { zone: SceneCompositionPlan['zones'][number]; layer: SceneCompositionPlan['zones'][number]['layers'][number]; resolved: ResolvedSceneFamily } => (
       entry !== null
       && entry.resolved.assets.length > 0
-      && isRepeatableNaturalFamily(entry.resolved.family)
+      && isRepeatableVegetationFamily(entry.resolved.family)
       && (entry.layer.distribution !== 'accent' || isPopulationZone(entry.zone))
     ))
     .sort((left, right) => (
@@ -249,8 +376,8 @@ function repairNaturalPopulation(
   return { target, operations, familyCounts, zoneCounts };
 }
 
-function isRepeatableNaturalFamily(family: ResolvedSceneFamily['family']): boolean {
-  return /tree|forest|wood|pine|oak|bush|shrub|fern|vegetation|plant|foliage|rock|stone|flower|grass|树|林|灌|蕨|植|岩|石|花|草/i
+function isRepeatableVegetationFamily(family: ResolvedSceneFamily['family']): boolean {
+  return /tree|forest|pine|oak|bush|shrub|fern|vegetation|plant|foliage|flower|grass|树|林|灌|蕨|植|花|草/i
     .test(`${family.label} ${family.role} ${family.tags.join(' ')}`);
 }
 

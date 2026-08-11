@@ -44,7 +44,13 @@ export function buildSceneDirectorPrompt(
     'For each asset family provide 1-3 identityTags containing the specific identity required for reuse (for example maple, castle, deer, sakura). Do not put broad category tags such as tree, vegetation, building, structure, animal, forest, or landmark in identityTags.',
     'Choose a placement.mode for each object layer: anchor for landmarks, field for even natural cover, patch for mixed ecological communities, linear for fences/lights/roadside objects, layout for buildings/camps/courtyards, and attached for props dependent on another family.',
     'Buildings and structures must use anchor, linear, or layout; never field or patch. Use layout.pattern row|courtyard|radial|grid to establish order. Attached placement must name targetFamilyId. Related plant patch layers should share the zone habitat and use spacingByFamily when their ecological separation differs.',
+    'Furniture is not architecture and must declare placement.intent. Use street-edge for benches/lights/bins along a path, audience for church/classroom/theater rows, social for chairs attached to tables or fire pits, viewpoint for small bench arcs facing scenery, wall for indoor wall furniture, and attached-service for props beside another family.',
+    'Never use field or patch for furniture. Never use a complete courtyard or radial furniture ring unless the user explicitly requests circular seating, an amphitheater, or a ceremony. Viewpoint seating uses pattern arc, maxPerGroup 2-5, and arcDegrees 45-140.',
+    'Street-edge furniture should provide 2-16 normalized guidePoints following the shared path, use small groups separated by gaps, and face the guide or named focus. Audience seating uses grid plus focusFamilyId and aisleEvery. Social and attached-service furniture require targetFamilyId.',
+    'Playground swings, slides, and fitness equipment are facilities: use sparse anchors, normally one or two instances, with enough spacing for a clear activity area.',
     'On mountains, give vegetation an explicit habitat.slope band. Keep large trees off cliff shoulders and narrow ridge crests; let shrubs and rocks tolerate progressively steeper ground.',
+    'When the user explicitly requests a high mountain, snow mountain, mountain peak, or bare ridge, create a broad mountain zone with strong relief, rock surface, and scenic access. A low rounded hill is not an acceptable substitute. Put bare-rock and outcrop families inside that mountain zone with explicit high-elevation and steep-slope habitat bands.',
+    'Repeated decorative rocks are terrain cover, not boundary markers. Unless the request is specifically for a compact rock field, distribute each natural rock family through compatible broad zones with only moderate clustering so it does not collapse into one side of the map.',
     'For every animal family, provide behavior. kind is static|solitary|pair|flock|herd|school|territorial; locomotion is static|ground|air|water|mixed. Use groupCount, coreRatio, and outlierMinDistance to create several readable cores plus reserved separated individuals. For mixed birds, coreState is usually feed or rest and outlierState is fly; set an altitudeRange for airborne members.',
     'Treat ecology at three scales: zone habitat, family patches or social cores, then individually spaced instances. Do not represent a flock, herd, or mixed plant community as one undifferentiated cluster.',
     'Every mountain or ridge must choose terrain.access walkable|scenic. Walkable mountains are broad massifs; scenic mountains may be steeper but still require a wide region. A ridge is only valid inside a large region. Use layout terraces when traversal should happen by jumping between geometric platforms.',
@@ -94,9 +100,11 @@ export function buildSceneDirectorPrompt(
         layers: [{
           familyId: 'family-id', density: 0.04, scaleRange: [0.8, 1.2], distribution: 'even|clustered|accent', edgeFalloff: 0.25,
           placement: {
-            mode: 'anchor|field|patch|linear|layout|attached', pattern: 'row|courtyard|radial|grid',
+            mode: 'anchor|field|patch|linear|layout|attached', pattern: 'row|courtyard|radial|grid|arc',
+            intent: 'landmark|settlement|street-edge|audience|social|viewpoint|wall|attached-service|playground',
             direction: 0, spacing: 3, offset: 0, facing: 'random|guide|inward|outward',
-            targetFamilyId: null, spacingByFamily: { 'other-family-id': 2.5 },
+            targetFamilyId: null, focusFamilyId: null, guidePoints: [[-0.8, 0], [0, 0.1], [0.8, 0.2]],
+            maxPerGroup: 4, arcDegrees: 110, aisleEvery: 4, spacingByFamily: { 'other-family-id': 2.5 },
             habitat: { height: [-2, 0, 6, 10], slope: [0, 0, 20, 35], waterDistance: [0, 1, 5, 9] }
           }
         }],

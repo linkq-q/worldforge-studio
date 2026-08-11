@@ -10,9 +10,11 @@ import {
   getMapBounds,
   MAX_WATER_DEPTH,
   normalizeMap,
+  normalizeMapRoom,
   sampleTerrainHeight,
   type EditableMap,
   type MapAsset,
+  type MapRoom,
   type TerrainBrushMode
 } from '../shared/map';
 import {
@@ -103,7 +105,10 @@ export async function runMapAgent(
   options: MapAgentOptions
 ): Promise<MapAiSuggestion> {
   const mode = options.mode ?? 'generate';
-  if (mode === 'generate') {
+  if (mode === 'generate' && map.sceneMode === 'outdoor' && requestsIndoorScene(prompt)) {
+    throw new Error('indoor_prompt_requires_indoor_map');
+  }
+  if (mode === 'generate' && map.sceneMode === 'outdoor') {
     const result = await runMapCompositionWorkflow(prompt, map, assets, options);
     const validated = finalizeMapAgentSuggestion(map, result.assets, result.suggestion, options);
     options.onProgress?.({ phase: 'complete', label: '场景构图、合成审查与地图预览已完成' });
@@ -229,6 +234,10 @@ export async function runMapAgent(
   const validated = finalizeMapAgentSuggestion(map, expandedAssets, suggestion, options);
   options.onProgress?.({ phase: 'complete', label: '地图修改方案已完成' });
   return validated;
+}
+
+function requestsIndoorScene(prompt: string): boolean {
+  return /室内|内部|房间|教堂内|礼拜堂内|\b(?:interior|indoors?|inside (?:a|the))\b/i.test(prompt);
 }
 
 function assertFinalPassRequestsNoAssets(
@@ -388,28 +397,30 @@ export function normalizeMapSuggestion(
   const operations: MapOperation[] = renderPromptSuggestions.length > 0
     ? [{ type: 'map.update', renderPromptSuggestions }]
     : [];
+  operations.push(...normalizeRoomOperations(input.room, map));
   operations.push(...normalizeVisualZoneUpdateOperations(input.visualZoneUpdates, map, targetVisualZoneId));
-  if (input.terrainGeneration !== undefined && input.terrainGeneration !== null) {
+  if (map.sceneMode !== 'indoor' && input.terrainGeneration !== undefined && input.terrainGeneration !== null) {
     operations.push({
       type: 'terrain.generate',
       ...normalizeTerrainGenerationParams(input.terrainGeneration, map)
     });
   }
-  const terrainOperations = normalizeTerrainOperations(input.terrain, bounds, limits);
+  const terrainOperations = map.sceneMode === 'indoor' ? [] : normalizeTerrainOperations(input.terrain, bounds, limits);
   operations.push(...terrainOperations);
-  operations.push(...normalizeTerrainModifierOperations(input.terrainModifiers, map, limits));
-  if (input.terrainRefinement !== undefined && input.terrainRefinement !== null) {
+  if (map.sceneMode !== 'indoor') operations.push(...normalizeTerrainModifierOperations(input.terrainModifiers, map, limits));
+  if (map.sceneMode !== 'indoor' && input.terrainRefinement !== undefined && input.terrainRefinement !== null) {
     operations.push({ type: 'terrain.refine', ...normalizeTerrainRefinementParams(input.terrainRefinement) });
   }
-  operations.push(...normalizeTerrainSurfaceOperations(input.terrainSurfaces, map));
-  const waterRefineOperations = mode === 'refine'
+  if (map.sceneMode !== 'indoor') operations.push(...normalizeTerrainSurfaceOperations(input.terrainSurfaces, map));
+  const waterRefineOperations = mode === 'refine' && map.sceneMode !== 'indoor'
     ? normalizeWaterRefineOperations(input.waterUpdates, input.waterRemovals, map, bounds)
     : [];
   operations.push(...waterRefineOperations);
-  const waterOperations = normalizeWaterOperations(input.waters, bounds, limits, map.seed);
+  const waterOperations = map.sceneMode === 'indoor' ? [] : normalizeWaterOperations(input.waters, bounds, limits, map.seed);
   operations.push(...waterOperations);
   const earlyOperations = operations.filter((operation) => (
-    operation.type === 'terrain.generate'
+    operation.type === 'room.set'
+    || operation.type === 'terrain.generate'
     || operation.type === 'terrain.brush'
     || operation.type === 'terrain.modify'
     || operation.type === 'terrain.refine'
@@ -462,6 +473,15 @@ export function normalizeMapSuggestion(
     renderPromptSuggestions,
     generatedAssets: []
   };
+}
+
+function normalizeRoomOperations(value: unknown, map: EditableMap): MapOperation[] {
+  if (map.sceneMode === 'outdoor' || value === undefined || value === null) return [];
+  if (!value || typeof value !== 'object' || Array.isArray(value)) throw new Error('invalid_room_plan');
+  return [{
+    type: 'room.set',
+    room: normalizeMapRoom(value as Partial<MapRoom>, map.box.size, map.room ?? undefined)
+  }];
 }
 
 function assertNoForbiddenAssetReuse(
@@ -575,6 +595,7 @@ function scopeMapOperationsToVisualZone(
   return operations.filter((operation) => {
     switch (operation.type) {
       case 'map.update': return allowMapUpdate;
+      case 'room.set': return false;
       case 'terrain.brush': return strictFootprints && !allowTerrainOverlap
         ? circleInside(operation.point[0], operation.point[2], operation.size ?? 1, contains)
         : contains(operation.point[0], operation.point[2]);
@@ -928,14 +949,21 @@ function normalizeObjectOperations(
     const z = clamp(requiredNumber(input.z, 'invalid_object_plan'), bounds.minZ, bounds.maxZ);
     const scale = clamp(optionalNumber(input.scale, 1), 0.1, 8);
     const rotationY = optionalNumber(input.rotationYDeg, 0) * Math.PI / 180;
+    const y = finiteNumber(input.y);
+    const roomOpeningId = typeof input.roomOpeningId === 'string'
+      && map.room?.openings.some((opening) => opening.id === input.roomOpeningId)
+      ? input.roomOpeningId
+      : undefined;
     return {
       type: 'object.add',
       object: {
         id: createId('obj'),
         name: cleanText(input.name, asset.name, 48),
         assetId,
+        heightMode: y !== null || roomOpeningId ? 'fixed' : 'terrain',
+        roomOpeningId,
         transform: {
-          position: [x, sampleTerrainHeight(map, x, z), z],
+          position: [x, y === null ? sampleTerrainHeight(map, x, z) : clamp(y, bounds.minY, bounds.maxY), z],
           rotation: [0, rotationY, 0],
           scale: [scale, scale, scale]
         }
@@ -1216,17 +1244,34 @@ function buildSystemPrompt(
         'Do not place vegetation, buildings, props, water, local landmarks or region-specific content.'
       ]
     : [];
+  const roomInstructions = map.sceneMode === 'outdoor'
+    ? []
+    : [
+        `Scene mode is ${map.sceneMode}. The parameterized room is structural map data, not a generated whole-room asset.`,
+        'Return room as {"position":[x,y,z],"size":[width,height,depth],"wallThickness":0.16,"openings":[{"id":"door-main","kind":"door|window","wall":"north|south|east|west","offset":0,"bottom":0,"width":1.2,"height":2.1}]}. Use one rectangular room only.',
+        'Walls are assembled from modular segments around room.openings; do not request wall, floor, or ceiling assets and do not use CSG.',
+        'Every door/window asset request must include the English tag door or window. In the final objects list, bind it with roomOpeningId matching one room opening and include y.',
+        'A window asset prompt must explicitly request a visible transparent glass pane whose material is tagged base:glass; keep base:glass out of assetRequests.tags.',
+        'Keep a continuous walkable route at least 0.8m wide from spawn to every door. Place wall items against their wall, ceiling items below the ceiling, and floor furniture on the room floor.',
+        ...(map.sceneMode === 'indoor' ? [
+          'This is a standalone indoor map. Keep terrainGeneration, terrain, terrainModifiers, terrainRefinement, terrainSurfaces, waters, waterUpdates, waterRemovals and scatters empty.'
+        ] : [
+          'This is a mixed indoor/outdoor map. Room content and outdoor terrain may coexist in the same map.'
+        ]),
+        `Current room: ${JSON.stringify(map.room)}`
+      ];
   return [
     ...baseTerrainInstructions,
+    ...roomInstructions,
     ...refineInstructions,
     ...assetReuseInstructions,
     'visualZoneUpdates format: [{"zoneId":"existing-zone-id","center":[0,0],"radius":8,"tags":["grass"],"intensity":0.8}]. Omit unchanged fields.',
     '你是 WorldForge 的地图规划器。玩家通常只写一句简短场景描述；请自行推导整体构图、坐标、数量、密度、留白和自然过渡，不要求玩家补充技术参数。',
     '只规划空间内容，不决定最终渲染风格。你可以选择地形、湖泊/河流、已有资产和出生点；不得删除或修改未授权内容，不得编造资产 ID。',
     finalPass
-      ? '这是最终规划轮次。assetRequests 必须为空；必须至少生成一项地形、物体摆放或出生点操作，使用现有资产完成地图，无法使用的内容直接省略。'
+      ? '这是最终规划轮次。assetRequests 必须为空；必须至少生成一项房间、地形、物体摆放或出生点操作，使用现有资产完成地图，无法使用的内容直接省略。'
       : `若场景需要新的可复用物体，在 assetRequests 中请求生成 ${assetRange.min}-${assetRange.max} 项；请求资产时不要提前编造其 assetId。`,
-    'assetRequests.tags 必须使用简短英文语义标签，例如 tree、vegetation、rock、building、prop、landmark、shrub、grass、fence 或 bridge；不要把 bark、foliage 等模型内部材质标签写进资产标签。',
+    'assetRequests.tags 必须使用简短英文语义标签，例如 tree、vegetation、rock、building、prop、landmark、shrub、grass、fence、bridge、door 或 window；不要把 bark、foliage 等模型内部材质标签写进资产标签。',
     `本地图新资产的默认生成模式是 ${map.assetGenerationMode}；缺失资产由代码使用这个模式生成，但摆放时允许复用资产库中的其他模式资产。`,
     `地图范围：X ${bounds.minX} 到 ${bounds.maxX}，Z ${bounds.minZ} 到 ${bounds.maxZ}，最大高度 ${bounds.maxY}。`,
     `本地图配额：terrain 最多 ${limits.terrainBrushCount} 笔、笔刷半径最多 ${limits.brushRadiusMax}、waters 最多 ${limits.waterCount} 个、最终物体总数最多 ${limits.objectCount} 个。`,
@@ -1239,11 +1284,11 @@ function buildSystemPrompt(
     '湖泊用 5-10 个粗略边界控制点组合出多个圆弧岸湾，shorelineSmoothness 建议 0.7-0.95，shorelineIrregularity 建议 0.08-0.28；代码会用 seed 生成连续噪声并平滑成不规则圆弧，不要手写密集锯齿点。',
     `河流用 4-10 个从上游到下游排列的中心线控制点，width 是完整河宽，shorelineSmoothness 建议 0.65-0.9。可选 levels 必须与 points 等长并从上游到下游逐渐降低；省略时代码会根据源头地形与终点 level 自动生成沿程水位。河床会按 depth（0.1 到 ${MAX_WATER_DEPTH}）自动开槽并生成平滑河岸。`,
     `湖泊的 depth 是水面以下的盆地深度，代码会自动把湖底挖进地形，不要再用 terrain 笔刷压低水区。小水塘用 0.6 左右，深湖用 3 以上。`,
-    'objects 只用于少量独立物体，格式：{"assetId":"已有ID","name":"名称","x":0,"z":0,"rotationYDeg":0,"scale":1}。',
+    'objects 只用于少量独立物体，格式：{"assetId":"已有ID","name":"名称","x":0,"y":0,"z":0,"rotationYDeg":0,"scale":1,"roomOpeningId":"可选的门窗预留ID"}。室外贴地物体省略 y；室内墙面、天花板、门窗物体必须提供 y。',
     '大量植被、岩石等重复物体必须优先使用 scatters，让代码生成坐标。scatters 每项格式：{"assetIds":["已有ID"],"region":{"kind":"circle","x":0,"z":0,"r":20},"density":0.04,"avoidWater":1,"maxSlope":30,"minSpacing":2,"scaleRange":[0.8,1.2],"seed":7,"patchSeed":99,"clusterStrength":0.6,"edgeFalloff":0.25,"spacingByAssetId":{"另一已有ID":3},"habitat":{"height":[-2,0,6,10],"slope":[0,0,20,35],"waterDistance":[0,1,5,9]}}。同一植物群落的多个 scatter 使用相同 patchSeed，让物种共享群落而不是各自形成圆团。',
     '若用户写了雾、光照、素描等氛围词，只放入 renderPromptSuggestions，不要用它改变地图。',
     '只返回一个 JSON 对象，不要 Markdown：',
-    '{"summary":"简短摘要","assetRequests":[{"name":"资产名","prompt":"独立低多边形物体描述，无地面和背景","tags":["tree","vegetation"]}],"terrainGeneration":{"preset":"hills","amplitude":5,"roughness":0.55},"terrain":[],"terrainModifiers":[],"terrainRefinement":{"erosion":0.22,"drainage":0.08,"iterations":3,"talus":46},"terrainSurfaces":[],"waters":[],"waterUpdates":[],"waterRemovals":[],"objects":[],"objectUpdates":[],"objectRemovals":[],"scatters":[],"spawn":null,"renderPromptSuggestions":[]}',
+    '{"summary":"简短摘要","assetRequests":[{"name":"资产名","prompt":"独立低多边形物体描述，无地面和背景","tags":["prop"]}],"room":null,"terrainGeneration":{"preset":"hills","amplitude":5,"roughness":0.55},"terrain":[],"terrainModifiers":[],"terrainRefinement":{"erosion":0.22,"drainage":0.08,"iterations":3,"talus":46},"terrainSurfaces":[],"waters":[],"waterUpdates":[],"waterRemovals":[],"objects":[],"objectUpdates":[],"objectRemovals":[],"scatters":[],"spawn":null,"renderPromptSuggestions":[]}',
     `已有资产：${JSON.stringify(assetLibrary)}`
   ].join('\n');
 }
@@ -1286,6 +1331,7 @@ function normalizeAssetRequests(
 function hasSpatialOperations(suggestion: MapAiSuggestion): boolean {
   return suggestion.operations.some((operation) =>
     (operation.type === 'map.update' && operation.visualSemantics !== undefined)
+    || operation.type === 'room.set'
     || operation.type === 'terrain.brush'
     || operation.type === 'terrain.modify'
     || operation.type === 'terrain.refine'

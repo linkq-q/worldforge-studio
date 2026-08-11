@@ -3,8 +3,10 @@ import { createEmptyMap, type MapAsset } from '../src/shared/map';
 import {
   ensureMinimumSceneCoverage,
   estimateSceneZoneCoverage,
+  enforceScenePlacementContracts,
   isCompositionEmptyMap,
   normalizeSceneCompositionPlan,
+  enforcePromptSceneIntent,
   sceneZoneWorldRegion
 } from '../src/shared/sceneComposition';
 import {
@@ -651,6 +653,263 @@ describe('scene composition contract', () => {
       expect.objectContaining({ requirementId: 'scene-population', status: 'repaired' })
     ]));
     expect(first.compiled.metrics.objectCount).toBeGreaterThanOrEqual(10);
+  });
+
+  it('does not inflate rocks and boundary stones through vegetation population repair', () => {
+    const map = createEmptyMap('Rock field', 'map-rock-population', [96, 16, 96], 'voxel');
+    const input = structuredClone(planInput()) as {
+      globalBrief: { focalZoneId: string };
+      assetFamilies: Array<Record<string, unknown>>;
+      zones: Array<Record<string, unknown>>;
+      transitions: unknown[];
+      consultations: unknown[];
+      intentRequirements?: unknown[];
+    };
+    input.assetFamilies = [{
+      id: 'rocks', label: 'Boundary stones', role: 'field boundary markers', tags: ['rock', 'stone', 'boundary'],
+      sizeClass: 'small', desiredVariants: 1, priority: 0.5, generationBrief: 'small boundary stone'
+    }];
+    input.zones = [{
+      id: 'rock-field', label: 'Rock field', role: 'primary', importance: 1,
+      region: { kind: 'circle', center: [0, 0], radius: 0.8 },
+      brief: { atmosphere: 'open', hierarchy: 'sparse stones', openness: 0.9, transitionIntent: 'soft edge' },
+      terrain: { elevation: 0, roughness: 0.2, flatness: 0.7 },
+      layers: [{ familyId: 'rocks', density: 0.0001, scaleRange: [1, 1], distribution: 'clustered', edgeFalloff: 0.2 }],
+      grassLayers: [], excludeZoneIds: []
+    }];
+    input.globalBrief.focalZoneId = 'rock-field';
+    input.transitions = [];
+    input.consultations = [];
+    input.intentRequirements = [];
+    const plan = normalizeSceneCompositionPlan(input, map);
+    const rock = asset('rock-a', 'Boundary stone', ['rock', 'stone', 'boundary'], 'small', 'voxel');
+    const resolved = resolveSceneFamilies(plan, map, [rock], 0).families;
+    const compiled = compileSceneComposition(map, plan, resolved);
+
+    const outcome = ensureSceneCompositionOutcome(map, plan, resolved, compiled);
+
+    expect(outcome.checks.some((check) => check.requirementId === 'scene-population')).toBe(false);
+    expect(outcome.compiled.metrics.objectCount).toBeLessThan(10);
+  });
+
+  it('classifies furniture intent and replaces unsafe cult-ring defaults before compilation', () => {
+    const map = createEmptyMap('Furniture park', 'map-furniture-contract', [96, 16, 96], 'voxel');
+    const input = structuredClone(planInput()) as {
+      globalBrief: { focalZoneId: string };
+      assetFamilies: Array<Record<string, unknown>>;
+      zones: Array<Record<string, unknown>>;
+      transitions: unknown[];
+      consultations: unknown[];
+      intentRequirements?: unknown[];
+    };
+    input.assetFamilies = [
+      { id: 'benches', label: 'Park benches', role: 'public seating facing the sea', tags: ['bench', 'furniture'], sizeClass: 'medium', desiredVariants: 1, priority: 0.7, generationBrief: 'wood bench' },
+      { id: 'swings', label: 'Playground swings', role: 'children playground facility', tags: ['swing', 'playground'], sizeClass: 'large', desiredVariants: 1, priority: 0.8, generationBrief: 'swing set' },
+      { id: 'pews', label: 'Church pews', role: 'audience seating facing altar', tags: ['pew', 'church', 'chair'], sizeClass: 'medium', desiredVariants: 1, priority: 0.7, generationBrief: 'church pew' },
+      { id: 'path-benches', label: 'Path benches', role: 'seating along a curved park path', tags: ['bench', 'path'], sizeClass: 'medium', desiredVariants: 1, priority: 0.6, generationBrief: 'path bench' }
+    ];
+    input.zones = [{
+      id: 'park', label: 'Park plaza', role: 'primary', importance: 1,
+      region: { kind: 'circle', center: [0, 0], radius: 0.85 },
+      brief: { atmosphere: 'public park', hierarchy: 'open activity field', openness: 0.8, transitionIntent: 'soft' },
+      terrain: { elevation: 0, roughness: 0.1, flatness: 0.9 },
+      layers: [
+        { familyId: 'benches', density: 0.2, scaleRange: [1, 1], distribution: 'clustered', edgeFalloff: 0.1, placement: { mode: 'layout', pattern: 'courtyard', direction: 0, offset: 0, facing: 'inward' } },
+        { familyId: 'swings', density: 0.2, scaleRange: [1, 1], distribution: 'clustered', edgeFalloff: 0.1, placement: { mode: 'layout', pattern: 'courtyard', direction: 0, offset: 0, facing: 'inward' } },
+        { familyId: 'pews', density: 0.2, scaleRange: [1, 1], distribution: 'even', edgeFalloff: 0.1, placement: { mode: 'layout', direction: 0, offset: 0, facing: 'inward' } },
+        { familyId: 'path-benches', density: 0.1, scaleRange: [1, 1], distribution: 'even', edgeFalloff: 0.1, placement: { mode: 'linear', intent: 'street-edge', guidePoints: [[-0.8, -0.4], [0, -0.4], [0.6, 0.5]], maxPerGroup: 3, direction: 0, offset: 2, facing: 'guide' } }
+      ],
+      grassLayers: [], excludeZoneIds: []
+    }];
+    input.globalBrief.focalZoneId = 'park';
+    input.transitions = [];
+    input.consultations = [];
+    input.intentRequirements = [];
+
+    const safe = enforceScenePlacementContracts(normalizeSceneCompositionPlan(input, map), map);
+    const layers = Object.fromEntries(safe.zones[0].layers.map((layer) => [layer.familyId, layer]));
+    expect(layers.benches.placement).toMatchObject({ mode: 'layout', pattern: 'arc', intent: 'viewpoint', maxPerGroup: 5 });
+    expect(layers.swings.placement).toMatchObject({ mode: 'layout', pattern: 'arc', intent: 'playground', maxPerGroup: 2 });
+    expect(layers.pews.placement).toMatchObject({ mode: 'layout', pattern: 'grid', intent: 'audience' });
+    expect(layers['path-benches'].placement).toMatchObject({ mode: 'linear', intent: 'street-edge', maxPerGroup: 3 });
+    expect(layers['path-benches'].placement?.guidePoints).toEqual([[-0.8, -0.4], [0, -0.4], [0.6, 0.5]]);
+  });
+
+  it('drops incomplete optional guide points instead of rejecting the whole scene plan', () => {
+    const map = createEmptyMap('Optional guide', 'map-optional-guide', [72, 12, 72], 'voxel');
+    const input = structuredClone(planInput()) as {
+      zones: Array<{ layers: Array<Record<string, unknown>> }>;
+    };
+    input.zones[0].layers[0].placement = {
+      mode: 'linear', intent: 'street-edge', direction: 0, offset: 1.5, facing: 'guide', guidePoints: []
+    };
+
+    const plan = normalizeSceneCompositionPlan(input, map);
+
+    expect(plan.zones[0].layers[0].placement?.guidePoints).toBeUndefined();
+  });
+
+  it('uses chapel context to turn generic benches into audience rows facing the chapel focus', () => {
+    const map = createEmptyMap('Chapel', 'map-chapel-seating', [72, 12, 72], 'voxel');
+    const input = structuredClone(planInput()) as {
+      globalBrief: { focalZoneId: string };
+      assetFamilies: Array<Record<string, unknown>>;
+      zones: Array<Record<string, unknown>>;
+      transitions: unknown[];
+      consultations: unknown[];
+      intentRequirements: unknown[];
+    };
+    input.assetFamilies = [
+      { id: 'chapel', label: 'Small chapel', role: 'architectural focus', tags: ['church', 'building'], sizeClass: 'large', desiredVariants: 1, priority: 1, generationBrief: 'small chapel' },
+      { id: 'benches', label: 'Wood benches', role: 'seating', tags: ['bench', 'furniture'], sizeClass: 'medium', desiredVariants: 1, priority: 0.8, generationBrief: 'simple wood bench' }
+    ];
+    input.zones = [{
+      id: 'chapel-zone', label: 'Quiet interior', role: 'primary', importance: 1,
+      region: { kind: 'circle', center: [0, 0], radius: 0.7 },
+      brief: { atmosphere: 'quiet', hierarchy: 'seating faces the focal structure', openness: 0.5, transitionIntent: 'none' },
+      terrain: { elevation: 0, roughness: 0, flatness: 1 },
+      layers: [
+        { familyId: 'chapel', density: 0.01, scaleRange: [1, 1], distribution: 'accent', edgeFalloff: 0.1, placement: { mode: 'anchor', direction: 0, offset: 0, facing: 'guide' } },
+        { familyId: 'benches', density: 0.1, scaleRange: [1, 1], distribution: 'clustered', edgeFalloff: 0.1 }
+      ],
+      grassLayers: [], excludeZoneIds: []
+    }];
+    input.globalBrief.focalZoneId = 'chapel-zone';
+    input.transitions = [];
+    input.consultations = [];
+    input.intentRequirements = [];
+
+    const plan = enforcePromptSceneIntent(
+      normalizeSceneCompositionPlan(input, map),
+      'A small chapel interior with orderly wood benches, a center aisle, and all seats facing the altar.',
+      map
+    );
+    const benches = plan.zones[0].layers.find((layer) => layer.familyId === 'benches')!;
+
+    expect(benches.placement).toMatchObject({
+      mode: 'layout', pattern: 'grid', intent: 'audience', focusFamilyId: 'chapel', aisleEvery: 4
+    });
+  });
+
+  it('places two sparse instances of each playground facility family', () => {
+    const map = createEmptyMap('Playground', 'map-playground-layout', [72, 12, 72], 'voxel');
+    const input = structuredClone(planInput()) as {
+      globalBrief: { focalZoneId: string };
+      assetFamilies: Array<Record<string, unknown>>;
+      zones: Array<Record<string, unknown>>;
+      transitions: unknown[];
+      consultations: unknown[];
+      intentRequirements: unknown[];
+    };
+    input.assetFamilies = [
+      { id: 'swings', label: 'Playground swings', role: 'play facility', tags: ['swing', 'playground'], sizeClass: 'medium', desiredVariants: 1, priority: 0.8, generationBrief: 'swing set' },
+      { id: 'slides', label: 'Playground slides', role: 'play facility', tags: ['slide', 'playground'], sizeClass: 'medium', desiredVariants: 1, priority: 0.8, generationBrief: 'small slide' }
+    ];
+    input.zones = [{
+      id: 'play-zone', label: 'Playground', role: 'primary', importance: 1,
+      region: { kind: 'circle', center: [0, 0], radius: 0.85 },
+      brief: { atmosphere: 'active', hierarchy: 'sparse facilities around open play space', openness: 0.75, transitionIntent: 'soft' },
+      terrain: { elevation: 0, roughness: 0, flatness: 1 },
+      layers: input.assetFamilies.map((family) => ({
+        familyId: family.id, density: 0.08, scaleRange: [0.7, 0.7], distribution: 'clustered', edgeFalloff: 0.1
+      })),
+      grassLayers: [], excludeZoneIds: []
+    }];
+    input.globalBrief.focalZoneId = 'play-zone';
+    input.transitions = [];
+    input.consultations = [];
+    input.intentRequirements = [];
+    const plan = enforcePromptSceneIntent(normalizeSceneCompositionPlan(input, map), 'A small public playground.', map);
+    const assets = [
+      asset('swing-a', 'Swing', ['swing', 'playground'], 'medium', 'voxel'),
+      asset('slide-a', 'Slide', ['slide', 'playground'], 'medium', 'voxel')
+    ];
+    const resolved = resolveSceneFamilies(plan, map, assets, 0).families;
+
+    const compiled = compileSceneComposition(map, plan, resolved);
+
+    expect(compiled.metrics.familyCounts.swings).toBe(2);
+    expect(compiled.metrics.familyCounts.slides).toBe(2);
+
+    const missingFacilities = {
+      ...compiled,
+      operations: compiled.operations.filter((operation) => operation.type !== 'object.add'),
+      metrics: { ...compiled.metrics, objectCount: 0, familyCounts: {}, zoneCounts: { 'play-zone': 0 } }
+    };
+    const outcome = ensureSceneCompositionOutcome(map, plan, resolved, missingFacilities);
+    expect(outcome.compiled.metrics.familyCounts.swings).toBe(2);
+    expect(outcome.compiled.metrics.familyCounts.slides).toBe(2);
+    expect(outcome.checks).toEqual(expect.arrayContaining([
+      expect.objectContaining({ requirementId: 'family-presence-swings', status: 'repaired' }),
+      expect.objectContaining({ requirementId: 'family-presence-slides', status: 'repaired' })
+    ]));
+  });
+
+  it('turns an explicit high-mountain prompt into a scenic rocky massif and slope habitat', () => {
+    const map = createEmptyMap('High mountain', 'map-high-mountain-intent', [96, 16, 96], 'voxel');
+    const input = structuredClone(planInput()) as {
+      assetFamilies: Array<Record<string, unknown>>;
+      zones: Array<{ id: string; layers: Array<Record<string, unknown>> }>;
+    };
+    input.assetFamilies.push({
+      id: 'mountain-rocks', label: 'Bare ridge rocks', role: 'natural mountain outcrops', tags: ['rock', 'stone', 'mountain'],
+      sizeClass: 'medium', desiredVariants: 1, priority: 0.8, generationBrief: 'angular bare mountain rock'
+    });
+    input.zones[0].layers.push({
+      familyId: 'mountain-rocks', density: 0.018, scaleRange: [0.8, 1.3], distribution: 'clustered', edgeFalloff: 0.2
+    });
+    const normalized = normalizeSceneCompositionPlan(input, map);
+
+    const plan = enforcePromptSceneIntent(normalized, '一座岩石裸露的高山，缓坡覆盖苔藓，山脊只有裸岩。', map);
+    const mountain = plan.zones.find((zone) => zone.layers.some((layer) => layer.familyId === 'mountain-rocks'))!;
+    const rocks = mountain.layers.find((layer) => layer.familyId === 'mountain-rocks')!;
+
+    expect(mountain.region.radius).toBeGreaterThanOrEqual(0.62);
+    expect(mountain.terrain).toMatchObject({ modifier: 'mountain', access: 'scenic', surface: 'rock' });
+    expect(mountain.terrain.amplitude).toBeGreaterThanOrEqual(7.5);
+    expect(rocks.placement?.habitat?.height?.[1]).toBeGreaterThan(3);
+    expect(rocks.placement?.habitat?.slope?.[2]).toBeGreaterThan(45);
+
+    const rockAsset = asset('mountain-rock-a', 'Bare ridge rocks', ['rock', 'stone', 'mountain'], 'medium', 'voxel');
+    const resolved = resolveSceneFamilies(plan, map, [rockAsset], 0).families;
+    const compiled = compileSceneComposition(map, plan, resolved);
+    const rockPlacements = compiled.operations.filter((operation) => (
+      operation.type === 'object.add' && operation.object.assetId === rockAsset.id
+    ));
+    expect(compiled.operations).toEqual(expect.arrayContaining([
+      expect.objectContaining({ type: 'terrain.modify', modifier: 'mountain' })
+    ]));
+    expect(rockPlacements.some((operation) => (
+      operation.type === 'object.add' && (operation.object.transform?.position?.[1] ?? -Infinity) > 3
+    ))).toBe(true);
+  });
+
+  it('reports unsafe furniture rings in the outcome audit', () => {
+    const map = createEmptyMap('Unsafe park furniture', 'map-furniture-audit', [72, 12, 72], 'voxel');
+    const input = structuredClone(planInput()) as {
+      assetFamilies: Array<Record<string, unknown>>;
+      zones: Array<{ layers: Array<Record<string, unknown>> }>;
+      intentRequirements: unknown[];
+    };
+    input.intentRequirements = [];
+    input.assetFamilies.push({
+      id: 'benches', label: 'Park benches', role: 'public seating', tags: ['bench', 'furniture'],
+      sizeClass: 'medium', desiredVariants: 1, priority: 0.7, generationBrief: 'wood park bench'
+    });
+    input.zones[0].layers.push({
+      familyId: 'benches', density: 0.2, scaleRange: [1, 1], distribution: 'clustered', edgeFalloff: 0.1,
+      placement: { mode: 'layout', pattern: 'courtyard', direction: 0, offset: 0, facing: 'inward' }
+    });
+    const plan = normalizeSceneCompositionPlan(input, map);
+    const bench = asset('bench-a', 'Park bench', ['bench', 'furniture'], 'medium', 'voxel');
+    const resolved = resolveSceneFamilies(plan, map, [bench], 0).families;
+    const compiled = compileSceneComposition(map, plan, resolved);
+
+    const outcome = ensureSceneCompositionOutcome(map, plan, resolved, compiled);
+
+    expect(outcome.checks).toEqual(expect.arrayContaining([
+      expect.objectContaining({ requirementId: 'furniture-benches', kind: 'furniture', status: 'warning' })
+    ]));
   });
 
   it('restores a required structured pond if it disappears from compiled operations', () => {

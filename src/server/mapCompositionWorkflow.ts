@@ -4,6 +4,7 @@ import { normalizeMapAiNewAssetRange } from '../shared/mapPlanning';
 import { CHAT_PROVIDER_OPTIONS, type AgentProgressEvent, type ChatProvider } from '../shared/protocol';
 import {
   ensureMinimumSceneCoverage,
+  enforcePromptSceneIntent,
   isCompositionEmptyMap,
   normalizeSceneCompositionPlan,
   SCENE_COMPOSITION_LIMITS,
@@ -94,7 +95,7 @@ export async function runMapCompositionWorkflow(
       if (assetRange.min > 0 && budgeted.assetFamilies.length === 0) {
         throw new Error('scene_asset_variant_count_below_min');
       }
-      return budgeted;
+      return enforcePromptSceneIntent(budgeted, cleanPrompt, map);
     },
     options,
     0.45
@@ -120,7 +121,11 @@ export async function runMapCompositionWorkflow(
         options,
         0.3
       );
-      plan = ensureMinimumSceneCoverage(applySceneAdvice(plan, advice, map));
+      plan = enforcePromptSceneIntent(
+        ensureMinimumSceneCoverage(applySceneAdvice(plan, advice, map)),
+        cleanPrompt,
+        map
+      );
       consultationTrace.push({
         id: consultation.id,
         summary: advice.summary,
@@ -205,7 +210,11 @@ export async function runMapCompositionWorkflow(
     };
   }
   if (review.status === 'revise' && review.patches.length > 0) {
-    plan = ensureMinimumSceneCoverage(applySceneAdvice(plan, review, map));
+    plan = enforcePromptSceneIntent(
+      ensureMinimumSceneCoverage(applySceneAdvice(plan, review, map)),
+      cleanPrompt,
+      map
+    );
     compiled = compileSceneComposition(map, plan, resolvedFamilies);
     outcome = ensureSceneCompositionOutcome(map, plan, resolvedFamilies, compiled);
     compiled = outcome.compiled;
