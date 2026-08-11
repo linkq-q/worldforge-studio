@@ -32,11 +32,6 @@ export function buildMapGrassField(map: EditableMap, style?: RuntimeGrassStyle):
     // Building with the style avoids a second full rebuild from setStyle.
     ...(style ? { style } : {}),
   });
-  // Grass keeps its custom material out of general shader rewriting, but still
-  // contributes geometry to SSAO, distance fog and depth/normal-based outlines.
-  field.group.traverse((object) => {
-    if ((object as THREE.Mesh).isMesh) object.userData.forceNormalDepthPrePass = true;
-  });
   refineFlowerGeometry(field.group);
   let interaction = new MapGrassInteraction(field.group);
   return {

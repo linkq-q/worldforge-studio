@@ -1,10 +1,27 @@
 import { describe, expect, it } from 'vitest';
+import type { Mesh } from 'three';
 import { createEmptyMap, normalizeMap } from '../src/shared/map';
 import { combinedGrassDensity, inferGrassPreset, normalizeGrassLayers, sampleGrassDensity } from '../src/shared/mapGrass';
 import { applyMapOperations } from '../src/shared/mapOperations';
-import { deriveContactAwareGrassMap } from '../src/client/mapGrassRenderer';
+import { buildMapGrassField, deriveContactAwareGrassMap } from '../src/client/mapGrassRenderer';
+import { isNormalDepthPrePassMesh } from '../src/client/renderPrePassPolicy';
 
 describe('map grass layers', () => {
+  it('keeps grass cards out of the normal/depth pre-pass', () => {
+    const map = applyMapOperations(createEmptyMap('pre-pass grass', 'pre-pass-grass'), [
+      { type: 'grass.layer.add', layer: { id: 'meadow' } },
+      { type: 'grass.fill', layerId: 'meadow', density: 1 }
+    ]);
+    const field = buildMapGrassField(map)!;
+    const grassMesh = field.group.children.find(
+      (object): object is Mesh => (object as Mesh).isMesh === true
+    );
+
+    expect(grassMesh).toBeDefined();
+    expect(isNormalDepthPrePassMesh(grassMesh!)).toBe(false);
+    field.dispose();
+  });
+
   it('maps distinct natural and fantasy forms to bounded grass presets', () => {
     expect([
       inferGrassPreset('ordinary meadow'),
