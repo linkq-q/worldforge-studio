@@ -85,10 +85,13 @@ export function expandStructuredMapPlacement(
     const asset = selectedAssets[Math.floor(random() * selectedAssets.length)];
     const scale = minScale + (maxScale - minScale) * random();
     const footprintRadius = mapAssetFootprintRadius(asset) * scale;
-    const jitter = plan.intent === 'wall' ? 0 : plan.mode === 'layout' ? spacing * 0.07 : spacing * 0.04;
+    const jitter = plan.intent === 'wall' || plan.intent === 'audience'
+      ? 0
+      : plan.mode === 'layout' ? spacing * 0.07 : spacing * 0.04;
     const x = slot.x + (random() - 0.5) * jitter;
     const z = slot.z + (random() - 0.5) * jitter;
-    if (Math.hypot(x - plan.region.x, z - plan.region.z) > plan.region.r) continue;
+    if (!(map.room && plan.intent === 'audience')
+      && Math.hypot(x - plan.region.x, z - plan.region.z) > plan.region.r) continue;
     if (plan.excludeRegions?.some((region) => Math.hypot(x - region.x, z - region.z) <= region.r)) continue;
     if (x < bounds.minX + footprintRadius || x > bounds.maxX - footprintRadius) continue;
     if (z < bounds.minZ + footprintRadius || z > bounds.maxZ - footprintRadius) continue;
@@ -148,6 +151,7 @@ function candidateSlots(
     return guidePathSlots(plan, count, spacing);
   }
   if (plan.intent === 'wall' && map.room) return roomWallSlots(map.room, plan, count, spacing);
+  if (plan.intent === 'audience' && map.room) return roomAudienceSlots(map.room, plan, count, spacing);
 
   const pattern = plan.mode === 'linear' ? 'row' : plan.pattern ?? 'courtyard';
   if (pattern === 'row') {
@@ -164,7 +168,10 @@ function candidateSlots(
     });
   }
   if (pattern === 'grid') {
-    const columns = Math.max(1, Math.ceil(Math.sqrt(count)));
+    const minimumColumns = Math.max(1, Math.ceil(Math.sqrt(count)));
+    const columns = plan.intent === 'audience' && minimumColumns > 1 && minimumColumns % 2 !== 0
+      ? minimumColumns + 1
+      : minimumColumns;
     const rows = Math.max(1, Math.ceil(count / columns));
     const focusX = plan.focus?.x ?? plan.region.x;
     const focusZ = plan.focus?.z ?? plan.region.z;
@@ -229,6 +236,47 @@ function candidateSlots(
       guideYaw,
       focusX: plan.region.x,
       focusZ: plan.region.z
+    };
+  });
+}
+
+function roomAudienceSlots(
+  room: NonNullable<EditableMap['room']>,
+  plan: StructuredPlacementPlan,
+  count: number,
+  spacing: number
+): CandidateSlot[] {
+  const focusX = plan.focus?.x ?? room.position[0];
+  const focusZ = plan.focus?.z ?? room.position[2] - room.size[2] * 0.35;
+  const focusDistance = Math.hypot(focusX - room.position[0], focusZ - room.position[2]);
+  const angle = plan.direction * Math.PI / 180;
+  const forwardX = focusDistance > 0.001 ? (focusX - room.position[0]) / focusDistance : -Math.sin(angle);
+  const forwardZ = focusDistance > 0.001 ? (focusZ - room.position[2]) / focusDistance : -Math.cos(angle);
+  const lateralX = forwardZ;
+  const lateralZ = -forwardX;
+  const inset = room.wallThickness + 0.7;
+  const usableWidth = Math.abs(lateralX) * Math.max(1, room.size[0] - inset * 2)
+    + Math.abs(lateralZ) * Math.max(1, room.size[2] - inset * 2);
+  const aisleWidth = Math.max(1.2, spacing * 0.9);
+  const maximumColumnsRaw = Math.max(2, Math.floor((usableWidth - aisleWidth) / spacing) + 1);
+  const maximumColumns = maximumColumnsRaw % 2 === 0 ? maximumColumnsRaw : maximumColumnsRaw - 1;
+  const desiredColumnsRaw = Math.max(2, Math.ceil(Math.sqrt(count)));
+  const desiredColumns = desiredColumnsRaw % 2 === 0 ? desiredColumnsRaw : desiredColumnsRaw + 1;
+  const columns = Math.max(2, Math.min(maximumColumns, desiredColumns));
+  const frontGap = Math.max(1.4, spacing * 1.25);
+
+  return Array.from({ length: count }, (_, index) => {
+    const column = index % columns;
+    const row = Math.floor(index / columns);
+    const relativeColumn = column - (columns - 1) / 2;
+    const lateral = relativeColumn * spacing + Math.sign(relativeColumn) * aisleWidth / 2;
+    const backward = frontGap + row * spacing;
+    return {
+      x: focusX - forwardX * backward + lateralX * lateral,
+      z: focusZ - forwardZ * backward + lateralZ * lateral,
+      guideYaw: Math.atan2(forwardX, forwardZ),
+      focusX,
+      focusZ
     };
   });
 }

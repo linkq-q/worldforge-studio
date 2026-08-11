@@ -152,7 +152,8 @@ describe('map grass layers', () => {
 
     expect(sampleGrassDensity(byId('meadow'), derived, 0, 0)).toBe(0);
     expect(sampleGrassDensity(byId('sand-grass'), derived, 0, 0)).toBeGreaterThan(0.8);
-    expect(sampleGrassDensity(byId('moss'), derived, 16, 0)).toBeGreaterThan(0.8);
+    expect(sampleGrassDensity(byId('moss'), derived, 16, 0)).toBeGreaterThan(0.1);
+    expect(sampleGrassDensity(byId('moss'), derived, 16, 0)).toBeLessThan(0.35);
   });
 
   it('applies layer, fill, brush, update and remove operations atomically', () => {

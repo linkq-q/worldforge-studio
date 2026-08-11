@@ -108,7 +108,7 @@ export async function runMapAgent(
   if (mode === 'generate' && map.sceneMode === 'outdoor' && requestsIndoorScene(prompt)) {
     throw new Error('indoor_prompt_requires_indoor_map');
   }
-  if (mode === 'generate' && map.sceneMode === 'outdoor') {
+  if (mode === 'generate' && map.sceneMode !== 'mixed') {
     const result = await runMapCompositionWorkflow(prompt, map, assets, options);
     const validated = finalizeMapAgentSuggestion(map, result.assets, result.suggestion, options);
     options.onProgress?.({ phase: 'complete', label: '场景构图、合成审查与地图预览已完成' });
@@ -392,7 +392,7 @@ export function normalizeMapSuggestion(
   const input = parseJsonObject(content);
 
   const bounds = getMapBounds(map);
-  const limits = planLimits(bounds);
+  const limits = planLimits(bounds, map.sceneMode);
   const renderPromptSuggestions = normalizeTextList(input.renderPromptSuggestions, 8, 80);
   const operations: MapOperation[] = renderPromptSuggestions.length > 0
     ? [{ type: 'map.update', renderPromptSuggestions }]
@@ -1162,7 +1162,7 @@ function buildSystemPrompt(
   generatedAssetIds: ReadonlySet<string> = new Set()
 ): string {
   const bounds = getMapBounds(map);
-  const limits = planLimits(bounds);
+  const limits = planLimits(bounds, map.sceneMode);
   const placedAssetIds = new Set(map.objects.map((object) => object.assetId).filter((id): id is string => Boolean(id)));
   const reusableIds = options.reusableAssetIds ? new Set(options.reusableAssetIds) : null;
   const visibleAssets = options.reuseExistingAssets

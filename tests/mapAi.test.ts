@@ -34,6 +34,122 @@ describe('map AI adapter', () => {
     expect(fetchImpl).not.toHaveBeenCalled();
   });
 
+  it('composes an indoor chapel without terrain and keeps pew rows facing the altar across a center aisle', async () => {
+    const map = createEmptyMap('Chapel', 'map-indoor-chapel', [20, 3, 20], 'voxel', 'indoor', [20, 3, 20]);
+    const plan = compositionPlan({
+      assetFamilies: [
+        family('altar', ['altar', 'lectern'], 'medium'),
+        family('pews', ['pew', 'furniture', 'wooden', 'honey-oak'], 'medium')
+      ],
+      zones: [{
+        id: 'sanctuary', label: 'Chapel sanctuary', role: 'primary', importance: 1,
+        region: { kind: 'circle', center: [0, -0.68], radius: 0.2 },
+        brief: {
+          atmosphere: 'quiet chapel sanctuary', hierarchy: 'altar is the clear focus',
+          openness: 0.35, transitionIntent: 'opens toward the nave'
+        },
+        terrain: { elevation: 0, roughness: 0, flatness: 1 },
+        layers: [{
+          familyId: 'altar', density: 0.01, scaleRange: [1, 1], distribution: 'accent', edgeFalloff: 0,
+          placement: { mode: 'anchor', intent: 'landmark', direction: 0, offset: 0, facing: 'guide' }
+        }],
+        grassLayers: [], excludeZoneIds: []
+      }, {
+        id: 'left-seating', label: 'Left chapel seating', role: 'secondary', importance: 0.9,
+        region: { kind: 'circle', center: [-0.42, 0.08], radius: 0.62 },
+        brief: {
+          atmosphere: 'orderly wooden pew rows', hierarchy: 'left rows lead to the altar',
+          openness: 0.45, transitionIntent: 'preserve the center aisle'
+        },
+        terrain: { elevation: 0, roughness: 0, flatness: 1 },
+        layers: [{
+          familyId: 'pews', density: 0.08, scaleRange: [1, 1], distribution: 'even', edgeFalloff: 0,
+          placement: {
+            mode: 'layout', pattern: 'grid', intent: 'audience', direction: 0, spacing: 2.2,
+            offset: 0, facing: 'inward', focusFamilyId: 'altar', maxPerGroup: 8, aisleEvery: 2
+          }
+        }],
+        grassLayers: [], excludeZoneIds: []
+      }, {
+        id: 'right-seating', label: 'Right chapel seating', role: 'secondary', importance: 0.9,
+        region: { kind: 'circle', center: [0.42, 0.08], radius: 0.62 },
+        brief: {
+          atmosphere: 'orderly wooden pew rows', hierarchy: 'right rows lead to the altar',
+          openness: 0.45, transitionIntent: 'preserve the center aisle'
+        },
+        terrain: { elevation: 0, roughness: 0, flatness: 1 },
+        layers: [{
+          familyId: 'pews', density: 0.08, scaleRange: [1, 1], distribution: 'even', edgeFalloff: 0,
+          placement: {
+            mode: 'layout', pattern: 'grid', intent: 'audience', direction: 0, spacing: 2.2,
+            offset: 0, facing: 'inward', focusFamilyId: 'altar', maxPerGroup: 8, aisleEvery: 2
+          }
+        }],
+        grassLayers: [], excludeZoneIds: []
+      }]
+    });
+    const fetchImpl = vi.fn()
+      .mockResolvedValueOnce(chatResponse(plan))
+      .mockResolvedValueOnce(chatResponse(reviewPass()));
+    const createAsset = vi.fn().mockImplementation(async (request: { tags: string[] }) => {
+      if (request.tags.includes('altar')) {
+        return testAssetWithBounds(
+          'asset-indoor-altar', 'Chapel altar', request.tags, 'medium',
+          [-0.85, 0, -0.53], [0.85, 2.25, 0.53]
+        );
+      }
+      return testAssetWithBounds(
+        'asset-indoor-pew', 'Wooden pew', request.tags, 'medium',
+        [-0.75, 1.22, -0.56], [0.75, 3.475, 0.56]
+      );
+    });
+
+    const suggestion = await runMapAgent(
+      '小教堂室内，木椅整齐分排，中间留出过道，全部朝向讲台。',
+      map,
+      [],
+      { apiBase: 'https://example.test', provider: 'gpt', fetchImpl, createAsset }
+    );
+    const applied = applyMapOperations(map, suggestion.operations);
+    const altar = applied.objects.find((object) => object.assetId === 'asset-indoor-altar');
+    const pews = applied.objects.filter((object) => object.assetId === 'asset-indoor-pew');
+
+    expect(fetchImpl).toHaveBeenCalledTimes(2);
+    expect(createAsset).toHaveBeenCalledTimes(2);
+    expect(suggestion.operations.some((operation) => (
+      operation.type === 'terrain.generate'
+      || operation.type === 'terrain.modify'
+      || operation.type === 'terrain.refine'
+      || operation.type === 'terrain.brush'
+      || operation.type === 'water.add'
+      || operation.type.startsWith('grass.')
+    ))).toBe(false);
+    expect(altar).toBeDefined();
+    expect(pews).toHaveLength(8);
+    expect(applied.objects.some((object) => object.id.startsWith('population-'))).toBe(false);
+    expect(pews.every((pew) => pew.transform.scale[0] < 0.5)).toBe(true);
+    expect(pews.every((pew) => Math.abs(
+      pew.transform.position[1] + 1.22 * pew.transform.scale[1]
+    ) < 0.001)).toBe(true);
+    expect(pews.every((pew) => (
+      pew.transform.position[1] + 3.475 * pew.transform.scale[1] <= 2.84
+    ))).toBe(true);
+    expect(pews.some((pew) => pew.transform.position[0] < -0.8)).toBe(true);
+    expect(pews.some((pew) => pew.transform.position[0] > 0.8)).toBe(true);
+    expect(pews.every((pew) => Math.abs(pew.transform.position[0]) > 0.6)).toBe(true);
+    expect(pews.every((pew) => {
+      const position = pew.transform.position;
+      const forward = [Math.sin(pew.transform.rotation[1]), Math.cos(pew.transform.rotation[1])];
+      const toAltar = [altar!.transform.position[0] - position[0], altar!.transform.position[2] - position[2]];
+      const distance = Math.hypot(toAltar[0], toAltar[1]);
+      return (forward[0] * toAltar[0] + forward[1] * toAltar[1]) / distance > 0.98;
+    })).toBe(true);
+    expect(applied.objects.every((object) => (
+      Math.abs(object.transform.position[0]) <= 9.4
+      && Math.abs(object.transform.position[2]) <= 9.4
+    ))).toBe(true);
+  });
+
   it('places the deterministic terrain base before local terrain and water operations', () => {
     const map = createEmptyMap('terrain plan', 'map-terrain-plan');
     const suggestion = normalizeMapSuggestion(JSON.stringify({
@@ -853,5 +969,26 @@ function testAsset(
     mode,
     createdAt: 1,
     updatedAt: 1
+  };
+}
+
+function testAssetWithBounds(
+  id: string,
+  name: string,
+  tags: string[],
+  sizeClass: 'small' | 'medium' | 'large',
+  min: [number, number, number],
+  max: [number, number, number]
+): MapAsset {
+  return {
+    ...testAsset(id, name, tags, sizeClass),
+    footprintRadius: Math.max(Math.abs(min[0]), Math.abs(max[0]), Math.abs(min[2]), Math.abs(max[2])),
+    colliderPlan: {
+      version: 1,
+      boxes: [{ min, max, sourceNodeId: 'test-mesh' }],
+      sourceMeshCount: 1,
+      candidateCount: 1,
+      fallbackUsed: false
+    }
   };
 }

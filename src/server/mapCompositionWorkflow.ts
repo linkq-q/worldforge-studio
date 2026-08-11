@@ -91,7 +91,7 @@ export async function runMapCompositionWorkflow(
       const budgeted = fitSceneAssetVariantBudget(ensureMinimumSceneCoverage({
         ...normalized,
         assetFamilies: normalized.assetFamilies.map((family) => ({ ...family, desiredVariants: 1 }))
-      }), assetRange.min, SCENE_COMPOSITION_LIMITS.assetFamilyCount * 3);
+      }, map), assetRange.min, SCENE_COMPOSITION_LIMITS.assetFamilyCount * 3);
       if (assetRange.min > 0 && budgeted.assetFamilies.length === 0) {
         throw new Error('scene_asset_variant_count_below_min');
       }
@@ -122,7 +122,7 @@ export async function runMapCompositionWorkflow(
         0.3
       );
       plan = enforcePromptSceneIntent(
-        ensureMinimumSceneCoverage(applySceneAdvice(plan, advice, map)),
+        ensureMinimumSceneCoverage(applySceneAdvice(plan, advice, map), map),
         cleanPrompt,
         map
       );
@@ -211,7 +211,7 @@ export async function runMapCompositionWorkflow(
   }
   if (review.status === 'revise' && review.patches.length > 0) {
     plan = enforcePromptSceneIntent(
-      ensureMinimumSceneCoverage(applySceneAdvice(plan, review, map)),
+      ensureMinimumSceneCoverage(applySceneAdvice(plan, review, map), map),
       cleanPrompt,
       map
     );

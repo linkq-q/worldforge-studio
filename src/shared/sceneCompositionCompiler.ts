@@ -1,5 +1,6 @@
 import {
   getMapBounds,
+  sampleTerrainHeight,
   type EditableMap,
   type MapAsset
 } from './map';
@@ -15,6 +16,7 @@ import {
 } from './mapScatter';
 import {
   estimateSceneZoneCoverage,
+  isNaturalRockFamily,
   sceneAssetCategory,
   sceneZoneWorldRegion,
   type SceneCompositionMetrics,
@@ -25,6 +27,7 @@ import {
 } from './sceneComposition';
 import type { ResolvedSceneFamily } from './sceneCompositionAssets';
 import { compileMapVisualSemantics } from './mapVisualSemantics';
+import type { TerrainRegion } from './terrainGeneration';
 
 export interface CompiledSceneComposition {
   operations: MapOperation[];
@@ -53,17 +56,19 @@ export function compileSceneComposition(
     renderPromptSuggestions: plan.renderPromptSuggestions,
     visualSemantics: compileMapVisualSemantics(map, plan)
   });
-  operations.push({ type: 'terrain.generate', ...plan.globalBrief.terrainBase });
-  operations.push(...compileZoneTerrain(map, plan));
-  operations.push({
-    type: 'terrain.refine',
-    ...(plan.globalBrief.terrainRefinement ?? { erosion: 0.2, drainage: 0.08, iterations: 3, talus: 46 })
-  });
-  operations.push(...compileZoneWater(map, plan));
-  operations.push(...compileZoneGrass(map, plan));
+  if (map.sceneMode !== 'indoor') {
+    operations.push({ type: 'terrain.generate', ...plan.globalBrief.terrainBase });
+    operations.push(...compileZoneTerrain(map, plan));
+    operations.push({
+      type: 'terrain.refine',
+      ...(plan.globalBrief.terrainRefinement ?? { erosion: 0.2, drainage: 0.08, iterations: 3, talus: 46 })
+    });
+    operations.push(...compileZoneWater(map, plan));
+    operations.push(...compileZoneGrass(map, plan));
+  }
 
   let workingMap = applyMapOperations(map, operations);
-  const limits = planLimits(getMapBounds(map));
+  const limits = planLimits(getMapBounds(map), map.sceneMode);
   let remaining = limits.objectCount;
 
   const accentOperations = compileAccents(workingMap, plan, familyAssets, remaining, familyCounts, zoneCounts);
@@ -73,7 +78,7 @@ export function compileSceneComposition(
     remaining -= accentOperations.filter((operation) => operation.type === 'object.add').length;
   }
 
-  const scatterLayers = plan.zones
+  const rawScatterLayers = plan.zones
     .flatMap((zone) => zone.layers
       .filter((layer) => placementMode(layer) !== 'anchor')
       .map((layer) => ({ zone, layer })))
@@ -82,6 +87,13 @@ export function compileSceneComposition(
       || placementOrder(placementMode(left.layer)) - placementOrder(placementMode(right.layer))
       || right.zone.importance - left.zone.importance
     ));
+  const indoorAudienceFamilies = new Set<string>();
+  const scatterLayers = rawScatterLayers.filter(({ layer }) => {
+    if (map.sceneMode !== 'indoor' || layer.placement?.intent !== 'audience') return true;
+    if (indoorAudienceFamilies.has(layer.familyId)) return false;
+    indoorAudienceFamilies.add(layer.familyId);
+    return true;
+  });
   for (const [index, entry] of scatterLayers.entries()) {
     if (remaining <= 0) break;
     const assets = familyAssets.get(entry.layer.familyId) ?? [];
@@ -91,13 +103,23 @@ export function compileSceneComposition(
       ...entry.zone.excludeZoneIds,
       ...plan.zones.filter((zone) => zone.role === 'negative-space' && zone.id !== entry.zone.id).map((zone) => zone.id)
     ]);
-    const excluded = [...excludedZoneIds]
+    const family = families.get(entry.layer.familyId);
+    const indoorAudience = map.sceneMode === 'indoor' && entry.layer.placement?.intent === 'audience';
+    const excluded = indoorAudience ? [] : [...excludedZoneIds]
       .map((zoneId) => plan.zones.find((zone) => zone.id === zoneId))
       .filter((zone): zone is SceneCompositionPlan['zones'][number] => Boolean(zone))
       .map((zone) => ({ kind: 'circle' as const, ...sceneZoneWorldRegion(zone, map) }));
-    const footprint = Math.max(...assets.map((asset) => asset.footprintRadius ?? 0.5));
     const libraryMetadata = assets[0]?.libraryMetadata;
-    const family = families.get(entry.layer.familyId);
+    const requestedScaleRange = libraryMetadata?.scaleRange ?? entry.layer.scaleRange;
+    const scaleRange = indoorScaleRange(map, family, assets, requestedScaleRange);
+    const footprint = Math.max(...assets.map((asset) => (asset.footprintRadius ?? 0.5) * scaleRange[1]));
+    const placementRegion = indoorAudience && map.room
+      ? {
+          x: map.room.position[0],
+          z: map.room.position[2],
+          r: Math.max(1, Math.min(map.room.size[0], map.room.size[2]) / 2 - map.room.wallThickness)
+        }
+      : region;
     const requiredLayerBudget = requiredFamilyIds.has(entry.layer.familyId)
       ? Math.max(1, Math.floor(remaining / scatterLayers.slice(index).filter((item) => (
           requiredFamilyIds.has(item.layer.familyId)
@@ -116,9 +138,10 @@ export function compileSceneComposition(
     );
     const seed = derivedSeed(map.seed, `${entry.zone.id}:${entry.layer.familyId}:${index}`);
     const grouping = sceneBehaviorGrouping(family?.behavior);
+    const scatterLimit = family && isNaturalRockFamily(family) ? structuredLimit : placementLimit;
     const scatterTarget = grouping
-      ? Math.min(placementLimit, Math.max(1, Math.round(Math.PI * region.r * region.r * (libraryMetadata?.density ?? entry.layer.density))))
-      : placementLimit;
+      ? Math.min(scatterLimit, Math.max(1, Math.round(Math.PI * region.r * region.r * (libraryMetadata?.density ?? entry.layer.density))))
+      : scatterLimit;
     let scatterPlan: MapScatterPlan | undefined;
     const placements = mode === 'linear' || mode === 'layout' || mode === 'attached'
       ? expandStructuredMapPlacement(workingMap, {
@@ -126,7 +149,7 @@ export function compileSceneComposition(
           pattern: entry.layer.placement?.pattern,
           intent: entry.layer.placement?.intent,
           assetIds: assets.map((asset) => asset.id),
-          region: { kind: 'circle', ...region },
+          region: { kind: 'circle', ...placementRegion },
           density: libraryMetadata?.density ?? entry.layer.density,
           spacing,
           offset: entry.layer.placement?.offset ?? 0,
@@ -134,10 +157,10 @@ export function compileSceneComposition(
           facing: entry.layer.placement?.facing ?? (mode === 'layout' ? 'inward' : 'guide'),
           avoidWater: 1,
           maxSlope: mode === 'layout' ? 18 : 24,
-          scaleRange: libraryMetadata?.scaleRange ?? entry.layer.scaleRange,
+          scaleRange,
           seed,
           guidePoints: sceneGuideWorldPoints(entry.layer, map),
-          focus: placementFocus(workingMap, entry.layer, familyAssets) ?? { x: region.x, z: region.z },
+          focus: placementFocus(workingMap, entry.layer, familyAssets) ?? { x: placementRegion.x, z: placementRegion.z },
           maxPerGroup: entry.layer.placement?.maxPerGroup,
           arcDegrees: entry.layer.placement?.arcDegrees,
           aisleEvery: entry.layer.placement?.aisleEvery,
@@ -153,7 +176,7 @@ export function compileSceneComposition(
           minSpacing: spacing,
           spacingByAssetId: spacingByAssetId(entry.layer, familyAssets),
           habitat: entry.layer.placement?.habitat,
-          scaleRange: libraryMetadata?.scaleRange ?? entry.layer.scaleRange,
+          scaleRange,
           seed,
           patchSeed: derivedSeed(map.seed, `${entry.zone.id}:shared-habitat`),
           edgeFalloff: Math.max(entry.layer.edgeFalloff, transitionFalloff(plan, entry.zone.id)),
@@ -168,20 +191,34 @@ export function compileSceneComposition(
         behaviorQuality[entry.layer.familyId] = quality;
       }
     }
-    const placementOperations = placements.map((placement): MapOperation => ({
-      type: 'object.add',
-      object: {
-        id: placement.id,
-        name: placement.name,
-        assetId: placement.assetId,
-        transform: {
-          position: [placement.x, placement.y + scenePlacementAltitude(family?.behavior, placement), placement.z],
-          rotation: [0, libraryMetadata?.rotation === 'fixed' && !entry.layer.placement?.intent ? 0 : placement.rotationY, 0],
-          scale: [placement.scale, placement.scale, placement.scale]
-        },
-        ...compileScenePlacementBehavior(family?.behavior, placement, seed)
-      }
-    }));
+    const placementOperations = placements.map((placement): MapOperation => {
+      const asset = assets.find((candidate) => candidate.id === placement.assetId);
+      const rockTransform = family && isNaturalRockFamily(family)
+        ? naturalRockTransform(workingMap, placement, family.sizeClass, asset)
+        : undefined;
+      const rotationY = libraryMetadata?.rotation === 'fixed' && !entry.layer.placement?.intent
+        ? 0
+        : placement.rotationY;
+      const indoorTransform = map.sceneMode === 'indoor' && family && asset
+        ? indoorPlacementTransform(map, family, asset, placement, rotationY, entry.layer.placement?.intent)
+        : undefined;
+      return {
+        type: 'object.add',
+        object: {
+          id: placement.id,
+          name: placement.name,
+          assetId: placement.assetId,
+          transform: rockTransform ?? indoorTransform ?? {
+            position: [placement.x, placement.y + scenePlacementAltitude(family?.behavior, placement), placement.z],
+            rotation: [0, rotationY, 0],
+            scale: [placement.scale, placement.scale, placement.scale]
+          },
+          ...(rockTransform || indoorTransform
+            ? { heightMode: 'fixed' as const }
+            : compileScenePlacementBehavior(family?.behavior, placement, seed))
+        }
+      };
+    });
     if (placementOperations.length === 0) continue;
     operations.push(...placementOperations);
     workingMap = applyMapOperations(workingMap, placementOperations);
@@ -286,16 +323,17 @@ function compileZoneGrass(map: EditableMap, plan: SceneCompositionPlan): MapOper
 function compileZoneTerrain(map: EditableMap, plan: SceneCompositionPlan): MapOperation[] {
   const maxHeight = map.box.size[1] - 0.1;
   const baseHeight = plan.globalBrief.terrainBase.amplitude * 0.4;
-  const maxBrushes = planLimits(getMapBounds(map)).terrainBrushCount;
+  const maxBrushes = planLimits(getMapBounds(map), map.sceneMode).terrainBrushCount;
   const operations: MapOperation[] = [];
   for (const zone of plan.zones) {
     if (operations.length >= maxBrushes) break;
     const region = sceneZoneWorldRegion(zone, map);
+    const terrainRegion = scenicMountainRegion(zone, region);
     if (zone.terrain.modifier) {
       operations.push({
         type: 'terrain.modify',
         modifier: zone.terrain.modifier,
-        region: { kind: 'circle', x: region.x, z: region.z, radius: region.r },
+        region: terrainRegion,
         seed: derivedSeed(map.seed, `terrain:${zone.id}:${zone.terrain.modifier}`),
         amplitude: zone.terrain.amplitude,
         softness: zone.terrain.softness,
@@ -310,7 +348,7 @@ function compileZoneTerrain(map: EditableMap, plan: SceneCompositionPlan): MapOp
       operations.push({
         type: 'terrain.surface',
         surface: zone.terrain.surface,
-        region: { kind: 'circle', x: region.x, z: region.z, radius: region.r },
+        region: terrainRegion,
         intensity: 1,
         zoneId: `composition-surface-${zone.id}`
       });
@@ -410,43 +448,51 @@ function compileAccents(
       const assets = familyAssets.get(layer.familyId) ?? [];
       if (assets.length === 0) continue;
       const region = sceneZoneWorldRegion(zone, map);
+      const family = plan.assetFamilies.find((item) => item.id === layer.familyId);
       const libraryMetadata = assets[0]?.libraryMetadata;
       const chosenScaleRange = libraryMetadata?.scaleRange ?? layer.scaleRange;
-      const scale = (chosenScaleRange[0] + chosenScaleRange[1]) / 2;
+      const fittedScaleRange = indoorScaleRange(map, family, assets, chosenScaleRange);
+      const scale = (fittedScaleRange[0] + fittedScaleRange[1]) / 2;
       const footprint = Math.max(...assets.map((asset) => asset.footprintRadius ?? 0.5)) * scale;
-      const placement = expandMapScatter(workingMap, {
-        assetIds: assets.map((asset) => asset.id),
-        region: { kind: 'circle', ...region },
-        density: Math.max(0.02, libraryMetadata?.density ?? layer.density),
-        avoidWater: 1,
-        maxSlope: 28,
-        minSpacing: Math.max(libraryMetadata?.minSpacing ?? 0, 1, footprint * 1.8),
-        scaleRange: [scale, scale],
-        seed: derivedSeed(map.seed, `${zone.id}:${layer.familyId}:accent`),
-        edgeFalloff: Math.max(layer.edgeFalloff, transitionFalloff(plan, zone.id)),
-        clusterStrength: 0,
-        excludeRegions: zone.excludeZoneIds
-          .map((zoneId) => plan.zones.find((item) => item.id === zoneId))
-          .filter((item): item is SceneCompositionPlan['zones'][number] => Boolean(item))
-          .map((item) => ({ kind: 'circle' as const, ...sceneZoneWorldRegion(item, map) }))
-      }, assets, 1, `composition-${zone.id}-${layer.familyId}-accent`)[0];
+      const placement = map.sceneMode === 'indoor'
+        ? indoorAnchorPlacement(map, zone.id, layer, assets[0], region, footprint, scale)
+        : expandMapScatter(workingMap, {
+            assetIds: assets.map((asset) => asset.id),
+            region: { kind: 'circle', ...region },
+            density: Math.max(0.02, libraryMetadata?.density ?? layer.density),
+            avoidWater: 1,
+            maxSlope: 28,
+            minSpacing: Math.max(libraryMetadata?.minSpacing ?? 0, 1, footprint * 1.8),
+            scaleRange: [scale, scale],
+            seed: derivedSeed(map.seed, `${zone.id}:${layer.familyId}:accent`),
+            edgeFalloff: Math.max(layer.edgeFalloff, transitionFalloff(plan, zone.id)),
+            clusterStrength: 0,
+            excludeRegions: zone.excludeZoneIds
+              .map((zoneId) => plan.zones.find((item) => item.id === zoneId))
+              .filter((item): item is SceneCompositionPlan['zones'][number] => Boolean(item))
+              .map((item) => ({ kind: 'circle' as const, ...sceneZoneWorldRegion(item, map) }))
+          }, assets, 1, `composition-${zone.id}-${layer.familyId}-accent`)[0];
       if (!placement) continue;
+      const rotationY = libraryMetadata?.rotation === 'fixed' ? 0 : placement.rotationY;
+      const indoorTransform = map.sceneMode === 'indoor' && family
+        ? indoorPlacementTransform(map, family, assets[0], placement, rotationY, layer.placement?.intent)
+        : undefined;
       const operation: MapOperation = {
         type: 'object.add',
         object: {
           id: placement.id,
           name: placement.name,
           assetId: placement.assetId,
-          transform: {
+          transform: indoorTransform ?? {
             position: [placement.x, placement.y, placement.z],
-            rotation: [0, libraryMetadata?.rotation === 'fixed' ? 0 : placement.rotationY, 0],
+            rotation: [0, rotationY, 0],
             scale: [placement.scale, placement.scale, placement.scale]
-          }
+          },
+          ...(indoorTransform ? { heightMode: 'fixed' as const } : {})
         }
       };
       operations.push(operation);
       objectCount += 1;
-      const family = plan.assetFamilies.find((item) => item.id === layer.familyId);
       const grassResidualOperations = family && shouldClearGrass(family)
         ? zone.grassLayers.map((grass): MapOperation => ({
             type: 'grass.brush',
@@ -465,6 +511,118 @@ function compileAccents(
     }
   }
   return operations;
+}
+
+function indoorAnchorPlacement(
+  map: EditableMap,
+  zoneId: string,
+  layer: SceneZoneLayer,
+  asset: MapAsset,
+  region: { x: number; z: number },
+  footprint: number,
+  scale: number
+): MapScatterPlacement {
+  const room = map.room;
+  const bounds = getMapBounds(map);
+  const inset = (room?.wallThickness ?? 0) + footprint;
+  return {
+    id: `composition-${zoneId}-${layer.familyId}-accent-1`,
+    assetId: asset.id,
+    name: asset.name,
+    x: clamp(region.x, bounds.minX + inset, bounds.maxX - inset),
+    y: room?.position[1] ?? 0,
+    z: clamp(region.z, bounds.minZ + inset, bounds.maxZ - inset),
+    rotationY: (layer.placement?.direction ?? 0) * Math.PI / 180,
+    scale
+  };
+}
+
+function indoorScaleRange(
+  map: EditableMap,
+  family: SceneCompositionPlan['assetFamilies'][number] | undefined,
+  assets: readonly MapAsset[],
+  requested: [number, number]
+): [number, number] {
+  if (map.sceneMode !== 'indoor' || !family || assets.length === 0) return requested;
+  const minimum = Math.min(...assets.map((asset) => fitIndoorAssetScale(map, family, asset, requested[0])));
+  const maximum = Math.min(...assets.map((asset) => fitIndoorAssetScale(map, family, asset, requested[1])));
+  return [Math.min(minimum, maximum), Math.max(minimum, maximum)];
+}
+
+function fitIndoorAssetScale(
+  map: EditableMap,
+  family: SceneCompositionPlan['assetFamilies'][number],
+  asset: MapAsset,
+  requested: number
+): number {
+  const room = map.room;
+  if (!room) return requested;
+  const bounds = mapAssetLocalBounds(asset);
+  const height = Math.max(0.01, bounds.max[1] - bounds.min[1]);
+  const semantic = `${family.label} ${family.role} ${family.tags.join(' ')} ${family.generationBrief}`;
+  const usableHeight = Math.max(0.5, room.size[1] - room.wallThickness * 2);
+  const targetHeight = /chair|seat|pew|stool|椅|座椅|长凳/i.test(semantic)
+    ? Math.min(1.05, usableHeight * 0.42)
+    : /table|desk|餐桌|书桌|课桌/i.test(semantic)
+      ? Math.min(0.95, usableHeight * 0.4)
+      : /lectern|pulpit|altar|讲台|祭坛/i.test(semantic)
+        ? Math.min(1.4, usableHeight * 0.58)
+        : /door|门/i.test(semantic)
+          ? Math.min(2.2, usableHeight * 0.92)
+          : /cross|window|wall|十字架|窗|墙/i.test(semantic)
+            ? Math.min(1.8, usableHeight * 0.72)
+            : Math.min(1.8, usableHeight * 0.72);
+  const horizontalRadius = Math.max(0.1, asset.footprintRadius ?? 0.5);
+  const horizontalLimit = Math.min(room.size[0], room.size[2]) * 0.22 / horizontalRadius;
+  return clamp(Math.min(requested, targetHeight / height, usableHeight * 0.9 / height, horizontalLimit), 0.05, requested);
+}
+
+function indoorPlacementTransform(
+  map: EditableMap,
+  family: SceneCompositionPlan['assetFamilies'][number],
+  asset: MapAsset,
+  placement: MapScatterPlacement,
+  rotationY: number,
+  intent: NonNullable<SceneZoneLayer['placement']>['intent']
+): {
+  position: [number, number, number];
+  rotation: [number, number, number];
+  scale: [number, number, number];
+} {
+  const room = map.room!;
+  const bounds = mapAssetLocalBounds(asset);
+  const height = bounds.max[1] - bounds.min[1];
+  const semantic = `${family.label} ${family.role} ${family.tags.join(' ')} ${family.generationBrief}`;
+  const wallMounted = intent === 'wall' || /wall-prop|wall mounted|cross|window|墙面|壁挂|十字架|窗/i.test(semantic);
+  const y = wallMounted
+    ? room.position[1] + room.size[1] * 0.56 - (bounds.min[1] + height / 2) * placement.scale
+    : room.position[1] - bounds.min[1] * placement.scale;
+  return {
+    position: [placement.x, y, placement.z],
+    rotation: [0, rotationY, 0],
+    scale: [placement.scale, placement.scale, placement.scale]
+  };
+}
+
+function mapAssetLocalBounds(asset: MapAsset): { min: [number, number, number]; max: [number, number, number] } {
+  const boxes = asset.colliderPlan?.boxes ?? [];
+  if (boxes.length === 0) {
+    const radius = Math.max(0.1, asset.footprintRadius ?? 0.5);
+    const fallbackHeight = asset.sizeClass === 'large' ? 3 : asset.sizeClass === 'medium' ? 1.8 : 1;
+    return { min: [-radius, 0, -radius], max: [radius, fallbackHeight, radius] };
+  }
+  return {
+    min: [
+      Math.min(...boxes.map((box) => box.min[0])),
+      Math.min(...boxes.map((box) => box.min[1])),
+      Math.min(...boxes.map((box) => box.min[2]))
+    ],
+    max: [
+      Math.max(...boxes.map((box) => box.max[0])),
+      Math.max(...boxes.map((box) => box.max[1])),
+      Math.max(...boxes.map((box) => box.max[2]))
+    ]
+  };
 }
 
 function shouldClearGrass(family: SceneCompositionPlan['assetFamilies'][number]): boolean {
@@ -498,7 +656,65 @@ function relationshipPlacementLimit(
   if (intent === 'street-edge') return Math.min(limit, (layer.placement?.maxPerGroup ?? 4) * 3);
   if (intent === 'social' || intent === 'attached-service') return Math.min(limit, (layer.placement?.maxPerGroup ?? 6) * 8);
   if (intent === 'audience') return Math.min(limit, layer.placement?.maxPerGroup ?? 24);
+  if (family && isNaturalRockFamily(family)) {
+    return Math.min(limit, family.sizeClass === 'large' ? 4 : family.sizeClass === 'medium' ? 6 : 12);
+  }
   return family && sceneAssetCategory(family) === 'furniture' ? Math.min(limit, 5) : limit;
+}
+
+function scenicMountainRegion(
+  zone: SceneCompositionPlan['zones'][number],
+  region: { x: number; z: number; r: number }
+): TerrainRegion {
+  if (zone.terrain.modifier !== 'mountain' || zone.terrain.access !== 'scenic') {
+    return { kind: 'circle', x: region.x, z: region.z, radius: region.r };
+  }
+  const angle = (zone.terrain.direction ?? 0) * Math.PI / 180;
+  const along = [Math.cos(angle), Math.sin(angle)] as const;
+  const across = [-along[1], along[0]] as const;
+  const points = [-0.72, -0.24, 0.26, 0.72].map((distance, index): [number, number] => {
+    const bend = [0, 0.09, -0.11, 0.02][index] * region.r;
+    return [
+      region.x + along[0] * region.r * distance + across[0] * bend,
+      region.z + along[1] * region.r * distance + across[1] * bend
+    ];
+  });
+  return { kind: 'path', points, width: region.r * 1.18 };
+}
+
+function naturalRockTransform(
+  map: EditableMap,
+  placement: MapScatterPlacement,
+  sizeClass: SceneCompositionPlan['assetFamilies'][number]['sizeClass'],
+  asset: MapAsset | undefined
+): {
+  position: [number, number, number];
+  rotation: [number, number, number];
+  scale: [number, number, number];
+} {
+  const stepX = map.box.size[0] / Math.max(1, map.terrain.resolutionX - 1);
+  const stepZ = map.box.size[2] / Math.max(1, map.terrain.resolutionZ - 1);
+  const riseX = (
+    sampleTerrainHeight(map, placement.x + stepX, placement.z)
+    - sampleTerrainHeight(map, placement.x - stepX, placement.z)
+  ) / (2 * stepX);
+  const riseZ = (
+    sampleTerrainHeight(map, placement.x, placement.z + stepZ)
+    - sampleTerrainHeight(map, placement.x, placement.z - stepZ)
+  ) / (2 * stepZ);
+  const tiltStrength = 0.34;
+  const tiltLimit = 16 * Math.PI / 180;
+  const verticalScale = sizeClass === 'large' ? 0.58 : sizeClass === 'medium' ? 0.68 : 0.8;
+  const burial = clamp((asset?.footprintRadius ?? 0.5) * placement.scale * 0.24, 0.08, 0.55);
+  return {
+    position: [placement.x, placement.y - burial, placement.z],
+    rotation: [
+      clamp(Math.atan(riseZ) * tiltStrength, -tiltLimit, tiltLimit),
+      placement.rotationY,
+      clamp(-Math.atan(riseX) * tiltStrength, -tiltLimit, tiltLimit)
+    ],
+    scale: [placement.scale, placement.scale * verticalScale, placement.scale]
+  };
 }
 
 function scatterMaxSlope(layer: SceneZoneLayer, fallback: number): number {

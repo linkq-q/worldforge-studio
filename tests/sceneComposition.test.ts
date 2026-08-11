@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createEmptyMap, type MapAsset } from '../src/shared/map';
+import { createEmptyMap, sampleTerrainHeight, type MapAsset } from '../src/shared/map';
 import {
   ensureMinimumSceneCoverage,
   estimateSceneZoneCoverage,
@@ -869,6 +869,10 @@ describe('scene composition contract', () => {
     expect(mountain.terrain.amplitude).toBeGreaterThanOrEqual(7.5);
     expect(rocks.placement?.habitat?.height?.[1]).toBeGreaterThan(3);
     expect(rocks.placement?.habitat?.slope?.[2]).toBeGreaterThan(45);
+    expect(plan.assetFamilies.find((family) => family.id === 'mountain-rocks')).toMatchObject({
+      desiredVariants: 2
+    });
+    expect(plan.assetFamilies.find((family) => family.id === 'mountain-rocks')?.generationBrief).toContain('no stacked monument');
 
     const rockAsset = asset('mountain-rock-a', 'Bare ridge rocks', ['rock', 'stone', 'mountain'], 'medium', 'voxel');
     const resolved = resolveSceneFamilies(plan, map, [rockAsset], 0).families;
@@ -877,10 +881,29 @@ describe('scene composition contract', () => {
       operation.type === 'object.add' && operation.object.assetId === rockAsset.id
     ));
     expect(compiled.operations).toEqual(expect.arrayContaining([
-      expect.objectContaining({ type: 'terrain.modify', modifier: 'mountain' })
+      expect.objectContaining({
+        type: 'terrain.modify', modifier: 'mountain',
+        region: expect.objectContaining({ kind: 'path' })
+      })
     ]));
+    expect(rockPlacements.length).toBeGreaterThan(0);
+    expect(rockPlacements.length).toBeLessThanOrEqual(6);
     expect(rockPlacements.some((operation) => (
       operation.type === 'object.add' && (operation.object.transform?.position?.[1] ?? -Infinity) > 3
+    ))).toBe(true);
+    const generated = applyMapOperations(map, compiled.operations);
+    const generatedRocks = generated.objects.filter((object) => object.assetId === rockAsset.id);
+    expect(generatedRocks.every((object) => object.heightMode === 'fixed')).toBe(true);
+    expect(generatedRocks.every((object) => object.transform.scale[1] < object.transform.scale[0])).toBe(true);
+    expect(generatedRocks.some((object) => (
+      Math.abs(object.transform.rotation[0]) > 0.01 || Math.abs(object.transform.rotation[2]) > 0.01
+    ))).toBe(true);
+    expect(generatedRocks.every((object) => (
+      object.transform.position[1] < sampleTerrainHeight(
+        generated,
+        object.transform.position[0],
+        object.transform.position[2]
+      )
     ))).toBe(true);
   });
 

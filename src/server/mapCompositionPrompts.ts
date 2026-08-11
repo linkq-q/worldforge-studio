@@ -14,8 +14,9 @@ export function buildSceneDirectorPrompt(
   assets: readonly MapAsset[],
   options: { reuseExistingAssets?: boolean; minNewAssets?: number; maxNewAssets?: number } = {}
 ): string {
+  const indoor = map.sceneMode === 'indoor';
   const bounds = getMapBounds(map);
-  const limits = planLimits(bounds);
+  const limits = planLimits(bounds, map.sceneMode);
   const catalogAssets = assets
     .slice(0, 80)
     .map((asset) => ({
@@ -28,8 +29,18 @@ export function buildSceneDirectorPrompt(
     'You are the scene director for a 3D world editor.',
     'Transform the user request into one coherent environment composition plan before any terrain or objects are generated.',
     'You decide what this world looks like: regions, hierarchy, focal areas, transitions, terrain intent, asset families, density, scale, and negative space.',
-    `Terrain capabilities are composable and independent: ${JSON.stringify(terrainCapabilitySummary())}. Choose a global terrainBase and terrainRefinement, then add a zone terrain.modifier and terrain.surface when the request calls for ridges, valleys, basins, cliffs, terraces, dunes, islands, sand, grass, or rock. For example, a mountain can use a cliff modifier even when the base is hills; never assume a modifier belongs only to one preset.`,
-    'Use terrainRefinement to remove synthetic cuts after all sculpting. Keep erosion around 0.12-0.35 and drainage around 0.04-0.16 unless the request explicitly needs heavily eroded terrain. Cliff softness below 0.16 is automatically given a natural shoulder; prefer 0.25-0.6 for broad formations.',
+    indoor
+      ? 'This map is one existing indoor room. Treat zones as functional floor areas inside that room; the room shell, floor, ceiling, and walls already exist and must not become asset families.'
+      : `Terrain capabilities are composable and independent: ${JSON.stringify(terrainCapabilitySummary())}. Choose a global terrainBase and terrainRefinement, then add a zone terrain.modifier and terrain.surface when the request calls for ridges, valleys, basins, cliffs, terraces, dunes, islands, sand, grass, or rock. For example, a mountain can use a cliff modifier even when the base is hills; never assume a modifier belongs only to one preset.`,
+    indoor
+      ? 'Indoor plans must use a plain zero-relief terrainBase placeholder, null water, empty grassFamilies and grassLayers, and no terrain or water intentRequirements. The compiler will preserve the room floor instead of generating terrain.'
+      : 'Use terrainRefinement to remove synthetic cuts after all sculpting. Keep erosion around 0.12-0.35 and drainage around 0.04-0.16 unless the request explicitly needs heavily eroded terrain. Cliff softness below 0.16 is automatically given a natural shoulder; prefer 0.25-0.6 for broad formations.',
+    indoor
+      ? 'Doors and windows are standalone model assets placed at planned wall positions; do not request wall holes. Wall-mounted props use placement.intent wall. Preserve walkable circulation and explicit aisles as negative space.'
+      : '',
+    indoor
+      ? 'Repeated indoor furniture must be modular: generate one reusable pew, chair, desk, or row module and repeat it with placement operations. Never bundle the whole room layout or several separated rows into one generated asset.'
+      : '',
     'Do not output object coordinates, low-level map operations, spawn points, combat rules, cover, quests, or gameplay logic.',
     'Do not use a fixed forest/camp template. Choose regions and asset roles that specifically fit this request.',
     'Extract every explicitly named physical requirement (for example terrain, pond, cabin, castle, a named tree species, or an animal) into intentRequirements. These are acceptance criteria, not suggestions.',
@@ -64,7 +75,7 @@ export function buildSceneDirectorPrompt(
     `Use consultations only when a genuinely difficult local relationship would benefit from an independent specialist. Use 0-${SCENE_COMPOSITION_LIMITS.consultationCount}; do not create one per zone.`,
     'A consultation may improve the plan but cannot directly create assets or map operations.',
     'Rendering is a later stage. Only provide short renderPromptSuggestions; do not choose or edit a render scheme.',
-    `Map: ${map.box.size[0]} x ${map.box.size[1]} x ${map.box.size[2]}, seed ${map.seed}, default new-asset mode ${map.assetGenerationMode}.`,
+    `Map: ${map.box.size[0]} x ${map.box.size[1]} x ${map.box.size[2]}, scene mode ${map.sceneMode}, seed ${map.seed}, default new-asset mode ${map.assetGenerationMode}.`,
     `Execution budgets: about ${limits.objectCount} objects and ${options.minNewAssets ?? 0}-${options.maxNewAssets ?? limits.assetRequestCount} newly generated assets. Define enough useful families or variants to satisfy the minimum; never exceed the maximum.`,
     'Use several semantically useful asset families. Do not create near-duplicate recolors or unnecessary variants of one landmark.',
     options.reuseExistingAssets
@@ -127,7 +138,7 @@ export function buildSceneDirectorPrompt(
       }],
       renderPromptSuggestions: ['short later-stage style hint']
     })
-  ].join('\n');
+  ].filter(Boolean).join('\n');
 }
 
 export function buildSceneSpecialistPrompt(

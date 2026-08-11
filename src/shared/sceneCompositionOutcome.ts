@@ -132,7 +132,7 @@ export function ensureSceneCompositionOutcome(
       : 1;
     const currentCount = familyCounts[resolved.family.id] ?? 0;
     if (currentCount >= minimum) continue;
-    const available = Math.max(0, planLimits(getMapBounds(map)).objectCount - (candidate.objects.length - map.objects.length));
+    const available = Math.max(0, planLimits(getMapBounds(map), map.sceneMode).objectCount - (candidate.objects.length - map.objects.length));
     const missing = Math.min(minimum - currentCount, available);
     const requirement: SceneIntentRequirement = {
       id: `family-presence-${resolved.family.id}`,
@@ -302,6 +302,9 @@ function repairNaturalPopulation(
   familyCounts: Record<string, number>;
   zoneCounts: Record<string, number>;
 } {
+  if (baseMap.sceneMode === 'indoor') {
+    return { target: 0, operations: [], familyCounts: {}, zoneCounts: {} };
+  }
   const assetsByFamily = new Map(resolvedFamilies.map((resolved) => [resolved.family.id, resolved]));
   const entries = plan.zones
     .filter((zone) => zone.role !== 'negative-space' && !zone.water)
@@ -322,7 +325,7 @@ function repairNaturalPopulation(
     ));
   if (entries.length === 0) return { target: 0, operations: [], familyCounts: {}, zoneCounts: {} };
 
-  const limits = planLimits(getMapBounds(baseMap));
+  const limits = planLimits(getMapBounds(baseMap), baseMap.sceneMode);
   const target = Math.min(limits.objectCount, Math.max(10, Math.round(limits.objectCount * Math.min(0.52, 0.14 + entries.length * 0.12))));
   let remaining = Math.max(0, target - (candidate.objects.length - baseMap.objects.length));
   let workingMap = candidate;
@@ -377,6 +380,7 @@ function repairNaturalPopulation(
 }
 
 function isRepeatableVegetationFamily(family: ResolvedSceneFamily['family']): boolean {
+  if (sceneAssetCategory(family) !== 'nature') return false;
   return /tree|forest|pine|oak|bush|shrub|fern|vegetation|plant|foliage|flower|grass|树|林|灌|蕨|植|花|草/i
     .test(`${family.label} ${family.role} ${family.tags.join(' ')}`);
 }
@@ -420,11 +424,12 @@ function requiredFamilyRepairs(
 ): MapOperation[] {
   const resolved = resolvedFamilies.find((entry) => entry.family.id === requirement.familyId);
   if (!resolved || resolved.assets.length === 0) return [];
+  if (baseMap.sceneMode === 'indoor') return [];
   const footprint = Math.max(...resolved.assets.map((asset) => asset.footprintRadius ?? 0.5)) * 1.1;
   const regions = requiredPlacementRegions(baseMap, plan, requirement, footprint);
   const operations: MapOperation[] = [];
   let workingMap = candidate;
-  let remaining = Math.min(missing, planLimits(getMapBounds(baseMap)).objectCount);
+  let remaining = Math.min(missing, planLimits(getMapBounds(baseMap), baseMap.sceneMode).objectCount);
 
   for (const [regionIndex, region] of regions.entries()) {
     if (remaining <= 0) break;

@@ -105,7 +105,7 @@ function grassSurfaceFactor(map: EditableMap, x: number, z: number, preset: Gras
   const sand = terrainSemanticSurfaceWeight(map, x, z, ['sand']);
   const rocky = terrainSemanticSurfaceWeight(map, x, z, ['rocky']);
   if (preset === 'sand') return 1 - rocky;
-  if (preset === 'alpine-moss') return 1 - sand;
+  if (preset === 'alpine-moss') return 1 - Math.max(sand, rocky * 0.78);
   if (preset === 'magic') return 1;
   return 1 - Math.max(sand, rocky);
 }

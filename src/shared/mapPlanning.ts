@@ -1,4 +1,4 @@
-import type { MapBounds } from './map';
+import type { MapBounds, MapSceneMode } from './map';
 
 export interface MapPlanLimits {
   terrainBrushCount: number;
@@ -32,7 +32,7 @@ export function normalizeMapAiNewAssetRange(
   return { min, max };
 }
 
-export function planLimits(bounds: MapBounds): MapPlanLimits {
+export function planLimits(bounds: MapBounds, sceneMode: MapSceneMode = 'outdoor'): MapPlanLimits {
   const width = bounds.maxX - bounds.minX;
   const depth = bounds.maxZ - bounds.minZ;
   const area = width * depth;
@@ -45,7 +45,9 @@ export function planLimits(bounds: MapBounds): MapPlanLimits {
   return {
     terrainBrushCount: Math.max(1, Math.round(area / 200)),
     brushRadiusMax: Math.min(width, depth) / 6,
-    objectCount: Math.max(1, Math.floor(area / 90)),
+    objectCount: sceneMode === 'indoor'
+      ? Math.max(16, Math.min(128, Math.floor(area / 6)))
+      : Math.max(1, Math.floor(area / 90)),
     waterCount: Math.max(1, Math.round(area / 900)),
     assetRequestCount: assetVariantRange.max,
     assetVariantMin: assetVariantRange.min,

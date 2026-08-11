@@ -236,7 +236,15 @@ export function normalizeSceneCompositionPlan(value: unknown, map: EditableMap):
   if (zoneValues.length < 1) throw new Error('scene_composition_requires_zones');
   const { grassFamilies, grassFamilyReferences } = completeGrassFamilyReferences(declaredGrassFamilies, zoneValues);
   uniqueIds(grassFamilies, 'duplicate_scene_grass_family_id');
-  const zones = zoneValues.map((zone) => normalizeZone(zone, map, familyIds, grassFamilyReferences));
+  const normalizedZones = zoneValues.map((zone) => normalizeZone(zone, map, familyIds, grassFamilyReferences));
+  const zones = map.sceneMode === 'indoor'
+    ? normalizedZones.map((zone) => ({
+        ...zone,
+        terrain: { elevation: 0, roughness: 0, flatness: 1 },
+        water: undefined,
+        grassLayers: []
+      }))
+    : normalizedZones;
   const zoneIds = uniqueIds(zones, 'duplicate_scene_zone_id');
   for (const zone of zones) {
     if (zone.excludeZoneIds.some((id) => !zoneIds.has(id) || id === zone.id)) {
@@ -255,10 +263,13 @@ export function normalizeSceneCompositionPlan(value: unknown, map: EditableMap):
   const globalInput = requireRecord(input.globalBrief, 'invalid_scene_global_brief');
   const focalZoneId = cleanId(globalInput.focalZoneId);
   if (!zoneIds.has(focalZoneId)) throw new Error('unknown_scene_focal_zone');
-  const intentRequirements = Array.isArray(input.intentRequirements)
+  const normalizedRequirements = Array.isArray(input.intentRequirements)
     ? input.intentRequirements.slice(0, SCENE_COMPOSITION_LIMITS.requirementCount)
-      .map((requirement) => normalizeRequirement(requirement, zones, assetFamilies))
+      .map((requirement) => normalizeRequirement(requirement, normalizedZones, assetFamilies))
     : derivePlanRequirements(zones, assetFamilies, focalZoneId);
+  const intentRequirements = map.sceneMode === 'indoor'
+    ? normalizedRequirements.filter((requirement) => requirement.kind === 'asset-family')
+    : normalizedRequirements;
   uniqueIds(intentRequirements, 'duplicate_scene_requirement_id');
   return {
     version: SCENE_COMPOSITION_VERSION,
@@ -275,7 +286,7 @@ export function normalizeSceneCompositionPlan(value: unknown, map: EditableMap):
     zones,
     transitions,
     assetFamilies,
-    grassFamilies,
+    grassFamilies: map.sceneMode === 'indoor' ? [] : grassFamilies,
     consultations,
     renderPromptSuggestions: normalizeTextList(input.renderPromptSuggestions, 8, 80)
   };
@@ -299,7 +310,6 @@ export function enforceScenePlacementContracts(
   map: EditableMap,
   prompt = ''
 ): SceneCompositionPlan {
-  void map;
   const families = new Map(plan.assetFamilies.map((family) => [family.id, family]));
   const zones = plan.zones.map((zone) => {
     const zoneSemantic = `${zone.label} ${zone.brief.atmosphere} ${zone.brief.hierarchy} ${prompt}`;
@@ -317,6 +327,25 @@ export function enforceScenePlacementContracts(
         offset: 0,
         facing: 'random' as const
       };
+
+      if (map.sceneMode === 'indoor' && family.id === audienceFocusFamilyId && category !== 'furniture') {
+        return {
+          ...layer,
+          distribution: 'accent' as const,
+          placement: { ...current, mode: 'anchor', pattern: undefined, intent: 'landmark', facing: 'guide' }
+        };
+      }
+      if (map.sceneMode === 'indoor' && category === 'prop'
+        && /wall-prop|wall mounted|cross|window|墙面|壁挂|十字架|窗/i.test(semantic)) {
+        return {
+          ...layer,
+          distribution: 'even' as const,
+          placement: {
+            ...current, mode: 'linear', pattern: 'row', intent: 'wall', facing: 'inward',
+            maxPerGroup: Math.min(current.maxPerGroup ?? 1, 4)
+          }
+        };
+      }
 
       if (category === 'facility' && /swing|slide|playground|gym|秋千|滑梯|游乐|健身/i.test(semantic)) {
         return {
@@ -408,11 +437,17 @@ function findAudienceFocusFamilyId(
   zone: SceneCompositionZone,
   families: ReadonlyMap<string, SceneAssetFamily>
 ): string | undefined {
-  return zone.layers
+  const local = zone.layers
     .map((layer) => families.get(layer.familyId))
-    .filter((family): family is SceneAssetFamily => Boolean(family))
-    .sort((left, right) => Number(sceneAssetCategory(right) === 'architecture') - Number(sceneAssetCategory(left) === 'architecture'))
-    .find((family) => /altar|stage|pulpit|lectern|church|chapel|祭坛|舞台|讲台|教堂|礼拜堂/i.test(sceneFamilySemantic(family)))?.id;
+    .filter((family): family is SceneAssetFamily => Boolean(family));
+  const candidates = [...local, ...[...families.values()].filter((family) => !local.includes(family))];
+  return candidates.find((family) => (
+    sceneAssetCategory(family) !== 'furniture'
+    && /altar|stage|pulpit|lectern|祭坛|舞台|讲台/i.test(sceneFamilySemantic(family))
+  ))?.id ?? candidates.find((family) => (
+    sceneAssetCategory(family) === 'architecture'
+    && /church|chapel|教堂|礼拜堂/i.test(sceneFamilySemantic(family))
+  ))?.id;
 }
 
 function familyPlacementDirection(seed: number, familyId: string): number {
@@ -446,6 +481,18 @@ export function enforcePromptSceneIntent(
   ))[0];
   if (!target) return plan;
 
+  const assetFamilies = plan.assetFamilies.map((family) => {
+    if (!rockFamilyIds.has(family.id)) return family;
+    const outcropBrief = 'low wide slope-integrated outcrop, irregular horizontal strata, partially buried base, no cairn, no stacked monument, no freestanding tower';
+    return {
+      ...family,
+      desiredVariants: Math.max(2, family.desiredVariants),
+      generationBrief: family.generationBrief.includes('no stacked monument')
+        ? family.generationBrief
+        : `${family.generationBrief}; ${outcropBrief}`
+    };
+  });
+  const familiesById = new Map(assetFamilies.map((family) => [family.id, family]));
   const mapHeight = map.box.size[1];
   const zones = plan.zones.map((zone) => {
     if (zone.id !== target.id) return zone;
@@ -453,11 +500,16 @@ export function enforcePromptSceneIntent(
     for (const familyId of rockFamilyIds) {
       const index = layers.findIndex((layer) => layer.familyId === familyId);
       const current = index >= 0 ? layers[index] : undefined;
+      const family = familiesById.get(familyId);
       const placement = current?.placement;
+      const currentScale = current?.scaleRange ?? [0.7, 1.05];
       const next: SceneZoneLayer = {
         familyId,
         density: Math.max(current?.density ?? 0, 0.018),
-        scaleRange: current?.scaleRange ?? [0.8, 1.3],
+        scaleRange: [
+          clamp(currentScale[0], family?.sizeClass === 'large' ? 0.55 : 0.65, 0.9),
+          clamp(currentScale[1], 0.8, family?.sizeClass === 'small' ? 1 : 1.1)
+        ],
         distribution: 'clustered',
         edgeFalloff: Math.max(current?.edgeFalloff ?? 0, 0.16),
         placement: {
@@ -498,7 +550,7 @@ export function enforcePromptSceneIntent(
       layers
     };
   });
-  return { ...plan, zones };
+  return { ...plan, assetFamilies, zones };
 }
 
 function mountainZoneScore(zone: SceneCompositionZone, rockFamilyIds: ReadonlySet<string>): number {
@@ -510,7 +562,7 @@ function mountainZoneScore(zone: SceneCompositionZone, rockFamilyIds: ReadonlySe
     + zone.importance;
 }
 
-function isNaturalRockFamily(family: SceneAssetFamily): boolean {
+export function isNaturalRockFamily(family: SceneAssetFamily): boolean {
   const semantic = `${family.label} ${family.role} ${family.tags.join(' ')}`;
   return /rock|stone|boulder|outcrop|岩|石/i.test(semantic)
     && !/boundary|border|marker|fence|边界|界石|围栏/i.test(semantic);
@@ -532,8 +584,22 @@ export function estimateSceneZoneCoverage(plan: SceneCompositionPlan): number {
 }
 
 /** Adds editable low ground cover when the director accidentally leaves most of the map undescribed. */
-export function ensureMinimumSceneCoverage(plan: SceneCompositionPlan): SceneCompositionPlan {
+export function ensureMinimumSceneCoverage(plan: SceneCompositionPlan, map?: EditableMap): SceneCompositionPlan {
   if (estimateSceneZoneCoverage(plan) >= MIN_SCENE_COVERAGE) return plan;
+
+  if (map?.sceneMode === 'indoor') {
+    const target = [...plan.zones]
+      .filter((zone) => zone.role !== 'negative-space')
+      .sort((left, right) => right.importance - left.importance)[0];
+    if (!target) throw new Error('scene_composition_insufficient_coverage');
+    return {
+      ...plan,
+      zones: plan.zones.map((zone) => zone.id === target.id ? {
+        ...zone,
+        region: { kind: 'circle' as const, center: [0, 0] as [number, number], radius: 1.2 }
+      } : zone)
+    };
+  }
 
   const grassFamily = plan.grassFamilies[0] ?? {
     id: 'ambient-ground-cover',
