@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import {
-  PLAYER_HEIGHT,
+  getMapPlayerMetrics,
   getMapCollisionBake,
   getPlayerSpawnYaw,
   getSpawnPoints,
@@ -14,7 +14,6 @@ import { movementDelta } from '../shared/math';
 import { isPointInsideWaterBody } from '../shared/mapWater';
 import type { InputState, Vec3 } from '../shared/protocol';
 
-const EYE_HEIGHT = PLAYER_HEIGHT * 0.88;
 const WATER_SPEED_SCALE = 0.62;
 
 export interface PlayMotionState {
@@ -129,9 +128,12 @@ export class PlayModeController {
 
   private syncCamera(): void {
     if (!this.state) return;
+    const map = this.options.getMap();
+    if (!map) return;
+    const { eyeHeight } = getMapPlayerMetrics(map);
     this.options.camera.position.set(
       this.state.position[0],
-      this.state.position[1] + EYE_HEIGHT,
+      this.state.position[1] + eyeHeight,
       this.state.position[2]
     );
     this.options.camera.rotation.order = 'YXZ';

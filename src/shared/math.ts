@@ -102,7 +102,8 @@ export function stepVerticalMotion(
   groundY: number,
   velocity: number,
   dt: number,
-  jumpRequested: boolean
+  jumpRequested: boolean,
+  jumpSpeed = PLAYER_JUMP_SPEED
 ): VerticalMotionState {
   const safeGround = Number.isFinite(groundY) ? groundY : 0;
   const safeY = Number.isFinite(currentY) ? Math.max(currentY, safeGround) : safeGround;
@@ -112,7 +113,7 @@ export function stepVerticalMotion(
 
   const wasGrounded = safeY <= safeGround + 0.001 && (!Number.isFinite(velocity) || velocity <= 0);
   let nextVelocity = Number.isFinite(velocity) ? velocity : 0;
-  if (wasGrounded) nextVelocity = jumpRequested ? PLAYER_JUMP_SPEED : 0;
+  if (wasGrounded) nextVelocity = jumpRequested ? jumpSpeed : 0;
   const nextY = safeY + nextVelocity * dt - 0.5 * PLAYER_GRAVITY * dt * dt;
   nextVelocity -= PLAYER_GRAVITY * dt;
   if (nextY <= safeGround) return { y: safeGround, velocity: 0, grounded: true };

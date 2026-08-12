@@ -46,7 +46,7 @@ export function planLimits(bounds: MapBounds, sceneMode: MapSceneMode = 'outdoor
     terrainBrushCount: Math.max(1, Math.round(area / 200)),
     brushRadiusMax: Math.min(width, depth) / 6,
     objectCount: sceneMode === 'indoor'
-      ? Math.max(16, Math.min(128, Math.floor(area / 6)))
+      ? Math.max(24, Math.min(512, Math.floor(area / 2)))
       : Math.max(1, Math.floor(area / 90)),
     waterCount: Math.max(1, Math.round(area / 900)),
     assetRequestCount: assetVariantRange.max,

@@ -99,9 +99,13 @@ const FALLBACK_BOUNDS: Aabb = {
 };
 
 export function calculateModelHitBounds(modelJson: unknown): Aabb {
+  return expandHitBounds(calculateModelVisualBounds(modelJson));
+}
+
+/** Matches the renderer's centered X/Z and floor-aligned Y model group exactly. */
+export function calculateModelVisualBounds(modelJson: unknown): Aabb {
   const { rawBounds } = collectModelMeshBounds(modelJson);
-  if (!rawBounds) return cloneBounds(expandHitBounds(FALLBACK_BOUNDS));
-  return expandHitBounds(normalizeLikeClient(rawBounds));
+  return cloneBounds(normalizeLikeClient(rawBounds ?? FALLBACK_BOUNDS));
 }
 
 export function buildModelColliderPlan(

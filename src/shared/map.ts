@@ -1,12 +1,13 @@
 import {
   MAP_ASSET_COLLIDER_PROFILE,
   buildModelColliderPlan,
+  calculateModelVisualBounds,
   normalizeModelColliderPlan,
   type Aabb,
   type ModelColliderPlan
 } from './modelBounds';
 import { rayAabbIntersection, stepVerticalMotion, wrapAngle, type VerticalMotionState } from './math';
-import type { Vec3 } from './protocol';
+import { PLAYER_JUMP_SPEED, type Vec3 } from './protocol';
 import { seedFromString } from './mapSeed';
 import {
   assetFootprintRadius,
@@ -209,6 +210,9 @@ export interface EditableMap {
   updatedAt: number;
   box: MapBox;
   sceneMode: MapSceneMode;
+  playerHeight: number;
+  playerRadius: number;
+  worldScaleProfile: WorldScaleProfile;
   room: MapRoom | null;
   lighting: MapLighting;
   terrain: MapTerrain;
@@ -284,11 +288,24 @@ export interface PlayerVerticalMotionSweep {
   jumpRequested: boolean;
 }
 
+export type WorldScaleProfile = 'intimate' | 'balanced' | 'grand';
+
+export interface MapPlayerMetrics {
+  height: number;
+  radius: number;
+  eyeHeight: number;
+  jumpSpeed: number;
+}
+
+/** Legacy constants remain exported for old maps and external callers. */
 export const PLAYER_RADIUS = 0.45;
 export const PLAYER_MAX_WALKABLE_SLOPE = 30;
 // The editor spawn marker, play capsule, camera and collision all share this
 // world-space height. Keep it as the single source of truth.
 export const PLAYER_HEIGHT = 2.7;
+export const DEFAULT_PLAYER_HEIGHT = 1.6;
+export const DEFAULT_PLAYER_RADIUS = 0.38;
+export const DEFAULT_WORLD_SCALE_PROFILE: WorldScaleProfile = 'balanced';
 export const PLAYER_SPAWN_OBJECT_ID = '__player_spawn__';
 export const SUN_OBJECT_ID = '__sun__';
 export const DEFAULT_SUN_POSITION: Vec3 = [-18, 24, 14];
@@ -361,7 +378,9 @@ export function createEmptyMap(
   size: Vec3 = DEFAULT_MAP_SIZE,
   assetGenerationMode: ModelGenerationMode = 'voxel',
   sceneMode: MapSceneMode = 'outdoor',
-  roomSize?: Vec3
+  roomSize?: Vec3,
+  playerHeight = DEFAULT_PLAYER_HEIGHT,
+  worldScaleProfile: WorldScaleProfile = DEFAULT_WORLD_SCALE_PROFILE
 ): EditableMap {
   const now = Date.now();
   const safeSize = positiveVec3(size, DEFAULT_MAP_SIZE);
@@ -379,6 +398,9 @@ export function createEmptyMap(
       colors: { ...(sceneMode === 'indoor' ? DEFAULT_INDOOR_BOX_COLORS : DEFAULT_BOX_COLORS) }
     },
     sceneMode,
+    playerHeight,
+    playerRadius: defaultPlayerRadius(playerHeight),
+    worldScaleProfile,
     room: sceneMode === 'outdoor'
       ? null
       : createDefaultRoom(roomSize ?? (sceneMode === 'indoor'
@@ -405,6 +427,35 @@ export function createDefaultRoom(size: Vec3 = [10, 3, 8]): MapRoom {
 
 export function normalizeMapSceneMode(value: unknown): MapSceneMode {
   return value === 'indoor' || value === 'mixed' ? value : 'outdoor';
+}
+
+export function normalizeWorldScaleProfile(value: unknown): WorldScaleProfile {
+  return value === 'intimate' || value === 'grand' ? value : DEFAULT_WORLD_SCALE_PROFILE;
+}
+
+export function worldScaleProfileMultiplier(profile: WorldScaleProfile): number {
+  if (profile === 'intimate') return 0.78;
+  if (profile === 'grand') return 1.28;
+  return 1;
+}
+
+export function getMapPlayerMetrics(map: Pick<EditableMap, 'playerHeight' | 'playerRadius'>): MapPlayerMetrics {
+  const height = normalizePlayerHeight(map.playerHeight);
+  const radius = clamp(finiteNumber(map.playerRadius, defaultPlayerRadius(height)), 0.2, 0.8);
+  return {
+    height,
+    radius,
+    eyeHeight: height * 0.88,
+    jumpSpeed: PLAYER_JUMP_SPEED * Math.sqrt(height / PLAYER_HEIGHT)
+  };
+}
+
+function normalizePlayerHeight(value: unknown): number {
+  return clamp(finiteNumber(value, DEFAULT_PLAYER_HEIGHT), 0.8, 3.2);
+}
+
+function defaultPlayerRadius(height: number): number {
+  return clamp(height * 0.2375, 0.3, 0.5);
 }
 
 export function normalizeMapRoom(
@@ -652,6 +703,12 @@ export function normalizeMap(input: Partial<EditableMap>): EditableMap {
   const defaultBoxColors = sceneMode === 'indoor' ? DEFAULT_INDOOR_BOX_COLORS : DEFAULT_BOX_COLORS;
   const terrainFallback = terrainResolutionForSize(boxSize);
   const terrain = normalizeTerrain(input.terrain, terrainFallback, terrainFallback);
+  const playerHeight = input.playerHeight === undefined
+    ? PLAYER_HEIGHT
+    : normalizePlayerHeight(input.playerHeight);
+  const playerRadius = input.playerRadius === undefined
+    ? input.playerHeight === undefined ? PLAYER_RADIUS : defaultPlayerRadius(playerHeight)
+    : clamp(finiteNumber(input.playerRadius, defaultPlayerRadius(playerHeight)), 0.2, 0.8);
   const map: EditableMap = {
     id,
     seed: Number.isFinite(Number(input.seed)) ? Math.trunc(Number(input.seed)) >>> 0 : seedFromString(id),
@@ -672,6 +729,9 @@ export function normalizeMap(input: Partial<EditableMap>): EditableMap {
       }
     },
     sceneMode,
+    playerHeight,
+    playerRadius,
+    worldScaleProfile: normalizeWorldScaleProfile(input.worldScaleProfile),
     room: sceneMode === 'outdoor' ? null : normalizeMapRoom(input.room, boxSize),
     lighting: normalizeLighting(input.lighting),
     terrain,
@@ -681,7 +741,7 @@ export function normalizeMap(input: Partial<EditableMap>): EditableMap {
       ? input.paintStrokes.map((stroke) => createPaintStroke(stroke)).slice(-1200)
       : [],
     objects: Array.isArray(input.objects) ? input.objects.map(normalizeObject) : [],
-    spawnPoints: normalizeSpawnPoints(input.spawnPoints, boxSize),
+    spawnPoints: normalizeSpawnPoints(input.spawnPoints, boxSize, playerHeight, playerRadius),
     spawnYaw: wrapAngle(finiteNumber(input.spawnYaw, 0)),
     confirmedAt: typeof input.confirmedAt === 'number' && Number.isFinite(input.confirmedAt) && input.confirmedAt > 0
       ? input.confirmedAt
@@ -950,23 +1010,24 @@ export function resolvePlayerPositionForMap(
   obstacles: MapCollisionObstacles = getMapCollisionBake(map)
 ): Vec3 {
   const bounds = getMapBounds(map);
-  let x = clamp(position[0], bounds.minX + PLAYER_RADIUS, bounds.maxX - PLAYER_RADIUS);
-  let z = clamp(position[2], bounds.minZ + PLAYER_RADIUS, bounds.maxZ - PLAYER_RADIUS);
+  const { radius, height } = getMapPlayerMetrics(map);
+  let x = clamp(position[0], bounds.minX + radius, bounds.maxX - radius);
+  let z = clamp(position[2], bounds.minZ + radius, bounds.maxZ - radius);
   const playerBottom = Math.max(position[1], sampleTerrainHeight(map, x, z));
   const candidates = queryMapCollisionObstacles(
     obstacles,
-    x - PLAYER_RADIUS * 2,
-    x + PLAYER_RADIUS * 2,
-    z - PLAYER_RADIUS * 2,
-    z + PLAYER_RADIUS * 2
+    x - radius * 2,
+    x + radius * 2,
+    z - radius * 2,
+    z + radius * 2
   );
 
   for (const obstacle of candidates) {
-    if (!overlapsPlayerVertically(obstacle, playerBottom)) continue;
-    const minX = obstacle.min[0] - PLAYER_RADIUS;
-    const maxX = obstacle.max[0] + PLAYER_RADIUS;
-    const minZ = obstacle.min[2] - PLAYER_RADIUS;
-    const maxZ = obstacle.max[2] + PLAYER_RADIUS;
+    if (!overlapsPlayerVertically(obstacle, playerBottom, height)) continue;
+    const minX = obstacle.min[0] - radius;
+    const maxX = obstacle.max[0] + radius;
+    const minZ = obstacle.min[2] - radius;
+    const maxZ = obstacle.max[2] + radius;
     if (x <= minX || x >= maxX || z <= minZ || z >= maxZ) continue;
 
     const pushLeft = Math.abs(x - minX);
@@ -993,19 +1054,20 @@ export function getPlayerSupportHeightForMap(
   map: EditableMap,
   obstacles: MapCollisionObstacles = getMapCollisionBake(map)
 ): number {
+  const { radius } = getMapPlayerMetrics(map);
   let supportY = sampleTerrainHeight(map, position[0], position[2]);
   const maxSupportY = position[1] + 0.05;
   const candidates = queryMapCollisionObstacles(
     obstacles,
-    position[0] - PLAYER_RADIUS,
-    position[0] + PLAYER_RADIUS,
-    position[2] - PLAYER_RADIUS,
-    position[2] + PLAYER_RADIUS
+    position[0] - radius,
+    position[0] + radius,
+    position[2] - radius,
+    position[2] + radius
   );
   for (const obstacle of candidates) {
     const top = obstacle.max[1];
     if (top <= supportY || top > maxSupportY) continue;
-    if (!playerFootprintOverlapsObstacle(position[0], position[2], obstacle)) continue;
+    if (!playerFootprintOverlapsObstacle(position[0], position[2], obstacle, radius)) continue;
     supportY = top;
   }
   return supportY;
@@ -1019,22 +1081,23 @@ export function stepPlayerVerticalMotionForMap(
   map: EditableMap,
   obstacles: MapCollisionObstacles = getMapCollisionBake(map)
 ): VerticalMotionState {
+  const { height, radius, jumpSpeed } = getMapPlayerMetrics(map);
   const groundY = getPlayerSupportHeightForMap(position, map, obstacles);
-  const vertical = stepVerticalMotion(position[1], groundY, velocity, dt, jumpRequested);
+  const vertical = stepVerticalMotion(position[1], groundY, velocity, dt, jumpRequested, jumpSpeed);
   if (vertical.y <= position[1] + MAP_COLLISION_EPSILON) return vertical;
 
-  const headStart = Math.max(position[1], groundY) + PLAYER_HEIGHT;
-  const headEnd = vertical.y + PLAYER_HEIGHT;
+  const headStart = Math.max(position[1], groundY) + height;
+  const headEnd = vertical.y + height;
   const candidates = queryMapCollisionObstacles(
     obstacles,
-    position[0] - PLAYER_RADIUS,
-    position[0] + PLAYER_RADIUS,
-    position[2] - PLAYER_RADIUS,
-    position[2] + PLAYER_RADIUS
+    position[0] - radius,
+    position[0] + radius,
+    position[2] - radius,
+    position[2] + radius
   );
   let ceilingY = Number.POSITIVE_INFINITY;
   for (const obstacle of candidates) {
-    if (!playerFootprintOverlapsObstacle(position[0], position[2], obstacle)) continue;
+    if (!playerFootprintOverlapsObstacle(position[0], position[2], obstacle, radius)) continue;
     const underside = obstacle.min[1];
     if (underside < headStart - MAP_COLLISION_EPSILON || underside > headEnd + MAP_COLLISION_EPSILON) continue;
     ceilingY = Math.min(ceilingY, underside);
@@ -1042,7 +1105,7 @@ export function stepPlayerVerticalMotionForMap(
   if (!Number.isFinite(ceilingY)) return vertical;
 
   return {
-    y: Math.max(groundY, ceilingY - PLAYER_HEIGHT - MAP_COLLISION_EPSILON),
+    y: Math.max(groundY, ceilingY - height - MAP_COLLISION_EPSILON),
     velocity: 0,
     grounded: false
   };
@@ -1062,11 +1125,12 @@ export function movePlayerPositionForMap(
   obstacles: MapCollisionObstacles = getMapCollisionBake(map),
   verticalMotion?: PlayerVerticalMotionSweep
 ): Vec3 {
+  const { radius } = getMapPlayerMetrics(map);
   const start = resolvePlayerPositionForMap(position, map, obstacles);
   let x = start[0];
   let z = start[2];
   const distance = Math.hypot(delta[0], delta[2]);
-  const steps = Math.max(1, Math.ceil(distance / (PLAYER_RADIUS * 0.5)));
+  const steps = Math.max(1, Math.ceil(distance / (radius * 0.5)));
   const stepX = delta[0] / steps;
   const stepZ = delta[2] / steps;
   const playerY = Math.max(position[1], start[1]);
@@ -1106,10 +1170,11 @@ function sweepPlayerAxis(
   stepStartsAt: number,
   stepDuration: number
 ): number {
+  const { radius, height, jumpSpeed } = getMapPlayerMetrics(map);
   const bounds = getMapBounds(map);
   const worldMin = axis === 'x' ? bounds.minX : bounds.minZ;
   const worldMax = axis === 'x' ? bounds.maxX : bounds.maxZ;
-  const requestedTarget = clamp(primary + delta, worldMin + PLAYER_RADIUS, worldMax - PLAYER_RADIUS);
+  const requestedTarget = clamp(primary + delta, worldMin + radius, worldMax - radius);
   const candidateX = axis === 'x' ? requestedTarget : secondary;
   const candidateZ = axis === 'z' ? requestedTarget : secondary;
   if (!isPointInsidePlayableArea(map.layout, map.box.size, candidateX, candidateZ)) return primary;
@@ -1130,22 +1195,23 @@ function sweepPlayerAxis(
           initialSupportY,
           verticalMotion.velocity,
           targetTime,
-          verticalMotion.jumpRequested
+          verticalMotion.jumpRequested,
+          jumpSpeed
         ).y
       : playerY;
     if (targetTerrainY > sweptPlayerY + MAP_COLLISION_EPSILON) return primary;
   }
   let target = requestedTarget;
-  const minPrimary = Math.min(primary, requestedTarget) - PLAYER_RADIUS;
-  const maxPrimary = Math.max(primary, requestedTarget) + PLAYER_RADIUS;
+  const minPrimary = Math.min(primary, requestedTarget) - radius;
+  const maxPrimary = Math.max(primary, requestedTarget) + radius;
   const candidates = axis === 'x'
-    ? queryMapCollisionObstacles(obstacles, minPrimary, maxPrimary, secondary - PLAYER_RADIUS, secondary + PLAYER_RADIUS)
-    : queryMapCollisionObstacles(obstacles, secondary - PLAYER_RADIUS, secondary + PLAYER_RADIUS, minPrimary, maxPrimary);
+    ? queryMapCollisionObstacles(obstacles, minPrimary, maxPrimary, secondary - radius, secondary + radius)
+    : queryMapCollisionObstacles(obstacles, secondary - radius, secondary + radius, minPrimary, maxPrimary);
   for (const obstacle of candidates) {
-    const obstacleMin = (axis === 'x' ? obstacle.min[0] : obstacle.min[2]) - PLAYER_RADIUS;
-    const obstacleMax = (axis === 'x' ? obstacle.max[0] : obstacle.max[2]) + PLAYER_RADIUS;
-    const secondaryMin = (axis === 'x' ? obstacle.min[2] : obstacle.min[0]) - PLAYER_RADIUS;
-    const secondaryMax = (axis === 'x' ? obstacle.max[2] : obstacle.max[0]) + PLAYER_RADIUS;
+    const obstacleMin = (axis === 'x' ? obstacle.min[0] : obstacle.min[2]) - radius;
+    const obstacleMax = (axis === 'x' ? obstacle.max[0] : obstacle.max[2]) + radius;
+    const secondaryMin = (axis === 'x' ? obstacle.min[2] : obstacle.min[0]) - radius;
+    const secondaryMax = (axis === 'x' ? obstacle.max[2] : obstacle.max[0]) + radius;
     if (secondary <= secondaryMin || secondary >= secondaryMax) continue;
 
     let contactPrimary: number;
@@ -1171,11 +1237,12 @@ function sweepPlayerAxis(
         initialSupportY,
         verticalMotion.velocity,
         contactTime,
-        verticalMotion.jumpRequested
+        verticalMotion.jumpRequested,
+        jumpSpeed
       ).y
       : playerY;
     const playerBottom = Math.max(sweptPlayerY, sampleTerrainHeight(map, contactX, contactZ));
-    if (!overlapsPlayerVertically(obstacle, playerBottom)) continue;
+    if (!overlapsPlayerVertically(obstacle, playerBottom, height)) continue;
 
     if (requestedTarget > primary) {
       target = Math.min(target, obstacleMin);
@@ -1187,26 +1254,27 @@ function sweepPlayerAxis(
   return target;
 }
 
-function overlapsPlayerVertically(obstacle: MapObjectAabb, playerBottom: number): boolean {
+function overlapsPlayerVertically(obstacle: MapObjectAabb, playerBottom: number, playerHeight: number): boolean {
   const epsilon = 0.05;
   return obstacle.max[1] > playerBottom + epsilon
-    && obstacle.min[1] < playerBottom + PLAYER_HEIGHT - epsilon;
+    && obstacle.min[1] < playerBottom + playerHeight - epsilon;
 }
 
-function playerFootprintOverlapsObstacle(x: number, z: number, obstacle: MapObjectAabb): boolean {
+function playerFootprintOverlapsObstacle(x: number, z: number, obstacle: MapObjectAabb, playerRadius: number): boolean {
   const closestX = clamp(x, obstacle.min[0], obstacle.max[0]);
   const closestZ = clamp(z, obstacle.min[2], obstacle.max[2]);
   const dx = x - closestX;
   const dz = z - closestZ;
-  return dx * dx + dz * dz < (PLAYER_RADIUS - MAP_COLLISION_EPSILON) ** 2;
+  return dx * dx + dz * dz < (playerRadius - MAP_COLLISION_EPSILON) ** 2;
 }
 
 export function spectatorPositionForMap(position: Vec3, map: EditableMap): Vec3 {
   const bounds = getMapBounds(map);
+  const { radius, height } = getMapPlayerMetrics(map);
   return [
-    clamp(position[0], bounds.minX + PLAYER_RADIUS, bounds.maxX - PLAYER_RADIUS),
-    clamp(position[1] + PLAYER_HEIGHT * 0.85, 0.8, bounds.maxY - 0.2),
-    clamp(position[2], bounds.minZ + PLAYER_RADIUS, bounds.maxZ - PLAYER_RADIUS)
+    clamp(position[0], bounds.minX + radius, bounds.maxX - radius),
+    clamp(position[1] + height * 0.85, 0.8, bounds.maxY - 0.2),
+    clamp(position[2], bounds.minZ + radius, bounds.maxZ - radius)
   ];
 }
 
@@ -1228,6 +1296,23 @@ export function getMapObjectAabbs(map: EditableMap): MapObjectAabb[] {
       const transformed = transformBounds(local, world);
       boxes.push({ objectId: object.id, min: transformed.min, max: transformed.max });
     }
+  }
+  return boxes;
+}
+
+/** World-space visual bounds; use for grounding and visible scale, never collision. */
+export function getMapObjectVisualAabbs(map: EditableMap): MapObjectAabb[] {
+  const assets = new Map((map.assets ?? []).map((asset) => [asset.id, asset]));
+  const transforms = getObjectWorldTransforms(map);
+  const boxes: MapObjectAabb[] = [];
+  for (const object of map.objects) {
+    if (!object.visible) continue;
+    const world = transforms.get(object.id);
+    if (!world) continue;
+    const asset = object.assetId ? assets.get(object.assetId) : undefined;
+    const local = asset ? calculateModelVisualBounds(asset.modelJson) : FALLBACK_OBJECT_BOUNDS;
+    const transformed = transformBounds(local, world);
+    boxes.push({ objectId: object.id, min: transformed.min, max: transformed.max });
   }
   return boxes;
 }
@@ -1755,14 +1840,14 @@ function resampleTerrainHeights(source: number[], sourceX: number, sourceZ: numb
   return heights;
 }
 
-function normalizeSpawnPoints(points: unknown, size: Vec3): Vec3[] {
+function normalizeSpawnPoints(points: unknown, size: Vec3, playerHeight: number, playerRadius: number): Vec3[] {
   const [width, height, depth] = size;
   const source = Array.isArray(points) && points.length > 0 ? points[0] : defaultSpawnPoints(size)[0];
   const point = validVec3(source, [0, 0, 0]);
   return [[
-    clamp(point[0], -width / 2 + PLAYER_RADIUS, width / 2 - PLAYER_RADIUS),
-    clamp(point[1], 0, Math.max(0, height - PLAYER_HEIGHT)),
-    clamp(point[2], -depth / 2 + PLAYER_RADIUS, depth / 2 - PLAYER_RADIUS)
+    clamp(point[0], -width / 2 + playerRadius, width / 2 - playerRadius),
+    clamp(point[1], 0, Math.max(0, height - playerHeight)),
+    clamp(point[2], -depth / 2 + playerRadius, depth / 2 - playerRadius)
   ]];
 }
 

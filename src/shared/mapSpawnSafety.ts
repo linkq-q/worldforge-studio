@@ -1,6 +1,6 @@
 import {
-  PLAYER_RADIUS,
   PLAYER_MAX_WALKABLE_SLOPE,
+  getMapPlayerMetrics,
   getMapBounds,
   getMapObjectAabbs,
   getRoomShellAabbs,
@@ -13,19 +13,20 @@ import { isPointInsidePlayableArea } from './mapLayout';
 
 export function isSpawnPositionSafe(map: EditableMap, x: number, z: number): boolean {
   const bounds = getMapBounds(map);
-  if (x < bounds.minX + PLAYER_RADIUS || x > bounds.maxX - PLAYER_RADIUS) return false;
-  if (z < bounds.minZ + PLAYER_RADIUS || z > bounds.maxZ - PLAYER_RADIUS) return false;
+  const { radius } = getMapPlayerMetrics(map);
+  if (x < bounds.minX + radius || x > bounds.maxX - radius) return false;
+  if (z < bounds.minZ + radius || z > bounds.maxZ - radius) return false;
   if (!isPointInsidePlayableArea(map.layout, map.box.size, x, z)) return false;
   for (let index = 0; index < 8; index += 1) {
     const angle = index / 8 * Math.PI * 2;
     if (!isPointInsidePlayableArea(
       map.layout,
       map.box.size,
-      x + Math.cos(angle) * PLAYER_RADIUS,
-      z + Math.sin(angle) * PLAYER_RADIUS
+      x + Math.cos(angle) * radius,
+      z + Math.sin(angle) * radius
     )) return false;
   }
-  if (isNearWater(map, x, z, PLAYER_RADIUS + 0.2)) return false;
+  if (isNearWater(map, x, z, radius + 0.2)) return false;
   if (terrainSlopeDegrees(map, x, z) > PLAYER_MAX_WALKABLE_SLOPE) return false;
   const roomWalls = getRoomShellAabbs(map).filter((obstacle) => (
     !obstacle.objectId.includes(':floor:') && !obstacle.objectId.includes(':ceiling:')
@@ -33,12 +34,13 @@ export function isSpawnPositionSafe(map: EditableMap, x: number, z: number): boo
   return ![...getMapObjectAabbs(map), ...getTerrainCliffAabbs(map), ...roomWalls].some((obstacle) => {
     const closestX = clamp(x, obstacle.min[0], obstacle.max[0]);
     const closestZ = clamp(z, obstacle.min[2], obstacle.max[2]);
-    return Math.hypot(x - closestX, z - closestZ) < PLAYER_RADIUS + 0.1;
+    return Math.hypot(x - closestX, z - closestZ) < radius + 0.1;
   });
 }
 
 export function findSafeSpawnPosition(map: EditableMap, requestedX: number, requestedZ: number): [number, number] {
   const bounds = getMapBounds(map);
+  const { radius: playerRadius } = getMapPlayerMetrics(map);
   const terrainStep = Math.max(
     1,
     Math.min(
@@ -53,20 +55,20 @@ export function findSafeSpawnPosition(map: EditableMap, requestedX: number, requ
       const angle = candidateCount === 1 ? 0 : index / candidateCount * Math.PI * 2;
       const x = clamp(
         requestedX + Math.cos(angle) * radius,
-        bounds.minX + PLAYER_RADIUS,
-        bounds.maxX - PLAYER_RADIUS
+        bounds.minX + playerRadius,
+        bounds.maxX - playerRadius
       );
       const z = clamp(
         requestedZ + Math.sin(angle) * radius,
-        bounds.minZ + PLAYER_RADIUS,
-        bounds.maxZ - PLAYER_RADIUS
+        bounds.minZ + playerRadius,
+        bounds.maxZ - playerRadius
       );
       if (isSpawnPositionSafe(map, x, z)) return [x, z];
     }
   }
   return [
-    clamp(requestedX, bounds.minX + PLAYER_RADIUS, bounds.maxX - PLAYER_RADIUS),
-    clamp(requestedZ, bounds.minZ + PLAYER_RADIUS, bounds.maxZ - PLAYER_RADIUS)
+    clamp(requestedX, bounds.minX + playerRadius, bounds.maxX - playerRadius),
+    clamp(requestedZ, bounds.minZ + playerRadius, bounds.maxZ - playerRadius)
   ];
 }
 

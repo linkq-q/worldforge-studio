@@ -145,7 +145,7 @@ describe('map terrain editing', () => {
 
     const moved = movePlayerPositionForMap([-4, 0, 0], [10, 0, 0], map, obstacles);
 
-    expect(moved[0]).toBeCloseTo(2 - PLAYER_RADIUS, 5);
+    expect(moved[0]).toBeCloseTo(2 - map.playerRadius, 5);
     expect(moved[2]).toBeCloseTo(0, 5);
   });
 
@@ -184,6 +184,8 @@ describe('map terrain editing', () => {
 
   it('resolves a jump over a collider identically at client and server step sizes', () => {
     const map = createEmptyMap('Jump collision determinism');
+    map.playerHeight = PLAYER_HEIGHT;
+    map.playerRadius = PLAYER_RADIUS;
     const obstacles: MapObjectAabb[] = [{
       objectId: 'jump-box',
       min: [-1, 0, -0.5],
@@ -323,7 +325,7 @@ describe('map terrain editing', () => {
   it('stops upward motion at the underside of an elevated collider', () => {
     const map = createEmptyMap('Ceiling collision map');
     // Keep the underside inside the first jump sweep as the player capsule changes size.
-    const ceilingBottom = PLAYER_HEIGHT + 0.3;
+    const ceilingBottom = map.playerHeight + 0.3;
     const obstacles: MapObjectAabb[] = [{
       objectId: 'low-ceiling',
       min: [-1, ceilingBottom, -1],
@@ -332,7 +334,7 @@ describe('map terrain editing', () => {
 
     const vertical = stepPlayerVerticalMotionForMap([0, 0, 0], 0, 0.1, true, map, obstacles);
 
-    expect(vertical.y).toBeCloseTo(ceilingBottom - PLAYER_HEIGHT, 4);
+    expect(vertical.y).toBeCloseTo(ceilingBottom - map.playerHeight, 4);
     expect(vertical.velocity).toBe(0);
     expect(vertical.grounded).toBe(false);
   });

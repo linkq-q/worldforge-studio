@@ -3,10 +3,27 @@ import {
   MAP_ASSET_COLLIDER_PROFILE,
   PLAYER_MODEL_COLLIDER_PROFILE,
   buildModelColliderPlan,
+  calculateModelVisualBounds,
   modelColliderVisibilityPoints,
   modelColliderWorldAabbs,
   rayModelHitboxIntersection
 } from '../src/shared/modelBounds';
+
+const thinLegChair = {
+  format: 2,
+  nodes: [
+    {
+      id: 'seat',
+      transform: { pos: [0, 1, 0] },
+      mesh: { type: 'box', params: { width: 1, height: 0.4, depth: 1 } }
+    },
+    ...[-0.42, 0.42].flatMap((x) => [-0.42, 0.42].map((z, index) => ({
+      id: `leg-${x}-${z}-${index}`,
+      transform: { pos: [x, 0.4, z] },
+      mesh: { type: 'box', params: { width: 0.05, height: 0.8, depth: 0.05 } }
+    })))
+  ]
+};
 
 const splitModel = {
   format: 2,
@@ -30,6 +47,15 @@ const splitModel = {
 };
 
 describe('voxel-style model collider plans', () => {
+  it('keeps the true visual bottom even when thin furniture legs are omitted from collision', () => {
+    const visual = calculateModelVisualBounds(thinLegChair);
+    const collider = buildModelColliderPlan(thinLegChair, MAP_ASSET_COLLIDER_PROFILE);
+
+    expect(visual.min[1]).toBe(0);
+    expect(visual.max[1]).toBeCloseTo(1.2, 5);
+    expect(Math.min(...collider.boxes.map((box) => box.min[1]))).toBeCloseTo(0.8, 5);
+  });
+
   it('filters tiny meshes and keeps separate visible mesh boxes', () => {
     const plan = buildModelColliderPlan(splitModel, MAP_ASSET_COLLIDER_PROFILE);
 

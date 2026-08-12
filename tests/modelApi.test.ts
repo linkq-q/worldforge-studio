@@ -90,6 +90,16 @@ describe('model API adapter', () => {
     expect(fetchImpl.mock.calls[1][1]?.headers).toEqual(expect.objectContaining({ Connection: 'close' }));
   });
 
+  it('reports a stable upstream chat-service error after transport retries', async () => {
+    const fetchImpl = vi.fn().mockRejectedValue(new TypeError('fetch failed'));
+
+    await expect(llmChat([{ role: 'user', content: 'plan a grove' }], {
+      apiBase: 'https://example.test',
+      fetchImpl
+    })).rejects.toThrow('chat_service_unreachable');
+    expect(fetchImpl).toHaveBeenCalledTimes(3);
+  });
+
   it('retries when the model backend returns an empty chat response', async () => {
     const fetchImpl = vi.fn()
       .mockResolvedValueOnce(new Response(JSON.stringify({ ok: false, error: 'Empty AI response' }), { status: 502 }))
