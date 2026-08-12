@@ -214,7 +214,7 @@ export async function llmChat(messages: readonly ChatMessage[], options: ChatApi
       data = await response.json() as { ok?: boolean; content?: string; error?: string };
     } catch (error) {
       if (options.signal?.aborted || isAbortError(error)) throw error;
-      if (attempt === 3) throw error;
+      if (attempt === 3) throw new Error('chat_service_unreachable');
       lastError = error;
       await abortableDelay(300, options.signal);
       continue;
