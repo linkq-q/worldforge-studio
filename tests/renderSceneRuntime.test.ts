@@ -5,6 +5,7 @@ import {
   applyRenderScheme,
   type RenderSchemeTargets
 } from '../src/client/renderSceneRuntime';
+import { RenderRuntimeAdapter } from '../src/client/renderRuntimeAdapter';
 import { BUILTIN_RENDER_SCHEMES, createRenderScheme } from '../src/shared/renderScheme';
 
 const PLAIN_SCHEME = BUILTIN_RENDER_SCHEMES[0];
@@ -214,5 +215,40 @@ describe('RenderSceneRuntime sizing', () => {
 
     expect(renderer.setPixelRatio).toHaveBeenCalledOnce();
     expect(adapter.setSize).toHaveBeenCalledWith(800, 600);
+  });
+
+  it('keeps the composer pixel ratio in sync with its render targets', () => {
+    const composer = { setPixelRatio: vi.fn(), setSize: vi.fn() };
+    const target = () => ({ setSize: vi.fn() });
+    const normalTarget = target();
+    const edgeTarget = target();
+    const boundaryTarget = target();
+    const edgePass = target();
+    const adapter = Object.assign(Object.create(RenderRuntimeAdapter.prototype), {
+      renderer: {
+        getPixelRatio: () => 1,
+        getDrawingBufferSize: (size: THREE.Vector2) => size.set(800, 600)
+      },
+      composer,
+      normalTarget,
+      edgeTarget,
+      boundaryTarget,
+      edgePass,
+      inkPass: { uniforms: { uResolution: { value: new THREE.Vector2() } } },
+      comicPass: { uniforms: { uResolution: { value: new THREE.Vector2() } } },
+      sketchPass: { uniforms: { uResolution: { value: new THREE.Vector2() } } },
+      curvaturePass: { uniforms: { uTexelSize: { value: new THREE.Vector2() } } },
+      width: 800,
+      height: 600,
+      pixelRatio: 2
+    }) as RenderRuntimeAdapter;
+
+    adapter.setSize(800, 600);
+
+    expect(composer.setPixelRatio).toHaveBeenCalledWith(1);
+    expect(composer.setSize).toHaveBeenCalledWith(800, 600);
+    for (const renderTarget of [normalTarget, edgeTarget, boundaryTarget, edgePass]) {
+      expect(renderTarget.setSize).toHaveBeenCalledWith(800, 600);
+    }
   });
 });

@@ -107,6 +107,28 @@ describe('structured map water rendering', () => {
     });
   });
 
+  it('builds ocean shore distance from the terrain coastline', () => {
+    const map = applyMapOperations(createEmptyMap('island-ocean', 'map-island-ocean'), [{
+      type: 'terrain.generate', preset: 'island', seed: 7, amplitude: 6, roughness: 0.5
+    }]);
+
+    const waterRoot = buildStructuredWaterGroup(map);
+    const ocean = waterRoot.getObjectByName('water:terrain-ocean') as THREE.Mesh;
+    const image = (ocean.userData.waterShore.texture as THREE.DataTexture).image as {
+      data: Uint8Array;
+      width: number;
+      height: number;
+    };
+    const center = Math.floor(image.height / 2) * image.width + Math.floor(image.width / 2);
+
+    expect(image.data[center]).toBe(0);
+    expect(Math.max(...image.data)).toBe(255);
+
+    ocean.geometry.dispose();
+    (ocean.material as THREE.Material).dispose();
+    (ocean.userData.waterShore.texture as THREE.Texture).dispose();
+  });
+
   it('renders overlapping same-level water blocks as one clipped surface', () => {
     const map = createEmptyMap('joined-water', 'map-joined-water');
     map.waterBodies = [
@@ -540,7 +562,7 @@ describe('terrain-only refresh', () => {
 });
 
 describe('derived local lights', () => {
-  it('caps visible emissive-object lights at eight', async () => {
+  it('keeps two fixed light slots for stable shader variants', async () => {
     const map = createEmptyMap('local lights', 'map-local-lights');
     const now = Date.now();
     const asset: MapAsset = {
@@ -564,8 +586,37 @@ describe('derived local lights', () => {
     camera.updateProjectionMatrix();
     rendered.update(0.016, camera, 100);
 
+    expect(MAX_VISIBLE_MAP_LOCAL_LIGHTS).toBe(2);
     expect(lightRoot.children).toHaveLength(MAX_VISIBLE_MAP_LOCAL_LIGHTS);
     expect(lightRoot.children.filter((child) => child.visible)).toHaveLength(MAX_VISIBLE_MAP_LOCAL_LIGHTS);
+    rendered.dispose();
+  });
+
+  it('keeps an offscreen emitter active while its light volume reaches the view', async () => {
+    const map = createEmptyMap('offscreen local light', 'map-offscreen-local-light');
+    const now = Date.now();
+    const asset: MapAsset = {
+      id: 'asset-lamp', name: 'lamp', prompt: 'glowing lamp',
+      modelJson: { nodes: [{ id: 'bulb', tags: [{ tag: 'emissive', value: 1 }], mesh: { type: 'box' } }] },
+      colliderPlan: { version: 1, boxes: [], sourceMeshCount: 1, candidateCount: 1, fallbackUsed: false },
+      mode: 'voxel', createdAt: now, updatedAt: now
+    };
+    const lamp = createTestObject('lamp-offscreen', asset.id);
+    lamp.transform.position = [8, 0, -5];
+    map.assets = [asset];
+    map.objects = [lamp];
+
+    const rendered = await buildEditableMapGroup(map);
+    const lightRoot = rendered.group.getObjectByName('mapLocalLights') as THREE.Group;
+    const camera = new THREE.PerspectiveCamera(60, 1, 0.1, 100);
+    camera.lookAt(0, 0, -10);
+    camera.updateProjectionMatrix();
+    rendered.update(0.016, camera, 1);
+
+    const light = lightRoot.children[0] as THREE.PointLight;
+    expect(rendered.objectGroups.get(lamp.id)?.getObjectByName('bulb')?.visible).toBe(false);
+    expect(light.visible).toBe(true);
+    expect(light.intensity).toBeGreaterThan(0);
     rendered.dispose();
   });
 });

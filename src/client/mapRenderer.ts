@@ -36,7 +36,7 @@ import type { MapPrimitiveBatchStats } from './mapPrimitiveBatching';
 import type { Vec3 } from '../shared/protocol';
 import { buildMapLocalLights } from './mapLocalLights';
 import { isPointInsidePlayableArea } from '../shared/mapLayout';
-import { riverPathSamples, waterBoundaryPoints } from '../shared/mapWater';
+import { isPointInsideWaterBody, riverPathSamples, waterBoundaryPoints } from '../shared/mapWater';
 
 export interface RenderedMapDebugStats extends MapPrimitiveBatchStats {
   grassLayers: number;
@@ -474,7 +474,7 @@ export function buildStructuredWaterGroup(map: EditableMap): THREE.Group {
   });
   for (const waters of groupConnectedWaterBodies(visibleWaters)) {
     const water = waters[0];
-    const shore = createCompositeWaterShoreBinding(waters);
+    const shore = createCompositeWaterShoreBinding(map, waters);
     const isComposite = waters.length > 1;
     const geometry = isComposite
       ? buildCompositeWaterGeometry(shore.size)
@@ -553,7 +553,7 @@ function groupConnectedWaterBodies(waters: readonly MapWaterBody[]): MapWaterBod
   return [...groups.values()];
 }
 
-function createCompositeWaterShoreBinding(waters: readonly MapWaterBody[]): WaterShoreBinding {
+function createCompositeWaterShoreBinding(map: EditableMap, waters: readonly MapWaterBody[]): WaterShoreBinding {
   const boundaries = waters.map(waterBoundaryPoints);
   const points = boundaries.flat();
   const minX = Math.min(...points.map((point) => point[0]));
@@ -571,7 +571,10 @@ function createCompositeWaterShoreBinding(waters: readonly MapWaterBody[]): Wate
     for (let column = 0; column < resolution; column += 1) {
       const u = (column + 0.5) / resolution;
       const x = center[0] + (u - 0.5) * size;
-      if (boundaries.some((boundary) => pointInPolygon(x, z, boundary))) {
+      // Outside the ocean plane is still water, so only raised terrain becomes a shoreline.
+      if (waters.some((water, index) => water.type === 'ocean'
+        ? !pointInPolygon(x, z, boundaries[index]) || isPointInsideWaterBody(water, x, z, map)
+        : pointInPolygon(x, z, boundaries[index]))) {
         inside[row * resolution + column] = 1;
       }
     }

@@ -37,8 +37,8 @@ export function stabilizeRenderSemantics(
 
 function stabilizeSoftLight(
   suggestion: RenderSuggestion,
-  schemes: readonly RenderScheme[],
-  isRefine: boolean
+  _schemes: readonly RenderScheme[],
+  _isRefine: boolean
 ): RenderSuggestion {
   const plan: RenderPlan = {
     ...suggestion.plan,
@@ -53,10 +53,7 @@ function stabilizeSoftLight(
   if (grade) stabilizeColorGrade(grade);
   ensureSoftLightRig(plan.modules);
 
-  const baseSchemeId = !isRefine && isMistBaseScheme(plan.baseSchemeId)
-    && schemes.some((scheme) => scheme.id === 'render-natural-day')
-    ? 'render-natural-day'
-    : plan.baseSchemeId;
+  const baseSchemeId = plan.baseSchemeId;
   plan.baseSchemeId = baseSchemeId;
   return {
     ...suggestion,
@@ -101,8 +98,8 @@ function cappedNumber(value: unknown, maximum: number): number {
 function stabilizeStrongDaylight(
   prompt: string,
   suggestion: RenderSuggestion,
-  schemes: readonly RenderScheme[],
-  isRefine: boolean
+  _schemes: readonly RenderScheme[],
+  _isRefine: boolean
 ): RenderSuggestion {
   const plan: RenderPlan = {
     ...suggestion.plan,
@@ -127,11 +124,7 @@ function stabilizeStrongDaylight(
   ensureHardDayRig(plan.modules);
   preserveCelShadowDetail(plan.modules);
 
-  const replaceMistBase = !isRefine
-    && !EXPLICIT_LOW_CONTRAST.test(prompt)
-    && isMistBaseScheme(plan.baseSchemeId)
-    && schemes.some((scheme) => scheme.id === 'render-natural-day');
-  const baseSchemeId = replaceMistBase ? 'render-natural-day' : plan.baseSchemeId;
+  const baseSchemeId = plan.baseSchemeId;
   plan.baseSchemeId = baseSchemeId;
   return {
     ...suggestion,
@@ -139,10 +132,6 @@ function stabilizeStrongDaylight(
     plan,
     settings: compileRenderPlan(plan)
   };
-}
-
-function isMistBaseScheme(id: string): boolean {
-  return id === 'render-morning-mist' || id === 'render-runtime-sketch-mist';
 }
 
 function stabilizeColorGrade(module: RenderModuleSelection): void {

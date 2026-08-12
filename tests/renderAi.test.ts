@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { BUILTIN_RENDER_SCHEMES } from '../src/shared/renderScheme';
+import { BUILTIN_RENDER_SCHEMES as SHIPPED_RENDER_SCHEMES } from '../src/shared/renderScheme';
 import {
   compileRuntimeOutline,
   compileRuntimePresentation,
@@ -12,6 +12,19 @@ import {
   normalizeRenderSuggestion,
   refineRenderSuggestion
 } from '../src/server/renderAi';
+
+// Legacy IDs remain useful as isolated parser fixtures; they are not shipped
+// by the product and therefore do not reappear in the scheme picker.
+const BUILTIN_RENDER_SCHEMES = [
+  ...SHIPPED_RENDER_SCHEMES,
+  ...['render-natural-day', 'render-morning-mist', 'render-runtime-cel-day'].map((id) => ({
+    ...SHIPPED_RENDER_SCHEMES[0],
+    id,
+    renderPlan: SHIPPED_RENDER_SCHEMES[0].renderPlan
+      ? { ...SHIPPED_RENDER_SCHEMES[0].renderPlan, baseSchemeId: id }
+      : undefined
+  }))
+];
 
 describe('render AI adapter', () => {
   it('extracts JSON and clamps the render whitelist', () => {

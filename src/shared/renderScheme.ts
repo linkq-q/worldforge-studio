@@ -44,75 +44,6 @@ export interface RenderSuggestion {
 }
 
 export const BUILTIN_RENDER_SCHEMES: readonly RenderScheme[] = [
-  builtinScheme('render-natural-day', '自然日光', '清晰、中性的日间光照，适合继续编辑地图。', {
-    background: '#9cc7d5',
-    fogColor: '#9cc7d5',
-    fogDensity: 0.004,
-    hemisphereSkyColor: '#eaf6ff',
-    hemisphereGroundColor: '#30382f',
-    hemisphereIntensity: 1.6,
-    sunColor: '#fff0ce',
-    sunIntensity: 2.5,
-    exposure: 1
-  }),
-  builtinScheme('render-morning-mist', '薄雾晨光', '低对比度的冷色晨雾，适合田园和森林场景。', {
-    background: '#a8bec0',
-    fogColor: '#b9c9c5',
-    fogDensity: 0.018,
-    hemisphereSkyColor: '#dceff1',
-    hemisphereGroundColor: '#3b4740',
-    hemisphereIntensity: 1.35,
-    sunColor: '#ffe1ad',
-    sunIntensity: 1.7,
-    exposure: 0.94
-  }),
-  builtinScheme('render-golden-hour', '金色黄昏', '暖色主光和轻微雾化，突出轮廓与空间层次。', {
-    background: '#8e6f69',
-    fogColor: '#b58a71',
-    fogDensity: 0.011,
-    hemisphereSkyColor: '#d5a47f',
-    hemisphereGroundColor: '#352f32',
-    hemisphereIntensity: 1.15,
-    sunColor: '#ffb45c',
-    sunIntensity: 3.1,
-    exposure: 1.08
-  }),
-  builtinScheme('render-moonlit-night', '月夜', '冷色低照度环境，用于夜景氛围预览。', {
-    background: '#101a2d',
-    fogColor: '#18243a',
-    fogDensity: 0.009,
-    hemisphereSkyColor: '#728bb8',
-    hemisphereGroundColor: '#101521',
-    hemisphereIntensity: 0.72,
-    sunColor: '#b9d2ff',
-    sunIntensity: 1.25,
-    exposure: 0.78
-  }),
-  builtinScheme('render-runtime-cel-day', '卡通日光', '使用 Voxel Render Runtime 的色阶卡通明暗，适合低多边形场景。', {
-    background: '#a9d3df',
-    fogColor: '#b8d6d9',
-    fogDensity: 0.006,
-    hemisphereSkyColor: '#edf9ff',
-    hemisphereGroundColor: '#39483b',
-    hemisphereIntensity: 1.55,
-    sunColor: '#fff0c7',
-    sunIntensity: 2.7,
-    exposure: 1
-  }, {
-    version: 1,
-    baseSchemeId: 'render-runtime-cel-day',
-    modules: [{
-      id: 'runtime.surface-style',
-      params: {
-        mode: 'cel',
-        bands: 4,
-        shadowFloor: 0.34,
-        highlightFactor: 1.05,
-        rampStrength: 0.88,
-        transitionSoftness: 0.16
-      }
-    }]
-  }),
   builtinScheme('render-runtime-sketch-mist', '淡彩素描晨雾', '程序化交叉排线与柔和晨雾，保留少量原始色彩。', {
     background: '#c9d2cf',
     fogColor: '#d7ddd8',
@@ -159,34 +90,6 @@ export const BUILTIN_RENDER_SCHEMES: readonly RenderScheme[] = [
           paperScale: 2,
           paperTint: '#f4f0e6'
         }
-      }
-    ]
-  }),
-  builtinScheme('render-runtime-comic-clean', '清线漫画', '干净的共享轮廓与克制的漫画印刷处理，保留原有色彩层次。', {
-    background: '#a9d3df',
-    fogColor: '#b8d6d9',
-    fogDensity: 0.006,
-    hemisphereSkyColor: '#edf9ff',
-    hemisphereGroundColor: '#39483b',
-    hemisphereIntensity: 1.55,
-    sunColor: '#fff0c7',
-    sunIntensity: 2.7,
-    exposure: 1
-  }, {
-    version: 1,
-    baseSchemeId: 'render-runtime-comic-clean',
-    modules: [
-      {
-        id: 'runtime.surface-style',
-        params: { mode: 'cel', bands: 4, rampStrength: 0.82, transitionSoftness: 0.16 }
-      },
-      {
-        id: 'runtime.outline-style',
-        params: { mode: 'clean', strength: 1, width: 1.25, color: '#171824' }
-      },
-      {
-        id: 'runtime.presentation-style',
-        params: { mode: 'comic-clean' }
       }
     ]
   }),

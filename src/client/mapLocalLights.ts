@@ -2,7 +2,8 @@ import * as THREE from 'three';
 import type { EditableMap, MapAsset, MapObject } from '../shared/map';
 import { isMaterialTagEnabled } from '../shared/materialTagPolicy';
 
-export const MAX_VISIBLE_MAP_LOCAL_LIGHTS = 8;
+export const MAX_VISIBLE_MAP_LOCAL_LIGHTS = 2;
+const MAP_LOCAL_LIGHT_DISTANCE = 12;
 
 export interface MapLocalLightCandidateInfo {
   objectId: string;
@@ -33,15 +34,18 @@ export function buildMapLocalLights(
     }] : [];
   });
   const lights = Array.from({ length: Math.min(MAX_VISIBLE_MAP_LOCAL_LIGHTS, candidates.length) }, () => {
-    const light = new THREE.PointLight(0xffc46b, 0, 12, 2);
+    const light = new THREE.PointLight(0xffc46b, 0, MAP_LOCAL_LIGHT_DISTANCE, 2);
     light.castShadow = false;
-    light.visible = false;
+    // Keep the light count stable so camera movement does not compile a new
+    // material shader variant whenever an emitter crosses the viewport edge.
+    light.visible = true;
     group.add(light);
     return light;
   });
   const position = new THREE.Vector3();
   const projection = new THREE.Matrix4();
   const frustum = new THREE.Frustum();
+  const influence = new THREE.Sphere(new THREE.Vector3(), MAP_LOCAL_LIGHT_DISTANCE);
   return {
     group,
     update: (camera) => {
@@ -55,13 +59,18 @@ export function buildMapLocalLights(
           world.y += candidate.height;
           return { candidate, world, distance: world.distanceToSquared(camera.position) };
         })
-        .filter((entry) => frustum.containsPoint(entry.world))
+        // The emitter may be outside the picture while its light still reaches
+        // visible surfaces. Cull the influence volume, not the bulb position.
+        .filter((entry) => frustum.intersectsSphere(influence.set(entry.world, MAP_LOCAL_LIGHT_DISTANCE)))
         .sort((left, right) => left.distance - right.distance)
         .slice(0, lights.length);
+      group.visible = selected.length > 0;
       lights.forEach((light, index) => {
         const entry = selected[index];
-        light.visible = Boolean(entry);
-        if (!entry) return;
+        if (!entry) {
+          light.intensity = 0;
+          return;
+        }
         light.position.copy(entry.world);
         light.color.set(entry.candidate.color);
         light.intensity = entry.candidate.intensity;

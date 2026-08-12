@@ -625,9 +625,11 @@ export class RenderRuntimeAdapter {
   setSize(width: number, height: number): void {
     const pixelRatio = this.renderer.getPixelRatio();
     if (width === this.width && height === this.height && pixelRatio === this.pixelRatio) return;
+    const pixelRatioChanged = pixelRatio !== this.pixelRatio;
     this.width = Math.max(1, width);
     this.height = Math.max(1, height);
     this.pixelRatio = pixelRatio;
+    if (pixelRatioChanged) this.composer.setPixelRatio(pixelRatio);
     this.composer.setSize(this.width, this.height);
     const drawingSize = this.renderer.getDrawingBufferSize(new THREE.Vector2());
     const drawWidth = Math.max(1, drawingSize.x);

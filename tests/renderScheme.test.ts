@@ -17,19 +17,11 @@ afterEach(async () => {
 });
 
 describe('render schemes', () => {
-  it('ships a deterministic runtime-backed cel preset', () => {
-    const scheme = BUILTIN_RENDER_SCHEMES.find((item) => item.id === 'render-runtime-cel-day');
-    expect(scheme?.renderPlan).toBeDefined();
-    expect(compileRuntimeStyle(scheme!.renderPlan!)).toEqual({
-      mode: 'cel',
-      cartoon: {
-        bands: 4,
-        shadowFloor: 0.34,
-        highlightFactor: 1.05,
-        rampStrength: 0.88,
-        transitionSoftness: 0.16
-      }
-    });
+  it('ships only the two accepted built-in presets', () => {
+    expect(BUILTIN_RENDER_SCHEMES.map((scheme) => scheme.id)).toEqual([
+      'render-runtime-sketch-mist',
+      'render-runtime-comic-print'
+    ]);
   });
 
   it('ships a deterministic runtime-backed sketch preset', () => {
@@ -51,14 +43,12 @@ describe('render schemes', () => {
     });
   });
 
-  it('ships the accepted comic clean and print recipes', () => {
-    const clean = BUILTIN_RENDER_SCHEMES.find((item) => item.id === 'render-runtime-comic-clean');
+  it('ships the accepted comic print recipe', () => {
     const print = BUILTIN_RENDER_SCHEMES.find((item) => item.id === 'render-runtime-comic-print');
 
-    expect(compileRuntimePresentation(clean!.renderPlan!)).toMatchObject({ mode: 'comic-clean' });
     expect(compileRuntimePresentation(print!.renderPlan!)).toMatchObject({ mode: 'comic-print' });
-    expect(compileRuntimeOutline(clean!.renderPlan!)).toMatchObject({ mode: 'clean' });
     expect(compileRuntimeOutline(print!.renderPlan!)).toMatchObject({ mode: 'clean' });
+    expect(compileRuntimeStyle(print!.renderPlan!)).toMatchObject({ mode: 'cel' });
   });
 
   it('normalizes colors and clamps the safe environment settings', () => {
@@ -115,6 +105,19 @@ describe('render schemes', () => {
     });
     expect(loaded.sourcePrompt).toBe('素描风格的田园晨雾');
     await expect(restartedStore.deleteRenderScheme(builtins[0].id)).rejects.toThrow('builtin_scheme_readonly');
+  });
+
+  it('can promote a local scheme to a read-only default scheme', async () => {
+    const store = await createStore();
+    const custom = await store.saveRenderScheme({
+      ...BUILTIN_RENDER_SCHEMES[0],
+      name: '本地清晨'
+    });
+
+    const promoted = await store.updateRenderScheme(custom.id, { name: '清透晨林', kind: 'builtin' });
+
+    expect(promoted).toMatchObject({ id: custom.id, name: '清透晨林', kind: 'builtin' });
+    await expect(store.deleteRenderScheme(custom.id)).rejects.toThrow('builtin_scheme_readonly');
   });
 
   it('persists confirmation and a reusable renderSchemeId on the map', async () => {
