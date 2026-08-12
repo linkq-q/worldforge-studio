@@ -264,8 +264,7 @@ export function normalizeSceneCompositionPlan(value: unknown, map: EditableMap):
   const focalZoneId = cleanId(globalInput.focalZoneId);
   if (!zoneIds.has(focalZoneId)) throw new Error('unknown_scene_focal_zone');
   const normalizedRequirements = Array.isArray(input.intentRequirements)
-    ? input.intentRequirements.slice(0, SCENE_COMPOSITION_LIMITS.requirementCount)
-      .map((requirement) => normalizeRequirement(requirement, normalizedZones, assetFamilies))
+    ? normalizeRequirements(input.intentRequirements, normalizedZones, assetFamilies, focalZoneId)
     : derivePlanRequirements(zones, assetFamilies, focalZoneId);
   const intentRequirements = map.sceneMode === 'indoor'
     ? normalizedRequirements.filter((requirement) => requirement.kind === 'asset-family')
@@ -656,30 +655,89 @@ export function ensureMinimumSceneCoverage(plan: SceneCompositionPlan, map?: Edi
   return { ...plan, grassFamilies, zones };
 }
 
+function normalizeRequirements(
+  values: unknown[],
+  zones: SceneCompositionZone[],
+  families: SceneAssetFamily[],
+  focalZoneId: string
+): SceneIntentRequirement[] {
+  const usedIds = new Set<string>();
+  const requirements = values
+    .slice(0, SCENE_COMPOSITION_LIMITS.requirementCount)
+    .map((value, index) => normalizeRequirement(value, zones, families, focalZoneId, index))
+    .filter((requirement): requirement is SceneIntentRequirement => Boolean(requirement))
+    .map((requirement) => {
+      const baseId = requirement.id;
+      let id = baseId;
+      for (let suffix = 2; usedIds.has(id); suffix += 1) id = `${baseId}-${suffix}`;
+      usedIds.add(id);
+      return id === baseId ? requirement : { ...requirement, id };
+    });
+  return requirements.length > 0 || values.length === 0
+    ? requirements
+    : derivePlanRequirements(zones, families, focalZoneId);
+}
+
 function normalizeRequirement(
   value: unknown,
   zones: SceneCompositionZone[],
-  families: SceneAssetFamily[]
-): SceneIntentRequirement {
-  const input = requireRecord(value, 'invalid_scene_requirement');
-  const kind = input.kind === 'water' || input.kind === 'asset-family' ? input.kind : input.kind === 'terrain' ? 'terrain' : null;
-  if (!kind) throw new Error('invalid_scene_requirement');
-  const targetZoneId = input.targetZoneId === undefined ? undefined : requireId(input.targetZoneId, 'invalid_scene_requirement');
-  const familyId = input.familyId === undefined ? undefined : requireId(input.familyId, 'invalid_scene_requirement');
-  const zone = targetZoneId ? zones.find((item) => item.id === targetZoneId) : undefined;
-  if (targetZoneId && !zone) throw new Error('unknown_scene_requirement_zone');
-  if (kind === 'water' && (!zone || !zone.water)) throw new Error('scene_water_requirement_requires_water_zone');
-  if (kind === 'asset-family' && (!familyId || !families.some((family) => family.id === familyId))) {
-    throw new Error('unknown_scene_requirement_family');
-  }
+  families: SceneAssetFamily[],
+  focalZoneId: string,
+  index: number
+): SceneIntentRequirement | null {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
+  const input = value as Record<string, unknown>;
+  const requestedZoneId = cleanId(input.targetZoneId);
+  const requestedZone = zones.find((item) => item.id === requestedZoneId);
+  const requestedFamilyId = cleanId(input.familyId);
+  const requestedFamily = families.find((item) => item.id === requestedFamilyId);
+  const description = cleanText(input.description, '', 160);
+  const kind = input.kind === 'terrain' || input.kind === 'water' || input.kind === 'asset-family'
+    ? input.kind
+    : requestedFamily || /asset|object|family|furniture|prop/i.test(String(input.kind ?? ''))
+      ? 'asset-family'
+      : requestedZone?.water || /pond|lake|pool|water|池|湖|水/i.test(description)
+        ? 'water'
+        : /terrain|ground|hill|mountain|valley|地形|地面|山|谷/i.test(description)
+          ? 'terrain'
+          : null;
+  if (!kind) return null;
+
+  const zone = kind === 'water'
+    ? (requestedZone?.water ? requestedZone : zones.find((item) => item.water))
+    : kind === 'terrain'
+      ? (requestedZone ?? zones.find((item) => item.id === focalZoneId) ?? zones[0])
+      : requestedZone;
+  if (kind === 'water' && !zone) return null;
+
+  const family = kind === 'asset-family'
+    ? (requestedFamily ?? inferRequirementFamily(description, zone, families))
+    : undefined;
+  if (kind === 'asset-family' && !family) return null;
+  const targetZoneId = zone?.id;
+  const familyId = family?.id;
   return {
-    id: requireId(input.id, 'invalid_scene_requirement'),
+    id: cleanId(input.id) || `requirement-${kind}-${familyId ?? targetZoneId ?? index + 1}`,
     kind,
-    description: cleanText(input.description, kind, 160),
+    description: description || kind,
     ...(targetZoneId ? { targetZoneId } : {}),
     ...(familyId ? { familyId } : {}),
     minCount: Math.round(clamp(finiteNumber(input.minCount, 1), 1, 24))
   };
+}
+
+function inferRequirementFamily(
+  description: string,
+  zone: SceneCompositionZone | undefined,
+  families: SceneAssetFamily[]
+): SceneAssetFamily | undefined {
+  const localIds = new Set(zone?.layers.map((layer) => layer.familyId) ?? []);
+  const localFamilies = families.filter((family) => localIds.has(family.id));
+  if (localFamilies.length === 1) return localFamilies[0];
+  const semanticMatches = families.filter((family) => [family.id, family.label, ...family.tags]
+    .some((term) => term.length >= 2 && description.toLowerCase().includes(term.toLowerCase())));
+  if (semanticMatches.length === 1) return semanticMatches[0];
+  return families.length === 1 ? families[0] : undefined;
 }
 
 function derivePlanRequirements(

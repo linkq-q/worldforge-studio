@@ -953,6 +953,76 @@ describe('scene composition contract', () => {
     expect(applied.waterBodies.map((water) => water.id)).toContain('composition-water-pond');
     expect(outcome.checks.find((check) => check.requirementId === 'water-pond')?.status).toBe('repaired');
   });
+
+  it('keeps the generated scene and reports a downgrade when a required asset cannot physically fit', () => {
+    const map = createEmptyMap('Tiny classroom', 'map-unplaceable-blackboard', [6, 3, 6], 'voxel', 'indoor', [6, 3, 6]);
+    const input = structuredClone(planInput()) as {
+      globalBrief: { focalZoneId: string };
+      assetFamilies: Array<Record<string, unknown>>;
+      zones: Array<Record<string, unknown>>;
+      transitions: unknown[];
+      consultations: unknown[];
+      intentRequirements: unknown[];
+    };
+    input.assetFamilies = [{
+      id: 'front-blackboard', label: 'Front blackboard', role: 'classroom focus', tags: ['blackboard', 'wall-prop'],
+      sizeClass: 'large', desiredVariants: 1, priority: 1, generationBrief: 'wide classroom blackboard'
+    }];
+    input.zones = [{
+      id: 'front', label: 'Classroom front', role: 'primary', importance: 1,
+      region: { kind: 'circle', center: [0, -0.7], radius: 0.2 },
+      brief: { atmosphere: 'classroom', hierarchy: 'blackboard focus', openness: 0.4, transitionIntent: 'front wall' },
+      terrain: { elevation: 0, roughness: 0, flatness: 1 },
+      layers: [{
+        familyId: 'front-blackboard', density: 0.01, scaleRange: [1, 1], distribution: 'accent', edgeFalloff: 0,
+        placement: { mode: 'linear', intent: 'wall', pattern: 'row', direction: 0, offset: 0.2, facing: 'inward', maxPerGroup: 1 }
+      }],
+      grassLayers: [], excludeZoneIds: []
+    }];
+    input.globalBrief.focalZoneId = 'front';
+    input.transitions = [];
+    input.consultations = [];
+    input.intentRequirements = [{
+      id: 'front-blackboard', kind: 'asset-family', description: 'required front blackboard',
+      targetZoneId: 'front', familyId: 'front-blackboard', minCount: 1
+    }];
+    const plan = normalizeSceneCompositionPlan(input, map);
+    const blackboard = asset('asset-huge-blackboard', 'Huge blackboard', ['blackboard', 'wall-prop'], 'large', 'voxel');
+    blackboard.footprintRadius = 100;
+    blackboard.colliderPlan.boxes = [{ min: [-100, 0, -0.2], max: [100, 2, 0.2] }];
+    blackboard.colliderPlan.fallbackUsed = false;
+    blackboard.colliderPlan.sourceMeshCount = 1;
+    const resolved = resolveSceneFamilies(plan, map, [blackboard], 0).families;
+    const compiled = compileSceneComposition(map, plan, resolved);
+
+    const outcome = ensureSceneCompositionOutcome(map, plan, resolved, compiled);
+
+    expect(outcome.checks).toEqual(expect.arrayContaining([expect.objectContaining({
+      requirementId: 'front-blackboard', status: 'warning'
+    })]));
+    expect(outcome.compiled.operations.length).toBeGreaterThan(0);
+
+    const fittingBlackboard = asset('asset-fitting-blackboard', 'Fitting blackboard', ['blackboard', 'wall-prop'], 'large', 'voxel');
+    fittingBlackboard.footprintRadius = 4;
+    fittingBlackboard.colliderPlan = {
+      version: 1, boxes: [{ min: [-4, 0, -0.1], max: [4, 1.8, 0.1] }],
+      sourceMeshCount: 1, candidateCount: 1, fallbackUsed: false
+    };
+    fittingBlackboard.modelJson = {
+      nodes: [{ id: 'board', transform: { pos: [0, 0.9, 0] }, mesh: { type: 'box', params: { width: 8, height: 1.8, depth: 0.2 } } }]
+    };
+    const fittingMap = createEmptyMap('Classroom', 'map-fitting-blackboard', [12, 3, 8], 'voxel', 'indoor', [12, 3, 8]);
+    const fittingResolved = resolveSceneFamilies(plan, fittingMap, [fittingBlackboard], 0).families;
+    const fittingOutcome = ensureSceneCompositionOutcome(
+      fittingMap, plan, fittingResolved, compileSceneComposition(fittingMap, plan, fittingResolved)
+    );
+    const placed = fittingOutcome.compiled.operations.find((operation): operation is Extract<MapOperation, { type: 'object.add' }> => (
+      operation.type === 'object.add' && operation.object.assetId === fittingBlackboard.id
+    ));
+    expect(placed).toBeDefined();
+    expect(placed?.object.transform?.scale?.[0]).toBeGreaterThan(0.8);
+    expect(placed?.object.transform?.position?.[2]).toBeLessThan(-3.5);
+  });
 });
 
 function planInput(): unknown {

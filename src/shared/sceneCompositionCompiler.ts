@@ -1,6 +1,8 @@
 import {
   getMapBounds,
+  getMapPlayerMetrics,
   sampleTerrainHeight,
+  worldScaleProfileMultiplier,
   type EditableMap,
   type MapAsset
 } from './map';
@@ -28,6 +30,7 @@ import {
 import type { ResolvedSceneFamily } from './sceneCompositionAssets';
 import { compileMapVisualSemantics } from './mapVisualSemantics';
 import type { TerrainRegion } from './terrainGeneration';
+import { calculateModelVisualBounds } from './modelBounds';
 
 export interface CompiledSceneComposition {
   operations: MapOperation[];
@@ -110,8 +113,13 @@ export function compileSceneComposition(
       .filter((zone): zone is SceneCompositionPlan['zones'][number] => Boolean(zone))
       .map((zone) => ({ kind: 'circle' as const, ...sceneZoneWorldRegion(zone, map) }));
     const libraryMetadata = assets[0]?.libraryMetadata;
+    const layoutDensity = indoorAudience
+      ? rawScatterLayers
+          .filter((item) => item.layer.familyId === entry.layer.familyId && item.layer.placement?.intent === 'audience')
+          .reduce((sum, item) => sum + item.layer.density, 0)
+      : libraryMetadata?.density ?? entry.layer.density;
     const requestedScaleRange = libraryMetadata?.scaleRange ?? entry.layer.scaleRange;
-    const scaleRange = indoorScaleRange(map, family, assets, requestedScaleRange);
+    const scaleRange = semanticScaleRange(map, family, assets, requestedScaleRange, entry.layer.placement);
     const footprint = Math.max(...assets.map((asset) => (asset.footprintRadius ?? 0.5) * scaleRange[1]));
     const placementRegion = indoorAudience && map.room
       ? {
@@ -130,12 +138,15 @@ export function compileSceneComposition(
       : requiredLayerBudget;
     const structuredLimit = relationshipPlacementLimit(entry.layer, family, placementLimit);
     const mode = placementMode(entry.layer);
-    const spacing = Math.max(
+    const requestedSpacing = Math.max(
       entry.layer.placement?.spacing ?? 0,
       libraryMetadata?.minSpacing ?? 0,
       0.8,
       footprint * 1.8
     );
+    const spacing = indoorAudience
+      ? clamp(requestedSpacing, Math.max(footprint * 2.05, getMapPlayerMetrics(map).height * 0.52), getMapPlayerMetrics(map).height * 0.9)
+      : requestedSpacing;
     const seed = derivedSeed(map.seed, `${entry.zone.id}:${entry.layer.familyId}:${index}`);
     const grouping = sceneBehaviorGrouping(family?.behavior);
     const scatterLimit = family && isNaturalRockFamily(family) ? structuredLimit : placementLimit;
@@ -150,7 +161,7 @@ export function compileSceneComposition(
           intent: entry.layer.placement?.intent,
           assetIds: assets.map((asset) => asset.id),
           region: { kind: 'circle', ...placementRegion },
-          density: libraryMetadata?.density ?? entry.layer.density,
+          density: layoutDensity,
           spacing,
           offset: entry.layer.placement?.offset ?? 0,
           direction: entry.layer.placement?.direction ?? 0,
@@ -451,7 +462,7 @@ function compileAccents(
       const family = plan.assetFamilies.find((item) => item.id === layer.familyId);
       const libraryMetadata = assets[0]?.libraryMetadata;
       const chosenScaleRange = libraryMetadata?.scaleRange ?? layer.scaleRange;
-      const fittedScaleRange = indoorScaleRange(map, family, assets, chosenScaleRange);
+      const fittedScaleRange = semanticScaleRange(map, family, assets, chosenScaleRange, layer.placement);
       const scale = (fittedScaleRange[0] + fittedScaleRange[1]) / 2;
       const footprint = Math.max(...assets.map((asset) => asset.footprintRadius ?? 0.5)) * scale;
       const placement = map.sceneMode === 'indoor'
@@ -537,44 +548,71 @@ function indoorAnchorPlacement(
   };
 }
 
-function indoorScaleRange(
+function semanticScaleRange(
   map: EditableMap,
   family: SceneCompositionPlan['assetFamilies'][number] | undefined,
   assets: readonly MapAsset[],
-  requested: [number, number]
+  requested: [number, number],
+  placement?: SceneZoneLayer['placement']
 ): [number, number] {
-  if (map.sceneMode !== 'indoor' || !family || assets.length === 0) return requested;
-  const minimum = Math.min(...assets.map((asset) => fitIndoorAssetScale(map, family, asset, requested[0])));
-  const maximum = Math.min(...assets.map((asset) => fitIndoorAssetScale(map, family, asset, requested[1])));
+  if (!family || assets.length === 0) return requested;
+  const minimum = Math.min(...assets.map((asset) => fitSemanticAssetScale(map, family, asset, requested[0], placement)));
+  const maximum = Math.min(...assets.map((asset) => fitSemanticAssetScale(map, family, asset, requested[1], placement)));
   return [Math.min(minimum, maximum), Math.max(minimum, maximum)];
 }
 
-function fitIndoorAssetScale(
+function fitSemanticAssetScale(
   map: EditableMap,
   family: SceneCompositionPlan['assetFamilies'][number],
   asset: MapAsset,
-  requested: number
+  requested: number,
+  placement?: SceneZoneLayer['placement']
 ): number {
-  const room = map.room;
-  if (!room) return requested;
   const bounds = mapAssetLocalBounds(asset);
   const height = Math.max(0.01, bounds.max[1] - bounds.min[1]);
+  const width = Math.max(0.01, bounds.max[0] - bounds.min[0]);
+  const depth = Math.max(0.01, bounds.max[2] - bounds.min[2]);
+  const majorExtent = Math.max(height, width, depth);
   const semantic = `${family.label} ${family.role} ${family.tags.join(' ')} ${family.generationBrief}`;
+  const { height: playerHeight } = getMapPlayerMetrics(map);
+  if (map.sceneMode !== 'indoor' || !map.room) {
+    const profile = worldScaleProfileMultiplier(map.worldScaleProfile);
+    const explicitlyTiny = /tiny|miniature|pebble|gravel|seedling|小石子|碎石|幼苗/i.test(semantic);
+    const semanticMinimum = /tree|pine|oak|palm|树|松|橡树|棕榈/i.test(semantic)
+      ? playerHeight * 2.6 * profile
+      : /building|house|tower|chapel|建筑|房屋|塔|教堂/i.test(semantic)
+        ? playerHeight * 2.2 * profile
+        : /rock|stone|boulder|石|岩/i.test(semantic)
+          ? playerHeight * 0.45 * profile
+          : explicitlyTiny ? playerHeight / 24 : playerHeight / 6;
+    return clamp(Math.max(requested, semanticMinimum / majorExtent), 0.05, 40);
+  }
+  const room = map.room;
   const usableHeight = Math.max(0.5, room.size[1] - room.wallThickness * 2);
   const targetHeight = /chair|seat|pew|stool|椅|座椅|长凳/i.test(semantic)
-    ? Math.min(1.05, usableHeight * 0.42)
+    ? Math.min(playerHeight * 0.64, usableHeight * 0.42)
     : /table|desk|餐桌|书桌|课桌/i.test(semantic)
-      ? Math.min(0.95, usableHeight * 0.4)
+      ? Math.min(playerHeight * 0.58, usableHeight * 0.4)
       : /lectern|pulpit|altar|讲台|祭坛/i.test(semantic)
-        ? Math.min(1.4, usableHeight * 0.58)
+        ? Math.min(playerHeight * 0.88, usableHeight * 0.58)
         : /door|门/i.test(semantic)
-          ? Math.min(2.2, usableHeight * 0.92)
+          ? Math.min(playerHeight * 1.35, usableHeight * 0.92)
           : /cross|window|wall|十字架|窗|墙/i.test(semantic)
-            ? Math.min(1.8, usableHeight * 0.72)
-            : Math.min(1.8, usableHeight * 0.72);
+            ? Math.min(playerHeight * 1.05, usableHeight * 0.72)
+            : Math.min(playerHeight, usableHeight * 0.72);
   const horizontalRadius = Math.max(0.1, asset.footprintRadius ?? 0.5);
-  const horizontalLimit = Math.min(room.size[0], room.size[2]) * 0.22 / horizontalRadius;
-  return clamp(Math.min(requested, targetHeight / height, usableHeight * 0.9 / height, horizontalLimit), 0.05, requested);
+  const direction = (placement?.direction ?? 0) * Math.PI / 180;
+  const rotatedWidth = Math.abs(Math.cos(direction)) * width + Math.abs(Math.sin(direction)) * depth;
+  const rotatedDepth = Math.abs(Math.sin(direction)) * width + Math.abs(Math.cos(direction)) * depth;
+  const wallLength = Math.abs(Math.sin(direction)) > Math.abs(Math.cos(direction)) ? room.size[2] : room.size[0];
+  const wallExtent = Math.abs(Math.sin(direction)) > Math.abs(Math.cos(direction)) ? rotatedDepth : rotatedWidth;
+  const horizontalLimit = placement?.intent === 'wall'
+    ? Math.max(0.05, (wallLength - (room.wallThickness + 0.25) * 2) / Math.max(0.1, wallExtent))
+    : Math.min(room.size[0], room.size[2]) * 0.22 / horizontalRadius;
+  const targetScale = targetHeight / height;
+  const minimum = Math.min(targetScale * 0.82, horizontalLimit);
+  const maximum = Math.min(targetScale * 1.18, usableHeight * 0.9 / height, horizontalLimit);
+  return clamp(requested, Math.min(minimum, maximum), Math.max(minimum, maximum));
 }
 
 function indoorPlacementTransform(
@@ -605,24 +643,12 @@ function indoorPlacementTransform(
 }
 
 function mapAssetLocalBounds(asset: MapAsset): { min: [number, number, number]; max: [number, number, number] } {
-  const boxes = asset.colliderPlan?.boxes ?? [];
-  if (boxes.length === 0) {
+  if (asset.colliderPlan?.fallbackUsed && asset.colliderPlan.sourceMeshCount === 0) {
     const radius = Math.max(0.1, asset.footprintRadius ?? 0.5);
-    const fallbackHeight = asset.sizeClass === 'large' ? 3 : asset.sizeClass === 'medium' ? 1.8 : 1;
-    return { min: [-radius, 0, -radius], max: [radius, fallbackHeight, radius] };
+    const height = asset.sizeClass === 'large' ? 3 : asset.sizeClass === 'medium' ? 1.8 : 1;
+    return { min: [-radius, 0, -radius], max: [radius, height, radius] };
   }
-  return {
-    min: [
-      Math.min(...boxes.map((box) => box.min[0])),
-      Math.min(...boxes.map((box) => box.min[1])),
-      Math.min(...boxes.map((box) => box.min[2]))
-    ],
-    max: [
-      Math.max(...boxes.map((box) => box.max[0])),
-      Math.max(...boxes.map((box) => box.max[1])),
-      Math.max(...boxes.map((box) => box.max[2]))
-    ]
-  };
+  return calculateModelVisualBounds(asset.modelJson);
 }
 
 function shouldClearGrass(family: SceneCompositionPlan['assetFamilies'][number]): boolean {
@@ -655,11 +681,11 @@ function relationshipPlacementLimit(
   if (intent === 'wall') return Math.min(limit, layer.placement?.maxPerGroup ?? 10);
   if (intent === 'street-edge') return Math.min(limit, (layer.placement?.maxPerGroup ?? 4) * 3);
   if (intent === 'social' || intent === 'attached-service') return Math.min(limit, (layer.placement?.maxPerGroup ?? 6) * 8);
-  if (intent === 'audience') return Math.min(limit, layer.placement?.maxPerGroup ?? 24);
+  if (intent === 'audience') return limit;
   if (family && isNaturalRockFamily(family)) {
     return Math.min(limit, family.sizeClass === 'large' ? 4 : family.sizeClass === 'medium' ? 6 : 12);
   }
-  return family && sceneAssetCategory(family) === 'furniture' ? Math.min(limit, 5) : limit;
+  return limit;
 }
 
 function scenicMountainRegion(

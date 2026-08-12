@@ -24,6 +24,12 @@ const server = http.createServer(async (req, res) => {
     sendJson(res, 404, { error: 'not_found' });
   } catch (error) {
     console.error(error);
+    if (res.headersSent && !res.writableEnded) {
+      const detail = error instanceof Error ? error.message : 'agent_failed';
+      res.write(`event: error\ndata: ${JSON.stringify({ error: detail })}\n\n`);
+      res.end();
+      return;
+    }
     sendJson(res, 500, { error: 'internal_error' });
   }
 });

@@ -8,6 +8,7 @@ import {
   createId,
   DEFAULT_WATER_DEPTH,
   getMapBounds,
+  getMapPlayerMetrics,
   MAX_WATER_DEPTH,
   normalizeMap,
   normalizeMapRoom,
@@ -48,6 +49,7 @@ import {
   type ModelGenerationMode
 } from '../shared/modelGenerationMode';
 import { runMapCompositionWorkflow } from './mapCompositionWorkflow';
+import type { SceneCompositionPlan } from '../shared/sceneComposition';
 import { completeMapVisualSemantics } from '../shared/mapVisualSemantics';
 import { patchMapVisualZone, type VisualZonePatch } from '../shared/mapVisualSemantics';
 import { VISUAL_ZONE_TAGS, normalizeMapVisualSemantics, type VisualZoneTag } from '../shared/visualDirection';
@@ -74,6 +76,8 @@ export interface MapAiOptions {
   targetRegionId?: string;
   /** Restrict a refine pass to the one shared terrain height field. */
   baseTerrainOnly?: boolean;
+  /** User-approved director plan; skips a second director pass. */
+  approvedCompositionPlan?: SceneCompositionPlan;
 }
 
 export interface AssetGenerationRequest {
@@ -198,36 +202,22 @@ export async function runMapAgent(
   };
   let missingAssetIds = missingPlacedAssetIds(suggestion, generatedAssetIds);
   if (missingAssetIds.length > 0) {
-    options.onProgress?.({ phase: 'replanning', label: '补充新资产的区块摆放' });
-    finalContent = await requestMapPlan(
-      `${prompt}\n\nReturn the complete final map plan again. Every generated asset ID must be placed at least once with objects or scatters. Missing IDs: ${missingAssetIds.join(', ')}.`,
+    const operationCount = suggestion.operations.length;
+    suggestion = addDeterministicGeneratedAssetPlacements(
       map,
       expandedAssets,
-      options,
-      true,
-      mode,
-      generatedAssetIds
+      suggestion,
+      generatedAssetIds,
+      options.targetRegionId
     );
-    assertFinalPassRequestsNoAssets(finalContent, maxNewAssets, map.assetGenerationMode);
-    suggestion = {
-      ...normalizeMapSuggestion(finalContent, map, expandedAssets, mode, options.targetVisualZoneId, options.targetRegionId, options.baseTerrainOnly),
-      generatedAssets: generatedAssets.map((asset) => ({ id: asset.id, name: asset.name }))
-    };
     missingAssetIds = missingPlacedAssetIds(suggestion, generatedAssetIds);
-    if (missingAssetIds.length > 0) {
-      const operationCount = suggestion.operations.length;
-      suggestion = addDeterministicGeneratedAssetPlacements(
-        map,
-        expandedAssets,
-        suggestion,
-        generatedAssetIds,
-        options.targetRegionId
-      );
-      options.onProgress?.({
-        phase: 'repairing',
-        label: `自动补摆 ${suggestion.operations.length - operationCount} 个遗漏的新资产`
-      });
-    }
+    options.onProgress?.({
+      phase: 'repairing',
+      label: missingAssetIds.length > 0
+        ? `自动补摆后仍有 ${missingAssetIds.length} 项无合法位置，已局部降级`
+        : `自动补摆 ${suggestion.operations.length - operationCount} 个遗漏的新资产`,
+      detail: missingAssetIds.length > 0 ? missingAssetIds.join(', ') : undefined
+    });
   }
   assertNoForbiddenAssetReuse(suggestion, generatedAssetIds, options);
   if (!hasSpatialOperations(suggestion)) throw new Error('map_agent_no_spatial_plan');
@@ -316,10 +306,18 @@ function addDeterministicGeneratedAssetPlacements(
   }
 
   const repaired = { ...suggestion, operations: [...suggestion.operations, ...operations] };
-  if (missingPlacedAssetIds(repaired, generatedAssetIds).length > 0) {
-    throw new Error('map_agent_generated_assets_not_placed');
-  }
-  return repaired;
+  const unplacedAssetIds = missingPlacedAssetIds(repaired, generatedAssetIds);
+  if (unplacedAssetIds.length === 0) return repaired;
+  const names = unplacedAssetIds.map((assetId) => assets.find((asset) => asset.id === assetId)?.name ?? assetId);
+  return {
+    ...repaired,
+    diagnostics: [...(repaired.diagnostics ?? []), {
+      code: 'asset.unplaced',
+      severity: 'warning',
+      message: `新资产“${names.join('、')}”在边界、坡度、水体和碰撞约束内无合法位置，已降级跳过；其余地图内容仍可预览。`,
+      repaired: false
+    }]
+  };
 }
 
 function finalizeMapAgentSuggestion(
@@ -1163,6 +1161,7 @@ function buildSystemPrompt(
 ): string {
   const bounds = getMapBounds(map);
   const limits = planLimits(bounds, map.sceneMode);
+  const player = getMapPlayerMetrics(map);
   const placedAssetIds = new Set(map.objects.map((object) => object.assetId).filter((id): id is string => Boolean(id)));
   const reusableIds = options.reusableAssetIds ? new Set(options.reusableAssetIds) : null;
   const visibleAssets = options.reuseExistingAssets
@@ -1265,6 +1264,8 @@ function buildSystemPrompt(
     ...roomInstructions,
     ...refineInstructions,
     ...assetReuseInstructions,
+    `角色高度是 ${player.height.toFixed(2)} 米，世界尺度档位是 ${map.worldScaleProfile}。普通可见物体的最大边不要小于 ${(player.height / 6).toFixed(2)} 米；只有明确要求的小物件才能低至 ${(player.height / 24).toFixed(2)} 米。树木必须明显高于人物。`,
+    '大房间中的重复家具数量必须随可用面积增长，并铺开使用房间；保留通道，不要把固定少量家具挤在中心。',
     'visualZoneUpdates format: [{"zoneId":"existing-zone-id","center":[0,0],"radius":8,"tags":["grass"],"intensity":0.8}]. Omit unchanged fields.',
     '你是 WorldForge 的地图规划器。玩家通常只写一句简短场景描述；请自行推导整体构图、坐标、数量、密度、留白和自然过渡，不要求玩家补充技术参数。',
     '只规划空间内容，不决定最终渲染风格。你可以选择地形、湖泊/河流、已有资产和出生点；不得删除或修改未授权内容，不得编造资产 ID。',

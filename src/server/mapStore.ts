@@ -18,6 +18,7 @@ import {
   type MapPaintStroke,
   type MapSummary,
   type MapSceneMode,
+  type WorldScaleProfile,
   type TerrainBrushMode,
   type Transform3D
 } from '../shared/map';
@@ -63,6 +64,8 @@ export interface CreateMapInput {
   sceneMode?: MapSceneMode;
   roomSize?: Vec3;
   assetGenerationMode?: ModelGenerationMode;
+  playerHeight?: number;
+  worldScaleProfile?: WorldScaleProfile;
 }
 
 export interface GenerateAssetInput {
@@ -181,7 +184,9 @@ export class MapStore {
       size,
       normalizeModelGenerationMode(input.assetGenerationMode),
       normalizeMapSceneMode(input.sceneMode),
-      input.roomSize ? sanitizeVec3(input.roomSize, [10, 3, 8]) : undefined
+      input.roomSize ? sanitizeVec3(input.roomSize, [10, 3, 8]) : undefined,
+      input.playerHeight,
+      input.worldScaleProfile
     );
     return this.saveMap(map);
   }

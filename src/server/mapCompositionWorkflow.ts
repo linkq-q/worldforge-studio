@@ -43,6 +43,7 @@ export interface MapCompositionWorkflowOptions {
   reusableAssetIds?: readonly string[];
   minNewAssets?: number;
   maxNewAssets?: number;
+  approvedCompositionPlan?: SceneCompositionPlan;
   createAsset: (request: {
     name: string;
     prompt: string;
@@ -50,9 +51,46 @@ export interface MapCompositionWorkflowOptions {
     mode: ModelGenerationMode;
   }) => Promise<MapAsset>;
 }
+export type MapCompositionPlanningOptions = Omit<MapCompositionWorkflowOptions, 'createAsset' | 'approvedCompositionPlan'>;
 export interface MapCompositionWorkflowResult {
   suggestion: MapAiSuggestion;
   assets: MapAsset[];
+}
+
+export async function planMapComposition(
+  prompt: string,
+  map: EditableMap,
+  assets: readonly MapAsset[],
+  options: MapCompositionPlanningOptions
+): Promise<SceneCompositionPlan> {
+  if (!isCompositionEmptyMap(map)) throw new Error('map_composition_requires_empty_map');
+  const cleanPrompt = prompt.trim().slice(0, 1_200);
+  if (!cleanPrompt) throw new Error('missing_prompt');
+  const provider = options.provider ?? 'gpt';
+  const providerOption = CHAT_PROVIDER_OPTIONS.find((item) => item.key === provider);
+  if (!providerOption || providerOption.disabled) throw new Error('provider_unavailable');
+  const assetRange = normalizeMapAiNewAssetRange(options.minNewAssets, options.maxNewAssets);
+  const reusableIds = options.reusableAssetIds ? new Set(options.reusableAssetIds) : null;
+  const reusableAssets = options.reuseExistingAssets
+    ? assets.filter((asset) => (
+        (!reusableIds || reusableIds.has(asset.id))
+        && asset.libraryMetadata?.analysisStatus !== 'pending'
+        && asset.libraryMetadata?.enabled !== false
+      ))
+    : [];
+  options.onProgress?.({ phase: 'composing', label: '场景总导演正在生成可确认的俯视空间规划' });
+  return requestStructured(
+    'scene composition plan',
+    buildSceneDirectorPrompt(map, reusableAssets, {
+      reuseExistingAssets: options.reuseExistingAssets === true,
+      minNewAssets: assetRange.min,
+      maxNewAssets: assetRange.max
+    }),
+    cleanPrompt,
+    (value) => normalizeCompositionPlan(value, map, cleanPrompt, assetRange.min),
+    options,
+    0.45
+  );
 }
 
 export async function runMapCompositionWorkflow(
@@ -77,8 +115,12 @@ export async function runMapCompositionWorkflow(
       ))
     : [];
 
-  options.onProgress?.({ phase: 'composing', label: '场景总导演正在组织区域、主次与资产家族' });
-  let plan = await requestStructured(
+  if (!options.approvedCompositionPlan) {
+    options.onProgress?.({ phase: 'composing', label: '场景总导演正在组织区域、主次与资产家族' });
+  }
+  let plan = options.approvedCompositionPlan
+    ? normalizeCompositionPlan(options.approvedCompositionPlan, map, cleanPrompt, assetRange.min)
+    : await requestStructured(
     'scene composition plan',
     buildSceneDirectorPrompt(map, reusableAssets, {
       reuseExistingAssets: options.reuseExistingAssets === true,
@@ -86,23 +128,15 @@ export async function runMapCompositionWorkflow(
       maxNewAssets: assetRange.max
     }),
     cleanPrompt,
-    (value) => {
-      const normalized = normalizeSceneCompositionPlan(value, map);
-      const budgeted = fitSceneAssetVariantBudget(ensureMinimumSceneCoverage({
-        ...normalized,
-        assetFamilies: normalized.assetFamilies.map((family) => ({ ...family, desiredVariants: 1 }))
-      }, map), assetRange.min, SCENE_COMPOSITION_LIMITS.assetFamilyCount * 3);
-      if (assetRange.min > 0 && budgeted.assetFamilies.length === 0) {
-        throw new Error('scene_asset_variant_count_below_min');
-      }
-      return enforcePromptSceneIntent(budgeted, cleanPrompt, map);
-    },
+    (value) => normalizeCompositionPlan(value, map, cleanPrompt, assetRange.min),
     options,
     0.45
   );
 
   const consultationTrace: NonNullable<MapAiSuggestion['composition']>['consultations'] = [];
-  const consultations = [...plan.consultations].sort((left, right) => right.priority - left.priority);
+  const consultations = options.approvedCompositionPlan
+    ? []
+    : [...plan.consultations].sort((left, right) => right.priority - left.priority);
   for (const [index, consultation] of consultations.entries()) {
     options.signal?.throwIfAborted();
     options.onProgress?.({
@@ -161,14 +195,28 @@ export async function runMapCompositionWorkflow(
       current: index + 1,
       total: initialResolution.gaps.length
     });
-    const asset = await options.createAsset({
-      name: gap.name,
-      prompt: gap.prompt,
-      tags: gap.tags,
-      mode: map.assetGenerationMode
-    });
-    if (asset.mode !== map.assetGenerationMode) throw new Error('generated_asset_mode_mismatch');
-    generated.push({ familyId: gap.familyId, asset });
+    try {
+      const asset = await options.createAsset({
+        name: gap.name,
+        prompt: gap.prompt,
+        tags: gap.tags,
+        mode: map.assetGenerationMode
+      });
+      if (asset.mode !== map.assetGenerationMode) throw new Error('generated_asset_mode_mismatch');
+      generated.push({ familyId: gap.familyId, asset });
+    } catch (error) {
+      options.signal?.throwIfAborted();
+      const message = error instanceof Error ? error.message : String(error);
+      if (!message.startsWith('map_asset_generation_failed:')
+        || /failed to fetch|econnrefused|networkerror|socket|connection (?:closed|reset)|terminated|service_unreachable/i.test(message)) {
+        throw error;
+      }
+      options.onProgress?.({
+        phase: 'repairing',
+        label: `资产“${gap.name}”生成失败，已降级跳过并继续其他内容`,
+        detail: message
+      });
+    }
   }
   const resolvedFamilies = attachGeneratedSceneAssets(initialResolution.families, generated);
   const expandedAssets = [...assets, ...generated.map((entry) => entry.asset)];
@@ -177,13 +225,17 @@ export async function runMapCompositionWorkflow(
   let compiled = compileSceneComposition(map, plan, resolvedFamilies);
   let outcome = ensureSceneCompositionOutcome(map, plan, resolvedFamilies, compiled);
   compiled = outcome.compiled;
+  const outcomeWarnings = outcome.checks.filter((check) => check.status === 'warning');
   options.onProgress?.({
-    phase: outcome.repairCount > 0 ? 'repairing' : 'validating',
-    label: outcome.repairCount > 0
+    phase: outcome.repairCount > 0 || outcomeWarnings.length > 0 ? 'repairing' : 'validating',
+    label: outcomeWarnings.length > 0
+      ? `实体结果审查已自动降级 ${outcomeWarnings.length} 项，其他内容继续生成`
+      : outcome.repairCount > 0
       ? `实体结果审查补齐 ${outcome.repairCount} 项必要内容`
       : '实体结果审查已确认地形、水体与必要资产均已落地',
     current: outcome.checks.length,
-    total: outcome.checks.length
+    total: outcome.checks.length,
+    detail: outcomeWarnings.map((check) => check.message).join('；') || undefined
   });
 
   options.onProgress?.({ phase: 'reviewing', label: '合成审查正在检查焦点、留白、重复和尺度关系' });
@@ -238,12 +290,29 @@ export async function runMapCompositionWorkflow(
   };
 }
 
+function normalizeCompositionPlan(
+  value: unknown,
+  map: EditableMap,
+  prompt: string,
+  minimumAssets: number
+): SceneCompositionPlan {
+  const normalized = normalizeSceneCompositionPlan(value, map);
+  const budgeted = fitSceneAssetVariantBudget(ensureMinimumSceneCoverage({
+    ...normalized,
+    assetFamilies: normalized.assetFamilies.map((family) => ({ ...family, desiredVariants: 1 }))
+  }, map), minimumAssets, SCENE_COMPOSITION_LIMITS.assetFamilyCount * 3);
+  if (minimumAssets > 0 && budgeted.assetFamilies.length === 0) {
+    throw new Error('scene_asset_variant_count_below_min');
+  }
+  return enforcePromptSceneIntent(budgeted, prompt, map);
+}
+
 async function requestStructured<T>(
   kind: string,
   systemPrompt: string,
   userPrompt: string,
   normalize: (value: unknown) => T,
-  options: MapCompositionWorkflowOptions,
+  options: MapCompositionPlanningOptions,
   temperature: number
 ): Promise<T> {
   let content = await requestModel(systemPrompt, userPrompt, options, temperature);
@@ -267,7 +336,7 @@ async function requestStructured<T>(
 function requestModel(
   systemPrompt: string,
   userPrompt: string,
-  options: MapCompositionWorkflowOptions,
+  options: MapCompositionPlanningOptions,
   temperature: number
 ): Promise<string> {
   return llmChat([

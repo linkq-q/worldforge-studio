@@ -1,4 +1,4 @@
-import { getMapBounds, type EditableMap, type MapAsset } from '../shared/map';
+import { getMapBounds, getMapPlayerMetrics, type EditableMap, type MapAsset } from '../shared/map';
 import { planLimits } from '../shared/mapPlanning';
 import type {
   SceneCompositionMetrics,
@@ -17,6 +17,7 @@ export function buildSceneDirectorPrompt(
   const indoor = map.sceneMode === 'indoor';
   const bounds = getMapBounds(map);
   const limits = planLimits(bounds, map.sceneMode);
+  const player = getMapPlayerMetrics(map);
   const catalogAssets = assets
     .slice(0, 80)
     .map((asset) => ({
@@ -62,6 +63,8 @@ export function buildSceneDirectorPrompt(
     'On mountains, give vegetation an explicit habitat.slope band. Keep large trees off cliff shoulders and narrow ridge crests; let shrubs and rocks tolerate progressively steeper ground.',
     'When the user explicitly requests a high mountain, snow mountain, mountain peak, or bare ridge, create a broad mountain zone with strong relief, rock surface, and scenic access. A low rounded hill is not an acceptable substitute. Put bare-rock and outcrop families inside that mountain zone with explicit high-elevation and steep-slope habitat bands.',
     'Repeated decorative rocks are terrain cover, not boundary markers. Unless the request is specifically for a compact rock field, distribute each natural rock family through compatible broad zones with only moderate clustering so it does not collapse into one side of the map.',
+    `Use the ${player.height.toFixed(2)}m character as the scale reference. World scale profile is ${map.worldScaleProfile}. Ordinary visible assets should not have a major dimension below ${(player.height / 6).toFixed(2)}m; only explicitly requested tiny props may use ${(player.height / 24).toFixed(2)}-${(player.height / 6).toFixed(2)}m. Trees must read clearly taller than the character.`,
+    'For repeated furniture, density describes how much of the usable area should be occupied. Do not encode one compact fixed-count block for a large room; preserve aisles and distribute rows across the available floor area.',
     'For every animal family, provide behavior. kind is static|solitary|pair|flock|herd|school|territorial; locomotion is static|ground|air|water|mixed. Use groupCount, coreRatio, and outlierMinDistance to create several readable cores plus reserved separated individuals. For mixed birds, coreState is usually feed or rest and outlierState is fly; set an altitudeRange for airborne members.',
     'Treat ecology at three scales: zone habitat, family patches or social cores, then individually spaced instances. Do not represent a flock, herd, or mixed plant community as one undifferentiated cluster.',
     'Every mountain or ridge must choose terrain.access walkable|scenic. Walkable mountains are broad massifs; scenic mountains may be steeper but still require a wide region. A ridge is only valid inside a large region. Use layout terraces when traversal should happen by jumping between geometric platforms.',
@@ -75,7 +78,7 @@ export function buildSceneDirectorPrompt(
     `Use consultations only when a genuinely difficult local relationship would benefit from an independent specialist. Use 0-${SCENE_COMPOSITION_LIMITS.consultationCount}; do not create one per zone.`,
     'A consultation may improve the plan but cannot directly create assets or map operations.',
     'Rendering is a later stage. Only provide short renderPromptSuggestions; do not choose or edit a render scheme.',
-    `Map: ${map.box.size[0]} x ${map.box.size[1]} x ${map.box.size[2]}, scene mode ${map.sceneMode}, seed ${map.seed}, default new-asset mode ${map.assetGenerationMode}.`,
+    `Map: ${map.box.size[0]} x ${map.box.size[1]} x ${map.box.size[2]}, scene mode ${map.sceneMode}, seed ${map.seed}, default new-asset mode ${map.assetGenerationMode}, character height ${player.height.toFixed(2)}m, world scale ${map.worldScaleProfile}.`,
     `Execution budgets: about ${limits.objectCount} objects and ${options.minNewAssets ?? 0}-${options.maxNewAssets ?? limits.assetRequestCount} newly generated assets. Define enough useful families or variants to satisfy the minimum; never exceed the maximum.`,
     'Use several semantically useful asset families. Do not create near-duplicate recolors or unnecessary variants of one landmark.',
     options.reuseExistingAssets

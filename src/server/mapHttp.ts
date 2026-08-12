@@ -26,6 +26,7 @@ import {
 import type { RenderScheme } from '../shared/renderScheme';
 import type { RenderPlan } from '../shared/renderPlan';
 import { runMapAgent } from './mapAi';
+import { planMapComposition } from './mapCompositionWorkflow';
 import { generateMapLayoutSuggestion } from './mapLayoutAi';
 import { generateMapAssetWithRetry } from './mapAssetGenerationRetry';
 import { generateModel } from './modelApi';
@@ -35,7 +36,7 @@ import {
 } from '../shared/modelGenerationMode';
 import { generateRenderSuggestion, refineRenderSuggestion } from './renderAi';
 import { MapStore, mapEditorCliManifest } from './mapStore';
-import { isCompositionEmptyMap } from '../shared/sceneComposition';
+import { isCompositionEmptyMap, type SceneCompositionPlan } from '../shared/sceneComposition';
 import type { AssetLibraryMetadata } from '../shared/assetLibrary';
 import { analyzeAssetForLibrary, pendingAssetLibraryMetadata } from './assetLibraryAi';
 import {
@@ -232,6 +233,8 @@ async function handleEditorMaps(req: Req, res: Res, store: MapStore, parts: stri
       sceneMode?: MapSceneMode;
       roomSize?: Vec3;
       assetGenerationMode?: ModelGenerationMode;
+      playerHeight?: number;
+      worldScaleProfile?: EditableMap['worldScaleProfile'];
     }>(req);
     sendJson(res, 201, { map: await store.createMap(body) });
     return;
@@ -348,6 +351,8 @@ async function handleEditorMaps(req: Req, res: Res, store: MapStore, parts: stri
       targetVisualZoneId?: string;
       targetRegionId?: string;
       baseTerrainOnly?: boolean;
+      planOnly?: boolean;
+      approvedCompositionPlan?: SceneCompositionPlan;
     }>(req);
     const prompt = body.prompt?.trim();
     if (!prompt) throw new HttpError(400, 'missing_prompt');
@@ -386,6 +391,27 @@ async function handleEditorMaps(req: Req, res: Res, store: MapStore, parts: stri
         ...(planningMap.assets ?? []),
         ...libraryAssets
       ]);
+      if (body.planOnly === true) {
+        if (parts[4] !== 'generate' || planningMap.sceneMode === 'mixed') {
+          throw new HttpError(400, 'composition_plan_preview_unavailable');
+        }
+        const plan = await planMapComposition(prompt, planningMap, planningAssets, {
+          provider,
+          signal: controller.signal,
+          reuseExistingAssets: body.reuseExistingAssets === true,
+          reusableAssetIds: libraryAssets.map((asset) => asset.id),
+          minNewAssets: body.minNewAssets,
+          maxNewAssets: body.maxNewAssets,
+          onProgress
+        });
+        if (stream) {
+          sendSse(res, 'result', { plan });
+          res.end();
+        } else {
+          sendJson(res, 200, { plan });
+        }
+        return;
+      }
       const suggestion = await runMapAgent(prompt, planningMap, planningAssets, {
           provider,
           signal: controller.signal,
@@ -397,6 +423,7 @@ async function handleEditorMaps(req: Req, res: Res, store: MapStore, parts: stri
           targetVisualZoneId: parts[4] === 'refine' ? body.targetVisualZoneId : undefined,
           targetRegionId: parts[4] === 'refine' ? body.targetRegionId : undefined,
           baseTerrainOnly: parts[4] === 'refine' && body.baseTerrainOnly === true,
+          approvedCompositionPlan: body.approvedCompositionPlan,
           onProgress,
           createAsset: async (request) => {
             const modelJson = await generateMapAssetWithRetry(request.name, () => generateModel(request.prompt, {

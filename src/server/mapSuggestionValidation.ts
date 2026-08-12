@@ -15,10 +15,11 @@ export function validateMapSuggestion(map: EditableMap, suggestion: MapAiSuggest
   const candidate = applyMapOperations(map, suggestion.operations);
   const lint = lintMap(candidate);
   const operations = [...suggestion.operations, ...lint.repairOperations];
+  const issues = [...(suggestion.diagnostics ?? []), ...lint.issues];
   if (lint.repairOperations.length > 0) applyMapOperations(map, operations);
   return {
-    suggestion: { ...suggestion, operations, diagnostics: lint.issues },
-    issues: lint.issues,
+    suggestion: { ...suggestion, operations, diagnostics: issues },
+    issues,
     repairCount: lint.repairOperations.length
   };
 }

@@ -15,6 +15,8 @@ import {
 } from '../src/server/mapAi';
 import { planLimits } from '../src/shared/mapPlanning';
 import { isSpawnPositionSafe } from '../src/shared/mapSpawnSafety';
+import { planMapComposition } from '../src/server/mapCompositionWorkflow';
+import type { SceneCompositionPlan } from '../src/shared/sceneComposition';
 
 const assets: MapAsset[] = [
   testAsset('asset-tree', 'Pine tree', ['tree', 'vegetation'], 'large'),
@@ -22,6 +24,112 @@ const assets: MapAsset[] = [
 ];
 
 describe('map AI adapter', () => {
+  it('can return a director plan before generating any assets', async () => {
+    const plan = compositionPlan({
+      assetFamilies: [family('chairs', ['chair', 'furniture'], 'medium')],
+      zones: [zone('seating', [{ familyId: 'chairs', distribution: 'even' }])]
+    });
+    const fetchImpl = vi.fn().mockResolvedValueOnce(chatResponse(plan));
+    const createAsset = vi.fn();
+
+    const approved = await planMapComposition(
+      '整齐排列的教堂座席，保留中央过道',
+      createEmptyMap('chapel', 'chapel-plan', [16, 3, 12], 'voxel', 'indoor', [16, 3, 12]),
+      [],
+      { apiBase: 'https://example.test', provider: 'gpt', fetchImpl, minNewAssets: 0, maxNewAssets: 4 }
+    );
+
+    expect(approved.zones[0].id).toBe('seating');
+    expect(fetchImpl).toHaveBeenCalledOnce();
+    expect(createAsset).not.toHaveBeenCalled();
+  });
+
+  it('repairs malformed director requirements locally instead of requesting a full replan', async () => {
+    const plan = compositionPlan({
+      assetFamilies: [family('chairs', ['chair', 'furniture'], 'medium')],
+      zones: [zone('seating', [{ familyId: 'chairs', distribution: 'even' }])],
+      intentRequirements: [{
+        kind: 'asset', description: 'chairs requested by the user', familyId: 'chairs', minCount: 6
+      }]
+    });
+    const fetchImpl = vi.fn().mockResolvedValueOnce(chatResponse(plan));
+
+    const approved = await planMapComposition(
+      '教室内整齐排列六把椅子',
+      createEmptyMap('classroom', 'classroom-plan', [16, 3, 12], 'voxel', 'indoor', [16, 3, 12]),
+      [],
+      { apiBase: 'https://example.test', provider: 'gpt', fetchImpl, minNewAssets: 0, maxNewAssets: 4 }
+    );
+
+    expect(fetchImpl).toHaveBeenCalledOnce();
+    expect(approved.intentRequirements).toEqual([expect.objectContaining({
+      kind: 'asset-family', familyId: 'chairs', minCount: 6
+    })]);
+  });
+
+  it('keeps successful indoor assets when one model family fails after its own retries', async () => {
+    const blackboardFamily = {
+      ...(family('front-blackboard', ['blackboard', 'wall-prop'], 'large') as Record<string, unknown>),
+      priority: 1
+    };
+    const plan = compositionPlan({
+      assetFamilies: [blackboardFamily, family('chairs', ['chair', 'furniture'], 'medium')],
+      zones: [zone('classroom', [
+        { familyId: 'front-blackboard', distribution: 'accent' },
+        { familyId: 'chairs', distribution: 'even' }
+      ])],
+      intentRequirements: [{
+        id: 'front-blackboard', kind: 'asset-family', description: 'front blackboard',
+        targetZoneId: 'classroom', familyId: 'front-blackboard', minCount: 1
+      }]
+    });
+    const fetchImpl = vi.fn()
+      .mockResolvedValueOnce(chatResponse(plan))
+      .mockResolvedValueOnce(chatResponse(reviewPass()));
+    const createAsset = vi.fn()
+      .mockRejectedValueOnce(new Error('map_asset_generation_failed:Front blackboard:gpt: HTTP 500'))
+      .mockResolvedValueOnce(testAsset('asset-chair', 'Chair', ['chair', 'furniture'], 'medium'));
+
+    const suggestion = await runMapAgent(
+      '教室内有前方黑板和整齐排列的椅子',
+      createEmptyMap('classroom', 'classroom-soft-asset-failure', [16, 3, 12], 'voxel', 'indoor', [16, 3, 12]),
+      [],
+      { apiBase: 'https://example.test', provider: 'gpt', fetchImpl, createAsset }
+    );
+
+    expect(fetchImpl).toHaveBeenCalledTimes(2);
+    expect(suggestion.generatedAssets).toEqual([{ id: 'asset-chair', name: 'Chair' }]);
+    expect(suggestion.operations.some((operation) => (
+      operation.type === 'object.add' && operation.object.assetId === 'asset-chair'
+    ))).toBe(true);
+    expect(suggestion.composition?.outcome.checks).toEqual(expect.arrayContaining([expect.objectContaining({
+      requirementId: 'front-blackboard', status: 'warning'
+    })]));
+  });
+
+  it('continues from an approved composition without asking the director to redesign it', async () => {
+    const approvedPlan = compositionPlan({
+      assetFamilies: [family('chairs', ['chair', 'furniture'], 'medium')],
+      zones: [zone('seating', [{ familyId: 'chairs', distribution: 'even' }])]
+    });
+    const fetchImpl = vi.fn().mockResolvedValueOnce(chatResponse(reviewPass()));
+    const createAsset = vi.fn().mockResolvedValue(testAsset('approved-chair', 'Approved chair', ['chair', 'furniture'], 'medium'));
+
+    const suggestion = await runMapAgent(
+      '整齐排列的教堂座席',
+      createEmptyMap('chapel', 'approved-chapel', [16, 3, 12], 'voxel', 'indoor', [16, 3, 12]),
+      [],
+      {
+        apiBase: 'https://example.test', provider: 'gpt', fetchImpl, createAsset,
+        approvedCompositionPlan: approvedPlan as SceneCompositionPlan
+      }
+    );
+
+    expect(createAsset).toHaveBeenCalledOnce();
+    expect(fetchImpl).toHaveBeenCalledOnce();
+    expect(suggestion.composition?.plan.zones[0].id).toBe('seating');
+  });
+
   it('rejects an explicit interior prompt on an outdoor map before calling the model', async () => {
     const fetchImpl = vi.fn();
 
@@ -125,14 +233,13 @@ describe('map AI adapter', () => {
       || operation.type.startsWith('grass.')
     ))).toBe(false);
     expect(altar).toBeDefined();
-    expect(pews).toHaveLength(8);
+    expect(pews.length).toBeGreaterThanOrEqual(40);
+    expect(pews.length).toBeLessThanOrEqual(200);
     expect(applied.objects.some((object) => object.id.startsWith('population-'))).toBe(false);
-    expect(pews.every((pew) => pew.transform.scale[0] < 0.5)).toBe(true);
-    expect(pews.every((pew) => Math.abs(
-      pew.transform.position[1] + 1.22 * pew.transform.scale[1]
-    ) < 0.001)).toBe(true);
+    expect(pews.every((pew) => pew.transform.scale[0] < 0.61)).toBe(true);
+    expect(pews.every((pew) => Math.abs(pew.transform.position[1]) < 0.001)).toBe(true);
     expect(pews.every((pew) => (
-      pew.transform.position[1] + 3.475 * pew.transform.scale[1] <= 2.84
+      pew.transform.position[1] + (3.475 - 1.22) * pew.transform.scale[1] <= 2.84
     ))).toBe(true);
     expect(pews.some((pew) => pew.transform.position[0] < -0.8)).toBe(true);
     expect(pews.some((pew) => pew.transform.position[0] > 0.8)).toBe(true);
@@ -631,7 +738,7 @@ describe('map AI adapter', () => {
     expect(JSON.stringify(suggestion.operations)).toContain('asset-new-pine');
   });
 
-  it('replans once when generated assets were not placed by the final refine pass', async () => {
+  it('locally places generated assets omitted by the final refine pass without another AI request', async () => {
     const fetchImpl = vi.fn()
       .mockResolvedValueOnce(chatResponse({
         summary: 'request one',
@@ -641,11 +748,6 @@ describe('map AI adapter', () => {
         summary: 'terrain only by mistake',
         assetRequests: [],
         terrain: [{ mode: 'raise', x: 0, z: 0 }]
-      }))
-      .mockResolvedValueOnce(chatResponse({
-        summary: 'place generated asset',
-        assetRequests: [],
-        objects: [{ assetId: 'asset-new-pine', x: 0, z: 0 }]
       }));
     const createAsset = vi.fn().mockResolvedValue(testAsset('asset-new-pine', 'Pine', ['tree'], 'large'));
 
@@ -654,8 +756,33 @@ describe('map AI adapter', () => {
       mode: 'refine', minNewAssets: 0, maxNewAssets: 2
     });
 
-    expect(fetchImpl).toHaveBeenCalledTimes(3);
+    expect(fetchImpl).toHaveBeenCalledTimes(2);
     expect(JSON.stringify(suggestion.operations)).toContain('asset-new-pine');
+  });
+
+  it('keeps other refine operations when a generated asset has no legal placement', async () => {
+    const fetchImpl = vi.fn()
+      .mockResolvedValueOnce(chatResponse({
+        summary: 'request one',
+        assetRequests: [{ name: 'Huge prop', prompt: 'one huge prop', tags: ['prop'] }]
+      }))
+      .mockResolvedValueOnce(chatResponse({
+        summary: 'terrain survives', assetRequests: [], terrain: [{ mode: 'raise', x: 0, z: 0 }]
+      }));
+    const huge = testAsset('asset-huge-prop', 'Huge prop', ['prop'], 'large');
+    huge.footprintRadius = 100;
+
+    const suggestion = await runMapAgent(
+      'add a huge prop and raise the ground',
+      createEmptyMap('tiny', 'map-tiny-refine', [4, 4, 4]),
+      [],
+      { apiBase: 'https://example.test', provider: 'gpt', fetchImpl, createAsset: vi.fn().mockResolvedValue(huge), mode: 'refine' }
+    );
+
+    expect(fetchImpl).toHaveBeenCalledTimes(2);
+    expect(suggestion.operations.some((operation) => operation.type === 'terrain.brush')).toBe(true);
+    expect(suggestion.operations.some((operation) => operation.type === 'object.add')).toBe(false);
+    expect(suggestion.diagnostics).toEqual(expect.arrayContaining([expect.objectContaining({ code: 'asset.unplaced' })]));
   });
 
   it('deterministically places generated assets inside the target region when the retry still omits them', async () => {
@@ -878,6 +1005,7 @@ function compositionPlan(overrides: {
   assetFamilies?: unknown[];
   zones?: unknown[];
   consultations?: unknown[];
+  intentRequirements?: unknown[];
 } = {}): unknown {
   const zones = overrides.zones ?? [zone('main', [])];
   const focalZoneId = (zones[0] as { id: string }).id;
@@ -894,6 +1022,7 @@ function compositionPlan(overrides: {
     zones,
     transitions: [],
     assetFamilies: overrides.assetFamilies ?? [],
+    ...(overrides.intentRequirements ? { intentRequirements: overrides.intentRequirements } : {}),
     consultations: overrides.consultations ?? [],
     renderPromptSuggestions: ['soft morning atmosphere']
   };
@@ -983,6 +1112,13 @@ function testAssetWithBounds(
   return {
     ...testAsset(id, name, tags, sizeClass),
     footprintRadius: Math.max(Math.abs(min[0]), Math.abs(max[0]), Math.abs(min[2]), Math.abs(max[2])),
+    modelJson: {
+      nodes: [{
+        id: `${id}-visual`,
+        transform: { pos: [0, (max[1] - min[1]) / 2, 0] },
+        mesh: { type: 'box', params: { width: max[0] - min[0], height: max[1] - min[1], depth: max[2] - min[2] } }
+      }]
+    },
     colliderPlan: {
       version: 1,
       boxes: [{ min, max, sourceNodeId: 'test-mesh' }],

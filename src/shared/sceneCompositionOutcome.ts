@@ -1,10 +1,12 @@
 import {
   getMapBounds,
+  getMapPlayerMetrics,
   type EditableMap,
   type MapAsset
 } from './map';
 import { applyMapOperations, type MapOperation } from './mapOperations';
 import { expandMapScatter } from './mapScatter';
+import { expandStructuredMapPlacement } from './mapPlacement';
 import { planLimits } from './mapPlanning';
 import {
   sceneAssetCategory,
@@ -13,6 +15,7 @@ import {
   type SceneIntentRequirement
 } from './sceneComposition';
 import type { ResolvedSceneFamily } from './sceneCompositionAssets';
+import { calculateModelVisualBounds } from './modelBounds';
 import {
   compileScenePlacementBehavior,
   compileZoneWater,
@@ -83,7 +86,15 @@ export function ensureSceneCompositionOutcome(
           ...plan,
           zones: plan.zones.filter((zone) => zone.id === requirement.targetZoneId)
         }).filter((operation) => operation.type === 'water.add');
-        if (repairs.length === 0) throw new Error(`scene_outcome_missing_water:${requirement.id}`);
+        if (repairs.length === 0) {
+          checks.push({
+            requirementId: requirement.id,
+            kind: requirement.kind,
+            status: 'warning',
+            message: `水体要求“${requirement.description}”无法安全重建，已降级跳过并保留其余场景。`
+          });
+          continue;
+        }
         operations.push(...repairs);
         candidate = applyMapOperations(candidate, repairs);
         repairCount += repairs.length;
@@ -105,7 +116,15 @@ export function ensureSceneCompositionOutcome(
       continue;
     }
     const repairs = requiredFamilyRepairs(map, candidate, plan, resolvedFamilies, requirement, requirement.minCount - currentCount);
-    if (repairs.length === 0) throw new Error(`scene_outcome_missing_asset_family:${requirement.id}`);
+    if (repairs.length === 0) {
+      checks.push({
+        requirementId: requirement.id,
+        kind: requirement.kind,
+        status: 'warning',
+        message: `必要资产“${requirement.description}”在自动缩放、贴墙和补摆后仍无合法位置，已降级跳过并保留其余场景。`
+      });
+      continue;
+    }
     operations.push(...repairs);
     candidate = applyMapOperations(candidate, repairs);
     familyCounts[requirement.familyId!] = currentCount + repairs.length;
@@ -118,8 +137,19 @@ export function ensureSceneCompositionOutcome(
     });
   }
 
+  const checkedFamilyIds = new Set(plan.intentRequirements.flatMap((requirement) => (
+    requirement.kind === 'asset-family' && requirement.familyId ? [requirement.familyId] : []
+  )));
   for (const resolved of resolvedFamilies) {
-    if (resolved.assets.length === 0) continue;
+    if (resolved.assets.length === 0) {
+      if (!checkedFamilyIds.has(resolved.family.id)) checks.push({
+        requirementId: `family-unavailable-${resolved.family.id}`,
+        kind: 'asset-family',
+        status: 'warning',
+        message: `资产“${resolved.family.label}”没有可生成或复用的模型，已降级跳过并保留其余场景。`
+      });
+      continue;
+    }
     const zone = plan.zones.find((item) => (
       item.role !== 'negative-space'
       && item.layers.some((layer) => layer.familyId === resolved.family.id)
@@ -262,10 +292,10 @@ function furnitureLayerLimit(layer: SceneCompositionPlan['zones'][number]['layer
   if (intent === 'playground') return 2;
   if (intent === 'viewpoint') return layer.placement?.maxPerGroup ?? 5;
   if (intent === 'street-edge') return (layer.placement?.maxPerGroup ?? 4) * 3;
-  if (intent === 'audience') return layer.placement?.maxPerGroup ?? 24;
+  if (intent === 'audience') return Number.POSITIVE_INFINITY;
   if (intent === 'social' || intent === 'attached-service') return (layer.placement?.maxPerGroup ?? 6) * 8;
   if (intent === 'wall') return layer.placement?.maxPerGroup ?? 10;
-  return 5;
+  return Number.POSITIVE_INFINITY;
 }
 
 function formsClosedFurnitureRing(objects: EditableMap['objects']): boolean {
@@ -424,7 +454,9 @@ function requiredFamilyRepairs(
 ): MapOperation[] {
   const resolved = resolvedFamilies.find((entry) => entry.family.id === requirement.familyId);
   if (!resolved || resolved.assets.length === 0) return [];
-  if (baseMap.sceneMode === 'indoor') return [];
+  if (baseMap.sceneMode === 'indoor') {
+    return indoorRequiredFamilyRepairs(baseMap, candidate, plan, resolved, requirement, missing);
+  }
   const footprint = Math.max(...resolved.assets.map((asset) => asset.footprintRadius ?? 0.5)) * 1.1;
   const regions = requiredPlacementRegions(baseMap, plan, requirement, footprint);
   const operations: MapOperation[] = [];
@@ -467,6 +499,105 @@ function requiredFamilyRepairs(
     remaining -= placementOperations.length;
   }
   return operations;
+}
+
+function indoorRequiredFamilyRepairs(
+  baseMap: EditableMap,
+  candidate: EditableMap,
+  plan: SceneCompositionPlan,
+  resolved: ResolvedSceneFamily,
+  requirement: SceneIntentRequirement,
+  missing: number
+): MapOperation[] {
+  const room = baseMap.room;
+  if (!room) return [];
+  const zone = plan.zones.find((item) => item.id === requirement.targetZoneId)
+    ?? plan.zones.find((item) => item.layers.some((layer) => layer.familyId === resolved.family.id));
+  const layer = zone?.layers.find((item) => item.familyId === resolved.family.id);
+  const intent = layer?.placement?.intent;
+  const { height: playerHeight } = getMapPlayerMetrics(baseMap);
+  const operations: MapOperation[] = [];
+  let workingMap = candidate;
+  let remaining = Math.min(missing, planLimits(getMapBounds(baseMap), 'indoor').objectCount);
+
+  for (const [stage, backoff] of [1, 0.8, 0.6].entries()) {
+    if (remaining <= 0) break;
+    const asset = resolved.assets[stage % resolved.assets.length];
+    const bounds = localAssetBounds(asset);
+    const localHeight = Math.max(0.01, bounds.max[1] - bounds.min[1]);
+    const targetHeight = /chair|seat|pew|stool|椅|座椅|长凳/i.test(`${resolved.family.label} ${resolved.family.tags.join(' ')}`)
+      ? playerHeight * 0.64
+      : playerHeight;
+    const ceilingScale = Math.max(0.05, (room.size[1] - 0.02) / localHeight);
+    const direction = (layer?.placement?.direction ?? 0) * Math.PI / 180;
+    const localWidth = Math.max(0.01, bounds.max[0] - bounds.min[0]);
+    const localDepth = Math.max(0.01, bounds.max[2] - bounds.min[2]);
+    const wallLength = Math.abs(Math.sin(direction)) > Math.abs(Math.cos(direction)) ? room.size[2] : room.size[0];
+    const wallExtent = Math.abs(Math.sin(direction)) > Math.abs(Math.cos(direction))
+      ? Math.abs(Math.sin(direction)) * localWidth + Math.abs(Math.cos(direction)) * localDepth
+      : Math.abs(Math.cos(direction)) * localWidth + Math.abs(Math.sin(direction)) * localDepth;
+    const wallScale = intent === 'wall'
+      ? Math.max(0.05, (wallLength - (room.wallThickness + 0.25) * 2) / wallExtent)
+      : Number.POSITIVE_INFINITY;
+    const scale = Math.min(ceilingScale, wallScale, Math.max(0.05, targetHeight / localHeight) * backoff);
+    const spacing = Math.max(0.55, playerHeight * 0.78 * backoff, (asset.footprintRadius ?? 0.5) * scale * 2.05);
+    const placements = expandStructuredMapPlacement(workingMap, {
+      mode: intent === 'wall' ? 'linear' : 'layout',
+      pattern: intent === 'audience' ? 'grid' : 'grid',
+      intent,
+      assetIds: resolved.assets.map((item) => item.id),
+      region: {
+        kind: 'circle',
+        x: room.position[0],
+        z: room.position[2],
+        r: Math.max(1, Math.min(room.size[0], room.size[2]) / 2 - room.wallThickness)
+      },
+      density: Math.max(0.08, layer?.density ?? 0.08),
+      spacing,
+      offset: layer?.placement?.offset ?? 0,
+      direction: layer?.placement?.direction ?? 0,
+      facing: layer?.placement?.facing ?? (intent === 'audience' ? 'inward' : 'guide'),
+      avoidWater: 0,
+      maxSlope: 89,
+      scaleRange: [scale, scale],
+      seed: hashSeed(baseMap.seed, `${requirement.id}:indoor:${stage}`),
+      focus: { x: room.position[0], z: room.position[2] - room.size[2] * 0.35 },
+      maxPerGroup: layer?.placement?.maxPerGroup,
+      aisleEvery: layer?.placement?.aisleEvery
+    }, resolved.assets, remaining, `required-${requirement.id}-indoor-${stage}`);
+    const repairs = placements.map((placement): MapOperation => {
+      const placedAsset = resolved.assets.find((item) => item.id === placement.assetId) ?? asset;
+      const placedBounds = localAssetBounds(placedAsset);
+      return {
+        type: 'object.add',
+        object: {
+          id: placement.id,
+          name: placement.name,
+          assetId: placement.assetId,
+          heightMode: 'fixed',
+          transform: {
+            position: [placement.x, room.position[1] - placedBounds.min[1] * placement.scale, placement.z],
+            rotation: [0, placement.rotationY, 0],
+            scale: [placement.scale, placement.scale, placement.scale]
+          }
+        }
+      };
+    });
+    if (repairs.length === 0) continue;
+    operations.push(...repairs);
+    workingMap = applyMapOperations(workingMap, repairs);
+    remaining -= repairs.length;
+  }
+  return operations;
+}
+
+function localAssetBounds(asset: MapAsset): { min: [number, number, number]; max: [number, number, number] } {
+  if (asset.colliderPlan?.fallbackUsed && asset.colliderPlan.sourceMeshCount === 0) {
+    const radius = Math.max(0.1, asset.footprintRadius ?? 0.5);
+    const height = asset.sizeClass === 'large' ? 3 : asset.sizeClass === 'medium' ? 1.8 : 1;
+    return { min: [-radius, 0, -radius], max: [radius, height, radius] };
+  }
+  return calculateModelVisualBounds(asset.modelJson);
 }
 
 function requiredPlacementRegions(
