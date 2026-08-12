@@ -160,6 +160,24 @@ export function compileSceneComposition(
       : requestedSpacing;
     const seed = derivedSeed(map.seed, `${entry.zone.id}:${entry.layer.familyId}:${index}`);
     const grouping = sceneBehaviorGrouping(family?.behavior);
+    if (map.sceneMode === 'indoor' && entry.layer.placement?.intent === 'supported' && family) {
+      const supportedOperations = compileSupportedObjects(
+        workingMap,
+        entry.layer,
+        family,
+        assets,
+        familyAssets,
+        Math.min(structuredLimit, remaining),
+        `composition-${entry.zone.id}-${entry.layer.familyId}`
+      );
+      if (supportedOperations.length === 0) continue;
+      operations.push(...supportedOperations);
+      workingMap = applyMapOperations(workingMap, supportedOperations);
+      remaining -= supportedOperations.length;
+      familyCounts[entry.layer.familyId] = (familyCounts[entry.layer.familyId] ?? 0) + supportedOperations.length;
+      zoneCounts[entry.zone.id] = (zoneCounts[entry.zone.id] ?? 0) + supportedOperations.length;
+      continue;
+    }
     const scatterLimit = family && isNaturalRockFamily(family) ? structuredLimit : placementLimit;
     const scatterTarget = grouping
       ? Math.min(scatterLimit, Math.max(1, Math.round(Math.PI * region.r * region.r * (libraryMetadata?.density ?? entry.layer.density))))
@@ -186,6 +204,7 @@ export function compileSceneComposition(
           maxPerGroup: entry.layer.placement?.maxPerGroup,
           arcDegrees: entry.layer.placement?.arcDegrees,
           aisleEvery: entry.layer.placement?.aisleEvery,
+          symmetric: map.sceneMode === 'indoor' && entry.zone.symmetry !== 'asymmetric',
           targets: attachmentTargets(workingMap, entry.layer, familyAssets),
           excludeRegions: excluded
         }, assets, structuredLimit, `composition-${entry.zone.id}-${entry.layer.familyId}`)
@@ -275,7 +294,7 @@ export function compileSceneComposition(
   };
 }
 
-function indoorOccupancyMetrics(
+export function indoorOccupancyMetrics(
   source: EditableMap,
   result: EditableMap
 ): Pick<SceneCompositionMetrics, 'indoorFloorOccupancy' | 'indoorObjectSpread'> {
@@ -534,7 +553,8 @@ function compileAccents(
             avoidWater: 0,
             maxSlope: 89,
             scaleRange: [scale, scale],
-            seed: derivedSeed(map.seed, `${zone.id}:${layer.familyId}:indoor-anchor`)
+            seed: derivedSeed(map.seed, `${zone.id}:${layer.familyId}:indoor-anchor`),
+            symmetric: zone.symmetry !== 'asymmetric'
           }, assets, 1, `composition-${zone.id}-${layer.familyId}-accent`)[0]
         : expandMapScatter(workingMap, {
             assetIds: assets.map((asset) => asset.id),
@@ -797,8 +817,17 @@ function relationshipPlacementLimit(
   if (intent === 'playground') return Math.min(limit, 2);
   if (intent === 'wall') return Math.min(limit, layer.placement?.maxPerGroup ?? 10);
   if (intent === 'street-edge') return Math.min(limit, (layer.placement?.maxPerGroup ?? 4) * 3);
-  if (intent === 'social' || intent === 'attached-service') return Math.min(limit, (layer.placement?.maxPerGroup ?? 6) * 8);
-  if (intent === 'paired') return Math.min(limit, (layer.placement?.maxPerGroup ?? 1) * 24);
+  // maxPerGroup describes one relationship group (for example four chairs per
+  // dining table), not a hidden cap on how many groups a whole zone may own.
+  if (intent === 'social' || intent === 'attached-service' || intent === 'paired' || intent === 'supported') {
+    return limit;
+  }
+  if (intent === 'functional-group') {
+    const semantic = family ? `${family.label} ${family.role} ${family.tags.join(' ')}` : '';
+    return /ceiling[-_ ]?mounted|ceiling[-_ ]?light|overhead[-_ ]?light|pendant[-_ ]?light|industrial[-_ ]?light|顶灯|吊灯|天花灯|工业照明/i.test(semantic)
+      ? Math.min(limit, layer.placement?.maxPerGroup ?? 12)
+      : limit;
+  }
   if (intent === 'audience') return limit;
   if (family && isNaturalRockFamily(family)) {
     return Math.min(limit, family.sizeClass === 'large' ? 4 : family.sizeClass === 'medium' ? 6 : 12);
@@ -905,6 +934,68 @@ function attachmentTargets(
       yaw: object.transform.rotation[1],
       footprintRadius: (radiusByAssetId.get(object.assetId!) ?? 0.5) * Math.max(object.transform.scale[0], object.transform.scale[2])
     }));
+}
+
+function compileSupportedObjects(
+  map: EditableMap,
+  layer: SceneZoneLayer,
+  family: SceneCompositionPlan['assetFamilies'][number],
+  assets: readonly MapAsset[],
+  familyAssets: ReadonlyMap<string, MapAsset[]>,
+  limit: number,
+  idPrefix: string
+): MapOperation[] {
+  const targetFamilyId = layer.placement?.targetFamilyId;
+  if (!targetFamilyId || assets.length === 0 || limit <= 0) return [];
+  const targetAssets = familyAssets.get(targetFamilyId) ?? [];
+  const targetByAssetId = new Map(targetAssets.map((asset) => [asset.id, asset]));
+  const dependentAssetIds = new Set(assets.map((asset) => asset.id));
+  const occupiedParents = new Set(map.objects
+    .filter((object) => object.parentId && object.assetId && dependentAssetIds.has(object.assetId))
+    .map((object) => object.parentId!));
+  const targets = map.objects.filter((object) => (
+    object.assetId && targetByAssetId.has(object.assetId) && !occupiedParents.has(object.id)
+  ));
+  const scaleRange = semanticScaleRange(map, family, assets, layer.scaleRange, layer.placement);
+  const desiredScale = (scaleRange[0] + scaleRange[1]) / 2;
+  return targets.slice(0, limit).map((target, index): MapOperation => {
+    const asset = assets[index % assets.length];
+    const targetAsset = targetByAssetId.get(target.assetId!)!;
+    const supportBounds = mapAssetLocalBounds(targetAsset);
+    const itemBounds = mapAssetLocalBounds(asset);
+    const parentScale: [number, number, number] = [0, 1, 2].map((axis) => Math.max(
+      0.001,
+      Math.abs(target.transform.scale[axis] * target.transform.size[axis])
+    )) as [number, number, number];
+    const localScale: [number, number, number] = [
+      desiredScale / parentScale[0],
+      desiredScale / parentScale[1],
+      desiredScale / parentScale[2]
+    ];
+    const supportCenterX = (supportBounds.min[0] + supportBounds.max[0]) / 2;
+    const supportCenterZ = (supportBounds.min[2] + supportBounds.max[2]) / 2;
+    const itemCenterX = (itemBounds.min[0] + itemBounds.max[0]) / 2;
+    const itemCenterZ = (itemBounds.min[2] + itemBounds.max[2]) / 2;
+    return {
+      type: 'object.add',
+      object: {
+        id: `${idPrefix}-${index + 1}`.slice(0, 80),
+        name: `${family.label} ${index + 1}`,
+        parentId: target.id,
+        assetId: asset.id,
+        heightMode: 'fixed',
+        transform: {
+          position: [
+            supportCenterX - itemCenterX * localScale[0],
+            supportBounds.max[1] - itemBounds.min[1] * localScale[1] + 0.02 / parentScale[1],
+            supportCenterZ - itemCenterZ * localScale[2]
+          ],
+          rotation: [0, 0, 0],
+          scale: localScale
+        }
+      }
+    };
+  });
 }
 
 function placementFocus(

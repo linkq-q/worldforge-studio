@@ -114,7 +114,14 @@ export async function runMapAgent(
   }
   if (mode === 'generate' && map.sceneMode !== 'mixed') {
     const result = await runMapCompositionWorkflow(prompt, map, assets, options);
-    const validated = finalizeMapAgentSuggestion(map, result.assets, result.suggestion, options);
+    const generatedAssetIds = new Set(result.suggestion.generatedAssets.map((asset) => asset.id));
+    const completeSuggestion = addDeterministicGeneratedAssetPlacements(
+      map,
+      result.assets,
+      result.suggestion,
+      generatedAssetIds
+    );
+    const validated = finalizeMapAgentSuggestion(map, result.assets, completeSuggestion, options);
     options.onProgress?.({ phase: 'complete', label: '场景构图、合成审查与地图预览已完成' });
     return validated;
   }

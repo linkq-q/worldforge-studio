@@ -255,6 +255,11 @@ describe('deterministic terrain generation', () => {
       region: { kind: 'circle', x: 0, z: 0, radius: 10 }, amplitude: 5
     }]);
     expect(stampedIsland.waterBodies).toContainEqual(expect.objectContaining({ type: 'ocean', level: 0 }));
+
+    const hills = applyMapOperations(island, [
+      { type: 'terrain.generate', preset: 'hills', seed: 6, amplitude: 4, roughness: 0.4 }
+    ]);
+    expect(hills.waterBodies).not.toContainEqual(expect.objectContaining({ id: 'terrain-ocean' }));
   });
 
   it('re-grounds terrain-following objects and preserves fixed-height objects', () => {

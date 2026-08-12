@@ -2270,7 +2270,7 @@ class MapEditor {
               <span>局部灯光候选 <b>${derived.localLightCandidateCount}/${derived.localLightVisibleLimit}</b></span>
             </div>
             <div class="style-tags">${map.visualSemantics.zones.map((zone) => `<span>${escapeHtml(zone.id)} · ${escapeHtml(zone.tags.join(', ') || '未标记')}</span>`).join('')}</div>
-            <p class="empty">湿岸与草地退让只在渲染时自动计算，不改写手工密度；局部灯光从可见自发光/火焰材质中选取，当前最多显示 ${derived.localLightVisibleLimit} 个。</p>
+            <p class="empty">湿岸与草地退让只在渲染时自动计算，不改写手工密度；局部灯光按照明范围选择，灯具离开画面后仍可照亮可见区域，当前使用 ${derived.localLightVisibleLimit} 个固定光源槽。</p>
           </details>
         </section>
       </details>

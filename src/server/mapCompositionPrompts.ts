@@ -56,7 +56,16 @@ export function buildSceneDirectorPrompt(
       ? 'Classrooms use straight aligned desk rows facing a wall-mounted blackboard; pair one chair behind each desk. Restaurants and cafes infer multiple dining-table groups from usable floor area and attach chairs around every table. Offices infer multiple workstations and pair a chair with each desk. Do not use arcs for these functional groups unless the user explicitly requests curved seating.'
       : '',
     indoor
+      ? 'For homes and small apartments, build named activity zones first, then layer functional furniture, reachable everyday objects, and personal decor. Use vertical storage plus a mix of open display and closed storage; rugs, lamps, plants, books, trays, tableware, art and countertop appliances should make the room feel lived in without blocking circulation. Kitchens keep refrigerator, sink and cooktop as three distinct work centers with clear paths between them.'
+      : '',
+    indoor
+      ? 'Use placement.intent supported for an object that sits on another asset. It must name targetFamilyId and maxPerGroup 1. Internet cafes require one complete computer station per gaming desk; televisions sit on media consoles; countertop and coffee-table props sit on their named supporting surface. Never scatter these supported objects on the floor.'
+      : '',
+    indoor
       ? 'Treat the zone graph as a top-down interior plan even when the user skips plan confirmation: allocate entrance clearance, circulation spine, primary work or activity bays, wall storage or service bands, and daylight/safety fixtures before choosing densities. Warehouse shelves form aligned rows with service aisles; crates and pallets occupy staging bays rather than the circulation spine; pallet jacks stay near staging or loading; lights use a ceiling grid; signs and extinguishers attach to walls.'
+      : '',
+    indoor
+      ? 'Set every zone symmetry to symmetric by default and choose symmetryAxis x or z. Axis x means the mirror plane X = zone center X; axis z means Z = zone center Z. Use asymmetric only when the room function or user request clearly calls for an irregular arrangement, such as many toilets or utility rooms. Symmetry affects repeated desks, chairs, windows, lights, shelves, and decor; it never duplicates a family that is intentionally singular, such as one entrance door, one blackboard, or one teacher podium.'
       : '',
     'Do not output object coordinates, low-level map operations, spawn points, combat rules, cover, quests, or gameplay logic.',
     'Do not use a fixed forest/camp template. Choose regions and asset roles that specifically fit this request.',
@@ -72,9 +81,9 @@ export function buildSceneDirectorPrompt(
     'For each asset family provide 1-3 identityTags containing the specific identity required for reuse (for example maple, castle, deer, sakura). Do not put broad category tags such as tree, vegetation, building, structure, animal, forest, or landmark in identityTags.',
     'Choose a placement.mode for each object layer: anchor for landmarks, field for even natural cover, patch for mixed ecological communities, linear for fences/lights/roadside objects, layout for buildings/camps/courtyards, and attached for props dependent on another family.',
     'Buildings and structures must use anchor, linear, or layout; never field or patch. Use layout.pattern row|courtyard|radial|grid to establish order. Attached placement must name targetFamilyId. Related plant patch layers should share the zone habitat and use spacingByFamily when their ecological separation differs.',
-    'Furniture is not architecture and must declare placement.intent. Use street-edge for benches/lights/bins along a path, audience for church/theater rows without desks, functional-group for repeated classroom desks, restaurant tables, or office workstations, paired for one chair behind each desk, social for chairs around tables or fire pits, viewpoint for small bench arcs facing scenery, wall for indoor wall furniture, and attached-service for props beside another family.',
+    'Furniture is not architecture and must declare placement.intent. Use street-edge for benches/lights/bins along a path, audience for church/theater rows without desks, functional-group for repeated classroom desks, restaurant tables, or office workstations, paired for one chair behind each desk, social for chairs around tables or fire pits, viewpoint for small bench arcs facing scenery, wall for indoor wall furniture, attached-service for props beside another family, and supported for an object resting on a target surface.',
     'Never use field or patch for furniture. Never use a complete courtyard or radial furniture ring unless the user explicitly requests circular seating, an amphitheater, or a ceremony. Viewpoint seating uses pattern arc, maxPerGroup 2-5, and arcDegrees 45-140.',
-    'Street-edge furniture should provide 2-16 normalized guidePoints following the shared path, use small groups separated by gaps, and face the guide or named focus. Audience seating uses grid plus focusFamilyId and aisleEvery. Functional-group uses an aligned row or grid. Paired, social, and attached-service require targetFamilyId.',
+    'Street-edge furniture should provide 2-16 normalized guidePoints following the shared path, use small groups separated by gaps, and face the guide or named focus. Audience seating uses grid plus focusFamilyId and aisleEvery. Functional-group uses an aligned row or grid. Paired, social, attached-service, and supported require targetFamilyId.',
     'Playground swings, slides, and fitness equipment are facilities: use sparse anchors, normally one or two instances, with enough spacing for a clear activity area.',
     'On mountains, give vegetation an explicit habitat.slope band. Keep large trees off cliff shoulders and narrow ridge crests; let shrubs and rocks tolerate progressively steeper ground.',
     'When the user explicitly requests a high mountain, snow mountain, mountain peak, or bare ridge, create a broad mountain zone with strong relief, rock surface, and scenic access. A low rounded hill is not an acceptable substitute. Put bare-rock and outcrop families inside that mountain zone with explicit high-elevation and steep-slope habitat bands.',
@@ -121,7 +130,7 @@ export function buildSceneDirectorPrompt(
         { id: 'named-focus', kind: 'asset-family', description: 'focal cabin requested by the user', familyId: 'family-id', targetZoneId: 'zone-id', minCount: 1 }
       ],
       zones: [{
-        id: 'zone-id', label: 'human label', role: 'primary|secondary|transition|negative-space', importance: 0.8,
+        id: 'zone-id', label: 'human label', role: 'primary|secondary|transition|negative-space', importance: 0.8, symmetry: 'symmetric|asymmetric', symmetryAxis: 'x|z',
         region: { kind: 'circle', center: [0, 0], radius: 0.35 },
         brief: { atmosphere: 'text', hierarchy: 'text', openness: 0.4, transitionIntent: 'text' },
         terrain: {
@@ -134,7 +143,7 @@ export function buildSceneDirectorPrompt(
           familyId: 'family-id', density: 0.04, scaleRange: [0.8, 1.2], distribution: 'even|clustered|accent', edgeFalloff: 0.25,
           placement: {
             mode: 'anchor|field|patch|linear|layout|attached', pattern: 'row|courtyard|radial|grid|arc',
-            intent: 'landmark|settlement|street-edge|audience|functional-group|paired|social|viewpoint|wall|attached-service|playground',
+            intent: 'landmark|settlement|street-edge|audience|functional-group|paired|social|viewpoint|wall|attached-service|supported|playground',
             direction: 0, spacing: 3, offset: 0, facing: 'random|guide|inward|outward',
             targetFamilyId: null, focusFamilyId: null, guidePoints: [[-0.8, 0], [0, 0.1], [0.8, 0.2]],
             maxPerGroup: 4, arcDegrees: 110, aisleEvery: 4, spacingByFamily: { 'other-family-id': 2.5 },

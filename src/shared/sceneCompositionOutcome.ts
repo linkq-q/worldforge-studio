@@ -12,7 +12,8 @@ import {
   sceneAssetCategory,
   sceneZoneWorldRegion,
   type SceneCompositionPlan,
-  type SceneIntentRequirement
+  type SceneIntentRequirement,
+  type SceneZoneLayer
 } from './sceneComposition';
 import type { ResolvedSceneFamily } from './sceneCompositionAssets';
 import { calculateModelVisualBounds } from './modelBounds';
@@ -21,6 +22,7 @@ import {
   bindIndoorRoomOpenings,
   compileScenePlacementBehavior,
   compileZoneWater,
+  indoorOccupancyMetrics,
   isImplicitOceanZone,
   sceneBehaviorGrouping,
   scenePlacementAltitude,
@@ -47,6 +49,7 @@ export function ensureSceneCompositionOutcome(
   resolvedFamilies: readonly ResolvedSceneFamily[],
   compiled: CompiledSceneComposition
 ): SceneCompositionOutcome {
+  const initialObjectCount = compiled.metrics.initialObjectCount ?? compiled.metrics.objectCount;
   const operations = [...compiled.operations];
   const familyCounts = { ...compiled.metrics.familyCounts };
   const zoneCounts = { ...compiled.metrics.zoneCounts };
@@ -57,6 +60,20 @@ export function ensureSceneCompositionOutcome(
   let candidate = applyMapOperations({ ...map, assets: [...planningAssets.values()] }, operations);
   const checks: SceneOutcomeCheck[] = [];
   let repairCount = 0;
+
+  const relationshipReflow = reflowIndoorRelationshipGroups(map, plan, resolvedFamilies, operations);
+  if (relationshipReflow) {
+    operations.splice(0, operations.length, ...relationshipReflow.operations);
+    candidate = relationshipReflow.candidate;
+    Object.assign(familyCounts, relationshipReflow.familyCounts);
+    repairCount += relationshipReflow.repairCount;
+    checks.push({
+      requirementId: 'indoor-relationship-groups',
+      kind: 'furniture',
+      status: 'repaired',
+      message: `桌椅等依赖关系不完整，已整体重排 ${relationshipReflow.groupCount} 组关系家具。`
+    });
+  }
 
   for (const requirement of plan.intentRequirements) {
     if (requirement.kind === 'terrain') {
@@ -233,6 +250,13 @@ export function ensureSceneCompositionOutcome(
     }
   }
 
+  const focusFacingRepairs = repairIndoorFocusFacing(candidate, plan, resolvedFamilies);
+  if (focusFacingRepairs.length > 0) {
+    operations.push(...focusFacingRepairs);
+    candidate = applyMapOperations(candidate, focusFacingRepairs);
+    repairCount += focusFacingRepairs.length;
+  }
+
   const population = repairNaturalPopulation(map, candidate, plan, resolvedFamilies);
   if (population.target > 0) {
     const currentCount = candidate.objects.length - map.objects.length;
@@ -268,10 +292,12 @@ export function ensureSceneCompositionOutcome(
       operations,
       metrics: {
         ...compiled.metrics,
+        initialObjectCount,
         objectCount: Math.max(0, candidate.objects.length - map.objects.length),
         waterCount: Math.max(0, candidate.waterBodies.length - map.waterBodies.length),
         terrainRelief: Math.max(...candidate.terrain.heights) - Math.min(...candidate.terrain.heights),
         terrainChangedCells: terrainChangedCellCount(map, candidate),
+        ...indoorOccupancyMetrics(map, candidate),
         familyCounts,
         zoneCounts
       }
@@ -325,6 +351,105 @@ function auditFurnitureOutcome(
         : `${family.label} 的数量、用途和朝向布局已通过家具验收。`
     }];
   });
+}
+
+function reflowIndoorRelationshipGroups(
+  baseMap: EditableMap,
+  plan: SceneCompositionPlan,
+  resolvedFamilies: readonly ResolvedSceneFamily[],
+  sourceOperations: readonly MapOperation[]
+): {
+  operations: MapOperation[];
+  candidate: EditableMap;
+  familyCounts: Record<string, number>;
+  repairCount: number;
+  groupCount: number;
+} | null {
+  if (baseMap.sceneMode !== 'indoor' || !baseMap.room) return null;
+  const planningAssets = new Map((baseMap.assets ?? []).map((asset) => [asset.id, asset]));
+  for (const resolved of resolvedFamilies) {
+    for (const asset of resolved.assets) planningAssets.set(asset.id, asset);
+  }
+  const planningMap = { ...baseMap, assets: [...planningAssets.values()] };
+  let operations = [...sourceOperations];
+  let candidate = applyMapOperations(planningMap, operations);
+  let repairCount = 0;
+  let groupCount = 0;
+  const repairedDependents = new Set<string>();
+
+  for (const zone of plan.zones) {
+    for (const layer of zone.layers) {
+      const intent = layer.placement?.intent;
+      const targetFamilyId = layer.placement?.targetFamilyId;
+      if ((intent !== 'paired' && intent !== 'social') || !targetFamilyId || repairedDependents.has(layer.familyId)) continue;
+      const target = resolvedFamilies.find((entry) => entry.family.id === targetFamilyId);
+      const dependent = resolvedFamilies.find((entry) => entry.family.id === layer.familyId);
+      if (!target?.assets.length || !dependent?.assets.length) continue;
+
+      const targetAssetIds = new Set(target.assets.map((asset) => asset.id));
+      const dependentAssetIds = new Set(dependent.assets.map((asset) => asset.id));
+      const currentTargets = candidate.objects.filter((object) => object.assetId && targetAssetIds.has(object.assetId)).length;
+      const currentDependents = candidate.objects.filter((object) => object.assetId && dependentAssetIds.has(object.assetId)).length;
+      const targetMinimum = plan.intentRequirements.find((requirement) => (
+        requirement.kind === 'asset-family' && requirement.familyId === targetFamilyId
+      ))?.minCount ?? 0;
+      const dependentMinimum = plan.intentRequirements.find((requirement) => (
+        requirement.kind === 'asset-family' && requirement.familyId === layer.familyId
+      ))?.minCount ?? 0;
+      const targetCount = Math.max(1, currentTargets, targetMinimum);
+      const perTarget = intent === 'paired' ? 1 : Math.max(1, layer.placement?.maxPerGroup ?? 4);
+      const dependentCount = Math.max(dependentMinimum, targetCount * perTarget);
+      if (currentTargets >= targetCount && currentDependents >= dependentCount) continue;
+
+      const groupAssetIds = new Set([...targetAssetIds, ...dependentAssetIds]);
+      const retained = operations.filter((operation) => (
+        operation.type !== 'object.add' || !operation.object.assetId || !groupAssetIds.has(operation.object.assetId)
+      ));
+      const withoutGroup = retained.length > 0 ? applyMapOperations(planningMap, retained) : planningMap;
+      const targetRequirement: SceneIntentRequirement = {
+        id: `relationship-${targetFamilyId}`,
+        kind: 'asset-family',
+        description: target.family.label,
+        targetZoneId: zone.id,
+        familyId: targetFamilyId,
+        minCount: targetCount
+      };
+      const targetOperations = indoorRequiredFamilyRepairs(
+        baseMap, withoutGroup, plan, resolvedFamilies, target, targetRequirement, targetCount, targetCount,
+        intent === 'paired' ? 1.7 : 2.8
+      );
+      const placedTargets = targetOperations.filter((operation) => operation.type === 'object.add').length;
+      if (placedTargets !== targetCount) continue;
+
+      const withTargets = applyMapOperations(withoutGroup, targetOperations);
+      const dependentRequirement: SceneIntentRequirement = {
+        id: `relationship-${layer.familyId}`,
+        kind: 'asset-family',
+        description: dependent.family.label,
+        targetZoneId: zone.id,
+        familyId: layer.familyId,
+        minCount: dependentCount
+      };
+      const dependentOperations = indoorRequiredFamilyRepairs(
+        baseMap, withTargets, plan, resolvedFamilies, dependent, dependentRequirement, dependentCount, dependentCount * 4
+      );
+      const placedDependents = dependentOperations.filter((operation) => operation.type === 'object.add').length;
+      if (placedDependents !== dependentCount) continue;
+
+      operations = [...retained, ...targetOperations, ...dependentOperations];
+      candidate = applyMapOperations(planningMap, operations);
+      repairCount += targetOperations.length + dependentOperations.length;
+      groupCount += 1;
+      repairedDependents.add(layer.familyId);
+    }
+  }
+
+  if (groupCount === 0) return null;
+  const familyCounts = Object.fromEntries(resolvedFamilies.map((resolved) => {
+    const assetIds = new Set(resolved.assets.map((asset) => asset.id));
+    return [resolved.family.id, candidate.objects.filter((object) => object.assetId && assetIds.has(object.assetId)).length];
+  }));
+  return { operations, candidate, familyCounts, repairCount, groupCount };
 }
 
 function furnitureLayerLimit(layer: SceneCompositionPlan['zones'][number]['layers'][number]): number {
@@ -495,7 +620,7 @@ function requiredFamilyRepairs(
   const resolved = resolvedFamilies.find((entry) => entry.family.id === requirement.familyId);
   if (!resolved || resolved.assets.length === 0) return [];
   if (baseMap.sceneMode === 'indoor') {
-    return indoorRequiredFamilyRepairs(baseMap, candidate, plan, resolved, requirement, missing);
+    return indoorRequiredFamilyRepairs(baseMap, candidate, plan, resolvedFamilies, resolved, requirement, missing);
   }
   const footprint = Math.max(...resolved.assets.map((asset) => asset.footprintRadius ?? 0.5)) * 1.1;
   const regions = requiredPlacementRegions(baseMap, plan, requirement, footprint);
@@ -545,9 +670,12 @@ function indoorRequiredFamilyRepairs(
   baseMap: EditableMap,
   candidate: EditableMap,
   plan: SceneCompositionPlan,
+  resolvedFamilies: readonly ResolvedSceneFamily[],
   resolved: ResolvedSceneFamily,
   requirement: SceneIntentRequirement,
-  missing: number
+  missing: number,
+  candidateCount = 49,
+  spacingMultiplier = 1
 ): MapOperation[] {
   const room = baseMap.room;
   if (!room) return [];
@@ -560,7 +688,19 @@ function indoorRequiredFamilyRepairs(
   const dimensions = indoorSemanticDimensions(baseMap, semantic);
   const operations: MapOperation[] = [];
   let workingMap = candidate;
+  const familyAssets = new Map(resolvedFamilies.map((entry) => [entry.family.id, entry.assets]));
   let remaining = Math.min(missing, planLimits(getMapBounds(baseMap), 'indoor').objectCount);
+
+  if (remaining > 0 && zone && zone.symmetry !== 'asymmetric' && intent === 'wall') {
+    const mirrored = mirroredWallFamilyRepairs(baseMap, workingMap, zone, resolved, requirement, remaining);
+    const executableMirrors = bindIndoorRoomOpenings(workingMap, resolved.family, resolved.assets, mirrored);
+    const mirroredCount = executableMirrors.filter((operation) => operation.type === 'object.add').length;
+    if (mirroredCount > 0) {
+      operations.push(...executableMirrors);
+      workingMap = applyMapOperations(workingMap, executableMirrors);
+      remaining -= mirroredCount;
+    }
+  }
 
   for (const [stage, backoff] of [1, 0.8, 0.6].entries()) {
     if (remaining <= 0) break;
@@ -584,9 +724,13 @@ function indoorRequiredFamilyRepairs(
       dimensions.minimumDepth / localDepth,
       0.05
     ) * backoff);
-    const spacing = Math.max(0.55, playerHeight * 0.78 * backoff, (asset.footprintRadius ?? 0.5) * scale * 2.05);
+    const spacing = Math.max(0.55, playerHeight * 0.78 * backoff, (asset.footprintRadius ?? 0.5) * scale * 2.25)
+      * spacingMultiplier;
+    const focus = indoorPlacementFocus(workingMap, layer, familyAssets)
+      ?? { x: room.position[0], z: room.position[2] - room.size[2] * 0.35 };
+    const attached = intent === 'social' || intent === 'paired' || intent === 'attached-service';
     const placements = expandStructuredMapPlacement(workingMap, {
-      mode: intent === 'wall' ? 'linear' : 'layout',
+      mode: intent === 'wall' ? 'linear' : attached ? 'attached' : 'layout',
       pattern: intent === 'audience' ? 'grid' : 'grid',
       intent,
       assetIds: resolved.assets.map((item) => item.id),
@@ -605,10 +749,12 @@ function indoorRequiredFamilyRepairs(
       maxSlope: 89,
       scaleRange: [scale, scale],
       seed: hashSeed(baseMap.seed, `${requirement.id}:indoor:${stage}`),
-      focus: { x: room.position[0], z: room.position[2] - room.size[2] * 0.35 },
+      focus,
       maxPerGroup: layer?.placement?.maxPerGroup,
       aisleEvery: layer?.placement?.aisleEvery,
-      candidateCount: 49
+      candidateCount: Math.max(remaining, candidateCount),
+      targets: indoorAttachmentTargets(workingMap, layer, familyAssets),
+      symmetric: zone?.symmetry !== 'asymmetric'
     }, resolved.assets, remaining, `required-${requirement.id}-indoor-${stage}`);
     const repairs = placements.map((placement): MapOperation => {
       const placedAsset = resolved.assets.find((item) => item.id === placement.assetId) ?? asset;
@@ -647,6 +793,154 @@ function indoorRequiredFamilyRepairs(
     remaining -= placedCount;
   }
   return operations;
+}
+
+function mirroredWallFamilyRepairs(
+  baseMap: EditableMap,
+  map: EditableMap,
+  zone: SceneCompositionPlan['zones'][number],
+  resolved: ResolvedSceneFamily,
+  requirement: SceneIntentRequirement,
+  limit: number
+): MapOperation[] {
+  const room = map.room;
+  if (!room || limit <= 0) return [];
+  const assetIds = new Set(resolved.assets.map((asset) => asset.id));
+  const familyObjects = map.objects.filter((object) => object.assetId && assetIds.has(object.assetId));
+  if (familyObjects.length === 0) return [];
+  const center = sceneZoneWorldRegion(zone, baseMap);
+  const axis = zone.symmetryAxis ?? 'x';
+  const repairs: MapOperation[] = [];
+  for (const source of familyObjects) {
+    if (repairs.length >= limit) break;
+    const [x, y, z] = source.transform.position;
+    const mirroredX = axis === 'x' ? center.x * 2 - x : x;
+    const mirroredZ = axis === 'z' ? center.z * 2 - z : z;
+    if (Math.hypot(mirroredX - x, mirroredZ - z) < 0.2) continue;
+    if (familyObjects.some((object) => Math.hypot(
+      object.transform.position[0] - mirroredX,
+      object.transform.position[2] - mirroredZ
+    ) < 0.2)) continue;
+    if (mirroredOpeningBlocked(room, source.roomOpeningId, axis, center.x, center.z)) continue;
+    const yaw = source.transform.rotation[1];
+    const mirroredYaw = axis === 'x' ? -yaw : Math.PI - yaw;
+    repairs.push({
+      type: 'object.add',
+      object: {
+        id: `required-${requirement.id}-mirror-${repairs.length + 1}`,
+        name: source.name,
+        assetId: source.assetId,
+        heightMode: source.heightMode,
+        transform: {
+          position: [mirroredX, y, mirroredZ],
+          rotation: [source.transform.rotation[0], mirroredYaw, source.transform.rotation[2]],
+          scale: [...source.transform.scale]
+        }
+      }
+    });
+  }
+  return repairs;
+}
+
+function mirroredOpeningBlocked(
+  room: NonNullable<EditableMap['room']>,
+  openingId: string | undefined,
+  axis: 'x' | 'z',
+  centerX: number,
+  centerZ: number
+): boolean {
+  if (!openingId) return false;
+  const source = room.openings.find((opening) => opening.id === openingId);
+  if (!source) return false;
+  const wall = axis === 'x'
+    ? source.wall === 'east' ? 'west' : source.wall === 'west' ? 'east' : source.wall
+    : source.wall === 'north' ? 'south' : source.wall === 'south' ? 'north' : source.wall;
+  const offset = axis === 'x' && (source.wall === 'north' || source.wall === 'south')
+    ? 2 * (centerX - room.position[0]) - source.offset
+    : axis === 'z' && (source.wall === 'east' || source.wall === 'west')
+      ? 2 * (centerZ - room.position[2]) - source.offset
+      : source.offset;
+  return room.openings.some((opening) => opening.id !== source.id && opening.wall === wall
+    && Math.abs(opening.offset - offset) < (opening.width + source.width) / 2 + 0.2);
+}
+
+function indoorAttachmentTargets(
+  map: EditableMap,
+  layer: SceneZoneLayer | undefined,
+  familyAssets: ReadonlyMap<string, MapAsset[]>
+): Array<{ x: number; z: number; yaw: number; footprintRadius: number }> | undefined {
+  const targetFamilyId = layer?.placement?.targetFamilyId;
+  if (!targetFamilyId) return undefined;
+  const assets = familyAssets.get(targetFamilyId) ?? [];
+  const assetIds = new Set(assets.map((asset) => asset.id));
+  const radiusById = new Map(assets.map((asset) => [asset.id, asset.footprintRadius ?? 0.5]));
+  return map.objects
+    .filter((object) => object.assetId && assetIds.has(object.assetId))
+    .map((object) => ({
+      x: object.transform.position[0],
+      z: object.transform.position[2],
+      yaw: object.transform.rotation[1],
+      footprintRadius: (radiusById.get(object.assetId!) ?? 0.5)
+        * Math.max(object.transform.scale[0], object.transform.scale[2])
+    }));
+}
+
+function indoorPlacementFocus(
+  map: EditableMap,
+  layer: SceneZoneLayer | undefined,
+  familyAssets: ReadonlyMap<string, MapAsset[]>
+): { x: number; z: number } | undefined {
+  const focusFamilyId = layer?.placement?.focusFamilyId;
+  if (!focusFamilyId) return undefined;
+  const assetIds = new Set((familyAssets.get(focusFamilyId) ?? []).map((asset) => asset.id));
+  const targets = map.objects.filter((object) => object.assetId && assetIds.has(object.assetId));
+  if (targets.length === 0) return undefined;
+  return {
+    x: targets.reduce((sum, object) => sum + object.transform.position[0], 0) / targets.length,
+    z: targets.reduce((sum, object) => sum + object.transform.position[2], 0) / targets.length
+  };
+}
+
+function repairIndoorFocusFacing(
+  map: EditableMap,
+  plan: SceneCompositionPlan,
+  resolvedFamilies: readonly ResolvedSceneFamily[]
+): MapOperation[] {
+  if (map.sceneMode !== 'indoor') return [];
+  const assetsByFamily = new Map(resolvedFamilies.map((resolved) => [
+    resolved.family.id,
+    new Set(resolved.assets.map((asset) => asset.id))
+  ]));
+  const updates = new Map<string, MapOperation>();
+  for (const zone of plan.zones) {
+    for (const layer of zone.layers) {
+      const focusFamilyId = layer.placement?.focusFamilyId;
+      if (!focusFamilyId || layer.placement?.facing !== 'inward') continue;
+      const focusAssetIds = assetsByFamily.get(focusFamilyId);
+      const familyAssetIds = assetsByFamily.get(layer.familyId);
+      if (!focusAssetIds || !familyAssetIds) continue;
+      const focusObjects = map.objects.filter((object) => object.assetId && focusAssetIds.has(object.assetId));
+      if (focusObjects.length === 0) continue;
+      const focusX = focusObjects.reduce((sum, object) => sum + object.transform.position[0], 0) / focusObjects.length;
+      const focusZ = focusObjects.reduce((sum, object) => sum + object.transform.position[2], 0) / focusObjects.length;
+      for (const object of map.objects.filter((item) => item.assetId && familyAssetIds.has(item.assetId))) {
+        const deltaX = focusX - object.transform.position[0];
+        const deltaZ = focusZ - object.transform.position[2];
+        if (Math.hypot(deltaX, deltaZ) < 0.01) continue;
+        const yaw = Math.atan2(deltaX, deltaZ);
+        if (Math.abs(Math.atan2(
+          Math.sin(yaw - object.transform.rotation[1]),
+          Math.cos(yaw - object.transform.rotation[1])
+        )) < 0.001) continue;
+        updates.set(object.id, {
+          type: 'object.update',
+          objectId: object.id,
+          patch: { transform: { rotation: [object.transform.rotation[0], yaw, object.transform.rotation[2]] } }
+        });
+      }
+    }
+  }
+  return [...updates.values()];
 }
 
 function localAssetBounds(asset: MapAsset): { min: [number, number, number]; max: [number, number, number] } {

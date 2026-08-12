@@ -21,7 +21,7 @@ describe('map derived-results inspection', () => {
 
     const result = inspectMapDerivedResults(map);
 
-    expect(result).toMatchObject({ semanticZoneCount: 1, wetShoreCount: 1, localLightVisibleLimit: 8 });
+    expect(result).toMatchObject({ semanticZoneCount: 1, wetShoreCount: 1, localLightVisibleLimit: 2 });
     expect(result.grassRetreatedCells).toBeGreaterThan(0);
     expect(layer.densities).toEqual(before);
   });

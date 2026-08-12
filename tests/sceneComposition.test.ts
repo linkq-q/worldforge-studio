@@ -791,6 +791,391 @@ describe('scene composition contract', () => {
     });
   });
 
+  it('faces symmetric classroom furniture toward the blackboard and mounts a hyphenated wall clock', () => {
+    const map = createEmptyMap('Classroom', 'map-classroom-focus', [15, 4, 10], 'voxel', 'indoor', [15, 4, 10]);
+    const input = structuredClone(planInput()) as {
+      globalBrief: { focalZoneId: string };
+      assetFamilies: Array<Record<string, unknown>>;
+      zones: Array<Record<string, unknown>>;
+      transitions: unknown[];
+      consultations: unknown[];
+      intentRequirements: unknown[];
+    };
+    input.assetFamilies = [
+      { id: 'blackboard', label: 'Front blackboard', role: 'classroom teaching focus', tags: ['wall-mounted', 'blackboard'], sizeClass: 'large', desiredVariants: 1, priority: 1, generationBrief: 'front wall blackboard' },
+      { id: 'desks', label: 'Student desks', role: 'repeated classroom desks', tags: ['school-desk', 'furniture'], sizeClass: 'medium', desiredVariants: 1, priority: 0.9, generationBrief: 'one reusable student desk' },
+      { id: 'chairs', label: 'Student chairs', role: 'one chair paired to each student desk', tags: ['school-chair', 'furniture'], sizeClass: 'medium', desiredVariants: 1, priority: 0.9, generationBrief: 'one reusable student chair' },
+      { id: 'clock', label: 'Classroom wall-clock', role: 'wall timepiece', tags: ['wall-clock', 'timepiece'], sizeClass: 'small', desiredVariants: 1, priority: 0.5, generationBrief: 'round classroom wall-clock' }
+    ];
+    input.zones = [{
+      id: 'classroom', label: 'Classroom seating', role: 'primary', importance: 1,
+      region: { kind: 'circle', center: [0, 0], radius: 0.85 },
+      brief: { atmosphere: 'orderly classroom', hierarchy: 'students face the front blackboard', openness: 0.45, transitionIntent: 'central aisle' },
+      terrain: { elevation: 0, roughness: 0, flatness: 1 },
+      layers: [
+        { familyId: 'blackboard', density: 0.01, scaleRange: [1, 1], distribution: 'accent', edgeFalloff: 0, placement: { mode: 'anchor', direction: 180, offset: 0.1, facing: 'guide' } },
+        { familyId: 'desks', density: 0.08, scaleRange: [0.6, 0.6], distribution: 'even', edgeFalloff: 0, placement: { mode: 'layout', pattern: 'grid', direction: 0, offset: 0, facing: 'guide' } },
+        { familyId: 'chairs', density: 0.08, scaleRange: [0.45, 0.45], distribution: 'even', edgeFalloff: 0, placement: { mode: 'layout', pattern: 'grid', direction: 0, offset: 0, facing: 'guide' } },
+        { familyId: 'clock', density: 0.01, scaleRange: [1, 1], distribution: 'accent', edgeFalloff: 0, placement: { mode: 'anchor', direction: 180, offset: 0.1, facing: 'guide' } }
+      ],
+      grassLayers: [], excludeZoneIds: []
+    }];
+    input.globalBrief.focalZoneId = 'classroom';
+    input.transitions = [];
+    input.consultations = [];
+    input.intentRequirements = [];
+    const plan = enforceScenePlacementContracts(normalizeSceneCompositionPlan(input, map), map, 'ordinary classroom');
+    const asymmetricInput = structuredClone(input);
+    (asymmetricInput.zones[0] as Record<string, unknown>).symmetry = 'asymmetric';
+    const layers = Object.fromEntries(plan.zones[0].layers.map((layer) => [layer.familyId, layer]));
+    expect(plan.zones[0].symmetry).toBe('symmetric');
+    expect(plan.zones[0].symmetryAxis).toBe('x');
+    expect(normalizeSceneCompositionPlan(asymmetricInput, map).zones[0].symmetry).toBe('asymmetric');
+    expect(layers.blackboard.placement).toMatchObject({ mode: 'linear', intent: 'wall' });
+    expect(layers.clock.placement).toMatchObject({ mode: 'linear', intent: 'wall' });
+    expect(layers.desks.placement).toMatchObject({ intent: 'functional-group', facing: 'inward', focusFamilyId: 'blackboard' });
+    expect(layers.chairs.placement).toMatchObject({ intent: 'paired', facing: 'inward', focusFamilyId: 'blackboard' });
+
+    const assets = [
+      asset('asset-blackboard', 'Front blackboard', ['wall-mounted', 'blackboard'], 'large', 'voxel'),
+      asset('asset-desks', 'Student desk', ['school-desk', 'furniture'], 'medium', 'voxel'),
+      asset('asset-chairs', 'Student chair', ['school-chair', 'furniture'], 'medium', 'voxel'),
+      asset('asset-clock', 'Classroom wall-clock', ['wall-clock', 'timepiece'], 'small', 'voxel')
+    ];
+    const resolved = plan.assetFamilies.map((family, index) => ({ family, assets: [assets[index]], missingCount: 0 }));
+    const compiled = compileSceneComposition(map, plan, resolved);
+    compiled.operations = compiled.operations.flatMap((operation): MapOperation[] => {
+      if (operation.type !== 'object.add') return [operation];
+      if (operation.object.assetId === 'asset-blackboard') return [];
+      if (operation.object.assetId !== 'asset-desks' && operation.object.assetId !== 'asset-chairs') return [operation];
+      const rotation = operation.object.transform?.rotation ?? [0, 0, 0];
+      return [{
+        ...operation,
+        object: { ...operation.object, transform: { ...operation.object.transform, rotation: [rotation[0], Math.PI / 2, rotation[2]] } }
+      }];
+    });
+    compiled.metrics.familyCounts.blackboard = 0;
+    const outcome = ensureSceneCompositionOutcome(map, plan, resolved, compiled);
+    const generated = applyMapOperations({ ...map, assets }, outcome.compiled.operations);
+    const blackboard = generated.objects.find((object) => object.assetId === 'asset-blackboard')!;
+    const clock = generated.objects.find((object) => object.assetId === 'asset-clock')!;
+    const students = generated.objects.filter((object) => object.assetId === 'asset-desks' || object.assetId === 'asset-chairs');
+    expect(students.length).toBeGreaterThan(2);
+    expect(students.every((object) => {
+      const dx = blackboard.transform.position[0] - object.transform.position[0];
+      const dz = blackboard.transform.position[2] - object.transform.position[2];
+      const length = Math.hypot(dx, dz);
+      return (Math.sin(object.transform.rotation[1]) * dx + Math.cos(object.transform.rotation[1]) * dz) / length > 0.98;
+    })).toBe(true);
+    expect(outcome.compiled.operations.some((operation) => operation.type === 'object.update')).toBe(true);
+    const clockBounds = getMapObjectAabbs(generated).find((bounds) => bounds.objectId === clock.id)!;
+    expect(Math.min(
+      Math.abs(Math.abs(clockBounds.min[0]) - map.room!.size[0] / 2),
+      Math.abs(Math.abs(clockBounds.max[0]) - map.room!.size[0] / 2),
+      Math.abs(Math.abs(clockBounds.min[2]) - map.room!.size[2] / 2),
+      Math.abs(Math.abs(clockBounds.max[2]) - map.room!.size[2] / 2)
+    )).toBeLessThan(0.2);
+  });
+
+  it('places one computer on each internet-cafe desk through parent support hierarchy', () => {
+    const map = createEmptyMap('Internet cafe', 'map-internet-cafe-support', [14, 3.4, 10], 'voxel', 'indoor', [14, 3.4, 10]);
+    const input = structuredClone(planInput()) as {
+      globalBrief: { focalZoneId: string };
+      assetFamilies: Array<Record<string, unknown>>;
+      zones: Array<Record<string, unknown>>;
+      transitions: unknown[];
+      consultations: unknown[];
+      intentRequirements: unknown[];
+    };
+    input.assetFamilies = [
+      { id: 'desks', label: 'Gaming desks', role: 'repeated internet cafe workstations', tags: ['gaming-desk', 'furniture'], sizeClass: 'medium', desiredVariants: 1, priority: 1, generationBrief: 'one reusable gaming desk' },
+      { id: 'computers', label: 'Desktop computers', role: 'one complete computer station per desk', tags: ['desktop-computer', 'monitor'], sizeClass: 'medium', desiredVariants: 1, priority: 1, generationBrief: 'monitor keyboard mouse and tower, no desk' }
+    ];
+    input.zones = [{
+      id: 'workstations', label: 'Internet cafe workstations', role: 'primary', importance: 1,
+      region: { kind: 'circle', center: [0, 0], radius: 0.8 },
+      brief: { atmosphere: 'busy internet cafe', hierarchy: 'aligned desks and computers', openness: 0.45, transitionIntent: 'central aisle' },
+      terrain: { elevation: 0, roughness: 0, flatness: 1 },
+      layers: [
+        { familyId: 'desks', density: 0.08, scaleRange: [0.75, 0.75], distribution: 'even', edgeFalloff: 0, placement: { mode: 'layout', pattern: 'grid', intent: 'functional-group', direction: 0, offset: 0, facing: 'guide' } },
+        { familyId: 'computers', density: 0.08, scaleRange: [0.45, 0.45], distribution: 'clustered', edgeFalloff: 0, placement: { mode: 'attached', intent: 'supported', targetFamilyId: 'desks', direction: 0, offset: 0, facing: 'guide', maxPerGroup: 1 } }
+      ],
+      grassLayers: [], excludeZoneIds: []
+    }];
+    input.globalBrief.focalZoneId = 'workstations';
+    input.transitions = [];
+    input.consultations = [];
+    input.intentRequirements = [{ id: 'four-desks', kind: 'asset-family', description: 'four desks', targetZoneId: 'workstations', familyId: 'desks', minCount: 4 }];
+    const plan = enforceScenePlacementContracts(normalizeSceneCompositionPlan(input, map), map, 'internet cafe');
+    const deskAsset = asset('asset-gaming-desk', 'Gaming desk', ['gaming-desk', 'furniture'], 'medium', 'voxel');
+    const computerAsset = asset('asset-desktop-computer', 'Desktop computer', ['desktop-computer', 'monitor'], 'medium', 'voxel');
+    const resolved = [
+      { family: plan.assetFamilies[0], assets: [deskAsset], missingCount: 0 },
+      { family: plan.assetFamilies[1], assets: [computerAsset], missingCount: 0 }
+    ];
+
+    const generated = applyMapOperations(map, compileSceneComposition(map, plan, resolved).operations);
+    const desks = generated.objects.filter((object) => object.assetId === deskAsset.id);
+    const computers = generated.objects.filter((object) => object.assetId === computerAsset.id);
+
+    expect(desks.length).toBeGreaterThan(0);
+    expect(computers).toHaveLength(desks.length);
+    expect(new Set(computers.map((computer) => computer.parentId))).toEqual(new Set(desks.map((desk) => desk.id)));
+    expect(computers.every((computer) => computer.transform.position[1] > 0)).toBe(true);
+  });
+
+  it('repairs a restaurant as symmetric table groups with four chairs and a complete ceiling grid', () => {
+    const map = createEmptyMap('Restaurant', 'map-restaurant-groups', [20, 5, 15], 'voxel', 'indoor', [20, 5, 15]);
+    const input = structuredClone(planInput()) as {
+      globalBrief: { focalZoneId: string };
+      assetFamilies: Array<Record<string, unknown>>;
+      zones: Array<Record<string, unknown>>;
+      transitions: unknown[];
+      consultations: unknown[];
+      intentRequirements: unknown[];
+    };
+    input.assetFamilies = [
+      { id: 'tables', label: 'Four-seat dining tables', role: 'repeated restaurant dining tables', tags: ['furniture', 'dining', 'table', 'four-seat'], sizeClass: 'medium', desiredVariants: 1, priority: 1, generationBrief: 'one four-seat table' },
+      { id: 'chairs', label: 'Dining chairs', role: 'chairs around each dining table', tags: ['furniture', 'dining', 'chair'], sizeClass: 'small', desiredVariants: 1, priority: 1, generationBrief: 'one dining chair' },
+      { id: 'lights', label: 'Pendant lights', role: 'regular restaurant ceiling illumination', tags: ['lighting', 'ceiling-light', 'pendant-light'], sizeClass: 'small', desiredVariants: 1, priority: 0.7, generationBrief: 'one pendant light' }
+    ];
+    input.zones = [{
+      id: 'dining', label: 'Main restaurant dining room', role: 'primary', importance: 1,
+      symmetry: 'symmetric', symmetryAxis: 'x',
+      region: { kind: 'circle', center: [0, 0], radius: 0.86 },
+      brief: { atmosphere: 'orderly diner', hierarchy: 'repeated dining groups', openness: 0.45, transitionIntent: 'clear central circulation' },
+      terrain: { elevation: 0, roughness: 0, flatness: 1 },
+      layers: [
+        { familyId: 'tables', density: 0.08, scaleRange: [0.8, 0.8], distribution: 'even', edgeFalloff: 0, placement: { mode: 'layout', pattern: 'grid', direction: 0, offset: 0, facing: 'guide', maxPerGroup: 1 } },
+        { familyId: 'chairs', density: 0.2, scaleRange: [0.55, 0.55], distribution: 'even', edgeFalloff: 0, placement: { mode: 'layout', pattern: 'grid', direction: 0, offset: 0, facing: 'random', targetFamilyId: 'tables' } },
+        { familyId: 'lights', density: 0.2, scaleRange: [0.7, 0.7], distribution: 'even', edgeFalloff: 0, placement: { mode: 'layout', pattern: 'grid', direction: 0, offset: 0, facing: 'guide' } }
+      ],
+      grassLayers: [], excludeZoneIds: []
+    }];
+    input.globalBrief.focalZoneId = 'dining';
+    input.transitions = [];
+    input.consultations = [];
+    input.intentRequirements = [
+      { id: 'required-tables', kind: 'asset-family', description: 'four dining tables', targetZoneId: 'dining', familyId: 'tables', minCount: 4 },
+      { id: 'required-chairs', kind: 'asset-family', description: 'four chairs per table', targetZoneId: 'dining', familyId: 'chairs', minCount: 16 }
+    ];
+    const plan = enforceScenePlacementContracts(normalizeSceneCompositionPlan(input, map), map, 'orderly restaurant');
+    const layers = Object.fromEntries(plan.zones[0].layers.map((layer) => [layer.familyId, layer]));
+    expect(plan.assetFamilies.find((family) => family.id === 'lights')?.tags).toContain('ceiling-mounted');
+    expect(layers.chairs.placement).toMatchObject({ mode: 'attached', intent: 'social', targetFamilyId: 'tables', maxPerGroup: 4 });
+    expect(layers.lights.placement).toMatchObject({ mode: 'layout', pattern: 'grid', maxPerGroup: 12 });
+
+    const assets = [
+      { ...asset('asset-table', 'Four-seat dining table', ['furniture', 'dining', 'table'], 'medium', 'voxel'), footprintRadius: 0.74 },
+      { ...asset('asset-chair', 'Dining chair', ['furniture', 'dining', 'chair'], 'small', 'voxel'), footprintRadius: 0.25 },
+      {
+        ...asset('asset-light', 'Pendant light', ['lighting', 'ceiling-light', 'pendant-light'], 'small', 'voxel'),
+        footprintRadius: 0.45,
+        modelJson: { nodes: [{ id: 'light', transform: { pos: [0, 0.2, 0] }, mesh: { type: 'box', params: { width: 0.9, height: 0.4, depth: 0.4 } } }] },
+        colliderPlan: {
+          version: 1 as const,
+          boxes: [{ min: [-0.45, 0, -0.2] as [number, number, number], max: [0.45, 0.4, 0.2] as [number, number, number] }],
+          sourceMeshCount: 1, candidateCount: 1, fallbackUsed: false
+        }
+      }
+    ];
+    const resolved = plan.assetFamilies.map((family, index) => ({ family, assets: [assets[index]], missingCount: 0 }));
+    const compiled = compileSceneComposition(map, plan, resolved);
+    expect(layers.tables.placement).toMatchObject({ mode: 'layout', intent: 'functional-group' });
+    expect(compiled.metrics.familyCounts.tables).toBeGreaterThan(1);
+    const tableOperations: MapOperation[] = [
+      [-2, -2], [2, -2], [-2, 2], [2, 2]
+    ].map(([x, z], index) => ({
+      type: 'object.add',
+      object: {
+        id: `restaurant-table-${index + 1}`, name: 'Dining table', assetId: 'asset-table', heightMode: 'fixed',
+        transform: { position: [x, 0, z], rotation: [0, 0, 0], scale: [0.8, 0.8, 0.8] }
+      }
+    }));
+    const missingGroups = {
+      ...compiled,
+      operations: [
+        ...compiled.operations.filter((operation) => operation.type !== 'object.add'
+          || operation.object.assetId === 'asset-light'),
+        ...tableOperations
+      ],
+      metrics: {
+        ...compiled.metrics,
+        familyCounts: { ...compiled.metrics.familyCounts, tables: 4, chairs: 0 }
+      }
+    };
+    const outcome = ensureSceneCompositionOutcome(map, plan, resolved, missingGroups);
+    const generated = applyMapOperations({ ...map, assets }, outcome.compiled.operations);
+    const tables = generated.objects.filter((object) => object.assetId === 'asset-table');
+    const chairs = generated.objects.filter((object) => object.assetId === 'asset-chair');
+    const lights = generated.objects.filter((object) => object.assetId === 'asset-light');
+
+    expect(tables).toHaveLength(4);
+    expect(chairs).toHaveLength(16);
+    expect(lights.length).toBeGreaterThanOrEqual(4);
+    for (const table of tables) {
+      expect(tables.some((other) => Math.abs(other.transform.position[0] + table.transform.position[0]) < 0.001
+        && Math.abs(other.transform.position[2] - table.transform.position[2]) < 0.001)).toBe(true);
+      const groupedChairs = chairs.filter((chair) => Math.hypot(
+        chair.transform.position[0] - table.transform.position[0],
+        chair.transform.position[2] - table.transform.position[2]
+      ) < 2);
+      expect(groupedChairs).toHaveLength(4);
+      expect(groupedChairs.every((chair) => {
+        const dx = table.transform.position[0] - chair.transform.position[0];
+        const dz = table.transform.position[2] - chair.transform.position[2];
+        const length = Math.hypot(dx, dz);
+        return (Math.sin(chair.transform.rotation[1]) * dx + Math.cos(chair.transform.rotation[1]) * dz) / length > 0.98;
+      })).toBe(true);
+    }
+    const lightXs = new Set(lights.map((light) => light.transform.position[0].toFixed(3)));
+    const lightZs = new Set(lights.map((light) => light.transform.position[2].toFixed(3)));
+    expect(lightXs.size * lightZs.size).toBe(lights.length);
+    expect(Math.min(lightXs.size, lightZs.size)).toBeGreaterThanOrEqual(2);
+    const lightBounds = getMapObjectAabbs(generated).filter((bounds) => lights.some((light) => light.id === bounds.objectId));
+    expect(lightBounds.every((bounds) => Math.abs(bounds.max[1] - (map.room!.size[1] - map.room!.wallThickness)) < 0.001)).toBe(true);
+  });
+
+  it('reflows an incomplete office workstation relationship as one coherent desk-chair group', () => {
+    const map = createEmptyMap('Office', 'map-office-reflow', [15, 5, 10], 'voxel', 'indoor', [15, 5, 10]);
+    const input = structuredClone(planInput()) as {
+      globalBrief: { focalZoneId: string };
+      assetFamilies: Array<Record<string, unknown>>;
+      zones: Array<Record<string, unknown>>;
+      transitions: unknown[];
+      consultations: unknown[];
+      intentRequirements: unknown[];
+    };
+    input.assetFamilies = [
+      { id: 'desks', label: 'Office desks', role: 'four desks in two workstation groups', tags: ['office-desk', 'workstation', 'furniture'], sizeClass: 'medium', desiredVariants: 1, priority: 1, generationBrief: 'one reusable office desk' },
+      { id: 'chairs', label: 'Office chairs', role: 'one chair paired with every desk', tags: ['office-chair', 'furniture'], sizeClass: 'medium', desiredVariants: 1, priority: 1, generationBrief: 'one reusable office chair' }
+    ];
+    input.zones = [{
+      id: 'workstations', label: 'Office workstation bay', role: 'primary', importance: 1,
+      region: { kind: 'circle', center: [0, 0], radius: 0.82 },
+      brief: { atmosphere: 'orderly office', hierarchy: 'four desks form two groups', openness: 0.5, transitionIntent: 'clear circulation around workstations' },
+      terrain: { elevation: 0, roughness: 0, flatness: 1 },
+      layers: [
+        { familyId: 'desks', density: 0.05, scaleRange: [1, 1], distribution: 'even', edgeFalloff: 0.1, placement: { mode: 'layout', pattern: 'grid', direction: 0, offset: 0, facing: 'guide' } },
+        { familyId: 'chairs', density: 0.05, scaleRange: [1, 1], distribution: 'clustered', edgeFalloff: 0.1, placement: { mode: 'attached', direction: 0, offset: 0, facing: 'guide', targetFamilyId: 'desks' } }
+      ],
+      grassLayers: [], excludeZoneIds: []
+    }];
+    input.globalBrief.focalZoneId = 'workstations';
+    input.transitions = [];
+    input.consultations = [];
+    input.intentRequirements = [
+      { id: 'four-desks', kind: 'asset-family', description: 'four office desks', targetZoneId: 'workstations', familyId: 'desks', minCount: 4 },
+      { id: 'chair-per-desk', kind: 'asset-family', description: 'one chair per desk', targetZoneId: 'workstations', familyId: 'chairs', minCount: 4 }
+    ];
+    const plan = enforceScenePlacementContracts(normalizeSceneCompositionPlan(input, map), map, '办公室，四个办公桌组成两组工位，每张桌子配一把椅子');
+    const assets = [
+      { ...asset('asset-office-desk', 'Office desk', ['office-desk', 'workstation', 'furniture'], 'medium', 'voxel'), footprintRadius: 0.7 },
+      { ...asset('asset-office-chair', 'Office chair', ['office-chair', 'furniture'], 'medium', 'voxel'), footprintRadius: 0.5 }
+    ];
+    const resolved = plan.assetFamilies.map((family, index) => ({ family, assets: [assets[index]], missingCount: 0 }));
+    const deskPositions = [[0, 0], [0, -2.2], [0, 2.2], [-2.2, -2.2]];
+    const brokenOperations: MapOperation[] = [
+      ...deskPositions.map(([x, z], index): MapOperation => ({
+        type: 'object.add', object: {
+          id: `broken-desk-${index + 1}`, name: 'Office desk', assetId: assets[0].id, heightMode: 'fixed',
+          transform: { position: [x, 0, z], rotation: [0, Math.PI, 0], scale: [1.5, 1.5, 1.5] }
+        }
+      })),
+      {
+        type: 'object.add', object: {
+          id: 'broken-chair-1', name: 'Office chair', assetId: assets[1].id, heightMode: 'fixed',
+          transform: { position: [0, 0, 4], rotation: [0, Math.PI, 0], scale: [1.2, 1.2, 1.2] }
+        }
+      }
+    ];
+    const outcome = ensureSceneCompositionOutcome(map, plan, resolved, {
+      operations: brokenOperations,
+      metrics: {
+        zoneCoverage: 0.8, zoneCount: 1, objectCount: 5, waterCount: 0,
+        familyCounts: { desks: 4, chairs: 1 }, zoneCounts: { workstations: 5 }, unresolvedFamilyIds: []
+      }
+    });
+    const generated = applyMapOperations({ ...map, assets }, outcome.compiled.operations);
+    const desks = generated.objects.filter((object) => object.assetId === assets[0].id);
+    const chairs = generated.objects.filter((object) => object.assetId === assets[1].id);
+    expect(desks).toHaveLength(4);
+    expect(chairs).toHaveLength(4);
+    expect(generated.objects.some((object) => object.id.startsWith('broken-'))).toBe(false);
+    expect(outcome.compiled.metrics.initialObjectCount).toBe(5);
+    const pairedChairIds = new Set<string>();
+    for (const desk of desks) {
+      const nearest = chairs.map((chair) => ({
+        chair,
+        distance: Math.hypot(
+          chair.transform.position[0] - desk.transform.position[0],
+          chair.transform.position[2] - desk.transform.position[2]
+        )
+      })).sort((left, right) => left.distance - right.distance)[0];
+      expect(nearest.distance).toBeLessThan(3);
+      pairedChairIds.add(nearest.chair.id);
+    }
+    expect(pairedChairIds.size).toBe(4);
+  });
+
+  it('mirrors a missing repeated window across the declared indoor symmetry axis', () => {
+    const map = createEmptyMap('Restaurant windows', 'map-window-mirror', [20, 5, 15], 'voxel', 'indoor', [20, 5, 15]);
+    const windowAsset = {
+      ...asset('asset-window', 'Restaurant glass window', ['window', 'wall-mounted', 'glass'], 'medium', 'voxel'),
+      footprintRadius: 1.2,
+      modelJson: { nodes: [{ id: 'window', transform: { pos: [0, 0.8, 0] }, mesh: { type: 'box', params: { width: 2.4, height: 1.6, depth: 0.15 } } }] }
+    };
+    const input = structuredClone(planInput()) as {
+      globalBrief: { focalZoneId: string };
+      assetFamilies: Array<Record<string, unknown>>;
+      zones: Array<Record<string, unknown>>;
+      transitions: unknown[];
+      consultations: unknown[];
+      intentRequirements: unknown[];
+    };
+    input.assetFamilies = [{
+      id: 'windows', label: 'Restaurant windows', role: 'repeated wall daylight windows',
+      tags: ['window', 'wall-mounted'], sizeClass: 'medium', desiredVariants: 1, priority: 1,
+      generationBrief: 'one reusable glass window'
+    }];
+    input.zones = [{
+      id: 'dining', label: 'Dining room', role: 'primary', importance: 1,
+      symmetry: 'symmetric', symmetryAxis: 'x',
+      region: { kind: 'circle', center: [0, 0], radius: 0.9 },
+      brief: { atmosphere: 'balanced', hierarchy: 'paired windows', openness: 0.5, transitionIntent: 'clear center' },
+      terrain: { elevation: 0, roughness: 0, flatness: 1 },
+      layers: [{ familyId: 'windows', density: 0.01, scaleRange: [1, 1], distribution: 'even', edgeFalloff: 0, placement: { mode: 'linear', pattern: 'row', intent: 'wall', direction: 0, offset: 0, facing: 'inward' } }],
+      grassLayers: [], excludeZoneIds: []
+    }];
+    input.globalBrief.focalZoneId = 'dining';
+    input.transitions = [];
+    input.consultations = [];
+    input.intentRequirements = [{ id: 'two-windows', kind: 'asset-family', description: 'two symmetric windows', targetZoneId: 'dining', familyId: 'windows', minCount: 2 }];
+    const plan = enforceScenePlacementContracts(normalizeSceneCompositionPlan(input, map), map, 'symmetric restaurant windows');
+    const resolved = [{ family: plan.assetFamilies[0], assets: [windowAsset], missingCount: 0 }];
+    const initialWindow: MapOperation = {
+      type: 'object.add',
+      object: {
+        id: 'window-right', name: 'Window', assetId: windowAsset.id, heightMode: 'fixed',
+        transform: { position: [3, 1.6, -7.34], rotation: [0, 0, 0], scale: [1, 1, 1] }
+      }
+    };
+    const compiled = {
+      operations: [initialWindow],
+      metrics: {
+        zoneCoverage: 0.5, zoneCount: 1, objectCount: 1, waterCount: 0,
+        familyCounts: { windows: 1 }, zoneCounts: { dining: 1 }, unresolvedFamilyIds: [], behaviorQuality: {}
+      }
+    };
+    const outcome = ensureSceneCompositionOutcome(map, plan, resolved, compiled);
+    const generated = applyMapOperations({ ...map, assets: [windowAsset] }, outcome.compiled.operations);
+    const windows = generated.objects.filter((object) => object.assetId === windowAsset.id);
+
+    expect(windows).toHaveLength(2);
+    expect(windows[0].transform.position[0] + windows[1].transform.position[0]).toBeCloseTo(0, 4);
+    expect(generated.room?.openings.filter((opening) => opening.kind === 'window')).toHaveLength(1);
+  });
+
   it('places two sparse instances of each playground facility family', () => {
     const map = createEmptyMap('Playground', 'map-playground-layout', [72, 12, 72], 'voxel');
     const input = structuredClone(planInput()) as {

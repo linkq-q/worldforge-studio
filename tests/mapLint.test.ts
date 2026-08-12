@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createEmptyMap, createMapObject, type MapAsset } from '../src/shared/map';
+import { createEmptyMap, createMapObject, getMapObjectAabbs, type MapAsset } from '../src/shared/map';
 import { applyMapOperations } from '../src/shared/mapOperations';
 import { lintMap } from '../src/shared/mapLint';
 import { validateMapSuggestion } from '../src/server/mapSuggestionValidation';
@@ -137,6 +137,32 @@ describe('map lint and deterministic repair', () => {
     ]));
   });
 
+  it('tags and snaps hyphenated ceiling lights to the ceiling underside', () => {
+    const lightModel = {
+      nodes: [{ id: 'light', transform: { pos: [0, 0.2, 0] }, mesh: { type: 'box', params: { width: 1, height: 0.4, depth: 0.4 } } }]
+    };
+    const lightAsset = {
+      ...asset,
+      id: 'ceiling-light',
+      name: 'Grid light',
+      prompt: 'rectangular grid light',
+      tags: ['indoor', 'ceiling-light'],
+      modelJson: lightModel,
+      colliderPlan: buildModelColliderPlan(lightModel)
+    } satisfies MapAsset;
+    const map = createEmptyMap('room', 'ceiling-light-room', [10, 3, 8], 'voxel', 'indoor', [10, 3, 8]);
+    map.assets = [lightAsset];
+    const light = createMapObject('Grid light', lightAsset.id);
+    light.id = 'grid-light';
+    light.transform.position = [0, 0, 0];
+    map.objects = [light];
+
+    const repaired = applyMapOperations(map, lintMap(map).repairOperations);
+    const bounds = getMapObjectAabbs(repaired).find((item) => item.objectId === light.id)!;
+
+    expect(bounds.max[1]).toBeCloseTo(map.room!.size[1] - map.room!.wallThickness, 5);
+  });
+
   it('normalizes recognizable indoor furniture to character-relative semantic heights', () => {
     const tallChairModel = {
       nodes: [{ id: 'chair', transform: { pos: [0, 1.5, 0] }, mesh: { type: 'box', params: { width: 1, height: 3, depth: 1 } } }]
@@ -192,6 +218,43 @@ describe('map lint and deterministic repair', () => {
     expect(0.3 * object.transform.scale[0]).toBeGreaterThan(0.9);
     expect(1.8 * object.transform.scale[1]).toBeLessThanOrEqual(2.98);
     expect(object.transform.scale[0]).toBeGreaterThan(object.transform.scale[1]);
+  });
+
+  it('keeps a wide rotated wall menu board in contact with its wall', () => {
+    const menuAsset = {
+      ...asset,
+      id: 'wall-menu',
+      name: 'Wall-mounted menu board',
+      tags: ['menu-board', 'wall-mounted'],
+      footprintRadius: 2.69,
+      modelJson: {
+        nodes: [{ id: 'menu', transform: { pos: [0, 1.2, 0] }, mesh: { type: 'box', params: { width: 5.2, height: 2.4, depth: 0.2 } } }]
+      },
+      colliderPlan: {
+        version: 1 as const,
+        boxes: [{
+          min: [-2.6, 0, -0.1] as [number, number, number],
+          max: [2.6, 2.4, 0.1] as [number, number, number]
+        }],
+        sourceMeshCount: 1,
+        candidateCount: 1,
+        fallbackUsed: false
+      }
+    } satisfies MapAsset;
+    const map = createEmptyMap('restaurant', 'wall-menu-room', [20, 5, 15], 'voxel', 'indoor', [20, 5, 15]);
+    map.assets = [menuAsset];
+    const menu = createMapObject('Menu', menuAsset.id);
+    menu.id = 'wall-menu-object';
+    menu.heightMode = 'fixed';
+    menu.transform.position = [9.74, 1.3, 0];
+    menu.transform.rotation = [0, -Math.PI / 2, 0];
+    map.objects = [menu];
+
+    const lint = lintMap(map);
+    const repaired = lint.repairOperations.length > 0 ? applyMapOperations(map, lint.repairOperations) : map;
+    const bounds = getMapObjectAabbs(repaired)[0];
+
+    expect(bounds.max[0]).toBeGreaterThan(9.7);
   });
 
   it('repairs a generated tree that is tiny relative to the configured character', () => {

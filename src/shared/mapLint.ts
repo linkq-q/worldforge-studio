@@ -96,14 +96,19 @@ function lintObjectPlacement(
     if (!object.assetId || object.parentId || object.locked || removedIds.has(object.id)) continue;
     const position = [...object.transform.position] as [number, number, number];
     const asset = assets.get(object.assetId);
+    const currentBounds = objectBounds.get(object.id);
     const radius = (asset?.footprintRadius ?? (asset ? assetFootprintRadius(asset.colliderPlan) : 0.5))
       * Math.max(object.transform.scale[0], object.transform.scale[2]);
     const minX = room ? room.position[0] - room.size[0] / 2 + room.wallThickness : bounds.minX;
     const maxX = room ? room.position[0] + room.size[0] / 2 - room.wallThickness : bounds.maxX;
     const minZ = room ? room.position[2] - room.size[2] / 2 + room.wallThickness : bounds.minZ;
     const maxZ = room ? room.position[2] + room.size[2] / 2 - room.wallThickness : bounds.maxZ;
-    const nextX = clamp(position[0], minX + radius, maxX - radius);
-    const nextZ = clamp(position[2], minZ + radius, maxZ - radius);
+    const leftExtent = currentBounds ? position[0] - currentBounds.min[0] : radius;
+    const rightExtent = currentBounds ? currentBounds.max[0] - position[0] : radius;
+    const nearExtent = currentBounds ? position[2] - currentBounds.min[2] : radius;
+    const farExtent = currentBounds ? currentBounds.max[2] - position[2] : radius;
+    let nextX = clamp(position[0], minX + leftExtent, maxX - rightExtent);
+    let nextZ = clamp(position[2], minZ + nearExtent, maxZ - farExtent);
     const fixedHeight = object.heightMode === 'fixed' || Boolean(object.roomOpeningId);
     const floorY = room?.position[1] ?? sampleTerrainHeight(map, nextX, nextZ);
     let nextY = fixedHeight ? position[1] : floorY;
@@ -111,7 +116,6 @@ function lintObjectPlacement(
     let aboveCeiling = false;
     let tooSmall = false;
     let scaleMismatch = false;
-    const currentBounds = objectBounds.get(object.id);
     const semantic = [
       asset?.name,
       asset?.prompt,
@@ -121,6 +125,18 @@ function lintObjectPlacement(
     const wallMounted = Boolean(object.roomOpeningId) || isElevatedWallSemantic(mountSemantic);
     const ceilingMounted = isCeilingMountedSemantic(semantic);
     const elevated = wallMounted || ceilingMounted;
+    if (room && wallMounted && !object.roomOpeningId && currentBounds) {
+      const distances = [
+        { wall: 'west', distance: Math.abs(currentBounds.min[0] - minX) },
+        { wall: 'east', distance: Math.abs(maxX - currentBounds.max[0]) },
+        { wall: 'north', distance: Math.abs(currentBounds.min[2] - minZ) },
+        { wall: 'south', distance: Math.abs(maxZ - currentBounds.max[2]) }
+      ].sort((left, right) => left.distance - right.distance);
+      if (distances[0].wall === 'west') nextX = position[0] + minX - currentBounds.min[0];
+      if (distances[0].wall === 'east') nextX = position[0] + maxX - currentBounds.max[0];
+      if (distances[0].wall === 'north') nextZ = position[2] + minZ - currentBounds.min[2];
+      if (distances[0].wall === 'south') nextZ = position[2] + maxZ - currentBounds.max[2];
+    }
     if (!room && currentBounds) {
       const { height: playerHeight } = getMapPlayerMetrics(map);
       const profile = worldScaleProfileMultiplier(map.worldScaleProfile);
@@ -171,7 +187,10 @@ function lintObjectPlacement(
           nextScale[2] * horizontalFit
         ];
       }
-      if (!elevated) {
+      if (ceilingMounted) {
+        const topOffset = (currentBounds.max[1] - position[1]) * verticalFit;
+        nextY = ceilingY - room.wallThickness - topOffset;
+      } else if (!elevated) {
         const bottomOffset = (currentBounds.min[1] - position[1]) * verticalFit;
         nextY = floorY - bottomOffset;
       } else if (aboveCeiling) {

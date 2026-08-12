@@ -792,6 +792,16 @@ async function handleEditorRenderSchemes(req: Req, res: Res, store: MapStore, pa
     sendJson(res, 200, { renderScheme: await store.loadRenderScheme(schemeId) });
     return;
   }
+  if (req.method === 'PATCH' && parts.length === 4) {
+    const body = await readJson<Partial<RenderScheme>>(req);
+    try {
+      sendJson(res, 200, { renderScheme: await store.updateRenderScheme(schemeId, body) });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'update_failed';
+      throw new HttpError(message === 'builtin_scheme_readonly' ? 409 : 500, message);
+    }
+    return;
+  }
   if (req.method === 'DELETE' && parts.length === 4) {
     try {
       await store.deleteRenderScheme(schemeId);

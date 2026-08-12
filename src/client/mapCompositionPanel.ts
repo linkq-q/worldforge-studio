@@ -36,6 +36,9 @@ export function renderMapCompositionPlanApproval(plan: SceneCompositionPlan): st
             <div class="map-composition-zone-item">
               <b><i style="background:${colors[zone.role]}"></i>${escapeHtml(zone.label)} · ${roleLabels[zone.role]}</b>
               <span>${escapeHtml(zone.brief.hierarchy || zone.brief.transitionIntent || zone.brief.atmosphere)}</span>
+              <small>布局：${zone.symmetry === 'asymmetric'
+                ? '非对称'
+                : `默认对称 · ${zone.symmetryAxis === 'z' ? 'Z' : 'X'} = 区域中心`}</small>
               ${zone.role === 'negative-space' ? `<small>留白用途：${escapeHtml(zone.brief.transitionIntent || zone.brief.hierarchy || '保证通行、视线或节奏')}</small>` : ''}
             </div>
           `).join('')}
@@ -64,7 +67,15 @@ export function renderMapCompositionSummary(suggestion: MapAiSuggestion): string
     issue
   ])).values()];
   const outcomeWarnings = composition.outcome.checks.filter((check) => check.status === 'warning');
+  const placementQuality = mapCompositionPlacementQuality(
+    composition.metrics.initialObjectCount ?? composition.metrics.objectCount,
+    composition.metrics.objectCount
+  );
   return `
+    <div class="map-composition-quality map-composition-quality-${placementQuality.tone}">
+      <b>${placementQuality.label}</b>
+      <span>初始规划正常落位 <b>${placementQuality.initial} / ${placementQuality.total}</b> · ${placementQuality.percent}%</span>
+    </div>
     <details class="inspector-disclosure compact map-ai-composition-details">
       <summary><span><b>生成结果详情</b><small>构图、分区与自动验收</small></span></summary>
       <div class="inspector-body asset-library-details">
@@ -80,7 +91,7 @@ export function renderMapCompositionSummary(suggestion: MapAiSuggestion): string
       </div>
       <p class="empty">${escapeHtml(composition.plan.globalBrief.visualHierarchy)}</p>
       <div class="style-tags">
-        ${composition.plan.zones.map((zone) => `<span>${escapeHtml(zone.label)} · ${zone.role}</span>`).join('')}
+        ${composition.plan.zones.map((zone) => `<span>${escapeHtml(zone.label)} · ${zone.role} · ${zone.symmetry === 'asymmetric' ? '非对称' : `${zone.symmetryAxis === 'z' ? 'Z' : 'X'}轴对称`}</span>`).join('')}
       </div>
       ${composition.consultations.length > 0 ? `
         <p class="empty">动态专家：${composition.consultations.map((item) => escapeHtml(item.id)).join('、')}</p>
@@ -102,6 +113,24 @@ export function renderMapCompositionSummary(suggestion: MapAiSuggestion): string
       </div>
     </details>
   `;
+}
+
+export function mapCompositionPlacementQuality(initialObjectCount: number, objectCount: number): {
+  label: '规划不足' | '需要注意' | '规划良好';
+  tone: 'danger' | 'warning' | 'good';
+  initial: number;
+  total: number;
+  percent: number;
+} {
+  const total = Math.max(0, Math.round(objectCount));
+  const initial = Math.min(total, Math.max(0, Math.round(initialObjectCount)));
+  const ratio = total > 0 ? initial / total : 1;
+  const tier = ratio >= 0.75
+    ? { label: '规划良好' as const, tone: 'good' as const }
+    : ratio >= 0.4
+      ? { label: '需要注意' as const, tone: 'warning' as const }
+      : { label: '规划不足' as const, tone: 'danger' as const };
+  return { ...tier, initial, total, percent: Math.round(ratio * 100) };
 }
 
 function escapeHtml(value: string): string {

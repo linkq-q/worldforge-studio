@@ -1454,6 +1454,38 @@ p {
   position: relative;
 }
 
+.map-composition-quality {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 8px;
+  padding: 9px 10px;
+  border: 1px solid currentColor;
+  border-radius: 8px;
+  font-size: 0.72rem;
+}
+
+.map-composition-quality span {
+  color: inherit;
+  opacity: 0.88;
+}
+
+.map-composition-quality-danger {
+  color: #ff8b85;
+  background: rgba(209, 63, 56, 0.12);
+}
+
+.map-composition-quality-warning {
+  color: #f7bc5d;
+  background: rgba(247, 188, 93, 0.1);
+}
+
+.map-composition-quality-good {
+  color: #c6f45b;
+  background: rgba(198, 244, 91, 0.08);
+}
+
 .map-composition-approval {
   background: radial-gradient(circle at 100% 0, rgba(112, 183, 255, 0.12), transparent 48%), #132024;
 }

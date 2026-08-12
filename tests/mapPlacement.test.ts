@@ -270,4 +270,49 @@ describe('structured map placement', () => {
     expect(placements[1].z).toBeGreaterThan(targets[1].z);
     expect(placements.every((placement) => Math.abs(placement.rotationY - Math.PI) < 0.01)).toBe(true);
   });
+
+  it('uses complete mirrored grids for symmetric repeated assets without duplicating singletons', () => {
+    const map = createEmptyMap('symmetric classroom', 'map-symmetric-classroom', [30, 4, 24], 'voxel', 'indoor', [30, 4, 24]);
+    map.assets = [buildingAsset];
+    const basePlan = {
+      mode: 'layout' as const, pattern: 'grid' as const, intent: 'functional-group' as const,
+      assetIds: [buildingAsset.id], region: { kind: 'circle' as const, x: 0, z: 0, r: 10 },
+      density: 0.1, spacing: 4, offset: 0, direction: 0, facing: 'guide' as const,
+      avoidWater: 0, maxSlope: 89, scaleRange: [0.5, 0.5] as [number, number], seed: 44,
+      symmetric: true
+    };
+    const repeated = expandStructuredMapPlacement(map, basePlan, [buildingAsset], 8, 'symmetric-grid');
+    const singleton = expandStructuredMapPlacement(map, basePlan, [buildingAsset], 1, 'symmetric-single');
+
+    expect(repeated).toHaveLength(8);
+    for (const placement of repeated) {
+      expect(repeated.some((other) => (
+        Math.abs(other.x + placement.x) < 0.001 && Math.abs(other.z - placement.z) < 0.001
+      ))).toBe(true);
+    }
+    expect(singleton).toHaveLength(1);
+  });
+
+  it('keeps a rectangular ceiling grid independent from floor furniture collisions', () => {
+    const map = createEmptyMap('restaurant lights', 'map-restaurant-lights', [20, 5, 15], 'voxel', 'indoor', [20, 5, 15]);
+    const table = { ...buildingAsset, id: 'asset-table', name: 'Dining table', prompt: 'dining table', footprintRadius: 1 };
+    const light = { ...buildingAsset, id: 'asset-light', name: 'Pendant light', prompt: 'ceiling-mounted pendant light', tags: ['ceiling-mounted', 'pendant-light'], footprintRadius: 0.4 };
+    map.assets = [table, light];
+    const floorTable = createMapObject('Table', table.id);
+    floorTable.id = 'floor-table';
+    map.objects = [floorTable];
+
+    const lights = expandStructuredMapPlacement(map, {
+      mode: 'layout', pattern: 'grid', intent: 'functional-group',
+      assetIds: [light.id], region: { kind: 'circle', x: 0, z: 0, r: 7 },
+      density: 1, spacing: 3, offset: 0, direction: 0, facing: 'guide',
+      avoidWater: 0, maxSlope: 89, scaleRange: [0.5, 0.5], seed: 45,
+      symmetric: true
+    }, [table, light], 12, 'restaurant-light');
+
+    expect(lights).toHaveLength(12);
+    const xs = new Set(lights.map((item) => item.x.toFixed(3)));
+    const zs = new Set(lights.map((item) => item.z.toFixed(3)));
+    expect(xs.size * zs.size).toBe(12);
+  });
 });

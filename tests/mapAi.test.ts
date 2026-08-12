@@ -110,6 +110,48 @@ describe('map AI adapter', () => {
     ]));
   });
 
+  it('places a generated indoor attachment even when its target family failed to generate', async () => {
+    const counter = {
+      ...(family('service-counter', ['service-counter', 'furniture'], 'large') as Record<string, unknown>),
+      priority: 1
+    };
+    const register = {
+      ...(family('cash-register', ['cash-register', 'counter-prop'], 'small') as Record<string, unknown>),
+      priority: 0.9
+    };
+    const plan = compositionPlan({
+      assetFamilies: [counter, register],
+      zones: [{
+        ...(zone('restaurant', []) as Record<string, unknown>),
+        layers: [{
+          familyId: 'service-counter', density: 0.01, scaleRange: [1, 1], distribution: 'even', edgeFalloff: 0,
+          placement: { mode: 'linear', pattern: 'row', intent: 'wall', direction: 0, offset: 0, facing: 'inward', maxPerGroup: 1 }
+        }, {
+          familyId: 'cash-register', density: 0.01, scaleRange: [1, 1], distribution: 'clustered', edgeFalloff: 0,
+          placement: { mode: 'attached', intent: 'attached-service', targetFamilyId: 'service-counter', direction: 0, offset: 0, facing: 'inward', maxPerGroup: 1 }
+        }]
+      }]
+    });
+    const fetchImpl = vi.fn()
+      .mockResolvedValueOnce(chatResponse(plan))
+      .mockResolvedValueOnce(chatResponse(reviewPass()));
+    const createAsset = vi.fn()
+      .mockRejectedValueOnce(new Error('map_asset_generation_failed:Service counter:gpt: HTTP 500'))
+      .mockResolvedValueOnce(testAsset('asset-register', 'Cash register', ['cash-register', 'counter-prop'], 'small'));
+
+    const suggestion = await runMapAgent(
+      '一间小餐厅，收银机放在服务柜台旁边',
+      createEmptyMap('restaurant', 'restaurant-missing-counter', [16, 3, 12], 'voxel', 'indoor', [16, 3, 12]),
+      [],
+      { apiBase: 'https://example.test', provider: 'gpt', fetchImpl, createAsset, minNewAssets: 0, maxNewAssets: 2 }
+    );
+
+    expect(suggestion.generatedAssets).toEqual([{ id: 'asset-register', name: 'Cash register' }]);
+    expect(suggestion.operations.some((operation) => (
+      operation.type === 'object.add' && operation.object.assetId === 'asset-register'
+    ))).toBe(true);
+  });
+
   it('continues from an approved composition without asking the director to redesign it', async () => {
     const approvedPlan = compositionPlan({
       assetFamilies: [family('chairs', ['chair', 'furniture'], 'medium')],

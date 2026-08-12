@@ -11,6 +11,7 @@ import { mapAssetFootprintRadius, type MapScatterPlacement } from './mapScatter'
 import { terrainFootprintSlopeDegrees } from './mapTerrainAnalysis';
 import { isNearWater } from './mapWater';
 import type { ScenePlacementIntent } from './sceneComposition';
+import { isCeilingMountedSemantic, isElevatedWallSemantic } from './indoorScale';
 
 export type StructuredPlacementMode = 'linear' | 'layout' | 'attached';
 export type StructuredLayoutPattern = 'row' | 'courtyard' | 'radial' | 'grid' | 'arc';
@@ -38,6 +39,7 @@ export interface StructuredPlacementPlan {
   aisleEvery?: number;
   /** Extra deterministic candidates to try without increasing the requested placement count. */
   candidateCount?: number;
+  symmetric?: boolean;
   excludeRegions?: Array<{ kind: 'circle'; x: number; z: number; r: number }>;
 }
 
@@ -47,6 +49,7 @@ interface CandidateSlot {
   guideYaw: number;
   focusX: number;
   focusZ: number;
+  targetIndex?: number;
 }
 
 interface HorizontalBounds {
@@ -92,16 +95,21 @@ export function expandStructuredMapPlacement(
   const minScale = Math.max(0.1, Math.min(...plan.scaleRange));
   const maxScale = Math.max(minScale, Math.max(...plan.scaleRange));
   const placements: MapScatterPlacement[] = [];
-  const occupiedBounds = existingOccupiedBounds(map);
+  const occupiedBounds = existingFloorOccupiedBounds(map);
   const existingBoundsCount = occupiedBounds.length;
   const elevatedWallBounds = occupiedWallBounds(map);
+  const ceilingBounds = occupiedCeilingBounds(map);
+  const placedPairTargets = new Set<number>();
 
   for (const [index, slot] of slots.entries()) {
     if (placements.length >= count) break;
+    if (plan.intent === 'paired' && slot.targetIndex !== undefined && placedPairTargets.has(slot.targetIndex)) continue;
     const asset = selectedAssets[Math.floor(random() * selectedAssets.length)];
     const scale = minScale + (maxScale - minScale) * random();
     const footprintRadius = mapAssetFootprintRadius(asset) * scale;
-    const jitter = plan.intent === 'wall' || plan.intent === 'audience'
+    const ceilingAsset = isCeilingIndoorAsset(asset);
+    const elevatedWallAsset = isElevatedIndoorAsset(asset) && !ceilingAsset;
+    const jitter = plan.symmetric || plan.intent === 'wall' || plan.intent === 'audience'
       ? 0
       : plan.mode === 'layout' ? spacing * 0.07 : spacing * 0.04;
     let x = slot.x + (random() - 0.5) * jitter;
@@ -114,14 +122,13 @@ export function expandStructuredMapPlacement(
       z = snapped.z;
       candidateBounds = snapped.bounds;
     }
-    if (!(map.room && (plan.intent === 'audience' || plan.intent === 'wall'))
+    if (!(map.room && (plan.intent === 'audience' || plan.intent === 'wall' || ceilingAsset))
       && Math.hypot(x - plan.region.x, z - plan.region.z) > plan.region.r) continue;
     if (plan.excludeRegions?.some((region) => Math.hypot(x - region.x, z - region.z) <= region.r)) continue;
     if (candidateBounds.minX < bounds.minX || candidateBounds.maxX > bounds.maxX
       || candidateBounds.minZ < bounds.minZ || candidateBounds.maxZ > bounds.maxZ) continue;
     if (isNearWater(map, x, z, Math.max(0, plan.avoidWater))) continue;
     if (terrainFootprintSlopeDegrees(map, x, z, footprintRadius) > Math.min(89, Math.max(0, plan.maxSlope))) continue;
-    const elevatedWallAsset = isElevatedIndoorAsset(asset);
     const collisionClearance = plan.intent === 'audience' || plan.intent === 'paired'
       || plan.intent === 'social' || plan.intent === 'viewpoint'
       ? -Math.min(0.45, footprintRadius * 0.35)
@@ -130,8 +137,9 @@ export function expandStructuredMapPlacement(
       || plan.intent === 'social' || plan.intent === 'viewpoint'
       ? occupiedBounds.slice(0, existingBoundsCount)
       : occupiedBounds;
-    if ((!elevatedWallAsset && collisionBounds.some((item) => horizontalBoundsOverlap(candidateBounds, item, collisionClearance)))
+    if ((!elevatedWallAsset && !ceilingAsset && collisionBounds.some((item) => horizontalBoundsOverlap(candidateBounds, item, collisionClearance)))
       || elevatedWallAsset && elevatedWallBounds.some((item) => horizontalBoundsOverlap(candidateBounds, item, 0.05))
+      || ceilingAsset && ceilingBounds.some((item) => horizontalBoundsOverlap(candidateBounds, item, 0.05))
       || plan.intent === 'wall' && wallOpeningOverlap(map, plan.direction, candidateBounds)) continue;
 
     placements.push({
@@ -144,8 +152,10 @@ export function expandStructuredMapPlacement(
       rotationY,
       scale
     });
-    occupiedBounds.push(candidateBounds);
+    if (!elevatedWallAsset && !ceilingAsset) occupiedBounds.push(candidateBounds);
     if (elevatedWallAsset) elevatedWallBounds.push(candidateBounds);
+    if (ceilingAsset) ceilingBounds.push(candidateBounds);
+    if (plan.intent === 'paired' && slot.targetIndex !== undefined) placedPairTargets.add(slot.targetIndex);
   }
   return placements;
 }
@@ -205,9 +215,10 @@ function candidateSlots(
   }
   if (pattern === 'grid') {
     const minimumColumns = Math.max(1, Math.ceil(Math.sqrt(count)));
-    const columns = plan.intent === 'audience' && minimumColumns > 1 && minimumColumns % 2 !== 0
-      ? minimumColumns + 1
-      : minimumColumns;
+    const symmetricColumns = plan.symmetric ? symmetricGridColumns(count) : minimumColumns;
+    const columns = plan.intent === 'audience' && symmetricColumns > 1 && symmetricColumns % 2 !== 0
+      ? symmetricColumns + 1
+      : symmetricColumns;
     const rows = Math.max(1, Math.ceil(count / columns));
     const focusX = plan.focus?.x ?? plan.region.x;
     const focusZ = plan.focus?.z ?? plan.region.z;
@@ -274,6 +285,13 @@ function candidateSlots(
       focusZ: plan.region.z
     };
   });
+}
+
+function symmetricGridColumns(count: number): number {
+  for (let columns = Math.max(1, Math.ceil(Math.sqrt(count))); columns <= count; columns += 1) {
+    if (count % columns === 0) return columns;
+  }
+  return count;
 }
 
 function roomAudienceSlots(
@@ -407,18 +425,25 @@ function pairedFurnitureSlots(
   count: number,
   spacing: number
 ): CandidateSlot[] {
-  return (plan.targets ?? []).slice(0, count).map((target) => {
-    const targetYaw = target.yaw ?? plan.direction * Math.PI / 180;
-    const angle = targetYaw + Math.PI;
-    const distance = Math.max(Math.abs(plan.offset), (target.footprintRadius ?? 0) + spacing * 0.58);
-    return {
-      x: target.x + Math.sin(angle) * distance,
-      z: target.z + Math.cos(angle) * distance,
-      guideYaw: targetYaw,
-      focusX: target.x,
-      focusZ: target.z
-    };
-  });
+  const targets = plan.targets ?? [];
+  const slots: CandidateSlot[] = [];
+  for (let attempt = 0; slots.length < count && attempt < Math.ceil(count / Math.max(1, targets.length)); attempt += 1) {
+    for (const [targetIndex, target] of targets.entries()) {
+      if (slots.length >= count) break;
+      const targetYaw = target.yaw ?? plan.direction * Math.PI / 180;
+      const angle = targetYaw + Math.PI;
+      const distance = Math.max(Math.abs(plan.offset), (target.footprintRadius ?? 0) + spacing * 0.58) * (1 + attempt * 0.08);
+      slots.push({
+        x: target.x + Math.sin(angle) * distance,
+        z: target.z + Math.cos(angle) * distance,
+        guideYaw: targetYaw,
+        focusX: target.x,
+        focusZ: target.z,
+        targetIndex
+      });
+    }
+  }
+  return slots;
 }
 
 function roomWallSlots(
@@ -474,14 +499,22 @@ function placementYaw(
   return random() * Math.PI * 2;
 }
 
-function existingOccupiedBounds(map: EditableMap): HorizontalBounds[] {
-  return [...getMapObjectAabbs(map), ...getTerrainCliffAabbs(map)].map((box) => ({
+function existingFloorOccupiedBounds(map: EditableMap): HorizontalBounds[] {
+  const elevatedIds = new Set((map.assets ?? [])
+    .filter(isElevatedIndoorAsset)
+    .map((asset) => asset.id));
+  const elevatedObjectIds = new Set(map.objects
+    .filter((object) => object.assetId && elevatedIds.has(object.assetId))
+    .map((object) => object.id));
+  return [...getMapObjectAabbs(map).filter((box) => !elevatedObjectIds.has(box.objectId)), ...getTerrainCliffAabbs(map)].map((box) => ({
     minX: box.min[0], maxX: box.max[0], minZ: box.min[2], maxZ: box.max[2]
   })).concat(roomDoorClearanceBounds(map));
 }
 
 function occupiedWallBounds(map: EditableMap): HorizontalBounds[] {
-  const wallAssetIds = new Set((map.assets ?? []).filter(isElevatedIndoorAsset).map((asset) => asset.id));
+  const wallAssetIds = new Set((map.assets ?? [])
+    .filter((asset) => isElevatedIndoorAsset(asset) && !isCeilingIndoorAsset(asset))
+    .map((asset) => asset.id));
   const wallObjectIds = new Set(map.objects
     .filter((object) => object.assetId && wallAssetIds.has(object.assetId))
     .map((object) => object.id));
@@ -490,10 +523,24 @@ function occupiedWallBounds(map: EditableMap): HorizontalBounds[] {
     .map((box) => ({ minX: box.min[0], maxX: box.max[0], minZ: box.min[2], maxZ: box.max[2] }));
 }
 
+function occupiedCeilingBounds(map: EditableMap): HorizontalBounds[] {
+  const ceilingAssetIds = new Set((map.assets ?? []).filter(isCeilingIndoorAsset).map((asset) => asset.id));
+  const objectIds = new Set(map.objects
+    .filter((object) => object.assetId && ceilingAssetIds.has(object.assetId))
+    .map((object) => object.id));
+  return getMapObjectAabbs(map)
+    .filter((box) => objectIds.has(box.objectId))
+    .map((box) => ({ minX: box.min[0], maxX: box.max[0], minZ: box.min[2], maxZ: box.max[2] }));
+}
+
 function isElevatedIndoorAsset(asset: MapAsset): boolean {
   const semantic = `${asset.name} ${asset.prompt} ${(asset.tags ?? []).join(' ')}`;
-  return /wall-prop|wall-mounted|window|blackboard|chalkboard|whiteboard|notice board|menu board|wall clock|poster|painting|cross|safety sign|warning sign|fire extinguisher|ceiling light|ceiling lamp|overhead light|pendant light|industrial light|窗|黑板|白板|公告板|菜单板|挂钟|海报|挂画|十字架|安全标识|警示牌|灭火器|顶灯|吊灯|天花灯|工业照明/i.test(semantic)
-    && !/\bdoor\b|房门|门扇/i.test(semantic);
+  return isElevatedWallSemantic(semantic) || isCeilingMountedSemantic(semantic);
+}
+
+function isCeilingIndoorAsset(asset: MapAsset): boolean {
+  const semantic = `${asset.name} ${asset.prompt} ${(asset.tags ?? []).join(' ')}`;
+  return isCeilingMountedSemantic(semantic);
 }
 
 function roomDoorClearanceBounds(map: EditableMap): HorizontalBounds[] {

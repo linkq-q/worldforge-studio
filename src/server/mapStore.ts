@@ -498,8 +498,25 @@ export class MapStore {
     return scheme;
   }
 
+  async updateRenderScheme(id: string, input: Partial<RenderScheme>): Promise<RenderScheme> {
+    await this.ensureReady();
+    if (BUILTIN_RENDER_SCHEMES.some((scheme) => scheme.id === id)) throw new Error('builtin_scheme_readonly');
+    const current = await this.loadRenderScheme(id);
+    const scheme = normalizeRenderScheme({
+      ...current,
+      ...input,
+      id: current.id,
+      createdAt: current.createdAt,
+      updatedAt: Date.now()
+    });
+    await atomicWriteJson(this.renderSchemePath(id), scheme);
+    return scheme;
+  }
+
   async deleteRenderScheme(id: string): Promise<void> {
     if (BUILTIN_RENDER_SCHEMES.some((scheme) => scheme.id === id)) throw new Error('builtin_scheme_readonly');
+    const scheme = await this.loadRenderScheme(id);
+    if (scheme.kind === 'builtin') throw new Error('builtin_scheme_readonly');
     const fallbackId = BUILTIN_RENDER_SCHEMES[0]?.id ?? null;
     const maps = await this.listMaps();
     for (const map of maps) {

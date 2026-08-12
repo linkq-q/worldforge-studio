@@ -47,6 +47,82 @@ describe('indoor scene planning', () => {
     expect(chairLayer.placement).toMatchObject({ mode: 'attached', intent: 'social', targetFamilyId: table.id });
   });
 
+  it('adds lived-in residential layers and explicit tabletop support relations', () => {
+    const map = createEmptyMap('Small home', 'small-home', [12, 3.2, 9], 'voxel', 'indoor', [12, 3.2, 9]);
+    const plan = completeIndoorScenePlan(
+      normalizeSceneCompositionPlan(planInput('small apartment living room and kitchen', []), map),
+      map,
+      '漂亮的小户型客厅和开放式厨房',
+      4,
+      16
+    );
+    const familyByTag = (tag: string) => plan.assetFamilies.find((family) => family.tags.includes(tag))!;
+    const layers = new Map(plan.zones[0].layers.map((layer) => [layer.familyId, layer]));
+
+    expect(plan.assetFamilies).toHaveLength(16);
+    expect(familyByTag('sofa')).toBeDefined();
+    expect(familyByTag('refrigerator')).toBeDefined();
+    expect(familyByTag('tabletop-decor')).toBeDefined();
+    expect(layers.get(familyByTag('television').id)?.placement).toMatchObject({
+      intent: 'supported', targetFamilyId: familyByTag('media-console').id, maxPerGroup: 1
+    });
+  });
+
+  it('binds one complete computer station to each internet-cafe desk', () => {
+    const map = createEmptyMap('Internet cafe', 'internet-cafe', [18, 3.4, 12], 'voxel', 'indoor', [18, 3.4, 12]);
+    const plan = completeIndoorScenePlan(
+      normalizeSceneCompositionPlan(planInput('internet cafe', []), map),
+      map,
+      '网吧，整齐的电脑桌和电脑',
+      4,
+      16
+    );
+    const desk = plan.assetFamilies.find((family) => family.tags.includes('gaming-desk'))!;
+    const computer = plan.assetFamilies.find((family) => family.tags.includes('desktop-computer'))!;
+    const layer = plan.zones[0].layers.find((item) => item.familyId === computer.id)!;
+
+    expect(layer.placement).toMatchObject({
+      mode: 'attached', intent: 'supported', targetFamilyId: desk.id, maxPerGroup: 1
+    });
+  });
+
+  it('adds every model-authored indoor family to a zone layer even when it is outside the built-in demand tree', () => {
+    const map = createEmptyMap('Cafe', 'cafe-layer-coverage', [20, 4, 12], 'voxel', 'indoor', [20, 4, 12]);
+    const families = [{
+      id: 'two-person-cafe-table', label: '双人咖啡桌', role: '多组双人桌的重复锚点',
+      tags: ['table', 'cafe', 'two-person-table', 'furniture'], sizeClass: 'medium' as const,
+      desiredVariants: 1, priority: 1, generationBrief: '一张可复用的双人咖啡桌'
+    }, {
+      id: 'cafe-chair', label: '咖啡馆椅', role: '每张双人桌配套的座椅',
+      tags: ['chair', 'cafe', 'furniture'], sizeClass: 'medium' as const,
+      desiredVariants: 1, priority: 1, generationBrief: '一把可复用的咖啡馆椅'
+    }, {
+      id: 'espresso-machine', label: '咖啡机', role: '吧台上的服务设备',
+      tags: ['espresso', 'machine', 'cafe-service'], sizeClass: 'medium' as const,
+      desiredVariants: 1, priority: 0.7, generationBrief: '一台咖啡机'
+    }];
+    const input = planInput('cafe', families) as {
+      zones: Array<{ layers: unknown[] }>;
+    };
+    input.zones[0].layers = [];
+
+    const completed = completeIndoorScenePlan(
+      normalizeSceneCompositionPlan(input, map),
+      map,
+      '小型咖啡馆，多组双人桌椅整齐排列，吧台靠墙',
+      3,
+      3
+    );
+    const plan = enforcePromptSceneIntent(completed, '小型咖啡馆，多组双人桌椅整齐排列，吧台靠墙', map);
+    const layers = new Map(plan.zones.flatMap((zone) => zone.layers).map((layer) => [layer.familyId, layer]));
+
+    expect([...layers.keys()]).toEqual(expect.arrayContaining(families.map((family) => family.id)));
+    expect(layers.get('two-person-cafe-table')?.placement).toMatchObject({ intent: 'functional-group', pattern: 'grid' });
+    expect(layers.get('cafe-chair')?.placement).toMatchObject({
+      intent: 'social', targetFamilyId: 'two-person-cafe-table', maxPerGroup: 2
+    });
+  });
+
   it('converges an overfull or underfilled asset budget locally instead of throwing', () => {
     const map = createEmptyMap('Room', 'room-budget', [10, 3, 8], 'voxel', 'indoor', [10, 3, 8]);
     const families = Array.from({ length: 8 }, (_, index) => ({

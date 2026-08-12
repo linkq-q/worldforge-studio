@@ -31,6 +31,7 @@ describe('map composition preview panel', () => {
     expect(html).toContain('<svg');
     expect(html).toContain('中央过道');
     expect(html).toContain('用于通行与仪式');
+    expect(html).toContain('默认对称');
     expect(html).toContain('确认规划并开始生成');
   });
 
@@ -76,6 +77,7 @@ describe('map composition preview panel', () => {
         metrics: {
           zoneCoverage: 0.64,
           zoneCount: 1,
+          initialObjectCount: 3,
           objectCount: 12,
           waterCount: 0,
           familyCounts: {},
@@ -108,6 +110,51 @@ describe('map composition preview panel', () => {
     expect(html).toContain('<details class="inspector-disclosure compact map-ai-composition-details">');
     expect(html).not.toContain('map-ai-composition-details" open');
     expect(html).toContain('map-ai-composition-quality');
+    expect(html).toContain('规划不足');
+    expect(html).toContain('初始规划正常落位 <b>3 / 12</b>');
     expect(html.match(/Bench overlap/g)).toHaveLength(1);
+    expect(html.indexOf('map-composition-quality-danger')).toBeLessThan(html.indexOf('<details'));
+  });
+
+  it.each([
+    [2, 10, '规划不足', 'danger'],
+    [5, 10, '需要注意', 'warning'],
+    [8, 10, '规划良好', 'good']
+  ])('shows three placement quality tiers for %i of %i initially planned objects', (initial, total, label, tone) => {
+    const suggestion = compositionSuggestion(initial, total);
+
+    const html = renderMapCompositionSummary(suggestion);
+
+    expect(html).toContain(label);
+    expect(html).toContain(`map-composition-quality-${tone}`);
   });
 });
+
+function compositionSuggestion(initialObjectCount: number, objectCount: number): MapAiSuggestion {
+  return {
+    summary: 'room', operations: [], renderPromptSuggestions: [], generatedAssets: [],
+    composition: {
+      plan: {
+        version: 1, summary: 'room',
+        globalBrief: {
+          spatialTheme: 'room', visualHierarchy: 'balanced room', assetArtDirection: 'voxel', focalZoneId: 'room',
+          terrainBase: { preset: 'plain', seed: 1, amplitude: 0, roughness: 0 }
+        },
+        intentRequirements: [],
+        zones: [{
+          id: 'room', label: '房间', role: 'primary', importance: 1,
+          region: { kind: 'circle', center: [0, 0], radius: 1 },
+          brief: { atmosphere: '', hierarchy: '', openness: 0.5, transitionIntent: '' },
+          terrain: { elevation: 0, roughness: 0, flatness: 1 }, layers: [], grassLayers: [], excludeZoneIds: []
+        }],
+        transitions: [], assetFamilies: [], grassFamilies: [], consultations: [], renderPromptSuggestions: []
+      },
+      metrics: {
+        zoneCoverage: 1, zoneCount: 1, initialObjectCount, objectCount, waterCount: 0,
+        familyCounts: {}, zoneCounts: { room: objectCount }, unresolvedFamilyIds: []
+      },
+      consultations: [], review: { status: 'pass', summary: 'pass', findings: [], patches: [] },
+      outcome: { checks: [], repairCount: objectCount - initialObjectCount }
+    }
+  };
+}

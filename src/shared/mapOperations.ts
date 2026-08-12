@@ -176,6 +176,7 @@ export function applyMapOperations(map: EditableMap, operations: readonly MapOpe
         const params = generateTerrainInPlace(next, operation);
         terrainChanged = true;
         if (params.preset === 'island' || params.preset === 'archipelago') ensureTerrainOcean(next);
+        else next.waterBodies = next.waterBodies.filter((water) => water.id !== 'terrain-ocean');
         if (params.preset === 'dune-desert') {
           applyTerrainSurfaceInPlace(next, {
             surface: 'sand',

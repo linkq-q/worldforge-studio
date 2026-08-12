@@ -7,6 +7,7 @@ import {
 } from './map';
 import type { MapScatterQuality } from './mapScatter';
 import type { MapAssetSizeClass } from './mapAssetMetadata';
+import { isCeilingMountedSemantic } from './indoorScale';
 import {
   inferGrassPreset,
   normalizeGrassPreset,
@@ -45,7 +46,7 @@ export const SCENE_PLACEMENT_MODES = ['anchor', 'field', 'patch', 'linear', 'lay
 export const SCENE_LAYOUT_PATTERNS = ['row', 'courtyard', 'radial', 'grid', 'arc'] as const;
 export const SCENE_PLACEMENT_INTENTS = [
   'landmark', 'settlement', 'street-edge', 'audience', 'social',
-  'viewpoint', 'wall', 'attached-service', 'playground', 'functional-group', 'paired'
+  'viewpoint', 'wall', 'attached-service', 'playground', 'functional-group', 'paired', 'supported'
 ] as const;
 
 export type SceneZoneRole = typeof SCENE_ZONE_ROLES[number];
@@ -88,6 +89,10 @@ export interface SceneCompositionZone {
   label: string;
   role: SceneZoneRole;
   importance: number;
+  /** Indoor layout policy. Omitted model output defaults to symmetric. */
+  symmetry?: 'symmetric' | 'asymmetric';
+  /** World-space mirror plane normal. `x` means mirror across X = zone center X. */
+  symmetryAxis?: 'x' | 'z';
   region: {
     kind: 'circle';
     center: [number, number];
@@ -213,6 +218,8 @@ export interface SceneConsultationRequest {
 export interface SceneCompositionMetrics {
   zoneCoverage: number;
   zoneCount: number;
+  /** Objects placed by the coherent composition compiler before outcome repairs and fallbacks. */
+  initialObjectCount?: number;
   objectCount: number;
   waterCount: number;
   terrainRelief?: number;
@@ -329,16 +336,24 @@ export function enforceScenePlacementContracts(
         offset: 0,
         facing: 'random' as const
       };
+      const supportFamilyId = current.intent === 'supported'
+        ? current.targetFamilyId
+        : findSupportFamilyId(zone, families, family);
 
-      if (map.sceneMode === 'indoor' && family.id === audienceFocusFamilyId && category !== 'furniture') {
+      if (map.sceneMode === 'indoor' && (current.intent === 'supported' || supportFamilyId)) {
         return {
           ...layer,
-          distribution: 'accent' as const,
-          placement: { ...current, mode: 'anchor', pattern: undefined, intent: 'landmark', facing: 'guide' }
+          distribution: 'clustered' as const,
+          placement: {
+            ...current, mode: 'attached', pattern: undefined, intent: 'supported', facing: 'guide',
+            targetFamilyId: supportFamilyId,
+            maxPerGroup: 1
+          }
         };
       }
+
       if (map.sceneMode === 'indoor' && category === 'prop'
-        && /wall-prop|wall mounted|cross|door|window|blackboard|chalkboard|whiteboard|notice board|menu board|wall clock|poster|painting|safety sign|fire extinguisher|墙面|壁挂|十字架|门|窗|黑板|白板|公告板|菜单板|挂钟|海报|挂画|安全标识|灭火器/i.test(semantic)) {
+        && /wall-prop|wall mounted|cross|door|window|blackboard|chalkboard|whiteboard|notice board|menu board|wall[-_ ]?clock|timepiece|poster|painting|safety sign|fire extinguisher|墙面|壁挂|十字架|门|窗|黑板|白板|公告板|菜单板|挂钟|时钟|海报|挂画|安全标识|灭火器/i.test(semantic)) {
         return {
           ...layer,
           distribution: 'even' as const,
@@ -348,14 +363,21 @@ export function enforceScenePlacementContracts(
           }
         };
       }
+      if (map.sceneMode === 'indoor' && family.id === audienceFocusFamilyId && category !== 'furniture') {
+        return {
+          ...layer,
+          distribution: 'accent' as const,
+          placement: { ...current, mode: 'anchor', pattern: undefined, intent: 'landmark', facing: 'guide' }
+        };
+      }
       if (map.sceneMode === 'indoor'
-        && /ceiling light|industrial light|overhead light|pendant light|顶灯|吊灯|工业照明/i.test(semantic)) {
+        && /ceiling[-_ ]?mounted|ceiling[-_ ]?light|industrial[-_ ]?light|overhead[-_ ]?light|pendant[-_ ]?light|顶灯|吊灯|工业照明/i.test(semantic)) {
         return {
           ...layer,
           distribution: 'even' as const,
           placement: {
             ...current, mode: 'layout', pattern: 'grid', intent: 'functional-group', facing: 'guide',
-            maxPerGroup: Math.min(current.maxPerGroup ?? 12, 12)
+            maxPerGroup: 12
           }
         };
       }
@@ -390,7 +412,11 @@ export function enforceScenePlacementContracts(
       const classroom = /classroom|school|教室|课堂|学校/i.test(zoneSemantic);
       const dining = /restaurant|diner|cafe|cafeteria|餐厅|饭店|咖啡馆|食堂/i.test(zoneSemantic);
       const office = /office|workplace|办公室|办公区/i.test(zoneSemantic);
-      if (relatedGroupFamilyId && /chair|seat|stool|椅|座椅/i.test(semantic)) {
+      const identitySemantic = `${family.id} ${family.label} ${family.tags.join(' ')}`;
+      const seatingFurniture = /chair|stool|椅|座椅/i.test(identitySemantic)
+        || (/\bseat\b/i.test(identitySemantic)
+          && !/table|desk|workstation|four[-_ ]?seat|四人|餐桌|饭桌/i.test(identitySemantic));
+      if (relatedGroupFamilyId && seatingFurniture) {
         intent = dining ? 'social' : classroom || office ? 'paired' : intent;
       } else if ((classroom || dining || office)
         && /desk|table|workstation|课桌|餐桌|办公桌|工位/i.test(semantic)) {
@@ -426,15 +452,20 @@ export function enforceScenePlacementContracts(
         placement: {
           ...current, mode: 'attached', pattern: undefined, intent, facing: 'inward',
           targetFamilyId: current.targetFamilyId ?? relatedGroupFamilyId,
-          maxPerGroup: Math.min(current.maxPerGroup ?? (intent === 'social' ? 6 : 1), intent === 'social' ? 8 : 2)
+          maxPerGroup: intent === 'social'
+            ? seatsPerDiningTarget(families.get(relatedGroupFamilyId ?? ''))
+              ?? Math.min(current.maxPerGroup ?? (dining ? 4 : 6), 8)
+            : Math.min(current.maxPerGroup ?? 1, 2)
         }
       };
       if (intent === 'paired') return {
         ...layer,
         distribution: 'clustered' as const,
         placement: {
-          ...current, mode: 'attached', pattern: undefined, intent, facing: 'guide',
+          ...current, mode: 'attached', pattern: undefined, intent,
+          facing: audienceFocusFamilyId ? 'inward' : 'guide',
           targetFamilyId: current.targetFamilyId ?? relatedGroupFamilyId,
+          focusFamilyId: current.focusFamilyId ?? audienceFocusFamilyId,
           maxPerGroup: 1
         }
       };
@@ -443,7 +474,7 @@ export function enforceScenePlacementContracts(
         distribution: 'even' as const,
         placement: {
           ...current, mode: 'layout', pattern: 'grid', intent,
-          facing: audienceFocusFamilyId ? 'inward' : current.facing === 'random' ? 'guide' : current.facing,
+          facing: audienceFocusFamilyId || office ? 'inward' : current.facing === 'random' ? 'guide' : current.facing,
           focusFamilyId: current.focusFamilyId ?? audienceFocusFamilyId,
           maxPerGroup: Math.min(current.maxPerGroup ?? 12, 24), aisleEvery: current.aisleEvery ?? 4
         }
@@ -516,11 +547,41 @@ function findRelatedGroupFamilyId(
   const pattern = /classroom|school|教室|课堂|学校/i.test(zoneSemantic)
     ? /student desk|classroom desk|school desk|课桌|学生桌/i
     : /restaurant|diner|cafe|cafeteria|餐厅|饭店|咖啡馆|食堂/i.test(zoneSemantic)
-      ? /dining table|restaurant table|餐桌|饭桌/i
+      ? /dining table|restaurant table|cafe table|coffee table|餐桌|饭桌|咖啡桌/i
       : /office|workplace|办公室|办公区/i.test(zoneSemantic)
         ? /office desk|work desk|workstation|办公桌|工位/i
         : null;
   return pattern ? candidates.find((family) => pattern.test(sceneFamilySemantic(family)))?.id : undefined;
+}
+
+function findSupportFamilyId(
+  zone: SceneCompositionZone,
+  families: ReadonlyMap<string, SceneAssetFamily>,
+  dependent: SceneAssetFamily
+): string | undefined {
+  const dependentSemantic = sceneFamilySemantic(dependent);
+  const targetPattern = /computer|monitor|keyboard|desktop pc|电脑|显示器|键盘/i.test(dependentSemantic)
+    ? /gaming desk|computer desk|office desk|work desk|workstation|网吧桌|电脑桌|办公桌|工位/i
+    : /television|\btv\b|电视/i.test(dependentSemantic)
+      ? /media console|tv stand|television cabinet|电视柜|媒体柜/i
+      : /kettle|toaster|coffee machine|countertop appliance|dishware|fruit bowl|水壶|烤面包机|咖啡机|餐具|果盘/i.test(dependentSemantic)
+        ? /kitchen counter|countertop|base cabinet|service counter|厨房台面|橱柜|操作台/i
+        : /book stack|tray|tabletop decor|茶几摆件|书堆|托盘/i.test(dependentSemantic)
+          ? /coffee table|side table|茶几|边几/i
+          : null;
+  if (!targetPattern) return undefined;
+  const localFamilies = zone.layers
+    .map((layer) => families.get(layer.familyId))
+    .filter((family): family is SceneAssetFamily => Boolean(family));
+  return localFamilies.find((family) => family.id !== dependent.id && targetPattern.test(sceneFamilySemantic(family)))?.id;
+}
+
+function seatsPerDiningTarget(family: SceneAssetFamily | undefined): number | undefined {
+  if (!family) return undefined;
+  const semantic = sceneFamilySemantic(family);
+  if (/two[-_ ]?(?:person|seat)|2[-_ ]?seat|双人|两人/i.test(semantic)) return 2;
+  if (/four[-_ ]?(?:person|seat)|4[-_ ]?seat|四人/i.test(semantic)) return 4;
+  return undefined;
 }
 
 function familyPlacementDirection(seed: number, familyId: string): number {
@@ -872,13 +933,17 @@ function normalizeFamily(value: unknown): SceneAssetFamily {
     ? input.sizeClass
     : null;
   if (!sizeClass) throw new Error('invalid_scene_asset_family');
+  const label = cleanText(input.label, String(input.id ?? ''), 64);
+  const role = cleanText(input.role, 'scene asset', 80);
+  const generationBrief = cleanText(input.generationBrief, '', 320);
   const tags = normalizeTags(input.tags);
+  if (isCeilingMountedSemantic(`${label} ${role} ${tags.join(' ')} ${generationBrief}`)) {
+    tags.push('ceiling-mounted');
+  }
   const identityTags = Array.isArray(input.identityTags)
     ? normalizeTags(input.identityTags)
     : deriveIdentityTags(tags);
   const requiredIdentityTags = identityTags.length > 0 ? identityTags : tags.slice(0, 1);
-  const label = cleanText(input.label, String(input.id ?? ''), 64);
-  const role = cleanText(input.role, 'scene asset', 80);
   const behavior = normalizeBehaviorProfile(input.behavior, `${label} ${role} ${tags.join(' ')}`);
   return {
     id: requireId(input.id, 'invalid_scene_asset_family'),
@@ -889,7 +954,7 @@ function normalizeFamily(value: unknown): SceneAssetFamily {
     sizeClass,
     desiredVariants: Math.round(clamp(finiteNumber(input.desiredVariants, 1), 1, 3)),
     priority: clamp(finiteNumber(input.priority, 0.5), 0, 1),
-    generationBrief: cleanText(input.generationBrief, '', 320),
+    generationBrief,
     ...(behavior ? { behavior } : {})
   };
 }
@@ -1000,6 +1065,10 @@ function normalizeZone(
     label: cleanText(input.label, String(input.id ?? ''), 64),
     role,
     importance: clamp(finiteNumber(input.importance, 0.5), 0, 1),
+    symmetry: input.symmetry === 'asymmetric'
+      ? 'asymmetric'
+      : input.symmetry === 'symmetric' || map.sceneMode === 'indoor' ? 'symmetric' : 'asymmetric',
+    symmetryAxis: input.symmetryAxis === 'z' ? 'z' : 'x',
     region: {
       kind: 'circle',
       center: [clamp(center[0], -1, 1), clamp(center[1], -1, 1)],
