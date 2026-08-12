@@ -1,7 +1,6 @@
 import * as THREE from 'three';
 import {
-  PLAYER_HEIGHT,
-  PLAYER_RADIUS,
+  getMapPlayerMetrics,
   PLAYER_SPAWN_OBJECT_ID,
   ROOM_SURFACES,
   SUN_OBJECT_ID,
@@ -987,6 +986,7 @@ function buildFallbackObject(): THREE.Group {
 
 function buildPlayerSpawnGroup(map: EditableMap): THREE.Group {
   const spawn = getSpawnPoints(map)[0];
+  const { height, radius } = getMapPlayerMetrics(map);
   const group = new THREE.Group();
   group.name = '场景参考点';
   group.userData.skipShaderApply = true;
@@ -997,7 +997,7 @@ function buildPlayerSpawnGroup(map: EditableMap): THREE.Group {
   group.userData.mapObjectId = PLAYER_SPAWN_OBJECT_ID;
 
   const body = new THREE.Mesh(
-    new THREE.CapsuleGeometry(PLAYER_RADIUS, Math.max(0.01, PLAYER_HEIGHT - PLAYER_RADIUS * 2), 8, 16),
+    new THREE.CapsuleGeometry(radius, Math.max(0.01, height - radius * 2), 8, 16),
     new THREE.MeshStandardMaterial({
       color: 0x7bc8ff,
       emissive: 0x1d5f78,
@@ -1007,10 +1007,10 @@ function buildPlayerSpawnGroup(map: EditableMap): THREE.Group {
       opacity: 0.72
     })
   );
-  body.position.y = PLAYER_HEIGHT / 2;
+  body.position.y = height / 2;
 
   const footprint = new THREE.Mesh(
-    new THREE.RingGeometry(PLAYER_RADIUS * 1.08, PLAYER_RADIUS * 1.38, 40),
+    new THREE.RingGeometry(radius * 1.08, radius * 1.38, 40),
     new THREE.MeshBasicMaterial({
       color: 0xd8ef75,
       side: THREE.DoubleSide,
@@ -1023,11 +1023,11 @@ function buildPlayerSpawnGroup(map: EditableMap): THREE.Group {
   footprint.position.y = 0.025;
 
   const forward = new THREE.Mesh(
-    new THREE.ConeGeometry(PLAYER_RADIUS * 0.28, PLAYER_RADIUS * 0.55, 20),
+    new THREE.ConeGeometry(radius * 0.28, radius * 0.55, 20),
     new THREE.MeshBasicMaterial({ color: 0xd8ef75, transparent: true, opacity: 0.9 })
   );
   forward.rotation.x = Math.PI / 2;
-  forward.position.set(0, PLAYER_HEIGHT * 0.78, -PLAYER_RADIUS * 1.25);
+  forward.position.set(0, height * 0.78, -radius * 1.25);
 
   group.add(body, footprint, forward);
   group.traverse((child) => {

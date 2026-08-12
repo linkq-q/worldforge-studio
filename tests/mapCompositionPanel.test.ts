@@ -1,8 +1,39 @@
 import { describe, expect, it } from 'vitest';
-import { renderMapCompositionSummary } from '../src/client/mapCompositionPanel';
+import { renderMapCompositionPlanApproval, renderMapCompositionSummary } from '../src/client/mapCompositionPanel';
 import type { MapAiSuggestion } from '../src/shared/mapOperations';
 
 describe('map composition preview panel', () => {
+  it('renders a top-down approval plan with explicit whitespace meaning before generation', () => {
+    const plan = {
+      version: 1 as const,
+      summary: '教堂平面规划',
+      globalBrief: {
+        spatialTheme: '中轴对称', visualHierarchy: '讲台是焦点', assetArtDirection: '木质体素',
+        focalZoneId: 'altar', terrainBase: { preset: 'plain' as const, seed: 1, amplitude: 0, roughness: 0 }
+      },
+      intentRequirements: [],
+      zones: [{
+        id: 'altar', label: '讲台区', role: 'primary' as const, importance: 1,
+        region: { kind: 'circle' as const, center: [0, -0.6] as [number, number], radius: 0.22 },
+        brief: { atmosphere: '肃静', hierarchy: '视觉焦点', openness: 0.2, transitionIntent: '连接座席' },
+        terrain: { elevation: 0, roughness: 0, flatness: 1 }, layers: [], grassLayers: [], excludeZoneIds: []
+      }, {
+        id: 'aisle', label: '中央过道', role: 'negative-space' as const, importance: 0.8,
+        region: { kind: 'circle' as const, center: [0, 0.2] as [number, number], radius: 0.18 },
+        brief: { atmosphere: '清晰通行', hierarchy: '保持入口到讲台视线', openness: 1, transitionIntent: '用于通行与仪式' },
+        terrain: { elevation: 0, roughness: 0, flatness: 1 }, layers: [], grassLayers: [], excludeZoneIds: []
+      }],
+      transitions: [], assetFamilies: [], grassFamilies: [], consultations: [], renderPromptSuggestions: []
+    };
+
+    const html = renderMapCompositionPlanApproval(plan);
+
+    expect(html).toContain('<svg');
+    expect(html).toContain('中央过道');
+    expect(html).toContain('用于通行与仪式');
+    expect(html).toContain('确认规划并开始生成');
+  });
+
   it('shows focal hierarchy, zones, dynamic specialists, and final review without persisting another map format', () => {
     const html = renderMapCompositionSummary({
       summary: 'forest',
@@ -58,13 +89,18 @@ describe('map composition preview panel', () => {
         }],
         review: { status: 'pass', summary: 'coherent', findings: [], patches: [] },
         outcome: {
-          checks: [{ requirementId: 'terrain-foundation', kind: 'terrain', status: 'pass', message: '地形高度场已生成。' }],
+          checks: [
+            { requirementId: 'terrain-foundation', kind: 'terrain', status: 'pass', message: '地形高度场已生成。' },
+            { requirementId: 'front-blackboard', kind: 'asset-family', status: 'warning', message: '前方黑板无合法位置，已降级跳过。' }
+          ],
           repairCount: 0
         }
       }
     } satisfies MapAiSuggestion);
 
     expect(html).toContain('覆盖 <b>64%</b>');
+    expect(html).toContain('自动降级 1');
+    expect(html).toContain('前方黑板无合法位置');
     expect(html).toContain('动态专家：layout-specialist');
     expect(html).toContain('The cabin is framed by the pond and forest.');
     expect(html).toContain('&lt;Cabin&gt;');

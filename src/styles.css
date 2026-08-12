@@ -1454,6 +1454,72 @@ p {
   position: relative;
 }
 
+.map-composition-approval {
+  background: radial-gradient(circle at 100% 0, rgba(112, 183, 255, 0.12), transparent 48%), #132024;
+}
+
+.map-composition-plan-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+  align-items: start;
+}
+
+.map-composition-plan-grid svg {
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: 8px;
+  background: #0b1315;
+}
+
+.map-composition-plan-grid text {
+  fill: #f4f8f6;
+  font-size: 4px;
+  font-weight: 700;
+  paint-order: stroke;
+  stroke: rgba(7, 15, 17, 0.88);
+  stroke-width: 1.5px;
+}
+
+.map-composition-zone-list {
+  display: grid;
+  gap: 7px;
+}
+
+.map-composition-zone-item {
+  display: grid;
+  gap: 3px;
+  padding: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  background: rgba(4, 12, 14, 0.38);
+}
+
+.map-composition-zone-item b {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  color: #eef5f2;
+  font-size: 0.75rem;
+}
+
+.map-composition-zone-item i {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.map-composition-zone-item span,
+.map-composition-zone-item small {
+  color: var(--muted);
+  font-size: 0.68rem;
+  line-height: 1.4;
+}
+
+.map-composition-zone-item small {
+  color: #c9d99a;
+}
+
 .preview-comparison {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));

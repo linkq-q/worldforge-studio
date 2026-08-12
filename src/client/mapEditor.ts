@@ -6,8 +6,8 @@ import {
   MAP_SIZE_PRESETS,
   SUPER_MAP_MEDIUM_COUNT_MAX,
   SUPER_MAP_MEDIUM_COUNT_MIN,
-  PLAYER_HEIGHT,
-  PLAYER_RADIUS,
+  DEFAULT_PLAYER_HEIGHT,
+  DEFAULT_WORLD_SCALE_PROFILE,
   PLAYER_SPAWN_OBJECT_ID,
   ROOM_OBJECT_ID,
   ROOM_SURFACES,
@@ -17,12 +17,14 @@ import {
   createMapObject,
   createPaintStroke,
   getMapBounds,
+  getMapPlayerMetrics,
   getPlayerSpawnYaw,
   getSpawnPoints,
   getSunPosition,
   normalizeMap,
   normalizeMapRoom,
   normalizeMapSceneMode,
+  normalizeWorldScaleProfile,
   placeRoomOpeningObjectInPlace,
   reassignRegionGenerationOwnersInPlace,
   sampleTerrainHeight,
@@ -39,16 +41,18 @@ import {
   type MapSizePresetKey,
   type RoomSurface,
   type RoomWallDisplayMode,
+  type WorldScaleProfile,
   type TerrainBrushMode
 } from '../shared/map';
+import { lintMap } from '../shared/mapLint';
 import {
   DEFAULT_MAP_AI_MIN_NEW_ASSETS,
   DEFAULT_MAP_AI_MAX_NEW_ASSETS,
   MAP_AI_MAX_NEW_ASSETS,
   normalizeMapAiNewAssetRange
 } from '../shared/mapPlanning';
-import { isCompositionEmptyMap, SCENE_COMPOSITION_LIMITS } from '../shared/sceneComposition';
-import { renderMapCompositionSummary } from './mapCompositionPanel';
+import { isCompositionEmptyMap, SCENE_COMPOSITION_LIMITS, type SceneCompositionPlan } from '../shared/sceneComposition';
+import { renderMapCompositionPlanApproval, renderMapCompositionSummary } from './mapCompositionPanel';
 import {
   bindMaterialTagScenePanel,
   renderMaterialTagScenePanel
@@ -322,6 +326,8 @@ class MapEditor {
   private mapAiBaseTerrainOnly = false;
   private mapAiProvider: ChatProvider = 'gpt';
   private mapAiReuseExistingAssets = false;
+  private mapAiConfirmCompositionPlan = false;
+  private pendingCompositionPlan: SceneCompositionPlan | null = null;
   private activeAssetLibraryId = '';
   private selectedLibraryAssetId = '';
   private previewingLibraryAsset = false;
@@ -332,6 +338,8 @@ class MapEditor {
   private newMapAssetGenerationMode: ModelGenerationMode = 'voxel';
   private newMapSceneMode: MapSceneMode = 'outdoor';
   private newRoomSize: [number, number, number] = [10, 3, 8];
+  private newPlayerHeight = DEFAULT_PLAYER_HEIGHT;
+  private newWorldScaleProfile: WorldScaleProfile = DEFAULT_WORLD_SCALE_PROFILE;
   private roomWallDisplayMode: RoomWallDisplayMode = 'cutaway';
   private mapAiSuggestion: MapAiSuggestion | null = null;
   private mapPreviewKind: 'ai' | 'terrain' = 'ai';
@@ -429,6 +437,12 @@ class MapEditor {
                     ${MODEL_GENERATION_MODES.map((mode) => `
                       <option value="${mode.key}" ${mode.key === this.newMapAssetGenerationMode ? 'selected' : ''}>${mode.label}</option>
                     `).join('')}
+                  </select></label>
+                  <label><span>角色高度（米）</span><input id="new-player-height" type="number" min="0.8" max="2.4" step="0.1" value="${this.newPlayerHeight}" /></label>
+                  <label><span>世界尺度</span><select id="new-world-scale-profile">
+                    <option value="intimate" ${this.newWorldScaleProfile === 'intimate' ? 'selected' : ''}>亲近（人物与景物差距较小）</option>
+                    <option value="balanced" ${this.newWorldScaleProfile === 'balanced' ? 'selected' : ''}>均衡</option>
+                    <option value="grand" ${this.newWorldScaleProfile === 'grand' ? 'selected' : ''}>宏大（景物更有体量）</option>
                   </select></label>
                   <button id="new-map" type="button">创建地图</button>
                 </div>
@@ -592,6 +606,14 @@ class MapEditor {
     this.app.querySelector<HTMLSelectElement>('#new-map-asset-mode')?.addEventListener('change', (event) => {
       this.newMapAssetGenerationMode = normalizeModelGenerationMode((event.target as HTMLSelectElement).value);
       localStorage.setItem('worldforge.newMapAssetMode', this.newMapAssetGenerationMode);
+    });
+    this.app.querySelector<HTMLInputElement>('#new-player-height')?.addEventListener('change', (event) => {
+      const input = event.target as HTMLInputElement;
+      this.newPlayerHeight = clampNumber(Number(input.value), 0.8, 2.4);
+      input.value = String(this.newPlayerHeight);
+    });
+    this.app.querySelector<HTMLSelectElement>('#new-world-scale-profile')?.addEventListener('change', (event) => {
+      this.newWorldScaleProfile = normalizeWorldScaleProfile((event.target as HTMLSelectElement).value);
     });
     this.app.querySelector<HTMLSelectElement>('#room-wall-display-mode')?.addEventListener('change', (event) => {
       this.roomWallDisplayMode = normalizeRoomWallDisplayMode((event.target as HTMLSelectElement).value);
@@ -874,7 +896,9 @@ class MapEditor {
         size: mapSize,
         sceneMode: this.newMapSceneMode,
         roomSize: this.newMapSceneMode === 'outdoor' ? undefined : this.newRoomSize,
-        assetGenerationMode: this.newMapAssetGenerationMode
+        assetGenerationMode: this.newMapAssetGenerationMode,
+        playerHeight: this.newPlayerHeight,
+        worldScaleProfile: this.newWorldScaleProfile
       })
     });
     await this.reloadLists();
@@ -1104,7 +1128,7 @@ class MapEditor {
     if (this.mapAiTargetVisualZoneId && !visualZones.some((zone) => zone.id === this.mapAiTargetVisualZoneId)) {
       this.mapAiTargetVisualZoneId = '';
     }
-    const generationBlocked = this.state.busy || this.state.dirty || !this.mapAiPrompt.trim() || !compositionAvailable;
+    const generationBlocked = this.state.busy || this.state.dirty || !this.mapAiPrompt.trim() || !compositionAvailable || Boolean(this.pendingCompositionPlan);
     const refinementBlocked = generationBlocked || !hasRefinableMapContent(map);
     const mapAiOpen = host.querySelector<HTMLDetailsElement>('[data-inspector-section="map-ai"]')?.open ?? true;
     const layoutHtml = map.sceneMode === 'indoor' ? '' : this.renderMapLayoutHtml(map);
@@ -1113,9 +1137,13 @@ class MapEditor {
       <details class="inspector-disclosure" data-inspector-section="map-ai" ${mapAiOpen || this.state.busy || Boolean(suggestion) ? 'open' : ''}>
         <summary><span><b>${map.sceneMode === 'indoor' ? 'AI 生成室内场景' : 'AI 生成地图'}</b><small>一句话生成或继续调整</small></span></summary>
         <section class="editor-section inspector-body map-ai">
-        <textarea id="map-ai-prompt" rows="2" maxlength="1200" placeholder="${map.sceneMode === 'indoor' ? '例如：一间 1980 年代的教室' : '例如：一片树林里散布着许多小木屋'}" ${this.state.busy ? 'disabled' : ''}>${escapeHtml(this.mapAiPrompt)}</textarea>
+        <textarea id="map-ai-prompt" rows="2" maxlength="1200" placeholder="${map.sceneMode === 'indoor' ? '例如：一间 1980 年代的教室' : '例如：一片树林里散布着许多小木屋'}" ${this.state.busy || this.pendingCompositionPlan ? 'disabled' : ''}>${escapeHtml(this.mapAiPrompt)}</textarea>
         <p class="empty inspector-note">建议只写一句场景描述；AI 会自行安排坐标、数量、密度和空间关系。</p>
         <div class="map-ai-options">
+          ${map.sceneMode === 'indoor' ? `<label class="field compact map-ai-toggle">
+            <span>生成资产前先确认俯视规划</span>
+            <input id="map-ai-confirm-plan" type="checkbox" ${this.mapAiConfirmCompositionPlan ? 'checked' : ''} ${this.state.busy || this.pendingCompositionPlan ? 'disabled' : ''} />
+          </label>` : ''}
           <label class="field compact map-ai-toggle">
             <span>允许使用所选资产库</span>
             <input id="map-ai-reuse-assets" type="checkbox" ${this.mapAiReuseExistingAssets ? 'checked' : ''} ${this.state.busy || !this.activeAssetLibraryId ? 'disabled' : ''} />
@@ -1145,7 +1173,7 @@ class MapEditor {
           </label>` : ''}
         </div>
         <div class="map-ai-controls">
-          <button id="generate-map-ai" ${generationBlocked ? 'disabled' : ''}>生成新规划</button>
+          <button id="generate-map-ai" ${generationBlocked ? 'disabled' : ''}>${map.sceneMode === 'indoor' && this.mapAiConfirmCompositionPlan ? '先生成俯视规划' : '生成新规划'}</button>
           <button id="refine-map-ai" class="secondary" ${refinementBlocked ? 'disabled' : ''}>调整当前地图</button>
           ${this.mapAiAbortController ? '<button id="cancel-map-ai" class="secondary">取消</button>' : ''}
         </div>
@@ -1161,6 +1189,7 @@ class MapEditor {
             : `总导演编排场景 · 生成 ${this.mapAiMinNewAssets}-${this.mapAiMaxNewAssets} 个新资产`}</p>
         </section>
       </details>
+      ${this.pendingCompositionPlan ? renderMapCompositionPlanApproval(this.pendingCompositionPlan) : ''}
       ${suggestion && this.mapAiPreviewMap ? `
         <section class="editor-section map-ai-result">
           <span class="stage-kicker">${isTerrainPreview ? '地形编辑预览' : 'AI 地图建议'}</span>
@@ -1221,6 +1250,10 @@ class MapEditor {
     host.querySelector<HTMLInputElement>('#map-ai-reuse-assets')?.addEventListener('change', (event) => {
       this.mapAiReuseExistingAssets = (event.target as HTMLInputElement).checked;
     });
+    host.querySelector<HTMLInputElement>('#map-ai-confirm-plan')?.addEventListener('change', (event) => {
+      this.mapAiConfirmCompositionPlan = (event.target as HTMLInputElement).checked;
+      this.renderMapAiPanel();
+    });
     host.querySelector<HTMLSelectElement>('#map-ai-asset-library')?.addEventListener('change', async (event) => {
       await this.selectAssetLibrary((event.target as HTMLSelectElement).value);
       this.renderPanels();
@@ -1248,7 +1281,8 @@ class MapEditor {
     host.querySelector('#generate-map-ai')?.addEventListener('click', () => {
       this.mapAiBaseTerrainOnly = false;
       this.mapAiTargetRegionId = '';
-      void this.generateMapAiPreview('generate');
+      if (map.sceneMode === 'indoor' && this.mapAiConfirmCompositionPlan) void this.generateCompositionPlanPreview();
+      else void this.generateMapAiPreview('generate');
     });
     host.querySelector('#refine-map-ai')?.addEventListener('click', () => {
       this.mapAiBaseTerrainOnly = false;
@@ -1262,6 +1296,18 @@ class MapEditor {
     });
     host.querySelector('#discard-map-ai')?.addEventListener('click', () => void this.discardMapAiPreview());
     host.querySelector('#apply-map-ai')?.addEventListener('click', () => void this.applyMapAiPreview());
+    host.querySelector('#discard-composition-plan')?.addEventListener('click', () => {
+      this.pendingCompositionPlan = null;
+      this.state.message = '已放弃俯视规划，可以修改提示词后重试';
+      this.renderPanels();
+    });
+    host.querySelector('#regenerate-composition-plan')?.addEventListener('click', () => {
+      this.pendingCompositionPlan = null;
+      void this.generateCompositionPlanPreview();
+    });
+    host.querySelector('#approve-composition-plan')?.addEventListener('click', () => {
+      if (this.pendingCompositionPlan) void this.generateMapAiPreview('generate', this.pendingCompositionPlan);
+    });
     host.querySelectorAll<HTMLButtonElement>('[data-map-preview-view]').forEach((button) => {
       button.addEventListener('click', async () => {
         this.mapAiPreviewVisible = button.dataset.mapPreviewView === 'after';
@@ -1737,7 +1783,61 @@ class MapEditor {
     });
   }
 
-  private async generateMapAiPreview(mode: 'generate' | 'refine'): Promise<void> {
+  private async generateCompositionPlanPreview(): Promise<void> {
+    const map = this.state.map;
+    const prompt = this.mapAiPrompt.trim();
+    if (!map || !prompt || map.sceneMode !== 'indoor' || this.state.busy) return;
+    const controller = new AbortController();
+    this.mapAiAbortController = controller;
+    this.mapAgentProgress = [];
+    this.startMapAgentProgressTimer();
+    this.setBusy(true, '场景总导演正在绘制室内俯视规划...');
+    this.renderMapAiPanel();
+    try {
+      const { plan } = await editorAgentFetch<{ plan: SceneCompositionPlan }>(
+        `/api/editor/maps/${encodeURIComponent(map.id)}/generate`,
+        {
+          method: 'POST',
+          body: JSON.stringify({
+            prompt,
+            provider: this.mapAiProvider,
+            reuseExistingAssets: this.mapAiReuseExistingAssets,
+            assetLibraryId: this.mapAiReuseExistingAssets ? this.activeAssetLibraryId : undefined,
+            minNewAssets: this.mapAiMinNewAssets,
+            maxNewAssets: this.mapAiMaxNewAssets,
+            planOnly: true
+          }),
+          signal: controller.signal
+        },
+        (event) => {
+          updateAgentProgress(this.mapAgentProgress, event);
+          this.renderMapAiPanel();
+        }
+      );
+      this.pendingCompositionPlan = plan;
+      updateAgentProgress(this.mapAgentProgress, { phase: 'complete', label: '俯视空间规划已生成，等待确认' });
+      this.state.message = '俯视规划已生成；确认前不会生成任何 3D 资产';
+    } catch (error) {
+      const cancelled = error instanceof Error && error.name === 'AbortError';
+      const detail = humanizeAgentError(error);
+      updateAgentProgress(this.mapAgentProgress, {
+        phase: 'failed',
+        label: cancelled ? '俯视规划已取消' : '俯视规划失败',
+        detail
+      });
+      this.state.message = cancelled ? '已取消俯视规划' : `俯视规划失败：${detail}`;
+    } finally {
+      if (this.mapAiAbortController === controller) this.mapAiAbortController = null;
+      this.stopMapAgentProgressTimer();
+      this.setBusy(false);
+      this.renderPanels();
+    }
+  }
+
+  private async generateMapAiPreview(
+    mode: 'generate' | 'refine',
+    approvedCompositionPlan?: SceneCompositionPlan
+  ): Promise<void> {
     const map = this.state.map;
     const prompt = this.mapAiPrompt.trim();
     if (!map || !prompt || this.state.busy) return;
@@ -1769,6 +1869,7 @@ class MapEditor {
             targetVisualZoneId: mode === 'refine' ? this.mapAiTargetVisualZoneId || undefined : undefined,
             targetRegionId: mode === 'refine' ? this.mapAiTargetRegionId || undefined : undefined,
             baseTerrainOnly: mode === 'refine' && this.mapAiBaseTerrainOnly,
+            approvedCompositionPlan,
             ...(previousSuggestion ? { baseOperations: previousSuggestion.operations } : {})
           }),
           signal: controller.signal
@@ -1788,6 +1889,7 @@ class MapEditor {
         : suggestion;
       this.mapPreviewKind = 'ai';
       this.mapAiSuggestion = combinedSuggestion;
+      this.pendingCompositionPlan = null;
       this.mapAiPreviewMap = applyMapOperations(this.mapWithEditorAssets(map), combinedSuggestion.operations);
       this.mapAiComparisonMap = comparisonMap;
       this.mapAiPreviewVisible = true;
@@ -1879,6 +1981,18 @@ class MapEditor {
     this.renderPanels();
   }
 
+  private async previewSceneNormalization(): Promise<void> {
+    const map = this.state.map;
+    if (!map || this.state.busy || this.mapAiPreviewMap) return;
+    const lint = lintMap(this.mapWithEditorAssets(map));
+    if (lint.repairOperations.length === 0) {
+      this.state.message = '当前场景没有需要本地修正的落地、越界或天花板问题';
+      this.renderPanels();
+      return;
+    }
+    await this.previewTerrainOperations('本地尺度与落点重新规范', lint.repairOperations);
+  }
+
   private async discardMapAiPreview(): Promise<void> {
     if (!this.mapAiPreviewMap) return;
     const wasTerrainPreview = this.mapPreviewKind === 'terrain';
@@ -1926,6 +2040,7 @@ class MapEditor {
 
   private clearMapAiPreview(): void {
     this.mapAiSuggestion = null;
+    this.pendingCompositionPlan = null;
     this.mapAiPreviewMap = null;
     this.mapAiPreviewVisible = true;
     this.mapAiComparisonMap = null;
@@ -2052,6 +2167,14 @@ class MapEditor {
           <option value="indoor" ${map.sceneMode === 'indoor' ? 'selected' : ''}>室内</option>
           <option value="mixed" ${map.sceneMode === 'mixed' ? 'selected' : ''}>室内 + 室外</option>
         </select></label>
+        <label class="field compact"><span>角色高度（米）</span><input data-player-height type="number" min="0.8" max="3.2" step="0.1" value="${map.playerHeight}" /></label>
+        <label class="field compact"><span>世界尺度</span><select data-world-scale-profile>
+          <option value="intimate" ${map.worldScaleProfile === 'intimate' ? 'selected' : ''}>亲近</option>
+          <option value="balanced" ${map.worldScaleProfile === 'balanced' ? 'selected' : ''}>均衡</option>
+          <option value="grand" ${map.worldScaleProfile === 'grand' ? 'selected' : ''}>宏大</option>
+        </select></label>
+        <button type="button" class="secondary small" data-renormalize-scene>预览重新规范当前场景</button>
+        <p class="empty">只生成本地确定性修正预览，不调用 AI；锁定物体不会被修改。</p>
         <div class="triple">
           ${numberField('宽', 'box-size', 0, map.box.size[0])}
           ${numberField('高', 'box-size', 1, map.box.size[1])}
@@ -2210,6 +2333,21 @@ class MapEditor {
       this.markDirty();
       void this.refreshScene();
       this.renderPanels();
+    });
+    host.querySelector<HTMLInputElement>('[data-player-height]')?.addEventListener('change', (event) => {
+      const playerHeight = clampNumber(Number((event.target as HTMLInputElement).value), 0.8, 3.2);
+      this.state.map = normalizeMap({ ...map, playerHeight, playerRadius: undefined });
+      this.markDirty();
+      void this.refreshScene();
+      this.renderPanels();
+    });
+    host.querySelector<HTMLSelectElement>('[data-world-scale-profile]')?.addEventListener('change', (event) => {
+      map.worldScaleProfile = normalizeWorldScaleProfile((event.target as HTMLSelectElement).value);
+      this.markDirty(false);
+      this.renderPanels();
+    });
+    host.querySelector<HTMLButtonElement>('[data-renormalize-scene]')?.addEventListener('click', () => {
+      void this.previewSceneNormalization();
     });
     bindVectorInputs(host, 'box-size', map.box.size, () => {
       if (map.room) map.room = normalizeMapRoom(map.room, map.box.size, map.room);
@@ -2444,6 +2582,7 @@ class MapEditor {
     }
     if (map && this.isPlayerSpawnSelected()) {
       const spawn = this.playerSpawnPoint();
+      const playerMetrics = getMapPlayerMetrics(map);
       const selectionOpen = host.querySelector<HTMLDetailsElement>('[data-selection-id="player-spawn"]')?.open ?? true;
       host.innerHTML = `
         <details class="inspector-disclosure" data-inspector-section="selection" data-selection-id="player-spawn" ${selectionOpen ? 'open' : ''}>
@@ -2452,7 +2591,7 @@ class MapEditor {
           <p class="empty">用于预览、导航或后续运行时接入的默认空间参考点。</p>
           <div class="triple">${numberField('X', 'spawn-pos', 0, spawn[0])}${numberField('Y', 'spawn-pos', 1, spawn[1])}${numberField('Z', 'spawn-pos', 2, spawn[2])}</div>
           <label class="field compact"><span>朝向 Yaw（度）</span><input data-spawn-yaw type="number" step="1" value="${radiansToDegrees(getPlayerSpawnYaw(map)).toFixed(1)}" /></label>
-          <div class="triple">${readonlyNumberField('宽', PLAYER_RADIUS * 2)}${readonlyNumberField('高', PLAYER_HEIGHT)}${readonlyNumberField('深', PLAYER_RADIUS * 2)}</div>
+          <div class="triple">${readonlyNumberField('宽', playerMetrics.radius * 2)}${readonlyNumberField('高', playerMetrics.height)}${readonlyNumberField('深', playerMetrics.radius * 2)}</div>
           </section>
         </details>
       `;
@@ -4213,10 +4352,11 @@ class MapEditor {
   private setPlayerSpawnPoint(position: [number, number, number]): void {
     if (!this.state.map) return;
     const bounds = getMapBounds(this.state.map);
-    const x = clampNumber(position[0], bounds.minX + PLAYER_RADIUS, bounds.maxX - PLAYER_RADIUS);
-    const z = clampNumber(position[2], bounds.minZ + PLAYER_RADIUS, bounds.maxZ - PLAYER_RADIUS);
+    const { radius, height } = getMapPlayerMetrics(this.state.map);
+    const x = clampNumber(position[0], bounds.minX + radius, bounds.maxX - radius);
+    const z = clampNumber(position[2], bounds.minZ + radius, bounds.maxZ - radius);
     const terrainY = sampleTerrainHeight(this.state.map, x, z);
-    const maxY = Math.max(terrainY, bounds.maxY - PLAYER_HEIGHT);
+    const maxY = Math.max(terrainY, bounds.maxY - height);
     const y = clampNumber(position[1], terrainY, maxY);
     this.state.map.spawnPoints = [[x, y, z]];
   }

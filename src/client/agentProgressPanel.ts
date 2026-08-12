@@ -41,7 +41,7 @@ export function updateAgentProgress(list: AgentProgressEvent[], event: AgentProg
 export function humanizeAgentError(error: unknown): string {
   if (error instanceof Error && error.name === 'AbortError') return '【用户取消】本次规划已中断，没有内容应用到地图。';
   const message = error instanceof Error ? error.message : String(error || 'unknown_error');
-  if (/fetch failed|failed to fetch|econnrefused|networkerror|socket|connection (?:closed|reset)|terminated/i.test(message)) {
+  if (/failed to fetch|econnrefused|networkerror|socket|connection (?:closed|reset)|terminated/i.test(message)) {
     return '【连接失败】无法连接 Voxel Studio 后端，或连接中途断开。请确认服务端仍在运行、网络连接正常，然后重试；本次规划没有应用。';
   }
   const labels: Record<string, string> = {
@@ -62,6 +62,7 @@ export function humanizeAgentError(error: unknown): string {
     ecology_region_content_locked: '【目标区块已锁定】该区块禁止重新生成内容。请先关闭“锁定内容”，再重试。',
     unknown_visual_zone: '【目标区域失效】所选视觉区域已不存在。请改为整张地图或重新选择区域。',
     provider_unavailable: '【模型不可用】所选 AI 提供方当前不可用。请切换可用模型后重试。',
+    chat_service_unreachable: '【AI 服务连接失败】本地编辑器仍可访问，但它无法连接上游 AI 模型服务。请稍后重试或切换模型提供方；本次规划没有应用。',
     missing_prompt: '【缺少提示词】没有收到可用的地图提示词。请填写生成要求后重试。',
     map_layout_incomplete_partition: '【分区拓扑校验失败】AI 给出的区块存在重叠或缺口，自动修正后仍未完整覆盖地图。请简化分区描述后重试。',
     map_layout_region_limit: '【分区数量超限】AI 返回的区块数量超过当前地图尺寸允许的上限。请减少区块数量后重试。',

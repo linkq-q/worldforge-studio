@@ -26,12 +26,12 @@ describe('agent progress panel', () => {
     updateAgentProgress(events, {
       phase: 'failed',
       label: '地图 Agent 执行失败',
-      detail: humanizeAgentError(new Error('fetch failed'))
+      detail: humanizeAgentError(new Error('chat_service_unreachable'))
     });
 
     const html = renderAgentProgress(events, { running: false, elapsedMs: 3_000 });
     expect(html).toContain('生成失败');
-    expect(html).toContain('无法连接 Voxel Studio 后端');
+    expect(html).toContain('无法连接上游 AI 模型服务');
     expect(html).toContain('组织场景');
   });
 
@@ -44,6 +44,8 @@ describe('agent progress panel', () => {
     expect(humanizeAgentError(new Error('map_asset_generation_failed:松树:gpt: HTTP 500'))).toContain('【资产生成失败】');
     expect(humanizeAgentError(new Error('unknown_ecology_region'))).toContain('【目标区块失效】');
     expect(humanizeAgentError(new Error('indoor_prompt_requires_indoor_map'))).toContain('【场景类型不匹配】');
+    expect(humanizeAgentError(new Error('Failed to fetch'))).toContain('【连接失败】');
+    expect(humanizeAgentError(new Error('chat_service_unreachable'))).toContain('【AI 服务连接失败】');
   });
 
   it('explains a render JSON repair failure as a terminal two-attempt failure', () => {
