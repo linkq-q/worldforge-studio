@@ -1,8 +1,9 @@
 import {
   getMapBounds,
   getMapObjectAabbs,
-  PLAYER_HEIGHT,
-  PLAYER_RADIUS,
+  getMapObjectVisualAabbs,
+  getMapPlayerMetrics,
+  worldScaleProfileMultiplier,
   sampleTerrainHeight,
   terrainPointAt,
   type EditableMap,
@@ -17,7 +18,8 @@ export type MapLintSeverity = 'info' | 'warning' | 'error';
 
 export interface MapLintIssue {
   code: 'spawn.unsafe' | 'object.out-of-bounds' | 'object.off-ground' | 'object.duplicate'
-    | 'object.overlap' | 'water.exposed-terrain' | 'scene.sparse' | 'room.path-blocked';
+    | 'object.above-ceiling' | 'object.too-small' | 'object.scale-mismatch' | 'object.overlap'
+    | 'water.exposed-terrain' | 'scene.sparse' | 'room.path-blocked' | 'asset.unplaced';
   severity: MapLintSeverity;
   message: string;
   objectIds?: string[];
@@ -87,8 +89,9 @@ function lintObjectPlacement(
   const bounds = getMapBounds(map);
   const room = map.sceneMode === 'indoor' ? map.room : null;
   const assets = new Map((map.assets ?? []).map((asset) => [asset.id, asset]));
+  const objectBounds = aggregateObjectBounds(getMapObjectVisualAabbs(map));
   for (const object of map.objects) {
-    if (!object.assetId || object.parentId || removedIds.has(object.id)) continue;
+    if (!object.assetId || object.parentId || object.locked || removedIds.has(object.id)) continue;
     const position = [...object.transform.position] as [number, number, number];
     const asset = assets.get(object.assetId);
     const radius = (asset?.footprintRadius ?? (asset ? assetFootprintRadius(asset.colliderPlan) : 0.5))
@@ -100,14 +103,71 @@ function lintObjectPlacement(
     const nextX = clamp(position[0], minX + radius, maxX - radius);
     const nextZ = clamp(position[2], minZ + radius, maxZ - radius);
     const fixedHeight = object.heightMode === 'fixed' || Boolean(object.roomOpeningId);
-    const nextY = fixedHeight ? position[1] : room?.position[1] ?? sampleTerrainHeight(map, nextX, nextZ);
+    const floorY = room?.position[1] ?? sampleTerrainHeight(map, nextX, nextZ);
+    let nextY = fixedHeight ? position[1] : floorY;
+    let nextScale = [...object.transform.scale] as [number, number, number];
+    let aboveCeiling = false;
+    let tooSmall = false;
+    let scaleMismatch = false;
+    const currentBounds = objectBounds.get(object.id);
+    const semantic = [
+      asset?.name,
+      asset?.prompt,
+      ...(asset?.tags ?? [])
+    ].filter(Boolean).join(' ');
+    const mountSemantic = [asset?.name, ...(asset?.tags ?? [])].filter(Boolean).join(' ');
+    const wallMounted = Boolean(object.roomOpeningId)
+      || /wall-mounted|wall-prop|sconce|cross|window|壁挂|墙灯|十字架|窗/i.test(mountSemantic);
+    if (!room && currentBounds) {
+      const { height: playerHeight } = getMapPlayerMetrics(map);
+      const profile = worldScaleProfileMultiplier(map.worldScaleProfile);
+      const majorExtent = Math.max(
+        currentBounds.max[0] - currentBounds.min[0],
+        currentBounds.max[1] - currentBounds.min[1],
+        currentBounds.max[2] - currentBounds.min[2]
+      );
+      const explicitlyTiny = /tiny|miniature|pebble|gravel|seedling|小石子|碎石|幼苗/i.test(semantic);
+      const minimumExtent = /tree|pine|oak|palm|树|松|橡树|棕榈/i.test(semantic)
+        ? playerHeight * 2.6 * profile
+        : /rock|stone|boulder|石|岩/i.test(semantic)
+          ? playerHeight * 0.45 * profile
+          : explicitlyTiny ? playerHeight / 24 : playerHeight / 6;
+      const fit = minimumExtent / Math.max(0.001, majorExtent);
+      tooSmall = fit > 1.01;
+      if (tooSmall) {
+        nextScale = nextScale.map((value) => value * fit) as [number, number, number];
+        nextY = floorY - (currentBounds.min[1] - position[1]) * fit;
+      }
+    }
+    if (room && currentBounds) {
+      const ceilingY = room.position[1] + room.size[1];
+      const currentHeight = Math.max(0.001, currentBounds.max[1] - currentBounds.min[1]);
+      const targetHeight = indoorSemanticTargetHeight(map, semantic);
+      let fit = 1;
+      if (!wallMounted && targetHeight !== null
+        && (currentHeight < targetHeight * 0.88 || currentHeight > targetHeight * 1.12)) {
+        fit = targetHeight / currentHeight;
+        scaleMismatch = true;
+      }
+      const ceilingFit = Math.max(0.05, (room.size[1] - 0.02) / currentHeight);
+      aboveCeiling = currentBounds.max[1] > ceilingY + 0.01 || currentHeight * fit > room.size[1] - 0.02;
+      fit = Math.min(fit, ceilingFit);
+      if (Math.abs(fit - 1) > 0.001) nextScale = nextScale.map((value) => value * fit) as [number, number, number];
+      if (!wallMounted) {
+        const bottomOffset = (currentBounds.min[1] - position[1]) * fit;
+        nextY = floorY - bottomOffset;
+      } else if (aboveCeiling) {
+        const centerOffset = ((currentBounds.min[1] + currentBounds.max[1]) / 2 - position[1]) * fit;
+        nextY = floorY + room.size[1] / 2 - centerOffset;
+      }
+    }
     const outOfBounds = Math.abs(nextX - position[0]) > 0.001 || Math.abs(nextZ - position[2]) > 0.001;
-    const offGround = !fixedHeight && Math.abs(nextY - position[1]) > 0.05;
-    if (!outOfBounds && !offGround) continue;
+    const offGround = Math.abs(nextY - position[1]) > 0.05;
+    if (!outOfBounds && !offGround && !aboveCeiling && !tooSmall && !scaleMismatch) continue;
     repairs.push({
       type: 'object.update',
       objectId: object.id,
-      patch: { transform: { position: [nextX, nextY, nextZ] } }
+      patch: { transform: { position: [nextX, nextY, nextZ], scale: nextScale } }
     });
     if (outOfBounds) issues.push({
       code: 'object.out-of-bounds', severity: 'warning', message: '物体已移回地图边界内。',
@@ -117,7 +177,28 @@ function lintObjectPlacement(
       code: 'object.off-ground', severity: 'warning', message: '物体已重新贴合地形。',
       objectIds: [object.id], repaired: true
     });
+    if (aboveCeiling) issues.push({
+      code: 'object.above-ceiling', severity: 'warning', message: '物体已等比缩放并重新贴地，最高点不会超过天花板。',
+      objectIds: [object.id], repaired: true
+    });
+    if (tooSmall) issues.push({
+      code: 'object.too-small', severity: 'warning', message: '物体相对角色过小，已按语义尺度等比放大并重新贴地。',
+      objectIds: [object.id], repaired: true
+    });
+    if (scaleMismatch) issues.push({
+      code: 'object.scale-mismatch', severity: 'warning', message: '室内家具的可见高度与角色尺度不协调，已按家具语义等比修正并重新贴地。',
+      objectIds: [object.id], repaired: true
+    });
   }
+}
+
+function indoorSemanticTargetHeight(map: EditableMap, semantic: string): number | null {
+  const { height: playerHeight } = getMapPlayerMetrics(map);
+  const usableHeight = Math.max(0.5, (map.room?.size[1] ?? map.box.size[1]) - (map.room?.wallThickness ?? 0) * 2);
+  if (/chair|seat|pew|stool|椅|座椅|长凳/i.test(semantic)) return Math.min(playerHeight * 0.64, usableHeight * 0.42);
+  if (/table|desk|餐桌|书桌|课桌/i.test(semantic)) return Math.min(playerHeight * 0.58, usableHeight * 0.4);
+  if (/lectern|pulpit|altar|podium|讲台|祭坛/i.test(semantic)) return Math.min(playerHeight * 0.88, usableHeight * 0.58);
+  return null;
 }
 
 function lintRoomPaths(map: EditableMap, issues: MapLintIssue[]): void {
@@ -130,16 +211,17 @@ function lintRoomPaths(map: EditableMap, issues: MapLintIssue[]): void {
     .map((object) => [object.roomOpeningId as string, object.id]));
   const allObstacles = getMapObjectAabbs(map);
   const start = map.spawnPoints[0] ?? room.position;
+  const { radius, height } = getMapPlayerMetrics(map);
   for (const door of doors) {
     const linkedObjectId = linkedObjectByOpening.get(door.id);
     const obstacles = linkedObjectId
       ? allObstacles.filter((obstacle) => obstacle.objectId !== linkedObjectId)
       : allObstacles;
-    if (hasRoomPath(room, [start[0], start[2]], roomDoorInsidePoint(room, door), obstacles)) continue;
+    if (hasRoomPath(room, [start[0], start[2]], roomDoorInsidePoint(room, door, radius), obstacles, radius, height)) continue;
     issues.push({
       code: 'room.path-blocked',
       severity: 'warning',
-      message: `出生点到门口 ${door.id} 没有至少 ${(PLAYER_RADIUS * 2).toFixed(1)}m 宽的连续通道。`,
+      message: `出生点到门口 ${door.id} 没有至少 ${(radius * 2).toFixed(1)}m 宽的连续通道。`,
       repaired: false
     });
   }
@@ -149,13 +231,15 @@ function hasRoomPath(
   room: NonNullable<EditableMap['room']>,
   start: [number, number],
   goal: [number, number],
-  obstacles: MapObjectAabb[]
+  obstacles: MapObjectAabb[],
+  playerRadius: number,
+  playerHeight: number
 ): boolean {
   const step = 0.4;
-  const minX = room.position[0] - room.size[0] / 2 + room.wallThickness + PLAYER_RADIUS;
-  const maxX = room.position[0] + room.size[0] / 2 - room.wallThickness - PLAYER_RADIUS;
-  const minZ = room.position[2] - room.size[2] / 2 + room.wallThickness + PLAYER_RADIUS;
-  const maxZ = room.position[2] + room.size[2] / 2 - room.wallThickness - PLAYER_RADIUS;
+  const minX = room.position[0] - room.size[0] / 2 + room.wallThickness + playerRadius;
+  const maxX = room.position[0] + room.size[0] / 2 - room.wallThickness - playerRadius;
+  const minZ = room.position[2] - room.size[2] / 2 + room.wallThickness + playerRadius;
+  const maxZ = room.position[2] + room.size[2] / 2 - room.wallThickness - playerRadius;
   const width = Math.max(1, Math.floor((maxX - minX) / step) + 1);
   const depth = Math.max(1, Math.floor((maxZ - minZ) / step) + 1);
   const cellOf = ([x, z]: [number, number]): [number, number] => [
@@ -176,7 +260,7 @@ function hasRoomPath(
       if (nextX < 0 || nextX >= width || nextZ < 0 || nextZ >= depth || visited.has(key)) continue;
       const worldX = minX + nextX * step;
       const worldZ = minZ + nextZ * step;
-      if (obstacles.some((obstacle) => roomPathPointBlocked(room.position[1], worldX, worldZ, obstacle))) continue;
+      if (obstacles.some((obstacle) => roomPathPointBlocked(room.position[1], worldX, worldZ, obstacle, playerRadius, playerHeight))) continue;
       visited.add(key);
       queue.push([nextX, nextZ]);
     }
@@ -184,18 +268,19 @@ function hasRoomPath(
   return false;
 }
 
-function roomPathPointBlocked(floorY: number, x: number, z: number, obstacle: MapObjectAabb): boolean {
-  if (obstacle.max[1] <= floorY + 0.05 || obstacle.min[1] >= floorY + PLAYER_HEIGHT) return false;
+function roomPathPointBlocked(floorY: number, x: number, z: number, obstacle: MapObjectAabb, playerRadius: number, playerHeight: number): boolean {
+  if (obstacle.max[1] <= floorY + 0.05 || obstacle.min[1] >= floorY + playerHeight) return false;
   const closestX = clamp(x, obstacle.min[0], obstacle.max[0]);
   const closestZ = clamp(z, obstacle.min[2], obstacle.max[2]);
-  return Math.hypot(x - closestX, z - closestZ) < PLAYER_RADIUS + 0.05;
+  return Math.hypot(x - closestX, z - closestZ) < playerRadius + 0.05;
 }
 
 function roomDoorInsidePoint(
   room: NonNullable<EditableMap['room']>,
-  door: NonNullable<EditableMap['room']>['openings'][number]
+  door: NonNullable<EditableMap['room']>['openings'][number],
+  playerRadius: number
 ): [number, number] {
-  const inset = room.wallThickness + PLAYER_RADIUS + 0.1;
+  const inset = room.wallThickness + playerRadius + 0.1;
   if (door.wall === 'north') return [room.position[0] + door.offset, room.position[2] - room.size[2] / 2 + inset];
   if (door.wall === 'south') return [room.position[0] + door.offset, room.position[2] + room.size[2] / 2 - inset];
   if (door.wall === 'east') return [room.position[0] + room.size[0] / 2 - inset, room.position[2] + door.offset];
@@ -252,6 +337,20 @@ function lintOverlaps(map: EditableMap, removedIds: Set<string>, issues: MapLint
       });
     }
   }
+}
+
+function aggregateObjectBounds(boxes: MapObjectAabb[]): Map<string, MapObjectAabb> {
+  const result = new Map<string, MapObjectAabb>();
+  for (const box of boxes) {
+    const current = result.get(box.objectId);
+    if (!current) {
+      result.set(box.objectId, { objectId: box.objectId, min: [...box.min], max: [...box.max] });
+      continue;
+    }
+    current.min = current.min.map((value, axis) => Math.min(value, box.min[axis])) as [number, number, number];
+    current.max = current.max.map((value, axis) => Math.max(value, box.max[axis])) as [number, number, number];
+  }
+  return result;
 }
 
 function overlapRatio(a: MapObjectAabb, b: MapObjectAabb): number {

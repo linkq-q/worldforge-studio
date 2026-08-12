@@ -16,6 +16,7 @@ import {
   type MapSurface,
   type MapTerrain,
   type MapWaterBody,
+  type WorldScaleProfile,
   type TerrainBrushMode,
   type Transform3D
 } from './map';
@@ -68,7 +69,7 @@ export type MapWaterBodyInput = Omit<Partial<MapWaterBody>, 'points'> & {
 export type MapWaterBodyPatch = Omit<Partial<MapWaterBody>, 'id'>;
 
 export type MapOperation =
-  | { type: 'map.update'; name?: string; size?: Vec3; colors?: Partial<MapBoxColors>; renderPromptSuggestions?: string[]; visualSemantics?: MapVisualSemantics; layout?: MapLayout }
+  | { type: 'map.update'; name?: string; size?: Vec3; colors?: Partial<MapBoxColors>; playerHeight?: number; playerRadius?: number; worldScaleProfile?: WorldScaleProfile; renderPromptSuggestions?: string[]; visualSemantics?: MapVisualSemantics; layout?: MapLayout }
   | { type: 'room.set'; room: Partial<MapRoom> }
   | { type: 'terrain.set'; terrain: MapTerrain }
   | ({ type: 'terrain.generate' } & Partial<TerrainGenerationParams> & Pick<TerrainGenerationParams, 'preset'>)
@@ -144,6 +145,14 @@ export function applyMapOperations(map: EditableMap, operations: readonly MapOpe
         if (operation.name !== undefined && typeof operation.name !== 'string') throw new Error('invalid_map_name');
         if (operation.size !== undefined) requireVec3(operation.size, 'invalid_map_size');
         if (operation.name !== undefined) next.name = operation.name;
+        if (operation.playerHeight !== undefined) {
+          next.playerHeight = operation.playerHeight;
+          if (operation.playerRadius === undefined) {
+            next.playerRadius = Math.min(0.5, Math.max(0.3, operation.playerHeight * 0.2375));
+          }
+        }
+        if (operation.playerRadius !== undefined) next.playerRadius = operation.playerRadius;
+        if (operation.worldScaleProfile !== undefined) next.worldScaleProfile = operation.worldScaleProfile;
         if (operation.renderPromptSuggestions !== undefined) {
           next.renderPromptSuggestions = operation.renderPromptSuggestions;
         }

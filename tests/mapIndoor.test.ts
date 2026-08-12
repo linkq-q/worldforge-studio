@@ -4,6 +4,7 @@ import {
   ROOM_SURFACES,
   buildRoomShellSegments,
   createEmptyMap,
+  getMapPlayerMetrics,
   getRoomShellAabbs,
   normalizeMap,
   type MapAsset
@@ -41,6 +42,9 @@ describe('indoor map contract', () => {
       wallThickness: 0.16,
       openings: []
     });
+    expect(getMapPlayerMetrics(legacy)).toMatchObject({ height: 2.7, radius: 0.45 });
+    expect(getMapPlayerMetrics(indoor)).toMatchObject({ height: 1.6, radius: 0.38 });
+    expect(indoor.worldScaleProfile).toBe('balanced');
   });
 
   it('splits modular walls around door and window reservations without CSG', () => {

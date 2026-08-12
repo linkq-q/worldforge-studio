@@ -147,6 +147,23 @@ describe('structured map placement', () => {
     expect(Math.max(...xValues.slice(1).map((value, index) => value - xValues[index]))).toBeGreaterThan(3);
   });
 
+  it('uses more of a large indoor room instead of stopping at one compact furniture block', () => {
+    const map = createEmptyMap('large chapel', 'map-large-audience', [24, 3.4, 20], 'voxel', 'indoor', [24, 3.4, 20]);
+    map.assets = [buildingAsset];
+    const placements = expandStructuredMapPlacement(map, {
+      mode: 'layout', pattern: 'grid', intent: 'audience',
+      assetIds: [buildingAsset.id],
+      region: { kind: 'circle', x: 0, z: 0, r: 9.8 },
+      density: 0.16, spacing: 2.7, offset: 0, direction: 0, facing: 'inward',
+      focus: { x: 0, z: -8 }, aisleEvery: 4,
+      avoidWater: 0, maxSlope: 20, scaleRange: [0.45, 0.45], seed: 23
+    }, [buildingAsset], 240, 'large-audience');
+
+    expect(placements.length).toBeGreaterThanOrEqual(40);
+    expect(Math.max(...placements.map((placement) => placement.x)) - Math.min(...placements.map((placement) => placement.x))).toBeGreaterThan(14);
+    expect(Math.max(...placements.map((placement) => placement.z)) - Math.min(...placements.map((placement) => placement.z))).toBeGreaterThan(10);
+  });
+
   it('limits social furniture to target-local slots and viewpoint seating to a short arc', () => {
     const map = createEmptyMap('furniture groups', 'map-furniture-groups');
     map.assets = [buildingAsset];
@@ -188,5 +205,31 @@ describe('structured map placement', () => {
     expect(placements.every((placement) => placement.z < -4)).toBe(true);
     expect(placements.every((placement) => Math.abs(placement.x) > 1.4)).toBe(true);
     expect(placements.every((placement) => Math.abs(placement.rotationY) < 0.01)).toBe(true);
+  });
+
+  it('places a wide shallow blackboard against a wall without treating its width as wall depth', () => {
+    const map = createEmptyMap('classroom', 'map-wall-blackboard', [12, 3.2, 10], 'voxel', 'indoor', [12, 3.2, 10]);
+    const blackboard = {
+      ...buildingAsset,
+      id: 'asset-blackboard',
+      name: 'Front blackboard',
+      colliderPlan: {
+        ...buildingAsset.colliderPlan,
+        boxes: [{ min: [-3, 0, -0.1], max: [3, 1.8, 0.1] }]
+      },
+      footprintRadius: 3
+    } satisfies MapAsset;
+    map.assets = [blackboard];
+
+    const placements = expandStructuredMapPlacement(map, {
+      mode: 'linear', intent: 'wall',
+      assetIds: [blackboard.id], region: { kind: 'circle', x: 0, z: 0, r: 5 },
+      density: 0.01, spacing: 4, offset: 0.2, direction: 0, facing: 'inward',
+      maxPerGroup: 1,
+      avoidWater: 0, maxSlope: 89, scaleRange: [1, 1], seed: 12
+    }, [blackboard], 1, 'front-blackboard');
+
+    expect(placements).toHaveLength(1);
+    expect(placements[0].z).toBeLessThan(-4);
   });
 });

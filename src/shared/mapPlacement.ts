@@ -52,6 +52,13 @@ interface OccupiedCircle {
   radius: number;
 }
 
+interface HorizontalBounds {
+  minX: number;
+  maxX: number;
+  minZ: number;
+  maxZ: number;
+}
+
 export function expandStructuredMapPlacement(
   map: EditableMap,
   plan: StructuredPlacementPlan,
@@ -69,16 +76,20 @@ export function expandStructuredMapPlacement(
   const random = mulberry32(plan.seed);
   const spacing = Math.max(0.1, plan.spacing);
   const areaCount = Math.max(1, Math.round(Math.PI * plan.region.r ** 2 * Math.max(0.0001, plan.density)));
+  const audienceCount = plan.intent === 'audience' && map.room
+    ? roomAudienceTargetCount(map.room, plan, spacing)
+    : 0;
   const relationshipMinimum = plan.intent === 'social' || plan.intent === 'attached-service'
     ? Math.max(1, plan.targets?.length ?? 0) * Math.max(1, plan.maxPerGroup ?? 1)
     : plan.intent === 'viewpoint' ? Math.max(1, plan.maxPerGroup ?? 5) : 0;
-  const count = Math.min(maxCount, Math.max(areaCount, relationshipMinimum));
+  const count = Math.min(maxCount, Math.max(areaCount, audienceCount, relationshipMinimum));
   const slots = candidateSlots(map, plan, count, spacing, random);
   const occupied = existingOccupiedCircles(map);
   const bounds = getMapBounds(map);
   const minScale = Math.max(0.1, Math.min(...plan.scaleRange));
   const maxScale = Math.max(minScale, Math.max(...plan.scaleRange));
   const placements: MapScatterPlacement[] = [];
+  const occupiedBounds = existingOccupiedBounds(map);
 
   for (const [index, slot] of slots.entries()) {
     if (placements.length >= maxCount) break;
@@ -88,20 +99,35 @@ export function expandStructuredMapPlacement(
     const jitter = plan.intent === 'wall' || plan.intent === 'audience'
       ? 0
       : plan.mode === 'layout' ? spacing * 0.07 : spacing * 0.04;
-    const x = slot.x + (random() - 0.5) * jitter;
-    const z = slot.z + (random() - 0.5) * jitter;
-    if (!(map.room && plan.intent === 'audience')
+    let x = slot.x + (random() - 0.5) * jitter;
+    let z = slot.z + (random() - 0.5) * jitter;
+    const rotationY = placementYaw(plan.facing, slot, x, z, random);
+    let wallBounds = plan.intent === 'wall'
+      ? transformedHorizontalBounds(asset, scale, rotationY, x, z)
+      : null;
+    if (wallBounds) {
+      const snapped = snapToRoomWall(map, plan.direction, x, z, wallBounds);
+      x = snapped.x;
+      z = snapped.z;
+      wallBounds = snapped.bounds;
+    }
+    if (!(map.room && (plan.intent === 'audience' || plan.intent === 'wall'))
       && Math.hypot(x - plan.region.x, z - plan.region.z) > plan.region.r) continue;
     if (plan.excludeRegions?.some((region) => Math.hypot(x - region.x, z - region.z) <= region.r)) continue;
-    if (x < bounds.minX + footprintRadius || x > bounds.maxX - footprintRadius) continue;
-    if (z < bounds.minZ + footprintRadius || z > bounds.maxZ - footprintRadius) continue;
+    if (wallBounds
+      ? wallBounds.minX < bounds.minX || wallBounds.maxX > bounds.maxX
+        || wallBounds.minZ < bounds.minZ || wallBounds.maxZ > bounds.maxZ
+      : x < bounds.minX + footprintRadius || x > bounds.maxX - footprintRadius
+        || z < bounds.minZ + footprintRadius || z > bounds.maxZ - footprintRadius) continue;
     if (isNearWater(map, x, z, Math.max(0, plan.avoidWater))) continue;
     if (terrainFootprintSlopeDegrees(map, x, z, footprintRadius) > Math.min(89, Math.max(0, plan.maxSlope))) continue;
-    if (occupied.some((item) => (
-      Math.hypot(x - item.x, z - item.z) < Math.max(spacing * 0.9, footprintRadius + item.radius)
-    ))) continue;
+    if (wallBounds
+      ? occupiedBounds.some((item) => horizontalBoundsOverlap(wallBounds, item, 0.05))
+        || wallOpeningOverlap(map, plan.direction, wallBounds)
+      : occupied.some((item) => (
+          Math.hypot(x - item.x, z - item.z) < Math.max(spacing * 0.9, footprintRadius + item.radius)
+        ))) continue;
 
-    const rotationY = placementYaw(plan.facing, slot, x, z, random);
     placements.push({
       id: `${idPrefix}-${index + 1}`,
       assetId: asset.id,
@@ -113,6 +139,10 @@ export function expandStructuredMapPlacement(
       scale
     });
     occupied.push({ x, z, radius: footprintRadius });
+    occupiedBounds.push(wallBounds ?? {
+      minX: x - footprintRadius, maxX: x + footprintRadius,
+      minZ: z - footprintRadius, maxZ: z + footprintRadius
+    });
   }
   return placements;
 }
@@ -281,6 +311,21 @@ function roomAudienceSlots(
   });
 }
 
+function roomAudienceTargetCount(
+  room: NonNullable<EditableMap['room']>,
+  plan: StructuredPlacementPlan,
+  spacing: number
+): number {
+  const inset = room.wallThickness + 0.7;
+  const usableWidth = Math.max(1, room.size[0] - inset * 2);
+  const usableDepth = Math.max(1, room.size[2] - inset * 2 - Math.max(1.4, spacing * 1.25));
+  const aisleWidth = Math.max(1.2, spacing * 0.9);
+  const columns = Math.max(2, Math.floor((usableWidth - aisleWidth) / spacing));
+  const rows = Math.max(1, Math.floor(usableDepth / spacing));
+  const fill = Math.min(0.92, Math.max(0.5, Math.sqrt(Math.max(0.0001, plan.density)) * 2));
+  return Math.max(1, Math.ceil(columns * rows * fill));
+}
+
 function guidePathSlots(plan: StructuredPlacementPlan, count: number, spacing: number): CandidateSlot[] {
   const points = plan.guidePoints ?? [];
   const segments = points.slice(1).map((point, index) => {
@@ -408,6 +453,108 @@ function existingOccupiedCircles(map: EditableMap): OccupiedCircle[] {
     z: (box.min[2] + box.max[2]) / 2,
     radius: Math.hypot(box.max[0] - box.min[0], box.max[2] - box.min[2]) / 2
   }));
+}
+
+function existingOccupiedBounds(map: EditableMap): HorizontalBounds[] {
+  return [...getMapObjectAabbs(map), ...getTerrainCliffAabbs(map)].map((box) => ({
+    minX: box.min[0], maxX: box.max[0], minZ: box.min[2], maxZ: box.max[2]
+  }));
+}
+
+function transformedHorizontalBounds(
+  asset: MapAsset,
+  scale: number,
+  rotationY: number,
+  x: number,
+  z: number
+): HorizontalBounds {
+  const boxes = asset.colliderPlan?.boxes ?? [];
+  if (boxes.length === 0) {
+    const radius = mapAssetFootprintRadius(asset) * scale;
+    return { minX: x - radius, maxX: x + radius, minZ: z - radius, maxZ: z + radius };
+  }
+  const cosine = Math.cos(rotationY);
+  const sine = Math.sin(rotationY);
+  let minX = Number.POSITIVE_INFINITY;
+  let maxX = Number.NEGATIVE_INFINITY;
+  let minZ = Number.POSITIVE_INFINITY;
+  let maxZ = Number.NEGATIVE_INFINITY;
+  for (const box of boxes) {
+    for (const localX of [box.min[0], box.max[0]]) {
+      for (const localZ of [box.min[2], box.max[2]]) {
+        const worldX = x + (cosine * localX + sine * localZ) * scale;
+        const worldZ = z + (-sine * localX + cosine * localZ) * scale;
+        minX = Math.min(minX, worldX);
+        maxX = Math.max(maxX, worldX);
+        minZ = Math.min(minZ, worldZ);
+        maxZ = Math.max(maxZ, worldZ);
+      }
+    }
+  }
+  return { minX, maxX, minZ, maxZ };
+}
+
+function horizontalBoundsOverlap(left: HorizontalBounds, right: HorizontalBounds, clearance: number): boolean {
+  return left.minX < right.maxX + clearance && left.maxX > right.minX - clearance
+    && left.minZ < right.maxZ + clearance && left.maxZ > right.minZ - clearance;
+}
+
+function wallOpeningOverlap(map: EditableMap, direction: number, bounds: HorizontalBounds): boolean {
+  const room = map.room;
+  if (!room) return false;
+  const normalized = ((direction % 360) + 360) % 360;
+  const wall = normalized >= 45 && normalized < 135 ? 'east'
+    : normalized >= 135 && normalized < 225 ? 'south'
+    : normalized >= 225 && normalized < 315 ? 'west'
+    : 'north';
+  const alongMin = wall === 'north' || wall === 'south'
+    ? bounds.minX - room.position[0]
+    : bounds.minZ - room.position[2];
+  const alongMax = wall === 'north' || wall === 'south'
+    ? bounds.maxX - room.position[0]
+    : bounds.maxZ - room.position[2];
+  return room.openings.some((opening) => (
+    opening.wall === wall
+    && alongMin < opening.offset + opening.width / 2 + 0.2
+    && alongMax > opening.offset - opening.width / 2 - 0.2
+  ));
+}
+
+function snapToRoomWall(
+  map: EditableMap,
+  direction: number,
+  x: number,
+  z: number,
+  bounds: HorizontalBounds
+): { x: number; z: number; bounds: HorizontalBounds } {
+  const room = map.room;
+  if (!room) return { x, z, bounds };
+  const normalized = ((direction % 360) + 360) % 360;
+  const wall = normalized >= 45 && normalized < 135 ? 'east'
+    : normalized >= 135 && normalized < 225 ? 'south'
+    : normalized >= 225 && normalized < 315 ? 'west'
+    : 'north';
+  const clearance = room.wallThickness + 0.05;
+  const deltaX = wall === 'east'
+    ? room.position[0] + room.size[0] / 2 - clearance - bounds.maxX
+    : wall === 'west'
+      ? room.position[0] - room.size[0] / 2 + clearance - bounds.minX
+      : 0;
+  const deltaZ = wall === 'south'
+    ? room.position[2] + room.size[2] / 2 - clearance - bounds.maxZ
+    : wall === 'north'
+      ? room.position[2] - room.size[2] / 2 + clearance - bounds.minZ
+      : 0;
+  return {
+    x: x + deltaX,
+    z: z + deltaZ,
+    bounds: {
+      minX: bounds.minX + deltaX,
+      maxX: bounds.maxX + deltaX,
+      minZ: bounds.minZ + deltaZ,
+      maxZ: bounds.maxZ + deltaZ
+    }
+  };
 }
 
 function mulberry32(seed: number): () => number {
