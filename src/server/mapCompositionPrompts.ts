@@ -1,4 +1,5 @@
 import { getMapBounds, getMapPlayerMetrics, type EditableMap, type MapAsset } from '../shared/map';
+import { indoorAssetTargetCount } from '../shared/indoorScenePlanning';
 import { planLimits } from '../shared/mapPlanning';
 import type {
   SceneCompositionMetrics,
@@ -18,6 +19,9 @@ export function buildSceneDirectorPrompt(
   const bounds = getMapBounds(map);
   const limits = planLimits(bounds, map.sceneMode);
   const player = getMapPlayerMetrics(map);
+  const indoorAssetTarget = indoor
+    ? indoorAssetTargetCount(map, options.minNewAssets ?? 0, options.maxNewAssets ?? limits.assetRequestCount)
+    : 0;
   const catalogAssets = assets
     .slice(0, 80)
     .map((asset) => ({
@@ -37,10 +41,22 @@ export function buildSceneDirectorPrompt(
       ? 'Indoor plans must use a plain zero-relief terrainBase placeholder, null water, empty grassFamilies and grassLayers, and no terrain or water intentRequirements. The compiler will preserve the room floor instead of generating terrain.'
       : 'Use terrainRefinement to remove synthetic cuts after all sculpting. Keep erosion around 0.12-0.35 and drainage around 0.04-0.16 unless the request explicitly needs heavily eroded terrain. Cliff softness below 0.16 is automatically given a natural shoulder; prefer 0.25-0.6 for broad formations.',
     indoor
-      ? 'Doors and windows are standalone model assets placed at planned wall positions; do not request wall holes. Wall-mounted props use placement.intent wall. Preserve walkable circulation and explicit aisles as negative space.'
+      ? 'Doors and windows are standalone model assets placed at planned wall positions. The deterministic compiler reserves a matching parameterized wall opening behind each model, so the opening is visible and glass materials remain part of the asset. Wall-mounted props use placement.intent wall. Preserve walkable circulation and explicit aisles as negative space.'
       : '',
     indoor
       ? 'Repeated indoor furniture must be modular: generate one reusable pew, chair, desk, or row module and repeat it with placement operations. Never bundle the whole room layout or several separated rows into one generated asset.'
+      : '',
+    indoor
+      ? `Plan the room in two passes inside this one response. First expand a breadth-first functional inventory: entrance/daylight fixtures, primary activity groups, supporting storage or service furniture, then readable decor. Aim for about ${indoorAssetTarget} useful asset families within the user's bounds; do not merely stop at the lower bound.`
+      : '',
+    indoor
+      ? 'Then create a relationship graph between those families: support, paired, facing, aligned, close-to-wall, and circulation-clear. A typical room needs a standalone door model and normally at least one standalone glass window model unless the user explicitly requests a sealed or windowless room.'
+      : '',
+    indoor
+      ? 'Classrooms use straight aligned desk rows facing a wall-mounted blackboard; pair one chair behind each desk. Restaurants and cafes infer multiple dining-table groups from usable floor area and attach chairs around every table. Offices infer multiple workstations and pair a chair with each desk. Do not use arcs for these functional groups unless the user explicitly requests curved seating.'
+      : '',
+    indoor
+      ? 'Treat the zone graph as a top-down interior plan even when the user skips plan confirmation: allocate entrance clearance, circulation spine, primary work or activity bays, wall storage or service bands, and daylight/safety fixtures before choosing densities. Warehouse shelves form aligned rows with service aisles; crates and pallets occupy staging bays rather than the circulation spine; pallet jacks stay near staging or loading; lights use a ceiling grid; signs and extinguishers attach to walls.'
       : '',
     'Do not output object coordinates, low-level map operations, spawn points, combat rules, cover, quests, or gameplay logic.',
     'Do not use a fixed forest/camp template. Choose regions and asset roles that specifically fit this request.',
@@ -56,15 +72,18 @@ export function buildSceneDirectorPrompt(
     'For each asset family provide 1-3 identityTags containing the specific identity required for reuse (for example maple, castle, deer, sakura). Do not put broad category tags such as tree, vegetation, building, structure, animal, forest, or landmark in identityTags.',
     'Choose a placement.mode for each object layer: anchor for landmarks, field for even natural cover, patch for mixed ecological communities, linear for fences/lights/roadside objects, layout for buildings/camps/courtyards, and attached for props dependent on another family.',
     'Buildings and structures must use anchor, linear, or layout; never field or patch. Use layout.pattern row|courtyard|radial|grid to establish order. Attached placement must name targetFamilyId. Related plant patch layers should share the zone habitat and use spacingByFamily when their ecological separation differs.',
-    'Furniture is not architecture and must declare placement.intent. Use street-edge for benches/lights/bins along a path, audience for church/classroom/theater rows, social for chairs attached to tables or fire pits, viewpoint for small bench arcs facing scenery, wall for indoor wall furniture, and attached-service for props beside another family.',
+    'Furniture is not architecture and must declare placement.intent. Use street-edge for benches/lights/bins along a path, audience for church/theater rows without desks, functional-group for repeated classroom desks, restaurant tables, or office workstations, paired for one chair behind each desk, social for chairs around tables or fire pits, viewpoint for small bench arcs facing scenery, wall for indoor wall furniture, and attached-service for props beside another family.',
     'Never use field or patch for furniture. Never use a complete courtyard or radial furniture ring unless the user explicitly requests circular seating, an amphitheater, or a ceremony. Viewpoint seating uses pattern arc, maxPerGroup 2-5, and arcDegrees 45-140.',
-    'Street-edge furniture should provide 2-16 normalized guidePoints following the shared path, use small groups separated by gaps, and face the guide or named focus. Audience seating uses grid plus focusFamilyId and aisleEvery. Social and attached-service furniture require targetFamilyId.',
+    'Street-edge furniture should provide 2-16 normalized guidePoints following the shared path, use small groups separated by gaps, and face the guide or named focus. Audience seating uses grid plus focusFamilyId and aisleEvery. Functional-group uses an aligned row or grid. Paired, social, and attached-service require targetFamilyId.',
     'Playground swings, slides, and fitness equipment are facilities: use sparse anchors, normally one or two instances, with enough spacing for a clear activity area.',
     'On mountains, give vegetation an explicit habitat.slope band. Keep large trees off cliff shoulders and narrow ridge crests; let shrubs and rocks tolerate progressively steeper ground.',
     'When the user explicitly requests a high mountain, snow mountain, mountain peak, or bare ridge, create a broad mountain zone with strong relief, rock surface, and scenic access. A low rounded hill is not an acceptable substitute. Put bare-rock and outcrop families inside that mountain zone with explicit high-elevation and steep-slope habitat bands.',
     'Repeated decorative rocks are terrain cover, not boundary markers. Unless the request is specifically for a compact rock field, distribute each natural rock family through compatible broad zones with only moderate clustering so it does not collapse into one side of the map.',
     `Use the ${player.height.toFixed(2)}m character as the scale reference. World scale profile is ${map.worldScaleProfile}. Ordinary visible assets should not have a major dimension below ${(player.height / 6).toFixed(2)}m; only explicitly requested tiny props may use ${(player.height / 24).toFixed(2)}-${(player.height / 6).toFixed(2)}m. Trees must read clearly taller than the character.`,
     'For repeated furniture, density describes how much of the usable area should be occupied. Do not encode one compact fixed-count block for a large room; preserve aisles and distribute rows across the available floor area.',
+    indoor
+      ? 'Before returning, estimate occupied floor area and spatial spread. If a large room would leave most of its floor unintentionally blank, add another functional group or supporting/decor families and explain any remaining open zone by its actual use. Empty space is valid only when it is a circulation route, activity area, sightline, or other named function.'
+      : '',
     'For every animal family, provide behavior. kind is static|solitary|pair|flock|herd|school|territorial; locomotion is static|ground|air|water|mixed. Use groupCount, coreRatio, and outlierMinDistance to create several readable cores plus reserved separated individuals. For mixed birds, coreState is usually feed or rest and outlierState is fly; set an altitudeRange for airborne members.',
     'Treat ecology at three scales: zone habitat, family patches or social cores, then individually spaced instances. Do not represent a flock, herd, or mixed plant community as one undifferentiated cluster.',
     'Every mountain or ridge must choose terrain.access walkable|scenic. Walkable mountains are broad massifs; scenic mountains may be steeper but still require a wide region. A ridge is only valid inside a large region. Use layout terraces when traversal should happen by jumping between geometric platforms.',
@@ -115,7 +134,7 @@ export function buildSceneDirectorPrompt(
           familyId: 'family-id', density: 0.04, scaleRange: [0.8, 1.2], distribution: 'even|clustered|accent', edgeFalloff: 0.25,
           placement: {
             mode: 'anchor|field|patch|linear|layout|attached', pattern: 'row|courtyard|radial|grid|arc',
-            intent: 'landmark|settlement|street-edge|audience|social|viewpoint|wall|attached-service|playground',
+            intent: 'landmark|settlement|street-edge|audience|functional-group|paired|social|viewpoint|wall|attached-service|playground',
             direction: 0, spacing: 3, offset: 0, facing: 'random|guide|inward|outward',
             targetFamilyId: null, focusFamilyId: null, guidePoints: [[-0.8, 0], [0, 0.1], [0.8, 0.2]],
             maxPerGroup: 4, arcDegrees: 110, aisleEvery: 4, spacingByFamily: { 'other-family-id': 2.5 },
@@ -178,6 +197,8 @@ export function buildSceneReviewerPrompt(
   return [
     'You are the final composition reviewer for a generated 3D environment.',
     'Review visual and technical composition only: continuity, focal hierarchy, empty or repetitive areas, scale balance, and terrain/water transitions.',
+    'For indoor scenes, deterministic metrics include indoorFloorOccupancy and indoorObjectSpread. When either is very low and no named circulation/activity/negative-space zone justifies it, revise existing group densities or zone radii so furniture uses the room instead of remaining in one compact island. Preserve deliberate aisles and door clearance.',
+    'Check family relationships as a graph: every paired chair needs its desk target, restaurant chairs need dining-table targets, classroom groups face the teaching wall, and wall props remain wall-aligned. Correct relationship fields before merely increasing random density.',
     'Do not add gameplay, spawn, combat, cover, quests, or navigation requirements.',
     'Do not request or invent new assets. You may only redistribute existing families and adjust bounded plan fields.',
     'The plan intentRequirements are mandatory acceptance criteria. Never remove or invalidate a required water or asset family.',

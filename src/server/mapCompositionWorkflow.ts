@@ -1,6 +1,7 @@
 import type { EditableMap, MapAsset } from '../shared/map';
 import type { MapAiSuggestion } from '../shared/mapOperations';
 import { normalizeMapAiNewAssetRange } from '../shared/mapPlanning';
+import { completeIndoorScenePlan } from '../shared/indoorScenePlanning';
 import { CHAT_PROVIDER_OPTIONS, type AgentProgressEvent, type ChatProvider } from '../shared/protocol';
 import {
   ensureMinimumSceneCoverage,
@@ -87,7 +88,7 @@ export async function planMapComposition(
       maxNewAssets: assetRange.max
     }),
     cleanPrompt,
-    (value) => normalizeCompositionPlan(value, map, cleanPrompt, assetRange.min),
+    (value) => normalizeCompositionPlan(value, map, cleanPrompt, assetRange.min, assetRange.max),
     options,
     0.45
   );
@@ -119,7 +120,7 @@ export async function runMapCompositionWorkflow(
     options.onProgress?.({ phase: 'composing', label: '场景总导演正在组织区域、主次与资产家族' });
   }
   let plan = options.approvedCompositionPlan
-    ? normalizeCompositionPlan(options.approvedCompositionPlan, map, cleanPrompt, assetRange.min)
+    ? normalizeCompositionPlan(options.approvedCompositionPlan, map, cleanPrompt, assetRange.min, assetRange.max)
     : await requestStructured(
     'scene composition plan',
     buildSceneDirectorPrompt(map, reusableAssets, {
@@ -128,7 +129,7 @@ export async function runMapCompositionWorkflow(
       maxNewAssets: assetRange.max
     }),
     cleanPrompt,
-    (value) => normalizeCompositionPlan(value, map, cleanPrompt, assetRange.min),
+    (value) => normalizeCompositionPlan(value, map, cleanPrompt, assetRange.min, assetRange.max),
     options,
     0.45
   );
@@ -220,6 +221,14 @@ export async function runMapCompositionWorkflow(
   }
   const resolvedFamilies = attachGeneratedSceneAssets(initialResolution.families, generated);
   const expandedAssets = [...assets, ...generated.map((entry) => entry.asset)];
+  const assetMinimumShortfall = Math.max(0, assetRange.min - generated.length);
+  if (assetMinimumShortfall > 0) {
+    options.onProgress?.({
+      phase: 'repairing',
+      label: `新资产少于下限 ${assetMinimumShortfall} 个，已保留可执行场景并继续`,
+      detail: `目标至少 ${assetRange.min} 个，实际生成 ${generated.length} 个`
+    });
+  }
 
   options.onProgress?.({ phase: 'compiling', label: '将场景意图编译为可编辑地形、水体和资产操作' });
   let compiled = compileSceneComposition(map, plan, resolvedFamilies);
@@ -279,6 +288,14 @@ export async function runMapCompositionWorkflow(
       operations: compiled.operations,
       renderPromptSuggestions: plan.renderPromptSuggestions,
       generatedAssets: generated.map(({ asset }) => ({ id: asset.id, name: asset.name })),
+      ...(assetMinimumShortfall > 0 ? {
+        diagnostics: [{
+          code: 'asset.minimum-degraded',
+          severity: 'warning' as const,
+          message: `本次实际生成 ${generated.length} 个新资产，低于设置的最少 ${assetRange.min} 个；系统已保留可执行内容并继续，没有中断本次生成。`,
+          repaired: false
+        }]
+      } : {}),
       composition: {
         plan,
         metrics: compiled.metrics,
@@ -294,16 +311,17 @@ function normalizeCompositionPlan(
   value: unknown,
   map: EditableMap,
   prompt: string,
-  minimumAssets: number
+  minimumAssets: number,
+  maximumAssets: number
 ): SceneCompositionPlan {
   const normalized = normalizeSceneCompositionPlan(value, map);
-  const budgeted = fitSceneAssetVariantBudget(ensureMinimumSceneCoverage({
+  const covered = ensureMinimumSceneCoverage({
     ...normalized,
     assetFamilies: normalized.assetFamilies.map((family) => ({ ...family, desiredVariants: 1 }))
-  }, map), minimumAssets, SCENE_COMPOSITION_LIMITS.assetFamilyCount * 3);
-  if (minimumAssets > 0 && budgeted.assetFamilies.length === 0) {
-    throw new Error('scene_asset_variant_count_below_min');
-  }
+  }, map);
+  const contracted = enforcePromptSceneIntent(covered, prompt, map);
+  const completed = completeIndoorScenePlan(contracted, map, prompt, minimumAssets, maximumAssets);
+  const budgeted = fitSceneAssetVariantBudget(completed, minimumAssets, maximumAssets);
   return enforcePromptSceneIntent(budgeted, prompt, map);
 }
 

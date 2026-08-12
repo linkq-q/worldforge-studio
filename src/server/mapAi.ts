@@ -127,6 +127,7 @@ export async function runMapAgent(
     maxNewAssets,
     map.assetGenerationMode
   );
+  let minimumAssetShortfall = 0;
   if (requests.length < assetRange.min) {
     options.onProgress?.({ phase: 'replanning', label: `补足至少 ${assetRange.min} 个新资产请求` });
     firstContent = await requestMapPlan(
@@ -138,7 +139,14 @@ export async function runMapAgent(
       mode
     );
     requests = normalizeAssetRequests(parseJsonObject(firstContent).assetRequests, maxNewAssets, map.assetGenerationMode);
-    if (requests.length < assetRange.min) throw new Error('map_agent_asset_minimum_not_met');
+    minimumAssetShortfall = Math.max(0, assetRange.min - requests.length);
+    if (minimumAssetShortfall > 0) {
+      options.onProgress?.({
+        phase: 'repairing',
+        label: `AI 仍少规划 ${minimumAssetShortfall} 个新资产，已按现有规划局部降级并继续`,
+        detail: `目标至少 ${assetRange.min} 个，当前可执行 ${requests.length} 个`
+      });
+    }
   }
   options.onProgress?.({
     phase: 'checking-assets',
@@ -167,7 +175,7 @@ export async function runMapAgent(
     if (hasSpatialOperations(firstSuggestion)) {
       const validated = finalizeMapAgentSuggestion(map, assets, firstSuggestion, options);
       options.onProgress?.({ phase: 'complete', label: '地图修改方案已完成' });
-      return validated;
+      return withAssetMinimumWarning(validated, assetRange.min, requests.length);
     }
     options.onProgress?.({ phase: 'replanning', label: '补充空间操作' });
     const retryContent = await requestMapPlan(prompt, map, assets, options, true, mode);
@@ -176,7 +184,7 @@ export async function runMapAgent(
     if (!hasSpatialOperations(retrySuggestion)) throw new Error('map_agent_no_spatial_plan');
     const validated = finalizeMapAgentSuggestion(map, assets, retrySuggestion, options);
     options.onProgress?.({ phase: 'complete', label: '地图修改方案已完成' });
-    return validated;
+    return withAssetMinimumWarning(validated, assetRange.min, requests.length);
   }
 
   const generatedAssets: MapAsset[] = [];
@@ -223,7 +231,24 @@ export async function runMapAgent(
   if (!hasSpatialOperations(suggestion)) throw new Error('map_agent_no_spatial_plan');
   const validated = finalizeMapAgentSuggestion(map, expandedAssets, suggestion, options);
   options.onProgress?.({ phase: 'complete', label: '地图修改方案已完成' });
-  return validated;
+  return withAssetMinimumWarning(validated, assetRange.min, requests.length);
+}
+
+function withAssetMinimumWarning(
+  suggestion: MapAiSuggestion,
+  minimum: number,
+  actual: number
+): MapAiSuggestion {
+  if (actual >= minimum) return suggestion;
+  return {
+    ...suggestion,
+    diagnostics: [...(suggestion.diagnostics ?? []), {
+      code: 'asset.minimum-degraded',
+      severity: 'warning',
+      message: `AI 仅规划出 ${actual} 个可执行的新资产，低于设置的最少 ${minimum} 个；系统已保留可执行内容并继续，没有中断本次生成。`,
+      repaired: false
+    }]
+  };
 }
 
 function requestsIndoorScene(prompt: string): boolean {

@@ -605,15 +605,18 @@ export function placeRoomOpeningObjectInPlace(map: EditableMap, object: MapObjec
   }
   const [x, y, z] = room.position;
   const [width, , depth] = room.size;
-  const inset = room.wallThickness;
+  const inset = room.wallThickness / 2;
+  const asset = object.assetId ? map.assets?.find((item) => item.id === object.assetId) : undefined;
+  const localMinY = asset ? calculateModelVisualBounds(asset.modelJson).min[1] : 0;
+  const objectY = y + opening.bottom - localMinY * object.transform.scale[1];
   object.heightMode = 'fixed';
   object.transform.position = opening.wall === 'north'
-    ? [x + opening.offset, y + opening.bottom, z - depth / 2 + inset]
+    ? [x + opening.offset, objectY, z - depth / 2 + inset]
     : opening.wall === 'south'
-      ? [x + opening.offset, y + opening.bottom, z + depth / 2 - inset]
+      ? [x + opening.offset, objectY, z + depth / 2 - inset]
       : opening.wall === 'east'
-        ? [x + width / 2 - inset, y + opening.bottom, z + opening.offset]
-        : [x - width / 2 + inset, y + opening.bottom, z + opening.offset];
+        ? [x + width / 2 - inset, objectY, z + opening.offset]
+        : [x - width / 2 + inset, objectY, z + opening.offset];
   object.transform.rotation[1] = opening.wall === 'north'
     ? 0
     : opening.wall === 'south'
@@ -637,9 +640,14 @@ export function syncRoomOpeningFromObjectInPlace(map: EditableMap, object: MapOb
     -wallLength / 2 + opening.width / 2 + room.wallThickness,
     wallLength / 2 - opening.width / 2 - room.wallThickness
   );
+  const asset = object.assetId ? map.assets?.find((item) => item.id === object.assetId) : undefined;
+  const localMinY = asset ? calculateModelVisualBounds(asset.modelJson).min[1] : 0;
+  const visualBottom = object.transform.position[1]
+    + localMinY * object.transform.scale[1]
+    - room.position[1];
   opening.bottom = opening.kind === 'door'
     ? 0
-    : clamp(object.transform.position[1] - room.position[1], 0, room.size[1] - room.wallThickness - opening.height);
+    : clamp(visualBottom, 0, room.size[1] - room.wallThickness - opening.height);
   placeRoomOpeningObjectInPlace(map, object);
 }
 

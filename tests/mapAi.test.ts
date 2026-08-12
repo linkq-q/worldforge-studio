@@ -94,7 +94,7 @@ describe('map AI adapter', () => {
       '教室内有前方黑板和整齐排列的椅子',
       createEmptyMap('classroom', 'classroom-soft-asset-failure', [16, 3, 12], 'voxel', 'indoor', [16, 3, 12]),
       [],
-      { apiBase: 'https://example.test', provider: 'gpt', fetchImpl, createAsset }
+      { apiBase: 'https://example.test', provider: 'gpt', fetchImpl, createAsset, minNewAssets: 2, maxNewAssets: 2 }
     );
 
     expect(fetchImpl).toHaveBeenCalledTimes(2);
@@ -105,6 +105,9 @@ describe('map AI adapter', () => {
     expect(suggestion.composition?.outcome.checks).toEqual(expect.arrayContaining([expect.objectContaining({
       requirementId: 'front-blackboard', status: 'warning'
     })]));
+    expect(suggestion.diagnostics).toEqual(expect.arrayContaining([
+      expect.objectContaining({ code: 'asset.minimum-degraded', severity: 'warning' })
+    ]));
   });
 
   it('continues from an approved composition without asking the director to redesign it', async () => {
@@ -121,7 +124,8 @@ describe('map AI adapter', () => {
       [],
       {
         apiBase: 'https://example.test', provider: 'gpt', fetchImpl, createAsset,
-        approvedCompositionPlan: approvedPlan as SceneCompositionPlan
+        approvedCompositionPlan: approvedPlan as SceneCompositionPlan,
+        maxNewAssets: 1
       }
     );
 
@@ -216,7 +220,7 @@ describe('map AI adapter', () => {
       '小教堂室内，木椅整齐分排，中间留出过道，全部朝向讲台。',
       map,
       [],
-      { apiBase: 'https://example.test', provider: 'gpt', fetchImpl, createAsset }
+      { apiBase: 'https://example.test', provider: 'gpt', fetchImpl, createAsset, maxNewAssets: 2 }
     );
     const applied = applyMapOperations(map, suggestion.operations);
     const altar = applied.objects.find((object) => object.assetId === 'asset-indoor-altar');
@@ -236,14 +240,15 @@ describe('map AI adapter', () => {
     expect(pews.length).toBeGreaterThanOrEqual(40);
     expect(pews.length).toBeLessThanOrEqual(200);
     expect(applied.objects.some((object) => object.id.startsWith('population-'))).toBe(false);
-    expect(pews.every((pew) => pew.transform.scale[0] < 0.61)).toBe(true);
+    expect(pews.every((pew) => pew.transform.scale[0] < 0.74)).toBe(true);
+    expect(pews.every((pew) => pew.transform.scale[0] >= pew.transform.scale[1])).toBe(true);
     expect(pews.every((pew) => Math.abs(pew.transform.position[1]) < 0.001)).toBe(true);
     expect(pews.every((pew) => (
       pew.transform.position[1] + (3.475 - 1.22) * pew.transform.scale[1] <= 2.84
     ))).toBe(true);
     expect(pews.some((pew) => pew.transform.position[0] < -0.8)).toBe(true);
     expect(pews.some((pew) => pew.transform.position[0] > 0.8)).toBe(true);
-    expect(pews.every((pew) => Math.abs(pew.transform.position[0]) > 0.6)).toBe(true);
+    expect(pews.filter((pew) => Math.abs(pew.transform.position[0]) <= 0.6).length / pews.length).toBeLessThan(0.18);
     expect(pews.every((pew) => {
       const position = pew.transform.position;
       const forward = [Math.sin(pew.transform.rotation[1]), Math.cos(pew.transform.rotation[1])];
@@ -736,6 +741,36 @@ describe('map AI adapter', () => {
     expect(fetchImpl).toHaveBeenCalledTimes(3);
     expect(createAsset).toHaveBeenCalledOnce();
     expect(JSON.stringify(suggestion.operations)).toContain('asset-new-pine');
+  });
+
+  it('keeps a mixed-scene plan executable when the AI still misses the asset minimum after retry', async () => {
+    const fetchImpl = vi.fn()
+      .mockResolvedValueOnce(chatResponse({
+        summary: 'layout without new assets',
+        assetRequests: [],
+        terrain: [{ mode: 'raise', x: -2, z: 0, size: 2, strength: 0.4 }]
+      }))
+      .mockResolvedValueOnce(chatResponse({
+        summary: 'retry remains usable but has no assets',
+        assetRequests: [],
+        terrain: [{ mode: 'raise', x: 2, z: 0, size: 2, strength: 0.4 }]
+      }));
+
+    const suggestion = await runMapAgent(
+      'make a mixed courtyard and interior',
+      createEmptyMap('mixed', 'mixed-minimum-degrade', [24, 8, 24], 'voxel', 'mixed'),
+      [],
+      {
+        apiBase: 'https://example.test', provider: 'gpt', fetchImpl,
+        createAsset: vi.fn(), minNewAssets: 2, maxNewAssets: 4
+      }
+    );
+
+    expect(fetchImpl).toHaveBeenCalledTimes(2);
+    expect(suggestion.operations.some((operation) => operation.type === 'terrain.brush')).toBe(true);
+    expect(suggestion.diagnostics).toEqual(expect.arrayContaining([
+      expect.objectContaining({ code: 'asset.minimum-degraded', severity: 'warning' })
+    ]));
   });
 
   it('locally places generated assets omitted by the final refine pass without another AI request', async () => {

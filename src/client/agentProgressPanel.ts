@@ -54,7 +54,7 @@ export function humanizeAgentError(error: unknown): string {
     indoor_prompt_requires_indoor_map: '【场景类型不匹配】提示词明确要求室内空间，但当前是室外地图。请新建或切换为“室内”地图后再生成，系统会使用参数化房间、墙面和室内家具布局。',
     scene_asset_family_count_above_max: '【资产数量超限】场景规划包含过多资产家族，超过当前地图额度。请减少生态/建筑种类或提高最大新资产数。',
     scene_asset_variant_count_above_max: '【资产数量超限】AI 为同类资产规划了过多变体。请减少变体要求或提高最大新资产数。',
-    scene_asset_variant_count_below_min: '【资产数量不足】场景规划无法在当前上下限内满足最少资产数。请检查资产最少/最多值是否冲突。',
+    scene_asset_variant_count_below_min: '【资产规划已收敛】场景规划会在当前上下限内自动补足或裁剪资产，不需要反复抽卡。',
     invalid_agent_json: '【AI 输出格式错误】AI 连续修正后仍未返回可解析的场景规划 JSON。请重试；若重复出现，可简化提示词。',
     invalid_map_ai_json: '【AI 输出格式错误】AI 返回的地图修改 JSON 不完整或格式错误。请重试；若重复出现，可缩短并明确提示词。',
     invalid_scatter_plan: '【散布范围无效】AI 的某项批量摆放缺少可用资产或范围。圆形范围需包含中心与半径；分区生成时系统会自动使用当前区块。请重试，若仍失败可减少批量摆放种类。',

@@ -1,10 +1,12 @@
 import {
   getMapBounds,
+  getMapObjectVisualAabbs,
   getMapPlayerMetrics,
   sampleTerrainHeight,
   worldScaleProfileMultiplier,
   type EditableMap,
-  type MapAsset
+  type MapAsset,
+  type RoomWall
 } from './map';
 import { applyMapOperations, type MapOperation } from './mapOperations';
 import { planLimits } from './mapPlanning';
@@ -28,6 +30,11 @@ import {
   type SceneZoneLayer
 } from './sceneComposition';
 import type { ResolvedSceneFamily } from './sceneCompositionAssets';
+import {
+  indoorFallbackTargetHeight,
+  indoorSemanticDimensions,
+  isElevatedWallSemantic
+} from './indoorScale';
 import { compileMapVisualSemantics } from './mapVisualSemantics';
 import type { TerrainRegion } from './terrainGeneration';
 import { calculateModelVisualBounds } from './modelBounds';
@@ -70,7 +77,11 @@ export function compileSceneComposition(
     operations.push(...compileZoneGrass(map, plan));
   }
 
-  let workingMap = applyMapOperations(map, operations);
+  const planningAssets = new Map((map.assets ?? []).map((asset) => [asset.id, asset]));
+  for (const resolved of resolvedFamilies) {
+    for (const asset of resolved.assets) planningAssets.set(asset.id, asset);
+  }
+  let workingMap = applyMapOperations({ ...map, assets: [...planningAssets.values()] }, operations);
   const limits = planLimits(getMapBounds(map), map.sceneMode);
   let remaining = limits.objectCount;
 
@@ -211,7 +222,7 @@ export function compileSceneComposition(
         ? 0
         : placement.rotationY;
       const indoorTransform = map.sceneMode === 'indoor' && family && asset
-        ? indoorPlacementTransform(map, family, asset, placement, rotationY, entry.layer.placement?.intent)
+        ? indoorPlacementTransform(map, family, asset, placement, rotationY)
         : undefined;
       return {
         type: 'object.add',
@@ -231,16 +242,21 @@ export function compileSceneComposition(
       };
     });
     if (placementOperations.length === 0) continue;
-    operations.push(...placementOperations);
-    workingMap = applyMapOperations(workingMap, placementOperations);
-    remaining -= placementOperations.length;
-    familyCounts[entry.layer.familyId] = (familyCounts[entry.layer.familyId] ?? 0) + placementOperations.length;
-    zoneCounts[entry.zone.id] = (zoneCounts[entry.zone.id] ?? 0) + placementOperations.length;
+    const executableOperations = family
+      ? bindIndoorRoomOpenings(workingMap, family, assets, placementOperations)
+      : placementOperations;
+    const placedCount = executableOperations.filter((operation) => operation.type === 'object.add').length;
+    operations.push(...executableOperations);
+    workingMap = applyMapOperations(workingMap, executableOperations);
+    remaining -= placedCount;
+    familyCounts[entry.layer.familyId] = (familyCounts[entry.layer.familyId] ?? 0) + placedCount;
+    zoneCounts[entry.zone.id] = (zoneCounts[entry.zone.id] ?? 0) + placedCount;
   }
 
   const changedHeights = workingMap.terrain.heights.filter((height, index) => (
     Math.abs(height - (map.terrain.heights[index] ?? 0)) > 0.01
   ));
+  const indoorOccupancy = indoorOccupancyMetrics(map, workingMap);
   return {
     operations,
     metrics: {
@@ -250,11 +266,51 @@ export function compileSceneComposition(
       waterCount: Math.max(0, workingMap.waterBodies.length - map.waterBodies.length),
       terrainRelief: Math.max(...workingMap.terrain.heights) - Math.min(...workingMap.terrain.heights),
       terrainChangedCells: changedHeights.length,
+      ...indoorOccupancy,
       familyCounts,
       zoneCounts,
       unresolvedFamilyIds,
       ...(Object.keys(behaviorQuality).length > 0 ? { behaviorQuality } : {})
     }
+  };
+}
+
+function indoorOccupancyMetrics(
+  source: EditableMap,
+  result: EditableMap
+): Pick<SceneCompositionMetrics, 'indoorFloorOccupancy' | 'indoorObjectSpread'> {
+  const room = result.sceneMode === 'indoor' ? result.room : null;
+  if (!room) return {};
+  const existingIds = new Set(source.objects.map((object) => object.id));
+  const assets = new Map((result.assets ?? []).map((asset) => [asset.id, asset]));
+  const floorObjectIds = new Set(result.objects
+    .filter((object) => !existingIds.has(object.id))
+    .filter((object) => {
+      const asset = object.assetId ? assets.get(object.assetId) : undefined;
+      const semantic = asset ? `${asset.name} ${asset.prompt} ${(asset.tags ?? []).join(' ')}` : '';
+      return !isElevatedWallSemantic(semantic);
+    })
+    .map((object) => object.id));
+  const inset = room.wallThickness;
+  const roomMinX = room.position[0] - room.size[0] / 2 + inset;
+  const roomMaxX = room.position[0] + room.size[0] / 2 - inset;
+  const roomMinZ = room.position[2] - room.size[2] / 2 + inset;
+  const roomMaxZ = room.position[2] + room.size[2] / 2 - inset;
+  const usableArea = Math.max(0.01, (roomMaxX - roomMinX) * (roomMaxZ - roomMinZ));
+  const boxes = getMapObjectVisualAabbs(result).filter((box) => floorObjectIds.has(box.objectId));
+  if (boxes.length === 0) return { indoorFloorOccupancy: 0, indoorObjectSpread: 0 };
+  const occupiedArea = boxes.reduce((sum, box) => {
+    const width = Math.max(0, Math.min(roomMaxX, box.max[0]) - Math.max(roomMinX, box.min[0]));
+    const depth = Math.max(0, Math.min(roomMaxZ, box.max[2]) - Math.max(roomMinZ, box.min[2]));
+    return sum + width * depth;
+  }, 0);
+  const spreadMinX = Math.max(roomMinX, Math.min(...boxes.map((box) => box.min[0])));
+  const spreadMaxX = Math.min(roomMaxX, Math.max(...boxes.map((box) => box.max[0])));
+  const spreadMinZ = Math.max(roomMinZ, Math.min(...boxes.map((box) => box.min[2])));
+  const spreadMaxZ = Math.min(roomMaxZ, Math.max(...boxes.map((box) => box.max[2])));
+  return {
+    indoorFloorOccupancy: clamp(occupiedArea / usableArea, 0, 1),
+    indoorObjectSpread: clamp((spreadMaxX - spreadMinX) * (spreadMaxZ - spreadMinZ) / usableArea, 0, 1)
   };
 }
 
@@ -466,7 +522,20 @@ function compileAccents(
       const scale = (fittedScaleRange[0] + fittedScaleRange[1]) / 2;
       const footprint = Math.max(...assets.map((asset) => asset.footprintRadius ?? 0.5)) * scale;
       const placement = map.sceneMode === 'indoor'
-        ? indoorAnchorPlacement(map, zone.id, layer, assets[0], region, footprint, scale)
+        ? expandStructuredMapPlacement(workingMap, {
+            mode: 'layout', pattern: 'grid', intent: 'landmark',
+            assetIds: assets.map((asset) => asset.id),
+            region: { kind: 'circle', ...region },
+            density: Math.max(0.01, layer.density),
+            spacing: Math.max(1, footprint * 1.8),
+            offset: layer.placement?.offset ?? 0,
+            direction: layer.placement?.direction ?? 0,
+            facing: layer.placement?.facing ?? 'guide',
+            avoidWater: 0,
+            maxSlope: 89,
+            scaleRange: [scale, scale],
+            seed: derivedSeed(map.seed, `${zone.id}:${layer.familyId}:indoor-anchor`)
+          }, assets, 1, `composition-${zone.id}-${layer.familyId}-accent`)[0]
         : expandMapScatter(workingMap, {
             assetIds: assets.map((asset) => asset.id),
             region: { kind: 'circle', ...region },
@@ -486,7 +555,7 @@ function compileAccents(
       if (!placement) continue;
       const rotationY = libraryMetadata?.rotation === 'fixed' ? 0 : placement.rotationY;
       const indoorTransform = map.sceneMode === 'indoor' && family
-        ? indoorPlacementTransform(map, family, assets[0], placement, rotationY, layer.placement?.intent)
+        ? indoorPlacementTransform(map, family, assets[0], placement, rotationY)
         : undefined;
       const operation: MapOperation = {
         type: 'object.add',
@@ -502,7 +571,10 @@ function compileAccents(
           ...(indoorTransform ? { heightMode: 'fixed' as const } : {})
         }
       };
-      operations.push(operation);
+      const executableOperations = family
+        ? bindIndoorRoomOpenings(workingMap, family, assets, [operation])
+        : [operation];
+      operations.push(...executableOperations);
       objectCount += 1;
       const grassResidualOperations = family && shouldClearGrass(family)
         ? zone.grassLayers.map((grass): MapOperation => ({
@@ -516,36 +588,12 @@ function compileAccents(
           }))
         : [];
       operations.push(...grassResidualOperations);
-      workingMap = applyMapOperations(workingMap, [operation, ...grassResidualOperations]);
+      workingMap = applyMapOperations(workingMap, [...executableOperations, ...grassResidualOperations]);
       familyCounts[layer.familyId] = (familyCounts[layer.familyId] ?? 0) + 1;
       zoneCounts[zone.id] = (zoneCounts[zone.id] ?? 0) + 1;
     }
   }
   return operations;
-}
-
-function indoorAnchorPlacement(
-  map: EditableMap,
-  zoneId: string,
-  layer: SceneZoneLayer,
-  asset: MapAsset,
-  region: { x: number; z: number },
-  footprint: number,
-  scale: number
-): MapScatterPlacement {
-  const room = map.room;
-  const bounds = getMapBounds(map);
-  const inset = (room?.wallThickness ?? 0) + footprint;
-  return {
-    id: `composition-${zoneId}-${layer.familyId}-accent-1`,
-    assetId: asset.id,
-    name: asset.name,
-    x: clamp(region.x, bounds.minX + inset, bounds.maxX - inset),
-    y: room?.position[1] ?? 0,
-    z: clamp(region.z, bounds.minZ + inset, bounds.maxZ - inset),
-    rotationY: (layer.placement?.direction ?? 0) * Math.PI / 180,
-    scale
-  };
 }
 
 function semanticScaleRange(
@@ -588,18 +636,8 @@ function fitSemanticAssetScale(
     return clamp(Math.max(requested, semanticMinimum / majorExtent), 0.05, 40);
   }
   const room = map.room;
-  const usableHeight = Math.max(0.5, room.size[1] - room.wallThickness * 2);
-  const targetHeight = /chair|seat|pew|stool|椅|座椅|长凳/i.test(semantic)
-    ? Math.min(playerHeight * 0.64, usableHeight * 0.42)
-    : /table|desk|餐桌|书桌|课桌/i.test(semantic)
-      ? Math.min(playerHeight * 0.58, usableHeight * 0.4)
-      : /lectern|pulpit|altar|讲台|祭坛/i.test(semantic)
-        ? Math.min(playerHeight * 0.88, usableHeight * 0.58)
-        : /door|门/i.test(semantic)
-          ? Math.min(playerHeight * 1.35, usableHeight * 0.92)
-          : /cross|window|wall|十字架|窗|墙/i.test(semantic)
-            ? Math.min(playerHeight * 1.05, usableHeight * 0.72)
-            : Math.min(playerHeight, usableHeight * 0.72);
+  const dimensions = indoorSemanticDimensions(map, semantic);
+  const targetHeight = dimensions.targetHeight ?? indoorFallbackTargetHeight(map, family.sizeClass);
   const horizontalRadius = Math.max(0.1, asset.footprintRadius ?? 0.5);
   const direction = (placement?.direction ?? 0) * Math.PI / 180;
   const rotatedWidth = Math.abs(Math.cos(direction)) * width + Math.abs(Math.sin(direction)) * depth;
@@ -609,9 +647,13 @@ function fitSemanticAssetScale(
   const horizontalLimit = placement?.intent === 'wall'
     ? Math.max(0.05, (wallLength - (room.wallThickness + 0.25) * 2) / Math.max(0.1, wallExtent))
     : Math.min(room.size[0], room.size[2]) * 0.22 / horizontalRadius;
-  const targetScale = targetHeight / height;
+  const targetScale = Math.max(
+    targetHeight / height,
+    dimensions.minimumWidth / width,
+    dimensions.minimumDepth / depth
+  );
   const minimum = Math.min(targetScale * 0.82, horizontalLimit);
-  const maximum = Math.min(targetScale * 1.18, usableHeight * 0.9 / height, horizontalLimit);
+  const maximum = Math.min(targetScale * 1.18, horizontalLimit);
   return clamp(requested, Math.min(minimum, maximum), Math.max(minimum, maximum));
 }
 
@@ -620,8 +662,7 @@ function indoorPlacementTransform(
   family: SceneCompositionPlan['assetFamilies'][number],
   asset: MapAsset,
   placement: MapScatterPlacement,
-  rotationY: number,
-  intent: NonNullable<SceneZoneLayer['placement']>['intent']
+  rotationY: number
 ): {
   position: [number, number, number];
   rotation: [number, number, number];
@@ -631,15 +672,91 @@ function indoorPlacementTransform(
   const bounds = mapAssetLocalBounds(asset);
   const height = bounds.max[1] - bounds.min[1];
   const semantic = `${family.label} ${family.role} ${family.tags.join(' ')} ${family.generationBrief}`;
-  const wallMounted = intent === 'wall' || /wall-prop|wall mounted|cross|window|墙面|壁挂|十字架|窗/i.test(semantic);
-  const y = wallMounted
-    ? room.position[1] + room.size[1] * 0.56 - (bounds.min[1] + height / 2) * placement.scale
-    : room.position[1] - bounds.min[1] * placement.scale;
+  const dimensions = indoorSemanticDimensions(map, semantic);
+  const wallMounted = dimensions.wallMounted;
+  const verticalScale = Math.min(
+    placement.scale,
+    Math.max(0.05, (dimensions.targetHeight ?? height * placement.scale) / Math.max(0.01, height)),
+    Math.max(0.05, (room.size[1] - 0.02) / Math.max(0.01, height))
+  );
+  const y = dimensions.ceilingMounted
+    ? room.position[1] + room.size[1] - room.wallThickness - bounds.max[1] * verticalScale
+    : wallMounted
+    ? room.position[1] + room.size[1] * 0.56 - (bounds.min[1] + height / 2) * verticalScale
+    : room.position[1] - bounds.min[1] * verticalScale;
   return {
     position: [placement.x, y, placement.z],
     rotation: [0, rotationY, 0],
-    scale: [placement.scale, placement.scale, placement.scale]
+    scale: [placement.scale, verticalScale, placement.scale]
   };
+}
+
+/** Converts planned door/window models into real room-shell reservations and links the objects to them. */
+export function bindIndoorRoomOpenings(
+  map: EditableMap,
+  family: SceneCompositionPlan['assetFamilies'][number],
+  assets: readonly MapAsset[],
+  operations: readonly MapOperation[]
+): MapOperation[] {
+  const room = map.sceneMode === 'indoor' ? map.room : null;
+  if (!room) return [...operations];
+  const semantic = `${family.label} ${family.role} ${family.tags.join(' ')} ${family.generationBrief}`;
+  const kind = /loading door|warehouse door|\bdoor\b|房门|门扇|装卸门|仓库门/i.test(semantic)
+    ? 'door' as const
+    : /\bwindow\b|窗户|窗框|仓库窗/i.test(semantic)
+      ? 'window' as const
+      : null;
+  if (!kind) return [...operations];
+
+  const assetById = new Map(assets.map((asset) => [asset.id, asset]));
+  const openings = [...room.openings];
+  let changed = false;
+  const linked = operations.map((operation): MapOperation => {
+    if (operation.type !== 'object.add' || !operation.object.assetId || operation.object.roomOpeningId) return operation;
+    const asset = assetById.get(operation.object.assetId);
+    const transform = operation.object.transform;
+    if (!asset || !transform?.position || !transform.rotation || !transform.scale) return operation;
+    const bounds = mapAssetLocalBounds(asset);
+    const wall = nearestRoomWall(room, transform.position[0], transform.position[2]);
+    const width = Math.max(0.4, bounds.max[0] - bounds.min[0]) * Math.abs(transform.scale[0]);
+    const height = Math.max(0.4, bounds.max[1] - bounds.min[1]) * Math.abs(transform.scale[1]);
+    const wallLength = wall === 'north' || wall === 'south' ? room.size[0] : room.size[2];
+    const openingWidth = Math.min(width + 0.08, wallLength - room.wallThickness * 2);
+    const openingHeight = Math.min(height + 0.08, room.size[1] - room.wallThickness);
+    const rawOffset = wall === 'north' || wall === 'south'
+      ? transform.position[0] - room.position[0]
+      : transform.position[2] - room.position[2];
+    const offset = clamp(
+      rawOffset,
+      -wallLength / 2 + openingWidth / 2 + room.wallThickness,
+      wallLength / 2 - openingWidth / 2 - room.wallThickness
+    );
+    const visualBottom = transform.position[1] - room.position[1] + bounds.min[1] * transform.scale[1];
+    const bottom = kind === 'door'
+      ? 0
+      : clamp(visualBottom, room.wallThickness, room.size[1] - room.wallThickness - openingHeight);
+    const roomOpeningId = `${operation.object.id}-opening`;
+    openings.push({ id: roomOpeningId, kind, wall, offset, bottom, width: openingWidth, height: openingHeight });
+    changed = true;
+    return { ...operation, object: { ...operation.object, roomOpeningId } };
+  });
+  return changed
+    ? [{ type: 'room.set', room: { ...room, openings } }, ...linked]
+    : linked;
+}
+
+function nearestRoomWall(
+  room: NonNullable<EditableMap['room']>,
+  x: number,
+  z: number
+): RoomWall {
+  const distances: Array<[RoomWall, number]> = [
+    ['north', Math.abs(z - (room.position[2] - room.size[2] / 2))],
+    ['south', Math.abs(z - (room.position[2] + room.size[2] / 2))],
+    ['west', Math.abs(x - (room.position[0] - room.size[0] / 2))],
+    ['east', Math.abs(x - (room.position[0] + room.size[0] / 2))]
+  ];
+  return distances.sort((left, right) => left[1] - right[1])[0][0];
 }
 
 function mapAssetLocalBounds(asset: MapAsset): { min: [number, number, number]; max: [number, number, number] } {
@@ -681,6 +798,7 @@ function relationshipPlacementLimit(
   if (intent === 'wall') return Math.min(limit, layer.placement?.maxPerGroup ?? 10);
   if (intent === 'street-edge') return Math.min(limit, (layer.placement?.maxPerGroup ?? 4) * 3);
   if (intent === 'social' || intent === 'attached-service') return Math.min(limit, (layer.placement?.maxPerGroup ?? 6) * 8);
+  if (intent === 'paired') return Math.min(limit, (layer.placement?.maxPerGroup ?? 1) * 24);
   if (intent === 'audience') return limit;
   if (family && isNaturalRockFamily(family)) {
     return Math.min(limit, family.sizeClass === 'large' ? 4 : family.sizeClass === 'medium' ? 6 : 12);
@@ -749,8 +867,8 @@ function scatterMaxSlope(layer: SceneZoneLayer, fallback: number): number {
 }
 
 function placementOrder(mode: ScenePlacementMode): number {
-  if (mode === 'layout') return 0;
-  if (mode === 'linear') return 1;
+  if (mode === 'linear') return 0;
+  if (mode === 'layout') return 1;
   if (mode === 'field' || mode === 'patch') return 2;
   if (mode === 'attached') return 3;
   return -1;

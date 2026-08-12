@@ -1,6 +1,7 @@
 import {
   getMapBounds,
   getMapObjectAabbs,
+  getMapPlayerMetrics,
   getTerrainCliffAabbs,
   sampleTerrainHeight,
   type EditableMap,
@@ -35,6 +36,8 @@ export interface StructuredPlacementPlan {
   maxPerGroup?: number;
   arcDegrees?: number;
   aisleEvery?: number;
+  /** Extra deterministic candidates to try without increasing the requested placement count. */
+  candidateCount?: number;
   excludeRegions?: Array<{ kind: 'circle'; x: number; z: number; r: number }>;
 }
 
@@ -44,12 +47,6 @@ interface CandidateSlot {
   guideYaw: number;
   focusX: number;
   focusZ: number;
-}
-
-interface OccupiedCircle {
-  x: number;
-  z: number;
-  radius: number;
 }
 
 interface HorizontalBounds {
@@ -83,16 +80,24 @@ export function expandStructuredMapPlacement(
     ? Math.max(1, plan.targets?.length ?? 0) * Math.max(1, plan.maxPerGroup ?? 1)
     : plan.intent === 'viewpoint' ? Math.max(1, plan.maxPerGroup ?? 5) : 0;
   const count = Math.min(maxCount, Math.max(areaCount, audienceCount, relationshipMinimum));
-  const slots = candidateSlots(map, plan, count, spacing, random);
-  const occupied = existingOccupiedCircles(map);
+  const candidateCount = Math.max(count, plan.candidateCount ?? (count === 1 && plan.intent === 'landmark' ? 25 : count));
+  const slots = candidateSlots(map, plan, candidateCount, spacing, random);
+  if (candidateCount > count) {
+    slots.sort((left, right) => (
+      Math.hypot(left.x - plan.region.x, left.z - plan.region.z)
+      - Math.hypot(right.x - plan.region.x, right.z - plan.region.z)
+    ));
+  }
   const bounds = getMapBounds(map);
   const minScale = Math.max(0.1, Math.min(...plan.scaleRange));
   const maxScale = Math.max(minScale, Math.max(...plan.scaleRange));
   const placements: MapScatterPlacement[] = [];
   const occupiedBounds = existingOccupiedBounds(map);
+  const existingBoundsCount = occupiedBounds.length;
+  const elevatedWallBounds = occupiedWallBounds(map);
 
   for (const [index, slot] of slots.entries()) {
-    if (placements.length >= maxCount) break;
+    if (placements.length >= count) break;
     const asset = selectedAssets[Math.floor(random() * selectedAssets.length)];
     const scale = minScale + (maxScale - minScale) * random();
     const footprintRadius = mapAssetFootprintRadius(asset) * scale;
@@ -102,31 +107,32 @@ export function expandStructuredMapPlacement(
     let x = slot.x + (random() - 0.5) * jitter;
     let z = slot.z + (random() - 0.5) * jitter;
     const rotationY = placementYaw(plan.facing, slot, x, z, random);
-    let wallBounds = plan.intent === 'wall'
-      ? transformedHorizontalBounds(asset, scale, rotationY, x, z)
-      : null;
-    if (wallBounds) {
-      const snapped = snapToRoomWall(map, plan.direction, x, z, wallBounds);
+    let candidateBounds = transformedHorizontalBounds(asset, scale, rotationY, x, z);
+    if (plan.intent === 'wall') {
+      const snapped = snapToRoomWall(map, plan.direction, x, z, candidateBounds);
       x = snapped.x;
       z = snapped.z;
-      wallBounds = snapped.bounds;
+      candidateBounds = snapped.bounds;
     }
     if (!(map.room && (plan.intent === 'audience' || plan.intent === 'wall'))
       && Math.hypot(x - plan.region.x, z - plan.region.z) > plan.region.r) continue;
     if (plan.excludeRegions?.some((region) => Math.hypot(x - region.x, z - region.z) <= region.r)) continue;
-    if (wallBounds
-      ? wallBounds.minX < bounds.minX || wallBounds.maxX > bounds.maxX
-        || wallBounds.minZ < bounds.minZ || wallBounds.maxZ > bounds.maxZ
-      : x < bounds.minX + footprintRadius || x > bounds.maxX - footprintRadius
-        || z < bounds.minZ + footprintRadius || z > bounds.maxZ - footprintRadius) continue;
+    if (candidateBounds.minX < bounds.minX || candidateBounds.maxX > bounds.maxX
+      || candidateBounds.minZ < bounds.minZ || candidateBounds.maxZ > bounds.maxZ) continue;
     if (isNearWater(map, x, z, Math.max(0, plan.avoidWater))) continue;
     if (terrainFootprintSlopeDegrees(map, x, z, footprintRadius) > Math.min(89, Math.max(0, plan.maxSlope))) continue;
-    if (wallBounds
-      ? occupiedBounds.some((item) => horizontalBoundsOverlap(wallBounds, item, 0.05))
-        || wallOpeningOverlap(map, plan.direction, wallBounds)
-      : occupied.some((item) => (
-          Math.hypot(x - item.x, z - item.z) < Math.max(spacing * 0.9, footprintRadius + item.radius)
-        ))) continue;
+    const elevatedWallAsset = isElevatedIndoorAsset(asset);
+    const collisionClearance = plan.intent === 'audience' || plan.intent === 'paired'
+      || plan.intent === 'social' || plan.intent === 'viewpoint'
+      ? -Math.min(0.45, footprintRadius * 0.35)
+      : Math.min(0.24, spacing * 0.08);
+    const collisionBounds = plan.intent === 'audience' || plan.intent === 'paired'
+      || plan.intent === 'social' || plan.intent === 'viewpoint'
+      ? occupiedBounds.slice(0, existingBoundsCount)
+      : occupiedBounds;
+    if ((!elevatedWallAsset && collisionBounds.some((item) => horizontalBoundsOverlap(candidateBounds, item, collisionClearance)))
+      || elevatedWallAsset && elevatedWallBounds.some((item) => horizontalBoundsOverlap(candidateBounds, item, 0.05))
+      || plan.intent === 'wall' && wallOpeningOverlap(map, plan.direction, candidateBounds)) continue;
 
     placements.push({
       id: `${idPrefix}-${index + 1}`,
@@ -138,11 +144,8 @@ export function expandStructuredMapPlacement(
       rotationY,
       scale
     });
-    occupied.push({ x, z, radius: footprintRadius });
-    occupiedBounds.push(wallBounds ?? {
-      minX: x - footprintRadius, maxX: x + footprintRadius,
-      minZ: z - footprintRadius, maxZ: z + footprintRadius
-    });
+    occupiedBounds.push(candidateBounds);
+    if (elevatedWallAsset) elevatedWallBounds.push(candidateBounds);
   }
   return placements;
 }
@@ -162,6 +165,9 @@ function candidateSlots(
   const guideYaw = Math.atan2(tangentX, tangentZ);
   if (plan.mode === 'attached' && (plan.intent === 'social' || plan.intent === 'attached-service')) {
     return furnitureAttachmentSlots(plan, count, spacing);
+  }
+  if (plan.mode === 'attached' && plan.intent === 'paired') {
+    return pairedFurnitureSlots(plan, count, spacing);
   }
   if (plan.mode === 'attached') {
     return (plan.targets ?? []).slice(0, count).map((target, index) => {
@@ -289,7 +295,7 @@ function roomAudienceSlots(
     + Math.abs(lateralZ) * Math.max(1, room.size[2] - inset * 2);
   const aisleWidth = Math.max(1.2, spacing * 0.9);
   const maximumColumnsRaw = Math.max(2, Math.floor((usableWidth - aisleWidth) / spacing) + 1);
-  const maximumColumns = maximumColumnsRaw % 2 === 0 ? maximumColumnsRaw : maximumColumnsRaw - 1;
+  const maximumColumns = Math.max(2, maximumColumnsRaw % 2 === 0 ? maximumColumnsRaw : maximumColumnsRaw - 1);
   const desiredColumnsRaw = Math.max(2, Math.ceil(Math.sqrt(count)));
   const desiredColumns = desiredColumnsRaw % 2 === 0 ? desiredColumnsRaw : desiredColumnsRaw + 1;
   const columns = Math.max(2, Math.min(maximumColumns, desiredColumns));
@@ -299,7 +305,9 @@ function roomAudienceSlots(
     const column = index % columns;
     const row = Math.floor(index / columns);
     const relativeColumn = column - (columns - 1) / 2;
-    const lateral = relativeColumn * spacing + Math.sign(relativeColumn) * aisleWidth / 2;
+    const centerAisle = columns % 2 === 0 ? 0 : Math.floor(columns / 2);
+    const aisleSide = column < centerAisle ? -1 : 1;
+    const lateral = relativeColumn * spacing + aisleSide * aisleWidth / 2;
     const backward = frontGap + row * spacing;
     return {
       x: focusX - forwardX * backward + lateralX * lateral,
@@ -394,6 +402,25 @@ function furnitureAttachmentSlots(
   return slots;
 }
 
+function pairedFurnitureSlots(
+  plan: StructuredPlacementPlan,
+  count: number,
+  spacing: number
+): CandidateSlot[] {
+  return (plan.targets ?? []).slice(0, count).map((target) => {
+    const targetYaw = target.yaw ?? plan.direction * Math.PI / 180;
+    const angle = targetYaw + Math.PI;
+    const distance = Math.max(Math.abs(plan.offset), (target.footprintRadius ?? 0) + spacing * 0.58);
+    return {
+      x: target.x + Math.sin(angle) * distance,
+      z: target.z + Math.cos(angle) * distance,
+      guideYaw: targetYaw,
+      focusX: target.x,
+      focusZ: target.z
+    };
+  });
+}
+
 function roomWallSlots(
   room: NonNullable<EditableMap['room']>,
   plan: StructuredPlacementPlan,
@@ -447,18 +474,49 @@ function placementYaw(
   return random() * Math.PI * 2;
 }
 
-function existingOccupiedCircles(map: EditableMap): OccupiedCircle[] {
-  return [...getMapObjectAabbs(map), ...getTerrainCliffAabbs(map)].map((box) => ({
-    x: (box.min[0] + box.max[0]) / 2,
-    z: (box.min[2] + box.max[2]) / 2,
-    radius: Math.hypot(box.max[0] - box.min[0], box.max[2] - box.min[2]) / 2
-  }));
-}
-
 function existingOccupiedBounds(map: EditableMap): HorizontalBounds[] {
   return [...getMapObjectAabbs(map), ...getTerrainCliffAabbs(map)].map((box) => ({
     minX: box.min[0], maxX: box.max[0], minZ: box.min[2], maxZ: box.max[2]
-  }));
+  })).concat(roomDoorClearanceBounds(map));
+}
+
+function occupiedWallBounds(map: EditableMap): HorizontalBounds[] {
+  const wallAssetIds = new Set((map.assets ?? []).filter(isElevatedIndoorAsset).map((asset) => asset.id));
+  const wallObjectIds = new Set(map.objects
+    .filter((object) => object.assetId && wallAssetIds.has(object.assetId))
+    .map((object) => object.id));
+  return getMapObjectAabbs(map)
+    .filter((box) => wallObjectIds.has(box.objectId))
+    .map((box) => ({ minX: box.min[0], maxX: box.max[0], minZ: box.min[2], maxZ: box.max[2] }));
+}
+
+function isElevatedIndoorAsset(asset: MapAsset): boolean {
+  const semantic = `${asset.name} ${asset.prompt} ${(asset.tags ?? []).join(' ')}`;
+  return /wall-prop|wall-mounted|window|blackboard|chalkboard|whiteboard|notice board|menu board|wall clock|poster|painting|cross|safety sign|warning sign|fire extinguisher|ceiling light|ceiling lamp|overhead light|pendant light|industrial light|窗|黑板|白板|公告板|菜单板|挂钟|海报|挂画|十字架|安全标识|警示牌|灭火器|顶灯|吊灯|天花灯|工业照明/i.test(semantic)
+    && !/\bdoor\b|房门|门扇/i.test(semantic);
+}
+
+function roomDoorClearanceBounds(map: EditableMap): HorizontalBounds[] {
+  const room = map.room;
+  if (!room) return [];
+  const { radius, height } = getMapPlayerMetrics(map);
+  const halfWidth = radius + 0.3;
+  const depth = Math.max(1.2, height * 0.9);
+  return room.openings.filter((opening) => opening.kind === 'door').map((opening) => {
+    const along = opening.offset;
+    if (opening.wall === 'north' || opening.wall === 'south') {
+      const z = room.position[2] + (opening.wall === 'north'
+        ? -room.size[2] / 2 + room.wallThickness + depth / 2
+        : room.size[2] / 2 - room.wallThickness - depth / 2);
+      const x = room.position[0] + along;
+      return { minX: x - halfWidth, maxX: x + halfWidth, minZ: z - depth / 2, maxZ: z + depth / 2 };
+    }
+    const x = room.position[0] + (opening.wall === 'west'
+      ? -room.size[0] / 2 + room.wallThickness + depth / 2
+      : room.size[0] / 2 - room.wallThickness - depth / 2);
+    const z = room.position[2] + along;
+    return { minX: x - depth / 2, maxX: x + depth / 2, minZ: z - halfWidth, maxZ: z + halfWidth };
+  });
 }
 
 function transformedHorizontalBounds(

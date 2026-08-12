@@ -1258,10 +1258,16 @@ class MapEditor {
       await this.selectAssetLibrary((event.target as HTMLSelectElement).value);
       this.renderPanels();
     });
-    const updateAssetRange = () => {
+    const updateAssetRange = (changed: 'min' | 'max') => {
       const minInput = host.querySelector<HTMLInputElement>('#map-ai-min-new-assets');
       const maxInput = host.querySelector<HTMLInputElement>('#map-ai-max-new-assets');
-      const range = normalizeMapAiNewAssetRange(minInput?.value, maxInput?.value);
+      let minimum = Number(minInput?.value);
+      let maximum = Number(maxInput?.value);
+      if (Number.isFinite(minimum) && Number.isFinite(maximum) && minimum > maximum) {
+        if (changed === 'min') maximum = minimum;
+        else minimum = maximum;
+      }
+      const range = normalizeMapAiNewAssetRange(minimum, maximum);
       this.mapAiMinNewAssets = range.min;
       this.mapAiMaxNewAssets = range.max;
       if (minInput) {
@@ -1272,8 +1278,9 @@ class MapEditor {
     };
     for (const selector of ['#map-ai-min-new-assets', '#map-ai-max-new-assets']) {
       const input = host.querySelector<HTMLInputElement>(selector);
-      input?.addEventListener('change', updateAssetRange);
-      input?.addEventListener('blur', updateAssetRange);
+      const changed = selector.includes('min-') ? 'min' as const : 'max' as const;
+      input?.addEventListener('change', () => updateAssetRange(changed));
+      input?.addEventListener('blur', () => updateAssetRange(changed));
     }
     host.querySelector<HTMLSelectElement>('#map-ai-target-zone')?.addEventListener('change', (event) => {
       this.mapAiTargetVisualZoneId = (event.target as HTMLSelectElement).value;

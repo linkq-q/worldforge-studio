@@ -45,7 +45,7 @@ export const SCENE_PLACEMENT_MODES = ['anchor', 'field', 'patch', 'linear', 'lay
 export const SCENE_LAYOUT_PATTERNS = ['row', 'courtyard', 'radial', 'grid', 'arc'] as const;
 export const SCENE_PLACEMENT_INTENTS = [
   'landmark', 'settlement', 'street-edge', 'audience', 'social',
-  'viewpoint', 'wall', 'attached-service', 'playground'
+  'viewpoint', 'wall', 'attached-service', 'playground', 'functional-group', 'paired'
 ] as const;
 
 export type SceneZoneRole = typeof SCENE_ZONE_ROLES[number];
@@ -217,6 +217,8 @@ export interface SceneCompositionMetrics {
   waterCount: number;
   terrainRelief?: number;
   terrainChangedCells?: number;
+  indoorFloorOccupancy?: number;
+  indoorObjectSpread?: number;
   familyCounts: Record<string, number>;
   zoneCounts: Record<string, number>;
   unresolvedFamilyIds: string[];
@@ -313,6 +315,7 @@ export function enforceScenePlacementContracts(
   const zones = plan.zones.map((zone) => {
     const zoneSemantic = `${zone.label} ${zone.brief.atmosphere} ${zone.brief.hierarchy} ${prompt}`;
     const audienceFocusFamilyId = findAudienceFocusFamilyId(zone, families);
+    const relatedGroupFamilyId = findRelatedGroupFamilyId(zone, families, zoneSemantic);
     return {
       ...zone,
       layers: zone.layers.map((layer): SceneZoneLayer => {
@@ -335,13 +338,36 @@ export function enforceScenePlacementContracts(
         };
       }
       if (map.sceneMode === 'indoor' && category === 'prop'
-        && /wall-prop|wall mounted|cross|window|墙面|壁挂|十字架|窗/i.test(semantic)) {
+        && /wall-prop|wall mounted|cross|door|window|blackboard|chalkboard|whiteboard|notice board|menu board|wall clock|poster|painting|safety sign|fire extinguisher|墙面|壁挂|十字架|门|窗|黑板|白板|公告板|菜单板|挂钟|海报|挂画|安全标识|灭火器/i.test(semantic)) {
         return {
           ...layer,
           distribution: 'even' as const,
           placement: {
             ...current, mode: 'linear', pattern: 'row', intent: 'wall', facing: 'inward',
             maxPerGroup: Math.min(current.maxPerGroup ?? 1, 4)
+          }
+        };
+      }
+      if (map.sceneMode === 'indoor'
+        && /ceiling light|industrial light|overhead light|pendant light|顶灯|吊灯|工业照明/i.test(semantic)) {
+        return {
+          ...layer,
+          distribution: 'even' as const,
+          placement: {
+            ...current, mode: 'layout', pattern: 'grid', intent: 'functional-group', facing: 'guide',
+            maxPerGroup: Math.min(current.maxPerGroup ?? 12, 12)
+          }
+        };
+      }
+      if (map.sceneMode === 'indoor'
+        && /warehouse|storage|仓库|库房/i.test(zoneSemantic)
+        && /shelf|rack|crate|box|pallet|货架|箱|托盘/i.test(semantic)) {
+        return {
+          ...layer,
+          distribution: 'even' as const,
+          placement: {
+            ...current, mode: 'layout', pattern: 'grid', intent: 'functional-group', facing: 'guide',
+            maxPerGroup: Math.min(current.maxPerGroup ?? 12, 12), aisleEvery: current.aisleEvery ?? 3
           }
         };
       }
@@ -361,8 +387,17 @@ export function enforceScenePlacementContracts(
 
       const explicitCircle = /amphitheater|circular seating|ceremony|ritual|圆形剧场|环形座位|仪式/i.test(semantic);
       let intent = current.intent ?? inferFurnitureIntent(semantic, current.targetFamilyId, zoneSemantic);
+      const classroom = /classroom|school|教室|课堂|学校/i.test(zoneSemantic);
+      const dining = /restaurant|diner|cafe|cafeteria|餐厅|饭店|咖啡馆|食堂/i.test(zoneSemantic);
+      const office = /office|workplace|办公室|办公区/i.test(zoneSemantic);
+      if (relatedGroupFamilyId && /chair|seat|stool|椅|座椅/i.test(semantic)) {
+        intent = dining ? 'social' : classroom || office ? 'paired' : intent;
+      } else if ((classroom || dining || office)
+        && /desk|table|workstation|课桌|餐桌|办公桌|工位/i.test(semantic)) {
+        intent = 'functional-group';
+      }
       if ((current.pattern === 'courtyard' || current.pattern === 'radial') && !explicitCircle) intent = 'viewpoint';
-      if ((intent === 'social' || intent === 'attached-service') && !current.targetFamilyId) {
+      if ((intent === 'social' || intent === 'attached-service') && !current.targetFamilyId && !relatedGroupFamilyId) {
         intent = /road|street|path|walkway|道路|街道|步道|沿路/i.test(semantic) ? 'street-edge' : 'viewpoint';
       }
 
@@ -390,7 +425,27 @@ export function enforceScenePlacementContracts(
         distribution: 'clustered' as const,
         placement: {
           ...current, mode: 'attached', pattern: undefined, intent, facing: 'inward',
+          targetFamilyId: current.targetFamilyId ?? relatedGroupFamilyId,
           maxPerGroup: Math.min(current.maxPerGroup ?? (intent === 'social' ? 6 : 1), intent === 'social' ? 8 : 2)
+        }
+      };
+      if (intent === 'paired') return {
+        ...layer,
+        distribution: 'clustered' as const,
+        placement: {
+          ...current, mode: 'attached', pattern: undefined, intent, facing: 'guide',
+          targetFamilyId: current.targetFamilyId ?? relatedGroupFamilyId,
+          maxPerGroup: 1
+        }
+      };
+      if (intent === 'functional-group') return {
+        ...layer,
+        distribution: 'even' as const,
+        placement: {
+          ...current, mode: 'layout', pattern: 'grid', intent,
+          facing: audienceFocusFamilyId ? 'inward' : current.facing === 'random' ? 'guide' : current.facing,
+          focusFamilyId: current.focusFamilyId ?? audienceFocusFamilyId,
+          maxPerGroup: Math.min(current.maxPerGroup ?? 12, 24), aisleEvery: current.aisleEvery ?? 4
         }
       };
       if (intent === 'wall') return {
@@ -442,11 +497,30 @@ function findAudienceFocusFamilyId(
   const candidates = [...local, ...[...families.values()].filter((family) => !local.includes(family))];
   return candidates.find((family) => (
     sceneAssetCategory(family) !== 'furniture'
-    && /altar|stage|pulpit|lectern|祭坛|舞台|讲台/i.test(sceneFamilySemantic(family))
+    && /altar|stage|pulpit|lectern|blackboard|chalkboard|whiteboard|teaching surface|祭坛|舞台|讲台|黑板|白板/i.test(sceneFamilySemantic(family))
   ))?.id ?? candidates.find((family) => (
     sceneAssetCategory(family) === 'architecture'
     && /church|chapel|教堂|礼拜堂/i.test(sceneFamilySemantic(family))
   ))?.id;
+}
+
+function findRelatedGroupFamilyId(
+  zone: SceneCompositionZone,
+  families: ReadonlyMap<string, SceneAssetFamily>,
+  zoneSemantic: string
+): string | undefined {
+  const local = zone.layers
+    .map((layer) => families.get(layer.familyId))
+    .filter((family): family is SceneAssetFamily => Boolean(family));
+  const candidates = [...local, ...[...families.values()].filter((family) => !local.includes(family))];
+  const pattern = /classroom|school|教室|课堂|学校/i.test(zoneSemantic)
+    ? /student desk|classroom desk|school desk|课桌|学生桌/i
+    : /restaurant|diner|cafe|cafeteria|餐厅|饭店|咖啡馆|食堂/i.test(zoneSemantic)
+      ? /dining table|restaurant table|餐桌|饭桌/i
+      : /office|workplace|办公室|办公区/i.test(zoneSemantic)
+        ? /office desk|work desk|workstation|办公桌|工位/i
+        : null;
+  return pattern ? candidates.find((family) => pattern.test(sceneFamilySemantic(family)))?.id : undefined;
 }
 
 function familyPlacementDirection(seed: number, familyId: string): number {
@@ -912,7 +986,7 @@ function normalizeZone(
     ? terrainInput.surface as TerrainSurfaceKind
     : undefined;
   const layers = Array.isArray(input.layers)
-    ? input.layers.slice(0, 8).map((layer) => normalizeLayer(layer, familyIds, map))
+    ? input.layers.slice(0, SCENE_COMPOSITION_LIMITS.assetFamilyCount).map((layer) => normalizeLayer(layer, familyIds, map))
     : [];
   const grassLayers = Array.isArray(input.grassLayers)
     ? input.grassLayers.slice(0, SCENE_COMPOSITION_LIMITS.grassFamilyCount)
@@ -1086,7 +1160,7 @@ function normalizePlacement(
 ): SceneZoneLayer['placement'] | undefined {
   if (value === undefined || value === null) return undefined;
   const input = requireRecord(value, 'invalid_scene_placement');
-  const mode = SCENE_PLACEMENT_MODES.includes(input.mode as ScenePlacementMode)
+  let mode = SCENE_PLACEMENT_MODES.includes(input.mode as ScenePlacementMode)
     ? input.mode as ScenePlacementMode
     : null;
   if (!mode) throw new Error('invalid_scene_placement');
@@ -1101,10 +1175,9 @@ function normalizePlacement(
     : 'random';
   const targetFamilyId = cleanId(input.targetFamilyId);
   const focusFamilyId = cleanId(input.focusFamilyId);
-  if (mode === 'attached' && (!targetFamilyId || !familyIds.has(targetFamilyId))) {
-    throw new Error('invalid_scene_attachment_target');
-  }
-  if (focusFamilyId && !familyIds.has(focusFamilyId)) throw new Error('invalid_scene_focus_target');
+  if (mode === 'attached' && (!targetFamilyId || !familyIds.has(targetFamilyId))) mode = 'layout';
+  const validTargetFamilyId = targetFamilyId && familyIds.has(targetFamilyId) ? targetFamilyId : undefined;
+  const validFocusFamilyId = focusFamilyId && familyIds.has(focusFamilyId) ? focusFamilyId : undefined;
   const normalizedGuidePoints = Array.isArray(input.guidePoints)
     ? input.guidePoints.slice(0, 16).flatMap((point): Array<[number, number]> => {
       if (!Array.isArray(point) || point.length < 2) return [];
@@ -1148,8 +1221,8 @@ function normalizePlacement(
     ...(input.spacing === undefined ? {} : { spacing: clamp(finiteNumber(input.spacing, 2), 0.1, 64) }),
     offset: clamp(finiteNumber(input.offset, 0), -64, 64),
     facing,
-    ...(targetFamilyId ? { targetFamilyId } : {}),
-    ...(focusFamilyId ? { focusFamilyId } : {}),
+    ...(validTargetFamilyId ? { targetFamilyId: validTargetFamilyId } : {}),
+    ...(validFocusFamilyId ? { focusFamilyId: validFocusFamilyId } : {}),
     ...(guidePoints ? { guidePoints } : {}),
     ...(input.maxPerGroup === undefined ? {} : { maxPerGroup: Math.round(clamp(finiteNumber(input.maxPerGroup, 4), 1, 24)) }),
     ...(input.arcDegrees === undefined ? {} : { arcDegrees: clamp(finiteNumber(input.arcDegrees, 110), 20, 320) }),

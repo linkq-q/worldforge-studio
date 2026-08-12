@@ -16,7 +16,9 @@ import {
 } from './sceneComposition';
 import type { ResolvedSceneFamily } from './sceneCompositionAssets';
 import { calculateModelVisualBounds } from './modelBounds';
+import { indoorFallbackTargetHeight, indoorSemanticDimensions } from './indoorScale';
 import {
+  bindIndoorRoomOpenings,
   compileScenePlacementBehavior,
   compileZoneWater,
   isImplicitOceanZone,
@@ -48,7 +50,11 @@ export function ensureSceneCompositionOutcome(
   const operations = [...compiled.operations];
   const familyCounts = { ...compiled.metrics.familyCounts };
   const zoneCounts = { ...compiled.metrics.zoneCounts };
-  let candidate = applyMapOperations(map, operations);
+  const planningAssets = new Map((map.assets ?? []).map((asset) => [asset.id, asset]));
+  for (const resolved of resolvedFamilies) {
+    for (const asset of resolved.assets) planningAssets.set(asset.id, asset);
+  }
+  let candidate = applyMapOperations({ ...map, assets: [...planningAssets.values()] }, operations);
   const checks: SceneOutcomeCheck[] = [];
   let repairCount = 0;
 
@@ -127,13 +133,14 @@ export function ensureSceneCompositionOutcome(
     }
     operations.push(...repairs);
     candidate = applyMapOperations(candidate, repairs);
-    familyCounts[requirement.familyId!] = currentCount + repairs.length;
+    const placedCount = repairs.filter((operation) => operation.type === 'object.add').length;
+    familyCounts[requirement.familyId!] = currentCount + placedCount;
     repairCount += repairs.length;
     checks.push({
       requirementId: requirement.id,
       kind: requirement.kind,
       status: 'repaired',
-      message: `必要资产家族缺少实例，已补充 ${repairs.length} 个可编辑实例。`
+      message: `必要资产家族缺少实例，已补充 ${placedCount} 个可编辑实例。`
     });
   }
 
@@ -153,44 +160,77 @@ export function ensureSceneCompositionOutcome(
     const zone = plan.zones.find((item) => (
       item.role !== 'negative-space'
       && item.layers.some((layer) => layer.familyId === resolved.family.id)
-    ));
+    )) ?? plan.zones.find((item) => item.role !== 'negative-space');
     if (!zone) continue;
     const layers = zone.layers.filter((layer) => layer.familyId === resolved.family.id);
     const minimum = sceneAssetCategory(resolved.family) === 'facility'
       && layers.some((layer) => layer.placement?.intent === 'playground')
       ? 2
       : 1;
-    const currentCount = familyCounts[resolved.family.id] ?? 0;
-    if (currentCount >= minimum) continue;
-    const available = Math.max(0, planLimits(getMapBounds(map), map.sceneMode).objectCount - (candidate.objects.length - map.objects.length));
-    const missing = Math.min(minimum - currentCount, available);
-    const requirement: SceneIntentRequirement = {
-      id: `family-presence-${resolved.family.id}`,
-      kind: 'asset-family',
-      description: `${resolved.family.label} must be represented in the compiled scene.`,
-      targetZoneId: zone.id,
-      familyId: resolved.family.id,
-      minCount: minimum
-    };
-    const repairs = missing > 0
-      ? requiredFamilyRepairs(map, candidate, plan, resolvedFamilies, requirement, missing)
-      : [];
-    if (repairs.length > 0) {
-      operations.push(...repairs);
-      candidate = applyMapOperations(candidate, repairs);
-      familyCounts[resolved.family.id] = currentCount + repairs.length;
-      zoneCounts[zone.id] = (zoneCounts[zone.id] ?? 0) + repairs.length;
-      repairCount += repairs.length;
+    const familyMissing = Math.max(0, minimum - (familyCounts[resolved.family.id] ?? 0));
+    if (familyMissing > 0) {
+      const familyRequirement: SceneIntentRequirement = {
+        id: `family-presence-${resolved.family.id}`,
+        kind: 'asset-family',
+        description: `${resolved.family.label} must be represented in the compiled scene.`,
+        targetZoneId: zone.id,
+        familyId: resolved.family.id,
+        minCount: minimum
+      };
+      const repairs = requiredFamilyRepairs(
+        map, candidate, plan, resolvedFamilies, familyRequirement, familyMissing
+      );
+      const placedCount = repairs.filter((operation) => operation.type === 'object.add').length;
+      if (placedCount > 0) {
+        operations.push(...repairs);
+        candidate = applyMapOperations(candidate, repairs);
+        familyCounts[resolved.family.id] = (familyCounts[resolved.family.id] ?? 0) + placedCount;
+        zoneCounts[zone.id] = (zoneCounts[zone.id] ?? 0) + placedCount;
+        repairCount += repairs.length;
+      }
+      checks.push({
+        requirementId: familyRequirement.id,
+        kind: 'asset-family',
+        status: placedCount > 0 ? 'repaired' : 'warning',
+        message: placedCount > 0
+          ? `${resolved.family.label} 未进入初始布局，已补入 ${placedCount} 个可编辑实例。`
+          : `${resolved.family.label} 仍缺少可用落位空间。`
+      });
     }
-    const repairedCount = currentCount + repairs.length;
-    checks.push({
-      requirementId: requirement.id,
-      kind: 'asset-family',
-      status: repairedCount >= minimum ? 'repaired' : 'warning',
-      message: repairedCount >= minimum
-        ? `${resolved.family.label} 未进入初始布局，已补入 ${repairs.length} 个实例。`
-        : `${resolved.family.label} 仍缺少可用落位空间。`
-    });
+    const represented = new Set(candidate.objects.flatMap((object) => object.assetId ? [object.assetId] : []));
+    const missingAssets = resolved.assets.filter((asset) => !represented.has(asset.id));
+    for (const asset of missingAssets) {
+      const available = Math.max(0, planLimits(getMapBounds(map), map.sceneMode).objectCount - (candidate.objects.length - map.objects.length));
+      const requirement: SceneIntentRequirement = {
+        id: `asset-presence-${asset.id}`,
+        kind: 'asset-family',
+        description: `${resolved.family.label} variant ${asset.name} must be represented in the compiled scene.`,
+        targetZoneId: zone.id,
+        familyId: resolved.family.id,
+        minCount: 1
+      };
+      const repairs = available > 0
+        ? requiredFamilyRepairs(map, candidate, plan, [
+            ...resolvedFamilies.filter((entry) => entry.family.id !== resolved.family.id),
+            { ...resolved, assets: [asset] }
+          ], requirement, 1)
+        : [];
+      if (repairs.length > 0) {
+        operations.push(...repairs);
+        candidate = applyMapOperations(candidate, repairs);
+        familyCounts[resolved.family.id] = (familyCounts[resolved.family.id] ?? 0) + repairs.filter((operation) => operation.type === 'object.add').length;
+        zoneCounts[zone.id] = (zoneCounts[zone.id] ?? 0) + repairs.filter((operation) => operation.type === 'object.add').length;
+        repairCount += repairs.length;
+      }
+      checks.push({
+        requirementId: requirement.id,
+        kind: 'asset-family',
+        status: repairs.some((operation) => operation.type === 'object.add') ? 'repaired' : 'warning',
+        message: repairs.some((operation) => operation.type === 'object.add')
+          ? `${asset.name} 未进入初始布局，已补入一个可编辑实例。`
+          : `${asset.name} 仍缺少可用落位空间。`
+      });
+    }
   }
 
   const population = repairNaturalPopulation(map, candidate, plan, resolvedFamilies);
@@ -516,6 +556,8 @@ function indoorRequiredFamilyRepairs(
   const layer = zone?.layers.find((item) => item.familyId === resolved.family.id);
   const intent = layer?.placement?.intent;
   const { height: playerHeight } = getMapPlayerMetrics(baseMap);
+  const semantic = `${resolved.family.label} ${resolved.family.role} ${resolved.family.tags.join(' ')} ${resolved.family.generationBrief}`;
+  const dimensions = indoorSemanticDimensions(baseMap, semantic);
   const operations: MapOperation[] = [];
   let workingMap = candidate;
   let remaining = Math.min(missing, planLimits(getMapBounds(baseMap), 'indoor').objectCount);
@@ -525,13 +567,10 @@ function indoorRequiredFamilyRepairs(
     const asset = resolved.assets[stage % resolved.assets.length];
     const bounds = localAssetBounds(asset);
     const localHeight = Math.max(0.01, bounds.max[1] - bounds.min[1]);
-    const targetHeight = /chair|seat|pew|stool|椅|座椅|长凳/i.test(`${resolved.family.label} ${resolved.family.tags.join(' ')}`)
-      ? playerHeight * 0.64
-      : playerHeight;
-    const ceilingScale = Math.max(0.05, (room.size[1] - 0.02) / localHeight);
-    const direction = (layer?.placement?.direction ?? 0) * Math.PI / 180;
     const localWidth = Math.max(0.01, bounds.max[0] - bounds.min[0]);
     const localDepth = Math.max(0.01, bounds.max[2] - bounds.min[2]);
+    const targetHeight = dimensions.targetHeight ?? indoorFallbackTargetHeight(baseMap, resolved.family.sizeClass);
+    const direction = (layer?.placement?.direction ?? 0) * Math.PI / 180;
     const wallLength = Math.abs(Math.sin(direction)) > Math.abs(Math.cos(direction)) ? room.size[2] : room.size[0];
     const wallExtent = Math.abs(Math.sin(direction)) > Math.abs(Math.cos(direction))
       ? Math.abs(Math.sin(direction)) * localWidth + Math.abs(Math.cos(direction)) * localDepth
@@ -539,7 +578,12 @@ function indoorRequiredFamilyRepairs(
     const wallScale = intent === 'wall'
       ? Math.max(0.05, (wallLength - (room.wallThickness + 0.25) * 2) / wallExtent)
       : Number.POSITIVE_INFINITY;
-    const scale = Math.min(ceilingScale, wallScale, Math.max(0.05, targetHeight / localHeight) * backoff);
+    const scale = Math.min(wallScale, Math.max(
+      targetHeight / localHeight,
+      dimensions.minimumWidth / localWidth,
+      dimensions.minimumDepth / localDepth,
+      0.05
+    ) * backoff);
     const spacing = Math.max(0.55, playerHeight * 0.78 * backoff, (asset.footprintRadius ?? 0.5) * scale * 2.05);
     const placements = expandStructuredMapPlacement(workingMap, {
       mode: intent === 'wall' ? 'linear' : 'layout',
@@ -563,11 +607,23 @@ function indoorRequiredFamilyRepairs(
       seed: hashSeed(baseMap.seed, `${requirement.id}:indoor:${stage}`),
       focus: { x: room.position[0], z: room.position[2] - room.size[2] * 0.35 },
       maxPerGroup: layer?.placement?.maxPerGroup,
-      aisleEvery: layer?.placement?.aisleEvery
+      aisleEvery: layer?.placement?.aisleEvery,
+      candidateCount: 49
     }, resolved.assets, remaining, `required-${requirement.id}-indoor-${stage}`);
     const repairs = placements.map((placement): MapOperation => {
       const placedAsset = resolved.assets.find((item) => item.id === placement.assetId) ?? asset;
       const placedBounds = localAssetBounds(placedAsset);
+      const placedHeight = Math.max(0.01, placedBounds.max[1] - placedBounds.min[1]);
+      const verticalScale = Math.min(
+        placement.scale,
+        Math.max(0.05, targetHeight / placedHeight),
+        Math.max(0.05, (room.size[1] - 0.02) / placedHeight)
+      );
+      const y = dimensions.ceilingMounted
+        ? room.position[1] + room.size[1] - room.wallThickness - placedBounds.max[1] * verticalScale
+        : dimensions.wallMounted
+        ? room.position[1] + room.size[1] * 0.56 - (placedBounds.min[1] + placedHeight / 2) * verticalScale
+        : room.position[1] - placedBounds.min[1] * verticalScale;
       return {
         type: 'object.add',
         object: {
@@ -576,17 +632,19 @@ function indoorRequiredFamilyRepairs(
           assetId: placement.assetId,
           heightMode: 'fixed',
           transform: {
-            position: [placement.x, room.position[1] - placedBounds.min[1] * placement.scale, placement.z],
+            position: [placement.x, y, placement.z],
             rotation: [0, placement.rotationY, 0],
-            scale: [placement.scale, placement.scale, placement.scale]
+            scale: [placement.scale, verticalScale, placement.scale]
           }
         }
       };
     });
     if (repairs.length === 0) continue;
-    operations.push(...repairs);
-    workingMap = applyMapOperations(workingMap, repairs);
-    remaining -= repairs.length;
+    const executableRepairs = bindIndoorRoomOpenings(workingMap, resolved.family, resolved.assets, repairs);
+    const placedCount = executableRepairs.filter((operation) => operation.type === 'object.add').length;
+    operations.push(...executableRepairs);
+    workingMap = applyMapOperations(workingMap, executableRepairs);
+    remaining -= placedCount;
   }
   return operations;
 }

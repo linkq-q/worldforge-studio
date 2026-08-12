@@ -105,7 +105,7 @@ describe('indoor map contract', () => {
     ]);
 
     expect(result.objects[0]).toMatchObject({ roomOpeningId: 'door-main', heightMode: 'fixed' });
-    expect(result.objects[0].transform.position).toEqual([1.5, 0, -3.84]);
+    expect(result.objects[0].transform.position).toEqual([1.5, 0, -3.92]);
     expect(result.objects[0].transform.rotation[1]).toBe(0);
   });
 
@@ -129,7 +129,7 @@ describe('indoor map contract', () => {
     ]);
     const applied = applyMapOperations({ ...map, assets: [door] }, suggestion.operations);
     expect(applied.objects[0].roomOpeningId).toBe('door-main');
-    expect(applied.objects[0].transform.position[2]).toBeCloseTo(4.32);
+    expect(applied.objects[0].transform.position[2]).toBeCloseTo(4.41);
   });
 
   it('reports a blocked indoor route from spawn to a door', () => {

@@ -10,6 +10,7 @@ import {
   type MapObjectAabb
 } from './map';
 import { assetFootprintRadius } from './mapAssetMetadata';
+import { indoorSemanticDimensions, isCeilingMountedSemantic, isElevatedWallSemantic } from './indoorScale';
 import type { MapOperation } from './mapOperations';
 import { findSafeSpawnPosition, isSpawnPositionSafe } from './mapSpawnSafety';
 import { isPointInsideWaterBody, waterSurfaceLevelAt } from './mapWater';
@@ -19,7 +20,8 @@ export type MapLintSeverity = 'info' | 'warning' | 'error';
 export interface MapLintIssue {
   code: 'spawn.unsafe' | 'object.out-of-bounds' | 'object.off-ground' | 'object.duplicate'
     | 'object.above-ceiling' | 'object.too-small' | 'object.scale-mismatch' | 'object.overlap'
-    | 'water.exposed-terrain' | 'scene.sparse' | 'room.path-blocked' | 'asset.unplaced';
+    | 'water.exposed-terrain' | 'scene.sparse' | 'room.path-blocked' | 'asset.unplaced'
+    | 'asset.minimum-degraded';
   severity: MapLintSeverity;
   message: string;
   objectIds?: string[];
@@ -116,8 +118,9 @@ function lintObjectPlacement(
       ...(asset?.tags ?? [])
     ].filter(Boolean).join(' ');
     const mountSemantic = [asset?.name, ...(asset?.tags ?? [])].filter(Boolean).join(' ');
-    const wallMounted = Boolean(object.roomOpeningId)
-      || /wall-mounted|wall-prop|sconce|cross|window|壁挂|墙灯|十字架|窗/i.test(mountSemantic);
+    const wallMounted = Boolean(object.roomOpeningId) || isElevatedWallSemantic(mountSemantic);
+    const ceilingMounted = isCeilingMountedSemantic(semantic);
+    const elevated = wallMounted || ceilingMounted;
     if (!room && currentBounds) {
       const { height: playerHeight } = getMapPlayerMetrics(map);
       const profile = worldScaleProfileMultiplier(map.worldScaleProfile);
@@ -142,22 +145,37 @@ function lintObjectPlacement(
     if (room && currentBounds) {
       const ceilingY = room.position[1] + room.size[1];
       const currentHeight = Math.max(0.001, currentBounds.max[1] - currentBounds.min[1]);
-      const targetHeight = indoorSemanticTargetHeight(map, semantic);
-      let fit = 1;
-      if (!wallMounted && targetHeight !== null
-        && (currentHeight < targetHeight * 0.88 || currentHeight > targetHeight * 1.12)) {
-        fit = targetHeight / currentHeight;
+      const target = indoorSemanticDimensions(map, semantic);
+      const currentWidth = Math.max(0.001, currentBounds.max[0] - currentBounds.min[0]);
+      const currentDepth = Math.max(0.001, currentBounds.max[2] - currentBounds.min[2]);
+      let verticalFit = 1;
+      if (!elevated && target.targetHeight !== null
+        && (currentHeight < target.targetHeight * 0.88 || currentHeight > target.targetHeight * 1.12)) {
+        verticalFit = target.targetHeight / currentHeight;
+        scaleMismatch = true;
+      }
+      const widthFit = target.minimumWidth / currentWidth;
+      const depthFit = target.minimumDepth / currentDepth;
+      let horizontalFit = verticalFit;
+      if (!elevated && (widthFit > 1.08 || depthFit > 1.08)) {
+        horizontalFit = Math.max(horizontalFit, widthFit, depthFit);
         scaleMismatch = true;
       }
       const ceilingFit = Math.max(0.05, (room.size[1] - 0.02) / currentHeight);
-      aboveCeiling = currentBounds.max[1] > ceilingY + 0.01 || currentHeight * fit > room.size[1] - 0.02;
-      fit = Math.min(fit, ceilingFit);
-      if (Math.abs(fit - 1) > 0.001) nextScale = nextScale.map((value) => value * fit) as [number, number, number];
-      if (!wallMounted) {
-        const bottomOffset = (currentBounds.min[1] - position[1]) * fit;
+      aboveCeiling = currentBounds.max[1] > ceilingY + 0.01 || currentHeight * verticalFit > room.size[1] - 0.02;
+      verticalFit = Math.min(verticalFit, ceilingFit);
+      if (Math.abs(horizontalFit - 1) > 0.001 || Math.abs(verticalFit - 1) > 0.001) {
+        nextScale = [
+          nextScale[0] * horizontalFit,
+          nextScale[1] * verticalFit,
+          nextScale[2] * horizontalFit
+        ];
+      }
+      if (!elevated) {
+        const bottomOffset = (currentBounds.min[1] - position[1]) * verticalFit;
         nextY = floorY - bottomOffset;
       } else if (aboveCeiling) {
-        const centerOffset = ((currentBounds.min[1] + currentBounds.max[1]) / 2 - position[1]) * fit;
+        const centerOffset = ((currentBounds.min[1] + currentBounds.max[1]) / 2 - position[1]) * verticalFit;
         nextY = floorY + room.size[1] / 2 - centerOffset;
       }
     }
@@ -190,15 +208,6 @@ function lintObjectPlacement(
       objectIds: [object.id], repaired: true
     });
   }
-}
-
-function indoorSemanticTargetHeight(map: EditableMap, semantic: string): number | null {
-  const { height: playerHeight } = getMapPlayerMetrics(map);
-  const usableHeight = Math.max(0.5, (map.room?.size[1] ?? map.box.size[1]) - (map.room?.wallThickness ?? 0) * 2);
-  if (/chair|seat|pew|stool|椅|座椅|长凳/i.test(semantic)) return Math.min(playerHeight * 0.64, usableHeight * 0.42);
-  if (/table|desk|餐桌|书桌|课桌/i.test(semantic)) return Math.min(playerHeight * 0.58, usableHeight * 0.4);
-  if (/lectern|pulpit|altar|podium|讲台|祭坛/i.test(semantic)) return Math.min(playerHeight * 0.88, usableHeight * 0.58);
-  return null;
 }
 
 function lintRoomPaths(map: EditableMap, issues: MapLintIssue[]): void {

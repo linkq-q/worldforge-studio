@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import * as THREE from 'three';
-import { createEmptyMap, type MapAsset } from '../src/shared/map';
+import { createEmptyMap, createMapObject, type MapAsset } from '../src/shared/map';
 import { expandStructuredMapPlacement } from '../src/shared/mapPlacement';
 
 const buildingAsset = {
@@ -231,5 +231,43 @@ describe('structured map placement', () => {
 
     expect(placements).toHaveLength(1);
     expect(placements[0].z).toBeLessThan(-4);
+  });
+
+  it('searches nearby free slots for a singleton instead of rejecting a room after the center is occupied', () => {
+    const map = createEmptyMap('office', 'map-office-free-slot', [14, 3.2, 10], 'voxel', 'indoor', [14, 3.2, 10]);
+    map.assets = [buildingAsset];
+    const existing = createMapObject('Existing center desk', buildingAsset.id);
+    existing.id = 'existing-center';
+    map.objects = [existing];
+
+    const placements = expandStructuredMapPlacement(map, {
+      mode: 'layout', pattern: 'grid', intent: 'landmark',
+      assetIds: [buildingAsset.id], region: { kind: 'circle', x: 0, z: 0, r: 5 },
+      density: 0.01, spacing: 3, offset: 0, direction: 0, facing: 'guide',
+      avoidWater: 0, maxSlope: 89, scaleRange: [0.6, 0.6], seed: 42
+    }, [buildingAsset], 1, 'office-singleton');
+
+    expect(placements).toHaveLength(1);
+    expect(Math.hypot(placements[0].x, placements[0].z)).toBeGreaterThan(1);
+  });
+
+  it('places one paired chair behind each aligned desk target', () => {
+    const map = createEmptyMap('classroom pairs', 'map-classroom-pairs', [14, 3.2, 10], 'voxel', 'indoor', [14, 3.2, 10]);
+    const chair = { ...buildingAsset, id: 'asset-chair', name: 'Student chair', prompt: 'student chair', footprintRadius: 0.35 };
+    map.assets = [chair];
+    const targets = [{ x: -2, z: 0, yaw: Math.PI, footprintRadius: 0.6 }, { x: 2, z: 0, yaw: Math.PI, footprintRadius: 0.6 }];
+
+    const placements = expandStructuredMapPlacement(map, {
+      mode: 'attached', intent: 'paired',
+      assetIds: [chair.id], region: { kind: 'circle', x: 0, z: 0, r: 6 },
+      density: 1, spacing: 0.8, offset: 0, direction: 0, facing: 'guide',
+      targets, maxPerGroup: 1,
+      avoidWater: 0, maxSlope: 89, scaleRange: [0.35, 0.35], seed: 43
+    }, [chair], 2, 'paired-chair');
+
+    expect(placements).toHaveLength(2);
+    expect(placements[0].z).toBeGreaterThan(targets[0].z);
+    expect(placements[1].z).toBeGreaterThan(targets[1].z);
+    expect(placements.every((placement) => Math.abs(placement.rotationY - Math.PI) < 0.01)).toBe(true);
   });
 });

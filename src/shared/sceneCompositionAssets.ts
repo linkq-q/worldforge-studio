@@ -19,34 +19,54 @@ export function fitSceneAssetVariantBudget(
   minimum: number,
   maximum: number
 ): SceneCompositionPlan {
-  if (plan.assetFamilies.length === 0) return plan;
-  if (plan.assetFamilies.length > maximum) throw new Error('scene_asset_family_count_above_max');
-
-  const families = plan.assetFamilies.map((family) => ({ ...family }));
+  const safeMaximum = Math.max(0, Math.round(maximum));
+  const safeMinimum = Math.min(safeMaximum, Math.max(0, Math.round(minimum)));
+  const requiredFamilyIds = new Set(plan.intentRequirements.flatMap((requirement) => (
+    requirement.kind === 'asset-family' && requirement.familyId ? [requirement.familyId] : []
+  )));
+  const selectedIds = new Set([...plan.assetFamilies]
+    .sort((left, right) => (
+      Number(requiredFamilyIds.has(right.id)) - Number(requiredFamilyIds.has(left.id))
+      || right.priority - left.priority
+    ))
+    .slice(0, safeMaximum)
+    .map((family) => family.id));
+  const families = plan.assetFamilies
+    .filter((family) => selectedIds.has(family.id))
+    .map((family) => ({ ...family, desiredVariants: Math.max(1, family.desiredVariants) }));
+  const trimmedPlan: SceneCompositionPlan = {
+    ...plan,
+    assetFamilies: families,
+    zones: plan.zones.map((zone) => ({
+      ...zone,
+      layers: zone.layers.filter((layer) => selectedIds.has(layer.familyId))
+    })),
+    intentRequirements: plan.intentRequirements.filter((requirement) => (
+      requirement.kind !== 'asset-family' || Boolean(requirement.familyId && selectedIds.has(requirement.familyId))
+    ))
+  };
+  if (families.length === 0) return trimmedPlan;
   let total = families.reduce((sum, family) => sum + family.desiredVariants, 0);
   const byPriority = [...families].sort((left, right) => right.priority - left.priority);
 
-  while (total < minimum) {
-    let changed = false;
+  while (total < safeMinimum) {
     for (const family of byPriority) {
-      if (family.desiredVariants >= 3 || total >= minimum) continue;
+      if (total >= safeMinimum) break;
       family.desiredVariants += 1;
       total += 1;
-      changed = true;
     }
-    if (!changed) throw new Error('scene_asset_variant_count_below_min');
   }
 
-  while (total > maximum) {
+  while (total > safeMaximum) {
     const family = [...families]
       .sort((left, right) => left.priority - right.priority)
       .find((item) => item.desiredVariants > 1);
-    if (!family) throw new Error('scene_asset_variant_count_above_max');
+    if (!family) break;
     family.desiredVariants -= 1;
     total -= 1;
   }
 
-  return { ...plan, assetFamilies: families };
+  return { ...trimmedPlan, assetFamilies: families };
 }
 
 export function resolveSceneFamilies(

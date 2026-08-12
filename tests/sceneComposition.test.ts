@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createEmptyMap, sampleTerrainHeight, type MapAsset } from '../src/shared/map';
+import { createEmptyMap, getMapObjectAabbs, sampleTerrainHeight, type MapAsset } from '../src/shared/map';
 import {
   ensureMinimumSceneCoverage,
   estimateSceneZoneCoverage,
@@ -845,6 +845,88 @@ describe('scene composition contract', () => {
     ]));
   });
 
+  it('keeps every generated warehouse asset, separates floor inventory, and binds doors and windows to openings', () => {
+    const map = createEmptyMap('Warehouse', 'map-warehouse-golden', [15, 4, 10], 'voxel', 'indoor', [15, 4, 10]);
+    const inventory = [
+      ['rack', 'Warehouse storage rack', ['warehouse', 'storage rack'], 'large'],
+      ['door', 'Warehouse loading door', ['warehouse', 'loading door'], 'large'],
+      ['transport-box', 'Transport box', ['warehouse', 'transport box'], 'small'],
+      ['light', 'Industrial ceiling light', ['warehouse', 'industrial light', 'ceiling-mounted'], 'small'],
+      ['crate', 'Storage crate', ['warehouse', 'storage crate'], 'medium'],
+      ['pallet', 'Wood pallet', ['warehouse', 'wood pallet'], 'small'],
+      ['window', 'High warehouse window', ['warehouse', 'window', 'wall-prop'], 'medium'],
+      ['jack', 'Pallet jack', ['warehouse', 'pallet jack'], 'medium'],
+      ['marker', 'Aisle marker post', ['warehouse', 'aisle marker'], 'small'],
+      ['sign', 'Warehouse safety sign', ['warehouse', 'safety sign', 'wall-prop'], 'small'],
+      ['extinguisher', 'Fire extinguisher', ['warehouse', 'fire extinguisher', 'wall-prop'], 'small']
+    ] as const;
+    const assets = inventory.map(([id, name, tags, sizeClass]) => ({
+      ...asset(`asset-${id}`, name, [...tags], sizeClass, 'voxel'),
+      footprintRadius: Math.SQRT1_2,
+      colliderPlan: {
+        version: 1 as const,
+        boxes: [{ min: [-0.5, 0, -0.5] as [number, number, number], max: [0.5, 1, 0.5] as [number, number, number] }],
+        sourceMeshCount: 1, candidateCount: 1, fallbackUsed: false
+      }
+    }));
+    const input = structuredClone(planInput()) as {
+      globalBrief: { focalZoneId: string };
+      assetFamilies: Array<Record<string, unknown>>;
+      zones: Array<Record<string, unknown>>;
+      transitions: unknown[];
+      consultations: unknown[];
+      intentRequirements: unknown[];
+    };
+    input.assetFamilies = inventory.map(([id, label, tags, sizeClass]) => ({
+      id, label, role: label, tags: [...tags], identityTags: [id], sizeClass,
+      desiredVariants: 1, priority: 0.8, generationBrief: label
+    }));
+    input.zones = [{
+      id: 'warehouse-floor', label: 'Warehouse floor', role: 'primary', importance: 1,
+      region: { kind: 'circle', center: [0, 0], radius: 0.9 },
+      brief: {
+        atmosphere: 'orderly working warehouse', hierarchy: 'rack rows and staging bays',
+        openness: 0.45, transitionIntent: 'clear loading and circulation spine'
+      },
+      terrain: { elevation: 0, roughness: 0, flatness: 1 },
+      layers: inventory.map(([id]) => ({
+        familyId: id, density: 0.012, scaleRange: [1, 1], distribution: 'even', edgeFalloff: 0
+      })),
+      grassLayers: [], excludeZoneIds: []
+    }];
+    input.globalBrief.focalZoneId = 'warehouse-floor';
+    input.transitions = [];
+    input.consultations = [];
+    input.intentRequirements = [];
+    const plan = enforceScenePlacementContracts(normalizeSceneCompositionPlan(input, map), map, 'orderly warehouse');
+    expect(plan.assetFamilies.map((family) => family.id)).toEqual(inventory.map(([id]) => id));
+    const resolved = plan.assetFamilies.map((family, index) => ({ family, assets: [assets[index]], missingCount: 0 }));
+    const compiled = compileSceneComposition(map, plan, resolved);
+    const outcome = ensureSceneCompositionOutcome(map, plan, resolved, compiled);
+    const generated = applyMapOperations({ ...map, assets }, outcome.compiled.operations);
+
+    expect(outcome.checks.filter((check) => check.status === 'warning')).toEqual([]);
+    expect(new Set(generated.objects.map((object) => object.assetId))).toEqual(new Set(assets.map((item) => item.id)));
+    expect(generated.room?.openings.map((opening) => opening.kind).sort()).toEqual(['door', 'window']);
+    expect(generated.objects.filter((object) => object.roomOpeningId)).toHaveLength(2);
+    const floorIds = new Set(['asset-rack', 'asset-transport-box', 'asset-crate', 'asset-pallet', 'asset-jack', 'asset-marker']);
+    const floorObjects = generated.objects.filter((object) => floorIds.has(object.assetId ?? ''));
+    const visualBounds = new Map(getMapObjectAabbs(generated).map((bounds) => [bounds.objectId, bounds]));
+    for (let leftIndex = 0; leftIndex < floorObjects.length; leftIndex += 1) {
+      const left = visualBounds.get(floorObjects[leftIndex].id)!;
+      for (let rightIndex = leftIndex + 1; rightIndex < floorObjects.length; rightIndex += 1) {
+        const right = visualBounds.get(floorObjects[rightIndex].id)!;
+        expect(
+          left.max[0] <= right.min[0] || right.max[0] <= left.min[0]
+            || left.max[2] <= right.min[2] || right.max[2] <= left.min[2],
+          `${floorObjects[leftIndex].name} ${JSON.stringify(left)} overlaps ${floorObjects[rightIndex].name} ${JSON.stringify(right)}`
+        ).toBe(true);
+      }
+    }
+    const light = generated.objects.find((object) => object.assetId === 'asset-light')!;
+    expect(light.transform.position[1]).toBeGreaterThan(3);
+  });
+
   it('turns an explicit high-mountain prompt into a scenic rocky massif and slope habitat', () => {
     const map = createEmptyMap('High mountain', 'map-high-mountain-intent', [96, 16, 96], 'voxel');
     const input = structuredClone(planInput()) as {
@@ -1013,14 +1095,26 @@ describe('scene composition contract', () => {
     };
     const fittingMap = createEmptyMap('Classroom', 'map-fitting-blackboard', [12, 3, 8], 'voxel', 'indoor', [12, 3, 8]);
     const fittingResolved = resolveSceneFamilies(plan, fittingMap, [fittingBlackboard], 0).families;
+    const fittingCompiled = compileSceneComposition(fittingMap, plan, fittingResolved);
+    const missingBlackboard = {
+      ...fittingCompiled,
+      operations: fittingCompiled.operations.filter((operation) => operation.type !== 'object.add'),
+      metrics: {
+        ...fittingCompiled.metrics,
+        objectCount: 0,
+        familyCounts: {},
+        zoneCounts: { front: 0 }
+      }
+    };
     const fittingOutcome = ensureSceneCompositionOutcome(
-      fittingMap, plan, fittingResolved, compileSceneComposition(fittingMap, plan, fittingResolved)
+      fittingMap, plan, fittingResolved, missingBlackboard
     );
     const placed = fittingOutcome.compiled.operations.find((operation): operation is Extract<MapOperation, { type: 'object.add' }> => (
       operation.type === 'object.add' && operation.object.assetId === fittingBlackboard.id
     ));
     expect(placed).toBeDefined();
-    expect(placed?.object.transform?.scale?.[0]).toBeGreaterThan(0.8);
+    expect(placed?.object.transform?.scale?.[0]).toBeGreaterThan(0.6);
+    expect(placed?.object.transform?.position?.[1]).toBeGreaterThan(0.5);
     expect(placed?.object.transform?.position?.[2]).toBeLessThan(-3.5);
   });
 });

@@ -160,11 +160,38 @@ describe('map lint and deterministic repair', () => {
     const repairedChair = repaired.objects.find((object) => object.id === 'chair')!;
     const repairedLectern = repaired.objects.find((object) => object.id === 'lectern')!;
 
-    expect(3 * repairedChair.transform.scale[1]).toBeCloseTo(1.6 * 0.64, 2);
-    expect(repairedLectern.transform.scale[1]).toBeCloseTo(1.6 * 0.88, 2);
+    expect(3 * repairedChair.transform.scale[1]).toBeCloseTo(1.6 * 0.64 * 1.2, 2);
+    expect(repairedLectern.transform.scale[1]).toBeCloseTo(1.6 * 0.88 * 1.2, 2);
     expect(lint.issues).toEqual(expect.arrayContaining([
       expect.objectContaining({ code: 'object.scale-mismatch', repaired: true })
     ]));
+  });
+
+  it('widens implausibly thin cartoon storage without pushing its top through the ceiling', () => {
+    const narrowBookcaseModel = {
+      nodes: [{ id: 'bookcase', transform: { pos: [0, 0.9, 0] }, mesh: { type: 'box', params: { width: 0.3, height: 1.8, depth: 0.3 } } }]
+    };
+    const bookcaseAsset = {
+      ...asset,
+      id: 'bookcase',
+      name: 'Classroom bookcase',
+      tags: ['bookcase', 'furniture'],
+      modelJson: narrowBookcaseModel,
+      colliderPlan: buildModelColliderPlan(narrowBookcaseModel)
+    } satisfies MapAsset;
+    const map = createEmptyMap('room', 'stocky-bookcase-room', [10, 3, 8], 'voxel', 'indoor', [10, 3, 8]);
+    map.assets = [bookcaseAsset];
+    const bookcase = createMapObject('Bookcase', bookcaseAsset.id);
+    bookcase.id = 'bookcase';
+    map.objects = [bookcase];
+
+    const lint = lintMap(map);
+    const repaired = applyMapOperations(map, lint.repairOperations);
+    const object = repaired.objects[0];
+
+    expect(0.3 * object.transform.scale[0]).toBeGreaterThan(0.9);
+    expect(1.8 * object.transform.scale[1]).toBeLessThanOrEqual(2.98);
+    expect(object.transform.scale[0]).toBeGreaterThan(object.transform.scale[1]);
   });
 
   it('repairs a generated tree that is tiny relative to the configured character', () => {
