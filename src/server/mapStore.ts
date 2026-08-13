@@ -33,7 +33,7 @@ import {
 import { prepareStructuredWaterInPlace } from '../shared/mapWater';
 
 import { MAP_ASSET_COLLIDER_PROFILE, normalizeModelColliderPlan } from '../shared/modelBounds';
-import { assetFootprintRadius, assetSizeClass, normalizeAssetTags } from '../shared/mapAssetMetadata';
+import { assetFootprintRadius, assetSizeClass, normalizeAssetTags, normalizeMapAssetLight, type MapAssetLight } from '../shared/mapAssetMetadata';
 import {
   BUILTIN_RENDER_SCHEMES,
   createRenderScheme,
@@ -74,6 +74,7 @@ export interface GenerateAssetInput {
   modelJson: unknown;
   colliderPlan?: MapAsset['colliderPlan'];
   tags?: string[];
+  light?: MapAssetLight;
   mode?: string;
   provider?: string;
   libraryId?: string;
@@ -421,6 +422,7 @@ export class MapStore {
       name: input.name || input.prompt.slice(0, 42) || '未命名资产',
       prompt: input.prompt,
       tags: input.tags,
+      light: input.light,
       modelJson: input.modelJson,
       colliderPlan: input.colliderPlan,
       mode: input.mode ?? 'voxel',
@@ -597,6 +599,7 @@ export class MapStore {
       name: source.name,
       prompt: source.prompt,
       tags: source.tags,
+      light: source.light,
       modelJson: source.modelJson,
       colliderPlan: source.colliderPlan,
       mode: source.mode,
@@ -984,6 +987,7 @@ function normalizeAsset(input: Partial<MapAsset>): MapAsset {
     name: typeof input.name === 'string' && input.name.trim() ? input.name.trim().slice(0, 48) : '未命名资产',
     prompt: typeof input.prompt === 'string' ? input.prompt : '',
     tags: normalizeAssetTags(input.tags),
+    light: normalizeMapAssetLight(input.light),
     modelJson: input.modelJson ?? null,
     colliderPlan,
     footprintRadius,

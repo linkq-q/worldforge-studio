@@ -26,6 +26,7 @@ describe('map asset metadata', () => {
       name: 'Tagged tree',
       prompt: 'tree',
       tags: ['tree', 'vegetation'],
+      light: { kind: 'spot', color: '#80c8ff', intensity: 6, range: 14, offset: [0, 0.5, 0], direction: [0, -1, 0], coneAngleDegrees: 42, penumbra: 0.3 },
       modelJson: {
         format: 2,
         nodes: [{
@@ -39,6 +40,11 @@ describe('map asset metadata', () => {
     expect(asset.tags).toEqual(['tree', 'vegetation']);
     expect(asset.footprintRadius).toBeGreaterThanOrEqual(1);
     expect(asset.sizeClass).toBe('medium');
+    expect(asset.light).toEqual({
+      kind: 'spot', color: '#80c8ff', intensity: 6, range: 14,
+      offset: [0, 0.5, 0], direction: [0, -1, 0], coneAngleDegrees: 42, penumbra: 0.3
+    });
     expect((await store.loadAsset(asset.id)).tags).toEqual(['tree', 'vegetation']);
+    expect((await store.loadAsset(asset.id)).light?.kind).toBe('spot');
   });
 });

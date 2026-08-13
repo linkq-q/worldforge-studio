@@ -38,6 +38,7 @@ import { generateRenderSuggestion, refineRenderSuggestion } from './renderAi';
 import { MapStore, mapEditorCliManifest } from './mapStore';
 import { isCompositionEmptyMap, type SceneCompositionPlan } from '../shared/sceneComposition';
 import type { AssetLibraryMetadata } from '../shared/assetLibrary';
+import type { MapAssetLight } from '../shared/mapAssetMetadata';
 import { analyzeAssetForLibrary, pendingAssetLibraryMetadata } from './assetLibraryAi';
 import {
   decodeWorldForgeTransfer,
@@ -444,6 +445,7 @@ async function handleEditorMaps(req: Req, res: Res, store: MapStore, parts: stri
               name: request.name,
               prompt: request.prompt,
               tags: request.tags,
+              light: request.light,
               modelJson,
               mode: request.mode,
               provider: modelProvider
@@ -581,13 +583,14 @@ async function handleEditorAssets(req: Req, res: Res, store: MapStore, parts: st
       prompt?: string;
       name?: string;
       tags?: string[];
+      light?: MapAssetLight;
       mode?: ModelGenerationMode;
     }>(req);
     const prompt = body.prompt?.trim();
     if (!prompt) throw new HttpError(400, 'missing_prompt');
     const mode = normalizeModelGenerationMode(body.mode);
     const modelJson = await generateModel(prompt, { mode });
-    const asset = await store.saveAsset({ prompt, name: body.name, tags: body.tags, modelJson, mode });
+    const asset = await store.saveAsset({ prompt, name: body.name, tags: body.tags, light: body.light, modelJson, mode });
     sendJson(res, 201, { asset });
     return;
   }
@@ -662,6 +665,7 @@ async function handleEditorAssetLibraries(
       name?: string;
       prompt?: string;
       tags?: string[];
+      light?: MapAssetLight;
       modelJson?: unknown;
       mode?: string;
       provider?: ChatProvider;
@@ -671,6 +675,7 @@ async function handleEditorAssetLibraries(
       name: body.name,
       prompt: body.prompt?.trim() || body.name?.trim() || 'Imported model',
       tags: body.tags,
+      light: body.light,
       modelJson: body.modelJson,
       mode: body.mode || 'voxel'
     }, pendingAssetLibraryMetadata({ tags: body.tags }));

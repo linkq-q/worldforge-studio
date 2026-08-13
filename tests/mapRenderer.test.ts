@@ -6,7 +6,7 @@ import { applyMapOperations } from '../src/shared/mapOperations';
 import type { MapAsset } from '../src/shared/map';
 import { createGrassLayer, fillGrassLayerInPlace } from '../src/shared/mapGrass';
 import { DEFAULT_RUNTIME_GRASS_STYLE } from '../src/shared/renderPlan';
-import { MAX_VISIBLE_MAP_LOCAL_LIGHTS } from '../src/client/mapLocalLights';
+import { MAX_VISIBLE_MAP_LOCAL_LIGHTS, MAX_VISIBLE_MAP_POINT_LIGHTS } from '../src/client/mapLocalLights';
 
 beforeEach(() => {
   vi.stubGlobal('document', {
@@ -562,11 +562,12 @@ describe('terrain-only refresh', () => {
 });
 
 describe('derived local lights', () => {
-  it('keeps two fixed light slots for stable shader variants', async () => {
+  it('keeps a bounded set of real local-light slots for stable shader variants', async () => {
     const map = createEmptyMap('local lights', 'map-local-lights');
     const now = Date.now();
     const asset: MapAsset = {
       id: 'asset-lamp', name: 'lamp', prompt: 'glowing lamp',
+      light: { kind: 'point', color: '#ffd878', intensity: 5, range: 12, offset: [0, 0.4, 0] },
       modelJson: { nodes: [{ id: 'bulb', tags: [{ tag: 'emissive', value: 1 }], mesh: { type: 'box' } }] },
       colliderPlan: { version: 1, boxes: [], sourceMeshCount: 1, candidateCount: 1, fallbackUsed: false },
       mode: 'voxel', createdAt: now, updatedAt: now
@@ -586,9 +587,99 @@ describe('derived local lights', () => {
     camera.updateProjectionMatrix();
     rendered.update(0.016, camera, 100);
 
-    expect(MAX_VISIBLE_MAP_LOCAL_LIGHTS).toBe(2);
-    expect(lightRoot.children).toHaveLength(MAX_VISIBLE_MAP_LOCAL_LIGHTS);
-    expect(lightRoot.children.filter((child) => child.visible)).toHaveLength(MAX_VISIBLE_MAP_LOCAL_LIGHTS);
+    expect(MAX_VISIBLE_MAP_LOCAL_LIGHTS).toBeGreaterThan(2);
+    const realLights = lightRoot.children.filter((child) => (child as THREE.Light).isLight);
+    expect(realLights).toHaveLength(MAX_VISIBLE_MAP_POINT_LIGHTS);
+    expect(realLights.length).toBeLessThanOrEqual(MAX_VISIBLE_MAP_LOCAL_LIGHTS);
+    expect(realLights.filter((child) => child.visible)).toHaveLength(MAX_VISIBLE_MAP_POINT_LIGHTS);
+    rendered.dispose();
+  });
+
+  it('uses AI-authored light metadata without relying on fixture-name keywords', async () => {
+    const map = createEmptyMap('pendant lights', 'map-pendant-lights');
+    const now = Date.now();
+    const asset: MapAsset = {
+      id: 'asset-pendant', name: 'Fixture 07', prompt: 'interior fixture', tags: ['interior-fixture'],
+      light: { kind: 'point', color: '#7fc8ff', intensity: 6.5, range: 9, offset: [0, -0.25, 0] },
+      modelJson: { nodes: [{ id: 'shade', mesh: { type: 'box' } }] },
+      colliderPlan: { version: 1, boxes: [], sourceMeshCount: 1, candidateCount: 1, fallbackUsed: false },
+      mode: 'voxel', createdAt: now, updatedAt: now
+    };
+    map.assets = [asset];
+    map.objects = [createTestObject('pendant', asset.id)];
+
+    const rendered = await buildEditableMapGroup(map);
+    const lightRoot = rendered.group.getObjectByName('mapLocalLights') as THREE.Group;
+    const camera = new THREE.PerspectiveCamera(60, 1, 0.1, 100);
+    camera.position.set(0, 4, 8);
+    camera.lookAt(0, 0, 0);
+    camera.updateProjectionMatrix();
+    rendered.update(0.016, camera, 100);
+
+    const light = lightRoot.children.find((child) => (child as THREE.PointLight).isPointLight) as THREE.PointLight;
+    expect(light).toBeDefined();
+    expect(light.color.getHexString()).toBe('7fc8ff');
+    expect(light.intensity).toBe(6.5);
+    expect(light.distance).toBe(9);
+    rendered.dispose();
+  });
+
+  it('keeps ordinary emissive screens visual-only instead of consuming real-light slots', async () => {
+    const map = createEmptyMap('emissive screen', 'map-emissive-screen');
+    const now = Date.now();
+    const asset: MapAsset = {
+      id: 'asset-screen', name: 'Computer display', prompt: 'desktop screen', tags: ['computer', 'monitor'],
+      modelJson: { nodes: [{ id: 'screen', tags: [{ tag: 'emissive', value: 1 }], mesh: { type: 'box' } }] },
+      colliderPlan: { version: 1, boxes: [], sourceMeshCount: 1, candidateCount: 1, fallbackUsed: false },
+      mode: 'voxel', createdAt: now, updatedAt: now
+    };
+    map.assets = [asset];
+    map.objects = [createTestObject('screen', asset.id)];
+
+    const rendered = await buildEditableMapGroup(map);
+    const lightRoot = rendered.group.getObjectByName('mapLocalLights') as THREE.Group;
+
+    expect(lightRoot.children.filter((child) => (child as THREE.Light).isLight)).toHaveLength(0);
+    rendered.dispose();
+  });
+
+  it('recognizes legacy AI role tags without reading the asset name', async () => {
+    const map = createEmptyMap('legacy tagged light', 'map-legacy-tagged-light');
+    const now = Date.now();
+    const asset: MapAsset = {
+      id: 'asset-panel', name: 'Fixture 08', prompt: 'interior fixture', tags: ['light', 'ceiling', 'panel'],
+      modelJson: { nodes: [{ id: 'panel', mesh: { type: 'box' } }] },
+      colliderPlan: { version: 1, boxes: [], sourceMeshCount: 1, candidateCount: 1, fallbackUsed: false },
+      mode: 'voxel', createdAt: now, updatedAt: now
+    };
+    map.assets = [asset];
+    map.objects = [createTestObject('panel', asset.id)];
+
+    const rendered = await buildEditableMapGroup(map);
+    const lightRoot = rendered.group.getObjectByName('mapLocalLights') as THREE.Group;
+
+    expect(lightRoot.children.some((child) => (child as THREE.PointLight).isPointLight)).toBe(true);
+    rendered.dispose();
+  });
+
+  it('maps a spotlight fixture to a real Three.js spotlight and target', async () => {
+    const map = createEmptyMap('spot lights', 'map-spot-lights');
+    const now = Date.now();
+    const asset: MapAsset = {
+      id: 'asset-spot', name: '轨道射灯', prompt: 'downward track spotlight', tags: ['lighting', 'spotlight', 'ceiling-mounted'],
+      light: { kind: 'spot', color: '#ffd69a', intensity: 5, range: 12, offset: [0, -0.2, 0], direction: [0, -1, 0], coneAngleDegrees: 36, penumbra: 0.45 },
+      modelJson: { nodes: [{ id: 'shade', mesh: { type: 'box' } }] },
+      colliderPlan: { version: 1, boxes: [], sourceMeshCount: 1, candidateCount: 1, fallbackUsed: false },
+      mode: 'voxel', createdAt: now, updatedAt: now
+    };
+    map.assets = [asset];
+    map.objects = [createTestObject('spot', asset.id)];
+
+    const rendered = await buildEditableMapGroup(map);
+    const lightRoot = rendered.group.getObjectByName('mapLocalLights') as THREE.Group;
+
+    expect(lightRoot.children.some((child) => (child as THREE.SpotLight).isSpotLight)).toBe(true);
+    expect(lightRoot.getObjectByName('mapLocalLightTarget')).toBeDefined();
     rendered.dispose();
   });
 
@@ -597,6 +688,7 @@ describe('derived local lights', () => {
     const now = Date.now();
     const asset: MapAsset = {
       id: 'asset-lamp', name: 'lamp', prompt: 'glowing lamp',
+      light: { kind: 'point', color: '#ffd878', intensity: 5, range: 12, offset: [0, 0.4, 0] },
       modelJson: { nodes: [{ id: 'bulb', tags: [{ tag: 'emissive', value: 1 }], mesh: { type: 'box' } }] },
       colliderPlan: { version: 1, boxes: [], sourceMeshCount: 1, candidateCount: 1, fallbackUsed: false },
       mode: 'voxel', createdAt: now, updatedAt: now

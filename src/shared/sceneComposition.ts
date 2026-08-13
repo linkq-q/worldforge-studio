@@ -6,7 +6,7 @@ import {
   type MapLocomotion
 } from './map';
 import type { MapScatterQuality } from './mapScatter';
-import type { MapAssetSizeClass } from './mapAssetMetadata';
+import { normalizeMapAssetLight, type MapAssetLight, type MapAssetSizeClass } from './mapAssetMetadata';
 import { isCeilingMountedSemantic } from './indoorScale';
 import {
   inferGrassPreset,
@@ -193,6 +193,8 @@ export interface SceneAssetFamily {
   desiredVariants: number;
   priority: number;
   generationBrief: string;
+  /** Structured local illumination chosen by the director; emissive-only props omit it. */
+  light?: MapAssetLight;
   behavior?: SceneBehaviorProfile;
 }
 
@@ -945,6 +947,7 @@ function normalizeFamily(value: unknown): SceneAssetFamily {
     : deriveIdentityTags(tags);
   const requiredIdentityTags = identityTags.length > 0 ? identityTags : tags.slice(0, 1);
   const behavior = normalizeBehaviorProfile(input.behavior, `${label} ${role} ${tags.join(' ')}`);
+  const light = normalizeMapAssetLight(input.light);
   return {
     id: requireId(input.id, 'invalid_scene_asset_family'),
     label,
@@ -955,6 +958,7 @@ function normalizeFamily(value: unknown): SceneAssetFamily {
     desiredVariants: Math.round(clamp(finiteNumber(input.desiredVariants, 1), 1, 3)),
     priority: clamp(finiteNumber(input.priority, 0.5), 0, 1),
     generationBrief,
+    ...(light ? { light } : {}),
     ...(behavior ? { behavior } : {})
   };
 }

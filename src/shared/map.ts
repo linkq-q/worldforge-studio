@@ -13,6 +13,8 @@ import {
   assetFootprintRadius,
   assetSizeClass,
   normalizeAssetTags,
+  normalizeMapAssetLight,
+  type MapAssetLight,
   type MapAssetSizeClass
 } from './mapAssetMetadata';
 import { normalizeModelGenerationMode, type ModelGenerationMode } from './modelGenerationMode';
@@ -156,6 +158,7 @@ export interface MapAsset {
   name: string;
   prompt: string;
   tags?: string[];
+  light?: MapAssetLight;
   modelJson: unknown;
   colliderPlan: ModelColliderPlan;
   footprintRadius?: number;
@@ -1741,6 +1744,7 @@ function normalizeAsset(input: Partial<MapAsset>): MapAsset {
     name: cleanName(input.name, '未命名资产'),
     prompt: typeof input.prompt === 'string' ? input.prompt : '',
     tags: normalizeAssetTags(input.tags),
+    light: normalizeMapAssetLight(input.light),
     modelJson: input.modelJson ?? null,
     colliderPlan,
     footprintRadius,

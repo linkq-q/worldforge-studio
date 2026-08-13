@@ -6,6 +6,7 @@ import type {
   SceneZoneLayer
 } from './sceneComposition';
 import { sceneAssetCategory } from './sceneComposition';
+import type { MapAssetLight } from './mapAssetMetadata';
 
 interface IndoorAssetDemand {
   key: string;
@@ -69,7 +70,8 @@ export function completeIndoorScenePlan(
       sizeClass: demand.sizeClass,
       desiredVariants: 1,
       priority: demand.priority,
-      generationBrief: demand.generationBrief
+      generationBrief: demand.generationBrief,
+      ...indoorDemandLight(demand.tags)
     };
     families.push(family);
     familyByDemand.set(demand.key, id);
@@ -91,6 +93,17 @@ export function completeIndoorScenePlan(
   }
 
   return { ...plan, assetFamilies: families, zones };
+}
+
+function indoorDemandLight(tags: readonly string[]): { light: MapAssetLight } | Record<string, never> {
+  const tagSet = new Set(tags);
+  if (![...tagSet].some((tag) => tag === 'lighting' || tag.includes('light') || tag.includes('lamp'))) return {};
+  return {
+    light: {
+      kind: 'point', color: '#ffd8a0', intensity: 3, range: 7,
+      offset: tagSet.has('ceiling-mounted') ? [0, -0.2, 0] : [0, 0.8, 0]
+    }
+  };
 }
 
 export function indoorAssetTargetCount(
@@ -247,6 +260,11 @@ function residentialDemands(semantic: string): IndoorAssetDemand[] {
     demand('upper-cabinet', 'Upper kitchen cabinet', 'vertical household storage', ['upper-cabinet', 'kitchen-storage', 'wall-prop'], /upper cabinet|wall cabinet|吊柜/i, 'medium', 0.75, 'One compact wall-mounted kitchen cabinet with readable doors.', 'wall', undefined, 0, 2),
     demand('countertop-appliance', 'Countertop appliance group', 'everyday preparation detail', ['kettle', 'toaster', 'countertop-appliance'], /countertop appliance|kettle|toaster|台面电器|水壶|烤面包机/i, 'small', 0.7, 'One grouped countertop asset with a kettle and toaster on a flat base; no counter.', 'supported', 'kitchen-counter', 0, 1),
     demand('kitchen-daily-items', 'Kitchen daily items', 'visible lived-in countertop detail', ['dishware', 'fruit-bowl', 'kitchen-decor'], /dishware|fruit bowl|餐具|果盘/i, 'small', 0.64, 'One readable grouped countertop asset with bowls, plates and a fruit bowl; no counter.', 'supported', 'sink-counter', 0, 1),
+    demand('kitchen-runner', 'Kitchen runner rug', 'soft floor accent outside the work route', ['kitchen-runner', 'area-rug', 'kitchen-decor'], /kitchen runner|runner rug|kitchen rug|厨房地毯|厨房脚垫/i, 'large', 0.61, 'One flat washable cartoon kitchen runner with a simple readable pattern; no raised border.', 'anchor'),
+    demand('kitchen-wall-decor', 'Kitchen wall decor', 'warm visual detail on an unused wall', ['kitchen-wall-decor', 'wall-art', 'wall-prop'], /kitchen wall decor|kitchen wall art|厨房挂饰|厨房挂画/i, 'medium', 0.58, 'One shallow wall-mounted kitchen decoration, such as framed utensils or a cheerful food print.', 'wall', undefined, 180, 1),
+    demand('kitchen-spice-shelf', 'Kitchen spice shelf', 'reachable wall storage detail', ['kitchen-spice-shelf', 'wall-prop', 'kitchen-storage'], /spice shelf|spice rack|调料架|香料架/i, 'medium', 0.56, 'One shallow wall-mounted spice shelf with a few broad readable jars; no wall.', 'wall', undefined, 0, 1),
+    demand('kitchen-utensil-rack', 'Kitchen utensil rack', 'visible cooking tool detail', ['kitchen-utensil-rack', 'wall-prop', 'kitchen-decor'], /utensil rack|hanging utensils|厨具挂架|锅铲挂架/i, 'medium', 0.53, 'One shallow wall-mounted rack with several broad cartoon cooking utensils.', 'wall', undefined, 270, 1),
+    demand('kitchen-ceiling-light', 'Kitchen ceiling light', 'even task lighting', ['kitchen-ceiling-light', 'ceiling-light', 'ceiling-mounted', 'lighting'], /kitchen ceiling light|kitchen pendant|厨房顶灯|厨房吊灯/i, 'medium', 0.51, 'One compact ceiling-mounted kitchen light with a broad warm diffuser.', 'anchor', undefined, 0, 1),
     demand('kitchen-bin', 'Kitchen bin', 'daily household utility', ['waste-bin', 'kitchen-prop'], /kitchen bin|trash bin|厨房垃圾桶/i, 'medium', 0.46, 'One compact readable lidded kitchen bin.', 'anchor')
   ];
   const hasLiving = /living room|family room|客厅|起居室/i.test(semantic);

@@ -22,6 +22,21 @@ import { sampleGrassDensity } from '../src/shared/mapGrass';
 import { ensureSceneCompositionOutcome } from '../src/shared/sceneCompositionOutcome';
 
 describe('scene composition contract', () => {
+  it('preserves an AI-authored light contract on an asset family and generation gap', () => {
+    const map = createEmptyMap('Lighting contract', 'map-light-contract', [16, 4, 12], 'voxel', 'indoor', [16, 4, 12]);
+    const input = structuredClone(planInput()) as { assetFamilies: Array<Record<string, unknown>> };
+    input.assetFamilies[0].light = {
+      kind: 'spot', color: '#80c8ff', intensity: 6, range: 14,
+      offset: [0, -0.2, 0], direction: [0, -1, 0], coneAngleDegrees: 38, penumbra: 0.4
+    };
+
+    const plan = normalizeSceneCompositionPlan(input, map);
+    const resolved = resolveSceneFamilies(plan, map, [], 1);
+
+    expect(plan.assetFamilies[0].light).toMatchObject({ kind: 'spot', color: '#80c8ff', intensity: 6, range: 14 });
+    expect(resolved.gaps[0].light).toEqual(plan.assetFamilies[0].light);
+  });
+
   it('compiles director-selected terrain modifiers and surfaces as reusable operations', () => {
     const map = createEmptyMap('Cliff terraces', 'map-cliff-terraces', [96, 16, 96], 'voxel-pro');
     const input = structuredClone(planInput()) as {

@@ -25,6 +25,7 @@ import {
 import { compileSceneComposition } from '../shared/sceneCompositionCompiler';
 import { ensureSceneCompositionOutcome } from '../shared/sceneCompositionOutcome';
 import type { ModelGenerationMode } from '../shared/modelGenerationMode';
+import type { MapAssetLight } from '../shared/mapAssetMetadata';
 import { llmChat } from './modelApi';
 import { parseLlmJsonObject } from './llmJson';
 import {
@@ -49,6 +50,7 @@ export interface MapCompositionWorkflowOptions {
     name: string;
     prompt: string;
     tags: string[];
+    light?: MapAssetLight;
     mode: ModelGenerationMode;
   }) => Promise<MapAsset>;
 }
@@ -201,6 +203,7 @@ export async function runMapCompositionWorkflow(
         name: gap.name,
         prompt: gap.prompt,
         tags: gap.tags,
+        light: gap.light,
         mode: map.assetGenerationMode
       });
       if (asset.mode !== map.assetGenerationMode) throw new Error('generated_asset_mode_mismatch');

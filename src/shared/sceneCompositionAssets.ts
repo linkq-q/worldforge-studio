@@ -1,4 +1,5 @@
 import type { EditableMap, MapAsset } from './map';
+import type { MapAssetLight } from './mapAssetMetadata';
 import type { SceneAssetFamily, SceneCompositionPlan } from './sceneComposition';
 
 export interface ResolvedSceneFamily {
@@ -12,6 +13,7 @@ export interface SceneAssetGap {
   name: string;
   prompt: string;
   tags: string[];
+  light?: MapAssetLight;
 }
 
 export function fitSceneAssetVariantBudget(
@@ -110,7 +112,8 @@ export function resolveSceneFamilies(
           ? `${resolved.family.label} ${resolved.assets.length + index + 1}`
           : resolved.family.label,
         prompt: buildFamilyPrompt(resolved.family, plan.globalBrief.assetArtDirection, index),
-        tags: resolved.family.tags
+        tags: resolved.family.tags,
+        light: resolved.family.light
       });
     }
   }

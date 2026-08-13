@@ -41,7 +41,7 @@ import {
   terrainCapabilitySummary
 } from '../shared/terrainGeneration';
 import { findSafeSpawnPosition } from '../shared/mapSpawnSafety';
-import { normalizeAssetTags } from '../shared/mapAssetMetadata';
+import { normalizeAssetTags, normalizeMapAssetLight, type MapAssetLight } from '../shared/mapAssetMetadata';
 import { validateMapSuggestion } from './mapSuggestionValidation';
 import { llmChat } from './modelApi';
 import {
@@ -84,6 +84,7 @@ export interface AssetGenerationRequest {
   name: string;
   prompt: string;
   tags: string[];
+  light?: MapAssetLight;
   mode: ModelGenerationMode;
 }
 
@@ -1305,6 +1306,7 @@ function buildSystemPrompt(
       ? '这是最终规划轮次。assetRequests 必须为空；必须至少生成一项房间、地形、物体摆放或出生点操作，使用现有资产完成地图，无法使用的内容直接省略。'
       : `若场景需要新的可复用物体，在 assetRequests 中请求生成 ${assetRange.min}-${assetRange.max} 项；请求资产时不要提前编造其 assetId。`,
     'assetRequests.tags 必须使用简短英文语义标签，例如 tree、vegetation、rock、building、prop、landmark、shrub、grass、fence、bridge、door 或 window；不要把 bark、foliage 等模型内部材质标签写进资产标签。',
+    '需要真正照亮周围环境的灯具必须在 assetRequests.light 中显式声明光源：point 用于全向灯，spot 用于定向灯；填写 color、intensity(通常 1-8)、range、offset，spot 还要填写 direction、coneAngleDegrees 和 penumbra。重复灯具的 range 应保持局部，避免叠加照亮整个房间。显示器、指示灯、霓虹牌等只发光但不照明的物体不要填写 light。',
     `本地图新资产的默认生成模式是 ${map.assetGenerationMode}；缺失资产由代码使用这个模式生成，但摆放时允许复用资产库中的其他模式资产。`,
     `地图范围：X ${bounds.minX} 到 ${bounds.maxX}，Z ${bounds.minZ} 到 ${bounds.maxZ}，最大高度 ${bounds.maxY}。`,
     `本地图配额：terrain 最多 ${limits.terrainBrushCount} 笔、笔刷半径最多 ${limits.brushRadiusMax}、waters 最多 ${limits.waterCount} 个、最终物体总数最多 ${limits.objectCount} 个。`,
@@ -1321,7 +1323,7 @@ function buildSystemPrompt(
     '大量植被、岩石等重复物体必须优先使用 scatters，让代码生成坐标。scatters 每项格式：{"assetIds":["已有ID"],"region":{"kind":"circle","x":0,"z":0,"r":20},"density":0.04,"avoidWater":1,"maxSlope":30,"minSpacing":2,"scaleRange":[0.8,1.2],"seed":7,"patchSeed":99,"clusterStrength":0.6,"edgeFalloff":0.25,"spacingByAssetId":{"另一已有ID":3},"habitat":{"height":[-2,0,6,10],"slope":[0,0,20,35],"waterDistance":[0,1,5,9]}}。同一植物群落的多个 scatter 使用相同 patchSeed，让物种共享群落而不是各自形成圆团。',
     '若用户写了雾、光照、素描等氛围词，只放入 renderPromptSuggestions，不要用它改变地图。',
     '只返回一个 JSON 对象，不要 Markdown：',
-    '{"summary":"简短摘要","assetRequests":[{"name":"资产名","prompt":"独立低多边形物体描述，无地面和背景","tags":["prop"]}],"room":null,"terrainGeneration":{"preset":"hills","amplitude":5,"roughness":0.55},"terrain":[],"terrainModifiers":[],"terrainRefinement":{"erosion":0.22,"drainage":0.08,"iterations":3,"talus":46},"terrainSurfaces":[],"waters":[],"waterUpdates":[],"waterRemovals":[],"objects":[],"objectUpdates":[],"objectRemovals":[],"scatters":[],"spawn":null,"renderPromptSuggestions":[]}',
+    '{"summary":"简短摘要","assetRequests":[{"name":"资产名","prompt":"独立低多边形物体描述，无地面和背景","tags":["prop"],"light":null}],"room":null,"terrainGeneration":{"preset":"hills","amplitude":5,"roughness":0.55},"terrain":[],"terrainModifiers":[],"terrainRefinement":{"erosion":0.22,"drainage":0.08,"iterations":3,"talus":46},"terrainSurfaces":[],"waters":[],"waterUpdates":[],"waterRemovals":[],"objects":[],"objectUpdates":[],"objectRemovals":[],"scatters":[],"spawn":null,"renderPromptSuggestions":[]}',
     `已有资产：${JSON.stringify(assetLibrary)}`
   ].join('\n');
 }
@@ -1351,11 +1353,12 @@ function normalizeAssetRequests(
     const name = cleanText(input.name, '', 42);
     const prompt = cleanText(input.prompt, '', 500);
     const tags = normalizeAssetTags(input.tags) ?? [];
+    const light = normalizeMapAssetLight(input.light);
     const mode = normalizeModelGenerationMode(selectedMode);
     const key = `${name}\n${prompt}`;
     if (!name || !prompt || seen.has(key)) continue;
     seen.add(key);
-    requests.push({ name, prompt, tags, mode });
+    requests.push({ name, prompt, tags, ...(light ? { light } : {}), mode });
     if (requests.length === maxCount) break;
   }
   return requests;

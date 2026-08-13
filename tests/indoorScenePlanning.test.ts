@@ -68,6 +68,24 @@ describe('indoor scene planning', () => {
     });
   });
 
+  it('fills a kitchen inventory through readable floor, wall, storage and lighting decor', () => {
+    const map = createEmptyMap('Kitchen', 'kitchen-decor', [15, 5, 8], 'voxel', 'indoor', [15, 5, 8]);
+    const plan = completeIndoorScenePlan(
+      normalizeSceneCompositionPlan(planInput('bright compact kitchen', []), map),
+      map,
+      '明亮整洁而有生活感的小户型厨房',
+      4,
+      16
+    );
+    const familyByTag = (tag: string) => plan.assetFamilies.find((family) => family.tags.includes(tag));
+    const layers = new Map(plan.zones[0].layers.map((layer) => [layer.familyId, layer]));
+
+    expect(familyByTag('kitchen-runner')).toBeDefined();
+    expect(familyByTag('kitchen-wall-decor')).toBeDefined();
+    expect(familyByTag('kitchen-ceiling-light')).toBeDefined();
+    expect(layers.get(familyByTag('kitchen-wall-decor')!.id)?.placement).toMatchObject({ intent: 'wall' });
+  });
+
   it('binds one complete computer station to each internet-cafe desk', () => {
     const map = createEmptyMap('Internet cafe', 'internet-cafe', [18, 3.4, 12], 'voxel', 'indoor', [18, 3.4, 12]);
     const plan = completeIndoorScenePlan(

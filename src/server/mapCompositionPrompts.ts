@@ -46,6 +46,7 @@ export function buildSceneDirectorPrompt(
     indoor
       ? 'Repeated indoor furniture must be modular: generate one reusable pew, chair, desk, or row module and repeat it with placement operations. Never bundle the whole room layout or several separated rows into one generated asset.'
       : '',
+    'For every asset family that should illuminate nearby geometry, set a structured light object. Choose point for omnidirectional lamps and spot for directed fixtures. Set color, intensity (usually 1-8), range, offset, and spot direction/cone deliberately. Keep ranges local so repeated fixtures do not overexpose the whole room. Omit light for monitors, signs, indicator LEDs, decorative neon, and other emissive-only surfaces.',
     indoor
       ? `Plan the room in two passes inside this one response. First expand a breadth-first functional inventory: entrance/daylight fixtures, primary activity groups, supporting storage or service furniture, then readable decor. Aim for about ${indoorAssetTarget} useful asset families within the user's bounds; do not merely stop at the lower bound.`
       : '',
@@ -157,6 +158,7 @@ export function buildSceneDirectorPrompt(
       assetFamilies: [{
         id: 'family-id', label: 'human label', role: 'free semantic role', tags: ['broad-tag', 'specific-tag'], identityTags: ['specific-tag'],
         sizeClass: 'small|medium|large', desiredVariants: 1, priority: 0.8, generationBrief: 'single reusable asset brief',
+        light: null,
         behavior: {
           kind: 'static|solitary|pair|flock|herd|school|territorial', locomotion: 'static|ground|air|water|mixed',
           groupCount: 2, coreRatio: 0.72, outlierMinDistance: 7, altitudeRange: [3, 8], coreState: 'feed', outlierState: 'fly'

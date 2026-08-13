@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { inspectMapDerivedResults } from '../src/client/mapDerivedInspection';
+import { MAX_VISIBLE_MAP_LOCAL_LIGHTS } from '../src/client/mapLocalLights';
 import { createEmptyMap, createMapObject } from '../src/shared/map';
 import { createGrassLayer, fillGrassLayerInPlace } from '../src/shared/mapGrass';
 
@@ -21,7 +22,11 @@ describe('map derived-results inspection', () => {
 
     const result = inspectMapDerivedResults(map);
 
-    expect(result).toMatchObject({ semanticZoneCount: 1, wetShoreCount: 1, localLightVisibleLimit: 2 });
+    expect(result).toMatchObject({
+      semanticZoneCount: 1,
+      wetShoreCount: 1,
+      localLightVisibleLimit: MAX_VISIBLE_MAP_LOCAL_LIGHTS
+    });
     expect(result.grassRetreatedCells).toBeGreaterThan(0);
     expect(layer.densities).toEqual(before);
   });
