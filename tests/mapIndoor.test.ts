@@ -173,6 +173,10 @@ describe('indoor map contract', () => {
     expect(rendered.group.getObjectByName('room:ceiling')?.visible).toBe(false);
     expect(rendered.group.getObjectByName('room:south')?.visible).toBe(false);
     expect(rendered.group.getObjectByName('room:north')?.visible).toBe(true);
+    const shadowShell = rendered.group.getObjectByName('roomShadowShell') as THREE.Group;
+    expect(shadowShell.visible).toBe(true);
+    expect(shadowShell.children.length).toBeGreaterThan(0);
+    expect(shadowShell.children.every((child) => (child as THREE.Mesh).castShadow)).toBe(true);
 
     rendered.setRoomWallDisplayMode('half', camera);
     const northMeshes: THREE.Mesh[] = [];
@@ -184,6 +188,7 @@ describe('indoor map contract', () => {
     rendered.setRoomWallDisplayMode('hidden', camera);
     expect(rendered.group.getObjectByName('room:north')?.visible).toBe(false);
     expect(rendered.group.getObjectByName('room:floor')?.visible).toBe(true);
+    expect(shadowShell.visible).toBe(true);
 
     rendered.setRoomWallDisplayMode('full', camera);
     expect(rendered.group.getObjectByName('room:ceiling')?.visible).toBe(true);

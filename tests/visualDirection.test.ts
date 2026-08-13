@@ -72,6 +72,13 @@ describe('visual direction contract', () => {
     expect(plan.visualDirection?.atmosphereFx).not.toHaveProperty('windStreaks');
   });
 
+  it('keeps night as a real time of day and compiles a night light rig', () => {
+    const direction = normalizeVisualDirection({ timeOfDay: 'night' });
+
+    expect(direction.timeOfDay).toBe('night');
+    expect(compileVisualDirection(direction).lightRig.recipe).toBe('night');
+  });
+
   it('compiles distinct bounded contrast methods', () => {
     const bright = compileVisualDirection(normalizeVisualDirection({ contrastMode: 'bright-cartoon' }));
     const colored = compileVisualDirection(normalizeVisualDirection({ contrastMode: 'colored-shadow' }));

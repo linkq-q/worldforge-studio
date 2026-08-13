@@ -37,6 +37,7 @@ import type { Vec3 } from '../shared/protocol';
 import { buildMapLocalLights } from './mapLocalLights';
 import { isPointInsidePlayableArea } from '../shared/mapLayout';
 import { isPointInsideWaterBody, riverPathSamples, waterBoundaryPoints } from '../shared/mapWater';
+import type { VisualTimeOfDay } from '../shared/visualDirection';
 
 export interface RenderedMapDebugStats extends MapPrimitiveBatchStats {
   grassLayers: number;
@@ -59,6 +60,7 @@ export interface RenderedMap {
   setGrassStyle: (style: RuntimeGrassStyle) => void;
   setSandFlowStrength: (strength: number) => void;
   setRoomWallDisplayMode: (mode: RoomWallDisplayMode, camera: THREE.Camera) => void;
+  setLightingTimeOfDay: (timeOfDay: VisualTimeOfDay) => void;
   interactGrass: (position: Vec3, elapsedSeconds: number) => void;
   clearGrassInteraction: () => void;
   getDebugStats: () => RenderedMapDebugStats;
@@ -224,6 +226,7 @@ export async function buildEditableMapGroup(input: EditableMap, options: MapRend
       syncTerrainSandShader(sandFlow);
     },
     setRoomWallDisplayMode: (mode, camera) => roomShell?.setDisplayMode(mode, camera),
+    setLightingTimeOfDay: localLights.setTimeOfDay,
     interactGrass: (position, elapsedSeconds) => grass?.interact(position, elapsedSeconds),
     clearGrassInteraction: () => grass?.clearInteraction(),
     getDebugStats: () => {
@@ -270,6 +273,9 @@ function buildRoomShell(map: EditableMap): RoomShellRender | null {
   group.name = 'room';
   group.userData.isRoomShell = true;
   const surfaceGroups = new Map<RoomSurface, THREE.Group>();
+  const shadowShell = new THREE.Group();
+  shadowShell.name = 'roomShadowShell';
+  group.add(shadowShell);
   for (const surface of ROOM_SURFACES) {
     const surfaceGroup = new THREE.Group();
     surfaceGroup.name = `room:${surface}`;
@@ -290,7 +296,7 @@ function buildRoomShell(map: EditableMap): RoomShellRender | null {
     const mesh = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), material);
     mesh.position.set(...segment.center);
     mesh.scale.set(...segment.size);
-    mesh.castShadow = segment.surface !== 'floor';
+    mesh.castShadow = false;
     mesh.receiveShadow = true;
     mesh.userData.surface = segment.surface;
     mesh.userData.mapObjectId = `__room__:${segment.surface}`;
@@ -299,6 +305,17 @@ function buildRoomShell(map: EditableMap): RoomShellRender | null {
     mesh.userData.roomYMin = segment.yMin;
     mesh.userData.roomYMax = segment.yMax;
     surfaceGroups.get(segment.surface)?.add(mesh);
+    if (segment.surface !== 'floor') {
+      const shadowMaterial = new THREE.MeshBasicMaterial({ side: THREE.DoubleSide });
+      shadowMaterial.colorWrite = false;
+      shadowMaterial.depthWrite = false;
+      const shadowMesh = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), shadowMaterial);
+      shadowMesh.position.set(...segment.center);
+      shadowMesh.scale.set(...segment.size);
+      shadowMesh.castShadow = true;
+      shadowMesh.receiveShadow = false;
+      shadowShell.add(shadowMesh);
+    }
   }
 
   const setDisplayMode = (mode: RoomWallDisplayMode, camera: THREE.Camera): void => {

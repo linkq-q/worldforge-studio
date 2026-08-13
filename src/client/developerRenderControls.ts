@@ -169,6 +169,7 @@ const OPTION_LABELS: Record<string, string> = {
   backlit: '逆光',
   overcast: '阴天',
   sunset: '黄昏',
+  night: '夜间',
   soft: '柔和',
   strong: '强',
   portrait: '人像景深',

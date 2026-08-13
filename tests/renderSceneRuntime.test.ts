@@ -7,6 +7,7 @@ import {
 } from '../src/client/renderSceneRuntime';
 import { RenderRuntimeAdapter } from '../src/client/renderRuntimeAdapter';
 import { BUILTIN_RENDER_SCHEMES, createRenderScheme } from '../src/shared/renderScheme';
+import { createEmptyMap } from '../src/shared/map';
 
 const PLAIN_SCHEME = BUILTIN_RENDER_SCHEMES[0];
 /** A builtin that actually carries a `RenderPlan`, so styling is observable. */
@@ -24,7 +25,7 @@ function createTargets() {
   };
   const styleManager = { applyStyle: vi.fn(), setCartoonParams: vi.fn() };
   const hdriSky = { apply: vi.fn(async () => {}), clear: vi.fn() };
-  const rendered = { setGrassStyle: vi.fn() };
+  const rendered = { setGrassStyle: vi.fn(), setLightingTimeOfDay: vi.fn() };
   const updateLighting = vi.fn();
   const targets: RenderSchemeTargets = {
     scene: new THREE.Scene(),
@@ -81,6 +82,67 @@ describe('applyRenderScheme', () => {
     expect(hdriSky.apply).toHaveBeenCalledTimes(1);
     expect(hdriSky.clear).toHaveBeenCalledTimes(1);
     expect(updateLighting).toHaveBeenCalled();
+  });
+
+  it('uses an indoor night profile instead of the outdoor daylight path', () => {
+    const { targets, rendered } = createTargets();
+    targets.map = createEmptyMap('night room', 'night-room', [10, 3, 8], 'voxel', 'indoor', [10, 3, 8]);
+    const scheme = createRenderScheme({
+      name: 'indoor night',
+      settings: PLAIN_SCHEME.settings,
+      renderPlan: {
+        version: 2,
+        baseSchemeId: PLAIN_SCHEME.id,
+        visualDirection: {
+          version: 1,
+          contrastMode: 'bright-cartoon',
+          timeOfDay: 'night',
+          temperature: 'cool',
+          palette: {
+            sky: '#17233f', keyLight: '#9bb8e8', fillLight: '#4b628f', shadow: '#171d2d',
+            fog: '#151b2d', waterBias: '#294768', accent: '#ffd39a'
+          },
+          atmosphereFx: { masterStrength: 0.1, pollen: 0, vapor: 0, dust: 0 }
+        },
+        modules: []
+      }
+    });
+
+    applyRenderScheme(targets, scheme);
+
+    expect(rendered.setLightingTimeOfDay).toHaveBeenCalledWith('night');
+    expect(targets.sunLight.intensity).toBeLessThan(0.2);
+    expect(targets.hemisphereLight.intensity).toBeLessThan(0.1);
+    expect(targets.renderer.toneMappingExposure).toBeGreaterThan(scheme.settings.exposure);
+  });
+
+  it('treats an explicit night recipe as night even when an older visual direction says noon', () => {
+    const { targets, rendered } = createTargets();
+    targets.map = createEmptyMap('night override', 'night-override', [10, 3, 8], 'voxel', 'indoor', [10, 3, 8]);
+    const scheme = createRenderScheme({
+      name: 'night override',
+      settings: PLAIN_SCHEME.settings,
+      renderPlan: {
+        version: 2,
+        baseSchemeId: PLAIN_SCHEME.id,
+        visualDirection: {
+          version: 1,
+          contrastMode: 'bright-cartoon',
+          timeOfDay: 'noon',
+          temperature: 'cool',
+          palette: {
+            sky: '#17233f', keyLight: '#9bb8e8', fillLight: '#4b628f', shadow: '#171d2d',
+            fog: '#151b2d', waterBias: '#294768', accent: '#ffd39a'
+          },
+          atmosphereFx: { masterStrength: 0.1, pollen: 0, vapor: 0, dust: 0 }
+        },
+        modules: [{ id: 'runtime.light-rig', params: { recipe: 'night' } }]
+      }
+    });
+
+    applyRenderScheme(targets, scheme);
+
+    expect(rendered.setLightingTimeOfDay).toHaveBeenCalledWith('night');
   });
 
   it('leaves the scene unstyled when the scheme carries no render plan', () => {

@@ -236,7 +236,7 @@ function buildSystemPrompt(
     '色彩语义使用 runtime.color-grade；水体语义使用 runtime.water-style；草叶颜色、胖瘦、高度、风和地表染色使用 runtime.grass-style；树叶/树皮/石头/金属批量改材质使用 runtime.material-theme；柔光/硬光/逆光/阴天/黄昏使用 runtime.light-rig；Bloom/SSAO 使用 runtime.post-quality；发光/Fresnel/火焰/魔法光环/植被摇摆使用 runtime.effect-recipe。',
     '水面需要有明显变化时，不要只改颜色：按描述组合 waveStrength、waveSpeed、waveScale、waveDirection、waveSharpness、foamStrength、shoreFoamWidth、shoreWaveRange、shoreWaveFrequency、shoreWaveWidth、shoreWaveBreakup 与反射参数。卡通水面使用 runtime.water-style=stylized，不代表全场景使用 Cel。',
     '水色必须随场景氛围主动变化，不要总用白色或浅蓝色：可以选择青绿、松石、翡翠、深蓝、灰蓝、茶绿或夕照影响下的暖灰蓝。color、shallowColor、depthColor 要有清楚的明度层次，只有 foamColor 可以接近白色；水体 opacity 默认保持在 0.45-0.72，确保能看见水下地形。',
-    '同时输出 plan.visualDirection，作为全局视觉导演：contrastMode 只能是 bright-cartoon、colored-shadow、dramatic；timeOfDay 只能是 morning、noon、evening；temperature 只能是 cool、warm；palette 必须提供 sky、keyLight、fillLight、shadow、fog、waterBias、accent 七个 #RRGGBB 色。艳阳/高对比但没有戏剧化要求时默认 bright-cartoon，避免暗部压黑。',
+    '同时输出 plan.visualDirection，作为全局视觉导演：contrastMode 只能是 bright-cartoon、colored-shadow、dramatic；timeOfDay 只能是 morning、noon、evening、night；明确夜晚、夜景、深夜时必须使用 night；temperature 只能是 cool、warm；palette 必须提供 sky、keyLight、fillLight、shadow、fog、waterBias、accent 七个 #RRGGBB 色。艳阳/高对比但没有戏剧化要求时默认 bright-cartoon，避免暗部压黑。',
     '“柔和/柔光”默认只表示柔和灯光：选择 runtime.light-rig=soft-morning，保留清晰的中等对比度。只有用户明确说雾、朦胧、低对比、低饱和或粉彩时，才选择晨雾基础方案或 runtime.color-grade=misty/pastel。',
     '“艳阳/烈日/高对比”应通过暖色主光、偏冷环境补光和清晰色彩倾向实现，不得把暗部压成黑块；使用 runtime.light-rig=hard-day，并让 color-grade 保持中等对比和可读暗部。',
     '雾优先使用 atmosphere.fog.visibilityDistance（米），不要猜底层 density：薄雾 240-450，普通雾 120-220，浓雾 40-90；“清晨薄雾”不得低于 260。',

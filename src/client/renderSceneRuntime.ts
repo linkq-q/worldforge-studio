@@ -9,6 +9,7 @@ import type { RenderedMap } from './mapRenderer';
 import type { Vec3 } from '../shared/protocol';
 import { DEFAULT_SUN_POSITION, type EditableMap } from '../shared/map';
 import type { RenderScheme } from '../shared/renderScheme';
+import type { VisualTimeOfDay } from '../shared/visualDirection';
 import { mixHexColors } from '../shared/colorDirector';
 import { compileAtmosphereFx } from '../shared/atmosphereFx';
 import {
@@ -52,7 +53,7 @@ export interface RenderSchemeTargets {
     | 'applyScopedCapabilities'
   >;
   hdriSky: Pick<HdriSkyController, 'apply' | 'clear'>;
-  rendered: Pick<RenderedMap, 'setGrassStyle'> | null;
+  rendered: Pick<RenderedMap, 'setGrassStyle' | 'setLightingTimeOfDay'> | null;
   map?: EditableMap | null;
   updateLighting(): void;
 }
@@ -260,7 +261,7 @@ export function applyRenderScheme(targets: RenderSchemeTargets, scheme: RenderSc
     hemisphereLight.intensity = 1.6;
     sunLight.color.set(0xfff0ce);
     sunLight.intensity = 2.5;
-    configureRendererOutput(renderer);
+    configureRendererOutput(renderer, applySceneLightingContext(targets, 'noon', 1));
     adapter.applyColorGrade({ recipe: 'neutral' });
     adapter.applyPostQuality({ bloom: 'off', ssao: 'off', depthOfField: 'off' });
     adapter.applyDistanceFog('#111719', 0);
@@ -284,7 +285,6 @@ export function applyRenderScheme(targets: RenderSchemeTargets, scheme: RenderSc
   hemisphereLight.intensity = settings.hemisphereIntensity;
   sunLight.color.set(settings.sunColor);
   sunLight.intensity = settings.sunIntensity;
-  configureRendererOutput(renderer, settings.exposure);
 
   const runtimeStyle = plan ? compileRuntimeStyle(plan) : { mode: 'pbr' as const, cartoon: {} };
   styleManager.applyStyle({ renderMode: runtimeStyle.mode, cartoon: runtimeStyle.cartoon });
@@ -298,6 +298,8 @@ export function applyRenderScheme(targets: RenderSchemeTargets, scheme: RenderSc
     plan ? compileRuntimePostQuality(plan) : { bloom: 'off', ssao: 'off', depthOfField: 'off' }
   );
   if (plan) applyLightRig(compileRuntimeLightRig(plan), sunLight, hemisphereLight, settings);
+  const timeOfDay = renderTimeOfDay(plan);
+  configureRendererOutput(renderer, applySceneLightingContext(targets, timeOfDay, settings.exposure));
   targets.rendered?.setGrassStyle(grassStyleWithSharedWind(
     plan ? compileRuntimeGrassStyle(plan) : DEFAULT_RUNTIME_GRASS_STYLE,
     targets.map,
@@ -397,7 +399,8 @@ function applyLightRig(
     'hard-day': { key: 1.18, fill: 0.92, sun: '#fff0cf', sky: '#d9efff', ground: '#657266', softness: 0.3 },
     backlit: { key: 1.18, fill: 0.76, sun: '#ffd5a1', sky: '#dbe9f1', ground: '#3d4347', softness: 0.42 },
     overcast: { key: 0.36, fill: 1.28, sun: '#e8eef0', sky: '#d9e2e4', ground: '#59605d', softness: 1 },
-    sunset: { key: 1.08, fill: 0.72, sun: '#ff9c5a', sky: '#c99691', ground: '#40373d', softness: 0.72 }
+    sunset: { key: 1.08, fill: 0.72, sun: '#ff9c5a', sky: '#c99691', ground: '#40373d', softness: 0.72 },
+    night: { key: 0.035, fill: 0.1, sun: '#9bb8e8', sky: '#52678f', ground: '#161b29', softness: 0.88 }
   };
   const recipe = recipes[rig.recipe];
   const strength = rig.strength ?? 1;
@@ -412,4 +415,22 @@ function applyLightRig(
   hemisphere.groundColor.set(recipe.ground);
   sun.shadow.radius = 1 + (rig.shadowSoftness ?? recipe.softness) * 4;
   sun.shadow.needsUpdate = true;
+}
+
+function renderTimeOfDay(plan: RenderScheme['renderPlan']): VisualTimeOfDay {
+  if (plan && compileRuntimeLightRig(plan).recipe === 'night') return 'night';
+  if (plan?.visualDirection) return plan.visualDirection.timeOfDay;
+  return 'noon';
+}
+
+function applySceneLightingContext(
+  targets: RenderSchemeTargets,
+  timeOfDay: VisualTimeOfDay,
+  exposure: number
+): number {
+  targets.rendered?.setLightingTimeOfDay(timeOfDay);
+  if (targets.map?.sceneMode !== 'indoor') return exposure;
+  targets.hemisphereLight.intensity *= timeOfDay === 'night' ? 0.28 : timeOfDay === 'evening' ? 0.34 : 0.42;
+  const exposureScale = timeOfDay === 'night' ? 1.35 : timeOfDay === 'evening' ? 1.18 : 1.08;
+  return THREE.MathUtils.clamp(exposure * exposureScale, 0.05, 3);
 }

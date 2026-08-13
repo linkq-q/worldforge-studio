@@ -225,7 +225,7 @@ export interface RuntimeMaterialTheme {
 }
 
 export interface RuntimeLightRig {
-  recipe: 'neutral' | 'soft-morning' | 'hard-day' | 'backlit' | 'overcast' | 'sunset';
+  recipe: 'neutral' | 'soft-morning' | 'hard-day' | 'backlit' | 'overcast' | 'sunset' | 'night';
   strength?: number;
   warmth?: number;
   shadowSoftness?: number;
@@ -489,7 +489,7 @@ export const RENDER_CAPABILITIES: readonly RenderCapability[] = [
     params: {
       recipe: {
         type: 'enum',
-        values: ['neutral', 'soft-morning', 'hard-day', 'backlit', 'overcast', 'sunset'],
+        values: ['neutral', 'soft-morning', 'hard-day', 'backlit', 'overcast', 'sunset', 'night'],
         default: 'neutral'
       },
       strength: { type: 'number', min: 0.25, max: 2, default: 1 },
@@ -846,7 +846,7 @@ export function compileRuntimeLightRig(plan: RenderPlan): RuntimeLightRig {
   const params = plan.modules.find((item) => item.id === 'runtime.light-rig')?.params ?? {};
   const directed = plan.visualDirection ? compileVisualDirection(plan.visualDirection).lightRig : undefined;
   return {
-    recipe: enumValue(params.recipe, ['neutral', 'soft-morning', 'hard-day', 'backlit', 'overcast', 'sunset'], directed?.recipe ?? 'neutral'),
+    recipe: enumValue(params.recipe, ['neutral', 'soft-morning', 'hard-day', 'backlit', 'overcast', 'sunset', 'night'], directed?.recipe ?? 'neutral'),
     strength: numericValue(params.strength) ?? directed?.strength,
     warmth: numericValue(params.warmth) ?? directed?.warmth,
     shadowSoftness: numericValue(params.shadowSoftness) ?? directed?.shadowSoftness

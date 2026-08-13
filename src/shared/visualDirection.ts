@@ -1,7 +1,7 @@
 export const VISUAL_DIRECTION_VERSION = 1 as const;
 
 export const CONTRAST_MODES = ['bright-cartoon', 'colored-shadow', 'dramatic'] as const;
-export const VISUAL_TIMES_OF_DAY = ['morning', 'noon', 'evening'] as const;
+export const VISUAL_TIMES_OF_DAY = ['morning', 'noon', 'evening', 'night'] as const;
 export const VISUAL_TEMPERATURES = ['cool', 'warm'] as const;
 export const VISUAL_ZONE_TAGS = ['grass', 'forest', 'water', 'lowland', 'dry', 'sand', 'settlement', 'rocky'] as const;
 
@@ -67,7 +67,7 @@ export interface MapVisualSemantics {
 export interface CompiledVisualDirection {
   contrastMode: ContrastMode;
   lightRig: {
-    recipe: 'hard-day' | 'soft-morning' | 'backlit' | 'sunset';
+    recipe: 'hard-day' | 'soft-morning' | 'backlit' | 'sunset' | 'night';
     strength: number;
     warmth: number;
     shadowSoftness: number;
@@ -174,11 +174,18 @@ export function compileVisualDirection(input: VisualDirection): CompiledVisualDi
     ? 'soft-morning'
     : direction.timeOfDay === 'evening'
       ? 'sunset'
-      : 'hard-day';
+      : direction.timeOfDay === 'night'
+        ? 'night'
+        : 'hard-day';
   if (mode === 'dramatic') {
     return {
       contrastMode: mode,
-      lightRig: { recipe: direction.timeOfDay === 'evening' ? 'sunset' : 'backlit', strength: 1.08, warmth: temperature, shadowSoftness: 0.2 },
+      lightRig: {
+        recipe: direction.timeOfDay === 'night' ? 'night' : direction.timeOfDay === 'evening' ? 'sunset' : 'backlit',
+        strength: 1.08,
+        warmth: temperature,
+        shadowSoftness: 0.2
+      },
       colorGrade: { contrast: 1.18, saturation: 1.02, shadowLift: 0.025, temperature, tint: direction.palette.accent },
       surfaceShadowFloor: 0.24,
       palette: direction.palette,

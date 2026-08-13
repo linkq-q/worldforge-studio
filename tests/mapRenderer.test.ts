@@ -562,6 +562,46 @@ describe('terrain-only refresh', () => {
 });
 
 describe('derived local lights', () => {
+  it('dims window light and raises practical lights automatically at night indoors', async () => {
+    const map = createEmptyMap('night room', 'map-night-room', [10, 3, 8], 'voxel', 'indoor', [10, 3, 8]);
+    map.room!.openings = [{
+      id: 'window-main', kind: 'window', wall: 'north', offset: 0, bottom: 1, width: 2.4, height: 1.4
+    }];
+    const now = Date.now();
+    const asset: MapAsset = {
+      id: 'asset-room-lamp', name: 'room lamp', prompt: 'warm room lamp',
+      light: { kind: 'point', color: '#ffd878', intensity: 5, range: 10, offset: [0, 1.4, 0] },
+      modelJson: { nodes: [{ id: 'bulb', mesh: { type: 'box' } }] },
+      colliderPlan: { version: 1, boxes: [], sourceMeshCount: 1, candidateCount: 1, fallbackUsed: false },
+      mode: 'voxel', createdAt: now, updatedAt: now
+    };
+    map.assets = [asset];
+    map.objects = [createTestObject('room-lamp', asset.id)];
+
+    const rendered = await buildEditableMapGroup(map);
+    const camera = new THREE.PerspectiveCamera(60, 1, 0.1, 100);
+    camera.position.set(0, 4, 8);
+    camera.lookAt(0, 1, 0);
+    camera.updateProjectionMatrix();
+    const lightRoot = rendered.group.getObjectByName('mapLocalLights') as THREE.Group;
+    const practical = lightRoot.children.find((child) => (child as THREE.PointLight).isPointLight) as THREE.PointLight;
+    const windowLight = lightRoot.getObjectByName('mapWindowLight') as THREE.SpotLight;
+
+    rendered.setLightingTimeOfDay('noon');
+    rendered.update(0.016, camera, 100);
+    const noonPractical = practical.intensity;
+    const noonWindow = windowLight.intensity;
+    rendered.setLightingTimeOfDay('night');
+    rendered.update(0.016, camera, 100);
+
+    expect(practical.intensity).toBeGreaterThan(noonPractical);
+    expect(practical.intensity).toBeGreaterThan(asset.light!.intensity);
+    expect(windowLight.intensity).toBeLessThan(noonWindow * 0.2);
+    expect(windowLight.position.z).toBeLessThan(map.room!.position[2]);
+    expect(windowLight.target.position.z).toBeGreaterThan(0);
+    rendered.dispose();
+  });
+
   it('keeps a bounded set of real local-light slots for stable shader variants', async () => {
     const map = createEmptyMap('local lights', 'map-local-lights');
     const now = Date.now();
