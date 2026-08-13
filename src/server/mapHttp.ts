@@ -426,20 +426,19 @@ async function handleEditorMaps(req: Req, res: Res, store: MapStore, parts: stri
           baseTerrainOnly: parts[4] === 'refine' && body.baseTerrainOnly === true,
           approvedCompositionPlan: body.approvedCompositionPlan,
           onProgress,
-          createAsset: async (request) => {
+          createAsset: async (request, report) => {
             const modelJson = await generateMapAssetWithRetry(request.name, () => generateModel(request.prompt, {
                 mode: request.mode,
                 providers: [modelProvider],
                 signal: controller.signal,
-                onStage: (stage) => onProgress?.({
-                  phase: 'generating-asset',
-                  label: `生成资产：${request.name}`,
-                  detail: stage.stage
-                })
+                onStage: (stage) => report({ status: 'running', detail: stage.stage })
               }), {
               attempts: 3,
               signal: controller.signal,
-              onProgress
+              onProgress: (event) => report({
+                status: event.phase === 'asset-retrying' ? 'retrying' : 'running',
+                detail: event.detail ?? event.label
+              })
             });
             return store.saveAsset({
               name: request.name,

@@ -26,6 +26,7 @@ import { compileSceneComposition } from '../shared/sceneCompositionCompiler';
 import { ensureSceneCompositionOutcome } from '../shared/sceneCompositionOutcome';
 import type { ModelGenerationMode } from '../shared/modelGenerationMode';
 import type { MapAssetLight } from '../shared/mapAssetMetadata';
+import { runAssetGenerationPool, type AssetTaskReporter } from './assetGenerationPool';
 import { llmChat } from './modelApi';
 import { parseLlmJsonObject } from './llmJson';
 import {
@@ -52,7 +53,7 @@ export interface MapCompositionWorkflowOptions {
     tags: string[];
     light?: MapAssetLight;
     mode: ModelGenerationMode;
-  }) => Promise<MapAsset>;
+  }, report: AssetTaskReporter) => Promise<MapAsset>;
 }
 export type MapCompositionPlanningOptions = Omit<MapCompositionWorkflowOptions, 'createAsset' | 'approvedCompositionPlan'>;
 export interface MapCompositionWorkflowResult {
@@ -189,15 +190,7 @@ export async function runMapCompositionWorkflow(
     assetRange.max,
     assetRange.min
   );
-  const generated: Array<{ familyId: string; asset: MapAsset }> = [];
-  for (const [index, gap] of initialResolution.gaps.entries()) {
-    options.signal?.throwIfAborted();
-    options.onProgress?.({
-      phase: 'generating-asset',
-      label: `生成必要资产 ${index + 1}/${initialResolution.gaps.length}：${gap.name}`,
-      current: index + 1,
-      total: initialResolution.gaps.length
-    });
+  const generatedResults = await runAssetGenerationPool(initialResolution.gaps, async (gap, _index, report) => {
     try {
       const asset = await options.createAsset({
         name: gap.name,
@@ -205,9 +198,9 @@ export async function runMapCompositionWorkflow(
         tags: gap.tags,
         light: gap.light,
         mode: map.assetGenerationMode
-      });
+      }, report);
       if (asset.mode !== map.assetGenerationMode) throw new Error('generated_asset_mode_mismatch');
-      generated.push({ familyId: gap.familyId, asset });
+      return { familyId: gap.familyId, asset };
     } catch (error) {
       options.signal?.throwIfAborted();
       const message = error instanceof Error ? error.message : String(error);
@@ -215,13 +208,11 @@ export async function runMapCompositionWorkflow(
         || /failed to fetch|econnrefused|networkerror|socket|connection (?:closed|reset)|terminated|service_unreachable/i.test(message)) {
         throw error;
       }
-      options.onProgress?.({
-        phase: 'repairing',
-        label: `资产“${gap.name}”生成失败，已降级跳过并继续其他内容`,
-        detail: message
-      });
+      report({ status: 'failed', detail: message });
+      return null;
     }
-  }
+  }, { signal: options.signal, onProgress: options.onProgress });
+  const generated = generatedResults.filter((entry): entry is { familyId: string; asset: MapAsset } => entry !== null);
   const resolvedFamilies = attachGeneratedSceneAssets(initialResolution.families, generated);
   const expandedAssets = [...assets, ...generated.map((entry) => entry.asset)];
   const assetMinimumShortfall = Math.max(0, assetRange.min - generated.length);

@@ -47,6 +47,14 @@ export interface ModelJobState {
   message?: string;
 }
 
+export interface AgentAssetProgress {
+  key: string;
+  name: string;
+  status: 'queued' | 'running' | 'retrying' | 'success' | 'failed';
+  slot?: number;
+  detail?: string;
+}
+
 export interface AgentProgressEvent {
   phase:
     | 'planning'
@@ -67,4 +75,5 @@ export interface AgentProgressEvent {
   current?: number;
   total?: number;
   detail?: string;
+  assets?: AgentAssetProgress[];
 }

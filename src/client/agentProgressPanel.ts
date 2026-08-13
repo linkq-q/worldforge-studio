@@ -28,11 +28,13 @@ export function updateAgentProgress(list: AgentProgressEvent[], event: AgentProg
   if (
     previous
     && previous.phase === event.phase
-    && event.current === undefined
-    && event.total === undefined
+    && (event.assets !== undefined || (event.current === undefined && event.total === undefined))
   ) {
     previous.label = event.label || previous.label;
     previous.detail = event.detail ?? previous.detail;
+    previous.current = event.current ?? previous.current;
+    previous.total = event.total ?? previous.total;
+    previous.assets = event.assets ?? previous.assets;
     return;
   }
   list.push({ ...event });
@@ -120,11 +122,12 @@ export function renderAgentProgress(
   const cancelled = failed && /取消/.test(last.label);
   const complete = last?.phase === 'complete';
   const progressEvent = failed ? [...events].reverse().find((event) => event.phase !== 'failed') : last;
+  const assetProgress = [...events].reverse().find((event) => event.assets?.length)?.assets;
   const percent = workflowPercent(progressEvent, options.running);
   const title = failed ? cancelled ? '已取消' : '生成失败' : complete ? '规划完成' : 'AI 正在工作';
   const currentLabel = last?.label ?? '正在连接地图 Agent';
   const detail = last?.detail ? agentStageLabel(last.detail) : waitingHint(last?.phase);
-  const counter = last?.total && last.total > 0 && last.current
+  const counter = last?.total && last.total > 0 && last.current !== undefined
     ? `<span>${last.current} / ${last.total}</span>`
     : '';
   const slowHint = options.running && options.slowAssetMode
@@ -133,6 +136,38 @@ export function renderAgentProgress(
   const completionRate = complete && options.completionPercent !== undefined
     ? `<p class="agent-completion-rate">规划完成率 <b>${Math.round(Math.max(0, Math.min(100, options.completionPercent)))}%</b></p>`
     : '';
+  const assetGrid = assetProgress ? `
+    <div class="agent-assets-heading">
+      <strong>并行资产生成</strong>
+      <span>最多同时生成 3 项</span>
+    </div>
+    <div class="agent-assets-grid">
+      ${assetProgress.map((asset) => {
+        const statusLabels = {
+          queued: '排队中',
+          running: '生成中',
+          retrying: '正在重试',
+          success: '生成成功',
+          failed: '生成失败'
+        } as const;
+        const assetDetail = asset.detail
+          ? asset.status === 'failed'
+            ? humanizeAgentError(new Error(asset.detail))
+            : agentStageLabel(asset.detail)
+          : '';
+        return `
+          <article class="agent-asset-card ${asset.status}">
+            <div>
+              <strong title="${escapeHtml(asset.name)}">${escapeHtml(asset.name)}</strong>
+              ${asset.slot ? `<span>通道 ${asset.slot}</span>` : ''}
+            </div>
+            <b>${statusLabels[asset.status]}</b>
+            ${assetDetail ? `<small title="${escapeHtml(assetDetail)}">${escapeHtml(assetDetail)}</small>` : ''}
+          </article>
+        `;
+      }).join('')}
+    </div>
+  ` : '';
   const eventHistory = events.length > 0 ? `
     <ol class="agent-progress">
       ${events.map((event, index) => `
@@ -162,6 +197,7 @@ export function renderAgentProgress(
       </div>
       ${detail ? `<small>${escapeHtml(detail)}</small>` : ''}
       ${slowHint}
+      ${assetGrid}
       ${completionRate}
       ${complete && eventHistory ? `<details class="agent-progress-details"><summary>查看详细步骤</summary>${eventHistory}</details>` : eventHistory}
     </section>

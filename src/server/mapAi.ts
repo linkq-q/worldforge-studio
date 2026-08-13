@@ -53,6 +53,7 @@ import type { SceneCompositionPlan } from '../shared/sceneComposition';
 import { completeMapVisualSemantics } from '../shared/mapVisualSemantics';
 import { patchMapVisualZone, type VisualZonePatch } from '../shared/mapVisualSemantics';
 import { VISUAL_ZONE_TAGS, normalizeMapVisualSemantics, type VisualZoneTag } from '../shared/visualDirection';
+import { runAssetGenerationPool, type AssetTaskReporter } from './assetGenerationPool';
 import {
   findAdjacentMapRegion,
   isPointInsidePlayableArea,
@@ -89,7 +90,7 @@ export interface AssetGenerationRequest {
 }
 
 export interface MapAgentOptions extends MapAiOptions {
-  createAsset: (request: AssetGenerationRequest) => Promise<MapAsset>;
+  createAsset: (request: AssetGenerationRequest, report: AssetTaskReporter) => Promise<MapAsset>;
   mode?: 'generate' | 'refine';
 }
 
@@ -195,17 +196,11 @@ export async function runMapAgent(
     return withAssetMinimumWarning(validated, assetRange.min, requests.length);
   }
 
-  const generatedAssets: MapAsset[] = [];
-  for (const [index, request] of requests.entries()) {
-    options.signal?.throwIfAborted();
-    options.onProgress?.({
-      phase: 'generating-asset',
-      label: `生成资产 ${index + 1}/${requests.length}：${request.name}`,
-      current: index + 1,
-      total: requests.length
-    });
-    generatedAssets.push(await options.createAsset(request));
-  }
+  const generatedAssets = await runAssetGenerationPool(
+    requests,
+    (request, _index, report) => options.createAsset(request, report),
+    { signal: options.signal, onProgress: options.onProgress }
+  );
 
   const expandedAssets = [...assets, ...generatedAssets];
   const generatedAssetIds = new Set(generatedAssets.map((asset) => asset.id));
