@@ -60,4 +60,16 @@ describe('agent progress panel', () => {
     expect(html).toContain('aria-valuenow="52"');
     expect(html).toContain('2 / 4');
   });
+
+  it('keeps a completed run compact and folds the detailed event history', () => {
+    const html = renderAgentProgress([
+      { phase: 'generating-asset', label: '生成资产：沙发' },
+      { phase: 'repairing', label: '自动修复 8 项' },
+      { phase: 'complete', label: '场景构图与地图预览已完成' }
+    ], { running: false, elapsedMs: 120_000, completionPercent: 38 });
+
+    expect(html).toContain('规划完成率 <b>38%</b>');
+    expect(html).toContain('<details class="agent-progress-details">');
+    expect(html).not.toContain('agent-progress-details" open');
+  });
 });

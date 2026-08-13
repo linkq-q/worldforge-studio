@@ -73,8 +73,9 @@ export function renderMapCompositionSummary(suggestion: MapAiSuggestion): string
   );
   return `
     <div class="map-composition-quality map-composition-quality-${placementQuality.tone}">
-      <b>${placementQuality.label}</b>
-      <span>初始规划正常落位 <b>${placementQuality.initial} / ${placementQuality.total}</b> · ${placementQuality.percent}%</span>
+      <div><b>${placementQuality.label}</b>
+      <span>初始规划正常落位 <b>${placementQuality.initial} / ${placementQuality.total}</b> · ${placementQuality.percent}%</span></div>
+      ${placementQuality.tone === 'danger' ? '<button id="repair-map-ai-composition" class="secondary compact">继续修复规划</button>' : ''}
     </div>
     <details class="inspector-disclosure compact map-ai-composition-details">
       <summary><span><b>生成结果详情</b><small>构图、分区与自动验收</small></span></summary>

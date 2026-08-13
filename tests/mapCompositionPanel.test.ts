@@ -128,6 +128,11 @@ describe('map composition preview panel', () => {
     expect(html).toContain(label);
     expect(html).toContain(`map-composition-quality-${tone}`);
   });
+
+  it('offers a continuation repair only when initial planning quality is low', () => {
+    expect(renderMapCompositionSummary(compositionSuggestion(3, 12))).toContain('id="repair-map-ai-composition"');
+    expect(renderMapCompositionSummary(compositionSuggestion(10, 12))).not.toContain('id="repair-map-ai-composition"');
+  });
 });
 
 function compositionSuggestion(initialObjectCount: number, objectCount: number): MapAiSuggestion {

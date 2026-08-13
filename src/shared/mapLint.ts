@@ -11,7 +11,7 @@ import {
 } from './map';
 import { assetFootprintRadius } from './mapAssetMetadata';
 import { indoorSemanticDimensions, isCeilingMountedSemantic, isElevatedWallSemantic } from './indoorScale';
-import type { MapOperation } from './mapOperations';
+import { applyMapOperations, type MapOperation } from './mapOperations';
 import { findSafeSpawnPosition, isSpawnPositionSafe } from './mapSpawnSafety';
 import { isPointInsideWaterBody, waterSurfaceLevelAt } from './mapWater';
 
@@ -20,6 +20,7 @@ export type MapLintSeverity = 'info' | 'warning' | 'error';
 export interface MapLintIssue {
   code: 'spawn.unsafe' | 'object.out-of-bounds' | 'object.off-ground' | 'object.duplicate'
     | 'object.above-ceiling' | 'object.too-small' | 'object.scale-mismatch' | 'object.overlap'
+    | 'object.wall-mounted'
     | 'water.exposed-terrain' | 'scene.sparse' | 'room.path-blocked' | 'asset.unplaced'
     | 'asset.minimum-degraded';
   severity: MapLintSeverity;
@@ -38,10 +39,12 @@ export function lintMap(map: EditableMap): MapLintResult {
   const repairOperations: MapOperation[] = [];
   const removedIds = findExactDuplicates(map, issues, repairOperations);
   lintObjectPlacement(map, removedIds, issues, repairOperations);
-  lintSpawn(map, issues, repairOperations);
-  lintRoomPaths(map, issues);
+  let workingMap = repairOperations.length > 0 ? applyMapOperations(map, repairOperations) : map;
+  lintRoomPaths(workingMap, issues, repairOperations);
+  workingMap = repairOperations.length > 0 ? applyMapOperations(map, repairOperations) : map;
+  lintSpawn(workingMap, issues, repairOperations);
   lintWaterExposure(map, issues, repairOperations);
-  lintOverlaps(map, removedIds, issues);
+  lintOverlaps(workingMap, removedIds, issues);
   if (map.objects.length < Math.max(2, Math.floor(map.box.size[0] * map.box.size[2] / 3000))) {
     issues.push({
       code: 'scene.sparse',
@@ -125,6 +128,7 @@ function lintObjectPlacement(
     const wallMounted = Boolean(object.roomOpeningId) || isElevatedWallSemantic(mountSemantic);
     const ceilingMounted = isCeilingMountedSemantic(semantic);
     const elevated = wallMounted || ceilingMounted;
+    let wallMountAdjusted = false;
     if (room && wallMounted && !object.roomOpeningId && currentBounds) {
       const distances = [
         { wall: 'west', distance: Math.abs(currentBounds.min[0] - minX) },
@@ -136,6 +140,12 @@ function lintObjectPlacement(
       if (distances[0].wall === 'east') nextX = position[0] + maxX - currentBounds.max[0];
       if (distances[0].wall === 'north') nextZ = position[2] + minZ - currentBounds.min[2];
       if (distances[0].wall === 'south') nextZ = position[2] + maxZ - currentBounds.max[2];
+      if (currentBounds.min[1] < floorY + 0.35) {
+        const centerOffset = (currentBounds.min[1] + currentBounds.max[1]) / 2 - position[1];
+        const mountCenter = floorY + Math.min(room.size[1] * 0.58, getMapPlayerMetrics(map).height * 1.15);
+        nextY = mountCenter - centerOffset;
+        wallMountAdjusted = true;
+      }
     }
     if (!room && currentBounds) {
       const { height: playerHeight } = getMapPlayerMetrics(map);
@@ -199,8 +209,8 @@ function lintObjectPlacement(
       }
     }
     const outOfBounds = Math.abs(nextX - position[0]) > 0.001 || Math.abs(nextZ - position[2]) > 0.001;
-    const offGround = Math.abs(nextY - position[1]) > 0.05;
-    if (!outOfBounds && !offGround && !aboveCeiling && !tooSmall && !scaleMismatch) continue;
+    const offGround = Math.abs(nextY - position[1]) > 0.05 && !wallMountAdjusted;
+    if (!outOfBounds && !offGround && !wallMountAdjusted && !aboveCeiling && !tooSmall && !scaleMismatch) continue;
     repairs.push({
       type: 'object.update',
       objectId: object.id,
@@ -212,6 +222,10 @@ function lintObjectPlacement(
     });
     if (offGround) issues.push({
       code: 'object.off-ground', severity: 'warning', message: '物体已重新贴合地形。',
+      objectIds: [object.id], repaired: true
+    });
+    if (wallMountAdjusted) issues.push({
+      code: 'object.wall-mounted', severity: 'warning', message: '墙面物体已贴墙并提升到可读高度。',
       objectIds: [object.id], repaired: true
     });
     if (aboveCeiling) issues.push({
@@ -229,23 +243,43 @@ function lintObjectPlacement(
   }
 }
 
-function lintRoomPaths(map: EditableMap, issues: MapLintIssue[]): void {
+function lintRoomPaths(map: EditableMap, issues: MapLintIssue[], repairs: MapOperation[]): void {
   const room = map.room;
   if (!room) return;
   const doors = room.openings.filter((opening) => opening.kind === 'door');
   if (doors.length === 0) return;
-  const linkedObjectByOpening = new Map(map.objects
-    .filter((object) => object.roomOpeningId)
-    .map((object) => [object.roomOpeningId as string, object.id]));
-  const allObstacles = getMapObjectAabbs(map);
+  let pathMap = map;
   const start = map.spawnPoints[0] ?? room.position;
   const { radius, height } = getMapPlayerMetrics(map);
   for (const door of doors) {
+    const linkedObjectByOpening = new Map(pathMap.objects
+      .filter((object) => object.roomOpeningId)
+      .map((object) => [object.roomOpeningId as string, object.id]));
+    const allObstacles = getMapObjectAabbs(pathMap);
     const linkedObjectId = linkedObjectByOpening.get(door.id);
     const obstacles = linkedObjectId
       ? allObstacles.filter((obstacle) => obstacle.objectId !== linkedObjectId)
       : allObstacles;
-    if (hasRoomPath(room, [start[0], start[2]], roomDoorInsidePoint(room, door, radius), obstacles, radius, height)) continue;
+    const goal = roomDoorInsidePoint(room, door, radius);
+    if (hasRoomPath(room, [start[0], start[2]], goal, obstacles, radius, height)) continue;
+    const relocation = findRoomPathRelocation(pathMap, room, [start[0], start[2]], goal, obstacles, radius, height);
+    if (relocation) {
+      const operation: MapOperation = {
+        type: 'object.update',
+        objectId: relocation.objectId,
+        patch: { transform: { position: relocation.position } }
+      };
+      repairs.push(operation);
+      pathMap = applyMapOperations(pathMap, [operation]);
+      issues.push({
+        code: 'room.path-blocked',
+        severity: 'warning',
+        message: `已将阻挡出生点到门口 ${door.id} 的物体移到房间边缘，恢复至少 ${(radius * 2).toFixed(1)}m 宽的连续通道。`,
+        objectIds: [relocation.objectId],
+        repaired: true
+      });
+      continue;
+    }
     issues.push({
       code: 'room.path-blocked',
       severity: 'warning',
@@ -253,6 +287,99 @@ function lintRoomPaths(map: EditableMap, issues: MapLintIssue[]): void {
       repaired: false
     });
   }
+}
+
+function findRoomPathRelocation(
+  map: EditableMap,
+  room: NonNullable<EditableMap['room']>,
+  start: [number, number],
+  goal: [number, number],
+  obstacles: MapObjectAabb[],
+  playerRadius: number,
+  playerHeight: number
+): { objectId: string; position: [number, number, number] } | null {
+  const assets = new Map((map.assets ?? []).map((asset) => [asset.id, asset]));
+  const boundsByObject = aggregateObjectBounds(obstacles);
+  const objectsWithChildren = new Set(map.objects.flatMap((object) => object.parentId ? [object.parentId] : []));
+  const candidates = map.objects
+    .filter((object) => object.assetId && !object.parentId && !object.locked && !object.roomOpeningId && !objectsWithChildren.has(object.id))
+    .flatMap((object) => {
+      const bounds = boundsByObject.get(object.id);
+      const asset = object.assetId ? assets.get(object.assetId) : undefined;
+      const semantic = [asset?.name, asset?.prompt, ...(asset?.tags ?? [])].filter(Boolean).join(' ');
+      if (!bounds || isElevatedWallSemantic(semantic) || isCeilingMountedSemantic(semantic)) return [];
+      if (bounds.max[1] <= room.position[1] + 0.05 || bounds.min[1] >= room.position[1] + playerHeight) return [];
+      const center: [number, number] = [(bounds.min[0] + bounds.max[0]) / 2, (bounds.min[2] + bounds.max[2]) / 2];
+      return [{ object, bounds, routeDistance: pointSegmentDistance(center, start, goal) }];
+    })
+    .sort((left, right) => left.routeDistance - right.routeDistance);
+
+  for (const candidate of candidates) {
+    const otherObstacles = obstacles.filter((obstacle) => obstacle.objectId !== candidate.object.id);
+    for (const position of roomEdgePositions(room, candidate.object.transform.position, candidate.bounds, playerRadius)) {
+      const moved = translateBounds(candidate.bounds, position[0] - candidate.object.transform.position[0], position[2] - candidate.object.transform.position[2]);
+      if (otherObstacles.some((obstacle) => boundsOverlapWithClearance(moved, obstacle, 0.12))) continue;
+      const movedObstacles = [...otherObstacles, moved];
+      if (!hasRoomPath(room, start, goal, movedObstacles, playerRadius, playerHeight)) continue;
+      return { objectId: candidate.object.id, position };
+    }
+  }
+  return null;
+}
+
+function roomEdgePositions(
+  room: NonNullable<EditableMap['room']>,
+  position: [number, number, number],
+  bounds: MapObjectAabb,
+  playerRadius: number
+): Array<[number, number, number]> {
+  const minX = room.position[0] - room.size[0] / 2 + room.wallThickness;
+  const maxX = room.position[0] + room.size[0] / 2 - room.wallThickness;
+  const minZ = room.position[2] - room.size[2] / 2 + room.wallThickness;
+  const maxZ = room.position[2] + room.size[2] / 2 - room.wallThickness;
+  const left = position[0] - bounds.min[0];
+  const right = bounds.max[0] - position[0];
+  const near = position[2] - bounds.min[2];
+  const far = bounds.max[2] - position[2];
+  const step = Math.max(0.6, playerRadius * 2);
+  const result: Array<[number, number, number]> = [];
+  for (let z = minZ + near; z <= maxZ - far + 0.001; z += step) {
+    result.push([minX + left, position[1], z], [maxX - right, position[1], z]);
+  }
+  for (let x = minX + left; x <= maxX - right + 0.001; x += step) {
+    result.push([x, position[1], minZ + near], [x, position[1], maxZ - far]);
+  }
+  return result
+    .filter((candidate) => Math.hypot(candidate[0] - position[0], candidate[2] - position[2]) > 0.1)
+    .sort((leftPosition, rightPosition) => (
+      Math.hypot(leftPosition[0] - position[0], leftPosition[2] - position[2])
+      - Math.hypot(rightPosition[0] - position[0], rightPosition[2] - position[2])
+    ));
+}
+
+function translateBounds(bounds: MapObjectAabb, dx: number, dz: number): MapObjectAabb {
+  return {
+    objectId: bounds.objectId,
+    min: [bounds.min[0] + dx, bounds.min[1], bounds.min[2] + dz],
+    max: [bounds.max[0] + dx, bounds.max[1], bounds.max[2] + dz]
+  };
+}
+
+function boundsOverlapWithClearance(left: MapObjectAabb, right: MapObjectAabb, clearance: number): boolean {
+  if (left.max[1] <= right.min[1] + 0.02 || left.min[1] >= right.max[1] - 0.02) return false;
+  return left.min[0] < right.max[0] + clearance
+    && left.max[0] > right.min[0] - clearance
+    && left.min[2] < right.max[2] + clearance
+    && left.max[2] > right.min[2] - clearance;
+}
+
+function pointSegmentDistance(point: [number, number], start: [number, number], end: [number, number]): number {
+  const dx = end[0] - start[0];
+  const dz = end[1] - start[1];
+  const lengthSquared = dx * dx + dz * dz;
+  if (lengthSquared <= 0.0001) return Math.hypot(point[0] - start[0], point[1] - start[1]);
+  const amount = clamp(((point[0] - start[0]) * dx + (point[1] - start[1]) * dz) / lengthSquared, 0, 1);
+  return Math.hypot(point[0] - (start[0] + dx * amount), point[1] - (start[1] + dz * amount));
 }
 
 function hasRoomPath(

@@ -1454,6 +1454,21 @@ p {
   position: relative;
 }
 
+.agent-completion-rate {
+  margin: 8px 0 0;
+  color: var(--muted);
+}
+
+.agent-progress-details {
+  margin-top: 8px;
+}
+
+.agent-progress-details summary {
+  cursor: pointer;
+  color: var(--muted);
+  font-size: 12px;
+}
+
 .map-composition-quality {
   display: flex;
   align-items: center;
@@ -1464,6 +1479,11 @@ p {
   border: 1px solid currentColor;
   border-radius: 8px;
   font-size: 0.72rem;
+}
+
+.map-composition-quality > div {
+  display: grid;
+  gap: 3px;
 }
 
 .map-composition-quality span {

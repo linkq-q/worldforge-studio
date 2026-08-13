@@ -93,7 +93,7 @@ export function indoorSemanticDimensions(map: EditableMap, semantic: string): In
 }
 
 export function isElevatedWallSemantic(semantic: string): boolean {
-  return /wall-mounted|wall-prop|sconce|cross|window|blackboard|chalkboard|whiteboard|notice board|menu board|wall[-_ ]?clock|timepiece|poster|painting|safety sign|warning sign|fire extinguisher|壁挂|墙灯|十字架|窗|黑板|白板|公告板|菜单板|挂钟|时钟|海报|挂画|安全标识|警示牌|灭火器/i.test(semantic)
+  return /wall-mounted|wall-prop|wall[-_ ]?(?:art|decor)|framed[-_ ]?art|sconce|cross|window|blackboard|chalkboard|whiteboard|notice board|menu board|wall[-_ ]?clock|timepiece|poster|painting|safety sign|warning sign|fire extinguisher|壁挂|墙灯|墙饰|装饰画|十字架|窗|黑板|白板|公告板|菜单板|挂钟|时钟|海报|挂画|安全标识|警示牌|灭火器/i.test(semantic)
     && !/\bdoor\b|房门|门扇/i.test(semantic);
 }
 

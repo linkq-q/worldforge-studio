@@ -257,6 +257,76 @@ describe('map lint and deterministic repair', () => {
     expect(bounds.max[0]).toBeGreaterThan(9.7);
   });
 
+  it('mounts named wall art on a wall instead of leaving it on the floor', () => {
+    const wallArtModel = {
+      nodes: [{ id: 'art', transform: { pos: [0, 0.6, 0] }, mesh: { type: 'box', params: { width: 2, height: 1.2, depth: 0.2 } } }]
+    };
+    const wallArtAsset = {
+      ...asset,
+      id: 'wall-art',
+      name: '墙面装饰画',
+      prompt: 'framed wall art',
+      tags: ['wall-art', 'framed-art', 'decor'],
+      modelJson: wallArtModel,
+      colliderPlan: buildModelColliderPlan(wallArtModel)
+    } satisfies MapAsset;
+    const map = createEmptyMap('living room', 'wall-art-room', [15, 5, 8], 'voxel', 'indoor', [15, 5, 8]);
+    map.assets = [wallArtAsset];
+    const art = createMapObject('墙面装饰画', wallArtAsset.id);
+    art.id = 'wall-art-object';
+    art.heightMode = 'fixed';
+    art.transform.position = [-map.room!.size[0] / 2 + map.room!.wallThickness + 1, 0, 0];
+    map.objects = [art];
+
+    const lint = lintMap(map);
+    const repaired = applyMapOperations(map, lint.repairOperations);
+    const bounds = getMapObjectAabbs(repaired)[0];
+    const room = map.room!;
+    const wallDistance = Math.min(
+      Math.abs(bounds.min[0] - (-room.size[0] / 2 + room.wallThickness)),
+      Math.abs(bounds.max[0] - (room.size[0] / 2 - room.wallThickness)),
+      Math.abs(bounds.min[2] - (-room.size[2] / 2 + room.wallThickness)),
+      Math.abs(bounds.max[2] - (room.size[2] / 2 - room.wallThickness))
+    );
+
+    expect(wallDistance).toBeLessThan(0.05);
+    expect(bounds.min[1]).toBeGreaterThan(0.5);
+  });
+
+  it('moves a movable fixture away from the spawn route instead of only reporting a blocked path', () => {
+    const fridgeModel = {
+      nodes: [{ id: 'fridge', transform: { pos: [0, 1, 0] }, mesh: { type: 'box', params: { width: 1.4, height: 2, depth: 1.2 } } }]
+    };
+    const fridgeAsset = {
+      ...asset,
+      id: 'fridge',
+      name: '冰箱',
+      prompt: 'compact refrigerator',
+      tags: ['kitchen', 'refrigerator', 'appliance'],
+      modelJson: fridgeModel,
+      colliderPlan: buildModelColliderPlan(fridgeModel)
+    } satisfies MapAsset;
+    const map = createEmptyMap('kitchen', 'kitchen-route', [10, 3, 8], 'voxel', 'indoor', [10, 3, 8]);
+    map.room!.openings = [{ id: 'door-main', kind: 'door', wall: 'north', offset: -3.2, bottom: 0, width: 1.2, height: 2.1 }];
+    map.assets = [fridgeAsset];
+    map.spawnPoints = [[0, 0, 0]];
+    const fridge = createMapObject('冰箱', fridgeAsset.id);
+    fridge.id = 'fridge-object';
+    fridge.transform.position = [0, 0, 0];
+    map.objects = [fridge];
+
+    const lint = lintMap(map);
+    const repaired = applyMapOperations(map, lint.repairOperations);
+
+    expect(repaired.objects[0].transform.position).not.toEqual([0, 0, 0]);
+    expect(lint.issues).toEqual(expect.arrayContaining([
+      expect.objectContaining({ code: 'room.path-blocked', repaired: true })
+    ]));
+    expect(lintMap(repaired).issues).not.toEqual(expect.arrayContaining([
+      expect.objectContaining({ code: 'room.path-blocked' })
+    ]));
+  });
+
   it('repairs a generated tree that is tiny relative to the configured character', () => {
     const map = createEmptyMap('tree scale', 'tree-scale');
     map.assets = [asset];

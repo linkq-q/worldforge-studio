@@ -52,7 +52,7 @@ import {
   normalizeMapAiNewAssetRange
 } from '../shared/mapPlanning';
 import { isCompositionEmptyMap, SCENE_COMPOSITION_LIMITS, type SceneCompositionPlan } from '../shared/sceneComposition';
-import { renderMapCompositionPlanApproval, renderMapCompositionSummary } from './mapCompositionPanel';
+import { mapCompositionPlacementQuality, renderMapCompositionPlanApproval, renderMapCompositionSummary } from './mapCompositionPanel';
 import {
   bindMaterialTagScenePanel,
   renderMaterialTagScenePanel
@@ -1123,6 +1123,12 @@ class MapEditor {
     const waterCount = suggestion?.operations.filter((operation) => operation.type.startsWith('water.')).length ?? 0;
     const objectCount = suggestion?.operations.filter((operation) => operation.type.startsWith('object.')).length ?? 0;
     const hasSpawn = suggestion?.operations.some((operation) => operation.type === 'reference.set') ?? false;
+    const compositionCompletionPercent = suggestion?.composition
+      ? mapCompositionPlacementQuality(
+          suggestion.composition.metrics.initialObjectCount ?? suggestion.composition.metrics.objectCount,
+          suggestion.composition.metrics.objectCount
+        ).percent
+      : undefined;
     const compositionAvailable = isCompositionEmptyMap(map);
     const visualZones = map.visualSemantics.zones;
     if (this.mapAiTargetVisualZoneId && !visualZones.some((zone) => zone.id === this.mapAiTargetVisualZoneId)) {
@@ -1180,7 +1186,8 @@ class MapEditor {
         ${renderAgentProgress(this.mapAgentProgress, {
           running: Boolean(this.mapAiAbortController),
           elapsedMs: this.mapAgentElapsedMs,
-          slowAssetMode: map.assetGenerationMode === 'standard' || map.assetGenerationMode === 'voxel-pro'
+          slowAssetMode: map.assetGenerationMode === 'standard' || map.assetGenerationMode === 'voxel-pro',
+          completionPercent: compositionCompletionPercent
         })}
         <p class="empty inspector-note" title="总导演会先组织完整场景，按需调用最多 ${SCENE_COMPOSITION_LIMITS.consultationCount} 个专家；未开启复用时，新内容只使用本次生成的资产。">默认 ${map.assetGenerationMode.toUpperCase()} · ${this.state.dirty
           ? '请先保存当前手工修改，再生成 AI 地图预览。'
@@ -1303,6 +1310,10 @@ class MapEditor {
     });
     host.querySelector('#discard-map-ai')?.addEventListener('click', () => void this.discardMapAiPreview());
     host.querySelector('#apply-map-ai')?.addEventListener('click', () => void this.applyMapAiPreview());
+    host.querySelector('#repair-map-ai-composition')?.addEventListener('click', () => {
+      const repairPrompt = `${this.mapAiPrompt}\n\n在上一轮预览基础上继续修复规划完整性：优先补足未正常落位的资产与装饰，修复动线、贴墙、贴顶和关系组；保留已经合理的内容。`;
+      void this.generateMapAiPreview('refine', undefined, repairPrompt);
+    });
     host.querySelector('#discard-composition-plan')?.addEventListener('click', () => {
       this.pendingCompositionPlan = null;
       this.state.message = '已放弃俯视规划，可以修改提示词后重试';
@@ -1843,10 +1854,11 @@ class MapEditor {
 
   private async generateMapAiPreview(
     mode: 'generate' | 'refine',
-    approvedCompositionPlan?: SceneCompositionPlan
+    approvedCompositionPlan?: SceneCompositionPlan,
+    promptOverride?: string
   ): Promise<void> {
     const map = this.state.map;
-    const prompt = this.mapAiPrompt.trim();
+    const prompt = (promptOverride ?? this.mapAiPrompt).trim();
     if (!map || !prompt || this.state.busy) return;
     if (this.state.dirty) {
       this.state.message = '请先保存当前手工修改';
@@ -1887,11 +1899,24 @@ class MapEditor {
         }
       );
       if (suggestion.generatedAssets.length > 0) await this.reloadLists();
+      const addedObjects = suggestion.operations.filter((operation) => operation.type === 'object.add').length;
+      const removedObjects = suggestion.operations.filter((operation) => operation.type === 'object.remove').length;
+      const continuedComposition = previousSuggestion?.composition && !suggestion.composition
+        ? {
+            ...previousSuggestion.composition,
+            metrics: {
+              ...previousSuggestion.composition.metrics,
+              initialObjectCount: Math.max(0, (previousSuggestion.composition.metrics.initialObjectCount ?? previousSuggestion.composition.metrics.objectCount) + addedObjects),
+              objectCount: Math.max(0, previousSuggestion.composition.metrics.objectCount + addedObjects - removedObjects)
+            }
+          }
+        : undefined;
       const combinedSuggestion = previousSuggestion
         ? {
             ...suggestion,
             operations: [...previousSuggestion.operations, ...suggestion.operations],
-            generatedAssets: [...previousSuggestion.generatedAssets, ...suggestion.generatedAssets]
+            generatedAssets: [...previousSuggestion.generatedAssets, ...suggestion.generatedAssets],
+            composition: suggestion.composition ?? continuedComposition
           }
         : suggestion;
       this.mapPreviewKind = 'ai';

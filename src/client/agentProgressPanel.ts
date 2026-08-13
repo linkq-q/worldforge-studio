@@ -4,6 +4,7 @@ export interface AgentProgressViewOptions {
   running: boolean;
   elapsedMs: number;
   slowAssetMode?: boolean;
+  completionPercent?: number;
 }
 
 const PHASE_PROGRESS: Partial<Record<AgentProgressEvent['phase'], number>> = {
@@ -129,6 +130,22 @@ export function renderAgentProgress(
   const slowHint = options.running && options.slowAssetMode
     ? '<p class="agent-progress-hint">PRO 资产单个可能需要数分钟；页面保持打开即可，也可以随时取消。</p>'
     : '';
+  const completionRate = complete && options.completionPercent !== undefined
+    ? `<p class="agent-completion-rate">规划完成率 <b>${Math.round(Math.max(0, Math.min(100, options.completionPercent)))}%</b></p>`
+    : '';
+  const eventHistory = events.length > 0 ? `
+    <ol class="agent-progress">
+      ${events.map((event, index) => `
+        <li class="${event.phase === 'failed' ? 'failed' : index === events.length - 1 && event.phase !== 'complete' ? 'active' : 'done'}">
+          <span></span>
+          <div>
+            <strong>${escapeHtml(event.label)}</strong>
+            ${event.detail ? `<small>${escapeHtml(agentStageLabel(event.detail))}</small>` : ''}
+          </div>
+        </li>
+      `).join('')}
+    </ol>
+  ` : '';
 
   return `
     <section class="agent-run ${failed ? 'failed' : complete ? 'complete' : 'running'}" aria-live="polite">
@@ -145,19 +162,8 @@ export function renderAgentProgress(
       </div>
       ${detail ? `<small>${escapeHtml(detail)}</small>` : ''}
       ${slowHint}
-      ${events.length > 0 ? `
-        <ol class="agent-progress">
-          ${events.map((event, index) => `
-            <li class="${event.phase === 'failed' ? 'failed' : index === events.length - 1 && event.phase !== 'complete' ? 'active' : 'done'}">
-              <span></span>
-              <div>
-                <strong>${escapeHtml(event.label)}</strong>
-                ${event.detail ? `<small>${escapeHtml(agentStageLabel(event.detail))}</small>` : ''}
-              </div>
-            </li>
-          `).join('')}
-        </ol>
-      ` : ''}
+      ${completionRate}
+      ${complete && eventHistory ? `<details class="agent-progress-details"><summary>查看详细步骤</summary>${eventHistory}</details>` : eventHistory}
     </section>
   `;
 }
