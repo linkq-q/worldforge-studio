@@ -1,0 +1,204 @@
+{
+  "id": "asset-c474c664-9ab3-45f5",
+  "name": "全身试衣镜",
+  "prompt": "单块竖向全身镜，细炭灰框、完整反射表面和轻微离墙厚度，作为墙装或试衣模块附属资产。\n全局资产美术方向：现代简洁的体素风服装零售家具，比例参照1.60米角色；采用浅橡木、哑光白、炭灰金属与少量暖色织物，货架轮廓轻薄但可读，普通构件主要尺寸不小于0.27米。\n资产角色：墙面和试衣区的穿搭查看设施；目标尺度：medium。\n只生成一个可复用的独立物体，不要生成地面、背景、天空、完整场景或多个分散物体。",
+  "tags": [
+    "full-length-mirror",
+    "fitting",
+    "wall-mounted"
+  ],
+  "modelJson": {
+    "name": "单块竖向全身镜",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "m0",
+        "transform": {
+          "pos": [
+            0,
+            0.82,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.9,
+            "height": 1.58,
+            "depth": 0.07
+          },
+          "color": 6647928
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass"
+          }
+        ]
+      },
+      {
+        "id": "m1",
+        "transform": {
+          "pos": [
+            -0.46,
+            0.85,
+            -0.015
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.08,
+            "height": 1.7,
+            "depth": 0.14
+          },
+          "color": 2698544
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m2",
+        "transform": {
+          "pos": [
+            0.46,
+            0.85,
+            -0.015
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.08,
+            "height": 1.7,
+            "depth": 0.14
+          },
+          "color": 2698544
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m3",
+        "transform": {
+          "pos": [
+            0,
+            1.66,
+            -0.015
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.84,
+            "height": 0.08,
+            "depth": 0.14
+          },
+          "color": 2698544
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m4",
+        "transform": {
+          "pos": [
+            0,
+            0.04,
+            -0.015
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.84,
+            "height": 0.08,
+            "depth": 0.14
+          },
+          "color": 2698544
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m5",
+        "transform": {
+          "pos": [
+            0,
+            0.85,
+            0.045
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.82,
+            "height": 1.54,
+            "depth": 0.05
+          },
+          "color": 7832970
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass"
+          }
+        ]
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1786542722085,
+        "provider": "gpt",
+        "data": "SvDguHe5wuXRZg0YJzWoaXlbHd1ICFamy492a4cWnF7qhpRQAxJH3+HjHfeKR0MIhpWYtk1rVnaLfBTZ2FNrRrUlD8MUWHIEseEn9qMa5fIUSNQlVeos7JbZGCskgUmBRMRcf9bIBl/VKOOveRre3kbxhZWSi7ialUXMOcDvgdEZtHjeARlDxVRxse4wR/RUuPqijzqTuhhvjaZzndSWiYXxZMuk3yJZoMeQrkljd2nYTFz8OXLVwD7OxuxxC7jA/0ZOr0ZKj+3EG323osZ+TTjKRwTBjcOZF3LDb8urpEdiPLGYcrOKDuK4IQVjAPtEnXo05RqJ8yyUmQ2PiMNDaHaE/97PD5eMtoZq42pIjWLD9FOgCPrCxljmo5DFc21eRG8V2dFPg0eXZPX0tPmjBNHQmsiu9fT9TwAyOZtJ893a8hl8Q16KnX0XLG3CNA/OLzU6LmguXr0A59xJ7R9gtLj2EcUcZiciN96b+/ErlSs6sq39I8OfujWYEeF0ND6VV4JA",
+        "edits": ""
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -0.5,
+          0,
+          -0.07750000000000001
+        ],
+        "max": [
+          0.5,
+          1.7,
+          0.07750000000000001
+        ],
+        "sourceNodeId": "asset-bounds"
+      }
+    ],
+    "sourceMeshCount": 6,
+    "candidateCount": 0,
+    "fallbackUsed": true
+  },
+  "footprintRadius": 0.5,
+  "sizeClass": "small",
+  "mode": "voxel",
+  "provider": "gpt",
+  "createdAt": 1786542724839,
+  "updatedAt": 1786542724839
+}

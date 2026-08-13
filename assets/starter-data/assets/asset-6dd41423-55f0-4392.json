@@ -1,0 +1,340 @@
+{
+  "id": "asset-6dd41423-55f0-4392",
+  "name": "前置扬声器",
+  "prompt": "立式电影院前置扬声器单体，哑光黑箱体、深色声学网罩和稳固底座，适合在银幕两侧成对重复。\n全局资产美术方向：现代小型电影院风格，深灰与炭黑吸音墙面、深红或暗蓝软包座椅、低反射金属灯具、柔和暖白导向照明；家具比例以1.60米角色高度为参照，所有重复座椅使用单一可复用模块。\n资产角色：银幕两侧对称布置的主声道设备；目标尺度：large。\n只生成一个可复用的独立物体，不要生成地面、背景、天空、完整场景或多个分散物体。",
+  "tags": [
+    "cinema",
+    "front-channel",
+    "speaker",
+    "front-channel-speaker"
+  ],
+  "modelJson": {
+    "name": "立式电影院前置扬声器",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "base",
+        "name": "稳固底座",
+        "transform": {
+          "pos": [
+            0,
+            0.27,
+            0
+          ]
+        }
+      },
+      {
+        "id": "cabinet",
+        "name": "哑光黑箱体",
+        "parent": "base",
+        "transform": {
+          "pos": [
+            0,
+            3.42,
+            0
+          ]
+        }
+      },
+      {
+        "id": "acousticGrille",
+        "name": "深色声学网罩",
+        "parent": "base",
+        "transform": {
+          "pos": [
+            0,
+            2.265,
+            0.52
+          ]
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "cabinet",
+        "transform": {
+          "pos": [
+            0,
+            -1.04,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.45,
+            "height": 4.1,
+            "depth": 0.9
+          },
+          "color": 1513756
+        }
+      },
+      {
+        "id": "m1",
+        "parent": "cabinet",
+        "transform": {
+          "pos": [
+            0,
+            1.04,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.25,
+            "height": 0.16,
+            "depth": 0.76
+          },
+          "color": 987154
+        }
+      },
+      {
+        "id": "m2",
+        "parent": "acousticGrille",
+        "transform": {
+          "pos": [
+            0,
+            0.165,
+            -0.03
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.22,
+            "height": 3.25,
+            "depth": 0.08
+          },
+          "color": 2369066
+        }
+      },
+      {
+        "id": "m3",
+        "parent": "acousticGrille",
+        "transform": {
+          "pos": [
+            0,
+            -0.815,
+            0.03
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.98,
+            "height": 1.18,
+            "depth": 0.035
+          },
+          "color": 1052948
+        }
+      },
+      {
+        "id": "m4",
+        "parent": "acousticGrille",
+        "transform": {
+          "pos": [
+            0,
+            0.815,
+            0.03
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.72,
+            "height": 0.82,
+            "depth": 0.035
+          },
+          "color": 1052948
+        }
+      },
+      {
+        "id": "m5",
+        "parent": "base",
+        "transform": {
+          "pos": [
+            0,
+            -0.05,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.9,
+            "height": 0.28,
+            "depth": 1.3
+          },
+          "color": 2106152
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m6",
+        "parent": "base",
+        "transform": {
+          "pos": [
+            0,
+            0.23,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.55,
+            "height": 0.28,
+            "depth": 1.05
+          },
+          "color": 1184791
+        }
+      },
+      {
+        "id": "m7",
+        "parent": "base",
+        "transform": {
+          "pos": [
+            -0.62,
+            -0.23,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.32,
+            "height": 0.16,
+            "depth": 0.82
+          },
+          "color": 723982
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m8",
+        "parent": "base",
+        "transform": {
+          "pos": [
+            0.62,
+            -0.23,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.32,
+            "height": 0.16,
+            "depth": 0.82
+          },
+          "color": 723982
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1786541233783,
+        "provider": "gpt",
+        "data": "cJ6bRqsPyadmW16+TvvQ2ggWQwbRc1zxExuaA40j2hHIMTgeoyoAsCrwCdBjiHyG1MrixG1Dv8C+xYmQNNyr+N4FtcBtSGofNfWD33KoLuJu9QmL+jm2duq/W4oFjuj9XQwk/2+lczeKO6Nd40hkxAk6cjDIKfxFgVFcnBhkjgEIENOVnR4d8ePXu8McNF0yWd57X95mf7vapignjSVq+fA7D8pJH5+vh8F5mRpX/libPZn0QK/Tx4nWP7kKrVRg0HSTPlAsVefhifzpG8gklHBBV38L2JfPW2WQUnt0xLbNFhZVLfO7tNG8QVeXcSYvmC0mKOKeMWv8sLw9I295Pbs2fnuNdgH8D6AGzHm1/inHCAtv1Vao/M4nyHRGaB4sYMj5heK/NmnhrZX2rDrV3UqsmX0au0K4wMrBdlzBnJQXsm2LM90mS1K3V2p72fVf3auEmSR4OE9tx9V+4HQRJY2Ff3Ycr8PQW57TtCv4kBIMvsqNbU9li16BgPbgldU3zD0W6Fo+bnuXAdpiJaWqebr4eFX9Ob1HS2bZqgGw7HfL8ow/pNwQtztawlxS1M+VyAHWqxnpVS4CsW8m4MrJ7ytCVVCt7wWDhhUlJm39QlpvN9IAKf1PUrFp0n7wckvet6UV9yALZ+v6Tk5f1WL1vnFustJDM0cRVka9aHsqLunxFAkrCtTr+/9I2avtOwiFRRycqxTUMCxn2sEhRzBnZXEkCwmeN8+Afbgchta2CaQnqo/u763TW966YUwikiAijw==",
+        "edits": ""
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -0.725,
+          0.6400000000000001,
+          -0.45
+        ],
+        "max": [
+          0.725,
+          4.739999999999999,
+          0.45
+        ],
+        "sourceNodeId": "m0"
+      },
+      {
+        "min": [
+          -0.95,
+          0.12000000000000001,
+          -0.65
+        ],
+        "max": [
+          0.95,
+          0.4,
+          0.65
+        ],
+        "sourceNodeId": "m5"
+      },
+      {
+        "min": [
+          -0.775,
+          0.39999999999999997,
+          -0.525
+        ],
+        "max": [
+          0.775,
+          0.68,
+          0.525
+        ],
+        "sourceNodeId": "m6"
+      },
+      {
+        "min": [
+          -0.61,
+          1.1150000000000002,
+          0.45
+        ],
+        "max": [
+          0.61,
+          4.365,
+          0.53
+        ],
+        "sourceNodeId": "m2"
+      },
+      {
+        "min": [
+          -0.625,
+          4.69,
+          -0.38
+        ],
+        "max": [
+          0.625,
+          4.8500000000000005,
+          0.38
+        ],
+        "sourceNodeId": "m1"
+      }
+    ],
+    "sourceMeshCount": 9,
+    "candidateCount": 5,
+    "fallbackUsed": false
+  },
+  "footprintRadius": 0.95,
+  "sizeClass": "medium",
+  "mode": "voxel",
+  "provider": "gpt",
+  "createdAt": 1786541237289,
+  "updatedAt": 1786541237289
+}

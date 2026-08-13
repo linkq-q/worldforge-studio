@@ -1,0 +1,358 @@
+{
+  "id": "asset-667e5597-12ff-426e",
+  "name": "复古餐厅椅",
+  "prompt": "独立低多边形80年代小餐厅餐椅，无地面和背景；四把椅子围绕餐桌时可清晰朝向桌面，暖色木框、暗红或棕橙色坐垫，比例适配1.60米角色，造型简洁耐用，不生成餐桌或其他家具。",
+  "tags": [
+    "indoor",
+    "chair",
+    "dining",
+    "restaurant",
+    "retro-1980s",
+    "furniture"
+  ],
+  "modelJson": {
+    "name": "80年代低多边形木餐椅",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "m0",
+        "transform": {
+          "pos": [
+            0,
+            0.92,
+            0.02
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.95,
+            "height": 0.16,
+            "depth": 0.86
+          },
+          "color": 9063210
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ]
+      },
+      {
+        "id": "m1",
+        "transform": {
+          "pos": [
+            0,
+            1.04,
+            0.05
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.82,
+            "height": 0.14,
+            "depth": 0.72
+          },
+          "color": 7219493
+        }
+      },
+      {
+        "id": "m2",
+        "transform": {
+          "pos": [
+            -0.38,
+            0.46,
+            -0.31
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.11,
+            "height": 0.9,
+            "depth": 0.11
+          },
+          "color": 8077092
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ]
+      },
+      {
+        "id": "m3",
+        "transform": {
+          "pos": [
+            0.38,
+            0.46,
+            -0.31
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.11,
+            "height": 0.9,
+            "depth": 0.11
+          },
+          "color": 8077092
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ]
+      },
+      {
+        "id": "m4",
+        "transform": {
+          "pos": [
+            -0.38,
+            0.46,
+            0.34
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.11,
+            "height": 0.9,
+            "depth": 0.11
+          },
+          "color": 8077092
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ]
+      },
+      {
+        "id": "m5",
+        "transform": {
+          "pos": [
+            0.38,
+            0.46,
+            0.34
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.11,
+            "height": 0.9,
+            "depth": 0.11
+          },
+          "color": 8077092
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ]
+      },
+      {
+        "id": "m6",
+        "transform": {
+          "pos": [
+            0,
+            0.55,
+            -0.31
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.82,
+            "height": 0.12,
+            "depth": 0.1
+          },
+          "color": 7157023
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ]
+      },
+      {
+        "id": "m7",
+        "transform": {
+          "pos": [
+            0,
+            0.55,
+            0.34
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.82,
+            "height": 0.12,
+            "depth": 0.1
+          },
+          "color": 7157023
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ]
+      },
+      {
+        "id": "m8",
+        "transform": {
+          "pos": [
+            -0.39,
+            1.48,
+            -0.31
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.13,
+            "height": 1.1,
+            "depth": 0.13
+          },
+          "color": 8077092
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ]
+      },
+      {
+        "id": "m9",
+        "transform": {
+          "pos": [
+            0.39,
+            1.48,
+            -0.31
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.13,
+            "height": 1.1,
+            "depth": 0.13
+          },
+          "color": 8077092
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ]
+      },
+      {
+        "id": "m10",
+        "transform": {
+          "pos": [
+            0,
+            1.96,
+            -0.31
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.9,
+            "height": 0.16,
+            "depth": 0.14
+          },
+          "color": 9063210
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ]
+      },
+      {
+        "id": "m11",
+        "transform": {
+          "pos": [
+            0,
+            1.62,
+            -0.31
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.64,
+            "height": 0.48,
+            "depth": 0.12
+          },
+          "color": 6629412
+        }
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1786532486393,
+        "provider": "gpt",
+        "data": "AT8bJCStZOW1PMroswBaoLuzl23+JbdVPWTHh2UknaQQM3vou5UVXBixQza3MDm6TmJbqd/+44xVEimNg4ewu/cxYtNLAOc7FCvKowUT872syP28dL0VCKpafMopFcvwenKzmwRjag6gkgA4huZY8yTYGMQzghksCb40x5lOaCIKgu2INgB3bfTw+3I/CVOKAbddE++93ZWOf76mWB2w9twgXyjJp9Gs0QhS7QaQvCFGkwvpngwdItWot7AYRJjpyFHM0pTtXWsqRUyZXNRaD1LTSENJOAvnNEPyJgmqVOlgbgwHJ+1h2qwxENT4+E7V7vOrVLkc+110km3doKIBXpoafKhcUaGShimKf4pFOhWLsYcJd6erAJR6GnW7UHErBDqxXgMeGeJoGBJTeGYGJWpdxhTZGQrhi5qJ2/pe4ZR2NJoUwddsgIgc9Y7sdGJioCVN4WLDkTz+GR8+Zx1eUiZvQRZWOB7pPes+lr0+nbgOdvL3ZviualCkCzDpaAFH7P4Jf6g8lV2xUmuN/gyrvFYtAslwLTW7bEfB9mIp+CG2apVDcUx+u9kPMpF7sJ/Wm0lcfv3+iPPOKI+lmahofMky17AR/E84h0yABgbSeOgDvCG1PRrpJXTma9s8",
+        "edits": ""
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -0.475,
+          0.8300000000000001,
+          -0.43
+        ],
+        "max": [
+          0.475,
+          0.99,
+          0.43
+        ],
+        "sourceNodeId": "m0"
+      },
+      {
+        "min": [
+          -0.41,
+          0.96,
+          -0.33
+        ],
+        "max": [
+          0.41,
+          1.1,
+          0.38999999999999996
+        ],
+        "sourceNodeId": "m1"
+      }
+    ],
+    "sourceMeshCount": 12,
+    "candidateCount": 2,
+    "fallbackUsed": false
+  },
+  "footprintRadius": 0.475,
+  "sizeClass": "small",
+  "mode": "voxel",
+  "provider": "gpt",
+  "createdAt": 1786532488179,
+  "updatedAt": 1786532488179
+}

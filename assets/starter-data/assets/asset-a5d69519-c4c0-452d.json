@@ -1,0 +1,439 @@
+{
+  "id": "asset-a5d69519-c4c0-452d",
+  "name": "影院吸音板",
+  "prompt": "单块可复用影院吸音墙板，深灰织物软包、轻微倒角和隐藏式安装结构，不包含墙体。\n全局资产美术方向：现代小型电影院风格，深灰与炭黑吸音墙面、深红或暗蓝软包座椅、低反射金属灯具、柔和暖白导向照明；家具比例以1.60米角色高度为参照，所有重复座椅使用单一可复用模块。\n资产角色：重复覆盖侧墙的声学装饰模块；目标尺度：large。\n只生成一个可复用的独立物体，不要生成地面、背景、天空、完整场景或多个分散物体。",
+  "tags": [
+    "cinema",
+    "acoustic",
+    "panel",
+    "acoustic-panel"
+  ],
+  "modelJson": {
+    "name": "模块化影院吸音墙板",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "m0",
+        "transform": {
+          "pos": [
+            0,
+            1.45,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 3.2,
+            "height": 2.5,
+            "depth": 0.22
+          },
+          "color": 2698030
+        }
+      },
+      {
+        "id": "m1",
+        "transform": {
+          "pos": [
+            0,
+            1.48,
+            0.16
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2.92,
+            "height": 2.18,
+            "depth": 0.08
+          },
+          "color": 3684926
+        }
+      },
+      {
+        "id": "m2",
+        "transform": {
+          "pos": [
+            0,
+            2.68,
+            0.14
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 3.18,
+            "height": 0.12,
+            "depth": 0.16
+          },
+          "color": 2105894
+        }
+      },
+      {
+        "id": "m3",
+        "transform": {
+          "pos": [
+            0,
+            0.22,
+            0.14
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 3.18,
+            "height": 0.12,
+            "depth": 0.16
+          },
+          "color": 2105894
+        }
+      },
+      {
+        "id": "m4",
+        "transform": {
+          "pos": [
+            -1.54,
+            1.45,
+            0.14
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.12,
+            "height": 2.38,
+            "depth": 0.16
+          },
+          "color": 2105894
+        }
+      },
+      {
+        "id": "m5",
+        "transform": {
+          "pos": [
+            1.54,
+            1.45,
+            0.14
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.12,
+            "height": 2.38,
+            "depth": 0.16
+          },
+          "color": 2105894
+        }
+      },
+      {
+        "id": "m6",
+        "transform": {
+          "pos": [
+            0,
+            2.63,
+            0.21
+          ],
+          "quat": [
+            -0.54,
+            0,
+            0,
+            0.84
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2.92,
+            "height": 0.06,
+            "depth": 0.12
+          },
+          "color": 4474699
+        }
+      },
+      {
+        "id": "m7",
+        "transform": {
+          "pos": [
+            0,
+            0.28,
+            0.21
+          ],
+          "quat": [
+            -0.84,
+            0,
+            0,
+            0.54
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2.92,
+            "height": 0.06,
+            "depth": 0.12
+          },
+          "color": 4474699
+        }
+      },
+      {
+        "id": "m8",
+        "transform": {
+          "pos": [
+            -0.72,
+            1.48,
+            0.215
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.055,
+            "height": 2.12,
+            "depth": 0.035
+          },
+          "color": 3158582
+        }
+      },
+      {
+        "id": "m9",
+        "transform": {
+          "pos": [
+            0.72,
+            1.48,
+            0.215
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.055,
+            "height": 2.12,
+            "depth": 0.035
+          },
+          "color": 3158582
+        }
+      },
+      {
+        "id": "m10",
+        "transform": {
+          "pos": [
+            0,
+            1.48,
+            0.215
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2.9,
+            "height": 0.055,
+            "depth": 0.035
+          },
+          "color": 3158582
+        }
+      },
+      {
+        "id": "m11",
+        "transform": {
+          "pos": [
+            0,
+            1,
+            -0.16
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2.5,
+            "height": 0.1,
+            "depth": 0.06
+          },
+          "color": 4540491
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m12",
+        "transform": {
+          "pos": [
+            0,
+            2,
+            -0.16
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2.5,
+            "height": 0.1,
+            "depth": 0.06
+          },
+          "color": 4540491
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m13",
+        "transform": {
+          "pos": [
+            -1.05,
+            1,
+            -0.2
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.5,
+            "height": 0.12,
+            "depth": 0.08
+          },
+          "color": 3685182
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m14",
+        "transform": {
+          "pos": [
+            1.05,
+            1,
+            -0.2
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.5,
+            "height": 0.12,
+            "depth": 0.08
+          },
+          "color": 3685182
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m15",
+        "transform": {
+          "pos": [
+            -1.05,
+            2,
+            -0.2
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.5,
+            "height": 0.12,
+            "depth": 0.08
+          },
+          "color": 3685182
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m16",
+        "transform": {
+          "pos": [
+            1.05,
+            2,
+            -0.2
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.5,
+            "height": 0.12,
+            "depth": 0.08
+          },
+          "color": 3685182
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1786541349588,
+        "provider": "gpt",
+        "data": "D2Z+tnceSKZjesdmeACM+tZdKExVyXi1xUgnscyj6NhM+c3Qvs672sryq+A5pucQN6ZJvMEtRAM5UtGzRf/ZRFcPxRiEG8pyyU6aD6zUZ11An0D8jlH8AsLAnBwHiYKAQBCyFxwxJ88vjVxawj+3U9E4tXgT3ttjSnwV1o9jrjHvOomESSoAebbZ7LtaalrtlMNHtkp4EmxmcWxjDLDyWCd1d4j/WuFg957kBVaQWWpn0uFzAjBJSToOO7f2+aL3hLEBENNepA/WQmr6KqHJuJC83SlymMEU3M2LyDP8ySV8xYJkWXX6XztqOwH94XHszZC0QpRRbYoEqyPY8TK6ax/sBf1SLY3Ebvrco9LuFxWEbn81cPJpRuhYbJof5QfamdMUV4KEk98IUrSeZNPaz8GbNlpwvso91bymISNpY485E+sZLEq3GNCBT1cuBPziVK7gRF2Up+6JWFLXUboRAOZ6ut8kLvySFXFjl/p9lH3tzEMLb0hNGb1BR5EqUKuxe8lZ6yEgt+lNi2WuF9afbzmIKYeYlWTlySVmDy9zTIbUN7QO7G4jcfuF0+KT9MMmCMalaQhDZLbL8zOjERDxDz5VGgynJSZEviBiq7wXo/DPq+uP0Orlr8Yd4ye+8DgFrCKp285HWeT+WlI4h8GGxxG65/8EgimbbcvAwPHNlUUQ59u3MOB4knYmfJ9BY3qAx0wwS1o9GAshErPWvm4as4mRTRvUu1IYcR+0kLDw8RUV",
+        "edits": ""
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -1.6,
+          0.03999999999999995,
+          -0.12110108303249095
+        ],
+        "max": [
+          1.6,
+          2.54,
+          0.09889891696750905
+        ],
+        "sourceNodeId": "m0"
+      },
+      {
+        "min": [
+          -1.46,
+          0.2299999999999999,
+          0.10889891696750904
+        ],
+        "max": [
+          1.46,
+          2.41,
+          0.18889891696750905
+        ],
+        "sourceNodeId": "m1"
+      }
+    ],
+    "sourceMeshCount": 17,
+    "candidateCount": 2,
+    "fallbackUsed": false
+  },
+  "footprintRadius": 1.6,
+  "sizeClass": "medium",
+  "mode": "voxel",
+  "provider": "gpt",
+  "createdAt": 1786541353494,
+  "updatedAt": 1786541353494
+}

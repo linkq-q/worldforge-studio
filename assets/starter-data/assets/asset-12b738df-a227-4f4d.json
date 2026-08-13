@@ -1,0 +1,196 @@
+{
+  "id": "asset-12b738df-a227-4f4d",
+  "name": "侧通道导向灯",
+  "prompt": "低位电影院通道导向灯单体，紧凑深色外壳和柔和暖白发光条，避免产生屏幕眩光。\n全局资产美术方向：现代小型电影院风格，深灰与炭黑吸音墙面、深红或暗蓝软包座椅、低反射金属灯具、柔和暖白导向照明；家具比例以1.60米角色高度为参照，所有重复座椅使用单一可复用模块。\n资产角色：沿两侧连续通道排列的低位安全照明；目标尺度：small。\n只生成一个可复用的独立物体，不要生成地面、背景、天空、完整场景或多个分散物体。",
+  "tags": [
+    "cinema",
+    "aisle",
+    "lighting",
+    "aisle-guide-light"
+  ],
+  "modelJson": {
+    "name": "低位电影院通道导向灯",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "fixture",
+        "name": "导向灯单体",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "fixture",
+        "transform": {
+          "pos": [
+            0,
+            0.11,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.34,
+            "height": 0.18,
+            "depth": 0.07
+          },
+          "color": 2106150
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m1",
+        "parent": "fixture",
+        "transform": {
+          "pos": [
+            0,
+            0.11,
+            0.047
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.29,
+            "height": 0.12,
+            "depth": 0.025
+          },
+          "color": 1118997
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m2",
+        "parent": "fixture",
+        "transform": {
+          "pos": [
+            0,
+            0.095,
+            0.065
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.25,
+            "height": 0.035,
+            "depth": 0.012
+          },
+          "color": 16769446
+        },
+        "tags": [
+          {
+            "tag": "emissive",
+            "value": 0.75
+          }
+        ]
+      },
+      {
+        "id": "m3",
+        "parent": "fixture",
+        "transform": {
+          "pos": [
+            0,
+            0.145,
+            0.064
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.29,
+            "height": 0.025,
+            "depth": 0.055
+          },
+          "color": 2698287
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m4",
+        "parent": "fixture",
+        "transform": {
+          "pos": [
+            0,
+            0.055,
+            0.056
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.26,
+            "height": 0.018,
+            "depth": 0.045
+          },
+          "color": 1579548
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1786541316962,
+        "provider": "gpt",
+        "data": "dsIamkdnftQ8FHZXrC9DqKXZbJwvhjwkN+mi+eItaHC/x8Lylyzods0EnqC7CxeR7JH+kHsD/B96P4YX2L7ruCZsqoju9W+v/sqkNvNfI3YKU06R1Q8Dn80yRK191Ge8oFEtToSW3wIhV4Cra0vyZNLBEDPkE93x4B1dumgJKImnDsAzqrTW1tBccR9+Yxf24k2QkdexKfKLyshwmFA+eItkctg2EMvC7ZTnTlolf41jpGEvDmTaLgdS2SzVZhpw6nIAzCY677Cd8u4AbobsniNtuWhVvnPg3FC6PuMLCSjiLpGR4yhK28bSEgSt6Tgz1yMBN1a9joI3ri+bfOlcysmCD/H1i0VvzOifvSV6uYyGDO35YgYWfroYCcVUBeFxSRn3KyEH0ZrosrCjDXA38dP2Y01lrVFH0zFepo3RYH3Wduab3yqylok5qHdr3na0OdLIVkbYsuz03K36r1NnLzTmwhIrHIWxc+cezPAa/SXDB4cv7fiNxgdSSMUABWPaitu+lUJLVqVRKaxvXfLl+A6SVgOjqiUCsBOOSQJBZEkNOvXpFPEd22X+W7WIFZ2aPMjsUqgXr5af550B7TLn+/uL0XyX+IETBQD68/6MsGUKR7U=",
+        "edits": ""
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -0.17,
+          0,
+          -0.06325
+        ],
+        "max": [
+          0.17,
+          0.18,
+          0.06325
+        ],
+        "sourceNodeId": "asset-bounds"
+      }
+    ],
+    "sourceMeshCount": 5,
+    "candidateCount": 0,
+    "fallbackUsed": true
+  },
+  "footprintRadius": 0.17,
+  "sizeClass": "small",
+  "mode": "voxel",
+  "provider": "gpt",
+  "createdAt": 1786541318243,
+  "updatedAt": 1786541318243
+}

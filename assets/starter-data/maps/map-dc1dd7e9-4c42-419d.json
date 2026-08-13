@@ -1,0 +1,8675 @@
+{
+  "id": "map-dc1dd7e9-4c42-419d",
+  "seed": 3085106322,
+  "name": "电影院样例",
+  "assetGenerationMode": "voxel",
+  "version": 10,
+  "createdAt": 1786540850705,
+  "updatedAt": 1786598228328,
+  "box": {
+    "size": [
+      25,
+      5,
+      15
+    ],
+    "colors": {
+      "floor": "#8a765e",
+      "ceiling": "#ded8ca",
+      "north": "#c9c0ae",
+      "south": "#c9c0ae",
+      "east": "#d1c8b7",
+      "west": "#d1c8b7"
+    }
+  },
+  "sceneMode": "indoor",
+  "playerHeight": 1.6,
+  "playerRadius": 0.38,
+  "worldScaleProfile": "balanced",
+  "room": {
+    "position": [
+      0,
+      0,
+      0
+    ],
+    "size": [
+      25,
+      5,
+      15
+    ],
+    "wallThickness": 0.16,
+    "openings": [
+      {
+        "id": "composition-entrance-zone-entrance-door-1-opening",
+        "kind": "door",
+        "wall": "south",
+        "offset": 0,
+        "bottom": 0,
+        "width": 3.9031999999999996,
+        "height": 2.24
+      },
+      {
+        "id": "composition-entrance-zone-daylight-window-1-opening",
+        "kind": "window",
+        "wall": "east",
+        "offset": 0,
+        "bottom": 2.08,
+        "width": 1.4631739221243192,
+        "height": 1.5200000000000002
+      }
+    ]
+  },
+  "lighting": {
+    "sunPosition": [
+      -18,
+      24,
+      14
+    ]
+  },
+  "terrain": {
+    "resolutionX": 33,
+    "resolutionZ": 33,
+    "heights": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ]
+  },
+  "grassLayers": [],
+  "waterBodies": [],
+  "paintStrokes": [],
+  "objects": [
+    {
+      "id": "composition-screen-zone-cinema-screen-1",
+      "name": "电影院银幕",
+      "parentId": null,
+      "assetId": "asset-4553913b-a4bf-4890",
+      "transform": {
+        "position": [
+          0,
+          0,
+          -7.090551219512195
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          0.6981818181818196,
+          0.24975609756097558,
+          0.6981818181818196
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-entrance-zone-entrance-door-1",
+      "name": "电影院入口门",
+      "parentId": null,
+      "assetId": "asset-9f92596f-5810-49ef",
+      "transform": {
+        "position": [
+          0,
+          0,
+          7.42
+        ],
+        "rotation": [
+          0,
+          3.141592653589793,
+          0
+        ],
+        "scale": [
+          0.7496470588235293,
+          0.6352941176470588,
+          0.7496470588235293
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false,
+      "roomOpeningId": "composition-entrance-zone-entrance-door-1-opening"
+    },
+    {
+      "id": "composition-entrance-zone-daylight-window-1",
+      "name": "侧后方玻璃窗",
+      "parentId": null,
+      "assetId": "asset-28aebc2b-8def-4789",
+      "transform": {
+        "position": [
+          12.42,
+          2.08,
+          0
+        ],
+        "rotation": [
+          0,
+          -1.5707963267948966,
+          0
+        ],
+        "scale": [
+          1.0977570810510469,
+          0.5142857142857143,
+          1.0977570810510469
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false,
+      "roomOpeningId": "composition-entrance-zone-daylight-window-1-opening"
+    },
+    {
+      "id": "composition-seating-zone-cinema-seat-1",
+      "name": "电影院座椅模块",
+      "parentId": null,
+      "assetId": "asset-5c73a945-1248-44be",
+      "transform": {
+        "position": [
+          4.125000000000001,
+          0,
+          -5.690551219512194
+        ],
+        "rotation": [
+          0,
+          -1.897991473489826,
+          0
+        ],
+        "scale": [
+          0.9845205910224467,
+          0.9845205910224467,
+          0.9845205910224467
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-seating-zone-cinema-seat-2",
+      "name": "电影院座椅模块",
+      "parentId": null,
+      "assetId": "asset-5c73a945-1248-44be",
+      "transform": {
+        "position": [
+          3.075,
+          0,
+          -5.690551219512194
+        ],
+        "rotation": [
+          0,
+          -1.9980361897166297,
+          0
+        ],
+        "scale": [
+          0.9956854020897299,
+          0.9956854020897299,
+          0.9956854020897299
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-seating-zone-cinema-seat-3",
+      "name": "电影院座椅模块",
+      "parentId": null,
+      "assetId": "asset-5c73a945-1248-44be",
+      "transform": {
+        "position": [
+          2.025,
+          0,
+          -5.690551219512194
+        ],
+        "rotation": [
+          0,
+          -2.1756987297303096,
+          0
+        ],
+        "scale": [
+          1.0103916328400373,
+          1.0103916328400373,
+          1.0103916328400373
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-seating-zone-cinema-seat-4",
+      "name": "电影院座椅模块",
+      "parentId": null,
+      "assetId": "asset-5c73a945-1248-44be",
+      "transform": {
+        "position": [
+          0.9750000000000002,
+          0,
+          -5.690551219512194
+        ],
+        "rotation": [
+          0,
+          -2.5332676449712204,
+          0
+        ],
+        "scale": [
+          0.9964225304778666,
+          0.9964225304778666,
+          0.9964225304778666
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-seating-zone-cinema-seat-5",
+      "name": "电影院座椅模块",
+      "parentId": null,
+      "assetId": "asset-5c73a945-1248-44be",
+      "transform": {
+        "position": [
+          -0.07499999999999996,
+          0,
+          -5.690551219512194
+        ],
+        "rotation": [
+          0,
+          3.088072385130478,
+          0
+        ],
+        "scale": [
+          0.9913615906890482,
+          0.9913615906890482,
+          0.9913615906890482
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-seating-zone-cinema-seat-6",
+      "name": "电影院座椅模块",
+      "parentId": null,
+      "assetId": "asset-5c73a945-1248-44be",
+      "transform": {
+        "position": [
+          -1.125,
+          0,
+          -5.690551219512194
+        ],
+        "rotation": [
+          0,
+          2.4646778017473165,
+          0
+        ],
+        "scale": [
+          1.0133893264550715,
+          1.0133893264550715,
+          1.0133893264550715
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-seating-zone-cinema-seat-7",
+      "name": "电影院座椅模块",
+      "parentId": null,
+      "assetId": "asset-5c73a945-1248-44be",
+      "transform": {
+        "position": [
+          -2.1750000000000003,
+          0,
+          -5.690551219512194
+        ],
+        "rotation": [
+          0,
+          2.142714526656159,
+          0
+        ],
+        "scale": [
+          0.9979620550014079,
+          0.9979620550014079,
+          0.9979620550014079
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-seating-zone-cinema-seat-8",
+      "name": "电影院座椅模块",
+      "parentId": null,
+      "assetId": "asset-5c73a945-1248-44be",
+      "transform": {
+        "position": [
+          -3.225,
+          0,
+          -5.690551219512194
+        ],
+        "rotation": [
+          0,
+          1.9803566132434949,
+          0
+        ],
+        "scale": [
+          0.9812648728024215,
+          0.9812648728024215,
+          0.9812648728024215
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-seating-zone-cinema-seat-9",
+      "name": "电影院座椅模块",
+      "parentId": null,
+      "assetId": "asset-5c73a945-1248-44be",
+      "transform": {
+        "position": [
+          -4.275,
+          0,
+          -5.690551219512194
+        ],
+        "rotation": [
+          0,
+          1.8872745223124874,
+          0
+        ],
+        "scale": [
+          0.9948674285598099,
+          0.9948674285598099,
+          0.9948674285598099
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-seating-zone-cinema-seat-10",
+      "name": "电影院座椅模块",
+      "parentId": null,
+      "assetId": "asset-5c73a945-1248-44be",
+      "transform": {
+        "position": [
+          -5.325,
+          0,
+          -5.690551219512194
+        ],
+        "rotation": [
+          0,
+          1.8278889347675578,
+          0
+        ],
+        "scale": [
+          1.0025574642512947,
+          1.0025574642512947,
+          1.0025574642512947
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-seating-zone-cinema-seat-11",
+      "name": "电影院座椅模块",
+      "parentId": null,
+      "assetId": "asset-5c73a945-1248-44be",
+      "transform": {
+        "position": [
+          4.125000000000001,
+          0,
+          -4.6405512195121945
+        ],
+        "rotation": [
+          0,
+          -2.1067475815564616,
+          0
+        ],
+        "scale": [
+          0.9999738452676684,
+          0.9999738452676684,
+          0.9999738452676684
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-seating-zone-cinema-seat-12",
+      "name": "电影院座椅模块",
+      "parentId": null,
+      "assetId": "asset-5c73a945-1248-44be",
+      "transform": {
+        "position": [
+          3.075,
+          0,
+          -4.6405512195121945
+        ],
+        "rotation": [
+          0,
+          -2.243551174311116,
+          0
+        ],
+        "scale": [
+          0.9983846759609878,
+          0.9983846759609878,
+          0.9983846759609878
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-seating-zone-cinema-seat-13",
+      "name": "电影院座椅模块",
+      "parentId": null,
+      "assetId": "asset-5c73a945-1248-44be",
+      "transform": {
+        "position": [
+          2.025,
+          0,
+          -4.6405512195121945
+        ],
+        "rotation": [
+          0,
+          -2.4508825529872946,
+          0
+        ],
+        "scale": [
+          0.9850373232923448,
+          0.9850373232923448,
+          0.9850373232923448
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-seating-zone-cinema-seat-14",
+      "name": "电影院座椅模块",
+      "parentId": null,
+      "assetId": "asset-5c73a945-1248-44be",
+      "transform": {
+        "position": [
+          0.9750000000000002,
+          0,
+          -4.6405512195121945
+        ],
+        "rotation": [
+          0,
+          -2.7628468380387092,
+          0
+        ],
+        "scale": [
+          1.0081852207798512,
+          1.0081852207798512,
+          1.0081852207798512
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-seating-zone-cinema-seat-15",
+      "name": "电影院座椅模块",
+      "parentId": null,
+      "assetId": "asset-5c73a945-1248-44be",
+      "transform": {
+        "position": [
+          -0.07499999999999996,
+          0,
+          -4.6405512195121945
+        ],
+        "rotation": [
+          0,
+          3.110989965661074,
+          0
+        ],
+        "scale": [
+          0.9924286629352719,
+          0.9924286629352719,
+          0.9924286629352719
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-seating-zone-cinema-seat-16",
+      "name": "电影院座椅模块",
+      "parentId": null,
+      "assetId": "asset-5c73a945-1248-44be",
+      "transform": {
+        "position": [
+          -1.125,
+          0,
+          -4.6405512195121945
+        ],
+        "rotation": [
+          0,
+          2.7111278807554857,
+          0
+        ],
+        "scale": [
+          1.0162681815680117,
+          1.0162681815680117,
+          1.0162681815680117
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-seating-zone-cinema-seat-17",
+      "name": "电影院座椅模块",
+      "parentId": null,
+      "assetId": "asset-5c73a945-1248-44be",
+      "transform": {
+        "position": [
+          -2.1750000000000003,
+          0,
+          -4.6405512195121945
+        ],
+        "rotation": [
+          0,
+          2.415584026384706,
+          0
+        ],
+        "scale": [
+          0.9933336603641509,
+          0.9933336603641509,
+          0.9933336603641509
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-seating-zone-cinema-seat-18",
+      "name": "电影院座椅模块",
+      "parentId": null,
+      "assetId": "asset-5c73a945-1248-44be",
+      "transform": {
+        "position": [
+          -3.225,
+          0,
+          -4.6405512195121945
+        ],
+        "rotation": [
+          0,
+          2.220470196692962,
+          0
+        ],
+        "scale": [
+          0.9827805473469198,
+          0.9827805473469198,
+          0.9827805473469198
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-seating-zone-cinema-seat-19",
+      "name": "电影院座椅模块",
+      "parentId": null,
+      "assetId": "asset-5c73a945-1248-44be",
+      "transform": {
+        "position": [
+          -4.275,
+          0,
+          -4.6405512195121945
+        ],
+        "rotation": [
+          0,
+          2.091201093617796,
+          0
+        ],
+        "scale": [
+          1.0021443256828935,
+          1.0021443256828935,
+          1.0021443256828935
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-seating-zone-cinema-seat-20",
+      "name": "电影院座椅模块",
+      "parentId": null,
+      "assetId": "asset-5c73a945-1248-44be",
+      "transform": {
+        "position": [
+          -5.325,
+          0,
+          -4.6405512195121945
+        ],
+        "rotation": [
+          0,
+          2.002012562863803,
+          0
+        ],
+        "scale": [
+          0.995474314102903,
+          0.995474314102903,
+          0.995474314102903
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-seating-zone-cinema-seat-21",
+      "name": "电影院座椅模块",
+      "parentId": null,
+      "assetId": "asset-5c73a945-1248-44be",
+      "transform": {
+        "position": [
+          4.125000000000001,
+          0,
+          -3.5905512195121947
+        ],
+        "rotation": [
+          0,
+          -2.2744101095743487,
+          0
+        ],
+        "scale": [
+          1.0091832527704536,
+          1.0091832527704536,
+          1.0091832527704536
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-seating-zone-cinema-seat-22",
+      "name": "电影院座椅模块",
+      "parentId": null,
+      "assetId": "asset-5c73a945-1248-44be",
+      "transform": {
+        "position": [
+          3.075,
+          0,
+          -3.5905512195121947
+        ],
+        "rotation": [
+          0,
+          -2.4207434744810996,
+          0
+        ],
+        "scale": [
+          1.0155484700016677,
+          1.0155484700016677,
+          1.0155484700016677
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-seating-zone-cinema-seat-23",
+      "name": "电影院座椅模块",
+      "parentId": null,
+      "assetId": "asset-5c73a945-1248-44be",
+      "transform": {
+        "position": [
+          2.025,
+          0,
+          -3.5905512195121947
+        ],
+        "rotation": [
+          0,
+          -2.6170784927460966,
+          0
+        ],
+        "scale": [
+          1.0161260081455112,
+          1.0161260081455112,
+          1.0161260081455112
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-seating-zone-cinema-seat-24",
+      "name": "电影院座椅模块",
+      "parentId": null,
+      "assetId": "asset-5c73a945-1248-44be",
+      "transform": {
+        "position": [
+          0.9750000000000002,
+          0,
+          -3.5905512195121947
+        ],
+        "rotation": [
+          0,
+          -2.8699091551341596,
+          0
+        ],
+        "scale": [
+          1.0033895295765252,
+          1.0033895295765252,
+          1.0033895295765252
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-seating-zone-cinema-seat-25",
+      "name": "电影院座椅模块",
+      "parentId": null,
+      "assetId": "asset-5c73a945-1248-44be",
+      "transform": {
+        "position": [
+          -0.07499999999999996,
+          0,
+          -3.5905512195121947
+        ],
+        "rotation": [
+          0,
+          3.1201673611412586,
+          0
+        ],
+        "scale": [
+          0.9904590288363397,
+          0.9904590288363397,
+          0.9904590288363397
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-seating-zone-cinema-seat-26",
+      "name": "电影院座椅模块",
+      "parentId": null,
+      "assetId": "asset-5c73a945-1248-44be",
+      "transform": {
+        "position": [
+          -1.125,
+          0,
+          -3.5905512195121947
+        ],
+        "rotation": [
+          0,
+          2.8305943729842524,
+          0
+        ],
+        "scale": [
+          1.0143788637407125,
+          1.0143788637407125,
+          1.0143788637407125
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-seating-zone-cinema-seat-27",
+      "name": "电影院座椅模块",
+      "parentId": null,
+      "assetId": "asset-5c73a945-1248-44be",
+      "transform": {
+        "position": [
+          -2.1750000000000003,
+          0,
+          -3.5905512195121947
+        ],
+        "rotation": [
+          0,
+          2.585565679839419,
+          0
+        ],
+        "scale": [
+          1.00681952749379,
+          1.00681952749379,
+          1.00681952749379
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-seating-zone-cinema-seat-28",
+      "name": "电影院座椅模块",
+      "parentId": null,
+      "assetId": "asset-5c73a945-1248-44be",
+      "transform": {
+        "position": [
+          -3.225,
+          0,
+          -3.5905512195121947
+        ],
+        "rotation": [
+          0,
+          2.3970639134221043,
+          0
+        ],
+        "scale": [
+          1.0144205584935844,
+          1.0144205584935844,
+          1.0144205584935844
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-seating-zone-cinema-seat-29",
+      "name": "电影院座椅模块",
+      "parentId": null,
+      "assetId": "asset-5c73a945-1248-44be",
+      "transform": {
+        "position": [
+          -4.275,
+          0,
+          -3.5905512195121947
+        ],
+        "rotation": [
+          0,
+          2.2568442076363033,
+          0
+        ],
+        "scale": [
+          0.9958423017244786,
+          0.9958423017244786,
+          0.9958423017244786
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-seating-zone-cinema-seat-30",
+      "name": "电影院座椅模块",
+      "parentId": null,
+      "assetId": "asset-5c73a945-1248-44be",
+      "transform": {
+        "position": [
+          -5.325,
+          0,
+          -3.5905512195121947
+        ],
+        "rotation": [
+          0,
+          2.1522701874145107,
+          0
+        ],
+        "scale": [
+          0.9930351855792106,
+          0.9930351855792106,
+          0.9930351855792106
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-seating-zone-cinema-seat-31",
+      "name": "电影院座椅模块",
+      "parentId": null,
+      "assetId": "asset-5c73a945-1248-44be",
+      "transform": {
+        "position": [
+          4.125000000000001,
+          0,
+          -2.540551219512194
+        ],
+        "rotation": [
+          0,
+          -2.4051467054287716,
+          0
+        ],
+        "scale": [
+          1.0067089030146599,
+          1.0067089030146599,
+          1.0067089030146599
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-seating-zone-cinema-seat-32",
+      "name": "电影院座椅模块",
+      "parentId": null,
+      "assetId": "asset-5c73a945-1248-44be",
+      "transform": {
+        "position": [
+          3.075,
+          0,
+          -2.540551219512194
+        ],
+        "rotation": [
+          0,
+          -2.5472770025983578,
+          0
+        ],
+        "scale": [
+          0.9975847920775414,
+          0.9975847920775414,
+          0.9975847920775414
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-seating-zone-cinema-seat-33",
+      "name": "电影院座椅模块",
+      "parentId": null,
+      "assetId": "asset-5c73a945-1248-44be",
+      "transform": {
+        "position": [
+          2.025,
+          0,
+          -2.540551219512194
+        ],
+        "rotation": [
+          0,
+          -2.7228586400587766,
+          0
+        ],
+        "scale": [
+          1.0135899448674173,
+          1.0135899448674173,
+          1.0135899448674173
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-seating-zone-cinema-seat-34",
+      "name": "电影院座椅模块",
+      "parentId": null,
+      "assetId": "asset-5c73a945-1248-44be",
+      "transform": {
+        "position": [
+          0.9750000000000002,
+          0,
+          -2.540551219512194
+        ],
+        "rotation": [
+          0,
+          -2.930499320367047,
+          0
+        ],
+        "scale": [
+          0.9987367196939886,
+          0.9987367196939886,
+          0.9987367196939886
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-seating-zone-cinema-seat-35",
+      "name": "电影院座椅模块",
+      "parentId": null,
+      "assetId": "asset-5c73a945-1248-44be",
+      "transform": {
+        "position": [
+          -0.07499999999999996,
+          0,
+          -2.540551219512194
+        ],
+        "rotation": [
+          0,
+          3.1251106297547913,
+          0
+        ],
+        "scale": [
+          0.9909040583483875,
+          0.9909040583483875,
+          0.9909040583483875
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-seating-zone-cinema-seat-36",
+      "name": "电影院座椅模块",
+      "parentId": null,
+      "assetId": "asset-5c73a945-1248-44be",
+      "transform": {
+        "position": [
+          -1.125,
+          0,
+          -2.540551219512194
+        ],
+        "rotation": [
+          0,
+          2.899201306811175,
+          0
+        ],
+        "scale": [
+          1.0130989897064864,
+          1.0130989897064864,
+          1.0130989897064864
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-seating-zone-cinema-seat-37",
+      "name": "电影院座椅模块",
+      "parentId": null,
+      "assetId": "asset-5c73a945-1248-44be",
+      "transform": {
+        "position": [
+          -2.1750000000000003,
+          0,
+          -2.540551219512194
+        ],
+        "rotation": [
+          0,
+          2.695681543687299,
+          0
+        ],
+        "scale": [
+          1.0088317300844938,
+          1.0088317300844938,
+          1.0088317300844938
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-seating-zone-cinema-seat-38",
+      "name": "电影院座椅模块",
+      "parentId": null,
+      "assetId": "asset-5c73a945-1248-44be",
+      "transform": {
+        "position": [
+          -3.225,
+          0,
+          -2.540551219512194
+        ],
+        "rotation": [
+          0,
+          2.5249908846226123,
+          0
+        ],
+        "scale": [
+          0.9981109934765846,
+          0.9981109934765846,
+          0.9981109934765846
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-seating-zone-cinema-seat-39",
+      "name": "电影院座椅模块",
+      "parentId": null,
+      "assetId": "asset-5c73a945-1248-44be",
+      "transform": {
+        "position": [
+          -4.275,
+          0,
+          -2.540551219512194
+        ],
+        "rotation": [
+          0,
+          2.387345882833952,
+          0
+        ],
+        "scale": [
+          0.9820748803205788,
+          0.9820748803205788,
+          0.9820748803205788
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-seating-zone-cinema-seat-40",
+      "name": "电影院座椅模块",
+      "parentId": null,
+      "assetId": "asset-5c73a945-1248-44be",
+      "transform": {
+        "position": [
+          -5.325,
+          0,
+          -2.540551219512194
+        ],
+        "rotation": [
+          0,
+          2.2778740132460245,
+          0
+        ],
+        "scale": [
+          1.0142755315173417,
+          1.0142755315173417,
+          1.0142755315173417
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-seating-zone-cinema-seat-41",
+      "name": "电影院座椅模块",
+      "parentId": null,
+      "assetId": "asset-5c73a945-1248-44be",
+      "transform": {
+        "position": [
+          4.125000000000001,
+          0,
+          -1.490551219512195
+        ],
+        "rotation": [
+          0,
+          -2.5067182179241625,
+          0
+        ],
+        "scale": [
+          1.0101126612070948,
+          1.0101126612070948,
+          1.0101126612070948
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-seating-zone-cinema-seat-42",
+      "name": "电影院座椅模块",
+      "parentId": null,
+      "assetId": "asset-5c73a945-1248-44be",
+      "transform": {
+        "position": [
+          3.075,
+          0,
+          -1.490551219512195
+        ],
+        "rotation": [
+          0,
+          -2.639435196026066,
+          0
+        ],
+        "scale": [
+          1.0148064886964858,
+          1.0148064886964858,
+          1.0148064886964858
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-seating-zone-cinema-seat-43",
+      "name": "电影院座椅模块",
+      "parentId": null,
+      "assetId": "asset-5c73a945-1248-44be",
+      "transform": {
+        "position": [
+          2.025,
+          0,
+          -1.490551219512195
+        ],
+        "rotation": [
+          0,
+          -2.794615048370139,
+          0
+        ],
+        "scale": [
+          1.0059329356439413,
+          1.0059329356439413,
+          1.0059329356439413
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-seating-zone-cinema-seat-44",
+      "name": "电影院座椅模块",
+      "parentId": null,
+      "assetId": "asset-5c73a945-1248-44be",
+      "transform": {
+        "position": [
+          0.9750000000000002,
+          0,
+          -1.490551219512195
+        ],
+        "rotation": [
+          0,
+          -2.9692134441934237,
+          0
+        ],
+        "scale": [
+          1.019162790896371,
+          1.019162790896371,
+          1.019162790896371
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-seating-zone-cinema-seat-45",
+      "name": "电影院座椅模块",
+      "parentId": null,
+      "assetId": "asset-5c73a945-1248-44be",
+      "transform": {
+        "position": [
+          -0.07499999999999996,
+          0,
+          -1.490551219512195
+        ],
+        "rotation": [
+          0,
+          3.128200597113548,
+          0
+        ],
+        "scale": [
+          0.9961227141413838,
+          0.9961227141413838,
+          0.9961227141413838
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-seating-zone-cinema-seat-46",
+      "name": "电影院座椅模块",
+      "parentId": null,
+      "assetId": "asset-5c73a945-1248-44be",
+      "transform": {
+        "position": [
+          -1.125,
+          0,
+          -1.490551219512195
+        ],
+        "rotation": [
+          0,
+          2.9433387248520146,
+          0
+        ],
+        "scale": [
+          0.996505854614079,
+          0.996505854614079,
+          0.996505854614079
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-seating-zone-cinema-seat-47",
+      "name": "电影院座椅模块",
+      "parentId": null,
+      "assetId": "asset-5c73a945-1248-44be",
+      "transform": {
+        "position": [
+          -2.1750000000000003,
+          0,
+          -1.490551219512195
+        ],
+        "rotation": [
+          0,
+          2.7711323063578663,
+          0
+        ],
+        "scale": [
+          1.0049512772168965,
+          1.0049512772168965,
+          1.0049512772168965
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-seating-zone-cinema-seat-48",
+      "name": "电影院座椅模块",
+      "parentId": null,
+      "assetId": "asset-5c73a945-1248-44be",
+      "transform": {
+        "position": [
+          -3.225,
+          0,
+          -1.490551219512195
+        ],
+        "rotation": [
+          0,
+          2.619087626831452,
+          0
+        ],
+        "scale": [
+          0.9964394641388208,
+          0.9964394641388208,
+          0.9964394641388208
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-seating-zone-cinema-seat-49",
+      "name": "电影院座椅模块",
+      "parentId": null,
+      "assetId": "asset-5c73a945-1248-44be",
+      "transform": {
+        "position": [
+          -4.275,
+          0,
+          -1.490551219512195
+        ],
+        "rotation": [
+          0,
+          2.4895750722078818,
+          0
+        ],
+        "scale": [
+          1.0075541852787138,
+          1.0075541852787138,
+          1.0075541852787138
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-seating-zone-cinema-seat-50",
+      "name": "电影院座椅模块",
+      "parentId": null,
+      "assetId": "asset-5c73a945-1248-44be",
+      "transform": {
+        "position": [
+          -5.325,
+          0,
+          -1.490551219512195
+        ],
+        "rotation": [
+          0,
+          2.3813608005896416,
+          0
+        ],
+        "scale": [
+          0.9918469495791942,
+          0.9918469495791942,
+          0.9918469495791942
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-seating-zone-cinema-seat-51",
+      "name": "电影院座椅模块",
+      "parentId": null,
+      "assetId": "asset-5c73a945-1248-44be",
+      "transform": {
+        "position": [
+          4.125000000000001,
+          0,
+          -0.44055121951219434
+        ],
+        "rotation": [
+          0,
+          -2.5863797120270906,
+          0
+        ],
+        "scale": [
+          0.9921123860217631,
+          0.9921123860217631,
+          0.9921123860217631
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-seating-zone-cinema-seat-52",
+      "name": "电影院座椅模块",
+      "parentId": null,
+      "assetId": "asset-5c73a945-1248-44be",
+      "transform": {
+        "position": [
+          3.075,
+          0,
+          -0.44055121951219434
+        ],
+        "rotation": [
+          0,
+          -2.7084699115061897,
+          0
+        ],
+        "scale": [
+          1.0143022682331502,
+          1.0143022682331502,
+          1.0143022682331502
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-seating-zone-cinema-seat-53",
+      "name": "电影院座椅模块",
+      "parentId": null,
+      "assetId": "asset-5c73a945-1248-44be",
+      "transform": {
+        "position": [
+          2.025,
+          0,
+          -0.44055121951219434
+        ],
+        "rotation": [
+          0,
+          -2.846002227815925,
+          0
+        ],
+        "scale": [
+          1.003236750010401,
+          1.003236750010401,
+          1.003236750010401
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-seating-zone-cinema-seat-54",
+      "name": "电影院座椅模块",
+      "parentId": null,
+      "assetId": "asset-5c73a945-1248-44be",
+      "transform": {
+        "position": [
+          0.9750000000000002,
+          0,
+          -0.44055121951219434
+        ],
+        "rotation": [
+          0,
+          -2.9960133431401346,
+          0
+        ],
+        "scale": [
+          1.0009020317345858,
+          1.0009020317345858,
+          1.0009020317345858
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-seating-zone-cinema-seat-55",
+      "name": "电影院座椅模块",
+      "parentId": null,
+      "assetId": "asset-5c73a945-1248-44be",
+      "transform": {
+        "position": [
+          -0.07499999999999996,
+          0,
+          -0.44055121951219434
+        ],
+        "rotation": [
+          0,
+          3.130314936251398,
+          0
+        ],
+        "scale": [
+          1.0073405967466533,
+          1.0073405967466533,
+          1.0073405967466533
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-seating-zone-cinema-seat-56",
+      "name": "电影院座椅模块",
+      "parentId": null,
+      "assetId": "asset-5c73a945-1248-44be",
+      "transform": {
+        "position": [
+          -1.125,
+          0,
+          -0.44055121951219434
+        ],
+        "rotation": [
+          0,
+          2.9740064429162354,
+          0
+        ],
+        "scale": [
+          1.0038552614022047,
+          1.0038552614022047,
+          1.0038552614022047
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-seating-zone-cinema-seat-57",
+      "name": "电影院座椅模块",
+      "parentId": null,
+      "assetId": "asset-5c73a945-1248-44be",
+      "transform": {
+        "position": [
+          -2.1750000000000003,
+          0,
+          -0.44055121951219434
+        ],
+        "rotation": [
+          0,
+          2.8254917565967355,
+          0
+        ],
+        "scale": [
+          0.985501250969246,
+          0.985501250969246,
+          0.985501250969246
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-seating-zone-cinema-seat-58",
+      "name": "电影院座椅模块",
+      "parentId": null,
+      "assetId": "asset-5c73a945-1248-44be",
+      "transform": {
+        "position": [
+          -3.225,
+          0,
+          -0.44055121951219434
+        ],
+        "rotation": [
+          0,
+          2.6900473281323167,
+          0
+        ],
+        "scale": [
+          0.9884901697654277,
+          0.9884901697654277,
+          0.9884901697654277
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-seating-zone-cinema-seat-59",
+      "name": "电影院座椅模块",
+      "parentId": null,
+      "assetId": "asset-5c73a945-1248-44be",
+      "transform": {
+        "position": [
+          -4.275,
+          0,
+          -0.44055121951219434
+        ],
+        "rotation": [
+          0,
+          2.5702551737561663,
+          0
+        ],
+        "scale": [
+          0.9863336079008878,
+          0.9863336079008878,
+          0.9863336079008878
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-seating-zone-cinema-seat-60",
+      "name": "电影院座椅模块",
+      "parentId": null,
+      "assetId": "asset-5c73a945-1248-44be",
+      "transform": {
+        "position": [
+          -5.325,
+          0,
+          -0.44055121951219434
+        ],
+        "rotation": [
+          0,
+          2.466393416256255,
+          0
+        ],
+        "scale": [
+          1.0073932263813914,
+          1.0073932263813914,
+          1.0073932263813914
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-seating-zone-cinema-seat-61",
+      "name": "电影院座椅模块",
+      "parentId": null,
+      "assetId": "asset-5c73a945-1248-44be",
+      "transform": {
+        "position": [
+          4.125000000000001,
+          0,
+          0.6094487804878064
+        ],
+        "rotation": [
+          0,
+          -2.6497834776010945,
+          0
+        ],
+        "scale": [
+          1.01912606023252,
+          1.01912606023252,
+          1.01912606023252
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-seating-zone-cinema-seat-62",
+      "name": "电影院座椅模块",
+      "parentId": null,
+      "assetId": "asset-5c73a945-1248-44be",
+      "transform": {
+        "position": [
+          3.075,
+          0,
+          0.6094487804878064
+        ],
+        "rotation": [
+          0,
+          -2.7616461868332514,
+          0
+        ],
+        "scale": [
+          0.9818590622395277,
+          0.9818590622395277,
+          0.9818590622395277
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-seating-zone-cinema-seat-63",
+      "name": "电影院座椅模块",
+      "parentId": null,
+      "assetId": "asset-5c73a945-1248-44be",
+      "transform": {
+        "position": [
+          2.025,
+          0,
+          0.6094487804878064
+        ],
+        "rotation": [
+          0,
+          -2.8844287596178235,
+          0
+        ],
+        "scale": [
+          1.0179723196756094,
+          1.0179723196756094,
+          1.0179723196756094
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-seating-zone-cinema-seat-64",
+      "name": "电影院座椅模块",
+      "parentId": null,
+      "assetId": "asset-5c73a945-1248-44be",
+      "transform": {
+        "position": [
+          0.9750000000000002,
+          0,
+          0.6094487804878064
+        ],
+        "rotation": [
+          0,
+          -3.015639578102221,
+          0
+        ],
+        "scale": [
+          1.0141542627848685,
+          1.0141542627848685,
+          1.0141542627848685
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-seating-zone-cinema-seat-65",
+      "name": "电影院座椅模块",
+      "parentId": null,
+      "assetId": "asset-5c73a945-1248-44be",
+      "transform": {
+        "position": [
+          -0.07499999999999996,
+          0,
+          0.6094487804878064
+        ],
+        "rotation": [
+          0,
+          3.131852701860117,
+          0
+        ],
+        "scale": [
+          1.0142781671509147,
+          1.0142781671509147,
+          1.0142781671509147
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-seating-zone-cinema-seat-66",
+      "name": "电影院座椅模块",
+      "parentId": null,
+      "assetId": "asset-5c73a945-1248-44be",
+      "transform": {
+        "position": [
+          -1.125,
+          0,
+          0.6094487804878064
+        ],
+        "rotation": [
+          0,
+          2.9965152371505477,
+          0
+        ],
+        "scale": [
+          0.9898013473115861,
+          0.9898013473115861,
+          0.9898013473115861
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-seating-zone-cinema-seat-67",
+      "name": "电影院座椅模块",
+      "parentId": null,
+      "assetId": "asset-5c73a945-1248-44be",
+      "transform": {
+        "position": [
+          -2.1750000000000003,
+          0,
+          0.6094487804878064
+        ],
+        "rotation": [
+          0,
+          2.8662972773915425,
+          0
+        ],
+        "scale": [
+          0.9896178469900042,
+          0.9896178469900042,
+          0.9896178469900042
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-seating-zone-cinema-seat-68",
+      "name": "电影院座椅模块",
+      "parentId": null,
+      "assetId": "asset-5c73a945-1248-44be",
+      "transform": {
+        "position": [
+          -3.225,
+          0,
+          0.6094487804878064
+        ],
+        "rotation": [
+          0,
+          2.744958642633792,
+          0
+        ],
+        "scale": [
+          1.0087983083166183,
+          1.0087983083166183,
+          1.0087983083166183
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-seating-zone-cinema-seat-69",
+      "name": "电影院座椅模块",
+      "parentId": null,
+      "assetId": "asset-5c73a945-1248-44be",
+      "transform": {
+        "position": [
+          -4.275,
+          0,
+          0.6094487804878064
+        ],
+        "rotation": [
+          0,
+          2.6347698591435993,
+          0
+        ],
+        "scale": [
+          1.004741085274145,
+          1.004741085274145,
+          1.004741085274145
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-seating-zone-cinema-seat-70",
+      "name": "电影院座椅模块",
+      "parentId": null,
+      "assetId": "asset-5c73a945-1248-44be",
+      "transform": {
+        "position": [
+          -5.325,
+          0,
+          0.6094487804878064
+        ],
+        "rotation": [
+          0,
+          2.536554661111877,
+          0
+        ],
+        "scale": [
+          0.9969142850209027,
+          0.9969142850209027,
+          0.9969142850209027
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-seating-zone-cinema-seat-71",
+      "name": "电影院座椅模块",
+      "parentId": null,
+      "assetId": "asset-5c73a945-1248-44be",
+      "transform": {
+        "position": [
+          4.125000000000001,
+          0,
+          1.6594487804878053
+        ],
+        "rotation": [
+          0,
+          -2.70106231297328,
+          0
+        ],
+        "scale": [
+          1.004608467835933,
+          1.004608467835933,
+          1.004608467835933
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-seating-zone-cinema-seat-72",
+      "name": "电影院座椅模块",
+      "parentId": null,
+      "assetId": "asset-5c73a945-1248-44be",
+      "transform": {
+        "position": [
+          3.075,
+          0,
+          1.6594487804878053
+        ],
+        "rotation": [
+          0,
+          -2.8036457321033517,
+          0
+        ],
+        "scale": [
+          1.0188616763986647,
+          1.0188616763986647,
+          1.0188616763986647
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-seating-zone-cinema-seat-73",
+      "name": "电影院座椅模块",
+      "parentId": null,
+      "assetId": "asset-5c73a945-1248-44be",
+      "transform": {
+        "position": [
+          2.025,
+          0,
+          1.6594487804878053
+        ],
+        "rotation": [
+          0,
+          -2.91416789282816,
+          0
+        ],
+        "scale": [
+          0.9922550393547863,
+          0.9922550393547863,
+          0.9922550393547863
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-seating-zone-cinema-seat-74",
+      "name": "电影院座椅模块",
+      "parentId": null,
+      "assetId": "asset-5c73a945-1248-44be",
+      "transform": {
+        "position": [
+          0.9750000000000002,
+          0,
+          1.6594487804878053
+        ],
+        "rotation": [
+          0,
+          -3.0306218545020616,
+          0
+        ],
+        "scale": [
+          1.010388827379793,
+          1.010388827379793,
+          1.010388827379793
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-seating-zone-cinema-seat-75",
+      "name": "电影院座椅模块",
+      "parentId": null,
+      "assetId": "asset-5c73a945-1248-44be",
+      "transform": {
+        "position": [
+          -0.07499999999999996,
+          0,
+          1.6594487804878053
+        ],
+        "rotation": [
+          0,
+          3.1330214349216483,
+          0
+        ],
+        "scale": [
+          1.0188998103141784,
+          1.0188998103141784,
+          1.0188998103141784
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-seating-zone-cinema-seat-76",
+      "name": "电影院座椅模块",
+      "parentId": null,
+      "assetId": "asset-5c73a945-1248-44be",
+      "transform": {
+        "position": [
+          -1.125,
+          0,
+          1.6594487804878053
+        ],
+        "rotation": [
+          0,
+          3.0137227350297935,
+          0
+        ],
+        "scale": [
+          0.9845706622488797,
+          0.9845706622488797,
+          0.9845706622488797
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-seating-zone-cinema-seat-77",
+      "name": "电影院座椅模块",
+      "parentId": null,
+      "assetId": "asset-5c73a945-1248-44be",
+      "transform": {
+        "position": [
+          -2.1750000000000003,
+          0,
+          1.6594487804878053
+        ],
+        "rotation": [
+          0,
+          2.8979589795644776,
+          0
+        ],
+        "scale": [
+          0.9878684499207884,
+          0.9878684499207884,
+          0.9878684499207884
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-seating-zone-cinema-seat-78",
+      "name": "电影院座椅模块",
+      "parentId": null,
+      "assetId": "asset-5c73a945-1248-44be",
+      "transform": {
+        "position": [
+          -3.225,
+          0,
+          1.6594487804878053
+        ],
+        "rotation": [
+          0,
+          2.788469868040897,
+          0
+        ],
+        "scale": [
+          0.9824061481188983,
+          0.9824061481188983,
+          0.9824061481188983
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-seating-zone-cinema-seat-79",
+      "name": "电影院座椅模块",
+      "parentId": null,
+      "assetId": "asset-5c73a945-1248-44be",
+      "transform": {
+        "position": [
+          -4.275,
+          0,
+          1.6594487804878053
+        ],
+        "rotation": [
+          0,
+          2.6871296313257407,
+          0
+        ],
+        "scale": [
+          1.0164862604532392,
+          1.0164862604532392,
+          1.0164862604532392
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-seating-zone-cinema-seat-80",
+      "name": "电影院座椅模块",
+      "parentId": null,
+      "assetId": "asset-5c73a945-1248-44be",
+      "transform": {
+        "position": [
+          -5.325,
+          0,
+          1.6594487804878053
+        ],
+        "rotation": [
+          0,
+          2.594894458095512,
+          0
+        ],
+        "scale": [
+          0.9988633279781789,
+          0.9988633279781789,
+          0.9988633279781789
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-seating-zone-cinema-seat-81",
+      "name": "电影院座椅模块",
+      "parentId": null,
+      "assetId": "asset-5c73a945-1248-44be",
+      "transform": {
+        "position": [
+          4.125000000000001,
+          0,
+          2.709448780487806
+        ],
+        "rotation": [
+          0,
+          -2.743184259017769,
+          0
+        ],
+        "scale": [
+          1.0063737919926643,
+          1.0063737919926643,
+          1.0063737919926643
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-seating-zone-cinema-seat-82",
+      "name": "电影院座椅模块",
+      "parentId": null,
+      "assetId": "asset-5c73a945-1248-44be",
+      "transform": {
+        "position": [
+          3.075,
+          0,
+          2.709448780487806
+        ],
+        "rotation": [
+          0,
+          -2.837546176909061,
+          0
+        ],
+        "scale": [
+          1.002206547036767,
+          1.002206547036767,
+          1.002206547036767
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-seating-zone-cinema-seat-83",
+      "name": "电影院座椅模块",
+      "parentId": null,
+      "assetId": "asset-5c73a945-1248-44be",
+      "transform": {
+        "position": [
+          2.025,
+          0,
+          2.709448780487806
+        ],
+        "rotation": [
+          0,
+          -2.9378277531212493,
+          0
+        ],
+        "scale": [
+          0.9937790248356759,
+          0.9937790248356759,
+          0.9937790248356759
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-seating-zone-cinema-seat-84",
+      "name": "电影院座椅模块",
+      "parentId": null,
+      "assetId": "asset-5c73a945-1248-44be",
+      "transform": {
+        "position": [
+          0.9750000000000002,
+          0,
+          2.709448780487806
+        ],
+        "rotation": [
+          0,
+          -3.042429179130928,
+          0
+        ],
+        "scale": [
+          0.9954080879036337,
+          0.9954080879036337,
+          0.9954080879036337
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-seating-zone-cinema-seat-85",
+      "name": "电影院座椅模块",
+      "parentId": null,
+      "assetId": "asset-5c73a945-1248-44be",
+      "transform": {
+        "position": [
+          -0.07499999999999996,
+          0,
+          2.709448780487806
+        ],
+        "rotation": [
+          0,
+          3.13393974177165,
+          0
+        ],
+        "scale": [
+          1.016792634036392,
+          1.016792634036392,
+          1.016792634036392
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-seating-zone-cinema-seat-86",
+      "name": "电影院座椅模块",
+      "parentId": null,
+      "assetId": "asset-5c73a945-1248-44be",
+      "transform": {
+        "position": [
+          -1.125,
+          0,
+          2.709448780487806
+        ],
+        "rotation": [
+          0,
+          3.0272970493663554,
+          0
+        ],
+        "scale": [
+          1.012705348925665,
+          1.012705348925665,
+          1.012705348925665
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-seating-zone-cinema-seat-87",
+      "name": "电影院座椅模块",
+      "parentId": null,
+      "assetId": "asset-5c73a945-1248-44be",
+      "transform": {
+        "position": [
+          -2.1750000000000003,
+          0,
+          2.709448780487806
+        ],
+        "rotation": [
+          0,
+          2.9231938319664397,
+          0
+        ],
+        "scale": [
+          1.0085639067925514,
+          1.0085639067925514,
+          1.0085639067925514
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-seating-zone-cinema-seat-88",
+      "name": "电影院座椅模块",
+      "parentId": null,
+      "assetId": "asset-5c73a945-1248-44be",
+      "transform": {
+        "position": [
+          -3.225,
+          0,
+          2.709448780487806
+        ],
+        "rotation": [
+          0,
+          2.8236734980697387,
+          0
+        ],
+        "scale": [
+          1.0103639101888984,
+          1.0103639101888984,
+          1.0103639101888984
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-seating-zone-cinema-seat-89",
+      "name": "电影院座椅模块",
+      "parentId": null,
+      "assetId": "asset-5c73a945-1248-44be",
+      "transform": {
+        "position": [
+          -4.275,
+          0,
+          2.709448780487806
+        ],
+        "rotation": [
+          0,
+          2.730253305437404,
+          0
+        ],
+        "scale": [
+          0.9878153440076858,
+          0.9878153440076858,
+          0.9878153440076858
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-seating-zone-cinema-seat-90",
+      "name": "电影院座椅模块",
+      "parentId": null,
+      "assetId": "asset-5c73a945-1248-44be",
+      "transform": {
+        "position": [
+          -5.325,
+          0,
+          2.709448780487806
+        ],
+        "rotation": [
+          0,
+          2.6438559484076127,
+          0
+        ],
+        "scale": [
+          1.0039006078243256,
+          1.0039006078243256,
+          1.0039006078243256
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-seating-zone-cinema-seat-91",
+      "name": "电影院座椅模块",
+      "parentId": null,
+      "assetId": "asset-5c73a945-1248-44be",
+      "transform": {
+        "position": [
+          4.125000000000001,
+          0,
+          3.7594487804878067
+        ],
+        "rotation": [
+          0,
+          -2.7782845806291045,
+          0
+        ],
+        "scale": [
+          0.9808409668132663,
+          0.9808409668132663,
+          0.9808409668132663
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-seating-zone-cinema-seat-92",
+      "name": "电影院座椅模块",
+      "parentId": null,
+      "assetId": "asset-5c73a945-1248-44be",
+      "transform": {
+        "position": [
+          3.075,
+          0,
+          3.7594487804878067
+        ],
+        "rotation": [
+          0,
+          -2.8654245382505,
+          0
+        ],
+        "scale": [
+          0.9974319429602474,
+          0.9974319429602474,
+          0.9974319429602474
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-seating-zone-ceiling-light-1",
+      "name": "影院吸顶灯",
+      "parentId": null,
+      "assetId": "asset-9061c53d-82bc-4f20",
+      "transform": {
+        "position": [
+          -4.800000000000001,
+          4.552,
+          -3.0500000000000003
+        ],
+        "rotation": [
+          0,
+          1.5707963267948966,
+          0
+        ],
+        "scale": [
+          0.7551999999999999,
+          0.6399999999999999,
+          0.7551999999999999
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-seating-zone-ceiling-light-2",
+      "name": "影院吸顶灯",
+      "parentId": null,
+      "assetId": "asset-9061c53d-82bc-4f20",
+      "transform": {
+        "position": [
+          -1.6,
+          4.552,
+          -3.0500000000000003
+        ],
+        "rotation": [
+          0,
+          1.5707963267948966,
+          0
+        ],
+        "scale": [
+          0.7551999999999999,
+          0.6399999999999999,
+          0.7551999999999999
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-seating-zone-ceiling-light-3",
+      "name": "影院吸顶灯",
+      "parentId": null,
+      "assetId": "asset-9061c53d-82bc-4f20",
+      "transform": {
+        "position": [
+          1.6,
+          4.552,
+          -3.0500000000000003
+        ],
+        "rotation": [
+          0,
+          1.5707963267948966,
+          0
+        ],
+        "scale": [
+          0.7551999999999999,
+          0.6399999999999999,
+          0.7551999999999999
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-seating-zone-ceiling-light-4",
+      "name": "影院吸顶灯",
+      "parentId": null,
+      "assetId": "asset-9061c53d-82bc-4f20",
+      "transform": {
+        "position": [
+          4.800000000000001,
+          4.552,
+          -3.0500000000000003
+        ],
+        "rotation": [
+          0,
+          1.5707963267948966,
+          0
+        ],
+        "scale": [
+          0.7551999999999999,
+          0.6399999999999999,
+          0.7551999999999999
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-seating-zone-ceiling-light-5",
+      "name": "影院吸顶灯",
+      "parentId": null,
+      "assetId": "asset-9061c53d-82bc-4f20",
+      "transform": {
+        "position": [
+          -4.800000000000001,
+          4.552,
+          0.15
+        ],
+        "rotation": [
+          0,
+          1.5707963267948966,
+          0
+        ],
+        "scale": [
+          0.7551999999999999,
+          0.6399999999999999,
+          0.7551999999999999
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-seating-zone-ceiling-light-6",
+      "name": "影院吸顶灯",
+      "parentId": null,
+      "assetId": "asset-9061c53d-82bc-4f20",
+      "transform": {
+        "position": [
+          -1.6,
+          4.552,
+          0.15
+        ],
+        "rotation": [
+          0,
+          1.5707963267948966,
+          0
+        ],
+        "scale": [
+          0.7551999999999999,
+          0.6399999999999999,
+          0.7551999999999999
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-seating-zone-ceiling-light-7",
+      "name": "影院吸顶灯",
+      "parentId": null,
+      "assetId": "asset-9061c53d-82bc-4f20",
+      "transform": {
+        "position": [
+          1.6,
+          4.552,
+          0.15
+        ],
+        "rotation": [
+          0,
+          1.5707963267948966,
+          0
+        ],
+        "scale": [
+          0.7551999999999999,
+          0.6399999999999999,
+          0.7551999999999999
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-seating-zone-ceiling-light-8",
+      "name": "影院吸顶灯",
+      "parentId": null,
+      "assetId": "asset-9061c53d-82bc-4f20",
+      "transform": {
+        "position": [
+          4.800000000000001,
+          4.552,
+          0.15
+        ],
+        "rotation": [
+          0,
+          1.5707963267948966,
+          0
+        ],
+        "scale": [
+          0.7551999999999999,
+          0.6399999999999999,
+          0.7551999999999999
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-seating-zone-ceiling-light-9",
+      "name": "影院吸顶灯",
+      "parentId": null,
+      "assetId": "asset-9061c53d-82bc-4f20",
+      "transform": {
+        "position": [
+          -4.800000000000001,
+          4.552,
+          3.35
+        ],
+        "rotation": [
+          0,
+          1.5707963267948966,
+          0
+        ],
+        "scale": [
+          0.7551999999999999,
+          0.6399999999999999,
+          0.7551999999999999
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-seating-zone-ceiling-light-10",
+      "name": "影院吸顶灯",
+      "parentId": null,
+      "assetId": "asset-9061c53d-82bc-4f20",
+      "transform": {
+        "position": [
+          -1.6,
+          4.552,
+          3.35
+        ],
+        "rotation": [
+          0,
+          1.5707963267948966,
+          0
+        ],
+        "scale": [
+          0.7551999999999999,
+          0.6399999999999999,
+          0.7551999999999999
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-seating-zone-ceiling-light-11",
+      "name": "影院吸顶灯",
+      "parentId": null,
+      "assetId": "asset-9061c53d-82bc-4f20",
+      "transform": {
+        "position": [
+          1.6,
+          4.552,
+          3.35
+        ],
+        "rotation": [
+          0,
+          1.5707963267948966,
+          0
+        ],
+        "scale": [
+          0.7551999999999999,
+          0.6399999999999999,
+          0.7551999999999999
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-seating-zone-ceiling-light-12",
+      "name": "影院吸顶灯",
+      "parentId": null,
+      "assetId": "asset-9061c53d-82bc-4f20",
+      "transform": {
+        "position": [
+          4.800000000000001,
+          4.552,
+          3.35
+        ],
+        "rotation": [
+          0,
+          1.5707963267948966,
+          0
+        ],
+        "scale": [
+          0.7551999999999999,
+          0.6399999999999999,
+          0.7551999999999999
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-seating-zone-wall-speaker-1",
+      "name": "侧墙环绕扬声器",
+      "parentId": null,
+      "assetId": "asset-d98bf0ea-2f58-485f",
+      "transform": {
+        "position": [
+          -4,
+          0,
+          6.697518428911268
+        ],
+        "rotation": [
+          0,
+          2.8626843056712126,
+          0
+        ],
+        "scale": [
+          0.9915751443710179,
+          0.9915751443710179,
+          0.9915751443710179
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-seating-zone-wall-speaker-2",
+      "name": "侧墙环绕扬声器",
+      "parentId": null,
+      "assetId": "asset-d98bf0ea-2f58-485f",
+      "transform": {
+        "position": [
+          4,
+          0,
+          6.722093260858755
+        ],
+        "rotation": [
+          0,
+          -2.862980561486042,
+          0
+        ],
+        "scale": [
+          0.9539749827701599,
+          0.9539749827701599,
+          0.9539749827701599
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-seating-zone-acoustic-panel-1",
+      "name": "影院吸音板",
+      "parentId": null,
+      "assetId": "asset-a5d69519-c4c0-452d",
+      "transform": {
+        "position": [
+          -5.5322790697674415,
+          0,
+          7.147060935269918
+        ],
+        "rotation": [
+          0,
+          3.141592653589793,
+          0
+        ],
+        "scale": [
+          1.37633814966573,
+          0.4762790697674418,
+          1.37633814966573
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-seating-zone-acoustic-panel-4",
+      "name": "影院吸音板",
+      "parentId": null,
+      "assetId": "asset-a5d69519-c4c0-452d",
+      "transform": {
+        "position": [
+          5.5322790697674415,
+          0,
+          7.147060935269918
+        ],
+        "rotation": [
+          0,
+          3.141592653589793,
+          0
+        ],
+        "scale": [
+          1.37633814966573,
+          0.4762790697674418,
+          1.37633814966573
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-entrance-zone-ticket-counter-1",
+      "name": "检票服务台",
+      "parentId": null,
+      "assetId": "asset-c1e503b4-4c0c-4ac6",
+      "transform": {
+        "position": [
+          -1.75,
+          0,
+          -6.7236
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          0.9062399999999999,
+          0.5627586206896552,
+          0.9062399999999999
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-entrance-zone-queue-stanchion-1",
+      "name": "排队隔离柱",
+      "parentId": null,
+      "assetId": "asset-772de973-e70f-4995",
+      "transform": {
+        "position": [
+          -1,
+          0,
+          4.5
+        ],
+        "rotation": [
+          0,
+          1.5707963267948966,
+          0
+        ],
+        "scale": [
+          1.0593103448275862,
+          1.0593103448275862,
+          1.0593103448275862
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-entrance-zone-queue-stanchion-2",
+      "name": "排队隔离柱",
+      "parentId": null,
+      "assetId": "asset-772de973-e70f-4995",
+      "transform": {
+        "position": [
+          1,
+          0,
+          4.5
+        ],
+        "rotation": [
+          0,
+          1.5707963267948966,
+          0
+        ],
+        "scale": [
+          1.059310344827586,
+          1.059310344827586,
+          1.059310344827586
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-screen-zone-front-speaker-2",
+      "name": "前置扬声器",
+      "parentId": null,
+      "assetId": "asset-6dd41423-55f0-4392",
+      "transform": {
+        "position": [
+          2.5,
+          0,
+          -6.92294798653602
+        ],
+        "rotation": [
+          0,
+          -0.48947253809979097,
+          0
+        ],
+        "scale": [
+          0.253360824742268,
+          0.253360824742268,
+          0.253360824742268
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "required-family-presence-projector-indoor-0-26",
+      "name": "影院投影机",
+      "parentId": null,
+      "assetId": "asset-29761b56-36d2-4599",
+      "transform": {
+        "position": [
+          6.097235247470374e-16,
+          0,
+          4.978770410958904
+        ],
+        "rotation": [
+          0,
+          -3.141592653589793,
+          0
+        ],
+        "scale": [
+          0.6312328767123287,
+          0.6312328767123287,
+          0.6312328767123287
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "required-family-presence-exit-sign-indoor-0-5",
+      "name": "安全出口标志",
+      "parentId": null,
+      "assetId": "asset-8c106d1b-0b1b-4797",
+      "transform": {
+        "position": [
+          -5.78823529411765,
+          2.4000000000000004,
+          7.229882352941175
+        ],
+        "rotation": [
+          0,
+          3.141592653589793,
+          0
+        ],
+        "scale": [
+          0.9411764705882357,
+          0.9411764705882357,
+          0.9411764705882357
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "required-family-presence-side-aisle-light-indoor-2-11",
+      "name": "侧通道导向灯",
+      "parentId": null,
+      "assetId": "asset-12b738df-a227-4f4d",
+      "transform": {
+        "position": [
+          1.4976000000000003,
+          0,
+          -1.8340310464030764e-16
+        ],
+        "rotation": [
+          0,
+          -1.5707963267948966,
+          0
+        ],
+        "scale": [
+          6.826666666666666,
+          6.826666666666666,
+          6.826666666666666
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "required-family-presence-fire-extinguisher-indoor-0-1",
+      "name": "壁挂灭火器",
+      "parentId": null,
+      "assetId": "asset-8f424f65-9318-4d38",
+      "transform": {
+        "position": [
+          12.115333333333332,
+          2.3040000000000003,
+          -1.8719999999999999
+        ],
+        "rotation": [
+          0,
+          -1.5707963267948966,
+          0
+        ],
+        "scale": [
+          0.5333333333333335,
+          0.5333333333333335,
+          0.5333333333333335
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "required-family-presence-blackout-curtain-indoor-0-2",
+      "name": "遮光帘",
+      "parentId": null,
+      "assetId": "asset-b471130c-0afb-449d",
+      "transform": {
+        "position": [
+          12.223870967741934,
+          0,
+          2.952
+        ],
+        "rotation": [
+          0,
+          -1.5707963267948966,
+          0
+        ],
+        "scale": [
+          1.343999999999989,
+          0.28313364055299534,
+          1.343999999999989
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "required-family-presence-waste-bin-indoor-2-1",
+      "name": "入口垃圾桶",
+      "parentId": null,
+      "assetId": "asset-be32643b-ae9a-4b0d",
+      "transform": {
+        "position": [
+          0.6786690285714285,
+          0,
+          -6.584729469459082
+        ],
+        "rotation": [
+          0,
+          1.3480186061571946,
+          0
+        ],
+        "scale": [
+          1.8925714285714283,
+          1.145263157894737,
+          1.8925714285714283
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    }
+  ],
+  "spawnPoints": [
+    [
+      0,
+      0,
+      0
+    ]
+  ],
+  "spawnYaw": 0,
+  "confirmedAt": 1786598228310,
+  "renderSchemeId": "render-689ea313-fa47-4f05",
+  "renderPromptSuggestions": [
+    "现代小型电影院，深色低反射材质，暖白通道灯与屏幕冷色反光形成克制对比。"
+  ],
+  "materialTagPolicy": {
+    "disabled": [
+      "base:fur"
+    ]
+  },
+  "visualSemantics": {
+    "version": 1,
+    "zones": [
+      {
+        "id": "entrance-zone",
+        "tags": [],
+        "center": [
+          0,
+          5.7
+        ],
+        "radius": 3,
+        "intensity": 0.65
+      },
+      {
+        "id": "seating-zone",
+        "tags": [],
+        "center": [
+          0,
+          0.15
+        ],
+        "radius": 8.625,
+        "intensity": 1
+      },
+      {
+        "id": "screen-zone",
+        "tags": [],
+        "center": [
+          0,
+          -5.8500000000000005
+        ],
+        "radius": 3,
+        "intensity": 0.9
+      }
+    ],
+    "wind": {
+      "direction": [
+        0.9701425001453319,
+        0.24253562503633297
+      ],
+      "speed": 0.22,
+      "gustStrength": 0.18,
+      "gustFrequency": 0.12
+    }
+  },
+  "layout": {
+    "version": 1,
+    "globalPrompt": "",
+    "regions": [],
+    "edgeMask": {
+      "kind": "none",
+      "points": [
+        [
+          -12.5,
+          -7.5
+        ],
+        [
+          12.5,
+          -7.5
+        ],
+        [
+          12.5,
+          7.5
+        ],
+        [
+          -12.5,
+          7.5
+        ]
+      ],
+      "seed": 1,
+      "irregularity": 0.22
+    },
+    "stitchSources": [],
+    "seams": []
+  },
+  "collisionBake": {
+    "version": 1,
+    "sourceHash": "15pr6yp",
+    "sourceBoxCount": 240,
+    "boxes": [
+      {
+        "objectId": "composition-screen-zone-cinema-screen-1",
+        "min": [
+          -2.7229090909090963,
+          0.07118048780487811,
+          -6.9055330376940125
+        ],
+        "max": [
+          2.7229090909090963,
+          1.1576195121951218,
+          -6.821751219512194
+        ]
+      },
+      {
+        "objectId": "composition-screen-zone-cinema-screen-1",
+        "min": [
+          -1.926981818181822,
+          0.046204878048780526,
+          -7.087060310421285
+        ],
+        "max": [
+          -1.7733818181818217,
+          1.1825951219512192,
+          -6.919496674057649
+        ]
+      },
+      {
+        "objectId": "composition-screen-zone-cinema-screen-1",
+        "min": [
+          1.7733818181818217,
+          0.046204878048780526,
+          -7.087060310421285
+        ],
+        "max": [
+          1.926981818181822,
+          1.1825951219512192,
+          -6.919496674057649
+        ]
+      },
+      {
+        "objectId": "composition-screen-zone-cinema-screen-1",
+        "min": [
+          -2.820654545454551,
+          0.047453658536585376,
+          -6.870623946784922
+        ],
+        "max": [
+          2.820654545454551,
+          0.0874146341463415,
+          -6.744951219512194
+        ]
+      },
+      {
+        "objectId": "composition-screen-zone-cinema-screen-1",
+        "min": [
+          -2.820654545454551,
+          1.1413853658536586,
+          -6.870623946784922
+        ],
+        "max": [
+          2.820654545454551,
+          1.1813463414634147,
+          -6.744951219512194
+        ]
+      },
+      {
+        "objectId": "composition-screen-zone-cinema-screen-1",
+        "min": [
+          -2.0247272727272767,
+          0,
+          -7.066114855875831
+        ],
+        "max": [
+          2.0247272727272767,
+          0.044956097560975614,
+          -6.9125148558758305
+        ]
+      },
+      {
+        "objectId": "composition-screen-zone-cinema-screen-1",
+        "min": [
+          -2.0247272727272767,
+          1.1838439024390244,
+          -7.066114855875831
+        ],
+        "max": [
+          2.0247272727272767,
+          1.2288,
+          -6.9125148558758305
+        ]
+      },
+      {
+        "objectId": "composition-screen-zone-cinema-screen-1",
+        "min": [
+          -2.0770909090909133,
+          0.06493658536585363,
+          -7.436151219512196
+        ],
+        "max": [
+          -1.6232727272727303,
+          0.11488780487804878,
+          -6.933460310421285
+        ]
+      },
+      {
+        "objectId": "composition-screen-zone-cinema-screen-1",
+        "min": [
+          -2.0770909090909133,
+          1.1139121951219513,
+          -7.436151219512196
+        ],
+        "max": [
+          -1.6232727272727303,
+          1.1638634146341462,
+          -6.933460310421285
+        ]
+      },
+      {
+        "objectId": "composition-screen-zone-cinema-screen-1",
+        "min": [
+          1.6232727272727303,
+          0.06493658536585363,
+          -7.436151219512196
+        ],
+        "max": [
+          2.0770909090909133,
+          0.11488780487804878,
+          -6.933460310421285
+        ]
+      },
+      {
+        "objectId": "composition-screen-zone-cinema-screen-1",
+        "min": [
+          1.6232727272727303,
+          1.1139121951219513,
+          -7.436151219512196
+        ],
+        "max": [
+          2.0770909090909133,
+          1.1638634146341462,
+          -6.933460310421285
+        ]
+      },
+      {
+        "objectId": "composition-entrance-zone-entrance-door-1",
+        "min": [
+          -1.9115999999999997,
+          0,
+          7.375021176470588
+        ],
+        "max": [
+          -1.049505882352941,
+          2.1599999999999997,
+          7.6598870588235295
+        ]
+      },
+      {
+        "objectId": "composition-entrance-zone-entrance-door-1",
+        "min": [
+          1.049505882352941,
+          0,
+          7.375021176470589
+        ],
+        "max": [
+          1.9115999999999997,
+          2.1599999999999997,
+          7.6598870588235295
+        ]
+      },
+      {
+        "objectId": "composition-entrance-zone-entrance-door-1",
+        "min": [
+          -1.049505882352941,
+          1.588235294117647,
+          7.375021176470588
+        ],
+        "max": [
+          1.049505882352941,
+          2.16,
+          7.6598870588235295
+        ]
+      },
+      {
+        "objectId": "composition-entrance-zone-entrance-door-1",
+        "min": [
+          -0.5547388235294117,
+          0.22235294117647064,
+          7.300056470588235
+        ],
+        "max": [
+          0.5547388235294117,
+          1.8105882352941176,
+          7.43499294117647
+        ]
+      },
+      {
+        "objectId": "composition-entrance-zone-entrance-door-1",
+        "min": [
+          -0.6746823529411763,
+          0.07941176470588235,
+          7.240084705882353
+        ],
+        "max": [
+          -0.5697317647058823,
+          1.762941176470588,
+          7.614908235294117
+        ]
+      },
+      {
+        "objectId": "composition-entrance-zone-entrance-door-1",
+        "min": [
+          0.5697317647058823,
+          0.07941176470588235,
+          7.240084705882353
+        ],
+        "max": [
+          0.6746823529411763,
+          1.762941176470588,
+          7.614908235294117
+        ]
+      },
+      {
+        "objectId": "composition-entrance-zone-entrance-door-1",
+        "min": [
+          -0.6746823529411764,
+          1.6708235294117648,
+          7.240084705882353
+        ],
+        "max": [
+          0.6746823529411764,
+          1.759764705882353,
+          7.614908235294117
+        ]
+      },
+      {
+        "objectId": "composition-entrance-zone-daylight-window-1",
+        "min": [
+          12.299246721084385,
+          2.08,
+          -0.6915869610621596
+        ],
+        "max": [
+          12.540753278915615,
+          3.5200000000000005,
+          0.6915869610621596
+        ]
+      },
+      {
+        "objectId": "composition-seating-zone-cinema-seat-1",
+        "min": [
+          4.164599191019519,
+          0.46015018750646064,
+          -5.916332654718561
+        ],
+        "max": [
+          4.570750295985767,
+          1.0953923463090052,
+          -5.300045109928277
+        ]
+      },
+      {
+        "objectId": "composition-seating-zone-cinema-seat-2",
+        "min": [
+          3.0830350968627136,
+          0.4653684530795038,
+          -5.895213949710268
+        ],
+        "max": [
+          3.538725078231798,
+          1.1078144822222693,
+          -5.271103368945888
+        ]
+      },
+      {
+        "objectId": "composition-seating-zone-cinema-seat-3",
+        "min": [
+          1.975470803566875,
+          0.47224192520286434,
+          -5.85061215442127
+        ],
+        "max": [
+          2.507202326167393,
+          1.1241768546843944,
+          -5.231358244293006
+        ]
+      },
+      {
+        "objectId": "composition-seating-zone-cinema-seat-4",
+        "min": [
+          0.8181105824055597,
+          0.4657129758544568,
+          -5.740482140435274
+        ],
+        "max": [
+          1.4283444929360047,
+          1.1086346223005723,
+          -5.214941216047381
+        ]
+      },
+      {
+        "objectId": "composition-seating-zone-cinema-seat-5",
+        "min": [
+          -0.3822196990533564,
+          0.46334756835153684,
+          -5.566448371834112
+        ],
+        "max": [
+          0.20461094033653382,
+          1.1030037449371592,
+          -5.299290571142921
+        ]
+      },
+      {
+        "objectId": "composition-seating-zone-cinema-seat-6",
+        "min": [
+          -1.595109695107824,
+          0.4736430023277342,
+          -5.763333889021314
+        ],
+        "max": [
+          -0.9853555357190704,
+          1.1275121334712788,
+          -5.206522929418495
+        ]
+      },
+      {
+        "objectId": "composition-seating-zone-cinema-seat-7",
+        "min": [
+          -2.650267118900688,
+          0.4664325265724795,
+          -5.857799062898652
+        ],
+        "max": [
+          -2.136594417017857,
+          1.1103475203297448,
+          -5.2421051461092025
+        ]
+      },
+      {
+        "objectId": "composition-seating-zone-cinema-seat-8",
+        "min": [
+          -3.6800882802742234,
+          0.4586285135434438,
+          -5.89652738059115
+        ],
+        "max": [
+          -3.23850884363497,
+          1.091769985484382,
+          -5.2811530511548295
+        ]
+      },
+      {
+        "objectId": "composition-seating-zone-cinema-seat-9",
+        "min": [
+          -4.723782243433211,
+          0.464986144495407,
+          -5.921108645283584
+        ],
+        "max": [
+          -4.318423733571364,
+          1.1069043926290927,
+          -5.298803532265623
+        ]
+      },
+      {
+        "objectId": "composition-seating-zone-cinema-seat-10",
+        "min": [
+          -5.7670866757449595,
+          0.4685803520697688,
+          -5.935819071363204
+        ],
+        "max": [
+          -5.3876902410478955,
+          1.1154604414472766,
+          -5.31257206559358
+        ]
+      },
+      {
+        "objectId": "composition-seating-zone-cinema-seat-11",
+        "min": [
+          4.098052548232854,
+          0.46737280722956775,
+          -4.81793212594475
+        ],
+        "max": [
+          4.599538595406835,
+          1.1125858682933483,
+          -4.197328300493644
+        ]
+      },
+      {
+        "objectId": "composition-seating-zone-cinema-seat-12",
+        "min": [
+          3.004601039485892,
+          0.46663005328301066,
+          -4.779337481209586
+        ],
+        "max": [
+          3.5519063850537145,
+          1.1108177347353498,
+          -4.1778809935474746
+        ]
+      },
+      {
+        "objectId": "composition-seating-zone-cinema-seat-13",
+        "min": [
+          1.893236168118832,
+          0.46039170043473504,
+          -4.715561936595554
+        ],
+        "max": [
+          2.48346727657811,
+          1.0959672703671697,
+          -4.170269668104139
+        ]
+      },
+      {
+        "objectId": "composition-seating-zone-cinema-seat-14",
+        "min": [
+          0.7558718528495417,
+          0.47121068123248,
+          -4.616672650138503
+        ],
+        "max": [
+          1.3881983173819863,
+          1.1217219675996848,
+          -4.176766284201533
+        ]
+      },
+      {
+        "objectId": "composition-seating-zone-cinema-seat-15",
+        "min": [
+          -0.3741996233312301,
+          0.46384630194701487,
+          -4.509590241947069
+        ],
+        "max": [
+          0.20839096747178,
+          1.1041909854907146,
+          -4.255096105668618
+        ]
+      },
+      {
+        "objectId": "composition-seating-zone-cinema-seat-16",
+        "min": [
+          -1.553855174832465,
+          0.47498853611555236,
+          -4.6334064116857
+        ],
+        "max": [
+          -0.9169216686607586,
+          1.130715190761906,
+          -4.166893123731225
+        ]
+      },
+      {
+        "objectId": "composition-seating-zone-cinema-seat-17",
+        "min": [
+          -2.6408237504226713,
+          0.4642692841988732,
+          -4.727129435906948
+        ],
+        "max": [
+          -2.052493149968414,
+          1.1051978991764853,
+          -4.167248218768863
+        ]
+      },
+      {
+        "objectId": "composition-seating-zone-cinema-seat-18",
+        "min": [
+          -3.694549787833538,
+          0.45933691713825875,
+          -4.783730232622065
+        ],
+        "max": [
+          -3.162855663962325,
+          1.0934563476698744,
+          -4.187870390309342
+        ]
+      },
+      {
+        "objectId": "composition-seating-zone-cinema-seat-19",
+        "min": [
+          -4.749647422194807,
+          0.468387257286938,
+          -4.822490107647841
+        ],
+        "max": [
+          -4.253002741900327,
+          1.1150007772920336,
+          -4.199198787041325
+        ]
+      },
+      {
+        "objectId": "composition-seating-zone-cinema-seat-20",
+        "min": [
+          -5.7890450640299775,
+          0.4652697937141188,
+          -4.8441856889378885
+        ],
+        "max": [
+          -5.331757485333635,
+          1.1075796225684678,
+          -4.220303370567092
+        ]
+      },
+      {
+        "objectId": "composition-seating-zone-cinema-seat-21",
+        "min": [
+          4.044077293272517,
+          0.4716771464459056,
+          -3.721713633400816
+        ],
+        "max": [
+          4.60653008978712,
+          1.122832392931411,
+          -3.1194795109063063
+        ]
+      },
+      {
+        "objectId": "composition-seating-zone-cinema-seat-22",
+        "min": [
+          2.9481942118002333,
+          0.4746521537024026,
+          -3.6774380321716134
+        ],
+        "max": [
+          3.550756020195665,
+          1.1299144289002323,
+          -3.106485281003786
+        ]
+      },
+      {
+        "objectId": "composition-seating-zone-cinema-seat-23",
+        "min": [
+          1.8416368778267465,
+          0.47492208638599,
+          -3.614198366512253
+        ],
+        "max": [
+          2.473279786970888,
+          1.1305570064839177,
+          -3.1090234173063482
+        ]
+      },
+      {
+        "objectId": "composition-seating-zone-cinema-seat-24",
+        "min": [
+          0.732629182429977,
+          0.46896924694806164,
+          -3.53244613399614
+        ],
+        "max": [
+          1.3575491200381211,
+          1.116386209782848,
+          -3.145452142322258
+        ]
+      },
+      {
+        "objectId": "composition-seating-zone-cinema-seat-25",
+        "min": [
+          -0.3702241480560082,
+          0.4629257244515239,
+          -3.4571816906494464
+        ],
+        "max": [
+          0.20917741372277515,
+          1.1019995411098928,
+          -3.208406479490733
+        ]
+      },
+      {
+        "objectId": "composition-seating-zone-cinema-seat-26",
+        "min": [
+          -1.522920564771974,
+          0.4741054972432133,
+          -3.544500806042172
+        ],
+        "max": [
+          -0.8886783760700846,
+          1.1286131074671124,
+          -3.133849372584702
+        ]
+      },
+      {
+        "objectId": "composition-seating-zone-cinema-seat-27",
+        "min": [
+          -2.6247722938601354,
+          0.470572376632873,
+          -3.624171335320628
+        ],
+        "max": [
+          -2.001882320843545,
+          1.1202024768073149,
+          -3.1117397696978406
+        ]
+      },
+      {
+        "objectId": "composition-seating-zone-cinema-seat-28",
+        "min": [
+          -3.7023483538283077,
+          0.4741249847466002,
+          -3.6847836346824394
+        ],
+        "max": [
+          -3.105510304193356,
+          1.128659497673263,
+          -3.1079450669540982
+        ]
+      },
+      {
+        "objectId": "composition-seating-zone-cinema-seat-29",
+        "min": [
+          -4.750520245322932,
+          0.46544178562024263,
+          -3.7251209476918006
+        ],
+        "max": [
+          -4.200621878970038,
+          1.1079890511044335,
+          -3.1275610386950707
+        ]
+      },
+      {
+        "objectId": "composition-seating-zone-cinema-seat-30",
+        "min": [
+          -5.7982629685313105,
+          0.464129781552094,
+          -3.754352146638084
+        ],
+        "max": [
+          -5.283748237361702,
+          1.1048658116630585,
+          -3.142799265038786
+        ]
+      },
+      {
+        "objectId": "composition-seating-zone-cinema-seat-31",
+        "min": [
+          4.003980406481738,
+          0.4705206724072035,
+          -2.6315519844726305
+        ],
+        "max": [
+          4.598030952150897,
+          1.120079394355959,
+          -2.0612712589690947
+        ]
+      },
+      {
+        "objectId": "composition-seating-zone-cinema-seat-32",
+        "min": [
+          2.9140110235913252,
+          0.46625619952890174,
+          -2.586084431657742
+        ],
+        "max": [
+          3.5267904710388125,
+          1.1099277719536136,
+          -2.064726364905792
+        ]
+      },
+      {
+        "objectId": "composition-seating-zone-cinema-seat-33",
+        "min": [
+          1.8145230036269955,
+          0.47373676837072,
+          -2.529593135684409
+        ],
+        "max": [
+          2.450031671889919,
+          1.1277353445197993,
+          -2.0694234892155534
+        ]
+      },
+      {
+        "objectId": "composition-seating-zone-cinema-seat-34",
+        "min": [
+          0.7212807590958175,
+          0.46679459325426975,
+          -2.4636401073083762
+        ],
+        "max": [
+          1.3376622093374095,
+          1.111209423862232,
+          -2.1090618123609532
+        ]
+      },
+      {
+        "objectId": "composition-seating-zone-cinema-seat-35",
+        "min": [
+          -0.36852416799898297,
+          0.46313372458405744,
+          -2.4056884332687525
+        ],
+        "max": [
+          0.210022065342014,
+          1.1024946876063946,
+          -2.1596197778995165
+        ]
+      },
+      {
+        "objectId": "composition-seating-zone-cinema-seat-36",
+        "min": [
+          -1.5025412708994041,
+          0.47350730327733376,
+          -2.4724979818405917
+        ],
+        "max": [
+          -0.8740523354525488,
+          1.1271891004589145,
+          -2.096603649271454
+        ]
+      },
+      {
+        "objectId": "composition-seating-zone-cinema-seat-37",
+        "min": [
+          -2.6041573929980526,
+          0.4715128500042342,
+          -2.5384822885012164
+        ],
+        "max": [
+          -1.9723497981970224,
+          1.1224412835292659,
+          -2.068777520666809
+        ]
+      },
+      {
+        "objectId": "composition-seating-zone-cinema-seat-38",
+        "min": [
+          -3.6803020236481103,
+          0.4665021381864005,
+          -2.593196166836667
+        ],
+        "max": [
+          -3.070174404504093,
+          1.110513231506603,
+          -2.0639782882830624
+        ]
+      },
+      {
+        "objectId": "composition-seating-zone-cinema-seat-39",
+        "min": [
+          -4.737895348232605,
+          0.45900709893288155,
+          -2.6347212108869544
+        ],
+        "max": [
+          -4.16219014316561,
+          1.0926712119736328,
+          -2.073775617409509
+        ]
+      },
+      {
+        "objectId": "composition-seating-zone-cinema-seat-40",
+        "min": [
+          -5.8088707769088925,
+          0.474057201308732,
+          -2.6713380304561043
+        ],
+        "max": [
+          -5.242572279870787,
+          1.1284981384886679,
+          -2.0667473365781355
+        ]
+      },
+      {
+        "objectId": "composition-seating-zone-cinema-seat-41",
+        "min": [
+          3.9735555834766054,
+          0.4721115380373972,
+          -1.5496907927311236
+        ],
+        "max": [
+          4.588322126047581,
+          1.1238664666698124,
+          -1.0080140285149786
+        ]
+      },
+      {
+        "objectId": "composition-seating-zone-cinema-seat-42",
+        "min": [
+          2.885859373106867,
+          0.47430536274666324,
+          -1.5068665377680472
+        ],
+        "max": [
+          3.518424602546074,
+          1.1290888893937843,
+          -1.0111496366526134
+        ]
+      },
+      {
+        "objectId": "composition-seating-zone-cinema-seat-43",
+        "min": [
+          1.7988627251306635,
+          0.4701579968731507,
+          -1.4564642058663457
+        ],
+        "max": [
+          2.4292212024418918,
+          1.1192160414442764,
+          -1.0321592235746806
+        ]
+      },
+      {
+        "objectId": "composition-seating-zone-cinema-seat-44",
+        "min": [
+          0.7084542663071473,
+          0.4763414331878413,
+          -1.3997759325388666
+        ],
+        "max": [
+          1.3325536893062888,
+          1.1339357764284248,
+          -1.0586141460391238
+        ]
+      },
+      {
+        "objectId": "composition-seating-zone-cinema-seat-45",
+        "min": [
+          -0.3689147819640665,
+          0.46557284618656763,
+          -1.354079176342411
+        ],
+        "max": [
+          0.21197012182978342,
+          1.1083010421568187,
+          -1.1084886393221676
+        ]
+      },
+      {
+        "objectId": "composition-seating-zone-cinema-seat-46",
+        "min": [
+          -1.4828496077474786,
+          0.4657519203084902,
+          -1.4098125557585603
+        ],
+        "max": [
+          -0.8693282563086938,
+          1.1087273299817546,
+          -1.0626711821862158
+        ]
+      },
+      {
+        "objectId": "composition-seating-zone-cinema-seat-47",
+        "min": [
+          -2.5848141271980696,
+          0.46969918441824526,
+          -1.4640727443536004
+        ],
+        "max": [
+          -1.9545993728280178,
+          1.118123833584451,
+          -1.0293443612702906
+        ]
+      },
+      {
+        "objectId": "composition-seating-zone-cinema-seat-48",
+        "min": [
+          -3.6642266592506476,
+          0.46572089039411635,
+          -1.5130963888183184
+        ],
+        "max": [
+          -3.0446548348763516,
+          1.1086534629452205,
+          -1.0184753937374842
+        ]
+      },
+      {
+        "objectId": "composition-seating-zone-cinema-seat-49",
+        "min": [
+          -4.739390306556068,
+          0.4709157446848654,
+          -1.5550084701777813
+        ],
+        "max": [
+          -4.12889137650621,
+          1.1210198680555021,
+          -1.0091635769989475
+        ]
+      },
+      {
+        "objectId": "composition-seating-zone-cinema-seat-50",
+        "min": [
+          -5.792956878924375,
+          0.46357441783172565,
+          -1.5874838827529336
+        ],
+        "max": [
+          -5.212858033704506,
+          1.103543762503401,
+          -1.019428225619488
+        ]
+      },
+      {
+        "objectId": "composition-seating-zone-cinema-seat-51",
+        "min": [
+          3.9541909296429383,
+          0.4636984788518129,
+          -0.4734212304132076
+        ],
+        "max": [
+          4.56806524925401,
+          1.1038390910625726,
+          0.031228752519654013
+        ]
+      },
+      {
+        "objectId": "composition-seating-zone-cinema-seat-52",
+        "min": [
+          2.8679963804210513,
+          0.4740696976494939,
+          -0.4342892812859585
+        ],
+        "max": [
+          3.5036280900794616,
+          1.1285278861588832,
+          0.03247228253097101
+        ]
+      },
+      {
+        "objectId": "composition-seating-zone-cinema-seat-53",
+        "min": [
+          1.7878567891647128,
+          0.46889784006572693,
+          -0.39007805252831607
+        ],
+        "max": [
+          2.4142872063062977,
+          1.1162162249507064,
+          0.008608981346999278
+        ]
+      },
+      {
+        "objectId": "composition-seating-zone-cinema-seat-54",
+        "min": [
+          0.708266894993538,
+          0.46780662769070147,
+          -0.34312342107932214
+        ],
+        "max": [
+          1.3173223455132772,
+          1.113618582449944,
+          -0.02242163397550828
+        ]
+      },
+      {
+        "objectId": "composition-seating-zone-cinema-seat-55",
+        "min": [
+          -0.3714236891908762,
+          0.4708159166020675,
+          -0.30192097628366765
+        ],
+        "max": [
+          0.2155095410487594,
+          1.1207822262576446,
+          -0.05479366080635073
+        ]
+      },
+      {
+        "objectId": "composition-seating-zone-cinema-seat-56",
+        "min": [
+          -1.4756187906869558,
+          0.46918692303210535,
+          -0.34964945102087575
+        ],
+        "max": [
+          -0.8615535017270319,
+          1.116904389983378,
+          -0.016167881734163503
+        ]
+      },
+      {
+        "objectId": "composition-seating-zone-cinema-seat-57",
+        "min": [
+          -2.56295893912605,
+          0.460608533286645,
+          -0.3974175216067256
+        ],
+        "max": [
+          -1.946529825330249,
+          1.0964834432447637,
+          0.0039473968969965245
+        ]
+      },
+      {
+        "objectId": "composition-seating-zone-cinema-seat-58",
+        "min": [
+          -3.6467087486290133,
+          0.4620055091925286,
+          -0.4403196496487949
+        ],
+        "max": [
+          -3.0278436328458933,
+          1.0998089590368472,
+          0.0222477026579343
+        ]
+      },
+      {
+        "objectId": "composition-seating-zone-cinema-seat-59",
+        "min": [
+          -4.71812764681524,
+          0.4609975644574095,
+          -0.4783259319338866
+        ],
+        "max": [
+          -4.109543221979426,
+          1.097409536025993,
+          0.029155955478979145
+        ]
+      },
+      {
+        "objectId": "composition-seating-zone-cinema-seat-60",
+        "min": [
+          -5.79212983627684,
+          0.47084051490556056,
+          -0.5123599052659866
+        ],
+        "max": [
+          -5.185678224922687,
+          1.1208407827770377,
+          0.04063279149546606
+        ]
+      },
+      {
+        "objectId": "composition-seating-zone-cinema-seat-61",
+        "min": [
+          3.9322899375202183,
+          0.47632426582535814,
+          0.5964608761820734
+        ],
+        "max": [
+          4.568250277588486,
+          1.1338949093420234,
+          1.0901117529964504
+        ]
+      },
+      {
+        "objectId": "composition-seating-zone-cinema-seat-62",
+        "min": [
+          2.861874712933909,
+          0.4589062287922583,
+          0.6323247451301613
+        ],
+        "max": [
+          3.477697903224295,
+          1.0924310895461953,
+          1.0612749766318477
+        ]
+      },
+      {
+        "objectId": "composition-seating-zone-cinema-seat-63",
+        "min": [
+          1.7759762644201793,
+          0.47578502475875445,
+          0.6730799646024433
+        ],
+        "max": [
+          2.40881208110867,
+          1.1326112403287083,
+          1.058346120112499
+        ]
+      },
+      {
+        "objectId": "composition-seating-zone-cinema-seat-64",
+        "min": [
+          0.7011754088246243,
+          0.4740005221183778,
+          0.7142650890205631
+        ],
+        "max": [
+          1.3151481412568142,
+          1.1283632130817145,
+          1.0284184572135855
+        ]
+      },
+      {
+        "objectId": "composition-seating-zone-cinema-seat-65",
+        "min": [
+          -0.372877723027609,
+          0.47405843316441265,
+          0.7494883761685128
+        ],
+        "max": [
+          0.2177347898929472,
+          1.1285010709340324,
+          0.9974169866323948
+        ]
+      },
+      {
+        "objectId": "composition-seating-zone-cinema-seat-66",
+        "min": [
+          -1.463359983637068,
+          0.4626183339513205,
+          0.7059487210847895
+        ],
+        "max": [
+          -0.8611350259745729,
+          1.1012677948009855,
+          1.022825794566055
+        ]
+      },
+      {
+        "objectId": "composition-seating-zone-cinema-seat-67",
+        "min": [
+          -2.5533253524567154,
+          0.46253256864772674,
+          0.6656222937059859
+        ],
+        "max": [
+          -1.9367206408425477,
+          1.1010636295964797,
+          1.0490702780302343
+        ]
+      },
+      {
+        "objectId": "composition-seating-zone-cinema-seat-68",
+        "min": [
+          -3.6428145018110474,
+          0.4714972291702009,
+          0.6275358768583339
+        ],
+        "max": [
+          -3.010070875721318,
+          1.122404097970056,
+          1.0757701824116084
+        ]
+      },
+      {
+        "objectId": "composition-seating-zone-cinema-seat-69",
+        "min": [
+          -4.714927510851409,
+          0.4696009438504487,
+          0.5917860329085064
+        ],
+        "max": [
+          -4.088970615124165,
+          1.1178899708827001,
+          1.0844251116956232
+        ]
+      },
+      {
+        "objectId": "composition-seating-zone-cinema-seat-70",
+        "min": [
+          -5.778087842173013,
+          0.46594281456707354,
+          0.560537166597376
+        ],
+        "max": [
+          -5.167112035361734,
+          1.1091817557659527,
+          1.0852221891233174
+        ]
+      },
+      {
+        "objectId": "composition-seating-zone-cinema-seat-71",
+        "min": [
+          3.921837831212336,
+          0.4695389604449046,
+          1.6632518228196904
+        ],
+        "max": [
+          4.55117891782465,
+          1.1177424187358695,
+          2.128711569446493
+        ]
+      },
+      {
+        "objectId": "composition-seating-zone-cinema-seat-72",
+        "min": [
+          2.843839136299111,
+          0.4762006967788277,
+          1.6969225829179007
+        ],
+        "max": [
+          3.482021736440085,
+          1.1336007519310625,
+          2.1223920956082667
+        ]
+      },
+      {
+        "objectId": "composition-seating-zone-cinema-seat-73",
+        "min": [
+          1.7761780906601854,
+          0.4637651528843701,
+          1.7307772566624313
+        ],
+        "max": [
+          2.390292072022655,
+          1.1039978092961922,
+          2.0913864393624912
+        ]
+      },
+      {
+        "objectId": "composition-seating-zone-cinema-seat-74",
+        "min": [
+          0.6995553027731803,
+          0.47224061397273953,
+          1.7684871864362188
+        ],
+        "max": [
+          1.3086965027279076,
+          1.1241737332873332,
+          2.073182988010691
+        ]
+      },
+      {
+        "objectId": "composition-seating-zone-cinema-seat-75",
+        "min": [
+          -0.37378605316473773,
+          0.4762185200001336,
+          1.800473338294773
+        ],
+        "max": [
+          0.21923960125635478,
+          1.1336431802962683,
+          2.048843611992191
+        ]
+      },
+      {
+        "objectId": "composition-seating-zone-cinema-seat-76",
+        "min": [
+          -1.455867337443667,
+          0.46017359004820724,
+          1.7606309598951695
+        ],
+        "max": [
+          -0.859496116352394,
+          1.0954480563050226,
+          2.06664901949425
+        ]
+      },
+      {
+        "objectId": "composition-seating-zone-cinema-seat-77",
+        "min": [
+          -2.543505519798057,
+          0.46171492664332037,
+          1.7254201425692772
+        ],
+        "max": [
+          -1.930555495260156,
+          1.0991172242315252,
+          2.0925734559968436
+        ]
+      },
+      {
+        "objectId": "composition-seating-zone-cinema-seat-78",
+        "min": [
+          -3.6213201130477657,
+          0.4591619285432539,
+          1.6908022786920918
+        ],
+        "max": [
+          -3.005551071644849,
+          1.0930397854846052,
+          2.1079783415270468
+        ]
+      },
+      {
+        "objectId": "composition-seating-zone-cinema-seat-79",
+        "min": [
+          -4.709288513846042,
+          0.47509046292220697,
+          1.6587306858566413
+        ],
+        "max": [
+          -4.073011916928208,
+          1.1309578285939108,
+          2.1356355930779607
+        ]
+      },
+      {
+        "objectId": "composition-seating-zone-cinema-seat-80",
+        "min": [
+          -5.769619834827731,
+          0.4668537680711718,
+          1.6290839296685888
+        ],
+        "max": [
+          -5.150716414152472,
+          1.1113502901343508,
+          2.134028124936464
+        ]
+      },
+      {
+        "objectId": "composition-seating-zone-cinema-seat-81",
+        "min": [
+          3.911019891831751,
+          0.470364046531612,
+          2.72691753199167
+        ],
+        "max": [
+          4.542235018597064,
+          1.1197065448167975,
+          3.174864422245123
+        ]
+      },
+      {
+        "objectId": "composition-seating-zone-cinema-seat-82",
+        "min": [
+          2.8399669788139685,
+          0.4684163386163818,
+          2.7571694278066836
+        ],
+        "max": [
+          3.4662358856614794,
+          1.1150700057017098,
+          3.159545392310192
+        ]
+      },
+      {
+        "objectId": "composition-seating-zone-cinema-seat-83",
+        "min": [
+          1.771101103790082,
+          0.4644774408864526,
+          2.78825618366425
+        ],
+        "max": [
+          2.3835909133785482,
+          1.1056934183539153,
+          3.1372990406459675
+        ]
+      },
+      {
+        "objectId": "composition-seating-zone-cinema-seat-84",
+        "min": [
+          0.7016349255958031,
+          0.4652388405798832,
+          2.820433762423123
+        ],
+        "max": [
+          1.2996683110278244,
+          1.1075059383078578,
+          3.114127100000229
+        ]
+      },
+      {
+        "objectId": "composition-seating-zone-cinema-seat-85",
+        "min": [
+          -0.37281580847687523,
+          0.47523365734903794,
+          2.850453526171422
+        ],
+        "max": [
+          0.218764841301256,
+          1.1312987044284613,
+          3.097770412418437
+        ]
+      },
+      {
+        "objectId": "composition-seating-zone-cinema-seat-86",
+        "min": [
+          -1.4606221893732543,
+          0.47332332146856626,
+          2.817713600847249
+        ],
+        "max": [
+          -0.8495049463615152,
+          1.1267511298339843,
+          3.1249581203067986
+        ]
+      },
+      {
+        "objectId": "composition-seating-zone-cinema-seat-87",
+        "min": [
+          -2.5435087148860545,
+          0.4713876734064772,
+          2.784807788285953
+        ],
+        "max": [
+          -1.920253901115459,
+          1.1221432993257539,
+          3.1466753528344054
+        ]
+      },
+      {
+        "objectId": "composition-seating-zone-cinema-seat-88",
+        "min": [
+          -3.6232432529221037,
+          0.47222896805068687,
+          2.7530837715547647
+        ],
+        "max": [
+          -2.9911779036716344,
+          1.1241460100477725,
+          3.165450172248329
+        ]
+      },
+      {
+        "objectId": "composition-seating-zone-cinema-seat-89",
+        "min": [
+          -4.687539619300047,
+          0.4616901057344489,
+          2.7224816880071327
+        ],
+        "max": [
+          -4.068079243206768,
+          1.0990581377976945,
+          3.1677760723993034
+        ]
+      },
+      {
+        "objectId": "composition-seating-zone-cinema-seat-90",
+        "min": [
+          -5.762797331750735,
+          0.4692081172710394,
+          2.6947380569412758
+        ],
+        "max": [
+          -5.13672627478002,
+          1.116954843091395,
+          3.183376657837416
+        ]
+      },
+      {
+        "objectId": "composition-seating-zone-cinema-seat-91",
+        "min": [
+          3.9082346956877947,
+          0.458430386229324,
+          3.7875455844573573
+        ],
+        "max": [
+          4.523225411374973,
+          1.0912983413356365,
+          4.208647046004562
+        ]
+      },
+      {
+        "objectId": "composition-seating-zone-cinema-seat-92",
+        "min": [
+          2.8350259172273575,
+          0.4661847601393914,
+          3.8157895429992528
+        ],
+        "max": [
+          3.456561952159049,
+          1.1097577097377993,
+          4.202694483941405
+        ]
+      },
+      {
+        "objectId": "composition-seating-zone-ceiling-light-1",
+        "min": [
+          -5.78176,
+          4.699199999999999,
+          -4.03176
+        ],
+        "max": [
+          -3.8182400000000007,
+          4.84,
+          -2.0682400000000003
+        ]
+      },
+      {
+        "objectId": "composition-seating-zone-ceiling-light-5",
+        "min": [
+          -5.78176,
+          4.699199999999999,
+          -0.8317599999999999
+        ],
+        "max": [
+          -3.8182400000000007,
+          4.84,
+          1.1317599999999999
+        ]
+      },
+      {
+        "objectId": "composition-seating-zone-ceiling-light-9",
+        "min": [
+          -5.78176,
+          4.699199999999999,
+          2.36824
+        ],
+        "max": [
+          -3.8182400000000007,
+          4.84,
+          4.33176
+        ]
+      },
+      {
+        "objectId": "composition-seating-zone-ceiling-light-2",
+        "min": [
+          -2.58176,
+          4.699199999999999,
+          -4.03176
+        ],
+        "max": [
+          -0.6182400000000001,
+          4.84,
+          -2.0682400000000003
+        ]
+      },
+      {
+        "objectId": "composition-seating-zone-ceiling-light-6",
+        "min": [
+          -2.58176,
+          4.699199999999999,
+          -0.8317599999999999
+        ],
+        "max": [
+          -0.6182400000000001,
+          4.84,
+          1.1317599999999999
+        ]
+      },
+      {
+        "objectId": "composition-seating-zone-ceiling-light-10",
+        "min": [
+          -2.58176,
+          4.699199999999999,
+          2.36824
+        ],
+        "max": [
+          -0.6182400000000001,
+          4.84,
+          4.33176
+        ]
+      },
+      {
+        "objectId": "composition-seating-zone-ceiling-light-3",
+        "min": [
+          0.6182400000000001,
+          4.699199999999999,
+          -4.03176
+        ],
+        "max": [
+          2.58176,
+          4.84,
+          -2.0682400000000003
+        ]
+      },
+      {
+        "objectId": "composition-seating-zone-ceiling-light-7",
+        "min": [
+          0.6182400000000001,
+          4.699199999999999,
+          -0.8317599999999999
+        ],
+        "max": [
+          2.58176,
+          4.84,
+          1.1317599999999999
+        ]
+      },
+      {
+        "objectId": "composition-seating-zone-ceiling-light-11",
+        "min": [
+          0.6182400000000001,
+          4.699199999999999,
+          2.36824
+        ],
+        "max": [
+          2.58176,
+          4.84,
+          4.33176
+        ]
+      },
+      {
+        "objectId": "composition-seating-zone-ceiling-light-4",
+        "min": [
+          3.8182400000000007,
+          4.699199999999999,
+          -4.03176
+        ],
+        "max": [
+          5.78176,
+          4.84,
+          -2.0682400000000003
+        ]
+      },
+      {
+        "objectId": "composition-seating-zone-ceiling-light-8",
+        "min": [
+          3.8182400000000007,
+          4.699199999999999,
+          -0.8317599999999999
+        ],
+        "max": [
+          5.78176,
+          4.84,
+          1.1317599999999999
+        ]
+      },
+      {
+        "objectId": "composition-seating-zone-ceiling-light-12",
+        "min": [
+          3.8182400000000007,
+          4.699199999999999,
+          2.36824
+        ],
+        "max": [
+          5.78176,
+          4.84,
+          4.33176
+        ]
+      },
+      {
+        "objectId": "composition-seating-zone-ceiling-light-1",
+        "min": [
+          -5.687360000000001,
+          4.616,
+          -3.93736
+        ],
+        "max": [
+          -3.9126400000000006,
+          4.7184,
+          -2.1626400000000006
+        ]
+      },
+      {
+        "objectId": "composition-seating-zone-ceiling-light-5",
+        "min": [
+          -5.687360000000001,
+          4.616,
+          -0.7373599999999999
+        ],
+        "max": [
+          -3.9126400000000006,
+          4.7184,
+          1.0373599999999998
+        ]
+      },
+      {
+        "objectId": "composition-seating-zone-ceiling-light-9",
+        "min": [
+          -5.687360000000001,
+          4.616,
+          2.4626400000000004
+        ],
+        "max": [
+          -3.9126400000000006,
+          4.7184,
+          4.23736
+        ]
+      },
+      {
+        "objectId": "composition-seating-zone-ceiling-light-2",
+        "min": [
+          -2.48736,
+          4.616,
+          -3.93736
+        ],
+        "max": [
+          -0.7126400000000002,
+          4.7184,
+          -2.1626400000000006
+        ]
+      },
+      {
+        "objectId": "composition-seating-zone-ceiling-light-6",
+        "min": [
+          -2.48736,
+          4.616,
+          -0.7373599999999999
+        ],
+        "max": [
+          -0.7126400000000002,
+          4.7184,
+          1.0373599999999998
+        ]
+      },
+      {
+        "objectId": "composition-seating-zone-ceiling-light-10",
+        "min": [
+          -2.48736,
+          4.616,
+          2.4626400000000004
+        ],
+        "max": [
+          -0.7126400000000002,
+          4.7184,
+          4.23736
+        ]
+      },
+      {
+        "objectId": "composition-seating-zone-ceiling-light-3",
+        "min": [
+          0.7126400000000002,
+          4.616,
+          -3.93736
+        ],
+        "max": [
+          2.48736,
+          4.7184,
+          -2.1626400000000006
+        ]
+      },
+      {
+        "objectId": "composition-seating-zone-ceiling-light-7",
+        "min": [
+          0.7126400000000002,
+          4.616,
+          -0.7373599999999999
+        ],
+        "max": [
+          2.48736,
+          4.7184,
+          1.0373599999999998
+        ]
+      },
+      {
+        "objectId": "composition-seating-zone-ceiling-light-11",
+        "min": [
+          0.7126400000000002,
+          4.616,
+          2.4626400000000004
+        ],
+        "max": [
+          2.48736,
+          4.7184,
+          4.23736
+        ]
+      },
+      {
+        "objectId": "composition-seating-zone-ceiling-light-4",
+        "min": [
+          3.9126400000000006,
+          4.616,
+          -3.93736
+        ],
+        "max": [
+          5.687360000000001,
+          4.7184,
+          -2.1626400000000006
+        ]
+      },
+      {
+        "objectId": "composition-seating-zone-ceiling-light-8",
+        "min": [
+          3.9126400000000006,
+          4.616,
+          -0.7373599999999999
+        ],
+        "max": [
+          5.687360000000001,
+          4.7184,
+          1.0373599999999998
+        ]
+      },
+      {
+        "objectId": "composition-seating-zone-ceiling-light-12",
+        "min": [
+          3.9126400000000006,
+          4.616,
+          2.4626400000000004
+        ],
+        "max": [
+          5.687360000000001,
+          4.7184,
+          4.23736
+        ]
+      },
+      {
+        "objectId": "composition-seating-zone-ceiling-light-1",
+        "min": [
+          -5.721344000000001,
+          4.552,
+          -3.9751200000000004
+        ],
+        "max": [
+          -5.509888,
+          4.667199999999999,
+          -2.12488
+        ]
+      },
+      {
+        "objectId": "composition-seating-zone-ceiling-light-5",
+        "min": [
+          -5.721344000000001,
+          4.552,
+          -0.77512
+        ],
+        "max": [
+          -5.509888,
+          4.667199999999999,
+          1.0751199999999999
+        ]
+      },
+      {
+        "objectId": "composition-seating-zone-ceiling-light-9",
+        "min": [
+          -5.721344000000001,
+          4.552,
+          2.42488
+        ],
+        "max": [
+          -5.509888,
+          4.667199999999999,
+          4.27512
+        ]
+      },
+      {
+        "objectId": "composition-seating-zone-ceiling-light-1",
+        "min": [
+          -4.090112000000001,
+          4.552,
+          -3.9751200000000004
+        ],
+        "max": [
+          -3.8786560000000008,
+          4.667199999999999,
+          -2.12488
+        ]
+      },
+      {
+        "objectId": "composition-seating-zone-ceiling-light-5",
+        "min": [
+          -4.090112000000001,
+          4.552,
+          -0.7751199999999999
+        ],
+        "max": [
+          -3.8786560000000008,
+          4.667199999999999,
+          1.07512
+        ]
+      },
+      {
+        "objectId": "composition-seating-zone-ceiling-light-9",
+        "min": [
+          -4.090112000000001,
+          4.552,
+          2.42488
+        ],
+        "max": [
+          -3.8786560000000008,
+          4.667199999999999,
+          4.27512
+        ]
+      },
+      {
+        "objectId": "composition-seating-zone-ceiling-light-2",
+        "min": [
+          -2.521344,
+          4.552,
+          -3.9751200000000004
+        ],
+        "max": [
+          -2.309888,
+          4.667199999999999,
+          -2.12488
+        ]
+      },
+      {
+        "objectId": "composition-seating-zone-ceiling-light-6",
+        "min": [
+          -2.521344,
+          4.552,
+          -0.77512
+        ],
+        "max": [
+          -2.309888,
+          4.667199999999999,
+          1.0751199999999999
+        ]
+      },
+      {
+        "objectId": "composition-seating-zone-ceiling-light-10",
+        "min": [
+          -2.521344,
+          4.552,
+          2.42488
+        ],
+        "max": [
+          -2.309888,
+          4.667199999999999,
+          4.27512
+        ]
+      },
+      {
+        "objectId": "composition-seating-zone-ceiling-light-2",
+        "min": [
+          -0.8901120000000002,
+          4.552,
+          -3.9751200000000004
+        ],
+        "max": [
+          -0.678656,
+          4.667199999999999,
+          -2.12488
+        ]
+      },
+      {
+        "objectId": "composition-seating-zone-ceiling-light-6",
+        "min": [
+          -0.8901120000000002,
+          4.552,
+          -0.7751199999999999
+        ],
+        "max": [
+          -0.678656,
+          4.667199999999999,
+          1.07512
+        ]
+      },
+      {
+        "objectId": "composition-seating-zone-ceiling-light-10",
+        "min": [
+          -0.8901120000000002,
+          4.552,
+          2.42488
+        ],
+        "max": [
+          -0.678656,
+          4.667199999999999,
+          4.27512
+        ]
+      },
+      {
+        "objectId": "composition-seating-zone-ceiling-light-3",
+        "min": [
+          0.678656,
+          4.552,
+          -3.9751200000000004
+        ],
+        "max": [
+          0.8901120000000002,
+          4.667199999999999,
+          -2.12488
+        ]
+      },
+      {
+        "objectId": "composition-seating-zone-ceiling-light-7",
+        "min": [
+          0.678656,
+          4.552,
+          -0.77512
+        ],
+        "max": [
+          0.8901120000000002,
+          4.667199999999999,
+          1.0751199999999999
+        ]
+      },
+      {
+        "objectId": "composition-seating-zone-ceiling-light-11",
+        "min": [
+          0.678656,
+          4.552,
+          2.42488
+        ],
+        "max": [
+          0.8901120000000002,
+          4.667199999999999,
+          4.27512
+        ]
+      },
+      {
+        "objectId": "composition-seating-zone-ceiling-light-3",
+        "min": [
+          2.309888,
+          4.552,
+          -3.9751200000000004
+        ],
+        "max": [
+          2.521344,
+          4.667199999999999,
+          -2.12488
+        ]
+      },
+      {
+        "objectId": "composition-seating-zone-ceiling-light-7",
+        "min": [
+          2.309888,
+          4.552,
+          -0.7751199999999999
+        ],
+        "max": [
+          2.521344,
+          4.667199999999999,
+          1.07512
+        ]
+      },
+      {
+        "objectId": "composition-seating-zone-ceiling-light-11",
+        "min": [
+          2.309888,
+          4.552,
+          2.42488
+        ],
+        "max": [
+          2.521344,
+          4.667199999999999,
+          4.27512
+        ]
+      },
+      {
+        "objectId": "composition-seating-zone-ceiling-light-4",
+        "min": [
+          3.8786560000000008,
+          4.552,
+          -3.9751200000000004
+        ],
+        "max": [
+          4.090112000000001,
+          4.667199999999999,
+          -2.12488
+        ]
+      },
+      {
+        "objectId": "composition-seating-zone-ceiling-light-8",
+        "min": [
+          3.8786560000000008,
+          4.552,
+          -0.77512
+        ],
+        "max": [
+          4.090112000000001,
+          4.667199999999999,
+          1.0751199999999999
+        ]
+      },
+      {
+        "objectId": "composition-seating-zone-ceiling-light-12",
+        "min": [
+          3.8786560000000008,
+          4.552,
+          2.42488
+        ],
+        "max": [
+          4.090112000000001,
+          4.667199999999999,
+          4.27512
+        ]
+      },
+      {
+        "objectId": "composition-seating-zone-ceiling-light-4",
+        "min": [
+          5.509888,
+          4.552,
+          -3.9751200000000004
+        ],
+        "max": [
+          5.721344000000001,
+          4.667199999999999,
+          -2.12488
+        ]
+      },
+      {
+        "objectId": "composition-seating-zone-ceiling-light-8",
+        "min": [
+          5.509888,
+          4.552,
+          -0.7751199999999999
+        ],
+        "max": [
+          5.721344000000001,
+          4.667199999999999,
+          1.07512
+        ]
+      },
+      {
+        "objectId": "composition-seating-zone-ceiling-light-12",
+        "min": [
+          5.509888,
+          4.552,
+          2.42488
+        ],
+        "max": [
+          5.721344000000001,
+          4.667199999999999,
+          4.27512
+        ]
+      },
+      {
+        "objectId": "composition-seating-zone-ceiling-light-1",
+        "min": [
+          -5.517440000000001,
+          4.552,
+          -3.971344
+        ],
+        "max": [
+          -4.082560000000001,
+          4.667199999999999,
+          -3.759888
+        ]
+      },
+      {
+        "objectId": "composition-seating-zone-ceiling-light-1",
+        "min": [
+          -5.517440000000001,
+          4.552,
+          -2.3401120000000004
+        ],
+        "max": [
+          -4.082560000000001,
+          4.667199999999999,
+          -2.1286560000000003
+        ]
+      },
+      {
+        "objectId": "composition-seating-zone-ceiling-light-5",
+        "min": [
+          -5.517440000000001,
+          4.552,
+          -0.7713439999999999
+        ],
+        "max": [
+          -4.082560000000001,
+          4.667199999999999,
+          -0.5598879999999999
+        ]
+      },
+      {
+        "objectId": "composition-seating-zone-ceiling-light-5",
+        "min": [
+          -5.517440000000001,
+          4.552,
+          0.859888
+        ],
+        "max": [
+          -4.082560000000001,
+          4.667199999999999,
+          1.0713439999999999
+        ]
+      },
+      {
+        "objectId": "composition-seating-zone-ceiling-light-9",
+        "min": [
+          -5.517440000000001,
+          4.552,
+          2.428656
+        ],
+        "max": [
+          -4.082560000000001,
+          4.667199999999999,
+          2.6401120000000002
+        ]
+      },
+      {
+        "objectId": "composition-seating-zone-ceiling-light-9",
+        "min": [
+          -5.517440000000001,
+          4.552,
+          4.059888
+        ],
+        "max": [
+          -4.082560000000001,
+          4.667199999999999,
+          4.271344
+        ]
+      },
+      {
+        "objectId": "composition-seating-zone-ceiling-light-2",
+        "min": [
+          -2.31744,
+          4.552,
+          -3.971344
+        ],
+        "max": [
+          -0.8825600000000001,
+          4.667199999999999,
+          -3.759888
+        ]
+      },
+      {
+        "objectId": "composition-seating-zone-ceiling-light-2",
+        "min": [
+          -2.31744,
+          4.552,
+          -2.3401120000000004
+        ],
+        "max": [
+          -0.8825600000000002,
+          4.667199999999999,
+          -2.1286560000000003
+        ]
+      },
+      {
+        "objectId": "composition-seating-zone-ceiling-light-6",
+        "min": [
+          -2.31744,
+          4.552,
+          -0.7713439999999999
+        ],
+        "max": [
+          -0.8825600000000001,
+          4.667199999999999,
+          -0.5598879999999999
+        ]
+      },
+      {
+        "objectId": "composition-seating-zone-ceiling-light-6",
+        "min": [
+          -2.31744,
+          4.552,
+          0.859888
+        ],
+        "max": [
+          -0.8825600000000002,
+          4.667199999999999,
+          1.0713439999999999
+        ]
+      },
+      {
+        "objectId": "composition-seating-zone-ceiling-light-10",
+        "min": [
+          -2.31744,
+          4.552,
+          2.428656
+        ],
+        "max": [
+          -0.8825600000000001,
+          4.667199999999999,
+          2.6401120000000002
+        ]
+      },
+      {
+        "objectId": "composition-seating-zone-ceiling-light-10",
+        "min": [
+          -2.31744,
+          4.552,
+          4.059888
+        ],
+        "max": [
+          -0.8825600000000002,
+          4.667199999999999,
+          4.271344
+        ]
+      },
+      {
+        "objectId": "composition-seating-zone-ceiling-light-3",
+        "min": [
+          0.8825600000000002,
+          4.552,
+          -3.971344
+        ],
+        "max": [
+          2.31744,
+          4.667199999999999,
+          -3.759888
+        ]
+      },
+      {
+        "objectId": "composition-seating-zone-ceiling-light-3",
+        "min": [
+          0.8825600000000001,
+          4.552,
+          -2.3401120000000004
+        ],
+        "max": [
+          2.31744,
+          4.667199999999999,
+          -2.1286560000000003
+        ]
+      },
+      {
+        "objectId": "composition-seating-zone-ceiling-light-7",
+        "min": [
+          0.8825600000000002,
+          4.552,
+          -0.7713439999999999
+        ],
+        "max": [
+          2.31744,
+          4.667199999999999,
+          -0.5598879999999999
+        ]
+      },
+      {
+        "objectId": "composition-seating-zone-ceiling-light-7",
+        "min": [
+          0.8825600000000001,
+          4.552,
+          0.859888
+        ],
+        "max": [
+          2.31744,
+          4.667199999999999,
+          1.0713439999999999
+        ]
+      },
+      {
+        "objectId": "composition-seating-zone-ceiling-light-11",
+        "min": [
+          0.8825600000000002,
+          4.552,
+          2.428656
+        ],
+        "max": [
+          2.31744,
+          4.667199999999999,
+          2.6401120000000002
+        ]
+      },
+      {
+        "objectId": "composition-seating-zone-ceiling-light-11",
+        "min": [
+          0.8825600000000001,
+          4.552,
+          4.059888
+        ],
+        "max": [
+          2.31744,
+          4.667199999999999,
+          4.271344
+        ]
+      },
+      {
+        "objectId": "composition-seating-zone-ceiling-light-4",
+        "min": [
+          4.082560000000001,
+          4.552,
+          -3.971344
+        ],
+        "max": [
+          5.517440000000001,
+          4.667199999999999,
+          -3.759888
+        ]
+      },
+      {
+        "objectId": "composition-seating-zone-ceiling-light-4",
+        "min": [
+          4.082560000000001,
+          4.552,
+          -2.3401120000000004
+        ],
+        "max": [
+          5.517440000000001,
+          4.667199999999999,
+          -2.1286560000000003
+        ]
+      },
+      {
+        "objectId": "composition-seating-zone-ceiling-light-8",
+        "min": [
+          4.082560000000001,
+          4.552,
+          -0.7713439999999999
+        ],
+        "max": [
+          5.517440000000001,
+          4.667199999999999,
+          -0.5598879999999999
+        ]
+      },
+      {
+        "objectId": "composition-seating-zone-ceiling-light-8",
+        "min": [
+          4.082560000000001,
+          4.552,
+          0.859888
+        ],
+        "max": [
+          5.517440000000001,
+          4.667199999999999,
+          1.0713439999999999
+        ]
+      },
+      {
+        "objectId": "composition-seating-zone-ceiling-light-12",
+        "min": [
+          4.082560000000001,
+          4.552,
+          2.428656
+        ],
+        "max": [
+          5.517440000000001,
+          4.667199999999999,
+          2.6401120000000002
+        ]
+      },
+      {
+        "objectId": "composition-seating-zone-ceiling-light-12",
+        "min": [
+          4.082560000000001,
+          4.552,
+          4.059888
+        ],
+        "max": [
+          5.517440000000001,
+          4.667199999999999,
+          4.271344
+        ]
+      },
+      {
+        "objectId": "composition-seating-zone-wall-speaker-1",
+        "min": [
+          -4.933344173048913,
+          0,
+          6.124148009149533
+        ],
+        "max": [
+          -3.048229209195152,
+          1.1403114160266707,
+          7.206543983644421
+        ]
+      },
+      {
+        "objectId": "composition-seating-zone-wall-speaker-1",
+        "min": [
+          -4.614090870828356,
+          0.13386264449008742,
+          6.855667899184205
+        ],
+        "max": [
+          -3.5858720551897574,
+          1.006448771536583,
+          7.237629901355914
+        ]
+      },
+      {
+        "objectId": "composition-seating-zone-wall-speaker-2",
+        "min": [
+          3.0843434147300037,
+          0,
+          6.1706826419343965
+        ],
+        "max": [
+          4.89794703849676,
+          1.097071230185684,
+          7.211593698891531
+        ]
+      },
+      {
+        "objectId": "composition-seating-zone-wall-speaker-2",
+        "min": [
+          3.6014488770215523,
+          0.1287866226739716,
+          6.874413003836743
+        ],
+        "max": [
+          4.590732500925047,
+          0.9682846075117122,
+          7.241613629037577
+        ]
+      },
+      {
+        "objectId": "composition-seating-zone-acoustic-panel-1",
+        "min": [
+          -7.73442010923261,
+          0.01905116279069765,
+          7.010942582886912
+        ],
+        "max": [
+          -3.3301380303022734,
+          1.2097488372093022,
+          7.313736975813373
+        ]
+      },
+      {
+        "objectId": "composition-seating-zone-acoustic-panel-4",
+        "min": [
+          3.3301380303022734,
+          0.01905116279069765,
+          7.010942582886912
+        ],
+        "max": [
+          7.73442010923261,
+          1.2097488372093022,
+          7.313736975813373
+        ]
+      },
+      {
+        "objectId": "composition-seating-zone-acoustic-panel-1",
+        "min": [
+          -7.541732768279408,
+          0.10954418604651156,
+          6.887072149416996
+        ],
+        "max": [
+          -3.522825371255476,
+          1.1478325581395348,
+          6.997179201390255
+        ]
+      },
+      {
+        "objectId": "composition-seating-zone-acoustic-panel-4",
+        "min": [
+          3.522825371255476,
+          0.10954418604651156,
+          6.887072149416996
+        ],
+        "max": [
+          7.541732768279408,
+          1.1478325581395348,
+          6.997179201390255
+        ]
+      },
+      {
+        "objectId": "composition-entrance-zone-ticket-counter-1",
+        "min": [
+          -3.381232,
+          0,
+          -7.2310944
+        ],
+        "max": [
+          -0.11876799999999998,
+          0.7597241379310345,
+          -6.2795424
+        ]
+      },
+      {
+        "objectId": "composition-entrance-zone-ticket-counter-1",
+        "min": [
+          -3.517168,
+          0.7822344827586208,
+          -7.29
+        ],
+        "max": [
+          0.01716799999999985,
+          0.8835310344827588,
+          -6.2206368
+        ]
+      },
+      {
+        "objectId": "composition-entrance-zone-ticket-counter-1",
+        "min": [
+          -2.973424,
+          0.8441379310344828,
+          -7.1631264
+        ],
+        "max": [
+          -0.5265759999999999,
+          1.2493241379310345,
+          -7.0000032
+        ]
+      },
+      {
+        "objectId": "composition-entrance-zone-ticket-counter-1",
+        "min": [
+          -3.2452959999999997,
+          0.16320000000000004,
+          -6.2795424
+        ],
+        "max": [
+          -0.25470400000000026,
+          0.6021517241379309,
+          -6.2070432
+        ]
+      },
+      {
+        "objectId": "composition-entrance-zone-ticket-counter-1",
+        "min": [
+          -3.3902944,
+          0.09566896551724141,
+          -7.154064
+        ],
+        "max": [
+          -3.2271712,
+          0.7822344827586208,
+          -6.3565728
+        ]
+      },
+      {
+        "objectId": "composition-entrance-zone-ticket-counter-1",
+        "min": [
+          -0.2728288000000001,
+          0.09566896551724141,
+          -7.154064
+        ],
+        "max": [
+          -0.10970560000000007,
+          0.7822344827586208,
+          -6.3565728
+        ]
+      },
+      {
+        "objectId": "composition-entrance-zone-ticket-counter-1",
+        "min": [
+          -2.0309344,
+          0.9004137931034484,
+          -6.900316800000001
+        ],
+        "max": [
+          -1.4690656,
+          1.091751724137931,
+          -6.4653216
+        ]
+      },
+      {
+        "objectId": "composition-entrance-zone-ticket-counter-1",
+        "min": [
+          -3.313264,
+          0.1800827586206897,
+          -6.2387616
+        ],
+        "max": [
+          -2.08984,
+          0.5852689655172414,
+          -6.1572000000000005
+        ]
+      },
+      {
+        "objectId": "composition-entrance-zone-ticket-counter-1",
+        "min": [
+          -1.41016,
+          0.1800827586206897,
+          -6.2387616
+        ],
+        "max": [
+          -0.186736,
+          0.5852689655172414,
+          -6.1572000000000005
+        ]
+      },
+      {
+        "objectId": "composition-entrance-zone-queue-stanchion-1",
+        "min": [
+          -1.4131310344827588,
+          0,
+          3.861765517241379
+        ],
+        "max": [
+          -0.5868689655172413,
+          1.2288000000000001,
+          5.13823448275862
+        ]
+      },
+      {
+        "objectId": "composition-entrance-zone-queue-stanchion-2",
+        "min": [
+          0.5868689655172414,
+          0,
+          3.8617655172413796
+        ],
+        "max": [
+          1.4131310344827586,
+          1.2288,
+          5.13823448275862
+        ]
+      },
+      {
+        "objectId": "composition-screen-zone-front-speaker-2",
+        "min": [
+          2.284277598695082,
+          0.16215092783505156,
+          -7.109935305087893
+        ],
+        "max": [
+          2.715722401304918,
+          1.20093030927835,
+          -6.735960667984147
+        ]
+      },
+      {
+        "objectId": "composition-screen-zone-front-speaker-2",
+        "min": [
+          2.210140977319247,
+          0.030403298969072165,
+          -7.181459646213451
+        ],
+        "max": [
+          2.789859022680753,
+          0.10134432989690721,
+          -6.6644363268585884
+        ]
+      },
+      {
+        "objectId": "composition-screen-zone-front-speaker-2",
+        "min": [
+          2.2641630090406033,
+          0.1013443298969072,
+          -7.132662174992648
+        ],
+        "max": [
+          2.7358369909593967,
+          0.17228536082474225,
+          -6.713233798079392
+        ]
+      },
+      {
+        "objectId": "composition-screen-zone-front-speaker-2",
+        "min": [
+          2.300463296009454,
+          0.28249731958762886,
+          -6.894986179348059
+        ],
+        "max": [
+          2.5827988754237787,
+          1.10592,
+          -6.731770579346359
+        ]
+      },
+      {
+        "objectId": "composition-screen-zone-front-speaker-2",
+        "min": [
+          2.3149771593455264,
+          1.1882622680412371,
+          -7.08237048073778
+        ],
+        "max": [
+          2.6850228406544736,
+          1.2288,
+          -6.763525492334259
+        ]
+      },
+      {
+        "objectId": "required-family-presence-projector-indoor-0-26",
+        "min": [
+          -0.7574794520547941,
+          0,
+          4.440644383561644
+        ],
+        "max": [
+          0.7574794520547952,
+          0.7259178082191782,
+          5.734671780821918
+        ]
+      },
+      {
+        "objectId": "required-family-presence-projector-indoor-0-26",
+        "min": [
+          -0.6470136986301364,
+          0.7164493150684932,
+          4.563734794520548
+        ],
+        "max": [
+          0.6470136986301376,
+          0.7921972602739726,
+          5.649455342465753
+        ]
+      },
+      {
+        "objectId": "required-family-presence-projector-indoor-0-26",
+        "min": [
+          -0.24618082191780769,
+          0.15465205479452046,
+          4.197619726027398
+        ],
+        "max": [
+          0.24618082191780877,
+          0.5838904109589038,
+          4.487986849315068
+        ]
+      },
+      {
+        "objectId": "required-family-presence-projector-indoor-0-26",
+        "min": [
+          -0.45764383561643773,
+          1.0510027397260273,
+          4.756260821917808
+        ],
+        "max": [
+          0.457643835616439,
+          1.152,
+          5.419055342465754
+        ]
+      },
+      {
+        "objectId": "required-family-presence-projector-indoor-0-26",
+        "min": [
+          -0.5207671232876706,
+          0.7858849315068495,
+          5.005597808219178
+        ],
+        "max": [
+          0.5207671232876717,
+          0.8995068493150685,
+          5.396962191780822
+        ]
+      },
+      {
+        "objectId": "required-family-presence-projector-indoor-0-26",
+        "min": [
+          -0.5428602739726021,
+          0.16727671232876706,
+          5.7378279452054795
+        ],
+        "max": [
+          0.5428602739726034,
+          0.558641095890411,
+          5.788326575342466
+        ]
+      },
+      {
+        "objectId": "required-family-presence-exit-sign-indoor-0-5",
+        "min": [
+          -6.494117647058826,
+          2.6164705882352943,
+          7.170588235294116
+        ],
+        "max": [
+          -5.082352941176473,
+          3.2,
+          7.302352941176469
+        ]
+      },
+      {
+        "objectId": "required-family-presence-side-aisle-light-indoor-2-11",
+        "min": [
+          1.0658133333333335,
+          0,
+          -1.1605333333333336
+        ],
+        "max": [
+          1.929386666666667,
+          1.2288,
+          1.1605333333333332
+        ]
+      },
+      {
+        "objectId": "required-family-presence-fire-extinguisher-indoor-0-1",
+        "min": [
+          11.977333333333332,
+          2.3040000000000003,
+          -2.092
+        ],
+        "max": [
+          12.276,
+          3.0613333333333337,
+          -1.7186666666666666
+        ]
+      },
+      {
+        "objectId": "required-family-presence-fire-extinguisher-indoor-0-1",
+        "min": [
+          12.275999999999998,
+          2.3066666666666666,
+          -2.124
+        ],
+        "max": [
+          12.339999999999998,
+          3.0266666666666673,
+          -1.6866666666666665
+        ]
+      },
+      {
+        "objectId": "required-family-presence-blackout-curtain-indoor-0-2",
+        "min": [
+          11.874430967741937,
+          0.008494009216589868,
+          0.7075200000000184
+        ],
+        "max": [
+          12.331390967741934,
+          1.1183778801843314,
+          1.5676800000000115
+        ]
+      },
+      {
+        "objectId": "required-family-presence-blackout-curtain-indoor-0-2",
+        "min": [
+          11.874430967741937,
+          0.008494009216589868,
+          2.4816000000000042
+        ],
+        "max": [
+          12.331390967741934,
+          1.1183778801843314,
+          3.341759999999997
+        ]
+      },
+      {
+        "objectId": "required-family-presence-blackout-curtain-indoor-0-2",
+        "min": [
+          11.874430967741937,
+          0.008494009216589868,
+          4.255679999999989
+        ],
+        "max": [
+          12.331390967741934,
+          1.1183778801843314,
+          5.115839999999983
+        ]
+      },
+      {
+        "objectId": "required-family-presence-blackout-curtain-indoor-0-2",
+        "min": [
+          11.995390967741937,
+          0.008494009216589868,
+          -0.17951999999997392
+        ],
+        "max": [
+          12.371710967741933,
+          1.1183778801843314,
+          0.680640000000019
+        ]
+      },
+      {
+        "objectId": "required-family-presence-blackout-curtain-indoor-0-2",
+        "min": [
+          11.995390967741937,
+          0.008494009216589868,
+          1.5945600000000113
+        ],
+        "max": [
+          12.371710967741933,
+          1.1183778801843314,
+          2.4547200000000045
+        ]
+      },
+      {
+        "objectId": "required-family-presence-blackout-curtain-indoor-0-2",
+        "min": [
+          11.995390967741937,
+          0.008494009216589868,
+          3.368639999999997
+        ],
+        "max": [
+          12.371710967741933,
+          1.1183778801843314,
+          4.22879999999999
+        ]
+      },
+      {
+        "objectId": "required-family-presence-blackout-curtain-indoor-0-2",
+        "min": [
+          11.995390967741937,
+          0.008494009216589868,
+          5.142719999999982
+        ],
+        "max": [
+          12.371710967741933,
+          1.1183778801843314,
+          6.0028799999999745
+        ]
+      },
+      {
+        "objectId": "required-family-presence-blackout-curtain-indoor-0-2",
+        "min": [
+          11.914750967741936,
+          1.1098838709677417,
+          -0.19295999999997404
+        ],
+        "max": [
+          12.425470967741933,
+          1.1608479262672808,
+          6.0163199999999755
+        ]
+      },
+      {
+        "objectId": "required-family-presence-blackout-curtain-indoor-0-2",
+        "min": [
+          11.981950967741936,
+          1.1778359447004607,
+          -0.3811199999999726
+        ],
+        "max": [
+          12.438910967741933,
+          1.2287999999999997,
+          6.204479999999974
+        ]
+      },
+      {
+        "objectId": "required-family-presence-blackout-curtain-indoor-0-2",
+        "min": [
+          11.928190967741937,
+          0,
+          -0.2735999999999734
+        ],
+        "max": [
+          12.385150967741932,
+          1.1268718894009213,
+          -0.11231999999997466
+        ]
+      },
+      {
+        "objectId": "required-family-presence-blackout-curtain-indoor-0-2",
+        "min": [
+          11.928190967741937,
+          0,
+          5.935679999999976
+        ],
+        "max": [
+          12.385150967741934,
+          1.1268718894009213,
+          6.096959999999974
+        ]
+      },
+      {
+        "objectId": "required-family-presence-waste-bin-indoor-2-1",
+        "min": [
+          0.12220288431238635,
+          0.13743157894736843,
+          -7.253623633098705
+        ],
+        "max": [
+          1.193604644361514,
+          1.1910736842105265,
+          -5.92524354303682
+        ]
+      },
+      {
+        "objectId": "__room__:floor:0",
+        "min": [
+          -12.5,
+          -0.16,
+          -7.5
+        ],
+        "max": [
+          12.5,
+          0,
+          7.5
+        ]
+      },
+      {
+        "objectId": "__room__:ceiling:1",
+        "min": [
+          -12.5,
+          4.84,
+          -7.5
+        ],
+        "max": [
+          12.5,
+          5,
+          7.5
+        ]
+      },
+      {
+        "objectId": "__room__:north:2",
+        "min": [
+          -12.5,
+          0,
+          -7.5
+        ],
+        "max": [
+          12.5,
+          5,
+          -7.34
+        ]
+      },
+      {
+        "objectId": "__room__:south:3",
+        "min": [
+          -12.5,
+          0,
+          7.34
+        ],
+        "max": [
+          -1.9515999999999991,
+          5,
+          7.5
+        ]
+      },
+      {
+        "objectId": "__room__:south:4",
+        "min": [
+          1.9515999999999991,
+          0,
+          7.34
+        ],
+        "max": [
+          12.5,
+          5,
+          7.5
+        ]
+      },
+      {
+        "objectId": "__room__:south:5",
+        "min": [
+          -1.9515999999999998,
+          2.24,
+          7.34
+        ],
+        "max": [
+          1.9515999999999998,
+          5,
+          7.5
+        ]
+      },
+      {
+        "objectId": "__room__:east:6",
+        "min": [
+          12.34,
+          0,
+          -7.5
+        ],
+        "max": [
+          12.5,
+          5,
+          -0.7315869610621597
+        ]
+      },
+      {
+        "objectId": "__room__:east:7",
+        "min": [
+          12.34,
+          0,
+          0.7315869610621597
+        ],
+        "max": [
+          12.5,
+          5,
+          7.5
+        ]
+      },
+      {
+        "objectId": "__room__:east:8",
+        "min": [
+          12.34,
+          0,
+          -0.7315869610621596
+        ],
+        "max": [
+          12.5,
+          2.08,
+          0.7315869610621596
+        ]
+      },
+      {
+        "objectId": "__room__:east:9",
+        "min": [
+          12.34,
+          3.600000000000001,
+          -0.7315869610621596
+        ],
+        "max": [
+          12.5,
+          5,
+          0.7315869610621596
+        ]
+      },
+      {
+        "objectId": "__room__:west:10",
+        "min": [
+          -12.5,
+          0,
+          -7.5
+        ],
+        "max": [
+          -12.34,
+          5,
+          7.5
+        ]
+      }
+    ],
+    "cellSize": 4,
+    "cells": {
+      "-1,-2": [
+        0,
+        1,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        23,
+        24,
+        25,
+        26,
+        33,
+        34,
+        35,
+        36,
+        111,
+        114,
+        191,
+        192,
+        193,
+        194,
+        195,
+        196,
+        197,
+        198,
+        199,
+        229,
+        230,
+        231
+      ],
+      "0,-2": [
+        0,
+        2,
+        3,
+        4,
+        5,
+        6,
+        9,
+        10,
+        20,
+        21,
+        22,
+        23,
+        30,
+        31,
+        32,
+        33,
+        117,
+        120,
+        192,
+        202,
+        203,
+        204,
+        205,
+        206,
+        228,
+        229,
+        230,
+        231
+      ],
+      "-1,1": [
+        11,
+        13,
+        14,
+        15,
+        17,
+        113,
+        116,
+        125,
+        128,
+        140,
+        143,
+        146,
+        170,
+        183,
+        184,
+        187,
+        189,
+        200,
+        207,
+        208,
+        209,
+        210,
+        211,
+        212,
+        229,
+        230,
+        232,
+        234
+      ],
+      "0,1": [
+        12,
+        13,
+        14,
+        16,
+        17,
+        109,
+        110,
+        119,
+        122,
+        131,
+        134,
+        149,
+        152,
+        155,
+        176,
+        185,
+        186,
+        188,
+        190,
+        201,
+        207,
+        208,
+        209,
+        210,
+        211,
+        212,
+        229,
+        230,
+        233,
+        234
+      ],
+      "3,-1": [
+        18,
+        215,
+        216,
+        220,
+        224,
+        225,
+        226,
+        229,
+        230,
+        235,
+        237,
+        238
+      ],
+      "3,0": [
+        18,
+        217,
+        218,
+        220,
+        221,
+        222,
+        224,
+        225,
+        229,
+        230,
+        236,
+        237,
+        238
+      ],
+      "1,-2": [
+        19,
+        29,
+        120,
+        229,
+        230,
+        231
+      ],
+      "-2,-2": [
+        27,
+        28,
+        37,
+        38,
+        111,
+        229,
+        230,
+        231
+      ],
+      "1,-1": [
+        39,
+        49,
+        59,
+        69,
+        120,
+        121,
+        132,
+        133,
+        153,
+        154,
+        156,
+        157,
+        177,
+        178,
+        179,
+        229,
+        230
+      ],
+      "0,-1": [
+        40,
+        41,
+        42,
+        43,
+        50,
+        51,
+        52,
+        53,
+        59,
+        60,
+        61,
+        62,
+        63,
+        69,
+        70,
+        71,
+        72,
+        73,
+        117,
+        118,
+        120,
+        121,
+        129,
+        130,
+        132,
+        133,
+        147,
+        148,
+        150,
+        151,
+        153,
+        154,
+        171,
+        172,
+        173,
+        214,
+        229,
+        230
+      ],
+      "-1,-1": [
+        43,
+        44,
+        45,
+        46,
+        53,
+        54,
+        55,
+        56,
+        63,
+        64,
+        65,
+        66,
+        73,
+        74,
+        75,
+        76,
+        111,
+        112,
+        114,
+        115,
+        123,
+        124,
+        126,
+        127,
+        138,
+        139,
+        141,
+        142,
+        144,
+        145,
+        165,
+        166,
+        167,
+        229,
+        230
+      ],
+      "-2,-1": [
+        47,
+        48,
+        57,
+        58,
+        67,
+        68,
+        77,
+        78,
+        111,
+        112,
+        123,
+        124,
+        135,
+        136,
+        138,
+        139,
+        159,
+        160,
+        161,
+        229,
+        230
+      ],
+      "0,0": [
+        69,
+        70,
+        71,
+        79,
+        80,
+        81,
+        82,
+        83,
+        89,
+        90,
+        91,
+        92,
+        93,
+        99,
+        100,
+        101,
+        102,
+        103,
+        109,
+        110,
+        118,
+        119,
+        121,
+        122,
+        130,
+        131,
+        133,
+        134,
+        148,
+        149,
+        151,
+        152,
+        154,
+        155,
+        174,
+        175,
+        201,
+        214,
+        229,
+        230
+      ],
+      "1,0": [
+        69,
+        79,
+        89,
+        99,
+        109,
+        121,
+        122,
+        133,
+        134,
+        154,
+        155,
+        157,
+        158,
+        180,
+        181,
+        229,
+        230
+      ],
+      "-1,0": [
+        75,
+        76,
+        83,
+        84,
+        85,
+        86,
+        93,
+        94,
+        95,
+        96,
+        103,
+        104,
+        105,
+        106,
+        112,
+        113,
+        115,
+        116,
+        124,
+        125,
+        127,
+        128,
+        139,
+        140,
+        142,
+        143,
+        145,
+        146,
+        168,
+        169,
+        200,
+        229,
+        230
+      ],
+      "-2,0": [
+        77,
+        78,
+        87,
+        88,
+        97,
+        98,
+        107,
+        108,
+        112,
+        113,
+        124,
+        125,
+        136,
+        137,
+        139,
+        140,
+        162,
+        163,
+        229,
+        230
+      ],
+      "1,1": [
+        109,
+        122,
+        134,
+        155,
+        158,
+        182,
+        185,
+        186,
+        188,
+        190,
+        229,
+        230,
+        233
+      ],
+      "-2,1": [
+        113,
+        125,
+        137,
+        140,
+        164,
+        183,
+        184,
+        187,
+        189,
+        213,
+        229,
+        230,
+        232
+      ],
+      "2,-1": [
+        215,
+        220,
+        224,
+        225,
+        226,
+        229,
+        230
+      ],
+      "2,0": [
+        217,
+        218,
+        220,
+        221,
+        222,
+        224,
+        225,
+        229,
+        230
+      ],
+      "2,1": [
+        219,
+        222,
+        223,
+        224,
+        225,
+        227,
+        229,
+        230,
+        233
+      ],
+      "3,1": [
+        219,
+        222,
+        223,
+        224,
+        225,
+        227,
+        229,
+        230,
+        233,
+        236
+      ],
+      "-4,-2": [
+        229,
+        230,
+        231,
+        239
+      ],
+      "-3,-2": [
+        229,
+        230,
+        231
+      ],
+      "2,-2": [
+        229,
+        230,
+        231
+      ],
+      "3,-2": [
+        229,
+        230,
+        231,
+        235
+      ],
+      "-4,-1": [
+        229,
+        230,
+        239
+      ],
+      "-3,-1": [
+        229,
+        230
+      ],
+      "-4,0": [
+        229,
+        230,
+        239
+      ],
+      "-3,0": [
+        229,
+        230
+      ],
+      "-4,1": [
+        229,
+        230,
+        232,
+        239
+      ],
+      "-3,1": [
+        229,
+        230,
+        232
+      ]
+    }
+  }
+}

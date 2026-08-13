@@ -1,0 +1,418 @@
+{
+  "id": "asset-ea0d3ce2-8ca5-4711",
+  "name": "收银POS终端",
+  "prompt": "单个清晰可读的零售POS终端，包含倾斜显示屏、刷卡区和小型扫码底座，尺寸不小于0.27米并适合放置在收银台面。\n全局资产美术方向：现代简洁的体素风服装零售家具，比例参照1.60米角色；采用浅橡木、哑光白、炭灰金属与少量暖色织物，货架轮廓轻薄但可读，普通构件主要尺寸不小于0.27米。\n资产角色：依附收银台的结账设备；目标尺度：small。\n只生成一个可复用的独立物体，不要生成地面、背景、天空、完整场景或多个分散物体。",
+  "tags": [
+    "pos",
+    "payment-terminal",
+    "checkout-device"
+  ],
+  "modelJson": {
+    "name": "零售POS结账终端",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "terminal",
+        "name": "终端底座",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        }
+      },
+      {
+        "id": "display",
+        "name": "倾斜显示屏",
+        "parent": "terminal",
+        "transform": {
+          "pos": [
+            0,
+            0.27,
+            -0.11
+          ]
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "terminal",
+        "transform": {
+          "pos": [
+            0,
+            0.04,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.72,
+            "height": 0.08,
+            "depth": 0.46
+          },
+          "color": 14203274
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "oak"
+          }
+        ]
+      },
+      {
+        "id": "m1",
+        "parent": "terminal",
+        "transform": {
+          "pos": [
+            0,
+            0.125,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.68,
+            "height": 0.09,
+            "depth": 0.42
+          },
+          "color": 15921645
+        }
+      },
+      {
+        "id": "m2",
+        "parent": "terminal",
+        "transform": {
+          "pos": [
+            0,
+            0.245,
+            -0.13
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.12,
+            "height": 0.19,
+            "depth": 0.1
+          },
+          "color": 3488317
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m3",
+        "parent": "terminal",
+        "transform": {
+          "pos": [
+            0.22,
+            0.16,
+            0.08
+          ],
+          "quat": [
+            0.08,
+            0,
+            0,
+            1
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.27,
+            "height": 0.035,
+            "depth": 0.24
+          },
+          "color": 3883075
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m4",
+        "parent": "terminal",
+        "transform": {
+          "pos": [
+            0.23,
+            0.18,
+            0.07
+          ],
+          "quat": [
+            0.08,
+            0,
+            0,
+            1
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.18,
+            "height": 0.012,
+            "depth": 0.06
+          },
+          "color": 1514012
+        }
+      },
+      {
+        "id": "m5",
+        "parent": "terminal",
+        "transform": {
+          "pos": [
+            -0.21,
+            0.21,
+            0.075
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.28,
+            "height": 0.1,
+            "depth": 0.25
+          },
+          "color": 16119023
+        }
+      },
+      {
+        "id": "m6",
+        "parent": "terminal",
+        "transform": {
+          "pos": [
+            -0.21,
+            0.275,
+            0.095
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.21,
+            "height": 0.045,
+            "depth": 0.17
+          },
+          "color": 4795179
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass",
+            "variant": "red"
+          },
+          {
+            "tag": "emissive",
+            "value": 0.25
+          }
+        ]
+      },
+      {
+        "id": "m7",
+        "parent": "terminal",
+        "transform": {
+          "pos": [
+            -0.21,
+            0.245,
+            -0.045
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.22,
+            "height": 0.08,
+            "depth": 0.045
+          },
+          "color": 3422524
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m8",
+        "parent": "display",
+        "transform": {
+          "pos": [
+            0,
+            0.17,
+            -0.05
+          ],
+          "quat": [
+            -0.82,
+            0,
+            0,
+            0.58
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.58,
+            "height": 0.065,
+            "depth": 0.38
+          },
+          "color": 3422524
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m9",
+        "parent": "display",
+        "transform": {
+          "pos": [
+            0,
+            0.16,
+            0
+          ],
+          "quat": [
+            -0.82,
+            0,
+            0,
+            0.58
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.47,
+            "height": 0.012,
+            "depth": 0.28
+          },
+          "color": 2704979
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass",
+            "variant": "blue"
+          },
+          {
+            "tag": "emissive",
+            "value": 0.25
+          }
+        ]
+      },
+      {
+        "id": "m10",
+        "parent": "display",
+        "transform": {
+          "pos": [
+            0,
+            0.09,
+            0.03
+          ],
+          "quat": [
+            -0.82,
+            0,
+            0,
+            0.58
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.34,
+            "height": 0.008,
+            "depth": 0.04
+          },
+          "color": 15265256
+        },
+        "tags": [
+          {
+            "tag": "emissive",
+            "value": 0.5
+          }
+        ]
+      },
+      {
+        "id": "m11",
+        "parent": "display",
+        "transform": {
+          "pos": [
+            0,
+            0.23,
+            -0.02
+          ],
+          "quat": [
+            -0.82,
+            0,
+            0,
+            0.58
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.2,
+            "height": 0.009,
+            "depth": 0.05
+          },
+          "color": 14195291
+        },
+        "tags": [
+          {
+            "tag": "emissive",
+            "value": 0.5
+          }
+        ]
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1786542867516,
+        "provider": "gpt",
+        "data": "jbER7F2GXg5Zl5q2Nw2iKc1dHYgFNNd7pNgM+FcoyzQUhq1Xpj7OxoZ2g2rRmDfJ9YdsmmlNNQ8ZY78JGxjw/QPk/IYvWpco3PS8gGmVu/dAU5yjOFanMHtEt4OVtvMNT37lDVQ+DYCmK9k3Plu2u+xy4K85GObxHFU20eLACD+PmxCOvypi3lg6sv7ZRv7B9kfCEUavx5MVNVSh6fuiKMrJBDpqebfkfqgZb984pvH5APy2mJk1RKqp9E4YQzboq4DBcMUkG3NvCz9ffqyqbEzVFg2cUFsmajlHBwUHVrU49JZVa2p77frozOKK+BQ3GFkMGOtowns/np5s8Ty4lmaV9fO1kvOtcz3q43jpIxoYl9GToSiys+ask3qCYtrwT0T8PcPaY9N5itYcf0b8c37UDNs1w5Z1ZfEs1OIILfEWM311IyU3Dkyv28eBHB0y5dkaPRahEkrRQjCeoUZ2FJY5m0cr398UlV3bDmqNVKdOQ4h6MwnAljpAaRr/bscGHnBRasJSLsb3w1Q/ypUL/BkvVMGS/ULCplQFpv3q/39EbPYP266OMqnqn3avm8X86DF9VYlFeSoqbr6cch566TpTorFL5iRVREK2Z18xzIvSbT5C5kgbffoPNKL4WdvMYlwI0iDArbSCP4sF18Vr7a3GxfO4Wj/AK6MCI5Tr3Vl71ErUu7BASPVGYB7tg+u4CtqFIYKgVAnLQrSFbKs6XkokMRya+X/zHo1NxWd9RZvFlAMnDnVf4shWNmUUYeG4NIZTy3kqE7YNuxbDGwepqBPtztp8n6kGOCDQyLyascVvYRpSpKS5K8liw5LlF0AKAWizb9XAvmoKn4pAnEQlTIt6RUvXbUuACN9mISKvxjhbkBFEg3KgTp6/ooAA8p+NbbqvsDRtsOnpK6tKgccxnhDwBnl5xFfv99g+K+QZDb2/DLJdFsUButexbCMMBa+cNg44lYHiL4uts8WZwe3vFz9J+UYB1emN9jFWyl7G9/TncgHXDSLRrXNeNAEGQmOaCPh4WW5Di4Y8TwZJ8fwcrRjVr7jqHcv2JjNVE6zlUItbPDn++76j+VcHor9JGzObC24=",
+        "edits": ""
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -0.36,
+          0,
+          -0.24196371927042032
+        ],
+        "max": [
+          0.36,
+          0.6299762093576526,
+          0.24196371927042032
+        ],
+        "sourceNodeId": "asset-bounds"
+      }
+    ],
+    "sourceMeshCount": 12,
+    "candidateCount": 0,
+    "fallbackUsed": true
+  },
+  "footprintRadius": 0.36,
+  "sizeClass": "small",
+  "mode": "voxel",
+  "provider": "gpt",
+  "createdAt": 1786542873911,
+  "updatedAt": 1786542873911
+}

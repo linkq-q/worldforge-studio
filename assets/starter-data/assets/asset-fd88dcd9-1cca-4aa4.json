@@ -1,0 +1,361 @@
+{
+  "id": "asset-fd88dcd9-1cca-4aa4",
+  "name": "对称复古玻璃窗",
+  "prompt": "生成一个可重复使用的独立玻璃窗模型，宽幅透明玻璃、奶油白与铬银圆角窗框，玻璃材质清晰可见；不要附带墙体或多个窗户。\n全局资产美术方向：1950年代复古快餐店风格，奶油白、番茄红、薄荷绿与铬银配色；家具采用圆角金属包边、耐用层压板和红色软包，比例清晰并适合1.60米角色。\n资产角色：沿墙重复的独立采光窗模块；目标尺度：large。\n只生成一个可复用的独立物体，不要生成地面、背景、天空、完整场景或多个分散物体。",
+  "tags": [
+    "retro-diner",
+    "glass-window",
+    "chrome-frame"
+  ],
+  "modelJson": {
+    "name": "1950年代复古快餐店独立玻璃窗",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "window",
+        "name": "独立采光窗模块",
+        "transform": {
+          "pos": [
+            0,
+            1.22,
+            0.155
+          ]
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "window",
+        "transform": {
+          "pos": [
+            0,
+            0.08,
+            -0.155
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 3.2,
+            "height": 2.4,
+            "depth": 0.28
+          },
+          "color": 16774102
+        }
+      },
+      {
+        "id": "m1",
+        "parent": "window",
+        "transform": {
+          "pos": [
+            0,
+            0.08,
+            0.005
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2.68,
+            "height": 1.88,
+            "depth": 0.18
+          },
+          "color": 12577249
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass"
+          }
+        ]
+      },
+      {
+        "id": "m2",
+        "parent": "window",
+        "transform": {
+          "pos": [
+            0,
+            1.06,
+            0.125
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2.72,
+            "height": 0.1,
+            "depth": 0.08
+          },
+          "color": 13224393
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "silver"
+          }
+        ]
+      },
+      {
+        "id": "m3",
+        "parent": "window",
+        "transform": {
+          "pos": [
+            0,
+            -0.9,
+            0.125
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2.72,
+            "height": 0.1,
+            "depth": 0.08
+          },
+          "color": 13224393
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "silver"
+          }
+        ]
+      },
+      {
+        "id": "m4",
+        "parent": "window",
+        "transform": {
+          "pos": [
+            -1.36,
+            0.08,
+            0.125
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.1,
+            "height": 1.88,
+            "depth": 0.08
+          },
+          "color": 13224393
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "silver"
+          }
+        ]
+      },
+      {
+        "id": "m5",
+        "parent": "window",
+        "transform": {
+          "pos": [
+            1.36,
+            0.08,
+            0.125
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.1,
+            "height": 1.88,
+            "depth": 0.08
+          },
+          "color": 13224393
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "silver"
+          }
+        ]
+      },
+      {
+        "id": "m6",
+        "parent": "window",
+        "transform": {
+          "pos": [
+            -1.43,
+            1.14,
+            -0.105
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.34,
+            "height": 0.34,
+            "depth": 0.3
+          },
+          "color": 16774102
+        }
+      },
+      {
+        "id": "m7",
+        "parent": "window",
+        "transform": {
+          "pos": [
+            1.43,
+            1.14,
+            -0.105
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.34,
+            "height": 0.34,
+            "depth": 0.3
+          },
+          "color": 16774102
+        }
+      },
+      {
+        "id": "m8",
+        "parent": "window",
+        "transform": {
+          "pos": [
+            -1.43,
+            -0.98,
+            -0.105
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.34,
+            "height": 0.34,
+            "depth": 0.3
+          },
+          "color": 16774102
+        }
+      },
+      {
+        "id": "m9",
+        "parent": "window",
+        "transform": {
+          "pos": [
+            1.43,
+            -0.98,
+            -0.105
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.34,
+            "height": 0.34,
+            "depth": 0.3
+          },
+          "color": 16774102
+        }
+      },
+      {
+        "id": "m10",
+        "parent": "window",
+        "transform": {
+          "pos": [
+            0,
+            -1.14,
+            -0.075
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 3.45,
+            "height": 0.16,
+            "depth": 0.46
+          },
+          "color": 16774102
+        }
+      },
+      {
+        "id": "m11",
+        "parent": "window",
+        "transform": {
+          "pos": [
+            0,
+            -1.02,
+            0.155
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2.5,
+            "height": 0.08,
+            "depth": 0.08
+          },
+          "color": 14236466
+        }
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1786540084197,
+        "provider": "gpt",
+        "data": "c1R9rS/M1xHgR9yBBzBb8NNLYQaj2Xm0ZTogQogp+e/3u1ELUeqwYy+tvi0Uj/sn/vHOnrMbPBqJCGj5ZSDiH9hioMEiwMx5+pofMe00WEaLhe2/QiHQb8LN2i0vvyfVb1eqWT/8zYaqn1CEx1nH+PGnlm1cWUpo2Y/XFUg596NwIY9Q8x65A5UNMjJR5UcfJefmQTRkvPvIw8UImmsfVH5IRWuxCaPx8lxGZcRF9XlxarpnCj7LqHCisqQQ+IEkfNk7FIynR350njz1lnShMA42zoVzTvEic7e7Xlv3bT2/XfFt5/rPYoYuKp1reKBswezcCJqoFG2IFXKXUYf1cJMtvzAtoq6sTu2tGq4iJcmxoKEqFQluXwpD43r+mUhbzVXST2ywdwUwT/a1nXVPvpyzL4wCXPuwdfM0naRqYZZLawrBYOMCBh91uL7ibYkgtXQMSlYmLuswIjdPGIgbrt6LaRTCqXEgt9XdRUS1gYNsyb28aGZYQ5uY/c9g+8pAvReDvM5r5RPDP26Pyfl8x+fyIaArqe9egMMLAHVRgqgRX7zGrrur+LdbfKBa7idEOSRAHEC/939hxdG0AhQmo9JFDulw/U6rLYriu/5byOalFCNrTr7AVA0u4wg8fpem2kG2xj/T3mgNr5W0X2o5/UP3oZW3gfvRDd5wJyikjoyHAKsSnHCZEn7ALypIjTuPKwszwwbM",
+        "edits": ""
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -1.6,
+          0.10000000000000002,
+          -0.24
+        ],
+        "max": [
+          1.6,
+          2.5,
+          0.040000000000000036
+        ],
+        "sourceNodeId": "m0"
+      },
+      {
+        "min": [
+          -1.34,
+          0.36000000000000004,
+          -0.02999999999999997
+        ],
+        "max": [
+          1.34,
+          2.24,
+          0.15000000000000002
+        ],
+        "sourceNodeId": "m1"
+      },
+      {
+        "min": [
+          -1.725,
+          0,
+          -0.25
+        ],
+        "max": [
+          1.725,
+          0.16000000000000003,
+          0.21000000000000002
+        ],
+        "sourceNodeId": "m10"
+      }
+    ],
+    "sourceMeshCount": 12,
+    "candidateCount": 3,
+    "fallbackUsed": false
+  },
+  "footprintRadius": 1.725,
+  "sizeClass": "medium",
+  "mode": "voxel",
+  "provider": "gpt",
+  "createdAt": 1786540086519,
+  "updatedAt": 1786540086519
+}

@@ -1,31 +1,24 @@
 {
-  "id": "render-02f563f4-c0ea-4ed8",
-  "name": "童话池畔清晨",
-  "description": "以柔和清晨方案为基础，用暖色晨光、320米清晨薄雾和克制的低空水汽营造宁静氛围，同时保留中等对比与清晰暗部；池塘反射柔和，花粉和光束仅作轻微点缀。",
-  "sourcePrompt": "柔和清晨，薄雾漂浮在池塘和林间低处，淡金色阳光穿过树冠，空气中只有少量花粉，宁静而清晰。",
-  "styleTags": [
-    "柔和清晨",
-    "林间薄雾",
-    "淡金晨光",
-    "宁静清晰",
-    "少量花粉",
-    "平静池塘"
-  ],
+  "id": "render-689ea313-fa47-4f05",
+  "name": "晴空沙漠",
+  "description": "清晰、中性的日间光照，适合继续编辑地图。",
+  "sourcePrompt": "干热空气中的赭红峡谷与低饱和深绿绿洲形成冷暖对比，远端石柱使用轻微沙尘薄雾弱化，水潭保持最清晰的局部反光",
+  "styleTags": [],
   "provider": "gpt",
   "renderPlan": {
     "version": 2,
-    "baseSchemeId": "render-eadfd3db-bf88-443f",
+    "baseSchemeId": "render-natural-day",
     "modules": [
       {
         "id": "environment.hdri",
         "params": {
-          "texture": "HDRI-44.exr",
-          "rotation": 18,
-          "exposure": 1.08,
-          "saturation": 0.9,
-          "intensity": 1.05,
-          "tint": "#FFE4B8",
-          "tintStrength": 0.2,
+          "texture": "HDRI-95.hdr",
+          "rotation": 24,
+          "exposure": 1.14,
+          "saturation": 0.78,
+          "intensity": 1.12,
+          "tint": "#E5B58B",
+          "tintStrength": 0.28,
           "useAsEnvironment": "on"
         }
       },
@@ -36,33 +29,57 @@
         }
       },
       {
-        "id": "presentation.exposure",
-        "params": {
-          "value": 1.02
-        }
-      },
-      {
         "id": "runtime.light-rig",
         "params": {
-          "recipe": "soft-morning",
-          "strength": 1.18,
-          "warmth": 0.38,
-          "shadowSoftness": 0.82
+          "recipe": "hard-day",
+          "strength": 1.24,
+          "warmth": 0.58,
+          "shadowSoftness": 0.28
         }
       },
       {
         "id": "runtime.color-grade",
         "params": {
           "recipe": "warm",
-          "temperature": 0.2,
-          "contrast": 1.08,
-          "saturation": 1.02,
-          "shadowLift": 0.1,
-          "tint": "#FFF3DC"
+          "temperature": 0.32,
+          "contrast": 1.2,
+          "saturation": 0.86,
+          "shadowLift": 0.11,
+          "tint": "#F2D7C0"
         }
       },
       {
-        "key": "pond-calm-morning",
+        "key": "ochre-weathered-stone",
+        "id": "runtime.material-theme",
+        "scope": {
+          "target": "material-tag",
+          "tag": "stone"
+        },
+        "params": {
+          "recipe": "weathered",
+          "strength": 0.82,
+          "color": "#A9513B",
+          "roughness": 0.9,
+          "metalness": 0.01
+        }
+      },
+      {
+        "key": "oasis-deep-foliage",
+        "id": "runtime.material-theme",
+        "scope": {
+          "target": "material-tag",
+          "tag": "foliage"
+        },
+        "params": {
+          "recipe": "natural",
+          "strength": 0.76,
+          "color": "#315B43",
+          "roughness": 0.78,
+          "metalness": 0
+        }
+      },
+      {
+        "key": "clear-oasis-pool",
         "id": "runtime.water-style",
         "scope": {
           "target": "water",
@@ -70,74 +87,83 @@
         },
         "params": {
           "recipe": "calm-lake",
-          "opacity": 0.88,
-          "color": "#6B9FA0",
-          "shallowColor": "#93C4B8",
-          "depthColor": "#315D66",
-          "waveStrength": 0.16,
-          "waveSpeed": 0.18,
-          "foamStrength": 0.08,
-          "environmentReflectionStrength": 0.48,
-          "environmentReflectionExposure": 0.62
-        }
-      },
-      {
-        "id": "runtime.post-quality",
-        "params": {
-          "bloom": "soft",
-          "bloomStrength": 0.18,
-          "ssao": "soft"
+          "opacity": 0.56,
+          "color": "#396F67",
+          "shallowColor": "#719B82",
+          "depthColor": "#173B3A",
+          "foamColor": "#E9E1D3",
+          "waveStrength": 0.11,
+          "waveSpeed": 0.14,
+          "waveScale": 1.8,
+          "waveDirection": 18,
+          "waveSharpness": 1.25,
+          "foamStrength": 0.1,
+          "shoreFoamWidth": 0.035,
+          "shoreWaveRange": 0.2,
+          "shoreWaveFrequency": 4,
+          "shoreWaveWidth": 0.3,
+          "shoreWaveBreakup": 0.18,
+          "environmentReflectionStrength": 0.35,
+          "environmentReflectionExposure": 0.7
         }
       },
       {
         "id": "runtime.atmosphere-fx",
         "params": {
-          "masterStrength": 0.34,
-          "semanticStrength": 0.8,
-          "pollen": 0.1,
-          "vapor": 0.22,
-          "dust": 0
+          "masterStrength": 0.38,
+          "semanticStrength": 0.85,
+          "pollen": 0,
+          "vapor": 0.02,
+          "dust": 0.32
+        }
+      },
+      {
+        "id": "runtime.post-quality",
+        "params": {
+          "bloom": "off",
+          "bloomStrength": 0,
+          "ssao": "soft"
         }
       },
       {
         "id": "environment.palette",
         "params": {
-          "fogColor": "#aebac0"
+          "fogColor": "#af9175"
         }
       },
       {
         "id": "lighting.hemisphere",
         "params": {
-          "skyColor": "#bed2dd",
-          "groundColor": "#aebac0"
+          "skyColor": "#a1b0ae",
+          "groundColor": "#af9175"
         }
       },
       {
         "id": "lighting.sun",
         "params": {
-          "color": "#ffe0a3"
+          "color": "#ffd29a"
         }
       }
     ],
     "visualDirection": {
       "version": 1,
-      "contrastMode": "bright-cartoon",
-      "timeOfDay": "morning",
+      "contrastMode": "colored-shadow",
+      "timeOfDay": "noon",
       "temperature": "warm",
       "palette": {
-        "sky": "#a9cad8",
-        "keyLight": "#ffe0a3",
-        "fillLight": "#c8dfe5",
-        "shadow": "#60766f",
-        "fog": "#c5d3ce",
-        "waterBias": "#6fa5a6",
-        "accent": "#f3c96f"
+        "sky": "#b8c1bc",
+        "keyLight": "#ffd29a",
+        "fillLight": "#8fa9a3",
+        "shadow": "#405a58",
+        "fog": "#b99b7e",
+        "waterBias": "#356b63",
+        "accent": "#b85c3f"
       },
       "atmosphereFx": {
-        "masterStrength": 0.34,
-        "pollen": 0.1,
-        "vapor": 0.22,
-        "dust": 0,
+        "masterStrength": 0.38,
+        "pollen": 0,
+        "vapor": 0.02,
+        "dust": 0.32,
         "sand": 0
       }
     }
@@ -2222,16 +2248,16 @@
   "schemaVersion": 1,
   "kind": "builtin",
   "settings": {
-    "background": "#a9cad8",
-    "fogColor": "#aebac0",
+    "background": "#b8c1bc",
+    "fogColor": "#af9175",
     "fogDensity": 0.005408807445632142,
-    "hemisphereSkyColor": "#bed2dd",
-    "hemisphereGroundColor": "#aebac0",
+    "hemisphereSkyColor": "#a1b0ae",
+    "hemisphereGroundColor": "#af9175",
     "hemisphereIntensity": 1.45,
-    "sunColor": "#ffe0a3",
+    "sunColor": "#ffd29a",
     "sunIntensity": 2.7,
-    "exposure": 1.02
+    "exposure": 1
   },
-  "createdAt": 1785736043180,
-  "updatedAt": 1786551136152
+  "createdAt": 1786285273215,
+  "updatedAt": 1786551136233
 }

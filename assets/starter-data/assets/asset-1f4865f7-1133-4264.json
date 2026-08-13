@@ -1,0 +1,269 @@
+{
+  "id": "asset-1f4865f7-1133-4264",
+  "name": "复古圆盘顶灯",
+  "prompt": "生成单个吊装式复古圆盘顶灯，乳白玻璃灯罩、铬银边缘和短吊杆，光罩尺度清晰；不要包含天花板或多灯组合。\n全局资产美术方向：1950年代复古快餐店风格，奶油白、番茄红、薄荷绿与铬银配色；家具采用圆角金属包边、耐用层压板和红色软包，比例清晰并适合1.60米角色。\n资产角色：与餐桌网格对齐的均匀照明模块；目标尺度：medium。\n只生成一个可复用的独立物体，不要生成地面、背景、天空、完整场景或多个分散物体。",
+  "tags": [
+    "retro-diner",
+    "ceiling-light",
+    "opal-glass",
+    "ceiling-mounted"
+  ],
+  "modelJson": {
+    "name": "复古圆盘吊装顶灯",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "pendant_lamp",
+        "name": "单个吊装式圆盘顶灯",
+        "transform": {
+          "pos": [
+            0,
+            2.245,
+            0
+          ]
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "pendant_lamp",
+        "transform": {
+          "pos": [
+            0,
+            0.475,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.28,
+            "height": 0.75,
+            "depth": 0.28
+          },
+          "color": 10331046
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "silver"
+          }
+        ]
+      },
+      {
+        "id": "m1",
+        "parent": "pendant_lamp",
+        "transform": {
+          "pos": [
+            0,
+            0.075,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.62,
+            "height": 0.16,
+            "depth": 0.62
+          },
+          "color": 10331046
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "silver"
+          }
+        ]
+      },
+      {
+        "id": "m2",
+        "parent": "pendant_lamp",
+        "transform": {
+          "pos": [
+            0,
+            -0.025,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2.55,
+            "height": 0.14,
+            "depth": 2.55
+          },
+          "color": 12961992
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "silver"
+          }
+        ]
+      },
+      {
+        "id": "m3",
+        "parent": "pendant_lamp",
+        "transform": {
+          "pos": [
+            0,
+            -0.195,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2.25,
+            "height": 0.22,
+            "depth": 2.25
+          },
+          "color": 16052444
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass"
+          },
+          {
+            "tag": "emissive",
+            "value": 0.75
+          }
+        ]
+      },
+      {
+        "id": "m4",
+        "parent": "pendant_lamp",
+        "transform": {
+          "pos": [
+            0,
+            -0.375,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.75,
+            "height": 0.12,
+            "depth": 1.75
+          },
+          "color": 16775132
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass"
+          },
+          {
+            "tag": "emissive",
+            "value": 1
+          }
+        ]
+      },
+      {
+        "id": "m5",
+        "parent": "pendant_lamp",
+        "transform": {
+          "pos": [
+            0,
+            -0.475,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.92,
+            "height": 0.1,
+            "depth": 0.92
+          },
+          "color": 12107968
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "silver"
+          }
+        ]
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1786540195940,
+        "provider": "gpt",
+        "data": "PiGclgU1AQ5v7wZYglKSrce35j8ingbzuN6nb9kv4Wbp1/tKXrXG1ZC+rRV8iLyB8+wejcThs8j3Lo5B3MWDgWoDXjji8ECQ581j6S0vycvQh40W9/p0VvYq2nKb8lXNSLGa9YDpy/e7bqXHyN2/zwr3K+rhzOJaA+DZa52pBV/kDapn8Xc5LMDjq1VTsWZ5fcpIzRx/vP4d+tYuEy618iN9IDaWH/PKOwWINrV+dAvgXqQt2bwN5vV1xfvI3wroM+eU1FgOu3YlBaLGZ2SoyfdoUbHVgbsjipXvAvvFG864TcRZkPhg1Dfutti6lO0DJxe3sORQpPtKRSwBGdOJPPTt+QZf+B+rMx/RH2tWU7OEFky4cqzK9Ang5OutKRJMwFxU/iI0cqfe3UX6h7T3HXku90k4w8ba3NCR7jOpMiF8JmVvbeqiMIlQnwFLP194kJmRDK0fd39begl8l927PyLX0KO4S85nMVrhVhrTJrBb9lJL+AF4sUA5c9ZYxLbIYO9aTA8x1nW+e46qJMBfj5pm2Ip+bS7+KIie23xxn/UA5tZ9G4tdrjCjGTKJTQU749O1pwHTGjQN1gDOW6/CMHu/F7p1uf2JxlE6/c0pp18T76PnB0rT4TuYXdMSFRIenppQ",
+        "edits": ""
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -1.125,
+          0.2200000000000002,
+          -1.125
+        ],
+        "max": [
+          1.125,
+          0.44000000000000017,
+          1.125
+        ],
+        "sourceNodeId": "m3"
+      },
+      {
+        "min": [
+          -1.275,
+          0.4300000000000004,
+          -1.275
+        ],
+        "max": [
+          1.275,
+          0.5700000000000001,
+          1.275
+        ],
+        "sourceNodeId": "m2"
+      },
+      {
+        "min": [
+          -0.875,
+          0.09000000000000008,
+          -0.875
+        ],
+        "max": [
+          0.875,
+          0.2100000000000002,
+          0.875
+        ],
+        "sourceNodeId": "m4"
+      },
+      {
+        "min": [
+          -0.46,
+          0,
+          -0.46
+        ],
+        "max": [
+          0.46,
+          0.10000000000000009,
+          0.46
+        ],
+        "sourceNodeId": "m5"
+      }
+    ],
+    "sourceMeshCount": 6,
+    "candidateCount": 4,
+    "fallbackUsed": false
+  },
+  "footprintRadius": 1.275,
+  "sizeClass": "medium",
+  "mode": "voxel",
+  "provider": "gpt",
+  "createdAt": 1786540197250,
+  "updatedAt": 1786540197250
+}

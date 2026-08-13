@@ -1,0 +1,760 @@
+{
+  "id": "asset-915ebf00-ce8f-4b0f",
+  "name": "复古饮料机",
+  "prompt": "生成单个台式或矮柜式饮料机，薄荷绿与铬银外壳，具有多个清晰出液口和接杯托盘；不要附带柜台。\n全局资产美术方向：1950年代复古快餐店风格，奶油白、番茄红、薄荷绿与铬银配色；家具采用圆角金属包边、耐用层压板和红色软包，比例清晰并适合1.60米角色。\n资产角色：收银台旁的饮品服务设备；目标尺度：medium。\n只生成一个可复用的独立物体，不要生成地面、背景、天空、完整场景或多个分散物体。",
+  "tags": [
+    "retro-diner",
+    "drink-dispenser",
+    "service"
+  ],
+  "modelJson": {
+    "name": "复古薄荷绿饮料机",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "dispensing_panel",
+        "name": "出液面板",
+        "transform": {
+          "pos": [
+            0,
+            1.07,
+            0.337
+          ]
+        }
+      },
+      {
+        "id": "dispenser_body",
+        "name": "饮料机主体",
+        "parent": "dispensing_panel",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            -0.174
+          ]
+        }
+      },
+      {
+        "id": "top_sign",
+        "name": "复古顶部标牌",
+        "parent": "dispensing_panel",
+        "transform": {
+          "pos": [
+            0,
+            0.47,
+            -0.057
+          ]
+        }
+      },
+      {
+        "id": "cup_tray",
+        "name": "接杯托盘",
+        "parent": "dispensing_panel",
+        "transform": {
+          "pos": [
+            0,
+            -0.42,
+            -0.067
+          ]
+        }
+      },
+      {
+        "id": "feet",
+        "name": "底部支脚",
+        "parent": "dispensing_panel",
+        "transform": {
+          "pos": [
+            0,
+            -0.95,
+            -0.174
+          ]
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "dispenser_body",
+        "transform": {
+          "pos": [
+            0,
+            -0.35,
+            -0.163
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.92,
+            "height": 1.12,
+            "depth": 0.62
+          },
+          "color": 10213572
+        }
+      },
+      {
+        "id": "m1",
+        "parent": "dispenser_body",
+        "transform": {
+          "pos": [
+            0,
+            0.24,
+            -0.163
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.98,
+            "height": 0.08,
+            "depth": 0.68
+          },
+          "color": 12568516
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m2",
+        "parent": "dispenser_body",
+        "transform": {
+          "pos": [
+            0,
+            0.35,
+            -0.163
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.92,
+            "height": 0.16,
+            "depth": 0.64
+          },
+          "color": 16773842
+        }
+      },
+      {
+        "id": "m3",
+        "parent": "dispenser_body",
+        "transform": {
+          "pos": [
+            0,
+            0.08,
+            0.163
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.72,
+            "height": 0.34,
+            "depth": 0.035
+          },
+          "color": 14172734
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m4",
+        "parent": "dispenser_body",
+        "transform": {
+          "pos": [
+            -0.49,
+            -0.35,
+            -0.163
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.07,
+            "height": 1.08,
+            "depth": 0.07
+          },
+          "color": 13029322
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m5",
+        "parent": "dispenser_body",
+        "transform": {
+          "pos": [
+            0.49,
+            -0.35,
+            -0.163
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.07,
+            "height": 1.08,
+            "depth": 0.07
+          },
+          "color": 13029322
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m6",
+        "parent": "top_sign",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.76,
+            "height": 0.18,
+            "depth": 0.08
+          },
+          "color": 16773842
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m7",
+        "parent": "top_sign",
+        "transform": {
+          "pos": [
+            0,
+            0.01,
+            0.046
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.48,
+            "height": 0.07,
+            "depth": 0.025
+          },
+          "color": 14172734
+        }
+      },
+      {
+        "id": "m8",
+        "parent": "dispensing_panel",
+        "transform": {
+          "pos": [
+            0,
+            -0.16,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.72,
+            "height": 0.48,
+            "depth": 0.045
+          },
+          "color": 7912873
+        }
+      },
+      {
+        "id": "m9",
+        "parent": "dispensing_panel",
+        "transform": {
+          "pos": [
+            -0.24,
+            0.01,
+            0.045
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.16,
+            "height": 0.07,
+            "depth": 0.06
+          },
+          "color": 12568516
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m10",
+        "parent": "dispensing_panel",
+        "transform": {
+          "pos": [
+            0,
+            0.01,
+            0.045
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.16,
+            "height": 0.07,
+            "depth": 0.06
+          },
+          "color": 12568516
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m11",
+        "parent": "dispensing_panel",
+        "transform": {
+          "pos": [
+            0.24,
+            0.01,
+            0.045
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.16,
+            "height": 0.07,
+            "depth": 0.06
+          },
+          "color": 12568516
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m12",
+        "parent": "dispensing_panel",
+        "transform": {
+          "pos": [
+            -0.24,
+            -0.13,
+            0.053
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.07,
+            "height": 0.18,
+            "depth": 0.07
+          },
+          "color": 10266789
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m13",
+        "parent": "dispensing_panel",
+        "transform": {
+          "pos": [
+            0,
+            -0.13,
+            0.053
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.07,
+            "height": 0.18,
+            "depth": 0.07
+          },
+          "color": 10266789
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m14",
+        "parent": "dispensing_panel",
+        "transform": {
+          "pos": [
+            0.24,
+            -0.13,
+            0.053
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.07,
+            "height": 0.18,
+            "depth": 0.07
+          },
+          "color": 10266789
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m15",
+        "parent": "dispensing_panel",
+        "transform": {
+          "pos": [
+            -0.24,
+            -0.25,
+            0.063
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.19,
+            "height": 0.05,
+            "depth": 0.08
+          },
+          "color": 14172734
+        }
+      },
+      {
+        "id": "m16",
+        "parent": "dispensing_panel",
+        "transform": {
+          "pos": [
+            0,
+            -0.25,
+            0.063
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.19,
+            "height": 0.05,
+            "depth": 0.08
+          },
+          "color": 16773842
+        }
+      },
+      {
+        "id": "m17",
+        "parent": "dispensing_panel",
+        "transform": {
+          "pos": [
+            0.24,
+            -0.25,
+            0.063
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.19,
+            "height": 0.05,
+            "depth": 0.08
+          },
+          "color": 14172734
+        }
+      },
+      {
+        "id": "m18",
+        "parent": "cup_tray",
+        "transform": {
+          "pos": [
+            0,
+            -0.07,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.76,
+            "height": 0.08,
+            "depth": 0.36
+          },
+          "color": 14172734
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m19",
+        "parent": "cup_tray",
+        "transform": {
+          "pos": [
+            0,
+            -0.01,
+            0.2
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.82,
+            "height": 0.07,
+            "depth": 0.07
+          },
+          "color": 12568516
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m20",
+        "parent": "cup_tray",
+        "transform": {
+          "pos": [
+            -0.39,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.07,
+            "height": 0.13,
+            "depth": 0.32
+          },
+          "color": 12568516
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m21",
+        "parent": "cup_tray",
+        "transform": {
+          "pos": [
+            0.39,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.07,
+            "height": 0.13,
+            "depth": 0.32
+          },
+          "color": 12568516
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m22",
+        "parent": "feet",
+        "transform": {
+          "pos": [
+            -0.33,
+            0,
+            -0.363
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.16,
+            "height": 0.12,
+            "depth": 0.16
+          },
+          "color": 10266789
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m23",
+        "parent": "feet",
+        "transform": {
+          "pos": [
+            0.33,
+            0,
+            -0.363
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.16,
+            "height": 0.12,
+            "depth": 0.16
+          },
+          "color": 10266789
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m24",
+        "parent": "feet",
+        "transform": {
+          "pos": [
+            -0.33,
+            0,
+            0.037
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.16,
+            "height": 0.12,
+            "depth": 0.16
+          },
+          "color": 10266789
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m25",
+        "parent": "feet",
+        "transform": {
+          "pos": [
+            0.33,
+            0,
+            0.037
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.16,
+            "height": 0.12,
+            "depth": 0.16
+          },
+          "color": 10266789
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1786540236199,
+        "provider": "gpt",
+        "data": "QITeLRoFSGAtY+EtruzND4snWAPLlBIKEji31tI9T7T7gidcJM3imcMcjPGxWgTb2RqXCU57MfCTvu4/667+gFwYWPT/AwMpp35iMVZokOtLkjFaNJsU5D13j2KNV/M8htLk2ePrYMGE32FIB/ZgmYgYcDoXic9H6fHOBh6dyNQ9InozQFxmjgjap9ifw7MCUputb70tqgxQoAnAiFFoRHhxuumAGMijlzgfzu88YdHZLa/FIkDMSH+qiwIWTCpovffNQ6cnrysnx9LG+jwVjktgUbq3lAj/xIlyR/YqbM+wOOs4bOZJYf2q7TEO16kmRqo7H3sW3WVxIINYkjizA6kOFspyawd0JEsn7601y6y9rQh2MC5jott361ahLuhkMCWTnE0yMnAlrhvvCwdXjfx3IIQJUMxQDvCat5z52V6D501Vu6CLpwqcODYKN49Xea70NyKQ5OJbw/XBtP5oTyC+4+t9JqhwTm8he1jec73xFrvBzObOhzzHTOdZPtuHFi1QBeM0x9R7ycUBYM3QvjdiHC9HVT0nzRbPcWMxG6cSa2KTQp4pVmm4PrNqqxBRsFYH7Hd25TnoFm3pRIZ6nk/vIBrhiwOWeGbTUdW0Kyf44vNTPwkoYiABW2jm4e6Y95SAEeaXvsz9EtJAtgTvd4vTi3GPuoqUMn9wiZgY96DESEkynBojv/mxraRQ94pLP6xCBxA1oghW5oPOQTXKCa8ItYC4RV2uKFrRTZ3yshVMsTv3FiH1BMBCioYgCQql5OT5fDzwZThBM/sPwCD53Ndgh621El0e+WoHHJOE4yBpymVC/8BS03U1TGGp1XgFgmSj7EdfE9jGld+MRXnaZ1zdIycxHi8eJP+eHN6CVLbm4lwKKdcrnmV1vDeXxl7FV2LvkTqTXNqFRR8KGChhczvjFjBqC63vMI4EXWTEMa8C9c9gWl7y0l8vRUkFvJk2s45+5k2CE9Zu1MU51FBXTN6joQ++YK2+27jWiyJQ8cW9ExrYKoVaXbiqgQEfAP7SvKI0YiqVZsFsGH4mXMtpAWy9auhwxmyfUwC6J482pZsp",
+        "edits": ""
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -0.46,
+          0.09999999999999992,
+          -0.39249999999999996
+        ],
+        "max": [
+          0.46,
+          1.2200000000000002,
+          0.22750000000000004
+        ],
+        "sourceNodeId": "m0"
+      },
+      {
+        "min": [
+          -0.46,
+          1.2799999999999998,
+          -0.40249999999999997
+        ],
+        "max": [
+          0.46,
+          1.44,
+          0.23750000000000004
+        ],
+        "sourceNodeId": "m2"
+      }
+    ],
+    "sourceMeshCount": 26,
+    "candidateCount": 2,
+    "fallbackUsed": false
+  },
+  "footprintRadius": 0.46,
+  "sizeClass": "small",
+  "mode": "voxel",
+  "provider": "gpt",
+  "createdAt": 1786540239034,
+  "updatedAt": 1786540239034
+}

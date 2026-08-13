@@ -1,0 +1,378 @@
+{
+  "id": "asset-0000f366-8e5a-4edb",
+  "name": "试衣等候长凳",
+  "prompt": "单个简洁双人等候长凳，浅木框架与暖灰软垫，宽度适合两人且不形成整排座椅组合。\n全局资产美术方向：现代简洁的体素风服装零售家具，比例参照1.60米角色；采用浅橡木、哑光白、炭灰金属与少量暖色织物，货架轮廓轻薄但可读，普通构件主要尺寸不小于0.27米。\n资产角色：后部试衣区的短暂停留座位；目标尺度：medium。\n只生成一个可复用的独立物体，不要生成地面、背景、天空、完整场景或多个分散物体。",
+  "tags": [
+    "waiting-bench",
+    "fitting-area",
+    "retail-seating"
+  ],
+  "modelJson": {
+    "name": "双人等候长凳",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "m0",
+        "transform": {
+          "pos": [
+            0,
+            0.5,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2.2,
+            "height": 0.16,
+            "depth": 0.68
+          },
+          "color": 13150325
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "oak"
+          }
+        ]
+      },
+      {
+        "id": "m1",
+        "transform": {
+          "pos": [
+            0,
+            0.68,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.95,
+            "height": 0.2,
+            "depth": 0.56
+          },
+          "color": 9404788
+        }
+      },
+      {
+        "id": "m2",
+        "transform": {
+          "pos": [
+            0,
+            0.42,
+            -0.29
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2.08,
+            "height": 0.16,
+            "depth": 0.12
+          },
+          "color": 12096094
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "oak"
+          }
+        ]
+      },
+      {
+        "id": "m3",
+        "transform": {
+          "pos": [
+            0,
+            0.42,
+            0.29
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2.08,
+            "height": 0.16,
+            "depth": 0.12
+          },
+          "color": 12096094
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "oak"
+          }
+        ]
+      },
+      {
+        "id": "m4",
+        "transform": {
+          "pos": [
+            -0.88,
+            0.25,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.16,
+            "height": 0.4,
+            "depth": 0.58
+          },
+          "color": 13150325
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "oak"
+          }
+        ]
+      },
+      {
+        "id": "m5",
+        "transform": {
+          "pos": [
+            0.88,
+            0.25,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.16,
+            "height": 0.4,
+            "depth": 0.58
+          },
+          "color": 13150325
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "oak"
+          }
+        ]
+      },
+      {
+        "id": "m6",
+        "transform": {
+          "pos": [
+            -0.88,
+            0.25,
+            -0.25
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.16,
+            "height": 0.4,
+            "depth": 0.16
+          },
+          "color": 13150325
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "oak"
+          }
+        ]
+      },
+      {
+        "id": "m7",
+        "transform": {
+          "pos": [
+            0.88,
+            0.25,
+            -0.25
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.16,
+            "height": 0.4,
+            "depth": 0.16
+          },
+          "color": 13150325
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "oak"
+          }
+        ]
+      },
+      {
+        "id": "m8",
+        "transform": {
+          "pos": [
+            -0.82,
+            1.02,
+            -0.24
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.16,
+            "height": 1,
+            "depth": 0.16
+          },
+          "color": 13150325
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "oak"
+          }
+        ]
+      },
+      {
+        "id": "m9",
+        "transform": {
+          "pos": [
+            0.82,
+            1.02,
+            -0.24
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.16,
+            "height": 1,
+            "depth": 0.16
+          },
+          "color": 13150325
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "oak"
+          }
+        ]
+      },
+      {
+        "id": "m10",
+        "transform": {
+          "pos": [
+            0,
+            1.18,
+            -0.24
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.9,
+            "height": 0.48,
+            "depth": 0.16
+          },
+          "color": 9536891
+        }
+      },
+      {
+        "id": "m11",
+        "transform": {
+          "pos": [
+            0,
+            0.93,
+            -0.24
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.96,
+            "height": 0.12,
+            "depth": 0.18
+          },
+          "color": 13150325
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "oak"
+          }
+        ]
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1786542999753,
+        "provider": "gpt",
+        "data": "pF7UD2lVx5Q/YkrFg7DjYjxati+5PP3LWhCg6+aUtDYjeCkgKoiIDbNcSPTWbuPmFmqcDcLT6hGLQ6s/aT6+3VrsATyQ4K21N71An+VLqB56sZfp4NJErvFzQfKwpvFJLlD8bO9ELm8tTC9OWnwuuBUbHHF3kW2x85yt8sBHrQVpGzzsjWbMGp/ql5DxJxSFGlZnZpeTf2g8VnwTlTzBQH1gpbsDJ2lgBQB82G0qIfUCGQ3AegWX5jfhUU8AUpa6+uH8HChvgTSIJptXyAsd1cGb6/pSQbNnsYL1vHrhukPkGDrSz6S9ZSeOaUrWDABRrUxiJKA2MduWPZduqJ1gcoQ5UA2z5vl8X0ZzULJEgL2IL04XFC0UBFNOsHQoQ0IxTvH1Lss2KBdiUPXdJTaPC6HNPvYHxIuGPs3R/G+MB63nDPC4IfeBfzdA7wHBnZKg39KWT7Qa5nSE9EpCAcfeGY3PFU6jY74s8P/vK7uL6E9VhJbtWOb0/VTOXUG+8nCRMxgxwCXLwqK0fkJH2PKfWE7d+Mye0RecrlPsULXTTOqKLc1yZTuC4gHeELSOwSyq2F7XRyDHkRsx+BHjVx1C99sxWvhHQRg=",
+        "edits": ""
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -1.1,
+          0.37,
+          -0.34
+        ],
+        "max": [
+          1.1,
+          0.53,
+          0.34
+        ],
+        "sourceNodeId": "m0"
+      },
+      {
+        "min": [
+          -0.975,
+          0.53,
+          -0.28
+        ],
+        "max": [
+          0.975,
+          0.73,
+          0.28
+        ],
+        "sourceNodeId": "m1"
+      },
+      {
+        "min": [
+          -0.95,
+          0.8899999999999999,
+          -0.32
+        ],
+        "max": [
+          0.95,
+          1.3699999999999999,
+          -0.15999999999999998
+        ],
+        "sourceNodeId": "m10"
+      }
+    ],
+    "sourceMeshCount": 12,
+    "candidateCount": 3,
+    "fallbackUsed": false
+  },
+  "footprintRadius": 1.1,
+  "sizeClass": "medium",
+  "mode": "voxel",
+  "provider": "gpt",
+  "createdAt": 1786543002202,
+  "updatedAt": 1786543002202
+}

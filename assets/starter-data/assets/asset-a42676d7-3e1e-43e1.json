@@ -1,0 +1,674 @@
+{
+  "id": "asset-a42676d7-3e1e-43e1",
+  "name": "服装展示模特",
+  "prompt": "独立站姿服装模特，简化无面部特征造型，穿现代中性色服装并带稳定小底座；两个姿态变体保持相同占地尺度。\n全局资产美术方向：现代简洁的体素风服装零售家具，比例参照1.60米角色；采用浅橡木、哑光白、炭灰金属与少量暖色织物，货架轮廓轻薄但可读，普通构件主要尺寸不小于0.27米。\n资产角色：橱窗与货架端头的穿搭视觉焦点；目标尺度：medium。\n只生成一个可复用的独立物体，不要生成地面、背景、天空、完整场景或多个分散物体。",
+  "tags": [
+    "mannequin",
+    "fashion-display",
+    "shopfront"
+  ],
+  "modelJson": {
+    "name": "中性穿搭独立服装模特",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "stand_root",
+        "name": "独立底座",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        }
+      },
+      {
+        "id": "body",
+        "name": "躯干与外套",
+        "parent": "stand_root",
+        "transform": {
+          "pos": [
+            0,
+            0.88,
+            0
+          ]
+        }
+      },
+      {
+        "id": "head",
+        "name": "无面部特征头部",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0,
+            0.46,
+            0
+          ]
+        }
+      },
+      {
+        "id": "arm_l_upper",
+        "name": "左上臂",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            -0.27,
+            0.41,
+            0
+          ]
+        }
+      },
+      {
+        "id": "arm_l_lower",
+        "name": "左前臂",
+        "parent": "arm_l_upper",
+        "transform": {
+          "pos": [
+            -0.1,
+            -0.25,
+            0
+          ]
+        }
+      },
+      {
+        "id": "hand_l",
+        "name": "左手",
+        "parent": "arm_l_lower",
+        "transform": {
+          "pos": [
+            0.06,
+            -0.24,
+            0.025
+          ]
+        }
+      },
+      {
+        "id": "arm_r_upper",
+        "name": "右上臂",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0.27,
+            0.41,
+            0
+          ]
+        }
+      },
+      {
+        "id": "arm_r_lower",
+        "name": "右前臂",
+        "parent": "arm_r_upper",
+        "transform": {
+          "pos": [
+            0.12,
+            -0.23,
+            0
+          ]
+        }
+      },
+      {
+        "id": "hand_r",
+        "name": "右手",
+        "parent": "arm_r_lower",
+        "transform": {
+          "pos": [
+            0.08,
+            -0.22,
+            0.02
+          ]
+        }
+      },
+      {
+        "id": "leg_l_upper",
+        "name": "左大腿",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            -0.12,
+            0.02,
+            0
+          ]
+        }
+      },
+      {
+        "id": "leg_l_lower",
+        "name": "左小腿",
+        "parent": "leg_l_upper",
+        "transform": {
+          "pos": [
+            -0.02,
+            -0.31,
+            0
+          ]
+        }
+      },
+      {
+        "id": "foot_l",
+        "name": "左鞋",
+        "parent": "leg_l_lower",
+        "transform": {
+          "pos": [
+            -0.02,
+            -0.39,
+            0
+          ]
+        }
+      },
+      {
+        "id": "leg_r_upper",
+        "name": "右大腿",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0.12,
+            0.02,
+            0
+          ]
+        }
+      },
+      {
+        "id": "leg_r_lower",
+        "name": "右小腿",
+        "parent": "leg_r_upper",
+        "transform": {
+          "pos": [
+            0.01,
+            -0.31,
+            0
+          ]
+        }
+      },
+      {
+        "id": "foot_r",
+        "name": "右鞋",
+        "parent": "leg_r_lower",
+        "transform": {
+          "pos": [
+            0.02,
+            -0.39,
+            0
+          ]
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "stand_root",
+        "transform": {
+          "pos": [
+            0,
+            0.04,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.62,
+            "height": 0.08,
+            "depth": 0.44
+          },
+          "color": 13216124
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "oak"
+          }
+        ]
+      },
+      {
+        "id": "m1",
+        "parent": "stand_root",
+        "transform": {
+          "pos": [
+            0,
+            0.47,
+            -0.13
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.06,
+            "height": 0.78,
+            "depth": 0.06
+          },
+          "color": 3422266
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m2",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0,
+            0.22,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.48,
+            "height": 0.46,
+            "depth": 0.25
+          },
+          "color": 12104101
+        }
+      },
+      {
+        "id": "m3",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0,
+            0.405,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.56,
+            "height": 0.14,
+            "depth": 0.27
+          },
+          "color": 11117466
+        }
+      },
+      {
+        "id": "m4",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0,
+            0.23,
+            0.142
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.19,
+            "height": 0.34,
+            "depth": 0.035
+          },
+          "color": 11101512
+        }
+      },
+      {
+        "id": "m5",
+        "parent": "head",
+        "transform": {
+          "pos": [
+            0,
+            0.16,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.31,
+            "height": 0.32,
+            "depth": 0.28
+          },
+          "color": 15657698
+        }
+      },
+      {
+        "id": "m6",
+        "parent": "head",
+        "transform": {
+          "pos": [
+            0,
+            -0.025,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.13,
+            "height": 0.1,
+            "depth": 0.13
+          },
+          "color": 14999510
+        }
+      },
+      {
+        "id": "m7",
+        "parent": "arm_l_upper",
+        "transform": {
+          "pos": [
+            -0.05,
+            -0.12,
+            0
+          ],
+          "quat": [
+            -0.4,
+            0.59,
+            0.59,
+            -0.4
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.27,
+            "height": 0.2,
+            "depth": 0.17
+          },
+          "color": 11183259
+        }
+      },
+      {
+        "id": "m8",
+        "parent": "arm_l_lower",
+        "transform": {
+          "pos": [
+            0.03,
+            -0.12,
+            0
+          ],
+          "quat": [
+            0.56,
+            -0.44,
+            -0.44,
+            0.56
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.25,
+            "height": 0.18,
+            "depth": 0.15
+          },
+          "color": 11906723
+        }
+      },
+      {
+        "id": "m9",
+        "parent": "hand_l",
+        "transform": {
+          "pos": [
+            0.01,
+            -0.07,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.14,
+            "height": 0.17,
+            "depth": 0.15
+          },
+          "color": 15262682
+        }
+      },
+      {
+        "id": "m10",
+        "parent": "arm_r_upper",
+        "transform": {
+          "pos": [
+            0.06,
+            -0.11,
+            0
+          ],
+          "quat": [
+            0.6,
+            -0.37,
+            -0.37,
+            0.6
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.26,
+            "height": 0.2,
+            "depth": 0.17
+          },
+          "color": 11183259
+        }
+      },
+      {
+        "id": "m11",
+        "parent": "arm_r_lower",
+        "transform": {
+          "pos": [
+            0.04,
+            -0.11,
+            0
+          ],
+          "quat": [
+            0.58,
+            -0.41,
+            -0.41,
+            0.58
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.23,
+            "height": 0.18,
+            "depth": 0.15
+          },
+          "color": 11906723
+        }
+      },
+      {
+        "id": "m12",
+        "parent": "hand_r",
+        "transform": {
+          "pos": [
+            0.02,
+            -0.07,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.14,
+            "height": 0.17,
+            "depth": 0.15
+          },
+          "color": 15262682
+        }
+      },
+      {
+        "id": "m13",
+        "parent": "leg_l_upper",
+        "transform": {
+          "pos": [
+            -0.01,
+            -0.15,
+            0
+          ],
+          "quat": [
+            -0.48,
+            0.52,
+            0.52,
+            -0.48
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.31,
+            "height": 0.23,
+            "depth": 0.21
+          },
+          "color": 4145730
+        }
+      },
+      {
+        "id": "m14",
+        "parent": "leg_l_lower",
+        "transform": {
+          "pos": [
+            -0.01,
+            -0.19,
+            0
+          ],
+          "quat": [
+            -0.49,
+            0.51,
+            0.51,
+            -0.49
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.39,
+            "height": 0.21,
+            "depth": 0.18
+          },
+          "color": 4540487
+        }
+      },
+      {
+        "id": "m15",
+        "parent": "foot_l",
+        "transform": {
+          "pos": [
+            0,
+            -0.06,
+            0.065
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.23,
+            "height": 0.12,
+            "depth": 0.34
+          },
+          "color": 2698027
+        }
+      },
+      {
+        "id": "m16",
+        "parent": "leg_r_upper",
+        "transform": {
+          "pos": [
+            0.01,
+            -0.15,
+            0
+          ],
+          "quat": [
+            0.51,
+            -0.49,
+            -0.49,
+            0.51
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.31,
+            "height": 0.23,
+            "depth": 0.21
+          },
+          "color": 4145730
+        }
+      },
+      {
+        "id": "m17",
+        "parent": "leg_r_lower",
+        "transform": {
+          "pos": [
+            0.01,
+            -0.19,
+            0
+          ],
+          "quat": [
+            0.51,
+            -0.49,
+            -0.49,
+            0.51
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.39,
+            "height": 0.21,
+            "depth": 0.18
+          },
+          "color": 4540487
+        }
+      },
+      {
+        "id": "m18",
+        "parent": "foot_r",
+        "transform": {
+          "pos": [
+            0,
+            -0.06,
+            0.065
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.23,
+            "height": 0.12,
+            "depth": 0.34
+          },
+          "color": 2698027
+        }
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1786542699308,
+        "provider": "gpt",
+        "data": "Dw8tFSxqu5TQJmOXAP9L8oSA1n+4uvbX/HuyupJ+TXWIHRe79E3ULl0+1SQO3aSGH3PK7f+zjY+A/sTYI2VDNY8vTwGHh8xFuhhFtQ6dPJqWxVNi3ADxVI++NvDEnmJYm7T2RY17nwD3zTq3wU2NZRAjQ4EBAzeUoW2GcK7bJED1sZO09hilEsqrJQYQz+Yz4H7SEQidN5V4R4KbIeJoknjMuFISQrz6Vebt+jR91uwQyIbOrp5IsSbt7N8z/deuKJ+UTmoIt4TsCk1iK+TBOFXhdW4JN8kKZXCmKVSfGfUkpiyIP3OdfSmyjXqwbVI98OK6AJxJH7mJzFI6EISwcl8JsxINWpPidi221gQ/qkbTe8uObzg4lwHt+ZWXHHWc6bAx0mvxsrgzOiP3Zr7W8pqvGh8nIuaU1pX3ZwPu/8vz5U8BKrmfpsAfoqFNsrakEOQsPWHWXXtHrHPFW1xq+757Wngc31jv0QZ+IZcTepTc+hy0zJ/cM9CrkSXZpmaAsq8hpkWOV66VIXm4MfUk8S7EfQKttSx41mEAVeafvmvSt3UIMBqm4fcIDCOEANER9KXm54dC9yZp6yZ8ks/DrOlQgZYpr6XjVQOXsnzGXFDH9yQWGTCSz6tmZkAEGy7MEeof5BZX4CFvJK5gzTIdGlOF6r2mILaHovK1xTpMpnXic3o9HcuyiB2nxGIS6aliapRDnPIRk9hxEC8yx6qmNj8hujJRiHyULB8+Lo5VwRPtsatpkq6rbEY6sP5YXW3iZxdefz6EysLHvkM4gkrnae9VYb6aH6CWug/UWMNU5PKBvhKWlG0sciOX9Xgo9kN0SZjfwHY/Re87WVFs7hzdo9P8bwIbqVKMtdrg84z2VaYG2/b+GYJbO0ZNkg4L4vLbL/s2u9DpdLLaDTX4kHv68wPFZbzRq8guFaFYBHsx+ZQHesuY7J2EHDbNzHR0bwywHZalH2YHuNE/8cIU5u3ip09Wlfv4uS5a4XxgqmvEkVvO/DU7I3zqt8j72vRPkmBIGSJ/JBro+wwJABnKA+q9JXndVMXr1TG2eEiJeppXMlD8RbGR9Y3XyqXAjIJ1m3q76bIAh8DhZMhaCBCWetosCCb1cQhUUDyVKib+UxvTfDU9m6jwjGaH4/xOyLcgSR834pED7WUib2vwINjMwvr1EFbbDpRRbnLD0n3ENe0Yy/ThUZhKmZVGy7onh2/z0yw5jdBBJHsU+UqIKmY1gzEyIQ+JcA9DIxY26WMQo1HRKPpwZ3xhYYwslyGLVXg8Wjff3V6//rExF4x5bhB92W8qA/8WQQtYivAAjimjIURgKNRpdGWNrxXWSzB3cAgHCeCWtZkapcibvdC2i1YhCS7BWfZZRPuD1L5A3RrTYrj5neLV15G4bbwpP5DFPOYIkBBLCDJXy79kTIAriADYm2iDkAK3PlcY+73cAXN28sreHM3GeMK+Ai1XD49NXL/29wBoXRkXy2LLCLBNTH5hfkcyiQAhwyBr4UxGcSuCDpjtO3+9bWiOMdp+uA3vLLeI3AzPHC/pHi/r0uCZlgpcLzU43G/kd9bbtlx708JqQFPq7FrLIVU=",
+        "edits": ""
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -0.5044691005707538,
+          0,
+          -0.2275
+        ],
+        "max": [
+          0.5044691005707538,
+          1.66,
+          0.2275
+        ],
+        "sourceNodeId": "asset-bounds"
+      }
+    ],
+    "sourceMeshCount": 19,
+    "candidateCount": 0,
+    "fallbackUsed": true
+  },
+  "footprintRadius": 0.5044691005707538,
+  "sizeClass": "small",
+  "mode": "voxel",
+  "provider": "gpt",
+  "createdAt": 1786542703699,
+  "updatedAt": 1786542703699
+}

@@ -1,0 +1,459 @@
+{
+  "id": "asset-d4d29475-43a1-4bcd",
+  "name": "墙挂灭火器",
+  "prompt": "单个清晰可识别的红色灭火器与简洁墙挂支架，整体可见尺寸大于0.27米，保持通道外侧安装。\n全局资产美术方向：现代简洁的体素风服装零售家具，比例参照1.60米角色；采用浅橡木、哑光白、炭灰金属与少量暖色织物，货架轮廓轻薄但可读，普通构件主要尺寸不小于0.27米。\n资产角色：靠墙布置的室内安全设施；目标尺度：small。\n只生成一个可复用的独立物体，不要生成地面、背景、天空、完整场景或多个分散物体。",
+  "tags": [
+    "fire-safety",
+    "wall-mounted",
+    "retail-safety"
+  ],
+  "modelJson": {
+    "name": "墙挂式红色灭火器",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "mount",
+        "name": "简洁墙挂支架",
+        "transform": {
+          "pos": [
+            0,
+            0.9,
+            -0.15
+          ]
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "extinguisher",
+        "name": "灭火器主体",
+        "parent": "mount",
+        "transform": {
+          "pos": [
+            0,
+            -0.22,
+            0.12
+          ]
+        }
+      },
+      {
+        "id": "handle",
+        "name": "压把",
+        "parent": "extinguisher",
+        "transform": {
+          "pos": [
+            0,
+            0.81,
+            0.05
+          ]
+        }
+      },
+      {
+        "id": "hose",
+        "name": "软管与喷嘴",
+        "parent": "extinguisher",
+        "transform": {
+          "pos": [
+            0.08,
+            0.81,
+            0.05
+          ]
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "mount",
+        "transform": {
+          "pos": [
+            0,
+            0.12,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.08,
+            "height": 0.82,
+            "depth": 0.06
+          },
+          "color": 4146247
+        }
+      },
+      {
+        "id": "m1",
+        "parent": "mount",
+        "transform": {
+          "pos": [
+            0,
+            -0.27,
+            0.08
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.42,
+            "height": 0.07,
+            "depth": 0.2
+          },
+          "color": 4146247
+        }
+      },
+      {
+        "id": "m2",
+        "parent": "mount",
+        "transform": {
+          "pos": [
+            -0.18,
+            -0.2,
+            0.12
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.07,
+            "height": 0.12,
+            "depth": 0.25
+          },
+          "color": 4146247
+        }
+      },
+      {
+        "id": "m3",
+        "parent": "mount",
+        "transform": {
+          "pos": [
+            0.18,
+            -0.2,
+            0.12
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.07,
+            "height": 0.12,
+            "depth": 0.25
+          },
+          "color": 4146247
+        }
+      },
+      {
+        "id": "m4",
+        "parent": "extinguisher",
+        "transform": {
+          "pos": [
+            0,
+            0.28,
+            0.05
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.34,
+            "height": 0.55,
+            "depth": 0.27
+          },
+          "color": 13183016
+        }
+      },
+      {
+        "id": "m5",
+        "parent": "extinguisher",
+        "transform": {
+          "pos": [
+            0,
+            0.61,
+            0.05
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.29,
+            "height": 0.11,
+            "depth": 0.24
+          },
+          "color": 14168621
+        }
+      },
+      {
+        "id": "m6",
+        "parent": "extinguisher",
+        "transform": {
+          "pos": [
+            0,
+            0.725,
+            0.05
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.13,
+            "height": 0.12,
+            "depth": 0.13
+          },
+          "color": 11869986
+        }
+      },
+      {
+        "id": "m7",
+        "parent": "extinguisher",
+        "transform": {
+          "pos": [
+            0,
+            0.34,
+            0.193
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.22,
+            "height": 0.25,
+            "depth": 0.015
+          },
+          "color": 15920869
+        }
+      },
+      {
+        "id": "m8",
+        "parent": "extinguisher",
+        "transform": {
+          "pos": [
+            0,
+            0.405,
+            0.204
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.16,
+            "height": 0.035,
+            "depth": 0.012
+          },
+          "color": 14038060
+        }
+      },
+      {
+        "id": "m9",
+        "parent": "extinguisher",
+        "transform": {
+          "pos": [
+            0,
+            0.345,
+            0.204
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.16,
+            "height": 0.025,
+            "depth": 0.012
+          },
+          "color": 3422266
+        }
+      },
+      {
+        "id": "m10",
+        "parent": "extinguisher",
+        "transform": {
+          "pos": [
+            0,
+            0.295,
+            0.204
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.16,
+            "height": 0.025,
+            "depth": 0.012
+          },
+          "color": 3422266
+        }
+      },
+      {
+        "id": "m11",
+        "parent": "extinguisher",
+        "transform": {
+          "pos": [
+            0,
+            0.81,
+            0.05
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.11,
+            "height": 0.07,
+            "depth": 0.11
+          },
+          "color": 5593950
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m12",
+        "parent": "handle",
+        "transform": {
+          "pos": [
+            0.08,
+            0.06,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.32,
+            "height": 0.055,
+            "depth": 0.09
+          },
+          "color": 3159095
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m13",
+        "parent": "handle",
+        "transform": {
+          "pos": [
+            0.08,
+            -0.01,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.27,
+            "height": 0.05,
+            "depth": 0.075
+          },
+          "color": 13183016
+        }
+      },
+      {
+        "id": "m14",
+        "parent": "hose",
+        "transform": {
+          "pos": [
+            0.14,
+            -0.22,
+            0.02
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.055,
+            "height": 0.4,
+            "depth": 0.055
+          },
+          "color": 2435371
+        }
+      },
+      {
+        "id": "m15",
+        "parent": "hose",
+        "transform": {
+          "pos": [
+            0.085,
+            -0.01,
+            0.02
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.16,
+            "height": 0.055,
+            "depth": 0.055
+          },
+          "color": 2435371
+        }
+      },
+      {
+        "id": "m16",
+        "parent": "hose",
+        "transform": {
+          "pos": [
+            0.14,
+            -0.47,
+            0.02
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.09,
+            "height": 0.16,
+            "depth": 0.08
+          },
+          "color": 3159095
+        }
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1786543036302,
+        "provider": "gpt",
+        "data": "Z3aJKQtb0zOepxWEOYmKZDAEK+7OobhLBHD9eZxsdiP7qqWyoWUaPy9Pfdci3mhgcM7X20VdG0BlMo5gflBJ0yrJdARZg7ctT4qSyJeH/kDutB6CBj4arrDT+mCZxDFXUjjSIgKpFk28sWcyMw7jHPtKLFeSPN1FT2un/Qdpwqx6BmuHmHYyYw8aR3bL3UX6nlNnAtFm1JwxZdN1xt0hUrchThvLBbzjxTPXUGNadd92GGLtl5H9dI5SvCSp3N9pbQHG+mgoHSB622mh2kMqOAi/01H0o+40wkcmZSkrzmTe/BhWCfHUupthGDVdiAripV3UYjMn5E37KqCtugP+c+W3g4YuQXo4HtP/ICZFzRa7fWEoXG5kljWFHBI75vccPHz75RkJN/I+fwLKBdAb/tuUz8VSZwOTM2pG2O1Sz4xBwxDohqx4e0xWZ+aKdXtFVQx3GTRoyZccCo39UOMkAJI2sZ0UIpP/FElynnGheHz94TPmlXceQwRUEeVS97msiI1K1vwvRcpIqDgdrEVbN9rBLetL/ZLvYu545h2X8JSBmwM8gWKu/KvNiQzWMuuOb5+z9CaKPk736vI1u1wWmdmwqMx6DJ4F2sLLpveF5f4xAoXfEQj49kCY0IvOuV+cpGrjXjZ8THXPLDp1pcjpBMgadLAgDz+hPVYbT0nmU/MFTq57iz9mgvYzmfwl3Z1wEc1urhN3iR3GEDOviq1X3H/6PP1wNdS7/nCKKno5JSCkg5dncfk/INFQVM0TwU1KQtiBXkCf+vT5ISu1avKJWwGoWGJ5eWUYr7Xy3tOzKrkKOEWYrzR5CRQRv42z4F0mFH0GKgCLakw94cnPepjSGm0iGtHOzdpVQwg1p/rIqCqQQ854qHbfy0NfQkHeumznhQXAlfWo0UnTU5+jBavw3PmeS1j9xgyb0A4aCkC0t0dfCDyPqgtYCieOXMA0xlJUB6oI43HhL3kfyg==",
+        "edits": ""
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -0.24,
+          0,
+          -0.18
+        ],
+        "max": [
+          0.24,
+          0.9825000000000004,
+          0.18
+        ],
+        "sourceNodeId": "asset-bounds"
+      }
+    ],
+    "sourceMeshCount": 17,
+    "candidateCount": 0,
+    "fallbackUsed": true
+  },
+  "footprintRadius": 0.24,
+  "sizeClass": "small",
+  "mode": "voxel",
+  "provider": "gpt",
+  "createdAt": 1786543039437,
+  "updatedAt": 1786543039437
+}

@@ -1,0 +1,612 @@
+{
+  "id": "asset-0b36459f-5481-410c",
+  "name": "购物篮叠放组",
+  "prompt": "一个可复用的三至五只嵌套购物篮叠放模块，深灰篮体与木色提手，作为单个服务物件靠近收银台布置。\n全局资产美术方向：现代简洁的体素风服装零售家具，比例参照1.60米角色；采用浅橡木、哑光白、炭灰金属与少量暖色织物，货架轮廓轻薄但可读，普通构件主要尺寸不小于0.27米。\n资产角色：收银台附近的顾客服务用品；目标尺度：small。\n只生成一个可复用的独立物体，不要生成地面、背景、天空、完整场景或多个分散物体。",
+  "tags": [
+    "shopping-basket",
+    "retail-service",
+    "basket-stack"
+  ],
+  "modelJson": {
+    "name": "嵌套购物篮叠放模块",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "basket_1",
+        "name": "底层购物篮",
+        "transform": {
+          "pos": [
+            0,
+            0.12,
+            0
+          ]
+        }
+      },
+      {
+        "id": "basket_2",
+        "name": "第二层购物篮",
+        "parent": "basket_1",
+        "transform": {
+          "pos": [
+            0,
+            0.22,
+            0
+          ]
+        }
+      },
+      {
+        "id": "basket_3",
+        "name": "第三层购物篮",
+        "parent": "basket_1",
+        "transform": {
+          "pos": [
+            0,
+            0.45,
+            0
+          ]
+        }
+      },
+      {
+        "id": "basket_4",
+        "name": "顶层购物篮",
+        "parent": "basket_1",
+        "transform": {
+          "pos": [
+            0,
+            0.68,
+            0
+          ]
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "basket_1",
+        "transform": {
+          "pos": [
+            0,
+            0.18,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.28,
+            "height": 0.36,
+            "depth": 0.78
+          },
+          "color": 3422267
+        }
+      },
+      {
+        "id": "m1",
+        "parent": "basket_1",
+        "transform": {
+          "pos": [
+            0,
+            0.39,
+            0.34
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.32,
+            "height": 0.08,
+            "depth": 0.1
+          },
+          "color": 2435114
+        }
+      },
+      {
+        "id": "m2",
+        "parent": "basket_1",
+        "transform": {
+          "pos": [
+            -0.47,
+            0.6,
+            0.1
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.09,
+            "height": 0.34,
+            "depth": 0.09
+          },
+          "color": 10119739
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ]
+      },
+      {
+        "id": "m3",
+        "parent": "basket_1",
+        "transform": {
+          "pos": [
+            0.47,
+            0.6,
+            0.1
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.09,
+            "height": 0.34,
+            "depth": 0.09
+          },
+          "color": 10119739
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ]
+      },
+      {
+        "id": "m4",
+        "parent": "basket_1",
+        "transform": {
+          "pos": [
+            0,
+            0.76,
+            0.1
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.98,
+            "height": 0.1,
+            "depth": 0.1
+          },
+          "color": 11106371
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ]
+      },
+      {
+        "id": "m5",
+        "parent": "basket_2",
+        "transform": {
+          "pos": [
+            0,
+            0.2,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.18,
+            "height": 0.34,
+            "depth": 0.72
+          },
+          "color": 3882818
+        }
+      },
+      {
+        "id": "m6",
+        "parent": "basket_2",
+        "transform": {
+          "pos": [
+            0,
+            0.4,
+            0.31
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.22,
+            "height": 0.08,
+            "depth": 0.1
+          },
+          "color": 2698286
+        }
+      },
+      {
+        "id": "m7",
+        "parent": "basket_2",
+        "transform": {
+          "pos": [
+            -0.43,
+            0.58,
+            0.08
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.09,
+            "height": 0.31,
+            "depth": 0.09
+          },
+          "color": 10119739
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ]
+      },
+      {
+        "id": "m8",
+        "parent": "basket_2",
+        "transform": {
+          "pos": [
+            0.43,
+            0.58,
+            0.08
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.09,
+            "height": 0.31,
+            "depth": 0.09
+          },
+          "color": 10119739
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ]
+      },
+      {
+        "id": "m9",
+        "parent": "basket_2",
+        "transform": {
+          "pos": [
+            0,
+            0.73,
+            0.08
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.9,
+            "height": 0.1,
+            "depth": 0.1
+          },
+          "color": 11106371
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ]
+      },
+      {
+        "id": "m10",
+        "parent": "basket_3",
+        "transform": {
+          "pos": [
+            0,
+            0.2,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.08,
+            "height": 0.32,
+            "depth": 0.66
+          },
+          "color": 3422267
+        }
+      },
+      {
+        "id": "m11",
+        "parent": "basket_3",
+        "transform": {
+          "pos": [
+            0,
+            0.39,
+            0.28
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.12,
+            "height": 0.08,
+            "depth": 0.1
+          },
+          "color": 2435114
+        }
+      },
+      {
+        "id": "m12",
+        "parent": "basket_3",
+        "transform": {
+          "pos": [
+            -0.39,
+            0.56,
+            0.06
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.08,
+            "height": 0.29,
+            "depth": 0.08
+          },
+          "color": 10119739
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ]
+      },
+      {
+        "id": "m13",
+        "parent": "basket_3",
+        "transform": {
+          "pos": [
+            0.39,
+            0.56,
+            0.06
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.08,
+            "height": 0.29,
+            "depth": 0.08
+          },
+          "color": 10119739
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ]
+      },
+      {
+        "id": "m14",
+        "parent": "basket_3",
+        "transform": {
+          "pos": [
+            0,
+            0.7,
+            0.06
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.82,
+            "height": 0.1,
+            "depth": 0.1
+          },
+          "color": 11106371
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ]
+      },
+      {
+        "id": "m15",
+        "parent": "basket_4",
+        "transform": {
+          "pos": [
+            0,
+            0.2,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.98,
+            "height": 0.3,
+            "depth": 0.6
+          },
+          "color": 3882818
+        }
+      },
+      {
+        "id": "m16",
+        "parent": "basket_4",
+        "transform": {
+          "pos": [
+            0,
+            0.38,
+            0.25
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.02,
+            "height": 0.08,
+            "depth": 0.1
+          },
+          "color": 2698286
+        }
+      },
+      {
+        "id": "m17",
+        "parent": "basket_4",
+        "transform": {
+          "pos": [
+            -0.35,
+            0.54,
+            0.05
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.08,
+            "height": 0.27,
+            "depth": 0.08
+          },
+          "color": 10119739
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ]
+      },
+      {
+        "id": "m18",
+        "parent": "basket_4",
+        "transform": {
+          "pos": [
+            0.35,
+            0.54,
+            0.05
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.08,
+            "height": 0.27,
+            "depth": 0.08
+          },
+          "color": 10119739
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ]
+      },
+      {
+        "id": "m19",
+        "parent": "basket_4",
+        "transform": {
+          "pos": [
+            0,
+            0.67,
+            0.05
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.74,
+            "height": 0.1,
+            "depth": 0.1
+          },
+          "color": 11106371
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ]
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1786542973149,
+        "provider": "gpt",
+        "data": "MH3rkTmLOshx1NbvmcmG1g/XRsT4jCY9WaT0736Y41Gj3DqbCzn5HyPD5NMN67d3ovePTjTVeiEFmvuPjhQD2zjYIw0/LMf9d1CL+HeGf0QB/0zuTHB7OfUBl/M3uhjOpHRjkCTj/Z5KwgiM9eznarT7QGukx1HaqpPFiAMNMQYBRynYlJLbE6ieNkhGey4nfmghhJ9PO9IVfnravgw0f+OV4IV0+0bxmiM4E/0jYgWLTKjUkD8gNAiOfwjVwQ0wQr4CGsfEF2Wg2gmy41ECnqEz1jV9AUQtLbuY29JbnmELWyzmvS5REA+wTg5YubRb4pyOpFm8xajYVXGnkcGjpFZ60LUE2w3scF1qckTjLnCLl/Se6rjZ8tTqbJgAF9FhEbVZmmDnXbNTlzuohtFd+TGIshCaKYjDCnopFlfNZOZKv64xq50tsrWuCdSCsJMRQaRP1NjimynaagsbY7uZnfd3F4cneGl9mLEY+fVhxVbWUQh9iDDGTzMfhzVTQ4HRfhneIuQndMFSdLx8JU+Ibm77VeFtxJecHUvycOSi2hyCGw2TKo1WAsrJo7zwASywijKRdZoKSRQ/va58Xn7CUFwpVyyRYgejG+8Q67Emye79Pgz/4VslTEW0YQUPC1RmWNb5oOlXYyu9D0ob/JB2PAqqcLULQv0l4pH1Un22yQjdQ9xhYbOa8Xd7ZluuQubbacn81IwHlwQMQY+ggL9569fPoMO1yMoz16dZjTTtoZjZnTZl2snUgiGmUQyRTlsQUVwb9RaUKIYKqAVtaIMKgr0OhnVTGTU+YDUWYQHIYLIp6y3CPugDYKaMlsGHBJIdz81yMN6ptaO/qwOTaS+pzGOSlXK17hV5M137sdO/qTsCiA==",
+        "edits": ""
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -0.64,
+          0,
+          -0.39
+        ],
+        "max": [
+          0.64,
+          0.36,
+          0.39
+        ],
+        "sourceNodeId": "m0"
+      },
+      {
+        "min": [
+          -0.59,
+          0.25,
+          -0.36
+        ],
+        "max": [
+          0.59,
+          0.5900000000000001,
+          0.36
+        ],
+        "sourceNodeId": "m5"
+      },
+      {
+        "min": [
+          -0.54,
+          0.49,
+          -0.33
+        ],
+        "max": [
+          0.54,
+          0.81,
+          0.33
+        ],
+        "sourceNodeId": "m10"
+      },
+      {
+        "min": [
+          -0.49,
+          0.73,
+          -0.3
+        ],
+        "max": [
+          0.49,
+          1.0299999999999998,
+          0.3
+        ],
+        "sourceNodeId": "m15"
+      }
+    ],
+    "sourceMeshCount": 20,
+    "candidateCount": 4,
+    "fallbackUsed": false
+  },
+  "footprintRadius": 0.64,
+  "sizeClass": "small",
+  "mode": "voxel",
+  "provider": "gpt",
+  "createdAt": 1786542978613,
+  "updatedAt": 1786542978613
+}

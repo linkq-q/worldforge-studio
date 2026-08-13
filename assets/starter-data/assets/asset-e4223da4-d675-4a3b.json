@@ -1,0 +1,445 @@
+{
+  "id": "asset-e4223da4-d675-4a3b",
+  "name": "80年代墙面海报",
+  "prompt": "一张独立的80年代餐饮或汽水主题墙面海报，使用褪饱和红、橙、奶油色和粗体复古图形；少量重复即可，避免墙面过度拥挤。\n全局资产美术方向：80年代小餐厅风格，暖色木饰面、米白墙面、暗红与棕橙色软装、黄铜或深色金属灯具，家具比例适配1.60m角色，造型简洁耐用，避免现代极简或高档餐厅风格。\n资产角色：readable decorative wall accent；目标尺度：medium。\n只生成一个可复用的独立物体，不要生成地面、背景、天空、完整场景或多个分散物体。",
+  "tags": [
+    "indoor",
+    "wall-decor",
+    "poster",
+    "retro",
+    "retro-1980s",
+    "diner-poster"
+  ],
+  "modelJson": {
+    "name": "80年代汽水餐厅墙面海报",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "poster",
+        "name": "独立墙面海报",
+        "transform": {
+          "pos": [
+            0,
+            0.55,
+            0
+          ]
+        }
+      },
+      {
+        "id": "frame",
+        "name": "暖色木质画框",
+        "parent": "poster",
+        "transform": {
+          "pos": [
+            0,
+            0.55,
+            0
+          ]
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "walnut"
+          }
+        ]
+      },
+      {
+        "id": "print",
+        "name": "复古汽水印刷图形",
+        "parent": "poster",
+        "transform": {
+          "pos": [
+            0.015,
+            0.55,
+            0.088
+          ]
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "poster",
+        "transform": {
+          "pos": [
+            0,
+            0.55,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.92,
+            "height": 1.22,
+            "depth": 0.06
+          },
+          "color": 15127469
+        }
+      },
+      {
+        "id": "m1",
+        "parent": "frame",
+        "transform": {
+          "pos": [
+            0,
+            0.645,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.04,
+            "height": 0.07,
+            "depth": 0.11
+          },
+          "color": 7356459
+        }
+      },
+      {
+        "id": "m2",
+        "parent": "frame",
+        "transform": {
+          "pos": [
+            0,
+            -0.645,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.04,
+            "height": 0.07,
+            "depth": 0.11
+          },
+          "color": 7356459
+        }
+      },
+      {
+        "id": "m3",
+        "parent": "frame",
+        "transform": {
+          "pos": [
+            -0.485,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.07,
+            "height": 1.22,
+            "depth": 0.11
+          },
+          "color": 7356459
+        }
+      },
+      {
+        "id": "m4",
+        "parent": "frame",
+        "transform": {
+          "pos": [
+            0.485,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.07,
+            "height": 1.22,
+            "depth": 0.11
+          },
+          "color": 7356459
+        }
+      },
+      {
+        "id": "m5",
+        "parent": "print",
+        "transform": {
+          "pos": [
+            -0.015,
+            0.43,
+            -0.022
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.78,
+            "height": 0.24,
+            "depth": 0.025
+          },
+          "color": 10174005
+        }
+      },
+      {
+        "id": "m6",
+        "parent": "print",
+        "transform": {
+          "pos": [
+            -0.105,
+            0.47,
+            -0.006
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.48,
+            "height": 0.055,
+            "depth": 0.028
+          },
+          "color": 15851456
+        }
+      },
+      {
+        "id": "m7",
+        "parent": "print",
+        "transform": {
+          "pos": [
+            -0.005,
+            0.38,
+            -0.006
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.28,
+            "height": 0.045,
+            "depth": 0.028
+          },
+          "color": 13134907
+        }
+      },
+      {
+        "id": "m8",
+        "parent": "print",
+        "transform": {
+          "pos": [
+            0.005,
+            0.15,
+            -0.022
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.7,
+            "height": 0.08,
+            "depth": 0.025
+          },
+          "color": 13134907
+        }
+      },
+      {
+        "id": "m9",
+        "parent": "print",
+        "transform": {
+          "pos": [
+            -0.055,
+            0.04,
+            -0.022
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.58,
+            "height": 0.07,
+            "depth": 0.025
+          },
+          "color": 14192976
+        }
+      },
+      {
+        "id": "m10",
+        "parent": "print",
+        "transform": {
+          "pos": [
+            -0.115,
+            -0.06,
+            -0.022
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.42,
+            "height": 0.06,
+            "depth": 0.025
+          },
+          "color": 10174005
+        }
+      },
+      {
+        "id": "m11",
+        "parent": "print",
+        "transform": {
+          "pos": [
+            0.145,
+            -0.19,
+            -0.001
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.31,
+            "height": 0.48,
+            "depth": 0.04
+          },
+          "color": 10830391
+        }
+      },
+      {
+        "id": "m12",
+        "parent": "print",
+        "transform": {
+          "pos": [
+            0.145,
+            0.07,
+            0.002
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.36,
+            "height": 0.07,
+            "depth": 0.045
+          },
+          "color": 5911592
+        }
+      },
+      {
+        "id": "m13",
+        "parent": "print",
+        "transform": {
+          "pos": [
+            0.145,
+            -0.17,
+            0.022
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.32,
+            "height": 0.09,
+            "depth": 0.045
+          },
+          "color": 15255952
+        }
+      },
+      {
+        "id": "m14",
+        "parent": "print",
+        "transform": {
+          "pos": [
+            0.235,
+            0.19,
+            0.002
+          ],
+          "quat": [
+            0.61,
+            0.35,
+            0.35,
+            0.61
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.28,
+            "height": 0.04,
+            "depth": 0.04
+          },
+          "color": 13134907
+        }
+      },
+      {
+        "id": "m15",
+        "parent": "print",
+        "transform": {
+          "pos": [
+            -0.235,
+            -0.38,
+            -0.02
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.25,
+            "height": 0.055,
+            "depth": 0.025
+          },
+          "color": 5911592
+        }
+      },
+      {
+        "id": "m16",
+        "parent": "print",
+        "transform": {
+          "pos": [
+            -0.165,
+            -0.47,
+            -0.02
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.38,
+            "height": 0.045,
+            "depth": 0.025
+          },
+          "color": 12081725
+        }
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1786530318485,
+        "provider": "gpt",
+        "data": "SX63eBzK9mTcQX6GCRY1bZ/npcAnUdmLkGwr9eefT2PKoCvcj18cIP3ToxxNV5yZXa55bo42AfC8A3svH0p7JBkSLlwZdlCQwclHwRKtxZ7ZeT+f5QOi83cSi9NpetS8HBJ464HWp6oUGf0iWkghx3s2t3MjrKHanM22zjUE+qRoC3dKpUKIxTjxH23TDwrra+0Dn6oorj4bjcWZCDV4zSEEfbZd/3OEoD+amRIruTv5831+YYVLTBHCMZoCd5DSTpBEkfIvsJTpgm6hllMYAOvCbpLX9RS2UKYbE+j/+segh6WtUNAeUHhpVdIB0Qhzb21Bn8qyl7OQM9u2E3YQv5shMY9LP712bYuQdcUbTOI+x6/Cfwa58ZMaCw01plze3GYl5sNGNenweTqbzFLHDh51ikt7r5hcfhOlHUE+WLuDVxXF25GRu+S6Afd8bSsw/HDWSN/svTnlQwq9T3e/hG94ljaYCR/UA0KxdzDJQkocX19/liYHHG09JY3NB6//maLu9iQdRmXImv2VjU6RQhIoP5W9FcQTqIJi+KBGZbuRtklfcydOCzaAGle4VjlcItWCLOMta2nuQduRW63dB7cPA2tmdZhDfcF53Dx4/Il6GnQ4Axsw49Wv5uvLgZwB4SkCUSEsAwc13TNUrJxsbspiipGGKLGt6sOB+0SEZJimV0PQdAXyRwKdN8tI+R/AhbMnFosjmi8YvVRoabxCAZtrOA2Ob3vJJYGIQc94Qvx1+x755Q9n8idsVA/gxvlizKnUgrORyLAn0wh8i+WFXTvK6A1N3SzjENvLL+x/M83KlC00es94LXpPMLkrBsI7AAEHbqFHiHY9zgcHBYux41QEjNbPvrn+oXFI58ljoYLISWlqNB0XE8MiOUk3xgOKW2kxrVNvrw3uDWxG4pZW4l9wgbeSxbUX9jbo1swW+iIJl8hqImhtjhqwF2h03DzKm4zTpq3oToC3qWeOgOd00rxaVnLGF2/gX5J/zG3l/J2+oJ5IknRjkKnRpXlCcgY0oZaY5Ppys7Zt",
+        "edits": ""
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -0.52,
+          0,
+          -0.09375
+        ],
+        "max": [
+          0.52,
+          1.3599999999999999,
+          0.09374999999999999
+        ],
+        "sourceNodeId": "asset-bounds"
+      }
+    ],
+    "sourceMeshCount": 17,
+    "candidateCount": 0,
+    "fallbackUsed": true
+  },
+  "footprintRadius": 0.52,
+  "sizeClass": "small",
+  "mode": "voxel",
+  "provider": "gpt",
+  "createdAt": 1786530320296,
+  "updatedAt": 1786530320296
+}

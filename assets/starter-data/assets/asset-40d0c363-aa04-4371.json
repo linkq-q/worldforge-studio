@@ -1,0 +1,383 @@
+{
+  "id": "asset-40d0c363-aa04-4371",
+  "name": "80年代独立入口门",
+  "prompt": "一扇独立可识别的80年代小餐厅入口门，带深色木框、窄玻璃观察条和黄铜门把；作为单独模型，不捆绑墙体或其他家具。\n全局资产美术方向：80年代小餐厅风格，暖色木饰面、米白墙面、暗红与棕橙色软装、黄铜或深色金属灯具，家具比例适配1.60m角色，造型简洁耐用，避免现代极简或高档餐厅风格。\n资产角色：standalone entrance landmark；目标尺度：large。\n只生成一个可复用的独立物体，不要生成地面、背景、天空、完整场景或多个分散物体。",
+  "tags": [
+    "indoor",
+    "entrance",
+    "retro-1980s",
+    "restaurant-entrance"
+  ],
+  "modelJson": {
+    "name": "80年代小餐厅入口门",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "door",
+        "name": "可开合木门",
+        "transform": {
+          "pos": [
+            -0.95,
+            0,
+            0
+          ]
+        }
+      },
+      {
+        "id": "frame",
+        "name": "深色木门框",
+        "parent": "door",
+        "transform": {
+          "pos": [
+            1.1,
+            1.6,
+            0
+          ]
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "frame",
+        "transform": {
+          "pos": [
+            -1.27,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.28,
+            "height": 3.2,
+            "depth": 0.42
+          },
+          "color": 3875096
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ]
+      },
+      {
+        "id": "m1",
+        "parent": "frame",
+        "transform": {
+          "pos": [
+            0.97,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.28,
+            "height": 3.2,
+            "depth": 0.42
+          },
+          "color": 3875096
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ]
+      },
+      {
+        "id": "m2",
+        "parent": "frame",
+        "transform": {
+          "pos": [
+            -0.15,
+            1.45,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2.52,
+            "height": 0.3,
+            "depth": 0.42
+          },
+          "color": 3875096
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ]
+      },
+      {
+        "id": "m3",
+        "parent": "door",
+        "transform": {
+          "pos": [
+            0.95,
+            1.48,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.9,
+            "height": 2.85,
+            "depth": 0.2
+          },
+          "color": 5909789
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ]
+      },
+      {
+        "id": "m4",
+        "parent": "door",
+        "transform": {
+          "pos": [
+            0.57,
+            2.05,
+            0.125
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.42,
+            "height": 1.65,
+            "depth": 0.045
+          },
+          "color": 15392709
+        }
+      },
+      {
+        "id": "m5",
+        "parent": "door",
+        "transform": {
+          "pos": [
+            0.57,
+            2.05,
+            0.16
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.27,
+            "height": 1.5,
+            "depth": 0.055
+          },
+          "color": 10134432
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass"
+          }
+        ]
+      },
+      {
+        "id": "m6",
+        "parent": "door",
+        "transform": {
+          "pos": [
+            1.63,
+            1.53,
+            0.18
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.1,
+            "height": 0.42,
+            "depth": 0.09
+          },
+          "color": 12749362
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "gold"
+          }
+        ]
+      },
+      {
+        "id": "m7",
+        "parent": "door",
+        "transform": {
+          "pos": [
+            1.63,
+            1.77,
+            0.16
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.18,
+            "height": 0.09,
+            "depth": 0.12
+          },
+          "color": 12749362
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "gold"
+          }
+        ]
+      },
+      {
+        "id": "m8",
+        "parent": "door",
+        "transform": {
+          "pos": [
+            0.95,
+            0.32,
+            0.02
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.55,
+            "height": 0.14,
+            "depth": 0.24
+          },
+          "color": 4334362
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ]
+      },
+      {
+        "id": "m9",
+        "transform": {
+          "pos": [
+            0,
+            0.09,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2.35,
+            "height": 0.18,
+            "depth": 0.5
+          },
+          "color": 7027492
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ]
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1786529873958,
+        "provider": "gpt",
+        "data": "WV4oDHDH+5SWymNMX39DKCPFPR6VE+f69VphxH/sKb4juVsL8lCNBgtFxvXRbybYKaEnRLHfN/ECzPQwzMkXvNzhp42somFMKOOaFWY7H28h0AnClUTsNjQi3NBC32M4CRF3kKGImeF9wJJ2cIrPx2zxapp5CJOi0jn8J8ExXOtsFGbYBjGXvRPUgTgibzysOm0gauhsgTEJNYhALYLJCKAyeSPjqGekH7iUoPC1Dij5Y/i79Sry+MWc7/66BizmtAssHpsdAqlbMZ5b8fKVWoJAuCuYfmwukwbvNPovJ3th60mDVKSyfl3o/LK6w3Wo4DWHvSzpLC31vAWgNcaKhIlfN22IUOV9exSgr/P8zS+A3cBxtwK5DgVfhEDLH7vSjhkfdtJ7pZWzEXouFmo1Q/P1z9MbvXqYIF4AGrDhw2oNeCeHC+mcBhOy+WbAC8vX2fPLh9mOLCn7zM87o56hIU7o+3/9H8BtT6YNW6DNoG0jxeWR2lY6YNpkTltwAxXMZR3pA3kqj0w9/PK9wA9VOMcgzw8tDyytkLW3Pj19r4i+HqS8WzzGy804fxEfgS8vOMsUERDM0oEDr0Fl8vg3cW936Ww6VXMl938tyhiX+y+n3wTn4XBcSp3KudwJrmUatHSJDkSFaGy9IfIZOIyCH5Zyb2qI5Fu0+sOt3NlQehHv/R1/O4vVvIMQnvZTXatLeSSF9Iybwux0mCj3dFXVtCR8+tBX7JSxm3MjK/C0bTGQko+oBrovjAEW2JUNtXdxF+kg5y2eoL8sAesK/iL6GC428KUu2DNFqoAK",
+        "edits": ""
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -0.9500000000000002,
+          0.05499999999999994,
+          -0.1
+        ],
+        "max": [
+          0.9499999999999997,
+          2.9050000000000002,
+          0.1
+        ],
+        "sourceNodeId": "m3"
+      },
+      {
+        "min": [
+          0.9799999999999999,
+          0,
+          -0.21
+        ],
+        "max": [
+          1.26,
+          3.2,
+          0.21
+        ],
+        "sourceNodeId": "m1"
+      },
+      {
+        "min": [
+          -1.26,
+          0,
+          -0.21
+        ],
+        "max": [
+          -0.9800000000000001,
+          3.2,
+          0.21
+        ],
+        "sourceNodeId": "m0"
+      },
+      {
+        "min": [
+          -1.26,
+          2.9,
+          -0.21
+        ],
+        "max": [
+          1.26,
+          3.1999999999999997,
+          0.21
+        ],
+        "sourceNodeId": "m2"
+      },
+      {
+        "min": [
+          -1.1750000000000003,
+          0,
+          -0.25
+        ],
+        "max": [
+          1.1749999999999998,
+          0.18,
+          0.25
+        ],
+        "sourceNodeId": "m9"
+      }
+    ],
+    "sourceMeshCount": 10,
+    "candidateCount": 5,
+    "fallbackUsed": false
+  },
+  "footprintRadius": 1.26,
+  "sizeClass": "medium",
+  "mode": "voxel",
+  "provider": "gpt",
+  "createdAt": 1786529875545,
+  "updatedAt": 1786529875545
+}
