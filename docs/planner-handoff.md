@@ -2,8 +2,8 @@
 
 ## 交付内容
 
-- `worldforge-golden-pack-YYYY-MM-DD.zip`：四张可直接导入的金样场景；每张内含地图、模型资产、渲染方案，以及它实际使用的 HDRI。适合通过微信等渠道单独发送。
-- `assets/starter-data/`：Git 跟踪的首次启动种子；空白数据目录会自动获得四张金样及其引用资源。
+- `worldforge-golden-pack-YYYY-MM-DD.zip`：九张可直接导入的金样场景；每张内含地图、模型资产、渲染方案，以及它实际使用的 HDRI。适合通过微信等渠道单独发送。
+- `assets/starter-data/`：Git 跟踪的首次启动种子；空白数据目录会自动获得九张金样及其引用资源。
 - `assets/hdri/`：Git LFS 跟踪的完整共享 HDRI 库；克隆并完成 LFS 下载后可直接使用。
 - `data/map-editor/`：本机工作数据。它不进入 Git，并且优先覆盖同名共享 HDRI；已有数据目录不会被首次启动种子覆盖。
 
@@ -14,7 +14,7 @@
 1. 安装 Node.js 20 或更高版本，以及 Git LFS；无需安装或检出 `3d-generate`。
 2. PowerShell 进入 `worldforge-studio`：依次执行 `git lfs install`、`git lfs pull`、`npm install`（首次一次）。
 3. 启动：`npm run dev`。
-4. 浏览器打开 `http://localhost:5173`；若本机没有既有工作数据，会自动出现四张金样。
+4. 浏览器打开 `http://localhost:5173`；若本机没有既有工作数据，会自动出现九张金样。
 
 ## 策划日常操作
 
@@ -35,7 +35,7 @@
 
 ## 生成或备份交接包
 
-当前四张金样默认是：开阔平原、清新树林、樱花竹林、夕阳草原。
+当前九张金样默认是：开阔平原、清新树林、樱花竹林、夕阳草原、电影院样例、复古快餐店样例、服装店样例、餐厅样例、海岛公园。
 
 ```powershell
 npm run handoff:goldens

@@ -1,0 +1,644 @@
+{
+  "id": "asset-2103351a-35a4-4cc0",
+  "name": "墙面时钟",
+  "prompt": "一只贴墙的圆形80年代餐厅时钟，白色表盘、黑色指针、深色外圈和简洁刻度，尺寸明显可读但不抢过菜单牌。\n全局资产美术方向：80年代小餐厅风格，暖色木饰面、米白墙面、暗红与棕橙色软装、黄铜或深色金属灯具，家具比例适配1.60m角色，造型简洁耐用，避免现代极简或高档餐厅风格。\n资产角色：wall-mounted timekeeping decor；目标尺度：small。\n只生成一个可复用的独立物体，不要生成地面、背景、天空、完整场景或多个分散物体。",
+  "tags": [
+    "indoor",
+    "wall-prop",
+    "clock",
+    "restaurant",
+    "retro-wall-clock",
+    "1980s"
+  ],
+  "modelJson": {
+    "name": "80年代餐厅壁挂时钟",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "clock_body",
+        "name": "钟体",
+        "transform": {
+          "pos": [
+            0,
+            1.6,
+            -0.05
+          ]
+        }
+      },
+      {
+        "id": "dark_case",
+        "name": "深色金属外圈",
+        "parent": "clock_body",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0.05
+          ]
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "dial",
+        "name": "米白表盘",
+        "parent": "clock_body",
+        "transform": {
+          "pos": [
+            0.005,
+            0.005,
+            0.119
+          ]
+        }
+      },
+      {
+        "id": "center_pin",
+        "name": "中心轴",
+        "parent": "dial",
+        "transform": {
+          "pos": [
+            -0.005,
+            -0.005,
+            0.047
+          ]
+        }
+      },
+      {
+        "id": "hour_hand",
+        "name": "时针",
+        "parent": "clock_body",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0.14
+          ]
+        }
+      },
+      {
+        "id": "minute_hand",
+        "name": "分针",
+        "parent": "clock_body",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0.146
+          ]
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "dark_case",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.58,
+            "height": 0.38,
+            "depth": 0.1
+          },
+          "color": 3155746
+        }
+      },
+      {
+        "id": "m1",
+        "parent": "dark_case",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.38,
+            "height": 0.58,
+            "depth": 0.1
+          },
+          "color": 3155746
+        }
+      },
+      {
+        "id": "m2",
+        "parent": "dark_case",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.48,
+            "height": 0.48,
+            "depth": 0.1
+          },
+          "color": 3155746
+        }
+      },
+      {
+        "id": "m3",
+        "parent": "dial",
+        "transform": {
+          "pos": [
+            -0.005,
+            -0.005,
+            -0.011
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.5,
+            "height": 0.32,
+            "depth": 0.026
+          },
+          "color": 15985624
+        }
+      },
+      {
+        "id": "m4",
+        "parent": "dial",
+        "transform": {
+          "pos": [
+            -0.005,
+            -0.005,
+            -0.011
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.32,
+            "height": 0.5,
+            "depth": 0.026
+          },
+          "color": 15985624
+        }
+      },
+      {
+        "id": "m5",
+        "parent": "dial",
+        "transform": {
+          "pos": [
+            -0.005,
+            -0.005,
+            -0.011
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.42,
+            "height": 0.42,
+            "depth": 0.026
+          },
+          "color": 15985624
+        }
+      },
+      {
+        "id": "m6",
+        "parent": "dial",
+        "transform": {
+          "pos": [
+            -0.005,
+            0.205,
+            0.011
+          ],
+          "quat": [
+            0.5,
+            0.5,
+            0.5,
+            0.5
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.05,
+            "height": 0.012,
+            "depth": 0.01
+          },
+          "color": 2170138
+        }
+      },
+      {
+        "id": "m7",
+        "parent": "dial",
+        "transform": {
+          "pos": [
+            0.095,
+            0.175,
+            0.011
+          ],
+          "quat": [
+            0.61,
+            0.35,
+            0.35,
+            0.61
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.03,
+            "height": 0.012,
+            "depth": 0.01
+          },
+          "color": 2170138
+        }
+      },
+      {
+        "id": "m8",
+        "parent": "dial",
+        "transform": {
+          "pos": [
+            0.175,
+            0.095,
+            0.011
+          ],
+          "quat": [
+            0.68,
+            0.18,
+            0.18,
+            0.68
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.03,
+            "height": 0.012,
+            "depth": 0.01
+          },
+          "color": 2170138
+        }
+      },
+      {
+        "id": "m9",
+        "parent": "dial",
+        "transform": {
+          "pos": [
+            0.205,
+            -0.005,
+            0.011
+          ],
+          "quat": [
+            0.71,
+            0,
+            0,
+            0.71
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.05,
+            "height": 0.012,
+            "depth": 0.01
+          },
+          "color": 2170138
+        }
+      },
+      {
+        "id": "m10",
+        "parent": "dial",
+        "transform": {
+          "pos": [
+            0.175,
+            -0.105,
+            0.011
+          ],
+          "quat": [
+            0.68,
+            -0.18,
+            -0.18,
+            0.68
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.03,
+            "height": 0.012,
+            "depth": 0.01
+          },
+          "color": 2170138
+        }
+      },
+      {
+        "id": "m11",
+        "parent": "dial",
+        "transform": {
+          "pos": [
+            0.095,
+            -0.185,
+            0.011
+          ],
+          "quat": [
+            0.61,
+            -0.35,
+            -0.35,
+            0.61
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.03,
+            "height": 0.012,
+            "depth": 0.01
+          },
+          "color": 2170138
+        }
+      },
+      {
+        "id": "m12",
+        "parent": "dial",
+        "transform": {
+          "pos": [
+            -0.005,
+            -0.205,
+            0.011
+          ],
+          "quat": [
+            0.5,
+            -0.5,
+            -0.5,
+            0.5
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.05,
+            "height": 0.012,
+            "depth": 0.01
+          },
+          "color": 2170138
+        }
+      },
+      {
+        "id": "m13",
+        "parent": "dial",
+        "transform": {
+          "pos": [
+            -0.105,
+            -0.185,
+            0.011
+          ],
+          "quat": [
+            -0.35,
+            0.61,
+            0.61,
+            -0.35
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.03,
+            "height": 0.012,
+            "depth": 0.01
+          },
+          "color": 2170138
+        }
+      },
+      {
+        "id": "m14",
+        "parent": "dial",
+        "transform": {
+          "pos": [
+            -0.185,
+            -0.105,
+            0.011
+          ],
+          "quat": [
+            -0.18,
+            0.68,
+            0.68,
+            -0.18
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.03,
+            "height": 0.012,
+            "depth": 0.01
+          },
+          "color": 2170138
+        }
+      },
+      {
+        "id": "m15",
+        "parent": "dial",
+        "transform": {
+          "pos": [
+            -0.205,
+            -0.005,
+            0.011
+          ],
+          "quat": [
+            0,
+            0.71,
+            0.71,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.05,
+            "height": 0.012,
+            "depth": 0.01
+          },
+          "color": 2170138
+        }
+      },
+      {
+        "id": "m16",
+        "parent": "dial",
+        "transform": {
+          "pos": [
+            -0.185,
+            0.095,
+            0.011
+          ],
+          "quat": [
+            0.18,
+            0.68,
+            0.68,
+            0.18
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.03,
+            "height": 0.012,
+            "depth": 0.01
+          },
+          "color": 2170138
+        }
+      },
+      {
+        "id": "m17",
+        "parent": "dial",
+        "transform": {
+          "pos": [
+            -0.105,
+            0.175,
+            0.011
+          ],
+          "quat": [
+            0.35,
+            0.61,
+            0.61,
+            0.35
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.03,
+            "height": 0.012,
+            "depth": 0.01
+          },
+          "color": 2170138
+        }
+      },
+      {
+        "id": "m18",
+        "parent": "hour_hand",
+        "transform": {
+          "pos": [
+            -0.05,
+            0.03,
+            0
+          ],
+          "quat": [
+            0.21,
+            0.67,
+            0.67,
+            0.21
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.13,
+            "height": 0.016,
+            "depth": 0.02
+          },
+          "color": 1512724
+        }
+      },
+      {
+        "id": "m19",
+        "parent": "minute_hand",
+        "transform": {
+          "pos": [
+            0.07,
+            0.04,
+            0.004
+          ],
+          "quat": [
+            0.68,
+            0.18,
+            0.18,
+            0.68
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.19,
+            "height": 0.014,
+            "depth": 0.01
+          },
+          "color": 1512724
+        }
+      },
+      {
+        "id": "m20",
+        "parent": "center_pin",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.035,
+            "height": 0.035,
+            "depth": 0.026
+          },
+          "color": 2695967
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1786530148396,
+        "provider": "gpt",
+        "data": "dBWyy5wrzIOQ84dWIECA2yWOtgKjD2X810mg07y6ZJWxOi4QJe6BgcyVbfMlY5URBouwH2mCdUsEjkWNDjguRlAA5afza14Jev5xUoWtDsaLaq3lfnYTZSGIvjvn02AQ7yO3rifLSa5vlqulRvVPWz1ItDUKTSyNHNjWJPzEw0bv/2SnNZXXuW0Cnb5RvH8eexBnTllRCmQOXLfe4aX1zVu87wXu8C/SKpCSZJy9kFnqW0ibobiFNd4Mr5uvfKrJCp4Hv+TUdYiBlwinKYbZu5ETrtKJ+IqLreTs+4MVqMe7P/1rtdypdPu2slnX+dxRtaQStnR4LnKucyFdtDMDpOuqMkxKbJ0yYQ+WZ+jT2XOYiqEApFsX/HceP5mvHjNMFJdyufRga9bnEUhinA2qH3Vj8A0hwYmEsLNksHddKihYR6QbfvwEipVnyns7r6LtUKFHRi49KzmoxKxSqSemcAWpTNglD2sMVGgo1Xr/T/IOUd6Nlq+xoAW//NNwW8+MG9GeToOswpbb7pmRAhaye4iOOyjQH/DHxvkBe5zY9V3l/JFVqqRvy2z6q6BdkJIj6jV2aHp95SmHwJYGvf43junL69BUthqKEq1XfyPLjp4asT39Qf7V3+aqCEOCzkvCCJhHvcBXNeIAJjYsjsgyOHyz+SirxzZAqU2JBP/DHUyagHfp2Ilbh6XrGIkaVoy6hVT/miR6hHCJbkT9Yt9AbH8Aiz2kEo30oaFLsHLkENU//bg9xgKGXvuSQw5TaxosCaBRaEvIEoBN/v/C82czNe2ZQKY+SO/UDPdALQAzkuQWwr92I7d/oR8DzfxTnkUY0rvs62rRoV41mfmks+85pCNzNCD+tK+73nzefbSE007D7dBTx8sRvY7UJOwJsS5V5pWLKpKJTCM+3Cu1JcgMQKWIjANt6Hb9QsidTEZvIKZVmC36o8QdhIAW1QQ5GlszhxCk5hbL/FO/ULCkT/BDLrBZIZ4/o6w2rwlgrtCkNeVeDQ2sfCsxAmWBChEuyerexCTSi8K/MIVNhOzEHTiBrkyc/r2cgftbgkBEUPA2p/haT4ZoJV9Kojerh9jVuOkRJ1s6y1LJqZid1eQEnhKp2FK03MhYehm1pZwMHqEnXPF9/RKZPOrDwJCcf/y1OMF+LGUMwsVASpUXLAAdcEzBJDofwpkPSBsCre2YeCvxB6vfsh0HiSHr2CZTYP3MMsd7gEWMhay8G6hjpubGbS9QdhxD5vta6Ygy3tJj5w43y4ik6IrdRYDM1CkSHE9qyp8hGfFU8GdjJxLHNep01iDEa1pxgXWFCCYAZxKi0v4GXL8P8UWja9SJd2m8TjXtuL66nOMCcSFIaXjMQOUeFn9Y75AmvmzyFg==",
+        "edits": ""
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -0.29,
+          0,
+          -0.0895
+        ],
+        "max": [
+          0.29,
+          0.5800000000000001,
+          0.0895
+        ],
+        "sourceNodeId": "asset-bounds"
+      }
+    ],
+    "sourceMeshCount": 21,
+    "candidateCount": 0,
+    "fallbackUsed": true
+  },
+  "footprintRadius": 0.29,
+  "sizeClass": "small",
+  "mode": "voxel",
+  "provider": "gpt",
+  "createdAt": 1786530151731,
+  "updatedAt": 1786530151731
+}

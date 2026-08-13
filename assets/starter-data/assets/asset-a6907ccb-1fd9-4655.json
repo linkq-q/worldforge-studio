@@ -1,0 +1,508 @@
+{
+  "id": "asset-a6907ccb-1fd9-4655",
+  "name": "复古软包餐椅",
+  "prompt": "生成一把独立复古快餐椅，番茄红乙烯基软包座背、奶油白滚边和铬银管状椅腿；不要与桌子或其他椅子连成一体。\n全局资产美术方向：1950年代复古快餐店风格，奶油白、番茄红、薄荷绿与铬银配色；家具采用圆角金属包边、耐用层压板和红色软包，比例清晰并适合1.60米角色。\n资产角色：围绕每张餐桌配套重复的座椅；目标尺度：medium。\n只生成一个可复用的独立物体，不要生成地面、背景、天空、完整场景或多个分散物体。",
+  "tags": [
+    "retro-diner",
+    "dining-chair",
+    "vinyl-seat"
+  ],
+  "modelJson": {
+    "name": "1950年代复古快餐椅",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "legs",
+        "name": "铬银管状椅腿",
+        "transform": {
+          "pos": [
+            0,
+            0.305,
+            0.035
+          ]
+        }
+      },
+      {
+        "id": "seat",
+        "name": "番茄红软包座面",
+        "parent": "legs",
+        "transform": {
+          "pos": [
+            0,
+            0.475,
+            0.015
+          ]
+        }
+      },
+      {
+        "id": "back",
+        "name": "番茄红软包椅背",
+        "parent": "legs",
+        "transform": {
+          "pos": [
+            0,
+            1.025,
+            -0.375
+          ]
+        }
+      },
+      {
+        "id": "back_frame",
+        "name": "椅背铬银包边",
+        "parent": "legs",
+        "transform": {
+          "pos": [
+            0,
+            0.605,
+            -0.505
+          ]
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "seat",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.1,
+            "height": 0.28,
+            "depth": 0.9
+          },
+          "color": 14170674
+        }
+      },
+      {
+        "id": "m1",
+        "parent": "seat",
+        "transform": {
+          "pos": [
+            0,
+            0.04,
+            0.44
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.14,
+            "height": 0.09,
+            "depth": 0.08
+          },
+          "color": 16774358
+        }
+      },
+      {
+        "id": "m2",
+        "parent": "seat",
+        "transform": {
+          "pos": [
+            -0.53,
+            0.04,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.08,
+            "height": 0.1,
+            "depth": 0.82
+          },
+          "color": 16774358
+        }
+      },
+      {
+        "id": "m3",
+        "parent": "seat",
+        "transform": {
+          "pos": [
+            0.53,
+            0.04,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.08,
+            "height": 0.1,
+            "depth": 0.82
+          },
+          "color": 16774358
+        }
+      },
+      {
+        "id": "m4",
+        "parent": "back",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.1,
+            "height": 1,
+            "depth": 0.22
+          },
+          "color": 14170674
+        }
+      },
+      {
+        "id": "m5",
+        "parent": "back",
+        "transform": {
+          "pos": [
+            0,
+            0.5,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.14,
+            "height": 0.08,
+            "depth": 0.27
+          },
+          "color": 16774358
+        }
+      },
+      {
+        "id": "m6",
+        "parent": "back",
+        "transform": {
+          "pos": [
+            -0.53,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.08,
+            "height": 0.92,
+            "depth": 0.27
+          },
+          "color": 16774358
+        }
+      },
+      {
+        "id": "m7",
+        "parent": "back",
+        "transform": {
+          "pos": [
+            0.53,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.08,
+            "height": 0.92,
+            "depth": 0.27
+          },
+          "color": 16774358
+        }
+      },
+      {
+        "id": "m8",
+        "parent": "legs",
+        "transform": {
+          "pos": [
+            -0.43,
+            0.035,
+            0.305
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.1,
+            "height": 0.68,
+            "depth": 0.1
+          },
+          "color": 13160661
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "silver"
+          }
+        ]
+      },
+      {
+        "id": "m9",
+        "parent": "legs",
+        "transform": {
+          "pos": [
+            0.43,
+            0.035,
+            0.305
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.1,
+            "height": 0.68,
+            "depth": 0.1
+          },
+          "color": 13160661
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "silver"
+          }
+        ]
+      },
+      {
+        "id": "m10",
+        "parent": "legs",
+        "transform": {
+          "pos": [
+            -0.43,
+            0.035,
+            -0.305
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.1,
+            "height": 0.68,
+            "depth": 0.1
+          },
+          "color": 13160661
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "silver"
+          }
+        ]
+      },
+      {
+        "id": "m11",
+        "parent": "legs",
+        "transform": {
+          "pos": [
+            0.43,
+            0.035,
+            -0.305
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.1,
+            "height": 0.68,
+            "depth": 0.1
+          },
+          "color": 13160661
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "silver"
+          }
+        ]
+      },
+      {
+        "id": "m12",
+        "parent": "legs",
+        "transform": {
+          "pos": [
+            0,
+            -0.035,
+            0.305
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.9,
+            "height": 0.08,
+            "depth": 0.08
+          },
+          "color": 13160661
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "silver"
+          }
+        ]
+      },
+      {
+        "id": "m13",
+        "parent": "legs",
+        "transform": {
+          "pos": [
+            -0.43,
+            -0.035,
+            0.005
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.08,
+            "height": 0.08,
+            "depth": 0.58
+          },
+          "color": 13160661
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "silver"
+          }
+        ]
+      },
+      {
+        "id": "m14",
+        "parent": "back_frame",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.18,
+            "height": 0.08,
+            "depth": 0.08
+          },
+          "color": 13160661
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "silver"
+          }
+        ]
+      },
+      {
+        "id": "m15",
+        "parent": "back_frame",
+        "transform": {
+          "pos": [
+            -0.58,
+            0.45,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.08,
+            "height": 0.98,
+            "depth": 0.08
+          },
+          "color": 13160661
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "silver"
+          }
+        ]
+      },
+      {
+        "id": "m16",
+        "parent": "back_frame",
+        "transform": {
+          "pos": [
+            0.58,
+            0.45,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.08,
+            "height": 0.98,
+            "depth": 0.08
+          },
+          "color": 13160661
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "silver"
+          }
+        ]
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1786540013604,
+        "provider": "gpt",
+        "data": "NSIw1877jM1P4/Fnwn8Dfeq7k6k/YVjyOR9zK/W81plyUGmWbqVl7lqhoXhmjPU90TU8prM3GFetUrlEAUZgR/SUNLAvSTsSPiDFBBj/27jQ+ox28QhURIWtvAwsEEQIN/xAtbqgtjibJ+pEYxbNAwDBacwb1mIW82kl64ABh4Kl+px59RdvbZ9j2Y8R0ErsfkbP1EqtZXt2czNeDcQMNDVMcDPb3VkD5pzXqej9m4SJPnuyLLTJ2rPmKPJh3GsYLQEdY7q7QxnC2wRM56XwR4u22He4PuhUV9bgABD9hbVIit3+hSN7H31n2XCeBI5XXOx7taQATHcqAPxFKNL3HSaXrxzfrwIFJb6GdD36q6YHrTO2JSAVpoYZ8UpMpIeEfokIdrlf1empK2PCS0oMAnZMigv8cQIbshdHObRE1s1EONNO7IuEHjhH+MChnycZUTtjPVkT8Ax2xqquqcA3RUcKQYb04VpTJrAqcD0KbmWsy51OlxCdS4btqFww8QvUtWAoJiSnxp+f5jsIgbd91iJrhqXGmjj2WBb49m1sBPDQiXbWlfDjNE+CXkqWkmLcSxtkgl3Ph8j1oTiceiDZXjg1oTsGhGGz5regS1PCNailIyxm5ZZn1uGdXb+6ww71DF2hgLwWouX4Cwv+ngSr7gM+Zul5DM0QtIlCnQnkN1RXISklpr4MjgvQowNXmhjXj43rnQ5JjY90kzBjfheuE/FD/gmHWL90JDkFQTLVBXMW0qjhOCzCMEb7vyCs5M8j+qKHLgt8a+xJ16UlW0Lj4XhOTMejZdDSQ5UdxNaBEGZBXN1U46vvGS0t6IqzvyhuJHS5drU=",
+        "edits": ""
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -0.55,
+          0.6400000000000001,
+          -0.41000000000000003
+        ],
+        "max": [
+          0.55,
+          0.9200000000000002,
+          0.49
+        ],
+        "sourceNodeId": "m0"
+      },
+      {
+        "min": [
+          -0.55,
+          0.8299999999999998,
+          -0.45999999999999996
+        ],
+        "max": [
+          0.55,
+          1.8299999999999998,
+          -0.24
+        ],
+        "sourceNodeId": "m4"
+      }
+    ],
+    "sourceMeshCount": 17,
+    "candidateCount": 2,
+    "fallbackUsed": false
+  },
+  "footprintRadius": 0.55,
+  "sizeClass": "small",
+  "mode": "voxel",
+  "provider": "gpt",
+  "createdAt": 1786540015902,
+  "updatedAt": 1786540015902
+}

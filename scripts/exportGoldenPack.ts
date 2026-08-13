@@ -6,7 +6,17 @@ import { strToU8, zipSync } from 'fflate';
 import { renderSchemeHdriFile, encodeScenePackage } from '../src/shared/scenePackage';
 import { MapStore } from '../src/server/mapStore';
 
-const DEFAULT_GOLDEN_MAPS = ['开阔平原', '清新树林', '樱花竹林', '夕阳草原'];
+const DEFAULT_GOLDEN_MAPS = [
+  '开阔平原',
+  '清新树林',
+  '樱花竹林',
+  '夕阳草原',
+  '电影院样例',
+  '复古快餐店样例',
+  '服装店样例',
+  '餐厅样例',
+  '海岛公园'
+];
 const execFileAsync = promisify(execFile);
 
 interface GoldenSceneEntry {

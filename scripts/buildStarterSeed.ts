@@ -1,7 +1,17 @@
 import { copyFile, mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 
-const GOLDEN_MAPS = ['开阔平原', '清新树林', '樱花竹林', '夕阳草原'];
+const GOLDEN_MAPS = [
+  '开阔平原',
+  '清新树林',
+  '樱花竹林',
+  '夕阳草原',
+  '电影院样例',
+  '复古快餐店样例',
+  '服装店样例',
+  '餐厅样例',
+  '海岛公园'
+];
 
 void main().catch((error) => {
   console.error(error instanceof Error ? error.message : String(error));

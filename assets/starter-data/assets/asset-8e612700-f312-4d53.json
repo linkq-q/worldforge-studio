@@ -1,0 +1,673 @@
+{
+  "id": "asset-8e612700-f312-4d53",
+  "name": "台式收银机",
+  "prompt": "生成单个复古台式收银机，奶油白机身、深色按键区、小型价格显示窗与铬银细节，尺寸清晰可读并可放在收银台面。\n全局资产美术方向：1950年代复古快餐店风格，奶油白、番茄红、薄荷绿与铬银配色；家具采用圆角金属包边、耐用层压板和红色软包，比例清晰并适合1.60米角色。\n资产角色：依附收银台的结账设备；目标尺度：small。\n只生成一个可复用的独立物体，不要生成地面、背景、天空、完整场景或多个分散物体。",
+  "tags": [
+    "retro-diner",
+    "register",
+    "checkout"
+  ],
+  "modelJson": {
+    "name": "1950年代复古台式收银机",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "cash_register",
+        "name": "收银机",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "cash_register",
+        "transform": {
+          "pos": [
+            0,
+            0.23,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2.4,
+            "height": 0.46,
+            "depth": 1.5
+          },
+          "color": 15656393
+        }
+      },
+      {
+        "id": "m1",
+        "parent": "cash_register",
+        "transform": {
+          "pos": [
+            0,
+            0.25,
+            0.79
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2.16,
+            "height": 0.3,
+            "depth": 0.08
+          },
+          "color": 15261636
+        }
+      },
+      {
+        "id": "m2",
+        "parent": "cash_register",
+        "transform": {
+          "pos": [
+            0,
+            0.45,
+            0.8
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2.2,
+            "height": 0.09,
+            "depth": 0.08
+          },
+          "color": 12071466
+        }
+      },
+      {
+        "id": "m3",
+        "parent": "cash_register",
+        "transform": {
+          "pos": [
+            0,
+            0.24,
+            0.86
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.7,
+            "height": 0.08,
+            "depth": 0.09
+          },
+          "color": 13160144
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "silver"
+          }
+        ]
+      },
+      {
+        "id": "m4",
+        "parent": "cash_register",
+        "transform": {
+          "pos": [
+            -0.39,
+            0.24,
+            0.83
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.09,
+            "height": 0.18,
+            "depth": 0.09
+          },
+          "color": 13160144
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "silver"
+          }
+        ]
+      },
+      {
+        "id": "m5",
+        "parent": "cash_register",
+        "transform": {
+          "pos": [
+            0.39,
+            0.24,
+            0.83
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.09,
+            "height": 0.18,
+            "depth": 0.09
+          },
+          "color": 13160144
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "silver"
+          }
+        ]
+      },
+      {
+        "id": "m6",
+        "parent": "cash_register",
+        "transform": {
+          "pos": [
+            0,
+            1.02,
+            -0.36
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2.02,
+            "height": 1.02,
+            "depth": 0.68
+          },
+          "color": 15853772
+        }
+      },
+      {
+        "id": "m7",
+        "parent": "cash_register",
+        "transform": {
+          "pos": [
+            0,
+            1.56,
+            -0.36
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2.12,
+            "height": 0.1,
+            "depth": 0.76
+          },
+          "color": 13160144
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "silver"
+          }
+        ]
+      },
+      {
+        "id": "m8",
+        "parent": "cash_register",
+        "transform": {
+          "pos": [
+            -1.04,
+            1.02,
+            -0.35
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.08,
+            "height": 1.02,
+            "depth": 0.72
+          },
+          "color": 13160144
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "silver"
+          }
+        ]
+      },
+      {
+        "id": "m9",
+        "parent": "cash_register",
+        "transform": {
+          "pos": [
+            1.04,
+            1.02,
+            -0.35
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.08,
+            "height": 1.02,
+            "depth": 0.72
+          },
+          "color": 13160144
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "silver"
+          }
+        ]
+      },
+      {
+        "id": "m10",
+        "parent": "cash_register",
+        "transform": {
+          "pos": [
+            0,
+            0.79,
+            0.39
+          ],
+          "quat": [
+            0.95,
+            0,
+            0,
+            -0.3
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2.04,
+            "height": 0.1,
+            "depth": 0.89
+          },
+          "color": 3880242
+        }
+      },
+      {
+        "id": "m11",
+        "parent": "cash_register",
+        "transform": {
+          "pos": [
+            -0.62,
+            0.72,
+            0.56
+          ],
+          "quat": [
+            0.95,
+            0,
+            0,
+            -0.31
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.4,
+            "height": 0.09,
+            "depth": 0.22
+          },
+          "color": 2170653
+        }
+      },
+      {
+        "id": "m12",
+        "parent": "cash_register",
+        "transform": {
+          "pos": [
+            0,
+            0.72,
+            0.56
+          ],
+          "quat": [
+            0.95,
+            0,
+            0,
+            -0.31
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.4,
+            "height": 0.09,
+            "depth": 0.22
+          },
+          "color": 2170653
+        }
+      },
+      {
+        "id": "m13",
+        "parent": "cash_register",
+        "transform": {
+          "pos": [
+            0.62,
+            0.72,
+            0.56
+          ],
+          "quat": [
+            0.95,
+            0,
+            0,
+            -0.31
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.4,
+            "height": 0.09,
+            "depth": 0.22
+          },
+          "color": 2170653
+        }
+      },
+      {
+        "id": "m14",
+        "parent": "cash_register",
+        "transform": {
+          "pos": [
+            -0.62,
+            0.93,
+            0.26
+          ],
+          "quat": [
+            0.95,
+            0,
+            0,
+            -0.31
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.4,
+            "height": 0.09,
+            "depth": 0.22
+          },
+          "color": 2170653
+        }
+      },
+      {
+        "id": "m15",
+        "parent": "cash_register",
+        "transform": {
+          "pos": [
+            0,
+            0.93,
+            0.26
+          ],
+          "quat": [
+            0.95,
+            0,
+            0,
+            -0.31
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.4,
+            "height": 0.09,
+            "depth": 0.22
+          },
+          "color": 2170653
+        }
+      },
+      {
+        "id": "m16",
+        "parent": "cash_register",
+        "transform": {
+          "pos": [
+            0.62,
+            0.93,
+            0.26
+          ],
+          "quat": [
+            0.95,
+            0,
+            0,
+            -0.31
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.4,
+            "height": 0.09,
+            "depth": 0.22
+          },
+          "color": 12071466
+        }
+      },
+      {
+        "id": "m17",
+        "parent": "cash_register",
+        "transform": {
+          "pos": [
+            0,
+            1.3,
+            0.015
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.22,
+            "height": 0.46,
+            "depth": 0.09
+          },
+          "color": 9423278
+        }
+      },
+      {
+        "id": "m18",
+        "parent": "cash_register",
+        "transform": {
+          "pos": [
+            0,
+            1.3,
+            0.085
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.94,
+            "height": 0.27,
+            "depth": 0.06
+          },
+          "color": 2699823
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass",
+            "variant": "green"
+          }
+        ]
+      },
+      {
+        "id": "m19",
+        "parent": "cash_register",
+        "transform": {
+          "pos": [
+            -0.24,
+            1.31,
+            0.125
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.09,
+            "height": 0.15,
+            "depth": 0.025
+          },
+          "color": 16766842
+        },
+        "tags": [
+          {
+            "tag": "emissive",
+            "value": 0.5
+          }
+        ]
+      },
+      {
+        "id": "m20",
+        "parent": "cash_register",
+        "transform": {
+          "pos": [
+            0,
+            1.31,
+            0.125
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.09,
+            "height": 0.15,
+            "depth": 0.025
+          },
+          "color": 16766842
+        },
+        "tags": [
+          {
+            "tag": "emissive",
+            "value": 0.5
+          }
+        ]
+      },
+      {
+        "id": "m21",
+        "parent": "cash_register",
+        "transform": {
+          "pos": [
+            0.24,
+            1.31,
+            0.125
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.09,
+            "height": 0.15,
+            "depth": 0.025
+          },
+          "color": 16766842
+        },
+        "tags": [
+          {
+            "tag": "emissive",
+            "value": 0.5
+          }
+        ]
+      },
+      {
+        "id": "m22",
+        "parent": "cash_register",
+        "transform": {
+          "pos": [
+            0.12,
+            1.24,
+            0.126
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.05,
+            "height": 0.05,
+            "depth": 0.025
+          },
+          "color": 16766842
+        },
+        "tags": [
+          {
+            "tag": "emissive",
+            "value": 0.5
+          }
+        ]
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1786540172496,
+        "provider": "gpt",
+        "data": "4LPP5EmSc0EmdPul1OgTIvaP1IxUka1MnlIpgjp7dDSHi/4jkhk6XXljEjfSSb8cacH1HMNgZvWJlvtYgGP3KoYKTVngY8CmlyGzORcfKG525KhrGNWRb7MOe0L2Nl2zKXtS+8N/0ZD7FCnGVf5VkyWnhk8ZpQI4ltR5CVTQUN688oJZzKYSWokN2lYbQ+ji6OPjWJdfk7cqByWL+W85Uy7FiI8XbZGTEc3xUEorT0wjMhleWebbdZ9xwWgIMQcmmqPPICxhjIAcFLuhrdnsUBIk84icnuo4+oN8hb1rcBorHg4Y2RtBsK2DiluWXMR+MBG0Ui2NYmORWCXS+vPSvSDhIhEoSJ55FxSBCt9NdTDlnFtTGGfHhPpYE6z2G6zoMrlleHWtj1Gs9ktzcjt9i+5mfLjU8z2MQUKCWHnpNGcbGvwgznkGaalDtPx8ToYspWLurvv5KTr3bo30TI7NEend1fcPVDojcnNkdtjrMp+M+EiGbe5zXjjrCJnAxqISDo+QaVuaUfRGED7AjKlVOCQ1wrbpi2JuoVE4zHolhQ/eY/1NWlvm6HCeXBC4kJYr1IjA3R4uO22OV5ZGkOZhRDaLNatNHqLedkGV4J5EJtIzqUwkjDKamoEPhBNNxzOVLkh1Kw1wGW8g1Wdhzz96oZljEe0O55j4pX7qIJcweHqMNJ4R+F/6H6yhvPLaNjXc6JcXxUSYnBkepOmEWUg1zAQnCZaCiFxN2xIAGsxAOD4TKi4Q849uDw5VCErMX7D7eCb9xBCuxi1j15bdpQIZf6feR4/aHmLzYbK4wQNCzQ5FXZ+E1B3wBd5To4fCV6uLxhO+JK/EQmq4wAZaY3hfPQHnI/gJRAodjYuILulc0nFlbDjOXLAC5QXz6A2y/pgTWJMDH2f4dDFuDQk3ZkZFNWw3rZEErq4ygsKKUaZPuuBczY7izBIdodEJ6n1FO2mrNutdpkLFEOzxW2pEnkaWzhqkDyUfCPfy4XmwyEsusET8DDx8IUQX2i2mhOjbqOvZ1878fdwXQW4x2ZI9oQVTL15p3wxUPQECDkikeDh2q1RAXRiOo4e0xuHmjYPyXKVu9WhNEJ+NkOGI2/KRYqcgIURjFBaZPOBl3vVCecbwQDH6OZiO3PVC3eFG5vXo4ONhICmCoNk7uV2it28GzADcE2GDuW1a9wWkvCqNH3k+yK1S0z+vnyM5BX4Yee43x5+yecJV7sITBBlq3hpqddsJqVmwz6hI4LYBN2/CDA==",
+        "edits": ""
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -1.2,
+          0,
+          -0.8275
+        ],
+        "max": [
+          1.2,
+          0.46,
+          0.6725
+        ],
+        "sourceNodeId": "m0"
+      },
+      {
+        "min": [
+          -1.01,
+          0.51,
+          -0.7775
+        ],
+        "max": [
+          1.01,
+          1.53,
+          -0.09749999999999998
+        ],
+        "sourceNodeId": "m6"
+      },
+      {
+        "min": [
+          -1.02,
+          0.49350125944584383,
+          -0.08051007556675072
+        ],
+        "max": [
+          1.02,
+          1.0864987405541562,
+          0.7055100755667507
+        ],
+        "sourceNodeId": "m10"
+      },
+      {
+        "min": [
+          -1.06,
+          1.51,
+          -0.8175
+        ],
+        "max": [
+          1.06,
+          1.61,
+          -0.057499999999999996
+        ],
+        "sourceNodeId": "m7"
+      }
+    ],
+    "sourceMeshCount": 23,
+    "candidateCount": 4,
+    "fallbackUsed": false
+  },
+  "footprintRadius": 1.2,
+  "sizeClass": "medium",
+  "mode": "voxel",
+  "provider": "gpt",
+  "createdAt": 1786540176635,
+  "updatedAt": 1786540176635
+}

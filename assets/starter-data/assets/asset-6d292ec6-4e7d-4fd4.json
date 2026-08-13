@@ -1,0 +1,315 @@
+{
+  "id": "asset-6d292ec6-4e7d-4fd4",
+  "name": "玻璃店铺入口门",
+  "prompt": "单个可复用的现代服装店玻璃入口门模型，细炭灰金属框、清晰门把和完整玻璃材质；不包含墙体，供编译器在前墙预留匹配门洞。\n全局资产美术方向：现代简洁的体素风服装零售家具，比例参照1.60米角色；采用浅橡木、哑光白、炭灰金属与少量暖色织物，货架轮廓轻薄但可读，普通构件主要尺寸不小于0.27米。\n资产角色：入口与安全疏散识别点；目标尺度：large。\n只生成一个可复用的独立物体，不要生成地面、背景、天空、完整场景或多个分散物体。",
+  "tags": [
+    "retail-door",
+    "glass",
+    "shopfront"
+  ],
+  "modelJson": {
+    "name": "现代服装店玻璃入口门",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "frame",
+        "name": "炭灰金属门框",
+        "transform": {
+          "pos": [
+            0,
+            1.2,
+            0
+          ]
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "door_leaf",
+        "name": "玻璃门扇",
+        "parent": "frame",
+        "transform": {
+          "pos": [
+            -0.64,
+            -1.14,
+            0
+          ]
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m0",
+        "parent": "frame",
+        "transform": {
+          "pos": [
+            -0.72,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.12,
+            "height": 2.4,
+            "depth": 0.14
+          },
+          "color": 3159096
+        }
+      },
+      {
+        "id": "m1",
+        "parent": "frame",
+        "transform": {
+          "pos": [
+            0.72,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.12,
+            "height": 2.4,
+            "depth": 0.14
+          },
+          "color": 3159096
+        }
+      },
+      {
+        "id": "m2",
+        "parent": "frame",
+        "transform": {
+          "pos": [
+            0,
+            1.14,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.56,
+            "height": 0.12,
+            "depth": 0.14
+          },
+          "color": 3159096
+        }
+      },
+      {
+        "id": "m3",
+        "parent": "door_leaf",
+        "transform": {
+          "pos": [
+            0.05,
+            1.09,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.1,
+            "height": 2.18,
+            "depth": 0.1
+          },
+          "color": 3422268
+        }
+      },
+      {
+        "id": "m4",
+        "parent": "door_leaf",
+        "transform": {
+          "pos": [
+            1.23,
+            1.09,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.1,
+            "height": 2.18,
+            "depth": 0.1
+          },
+          "color": 3422268
+        }
+      },
+      {
+        "id": "m5",
+        "parent": "door_leaf",
+        "transform": {
+          "pos": [
+            0.64,
+            0.05,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.18,
+            "height": 0.1,
+            "depth": 0.1
+          },
+          "color": 3422268
+        }
+      },
+      {
+        "id": "m6",
+        "parent": "door_leaf",
+        "transform": {
+          "pos": [
+            0.64,
+            2.13,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.18,
+            "height": 0.1,
+            "depth": 0.1
+          },
+          "color": 3422268
+        }
+      },
+      {
+        "id": "m7",
+        "parent": "door_leaf",
+        "transform": {
+          "pos": [
+            0.64,
+            1.09,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.08,
+            "height": 1.98,
+            "depth": 0.04
+          },
+          "color": 12571864
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass"
+          }
+        ]
+      },
+      {
+        "id": "m8",
+        "parent": "door_leaf",
+        "transform": {
+          "pos": [
+            1.04,
+            1.09,
+            0.18
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.06,
+            "height": 0.46,
+            "depth": 0.06
+          },
+          "color": 4541006
+        }
+      },
+      {
+        "id": "m9",
+        "parent": "door_leaf",
+        "transform": {
+          "pos": [
+            1.04,
+            0.89,
+            0.1
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.06,
+            "height": 0.06,
+            "depth": 0.18
+          },
+          "color": 4541006
+        }
+      },
+      {
+        "id": "m10",
+        "parent": "door_leaf",
+        "transform": {
+          "pos": [
+            1.04,
+            1.29,
+            0.1
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.06,
+            "height": 0.06,
+            "depth": 0.18
+          },
+          "color": 4541006
+        }
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1786542492833,
+        "provider": "gpt",
+        "data": "91lkc5Te/fHNypBnvq9c3E2LQBvWNHdQ9wtlkFprP+cj0a1o2GzgPsHgzbqklVk1qQPUpKE3Hjvlj/Hnu/SMP9xpzo9EjvU6UkdACYjsCA28Udq88EOFgLtgHya/pRMrNZYlzeoA1M67LkdRnGeoFjdVdtAwNm46gJ5yLt2QYGYE5oxm/i5IskWhijUI+EvGjPnMORUs33VJngu1N/tSWE0fgInoN2qSBsF5rI6BiDf/8PvgCU8a4EF+on1Ah2KtnjJTza5E0dkx2Z+DEoEQylgrM2RnAg0e8a3R9pB08olyntEI1+hSgfJRMhWDe/YD+9KsDBUiTKOEVuz1UHyAa4+BEdDAgkNPqpNAbWWOBwHKTy+I/0GrOnhbNHOr7auHAygi25Zdb7Bu7/1FMCSkZpSDwBnlbIukVTAhnqoQvmIzFO6YS4Xe5xrFzDUTJF/k3mH/zfuCY8/pRaj12DE7QLw/5DOy6b028TRneCbmpfmjPuJNAAG3gOm5SpUh5jTQIOclDViY91+hoiD2PYElMXc1i0t0SWgB0bRqIU8EHeErcHSZnMA6QvP3WItncXhlcAuyH3kFkNc3jQbgqe0GOb1UXv9Dpsud/MZm7RiLGeRO3u3FZy8LBqoow9EJ1CGVmhYeymFc5NaA8ewntTBlr001CqGhNMbG9yP8ooONmAFnMAjX6ih6phV3siqRhgBVpfzfX8HS9sRowEG28/s+4dKUw/7O/uqxQEMIQLqXoO0uHqXp",
+        "edits": ""
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -0.78,
+          0,
+          -0.14
+        ],
+        "max": [
+          0.78,
+          2.4,
+          0.14
+        ],
+        "sourceNodeId": "asset-bounds"
+      }
+    ],
+    "sourceMeshCount": 11,
+    "candidateCount": 0,
+    "fallbackUsed": true
+  },
+  "footprintRadius": 0.78,
+  "sizeClass": "small",
+  "mode": "voxel",
+  "provider": "gpt",
+  "createdAt": 1786542497528,
+  "updatedAt": 1786542497528
+}

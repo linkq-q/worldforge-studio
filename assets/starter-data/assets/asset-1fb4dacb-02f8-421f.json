@@ -1,0 +1,560 @@
+{
+  "id": "asset-1fb4dacb-02f8-421f",
+  "name": "沙滩海鸥",
+  "prompt": "白灰色体素海鸥，生成站立观察与低头觅食两个姿态变体，黑色翼尖和黄色喙保持清楚可辨。\n全局资产美术方向：明快友好的体素热带公园风格；暖米色沙滩、青绿色草地、饱和但自然的椰叶与浅木设施，结构轮廓简洁、比例略夸张且易于远距离辨识。\n资产角色：潮线上的自然生物点缀；目标尺度：small。\n只生成一个可复用的独立物体，不要生成地面、背景、天空、完整场景或多个分散物体。",
+  "tags": [
+    "coastal",
+    "bird",
+    "shore",
+    "seagull",
+    "shore-gull"
+  ],
+  "modelJson": {
+    "name": "白灰色体素海鸥（站立观察/低头觅食双姿态）",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "body",
+        "name": "躯干",
+        "transform": {
+          "pos": [
+            0,
+            0.9,
+            0
+          ]
+        }
+      },
+      {
+        "id": "left_wing",
+        "name": "左翼",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            -0.48,
+            0.48,
+            0.35
+          ]
+        }
+      },
+      {
+        "id": "right_wing",
+        "name": "右翼",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0.48,
+            0.48,
+            0.35
+          ]
+        }
+      },
+      {
+        "id": "tail",
+        "name": "尾羽",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0,
+            0.35,
+            -0.53
+          ]
+        }
+      },
+      {
+        "id": "neck",
+        "name": "颈部姿态关节：观察直立或觅食前俯",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0,
+            0.56,
+            0.34
+          ]
+        }
+      },
+      {
+        "id": "head",
+        "name": "头部",
+        "parent": "neck",
+        "transform": {
+          "pos": [
+            0,
+            0.4,
+            0.1
+          ]
+        }
+      },
+      {
+        "id": "left_leg",
+        "name": "左腿",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            -0.27,
+            0.01,
+            0.08
+          ]
+        }
+      },
+      {
+        "id": "left_foot",
+        "name": "左足",
+        "parent": "left_leg",
+        "transform": {
+          "pos": [
+            0,
+            -0.69,
+            0
+          ]
+        }
+      },
+      {
+        "id": "right_leg",
+        "name": "右腿",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0.27,
+            0.01,
+            0.08
+          ]
+        }
+      },
+      {
+        "id": "right_foot",
+        "name": "右足",
+        "parent": "right_leg",
+        "transform": {
+          "pos": [
+            0,
+            -0.69,
+            0
+          ]
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0,
+            0.28,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.1,
+            "height": 0.64,
+            "depth": 1.25
+          },
+          "color": 14278112
+        }
+      },
+      {
+        "id": "m1",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0,
+            0.29,
+            0.48
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.82,
+            "height": 0.58,
+            "depth": 0.62
+          },
+          "color": 15987176
+        }
+      },
+      {
+        "id": "m2",
+        "parent": "left_wing",
+        "transform": {
+          "pos": [
+            -0.13,
+            -0.13,
+            -0.43
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.24,
+            "height": 0.46,
+            "depth": 1.08
+          },
+          "color": 11449786
+        }
+      },
+      {
+        "id": "m3",
+        "parent": "left_wing",
+        "transform": {
+          "pos": [
+            -0.14,
+            -0.19,
+            -0.86
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.26,
+            "height": 0.35,
+            "depth": 0.42
+          },
+          "color": 2435628
+        }
+      },
+      {
+        "id": "m4",
+        "parent": "right_wing",
+        "transform": {
+          "pos": [
+            0.13,
+            -0.13,
+            -0.43
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.24,
+            "height": 0.46,
+            "depth": 1.08
+          },
+          "color": 11449786
+        }
+      },
+      {
+        "id": "m5",
+        "parent": "right_wing",
+        "transform": {
+          "pos": [
+            0.14,
+            -0.19,
+            -0.86
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.26,
+            "height": 0.35,
+            "depth": 0.42
+          },
+          "color": 2435628
+        }
+      },
+      {
+        "id": "m6",
+        "parent": "tail",
+        "transform": {
+          "pos": [
+            0,
+            -0.07,
+            -0.33
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.7,
+            "height": 0.18,
+            "depth": 0.58
+          },
+          "color": 15855848
+        }
+      },
+      {
+        "id": "m7",
+        "parent": "neck",
+        "transform": {
+          "pos": [
+            0,
+            0.23,
+            0.08
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.5,
+            "height": 0.58,
+            "depth": 0.45
+          },
+          "color": 16052969
+        }
+      },
+      {
+        "id": "m8",
+        "parent": "head",
+        "transform": {
+          "pos": [
+            0,
+            0.22,
+            0.04
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.68,
+            "height": 0.62,
+            "depth": 0.66
+          },
+          "color": 16250349
+        }
+      },
+      {
+        "id": "m9",
+        "parent": "head",
+        "transform": {
+          "pos": [
+            -0.35,
+            0.31,
+            0.25
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.04,
+            "height": 0.11,
+            "depth": 0.11
+          },
+          "color": 1513754
+        }
+      },
+      {
+        "id": "m10",
+        "parent": "head",
+        "transform": {
+          "pos": [
+            0.35,
+            0.31,
+            0.25
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.04,
+            "height": 0.11,
+            "depth": 0.11
+          },
+          "color": 1513754
+        }
+      },
+      {
+        "id": "m11",
+        "parent": "head",
+        "transform": {
+          "pos": [
+            0,
+            0.17,
+            0.52
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.34,
+            "height": 0.2,
+            "depth": 0.52
+          },
+          "color": 15906354
+        }
+      },
+      {
+        "id": "m12",
+        "parent": "left_leg",
+        "transform": {
+          "pos": [
+            0,
+            -0.36,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.14,
+            "height": 0.68,
+            "depth": 0.14
+          },
+          "color": 15183153
+        }
+      },
+      {
+        "id": "m13",
+        "parent": "left_foot",
+        "transform": {
+          "pos": [
+            0,
+            -0.14,
+            0.19
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.28,
+            "height": 0.16,
+            "depth": 0.55
+          },
+          "color": 15183153
+        }
+      },
+      {
+        "id": "m14",
+        "parent": "right_leg",
+        "transform": {
+          "pos": [
+            0,
+            -0.36,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.14,
+            "height": 0.68,
+            "depth": 0.14
+          },
+          "color": 15183153
+        }
+      },
+      {
+        "id": "m15",
+        "parent": "right_foot",
+        "transform": {
+          "pos": [
+            0,
+            -0.14,
+            0.19
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.28,
+            "height": 0.16,
+            "depth": 0.55
+          },
+          "color": 15183153
+        }
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1786438920916,
+        "provider": "gpt",
+        "data": "OV8pC7qCDO0Un8zPs2gEr89MkqrQhS0FALFhSYZiJKjelBHZFkjbvyQqcZ8/qXmJ2FkiOuxY2YFPszqcUUEvi5cYlDeyVLCVxwHR/JZqQpLlxyOygeKPI0bGRle1EZLn7a39uzgHijIeLFfj/UcIHlBmlnWCGW991P5MDl1OssTgsVxZAoN7hjGcd/z1HPi2CgFPsVw8v2jHlhFWuh55KRyxd7VbUJw2HFwYpGlqVfGlxt6BykyAlre0js2m/hZXofkGXomwce8hMEM/iotOewo70NzhMUgIlAS4lNRLB40q5Tfj/7LgKIXHh9sNoDdxeeYmJpzMHwiYO+Icjjc1hs+j9bAU5xPnvJXrYZ7AKuAZuB8Kp/LvhD9P5FlcZtTgjAkLlF0HfpOpg8aK6cJvCUQWB9J4Nbwf/GR1v5hXxPQ++7/gfPRPiNJI9K5MjrWZ3QxJChOoLL4RBDNL6vwOea+lNhA+Dc48fVWuSnh4siJfZehCY7lKOhQjqr+77sXRDKM3wy4+H38++sFLg2jPIo374lGf08f9/fiNc000e/5rqH/GJfeeOmMqzEGs6XI4j4qgn0WGuwanWYHf0bSPQXk09SJGQhXyMYNCoox0NACdHuv1uehvwTarwglbOwXSpWBpyTaa0Tn/KyLDMsiWm+mPjWPcZvjfSfS1uj3nAqiO4QBOKoPC56zeY+zo8fh4uqMLmMhSLlIW+kWSKHhmj8kj+D+vN7BJSggElVAxgw8aMBw826NxkbeSkEQNxolpIH+FRM14AuYp/g3CB6LWswpZ+MtqA0hLRC/zNWn9vaQkoZh4IBTMZrKB7sQ8L3gl/+1J2Mz+9h1qnWO5emM+kURTqS+wM969cgoHAq7TtTjp/gXTMSEs3iq/tVfCW9pld7HeHu5Or9fEnEnqYOTRqelYN8zcJnaBEfVXnek6JT7YNGYicmafGCmHmpS6z2jdLNOAOEyxByqW50odL4dTZPVF7Q3vPHE68yAkn4XQ/zIKkiU40JijIF4AB6xTWiwW6H1vNW4B7rRek3mE94r/Caa+rID0Fi0dc8/eGyw7fsBKKJkbI/K7GGHvIdW1GipriNFRROIRvPqfOwPcmIxr0db6O+aoREZ3wrQ=",
+        "edits": ""
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -0.55,
+          0.86,
+          -0.66
+        ],
+        "max": [
+          0.55,
+          1.5000000000000002,
+          0.59
+        ],
+        "sourceNodeId": "m0"
+      },
+      {
+        "min": [
+          -0.41,
+          0.8999999999999998,
+          0.13499999999999995
+        ],
+        "max": [
+          0.41,
+          1.48,
+          0.755
+        ],
+        "sourceNodeId": "m1"
+      },
+      {
+        "min": [
+          -0.34,
+          1.77,
+          0.11499999999999999
+        ],
+        "max": [
+          0.34,
+          2.39,
+          0.775
+        ],
+        "sourceNodeId": "m8"
+      },
+      {
+        "min": [
+          -0.25,
+          1.4,
+          0.16
+        ],
+        "max": [
+          0.25,
+          1.98,
+          0.61
+        ],
+        "sourceNodeId": "m7"
+      },
+      {
+        "min": [
+          -0.73,
+          1.02,
+          -0.6550000000000001
+        ],
+        "max": [
+          -0.49,
+          1.48,
+          0.425
+        ],
+        "sourceNodeId": "m2"
+      },
+      {
+        "min": [
+          0.49,
+          1.02,
+          -0.6550000000000001
+        ],
+        "max": [
+          0.73,
+          1.48,
+          0.425
+        ],
+        "sourceNodeId": "m4"
+      }
+    ],
+    "sourceMeshCount": 16,
+    "candidateCount": 6,
+    "fallbackUsed": false
+  },
+  "footprintRadius": 0.775,
+  "sizeClass": "small",
+  "mode": "voxel",
+  "provider": "gpt",
+  "createdAt": 1786438925792,
+  "updatedAt": 1786438925792
+}

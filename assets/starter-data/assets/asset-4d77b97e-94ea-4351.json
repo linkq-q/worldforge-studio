@@ -1,0 +1,835 @@
+{
+  "id": "asset-4d77b97e-94ea-4351",
+  "name": "热带公园凉亭",
+  "prompt": "开放式浅木凉亭，宽檐屋顶带热带度假感，结构通透并能与椰树尺度协调。\n全局资产美术方向：明快友好的体素热带公园风格；暖米色沙滩、青绿色草地、饱和但自然的椰叶与浅木设施，结构轮廓简洁、比例略夸张且易于远距离辨识。\n资产角色：岛内草坪的次级休憩焦点；目标尺度：large。\n只生成一个可复用的独立物体，不要生成地面、背景、天空、完整场景或多个分散物体。",
+  "tags": [
+    "leisure",
+    "shade",
+    "tropical",
+    "pavilion",
+    "tropical-pavilion",
+    "island-gazebo"
+  ],
+  "modelJson": {
+    "name": "热带浅木宽檐凉亭",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "gazebo",
+        "name": "凉亭主体",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        }
+      },
+      {
+        "id": "platform",
+        "name": "抬高平台",
+        "parent": "gazebo",
+        "transform": {
+          "pos": [
+            0,
+            0.315,
+            1.575
+          ]
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ]
+      },
+      {
+        "id": "frame",
+        "name": "通透木架",
+        "parent": "gazebo",
+        "transform": {
+          "pos": [
+            0,
+            3.435,
+            0
+          ]
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ]
+      },
+      {
+        "id": "seating",
+        "name": "内置长椅",
+        "parent": "gazebo",
+        "transform": {
+          "pos": [
+            0,
+            1.245,
+            0
+          ]
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ]
+      },
+      {
+        "id": "roof",
+        "name": "宽檐屋顶",
+        "parent": "gazebo",
+        "transform": {
+          "pos": [
+            0,
+            4.945,
+            0
+          ]
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ]
+      },
+      {
+        "id": "m0",
+        "parent": "platform",
+        "transform": {
+          "pos": [
+            0,
+            0.135,
+            -1.575
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 7.8,
+            "height": 0.35,
+            "depth": 5.8
+          },
+          "color": 14268287
+        }
+      },
+      {
+        "id": "m1",
+        "parent": "platform",
+        "transform": {
+          "pos": [
+            0,
+            -0.135,
+            1.575
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 3.4,
+            "height": 0.22,
+            "depth": 0.8
+          },
+          "color": 14926991
+        }
+      },
+      {
+        "id": "m2",
+        "parent": "frame",
+        "transform": {
+          "pos": [
+            -3.25,
+            -0.985,
+            -2.25
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.34,
+            "height": 3.9,
+            "depth": 0.34
+          },
+          "color": 15058322
+        }
+      },
+      {
+        "id": "m3",
+        "parent": "frame",
+        "transform": {
+          "pos": [
+            -3.25,
+            0.985,
+            -2.25
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.48,
+            "height": 0.18,
+            "depth": 0.48
+          },
+          "color": 15782817
+        }
+      },
+      {
+        "id": "m4",
+        "parent": "frame",
+        "transform": {
+          "pos": [
+            -3.25,
+            -0.985,
+            2.25
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.34,
+            "height": 3.9,
+            "depth": 0.34
+          },
+          "color": 15058322
+        }
+      },
+      {
+        "id": "m5",
+        "parent": "frame",
+        "transform": {
+          "pos": [
+            -3.25,
+            0.985,
+            2.25
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.48,
+            "height": 0.18,
+            "depth": 0.48
+          },
+          "color": 15782817
+        }
+      },
+      {
+        "id": "m6",
+        "parent": "frame",
+        "transform": {
+          "pos": [
+            3.25,
+            -0.985,
+            -2.25
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.34,
+            "height": 3.9,
+            "depth": 0.34
+          },
+          "color": 15058322
+        }
+      },
+      {
+        "id": "m7",
+        "parent": "frame",
+        "transform": {
+          "pos": [
+            3.25,
+            0.985,
+            -2.25
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.48,
+            "height": 0.18,
+            "depth": 0.48
+          },
+          "color": 15782817
+        }
+      },
+      {
+        "id": "m8",
+        "parent": "frame",
+        "transform": {
+          "pos": [
+            3.25,
+            -0.985,
+            2.25
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.34,
+            "height": 3.9,
+            "depth": 0.34
+          },
+          "color": 15058322
+        }
+      },
+      {
+        "id": "m9",
+        "parent": "frame",
+        "transform": {
+          "pos": [
+            3.25,
+            0.985,
+            2.25
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.48,
+            "height": 0.18,
+            "depth": 0.48
+          },
+          "color": 15782817
+        }
+      },
+      {
+        "id": "m10",
+        "parent": "frame",
+        "transform": {
+          "pos": [
+            0,
+            0.815,
+            -2.25
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 7.25,
+            "height": 0.34,
+            "depth": 0.34
+          },
+          "color": 14201975
+        }
+      },
+      {
+        "id": "m11",
+        "parent": "frame",
+        "transform": {
+          "pos": [
+            0,
+            0.815,
+            2.25
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 7.25,
+            "height": 0.34,
+            "depth": 0.34
+          },
+          "color": 14201975
+        }
+      },
+      {
+        "id": "m12",
+        "parent": "frame",
+        "transform": {
+          "pos": [
+            -3.25,
+            0.815,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.34,
+            "height": 0.34,
+            "depth": 4.85
+          },
+          "color": 14201975
+        }
+      },
+      {
+        "id": "m13",
+        "parent": "frame",
+        "transform": {
+          "pos": [
+            3.25,
+            0.815,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.34,
+            "height": 0.34,
+            "depth": 4.85
+          },
+          "color": 14201975
+        }
+      },
+      {
+        "id": "m14",
+        "parent": "seating",
+        "transform": {
+          "pos": [
+            -2.75,
+            -0.025,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.75,
+            "height": 0.22,
+            "depth": 3.35
+          },
+          "color": 14728580
+        }
+      },
+      {
+        "id": "m15",
+        "parent": "seating",
+        "transform": {
+          "pos": [
+            -3.05,
+            0.425,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.22,
+            "height": 0.95,
+            "depth": 3.35
+          },
+          "color": 13871728
+        }
+      },
+      {
+        "id": "m16",
+        "parent": "seating",
+        "transform": {
+          "pos": [
+            -2.75,
+            -0.425,
+            -1.25
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.55,
+            "height": 0.65,
+            "depth": 0.3
+          },
+          "color": 13213027
+        }
+      },
+      {
+        "id": "m17",
+        "parent": "seating",
+        "transform": {
+          "pos": [
+            -2.75,
+            -0.425,
+            1.25
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.55,
+            "height": 0.65,
+            "depth": 0.3
+          },
+          "color": 13213027
+        }
+      },
+      {
+        "id": "m18",
+        "parent": "seating",
+        "transform": {
+          "pos": [
+            2.75,
+            -0.025,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.75,
+            "height": 0.22,
+            "depth": 3.35
+          },
+          "color": 14728580
+        }
+      },
+      {
+        "id": "m19",
+        "parent": "seating",
+        "transform": {
+          "pos": [
+            3.05,
+            0.425,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.22,
+            "height": 0.95,
+            "depth": 3.35
+          },
+          "color": 13871728
+        }
+      },
+      {
+        "id": "m20",
+        "parent": "seating",
+        "transform": {
+          "pos": [
+            2.75,
+            -0.425,
+            -1.25
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.55,
+            "height": 0.65,
+            "depth": 0.3
+          },
+          "color": 13213027
+        }
+      },
+      {
+        "id": "m21",
+        "parent": "seating",
+        "transform": {
+          "pos": [
+            2.75,
+            -0.425,
+            1.25
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.55,
+            "height": 0.65,
+            "depth": 0.3
+          },
+          "color": 13213027
+        }
+      },
+      {
+        "id": "m22",
+        "parent": "roof",
+        "transform": {
+          "pos": [
+            -2.27,
+            0.025,
+            0
+          ],
+          "quat": [
+            0.09,
+            -0.7,
+            0.09,
+            0.7
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 7.1,
+            "height": 0.24,
+            "depth": 4.7
+          },
+          "color": 13212508
+        }
+      },
+      {
+        "id": "m23",
+        "parent": "roof",
+        "transform": {
+          "pos": [
+            2.28,
+            0.025,
+            0
+          ],
+          "quat": [
+            0,
+            0,
+            -0.13,
+            0.99
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 4.7,
+            "height": 0.24,
+            "depth": 7.1
+          },
+          "color": 14002793
+        }
+      },
+      {
+        "id": "m24",
+        "parent": "roof",
+        "transform": {
+          "pos": [
+            0,
+            0.625,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.32,
+            "height": 0.28,
+            "depth": 7.35
+          },
+          "color": 12158286
+        }
+      },
+      {
+        "id": "m25",
+        "parent": "roof",
+        "transform": {
+          "pos": [
+            -4.55,
+            -0.625,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.28,
+            "height": 0.38,
+            "depth": 7.2
+          },
+          "color": 12158286
+        }
+      },
+      {
+        "id": "m26",
+        "parent": "roof",
+        "transform": {
+          "pos": [
+            4.55,
+            -0.625,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.28,
+            "height": 0.38,
+            "depth": 7.2
+          },
+          "color": 12158286
+        }
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1786438996213,
+        "provider": "gpt",
+        "data": "qfnoN87fna2nAWLZ8+cMIEt5d1TMqJ8sJ1caaErHswXJxVMxWNextVJ8m+ihGur/R3JSnO1rt2ZZy/gEWu9eaS+HBq0Bg1Fr+rL4A011gGcF6bvjDUg7DqVR6y2q6a7TL1zOidtt8qkfElwdhCCkuQo/dUHD+fJqmQHVTZCJTQu3tCUSXLdXAMBkgwrfLlquqJtww25Um89AQu5p4/LvBrBrHShIPjED2K0mUC+BXf+uFikNhzrpM84xgD9VjcvXz8yB7cvKGPmtP696nKdm8viRp1wzLips7VYogeh3/mkYzTzUIogWNBRmVIqNBqWclkdXc4pbecVRPaNWQScVkernjue66j+isUlVKj4aqrJgmwo3fJ5IMWBszdRVKrrKwEZABWYhoDcNGTBqYC6D2fXwt/AIszd9rsjmQCLPFeZUIHLQ5GfLXMBdb8frva+2IF6HucR59N94srmDckFDMLLSmXJlLvGCZHj3IAJVXWuWfvJHeurfPAYDA6c/NCIMxGChiXofJYxj7FFB3sVjZrQabfAJjTeZxiL7XQBQcQxhawbNi2Y67Fl0lCtVea34yfqspyc6iVqPJTsoHhN9DNgWgcojpsustJhJa2fyV6z4dqGXRdWcNTBBg6D2h4yzEsyE8oSoxOtxf3JN0V0V/D3ZvB6SQ30mXJFhd1l+7ahN7sBKjDDbQfPjIDaozYzfwN+FtCQVtCFJMN9PXdsbYlYUqyJGPv7dpH+gYF7Tk9sVcEa11YsQJ0eAbHXTXK8U4hDtiCH8GckNVvkKfZPT4KJF+wJNhONor4laqtWzAgn7j8711Ch8ZO+kg2xWsfK+FFHOULXB+2+lO2OymgES38xTUGtXYUHGposfop//BAooSbb11YLeRtHOTm/xZukcoJNoQBw5GD88I8sLg8PQIiZm/juW+tUU0gIgrC+7HIePLA8b2/ghV1We/zef8BQ/4JeBLvNFzwbe/P+Tlvb1PlX0Rr0q1qUVVw9uAdyecDZrK9i11vKa6wekyPDqqq+QzWwTSsFcSvwFM2ihVKj0OeipWH+/DIa/C4xQa2WSloFg02p29juNMmj+H7rZLcv4XA==",
+        "edits": ""
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -0.021311935807422522,
+          4.177358074222669,
+          -3.55
+        ],
+        "max": [
+          4.581311935807422,
+          5.622641925777332,
+          3.55
+        ],
+        "sourceNodeId": "m23"
+      },
+      {
+        "min": [
+          -4.573924914675768,
+          4.189443886769725,
+          -3.5500000000000007
+        ],
+        "max": [
+          0.0339249146757683,
+          5.610556113230276,
+          3.5500000000000007
+        ],
+        "sourceNodeId": "m22"
+      },
+      {
+        "min": [
+          -3.9,
+          0.20500000000000002,
+          -2.9
+        ],
+        "max": [
+          3.9,
+          0.555,
+          2.9
+        ],
+        "sourceNodeId": "m0"
+      },
+      {
+        "min": [
+          -3.625,
+          4.01,
+          -2.42
+        ],
+        "max": [
+          3.625,
+          4.35,
+          -2.08
+        ],
+        "sourceNodeId": "m10"
+      },
+      {
+        "min": [
+          -3.625,
+          4.01,
+          2.08
+        ],
+        "max": [
+          3.625,
+          4.35,
+          2.42
+        ],
+        "sourceNodeId": "m11"
+      },
+      {
+        "min": [
+          -4.6899999999999995,
+          4.06,
+          -3.6
+        ],
+        "max": [
+          -4.41,
+          4.44,
+          3.6
+        ],
+        "sourceNodeId": "m25"
+      },
+      {
+        "min": [
+          4.41,
+          4.06,
+          -3.6
+        ],
+        "max": [
+          4.6899999999999995,
+          4.44,
+          3.6
+        ],
+        "sourceNodeId": "m26"
+      },
+      {
+        "min": [
+          -3.1599999999999997,
+          1.1250000000000002,
+          -1.675
+        ],
+        "max": [
+          -2.94,
+          2.075,
+          1.675
+        ],
+        "sourceNodeId": "m15"
+      },
+      {
+        "min": [
+          2.94,
+          1.1250000000000002,
+          -1.675
+        ],
+        "max": [
+          3.1599999999999997,
+          2.075,
+          1.675
+        ],
+        "sourceNodeId": "m19"
+      },
+      {
+        "min": [
+          -0.16,
+          5.36,
+          -3.675
+        ],
+        "max": [
+          0.16,
+          5.64,
+          3.675
+        ],
+        "sourceNodeId": "m24"
+      },
+      {
+        "min": [
+          -1.7,
+          0,
+          2.75
+        ],
+        "max": [
+          1.7,
+          0.21999999999999997,
+          3.55
+        ],
+        "sourceNodeId": "m1"
+      },
+      {
+        "min": [
+          -3.42,
+          4.01,
+          -2.425
+        ],
+        "max": [
+          -3.08,
+          4.35,
+          2.425
+        ],
+        "sourceNodeId": "m12"
+      }
+    ],
+    "sourceMeshCount": 27,
+    "candidateCount": 23,
+    "fallbackUsed": false
+  },
+  "footprintRadius": 4.6899999999999995,
+  "sizeClass": "large",
+  "mode": "voxel",
+  "provider": "gpt",
+  "createdAt": 1786439003411,
+  "updatedAt": 1786439003411
+}

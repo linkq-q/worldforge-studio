@@ -1,0 +1,9036 @@
+{
+  "id": "map-fa02f4af-8ba3-4d0d",
+  "seed": 3600214594,
+  "name": "餐厅样例",
+  "assetGenerationMode": "voxel",
+  "version": 16,
+  "createdAt": 1786529688181,
+  "updatedAt": 1786598228488,
+  "box": {
+    "size": [
+      30,
+      3,
+      15
+    ],
+    "colors": {
+      "floor": "#8a765e",
+      "ceiling": "#ded8ca",
+      "north": "#c9c0ae",
+      "south": "#c9c0ae",
+      "east": "#d1c8b7",
+      "west": "#d1c8b7"
+    }
+  },
+  "sceneMode": "indoor",
+  "playerHeight": 1.6,
+  "playerRadius": 0.38,
+  "worldScaleProfile": "balanced",
+  "room": {
+    "position": [
+      0,
+      0,
+      0
+    ],
+    "size": [
+      30,
+      3,
+      15
+    ],
+    "wallThickness": 0.16,
+    "openings": [
+      {
+        "id": "composition-daylight-wall-band-retro-window-1-opening",
+        "kind": "window",
+        "wall": "east",
+        "offset": -4.5,
+        "bottom": 0.9600000000000001,
+        "width": 2.1224727272727275,
+        "height": 1.5200000000000002
+      },
+      {
+        "id": "composition-daylight-wall-band-retro-window-2-opening",
+        "kind": "window",
+        "wall": "east",
+        "offset": 0,
+        "bottom": 0.9600000000000001,
+        "width": 2.1224727272727275,
+        "height": 1.5200000000000002
+      },
+      {
+        "id": "composition-daylight-wall-band-retro-window-3-opening",
+        "kind": "window",
+        "wall": "east",
+        "offset": 4.5,
+        "bottom": 0.9600000000000001,
+        "width": 2.1224727272727275,
+        "height": 1.5200000000000002
+      }
+    ]
+  },
+  "lighting": {
+    "sunPosition": [
+      -18,
+      24,
+      14
+    ]
+  },
+  "terrain": {
+    "resolutionX": 33,
+    "resolutionZ": 33,
+    "heights": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ]
+  },
+  "grassLayers": [],
+  "waterBodies": [],
+  "paintStrokes": [],
+  "objects": [
+    {
+      "id": "composition-service-wall-menu-board-1",
+      "name": "墙面菜单牌",
+      "parentId": null,
+      "assetId": "asset-cefddfd4-ab78-456d",
+      "transform": {
+        "position": [
+          0,
+          0.010000000000000231,
+          7.0975
+        ],
+        "rotation": [
+          0,
+          3.141592653589793,
+          0
+        ],
+        "scale": [
+          1,
+          0.8975903614457832,
+          1
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-entrance-clearance-entrance-door-1",
+      "name": "80年代独立入口门",
+      "parentId": null,
+      "assetId": "asset-40d0c363-aa04-4371",
+      "transform": {
+        "position": [
+          0,
+          0,
+          -7.135125
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          0.6194999999999999,
+          0.6194999999999999,
+          0.6194999999999999
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-daylight-wall-band-retro-window-1",
+      "name": "对称玻璃窗",
+      "parentId": null,
+      "assetId": "asset-057c2628-1bb9-4d58",
+      "transform": {
+        "position": [
+          14.92,
+          0.9600000000000001,
+          -4.5
+        ],
+        "rotation": [
+          0,
+          -1.5707963267948966,
+          0
+        ],
+        "scale": [
+          0.3432727272727273,
+          0.29090909090909095,
+          0.3432727272727273
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false,
+      "roomOpeningId": "composition-daylight-wall-band-retro-window-1-opening"
+    },
+    {
+      "id": "composition-daylight-wall-band-retro-window-2",
+      "name": "对称玻璃窗",
+      "parentId": null,
+      "assetId": "asset-057c2628-1bb9-4d58",
+      "transform": {
+        "position": [
+          14.92,
+          0.9600000000000001,
+          0
+        ],
+        "rotation": [
+          0,
+          -1.5707963267948966,
+          0
+        ],
+        "scale": [
+          0.3432727272727273,
+          0.29090909090909095,
+          0.3432727272727273
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false,
+      "roomOpeningId": "composition-daylight-wall-band-retro-window-2-opening"
+    },
+    {
+      "id": "composition-daylight-wall-band-retro-window-3",
+      "name": "对称玻璃窗",
+      "parentId": null,
+      "assetId": "asset-057c2628-1bb9-4d58",
+      "transform": {
+        "position": [
+          14.92,
+          0.9600000000000001,
+          4.5
+        ],
+        "rotation": [
+          0,
+          -1.5707963267948966,
+          0
+        ],
+        "scale": [
+          0.3432727272727273,
+          0.29090909090909095,
+          0.3432727272727273
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false,
+      "roomOpeningId": "composition-daylight-wall-band-retro-window-3-opening"
+    },
+    {
+      "id": "composition-dining-floor-pendant-lamp-1",
+      "name": "矩形网格吊灯",
+      "parentId": null,
+      "assetId": "asset-c5980c12-ec28-4993",
+      "transform": {
+        "position": [
+          -9,
+          1.4542,
+          -2
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          0.82,
+          0.82,
+          0.82
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-dining-floor-pendant-lamp-2",
+      "name": "矩形网格吊灯",
+      "parentId": null,
+      "assetId": "asset-c5980c12-ec28-4993",
+      "transform": {
+        "position": [
+          -3,
+          1.4542,
+          -2
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          0.82,
+          0.82,
+          0.82
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-dining-floor-pendant-lamp-3",
+      "name": "矩形网格吊灯",
+      "parentId": null,
+      "assetId": "asset-c5980c12-ec28-4993",
+      "transform": {
+        "position": [
+          3,
+          1.4542,
+          -2
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          0.82,
+          0.82,
+          0.82
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-dining-floor-pendant-lamp-4",
+      "name": "矩形网格吊灯",
+      "parentId": null,
+      "assetId": "asset-c5980c12-ec28-4993",
+      "transform": {
+        "position": [
+          9,
+          1.4542,
+          -2
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          0.82,
+          0.82,
+          0.82
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-dining-floor-pendant-lamp-5",
+      "name": "矩形网格吊灯",
+      "parentId": null,
+      "assetId": "asset-c5980c12-ec28-4993",
+      "transform": {
+        "position": [
+          -9,
+          1.4542,
+          2
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          0.82,
+          0.82,
+          0.82
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-dining-floor-pendant-lamp-8",
+      "name": "矩形网格吊灯",
+      "parentId": null,
+      "assetId": "asset-c5980c12-ec28-4993",
+      "transform": {
+        "position": [
+          -3,
+          1.4542,
+          2
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          0.82,
+          0.82,
+          0.82
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-dining-floor-pendant-lamp-9",
+      "name": "矩形网格吊灯",
+      "parentId": null,
+      "assetId": "asset-c5980c12-ec28-4993",
+      "transform": {
+        "position": [
+          3,
+          1.4542,
+          2
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          0.82,
+          0.82,
+          0.82
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-dining-floor-pendant-lamp-12",
+      "name": "矩形网格吊灯",
+      "parentId": null,
+      "assetId": "asset-c5980c12-ec28-4993",
+      "transform": {
+        "position": [
+          9,
+          1.4542,
+          2
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          0.82,
+          0.82,
+          0.82
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-service-wall-storage-shelf-1",
+      "name": "墙边储物货架",
+      "parentId": null,
+      "assetId": "asset-38306122-37ae-485f",
+      "transform": {
+        "position": [
+          -4.800000000000001,
+          0,
+          -6.9879647557635325
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1.0067841474548913,
+          0.6742857142857142,
+          1.0067841474548913
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-service-wall-storage-shelf-4",
+      "name": "墙边储物货架",
+      "parentId": null,
+      "assetId": "asset-38306122-37ae-485f",
+      "transform": {
+        "position": [
+          4.800000000000001,
+          0,
+          -6.991749922810122
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          0.9941669239662588,
+          0.6742857142857142,
+          0.9941669239662588
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-service-wall-retro-wall-poster-1",
+      "name": "80年代墙面海报",
+      "parentId": null,
+      "assetId": "asset-e4223da4-d675-4a3b",
+      "transform": {
+        "position": [
+          -5.25,
+          1.0885808450891825,
+          -7.258462432686929
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          0.8697340513394378,
+          0.8697340513394378,
+          0.8697340513394378
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-service-wall-retro-wall-poster-2",
+      "name": "80年代墙面海报",
+      "parentId": null,
+      "assetId": "asset-e4223da4-d675-4a3b",
+      "transform": {
+        "position": [
+          -1.75,
+          1.0018096427555012,
+          -7.246499491188717
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          0.997338760653675,
+          0.997338760653675,
+          0.997338760653675
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-service-wall-retro-wall-poster-3",
+      "name": "80年代墙面海报",
+      "parentId": null,
+      "assetId": "asset-e4223da4-d675-4a3b",
+      "transform": {
+        "position": [
+          1.75,
+          1.0452288918069192,
+          -7.252485600892498
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          0.9334869238133542,
+          0.9334869238133542,
+          0.9334869238133542
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-service-wall-retro-wall-poster-4",
+      "name": "80年代墙面海报",
+      "parentId": null,
+      "assetId": "asset-e4223da4-d675-4a3b",
+      "transform": {
+        "position": [
+          5.25,
+          1.0309000016131256,
+          -7.250510110516514
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          0.9545588211571687,
+          0.9545588211571687,
+          0.9545588211571687
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-daylight-wall-band-storage-shelf-1",
+      "name": "墙边储物货架",
+      "parentId": null,
+      "assetId": "asset-38306122-37ae-485f",
+      "transform": {
+        "position": [
+          14.148800000000001,
+          0,
+          -2.5
+        ],
+        "rotation": [
+          0,
+          -1.5707963267948966,
+          0
+        ],
+        "scale": [
+          2.303999999999993,
+          0.6742857142857142,
+          2.303999999999993
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-daylight-wall-band-storage-shelf-2",
+      "name": "墙边储物货架",
+      "parentId": null,
+      "assetId": "asset-38306122-37ae-485f",
+      "transform": {
+        "position": [
+          14.148800000000001,
+          0,
+          2.5
+        ],
+        "rotation": [
+          0,
+          -1.5707963267948966,
+          0
+        ],
+        "scale": [
+          2.303999999999997,
+          0.6742857142857142,
+          2.303999999999997
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "required-wall-clock-required-indoor-0-5",
+      "name": "墙面时钟",
+      "parentId": null,
+      "assetId": "asset-2103351a-35a4-4cc0",
+      "transform": {
+        "position": [
+          4.5,
+          0,
+          7.2505
+        ],
+        "rotation": [
+          0,
+          3.141592653589793,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "required-family-presence-service-counter-indoor-0-5",
+      "name": "后侧服务柜台",
+      "parentId": null,
+      "assetId": "asset-67d09c7f-3170-452b",
+      "transform": {
+        "position": [
+          -9.615085714285714,
+          0,
+          -6.766114285714286
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1.0971428571428572,
+          1.0971428571428572,
+          1.0971428571428572
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "required-family-presence-condiment-station-indoor-0-1",
+      "name": "调味品服务台",
+      "parentId": null,
+      "assetId": "asset-58373d9d-1cee-4909",
+      "transform": {
+        "position": [
+          0,
+          0,
+          0
+        ],
+        "rotation": [
+          0,
+          1.5707963267948966,
+          0
+        ],
+        "scale": [
+          3.8068965517241367,
+          0.6627411167512691,
+          3.8068965517241367
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "obj-45537d19-0512-416c",
+      "name": "四人餐桌-西外-南",
+      "parentId": null,
+      "assetId": "asset-58c9346e-753e-481d",
+      "transform": {
+        "position": [
+          -11,
+          0,
+          -3.5
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "obj-08496c9e-2bd6-4596",
+      "name": "餐椅-西外-南-西",
+      "parentId": null,
+      "assetId": "asset-667e5597-12ff-426e",
+      "transform": {
+        "position": [
+          -12.15,
+          0,
+          -3.5
+        ],
+        "rotation": [
+          0,
+          1.5707963267948966,
+          0
+        ],
+        "scale": [
+          0.9376744186046493,
+          0.6053201970443348,
+          0.9376744186046493
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "obj-29c34389-bc7d-47d5",
+      "name": "餐椅-西外-南-东",
+      "parentId": null,
+      "assetId": "asset-667e5597-12ff-426e",
+      "transform": {
+        "position": [
+          -9.85,
+          0,
+          -3.5
+        ],
+        "rotation": [
+          0,
+          4.71238898038469,
+          0
+        ],
+        "scale": [
+          0.9376744186046493,
+          0.6053201970443348,
+          0.9376744186046493
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "obj-1914a45c-9918-4e19",
+      "name": "餐椅-西外-南-南",
+      "parentId": null,
+      "assetId": "asset-667e5597-12ff-426e",
+      "transform": {
+        "position": [
+          -11,
+          0,
+          -4.45
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          0.8488421052631561,
+          0.6053201970443348,
+          0.8488421052631561
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "obj-ffcf526d-5416-40ff",
+      "name": "餐椅-西外-南-北",
+      "parentId": null,
+      "assetId": "asset-667e5597-12ff-426e",
+      "transform": {
+        "position": [
+          -11,
+          0,
+          -2.55
+        ],
+        "rotation": [
+          0,
+          3.141592653589793,
+          0
+        ],
+        "scale": [
+          0.8488421052631561,
+          0.6053201970443348,
+          0.8488421052631561
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "obj-aea2e202-e06c-4b1e",
+      "name": "四人餐桌-西中-南",
+      "parentId": null,
+      "assetId": "asset-58c9346e-753e-481d",
+      "transform": {
+        "position": [
+          -7,
+          0,
+          -3.5
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "obj-23ff1228-e7f9-46d8",
+      "name": "餐椅-西中-南-西",
+      "parentId": null,
+      "assetId": "asset-667e5597-12ff-426e",
+      "transform": {
+        "position": [
+          -8.15,
+          0,
+          -3.5
+        ],
+        "rotation": [
+          0,
+          1.5707963267948966,
+          0
+        ],
+        "scale": [
+          0.9376744186046508,
+          0.6053201970443348,
+          0.9376744186046508
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "obj-8f276f32-3e55-41c5",
+      "name": "餐椅-西中-南-东",
+      "parentId": null,
+      "assetId": "asset-667e5597-12ff-426e",
+      "transform": {
+        "position": [
+          -5.85,
+          0,
+          -3.5
+        ],
+        "rotation": [
+          0,
+          4.71238898038469,
+          0
+        ],
+        "scale": [
+          0.9376744186046493,
+          0.6053201970443348,
+          0.9376744186046493
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "obj-a0ad8a7c-0a7a-41fe",
+      "name": "餐椅-西中-南-南",
+      "parentId": null,
+      "assetId": "asset-667e5597-12ff-426e",
+      "transform": {
+        "position": [
+          -7,
+          0,
+          -4.45
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          0.8488421052631587,
+          0.6053201970443348,
+          0.8488421052631587
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "obj-d573f08a-e12e-4d8f",
+      "name": "餐椅-西中-南-北",
+      "parentId": null,
+      "assetId": "asset-667e5597-12ff-426e",
+      "transform": {
+        "position": [
+          -7,
+          0,
+          -2.55
+        ],
+        "rotation": [
+          0,
+          3.141592653589793,
+          0
+        ],
+        "scale": [
+          0.8488421052631587,
+          0.6053201970443348,
+          0.8488421052631587
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "obj-aaba6eea-123c-4299",
+      "name": "四人餐桌-西内-南",
+      "parentId": null,
+      "assetId": "asset-58c9346e-753e-481d",
+      "transform": {
+        "position": [
+          -3,
+          0,
+          -3.5
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "obj-87c93eea-2673-4ceb",
+      "name": "餐椅-西内-南-西",
+      "parentId": null,
+      "assetId": "asset-667e5597-12ff-426e",
+      "transform": {
+        "position": [
+          -4.15,
+          0,
+          -3.5
+        ],
+        "rotation": [
+          0,
+          1.5707963267948966,
+          0
+        ],
+        "scale": [
+          0.9376744186046517,
+          0.6053201970443348,
+          0.9376744186046517
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "obj-933e6300-6b92-478e",
+      "name": "餐椅-西内-南-东",
+      "parentId": null,
+      "assetId": "asset-667e5597-12ff-426e",
+      "transform": {
+        "position": [
+          -1.85,
+          0,
+          -3.5
+        ],
+        "rotation": [
+          0,
+          4.71238898038469,
+          0
+        ],
+        "scale": [
+          0.9376744186046508,
+          0.6053201970443348,
+          0.9376744186046508
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "obj-1c428fd1-a2f6-45d6",
+      "name": "餐椅-西内-南-南",
+      "parentId": null,
+      "assetId": "asset-667e5597-12ff-426e",
+      "transform": {
+        "position": [
+          -3,
+          0,
+          -4.45
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          0.8488421052631574,
+          0.6053201970443348,
+          0.8488421052631574
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "obj-c3eba464-5a4f-4109",
+      "name": "餐椅-西内-南-北",
+      "parentId": null,
+      "assetId": "asset-667e5597-12ff-426e",
+      "transform": {
+        "position": [
+          -3,
+          0,
+          -2.55
+        ],
+        "rotation": [
+          0,
+          3.141592653589793,
+          0
+        ],
+        "scale": [
+          0.8488421052631574,
+          0.6053201970443348,
+          0.8488421052631574
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "obj-859920c8-d768-4fbc",
+      "name": "四人餐桌-东内-南",
+      "parentId": null,
+      "assetId": "asset-58c9346e-753e-481d",
+      "transform": {
+        "position": [
+          3,
+          0,
+          -3.5
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "obj-9b966911-df20-485e",
+      "name": "餐椅-东内-南-西",
+      "parentId": null,
+      "assetId": "asset-667e5597-12ff-426e",
+      "transform": {
+        "position": [
+          1.85,
+          0,
+          -3.5
+        ],
+        "rotation": [
+          0,
+          1.5707963267948966,
+          0
+        ],
+        "scale": [
+          0.9376744186046508,
+          0.6053201970443348,
+          0.9376744186046508
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "obj-ecc18684-2aaf-4109",
+      "name": "餐椅-东内-南-东",
+      "parentId": null,
+      "assetId": "asset-667e5597-12ff-426e",
+      "transform": {
+        "position": [
+          4.15,
+          0,
+          -3.5
+        ],
+        "rotation": [
+          0,
+          4.71238898038469,
+          0
+        ],
+        "scale": [
+          0.9376744186046501,
+          0.6053201970443348,
+          0.9376744186046501
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "obj-aa9764fe-1834-4484",
+      "name": "餐椅-东内-南-南",
+      "parentId": null,
+      "assetId": "asset-667e5597-12ff-426e",
+      "transform": {
+        "position": [
+          3,
+          0,
+          -4.45
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          0.8488421052631574,
+          0.6053201970443348,
+          0.8488421052631574
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "obj-83479c97-9b31-4f64",
+      "name": "餐椅-东内-南-北",
+      "parentId": null,
+      "assetId": "asset-667e5597-12ff-426e",
+      "transform": {
+        "position": [
+          3,
+          0,
+          -2.55
+        ],
+        "rotation": [
+          0,
+          3.141592653589793,
+          0
+        ],
+        "scale": [
+          0.8488421052631574,
+          0.6053201970443348,
+          0.8488421052631574
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "obj-1cbfeba9-fc5e-4517",
+      "name": "四人餐桌-东中-南",
+      "parentId": null,
+      "assetId": "asset-58c9346e-753e-481d",
+      "transform": {
+        "position": [
+          7,
+          0,
+          -3.5
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "obj-00777846-0a5d-4c5c",
+      "name": "餐椅-东中-南-西",
+      "parentId": null,
+      "assetId": "asset-667e5597-12ff-426e",
+      "transform": {
+        "position": [
+          5.85,
+          0,
+          -3.5
+        ],
+        "rotation": [
+          0,
+          1.5707963267948966,
+          0
+        ],
+        "scale": [
+          0.9376744186046525,
+          0.6053201970443348,
+          0.9376744186046525
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "obj-8d4c9ce8-74d8-46d0",
+      "name": "餐椅-东中-南-东",
+      "parentId": null,
+      "assetId": "asset-667e5597-12ff-426e",
+      "transform": {
+        "position": [
+          8.15,
+          0,
+          -3.5
+        ],
+        "rotation": [
+          0,
+          4.71238898038469,
+          0
+        ],
+        "scale": [
+          0.9376744186046493,
+          0.6053201970443348,
+          0.9376744186046493
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "obj-49bb2491-1bac-4ebb",
+      "name": "餐椅-东中-南-南",
+      "parentId": null,
+      "assetId": "asset-667e5597-12ff-426e",
+      "transform": {
+        "position": [
+          7,
+          0,
+          -4.45
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          0.8488421052631587,
+          0.6053201970443348,
+          0.8488421052631587
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "obj-f9d92b4f-e5b1-433b",
+      "name": "餐椅-东中-南-北",
+      "parentId": null,
+      "assetId": "asset-667e5597-12ff-426e",
+      "transform": {
+        "position": [
+          7,
+          0,
+          -2.55
+        ],
+        "rotation": [
+          0,
+          3.141592653589793,
+          0
+        ],
+        "scale": [
+          0.8488421052631587,
+          0.6053201970443348,
+          0.8488421052631587
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "obj-41e21992-e38c-479b",
+      "name": "四人餐桌-东外-南",
+      "parentId": null,
+      "assetId": "asset-58c9346e-753e-481d",
+      "transform": {
+        "position": [
+          11,
+          0,
+          -3.5
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "obj-12c9c0c7-55bb-4691",
+      "name": "餐椅-东外-南-西",
+      "parentId": null,
+      "assetId": "asset-667e5597-12ff-426e",
+      "transform": {
+        "position": [
+          9.85,
+          0,
+          -3.5
+        ],
+        "rotation": [
+          0,
+          1.5707963267948966,
+          0
+        ],
+        "scale": [
+          0.9376744186046493,
+          0.6053201970443348,
+          0.9376744186046493
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "obj-d52edecf-2801-4a05",
+      "name": "餐椅-东外-南-东",
+      "parentId": null,
+      "assetId": "asset-667e5597-12ff-426e",
+      "transform": {
+        "position": [
+          12.15,
+          0,
+          -3.5
+        ],
+        "rotation": [
+          0,
+          4.71238898038469,
+          0
+        ],
+        "scale": [
+          0.9376744186046493,
+          0.6053201970443348,
+          0.9376744186046493
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "obj-d0b746b8-59d9-4833",
+      "name": "餐椅-东外-南-南",
+      "parentId": null,
+      "assetId": "asset-667e5597-12ff-426e",
+      "transform": {
+        "position": [
+          11,
+          0,
+          -4.45
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          0.8488421052631561,
+          0.6053201970443348,
+          0.8488421052631561
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "obj-362c60a1-98d8-4974",
+      "name": "餐椅-东外-南-北",
+      "parentId": null,
+      "assetId": "asset-667e5597-12ff-426e",
+      "transform": {
+        "position": [
+          11,
+          0,
+          -2.55
+        ],
+        "rotation": [
+          0,
+          3.141592653589793,
+          0
+        ],
+        "scale": [
+          0.8488421052631561,
+          0.6053201970443348,
+          0.8488421052631561
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "obj-1d6f05ce-b0bf-44a5",
+      "name": "四人餐桌-西外-中",
+      "parentId": null,
+      "assetId": "asset-58c9346e-753e-481d",
+      "transform": {
+        "position": [
+          -11,
+          0,
+          0
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "obj-3ede2a78-0f7b-4339",
+      "name": "餐椅-西外-中-西",
+      "parentId": null,
+      "assetId": "asset-667e5597-12ff-426e",
+      "transform": {
+        "position": [
+          -12.15,
+          0,
+          0
+        ],
+        "rotation": [
+          0,
+          1.5707963267948966,
+          0
+        ],
+        "scale": [
+          0.9376744186046493,
+          0.6053201970443348,
+          0.9376744186046493
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "obj-5210b224-2a2e-4ef7",
+      "name": "餐椅-西外-中-东",
+      "parentId": null,
+      "assetId": "asset-667e5597-12ff-426e",
+      "transform": {
+        "position": [
+          -9.85,
+          0,
+          0
+        ],
+        "rotation": [
+          0,
+          4.71238898038469,
+          0
+        ],
+        "scale": [
+          0.9376744186046493,
+          0.6053201970443348,
+          0.9376744186046493
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "obj-54316e0b-2b9c-4462",
+      "name": "餐椅-西外-中-南",
+      "parentId": null,
+      "assetId": "asset-667e5597-12ff-426e",
+      "transform": {
+        "position": [
+          -11,
+          0,
+          -0.95
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          0.8488421052631561,
+          0.6053201970443348,
+          0.8488421052631561
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "obj-c9f5446d-b345-4933",
+      "name": "餐椅-西外-中-北",
+      "parentId": null,
+      "assetId": "asset-667e5597-12ff-426e",
+      "transform": {
+        "position": [
+          -11,
+          0,
+          0.95
+        ],
+        "rotation": [
+          0,
+          3.141592653589793,
+          0
+        ],
+        "scale": [
+          0.8488421052631561,
+          0.6053201970443348,
+          0.8488421052631561
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "obj-8a0b4d50-db5a-461d",
+      "name": "四人餐桌-西中-中",
+      "parentId": null,
+      "assetId": "asset-58c9346e-753e-481d",
+      "transform": {
+        "position": [
+          -7,
+          0,
+          0
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "obj-5515e1e6-893d-4bb5",
+      "name": "餐椅-西中-中-西",
+      "parentId": null,
+      "assetId": "asset-667e5597-12ff-426e",
+      "transform": {
+        "position": [
+          -8.15,
+          0,
+          0
+        ],
+        "rotation": [
+          0,
+          1.5707963267948966,
+          0
+        ],
+        "scale": [
+          0.9376744186046508,
+          0.6053201970443348,
+          0.9376744186046508
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "obj-7782ca01-796b-4faa",
+      "name": "餐椅-西中-中-东",
+      "parentId": null,
+      "assetId": "asset-667e5597-12ff-426e",
+      "transform": {
+        "position": [
+          -5.85,
+          0,
+          0
+        ],
+        "rotation": [
+          0,
+          4.71238898038469,
+          0
+        ],
+        "scale": [
+          0.9376744186046493,
+          0.6053201970443348,
+          0.9376744186046493
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "obj-e52e8223-3543-4d81",
+      "name": "餐椅-西中-中-南",
+      "parentId": null,
+      "assetId": "asset-667e5597-12ff-426e",
+      "transform": {
+        "position": [
+          -7,
+          0,
+          -0.95
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          0.8488421052631587,
+          0.6053201970443348,
+          0.8488421052631587
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "obj-050de793-425c-4233",
+      "name": "餐椅-西中-中-北",
+      "parentId": null,
+      "assetId": "asset-667e5597-12ff-426e",
+      "transform": {
+        "position": [
+          -7,
+          0,
+          0.95
+        ],
+        "rotation": [
+          0,
+          3.141592653589793,
+          0
+        ],
+        "scale": [
+          0.8488421052631587,
+          0.6053201970443348,
+          0.8488421052631587
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "obj-540eb27d-4446-4b5c",
+      "name": "四人餐桌-西内-中",
+      "parentId": null,
+      "assetId": "asset-58c9346e-753e-481d",
+      "transform": {
+        "position": [
+          -3,
+          0,
+          0
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "obj-6c1a2622-2b9e-4e9d",
+      "name": "餐椅-西内-中-西",
+      "parentId": null,
+      "assetId": "asset-667e5597-12ff-426e",
+      "transform": {
+        "position": [
+          -4.15,
+          0,
+          0
+        ],
+        "rotation": [
+          0,
+          1.5707963267948966,
+          0
+        ],
+        "scale": [
+          0.9376744186046517,
+          0.6053201970443348,
+          0.9376744186046517
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "obj-51cc0407-24a5-4a31",
+      "name": "餐椅-西内-中-东",
+      "parentId": null,
+      "assetId": "asset-667e5597-12ff-426e",
+      "transform": {
+        "position": [
+          -1.85,
+          0,
+          0
+        ],
+        "rotation": [
+          0,
+          4.71238898038469,
+          0
+        ],
+        "scale": [
+          0.9376744186046508,
+          0.6053201970443348,
+          0.9376744186046508
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "obj-e631788b-fa8b-41fa",
+      "name": "餐椅-西内-中-南",
+      "parentId": null,
+      "assetId": "asset-667e5597-12ff-426e",
+      "transform": {
+        "position": [
+          -3,
+          0,
+          -0.95
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          0.8488421052631574,
+          0.6053201970443348,
+          0.8488421052631574
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "obj-3a80907d-ec3f-4d03",
+      "name": "餐椅-西内-中-北",
+      "parentId": null,
+      "assetId": "asset-667e5597-12ff-426e",
+      "transform": {
+        "position": [
+          -3,
+          0,
+          0.95
+        ],
+        "rotation": [
+          0,
+          3.141592653589793,
+          0
+        ],
+        "scale": [
+          0.8488421052631574,
+          0.6053201970443348,
+          0.8488421052631574
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "obj-6fa8df8e-16de-4fdd",
+      "name": "四人餐桌-东内-中",
+      "parentId": null,
+      "assetId": "asset-58c9346e-753e-481d",
+      "transform": {
+        "position": [
+          3,
+          0,
+          0
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "obj-10479f94-f55c-4e65",
+      "name": "餐椅-东内-中-西",
+      "parentId": null,
+      "assetId": "asset-667e5597-12ff-426e",
+      "transform": {
+        "position": [
+          1.85,
+          0,
+          0
+        ],
+        "rotation": [
+          0,
+          1.5707963267948966,
+          0
+        ],
+        "scale": [
+          0.9376744186046508,
+          0.6053201970443348,
+          0.9376744186046508
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "obj-67d83b84-bf72-4c04",
+      "name": "餐椅-东内-中-东",
+      "parentId": null,
+      "assetId": "asset-667e5597-12ff-426e",
+      "transform": {
+        "position": [
+          4.15,
+          0,
+          0
+        ],
+        "rotation": [
+          0,
+          4.71238898038469,
+          0
+        ],
+        "scale": [
+          0.9376744186046501,
+          0.6053201970443348,
+          0.9376744186046501
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "obj-47354913-9eba-49f6",
+      "name": "餐椅-东内-中-南",
+      "parentId": null,
+      "assetId": "asset-667e5597-12ff-426e",
+      "transform": {
+        "position": [
+          3,
+          0,
+          -0.95
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          0.8488421052631574,
+          0.6053201970443348,
+          0.8488421052631574
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "obj-b808caac-0d9e-44ca",
+      "name": "餐椅-东内-中-北",
+      "parentId": null,
+      "assetId": "asset-667e5597-12ff-426e",
+      "transform": {
+        "position": [
+          3,
+          0,
+          0.95
+        ],
+        "rotation": [
+          0,
+          3.141592653589793,
+          0
+        ],
+        "scale": [
+          0.8488421052631574,
+          0.6053201970443348,
+          0.8488421052631574
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "obj-8908a231-3022-44be",
+      "name": "四人餐桌-东中-中",
+      "parentId": null,
+      "assetId": "asset-58c9346e-753e-481d",
+      "transform": {
+        "position": [
+          7,
+          0,
+          0
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "obj-c56698b3-6d79-4b24",
+      "name": "餐椅-东中-中-西",
+      "parentId": null,
+      "assetId": "asset-667e5597-12ff-426e",
+      "transform": {
+        "position": [
+          5.85,
+          0,
+          0
+        ],
+        "rotation": [
+          0,
+          1.5707963267948966,
+          0
+        ],
+        "scale": [
+          0.9376744186046525,
+          0.6053201970443348,
+          0.9376744186046525
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "obj-24bcfed1-7a95-4eec",
+      "name": "餐椅-东中-中-东",
+      "parentId": null,
+      "assetId": "asset-667e5597-12ff-426e",
+      "transform": {
+        "position": [
+          8.15,
+          0,
+          0
+        ],
+        "rotation": [
+          0,
+          4.71238898038469,
+          0
+        ],
+        "scale": [
+          0.9376744186046493,
+          0.6053201970443348,
+          0.9376744186046493
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "obj-f3c5bb6b-a912-4089",
+      "name": "餐椅-东中-中-南",
+      "parentId": null,
+      "assetId": "asset-667e5597-12ff-426e",
+      "transform": {
+        "position": [
+          7,
+          0,
+          -0.95
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          0.8488421052631587,
+          0.6053201970443348,
+          0.8488421052631587
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "obj-0713830c-ac2b-4624",
+      "name": "餐椅-东中-中-北",
+      "parentId": null,
+      "assetId": "asset-667e5597-12ff-426e",
+      "transform": {
+        "position": [
+          7,
+          0,
+          0.95
+        ],
+        "rotation": [
+          0,
+          3.141592653589793,
+          0
+        ],
+        "scale": [
+          0.8488421052631587,
+          0.6053201970443348,
+          0.8488421052631587
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "obj-73d7bd4e-a3ba-45e7",
+      "name": "四人餐桌-东外-中",
+      "parentId": null,
+      "assetId": "asset-58c9346e-753e-481d",
+      "transform": {
+        "position": [
+          11,
+          0,
+          0
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "obj-49ee5266-493b-4eae",
+      "name": "餐椅-东外-中-西",
+      "parentId": null,
+      "assetId": "asset-667e5597-12ff-426e",
+      "transform": {
+        "position": [
+          9.85,
+          0,
+          0
+        ],
+        "rotation": [
+          0,
+          1.5707963267948966,
+          0
+        ],
+        "scale": [
+          0.9376744186046493,
+          0.6053201970443348,
+          0.9376744186046493
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "obj-5a057ae9-e5b3-446a",
+      "name": "餐椅-东外-中-东",
+      "parentId": null,
+      "assetId": "asset-667e5597-12ff-426e",
+      "transform": {
+        "position": [
+          12.15,
+          0,
+          0
+        ],
+        "rotation": [
+          0,
+          4.71238898038469,
+          0
+        ],
+        "scale": [
+          0.9376744186046493,
+          0.6053201970443348,
+          0.9376744186046493
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "obj-eaaa8162-0727-4ec3",
+      "name": "餐椅-东外-中-南",
+      "parentId": null,
+      "assetId": "asset-667e5597-12ff-426e",
+      "transform": {
+        "position": [
+          11,
+          0,
+          -0.95
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          0.8488421052631561,
+          0.6053201970443348,
+          0.8488421052631561
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "obj-7e779ff4-4a90-41e1",
+      "name": "餐椅-东外-中-北",
+      "parentId": null,
+      "assetId": "asset-667e5597-12ff-426e",
+      "transform": {
+        "position": [
+          11,
+          0,
+          0.95
+        ],
+        "rotation": [
+          0,
+          3.141592653589793,
+          0
+        ],
+        "scale": [
+          0.8488421052631561,
+          0.6053201970443348,
+          0.8488421052631561
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "obj-885e2734-cb4a-411c",
+      "name": "四人餐桌-西外-北",
+      "parentId": null,
+      "assetId": "asset-58c9346e-753e-481d",
+      "transform": {
+        "position": [
+          -11,
+          0,
+          3.5
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "obj-0678ee93-53f1-4faf",
+      "name": "餐椅-西外-北-西",
+      "parentId": null,
+      "assetId": "asset-667e5597-12ff-426e",
+      "transform": {
+        "position": [
+          -12.15,
+          0,
+          3.5
+        ],
+        "rotation": [
+          0,
+          1.5707963267948966,
+          0
+        ],
+        "scale": [
+          0.9376744186046493,
+          0.6053201970443348,
+          0.9376744186046493
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "obj-3437041d-f1db-48e6",
+      "name": "餐椅-西外-北-东",
+      "parentId": null,
+      "assetId": "asset-667e5597-12ff-426e",
+      "transform": {
+        "position": [
+          -9.85,
+          0,
+          3.5
+        ],
+        "rotation": [
+          0,
+          4.71238898038469,
+          0
+        ],
+        "scale": [
+          0.9376744186046493,
+          0.6053201970443348,
+          0.9376744186046493
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "obj-305d05e0-e60f-4ac9",
+      "name": "餐椅-西外-北-南",
+      "parentId": null,
+      "assetId": "asset-667e5597-12ff-426e",
+      "transform": {
+        "position": [
+          -11,
+          0,
+          2.55
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          0.8488421052631561,
+          0.6053201970443348,
+          0.8488421052631561
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "obj-abba8f3e-22d0-4139",
+      "name": "餐椅-西外-北-北",
+      "parentId": null,
+      "assetId": "asset-667e5597-12ff-426e",
+      "transform": {
+        "position": [
+          -11,
+          0,
+          4.45
+        ],
+        "rotation": [
+          0,
+          3.141592653589793,
+          0
+        ],
+        "scale": [
+          0.8488421052631561,
+          0.6053201970443348,
+          0.8488421052631561
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "obj-7f874f4e-70bb-460a",
+      "name": "四人餐桌-西中-北",
+      "parentId": null,
+      "assetId": "asset-58c9346e-753e-481d",
+      "transform": {
+        "position": [
+          -7,
+          0,
+          3.5
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "obj-9e42cb6c-fe96-489c",
+      "name": "餐椅-西中-北-西",
+      "parentId": null,
+      "assetId": "asset-667e5597-12ff-426e",
+      "transform": {
+        "position": [
+          -8.15,
+          0,
+          3.5
+        ],
+        "rotation": [
+          0,
+          1.5707963267948966,
+          0
+        ],
+        "scale": [
+          0.9376744186046508,
+          0.6053201970443348,
+          0.9376744186046508
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "obj-eb096e97-9fc1-48c5",
+      "name": "餐椅-西中-北-东",
+      "parentId": null,
+      "assetId": "asset-667e5597-12ff-426e",
+      "transform": {
+        "position": [
+          -5.85,
+          0,
+          3.5
+        ],
+        "rotation": [
+          0,
+          4.71238898038469,
+          0
+        ],
+        "scale": [
+          0.9376744186046493,
+          0.6053201970443348,
+          0.9376744186046493
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "obj-015351dd-8500-4741",
+      "name": "餐椅-西中-北-南",
+      "parentId": null,
+      "assetId": "asset-667e5597-12ff-426e",
+      "transform": {
+        "position": [
+          -7,
+          0,
+          2.55
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          0.8488421052631587,
+          0.6053201970443348,
+          0.8488421052631587
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "obj-ffa50f17-18cc-417d",
+      "name": "餐椅-西中-北-北",
+      "parentId": null,
+      "assetId": "asset-667e5597-12ff-426e",
+      "transform": {
+        "position": [
+          -7,
+          0,
+          4.45
+        ],
+        "rotation": [
+          0,
+          3.141592653589793,
+          0
+        ],
+        "scale": [
+          0.8488421052631587,
+          0.6053201970443348,
+          0.8488421052631587
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "obj-1d263e8c-1997-4e1d",
+      "name": "四人餐桌-西内-北",
+      "parentId": null,
+      "assetId": "asset-58c9346e-753e-481d",
+      "transform": {
+        "position": [
+          -3,
+          0,
+          3.5
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "obj-9992638e-da33-41ce",
+      "name": "餐椅-西内-北-西",
+      "parentId": null,
+      "assetId": "asset-667e5597-12ff-426e",
+      "transform": {
+        "position": [
+          -4.15,
+          0,
+          3.5
+        ],
+        "rotation": [
+          0,
+          1.5707963267948966,
+          0
+        ],
+        "scale": [
+          0.9376744186046517,
+          0.6053201970443348,
+          0.9376744186046517
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "obj-2b9ea804-61c8-4c98",
+      "name": "餐椅-西内-北-东",
+      "parentId": null,
+      "assetId": "asset-667e5597-12ff-426e",
+      "transform": {
+        "position": [
+          -1.85,
+          0,
+          3.5
+        ],
+        "rotation": [
+          0,
+          4.71238898038469,
+          0
+        ],
+        "scale": [
+          0.9376744186046508,
+          0.6053201970443348,
+          0.9376744186046508
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "obj-c97b5d35-0778-4b32",
+      "name": "餐椅-西内-北-南",
+      "parentId": null,
+      "assetId": "asset-667e5597-12ff-426e",
+      "transform": {
+        "position": [
+          -3,
+          0,
+          2.55
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          0.8488421052631574,
+          0.6053201970443348,
+          0.8488421052631574
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "obj-4629a197-9523-4adb",
+      "name": "餐椅-西内-北-北",
+      "parentId": null,
+      "assetId": "asset-667e5597-12ff-426e",
+      "transform": {
+        "position": [
+          -3,
+          0,
+          4.45
+        ],
+        "rotation": [
+          0,
+          3.141592653589793,
+          0
+        ],
+        "scale": [
+          0.8488421052631574,
+          0.6053201970443348,
+          0.8488421052631574
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "obj-4407cfc0-2f23-46e7",
+      "name": "四人餐桌-东内-北",
+      "parentId": null,
+      "assetId": "asset-58c9346e-753e-481d",
+      "transform": {
+        "position": [
+          3,
+          0,
+          3.5
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "obj-38e88fdc-1711-4eb3",
+      "name": "餐椅-东内-北-西",
+      "parentId": null,
+      "assetId": "asset-667e5597-12ff-426e",
+      "transform": {
+        "position": [
+          1.85,
+          0,
+          3.5
+        ],
+        "rotation": [
+          0,
+          1.5707963267948966,
+          0
+        ],
+        "scale": [
+          0.9376744186046508,
+          0.6053201970443348,
+          0.9376744186046508
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "obj-6c79bf49-4f9f-4d44",
+      "name": "餐椅-东内-北-东",
+      "parentId": null,
+      "assetId": "asset-667e5597-12ff-426e",
+      "transform": {
+        "position": [
+          4.15,
+          0,
+          3.5
+        ],
+        "rotation": [
+          0,
+          4.71238898038469,
+          0
+        ],
+        "scale": [
+          0.9376744186046501,
+          0.6053201970443348,
+          0.9376744186046501
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "obj-11d65249-2931-4760",
+      "name": "餐椅-东内-北-南",
+      "parentId": null,
+      "assetId": "asset-667e5597-12ff-426e",
+      "transform": {
+        "position": [
+          3,
+          0,
+          2.55
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          0.8488421052631574,
+          0.6053201970443348,
+          0.8488421052631574
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "obj-306f6f3e-1e53-4751",
+      "name": "餐椅-东内-北-北",
+      "parentId": null,
+      "assetId": "asset-667e5597-12ff-426e",
+      "transform": {
+        "position": [
+          3,
+          0,
+          4.45
+        ],
+        "rotation": [
+          0,
+          3.141592653589793,
+          0
+        ],
+        "scale": [
+          0.8488421052631574,
+          0.6053201970443348,
+          0.8488421052631574
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "obj-53de39cd-0b65-4877",
+      "name": "四人餐桌-东中-北",
+      "parentId": null,
+      "assetId": "asset-58c9346e-753e-481d",
+      "transform": {
+        "position": [
+          7,
+          0,
+          3.5
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "obj-586b6f94-5574-4c25",
+      "name": "餐椅-东中-北-西",
+      "parentId": null,
+      "assetId": "asset-667e5597-12ff-426e",
+      "transform": {
+        "position": [
+          5.85,
+          0,
+          3.5
+        ],
+        "rotation": [
+          0,
+          1.5707963267948966,
+          0
+        ],
+        "scale": [
+          0.9376744186046525,
+          0.6053201970443348,
+          0.9376744186046525
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "obj-1195895c-7e09-4404",
+      "name": "餐椅-东中-北-东",
+      "parentId": null,
+      "assetId": "asset-667e5597-12ff-426e",
+      "transform": {
+        "position": [
+          8.15,
+          0,
+          3.5
+        ],
+        "rotation": [
+          0,
+          4.71238898038469,
+          0
+        ],
+        "scale": [
+          0.9376744186046493,
+          0.6053201970443348,
+          0.9376744186046493
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "obj-ba8128eb-bae4-4d6d",
+      "name": "餐椅-东中-北-南",
+      "parentId": null,
+      "assetId": "asset-667e5597-12ff-426e",
+      "transform": {
+        "position": [
+          7,
+          0,
+          2.55
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          0.8488421052631587,
+          0.6053201970443348,
+          0.8488421052631587
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "obj-115e5e2d-b758-49fe",
+      "name": "餐椅-东中-北-北",
+      "parentId": null,
+      "assetId": "asset-667e5597-12ff-426e",
+      "transform": {
+        "position": [
+          7,
+          0,
+          4.45
+        ],
+        "rotation": [
+          0,
+          3.141592653589793,
+          0
+        ],
+        "scale": [
+          0.8488421052631587,
+          0.6053201970443348,
+          0.8488421052631587
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "obj-a94005f7-e967-47df",
+      "name": "四人餐桌-东外-北",
+      "parentId": null,
+      "assetId": "asset-58c9346e-753e-481d",
+      "transform": {
+        "position": [
+          11,
+          0,
+          3.5
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "obj-7ce1dba6-1dfe-4b4a",
+      "name": "餐椅-东外-北-西",
+      "parentId": null,
+      "assetId": "asset-667e5597-12ff-426e",
+      "transform": {
+        "position": [
+          9.85,
+          0,
+          3.5
+        ],
+        "rotation": [
+          0,
+          1.5707963267948966,
+          0
+        ],
+        "scale": [
+          0.9376744186046493,
+          0.6053201970443348,
+          0.9376744186046493
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "obj-860fcc9c-8484-49ed",
+      "name": "餐椅-东外-北-东",
+      "parentId": null,
+      "assetId": "asset-667e5597-12ff-426e",
+      "transform": {
+        "position": [
+          12.15,
+          0,
+          3.5
+        ],
+        "rotation": [
+          0,
+          4.71238898038469,
+          0
+        ],
+        "scale": [
+          0.9376744186046493,
+          0.6053201970443348,
+          0.9376744186046493
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "obj-59692ac4-dae5-4fd2",
+      "name": "餐椅-东外-北-南",
+      "parentId": null,
+      "assetId": "asset-667e5597-12ff-426e",
+      "transform": {
+        "position": [
+          11,
+          0,
+          2.55
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          0.8488421052631561,
+          0.6053201970443348,
+          0.8488421052631561
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "obj-96145251-cf03-44b3",
+      "name": "餐椅-东外-北-北",
+      "parentId": null,
+      "assetId": "asset-667e5597-12ff-426e",
+      "transform": {
+        "position": [
+          11,
+          0,
+          4.45
+        ],
+        "rotation": [
+          0,
+          3.141592653589793,
+          0
+        ],
+        "scale": [
+          0.8488421052631561,
+          0.6053201970443348,
+          0.8488421052631561
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    }
+  ],
+  "spawnPoints": [
+    [
+      0,
+      0,
+      -6.2
+    ]
+  ],
+  "spawnYaw": 0,
+  "confirmedAt": 1786598228474,
+  "renderSchemeId": "render-6d04102b-0cf0-4a5c",
+  "renderPromptSuggestions": [
+    "暖白与琥珀色混合照明，突出吊灯网格和木质餐桌。",
+    "采用轻微胶片颗粒、褪色红橙色点缀和80年代社区餐厅的怀旧材质表现。"
+  ],
+  "materialTagPolicy": {
+    "disabled": [
+      "base:fur"
+    ]
+  },
+  "visualSemantics": {
+    "version": 1,
+    "zones": [
+      {
+        "id": "entrance-clearance",
+        "tags": [],
+        "center": [
+          0,
+          -5.8500000000000005
+        ],
+        "radius": 4.65,
+        "intensity": 0.72
+      },
+      {
+        "id": "central-circulation-spine",
+        "tags": [],
+        "center": [
+          0,
+          0
+        ],
+        "radius": 3.15,
+        "intensity": 0.9
+      },
+      {
+        "id": "dining-floor",
+        "tags": [],
+        "center": [
+          0,
+          0
+        ],
+        "radius": 9,
+        "intensity": 1
+      },
+      {
+        "id": "service-wall",
+        "tags": [],
+        "center": [
+          0,
+          5.8500000000000005
+        ],
+        "radius": 5.25,
+        "intensity": 0.82
+      },
+      {
+        "id": "daylight-wall-band",
+        "tags": [
+          "forest"
+        ],
+        "center": [
+          0,
+          0
+        ],
+        "radius": 6.9,
+        "intensity": 0.68
+      }
+    ],
+    "wind": {
+      "direction": [
+        0.9701425001453319,
+        0.24253562503633297
+      ],
+      "speed": 0.22,
+      "gustStrength": 0.18,
+      "gustFrequency": 0.12
+    }
+  },
+  "layout": {
+    "version": 1,
+    "globalPrompt": "",
+    "regions": [],
+    "edgeMask": {
+      "kind": "none",
+      "points": [
+        [
+          -15,
+          -7.5
+        ],
+        [
+          15,
+          -7.5
+        ],
+        [
+          15,
+          7.5
+        ],
+        [
+          -15,
+          7.5
+        ]
+      ],
+      "seed": 1,
+      "irregularity": 0.22
+    },
+    "stitchSources": [],
+    "seams": []
+  },
+  "collisionBake": {
+    "version": 1,
+    "sourceHash": "1arohc4",
+    "sourceBoxCount": 280,
+    "boxes": [
+      {
+        "objectId": "composition-service-wall-menu-board-1",
+        "min": [
+          -1.86,
+          0.20746987951807272,
+          7
+        ],
+        "max": [
+          1.86,
+          2.792530120481928,
+          7.12
+        ]
+      },
+      {
+        "objectId": "composition-service-wall-menu-board-1",
+        "min": [
+          -2.1,
+          0.010000000000000231,
+          7.02
+        ],
+        "max": [
+          2.1,
+          0.2074698795180725,
+          7.340000000000001
+        ]
+      },
+      {
+        "objectId": "composition-service-wall-menu-board-1",
+        "min": [
+          -2.1,
+          2.792530120481928,
+          7.02
+        ],
+        "max": [
+          2.1,
+          2.99,
+          7.340000000000001
+        ]
+      },
+      {
+        "objectId": "composition-service-wall-menu-board-1",
+        "min": [
+          -2.1,
+          0.19849397590361487,
+          7.02
+        ],
+        "max": [
+          -1.88,
+          2.801506024096386,
+          7.34
+        ]
+      },
+      {
+        "objectId": "composition-service-wall-menu-board-1",
+        "min": [
+          1.88,
+          0.19849397590361487,
+          7.0200000000000005
+        ],
+        "max": [
+          2.1,
+          2.801506024096386,
+          7.340000000000001
+        ]
+      },
+      {
+        "objectId": "composition-service-wall-menu-board-1",
+        "min": [
+          -1.74,
+          2.316807228915663,
+          6.92
+        ],
+        "max": [
+          1.74,
+          2.7476506024096388,
+          7
+        ]
+      },
+      {
+        "objectId": "composition-entrance-clearance-entrance-door-1",
+        "min": [
+          -0.5885250000000001,
+          0.03407249999999996,
+          -7.197075000000001
+        ],
+        "max": [
+          0.5885249999999997,
+          1.7996475,
+          -7.073175
+        ]
+      },
+      {
+        "objectId": "composition-entrance-clearance-entrance-door-1",
+        "min": [
+          -0.7805699999999999,
+          0,
+          -7.26522
+        ],
+        "max": [
+          -0.60711,
+          1.9824,
+          -7.0050300000000005
+        ]
+      },
+      {
+        "objectId": "composition-entrance-clearance-entrance-door-1",
+        "min": [
+          0.6071099999999998,
+          0,
+          -7.26522
+        ],
+        "max": [
+          0.7805699999999999,
+          1.9824,
+          -7.0050300000000005
+        ]
+      },
+      {
+        "objectId": "composition-entrance-clearance-entrance-door-1",
+        "min": [
+          -0.7805699999999999,
+          1.7965499999999999,
+          -7.26522
+        ],
+        "max": [
+          0.7805699999999999,
+          1.9823999999999997,
+          -7.0050300000000005
+        ]
+      },
+      {
+        "objectId": "composition-entrance-clearance-entrance-door-1",
+        "min": [
+          -0.7279125000000001,
+          0,
+          -7.29
+        ],
+        "max": [
+          0.7279124999999999,
+          0.11150999999999998,
+          -6.980250000000001
+        ]
+      },
+      {
+        "objectId": "composition-daylight-wall-band-retro-window-1",
+        "min": [
+          14.803287272727273,
+          0.9600000000000001,
+          -5.521236363636364
+        ],
+        "max": [
+          15.036712727272727,
+          1.0414545454545456,
+          -3.4787636363636363
+        ]
+      },
+      {
+        "objectId": "composition-daylight-wall-band-retro-window-2",
+        "min": [
+          14.803287272727273,
+          0.9600000000000001,
+          -1.0212363636363637
+        ],
+        "max": [
+          15.036712727272727,
+          1.0414545454545456,
+          1.0212363636363637
+        ]
+      },
+      {
+        "objectId": "composition-daylight-wall-band-retro-window-3",
+        "min": [
+          14.803287272727273,
+          0.9600000000000001,
+          3.4787636363636363
+        ],
+        "max": [
+          15.036712727272727,
+          1.0414545454545456,
+          5.521236363636364
+        ]
+      },
+      {
+        "objectId": "composition-daylight-wall-band-retro-window-1",
+        "min": [
+          14.865076363636364,
+          1.026909090909091,
+          -5.495490909090909
+        ],
+        "max": [
+          15.009250909090909,
+          1.12,
+          -3.504509090909091
+        ]
+      },
+      {
+        "objectId": "composition-daylight-wall-band-retro-window-2",
+        "min": [
+          14.865076363636364,
+          1.026909090909091,
+          -0.9954909090909091
+        ],
+        "max": [
+          15.009250909090909,
+          1.12,
+          0.9954909090909091
+        ]
+      },
+      {
+        "objectId": "composition-daylight-wall-band-retro-window-3",
+        "min": [
+          14.865076363636364,
+          1.026909090909091,
+          3.504509090909091
+        ],
+        "max": [
+          15.009250909090909,
+          1.12,
+          5.495490909090909
+        ]
+      },
+      {
+        "objectId": "composition-daylight-wall-band-retro-window-1",
+        "min": [
+          14.865076363636364,
+          2.306909090909091,
+          -5.495490909090909
+        ],
+        "max": [
+          15.009250909090909,
+          2.4000000000000004,
+          -3.504509090909091
+        ]
+      },
+      {
+        "objectId": "composition-daylight-wall-band-retro-window-2",
+        "min": [
+          14.865076363636364,
+          2.306909090909091,
+          -0.9954909090909091
+        ],
+        "max": [
+          15.009250909090909,
+          2.4000000000000004,
+          0.9954909090909091
+        ]
+      },
+      {
+        "objectId": "composition-daylight-wall-band-retro-window-3",
+        "min": [
+          14.865076363636364,
+          2.306909090909091,
+          3.504509090909091
+        ],
+        "max": [
+          15.009250909090909,
+          2.4000000000000004,
+          5.495490909090909
+        ]
+      },
+      {
+        "objectId": "composition-daylight-wall-band-retro-window-1",
+        "min": [
+          14.865076363636364,
+          1.1170909090909094,
+          -5.495490909090909
+        ],
+        "max": [
+          15.009250909090909,
+          2.309818181818182,
+          -5.385643636363636
+        ]
+      },
+      {
+        "objectId": "composition-daylight-wall-band-retro-window-1",
+        "min": [
+          14.865076363636364,
+          1.1170909090909094,
+          -3.6143563636363636
+        ],
+        "max": [
+          15.009250909090909,
+          2.309818181818182,
+          -3.5045090909090906
+        ]
+      },
+      {
+        "objectId": "composition-daylight-wall-band-retro-window-2",
+        "min": [
+          14.865076363636364,
+          1.1170909090909094,
+          -0.9954909090909092
+        ],
+        "max": [
+          15.009250909090909,
+          2.309818181818182,
+          -0.8856436363636364
+        ]
+      },
+      {
+        "objectId": "composition-daylight-wall-band-retro-window-2",
+        "min": [
+          14.865076363636364,
+          1.1170909090909094,
+          0.8856436363636364
+        ],
+        "max": [
+          15.009250909090909,
+          2.309818181818182,
+          0.9954909090909092
+        ]
+      },
+      {
+        "objectId": "composition-daylight-wall-band-retro-window-3",
+        "min": [
+          14.865076363636364,
+          1.1170909090909094,
+          3.5045090909090906
+        ],
+        "max": [
+          15.009250909090909,
+          2.309818181818182,
+          3.6143563636363636
+        ]
+      },
+      {
+        "objectId": "composition-daylight-wall-band-retro-window-3",
+        "min": [
+          14.865076363636364,
+          1.1170909090909094,
+          5.385643636363636
+        ],
+        "max": [
+          15.009250909090909,
+          2.309818181818182,
+          5.495490909090909
+        ]
+      },
+      {
+        "objectId": "composition-daylight-wall-band-retro-window-1",
+        "min": [
+          14.913134545454545,
+          1.1374545454545455,
+          -5.399374545454545
+        ],
+        "max": [
+          14.954327272727273,
+          1.6669090909090911,
+          -4.548058181818182
+        ]
+      },
+      {
+        "objectId": "composition-daylight-wall-band-retro-window-1",
+        "min": [
+          14.913134545454545,
+          1.1374545454545455,
+          -4.451941818181818
+        ],
+        "max": [
+          14.954327272727273,
+          1.6669090909090911,
+          -3.6006254545454546
+        ]
+      },
+      {
+        "objectId": "composition-daylight-wall-band-retro-window-2",
+        "min": [
+          14.913134545454545,
+          1.1374545454545455,
+          -0.8993745454545455
+        ],
+        "max": [
+          14.954327272727273,
+          1.6669090909090911,
+          -0.048058181818181785
+        ]
+      },
+      {
+        "objectId": "composition-daylight-wall-band-retro-window-2",
+        "min": [
+          14.913134545454545,
+          1.1374545454545455,
+          0.048058181818181785
+        ],
+        "max": [
+          14.954327272727273,
+          1.6669090909090911,
+          0.8993745454545455
+        ]
+      },
+      {
+        "objectId": "composition-daylight-wall-band-retro-window-3",
+        "min": [
+          14.913134545454545,
+          1.1374545454545455,
+          3.6006254545454546
+        ],
+        "max": [
+          14.954327272727273,
+          1.6669090909090911,
+          4.451941818181818
+        ]
+      },
+      {
+        "objectId": "composition-daylight-wall-band-retro-window-3",
+        "min": [
+          14.913134545454545,
+          1.1374545454545455,
+          4.548058181818182
+        ],
+        "max": [
+          14.954327272727273,
+          1.6669090909090911,
+          5.399374545454545
+        ]
+      },
+      {
+        "objectId": "composition-daylight-wall-band-retro-window-1",
+        "min": [
+          14.913134545454545,
+          1.76,
+          -5.399374545454545
+        ],
+        "max": [
+          14.954327272727273,
+          2.2894545454545456,
+          -4.548058181818182
+        ]
+      },
+      {
+        "objectId": "composition-daylight-wall-band-retro-window-1",
+        "min": [
+          14.913134545454545,
+          1.76,
+          -4.451941818181818
+        ],
+        "max": [
+          14.954327272727273,
+          2.2894545454545456,
+          -3.6006254545454546
+        ]
+      },
+      {
+        "objectId": "composition-daylight-wall-band-retro-window-2",
+        "min": [
+          14.913134545454545,
+          1.76,
+          -0.8993745454545455
+        ],
+        "max": [
+          14.954327272727273,
+          2.2894545454545456,
+          -0.048058181818181785
+        ]
+      },
+      {
+        "objectId": "composition-daylight-wall-band-retro-window-2",
+        "min": [
+          14.913134545454545,
+          1.76,
+          0.048058181818181785
+        ],
+        "max": [
+          14.954327272727273,
+          2.2894545454545456,
+          0.8993745454545455
+        ]
+      },
+      {
+        "objectId": "composition-daylight-wall-band-retro-window-3",
+        "min": [
+          14.913134545454545,
+          1.76,
+          3.6006254545454546
+        ],
+        "max": [
+          14.954327272727273,
+          2.2894545454545456,
+          4.451941818181818
+        ]
+      },
+      {
+        "objectId": "composition-daylight-wall-band-retro-window-3",
+        "min": [
+          14.913134545454545,
+          1.76,
+          4.548058181818182
+        ],
+        "max": [
+          14.954327272727273,
+          2.2894545454545456,
+          5.399374545454545
+        ]
+      },
+      {
+        "objectId": "composition-daylight-wall-band-retro-window-1",
+        "min": [
+          14.823883636363636,
+          1.0356363636363637,
+          -5.418254545454546
+        ],
+        "max": [
+          14.99552,
+          1.0821818181818184,
+          -3.5817454545454543
+        ]
+      },
+      {
+        "objectId": "composition-daylight-wall-band-retro-window-2",
+        "min": [
+          14.823883636363636,
+          1.0356363636363637,
+          -0.9182545454545454
+        ],
+        "max": [
+          14.99552,
+          1.0821818181818184,
+          0.9182545454545454
+        ]
+      },
+      {
+        "objectId": "composition-daylight-wall-band-retro-window-3",
+        "min": [
+          14.823883636363636,
+          1.0356363636363637,
+          3.5817454545454543
+        ],
+        "max": [
+          14.99552,
+          1.0821818181818184,
+          5.418254545454546
+        ]
+      },
+      {
+        "objectId": "composition-daylight-wall-band-retro-window-1",
+        "min": [
+          14.865076363636364,
+          1.6814545454545458,
+          -5.401090909090909
+        ],
+        "max": [
+          14.981789090909091,
+          1.7454545454545456,
+          -3.598909090909091
+        ]
+      },
+      {
+        "objectId": "composition-daylight-wall-band-retro-window-2",
+        "min": [
+          14.865076363636364,
+          1.6814545454545458,
+          -0.9010909090909092
+        ],
+        "max": [
+          14.981789090909091,
+          1.7454545454545456,
+          0.9010909090909092
+        ]
+      },
+      {
+        "objectId": "composition-daylight-wall-band-retro-window-3",
+        "min": [
+          14.865076363636364,
+          1.6814545454545458,
+          3.598909090909091
+        ],
+        "max": [
+          14.981789090909091,
+          1.7454545454545456,
+          5.401090909090909
+        ]
+      },
+      {
+        "objectId": "composition-daylight-wall-band-retro-window-1",
+        "min": [
+          14.865076363636364,
+          1.1170909090909094,
+          -4.53776
+        ],
+        "max": [
+          14.981789090909091,
+          2.309818181818182,
+          -4.46224
+        ]
+      },
+      {
+        "objectId": "composition-daylight-wall-band-retro-window-2",
+        "min": [
+          14.865076363636364,
+          1.1170909090909094,
+          -0.03776000000000001
+        ],
+        "max": [
+          14.981789090909091,
+          2.309818181818182,
+          0.03776
+        ]
+      },
+      {
+        "objectId": "composition-daylight-wall-band-retro-window-3",
+        "min": [
+          14.865076363636364,
+          1.1170909090909094,
+          4.46224
+        ],
+        "max": [
+          14.981789090909091,
+          2.309818181818182,
+          4.53776
+        ]
+      },
+      {
+        "objectId": "composition-dining-floor-pendant-lamp-1",
+        "min": [
+          -9.6068,
+          1.5279999999999998,
+          -2.3362
+        ],
+        "max": [
+          -8.3932,
+          1.7248,
+          -1.6638000000000002
+        ]
+      },
+      {
+        "objectId": "composition-dining-floor-pendant-lamp-5",
+        "min": [
+          -9.6068,
+          1.5279999999999998,
+          1.6638000000000002
+        ],
+        "max": [
+          -8.3932,
+          1.7248,
+          2.3362
+        ]
+      },
+      {
+        "objectId": "composition-dining-floor-pendant-lamp-2",
+        "min": [
+          -3.6068,
+          1.5279999999999998,
+          -2.3362
+        ],
+        "max": [
+          -2.3932,
+          1.7248,
+          -1.6638000000000002
+        ]
+      },
+      {
+        "objectId": "composition-dining-floor-pendant-lamp-8",
+        "min": [
+          -3.6068,
+          1.5279999999999998,
+          1.6638000000000002
+        ],
+        "max": [
+          -2.3932,
+          1.7248,
+          2.3362
+        ]
+      },
+      {
+        "objectId": "composition-dining-floor-pendant-lamp-3",
+        "min": [
+          2.3932,
+          1.5279999999999998,
+          -2.3362
+        ],
+        "max": [
+          3.6068,
+          1.7248,
+          -1.6638000000000002
+        ]
+      },
+      {
+        "objectId": "composition-dining-floor-pendant-lamp-9",
+        "min": [
+          2.3932,
+          1.5279999999999998,
+          1.6638000000000002
+        ],
+        "max": [
+          3.6068,
+          1.7248,
+          2.3362
+        ]
+      },
+      {
+        "objectId": "composition-dining-floor-pendant-lamp-4",
+        "min": [
+          8.3932,
+          1.5279999999999998,
+          -2.3362
+        ],
+        "max": [
+          9.6068,
+          1.7248,
+          -1.6638000000000002
+        ]
+      },
+      {
+        "objectId": "composition-dining-floor-pendant-lamp-12",
+        "min": [
+          8.3932,
+          1.5279999999999998,
+          1.6638000000000002
+        ],
+        "max": [
+          9.6068,
+          1.7248,
+          2.3362
+        ]
+      },
+      {
+        "objectId": "composition-dining-floor-pendant-lamp-1",
+        "min": [
+          -9.4182,
+          1.7001999999999997,
+          -2.2378
+        ],
+        "max": [
+          -8.5818,
+          1.8314,
+          -1.7622
+        ]
+      },
+      {
+        "objectId": "composition-dining-floor-pendant-lamp-5",
+        "min": [
+          -9.4182,
+          1.7001999999999997,
+          1.7622
+        ],
+        "max": [
+          -8.5818,
+          1.8314,
+          2.2378
+        ]
+      },
+      {
+        "objectId": "composition-dining-floor-pendant-lamp-2",
+        "min": [
+          -3.4182,
+          1.7001999999999997,
+          -2.2378
+        ],
+        "max": [
+          -2.5818,
+          1.8314,
+          -1.7622
+        ]
+      },
+      {
+        "objectId": "composition-dining-floor-pendant-lamp-8",
+        "min": [
+          -3.4182,
+          1.7001999999999997,
+          1.7622
+        ],
+        "max": [
+          -2.5818,
+          1.8314,
+          2.2378
+        ]
+      },
+      {
+        "objectId": "composition-dining-floor-pendant-lamp-3",
+        "min": [
+          2.5818,
+          1.7001999999999997,
+          -2.2378
+        ],
+        "max": [
+          3.4182,
+          1.8314,
+          -1.7622
+        ]
+      },
+      {
+        "objectId": "composition-dining-floor-pendant-lamp-9",
+        "min": [
+          2.5818,
+          1.7001999999999997,
+          1.7622
+        ],
+        "max": [
+          3.4182,
+          1.8314,
+          2.2378
+        ]
+      },
+      {
+        "objectId": "composition-dining-floor-pendant-lamp-4",
+        "min": [
+          8.5818,
+          1.7001999999999997,
+          -2.2378
+        ],
+        "max": [
+          9.4182,
+          1.8314,
+          -1.7622
+        ]
+      },
+      {
+        "objectId": "composition-dining-floor-pendant-lamp-12",
+        "min": [
+          8.5818,
+          1.7001999999999997,
+          1.7622
+        ],
+        "max": [
+          9.4182,
+          1.8314,
+          2.2378
+        ]
+      },
+      {
+        "objectId": "composition-service-wall-storage-shelf-1",
+        "min": [
+          -5.479579299532053,
+          0.030342857142857203,
+          -7.29
+        ],
+        "max": [
+          -4.120420700467949,
+          2.1543428571428564,
+          -7.169185902305413
+        ]
+      },
+      {
+        "objectId": "composition-service-wall-storage-shelf-1",
+        "min": [
+          -5.464477537320229,
+          0.0370857142857142,
+          -7.239660792627255
+        ],
+        "max": [
+          -5.323527756676544,
+          2.2285142857142852,
+          -6.756404401848908
+        ]
+      },
+      {
+        "objectId": "composition-service-wall-storage-shelf-1",
+        "min": [
+          -4.276472243323457,
+          0.0370857142857142,
+          -7.239660792627255
+        ],
+        "max": [
+          -4.135522462679773,
+          2.2285142857142852,
+          -6.756404401848908
+        ]
+      },
+      {
+        "objectId": "composition-service-wall-storage-shelf-1",
+        "min": [
+          -5.514816744692974,
+          2.157714285714285,
+          -7.269864317050902
+        ],
+        "max": [
+          -4.085183255307028,
+          2.2655999999999996,
+          -6.726200877425261
+        ]
+      },
+      {
+        "objectId": "composition-service-wall-storage-shelf-1",
+        "min": [
+          -5.394002646998387,
+          0.37085714285714283,
+          -7.249728634101804
+        ],
+        "max": [
+          -4.205997353001615,
+          0.46525714285714287,
+          -6.746336560374359
+        ]
+      },
+      {
+        "objectId": "composition-service-wall-storage-shelf-1",
+        "min": [
+          -5.394002646998387,
+          0.8158857142857141,
+          -7.249728634101804
+        ],
+        "max": [
+          -4.205997353001615,
+          0.9102857142857141,
+          -6.746336560374359
+        ]
+      },
+      {
+        "objectId": "composition-service-wall-storage-shelf-1",
+        "min": [
+          -5.394002646998387,
+          1.2609142857142854,
+          -7.249728634101804
+        ],
+        "max": [
+          -4.205997353001615,
+          1.3553142857142852,
+          -6.746336560374359
+        ]
+      },
+      {
+        "objectId": "composition-service-wall-storage-shelf-1",
+        "min": [
+          -5.394002646998387,
+          1.705942857142857,
+          -7.249728634101804
+        ],
+        "max": [
+          -4.205997353001615,
+          1.8003428571428568,
+          -6.746336560374359
+        ]
+      },
+      {
+        "objectId": "composition-service-wall-storage-shelf-4",
+        "min": [
+          4.1289373263227755,
+          0.030342857142857203,
+          -7.29
+        ],
+        "max": [
+          5.471062673677226,
+          2.1543428571428564,
+          -7.1706999691240485
+        ]
+      },
+      {
+        "objectId": "composition-service-wall-storage-shelf-4",
+        "min": [
+          4.14384983018227,
+          0.0370857142857142,
+          -7.240291653801687
+        ],
+        "max": [
+          4.283033199537546,
+          2.2285142857142852,
+          -6.763091530297882
+        ]
+      },
+      {
+        "objectId": "composition-service-wall-storage-shelf-4",
+        "min": [
+          5.316966800462455,
+          0.0370857142857142,
+          -7.240291653801687
+        ],
+        "max": [
+          5.4561501698177315,
+          2.2285142857142852,
+          -6.763091530297882
+        ]
+      },
+      {
+        "objectId": "composition-service-wall-storage-shelf-4",
+        "min": [
+          4.094141483983957,
+          2.157714285714285,
+          -7.2701166615206745
+        ],
+        "max": [
+          5.505858516016044,
+          2.2655999999999996,
+          -6.733266522578894
+        ]
+      },
+      {
+        "objectId": "composition-service-wall-storage-shelf-4",
+        "min": [
+          4.213441514859908,
+          0.37085714285714283,
+          -7.25023332304135
+        ],
+        "max": [
+          5.386558485140093,
+          0.46525714285714287,
+          -6.75314986105822
+        ]
+      },
+      {
+        "objectId": "composition-service-wall-storage-shelf-4",
+        "min": [
+          4.213441514859908,
+          0.8158857142857141,
+          -7.25023332304135
+        ],
+        "max": [
+          5.386558485140093,
+          0.9102857142857141,
+          -6.75314986105822
+        ]
+      },
+      {
+        "objectId": "composition-service-wall-storage-shelf-4",
+        "min": [
+          4.213441514859908,
+          1.2609142857142854,
+          -7.25023332304135
+        ],
+        "max": [
+          5.386558485140093,
+          1.3553142857142852,
+          -6.75314986105822
+        ]
+      },
+      {
+        "objectId": "composition-service-wall-storage-shelf-4",
+        "min": [
+          4.213441514859908,
+          1.705942857142857,
+          -7.25023332304135
+        ],
+        "max": [
+          5.386558485140093,
+          1.8003428571428568,
+          -6.75314986105822
+        ]
+      },
+      {
+        "objectId": "composition-service-wall-retro-wall-poster-1",
+        "min": [
+          -5.702261706696508,
+          1.0885808450891825,
+          -7.340000000000001
+        ],
+        "max": [
+          -4.797738293303492,
+          2.271419154910818,
+          -7.176924865373857
+        ]
+      },
+      {
+        "objectId": "composition-service-wall-retro-wall-poster-2",
+        "min": [
+          -2.268616155539911,
+          1.0018096427555012,
+          -7.339999999999999
+        ],
+        "max": [
+          -1.231383844460089,
+          2.3581903572444993,
+          -7.152998982377436
+        ]
+      },
+      {
+        "objectId": "composition-service-wall-retro-wall-poster-3",
+        "min": [
+          1.264586799617056,
+          1.0452288918069192,
+          -7.34
+        ],
+        "max": [
+          2.2354132003829443,
+          2.3147711081930806,
+          -7.164971201784995
+        ]
+      },
+      {
+        "objectId": "composition-service-wall-retro-wall-poster-4",
+        "min": [
+          4.753629412998272,
+          1.0309000016131256,
+          -7.339999999999999
+        ],
+        "max": [
+          5.746370587001728,
+          2.3290999983868748,
+          -7.16102022103303
+        ]
+      },
+      {
+        "objectId": "composition-daylight-wall-band-storage-shelf-1",
+        "min": [
+          14.56352,
+          0.030342857142857203,
+          -4.055199999999996
+        ],
+        "max": [
+          14.84,
+          2.1543428571428564,
+          -0.9448000000000045
+        ]
+      },
+      {
+        "objectId": "composition-daylight-wall-band-storage-shelf-2",
+        "min": [
+          14.56352,
+          0.030342857142857203,
+          0.9448000000000019
+        ],
+        "max": [
+          14.84,
+          2.1543428571428564,
+          4.055199999999998
+        ]
+      },
+      {
+        "objectId": "composition-daylight-wall-band-storage-shelf-1",
+        "min": [
+          13.618880000000003,
+          0.0370857142857142,
+          -4.020639999999995
+        ],
+        "max": [
+          14.7248,
+          2.2285142857142852,
+          -3.6980799999999965
+        ]
+      },
+      {
+        "objectId": "composition-daylight-wall-band-storage-shelf-1",
+        "min": [
+          13.618880000000003,
+          0.0370857142857142,
+          -1.3019200000000035
+        ],
+        "max": [
+          14.7248,
+          2.2285142857142852,
+          -0.9793600000000047
+        ]
+      },
+      {
+        "objectId": "composition-daylight-wall-band-storage-shelf-2",
+        "min": [
+          13.618880000000003,
+          0.0370857142857142,
+          0.979360000000002
+        ],
+        "max": [
+          14.7248,
+          2.2285142857142852,
+          1.3019200000000015
+        ]
+      },
+      {
+        "objectId": "composition-daylight-wall-band-storage-shelf-2",
+        "min": [
+          13.618880000000003,
+          0.0370857142857142,
+          3.6980799999999983
+        ],
+        "max": [
+          14.7248,
+          2.2285142857142852,
+          4.020639999999998
+        ]
+      },
+      {
+        "objectId": "composition-daylight-wall-band-storage-shelf-1",
+        "min": [
+          13.549760000000003,
+          2.157714285714285,
+          -4.135839999999995
+        ],
+        "max": [
+          14.79392,
+          2.2655999999999996,
+          -0.8641600000000049
+        ]
+      },
+      {
+        "objectId": "composition-daylight-wall-band-storage-shelf-2",
+        "min": [
+          13.549760000000003,
+          2.157714285714285,
+          0.864160000000002
+        ],
+        "max": [
+          14.79392,
+          2.2655999999999996,
+          4.135839999999998
+        ]
+      },
+      {
+        "objectId": "composition-daylight-wall-band-storage-shelf-1",
+        "min": [
+          13.595840000000003,
+          0.37085714285714283,
+          -3.859359999999996
+        ],
+        "max": [
+          14.74784,
+          0.46525714285714287,
+          -1.140640000000004
+        ]
+      },
+      {
+        "objectId": "composition-daylight-wall-band-storage-shelf-2",
+        "min": [
+          13.595840000000003,
+          0.37085714285714283,
+          1.1406400000000017
+        ],
+        "max": [
+          14.74784,
+          0.46525714285714287,
+          3.8593599999999983
+        ]
+      },
+      {
+        "objectId": "composition-daylight-wall-band-storage-shelf-1",
+        "min": [
+          13.595840000000003,
+          0.8158857142857141,
+          -3.859359999999996
+        ],
+        "max": [
+          14.74784,
+          0.9102857142857141,
+          -1.140640000000004
+        ]
+      },
+      {
+        "objectId": "composition-daylight-wall-band-storage-shelf-2",
+        "min": [
+          13.595840000000003,
+          0.8158857142857141,
+          1.1406400000000017
+        ],
+        "max": [
+          14.74784,
+          0.9102857142857141,
+          3.8593599999999983
+        ]
+      },
+      {
+        "objectId": "composition-daylight-wall-band-storage-shelf-1",
+        "min": [
+          13.595840000000003,
+          1.2609142857142854,
+          -3.859359999999996
+        ],
+        "max": [
+          14.74784,
+          1.3553142857142852,
+          -1.140640000000004
+        ]
+      },
+      {
+        "objectId": "composition-daylight-wall-band-storage-shelf-2",
+        "min": [
+          13.595840000000003,
+          1.2609142857142854,
+          1.1406400000000017
+        ],
+        "max": [
+          14.74784,
+          1.3553142857142852,
+          3.8593599999999983
+        ]
+      },
+      {
+        "objectId": "composition-daylight-wall-band-storage-shelf-1",
+        "min": [
+          13.595840000000003,
+          1.705942857142857,
+          -3.859359999999996
+        ],
+        "max": [
+          14.74784,
+          1.8003428571428568,
+          -1.140640000000004
+        ]
+      },
+      {
+        "objectId": "composition-daylight-wall-band-storage-shelf-2",
+        "min": [
+          13.595840000000003,
+          1.705942857142857,
+          1.1406400000000017
+        ],
+        "max": [
+          14.74784,
+          1.8003428571428568,
+          3.8593599999999983
+        ]
+      },
+      {
+        "objectId": "required-wall-clock-required-indoor-0-5",
+        "min": [
+          4.21,
+          0,
+          7.161
+        ],
+        "max": [
+          4.79,
+          0.5800000000000001,
+          7.34
+        ]
+      },
+      {
+        "objectId": "required-family-presence-service-counter-indoor-0-5",
+        "min": [
+          -11.315657142857143,
+          0.010971428571428552,
+          -7.180285714285715
+        ],
+        "max": [
+          -7.914514285714285,
+          0.8448000000000001,
+          -6.4561714285714285
+        ]
+      },
+      {
+        "objectId": "required-family-presence-service-counter-indoor-0-5",
+        "min": [
+          -11.4912,
+          0.8886857142857144,
+          -7.29
+        ],
+        "max": [
+          -7.738971428571428,
+          1.0203428571428572,
+          -6.3025714285714285
+        ]
+      },
+      {
+        "objectId": "required-family-presence-condiment-station-indoor-0-1",
+        "min": [
+          -1.1039999999999999,
+          0.8880730964467005,
+          -2.8551724137931025
+        ],
+        "max": [
+          1.1039999999999999,
+          0.9808568527918783,
+          2.8551724137931025
+        ]
+      },
+      {
+        "objectId": "obj-45537d19-0512-416c",
+        "min": [
+          -11.9,
+          0.95,
+          -4.05
+        ],
+        "max": [
+          -10.1,
+          1.09,
+          -2.95
+        ]
+      },
+      {
+        "objectId": "obj-1d6f05ce-b0bf-44a5",
+        "min": [
+          -11.9,
+          0.95,
+          -0.55
+        ],
+        "max": [
+          -10.1,
+          1.09,
+          0.55
+        ]
+      },
+      {
+        "objectId": "obj-885e2734-cb4a-411c",
+        "min": [
+          -11.9,
+          0.95,
+          2.95
+        ],
+        "max": [
+          -10.1,
+          1.09,
+          4.05
+        ]
+      },
+      {
+        "objectId": "obj-aea2e202-e06c-4b1e",
+        "min": [
+          -7.9,
+          0.95,
+          -4.05
+        ],
+        "max": [
+          -6.1,
+          1.09,
+          -2.95
+        ]
+      },
+      {
+        "objectId": "obj-8a0b4d50-db5a-461d",
+        "min": [
+          -7.9,
+          0.95,
+          -0.55
+        ],
+        "max": [
+          -6.1,
+          1.09,
+          0.55
+        ]
+      },
+      {
+        "objectId": "obj-7f874f4e-70bb-460a",
+        "min": [
+          -7.9,
+          0.95,
+          2.95
+        ],
+        "max": [
+          -6.1,
+          1.09,
+          4.05
+        ]
+      },
+      {
+        "objectId": "obj-aaba6eea-123c-4299",
+        "min": [
+          -3.9,
+          0.95,
+          -4.05
+        ],
+        "max": [
+          -2.1,
+          1.09,
+          -2.95
+        ]
+      },
+      {
+        "objectId": "obj-540eb27d-4446-4b5c",
+        "min": [
+          -3.9,
+          0.95,
+          -0.55
+        ],
+        "max": [
+          -2.1,
+          1.09,
+          0.55
+        ]
+      },
+      {
+        "objectId": "obj-1d263e8c-1997-4e1d",
+        "min": [
+          -3.9,
+          0.95,
+          2.95
+        ],
+        "max": [
+          -2.1,
+          1.09,
+          4.05
+        ]
+      },
+      {
+        "objectId": "obj-859920c8-d768-4fbc",
+        "min": [
+          2.1,
+          0.95,
+          -4.05
+        ],
+        "max": [
+          3.9,
+          1.09,
+          -2.95
+        ]
+      },
+      {
+        "objectId": "obj-6fa8df8e-16de-4fdd",
+        "min": [
+          2.1,
+          0.95,
+          -0.55
+        ],
+        "max": [
+          3.9,
+          1.09,
+          0.55
+        ]
+      },
+      {
+        "objectId": "obj-4407cfc0-2f23-46e7",
+        "min": [
+          2.1,
+          0.95,
+          2.95
+        ],
+        "max": [
+          3.9,
+          1.09,
+          4.05
+        ]
+      },
+      {
+        "objectId": "obj-1cbfeba9-fc5e-4517",
+        "min": [
+          6.1,
+          0.95,
+          -4.05
+        ],
+        "max": [
+          7.9,
+          1.09,
+          -2.95
+        ]
+      },
+      {
+        "objectId": "obj-8908a231-3022-44be",
+        "min": [
+          6.1,
+          0.95,
+          -0.55
+        ],
+        "max": [
+          7.9,
+          1.09,
+          0.55
+        ]
+      },
+      {
+        "objectId": "obj-53de39cd-0b65-4877",
+        "min": [
+          6.1,
+          0.95,
+          2.95
+        ],
+        "max": [
+          7.9,
+          1.09,
+          4.05
+        ]
+      },
+      {
+        "objectId": "obj-41e21992-e38c-479b",
+        "min": [
+          10.1,
+          0.95,
+          -4.05
+        ],
+        "max": [
+          11.9,
+          1.09,
+          -2.95
+        ]
+      },
+      {
+        "objectId": "obj-73d7bd4e-a3ba-45e7",
+        "min": [
+          10.1,
+          0.95,
+          -0.55
+        ],
+        "max": [
+          11.9,
+          1.09,
+          0.55
+        ]
+      },
+      {
+        "objectId": "obj-a94005f7-e967-47df",
+        "min": [
+          10.1,
+          0.95,
+          2.95
+        ],
+        "max": [
+          11.9,
+          1.09,
+          4.05
+        ]
+      },
+      {
+        "objectId": "obj-08496c9e-2bd6-4596",
+        "min": [
+          -12.5532,
+          0.502415763546798,
+          -3.9453953488372084
+        ],
+        "max": [
+          -11.7468,
+          0.5992669950738915,
+          -3.0546046511627916
+        ]
+      },
+      {
+        "objectId": "obj-3ede2a78-0f7b-4339",
+        "min": [
+          -12.5532,
+          0.502415763546798,
+          -0.4453953488372084
+        ],
+        "max": [
+          -11.7468,
+          0.5992669950738915,
+          0.4453953488372084
+        ]
+      },
+      {
+        "objectId": "obj-0678ee93-53f1-4faf",
+        "min": [
+          -12.5532,
+          0.502415763546798,
+          3.0546046511627916
+        ],
+        "max": [
+          -11.7468,
+          0.5992669950738915,
+          3.9453953488372084
+        ]
+      },
+      {
+        "objectId": "obj-29c34389-bc7d-47d5",
+        "min": [
+          -10.2532,
+          0.502415763546798,
+          -3.9453953488372084
+        ],
+        "max": [
+          -9.4468,
+          0.5992669950738915,
+          -3.0546046511627916
+        ]
+      },
+      {
+        "objectId": "obj-5210b224-2a2e-4ef7",
+        "min": [
+          -10.2532,
+          0.502415763546798,
+          -0.44539534883720844
+        ],
+        "max": [
+          -9.4468,
+          0.5992669950738915,
+          0.44539534883720844
+        ]
+      },
+      {
+        "objectId": "obj-3437041d-f1db-48e6",
+        "min": [
+          -10.2532,
+          0.502415763546798,
+          3.0546046511627916
+        ],
+        "max": [
+          -9.4468,
+          0.5992669950738915,
+          3.9453953488372084
+        ]
+      },
+      {
+        "objectId": "obj-23ff1228-e7f9-46d8",
+        "min": [
+          -8.5532,
+          0.502415763546798,
+          -3.9453953488372093
+        ],
+        "max": [
+          -7.7468,
+          0.5992669950738915,
+          -3.0546046511627907
+        ]
+      },
+      {
+        "objectId": "obj-5515e1e6-893d-4bb5",
+        "min": [
+          -8.5532,
+          0.502415763546798,
+          -0.4453953488372091
+        ],
+        "max": [
+          -7.7468,
+          0.5992669950738915,
+          0.4453953488372091
+        ]
+      },
+      {
+        "objectId": "obj-9e42cb6c-fe96-489c",
+        "min": [
+          -8.5532,
+          0.502415763546798,
+          3.0546046511627907
+        ],
+        "max": [
+          -7.7468,
+          0.5992669950738915,
+          3.9453953488372093
+        ]
+      },
+      {
+        "objectId": "obj-8f276f32-3e55-41c5",
+        "min": [
+          -6.253199999999999,
+          0.502415763546798,
+          -3.9453953488372084
+        ],
+        "max": [
+          -5.4468000000000005,
+          0.5992669950738915,
+          -3.0546046511627916
+        ]
+      },
+      {
+        "objectId": "obj-7782ca01-796b-4faa",
+        "min": [
+          -6.253199999999999,
+          0.502415763546798,
+          -0.44539534883720844
+        ],
+        "max": [
+          -5.4468000000000005,
+          0.5992669950738915,
+          0.44539534883720844
+        ]
+      },
+      {
+        "objectId": "obj-eb096e97-9fc1-48c5",
+        "min": [
+          -6.253199999999999,
+          0.502415763546798,
+          3.0546046511627916
+        ],
+        "max": [
+          -5.4468000000000005,
+          0.5992669950738915,
+          3.9453953488372084
+        ]
+      },
+      {
+        "objectId": "obj-87c93eea-2673-4ceb",
+        "min": [
+          -4.5532,
+          0.502415763546798,
+          -3.9453953488372093
+        ],
+        "max": [
+          -3.7468000000000004,
+          0.5992669950738915,
+          -3.0546046511627907
+        ]
+      },
+      {
+        "objectId": "obj-6c1a2622-2b9e-4e9d",
+        "min": [
+          -4.5532,
+          0.502415763546798,
+          -0.44539534883720955
+        ],
+        "max": [
+          -3.7468000000000004,
+          0.5992669950738915,
+          0.44539534883720955
+        ]
+      },
+      {
+        "objectId": "obj-9992638e-da33-41ce",
+        "min": [
+          -4.5532,
+          0.502415763546798,
+          3.0546046511627907
+        ],
+        "max": [
+          -3.7468000000000004,
+          0.5992669950738915,
+          3.9453953488372093
+        ]
+      },
+      {
+        "objectId": "obj-933e6300-6b92-478e",
+        "min": [
+          -2.2532,
+          0.502415763546798,
+          -3.9453953488372093
+        ],
+        "max": [
+          -1.4468,
+          0.5992669950738915,
+          -3.0546046511627907
+        ]
+      },
+      {
+        "objectId": "obj-51cc0407-24a5-4a31",
+        "min": [
+          -2.2532,
+          0.502415763546798,
+          -0.44539534883720916
+        ],
+        "max": [
+          -1.4468,
+          0.5992669950738915,
+          0.44539534883720916
+        ]
+      },
+      {
+        "objectId": "obj-2b9ea804-61c8-4c98",
+        "min": [
+          -2.2532,
+          0.502415763546798,
+          3.0546046511627907
+        ],
+        "max": [
+          -1.4468,
+          0.5992669950738915,
+          3.9453953488372093
+        ]
+      },
+      {
+        "objectId": "obj-9b966911-df20-485e",
+        "min": [
+          1.4468000000000003,
+          0.502415763546798,
+          -3.9453953488372093
+        ],
+        "max": [
+          2.2532,
+          0.5992669950738915,
+          -3.0546046511627907
+        ]
+      },
+      {
+        "objectId": "obj-10479f94-f55c-4e65",
+        "min": [
+          1.4468000000000003,
+          0.502415763546798,
+          -0.4453953488372091
+        ],
+        "max": [
+          2.2532,
+          0.5992669950738915,
+          0.4453953488372091
+        ]
+      },
+      {
+        "objectId": "obj-38e88fdc-1711-4eb3",
+        "min": [
+          1.4468000000000003,
+          0.502415763546798,
+          3.0546046511627907
+        ],
+        "max": [
+          2.2532,
+          0.5992669950738915,
+          3.9453953488372093
+        ]
+      },
+      {
+        "objectId": "obj-ecc18684-2aaf-4109",
+        "min": [
+          3.746800000000001,
+          0.502415763546798,
+          -3.945395348837209
+        ],
+        "max": [
+          4.5532,
+          0.5992669950738915,
+          -3.054604651162791
+        ]
+      },
+      {
+        "objectId": "obj-67d83b84-bf72-4c04",
+        "min": [
+          3.746800000000001,
+          0.502415763546798,
+          -0.4453953488372088
+        ],
+        "max": [
+          4.5532,
+          0.5992669950738915,
+          0.4453953488372088
+        ]
+      },
+      {
+        "objectId": "obj-6c79bf49-4f9f-4d44",
+        "min": [
+          3.746800000000001,
+          0.502415763546798,
+          3.054604651162791
+        ],
+        "max": [
+          4.5532,
+          0.5992669950738915,
+          3.945395348837209
+        ]
+      },
+      {
+        "objectId": "obj-00777846-0a5d-4c5c",
+        "min": [
+          5.446799999999999,
+          0.502415763546798,
+          -3.9453953488372098
+        ],
+        "max": [
+          6.2532000000000005,
+          0.5992669950738915,
+          -3.0546046511627902
+        ]
+      },
+      {
+        "objectId": "obj-c56698b3-6d79-4b24",
+        "min": [
+          5.446799999999999,
+          0.502415763546798,
+          -0.44539534883720994
+        ],
+        "max": [
+          6.2532000000000005,
+          0.5992669950738915,
+          0.44539534883720994
+        ]
+      },
+      {
+        "objectId": "obj-586b6f94-5574-4c25",
+        "min": [
+          5.446799999999999,
+          0.502415763546798,
+          3.0546046511627902
+        ],
+        "max": [
+          6.2532000000000005,
+          0.5992669950738915,
+          3.9453953488372098
+        ]
+      },
+      {
+        "objectId": "obj-8d4c9ce8-74d8-46d0",
+        "min": [
+          7.746800000000001,
+          0.502415763546798,
+          -3.9453953488372084
+        ],
+        "max": [
+          8.5532,
+          0.5992669950738915,
+          -3.0546046511627916
+        ]
+      },
+      {
+        "objectId": "obj-24bcfed1-7a95-4eec",
+        "min": [
+          7.746800000000001,
+          0.502415763546798,
+          -0.44539534883720844
+        ],
+        "max": [
+          8.5532,
+          0.5992669950738915,
+          0.44539534883720844
+        ]
+      },
+      {
+        "objectId": "obj-1195895c-7e09-4404",
+        "min": [
+          7.746800000000001,
+          0.502415763546798,
+          3.0546046511627916
+        ],
+        "max": [
+          8.5532,
+          0.5992669950738915,
+          3.9453953488372084
+        ]
+      },
+      {
+        "objectId": "obj-12c9c0c7-55bb-4691",
+        "min": [
+          9.4468,
+          0.502415763546798,
+          -3.9453953488372084
+        ],
+        "max": [
+          10.2532,
+          0.5992669950738915,
+          -3.0546046511627916
+        ]
+      },
+      {
+        "objectId": "obj-49ee5266-493b-4eae",
+        "min": [
+          9.4468,
+          0.502415763546798,
+          -0.4453953488372084
+        ],
+        "max": [
+          10.2532,
+          0.5992669950738915,
+          0.4453953488372084
+        ]
+      },
+      {
+        "objectId": "obj-7ce1dba6-1dfe-4b4a",
+        "min": [
+          9.4468,
+          0.502415763546798,
+          3.0546046511627916
+        ],
+        "max": [
+          10.2532,
+          0.5992669950738915,
+          3.9453953488372084
+        ]
+      },
+      {
+        "objectId": "obj-d52edecf-2801-4a05",
+        "min": [
+          11.7468,
+          0.502415763546798,
+          -3.9453953488372084
+        ],
+        "max": [
+          12.5532,
+          0.5992669950738915,
+          -3.0546046511627916
+        ]
+      },
+      {
+        "objectId": "obj-5a057ae9-e5b3-446a",
+        "min": [
+          11.7468,
+          0.502415763546798,
+          -0.44539534883720844
+        ],
+        "max": [
+          12.5532,
+          0.5992669950738915,
+          0.44539534883720844
+        ]
+      },
+      {
+        "objectId": "obj-860fcc9c-8484-49ed",
+        "min": [
+          11.7468,
+          0.502415763546798,
+          3.0546046511627916
+        ],
+        "max": [
+          12.5532,
+          0.5992669950738915,
+          3.9453953488372084
+        ]
+      },
+      {
+        "objectId": "obj-08496c9e-2bd6-4596",
+        "min": [
+          -12.459432558139534,
+          0.5811073891625614,
+          -3.8844465116279063
+        ],
+        "max": [
+          -11.784306976744187,
+          0.6658522167487684,
+          -3.1155534883720937
+        ]
+      },
+      {
+        "objectId": "obj-3ede2a78-0f7b-4339",
+        "min": [
+          -12.459432558139534,
+          0.5811073891625614,
+          -0.38444651162790616
+        ],
+        "max": [
+          -11.784306976744187,
+          0.6658522167487684,
+          0.38444651162790616
+        ]
+      },
+      {
+        "objectId": "obj-0678ee93-53f1-4faf",
+        "min": [
+          -12.459432558139534,
+          0.5811073891625614,
+          3.1155534883720937
+        ],
+        "max": [
+          -11.784306976744187,
+          0.6658522167487684,
+          3.8844465116279063
+        ]
+      },
+      {
+        "objectId": "obj-29c34389-bc7d-47d5",
+        "min": [
+          -10.215693023255813,
+          0.5811073891625614,
+          -3.8844465116279063
+        ],
+        "max": [
+          -9.540567441860466,
+          0.6658522167487684,
+          -3.1155534883720937
+        ]
+      },
+      {
+        "objectId": "obj-5210b224-2a2e-4ef7",
+        "min": [
+          -10.215693023255813,
+          0.5811073891625614,
+          -0.3844465116279062
+        ],
+        "max": [
+          -9.540567441860466,
+          0.6658522167487684,
+          0.3844465116279062
+        ]
+      },
+      {
+        "objectId": "obj-3437041d-f1db-48e6",
+        "min": [
+          -10.215693023255813,
+          0.5811073891625614,
+          3.1155534883720937
+        ],
+        "max": [
+          -9.540567441860466,
+          0.6658522167487684,
+          3.8844465116279063
+        ]
+      },
+      {
+        "objectId": "obj-23ff1228-e7f9-46d8",
+        "min": [
+          -8.459432558139536,
+          0.5811073891625614,
+          -3.8844465116279068
+        ],
+        "max": [
+          -7.784306976744187,
+          0.6658522167487684,
+          -3.1155534883720932
+        ]
+      },
+      {
+        "objectId": "obj-5515e1e6-893d-4bb5",
+        "min": [
+          -8.459432558139536,
+          0.5811073891625614,
+          -0.38444651162790683
+        ],
+        "max": [
+          -7.784306976744187,
+          0.6658522167487684,
+          0.38444651162790683
+        ]
+      },
+      {
+        "objectId": "obj-9e42cb6c-fe96-489c",
+        "min": [
+          -8.459432558139536,
+          0.5811073891625614,
+          3.1155534883720932
+        ],
+        "max": [
+          -7.784306976744187,
+          0.6658522167487684,
+          3.8844465116279068
+        ]
+      },
+      {
+        "objectId": "obj-8f276f32-3e55-41c5",
+        "min": [
+          -6.215693023255813,
+          0.5811073891625614,
+          -3.8844465116279063
+        ],
+        "max": [
+          -5.540567441860465,
+          0.6658522167487684,
+          -3.1155534883720937
+        ]
+      },
+      {
+        "objectId": "obj-7782ca01-796b-4faa",
+        "min": [
+          -6.215693023255813,
+          0.5811073891625614,
+          -0.3844465116279062
+        ],
+        "max": [
+          -5.540567441860465,
+          0.6658522167487684,
+          0.3844465116279062
+        ]
+      },
+      {
+        "objectId": "obj-eb096e97-9fc1-48c5",
+        "min": [
+          -6.215693023255813,
+          0.5811073891625614,
+          3.1155534883720937
+        ],
+        "max": [
+          -5.540567441860465,
+          0.6658522167487684,
+          3.8844465116279063
+        ]
+      },
+      {
+        "objectId": "obj-87c93eea-2673-4ceb",
+        "min": [
+          -4.459432558139535,
+          0.5811073891625614,
+          -3.884446511627907
+        ],
+        "max": [
+          -3.7843069767441864,
+          0.6658522167487684,
+          -3.115553488372093
+        ]
+      },
+      {
+        "objectId": "obj-6c1a2622-2b9e-4e9d",
+        "min": [
+          -4.459432558139535,
+          0.5811073891625614,
+          -0.38444651162790716
+        ],
+        "max": [
+          -3.7843069767441864,
+          0.6658522167487684,
+          0.38444651162790716
+        ]
+      },
+      {
+        "objectId": "obj-9992638e-da33-41ce",
+        "min": [
+          -4.459432558139535,
+          0.5811073891625614,
+          3.115553488372093
+        ],
+        "max": [
+          -3.7843069767441864,
+          0.6658522167487684,
+          3.884446511627907
+        ]
+      },
+      {
+        "objectId": "obj-933e6300-6b92-478e",
+        "min": [
+          -2.215693023255814,
+          0.5811073891625614,
+          -3.8844465116279068
+        ],
+        "max": [
+          -1.5405674418604653,
+          0.6658522167487684,
+          -3.1155534883720932
+        ]
+      },
+      {
+        "objectId": "obj-51cc0407-24a5-4a31",
+        "min": [
+          -2.215693023255814,
+          0.5811073891625614,
+          -0.3844465116279069
+        ],
+        "max": [
+          -1.5405674418604653,
+          0.6658522167487684,
+          0.3844465116279069
+        ]
+      },
+      {
+        "objectId": "obj-2b9ea804-61c8-4c98",
+        "min": [
+          -2.215693023255814,
+          0.5811073891625614,
+          3.1155534883720932
+        ],
+        "max": [
+          -1.5405674418604653,
+          0.6658522167487684,
+          3.8844465116279068
+        ]
+      },
+      {
+        "objectId": "obj-9b966911-df20-485e",
+        "min": [
+          1.5405674418604653,
+          0.5811073891625614,
+          -3.8844465116279068
+        ],
+        "max": [
+          2.215693023255814,
+          0.6658522167487684,
+          -3.1155534883720932
+        ]
+      },
+      {
+        "objectId": "obj-10479f94-f55c-4e65",
+        "min": [
+          1.5405674418604653,
+          0.5811073891625614,
+          -0.38444651162790683
+        ],
+        "max": [
+          2.215693023255814,
+          0.6658522167487684,
+          0.38444651162790683
+        ]
+      },
+      {
+        "objectId": "obj-38e88fdc-1711-4eb3",
+        "min": [
+          1.5405674418604653,
+          0.5811073891625614,
+          3.1155534883720932
+        ],
+        "max": [
+          2.215693023255814,
+          0.6658522167487684,
+          3.8844465116279068
+        ]
+      },
+      {
+        "objectId": "obj-ecc18684-2aaf-4109",
+        "min": [
+          3.784306976744187,
+          0.5811073891625614,
+          -3.8844465116279068
+        ],
+        "max": [
+          4.459432558139535,
+          0.6658522167487684,
+          -3.1155534883720932
+        ]
+      },
+      {
+        "objectId": "obj-67d83b84-bf72-4c04",
+        "min": [
+          3.784306976744187,
+          0.5811073891625614,
+          -0.38444651162790655
+        ],
+        "max": [
+          4.459432558139535,
+          0.6658522167487684,
+          0.38444651162790655
+        ]
+      },
+      {
+        "objectId": "obj-6c79bf49-4f9f-4d44",
+        "min": [
+          3.784306976744187,
+          0.5811073891625614,
+          3.1155534883720932
+        ],
+        "max": [
+          4.459432558139535,
+          0.6658522167487684,
+          3.8844465116279068
+        ]
+      },
+      {
+        "objectId": "obj-00777846-0a5d-4c5c",
+        "min": [
+          5.540567441860464,
+          0.5811073891625614,
+          -3.8844465116279077
+        ],
+        "max": [
+          6.215693023255814,
+          0.6658522167487684,
+          -3.1155534883720923
+        ]
+      },
+      {
+        "objectId": "obj-c56698b3-6d79-4b24",
+        "min": [
+          5.540567441860464,
+          0.5811073891625614,
+          -0.3844465116279075
+        ],
+        "max": [
+          6.215693023255814,
+          0.6658522167487684,
+          0.3844465116279075
+        ]
+      },
+      {
+        "objectId": "obj-586b6f94-5574-4c25",
+        "min": [
+          5.540567441860464,
+          0.5811073891625614,
+          3.1155534883720923
+        ],
+        "max": [
+          6.215693023255814,
+          0.6658522167487684,
+          3.8844465116279077
+        ]
+      },
+      {
+        "objectId": "obj-8d4c9ce8-74d8-46d0",
+        "min": [
+          7.784306976744187,
+          0.5811073891625614,
+          -3.8844465116279063
+        ],
+        "max": [
+          8.459432558139534,
+          0.6658522167487684,
+          -3.1155534883720937
+        ]
+      },
+      {
+        "objectId": "obj-24bcfed1-7a95-4eec",
+        "min": [
+          7.784306976744187,
+          0.5811073891625614,
+          -0.3844465116279062
+        ],
+        "max": [
+          8.459432558139534,
+          0.6658522167487684,
+          0.3844465116279062
+        ]
+      },
+      {
+        "objectId": "obj-1195895c-7e09-4404",
+        "min": [
+          7.784306976744187,
+          0.5811073891625614,
+          3.1155534883720937
+        ],
+        "max": [
+          8.459432558139534,
+          0.6658522167487684,
+          3.8844465116279063
+        ]
+      },
+      {
+        "objectId": "obj-12c9c0c7-55bb-4691",
+        "min": [
+          9.540567441860466,
+          0.5811073891625614,
+          -3.8844465116279063
+        ],
+        "max": [
+          10.215693023255813,
+          0.6658522167487684,
+          -3.1155534883720937
+        ]
+      },
+      {
+        "objectId": "obj-49ee5266-493b-4eae",
+        "min": [
+          9.540567441860466,
+          0.5811073891625614,
+          -0.38444651162790616
+        ],
+        "max": [
+          10.215693023255813,
+          0.6658522167487684,
+          0.38444651162790616
+        ]
+      },
+      {
+        "objectId": "obj-7ce1dba6-1dfe-4b4a",
+        "min": [
+          9.540567441860466,
+          0.5811073891625614,
+          3.1155534883720937
+        ],
+        "max": [
+          10.215693023255813,
+          0.6658522167487684,
+          3.8844465116279063
+        ]
+      },
+      {
+        "objectId": "obj-d52edecf-2801-4a05",
+        "min": [
+          11.784306976744187,
+          0.5811073891625614,
+          -3.8844465116279063
+        ],
+        "max": [
+          12.459432558139534,
+          0.6658522167487684,
+          -3.1155534883720937
+        ]
+      },
+      {
+        "objectId": "obj-5a057ae9-e5b3-446a",
+        "min": [
+          11.784306976744187,
+          0.5811073891625614,
+          -0.3844465116279062
+        ],
+        "max": [
+          12.459432558139534,
+          0.6658522167487684,
+          0.3844465116279062
+        ]
+      },
+      {
+        "objectId": "obj-860fcc9c-8484-49ed",
+        "min": [
+          11.784306976744187,
+          0.5811073891625614,
+          3.1155534883720937
+        ],
+        "max": [
+          12.459432558139534,
+          0.6658522167487684,
+          3.8844465116279063
+        ]
+      },
+      {
+        "objectId": "obj-1914a45c-9918-4e19",
+        "min": [
+          -11.403199999999998,
+          0.502415763546798,
+          -4.815002105263157
+        ],
+        "max": [
+          -10.596800000000002,
+          0.5992669950738915,
+          -4.084997894736843
+        ]
+      },
+      {
+        "objectId": "obj-ffcf526d-5416-40ff",
+        "min": [
+          -11.4032,
+          0.502415763546798,
+          -2.915002105263157
+        ],
+        "max": [
+          -10.5968,
+          0.5992669950738915,
+          -2.1849978947368425
+        ]
+      },
+      {
+        "objectId": "obj-54316e0b-2b9c-4462",
+        "min": [
+          -11.403199999999998,
+          0.502415763546798,
+          -1.315002105263157
+        ],
+        "max": [
+          -10.596800000000002,
+          0.5992669950738915,
+          -0.5849978947368428
+        ]
+      },
+      {
+        "objectId": "obj-c9f5446d-b345-4933",
+        "min": [
+          -11.4032,
+          0.502415763546798,
+          0.5849978947368428
+        ],
+        "max": [
+          -10.5968,
+          0.5992669950738915,
+          1.315002105263157
+        ]
+      },
+      {
+        "objectId": "obj-305d05e0-e60f-4ac9",
+        "min": [
+          -11.403199999999998,
+          0.502415763546798,
+          2.184997894736843
+        ],
+        "max": [
+          -10.596800000000002,
+          0.5992669950738915,
+          2.9150021052631567
+        ]
+      },
+      {
+        "objectId": "obj-abba8f3e-22d0-4139",
+        "min": [
+          -11.4032,
+          0.502415763546798,
+          4.084997894736843
+        ],
+        "max": [
+          -10.5968,
+          0.5992669950738915,
+          4.815002105263157
+        ]
+      },
+      {
+        "objectId": "obj-a0ad8a7c-0a7a-41fe",
+        "min": [
+          -7.4032,
+          0.502415763546798,
+          -4.815002105263158
+        ],
+        "max": [
+          -6.5968,
+          0.5992669950738915,
+          -4.084997894736842
+        ]
+      },
+      {
+        "objectId": "obj-d573f08a-e12e-4d8f",
+        "min": [
+          -7.4032,
+          0.502415763546798,
+          -2.915002105263158
+        ],
+        "max": [
+          -6.5968,
+          0.5992669950738915,
+          -2.1849978947368416
+        ]
+      },
+      {
+        "objectId": "obj-e52e8223-3543-4d81",
+        "min": [
+          -7.4032,
+          0.502415763546798,
+          -1.3150021052631582
+        ],
+        "max": [
+          -6.5968,
+          0.5992669950738915,
+          -0.5849978947368417
+        ]
+      },
+      {
+        "objectId": "obj-050de793-425c-4233",
+        "min": [
+          -7.4032,
+          0.502415763546798,
+          0.5849978947368417
+        ],
+        "max": [
+          -6.5968,
+          0.5992669950738915,
+          1.3150021052631582
+        ]
+      },
+      {
+        "objectId": "obj-015351dd-8500-4741",
+        "min": [
+          -7.4032,
+          0.502415763546798,
+          2.1849978947368416
+        ],
+        "max": [
+          -6.5968,
+          0.5992669950738915,
+          2.915002105263158
+        ]
+      },
+      {
+        "objectId": "obj-ffa50f17-18cc-417d",
+        "min": [
+          -7.4032,
+          0.502415763546798,
+          4.0849978947368415
+        ],
+        "max": [
+          -6.5968,
+          0.5992669950738915,
+          4.815002105263159
+        ]
+      },
+      {
+        "objectId": "obj-1c428fd1-a2f6-45d6",
+        "min": [
+          -3.4031999999999996,
+          0.502415763546798,
+          -4.815002105263158
+        ],
+        "max": [
+          -2.5968000000000004,
+          0.5992669950738915,
+          -4.084997894736842
+        ]
+      },
+      {
+        "objectId": "obj-c3eba464-5a4f-4109",
+        "min": [
+          -3.4032,
+          0.502415763546798,
+          -2.9150021052631576
+        ],
+        "max": [
+          -2.5968,
+          0.5992669950738915,
+          -2.184997894736842
+        ]
+      },
+      {
+        "objectId": "obj-e631788b-fa8b-41fa",
+        "min": [
+          -3.4031999999999996,
+          0.502415763546798,
+          -1.3150021052631575
+        ],
+        "max": [
+          -2.5968000000000004,
+          0.5992669950738915,
+          -0.5849978947368423
+        ]
+      },
+      {
+        "objectId": "obj-3a80907d-ec3f-4d03",
+        "min": [
+          -3.4032,
+          0.502415763546798,
+          0.5849978947368422
+        ],
+        "max": [
+          -2.5968,
+          0.5992669950738915,
+          1.3150021052631578
+        ]
+      },
+      {
+        "objectId": "obj-c97b5d35-0778-4b32",
+        "min": [
+          -3.4031999999999996,
+          0.502415763546798,
+          2.184997894736842
+        ],
+        "max": [
+          -2.5968000000000004,
+          0.5992669950738915,
+          2.9150021052631576
+        ]
+      },
+      {
+        "objectId": "obj-4629a197-9523-4adb",
+        "min": [
+          -3.4032,
+          0.502415763546798,
+          4.084997894736842
+        ],
+        "max": [
+          -2.5968,
+          0.5992669950738915,
+          4.815002105263158
+        ]
+      },
+      {
+        "objectId": "obj-aa9764fe-1834-4484",
+        "min": [
+          2.5968000000000004,
+          0.502415763546798,
+          -4.815002105263158
+        ],
+        "max": [
+          3.4031999999999996,
+          0.5992669950738915,
+          -4.084997894736842
+        ]
+      },
+      {
+        "objectId": "obj-83479c97-9b31-4f64",
+        "min": [
+          2.5968,
+          0.502415763546798,
+          -2.9150021052631576
+        ],
+        "max": [
+          3.4032,
+          0.5992669950738915,
+          -2.184997894736842
+        ]
+      },
+      {
+        "objectId": "obj-47354913-9eba-49f6",
+        "min": [
+          2.5968000000000004,
+          0.502415763546798,
+          -1.3150021052631575
+        ],
+        "max": [
+          3.4031999999999996,
+          0.5992669950738915,
+          -0.5849978947368423
+        ]
+      },
+      {
+        "objectId": "obj-b808caac-0d9e-44ca",
+        "min": [
+          2.5968,
+          0.502415763546798,
+          0.5849978947368422
+        ],
+        "max": [
+          3.4032,
+          0.5992669950738915,
+          1.3150021052631578
+        ]
+      },
+      {
+        "objectId": "obj-11d65249-2931-4760",
+        "min": [
+          2.5968000000000004,
+          0.502415763546798,
+          2.184997894736842
+        ],
+        "max": [
+          3.4031999999999996,
+          0.5992669950738915,
+          2.9150021052631576
+        ]
+      },
+      {
+        "objectId": "obj-306f6f3e-1e53-4751",
+        "min": [
+          2.5968,
+          0.502415763546798,
+          4.084997894736842
+        ],
+        "max": [
+          3.4032,
+          0.5992669950738915,
+          4.815002105263158
+        ]
+      },
+      {
+        "objectId": "obj-49bb2491-1bac-4ebb",
+        "min": [
+          6.5968,
+          0.502415763546798,
+          -4.815002105263158
+        ],
+        "max": [
+          7.4032,
+          0.5992669950738915,
+          -4.084997894736842
+        ]
+      },
+      {
+        "objectId": "obj-f9d92b4f-e5b1-433b",
+        "min": [
+          6.5968,
+          0.502415763546798,
+          -2.915002105263158
+        ],
+        "max": [
+          7.4032,
+          0.5992669950738915,
+          -2.1849978947368416
+        ]
+      },
+      {
+        "objectId": "obj-f3c5bb6b-a912-4089",
+        "min": [
+          6.5968,
+          0.502415763546798,
+          -1.3150021052631582
+        ],
+        "max": [
+          7.4032,
+          0.5992669950738915,
+          -0.5849978947368417
+        ]
+      },
+      {
+        "objectId": "obj-0713830c-ac2b-4624",
+        "min": [
+          6.5968,
+          0.502415763546798,
+          0.5849978947368417
+        ],
+        "max": [
+          7.4032,
+          0.5992669950738915,
+          1.3150021052631582
+        ]
+      },
+      {
+        "objectId": "obj-ba8128eb-bae4-4d6d",
+        "min": [
+          6.5968,
+          0.502415763546798,
+          2.1849978947368416
+        ],
+        "max": [
+          7.4032,
+          0.5992669950738915,
+          2.915002105263158
+        ]
+      },
+      {
+        "objectId": "obj-115e5e2d-b758-49fe",
+        "min": [
+          6.5968,
+          0.502415763546798,
+          4.0849978947368415
+        ],
+        "max": [
+          7.4032,
+          0.5992669950738915,
+          4.815002105263159
+        ]
+      },
+      {
+        "objectId": "obj-d0b746b8-59d9-4833",
+        "min": [
+          10.596800000000002,
+          0.502415763546798,
+          -4.815002105263157
+        ],
+        "max": [
+          11.403199999999998,
+          0.5992669950738915,
+          -4.084997894736843
+        ]
+      },
+      {
+        "objectId": "obj-362c60a1-98d8-4974",
+        "min": [
+          10.5968,
+          0.502415763546798,
+          -2.915002105263157
+        ],
+        "max": [
+          11.4032,
+          0.5992669950738915,
+          -2.1849978947368425
+        ]
+      },
+      {
+        "objectId": "obj-eaaa8162-0727-4ec3",
+        "min": [
+          10.596800000000002,
+          0.502415763546798,
+          -1.315002105263157
+        ],
+        "max": [
+          11.403199999999998,
+          0.5992669950738915,
+          -0.5849978947368428
+        ]
+      },
+      {
+        "objectId": "obj-7e779ff4-4a90-41e1",
+        "min": [
+          10.5968,
+          0.502415763546798,
+          0.5849978947368428
+        ],
+        "max": [
+          11.4032,
+          0.5992669950738915,
+          1.315002105263157
+        ]
+      },
+      {
+        "objectId": "obj-59692ac4-dae5-4fd2",
+        "min": [
+          10.596800000000002,
+          0.502415763546798,
+          2.184997894736843
+        ],
+        "max": [
+          11.403199999999998,
+          0.5992669950738915,
+          2.9150021052631567
+        ]
+      },
+      {
+        "objectId": "obj-96145251-cf03-44b3",
+        "min": [
+          10.5968,
+          0.502415763546798,
+          4.084997894736843
+        ],
+        "max": [
+          11.4032,
+          0.5992669950738915,
+          4.815002105263157
+        ]
+      },
+      {
+        "objectId": "obj-1914a45c-9918-4e19",
+        "min": [
+          -11.348025263157894,
+          0.5811073891625614,
+          -4.730117894736842
+        ],
+        "max": [
+          -10.651974736842106,
+          0.6658522167487684,
+          -4.118951578947369
+        ]
+      },
+      {
+        "objectId": "obj-ffcf526d-5416-40ff",
+        "min": [
+          -11.348025263157894,
+          0.5811073891625614,
+          -2.881048421052631
+        ],
+        "max": [
+          -10.651974736842106,
+          0.6658522167487684,
+          -2.269882105263158
+        ]
+      },
+      {
+        "objectId": "obj-54316e0b-2b9c-4462",
+        "min": [
+          -11.348025263157894,
+          0.5811073891625614,
+          -1.2301178947368414
+        ],
+        "max": [
+          -10.651974736842106,
+          0.6658522167487684,
+          -0.6189515789473692
+        ]
+      },
+      {
+        "objectId": "obj-c9f5446d-b345-4933",
+        "min": [
+          -11.348025263157894,
+          0.5811073891625614,
+          0.6189515789473691
+        ],
+        "max": [
+          -10.651974736842106,
+          0.6658522167487684,
+          1.2301178947368414
+        ]
+      },
+      {
+        "objectId": "obj-305d05e0-e60f-4ac9",
+        "min": [
+          -11.348025263157894,
+          0.5811073891625614,
+          2.269882105263158
+        ],
+        "max": [
+          -10.651974736842106,
+          0.6658522167487684,
+          2.881048421052631
+        ]
+      },
+      {
+        "objectId": "obj-abba8f3e-22d0-4139",
+        "min": [
+          -11.348025263157894,
+          0.5811073891625614,
+          4.118951578947369
+        ],
+        "max": [
+          -10.651974736842106,
+          0.6658522167487684,
+          4.730117894736842
+        ]
+      },
+      {
+        "objectId": "obj-a0ad8a7c-0a7a-41fe",
+        "min": [
+          -7.348025263157895,
+          0.5811073891625614,
+          -4.730117894736843
+        ],
+        "max": [
+          -6.651974736842105,
+          0.6658522167487684,
+          -4.118951578947368
+        ]
+      },
+      {
+        "objectId": "obj-d573f08a-e12e-4d8f",
+        "min": [
+          -7.348025263157895,
+          0.5811073891625614,
+          -2.8810484210526317
+        ],
+        "max": [
+          -6.651974736842105,
+          0.6658522167487684,
+          -2.2698821052631573
+        ]
+      },
+      {
+        "objectId": "obj-e52e8223-3543-4d81",
+        "min": [
+          -7.348025263157895,
+          0.5811073891625614,
+          -1.2301178947368423
+        ],
+        "max": [
+          -6.651974736842105,
+          0.6658522167487684,
+          -0.6189515789473681
+        ]
+      },
+      {
+        "objectId": "obj-050de793-425c-4233",
+        "min": [
+          -7.348025263157895,
+          0.5811073891625614,
+          0.6189515789473681
+        ],
+        "max": [
+          -6.651974736842105,
+          0.6658522167487684,
+          1.2301178947368423
+        ]
+      },
+      {
+        "objectId": "obj-015351dd-8500-4741",
+        "min": [
+          -7.348025263157895,
+          0.5811073891625614,
+          2.2698821052631573
+        ],
+        "max": [
+          -6.651974736842105,
+          0.6658522167487684,
+          2.8810484210526317
+        ]
+      },
+      {
+        "objectId": "obj-ffa50f17-18cc-417d",
+        "min": [
+          -7.348025263157895,
+          0.5811073891625614,
+          4.118951578947368
+        ],
+        "max": [
+          -6.651974736842105,
+          0.6658522167487684,
+          4.730117894736843
+        ]
+      },
+      {
+        "objectId": "obj-1c428fd1-a2f6-45d6",
+        "min": [
+          -3.3480252631578944,
+          0.5811073891625614,
+          -4.730117894736842
+        ],
+        "max": [
+          -2.6519747368421056,
+          0.6658522167487684,
+          -4.118951578947369
+        ]
+      },
+      {
+        "objectId": "obj-c3eba464-5a4f-4109",
+        "min": [
+          -3.3480252631578944,
+          0.5811073891625614,
+          -2.8810484210526313
+        ],
+        "max": [
+          -2.6519747368421056,
+          0.6658522167487684,
+          -2.2698821052631577
+        ]
+      },
+      {
+        "objectId": "obj-e631788b-fa8b-41fa",
+        "min": [
+          -3.3480252631578944,
+          0.5811073891625614,
+          -1.2301178947368419
+        ],
+        "max": [
+          -2.6519747368421056,
+          0.6658522167487684,
+          -0.6189515789473686
+        ]
+      },
+      {
+        "objectId": "obj-3a80907d-ec3f-4d03",
+        "min": [
+          -3.3480252631578944,
+          0.5811073891625614,
+          0.6189515789473685
+        ],
+        "max": [
+          -2.6519747368421056,
+          0.6658522167487684,
+          1.2301178947368419
+        ]
+      },
+      {
+        "objectId": "obj-c97b5d35-0778-4b32",
+        "min": [
+          -3.3480252631578944,
+          0.5811073891625614,
+          2.2698821052631577
+        ],
+        "max": [
+          -2.6519747368421056,
+          0.6658522167487684,
+          2.8810484210526313
+        ]
+      },
+      {
+        "objectId": "obj-4629a197-9523-4adb",
+        "min": [
+          -3.3480252631578944,
+          0.5811073891625614,
+          4.118951578947369
+        ],
+        "max": [
+          -2.6519747368421056,
+          0.6658522167487684,
+          4.730117894736842
+        ]
+      },
+      {
+        "objectId": "obj-aa9764fe-1834-4484",
+        "min": [
+          2.6519747368421056,
+          0.5811073891625614,
+          -4.730117894736842
+        ],
+        "max": [
+          3.3480252631578944,
+          0.6658522167487684,
+          -4.118951578947369
+        ]
+      },
+      {
+        "objectId": "obj-83479c97-9b31-4f64",
+        "min": [
+          2.6519747368421056,
+          0.5811073891625614,
+          -2.8810484210526313
+        ],
+        "max": [
+          3.3480252631578944,
+          0.6658522167487684,
+          -2.2698821052631577
+        ]
+      },
+      {
+        "objectId": "obj-47354913-9eba-49f6",
+        "min": [
+          2.6519747368421056,
+          0.5811073891625614,
+          -1.2301178947368419
+        ],
+        "max": [
+          3.3480252631578944,
+          0.6658522167487684,
+          -0.6189515789473686
+        ]
+      },
+      {
+        "objectId": "obj-b808caac-0d9e-44ca",
+        "min": [
+          2.6519747368421056,
+          0.5811073891625614,
+          0.6189515789473685
+        ],
+        "max": [
+          3.3480252631578944,
+          0.6658522167487684,
+          1.2301178947368419
+        ]
+      },
+      {
+        "objectId": "obj-11d65249-2931-4760",
+        "min": [
+          2.6519747368421056,
+          0.5811073891625614,
+          2.2698821052631577
+        ],
+        "max": [
+          3.3480252631578944,
+          0.6658522167487684,
+          2.8810484210526313
+        ]
+      },
+      {
+        "objectId": "obj-306f6f3e-1e53-4751",
+        "min": [
+          2.6519747368421056,
+          0.5811073891625614,
+          4.118951578947369
+        ],
+        "max": [
+          3.3480252631578944,
+          0.6658522167487684,
+          4.730117894736842
+        ]
+      },
+      {
+        "objectId": "obj-49bb2491-1bac-4ebb",
+        "min": [
+          6.651974736842105,
+          0.5811073891625614,
+          -4.730117894736843
+        ],
+        "max": [
+          7.348025263157895,
+          0.6658522167487684,
+          -4.118951578947368
+        ]
+      },
+      {
+        "objectId": "obj-f9d92b4f-e5b1-433b",
+        "min": [
+          6.651974736842105,
+          0.5811073891625614,
+          -2.8810484210526317
+        ],
+        "max": [
+          7.348025263157895,
+          0.6658522167487684,
+          -2.2698821052631573
+        ]
+      },
+      {
+        "objectId": "obj-f3c5bb6b-a912-4089",
+        "min": [
+          6.651974736842105,
+          0.5811073891625614,
+          -1.2301178947368423
+        ],
+        "max": [
+          7.348025263157895,
+          0.6658522167487684,
+          -0.6189515789473681
+        ]
+      },
+      {
+        "objectId": "obj-0713830c-ac2b-4624",
+        "min": [
+          6.651974736842105,
+          0.5811073891625614,
+          0.6189515789473681
+        ],
+        "max": [
+          7.348025263157895,
+          0.6658522167487684,
+          1.2301178947368423
+        ]
+      },
+      {
+        "objectId": "obj-ba8128eb-bae4-4d6d",
+        "min": [
+          6.651974736842105,
+          0.5811073891625614,
+          2.2698821052631573
+        ],
+        "max": [
+          7.348025263157895,
+          0.6658522167487684,
+          2.8810484210526317
+        ]
+      },
+      {
+        "objectId": "obj-115e5e2d-b758-49fe",
+        "min": [
+          6.651974736842105,
+          0.5811073891625614,
+          4.118951578947368
+        ],
+        "max": [
+          7.348025263157895,
+          0.6658522167487684,
+          4.730117894736843
+        ]
+      },
+      {
+        "objectId": "obj-d0b746b8-59d9-4833",
+        "min": [
+          10.651974736842106,
+          0.5811073891625614,
+          -4.730117894736842
+        ],
+        "max": [
+          11.348025263157894,
+          0.6658522167487684,
+          -4.118951578947369
+        ]
+      },
+      {
+        "objectId": "obj-362c60a1-98d8-4974",
+        "min": [
+          10.651974736842106,
+          0.5811073891625614,
+          -2.881048421052631
+        ],
+        "max": [
+          11.348025263157894,
+          0.6658522167487684,
+          -2.269882105263158
+        ]
+      },
+      {
+        "objectId": "obj-eaaa8162-0727-4ec3",
+        "min": [
+          10.651974736842106,
+          0.5811073891625614,
+          -1.2301178947368414
+        ],
+        "max": [
+          11.348025263157894,
+          0.6658522167487684,
+          -0.6189515789473692
+        ]
+      },
+      {
+        "objectId": "obj-7e779ff4-4a90-41e1",
+        "min": [
+          10.651974736842106,
+          0.5811073891625614,
+          0.6189515789473691
+        ],
+        "max": [
+          11.348025263157894,
+          0.6658522167487684,
+          1.2301178947368414
+        ]
+      },
+      {
+        "objectId": "obj-59692ac4-dae5-4fd2",
+        "min": [
+          10.651974736842106,
+          0.5811073891625614,
+          2.269882105263158
+        ],
+        "max": [
+          11.348025263157894,
+          0.6658522167487684,
+          2.881048421052631
+        ]
+      },
+      {
+        "objectId": "obj-96145251-cf03-44b3",
+        "min": [
+          10.651974736842106,
+          0.5811073891625614,
+          4.118951578947369
+        ],
+        "max": [
+          11.348025263157894,
+          0.6658522167487684,
+          4.730117894736842
+        ]
+      },
+      {
+        "objectId": "__room__:floor:0",
+        "min": [
+          -15,
+          -0.16,
+          -7.5
+        ],
+        "max": [
+          15,
+          0,
+          7.5
+        ]
+      },
+      {
+        "objectId": "__room__:ceiling:1",
+        "min": [
+          -15,
+          2.84,
+          -7.5
+        ],
+        "max": [
+          15,
+          3,
+          7.5
+        ]
+      },
+      {
+        "objectId": "__room__:north:2",
+        "min": [
+          -15,
+          0,
+          -7.5
+        ],
+        "max": [
+          15,
+          3,
+          -7.34
+        ]
+      },
+      {
+        "objectId": "__room__:south:3",
+        "min": [
+          -15,
+          0,
+          7.34
+        ],
+        "max": [
+          15,
+          3,
+          7.5
+        ]
+      },
+      {
+        "objectId": "__room__:east:4",
+        "min": [
+          14.84,
+          0,
+          -7.5
+        ],
+        "max": [
+          15,
+          3,
+          -5.561236363636365
+        ]
+      },
+      {
+        "objectId": "__room__:east:5",
+        "min": [
+          14.84,
+          0,
+          -3.4387636363636362
+        ],
+        "max": [
+          15,
+          3,
+          -1.0612363636363638
+        ]
+      },
+      {
+        "objectId": "__room__:east:6",
+        "min": [
+          14.84,
+          0,
+          1.0612363636363638
+        ],
+        "max": [
+          15,
+          3,
+          3.4387636363636362
+        ]
+      },
+      {
+        "objectId": "__room__:east:7",
+        "min": [
+          14.84,
+          0,
+          5.561236363636365
+        ],
+        "max": [
+          15,
+          3,
+          7.5
+        ]
+      },
+      {
+        "objectId": "__room__:east:12",
+        "min": [
+          14.84,
+          0,
+          -5.561236363636364
+        ],
+        "max": [
+          15,
+          0.9600000000000001,
+          -3.4387636363636362
+        ]
+      },
+      {
+        "objectId": "__room__:east:10",
+        "min": [
+          14.84,
+          0,
+          -1.0612363636363638
+        ],
+        "max": [
+          15,
+          0.9600000000000001,
+          1.0612363636363638
+        ]
+      },
+      {
+        "objectId": "__room__:east:8",
+        "min": [
+          14.84,
+          0,
+          3.4387636363636362
+        ],
+        "max": [
+          15,
+          0.9600000000000001,
+          5.561236363636364
+        ]
+      },
+      {
+        "objectId": "__room__:east:13",
+        "min": [
+          14.84,
+          2.4800000000000004,
+          -5.561236363636364
+        ],
+        "max": [
+          15,
+          3,
+          -3.4387636363636362
+        ]
+      },
+      {
+        "objectId": "__room__:east:11",
+        "min": [
+          14.84,
+          2.4800000000000004,
+          -1.0612363636363638
+        ],
+        "max": [
+          15,
+          3,
+          1.0612363636363638
+        ]
+      },
+      {
+        "objectId": "__room__:east:9",
+        "min": [
+          14.84,
+          2.4800000000000004,
+          3.4387636363636362
+        ],
+        "max": [
+          15,
+          3,
+          5.561236363636364
+        ]
+      },
+      {
+        "objectId": "__room__:west:14",
+        "min": [
+          -15,
+          0,
+          -7.5
+        ],
+        "max": [
+          -14.84,
+          3,
+          7.5
+        ]
+      }
+    ],
+    "cellSize": 4,
+    "cells": {
+      "-1,1": [
+        0,
+        1,
+        2,
+        3,
+        5,
+        111,
+        210,
+        246,
+        265,
+        266,
+        268
+      ],
+      "0,1": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        114,
+        216,
+        252,
+        265,
+        266,
+        268
+      ],
+      "-1,-2": [
+        6,
+        7,
+        9,
+        10,
+        80,
+        109,
+        205,
+        241,
+        265,
+        266,
+        267
+      ],
+      "0,-2": [
+        6,
+        8,
+        9,
+        10,
+        81,
+        112,
+        211,
+        247,
+        265,
+        266,
+        267
+      ],
+      "3,-2": [
+        11,
+        14,
+        17,
+        20,
+        26,
+        27,
+        32,
+        33,
+        38,
+        41,
+        44,
+        83,
+        85,
+        89,
+        265,
+        266,
+        267,
+        269,
+        273,
+        276
+      ],
+      "3,-1": [
+        11,
+        12,
+        14,
+        15,
+        17,
+        18,
+        21,
+        22,
+        27,
+        28,
+        33,
+        34,
+        38,
+        39,
+        41,
+        42,
+        45,
+        83,
+        85,
+        86,
+        89,
+        91,
+        93,
+        95,
+        97,
+        154,
+        155,
+        190,
+        191,
+        265,
+        266,
+        270,
+        273,
+        274,
+        276,
+        277
+      ],
+      "3,0": [
+        12,
+        13,
+        15,
+        16,
+        18,
+        19,
+        23,
+        24,
+        29,
+        30,
+        35,
+        36,
+        39,
+        40,
+        42,
+        43,
+        45,
+        84,
+        87,
+        88,
+        90,
+        92,
+        94,
+        96,
+        98,
+        155,
+        156,
+        191,
+        192,
+        265,
+        266,
+        271,
+        274,
+        275,
+        277,
+        278
+      ],
+      "3,1": [
+        13,
+        16,
+        19,
+        25,
+        30,
+        31,
+        36,
+        37,
+        40,
+        43,
+        46,
+        84,
+        88,
+        90,
+        265,
+        266,
+        268,
+        272,
+        275,
+        278
+      ],
+      "-3,-1": [
+        47,
+        55,
+        103,
+        104,
+        121,
+        122,
+        124,
+        125,
+        127,
+        128,
+        157,
+        158,
+        160,
+        161,
+        163,
+        164,
+        194,
+        195,
+        230,
+        231,
+        265,
+        266
+      ],
+      "-3,0": [
+        48,
+        56,
+        104,
+        105,
+        122,
+        123,
+        125,
+        126,
+        128,
+        129,
+        158,
+        159,
+        161,
+        162,
+        164,
+        165,
+        196,
+        197,
+        232,
+        233,
+        265,
+        266
+      ],
+      "-1,-1": [
+        49,
+        57,
+        102,
+        109,
+        110,
+        133,
+        134,
+        136,
+        137,
+        169,
+        170,
+        172,
+        173,
+        206,
+        207,
+        242,
+        243,
+        265,
+        266
+      ],
+      "-1,0": [
+        50,
+        58,
+        102,
+        110,
+        111,
+        134,
+        135,
+        137,
+        138,
+        170,
+        171,
+        173,
+        174,
+        208,
+        209,
+        244,
+        245,
+        265,
+        266
+      ],
+      "0,-1": [
+        51,
+        59,
+        102,
+        112,
+        113,
+        139,
+        140,
+        142,
+        143,
+        175,
+        176,
+        178,
+        179,
+        212,
+        213,
+        248,
+        249,
+        265,
+        266
+      ],
+      "0,0": [
+        52,
+        60,
+        102,
+        113,
+        114,
+        140,
+        141,
+        143,
+        144,
+        176,
+        177,
+        179,
+        180,
+        214,
+        215,
+        250,
+        251,
+        265,
+        266
+      ],
+      "2,-1": [
+        53,
+        61,
+        118,
+        119,
+        148,
+        149,
+        151,
+        152,
+        154,
+        155,
+        184,
+        185,
+        187,
+        188,
+        190,
+        191,
+        224,
+        225,
+        260,
+        261,
+        265,
+        266
+      ],
+      "2,0": [
+        54,
+        62,
+        119,
+        120,
+        149,
+        150,
+        152,
+        153,
+        155,
+        156,
+        185,
+        186,
+        188,
+        189,
+        191,
+        192,
+        226,
+        227,
+        262,
+        263,
+        265,
+        266
+      ],
+      "-2,-2": [
+        63,
+        64,
+        65,
+        66,
+        67,
+        68,
+        69,
+        70,
+        79,
+        100,
+        101,
+        106,
+        199,
+        235,
+        265,
+        266,
+        267
+      ],
+      "1,-2": [
+        71,
+        72,
+        73,
+        74,
+        75,
+        76,
+        77,
+        78,
+        82,
+        115,
+        217,
+        253,
+        265,
+        266,
+        267
+      ],
+      "1,1": [
+        99,
+        117,
+        222,
+        258,
+        265,
+        266,
+        268
+      ],
+      "-3,-2": [
+        100,
+        101,
+        103,
+        193,
+        229,
+        265,
+        266,
+        267
+      ],
+      "-3,1": [
+        105,
+        198,
+        234,
+        265,
+        266,
+        268
+      ],
+      "-2,-1": [
+        106,
+        107,
+        127,
+        128,
+        130,
+        131,
+        133,
+        134,
+        163,
+        164,
+        166,
+        167,
+        169,
+        170,
+        200,
+        201,
+        236,
+        237,
+        265,
+        266
+      ],
+      "-2,0": [
+        107,
+        108,
+        128,
+        129,
+        131,
+        132,
+        134,
+        135,
+        164,
+        165,
+        167,
+        168,
+        170,
+        171,
+        202,
+        203,
+        238,
+        239,
+        265,
+        266
+      ],
+      "-2,1": [
+        108,
+        204,
+        240,
+        265,
+        266,
+        268
+      ],
+      "1,-1": [
+        115,
+        116,
+        142,
+        143,
+        145,
+        146,
+        148,
+        149,
+        178,
+        179,
+        181,
+        182,
+        184,
+        185,
+        218,
+        219,
+        254,
+        255,
+        265,
+        266
+      ],
+      "1,0": [
+        116,
+        117,
+        143,
+        144,
+        146,
+        147,
+        149,
+        150,
+        179,
+        180,
+        182,
+        183,
+        185,
+        186,
+        220,
+        221,
+        256,
+        257,
+        265,
+        266
+      ],
+      "2,-2": [
+        118,
+        223,
+        259,
+        265,
+        266,
+        267
+      ],
+      "2,1": [
+        120,
+        228,
+        264,
+        265,
+        266,
+        268
+      ],
+      "-4,-1": [
+        121,
+        122,
+        157,
+        158,
+        265,
+        266,
+        279
+      ],
+      "-4,0": [
+        122,
+        123,
+        158,
+        159,
+        265,
+        266,
+        279
+      ],
+      "-4,-2": [
+        265,
+        266,
+        267,
+        279
+      ],
+      "-4,1": [
+        265,
+        266,
+        268,
+        279
+      ]
+    }
+  }
+}

@@ -1,0 +1,302 @@
+{
+  "id": "asset-58c9346e-753e-481d",
+  "name": "四人复古餐桌",
+  "prompt": "独立低多边形80年代小餐厅四人餐桌，无地面和背景；暖色木质矩形桌面，深色木腿或金属腿，比例适配1.60米角色，桌面清晰耐用，适合规则矩形网格排列，不生成椅子或其他家具。",
+  "tags": [
+    "indoor",
+    "table",
+    "dining",
+    "restaurant",
+    "retro-1980s",
+    "furniture"
+  ],
+  "modelJson": {
+    "name": "80年代小餐厅四人餐桌",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "table",
+        "name": "餐桌",
+        "transform": {
+          "pos": [
+            0,
+            0.73,
+            0
+          ]
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "table",
+        "transform": {
+          "pos": [
+            0,
+            0.29,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.8,
+            "height": 0.14,
+            "depth": 1.1
+          },
+          "color": 12087100
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ]
+      },
+      {
+        "id": "m1",
+        "parent": "table",
+        "transform": {
+          "pos": [
+            0,
+            0.15,
+            -0.49
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.72,
+            "height": 0.16,
+            "depth": 0.1
+          },
+          "color": 4859929
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ]
+      },
+      {
+        "id": "m2",
+        "parent": "table",
+        "transform": {
+          "pos": [
+            0,
+            0.15,
+            0.49
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.72,
+            "height": 0.16,
+            "depth": 0.1
+          },
+          "color": 4859929
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ]
+      },
+      {
+        "id": "m3",
+        "parent": "table",
+        "transform": {
+          "pos": [
+            -0.81,
+            0.15,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.1,
+            "height": 0.16,
+            "depth": 0.82
+          },
+          "color": 4859929
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ]
+      },
+      {
+        "id": "m4",
+        "parent": "table",
+        "transform": {
+          "pos": [
+            0.81,
+            0.15,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.1,
+            "height": 0.16,
+            "depth": 0.82
+          },
+          "color": 4859929
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ]
+      },
+      {
+        "id": "m5",
+        "parent": "table",
+        "transform": {
+          "pos": [
+            -0.72,
+            -0.29,
+            -0.4
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.14,
+            "height": 0.88,
+            "depth": 0.14
+          },
+          "color": 3875094
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ]
+      },
+      {
+        "id": "m6",
+        "parent": "table",
+        "transform": {
+          "pos": [
+            0.72,
+            -0.29,
+            -0.4
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.14,
+            "height": 0.88,
+            "depth": 0.14
+          },
+          "color": 3875094
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ]
+      },
+      {
+        "id": "m7",
+        "parent": "table",
+        "transform": {
+          "pos": [
+            -0.72,
+            -0.29,
+            0.4
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.14,
+            "height": 0.88,
+            "depth": 0.14
+          },
+          "color": 3875094
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ]
+      },
+      {
+        "id": "m8",
+        "parent": "table",
+        "transform": {
+          "pos": [
+            0.72,
+            -0.29,
+            0.4
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.14,
+            "height": 0.88,
+            "depth": 0.14
+          },
+          "color": 3875094
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ]
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1786532461370,
+        "provider": "gpt",
+        "data": "foW2BzmfQSpyBUT0xn5DgxloWeVkxhYNcW1GtGJgTIoyqCFm3IiwwZxMvVb5DhtpbJ8XvdtrTUKDouq4nssVA1ME/cQauU3mqqSi4hi0GaYFcS7mFKrzkShuMiJwRkoAK/lk/6jqIK+cXFXOWDw9h1WAMDMZsEjt4Kg367qXOenHy4plGKPLoNOlDKRXjOr+cRyFE8QeCBf7aSG6QPHC+uKE34dZxS0M9zP4cTZeseNwUGlMbbL+OBhABi1eNbpoNQx3m5u6IuuTpPvZiXnxaXH0RCsDZeKhMm0dqZghWb8l78RiiRUew2QTrwC8dTBgHHfqLbrJNtTAZp0CyV/jgGK+f0WFzBlWPVL3ZmP6agnKS+3WJgNeVhpH7uQSKgOUPW0zPAktBUCTfaOQIg0IzwS9ZteL6vPpuOucpLyu8p/PKGIU9yxXSAlgaltXY4/Mp5IgWI4imvua70awmd5K58tXIqzgAhlpAjo81MkJnZUxBOgznTT8/2zmZcZMsYq66dIi5VGoXEGrdkdcXM2q8o+fd3d0t887f2mHj8JjycLkWo2H/sWIvw1t58DC",
+        "edits": ""
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -0.9,
+          0.95,
+          -0.55
+        ],
+        "max": [
+          0.9,
+          1.09,
+          0.55
+        ],
+        "sourceNodeId": "m0"
+      }
+    ],
+    "sourceMeshCount": 9,
+    "candidateCount": 1,
+    "fallbackUsed": false
+  },
+  "footprintRadius": 0.9,
+  "sizeClass": "medium",
+  "mode": "voxel",
+  "provider": "gpt",
+  "createdAt": 1786532462603,
+  "updatedAt": 1786532462603
+}

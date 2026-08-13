@@ -1,0 +1,603 @@
+{
+  "id": "asset-38306122-37ae-485f",
+  "name": "墙边储物货架",
+  "prompt": "窄而高效的墙边储物货架，深色木架或涂漆金属架，可放置餐具、纸品和少量展示物；不侵占中央通行道。\n全局资产美术方向：80年代小餐厅风格，暖色木饰面、米白墙面、暗红与棕橙色软装、黄铜或深色金属灯具，家具比例适配1.60m角色，造型简洁耐用，避免现代极简或高档餐厅风格。\n资产角色：supporting wall storage and display furniture；目标尺度：medium。\n只生成一个可复用的独立物体，不要生成地面、背景、天空、完整场景或多个分散物体。",
+  "tags": [
+    "indoor",
+    "storage",
+    "shelf",
+    "service-band",
+    "retro-storage-shelf",
+    "restaurant-shelf"
+  ],
+  "modelJson": {
+    "name": "80年代餐厅墙边储物货架",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "shelf_unit",
+        "name": "窄高墙边货架",
+        "transform": {
+          "pos": [
+            0,
+            1.775,
+            0.03
+          ]
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "shelf_unit",
+        "transform": {
+          "pos": [
+            0,
+            -0.055,
+            -0.26
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.35,
+            "height": 3.15,
+            "depth": 0.12
+          },
+          "color": 7026724
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ]
+      },
+      {
+        "id": "m1",
+        "parent": "shelf_unit",
+        "transform": {
+          "pos": [
+            -0.59,
+            0.005,
+            -0.03
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.14,
+            "height": 3.25,
+            "depth": 0.48
+          },
+          "color": 5318943
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ]
+      },
+      {
+        "id": "m2",
+        "parent": "shelf_unit",
+        "transform": {
+          "pos": [
+            0.59,
+            0.005,
+            -0.03
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.14,
+            "height": 3.25,
+            "depth": 0.48
+          },
+          "color": 5318943
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ]
+      },
+      {
+        "id": "m3",
+        "parent": "shelf_unit",
+        "transform": {
+          "pos": [
+            0,
+            1.605,
+            -0.03
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.42,
+            "height": 0.16,
+            "depth": 0.54
+          },
+          "color": 8077351
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ]
+      },
+      {
+        "id": "m4",
+        "parent": "shelf_unit",
+        "transform": {
+          "pos": [
+            0,
+            -1.615,
+            -0.03
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.28,
+            "height": 0.12,
+            "depth": 0.5
+          },
+          "color": 6960162
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ]
+      },
+      {
+        "id": "m5",
+        "parent": "shelf_unit",
+        "transform": {
+          "pos": [
+            0,
+            -1.055,
+            -0.03
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.18,
+            "height": 0.14,
+            "depth": 0.5
+          },
+          "color": 8472107
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ]
+      },
+      {
+        "id": "m6",
+        "parent": "shelf_unit",
+        "transform": {
+          "pos": [
+            0,
+            -0.395,
+            -0.03
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.18,
+            "height": 0.14,
+            "depth": 0.5
+          },
+          "color": 8472107
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ]
+      },
+      {
+        "id": "m7",
+        "parent": "shelf_unit",
+        "transform": {
+          "pos": [
+            0,
+            0.265,
+            -0.03
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.18,
+            "height": 0.14,
+            "depth": 0.5
+          },
+          "color": 8472107
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ]
+      },
+      {
+        "id": "m8",
+        "parent": "shelf_unit",
+        "transform": {
+          "pos": [
+            0,
+            0.925,
+            -0.03
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.18,
+            "height": 0.14,
+            "depth": 0.5
+          },
+          "color": 8472107
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ]
+      },
+      {
+        "id": "m9",
+        "parent": "shelf_unit",
+        "transform": {
+          "pos": [
+            0,
+            -1.205,
+            0.24
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.28,
+            "height": 0.08,
+            "depth": 0.08
+          },
+          "color": 10115890
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ]
+      },
+      {
+        "id": "m10",
+        "parent": "shelf_unit",
+        "transform": {
+          "pos": [
+            0,
+            -0.545,
+            0.24
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.28,
+            "height": 0.08,
+            "depth": 0.08
+          },
+          "color": 10115890
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ]
+      },
+      {
+        "id": "m11",
+        "parent": "shelf_unit",
+        "transform": {
+          "pos": [
+            0,
+            0.115,
+            0.24
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.28,
+            "height": 0.08,
+            "depth": 0.08
+          },
+          "color": 10115890
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ]
+      },
+      {
+        "id": "m12",
+        "parent": "shelf_unit",
+        "transform": {
+          "pos": [
+            0,
+            0.775,
+            0.24
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.28,
+            "height": 0.08,
+            "depth": 0.08
+          },
+          "color": 10115890
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ]
+      },
+      {
+        "id": "m13",
+        "parent": "shelf_unit",
+        "transform": {
+          "pos": [
+            -0.3,
+            -0.215,
+            0.02
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.38,
+            "height": 0.18,
+            "depth": 0.3
+          },
+          "color": 15194301
+        }
+      },
+      {
+        "id": "m14",
+        "parent": "shelf_unit",
+        "transform": {
+          "pos": [
+            -0.28,
+            -0.045,
+            0.02
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.34,
+            "height": 0.22,
+            "depth": 0.28
+          },
+          "color": 15786954
+        }
+      },
+      {
+        "id": "m15",
+        "parent": "shelf_unit",
+        "transform": {
+          "pos": [
+            0.3,
+            0.415,
+            0.01
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.26,
+            "height": 0.26,
+            "depth": 0.28
+          },
+          "color": 11027762
+        }
+      },
+      {
+        "id": "m16",
+        "parent": "shelf_unit",
+        "transform": {
+          "pos": [
+            0.3,
+            0.585,
+            0.01
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.34,
+            "height": 0.08,
+            "depth": 0.34
+          },
+          "color": 13732424
+        }
+      },
+      {
+        "id": "m17",
+        "parent": "shelf_unit",
+        "transform": {
+          "pos": [
+            0,
+            1.615,
+            0.26
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.42,
+            "height": 0.08,
+            "depth": 0.04
+          },
+          "color": 11565621
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "gold"
+          }
+        ]
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1786530188094,
+        "provider": "gpt",
+        "data": "H610gRI9+JLGsRSuclnmI+otqpHFXgldAKaV1/nuRwu8kGiiXsPtqqJcwotMPR0fIP5z+YlXmDEXx3Yp7ro/kep3KxVdtfflaj6Yynqey3rvawrGoeiBBcX6Gq3o8kDrXBYGZJwoTRnzy2gvSizLuVqI5OWlbq9C/XEfxYbds+gR10ZeXFnJuZDh4S3bhVW/+yLGuTtkJ5B+1iTE/GBD79aI3gKCWy3pBdNKRP+9fVsh8R3/z9NoV4+ZRZrH0346yazc5eQ7QpBRzyNTI0QL/IZSfDPgZzqu5iAhCLdCeeKoGjsE7RnrvPjLcutc/Qgwe/t22Awl2DNheuW41XPWHJUOMskdJblEgZBUqDS8eiSrTb9d1VowjHm3rboIF7HNHIV0LLki0RPHYTHxjsNS3FuiaFhB1lKtxWPXyIZKTFUgPmtXk/pWa50nQ2wFcWGGhQLpnUSQUSoIOxmD1HCzt5+D/BX8ZebGR65G06SMxZXsLWFkUJWco7f18nIh2e09IouRvDaKwR683cI2zf6+s/pCq2wpNN645JA42cbEsTktmuUdxY/TJF2420gGVRkVaY5y42/I5okDIRmhBhRLdQ/ze0ogFsrqs+fCqkD/bh6AaSHDA5sdLK1mJFHrZJkhYwa2bIIXIBBK/8wRU77YT150oX22K644yKD+o81r+r2GNwYRIAmN/Z0dsMX//2SmxSwauvdPBB9W2pFPTENeNSTraTUV7em0pwTxtFD60dNE3mHH1Ynwn04bBatCSj2MWKbD6tL34dhfwaBeX9OkpGgOfWKOuXguWh3KIT5exvXFJN2aBxWOgmxDEcuyTZrbj22uLncoKzW2gYa6AqiPI6qpv8kfAUPPF++WB7qE",
+        "edits": ""
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -0.675,
+          0.045000000000000095,
+          -0.30000000000000004
+        ],
+        "max": [
+          0.675,
+          3.195,
+          -0.18000000000000002
+        ],
+        "sourceNodeId": "m0"
+      },
+      {
+        "min": [
+          -0.6599999999999999,
+          0.05499999999999988,
+          -0.25
+        ],
+        "max": [
+          -0.52,
+          3.3049999999999997,
+          0.22999999999999998
+        ],
+        "sourceNodeId": "m1"
+      },
+      {
+        "min": [
+          0.52,
+          0.05499999999999988,
+          -0.25
+        ],
+        "max": [
+          0.6599999999999999,
+          3.3049999999999997,
+          0.22999999999999998
+        ],
+        "sourceNodeId": "m2"
+      },
+      {
+        "min": [
+          -0.71,
+          3.1999999999999997,
+          -0.28
+        ],
+        "max": [
+          0.71,
+          3.36,
+          0.26
+        ],
+        "sourceNodeId": "m3"
+      },
+      {
+        "min": [
+          -0.59,
+          0.55,
+          -0.26
+        ],
+        "max": [
+          0.59,
+          0.6900000000000002,
+          0.24
+        ],
+        "sourceNodeId": "m5"
+      },
+      {
+        "min": [
+          -0.59,
+          1.21,
+          -0.26
+        ],
+        "max": [
+          0.59,
+          1.35,
+          0.24
+        ],
+        "sourceNodeId": "m6"
+      },
+      {
+        "min": [
+          -0.59,
+          1.87,
+          -0.26
+        ],
+        "max": [
+          0.59,
+          2.01,
+          0.24
+        ],
+        "sourceNodeId": "m7"
+      },
+      {
+        "min": [
+          -0.59,
+          2.5300000000000002,
+          -0.26
+        ],
+        "max": [
+          0.59,
+          2.67,
+          0.24
+        ],
+        "sourceNodeId": "m8"
+      }
+    ],
+    "sourceMeshCount": 18,
+    "candidateCount": 8,
+    "fallbackUsed": false
+  },
+  "footprintRadius": 0.71,
+  "sizeClass": "small",
+  "mode": "voxel",
+  "provider": "gpt",
+  "createdAt": 1786530190723,
+  "updatedAt": 1786530190723
+}

@@ -1,0 +1,575 @@
+{
+  "id": "asset-eacec7c9-cc8f-4871",
+  "name": "中央双面服装货架模块",
+  "prompt": "一个独立可重复的双面服装陈列货架，稳定底座、两侧挂杆和低矮上层折叠衣物台；长度适合模块化直线排列，不绑定多排布局。\n全局资产美术方向：现代简洁的体素风服装零售家具，比例参照1.60米角色；采用浅橡木、哑光白、炭灰金属与少量暖色织物，货架轮廓轻薄但可读，普通构件主要尺寸不小于0.27米。\n资产角色：形成平行商品排的核心零售家具；目标尺度：large。\n只生成一个可复用的独立物体，不要生成地面、背景、天空、完整场景或多个分散物体。",
+  "tags": [
+    "double-sided-rack",
+    "apparel-display",
+    "modular-retail"
+  ],
+  "modelJson": {
+    "name": "双面模块化服装陈列货架",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "rack",
+        "name": "独立货架",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        }
+      },
+      {
+        "id": "base",
+        "name": "稳定底座",
+        "parent": "rack",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        }
+      },
+      {
+        "id": "frame",
+        "name": "炭灰金属框架",
+        "parent": "rack",
+        "transform": {
+          "pos": [
+            0,
+            0.2,
+            0
+          ]
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "top_table",
+        "name": "浅橡木折叠衣物台",
+        "parent": "rack",
+        "transform": {
+          "pos": [
+            0,
+            1.18,
+            0
+          ]
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "oak"
+          }
+        ]
+      },
+      {
+        "id": "folded_clothes",
+        "name": "上层折叠衣物",
+        "parent": "rack",
+        "transform": {
+          "pos": [
+            0,
+            1.25,
+            0
+          ]
+        }
+      },
+      {
+        "id": "front_display",
+        "name": "前侧悬挂服装",
+        "parent": "rack",
+        "transform": {
+          "pos": [
+            0,
+            0.9,
+            0.43
+          ]
+        }
+      },
+      {
+        "id": "rear_display",
+        "name": "后侧悬挂服装",
+        "parent": "rack",
+        "transform": {
+          "pos": [
+            0,
+            0.9,
+            -0.43
+          ]
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "base",
+        "transform": {
+          "pos": [
+            0,
+            0.08,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2.4,
+            "height": 0.16,
+            "depth": 1.08
+          },
+          "color": 15855850
+        }
+      },
+      {
+        "id": "m1",
+        "parent": "base",
+        "transform": {
+          "pos": [
+            0,
+            0.2,
+            -0.38
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2.2,
+            "height": 0.08,
+            "depth": 0.28
+          },
+          "color": 3422266
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m2",
+        "parent": "base",
+        "transform": {
+          "pos": [
+            0,
+            0.2,
+            0.38
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2.2,
+            "height": 0.08,
+            "depth": 0.28
+          },
+          "color": 3422266
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m3",
+        "parent": "frame",
+        "transform": {
+          "pos": [
+            -1.02,
+            0.54,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.12,
+            "height": 1.08,
+            "depth": 0.34
+          },
+          "color": 3422266
+        }
+      },
+      {
+        "id": "m4",
+        "parent": "frame",
+        "transform": {
+          "pos": [
+            1.02,
+            0.54,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.12,
+            "height": 1.08,
+            "depth": 0.34
+          },
+          "color": 3422266
+        }
+      },
+      {
+        "id": "m5",
+        "parent": "frame",
+        "transform": {
+          "pos": [
+            0,
+            0.7,
+            -0.43
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2.08,
+            "height": 0.09,
+            "depth": 0.09
+          },
+          "color": 3422266
+        }
+      },
+      {
+        "id": "m6",
+        "parent": "frame",
+        "transform": {
+          "pos": [
+            -1.02,
+            0.71,
+            -0.3096
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.12,
+            "height": 0.28,
+            "depth": 0.12
+          },
+          "color": 3422266
+        }
+      },
+      {
+        "id": "m7",
+        "parent": "frame",
+        "transform": {
+          "pos": [
+            1.02,
+            0.71,
+            -0.3096
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.12,
+            "height": 0.28,
+            "depth": 0.12
+          },
+          "color": 3422266
+        }
+      },
+      {
+        "id": "m8",
+        "parent": "frame",
+        "transform": {
+          "pos": [
+            0,
+            0.7,
+            0.43
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2.08,
+            "height": 0.09,
+            "depth": 0.09
+          },
+          "color": 3422266
+        }
+      },
+      {
+        "id": "m9",
+        "parent": "frame",
+        "transform": {
+          "pos": [
+            -1.02,
+            0.71,
+            0.3096
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.12,
+            "height": 0.28,
+            "depth": 0.12
+          },
+          "color": 3422266
+        }
+      },
+      {
+        "id": "m10",
+        "parent": "frame",
+        "transform": {
+          "pos": [
+            1.02,
+            0.71,
+            0.3096
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.12,
+            "height": 0.28,
+            "depth": 0.12
+          },
+          "color": 3422266
+        }
+      },
+      {
+        "id": "m11",
+        "parent": "top_table",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2.26,
+            "height": 0.14,
+            "depth": 0.82
+          },
+          "color": 14204298
+        }
+      },
+      {
+        "id": "m12",
+        "parent": "top_table",
+        "transform": {
+          "pos": [
+            0,
+            -0.15,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2.04,
+            "height": 0.27,
+            "depth": 0.08
+          },
+          "color": 13478261
+        }
+      },
+      {
+        "id": "m13",
+        "parent": "folded_clothes",
+        "transform": {
+          "pos": [
+            -0.62,
+            0.065,
+            -0.13
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.5,
+            "height": 0.13,
+            "depth": 0.42
+          },
+          "color": 13203549
+        }
+      },
+      {
+        "id": "m14",
+        "parent": "folded_clothes",
+        "transform": {
+          "pos": [
+            0,
+            0.065,
+            0.12
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.5,
+            "height": 0.13,
+            "depth": 0.42
+          },
+          "color": 15195856
+        }
+      },
+      {
+        "id": "m15",
+        "parent": "folded_clothes",
+        "transform": {
+          "pos": [
+            0.62,
+            0.065,
+            -0.08
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.5,
+            "height": 0.13,
+            "depth": 0.42
+          },
+          "color": 12159842
+        }
+      },
+      {
+        "id": "m16",
+        "parent": "front_display",
+        "transform": {
+          "pos": [
+            -0.52,
+            -0.28,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.48,
+            "height": 0.5,
+            "depth": 0.1
+          },
+          "color": 13004626
+        }
+      },
+      {
+        "id": "m17",
+        "parent": "front_display",
+        "transform": {
+          "pos": [
+            0.3,
+            -0.28,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.48,
+            "height": 0.5,
+            "depth": 0.1
+          },
+          "color": 15064528
+        }
+      },
+      {
+        "id": "m18",
+        "parent": "rear_display",
+        "transform": {
+          "pos": [
+            -0.25,
+            -0.28,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.48,
+            "height": 0.5,
+            "depth": 0.1
+          },
+          "color": 11962979
+        }
+      },
+      {
+        "id": "m19",
+        "parent": "rear_display",
+        "transform": {
+          "pos": [
+            0.57,
+            -0.28,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.48,
+            "height": 0.5,
+            "depth": 0.1
+          },
+          "color": 4937047
+        }
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1786542401129,
+        "provider": "gpt",
+        "data": "lCuSQtoo8MGgD8cnt06zwmsTO5zbuNKDp2p8GUYZbms1usMSMFuR5oX1nmsJG7KEdbXhhk4LfvnAfAPQImeIzeCFjnbX2BXqEyq5uK2419fCWeN4hEHavcz1GDsRqFNc9CgksvXUHQbZLjX13NTLSWXg16i6SEon/KuCgf6lDPDv0dKGSrS0snyml7nUeEIF8XjCczanyjGvx+Xbc+CnPI0JZlp+IeV8dYNSsWTWwM1Sn0NyerGrXL1R0ab5rvXbPjVCz9tycKqOUh2TSWg7N6TqjzsFylOnjIdsbg1MkF0/Yw0agsRE9rkwpq7Dhh6zOITmWH9IrTIFy4NK3DrloT3ht6sO1PB12OsmVcQTvIMTjI/miaG6835t290AtuUooHKGorsFKMf6hNsL25SrELjk1pvsP3NrNM68bKV6jHGH0hZ5jNvHpVu0xzQJ4GjSE42gDL6UPXbBwJrPBaUORC9q1vA5eff3JZTY+WIFmCKAGKverLTRyc7G0hhpL62FA805Mgwims8Ir4zb/QaGVckwOyEaoJ0AcSO7Sx0l6c139W7yY8CqoPXhu5NYbtzBCLQSfBQFe4L8zzcyVKHMxXw8AHY204qrrHGvIAorYyfpUE9V2K1zUBz1+0Pi3Nvtv/lUPbLQsQhhZ82mfeoS/eiX8wkZKo17e3R0gpA8zfRxoV+mXWK7NOj/wCL7zkQO+a4w6iAfwOfbNMcuA4rkSepscVy08Njpj2spa61Fkx6JoLEXSYli5LdMus2AvHGoGccn+mFKCODuFcKs6F7gpvfZAuUI/Zu4pwSGHcE4j2tnbz80XrnVHMuOXMCMTD3X72K/pefZ0Qup3PHzEJi2pNA79z233JS5/gSlTNZExP5MP31MwrgWKkASoiY4/Gq2EbgfBWT8V/p5IKcg7PWZoCtGaNErh0IsTmV+HiEseSnxYioyYUwGQEI6XOQt5aoBU9TyE+yeLvTHbG2MwaL+6G5qwz0OzvwMwYAb7+0Vb+LQ5tOSymb5TEdcCEg3oshjmr7i5MS9MSmWoceguMSdyZFFUWt4cwQEbldrr4/meTTiKzi2DQ2azPhtpKbjsczJzsW1zV3iFsWpYBbiqg1rpngnhamTSfcVjltg4H7qzzmSWSwO5fN3z/hHsFE0R6URMKR6usmsThfX1YR9A/dvtoe360lQhB89qeaiOhNuVm6KYSo+ZmIagG7NjoyryN/+zbxz1QUKEx97N2oVX3CZpilRKFQPml4uL4g40/AX0kLtlt2+cCG7Pnx3xnfn",
+        "edits": ""
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -1.2,
+          0,
+          -0.54
+        ],
+        "max": [
+          1.2,
+          0.16,
+          0.54
+        ],
+        "sourceNodeId": "m0"
+      },
+      {
+        "min": [
+          -1.13,
+          1.1099999999999999,
+          -0.41
+        ],
+        "max": [
+          1.13,
+          1.25,
+          0.41
+        ],
+        "sourceNodeId": "m11"
+      }
+    ],
+    "sourceMeshCount": 20,
+    "candidateCount": 2,
+    "fallbackUsed": false
+  },
+  "footprintRadius": 1.2,
+  "sizeClass": "medium",
+  "mode": "voxel",
+  "provider": "gpt",
+  "createdAt": 1786542406055,
+  "updatedAt": 1786542406055
+}

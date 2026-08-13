@@ -1,0 +1,237 @@
+{
+  "id": "asset-d98bf0ea-2f58-485f",
+  "name": "侧墙环绕扬声器",
+  "prompt": "紧凑壁挂式影院环绕扬声器，哑光黑箱体、深色网罩和可辨识壁挂支架。\n全局资产美术方向：现代小型电影院风格，深灰与炭黑吸音墙面、深红或暗蓝软包座椅、低反射金属灯具、柔和暖白导向照明；家具比例以1.60米角色高度为参照，所有重复座椅使用单一可复用模块。\n资产角色：沿两侧墙面成对排列的环绕声设备；目标尺度：medium。\n只生成一个可复用的独立物体，不要生成地面、背景、天空、完整场景或多个分散物体。",
+  "tags": [
+    "cinema",
+    "surround",
+    "speaker",
+    "surround-speaker"
+  ],
+  "modelJson": {
+    "name": "紧凑壁挂式影院环绕扬声器",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "wall_bracket",
+        "name": "壁挂支架",
+        "transform": {
+          "pos": [
+            0,
+            1.235,
+            -0.175
+          ]
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "cabinet",
+        "name": "哑光黑扬声器箱体",
+        "parent": "wall_bracket",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0.175
+          ]
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "cabinet",
+        "transform": {
+          "pos": [
+            0,
+            0.215,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.8,
+            "height": 1.15,
+            "depth": 0.62
+          },
+          "color": 1513756
+        }
+      },
+      {
+        "id": "m1",
+        "parent": "cabinet",
+        "transform": {
+          "pos": [
+            0,
+            0.215,
+            0.335
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.62,
+            "height": 0.92,
+            "depth": 0.045
+          },
+          "color": 2698030
+        }
+      },
+      {
+        "id": "m2",
+        "parent": "cabinet",
+        "transform": {
+          "pos": [
+            0,
+            -0.185,
+            0.37
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.18,
+            "height": 0.035,
+            "depth": 0.025
+          },
+          "color": 5593179
+        }
+      },
+      {
+        "id": "m3",
+        "parent": "wall_bracket",
+        "transform": {
+          "pos": [
+            0,
+            0.215,
+            -0.225
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.05,
+            "height": 0.88,
+            "depth": 0.1
+          },
+          "color": 3422267
+        }
+      },
+      {
+        "id": "m4",
+        "parent": "wall_bracket",
+        "transform": {
+          "pos": [
+            -0.48,
+            -0.035,
+            -0.005
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.2,
+            "height": 0.18,
+            "depth": 0.52
+          },
+          "color": 4540748
+        }
+      },
+      {
+        "id": "m5",
+        "parent": "wall_bracket",
+        "transform": {
+          "pos": [
+            0.48,
+            -0.035,
+            -0.005
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.2,
+            "height": 0.18,
+            "depth": 0.52
+          },
+          "color": 4540748
+        }
+      },
+      {
+        "id": "m6",
+        "parent": "wall_bracket",
+        "transform": {
+          "pos": [
+            0,
+            -0.215,
+            0.225
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.9,
+            "height": 0.12,
+            "depth": 0.18
+          },
+          "color": 4014404
+        }
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1786541273366,
+        "provider": "gpt",
+        "data": "9UMM3zo0+5BX/SXfooeAtctj79RSg/xUwuQJ1WpbCsgWnheXCSvFKKm8qpHFQK8DOlum8rwncWS0AiNFu+jZW+pHqMuz5Q/YQxyB6lBhwT+NjfqOGdU8+rO0zmqwwBPZ9OjwHbVUBI5crv7gYsLF5ItA1Nl8NMsU+s4px1EbsqEkfwfq2vd2F4U2dv3VZWQ3qtPY3/INagaDuU6UX0CmJNYiNUpP9votMX+0sW0KiLnf3SFh5AawIMs2tb9mV+H62zk0lnkJSfJwC3W60BJBgvDDWgdvJmBajpaPaY7GcNyFvlk6DqjMEYk6UGfexWH/nl5RbMVC+ob2dPVt40+0igc9bwTryMV5x94QhHHgy8BE6ciAaohzx3MpXXx2afl0jgtQqaYM8dpBaOvtxr1rXxMwhm29+5efzDczJ8nFuT/xfbJQF4FsrmPRSCUPnz7gI2GahiPciytN72RfAhoScKLIfTtPy+kyH6C7TaZqd5CJg/2bw4AQ6Tm5r019ojO9se5Keck8HIOw7SVkl3fiWsn4RmCK56r2PrfgV743OSS6wNsxfosI3eDb0WGcMAtZ7cA6hvL1CCUM7jWujXIaUIk4VoftcJkIFmTj5hFvY6kqkV/Q30sgCGb4NXtK4P1gGGUFZMHgrEvqUuf7R1sZnxvWwPpntEXkflllP0yHEuliDJ8R+z0giyVUySOuEYA=",
+        "edits": ""
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -0.9,
+          0,
+          -0.27625
+        ],
+        "max": [
+          0.9,
+          1.1500000000000001,
+          0.34375
+        ],
+        "sourceNodeId": "m0"
+      },
+      {
+        "min": [
+          -0.525,
+          0.135,
+          -0.41625
+        ],
+        "max": [
+          0.525,
+          1.015,
+          -0.31625000000000003
+        ],
+        "sourceNodeId": "m3"
+      }
+    ],
+    "sourceMeshCount": 7,
+    "candidateCount": 2,
+    "fallbackUsed": false
+  },
+  "footprintRadius": 0.9,
+  "sizeClass": "medium",
+  "mode": "voxel",
+  "provider": "gpt",
+  "createdAt": 1786541274879,
+  "updatedAt": 1786541274879
+}

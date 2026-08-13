@@ -1,0 +1,296 @@
+{
+  "id": "asset-9061c53d-82bc-4f20",
+  "name": "影院吸顶灯",
+  "prompt": "现代低眩光影院吸顶灯单体，黑色圆形或方形外壳、暖白柔光发光面和低反射边框。\n全局资产美术方向：现代小型电影院风格，深灰与炭黑吸音墙面、深红或暗蓝软包座椅、低反射金属灯具、柔和暖白导向照明；家具比例以1.60米角色高度为参照，所有重复座椅使用单一可复用模块。\n资产角色：中轴对称网格布置的顶部低眩光灯具；目标尺度：small。\n只生成一个可复用的独立物体，不要生成地面、背景、天空、完整场景或多个分散物体。",
+  "tags": [
+    "cinema",
+    "ceiling",
+    "lighting",
+    "ceiling-mounted",
+    "cinema-ceiling-light"
+  ],
+  "modelJson": {
+    "name": "现代低眩光影院吸顶灯",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "m0",
+        "transform": {
+          "pos": [
+            0,
+            0.08,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2.6,
+            "height": 0.22,
+            "depth": 2.6
+          },
+          "color": 1513756
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m1",
+        "transform": {
+          "pos": [
+            0,
+            -0.08,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2.35,
+            "height": 0.16,
+            "depth": 2.35
+          },
+          "color": 2369323
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m2",
+        "transform": {
+          "pos": [
+            0,
+            -0.19,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.78,
+            "height": 0.08,
+            "depth": 1.78
+          },
+          "color": 16770736
+        },
+        "tags": [
+          {
+            "tag": "emissive",
+            "value": 0.75
+          }
+        ]
+      },
+      {
+        "id": "m3",
+        "transform": {
+          "pos": [
+            0,
+            -0.17,
+            -1.08
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2.45,
+            "height": 0.18,
+            "depth": 0.28
+          },
+          "color": 1118998
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m4",
+        "transform": {
+          "pos": [
+            0,
+            -0.17,
+            1.08
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2.45,
+            "height": 0.18,
+            "depth": 0.28
+          },
+          "color": 1118998
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m5",
+        "transform": {
+          "pos": [
+            -1.08,
+            -0.17,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.28,
+            "height": 0.18,
+            "depth": 1.9
+          },
+          "color": 1118998
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m6",
+        "transform": {
+          "pos": [
+            1.08,
+            -0.17,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.28,
+            "height": 0.18,
+            "depth": 1.9
+          },
+          "color": 1118998
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1786541252931,
+        "provider": "gpt",
+        "data": "q0XmSoCBE7FUvDT7feKa3M6Iflge88Xx8ppvZBf7I6LXYdUg8EI08+jhX5dGiLHeM0j163MPDoEJYEwSPoEMlsVvghCRMPS6srezm/rAPgOVz+jBSj23WBxTnbuthbbNbljOK6/rn82X3yItwpD7mZJ7QolKjS2oCLGc04GjCIkQDhnkn3QkpvL12VzI5kargMrPk38pd0kKD0VZLM7u7NQ+LPRshzJoOdSd+rQj/rL5SALiIBYYQIPIS+30En3pparNKGrcPlG1cWYBvIJOWCOwxyvwfyGyq1GkxfmRF2E2hlfGp+NADS6r9GJg90mQHQxv+BN0+5FU8RxjvVnPDiFRmpYrcCj1qF3ZADGW54SZx77IvmNh7BdTDFUsYbm++CHuGHAB9bDxnx78mHlsVWZTlI3Yffq4xmevwVu31Et0kMKC7oMcLPeM2ESqziq8i6FrktLDCZSRHHTxTBccJ4o7xDitEFpvetsNZYZLEKKJAjv+W8vDdRbxO8QLnCVgcSB26iQoFiFA2XrlBElDeMTu83lVc3IpS2zvpJ/Nc6FW8V5NqgwEPBw=",
+        "edits": ""
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -1.3,
+          0.23,
+          -1.3
+        ],
+        "max": [
+          1.3,
+          0.45,
+          1.3
+        ],
+        "sourceNodeId": "m0"
+      },
+      {
+        "min": [
+          -1.175,
+          0.1,
+          -1.175
+        ],
+        "max": [
+          1.175,
+          0.26,
+          1.175
+        ],
+        "sourceNodeId": "m1"
+      },
+      {
+        "min": [
+          -1.225,
+          0,
+          -1.2200000000000002
+        ],
+        "max": [
+          1.225,
+          0.18,
+          -0.9400000000000001
+        ],
+        "sourceNodeId": "m3"
+      },
+      {
+        "min": [
+          -1.225,
+          0,
+          0.9400000000000001
+        ],
+        "max": [
+          1.225,
+          0.18,
+          1.2200000000000002
+        ],
+        "sourceNodeId": "m4"
+      },
+      {
+        "min": [
+          -1.2200000000000002,
+          0,
+          -0.95
+        ],
+        "max": [
+          -0.9400000000000001,
+          0.18,
+          0.95
+        ],
+        "sourceNodeId": "m5"
+      },
+      {
+        "min": [
+          0.9400000000000001,
+          0,
+          -0.95
+        ],
+        "max": [
+          1.2200000000000002,
+          0.18,
+          0.95
+        ],
+        "sourceNodeId": "m6"
+      }
+    ],
+    "sourceMeshCount": 7,
+    "candidateCount": 6,
+    "fallbackUsed": false
+  },
+  "footprintRadius": 1.3,
+  "sizeClass": "medium",
+  "mode": "voxel",
+  "provider": "gpt",
+  "createdAt": 1786541254374,
+  "updatedAt": 1786541254374
+}

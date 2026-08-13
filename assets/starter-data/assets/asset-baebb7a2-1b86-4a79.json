@@ -1,0 +1,685 @@
+{
+  "id": "asset-baebb7a2-1b86-4a79",
+  "name": "服装店收银台",
+  "prompt": "单个现代L感但保持紧凑的直线收银台模块，面向顾客的一侧整洁封闭，收银员一侧有工作台面和储物空间；不包含POS终端或完整收银区布局。\n全局资产美术方向：现代简洁的体素风服装零售家具，比例参照1.60米角色；采用浅橡木、哑光白、炭灰金属与少量暖色织物，货架轮廓轻薄但可读，普通构件主要尺寸不小于0.27米。\n资产角色：入口旁的结账与顾客服务节点；目标尺度：large。\n只生成一个可复用的独立物体，不要生成地面、背景、天空、完整场景或多个分散物体。",
+  "tags": [
+    "checkout",
+    "service-counter",
+    "retail"
+  ],
+  "modelJson": {
+    "name": "现代L型紧凑收银台模块",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "right_return",
+        "name": "L型侧向储物返回柜",
+        "transform": {
+          "pos": [
+            0.52,
+            0.78,
+            -0.55
+          ]
+        }
+      },
+      {
+        "id": "counter_body",
+        "name": "顾客侧封闭柜体",
+        "parent": "right_return",
+        "transform": {
+          "pos": [
+            -0.52,
+            0,
+            0.8025
+          ]
+        }
+      },
+      {
+        "id": "cashier_workspace",
+        "name": "收银员工作台",
+        "parent": "right_return",
+        "transform": {
+          "pos": [
+            -0.52,
+            0,
+            0.27
+          ]
+        }
+      },
+      {
+        "id": "base_plinth",
+        "name": "底部踢脚",
+        "parent": "right_return",
+        "transform": {
+          "pos": [
+            -0.52,
+            -0.68,
+            0.56
+          ]
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "counter_body",
+        "transform": {
+          "pos": [
+            0,
+            -0.24,
+            0.1275
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2.4,
+            "height": 0.82,
+            "depth": 0.18
+          },
+          "color": 15987695
+        }
+      },
+      {
+        "id": "m1",
+        "parent": "counter_body",
+        "transform": {
+          "pos": [
+            -1.11,
+            -0.24,
+            -0.2325
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.18,
+            "height": 0.82,
+            "depth": 0.78
+          },
+          "color": 15987695
+        }
+      },
+      {
+        "id": "m2",
+        "parent": "counter_body",
+        "transform": {
+          "pos": [
+            1.11,
+            -0.24,
+            -0.2325
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.18,
+            "height": 0.82,
+            "depth": 0.78
+          },
+          "color": 3422267
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m3",
+        "parent": "counter_body",
+        "transform": {
+          "pos": [
+            0,
+            0.24,
+            -0.2325
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2.5,
+            "height": 0.14,
+            "depth": 0.9
+          },
+          "color": 14002293
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "oak"
+          }
+        ]
+      },
+      {
+        "id": "m4",
+        "parent": "counter_body",
+        "transform": {
+          "pos": [
+            -0.38,
+            -0.2,
+            0.2325
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.68,
+            "height": 0.46,
+            "depth": 0.04
+          },
+          "color": 13206111
+        }
+      },
+      {
+        "id": "m5",
+        "parent": "cashier_workspace",
+        "transform": {
+          "pos": [
+            -0.18,
+            0.08,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.72,
+            "height": 0.1,
+            "depth": 0.5
+          },
+          "color": 14002293
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "oak"
+          }
+        ]
+      },
+      {
+        "id": "m6",
+        "parent": "cashier_workspace",
+        "transform": {
+          "pos": [
+            -0.18,
+            -0.36,
+            -0.2
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.8,
+            "height": 0.12,
+            "depth": 0.16
+          },
+          "color": 3422267
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m7",
+        "parent": "cashier_workspace",
+        "transform": {
+          "pos": [
+            -0.18,
+            -0.39,
+            -0.22
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.8,
+            "height": 0.62,
+            "depth": 0.1
+          },
+          "color": 15987695
+        }
+      },
+      {
+        "id": "m8",
+        "parent": "cashier_workspace",
+        "transform": {
+          "pos": [
+            -0.98,
+            -0.11,
+            -0.02
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.1,
+            "height": 0.5,
+            "depth": 0.42
+          },
+          "color": 3422267
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m9",
+        "parent": "cashier_workspace",
+        "transform": {
+          "pos": [
+            0.62,
+            -0.11,
+            -0.02
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.1,
+            "height": 0.5,
+            "depth": 0.42
+          },
+          "color": 3422267
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m10",
+        "parent": "right_return",
+        "transform": {
+          "pos": [
+            0.3,
+            -0.25,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.52,
+            "height": 0.86,
+            "depth": 1.25
+          },
+          "color": 15987695
+        }
+      },
+      {
+        "id": "m11",
+        "parent": "right_return",
+        "transform": {
+          "pos": [
+            0.3,
+            0.24,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.58,
+            "height": 0.14,
+            "depth": 1.34
+          },
+          "color": 14002293
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "oak"
+          }
+        ]
+      },
+      {
+        "id": "m12",
+        "parent": "right_return",
+        "transform": {
+          "pos": [
+            0,
+            -0.2,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.08,
+            "height": 0.58,
+            "depth": 1.08
+          },
+          "color": 3422267
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m13",
+        "parent": "right_return",
+        "transform": {
+          "pos": [
+            0.6,
+            -0.2,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.08,
+            "height": 0.58,
+            "depth": 1.08
+          },
+          "color": 3422267
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m14",
+        "parent": "right_return",
+        "transform": {
+          "pos": [
+            0.3,
+            -0.48,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.52,
+            "height": 0.08,
+            "depth": 1.08
+          },
+          "color": 3422267
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m15",
+        "parent": "right_return",
+        "transform": {
+          "pos": [
+            0.3,
+            -0.12,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.52,
+            "height": 0.08,
+            "depth": 1.08
+          },
+          "color": 3422267
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m16",
+        "parent": "right_return",
+        "transform": {
+          "pos": [
+            0.3,
+            0.18,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.52,
+            "height": 0.08,
+            "depth": 1.08
+          },
+          "color": 3422267
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m17",
+        "parent": "base_plinth",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2.48,
+            "height": 0.16,
+            "depth": 0.86
+          },
+          "color": 3422267
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m18",
+        "parent": "base_plinth",
+        "transform": {
+          "pos": [
+            0.82,
+            0,
+            -0.56
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.54,
+            "height": 0.16,
+            "depth": 1.28
+          },
+          "color": 3422267
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1786542448498,
+        "provider": "gpt",
+        "data": "LyCfv/5xi2lTfkiRPgIev/TDqkYxM7yKT/SJOIJp+BWnacXaa+MLqIZZ1zL7y2hBZJEn2Hi5GULwAafjxYI/OT9FJw9/I5Jc7USZAe4tao9zk85gzpzmpRyaYp4CCKJArc6vG6T4JtlgQ3lHuFZWP5w+qScOMM9hzf5EGGhiI1yI7KaOmu8E/W+Pb8BbXWcqVsrCeh+ZUVRfBOnvlRMwtHi9f7kqLODzwa/wgc8hsamlJIc1Bko35bU49ny9rFtVInv3lPVpp+1IIFp4PDB8jaxdmbPcg9X2TnbC/dgs7Ju55z218rHSoXOS5btnuO/1hvRfn7Ak3n16bv1ec0aGEKdDcVhwP/LhkpqgRV0IujhPiL6UjESLRIe+dyDCnvpu3n/ig7FjdWyS1DdWGUgMlSzxGeBCLcIjbn5sUgKVWcxN+pCbJrL6l4aaRp685OLCUICLpYpnHTnMrvMA9If0mVDi50LdKc5MdhBFylh6UEjxKNvVp3LdBXMWzY2al1Zi8wza+AOmT5nPW2UzJysQ5Z+qjJUlW5YLFaOCdjb0PraJmOlQMahGvGdwaWmgzkSoBVb5sxpTtw5hs5AR5nLctD+m/an1wPaYWM9u64pJAy9RrPv30SkCXM6vBddQGZ4Yw+YJT6LYqPIyf8Lp9HZasg84zYJuG8ElaXW/6+aisMonlQ+fzMLw3jmhcp9j4HsrPgMjimA1K3gtSmtEkyIL1kYWnz6GLbveBo64u28KowB2Y67fSOviIqlyUWgSwTb4HfMWvl2PfpSSKMPXLzeALebQRVZzTV1C5BxNXybXsr4f87z1reQ532aOIhn29dbLOHsc3sJsqtS9tNA8oxVAZa/izd24iAs540HOyT0rgLHCbN51RqRfGIDh7OwVdy/ZVc/GOlchiN08BOxLQpHYsbuXz0w5L9Ob2HlEkEr8qv6nAo8Mmf8/P5myjWheFKwPN7Ku9t2GLo4OOflgXsmv4ZE9ixQDtb0jkfwkqFN5Ge/lfPc1LzIUXYoQyuXNP/RN2e6KoPkBqj62GPkbPjbLpbE=",
+        "edits": ""
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          0.56,
+          0.08000000000000006,
+          -0.8174999999999999
+        ],
+        "max": [
+          1.08,
+          0.94,
+          0.43250000000000005
+        ],
+        "sourceNodeId": "m10"
+      },
+      {
+        "min": [
+          -1.2,
+          0.11000000000000008,
+          0.6475
+        ],
+        "max": [
+          1.2,
+          0.9299999999999999,
+          0.8275000000000001
+        ],
+        "sourceNodeId": "m0"
+      },
+      {
+        "min": [
+          -1.24,
+          0,
+          -0.06249999999999989
+        ],
+        "max": [
+          1.24,
+          0.16000000000000003,
+          0.7975000000000001
+        ],
+        "sourceNodeId": "m17"
+      },
+      {
+        "min": [
+          -1.25,
+          0.9299999999999999,
+          -0.07249999999999995
+        ],
+        "max": [
+          1.25,
+          1.07,
+          0.8275000000000001
+        ],
+        "sourceNodeId": "m3"
+      },
+      {
+        "min": [
+          -1.2000000000000002,
+          0.11000000000000008,
+          -0.012500000000000011
+        ],
+        "max": [
+          -1.02,
+          0.9299999999999999,
+          0.7675000000000001
+        ],
+        "sourceNodeId": "m1"
+      },
+      {
+        "min": [
+          1.02,
+          0.11000000000000008,
+          -0.012500000000000011
+        ],
+        "max": [
+          1.2000000000000002,
+          0.9299999999999999,
+          0.7675000000000001
+        ],
+        "sourceNodeId": "m2"
+      },
+      {
+        "min": [
+          -1.08,
+          0.06000000000000004,
+          -0.19249999999999995
+        ],
+        "max": [
+          0.72,
+          0.6799999999999999,
+          -0.09249999999999992
+        ],
+        "sourceNodeId": "m7"
+      },
+      {
+        "min": [
+          0.5499999999999999,
+          0,
+          -0.8324999999999998
+        ],
+        "max": [
+          1.0899999999999999,
+          0.16000000000000003,
+          0.44750000000000006
+        ],
+        "sourceNodeId": "m18"
+      },
+      {
+        "min": [
+          0.53,
+          0.9299999999999999,
+          -0.8625
+        ],
+        "max": [
+          1.11,
+          1.07,
+          0.4775000000000001
+        ],
+        "sourceNodeId": "m11"
+      },
+      {
+        "min": [
+          -1.04,
+          0.7899999999999999,
+          -0.17249999999999993
+        ],
+        "max": [
+          0.6799999999999999,
+          0.89,
+          0.32750000000000007
+        ],
+        "sourceNodeId": "m5"
+      }
+    ],
+    "sourceMeshCount": 19,
+    "candidateCount": 10,
+    "fallbackUsed": false
+  },
+  "footprintRadius": 1.25,
+  "sizeClass": "medium",
+  "mode": "voxel",
+  "provider": "gpt",
+  "createdAt": 1786542455666,
+  "updatedAt": 1786542455666
+}

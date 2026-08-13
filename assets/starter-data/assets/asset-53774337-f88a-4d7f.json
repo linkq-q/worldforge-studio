@@ -1,0 +1,832 @@
+{
+  "id": "asset-53774337-f88a-4d7f",
+  "name": "复古霓虹边框壁钟",
+  "prompt": "生成单个圆形复古壁钟，奶油白表盘、红色刻度、铬银外圈和薄荷绿霓虹感边框；仅生成壁钟，不附带墙面。\n全局资产美术方向：1950年代复古快餐店风格，奶油白、番茄红、薄荷绿与铬银配色；家具采用圆角金属包边、耐用层压板和红色软包，比例清晰并适合1.60米角色。\n资产角色：可读的墙面装饰与时间标识；目标尺度：medium。\n只生成一个可复用的独立物体，不要生成地面、背景、天空、完整场景或多个分散物体。",
+  "tags": [
+    "retro-diner",
+    "wall-clock",
+    "neon-trim"
+  ],
+  "modelJson": {
+    "name": "1950年代复古圆形壁钟",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "outer_bezel",
+        "name": "铬银外圈",
+        "transform": {
+          "pos": [
+            0,
+            2.4,
+            0
+          ]
+        }
+      },
+      {
+        "id": "mint_neon_border",
+        "name": "薄荷绿霓虹边框",
+        "parent": "outer_bezel",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0.15
+          ]
+        }
+      },
+      {
+        "id": "cream_dial",
+        "name": "奶油白表盘",
+        "parent": "outer_bezel",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0.11
+          ]
+        }
+      },
+      {
+        "id": "red_hour_marks",
+        "name": "番茄红刻度",
+        "parent": "outer_bezel",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0.22
+          ]
+        }
+      },
+      {
+        "id": "minute_hand",
+        "name": "分针",
+        "parent": "outer_bezel",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0.3
+          ]
+        }
+      },
+      {
+        "id": "hour_hand",
+        "name": "时针",
+        "parent": "outer_bezel",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0.32
+          ]
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "outer_bezel",
+        "transform": {
+          "pos": [
+            0,
+            1.38,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.92,
+            "height": 0.28,
+            "depth": 0.22
+          },
+          "color": 13093840
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "silver"
+          }
+        ]
+      },
+      {
+        "id": "m1",
+        "parent": "outer_bezel",
+        "transform": {
+          "pos": [
+            0,
+            -1.38,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.92,
+            "height": 0.28,
+            "depth": 0.22
+          },
+          "color": 13093840
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "silver"
+          }
+        ]
+      },
+      {
+        "id": "m2",
+        "parent": "outer_bezel",
+        "transform": {
+          "pos": [
+            -1.38,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.28,
+            "height": 0.92,
+            "depth": 0.22
+          },
+          "color": 13093840
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "silver"
+          }
+        ]
+      },
+      {
+        "id": "m3",
+        "parent": "outer_bezel",
+        "transform": {
+          "pos": [
+            1.38,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.28,
+            "height": 0.92,
+            "depth": 0.22
+          },
+          "color": 13093840
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "silver"
+          }
+        ]
+      },
+      {
+        "id": "m4",
+        "parent": "outer_bezel",
+        "transform": {
+          "pos": [
+            0.81,
+            1.16,
+            0
+          ],
+          "quat": [
+            -0.65,
+            -0.27,
+            0.27,
+            0.65
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.59,
+            "height": 0.22,
+            "depth": 0.28
+          },
+          "color": 13093840
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "silver"
+          }
+        ]
+      },
+      {
+        "id": "m5",
+        "parent": "outer_bezel",
+        "transform": {
+          "pos": [
+            -0.81,
+            1.16,
+            0
+          ],
+          "quat": [
+            -0.65,
+            0.27,
+            -0.27,
+            0.65
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.59,
+            "height": 0.22,
+            "depth": 0.28
+          },
+          "color": 13093840
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "silver"
+          }
+        ]
+      },
+      {
+        "id": "m6",
+        "parent": "outer_bezel",
+        "transform": {
+          "pos": [
+            -0.81,
+            -1.16,
+            0
+          ],
+          "quat": [
+            0.27,
+            -0.65,
+            0.65,
+            -0.27
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.59,
+            "height": 0.22,
+            "depth": 0.28
+          },
+          "color": 13093840
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "silver"
+          }
+        ]
+      },
+      {
+        "id": "m7",
+        "parent": "outer_bezel",
+        "transform": {
+          "pos": [
+            0.81,
+            -1.16,
+            0
+          ],
+          "quat": [
+            -0.27,
+            -0.65,
+            0.65,
+            0.27
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.59,
+            "height": 0.22,
+            "depth": 0.28
+          },
+          "color": 13093840
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "silver"
+          }
+        ]
+      },
+      {
+        "id": "m8",
+        "parent": "mint_neon_border",
+        "transform": {
+          "pos": [
+            0,
+            1.15,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.68,
+            "height": 0.12,
+            "depth": 0.12
+          },
+          "color": 9564871
+        },
+        "tags": [
+          {
+            "tag": "emissive",
+            "value": 0.75
+          }
+        ]
+      },
+      {
+        "id": "m9",
+        "parent": "mint_neon_border",
+        "transform": {
+          "pos": [
+            0,
+            -1.15,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.68,
+            "height": 0.12,
+            "depth": 0.12
+          },
+          "color": 9564871
+        },
+        "tags": [
+          {
+            "tag": "emissive",
+            "value": 0.75
+          }
+        ]
+      },
+      {
+        "id": "m10",
+        "parent": "mint_neon_border",
+        "transform": {
+          "pos": [
+            -1.15,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.12,
+            "height": 0.68,
+            "depth": 0.12
+          },
+          "color": 9564871
+        },
+        "tags": [
+          {
+            "tag": "emissive",
+            "value": 0.75
+          }
+        ]
+      },
+      {
+        "id": "m11",
+        "parent": "mint_neon_border",
+        "transform": {
+          "pos": [
+            1.15,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.12,
+            "height": 0.68,
+            "depth": 0.12
+          },
+          "color": 9564871
+        },
+        "tags": [
+          {
+            "tag": "emissive",
+            "value": 0.75
+          }
+        ]
+      },
+      {
+        "id": "m12",
+        "parent": "cream_dial",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.72,
+            "height": 1.72,
+            "depth": 0.16
+          },
+          "color": 16773583
+        }
+      },
+      {
+        "id": "m13",
+        "parent": "cream_dial",
+        "transform": {
+          "pos": [
+            0,
+            1,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.18,
+            "height": 0.28,
+            "depth": 0.16
+          },
+          "color": 16773583
+        }
+      },
+      {
+        "id": "m14",
+        "parent": "cream_dial",
+        "transform": {
+          "pos": [
+            0,
+            -1,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.18,
+            "height": 0.28,
+            "depth": 0.16
+          },
+          "color": 16773583
+        }
+      },
+      {
+        "id": "m15",
+        "parent": "cream_dial",
+        "transform": {
+          "pos": [
+            -1,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.28,
+            "height": 1.18,
+            "depth": 0.16
+          },
+          "color": 16773583
+        }
+      },
+      {
+        "id": "m16",
+        "parent": "cream_dial",
+        "transform": {
+          "pos": [
+            1,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.28,
+            "height": 1.18,
+            "depth": 0.16
+          },
+          "color": 16773583
+        }
+      },
+      {
+        "id": "m17",
+        "parent": "red_hour_marks",
+        "transform": {
+          "pos": [
+            0,
+            0.85,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.1,
+            "height": 0.34,
+            "depth": 0.1
+          },
+          "color": 14170674
+        }
+      },
+      {
+        "id": "m18",
+        "parent": "red_hour_marks",
+        "transform": {
+          "pos": [
+            0.85,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.34,
+            "height": 0.1,
+            "depth": 0.1
+          },
+          "color": 14170674
+        }
+      },
+      {
+        "id": "m19",
+        "parent": "red_hour_marks",
+        "transform": {
+          "pos": [
+            0,
+            -0.85,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.1,
+            "height": 0.34,
+            "depth": 0.1
+          },
+          "color": 14170674
+        }
+      },
+      {
+        "id": "m20",
+        "parent": "red_hour_marks",
+        "transform": {
+          "pos": [
+            -0.85,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.34,
+            "height": 0.1,
+            "depth": 0.1
+          },
+          "color": 14170674
+        }
+      },
+      {
+        "id": "m21",
+        "parent": "red_hour_marks",
+        "transform": {
+          "pos": [
+            0.62,
+            0.62,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.12,
+            "height": 0.18,
+            "depth": 0.1
+          },
+          "color": 14170674
+        }
+      },
+      {
+        "id": "m22",
+        "parent": "red_hour_marks",
+        "transform": {
+          "pos": [
+            0.62,
+            -0.62,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.12,
+            "height": 0.18,
+            "depth": 0.1
+          },
+          "color": 14170674
+        }
+      },
+      {
+        "id": "m23",
+        "parent": "red_hour_marks",
+        "transform": {
+          "pos": [
+            -0.62,
+            -0.62,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.12,
+            "height": 0.18,
+            "depth": 0.1
+          },
+          "color": 14170674
+        }
+      },
+      {
+        "id": "m24",
+        "parent": "red_hour_marks",
+        "transform": {
+          "pos": [
+            -0.62,
+            0.62,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.12,
+            "height": 0.18,
+            "depth": 0.1
+          },
+          "color": 14170674
+        }
+      },
+      {
+        "id": "m25",
+        "parent": "minute_hand",
+        "transform": {
+          "pos": [
+            0,
+            0.48,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.09,
+            "height": 1.02,
+            "depth": 0.08
+          },
+          "color": 3752778
+        }
+      },
+      {
+        "id": "m26",
+        "parent": "hour_hand",
+        "transform": {
+          "pos": [
+            0.22,
+            0.32,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.13,
+            "height": 0.72,
+            "depth": 0.09
+          },
+          "color": 3752778
+        }
+      },
+      {
+        "id": "m27",
+        "transform": {
+          "pos": [
+            0,
+            2.4,
+            0.38
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.22,
+            "height": 0.22,
+            "depth": 0.14
+          },
+          "color": 14170674
+        }
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1786540370351,
+        "provider": "gpt",
+        "data": "YCsUbUQ+rkePX8yPjWPexeXEc3L8PeL9EJI0kd94KJ81l74K4Ponggp57QBVEvvnoid1l7Gl4tVJ8/RFWMw701MFo7j7PVUIwKED7yrXeCOLI1VpKvVbvop2UTjen1qjh/BYxYfctDeQ3Ue4T1Siq/1e8papq4UkpayFvFzhnNuN2oOtMnD13VjqDpWZa7p9MuBt7bmgXRZwIX5d05mcskCkEwGiLvHag4JS2loEdeIdVgPkyBL93IC7RjbRVvzyibfyyW9c1p3hwQhGYgOXXrrkjfbxPoMViju6YskIX7594+D6XVmFBI1hylYHKtN2S9H5QkUlCwZIDIvL6uZtYx4Hjb9RFin6xoqENHKDjnadDCAxSXZWBsh9q/JUFIisDYHlk0oaKu9UqdOFA3zAzCU7kvXucQXLa5KtqrQ9RBkE3jmvq+YzfQv2fow1XNASPNH5kBQdsi4GPdXfXCm7wjxdfDl541gmGoJIIDxi7qlI4xNX8c4LXDvfMoM/zfarmP7v03hVAnWRGPQtFUP4c9LTv56fx/9z6RxjI02KKfp3i4ylbEOrvSLo2j0wbFkCczvmAIohsYZGWi+WyTKphStuNXXUY/gB1u0S4POLuaOdAAapHYftYJz8pwwH9R3rNuh0iPoKCfiD8hOjQ1D2Yw8nkO6Ui0BaJvZswrF/E+GPF+393vd0XLvieTaAeX64FK3Go2ArBVeF2ahd6UD6sUzUtrmGLwe71LV2t4W6sCEzjsA9Db/P0qLJUlVBD1I72pzMsBGMyn3S7iyoWqZF44Jy7UBm0IMbDZvfl+WxHqSbAHmZ4RiWhlCgmlf5ETxf7P6xSP4kJLEaV+ODCAj48ZCOyMFEgOBEaUUE7c2zjl6P6M8ljLGqr+s8iIpXy/DBrbePe5BgKzj0673QQlIEdarfRegXNsvY1HB04LHAOLkpPHd0getxj1sYTIVS2vlRtBaYr7FEElPA6xJjV5EWsAks9QWpmo8H4jSHVZSI837BCZZ9rBBKFEXwE6GHA2nYY5uci15f+pnhBNEcCJQnH+ZMzEI25GpAxbsx6GXmOV5eICt8ESjnlEo0uPqevwAHw1DRTSHjxXPeKDKXgCFUI/UiuiVaJE8NPAURLhA811wVvptjOOgczTp0vU13X+axcgP9lTZve7reIBV/JM9S9hRTH6cplnl5Le5gytyVsjuRDYmIA2TvVLLiE1ngaAWx1+c2srpXhkIRVNg=",
+        "edits": ""
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -0.86,
+          0.66,
+          -0.13999999999999999
+        ],
+        "max": [
+          0.86,
+          2.38,
+          0.020000000000000018
+        ],
+        "sourceNodeId": "m12"
+      },
+      {
+        "min": [
+          0.5026281792490916,
+          2.3721901493742426,
+          -0.27999999999999997
+        ],
+        "max": [
+          1.1173718207509085,
+          2.987809850625757,
+          -0.06
+        ],
+        "sourceNodeId": "m4"
+      },
+      {
+        "min": [
+          -1.1173718207509085,
+          2.3721901493742426,
+          -0.27999999999999997
+        ],
+        "max": [
+          -0.5026281792490916,
+          2.987809850625757,
+          -0.06
+        ],
+        "sourceNodeId": "m5"
+      },
+      {
+        "min": [
+          -1.1173718207509085,
+          0.052190149374243044,
+          -0.28
+        ],
+        "max": [
+          -0.5026281792490918,
+          0.6678098506257569,
+          -0.05999999999999997
+        ],
+        "sourceNodeId": "m6"
+      },
+      {
+        "min": [
+          0.5026281792490918,
+          0.052190149374243044,
+          -0.28
+        ],
+        "max": [
+          1.1173718207509085,
+          0.6678098506257569,
+          -0.05999999999999997
+        ],
+        "sourceNodeId": "m7"
+      }
+    ],
+    "sourceMeshCount": 28,
+    "candidateCount": 5,
+    "fallbackUsed": false
+  },
+  "footprintRadius": 1.1173718207509085,
+  "sizeClass": "medium",
+  "mode": "voxel",
+  "provider": "gpt",
+  "createdAt": 1786540374057,
+  "updatedAt": 1786540374057
+}

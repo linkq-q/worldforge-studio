@@ -1,0 +1,669 @@
+{
+  "id": "asset-f54bdf22-4a0c-4fb9",
+  "name": "服装店墙面店招",
+  "prompt": "单个现代无特定商标的服装店字牌，使用简洁几何字形和暖白背光，适合安装在入口门上方墙面。\n全局资产美术方向：现代简洁的体素风服装零售家具，比例参照1.60米角色；采用浅橡木、哑光白、炭灰金属与少量暖色织物，货架轮廓轻薄但可读，普通构件主要尺寸不小于0.27米。\n资产角色：入口上方的品牌识别装饰；目标尺度：medium。\n只生成一个可复用的独立物体，不要生成地面、背景、天空、完整场景或多个分散物体。",
+  "tags": [
+    "shop-sign",
+    "fashion-retail",
+    "wall-sign"
+  ],
+  "modelJson": {
+    "name": "暖白背光服装店字牌",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "sign",
+        "name": "字牌主体",
+        "transform": {
+          "pos": [
+            0,
+            0.4,
+            0
+          ]
+        }
+      },
+      {
+        "id": "lettering",
+        "name": "几何字形",
+        "parent": "sign",
+        "transform": {
+          "pos": [
+            -0.035,
+            0,
+            0.11
+          ]
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "sign",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2.7,
+            "height": 0.76,
+            "depth": 0.12
+          },
+          "color": 3421752
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m1",
+        "parent": "sign",
+        "transform": {
+          "pos": [
+            0,
+            -0.335,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2.76,
+            "height": 0.09,
+            "depth": 0.16
+          },
+          "color": 13216120
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "oak"
+          }
+        ]
+      },
+      {
+        "id": "m2",
+        "parent": "sign",
+        "transform": {
+          "pos": [
+            0,
+            0.335,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2.76,
+            "height": 0.09,
+            "depth": 0.16
+          },
+          "color": 13216120
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "oak"
+          }
+        ]
+      },
+      {
+        "id": "m3",
+        "parent": "lettering",
+        "transform": {
+          "pos": [
+            -0.955,
+            0,
+            0
+          ],
+          "quat": [
+            0.56,
+            -0.43,
+            -0.43,
+            0.56
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.39,
+            "height": 0.045,
+            "depth": 0.06
+          },
+          "color": 16773072
+        },
+        "tags": [
+          {
+            "tag": "emissive",
+            "value": 0.75
+          }
+        ]
+      },
+      {
+        "id": "m4",
+        "parent": "lettering",
+        "transform": {
+          "pos": [
+            -0.845,
+            -0.06,
+            0
+          ],
+          "quat": [
+            0.59,
+            0.39,
+            0.39,
+            0.59
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.28,
+            "height": 0.045,
+            "depth": 0.06
+          },
+          "color": 16773072
+        },
+        "tags": [
+          {
+            "tag": "emissive",
+            "value": 0.75
+          }
+        ]
+      },
+      {
+        "id": "m5",
+        "parent": "lettering",
+        "transform": {
+          "pos": [
+            -0.735,
+            -0.06,
+            0
+          ],
+          "quat": [
+            0.59,
+            -0.39,
+            -0.39,
+            0.59
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.28,
+            "height": 0.045,
+            "depth": 0.06
+          },
+          "color": 16773072
+        },
+        "tags": [
+          {
+            "tag": "emissive",
+            "value": 0.75
+          }
+        ]
+      },
+      {
+        "id": "m6",
+        "parent": "lettering",
+        "transform": {
+          "pos": [
+            -0.635,
+            0,
+            0
+          ],
+          "quat": [
+            0.56,
+            0.43,
+            0.43,
+            0.56
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.39,
+            "height": 0.045,
+            "depth": 0.05
+          },
+          "color": 16773072
+        },
+        "tags": [
+          {
+            "tag": "emissive",
+            "value": 0.75
+          }
+        ]
+      },
+      {
+        "id": "m7",
+        "parent": "lettering",
+        "transform": {
+          "pos": [
+            -0.455,
+            0,
+            0
+          ],
+          "quat": [
+            0.5,
+            0.5,
+            0.5,
+            0.5
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.38,
+            "height": 0.045,
+            "depth": 0.05
+          },
+          "color": 16773072
+        },
+        "tags": [
+          {
+            "tag": "emissive",
+            "value": 0.75
+          }
+        ]
+      },
+      {
+        "id": "m8",
+        "parent": "lettering",
+        "transform": {
+          "pos": [
+            -0.255,
+            0.19,
+            0
+          ],
+          "quat": [
+            0.71,
+            0,
+            0,
+            0.71
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.4,
+            "height": 0.045,
+            "depth": 0.05
+          },
+          "color": 16773072
+        },
+        "tags": [
+          {
+            "tag": "emissive",
+            "value": 0.75
+          }
+        ]
+      },
+      {
+        "id": "m9",
+        "parent": "lettering",
+        "transform": {
+          "pos": [
+            -0.295,
+            0,
+            0
+          ],
+          "quat": [
+            0.71,
+            0,
+            0,
+            0.71
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.32,
+            "height": 0.045,
+            "depth": 0.06
+          },
+          "color": 16773072
+        },
+        "tags": [
+          {
+            "tag": "emissive",
+            "value": 0.75
+          }
+        ]
+      },
+      {
+        "id": "m10",
+        "parent": "lettering",
+        "transform": {
+          "pos": [
+            -0.255,
+            -0.19,
+            0
+          ],
+          "quat": [
+            0.71,
+            0,
+            0,
+            0.71
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.4,
+            "height": 0.045,
+            "depth": 0.05
+          },
+          "color": 16773072
+        },
+        "tags": [
+          {
+            "tag": "emissive",
+            "value": 0.75
+          }
+        ]
+      },
+      {
+        "id": "m11",
+        "parent": "lettering",
+        "transform": {
+          "pos": [
+            0.185,
+            0,
+            0
+          ],
+          "quat": [
+            0.61,
+            0.37,
+            0.37,
+            0.61
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.43,
+            "height": 0.045,
+            "depth": 0.05
+          },
+          "color": 16773072
+        },
+        "tags": [
+          {
+            "tag": "emissive",
+            "value": 0.75
+          }
+        ]
+      },
+      {
+        "id": "m12",
+        "parent": "lettering",
+        "transform": {
+          "pos": [
+            0.385,
+            0,
+            0
+          ],
+          "quat": [
+            0.61,
+            -0.37,
+            -0.37,
+            0.61
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.43,
+            "height": 0.045,
+            "depth": 0.05
+          },
+          "color": 16773072
+        },
+        "tags": [
+          {
+            "tag": "emissive",
+            "value": 0.75
+          }
+        ]
+      },
+      {
+        "id": "m13",
+        "parent": "lettering",
+        "transform": {
+          "pos": [
+            0.285,
+            -0.04,
+            0
+          ],
+          "quat": [
+            0.71,
+            0,
+            0,
+            0.71
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.22,
+            "height": 0.045,
+            "depth": 0.06
+          },
+          "color": 16773072
+        },
+        "tags": [
+          {
+            "tag": "emissive",
+            "value": 0.75
+          }
+        ]
+      },
+      {
+        "id": "m14",
+        "parent": "lettering",
+        "transform": {
+          "pos": [
+            0.625,
+            0,
+            0
+          ],
+          "quat": [
+            0.5,
+            0.5,
+            0.5,
+            0.5
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.38,
+            "height": 0.045,
+            "depth": 0.05
+          },
+          "color": 16773072
+        },
+        "tags": [
+          {
+            "tag": "emissive",
+            "value": 0.75
+          }
+        ]
+      },
+      {
+        "id": "m15",
+        "parent": "lettering",
+        "transform": {
+          "pos": [
+            0.785,
+            0.19,
+            0
+          ],
+          "quat": [
+            0.71,
+            0,
+            0,
+            0.71
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.33,
+            "height": 0.045,
+            "depth": 0.05
+          },
+          "color": 16773072
+        },
+        "tags": [
+          {
+            "tag": "emissive",
+            "value": 0.75
+          }
+        ]
+      },
+      {
+        "id": "m16",
+        "parent": "lettering",
+        "transform": {
+          "pos": [
+            0.955,
+            0.1,
+            0
+          ],
+          "quat": [
+            -0.5,
+            0.5,
+            0.5,
+            -0.5
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.19,
+            "height": 0.045,
+            "depth": 0.05
+          },
+          "color": 16773072
+        },
+        "tags": [
+          {
+            "tag": "emissive",
+            "value": 0.75
+          }
+        ]
+      },
+      {
+        "id": "m17",
+        "parent": "lettering",
+        "transform": {
+          "pos": [
+            0.785,
+            0,
+            0
+          ],
+          "quat": [
+            0.71,
+            0,
+            0,
+            0.71
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.33,
+            "height": 0.045,
+            "depth": 0.06
+          },
+          "color": 16773072
+        },
+        "tags": [
+          {
+            "tag": "emissive",
+            "value": 0.75
+          }
+        ]
+      },
+      {
+        "id": "m18",
+        "parent": "lettering",
+        "transform": {
+          "pos": [
+            0.925,
+            -0.09,
+            0
+          ],
+          "quat": [
+            0.67,
+            -0.23,
+            -0.23,
+            0.67
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.31,
+            "height": 0.045,
+            "depth": 0.05
+          },
+          "color": 16773072
+        },
+        "tags": [
+          {
+            "tag": "emissive",
+            "value": 0.75
+          }
+        ]
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1786542918937,
+        "provider": "gpt",
+        "data": "eWgu55PIVlDKAfFBlscXy9zLbPETKNhfmvtF35Mc3JAstpgtWrRZ/pYhMmecF8uYv4ePZ6foful2C94ZOFpVhR5UEAb69IlbWbyp2kvywivAnwtqOJ6ZRIpcBq41HLkDL+PskIs0pb1mJOf5DxBEcRKprOoPOHj+I+fSemduhMkRsl6KBt2KkQjf/IgepzdYPghrQq2c6C6aNHIWFpdzcHVjqPq5jdVK+isZ+fseNGM8rwokpNWYbePei9zcjPCuEVFmg8WWxTqx7+F9dzuZctuwNAhnwMDxEgtLrx4B0pY8G2XSPsoFa9/Rv4JrHmtr2HZ7yVMRaPpVV980FKd/CBfpa02V4f28GOH8tETzWwtYRB5pgIdWIffREMv7MCx0ClhAn3MxlfpSVbZPUwvMUM2vSP1ZSo+6SoAISzQdb8jNeOD6FolTmG1I5j36Iy9d2/ViyT/fOQOfVSeA3COW3N3ewFId++StQnQqLnbTAmyuzegjpuFU34D1lmQO62volvFBKmtDEuo2YTC2AugQTgwL/Rt9JX1Hop5UrdtHDq9Z/kOq8wqq+WDHtmzzUV0/w8zzjj7usoe6SXeDHpWlqRiRIBT2fU5jStUwmYmNydPXEO78UQxpAt0NlB+yjHejzqfjAgzuKBeyaBvRVL3lxzs0+QOieT7hYfFea6/6MPcsWIBapjol32A9CELesty9FqaUara5mHbLQ7tvNNceoEFxsgnElqDQ0hsh7BaWoTYVjOb9eaelx+/gkjoegnVB74nl+GHOEe13y0WEzh65hQM2VOyI97pyR0dGTs+eRQBV6Xvso+tHFRaHmIcy1tgZ3dm+umNyD4cTwAnkZEaqH5UpLt0WWLOtulf4WsjwFcR/G+4hfGkEjECKp7YnNVO2q9qVdQEWSAkU1nJJgJjoUPPvhVlApBpWf6+Pcbj3XUAS11OaeUkltGzQVWgkJDUElRL6v4oUJXwhevkNqIUu6LbIwZ4RNXHGC5tI5wzZsiIuLeGmBJOxBrAPzMmNid2bs1X5/wTg4lZBap0qHtLMZj/2M8vTpe1fCV+7qyWvaWQUNP7yaccFDW98HBpkrxWBn8rYow==",
+        "edits": ""
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -1.35,
+          1.3877787807814457e-17,
+          -0.08625
+        ],
+        "max": [
+          1.35,
+          0.76,
+          0.033749999999999995
+        ],
+        "sourceNodeId": "m0"
+      }
+    ],
+    "sourceMeshCount": 19,
+    "candidateCount": 1,
+    "fallbackUsed": false
+  },
+  "footprintRadius": 1.35,
+  "sizeClass": "medium",
+  "mode": "voxel",
+  "provider": "gpt",
+  "createdAt": 1786542925508,
+  "updatedAt": 1786542925508
+}

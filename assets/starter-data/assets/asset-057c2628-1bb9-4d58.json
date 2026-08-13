@@ -1,0 +1,549 @@
+{
+  "id": "asset-057c2628-1bb9-4d58",
+  "name": "对称玻璃窗",
+  "prompt": "独立的80年代餐厅侧墙玻璃窗，带厚实深色窗框和分格玻璃；玻璃材质保留在模型中，窗体不捆绑墙壁。\n全局资产美术方向：80年代小餐厅风格，暖色木饰面、米白墙面、暗红与棕橙色软装、黄铜或深色金属灯具，家具比例适配1.60m角色，造型简洁耐用，避免现代极简或高档餐厅风格。\n资产角色：daylight and street-facing wall fixture；目标尺度：large。\nKeep foliage base colors clearly chromatic rather than gray, with enough brightness to remain readable after normal self-shadowing; do not use near-black leaf colors.\n只生成一个可复用的独立物体，不要生成地面、背景、天空、完整场景或多个分散物体。",
+  "tags": [
+    "indoor",
+    "window",
+    "glass",
+    "retro-1980s",
+    "restaurant-window"
+  ],
+  "modelJson": {
+    "name": "80年代餐厅侧墙分格玻璃窗",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "m0",
+        "transform": {
+          "pos": [
+            0,
+            5.15,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 5.8,
+            "height": 0.32,
+            "depth": 0.42
+          },
+          "color": 3810331
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m1",
+        "transform": {
+          "pos": [
+            0,
+            0.75,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 5.8,
+            "height": 0.32,
+            "depth": 0.42
+          },
+          "color": 3810331
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m2",
+        "transform": {
+          "pos": [
+            -2.74,
+            2.95,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.32,
+            "height": 4.1,
+            "depth": 0.42
+          },
+          "color": 3810331
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m3",
+        "transform": {
+          "pos": [
+            2.74,
+            2.95,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.32,
+            "height": 4.1,
+            "depth": 0.42
+          },
+          "color": 3810331
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m4",
+        "transform": {
+          "pos": [
+            0,
+            2.95,
+            0.04
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.22,
+            "height": 4.1,
+            "depth": 0.34
+          },
+          "color": 5320741
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m5",
+        "transform": {
+          "pos": [
+            0,
+            2.95,
+            0.04
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 5.25,
+            "height": 0.22,
+            "depth": 0.34
+          },
+          "color": 5320741
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m6",
+        "transform": {
+          "pos": [
+            -1.38,
+            4.02,
+            0.01
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2.48,
+            "height": 1.82,
+            "depth": 0.12
+          },
+          "color": 13227208
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass"
+          }
+        ]
+      },
+      {
+        "id": "m7",
+        "transform": {
+          "pos": [
+            1.38,
+            4.02,
+            0.01
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2.48,
+            "height": 1.82,
+            "depth": 0.12
+          },
+          "color": 13227208
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass"
+          }
+        ]
+      },
+      {
+        "id": "m8",
+        "transform": {
+          "pos": [
+            -1.38,
+            1.88,
+            0.01
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2.48,
+            "height": 1.82,
+            "depth": 0.12
+          },
+          "color": 12110276
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass"
+          }
+        ]
+      },
+      {
+        "id": "m9",
+        "transform": {
+          "pos": [
+            1.38,
+            1.88,
+            0.01
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2.48,
+            "height": 1.82,
+            "depth": 0.12
+          },
+          "color": 12110276
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass"
+          }
+        ]
+      },
+      {
+        "id": "m10",
+        "transform": {
+          "pos": [
+            0,
+            0.5,
+            0.05
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 5.95,
+            "height": 0.28,
+            "depth": 0.68
+          },
+          "color": 7026726
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ]
+      },
+      {
+        "id": "m11",
+        "transform": {
+          "pos": [
+            0,
+            0.7,
+            0.08
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 5.35,
+            "height": 0.16,
+            "depth": 0.5
+          },
+          "color": 10115890
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ]
+      },
+      {
+        "id": "m12",
+        "transform": {
+          "pos": [
+            -0.17,
+            2.95,
+            0.28
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.18,
+            "height": 0.58,
+            "depth": 0.12
+          },
+          "color": 11696693
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m13",
+        "transform": {
+          "pos": [
+            0.17,
+            2.95,
+            0.28
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.18,
+            "height": 0.58,
+            "depth": 0.12
+          },
+          "color": 11696693
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1786529963514,
+        "provider": "gpt",
+        "data": "3TT96pGG/op9vfchuSdqG0QO52KCdFzKEEyQGPHbeVoJh7srXubeehZUkmrddXt/NrDl+BgD0RYQ+zvS0NB9kLzcWvN+KkVD5mC+EkX2OKGTr4JoI13niJLy2nMm+vaDQs90a9ILhNHqDWpKdNJaVFfDz8kmgbUku4vCmmi5GerQPX5SoMZWqn4rIuVd6SjHs6o87trtza9IrQplhCs+osRyfp/uDSRGKQZ3pGh+GnrSFpxqG191qMOeR0PnuvhkXF2ADstV0P2MPM0LsagZsvSwfiy90d8Ceza7wVUgQBeUw5F940cWZWlP6lkb2WdlRZ8iJe4NzRB4bM2fBbBZEn2f1RqJ8vNxEjhZZsBv4+QACxpObb4G+loAC075KnmfnevTvmodzTM3hK+Ju19aSNAAjIPqoifLx5Ti72xN21CXYKqySkxY+HgNHyWT0WbYxcBrSHKa9AD5zPFz+ngo5AIr+zR6VrFqTXSAeTJAKDKvGclGdJg/CLJfjq7NUSIJmfx4cBNhZXwNRcPOiubVKu8twwDos1AU/OjF+SUXMYB5MAEqQhY3gUPUtK/PHLoInTGhVyk81svI7EMePGzdSO07mgw5KhbMmjRBhwEZdbIC+X9bLdE/iYYv+UggFtcdgPAhg+hTIvwHR0bHJCNkRy3gvCT7tBC7cRc=",
+        "edits": ""
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -2.975,
+          0,
+          -0.34
+        ],
+        "max": [
+          2.975,
+          0.28,
+          0.34
+        ],
+        "sourceNodeId": "m10"
+      },
+      {
+        "min": [
+          -2.9,
+          4.63,
+          -0.26
+        ],
+        "max": [
+          2.9,
+          4.95,
+          0.16
+        ],
+        "sourceNodeId": "m0"
+      },
+      {
+        "min": [
+          -2.9,
+          0.22999999999999998,
+          -0.26
+        ],
+        "max": [
+          2.9,
+          0.55,
+          0.16
+        ],
+        "sourceNodeId": "m1"
+      },
+      {
+        "min": [
+          -2.9000000000000004,
+          0.5400000000000004,
+          -0.26
+        ],
+        "max": [
+          -2.58,
+          4.64,
+          0.16
+        ],
+        "sourceNodeId": "m2"
+      },
+      {
+        "min": [
+          2.58,
+          0.5400000000000004,
+          -0.26
+        ],
+        "max": [
+          2.9000000000000004,
+          4.64,
+          0.16
+        ],
+        "sourceNodeId": "m3"
+      },
+      {
+        "min": [
+          -2.62,
+          2.7499999999999996,
+          -0.09999999999999998
+        ],
+        "max": [
+          -0.1399999999999999,
+          4.569999999999999,
+          0.020000000000000004
+        ],
+        "sourceNodeId": "m6"
+      },
+      {
+        "min": [
+          0.1399999999999999,
+          2.7499999999999996,
+          -0.09999999999999998
+        ],
+        "max": [
+          2.62,
+          4.569999999999999,
+          0.020000000000000004
+        ],
+        "sourceNodeId": "m7"
+      },
+      {
+        "min": [
+          -2.62,
+          0.6099999999999999,
+          -0.09999999999999998
+        ],
+        "max": [
+          -0.1399999999999999,
+          2.43,
+          0.020000000000000004
+        ],
+        "sourceNodeId": "m8"
+      },
+      {
+        "min": [
+          0.1399999999999999,
+          0.6099999999999999,
+          -0.09999999999999998
+        ],
+        "max": [
+          2.62,
+          2.43,
+          0.020000000000000004
+        ],
+        "sourceNodeId": "m9"
+      },
+      {
+        "min": [
+          -2.675,
+          0.26,
+          -0.21999999999999997
+        ],
+        "max": [
+          2.675,
+          0.41999999999999993,
+          0.28
+        ],
+        "sourceNodeId": "m11"
+      },
+      {
+        "min": [
+          -2.625,
+          2.4800000000000004,
+          -0.18
+        ],
+        "max": [
+          2.625,
+          2.7,
+          0.16000000000000003
+        ],
+        "sourceNodeId": "m5"
+      },
+      {
+        "min": [
+          -0.11,
+          0.5400000000000004,
+          -0.18
+        ],
+        "max": [
+          0.11,
+          4.64,
+          0.16000000000000003
+        ],
+        "sourceNodeId": "m4"
+      }
+    ],
+    "sourceMeshCount": 14,
+    "candidateCount": 12,
+    "fallbackUsed": false
+  },
+  "footprintRadius": 2.975,
+  "sizeClass": "large",
+  "mode": "voxel",
+  "provider": "gpt",
+  "createdAt": 1786529966550,
+  "updatedAt": 1786529966550
+}

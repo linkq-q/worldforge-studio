@@ -1,0 +1,313 @@
+{
+  "id": "asset-fd6a5943-7519-48a4",
+  "name": "落地玻璃橱窗",
+  "prompt": "单块可重复的落地玻璃橱窗，细金属边框与微弱反射玻璃，不包含墙体或模特，供编译器建立匹配窗洞。\n全局资产美术方向：现代简洁的体素风服装零售家具，比例参照1.60米角色；采用浅橡木、哑光白、炭灰金属与少量暖色织物，货架轮廓轻薄但可读，普通构件主要尺寸不小于0.27米。\n资产角色：入口两侧的日照与商品展示窗；目标尺度：large。\n只生成一个可复用的独立物体，不要生成地面、背景、天空、完整场景或多个分散物体。",
+  "tags": [
+    "shop-window",
+    "glass-display",
+    "daylight"
+  ],
+  "modelJson": {
+    "name": "可重复落地玻璃橱窗",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "m0",
+        "transform": {
+          "pos": [
+            0,
+            1.275,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2.35,
+            "height": 2.55,
+            "depth": 0.18
+          },
+          "color": 3422267
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m1",
+        "transform": {
+          "pos": [
+            0,
+            1.45,
+            0.11
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2.1,
+            "height": 2.28,
+            "depth": 0.08
+          },
+          "color": 13623779
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass"
+          }
+        ]
+      },
+      {
+        "id": "m2",
+        "transform": {
+          "pos": [
+            -1.105,
+            1.275,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.14,
+            "height": 2.55,
+            "depth": 0.24
+          },
+          "color": 3422267
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m3",
+        "transform": {
+          "pos": [
+            1.105,
+            1.275,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.14,
+            "height": 2.55,
+            "depth": 0.24
+          },
+          "color": 3422267
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m4",
+        "transform": {
+          "pos": [
+            0,
+            2.47,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2.35,
+            "height": 0.16,
+            "depth": 0.24
+          },
+          "color": 3422267
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m5",
+        "transform": {
+          "pos": [
+            0,
+            0.11,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2.35,
+            "height": 0.22,
+            "depth": 0.28
+          },
+          "color": 3422267
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m6",
+        "transform": {
+          "pos": [
+            0,
+            0.3,
+            0.03
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2.12,
+            "height": 0.12,
+            "depth": 0.34
+          },
+          "color": 14205082
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "oak"
+          }
+        ]
+      },
+      {
+        "id": "m7",
+        "transform": {
+          "pos": [
+            0,
+            0.78,
+            0.02
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.92,
+            "height": 0.1,
+            "depth": 0.38
+          },
+          "color": 15855851
+        }
+      },
+      {
+        "id": "m8",
+        "transform": {
+          "pos": [
+            0,
+            0.84,
+            0.2
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.92,
+            "height": 0.08,
+            "depth": 0.08
+          },
+          "color": 3422267
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1786542519944,
+        "provider": "gpt",
+        "data": "Wd6ZOh+8EiKnStcTaF95c5w1tBHOUO5uV1qSyLXEQu+YqHXkoLiXS4ToUp/LA5zI27Qa+Rx0inuBiWx4qMZ/MMHdGjs/vJEFdJxzPlIpw/vsQXfvk46CZY/9tTHr6X4y11Bnj9I4lCey94wiMlgis5kBQibYUSTGRuFbtLKj7IzALiPbvEKmhsyCwBzfvGDedDqAax/CPk4ZiyuoHbWDtXSv/nkCGGDofiHe6FStsonZ/SZeUzp2+xxKsn54Qk+WrxstTeNap1QXJ8OagB+UVK3qBty1e0rLk6qaEETOY380mbWbjaxl+A+9/NXIuGztCPifppJY2aL4ME7sfSC2JprO4m52qKjUOpkJ7J3I/aPHbMzGs+zAhrVjmvxSB0iYnPgUIL7wz2DD5MZQzF35MSlWYhsDgVOaDmwS+/1+syZrYZd4bjeX44Vy2rkajoY3hKena/DMVebvR35CDtP+R4OYQijF4epjWbL+JroR8ymaEKeowiTVjPdtDonTkSbgHD4Ynp6YUp5/+s35MouUyvGPWzOTObwjGyxiF+yqpqlfJYX27y/h5PasAeoD7S6WM2bSlp5yAHuWc4uHwFhV2E9KZucbVzpv4XbmKbebU5E31T8=",
+        "edits": ""
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -1.175,
+          0,
+          -0.125
+        ],
+        "max": [
+          1.175,
+          2.55,
+          0.05499999999999999
+        ],
+        "sourceNodeId": "m0"
+      },
+      {
+        "min": [
+          -1.175,
+          0,
+          -0.17500000000000002
+        ],
+        "max": [
+          1.175,
+          0.22,
+          0.10500000000000001
+        ],
+        "sourceNodeId": "m5"
+      },
+      {
+        "min": [
+          -1.175,
+          2.39,
+          -0.155
+        ],
+        "max": [
+          1.175,
+          2.5500000000000003,
+          0.08499999999999999
+        ],
+        "sourceNodeId": "m4"
+      },
+      {
+        "min": [
+          -1.06,
+          0.24,
+          -0.17500000000000002
+        ],
+        "max": [
+          1.06,
+          0.36,
+          0.165
+        ],
+        "sourceNodeId": "m6"
+      }
+    ],
+    "sourceMeshCount": 9,
+    "candidateCount": 4,
+    "fallbackUsed": false
+  },
+  "footprintRadius": 1.175,
+  "sizeClass": "medium",
+  "mode": "voxel",
+  "provider": "gpt",
+  "createdAt": 1786542524222,
+  "updatedAt": 1786542524222
+}

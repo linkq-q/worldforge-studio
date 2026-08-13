@@ -1,6 +1,6 @@
 {
   "id": "render-e79c36e1-c0d0-406a",
-  "name": "梦幻樱花",
+  "name": "梦幻樱花晨景",
   "description": "提高柔和晨光灯光强度，使画面更明亮，其余渲染语义保持不变。",
   "sourcePrompt": "光再强一些",
   "styleTags": [
@@ -90,8 +90,7 @@
           "semanticStrength": 0.9,
           "pollen": 0.42,
           "vapor": 0.14,
-          "dust": 0,
-          "windStreaks": 0
+          "dust": 0
         }
       },
       {
@@ -133,7 +132,7 @@
         "pollen": 0.42,
         "vapor": 0.14,
         "dust": 0,
-        "windStreaks": 0
+        "sand": 0
       }
     }
   },
@@ -195,7 +194,7 @@
         "ai": {
           "enabled": true,
           "min": 0.05,
-          "max": 4
+          "max": 1.5
         },
         "developer": {
           "enabled": true,
@@ -225,7 +224,7 @@
         "ai": {
           "enabled": true,
           "min": 0,
-          "max": 4
+          "max": 1.8
         },
         "developer": {
           "enabled": true,
@@ -337,7 +336,7 @@
         "ai": {
           "enabled": true,
           "min": 0,
-          "max": 8
+          "max": 2.4
         },
         "developer": {
           "enabled": true,
@@ -363,7 +362,7 @@
         "ai": {
           "enabled": true,
           "min": 0,
-          "max": 12
+          "max": 5
         },
         "developer": {
           "enabled": true,
@@ -378,7 +377,7 @@
         "ai": {
           "enabled": true,
           "min": 0.2,
-          "max": 3
+          "max": 1.5
         },
         "developer": {
           "enabled": true,
@@ -1255,7 +1254,7 @@
         "ai": {
           "enabled": true,
           "min": 0.25,
-          "max": 1
+          "max": 0.78
         },
         "developer": {
           "enabled": true,
@@ -1298,6 +1297,17 @@
       },
       {
         "moduleId": "runtime.water-style",
+        "parameter": "foamColor",
+        "control": "color",
+        "ai": {
+          "enabled": true
+        },
+        "developer": {
+          "enabled": true
+        }
+      },
+      {
+        "moduleId": "runtime.water-style",
         "parameter": "waveStrength",
         "control": "range",
         "ai": {
@@ -1328,6 +1338,51 @@
       },
       {
         "moduleId": "runtime.water-style",
+        "parameter": "waveScale",
+        "control": "range",
+        "ai": {
+          "enabled": true,
+          "min": 0.25,
+          "max": 4
+        },
+        "developer": {
+          "enabled": true,
+          "min": 0.25,
+          "max": 4
+        }
+      },
+      {
+        "moduleId": "runtime.water-style",
+        "parameter": "waveDirection",
+        "control": "range",
+        "ai": {
+          "enabled": true,
+          "min": -180,
+          "max": 180
+        },
+        "developer": {
+          "enabled": true,
+          "min": -180,
+          "max": 180
+        }
+      },
+      {
+        "moduleId": "runtime.water-style",
+        "parameter": "waveSharpness",
+        "control": "range",
+        "ai": {
+          "enabled": true,
+          "min": 0.5,
+          "max": 4
+        },
+        "developer": {
+          "enabled": true,
+          "min": 0.5,
+          "max": 4
+        }
+      },
+      {
+        "moduleId": "runtime.water-style",
         "parameter": "foamStrength",
         "control": "range",
         "ai": {
@@ -1343,17 +1398,77 @@
       },
       {
         "moduleId": "runtime.water-style",
-        "parameter": "reflectionStrength",
+        "parameter": "shoreFoamWidth",
+        "control": "range",
+        "ai": {
+          "enabled": true,
+          "min": 0.02,
+          "max": 0.25
+        },
+        "developer": {
+          "enabled": true,
+          "min": 0.02,
+          "max": 0.25
+        }
+      },
+      {
+        "moduleId": "runtime.water-style",
+        "parameter": "shoreWaveRange",
+        "control": "range",
+        "ai": {
+          "enabled": true,
+          "min": 0.12,
+          "max": 1
+        },
+        "developer": {
+          "enabled": true,
+          "min": 0.12,
+          "max": 1
+        }
+      },
+      {
+        "moduleId": "runtime.water-style",
+        "parameter": "shoreWaveFrequency",
+        "control": "range",
+        "ai": {
+          "enabled": true,
+          "min": 1,
+          "max": 16
+        },
+        "developer": {
+          "enabled": true,
+          "min": 1,
+          "max": 16
+        }
+      },
+      {
+        "moduleId": "runtime.water-style",
+        "parameter": "shoreWaveWidth",
+        "control": "range",
+        "ai": {
+          "enabled": true,
+          "min": 0.1,
+          "max": 0.9
+        },
+        "developer": {
+          "enabled": true,
+          "min": 0.1,
+          "max": 0.9
+        }
+      },
+      {
+        "moduleId": "runtime.water-style",
+        "parameter": "shoreWaveBreakup",
         "control": "range",
         "ai": {
           "enabled": true,
           "min": 0,
-          "max": 1.5
+          "max": 0.8
         },
         "developer": {
           "enabled": true,
           "min": 0,
-          "max": 1.5
+          "max": 0.8
         }
       },
       {
@@ -1363,7 +1478,7 @@
         "ai": {
           "enabled": true,
           "min": 0,
-          "max": 1
+          "max": 0.35
         },
         "developer": {
           "enabled": true,
@@ -1378,42 +1493,12 @@
         "ai": {
           "enabled": true,
           "min": 0.1,
-          "max": 1.5
+          "max": 0.7
         },
         "developer": {
           "enabled": true,
           "min": 0.1,
           "max": 1.5
-        }
-      },
-      {
-        "moduleId": "runtime.water-style",
-        "parameter": "reflectionDistortion",
-        "control": "range",
-        "ai": {
-          "enabled": true,
-          "min": 0,
-          "max": 0.2
-        },
-        "developer": {
-          "enabled": true,
-          "min": 0,
-          "max": 0.2
-        }
-      },
-      {
-        "moduleId": "runtime.water-style",
-        "parameter": "reflectionFresnel",
-        "control": "range",
-        "ai": {
-          "enabled": true,
-          "min": 0,
-          "max": 3
-        },
-        "developer": {
-          "enabled": true,
-          "min": 0,
-          "max": 3
         }
       },
       {
@@ -1992,7 +2077,7 @@
       },
       {
         "moduleId": "runtime.atmosphere-fx",
-        "parameter": "windStreaks",
+        "parameter": "sand",
         "control": "range",
         "ai": {
           "enabled": true,
@@ -2129,7 +2214,7 @@
     ]
   },
   "schemaVersion": 1,
-  "kind": "custom",
+  "kind": "builtin",
   "settings": {
     "background": "#c8dcef",
     "fogColor": "#d0c3d2",
@@ -2142,5 +2227,5 @@
     "exposure": 1
   },
   "createdAt": 1785744949654,
-  "updatedAt": 1785744949654
+  "updatedAt": 1786551136216
 }

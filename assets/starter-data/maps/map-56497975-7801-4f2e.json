@@ -1,0 +1,3721 @@
+{
+  "id": "map-56497975-7801-4f2e",
+  "seed": 2338525961,
+  "name": "服装店样例",
+  "assetGenerationMode": "voxel",
+  "version": 9,
+  "createdAt": 1786542128290,
+  "updatedAt": 1786598228420,
+  "box": {
+    "size": [
+      22,
+      6,
+      14
+    ],
+    "colors": {
+      "floor": "#8a765e",
+      "ceiling": "#ded8ca",
+      "north": "#c9c0ae",
+      "south": "#c9c0ae",
+      "east": "#d1c8b7",
+      "west": "#d1c8b7"
+    }
+  },
+  "sceneMode": "indoor",
+  "playerHeight": 1.6,
+  "playerRadius": 0.38,
+  "worldScaleProfile": "balanced",
+  "room": {
+    "position": [
+      0,
+      0,
+      0
+    ],
+    "size": [
+      22,
+      6,
+      14
+    ],
+    "wallThickness": 0.16,
+    "openings": [
+      {
+        "id": "composition-entrance-clearance-glass-entry-door-accent-1-opening",
+        "kind": "door",
+        "wall": "north",
+        "offset": 0,
+        "bottom": 0,
+        "width": 1.6400000000000001,
+        "height": 2.24
+      },
+      {
+        "id": "composition-entrance-clearance-storefront-window-1-opening",
+        "kind": "window",
+        "wall": "north",
+        "offset": 0,
+        "bottom": 2.64,
+        "width": 2.0624000000000002,
+        "height": 1.5200000000000002
+      },
+      {
+        "id": "required-family-presence-fitting-room-module-indoor-0-1-opening",
+        "kind": "door",
+        "wall": "north",
+        "offset": -2.2894191685912233,
+        "bottom": 0,
+        "width": 1.546605080831409,
+        "height": 2.24
+      }
+    ]
+  },
+  "lighting": {
+    "sunPosition": [
+      -18,
+      24,
+      14
+    ]
+  },
+  "terrain": {
+    "resolutionX": 33,
+    "resolutionZ": 33,
+    "heights": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ]
+  },
+  "grassLayers": [],
+  "waterBodies": [],
+  "paintStrokes": [],
+  "objects": [
+    {
+      "id": "composition-front-checkout-checkout-counter-accent-1",
+      "name": "服装店收银台",
+      "parentId": null,
+      "assetId": "asset-baebb7a2-1b86-4a79",
+      "transform": {
+        "position": [
+          -6.82,
+          0,
+          -4.06
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1.2201869158878507,
+          1.2201869158878507,
+          1.2201869158878507
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-entrance-clearance-glass-entry-door-accent-1",
+      "name": "玻璃店铺入口门",
+      "parentId": null,
+      "assetId": "asset-6d292ec6-4e7d-4fd4",
+      "transform": {
+        "position": [
+          0,
+          0,
+          -6.92
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          0.9000000000000001,
+          1
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false,
+      "roomOpeningId": "composition-entrance-clearance-glass-entry-door-accent-1-opening"
+    },
+    {
+      "id": "composition-wall-merchandise-band-wall-apparel-rack-1",
+      "name": "墙面服装货架模块",
+      "parentId": null,
+      "assetId": "asset-6362b1e0-028a-4e0e",
+      "transform": {
+        "position": [
+          10.450159999999999,
+          0,
+          -4.9651948051948045
+        ],
+        "rotation": [
+          0,
+          -1.5707963267948966,
+          0
+        ],
+        "scale": [
+          1.7953246753246719,
+          0.7403921568627451,
+          1.7953246753246719
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-wall-merchandise-band-wall-apparel-rack-3",
+      "name": "墙面服装货架模块",
+      "parentId": null,
+      "assetId": "asset-6362b1e0-028a-4e0e",
+      "transform": {
+        "position": [
+          10.450159999999999,
+          0,
+          -0.9930389610389607
+        ],
+        "rotation": [
+          0,
+          -1.5707963267948966,
+          0
+        ],
+        "scale": [
+          1.7953246753246719,
+          0.7403921568627451,
+          1.7953246753246719
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-wall-merchandise-band-wall-apparel-rack-5",
+      "name": "墙面服装货架模块",
+      "parentId": null,
+      "assetId": "asset-6362b1e0-028a-4e0e",
+      "transform": {
+        "position": [
+          10.450159999999999,
+          0,
+          2.979116883116883
+        ],
+        "rotation": [
+          0,
+          -1.5707963267948966,
+          0
+        ],
+        "scale": [
+          1.7953246753246719,
+          0.7403921568627451,
+          1.7953246753246719
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-central-retail-central-double-rack-10",
+      "name": "中央双面服装货架模块",
+      "parentId": null,
+      "assetId": "asset-eacec7c9-cc8f-4871",
+      "transform": {
+        "position": [
+          2.907848347826086,
+          0,
+          -2.697848347826086
+        ],
+        "rotation": [
+          0,
+          6.123233995736766e-17,
+          0
+        ],
+        "scale": [
+          1.6417391304347826,
+          1.6417391304347826,
+          1.6417391304347826
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-central-retail-central-double-rack-11",
+      "name": "中央双面服装货架模块",
+      "parentId": null,
+      "assetId": "asset-eacec7c9-cc8f-4871",
+      "transform": {
+        "position": [
+          2.907848347826086,
+          0,
+          0.20999999999999983
+        ],
+        "rotation": [
+          0,
+          6.123233995736766e-17,
+          0
+        ],
+        "scale": [
+          1.6417391304347826,
+          1.6417391304347826,
+          1.6417391304347826
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-central-retail-central-double-rack-12",
+      "name": "中央双面服装货架模块",
+      "parentId": null,
+      "assetId": "asset-eacec7c9-cc8f-4871",
+      "transform": {
+        "position": [
+          2.907848347826086,
+          0,
+          3.117848347826086
+        ],
+        "rotation": [
+          0,
+          6.123233995736766e-17,
+          0
+        ],
+        "scale": [
+          1.6417391304347826,
+          1.6417391304347826,
+          1.6417391304347826
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-central-retail-central-double-rack-24",
+      "name": "中央双面服装货架模块",
+      "parentId": null,
+      "assetId": "asset-eacec7c9-cc8f-4871",
+      "transform": {
+        "position": [
+          -2.907848347826086,
+          0,
+          -2.697848347826086
+        ],
+        "rotation": [
+          0,
+          6.123233995736766e-17,
+          0
+        ],
+        "scale": [
+          1.6417391304347826,
+          1.6417391304347826,
+          1.6417391304347826
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-central-retail-central-double-rack-25",
+      "name": "中央双面服装货架模块",
+      "parentId": null,
+      "assetId": "asset-eacec7c9-cc8f-4871",
+      "transform": {
+        "position": [
+          -2.907848347826086,
+          0,
+          0.21000000000000016
+        ],
+        "rotation": [
+          0,
+          6.123233995736766e-17,
+          0
+        ],
+        "scale": [
+          1.6417391304347826,
+          1.6417391304347826,
+          1.6417391304347826
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-central-retail-central-double-rack-26",
+      "name": "中央双面服装货架模块",
+      "parentId": null,
+      "assetId": "asset-eacec7c9-cc8f-4871",
+      "transform": {
+        "position": [
+          -2.907848347826086,
+          0,
+          3.117848347826086
+        ],
+        "rotation": [
+          0,
+          6.123233995736766e-17,
+          0
+        ],
+        "scale": [
+          1.6417391304347826,
+          1.6417391304347826,
+          1.6417391304347826
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-entrance-clearance-storefront-window-1",
+      "name": "落地玻璃橱窗",
+      "parentId": null,
+      "assetId": "asset-fd6a5943-7519-48a4",
+      "transform": {
+        "position": [
+          0,
+          2.64,
+          -6.92
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          0.8435744680851064,
+          0.5559845559845561,
+          0.8435744680851064
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false,
+      "roomOpeningId": "composition-entrance-clearance-storefront-window-1-opening"
+    },
+    {
+      "id": "composition-wall-merchandise-band-wall-mirror-1",
+      "name": "全身试衣镜",
+      "parentId": null,
+      "assetId": "asset-c474c664-9ab3-45f5",
+      "transform": {
+        "position": [
+          10.77802917647059,
+          2.6803200000000005,
+          0
+        ],
+        "rotation": [
+          0,
+          -1.5707963267948966,
+          0
+        ],
+        "scale": [
+          0.7996235294117646,
+          0.7996235294117646,
+          0.7996235294117646
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-wall-merchandise-band-fire-extinguisher-1",
+      "name": "墙挂灭火器",
+      "parentId": null,
+      "assetId": "asset-d4d29475-43a1-4bcd",
+      "transform": {
+        "position": [
+          10.656954056067391,
+          2.8640000000000003,
+          -4
+        ],
+        "rotation": [
+          0,
+          -1.5707963267948966,
+          0
+        ],
+        "scale": [
+          1.0169219107367098,
+          1.0096692111959285,
+          1.0169219107367098
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-wall-merchandise-band-fire-extinguisher-2",
+      "name": "墙挂灭火器",
+      "parentId": null,
+      "assetId": "asset-d4d29475-43a1-4bcd",
+      "transform": {
+        "position": [
+          10.661626587892417,
+          2.8731892294563877,
+          4
+        ],
+        "rotation": [
+          0,
+          -1.5707963267948966,
+          0
+        ],
+        "scale": [
+          0.9909634005976841,
+          0.9909634005976841,
+          0.9909634005976841
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-central-retail-mannequin-display-1",
+      "name": "服装展示模特",
+      "parentId": null,
+      "assetId": "asset-a42676d7-3e1e-43e1",
+      "transform": {
+        "position": [
+          2.75,
+          0,
+          -2.54
+        ],
+        "rotation": [
+          0,
+          2.356194490192345,
+          0
+        ],
+        "scale": [
+          1.3648192771084333,
+          1.3648192771084333,
+          1.3648192771084333
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-central-retail-mannequin-display-2",
+      "name": "服装展示模特",
+      "parentId": null,
+      "assetId": "asset-a42676d7-3e1e-43e1",
+      "transform": {
+        "position": [
+          2.75,
+          0,
+          2.96
+        ],
+        "rotation": [
+          0,
+          0.7853981633974483,
+          0
+        ],
+        "scale": [
+          1.3648192771084333,
+          1.3648192771084333,
+          1.3648192771084333
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-central-retail-mannequin-display-3",
+      "name": "服装展示模特",
+      "parentId": null,
+      "assetId": "asset-a42676d7-3e1e-43e1",
+      "transform": {
+        "position": [
+          -2.75,
+          0,
+          -2.54
+        ],
+        "rotation": [
+          0,
+          -2.356194490192345,
+          0
+        ],
+        "scale": [
+          1.3648192771084333,
+          1.3648192771084333,
+          1.3648192771084333
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-central-retail-mannequin-display-4",
+      "name": "服装展示模特",
+      "parentId": null,
+      "assetId": "asset-a42676d7-3e1e-43e1",
+      "transform": {
+        "position": [
+          -2.75,
+          0,
+          2.96
+        ],
+        "rotation": [
+          0,
+          -0.7853981633974483,
+          0
+        ],
+        "scale": [
+          1.3648192771084333,
+          1.3648192771084333,
+          1.3648192771084333
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-front-checkout-ceiling-track-light-3",
+      "name": "顶棚轨道射灯模块",
+      "parentId": null,
+      "assetId": "asset-477fd220-ed7f-4cd3",
+      "transform": {
+        "position": [
+          -6.82,
+          0,
+          -2.5843999999999996
+        ],
+        "rotation": [
+          0,
+          3.141592653589793,
+          0
+        ],
+        "scale": [
+          2.960384791811379,
+          2.960384791811379,
+          2.960384791811379
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-entrance-clearance-mannequin-display-1",
+      "name": "服装展示模特",
+      "parentId": null,
+      "assetId": "asset-a42676d7-3e1e-43e1",
+      "transform": {
+        "position": [
+          0,
+          0,
+          -5.46
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1.3701532942611943,
+          1.3648192771084333,
+          1.3701532942611943
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-rear-fitting-service-waiting-bench-1",
+      "name": "试衣等候长凳",
+      "parentId": null,
+      "assetId": "asset-0000f366-8e5a-4edb",
+      "transform": {
+        "position": [
+          -1.75,
+          0,
+          5.32
+        ],
+        "rotation": [
+          0,
+          1.5707963267948966,
+          0
+        ],
+        "scale": [
+          1.152,
+          0.8359183673469387,
+          1.152
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-rear-fitting-service-waiting-bench-2",
+      "name": "试衣等候长凳",
+      "parentId": null,
+      "assetId": "asset-0000f366-8e5a-4edb",
+      "transform": {
+        "position": [
+          1.75,
+          0,
+          5.32
+        ],
+        "rotation": [
+          0,
+          -1.5707963267948966,
+          0
+        ],
+        "scale": [
+          1.1519999999999997,
+          0.8359183673469387,
+          1.1519999999999997
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "required-wall-rack-requirement-mirror-1",
+      "name": "墙面服装货架模块",
+      "parentId": null,
+      "assetId": "asset-6362b1e0-028a-4e0e",
+      "transform": {
+        "position": [
+          -10.450159999999999,
+          0,
+          -4.9651948051948045
+        ],
+        "rotation": [
+          0,
+          1.5707963267948966,
+          0
+        ],
+        "scale": [
+          1.7953246753246719,
+          0.7403921568627451,
+          1.7953246753246719
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "required-wall-rack-requirement-mirror-2",
+      "name": "墙面服装货架模块",
+      "parentId": null,
+      "assetId": "asset-6362b1e0-028a-4e0e",
+      "transform": {
+        "position": [
+          -10.450159999999999,
+          0,
+          -0.9930389610389607
+        ],
+        "rotation": [
+          0,
+          1.5707963267948966,
+          0
+        ],
+        "scale": [
+          1.7953246753246719,
+          0.7403921568627451,
+          1.7953246753246719
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "required-wall-rack-requirement-mirror-3",
+      "name": "墙面服装货架模块",
+      "parentId": null,
+      "assetId": "asset-6362b1e0-028a-4e0e",
+      "transform": {
+        "position": [
+          -10.450159999999999,
+          0,
+          2.979116883116883
+        ],
+        "rotation": [
+          0,
+          1.5707963267948966,
+          0
+        ],
+        "scale": [
+          1.7953246753246719,
+          0.7403921568627451,
+          1.7953246753246719
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "required-central-rack-requirement-indoor-1-10",
+      "name": "中央双面服装货架模块",
+      "parentId": null,
+      "assetId": "asset-eacec7c9-cc8f-4871",
+      "transform": {
+        "position": [
+          6.461885217391304,
+          0,
+          -3.9567635239679295e-16
+        ],
+        "rotation": [
+          0,
+          6.123233995736766e-17,
+          0
+        ],
+        "scale": [
+          1.6417391304347821,
+          1.6417391304347821,
+          1.6417391304347821
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "required-central-rack-requirement-indoor-1-13",
+      "name": "中央双面服装货架模块",
+      "parentId": null,
+      "assetId": "asset-eacec7c9-cc8f-4871",
+      "transform": {
+        "position": [
+          -6.461885217391304,
+          0,
+          3.9567635239679295e-16
+        ],
+        "rotation": [
+          0,
+          6.123233995736766e-17,
+          0
+        ],
+        "scale": [
+          1.6417391304347821,
+          1.6417391304347821,
+          1.6417391304347821
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "required-family-presence-fitting-room-module-indoor-0-1",
+      "name": "模块化试衣间",
+      "parentId": null,
+      "assetId": "asset-602cdb25-b737-45fd",
+      "transform": {
+        "position": [
+          -2.2894191685912233,
+          0,
+          -6.92
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          0.9976905311778291,
+          0.9976905311778291,
+          0.9976905311778291
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false,
+      "roomOpeningId": "required-family-presence-fitting-room-module-indoor-0-1-opening"
+    },
+    {
+      "id": "required-family-presence-store-wall-sign-indoor-0-2",
+      "name": "服装店墙面店招",
+      "parentId": null,
+      "assetId": "asset-f54bdf22-4a0c-4fb9",
+      "transform": {
+        "position": [
+          4.194947368421051,
+          0,
+          -6.678947368421052
+        ],
+        "rotation": [
+          0,
+          3.141592653589793,
+          0
+        ],
+        "scale": [
+          2.9810526315789465,
+          2.9810526315789465,
+          2.9810526315789465
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "generated-fallback-asset-ea0d3ce2-8ca5-4711-1",
+      "name": "收银POS终端",
+      "parentId": null,
+      "assetId": "asset-ea0d3ce2-8ca5-4711",
+      "transform": {
+        "position": [
+          -4.333106629230315,
+          0,
+          -5.255635742447339
+        ],
+        "rotation": [
+          0,
+          0.1735364847197191,
+          0
+        ],
+        "scale": [
+          2.785262298188214,
+          2.0724592145015106,
+          2.785262298188214
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "terrain",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "generated-fallback-asset-0b36459f-5481-410c-5",
+      "name": "购物篮叠放组",
+      "parentId": null,
+      "assetId": "asset-0b36459f-5481-410c",
+      "transform": {
+        "position": [
+          5.361071284897858,
+          0,
+          -4.216630664346507
+        ],
+        "rotation": [
+          0,
+          5.218043321454787,
+          0
+        ],
+        "scale": [
+          1.6704865245483982,
+          1,
+          1.6704865245483982
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "terrain",
+      "visible": true,
+      "locked": false
+    }
+  ],
+  "spawnPoints": [
+    [
+      0,
+      0,
+      0
+    ]
+  ],
+  "spawnYaw": 0,
+  "confirmedAt": 1786598228405,
+  "renderSchemeId": "render-6d04102b-0cf0-4a5c",
+  "renderPromptSuggestions": [
+    "现代体素风精品服装店，浅木、哑光白与炭灰金属，柔和暖白轨道照明。",
+    "强调平行货架的纵深秩序、通透玻璃橱窗和连续无障碍购物通道。"
+  ],
+  "materialTagPolicy": {
+    "disabled": [
+      "base:fur"
+    ]
+  },
+  "visualSemantics": {
+    "version": 1,
+    "zones": [
+      {
+        "id": "wall-merchandise-band",
+        "tags": [],
+        "center": [
+          0,
+          0.56
+        ],
+        "radius": 7.5600000000000005,
+        "intensity": 0.82
+      },
+      {
+        "id": "central-retail",
+        "tags": [],
+        "center": [
+          0,
+          0.21
+        ],
+        "radius": 5.739999999999999,
+        "intensity": 1
+      },
+      {
+        "id": "entrance-clearance",
+        "tags": [],
+        "center": [
+          0,
+          -5.46
+        ],
+        "radius": 3.01,
+        "intensity": 0.86
+      },
+      {
+        "id": "front-checkout",
+        "tags": [],
+        "center": [
+          -6.82,
+          -4.06
+        ],
+        "radius": 2.3800000000000003,
+        "intensity": 0.88
+      },
+      {
+        "id": "rear-fitting-service",
+        "tags": [],
+        "center": [
+          0,
+          5.32
+        ],
+        "radius": 3.22,
+        "intensity": 0.78
+      },
+      {
+        "id": "main-aisle-front",
+        "tags": [],
+        "center": [
+          0,
+          -3.15
+        ],
+        "radius": 2.1,
+        "intensity": 0.92
+      },
+      {
+        "id": "main-aisle-center",
+        "tags": [],
+        "center": [
+          0,
+          0
+        ],
+        "radius": 2.24,
+        "intensity": 1
+      },
+      {
+        "id": "main-aisle-rear",
+        "tags": [],
+        "center": [
+          0,
+          3.15
+        ],
+        "radius": 2.1,
+        "intensity": 0.9
+      }
+    ],
+    "wind": {
+      "direction": [
+        0.9701425001453319,
+        0.24253562503633297
+      ],
+      "speed": 0.22,
+      "gustStrength": 0.18,
+      "gustFrequency": 0.12
+    }
+  },
+  "layout": {
+    "version": 1,
+    "globalPrompt": "",
+    "regions": [],
+    "edgeMask": {
+      "kind": "none",
+      "points": [
+        [
+          -11,
+          -7
+        ],
+        [
+          11,
+          -7
+        ],
+        [
+          11,
+          7
+        ],
+        [
+          -11,
+          7
+        ]
+      ],
+      "seed": 1,
+      "irregularity": 0.22
+    },
+    "stitchSources": [],
+    "seams": []
+  },
+  "collisionBake": {
+    "version": 1,
+    "sourceHash": "1umqsyg",
+    "sourceBoxCount": 100,
+    "boxes": [
+      {
+        "objectId": "composition-front-checkout-checkout-counter-accent-1",
+        "min": [
+          -6.136695327102804,
+          0.09761495327102812,
+          -5.057502803738317
+        ],
+        "max": [
+          -5.502198130841121,
+          1.1469757009345796,
+          -3.532269158878504
+        ]
+      },
+      {
+        "objectId": "composition-front-checkout-checkout-counter-accent-1",
+        "min": [
+          -8.284224299065421,
+          0.13422056074766367,
+          -3.2699289719626163
+        ],
+        "max": [
+          -5.355775700934579,
+          1.134773831775701,
+          -3.050295327102803
+        ]
+      },
+      {
+        "objectId": "composition-front-checkout-checkout-counter-accent-1",
+        "min": [
+          -8.333031775700935,
+          0,
+          -4.13626168224299
+        ],
+        "max": [
+          -5.306968224299066,
+          0.19522990654205613,
+          -3.0869009345794387
+        ]
+      },
+      {
+        "objectId": "composition-front-checkout-checkout-counter-accent-1",
+        "min": [
+          -8.345233644859814,
+          1.134773831775701,
+          -4.148463551401869
+        ],
+        "max": [
+          -5.294766355140187,
+          1.3056000000000003,
+          -3.050295327102803
+        ]
+      },
+      {
+        "objectId": "composition-front-checkout-checkout-counter-accent-1",
+        "min": [
+          -8.284224299065421,
+          0.13422056074766367,
+          -4.075252336448598
+        ],
+        "max": [
+          -8.064590654205608,
+          1.134773831775701,
+          -3.123506542056074
+        ]
+      },
+      {
+        "objectId": "composition-front-checkout-checkout-counter-accent-1",
+        "min": [
+          -5.575409345794393,
+          0.13422056074766367,
+          -4.075252336448598
+        ],
+        "max": [
+          -5.355775700934579,
+          1.134773831775701,
+          -3.123506542056074
+        ]
+      },
+      {
+        "objectId": "composition-front-checkout-checkout-counter-accent-1",
+        "min": [
+          -8.13780186915888,
+          0.07321121495327108,
+          -4.29488598130841
+        ],
+        "max": [
+          -5.941465420560748,
+          0.8297271028037384,
+          -4.172867289719625
+        ]
+      },
+      {
+        "objectId": "composition-front-checkout-checkout-counter-accent-1",
+        "min": [
+          -6.148897196261682,
+          0,
+          -5.075805607476635
+        ],
+        "max": [
+          -5.4899962616822435,
+          0.19522990654205613,
+          -3.5139663551401865
+        ]
+      },
+      {
+        "objectId": "composition-front-checkout-checkout-counter-accent-1",
+        "min": [
+          -6.173300934579439,
+          1.134773831775701,
+          -5.112411214953271
+        ],
+        "max": [
+          -5.465592523364486,
+          1.3056000000000003,
+          -3.4773607476635506
+        ]
+      },
+      {
+        "objectId": "composition-front-checkout-checkout-counter-accent-1",
+        "min": [
+          -8.088994392523364,
+          0.9639476635514019,
+          -4.270482242990654
+        ],
+        "max": [
+          -5.990272897196262,
+          1.085966355140187,
+          -3.6603887850467283
+        ]
+      },
+      {
+        "objectId": "composition-entrance-clearance-glass-entry-door-accent-1",
+        "min": [
+          -0.78,
+          0,
+          -7.06
+        ],
+        "max": [
+          0.78,
+          2.16,
+          -6.78
+        ]
+      },
+      {
+        "objectId": "__baked_map__",
+        "min": [
+          -11.141359999999997,
+          0,
+          -7.119584415584411
+        ],
+        "max": [
+          -10.818201558441556,
+          2.2211764705882353,
+          5.13350649350649
+        ]
+      },
+      {
+        "objectId": "__baked_map__",
+        "min": [
+          10.818201558441556,
+          0,
+          -7.119584415584411
+        ],
+        "max": [
+          11.141359999999997,
+          2.2211764705882353,
+          5.13350649350649
+        ]
+      },
+      {
+        "objectId": "__baked_map__",
+        "min": [
+          -11.087500259740256,
+          2.132329411764706,
+          -7.209350649350645
+        ],
+        "max": [
+          -9.794866493506493,
+          2.2655999999999996,
+          5.2232727272727235
+        ]
+      },
+      {
+        "objectId": "__baked_map__",
+        "min": [
+          9.794866493506493,
+          2.132329411764706,
+          -7.209350649350645
+        ],
+        "max": [
+          11.087500259740256,
+          2.2655999999999996,
+          5.2232727272727235
+        ]
+      },
+      {
+        "objectId": "required-wall-rack-requirement-mirror-1",
+        "min": [
+          -10.890014545454543,
+          0.1887999999999999,
+          -7.083677922077918
+        ],
+        "max": [
+          -10.35141714285714,
+          1.9287215686274513,
+          -6.545080519480516
+        ]
+      },
+      {
+        "objectId": "__baked_map__",
+        "min": [
+          -10.890014545454543,
+          0.1887999999999999,
+          -3.385309090909093
+        ],
+        "max": [
+          -10.351417142857143,
+          1.9287215686274513,
+          -2.572924675324672
+        ]
+      },
+      {
+        "objectId": "__baked_map__",
+        "min": [
+          -10.890014545454543,
+          0.1887999999999999,
+          0.5868467532467505
+        ],
+        "max": [
+          -10.351417142857143,
+          1.9287215686274513,
+          1.3992311688311718
+        ]
+      },
+      {
+        "objectId": "required-wall-rack-requirement-mirror-3",
+        "min": [
+          -10.890014545454543,
+          0.1887999999999999,
+          4.5590025974025945
+        ],
+        "max": [
+          -10.351417142857143,
+          1.9287215686274513,
+          5.097599999999996
+        ]
+      },
+      {
+        "objectId": "composition-wall-merchandise-band-wall-apparel-rack-1",
+        "min": [
+          10.35141714285714,
+          0.1887999999999999,
+          -7.083677922077918
+        ],
+        "max": [
+          10.890014545454543,
+          1.9287215686274513,
+          -6.545080519480516
+        ]
+      },
+      {
+        "objectId": "__baked_map__",
+        "min": [
+          10.351417142857143,
+          0.1887999999999999,
+          -3.385309090909093
+        ],
+        "max": [
+          10.890014545454543,
+          1.9287215686274513,
+          -2.572924675324672
+        ]
+      },
+      {
+        "objectId": "__baked_map__",
+        "min": [
+          10.351417142857143,
+          0.1887999999999999,
+          0.5868467532467505
+        ],
+        "max": [
+          10.890014545454543,
+          1.9287215686274513,
+          1.3992311688311718
+        ]
+      },
+      {
+        "objectId": "composition-wall-merchandise-band-wall-apparel-rack-5",
+        "min": [
+          10.351417142857143,
+          0.1887999999999999,
+          4.5590025974025945
+        ],
+        "max": [
+          10.890014545454543,
+          1.9287215686274513,
+          5.097599999999996
+        ]
+      },
+      {
+        "objectId": "composition-wall-merchandise-band-wall-apparel-rack-1",
+        "min": [
+          9.830772987012987,
+          0.7477960784313725,
+          -5.70127792207792
+        ],
+        "max": [
+          10.153931428571427,
+          1.5770352941176469,
+          -4.947241558441558
+        ]
+      },
+      {
+        "objectId": "composition-wall-merchandise-band-wall-apparel-rack-3",
+        "min": [
+          9.830772987012987,
+          0.7477960784313725,
+          -1.7291220779220762
+        ],
+        "max": [
+          10.153931428571427,
+          1.5770352941176469,
+          -0.975085714285714
+        ]
+      },
+      {
+        "objectId": "composition-wall-merchandise-band-wall-apparel-rack-5",
+        "min": [
+          9.830772987012987,
+          0.7477960784313725,
+          2.2430337662337676
+        ],
+        "max": [
+          10.153931428571427,
+          1.5770352941176469,
+          2.9970701298701297
+        ]
+      },
+      {
+        "objectId": "composition-central-retail-central-double-rack-24",
+        "min": [
+          -4.877935304347825,
+          0,
+          -3.5843874782608687
+        ],
+        "max": [
+          -0.9377613913043472,
+          0.2626782608695652,
+          -1.8113092173913035
+        ]
+      },
+      {
+        "objectId": "composition-central-retail-central-double-rack-25",
+        "min": [
+          -4.877935304347825,
+          0,
+          -0.6765391304347825
+        ],
+        "max": [
+          -0.9377613913043472,
+          0.2626782608695652,
+          1.096539130434783
+        ]
+      },
+      {
+        "objectId": "composition-central-retail-central-double-rack-26",
+        "min": [
+          -4.877935304347825,
+          0,
+          2.2313092173913036
+        ],
+        "max": [
+          -0.9377613913043472,
+          0.2626782608695652,
+          4.004387478260869
+        ]
+      },
+      {
+        "objectId": "composition-central-retail-central-double-rack-10",
+        "min": [
+          0.9377613913043472,
+          0,
+          -3.5843874782608687
+        ],
+        "max": [
+          4.877935304347825,
+          0.2626782608695652,
+          -1.8113092173913035
+        ]
+      },
+      {
+        "objectId": "composition-central-retail-central-double-rack-11",
+        "min": [
+          0.9377613913043472,
+          0,
+          -0.6765391304347829
+        ],
+        "max": [
+          4.877935304347825,
+          0.2626782608695652,
+          1.0965391304347825
+        ]
+      },
+      {
+        "objectId": "composition-central-retail-central-double-rack-12",
+        "min": [
+          0.9377613913043472,
+          0,
+          2.2313092173913036
+        ],
+        "max": [
+          4.877935304347825,
+          0.2626782608695652,
+          4.004387478260869
+        ]
+      },
+      {
+        "objectId": "composition-central-retail-central-double-rack-24",
+        "min": [
+          -4.76301356521739,
+          1.8223304347826084,
+          -3.370961391304347
+        ],
+        "max": [
+          -1.052683130434782,
+          2.0521739130434784,
+          -2.0247353043478253
+        ]
+      },
+      {
+        "objectId": "composition-central-retail-central-double-rack-25",
+        "min": [
+          -4.76301356521739,
+          1.8223304347826084,
+          -0.46311304347826077
+        ],
+        "max": [
+          -1.052683130434782,
+          2.0521739130434784,
+          0.8831130434782611
+        ]
+      },
+      {
+        "objectId": "composition-central-retail-central-double-rack-26",
+        "min": [
+          -4.76301356521739,
+          1.8223304347826084,
+          2.4447353043478253
+        ],
+        "max": [
+          -1.052683130434782,
+          2.0521739130434784,
+          3.790961391304347
+        ]
+      },
+      {
+        "objectId": "composition-central-retail-central-double-rack-10",
+        "min": [
+          1.052683130434782,
+          1.8223304347826084,
+          -3.370961391304347
+        ],
+        "max": [
+          4.76301356521739,
+          2.0521739130434784,
+          -2.0247353043478253
+        ]
+      },
+      {
+        "objectId": "composition-central-retail-central-double-rack-11",
+        "min": [
+          1.052683130434782,
+          1.8223304347826084,
+          -0.4631130434782611
+        ],
+        "max": [
+          4.76301356521739,
+          2.0521739130434784,
+          0.8831130434782608
+        ]
+      },
+      {
+        "objectId": "composition-central-retail-central-double-rack-12",
+        "min": [
+          1.052683130434782,
+          1.8223304347826084,
+          2.4447353043478253
+        ],
+        "max": [
+          4.76301356521739,
+          2.0521739130434784,
+          3.790961391304347
+        ]
+      },
+      {
+        "objectId": "composition-entrance-clearance-storefront-window-1",
+        "min": [
+          -0.9912000000000001,
+          2.64,
+          -7.0254468085106385
+        ],
+        "max": [
+          0.9912000000000001,
+          4.057760617760618,
+          -6.873603404255319
+        ]
+      },
+      {
+        "objectId": "composition-entrance-clearance-storefront-window-1",
+        "min": [
+          -0.9912000000000001,
+          2.64,
+          -7.067625531914894
+        ],
+        "max": [
+          0.9912000000000001,
+          2.7623166023166026,
+          -6.831424680851064
+        ]
+      },
+      {
+        "objectId": "composition-entrance-clearance-storefront-window-1",
+        "min": [
+          -0.9912000000000001,
+          3.968803088803089,
+          -7.050754042553192
+        ],
+        "max": [
+          0.9912000000000001,
+          4.057760617760618,
+          -6.848296170212766
+        ]
+      },
+      {
+        "objectId": "composition-entrance-clearance-storefront-window-1",
+        "min": [
+          -0.8941889361702128,
+          2.7734362934362937,
+          -7.067625531914894
+        ],
+        "max": [
+          0.8941889361702128,
+          2.8401544401544405,
+          -6.7808102127659575
+        ]
+      },
+      {
+        "objectId": "composition-wall-merchandise-band-wall-mirror-1",
+        "min": [
+          10.716058352941177,
+          2.6803200000000005,
+          -0.3998117647058823
+        ],
+        "max": [
+          10.840000000000002,
+          4.039680000000001,
+          0.3998117647058823
+        ]
+      },
+      {
+        "objectId": "composition-wall-merchandise-band-fire-extinguisher-1",
+        "min": [
+          10.473908112134783,
+          2.8640000000000003,
+          -4.24406125857681
+        ],
+        "max": [
+          10.84,
+          3.8560000000000003,
+          -3.7559387414231895
+        ]
+      },
+      {
+        "objectId": "composition-wall-merchandise-band-fire-extinguisher-2",
+        "min": [
+          10.483253175784835,
+          2.8731892294563877,
+          3.7621687838565556
+        ],
+        "max": [
+          10.84,
+          3.8468107705436125,
+          4.237831216143444
+        ]
+      },
+      {
+        "objectId": "composition-central-retail-mannequin-display-3",
+        "min": [
+          -3.456403590862418,
+          0,
+          -3.246403590862418
+        ],
+        "max": [
+          -2.043596409137582,
+          2.265599999999999,
+          -1.833596409137582
+        ]
+      },
+      {
+        "objectId": "composition-central-retail-mannequin-display-4",
+        "min": [
+          -3.456403590862418,
+          0,
+          2.253596409137582
+        ],
+        "max": [
+          -2.043596409137582,
+          2.265599999999999,
+          3.666403590862418
+        ]
+      },
+      {
+        "objectId": "composition-central-retail-mannequin-display-1",
+        "min": [
+          2.043596409137582,
+          0,
+          -3.246403590862418
+        ],
+        "max": [
+          3.456403590862418,
+          2.265599999999999,
+          -1.833596409137582
+        ]
+      },
+      {
+        "objectId": "composition-central-retail-mannequin-display-2",
+        "min": [
+          2.043596409137582,
+          0,
+          2.253596409137582
+        ],
+        "max": [
+          3.456403590862418,
+          2.265599999999999,
+          3.666403590862418
+        ]
+      },
+      {
+        "objectId": "composition-front-checkout-ceiling-track-light-3",
+        "min": [
+          -9.188307833449104,
+          0,
+          -3.142635498806817
+        ],
+        "max": [
+          -4.451692166550897,
+          2.2655999999999996,
+          -2.026164501193182
+        ]
+      },
+      {
+        "objectId": "composition-entrance-clearance-mannequin-display-1",
+        "min": [
+          -0.6912,
+          0,
+          -5.771709874444421
+        ],
+        "max": [
+          0.6912,
+          2.265599999999999,
+          -5.148290125555579
+        ]
+      },
+      {
+        "objectId": "composition-rear-fitting-service-waiting-bench-1",
+        "min": [
+          -2.14168,
+          0.3092897959183673,
+          4.0528
+        ],
+        "max": [
+          -1.35832,
+          0.44303673469387755,
+          6.5872
+        ]
+      },
+      {
+        "objectId": "composition-rear-fitting-service-waiting-bench-2",
+        "min": [
+          1.35832,
+          0.3092897959183673,
+          4.0528
+        ],
+        "max": [
+          2.14168,
+          0.44303673469387755,
+          6.5872
+        ]
+      },
+      {
+        "objectId": "composition-rear-fitting-service-waiting-bench-1",
+        "min": [
+          -2.07256,
+          0.44303673469387755,
+          4.1968000000000005
+        ],
+        "max": [
+          -1.4274399999999998,
+          0.6102204081632653,
+          6.4432
+        ]
+      },
+      {
+        "objectId": "composition-rear-fitting-service-waiting-bench-2",
+        "min": [
+          1.42744,
+          0.44303673469387755,
+          4.1968000000000005
+        ],
+        "max": [
+          2.07256,
+          0.6102204081632653,
+          6.4432
+        ]
+      },
+      {
+        "objectId": "composition-rear-fitting-service-waiting-bench-1",
+        "min": [
+          -2.11864,
+          0.7439673469387753,
+          4.2256
+        ],
+        "max": [
+          -1.9343199999999998,
+          1.145208163265306,
+          6.4144000000000005
+        ]
+      },
+      {
+        "objectId": "composition-rear-fitting-service-waiting-bench-2",
+        "min": [
+          1.9343199999999998,
+          0.7439673469387753,
+          4.225600000000001
+        ],
+        "max": [
+          2.11864,
+          1.145208163265306,
+          6.4144
+        ]
+      },
+      {
+        "objectId": "required-wall-rack-requirement-mirror-1",
+        "min": [
+          -10.153931428571427,
+          0.7477960784313725,
+          -4.983148051948051
+        ],
+        "max": [
+          -9.830772987012987,
+          1.5770352941176469,
+          -4.229111688311689
+        ]
+      },
+      {
+        "objectId": "required-wall-rack-requirement-mirror-2",
+        "min": [
+          -10.153931428571427,
+          0.7477960784313725,
+          -1.0109922077922073
+        ],
+        "max": [
+          -9.830772987012987,
+          1.5770352941176469,
+          -0.25695584415584516
+        ]
+      },
+      {
+        "objectId": "required-wall-rack-requirement-mirror-3",
+        "min": [
+          -10.153931428571427,
+          0.7477960784313725,
+          2.9611636363636364
+        ],
+        "max": [
+          -9.830772987012987,
+          1.5770352941176469,
+          3.7151999999999985
+        ]
+      },
+      {
+        "objectId": "required-central-rack-requirement-indoor-1-13",
+        "min": [
+          -8.431972173913042,
+          0,
+          -0.886539130434782
+        ],
+        "max": [
+          -4.491798260869565,
+          0.26267826086956514,
+          0.8865391304347829
+        ]
+      },
+      {
+        "objectId": "required-central-rack-requirement-indoor-1-10",
+        "min": [
+          4.491798260869565,
+          0,
+          -0.8865391304347829
+        ],
+        "max": [
+          8.431972173913042,
+          0.26267826086956514,
+          0.886539130434782
+        ]
+      },
+      {
+        "objectId": "required-central-rack-requirement-indoor-1-13",
+        "min": [
+          -8.317050434782608,
+          1.822330434782608,
+          -0.6731130434782603
+        ],
+        "max": [
+          -4.60672,
+          2.0521739130434775,
+          0.6731130434782612
+        ]
+      },
+      {
+        "objectId": "required-central-rack-requirement-indoor-1-10",
+        "min": [
+          4.60672,
+          1.822330434782608,
+          -0.6731130434782612
+        ],
+        "max": [
+          8.317050434782608,
+          2.0521739130434775,
+          0.6731130434782603
+        ]
+      },
+      {
+        "objectId": "required-family-presence-fitting-room-module-indoor-0-1",
+        "min": [
+          -2.997779445727482,
+          0,
+          -7.6445727482678985
+        ],
+        "max": [
+          -2.9179642032332556,
+          2.0751963048498845,
+          -6.207898383371824
+        ]
+      },
+      {
+        "objectId": "required-family-presence-fitting-room-module-indoor-0-1",
+        "min": [
+          -1.660874133949191,
+          0,
+          -7.6445727482678985
+        ],
+        "max": [
+          -1.5810588914549646,
+          2.0751963048498845,
+          -6.207898383371824
+        ]
+      },
+      {
+        "objectId": "required-family-presence-fitting-room-module-indoor-0-1",
+        "min": [
+          -2.957871824480369,
+          0,
+          -7.664526558891455
+        ],
+        "max": [
+          -1.6209665127020778,
+          2.0751963048498845,
+          -7.584711316397229
+        ]
+      },
+      {
+        "objectId": "required-family-presence-store-wall-sign-indoor-0-2",
+        "min": [
+          0.17052631578947253,
+          4.1370415864979505e-17,
+          -6.779557894736842
+        ],
+        "max": [
+          8.219368421052629,
+          2.265599999999999,
+          -6.4218315789473674
+        ]
+      },
+      {
+        "objectId": "generated-fallback-asset-ea0d3ce2-8ca5-4711-1",
+        "min": [
+          -5.437106629230315,
+          0,
+          -6.092577927910358
+        ],
+        "max": [
+          -3.2291066292303148,
+          1.3056,
+          -4.41869355698432
+        ]
+      },
+      {
+        "objectId": "generated-fallback-asset-0b36459f-5481-410c-5",
+        "min": [
+          4.27325429013006,
+          0,
+          -5.467519598415209
+        ],
+        "max": [
+          6.448888279665656,
+          0.36,
+          -2.965741730277805
+        ]
+      },
+      {
+        "objectId": "generated-fallback-asset-0b36459f-5481-410c-5",
+        "min": [
+          4.357554943774975,
+          0.25,
+          -5.370173189626222
+        ],
+        "max": [
+          6.364587626020741,
+          0.5900000000000001,
+          -3.0630881390667923
+        ]
+      },
+      {
+        "objectId": "generated-fallback-asset-0b36459f-5481-410c-5",
+        "min": [
+          4.44185559741989,
+          0.49,
+          -5.272826780837234
+        ],
+        "max": [
+          6.280286972375826,
+          0.81,
+          -3.16043454785578
+        ]
+      },
+      {
+        "objectId": "generated-fallback-asset-0b36459f-5481-410c-5",
+        "min": [
+          4.526156251064806,
+          0.73,
+          -5.175480372048247
+        ],
+        "max": [
+          6.1959863187309105,
+          1.0299999999999998,
+          -3.2577809566447677
+        ]
+      },
+      {
+        "objectId": "__room__:floor:0",
+        "min": [
+          -11,
+          -0.16,
+          -7
+        ],
+        "max": [
+          11,
+          0,
+          7
+        ]
+      },
+      {
+        "objectId": "__room__:ceiling:1",
+        "min": [
+          -11,
+          5.84,
+          -7
+        ],
+        "max": [
+          11,
+          6,
+          7
+        ]
+      },
+      {
+        "objectId": "__room__:north:2",
+        "min": [
+          -11,
+          0,
+          -7
+        ],
+        "max": [
+          -3.0627217090069276,
+          6,
+          -6.84
+        ]
+      },
+      {
+        "objectId": "__room__:north:3",
+        "min": [
+          -1.516116628175519,
+          0,
+          -7
+        ],
+        "max": [
+          -1.0312000000000001,
+          6,
+          -6.84
+        ]
+      },
+      {
+        "objectId": "__room__:north:7",
+        "min": [
+          1.0312000000000001,
+          0,
+          -7
+        ],
+        "max": [
+          11,
+          6,
+          -6.84
+        ]
+      },
+      {
+        "objectId": "__room__:north:4",
+        "min": [
+          -3.0627217090069276,
+          2.24,
+          -7
+        ],
+        "max": [
+          -1.516116628175519,
+          6,
+          -6.84
+        ]
+      },
+      {
+        "objectId": "__room__:north:5",
+        "min": [
+          -1.0312000000000001,
+          0,
+          -7
+        ],
+        "max": [
+          -0.8200000000000001,
+          2.64,
+          -6.84
+        ]
+      },
+      {
+        "objectId": "__room__:north:8",
+        "min": [
+          0.8200000000000001,
+          0,
+          -7
+        ],
+        "max": [
+          1.0312000000000001,
+          2.64,
+          -6.84
+        ]
+      },
+      {
+        "objectId": "__baked_map__",
+        "min": [
+          -1.0312000000000001,
+          4.16,
+          -7
+        ],
+        "max": [
+          1.0312000000000001,
+          6,
+          -6.84
+        ]
+      },
+      {
+        "objectId": "__room__:north:10",
+        "min": [
+          -0.8200000000000001,
+          2.24,
+          -7
+        ],
+        "max": [
+          0.8200000000000001,
+          2.6400000000000006,
+          -6.84
+        ]
+      },
+      {
+        "objectId": "__room__:south:12",
+        "min": [
+          -11,
+          0,
+          6.84
+        ],
+        "max": [
+          11,
+          6,
+          7
+        ]
+      },
+      {
+        "objectId": "__room__:west:14",
+        "min": [
+          -11,
+          0,
+          -7
+        ],
+        "max": [
+          -10.84,
+          6,
+          7
+        ]
+      },
+      {
+        "objectId": "__room__:east:13",
+        "min": [
+          10.84,
+          0,
+          -7
+        ],
+        "max": [
+          11,
+          6,
+          7
+        ]
+      }
+    ],
+    "cellSize": 4,
+    "cells": {
+      "-2,-2": [
+        0,
+        2,
+        3,
+        5,
+        6,
+        7,
+        8,
+        9,
+        68,
+        73,
+        74,
+        75
+      ],
+      "-2,-1": [
+        0,
+        1,
+        2,
+        3,
+        5,
+        7,
+        8,
+        9,
+        26,
+        27,
+        32,
+        33,
+        49,
+        60,
+        62,
+        73,
+        74
+      ],
+      "-3,-1": [
+        1,
+        2,
+        3,
+        4,
+        9,
+        11,
+        13,
+        16,
+        49,
+        58,
+        60,
+        62,
+        73,
+        74,
+        84
+      ],
+      "-3,-2": [
+        2,
+        3,
+        4,
+        6,
+        9,
+        11,
+        13,
+        15,
+        57,
+        73,
+        74,
+        75,
+        84
+      ],
+      "-1,-2": [
+        10,
+        38,
+        39,
+        40,
+        41,
+        50,
+        64,
+        65,
+        66,
+        68,
+        73,
+        74,
+        75,
+        76,
+        78,
+        79,
+        81,
+        82
+      ],
+      "0,-2": [
+        10,
+        38,
+        39,
+        40,
+        41,
+        50,
+        67,
+        73,
+        74,
+        77,
+        80,
+        81,
+        82
+      ],
+      "-3,0": [
+        11,
+        13,
+        17,
+        59,
+        60,
+        62,
+        73,
+        74,
+        84
+      ],
+      "-3,1": [
+        11,
+        13,
+        18,
+        73,
+        74,
+        83,
+        84
+      ],
+      "2,-2": [
+        12,
+        14,
+        19,
+        23,
+        43,
+        67,
+        73,
+        74,
+        77,
+        85
+      ],
+      "2,-1": [
+        12,
+        14,
+        20,
+        24,
+        42,
+        43,
+        61,
+        63,
+        73,
+        74,
+        85
+      ],
+      "2,0": [
+        12,
+        14,
+        21,
+        25,
+        42,
+        44,
+        61,
+        63,
+        73,
+        74,
+        85
+      ],
+      "2,1": [
+        12,
+        14,
+        22,
+        44,
+        73,
+        74,
+        83,
+        85
+      ],
+      "-1,-1": [
+        26,
+        27,
+        32,
+        33,
+        45,
+        73,
+        74
+      ],
+      "-2,0": [
+        27,
+        28,
+        33,
+        34,
+        60,
+        62,
+        73,
+        74
+      ],
+      "-1,0": [
+        27,
+        28,
+        33,
+        34,
+        46,
+        73,
+        74
+      ],
+      "-2,1": [
+        28,
+        73,
+        74,
+        83
+      ],
+      "-1,1": [
+        28,
+        51,
+        53,
+        55,
+        73,
+        74,
+        83
+      ],
+      "0,-1": [
+        29,
+        30,
+        35,
+        36,
+        47,
+        73,
+        74
+      ],
+      "1,-1": [
+        29,
+        30,
+        35,
+        36,
+        61,
+        63,
+        69,
+        70,
+        71,
+        72,
+        73,
+        74
+      ],
+      "0,0": [
+        30,
+        31,
+        36,
+        37,
+        48,
+        73,
+        74
+      ],
+      "1,0": [
+        30,
+        31,
+        36,
+        37,
+        61,
+        63,
+        73,
+        74
+      ],
+      "0,1": [
+        31,
+        52,
+        54,
+        56,
+        73,
+        74,
+        83
+      ],
+      "1,1": [
+        31,
+        73,
+        74,
+        83
+      ],
+      "1,-2": [
+        67,
+        69,
+        70,
+        71,
+        72,
+        73,
+        74,
+        77
+      ]
+    }
+  }
+}

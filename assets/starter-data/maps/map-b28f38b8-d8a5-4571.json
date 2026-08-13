@@ -1,0 +1,5364 @@
+{
+  "id": "map-b28f38b8-d8a5-4571",
+  "seed": 2968180800,
+  "name": "复古快餐店样例",
+  "assetGenerationMode": "voxel",
+  "version": 9,
+  "createdAt": 1786539728902,
+  "updatedAt": 1786598228379,
+  "box": {
+    "size": [
+      15,
+      5,
+      10
+    ],
+    "colors": {
+      "floor": "#8a765e",
+      "ceiling": "#ded8ca",
+      "north": "#c9c0ae",
+      "south": "#c9c0ae",
+      "east": "#d1c8b7",
+      "west": "#d1c8b7"
+    }
+  },
+  "sceneMode": "indoor",
+  "playerHeight": 1.6,
+  "playerRadius": 0.38,
+  "worldScaleProfile": "balanced",
+  "room": {
+    "position": [
+      0,
+      0,
+      0
+    ],
+    "size": [
+      15,
+      5,
+      10
+    ],
+    "wallThickness": 0.16,
+    "openings": [
+      {
+        "id": "composition-daylight-wall-zone-glass-window-1-opening",
+        "kind": "window",
+        "wall": "east",
+        "offset": -3.5999999999999996,
+        "bottom": 2.08,
+        "width": 2.39709090909091,
+        "height": 1.5200000000000005
+      },
+      {
+        "id": "composition-daylight-wall-zone-glass-window-2-opening",
+        "kind": "window",
+        "wall": "east",
+        "offset": -1.2000000000000002,
+        "bottom": 2.08,
+        "width": 2.39709090909091,
+        "height": 1.5200000000000005
+      },
+      {
+        "id": "composition-daylight-wall-zone-glass-window-3-opening",
+        "kind": "window",
+        "wall": "east",
+        "offset": 1.1999999999999993,
+        "bottom": 2.08,
+        "width": 2.39709090909091,
+        "height": 1.5200000000000005
+      },
+      {
+        "id": "composition-daylight-wall-zone-glass-window-4-opening",
+        "kind": "window",
+        "wall": "east",
+        "offset": 3.5999999999999996,
+        "bottom": 2.08,
+        "width": 2.39709090909091,
+        "height": 1.5200000000000005
+      }
+    ]
+  },
+  "lighting": {
+    "sunPosition": [
+      -18,
+      24,
+      14
+    ]
+  },
+  "terrain": {
+    "resolutionX": 33,
+    "resolutionZ": 33,
+    "heights": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ]
+  },
+  "grassLayers": [],
+  "waterBodies": [],
+  "paintStrokes": [],
+  "objects": [
+    {
+      "id": "composition-service-wall-zone-cashier-counter-accent-1",
+      "name": "复古收银台",
+      "parentId": null,
+      "assetId": "asset-01abe433-18b3-4dac",
+      "transform": {
+        "position": [
+          0,
+          0,
+          3.5999999999999996
+        ],
+        "rotation": [
+          0,
+          -3.065631797371762,
+          0
+        ],
+        "scale": [
+          1.2926732673267327,
+          1.2926732673267327,
+          1.2926732673267327
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-service-wall-zone-wall-menu-board-1",
+      "name": "墙贴式复古菜单牌",
+      "parentId": null,
+      "assetId": "asset-3ea1197c-59a1-4569",
+      "transform": {
+        "position": [
+          0,
+          2.1472,
+          -4.4464
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          2.1866666666666665,
+          0.6528000000000002,
+          2.1866666666666665
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-daylight-wall-zone-glass-window-1",
+      "name": "对称复古玻璃窗",
+      "parentId": null,
+      "assetId": "asset-fd88dcd9-1cca-4aa4",
+      "transform": {
+        "position": [
+          7.42,
+          2.08,
+          -3.5999999999999996
+        ],
+        "rotation": [
+          0,
+          -1.5707963267948966,
+          0
+        ],
+        "scale": [
+          0.671620553359684,
+          0.5691699604743085,
+          0.671620553359684
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false,
+      "roomOpeningId": "composition-daylight-wall-zone-glass-window-1-opening"
+    },
+    {
+      "id": "composition-daylight-wall-zone-glass-window-2",
+      "name": "对称复古玻璃窗",
+      "parentId": null,
+      "assetId": "asset-fd88dcd9-1cca-4aa4",
+      "transform": {
+        "position": [
+          7.42,
+          2.08,
+          -1.2000000000000002
+        ],
+        "rotation": [
+          0,
+          -1.5707963267948966,
+          0
+        ],
+        "scale": [
+          0.671620553359684,
+          0.5691699604743085,
+          0.671620553359684
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false,
+      "roomOpeningId": "composition-daylight-wall-zone-glass-window-2-opening"
+    },
+    {
+      "id": "composition-daylight-wall-zone-glass-window-3",
+      "name": "对称复古玻璃窗",
+      "parentId": null,
+      "assetId": "asset-fd88dcd9-1cca-4aa4",
+      "transform": {
+        "position": [
+          7.42,
+          2.08,
+          1.1999999999999993
+        ],
+        "rotation": [
+          0,
+          -1.5707963267948966,
+          0
+        ],
+        "scale": [
+          0.671620553359684,
+          0.5691699604743085,
+          0.671620553359684
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false,
+      "roomOpeningId": "composition-daylight-wall-zone-glass-window-3-opening"
+    },
+    {
+      "id": "composition-daylight-wall-zone-glass-window-4",
+      "name": "对称复古玻璃窗",
+      "parentId": null,
+      "assetId": "asset-fd88dcd9-1cca-4aa4",
+      "transform": {
+        "position": [
+          7.42,
+          2.08,
+          3.5999999999999996
+        ],
+        "rotation": [
+          0,
+          -1.5707963267948966,
+          0
+        ],
+        "scale": [
+          0.671620553359684,
+          0.5691699604743085,
+          0.671620553359684
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false,
+      "roomOpeningId": "composition-daylight-wall-zone-glass-window-4-opening"
+    },
+    {
+      "id": "composition-guest-dining-zone-dining-table-1",
+      "name": "模块化快餐店餐桌",
+      "parentId": null,
+      "assetId": "asset-dde570a8-f711-404f",
+      "transform": {
+        "position": [
+          -3.375,
+          0,
+          -3.375
+        ],
+        "rotation": [
+          0,
+          1.5707963267948966,
+          0
+        ],
+        "scale": [
+          1.507730061349693,
+          1.507730061349693,
+          1.507730061349693
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-guest-dining-zone-dining-table-4",
+      "name": "模块化快餐店餐桌",
+      "parentId": null,
+      "assetId": "asset-dde570a8-f711-404f",
+      "transform": {
+        "position": [
+          3.375,
+          0,
+          -3.375
+        ],
+        "rotation": [
+          0,
+          1.5707963267948966,
+          0
+        ],
+        "scale": [
+          1.507730061349693,
+          1.507730061349693,
+          1.507730061349693
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-guest-dining-zone-dining-table-5",
+      "name": "模块化快餐店餐桌",
+      "parentId": null,
+      "assetId": "asset-dde570a8-f711-404f",
+      "transform": {
+        "position": [
+          -3.375,
+          0,
+          -1.125
+        ],
+        "rotation": [
+          0,
+          1.5707963267948966,
+          0
+        ],
+        "scale": [
+          1.507730061349693,
+          1.507730061349693,
+          1.507730061349693
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-guest-dining-zone-dining-table-6",
+      "name": "模块化快餐店餐桌",
+      "parentId": null,
+      "assetId": "asset-dde570a8-f711-404f",
+      "transform": {
+        "position": [
+          -1.125,
+          0,
+          -1.125
+        ],
+        "rotation": [
+          0,
+          1.5707963267948966,
+          0
+        ],
+        "scale": [
+          1.507730061349693,
+          1.507730061349693,
+          1.507730061349693
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-guest-dining-zone-dining-table-7",
+      "name": "模块化快餐店餐桌",
+      "parentId": null,
+      "assetId": "asset-dde570a8-f711-404f",
+      "transform": {
+        "position": [
+          1.125,
+          0,
+          -1.125
+        ],
+        "rotation": [
+          0,
+          1.5707963267948966,
+          0
+        ],
+        "scale": [
+          1.507730061349693,
+          1.507730061349693,
+          1.507730061349693
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-guest-dining-zone-dining-table-8",
+      "name": "模块化快餐店餐桌",
+      "parentId": null,
+      "assetId": "asset-dde570a8-f711-404f",
+      "transform": {
+        "position": [
+          3.375,
+          0,
+          -1.125
+        ],
+        "rotation": [
+          0,
+          1.5707963267948966,
+          0
+        ],
+        "scale": [
+          1.507730061349693,
+          1.507730061349693,
+          1.507730061349693
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-guest-dining-zone-dining-table-9",
+      "name": "模块化快餐店餐桌",
+      "parentId": null,
+      "assetId": "asset-dde570a8-f711-404f",
+      "transform": {
+        "position": [
+          -3.375,
+          0,
+          1.125
+        ],
+        "rotation": [
+          0,
+          1.5707963267948966,
+          0
+        ],
+        "scale": [
+          1.507730061349693,
+          1.507730061349693,
+          1.507730061349693
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-guest-dining-zone-dining-table-10",
+      "name": "模块化快餐店餐桌",
+      "parentId": null,
+      "assetId": "asset-dde570a8-f711-404f",
+      "transform": {
+        "position": [
+          -1.125,
+          0,
+          1.125
+        ],
+        "rotation": [
+          0,
+          1.5707963267948966,
+          0
+        ],
+        "scale": [
+          1.507730061349693,
+          1.507730061349693,
+          1.507730061349693
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-guest-dining-zone-dining-table-11",
+      "name": "模块化快餐店餐桌",
+      "parentId": null,
+      "assetId": "asset-dde570a8-f711-404f",
+      "transform": {
+        "position": [
+          1.125,
+          0,
+          1.125
+        ],
+        "rotation": [
+          0,
+          1.5707963267948966,
+          0
+        ],
+        "scale": [
+          1.507730061349693,
+          1.507730061349693,
+          1.507730061349693
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-guest-dining-zone-dining-table-12",
+      "name": "模块化快餐店餐桌",
+      "parentId": null,
+      "assetId": "asset-dde570a8-f711-404f",
+      "transform": {
+        "position": [
+          3.375,
+          0,
+          1.125
+        ],
+        "rotation": [
+          0,
+          1.5707963267948966,
+          0
+        ],
+        "scale": [
+          1.507730061349693,
+          1.507730061349693,
+          1.507730061349693
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-guest-dining-zone-dining-table-13",
+      "name": "模块化快餐店餐桌",
+      "parentId": null,
+      "assetId": "asset-dde570a8-f711-404f",
+      "transform": {
+        "position": [
+          -3.375,
+          0,
+          3.375
+        ],
+        "rotation": [
+          0,
+          1.5707963267948966,
+          0
+        ],
+        "scale": [
+          1.507730061349693,
+          1.507730061349693,
+          1.507730061349693
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-guest-dining-zone-dining-table-16",
+      "name": "模块化快餐店餐桌",
+      "parentId": null,
+      "assetId": "asset-dde570a8-f711-404f",
+      "transform": {
+        "position": [
+          3.375,
+          0,
+          3.375
+        ],
+        "rotation": [
+          0,
+          1.5707963267948966,
+          0
+        ],
+        "scale": [
+          1.507730061349693,
+          1.507730061349693,
+          1.507730061349693
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-guest-dining-zone-dining-chair-1",
+      "name": "复古软包餐椅",
+      "parentId": null,
+      "assetId": "asset-a6907ccb-1fd9-4655",
+      "transform": {
+        "position": [
+          -2.069562944785276,
+          0,
+          -3.375
+        ],
+        "rotation": [
+          0,
+          -1.5707963267948966,
+          0
+        ],
+        "scale": [
+          0.7842461538461537,
+          0.6571122994652406,
+          0.7842461538461537
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-guest-dining-zone-dining-chair-3",
+      "name": "复古软包餐椅",
+      "parentId": null,
+      "assetId": "asset-a6907ccb-1fd9-4655",
+      "transform": {
+        "position": [
+          -4.680437055214724,
+          0,
+          -3.3750000000000004
+        ],
+        "rotation": [
+          0,
+          1.5707963267948963,
+          0
+        ],
+        "scale": [
+          0.7842461538461537,
+          0.6571122994652406,
+          0.7842461538461537
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-guest-dining-zone-dining-chair-5",
+      "name": "复古软包餐椅",
+      "parentId": null,
+      "assetId": "asset-a6907ccb-1fd9-4655",
+      "transform": {
+        "position": [
+          4.680437055214724,
+          0,
+          -3.375
+        ],
+        "rotation": [
+          0,
+          -1.5707963267948966,
+          0
+        ],
+        "scale": [
+          0.7842461538461537,
+          0.6571122994652406,
+          0.7842461538461537
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-guest-dining-zone-dining-chair-7",
+      "name": "复古软包餐椅",
+      "parentId": null,
+      "assetId": "asset-a6907ccb-1fd9-4655",
+      "transform": {
+        "position": [
+          2.069562944785276,
+          0,
+          -3.3750000000000004
+        ],
+        "rotation": [
+          0,
+          1.5707963267948963,
+          0
+        ],
+        "scale": [
+          0.7842461538461537,
+          0.6571122994652406,
+          0.7842461538461537
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-guest-dining-zone-dining-chair-9",
+      "name": "复古软包餐椅",
+      "parentId": null,
+      "assetId": "asset-a6907ccb-1fd9-4655",
+      "transform": {
+        "position": [
+          -2.069562944785276,
+          0,
+          -1.125
+        ],
+        "rotation": [
+          0,
+          -1.5707963267948966,
+          0
+        ],
+        "scale": [
+          0.7842461538461537,
+          0.6571122994652406,
+          0.7842461538461537
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-guest-dining-zone-dining-chair-11",
+      "name": "复古软包餐椅",
+      "parentId": null,
+      "assetId": "asset-a6907ccb-1fd9-4655",
+      "transform": {
+        "position": [
+          -4.680437055214724,
+          0,
+          -1.1250000000000002
+        ],
+        "rotation": [
+          0,
+          1.5707963267948966,
+          0
+        ],
+        "scale": [
+          0.7842461538461537,
+          0.6571122994652406,
+          0.7842461538461537
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-guest-dining-zone-dining-chair-15",
+      "name": "复古软包餐椅",
+      "parentId": null,
+      "assetId": "asset-a6907ccb-1fd9-4655",
+      "transform": {
+        "position": [
+          -2.430437055214724,
+          0,
+          -1.1250000000000002
+        ],
+        "rotation": [
+          0,
+          1.5707963267948966,
+          0
+        ],
+        "scale": [
+          0.7842461538461537,
+          0.6571122994652406,
+          0.7842461538461537
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-guest-dining-zone-dining-chair-17",
+      "name": "复古软包餐椅",
+      "parentId": null,
+      "assetId": "asset-a6907ccb-1fd9-4655",
+      "transform": {
+        "position": [
+          2.430437055214724,
+          0,
+          -1.125
+        ],
+        "rotation": [
+          0,
+          -1.5707963267948966,
+          0
+        ],
+        "scale": [
+          0.7842461538461537,
+          0.6571122994652406,
+          0.7842461538461537
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-guest-dining-zone-dining-chair-21",
+      "name": "复古软包餐椅",
+      "parentId": null,
+      "assetId": "asset-a6907ccb-1fd9-4655",
+      "transform": {
+        "position": [
+          4.680437055214724,
+          0,
+          -1.125
+        ],
+        "rotation": [
+          0,
+          -1.5707963267948966,
+          0
+        ],
+        "scale": [
+          0.7842461538461537,
+          0.6571122994652406,
+          0.7842461538461537
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-guest-dining-zone-dining-chair-23",
+      "name": "复古软包餐椅",
+      "parentId": null,
+      "assetId": "asset-a6907ccb-1fd9-4655",
+      "transform": {
+        "position": [
+          2.069562944785276,
+          0,
+          -1.1250000000000002
+        ],
+        "rotation": [
+          0,
+          1.5707963267948966,
+          0
+        ],
+        "scale": [
+          0.7842461538461537,
+          0.6571122994652406,
+          0.7842461538461537
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-guest-dining-zone-dining-chair-25",
+      "name": "复古软包餐椅",
+      "parentId": null,
+      "assetId": "asset-a6907ccb-1fd9-4655",
+      "transform": {
+        "position": [
+          -2.069562944785276,
+          0,
+          1.125
+        ],
+        "rotation": [
+          0,
+          -1.5707963267948966,
+          0
+        ],
+        "scale": [
+          0.7842461538461537,
+          0.6571122994652406,
+          0.7842461538461537
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-guest-dining-zone-dining-chair-27",
+      "name": "复古软包餐椅",
+      "parentId": null,
+      "assetId": "asset-a6907ccb-1fd9-4655",
+      "transform": {
+        "position": [
+          -4.680437055214724,
+          0,
+          1.1249999999999998
+        ],
+        "rotation": [
+          0,
+          1.5707963267948966,
+          0
+        ],
+        "scale": [
+          0.7842461538461537,
+          0.6571122994652406,
+          0.7842461538461537
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-guest-dining-zone-dining-chair-29",
+      "name": "复古软包餐椅",
+      "parentId": null,
+      "assetId": "asset-a6907ccb-1fd9-4655",
+      "transform": {
+        "position": [
+          0.18043705521472386,
+          0,
+          1.125
+        ],
+        "rotation": [
+          0,
+          -1.5707963267948966,
+          0
+        ],
+        "scale": [
+          0.7842461538461537,
+          0.6571122994652406,
+          0.7842461538461537
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-guest-dining-zone-dining-chair-31",
+      "name": "复古软包餐椅",
+      "parentId": null,
+      "assetId": "asset-a6907ccb-1fd9-4655",
+      "transform": {
+        "position": [
+          -2.430437055214724,
+          0,
+          1.1249999999999998
+        ],
+        "rotation": [
+          0,
+          1.5707963267948966,
+          0
+        ],
+        "scale": [
+          0.7842461538461537,
+          0.6571122994652406,
+          0.7842461538461537
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-guest-dining-zone-dining-chair-33",
+      "name": "复古软包餐椅",
+      "parentId": null,
+      "assetId": "asset-a6907ccb-1fd9-4655",
+      "transform": {
+        "position": [
+          2.430437055214724,
+          0,
+          1.125
+        ],
+        "rotation": [
+          0,
+          -1.5707963267948966,
+          0
+        ],
+        "scale": [
+          0.7842461538461537,
+          0.6571122994652406,
+          0.7842461538461537
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-guest-dining-zone-dining-chair-35",
+      "name": "复古软包餐椅",
+      "parentId": null,
+      "assetId": "asset-a6907ccb-1fd9-4655",
+      "transform": {
+        "position": [
+          -0.18043705521472386,
+          0,
+          1.1249999999999998
+        ],
+        "rotation": [
+          0,
+          1.5707963267948966,
+          0
+        ],
+        "scale": [
+          0.7842461538461537,
+          0.6571122994652406,
+          0.7842461538461537
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-guest-dining-zone-dining-chair-37",
+      "name": "复古软包餐椅",
+      "parentId": null,
+      "assetId": "asset-a6907ccb-1fd9-4655",
+      "transform": {
+        "position": [
+          4.680437055214724,
+          0,
+          1.125
+        ],
+        "rotation": [
+          0,
+          -1.5707963267948966,
+          0
+        ],
+        "scale": [
+          0.7842461538461537,
+          0.6571122994652406,
+          0.7842461538461537
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-guest-dining-zone-dining-chair-39",
+      "name": "复古软包餐椅",
+      "parentId": null,
+      "assetId": "asset-a6907ccb-1fd9-4655",
+      "transform": {
+        "position": [
+          2.069562944785276,
+          0,
+          1.1249999999999998
+        ],
+        "rotation": [
+          0,
+          1.5707963267948966,
+          0
+        ],
+        "scale": [
+          0.7842461538461537,
+          0.6571122994652406,
+          0.7842461538461537
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-guest-dining-zone-dining-chair-43",
+      "name": "复古软包餐椅",
+      "parentId": null,
+      "assetId": "asset-a6907ccb-1fd9-4655",
+      "transform": {
+        "position": [
+          -4.680437055214724,
+          0,
+          3.3749999999999996
+        ],
+        "rotation": [
+          0,
+          1.5707963267948963,
+          0
+        ],
+        "scale": [
+          0.7842461538461537,
+          0.6571122994652406,
+          0.7842461538461537
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-guest-dining-zone-dining-chair-45",
+      "name": "复古软包餐椅",
+      "parentId": null,
+      "assetId": "asset-a6907ccb-1fd9-4655",
+      "transform": {
+        "position": [
+          4.680437055214724,
+          0,
+          3.375
+        ],
+        "rotation": [
+          0,
+          -1.5707963267948966,
+          0
+        ],
+        "scale": [
+          0.7842461538461537,
+          0.6571122994652406,
+          0.7842461538461537
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-guest-dining-zone-ceiling-light-1",
+      "name": "复古圆盘顶灯",
+      "parentId": null,
+      "assetId": "asset-1f4865f7-1133-4264",
+      "transform": {
+        "position": [
+          -4.050000000000001,
+          4.552,
+          -2.7
+        ],
+        "rotation": [
+          0,
+          1.5707963267948966,
+          0
+        ],
+        "scale": [
+          0.48125490196078435,
+          0.2094545454545454,
+          0.48125490196078435
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-guest-dining-zone-ceiling-light-4",
+      "name": "复古圆盘顶灯",
+      "parentId": null,
+      "assetId": "asset-1f4865f7-1133-4264",
+      "transform": {
+        "position": [
+          4.050000000000001,
+          4.552,
+          -2.7
+        ],
+        "rotation": [
+          0,
+          1.5707963267948966,
+          0
+        ],
+        "scale": [
+          0.48125490196078435,
+          0.2094545454545454,
+          0.48125490196078435
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-guest-dining-zone-ceiling-light-5",
+      "name": "复古圆盘顶灯",
+      "parentId": null,
+      "assetId": "asset-1f4865f7-1133-4264",
+      "transform": {
+        "position": [
+          -4.050000000000001,
+          4.552,
+          0
+        ],
+        "rotation": [
+          0,
+          1.5707963267948966,
+          0
+        ],
+        "scale": [
+          0.48125490196078435,
+          0.2094545454545454,
+          0.48125490196078435
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-guest-dining-zone-ceiling-light-6",
+      "name": "复古圆盘顶灯",
+      "parentId": null,
+      "assetId": "asset-1f4865f7-1133-4264",
+      "transform": {
+        "position": [
+          -1.35,
+          4.552,
+          0
+        ],
+        "rotation": [
+          0,
+          1.5707963267948966,
+          0
+        ],
+        "scale": [
+          0.48125490196078435,
+          0.2094545454545454,
+          0.48125490196078435
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-guest-dining-zone-ceiling-light-7",
+      "name": "复古圆盘顶灯",
+      "parentId": null,
+      "assetId": "asset-1f4865f7-1133-4264",
+      "transform": {
+        "position": [
+          1.35,
+          4.552,
+          0
+        ],
+        "rotation": [
+          0,
+          1.5707963267948966,
+          0
+        ],
+        "scale": [
+          0.48125490196078435,
+          0.2094545454545454,
+          0.48125490196078435
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-guest-dining-zone-ceiling-light-8",
+      "name": "复古圆盘顶灯",
+      "parentId": null,
+      "assetId": "asset-1f4865f7-1133-4264",
+      "transform": {
+        "position": [
+          4.050000000000001,
+          4.552,
+          0
+        ],
+        "rotation": [
+          0,
+          1.5707963267948966,
+          0
+        ],
+        "scale": [
+          0.48125490196078435,
+          0.2094545454545454,
+          0.48125490196078435
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-guest-dining-zone-ceiling-light-9",
+      "name": "复古圆盘顶灯",
+      "parentId": null,
+      "assetId": "asset-1f4865f7-1133-4264",
+      "transform": {
+        "position": [
+          -4.050000000000001,
+          4.552,
+          2.7
+        ],
+        "rotation": [
+          0,
+          1.5707963267948966,
+          0
+        ],
+        "scale": [
+          0.48125490196078435,
+          0.2094545454545454,
+          0.48125490196078435
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-guest-dining-zone-ceiling-light-12",
+      "name": "复古圆盘顶灯",
+      "parentId": null,
+      "assetId": "asset-1f4865f7-1133-4264",
+      "transform": {
+        "position": [
+          4.050000000000001,
+          4.552,
+          2.7
+        ],
+        "rotation": [
+          0,
+          1.5707963267948966,
+          0
+        ],
+        "scale": [
+          0.48125490196078435,
+          0.2094545454545454,
+          0.48125490196078435
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "composition-service-wall-zone-drink-dispenser-1",
+      "name": "复古饮料机",
+      "parentId": null,
+      "assetId": "asset-915ebf00-ce8f-4b0f",
+      "transform": {
+        "position": [
+          2.0525904158415837,
+          0,
+          3.5999999999999996
+        ],
+        "rotation": [
+          0,
+          -1.5707963267948966,
+          0
+        ],
+        "scale": [
+          1.325443786982248,
+          0.22420382165605096,
+          1.325443786982248
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "required-required-dining-chairs-indoor-0-13",
+      "name": "复古软包餐椅",
+      "parentId": null,
+      "assetId": "asset-a6907ccb-1fd9-4655",
+      "transform": {
+        "position": [
+          -1.1249999999999998,
+          0,
+          -2.676837055214724
+        ],
+        "rotation": [
+          0,
+          -1.430849999224355e-16,
+          0
+        ],
+        "scale": [
+          0.6646153846153845,
+          0.6571122994652406,
+          0.6646153846153845
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "required-required-dining-chairs-indoor-0-15",
+      "name": "复古软包餐椅",
+      "parentId": null,
+      "assetId": "asset-a6907ccb-1fd9-4655",
+      "transform": {
+        "position": [
+          1.1249999999999996,
+          0,
+          2.676837055214724
+        ],
+        "rotation": [
+          0,
+          3.141592653589793,
+          0
+        ],
+        "scale": [
+          0.6646153846153845,
+          0.6571122994652406,
+          0.6646153846153845
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "required-required-dining-chairs-indoor-0-18",
+      "name": "复古软包餐椅",
+      "parentId": null,
+      "assetId": "asset-a6907ccb-1fd9-4655",
+      "transform": {
+        "position": [
+          1.1250000000000002,
+          0,
+          -2.676837055214724
+        ],
+        "rotation": [
+          0,
+          -1.430849999224355e-16,
+          0
+        ],
+        "scale": [
+          0.6646153846153845,
+          0.6571122994652406,
+          0.6646153846153845
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "required-required-dining-chairs-indoor-0-19",
+      "name": "复古软包餐椅",
+      "parentId": null,
+      "assetId": "asset-a6907ccb-1fd9-4655",
+      "transform": {
+        "position": [
+          -1.1250000000000004,
+          0,
+          2.676837055214724
+        ],
+        "rotation": [
+          0,
+          3.141592653589793,
+          0
+        ],
+        "scale": [
+          0.6646153846153845,
+          0.6571122994652406,
+          0.6646153846153845
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "required-family-presence-entrance-door-indoor-0-1",
+      "name": "复古快餐店入口门",
+      "parentId": null,
+      "assetId": "asset-0cb6e27e-e10e-487e",
+      "transform": {
+        "position": [
+          -0.6289043478260874,
+          0,
+          -4.663391304347826
+        ],
+        "rotation": [
+          0,
+          0.07596085621803096,
+          0
+        ],
+        "scale": [
+          0.48695652173913045,
+          0.48695652173913045,
+          0.48695652173913045
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "required-family-presence-cash-register-indoor-2-10",
+      "name": "台式收银机",
+      "parentId": null,
+      "assetId": "asset-8e612700-f312-4d53",
+      "transform": {
+        "position": [
+          -6.789599999999998,
+          0,
+          -4.154104023813276
+        ],
+        "rotation": [
+          0,
+          1.6243382898073608,
+          0
+        ],
+        "scale": [
+          1.2397058504771192,
+          0.8109316770186333,
+          1.2397058504771192
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "required-family-presence-trash-bin-indoor-0-1",
+      "name": "复古室内垃圾桶",
+      "parentId": null,
+      "assetId": "asset-36d84f24-0bad-45f6",
+      "transform": {
+        "position": [
+          0.6710608695652174,
+          0,
+          -4.461607920792079
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1.1405940594059407,
+          1.1405940594059407,
+          1.1405940594059407
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "required-family-presence-wall-clock-indoor-0-12",
+      "name": "复古霓虹边框壁钟",
+      "parentId": null,
+      "assetId": "asset-53774337-f88a-4d7f",
+      "transform": {
+        "position": [
+          6.864000000000001,
+          2.5120000000000005,
+          -4.5728323136784965
+        ],
+        "rotation": [
+          0,
+          -0.9667356412721972,
+          0
+        ],
+        "scale": [
+          0.1894736842105263,
+          0.1894736842105263,
+          0.1894736842105263
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "fixed",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "generated-fallback-asset-07049c1f-04f2-405d-20",
+      "name": "调味用品台",
+      "parentId": null,
+      "assetId": "asset-07049c1f-04f2-405d",
+      "transform": {
+        "position": [
+          -1.9443287756294014,
+          0,
+          4.407200226222644
+        ],
+        "rotation": [
+          0,
+          0.6822772040412876,
+          0
+        ],
+        "scale": [
+          2.4538511529057954,
+          1,
+          2.4538511529057954
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "terrain",
+      "visible": true,
+      "locked": false
+    }
+  ],
+  "spawnPoints": [
+    [
+      0,
+      0,
+      0
+    ]
+  ],
+  "spawnYaw": 0,
+  "confirmedAt": 1786598228362,
+  "renderSchemeId": "render-6d04102b-0cf0-4a5c",
+  "renderPromptSuggestions": [
+    "温暖日光穿过对称玻璃窗，配合柔和乳白顶灯。",
+    "突出红、奶油白、薄荷绿与铬银材质的1950年代复古快餐店质感。"
+  ],
+  "materialTagPolicy": {
+    "disabled": [
+      "base:fur"
+    ]
+  },
+  "visualSemantics": {
+    "version": 1,
+    "zones": [
+      {
+        "id": "guest-dining-zone",
+        "tags": [],
+        "center": [
+          0,
+          0
+        ],
+        "radius": 6,
+        "intensity": 0.95
+      },
+      {
+        "id": "service-wall-zone",
+        "tags": [],
+        "center": [
+          0,
+          3.5999999999999996
+        ],
+        "radius": 2.2,
+        "intensity": 0.9
+      },
+      {
+        "id": "entrance-clearance-zone",
+        "tags": [],
+        "center": [
+          0,
+          -3.9000000000000004
+        ],
+        "radius": 1.9,
+        "intensity": 0.72
+      },
+      {
+        "id": "central-aisle-zone",
+        "tags": [],
+        "center": [
+          0,
+          -0.4
+        ],
+        "radius": 1.1500000000000001,
+        "intensity": 0.86
+      },
+      {
+        "id": "daylight-wall-zone",
+        "tags": [],
+        "center": [
+          0,
+          0
+        ],
+        "radius": 5.4,
+        "intensity": 0.76
+      }
+    ],
+    "wind": {
+      "direction": [
+        0.9701425001453319,
+        0.24253562503633297
+      ],
+      "speed": 0.22,
+      "gustStrength": 0.18,
+      "gustFrequency": 0.12
+    }
+  },
+  "layout": {
+    "version": 1,
+    "globalPrompt": "",
+    "regions": [],
+    "edgeMask": {
+      "kind": "none",
+      "points": [
+        [
+          -7.5,
+          -5
+        ],
+        [
+          7.5,
+          -5
+        ],
+        [
+          7.5,
+          5
+        ],
+        [
+          -7.5,
+          5
+        ]
+      ],
+      "seed": 1,
+      "irregularity": 0.22
+    },
+    "stitchSources": [],
+    "seams": []
+  },
+  "collisionBake": {
+    "version": 1,
+    "sourceHash": "18uvsi8",
+    "sourceBoxCount": 158,
+    "boxes": [
+      {
+        "objectId": "composition-service-wall-zone-cashier-counter-accent-1",
+        "min": [
+          -1.5027514339237704,
+          0.0904871287128713,
+          3.0499265647708773
+        ],
+        "max": [
+          1.5027514339237704,
+          1.150479207920792,
+          4.150073435229122
+        ]
+      },
+      {
+        "objectId": "composition-service-wall-zone-cashier-counter-accent-1",
+        "min": [
+          -1.5998445020593803,
+          1.150479207920792,
+          2.952833496635267
+        ],
+        "max": [
+          1.5998445020593803,
+          1.3056,
+          4.247166503364732
+        ]
+      },
+      {
+        "objectId": "composition-service-wall-zone-wall-menu-board-1",
+        "min": [
+          -5.247999999999999,
+          2.2124800000000002,
+          -4.752533333333333
+        ],
+        "max": [
+          5.247999999999999,
+          3.3875200000000003,
+          -4.402666666666667
+        ]
+      },
+      {
+        "objectId": "composition-service-wall-zone-wall-menu-board-1",
+        "min": [
+          -5.1386666666666665,
+          3.087232,
+          -4.3808
+        ],
+        "max": [
+          5.1386666666666665,
+          3.400576000000001,
+          -4.205866666666666
+        ]
+      },
+      {
+        "objectId": "composition-service-wall-zone-wall-menu-board-1",
+        "min": [
+          -5.422933333333333,
+          2.1472,
+          -4.84
+        ],
+        "max": [
+          5.422933333333333,
+          2.2124800000000002,
+          -4.3152
+        ]
+      },
+      {
+        "objectId": "composition-daylight-wall-zone-glass-window-1",
+        "min": [
+          7.393135177865613,
+          2.136916996047431,
+          -4.674592885375494
+        ],
+        "max": [
+          7.581188932806324,
+          3.5029249011857715,
+          -2.525407114624505
+        ]
+      },
+      {
+        "objectId": "composition-daylight-wall-zone-glass-window-2",
+        "min": [
+          7.393135177865613,
+          2.136916996047431,
+          -2.274592885375495
+        ],
+        "max": [
+          7.581188932806324,
+          3.5029249011857715,
+          -0.1254071146245057
+        ]
+      },
+      {
+        "objectId": "composition-daylight-wall-zone-glass-window-3",
+        "min": [
+          7.393135177865613,
+          2.136916996047431,
+          0.12540711462450482
+        ],
+        "max": [
+          7.581188932806324,
+          3.5029249011857715,
+          2.274592885375494
+        ]
+      },
+      {
+        "objectId": "composition-daylight-wall-zone-glass-window-4",
+        "min": [
+          7.393135177865613,
+          2.136916996047431,
+          2.525407114624505
+        ],
+        "max": [
+          7.581188932806324,
+          3.5029249011857715,
+          4.674592885375494
+        ]
+      },
+      {
+        "objectId": "composition-daylight-wall-zone-glass-window-1",
+        "min": [
+          7.319256916996047,
+          2.2849011857707513,
+          -4.499971541501976
+        ],
+        "max": [
+          7.440148616600791,
+          3.354940711462451,
+          -2.700028458498023
+        ]
+      },
+      {
+        "objectId": "composition-daylight-wall-zone-glass-window-2",
+        "min": [
+          7.319256916996047,
+          2.2849011857707513,
+          -2.0999715415019766
+        ],
+        "max": [
+          7.440148616600791,
+          3.354940711462451,
+          -0.3000284584980236
+        ]
+      },
+      {
+        "objectId": "composition-daylight-wall-zone-glass-window-3",
+        "min": [
+          7.319256916996047,
+          2.2849011857707513,
+          0.30002845849802273
+        ],
+        "max": [
+          7.440148616600791,
+          3.354940711462451,
+          2.0999715415019757
+        ]
+      },
+      {
+        "objectId": "composition-daylight-wall-zone-glass-window-4",
+        "min": [
+          7.319256916996047,
+          2.2849011857707513,
+          2.700028458498023
+        ],
+        "max": [
+          7.440148616600791,
+          3.354940711462451,
+          4.499971541501976
+        ]
+      },
+      {
+        "objectId": "composition-daylight-wall-zone-glass-window-1",
+        "min": [
+          7.278959683794466,
+          2.08,
+          -4.758545454545454
+        ],
+        "max": [
+          7.587905138339921,
+          2.1710671936758894,
+          -2.441454545454545
+        ]
+      },
+      {
+        "objectId": "composition-daylight-wall-zone-glass-window-2",
+        "min": [
+          7.278959683794466,
+          2.08,
+          -2.358545454545455
+        ],
+        "max": [
+          7.587905138339921,
+          2.1710671936758894,
+          -0.04145454545454519
+        ]
+      },
+      {
+        "objectId": "composition-daylight-wall-zone-glass-window-3",
+        "min": [
+          7.278959683794466,
+          2.08,
+          0.0414545454545443
+        ],
+        "max": [
+          7.587905138339921,
+          2.1710671936758894,
+          2.358545454545454
+        ]
+      },
+      {
+        "objectId": "composition-daylight-wall-zone-glass-window-4",
+        "min": [
+          7.278959683794466,
+          2.08,
+          2.441454545454545
+        ],
+        "max": [
+          7.587905138339921,
+          2.1710671936758894,
+          4.758545454545454
+        ]
+      },
+      {
+        "objectId": "composition-guest-dining-zone-dining-table-1",
+        "min": [
+          -4.023323926380368,
+          1.070488343558282,
+          -4.2947153374233125
+        ],
+        "max": [
+          -2.726676073619632,
+          1.2212613496932514,
+          -2.4552846625766875
+        ]
+      },
+      {
+        "objectId": "composition-guest-dining-zone-dining-table-5",
+        "min": [
+          -4.023323926380368,
+          1.070488343558282,
+          -2.0447153374233125
+        ],
+        "max": [
+          -2.726676073619632,
+          1.2212613496932514,
+          -0.20528466257668732
+        ]
+      },
+      {
+        "objectId": "composition-guest-dining-zone-dining-table-9",
+        "min": [
+          -4.023323926380368,
+          1.070488343558282,
+          0.20528466257668732
+        ],
+        "max": [
+          -2.726676073619632,
+          1.2212613496932514,
+          2.0447153374233125
+        ]
+      },
+      {
+        "objectId": "composition-guest-dining-zone-dining-table-13",
+        "min": [
+          -4.023323926380368,
+          1.070488343558282,
+          2.4552846625766875
+        ],
+        "max": [
+          -2.726676073619632,
+          1.2212613496932514,
+          4.2947153374233125
+        ]
+      },
+      {
+        "objectId": "composition-guest-dining-zone-dining-table-4",
+        "min": [
+          2.726676073619632,
+          1.070488343558282,
+          -4.2947153374233125
+        ],
+        "max": [
+          4.023323926380368,
+          1.2212613496932514,
+          -2.4552846625766875
+        ]
+      },
+      {
+        "objectId": "composition-guest-dining-zone-dining-table-8",
+        "min": [
+          2.726676073619632,
+          1.070488343558282,
+          -2.0447153374233125
+        ],
+        "max": [
+          4.023323926380368,
+          1.2212613496932514,
+          -0.20528466257668732
+        ]
+      },
+      {
+        "objectId": "composition-guest-dining-zone-dining-table-12",
+        "min": [
+          2.726676073619632,
+          1.070488343558282,
+          0.20528466257668732
+        ],
+        "max": [
+          4.023323926380368,
+          1.2212613496932514,
+          2.0447153374233125
+        ]
+      },
+      {
+        "objectId": "composition-guest-dining-zone-dining-table-16",
+        "min": [
+          2.726676073619632,
+          1.070488343558282,
+          2.4552846625766875
+        ],
+        "max": [
+          4.023323926380368,
+          1.2212613496932514,
+          4.2947153374233125
+        ]
+      },
+      {
+        "objectId": "composition-guest-dining-zone-dining-table-6",
+        "min": [
+          -1.773323926380368,
+          1.070488343558282,
+          -2.0447153374233125
+        ],
+        "max": [
+          -0.47667607361963193,
+          1.2212613496932514,
+          -0.20528466257668732
+        ]
+      },
+      {
+        "objectId": "composition-guest-dining-zone-dining-table-10",
+        "min": [
+          -1.773323926380368,
+          1.070488343558282,
+          0.20528466257668732
+        ],
+        "max": [
+          -0.47667607361963193,
+          1.2212613496932514,
+          2.0447153374233125
+        ]
+      },
+      {
+        "objectId": "composition-guest-dining-zone-dining-table-7",
+        "min": [
+          0.47667607361963193,
+          1.070488343558282,
+          -2.0447153374233125
+        ],
+        "max": [
+          1.773323926380368,
+          1.2212613496932514,
+          -0.20528466257668732
+        ]
+      },
+      {
+        "objectId": "composition-guest-dining-zone-dining-table-11",
+        "min": [
+          0.47667607361963193,
+          1.070488343558282,
+          0.20528466257668732
+        ],
+        "max": [
+          1.773323926380368,
+          1.2212613496932514,
+          2.0447153374233125
+        ]
+      },
+      {
+        "objectId": "composition-guest-dining-zone-dining-table-1",
+        "min": [
+          -3.887628220858896,
+          1.070488343558282,
+          -4.430411042944785
+        ],
+        "max": [
+          -2.862371779141104,
+          1.2212613496932514,
+          -2.319588957055215
+        ]
+      },
+      {
+        "objectId": "composition-guest-dining-zone-dining-table-5",
+        "min": [
+          -3.887628220858896,
+          1.070488343558282,
+          -2.180411042944785
+        ],
+        "max": [
+          -2.862371779141104,
+          1.2212613496932514,
+          -0.06958895705521506
+        ]
+      },
+      {
+        "objectId": "composition-guest-dining-zone-dining-table-9",
+        "min": [
+          -3.887628220858896,
+          1.070488343558282,
+          0.06958895705521506
+        ],
+        "max": [
+          -2.862371779141104,
+          1.2212613496932514,
+          2.180411042944785
+        ]
+      },
+      {
+        "objectId": "composition-guest-dining-zone-dining-table-13",
+        "min": [
+          -3.887628220858896,
+          1.070488343558282,
+          2.319588957055215
+        ],
+        "max": [
+          -2.862371779141104,
+          1.2212613496932514,
+          4.430411042944785
+        ]
+      },
+      {
+        "objectId": "composition-guest-dining-zone-dining-table-4",
+        "min": [
+          2.862371779141104,
+          1.070488343558282,
+          -4.430411042944785
+        ],
+        "max": [
+          3.887628220858896,
+          1.2212613496932514,
+          -2.319588957055215
+        ]
+      },
+      {
+        "objectId": "composition-guest-dining-zone-dining-table-8",
+        "min": [
+          2.862371779141104,
+          1.070488343558282,
+          -2.180411042944785
+        ],
+        "max": [
+          3.887628220858896,
+          1.2212613496932514,
+          -0.06958895705521506
+        ]
+      },
+      {
+        "objectId": "composition-guest-dining-zone-dining-table-12",
+        "min": [
+          2.862371779141104,
+          1.070488343558282,
+          0.06958895705521506
+        ],
+        "max": [
+          3.887628220858896,
+          1.2212613496932514,
+          2.180411042944785
+        ]
+      },
+      {
+        "objectId": "composition-guest-dining-zone-dining-table-16",
+        "min": [
+          2.862371779141104,
+          1.070488343558282,
+          2.319588957055215
+        ],
+        "max": [
+          3.887628220858896,
+          1.2212613496932514,
+          4.430411042944785
+        ]
+      },
+      {
+        "objectId": "composition-guest-dining-zone-dining-table-6",
+        "min": [
+          -1.6376282208588957,
+          1.070488343558282,
+          -2.180411042944785
+        ],
+        "max": [
+          -0.6123717791411043,
+          1.2212613496932514,
+          -0.06958895705521506
+        ]
+      },
+      {
+        "objectId": "composition-guest-dining-zone-dining-table-10",
+        "min": [
+          -1.6376282208588957,
+          1.070488343558282,
+          0.06958895705521506
+        ],
+        "max": [
+          -0.6123717791411043,
+          1.2212613496932514,
+          2.180411042944785
+        ]
+      },
+      {
+        "objectId": "composition-guest-dining-zone-dining-table-7",
+        "min": [
+          0.6123717791411043,
+          1.070488343558282,
+          -2.180411042944785
+        ],
+        "max": [
+          1.6376282208588957,
+          1.2212613496932514,
+          -0.06958895705521506
+        ]
+      },
+      {
+        "objectId": "composition-guest-dining-zone-dining-table-11",
+        "min": [
+          0.6123717791411043,
+          1.070488343558282,
+          0.06958895705521506
+        ],
+        "max": [
+          1.6376282208588957,
+          1.2212613496932514,
+          2.180411042944785
+        ]
+      },
+      {
+        "objectId": "composition-guest-dining-zone-dining-chair-3",
+        "min": [
+          -5.001977978291647,
+          0.4205518716577541,
+          -3.806335384615385
+        ],
+        "max": [
+          -4.296156439830108,
+          0.6045433155080214,
+          -2.9436646153846158
+        ]
+      },
+      {
+        "objectId": "composition-guest-dining-zone-dining-chair-11",
+        "min": [
+          -5.001977978291647,
+          0.4205518716577541,
+          -1.5563353846153847
+        ],
+        "max": [
+          -4.296156439830108,
+          0.6045433155080214,
+          -0.6936646153846157
+        ]
+      },
+      {
+        "objectId": "composition-guest-dining-zone-dining-chair-27",
+        "min": [
+          -5.001977978291647,
+          0.4205518716577541,
+          0.6936646153846152
+        ],
+        "max": [
+          -4.296156439830108,
+          0.6045433155080214,
+          1.5563353846153842
+        ]
+      },
+      {
+        "objectId": "composition-guest-dining-zone-dining-chair-43",
+        "min": [
+          -5.001977978291647,
+          0.4205518716577541,
+          2.943664615384615
+        ],
+        "max": [
+          -4.296156439830108,
+          0.6045433155080214,
+          3.8063353846153842
+        ]
+      },
+      {
+        "objectId": "composition-guest-dining-zone-dining-chair-1",
+        "min": [
+          -2.4538435601698914,
+          0.4205518716577541,
+          -3.8063353846153847
+        ],
+        "max": [
+          -1.748022021708353,
+          0.6045433155080214,
+          -2.9436646153846153
+        ]
+      },
+      {
+        "objectId": "composition-guest-dining-zone-dining-chair-7",
+        "min": [
+          1.748022021708353,
+          0.4205518716577541,
+          -3.806335384615385
+        ],
+        "max": [
+          2.453843560169892,
+          0.6045433155080214,
+          -2.9436646153846158
+        ]
+      },
+      {
+        "objectId": "composition-guest-dining-zone-dining-chair-5",
+        "min": [
+          4.296156439830108,
+          0.4205518716577541,
+          -3.8063353846153847
+        ],
+        "max": [
+          5.001977978291647,
+          0.6045433155080214,
+          -2.9436646153846153
+        ]
+      },
+      {
+        "objectId": "composition-guest-dining-zone-dining-chair-21",
+        "min": [
+          4.296156439830108,
+          0.4205518716577541,
+          -1.5563353846153847
+        ],
+        "max": [
+          5.001977978291647,
+          0.6045433155080214,
+          -0.6936646153846154
+        ]
+      },
+      {
+        "objectId": "composition-guest-dining-zone-dining-chair-37",
+        "min": [
+          4.296156439830108,
+          0.4205518716577541,
+          0.6936646153846154
+        ],
+        "max": [
+          5.001977978291647,
+          0.6045433155080214,
+          1.5563353846153847
+        ]
+      },
+      {
+        "objectId": "composition-guest-dining-zone-dining-chair-45",
+        "min": [
+          4.296156439830108,
+          0.4205518716577541,
+          2.9436646153846153
+        ],
+        "max": [
+          5.001977978291647,
+          0.6045433155080214,
+          3.8063353846153847
+        ]
+      },
+      {
+        "objectId": "__baked_map__",
+        "min": [
+          -2.751977978291647,
+          0.4205518716577541,
+          -1.5563353846153847
+        ],
+        "max": [
+          -1.748022021708353,
+          0.6045433155080214,
+          -0.6936646153846157
+        ]
+      },
+      {
+        "objectId": "__baked_map__",
+        "min": [
+          -2.751977978291647,
+          0.4205518716577541,
+          0.6936646153846152
+        ],
+        "max": [
+          -1.748022021708353,
+          0.6045433155080214,
+          1.5563353846153842
+        ]
+      },
+      {
+        "objectId": "__baked_map__",
+        "min": [
+          1.748022021708353,
+          0.4205518716577541,
+          -1.5563353846153847
+        ],
+        "max": [
+          2.751977978291647,
+          0.6045433155080214,
+          -0.6936646153846157
+        ]
+      },
+      {
+        "objectId": "__baked_map__",
+        "min": [
+          1.748022021708353,
+          0.4205518716577541,
+          0.6936646153846152
+        ],
+        "max": [
+          2.751977978291647,
+          0.6045433155080214,
+          1.5563353846153842
+        ]
+      },
+      {
+        "objectId": "__baked_map__",
+        "min": [
+          -0.5019779782916469,
+          0.4205518716577541,
+          0.6936646153846152
+        ],
+        "max": [
+          0.5019779782916469,
+          0.6045433155080214,
+          1.5563353846153842
+        ]
+      },
+      {
+        "objectId": "composition-guest-dining-zone-dining-chair-3",
+        "min": [
+          -5.041190285983955,
+          0.5454032085561497,
+          -3.806335384615385
+        ],
+        "max": [
+          -4.868656132137801,
+          1.2025155080213903,
+          -2.9436646153846158
+        ]
+      },
+      {
+        "objectId": "composition-guest-dining-zone-dining-chair-11",
+        "min": [
+          -5.041190285983954,
+          0.5454032085561497,
+          -1.5563353846153847
+        ],
+        "max": [
+          -4.868656132137801,
+          1.2025155080213903,
+          -0.6936646153846157
+        ]
+      },
+      {
+        "objectId": "composition-guest-dining-zone-dining-chair-27",
+        "min": [
+          -5.041190285983954,
+          0.5454032085561497,
+          0.6936646153846152
+        ],
+        "max": [
+          -4.868656132137801,
+          1.2025155080213903,
+          1.5563353846153842
+        ]
+      },
+      {
+        "objectId": "composition-guest-dining-zone-dining-chair-43",
+        "min": [
+          -5.041190285983955,
+          0.5454032085561497,
+          2.943664615384615
+        ],
+        "max": [
+          -4.868656132137801,
+          1.2025155080213903,
+          3.8063353846153842
+        ]
+      },
+      {
+        "objectId": "composition-guest-dining-zone-dining-chair-1",
+        "min": [
+          -1.8813438678621992,
+          0.5454032085561497,
+          -3.8063353846153847
+        ],
+        "max": [
+          -1.7088097140160454,
+          1.2025155080213903,
+          -2.9436646153846153
+        ]
+      },
+      {
+        "objectId": "composition-guest-dining-zone-dining-chair-9",
+        "min": [
+          -1.8813438678621992,
+          0.5454032085561497,
+          -1.5563353846153847
+        ],
+        "max": [
+          -1.7088097140160454,
+          1.2025155080213903,
+          -0.6936646153846154
+        ]
+      },
+      {
+        "objectId": "composition-guest-dining-zone-dining-chair-25",
+        "min": [
+          -1.8813438678621992,
+          0.5454032085561497,
+          0.6936646153846154
+        ],
+        "max": [
+          -1.7088097140160454,
+          1.2025155080213903,
+          1.5563353846153847
+        ]
+      },
+      {
+        "objectId": "composition-guest-dining-zone-dining-chair-7",
+        "min": [
+          1.7088097140160454,
+          0.5454032085561497,
+          -3.806335384615385
+        ],
+        "max": [
+          1.8813438678621994,
+          1.2025155080213903,
+          -2.9436646153846158
+        ]
+      },
+      {
+        "objectId": "composition-guest-dining-zone-dining-chair-23",
+        "min": [
+          1.7088097140160454,
+          0.5454032085561497,
+          -1.5563353846153847
+        ],
+        "max": [
+          1.8813438678621992,
+          1.2025155080213903,
+          -0.6936646153846157
+        ]
+      },
+      {
+        "objectId": "composition-guest-dining-zone-dining-chair-39",
+        "min": [
+          1.7088097140160454,
+          0.5454032085561497,
+          0.6936646153846152
+        ],
+        "max": [
+          1.8813438678621992,
+          1.2025155080213903,
+          1.5563353846153842
+        ]
+      },
+      {
+        "objectId": "composition-guest-dining-zone-dining-chair-5",
+        "min": [
+          4.868656132137801,
+          0.5454032085561497,
+          -3.8063353846153847
+        ],
+        "max": [
+          5.041190285983954,
+          1.2025155080213903,
+          -2.9436646153846153
+        ]
+      },
+      {
+        "objectId": "composition-guest-dining-zone-dining-chair-21",
+        "min": [
+          4.868656132137801,
+          0.5454032085561497,
+          -1.5563353846153847
+        ],
+        "max": [
+          5.041190285983954,
+          1.2025155080213903,
+          -0.6936646153846154
+        ]
+      },
+      {
+        "objectId": "composition-guest-dining-zone-dining-chair-37",
+        "min": [
+          4.868656132137801,
+          0.5454032085561497,
+          0.6936646153846154
+        ],
+        "max": [
+          5.041190285983954,
+          1.2025155080213903,
+          1.5563353846153847
+        ]
+      },
+      {
+        "objectId": "composition-guest-dining-zone-dining-chair-45",
+        "min": [
+          4.868656132137801,
+          0.5454032085561497,
+          2.9436646153846153
+        ],
+        "max": [
+          5.041190285983954,
+          1.2025155080213903,
+          3.8063353846153847
+        ]
+      },
+      {
+        "objectId": "composition-guest-dining-zone-dining-chair-15",
+        "min": [
+          -2.7911902859839546,
+          0.5454032085561497,
+          -1.5563353846153847
+        ],
+        "max": [
+          -2.618656132137801,
+          1.2025155080213903,
+          -0.6936646153846157
+        ]
+      },
+      {
+        "objectId": "composition-guest-dining-zone-dining-chair-31",
+        "min": [
+          -2.7911902859839546,
+          0.5454032085561497,
+          0.6936646153846152
+        ],
+        "max": [
+          -2.618656132137801,
+          1.2025155080213903,
+          1.5563353846153842
+        ]
+      },
+      {
+        "objectId": "composition-guest-dining-zone-dining-chair-17",
+        "min": [
+          2.618656132137801,
+          0.5454032085561497,
+          -1.5563353846153847
+        ],
+        "max": [
+          2.7911902859839546,
+          1.2025155080213903,
+          -0.6936646153846154
+        ]
+      },
+      {
+        "objectId": "composition-guest-dining-zone-dining-chair-33",
+        "min": [
+          2.618656132137801,
+          0.5454032085561497,
+          0.6936646153846154
+        ],
+        "max": [
+          2.7911902859839546,
+          1.2025155080213903,
+          1.5563353846153847
+        ]
+      },
+      {
+        "objectId": "composition-guest-dining-zone-dining-chair-35",
+        "min": [
+          -0.5411902859839546,
+          0.5454032085561497,
+          0.6936646153846152
+        ],
+        "max": [
+          -0.3686561321378007,
+          1.2025155080213903,
+          1.5563353846153842
+        ]
+      },
+      {
+        "objectId": "composition-guest-dining-zone-dining-chair-29",
+        "min": [
+          0.3686561321378007,
+          0.5454032085561497,
+          0.6936646153846154
+        ],
+        "max": [
+          0.5411902859839546,
+          1.2025155080213903,
+          1.5563353846153847
+        ]
+      },
+      {
+        "objectId": "composition-guest-dining-zone-ceiling-light-1",
+        "min": [
+          -4.591411764705883,
+          4.5980799999999995,
+          -3.2414117647058824
+        ],
+        "max": [
+          -3.5085882352941185,
+          4.644159999999999,
+          -2.158588235294118
+        ]
+      },
+      {
+        "objectId": "composition-guest-dining-zone-ceiling-light-5",
+        "min": [
+          -4.591411764705883,
+          4.5980799999999995,
+          -0.5414117647058824
+        ],
+        "max": [
+          -3.5085882352941185,
+          4.644159999999999,
+          0.5414117647058824
+        ]
+      },
+      {
+        "objectId": "composition-guest-dining-zone-ceiling-light-9",
+        "min": [
+          -4.591411764705883,
+          4.5980799999999995,
+          2.158588235294118
+        ],
+        "max": [
+          -3.5085882352941185,
+          4.644159999999999,
+          3.2414117647058824
+        ]
+      },
+      {
+        "objectId": "composition-guest-dining-zone-ceiling-light-4",
+        "min": [
+          3.5085882352941185,
+          4.5980799999999995,
+          -3.2414117647058824
+        ],
+        "max": [
+          4.591411764705883,
+          4.644159999999999,
+          -2.158588235294118
+        ]
+      },
+      {
+        "objectId": "composition-guest-dining-zone-ceiling-light-8",
+        "min": [
+          3.5085882352941185,
+          4.5980799999999995,
+          -0.5414117647058824
+        ],
+        "max": [
+          4.591411764705883,
+          4.644159999999999,
+          0.5414117647058824
+        ]
+      },
+      {
+        "objectId": "composition-guest-dining-zone-ceiling-light-12",
+        "min": [
+          3.5085882352941185,
+          4.5980799999999995,
+          2.158588235294118
+        ],
+        "max": [
+          4.591411764705883,
+          4.644159999999999,
+          3.2414117647058824
+        ]
+      },
+      {
+        "objectId": "composition-guest-dining-zone-ceiling-light-6",
+        "min": [
+          -1.8914117647058823,
+          4.5980799999999995,
+          -0.5414117647058824
+        ],
+        "max": [
+          -0.8085882352941177,
+          4.644159999999999,
+          0.5414117647058824
+        ]
+      },
+      {
+        "objectId": "composition-guest-dining-zone-ceiling-light-7",
+        "min": [
+          0.8085882352941177,
+          4.5980799999999995,
+          -0.5414117647058824
+        ],
+        "max": [
+          1.8914117647058823,
+          4.644159999999999,
+          0.5414117647058824
+        ]
+      },
+      {
+        "objectId": "composition-guest-dining-zone-ceiling-light-1",
+        "min": [
+          -4.663600000000001,
+          4.642065454545454,
+          -3.3136
+        ],
+        "max": [
+          -3.436400000000001,
+          4.6713890909090905,
+          -2.0864000000000003
+        ]
+      },
+      {
+        "objectId": "composition-guest-dining-zone-ceiling-light-5",
+        "min": [
+          -4.663600000000001,
+          4.642065454545454,
+          -0.6136
+        ],
+        "max": [
+          -3.436400000000001,
+          4.6713890909090905,
+          0.6136
+        ]
+      },
+      {
+        "objectId": "composition-guest-dining-zone-ceiling-light-9",
+        "min": [
+          -4.663600000000001,
+          4.642065454545454,
+          2.0864000000000003
+        ],
+        "max": [
+          -3.436400000000001,
+          4.6713890909090905,
+          3.3136
+        ]
+      },
+      {
+        "objectId": "composition-guest-dining-zone-ceiling-light-4",
+        "min": [
+          3.436400000000001,
+          4.642065454545454,
+          -3.3136
+        ],
+        "max": [
+          4.663600000000001,
+          4.6713890909090905,
+          -2.0864000000000003
+        ]
+      },
+      {
+        "objectId": "composition-guest-dining-zone-ceiling-light-8",
+        "min": [
+          3.436400000000001,
+          4.642065454545454,
+          -0.6136
+        ],
+        "max": [
+          4.663600000000001,
+          4.6713890909090905,
+          0.6136
+        ]
+      },
+      {
+        "objectId": "composition-guest-dining-zone-ceiling-light-12",
+        "min": [
+          3.436400000000001,
+          4.642065454545454,
+          2.0864000000000003
+        ],
+        "max": [
+          4.663600000000001,
+          4.6713890909090905,
+          3.3136
+        ]
+      },
+      {
+        "objectId": "composition-guest-dining-zone-ceiling-light-6",
+        "min": [
+          -1.9636,
+          4.642065454545454,
+          -0.6136
+        ],
+        "max": [
+          -0.7364,
+          4.6713890909090905,
+          0.6136
+        ]
+      },
+      {
+        "objectId": "composition-guest-dining-zone-ceiling-light-7",
+        "min": [
+          0.7364,
+          4.642065454545454,
+          -0.6136
+        ],
+        "max": [
+          1.9636,
+          4.6713890909090905,
+          0.6136
+        ]
+      },
+      {
+        "objectId": "composition-guest-dining-zone-ceiling-light-1",
+        "min": [
+          -4.471098039215687,
+          4.570850909090908,
+          -3.1210980392156866
+        ],
+        "max": [
+          -3.6289019607843143,
+          4.595985454545454,
+          -2.2789019607843137
+        ]
+      },
+      {
+        "objectId": "composition-guest-dining-zone-ceiling-light-5",
+        "min": [
+          -4.471098039215687,
+          4.570850909090908,
+          -0.42109803921568634
+        ],
+        "max": [
+          -3.6289019607843143,
+          4.595985454545454,
+          0.42109803921568634
+        ]
+      },
+      {
+        "objectId": "composition-guest-dining-zone-ceiling-light-9",
+        "min": [
+          -4.471098039215687,
+          4.570850909090908,
+          2.2789019607843137
+        ],
+        "max": [
+          -3.6289019607843143,
+          4.595985454545454,
+          3.1210980392156866
+        ]
+      },
+      {
+        "objectId": "composition-guest-dining-zone-ceiling-light-4",
+        "min": [
+          3.6289019607843143,
+          4.570850909090908,
+          -3.1210980392156866
+        ],
+        "max": [
+          4.471098039215687,
+          4.595985454545454,
+          -2.2789019607843137
+        ]
+      },
+      {
+        "objectId": "composition-guest-dining-zone-ceiling-light-8",
+        "min": [
+          3.6289019607843143,
+          4.570850909090908,
+          -0.42109803921568634
+        ],
+        "max": [
+          4.471098039215687,
+          4.595985454545454,
+          0.42109803921568634
+        ]
+      },
+      {
+        "objectId": "composition-guest-dining-zone-ceiling-light-12",
+        "min": [
+          3.6289019607843143,
+          4.570850909090908,
+          2.2789019607843137
+        ],
+        "max": [
+          4.471098039215687,
+          4.595985454545454,
+          3.1210980392156866
+        ]
+      },
+      {
+        "objectId": "composition-guest-dining-zone-ceiling-light-6",
+        "min": [
+          -1.7710980392156865,
+          4.570850909090908,
+          -0.42109803921568634
+        ],
+        "max": [
+          -0.9289019607843138,
+          4.595985454545454,
+          0.42109803921568634
+        ]
+      },
+      {
+        "objectId": "composition-guest-dining-zone-ceiling-light-7",
+        "min": [
+          0.9289019607843138,
+          4.570850909090908,
+          -0.42109803921568634
+        ],
+        "max": [
+          1.7710980392156865,
+          4.595985454545454,
+          0.42109803921568634
+        ]
+      },
+      {
+        "objectId": "composition-guest-dining-zone-ceiling-light-1",
+        "min": [
+          -4.271377254901962,
+          4.552,
+          -2.921377254901961
+        ],
+        "max": [
+          -3.82862274509804,
+          4.572945454545454,
+          -2.4786227450980394
+        ]
+      },
+      {
+        "objectId": "composition-guest-dining-zone-ceiling-light-5",
+        "min": [
+          -4.271377254901962,
+          4.552,
+          -0.2213772549019608
+        ],
+        "max": [
+          -3.82862274509804,
+          4.572945454545454,
+          0.2213772549019608
+        ]
+      },
+      {
+        "objectId": "composition-guest-dining-zone-ceiling-light-9",
+        "min": [
+          -4.271377254901962,
+          4.552,
+          2.4786227450980394
+        ],
+        "max": [
+          -3.82862274509804,
+          4.572945454545454,
+          2.921377254901961
+        ]
+      },
+      {
+        "objectId": "composition-guest-dining-zone-ceiling-light-4",
+        "min": [
+          3.82862274509804,
+          4.552,
+          -2.921377254901961
+        ],
+        "max": [
+          4.271377254901962,
+          4.572945454545454,
+          -2.4786227450980394
+        ]
+      },
+      {
+        "objectId": "composition-guest-dining-zone-ceiling-light-8",
+        "min": [
+          3.82862274509804,
+          4.552,
+          -0.2213772549019608
+        ],
+        "max": [
+          4.271377254901962,
+          4.572945454545454,
+          0.2213772549019608
+        ]
+      },
+      {
+        "objectId": "composition-guest-dining-zone-ceiling-light-12",
+        "min": [
+          3.82862274509804,
+          4.552,
+          2.4786227450980394
+        ],
+        "max": [
+          4.271377254901962,
+          4.572945454545454,
+          2.921377254901961
+        ]
+      },
+      {
+        "objectId": "composition-guest-dining-zone-ceiling-light-6",
+        "min": [
+          -1.571377254901961,
+          4.552,
+          -0.2213772549019608
+        ],
+        "max": [
+          -1.1286227450980393,
+          4.572945454545454,
+          0.2213772549019608
+        ]
+      },
+      {
+        "objectId": "composition-guest-dining-zone-ceiling-light-7",
+        "min": [
+          1.1286227450980393,
+          4.552,
+          -0.2213772549019608
+        ],
+        "max": [
+          1.571377254901961,
+          4.572945454545454,
+          0.2213772549019608
+        ]
+      },
+      {
+        "objectId": "composition-service-wall-zone-drink-dispenser-1",
+        "min": [
+          1.7510519543031222,
+          0.022420382165605077,
+          2.9902958579881656
+        ],
+        "max": [
+          2.572827102232116,
+          0.2735286624203822,
+          4.209704142011834
+        ]
+      },
+      {
+        "objectId": "composition-service-wall-zone-drink-dispenser-1",
+        "min": [
+          1.7377975164332997,
+          0.28698089171974517,
+          2.9902958579881656
+        ],
+        "max": [
+          2.5860815401019384,
+          0.3228535031847134,
+          4.209704142011834
+        ]
+      },
+      {
+        "objectId": "required-required-dining-chairs-indoor-0-13",
+        "min": [
+          -1.4905384615384614,
+          0.4205518716577541,
+          -2.9493293629070316
+        ],
+        "max": [
+          -0.7594615384615382,
+          0.6045433155080214,
+          -2.3511755167531856
+        ]
+      },
+      {
+        "objectId": "required-required-dining-chairs-indoor-0-19",
+        "min": [
+          -1.490538461538462,
+          0.4205518716577541,
+          2.3511755167531856
+        ],
+        "max": [
+          -0.7594615384615389,
+          0.6045433155080214,
+          2.9493293629070316
+        ]
+      },
+      {
+        "objectId": "required-required-dining-chairs-indoor-0-18",
+        "min": [
+          0.7594615384615386,
+          0.4205518716577541,
+          -2.9493293629070316
+        ],
+        "max": [
+          1.4905384615384618,
+          0.6045433155080214,
+          -2.3511755167531856
+        ]
+      },
+      {
+        "objectId": "required-required-dining-chairs-indoor-0-15",
+        "min": [
+          0.759461538461538,
+          0.4205518716577541,
+          2.3511755167531856
+        ],
+        "max": [
+          1.4905384615384611,
+          0.6045433155080214,
+          2.9493293629070316
+        ]
+      },
+      {
+        "objectId": "required-required-dining-chairs-indoor-0-13",
+        "min": [
+          -1.4905384615384611,
+          0.5454032085561497,
+          -2.9825601321378006
+        ],
+        "max": [
+          -0.7594615384615382,
+          1.2025155080213903,
+          -2.836344747522416
+        ]
+      },
+      {
+        "objectId": "required-required-dining-chairs-indoor-0-19",
+        "min": [
+          -1.490538461538462,
+          0.5454032085561497,
+          2.836344747522416
+        ],
+        "max": [
+          -0.759461538461539,
+          1.2025155080213903,
+          2.9825601321378006
+        ]
+      },
+      {
+        "objectId": "required-required-dining-chairs-indoor-0-18",
+        "min": [
+          0.7594615384615387,
+          0.5454032085561497,
+          -2.9825601321378006
+        ],
+        "max": [
+          1.4905384615384618,
+          1.2025155080213903,
+          -2.836344747522416
+        ]
+      },
+      {
+        "objectId": "required-required-dining-chairs-indoor-0-15",
+        "min": [
+          0.759461538461538,
+          0.5454032085561497,
+          2.836344747522416
+        ],
+        "max": [
+          1.4905384615384611,
+          1.2025155080213903,
+          2.9825601321378006
+        ]
+      },
+      {
+        "objectId": "required-family-presence-entrance-door-indoor-0-1",
+        "min": [
+          -1.080416507044383,
+          0,
+          -4.76051085206588
+        ],
+        "max": [
+          -0.1803485144139142,
+          1.4998260869565219,
+          -4.605115941828323
+        ]
+      },
+      {
+        "objectId": "required-family-presence-entrance-door-indoor-0-1",
+        "min": [
+          -1.2491997013958815,
+          0,
+          -4.738853345668663
+        ],
+        "max": [
+          -1.0992025056218684,
+          1.6800000000000002,
+          -4.543996325654113
+        ]
+      },
+      {
+        "objectId": "required-family-presence-entrance-door-indoor-0-1",
+        "min": [
+          -0.16156251583642878,
+          0,
+          -4.821630468240091
+        ],
+        "max": [
+          -0.011565320062415618,
+          1.6800000000000002,
+          -4.62677344822554
+        ]
+      },
+      {
+        "objectId": "required-family-presence-entrance-door-indoor-0-1",
+        "min": [
+          -1.2491997013958813,
+          1.5436521739130435,
+          -4.821630468240091
+        ],
+        "max": [
+          -0.01156532006241573,
+          1.6800000000000002,
+          -4.543996325654113
+        ]
+      },
+      {
+        "objectId": "required-family-presence-entrance-door-indoor-0-1",
+        "min": [
+          -1.0654803968691606,
+          0.04382608695652175,
+          -4.754546706738766
+        ],
+        "max": [
+          -0.1938064616860753,
+          0.22886956521739132,
+          -4.591657994556162
+        ]
+      },
+      {
+        "objectId": "required-family-presence-entrance-door-indoor-0-1",
+        "min": [
+          -1.1677644300262546,
+          1.470608695652174,
+          -4.829914845351538
+        ],
+        "max": [
+          -0.09300059143204265,
+          1.5290434782608697,
+          -4.535711948542667
+        ]
+      },
+      {
+        "objectId": "required-family-presence-cash-register-indoor-2-10",
+        "min": [
+          -7.893599999999998,
+          0,
+          -5.684235930745833
+        ],
+        "max": [
+          -5.8774790440808475,
+          0.3730285714285714,
+          -2.613688707694804
+        ]
+      },
+      {
+        "objectId": "required-family-presence-cash-register-indoor-2-10",
+        "min": [
+          -7.819098064842797,
+          0.413575155279503,
+          -5.397944037529605
+        ],
+        "max": [
+          -6.843290087226509,
+          1.240725465838509,
+          -2.8522125066280752
+        ]
+      },
+      {
+        "objectId": "required-family-presence-cash-register-indoor-2-10",
+        "min": [
+          -6.956937249730694,
+          0.4001958039332258,
+          -5.463598693195886
+        ],
+        "max": [
+          -5.848556927362653,
+          0.8810762457562149,
+          -2.886074714051289
+        ]
+      },
+      {
+        "objectId": "required-family-presence-cash-register-indoor-2-10",
+        "min": [
+          -7.871932466278473,
+          1.2245068322981363,
+          -5.462494286377857
+        ],
+        "max": [
+          -6.7904556857908345,
+          1.3055999999999996,
+          -2.7876622577798233
+        ]
+      },
+      {
+        "objectId": "required-family-presence-trash-bin-indoor-0-1",
+        "min": [
+          0.2832588893671975,
+          0.1425742574257426,
+          -4.797227722772277
+        ],
+        "max": [
+          1.0588628497632373,
+          0.9638019801980199,
+          -4.204118811881187
+        ]
+      },
+      {
+        "objectId": "required-family-presence-wall-clock-indoor-0-12",
+        "min": [
+          6.7683287752935435,
+          2.637052631578948,
+          -4.722010522797967
+        ],
+        "max": [
+          6.978384463856921,
+          2.962947368421053,
+          -4.43656838616573
+        ]
+      },
+      {
+        "objectId": "required-family-presence-wall-clock-indoor-0-12",
+        "min": [
+          6.927448968327631,
+          2.521888659881436,
+          -4.524583959743724
+        ],
+        "max": [
+          7.0279146776225225,
+          2.638532392750144,
+          -4.405042403634352
+        ]
+      },
+      {
+        "objectId": "required-family-presence-wall-clock-indoor-0-12",
+        "min": [
+          6.927448968327631,
+          2.961467607249857,
+          -4.524583959743724
+        ],
+        "max": [
+          7.0279146776225225,
+          3.0781113401185647,
+          -4.405042403634352
+        ]
+      },
+      {
+        "objectId": "required-family-presence-wall-clock-indoor-0-12",
+        "min": [
+          6.7531061666371235,
+          2.521888659881436,
+          -4.77721268827497
+        ],
+        "max": [
+          6.8535718759320154,
+          2.638532392750144,
+          -4.657671132165597
+        ]
+      },
+      {
+        "objectId": "required-family-presence-wall-clock-indoor-0-12",
+        "min": [
+          6.7531061666371235,
+          2.961467607249857,
+          -4.77721268827497
+        ],
+        "max": [
+          6.8535718759320154,
+          3.0781113401185647,
+          -4.657671132165597
+        ]
+      },
+      {
+        "objectId": "generated-fallback-asset-07049c1f-04f2-405d-20",
+        "min": [
+          -2.939716386756349,
+          0.09999999999999998,
+          3.4609308637690743
+        ],
+        "max": [
+          -0.9876238019147443,
+          0.86,
+          5.305856360596036
+        ]
+      },
+      {
+        "objectId": "__room__:floor:0",
+        "min": [
+          -7.5,
+          -0.16,
+          -5
+        ],
+        "max": [
+          7.5,
+          0,
+          5
+        ]
+      },
+      {
+        "objectId": "__room__:ceiling:1",
+        "min": [
+          -7.5,
+          4.84,
+          -5
+        ],
+        "max": [
+          7.5,
+          5,
+          5
+        ]
+      },
+      {
+        "objectId": "__room__:north:2",
+        "min": [
+          -7.5,
+          0,
+          -5
+        ],
+        "max": [
+          7.5,
+          5,
+          -4.84
+        ]
+      },
+      {
+        "objectId": "__room__:south:3",
+        "min": [
+          -7.5,
+          0,
+          4.84
+        ],
+        "max": [
+          7.5,
+          5,
+          5
+        ]
+      },
+      {
+        "objectId": "__room__:east:4",
+        "min": [
+          7.34,
+          0,
+          -5
+        ],
+        "max": [
+          7.5,
+          5,
+          -4.7985454545454544
+        ]
+      },
+      {
+        "objectId": "__room__:east:5",
+        "min": [
+          7.34,
+          0,
+          -2.401454545454545
+        ],
+        "max": [
+          7.5,
+          5,
+          -2.398545454545455
+        ]
+      },
+      {
+        "objectId": "__room__:east:6",
+        "min": [
+          7.34,
+          0,
+          -0.001454545454545153
+        ],
+        "max": [
+          7.5,
+          5,
+          0.0014545454545442649
+        ]
+      },
+      {
+        "objectId": "__room__:east:7",
+        "min": [
+          7.34,
+          0,
+          2.398545454545454
+        ],
+        "max": [
+          7.5,
+          5,
+          2.401454545454545
+        ]
+      },
+      {
+        "objectId": "__room__:east:8",
+        "min": [
+          7.34,
+          0,
+          4.7985454545454544
+        ],
+        "max": [
+          7.5,
+          5,
+          5
+        ]
+      },
+      {
+        "objectId": "__room__:east:15",
+        "min": [
+          7.34,
+          0,
+          -4.7985454545454544
+        ],
+        "max": [
+          7.5,
+          2.08,
+          -2.401454545454545
+        ]
+      },
+      {
+        "objectId": "__room__:east:13",
+        "min": [
+          7.34,
+          0,
+          -2.398545454545455
+        ],
+        "max": [
+          7.5,
+          2.08,
+          -0.001454545454545375
+        ]
+      },
+      {
+        "objectId": "__room__:east:11",
+        "min": [
+          7.34,
+          0,
+          0.001454545454544487
+        ],
+        "max": [
+          7.5,
+          2.08,
+          2.398545454545454
+        ]
+      },
+      {
+        "objectId": "__room__:east:9",
+        "min": [
+          7.34,
+          0,
+          2.401454545454545
+        ],
+        "max": [
+          7.5,
+          2.08,
+          4.7985454545454544
+        ]
+      },
+      {
+        "objectId": "__room__:east:16",
+        "min": [
+          7.34,
+          3.600000000000001,
+          -4.7985454545454544
+        ],
+        "max": [
+          7.5,
+          5,
+          -2.401454545454545
+        ]
+      },
+      {
+        "objectId": "__room__:east:14",
+        "min": [
+          7.34,
+          3.600000000000001,
+          -2.398545454545455
+        ],
+        "max": [
+          7.5,
+          5,
+          -0.001454545454545375
+        ]
+      },
+      {
+        "objectId": "__room__:east:12",
+        "min": [
+          7.34,
+          3.600000000000001,
+          0.001454545454544487
+        ],
+        "max": [
+          7.5,
+          5,
+          2.398545454545454
+        ]
+      },
+      {
+        "objectId": "__room__:east:10",
+        "min": [
+          7.34,
+          3.600000000000001,
+          2.401454545454545
+        ],
+        "max": [
+          7.5,
+          5,
+          4.7985454545454544
+        ]
+      },
+      {
+        "objectId": "__room__:west:17",
+        "min": [
+          -7.5,
+          0,
+          -5
+        ],
+        "max": [
+          -7.34,
+          5,
+          5
+        ]
+      }
+    ],
+    "cellSize": 4,
+    "cells": {
+      "-1,0": [
+        0,
+        1,
+        19,
+        20,
+        26,
+        31,
+        32,
+        38,
+        52,
+        55,
+        62,
+        71,
+        74,
+        77,
+        78,
+        82,
+        85,
+        86,
+        90,
+        93,
+        94,
+        98,
+        101,
+        102,
+        106,
+        111,
+        115,
+        134,
+        135,
+        136
+      ],
+      "0,0": [
+        0,
+        1,
+        23,
+        24,
+        28,
+        35,
+        36,
+        40,
+        54,
+        55,
+        65,
+        73,
+        75,
+        80,
+        81,
+        83,
+        88,
+        89,
+        91,
+        96,
+        97,
+        99,
+        104,
+        105,
+        107,
+        108,
+        109,
+        113,
+        117,
+        135,
+        136
+      ],
+      "-1,1": [
+        0,
+        1,
+        20,
+        32,
+        134,
+        135,
+        136,
+        138
+      ],
+      "0,1": [
+        0,
+        1,
+        24,
+        36,
+        108,
+        109,
+        135,
+        136,
+        138
+      ],
+      "-2,-2": [
+        2,
+        3,
+        4,
+        17,
+        124,
+        125,
+        126,
+        127,
+        135,
+        136,
+        137,
+        152
+      ],
+      "-1,-2": [
+        2,
+        3,
+        4,
+        17,
+        29,
+        118,
+        119,
+        120,
+        121,
+        122,
+        123,
+        135,
+        136,
+        137
+      ],
+      "0,-2": [
+        2,
+        3,
+        4,
+        21,
+        33,
+        128,
+        135,
+        136,
+        137
+      ],
+      "1,-2": [
+        2,
+        3,
+        4,
+        5,
+        9,
+        13,
+        21,
+        129,
+        130,
+        131,
+        132,
+        133,
+        135,
+        136,
+        137,
+        139,
+        144,
+        148
+      ],
+      "1,-1": [
+        5,
+        6,
+        9,
+        10,
+        13,
+        14,
+        21,
+        22,
+        47,
+        48,
+        66,
+        67,
+        79,
+        80,
+        87,
+        88,
+        95,
+        96,
+        103,
+        104,
+        135,
+        136,
+        140,
+        141,
+        144,
+        145,
+        148,
+        149
+      ],
+      "1,0": [
+        7,
+        8,
+        11,
+        12,
+        15,
+        16,
+        23,
+        24,
+        49,
+        50,
+        68,
+        69,
+        80,
+        81,
+        88,
+        89,
+        96,
+        97,
+        104,
+        105,
+        135,
+        136,
+        141,
+        142,
+        146,
+        147,
+        150,
+        151
+      ],
+      "1,1": [
+        8,
+        12,
+        16,
+        24,
+        135,
+        136,
+        138,
+        143,
+        147,
+        151
+      ],
+      "-2,-1": [
+        17,
+        18,
+        41,
+        42,
+        56,
+        57,
+        76,
+        77,
+        84,
+        85,
+        92,
+        93,
+        100,
+        101,
+        124,
+        125,
+        126,
+        127,
+        135,
+        136,
+        152
+      ],
+      "-1,-1": [
+        17,
+        18,
+        25,
+        29,
+        30,
+        37,
+        45,
+        51,
+        60,
+        61,
+        70,
+        76,
+        77,
+        82,
+        84,
+        85,
+        90,
+        92,
+        93,
+        98,
+        100,
+        101,
+        106,
+        110,
+        114,
+        135,
+        136
+      ],
+      "-2,0": [
+        19,
+        20,
+        43,
+        44,
+        58,
+        59,
+        77,
+        78,
+        85,
+        86,
+        93,
+        94,
+        101,
+        102,
+        135,
+        136,
+        152
+      ],
+      "-2,1": [
+        20,
+        135,
+        136,
+        138,
+        152
+      ],
+      "0,-1": [
+        21,
+        22,
+        27,
+        33,
+        34,
+        39,
+        46,
+        53,
+        63,
+        64,
+        72,
+        79,
+        80,
+        83,
+        87,
+        88,
+        91,
+        95,
+        96,
+        99,
+        103,
+        104,
+        107,
+        112,
+        116,
+        135,
+        136
+      ]
+    }
+  }
+}

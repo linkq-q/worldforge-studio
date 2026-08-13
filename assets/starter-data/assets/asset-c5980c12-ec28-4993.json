@@ -1,0 +1,349 @@
+{
+  "id": "asset-c5980c12-ec28-4993",
+  "name": "矩形网格吊灯",
+  "prompt": "一盏独立的80年代餐厅吊灯，暖白磨砂灯罩、深色或黄铜吊杆，适合按餐桌矩形网格等间距悬挂；不生成整组灯具。\n全局资产美术方向：80年代小餐厅风格，暖色木饰面、米白墙面、暗红与棕橙色软装、黄铜或深色金属灯具，家具比例适配1.60m角色，造型简洁耐用，避免现代极简或高档餐厅风格。\n资产角色：ceiling lighting fixture aligned to dining grid；目标尺度：medium。\n只生成一个可复用的独立物体，不要生成地面、背景、天空、完整场景或多个分散物体。",
+  "tags": [
+    "indoor",
+    "ceiling-light",
+    "pendant",
+    "grid",
+    "retro-pendant",
+    "1980s-lighting"
+  ],
+  "modelJson": {
+    "name": "80年代餐厅独立吊灯",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "fixture",
+        "name": "餐厅吊灯",
+        "transform": {
+          "pos": [
+            0,
+            3.15,
+            0
+          ]
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "fixture",
+        "transform": {
+          "pos": [
+            0,
+            -0.1,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.62,
+            "height": 0.16,
+            "depth": 0.42
+          },
+          "color": 3154973
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m1",
+        "parent": "fixture",
+        "transform": {
+          "pos": [
+            0,
+            -0.73,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.18,
+            "height": 1.18,
+            "depth": 0.18
+          },
+          "color": 3877408
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m2",
+        "parent": "fixture",
+        "transform": {
+          "pos": [
+            0,
+            -0.27,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.3,
+            "height": 0.14,
+            "depth": 0.3
+          },
+          "color": 11565621
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "gold"
+          }
+        ]
+      },
+      {
+        "id": "m3",
+        "parent": "fixture",
+        "transform": {
+          "pos": [
+            0,
+            -1.33,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.02,
+            "height": 0.16,
+            "depth": 0.58
+          },
+          "color": 3877408
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m4",
+        "parent": "fixture",
+        "transform": {
+          "pos": [
+            0,
+            -1.5,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.48,
+            "height": 0.24,
+            "depth": 0.82
+          },
+          "color": 15985361
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass"
+          },
+          {
+            "tag": "emissive",
+            "value": 0.75
+          }
+        ]
+      },
+      {
+        "id": "m5",
+        "parent": "fixture",
+        "transform": {
+          "pos": [
+            0,
+            -1.66,
+            -0.42
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.56,
+            "height": 0.1,
+            "depth": 0.1
+          },
+          "color": 11565621
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "gold"
+          }
+        ]
+      },
+      {
+        "id": "m6",
+        "parent": "fixture",
+        "transform": {
+          "pos": [
+            0,
+            -1.66,
+            0.42
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.56,
+            "height": 0.1,
+            "depth": 0.1
+          },
+          "color": 11565621
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "gold"
+          }
+        ]
+      },
+      {
+        "id": "m7",
+        "parent": "fixture",
+        "transform": {
+          "pos": [
+            -0.73,
+            -1.66,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.1,
+            "height": 0.1,
+            "depth": 0.74
+          },
+          "color": 11565621
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "gold"
+          }
+        ]
+      },
+      {
+        "id": "m8",
+        "parent": "fixture",
+        "transform": {
+          "pos": [
+            0.73,
+            -1.66,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.1,
+            "height": 0.1,
+            "depth": 0.74
+          },
+          "color": 11565621
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "gold"
+          }
+        ]
+      },
+      {
+        "id": "m9",
+        "parent": "fixture",
+        "transform": {
+          "pos": [
+            0,
+            -1.63,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.18,
+            "height": 0.08,
+            "depth": 0.56
+          },
+          "color": 16773583
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass"
+          },
+          {
+            "tag": "emissive",
+            "value": 1
+          }
+        ]
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1786530006574,
+        "provider": "gpt",
+        "data": "Tj4LvV7+CCW82uGC1o2ONvKmk8+aaRWuoNz/7dQyqyqmhjTDlbXddMNKCQ9gwElDIrGktgHN0FB0z7bHb9Dy3CnA51hP9mq1WcBcTa2oAl1qL6pfGKNz4DLlh3P9SH4tJxhGI8hwyWtG7i+RI0HREpLNXaVIJBd5SBNrdz1oJ9Z8mkXBWsFrW97+pjyFXJmqnSJDSj1iODF7a3herHrls1ex2gogB2mEC6s4CnM5tUWOrDYxjb6zv1+ernmPQOLBdqcVPM6EM5SDL09cOMpS9OPifGe2wNcn3HEH4CEeAZSj3QAymkfugOS+GWqoVEiYhLKufun903gxbJJuVZEwR+2etrKEPYTEf405rinfAD5IzzG3vXBc2AFfdPCCNifIQsMhDwY08Bot2ghJdTi19k+LB1h/pI6g4ie1XSinMVyhSH8VpRlcYUaOpW5YTFnxOPYx2yGKMA1fVcuL2WpCTvRGsOxmFrZgnilXW/JBsnC8pvMVt3+l+thxi3olJdnh/yhTyyMMsLZ7LfT3hj962ABg4wgkjj6yq39j1oF8JhwcX1gkkvtjB+4Jryzti46s0sZx6/Q/LQW7nWAYgvLA1gf8k8wjPNUNFs2DX3zfwEk1Qqr9ANNxathv+IZmkJEpOr9YD3n/x7kdaDGtfRsxBajeDlaCki0zq2cZbaDqsOKtnX6c1gtLTGNnt6VNC8pyxsZZD15hwVlSUu3QPw==",
+        "edits": ""
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -0.74,
+          0.08999999999999986,
+          -0.41
+        ],
+        "max": [
+          0.74,
+          0.33000000000000007,
+          0.41
+        ],
+        "sourceNodeId": "m4"
+      },
+      {
+        "min": [
+          -0.51,
+          0.2999999999999998,
+          -0.29
+        ],
+        "max": [
+          0.51,
+          0.45999999999999996,
+          0.29
+        ],
+        "sourceNodeId": "m3"
+      }
+    ],
+    "sourceMeshCount": 10,
+    "candidateCount": 2,
+    "fallbackUsed": false
+  },
+  "footprintRadius": 0.74,
+  "sizeClass": "small",
+  "mode": "voxel",
+  "provider": "gpt",
+  "createdAt": 1786530008624,
+  "updatedAt": 1786530008624
+}

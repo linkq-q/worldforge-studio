@@ -1,0 +1,573 @@
+{
+  "id": "asset-be94db90-0cf0-4b8b",
+  "name": "沙滩排球设施组",
+  "prompt": "完整可复用的体素沙滩排球设施组，包括两根立柱、醒目球网、简洁沙地边界标识和一个排球，颜色清爽且易于远距离辨认。\n全局资产美术方向：明快友好的体素热带公园风格；暖米色沙滩、青绿色草地、饱和但自然的椰叶与浅木设施，结构轮廓简洁、比例略夸张且易于远距离辨识。\n资产角色：沙滩主活动地标；目标尺度：large。\n只生成一个可复用的独立物体，不要生成地面、背景、天空、完整场景或多个分散物体。",
+  "tags": [
+    "sports",
+    "sand",
+    "net",
+    "volleyball",
+    "beach-volleyball",
+    "volleyball-net"
+  ],
+  "modelJson": {
+    "name": "热带沙滩排球设施组",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "facility",
+        "name": "沙滩排球设施",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        }
+      },
+      {
+        "id": "posts",
+        "name": "浅木立柱",
+        "parent": "facility",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ]
+      },
+      {
+        "id": "net",
+        "name": "醒目球网",
+        "parent": "facility",
+        "transform": {
+          "pos": [
+            0,
+            2.45,
+            0
+          ]
+        }
+      },
+      {
+        "id": "court_boundary",
+        "name": "沙地区域边界",
+        "parent": "facility",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        }
+      },
+      {
+        "id": "volleyball",
+        "name": "体素排球",
+        "parent": "facility",
+        "transform": {
+          "pos": [
+            2.7,
+            0.53,
+            3.2
+          ]
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "posts",
+        "transform": {
+          "pos": [
+            -5,
+            2.2,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.38,
+            "height": 4.4,
+            "depth": 0.38
+          },
+          "color": 14268282
+        }
+      },
+      {
+        "id": "m1",
+        "parent": "posts",
+        "transform": {
+          "pos": [
+            5,
+            2.2,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.38,
+            "height": 4.4,
+            "depth": 0.38
+          },
+          "color": 14268282
+        }
+      },
+      {
+        "id": "m2",
+        "parent": "net",
+        "transform": {
+          "pos": [
+            -3.6,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.08,
+            "height": 2.8,
+            "depth": 0.09
+          },
+          "color": 16118232
+        }
+      },
+      {
+        "id": "m3",
+        "parent": "net",
+        "transform": {
+          "pos": [
+            -1.2,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.08,
+            "height": 2.8,
+            "depth": 0.09
+          },
+          "color": 16118232
+        }
+      },
+      {
+        "id": "m4",
+        "parent": "net",
+        "transform": {
+          "pos": [
+            1.2,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.08,
+            "height": 2.8,
+            "depth": 0.09
+          },
+          "color": 16118232
+        }
+      },
+      {
+        "id": "m5",
+        "parent": "net",
+        "transform": {
+          "pos": [
+            3.6,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.08,
+            "height": 2.8,
+            "depth": 0.09
+          },
+          "color": 16118232
+        }
+      },
+      {
+        "id": "m6",
+        "parent": "net",
+        "transform": {
+          "pos": [
+            0,
+            -1.4,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 9.6,
+            "height": 0.08,
+            "depth": 0.09
+          },
+          "color": 16118232
+        }
+      },
+      {
+        "id": "m7",
+        "parent": "net",
+        "transform": {
+          "pos": [
+            0,
+            -0.45,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 9.6,
+            "height": 0.08,
+            "depth": 0.09
+          },
+          "color": 16118232
+        }
+      },
+      {
+        "id": "m8",
+        "parent": "net",
+        "transform": {
+          "pos": [
+            0,
+            0.5,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 9.6,
+            "height": 0.08,
+            "depth": 0.09
+          },
+          "color": 16118232
+        }
+      },
+      {
+        "id": "m9",
+        "parent": "net",
+        "transform": {
+          "pos": [
+            0,
+            1.45,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 9.7,
+            "height": 0.22,
+            "depth": 0.18
+          },
+          "color": 1616291
+        }
+      },
+      {
+        "id": "m10",
+        "parent": "court_boundary",
+        "transform": {
+          "pos": [
+            0,
+            0.08,
+            -6.5
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 9.2,
+            "height": 0.12,
+            "depth": 0.18
+          },
+          "color": 16740193
+        }
+      },
+      {
+        "id": "m11",
+        "parent": "court_boundary",
+        "transform": {
+          "pos": [
+            0,
+            0.08,
+            6.5
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 9.2,
+            "height": 0.12,
+            "depth": 0.18
+          },
+          "color": 16740193
+        }
+      },
+      {
+        "id": "m12",
+        "parent": "court_boundary",
+        "transform": {
+          "pos": [
+            -4.5,
+            0.08,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.18,
+            "height": 0.12,
+            "depth": 13.2
+          },
+          "color": 16740193
+        }
+      },
+      {
+        "id": "m13",
+        "parent": "court_boundary",
+        "transform": {
+          "pos": [
+            4.5,
+            0.08,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.18,
+            "height": 0.12,
+            "depth": 13.2
+          },
+          "color": 16740193
+        }
+      },
+      {
+        "id": "m14",
+        "parent": "volleyball",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.9,
+            "height": 0.9,
+            "depth": 0.9
+          },
+          "color": 16775391
+        }
+      },
+      {
+        "id": "m15",
+        "parent": "volleyball",
+        "transform": {
+          "pos": [
+            0,
+            0.1,
+            0.47
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.86,
+            "height": 0.22,
+            "depth": 0.04
+          },
+          "color": 1616291
+        }
+      },
+      {
+        "id": "m16",
+        "parent": "volleyball",
+        "transform": {
+          "pos": [
+            0.47,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.04,
+            "height": 0.86,
+            "depth": 0.22
+          },
+          "color": 16173132
+        }
+      },
+      {
+        "id": "m17",
+        "parent": "volleyball",
+        "transform": {
+          "pos": [
+            0,
+            0.47,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.22,
+            "height": 0.04,
+            "depth": 0.86
+          },
+          "color": 16740193
+        }
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1786438795939,
+        "provider": "gpt",
+        "data": "vk1MdkOrL/8dGYAjL3voOojiDeLCVS67pGtBLHbSWiPJ1FS85AHVt49uUZGpSv8SO08aYZuTgZdMNE/fbo/OlexTUPt/SLxV+LjgqicaPrX9SoJoyzhl6pm38+GhTx6DBZiu6Nmf7XoSYtDfs0fp9PcGvoBgcrQdcTu4RVaFn0x9OaygGsJKoNkQFOAyxMWmnhRxnOLAIg1P6vrvTjrIk0ULsqJYuu+CVVhBnQ3+7el3B7Wr+nshBlFGqplAPCAUvIpv6GDFizg94OhlP4ld2RdL1NHCOTpYEtxjop5RQGcNsuLkHc/1JJD9KlZUItP748E42fIlQw6COdRaRsw82WPpKrXs0hRZEgy8PIZWCyD+nb/tYi9K5mlN4szAuktMdnHXgyLk/CBGLYLq638gB+aFfOoOyW2s8bLpMveTovEf5GXKMETSZ9XAL4Dx2OvTqQI0zLC8kqqEH1RehHITDFo+hJQr4n0zSj5TtyJt8yvCDVJIN97adjGjYFdhNYyQYXLX5jUbGxMlNy1Rxe2KU1cT87LPr7qkHuT1OQiZvkPYAfqELarC23yZ54hdXvnwd4pXx46J9aDjU8mpI3MD0t5no6rKc3cDtr0HNtycBeIiXWXYS5XKN2QZFvvE3MQViGLo8vdw7UQRcPgEIBzsM7zGy1F4ZMKQ05BSig19MtG1Eet3dV7t/xifwGKa8Iv+LHJ6moycPCatxjx0D/LOpZk6hT8t7RSkne8upe3Jh0JyQbaAYTS7f3Z4jvDVV6AqHzFatz4J1IEKNdE1m5NxgrYD3q+WU/u6cKXZ5wSQyDUhNq6BO62FCNwM1Xi8s1ZsXLR+ZARzTlTvjGwNe5u7DWQeVcUneGPjzxLt4bGYn9jJowvBYvo6i7wdQR0i6RxV/EFqmwK/cSHfJyXPYAoB89tchmtbdWlKBx1w61j1",
+        "edits": ""
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          2.25,
+          0.08000000000000002,
+          2.75
+        ],
+        "max": [
+          3.1500000000000004,
+          0.98,
+          3.6500000000000004
+        ],
+        "sourceNodeId": "m14"
+      },
+      {
+        "min": [
+          -5.19,
+          0,
+          -0.19
+        ],
+        "max": [
+          -4.81,
+          4.4,
+          0.19
+        ],
+        "sourceNodeId": "m0"
+      },
+      {
+        "min": [
+          4.81,
+          0,
+          -0.19
+        ],
+        "max": [
+          5.19,
+          4.4,
+          0.19
+        ],
+        "sourceNodeId": "m1"
+      },
+      {
+        "min": [
+          -4.85,
+          3.7900000000000005,
+          -0.09
+        ],
+        "max": [
+          4.85,
+          4.010000000000001,
+          0.09
+        ],
+        "sourceNodeId": "m9"
+      },
+      {
+        "min": [
+          -4.59,
+          0.020000000000000004,
+          -6.6
+        ],
+        "max": [
+          -4.41,
+          0.14,
+          6.6
+        ],
+        "sourceNodeId": "m12"
+      },
+      {
+        "min": [
+          4.41,
+          0.020000000000000004,
+          -6.6
+        ],
+        "max": [
+          4.59,
+          0.14,
+          6.6
+        ],
+        "sourceNodeId": "m13"
+      },
+      {
+        "min": [
+          -4.6,
+          0.020000000000000004,
+          -6.59
+        ],
+        "max": [
+          4.6,
+          0.14,
+          -6.41
+        ],
+        "sourceNodeId": "m10"
+      },
+      {
+        "min": [
+          -4.6,
+          0.020000000000000004,
+          6.41
+        ],
+        "max": [
+          4.6,
+          0.14,
+          6.59
+        ],
+        "sourceNodeId": "m11"
+      }
+    ],
+    "sourceMeshCount": 18,
+    "candidateCount": 8,
+    "fallbackUsed": false
+  },
+  "footprintRadius": 6.6,
+  "sizeClass": "large",
+  "mode": "voxel",
+  "provider": "gpt",
+  "createdAt": 1786438798278,
+  "updatedAt": 1786438798278
+}

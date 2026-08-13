@@ -1,0 +1,557 @@
+{
+  "id": "asset-8f424f65-9318-4d38",
+  "name": "壁挂灭火器",
+  "prompt": "标准室内壁挂灭火器单体，红色钢瓶、黑色软管、压力表和简洁墙面固定架。\n全局资产美术方向：现代小型电影院风格，深灰与炭黑吸音墙面、深红或暗蓝软包座椅、低反射金属灯具、柔和暖白导向照明；家具比例以1.60米角色高度为参照，所有重复座椅使用单一可复用模块。\n资产角色：前方侧墙可见且不阻碍通行的消防设施；目标尺度：small。\n只生成一个可复用的独立物体，不要生成地面、背景、天空、完整场景或多个分散物体。",
+  "tags": [
+    "cinema",
+    "safety",
+    "extinguisher",
+    "fire-extinguisher"
+  ],
+  "modelJson": {
+    "name": "室内壁挂灭火器",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "hose",
+        "name": "黑色软管",
+        "transform": {
+          "pos": [
+            0.38,
+            2.12,
+            0.02
+          ]
+        }
+      },
+      {
+        "id": "mounting_bracket",
+        "name": "墙面固定架",
+        "parent": "hose",
+        "transform": {
+          "pos": [
+            -0.38,
+            -1.37,
+            -0.36
+          ]
+        }
+      },
+      {
+        "id": "red_cylinder",
+        "name": "红色钢瓶",
+        "parent": "hose",
+        "transform": {
+          "pos": [
+            -0.38,
+            -1.42,
+            -0.02
+          ]
+        }
+      },
+      {
+        "id": "top_handle",
+        "name": "顶部压把",
+        "parent": "hose",
+        "transform": {
+          "pos": [
+            -0.38,
+            0.3,
+            -0.02
+          ]
+        }
+      },
+      {
+        "id": "pressure_gauge",
+        "name": "压力表",
+        "parent": "hose",
+        "transform": {
+          "pos": [
+            -0.38,
+            0.1,
+            0.26
+          ]
+        }
+      },
+      {
+        "id": "hose_clip",
+        "name": "软管卡扣",
+        "parent": "hose",
+        "transform": {
+          "pos": [
+            0.02,
+            -0.5,
+            -0.04
+          ]
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "mounting_bracket",
+        "transform": {
+          "pos": [
+            0,
+            0.6,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.82,
+            "height": 1.35,
+            "depth": 0.12
+          },
+          "color": 3158584
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m1",
+        "parent": "mounting_bracket",
+        "transform": {
+          "pos": [
+            0,
+            0.03,
+            0.22
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.92,
+            "height": 0.12,
+            "depth": 0.5
+          },
+          "color": 2369066
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m2",
+        "parent": "mounting_bracket",
+        "transform": {
+          "pos": [
+            0,
+            1.17,
+            0.22
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.92,
+            "height": 0.12,
+            "depth": 0.5
+          },
+          "color": 2369066
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m3",
+        "parent": "red_cylinder",
+        "transform": {
+          "pos": [
+            0,
+            0.68,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.7,
+            "height": 1.42,
+            "depth": 0.56
+          },
+          "color": 11739435
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m4",
+        "parent": "red_cylinder",
+        "transform": {
+          "pos": [
+            0,
+            1.46,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.58,
+            "height": 0.16,
+            "depth": 0.48
+          },
+          "color": 10296613
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m5",
+        "parent": "red_cylinder",
+        "transform": {
+          "pos": [
+            0,
+            1.64,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.3,
+            "height": 0.22,
+            "depth": 0.3
+          },
+          "color": 2698031
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m6",
+        "parent": "top_handle",
+        "transform": {
+          "pos": [
+            0,
+            0.06,
+            0.02
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.46,
+            "height": 0.1,
+            "depth": 0.16
+          },
+          "color": 1447963
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m7",
+        "parent": "top_handle",
+        "transform": {
+          "pos": [
+            -0.18,
+            -0.06,
+            0.02
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.1,
+            "height": 0.26,
+            "depth": 0.16
+          },
+          "color": 1447963
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m8",
+        "parent": "top_handle",
+        "transform": {
+          "pos": [
+            0.18,
+            -0.06,
+            0.02
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.1,
+            "height": 0.26,
+            "depth": 0.16
+          },
+          "color": 1447963
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m9",
+        "parent": "pressure_gauge",
+        "transform": {
+          "pos": [
+            0,
+            -0.02,
+            0.04
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.3,
+            "height": 0.3,
+            "depth": 0.1
+          },
+          "color": 2369066
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m10",
+        "parent": "pressure_gauge",
+        "transform": {
+          "pos": [
+            0,
+            -0.02,
+            0.11
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.22,
+            "height": 0.22,
+            "depth": 0.035
+          },
+          "color": 14801085
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass"
+          }
+        ]
+      },
+      {
+        "id": "m11",
+        "parent": "pressure_gauge",
+        "transform": {
+          "pos": [
+            0.025,
+            -0.02,
+            0.14
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.025,
+            "height": 0.12,
+            "depth": 0.045
+          },
+          "color": 2105636
+        }
+      },
+      {
+        "id": "m12",
+        "parent": "hose",
+        "transform": {
+          "pos": [
+            0.05,
+            -0.18,
+            0.06
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.13,
+            "height": 0.48,
+            "depth": 0.13
+          },
+          "color": 1381913
+        }
+      },
+      {
+        "id": "m13",
+        "parent": "hose",
+        "transform": {
+          "pos": [
+            0.14,
+            -0.46,
+            0.16
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.13,
+            "height": 0.62,
+            "depth": 0.13
+          },
+          "color": 1381913
+        }
+      },
+      {
+        "id": "m14",
+        "parent": "hose",
+        "transform": {
+          "pos": [
+            0.1,
+            -0.74,
+            0.25
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.13,
+            "height": 0.46,
+            "depth": 0.13
+          },
+          "color": 1381913
+        }
+      },
+      {
+        "id": "m15",
+        "parent": "hose",
+        "transform": {
+          "pos": [
+            0.1,
+            -1,
+            0.27
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.2,
+            "height": 0.16,
+            "depth": 0.2
+          },
+          "color": 2434859
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m16",
+        "parent": "hose_clip",
+        "transform": {
+          "pos": [
+            -0.01,
+            0,
+            0.07
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.2,
+            "height": 0.12,
+            "depth": 0.16
+          },
+          "color": 3421754
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1786541425954,
+        "provider": "gpt",
+        "data": "OhG3vQkGNs7Ui1JGYV83xDQ7+QyPnWR+35t/eZLzL/SqoqECsyID+OABmy4NWI0arMiGavOu01JqA/iRVYstTUB1AjG7f09AFZ9ba5is3akjyqLLbG/WzSsLCj1CmNo7o91Impg3ivCMbk9HAHVDBFo1HGVkpEF8euCoDpxAnswB4PwrlZNd2Byfa6xh3gTHs2ClepR0NQwfa2WPqu0kqh6NYG9PjsfJBS1ERQ6lkuXkdOkN7umFqhjys8TqRXbJFfDnjZijW51S2/smuugVIixB8iwUzC2KQJ7m80qqiKvVRXNRmuKwn6UO/+6YRnNvDca1yp+OyZEd/mn1K7ItH0hzZwaV+opEJfCYJRgKfeRgvdeBvW+EercPnPE6ON5wbdGMH/BKzY8lKuqieL1aK6kAQRZdrPvp9rHlrb6cgdBft4FQpugYgxdQU5Sd43TnMaA6WzvspCdyl3D0nC6V04kFr8PTv6TfxRItOpVuHas5NEoF0PfBhdLTzLMsbiArt03FZokRf7p5s/awJ/84gzz7+b7AuFMhfGaXhI+bn4vW0a8E4w0mOap4pv2DpItlCiYRpZZ/O7xjhQ2tjWhaMVRXAmlVqmpRxiW8sFKKVGGi5vspGblGDfIiSxA3ZkhTsUa8maDSSTfJgJ0sN10qP7u0hCG6kvj7UoVZHghyuA0vzbum861175StgwQ/0uvHe5BhyP7QKW8wbzej4DxCShO0SXyhlB8MoTFcQrzDsBcQ6oL4nY5WDK/xRBl+VHmUrtmBeHJT+se8/JXlsSmiLATbxxr1R6dT3dQBwEjJS4PUHDWzGbCtikWFNNCkzRdKz7ChOt3U0TehFpZUds5cVx+nDSYdykb4xGuHjUaMIjX+5+dnahBTwQcI1bDy+oWu/AlT7/T/YSs/A905/M9G4Q8Cbda6ZpV7AJh5cBqYK13QbB/HkRYhKbI95MxbDBkmB1cJaQfPKarWcgiwdu9wO7ss+afnNa5DRI1PZnCW1Q6CJM/Ht5ShQhM5+LOGZL7l0gSLWR3CdOcK6V6yoICQTXxtjSniTMc7GT204SLK2Wg2XILxXzJt8sSwWgClLu/gFxGUwVRg2BvH",
+        "edits": ""
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -0.4125,
+          0,
+          -0.3012500000000001
+        ],
+        "max": [
+          0.2875,
+          1.42,
+          0.25875
+        ],
+        "sourceNodeId": "m3"
+      },
+      {
+        "min": [
+          -0.4724999999999999,
+          0.004999999999999671,
+          -0.42125
+        ],
+        "max": [
+          0.34750000000000003,
+          1.355,
+          -0.30125
+        ],
+        "sourceNodeId": "m0"
+      }
+    ],
+    "sourceMeshCount": 17,
+    "candidateCount": 2,
+    "fallbackUsed": false
+  },
+  "footprintRadius": 0.4724999999999999,
+  "sizeClass": "small",
+  "mode": "voxel",
+  "provider": "gpt",
+  "createdAt": 1786541429761,
+  "updatedAt": 1786541429761
+}

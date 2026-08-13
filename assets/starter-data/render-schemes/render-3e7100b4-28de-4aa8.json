@@ -1,53 +1,38 @@
 {
-  "id": "render-02f563f4-c0ea-4ed8",
-  "name": "童话池畔清晨",
-  "description": "以柔和清晨方案为基础，用暖色晨光、320米清晨薄雾和克制的低空水汽营造宁静氛围，同时保留中等对比与清晰暗部；池塘反射柔和，花粉和光束仅作轻微点缀。",
-  "sourcePrompt": "柔和清晨，薄雾漂浮在池塘和林间低处，淡金色阳光穿过树冠，空气中只有少量花粉，宁静而清晰。",
+  "id": "render-3e7100b4-28de-4aa8",
+  "name": "热带海岸午后",
+  "description": "改用能力库中的自然日光基础方案，以暖色硬质午后主光和冷青补光形成明亮高对比；强化海浪、岸边泡沫与天空反射，并通过低空飞沙、尘粒和风迹表现沙地流动感。",
+  "sourcePrompt": "明亮热带午后，清澈青蓝海面与暖米色沙滩形成高对比。，沙地流动与低空飞沙",
   "styleTags": [
-    "柔和清晨",
-    "林间薄雾",
-    "淡金晨光",
-    "宁静清晰",
-    "少量花粉",
-    "平静池塘"
+    "明亮热带午后",
+    "清澈青蓝海面",
+    "暖米色沙滩",
+    "高对比可读暗部",
+    "低空飞沙",
+    "风驱沙尘"
   ],
   "provider": "gpt",
   "renderPlan": {
     "version": 2,
-    "baseSchemeId": "render-eadfd3db-bf88-443f",
+    "baseSchemeId": "render-natural-day",
     "modules": [
       {
         "id": "environment.hdri",
         "params": {
-          "texture": "HDRI-44.exr",
-          "rotation": 18,
-          "exposure": 1.08,
-          "saturation": 0.9,
-          "intensity": 1.05,
-          "tint": "#FFE4B8",
-          "tintStrength": 0.2,
+          "texture": "HDRI-35.exr",
+          "rotation": 24,
+          "exposure": 1.28,
+          "saturation": 1.3,
+          "intensity": 0.867,
+          "tint": "#C8F1FF",
+          "tintStrength": 0.22,
           "useAsEnvironment": "on"
         }
       },
       {
         "id": "atmosphere.fog",
         "params": {
-          "visibilityDistance": 320
-        }
-      },
-      {
-        "id": "presentation.exposure",
-        "params": {
-          "value": 1.02
-        }
-      },
-      {
-        "id": "runtime.light-rig",
-        "params": {
-          "recipe": "soft-morning",
-          "strength": 1.18,
-          "warmth": 0.38,
-          "shadowSoftness": 0.82
+          "visibilityDistance": 520
         }
       },
       {
@@ -55,89 +40,108 @@
         "params": {
           "recipe": "warm",
           "temperature": 0.2,
-          "contrast": 1.08,
-          "saturation": 1.02,
-          "shadowLift": 0.1,
-          "tint": "#FFF3DC"
+          "contrast": 1.16,
+          "saturation": 1.12,
+          "shadowLift": 0.07,
+          "tint": "#fff1df"
         }
       },
       {
-        "key": "pond-calm-morning",
+        "id": "runtime.light-rig",
+        "params": {
+          "recipe": "hard-day",
+          "strength": 1.15,
+          "warmth": 0.35,
+          "shadowSoftness": 0.28
+        }
+      },
+      {
+        "key": "clear-cyan-sea",
         "id": "runtime.water-style",
         "scope": {
           "target": "water",
           "tag": "water"
         },
         "params": {
-          "recipe": "calm-lake",
-          "opacity": 0.88,
-          "color": "#6B9FA0",
-          "shallowColor": "#93C4B8",
-          "depthColor": "#315D66",
-          "waveStrength": 0.16,
-          "waveSpeed": 0.18,
-          "foamStrength": 0.08,
-          "environmentReflectionStrength": 0.48,
-          "environmentReflectionExposure": 0.62
+          "recipe": "clear-river",
+          "opacity": 0.58,
+          "color": "#159DB8",
+          "shallowColor": "#58D7D2",
+          "depthColor": "#075477",
+          "foamColor": "#F4F4E8",
+          "waveStrength": 0.62,
+          "waveSpeed": 0.52,
+          "waveScale": 1.65,
+          "waveDirection": 32,
+          "waveSharpness": 2.55,
+          "foamStrength": 0.7,
+          "shoreFoamWidth": 0.085,
+          "shoreWaveRange": 0.58,
+          "shoreWaveFrequency": 8,
+          "shoreWaveWidth": 0.42,
+          "shoreWaveBreakup": 0.48,
+          "environmentReflectionStrength": 0.32,
+          "environmentReflectionExposure": 0.66
+        }
+      },
+      {
+        "id": "runtime.atmosphere-fx",
+        "params": {
+          "masterStrength": 0.68,
+          "semanticStrength": 1,
+          "pollen": 0,
+          "vapor": 0.03,
+          "dust": 0.34,
+          "sand": 0.78
         }
       },
       {
         "id": "runtime.post-quality",
         "params": {
           "bloom": "soft",
-          "bloomStrength": 0.18,
+          "bloomStrength": 0.3,
           "ssao": "soft"
-        }
-      },
-      {
-        "id": "runtime.atmosphere-fx",
-        "params": {
-          "masterStrength": 0.34,
-          "semanticStrength": 0.8,
-          "pollen": 0.1,
-          "vapor": 0.22,
-          "dust": 0
         }
       },
       {
         "id": "environment.palette",
         "params": {
-          "fogColor": "#aebac0"
+          "fogColor": "#9dc1cb"
         }
       },
       {
         "id": "lighting.hemisphere",
         "params": {
-          "skyColor": "#bed2dd",
-          "groundColor": "#aebac0"
+          "skyColor": "#a9d9e6",
+          "groundColor": "#9dc1cb"
         }
       },
       {
         "id": "lighting.sun",
         "params": {
-          "color": "#ffe0a3"
+          "color": "#ffe1a0"
         }
       }
     ],
     "visualDirection": {
       "version": 1,
       "contrastMode": "bright-cartoon",
-      "timeOfDay": "morning",
+      "timeOfDay": "noon",
       "temperature": "warm",
       "palette": {
-        "sky": "#a9cad8",
-        "keyLight": "#ffe0a3",
-        "fillLight": "#c8dfe5",
-        "shadow": "#60766f",
-        "fog": "#c5d3ce",
-        "waterBias": "#6fa5a6",
-        "accent": "#f3c96f"
+        "sky": "#58c9ef",
+        "keyLight": "#ffe1a0",
+        "fillLight": "#a9e7f2",
+        "shadow": "#477f8e",
+        "fog": "#add9dd",
+        "waterBias": "#159db8",
+        "accent": "#e7c78f"
       },
       "atmosphereFx": {
-        "masterStrength": 0.34,
-        "pollen": 0.1,
-        "vapor": 0.22,
-        "dust": 0,
+        "masterStrength": 0.68,
+        "pollen": 0,
+        "vapor": 0.03,
+        "dust": 0.34,
         "sand": 0
       }
     }
@@ -2222,16 +2226,16 @@
   "schemaVersion": 1,
   "kind": "builtin",
   "settings": {
-    "background": "#a9cad8",
-    "fogColor": "#aebac0",
-    "fogDensity": 0.005408807445632142,
-    "hemisphereSkyColor": "#bed2dd",
-    "hemisphereGroundColor": "#aebac0",
+    "background": "#58c9ef",
+    "fogColor": "#9dc1cb",
+    "fogDensity": 0.0033284968896197796,
+    "hemisphereSkyColor": "#a9d9e6",
+    "hemisphereGroundColor": "#9dc1cb",
     "hemisphereIntensity": 1.45,
-    "sunColor": "#ffe0a3",
+    "sunColor": "#ffe1a0",
     "sunIntensity": 2.7,
-    "exposure": 1.02
+    "exposure": 1
   },
-  "createdAt": 1785736043180,
-  "updatedAt": 1786551136152
+  "createdAt": 1786439586016,
+  "updatedAt": 1786551136381
 }

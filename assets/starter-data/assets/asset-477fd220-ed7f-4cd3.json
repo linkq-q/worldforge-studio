@@ -1,0 +1,347 @@
+{
+  "id": "asset-477fd220-ed7f-4cd3",
+  "name": "顶棚轨道射灯模块",
+  "prompt": "单段黑色顶棚轨道配两只可调筒灯，灯头朝下并略偏向陈列面；作为可重复照明模块，不包含整个顶棚网格。\n全局资产美术方向：现代简洁的体素风服装零售家具，比例参照1.60米角色；采用浅橡木、哑光白、炭灰金属与少量暖色织物，货架轮廓轻薄但可读，普通构件主要尺寸不小于0.27米。\n资产角色：覆盖货架、收银与试衣区的规则照明网格；目标尺度：small。\n只生成一个可复用的独立物体，不要生成地面、背景、天空、完整场景或多个分散物体。",
+  "tags": [
+    "track-light",
+    "ceiling-fixture",
+    "retail-lighting"
+  ],
+  "modelJson": {
+    "name": "双头黑色顶棚轨道灯",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "track",
+        "name": "单段轨道",
+        "transform": {
+          "pos": [
+            0,
+            1.275,
+            0
+          ]
+        }
+      },
+      {
+        "id": "lamp_0",
+        "name": "左可调筒灯",
+        "parent": "track",
+        "transform": {
+          "pos": [
+            -0.48,
+            1.055,
+            0
+          ]
+        }
+      },
+      {
+        "id": "lamp_1",
+        "name": "右可调筒灯",
+        "parent": "track",
+        "transform": {
+          "pos": [
+            0.48,
+            1.055,
+            0
+          ]
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "track",
+        "transform": {
+          "pos": [
+            0,
+            1.275,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.6,
+            "height": 0.12,
+            "depth": 0.14
+          },
+          "color": 2369322
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m1",
+        "parent": "track",
+        "transform": {
+          "pos": [
+            -0.48,
+            1.155,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.28,
+            "height": 0.15,
+            "depth": 0.2
+          },
+          "color": 3159096
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m2",
+        "parent": "lamp_0",
+        "transform": {
+          "pos": [
+            0,
+            0.02,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.12,
+            "height": 0.18,
+            "depth": 0.12
+          },
+          "color": 2369322
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m3",
+        "parent": "lamp_0",
+        "transform": {
+          "pos": [
+            0,
+            -0.23,
+            0.05
+          ],
+          "quat": [
+            0.61,
+            0,
+            0,
+            0.79
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.28,
+            "height": 0.28,
+            "depth": 0.42
+          },
+          "color": 2698544
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m4",
+        "parent": "lamp_0",
+        "transform": {
+          "pos": [
+            0,
+            -0.44,
+            0.11
+          ],
+          "quat": [
+            -0.13,
+            0,
+            0,
+            0.99
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.22,
+            "height": 0.035,
+            "depth": 0.22
+          },
+          "color": 16765578
+        },
+        "tags": [
+          {
+            "tag": "emissive",
+            "value": 1
+          }
+        ]
+      },
+      {
+        "id": "m5",
+        "parent": "track",
+        "transform": {
+          "pos": [
+            0.48,
+            1.155,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.28,
+            "height": 0.15,
+            "depth": 0.2
+          },
+          "color": 3159096
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m6",
+        "parent": "lamp_1",
+        "transform": {
+          "pos": [
+            0,
+            0.02,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.12,
+            "height": 0.18,
+            "depth": 0.12
+          },
+          "color": 2369322
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m7",
+        "parent": "lamp_1",
+        "transform": {
+          "pos": [
+            0,
+            -0.23,
+            0.05
+          ],
+          "quat": [
+            0.61,
+            0,
+            0,
+            0.79
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.28,
+            "height": 0.28,
+            "depth": 0.42
+          },
+          "color": 2698544
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m8",
+        "parent": "lamp_1",
+        "transform": {
+          "pos": [
+            0,
+            -0.44,
+            0.11
+          ],
+          "quat": [
+            -0.13,
+            0,
+            0,
+            0.99
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.22,
+            "height": 0.035,
+            "depth": 0.22
+          },
+          "color": 16765578
+        },
+        "tags": [
+          {
+            "tag": "emissive",
+            "value": 1
+          }
+        ]
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1786542634290,
+        "provider": "gpt",
+        "data": "j9/0ivRhyMwYIfKwuhIOKShDDiF0uCL8oL47bPiO3Wva2o+0WQFX9pa0ktZEHpCIzA5pOZz4UxiBD+wvF1Sa0lm8jxPyiWsC0iFQa3b1ExJWuLTJL6ciVhl2yYliSUKLy9vyFnN3V8wxuC+eIQ2ACTN7hPOiR2Vb6W1WPwrIRGrUVw7NJLbcDJIzH367qSuSd3w/dzw8wCGu1E30iot+AEzeurpCHNCpvIHDCxhT1RTlcFwr5ZY3/G6KfSq2rip5MDo7CSSMG4avNDZZoRf8VMjlEdQRsHRaQo0YsOT5vsHWYtL5iiZF0Fobj80frVezMg8MEVlX3yAmJ5ppjaN7gvfr4eFHfEd8HticMU3RR8ZXqfddVAWEcEavoE2rKEoFZMCOPaOnMrLwucRilBV0AzY+kAe6sT2qObYMuHepC0BVDDDgilg/bF4ZllmzzBnZmvMBDr+x2jmiiPEZu+Nno00yFE7E3U8tk0T+Hgd75xGRjpcBRZwAhzAj7xbHIMGa0x9a4r6MlTUmTzKYZeDrHTVb6bBTwYtnXTypLLG2ouLmQhES9UTrvmS4+01Uxaw7FuIvdMksgC0ynw0DTDNjSCKMVVDhHbL4YV9FfRO1yKb6zGQZlq7u6KVtqrWH7lGD6KPGggzkdVATsNaDSJ507z8DkFayoIh62Aiy6g6rBG+GX/Isagg4fU1s4NCA81XewOV2+SZikyI8qr13MtBWVz2B2555jttJCsA4dL9VqWmLgfE4m0OqNR+Sugf9UpUbmcpoEXRdRJhTQiGjsMeEJ786OvA0JmVDhXoxTwjJjuLpjS/gu0mZuBxsamhN/DNlMTyspsb/EtGelGidk9oGpKSth75JTQHK4i6+ipypucQ/YSteb2MkC4OVxw6NGWuC7hMzPkoeNcs4FQBiiWN84KRVvUJ8UsvrzHEQJEqygGgKF/WWtiUvVSVzAW73J1mBwSeAARSFjsXFsoKVhxNkkIIHm1aKpkFVgqQiel7wIAiHBtK+YKB4xtjeHbBvTAHTe4oCiJWQg2IqMtROKwqUgPMKrDOjmS2kGQv/PqYWsDQRwjP54qRaf46TB0M15y90mRTlkp6oN2bbGdhyaUKIRsmAIOtE8s3hTspZO9FiwyYhFq95RWJZmtSkug==",
+        "edits": ""
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -0.8,
+          0,
+          -0.18856856053001406
+        ],
+        "max": [
+          0.8,
+          0.7653059177532595,
+          0.18856856053001406
+        ],
+        "sourceNodeId": "asset-bounds"
+      }
+    ],
+    "sourceMeshCount": 9,
+    "candidateCount": 0,
+    "fallbackUsed": true
+  },
+  "footprintRadius": 0.8,
+  "sizeClass": "medium",
+  "mode": "voxel",
+  "provider": "gpt",
+  "createdAt": 1786542636885,
+  "updatedAt": 1786542636885
+}

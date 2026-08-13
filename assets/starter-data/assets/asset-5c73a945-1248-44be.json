@@ -1,0 +1,308 @@
+{
+  "id": "asset-5c73a945-1248-44be",
+  "name": "电影院座椅模块",
+  "prompt": "单个可复用电影院软包座椅模块，深红或暗蓝织物、黑色扶手、可辨识坐垫与靠背，不捆绑整排座椅。\n全局资产美术方向：现代小型电影院风格，深灰与炭黑吸音墙面、深红或暗蓝软包座椅、低反射金属灯具、柔和暖白导向照明；家具比例以1.60米角色高度为参照，所有重复座椅使用单一可复用模块。\n资产角色：重复排列的单体软包观众座椅；目标尺度：medium。\n只生成一个可复用的独立物体，不要生成地面、背景、天空、完整场景或多个分散物体。",
+  "tags": [
+    "cinema",
+    "auditorium",
+    "seating",
+    "cinema-seat"
+  ],
+  "modelJson": {
+    "name": "单体影院软包座椅",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "chair",
+        "name": "座椅主体",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        }
+      },
+      {
+        "id": "seat_cushion",
+        "name": "翻折坐垫",
+        "parent": "chair",
+        "transform": {
+          "pos": [
+            0,
+            0.57,
+            -0.19
+          ]
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "chair",
+        "transform": {
+          "pos": [
+            0,
+            0.12,
+            -0.08
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.42,
+            "height": 0.12,
+            "depth": 0.38
+          },
+          "color": 1513756
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m1",
+        "parent": "chair",
+        "transform": {
+          "pos": [
+            0,
+            0.31,
+            -0.12
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.16,
+            "height": 0.38,
+            "depth": 0.18
+          },
+          "color": 1513756
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m2",
+        "parent": "chair",
+        "transform": {
+          "pos": [
+            0,
+            0.85,
+            -0.31
+          ],
+          "quat": [
+            -0.75,
+            0,
+            0,
+            0.66
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.58,
+            "height": 0.16,
+            "depth": 0.63
+          },
+          "color": 6823723
+        }
+      },
+      {
+        "id": "m3",
+        "parent": "chair",
+        "transform": {
+          "pos": [
+            0,
+            0.67,
+            -0.175
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.48,
+            "height": 0.12,
+            "depth": 0.05
+          },
+          "color": 4855070
+        }
+      },
+      {
+        "id": "m4",
+        "parent": "chair",
+        "transform": {
+          "pos": [
+            -0.35,
+            0.43,
+            -0.12
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.09,
+            "height": 0.42,
+            "depth": 0.09
+          },
+          "color": 1513756
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m5",
+        "parent": "chair",
+        "transform": {
+          "pos": [
+            -0.35,
+            0.67,
+            0.04
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.13,
+            "height": 0.12,
+            "depth": 0.58
+          },
+          "color": 1513756
+        }
+      },
+      {
+        "id": "m6",
+        "parent": "chair",
+        "transform": {
+          "pos": [
+            0.35,
+            0.43,
+            -0.12
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.09,
+            "height": 0.42,
+            "depth": 0.09
+          },
+          "color": 1513756
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m7",
+        "parent": "chair",
+        "transform": {
+          "pos": [
+            0.35,
+            0.67,
+            0.04
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.13,
+            "height": 0.12,
+            "depth": 0.58
+          },
+          "color": 1513756
+        }
+      },
+      {
+        "id": "m8",
+        "parent": "seat_cushion",
+        "transform": {
+          "pos": [
+            0,
+            -0.03,
+            0.25
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.54,
+            "height": 0.16,
+            "depth": 0.52
+          },
+          "color": 6823723
+        }
+      },
+      {
+        "id": "m9",
+        "parent": "seat_cushion",
+        "transform": {
+          "pos": [
+            0,
+            0.067,
+            0.26
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.46,
+            "height": 0.035,
+            "depth": 0.42
+          },
+          "color": 4855070
+        }
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1786541076795,
+        "provider": "gpt",
+        "data": "vjZ6MEjf+jCKzEt56JgZcYWFVF4NRVYv9+I21gFEu+OoNIlaD9bH3CJr3p2h7JLEx0QB+qCGqzRxY0I3fBpMSyb9S3wqLfnIKNqB6X+wmsvK/QaQPJuA3fJJC8xpiemZyTYg5FpjGkMUKv3ozHgC+ml823ooHlvjLEuPF1Iseue08VsR1WZDNWUSq5oXH+WkMalEeg6p9HpPKTA3iG+biXuQ+S1GKuHzeTvc7jyIQdvwrCtK0NlLPubD+xkUzDxCiKi4lyU/eARDVLlEXoHSsjQVA62XDFQZCr4y/Eni5cAy7bPnHoifmjmWpjvttn4KLdq6GtwREQdyzPY3LlGvtvshl8Pemh6irzapBhb1BW0goaua8zlJ9jl6KlsruwhnAJZnaTuBAsILf9yMXJyfboE5SarkrWrAmdcBQuJ3DbQtGJUEF/CKUFKboNJYG1iCRaV69zzBRn46Xtbk7NiOgGj0lpp7xU9+d5aMZfy2Bo2f9fFbHHeH8vGC64Dvh0CVc0/QXlZSA16WVFczIAVpyJyjfldR3+kFASA1x/k6YY3DF/us57O90gCouTsljuRbexgwm/H14rAVeiWh36o3zOUvlFbEVVYyyTQbyU5HaXaubZAt8ZXk/gF46V5J7GWnqsJetAT4YdiM8REjeu5WTdHA4kj0v/4lAhUZhUNfLicsStOBWk6NCn2g/2Iq7bgCO3A7lBEoiqRnqNodNGIAGZ2+v/8jVkdw44EdRfIdnKGq/4ozY02pBhS7KY3ILA6hHIHx+j8vU5uxCfy5tjVvjo3zCgJGe3F115ZFIftJ07RANR3qn5Nw9CN2F9v4Uvu/B+buJRsTLIap0kGSabp6jbFcofogwb/PNUJh9DKCWol11A==",
+        "edits": ""
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -0.29,
+          0.46738503155996397,
+          -0.37970018034265096
+        ],
+        "max": [
+          0.29,
+          1.112614968440036,
+          -0.140899458972047
+        ],
+        "sourceNodeId": "m2"
+      }
+    ],
+    "sourceMeshCount": 10,
+    "candidateCount": 1,
+    "fallbackUsed": false
+  },
+  "footprintRadius": 0.37970018034265096,
+  "sizeClass": "small",
+  "mode": "voxel",
+  "provider": "gpt",
+  "createdAt": 1786541080243,
+  "updatedAt": 1786541080243
+}

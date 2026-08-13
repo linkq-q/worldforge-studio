@@ -1,0 +1,431 @@
+{
+  "id": "asset-67d09c7f-3170-452b",
+  "name": "后侧服务柜台",
+  "prompt": "一段靠后墙布置的80年代餐厅服务柜台，木饰面、耐磨台面和适度展示边缘；作为单段可重复模块，保留柜台前方操作空间。\n全局资产美术方向：80年代小餐厅风格，暖色木饰面、米白墙面、暗红与棕橙色软装、黄铜或深色金属灯具，家具比例适配1.60m角色，造型简洁耐用，避免现代极简或高档餐厅风格。\n资产角色：restaurant ordering and pickup service furniture；目标尺度：large。\n只生成一个可复用的独立物体，不要生成地面、背景、天空、完整场景或多个分散物体。",
+  "tags": [
+    "indoor",
+    "service",
+    "counter",
+    "restaurant",
+    "retro-service-counter",
+    "pickup-counter"
+  ],
+  "modelJson": {
+    "name": "80年代餐厅服务柜台模块",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "service_counter",
+        "name": "服务柜台",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "service_counter",
+        "transform": {
+          "pos": [
+            0,
+            0.43,
+            -0.02
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 3.1,
+            "height": 0.76,
+            "depth": 0.66
+          },
+          "color": 9064236
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ]
+      },
+      {
+        "id": "m1",
+        "parent": "service_counter",
+        "transform": {
+          "pos": [
+            0,
+            0.47,
+            0.34
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 3.22,
+            "height": 0.68,
+            "depth": 0.08
+          },
+          "color": 10970168
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ]
+      },
+      {
+        "id": "m2",
+        "parent": "service_counter",
+        "transform": {
+          "pos": [
+            0,
+            0.1,
+            0.31
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2.82,
+            "height": 0.12,
+            "depth": 0.1
+          },
+          "color": 3876124
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          },
+          {
+            "tag": "dirty",
+            "value": 0.25
+          }
+        ]
+      },
+      {
+        "id": "m3",
+        "parent": "service_counter",
+        "transform": {
+          "pos": [
+            -1.05,
+            0.48,
+            0.405
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.08,
+            "height": 0.58,
+            "depth": 0.05
+          },
+          "color": 7158308
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ]
+      },
+      {
+        "id": "m4",
+        "parent": "service_counter",
+        "transform": {
+          "pos": [
+            0,
+            0.48,
+            0.405
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.08,
+            "height": 0.58,
+            "depth": 0.05
+          },
+          "color": 7158308
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ]
+      },
+      {
+        "id": "m5",
+        "parent": "service_counter",
+        "transform": {
+          "pos": [
+            1.05,
+            0.48,
+            0.405
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.08,
+            "height": 0.58,
+            "depth": 0.05
+          },
+          "color": 7158308
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ]
+      },
+      {
+        "id": "m6",
+        "parent": "service_counter",
+        "transform": {
+          "pos": [
+            0,
+            0.91,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 3.42,
+            "height": 0.12,
+            "depth": 0.9
+          },
+          "color": 7164226
+        }
+      },
+      {
+        "id": "m7",
+        "parent": "service_counter",
+        "transform": {
+          "pos": [
+            0,
+            0.89,
+            0.47
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 3.46,
+            "height": 0.08,
+            "depth": 0.07
+          },
+          "color": 11565618
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m8",
+        "parent": "service_counter",
+        "transform": {
+          "pos": [
+            0,
+            1.04,
+            -0.41
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 3.26,
+            "height": 0.18,
+            "depth": 0.08
+          },
+          "color": 7357229
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ]
+      },
+      {
+        "id": "m9",
+        "parent": "service_counter",
+        "transform": {
+          "pos": [
+            0.93,
+            1.16,
+            -0.23
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.22,
+            "height": 0.1,
+            "depth": 0.38
+          },
+          "color": 7952199
+        }
+      },
+      {
+        "id": "m10",
+        "parent": "service_counter",
+        "transform": {
+          "pos": [
+            0.93,
+            1.2,
+            -0.01
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.28,
+            "height": 0.06,
+            "depth": 0.05
+          },
+          "color": 11565618
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m11",
+        "parent": "service_counter",
+        "transform": {
+          "pos": [
+            0.31,
+            1.11,
+            -0.23
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.06,
+            "height": 0.2,
+            "depth": 0.38
+          },
+          "color": 4928555
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m12",
+        "parent": "service_counter",
+        "transform": {
+          "pos": [
+            1.55,
+            1.11,
+            -0.23
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.06,
+            "height": 0.2,
+            "depth": 0.38
+          },
+          "color": 4928555
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m13",
+        "parent": "service_counter",
+        "transform": {
+          "pos": [
+            -0.92,
+            0.985,
+            0.02
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.78,
+            "height": 0.025,
+            "depth": 0.34
+          },
+          "color": 7745323
+        }
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1786530043837,
+        "provider": "gpt",
+        "data": "M/HTks7Mjh3/hxraHzM/r0KDaZBChHXHLaTUJgcXUTw1/kd5Q7JiIpu5F5lyO2KfK1fLCUsKISlHUw0zQWv2nRYbqyiAFH8fBgZfzZbrzmjHRhodVEl/oT8W7j0Qgh5zEnHXMSd8e1GnEjQTog7DDNdJNPAjd0AkLQXeR7ozPP6o9kjZ4f+3vvR2NS2aImqZnvb01bMae1H9ji/klqOYLGR3lb3sMuyci4hEVTe7QafaQct/Mf4KhQhwAhJLkRAKiHlI1Pcg+a5hnKLIkZszh0kB8K3t/YoWZnEPVNxFvEY8zajPXFIG7snce3QiXRgVOcHvDvsZzdfWF2zY5NtyyRIpmIuY5OEW06glzuYn7MKr4mJeNK4nokXxFc2uKsoZhWJD99l+AbDrVmXca6V06GEWpn4PRiVsvANUkz4KlEQjGb3qHDDzUCb65WFzqfmgM0e9lixcgM5s6B/x9wgm7cLDHoRKM15ozboezlLL2g8lrmuxmonpwaAzgzGQdKVfOMsK0SHXQj+hhNgIdiGcCqQq2CuLKASjSPpbX4wczgcrz9SqUsSv/thaxik0VDSGqRAKtDbCiEEtAZNAwBkuput/OuuQ4L2OuAPIDeQ/FW1KVJXcc6kjX/NLsWRGWufxlCBMpyOvMe0TOa0G8R5tBco04V1tqTPAC6PpSncJ0XuFKkXlSiEXz+tqhbGy4FhiRPh3b5M9BqZIrFEiu54Fhj72hf4uRotY1ibw3sCCxeLOgDGNCOelFjTqtouhkiAMSM73djg9tOhxLUlHtE7H1N/ZD/vjsUM1vDaN9WzfLI8Tbhfnfrz/+r02QfAVN1ZSk7ATBaMevAHqoLsWT7bqkzCint5NQOdTT9bPEb/Vup0B55pJEahWjsDk89EeJuZNhgslDyXucZFvvIu09Q==",
+        "edits": ""
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -1.55,
+          0.009999999999999981,
+          -0.37750000000000006
+        ],
+        "max": [
+          1.55,
+          0.77,
+          0.2825
+        ],
+        "sourceNodeId": "m0"
+      },
+      {
+        "min": [
+          -1.71,
+          0.81,
+          -0.47750000000000004
+        ],
+        "max": [
+          1.71,
+          0.9299999999999999,
+          0.4225
+        ],
+        "sourceNodeId": "m6"
+      }
+    ],
+    "sourceMeshCount": 14,
+    "candidateCount": 2,
+    "fallbackUsed": false
+  },
+  "footprintRadius": 1.71,
+  "sizeClass": "medium",
+  "mode": "voxel",
+  "provider": "gpt",
+  "createdAt": 1786530045538,
+  "updatedAt": 1786530045538
+}

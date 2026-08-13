@@ -1,0 +1,936 @@
+{
+  "id": "asset-3f6aa958-78d0-43c5",
+  "name": "热带椰子树",
+  "prompt": "体素风热带椰子树，细长略弯树干、放射状宽大椰叶和可辨识椰果；两个变体分别偏高直与低矮倾斜，保持同一资产语言。\n全局资产美术方向：明快友好的体素热带公园风格；暖米色沙滩、青绿色草地、饱和但自然的椰叶与浅木设施，结构轮廓简洁、比例略夸张且易于远距离辨识。\n资产角色：海岛轮廓树、草坪遮荫树与沙滩边缘框景；目标尺度：large。\nKeep foliage base colors clearly chromatic rather than gray, with enough brightness to remain readable after normal self-shadowing; do not use near-black leaf colors.\n只生成一个可复用的独立物体，不要生成地面、背景、天空、完整场景或多个分散物体。",
+  "tags": [
+    "tropical",
+    "palm",
+    "coconut",
+    "coastal",
+    "tropical-palm"
+  ],
+  "modelJson": {
+    "name": "热带椰子树",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "trunk",
+        "name": "略弯树干",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        }
+      },
+      {
+        "id": "crown",
+        "name": "树冠连接部",
+        "parent": "trunk",
+        "transform": {
+          "pos": [
+            -0.12,
+            6.35,
+            0.12
+          ]
+        }
+      },
+      {
+        "id": "leaf_0",
+        "name": "放射椰叶1",
+        "parent": "crown",
+        "transform": {
+          "pos": [
+            0,
+            0.23,
+            0
+          ]
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "leaf_1",
+        "name": "放射椰叶2",
+        "parent": "crown",
+        "transform": {
+          "pos": [
+            0,
+            0.23,
+            0
+          ]
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "leaf_2",
+        "name": "放射椰叶3",
+        "parent": "crown",
+        "transform": {
+          "pos": [
+            0,
+            0.23,
+            0
+          ]
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "leaf_3",
+        "name": "放射椰叶4",
+        "parent": "crown",
+        "transform": {
+          "pos": [
+            0,
+            0.23,
+            0
+          ]
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "leaf_4",
+        "name": "放射椰叶5",
+        "parent": "crown",
+        "transform": {
+          "pos": [
+            0,
+            0.23,
+            0
+          ]
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "leaf_5",
+        "name": "放射椰叶6",
+        "parent": "crown",
+        "transform": {
+          "pos": [
+            0,
+            0.23,
+            0
+          ]
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "leaf_6",
+        "name": "放射椰叶7",
+        "parent": "crown",
+        "transform": {
+          "pos": [
+            0,
+            0.23,
+            0
+          ]
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "coconuts",
+        "name": "椰果",
+        "parent": "crown",
+        "transform": {
+          "pos": [
+            0,
+            0.07,
+            0
+          ]
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "trunk",
+        "transform": {
+          "pos": [
+            0.04,
+            0.88,
+            0.01
+          ],
+          "quat": [
+            -0.08,
+            -0.09,
+            0.69,
+            0.72
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.75,
+            "height": 0.62,
+            "depth": 0.62
+          },
+          "color": 12157519
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "bark"
+          }
+        ]
+      },
+      {
+        "id": "m1",
+        "parent": "trunk",
+        "transform": {
+          "pos": [
+            0.05,
+            2.6,
+            0.05
+          ],
+          "quat": [
+            0.64,
+            0.67,
+            -0.26,
+            -0.28
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.7,
+            "height": 0.53,
+            "depth": 0.53
+          },
+          "color": 12684116
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "bark"
+          }
+        ]
+      },
+      {
+        "id": "m2",
+        "parent": "trunk",
+        "transform": {
+          "pos": [
+            -0.08,
+            4.25,
+            0.13
+          ],
+          "quat": [
+            0.64,
+            0.73,
+            -0.15,
+            -0.17
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.62,
+            "height": 0.45,
+            "depth": 0.45
+          },
+          "color": 12024389
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "bark"
+          }
+        ]
+      },
+      {
+        "id": "m3",
+        "parent": "trunk",
+        "transform": {
+          "pos": [
+            -0.15,
+            5.75,
+            0.15
+          ],
+          "quat": [
+            0.26,
+            0.28,
+            0.63,
+            0.67
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.4,
+            "height": 0.37,
+            "depth": 0.37
+          },
+          "color": 12946514
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "bark"
+          }
+        ]
+      },
+      {
+        "id": "m4",
+        "parent": "crown",
+        "transform": {
+          "pos": [
+            0,
+            0.13,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.72,
+            "height": 0.55,
+            "depth": 0.72
+          },
+          "color": 7903292
+        }
+      },
+      {
+        "id": "m5",
+        "parent": "leaf_0",
+        "transform": {
+          "pos": [
+            0.83,
+            0.2,
+            0.07
+          ],
+          "quat": [
+            0,
+            -0.04,
+            -0.06,
+            1
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.31,
+            "height": 0.12,
+            "depth": 0.58
+          },
+          "color": 2595669
+        }
+      },
+      {
+        "id": "m6",
+        "parent": "leaf_0",
+        "transform": {
+          "pos": [
+            2.26,
+            -0.34,
+            0.18
+          ],
+          "quat": [
+            0.01,
+            -0.04,
+            -0.25,
+            0.97
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.8,
+            "height": 0.12,
+            "depth": 0.76
+          },
+          "color": 3517789
+        }
+      },
+      {
+        "id": "m7",
+        "parent": "leaf_1",
+        "transform": {
+          "pos": [
+            0.5,
+            0.12,
+            0.66
+          ],
+          "quat": [
+            -0.01,
+            -0.44,
+            0.03,
+            0.9
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.3,
+            "height": 0.12,
+            "depth": 0.58
+          },
+          "color": 3517789
+        }
+      },
+      {
+        "id": "m8",
+        "parent": "leaf_1",
+        "transform": {
+          "pos": [
+            1.37,
+            -0.4,
+            1.8
+          ],
+          "quat": [
+            0.14,
+            -0.42,
+            -0.27,
+            0.85
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.93,
+            "height": 0.12,
+            "depth": 0.76
+          },
+          "color": 2329675
+        }
+      },
+      {
+        "id": "m9",
+        "parent": "leaf_2",
+        "transform": {
+          "pos": [
+            -0.2,
+            0.16,
+            0.8
+          ],
+          "quat": [
+            0.01,
+            -0.79,
+            -0.01,
+            0.61
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.3,
+            "height": 0.12,
+            "depth": 0.58
+          },
+          "color": 2329675
+        }
+      },
+      {
+        "id": "m10",
+        "parent": "leaf_2",
+        "transform": {
+          "pos": [
+            -0.56,
+            -0.32,
+            2.2
+          ],
+          "quat": [
+            0.21,
+            -0.76,
+            -0.16,
+            0.59
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.82,
+            "height": 0.12,
+            "depth": 0.76
+          },
+          "color": 4438371
+        }
+      },
+      {
+        "id": "m11",
+        "parent": "leaf_3",
+        "transform": {
+          "pos": [
+            -0.74,
+            0.2,
+            0.37
+          ],
+          "quat": [
+            -0.06,
+            0.97,
+            0.01,
+            -0.23
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.31,
+            "height": 0.12,
+            "depth": 0.58
+          },
+          "color": 4438371
+        }
+      },
+      {
+        "id": "m12",
+        "parent": "leaf_3",
+        "transform": {
+          "pos": [
+            -2.03,
+            -0.43,
+            1.01
+          ],
+          "quat": [
+            -0.29,
+            0.93,
+            0.07,
+            -0.22
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.9,
+            "height": 0.12,
+            "depth": 0.76
+          },
+          "color": 2989904
+        }
+      },
+      {
+        "id": "m13",
+        "parent": "leaf_4",
+        "transform": {
+          "pos": [
+            -0.76,
+            0.12,
+            -0.34
+          ],
+          "quat": [
+            0.03,
+            0.98,
+            0.01,
+            0.21
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.3,
+            "height": 0.12,
+            "depth": 0.58
+          },
+          "color": 2989904
+        }
+      },
+      {
+        "id": "m14",
+        "parent": "leaf_4",
+        "transform": {
+          "pos": [
+            -2.07,
+            -0.31,
+            -0.92
+          ],
+          "quat": [
+            -0.26,
+            0.94,
+            -0.06,
+            0.2
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.83,
+            "height": 0.12,
+            "depth": 0.76
+          },
+          "color": 5619049
+        }
+      },
+      {
+        "id": "m15",
+        "parent": "leaf_5",
+        "transform": {
+          "pos": [
+            -0.22,
+            0.16,
+            -0.8
+          ],
+          "quat": [
+            -0.01,
+            0.79,
+            -0.01,
+            0.61
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.3,
+            "height": 0.12,
+            "depth": 0.58
+          },
+          "color": 5619049
+        }
+      },
+      {
+        "id": "m16",
+        "parent": "leaf_5",
+        "transform": {
+          "pos": [
+            -0.59,
+            -0.41,
+            -2.19
+          ],
+          "quat": [
+            -0.24,
+            0.76,
+            -0.18,
+            0.58
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.91,
+            "height": 0.12,
+            "depth": 0.76
+          },
+          "color": 3249747
+        }
+      },
+      {
+        "id": "m17",
+        "parent": "leaf_6",
+        "transform": {
+          "pos": [
+            0.47,
+            0.2,
+            -0.68
+          ],
+          "quat": [
+            -0.03,
+            0.46,
+            -0.06,
+            0.88
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.31,
+            "height": 0.12,
+            "depth": 0.58
+          },
+          "color": 3249747
+        }
+      },
+      {
+        "id": "m18",
+        "parent": "leaf_6",
+        "transform": {
+          "pos": [
+            1.29,
+            -0.34,
+            -1.86
+          ],
+          "quat": [
+            -0.12,
+            0.45,
+            -0.23,
+            0.86
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.8,
+            "height": 0.12,
+            "depth": 0.76
+          },
+          "color": 2595669
+        }
+      },
+      {
+        "id": "m19",
+        "parent": "coconuts",
+        "transform": {
+          "pos": [
+            -0.36,
+            -0.24,
+            0.25
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.5,
+            "height": 0.55,
+            "depth": 0.5
+          },
+          "color": 8410415
+        }
+      },
+      {
+        "id": "m20",
+        "parent": "coconuts",
+        "transform": {
+          "pos": [
+            0.28,
+            -0.3,
+            0.34
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.52,
+            "height": 0.58,
+            "depth": 0.52
+          },
+          "color": 9527864
+        }
+      },
+      {
+        "id": "m21",
+        "parent": "coconuts",
+        "transform": {
+          "pos": [
+            0.08,
+            -0.22,
+            -0.38
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.46,
+            "height": 0.52,
+            "depth": 0.46
+          },
+          "color": 7620907
+        }
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1786438648214,
+        "provider": "gpt",
+        "data": "xAvyEMln/rU9BglDK2A3pjMYPiquswEk5INf1zHODBFGTttw8C/EnyzALKkMar95HeaetxaJxGCSV7YsYLR2P1bUnCNmCiJ+4Cau7e2+/tZ450hz1j5qOPfRfX2qmqqyD0AdhNBWkDjXs77yMNHcmDr5t8W++wjqnwCxb3oCW9AXBPaalS8+qv1AS5Ywy6xiXLJ60H+XhT5xF/h4GnzABu4t1RQuIVYyxGAdYm7WPlqkGrdDXpFz/4InpJ/qvLsA2+c/faISeMSLfCllR4ei5vHTpETO7kbCoM5KfBotvb0FnF74e7uYFQt1jUf1Y9JKkjVTY3qjlt18RqmhTPIGfhihAWgVkWxhcC5i8vk2cM+ikyXGjfoWBBWruufJVexMG6sQQP/xIYBE9owFVk4BYKlsf+IuKO46u9wFY1TWJr5jzOQ8nYQCm6zenBToIKhO2FIzsavqPxt4GSO6QIBkq79qRk357GBqJoqzvhcRFBBGesomOFAL+YFYbxv+coCT+vjorPCsypDnOr5zL5SZQe5PEYysep4i+Yfqum8RsXJyOTLdOcH7gqjveMyJm7XSB39PYTmsLd07RZjWnbxnoFLQ9Svi9gO0TZnwU19wO9gAncCBUwy9YXMIOrCWvcSijbZHzftovzBpfo7fRGa1nhKk6+g2h5YiFYtNQEVgpFKZ8HyO2+SuUcSeT3POM1hdQZsbvzvcjzmUU4qqyjHVtq8Sp0KjdXTDDL45dMnyCLj/JxsOhi9xiXoXppf0F8j5haw7jWccjjgSrmUVEywHUaW+PW+DRYcX0D0Zk2S/aBuoDySVB0/BcY6GP8zo9qhjb7Q4Uot6H+IyXQXJ39P4hQITIT1NgipwfxkG1qJHEypRI2N+AHoyKYrCdQNPaR1QDJ1fX5l7ESAikPfRbIvXN6ib9FQ3U0bGfS4WsMZE9ef15547GjOzLDiJmXQxgu/6dHd/I6mWwfGJcRiL06HeAe7B3pGHrE5umZwXL0fkTLUm7rWEXjjz1lFdWvAZucfXp7+nYdutLNaRHf3iz1Ujb7bRh0Y0AEzdCOhiIYf91rW1bV2zbWK9r+XkApndoyZ9TGstX92ba+KijYbbNblujIWApTVU9ufOutnLQRBVMryUbpCxb2aEiz5NjPmQKZ4WNrTUOieTacul6iJbCCVsNT3KAmD3H3BE3KCQgZwdaXhqcWLOX/4WwYf3E1ncMAWZspQXwBwTM8mM8QDVWWw6CsWwD5DtZhfUlSt2C2WbzybU9HpCKdNvP9mcg38q49aWChXluTjRIq3uYD0nnNiRkSSL/dI2PMYT9NxZEBbBLP0K/KnGwm2Ekm99DAv/CJ4j9lWR3wCLxZvfwJdyYWSM71UzVi6IAdWEaBZvL+Uy5Z+fWX/1S8q++/Tu0RBsGlLZSu0A4D9lATeuqSO0YQJekK0Gl2flSPR7qMU5rI1z8q3xZ2Qj936auehwzoUqPMH+El53+RA2WLhLAg6jhGSIduBQk0U6MgsOLWcvH1gBmvbRVJi5JnQK44+82503Vg7YrjgS1uwbmCwMbGRq8INfbb6VSC5m2/GWUGGzqlOFtZatq6evqnL1m9lPMUMx6kE5rvY1JK6afDNVfHcK+IEPzHI5+uQ=",
+        "edits": ""
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          0.49966156982105125,
+          5.576073909556777,
+          0.9194775949441485
+        ],
+        "max": [
+          2.105640992859179,
+          6.804758597876325,
+          2.678033172914695
+        ],
+        "sourceNodeId": "m8"
+      },
+      {
+        "min": [
+          -2.997154166130702,
+          5.569639041305098,
+          0.3043714669385005
+        ],
+        "max": [
+          -1.1975432711890672,
+          6.751193466128005,
+          1.7131393009203428
+        ],
+        "sourceNodeId": "m12"
+      },
+      {
+        "min": [
+          0.44883317157193603,
+          5.74917195016989,
+          -2.743404314901567
+        ],
+        "max": [
+          1.9964693911082942,
+          6.751660557263213,
+          -0.9790849172395897
+        ],
+        "sourceNodeId": "m18"
+      },
+      {
+        "min": [
+          -3.037990053601581,
+          5.753978778847231,
+          -1.598152537260767
+        ],
+        "max": [
+          -1.2367073837181881,
+          6.806853728585872,
+          -0.24433669488038956
+        ],
+        "sourceNodeId": "m14"
+      },
+      {
+        "min": [
+          -1.2385040971459405,
+          5.583750915071133,
+          -3.081451787385319
+        ],
+        "max": [
+          -0.07619334017382906,
+          6.777081592361969,
+          -1.3010374447558368
+        ],
+        "sourceNodeId": "m16"
+      },
+      {
+        "min": [
+          -1.196119062240355,
+          5.752646512908836,
+          1.3160589804735248
+        ],
+        "max": [
+          -0.058578375079414546,
+          6.788185994524266,
+          3.081451787385319
+        ],
+        "sourceNodeId": "m10"
+      },
+      {
+        "min": [
+          1.3473125090786484,
+          5.762661801423247,
+          -0.26731963348178106
+        ],
+        "max": [
+          3.037990053601581,
+          6.738170706009855,
+          0.6248304013406245
+        ],
+        "sourceNodeId": "m6"
+      },
+      {
+        "min": [
+          -0.3171376185607769,
+          0,
+          -0.5025369847524415
+        ],
+        "max": [
+          0.5024401812410073,
+          1.780832507433102,
+          0.280047752611285
+        ],
+        "sourceNodeId": "m0"
+      },
+      {
+        "min": [
+          -0.2960794304567989,
+          1.7456611516757348,
+          -0.48155272955987666
+        ],
+        "max": [
+          0.5013819931370294,
+          3.4751713557573676,
+          0.33906349741872016
+        ],
+        "sourceNodeId": "m1"
+      },
+      {
+        "min": [
+          -0.42225665708427346,
+          3.427664970891317,
+          -0.33761195684932865
+        ],
+        "max": [
+          0.36755921976450384,
+          5.093167536541785,
+          0.3551227247081722
+        ],
+        "sourceNodeId": "m2"
+      },
+      {
+        "min": [
+          -0.21054760810965756,
+          6.642175971031039,
+          -1.386348099159927
+        ],
+        "max": [
+          1.015850170789888,
+          6.938656536402064,
+          0.02385886701877049
+        ],
+        "sourceNodeId": "m17"
+      },
+      {
+        "min": [
+          -0.3878296623985419,
+          5.049293043391889,
+          -0.2661679877180878
+        ],
+        "max": [
+          0.19313222507877228,
+          6.471539464041213,
+          0.3236787555769314
+        ],
+        "sourceNodeId": "m3"
+      }
+    ],
+    "sourceMeshCount": 22,
+    "candidateCount": 22,
+    "fallbackUsed": false
+  },
+  "footprintRadius": 3.081451787385319,
+  "sizeClass": "large",
+  "mode": "voxel",
+  "provider": "gpt",
+  "createdAt": 1786438653327,
+  "updatedAt": 1786438653327
+}
