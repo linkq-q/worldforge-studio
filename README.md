@@ -1,6 +1,6 @@
 # WorldForge Studio
 
-WorldForge Studio 是从 `hAIde-seek` 中独立提取的 Three.js 场景编辑器。这个仓库只保留地图、地形、资产与本地编辑服务，不包含原游戏、联机房间、WebSocket 或 Electron。
+WorldForge Studio 是一个独立的 AI 辅助 Three.js 场景编辑器，用于创建、编辑和预览可持续迭代的室内外场景。它结合地形、参数化房间、资产编辑、受约束的 AI 构图与可复用渲染方案；生成结果始终保留为可预览、可编辑、可撤销的地图事务。
 
 ## 最近更新（2026-08）
 
@@ -149,7 +149,3 @@ Agent 应优先使用 CLI 或 `/api/editor`，不要直接改写数据文件。
 事务操作格式和调用方式见 [docs/map-transactions.md](docs/map-transactions.md)。
 
 渲染 AI 使用的模块白名单、校验和保存格式见 [docs/render-plan.md](docs/render-plan.md)。
-
-## 来源
-
-初版编辑器提取自本地 `hAIde-seek` 的提交 `dd5067879257127d5b0059a71cf1950fe0687f9e`，新仓库采用独立 Git 历史。
