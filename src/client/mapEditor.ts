@@ -45,6 +45,7 @@ import {
   type TerrainBrushMode
 } from '../shared/map';
 import { lintMap } from '../shared/mapLint';
+import type { IndoorVisualReview } from '../shared/indoorVisualReview';
 import {
   DEFAULT_MAP_AI_MIN_NEW_ASSETS,
   DEFAULT_MAP_AI_MAX_NEW_ASSETS,
@@ -347,6 +348,11 @@ class MapEditor {
   private mapAiPreviewVisible = true;
   private mapAiComparisonMap: EditableMap | null = null;
   private mapAiAbortController: AbortController | null = null;
+  private mapAiAutoRefineRunning = false;
+  private mapAiAutoRefineBaseSaved = false;
+  private mapAiRoundSavePromise: Promise<void> | null = null;
+  private mapAiVisualReviewRunning = false;
+  private mapAiVisualReviewCompleted = false;
   private mapAgentProgress: AgentProgressEvent[] = [];
   private mapAgentStartedAt = 0;
   private mapAgentElapsedMs = 0;
@@ -1239,8 +1245,8 @@ class MapEditor {
             </div>
           ` : ''}
           <div class="map-ai-actions">
-            <button id="discard-map-ai" class="secondary">放弃预览</button>
-            <button id="apply-map-ai">应用到地图</button>
+            <button id="discard-map-ai" class="secondary" ${this.mapAiAutoRefineRunning ? 'disabled' : ''}>放弃预览</button>
+            <button id="apply-map-ai" ${this.mapAiRoundSavePromise ? 'disabled' : ''}>${this.mapAiAutoRefineRunning ? '保存当前轮' : '应用到地图'}</button>
           </div>
         </section>
       ` : ''}
@@ -1855,17 +1861,24 @@ class MapEditor {
   private async generateMapAiPreview(
     mode: 'generate' | 'refine',
     approvedCompositionPlan?: SceneCompositionPlan,
-    promptOverride?: string
+    promptOverride?: string,
+    automatic = false,
+    visualRepair = false
   ): Promise<void> {
     const map = this.state.map;
     const prompt = (promptOverride ?? this.mapAiPrompt).trim();
     if (!map || !prompt || this.state.busy) return;
+    if (!automatic && !visualRepair) this.mapAiVisualReviewCompleted = false;
     if (this.state.dirty) {
       this.state.message = '请先保存当前手工修改';
       this.updateToolbarState();
       return;
     }
     const controller = new AbortController();
+    if (automatic) {
+      this.mapAiAutoRefineRunning = true;
+      this.mapAiAutoRefineBaseSaved = false;
+    }
     this.mapAiAbortController = controller;
     this.mapAgentProgress = [];
     this.startMapAgentProgressTimer();
@@ -1883,8 +1896,8 @@ class MapEditor {
             provider: this.mapAiProvider,
             reuseExistingAssets: this.mapAiReuseExistingAssets,
             assetLibraryId: this.mapAiReuseExistingAssets ? this.activeAssetLibraryId : undefined,
-            minNewAssets: this.mapAiMinNewAssets,
-            maxNewAssets: this.mapAiMaxNewAssets,
+            minNewAssets: visualRepair ? 0 : this.mapAiMinNewAssets,
+            maxNewAssets: visualRepair ? 0 : this.mapAiMaxNewAssets,
             targetVisualZoneId: mode === 'refine' ? this.mapAiTargetVisualZoneId || undefined : undefined,
             targetRegionId: mode === 'refine' ? this.mapAiTargetRegionId || undefined : undefined,
             baseTerrainOnly: mode === 'refine' && this.mapAiBaseTerrainOnly,
@@ -1898,6 +1911,7 @@ class MapEditor {
           this.renderMapAiPanel();
         }
       );
+      if (automatic && this.mapAiRoundSavePromise) await this.mapAiRoundSavePromise;
       if (suggestion.generatedAssets.length > 0) await this.reloadLists();
       const addedObjects = suggestion.operations.filter((operation) => operation.type === 'object.add').length;
       const removedObjects = suggestion.operations.filter((operation) => operation.type === 'object.remove').length;
@@ -1911,7 +1925,8 @@ class MapEditor {
             }
           }
         : undefined;
-      const combinedSuggestion = previousSuggestion
+      const baseWasSaved = automatic && this.mapAiAutoRefineBaseSaved;
+      const combinedSuggestion = previousSuggestion && !baseWasSaved
         ? {
             ...suggestion,
             operations: [...previousSuggestion.operations, ...suggestion.operations],
@@ -1922,12 +1937,25 @@ class MapEditor {
       this.mapPreviewKind = 'ai';
       this.mapAiSuggestion = combinedSuggestion;
       this.pendingCompositionPlan = null;
-      this.mapAiPreviewMap = applyMapOperations(this.mapWithEditorAssets(map), combinedSuggestion.operations);
-      this.mapAiComparisonMap = comparisonMap;
+      const previewBase = baseWasSaved ? this.state.map ?? map : map;
+      this.mapAiPreviewMap = applyMapOperations(this.mapWithEditorAssets(previewBase), combinedSuggestion.operations);
+      this.mapAiComparisonMap = baseWasSaved ? previewBase : comparisonMap;
       this.mapAiPreviewVisible = true;
       this.state.selectedObjectId = null;
-      this.state.message = 'AI 地图预览已生成，尚未应用';
+      this.state.message = automatic ? '第二轮规划提升已完成，尚未应用' : 'AI 地图预览已生成，尚未应用';
       await this.refreshScene();
+      const quality = mode === 'generate' && combinedSuggestion.composition
+        ? mapCompositionPlacementQuality(
+            combinedSuggestion.composition.metrics.initialObjectCount ?? combinedSuggestion.composition.metrics.objectCount,
+            combinedSuggestion.composition.metrics.objectCount
+          )
+        : null;
+      if (quality && quality.tone !== 'good') {
+        const repairPrompt = `${this.mapAiPrompt}\n\n在第一轮可见结果基础上自动进行一次规划提升：补足未正常落位的资产，修复尺度、动线、操作净空、贴墙贴顶、窗户覆盖和支撑关系；保留已经合理的内容。`;
+        window.setTimeout(() => void this.generateMapAiPreview('refine', undefined, repairPrompt, true), 0);
+      } else if (map.sceneMode === 'indoor' && !visualRepair) {
+        window.setTimeout(() => void this.runIndoorVisualFinalReview(), 0);
+      }
     } catch (error) {
       const cancelled = error instanceof Error && error.name === 'AbortError';
       const detail = humanizeAgentError(error);
@@ -1941,9 +1969,128 @@ class MapEditor {
         : `AI 地图生成失败：${detail}`;
     } finally {
       if (this.mapAiAbortController === controller) this.mapAiAbortController = null;
+      if (automatic) this.mapAiAutoRefineRunning = false;
       this.stopMapAgentProgressTimer();
       this.setBusy(false);
       this.renderPanels();
+    }
+  }
+
+  private async runIndoorVisualFinalReview(): Promise<void> {
+    const map = this.state.map;
+    const preview = this.mapAiPreviewMap;
+    const suggestion = this.mapAiSuggestion;
+    if (!map || !preview || !suggestion || preview.sceneMode !== 'indoor'
+      || this.mapAiVisualReviewRunning || this.mapAiVisualReviewCompleted || this.state.busy) return;
+    this.mapAiVisualReviewRunning = true;
+    this.mapAiVisualReviewCompleted = true;
+    this.setBusy(true, '正在合成四角视图与俯视图，进行室内轻量终检...');
+    updateAgentProgress(this.mapAgentProgress, { phase: 'reviewing', label: '室内轻量终检：检查遮挡、漂浮、暗角与构图' });
+    this.renderMapAiPanel();
+    try {
+      const imageDataUrl = this.captureIndoorReviewContactSheet();
+      if (!imageDataUrl) throw new Error('indoor_review_capture_unavailable');
+      const { review } = await editorFetch<{ review: IndoorVisualReview }>(
+        `/api/editor/maps/${encodeURIComponent(map.id)}/visual-review`,
+        {
+          method: 'POST',
+          body: JSON.stringify({
+            imageDataUrl,
+            provider: this.mapAiProvider,
+            baseOperations: suggestion.operations
+          })
+        }
+      );
+      if (review.status === 'revise' && review.repairPrompt) {
+        this.setBusy(false);
+        this.state.message = '室内终检发现严重问题，正在进行一次定向修复；不会生成新资产。';
+        await this.generateMapAiPreview(
+          'refine',
+          undefined,
+          `${this.mapAiPrompt}\n\n室内五视角轻量终检要求：\n${review.repairPrompt}`,
+          true,
+          true
+        );
+        return;
+      }
+      updateAgentProgress(this.mapAgentProgress, { phase: 'complete', label: '室内轻量终检通过' });
+      this.state.message = `室内轻量终检通过：${review.summary}`;
+    } catch (error) {
+      updateAgentProgress(this.mapAgentProgress, {
+        phase: 'complete',
+        label: '室内轻量终检已跳过',
+        detail: error instanceof Error ? error.message : String(error)
+      });
+      this.state.message = '室内轻量终检暂不可用，已保留通过确定性检查的当前结果。';
+    } finally {
+      this.mapAiVisualReviewRunning = false;
+      this.setBusy(false);
+      this.renderPanels();
+    }
+  }
+
+  private captureIndoorReviewContactSheet(): string | null {
+    const map = this.mapAiPreviewMap;
+    const camera = this.camera;
+    const renderer = this.renderer;
+    const orbit = this.orbit;
+    if (!map?.room || !camera || !renderer || !orbit || !this.renderScene || !this.renderedMap) return null;
+    const savedPosition = camera.position.clone();
+    const savedQuaternion = camera.quaternion.clone();
+    const savedUp = camera.up.clone();
+    const savedTarget = orbit.target.clone();
+    const bounds = getMapBounds(map);
+    const box = new THREE.Box3(
+      new THREE.Vector3(bounds.minX, bounds.minY, bounds.minZ),
+      new THREE.Vector3(bounds.maxX, bounds.maxY, bounds.maxZ)
+    );
+    const directions = [
+      new THREE.Vector3(1, 0.58, 1),
+      new THREE.Vector3(-1, 0.58, 1),
+      new THREE.Vector3(1, 0.58, -1),
+      new THREE.Vector3(-1, 0.58, -1),
+      new THREE.Vector3(0, 1, 0)
+    ];
+    const labels = ['西北角', '东北角', '西南角', '东南角', '俯视'];
+    const sheet = document.createElement('canvas');
+    sheet.width = 1280;
+    sheet.height = 720;
+    const context = sheet.getContext('2d');
+    if (!context) return null;
+    context.fillStyle = '#101416';
+    context.fillRect(0, 0, sheet.width, sheet.height);
+    try {
+      for (let index = 0; index < directions.length; index += 1) {
+        this.frameBox(box, directions[index]);
+        this.renderedMap.setRoomWallDisplayMode('cutaway', camera);
+        this.renderScene.renderFrame(0, performance.now() / 1000);
+        const column = index % 3;
+        const row = Math.floor(index / 3);
+        const x = column * 426;
+        const y = row * 360;
+        drawCanvasCover(context, renderer.domElement, x, y, 426, 360);
+        context.fillStyle = 'rgba(0, 0, 0, 0.72)';
+        context.fillRect(x + 10, y + 10, 72, 28);
+        context.fillStyle = '#ffffff';
+        context.font = '16px sans-serif';
+        context.fillText(labels[index], x + 18, y + 30);
+      }
+      context.fillStyle = '#182024';
+      context.fillRect(852, 360, 428, 360);
+      context.fillStyle = '#dce8ec';
+      context.font = 'bold 24px sans-serif';
+      context.fillText('室内五视角轻量终检', 900, 500);
+      context.font = '16px sans-serif';
+      context.fillText('仅检查严重遮挡、漂浮、暗角与构图问题', 900, 540);
+      return sheet.toDataURL('image/jpeg', 0.78);
+    } finally {
+      camera.position.copy(savedPosition);
+      camera.quaternion.copy(savedQuaternion);
+      camera.up.copy(savedUp);
+      orbit.target.copy(savedTarget);
+      orbit.update();
+      this.applyRoomWallDisplayMode();
+      this.renderScene.renderFrame(0, performance.now() / 1000);
     }
   }
 
@@ -2037,10 +2184,12 @@ class MapEditor {
   private async applyMapAiPreview(): Promise<void> {
     const map = this.state.map;
     const suggestion = this.mapAiSuggestion;
-    if (!map || !suggestion || this.state.busy || this.state.dirty) return;
+    if (!map || !suggestion || this.state.dirty || this.mapAiRoundSavePromise
+      || this.state.busy && !this.mapAiAutoRefineRunning) return;
     const isTerrainPreview = this.mapPreviewKind === 'terrain';
-    this.setBusy(true, isTerrainPreview ? '正在应用地形编辑...' : '正在应用 AI 地图...');
-    try {
+    const savingDuringAutoRefine = this.mapAiAutoRefineRunning;
+    if (!savingDuringAutoRefine) this.setBusy(true, isTerrainPreview ? '正在应用地形编辑...' : '正在应用 AI 地图...');
+    const save = (async () => {
       const result = await editorFetch<{ map: EditableMap; transaction: MapTransactionSummary }>(
         `/api/editor/maps/${encodeURIComponent(map.id)}/transactions`,
         {
@@ -2056,16 +2205,30 @@ class MapEditor {
       this.state.undoTransaction = result.transaction;
       this.state.redoTransaction = null;
       this.state.selectedObjectId = null;
-      this.clearMapAiPreview();
+      if (savingDuringAutoRefine) {
+        this.mapAiAutoRefineBaseSaved = true;
+        this.mapAiSuggestion = null;
+        this.mapAiPreviewMap = null;
+        this.mapAiComparisonMap = null;
+      } else {
+        this.clearMapAiPreview();
+      }
       this.resetRenderDraft();
       this.resetManualHistory(this.state.map, true);
       await this.reloadLists();
       await this.refreshScene();
-      this.state.message = `已应用：${result.transaction.label}`;
+      this.state.message = savingDuringAutoRefine
+        ? `已保存当前轮：${result.transaction.label}；第二轮仍在继续`
+        : `已应用：${result.transaction.label}`;
+    })();
+    this.mapAiRoundSavePromise = save;
+    try {
+      await save;
     } catch (error) {
       this.state.message = `应用${isTerrainPreview ? '地形编辑' : ' AI 地图'}失败：${error instanceof Error ? error.message : '未知错误'}`;
     } finally {
-      this.setBusy(false);
+      if (this.mapAiRoundSavePromise === save) this.mapAiRoundSavePromise = null;
+      if (!savingDuringAutoRefine) this.setBusy(false);
       this.renderPanels();
     }
   }
@@ -2077,6 +2240,9 @@ class MapEditor {
     this.mapAiPreviewVisible = true;
     this.mapAiComparisonMap = null;
     this.mapPreviewKind = 'ai';
+    this.mapAiAutoRefineBaseSaved = false;
+    this.mapAiVisualReviewRunning = false;
+    this.mapAiVisualReviewCompleted = false;
   }
 
   private renderMapSelector(): void {
@@ -4978,6 +5144,32 @@ class MapEditor {
       this.camera
     );
   }
+}
+
+function drawCanvasCover(
+  context: CanvasRenderingContext2D,
+  source: HTMLCanvasElement,
+  x: number,
+  y: number,
+  width: number,
+  height: number
+): void {
+  const sourceWidth = Math.max(1, source.width);
+  const sourceHeight = Math.max(1, source.height);
+  const scale = Math.max(width / sourceWidth, height / sourceHeight);
+  const cropWidth = width / scale;
+  const cropHeight = height / scale;
+  context.drawImage(
+    source,
+    (sourceWidth - cropWidth) / 2,
+    (sourceHeight - cropHeight) / 2,
+    cropWidth,
+    cropHeight,
+    x,
+    y,
+    width,
+    height
+  );
 }
 
 async function editorFetch<T>(path: string, init: RequestInit = {}): Promise<T> {

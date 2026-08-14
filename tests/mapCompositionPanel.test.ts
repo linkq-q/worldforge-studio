@@ -129,8 +129,9 @@ describe('map composition preview panel', () => {
     expect(html).toContain(`map-composition-quality-${tone}`);
   });
 
-  it('offers a continuation repair only when initial planning quality is low', () => {
+  it('offers a continuation repair whenever initial planning quality is below good', () => {
     expect(renderMapCompositionSummary(compositionSuggestion(3, 12))).toContain('id="repair-map-ai-composition"');
+    expect(renderMapCompositionSummary(compositionSuggestion(6, 12))).toContain('id="repair-map-ai-composition"');
     expect(renderMapCompositionSummary(compositionSuggestion(10, 12))).not.toContain('id="repair-map-ai-composition"');
   });
 });

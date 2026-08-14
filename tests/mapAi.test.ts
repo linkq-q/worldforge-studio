@@ -432,6 +432,28 @@ describe('map AI adapter', () => {
     });
   });
 
+  it('ignores stale refine targets while preserving valid edits from the same response', () => {
+    const map = createEmptyMap('refine', 'map-stale-refine');
+    const tree = { ...createMapObject('Tree', 'asset-tree'), id: 'tree-live' };
+    map.objects = [tree];
+
+    const suggestion = normalizeMapSuggestion(JSON.stringify({
+      summary: 'move the remaining tree',
+      objectRemovals: [{ objectIds: ['tree-already-gone'] }],
+      objectUpdates: [{ objectId: 'tree-live', x: 3 }, { objectId: 'tree-already-gone', x: 8 }]
+    }), map, assets, 'refine');
+
+    expect(suggestion.operations).toEqual([expect.objectContaining({ type: 'object.update', objectId: 'tree-live' })]);
+  });
+
+  it('turns an all-stale refine response into an empty retryable delta', () => {
+    const map = createEmptyMap('refine', 'map-all-stale-refine');
+    expect(normalizeMapSuggestion(JSON.stringify({
+      objectRemovals: [{ objectIds: ['already-gone'] }],
+      objectUpdates: [{ objectId: 'also-gone', x: 3 }]
+    }), map, assets, 'refine').operations).toEqual([]);
+  });
+
   it('bounds refine operations to one visual zone and preserves locked zone fields', () => {
     const map = createEmptyMap('zone refine', 'map-zone-refine');
     map.visualSemantics.zones = [{
@@ -638,6 +660,17 @@ describe('map AI adapter', () => {
     if (spawn?.type !== 'reference.set') throw new Error('missing spawn');
     const preview = applyMapOperations(map, suggestion.operations);
     expect(isSpawnPositionSafe(preview, spawn.point[0], spawn.point[2])).toBe(true);
+  });
+
+  it('ignores a malformed optional spawn without discarding valid refine operations', () => {
+    const map = createEmptyMap('refine room', 'map-refine-malformed-spawn');
+    const suggestion = normalizeMapSuggestion(JSON.stringify({
+      objects: [{ assetId: 'asset-tree', x: 2, z: 1 }],
+      spawn: {}
+    }), map, assets, 'refine');
+
+    expect(suggestion.operations.some((operation) => operation.type === 'object.add')).toBe(true);
+    expect(suggestion.operations.some((operation) => operation.type === 'reference.set')).toBe(false);
   });
 
   it('converts a bounded plan into the shared MapOperation protocol', () => {

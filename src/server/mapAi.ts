@@ -490,9 +490,13 @@ export function normalizeMapSuggestion(
     : targetVisualZoneId
     ? scopeMapOperationsToVisualZone(operations, map, targetVisualZoneId)
     : operations;
-  if (scopedOperations.length === 0) throw new Error('empty_map_suggestion');
+  // Refine responses can become empty when every referenced object was saved,
+  // removed, or replaced while the request was running. Let the agent's
+  // existing no-spatial-plan retry ask for a fresh delta instead of failing
+  // with an opaque stale-reference error.
+  if (scopedOperations.length === 0 && (mode !== 'refine' || baseTerrainOnly)) throw new Error('empty_map_suggestion');
 
-  applyMapOperations(map, scopedOperations);
+  if (scopedOperations.length > 0) applyMapOperations(map, scopedOperations);
   return {
     summary: cleanText(input.summary, 'AI 地图建议', 200),
     operations: scopedOperations,
@@ -743,7 +747,9 @@ function normalizeObjectRefineOperations(
         : map.objects.filter((object) => assetId && object.assetId === assetId))
         .filter((object) => !removed.has(object.id))
         .sort((a, b) => a.id.localeCompare(b.id));
-      if (candidates.length === 0) throw new Error('unknown_object_refine_target');
+      // A long-running refine may finish after the user has saved an earlier
+      // round. Ignore stale model references and keep any still-valid edits.
+      if (candidates.length === 0) continue;
       const count = Math.min(candidates.length, Math.max(1, Math.floor(optionalNumber(input.count, explicitIds.length || 1))));
       const selected = selectDeterministic(candidates, count, optionalNumber(input.seed, 1));
       for (const object of selected) {
@@ -758,9 +764,7 @@ function normalizeObjectRefineOperations(
       const input = item as Record<string, unknown>;
       const objectId = typeof input.objectId === 'string' ? input.objectId : '';
       const object = objectsById.get(objectId);
-      if (!object || operations.some((operation) => operation.type === 'object.remove' && operation.objectId === objectId)) {
-        throw new Error('unknown_object_refine_target');
-      }
+      if (!object || operations.some((operation) => operation.type === 'object.remove' && operation.objectId === objectId)) continue;
       const position = [...object.transform.position] as Vec3;
       if (input.x !== undefined) position[0] = clamp(requiredNumber(input.x, 'invalid_object_refine_plan'), bounds.minX, bounds.maxX);
       if (input.z !== undefined) position[2] = clamp(requiredNumber(input.z, 'invalid_object_refine_plan'), bounds.minZ, bounds.maxZ);
@@ -1165,11 +1169,14 @@ function finiteNumber(value: unknown): number | null {
 }
 
 function normalizeSpawnOperation(value: unknown, map: EditableMap): MapOperation | null {
-  if (!value || typeof value !== 'object') return null;
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
   const input = value as Record<string, unknown>;
+  const requestedX = finiteNumber(input.x);
+  const requestedZ = finiteNumber(input.z);
+  if (requestedX === null || requestedZ === null) return null;
   const bounds = getMapBounds(map);
-  const x = clamp(requiredNumber(input.x, 'invalid_spawn_plan'), bounds.minX, bounds.maxX);
-  const z = clamp(requiredNumber(input.z, 'invalid_spawn_plan'), bounds.minZ, bounds.maxZ);
+  const x = clamp(requestedX, bounds.minX, bounds.maxX);
+  const z = clamp(requestedZ, bounds.minZ, bounds.maxZ);
   const [safeX, safeZ] = findSafeSpawnPosition(map, x, z);
   const point: Vec3 = [safeX, sampleTerrainHeight(map, safeX, safeZ), safeZ];
   return {
@@ -1238,6 +1245,7 @@ function buildSystemPrompt(
     ? [
         'This is a refinement pass over the current map. The refinement rules below replace the earlier generate-only restriction on editing existing content.',
         'Preserve everything the user did not ask to change. Prefer small delta operations instead of rebuilding the scene.',
+        'Keep spawn null unless the user explicitly asks to move the existing spawn point.',
         'To reduce repeated objects, use objectRemovals: [{"assetId":"existing asset id","count":3,"seed":1}]. You may instead provide exact objectIds.',
         'To move, rotate, or scale an existing object, use objectUpdates: [{"objectId":"existing object id","x":0,"z":0,"rotationYDeg":0,"scale":1}].',
         'To adjust water, use waterUpdates: [{"waterId":"existing water id","level":0.2,"depth":1.5,"width":2,"shorelineSmoothness":0.85,"shorelineIrregularity":0.16,"seed":7}]. River updates may also include levels matching the existing centerline point count. To delete water, use waterRemovals: ["existing water id"].',
