@@ -26,6 +26,7 @@ import {
 import type { RenderScheme } from '../shared/renderScheme';
 import type { RenderPlan } from '../shared/renderPlan';
 import { runMapAgent } from './mapAi';
+import { reviewIndoorMapVisual } from './indoorVisualReview';
 import { planMapComposition } from './mapCompositionWorkflow';
 import { generateMapLayoutSuggestion } from './mapLayoutAi';
 import { generateMapAssetWithRetry } from './mapAssetGenerationRetry';
@@ -337,6 +338,41 @@ async function handleEditorMaps(req: Req, res: Res, store: MapStore, parts: stri
     }
     const updated = retuneMapStitchSeam(map, firstSource, secondSource, seamId, body);
     sendJson(res, 200, { map: await store.replaceMap(mapId, updated) });
+    return;
+  }
+
+  if (parts[4] === 'visual-review' && req.method === 'POST' && parts.length === 5) {
+    const body = await readJson<{
+      imageDataUrl?: string;
+      provider?: ChatProvider;
+      baseOperations?: MapOperation[];
+    }>(req);
+    const provider = body.provider ?? 'gpt';
+    const option = CHAT_PROVIDER_OPTIONS.find((item) => item.key === provider);
+    if (!option || option.disabled) throw new HttpError(400, 'provider_unavailable');
+    if (!body.imageDataUrl) throw new HttpError(400, 'missing_indoor_review_image');
+    const controller = new AbortController();
+    const abort = () => controller.abort();
+    const abortIfOpen = () => {
+      if (!res.writableEnded) abort();
+    };
+    req.once('aborted', abort);
+    res.once('close', abortIfOpen);
+    try {
+      const [map, assets] = await Promise.all([store.loadMap(mapId), store.listAssets()]);
+      const mapWithAssets = { ...map, assets: dedupeAssets([...assets, ...(map.assets ?? [])]) };
+      const planningMap = Array.isArray(body.baseOperations) && body.baseOperations.length > 0
+        ? applyMapOperations(mapWithAssets, body.baseOperations)
+        : mapWithAssets;
+      const review = await reviewIndoorMapVisual(planningMap, body.imageDataUrl, {
+        provider,
+        signal: controller.signal
+      });
+      sendJson(res, 200, { review });
+    } finally {
+      req.off('aborted', abort);
+      res.off('close', abortIfOpen);
+    }
     return;
   }
 

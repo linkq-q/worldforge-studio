@@ -26,8 +26,12 @@ export interface ParsedSseResult {
 
 export interface ChatMessage {
   role: 'system' | 'user' | 'assistant';
-  content: string;
+  content: string | readonly ChatMessageContentPart[];
 }
+
+export type ChatMessageContentPart =
+  | { type: 'text'; text: string }
+  | { type: 'image_url'; image_url: { url: string; detail?: 'low' | 'high' | 'auto' } };
 
 export interface ChatApiOptions {
   apiBase?: string;
