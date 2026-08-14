@@ -343,4 +343,175 @@ describe('map lint and deterministic repair', () => {
       expect.objectContaining({ code: 'object.too-small', repaired: true })
     ]));
   });
+
+  it('reports insufficient night lighting coverage for an unlit indoor room', () => {
+    const map = createEmptyMap('unlit room', 'unlit-room', [12, 3, 9], 'voxel', 'indoor', [12, 3, 9]);
+
+    expect(lintMap(map).issues).toEqual(expect.arrayContaining([
+      expect.objectContaining({ code: 'interior.light-coverage', repaired: false })
+    ]));
+  });
+
+  it('repairs surface palettes that drift far outside the global indoor palette', () => {
+    const map = applyMapOperations(
+      createEmptyMap('styled room', 'styled-room', [10, 3, 8], 'voxel', 'indoor', [10, 3, 8]),
+      [{ type: 'interior.art-direction.set', artDirection: {
+        summary: 'warm red room', palette: ['#7f3028', '#ead2b5'],
+        surfaces: { floor: { recipe: 'wood.plank', palette: ['#0000ff', '#1010ee'] } } as never
+      } }]
+    );
+
+    const lint = lintMap(map);
+    const repaired = applyMapOperations(map, lint.repairOperations);
+
+    expect(lint.issues).toEqual(expect.arrayContaining([
+      expect.objectContaining({ code: 'interior.style-drift', repaired: true })
+    ]));
+    expect(repaired.interiorArtDirection?.surfaces.floor.palette).toEqual(repaired.interiorArtDirection?.palette);
+  });
+
+  it('shrinks oversized rugs and room signs to semantic room scale', () => {
+    const rugModel = { nodes: [{ id: 'rug', transform: { pos: [0, 0.07, 0] }, mesh: { type: 'box', params: { width: 2.4, height: 0.14, depth: 1.6 } } }] };
+    const signModel = { nodes: [{ id: 'sign', transform: { pos: [0, 0.17, 0] }, mesh: { type: 'box', params: { width: 0.72, height: 0.34, depth: 0.08 } } }] };
+    const rugAsset = { ...asset, id: 'rug', name: 'Reading rug', tags: ['rug', 'floor-textile'], sizeClass: 'medium', modelJson: rugModel, colliderPlan: buildModelColliderPlan(rugModel) } satisfies MapAsset;
+    const signAsset = { ...asset, id: 'sign', name: 'Dorm room sign', tags: ['room-number', 'wall'], sizeClass: 'small', modelJson: signModel, colliderPlan: buildModelColliderPlan(signModel) } satisfies MapAsset;
+    const map = createEmptyMap('room', 'oversize-room', [15, 5, 8], 'voxel', 'indoor', [15, 5, 8]);
+    map.assets = [rugAsset, signAsset];
+    const rug = createMapObject('Reading rug', rugAsset.id);
+    rug.id = 'rug'; rug.transform.scale = [10, 10, 10];
+    const sign = createMapObject('Dorm room sign', signAsset.id);
+    sign.id = 'sign'; sign.transform.position = [0, 0, -3.8]; sign.transform.scale = [20, 3, 20];
+    map.objects = [rug, sign];
+
+    const lint = lintMap(map);
+    const repaired = applyMapOperations(map, lint.repairOperations);
+    const rugBounds = getMapObjectAabbs(repaired).filter((item) => item.objectId === 'rug');
+    const signBounds = getMapObjectAabbs(repaired).filter((item) => item.objectId === 'sign');
+    const extent = (boxes: typeof rugBounds, axis: 0 | 1 | 2) => Math.max(...boxes.map((box) => box.max[axis])) - Math.min(...boxes.map((box) => box.min[axis]));
+
+    expect(extent(rugBounds, 0)).toBeLessThanOrEqual(map.room!.size[0] * 0.72 + 0.01);
+    expect(extent(rugBounds, 1)).toBeLessThanOrEqual(map.playerHeight * 0.09 + 0.01);
+    expect(extent(signBounds, 0)).toBeLessThanOrEqual(map.playerHeight * 0.9 + 0.01);
+    expect(lint.issues).toEqual(expect.arrayContaining([expect.objectContaining({ code: 'object.scale-mismatch', repaired: true })]));
+  });
+
+  it('removes a second mattress-sized bed assembly supported on a complete bed', () => {
+    const bedModel = { nodes: [{ id: 'bed', transform: { pos: [0, 0.5, 0] }, mesh: { type: 'box', params: { width: 2, height: 1, depth: 3 } } }] };
+    const linenModel = { nodes: [{ id: 'linen', transform: { pos: [0, 0.3, 0] }, mesh: { type: 'box', params: { width: 1.9, height: 0.6, depth: 2.8 } } }] };
+    const bedAsset = { ...asset, id: 'bed', name: 'Platform bed', tags: ['bed'], sizeClass: 'large', modelJson: bedModel, colliderPlan: buildModelColliderPlan(bedModel) } satisfies MapAsset;
+    const linenAsset = { ...asset, id: 'linen', name: 'Bed linen set', tags: ['bedding', 'bed'], sizeClass: 'medium', modelJson: linenModel, colliderPlan: buildModelColliderPlan(linenModel) } satisfies MapAsset;
+    const map = createEmptyMap('bedroom', 'bed-support-room', [10, 3, 8], 'voxel', 'indoor', [10, 3, 8]);
+    map.assets = [bedAsset, linenAsset];
+    const bed = createMapObject('Bed', bedAsset.id); bed.id = 'bed';
+    const linen = createMapObject('Bed linen set', linenAsset.id); linen.id = 'linen'; linen.parentId = bed.id;
+    map.objects = [bed, linen];
+
+    const lint = lintMap(map);
+    const repaired = applyMapOperations(map, lint.repairOperations);
+
+    expect(repaired.objects.map((object) => object.id)).toEqual(['bed']);
+    expect(lint.issues).toEqual(expect.arrayContaining([expect.objectContaining({ code: 'object.invalid-support', repaired: true })]));
+  });
+
+  it('moves furniture out of an openable cabinet front clearance', () => {
+    const cabinetModel = { nodes: [{ id: 'cabinet', transform: { pos: [0, 1, 0] }, mesh: { type: 'box', params: { width: 1.6, height: 2, depth: 0.6 } } }] };
+    const chairModel = { nodes: [{ id: 'chair', transform: { pos: [0, 0.5, 0] }, mesh: { type: 'box', params: { width: 0.8, height: 1, depth: 0.8 } } }] };
+    const cabinetAsset = { ...asset, id: 'cabinet', name: 'Wardrobe', tags: ['wardrobe', 'openable-front'], sizeClass: 'large', modelJson: cabinetModel, colliderPlan: buildModelColliderPlan(cabinetModel) } satisfies MapAsset;
+    const chairAsset = { ...asset, id: 'chair-clearance', name: 'Chair', tags: ['chair'], sizeClass: 'medium', modelJson: chairModel, colliderPlan: buildModelColliderPlan(chairModel) } satisfies MapAsset;
+    const map = createEmptyMap('bedroom', 'cabinet-clearance-room', [10, 3, 8], 'voxel', 'indoor', [10, 3, 8]);
+    map.assets = [cabinetAsset, chairAsset];
+    const cabinet = createMapObject('Wardrobe', cabinetAsset.id); cabinet.id = 'cabinet'; cabinet.transform.position = [0, 0, -3.5];
+    const chair = createMapObject('Chair', chairAsset.id); chair.id = 'chair'; chair.transform.position = [0, 0, -2.35];
+    map.objects = [cabinet, chair];
+
+    const lint = lintMap(map);
+    const repaired = applyMapOperations(map, lint.repairOperations);
+
+    expect(repaired.objects.find((object) => object.id === 'chair')?.transform.position).not.toEqual(chair.transform.position);
+    expect(lint.issues).toEqual(expect.arrayContaining([expect.objectContaining({ code: 'interior.operational-clearance', repaired: true })]));
+  });
+
+  it('moves overlapping indoor floor furniture to a free room-edge position', () => {
+    const chairModel = {
+      nodes: [{ id: 'chair', transform: { pos: [0, 0.5, 0] }, mesh: { type: 'box', params: { width: 1, height: 1, depth: 1 } } }]
+    };
+    const chairAsset = {
+      ...asset,
+      id: 'overlap-chair',
+      name: 'Dining chair',
+      tags: ['chair', 'furniture'],
+      modelJson: chairModel,
+      colliderPlan: buildModelColliderPlan(chairModel)
+    } satisfies MapAsset;
+    const map = createEmptyMap('dining room', 'overlap-room', [10, 3, 8], 'voxel', 'indoor', [10, 3, 8]);
+    map.assets = [chairAsset];
+    const first = createMapObject('Chair A', chairAsset.id);
+    first.id = 'chair-a';
+    first.transform.position = [0, 0, 0];
+    const second = createMapObject('Chair B', chairAsset.id);
+    second.id = 'chair-b';
+    second.transform.position = [0.45, 0, 0];
+    map.objects = [first, second];
+
+    const lint = lintMap(map);
+    const repaired = applyMapOperations(map, lint.repairOperations);
+
+    expect(lint.issues).toEqual(expect.arrayContaining([
+      expect.objectContaining({ code: 'object.overlap', repaired: true })
+    ]));
+    expect(repaired.objects.find((object) => object.id === 'chair-b')?.transform.position).not.toEqual(second.transform.position);
+    expect(lintMap(repaired).issues).not.toEqual(expect.arrayContaining([
+      expect.objectContaining({ code: 'object.overlap' })
+    ]));
+  });
+
+  it('keeps intentional rug-under-furniture overlap', () => {
+    const rugModel = {
+      nodes: [{ id: 'rug', transform: { pos: [0, 0.03, 0] }, mesh: { type: 'box', params: { width: 3, height: 0.06, depth: 2 } } }]
+    };
+    const tableModel = {
+      nodes: [{ id: 'table', transform: { pos: [0, 0.5, 0] }, mesh: { type: 'box', params: { width: 1.4, height: 1, depth: 1 } } }]
+    };
+    const rugAsset = { ...asset, id: 'floor-rug', name: 'Area rug', tags: ['rug', 'floor-textile'], modelJson: rugModel, colliderPlan: buildModelColliderPlan(rugModel) } satisfies MapAsset;
+    const tableAsset = { ...asset, id: 'rug-table', name: 'Coffee table', tags: ['table', 'furniture'], modelJson: tableModel, colliderPlan: buildModelColliderPlan(tableModel) } satisfies MapAsset;
+    const map = createEmptyMap('living room', 'rug-overlap-room', [10, 3, 8], 'voxel', 'indoor', [10, 3, 8]);
+    map.assets = [rugAsset, tableAsset];
+    const rug = createMapObject('Area rug', rugAsset.id); rug.id = 'rug';
+    const table = createMapObject('Coffee table', tableAsset.id); table.id = 'table';
+    map.objects = [rug, table];
+
+    const lint = lintMap(map);
+
+    expect(lint.issues).not.toEqual(expect.arrayContaining([
+      expect.objectContaining({ code: 'object.overlap' })
+    ]));
+    const rugPositions = lint.repairOperations.flatMap((operation) => (
+      operation.type === 'object.update' && operation.objectId === 'rug' && operation.patch.transform?.position
+        ? [operation.patch.transform.position]
+        : []
+    ));
+    expect(rugPositions).toEqual([[0, 0, 0]]);
+  });
+
+  it('keeps supported child objects on their parent surface', () => {
+    const deskModel = {
+      nodes: [{ id: 'desk', transform: { pos: [0, 0.5, 0] }, mesh: { type: 'box', params: { width: 2, height: 1, depth: 1 } } }]
+    };
+    const lampModel = {
+      nodes: [{ id: 'lamp', transform: { pos: [0, 0.3, 0] }, mesh: { type: 'box', params: { width: 0.4, height: 0.6, depth: 0.4 } } }]
+    };
+    const deskAsset = { ...asset, id: 'desk', name: 'Desk', tags: ['desk', 'furniture'], modelJson: deskModel, colliderPlan: buildModelColliderPlan(deskModel) } satisfies MapAsset;
+    const lampAsset = { ...asset, id: 'desk-lamp', name: 'Desk lamp', tags: ['lamp', 'decor'], modelJson: lampModel, colliderPlan: buildModelColliderPlan(lampModel) } satisfies MapAsset;
+    const map = createEmptyMap('study', 'supported-overlap-room', [10, 3, 8], 'voxel', 'indoor', [10, 3, 8]);
+    map.assets = [deskAsset, lampAsset];
+    const desk = createMapObject('Desk', deskAsset.id); desk.id = 'desk';
+    const lamp = createMapObject('Desk lamp', lampAsset.id); lamp.id = 'lamp'; lamp.parentId = desk.id; lamp.transform.position = [0, 1, 0];
+    map.objects = [desk, lamp];
+
+    const lint = lintMap(map);
+
+    expect(lint.issues).not.toEqual(expect.arrayContaining([
+      expect.objectContaining({ code: 'object.overlap' })
+    ]));
+  });
 });

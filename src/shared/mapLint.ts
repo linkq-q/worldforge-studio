@@ -11,6 +11,7 @@ import {
 } from './map';
 import { assetFootprintRadius } from './mapAssetMetadata';
 import { indoorSemanticDimensions, isCeilingMountedSemantic, isElevatedWallSemantic } from './indoorScale';
+import { evaluateIndoorLightCoverage } from './indoorLighting';
 import { applyMapOperations, type MapOperation } from './mapOperations';
 import { findSafeSpawnPosition, isSpawnPositionSafe } from './mapSpawnSafety';
 import { isPointInsideWaterBody, waterSurfaceLevelAt } from './mapWater';
@@ -22,7 +23,8 @@ export interface MapLintIssue {
     | 'object.above-ceiling' | 'object.too-small' | 'object.scale-mismatch' | 'object.overlap'
     | 'object.wall-mounted'
     | 'water.exposed-terrain' | 'scene.sparse' | 'room.path-blocked' | 'asset.unplaced'
-    | 'asset.minimum-degraded';
+    | 'asset.minimum-degraded' | 'interior.light-coverage' | 'interior.style-drift'
+    | 'interior.operational-clearance' | 'object.invalid-support';
   severity: MapLintSeverity;
   message: string;
   objectIds?: string[];
@@ -38,13 +40,18 @@ export function lintMap(map: EditableMap): MapLintResult {
   const issues: MapLintIssue[] = [];
   const repairOperations: MapOperation[] = [];
   const removedIds = findExactDuplicates(map, issues, repairOperations);
+  lintInvalidSupports(map, removedIds, issues, repairOperations);
   lintObjectPlacement(map, removedIds, issues, repairOperations);
   let workingMap = repairOperations.length > 0 ? applyMapOperations(map, repairOperations) : map;
+  lintOverlaps(workingMap, removedIds, issues, repairOperations);
+  workingMap = repairOperations.length > 0 ? applyMapOperations(map, repairOperations) : map;
   lintRoomPaths(workingMap, issues, repairOperations);
+  workingMap = repairOperations.length > 0 ? applyMapOperations(map, repairOperations) : map;
+  lintOperationalClearance(workingMap, issues, repairOperations);
   workingMap = repairOperations.length > 0 ? applyMapOperations(map, repairOperations) : map;
   lintSpawn(workingMap, issues, repairOperations);
   lintWaterExposure(map, issues, repairOperations);
-  lintOverlaps(workingMap, removedIds, issues);
+  lintInteriorQuality(workingMap, issues, repairOperations);
   if (map.objects.length < Math.max(2, Math.floor(map.box.size[0] * map.box.size[2] / 3000))) {
     issues.push({
       code: 'scene.sparse',
@@ -171,7 +178,9 @@ function lintObjectPlacement(
     if (room && currentBounds) {
       const ceilingY = room.position[1] + room.size[1];
       const currentHeight = Math.max(0.001, currentBounds.max[1] - currentBounds.min[1]);
-      const target = indoorSemanticDimensions(map, semantic);
+      // Prompts include the global room art direction, so identity-sensitive
+      // scale rules must use the asset's own name/tags only.
+      const target = indoorSemanticDimensions(map, mountSemantic);
       const currentWidth = Math.max(0.001, currentBounds.max[0] - currentBounds.min[0]);
       const currentDepth = Math.max(0.001, currentBounds.max[2] - currentBounds.min[2]);
       let verticalFit = 1;
@@ -185,6 +194,19 @@ function lintObjectPlacement(
       let horizontalFit = verticalFit;
       if (!elevated && (widthFit > 1.08 || depthFit > 1.08)) {
         horizontalFit = Math.max(horizontalFit, widthFit, depthFit);
+        scaleMismatch = true;
+      }
+      const genericMaximum = (asset?.sizeClass === 'small' ? 1.6 : asset?.sizeClass === 'medium' ? 3.2 : 5)
+        * getMapPlayerMetrics(map).height;
+      const maximumFit = Math.min(
+        genericMaximum / Math.max(currentWidth, currentHeight, currentDepth),
+        target.maximumWidth === null ? Number.POSITIVE_INFINITY : target.maximumWidth / currentWidth,
+        target.maximumDepth === null ? Number.POSITIVE_INFINITY : target.maximumDepth / currentDepth,
+        target.maximumHeight === null ? Number.POSITIVE_INFINITY : target.maximumHeight / currentHeight
+      );
+      if (maximumFit < 0.98) {
+        horizontalFit = Math.min(horizontalFit, maximumFit);
+        verticalFit = Math.min(verticalFit, maximumFit);
         scaleMismatch = true;
       }
       const ceilingFit = Math.max(0.05, (room.size[1] - 0.02) / currentHeight);
@@ -206,6 +228,26 @@ function lintObjectPlacement(
       } else if (aboveCeiling) {
         const centerOffset = ((currentBounds.min[1] + currentBounds.max[1]) / 2 - position[1]) * verticalFit;
         nextY = floorY + room.size[1] / 2 - centerOffset;
+      }
+      if (wallMounted && currentBounds) {
+        const scaleX = nextScale[0] / Math.max(0.001, object.transform.scale[0]);
+        const scaleZ = nextScale[2] / Math.max(0.001, object.transform.scale[2]);
+        const scaled = {
+          minX: position[0] + (currentBounds.min[0] - position[0]) * scaleX,
+          maxX: position[0] + (currentBounds.max[0] - position[0]) * scaleX,
+          minZ: position[2] + (currentBounds.min[2] - position[2]) * scaleZ,
+          maxZ: position[2] + (currentBounds.max[2] - position[2]) * scaleZ
+        };
+        const distances = [
+          { wall: 'west', distance: Math.abs(scaled.minX - minX) },
+          { wall: 'east', distance: Math.abs(maxX - scaled.maxX) },
+          { wall: 'north', distance: Math.abs(scaled.minZ - minZ) },
+          { wall: 'south', distance: Math.abs(maxZ - scaled.maxZ) }
+        ].sort((left, right) => left.distance - right.distance);
+        if (distances[0].wall === 'west') nextX = position[0] + minX - scaled.minX;
+        if (distances[0].wall === 'east') nextX = position[0] + maxX - scaled.maxX;
+        if (distances[0].wall === 'north') nextZ = position[2] + minZ - scaled.minZ;
+        if (distances[0].wall === 'south') nextZ = position[2] + maxZ - scaled.maxZ;
       }
     }
     const outOfBounds = Math.abs(nextX - position[0]) > 0.001 || Math.abs(nextZ - position[2]) > 0.001;
@@ -241,6 +283,193 @@ function lintObjectPlacement(
       objectIds: [object.id], repaired: true
     });
   }
+}
+
+function lintInvalidSupports(
+  map: EditableMap,
+  removed: Set<string>,
+  issues: MapLintIssue[],
+  repairs: MapOperation[]
+): void {
+  const assets = new Map((map.assets ?? []).map((asset) => [asset.id, asset]));
+  const objects = new Map(map.objects.map((object) => [object.id, object]));
+  for (const child of map.objects) {
+    const parent = child.parentId ? objects.get(child.parentId) : undefined;
+    const childAsset = child.assetId ? assets.get(child.assetId) : undefined;
+    const parentAsset = parent?.assetId ? assets.get(parent.assetId) : undefined;
+    if (!parent || !childAsset || !parentAsset) continue;
+    const childSemantic = `${childAsset.name} ${childAsset.prompt} ${(childAsset.tags ?? []).join(' ')}`;
+    const parentSemantic = `${parentAsset.name} ${parentAsset.prompt} ${(parentAsset.tags ?? []).join(' ')}`;
+    const parentIsBed = /\bbed\b|mattress|床铺|床垫|床架/i.test(parentSemantic);
+    const childTags = new Set((childAsset.tags ?? []).map((tag) => tag.toLowerCase()));
+    const explicitBedAssembly = childTags.has('bed') || childTags.has('mattress') || childTags.has('bedding');
+    const looseBedDecor = !explicitBedAssembly && /pillow|small folded throw|cushion|枕|折叠毯|抱枕/i.test(childSemantic);
+    const childIsBedAssembly = /\bbed\b|mattress|bedding|bed[-_ ]?linen|床品|床铺|床垫|床架/i.test(childSemantic);
+    if (!parentIsBed || looseBedDecor || !childIsBedAssembly) continue;
+    removed.add(child.id);
+    repairs.push({ type: 'object.remove', objectId: child.id });
+    issues.push({
+      code: 'object.invalid-support', severity: 'warning',
+      message: '已移除叠放在床上的床垫或整套床品；床只承载枕头、折叠毯等小件。',
+      objectIds: [parent.id, child.id], repaired: true
+    });
+  }
+}
+
+function lintInteriorQuality(map: EditableMap, issues: MapLintIssue[], repairs: MapOperation[]): void {
+  if (map.sceneMode !== 'indoor' || !map.room) return;
+  const coverage = evaluateIndoorLightCoverage(map);
+  if (coverage.ratio < 0.72) {
+    issues.push({
+      code: 'interior.light-coverage',
+      severity: 'warning',
+      message: coverage.practicalLightCount === 0
+        ? '室内没有可用的实用灯光；生成规划应补充带光源元数据的顶灯或台灯。'
+        : `夜间实用灯光仅覆盖约 ${Math.round(coverage.ratio * 100)}% 的房间采样点，建议增加或重新分布顶灯。`,
+      repaired: false
+    });
+  }
+  const art = map.interiorArtDirection;
+  if (!art) return;
+  const surfaces = Object.entries(art.surfaces).filter(([, surface]) => (
+    surface.palette.every((color) => nearestPaletteDistance(color, art.palette) > 0.5)
+  ));
+  const rugs = art.rugs.filter((rug) => rug.palette.every((color) => nearestPaletteDistance(color, art.palette) > 0.5));
+  if (surfaces.length === 0 && rugs.length === 0) return;
+  const repairedArt = {
+    ...art,
+    surfaces: Object.fromEntries(Object.entries(art.surfaces).map(([name, surface]) => [
+      name,
+      surfaces.some(([surfaceName]) => surfaceName === name) ? { ...surface, palette: art.palette } : surface
+    ])) as typeof art.surfaces,
+    rugs: art.rugs.map((rug) => rugs.includes(rug) ? { ...rug, palette: art.palette } : rug)
+  };
+  repairs.push({ type: 'interior.art-direction.set', artDirection: repairedArt });
+  issues.push({
+    code: 'interior.style-drift',
+    severity: 'warning',
+    message: '已将脱离全局室内色板的表面或地毯颜色收束回统一美术方向。',
+    repaired: true
+  });
+}
+
+function lintOperationalClearance(map: EditableMap, issues: MapLintIssue[], repairs: MapOperation[]): void {
+  const room = map.room;
+  if (!room) return;
+  const { radius, height } = getMapPlayerMetrics(map);
+  const assets = new Map((map.assets ?? []).map((asset) => [asset.id, asset]));
+  const boundsById = aggregateObjectBounds(getMapObjectAabbs(map));
+  const protectedIds = new Set<string>();
+  const clearances: Array<{ ownerId: string; bounds: MapObjectAabb }> = room.openings
+    .filter((opening) => opening.kind === 'door')
+    .map((opening) => {
+      const linked = map.objects.find((object) => object.roomOpeningId === opening.id);
+      if (linked) protectedIds.add(linked.id);
+      const depth = Math.max(1.1, height * 0.72);
+      const halfWidth = opening.width / 2 + radius + 0.12;
+      const [x, z] = roomDoorInsidePoint(room, opening, radius);
+      const northSouth = opening.wall === 'north' || opening.wall === 'south';
+      return {
+        ownerId: linked?.id ?? `opening:${opening.id}`,
+        bounds: {
+          objectId: linked?.id ?? `opening:${opening.id}`,
+          min: [x - (northSouth ? halfWidth : depth / 2), room.position[1], z - (northSouth ? depth / 2 : halfWidth)],
+          max: [x + (northSouth ? halfWidth : depth / 2), room.position[1] + height, z + (northSouth ? depth / 2 : halfWidth)]
+        }
+      };
+    });
+  for (const object of map.objects) {
+    const asset = object.assetId ? assets.get(object.assetId) : undefined;
+    const bounds = boundsById.get(object.id);
+    if (!asset || !bounds || object.parentId || object.roomOpeningId) continue;
+    const semantic = `${asset.name} ${asset.prompt} ${(asset.tags ?? []).join(' ')}`;
+    if (!/openable[-_ ]?front|cabinet|wardrobe|dresser|drawer|refrigerator|fridge|oven|dishwasher|washing machine|柜|衣橱|冰箱|烤箱|洗碗机|洗衣机/i.test(semantic)
+      || /open shelf|bookshelf|bookcase|开放架|书架/i.test(semantic)) continue;
+    protectedIds.add(object.id);
+    clearances.push({ ownerId: object.id, bounds: frontClearanceBounds(room, object.transform.rotation[1], bounds, radius, height) });
+  }
+
+  const objectsWithChildren = new Set(map.objects.flatMap((object) => object.parentId ? [object.parentId] : []));
+  const relocated = new Set<string>();
+  let obstacles = [...boundsById.values()];
+  for (const clearance of clearances) {
+    const blockerBounds = obstacles.find((bounds) => (
+      bounds.objectId !== clearance.ownerId
+      && !protectedIds.has(bounds.objectId)
+      && !relocated.has(bounds.objectId)
+      && boundsOverlapWithClearance(bounds, clearance.bounds, 0)
+    ));
+    if (!blockerBounds) continue;
+    const blocker = map.objects.find((object) => object.id === blockerBounds.objectId);
+    const movable = blocker && !blocker.locked && !blocker.parentId && !blocker.roomOpeningId && !objectsWithChildren.has(blocker.id);
+    let destination: [number, number, number] | null = null;
+    if (movable) {
+      for (const position of roomEdgePositions(room, blocker.transform.position, blockerBounds, radius)) {
+        const moved = translateBounds(blockerBounds, position[0] - blocker.transform.position[0], position[2] - blocker.transform.position[2]);
+        if (obstacles.some((other) => other.objectId !== blocker.id && boundsOverlapWithClearance(moved, other, 0.12))) continue;
+        if (clearances.some((area) => area.ownerId !== blocker.id && boundsOverlapWithClearance(moved, area.bounds, 0))) continue;
+        destination = position;
+        obstacles = obstacles.map((item) => item.objectId === blocker.id ? moved : item);
+        break;
+      }
+    }
+    if (destination && blocker) {
+      relocated.add(blocker.id);
+      repairs.push({ type: 'object.update', objectId: blocker.id, patch: { transform: { position: destination } } });
+    }
+    issues.push({
+      code: 'interior.operational-clearance', severity: 'warning',
+      message: destination
+        ? '已将遮挡门或柜体开启面的物体移到房间边缘，恢复操作净空。'
+        : '门或柜体开启面前存在遮挡，当前没有可安全自动搬移的位置。',
+      objectIds: [clearance.ownerId, blockerBounds.objectId], repaired: Boolean(destination)
+    });
+  }
+}
+
+function frontClearanceBounds(
+  room: NonNullable<EditableMap['room']>,
+  yaw: number,
+  bounds: MapObjectAabb,
+  playerRadius: number,
+  playerHeight: number
+): MapObjectAabb {
+  const centerX = (bounds.min[0] + bounds.max[0]) / 2;
+  const centerZ = (bounds.min[2] + bounds.max[2]) / 2;
+  const distances = [
+    { direction: [1, 0] as const, value: Math.abs(bounds.min[0] - (room.position[0] - room.size[0] / 2)) },
+    { direction: [-1, 0] as const, value: Math.abs(bounds.max[0] - (room.position[0] + room.size[0] / 2)) },
+    { direction: [0, 1] as const, value: Math.abs(bounds.min[2] - (room.position[2] - room.size[2] / 2)) },
+    { direction: [0, -1] as const, value: Math.abs(bounds.max[2] - (room.position[2] + room.size[2] / 2)) }
+  ].sort((left, right) => left.value - right.value);
+  const nearWall = distances[0].value < Math.max(0.7, room.wallThickness + 0.35);
+  const direction = nearWall ? distances[0].direction : [Math.sin(yaw), Math.cos(yaw)] as const;
+  const alongX = Math.abs(direction[0]) > Math.abs(direction[1]);
+  const depth = Math.max(0.9, playerHeight * 0.65);
+  const halfWidth = (alongX ? bounds.max[2] - bounds.min[2] : bounds.max[0] - bounds.min[0]) / 2 + playerRadius;
+  const edgeX = centerX + direction[0] * ((bounds.max[0] - bounds.min[0]) / 2 + depth / 2);
+  const edgeZ = centerZ + direction[1] * ((bounds.max[2] - bounds.min[2]) / 2 + depth / 2);
+  return {
+    objectId: bounds.objectId,
+    min: [edgeX - (alongX ? depth / 2 : halfWidth), room.position[1], edgeZ - (alongX ? halfWidth : depth / 2)],
+    max: [edgeX + (alongX ? depth / 2 : halfWidth), room.position[1] + playerHeight, edgeZ + (alongX ? halfWidth : depth / 2)]
+  };
+}
+
+function nearestPaletteDistance(color: string, palette: readonly string[]): number {
+  const rgb = hexRgb(color);
+  if (!rgb || palette.length === 0) return 0;
+  return Math.min(...palette.flatMap((candidate) => {
+    const other = hexRgb(candidate);
+    return other ? [Math.hypot(rgb[0] - other[0], rgb[1] - other[1], rgb[2] - other[2]) / 441.7] : [];
+  }));
+}
+
+function hexRgb(color: string): [number, number, number] | null {
+  const match = /^#([0-9a-f]{6})$/i.exec(color);
+  if (!match) return null;
+  const value = Number.parseInt(match[1], 16);
+  return [value >> 16, value >> 8 & 255, value & 255];
 }
 
 function lintRoomPaths(map: EditableMap, issues: MapLintIssue[], repairs: MapOperation[]): void {
@@ -478,20 +707,95 @@ function lintWaterExposure(map: EditableMap, issues: MapLintIssue[], repairs: Ma
   }
 }
 
-function lintOverlaps(map: EditableMap, removedIds: Set<string>, issues: MapLintIssue[]): void {
-  const boxes = getMapObjectAabbs(map).filter((box) => !removedIds.has(box.objectId));
-  for (let left = 0; left < boxes.length; left += 1) {
-    for (let right = left + 1; right < boxes.length; right += 1) {
-      if (overlapRatio(boxes[left], boxes[right]) < 0.65) continue;
-      issues.push({
-        code: 'object.overlap',
-        severity: 'warning',
-        message: '检测到明显物体重叠；保留现状并建议在 Refine 中调整。',
-        objectIds: [boxes[left].objectId, boxes[right].objectId],
-        repaired: false
-      });
+function lintOverlaps(
+  map: EditableMap,
+  removedIds: Set<string>,
+  issues: MapLintIssue[],
+  repairs: MapOperation[]
+): void {
+  const room = map.room;
+  if (!room) return;
+  const assets = new Map((map.assets ?? []).map((asset) => [asset.id, asset]));
+  const objectsWithChildren = new Set(map.objects.flatMap((object) => object.parentId ? [object.parentId] : []));
+  const ignoredIds = new Set(map.objects.flatMap((object) => {
+    const asset = object.assetId ? assets.get(object.assetId) : undefined;
+    const semantic = [object.name, asset?.name, asset?.prompt, ...(asset?.tags ?? [])].filter(Boolean).join(' ');
+    return object.parentId
+      || object.roomOpeningId
+      || isElevatedWallSemantic(semantic)
+      || isCeilingMountedSemantic(semantic)
+      || /rug|carpet|doormat|floor[-_ ]?textile|地毯|地垫/i.test(semantic)
+      ? [object.id]
+      : [];
+  }));
+  const reportedPairs = new Set<string>();
+  let workingMap = map;
+
+  for (let pass = 0; pass < map.objects.length * 2; pass += 1) {
+    const boundsById = aggregateObjectBounds(getMapObjectAabbs(workingMap).filter((box) => !removedIds.has(box.objectId)));
+    const solidBounds = [...boundsById.values()].filter((bounds) => !ignoredIds.has(bounds.objectId));
+    let overlap: [MapObjectAabb, MapObjectAabb] | null = null;
+    for (let left = 0; left < solidBounds.length && !overlap; left += 1) {
+      for (let right = left + 1; right < solidBounds.length; right += 1) {
+        const pairKey = [solidBounds[left].objectId, solidBounds[right].objectId].sort().join(':');
+        if (reportedPairs.has(pairKey) || !isMeaningfulSolidOverlap(solidBounds[left], solidBounds[right])) continue;
+        overlap = [solidBounds[left], solidBounds[right]];
+        break;
+      }
     }
+    if (!overlap) break;
+
+    const [leftBounds, rightBounds] = overlap;
+    const pairKey = [leftBounds.objectId, rightBounds.objectId].sort().join(':');
+    reportedPairs.add(pairKey);
+    const movable = [rightBounds, leftBounds]
+      .flatMap((bounds) => {
+        const object = workingMap.objects.find((item) => item.id === bounds.objectId);
+        if (!object || object.locked || object.parentId || object.roomOpeningId || objectsWithChildren.has(object.id)) return [];
+        return [{ object, bounds, area: footprintArea(bounds) }];
+      })
+      .sort((left, right) => left.area - right.area);
+    let repair: MapOperation | null = null;
+    for (const candidate of movable) {
+      const otherBounds = solidBounds.filter((bounds) => bounds.objectId !== candidate.object.id);
+      for (const position of roomEdgePositions(room, candidate.object.transform.position, candidate.bounds, getMapPlayerMetrics(map).radius)) {
+        const moved = translateBounds(
+          candidate.bounds,
+          position[0] - candidate.object.transform.position[0],
+          position[2] - candidate.object.transform.position[2]
+        );
+        if (otherBounds.some((bounds) => boundsOverlapWithClearance(moved, bounds, 0.12))) continue;
+        repair = { type: 'object.update', objectId: candidate.object.id, patch: { transform: { position } } };
+        break;
+      }
+      if (repair) break;
+    }
+    if (repair) {
+      repairs.push(repair);
+      workingMap = applyMapOperations(workingMap, [repair]);
+    }
+    issues.push({
+      code: 'object.overlap',
+      severity: 'warning',
+      message: repair
+        ? '检测到室内实体家具重叠，已将较易移动的物体移到房间边缘空位。'
+        : '检测到室内实体家具重叠，但当前没有可安全自动搬移的位置。',
+      objectIds: [leftBounds.objectId, rightBounds.objectId],
+      repaired: Boolean(repair)
+    });
   }
+}
+
+function isMeaningfulSolidOverlap(left: MapObjectAabb, right: MapObjectAabb): boolean {
+  const height = Math.min(left.max[1], right.max[1]) - Math.max(left.min[1], right.min[1]);
+  if (height <= 0.06) return false;
+  // Keep this conservative because generated furniture colliders may enclose
+  // intentional hollow space, such as a chair tucked slightly under a table.
+  return overlapRatio(left, right) >= 0.25;
+}
+
+function footprintArea(bounds: MapObjectAabb): number {
+  return Math.max(0.0001, bounds.max[0] - bounds.min[0]) * Math.max(0.0001, bounds.max[2] - bounds.min[2]);
 }
 
 function aggregateObjectBounds(boxes: MapObjectAabb[]): Map<string, MapObjectAabb> {
