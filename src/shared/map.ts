@@ -25,6 +25,7 @@ import {
 } from './materialTagPolicy';
 import { normalizeMapVisualSemantics, type MapVisualSemantics } from './visualDirection';
 import type { AssetLibraryMetadata } from './assetLibrary';
+import { normalizeInteriorArtDirection, type InteriorArtDirection } from './interiorArtDirection';
 import {
   isPointInsidePlayableArea,
   normalizeMapLayout,
@@ -217,6 +218,7 @@ export interface EditableMap {
   playerRadius: number;
   worldScaleProfile: WorldScaleProfile;
   room: MapRoom | null;
+  interiorArtDirection: InteriorArtDirection | null;
   lighting: MapLighting;
   terrain: MapTerrain;
   grassLayers: MapGrassLayer[];
@@ -744,6 +746,9 @@ export function normalizeMap(input: Partial<EditableMap>): EditableMap {
     playerRadius,
     worldScaleProfile: normalizeWorldScaleProfile(input.worldScaleProfile),
     room: sceneMode === 'outdoor' ? null : normalizeMapRoom(input.room, boxSize),
+    interiorArtDirection: sceneMode === 'outdoor'
+      ? null
+      : normalizeInteriorArtDirection(input.interiorArtDirection, Number.isFinite(Number(input.seed)) ? Number(input.seed) : seedFromString(id)),
     lighting: normalizeLighting(input.lighting),
     terrain,
     grassLayers: normalizeGrassLayers(input.grassLayers, terrain.resolutionX, terrain.resolutionZ),

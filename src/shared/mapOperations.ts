@@ -38,6 +38,7 @@ import type { SceneAdviceFinding, SceneReviewResult } from './sceneCompositionAd
 import type { SceneOutcomeCheck } from './sceneCompositionOutcome';
 import type { MapVisualSemantics } from './visualDirection';
 import type { MapLayout } from './mapLayout';
+import { normalizeInteriorArtDirection, type InteriorArtDirection } from './interiorArtDirection';
 import {
   MAX_GRASS_LAYERS,
   applyGrassBrushInPlace,
@@ -71,6 +72,7 @@ export type MapWaterBodyPatch = Omit<Partial<MapWaterBody>, 'id'>;
 export type MapOperation =
   | { type: 'map.update'; name?: string; size?: Vec3; colors?: Partial<MapBoxColors>; playerHeight?: number; playerRadius?: number; worldScaleProfile?: WorldScaleProfile; renderPromptSuggestions?: string[]; visualSemantics?: MapVisualSemantics; layout?: MapLayout }
   | { type: 'room.set'; room: Partial<MapRoom> }
+  | { type: 'interior.art-direction.set'; artDirection: Partial<InteriorArtDirection> }
   | { type: 'terrain.set'; terrain: MapTerrain }
   | ({ type: 'terrain.generate' } & Partial<TerrainGenerationParams> & Pick<TerrainGenerationParams, 'preset'>)
   | ({ type: 'terrain.modify' } & Partial<TerrainModifierParams> & Pick<TerrainModifierParams, 'modifier' | 'region'>)
@@ -166,6 +168,11 @@ export function applyMapOperations(map: EditableMap, operations: readonly MapOpe
         if (!operation.room || typeof operation.room !== 'object') throw new Error('invalid_room');
         next.room = normalizeMapRoom(operation.room, next.box.size, next.room ?? undefined);
         next.objects.forEach((object) => placeRoomOpeningObjectInPlace(next, object));
+        break;
+      case 'interior.art-direction.set':
+        if (next.sceneMode === 'outdoor') throw new Error('interior_art_direction_requires_indoor_map');
+        next.interiorArtDirection = normalizeInteriorArtDirection(operation.artDirection, next.seed);
+        if (!next.interiorArtDirection) throw new Error('invalid_interior_art_direction');
         break;
       case 'terrain.set':
         if (!operation.terrain || typeof operation.terrain !== 'object') throw new Error('invalid_terrain');
