@@ -59,10 +59,11 @@ describe('indoor scene planning', () => {
     const familyByTag = (tag: string) => plan.assetFamilies.find((family) => family.tags.includes(tag))!;
     const layers = new Map(plan.zones[0].layers.map((layer) => [layer.familyId, layer]));
 
-    expect(plan.assetFamilies).toHaveLength(16);
+    expect(plan.assetFamilies).toHaveLength(indoorAssetTargetCount(map, 4, 16));
     expect(familyByTag('sofa')).toBeDefined();
     expect(familyByTag('refrigerator')).toBeDefined();
     expect(familyByTag('tabletop-decor')).toBeDefined();
+    expect(familyByTag('soft-furnishing')).toBeDefined();
     expect(layers.get(familyByTag('television').id)?.placement).toMatchObject({
       intent: 'supported', targetFamilyId: familyByTag('media-console').id, maxPerGroup: 1
     });
@@ -80,9 +81,9 @@ describe('indoor scene planning', () => {
     const familyByTag = (tag: string) => plan.assetFamilies.find((family) => family.tags.includes(tag));
     const layers = new Map(plan.zones[0].layers.map((layer) => [layer.familyId, layer]));
 
-    expect(familyByTag('kitchen-runner')).toBeDefined();
+    expect(familyByTag('kitchen-runner')).toBeUndefined();
     expect(familyByTag('kitchen-wall-decor')).toBeDefined();
-    expect(familyByTag('kitchen-ceiling-light')).toBeDefined();
+    expect(familyByTag('ceiling-light')).toBeDefined();
     expect(layers.get(familyByTag('kitchen-wall-decor')!.id)?.placement).toMatchObject({ intent: 'wall' });
   });
 
@@ -154,6 +155,31 @@ describe('indoor scene planning', () => {
     expect(fitted.assetFamilies).toHaveLength(4);
     expect(fitted.assetFamilies.reduce((sum, family) => sum + family.desiredVariants, 0)).toBe(4);
     expect(fitted.zones[0].layers.every((layer) => fitted.assetFamilies.some((family) => family.id === layer.familyId))).toBe(true);
+  });
+
+  it('keeps arbitrary indoor uses coherent across room sizes and seeds', () => {
+    const cases = [
+      ['cozy living room', [8, 3, 7], 11, true],
+      ['quiet bedroom', [12, 3.2, 9], 22, true],
+      ['cartoon design office', [18, 4, 12], 33, true],
+      ['orderly classroom', [20, 4.5, 14], 44, false],
+      ['compact warehouse', [24, 6, 18], 55, false]
+    ] as const;
+    for (const [prompt, size, seed, expectsRug] of cases) {
+      const map = createEmptyMap(prompt, `regression-${seed}`, [...size], 'voxel', 'indoor', [...size]);
+      map.seed = seed;
+      const first = completeIndoorScenePlan(normalizeSceneCompositionPlan(planInput(prompt, []), map), map, prompt, 4, 16);
+      const second = completeIndoorScenePlan(normalizeSceneCompositionPlan(planInput(prompt, []), map), map, prompt, 4, 16);
+
+      expect(first).toEqual(second);
+      expect(first.assetFamilies.length).toBeGreaterThanOrEqual(4);
+      expect(first.assetFamilies.length).toBeLessThanOrEqual(16);
+      expect(first.assetFamilies.some((family) => family.tags.includes('ceiling-light'))).toBe(true);
+      expect(first.assetFamilies.some((family) => family.tags.includes('area-rug'))).toBe(false);
+      expect(first.globalBrief.interiorArtDirection?.surfaces.floor).toBeDefined();
+      expect((first.globalBrief.interiorArtDirection?.rugs.length ?? 0) > 0).toBe(expectsRug);
+      expect(first.globalBrief.assetArtDirection).toContain('palette');
+    }
   });
 });
 

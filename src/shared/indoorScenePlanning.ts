@@ -39,13 +39,18 @@ export function completeIndoorScenePlan(
   if (map.sceneMode !== 'indoor' || !map.room || maximumAssets <= 0) return plan;
 
   const semantic = `${prompt} ${plan.summary} ${plan.globalBrief.spatialTheme}`;
-  const residential = /living room|family room|kitchen|apartment|small home|residential|客厅|起居室|厨房|公寓|住宅|小户型/i.test(semantic);
-  const target = residential
-    ? Math.max(0, Math.round(maximumAssets))
-    : indoorAssetTargetCount(map, minimumAssets, maximumAssets);
+  const interiorArtDirection = completeProceduralRugs(plan.globalBrief.interiorArtDirection, semantic, map.seed);
+  const decorDensity = plan.globalBrief.interiorArtDirection?.decorDensity ?? 0.62;
+  const target = indoorAssetTargetCount(map, minimumAssets, maximumAssets, decorDensity);
   const demands = indoorDemandTree(semantic);
-  const families = plan.assetFamilies.map((family) => ({ ...family, desiredVariants: 1 }));
-  const zones = plan.zones.map((zone) => ({ ...zone, layers: [...zone.layers] }));
+  const families = plan.assetFamilies
+    .filter((family) => !isProceduralSurfaceFamily(family))
+    .map((family) => ({ ...family, desiredVariants: 1 }));
+  const retainedFamilyIds = new Set(families.map((family) => family.id));
+  const zones = plan.zones.map((zone) => ({
+    ...zone,
+    layers: zone.layers.filter((layer) => retainedFamilyIds.has(layer.familyId))
+  }));
   const targetZone = zones.find((zone) => zone.id === plan.globalBrief.focalZoneId)
     ?? zones.find((zone) => zone.role !== 'negative-space')
     ?? zones[0];
@@ -92,7 +97,62 @@ export function completeIndoorScenePlan(
     zone.layers.push(fallbackFamilyLayer(family));
   }
 
-  return { ...plan, assetFamilies: families, zones };
+  return {
+    ...plan,
+    globalBrief: {
+      ...plan.globalBrief,
+      interiorArtDirection,
+      assetArtDirection: coherentAssetArtDirection(plan, interiorArtDirection)
+    },
+    assetFamilies: families,
+    zones
+  };
+}
+
+function coherentAssetArtDirection(
+  plan: SceneCompositionPlan,
+  interior: SceneCompositionPlan['globalBrief']['interiorArtDirection']
+): string {
+  if (!interior) return plan.globalBrief.assetArtDirection;
+  const parts = [
+    plan.globalBrief.assetArtDirection,
+    interior.summary,
+    interior.styleKeywords.join(', '),
+    `palette ${interior.palette.join(', ')}`,
+    interior.materialKeywords.length ? `materials ${interior.materialKeywords.join(', ')}` : ''
+  ].filter(Boolean);
+  return [...new Set(parts)].join('; ').slice(0, 420);
+}
+
+function completeProceduralRugs(
+  art: SceneCompositionPlan['globalBrief']['interiorArtDirection'],
+  semantic: string,
+  seed: number
+): SceneCompositionPlan['globalBrief']['interiorArtDirection'] {
+  if (!art || art.rugs.length > 0) return art;
+  const living = /living room|family room|bedroom|apartment|residential|客厅|起居室|卧室|公寓|住宅/i.test(semantic);
+  const kitchen = /kitchen|厨房/i.test(semantic);
+  const social = /office|restaurant|cafe|studio|办公室|餐厅|咖啡馆|工作室/i.test(semantic);
+  if (!living && !kitchen && !social) return art;
+  return {
+    ...art,
+    rugs: [{
+      id: kitchen && !living ? 'kitchen-runner' : 'focal-rug',
+      shape: kitchen && !living ? 'runner' : social && !living ? 'round' : 'rectangle',
+      center: kitchen && !living ? [0.25, 0] : [0, 0.05],
+      size: kitchen && !living ? [0.24, 0.66] : social && !living ? [0.4, 0.4] : [0.55, 0.42],
+      rotation: kitchen && !living ? 90 : 0,
+      pattern: art.styleKeywords.some((keyword) => /modern|geometric|现代|几何/i.test(keyword)) ? 'geometric' : 'border',
+      palette: art.palette,
+      seed: Math.trunc(seed + 811) >>> 0
+    }]
+  };
+}
+
+function isProceduralSurfaceFamily(family: SceneAssetFamily): boolean {
+  const tags = new Set(family.tags.map((tag) => tag.toLowerCase()));
+  return ['rug', 'area-rug', 'woven-rug', 'reading-rug', 'floor-textile', 'kitchen-runner', 'carpet', 'wallpaper', 'floor-tile', 'flooring']
+    .some((tag) => tags.has(tag));
 }
 
 function indoorDemandLight(tags: readonly string[]): { light: MapAssetLight } | Record<string, never> {
@@ -109,14 +169,16 @@ function indoorDemandLight(tags: readonly string[]): { light: MapAssetLight } | 
 export function indoorAssetTargetCount(
   map: EditableMap,
   minimumAssets: number,
-  maximumAssets: number
+  maximumAssets: number,
+  decorDensity = map.interiorArtDirection?.decorDensity ?? 0.62
 ): number {
   const maximum = Math.max(0, Math.round(maximumAssets));
   const minimum = Math.min(maximum, Math.max(0, Math.round(minimumAssets)));
   if (map.sceneMode !== 'indoor' || !map.room || maximum <= minimum) return minimum;
   const floorArea = map.room.size[0] * map.room.size[2];
   const usefulVariety = Math.round(4 + Math.sqrt(Math.max(1, floorArea)) * 0.55);
-  return Math.min(maximum, Math.max(minimum, usefulVariety));
+  const base = Math.min(maximum, Math.max(minimum, usefulVariety));
+  return Math.min(maximum, Math.round(base + (maximum - base) * Math.min(0.9, Math.max(0.25, decorDensity))));
 }
 
 function demandLayer(
@@ -212,8 +274,12 @@ function indoorDemandTree(semantic: string): IndoorAssetDemand[] {
   const common = [
     demand('door', 'Room door', 'primary room entrance', ['door', 'entry', 'wall-fixture'], /\bdoor\b|房门|门扇|入口门/i, 'medium', 0.96,
       'One complete cartoon voxel interior door model with frame and readable handle; standalone asset, no wall or room shell.', 'wall', undefined, 180, 1),
-    demand('window', 'Room window', 'daylight wall fixture', ['window', 'glass', 'wall-prop'], /\bwindow\b|窗户|窗框/i, 'medium', 0.92,
-      'One complete cartoon voxel window model with frame and transparent glass material; standalone asset, no wall.', 'wall', undefined, 90, 3)
+    ...(/windowless|sealed room|no windows|无窗|不要窗|密闭房间/i.test(semantic) ? [] : [demand('window', 'Room window', 'symmetric multi-wall daylight fixture', ['window', 'glass', 'wall-prop'], /\bwindow\b|窗户|窗框/i, 'medium', 0.92,
+      'One complete cartoon voxel window model with frame and clearly transparent glass material; standalone asset, no wall. It will be reused symmetrically across multiple room walls.', 'wall', undefined, 90, 4)]),
+    demand('ceiling-light', 'Room ceiling light', 'primary practical room illumination', ['ceiling-light', 'ceiling-mounted', 'lighting'], /ceiling light|pendant light|overhead light|顶灯|吊灯/i, 'medium', 0.91,
+      'One compact ceiling-mounted light with a broad diffuser and readable warm bulb; standalone fixture only.', 'group', undefined, 0, 4),
+    demand('window-treatment', 'Window curtains', 'soft daylight framing layer', ['curtain', 'window-treatment', 'soft-furnishing'], /curtain|drape|blind|窗帘|百叶/i, 'medium', 0.66,
+      'One tidy pair of soft curtains with a simple rail, matching the room palette; standalone window treatment.', 'supported', 'window', 0, 1)
   ];
   if (/internet cafe|cyber cafe|gaming cafe|网吧|电竞馆/i.test(semantic)) return [...common, ...internetCafeDemands()];
   if (/classroom|school|教室|课堂|学校/i.test(semantic)) return [...common, ...classroomDemands()];
@@ -246,8 +312,8 @@ function residentialDemands(semantic: string): IndoorAssetDemand[] {
     demand('coffee-table', 'Coffee table', 'reachable center surface', ['coffee-table', 'living-room', 'furniture'], /coffee table|茶几/i, 'medium', 0.94, 'One low compact coffee table with a broad usable top.', 'anchor'),
     demand('media-console', 'Media console', 'wall-side media storage', ['media-console', 'tv-stand', 'living-room', 'furniture'], /media console|tv stand|电视柜|媒体柜/i, 'medium', 0.88, 'One low media console with mixed open and closed storage.', 'wall', undefined, 180, 1),
     demand('television', 'Television', 'screen supported by the media console', ['television', 'living-room-electronics'], /television|\btv\b|电视机/i, 'medium', 0.86, 'One readable flat television on a short tabletop stand; no cabinet or wall.', 'supported', 'media-console', 0, 1),
-    demand('area-rug', 'Area rug', 'soft zone-defining floor layer', ['area-rug', 'living-room-decor'], /area rug|carpet|地毯/i, 'large', 0.72, 'One flat rectangular patterned area rug for defining a compact seating zone.', 'anchor'),
     demand('tabletop-decor', 'Coffee-table daily decor', 'reachable everyday tabletop detail', ['book-stack', 'tray', 'tabletop-decor'], /book stack|tabletop decor|茶几摆件|书堆|托盘/i, 'small', 0.68, 'One readable grouped tabletop asset containing a book stack, tray and small cup; flat base, no table.', 'supported', 'coffee-table', 0, 1),
+    demand('sofa-soft-decor', 'Sofa cushions and throw', 'coordinated soft furnishing accent', ['cushion', 'throw-blanket', 'soft-furnishing'], /cushion|throw blanket|sofa pillow|抱枕|盖毯/i, 'small', 0.67, 'One tidy grouped set of two cushions and one folded throw, made to sit on a sofa; no sofa.', 'supported', 'sofa', 0, 1),
     demand('floor-lamp', 'Living-room floor lamp', 'warm secondary light accent', ['floor-lamp', 'living-room-decor'], /floor lamp|standing lamp|落地灯/i, 'medium', 0.6, 'One readable floor lamp with a broad warm shade.', 'anchor'),
     demand('plant', 'Living-room plant', 'soft living corner accent', ['indoor-plant', 'living-room-decor'], /indoor plant|potted plant|绿植|盆栽/i, 'medium', 0.54, 'One full indoor potted plant with a broad silhouette.', 'anchor'),
     demand('wall-art', 'Personal wall art', 'personal visual identity', ['wall-art', 'living-room-decor', 'wall-prop'], /wall art|painting|挂画|墙饰/i, 'medium', 0.5, 'One grouped framed wall-art composition, readable from across the room.', 'wall', undefined, 90, 1)
@@ -260,7 +326,6 @@ function residentialDemands(semantic: string): IndoorAssetDemand[] {
     demand('upper-cabinet', 'Upper kitchen cabinet', 'vertical household storage', ['upper-cabinet', 'kitchen-storage', 'wall-prop'], /upper cabinet|wall cabinet|吊柜/i, 'medium', 0.75, 'One compact wall-mounted kitchen cabinet with readable doors.', 'wall', undefined, 0, 2),
     demand('countertop-appliance', 'Countertop appliance group', 'everyday preparation detail', ['kettle', 'toaster', 'countertop-appliance'], /countertop appliance|kettle|toaster|台面电器|水壶|烤面包机/i, 'small', 0.7, 'One grouped countertop asset with a kettle and toaster on a flat base; no counter.', 'supported', 'kitchen-counter', 0, 1),
     demand('kitchen-daily-items', 'Kitchen daily items', 'visible lived-in countertop detail', ['dishware', 'fruit-bowl', 'kitchen-decor'], /dishware|fruit bowl|餐具|果盘/i, 'small', 0.64, 'One readable grouped countertop asset with bowls, plates and a fruit bowl; no counter.', 'supported', 'sink-counter', 0, 1),
-    demand('kitchen-runner', 'Kitchen runner rug', 'soft floor accent outside the work route', ['kitchen-runner', 'area-rug', 'kitchen-decor'], /kitchen runner|runner rug|kitchen rug|厨房地毯|厨房脚垫/i, 'large', 0.61, 'One flat washable cartoon kitchen runner with a simple readable pattern; no raised border.', 'anchor'),
     demand('kitchen-wall-decor', 'Kitchen wall decor', 'warm visual detail on an unused wall', ['kitchen-wall-decor', 'wall-art', 'wall-prop'], /kitchen wall decor|kitchen wall art|厨房挂饰|厨房挂画/i, 'medium', 0.58, 'One shallow wall-mounted kitchen decoration, such as framed utensils or a cheerful food print.', 'wall', undefined, 180, 1),
     demand('kitchen-spice-shelf', 'Kitchen spice shelf', 'reachable wall storage detail', ['kitchen-spice-shelf', 'wall-prop', 'kitchen-storage'], /spice shelf|spice rack|调料架|香料架/i, 'medium', 0.56, 'One shallow wall-mounted spice shelf with a few broad readable jars; no wall.', 'wall', undefined, 0, 1),
     demand('kitchen-utensil-rack', 'Kitchen utensil rack', 'visible cooking tool detail', ['kitchen-utensil-rack', 'wall-prop', 'kitchen-decor'], /utensil rack|hanging utensils|厨具挂架|锅铲挂架/i, 'medium', 0.53, 'One shallow wall-mounted rack with several broad cartoon cooking utensils.', 'wall', undefined, 270, 1),
@@ -270,7 +335,7 @@ function residentialDemands(semantic: string): IndoorAssetDemand[] {
   const hasLiving = /living room|family room|客厅|起居室/i.test(semantic);
   const hasKitchen = /kitchen|厨房/i.test(semantic);
   if (hasLiving && hasKitchen) {
-    return [living[0], kitchen[0], living[1], kitchen[1], kitchen[2], kitchen[3], living[2], living[3], living[4], kitchen[5], living[5], kitchen[6], living[6], living[7]];
+    return [living[0], kitchen[0], living[1], kitchen[1], kitchen[2], kitchen[3], living[2], living[3], living[5], living[4], kitchen[5], kitchen[6], living[6], living[7]];
   }
   return hasKitchen && !hasLiving ? kitchen : living;
 }
@@ -281,6 +346,7 @@ function classroomDemands(): IndoorAssetDemand[] {
     demand('student-desk', 'Student desk', 'repeated student work surface', ['student-desk', 'classroom-desk', 'furniture'], /student desk|classroom desk|school desk|课桌|学生桌/i, 'medium', 0.95, 'One sturdy cartoon voxel student desk with stocky proportions; single reusable desk only.', 'group', undefined, 0, 24),
     demand('student-chair', 'Student chair', 'seat paired behind each student desk', ['student-chair', 'classroom-chair', 'furniture'], /student chair|classroom chair|school chair|学生椅|课椅/i, 'medium', 0.95, 'One sturdy cartoon voxel student chair with broad seat and thick legs; single reusable chair only.', 'paired', 'student-desk', 0, 1),
     demand('teacher-desk', 'Teacher desk', 'teacher workstation near teaching wall', ['teacher-desk', 'classroom', 'furniture'], /teacher desk|教师桌|讲桌/i, 'medium', 0.82, 'One broad teacher desk matching the student furniture style.', 'anchor'),
+    demand('student-supplies', 'Student desk supplies', 'small lived-in learning detail', ['stationery', 'book-stack', 'classroom-prop'], /student supplies|stationery|desk books|文具|课本/i, 'small', 0.8, 'One tidy grouped asset with two books, a notebook and pencil cup; made to sit on a student desk, no desk.', 'supported', 'student-desk', 0, 1),
     demand('bookcase', 'Classroom bookcase', 'book and teaching storage', ['bookcase', 'classroom-storage', 'furniture'], /bookcase|bookshelf|书柜|书架/i, 'large', 0.76, 'One broad classroom bookcase with readable books and closed base storage.', 'wall', undefined, 90, 2),
     demand('storage-cabinet', 'Classroom storage cabinet', 'teaching supply storage', ['storage-cabinet', 'classroom', 'furniture'], /storage cabinet|supply cabinet|储物柜|教具柜/i, 'large', 0.72, 'One stocky classroom supply cabinet.', 'wall', undefined, 270, 2),
     demand('notice-board', 'Classroom notice board', 'secondary teaching display', ['notice-board', 'wall-prop', 'classroom-decor'], /notice board|bulletin board|公告板|展示板/i, 'medium', 0.6, 'One colorful classroom notice board with a shallow frame.', 'wall', undefined, 270, 1),
@@ -296,6 +362,7 @@ function restaurantDemands(): IndoorAssetDemand[] {
     demand('dining-chair', 'Dining chair', 'chairs arranged around every dining table', ['dining-chair', 'restaurant', 'furniture'], /dining chair|restaurant chair|cafe chair|coffee chair|餐椅|咖啡馆椅|咖啡椅/i, 'medium', 0.95, 'One broad sturdy dining chair matching the dining table.', 'social', 'dining-table', 0, 4),
     demand('service-counter', 'Service counter', 'cashier and service focal point', ['service-counter', 'cashier-counter', 'furniture'], /service counter|cashier|checkout|收银台|服务台/i, 'large', 0.9, 'One broad restaurant cashier and service counter, human-scaled and not oversized.', 'wall', undefined, 0, 1),
     demand('menu-board', 'Menu board', 'menu display above service area', ['menu-board', 'wall-prop', 'restaurant-decor'], /menu board|menu sign|菜单板|菜单牌/i, 'medium', 0.72, 'One readable wall-mounted menu board with a shallow frame.', 'wall', undefined, 0, 1),
+    demand('table-setting', 'Dining table setting', 'welcoming lived-in dining detail', ['tableware', 'table-setting', 'restaurant-decor'], /table setting|tableware|place setting|餐具摆设|餐桌摆设/i, 'small', 0.7, 'One tidy grouped place setting with plates, cups and a small centerpiece; flat base, no table.', 'supported', 'dining-table', 0, 1),
     demand('restaurant-storage', 'Restaurant storage shelf', 'service storage', ['restaurant-shelf', 'storage', 'furniture'], /restaurant shelf|service shelf|餐厅货架|餐具架/i, 'medium', 0.65, 'One stocky restaurant service shelf with tableware.', 'wall', undefined, 270, 2),
     demand('room-divider', 'Restaurant divider', 'secondary dining-zone divider', ['room-divider', 'restaurant', 'furniture'], /divider|screen|隔断|屏风/i, 'medium', 0.58, 'One low open restaurant divider that preserves sight lines.', 'anchor'),
     demand('wall-decor', 'Restaurant wall decoration', 'visual identity and wall detail', ['wall-art', 'wall-prop', 'restaurant-decor'], /wall art|wall decor|poster|挂画|墙饰|海报/i, 'medium', 0.52, 'One readable restaurant wall decoration, not a tiny prop.', 'wall', undefined, 90, 2),
@@ -308,6 +375,7 @@ function officeDemands(): IndoorAssetDemand[] {
     demand('work-desk', 'Office desk', 'repeated workstation anchor', ['office-desk', 'workstation', 'furniture'], /office desk|work desk|workstation|办公桌|工位/i, 'medium', 0.96, 'One broad cartoon office desk; single reusable workstation desk only.', 'group', undefined, 0, 12),
     demand('office-chair', 'Office chair', 'chair paired with every workstation', ['office-chair', 'workstation-chair', 'furniture'], /office chair|desk chair|办公椅|工位椅/i, 'medium', 0.95, 'One broad stocky office chair matching the workstation desk.', 'paired', 'work-desk', 0, 1),
     demand('office-storage', 'Office storage cabinet', 'document storage', ['office-cabinet', 'storage', 'furniture'], /office cabinet|filing cabinet|文件柜|办公柜/i, 'medium', 0.78, 'One broad office filing and storage cabinet.', 'wall', undefined, 90, 3),
+    demand('desk-organizer', 'Office desk organizer', 'personal work-surface detail', ['desk-organizer', 'stationery', 'office-decor'], /desk organizer|stationery|办公桌摆件|文具/i, 'small', 0.74, 'One tidy grouped office desk asset with notebooks, pencil cup and a small desk plant; flat base, no desk.', 'supported', 'work-desk', 0, 1),
     demand('bookcase', 'Office bookcase', 'books and display storage', ['bookcase', 'office', 'furniture'], /bookcase|bookshelf|书柜|书架/i, 'large', 0.7, 'One broad office bookcase with readable shelves.', 'wall', undefined, 270, 2),
     demand('meeting-table', 'Meeting table', 'secondary collaboration group', ['meeting-table', 'office', 'furniture'], /meeting table|conference table|会议桌/i, 'large', 0.66, 'One broad compact meeting table, visibly larger than a desk but below counter height.', 'anchor'),
     demand('notice-board', 'Office notice board', 'shared information display', ['notice-board', 'wall-prop', 'office-decor'], /notice board|whiteboard|公告板|白板/i, 'medium', 0.6, 'One readable office notice board.', 'wall', undefined, 0, 1),
@@ -320,6 +388,8 @@ function bedroomDemands(): IndoorAssetDemand[] {
   return [
     demand('bed', 'Bed', 'primary sleeping furniture', ['bed', 'bedroom', 'furniture'], /\bbed\b|床铺|双人床|单人床/i, 'large', 0.98, 'One complete broad cartoon voxel bed with headboard; standalone furniture only.', 'wall', undefined, 0, 1),
     demand('bedside-table', 'Bedside table', 'bedside support furniture', ['bedside-table', 'bedroom', 'furniture'], /bedside table|nightstand|床头柜/i, 'medium', 0.86, 'One stocky bedside table matching the bed.', 'anchor'),
+    demand('bedside-lamp', 'Bedside lamp', 'warm local reading light', ['table-lamp', 'bedroom-decor', 'lighting'], /bedside lamp|table lamp|床头灯|台灯/i, 'small', 0.82, 'One broad bedside table lamp with a warm shade; no table.', 'supported', 'bedside-table', 0, 1),
+    demand('bed-soft-decor', 'Bed pillows and folded throw', 'coordinated soft furnishing layer', ['pillow', 'throw-blanket', 'soft-furnishing'], /bed pillow|throw blanket|床枕|盖毯/i, 'small', 0.78, 'Only two loose pillows and one small folded throw made to sit on a bed. No mattress, sheet spanning the bed, bed frame, platform, headboard or second bed.', 'supported', 'bed', 0, 1),
     demand('wardrobe', 'Wardrobe', 'clothing storage', ['wardrobe', 'bedroom-storage', 'furniture'], /wardrobe|衣柜/i, 'large', 0.86, 'One broad wardrobe with readable doors and handles.', 'wall', undefined, 90, 1),
     demand('dresser', 'Bedroom dresser', 'secondary clothing storage', ['dresser', 'bedroom-storage', 'furniture'], /dresser|chest of drawers|斗柜|梳妆柜/i, 'medium', 0.7, 'One broad low bedroom dresser.', 'wall', undefined, 270, 1),
     demand('armchair', 'Bedroom armchair', 'secondary reading corner', ['armchair', 'bedroom', 'furniture'], /armchair|reading chair|扶手椅|阅读椅/i, 'medium', 0.62, 'One broad cozy cartoon armchair.', 'anchor'),
@@ -345,6 +415,7 @@ function genericDemands(): IndoorAssetDemand[] {
   return [
     demand('primary-table', 'Room table', 'primary activity surface', ['room-table', 'furniture'], /table|desk|桌|台/i, 'medium', 0.82, 'One broad general-purpose cartoon room table.', 'anchor'),
     demand('primary-seat', 'Room chair', 'primary activity seat', ['room-chair', 'furniture'], /chair|seat|椅|座位/i, 'medium', 0.78, 'One broad sturdy cartoon room chair.', 'anchor'),
+    demand('tabletop-decor', 'Room tabletop decor', 'small lived-in activity detail', ['tabletop-decor', 'book-stack', 'room-decor'], /tabletop decor|book stack|桌面摆件|书堆/i, 'small', 0.76, 'One tidy grouped tabletop asset with books, a tray and one personal object; flat base, no table.', 'supported', 'primary-table', 0, 1),
     demand('storage-cabinet', 'Storage cabinet', 'room storage', ['storage-cabinet', 'furniture'], /cabinet|wardrobe|柜|衣柜/i, 'large', 0.72, 'One broad room storage cabinet.', 'wall', undefined, 90, 2),
     demand('bookcase', 'Bookcase', 'books and display storage', ['bookcase', 'furniture'], /bookcase|bookshelf|书柜|书架/i, 'large', 0.66, 'One broad bookcase with readable shelves.', 'wall', undefined, 270, 2),
     demand('wall-decor', 'Wall decoration', 'secondary wall detail', ['wall-art', 'wall-prop', 'room-decor'], /wall art|painting|poster|挂画|墙饰|海报/i, 'medium', 0.52, 'One readable framed wall decoration.', 'wall', undefined, 0, 2),

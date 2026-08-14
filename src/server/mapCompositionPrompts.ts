@@ -51,13 +51,16 @@ export function buildSceneDirectorPrompt(
       ? `Plan the room in two passes inside this one response. First expand a breadth-first functional inventory: entrance/daylight fixtures, primary activity groups, supporting storage or service furniture, then readable decor. Aim for about ${indoorAssetTarget} useful asset families within the user's bounds; do not merely stop at the lower bound.`
       : '',
     indoor
-      ? 'Then create a relationship graph between those families: support, paired, facing, aligned, close-to-wall, and circulation-clear. A typical room needs a standalone door model and normally at least one standalone glass window model unless the user explicitly requests a sealed or windowless room.'
+      ? 'Then create a relationship graph between those families: support, paired, facing, aligned, close-to-wall, and circulation-clear. A typical room needs a standalone door model and reusable transparent-glass windows distributed symmetrically across multiple walls unless the user explicitly requests a sealed, windowless, or single-sided room. Tag doors and furniture or appliances with opening fronts as openable-front; their front clearance must stay empty.'
       : '',
     indoor
       ? 'Classrooms use straight aligned desk rows facing a wall-mounted blackboard; pair one chair behind each desk. Restaurants and cafes infer multiple dining-table groups from usable floor area and attach chairs around every table. Offices infer multiple workstations and pair a chair with each desk. Do not use arcs for these functional groups unless the user explicitly requests curved seating.'
       : '',
     indoor
       ? 'For homes and small apartments, build named activity zones first, then layer functional furniture, reachable everyday objects, and personal decor. Use vertical storage plus a mix of open display and closed storage; rugs, lamps, plants, books, trays, tableware, art and countertop appliances should make the room feel lived in without blocking circulation. Kitchens keep refrigerator, sink and cooktop as three distinct work centers with clear paths between them.'
+      : '',
+    indoor
+      ? 'Define globalBrief.interiorArtDirection as one coherent AI-authored style contract for the whole room. Include summary, styleKeywords, a 3-6 color palette, materialKeywords, decorDensity 0.25-0.9, focalPoint, all six surface recipes, and up to four procedural rugs. Valid surface recipes are paint.solid, plaster.soft, wallpaper.stripe, wallpaper.geometric, wood.plank, wood.herringbone, tile.ceramic, tile.stone, carpet.loop, ceiling.panel, glass.panel. Wallpaper covers all four interior walls unless the user explicitly requests an accent wall. Conservatories, greenhouses and glass plant rooms use glass.panel on the ceiling as a visible skylight. Rugs use normalized center/size coordinates, shape rectangle|round|runner, pattern border|stripe|geometric|woven, rotation 0|90 and a matching palette. Keep the result coherent and calm, with one focal area and grouped accents instead of uniform clutter.'
       : '',
     indoor
       ? 'Use placement.intent supported for an object that sits on another asset. It must name targetFamilyId and maxPerGroup 1. Internet cafes require one complete computer station per gaming desk; televisions sit on media consoles; countertop and coffee-table props sit on their named supporting surface. Never scatter these supported objects on the floor.'
@@ -121,6 +124,20 @@ export function buildSceneDirectorPrompt(
         spatialTheme: 'overall spatial idea',
         visualHierarchy: 'primary/secondary visual relationship',
         assetArtDirection: 'shared asset style, proportions and palette',
+        interiorArtDirection: {
+          summary: 'coherent room finish and decor direction', styleKeywords: ['warm', 'cartoon'],
+          palette: ['#d8c7a6', '#9f7652', '#6e5544', '#e7dfce'], materialKeywords: ['wood', 'woven'],
+          decorDensity: 0.62, focalPoint: 'primary activity zone',
+          surfaces: {
+            floor: { recipe: 'wood.plank', seed: map.seed, scale: 0.42, rotation: 0, palette: ['#9f7652', '#6e5544'], jointWidth: 0.018, variation: 0.12, roughness: 0.82 },
+            ceiling: { recipe: 'paint.solid', seed: map.seed, scale: 0.5, rotation: 0, palette: ['#e7dfce', '#d8c7a6'], jointWidth: 0, variation: 0.04, roughness: 0.86 },
+            north: { recipe: 'wallpaper.geometric', seed: map.seed, scale: 0.32, rotation: 0, palette: ['#d8c7a6', '#9f7652'], jointWidth: 0.01, variation: 0.08, roughness: 0.88 },
+            south: { recipe: 'plaster.soft', seed: map.seed, scale: 0.5, rotation: 0, palette: ['#d8c7a6', '#e7dfce'], jointWidth: 0, variation: 0.08, roughness: 0.9 },
+            east: { recipe: 'plaster.soft', seed: map.seed, scale: 0.5, rotation: 0, palette: ['#d8c7a6', '#e7dfce'], jointWidth: 0, variation: 0.08, roughness: 0.9 },
+            west: { recipe: 'plaster.soft', seed: map.seed, scale: 0.5, rotation: 0, palette: ['#d8c7a6', '#e7dfce'], jointWidth: 0, variation: 0.08, roughness: 0.9 }
+          },
+          rugs: [{ id: 'main-rug', shape: 'rectangle', center: [0, 0], size: [0.55, 0.42], rotation: 0, pattern: 'border', palette: ['#9f7652', '#e7dfce'], seed: map.seed }]
+        },
         focalZoneId: 'zone-id',
         terrainBase: { preset: 'plain|hills|valley|island|archipelago|canyon|cliff-plateau|dune-desert', seed: map.seed, amplitude: 4, roughness: 0.5, direction: 90 },
         terrainRefinement: { erosion: 0.22, drainage: 0.08, iterations: 3, talus: 46 }

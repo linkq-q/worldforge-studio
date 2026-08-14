@@ -8,6 +8,9 @@ export interface IndoorSemanticDimensions {
   targetHeight: number | null;
   minimumWidth: number;
   minimumDepth: number;
+  maximumWidth: number | null;
+  maximumDepth: number | null;
+  maximumHeight: number | null;
   wallMounted: boolean;
   ceilingMounted: boolean;
 }
@@ -24,8 +27,18 @@ export function indoorSemanticDimensions(map: EditableMap, semantic: string): In
   const dimensions = (
     targetHeight: number | null,
     minimumWidth: number,
-    minimumDepth: number
-  ): IndoorSemanticDimensions => ({ targetHeight, minimumWidth, minimumDepth, wallMounted, ceilingMounted });
+    minimumDepth: number,
+    maximumWidth: number | null = null,
+    maximumDepth: number | null = null,
+    maximumHeight: number | null = null
+  ): IndoorSemanticDimensions => ({
+    targetHeight, minimumWidth, minimumDepth, maximumWidth, maximumDepth, maximumHeight,
+    wallMounted, ceilingMounted
+  });
+
+  if (/\brug\b|carpet|floor[-_ ]?textile|woven[-_ ]?rug|地毯|脚垫/i.test(semantic)) {
+    return dimensions(height * 0.035, 0, 0, (map.room?.size[0] ?? 8) * 0.72, (map.room?.size[2] ?? 8) * 0.72, height * 0.09);
+  }
 
   if (/loading door|loading bay|warehouse door|装卸门|仓库门/i.test(semantic)) {
     return dimensions(cap(height * 1.45, 0.92), height * 1.6, 0);
@@ -42,8 +55,8 @@ export function indoorSemanticDimensions(map: EditableMap, semantic: string): In
   if (/ceiling[-_ ]?light|ceiling[-_ ]?lamp|overhead[-_ ]?light|pendant[-_ ]?light|industrial[-_ ]?light|顶灯|吊灯|天花灯|工业照明/i.test(semantic)) {
     return dimensions(cap(height * 0.18, 0.2), height * 0.65, height * 0.18);
   }
-  if (/safety sign|warning sign|warehouse sign|安全标识|警示牌/i.test(semantic)) {
-    return dimensions(cap(height * 0.5, 0.5), height * 0.7, 0);
+  if (/safety sign|warning sign|warehouse sign|room[-_ ]?(?:number|sign)|door[-_ ]?sign|nameplate|门牌|房号|安全标识|警示牌/i.test(semantic)) {
+    return dimensions(cap(height * 0.3, 0.42), height * 0.42, 0, height * 0.9, height * 0.9, height * 0.62);
   }
   if (/wall[-_ ]?clock|timepiece|挂钟|时钟/i.test(semantic)) {
     return dimensions(cap(height * 0.36, 0.38), height * 0.36, 0);
@@ -93,7 +106,7 @@ export function indoorSemanticDimensions(map: EditableMap, semantic: string): In
 }
 
 export function isElevatedWallSemantic(semantic: string): boolean {
-  return /wall-mounted|wall-prop|wall[-_ ]?(?:art|decor)|framed[-_ ]?art|sconce|cross|window|blackboard|chalkboard|whiteboard|notice board|menu board|wall[-_ ]?clock|timepiece|poster|painting|safety sign|warning sign|fire extinguisher|壁挂|墙灯|墙饰|装饰画|十字架|窗|黑板|白板|公告板|菜单板|挂钟|时钟|海报|挂画|安全标识|警示牌|灭火器/i.test(semantic)
+  return /wall-mounted|wall-prop|wall[-_ ]?(?:art|decor)|framed[-_ ]?art|sconce|cross|window|blackboard|chalkboard|whiteboard|notice board|menu board|wall[-_ ]?clock|timepiece|poster|painting|safety sign|warning sign|room[-_ ]?(?:number|sign)|door[-_ ]?sign|nameplate|fire extinguisher|门牌|房号|壁挂|墙灯|墙饰|装饰画|十字架|窗|黑板|白板|公告板|菜单板|挂钟|时钟|海报|挂画|安全标识|警示牌|灭火器/i.test(semantic)
     && !/\bdoor\b|房门|门扇/i.test(semantic);
 }
 

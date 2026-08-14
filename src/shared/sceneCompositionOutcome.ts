@@ -20,6 +20,7 @@ import { calculateModelVisualBounds } from './modelBounds';
 import { indoorFallbackTargetHeight, indoorSemanticDimensions } from './indoorScale';
 import {
   bindIndoorRoomOpenings,
+  completeIndoorWindowCoverage,
   compileScenePlacementBehavior,
   compileZoneWater,
   indoorOccupancyMetrics,
@@ -247,6 +248,27 @@ export function ensureSceneCompositionOutcome(
           ? `${asset.name} 未进入初始布局，已补入一个可编辑实例。`
           : `${asset.name} 仍缺少可用落位空间。`
       });
+    }
+  }
+
+  if (map.sceneMode === 'indoor') {
+    const windows = resolvedFamilies.find((entry) => (
+      entry.assets.length > 0
+      && /\bwindow\b|窗户|窗框/i.test(`${entry.family.label} ${entry.family.role} ${entry.family.tags.join(' ')} ${entry.family.generationBrief}`)
+    ));
+    if (windows) {
+      const repairs = completeIndoorWindowCoverage(candidate, windows, plan);
+      const placedCount = repairs.filter((operation) => operation.type === 'object.add').length;
+      if (placedCount > 0) {
+        operations.push(...repairs);
+        candidate = applyMapOperations(candidate, repairs);
+        familyCounts[windows.family.id] = (familyCounts[windows.family.id] ?? 0) + placedCount;
+        repairCount += repairs.length;
+        checks.push({
+          requirementId: 'indoor-window-coverage', kind: 'asset-family', status: 'repaired',
+          message: `已补齐 ${placedCount} 个多墙面采光窗，并为每个窗体建立真实墙洞。`
+        });
+      }
     }
   }
 
@@ -723,7 +745,12 @@ function indoorRequiredFamilyRepairs(
       dimensions.minimumWidth / localWidth,
       dimensions.minimumDepth / localDepth,
       0.05
-    ) * backoff);
+    ) * backoff,
+    dimensions.maximumWidth === null ? Number.POSITIVE_INFINITY : dimensions.maximumWidth / localWidth,
+    dimensions.maximumDepth === null ? Number.POSITIVE_INFINITY : dimensions.maximumDepth / localDepth,
+    dimensions.maximumHeight === null ? Number.POSITIVE_INFINITY : dimensions.maximumHeight / localHeight,
+    (resolved.family.sizeClass === 'small' ? 1.6 : resolved.family.sizeClass === 'medium' ? 3.2 : 5)
+      * playerHeight / Math.max(localWidth, localHeight, localDepth));
     const spacing = Math.max(0.55, playerHeight * 0.78 * backoff, (asset.footprintRadius ?? 0.5) * scale * 2.25)
       * spacingMultiplier;
     const focus = indoorPlacementFocus(workingMap, layer, familyAssets)

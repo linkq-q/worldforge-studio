@@ -66,6 +66,12 @@ export function compileSceneComposition(
     renderPromptSuggestions: plan.renderPromptSuggestions,
     visualSemantics: compileMapVisualSemantics(map, plan)
   });
+  if (map.sceneMode !== 'outdoor' && plan.globalBrief.interiorArtDirection) {
+    operations.push({
+      type: 'interior.art-direction.set',
+      artDirection: plan.globalBrief.interiorArtDirection
+    });
+  }
   if (map.sceneMode !== 'indoor') {
     operations.push({ type: 'terrain.generate', ...plan.globalBrief.terrainBase });
     operations.push(...compileZoneTerrain(map, plan));
@@ -270,6 +276,19 @@ export function compileSceneComposition(
     remaining -= placedCount;
     familyCounts[entry.layer.familyId] = (familyCounts[entry.layer.familyId] ?? 0) + placedCount;
     zoneCounts[entry.zone.id] = (zoneCounts[entry.zone.id] ?? 0) + placedCount;
+  }
+
+  if (map.sceneMode === 'indoor' && map.room) {
+    const windows = resolvedFamilies.find((entry) => isWindowFamily(entry.family) && entry.assets.length > 0);
+    if (windows) {
+      const windowOperations = completeIndoorWindowCoverage(workingMap, windows, plan);
+      const placedCount = windowOperations.filter((operation) => operation.type === 'object.add').length;
+      if (placedCount > 0) {
+        operations.push(...windowOperations);
+        workingMap = applyMapOperations(workingMap, windowOperations);
+        familyCounts[windows.family.id] = (familyCounts[windows.family.id] ?? 0) + placedCount;
+      }
+    }
   }
 
   const changedHeights = workingMap.terrain.heights.filter((height, index) => (
@@ -672,8 +691,16 @@ function fitSemanticAssetScale(
     dimensions.minimumWidth / width,
     dimensions.minimumDepth / depth
   );
-  const minimum = Math.min(targetScale * 0.82, horizontalLimit);
-  const maximum = Math.min(targetScale * 1.18, horizontalLimit);
+  const semanticLimits = [
+    dimensions.maximumWidth === null ? Number.POSITIVE_INFINITY : dimensions.maximumWidth / width,
+    dimensions.maximumDepth === null ? Number.POSITIVE_INFINITY : dimensions.maximumDepth / depth,
+    dimensions.maximumHeight === null ? Number.POSITIVE_INFINITY : dimensions.maximumHeight / height
+  ];
+  const sizeClassMaximum = (family.sizeClass === 'small' ? 1.6 : family.sizeClass === 'medium' ? 3.2 : 5)
+    * playerHeight / majorExtent;
+  const upperLimit = Math.min(horizontalLimit, sizeClassMaximum, ...semanticLimits);
+  const minimum = Math.min(targetScale * 0.82, upperLimit);
+  const maximum = Math.min(targetScale * 1.18, upperLimit);
   return clamp(requested, Math.min(minimum, maximum), Math.max(minimum, maximum));
 }
 
@@ -709,6 +736,72 @@ function indoorPlacementTransform(
     rotation: [0, rotationY, 0],
     scale: [placement.scale, verticalScale, placement.scale]
   };
+}
+
+function isWindowFamily(family: SceneCompositionPlan['assetFamilies'][number]): boolean {
+  return /\bwindow\b|窗户|窗框/i.test(`${family.label} ${family.role} ${family.tags.join(' ')} ${family.generationBrief}`);
+}
+
+export function completeIndoorWindowCoverage(
+  map: EditableMap,
+  resolved: ResolvedSceneFamily,
+  plan?: SceneCompositionPlan
+): MapOperation[] {
+  const room = map.room;
+  if (!room) return [];
+  const occupiedWalls = new Set(room.openings.filter((opening) => opening.kind === 'window').map((opening) => opening.wall));
+  const planSemantic = plan
+    ? `${plan.summary} ${plan.globalBrief.spatialTheme} ${plan.globalBrief.assetArtDirection}`
+    : '';
+  const targetWallCount = /single[- ]sided (?:daylight|lighting|windows?)|windows? (?:only )?on (?:a |one )?single wall|单侧采光|单面采光|只在一面墙(?:上)?(?:开窗|有窗)/i.test(planSemantic)
+    ? 1
+    : 4;
+  if (occupiedWalls.size >= targetWallCount) return [];
+  const operations: MapOperation[] = [];
+  let workingMap = map;
+  const scaleRange = semanticScaleRange(workingMap, resolved.family, resolved.assets, [1, 1.15], {
+    mode: 'linear', pattern: 'row', intent: 'wall', direction: 0, offset: 0.15, facing: 'inward', maxPerGroup: 1
+  });
+  const directions: Array<[RoomWall, number]> = [['north', 0], ['east', 90], ['south', 180], ['west', 270]];
+  for (const [wall, direction] of directions) {
+    if (occupiedWalls.size >= targetWallCount) break;
+    if (occupiedWalls.has(wall)) continue;
+    const placements = expandStructuredMapPlacement(workingMap, {
+      mode: 'linear', pattern: 'row', intent: 'wall',
+      assetIds: resolved.assets.map((asset) => asset.id),
+      region: { kind: 'circle', x: room.position[0], z: room.position[2], r: Math.max(room.size[0], room.size[2]) },
+      density: 0.001, spacing: Math.max(1.6, getMapPlayerMetrics(map).height * 1.35), offset: 0.15,
+      direction, facing: 'inward', avoidWater: 0, maxSlope: 89, scaleRange,
+      seed: derivedSeed(map.seed, `window-coverage:${wall}`), candidateCount: 5, symmetric: true
+    }, resolved.assets, 1, `window-coverage-${wall}`);
+    const placement = placements[0];
+    if (!placement) continue;
+    const asset = resolved.assets.find((item) => item.id === placement.assetId) ?? resolved.assets[0];
+    const objectOperation: MapOperation = {
+      type: 'object.add',
+      object: {
+        id: placement.id, name: asset.name, assetId: asset.id, heightMode: 'fixed',
+        transform: indoorPlacementTransform(map, resolved.family, asset, placement, placement.rotationY)
+      }
+    };
+    const executable = bindIndoorRoomOpenings(workingMap, resolved.family, resolved.assets, [objectOperation]);
+    operations.push(...executable);
+    workingMap = applyMapOperations(workingMap, executable);
+    occupiedWalls.add(wall);
+  }
+  return operations;
+}
+
+function isInvalidBedSupport(asset: MapAsset, targetAssets: readonly MapAsset[]): boolean {
+  const targetIsBed = targetAssets.some((target) => /\bbed\b|mattress|床铺|床垫|床架/i.test(
+    `${target.name} ${target.prompt} ${(target.tags ?? []).join(' ')}`
+  ));
+  if (!targetIsBed) return false;
+  const semantic = `${asset.name} ${asset.prompt} ${(asset.tags ?? []).join(' ')}`;
+  const tags = new Set((asset.tags ?? []).map((tag) => tag.toLowerCase()));
+  const explicitBedAssembly = tags.has('bed') || tags.has('mattress') || tags.has('bedding');
+  if (!explicitBedAssembly && /pillow|small folded throw|cushion|枕|折叠毯|抱枕/i.test(semantic)) return false;
+  return /\bbed\b|mattress|bedding|bed[-_ ]?linen|床品|床铺|床垫|床架/i.test(semantic);
 }
 
 /** Converts planned door/window models into real room-shell reservations and links the objects to them. */
@@ -948,18 +1041,20 @@ function compileSupportedObjects(
   const targetFamilyId = layer.placement?.targetFamilyId;
   if (!targetFamilyId || assets.length === 0 || limit <= 0) return [];
   const targetAssets = familyAssets.get(targetFamilyId) ?? [];
+  const usableAssets = assets.filter((asset) => !isInvalidBedSupport(asset, targetAssets));
+  if (usableAssets.length === 0) return [];
   const targetByAssetId = new Map(targetAssets.map((asset) => [asset.id, asset]));
-  const dependentAssetIds = new Set(assets.map((asset) => asset.id));
+  const dependentAssetIds = new Set(usableAssets.map((asset) => asset.id));
   const occupiedParents = new Set(map.objects
     .filter((object) => object.parentId && object.assetId && dependentAssetIds.has(object.assetId))
     .map((object) => object.parentId!));
   const targets = map.objects.filter((object) => (
     object.assetId && targetByAssetId.has(object.assetId) && !occupiedParents.has(object.id)
   ));
-  const scaleRange = semanticScaleRange(map, family, assets, layer.scaleRange, layer.placement);
+  const scaleRange = semanticScaleRange(map, family, usableAssets, layer.scaleRange, layer.placement);
   const desiredScale = (scaleRange[0] + scaleRange[1]) / 2;
   return targets.slice(0, limit).map((target, index): MapOperation => {
-    const asset = assets[index % assets.length];
+    const asset = usableAssets[index % usableAssets.length];
     const targetAsset = targetByAssetId.get(target.assetId!)!;
     const supportBounds = mapAssetLocalBounds(targetAsset);
     const itemBounds = mapAssetLocalBounds(asset);

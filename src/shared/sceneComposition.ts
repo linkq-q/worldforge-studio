@@ -8,6 +8,7 @@ import {
 import type { MapScatterQuality } from './mapScatter';
 import { normalizeMapAssetLight, type MapAssetLight, type MapAssetSizeClass } from './mapAssetMetadata';
 import { isCeilingMountedSemantic } from './indoorScale';
+import { normalizeInteriorArtDirection, type InteriorArtDirection } from './interiorArtDirection';
 import {
   inferGrassPreset,
   normalizeGrassPreset,
@@ -62,6 +63,7 @@ export interface SceneCompositionPlan {
     spatialTheme: string;
     visualHierarchy: string;
     assetArtDirection: string;
+    interiorArtDirection?: InteriorArtDirection;
     focalZoneId: string;
     terrainBase: TerrainGenerationParams;
     terrainRefinement?: TerrainRefinementParams;
@@ -288,6 +290,14 @@ export function normalizeSceneCompositionPlan(value: unknown, map: EditableMap):
       spatialTheme: cleanText(globalInput.spatialTheme, '自然场景', 120),
       visualHierarchy: cleanText(globalInput.visualHierarchy, '', 240),
       assetArtDirection: cleanText(globalInput.assetArtDirection, '', 240),
+      ...(map.sceneMode !== 'outdoor'
+        ? { interiorArtDirection: normalizeInteriorArtDirection(
+            (globalInput.interiorArtDirection as Partial<InteriorArtDirection> | undefined) ?? {
+              summary: cleanText(globalInput.assetArtDirection, 'coherent indoor art direction', 240)
+            },
+            map.seed
+          ) ?? undefined }
+        : {}),
       focalZoneId,
       terrainBase: normalizeTerrainGenerationParams(globalInput.terrainBase, map),
       terrainRefinement: normalizeTerrainRefinementParams(globalInput.terrainRefinement)

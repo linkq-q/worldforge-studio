@@ -1186,8 +1186,51 @@ describe('scene composition contract', () => {
     const generated = applyMapOperations({ ...map, assets: [windowAsset] }, outcome.compiled.operations);
     const windows = generated.objects.filter((object) => object.assetId === windowAsset.id);
 
-    expect(windows).toHaveLength(2);
-    expect(windows[0].transform.position[0] + windows[1].transform.position[0]).toBeCloseTo(0, 4);
+    expect(windows.length).toBeGreaterThanOrEqual(4);
+    expect(windows.some((window) => window.id.includes('mirror'))).toBe(true);
+    expect(generated.room?.openings.filter((opening) => opening.kind === 'window')).toHaveLength(4);
+    expect(new Set(generated.room?.openings.filter((opening) => opening.kind === 'window').map((opening) => opening.wall)))
+      .toEqual(new Set(['north', 'south', 'east', 'west']));
+  });
+
+  it('does not expand an explicit single-sided daylight plan onto every wall', () => {
+    const map = createEmptyMap('Single-sided room', 'map-single-sided-window', [20, 5, 15], 'voxel', 'indoor', [20, 5, 15]);
+    const windowAsset = {
+      ...asset('asset-window-single', 'Glass window', ['window', 'wall-mounted', 'glass'], 'medium', 'voxel'),
+      footprintRadius: 1.2,
+      modelJson: { nodes: [{ id: 'window', transform: { pos: [0, 0.8, 0] }, mesh: { type: 'box', params: { width: 2.4, height: 1.6, depth: 0.15 } } }] }
+    };
+    const input = structuredClone(planInput()) as {
+      summary: string;
+      globalBrief: { focalZoneId: string };
+      assetFamilies: Array<Record<string, unknown>>;
+      zones: Array<Record<string, unknown>>;
+      transitions: unknown[];
+      consultations: unknown[];
+      intentRequirements: unknown[];
+    };
+    input.summary = 'A bedroom with single-sided daylight';
+    input.assetFamilies = [{
+      id: 'windows', label: 'Windows', role: 'wall daylight', tags: ['window', 'wall-mounted'],
+      sizeClass: 'medium', desiredVariants: 1, priority: 1, generationBrief: 'one reusable glass window'
+    }];
+    input.zones = [{
+      id: 'room', label: 'Bedroom', role: 'primary', importance: 1,
+      region: { kind: 'circle', center: [0, 0], radius: 0.9 },
+      brief: { atmosphere: 'quiet', hierarchy: 'single-side daylight', openness: 0.5, transitionIntent: 'clear center' },
+      terrain: { elevation: 0, roughness: 0, flatness: 1 },
+      layers: [{ familyId: 'windows', density: 0.01, scaleRange: [1, 1], distribution: 'even', edgeFalloff: 0, placement: { mode: 'linear', pattern: 'row', intent: 'wall', direction: 0, offset: 0, facing: 'inward' } }],
+      grassLayers: [], excludeZoneIds: []
+    }];
+    input.globalBrief.focalZoneId = 'room';
+    input.transitions = [];
+    input.consultations = [];
+    input.intentRequirements = [];
+    const plan = enforceScenePlacementContracts(normalizeSceneCompositionPlan(input, map), map, input.summary);
+    const resolved = [{ family: plan.assetFamilies[0], assets: [windowAsset], missingCount: 0 }];
+    const compiled = compileSceneComposition(map, plan, resolved);
+    const generated = applyMapOperations({ ...map, assets: [windowAsset] }, compiled.operations);
+
     expect(generated.room?.openings.filter((opening) => opening.kind === 'window')).toHaveLength(1);
   });
 
@@ -1307,8 +1350,8 @@ describe('scene composition contract', () => {
 
     expect(outcome.checks.filter((check) => check.status === 'warning')).toEqual([]);
     expect(new Set(generated.objects.map((object) => object.assetId))).toEqual(new Set(assets.map((item) => item.id)));
-    expect(generated.room?.openings.map((opening) => opening.kind).sort()).toEqual(['door', 'window']);
-    expect(generated.objects.filter((object) => object.roomOpeningId)).toHaveLength(2);
+    expect(generated.room?.openings.map((opening) => opening.kind).sort()).toEqual(['door', 'window', 'window', 'window', 'window']);
+    expect(generated.objects.filter((object) => object.roomOpeningId)).toHaveLength(5);
     const floorIds = new Set(['asset-rack', 'asset-transport-box', 'asset-crate', 'asset-pallet', 'asset-jack', 'asset-marker']);
     const floorObjects = generated.objects.filter((object) => floorIds.has(object.assetId ?? ''));
     const visualBounds = new Map(getMapObjectAabbs(generated).map((bounds) => [bounds.objectId, bounds]));
