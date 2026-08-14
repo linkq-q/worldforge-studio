@@ -586,17 +586,21 @@ describe('derived local lights', () => {
     const lightRoot = rendered.group.getObjectByName('mapLocalLights') as THREE.Group;
     const practical = lightRoot.children.find((child) => (child as THREE.PointLight).isPointLight) as THREE.PointLight;
     const windowLight = lightRoot.getObjectByName('mapWindowLight') as THREE.SpotLight;
+    const indirectProbe = lightRoot.getObjectByName('mapInteriorLightProbe') as THREE.LightProbe;
 
     rendered.setLightingTimeOfDay('noon');
     rendered.update(0.016, camera, 100);
     const noonPractical = practical.intensity;
     const noonWindow = windowLight.intensity;
+    const noonProbe = indirectProbe.intensity;
     rendered.setLightingTimeOfDay('night');
     rendered.update(0.016, camera, 100);
 
     expect(practical.intensity).toBeGreaterThan(noonPractical);
     expect(practical.intensity).toBeGreaterThan(asset.light!.intensity);
     expect(windowLight.intensity).toBeLessThan(noonWindow * 0.2);
+    expect(indirectProbe.intensity).toBeLessThan(noonProbe);
+    expect(indirectProbe.sh.coefficients[0].length()).toBeGreaterThan(0);
     expect(windowLight.position.z).toBeLessThan(map.room!.position[2]);
     expect(windowLight.target.position.z).toBeGreaterThan(0);
     rendered.dispose();
@@ -749,6 +753,65 @@ describe('derived local lights', () => {
     expect(rendered.objectGroups.get(lamp.id)?.getObjectByName('bulb')?.visible).toBe(false);
     expect(light.visible).toBe(true);
     expect(light.intensity).toBeGreaterThan(0);
+    rendered.dispose();
+  });
+});
+
+describe('procedural indoor finishes', () => {
+  it('renders persisted rugs and maps split wall segments through one continuous surface texture', async () => {
+    const map = applyMapOperations(
+      createEmptyMap('finished room', 'finished-room', [10, 3, 8], 'voxel', 'indoor', [10, 3, 8]),
+      [
+        { type: 'room.set', room: { openings: [
+          { id: 'window', kind: 'window', wall: 'north', offset: 0, bottom: 1, width: 2, height: 1.2 }
+        ] } },
+        { type: 'interior.art-direction.set', artDirection: {
+          summary: 'warm room', palette: ['#765432', '#decbaa'], decorDensity: 0.6,
+          surfaces: {
+            floor: { recipe: 'wood.herringbone', roughness: 0.7 },
+            north: { recipe: 'wallpaper.geometric', roughness: 0.91 }
+          } as never,
+          rugs: [{
+            id: 'main', shape: 'rectangle', center: [0.1, -0.1], size: [0.5, 0.4], rotation: 90,
+            pattern: 'border', palette: ['#765432', '#decbaa'], seed: 4
+          }]
+        } }
+      ]
+    );
+
+    const rendered = await buildEditableMapGroup(map);
+    const rugs = rendered.group.getObjectByName('proceduralRugs') as THREE.Group;
+    const rug = rendered.group.getObjectByName('proceduralRug:main') as THREE.Mesh;
+    const north = rendered.objectGroups.get('__room__:north') as THREE.Group;
+    const wallMaterials = north.children.map((child) => (child as THREE.Mesh).material as THREE.MeshStandardMaterial);
+
+    expect(rugs.children).toHaveLength(1);
+    expect(rug.userData.proceduralRug).toBe(true);
+    expect(rug.position.y).toBeCloseTo(0.012);
+    expect((rug.geometry as THREE.PlaneGeometry).parameters.width).toBeCloseTo(7);
+    expect((rug.geometry as THREE.PlaneGeometry).parameters.height).toBeCloseTo(4.48);
+    expect(wallMaterials).toHaveLength(4);
+    expect(wallMaterials.every((material) => material.roughness === 0.91)).toBe(true);
+    expect(new Set(wallMaterials.map((material) => `${material.map?.offset.x}:${material.map?.repeat.x}`)).size).toBeGreaterThan(1);
+    rendered.dispose();
+  });
+
+  it('renders a glass-panel ceiling as a transparent skylight without an opaque shadow shell', async () => {
+    const map = applyMapOperations(
+      createEmptyMap('glass room', 'glass-room', [10, 3, 8], 'voxel', 'indoor', [10, 3, 8]),
+      [{ type: 'interior.art-direction.set', artDirection: {
+        summary: 'glass conservatory', styleKeywords: ['conservatory'], palette: ['#dbe7da', '#70906c'], decorDensity: 0.6
+      } }]
+    );
+    const rendered = await buildEditableMapGroup(map);
+    const ceiling = rendered.objectGroups.get('__room__:ceiling') as THREE.Group;
+    const material = (ceiling.children[0] as THREE.Mesh).material as THREE.MeshPhysicalMaterial;
+    const shadowShell = rendered.group.getObjectByName('roomShadowShell') as THREE.Group;
+
+    expect(material.isMeshPhysicalMaterial).toBe(true);
+    expect(material.transparent).toBe(true);
+    expect(material.transmission).toBeGreaterThan(0);
+    expect(shadowShell.children).toHaveLength(4);
     rendered.dispose();
   });
 });

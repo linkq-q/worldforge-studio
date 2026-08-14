@@ -74,6 +74,8 @@ export function buildMapLocalLights(
   });
   const windowLights = buildWindowLights(map);
   group.add(windowLights.group);
+  const indirectProbe = buildInteriorIndirectProbe(map, candidates.length > 0);
+  if (indirectProbe) group.add(indirectProbe);
   let practicalScale = map.sceneMode === 'outdoor' ? 1 : indoorPracticalScale('noon');
   const position = new THREE.Vector3();
   const rotation = new THREE.Quaternion();
@@ -100,7 +102,7 @@ export function buildMapLocalLights(
         .sort((left, right) => right.candidate.priority - left.candidate.priority || left.distance - right.distance);
       const selectedPoints = visibleCandidates.filter((entry) => entry.candidate.kind === 'point').slice(0, pointLights.length);
       const selectedSpots = visibleCandidates.filter((entry) => entry.candidate.kind === 'spot').slice(0, spotLights.length);
-      group.visible = selectedPoints.length + selectedSpots.length + windowLights.count > 0;
+      group.visible = selectedPoints.length + selectedSpots.length + windowLights.count > 0 || Boolean(indirectProbe);
       pointLights.forEach((light, index) => {
         const entry = selectedPoints[index];
         if (!entry) {
@@ -130,8 +132,27 @@ export function buildMapLocalLights(
     setTimeOfDay: (timeOfDay) => {
       practicalScale = map.sceneMode === 'outdoor' ? 1 : indoorPracticalScale(timeOfDay);
       windowLights.setTimeOfDay(timeOfDay);
+      if (indirectProbe) indirectProbe.intensity = indirectProbeIntensity(timeOfDay, candidates.length > 0, windowLights.count > 0);
     }
   };
+}
+
+/** One low-frequency SH probe supplies cheap room-scale bounce on desktop. */
+function buildInteriorIndirectProbe(map: EditableMap, hasPracticalLights: boolean): THREE.LightProbe | null {
+  if (map.sceneMode !== 'indoor' || !map.room) return null;
+  const probe = new THREE.LightProbe(undefined, indirectProbeIntensity('noon', hasPracticalLights, map.room.openings.some((opening) => opening.kind === 'window')));
+  probe.name = 'mapInteriorLightProbe';
+  const colors = map.interiorArtDirection?.palette ?? [map.box.colors.floor, map.box.colors.north, '#ffd8a0'];
+  const bounce = colors.reduce((result, color) => result.add(new THREE.Color(color)), new THREE.Color()).multiplyScalar(1 / Math.max(1, colors.length));
+  probe.sh.coefficients[0].set(bounce.r, bounce.g, bounce.b).multiplyScalar(2 * Math.sqrt(Math.PI));
+  return probe;
+}
+
+function indirectProbeIntensity(timeOfDay: VisualTimeOfDay, hasPracticalLights: boolean, hasWindows: boolean): number {
+  if (timeOfDay === 'night') return hasPracticalLights ? 0.34 : 0.06;
+  if (timeOfDay === 'evening') return (hasPracticalLights ? 0.28 : 0.08) + (hasWindows ? 0.08 : 0);
+  if (timeOfDay === 'morning') return hasWindows ? 0.34 : 0.16;
+  return hasWindows ? 0.38 : 0.18;
 }
 
 function buildWindowLights(map: EditableMap): {

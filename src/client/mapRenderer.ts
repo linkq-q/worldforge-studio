@@ -19,6 +19,7 @@ import {
   type MapPaintStroke,
   type MapSurface,
   type MapWaterBody,
+  type RoomShellSegment,
   type RoomSurface,
   type RoomWallDisplayMode
 } from '../shared/map';
@@ -38,6 +39,7 @@ import { buildMapLocalLights } from './mapLocalLights';
 import { isPointInsidePlayableArea } from '../shared/mapLayout';
 import { isPointInsideWaterBody, riverPathSamples, waterBoundaryPoints } from '../shared/mapWater';
 import type { VisualTimeOfDay } from '../shared/visualDirection';
+import type { ProceduralRug, SurfaceFinishRecipe } from '../shared/interiorArtDirection';
 
 export interface RenderedMapDebugStats extends MapPrimitiveBatchStats {
   grassLayers: number;
@@ -113,6 +115,8 @@ export async function buildEditableMapGroup(input: EditableMap, options: MapRend
   const assets = new Map((map.assets ?? []).map((asset) => [asset.id, asset]));
   const roomShell = buildRoomShell(map);
   if (roomShell) modelsRoot.add(roomShell.group);
+  const proceduralRugs = buildProceduralRugs(map);
+  if (proceduralRugs) modelsRoot.add(proceduralRugs);
 
   let grassMap = deriveContactAwareGrassMap(map);
   const terrain = buildTerrain(map);
@@ -286,13 +290,18 @@ function buildRoomShell(map: EditableMap): RoomShellRender | null {
   }
 
   for (const segment of buildRoomShellSegments(map)) {
-    const material = new THREE.MeshStandardMaterial({
-      color: map.box.colors[segment.surface],
-      map: createSurfaceTexture(map, segment.surface),
-      roughness: 0.82,
-      metalness: 0,
-      side: THREE.DoubleSide
-    });
+    const finish = map.interiorArtDirection?.surfaces[segment.surface];
+    const glass = finish?.recipe === 'glass.panel';
+    const parameters = {
+      color: map.box.colors[segment.surface], map: createSurfaceTexture(map, segment.surface, segment),
+      roughness: finish?.roughness ?? 0.82, metalness: 0, side: THREE.DoubleSide
+    };
+    const material = glass
+      ? new THREE.MeshPhysicalMaterial({
+          ...parameters, transparent: true, opacity: 0.42, transmission: 0.62,
+          thickness: Math.max(0.02, Math.min(...segment.size)), depthWrite: false
+        })
+      : new THREE.MeshStandardMaterial(parameters);
     const mesh = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), material);
     mesh.position.set(...segment.center);
     mesh.scale.set(...segment.size);
@@ -305,7 +314,7 @@ function buildRoomShell(map: EditableMap): RoomShellRender | null {
     mesh.userData.roomYMin = segment.yMin;
     mesh.userData.roomYMax = segment.yMax;
     surfaceGroups.get(segment.surface)?.add(mesh);
-    if (segment.surface !== 'floor') {
+    if (segment.surface !== 'floor' && !glass) {
       const shadowMaterial = new THREE.MeshBasicMaterial({ side: THREE.DoubleSide });
       shadowMaterial.colorWrite = false;
       shadowMaterial.depthWrite = false;
@@ -324,7 +333,7 @@ function buildRoomShell(map: EditableMap): RoomShellRender | null {
     const cameraZ = camera.position.z - room.position[2];
     const hiddenCutaway = new Set<RoomSurface>();
     if (mode === 'cutaway') {
-      hiddenCutaway.add('ceiling');
+      if (map.interiorArtDirection?.surfaces.ceiling.recipe !== 'glass.panel') hiddenCutaway.add('ceiling');
       if (Math.abs(cameraX) > 0.05) hiddenCutaway.add(cameraX > 0 ? 'east' : 'west');
       if (Math.abs(cameraZ) > 0.05) hiddenCutaway.add(cameraZ > 0 ? 'south' : 'north');
     }
@@ -1102,28 +1111,224 @@ function buildSunGroup(map: EditableMap): THREE.Group {
   return group;
 }
 
-function createSurfaceTexture(map: EditableMap, surface: MapSurface): THREE.CanvasTexture {
+function createSurfaceTexture(
+  map: EditableMap,
+  surface: MapSurface,
+  segment?: RoomShellSegment
+): THREE.CanvasTexture {
   const canvas = document.createElement('canvas');
   canvas.width = 768;
   canvas.height = 768;
   const ctx = canvas.getContext('2d');
-  if (!ctx) return new THREE.CanvasTexture(canvas);
-  // Vertex colors own the terrain palette; a neutral base keeps paint strokes
-  // and the editor grid from multiplying the surface darker.
-  ctx.fillStyle = surface === 'terrain' ? '#ffffff' : map.box.colors[surface as keyof typeof map.box.colors];
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-  if (surface === 'terrain') drawSemanticTerrainSurface(ctx, map, canvas.width, canvas.height);
-  drawSubtleGrid(ctx, canvas.width, canvas.height);
-  for (const stroke of map.paintStrokes) {
-    if (stroke.surface !== surface && !(surface === 'terrain' && stroke.surface === 'floor')) continue;
-    drawStroke(ctx, stroke, canvas.width, canvas.height);
+  if (ctx) {
+    // Vertex colors own the terrain palette; a neutral base keeps paint strokes
+    // and the editor grid from multiplying the surface darker.
+    ctx.fillStyle = surface === 'terrain' ? '#ffffff' : map.box.colors[surface as keyof typeof map.box.colors];
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    if (surface === 'terrain') drawSemanticTerrainSurface(ctx, map, canvas.width, canvas.height);
+    const finish = surface !== 'terrain' ? map.interiorArtDirection?.surfaces[surface as RoomSurface] : undefined;
+    if (finish) drawSurfaceFinish(ctx, finish, surfaceDimensions(map, surface as RoomSurface), canvas.width, canvas.height);
+    drawSubtleGrid(ctx, canvas.width, canvas.height);
+    for (const stroke of map.paintStrokes) {
+      if (stroke.surface !== surface && !(surface === 'terrain' && stroke.surface === 'floor')) continue;
+      drawStroke(ctx, stroke, canvas.width, canvas.height);
+    }
   }
   const texture = new THREE.CanvasTexture(canvas);
   texture.colorSpace = THREE.SRGBColorSpace;
   texture.wrapS = THREE.ClampToEdgeWrapping;
   texture.wrapT = THREE.ClampToEdgeWrapping;
+  if (segment && segment.surface !== 'floor' && segment.surface !== 'ceiling' && map.room) {
+    const span = segment.surface === 'north' || segment.surface === 'south'
+      ? map.room.size[0]
+      : map.room.size[2];
+    texture.repeat.set((segment.uMax - segment.uMin) / span, (segment.yMax - segment.yMin) / map.room.size[1]);
+    texture.offset.set(segment.uMin / span + 0.5, segment.yMin / map.room.size[1]);
+  }
   texture.needsUpdate = true;
   return texture;
+}
+
+function surfaceDimensions(map: EditableMap, surface: RoomSurface): [number, number] {
+  const room = map.room;
+  if (!room) return [map.box.size[0], map.box.size[2]];
+  if (surface === 'floor' || surface === 'ceiling') return [room.size[0], room.size[2]];
+  return [surface === 'north' || surface === 'south' ? room.size[0] : room.size[2], room.size[1]];
+}
+
+function drawSurfaceFinish(
+  ctx: CanvasRenderingContext2D,
+  finish: SurfaceFinishRecipe,
+  dimensions: [number, number],
+  width: number,
+  height: number
+): void {
+  const [primary, secondary, accent = secondary] = finish.palette;
+  ctx.fillStyle = primary;
+  ctx.fillRect(0, 0, width, height);
+  const unitX = Math.max(8, width * finish.scale / Math.max(0.1, dimensions[0]));
+  const unitY = Math.max(8, height * finish.scale / Math.max(0.1, dimensions[1]));
+  const joint = Math.max(1, Math.min(unitX, unitY) * finish.jointWidth / Math.max(0.04, finish.scale));
+  const random = seededRandom(finish.seed);
+
+  if (finish.recipe === 'paint.solid' || finish.recipe === 'plaster.soft') {
+    const marks = finish.recipe === 'plaster.soft' ? 900 : 320;
+    for (let index = 0; index < marks; index += 1) {
+      ctx.globalAlpha = finish.variation * (0.08 + random() * 0.16);
+      ctx.fillStyle = random() > 0.5 ? secondary : accent;
+      const size = 0.5 + random() * (finish.recipe === 'plaster.soft' ? 2.2 : 1.1);
+      ctx.fillRect(random() * width, random() * height, size, size);
+    }
+  } else if (finish.recipe === 'wallpaper.stripe') {
+    ctx.globalAlpha = 0.42;
+    ctx.fillStyle = secondary;
+    for (let x = 0; x < width; x += unitX) ctx.fillRect(x, 0, Math.max(2, unitX * 0.28), height);
+  } else if (finish.recipe === 'wallpaper.geometric') {
+    ctx.strokeStyle = secondary;
+    ctx.globalAlpha = 0.34;
+    ctx.lineWidth = Math.max(1, joint);
+    for (let y = -unitY; y < height + unitY; y += unitY) {
+      for (let x = -unitX; x < width + unitX; x += unitX) {
+        ctx.beginPath();
+        ctx.moveTo(x, y + unitY / 2);
+        ctx.lineTo(x + unitX / 2, y);
+        ctx.lineTo(x + unitX, y + unitY / 2);
+        ctx.lineTo(x + unitX / 2, y + unitY);
+        ctx.closePath();
+        ctx.stroke();
+      }
+    }
+  } else if (finish.recipe === 'wood.plank') {
+    const rowHeight = Math.max(10, unitY * 0.45);
+    for (let row = 0, y = 0; y < height; row += 1, y += rowHeight) {
+      const offset = row % 2 ? -unitX * 0.5 : 0;
+      for (let x = offset; x < width; x += unitX * 2.6) {
+        ctx.globalAlpha = 0.14 + random() * finish.variation;
+        ctx.fillStyle = random() > 0.5 ? secondary : accent;
+        ctx.fillRect(x + joint, y + joint, unitX * 2.6 - joint * 2, rowHeight - joint * 2);
+      }
+    }
+  } else if (finish.recipe === 'wood.herringbone') {
+    ctx.strokeStyle = secondary;
+    ctx.globalAlpha = 0.45;
+    ctx.lineWidth = Math.max(2, joint);
+    for (let y = -unitY; y < height + unitY; y += unitY) {
+      for (let x = -unitX; x < width + unitX; x += unitX) {
+        ctx.beginPath();
+        ctx.moveTo(x, y + unitY);
+        ctx.lineTo(x + unitX, y);
+        ctx.moveTo(x + unitX, y);
+        ctx.lineTo(x + unitX * 2, y + unitY);
+        ctx.stroke();
+      }
+    }
+  } else if (finish.recipe === 'tile.ceramic' || finish.recipe === 'tile.stone' || finish.recipe === 'ceiling.panel' || finish.recipe === 'glass.panel') {
+    ctx.strokeStyle = secondary;
+    ctx.lineWidth = Math.max(1, joint);
+    ctx.globalAlpha = 0.5;
+    for (let x = 0; x <= width; x += unitX) {
+      ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, height); ctx.stroke();
+    }
+    for (let y = 0; y <= height; y += unitY) {
+      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(width, y); ctx.stroke();
+    }
+    if (finish.recipe === 'tile.stone') {
+      for (let index = 0; index < 420; index += 1) {
+        ctx.globalAlpha = finish.variation * 0.18;
+        ctx.fillStyle = accent;
+        ctx.fillRect(random() * width, random() * height, 1 + random() * 3, 1 + random() * 3);
+      }
+    }
+  } else if (finish.recipe === 'carpet.loop') {
+    for (let y = 0; y < height; y += 3) {
+      for (let x = 0; x < width; x += 3) {
+        ctx.globalAlpha = 0.08 + random() * finish.variation;
+        ctx.fillStyle = random() > 0.5 ? secondary : accent;
+        ctx.fillRect(x, y, 2, 2);
+      }
+    }
+  }
+  ctx.globalAlpha = 1;
+}
+
+function buildProceduralRugs(map: EditableMap): THREE.Group | null {
+  const room = map.room;
+  const rugs = map.interiorArtDirection?.rugs ?? [];
+  if (!room || rugs.length === 0) return null;
+  const group = new THREE.Group();
+  group.name = 'proceduralRugs';
+  for (const rug of rugs) {
+    const availableWidth = Math.max(0.4, room.size[0] - room.wallThickness * 4);
+    const availableDepth = Math.max(0.4, room.size[2] - room.wallThickness * 4);
+    const width = Math.min(availableWidth * 0.94, room.size[0] * rug.size[0] * 1.4);
+    const depth = Math.min(availableDepth * 0.94, room.size[2] * rug.size[1] * 1.4);
+    const geometry = rug.shape === 'round'
+      ? new THREE.CircleGeometry(Math.min(width, depth) / 2, 40)
+      : new THREE.PlaneGeometry(width, depth);
+    const material = new THREE.MeshStandardMaterial({
+      map: createRugTexture(rug), roughness: 0.96, metalness: 0, side: THREE.DoubleSide
+    });
+    const mesh = new THREE.Mesh(geometry, material);
+    mesh.name = `proceduralRug:${rug.id}`;
+    mesh.rotation.x = -Math.PI / 2;
+    mesh.rotation.z = THREE.MathUtils.degToRad(rug.rotation);
+    mesh.position.set(
+      room.position[0] + rug.center[0] * room.size[0] * 0.5,
+      room.position[1] + 0.012,
+      room.position[2] + rug.center[1] * room.size[2] * 0.5
+    );
+    mesh.receiveShadow = true;
+    mesh.userData.proceduralRug = true;
+    group.add(mesh);
+  }
+  return group;
+}
+
+function createRugTexture(rug: ProceduralRug): THREE.CanvasTexture {
+  const canvas = document.createElement('canvas');
+  canvas.width = 384;
+  canvas.height = 256;
+  const ctx = canvas.getContext('2d');
+  if (ctx) {
+    const [primary, secondary, accent = secondary] = rug.palette;
+    ctx.fillStyle = primary;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.strokeStyle = secondary;
+    ctx.fillStyle = secondary;
+    ctx.lineWidth = 10;
+    if (rug.pattern === 'border') ctx.strokeRect(14, 14, canvas.width - 28, canvas.height - 28);
+    if (rug.pattern === 'stripe') {
+      for (let x = 0; x < canvas.width; x += 48) ctx.fillRect(x, 0, 20, canvas.height);
+    }
+    if (rug.pattern === 'geometric') {
+      for (let y = 24; y < canvas.height; y += 48) {
+        for (let x = 24; x < canvas.width; x += 48) {
+          ctx.beginPath(); ctx.moveTo(x, y - 14); ctx.lineTo(x + 14, y); ctx.lineTo(x, y + 14); ctx.lineTo(x - 14, y); ctx.closePath(); ctx.fill();
+        }
+      }
+    }
+    if (rug.pattern === 'woven') {
+      const random = seededRandom(rug.seed);
+      for (let y = 0; y < canvas.height; y += 4) {
+        ctx.globalAlpha = 0.12 + random() * 0.18;
+        ctx.fillStyle = random() > 0.5 ? secondary : accent;
+        ctx.fillRect(0, y, canvas.width, 2);
+      }
+      ctx.globalAlpha = 1;
+    }
+  }
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  return texture;
+}
+
+function seededRandom(seed: number): () => number {
+  let state = Math.trunc(seed) >>> 0;
+  return () => {
+    state = Math.imul(state ^ state >>> 15, 1 | state);
+    state ^= state + Math.imul(state ^ state >>> 7, 61 | state);
+    return ((state ^ state >>> 14) >>> 0) / 4294967296;
+  };
 }
 
 function addMaskBorderSides(vertices: number[], uvs: number[], indices: number[], map: EditableMap): void {
