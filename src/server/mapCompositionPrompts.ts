@@ -1,6 +1,6 @@
 import { getMapBounds, getMapPlayerMetrics, type EditableMap, type MapAsset } from '../shared/map';
 import { indoorAssetTargetCount } from '../shared/indoorScenePlanning';
-import { planLimits } from '../shared/mapPlanning';
+import { DEFAULT_MAP_AI_MAX_NEW_ASSETS, planLimits } from '../shared/mapPlanning';
 import type {
   SceneCompositionMetrics,
   SceneCompositionPlan,
@@ -19,6 +19,13 @@ export function buildSceneDirectorPrompt(
   const bounds = getMapBounds(map);
   const limits = planLimits(bounds, map.sceneMode);
   const player = getMapPlayerMetrics(map);
+  const requestedAssetMaximum = Number.isFinite(options.maxNewAssets)
+    ? Math.max(0, Math.round(options.maxNewAssets!))
+    : DEFAULT_MAP_AI_MAX_NEW_ASSETS;
+  const assetFamilyLimit = Math.min(
+    SCENE_COMPOSITION_LIMITS.assetFamilyCount,
+    Math.max(DEFAULT_MAP_AI_MAX_NEW_ASSETS, requestedAssetMaximum)
+  );
   const indoorAssetTarget = indoor
     ? indoorAssetTargetCount(map, options.minNewAssets ?? 0, options.maxNewAssets ?? limits.assetRequestCount)
     : 0;
@@ -80,6 +87,7 @@ export function buildSceneDirectorPrompt(
     'Island and archipelago terrain automatically include an ocean at sea level. Represent a requested sea or ocean as a terrain requirement with island/archipelago terrain; do not add a water requirement or structured water zone for that surrounding ocean.',
     'Use normalized XZ coordinates in [-1,1]. Region radius is relative to the shorter map half-extent.',
     `Use 1-${SCENE_COMPOSITION_LIMITS.zoneCount} zones. A one-zone composition is valid when the request genuinely calls for it.`,
+    `Use at most ${assetFamilyLimit} asset families for this request. Every zones[].layers[].familyId must exactly match one declared assetFamilies[].id.`,
     'The union of all zones must cover at least 80% of the normalized map square. Any remaining large open area must be intentional negative space described by a zone, not an accidental omission.',
     'Asset family role is free semantic text. Tags should be reusable lower-case search terms.',
     'For each asset family provide 1-3 identityTags containing the specific identity required for reuse (for example maple, castle, deer, sakura). Do not put broad category tags such as tree, vegetation, building, structure, animal, forest, or landmark in identityTags.',

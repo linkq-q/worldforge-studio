@@ -16,6 +16,7 @@ import {
 import { planLimits } from '../src/shared/mapPlanning';
 import { isSpawnPositionSafe } from '../src/shared/mapSpawnSafety';
 import { planMapComposition } from '../src/server/mapCompositionWorkflow';
+import { buildSceneDirectorPrompt } from '../src/server/mapCompositionPrompts';
 import type { SceneCompositionPlan } from '../src/shared/sceneComposition';
 
 const assets: MapAsset[] = [
@@ -24,6 +25,14 @@ const assets: MapAsset[] = [
 ];
 
 describe('map AI adapter', () => {
+  it('scales the director asset-family limit with the requested asset maximum', () => {
+    const map = createEmptyMap();
+
+    expect(buildSceneDirectorPrompt(map, [], { maxNewAssets: 4 })).toContain('Use at most 16 asset families');
+    expect(buildSceneDirectorPrompt(map, [], { maxNewAssets: 32 })).toContain('Use at most 32 asset families');
+    expect(buildSceneDirectorPrompt(map, [], { maxNewAssets: 100 })).toContain('Use at most 64 asset families');
+  });
+
   it('can return a director plan before generating any assets', async () => {
     const plan = compositionPlan({
       assetFamilies: [family('chairs', ['chair', 'furniture'], 'medium')],

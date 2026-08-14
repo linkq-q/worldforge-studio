@@ -33,7 +33,7 @@ export const SCENE_COMPOSITION_VERSION = 1 as const;
 export const MIN_SCENE_COVERAGE = 0.8;
 export const SCENE_COMPOSITION_LIMITS = Object.freeze({
   zoneCount: 12,
-  assetFamilyCount: 16,
+  assetFamilyCount: 64,
   grassFamilyCount: 6,
   transitionCount: 16,
   consultationCount: 2,
@@ -238,8 +238,10 @@ export interface SceneCompositionMetrics {
 
 export function normalizeSceneCompositionPlan(value: unknown, map: EditableMap): SceneCompositionPlan {
   const input = requireRecord(value, 'invalid_scene_composition');
-  const familyValues = requireArray(input.assetFamilies, 'invalid_scene_asset_families')
-    .slice(0, SCENE_COMPOSITION_LIMITS.assetFamilyCount);
+  const familyValues = requireArray(input.assetFamilies, 'invalid_scene_asset_families');
+  if (familyValues.length > SCENE_COMPOSITION_LIMITS.assetFamilyCount) {
+    throw new Error('scene_asset_family_limit_exceeded');
+  }
   const assetFamilies = familyValues.map(normalizeFamily);
   const familyIds = uniqueIds(assetFamilies, 'duplicate_scene_family_id');
   const declaredGrassFamilies = Array.isArray(input.grassFamilies)

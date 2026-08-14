@@ -22,6 +22,50 @@ import { sampleGrassDensity } from '../src/shared/mapGrass';
 import { ensureSceneCompositionOutcome } from '../src/shared/sceneCompositionOutcome';
 
 describe('scene composition contract', () => {
+  it('retains asset families up to the requested 32-asset planning range', () => {
+    const map = createEmptyMap();
+    const input = structuredClone(planInput()) as {
+      assetFamilies: Array<Record<string, unknown>>;
+      zones: Array<{ layers: Array<Record<string, unknown>> }>;
+    };
+    input.assetFamilies = Array.from({ length: 32 }, (_, index) => ({
+      id: `family-${index + 1}`,
+      label: `Family ${index + 1}`,
+      role: 'scene prop',
+      tags: [`family-${index + 1}`],
+      sizeClass: 'small',
+      desiredVariants: 1,
+      priority: 0.5,
+      generationBrief: `Reusable scene prop ${index + 1}`
+    }));
+    input.zones.forEach((zone) => { zone.layers = []; });
+    input.zones[0].layers = [{
+      familyId: 'family-32', density: 0.04, scaleRange: [1, 1], distribution: 'even', edgeFalloff: 0.2
+    }];
+
+    const plan = normalizeSceneCompositionPlan(input, map);
+
+    expect(plan.assetFamilies).toHaveLength(32);
+    expect(plan.zones[0].layers[0].familyId).toBe('family-32');
+  });
+
+  it('rejects asset families above the hard limit before validating layer references', () => {
+    const input = structuredClone(planInput()) as { assetFamilies: Array<Record<string, unknown>> };
+    input.assetFamilies = Array.from({ length: 65 }, (_, index) => ({
+      id: `family-${index + 1}`,
+      label: `Family ${index + 1}`,
+      role: 'scene prop',
+      tags: [`family-${index + 1}`],
+      sizeClass: 'small',
+      desiredVariants: 1,
+      priority: 0.5,
+      generationBrief: `Reusable scene prop ${index + 1}`
+    }));
+
+    expect(() => normalizeSceneCompositionPlan(input, createEmptyMap()))
+      .toThrow('scene_asset_family_limit_exceeded');
+  });
+
   it('preserves an AI-authored light contract on an asset family and generation gap', () => {
     const map = createEmptyMap('Lighting contract', 'map-light-contract', [16, 4, 12], 'voxel', 'indoor', [16, 4, 12]);
     const input = structuredClone(planInput()) as { assetFamilies: Array<Record<string, unknown>> };
