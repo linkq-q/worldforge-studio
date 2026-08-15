@@ -49,6 +49,10 @@ import {
   type AssetLibraryMetadata,
   type AssetLibraryPack
 } from '../shared/assetLibrary';
+import {
+  normalizeProjectExportProfile,
+  type ProjectExportProfile
+} from '../shared/projectExport';
 
 export interface MapStoreOptions {
   rootDir?: string;
@@ -97,6 +101,7 @@ export class MapStore {
   private readonly sharedHdriDir: string;
   private readonly starterDataDir: string | null;
   private readonly starterSeedPath: string;
+  private readonly projectExportProfilesPath: string;
   // ponytail: one global queue is enough for local single-user editing; split per map only if concurrency becomes measurable.
   private transactionQueue: Promise<void> = Promise.resolve();
 
@@ -113,6 +118,7 @@ export class MapStore {
       ? (options.rootDir ? null : path.join(process.cwd(), 'assets', 'starter-data'))
       : options.starterDataDir;
     this.starterSeedPath = path.join(this.rootDir, '.starter-seed.json');
+    this.projectExportProfilesPath = path.join(this.rootDir, 'project-export-profiles.json');
   }
 
   async ensureReady(): Promise<void> {
@@ -223,6 +229,35 @@ export class MapStore {
     await rm(this.mapPath(id), { force: true });
     await rm(this.undoPath(id), { force: true });
     await rm(this.redoPath(id), { force: true });
+  }
+
+  async listProjectExportProfiles(): Promise<ProjectExportProfile[]> {
+    await this.ensureReady();
+    const values = await readJsonFile<ProjectExportProfile[]>(this.projectExportProfilesPath, []);
+    return values
+      .map((value) => normalizeProjectExportProfile(value))
+      .sort((left, right) => right.updatedAt - left.updatedAt || left.name.localeCompare(right.name));
+  }
+
+  async saveProjectExportProfile(input: Partial<ProjectExportProfile>): Promise<ProjectExportProfile> {
+    const profiles = await this.listProjectExportProfiles();
+    const current = input.id ? profiles.find((profile) => profile.id === input.id) : undefined;
+    const profile = normalizeProjectExportProfile(input, current);
+    if (profile.mode === 'server' && !path.isAbsolute(profile.projectDirectory)) {
+      throw new Error('project_export_server_path_must_be_absolute');
+    }
+    const next = current
+      ? profiles.map((item) => item.id === current.id ? profile : item)
+      : [...profiles, profile];
+    await atomicWriteJson(this.projectExportProfilesPath, next);
+    return profile;
+  }
+
+  async deleteProjectExportProfile(id: string): Promise<void> {
+    const profiles = await this.listProjectExportProfiles();
+    const next = profiles.filter((profile) => profile.id !== safeId(id));
+    if (next.length === profiles.length) throw new Error('unknown_project_export_profile');
+    await atomicWriteJson(this.projectExportProfilesPath, next);
   }
 
   async getUndoTransaction(mapId: string): Promise<MapTransactionSummary | null> {
@@ -973,6 +1008,15 @@ async function atomicWriteJson(destination: string, value: unknown): Promise<voi
     await rename(temporary, destination);
   } finally {
     await rm(temporary, { force: true });
+  }
+}
+
+async function readJsonFile<T>(file: string, fallback: T): Promise<T> {
+  try {
+    return JSON.parse(await readFile(file, 'utf8')) as T;
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === 'ENOENT') return fallback;
+    throw error;
   }
 }
 

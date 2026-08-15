@@ -89,6 +89,15 @@ import {
   type EditorExportKind
 } from './editorTransfer';
 import {
+  decodeProjectExportBundle,
+  inspectBrowserProjectExport,
+  loadBrowserProjectDirectory,
+  pickBrowserProjectDirectory,
+  saveBrowserProjectDirectory,
+  writeBrowserProjectExport
+} from './projectDirectoryExport';
+import type { ProjectExportProfile } from '../shared/projectExport';
+import {
   applyMapOperations,
   type MapAiSuggestion,
   type MapOperation,
@@ -331,6 +340,9 @@ class MapEditor {
   private pendingCompositionPlan: SceneCompositionPlan | null = null;
   private activeAssetLibraryId = '';
   private selectedLibraryAssetId = '';
+  private projectExportProfiles: ProjectExportProfile[] = [];
+  private selectedProjectExportProfileId = '';
+  private pendingBrowserProjectDirectory: FileSystemDirectoryHandle | null = null;
   private previewingLibraryAsset = false;
   private mapAiMinNewAssets = DEFAULT_MAP_AI_MIN_NEW_ASSETS;
   private mapAiMaxNewAssets = DEFAULT_MAP_AI_MAX_NEW_ASSETS;
@@ -505,6 +517,8 @@ class MapEditor {
                   <button type="button" data-editor-export="map">地图数据</button>
                   <button type="button" data-editor-export="render-scheme">渲染方案</button>
                   <button type="button" data-editor-export="scene">完整场景包</button>
+                  <button type="button" id="configure-project-export">项目导出配置…</button>
+                  <button type="button" id="export-to-project">一键导出到项目</button>
                   <button type="button" id="import-transfer">导入文件…</button>
                 </div>
               </details>
@@ -543,6 +557,49 @@ class MapEditor {
           <div id="render-inspector"></div>
         </aside>
       </main>
+      <dialog id="project-export-dialog" class="project-export-dialog">
+        <div class="project-export-dialog-body">
+          <header><div><h2>项目导出配置</h2><p>保存项目根目录，并把地图与公共资产写入相对子目录。</p></div></header>
+          <div class="project-export-profile-row">
+            <label><span>配置</span><select id="project-export-profile"></select></label>
+            <button id="project-export-new" class="secondary" type="button">新建</button>
+          </div>
+          <label><span>配置名称</span><input id="project-export-name" maxlength="64" placeholder="例如：躲猫猫项目"></label>
+          <label><span>写入方式</span><select id="project-export-mode">
+            <option value="server">本地服务绝对路径</option>
+            <option value="browser">浏览器目录授权</option>
+          </select></label>
+          <label><span>项目根目录</span><div class="project-export-directory-row">
+            <input id="project-export-root" maxlength="1024" placeholder="例如 D:\\Projects\\HideAndSeek">
+            <button id="project-export-pick" class="secondary" type="button">选择目录…</button>
+          </div></label>
+          <div class="project-export-path-grid">
+            <label><span>地图相对目录</span><input id="project-export-maps" value="maps"></label>
+            <label><span>公共资产相对目录</span><input id="project-export-assets" value="assets/worldforge"></label>
+          </div>
+          <label><span>本次地图文件夹</span><input id="project-export-map-folder" maxlength="80"></label>
+          <p id="project-export-hint" class="project-export-hint"></p>
+          <footer>
+            <button id="project-export-delete" class="secondary danger" type="button">删除配置</button>
+            <span></span>
+            <button id="project-export-cancel" class="secondary" type="button">取消</button>
+            <button id="project-export-save" class="secondary" type="button">保存配置</button>
+            <button id="project-export-run" type="button">保存并导出</button>
+          </footer>
+        </div>
+      </dialog>
+      <dialog id="project-export-conflicts" class="project-export-dialog project-export-conflicts">
+        <div class="project-export-dialog-body">
+          <header><div><h2>发现同名文件</h2><p>默认保留目标项目中的文件。勾选后才会覆盖。</p></div></header>
+          <div id="project-export-conflict-list" class="project-export-conflict-list"></div>
+          <footer>
+            <button id="project-export-conflict-cancel" class="secondary" type="button">取消</button>
+            <span></span>
+            <button id="project-export-conflict-rename" class="secondary" type="button">整张地图另存为…</button>
+            <button id="project-export-conflict-apply" type="button">按选择继续</button>
+          </footer>
+        </div>
+      </dialog>
     `;
 
     this.updateHierarchyLayout();
@@ -638,6 +695,35 @@ class MapEditor {
         void this.exportTransfer(button.dataset.editorExport as EditorExportKind);
         button.closest('details')?.removeAttribute('open');
       });
+    });
+    this.app.querySelector('#configure-project-export')?.addEventListener('click', (event) => {
+      (event.currentTarget as HTMLElement).closest('details')?.removeAttribute('open');
+      this.openProjectExportDialog();
+    });
+    this.app.querySelector('#export-to-project')?.addEventListener('click', (event) => {
+      (event.currentTarget as HTMLElement).closest('details')?.removeAttribute('open');
+      void this.exportCurrentMapToProject();
+    });
+    this.app.querySelector<HTMLSelectElement>('#project-export-profile')?.addEventListener('change', (event) => {
+      this.selectedProjectExportProfileId = (event.currentTarget as HTMLSelectElement).value;
+      this.pendingBrowserProjectDirectory = null;
+      this.populateProjectExportForm(this.currentProjectExportProfile());
+      this.rememberProjectExportProfile();
+    });
+    this.app.querySelector('#project-export-new')?.addEventListener('click', () => {
+      this.selectedProjectExportProfileId = '';
+      this.pendingBrowserProjectDirectory = null;
+      this.populateProjectExportForm(null);
+    });
+    this.app.querySelector<HTMLSelectElement>('#project-export-mode')?.addEventListener('change', () => {
+      this.updateProjectExportModeFields();
+    });
+    this.app.querySelector('#project-export-pick')?.addEventListener('click', () => void this.pickProjectExportDirectory());
+    this.app.querySelector('#project-export-save')?.addEventListener('click', () => void this.saveProjectExportProfile());
+    this.app.querySelector('#project-export-run')?.addEventListener('click', () => void this.saveAndRunProjectExport());
+    this.app.querySelector('#project-export-delete')?.addEventListener('click', () => void this.deleteProjectExportProfile());
+    this.app.querySelector('#project-export-cancel')?.addEventListener('click', () => {
+      this.app.querySelector<HTMLDialogElement>('#project-export-dialog')?.close();
     });
     const importInput = this.app.querySelector<HTMLInputElement>('#import-transfer-file');
     this.app.querySelector('#import-transfer')?.addEventListener('click', () => importInput?.click());
@@ -813,16 +899,18 @@ class MapEditor {
   }
 
   private async reloadLists(): Promise<void> {
-    const [maps, assets, renderSchemes, assetLibraries] = await Promise.all([
+    const [maps, assets, renderSchemes, assetLibraries, exportProfiles] = await Promise.all([
       editorFetch<{ maps: MapSummary[] }>('/api/editor/maps'),
       editorFetch<{ assets: MapAsset[] }>('/api/editor/assets'),
       editorFetch<{ renderSchemes: RenderScheme[] }>('/api/editor/render-schemes'),
-      editorFetch<{ libraries: AssetLibrary[] }>('/api/editor/asset-libraries')
+      editorFetch<{ libraries: AssetLibrary[] }>('/api/editor/asset-libraries'),
+      editorFetch<{ profiles: ProjectExportProfile[] }>('/api/editor/export-profiles')
     ]);
     this.state.maps = maps.maps;
     this.state.assets = assets.assets;
     this.state.renderSchemes = renderSchemes.renderSchemes;
     this.state.assetLibraries = assetLibraries.libraries;
+    this.projectExportProfiles = exportProfiles.profiles;
     if (!this.state.assetLibraries.some((library) => library.id === this.activeAssetLibraryId)) {
       this.activeAssetLibraryId = this.state.assetLibraries[0]?.id ?? '';
     }
@@ -3695,6 +3783,287 @@ class MapEditor {
     return this.state.renderSchemes.find((scheme) => scheme.id === id) ?? this.state.renderSchemes[0] ?? null;
   }
 
+  private openProjectExportDialog(): void {
+    const map = this.state.map;
+    const remembered = map ? localStorage.getItem(projectExportProfileKey(map.id)) ?? '' : '';
+    this.selectedProjectExportProfileId = this.projectExportProfiles.some((profile) => profile.id === remembered)
+      ? remembered
+      : this.projectExportProfiles.some((profile) => profile.id === this.selectedProjectExportProfileId)
+        ? this.selectedProjectExportProfileId
+        : this.projectExportProfiles[0]?.id ?? '';
+    this.pendingBrowserProjectDirectory = null;
+    this.populateProjectExportForm(this.currentProjectExportProfile());
+    this.app.querySelector<HTMLDialogElement>('#project-export-dialog')?.showModal();
+  }
+
+  private populateProjectExportForm(profile: ProjectExportProfile | null): void {
+    const map = this.state.map;
+    const select = this.app.querySelector<HTMLSelectElement>('#project-export-profile');
+    if (select) {
+      select.innerHTML = [
+        '<option value="">新配置</option>',
+        ...this.projectExportProfiles.map((item) => (
+          `<option value="${escapeHtml(item.id)}">${escapeHtml(item.name)}</option>`
+        ))
+      ].join('');
+      select.value = profile?.id ?? '';
+    }
+    setInputValue(this.app, '#project-export-name', profile?.name ?? '');
+    setInputValue(this.app, '#project-export-mode', profile?.mode ?? 'server');
+    setInputValue(this.app, '#project-export-root', profile?.projectDirectory ?? '');
+    setInputValue(this.app, '#project-export-maps', profile?.mapsDirectory ?? 'maps');
+    setInputValue(this.app, '#project-export-assets', profile?.assetsDirectory ?? 'assets/worldforge');
+    const rememberedFolder = map ? localStorage.getItem(projectExportFolderKey(map.id)) : null;
+    setInputValue(this.app, '#project-export-map-folder', rememberedFolder || map?.name || '地图');
+    const deleteButton = this.app.querySelector<HTMLButtonElement>('#project-export-delete');
+    if (deleteButton) deleteButton.disabled = !profile;
+    this.updateProjectExportModeFields();
+  }
+
+  private updateProjectExportModeFields(): void {
+    const mode = this.app.querySelector<HTMLSelectElement>('#project-export-mode')?.value;
+    const input = this.app.querySelector<HTMLInputElement>('#project-export-root');
+    const picker = this.app.querySelector<HTMLButtonElement>('#project-export-pick');
+    const hint = this.app.querySelector<HTMLElement>('#project-export-hint');
+    if (input) input.readOnly = mode === 'browser';
+    if (picker) picker.hidden = mode !== 'browser';
+    if (hint) hint.textContent = mode === 'browser'
+      ? '浏览器会保存目录授权；重启后可能要求再次确认权限。'
+      : '填写本机绝对路径。服务端只写入该项目根目录，不会删除任何已有文件。';
+  }
+
+  private async pickProjectExportDirectory(): Promise<void> {
+    try {
+      const handle = await pickBrowserProjectDirectory();
+      this.pendingBrowserProjectDirectory = handle;
+      setInputValue(this.app, '#project-export-root', handle.name);
+    } catch (error) {
+      if (error instanceof DOMException && error.name === 'AbortError') return;
+      this.state.message = `选择目录失败：${projectExportError(error)}`;
+      this.updateToolbarState();
+    }
+  }
+
+  private async saveProjectExportProfile(showMessage = true): Promise<ProjectExportProfile | null> {
+    const current = this.currentProjectExportProfile();
+    const mapFolder = this.app.querySelector<HTMLInputElement>('#project-export-map-folder')?.value.trim() ?? '';
+    const mode = this.app.querySelector<HTMLSelectElement>('#project-export-mode')?.value === 'browser'
+      ? 'browser'
+      : 'server';
+    const projectDirectory = this.app.querySelector<HTMLInputElement>('#project-export-root')?.value.trim() ?? '';
+    if (mode === 'browser' && current?.mode !== 'browser' && !this.pendingBrowserProjectDirectory) {
+      this.state.message = '请先选择浏览器项目根目录';
+      this.updateToolbarState();
+      return null;
+    }
+    try {
+      const { profile } = await editorFetch<{ profile: ProjectExportProfile }>('/api/editor/export-profiles', {
+        method: 'POST',
+        body: JSON.stringify({
+          id: current?.id,
+          name: this.app.querySelector<HTMLInputElement>('#project-export-name')?.value,
+          mode,
+          projectDirectory,
+          mapsDirectory: this.app.querySelector<HTMLInputElement>('#project-export-maps')?.value,
+          assetsDirectory: this.app.querySelector<HTMLInputElement>('#project-export-assets')?.value
+        })
+      });
+      if (mode === 'browser' && this.pendingBrowserProjectDirectory) {
+        await saveBrowserProjectDirectory(profile.id, this.pendingBrowserProjectDirectory);
+      }
+      await this.reloadProjectExportProfiles();
+      this.selectedProjectExportProfileId = profile.id;
+      this.rememberProjectExportProfile();
+      this.populateProjectExportForm(this.currentProjectExportProfile());
+      if (mapFolder) setInputValue(this.app, '#project-export-map-folder', mapFolder);
+      if (showMessage) {
+        this.state.message = `项目导出配置“${profile.name}”已保存`;
+        this.updateToolbarState();
+      }
+      return this.currentProjectExportProfile();
+    } catch (error) {
+      this.state.message = `保存导出配置失败：${projectExportError(error)}`;
+      this.updateToolbarState();
+      return null;
+    }
+  }
+
+  private async saveAndRunProjectExport(): Promise<void> {
+    const profile = await this.saveProjectExportProfile(false);
+    if (!profile) return;
+    const mapFolder = this.app.querySelector<HTMLInputElement>('#project-export-map-folder')?.value.trim()
+      || this.state.map?.name
+      || '地图';
+    this.app.querySelector<HTMLDialogElement>('#project-export-dialog')?.close();
+    await this.runProjectExport(profile, mapFolder);
+  }
+
+  private async deleteProjectExportProfile(): Promise<void> {
+    const profile = this.currentProjectExportProfile();
+    if (!profile || !confirm(`确定删除导出配置“${profile.name}”吗？\n\n不会删除已经导出的项目文件。`)) return;
+    try {
+      await editorFetch(`/api/editor/export-profiles/${encodeURIComponent(profile.id)}`, { method: 'DELETE' });
+      await this.reloadProjectExportProfiles();
+      this.selectedProjectExportProfileId = this.projectExportProfiles[0]?.id ?? '';
+      this.populateProjectExportForm(this.currentProjectExportProfile());
+      this.state.message = '项目导出配置已删除；目标项目文件未改动';
+      this.updateToolbarState();
+    } catch (error) {
+      this.state.message = `删除导出配置失败：${projectExportError(error)}`;
+      this.updateToolbarState();
+    }
+  }
+
+  private async exportCurrentMapToProject(): Promise<void> {
+    const map = this.state.map;
+    if (!map || this.state.busy) return;
+    if (this.state.dirty || this.mapAiPreviewMap || this.renderDraftChanged) {
+      this.state.message = '当前地图存在未保存内容，请先保存后再导出到项目';
+      this.updateToolbarState();
+      return;
+    }
+    const remembered = localStorage.getItem(projectExportProfileKey(map.id)) ?? '';
+    const profile = this.projectExportProfiles.find((item) => item.id === remembered)
+      ?? this.projectExportProfiles[0]
+      ?? null;
+    if (!profile) {
+      this.openProjectExportDialog();
+      this.state.message = '请先创建项目导出配置';
+      this.updateToolbarState();
+      return;
+    }
+    await this.runProjectExport(profile, localStorage.getItem(projectExportFolderKey(map.id)) || map.name);
+  }
+
+  private async runProjectExport(profile: ProjectExportProfile, initialMapFolder: string): Promise<void> {
+    const map = this.state.map;
+    const renderScheme = this.selectedRenderScheme();
+    if (!map || !renderScheme || this.state.busy) return;
+    this.selectedProjectExportProfileId = profile.id;
+    this.rememberProjectExportProfile();
+    this.setBusy(true, '正在检查目标项目文件...');
+    try {
+      let mapFolder = initialMapFolder;
+      for (;;) {
+        const request = {
+          mapId: map.id,
+          profileId: profile.id,
+          mapFolder,
+          renderSchemeId: renderScheme.id
+        };
+        if (profile.mode === 'browser') {
+          const directory = this.pendingBrowserProjectDirectory
+            ?? await loadBrowserProjectDirectory(profile.id);
+          if (!directory) throw new Error('browser_project_directory_permission_required');
+          const bundle = await editorFetchBytes('/api/editor/project-export/bundle', {
+            method: 'POST', body: JSON.stringify(request)
+          });
+          const files = decodeProjectExportBundle(bundle);
+          const preview = await inspectBrowserProjectExport(directory, files);
+          const decision = await this.resolveProjectExportConflicts(preview.conflicts, mapFolder);
+          if (!decision) return;
+          if ('rename' in decision) {
+            mapFolder = decision.rename;
+            continue;
+          }
+          const result = await writeBrowserProjectExport(directory, files, decision.overwritePaths);
+          this.finishProjectExport(profile, mapFolder, result);
+          return;
+        }
+        const previewResult = await editorFetch<{
+          preview: { conflicts: Array<{ path: string; bytes: number }> };
+        }>('/api/editor/project-export/preview', { method: 'POST', body: JSON.stringify(request) });
+        const decision = await this.resolveProjectExportConflicts(previewResult.preview.conflicts, mapFolder);
+        if (!decision) return;
+        if ('rename' in decision) {
+          mapFolder = decision.rename;
+          continue;
+        }
+        const written = await editorFetch<{
+          result: { written: number; unchanged: number; conflictsSkipped: number };
+        }>('/api/editor/project-export/write', {
+          method: 'POST',
+          body: JSON.stringify({ ...request, overwritePaths: decision.overwritePaths })
+        });
+        this.finishProjectExport(profile, mapFolder, written.result);
+        return;
+      }
+    } catch (error) {
+      this.state.message = `导出到项目失败：${projectExportError(error)}`;
+    } finally {
+      this.pendingBrowserProjectDirectory = null;
+      this.setBusy(false);
+    }
+  }
+
+  private finishProjectExport(
+    profile: ProjectExportProfile,
+    mapFolder: string,
+    result: { written: number; unchanged: number; conflictsSkipped: number }
+  ): void {
+    const map = this.state.map;
+    if (map) localStorage.setItem(projectExportFolderKey(map.id), mapFolder);
+    const kept = result.conflictsSkipped ? `，保留 ${result.conflictsSkipped} 个冲突文件` : '';
+    this.state.message = `已导出到“${profile.name}”：写入 ${result.written} 个，跳过相同文件 ${result.unchanged} 个${kept}`;
+  }
+
+  private resolveProjectExportConflicts(
+    conflicts: Array<{ path: string; bytes: number }>,
+    mapFolder: string
+  ): Promise<{ overwritePaths: string[] } | { rename: string } | null> {
+    if (!conflicts.length) return Promise.resolve({ overwritePaths: [] });
+    const dialog = this.app.querySelector<HTMLDialogElement>('#project-export-conflicts');
+    const list = this.app.querySelector<HTMLElement>('#project-export-conflict-list');
+    if (!dialog || !list) return Promise.resolve(null);
+    list.innerHTML = conflicts.map((conflict) => `
+      <label><input type="checkbox" data-project-export-conflict value="${escapeHtml(conflict.path)}">
+        <span><b>${escapeHtml(conflict.path)}</b><small>${formatBytes(conflict.bytes)} · 勾选后覆盖</small></span>
+      </label>
+    `).join('');
+    dialog.showModal();
+    return new Promise((resolve) => {
+      const controller = new AbortController();
+      const finish = (value: { overwritePaths: string[] } | { rename: string } | null) => {
+        controller.abort();
+        dialog.close();
+        resolve(value);
+      };
+      this.app.querySelector('#project-export-conflict-apply')?.addEventListener('click', () => {
+        const overwritePaths = [...list.querySelectorAll<HTMLInputElement>('[data-project-export-conflict]:checked')]
+          .map((input) => input.value);
+        finish({ overwritePaths });
+      }, { signal: controller.signal });
+      this.app.querySelector('#project-export-conflict-rename')?.addEventListener('click', () => {
+        const renamed = prompt('新的地图文件夹名称', `${mapFolder}-副本`)?.trim();
+        if (renamed) finish({ rename: renamed });
+      }, { signal: controller.signal });
+      this.app.querySelector('#project-export-conflict-cancel')?.addEventListener('click', () => finish(null), {
+        signal: controller.signal
+      });
+      dialog.addEventListener('cancel', (event) => {
+        event.preventDefault();
+        finish(null);
+      }, { signal: controller.signal });
+    });
+  }
+
+  private currentProjectExportProfile(): ProjectExportProfile | null {
+    return this.projectExportProfiles.find((profile) => profile.id === this.selectedProjectExportProfileId) ?? null;
+  }
+
+  private async reloadProjectExportProfiles(): Promise<void> {
+    this.projectExportProfiles = (await editorFetch<{ profiles: ProjectExportProfile[] }>(
+      '/api/editor/export-profiles'
+    )).profiles;
+  }
+
+  private rememberProjectExportProfile(): void {
+    const map = this.state.map;
+    if (map && this.selectedProjectExportProfileId) {
+      localStorage.setItem(projectExportProfileKey(map.id), this.selectedProjectExportProfileId);
+    }
+  }
+
   private async exportTransfer(kind: EditorExportKind): Promise<void> {
     const map = this.state.map;
     if (!map || this.state.busy) return;
@@ -5170,6 +5539,52 @@ function drawCanvasCover(
     width,
     height
   );
+}
+
+function projectExportProfileKey(mapId: string): string {
+  return `worldforge.projectExportProfile.${mapId}`;
+}
+
+function projectExportFolderKey(mapId: string): string {
+  return `worldforge.projectExportFolder.${mapId}`;
+}
+
+function setInputValue(app: HTMLElement, selector: string, value: string): void {
+  const input = app.querySelector<HTMLInputElement | HTMLSelectElement>(selector);
+  if (input) input.value = value;
+}
+
+function formatBytes(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+}
+
+function projectExportError(error: unknown): string {
+  const message = error instanceof Error ? error.message : String(error);
+  const known: Array<[string, string]> = [
+    ['project_export_server_path_must_be_absolute', '服务端模式必须填写绝对项目路径'],
+    ['project_export_directory_required', '请选择或填写项目根目录'],
+    ['invalid_project_export_directory', '地图或公共资产相对目录无效'],
+    ['invalid_project_export_map_folder', '地图文件夹名称无效'],
+    ['browser_directory_picker_unsupported', '当前浏览器不支持目录选择，请改用服务端路径模式'],
+    ['browser_project_directory_permission_required', '浏览器目录授权已失效，请在配置中重新选择目录'],
+    ['project_export_hdri_missing', '渲染方案引用的 HDRI 文件不存在']
+  ];
+  return known.find(([code]) => message.includes(code))?.[1] ?? message;
+}
+
+async function editorFetchBytes(path: string, init: RequestInit = {}): Promise<Uint8Array> {
+  const baseUrl = serverHttpBase(location, import.meta.env.DEV);
+  const response = await fetch(`${baseUrl}${path}`, {
+    ...init,
+    headers: { 'Content-Type': 'application/json', ...(init.headers ?? {}) }
+  });
+  if (!response.ok) {
+    const json = await response.json().catch(() => ({})) as { error?: unknown };
+    throw new Error(describeEditorResponseError(json.error, response.status, baseUrl));
+  }
+  return new Uint8Array(await response.arrayBuffer());
 }
 
 async function editorFetch<T>(path: string, init: RequestInit = {}): Promise<T> {

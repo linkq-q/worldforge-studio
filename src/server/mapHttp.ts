@@ -43,9 +43,18 @@ import type { MapAssetLight } from '../shared/mapAssetMetadata';
 import { analyzeAssetForLibrary, pendingAssetLibraryMetadata } from './assetLibraryAi';
 import {
   decodeWorldForgeTransfer,
+  renderSchemeHdriFile,
   replaceRenderSchemeHdriFile
 } from '../shared/scenePackage';
 import { retuneMapStitchSeam, stitchMaps, type MapStitchDirection, type MapStitchSeamPatch } from '../shared/mapStitch';
+import {
+  buildProjectExportPlan,
+  encodeProjectExportPlan,
+  inspectProjectExport,
+  writeProjectExport,
+  type ProjectExportPlan
+} from './projectExport';
+import type { ProjectExportProfile } from '../shared/projectExport';
 
 type Req = http.IncomingMessage;
 type Res = http.ServerResponse;
@@ -148,6 +157,16 @@ async function handleEditorRoute(req: Req, res: Res, store: MapStore, parts: str
 
   if (parts[2] === 'hdri') {
     await handleEditorHdri(req, res, store, parts);
+    return;
+  }
+
+  if (parts[2] === 'export-profiles') {
+    await handleEditorExportProfiles(req, res, store, parts);
+    return;
+  }
+
+  if (parts[2] === 'project-export') {
+    await handleEditorProjectExport(req, res, store, parts);
     return;
   }
 
@@ -644,6 +663,83 @@ async function handleEditorAssets(req: Req, res: Res, store: MapStore, parts: st
   throw new HttpError(404, 'not_found');
 }
 
+async function handleEditorExportProfiles(req: Req, res: Res, store: MapStore, parts: string[]): Promise<void> {
+  if (req.method === 'GET' && parts.length === 3) {
+    sendJson(res, 200, { profiles: await store.listProjectExportProfiles() });
+    return;
+  }
+  if (req.method === 'POST' && parts.length === 3) {
+    const profile = await store.saveProjectExportProfile(await readJson<Partial<ProjectExportProfile>>(req));
+    sendJson(res, 201, { profile });
+    return;
+  }
+  if (req.method === 'DELETE' && parts.length === 4) {
+    await store.deleteProjectExportProfile(parts[3]);
+    sendJson(res, 200, { ok: true });
+    return;
+  }
+  throw new HttpError(404, 'not_found');
+}
+
+async function handleEditorProjectExport(req: Req, res: Res, store: MapStore, parts: string[]): Promise<void> {
+  if (req.method !== 'POST' || parts.length !== 4) throw new HttpError(404, 'not_found');
+  const body = await readJson<{
+    mapId?: string;
+    profileId?: string;
+    mapFolder?: string;
+    renderSchemeId?: string;
+    overwritePaths?: string[];
+  }>(req);
+  const { profile, plan } = await prepareProjectExport(store, body);
+  if (parts[3] === 'bundle') {
+    sendBytes(res, 200, encodeProjectExportPlan(plan), 'application/zip', `${plan.mapFolder}.worldforge-project.zip`);
+    return;
+  }
+  if (profile.mode !== 'server') throw new HttpError(400, 'project_export_profile_requires_server_mode');
+  if (parts[3] === 'preview') {
+    sendJson(res, 200, {
+      profile,
+      mapFolder: plan.mapFolder,
+      manifest: plan.manifest,
+      preview: await inspectProjectExport(profile.projectDirectory, plan)
+    });
+    return;
+  }
+  if (parts[3] === 'write') {
+    const overwritePaths = Array.isArray(body.overwritePaths)
+      ? body.overwritePaths.filter((value): value is string => typeof value === 'string')
+      : [];
+    const result = await writeProjectExport(profile.projectDirectory, plan, overwritePaths);
+    sendJson(res, 200, { profile, mapFolder: plan.mapFolder, manifest: plan.manifest, result });
+    return;
+  }
+  throw new HttpError(404, 'not_found');
+}
+
+async function prepareProjectExport(
+  store: MapStore,
+  input: { mapId?: string; profileId?: string; mapFolder?: string; renderSchemeId?: string }
+): Promise<{ profile: ProjectExportProfile; plan: ProjectExportPlan }> {
+  if (!input.mapId || !input.profileId) throw new HttpError(400, 'project_export_map_and_profile_required');
+  const profile = (await store.listProjectExportProfiles()).find((item) => item.id === input.profileId);
+  if (!profile) throw new HttpError(404, 'unknown_project_export_profile');
+  const map = await store.loadMap(input.mapId);
+  const schemes = await store.listRenderSchemes();
+  const renderSchemeId = input.renderSchemeId || map.renderSchemeId || schemes[0]?.id;
+  if (!renderSchemeId) throw new HttpError(400, 'project_export_requires_render_scheme');
+  const renderScheme = await store.loadRenderScheme(renderSchemeId);
+  const hdriFile = renderSchemeHdriFile(renderScheme);
+  const hdriPath = hdriFile ? await store.resolveHdriFile(hdriFile) : null;
+  if (hdriFile && !hdriPath) throw new HttpError(409, 'project_export_hdri_missing');
+  const hdri = hdriFile && hdriPath
+    ? { file: hdriFile, bytes: new Uint8Array(await readFile(hdriPath)) }
+    : undefined;
+  return {
+    profile,
+    plan: buildProjectExportPlan({ map, renderScheme, profile, mapFolder: input.mapFolder, hdri })
+  };
+}
+
 async function handleEditorAssetLibraries(
   req: Req,
   res: Res,
@@ -884,6 +980,15 @@ async function readBody(req: Req, maxBytes: number): Promise<Buffer> {
 function sendJson(res: Res, status: number, body: unknown): void {
   res.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8' });
   res.end(JSON.stringify(body));
+}
+
+function sendBytes(res: Res, status: number, bytes: Uint8Array, contentType: string, fileName: string): void {
+  res.writeHead(status, {
+    'Content-Type': contentType,
+    'Content-Length': bytes.byteLength,
+    'Content-Disposition': `attachment; filename*=UTF-8''${encodeURIComponent(fileName)}`
+  });
+  res.end(Buffer.from(bytes));
 }
 
 function acceptsEventStream(req: Req): boolean {
