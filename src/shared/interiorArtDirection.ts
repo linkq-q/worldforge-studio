@@ -38,6 +38,22 @@ export interface ProceduralRug {
   seed: number;
 }
 
+export const INTERIOR_FINISH_LOCKS = ['master', 'walls', 'floor', 'carpet', 'rugs'] as const;
+export type InteriorFinishLock = typeof INTERIOR_FINISH_LOCKS[number];
+
+export interface InteriorFinishSettings {
+  enabled: boolean;
+  wallsEnabled: boolean;
+  floorEnabled: boolean;
+  carpetEnabled: boolean;
+  rugsEnabled: boolean;
+  /** Editor application scope. `true` applies a wall edit to all four room walls. */
+  uniformWalls: boolean;
+  locked: InteriorFinishLock[];
+  /** Retained independently so disabling full-room carpet reveals the stored hard floor. */
+  carpet: SurfaceFinishRecipe;
+}
+
 export interface InteriorArtDirection {
   summary: string;
   styleKeywords: string[];
@@ -47,7 +63,13 @@ export interface InteriorArtDirection {
   focalPoint: string;
   surfaces: Record<RoomSurface, SurfaceFinishRecipe>;
   rugs: ProceduralRug[];
+  finishSettings: InteriorFinishSettings;
 }
+
+export type InteriorArtDirectionInput = Omit<Partial<InteriorArtDirection>, 'surfaces' | 'finishSettings'> & {
+  surfaces?: Partial<Record<RoomSurface, Partial<SurfaceFinishRecipe>>>;
+  finishSettings?: Partial<Omit<InteriorFinishSettings, 'carpet'>> & { carpet?: Partial<SurfaceFinishRecipe> };
+};
 
 const DEFAULT_SURFACES: Record<RoomSurface, InteriorSurfaceRecipe> = {
   floor: 'wood.plank',
@@ -59,24 +81,28 @@ const DEFAULT_SURFACES: Record<RoomSurface, InteriorSurfaceRecipe> = {
 };
 
 export function normalizeInteriorArtDirection(
-  value: Partial<InteriorArtDirection> | null | undefined,
+  value: InteriorArtDirectionInput | null | undefined,
   seed = 0
 ): InteriorArtDirection | null {
   if (!value || typeof value !== 'object') return null;
   const palette = normalizePalette(value.palette, ['#d8c7a6', '#9f7652', '#6e5544', '#e7dfce']);
   const rawSurfaces: Partial<Record<RoomSurface, Partial<SurfaceFinishRecipe>>> =
     value.surfaces && typeof value.surfaces === 'object' ? value.surfaces : {};
+  const legacyCarpet = rawSurfaces.floor?.recipe === 'carpet.loop';
   const surfaces = Object.fromEntries((['floor', 'ceiling', 'north', 'south', 'east', 'west'] as RoomSurface[])
     .map((surface, index) => [surface, normalizeSurfaceFinish(
-      rawSurfaces[surface],
+      surface === 'floor' && legacyCarpet ? undefined : rawSurfaces[surface],
       DEFAULT_SURFACES[surface],
       seed + index * 97,
       palette
     )])) as Record<RoomSurface, SurfaceFinishRecipe>;
+  const rawSettings = value.finishSettings && typeof value.finishSettings === 'object'
+    ? value.finishSettings as Partial<InteriorFinishSettings>
+    : undefined;
   const wallSurfaces: RoomSurface[] = ['north', 'south', 'east', 'west'];
   const wallpaper = wallSurfaces.map((surface) => surfaces[surface]).find((surface) => surface.recipe.startsWith('wallpaper.'));
   const allowsAccentWall = /accent wall|feature wall|single wall|局部墙|单面墙|背景墙/i.test(value.summary ?? '');
-  if (wallpaper && !allowsAccentWall) {
+  if (wallpaper && rawSettings?.uniformWalls !== false && !allowsAccentWall) {
     for (const surface of wallSurfaces) surfaces[surface] = { ...wallpaper };
   }
   const glassRoom = /conservatory|greenhouse|glass room|sunroom|玻璃植物房|温室|阳光房/i.test([
@@ -87,6 +113,21 @@ export function normalizeInteriorArtDirection(
   if (glassRoom) surfaces.ceiling = normalizeSurfaceFinish(
     { recipe: 'glass.panel', palette }, 'glass.panel', seed + 701, palette
   );
+  const finishSettings: InteriorFinishSettings = {
+    enabled: rawSettings?.enabled !== false,
+    wallsEnabled: rawSettings?.wallsEnabled !== false,
+    floorEnabled: typeof rawSettings?.floorEnabled === 'boolean' ? rawSettings.floorEnabled : !legacyCarpet,
+    carpetEnabled: typeof rawSettings?.carpetEnabled === 'boolean' ? rawSettings.carpetEnabled : legacyCarpet,
+    rugsEnabled: rawSettings?.rugsEnabled !== false,
+    uniformWalls: rawSettings?.uniformWalls !== false,
+    locked: normalizeFinishLocks(rawSettings?.locked),
+    carpet: normalizeSurfaceFinish(
+      rawSettings?.carpet ?? (legacyCarpet ? rawSurfaces.floor : undefined),
+      'carpet.loop',
+      seed + 809,
+      palette
+    )
+  };
   return {
     summary: cleanText(value.summary, 'coherent indoor art direction', 240),
     styleKeywords: normalizeTextList(value.styleKeywords, 8, 40),
@@ -114,8 +155,59 @@ export function normalizeInteriorArtDirection(
             seed: Math.trunc(clampNumber(raw.seed, seed + index * 131, 0, 0xffffffff)) >>> 0
           }];
         })
-      : []
+      : [],
+    finishSettings
   };
+}
+
+export function activeInteriorSurfaceFinish(
+  direction: InteriorArtDirection | null | undefined,
+  surface: RoomSurface
+): SurfaceFinishRecipe | undefined {
+  if (!direction) return undefined;
+  if (surface === 'ceiling') return direction.surfaces.ceiling;
+  const settings = direction.finishSettings;
+  if (!settings.enabled) return undefined;
+  if (surface === 'floor') {
+    if (settings.carpetEnabled) return settings.carpet;
+    return settings.floorEnabled ? direction.surfaces.floor : undefined;
+  }
+  return settings.wallsEnabled ? direction.surfaces[surface] : undefined;
+}
+
+export function activeInteriorRugs(direction: InteriorArtDirection | null | undefined): ProceduralRug[] {
+  return direction?.finishSettings.enabled && direction.finishSettings.rugsEnabled ? direction.rugs : [];
+}
+
+export function mergeInteriorArtDirectionWithLocks(
+  current: InteriorArtDirection | null | undefined,
+  incoming: InteriorArtDirectionInput,
+  seed = 0
+): InteriorArtDirection | null {
+  const next = normalizeInteriorArtDirection(incoming, seed);
+  const previous = normalizeInteriorArtDirection(current, seed);
+  if (!next || !previous || previous.finishSettings.locked.length === 0) return next;
+  const locked = new Set(previous.finishSettings.locked);
+  if (locked.has('master')) next.finishSettings.enabled = previous.finishSettings.enabled;
+  if (locked.has('walls')) {
+    for (const wall of ['north', 'south', 'east', 'west'] as const) next.surfaces[wall] = { ...previous.surfaces[wall] };
+    next.finishSettings.wallsEnabled = previous.finishSettings.wallsEnabled;
+    next.finishSettings.uniformWalls = previous.finishSettings.uniformWalls;
+  }
+  if (locked.has('floor')) {
+    next.surfaces.floor = { ...previous.surfaces.floor };
+    next.finishSettings.floorEnabled = previous.finishSettings.floorEnabled;
+  }
+  if (locked.has('carpet')) {
+    next.finishSettings.carpet = { ...previous.finishSettings.carpet };
+    next.finishSettings.carpetEnabled = previous.finishSettings.carpetEnabled;
+  }
+  if (locked.has('rugs')) {
+    next.rugs = previous.rugs.map((rug) => ({ ...rug, center: [...rug.center], size: [...rug.size], palette: [...rug.palette] }));
+    next.finishSettings.rugsEnabled = previous.finishSettings.rugsEnabled;
+  }
+  next.finishSettings.locked = [...previous.finishSettings.locked];
+  return normalizeInteriorArtDirection(next, seed);
 }
 
 function normalizeSurfaceFinish(
@@ -137,6 +229,11 @@ function normalizeSurfaceFinish(
     variation: clampNumber(value?.variation, 0.12, 0, 0.35),
     roughness: clampNumber(value?.roughness, defaultRoughness(recipe), 0.2, 1)
   };
+}
+
+function normalizeFinishLocks(value: unknown): InteriorFinishLock[] {
+  if (!Array.isArray(value)) return [];
+  return INTERIOR_FINISH_LOCKS.filter((lock) => value.includes(lock));
 }
 
 function defaultScale(recipe: InteriorSurfaceRecipe): number {

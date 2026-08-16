@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { createEmptyMap, normalizeMap } from '../src/shared/map';
-import { normalizeInteriorArtDirection } from '../src/shared/interiorArtDirection';
+import {
+  activeInteriorRugs,
+  activeInteriorSurfaceFinish,
+  normalizeInteriorArtDirection
+} from '../src/shared/interiorArtDirection';
 import { applyMapOperations } from '../src/shared/mapOperations';
 import { compileSceneComposition } from '../src/shared/sceneCompositionCompiler';
 import type { SceneCompositionPlan } from '../src/shared/sceneComposition';
@@ -46,6 +50,67 @@ describe('interior art direction', () => {
     expect(() => applyMapOperations(createEmptyMap(), [{
       type: 'interior.art-direction.set', artDirection: { summary: 'invalid outdoors' }
     }])).toThrow('interior_art_direction_requires_indoor_map');
+  });
+
+  it('keeps legacy finishes visible while normalized feature switches can disable and restore them', () => {
+    const legacy = normalizeInteriorArtDirection({
+      summary: 'legacy carpet room', palette: ['#345678', '#abcdef'],
+      surfaces: { floor: { recipe: 'carpet.loop' } } as never,
+      rugs: [{
+        id: 'legacy-rug', shape: 'rectangle', center: [0, 0], size: [0.5, 0.4], rotation: 0,
+        pattern: 'border', palette: ['#345678', '#abcdef'], seed: 4
+      }]
+    }, 12)!;
+
+    expect(legacy.finishSettings).toMatchObject({
+      enabled: true, wallsEnabled: true, floorEnabled: false, carpetEnabled: true, rugsEnabled: true
+    });
+    expect(activeInteriorSurfaceFinish(legacy, 'floor')?.recipe).toBe('carpet.loop');
+    expect(activeInteriorRugs(legacy)).toHaveLength(1);
+
+    const disabled = normalizeInteriorArtDirection({
+      ...legacy,
+      finishSettings: { ...legacy.finishSettings, enabled: false }
+    }, 12)!;
+    expect(activeInteriorSurfaceFinish(disabled, 'floor')).toBeUndefined();
+    expect(activeInteriorSurfaceFinish(disabled, 'north')).toBeUndefined();
+    expect(activeInteriorSurfaceFinish(disabled, 'ceiling')).toBeDefined();
+    expect(activeInteriorRugs(disabled)).toEqual([]);
+    expect(disabled.rugs).toEqual(legacy.rugs);
+  });
+
+  it('preserves manually locked room finishes when AI replaces the art direction', () => {
+    const map = createEmptyMap('locked room', 'locked-room', [10, 3, 8], 'voxel', 'indoor', [10, 3, 8]);
+    map.interiorArtDirection = normalizeInteriorArtDirection({
+      summary: 'manual room', palette: ['#112233', '#ddeeff'],
+      surfaces: {
+        north: { recipe: 'wallpaper.geometric', palette: ['#112233', '#ddeeff'] },
+        floor: { recipe: 'wood.herringbone', palette: ['#112233', '#ddeeff'] }
+      } as never,
+      finishSettings: {
+        enabled: true, wallsEnabled: false, floorEnabled: true, carpetEnabled: false, rugsEnabled: true,
+        uniformWalls: true, locked: ['master', 'walls', 'floor']
+      }
+    }, map.seed);
+
+    const result = applyMapOperations(map, [{
+      type: 'interior.art-direction.set',
+      artDirection: {
+        summary: 'AI replacement', palette: ['#884422', '#ffeeaa'],
+        surfaces: {
+          north: { recipe: 'paint.solid' }, floor: { recipe: 'tile.ceramic' }
+        } as never,
+        finishSettings: { enabled: true, wallsEnabled: true, floorEnabled: true }
+      }
+    }]);
+
+    expect(result.interiorArtDirection?.summary).toBe('AI replacement');
+    expect(result.interiorArtDirection?.finishSettings).toMatchObject({
+      enabled: true, wallsEnabled: false, floorEnabled: true,
+      locked: ['master', 'walls', 'floor']
+    });
+    expect(result.interiorArtDirection?.surfaces.north.recipe).toBe('wallpaper.geometric');
+    expect(result.interiorArtDirection?.surfaces.floor.recipe).toBe('wood.herringbone');
   });
 
   it('covers all interior walls with wallpaper by default and gives glass rooms a skylight', () => {

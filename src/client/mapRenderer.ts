@@ -39,7 +39,12 @@ import { buildMapLocalLights } from './mapLocalLights';
 import { isPointInsidePlayableArea } from '../shared/mapLayout';
 import { isPointInsideWaterBody, riverPathSamples, waterBoundaryPoints } from '../shared/mapWater';
 import type { VisualTimeOfDay } from '../shared/visualDirection';
-import type { ProceduralRug, SurfaceFinishRecipe } from '../shared/interiorArtDirection';
+import {
+  activeInteriorRugs,
+  activeInteriorSurfaceFinish,
+  type ProceduralRug,
+  type SurfaceFinishRecipe
+} from '../shared/interiorArtDirection';
 
 export interface RenderedMapDebugStats extends MapPrimitiveBatchStats {
   grassLayers: number;
@@ -290,7 +295,7 @@ function buildRoomShell(map: EditableMap): RoomShellRender | null {
   }
 
   for (const segment of buildRoomShellSegments(map)) {
-    const finish = map.interiorArtDirection?.surfaces[segment.surface];
+    const finish = activeInteriorSurfaceFinish(map.interiorArtDirection, segment.surface);
     const glass = finish?.recipe === 'glass.panel';
     const parameters = {
       color: map.box.colors[segment.surface], map: createSurfaceTexture(map, segment.surface, segment),
@@ -333,7 +338,7 @@ function buildRoomShell(map: EditableMap): RoomShellRender | null {
     const cameraZ = camera.position.z - room.position[2];
     const hiddenCutaway = new Set<RoomSurface>();
     if (mode === 'cutaway') {
-      if (map.interiorArtDirection?.surfaces.ceiling.recipe !== 'glass.panel') hiddenCutaway.add('ceiling');
+      if (activeInteriorSurfaceFinish(map.interiorArtDirection, 'ceiling')?.recipe !== 'glass.panel') hiddenCutaway.add('ceiling');
       if (Math.abs(cameraX) > 0.05) hiddenCutaway.add(cameraX > 0 ? 'east' : 'west');
       if (Math.abs(cameraZ) > 0.05) hiddenCutaway.add(cameraZ > 0 ? 'south' : 'north');
     }
@@ -1126,7 +1131,9 @@ function createSurfaceTexture(
     ctx.fillStyle = surface === 'terrain' ? '#ffffff' : map.box.colors[surface as keyof typeof map.box.colors];
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     if (surface === 'terrain') drawSemanticTerrainSurface(ctx, map, canvas.width, canvas.height);
-    const finish = surface !== 'terrain' ? map.interiorArtDirection?.surfaces[surface as RoomSurface] : undefined;
+    const finish = surface !== 'terrain'
+      ? activeInteriorSurfaceFinish(map.interiorArtDirection, surface as RoomSurface)
+      : undefined;
     if (finish) drawSurfaceFinish(ctx, finish, surfaceDimensions(map, surface as RoomSurface), canvas.width, canvas.height);
     drawSubtleGrid(ctx, canvas.width, canvas.height);
     for (const stroke of map.paintStrokes) {
@@ -1253,7 +1260,7 @@ function drawSurfaceFinish(
 
 function buildProceduralRugs(map: EditableMap): THREE.Group | null {
   const room = map.room;
-  const rugs = map.interiorArtDirection?.rugs ?? [];
+  const rugs = activeInteriorRugs(map.interiorArtDirection);
   if (!room || rugs.length === 0) return null;
   const group = new THREE.Group();
   group.name = 'proceduralRugs';

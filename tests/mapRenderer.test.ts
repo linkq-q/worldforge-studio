@@ -814,6 +814,34 @@ describe('procedural indoor finishes', () => {
     expect(shadowShell.children).toHaveLength(4);
     rendered.dispose();
   });
+
+  it('keeps disabled room finishes configured but renders the plain room shell', async () => {
+    const map = applyMapOperations(
+      createEmptyMap('disabled finishes', 'disabled-finishes', [10, 3, 8], 'voxel', 'indoor', [10, 3, 8]),
+      [{ type: 'interior.art-direction.set', artDirection: {
+        summary: 'stored but disabled', palette: ['#765432', '#decbaa'], decorDensity: 0.6,
+        surfaces: {
+          floor: { recipe: 'wood.herringbone', roughness: 0.37 },
+          north: { recipe: 'wallpaper.geometric', roughness: 0.41 }
+        } as never,
+        rugs: [{
+          id: 'stored', shape: 'rectangle', center: [0, 0], size: [0.5, 0.4], rotation: 0,
+          pattern: 'border', palette: ['#765432', '#decbaa'], seed: 4
+        }],
+        finishSettings: {
+          enabled: false, wallsEnabled: true, floorEnabled: true, carpetEnabled: false, rugsEnabled: true
+        }
+      } }]
+    );
+
+    const rendered = await buildEditableMapGroup(map);
+    const floor = rendered.objectGroups.get('__room__:floor') as THREE.Group;
+    const north = rendered.objectGroups.get('__room__:north') as THREE.Group;
+    expect(rendered.group.getObjectByName('proceduralRugs')).toBeUndefined();
+    expect(((floor.children[0] as THREE.Mesh).material as THREE.MeshStandardMaterial).roughness).not.toBe(0.37);
+    expect(((north.children[0] as THREE.Mesh).material as THREE.MeshStandardMaterial).roughness).not.toBe(0.41);
+    rendered.dispose();
+  });
 });
 
 describe('grass-only refresh', () => {

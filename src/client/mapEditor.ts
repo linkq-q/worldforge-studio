@@ -64,6 +64,12 @@ import {
   renderGrassEditorPanel,
   type GrassEditorState,
 } from './grassEditorPanel';
+import {
+  bindInteriorFinishPanel,
+  bindRoomSurfaceFinishEditor,
+  renderInteriorFinishPanel,
+  renderRoomSurfaceFinishEditor
+} from './interiorFinishPanel';
 import { applyGrassBrushInPlace } from '../shared/mapGrass';
 import {
   defaultRenderModule,
@@ -2436,6 +2442,7 @@ class MapEditor {
     }
     const mapSettingsOpen = host.querySelector<HTMLDetailsElement>('[data-inspector-section="map-settings"]')?.open ?? false;
     const roomSettingsOpen = host.querySelector<HTMLDetailsElement>('[data-inspector-section="room-settings"]')?.open ?? Boolean(map.room);
+    const interiorFinishesOpen = host.querySelector<HTMLDetailsElement>('[data-inspector-section="interior-finishes"]')?.open ?? Boolean(map.room);
     const materialTagsOpen = host.querySelector<HTMLDetailsElement>('[data-inspector-section="material-tags"]')?.open ?? false;
     const visualSemanticsOpen = host.querySelector<HTMLDetailsElement>('[data-inspector-section="visual-semantics"]')?.open ?? false;
     if (!map.visualSemantics.zones.some((zone) => zone.id === this.selectedVisualZoneId)) {
@@ -2516,6 +2523,7 @@ class MapEditor {
           </section>
         </details>
       ` : ''}
+      ${renderInteriorFinishPanel(map, interiorFinishesOpen)}
       <details class="inspector-disclosure" data-inspector-section="visual-semantics" ${visualSemanticsOpen ? 'open' : ''}>
         <summary><span><b>区域语义</b><small>${map.visualSemantics.zones.length} 个区域 · 手调字段自动保留</small></span></summary>
         <section class="editor-section inspector-body">
@@ -2721,6 +2729,14 @@ class MapEditor {
         });
       });
     }
+    bindInteriorFinishPanel(host, map, {
+      changed: (message) => {
+        this.markDirty();
+        this.state.message = message;
+        void this.refreshScene();
+        this.renderPanels();
+      }
+    });
     host.querySelectorAll<HTMLInputElement>('[data-color]').forEach((input) => {
       input.addEventListener('input', () => {
         map.box.colors[input.dataset.color as keyof typeof map.box.colors] = input.value;
@@ -2854,8 +2870,9 @@ class MapEditor {
         <details class="inspector-disclosure" data-inspector-section="selection" data-selection-id="room-${roomSurface}" ${selectionOpen ? 'open' : ''}>
           <summary><span><b>${roomSurfaceLabel(roomSurface)}</b><small>参数化房间表面</small></span></summary>
           <section class="editor-section inspector-body">
-            <p class="empty">该表面属于房间外壳；尺寸由房间参数控制，可独立选择、绘制和修改基础颜色。</p>
-            ${colorField('基础颜色', roomSurface, map.box.colors[roomSurface])}
+            <p class="empty">该表面属于当前参数化房间。墙面可选择应用到整个房间或仅当前墙面；地板保留硬质地板与满铺地毯两套配置。</p>
+            ${colorField('关闭装修时的基础颜色', roomSurface, map.box.colors[roomSurface])}
+            ${renderRoomSurfaceFinishEditor(map, roomSurface)}
           </section>
         </details>
       `;
@@ -2863,6 +2880,14 @@ class MapEditor {
         map.box.colors[roomSurface] = (event.target as HTMLInputElement).value;
         this.markDirty();
         void this.refreshScene();
+      });
+      bindRoomSurfaceFinishEditor(host, map, roomSurface, {
+        changed: (message) => {
+          this.markDirty();
+          this.state.message = message;
+          void this.refreshScene();
+          this.renderPanels();
+        }
       });
       return;
     }
