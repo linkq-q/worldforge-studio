@@ -33,6 +33,7 @@ import {
   type MapGenerationOwner,
   type MapLayout
 } from './mapLayout';
+import { normalizeMapGuides, type MapGuide } from './mapGuide';
 
 export type MapSurface = 'floor' | 'ceiling' | 'north' | 'south' | 'east' | 'west' | 'terrain';
 export type TerrainBrushMode = 'raise' | 'lower' | 'flatten';
@@ -233,6 +234,7 @@ export interface EditableMap {
   materialTagPolicy: MapMaterialTagPolicy;
   visualSemantics: MapVisualSemantics;
   layout: MapLayout;
+  guides: MapGuide[];
   assets?: MapAsset[];
   collisionBake?: MapCollisionBake;
 }
@@ -769,6 +771,7 @@ export function normalizeMap(input: Partial<EditableMap>): EditableMap {
     materialTagPolicy: normalizeMaterialTagPolicy(input.materialTagPolicy),
     visualSemantics: normalizeMapVisualSemantics(input.visualSemantics),
     layout: normalizeMapLayout(input.layout, boxSize),
+    guides: normalizeMapGuides(input.guides, boxSize),
     assets: Array.isArray(input.assets) ? input.assets.map(normalizeAsset) : undefined,
     collisionBake: normalizeMapCollisionBake(input.collisionBake)
   };

@@ -55,6 +55,7 @@ import {
   type GrassLayerPatch,
   type GrassRegion
 } from './mapGrass';
+import { normalizeMapGuides, type MapGuide } from './mapGuide';
 
 export type MapTransactionSource = 'basic-ai' | 'agent' | 'manual';
 
@@ -90,6 +91,8 @@ export type MapOperation =
   | { type: 'grass.fill'; layerId: string; density: number }
   | { type: 'grass.brush'; layerId: string; mode: GrassBrushMode; point: [number, number]; size?: number; strength?: number; targetDensity?: number }
   | { type: 'grass.generate'; layerId: string; region: GrassRegion; density?: number; variation?: number; softness?: number; seed?: number }
+  | { type: 'guide.upsert'; guide: MapGuide }
+  | { type: 'guide.remove'; guideId: string }
   | { type: 'object.add'; object: MapObjectInput }
   | { type: 'object.update'; objectId: string; patch: MapObjectPatch }
   | { type: 'object.remove'; objectId: string }
@@ -120,6 +123,15 @@ export interface MapAiSuggestion {
   generatedAssets: Array<{ id: string; name: string }>;
   reusedAssets?: Array<{ id: string; name: string; libraryId: string }>;
   diagnostics?: MapLintIssue[];
+  /** Preview-only trace for the bounded model-directed Scene Program loop. */
+  agent?: {
+    program: string;
+    iterations: number;
+    guideCount: number;
+    objectCount: number;
+    diagnostics: Array<{ severity: 'info' | 'warning' | 'error'; code: string; message: string }>;
+    trace: Array<{ iteration: number; action: string; summary: string }>;
+  };
   /** Preview-only reasoning artifact. Map transactions persist only compiled operations. */
   composition?: {
     plan: SceneCompositionPlan;
@@ -285,6 +297,20 @@ export function applyMapOperations(map: EditableMap, operations: readonly MapOpe
           operation.softness,
           operation.seed
         );
+        break;
+      case 'guide.upsert': {
+        const [guide] = normalizeMapGuides([operation.guide], next.box.size);
+        if (!guide) throw new Error('invalid_map_guide');
+        const index = next.guides.findIndex((item) => item.id === guide.id);
+        if (index >= 0) next.guides[index] = guide;
+        else next.guides.push(guide);
+        break;
+      }
+      case 'guide.remove':
+        if (!operation.guideId || !next.guides.some((item) => item.id === operation.guideId)) {
+          throw new Error('map_guide_not_found');
+        }
+        next.guides = next.guides.filter((item) => item.id !== operation.guideId);
         break;
       case 'object.add': {
         if (!operation.object || typeof operation.object !== 'object') throw new Error('invalid_object');

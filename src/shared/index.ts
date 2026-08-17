@@ -14,6 +14,7 @@
 // Map schema, bounds, terrain sampling, collision bake and player movement.
 export * from './map';
 export * from './mapLayout';
+export * from './mapGuide';
 export * from './mapStitch';
 export * from './materialTagPolicy';
 
