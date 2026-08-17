@@ -341,6 +341,7 @@ class MapEditor {
   private mapAiTargetRegionId = '';
   private mapAiBaseTerrainOnly = false;
   private mapAiProvider: ChatProvider = 'gpt';
+  private mapAiUseSceneAgent = true;
   private mapAiReuseExistingAssets = false;
   private mapAiConfirmCompositionPlan = false;
   private pendingCompositionPlan: SceneCompositionPlan | null = null;
@@ -1246,6 +1247,10 @@ class MapEditor {
         <textarea id="map-ai-prompt" rows="2" maxlength="1200" placeholder="${map.sceneMode === 'indoor' ? '例如：一间 1980 年代的教室' : '例如：一片树林里散布着许多小木屋'}" ${this.state.busy || this.pendingCompositionPlan ? 'disabled' : ''}>${escapeHtml(this.mapAiPrompt)}</textarea>
         <p class="empty inspector-note">建议只写一句场景描述；AI 会自行安排坐标、数量、密度和空间关系。</p>
         <div class="map-ai-options">
+          ${map.sceneMode === 'outdoor' ? `<label class="field compact map-ai-toggle">
+            <span>Scene Agent（程序化规划）</span>
+            <input id="map-ai-scene-agent" type="checkbox" ${this.mapAiUseSceneAgent ? 'checked' : ''} ${this.state.busy ? 'disabled' : ''} />
+          </label>` : ''}
           ${map.sceneMode === 'indoor' ? `<label class="field compact map-ai-toggle">
             <span>生成资产前先确认俯视规划</span>
             <input id="map-ai-confirm-plan" type="checkbox" ${this.mapAiConfirmCompositionPlan ? 'checked' : ''} ${this.state.busy || this.pendingCompositionPlan ? 'disabled' : ''} />
@@ -1312,6 +1317,16 @@ class MapEditor {
             <span>出生点 <b>${hasSpawn ? '有' : '无'}</b></span>
           </div>
           ${renderMapCompositionSummary(suggestion)}
+          ${suggestion.agent ? `
+            <details class="inspector-disclosure compact map-ai-composition-details">
+              <summary><span><b>Scene Agent 轨迹</b><small>${suggestion.agent.iterations} 轮 · ${suggestion.agent.guideCount} 条引导 · ${suggestion.agent.objectCount} 个物体</small></span></summary>
+              <div class="inspector-body asset-library-details">
+                <div class="style-tags">${suggestion.agent.trace.map((item) => `<span>第 ${item.iteration} 轮 · ${escapeHtml(item.action)} · ${escapeHtml(item.summary)}</span>`).join('')}</div>
+                ${suggestion.agent.diagnostics.length > 0 ? `<p class="empty">${suggestion.agent.diagnostics.map((item) => escapeHtml(item.message)).join(' · ')}</p>` : ''}
+                <details class="inspector-disclosure compact"><summary><span><b>生成的 Scene Program</b><small>受限解释执行，不运行任意代码</small></span></summary><pre>${escapeHtml(suggestion.agent.program)}</pre></details>
+              </div>
+            </details>
+          ` : ''}
           ${suggestion.renderPromptSuggestions.length > 0 ? `
             <div>
               <p class="empty">留给渲染阶段的建议</p>
@@ -1356,6 +1371,10 @@ class MapEditor {
     });
     host.querySelector<HTMLInputElement>('#map-ai-reuse-assets')?.addEventListener('change', (event) => {
       this.mapAiReuseExistingAssets = (event.target as HTMLInputElement).checked;
+    });
+    host.querySelector<HTMLInputElement>('#map-ai-scene-agent')?.addEventListener('change', (event) => {
+      this.mapAiUseSceneAgent = (event.target as HTMLInputElement).checked;
+      this.renderMapAiPanel();
     });
     host.querySelector<HTMLInputElement>('#map-ai-confirm-plan')?.addEventListener('change', (event) => {
       this.mapAiConfirmCompositionPlan = (event.target as HTMLInputElement).checked;
@@ -1996,6 +2015,7 @@ class MapEditor {
             targetRegionId: mode === 'refine' ? this.mapAiTargetRegionId || undefined : undefined,
             baseTerrainOnly: mode === 'refine' && this.mapAiBaseTerrainOnly,
             approvedCompositionPlan,
+            sceneAgent: mode === 'generate' && map.sceneMode === 'outdoor' && this.mapAiUseSceneAgent,
             ...(previousSuggestion ? { baseOperations: previousSuggestion.operations } : {})
           }),
           signal: controller.signal

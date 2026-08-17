@@ -1,5 +1,7 @@
 # WorldForge Studio 产品与架构边界
 
+室外程序化规划的有界 Agent、持久化引导线与受限 Scene Program 运行时，见 [Scene Agent and Guide Layout](./scene-agent.md)。
+
 ## HDRI catalog
 
 Place `.exr` files in `data/map-editor/hdri/`. The render developer panel writes each selected panorama's two small classification axes (`morning/day/evening` and `cool/warm`) to `catalog.json`; unrelated free-form tags and optional `skyColor` / `groundColor` swatches are preserved.
