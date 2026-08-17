@@ -5,7 +5,7 @@ import {
   type EditableMap
 } from './map';
 import { PLAYER_GRAVITY, PLAYER_JUMP_SPEED } from './protocol';
-import type { VisualZoneTag } from './visualDirection';
+import { MAX_VISUAL_ZONES, type VisualZoneTag } from './visualDirection';
 
 export const TERRAIN_GENERATION_PRESETS = [
   'plain',
@@ -27,7 +27,7 @@ export type TerrainModifier = typeof TERRAIN_MODIFIERS[number];
 export const TERRAIN_ACCESS_MODES = ['walkable', 'scenic'] as const;
 export type TerrainAccessMode = typeof TERRAIN_ACCESS_MODES[number];
 
-export const TERRAIN_SURFACES = ['grass', 'sand', 'rock'] as const;
+export const TERRAIN_SURFACES = ['grass', 'sand', 'rock', 'soil', 'paving'] as const;
 export type TerrainSurfaceKind = typeof TERRAIN_SURFACES[number];
 
 export const TERRAIN_CLIFF_LAYOUTS = ['plateau', 'coast', 'canyon', 'wall', 'terraces'] as const;
@@ -107,7 +107,9 @@ export const TERRAIN_CAPABILITIES: readonly TerrainCapabilityDefinition[] = Obje
   { id: 'modifier.island', label: '局部小岛', category: 'modifier', regionKinds: ['circle', 'polygon'] },
   { id: 'surface.grass', label: '草地', category: 'surface', regionKinds: ALL_REGIONS },
   { id: 'surface.sand', label: '沙地', category: 'surface', regionKinds: ALL_REGIONS },
-  { id: 'surface.rock', label: '岩地', category: 'surface', regionKinds: ALL_REGIONS }
+  { id: 'surface.rock', label: '岩地', category: 'surface', regionKinds: ALL_REGIONS },
+  { id: 'surface.soil', label: '土壤', category: 'surface', regionKinds: ALL_REGIONS },
+  { id: 'surface.paving', label: '铺装', category: 'surface', regionKinds: ALL_REGIONS }
 ]);
 
 export function terrainCapabilitySummary(): unknown[] {
@@ -450,19 +452,22 @@ export function applyTerrainSurfaceInPlace(map: EditableMap, value: unknown): Te
   const tagMap: Record<TerrainSurfaceKind, VisualZoneTag[]> = {
     grass: ['grass'],
     sand: ['sand', 'dry'],
-    rock: ['rocky']
+    rock: ['rocky'],
+    soil: ['soil'],
+    paving: ['paving', 'settlement']
   };
   const zone = {
     id: params.zoneId,
     tags: tagMap[params.surface],
     center: bounds.center,
     radius: bounds.radius,
-    intensity: params.intensity
+    intensity: params.intensity,
+    region: params.region
   };
   const existing = map.visualSemantics.zones.findIndex((item) => item.id === zone.id);
   if (existing >= 0) map.visualSemantics.zones[existing] = zone;
   else map.visualSemantics.zones.push(zone);
-  map.visualSemantics.zones = map.visualSemantics.zones.slice(-24);
+  map.visualSemantics.zones = map.visualSemantics.zones.slice(-MAX_VISUAL_ZONES);
   if (params.surface === 'sand' && !map.renderPromptSuggestions.includes('沙地流动与低空飞沙')) {
     map.renderPromptSuggestions = [...map.renderPromptSuggestions, '沙地流动与低空飞沙'].slice(-8);
   }

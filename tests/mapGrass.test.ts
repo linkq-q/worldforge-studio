@@ -57,7 +57,7 @@ describe('map grass layers', () => {
     expect(map.grassLayers[0].densities).toEqual(before);
   });
 
-  it('hides authored grass inside semantic sand without changing saved densities', () => {
+  it('hides authored grass inside semantic sand or paving without changing saved densities', () => {
     const map = createEmptyMap('desert grass mask', 'map-desert-grass-mask');
     const layer = {
       id: 'meadow', name: 'Meadow', visible: true, seed: 1,
@@ -76,6 +76,13 @@ describe('map grass layers', () => {
     const derived = deriveContactAwareGrassMap(desert);
     expect(combinedGrassDensity(derived, 0, 0)).toBe(0);
     expect(combinedGrassDensity(desert, 0, 0)).toBe(1);
+
+    const paved = applyMapOperations(map, [{
+      type: 'terrain.surface', surface: 'paving',
+      region: { kind: 'circle', x: 0, z: 0, radius: 12 }, zoneId: 'paved-center'
+    }]);
+    expect(combinedGrassDensity(deriveContactAwareGrassMap(paved), 0, 0)).toBe(0);
+    expect(combinedGrassDensity(paved, 0, 0)).toBe(1);
   });
 
   it('normalizes multiple density layers and variant ratios at terrain resolution', () => {

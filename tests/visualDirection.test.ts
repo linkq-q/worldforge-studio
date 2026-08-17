@@ -149,6 +149,19 @@ describe('map visual semantics contract', () => {
     });
   });
 
+  it('moves and scales an exact path mask when its editable zone bounds change', () => {
+    const semantics = normalizeMapVisualSemantics({
+      zones: [{
+        id: 'road', tags: ['rocky'], center: [5, 0], radius: 5, intensity: 1,
+        region: { kind: 'path', points: [[0, 0], [10, 0]], width: 2 }
+      }]
+    });
+    const patched = patchMapVisualZone(semantics, 'road', { center: [10, 5], radius: 10 });
+    expect(patched.zones[0].region).toEqual({
+      kind: 'path', points: [[0, 5], [20, 5]], width: 4
+    });
+  });
+
   it('adds a deterministic default wind field to old and new maps', () => {
     expect(createEmptyMap('wind').visualSemantics.wind.speed).toBeGreaterThan(0);
     expect(normalizeMap({ id: 'legacy-map' }).visualSemantics.zones).toEqual([]);

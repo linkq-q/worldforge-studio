@@ -5733,7 +5733,7 @@ function terrainModifierLabel(value: TerrainModifier): string {
 }
 
 function terrainSurfaceLabel(value: TerrainSurfaceKind): string {
-  return ({ grass: '草地', sand: '沙地', rock: '岩地' } as const)[value];
+  return ({ grass: '草地', sand: '沙地', rock: '岩地', soil: '土壤', paving: '铺装' } as const)[value];
 }
 
 function terrainCliffLayoutLabel(value: TerrainCliffLayout): string {

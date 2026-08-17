@@ -38,7 +38,7 @@ import type { Vec3 } from '../shared/protocol';
 import { buildMapLocalLights } from './mapLocalLights';
 import { isPointInsidePlayableArea } from '../shared/mapLayout';
 import { isPointInsideWaterBody, riverPathSamples, waterBoundaryPoints } from '../shared/mapWater';
-import type { VisualTimeOfDay } from '../shared/visualDirection';
+import type { VisualTimeOfDay, VisualZoneRegion } from '../shared/visualDirection';
 import {
   activeInteriorRugs,
   activeInteriorSurfaceFinish,
@@ -389,7 +389,7 @@ function applyTerrainGrassTint(mesh: THREE.Mesh, map: EditableMap, style: Runtim
     color.setRGB(base[0], base[1], base[2]);
     const isSurface = y >= sampleTerrainHeight(map, x, z) - 0.05;
     if (style.groundTint && isSurface) {
-      const nonGrassWeight = terrainSemanticSurfaceWeight(map, x, z, ['sand', 'rocky']);
+      const nonGrassWeight = terrainSemanticSurfaceWeight(map, x, z, ['sand', 'rocky', 'paving']);
       const density = combinedGrassDensity(map, x, z) * (1 - nonGrassWeight);
       const transition = density * density * (3 - 2 * density);
       color.lerp(grassColor, transition * style.groundTintStrength);
@@ -1390,6 +1390,8 @@ const SEMANTIC_SURFACE_COLORS = {
   lowland: '#bdcfb8',
   dry: '#dfc692',
   sand: '#e6c77d',
+  soil: '#9d7955',
+  paving: '#b8b2a6',
   settlement: '#d7c5a6',
   rocky: '#c3c0b2'
 } as const;
@@ -1403,17 +1405,29 @@ function drawSemanticTerrainSurface(
   for (const zone of map.visualSemantics.zones) {
     const tag = [...zone.tags].reverse().find((item) => item in SEMANTIC_SURFACE_COLORS);
     if (!tag) continue;
-    const center = surfaceCanvasPoint(map, zone.center, width, height);
-    const radiusX = zone.radius / map.box.size[0] * width;
-    const radiusY = zone.radius / map.box.size[2] * height;
     const opacity = Math.min(0.24, 0.08 + zone.intensity * 0.12);
+    const color = SEMANTIC_SURFACE_COLORS[tag];
+    if (zone.region?.kind === 'path') {
+      drawSemanticPath(ctx, map, zone.region, color, opacity, width, height);
+      continue;
+    }
+    if (zone.region?.kind === 'polygon') {
+      drawSemanticPolygon(ctx, map, zone.region, color, opacity, width, height);
+      continue;
+    }
+    const circle = zone.region?.kind === 'circle'
+      ? { center: [zone.region.x, zone.region.z] as [number, number], radius: zone.region.radius }
+      : { center: zone.center, radius: zone.radius };
+    const center = surfaceCanvasPoint(map, circle.center, width, height);
+    const radiusX = circle.radius / map.box.size[0] * width;
+    const radiusY = circle.radius / map.box.size[2] * height;
     ctx.save();
     ctx.translate(center[0], center[1]);
     ctx.scale(Math.max(0.001, radiusX), Math.max(0.001, radiusY));
     const gradient = ctx.createRadialGradient(0, 0, 0.05, 0, 0, 1);
-    gradient.addColorStop(0, withOpacity(SEMANTIC_SURFACE_COLORS[tag], opacity));
-    gradient.addColorStop(0.72, withOpacity(SEMANTIC_SURFACE_COLORS[tag], opacity * 0.78));
-    gradient.addColorStop(1, withOpacity(SEMANTIC_SURFACE_COLORS[tag], 0));
+    gradient.addColorStop(0, withOpacity(color, opacity));
+    gradient.addColorStop(0.72, withOpacity(color, opacity * 0.78));
+    gradient.addColorStop(1, withOpacity(color, 0));
     ctx.fillStyle = gradient;
     ctx.beginPath();
     ctx.arc(0, 0, 1, 0, Math.PI * 2);
@@ -1421,6 +1435,57 @@ function drawSemanticTerrainSurface(
     ctx.restore();
   }
   for (const water of map.waterBodies) drawWetShore(ctx, map, water, width, height);
+}
+
+function drawSemanticPath(
+  ctx: CanvasRenderingContext2D,
+  map: EditableMap,
+  region: Extract<VisualZoneRegion, { kind: 'path' }>,
+  color: string,
+  opacity: number,
+  width: number,
+  height: number
+): void {
+  const points = region.points.map((point) => surfaceCanvasPoint(map, point, width, height));
+  if (points.length < 2) return;
+  const pixelsPerMetre = (width / map.box.size[0] + height / map.box.size[2]) * 0.5;
+  ctx.save();
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  ctx.beginPath();
+  ctx.moveTo(points[0][0], points[0][1]);
+  points.slice(1).forEach((point) => ctx.lineTo(point[0], point[1]));
+  ctx.strokeStyle = withOpacity(color, opacity * 0.3);
+  ctx.lineWidth = Math.max(1, region.width * pixelsPerMetre);
+  ctx.stroke();
+  ctx.strokeStyle = withOpacity(color, opacity);
+  ctx.lineWidth *= 0.72;
+  ctx.stroke();
+  ctx.restore();
+}
+
+function drawSemanticPolygon(
+  ctx: CanvasRenderingContext2D,
+  map: EditableMap,
+  region: Extract<VisualZoneRegion, { kind: 'polygon' }>,
+  color: string,
+  opacity: number,
+  width: number,
+  height: number
+): void {
+  const points = region.points.map((point) => surfaceCanvasPoint(map, point, width, height));
+  if (points.length < 3) return;
+  ctx.save();
+  ctx.beginPath();
+  ctx.moveTo(points[0][0], points[0][1]);
+  points.slice(1).forEach((point) => ctx.lineTo(point[0], point[1]));
+  ctx.closePath();
+  ctx.fillStyle = withOpacity(color, opacity * 0.82);
+  ctx.fill();
+  ctx.strokeStyle = withOpacity(color, opacity * 0.3);
+  ctx.lineWidth = 2;
+  ctx.stroke();
+  ctx.restore();
 }
 
 function drawWetShore(

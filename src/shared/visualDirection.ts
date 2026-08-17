@@ -3,7 +3,10 @@ export const VISUAL_DIRECTION_VERSION = 1 as const;
 export const CONTRAST_MODES = ['bright-cartoon', 'colored-shadow', 'dramatic'] as const;
 export const VISUAL_TIMES_OF_DAY = ['morning', 'noon', 'evening', 'night'] as const;
 export const VISUAL_TEMPERATURES = ['cool', 'warm'] as const;
-export const VISUAL_ZONE_TAGS = ['grass', 'forest', 'water', 'lowland', 'dry', 'sand', 'settlement', 'rocky'] as const;
+export const VISUAL_ZONE_TAGS = [
+  'grass', 'forest', 'water', 'lowland', 'dry', 'sand', 'soil', 'paving', 'settlement', 'rocky'
+] as const;
+export const MAX_VISUAL_ZONES = 96;
 
 export type ContrastMode = typeof CONTRAST_MODES[number];
 export type VisualTimeOfDay = typeof VISUAL_TIMES_OF_DAY[number];
@@ -46,9 +49,16 @@ export interface SceneVisualZone {
   center: [number, number];
   radius: number;
   intensity: number;
+  /** Exact spatial mask when the semantic zone is not circular. */
+  region?: VisualZoneRegion;
   /** Fields manually edited by the user and therefore preserved during AI recompute. */
   locks?: Partial<Record<VisualZoneField, true>>;
 }
+
+export type VisualZoneRegion =
+  | { kind: 'circle'; x: number; z: number; radius: number }
+  | { kind: 'path'; points: Array<[number, number]>; width: number }
+  | { kind: 'polygon'; points: Array<[number, number]> };
 
 export interface SceneWindField {
   direction: [number, number];
@@ -152,7 +162,7 @@ export function normalizeMapVisualSemantics(input: unknown): MapVisualSemantics 
   const raw = objectValue(input);
   const wind = objectValue(raw.wind);
   const zones = Array.isArray(raw.zones)
-    ? raw.zones.map(normalizeVisualZone).filter((zone): zone is SceneVisualZone => Boolean(zone)).slice(0, 24)
+    ? raw.zones.map(normalizeVisualZone).filter((zone): zone is SceneVisualZone => Boolean(zone)).slice(0, MAX_VISUAL_ZONES)
     : [];
   return {
     version: VISUAL_DIRECTION_VERSION,
@@ -223,14 +233,101 @@ function normalizeVisualZone(value: unknown): SceneVisualZone | null {
   const locks = Object.fromEntries(VISUAL_ZONE_FIELDS
     .filter((field) => rawLocks[field] === true)
     .map((field) => [field, true])) as Partial<Record<VisualZoneField, true>>;
+  const region = normalizeVisualZoneRegion(raw.region);
   return {
     id,
     tags,
     center: pairValue(raw.center, [0, 0]),
     radius: numberValue(raw.radius, 8, 0.5, 512),
     intensity: numberValue(raw.intensity, 1, 0, 1),
+    ...(region ? { region } : {}),
     ...(Object.keys(locks).length > 0 ? { locks } : {})
   };
+}
+
+function normalizeVisualZoneRegion(value: unknown): VisualZoneRegion | null {
+  const raw = objectValue(value);
+  if (raw.kind === 'circle') {
+    return {
+      kind: 'circle',
+      x: numberValue(raw.x, 0, -512, 512),
+      z: numberValue(raw.z, 0, -512, 512),
+      radius: numberValue(raw.radius, 8, 0.3, 1024)
+    };
+  }
+  if (raw.kind !== 'path' && raw.kind !== 'polygon') return null;
+  const minimumPoints = raw.kind === 'path' ? 2 : 3;
+  const points = Array.isArray(raw.points)
+    ? raw.points.slice(0, 64).filter((point) => (
+      Array.isArray(point) && point.length >= 2
+      && Number.isFinite(Number(point[0])) && Number.isFinite(Number(point[1]))
+    ))
+      .map((point) => pairValue(point, [0, 0]))
+    : [];
+  if (points.length < minimumPoints) return null;
+  return raw.kind === 'path'
+    ? { kind: 'path', points, width: numberValue(raw.width, 4, 0.3, 1024) }
+    : { kind: 'polygon', points };
+}
+
+export function visualZoneWeight(zone: SceneVisualZone, x: number, z: number): number {
+  const region = zone.region;
+  if (!region) {
+    const normalizedDistance = Math.hypot(x - zone.center[0], z - zone.center[1]) / Math.max(0.001, zone.radius);
+    return (1 - smoothstep(0.72, 1, normalizedDistance)) * zone.intensity;
+  }
+  if (region.kind === 'circle') {
+    const normalizedDistance = Math.hypot(x - region.x, z - region.z) / Math.max(0.001, region.radius);
+    return (1 - smoothstep(0.72, 1, normalizedDistance)) * zone.intensity;
+  }
+  if (region.kind === 'path') {
+    const normalizedDistance = distanceToPath(x, z, region.points) / Math.max(0.001, region.width / 2);
+    return (1 - smoothstep(0.72, 1, normalizedDistance)) * zone.intensity;
+  }
+  if (!pointInPolygon(x, z, region.points)) return 0;
+  const xs = region.points.map((point) => point[0]);
+  const zs = region.points.map((point) => point[1]);
+  const feather = Math.max(0.2, Math.min(Math.max(...xs) - Math.min(...xs), Math.max(...zs) - Math.min(...zs)) * 0.08);
+  return smoothstep(0, feather, polygonEdgeDistance(x, z, region.points)) * zone.intensity;
+}
+
+function distanceToPath(x: number, z: number, points: Array<[number, number]>): number {
+  let distance = Number.POSITIVE_INFINITY;
+  for (let index = 1; index < points.length; index += 1) {
+    distance = Math.min(distance, distanceToSegment(x, z, points[index - 1], points[index]));
+  }
+  return distance;
+}
+
+function polygonEdgeDistance(x: number, z: number, points: Array<[number, number]>): number {
+  let distance = Number.POSITIVE_INFINITY;
+  for (let index = 0; index < points.length; index += 1) {
+    distance = Math.min(distance, distanceToSegment(x, z, points[index], points[(index + 1) % points.length]));
+  }
+  return distance;
+}
+
+function distanceToSegment(x: number, z: number, start: [number, number], end: [number, number]): number {
+  const dx = end[0] - start[0];
+  const dz = end[1] - start[1];
+  const lengthSquared = dx * dx + dz * dz;
+  const t = lengthSquared > 0 ? Math.min(1, Math.max(0, ((x - start[0]) * dx + (z - start[1]) * dz) / lengthSquared)) : 0;
+  return Math.hypot(x - (start[0] + dx * t), z - (start[1] + dz * t));
+}
+
+function pointInPolygon(x: number, z: number, points: Array<[number, number]>): boolean {
+  let inside = false;
+  for (let current = 0, previous = points.length - 1; current < points.length; previous = current, current += 1) {
+    const [cx, cz] = points[current];
+    const [px, pz] = points[previous];
+    if ((cz > z) !== (pz > z) && x < (px - cx) * (z - cz) / (pz - cz) + cx) inside = !inside;
+  }
+  return inside;
+}
+
+function smoothstep(edge0: number, edge1: number, value: number): number {
+  const normalized = Math.min(1, Math.max(0, (value - edge0) / Math.max(0.0001, edge1 - edge0)));
+  return normalized * normalized * (3 - 2 * normalized);
 }
 
 function objectValue(value: unknown): Record<string, unknown> {

@@ -18,7 +18,7 @@ import {
   type MapStitchSeam,
   type MapStitchSource
 } from './mapLayout';
-import type { MapVisualSemantics } from './visualDirection';
+import { MAX_VISUAL_ZONES, type MapVisualSemantics } from './visualDirection';
 
 export type MapStitchDirection = 'east' | 'west' | 'north' | 'south';
 
@@ -459,7 +459,7 @@ function mergeVisualSemantics(
         id: `b:${zone.id}`.slice(0, 80),
         center: [zone.center[0] + placements.secondary[0], zone.center[1] + placements.secondary[1]] as [number, number]
       }))
-    ].slice(-24),
+    ].slice(-MAX_VISUAL_ZONES),
     wind: primary.visualSemantics.wind
   };
 }

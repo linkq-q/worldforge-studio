@@ -2,9 +2,11 @@ import type { EditableMap } from './map';
 import { sceneZoneWorldRegion, type SceneCompositionPlan } from './sceneComposition';
 import {
   DEFAULT_MAP_VISUAL_SEMANTICS,
+  MAX_VISUAL_ZONES,
   type MapVisualSemantics,
   type SceneVisualZone,
   type VisualZoneField,
+  type VisualZoneRegion,
   type VisualZoneTag
 } from './visualDirection';
 
@@ -55,6 +57,7 @@ export function completeMapVisualSemantics(map: EditableMap): MapVisualSemantics
   const zones = map.visualSemantics.zones.map((zone) => ({
     ...zone,
     tags: [...zone.tags],
+    ...(zone.region ? { region: cloneZoneRegion(zone.region) } : {}),
     ...(zone.locks ? { locks: { ...zone.locks } } : {})
   }));
   for (const water of map.waterBodies) {
@@ -76,13 +79,16 @@ export function completeMapVisualSemantics(map: EditableMap): MapVisualSemantics
         tags: ['water', 'lowland'],
         center,
         radius,
-        intensity: 0.75
+        intensity: 0.75,
+        region: water.type === 'river'
+          ? { kind: 'path', points: water.points.map((point) => [...point] as [number, number]), width: water.width }
+          : { kind: 'polygon', points: water.points.map((point) => [...point] as [number, number]) }
       });
     }
   }
   return {
     version: 1,
-    zones: zones.slice(0, 24),
+    zones: zones.slice(0, MAX_VISUAL_ZONES),
     wind: { ...map.visualSemantics.wind, direction: [...map.visualSemantics.wind.direction] }
   };
 }
@@ -102,13 +108,20 @@ export function patchMapVisualZone(
     found = true;
     const locks = { ...(zone.locks ?? {}) };
     for (const field of lockFields) locks[field] = true;
-    const next = { ...zone, tags: [...zone.tags] };
+    const next = {
+      ...zone,
+      tags: [...zone.tags],
+      ...(zone.region ? { region: cloneZoneRegion(zone.region) } : {})
+    };
     for (const field of ['center', 'radius', 'tags', 'intensity'] as const) {
       if (patch[field] === undefined || (respectLocks && zone.locks?.[field])) continue;
       if (field === 'center') next.center = [...patch.center!] as [number, number];
       else if (field === 'tags') next.tags = [...patch.tags!];
       else if (field === 'radius') next.radius = patch.radius!;
       else next.intensity = patch.intensity!;
+    }
+    if (zone.region && (next.center[0] !== zone.center[0] || next.center[1] !== zone.center[1] || next.radius !== zone.radius)) {
+      next.region = transformZoneRegion(zone.region, zone.center, zone.radius, next.center, next.radius);
     }
     return {
       ...next,
@@ -121,4 +134,32 @@ export function patchMapVisualZone(
 
 function has(text: string, tokens: readonly string[]): boolean {
   return tokens.some((token) => text.includes(token));
+}
+
+function cloneZoneRegion(region: VisualZoneRegion): VisualZoneRegion {
+  return region.kind === 'circle'
+    ? { ...region }
+    : { ...region, points: region.points.map((point) => [...point] as [number, number]) };
+}
+
+function transformZoneRegion(
+  region: VisualZoneRegion,
+  oldCenter: [number, number],
+  oldRadius: number,
+  nextCenter: [number, number],
+  nextRadius: number
+): VisualZoneRegion {
+  const scale = nextRadius / Math.max(0.001, oldRadius);
+  const point = ([x, z]: [number, number]): [number, number] => [
+    nextCenter[0] + (x - oldCenter[0]) * scale,
+    nextCenter[1] + (z - oldCenter[1]) * scale
+  ];
+  if (region.kind === 'circle') {
+    const center = point([region.x, region.z]);
+    return { kind: 'circle', x: center[0], z: center[1], radius: region.radius * scale };
+  }
+  if (region.kind === 'path') {
+    return { kind: 'path', points: region.points.map(point), width: region.width * scale };
+  }
+  return { kind: 'polygon', points: region.points.map(point) };
 }

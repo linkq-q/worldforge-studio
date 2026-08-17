@@ -1,11 +1,13 @@
 import * as THREE from 'three';
 import { sampleTerrainHeight, type EditableMap } from '../shared/map';
 import { terrainSlopeDegrees } from '../shared/mapTerrainAnalysis';
-import type { VisualZoneTag } from '../shared/visualDirection';
+import { visualZoneWeight, type VisualZoneTag } from '../shared/visualDirection';
 
 const SAND_COLOR = new THREE.Color('#e6c77d');
 const DRY_COLOR = new THREE.Color('#b89558');
 const ROCK_COLOR = new THREE.Color('#8b857a');
+const SOIL_COLOR = new THREE.Color('#8f704d');
+const PAVING_COLOR = new THREE.Color('#aaa498');
 
 export function terrainVertexColor(map: EditableMap, x: number, y: number, z: number): [number, number, number] {
   const surfaceY = sampleTerrainHeight(map, x, z);
@@ -20,6 +22,8 @@ export function terrainVertexColor(map: EditableMap, x: number, y: number, z: nu
   base.lerp(DRY_COLOR, terrainSemanticSurfaceWeight(map, x, z, ['dry']) * 0.62);
   base.lerp(ROCK_COLOR, terrainSemanticSurfaceWeight(map, x, z, ['rocky']) * 0.88);
   base.lerp(SAND_COLOR, terrainSemanticSurfaceWeight(map, x, z, ['sand']) * 0.96);
+  base.lerp(SOIL_COLOR, terrainSemanticSurfaceWeight(map, x, z, ['soil']) * 0.92);
+  base.lerp(PAVING_COLOR, terrainSemanticSurfaceWeight(map, x, z, ['paving']) * 0.94);
   return colorTuple(base);
 }
 
@@ -32,9 +36,7 @@ export function terrainSemanticSurfaceWeight(
   let weight = 0;
   for (const zone of map.visualSemantics.zones) {
     if (!tags.some((tag) => zone.tags.includes(tag))) continue;
-    const normalizedDistance = Math.hypot(x - zone.center[0], z - zone.center[1]) / Math.max(0.001, zone.radius);
-    const fade = 1 - smoothstep(0.72, 1, normalizedDistance);
-    weight = Math.max(weight, fade * zone.intensity);
+    weight = Math.max(weight, visualZoneWeight(zone, x, z));
   }
   return clamp01(weight);
 }
@@ -45,9 +47,4 @@ function colorTuple(color: THREE.Color): [number, number, number] {
 
 function clamp01(value: number): number {
   return Math.min(1, Math.max(0, value));
-}
-
-function smoothstep(edge0: number, edge1: number, value: number): number {
-  const normalized = clamp01((value - edge0) / Math.max(0.0001, edge1 - edge0));
-  return normalized * normalized * (3 - 2 * normalized);
 }
