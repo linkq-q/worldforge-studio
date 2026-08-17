@@ -409,6 +409,7 @@ async function handleEditorMaps(req: Req, res: Res, store: MapStore, parts: stri
       baseTerrainOnly?: boolean;
       planOnly?: boolean;
       approvedCompositionPlan?: SceneCompositionPlan;
+      sceneAgent?: boolean;
     }>(req);
     const prompt = body.prompt?.trim();
     if (!prompt) throw new HttpError(400, 'missing_prompt');
@@ -480,6 +481,7 @@ async function handleEditorMaps(req: Req, res: Res, store: MapStore, parts: stri
           targetRegionId: parts[4] === 'refine' ? body.targetRegionId : undefined,
           baseTerrainOnly: parts[4] === 'refine' && body.baseTerrainOnly === true,
           approvedCompositionPlan: body.approvedCompositionPlan,
+          sceneAgent: body.sceneAgent === true,
           onProgress,
           createAsset: async (request, report) => {
             const modelJson = await generateMapAssetWithRetry(request.name, () => generateModel(request.prompt, {

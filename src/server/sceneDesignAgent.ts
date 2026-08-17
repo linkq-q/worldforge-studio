@@ -1,0 +1,434 @@
+import { getMapBounds, sampleTerrainHeight, type EditableMap, type MapAsset } from '../shared/map';
+import { applyMapOperations, type MapAiSuggestion } from '../shared/mapOperations';
+import type { MapLintIssue } from '../shared/mapLint';
+import { normalizeMapAiNewAssetRange } from '../shared/mapPlanning';
+import type { AgentProgressEvent, ChatProvider } from '../shared/protocol';
+import { normalizeAssetTags, normalizeMapAssetLight, type MapAssetLight } from '../shared/mapAssetMetadata';
+import type { ModelGenerationMode } from '../shared/modelGenerationMode';
+import { validateMapSuggestion } from './mapSuggestionValidation';
+import { llmChat, type ChatMessage } from './modelApi';
+import { runAssetGenerationPool, type AssetTaskReporter } from './assetGenerationPool';
+import {
+  executeSceneProgram,
+  SCENE_PROGRAM_API_REFERENCE,
+  type SceneProgramResult
+} from './sceneProgram';
+
+export interface SceneDesignAssetRequest {
+  name: string;
+  prompt: string;
+  tags: string[];
+  light?: MapAssetLight;
+  mode: ModelGenerationMode;
+}
+
+export interface SceneDesignAgentOptions {
+  apiBase?: string;
+  provider?: ChatProvider;
+  fetchImpl?: typeof fetch;
+  signal?: AbortSignal;
+  minNewAssets?: number;
+  maxNewAssets?: number;
+  reuseExistingAssets?: boolean;
+  reusableAssetIds?: readonly string[];
+  onProgress?: (event: AgentProgressEvent) => void;
+  createAsset: (request: SceneDesignAssetRequest, report: AssetTaskReporter) => Promise<MapAsset>;
+  /** Test seam; production uses the configured chat backend. */
+  chat?: (messages: readonly ChatMessage[]) => Promise<string>;
+}
+
+interface AgentAction {
+  action: 'request_assets' | 'write_program' | 'finish';
+  summary: string;
+  assets?: SceneDesignAssetRequest[];
+  program?: string;
+}
+
+interface SceneOutcome {
+  unmet: string[];
+  warnings: string[];
+  metrics: {
+    guides: number;
+    objects: number;
+    waterBodies: number;
+    grassLayers: number;
+    semanticSurfaces: number;
+    playableLandRatio: number;
+  };
+}
+
+const MAX_AGENT_ITERATIONS = 7;
+
+export async function runSceneDesignAgent(
+  prompt: string,
+  map: EditableMap,
+  initialAssets: readonly MapAsset[],
+  options: SceneDesignAgentOptions
+): Promise<MapAiSuggestion> {
+  const assetRange = normalizeMapAiNewAssetRange(options.minNewAssets, options.maxNewAssets);
+  const bounds = getMapBounds(map);
+  const assets = permittedInitialAssets(map, initialAssets, options);
+  const generatedAssets: MapAsset[] = [];
+  const trace: Array<{ iteration: number; action: string; summary: string }> = [];
+  const messages: ChatMessage[] = [{
+    role: 'system',
+    content: buildSystemPrompt(map, bounds, assetRange.min, assetRange.max)
+  }, {
+    role: 'user',
+    content: buildUserPrompt(prompt, assets)
+  }];
+  const chat = options.chat ?? ((history: readonly ChatMessage[]) => llmChat(history, {
+    apiBase: options.apiBase,
+    provider: options.provider,
+    fetchImpl: options.fetchImpl,
+    signal: options.signal,
+    temperature: 0.15,
+    maxTokens: 4_500
+  }));
+  let latestProgram = '';
+  let latestResult: SceneProgramResult | null = null;
+  let latestIssues: MapLintIssue[] = [];
+
+  for (let iteration = 1; iteration <= MAX_AGENT_ITERATIONS; iteration += 1) {
+    options.signal?.throwIfAborted();
+    options.onProgress?.({
+      phase: iteration === 1 ? 'planning' : 'replanning',
+      label: iteration === 1 ? 'Scene Agent 正在观察地图与资产' : `Scene Agent 正在进行第 ${iteration} 轮决策`,
+      current: iteration,
+      total: MAX_AGENT_ITERATIONS
+    });
+    const content = await chat(messages);
+    messages.push({ role: 'assistant', content });
+    let action: AgentAction;
+    try {
+      action = parseAgentAction(content, map.assetGenerationMode, assetRange.max - generatedAssets.length);
+    } catch (error) {
+      trace.push({ iteration, action: 'invalid_response', summary: errorMessage(error) });
+      messages.push({ role: 'user', content: JSON.stringify({
+        tool: 'parse_action',
+        ok: false,
+        error: errorMessage(error),
+        instruction: 'Return one valid JSON action object and continue from the existing tool state.'
+      }) });
+      continue;
+    }
+    trace.push({ iteration, action: action.action, summary: action.summary });
+
+    if (action.action === 'request_assets') {
+      if (!action.assets?.length) {
+        messages.push({ role: 'user', content: JSON.stringify({
+          tool: 'request_assets',
+          ok: false,
+          error: 'No valid asset requests remain within the configured asset budget. Use available assets or write the program.'
+        }) });
+        continue;
+      }
+      const created = await runAssetGenerationPool(
+        action.assets,
+        (request, _index, report) => options.createAsset(request, report),
+        { signal: options.signal, onProgress: options.onProgress }
+      );
+      assets.push(...created);
+      generatedAssets.push(...created);
+      messages.push({ role: 'user', content: JSON.stringify({
+        tool: 'request_assets',
+        ok: true,
+        assets: created.map(assetManifestItem),
+        remainingAssetBudget: assetRange.max - generatedAssets.length
+      }) });
+      continue;
+    }
+
+    if (action.action === 'write_program') {
+      if (!action.program) throw new Error('scene_agent_missing_program');
+      options.onProgress?.({ phase: 'compiling', label: '解释执行 Scene Program 并检查空间约束' });
+      latestProgram = action.program;
+      try {
+        latestResult = executeSceneProgram(action.program, map, assets);
+        const executionValidation = validateMapSuggestion(map, {
+          summary: action.summary,
+          operations: latestResult.operations,
+          renderPromptSuggestions: latestResult.renderPromptSuggestions,
+          generatedAssets: []
+        });
+        latestResult = { ...latestResult, operations: executionValidation.suggestion.operations };
+        latestIssues = executionValidation.issues;
+        const candidate = applyMapOperations(map, latestResult.operations);
+        const outcome = evaluateSceneOutcome(prompt, map, candidate, assets, generatedAssets, latestResult, latestIssues);
+        messages.push({ role: 'user', content: JSON.stringify({
+          tool: 'execute_program',
+          ok: true,
+          operationCount: latestResult.operations.length,
+          guideCount: latestResult.guideCount,
+          objectCount: latestResult.objectCount,
+          diagnostics: latestResult.diagnostics,
+          lintIssues: executionValidation.issues,
+          automaticRepairCount: executionValidation.repairCount,
+          outcome
+        }) });
+      } catch (error) {
+        latestResult = null;
+        latestIssues = [];
+        messages.push({ role: 'user', content: JSON.stringify({
+          tool: 'execute_program',
+          ok: false,
+          error: error instanceof Error ? error.message : String(error)
+        }) });
+      }
+      continue;
+    }
+
+    if (!latestResult || !latestProgram) {
+      messages.push({ role: 'user', content: JSON.stringify({
+        tool: 'finish', ok: false, error: 'No successful Scene Program exists. Write or repair one before finishing.'
+      }) });
+      continue;
+    }
+    if (generatedAssets.length < assetRange.min) {
+      messages.push({ role: 'user', content: JSON.stringify({
+        tool: 'finish',
+        ok: false,
+        error: `The user requires at least ${assetRange.min} new assets; only ${generatedAssets.length} have been created. Request the missing reusable assets before finishing.`
+      }) });
+      continue;
+    }
+    const candidate = applyMapOperations(map, latestResult.operations);
+    const outcome = evaluateSceneOutcome(prompt, map, candidate, assets, generatedAssets, latestResult, latestIssues);
+    if (outcome.unmet.length > 0) {
+      messages.push({ role: 'user', content: JSON.stringify({
+        tool: 'finish',
+        ok: false,
+        error: 'Scene outcome requirements are not yet satisfied.',
+        outcome
+      }) });
+      continue;
+    }
+    return finalizeAgentSuggestion(map, latestProgram, latestResult, generatedAssets, trace, iteration, action.summary);
+  }
+
+  throw new Error('scene_agent_iteration_budget_exceeded');
+}
+
+function finalizeAgentSuggestion(
+  map: EditableMap,
+  program: string,
+  result: SceneProgramResult,
+  generatedAssets: readonly MapAsset[],
+  trace: Array<{ iteration: number; action: string; summary: string }>,
+  iterations: number,
+  summary: string
+): MapAiSuggestion {
+  const suggestion: MapAiSuggestion = {
+    summary: summary || `Scene Agent 生成了 ${result.guideCount} 条引导线和 ${result.objectCount} 个物体`,
+    operations: result.operations,
+    renderPromptSuggestions: result.renderPromptSuggestions,
+    generatedAssets: generatedAssets.map((asset) => ({ id: asset.id, name: asset.name })),
+    agent: {
+      program,
+      iterations,
+      guideCount: result.guideCount,
+      objectCount: result.objectCount,
+      diagnostics: result.diagnostics,
+      trace
+    }
+  };
+  return validateMapSuggestion(map, suggestion).suggestion;
+}
+
+function buildSystemPrompt(
+  map: EditableMap,
+  bounds: ReturnType<typeof getMapBounds>,
+  minNewAssets: number,
+  maxNewAssets: number
+): string {
+  return [
+    'You are WorldForge Scene Agent, a bounded spatial-design agent. You decide the next tool action; local code owns physics and safety.',
+    'Return exactly one JSON object, never Markdown.',
+    'Actions:',
+    '{"action":"request_assets","summary":"...","assets":[{"name":"...","prompt":"standalone low-poly object, no ground/background","tags":["short-english-tag"]}]}',
+    '{"action":"write_program","summary":"...","program":"const path = scene.guide(...); ..."}',
+    '{"action":"finish","summary":"..."}',
+    `You must request ${minNewAssets}-${maxNewAssets} new reusable assets across the run. Reuse listed assets for the remaining roles when suitable. Never invent asset IDs.`,
+    'After execute_program, inspect outcome.unmet, outcome.warnings, counts and diagnostics. You may finish only when outcome.unmet is empty.',
+    'Build outdoor scenes in layers: macro terrain, local terrain modifiers, drainage/water, semantic surfaces and grass, guides, relationship-aware objects, then spawn and render suggestions.',
+    'Use guides for authored environments: parks, campuses, farms, plazas, roads, waterfronts and building groups. Surface important guides and use scatter only for natural populations.',
+    'For cities, towns and campuses, prefer scene.streetGrid and iterate both streets and blocks instead of drawing unrelated parallel lines.',
+    'Every generated asset must be placed by the successful program. Never leave paid/generated assets unused.',
+    `Map sceneMode=${map.sceneMode}; bounds X ${bounds.minX}..${bounds.maxX}, Z ${bounds.minZ}..${bounds.maxZ}; seed=${map.seed}.`,
+    SCENE_PROGRAM_API_REFERENCE
+  ].join('\n');
+}
+
+function buildUserPrompt(prompt: string, assets: readonly MapAsset[]): string {
+  return `${prompt}\n\nAvailable assets: ${JSON.stringify(assets.slice(0, 120).map(assetManifestItem))}`;
+}
+
+function assetManifestItem(asset: MapAsset): unknown {
+  return {
+    id: asset.id,
+    name: asset.name,
+    tags: asset.tags ?? [],
+    footprintRadius: asset.footprintRadius ?? null,
+    sizeClass: asset.sizeClass ?? null
+  };
+}
+
+function permittedInitialAssets(
+  map: EditableMap,
+  initialAssets: readonly MapAsset[],
+  options: Pick<SceneDesignAgentOptions, 'reuseExistingAssets' | 'reusableAssetIds'>
+): MapAsset[] {
+  const allowed = new Set<string>();
+  for (const asset of map.assets ?? []) allowed.add(asset.id);
+  for (const object of map.objects) if (object.assetId) allowed.add(object.assetId);
+  if (options.reuseExistingAssets) {
+    for (const assetId of options.reusableAssetIds ?? []) allowed.add(assetId);
+  }
+  return initialAssets.filter((asset) => allowed.has(asset.id));
+}
+
+function evaluateSceneOutcome(
+  prompt: string,
+  original: EditableMap,
+  candidate: EditableMap,
+  assets: readonly MapAsset[],
+  generatedAssets: readonly MapAsset[],
+  result: SceneProgramResult,
+  lintIssues: readonly MapLintIssue[]
+): SceneOutcome {
+  const text = prompt.toLowerCase();
+  const operationTypes = new Set(result.operations.map((operation) => operation.type));
+  const placedAssetIds = new Set(candidate.objects.flatMap((object) => object.assetId ? [object.assetId] : []));
+  const assetById = new Map(assets.map((asset) => [asset.id, asset]));
+  const placedWords = candidate.objects.flatMap((object) => {
+    const asset = object.assetId ? assetById.get(object.assetId) : undefined;
+    return [object.name, asset?.name ?? '', ...(asset?.tags ?? [])];
+  }).join(' ').toLowerCase();
+  const authoredEnvironment = hasAny(text, [
+    'park', 'campus', 'farm', 'plaza', 'road', 'street', 'city', 'town', 'village', 'waterfront',
+    '公园', '校园', '农场', '农田', '广场', '道路', '街道', '城市', '城镇', '村庄', '滨水'
+  ]);
+  const needsWater = hasAny(text, ['seaside', 'coast', 'waterfront', 'river', 'lake', 'ocean', 'beach', '海边', '海岸', '滨水', '河', '湖', '海', '沙滩']);
+  const needsTerrain = hasAny(text, [
+    'mountain', 'hill', 'valley', 'island', 'cliff', 'dune',
+    '雪山', '高山', '山地', '山脉', '山峰', '丘陵', '山谷', '峡谷', '岛', '悬崖', '沙丘'
+  ]);
+  const needsVegetation = hasAny(text, ['park', 'forest', 'garden', 'farm', 'field', 'orchard', 'crop', '公园', '森林', '花园', '农场', '农田', '田野', '果园', '作物']);
+  const needsBuildings = hasAny(text, ['campus', 'city', 'town', 'village', 'school', '校园', '城市', '城镇', '村庄', '学校']);
+  const semanticSurfaces = result.operations.filter((operation) => operation.type === 'terrain.surface').length;
+  const playableLandRatio = sampledPlayableLandRatio(candidate);
+  const unmet: string[] = [];
+  const firstObjectIndex = result.operations.findIndex((operation) => operation.type === 'object.add');
+  if (firstObjectIndex >= 0 && result.operations.slice(firstObjectIndex + 1).some((operation) => (
+    operation.type === 'terrain.generate' || operation.type === 'terrain.modify' || operation.type === 'water.add'
+  ))) unmet.push('terrain-and-water-must-precede-object-placement');
+  if (authoredEnvironment && candidate.guides.length <= original.guides.length) unmet.push('authored-environment-needs-guides');
+  if (authoredEnvironment && semanticSurfaces === 0 && candidate.grassLayers.length === original.grassLayers.length
+    && candidate.waterBodies.length === original.waterBodies.length) unmet.push('authored-environment-needs-surface-treatment');
+  if (authoredEnvironment && candidate.objects.length - original.objects.length < 3) unmet.push('authored-environment-needs-more-spatial-content');
+  if (needsWater && candidate.waterBodies.length <= original.waterBodies.length) unmet.push('requested-water-is-missing');
+  if (candidate.waterBodies.some((water) => water.type === 'ocean') && playableLandRatio < 0.15) {
+    unmet.push('ocean-scene-needs-playable-land');
+  }
+  if (needsTerrain && !operationTypes.has('terrain.generate') && !operationTypes.has('terrain.modify')) unmet.push('requested-terrain-form-is-missing');
+  if (needsVegetation && !hasAny(placedWords, ['tree', 'plant', 'crop', 'flower', 'grass', 'bush', '树', '植物', '作物', '花', '草', '灌木'])
+    && candidate.grassLayers.length === original.grassLayers.length) unmet.push('requested-vegetation-is-missing');
+  if (needsBuildings && !hasAny(placedWords, ['building', 'house', 'hall', 'school', 'tower', '建筑', '房', '大厅', '教学楼', '塔'])) {
+    unmet.push('requested-buildings-are-missing');
+  }
+  const unplacedGenerated = generatedAssets.filter((asset) => !placedAssetIds.has(asset.id));
+  if (unplacedGenerated.length > 0) unmet.push(`generated-assets-unplaced:${unplacedGenerated.map((asset) => asset.id).join(',')}`);
+  for (const issue of lintIssues) {
+    if (issue.severity === 'error' && !issue.repaired) unmet.push(`lint:${issue.code}`);
+  }
+  if (result.diagnostics.some((diagnostic) => diagnostic.code === 'asset-not-found')) unmet.push('program-references-missing-assets');
+  const warnings: string[] = [];
+  if (result.renderPromptSuggestions.length === 0) warnings.push('no-render-suggestion');
+  if (!operationTypes.has('reference.set')) warnings.push('no-explicit-safe-spawn');
+  for (const diagnostic of result.diagnostics) {
+    if (diagnostic.severity === 'warning' && diagnostic.code !== 'asset-not-found') warnings.push(diagnostic.code);
+  }
+  return {
+    unmet: [...new Set(unmet)],
+    warnings: [...new Set(warnings)],
+    metrics: {
+      guides: candidate.guides.length - original.guides.length,
+      objects: candidate.objects.length - original.objects.length,
+      waterBodies: candidate.waterBodies.length - original.waterBodies.length,
+      grassLayers: candidate.grassLayers.length - original.grassLayers.length,
+      semanticSurfaces,
+      playableLandRatio
+    }
+  };
+}
+
+function sampledPlayableLandRatio(map: EditableMap): number {
+  const oceans = map.waterBodies.filter((water) => water.type === 'ocean');
+  if (oceans.length === 0) return 1;
+  const bounds = getMapBounds(map);
+  const seaLevel = Math.max(...oceans.map((water) => water.level));
+  let land = 0;
+  let total = 0;
+  for (let zIndex = 0; zIndex < 9; zIndex += 1) {
+    for (let xIndex = 0; xIndex < 9; xIndex += 1) {
+      const x = bounds.minX + (xIndex + 0.5) / 9 * (bounds.maxX - bounds.minX);
+      const z = bounds.minZ + (zIndex + 0.5) / 9 * (bounds.maxZ - bounds.minZ);
+      if (sampleTerrainHeight(map, x, z) > seaLevel + 0.02) land += 1;
+      total += 1;
+    }
+  }
+  return total > 0 ? land / total : 0;
+}
+
+function hasAny(text: string, terms: readonly string[]): boolean {
+  return terms.some((term) => text.includes(term));
+}
+
+function errorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
+}
+
+function parseAgentAction(content: string, mode: ModelGenerationMode, remainingAssetBudget: number): AgentAction {
+  const object = parseJsonObject(content);
+  const action = object.action;
+  const summary = typeof object.summary === 'string' ? object.summary.trim().slice(0, 240) : '';
+  if (action === 'finish') return { action, summary };
+  if (action === 'write_program') {
+    if (typeof object.program !== 'string' || !object.program.trim()) throw new Error('scene_agent_missing_program');
+    return { action, summary, program: object.program };
+  }
+  if (action === 'request_assets') {
+    const requests = Array.isArray(object.assets) ? object.assets : [];
+    const seen = new Set<string>();
+    const assets: SceneDesignAssetRequest[] = [];
+    for (const raw of requests) {
+      if (!raw || typeof raw !== 'object' || assets.length >= Math.max(0, remainingAssetBudget)) continue;
+      const item = raw as Record<string, unknown>;
+      const name = typeof item.name === 'string' ? item.name.trim().slice(0, 42) : '';
+      const prompt = typeof item.prompt === 'string' ? item.prompt.trim().slice(0, 500) : '';
+      if (!name || !prompt || seen.has(`${name}\n${prompt}`)) continue;
+      seen.add(`${name}\n${prompt}`);
+      const light = normalizeMapAssetLight(item.light);
+      assets.push({
+        name,
+        prompt,
+        tags: normalizeAssetTags(item.tags) ?? [],
+        ...(light ? { light } : {}),
+        mode
+      });
+    }
+    return { action, summary, assets };
+  }
+  throw new Error('invalid_scene_agent_action');
+}
+
+function parseJsonObject(content: string): Record<string, unknown> {
+  const start = content.indexOf('{');
+  const end = content.lastIndexOf('}');
+  if (start < 0 || end <= start) throw new Error('invalid_scene_agent_json');
+  try {
+    return JSON.parse(content.slice(start, end + 1)) as Record<string, unknown>;
+  } catch {
+    throw new Error('invalid_scene_agent_json');
+  }
+}

@@ -54,6 +54,7 @@ import { completeMapVisualSemantics } from '../shared/mapVisualSemantics';
 import { patchMapVisualZone, type VisualZonePatch } from '../shared/mapVisualSemantics';
 import { VISUAL_ZONE_TAGS, normalizeMapVisualSemantics, type VisualZoneTag } from '../shared/visualDirection';
 import { runAssetGenerationPool, type AssetTaskReporter } from './assetGenerationPool';
+import { runSceneDesignAgent } from './sceneDesignAgent';
 import {
   findAdjacentMapRegion,
   isPointInsidePlayableArea,
@@ -79,6 +80,8 @@ export interface MapAiOptions {
   baseTerrainOnly?: boolean;
   /** User-approved director plan; skips a second director pass. */
   approvedCompositionPlan?: SceneCompositionPlan;
+  /** Use the bounded model-directed Scene Program loop for outdoor generation. */
+  sceneAgent?: boolean;
 }
 
 export interface AssetGenerationRequest {
@@ -113,6 +116,11 @@ export async function runMapAgent(
   const mode = options.mode ?? 'generate';
   if (mode === 'generate' && map.sceneMode === 'outdoor' && requestsIndoorScene(prompt)) {
     throw new Error('indoor_prompt_requires_indoor_map');
+  }
+  if (mode === 'generate' && map.sceneMode === 'outdoor' && options.sceneAgent) {
+    const suggestion = await runSceneDesignAgent(prompt, map, assets, options);
+    options.onProgress?.({ phase: 'complete', label: 'Scene Agent 已生成可审阅的地图程序预览' });
+    return suggestion;
   }
   if (mode === 'generate' && map.sceneMode !== 'mixed') {
     const result = await runMapCompositionWorkflow(prompt, map, assets, options);
