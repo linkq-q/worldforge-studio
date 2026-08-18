@@ -2111,7 +2111,8 @@ class MapEditor {
           method: 'POST',
           body: JSON.stringify({
             prompt,
-            provider: this.mapAiProvider
+            provider: this.mapAiProvider,
+            maxNewAssets: this.mapAiMaxNewAssets
           }),
           signal: controller.signal
         },
@@ -2124,6 +2125,7 @@ class MapEditor {
         phase: 'complete',
         label: `Code 规划完成：${suggestion.codePlan?.placementCount ?? 0} 个摆放意图`
       });
+      if (suggestion.generatedAssets.length > 0) await this.reloadLists();
       this.mapPreviewKind = 'ai';
       this.mapAiSuggestion = suggestion;
       this.pendingCompositionPlan = null;

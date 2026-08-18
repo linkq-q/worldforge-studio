@@ -1,6 +1,6 @@
-import { describe, expect, it } from 'vitest';
-import { createEmptyMap } from '../src/shared/map';
-import { executeMapCodePlan } from '../src/server/mapCodePlanner';
+import { describe, expect, it, vi } from 'vitest';
+import { createEmptyMap, type MapAsset } from '../src/shared/map';
+import { discoverMapCodeAssets, executeMapCodePlan, generateMapCodeSuggestion } from '../src/server/mapCodePlanner';
 import { applyMapOperations } from '../src/shared/mapOperations';
 
 describe('map code planner', () => {
@@ -72,4 +72,87 @@ describe('map code planner', () => {
     expect(() => executeMapCodePlan('function plan() { while (true) {} }', createEmptyMap()))
       .toThrow();
   });
+
+  it('discovers bounded generated asset requirements', () => {
+    const code = `
+      function plan(api) {
+        const pine = api.requireAsset({
+          key: 'pine',
+          name: 'Tall pine',
+          prompt: 'Standalone low-poly tall pine tree, no ground or background',
+          tags: ['Tree', 'pine'],
+          variants: 3
+        });
+        api.place({ assetId: api.asset(pine, 0), position: [0, 0] });
+      }
+    `;
+
+    expect(discoverMapCodeAssets(code, createEmptyMap(), [], 3)).toEqual([{
+      key: 'pine',
+      name: 'Tall pine',
+      prompt: 'Standalone low-poly tall pine tree, no ground or background',
+      tags: ['tree', 'pine'],
+      variants: 3
+    }]);
+    expect(() => discoverMapCodeAssets(code, createEmptyMap(), [], 2))
+      .toThrow('map_code_asset_requirement_limit');
+  });
+
+  it('generates variants concurrently and replays code with real asset ids', async () => {
+    const code = `
+      function plan(api) {
+        const pine = api.requireAsset({
+          key: 'pine', name: 'Pine', prompt: 'Standalone pine tree', tags: ['tree'], variants: 3
+        });
+        for (let index = 0; index < 6; index += 1) {
+          api.place({ assetId: api.asset(pine, index), position: [index * 2, 0] });
+        }
+      }
+    `;
+    const fetchImpl = vi.fn().mockResolvedValue(new Response(JSON.stringify({ ok: true, content: code }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' }
+    }));
+    let active = 0;
+    let peak = 0;
+    const createAsset = vi.fn(async (request) => {
+      active += 1;
+      peak = Math.max(peak, active);
+      await new Promise((resolve) => setTimeout(resolve, 5));
+      active -= 1;
+      return testAsset(`asset-${request.name}`, request.name);
+    });
+
+    const suggestion = await generateMapCodeSuggestion('make a pine grove', createEmptyMap(), [], {
+      apiBase: 'https://example.test',
+      provider: 'gpt',
+      fetchImpl,
+      maxNewAssets: 3,
+      createAsset
+    });
+
+    expect(createAsset).toHaveBeenCalledTimes(3);
+    expect(peak).toBe(3);
+    expect(suggestion.generatedAssets).toHaveLength(3);
+    const assetIds = suggestion.operations
+      .filter((operation) => operation.type === 'object.add')
+      .map((operation) => operation.object.assetId);
+    expect(new Set(assetIds).size).toBe(3);
+    expect(assetIds.slice(0, 3)).toEqual(assetIds.slice(3, 6));
+    expect(() => applyMapOperations(createEmptyMap(), suggestion.operations)).not.toThrow();
+  });
 });
+
+function testAsset(id: string, name: string): MapAsset {
+  return {
+    id,
+    name,
+    prompt: name,
+    tags: ['tree'],
+    modelJson: {},
+    colliderPlan: { version: 1, boxes: [], sourceMeshCount: 0, candidateCount: 0, fallbackUsed: true },
+    mode: 'voxel',
+    createdAt: 1,
+    updatedAt: 1
+  };
+}

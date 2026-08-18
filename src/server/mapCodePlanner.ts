@@ -1,7 +1,11 @@
 import vm from 'node:vm';
 import { createId, getMapBounds, sampleTerrainHeight, type EditableMap, type MapAsset } from '../shared/map';
-import type { ChatProvider } from '../shared/protocol';
+import { normalizeAssetTags } from '../shared/mapAssetMetadata';
+import { normalizeMapAiMaxNewAssets } from '../shared/mapPlanning';
+import type { AgentProgressEvent, ChatProvider } from '../shared/protocol';
 import type { MapAiSuggestion, MapOperation } from '../shared/mapOperations';
+import { runAssetGenerationPool, type AssetTaskReporter } from './assetGenerationPool';
+import type { AssetGenerationRequest } from './mapAi';
 import { validateMapSuggestion } from './mapSuggestionValidation';
 import { llmChat } from './modelApi';
 
@@ -18,6 +22,9 @@ export interface MapCodePlannerOptions {
   provider?: ChatProvider;
   fetchImpl?: typeof fetch;
   signal?: AbortSignal;
+  maxNewAssets?: number;
+  onProgress?: (event: AgentProgressEvent) => void;
+  createAsset?: (request: AssetGenerationRequest, report: AssetTaskReporter) => Promise<MapAsset>;
 }
 
 export interface MapCodePlanMetadata {
@@ -46,14 +53,43 @@ interface PlacementIntent {
   heightMode: 'terrain' | 'fixed';
 }
 
+export interface CodeAssetRequirement {
+  key: string;
+  name: string;
+  prompt: string;
+  tags: string[];
+  variants: number;
+}
+
+interface CodeAssetRequirementInput {
+  key: string;
+  name: string;
+  prompt: string;
+  tags?: string[];
+  variants?: number;
+}
+
+interface CodeExecutionOptions {
+  mode?: 'discovery' | 'final';
+  assetBindings?: ReadonlyMap<string, readonly MapAsset[]>;
+  maxNewAssets?: number;
+}
+
+interface CodeExecutionResult {
+  suggestion: MapAiSuggestion;
+  requirements: CodeAssetRequirement[];
+}
+
 export async function generateMapCodeSuggestion(
   prompt: string,
   map: EditableMap,
   assets: readonly MapAsset[],
   options: MapCodePlannerOptions = {}
 ): Promise<MapAiSuggestion> {
+  options.onProgress?.({ phase: 'planning', label: 'AI 正在编写程序化环境规划代码' });
+  const maxNewAssets = normalizeMapAiMaxNewAssets(options.maxNewAssets);
   const code = extractCode(await llmChat([
-    { role: 'system', content: buildMapCodePlannerSystemPrompt(map, assets) },
+    { role: 'system', content: buildMapCodePlannerSystemPrompt(map, assets, maxNewAssets) },
     { role: 'user', content: prompt.trim().slice(0, 1_200) }
   ], {
     apiBase: options.apiBase,
@@ -63,7 +99,58 @@ export async function generateMapCodeSuggestion(
     fetchImpl: options.fetchImpl,
     signal: options.signal
   }));
-  return executeMapCodePlan(code, map, assets);
+  const discovery = runMapCodePlan(code, map, assets, {
+    mode: 'discovery',
+    maxNewAssets
+  });
+  if (discovery.requirements.length === 0) {
+    options.onProgress?.({ phase: 'complete', label: 'Code 规划已完成，未请求新资产' });
+    return discovery.suggestion;
+  }
+  if (!options.createAsset) throw new Error('map_code_asset_generation_unavailable');
+
+  const tasks = discovery.requirements.flatMap((requirement) => (
+    Array.from({ length: requirement.variants }, (_, variantIndex) => ({
+      key: requirement.key,
+      name: requirement.variants > 1 ? `${requirement.name} ${variantIndex + 1}` : requirement.name,
+      request: {
+        name: requirement.variants > 1 ? `${requirement.name} ${variantIndex + 1}` : requirement.name,
+        prompt: requirement.variants > 1
+          ? `${requirement.prompt}\nCreate variation ${variantIndex + 1} of ${requirement.variants}; preserve the same reusable asset family while varying silhouette and details.`
+          : requirement.prompt,
+        tags: requirement.tags,
+        mode: map.assetGenerationMode
+      } satisfies AssetGenerationRequest
+    }))
+  ));
+  options.onProgress?.({
+    phase: 'checking-assets',
+    label: `Code 规划请求生成 ${tasks.length} 个新资产`,
+    current: 0,
+    total: tasks.length
+  });
+  const generatedAssets = await runAssetGenerationPool(
+    tasks,
+    (task, _index, report) => options.createAsset!(task.request, report),
+    { signal: options.signal, onProgress: options.onProgress }
+  );
+  const bindings = new Map<string, MapAsset[]>();
+  tasks.forEach((task, index) => {
+    const family = bindings.get(task.key) ?? [];
+    family.push(generatedAssets[index]);
+    bindings.set(task.key, family);
+  });
+  options.onProgress?.({ phase: 'replanning', label: '使用新资产重放程序化环境规划' });
+  const final = runMapCodePlan(code, map, [...assets, ...generatedAssets], {
+    mode: 'final',
+    assetBindings: bindings,
+    maxNewAssets
+  }).suggestion;
+  options.onProgress?.({ phase: 'complete', label: `Code 规划与 ${generatedAssets.length} 个新资产已完成` });
+  return {
+    ...final,
+    generatedAssets: generatedAssets.map((asset) => ({ id: asset.id, name: asset.name }))
+  };
 }
 
 export function executeMapCodePlan(
@@ -71,12 +158,36 @@ export function executeMapCodePlan(
   map: EditableMap,
   assets: readonly MapAsset[] = []
 ): MapAiSuggestion {
+  return runMapCodePlan(code, map, assets).suggestion;
+}
+
+export function discoverMapCodeAssets(
+  code: string,
+  map: EditableMap,
+  assets: readonly MapAsset[] = [],
+  maxNewAssets?: number
+): CodeAssetRequirement[] {
+  return runMapCodePlan(code, map, assets, {
+    mode: 'discovery',
+    maxNewAssets: normalizeMapAiMaxNewAssets(maxNewAssets)
+  }).requirements;
+}
+
+function runMapCodePlan(
+  code: string,
+  map: EditableMap,
+  assets: readonly MapAsset[] = [],
+  options: CodeExecutionOptions = {}
+): CodeExecutionResult {
   const cleanCode = extractCode(code);
   if (!cleanCode || cleanCode.length > MAX_CODE_LENGTH) throw new Error('invalid_map_code_plan');
 
   const placements: PlacementIntent[] = [];
+  const requirements = new Map<string, CodeAssetRequirement>();
   const usedFunctions = new Set<string>();
   const assetById = new Map(assets.map((asset) => [asset.id, asset]));
+  const mode = options.mode ?? 'final';
+  const maxNewAssets = options.maxNewAssets ?? normalizeMapAiMaxNewAssets(undefined);
   const random = mulberry32(map.seed);
   const record = (name: string) => usedFunctions.add(name);
   const api = Object.freeze({
@@ -202,12 +313,41 @@ export function executeMapCodePlan(
       const direction = point2(tangent);
       return Math.atan2(direction[0], direction[1]);
     },
+    requireAsset(input: CodeAssetRequirementInput): string {
+      record('requireAsset');
+      const requirement = normalizeCodeAssetRequirement(input);
+      const existing = requirements.get(requirement.key);
+      if (existing && !sameCodeAssetRequirement(existing, requirement)) {
+        throw new Error(`conflicting_map_code_asset_requirement:${requirement.key}`);
+      }
+      if (!existing) {
+        const requestedCount = [...requirements.values()]
+          .reduce((total, item) => total + item.variants, 0) + requirement.variants;
+        if (requestedCount > maxNewAssets) throw new Error('map_code_asset_requirement_limit');
+        requirements.set(requirement.key, requirement);
+      }
+      return requirement.key;
+    },
+    asset(key: string, index = 0): string {
+      record('asset');
+      const normalizedKey = normalizeCodeAssetKey(key);
+      const requirement = requirements.get(normalizedKey);
+      if (!requirement) throw new Error(`unknown_map_code_asset_requirement:${normalizedKey}`);
+      const variantIndex = positiveModulo(Math.trunc(finite(index)), requirement.variants);
+      if (mode === 'discovery') return codeAssetPlaceholder(normalizedKey, variantIndex);
+      const family = options.assetBindings?.get(normalizedKey);
+      const asset = family?.[variantIndex];
+      if (!asset) throw new Error(`missing_map_code_asset_binding:${normalizedKey}:${variantIndex}`);
+      return asset.id;
+    },
     place(input: PlacementInput): void {
       record('place');
       if (placements.length >= MAX_PLACEMENTS) throw new Error('map_code_plan_too_many_placements');
       if (!input || typeof input !== 'object') throw new Error('invalid_map_code_placement');
       const assetId = typeof input.assetId === 'string' && input.assetId.trim() ? input.assetId.trim() : null;
-      if (assetId && !assetById.has(assetId)) throw new Error(`unknown_map_asset:${assetId}`);
+      if (assetId && !assetById.has(assetId) && !(mode === 'discovery' && isCodeAssetPlaceholder(assetId))) {
+        throw new Error(`unknown_map_asset:${assetId}`);
+      }
       const terrain = input.terrain !== false && input.position.length === 2;
       const position = placementPosition(input.position, map, terrain);
       placements.push({
@@ -262,20 +402,29 @@ export function executeMapCodePlan(
       functions: [...usedFunctions].sort()
     }
   };
-  return validateMapSuggestion(map, suggestion).suggestion;
+  return {
+    suggestion: validateMapSuggestion(map, suggestion).suggestion,
+    requirements: [...requirements.values()]
+  };
 }
 
-export function buildMapCodePlannerSystemPrompt(map: EditableMap, assets: readonly MapAsset[]): string {
+export function buildMapCodePlannerSystemPrompt(
+  map: EditableMap,
+  assets: readonly MapAsset[],
+  maxNewAssets = normalizeMapAiMaxNewAssets(undefined)
+): string {
   const bounds = getMapBounds(map);
   const assetCatalog = assets.length > 0
     ? assets.map((asset) => `- ${asset.id}: ${asset.name}; tags=${asset.tags?.join(',') || 'none'}`).join('\n')
-    : '- No reusable assets are available. Use api.place without assetId to create editor proxy objects.';
+    : '- No reusable assets are available. Declare the assets you need with api.requireAsset.';
   return `You are the procedural environment planner for WorldForge Studio.
 Return JavaScript only, defining exactly one synchronous function: function plan(api) { ... }.
 Basic JavaScript control flow is allowed: const/let, arrays, objects, for, for...of, while, if/else and local helper functions.
 Do not use async, promises, eval, Function, imports, network, files, timers, randomness outside api.random, or global state.
 
 The code must call api.place at least once. Position [x,z] follows terrain automatically; position [x,y,z] is fixed height.
+For prompt-specific visible content, declare reusable generated assets first. Use proxy placements without assetId only for abstract editor markers, never as the normal solution.
+The sum of all requireAsset variants must not exceed ${maxNewAssets}.
 Map bounds: x=${bounds.minX}..${bounds.maxX}, z=${bounds.minZ}..${bounds.maxZ}, seed=${map.seed}.
 
 Available API:
@@ -285,7 +434,12 @@ Available API:
 - curves: bezierPoint(t,p0,p1,p2,p3) -> {point,tangent}; sampleBezier(...) -> points
 - environment fields: noise2D(x,z,scale?,seed?), fbm2D(x,z,{scale,octaves,lacunarity,gain,seed})
 - distribution: poissonDisk({bounds?,minDistance,maxPoints?,attempts?,seed?})
+- assets: requireAsset({key,name,prompt,tags?,variants?}) -> key; asset(key,index?) -> generated assetId
 - output: place({assetId?,name?,position:[x,z]|[x,y,z],rotationY?,scale?,size?,terrain?})
+
+Asset example:
+const pine = api.requireAsset({ key:'pine', name:'Tall pine', prompt:'Standalone low-poly tall pine tree, no ground or background', tags:['tree','pine'], variants:4 });
+for (let i = 0; i < points.length; i += 1) api.place({ assetId: api.asset(pine, i), position: points[i] });
 
 Prefer common environment-design patterns: splines for roads/rivers/edges, noise or fBm for density masks, Poisson disk for natural non-overlapping scatter, grids for settlements, circles/radial layouts for plazas, and smoothstep/remap for transitions. Keep the main paths and landmarks readable; do not fill every free space.
 
@@ -296,6 +450,52 @@ ${assetCatalog}`;
 function extractCode(raw: string): string {
   const fenced = raw.match(/```(?:js|javascript|ts|typescript)?\s*([\s\S]*?)```/i);
   return (fenced?.[1] ?? raw).trim();
+}
+
+function normalizeCodeAssetRequirement(input: CodeAssetRequirementInput): CodeAssetRequirement {
+  if (!input || typeof input !== 'object') throw new Error('invalid_map_code_asset_requirement');
+  const key = normalizeCodeAssetKey(input.key);
+  const name = cleanText(input.name, 42);
+  const prompt = cleanText(input.prompt, 500);
+  if (!name || !prompt) throw new Error('invalid_map_code_asset_requirement');
+  return {
+    key,
+    name,
+    prompt,
+    tags: normalizeAssetTags(input.tags) ?? [],
+    variants: boundedCount(input.variants ?? 1, 1, 8)
+  };
+}
+
+function normalizeCodeAssetKey(value: string): string {
+  const key = String(value ?? '')
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9_-]/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '')
+    .slice(0, 48);
+  if (!key) throw new Error('invalid_map_code_asset_key');
+  return key;
+}
+
+function sameCodeAssetRequirement(left: CodeAssetRequirement, right: CodeAssetRequirement): boolean {
+  return left.name === right.name
+    && left.prompt === right.prompt
+    && left.variants === right.variants
+    && left.tags.join('\n') === right.tags.join('\n');
+}
+
+function codeAssetPlaceholder(key: string, index: number): string {
+  return `code-asset://${key}/${index}`;
+}
+
+function isCodeAssetPlaceholder(value: string): boolean {
+  return value.startsWith('code-asset://');
+}
+
+function positiveModulo(value: number, divisor: number): number {
+  return ((value % divisor) + divisor) % divisor;
 }
 
 function placementPosition(value: Point2 | Point3, map: EditableMap, terrain: boolean): Point3 {

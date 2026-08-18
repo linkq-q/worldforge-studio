@@ -401,6 +401,7 @@ async function handleEditorMaps(req: Req, res: Res, store: MapStore, parts: stri
       prompt?: string;
       provider?: ChatProvider;
       baseOperations?: MapOperation[];
+      maxNewAssets?: number;
     }>(req);
     const prompt = body.prompt?.trim();
     if (!prompt) throw new HttpError(400, 'missing_prompt');
@@ -408,6 +409,11 @@ async function handleEditorMaps(req: Req, res: Res, store: MapStore, parts: stri
     const option = CHAT_PROVIDER_OPTIONS.find((item) => item.key === provider);
     if (!option || option.disabled) throw new HttpError(400, 'provider_unavailable');
     const controller = new AbortController();
+    const stream = acceptsEventStream(req);
+    if (stream) beginSse(res);
+    const onProgress = stream
+      ? (event: AgentProgressEvent) => sendSse(res, 'progress', event)
+      : undefined;
     const abort = () => controller.abort();
     const abortIfOpen = () => {
       if (!res.writableEnded) abort();
@@ -420,11 +426,43 @@ async function handleEditorMaps(req: Req, res: Res, store: MapStore, parts: stri
       const planningMap = Array.isArray(body.baseOperations) && body.baseOperations.length > 0
         ? applyMapOperations(mapWithAssets, body.baseOperations)
         : mapWithAssets;
+      const modelProvider = provider === 'deepseek-v4-pro' ? 'deepseek' : provider;
       const suggestion = await generateMapCodeSuggestion(prompt, planningMap, mapWithAssets.assets ?? [], {
         provider,
-        signal: controller.signal
+        signal: controller.signal,
+        maxNewAssets: body.maxNewAssets,
+        onProgress,
+        createAsset: async (request, report) => {
+          const modelJson = await generateMapAssetWithRetry(request.name, () => generateModel(request.prompt, {
+            mode: request.mode,
+            providers: [modelProvider],
+            signal: controller.signal,
+            onStage: (stage) => report({ status: 'running', detail: stage.stage })
+          }), {
+            attempts: 3,
+            signal: controller.signal,
+            onProgress: (event) => report({
+              status: event.phase === 'asset-retrying' ? 'retrying' : 'running',
+              detail: event.detail ?? event.label
+            })
+          });
+          return store.saveAsset({
+            name: request.name,
+            prompt: request.prompt,
+            tags: request.tags,
+            light: request.light,
+            modelJson,
+            mode: request.mode,
+            provider: modelProvider
+          });
+        }
       });
-      sendJson(res, 200, { suggestion });
+      if (stream) {
+        sendSse(res, 'result', { suggestion });
+        res.end();
+      } else {
+        sendJson(res, 200, { suggestion });
+      }
     } finally {
       req.off('aborted', abort);
       res.off('close', abortIfOpen);
