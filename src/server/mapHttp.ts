@@ -26,6 +26,7 @@ import {
 import type { RenderScheme } from '../shared/renderScheme';
 import type { RenderPlan } from '../shared/renderPlan';
 import { runMapAgent } from './mapAi';
+import { generateMapCodeSuggestion } from './mapCodePlanner';
 import { reviewIndoorMapVisual } from './indoorVisualReview';
 import { planMapComposition } from './mapCompositionWorkflow';
 import { generateMapLayoutSuggestion } from './mapLayoutAi';
@@ -388,6 +389,42 @@ async function handleEditorMaps(req: Req, res: Res, store: MapStore, parts: stri
         signal: controller.signal
       });
       sendJson(res, 200, { review });
+    } finally {
+      req.off('aborted', abort);
+      res.off('close', abortIfOpen);
+    }
+    return;
+  }
+
+  if (parts[4] === 'code-generate' && req.method === 'POST' && parts.length === 5) {
+    const body = await readJson<{
+      prompt?: string;
+      provider?: ChatProvider;
+      baseOperations?: MapOperation[];
+    }>(req);
+    const prompt = body.prompt?.trim();
+    if (!prompt) throw new HttpError(400, 'missing_prompt');
+    const provider = body.provider ?? 'gpt';
+    const option = CHAT_PROVIDER_OPTIONS.find((item) => item.key === provider);
+    if (!option || option.disabled) throw new HttpError(400, 'provider_unavailable');
+    const controller = new AbortController();
+    const abort = () => controller.abort();
+    const abortIfOpen = () => {
+      if (!res.writableEnded) abort();
+    };
+    req.once('aborted', abort);
+    res.once('close', abortIfOpen);
+    try {
+      const [map, assets] = await Promise.all([store.loadMap(mapId), store.listAssets()]);
+      const mapWithAssets = { ...map, assets: dedupeAssets([...assets, ...(map.assets ?? [])]) };
+      const planningMap = Array.isArray(body.baseOperations) && body.baseOperations.length > 0
+        ? applyMapOperations(mapWithAssets, body.baseOperations)
+        : mapWithAssets;
+      const suggestion = await generateMapCodeSuggestion(prompt, planningMap, mapWithAssets.assets ?? [], {
+        provider,
+        signal: controller.signal
+      });
+      sendJson(res, 200, { suggestion });
     } finally {
       req.off('aborted', abort);
       res.off('close', abortIfOpen);

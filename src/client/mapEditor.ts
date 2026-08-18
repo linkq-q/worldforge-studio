@@ -53,7 +53,12 @@ import {
   normalizeMapAiNewAssetRange
 } from '../shared/mapPlanning';
 import { isCompositionEmptyMap, SCENE_COMPOSITION_LIMITS, type SceneCompositionPlan } from '../shared/sceneComposition';
-import { mapCompositionPlacementQuality, renderMapCompositionPlanApproval, renderMapCompositionSummary } from './mapCompositionPanel';
+import {
+  mapCompositionPlacementQuality,
+  renderMapCodePlanSummary,
+  renderMapCompositionPlanApproval,
+  renderMapCompositionSummary
+} from './mapCompositionPanel';
 import {
   bindMaterialTagScenePanel,
   renderMaterialTagScenePanel
@@ -1235,6 +1240,7 @@ class MapEditor {
       this.mapAiTargetVisualZoneId = '';
     }
     const generationBlocked = this.state.busy || this.state.dirty || !this.mapAiPrompt.trim() || !compositionAvailable || Boolean(this.pendingCompositionPlan);
+    const codeGenerationBlocked = this.state.busy || this.state.dirty || !this.mapAiPrompt.trim() || Boolean(this.pendingCompositionPlan);
     const refinementBlocked = generationBlocked || !hasRefinableMapContent(map);
     const mapAiOpen = host.querySelector<HTMLDetailsElement>('[data-inspector-section="map-ai"]')?.open ?? true;
     const layoutHtml = map.sceneMode === 'indoor' ? '' : this.renderMapLayoutHtml(map);
@@ -1278,8 +1284,9 @@ class MapEditor {
             </select>
           </label>` : ''}
         </div>
-        <div class="map-ai-controls">
+        <div class="map-ai-controls map-ai-generation-controls">
           <button id="generate-map-ai" ${generationBlocked ? 'disabled' : ''}>${map.sceneMode === 'indoor' && this.mapAiConfirmCompositionPlan ? '先生成俯视规划' : '生成新规划'}</button>
+          <button id="generate-map-code" class="secondary" title="让 AI 编写受限 JavaScript，并使用曲线、noise 和程序化分布生成布局" ${codeGenerationBlocked ? 'disabled' : ''}>Code 生成</button>
           <button id="refine-map-ai" class="secondary" ${refinementBlocked ? 'disabled' : ''}>调整当前地图</button>
           ${this.mapAiAbortController ? '<button id="cancel-map-ai" class="secondary">取消</button>' : ''}
         </div>
@@ -1312,6 +1319,7 @@ class MapEditor {
             <span>出生点 <b>${hasSpawn ? '有' : '无'}</b></span>
           </div>
           ${renderMapCompositionSummary(suggestion)}
+          ${renderMapCodePlanSummary(suggestion)}
           ${suggestion.renderPromptSuggestions.length > 0 ? `
             <div>
               <p class="empty">留给渲染阶段的建议</p>
@@ -1350,8 +1358,10 @@ class MapEditor {
       this.mapAiPrompt = (event.target as HTMLTextAreaElement).value;
       const blocked = this.state.busy || this.state.dirty || !this.mapAiPrompt.trim();
       const generateButton = host.querySelector<HTMLButtonElement>('#generate-map-ai');
+      const codeButton = host.querySelector<HTMLButtonElement>('#generate-map-code');
       const refineButton = host.querySelector<HTMLButtonElement>('#refine-map-ai');
       if (generateButton) generateButton.disabled = blocked || !isCompositionEmptyMap(map);
+      if (codeButton) codeButton.disabled = blocked;
       if (refineButton) refineButton.disabled = blocked || !hasRefinableMapContent(map);
     });
     host.querySelector<HTMLInputElement>('#map-ai-reuse-assets')?.addEventListener('change', (event) => {
@@ -1397,6 +1407,11 @@ class MapEditor {
       this.mapAiTargetRegionId = '';
       if (map.sceneMode === 'indoor' && this.mapAiConfirmCompositionPlan) void this.generateCompositionPlanPreview();
       else void this.generateMapAiPreview('generate');
+    });
+    host.querySelector('#generate-map-code')?.addEventListener('click', () => {
+      this.mapAiBaseTerrainOnly = false;
+      this.mapAiTargetRegionId = '';
+      void this.generateMapCodePreview();
     });
     host.querySelector('#refine-map-ai')?.addEventListener('click', () => {
       this.mapAiBaseTerrainOnly = false;
@@ -2064,6 +2079,71 @@ class MapEditor {
     } finally {
       if (this.mapAiAbortController === controller) this.mapAiAbortController = null;
       if (automatic) this.mapAiAutoRefineRunning = false;
+      this.stopMapAgentProgressTimer();
+      this.setBusy(false);
+      this.renderPanels();
+    }
+  }
+
+  private async generateMapCodePreview(): Promise<void> {
+    const map = this.state.map;
+    const prompt = this.mapAiPrompt.trim();
+    if (!map || !prompt || this.state.busy) return;
+    if (this.state.dirty) {
+      this.state.message = '请先保存当前手工修改';
+      this.updateToolbarState();
+      return;
+    }
+    const controller = new AbortController();
+    this.mapAiAbortController = controller;
+    this.mapAgentProgress = [];
+    this.startMapAgentProgressTimer();
+    updateAgentProgress(this.mapAgentProgress, {
+      phase: 'planning',
+      label: 'AI 正在编写程序化环境规划代码'
+    });
+    this.setBusy(true, 'AI 正在使用曲线、noise 与程序化分布规划地图...');
+    this.renderMapAiPanel();
+    try {
+      const { suggestion } = await editorAgentFetch<{ suggestion: MapAiSuggestion }>(
+        `/api/editor/maps/${encodeURIComponent(map.id)}/code-generate`,
+        {
+          method: 'POST',
+          body: JSON.stringify({
+            prompt,
+            provider: this.mapAiProvider
+          }),
+          signal: controller.signal
+        },
+        (event) => {
+          updateAgentProgress(this.mapAgentProgress, event);
+          this.renderMapAiPanel();
+        }
+      );
+      updateAgentProgress(this.mapAgentProgress, {
+        phase: 'complete',
+        label: `Code 规划完成：${suggestion.codePlan?.placementCount ?? 0} 个摆放意图`
+      });
+      this.mapPreviewKind = 'ai';
+      this.mapAiSuggestion = suggestion;
+      this.pendingCompositionPlan = null;
+      this.mapAiPreviewMap = applyMapOperations(this.mapWithEditorAssets(map), suggestion.operations);
+      this.mapAiComparisonMap = map;
+      this.mapAiPreviewVisible = true;
+      this.state.selectedObjectId = null;
+      this.state.message = 'Code 地图预览已生成，尚未应用';
+      await this.refreshScene();
+    } catch (error) {
+      const cancelled = error instanceof Error && error.name === 'AbortError';
+      const detail = humanizeAgentError(error);
+      updateAgentProgress(this.mapAgentProgress, {
+        phase: 'failed',
+        label: cancelled ? 'Code 规划已取消' : 'Code 规划执行失败',
+        detail
+      });
+      this.state.message = cancelled ? '已取消 Code 生成' : `Code 地图生成失败：${detail}`;
+    } finally {
+      if (this.mapAiAbortController === controller) this.mapAiAbortController = null;
       this.stopMapAgentProgressTimer();
       this.setBusy(false);
       this.renderPanels();

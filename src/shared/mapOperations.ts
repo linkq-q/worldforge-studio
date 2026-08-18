@@ -128,6 +128,12 @@ export interface MapAiSuggestion {
     review: SceneReviewResult;
     outcome: { checks: SceneOutcomeCheck[]; repairCount: number };
   };
+  /** Preview-only source and telemetry for the bounded procedural code planner. */
+  codePlan?: {
+    code: string;
+    placementCount: number;
+    functions: string[];
+  };
 }
 
 const MAP_SURFACES = new Set<MapSurface>(['floor', 'ceiling', 'north', 'south', 'east', 'west', 'terrain']);

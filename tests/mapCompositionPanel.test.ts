@@ -1,8 +1,31 @@
 import { describe, expect, it } from 'vitest';
-import { renderMapCompositionPlanApproval, renderMapCompositionSummary } from '../src/client/mapCompositionPanel';
+import {
+  renderMapCodePlanSummary,
+  renderMapCompositionPlanApproval,
+  renderMapCompositionSummary
+} from '../src/client/mapCompositionPanel';
 import type { MapAiSuggestion } from '../src/shared/mapOperations';
 
 describe('map composition preview panel', () => {
+  it('renders code planning tools and escaped source in the normal preview panel', () => {
+    const html = renderMapCodePlanSummary({
+      summary: 'code plan',
+      operations: [],
+      renderPromptSuggestions: [],
+      generatedAssets: [],
+      codePlan: {
+        code: 'function plan(api) { if (x < 2) api.place({ position:[0,0] }); }',
+        placementCount: 12,
+        functions: ['noise2D', 'place']
+      }
+    });
+    expect(html).toContain('Code 规划详情');
+    expect(html).toContain('12 个摆放意图');
+    expect(html).toContain('noise2D');
+    expect(html).toContain('&lt; 2');
+    expect(html).not.toContain('if (x < 2)');
+  });
+
   it('renders a top-down approval plan with explicit whitespace meaning before generation', () => {
     const plan = {
       version: 1 as const,

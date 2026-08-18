@@ -116,6 +116,20 @@ export function renderMapCompositionSummary(suggestion: MapAiSuggestion): string
   `;
 }
 
+export function renderMapCodePlanSummary(suggestion: MapAiSuggestion): string {
+  const codePlan = suggestion.codePlan;
+  if (!codePlan) return '';
+  return `
+    <details class="inspector-disclosure compact map-code-plan-details">
+      <summary><span><b>Code 规划详情</b><small>${codePlan.placementCount} 个摆放意图 · ${codePlan.functions.length} 种工具</small></span></summary>
+      <div class="inspector-body asset-library-details">
+        <div class="style-tags">${codePlan.functions.map((name) => `<span>${escapeHtml(name)}</span>`).join('')}</div>
+        <pre class="map-code-plan-source"><code>${escapeHtml(codePlan.code)}</code></pre>
+      </div>
+    </details>
+  `;
+}
+
 export function mapCompositionPlacementQuality(initialObjectCount: number, objectCount: number): {
   label: '规划不足' | '需要注意' | '规划良好';
   tone: 'danger' | 'warning' | 'good';
