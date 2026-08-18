@@ -1,7 +1,5 @@
 import type { AgentAssetProgress, AgentProgressEvent } from '../shared/protocol';
 
-export const MAP_ASSET_GENERATION_CONCURRENCY = 3;
-
 export type AssetTaskReporter = (
   update: Pick<AgentAssetProgress, 'status' | 'detail'>
 ) => void;
@@ -78,10 +76,7 @@ export async function runAssetGenerationPool<T extends { name: string }, R>(
     }
   };
 
-  await Promise.all(Array.from(
-    { length: Math.min(MAP_ASSET_GENERATION_CONCURRENCY, items.length) },
-    (_, index) => worker(index + 1)
-  ));
+  await Promise.all(items.map((_, index) => worker(index + 1)));
   if (firstError !== undefined) throw firstError;
   return results;
 }
