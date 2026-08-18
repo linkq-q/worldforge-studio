@@ -38,6 +38,10 @@ Available capabilities are:
 - `scene.guide(...)`
 - `scene.parallelGuides(...)`
 - `scene.streetGrid(...)`
+- `scene.gridPoints(...)`
+- `scene.noise2D(...)`, `scene.fbm2D(...)`
+- `scene.clamp(...)`, `scene.lerp(...)`, `scene.remap(...)`, `scene.smoothstep(...)`
+- `scene.distance2D(...)`, `scene.rotate2D(...)`
 - `scene.surface(...)`, `scene.surfaceRegion(...)`
 - `scene.water(...)`, `scene.grass(...)`
 - `scene.placeAlong(...)`
@@ -56,6 +60,8 @@ Terrain surfaces preserve their real circle, path or polygon masks. They are not
 Surface semantics include grass, sand, rock, soil and paving. Farms can therefore keep visible soil between crops, while roads and plazas suppress ordinary grass and use a distinct paved tint instead of borrowing the rock treatment.
 
 `placeAlong`, `scatter` and `placeAt` all use the shared placement kernels. They report underfilled requests instead of silently forcing objects through bounds, water, steep terrain or occupied footprints.
+
+Deterministic grid, noise and fBm helpers let the model vary density and structure without bypassing those placement kernels. They are capabilities of the same Scene Program runtime, not a second JavaScript VM or a separate generation mode. The editor keeps one Agent workflow so asset requests, library permissions, execution feedback and repair remain consistent.
 
 ## Agent completion checks
 

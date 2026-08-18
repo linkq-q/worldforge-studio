@@ -78,6 +78,7 @@ const DEFAULT_BUDGET: SceneProgramBudget = {
   maxLoopIterations: 256,
   maxOperations: 1_200
 };
+const MAX_LAYOUT_POINTS = 256;
 
 export function executeSceneProgram(
   source: string,
@@ -137,6 +138,11 @@ Available API:
 - scene.guide(id, { name?, points: [[x,z],...], curve?: "polyline"|"catmull-rom", closed?: boolean, width?: number, tags?: string[] }) -> Guide
 - scene.parallelGuides(idPrefix, polygon, { direction, spacing, inset?, width?, tags? }) -> Guide[]
 - scene.streetGrid(idPrefix, polygon, { direction, blockWidth, blockDepth, roadWidth, inset?, tags? }) -> { streets: Guide[], blocks: Block[] }
+- scene.gridPoints({ center?, columns, rows, spacing: number|[x,z] }) -> [x,z][]
+- scene.noise2D(x, z, scale?, seed?) -> number in [-1,1]
+- scene.fbm2D(x, z, { scale?, octaves?, lacunarity?, gain?, seed? }) -> number in [-1,1]
+- scene.clamp(value, min, max), scene.lerp(from, to, amount), scene.remap(value, inMin, inMax, outMin, outMax), scene.smoothstep(min, max, value)
+- scene.distance2D(left, right), scene.rotate2D(point, degrees, center?)
 - scene.surface(guide, "grass"|"sand"|"rock"|"soil"|"paving", intensity?)
 - scene.surfaceRegion(id, "grass"|"sand"|"rock"|"soil"|"paving", region, intensity?)
 - scene.water(id, { type: "lake"|"river"|"ocean", points: [[x,z],...], name?, width?, level?, depth?, shorelineSmoothness?, shorelineIrregularity? })
@@ -158,6 +164,93 @@ The runtime owns bounds, collision, terrain height, slope and operation budgets.
 
 function createSceneApi(context: SceneProgramContext): Record<string, SceneMethod> {
   return {
+    clamp: (value, min, max) => {
+      const left = finiteNumber(min, 0);
+      const right = finiteNumber(max, 1);
+      return clamp(finiteNumber(value, 0), Math.min(left, right), Math.max(left, right));
+    },
+    lerp: (from, to, amount) => {
+      const start = finiteNumber(from, 0);
+      return start + (finiteNumber(to, 0) - start) * finiteNumber(amount, 0);
+    },
+    remap: (value, inMin, inMax, outMin, outMax) => {
+      const inputMin = finiteNumber(inMin, 0);
+      const inputMax = finiteNumber(inMax, 1);
+      const outputMin = finiteNumber(outMin, 0);
+      const denominator = inputMax - inputMin;
+      if (Math.abs(denominator) < 0.000001) return outputMin;
+      const amount = (finiteNumber(value, inputMin) - inputMin) / denominator;
+      return outputMin + (finiteNumber(outMax, 1) - outputMin) * amount;
+    },
+    smoothstep: (min, max, value) => {
+      const start = finiteNumber(min, 0);
+      const end = finiteNumber(max, 1);
+      const denominator = end - start;
+      if (Math.abs(denominator) < 0.000001) return finiteNumber(value, start) < start ? 0 : 1;
+      const amount = clamp((finiteNumber(value, start) - start) / denominator, 0, 1);
+      return amount * amount * (3 - 2 * amount);
+    },
+    distance2D: (left, right) => {
+      const a = point2(left, 'invalid_distance_point');
+      const b = point2(right, 'invalid_distance_point');
+      return Math.hypot(a[0] - b[0], a[1] - b[1]);
+    },
+    rotate2D: (pointValue, degreesValue, centerValue = [0, 0]) => {
+      const point = point2(pointValue, 'invalid_rotate_point');
+      const center = point2(centerValue, 'invalid_rotate_center');
+      const radians = finiteNumber(degreesValue, 0) * Math.PI / 180;
+      const x = point[0] - center[0];
+      const z = point[1] - center[1];
+      return [
+        center[0] + x * Math.cos(radians) - z * Math.sin(radians),
+        center[1] + x * Math.sin(radians) + z * Math.cos(radians)
+      ];
+    },
+    gridPoints: (optionsValue) => {
+      const options = objectValue(optionsValue, 'invalid_grid_options');
+      const columns = boundedInteger(options.columns, 1, MAX_LAYOUT_POINTS, 1);
+      const rows = boundedInteger(options.rows, 1, Math.max(1, Math.floor(MAX_LAYOUT_POINTS / columns)), 1);
+      const center = point2(options.center ?? [0, 0], 'invalid_grid_center');
+      const spacing = Array.isArray(options.spacing)
+        ? point2(options.spacing, 'invalid_grid_spacing').map((value) => Math.max(0.01, Math.abs(value))) as [number, number]
+        : [
+            Math.max(0.01, Math.abs(finiteNumber(options.spacing, 1))),
+            Math.max(0.01, Math.abs(finiteNumber(options.spacing, 1)))
+          ] as [number, number];
+      return Array.from({ length: rows * columns }, (_, index) => {
+        const column = index % columns;
+        const row = Math.floor(index / columns);
+        return [
+          center[0] + (column - (columns - 1) / 2) * spacing[0],
+          center[1] + (row - (rows - 1) / 2) * spacing[1]
+        ];
+      });
+    },
+    noise2D: (xValue, zValue, scaleValue = 1, seedValue = context.map.seed) => valueNoise2D(
+      finiteNumber(xValue, 0) * finiteNumber(scaleValue, 1),
+      finiteNumber(zValue, 0) * finiteNumber(scaleValue, 1),
+      Math.trunc(finiteNumber(seedValue, context.map.seed))
+    ),
+    fbm2D: (xValue, zValue, optionsValue = {}) => {
+      const options = objectValue(optionsValue, 'invalid_fbm_options');
+      const octaves = boundedInteger(options.octaves, 1, 8, 4);
+      const seed = Math.trunc(finiteNumber(options.seed, context.map.seed));
+      let amplitude = 1;
+      let frequency = finiteNumber(options.scale, 1);
+      let total = 0;
+      let weight = 0;
+      for (let octave = 0; octave < octaves; octave += 1) {
+        total += valueNoise2D(
+          finiteNumber(xValue, 0) * frequency,
+          finiteNumber(zValue, 0) * frequency,
+          seed + octave * 1013
+        ) * amplitude;
+        weight += amplitude;
+        frequency *= finiteNumber(options.lacunarity, 2);
+        amplitude *= finiteNumber(options.gain, 0.5);
+      }
+      return weight > 0 ? total / weight : 0;
+    },
     terrain: (presetValue, optionsValue = {}) => {
       if (context.operations.some((operation) => operation.type === 'terrain.generate')) {
         throw new Error('scene_program_base_terrain_already_generated');
@@ -764,6 +857,36 @@ function finiteNumber(value: unknown, fallback: number): number {
 function optionalFiniteNumber(value: unknown): number | undefined {
   const number = Number(value);
   return value !== undefined && Number.isFinite(number) ? number : undefined;
+}
+
+function boundedInteger(value: unknown, min: number, max: number, fallback: number): number {
+  return Math.round(clamp(finiteNumber(value, fallback), min, max));
+}
+
+function valueNoise2D(x: number, z: number, seed: number): number {
+  const x0 = Math.floor(x);
+  const z0 = Math.floor(z);
+  const tx = smoothFraction(x - x0);
+  const tz = smoothFraction(z - z0);
+  return lerpNumber(
+    lerpNumber(hashNoise(x0, z0, seed), hashNoise(x0 + 1, z0, seed), tx),
+    lerpNumber(hashNoise(x0, z0 + 1, seed), hashNoise(x0 + 1, z0 + 1, seed), tx),
+    tz
+  ) * 2 - 1;
+}
+
+function hashNoise(x: number, z: number, seed: number): number {
+  let value = Math.imul(x, 374761393) + Math.imul(z, 668265263) + Math.imul(seed, 69069);
+  value = Math.imul(value ^ value >>> 13, 1274126177);
+  return ((value ^ value >>> 16) >>> 0) / 4294967295;
+}
+
+function smoothFraction(value: number): number {
+  return value * value * (3 - 2 * value);
+}
+
+function lerpNumber(from: number, to: number, amount: number): number {
+  return from + (to - from) * amount;
 }
 
 function propertyName(name: ts.PropertyName): string {

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { createEmptyMap, type MapAsset } from '../src/shared/map';
 import { applyMapOperations } from '../src/shared/mapOperations';
-import { executeSceneProgram } from '../src/server/sceneProgram';
+import { executeSceneProgram, SCENE_PROGRAM_API_REFERENCE } from '../src/server/sceneProgram';
 
 const asset = (id: string, name: string, tags: string[]): MapAsset => ({
   id,
@@ -124,6 +124,36 @@ describe('bounded scene program', () => {
     ]));
     expect(result.objectCount).toBeGreaterThanOrEqual(6);
     expect(result.renderPromptSuggestions).toEqual(['coastal mist and warm sunset reflections']);
+  });
+
+  it('combines deterministic fields and grid math with the existing safe placement kernel', () => {
+    const program = `
+      const points = scene.gridPoints({ center: [0,0], columns: 5, rows: 5, spacing: [4,3] });
+      for (const point of points) {
+        const density = scene.fbm2D(point[0], point[1], { scale: 0.08, octaves: 3 });
+        if (scene.smoothstep(-0.45, 0.35, density) > 0.3) {
+          const rotated = scene.rotate2D(point, 18);
+          scene.placeAt("crop", rotated, { searchRadius: 1.2, avoidWater: 0.5, maxSlope: 32 });
+        }
+      }
+      const mapped = scene.remap(scene.noise2D(3, 7, 0.2), -1, 1, 0, 10);
+      if (scene.clamp(mapped, 0, 10) >= 0 && scene.distance2D([0,0], [3,4]) === 5) {
+        scene.note("field math completed");
+      }
+    `;
+    const map = createEmptyMap('field layout', 'program-field-layout');
+    const first = executeSceneProgram(program, map, assets);
+    const second = executeSceneProgram(program, map, assets);
+    const positions = (result: typeof first) => result.operations.flatMap((operation) => (
+      operation.type === 'object.add' ? [operation.object.transform?.position] : []
+    ));
+
+    expect(first.objectCount).toBeGreaterThan(4);
+    expect(first.objectCount).toBeLessThanOrEqual(25);
+    expect(positions(first)).toEqual(positions(second));
+    expect(first.diagnostics).toContainEqual(expect.objectContaining({ code: 'program-note', message: 'field math completed' }));
+    expect(SCENE_PROGRAM_API_REFERENCE).toContain('scene.fbm2D');
+    expect(SCENE_PROGRAM_API_REFERENCE).toContain('scene.gridPoints');
   });
 
   it('rejects arbitrary JavaScript and stops programs that exceed loop budgets', () => {
