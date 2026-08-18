@@ -19,6 +19,7 @@ import {
 } from '../shared/protocol';
 import {
   applyMapOperations,
+  type MapAiSuggestion,
   type MapOperation,
   type MapTransactionRequest,
   type MapTransactionSource
@@ -261,6 +262,15 @@ async function handleEditorMaps(req: Req, res: Res, store: MapStore, parts: stri
     return;
   }
 
+  if (req.method === 'GET' && parts.length === 4 && parts[3] === 'trash') {
+    sendJson(res, 200, { maps: await store.listDeletedMaps() });
+    return;
+  }
+  if (req.method === 'POST' && parts.length === 6 && parts[3] === 'trash' && parts[5] === 'restore') {
+    sendJson(res, 200, { map: await store.restoreDeletedMap(decodeURIComponent(parts[4])) });
+    return;
+  }
+
   const mapId = parts[3];
   if (!mapId) throw new HttpError(404, 'not_found');
 
@@ -422,6 +432,9 @@ async function handleEditorMaps(req: Req, res: Res, store: MapStore, parts: stri
     const onProgress = stream
       ? (event: AgentProgressEvent) => sendSse(res, 'progress', event)
       : undefined;
+    const onPreview = stream
+      ? (suggestion: MapAiSuggestion) => sendSse(res, 'preview', { suggestion })
+      : undefined;
     const abort = () => controller.abort();
     const abortIfOpen = () => {
       if (!res.writableEnded) abort();
@@ -483,6 +496,7 @@ async function handleEditorMaps(req: Req, res: Res, store: MapStore, parts: stri
           approvedCompositionPlan: body.approvedCompositionPlan,
           sceneAgent: body.sceneAgent === true,
           onProgress,
+          onPreview,
           createAsset: async (request, report) => {
             const modelJson = await generateMapAssetWithRetry(request.name, () => generateModel(request.prompt, {
                 mode: request.mode,

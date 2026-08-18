@@ -295,6 +295,15 @@ export interface PlayerVerticalMotionSweep {
   jumpRequested: boolean;
 }
 
+export const MAP_TRASH_RETENTION_MS = 7 * 24 * 60 * 60 * 1_000;
+
+export interface DeletedMapSummary {
+  id: string;
+  name: string;
+  deletedAt: number;
+  expiresAt: number;
+}
+
 export type WorldScaleProfile = 'intimate' | 'balanced' | 'grand';
 
 export interface MapPlayerMetrics {

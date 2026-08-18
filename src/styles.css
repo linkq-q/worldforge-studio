@@ -2348,6 +2348,18 @@ button.danger {
   grid-template-columns: auto 1fr auto auto;
 }
 
+.map-draft-recovery[open] {
+  position: fixed;
+  inset: auto 24px 24px auto;
+  width: min(460px, calc(100vw - 48px));
+  margin: 0;
+  z-index: 20;
+}
+
+.map-draft-recovery footer {
+  grid-template-columns: auto 1fr auto;
+}
+
 .project-export-conflict-list {
   display: grid;
   gap: 8px;

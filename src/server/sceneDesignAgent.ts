@@ -32,6 +32,7 @@ export interface SceneDesignAgentOptions {
   reuseExistingAssets?: boolean;
   reusableAssetIds?: readonly string[];
   onProgress?: (event: AgentProgressEvent) => void;
+  onPreview?: (suggestion: MapAiSuggestion) => void;
   createAsset: (request: SceneDesignAssetRequest, report: AssetTaskReporter) => Promise<MapAsset>;
   /** Test seam; production uses the configured chat backend. */
   chat?: (messages: readonly ChatMessage[]) => Promise<string>;
@@ -57,7 +58,7 @@ interface SceneOutcome {
   };
 }
 
-const MAX_AGENT_ITERATIONS = 7;
+const MAX_AGENT_ITERATIONS = 10;
 
 export async function runSceneDesignAgent(
   prompt: string,
@@ -88,6 +89,7 @@ export async function runSceneDesignAgent(
   let latestProgram = '';
   let latestResult: SceneProgramResult | null = null;
   let latestIssues: MapLintIssue[] = [];
+  let latestOutcome: SceneOutcome | null = null;
 
   for (let iteration = 1; iteration <= MAX_AGENT_ITERATIONS; iteration += 1) {
     options.signal?.throwIfAborted();
@@ -142,19 +144,21 @@ export async function runSceneDesignAgent(
     if (action.action === 'write_program') {
       if (!action.program) throw new Error('scene_agent_missing_program');
       options.onProgress?.({ phase: 'compiling', label: '解释执行 Scene Program 并检查空间约束' });
-      latestProgram = action.program;
       try {
-        latestResult = executeSceneProgram(action.program, map, assets);
+        let result = executeSceneProgram(action.program, map, assets);
         const executionValidation = validateMapSuggestion(map, {
           summary: action.summary,
-          operations: latestResult.operations,
-          renderPromptSuggestions: latestResult.renderPromptSuggestions,
+          operations: result.operations,
+          renderPromptSuggestions: result.renderPromptSuggestions,
           generatedAssets: []
         });
-        latestResult = { ...latestResult, operations: executionValidation.suggestion.operations };
+        result = { ...result, operations: executionValidation.suggestion.operations };
+        latestProgram = action.program;
+        latestResult = result;
         latestIssues = executionValidation.issues;
         const candidate = applyMapOperations(map, latestResult.operations);
         const outcome = evaluateSceneOutcome(prompt, map, candidate, assets, generatedAssets, latestResult, latestIssues);
+        latestOutcome = outcome;
         messages.push({ role: 'user', content: JSON.stringify({
           tool: 'execute_program',
           ok: true,
@@ -166,9 +170,10 @@ export async function runSceneDesignAgent(
           automaticRepairCount: executionValidation.repairCount,
           outcome
         }) });
+        options.onPreview?.(finalizeAgentSuggestion(
+          map, latestProgram, latestResult, generatedAssets, trace, iteration, action.summary, outcome
+        ));
       } catch (error) {
-        latestResult = null;
-        latestIssues = [];
         messages.push({ role: 'user', content: JSON.stringify({
           tool: 'execute_program',
           ok: false,
@@ -203,10 +208,31 @@ export async function runSceneDesignAgent(
       }) });
       continue;
     }
-    return finalizeAgentSuggestion(map, latestProgram, latestResult, generatedAssets, trace, iteration, action.summary);
+    return finalizeAgentSuggestion(
+      map, latestProgram, latestResult, generatedAssets, trace, iteration, action.summary, outcome
+    );
   }
 
-  throw new Error('scene_agent_iteration_budget_exceeded');
+  if (latestProgram && latestResult && latestOutcome) {
+    const unmet = [...latestOutcome.unmet];
+    if (generatedAssets.length < assetRange.min) {
+      unmet.push(`new-assets-minimum:${generatedAssets.length}/${assetRange.min}`);
+    }
+    const outcome = { ...latestOutcome, unmet: [...new Set(unmet)] };
+    return finalizeAgentSuggestion(
+      map,
+      latestProgram,
+      latestResult,
+      generatedAssets,
+      trace,
+      MAX_AGENT_ITERATIONS,
+      outcome.unmet.length > 0
+        ? 'Scene Agent 已达到决策上限，保留最后一个可执行候选供审阅'
+        : trace.at(-1)?.summary ?? 'Scene Agent 已生成可执行候选',
+      outcome
+    );
+  }
+  throw new Error('scene_agent_no_executable_program');
 }
 
 function finalizeAgentSuggestion(
@@ -216,8 +242,14 @@ function finalizeAgentSuggestion(
   generatedAssets: readonly MapAsset[],
   trace: Array<{ iteration: number; action: string; summary: string }>,
   iterations: number,
-  summary: string
+  summary: string,
+  outcome?: SceneOutcome
 ): MapAiSuggestion {
+  const outcomeDiagnostics = outcome?.unmet.map((item) => ({
+    severity: 'warning' as const,
+    code: 'scene-outcome-unmet',
+    message: `尚未完全满足：${item}`
+  })) ?? [];
   const suggestion: MapAiSuggestion = {
     summary: summary || `Scene Agent 生成了 ${result.guideCount} 条引导线和 ${result.objectCount} 个物体`,
     operations: result.operations,
@@ -228,7 +260,7 @@ function finalizeAgentSuggestion(
       iterations,
       guideCount: result.guideCount,
       objectCount: result.objectCount,
-      diagnostics: result.diagnostics,
+      diagnostics: [...result.diagnostics, ...outcomeDiagnostics],
       trace
     }
   };

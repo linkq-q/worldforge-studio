@@ -18,10 +18,12 @@ describe('scene design agent', () => {
       JSON.stringify({ action: 'finish', summary: 'Curved park loop and path-side seating are ready for preview' })
     ];
     const messagesSeen: string[] = [];
+    const previews: number[] = [];
     const suggestion = await runSceneDesignAgent('Create a seaside park', createEmptyMap('park', 'agent-park'), [bench], {
       maxNewAssets: 0,
       reuseExistingAssets: true,
       reusableAssetIds: [bench.id],
+      onPreview: (preview) => previews.push(preview.operations.length),
       createAsset: async () => { throw new Error('not expected'); },
       chat: async (messages) => {
         messagesSeen.push(String(messages.at(-1)?.content));
@@ -34,6 +36,7 @@ describe('scene design agent', () => {
     expect(suggestion.operations.some((operation) => operation.type === 'guide.upsert')).toBe(true);
     expect(suggestion.operations.some((operation) => operation.type === 'object.add')).toBe(true);
     expect(messagesSeen[1]).toContain('"ok":true');
+    expect(previews).toHaveLength(1);
   });
 
   it('can request a missing reusable asset before programming the layout', async () => {
@@ -149,5 +152,85 @@ describe('scene design agent', () => {
     });
 
     expect(toolMessages.some((message) => message.includes('ocean-scene-needs-playable-land'))).toBe(true);
+  });
+
+  it('accepts a valid program written on the final decision round', async () => {
+    const replies = [
+      ...Array.from({ length: 9 }, () => 'not valid json'),
+      JSON.stringify({
+        action: 'write_program', summary: 'Final bounded repair',
+        program: 'scene.placeAt("bench", [0,0], { searchRadius: 2 });'
+      })
+    ];
+
+    const suggestion = await runSceneDesignAgent(
+      'Create one landmark',
+      createEmptyMap('last-round', 'agent-last-round'),
+      [bench],
+      {
+        maxNewAssets: 0,
+        reuseExistingAssets: true,
+        reusableAssetIds: [bench.id],
+        createAsset: async () => { throw new Error('not expected'); },
+        chat: async () => replies.shift()!
+      }
+    );
+
+    expect(suggestion.agent?.iterations).toBe(10);
+    expect(suggestion.operations.some((operation) => operation.type === 'object.add')).toBe(true);
+  });
+
+  it('returns the last executable candidate when semantic checks do not converge', async () => {
+    const replies = Array.from({ length: 10 }, (_, index) => JSON.stringify({
+      action: 'write_program',
+      summary: `Incomplete mountain draft ${index + 1}`,
+      program: 'scene.placeAt("bench", [0,0], { searchRadius: 2 });'
+    }));
+
+    const suggestion = await runSceneDesignAgent(
+      'Create a snow mountain village',
+      createEmptyMap('degraded', 'agent-degraded'),
+      [bench],
+      {
+        maxNewAssets: 0,
+        reuseExistingAssets: true,
+        reusableAssetIds: [bench.id],
+        createAsset: async () => { throw new Error('not expected'); },
+        chat: async () => replies.shift()!
+      }
+    );
+
+    expect(suggestion.summary).toContain('保留最后一个可执行候选');
+    expect(suggestion.operations.some((operation) => operation.type === 'object.add')).toBe(true);
+    expect(suggestion.agent?.diagnostics.some((item) => item.code === 'scene-outcome-unmet')).toBe(true);
+  });
+
+  it('keeps the last executable candidate when later repair programs fail', async () => {
+    const replies = [
+      JSON.stringify({
+        action: 'write_program', summary: 'Executable base',
+        program: 'scene.placeAt("bench", [0,0], { searchRadius: 2 });'
+      }),
+      ...Array.from({ length: 9 }, (_, index) => JSON.stringify({
+        action: 'write_program', summary: `Broken repair ${index + 1}`,
+        program: 'scene.unknownOperation("bench");'
+      }))
+    ];
+
+    const suggestion = await runSceneDesignAgent(
+      'Create a snow mountain village',
+      createEmptyMap('failed-repairs', 'agent-failed-repairs'),
+      [bench],
+      {
+        maxNewAssets: 0,
+        reuseExistingAssets: true,
+        reusableAssetIds: [bench.id],
+        createAsset: async () => { throw new Error('not expected'); },
+        chat: async () => replies.shift()!
+      }
+    );
+
+    expect(suggestion.operations.some((operation) => operation.type === 'object.add')).toBe(true);
+    expect(suggestion.agent?.program).toContain('placeAt');
   });
 });

@@ -1,5 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
+import { shouldPromoteLiveMapPreview } from '../src/client/mapEditor';
 
 const source = readFileSync(new URL('../src/client/mapEditor.ts', import.meta.url), 'utf8');
 
@@ -13,5 +14,11 @@ describe('map scene swap', () => {
 
     expect(build).toBeGreaterThan(-1);
     expect(detach).toBeGreaterThan(build);
+  });
+
+  it('does not replace a fuller live scene with a partial agent candidate', () => {
+    expect(shouldPromoteLiveMapPreview(8, 2)).toBe(false);
+    expect(shouldPromoteLiveMapPreview(8, 8)).toBe(true);
+    expect(shouldPromoteLiveMapPreview(8, 10)).toBe(true);
   });
 });

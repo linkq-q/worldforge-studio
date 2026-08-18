@@ -33,6 +33,7 @@ import {
   superMapSizeFromMediumCount,
   surfaceUvFromPoint,
   type EditableMap,
+  type DeletedMapSummary,
   type MapAsset,
   type MapObject,
   type MapSceneMode,
@@ -102,6 +103,18 @@ import {
   saveBrowserProjectDirectory,
   writeBrowserProjectExport
 } from './projectDirectoryExport';
+import {
+  deleteBrowserMapDraft,
+  loadBrowserMapDraft,
+  recoverBrowserMapDraft,
+  saveBrowserMapDraft,
+  type BrowserMapDraft
+} from './mapDraftStore';
+import {
+  copyMapObjectSubtree,
+  pasteMapObjectSubtree,
+  type MapObjectClipboard
+} from './mapObjectClipboard';
 import type { ProjectExportProfile } from '../shared/projectExport';
 import {
   applyMapOperations,
@@ -311,6 +324,14 @@ class MapEditor {
   private readonly historyPast: EditableMap[] = [];
   private readonly historyFuture: EditableMap[] = [];
   private historyGestureStart: EditableMap | null = null;
+  private mapDraftTimer: number | null = null;
+  private mapDraftWrite: Promise<void> = Promise.resolve();
+  private pendingMapDraftRecovery: {
+    savedMap: EditableMap;
+    draftMap: EditableMap;
+    draft: BrowserMapDraft;
+  } | null = null;
+  private objectClipboard: MapObjectClipboard | null = null;
   private renderDraft: RenderScheme | null = null;
   private renderDraftChanged = false;
   private renderAiPrompt = '';
@@ -348,6 +369,7 @@ class MapEditor {
   private activeAssetLibraryId = '';
   private selectedLibraryAssetId = '';
   private projectExportProfiles: ProjectExportProfile[] = [];
+  private deletedMaps: DeletedMapSummary[] = [];
   private selectedProjectExportProfileId = '';
   private pendingBrowserProjectDirectory: FileSystemDirectoryHandle | null = null;
   private previewingLibraryAsset = false;
@@ -362,7 +384,7 @@ class MapEditor {
   private newWorldScaleProfile: WorldScaleProfile = DEFAULT_WORLD_SCALE_PROFILE;
   private roomWallDisplayMode: RoomWallDisplayMode = 'cutaway';
   private mapAiSuggestion: MapAiSuggestion | null = null;
-  private mapPreviewKind: 'ai' | 'terrain' = 'ai';
+  private mapPreviewKind: 'ai' | 'terrain' | 'draft' = 'ai';
   private mapAiPreviewMap: EditableMap | null = null;
   private mapAiPreviewVisible = true;
   private mapAiComparisonMap: EditableMap | null = null;
@@ -435,6 +457,8 @@ class MapEditor {
                   <label><span>重命名当前地图</span><input id="rename-current-map-input" maxlength="80" aria-label="重命名当前地图" placeholder="输入地图名称"></label>
                   <button id="rename-current-map" class="secondary" type="button">重命名</button>
                   <button id="delete-map" class="secondary danger" type="button">删除当前地图</button>
+                  <label><span>最近删除（保留 7 天）</span><select id="deleted-map-select" aria-label="最近删除的地图"></select></label>
+                  <button id="restore-deleted-map" class="secondary" type="button">恢复所选地图</button>
                   <label><span>场景类型</span><select id="new-map-scene-mode" aria-label="新地图场景类型">
                     <option value="outdoor" ${this.newMapSceneMode === 'outdoor' ? 'selected' : ''}>室外</option>
                     <option value="indoor" ${this.newMapSceneMode === 'indoor' ? 'selected' : ''}>室内</option>
@@ -549,6 +573,9 @@ class MapEditor {
                 <span><kbd>Alt</kbd>+<kbd>左键</kbd>旋转视角</span>
                 <span><kbd>滚轮</kbd>缩放视角</span>
                 <span><kbd>F</kbd>聚焦选中 <kbd>Home</kbd>显示全景</span>
+                <span><kbd>Ctrl+C</kbd>/<kbd>Ctrl+V</kbd>复制 / 粘贴对象树</span>
+                <span><kbd>Ctrl+Z</kbd>/<kbd>Ctrl+Y</kbd>撤销 / 重做手工操作</span>
+                <span><kbd>Delete</kbd>删除选中对象树</span>
                 <span><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd>移动镜头</span>
                 <span><kbd>↑</kbd>/<kbd>↓</kbd>上升 / 下沉镜头</span>
               </div>
@@ -607,6 +634,22 @@ class MapEditor {
           </footer>
         </div>
       </dialog>
+      <dialog id="map-draft-recovery" class="project-export-dialog map-draft-recovery">
+        <div class="project-export-dialog-body">
+          <header><div><h2>发现未保存的恢复草稿</h2><p id="map-draft-recovery-summary"></p></div></header>
+          <div class="preview-comparison segmented compact" aria-label="正式版本与恢复草稿对比">
+            <button type="button" data-draft-recovery-view="saved">正式版本</button>
+            <button type="button" data-draft-recovery-view="draft" class="active">恢复草稿</button>
+          </div>
+          <p id="map-draft-recovery-warning" class="project-export-hint"></p>
+          <p class="project-export-hint">对话框保持非模态；可直接拖动、旋转和缩放场景后再决定。</p>
+          <footer>
+            <button id="discard-map-draft" class="secondary danger" type="button">放弃草稿</button>
+            <span></span>
+            <button id="restore-map-draft" type="button">恢复草稿</button>
+          </footer>
+        </div>
+      </dialog>
     `;
 
     this.updateHierarchyLayout();
@@ -620,6 +663,7 @@ class MapEditor {
       void this.createMap();
     });
     this.app.querySelector('#delete-map')?.addEventListener('click', () => void this.deleteCurrentMap());
+    this.app.querySelector('#restore-deleted-map')?.addEventListener('click', () => void this.restoreSelectedDeletedMap());
     this.app.querySelector('#rename-current-map')?.addEventListener('click', () => {
       const input = this.app.querySelector<HTMLInputElement>('#rename-current-map-input');
       this.renameCurrentMap(input?.value ?? '');
@@ -732,6 +776,11 @@ class MapEditor {
     this.app.querySelector('#project-export-cancel')?.addEventListener('click', () => {
       this.app.querySelector<HTMLDialogElement>('#project-export-dialog')?.close();
     });
+    this.app.querySelectorAll<HTMLButtonElement>('[data-draft-recovery-view]').forEach((button) => {
+      button.addEventListener('click', () => void this.showDraftRecoveryVersion(button.dataset.draftRecoveryView === 'draft'));
+    });
+    this.app.querySelector('#discard-map-draft')?.addEventListener('click', () => void this.discardPendingMapDraft());
+    this.app.querySelector('#restore-map-draft')?.addEventListener('click', () => void this.restorePendingMapDraft());
     const importInput = this.app.querySelector<HTMLInputElement>('#import-transfer-file');
     this.app.querySelector('#import-transfer')?.addEventListener('click', () => importInput?.click());
     importInput?.addEventListener('change', () => {
@@ -906,14 +955,16 @@ class MapEditor {
   }
 
   private async reloadLists(): Promise<void> {
-    const [maps, assets, renderSchemes, assetLibraries, exportProfiles] = await Promise.all([
+    const [maps, deletedMaps, assets, renderSchemes, assetLibraries, exportProfiles] = await Promise.all([
       editorFetch<{ maps: MapSummary[] }>('/api/editor/maps'),
+      editorFetch<{ maps: DeletedMapSummary[] }>('/api/editor/maps/trash'),
       editorFetch<{ assets: MapAsset[] }>('/api/editor/assets'),
       editorFetch<{ renderSchemes: RenderScheme[] }>('/api/editor/render-schemes'),
       editorFetch<{ libraries: AssetLibrary[] }>('/api/editor/asset-libraries'),
       editorFetch<{ profiles: ProjectExportProfile[] }>('/api/editor/export-profiles')
     ]);
     this.state.maps = maps.maps;
+    this.deletedMaps = deletedMaps.maps;
     this.state.assets = assets.assets;
     this.state.renderSchemes = renderSchemes.renderSchemes;
     this.state.assetLibraries = assetLibraries.libraries;
@@ -966,17 +1017,26 @@ class MapEditor {
         `/api/editor/maps/${encodeURIComponent(id)}/transactions`
       )
     ]);
-    this.state.map = normalizeMap(map);
+    const savedMap = normalizeMap(map);
+    const draftRecovery = await this.prepareBrowserMapDraftRecovery(savedMap);
     this.clearMapAiPreview();
+    this.state.map = savedMap;
     this.state.undoTransaction = transaction;
     this.state.redoTransaction = redoTransaction;
     this.state.selectedObjectId = null;
     this.state.stage = 'map';
     this.resetRenderDraft();
-    this.state.dirty = false;
-    this.resetManualHistory(this.state.map, true);
+    this.resetManualHistory(savedMap, true);
+    if (draftRecovery) {
+      this.pendingMapDraftRecovery = draftRecovery;
+      this.mapPreviewKind = 'draft';
+      this.mapAiPreviewMap = draftRecovery.draftMap;
+      this.mapAiComparisonMap = savedMap;
+      this.mapAiPreviewVisible = true;
+    }
     await this.refreshScene();
     this.renderPanels();
+    if (draftRecovery) this.showMapDraftRecoveryDialog();
     return true;
   }
 
@@ -1018,10 +1078,11 @@ class MapEditor {
   private async deleteCurrentMap(): Promise<void> {
     const map = this.state.map;
     if (!map || this.state.busy) return;
-    if (!confirm(`确定删除地图“${map.name}”吗？\n\n地图内容无法撤销，但不会删除公共资产和渲染方案。`)) return;
+    if (!confirm(`确定删除地图“${map.name}”吗？\n\n地图会进入项目回收站并保留 7 天；公共资产和渲染方案不会删除。`)) return;
     this.setBusy(true, '正在删除地图...');
     try {
       await editorFetch(`/api/editor/maps/${encodeURIComponent(map.id)}`, { method: 'DELETE' });
+      await this.clearBrowserMapDraft(map.id);
       this.state.map = null;
       this.state.selectedObjectId = null;
       this.clearMapAiPreview();
@@ -1031,10 +1092,45 @@ class MapEditor {
       this.historyPresent = null;
       await this.reloadLists();
       this.app.querySelector('.toolbar-project-menu')?.removeAttribute('open');
-      this.state.message = '地图已删除';
+      this.state.message = '地图已删除，可在 7 天内从最近删除中恢复';
       this.renderPanels();
     } catch (error) {
       this.state.message = `删除地图失败：${error instanceof Error ? error.message : '未知错误'}`;
+      this.renderPanels();
+    } finally {
+      this.setBusy(false);
+    }
+  }
+
+  private async restoreSelectedDeletedMap(): Promise<void> {
+    const select = this.app.querySelector<HTMLSelectElement>('#deleted-map-select');
+    const id = select?.value;
+    if (!id || this.state.busy || !await this.confirmLeaveDirtyMap()) return;
+    this.setBusy(true, '正在恢复地图...');
+    try {
+      const { map } = await editorFetch<{ map: EditableMap }>(
+        `/api/editor/maps/trash/${encodeURIComponent(id)}/restore`,
+        { method: 'POST' }
+      );
+      const { transaction, redoTransaction } = await editorFetch<{
+        transaction: MapTransactionSummary | null;
+        redoTransaction: MapTransactionSummary | null;
+      }>(`/api/editor/maps/${encodeURIComponent(id)}/transactions`);
+      this.clearMapAiPreview();
+      this.state.map = normalizeMap(map);
+      this.state.undoTransaction = transaction;
+      this.state.redoTransaction = redoTransaction;
+      this.state.selectedObjectId = null;
+      this.state.stage = 'map';
+      this.resetRenderDraft();
+      this.resetManualHistory(this.state.map, true);
+      await this.reloadLists();
+      await this.refreshScene();
+      this.app.querySelector('.toolbar-project-menu')?.removeAttribute('open');
+      this.state.message = `已恢复地图“${this.state.map.name}”`;
+      this.renderPanels();
+    } catch (error) {
+      this.state.message = `恢复地图失败：${error instanceof Error ? error.message : '未知错误'}`;
       this.renderPanels();
     } finally {
       this.setBusy(false);
@@ -1064,6 +1160,7 @@ class MapEditor {
       this.state.undoTransaction = null;
       this.state.redoTransaction = null;
       this.resetManualHistory(this.state.map, true);
+      await this.clearBrowserMapDraft(this.state.map.id);
       await this.reloadLists();
       this.state.message = '已保存';
       await this.refreshScene();
@@ -1146,9 +1243,10 @@ class MapEditor {
     const map = this.state.map;
     const object = this.selectedObject();
     if (!map || !object || this.mapAiPreviewMap) return;
-    map.objects = map.objects
-      .filter((item) => item.id !== object.id)
-      .map((item) => item.parentId === object.id ? { ...item, parentId: null } : item);
+    const subtree = copyMapObjectSubtree(map, object.id);
+    if (!subtree) return;
+    const deletedIds = new Set(subtree.objects.map((item) => item.id));
+    map.objects = map.objects.filter((item) => !deletedIds.has(item.id));
     this.state.selectedObjectId = null;
     this.markDirty();
     void this.refreshScene();
@@ -1159,19 +1257,34 @@ class MapEditor {
     const map = this.state.map;
     const source = this.selectedObject();
     if (!map || !source || this.mapAiPreviewMap) return;
-    const copy = createMapObject(`${source.name} 副本`, source.assetId);
-    copy.parentId = source.parentId;
-    copy.visible = source.visible;
-    copy.locked = source.locked;
-    copy.transform = {
-      position: [source.transform.position[0] + 0.5, source.transform.position[1], source.transform.position[2] + 0.5],
-      rotation: [...source.transform.rotation],
-      scale: [...source.transform.scale],
-      size: [...source.transform.size]
-    };
-    map.objects.push(copy);
-    this.state.selectedObjectId = copy.id;
+    const clipboard = copyMapObjectSubtree(map, source.id);
+    if (!clipboard) return;
+    const pasted = pasteMapObjectSubtree(map, clipboard);
+    map.objects.push(...pasted.objects);
+    this.state.selectedObjectId = pasted.rootId;
     this.markDirty();
+    void this.refreshScene();
+    this.renderPanels();
+  }
+
+  private copySelectedObject(): void {
+    const map = this.state.map;
+    const object = this.selectedObject();
+    if (!map || !object || this.mapAiPreviewMap) return;
+    this.objectClipboard = copyMapObjectSubtree(map, object.id);
+    if (!this.objectClipboard) return;
+    this.state.message = `已复制“${object.name}”及 ${this.objectClipboard.objects.length - 1} 个子物体`;
+    this.updateToolbarState();
+  }
+
+  private pasteCopiedObject(): void {
+    const map = this.state.map;
+    if (!map || !this.objectClipboard || this.mapAiPreviewMap) return;
+    const pasted = pasteMapObjectSubtree(map, this.objectClipboard);
+    map.objects.push(...pasted.objects);
+    this.state.selectedObjectId = pasted.rootId;
+    this.markDirty();
+    this.state.message = `已粘贴 ${pasted.objects.length} 个物体`;
     void this.refreshScene();
     this.renderPanels();
   }
@@ -1182,7 +1295,7 @@ class MapEditor {
     this.renderHierarchy();
     const mapStage = this.state.stage === 'map';
     const mapAiHost = this.app.querySelector<HTMLElement>('#map-ai-panel');
-    if (mapAiHost) mapAiHost.hidden = !mapStage;
+    if (mapAiHost) mapAiHost.hidden = !mapStage || this.mapPreviewKind === 'draft';
     const mapEditorHidden = !mapStage || Boolean(this.mapAiPreviewMap);
     for (const id of ['map-inspector', 'object-inspector', 'asset-panel']) {
       const host = this.app.querySelector<HTMLElement>(`#${id}`);
@@ -1354,8 +1467,8 @@ class MapEditor {
             </div>
           ` : ''}
           <div class="map-ai-actions">
-            <button id="discard-map-ai" class="secondary" ${this.mapAiAutoRefineRunning ? 'disabled' : ''}>放弃预览</button>
-            <button id="apply-map-ai" ${this.mapAiRoundSavePromise ? 'disabled' : ''}>${this.mapAiAutoRefineRunning ? '保存当前轮' : '应用到地图'}</button>
+            <button id="discard-map-ai" class="secondary" ${this.state.busy || this.mapAiAutoRefineRunning ? 'disabled' : ''}>放弃预览</button>
+            <button id="apply-map-ai" ${this.state.busy || this.mapAiRoundSavePromise ? 'disabled' : ''}>${this.mapAiAutoRefineRunning ? '保存当前轮' : '应用到地图'}</button>
           </div>
         </section>
       ` : ''}
@@ -1997,6 +2110,10 @@ class MapEditor {
     this.startMapAgentProgressTimer();
     const previousSuggestion = mode === 'refine' ? this.mapAiSuggestion : null;
     const comparisonMap = mode === 'refine' && this.mapAiPreviewMap ? this.mapAiPreviewMap : map;
+    let livePreviewWork = Promise.resolve();
+    let livePreviewFailure: unknown = null;
+    let liveGeneratedAssetCount = 0;
+    let livePreviewObjectCount = this.mapAiPreviewMap?.objects.length ?? 0;
     this.setBusy(true, mode === 'refine' ? '地图 Agent 正在调整当前地图...' : '地图 Agent 正在检查资产并规划场景...');
     this.renderMapAiPanel();
     try {
@@ -2023,8 +2140,33 @@ class MapEditor {
         (event) => {
           updateAgentProgress(this.mapAgentProgress, event);
           this.renderMapAiPanel();
+        },
+        (payload) => {
+          const liveSuggestion = (payload as { suggestion?: MapAiSuggestion }).suggestion;
+          if (!liveSuggestion) return;
+          const reloadAssets = liveSuggestion.generatedAssets.length > liveGeneratedAssetCount;
+          liveGeneratedAssetCount = Math.max(liveGeneratedAssetCount, liveSuggestion.generatedAssets.length);
+          livePreviewWork = livePreviewWork.then(async () => {
+            if (reloadAssets) await this.reloadLists();
+            const candidateMap = applyMapOperations(this.mapWithEditorAssets(map), liveSuggestion.operations);
+            if (!shouldPromoteLiveMapPreview(livePreviewObjectCount, candidateMap.objects.length)) return;
+            livePreviewObjectCount = candidateMap.objects.length;
+            this.mapPreviewKind = 'ai';
+            this.mapAiSuggestion = liveSuggestion;
+            this.mapAiPreviewMap = candidateMap;
+            this.mapAiComparisonMap = comparisonMap;
+            this.mapAiPreviewVisible = true;
+            this.state.selectedObjectId = null;
+            this.state.message = `Scene Agent 第 ${liveSuggestion.agent?.iterations ?? '?'} 轮候选已同步到场景`;
+            await this.refreshScene();
+            this.renderMapAiPanel();
+          }).catch((error) => {
+            livePreviewFailure ??= error;
+          });
         }
       );
+      await livePreviewWork;
+      if (livePreviewFailure) throw livePreviewFailure;
       if (automatic && this.mapAiRoundSavePromise) await this.mapAiRoundSavePromise;
       if (suggestion.generatedAssets.length > 0) await this.reloadLists();
       const addedObjects = suggestion.operations.filter((operation) => operation.type === 'object.add').length;
@@ -2071,16 +2213,20 @@ class MapEditor {
         window.setTimeout(() => void this.runIndoorVisualFinalReview(), 0);
       }
     } catch (error) {
+      await livePreviewWork;
       const cancelled = error instanceof Error && error.name === 'AbortError';
+      const retainedCandidate = Boolean(this.mapAiPreviewMap && this.mapAiSuggestion);
       const detail = humanizeAgentError(error);
       updateAgentProgress(this.mapAgentProgress, {
         phase: 'failed',
         label: cancelled ? '地图 Agent 已取消' : '地图 Agent 执行失败',
         detail
       });
-      this.state.message = error instanceof Error && error.name === 'AbortError'
-        ? '已取消地图 Agent'
-        : `AI 地图生成失败：${detail}`;
+      this.state.message = cancelled
+        ? retainedCandidate ? '已取消地图 Agent；最后一个可执行候选仍保留在场景中' : '已取消地图 Agent'
+        : retainedCandidate
+          ? `AI 地图生成未完成：${detail}；最后一个可执行候选仍可审阅或应用`
+          : `AI 地图生成失败：${detail}`;
     } finally {
       if (this.mapAiAbortController === controller) this.mapAiAbortController = null;
       if (automatic) this.mapAiAutoRefineRunning = false;
@@ -2357,6 +2503,8 @@ class MapEditor {
     this.mapAiAutoRefineBaseSaved = false;
     this.mapAiVisualReviewRunning = false;
     this.mapAiVisualReviewCompleted = false;
+    this.pendingMapDraftRecovery = null;
+    this.app.querySelector<HTMLDialogElement>('#map-draft-recovery')?.close();
   }
 
   private renderMapSelector(): void {
@@ -2369,6 +2517,18 @@ class MapEditor {
     if (name) name.textContent = this.state.map?.name ?? '选择地图';
     const renameInput = this.app.querySelector<HTMLInputElement>('#rename-current-map-input');
     if (renameInput) renameInput.value = this.state.map?.name ?? '';
+    const deletedSelect = this.app.querySelector<HTMLSelectElement>('#deleted-map-select');
+    if (deletedSelect) {
+      deletedSelect.innerHTML = this.deletedMaps.length
+        ? this.deletedMaps.map((map) => {
+            const days = Math.max(1, Math.ceil((map.expiresAt - Date.now()) / (24 * 60 * 60 * 1_000)));
+            return `<option value="${escapeHtml(map.id)}">${escapeHtml(map.name)} · 剩余 ${days} 天</option>`;
+          }).join('')
+        : '<option value="">暂无可恢复地图</option>';
+      deletedSelect.disabled = this.state.busy || this.deletedMaps.length === 0;
+    }
+    const restoreButton = this.app.querySelector<HTMLButtonElement>('#restore-deleted-map');
+    if (restoreButton) restoreButton.disabled = this.state.busy || this.deletedMaps.length === 0;
   }
 
   private renameCurrentMap(value: string): void {
@@ -5137,6 +5297,10 @@ class MapEditor {
     }
     const deleteMapButton = this.app.querySelector<HTMLButtonElement>('#delete-map');
     if (deleteMapButton) deleteMapButton.disabled = this.state.busy || !this.state.map;
+    const deletedMapSelect = this.app.querySelector<HTMLSelectElement>('#deleted-map-select');
+    if (deletedMapSelect) deletedMapSelect.disabled = this.state.busy || this.deletedMaps.length === 0;
+    const restoreDeletedMapButton = this.app.querySelector<HTMLButtonElement>('#restore-deleted-map');
+    if (restoreDeletedMapButton) restoreDeletedMapButton.disabled = this.state.busy || this.deletedMaps.length === 0;
     const renameMapButton = this.app.querySelector<HTMLButtonElement>('#rename-current-map');
     if (renameMapButton) renameMapButton.disabled = this.state.busy || !this.state.map || Boolean(this.mapAiPreviewMap);
     const renameMapInput = this.app.querySelector<HTMLInputElement>('#rename-current-map-input');
@@ -5210,6 +5374,109 @@ class MapEditor {
     if (redoEdit) redoEdit.disabled = this.state.busy || Boolean(this.mapAiPreviewMap) || this.historyFuture.length === 0;
   }
 
+  private async prepareBrowserMapDraftRecovery(savedMap: EditableMap): Promise<{
+    savedMap: EditableMap;
+    draftMap: EditableMap;
+    draft: BrowserMapDraft;
+  } | null> {
+    const draft = await loadBrowserMapDraft(savedMap.id).catch(() => null);
+    if (!draft || draft.updatedAt <= savedMap.updatedAt) {
+      if (draft) await this.clearBrowserMapDraft(savedMap.id);
+      return null;
+    }
+    return { savedMap, draftMap: recoverBrowserMapDraft(savedMap, draft), draft };
+  }
+
+  private showMapDraftRecoveryDialog(): void {
+    const pending = this.pendingMapDraftRecovery;
+    const dialog = this.app.querySelector<HTMLDialogElement>('#map-draft-recovery');
+    if (!pending || !dialog) return;
+    const summary = dialog.querySelector<HTMLElement>('#map-draft-recovery-summary');
+    if (summary) {
+      summary.textContent = `“${pending.savedMap.name}” · 草稿保存于 ${new Date(pending.draft.updatedAt).toLocaleString()}`;
+    }
+    const warning = dialog.querySelector<HTMLElement>('#map-draft-recovery-warning');
+    if (warning) {
+      warning.textContent = pending.draft.baseUpdatedAt === pending.savedMap.updatedAt
+        ? '草稿基于当前正式版本，可直接对比后恢复。'
+        : '正式版本在草稿产生后已变化；请仔细对比，恢复后将以草稿内容为准。';
+    }
+    this.updateDraftRecoveryViewButtons();
+    if (!dialog.open) dialog.show();
+  }
+
+  private async showDraftRecoveryVersion(showDraft: boolean): Promise<void> {
+    if (!this.pendingMapDraftRecovery) return;
+    this.mapAiPreviewVisible = showDraft;
+    this.updateDraftRecoveryViewButtons();
+    await this.refreshScene();
+  }
+
+  private updateDraftRecoveryViewButtons(): void {
+    this.app.querySelectorAll<HTMLButtonElement>('[data-draft-recovery-view]').forEach((button) => {
+      button.classList.toggle('active', (button.dataset.draftRecoveryView === 'draft') === this.mapAiPreviewVisible);
+    });
+  }
+
+  private async restorePendingMapDraft(): Promise<void> {
+    const pending = this.pendingMapDraftRecovery;
+    if (!pending) return;
+    const restored = cloneMap(pending.draftMap);
+    this.clearMapAiPreview();
+    this.state.map = restored;
+    this.resetManualHistory(pending.savedMap, true);
+    this.historyPast.push(cloneMap(pending.savedMap));
+    this.historyPresent = cloneMap(restored);
+    this.state.dirty = mapSnapshot(restored) !== this.savedMapSnapshot;
+    this.syncBrowserMapDraft();
+    this.state.message = '已恢复当前浏览器中的未保存草稿；保存前仍可用 Ctrl+Z 回到正式版本';
+    await this.refreshScene();
+    this.renderPanels();
+  }
+
+  private async discardPendingMapDraft(): Promise<void> {
+    const pending = this.pendingMapDraftRecovery;
+    if (!pending) return;
+    await this.clearBrowserMapDraft(pending.savedMap.id);
+    this.clearMapAiPreview();
+    this.state.map = cloneMap(pending.savedMap);
+    this.resetManualHistory(this.state.map, true);
+    this.state.message = '已放弃恢复草稿并打开正式版本';
+    await this.refreshScene();
+    this.renderPanels();
+  }
+
+  private syncBrowserMapDraft(): void {
+    if (!this.state.map) return;
+    if (this.state.dirty) this.scheduleBrowserMapDraft();
+    else void this.clearBrowserMapDraft(this.state.map.id);
+  }
+
+  private scheduleBrowserMapDraft(): void {
+    if (!this.state.map || !this.state.dirty || this.mapAiPreviewMap) return;
+    if (this.mapDraftTimer !== null) window.clearTimeout(this.mapDraftTimer);
+    this.mapDraftTimer = window.setTimeout(() => this.flushBrowserMapDraft(), 2_000);
+  }
+
+  private flushBrowserMapDraft(): void {
+    if (this.mapDraftTimer !== null) window.clearTimeout(this.mapDraftTimer);
+    this.mapDraftTimer = null;
+    if (!this.state.map || !this.state.dirty || this.mapAiPreviewMap) return;
+    const snapshot = cloneMap(this.state.map);
+    this.mapDraftWrite = this.mapDraftWrite
+      .catch(() => undefined)
+      .then(() => saveBrowserMapDraft(snapshot));
+  }
+
+  private async clearBrowserMapDraft(mapId: string): Promise<void> {
+    if (this.mapDraftTimer !== null) window.clearTimeout(this.mapDraftTimer);
+    this.mapDraftTimer = null;
+    this.mapDraftWrite = this.mapDraftWrite
+      .catch(() => undefined)
+      .then(() => deleteBrowserMapDraft(mapId));
+    await this.mapDraftWrite.catch(() => undefined);
+  }
+
   private markDirty(refreshStatus = true, invalidateConfirmation = true): void {
     if (this.state.map && invalidateConfirmation && this.state.map.confirmedAt !== null) {
       this.state.map.confirmedAt = null;
@@ -5227,6 +5494,7 @@ class MapEditor {
       this.historyPresent = current;
     }
     this.state.dirty = this.state.map ? mapSnapshot(this.state.map) !== this.savedMapSnapshot : false;
+    this.syncBrowserMapDraft();
     this.state.message = '';
     if (refreshStatus) this.updateToolbarState();
   }
@@ -5255,6 +5523,7 @@ class MapEditor {
     this.historyFuture.length = 0;
     this.historyPresent = cloneMap(this.state.map);
     this.state.dirty = mapSnapshot(this.state.map) !== this.savedMapSnapshot;
+    this.syncBrowserMapDraft();
     this.updateToolbarState();
   }
 
@@ -5267,6 +5536,7 @@ class MapEditor {
     this.state.map = cloneMap(previous);
     this.historyPresent = cloneMap(previous);
     this.state.dirty = mapSnapshot(previous) !== this.savedMapSnapshot;
+    this.syncBrowserMapDraft();
     if (!this.state.map.confirmedAt) this.state.stage = 'map';
     this.resetRenderDraft();
     this.keepValidSelection();
@@ -5283,6 +5553,7 @@ class MapEditor {
     this.state.map = cloneMap(next);
     this.historyPresent = cloneMap(next);
     this.state.dirty = mapSnapshot(next) !== this.savedMapSnapshot;
+    this.syncBrowserMapDraft();
     if (!this.state.map.confirmedAt) this.state.stage = 'map';
     this.resetRenderDraft();
     this.keepValidSelection();
@@ -5299,6 +5570,11 @@ class MapEditor {
   }
 
   private async confirmLeaveDirtyMap(): Promise<boolean> {
+    if (this.pendingMapDraftRecovery) {
+      if (!confirm('当前恢复草稿尚未处理。\n\n确定：放弃该草稿并继续\n取消：留在当前地图对比')) return false;
+      await this.clearBrowserMapDraft(this.pendingMapDraftRecovery.savedMap.id);
+      this.clearMapAiPreview();
+    }
     if (this.mapAiPreviewMap) {
       if (!confirm('当前 AI 地图预览尚未应用。\n\n确定：放弃预览并继续\n取消：留在当前地图')) return false;
       this.clearMapAiPreview();
@@ -5429,6 +5705,21 @@ class MapEditor {
       event.preventDefault();
       return;
     }
+    if ((event.ctrlKey || event.metaKey) && event.code === 'KeyY') {
+      void this.redoManualEdit();
+      event.preventDefault();
+      return;
+    }
+    if ((event.ctrlKey || event.metaKey) && event.code === 'KeyC') {
+      this.copySelectedObject();
+      event.preventDefault();
+      return;
+    }
+    if ((event.ctrlKey || event.metaKey) && event.code === 'KeyV') {
+      this.pasteCopiedObject();
+      event.preventDefault();
+      return;
+    }
     if ((event.ctrlKey || event.metaKey) && event.code === 'KeyD') {
       this.duplicateSelectedObject();
       event.preventDefault();
@@ -5494,6 +5785,7 @@ class MapEditor {
   };
 
   private handleBeforeUnload = (event: BeforeUnloadEvent): void => {
+    if (this.state.dirty) this.flushBrowserMapDraft();
     if (!this.state.dirty && !this.renderDraftChanged && !this.mapAiPreviewMap) return;
     event.preventDefault();
     event.returnValue = '';
@@ -5655,7 +5947,8 @@ function describeEditorResponseError(error: unknown, status: number, baseUrl: st
 async function editorAgentFetch<T>(
   path: string,
   init: RequestInit,
-  onProgress: (event: AgentProgressEvent) => void
+  onProgress: (event: AgentProgressEvent) => void,
+  onPreview?: (payload: unknown) => void
 ): Promise<T> {
   const response = await fetch(`${serverHttpBase(location, import.meta.env.DEV)}${path}`, {
     ...init,
@@ -5688,6 +5981,7 @@ async function editorAgentFetch<T>(
     if (data.length === 0) return;
     const payload = JSON.parse(data.join('\n')) as T & { error?: string };
     if (event === 'progress') onProgress(payload as unknown as AgentProgressEvent);
+    else if (event === 'preview') onPreview?.(payload);
     else if (event === 'result') result = payload;
     else if (event === 'error') throw new Error(payload.error ?? 'agent_failed');
   };
@@ -5824,11 +6118,21 @@ function findMapObjectIdFromHit(hit: THREE.Intersection): string | null {
   return findMapObjectId(hit.object);
 }
 
-function selectableObjectHit(hits: THREE.Intersection[]): THREE.Intersection | null {
-  const surfaceDistance = hits.find((hit) => findMapSurface(hit.object))?.distance ?? Number.POSITIVE_INFINITY;
-  return hits.find((hit) => {
-    return findMapObjectIdFromHit(hit) !== null && hit.distance <= surfaceDistance + 0.18;
-  }) ?? null;
+export function selectableObjectHit(hits: THREE.Intersection[]): THREE.Intersection | null {
+  const groundDistance = hits.find((hit) => {
+    const surface = findMapSurface(hit.object);
+    return surface === 'terrain' || surface === 'floor';
+  })?.distance ?? Number.POSITIVE_INFINITY;
+  const sceneObject = hits.find((hit) => {
+    const objectId = findMapObjectIdFromHit(hit);
+    return objectId !== null && !objectId.startsWith('__room__:') && hit.distance <= groundDistance + 0.18;
+  });
+  if (sceneObject) return sceneObject;
+  return hits.find((hit) => findMapObjectIdFromHit(hit)?.startsWith('__room__:')) ?? null;
+}
+
+export function shouldPromoteLiveMapPreview(previousObjectCount: number, candidateObjectCount: number): boolean {
+  return candidateObjectCount >= previousObjectCount;
 }
 
 function surfaceHit(hits: THREE.Intersection[]): THREE.Intersection | null {

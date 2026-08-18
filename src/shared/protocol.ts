@@ -55,6 +55,8 @@ export interface AgentAssetProgress {
   detail?: string;
 }
 
+export const MAP_ASSET_GENERATION_CONCURRENCY = 6;
+
 export interface AgentProgressEvent {
   phase:
     | 'planning'

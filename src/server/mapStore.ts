@@ -8,10 +8,12 @@ import {
   createId,
   createMapObject,
   getMapCollisionBake,
+  MAP_TRASH_RETENTION_MS,
   mapToSummary,
   normalizeMap,
   normalizeMapSceneMode,
   type EditableMap,
+  type DeletedMapSummary,
   type MapAsset,
   type MapBoxColors,
   type MapObject,
@@ -90,12 +92,20 @@ interface UndoTransaction {
   map: EditableMap;
 }
 
+interface DeletedMapRecord {
+  deletedAt: number;
+  map: EditableMap;
+  undo: UndoTransaction | null;
+  redo: UndoTransaction | null;
+}
+
 export class MapStore {
   readonly rootDir: string;
   private readonly mapsDir: string;
   private readonly assetsDir: string;
   private readonly assetLibrariesDir: string;
   private readonly historyDir: string;
+  private readonly trashDir: string;
   private readonly renderSchemesDir: string;
   private readonly hdriDir: string;
   private readonly sharedHdriDir: string;
@@ -111,6 +121,7 @@ export class MapStore {
     this.assetsDir = path.join(this.rootDir, 'assets');
     this.assetLibrariesDir = path.join(this.rootDir, 'asset-libraries');
     this.historyDir = path.join(this.rootDir, 'history');
+    this.trashDir = path.join(this.rootDir, 'trash');
     this.renderSchemesDir = path.join(this.rootDir, 'render-schemes');
     this.hdriDir = path.join(this.rootDir, 'hdri');
     this.sharedHdriDir = options.sharedHdriDir ?? path.join(process.cwd(), 'assets', 'hdri');
@@ -126,6 +137,7 @@ export class MapStore {
     await mkdir(this.assetsDir, { recursive: true });
     await mkdir(this.assetLibrariesDir, { recursive: true });
     await mkdir(this.historyDir, { recursive: true });
+    await mkdir(this.trashDir, { recursive: true });
     await mkdir(this.renderSchemesDir, { recursive: true });
     await mkdir(this.hdriDir, { recursive: true });
     await this.seedStarterDataIfEmpty();
@@ -226,9 +238,56 @@ export class MapStore {
   }
 
   async deleteMap(id: string): Promise<void> {
+    await this.ensureReady();
+    const map = await this.readMapFile(id);
+    const deletedAt = Date.now();
+    await atomicWriteJson(this.trashPath(id), {
+      deletedAt,
+      map,
+      undo: await this.readUndoTransaction(id),
+      redo: await this.readTransactionSnapshot(this.redoPath(id))
+    } satisfies DeletedMapRecord);
     await rm(this.mapPath(id), { force: true });
     await rm(this.undoPath(id), { force: true });
     await rm(this.redoPath(id), { force: true });
+  }
+
+  async listDeletedMaps(): Promise<DeletedMapSummary[]> {
+    await this.ensureReady();
+    const now = Date.now();
+    const files = (await readdir(this.trashDir).catch(() => [])).filter((file) => file.endsWith('.json'));
+    const summaries = await Promise.all(files.map(async (file) => {
+      const record = await readJsonFile<DeletedMapRecord | null>(path.join(this.trashDir, file), null);
+      if (!record?.map || now - record.deletedAt >= MAP_TRASH_RETENTION_MS) {
+        await rm(path.join(this.trashDir, file), { force: true });
+        return null;
+      }
+      return {
+        id: record.map.id,
+        name: record.map.name,
+        deletedAt: record.deletedAt,
+        expiresAt: record.deletedAt + MAP_TRASH_RETENTION_MS
+      } satisfies DeletedMapSummary;
+    }));
+    return summaries
+      .filter((item): item is DeletedMapSummary => Boolean(item))
+      .sort((left, right) => right.deletedAt - left.deletedAt);
+  }
+
+  async restoreDeletedMap(id: string): Promise<EditableMap> {
+    await this.ensureReady();
+    const record = await readJsonFile<DeletedMapRecord | null>(this.trashPath(id), null);
+    if (!record?.map) throw new Error('unknown_deleted_map');
+    if (Date.now() - record.deletedAt >= MAP_TRASH_RETENTION_MS) {
+      await rm(this.trashPath(id), { force: true });
+      throw new Error('deleted_map_expired');
+    }
+    if (await stat(this.mapPath(id)).catch(() => null)) throw new Error('map_already_exists');
+    await atomicWriteJson(this.mapPath(id), record.map);
+    if (record.undo) await atomicWriteJson(this.undoPath(id), record.undo);
+    if (record.redo) await atomicWriteJson(this.redoPath(id), record.redo);
+    await rm(this.trashPath(id), { force: true });
+    return this.hydrateMap(record.map);
   }
 
   async listProjectExportProfiles(): Promise<ProjectExportProfile[]> {
@@ -912,6 +971,10 @@ export class MapStore {
 
   private redoPath(id: string): string {
     return path.join(this.historyDir, `${safeId(id)}.redo.json`);
+  }
+
+  private trashPath(id: string): string {
+    return path.join(this.trashDir, `${safeId(id)}.json`);
   }
 
   private async readUndoTransaction(id: string): Promise<UndoTransaction | null> {

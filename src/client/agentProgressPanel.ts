@@ -1,4 +1,4 @@
-import type { AgentProgressEvent } from '../shared/protocol';
+import { MAP_ASSET_GENERATION_CONCURRENCY, type AgentProgressEvent } from '../shared/protocol';
 
 export interface AgentProgressViewOptions {
   running: boolean;
@@ -69,7 +69,9 @@ export function humanizeAgentError(error: unknown): string {
     missing_prompt: '【缺少提示词】没有收到可用的地图提示词。请填写生成要求后重试。',
     map_layout_incomplete_partition: '【分区拓扑校验失败】AI 给出的区块存在重叠或缺口，自动修正后仍未完整覆盖地图。请简化分区描述后重试。',
     map_layout_region_limit: '【分区数量超限】AI 返回的区块数量超过当前地图尺寸允许的上限。请减少区块数量后重试。',
-    invalid_map_layout_json: '【AI 输出格式错误】AI 没有返回可解析的分区 JSON，自动修正后仍失败。请重试或简化分区描述。'
+    invalid_map_layout_json: '【AI 输出格式错误】AI 没有返回可解析的分区 JSON，自动修正后仍失败。请重试或简化分区描述。',
+    scene_agent_iteration_budget_exceeded: '【Scene Agent 未收敛】Agent 已达到本次最多决策轮数，仍有空间约束未满足。已经生成的资产仍保留在资产库中；请允许复用后重试，或减少一次生成的场景要求。',
+    scene_agent_no_executable_program: '【Scene Agent 无可用候选】Agent 在决策轮数内没有成功解释执行任何 Scene Program。已经生成的资产仍保留在资产库中；请允许复用后重试或简化场景要求。'
   };
   if (labels[message]) return labels[message];
   if (/^map_asset_generation_failed:/.test(message)) {
@@ -139,7 +141,7 @@ export function renderAgentProgress(
   const assetGrid = assetProgress ? `
     <div class="agent-assets-heading">
       <strong>并行资产生成</strong>
-      <span>最多同时生成 3 项</span>
+      <span>最多同时生成 ${MAP_ASSET_GENERATION_CONCURRENCY} 项</span>
     </div>
     <div class="agent-assets-grid">
       ${assetProgress.map((asset) => {

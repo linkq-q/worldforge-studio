@@ -68,6 +68,7 @@ export interface MapAiOptions {
   fetchImpl?: typeof fetch;
   signal?: AbortSignal;
   onProgress?: (event: AgentProgressEvent) => void;
+  onPreview?: (suggestion: MapAiSuggestion) => void;
   reuseExistingAssets?: boolean;
   reusableAssetIds?: readonly string[];
   minNewAssets?: number;

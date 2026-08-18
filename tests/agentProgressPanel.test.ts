@@ -46,6 +46,7 @@ describe('agent progress panel', () => {
     expect(humanizeAgentError(new Error('indoor_prompt_requires_indoor_map'))).toContain('【场景类型不匹配】');
     expect(humanizeAgentError(new Error('Failed to fetch'))).toContain('【连接失败】');
     expect(humanizeAgentError(new Error('chat_service_unreachable'))).toContain('【AI 服务连接失败】');
+    expect(humanizeAgentError(new Error('scene_agent_iteration_budget_exceeded'))).toContain('【Scene Agent 未收敛】');
   });
 
   it('explains a render JSON repair failure as a terminal two-attempt failure', () => {
@@ -61,7 +62,7 @@ describe('agent progress panel', () => {
     expect(html).toContain('2 / 4');
   });
 
-  it('shows three parallel asset states with retry and failure details', () => {
+  it('shows the shared parallel asset limit with retry and failure details', () => {
     const html = renderAgentProgress([{
       phase: 'generating-asset',
       label: '并行生成资产：已完成 0/3，进行中 3 个',
@@ -75,7 +76,7 @@ describe('agent progress panel', () => {
     }], { running: true, elapsedMs: 5_000 });
 
     expect(html).toContain('并行资产生成');
-    expect(html).toContain('最多同时生成 3 项');
+    expect(html).toContain('最多同时生成 6 项');
     expect(html).toContain('通道 1');
     expect(html).toContain('正在重试');
     expect(html).toContain('生成失败');

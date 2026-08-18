@@ -1,6 +1,10 @@
-import type { AgentAssetProgress, AgentProgressEvent } from '../shared/protocol';
+import {
+  MAP_ASSET_GENERATION_CONCURRENCY,
+  type AgentAssetProgress,
+  type AgentProgressEvent
+} from '../shared/protocol';
 
-export const MAP_ASSET_GENERATION_CONCURRENCY = 6;
+export { MAP_ASSET_GENERATION_CONCURRENCY } from '../shared/protocol';
 
 export type AssetTaskReporter = (
   update: Pick<AgentAssetProgress, 'status' | 'detail'>
