@@ -7,6 +7,7 @@ export type AssetTaskReporter = (
 export interface AssetGenerationPoolOptions {
   signal?: AbortSignal;
   onProgress?: (event: AgentProgressEvent) => void;
+  progressIntervalMs?: number;
 }
 
 export async function runAssetGenerationPool<T extends { name: string }, R>(
@@ -26,10 +27,20 @@ export async function runAssetGenerationPool<T extends { name: string }, R>(
   let cursor = 0;
   let completed = 0;
   let firstError: unknown;
+  let lastEmittedAt = 0;
+  let lastSignature = '';
+  const progressIntervalMs = Math.max(0, options.progressIntervalMs ?? 250);
 
-  const emit = () => {
+  const emit = (force = false) => {
+    if (!options.onProgress) return;
+    const now = Date.now();
+    const signature = `${completed}|${assets.map((asset) => `${asset.status}:${asset.detail ?? ''}`).join('|')}`;
+    if (!force && signature === lastSignature) return;
+    if (!force && now - lastEmittedAt < progressIntervalMs) return;
+    lastEmittedAt = now;
+    lastSignature = signature;
     const active = assets.filter((asset) => asset.status === 'running' || asset.status === 'retrying').length;
-    options.onProgress?.({
+    options.onProgress({
       phase: 'generating-asset',
       label: `并行生成资产：已完成 ${completed}/${items.length}，进行中 ${active} 个`,
       current: completed,
@@ -47,14 +58,15 @@ export async function runAssetGenerationPool<T extends { name: string }, R>(
       state.status = 'running';
       state.slot = slot;
       state.detail = '等待模型返回';
-      emit();
+      emit(true);
 
       let reportedFailure = false;
       const report: AssetTaskReporter = (update) => {
+        const previousStatus = state.status;
         state.status = update.status;
         state.detail = update.detail;
         if (update.status === 'failed') reportedFailure = true;
-        emit();
+        emit(update.status !== previousStatus || update.status === 'failed');
       };
 
       try {
@@ -69,7 +81,7 @@ export async function runAssetGenerationPool<T extends { name: string }, R>(
         firstError ??= error;
       }
       completed += 1;
-      emit();
+      emit(true);
     }
     if (options.signal?.aborted) {
       firstError ??= options.signal.reason ?? new DOMException('Aborted', 'AbortError');

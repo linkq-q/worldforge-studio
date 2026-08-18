@@ -25,6 +25,7 @@ The first set focuses on the operations most often repeated in procedural enviro
 - Determinism: `api.random` replaces `Math.random` and derives from the persisted map seed.
 - Asset declaration: `api.requireAsset` describes prompt-specific reusable asset families and variant counts.
 - Asset binding: `api.asset` selects a generated variant deterministically, including modulo selection inside loops.
+- Point compatibility: generated points support both `[0]/[1]` and `.x/.z`, matching common procedural-code styles.
 
 These choices mirror the recurring building blocks in procedural environment systems: spline sampling, coherent noise, point scattering with minimum separation, grids/radial layouts, and scalar masks. The planner intentionally does not expose raw terrain mutation or direct map writes.
 
@@ -49,7 +50,9 @@ function plan(api) {
 }
 ```
 
-WorldForge executes the code once to discover requirements, generates all requested variants through the shared unbounded-concurrency asset pool, then replays the same code from the same map seed with real persisted asset IDs. Asset generation remains outside the sandboxed VM. The request's `maxNewAssets` value bounds the total number of variants, with the normal default of 16 and hard maximum of 32.
+WorldForge executes the code once to discover requirements, generates all requested variants through the shared unbounded-concurrency asset pool, then replays the same code from the same map seed with real persisted asset IDs. Asset generation remains outside the sandboxed VM. The request's `minNewAssets` and `maxNewAssets` values constrain the generated variant count; if a valid first program declares too few new assets, the planner requests one asset-focused revision before continuing.
+
+Code execution allows two AI repair passes for invalid coordinates, array bounds, vector shapes, and other non-finite calculations. Invented reusable asset IDs no longer abort the whole plan: WorldForge first attempts an exact name match, then degrades unresolved placements to editor proxies with a warning while preserving valid generated assets.
 
 ## API endpoint
 
@@ -64,6 +67,7 @@ Body:
   "prompt": "Create a winding path with sparse trees on both sides",
   "provider": "gpt",
   "baseOperations": [],
+  "minNewAssets": 2,
   "maxNewAssets": 16
 }
 ```

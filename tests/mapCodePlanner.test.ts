@@ -46,6 +46,22 @@ describe('map code planner', () => {
     expect(first.codePlan?.functions).toEqual(['noise2D', 'place', 'sampleBezier']);
   });
 
+  it('accepts Bezier frame objects as placement points and tangents', () => {
+    const map = createEmptyMap();
+    const suggestion = executeMapCodePlan(`
+      function plan(api) {
+        const frame = api.bezierPoint(0.5, [-8, -4], [-4, 8], [4, -8], [8, 4]);
+        api.place({ position: frame, rotationY: api.tangentYaw(frame) });
+      }
+    `, map);
+    const placement = suggestion.operations.find((operation) => operation.type === 'object.add');
+
+    expect(placement?.type).toBe('object.add');
+    if (placement?.type !== 'object.add') throw new Error('missing placement');
+    expect(placement.object.transform?.position?.every(Number.isFinite)).toBe(true);
+    expect(placement.object.transform?.rotation?.every(Number.isFinite)).toBe(true);
+  });
+
   it('provides bounded minimum-distance environment scattering', () => {
     const suggestion = executeMapCodePlan(`
       function plan(api) {
@@ -66,11 +82,42 @@ describe('map code planner', () => {
     }
   });
 
+  it('exposes generated points through array and named coordinates', () => {
+    const suggestion = executeMapCodePlan(`
+      function plan(api) {
+        const point = api.poissonDisk({ minDistance: 5, maxPoints: 1 })[0];
+        api.place({ position: [point.x, point.z] });
+      }
+    `, createEmptyMap());
+    const placement = suggestion.operations.find((operation) => operation.type === 'object.add');
+
+    expect(placement?.type).toBe('object.add');
+    if (placement?.type !== 'object.add') throw new Error('missing placement');
+    expect(placement.object.transform?.position?.every(Number.isFinite)).toBe(true);
+  });
+
   it('blocks host globals and runaway code', () => {
     expect(() => executeMapCodePlan('function plan(api) { process.cwd(); api.place({ position:[0,0] }); }', createEmptyMap()))
       .toThrow();
     expect(() => executeMapCodePlan('function plan() { while (true) {} }', createEmptyMap()))
       .toThrow();
+  });
+
+  it('degrades invented asset ids instead of failing the entire code plan', () => {
+    const knownAsset = testAsset('asset-real-sign', 'Neon sign');
+    const suggestion = executeMapCodePlan(`
+      function plan(api) {
+        api.place({ assetId: 'asset-invented', name: 'Neon sign', position: [0, 0] });
+        api.place({ assetId: 'asset-still-missing', name: 'Unknown kiosk', position: [4, 0] });
+      }
+    `, createEmptyMap(), [knownAsset]);
+    const placements = suggestion.operations.filter((operation) => operation.type === 'object.add');
+
+    expect(placements[0].object.assetId).toBe('asset-real-sign');
+    expect(placements[1].object.assetId).toBeNull();
+    expect(suggestion.diagnostics).toEqual(expect.arrayContaining([
+      expect.objectContaining({ code: 'asset.unplaced', severity: 'warning' })
+    ]));
   });
 
   it('discovers bounded generated asset requirements', () => {
@@ -176,6 +223,44 @@ describe('map code planner', () => {
     expect(fetchImpl).toHaveBeenCalledTimes(2);
     expect(suggestion.codePlan?.code).toContain('position: points[index]');
     expect(suggestion.operations.filter((operation) => operation.type === 'object.add')).toHaveLength(5);
+  });
+
+  it('replans when the code declares fewer than the requested new assets', async () => {
+    const reusedOnlyCode = `
+      function plan(api) {
+        api.place({ name: 'proxy', position: [0, 0] });
+      }
+    `;
+    const generatedAssetCode = `
+      function plan(api) {
+        const signs = api.requireAsset({
+          key: 'neon-sign', name: 'Neon sign', prompt: 'Standalone cyberpunk neon sign', variants: 2
+        });
+        api.place({ assetId: api.asset(signs, 0), position: [-2, 0] });
+        api.place({ assetId: api.asset(signs, 1), position: [2, 0] });
+      }
+    `;
+    const response = (content: string) => new Response(JSON.stringify({ ok: true, content }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' }
+    });
+    const fetchImpl = vi.fn()
+      .mockResolvedValueOnce(response(reusedOnlyCode))
+      .mockResolvedValueOnce(response(generatedAssetCode));
+    const createAsset = vi.fn(async (request) => testAsset(`asset-${request.name}`, request.name));
+
+    const suggestion = await generateMapCodeSuggestion('make a cyberpunk street', createEmptyMap(), [], {
+      apiBase: 'https://example.test',
+      provider: 'gpt',
+      fetchImpl,
+      minNewAssets: 2,
+      maxNewAssets: 4,
+      createAsset
+    });
+
+    expect(fetchImpl).toHaveBeenCalledTimes(2);
+    expect(createAsset).toHaveBeenCalledTimes(2);
+    expect(suggestion.generatedAssets).toHaveLength(2);
   });
 });
 

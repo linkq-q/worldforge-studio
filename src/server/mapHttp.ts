@@ -401,6 +401,7 @@ async function handleEditorMaps(req: Req, res: Res, store: MapStore, parts: stri
       prompt?: string;
       provider?: ChatProvider;
       baseOperations?: MapOperation[];
+      minNewAssets?: number;
       maxNewAssets?: number;
     }>(req);
     const prompt = body.prompt?.trim();
@@ -430,6 +431,7 @@ async function handleEditorMaps(req: Req, res: Res, store: MapStore, parts: stri
       const suggestion = await generateMapCodeSuggestion(prompt, planningMap, mapWithAssets.assets ?? [], {
         provider,
         signal: controller.signal,
+        minNewAssets: body.minNewAssets,
         maxNewAssets: body.maxNewAssets,
         onProgress,
         createAsset: async (request, report) => {

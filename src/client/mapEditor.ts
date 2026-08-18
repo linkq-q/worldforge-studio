@@ -2112,6 +2112,7 @@ class MapEditor {
           body: JSON.stringify({
             prompt,
             provider: this.mapAiProvider,
+            minNewAssets: this.mapAiMinNewAssets,
             maxNewAssets: this.mapAiMaxNewAssets
           }),
           signal: controller.signal

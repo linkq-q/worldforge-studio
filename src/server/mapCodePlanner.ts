@@ -1,7 +1,7 @@
 import vm from 'node:vm';
 import { createId, getMapBounds, sampleTerrainHeight, type EditableMap, type MapAsset } from '../shared/map';
 import { normalizeAssetTags } from '../shared/mapAssetMetadata';
-import { normalizeMapAiMaxNewAssets } from '../shared/mapPlanning';
+import { normalizeMapAiMaxNewAssets, normalizeMapAiNewAssetRange } from '../shared/mapPlanning';
 import type { AgentProgressEvent, ChatProvider } from '../shared/protocol';
 import type { MapAiSuggestion, MapOperation } from '../shared/mapOperations';
 import { runAssetGenerationPool, type AssetTaskReporter } from './assetGenerationPool';
@@ -22,6 +22,7 @@ export interface MapCodePlannerOptions {
   provider?: ChatProvider;
   fetchImpl?: typeof fetch;
   signal?: AbortSignal;
+  minNewAssets?: number;
   maxNewAssets?: number;
   onProgress?: (event: AgentProgressEvent) => void;
   createAsset?: (request: AssetGenerationRequest, report: AssetTaskReporter) => Promise<MapAsset>;
@@ -36,7 +37,7 @@ export interface MapCodePlanMetadata {
 interface PlacementInput {
   assetId?: string | null;
   name?: string;
-  position: Point2 | Point3;
+  position: Point2 | Point3 | { x: number; y?: number; z: number } | { point: Point2 | Point3 };
   rotationY?: number;
   scale?: number | Point3;
   size?: Point3;
@@ -87,8 +88,9 @@ export async function generateMapCodeSuggestion(
   options: MapCodePlannerOptions = {}
 ): Promise<MapAiSuggestion> {
   options.onProgress?.({ phase: 'planning', label: 'AI 正在编写程序化环境规划代码' });
-  const maxNewAssets = normalizeMapAiMaxNewAssets(options.maxNewAssets);
-  const systemPrompt = buildMapCodePlannerSystemPrompt(map, assets, maxNewAssets);
+  const assetRange = normalizeMapAiNewAssetRange(options.minNewAssets, options.maxNewAssets);
+  const maxNewAssets = assetRange.max;
+  const systemPrompt = buildMapCodePlannerSystemPrompt(map, assets, assetRange.min, maxNewAssets);
   const userPrompt = prompt.trim().slice(0, 1_200);
   let code = extractCode(await llmChat([
     { role: 'system', content: systemPrompt },
@@ -101,19 +103,14 @@ export async function generateMapCodeSuggestion(
     fetchImpl: options.fetchImpl,
     signal: options.signal
   }));
-  let discovery: CodeExecutionResult;
-  try {
-    discovery = runMapCodePlan(code, map, assets, {
-      mode: 'discovery',
-      maxNewAssets
-    });
-  } catch (error) {
-    if (error instanceof Error && error.name === 'AbortError') throw error;
-    const executionError = mapCodeExecutionErrorDetail(error);
+  let execution = await discoverMapCodeWithRepairs(code, userPrompt, systemPrompt, map, assets, maxNewAssets, options);
+  code = execution.code;
+  let discovery = execution.discovery;
+  const requestedAssetCount = () => discovery.requirements.reduce((total, requirement) => total + requirement.variants, 0);
+  if (requestedAssetCount() < assetRange.min) {
     options.onProgress?.({
       phase: 'replanning',
-      label: '检测到代码数值或边界错误，AI 正在自动修复',
-      detail: executionError
+      label: `Code 规划正在补足至少 ${assetRange.min} 个新资产`
     });
     code = extractCode(await llmChat([
       { role: 'system', content: systemPrompt },
@@ -121,25 +118,20 @@ export async function generateMapCodeSuggestion(
       { role: 'assistant', content: code },
       {
         role: 'user',
-        content: `The program failed during its sandboxed discovery run with this error:\n${executionError}\n\nReturn corrected JavaScript only. Preserve the requested design. Check every array index, loop endpoint, division, vector component, and optional argument. JavaScript arrays cannot be added or subtracted directly; calculate x/z components separately. Ensure every numeric value passed to the API is finite.`
+        content: `This program is valid but declares only ${requestedAssetCount()} new assets. Revise it to declare and place at least ${assetRange.min} and at most ${maxNewAssets} prompt-specific generated assets through api.requireAsset and api.asset. Return corrected JavaScript only.`
       }
     ], {
       apiBase: options.apiBase,
       provider: options.provider ?? 'gpt',
-      temperature: 0.1,
+      temperature: 0.15,
       maxTokens: 6_000,
       fetchImpl: options.fetchImpl,
       signal: options.signal
     }));
-    try {
-      discovery = runMapCodePlan(code, map, assets, {
-        mode: 'discovery',
-        maxNewAssets
-      });
-    } catch (repairError) {
-      if (repairError instanceof Error && repairError.name === 'AbortError') throw repairError;
-      throw new Error(`map_code_execution_failed:${mapCodeExecutionErrorDetail(repairError)}`);
-    }
+    execution = await discoverMapCodeWithRepairs(code, userPrompt, systemPrompt, map, assets, maxNewAssets, options);
+    code = execution.code;
+    discovery = execution.discovery;
+    if (requestedAssetCount() < assetRange.min) throw new Error('map_code_asset_minimum_not_met');
   }
   if (discovery.requirements.length === 0) {
     options.onProgress?.({ phase: 'complete', label: 'Code 规划已完成，未请求新资产' });
@@ -222,6 +214,7 @@ function runMapCodePlan(
 
   const placements: PlacementIntent[] = [];
   const requirements = new Map<string, CodeAssetRequirement>();
+  const unresolvedAssetIds = new Set<string>();
   const usedFunctions = new Set<string>();
   const assetById = new Map(assets.map((asset) => [asset.id, asset]));
   const mode = options.mode ?? 'final';
@@ -271,14 +264,14 @@ function runMapCodePlan(
       const sine = Math.sin(finite(angle));
       const x = source[0] - pivot[0];
       const z = source[1] - pivot[1];
-      return [pivot[0] + x * cosine - z * sine, pivot[1] + x * sine + z * cosine];
+      return codePoint(pivot[0] + x * cosine - z * sine, pivot[1] + x * sine + z * cosine);
     },
     linePoint(amount: number, from: Point2, to: Point2): Point2 {
       record('linePoint');
       const start = point2(from);
       const end = point2(to);
       const t = clampFinite(amount, 0, 1);
-      return [start[0] + (end[0] - start[0]) * t, start[1] + (end[1] - start[1]) * t];
+      return codePoint(start[0] + (end[0] - start[0]) * t, start[1] + (end[1] - start[1]) * t);
     },
     bezierPoint(amount: number, p0: Point2, p1: Point2, p2: Point2, p3: Point2) {
       record('bezierPoint');
@@ -297,7 +290,7 @@ function runMapCodePlan(
       const pivot = point2(center);
       const angle = finite(index) * Math.PI * 2 / total;
       const distance = Math.max(0, finite(radius));
-      return [pivot[0] + Math.cos(angle) * distance, pivot[1] + Math.sin(angle) * distance];
+      return codePoint(pivot[0] + Math.cos(angle) * distance, pivot[1] + Math.sin(angle) * distance);
     },
     gridPoints(options: { center?: Point2; columns: number; rows: number; spacing: number | Point2 }): Point2[] {
       record('gridPoints');
@@ -310,10 +303,10 @@ function runMapCodePlan(
       return Array.from({ length: rows * columns }, (_, index) => {
         const column = index % columns;
         const row = Math.floor(index / columns);
-        return [
+        return codePoint(
           center[0] + (column - (columns - 1) / 2) * spacing[0],
           center[1] + (row - (rows - 1) / 2) * spacing[1]
-        ];
+        );
       });
     },
     noise2D(x: number, z: number, scale = 1, seed = map.seed) {
@@ -346,9 +339,13 @@ function runMapCodePlan(
       const bounds = options.bounds ?? getMapBounds(map);
       return poissonDiskPoints(bounds, options.minDistance, options.maxPoints, options.attempts, options.seed ?? map.seed);
     },
-    tangentYaw(tangent: Point2): number {
+    tangentYaw(tangent: Point2 | { tangent: Point2 }): number {
       record('tangentYaw');
-      const direction = point2(tangent);
+      const direction = point2(
+        tangent && typeof tangent === 'object' && !Array.isArray(tangent) && 'tangent' in tangent
+          ? tangent.tangent
+          : tangent
+      );
       return Math.atan2(direction[0], direction[1]);
     },
     requireAsset(input: CodeAssetRequirementInput): string {
@@ -382,11 +379,13 @@ function runMapCodePlan(
       record('place');
       if (placements.length >= MAX_PLACEMENTS) throw new Error('map_code_plan_too_many_placements');
       if (!input || typeof input !== 'object') throw new Error('invalid_map_code_placement');
-      const assetId = typeof input.assetId === 'string' && input.assetId.trim() ? input.assetId.trim() : null;
+      const requestedAssetId = typeof input.assetId === 'string' && input.assetId.trim() ? input.assetId.trim() : null;
+      let assetId = requestedAssetId;
       if (assetId && !assetById.has(assetId) && !(mode === 'discovery' && isCodeAssetPlaceholder(assetId))) {
-        throw new Error(`unknown_map_asset:${assetId}`);
+        assetId = resolveMapCodeAssetId(input.name, assets);
+        if (!assetId) unresolvedAssetIds.add(requestedAssetId!);
       }
-      const terrain = input.terrain !== false && input.position.length === 2;
+      const terrain = input.terrain !== false && placementUsesTerrain(input.position);
       const position = placementPosition(input.position, map, terrain);
       placements.push({
         assetId,
@@ -440,8 +439,17 @@ function runMapCodePlan(
       functions: [...usedFunctions].sort()
     }
   };
+  const validated = validateMapSuggestion(map, suggestion).suggestion;
   return {
-    suggestion: validateMapSuggestion(map, suggestion).suggestion,
+    suggestion: unresolvedAssetIds.size === 0 ? validated : {
+      ...validated,
+      diagnostics: [...(validated.diagnostics ?? []), {
+        code: 'asset.unplaced',
+        severity: 'warning',
+        message: `Code 规划引用了 ${unresolvedAssetIds.size} 个不存在的资产 ID，已按名称匹配或降级为编辑器代理。`,
+        repaired: true
+      }]
+    },
     requirements: [...requirements.values()]
   };
 }
@@ -449,6 +457,7 @@ function runMapCodePlan(
 export function buildMapCodePlannerSystemPrompt(
   map: EditableMap,
   assets: readonly MapAsset[],
+  minNewAssets = 0,
   maxNewAssets = normalizeMapAiMaxNewAssets(undefined)
 ): string {
   const bounds = getMapBounds(map);
@@ -460,10 +469,12 @@ Return JavaScript only, defining exactly one synchronous function: function plan
 Basic JavaScript control flow is allowed: const/let, arrays, objects, for, for...of, while, if/else and local helper functions.
 Do not use async, promises, eval, Function, imports, network, files, timers, randomness outside api.random, or global state.
 JavaScript arrays are not vectors: never add or subtract arrays directly. Calculate x/z components separately, keep loop indexes in bounds, guard divisions, and only pass finite numbers to API functions.
+Every point returned by the API supports both array access point[0]/point[1] and named access point.x/point.z.
 
 The code must call api.place at least once. Position [x,z] follows terrain automatically; position [x,y,z] is fixed height.
 For prompt-specific visible content, declare reusable generated assets first. Use proxy placements without assetId only for abstract editor markers, never as the normal solution.
-The sum of all requireAsset variants must not exceed ${maxNewAssets}.
+The sum of all requireAsset variants must be between ${minNewAssets} and ${maxNewAssets}. When the minimum is greater than zero, you must declare and place that many prompt-specific new assets even if reusable assets exist.
+Never invent or modify asset IDs. Copy reusable asset IDs exactly from the catalog; otherwise use api.requireAsset and api.asset.
 Map bounds: x=${bounds.minX}..${bounds.maxX}, z=${bounds.minZ}..${bounds.maxZ}, seed=${map.seed}.
 
 Available API:
@@ -491,13 +502,69 @@ function extractCode(raw: string): string {
   return (fenced?.[1] ?? raw).trim();
 }
 
-function mapCodeExecutionErrorDetail(error: unknown): string {
+async function discoverMapCodeWithRepairs(
+  initialCode: string,
+  userPrompt: string,
+  systemPrompt: string,
+  map: EditableMap,
+  assets: readonly MapAsset[],
+  maxNewAssets: number,
+  options: MapCodePlannerOptions
+): Promise<{ code: string; discovery: CodeExecutionResult }> {
+  let code = initialCode;
+  for (let repairAttempt = 0; repairAttempt <= 2; repairAttempt += 1) {
+    try {
+      return {
+        code,
+        discovery: runMapCodePlan(code, map, assets, {
+          mode: 'discovery',
+          maxNewAssets
+        })
+      };
+    } catch (error) {
+      if (error instanceof Error && error.name === 'AbortError') throw error;
+      const executionError = mapCodeExecutionErrorDetail(error, code);
+      if (repairAttempt === 2) throw new Error(`map_code_execution_failed:${executionError}`);
+      options.onProgress?.({
+        phase: 'replanning',
+        label: `检测到代码数值或边界错误，AI 正在自动修复 ${repairAttempt + 1}/2`,
+        detail: executionError
+      });
+      code = extractCode(await llmChat([
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userPrompt },
+        { role: 'assistant', content: code },
+        {
+          role: 'user',
+          content: `The program failed during its sandboxed discovery run with this error:\n${executionError}\n\nReturn corrected JavaScript only. Preserve the requested design. Check every array index, loop endpoint, division, vector component, and optional argument. JavaScript arrays cannot be added or subtracted directly; calculate x/z components separately. bezierPoint returns {point,tangent}, while sampleBezier returns point arrays. Ensure every numeric value passed to the API is finite.`
+        }
+      ], {
+        apiBase: options.apiBase,
+        provider: options.provider ?? 'gpt',
+        temperature: 0.1,
+        maxTokens: 6_000,
+        fetchImpl: options.fetchImpl,
+        signal: options.signal
+      }));
+    }
+  }
+  throw new Error('map_code_execution_failed:missing_discovery_result');
+}
+
+function mapCodeExecutionErrorDetail(error: unknown, code?: string): string {
   if (!(error instanceof Error)) return String(error || 'unknown_map_code_execution_error').slice(0, 1_000);
   const generatedFrame = error.stack
     ?.split('\n')
     .find((line) => line.includes('worldforge-map-plan.js'))
     ?.trim();
-  return [error.message, generatedFrame].filter(Boolean).join(' at ').slice(0, 1_000);
+  const lineNumber = generatedFrame?.match(/worldforge-map-plan\.js:(\d+):\d+/)?.[1];
+  const sourceLine = lineNumber && code
+    ? code.split('\n')[Math.max(0, Number(lineNumber) - 1)]?.trim()
+    : undefined;
+  return [error.message, generatedFrame, sourceLine ? `source: ${sourceLine}` : undefined]
+    .filter(Boolean)
+    .join(' at ')
+    .slice(0, 1_000);
 }
 
 function normalizeCodeAssetRequirement(input: CodeAssetRequirementInput): CodeAssetRequirement {
@@ -542,22 +609,60 @@ function isCodeAssetPlaceholder(value: string): boolean {
   return value.startsWith('code-asset://');
 }
 
+function resolveMapCodeAssetId(name: string | undefined, assets: readonly MapAsset[]): string | null {
+  const normalizedName = String(name ?? '').trim().toLowerCase();
+  if (!normalizedName) return null;
+  const exact = assets.find((asset) => asset.name.trim().toLowerCase() === normalizedName);
+  return exact?.id ?? null;
+}
+
 function positiveModulo(value: number, divisor: number): number {
   return ((value % divisor) + divisor) % divisor;
 }
 
-function placementPosition(value: Point2 | Point3, map: EditableMap, terrain: boolean): Point3 {
-  if (!Array.isArray(value) || (value.length !== 2 && value.length !== 3)) throw new Error('invalid_map_code_position');
-  if (value.length === 2) {
+function placementPosition(value: PlacementInput['position'], map: EditableMap, terrain: boolean): Point3 {
+  if (value && typeof value === 'object' && !Array.isArray(value) && 'point' in value) {
+    return placementPosition(value.point, map, terrain);
+  }
+  if (Array.isArray(value) && value.length === 3) return point3(value);
+  if (value && typeof value === 'object' && !Array.isArray(value) && 'x' in value && 'z' in value) {
+    const x = finite(value.x);
+    const z = finite(value.z);
+    if (value.y !== undefined) return [x, finite(value.y), z];
+    return [x, terrain ? sampleTerrainHeight(map, x, z) : 0, z];
+  }
+  if (Array.isArray(value) && value.length === 2) {
     const position = point2(value);
     return [position[0], terrain ? sampleTerrainHeight(map, position[0], position[1]) : 0, position[1]];
   }
-  return point3(value);
+  throw new Error(`invalid_map_code_position:${describeCodeValue(value)}`);
 }
 
-function point2(value: readonly number[]): Point2 {
-  if (!Array.isArray(value) || value.length < 2) throw new Error('invalid_map_code_point');
-  return [finite(value[0]), finite(value[1])];
+function placementUsesTerrain(value: PlacementInput['position']): boolean {
+  if (Array.isArray(value)) return value.length === 2;
+  if (!value || typeof value !== 'object') return false;
+  if ('point' in value) return placementUsesTerrain(value.point);
+  return 'x' in value && 'z' in value && value.y === undefined;
+}
+
+function point2(value: unknown): Point2 {
+  if (Array.isArray(value) && value.length >= 2) return [finite(value[0]), finite(value[1])];
+  if (value && typeof value === 'object') {
+    const input = value as Record<string, unknown>;
+    if (input.point !== undefined) return point2(input.point);
+    if (input.x !== undefined && input.z !== undefined) return [finite(input.x), finite(input.z)];
+    if (input.x !== undefined && input.y !== undefined) return [finite(input.x), finite(input.y)];
+  }
+  throw new Error(`invalid_map_code_point:${describeCodeValue(value)}`);
+}
+
+function codePoint(x: number, z: number): Point2 {
+  const point: Point2 = [finite(x), finite(z)];
+  Object.defineProperties(point, {
+    x: { value: point[0], enumerable: false },
+    z: { value: point[1], enumerable: false }
+  });
+  return point;
 }
 
 function point3(value: readonly number[]): Point3 {
@@ -573,8 +678,17 @@ function scale3(value: number | Point3): Point3 {
 
 function finite(value: unknown): number {
   const number = Number(value);
-  if (!Number.isFinite(number)) throw new Error('non_finite_map_code_value');
+  if (!Number.isFinite(number)) throw new Error(`non_finite_map_code_value:${describeCodeValue(value)}`);
   return number;
+}
+
+function describeCodeValue(value: unknown): string {
+  if (value === undefined) return 'undefined';
+  if (value === null) return 'null';
+  if (typeof value === 'number') return String(value);
+  if (Array.isArray(value)) return `array(length=${value.length})`;
+  if (typeof value === 'object') return `object(keys=${Object.keys(value).slice(0, 8).join(',')})`;
+  return `${typeof value}:${String(value).slice(0, 80)}`;
 }
 
 function clampFinite(value: number, min: number, max: number): number {
@@ -593,14 +707,14 @@ function bezierPoint(amount: number, p0: Point2, p1: Point2, p2: Point2, p3: Poi
   const inverse = 1 - amount;
   const inverse2 = inverse * inverse;
   const amount2 = amount * amount;
-  const point: Point2 = [
+  const point = codePoint(
     inverse2 * inverse * p0[0] + 3 * inverse2 * amount * p1[0] + 3 * inverse * amount2 * p2[0] + amount2 * amount * p3[0],
     inverse2 * inverse * p0[1] + 3 * inverse2 * amount * p1[1] + 3 * inverse * amount2 * p2[1] + amount2 * amount * p3[1]
-  ];
-  const tangent: Point2 = [
+  );
+  const tangent = codePoint(
     3 * inverse2 * (p1[0] - p0[0]) + 6 * inverse * amount * (p2[0] - p1[0]) + 3 * amount2 * (p3[0] - p2[0]),
     3 * inverse2 * (p1[1] - p0[1]) + 6 * inverse * amount * (p2[1] - p1[1]) + 3 * amount2 * (p3[1] - p2[1])
-  ];
+  );
   return { point, tangent };
 }
 
@@ -625,10 +739,10 @@ function poissonDiskPoints(
   const points: Point2[] = [];
   const maxCandidates = maxPoints * attempts;
   for (let candidate = 0; candidate < maxCandidates && points.length < maxPoints; candidate += 1) {
-    const point: Point2 = [
+    const point = codePoint(
       bounds.minX + random() * (bounds.maxX - bounds.minX),
       bounds.minZ + random() * (bounds.maxZ - bounds.minZ)
-    ];
+    );
     if (points.every((existing) => Math.hypot(existing[0] - point[0], existing[1] - point[1]) >= minDistance)) {
       points.push(point);
     }

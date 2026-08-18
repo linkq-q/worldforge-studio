@@ -65,4 +65,21 @@ describe('asset generation pool', () => {
     await expect(resultPromise).rejects.toThrow('fatal');
     expect(started).toEqual([0, 1, 2, 3, 4]);
   });
+
+  it('throttles repeated model stage updates while preserving terminal progress', async () => {
+    const progress: AgentProgressEvent[] = [];
+
+    await runAssetGenerationPool([{ name: 'asset' }], async (_item, _index, report) => {
+      for (let index = 0; index < 100; index += 1) {
+        report({ status: 'running', detail: `stage-${index}` });
+      }
+      return 'done';
+    }, {
+      progressIntervalMs: 1_000,
+      onProgress: (event) => progress.push(event)
+    });
+
+    expect(progress.length).toBeLessThanOrEqual(3);
+    expect(progress.at(-1)?.assets?.[0].status).toBe('success');
+  });
 });
