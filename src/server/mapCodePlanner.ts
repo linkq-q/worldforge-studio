@@ -22,6 +22,8 @@ export interface MapCodePlannerOptions {
   provider?: ChatProvider;
   fetchImpl?: typeof fetch;
   signal?: AbortSignal;
+  reuseExistingAssets?: boolean;
+  reusableAssetIds?: readonly string[];
   minNewAssets?: number;
   maxNewAssets?: number;
   onProgress?: (event: AgentProgressEvent) => void;
@@ -90,7 +92,15 @@ export async function generateMapCodeSuggestion(
   options.onProgress?.({ phase: 'planning', label: 'AI 正在编写程序化环境规划代码' });
   const assetRange = normalizeMapAiNewAssetRange(options.minNewAssets, options.maxNewAssets);
   const maxNewAssets = assetRange.max;
-  const systemPrompt = buildMapCodePlannerSystemPrompt(map, assets, assetRange.min, maxNewAssets);
+  const reusableIds = options.reusableAssetIds ? new Set(options.reusableAssetIds) : null;
+  const reusableAssets = options.reuseExistingAssets === true
+    ? assets.filter((asset) => (
+        (!reusableIds || reusableIds.has(asset.id))
+        && asset.libraryMetadata?.analysisStatus !== 'pending'
+        && asset.libraryMetadata?.enabled !== false
+      ))
+    : [];
+  const systemPrompt = buildMapCodePlannerSystemPrompt(map, reusableAssets, assetRange.min, maxNewAssets);
   const userPrompt = prompt.trim().slice(0, 1_200);
   let code = extractCode(await llmChat([
     { role: 'system', content: systemPrompt },
@@ -103,7 +113,7 @@ export async function generateMapCodeSuggestion(
     fetchImpl: options.fetchImpl,
     signal: options.signal
   }));
-  let execution = await discoverMapCodeWithRepairs(code, userPrompt, systemPrompt, map, assets, maxNewAssets, options);
+  let execution = await discoverMapCodeWithRepairs(code, userPrompt, systemPrompt, map, reusableAssets, maxNewAssets, options);
   code = execution.code;
   let discovery = execution.discovery;
   const requestedAssetCount = () => discovery.requirements.reduce((total, requirement) => total + requirement.variants, 0);
@@ -128,7 +138,7 @@ export async function generateMapCodeSuggestion(
       fetchImpl: options.fetchImpl,
       signal: options.signal
     }));
-    execution = await discoverMapCodeWithRepairs(code, userPrompt, systemPrompt, map, assets, maxNewAssets, options);
+    execution = await discoverMapCodeWithRepairs(code, userPrompt, systemPrompt, map, reusableAssets, maxNewAssets, options);
     code = execution.code;
     discovery = execution.discovery;
     if (requestedAssetCount() < assetRange.min) throw new Error('map_code_asset_minimum_not_met');
@@ -171,7 +181,7 @@ export async function generateMapCodeSuggestion(
     bindings.set(task.key, family);
   });
   options.onProgress?.({ phase: 'replanning', label: '使用新资产重放程序化环境规划' });
-  const final = runMapCodePlan(code, map, [...assets, ...generatedAssets], {
+  const final = runMapCodePlan(code, map, [...reusableAssets, ...generatedAssets], {
     mode: 'final',
     assetBindings: bindings,
     maxNewAssets

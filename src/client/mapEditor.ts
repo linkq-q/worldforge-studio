@@ -2112,6 +2112,8 @@ class MapEditor {
           body: JSON.stringify({
             prompt,
             provider: this.mapAiProvider,
+            reuseExistingAssets: this.mapAiReuseExistingAssets,
+            assetLibraryId: this.mapAiReuseExistingAssets ? this.activeAssetLibraryId : undefined,
             minNewAssets: this.mapAiMinNewAssets,
             maxNewAssets: this.mapAiMaxNewAssets
           }),

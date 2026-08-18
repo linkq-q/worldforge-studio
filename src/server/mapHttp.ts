@@ -401,6 +401,8 @@ async function handleEditorMaps(req: Req, res: Res, store: MapStore, parts: stri
       prompt?: string;
       provider?: ChatProvider;
       baseOperations?: MapOperation[];
+      reuseExistingAssets?: boolean;
+      assetLibraryId?: string;
       minNewAssets?: number;
       maxNewAssets?: number;
     }>(req);
@@ -422,8 +424,17 @@ async function handleEditorMaps(req: Req, res: Res, store: MapStore, parts: stri
     req.once('aborted', abort);
     res.once('close', abortIfOpen);
     try {
-      const [map, assets] = await Promise.all([store.loadMap(mapId), store.listAssets()]);
-      const mapWithAssets = { ...map, assets: dedupeAssets([...assets, ...(map.assets ?? [])]) };
+      const [map, assets, libraryAssets] = await Promise.all([
+        store.loadMap(mapId),
+        store.listAssets(),
+        body.reuseExistingAssets === true && body.assetLibraryId
+          ? store.listAssetLibraryAssets(body.assetLibraryId)
+          : Promise.resolve([])
+      ]);
+      const mapWithAssets = {
+        ...map,
+        assets: dedupeAssets([...assets, ...(map.assets ?? []), ...libraryAssets])
+      };
       const planningMap = Array.isArray(body.baseOperations) && body.baseOperations.length > 0
         ? applyMapOperations(mapWithAssets, body.baseOperations)
         : mapWithAssets;
@@ -431,6 +442,8 @@ async function handleEditorMaps(req: Req, res: Res, store: MapStore, parts: stri
       const suggestion = await generateMapCodeSuggestion(prompt, planningMap, mapWithAssets.assets ?? [], {
         provider,
         signal: controller.signal,
+        reuseExistingAssets: body.reuseExistingAssets === true,
+        reusableAssetIds: libraryAssets.map((asset) => asset.id),
         minNewAssets: body.minNewAssets,
         maxNewAssets: body.maxNewAssets,
         onProgress,

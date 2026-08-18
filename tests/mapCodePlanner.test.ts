@@ -23,6 +23,43 @@ describe('map code planner', () => {
     expect(prompt).toContain('No undefined point, invalid array index, direct array arithmetic');
   });
 
+  it('hides existing assets by default and exposes only explicitly selected reusable assets', async () => {
+    const selected = testAsset('asset-selected', 'Selected neon lamp');
+    const unselected = testAsset('asset-unselected', 'Unselected old building');
+    const code = 'function plan(api) { api.place({ name: "marker", position: [0, 0] }); }';
+    const prompts: string[] = [];
+    const fetchImpl = vi.fn(async (_url: string | URL | Request, init?: RequestInit) => {
+      const body = JSON.parse(String(init?.body)) as { messages: Array<{ content: string }> };
+      prompts.push(body.messages[0].content);
+      return new Response(JSON.stringify({ ok: true, content: code }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    });
+
+    await generateMapCodeSuggestion('make a street', createEmptyMap(), [selected, unselected], {
+      apiBase: 'https://example.test',
+      provider: 'gpt',
+      fetchImpl,
+      minNewAssets: 0,
+      maxNewAssets: 0
+    });
+    await generateMapCodeSuggestion('make a street', createEmptyMap(), [selected, unselected], {
+      apiBase: 'https://example.test',
+      provider: 'gpt',
+      fetchImpl,
+      reuseExistingAssets: true,
+      reusableAssetIds: [selected.id],
+      minNewAssets: 0,
+      maxNewAssets: 0
+    });
+
+    expect(prompts[0]).not.toContain(selected.id);
+    expect(prompts[0]).not.toContain(unselected.id);
+    expect(prompts[1]).toContain(selected.id);
+    expect(prompts[1]).not.toContain(unselected.id);
+  });
+
   it('supports basic JavaScript control flow and preserves deterministic placement order', () => {
     const suggestion = executeMapCodePlan(`
       function plan(api) {
