@@ -25,6 +25,7 @@ The first set focuses on the operations most often repeated in procedural enviro
 - Facing contract: generated models use local `Y+` up, `Z+` front/forward, and `X+` right; `place({ facing: { target } })` or `place({ facing: { direction } })` resolves the world `rotationY`.
 - Curve frames: `bezierPoint` and `sampleBezierFrames` expose `{ point, tangent, normal }`. Path pieces use `facing: { tangent: frame.tangent }`; wall facades use `facing: { normal: frame.normal }`. The normal is the left-side unit normal as curve `t` increases, and `offsetY: api.TAU / 2` flips it.
 - Repeated module spacing: `sampleBezierFramesBySpacing(..., spacing, gapRatio?)` resamples by approximate arc length instead of parameter `t`; its default `gapRatio` is `0.08`, leaving a small intentional spacing between repeated modules.
+- Endpoint connection: `placeBetween({ start, end, dimensions, spanAxis })` derives the midpoint and rotation from two computed points, then fits only the declared long axis to the endpoint distance. It can coexist with ordinary `place({ facing })` and accepts an optional facing override.
 - Determinism: `api.random` replaces `Math.random` and derives from the persisted map seed.
 - Asset declaration: `api.requireAsset` describes prompt-specific reusable asset families and variant counts.
 - Asset binding: `api.asset` selects a generated variant deterministically, including modulo selection inside loops.
@@ -74,7 +75,9 @@ function plan(api) {
 
 The Code Planner automatically appends the same local-axis contract to each newly generated asset prompt, so model orientation and scene placement use the same convention.
 
-For any repeated modular element, the generated asset prompt also states the span/connection axis explicitly: side-by-side modules span local `X` with their front/depth on local `Z`; traversal modules span local `Z`. This keeps the model's long axis compatible with the curve tangent/normal used by Code placement.
+For any repeated modular element, the generated asset prompt also states the span/connection axis explicitly: side-by-side modules span local `X` with their front/depth on local `Z`; traversal modules span local `Z`. `requireAsset({ dimensions: [width, height, depth] })` adds the same canonical dimensions to the model-generation prompt, so generation and placement share one size contract.
+
+For uninterrupted connected scenery, use one asset family with `variants: 1` unless a visible transition is intentional. Alternating variants along the same run can produce incompatible connection shapes even when their nominal sizes match.
 
 Curved wall example:
 
@@ -83,21 +86,27 @@ function plan(api) {
   const wall = api.requireAsset({
     key: 'garden-wall',
     name: 'Garden wall segment',
-    prompt: 'Standalone modular garden wall, decorative facade toward local Z+, seamless ends',
+    prompt: 'Standalone modular garden wall, decorative facade toward local Z+, seamless ends; span local X',
+    dimensions: [6, 3, 0.5],
     tags: ['wall', 'garden'],
-    variants: 2
+    variants: 1
   });
-  const frames = api.sampleBezierFrames([-32, -12], [-18, 24], [18, -24], [32, 12], 16);
-  for (let index = 0; index < frames.length; index += 1) {
-    const frame = frames[index];
-    api.place({
-      assetId: api.asset(wall, index),
-      position: frame.point,
-      facing: { normal: frame.normal }
+  const frames = api.sampleBezierFramesBySpacing(
+    [-32, -12], [-18, 24], [18, -24], [32, 12], 6, 0.06
+  );
+  for (let index = 0; index < frames.length - 1; index += 1) {
+    api.placeBetween({
+      assetId: api.asset(wall, 0),
+      start: frames[index].point,
+      end: frames[index + 1].point,
+      dimensions: [6, 3, 0.5],
+      spanAxis: 'x'
     });
   }
 }
 ```
+
+With `spanAxis: 'x'`, the ordered `start -> end` line becomes local `X+`, and local `Z+` automatically faces the line's left side. Reverse the endpoints to flip the facade. Use `spanAxis: 'z'` when the asset's forward/traversal axis itself should connect the endpoints. A small `gapRatio` such as `0.05` to `0.10` shortens the fitted span around its midpoint when a visible seam is desired.
 
 WorldForge executes the code once to discover requirements, generates all requested variants through the shared unbounded-concurrency asset pool, then replays the same code from the same map seed with real persisted asset IDs. Asset generation remains outside the sandboxed VM. The request's `minNewAssets` and `maxNewAssets` values constrain the generated variant count; if a valid first program declares too few new assets, the planner requests one asset-focused revision before continuing.
 

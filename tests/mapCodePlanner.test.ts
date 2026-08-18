@@ -16,6 +16,8 @@ describe('map code planner', () => {
     expect(prompt).toContain('Every generated point supports both point[0]/point[1] and point.x/point.z.');
     expect(prompt).toContain('sampleBezierFrames(...) -> frame objects with point,tangent,normal');
     expect(prompt).toContain('sampleBezierFramesBySpacing(...,spacing,gapRatio?)');
+    expect(prompt).toContain('api.placeBetween({assetId?,name?,start:[x,z],end:[x,z]');
+    expect(prompt).toContain('For a continuous connected run, use one asset family and normally variants:1.');
     expect(prompt).toContain('facing:{normal:frame.normal}');
     expect(prompt).toContain('poissonDisk plus noise2D/fbm2D');
     expect(prompt).toContain('gridPoints with an explicit center and spacing');
@@ -140,6 +142,76 @@ describe('map code planner', () => {
     expect(placements[1].object.transform?.rotation?.[1]).toBeCloseTo(0);
     expect(placements[2].object.transform?.rotation?.[1]).toBeCloseTo(Math.PI);
     expect(suggestion.codePlan?.functions).toContain('place');
+  });
+
+  it('fits generated model dimensions between two endpoints', () => {
+    const connectedAsset: MapAsset = {
+      ...testAsset('asset-connected-wall', 'Connected wall'),
+      modelJson: {
+        format: 2,
+        nodes: [{
+          id: 'wall-body',
+          transform: { pos: [0, 2, 0] },
+          mesh: { type: 'box', params: { width: 2, height: 4, depth: 1 } }
+        }]
+      }
+    };
+    const suggestion = executeMapCodePlan(`
+      function plan(api) {
+        api.placeBetween({
+          assetId: 'asset-connected-wall',
+          name: 'connected-wall',
+          start: [0, 0],
+          end: [10, 0],
+          dimensions: [4, 3, 1],
+          spanAxis: 'x',
+          gapRatio: 0.1
+        });
+        api.placeBetween({
+          name: 'connected-path',
+          start: [0, 0],
+          end: [0, 8],
+          dimensions: [2, 1, 4],
+          spanAxis: 'z'
+        });
+      }
+    `, createEmptyMap(), [connectedAsset]);
+    const placements = suggestion.operations.filter((operation) => operation.type === 'object.add');
+
+    expect(placements).toHaveLength(2);
+    if (placements[0].type !== 'object.add' || placements[1].type !== 'object.add') {
+      throw new Error('missing connected placements');
+    }
+    expect(placements[0].object.transform?.position?.[0]).toBeCloseTo(5);
+    expect(placements[0].object.transform?.position?.[2]).toBeCloseTo(0);
+    expect(placements[0].object.transform?.rotation?.[1]).toBeCloseTo(0);
+    expect(placements[0].object.transform?.size).toEqual([9, 3, 1]);
+    expect(placements[0].object.transform?.scale).toEqual([0.5, 0.25, 1]);
+    expect(placements[1].object.transform?.position?.[2]).toBeCloseTo(4);
+    expect(placements[1].object.transform?.rotation?.[1]).toBeCloseTo(0);
+    expect(placements[1].object.transform?.size).toEqual([2, 1, 8]);
+    expect(placements[1].object.transform?.scale).toEqual([1, 1, 1]);
+    expect(suggestion.codePlan?.functions).toEqual(['placeBetween']);
+  });
+
+  it('allows facing to override automatic line orientation', () => {
+    const suggestion = executeMapCodePlan(`
+      function plan(api) {
+        api.placeBetween({
+          name: 'front-overridden-connection',
+          start: [0, 0],
+          end: [10, 0],
+          dimensions: [10, 2, 1],
+          spanAxis: 'x',
+          facing: { direction: [1, 0] }
+        });
+      }
+    `, createEmptyMap());
+    const placement = suggestion.operations.find((operation) => operation.type === 'object.add');
+
+    expect(placement?.type).toBe('object.add');
+    if (placement?.type !== 'object.add') throw new Error('missing connected placement');
+    expect(placement.object.transform?.rotation?.[1]).toBeCloseTo(Math.PI / 2);
   });
 
   it('uses Bezier normals for curved wall facades', () => {
@@ -268,7 +340,8 @@ describe('map code planner', () => {
     const code = `
       function plan(api) {
         const pine = api.requireAsset({
-          key: 'pine', name: 'Pine', prompt: 'Standalone pine tree', tags: ['tree'], variants: 3
+          key: 'pine', name: 'Pine', prompt: 'Standalone pine tree', tags: ['tree'], variants: 3,
+          dimensions: [2, 4, 2]
         });
         for (let index = 0; index < 6; index += 1) {
           api.place({ assetId: api.asset(pine, index), position: [index * 2, 0] });
@@ -299,6 +372,7 @@ describe('map code planner', () => {
 
     expect(createAsset).toHaveBeenCalledTimes(3);
     expect(createAsset.mock.calls[0][0].prompt).toContain('local Z+ is the front');
+    expect(createAsset.mock.calls[0][0].prompt).toContain('width=2, height=4, depth=2 world units');
     expect(peak).toBe(3);
     expect(suggestion.generatedAssets).toHaveLength(3);
     const assetIds = suggestion.operations

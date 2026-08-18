@@ -2,6 +2,7 @@ import vm from 'node:vm';
 import { createId, getMapBounds, sampleTerrainHeight, type EditableMap, type MapAsset } from '../shared/map';
 import { normalizeAssetTags } from '../shared/mapAssetMetadata';
 import { normalizeMapAiMaxNewAssets, normalizeMapAiNewAssetRange } from '../shared/mapPlanning';
+import { calculateModelVisualBounds } from '../shared/modelBounds';
 import type { AgentProgressEvent, ChatProvider } from '../shared/protocol';
 import type { MapAiSuggestion, MapOperation } from '../shared/mapOperations';
 import { runAssetGenerationPool, type AssetTaskReporter } from './assetGenerationPool';
@@ -54,6 +55,20 @@ interface PlacementInput {
   terrain?: boolean;
 }
 
+interface PlaceBetweenInput {
+  assetId?: string | null;
+  name?: string;
+  start: Point2 | Point3 | { x: number; y?: number; z: number };
+  end: Point2 | Point3 | { x: number; y?: number; z: number };
+  dimensions?: Point3;
+  size?: Point3;
+  spanAxis?: 'x' | 'z';
+  gapRatio?: number;
+  facing?: PlacementInput['facing'];
+  scale?: number | Point3;
+  terrain?: boolean;
+}
+
 interface PlacementIntent {
   assetId: string | null;
   name: string;
@@ -76,6 +91,7 @@ export interface CodeAssetRequirement {
   prompt: string;
   tags: string[];
   variants: number;
+  dimensions?: Point3;
 }
 
 interface CodeAssetRequirementInput {
@@ -84,6 +100,7 @@ interface CodeAssetRequirementInput {
   prompt: string;
   tags?: string[];
   variants?: number;
+  dimensions?: Point3;
 }
 
 interface CodeExecutionOptions {
@@ -170,7 +187,7 @@ export async function generateMapCodeSuggestion(
       request: {
         name: requirement.variants > 1 ? `${requirement.name} ${variantIndex + 1}` : requirement.name,
         prompt: [
-          codeAssetOrientationPrompt(requirement.prompt),
+          codeAssetOrientationPrompt(requirement.prompt, requirement.dimensions),
           requirement.variants > 1
             ? `Create variation ${variantIndex + 1} of ${requirement.variants}; preserve the same reusable asset family while varying silhouette and details.`
             : ''
@@ -458,6 +475,61 @@ function runMapCodePlan(
         size: point3(input.size ?? [1, 1, 1]),
         heightMode: terrain ? 'terrain' : 'fixed'
       });
+    },
+    placeBetween(input: PlaceBetweenInput): void {
+      record('placeBetween');
+      if (placements.length >= MAX_PLACEMENTS) throw new Error('map_code_plan_too_many_placements');
+      if (!input || typeof input !== 'object') throw new Error('invalid_map_code_placement');
+      const start = point2(input.start);
+      const end = point2(input.end);
+      const direction = codePoint(end[0] - start[0], end[1] - start[1]);
+      const distance = Math.hypot(direction[0], direction[1]);
+      if (!Number.isFinite(distance) || distance < 0.000001) throw new Error('invalid_map_code_connection');
+      const spanAxis = input.spanAxis === 'z' ? 'z' : 'x';
+      const spanIndex = spanAxis === 'x' ? 0 : 2;
+      const gapRatio = clampFinite(input.gapRatio ?? 0, 0, 0.25);
+      const fittedLength = distance * (1 - gapRatio);
+      const dimensions = point3(input.dimensions ?? input.size ?? [1, 1, 1]);
+      if (dimensions[spanIndex] <= 0.000001) throw new Error('invalid_map_code_connection_dimensions');
+      const center: Point2 = codePoint(
+        (start[0] + end[0]) / 2,
+        (start[1] + end[1]) / 2
+      );
+      const terrain = input.terrain !== false;
+      const position = placementPosition(center, map, terrain);
+      const lineRotation = spanAxis === 'x'
+        ? Math.atan2(-direction[1], direction[0])
+        : yawFromDirection(direction);
+      const requestedAssetId = typeof input.assetId === 'string' && input.assetId.trim() ? input.assetId.trim() : null;
+      let assetId = requestedAssetId;
+      if (assetId && !assetById.has(assetId) && !(mode === 'discovery' && isCodeAssetPlaceholder(assetId))) {
+        assetId = resolveMapCodeAssetId(input.name, assets);
+        if (!assetId) unresolvedAssetIds.add(requestedAssetId!);
+      }
+      const targetSize: Point3 = [...dimensions];
+      targetSize[spanIndex] = fittedLength;
+      const scale = scale3(input.scale ?? 1);
+      const boundAsset = assetId ? assetById.get(assetId) : undefined;
+      if (boundAsset) {
+        const bounds = calculateModelVisualBounds(boundAsset.modelJson);
+        const actualDimensions: Point3 = [
+          Math.max(0.000001, bounds.max[0] - bounds.min[0]),
+          Math.max(0.000001, bounds.max[1] - bounds.min[1]),
+          Math.max(0.000001, bounds.max[2] - bounds.min[2])
+        ];
+        for (let axis = 0; axis < 3; axis += 1) scale[axis] /= actualDimensions[axis];
+      }
+      placements.push({
+        assetId,
+        name: cleanText(input.name ?? assetById.get(assetId ?? '')?.name ?? 'procedural-connection', 80),
+        position,
+        rotationY: input.facing === undefined
+          ? lineRotation
+          : placementRotation(input.facing, position, lineRotation),
+        scale,
+        size: targetSize,
+        heightMode: terrain ? 'terrain' : 'fixed'
+      });
     }
   });
 
@@ -531,7 +603,7 @@ export function buildMapCodePlannerSystemPrompt(
 ## Output contract
 Return only one synchronous JavaScript function: function plan(api) { ... }.
 Do not return markdown, explanations, JSON, imports, async code, promises, eval, Function, network, files, timers, or global state.
-Use api. on every WorldForge call. The code must call api.place at least once.
+Use api. on every WorldForge call. The code must call api.place or api.placeBetween at least once.
 Allowed JavaScript: const/let, numbers, strings, arrays, plain objects, local helper functions, for, for...of, while, if/else, and Math scalar functions.
 
 ## World and coordinate contract
@@ -560,12 +632,15 @@ Transforms: api.rotate2D(point,angle,center?), api.distance2D(a,b), api.tangentY
 Curves: api.linePoint(t,a,b) -> [x,z]; api.bezierPoint(t,p0,p1,p2,p3) -> {point,tangent,normal}; api.sampleBezier(...) -> point arrays; api.sampleBezierFrames(...) -> frame objects with point,tangent,normal; api.sampleBezierFramesBySpacing(...,spacing,gapRatio?) -> approximately even arc-length frames. frame.normal is the normalized left-side normal [-tangentZ,tangentX] as t increases.
 Fields: api.noise2D(x,z,scale?,seed?) -> [-1,1]; api.fbm2D(x,z,{scale?,octaves?,lacunarity?,gain?,seed?}) -> [-1,1].
 Layouts: api.circlePoint(index,count,radius,center?) -> [x,z]; api.gridPoints({center?,columns,rows,spacing}) -> points; api.poissonDisk({bounds?,minDistance,maxPoints?,attempts?,seed?}) -> points.
-Assets: api.requireAsset({key,name,prompt,tags?,variants?}) -> key; api.asset(key,index?) -> generated assetId.
+Assets: api.requireAsset({key,name,prompt,tags?,variants?,dimensions:[width,height,depth]?}) -> key; api.asset(key,index?) -> generated assetId.
 Output: api.place({assetId?,name?,position:[x,z]|[x,y,z],rotationY?,facing?,scale?,size?,terrain?}).
 facing may be a direction [dx,dz], {direction:[dx,dz]}, {tangent:[dx,dz]}, {normal:[nx,nz]}, {target:[x,z]}, or any of those with offsetY; it overrides rotationY when present.
+For long connected scenery, prefer api.placeBetween({assetId?,name?,start:[x,z],end:[x,z],dimensions:[width,height,depth],spanAxis:'x'|'z',gapRatio?,facing?,scale?,terrain?}). It places the model at the midpoint, aligns its declared long axis to the line from start to end, and fits only that axis to the endpoint distance. Use spanAxis:'x' for side-by-side wall, railing, corridor, bridge, or facade modules and spanAxis:'z' for traversal modules. Omit facing unless a deliberate front override is required; ordinary line alignment is automatic, and facing can still override it.
 
 ## Scene pattern guide
 - Repeated modular elements along a curve: use sampleBezierFramesBySpacing with the module's approximate span and the default 0.08 gap ratio; this uses arc length instead of parameter t and avoids bunching or large endpoint gaps.
+- Connected modular elements between computed points: use placeBetween rather than manually calculating a midpoint plus rotationY. Give the asset a dimensions contract in requireAsset and pass the same dimensions to placeBetween; use gapRatio:0.05-0.10 only when a small visual seam is desired.
+- For a continuous connected run, use one asset family and normally variants:1. Do not alternate visibly different variants along the same uninterrupted line. The ordered start->end direction determines which side local Z+ faces when spanAxis:'x'.
 - Elements whose long axis follows travel: use facing:{tangent:frame.tangent}; elements whose front faces across the curve: use facing:{normal:frame.normal}; add offsetY:api.TAU / 2 for the opposite side. If an interior anchor is known, facing:{target:interiorPoint} is the safest inward-facing choice.
 - Organic scatter: poissonDisk plus noise2D/fbm2D density filtering; enforce minDistance.
 - Farms, buildings, stalls, streets: gridPoints with an explicit center and spacing.
@@ -579,7 +654,7 @@ The sum of all requireAsset variants must be between ${minNewAssets} and ${maxNe
 When the minimum is greater than zero, declare and place that many prompt-specific generated assets even if reusable assets exist.
 Use api.asset(key,index) for generated assets; do not invent asset IDs and do not modify catalog IDs.
 Each asset prompt must describe a standalone reusable object with no ground, scene, text, or background unless the object itself requires it.
-For any modular asset repeated along a line or curve, explicitly state its span axis and connection axis: side-by-side modules should span local X with depth/front on local Z; traversal modules should span local Z. Never leave the long axis implicit.
+For any modular asset repeated along a line or curve, explicitly state its span axis, connection axis, and canonical dimensions: side-by-side modules should span local X with depth/front on local Z; traversal modules should span local Z. Never leave the long axis or dimensions implicit.
 Append this orientation instruction to every generated asset prompt: "Coordinate contract: Y+ is up, Z+ is the front/entrance/forward direction, X+ is right; place doors, facades, openings, windshields, or noses toward local Z+ and keep the model centered at its origin."
 
 ## Correct patterns
@@ -599,13 +674,13 @@ const gate = api.requireAsset({key:'gate',name:'Arena gate',prompt:'Standalone a
 for (let i = 0; i < 8; i += 1) { const point = api.circlePoint(i,8,28,center); api.place({assetId:api.asset(gate,0),position:point,facing:{target:center}}); }
 
 Curved wall with a consistent facade:
-const wall = api.requireAsset({key:'wall',name:'Garden wall segment',prompt:'Standalone modular garden wall segment with decorative facade toward local Z+, seamless ends, no ground or background',tags:['wall','garden'],variants:2});
+const wall = api.requireAsset({key:'wall',name:'Garden wall segment',prompt:'Standalone modular garden wall segment with decorative facade toward local Z+, seamless ends, no ground or background; span axis local X; canonical dimensions 6 wide x 3 high x 0.5 deep',dimensions:[6,3,0.5],tags:['wall','garden'],variants:1});
 const frames = api.sampleBezierFramesBySpacing([-32,-12],[-18,24],[18,-24],[32,12],6,0.08);
-for (let i = 0; i < frames.length; i += 1) api.place({assetId:api.asset(wall,i),position:frames[i].point,facing:{normal:frames[i].normal}});
+for (let i = 0; i < frames.length - 1; i += 1) api.placeBetween({assetId:api.asset(wall,0),start:frames[i].point,end:frames[i + 1].point,dimensions:[6,3,0.5],spanAxis:'x'});
 
 ## Final self-check before returning
 1. Exactly one function named plan and no markdown.
-2. At least one api.place; all loops have bounded counts.
+2. At least one api.place or api.placeBetween; all loops have bounded counts.
 3. All positions are inside the stated bounds or intentionally clamped.
 4. No undefined point, invalid array index, direct array arithmetic, division by zero, invented asset ID, or unbounded placement loop.
 5. Generated assets are declared with requireAsset and bound only through api.asset.
@@ -695,14 +770,16 @@ function normalizeCodeAssetRequirement(input: CodeAssetRequirementInput): CodeAs
     name,
     prompt,
     tags: normalizeAssetTags(input.tags) ?? [],
-    variants: boundedCount(input.variants ?? 1, 1, 8)
+    variants: boundedCount(input.variants ?? 1, 1, 8),
+    ...(input.dimensions === undefined ? {} : { dimensions: point3(input.dimensions) })
   };
 }
 
-function codeAssetOrientationPrompt(prompt: string): string {
-  return /z\+\s+is\s+(?:the\s+)?(?:model'?s\s+)?(?:front|forward)/i.test(prompt)
-    ? prompt
-    : `${prompt}\n${CODE_ASSET_ORIENTATION_PROMPT}`;
+function codeAssetOrientationPrompt(prompt: string, dimensions?: Point3): string {
+  const dimensionContract = dimensions
+    ? `Canonical dimensions contract: width=${dimensions[0]}, height=${dimensions[1]}, depth=${dimensions[2]} world units. Keep the generated mesh within this centered bounding size.`
+    : '';
+  return `${prompt}\n${CODE_ASSET_ORIENTATION_PROMPT}${dimensionContract ? `\n${dimensionContract}` : ''}`;
 }
 
 function normalizeCodeAssetKey(value: string): string {
@@ -721,7 +798,8 @@ function sameCodeAssetRequirement(left: CodeAssetRequirement, right: CodeAssetRe
   return left.name === right.name
     && left.prompt === right.prompt
     && left.variants === right.variants
-    && left.tags.join('\n') === right.tags.join('\n');
+    && left.tags.join('\n') === right.tags.join('\n')
+    && JSON.stringify(left.dimensions) === JSON.stringify(right.dimensions);
 }
 
 function codeAssetPlaceholder(key: string, index: number): string {
