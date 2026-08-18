@@ -25,7 +25,10 @@ const asset = (id: string, name: string, tags: string[]): MapAsset => ({
 const assets = [
   asset('bench-a', 'Park Bench', ['bench']),
   asset('crop-a', 'Corn Plant', ['crop']),
-  asset('hall-a', 'Campus Hall', ['campus-building'])
+  asset('hall-a', 'Campus Hall', ['campus-building']),
+  asset('arena-base-a', 'Arena Base', ['arena-base']),
+  asset('arena-tier-a', 'Arena Seating Tier', ['arena-tier']),
+  asset('arena-light-a', 'Arena Wall Light', ['arena-light'])
 ];
 
 describe('bounded scene program', () => {
@@ -154,6 +157,22 @@ describe('bounded scene program', () => {
     expect(first.diagnostics).toContainEqual(expect.objectContaining({ code: 'program-note', message: 'field math completed' }));
     expect(SCENE_PROGRAM_API_REFERENCE).toContain('scene.fbm2D');
     expect(SCENE_PROGRAM_API_REFERENCE).toContain('scene.gridPoints');
+  });
+
+  it('builds a layered structure through bounded support and mounting relationships', () => {
+    const result = executeSceneProgram(`
+      const base = scene.placeAt("arena-base", [0,0], { name: "Arena Base", searchRadius: 1 });
+      const tier = scene.placeOn("arena-tier", base, { name: "Upper Seating Tier", scale: 0.9 });
+      scene.mountOn("arena-light", tier, { name: "East Light", side: "east", scale: 0.3, offset: [0,0.2] });
+    `, createEmptyMap('layered arena', 'program-layered-arena'), assets);
+    const objects = result.operations.flatMap((operation) => operation.type === 'object.add' ? [operation.object] : []);
+
+    expect(objects).toHaveLength(3);
+    expect(objects[1].parentId).toBe(objects[0].id);
+    expect(objects[2].parentId).toBe(objects[1].id);
+    expect(objects.slice(1).every((object) => object.heightMode === 'fixed')).toBe(true);
+    expect(SCENE_PROGRAM_API_REFERENCE).toContain('scene.placeOn');
+    expect(SCENE_PROGRAM_API_REFERENCE).toContain('scene.mountOn');
   });
 
   it('rejects arbitrary JavaScript and stops programs that exceed loop budgets', () => {

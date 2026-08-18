@@ -285,6 +285,7 @@ function buildSystemPrompt(
     'Build outdoor scenes in layers: macro terrain, local terrain modifiers, drainage/water, semantic surfaces and grass, guides, relationship-aware objects, then spawn and render suggestions.',
     'Use guides for authored environments: parks, campuses, farms, plazas, roads, waterfronts and building groups. Surface important guides and use scatter only for natural populations.',
     'For cities, towns and campuses, prefer scene.streetGrid and iterate both streets and blocks instead of drawing unrelated parallel lines.',
+    'For tiered, stacked or multi-level structures, request reusable structural modules and connect them with scene.placeOn or scene.mountOn. Do not fake vertical hierarchy with unrelated ground objects.',
     'Every generated asset must be placed by the successful program. Never leave paid/generated assets unused.',
     `Map sceneMode=${map.sceneMode}; bounds X ${bounds.minX}..${bounds.maxX}, Z ${bounds.minZ}..${bounds.maxZ}; seed=${map.seed}.`,
     SCENE_PROGRAM_API_REFERENCE
@@ -347,6 +348,10 @@ function evaluateSceneOutcome(
   ]);
   const needsVegetation = hasAny(text, ['park', 'forest', 'garden', 'farm', 'field', 'orchard', 'crop', '公园', '森林', '花园', '农场', '农田', '田野', '果园', '作物']);
   const needsBuildings = hasAny(text, ['campus', 'city', 'town', 'village', 'school', '校园', '城市', '城镇', '村庄', '学校']);
+  const needsLayeredStructure = hasAny(text, [
+    'multi-level', 'multilevel', 'multi-storey', 'multi-story', 'tiered', 'stacked', 'layered structure',
+    '多层', '层叠', '叠层', '分层建筑', '上下堆叠'
+  ]);
   const semanticSurfaces = result.operations.filter((operation) => operation.type === 'terrain.surface').length;
   const playableLandRatio = sampledPlayableLandRatio(candidate);
   const unmet: string[] = [];
@@ -367,6 +372,10 @@ function evaluateSceneOutcome(
     && candidate.grassLayers.length === original.grassLayers.length) unmet.push('requested-vegetation-is-missing');
   if (needsBuildings && !hasAny(placedWords, ['building', 'house', 'hall', 'school', 'tower', '建筑', '房', '大厅', '教学楼', '塔'])) {
     unmet.push('requested-buildings-are-missing');
+  }
+  const originalObjectIds = new Set(original.objects.map((object) => object.id));
+  if (needsLayeredStructure && !candidate.objects.some((object) => !originalObjectIds.has(object.id) && object.parentId)) {
+    unmet.push('requested-layered-structure-is-missing');
   }
   const unplacedGenerated = generatedAssets.filter((asset) => !placedAssetIds.has(asset.id));
   if (unplacedGenerated.length > 0) unmet.push(`generated-assets-unplaced:${unplacedGenerated.map((asset) => asset.id).join(',')}`);

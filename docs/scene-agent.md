@@ -42,6 +42,7 @@ Available capabilities are:
 - `scene.noise2D(...)`, `scene.fbm2D(...)`
 - `scene.clamp(...)`, `scene.lerp(...)`, `scene.remap(...)`, `scene.smoothstep(...)`
 - `scene.distance2D(...)`, `scene.rotate2D(...)`
+- `scene.placeOn(...)`, `scene.mountOn(...)`
 - `scene.surface(...)`, `scene.surfaceRegion(...)`
 - `scene.water(...)`, `scene.grass(...)`
 - `scene.placeAlong(...)`
@@ -62,6 +63,8 @@ Surface semantics include grass, sand, rock, soil and paving. Farms can therefor
 `placeAlong`, `scatter` and `placeAt` all use the shared placement kernels. They report underfilled requests instead of silently forcing objects through bounds, water, steep terrain or occupied footprints.
 
 Deterministic grid, noise and fBm helpers let the model vary density and structure without bypassing those placement kernels. They are capabilities of the same Scene Program runtime, not a second JavaScript VM or a separate generation mode. The editor keeps one Agent workflow so asset requests, library permissions, execution feedback and repair remain consistent.
+
+Layered structures use the persisted object hierarchy instead of unrestricted overlap. `placeOn` rests a child on a named parent surface; `mountOn` attaches it to one of the parent's four sides. Both produce ordinary `object.add` operations with local transforms and `parentId`, reject unrelated collisions, and cap new hierarchies at four levels. The model declares the relationship, while deterministic code resolves contact and validates it.
 
 ## Agent completion checks
 

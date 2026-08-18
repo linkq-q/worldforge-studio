@@ -8,6 +8,14 @@ const bench: MapAsset = {
   footprintRadius: 0.5, mode: 'asset', createdAt: 1, updatedAt: 1
 };
 
+const arenaTier: MapAsset = {
+  ...bench,
+  id: 'arena-tier-a',
+  name: 'Arena Tier',
+  prompt: 'modular arena seating tier',
+  tags: ['arena-tier']
+};
+
 describe('scene design agent', () => {
   it('observes, writes a program, receives execution evidence, and chooses when to finish', async () => {
     const replies = [
@@ -55,6 +63,42 @@ describe('scene design agent', () => {
     expect(suggestion.generatedAssets).toEqual([{ id: 'crop-a', name: 'Corn' }]);
     expect(suggestion.agent?.trace.map((item) => item.action)).toEqual(['request_assets', 'write_program', 'finish']);
     expect(suggestion.agent?.guideCount).toBeGreaterThan(2);
+  });
+
+  it('requires an explicit hierarchy when the user requests a multi-level structure', async () => {
+    const replies = [
+      JSON.stringify({
+        action: 'write_program', summary: 'Flat arena draft',
+        program: 'scene.placeAt("bench", [-4,0], { searchRadius: 1 }); scene.placeAt("arena-tier", [4,0], { searchRadius: 1 });'
+      }),
+      JSON.stringify({ action: 'finish', summary: 'Flat draft done' }),
+      JSON.stringify({
+        action: 'write_program', summary: 'Layer the upper tier on its support',
+        program: 'const base = scene.placeAt("bench", [0,0], { searchRadius: 1 }); scene.placeOn("arena-tier", base, { scale: 0.8 });'
+      }),
+      JSON.stringify({ action: 'finish', summary: 'Layered arena ready' })
+    ];
+    const toolMessages: string[] = [];
+    const suggestion = await runSceneDesignAgent(
+      'Create a symmetric multi-level futuristic arena',
+      createEmptyMap('layered arena', 'agent-layered-arena'),
+      [bench, arenaTier],
+      {
+        maxNewAssets: 0,
+        reuseExistingAssets: true,
+        reusableAssetIds: [bench.id, arenaTier.id],
+        createAsset: async () => { throw new Error('not expected'); },
+        chat: async (messages) => {
+          toolMessages.push(String(messages.at(-1)?.content));
+          return replies.shift()!;
+        }
+      }
+    );
+
+    expect(toolMessages.some((message) => message.includes('requested-layered-structure-is-missing'))).toBe(true);
+    expect(suggestion.operations).toContainEqual(expect.objectContaining({
+      type: 'object.add', object: expect.objectContaining({ parentId: expect.any(String) })
+    }));
   });
 
   it('asks the model to repair invalid action JSON instead of aborting the run', async () => {

@@ -22,6 +22,7 @@ import {
   type MapScatterPlan
 } from '../shared/mapScatter';
 import { findSafeSpawnPosition } from '../shared/mapSpawnSafety';
+import { planMapObjectAttachment } from '../shared/mapAttachment';
 import { GRASS_PRESET_IDS, type GrassPresetId, type GrassRegion } from '../shared/mapGrass';
 import {
   TERRAIN_GENERATION_PRESETS,
@@ -94,7 +95,10 @@ export function executeSceneProgram(
   const context: SceneProgramContext = {
     map,
     assets,
-    workingMap: map,
+    workingMap: {
+      ...map,
+      assets: [...new Map([...(map.assets ?? []), ...assets].map((asset) => [asset.id, asset])).values()]
+    },
     operations: [],
     diagnostics: [],
     renderPromptSuggestions: [],
@@ -143,6 +147,8 @@ Available API:
 - scene.fbm2D(x, z, { scale?, octaves?, lacunarity?, gain?, seed? }) -> number in [-1,1]
 - scene.clamp(value, min, max), scene.lerp(from, to, amount), scene.remap(value, inMin, inMax, outMin, outMax), scene.smoothstep(min, max, value)
 - scene.distance2D(left, right), scene.rotate2D(point, degrees, center?)
+- scene.placeOn(selector, parentId, { name?, scale?, yaw?, offset?: [localX,localZ], gap? }) -> objectId
+- scene.mountOn(selector, parentId, { side: "north"|"south"|"east"|"west", name?, scale?, yaw?, offset?: [horizontal,vertical], inset? }) -> objectId
 - scene.surface(guide, "grass"|"sand"|"rock"|"soil"|"paving", intensity?)
 - scene.surfaceRegion(id, "grass"|"sand"|"rock"|"soil"|"paving", region, intensity?)
 - scene.water(id, { type: "lake"|"river"|"ocean", points: [[x,z],...], name?, width?, level?, depth?, shorelineSmoothness?, shorelineIrregularity? })
@@ -542,6 +548,12 @@ function createSceneApi(context: SceneProgramContext): Record<string, SceneMetho
       emitPlacement(context, placement, optionalString(options.name));
       return placement.id;
     },
+    placeOn: (selectorValue, parentValue, optionsValue = {}) => placeAttached(
+      context, selectorValue, parentValue, optionsValue, 'supported'
+    ),
+    mountOn: (selectorValue, parentValue, optionsValue = {}) => placeAttached(
+      context, selectorValue, parentValue, optionsValue, 'mounted'
+    ),
     spawn: (pointValue, yawValue) => {
       const requested = point2(pointValue, 'invalid_spawn_point');
       const [x, z] = findSafeSpawnPosition(context.workingMap, requested[0], requested[1]);
@@ -618,6 +630,42 @@ function circleRegion(value: unknown, code: string): { center: [number, number];
   const radius = finiteNumber(region.radius ?? region.r, 8);
   if (radius <= 0) throw new Error(code);
   return { center, radius };
+}
+
+function placeAttached(
+  context: SceneProgramContext,
+  selectorValue: unknown,
+  parentValue: unknown,
+  optionsValue: unknown,
+  kind: 'supported' | 'mounted'
+): string | null {
+  const selector = stringValue(selectorValue, 'invalid_asset_selector');
+  const parentId = stringValue(parentValue, 'invalid_attachment_parent');
+  const options = objectValue(optionsValue, 'invalid_attachment_options');
+  const [asset] = selectAssets(context.assets, selector);
+  if (!asset) {
+    context.diagnostics.push({ severity: 'warning', code: 'asset-not-found', message: `No asset matched "${selector}".` });
+    return null;
+  }
+  const offset = options.offset === undefined
+    ? [0, 0] as [number, number]
+    : point2(options.offset, 'invalid_attachment_offset');
+  const object = planMapObjectAttachment(context.workingMap, {
+    id: `program-${kind}-${cleanId(selector)}-${context.operations.length + 1}`.slice(0, 80),
+    name: optionalString(options.name) ?? asset.name,
+    parentId,
+    asset,
+    kind,
+    side: optionalString(options.side) as 'north' | 'south' | 'east' | 'west' | undefined,
+    scale: clamp(finiteNumber(options.scale, 1), 0.1, 8),
+    yaw: finiteNumber(options.yaw, 0) * Math.PI / 180,
+    offset,
+    contact: kind === 'supported'
+      ? clamp(finiteNumber(options.gap, 0.02), 0, 2)
+      : clamp(finiteNumber(options.inset, 0.02), 0, 2)
+  });
+  emit(context, { type: 'object.add', object });
+  return object.id;
 }
 
 function emitPlacement(context: SceneProgramContext, placement: MapScatterPlacement, name?: string): void {

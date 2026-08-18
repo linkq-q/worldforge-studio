@@ -72,6 +72,7 @@ import {
   renderRoomSurfaceFinishEditor
 } from './interiorFinishPanel';
 import { applyGrassBrushInPlace } from '../shared/mapGrass';
+import { canReparentMapObject, reparentMapObjectInPlace } from '../shared/mapAttachment';
 import {
   defaultRenderModule,
   renderDeveloperWorkspace,
@@ -3137,7 +3138,9 @@ class MapEditor {
           <span>父级</span>
           <select data-parent>
             <option value="">无</option>
-            ${map.objects.filter((item) => item.id !== object.id).map((item) => `<option value="${item.id}" ${object.parentId === item.id ? 'selected' : ''}>${escapeHtml(item.name)}</option>`).join('')}
+            ${map.objects.filter((item) => item.id !== object.id && (
+              item.id === object.parentId || canReparentMapObject(map, object.id, item.id)
+            )).map((item) => `<option value="${item.id}" ${object.parentId === item.id ? 'selected' : ''}>${escapeHtml(item.name)}</option>`).join('')}
           </select>
         </label>
         <label class="field compact"><span>地形高度</span><select data-object-height-mode>
@@ -3170,9 +3173,14 @@ class MapEditor {
       this.renderHierarchy();
     });
     host.querySelector<HTMLSelectElement>('[data-parent]')?.addEventListener('change', (event) => {
-      object.parentId = (event.target as HTMLSelectElement).value || null;
-      this.markDirty();
-      void this.refreshScene();
+      try {
+        reparentMapObjectInPlace(map, object.id, (event.target as HTMLSelectElement).value || null);
+        this.markDirty();
+        void this.refreshScene();
+      } catch (error) {
+        this.state.message = `无法更改父级：${error instanceof Error ? error.message : '无效层级'}`;
+        this.renderPanels();
+      }
     });
     host.querySelector<HTMLSelectElement>('[data-object-asset]')?.addEventListener('change', (event) => {
       object.assetId = (event.target as HTMLSelectElement).value || null;

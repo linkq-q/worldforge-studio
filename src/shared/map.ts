@@ -1328,6 +1328,15 @@ export function getMapObjectAabbs(map: EditableMap): MapObjectAabb[] {
   return boxes;
 }
 
+export function getMapAssetLocalBounds(asset: MapAsset): Aabb {
+  if (asset.colliderPlan?.fallbackUsed && asset.colliderPlan.sourceMeshCount === 0) {
+    const radius = Math.max(0.1, asset.footprintRadius ?? 0.5);
+    const height = asset.sizeClass === 'large' ? 3 : asset.sizeClass === 'medium' ? 1.8 : 1;
+    return { min: [-radius, 0, -radius], max: [radius, height, radius] };
+  }
+  return calculateModelVisualBounds(asset.modelJson);
+}
+
 /** World-space visual bounds; use for grounding and visible scale, never collision. */
 export function getMapObjectVisualAabbs(map: EditableMap): MapObjectAabb[] {
   const assets = new Map((map.assets ?? []).map((asset) => [asset.id, asset]));

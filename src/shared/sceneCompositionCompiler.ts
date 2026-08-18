@@ -1,5 +1,6 @@
 import {
   getMapBounds,
+  getMapAssetLocalBounds,
   getMapObjectVisualAabbs,
   getMapPlayerMetrics,
   sampleTerrainHeight,
@@ -37,7 +38,6 @@ import {
 } from './indoorScale';
 import { compileMapVisualSemantics } from './mapVisualSemantics';
 import type { TerrainRegion } from './terrainGeneration';
-import { calculateModelVisualBounds } from './modelBounds';
 
 export interface CompiledSceneComposition {
   operations: MapOperation[];
@@ -655,7 +655,7 @@ function fitSemanticAssetScale(
   requested: number,
   placement?: SceneZoneLayer['placement']
 ): number {
-  const bounds = mapAssetLocalBounds(asset);
+  const bounds = getMapAssetLocalBounds(asset);
   const height = Math.max(0.01, bounds.max[1] - bounds.min[1]);
   const width = Math.max(0.01, bounds.max[0] - bounds.min[0]);
   const depth = Math.max(0.01, bounds.max[2] - bounds.min[2]);
@@ -716,7 +716,7 @@ function indoorPlacementTransform(
   scale: [number, number, number];
 } {
   const room = map.room!;
-  const bounds = mapAssetLocalBounds(asset);
+  const bounds = getMapAssetLocalBounds(asset);
   const height = bounds.max[1] - bounds.min[1];
   const semantic = `${family.label} ${family.role} ${family.tags.join(' ')} ${family.generationBrief}`;
   const dimensions = indoorSemanticDimensions(map, semantic);
@@ -829,7 +829,7 @@ export function bindIndoorRoomOpenings(
     const asset = assetById.get(operation.object.assetId);
     const transform = operation.object.transform;
     if (!asset || !transform?.position || !transform.rotation || !transform.scale) return operation;
-    const bounds = mapAssetLocalBounds(asset);
+    const bounds = getMapAssetLocalBounds(asset);
     const wall = nearestRoomWall(room, transform.position[0], transform.position[2]);
     const width = Math.max(0.4, bounds.max[0] - bounds.min[0]) * Math.abs(transform.scale[0]);
     const height = Math.max(0.4, bounds.max[1] - bounds.min[1]) * Math.abs(transform.scale[1]);
@@ -870,15 +870,6 @@ function nearestRoomWall(
     ['east', Math.abs(x - (room.position[0] + room.size[0] / 2))]
   ];
   return distances.sort((left, right) => left[1] - right[1])[0][0];
-}
-
-function mapAssetLocalBounds(asset: MapAsset): { min: [number, number, number]; max: [number, number, number] } {
-  if (asset.colliderPlan?.fallbackUsed && asset.colliderPlan.sourceMeshCount === 0) {
-    const radius = Math.max(0.1, asset.footprintRadius ?? 0.5);
-    const height = asset.sizeClass === 'large' ? 3 : asset.sizeClass === 'medium' ? 1.8 : 1;
-    return { min: [-radius, 0, -radius], max: [radius, height, radius] };
-  }
-  return calculateModelVisualBounds(asset.modelJson);
 }
 
 function shouldClearGrass(family: SceneCompositionPlan['assetFamilies'][number]): boolean {
@@ -1056,8 +1047,8 @@ function compileSupportedObjects(
   return targets.slice(0, limit).map((target, index): MapOperation => {
     const asset = usableAssets[index % usableAssets.length];
     const targetAsset = targetByAssetId.get(target.assetId!)!;
-    const supportBounds = mapAssetLocalBounds(targetAsset);
-    const itemBounds = mapAssetLocalBounds(asset);
+    const supportBounds = getMapAssetLocalBounds(targetAsset);
+    const itemBounds = getMapAssetLocalBounds(asset);
     const parentScale: [number, number, number] = [0, 1, 2].map((axis) => Math.max(
       0.001,
       Math.abs(target.transform.scale[axis] * target.transform.size[axis])
