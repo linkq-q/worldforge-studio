@@ -1,9 +1,28 @@
 import { describe, expect, it, vi } from 'vitest';
 import { createEmptyMap, type MapAsset } from '../src/shared/map';
-import { discoverMapCodeAssets, executeMapCodePlan, generateMapCodeSuggestion } from '../src/server/mapCodePlanner';
+import {
+  buildMapCodePlannerSystemPrompt,
+  discoverMapCodeAssets,
+  executeMapCodePlan,
+  generateMapCodeSuggestion
+} from '../src/server/mapCodePlanner';
 import { applyMapOperations } from '../src/shared/mapOperations';
 
 describe('map code planner', () => {
+  it('gives the model a complete Lite-style code and environment design contract', () => {
+    const prompt = buildMapCodePlannerSystemPrompt(createEmptyMap(), [], 2, 4);
+
+    expect(prompt).toContain('Return only one synchronous JavaScript function: function plan(api) { ... }.');
+    expect(prompt).toContain('Every generated point supports both point[0]/point[1] and point.x/point.z.');
+    expect(prompt).toContain('sampleBezier or linePoint');
+    expect(prompt).toContain('poissonDisk plus noise2D/fbm2D');
+    expect(prompt).toContain('gridPoints with an explicit center and spacing');
+    expect(prompt).toContain('circlePoint with deterministic index/count');
+    expect(prompt).toContain('The sum of all requireAsset variants must be between 2 and 4.');
+    expect(prompt).toContain("const tree = api.requireAsset({key:'tree'");
+    expect(prompt).toContain('No undefined point, invalid array index, direct array arithmetic');
+  });
+
   it('supports basic JavaScript control flow and preserves deterministic placement order', () => {
     const suggestion = executeMapCodePlan(`
       function plan(api) {
