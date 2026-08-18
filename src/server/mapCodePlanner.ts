@@ -13,6 +13,7 @@ const MAX_CODE_LENGTH = 40_000;
 const MAX_PLACEMENTS = 2_000;
 const MAX_POINT_RESULTS = 512;
 const EXECUTION_TIMEOUT_MS = 250;
+const CODE_ASSET_ORIENTATION_PROMPT = 'Coordinate contract: local Y+ is up, local Z+ is the front, entrance, or forward direction, and local X+ is right. Put doors, facades, openings, windshields, noses, seats, and other recognizable front details toward local Z+. Keep the model centered at its origin.';
 
 type Point2 = [number, number];
 type Point3 = [number, number, number];
@@ -41,6 +42,7 @@ interface PlacementInput {
   name?: string;
   position: Point2 | Point3 | { x: number; y?: number; z: number } | { point: Point2 | Point3 };
   rotationY?: number;
+  facing?: Point2 | { direction?: Point2 | { tangent: Point2 }; target?: Point2; offsetY?: number };
   scale?: number | Point3;
   size?: Point3;
   terrain?: boolean;
@@ -155,9 +157,12 @@ export async function generateMapCodeSuggestion(
       name: requirement.variants > 1 ? `${requirement.name} ${variantIndex + 1}` : requirement.name,
       request: {
         name: requirement.variants > 1 ? `${requirement.name} ${variantIndex + 1}` : requirement.name,
-        prompt: requirement.variants > 1
-          ? `${requirement.prompt}\nCreate variation ${variantIndex + 1} of ${requirement.variants}; preserve the same reusable asset family while varying silhouette and details.`
-          : requirement.prompt,
+        prompt: [
+          codeAssetOrientationPrompt(requirement.prompt),
+          requirement.variants > 1
+            ? `Create variation ${variantIndex + 1} of ${requirement.variants}; preserve the same reusable asset family while varying silhouette and details.`
+            : ''
+        ].filter(Boolean).join('\n'),
         tags: requirement.tags,
         mode: map.assetGenerationMode
       } satisfies AssetGenerationRequest
@@ -358,6 +363,12 @@ function runMapCodePlan(
       );
       return Math.atan2(direction[0], direction[1]);
     },
+    faceYaw(from: Point2, to: Point2): number {
+      record('faceYaw');
+      const origin = point2(from);
+      const target = point2(to);
+      return Math.atan2(target[0] - origin[0], target[1] - origin[1]);
+    },
     requireAsset(input: CodeAssetRequirementInput): string {
       record('requireAsset');
       const requirement = normalizeCodeAssetRequirement(input);
@@ -401,7 +412,7 @@ function runMapCodePlan(
         assetId,
         name: cleanText(input.name ?? assetById.get(assetId ?? '')?.name ?? '程序化物体', 80),
         position,
-        rotationY: finite(input.rotationY ?? 0),
+        rotationY: placementRotation(input.facing, position, input.rotationY),
         scale: scale3(input.scale ?? 1),
         size: point3(input.size ?? [1, 1, 1]),
         heightMode: terrain ? 'terrain' : 'fixed'
@@ -489,6 +500,12 @@ place({position:[x,z]}) samples terrain automatically; place({position:[x,y,z]})
 Every generated point supports both point[0]/point[1] and point.x/point.z.
 Never add or subtract arrays directly. Use [a[0] - b[0], a[1] - b[1]]. Never read points[index + 1] without checking index < points.length - 1. Guard divisions and only pass finite numbers.
 
+## Asset coordinate and orientation contract
+Every generated model uses local Y+ as up, local Z+ as its front/forward direction, and local X+ as its right side.
+For a building, gate, wall facade, stall, vehicle, or prop with a recognizable front, put its entrance, facade, opening, windshield, or nose toward local Z+ in the model-generation prompt.
+World rotationY rotates that local Z+ front on the map. api.tangentYaw(direction) makes local Z+ follow a path tangent; api.faceYaw(from,to) makes local Z+ face a target point; add api.TAU / 2 when the back should face the target.
+Do not use random rotation for directional assets. For a ring or arena, use api.faceYaw(point, center) for inward-facing fronts and api.faceYaw(point, center) + api.TAU / 2 for outward-facing backs.
+
 ## Design philosophy
 Build a readable composition, not a random pile: establish one or two primary paths/landmarks, add secondary structure, then add sparse accents.
 Use big-medium-small hierarchy: a few large anchors, a moderate number of supporting pieces, and restrained small details.
@@ -498,18 +515,20 @@ Use proxy placements without assetId only for abstract markers or when no visual
 ## API quick reference
 Constants: api.TAU, api.PHI, api.seed, api.bounds.
 Scalar math: api.clamp(value,min,max), api.lerp(a,b,t), api.remap(value,inMin,inMax,outMin,outMax), api.smoothstep(min,max,value), api.random(min?,max?).
-Transforms: api.rotate2D(point,angle,center?), api.distance2D(a,b), api.tangentYaw(tangent).
+Transforms: api.rotate2D(point,angle,center?), api.distance2D(a,b), api.tangentYaw(tangent), api.faceYaw(from,to).
 Curves: api.linePoint(t,a,b) -> [x,z]; api.bezierPoint(t,p0,p1,p2,p3) -> {point,tangent}; api.sampleBezier(p0,p1,p2,p3,segments) -> point arrays.
 Fields: api.noise2D(x,z,scale?,seed?) -> [-1,1]; api.fbm2D(x,z,{scale?,octaves?,lacunarity?,gain?,seed?}) -> [-1,1].
 Layouts: api.circlePoint(index,count,radius,center?) -> [x,z]; api.gridPoints({center?,columns,rows,spacing}) -> points; api.poissonDisk({bounds?,minDistance,maxPoints?,attempts?,seed?}) -> points.
 Assets: api.requireAsset({key,name,prompt,tags?,variants?}) -> key; api.asset(key,index?) -> generated assetId.
-Output: api.place({assetId?,name?,position:[x,z]|[x,y,z],rotationY?,scale?,size?,terrain?}).
+Output: api.place({assetId?,name?,position:[x,z]|[x,y,z],rotationY?,facing?,scale?,size?,terrain?}).
+facing may be a direction [dx,dz], {direction:[dx,dz]}, {target:[x,z]}, or any of those with offsetY; it overrides rotationY when present.
 
 ## Scene pattern guide
 - Roads, rivers, walls, borders, hedges: sampleBezier or linePoint, then orient with tangentYaw.
 - Organic scatter: poissonDisk plus noise2D/fbm2D density filtering; enforce minDistance.
 - Farms, buildings, stalls, streets: gridPoints with an explicit center and spacing.
 - Plazas, rings, lamps, portals: circlePoint with deterministic index/count.
+- Arena stands, gates, shops, and facades around a center: faceYaw(point, center) so the front faces inward; use + api.TAU / 2 for outward-facing backs.
 - Fades and zones: remap/smoothstep/clamp, not abrupt magic thresholds.
 - Variation: api.random(min,max), never Math.random and never an unseeded random source.
 
@@ -518,17 +537,23 @@ The sum of all requireAsset variants must be between ${minNewAssets} and ${maxNe
 When the minimum is greater than zero, declare and place that many prompt-specific generated assets even if reusable assets exist.
 Use api.asset(key,index) for generated assets; do not invent asset IDs and do not modify catalog IDs.
 Each asset prompt must describe a standalone reusable object with no ground, scene, text, or background unless the object itself requires it.
+Append this orientation instruction to every generated asset prompt: "Coordinate contract: Y+ is up, Z+ is the front/entrance/forward direction, X+ is right; place doors, facades, openings, windshields, or noses toward local Z+ and keep the model centered at its origin."
 
 ## Correct patterns
 Road curve:
 const road = api.requireAsset({key:'road',name:'Neon road segment',prompt:'Standalone low-poly wet neon road segment, no scene or background',tags:['road','neon'],variants:2});
 const curve = api.sampleBezier([-36,0],[-12,18],[12,-18],[36,0],12);
-for (let i = 0; i < curve.length; i += 1) api.place({assetId:api.asset(road,i),position:curve[i],rotationY:api.tangentYaw(i < curve.length - 1 ? [curve[i + 1][0]-curve[i][0],curve[i + 1][1]-curve[i][1]] : [1,0])});
+for (let i = 0; i < curve.length; i += 1) api.place({assetId:api.asset(road,i),position:curve[i],facing:{direction:i < curve.length - 1 ? [curve[i + 1][0]-curve[i][0],curve[i + 1][1]-curve[i][1]] : [1,0]}});
 
 Natural scatter:
 const tree = api.requireAsset({key:'tree',name:'Luminous street tree',prompt:'Standalone stylized luminous cyberpunk street tree, no ground or background',tags:['tree','neon'],variants:2});
 const points = api.poissonDisk({minDistance:6,maxPoints:24,attempts:20,seed:api.seed});
 for (let i = 0; i < points.length; i += 1) { const p = points[i]; if (api.fbm2D(p.x,p.z,{scale:0.08}) > -0.1) api.place({assetId:api.asset(tree,i),position:[p.x,p.z]}); }
+
+Inward arena ring:
+const center = [0,0];
+const gate = api.requireAsset({key:'gate',name:'Arena gate',prompt:'Standalone arena gate with facade and entrance, no ground or background',tags:['arena','gate'],variants:1});
+for (let i = 0; i < 8; i += 1) { const point = api.circlePoint(i,8,28,center); api.place({assetId:api.asset(gate,0),position:point,facing:{target:center}}); }
 
 ## Final self-check before returning
 1. Exactly one function named plan and no markdown.
@@ -626,6 +651,12 @@ function normalizeCodeAssetRequirement(input: CodeAssetRequirementInput): CodeAs
   };
 }
 
+function codeAssetOrientationPrompt(prompt: string): string {
+  return /z\+\s+is\s+(?:the\s+)?(?:model'?s\s+)?(?:front|forward)/i.test(prompt)
+    ? prompt
+    : `${prompt}\n${CODE_ASSET_ORIENTATION_PROMPT}`;
+}
+
 function normalizeCodeAssetKey(value: string): string {
   const key = String(value ?? '')
     .trim()
@@ -687,6 +718,34 @@ function placementUsesTerrain(value: PlacementInput['position']): boolean {
   if (!value || typeof value !== 'object') return false;
   if ('point' in value) return placementUsesTerrain(value.point);
   return 'x' in value && 'z' in value && value.y === undefined;
+}
+
+function placementRotation(
+  facing: PlacementInput['facing'],
+  position: Point3,
+  rotationY: number | undefined
+): number {
+  if (facing === undefined) return finite(rotationY ?? 0);
+  const offsetY = !Array.isArray(facing) && facing && typeof facing === 'object'
+    ? finite(facing.offsetY ?? 0)
+    : 0;
+  if (Array.isArray(facing)) return yawFromDirection(point2(facing)) + offsetY;
+  if (!facing || typeof facing !== 'object') throw new Error('invalid_map_code_facing');
+  if (facing.target !== undefined) {
+    const target = point2(facing.target);
+    return yawFromDirection([target[0] - position[0], target[1] - position[2]]) + offsetY;
+  }
+  if (facing.direction !== undefined) {
+    const direction = 'tangent' in facing.direction
+      ? point2(facing.direction.tangent)
+      : point2(facing.direction);
+    return yawFromDirection(direction) + offsetY;
+  }
+  throw new Error('invalid_map_code_facing');
+}
+
+function yawFromDirection(direction: Point2): number {
+  return Math.atan2(finite(direction[0]), finite(direction[1]));
 }
 
 function point2(value: unknown): Point2 {

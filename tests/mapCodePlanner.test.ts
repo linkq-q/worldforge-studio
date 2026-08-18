@@ -18,6 +18,8 @@ describe('map code planner', () => {
     expect(prompt).toContain('poissonDisk plus noise2D/fbm2D');
     expect(prompt).toContain('gridPoints with an explicit center and spacing');
     expect(prompt).toContain('circlePoint with deterministic index/count');
+    expect(prompt).toContain('facing may be a direction [dx,dz]');
+    expect(prompt).toContain('Inward arena ring:');
     expect(prompt).toContain('The sum of all requireAsset variants must be between 2 and 4.');
     expect(prompt).toContain("const tree = api.requireAsset({key:'tree'");
     expect(prompt).toContain('No undefined point, invalid array index, direct array arithmetic');
@@ -116,6 +118,26 @@ describe('map code planner', () => {
     if (placement?.type !== 'object.add') throw new Error('missing placement');
     expect(placement.object.transform?.position?.every(Number.isFinite)).toBe(true);
     expect(placement.object.transform?.rotation?.every(Number.isFinite)).toBe(true);
+  });
+
+  it('resolves declarative facing directions and targets into Y rotation', () => {
+    const suggestion = executeMapCodePlan(`
+      function plan(api) {
+        api.place({ name: 'east', position: [0, 0], facing: [1, 0] });
+        api.place({ name: 'north', position: [4, 0], facing: { target: [4, 10] } });
+        api.place({ name: 'south', position: [8, 0], facing: { target: [8, 10], offsetY: api.TAU / 2 } });
+      }
+    `, createEmptyMap());
+    const placements = suggestion.operations.filter((operation) => operation.type === 'object.add');
+
+    expect(placements).toHaveLength(3);
+    if (placements[0].type !== 'object.add' || placements[1].type !== 'object.add' || placements[2].type !== 'object.add') {
+      throw new Error('missing placements');
+    }
+    expect(placements[0].object.transform?.rotation?.[1]).toBeCloseTo(Math.PI / 2);
+    expect(placements[1].object.transform?.rotation?.[1]).toBeCloseTo(0);
+    expect(placements[2].object.transform?.rotation?.[1]).toBeCloseTo(Math.PI);
+    expect(suggestion.codePlan?.functions).toContain('place');
   });
 
   it('provides bounded minimum-distance environment scattering', () => {
@@ -235,6 +257,7 @@ describe('map code planner', () => {
     });
 
     expect(createAsset).toHaveBeenCalledTimes(3);
+    expect(createAsset.mock.calls[0][0].prompt).toContain('local Z+ is the front');
     expect(peak).toBe(3);
     expect(suggestion.generatedAssets).toHaveLength(3);
     const assetIds = suggestion.operations

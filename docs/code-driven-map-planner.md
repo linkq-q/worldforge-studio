@@ -21,7 +21,8 @@ The first set focuses on the operations most often repeated in procedural enviro
 - Natural distribution: `poissonDisk` for non-overlapping trees, rocks, props, and landmarks.
 - Structured distribution: `gridPoints` and `circlePoint` for settlements, farms, plazas, courtyards, and radial compositions.
 - Transitions: `clamp`, `lerp`, `remap`, and `smoothstep` for falloff and density blending.
-- Transforms: `rotate2D`, `distance2D`, and `tangentYaw` for alignment and symmetry.
+- Transforms: `rotate2D`, `distance2D`, `tangentYaw`, and `faceYaw` for path alignment, target-facing, and symmetry.
+- Facing contract: generated models use local `Y+` up, `Z+` front/forward, and `X+` right; `place({ facing: { target } })` or `place({ facing: { direction } })` resolves the world `rotationY`.
 - Determinism: `api.random` replaces `Math.random` and derives from the persisted map seed.
 - Asset declaration: `api.requireAsset` describes prompt-specific reusable asset families and variant counts.
 - Asset binding: `api.asset` selects a generated variant deterministically, including modulo selection inside loops.
@@ -49,6 +50,27 @@ function plan(api) {
   }
 }
 ```
+
+Directional placement example:
+
+```js
+function plan(api) {
+  const gate = api.requireAsset({
+    key: 'gate',
+    name: 'Arena gate',
+    prompt: 'Standalone arena gate with entrance toward local Z+, no ground or background',
+    tags: ['arena', 'gate'],
+    variants: 1
+  });
+  const center = [0, 0];
+  for (let index = 0; index < 8; index += 1) {
+    const point = api.circlePoint(index, 8, 28, center);
+    api.place({ assetId: api.asset(gate, 0), position: point, facing: { target: center } });
+  }
+}
+```
+
+The Code Planner automatically appends the same local-axis contract to each newly generated asset prompt, so model orientation and scene placement use the same convention.
 
 WorldForge executes the code once to discover requirements, generates all requested variants through the shared unbounded-concurrency asset pool, then replays the same code from the same map seed with real persisted asset IDs. Asset generation remains outside the sandboxed VM. The request's `minNewAssets` and `maxNewAssets` values constrain the generated variant count; if a valid first program declares too few new assets, the planner requests one asset-focused revision before continuing.
 
