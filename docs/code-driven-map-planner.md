@@ -24,6 +24,7 @@ The first set focuses on the operations most often repeated in procedural enviro
 - Transforms: `rotate2D`, `distance2D`, `tangentYaw`, and `faceYaw` for path alignment, target-facing, and symmetry.
 - Facing contract: generated models use local `Y+` up, `Z+` front/forward, and `X+` right; `place({ facing: { target } })` or `place({ facing: { direction } })` resolves the world `rotationY`.
 - Curve frames: `bezierPoint` and `sampleBezierFrames` expose `{ point, tangent, normal }`. Path pieces use `facing: { tangent: frame.tangent }`; wall facades use `facing: { normal: frame.normal }`. The normal is the left-side unit normal as curve `t` increases, and `offsetY: api.TAU / 2` flips it.
+- Repeated module spacing: `sampleBezierFramesBySpacing(..., spacing, gapRatio?)` resamples by approximate arc length instead of parameter `t`; its default `gapRatio` is `0.08`, leaving a small intentional spacing between repeated modules.
 - Determinism: `api.random` replaces `Math.random` and derives from the persisted map seed.
 - Asset declaration: `api.requireAsset` describes prompt-specific reusable asset families and variant counts.
 - Asset binding: `api.asset` selects a generated variant deterministically, including modulo selection inside loops.
@@ -72,6 +73,8 @@ function plan(api) {
 ```
 
 The Code Planner automatically appends the same local-axis contract to each newly generated asset prompt, so model orientation and scene placement use the same convention.
+
+For any repeated modular element, the generated asset prompt also states the span/connection axis explicitly: side-by-side modules span local `X` with their front/depth on local `Z`; traversal modules span local `Z`. This keeps the model's long axis compatible with the curve tangent/normal used by Code placement.
 
 Curved wall example:
 

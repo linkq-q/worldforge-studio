@@ -13,7 +13,7 @@ const MAX_CODE_LENGTH = 40_000;
 const MAX_PLACEMENTS = 2_000;
 const MAX_POINT_RESULTS = 512;
 const EXECUTION_TIMEOUT_MS = 250;
-const CODE_ASSET_ORIENTATION_PROMPT = 'Coordinate contract: local Y+ is up, local Z+ is the front, entrance, or forward direction, and local X+ is right. Put doors, facades, openings, windshields, noses, seats, and other recognizable front details toward local Z+. Keep the model centered at its origin.';
+const CODE_ASSET_ORIENTATION_PROMPT = 'Coordinate contract: local Y+ is up, local Z+ is the front, entrance, or forward direction, and local X+ is right. Put doors, facades, openings, windshields, noses, seats, and other recognizable front details toward local Z+. For a modular repeated element, explicitly choose the long axis: side-by-side modules span local X with depth/front on local Z; traversal modules span local Z. Keep the model centered at its origin.';
 
 type Point2 = [number, number];
 type Point3 = [number, number, number];
@@ -62,6 +62,12 @@ interface PlacementIntent {
   scale: Point3;
   size: Point3;
   heightMode: 'terrain' | 'fixed';
+}
+
+interface BezierFrame {
+  point: Point2;
+  tangent: Point2;
+  normal: Point2;
 }
 
 export interface CodeAssetRequirement {
@@ -316,6 +322,24 @@ function runMapCodePlan(
         bezierPoint(index / count, start, control1, control2, end)
       ));
     },
+    sampleBezierFramesBySpacing(
+      p0: Point2,
+      p1: Point2,
+      p2: Point2,
+      p3: Point2,
+      spacing: number,
+      gapRatio = 0.08
+    ) {
+      record('sampleBezierFramesBySpacing');
+      return sampleBezierFramesBySpacing(
+        point2(p0),
+        point2(p1),
+        point2(p2),
+        point2(p3),
+        spacing,
+        gapRatio
+      );
+    },
     circlePoint(index: number, count: number, radius: number, center: Point2 = [0, 0]): Point2 {
       record('circlePoint');
       const total = boundedCount(count, 1, MAX_POINT_RESULTS);
@@ -533,7 +557,7 @@ Use proxy placements without assetId only for abstract markers or when no visual
 Constants: api.TAU, api.PHI, api.seed, api.bounds.
 Scalar math: api.clamp(value,min,max), api.lerp(a,b,t), api.remap(value,inMin,inMax,outMin,outMax), api.smoothstep(min,max,value), api.random(min?,max?).
 Transforms: api.rotate2D(point,angle,center?), api.distance2D(a,b), api.tangentYaw(tangent), api.faceYaw(from,to).
-Curves: api.linePoint(t,a,b) -> [x,z]; api.bezierPoint(t,p0,p1,p2,p3) -> {point,tangent,normal}; api.sampleBezier(...) -> point arrays; api.sampleBezierFrames(...) -> frame objects with point,tangent,normal. frame.normal is the normalized left-side normal [-tangentZ,tangentX] as t increases.
+Curves: api.linePoint(t,a,b) -> [x,z]; api.bezierPoint(t,p0,p1,p2,p3) -> {point,tangent,normal}; api.sampleBezier(...) -> point arrays; api.sampleBezierFrames(...) -> frame objects with point,tangent,normal; api.sampleBezierFramesBySpacing(...,spacing,gapRatio?) -> approximately even arc-length frames. frame.normal is the normalized left-side normal [-tangentZ,tangentX] as t increases.
 Fields: api.noise2D(x,z,scale?,seed?) -> [-1,1]; api.fbm2D(x,z,{scale?,octaves?,lacunarity?,gain?,seed?}) -> [-1,1].
 Layouts: api.circlePoint(index,count,radius,center?) -> [x,z]; api.gridPoints({center?,columns,rows,spacing}) -> points; api.poissonDisk({bounds?,minDistance,maxPoints?,attempts?,seed?}) -> points.
 Assets: api.requireAsset({key,name,prompt,tags?,variants?}) -> key; api.asset(key,index?) -> generated assetId.
@@ -541,8 +565,8 @@ Output: api.place({assetId?,name?,position:[x,z]|[x,y,z],rotationY?,facing?,scal
 facing may be a direction [dx,dz], {direction:[dx,dz]}, {tangent:[dx,dz]}, {normal:[nx,nz]}, {target:[x,z]}, or any of those with offsetY; it overrides rotationY when present.
 
 ## Scene pattern guide
-- Roads, rivers, paths, and rails: follow the curve tangent with facing:{tangent:frame.tangent}.
-- Walls, hedges, facades, fences, and curved banks: use the curve normal with facing:{normal:frame.normal}; add offsetY:api.TAU / 2 for the opposite side. If an interior anchor is known, facing:{target:interiorPoint} is the safest inward-facing choice.
+- Repeated modular elements along a curve: use sampleBezierFramesBySpacing with the module's approximate span and the default 0.08 gap ratio; this uses arc length instead of parameter t and avoids bunching or large endpoint gaps.
+- Elements whose long axis follows travel: use facing:{tangent:frame.tangent}; elements whose front faces across the curve: use facing:{normal:frame.normal}; add offsetY:api.TAU / 2 for the opposite side. If an interior anchor is known, facing:{target:interiorPoint} is the safest inward-facing choice.
 - Organic scatter: poissonDisk plus noise2D/fbm2D density filtering; enforce minDistance.
 - Farms, buildings, stalls, streets: gridPoints with an explicit center and spacing.
 - Plazas, rings, lamps, portals: circlePoint with deterministic index/count.
@@ -555,6 +579,7 @@ The sum of all requireAsset variants must be between ${minNewAssets} and ${maxNe
 When the minimum is greater than zero, declare and place that many prompt-specific generated assets even if reusable assets exist.
 Use api.asset(key,index) for generated assets; do not invent asset IDs and do not modify catalog IDs.
 Each asset prompt must describe a standalone reusable object with no ground, scene, text, or background unless the object itself requires it.
+For any modular asset repeated along a line or curve, explicitly state its span axis and connection axis: side-by-side modules should span local X with depth/front on local Z; traversal modules should span local Z. Never leave the long axis implicit.
 Append this orientation instruction to every generated asset prompt: "Coordinate contract: Y+ is up, Z+ is the front/entrance/forward direction, X+ is right; place doors, facades, openings, windshields, or noses toward local Z+ and keep the model centered at its origin."
 
 ## Correct patterns
@@ -575,7 +600,7 @@ for (let i = 0; i < 8; i += 1) { const point = api.circlePoint(i,8,28,center); a
 
 Curved wall with a consistent facade:
 const wall = api.requireAsset({key:'wall',name:'Garden wall segment',prompt:'Standalone modular garden wall segment with decorative facade toward local Z+, seamless ends, no ground or background',tags:['wall','garden'],variants:2});
-const frames = api.sampleBezierFrames([-32,-12],[-18,24],[18,-24],[32,12],16);
+const frames = api.sampleBezierFramesBySpacing([-32,-12],[-18,24],[18,-24],[32,12],6,0.08);
 for (let i = 0; i < frames.length; i += 1) api.place({assetId:api.asset(wall,i),position:frames[i].point,facing:{normal:frames[i].normal}});
 
 ## Final self-check before returning
@@ -849,6 +874,66 @@ function bezierPoint(
   const length = Math.max(0.000001, Math.hypot(direction[0], direction[1]));
   const normal = codePoint(-direction[1] / length, direction[0] / length);
   return { point, tangent, normal };
+}
+
+function sampleBezierFramesBySpacing(
+  p0: Point2,
+  p1: Point2,
+  p2: Point2,
+  p3: Point2,
+  rawSpacing: number,
+  rawGapRatio = 0.08
+): BezierFrame[] {
+  const spacing = Math.max(0.01, finite(rawSpacing));
+  const gapRatio = clampFinite(rawGapRatio, 0, 0.25);
+  const denseCount = 256;
+  const denseFrames = Array.from({ length: denseCount + 1 }, (_, index) => (
+    bezierPoint(index / denseCount, p0, p1, p2, p3)
+  ));
+  const cumulative = [0];
+  for (let index = 1; index < denseFrames.length; index += 1) {
+    const previous = denseFrames[index - 1].point;
+    const current = denseFrames[index].point;
+    cumulative.push(cumulative[index - 1] + Math.hypot(current[0] - previous[0], current[1] - previous[1]));
+  }
+  const totalLength = cumulative[cumulative.length - 1];
+  const effectiveSpacing = spacing * (1 + gapRatio);
+  const segmentCount = Math.max(1, Math.min(MAX_POINT_RESULTS - 1, Math.floor(totalLength / effectiveSpacing)));
+  return Array.from({ length: segmentCount + 1 }, (_, index) => (
+    interpolateBezierFrame(denseFrames, cumulative, totalLength * index / segmentCount)
+  ));
+}
+
+function interpolateBezierFrame(
+  frames: readonly BezierFrame[],
+  cumulative: readonly number[],
+  targetDistance: number
+): BezierFrame {
+  let right = 1;
+  while (right < cumulative.length - 1 && cumulative[right] < targetDistance) right += 1;
+  const left = Math.max(0, right - 1);
+  const span = Math.max(0.000001, cumulative[right] - cumulative[left]);
+  const amount = clampFinite((targetDistance - cumulative[left]) / span, 0, 1);
+  const previous = frames[left];
+  const next = frames[right];
+  const point = codePoint(
+    previous.point[0] + (next.point[0] - previous.point[0]) * amount,
+    previous.point[1] + (next.point[1] - previous.point[1]) * amount
+  );
+  const tangent = codePoint(
+    previous.tangent[0] + (next.tangent[0] - previous.tangent[0]) * amount,
+    previous.tangent[1] + (next.tangent[1] - previous.tangent[1]) * amount
+  );
+  return frameFromTangent(point, tangent);
+}
+
+function frameFromTangent(point: Point2, tangent: Point2): BezierFrame {
+  const length = Math.max(0.000001, Math.hypot(tangent[0], tangent[1]));
+  return {
+    point,
+    tangent,
+    normal: codePoint(-tangent[1] / length, tangent[0] / length)
+  };
 }
 
 function poissonDiskPoints(

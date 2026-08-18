@@ -15,6 +15,7 @@ describe('map code planner', () => {
     expect(prompt).toContain('Return only one synchronous JavaScript function: function plan(api) { ... }.');
     expect(prompt).toContain('Every generated point supports both point[0]/point[1] and point.x/point.z.');
     expect(prompt).toContain('sampleBezierFrames(...) -> frame objects with point,tangent,normal');
+    expect(prompt).toContain('sampleBezierFramesBySpacing(...,spacing,gapRatio?)');
     expect(prompt).toContain('facing:{normal:frame.normal}');
     expect(prompt).toContain('poissonDisk plus noise2D/fbm2D');
     expect(prompt).toContain('gridPoints with an explicit center and spacing');
@@ -156,6 +157,28 @@ describe('map code planner', () => {
     if (placements[2].type !== 'object.add') throw new Error('missing wall placement');
     expect(placements[2].object.transform?.rotation?.[1]).toBeCloseTo(-Math.PI / 2);
     expect(suggestion.codePlan?.functions).toEqual(['place', 'sampleBezierFrames']);
+  });
+
+  it('samples repeated curve elements by arc length with a configurable spacing gap', () => {
+    const suggestion = executeMapCodePlan(`
+      function plan(api) {
+        const frames = api.sampleBezierFramesBySpacing([0, 0], [0, 10], [0, 20], [0, 30], 5, 0.1);
+        for (let index = 0; index < frames.length; index += 1) {
+          api.place({ name: 'modular-element', position: frames[index].point, facing: { tangent: frames[index].tangent } });
+        }
+      }
+    `, createEmptyMap());
+    const placements = suggestion.operations.filter((operation) => operation.type === 'object.add');
+    const zPositions = placements.map((operation) => {
+      if (operation.type !== 'object.add') throw new Error('unexpected operation');
+      return operation.object.transform?.position?.[2] ?? 0;
+    });
+    const distances = zPositions.slice(1).map((value, index) => value - zPositions[index]);
+
+    expect(distances.length).toBeGreaterThan(3);
+    expect(distances.every((distance) => distance > 5)).toBe(true);
+    expect(Math.max(...distances) - Math.min(...distances)).toBeLessThan(0.2);
+    expect(suggestion.codePlan?.functions).toEqual(['place', 'sampleBezierFramesBySpacing']);
   });
 
   it('provides bounded minimum-distance environment scattering', () => {
