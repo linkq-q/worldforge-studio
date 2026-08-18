@@ -23,6 +23,7 @@ The first set focuses on the operations most often repeated in procedural enviro
 - Transitions: `clamp`, `lerp`, `remap`, and `smoothstep` for falloff and density blending.
 - Transforms: `rotate2D`, `distance2D`, `tangentYaw`, and `faceYaw` for path alignment, target-facing, and symmetry.
 - Facing contract: generated models use local `Y+` up, `Z+` front/forward, and `X+` right; `place({ facing: { target } })` or `place({ facing: { direction } })` resolves the world `rotationY`.
+- Curve frames: `bezierPoint` and `sampleBezierFrames` expose `{ point, tangent, normal }`. Path pieces use `facing: { tangent: frame.tangent }`; wall facades use `facing: { normal: frame.normal }`. The normal is the left-side unit normal as curve `t` increases, and `offsetY: api.TAU / 2` flips it.
 - Determinism: `api.random` replaces `Math.random` and derives from the persisted map seed.
 - Asset declaration: `api.requireAsset` describes prompt-specific reusable asset families and variant counts.
 - Asset binding: `api.asset` selects a generated variant deterministically, including modulo selection inside loops.
@@ -71,6 +72,29 @@ function plan(api) {
 ```
 
 The Code Planner automatically appends the same local-axis contract to each newly generated asset prompt, so model orientation and scene placement use the same convention.
+
+Curved wall example:
+
+```js
+function plan(api) {
+  const wall = api.requireAsset({
+    key: 'garden-wall',
+    name: 'Garden wall segment',
+    prompt: 'Standalone modular garden wall, decorative facade toward local Z+, seamless ends',
+    tags: ['wall', 'garden'],
+    variants: 2
+  });
+  const frames = api.sampleBezierFrames([-32, -12], [-18, 24], [18, -24], [32, 12], 16);
+  for (let index = 0; index < frames.length; index += 1) {
+    const frame = frames[index];
+    api.place({
+      assetId: api.asset(wall, index),
+      position: frame.point,
+      facing: { normal: frame.normal }
+    });
+  }
+}
+```
 
 WorldForge executes the code once to discover requirements, generates all requested variants through the shared unbounded-concurrency asset pool, then replays the same code from the same map seed with real persisted asset IDs. Asset generation remains outside the sandboxed VM. The request's `minNewAssets` and `maxNewAssets` values constrain the generated variant count; if a valid first program declares too few new assets, the planner requests one asset-focused revision before continuing.
 

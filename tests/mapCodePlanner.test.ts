@@ -14,7 +14,8 @@ describe('map code planner', () => {
 
     expect(prompt).toContain('Return only one synchronous JavaScript function: function plan(api) { ... }.');
     expect(prompt).toContain('Every generated point supports both point[0]/point[1] and point.x/point.z.');
-    expect(prompt).toContain('sampleBezier or linePoint');
+    expect(prompt).toContain('sampleBezierFrames(...) -> frame objects with point,tangent,normal');
+    expect(prompt).toContain('facing:{normal:frame.normal}');
     expect(prompt).toContain('poissonDisk plus noise2D/fbm2D');
     expect(prompt).toContain('gridPoints with an explicit center and spacing');
     expect(prompt).toContain('circlePoint with deterministic index/count');
@@ -138,6 +139,23 @@ describe('map code planner', () => {
     expect(placements[1].object.transform?.rotation?.[1]).toBeCloseTo(0);
     expect(placements[2].object.transform?.rotation?.[1]).toBeCloseTo(Math.PI);
     expect(suggestion.codePlan?.functions).toContain('place');
+  });
+
+  it('uses Bezier normals for curved wall facades', () => {
+    const suggestion = executeMapCodePlan(`
+      function plan(api) {
+        const frames = api.sampleBezierFrames([0, -10], [0, -4], [0, 4], [0, 10], 4);
+        for (let index = 0; index < frames.length; index += 1) {
+          api.place({ name: 'garden-wall', position: frames[index].point, facing: { normal: frames[index].normal } });
+        }
+      }
+    `, createEmptyMap());
+    const placements = suggestion.operations.filter((operation) => operation.type === 'object.add');
+
+    expect(placements).toHaveLength(5);
+    if (placements[2].type !== 'object.add') throw new Error('missing wall placement');
+    expect(placements[2].object.transform?.rotation?.[1]).toBeCloseTo(-Math.PI / 2);
+    expect(suggestion.codePlan?.functions).toEqual(['place', 'sampleBezierFrames']);
   });
 
   it('provides bounded minimum-distance environment scattering', () => {

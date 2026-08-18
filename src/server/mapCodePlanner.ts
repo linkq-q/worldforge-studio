@@ -42,7 +42,13 @@ interface PlacementInput {
   name?: string;
   position: Point2 | Point3 | { x: number; y?: number; z: number } | { point: Point2 | Point3 };
   rotationY?: number;
-  facing?: Point2 | { direction?: Point2 | { tangent: Point2 }; target?: Point2; offsetY?: number };
+  facing?: Point2 | {
+    direction?: Point2;
+    tangent?: Point2;
+    normal?: Point2;
+    target?: Point2;
+    offsetY?: number;
+  };
   scale?: number | Point3;
   size?: Point3;
   terrain?: boolean;
@@ -299,6 +305,17 @@ function runMapCodePlan(
         bezierPoint(index / count, point2(p0), point2(p1), point2(p2), point2(p3)).point
       ));
     },
+    sampleBezierFrames(p0: Point2, p1: Point2, p2: Point2, p3: Point2, segments = 16) {
+      record('sampleBezierFrames');
+      const count = boundedCount(segments, 1, MAX_POINT_RESULTS);
+      const start = point2(p0);
+      const control1 = point2(p1);
+      const control2 = point2(p2);
+      const end = point2(p3);
+      return Array.from({ length: count + 1 }, (_, index) => (
+        bezierPoint(index / count, start, control1, control2, end)
+      ));
+    },
     circlePoint(index: number, count: number, radius: number, center: Point2 = [0, 0]): Point2 {
       record('circlePoint');
       const total = boundedCount(count, 1, MAX_POINT_RESULTS);
@@ -516,15 +533,16 @@ Use proxy placements without assetId only for abstract markers or when no visual
 Constants: api.TAU, api.PHI, api.seed, api.bounds.
 Scalar math: api.clamp(value,min,max), api.lerp(a,b,t), api.remap(value,inMin,inMax,outMin,outMax), api.smoothstep(min,max,value), api.random(min?,max?).
 Transforms: api.rotate2D(point,angle,center?), api.distance2D(a,b), api.tangentYaw(tangent), api.faceYaw(from,to).
-Curves: api.linePoint(t,a,b) -> [x,z]; api.bezierPoint(t,p0,p1,p2,p3) -> {point,tangent}; api.sampleBezier(p0,p1,p2,p3,segments) -> point arrays.
+Curves: api.linePoint(t,a,b) -> [x,z]; api.bezierPoint(t,p0,p1,p2,p3) -> {point,tangent,normal}; api.sampleBezier(...) -> point arrays; api.sampleBezierFrames(...) -> frame objects with point,tangent,normal. frame.normal is the normalized left-side normal [-tangentZ,tangentX] as t increases.
 Fields: api.noise2D(x,z,scale?,seed?) -> [-1,1]; api.fbm2D(x,z,{scale?,octaves?,lacunarity?,gain?,seed?}) -> [-1,1].
 Layouts: api.circlePoint(index,count,radius,center?) -> [x,z]; api.gridPoints({center?,columns,rows,spacing}) -> points; api.poissonDisk({bounds?,minDistance,maxPoints?,attempts?,seed?}) -> points.
 Assets: api.requireAsset({key,name,prompt,tags?,variants?}) -> key; api.asset(key,index?) -> generated assetId.
 Output: api.place({assetId?,name?,position:[x,z]|[x,y,z],rotationY?,facing?,scale?,size?,terrain?}).
-facing may be a direction [dx,dz], {direction:[dx,dz]}, {target:[x,z]}, or any of those with offsetY; it overrides rotationY when present.
+facing may be a direction [dx,dz], {direction:[dx,dz]}, {tangent:[dx,dz]}, {normal:[nx,nz]}, {target:[x,z]}, or any of those with offsetY; it overrides rotationY when present.
 
 ## Scene pattern guide
-- Roads, rivers, walls, borders, hedges: sampleBezier or linePoint, then orient with tangentYaw.
+- Roads, rivers, paths, and rails: follow the curve tangent with facing:{tangent:frame.tangent}.
+- Walls, hedges, facades, fences, and curved banks: use the curve normal with facing:{normal:frame.normal}; add offsetY:api.TAU / 2 for the opposite side. If an interior anchor is known, facing:{target:interiorPoint} is the safest inward-facing choice.
 - Organic scatter: poissonDisk plus noise2D/fbm2D density filtering; enforce minDistance.
 - Farms, buildings, stalls, streets: gridPoints with an explicit center and spacing.
 - Plazas, rings, lamps, portals: circlePoint with deterministic index/count.
@@ -554,6 +572,11 @@ Inward arena ring:
 const center = [0,0];
 const gate = api.requireAsset({key:'gate',name:'Arena gate',prompt:'Standalone arena gate with facade and entrance, no ground or background',tags:['arena','gate'],variants:1});
 for (let i = 0; i < 8; i += 1) { const point = api.circlePoint(i,8,28,center); api.place({assetId:api.asset(gate,0),position:point,facing:{target:center}}); }
+
+Curved wall with a consistent facade:
+const wall = api.requireAsset({key:'wall',name:'Garden wall segment',prompt:'Standalone modular garden wall segment with decorative facade toward local Z+, seamless ends, no ground or background',tags:['wall','garden'],variants:2});
+const frames = api.sampleBezierFrames([-32,-12],[-18,24],[18,-24],[32,12],16);
+for (let i = 0; i < frames.length; i += 1) api.place({assetId:api.asset(wall,i),position:frames[i].point,facing:{normal:frames[i].normal}});
 
 ## Final self-check before returning
 1. Exactly one function named plan and no markdown.
@@ -605,7 +628,7 @@ async function discoverMapCodeWithRepairs(
         { role: 'assistant', content: code },
         {
           role: 'user',
-          content: `The program failed during its sandboxed discovery run with this error:\n${executionError}\n\nReturn corrected JavaScript only. Preserve the requested design. Check every array index, loop endpoint, division, vector component, and optional argument. JavaScript arrays cannot be added or subtracted directly; calculate x/z components separately. bezierPoint returns {point,tangent}, while sampleBezier returns point arrays. Ensure every numeric value passed to the API is finite.`
+          content: `The program failed during its sandboxed discovery run with this error:\n${executionError}\n\nReturn corrected JavaScript only. Preserve the requested design. Check every array index, loop endpoint, division, vector component, and optional argument. JavaScript arrays cannot be added or subtracted directly; calculate x/z components separately. bezierPoint returns {point,tangent,normal}, sampleBezier returns point arrays, and sampleBezierFrames returns frame objects. Use facing:{tangent:frame.tangent} for along-curve objects and facing:{normal:frame.normal} for curve-side facades or walls. Ensure every numeric value passed to the API is finite.`
         }
       ], {
         apiBase: options.apiBase,
@@ -735,12 +758,9 @@ function placementRotation(
     const target = point2(facing.target);
     return yawFromDirection([target[0] - position[0], target[1] - position[2]]) + offsetY;
   }
-  if (facing.direction !== undefined) {
-    const direction = 'tangent' in facing.direction
-      ? point2(facing.direction.tangent)
-      : point2(facing.direction);
-    return yawFromDirection(direction) + offsetY;
-  }
+  if (facing.normal !== undefined) return yawFromDirection(point2(facing.normal)) + offsetY;
+  if (facing.tangent !== undefined) return yawFromDirection(point2(facing.tangent)) + offsetY;
+  if (facing.direction !== undefined) return yawFromDirection(point2(facing.direction)) + offsetY;
   throw new Error('invalid_map_code_facing');
 }
 
@@ -806,7 +826,13 @@ function cleanText(value: string, maxLength: number): string {
   return String(value).trim().slice(0, maxLength) || '程序化物体';
 }
 
-function bezierPoint(amount: number, p0: Point2, p1: Point2, p2: Point2, p3: Point2): { point: Point2; tangent: Point2 } {
+function bezierPoint(
+  amount: number,
+  p0: Point2,
+  p1: Point2,
+  p2: Point2,
+  p3: Point2
+): { point: Point2; tangent: Point2; normal: Point2 } {
   const inverse = 1 - amount;
   const inverse2 = inverse * inverse;
   const amount2 = amount * amount;
@@ -818,7 +844,11 @@ function bezierPoint(amount: number, p0: Point2, p1: Point2, p2: Point2, p3: Poi
     3 * inverse2 * (p1[0] - p0[0]) + 6 * inverse * amount * (p2[0] - p1[0]) + 3 * amount2 * (p3[0] - p2[0]),
     3 * inverse2 * (p1[1] - p0[1]) + 6 * inverse * amount * (p2[1] - p1[1]) + 3 * amount2 * (p3[1] - p2[1])
   );
-  return { point, tangent };
+  const fallback = codePoint(p3[0] - p0[0], p3[1] - p0[1]);
+  const direction = Math.hypot(tangent[0], tangent[1]) > 0.000001 ? tangent : fallback;
+  const length = Math.max(0.000001, Math.hypot(direction[0], direction[1]));
+  const normal = codePoint(-direction[1] / length, direction[0] / length);
+  return { point, tangent, normal };
 }
 
 function poissonDiskPoints(
