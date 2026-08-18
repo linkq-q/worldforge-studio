@@ -22,6 +22,8 @@ export type RenderModuleId =
   | 'runtime.material-theme'
   | 'runtime.light-rig'
   | 'runtime.post-quality'
+  | 'runtime.terrain-materials'
+  | 'runtime.weather'
   | 'runtime.effect-recipe'
   | 'runtime.atmosphere-fx'
   | 'runtime.shader-extension';
@@ -266,6 +268,18 @@ export interface RuntimeShaderExtension {
   code?: string;
 }
 
+export interface RuntimeTerrainMaterialStyle {
+  detailStrength: number;
+  soilRecipe: 'dry' | 'moist';
+  sandRecipe: 'dune' | 'beach';
+}
+
+export const DEFAULT_RUNTIME_TERRAIN_MATERIAL_STYLE: RuntimeTerrainMaterialStyle = {
+  detailStrength: 0.55,
+  soilRecipe: 'dry',
+  sandRecipe: 'dune'
+};
+
 export const RENDER_CAPABILITIES: readonly RenderCapability[] = [
   {
     id: 'environment.palette',
@@ -508,6 +522,35 @@ export const RENDER_CAPABILITIES: readonly RenderCapability[] = [
       bloomStrength: { type: 'number', min: 0, max: 1.5, default: 0.4 },
       ssao: { type: 'enum', values: ['off', 'soft', 'strong'], default: 'off' },
       depthOfField: { type: 'enum', values: ['off', 'soft', 'portrait'], default: 'off' }
+    }
+  },
+  {
+    id: 'runtime.terrain-materials',
+    label: '地表材质细节',
+    priority: 'P1',
+    availability: 'ready',
+    availabilityNote: '地图保存草地、土壤、沙地、岩石和铺装语义；渲染方案控制程序细节配方。',
+    params: {
+      detailStrength: { type: 'number', min: 0, max: 1, default: DEFAULT_RUNTIME_TERRAIN_MATERIAL_STYLE.detailStrength },
+      soilRecipe: { type: 'enum', values: ['dry', 'moist'], default: DEFAULT_RUNTIME_TERRAIN_MATERIAL_STYLE.soilRecipe },
+      sandRecipe: { type: 'enum', values: ['dune', 'beach'], default: DEFAULT_RUNTIME_TERRAIN_MATERIAL_STYLE.sandRecipe }
+    }
+  },
+  {
+    id: 'runtime.weather',
+    label: '天气系统',
+    priority: 'P1',
+    availability: 'ready',
+    availabilityNote: '降水围绕相机生成；积雪与湿润只作用于内容地形和 modelsRoot。',
+    params: {
+      preset: { type: 'enum', values: ['clear', 'overcast', 'rain', 'snow', 'storm'], default: 'clear' },
+      intensity: { type: 'number', min: 0, max: 1, default: 1 },
+      wind: { type: 'number', min: -1, max: 1, default: 0 },
+      flakeSize: { type: 'number', min: 0.5, max: 2, default: 1 },
+      snowCover: { type: 'number', min: 0, max: 1, default: 0 },
+      transitionSeconds: { type: 'number', min: 0, max: 30, default: 6 },
+      timeOfDay: { type: 'number', min: 0, max: 24, default: 13 },
+      daySpeed: { type: 'number', min: 0, max: 1, default: 0 }
     }
   },
   {
@@ -824,6 +867,15 @@ export function compileRuntimeGrassStyle(plan: RenderPlan): RuntimeGrassStyle {
   };
 }
 
+export function compileRuntimeTerrainMaterialStyle(plan: RenderPlan): RuntimeTerrainMaterialStyle {
+  const params = plan.modules.find((item) => item.id === 'runtime.terrain-materials')?.params ?? {};
+  return {
+    detailStrength: numericValue(params.detailStrength) ?? DEFAULT_RUNTIME_TERRAIN_MATERIAL_STYLE.detailStrength,
+    soilRecipe: params.soilRecipe === 'moist' ? 'moist' : 'dry',
+    sandRecipe: params.sandRecipe === 'beach' ? 'beach' : 'dune'
+  };
+}
+
 export function compileRuntimeMaterialThemes(plan: RenderPlan): RuntimeMaterialTheme[] {
   return plan.modules
     .filter((item) => item.id === 'runtime.material-theme')
@@ -915,7 +967,8 @@ export function createDefaultRenderAccessPolicy(): RenderAccessPolicy {
           && !(capability.id === 'runtime.outline-style' && ['fadeStart', 'fadeEnd'].includes(parameter))
           && !(capability.id === 'runtime.grass-style' && [
             'normalFlatten', 'rootDarken', 'gradientBias', 'cellSize', 'fadeStart', 'fadeEnd', 'maxInstances'
-          ].includes(parameter)),
+          ].includes(parameter))
+          && !(capability.id === 'runtime.weather' && parameter === 'daySpeed'),
         ...(rule.type === 'number' ? { min: rule.min, max: rule.max } : {}),
         ...(rule.type === 'enum' ? { values: [...rule.values] } : {})
       };

@@ -29,9 +29,15 @@ import { terrainSemanticSurfaceWeight, terrainVertexColor } from './terrainAppea
 import { buildMapGrassField, deriveContactAwareGrassMap } from './mapGrassRenderer';
 import { combinedGrassDensity } from '../shared/mapGrass';
 import {
+  DEFAULT_RUNTIME_TERRAIN_MATERIAL_STYLE,
   DEFAULT_RUNTIME_GRASS_STYLE,
+  type RuntimeTerrainMaterialStyle,
   type RuntimeGrassStyle,
 } from '../shared/renderPlan';
+import {
+  addMaterialShaderPatch,
+  hasMaterialShaderPatch
+} from '@voxel-studio/render-runtime/utils/MaterialShaderPatchChain.js';
 import type { RuntimeIndex } from '@voxel-studio/render-runtime';
 import type { MapPrimitiveBatchStats } from './mapPrimitiveBatching';
 import type { Vec3 } from '../shared/protocol';
@@ -65,6 +71,8 @@ export interface RenderedMap {
   syncMaterialEnvironment: (environmentMap: THREE.Texture | null) => void;
   getRuntimeBatchMeshes: () => THREE.Object3D[];
   setGrassStyle: (style: RuntimeGrassStyle) => void;
+  setTerrainMaterialStyle: (style: RuntimeTerrainMaterialStyle) => void;
+  setWeatherSurface: (wetness: number, snowCover: number) => void;
   setSandFlowStrength: (strength: number) => void;
   setRoomWallDisplayMode: (mode: RoomWallDisplayMode, camera: THREE.Camera) => void;
   setLightingTimeOfDay: (timeOfDay: VisualTimeOfDay) => void;
@@ -110,6 +118,7 @@ export interface MapMotionAdapter {
 
 export async function buildEditableMapGroup(input: EditableMap, options: MapRenderOptions = {}): Promise<RenderedMap> {
   const map = normalizeMap(input);
+  let currentMap = map;
   const root = new THREE.Group();
   root.name = `map:${map.id}`;
   const modelsRoot = new THREE.Group();
@@ -133,6 +142,8 @@ export async function buildEditableMapGroup(input: EditableMap, options: MapRend
 
   // Grass is rebuilt on its own, so it keeps its own map snapshot and style.
   let grassStyle = DEFAULT_RUNTIME_GRASS_STYLE;
+  let terrainMaterialStyle = DEFAULT_RUNTIME_TERRAIN_MATERIAL_STYLE;
+  const modelSnowUniforms = new Set<{ value: number }>();
   let materialElapsedSeconds = 0;
   const motionControllers: MapMotionController[] = [];
   let grass = map.sceneMode === 'indoor' ? null : buildMapGrassField(grassMap);
@@ -230,6 +241,25 @@ export async function buildEditableMapGroup(input: EditableMap, options: MapRend
       grass?.setStyle(style);
       applyTerrainGrassTint(terrain, grassMap, style);
     },
+    setTerrainMaterialStyle: (style) => {
+      terrainMaterialStyle = style;
+      sandFlow.detailStrength = style.detailStrength;
+      sandFlow.soilMoist = style.soilRecipe === 'moist' ? 1 : 0;
+      sandFlow.sandBeach = style.sandRecipe === 'beach' ? 1 : 0;
+      const material = terrain.material as THREE.MeshStandardMaterial;
+      material.map?.dispose();
+      material.map = createSurfaceTexture(currentMap, 'terrain', undefined, style);
+      material.needsUpdate = true;
+      terrain.userData.terrainMaterialStyle = { ...style };
+      syncTerrainSandShader(sandFlow);
+    },
+    setWeatherSurface: (wetness, snowCover) => {
+      sandFlow.wetness = THREE.MathUtils.clamp(wetness, 0, 1);
+      sandFlow.snowCover = THREE.MathUtils.clamp(snowCover, 0, 1);
+      terrain.userData.weatherSurface = { wetness: sandFlow.wetness, snowCover: sandFlow.snowCover };
+      syncTerrainSandShader(sandFlow);
+      applyModelSnow(modelsRoot, sandFlow.snowCover, modelSnowUniforms);
+    },
     setSandFlowStrength: (strength) => {
       sandFlow.strength = THREE.MathUtils.clamp(strength, 0, 1);
       syncTerrainSandShader(sandFlow);
@@ -250,12 +280,13 @@ export async function buildEditableMapGroup(input: EditableMap, options: MapRend
     },
     refreshGrass: rebuildGrass,
     refreshTerrain: (next) => {
+      currentMap = next;
       terrain.geometry.dispose();
       terrain.geometry = buildTerrainGeometry(next);
       // Keep the live material so an applied render scheme survives the swap.
       const material = terrain.material as THREE.MeshStandardMaterial;
       material.map?.dispose();
-      material.map = createSurfaceTexture(next, 'terrain');
+      material.map = createSurfaceTexture(next, 'terrain', undefined, terrainMaterialStyle);
       material.needsUpdate = true;
       updateTerrainSandZones(sandFlow, next);
       // Blades sample terrain height, so they have to follow the new surface.
@@ -422,11 +453,26 @@ interface TerrainSandFlowState {
   time: number;
   strength: number;
   zones: THREE.Vector4[];
+  detailStrength: number;
+  soilMoist: number;
+  sandBeach: number;
+  wetness: number;
+  snowCover: number;
   shader: THREE.WebGLProgramParametersWithUniforms | null;
 }
 
 function installTerrainSandShader(material: THREE.MeshStandardMaterial, map: EditableMap): TerrainSandFlowState {
-  const state: TerrainSandFlowState = { time: 0, strength: 0, zones: [], shader: null };
+  const state: TerrainSandFlowState = {
+    time: 0,
+    strength: 0,
+    zones: [],
+    detailStrength: DEFAULT_RUNTIME_TERRAIN_MATERIAL_STYLE.detailStrength,
+    soilMoist: 0,
+    sandBeach: 0,
+    wetness: 0,
+    snowCover: 0,
+    shader: null
+  };
   updateTerrainSandZones(state, map);
   material.onBeforeCompile = (shader) => {
     state.shader = shader;
@@ -434,9 +480,15 @@ function installTerrainSandShader(material: THREE.MeshStandardMaterial, map: Edi
     shader.uniforms.uTerrainSandStrength = { value: state.strength };
     shader.uniforms.uTerrainSandZoneCount = { value: state.zones.length };
     shader.uniforms.uTerrainSandZones = { value: paddedSandZones(state.zones) };
+    shader.uniforms.uTerrainDetailStrength = { value: state.detailStrength };
+    shader.uniforms.uTerrainSoilMoist = { value: state.soilMoist };
+    shader.uniforms.uTerrainSandBeach = { value: state.sandBeach };
+    shader.uniforms.uTerrainWetness = { value: state.wetness };
+    shader.uniforms.uTerrainSnowCover = { value: state.snowCover };
     shader.vertexShader = shader.vertexShader
-      .replace('#include <common>', '#include <common>\nvarying vec3 vTerrainSandPosition;')
-      .replace('#include <begin_vertex>', '#include <begin_vertex>\nvTerrainSandPosition = position;');
+      .replace('#include <common>', '#include <common>\nvarying vec3 vTerrainSandPosition;\nvarying vec3 vTerrainWorldNormal;')
+      .replace('#include <begin_vertex>', '#include <begin_vertex>\nvTerrainSandPosition = position;')
+      .replace('#include <defaultnormal_vertex>', '#include <defaultnormal_vertex>\nvTerrainWorldNormal = inverseTransformDirection(transformedNormal, viewMatrix);');
     shader.fragmentShader = shader.fragmentShader
       .replace('#include <common>', `#include <common>
         varying vec3 vTerrainSandPosition;
@@ -444,6 +496,12 @@ function installTerrainSandShader(material: THREE.MeshStandardMaterial, map: Edi
         uniform float uTerrainSandStrength;
         uniform int uTerrainSandZoneCount;
         uniform vec4 uTerrainSandZones[8];
+        uniform float uTerrainDetailStrength;
+        uniform float uTerrainSoilMoist;
+        uniform float uTerrainSandBeach;
+        uniform float uTerrainWetness;
+        uniform float uTerrainSnowCover;
+        varying vec3 vTerrainWorldNormal;
       `)
       .replace('#include <map_fragment>', `#include <map_fragment>
         float terrainSandMask = 0.0;
@@ -458,6 +516,18 @@ function installTerrainSandShader(material: THREE.MeshStandardMaterial, map: Edi
         float terrainSandFlow = smoothstep(0.08, 0.82, terrainSandRipple) * terrainSandMask * uTerrainSandStrength;
         diffuseColor.rgb = mix(diffuseColor.rgb, vec3(1.0, 0.78, 0.34), terrainSandFlow * 0.42);
         diffuseColor.rgb *= 1.0 - smoothstep(0.52, 0.92, terrainSandRipple) * terrainSandMask * uTerrainSandStrength * 0.12;
+        float terrainDetail = sin(vTerrainSandPosition.x * 9.1) * sin(vTerrainSandPosition.z * 7.7);
+        diffuseColor.rgb *= 1.0 + terrainDetail * uTerrainDetailStrength * 0.018;
+        float terrainWetMask = uTerrainWetness * (0.45 + terrainSandMask * 0.35);
+        diffuseColor.rgb *= 1.0 - terrainWetMask * 0.24;
+        diffuseColor.rgb = mix(diffuseColor.rgb, diffuseColor.rgb * vec3(0.88, 0.91, 0.94), uTerrainSoilMoist * uTerrainWetness * 0.12);
+        diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.94, 0.86, 0.68), terrainSandMask * uTerrainSandBeach * 0.08);
+        float terrainSnowSlope = smoothstep(0.42, 0.78, normalize(vTerrainWorldNormal).y);
+        diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.91, 0.95, 0.98), terrainSnowSlope * uTerrainSnowCover);
+      `)
+      .replace('#include <roughnessmap_fragment>', `#include <roughnessmap_fragment>
+        roughnessFactor = mix(roughnessFactor, 0.34, uTerrainWetness * 0.65);
+        roughnessFactor = mix(roughnessFactor, 0.94, uTerrainSnowCover);
       `);
     syncTerrainSandShader(state);
   };
@@ -480,6 +550,61 @@ function syncTerrainSandShader(state: TerrainSandFlowState): void {
   uniforms.uTerrainSandStrength.value = state.strength;
   uniforms.uTerrainSandZoneCount.value = state.zones.length;
   uniforms.uTerrainSandZones.value = paddedSandZones(state.zones);
+  uniforms.uTerrainDetailStrength.value = state.detailStrength;
+  uniforms.uTerrainSoilMoist.value = state.soilMoist;
+  uniforms.uTerrainSandBeach.value = state.sandBeach;
+  uniforms.uTerrainWetness.value = state.wetness;
+  uniforms.uTerrainSnowCover.value = state.snowCover;
+}
+
+const MODEL_SNOW_PATCH = 'worldforge-weather-snow';
+
+function applyModelSnow(
+  modelsRoot: THREE.Object3D,
+  snowCover: number,
+  uniforms: Set<{ value: number }>
+): void {
+  if (uniforms.size > 0) {
+    uniforms.forEach((uniform) => { uniform.value = snowCover; });
+    return;
+  }
+  if (snowCover <= 0) return;
+  modelsRoot.traverse((object) => {
+    const mesh = object as THREE.Mesh;
+    if (!mesh.isMesh) return;
+    const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+    for (const material of materials) {
+      if (!(material instanceof THREE.MeshStandardMaterial)) continue;
+      const uniform = material.userData.worldforgeSnowUniform as { value: number } | undefined
+        ?? { value: snowCover };
+      material.userData.worldforgeSnowUniform = uniform;
+      uniform.value = snowCover;
+      uniforms.add(uniform);
+      if (hasMaterialShaderPatch(material, MODEL_SNOW_PATCH)) continue;
+      addMaterialShaderPatch(material, MODEL_SNOW_PATCH, (shader) => {
+        shader.uniforms.uWorldforgeSnowCover = uniform;
+        shader.vertexShader = shader.vertexShader
+          .replace('#include <common>', '#include <common>\nvarying vec3 vWorldforgeSnowNormal;')
+          .replace(
+            '#include <defaultnormal_vertex>',
+            '#include <defaultnormal_vertex>\nvWorldforgeSnowNormal = inverseTransformDirection(transformedNormal, viewMatrix);'
+          );
+        shader.fragmentShader = shader.fragmentShader
+          .replace(
+            '#include <common>',
+            '#include <common>\nuniform float uWorldforgeSnowCover;\nvarying vec3 vWorldforgeSnowNormal;'
+          )
+          .replace(
+            '#include <map_fragment>',
+            '#include <map_fragment>\nfloat worldforgeSnowMask = smoothstep(0.38, 0.76, normalize(vWorldforgeSnowNormal).y) * uWorldforgeSnowCover;\ndiffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.92, 0.96, 1.0), worldforgeSnowMask);'
+          )
+          .replace(
+            '#include <roughnessmap_fragment>',
+            '#include <roughnessmap_fragment>\nroughnessFactor = mix(roughnessFactor, 0.93, worldforgeSnowMask);'
+          );
+      }, { order: 80, cacheKey: () => MODEL_SNOW_PATCH });
+    }
+  });
 }
 
 function paddedSandZones(zones: readonly THREE.Vector4[]): THREE.Vector4[] {
@@ -1119,7 +1244,8 @@ function buildSunGroup(map: EditableMap): THREE.Group {
 function createSurfaceTexture(
   map: EditableMap,
   surface: MapSurface,
-  segment?: RoomShellSegment
+  segment?: RoomShellSegment,
+  terrainStyle: RuntimeTerrainMaterialStyle = DEFAULT_RUNTIME_TERRAIN_MATERIAL_STYLE
 ): THREE.CanvasTexture {
   const canvas = document.createElement('canvas');
   canvas.width = 768;
@@ -1130,7 +1256,10 @@ function createSurfaceTexture(
     // and the editor grid from multiplying the surface darker.
     ctx.fillStyle = surface === 'terrain' ? '#ffffff' : map.box.colors[surface as keyof typeof map.box.colors];
     ctx.fillRect(0, 0, canvas.width, canvas.height);
-    if (surface === 'terrain') drawSemanticTerrainSurface(ctx, map, canvas.width, canvas.height);
+    if (surface === 'terrain') {
+      drawSemanticTerrainSurface(ctx, map, canvas.width, canvas.height);
+      drawProceduralTerrainDetail(ctx, map, terrainStyle, canvas.width, canvas.height);
+    }
     const finish = surface !== 'terrain'
       ? activeInteriorSurfaceFinish(map.interiorArtDirection, surface as RoomSurface)
       : undefined;
@@ -1435,6 +1564,61 @@ function drawSemanticTerrainSurface(
     ctx.restore();
   }
   for (const water of map.waterBodies) drawWetShore(ctx, map, water, width, height);
+}
+
+function drawProceduralTerrainDetail(
+  ctx: CanvasRenderingContext2D,
+  map: EditableMap,
+  style: RuntimeTerrainMaterialStyle,
+  width: number,
+  height: number
+): void {
+  if (style.detailStrength <= 0) return;
+  const random = seededRandom(map.seed ^ 0x74a91d3);
+  const tags = ['grass', 'soil', 'sand', 'rocky', 'paving'] as const;
+  const palettes = {
+    grass: ['#4e7046', '#7f9a5e'],
+    soil: style.soilRecipe === 'moist' ? ['#493b30', '#725841'] : ['#806246', '#b08a62'],
+    sand: style.sandRecipe === 'beach' ? ['#c9ae72', '#f0d79b'] : ['#b79858', '#dec174'],
+    rocky: ['#777873', '#b1ada3'],
+    paving: ['#777b79', '#b8b6af']
+  } as const;
+  const count = Math.round(450 + style.detailStrength * 1050);
+  ctx.save();
+  ctx.lineCap = 'round';
+  for (let index = 0; index < count; index += 1) {
+    const x = (random() - 0.5) * map.box.size[0];
+    const z = (random() - 0.5) * map.box.size[2];
+    let selected: typeof tags[number] = 'grass';
+    let selectedWeight = 0;
+    for (const tag of tags) {
+      const weight = terrainSemanticSurfaceWeight(map, x, z, [tag]);
+      if (weight > selectedWeight) {
+        selected = tag;
+        selectedWeight = weight;
+      }
+    }
+    const point = surfaceCanvasPoint(map, [x, z], width, height);
+    const palette = palettes[selected];
+    ctx.strokeStyle = palette[random() > 0.5 ? 0 : 1];
+    ctx.fillStyle = ctx.strokeStyle;
+    ctx.globalAlpha = style.detailStrength * (0.07 + Math.max(0.25, selectedWeight) * 0.18);
+    if (selected === 'soil' || selected === 'rocky') {
+      const radius = selected === 'rocky' ? 1.1 + random() * 2.2 : 0.6 + random() * 1.4;
+      ctx.fillRect(point[0], point[1], radius, radius * (0.5 + random()));
+    } else {
+      const length = selected === 'sand' ? 3 + random() * 6 : selected === 'paving' ? 2 + random() * 4 : 1 + random() * 3;
+      const angle = selected === 'sand'
+        ? (style.sandRecipe === 'beach' ? 0.12 : -0.42)
+        : random() * Math.PI;
+      ctx.lineWidth = selected === 'paving' ? 1.2 : 0.7;
+      ctx.beginPath();
+      ctx.moveTo(point[0] - Math.cos(angle) * length * 0.5, point[1] - Math.sin(angle) * length * 0.5);
+      ctx.lineTo(point[0] + Math.cos(angle) * length * 0.5, point[1] + Math.sin(angle) * length * 0.5);
+      ctx.stroke();
+    }
+  }
+  ctx.restore();
 }
 
 function drawSemanticPath(

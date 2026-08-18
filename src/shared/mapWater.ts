@@ -148,6 +148,7 @@ function carveRiverChannelInPlace(map: EditableMap, input: MapWaterBody): void {
   const terrain = map.terrain;
   const [boxWidth, , boxDepth] = map.box.size;
   const halfWidth = Math.max(0.15, water.width / 2);
+  const bedHalfWidth = halfWidth * 0.5;
   const shore = Math.max(0.5, water.depth * SHORE_SLOPE);
   const reach = halfWidth + shore;
   const xs = samples.map((sample) => sample.point[0]);
@@ -165,8 +166,10 @@ function carveRiverChannelInPlace(map: EditableMap, input: MapWaterBody): void {
       const top = closest.level - SHORE_RIM;
       const bottom = Math.max(TERRAIN_MIN_HEIGHT, closest.level - water.depth);
       let ceiling: number;
-      if (closest.distance <= halfWidth) {
-        const t = smoothstep(closest.distance / halfWidth);
+      if (closest.distance <= bedHalfWidth) {
+        ceiling = bottom;
+      } else if (closest.distance <= halfWidth) {
+        const t = smoothstep((closest.distance - bedHalfWidth) / Math.max(0.01, halfWidth - bedHalfWidth));
         ceiling = bottom + (top - bottom) * t;
       } else {
         const t = smoothstep((closest.distance - halfWidth) / shore);

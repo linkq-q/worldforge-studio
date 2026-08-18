@@ -3,6 +3,7 @@ import { RenderStyleManager } from '@voxel-studio/render-runtime';
 import { configureSunLight } from './lighting';
 import { HDRI_DOME_RADIUS, HdriSkyController } from './hdriSky';
 import { AtmosphereFxRuntime } from './atmosphereFxRuntime';
+import { WeatherRuntime, type WeatherFrame } from './weatherRuntime';
 import { RenderRuntimeAdapter } from './renderRuntimeAdapter';
 import { configureRendererOutput } from './renderOutputPipeline';
 import type { RenderedMap } from './mapRenderer';
@@ -12,8 +13,10 @@ import type { RenderScheme } from '../shared/renderScheme';
 import type { VisualTimeOfDay } from '../shared/visualDirection';
 import { mixHexColors } from '../shared/colorDirector';
 import { compileAtmosphereFx } from '../shared/atmosphereFx';
+import { compileRuntimeWeather } from '../shared/weather';
 import {
   DEFAULT_RUNTIME_GRASS_STYLE,
+  DEFAULT_RUNTIME_TERRAIN_MATERIAL_STYLE,
   compileRenderPlan,
   compileRuntimeColorGrade,
   compileRuntimeEffectRecipes,
@@ -25,6 +28,7 @@ import {
   compileRuntimePostQuality,
   compileRuntimePresentation,
   compileRuntimeStyle,
+  compileRuntimeTerrainMaterialStyle,
   compileRuntimeWaterStyles,
   type RuntimeLightRig
 } from '../shared/renderPlan';
@@ -89,6 +93,7 @@ export class RenderSceneRuntime {
   readonly adapter: RenderRuntimeAdapter;
   readonly hdriSky: HdriSkyController;
   readonly atmosphereFx: AtmosphereFxRuntime;
+  readonly weather: WeatherRuntime;
 
   /** Source of truth for sun placement and shadow fit. */
   map: EditableMap | null = null;
@@ -99,6 +104,15 @@ export class RenderSceneRuntime {
   private width = 0;
   private height = 0;
   private pixelRatio = 0;
+  private baseBackground = new THREE.Color(NEUTRAL_BACKGROUND);
+  private baseSunColor = new THREE.Color(0xfff0ce);
+  private baseHemisphereColor = new THREE.Color(0xeaf6ff);
+  private baseHemisphereGroundColor = new THREE.Color(0x30382f);
+  private baseSunIntensity = 2.5;
+  private baseHemisphereIntensity = 1.6;
+  private baseSunPosition = new THREE.Vector3(...DEFAULT_SUN_POSITION);
+  private baseFogColor = '#111719';
+  private baseFogDensity = 0;
 
   constructor(options: RenderSceneRuntimeOptions) {
     this.scene.background = new THREE.Color(NEUTRAL_BACKGROUND);
@@ -134,6 +148,7 @@ export class RenderSceneRuntime {
       (environmentMap) => this.adapter.syncEnvironment(environmentMap)
     );
     this.atmosphereFx = new AtmosphereFxRuntime(this.scene);
+    this.weather = new WeatherRuntime(this.scene, this.camera, this.renderer);
   }
 
   /** Re-fits the sun and its shadow camera to the current map. */
@@ -163,6 +178,7 @@ export class RenderSceneRuntime {
       const mesh = object as THREE.Mesh;
       if (mesh.isMesh && object.userData.editorHelper !== true) this.meshRegistry.set(mesh.uuid, mesh);
     });
+    this.applySurfaceCapabilities();
   }
 
   setSize(width: number, height: number): void {
@@ -184,6 +200,7 @@ export class RenderSceneRuntime {
 
   /** Advances animated capabilities (grass, water, effects) and draws a frame. */
   renderFrame(deltaTime: number, elapsedSeconds: number): void {
+    this.applyWeatherFrame(this.weather.update(deltaTime));
     this.rendered?.update(deltaTime, this.camera, this.adapter.getContentVisibilityDistance());
     this.atmosphereFx.update(deltaTime, elapsedSeconds);
     this.adapter.tick(deltaTime, elapsedSeconds);
@@ -206,6 +223,9 @@ export class RenderSceneRuntime {
   applyScheme(scheme: RenderScheme | null): void {
     this.currentScheme = scheme;
     applyRenderScheme(this, scheme);
+    this.captureWeatherBase(scheme);
+    this.weather.apply(compileRuntimeWeather(scheme?.renderPlan));
+    this.applySurfaceCapabilities();
     this.syncAtmosphereFx();
   }
 
@@ -221,6 +241,7 @@ export class RenderSceneRuntime {
   setAdaptiveQuality(quality: number): void {
     this.adaptiveQuality = THREE.MathUtils.clamp(quality, 0.4, 1);
     this.setAtmosphereFxQuality(this.adaptiveQuality);
+    this.weather?.setQuality(this.adaptiveQuality);
     const ratioScale = 0.74 + this.adaptiveQuality * 0.26;
     this.renderer.setPixelRatio(Math.max(0.85, this.basePixelRatio * ratioScale));
     if (this.width > 0 && this.height > 0) this.setSize(this.width, this.height);
@@ -228,6 +249,17 @@ export class RenderSceneRuntime {
 
   getAdaptiveQuality(): number {
     return this.adaptiveQuality;
+  }
+
+  getWeatherStats(): { particles: number; capacity: number; drawCalls: number; quality: number } {
+    return this.weather.getStats();
+  }
+
+  dispose(): void {
+    this.weather.dispose();
+    this.atmosphereFx.dispose();
+    this.hdriSky.dispose();
+    this.renderer.dispose();
   }
 
   private syncAtmosphereFx(): void {
@@ -238,6 +270,71 @@ export class RenderSceneRuntime {
     const state = compileAtmosphereFx(this.map, this.currentScheme?.renderPlan);
     this.atmosphereFx.apply(this.map, state);
     this.rendered?.setSandFlowStrength(state.channels.sand);
+  }
+
+  private applySurfaceCapabilities(): void {
+    const plan = this.currentScheme?.renderPlan;
+    this.rendered?.setTerrainMaterialStyle(
+      plan ? compileRuntimeTerrainMaterialStyle(plan) : DEFAULT_RUNTIME_TERRAIN_MATERIAL_STYLE
+    );
+    if (!plan?.modules.some((module) => module.id === 'runtime.weather')) {
+      this.rendered?.setWeatherSurface(0, 0);
+    }
+  }
+
+  private captureWeatherBase(scheme: RenderScheme | null): void {
+    if (this.scene.background instanceof THREE.Color) this.baseBackground.copy(this.scene.background);
+    this.baseSunColor.copy(this.sunLight.color);
+    this.baseHemisphereColor.copy(this.hemisphereLight.color);
+    this.baseHemisphereGroundColor.copy(this.hemisphereLight.groundColor);
+    this.baseSunIntensity = this.sunLight.intensity;
+    this.baseHemisphereIntensity = this.hemisphereLight.intensity;
+    this.baseSunPosition.copy(this.sunLight.position);
+    const settings = scheme
+      ? { ...scheme.settings, ...(scheme.renderPlan ? compileRenderPlan(scheme.renderPlan) : {}) }
+      : { fogColor: '#111719', fogDensity: 0 };
+    this.baseFogColor = settings.fogColor;
+    this.baseFogDensity = settings.fogDensity;
+  }
+
+  private applyWeatherFrame(frame: WeatherFrame): void {
+    if (!frame.enabled) {
+      if (this.scene.background instanceof THREE.Color) this.scene.background.copy(this.baseBackground);
+      this.sunLight.color.copy(this.baseSunColor);
+      this.hemisphereLight.color.copy(this.baseHemisphereColor);
+      this.hemisphereLight.groundColor.copy(this.baseHemisphereGroundColor);
+      this.sunLight.intensity = this.baseSunIntensity;
+      this.hemisphereLight.intensity = this.baseHemisphereIntensity;
+      this.sunLight.position.copy(this.baseSunPosition);
+      this.adapter.applyDistanceFog(this.baseFogColor, this.baseFogDensity);
+      this.rendered?.setWeatherSurface(0, 0);
+      return;
+    }
+
+    const daylight = THREE.MathUtils.clamp(Math.sin((frame.timeOfDay - 6) / 12 * Math.PI), 0, 1);
+    const dayFactor = 0.1 + daylight * 0.9;
+    const coldSky = new THREE.Color('#9fb4c4');
+    if (this.scene.background instanceof THREE.Color) {
+      this.scene.background.copy(this.baseBackground)
+        .lerp(coldSky, (1 - frame.skyDim) * 0.34)
+        .multiplyScalar(frame.skyDim * (0.3 + daylight * 0.7) + frame.lightningFlash * 0.5);
+    }
+    this.sunLight.color.copy(this.baseSunColor)
+      .lerp(new THREE.Color(daylight > 0.22 ? '#dcecff' : '#8fa9d8'), 0.28 + (1 - daylight) * 0.4);
+    this.hemisphereLight.color.copy(this.baseHemisphereColor).lerp(coldSky, (1 - frame.skyDim) * 0.4);
+    this.hemisphereLight.groundColor.copy(this.baseHemisphereGroundColor).lerp(new THREE.Color('#3e4a50'), 0.22);
+    this.sunLight.intensity = this.baseSunIntensity * frame.sunDim * dayFactor + frame.lightningFlash * 3.2;
+    this.hemisphereLight.intensity = this.baseHemisphereIntensity * frame.ambientDim * (0.28 + daylight * 0.72)
+      + frame.lightningFlash * 1.2;
+    const orbit = Math.max(10, this.baseSunPosition.length());
+    const solarAngle = (frame.timeOfDay - 6) / 24 * Math.PI * 2;
+    this.sunLight.position.set(
+      Math.cos(solarAngle) * orbit,
+      Math.max(2, Math.sin(solarAngle) * orbit),
+      Math.sin(solarAngle * 0.73) * orbit * 0.65
+    );
+    this.adapter.applyDistanceFog(this.baseFogColor, Math.max(this.baseFogDensity, frame.fogDensity));
+    this.rendered?.setWeatherSurface(frame.wetness, frame.snowCover);
   }
 }
 

@@ -136,7 +136,7 @@ export async function createMapViewer(options: MapViewerOptions): Promise<MapVie
         runtime.scene.remove(rendered.group);
         rendered.dispose();
       }
-      runtime.renderer.dispose();
+      runtime.dispose();
     }
   };
 }

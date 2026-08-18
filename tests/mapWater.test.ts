@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { createEmptyMap, sampleTerrainHeight, type MapWaterBody } from '../src/shared/map';
 import {
+  carveWaterBasinInPlace,
   distanceToWater,
   prepareStructuredWaterInPlace,
   riverPathSamples,
@@ -42,6 +43,22 @@ describe('structured water geometry', () => {
     expect(samples.length).toBeGreaterThan(river.points.length);
     expect(samples[0]).toMatchObject({ point: river.points[0], level: 3 });
     expect(samples.at(-1)).toMatchObject({ point: river.points.at(-1), level: 1 });
+  });
+
+  it('carves a deep central bed across part of the river width instead of a single V-shaped line', () => {
+    const map = createEmptyMap('deep river', 'deep-river');
+    map.terrain.heights.fill(3);
+    const river: MapWaterBody = {
+      id: 'deep-river', name: 'Deep river', type: 'river', level: 0, depth: 2.2, width: 6,
+      points: [[0, -12], [0, 12]], levels: [0, 0],
+      shorelineSmoothness: 0.9, shorelineIrregularity: 0, seed: 7
+    };
+
+    carveWaterBasinInPlace(map, river);
+
+    expect(sampleTerrainHeight(map, 0, 0)).toBeCloseTo(-2.2, 1);
+    expect(sampleTerrainHeight(map, 1, 0)).toBeCloseTo(-2.2, 1);
+    expect(sampleTerrainHeight(map, 2.8, 0)).toBeGreaterThan(-0.8);
   });
 
   it('upgrades legacy flat rivers in memory and carves their channel on load', () => {

@@ -366,6 +366,27 @@ declare module '@voxel-studio/render-runtime/environment' {
 }
 
 declare module '@voxel-studio/render-runtime/effects' {
+  export interface ParticleEmitter {
+    rate: number;
+    alive: number;
+    capacity: number;
+    worldPos: number[];
+    config: Record<string, unknown>;
+  }
+
+  export class ParticleEngine {
+    constructor(context: { THREE: typeof import('three'); scene: import('three').Scene });
+    spawn(config: Record<string, unknown>, anchor?: { worldPos?: number[] }): ParticleEmitter;
+    remove(emitter: ParticleEmitter): void;
+    update(
+      deltaTime: number,
+      camera?: import('three').Camera | null,
+      depthTexture?: import('three').DepthTexture | null,
+      viewportHeight?: number | null
+    ): void;
+    dispose(): void;
+  }
+
   export class EffectSlotManager {
     constructor(options?: Record<string, unknown>);
     applyPackage(
@@ -404,6 +425,16 @@ declare module '@voxel-studio/render-runtime/effects' {
       updateRuntimeUniforms(root: import('three').Object3D, values: Record<string, number>): number;
     };
   };
+}
+
+declare module '@voxel-studio/render-runtime/utils/MaterialShaderPatchChain.js' {
+  export function addMaterialShaderPatch(
+    material: import('three').Material,
+    key: string,
+    patch: (shader: import('three').WebGLProgramParametersWithUniforms) => void,
+    options?: { order?: number; cacheKey?: () => string }
+  ): void;
+  export function hasMaterialShaderPatch(material: import('three').Material, key: string): boolean;
 }
 
 declare module '@voxel-studio/render-runtime/model/material-tags-v1.json' {

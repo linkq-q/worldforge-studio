@@ -5192,6 +5192,7 @@ class MapEditor {
     const mapStats = this.renderedMap?.getDebugStats();
     const pipeline = this.renderScene?.adapter.getPerformanceStats();
     const atmosphere = this.renderScene?.getAtmosphereFxStats();
+    const weather = this.renderScene?.getWeatherStats();
     return {
       objects: this.state.map?.objects.length ?? 0,
       waters: this.state.map?.waterBodies.length ?? 0,
@@ -5212,6 +5213,9 @@ class MapEditor {
       grassDrawCalls: mapStats?.grassDrawCalls ?? 0,
       atmosphereParticles: atmosphere?.particles ?? 0,
       atmosphereDrawCalls: atmosphere?.drawCalls ?? 0,
+      weatherParticles: weather?.particles ?? 0,
+      weatherCapacity: weather?.capacity ?? 0,
+      weatherDrawCalls: weather?.drawCalls ?? 0,
       adaptiveQuality: this.renderScene?.getAdaptiveQuality() ?? 1,
       stages: pipeline?.stages ?? [],
       passes: pipeline?.passes ?? [],

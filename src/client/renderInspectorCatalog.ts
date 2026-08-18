@@ -47,8 +47,8 @@ export const RENDER_INSPECTOR_CATEGORIES: readonly RenderInspectorCategory[] = [
   {
     id: 'environment',
     label: '环境',
-    description: '天空、环境色、距离雾和草地表现',
-    moduleIds: ['environment.palette', 'environment.hdri', 'atmosphere.fog', 'runtime.atmosphere-fx', 'runtime.grass-style']
+    description: '天空、天气、环境色、距离雾和草地表现',
+    moduleIds: ['environment.palette', 'environment.hdri', 'atmosphere.fog', 'runtime.weather', 'runtime.atmosphere-fx', 'runtime.grass-style']
   },
   {
     id: 'water',
@@ -59,8 +59,8 @@ export const RENDER_INSPECTOR_CATEGORIES: readonly RenderInspectorCategory[] = [
   {
     id: 'materials',
     label: '材质',
-    description: '按标签应用材质主题、特效和隔离 Shader 扩展',
-    moduleIds: ['runtime.material-theme', 'runtime.effect-recipe', 'runtime.shader-extension']
+    description: '地表细节与按标签应用的材质、特效和隔离 Shader 扩展',
+    moduleIds: ['runtime.terrain-materials', 'runtime.material-theme', 'runtime.effect-recipe', 'runtime.shader-extension']
   }
 ] as const;
 

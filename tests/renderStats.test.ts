@@ -48,6 +48,9 @@ describe('render stats', () => {
       grassDrawCalls: 3,
       atmosphereParticles: 120,
       atmosphereDrawCalls: 2,
+      weatherParticles: 256,
+      weatherCapacity: 1024,
+      weatherDrawCalls: 1,
       adaptiveQuality: 0.68,
       stages: [],
       passes: [],
@@ -86,7 +89,8 @@ describe('render stats', () => {
         fallbackParts: 0, batchCount: 0, effectBatchCount: 0, effectBatchParts: 0,
         runtimeIndexPartRefs: 0, orphanPartRefs: 0, orphanInstanceRefs: 0, culled: 0, tested: 0,
         grassBlades: 0, grassFlowers: 0, grassDrawCalls: 0, atmosphereParticles: 0,
-        atmosphereDrawCalls: 0, adaptiveQuality: 1, stages: [], passes: [], composerPasses: []
+        atmosphereDrawCalls: 0, weatherParticles: 0, weatherCapacity: 0, weatherDrawCalls: 0,
+        adaptiveQuality: 1, stages: [], passes: [], composerPasses: []
       })
     });
 

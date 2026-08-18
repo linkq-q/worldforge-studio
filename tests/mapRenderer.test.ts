@@ -414,6 +414,32 @@ describe('structured map water rendering', () => {
     rendered.dispose();
   });
 
+  it('applies terrain recipes and snow to upward model surfaces', async () => {
+    const rendered = await buildEditableMapGroup(createEmptyMap('weather-surface', 'map-weather-surface'));
+    const terrain = rendered.group.getObjectByName('terrain') as THREE.Mesh;
+    const terrainMaterial = terrain.material as THREE.MeshStandardMaterial;
+    const firstTexture = terrainMaterial.map;
+    const roofMaterial = new THREE.MeshStandardMaterial({ color: '#70452f', roughness: 0.7 });
+    const roof = new THREE.Mesh(new THREE.BoxGeometry(2, 0.3, 2), roofMaterial);
+    rendered.modelsRoot.add(roof);
+
+    rendered.setTerrainMaterialStyle({ detailStrength: 1, soilRecipe: 'moist', sandRecipe: 'beach' });
+    rendered.setWeatherSurface(0.65, 0.9);
+
+    expect(terrainMaterial.map).not.toBe(firstTexture);
+    expect(terrain.userData.terrainMaterialStyle).toEqual({
+      detailStrength: 1,
+      soilRecipe: 'moist',
+      sandRecipe: 'beach'
+    });
+    expect(terrain.userData.weatherSurface).toEqual({ wetness: 0.65, snowCover: 0.9 });
+    expect(roofMaterial.userData.worldforgeSnowUniform.value).toBe(0.9);
+    expect(roofMaterial.userData.shaderPatchChain).toEqual(expect.arrayContaining([
+      expect.objectContaining({ key: 'worldforge-weather-snow' })
+    ]));
+    rendered.dispose();
+  });
+
   it('regroups matching material-tag effects and keeps their RuntimeIndex transform binding', async () => {
     const map = createEmptyMap('tagged-effect-batch', 'map-tagged-effect-batch');
     const now = Date.now();

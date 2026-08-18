@@ -31,6 +31,9 @@ export interface RenderDebugDetails {
   grassDrawCalls: number;
   atmosphereParticles: number;
   atmosphereDrawCalls: number;
+  weatherParticles: number;
+  weatherCapacity: number;
+  weatherDrawCalls: number;
   adaptiveQuality: number;
   stages: Array<{ name: string; ms: number }>;
   passes: Array<{ id: string; name: string; enabled: boolean }>;
@@ -71,6 +74,9 @@ const EMPTY_DETAILS: RenderDebugDetails = {
   grassDrawCalls: 0,
   atmosphereParticles: 0,
   atmosphereDrawCalls: 0,
+  weatherParticles: 0,
+  weatherCapacity: 0,
+  weatherDrawCalls: 0,
   adaptiveQuality: 1,
   stages: [],
   passes: [],
@@ -178,6 +184,7 @@ export class RenderStats {
           <span>草叶 <b>${formatCount(details.grassBlades)}</b></span><span>碎花 <b>${formatCount(details.grassFlowers)}</b></span>
           <span>草 Draw <b>${details.grassDrawCalls}</b></span><span>纹理 <b>${this.info.memory?.textures ?? 0}</b></span>
           <span>氛围粒子 <b>${formatCount(details.atmosphereParticles)}</b></span><span>氛围 Draw <b>${details.atmosphereDrawCalls}</b></span>
+          <span>天气粒子 <b>${formatCount(details.weatherParticles)}/${formatCount(details.weatherCapacity)}</b></span><span>天气 Draw <b>${details.weatherDrawCalls}</b></span>
           <span>自适应质量 <b>${Math.round(details.adaptiveQuality * 100)}%</b></span><span>未合批 Part <b>${details.fallbackParts}</b></span>
         </div>
         ${passRows ? `<div class="perf-pass-list"><strong>Pass Timing</strong>${passRows}</div>` : ''}
@@ -254,6 +261,7 @@ export function buildPerformanceReport(
     `grassBlades: ${details.grassBlades}`,
     `grassFlowers: ${details.grassFlowers}`,
     `atmosphereParticles: ${details.atmosphereParticles}`,
+    `weatherParticles: ${details.weatherParticles}/${details.weatherCapacity}`,
     `adaptiveQuality: ${details.adaptiveQuality.toFixed(2)}`,
     `composer: ${details.composerPasses.map((pass) => `${pass.name}=${pass.ms.toFixed(2)}ms`).join(', ') || 'none'}`
   ].join('\n');
