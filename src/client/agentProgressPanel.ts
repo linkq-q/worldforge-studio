@@ -86,6 +86,9 @@ export function humanizeAgentError(error: unknown): string {
   if (/^(?:unknown_map_asset|map_agent_existing_asset_reuse_disabled|generated_asset_mode_mismatch)/.test(message)) {
     return `【资产引用冲突】AI 引用了当前不可用、不可复用或生成模式不匹配的资产（${message}）。请检查资产库复用选项与地图资产模式后重试。`;
   }
+  if (/^(?:map_code_execution_failed:)?(?:non_finite_map_code_value|invalid_map_code_point|invalid_map_code_position)/.test(message)) {
+    return `【Code 数值错误】程序化规划代码产生了无效坐标或非有限数值。系统已自动尝试修复一次，但仍未通过。请重试；若持续出现，请简化曲线、循环或向量计算要求。服务端信息：${message.slice(0, 240)}`;
+  }
   if (/^(?:invalid_|unknown_scene_|duplicate_scene_|forbidden_scene_|required_scene_|scene_composition_)/.test(message)) {
     return `【AI 规划校验失败】AI 返回的场景关系或地图操作不符合编辑器约束（${message}）。请重试；若重复出现，请简化区域关系与内容要求。`;
   }

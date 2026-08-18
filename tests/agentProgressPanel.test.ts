@@ -46,6 +46,8 @@ describe('agent progress panel', () => {
     expect(humanizeAgentError(new Error('indoor_prompt_requires_indoor_map'))).toContain('【场景类型不匹配】');
     expect(humanizeAgentError(new Error('Failed to fetch'))).toContain('【连接失败】');
     expect(humanizeAgentError(new Error('chat_service_unreachable'))).toContain('【AI 服务连接失败】');
+    expect(humanizeAgentError(new Error('map_code_execution_failed:non_finite_map_code_value')))
+      .toContain('【Code 数值错误】');
   });
 
   it('explains a render JSON repair failure as a terminal two-attempt failure', () => {

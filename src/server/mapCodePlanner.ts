@@ -88,9 +88,11 @@ export async function generateMapCodeSuggestion(
 ): Promise<MapAiSuggestion> {
   options.onProgress?.({ phase: 'planning', label: 'AI 正在编写程序化环境规划代码' });
   const maxNewAssets = normalizeMapAiMaxNewAssets(options.maxNewAssets);
-  const code = extractCode(await llmChat([
-    { role: 'system', content: buildMapCodePlannerSystemPrompt(map, assets, maxNewAssets) },
-    { role: 'user', content: prompt.trim().slice(0, 1_200) }
+  const systemPrompt = buildMapCodePlannerSystemPrompt(map, assets, maxNewAssets);
+  const userPrompt = prompt.trim().slice(0, 1_200);
+  let code = extractCode(await llmChat([
+    { role: 'system', content: systemPrompt },
+    { role: 'user', content: userPrompt }
   ], {
     apiBase: options.apiBase,
     provider: options.provider ?? 'gpt',
@@ -99,10 +101,46 @@ export async function generateMapCodeSuggestion(
     fetchImpl: options.fetchImpl,
     signal: options.signal
   }));
-  const discovery = runMapCodePlan(code, map, assets, {
-    mode: 'discovery',
-    maxNewAssets
-  });
+  let discovery: CodeExecutionResult;
+  try {
+    discovery = runMapCodePlan(code, map, assets, {
+      mode: 'discovery',
+      maxNewAssets
+    });
+  } catch (error) {
+    if (error instanceof Error && error.name === 'AbortError') throw error;
+    const executionError = mapCodeExecutionErrorDetail(error);
+    options.onProgress?.({
+      phase: 'replanning',
+      label: '检测到代码数值或边界错误，AI 正在自动修复',
+      detail: executionError
+    });
+    code = extractCode(await llmChat([
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: userPrompt },
+      { role: 'assistant', content: code },
+      {
+        role: 'user',
+        content: `The program failed during its sandboxed discovery run with this error:\n${executionError}\n\nReturn corrected JavaScript only. Preserve the requested design. Check every array index, loop endpoint, division, vector component, and optional argument. JavaScript arrays cannot be added or subtracted directly; calculate x/z components separately. Ensure every numeric value passed to the API is finite.`
+      }
+    ], {
+      apiBase: options.apiBase,
+      provider: options.provider ?? 'gpt',
+      temperature: 0.1,
+      maxTokens: 6_000,
+      fetchImpl: options.fetchImpl,
+      signal: options.signal
+    }));
+    try {
+      discovery = runMapCodePlan(code, map, assets, {
+        mode: 'discovery',
+        maxNewAssets
+      });
+    } catch (repairError) {
+      if (repairError instanceof Error && repairError.name === 'AbortError') throw repairError;
+      throw new Error(`map_code_execution_failed:${mapCodeExecutionErrorDetail(repairError)}`);
+    }
+  }
   if (discovery.requirements.length === 0) {
     options.onProgress?.({ phase: 'complete', label: 'Code 规划已完成，未请求新资产' });
     return discovery.suggestion;
@@ -421,6 +459,7 @@ export function buildMapCodePlannerSystemPrompt(
 Return JavaScript only, defining exactly one synchronous function: function plan(api) { ... }.
 Basic JavaScript control flow is allowed: const/let, arrays, objects, for, for...of, while, if/else and local helper functions.
 Do not use async, promises, eval, Function, imports, network, files, timers, randomness outside api.random, or global state.
+JavaScript arrays are not vectors: never add or subtract arrays directly. Calculate x/z components separately, keep loop indexes in bounds, guard divisions, and only pass finite numbers to API functions.
 
 The code must call api.place at least once. Position [x,z] follows terrain automatically; position [x,y,z] is fixed height.
 For prompt-specific visible content, declare reusable generated assets first. Use proxy placements without assetId only for abstract editor markers, never as the normal solution.
@@ -450,6 +489,15 @@ ${assetCatalog}`;
 function extractCode(raw: string): string {
   const fenced = raw.match(/```(?:js|javascript|ts|typescript)?\s*([\s\S]*?)```/i);
   return (fenced?.[1] ?? raw).trim();
+}
+
+function mapCodeExecutionErrorDetail(error: unknown): string {
+  if (!(error instanceof Error)) return String(error || 'unknown_map_code_execution_error').slice(0, 1_000);
+  const generatedFrame = error.stack
+    ?.split('\n')
+    .find((line) => line.includes('worldforge-map-plan.js'))
+    ?.trim();
+  return [error.message, generatedFrame].filter(Boolean).join(' at ').slice(0, 1_000);
 }
 
 function normalizeCodeAssetRequirement(input: CodeAssetRequirementInput): CodeAssetRequirement {

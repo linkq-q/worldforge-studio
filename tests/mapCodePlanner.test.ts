@@ -141,6 +141,42 @@ describe('map code planner', () => {
     expect(assetIds.slice(0, 3)).toEqual(assetIds.slice(3, 6));
     expect(() => applyMapOperations(createEmptyMap(), suggestion.operations)).not.toThrow();
   });
+
+  it('asks the AI to repair non-finite code once before failing the plan', async () => {
+    const brokenCode = `
+      function plan(api) {
+        const points = api.sampleBezier([-5, 0], [-2, 3], [2, -3], [5, 0], 4);
+        for (let index = 0; index < points.length; index += 1) {
+          api.place({ position: [points[index][0], points[index + 1][1]] });
+        }
+      }
+    `;
+    const repairedCode = `
+      function plan(api) {
+        const points = api.sampleBezier([-5, 0], [-2, 3], [2, -3], [5, 0], 4);
+        for (let index = 0; index < points.length; index += 1) {
+          api.place({ position: points[index] });
+        }
+      }
+    `;
+    const response = (content: string) => new Response(JSON.stringify({ ok: true, content }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' }
+    });
+    const fetchImpl = vi.fn()
+      .mockResolvedValueOnce(response(brokenCode))
+      .mockResolvedValueOnce(response(repairedCode));
+
+    const suggestion = await generateMapCodeSuggestion('make a curved trail', createEmptyMap(), [], {
+      apiBase: 'https://example.test',
+      provider: 'gpt',
+      fetchImpl
+    });
+
+    expect(fetchImpl).toHaveBeenCalledTimes(2);
+    expect(suggestion.codePlan?.code).toContain('position: points[index]');
+    expect(suggestion.operations.filter((operation) => operation.type === 'object.add')).toHaveLength(5);
+  });
 });
 
 function testAsset(id: string, name: string): MapAsset {
