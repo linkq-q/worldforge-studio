@@ -83,6 +83,10 @@ export interface MapAiOptions {
   approvedCompositionPlan?: SceneCompositionPlan;
   /** Use one unified bounded Scene Code program for outdoor generation. */
   sceneAgent?: boolean;
+  /** Return an indoor Code candidate and asset declaration list without generating assets. */
+  discoveryOnly?: boolean;
+  /** Continue from a user-approved indoor Code candidate. */
+  approvedCode?: string;
 }
 
 export interface AssetGenerationRequest {
@@ -118,7 +122,7 @@ export async function runMapAgent(
   if (mode === 'generate' && map.sceneMode === 'outdoor' && requestsIndoorScene(prompt)) {
     throw new Error('indoor_prompt_requires_indoor_map');
   }
-  if (map.sceneMode === 'outdoor' && options.sceneAgent) {
+  if (map.sceneMode === 'indoor' || (map.sceneMode === 'outdoor' && options.sceneAgent)) {
     return generateMapCodeSuggestion(prompt, map, assets, {
       ...options,
       mode,

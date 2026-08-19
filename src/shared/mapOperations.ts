@@ -74,6 +74,21 @@ export interface MapAiCodePlan {
   functions: string[];
   sceneIntent?: 'natural' | 'authored';
   sceneIntentReason?: string;
+  repairAttempts?: number;
+  assetRequirements?: Array<{
+    key: string;
+    name: string;
+    variants: number;
+    dimensions?: [number, number, number];
+    role?: 'structure' | 'environment' | 'functional' | 'decor';
+    optional?: boolean;
+  }>;
+  diagnostics?: Array<{
+    code: string;
+    severity: 'info' | 'warning' | 'error';
+    message: string;
+    repaired: boolean;
+  }>;
 }
 
 export interface MapAiTransactionMetadata {

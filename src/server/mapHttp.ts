@@ -419,6 +419,7 @@ async function handleEditorMaps(req: Req, res: Res, store: MapStore, parts: stri
       baseTerrainOnly?: boolean;
       planOnly?: boolean;
       approvedCompositionPlan?: SceneCompositionPlan;
+      approvedCode?: string;
       sceneAgent?: boolean;
     }>(req);
     const prompt = body.prompt?.trim();
@@ -465,6 +466,27 @@ async function handleEditorMaps(req: Req, res: Res, store: MapStore, parts: stri
         if (parts[4] !== 'generate' || planningMap.sceneMode === 'mixed') {
           throw new HttpError(400, 'composition_plan_preview_unavailable');
         }
+        if (planningMap.sceneMode === 'indoor') {
+          const suggestion = await runMapAgent(prompt, planningMap, planningAssets, {
+            provider,
+            signal: controller.signal,
+            mode: 'generate',
+            reuseExistingAssets: body.reuseExistingAssets === true,
+            reusableAssetIds: libraryAssets.map((asset) => asset.id),
+            minNewAssets: body.minNewAssets,
+            maxNewAssets: body.maxNewAssets,
+            discoveryOnly: true,
+            onProgress,
+            createAsset: async () => { throw new Error('discovery_only_asset_generation'); }
+          });
+          if (stream) {
+            sendSse(res, 'result', { suggestion });
+            res.end();
+          } else {
+            sendJson(res, 200, { suggestion });
+          }
+          return;
+        }
         const plan = await planMapComposition(prompt, planningMap, planningAssets, {
           provider,
           signal: controller.signal,
@@ -494,6 +516,7 @@ async function handleEditorMaps(req: Req, res: Res, store: MapStore, parts: stri
           targetRegionId: parts[4] === 'refine' ? body.targetRegionId : undefined,
           baseTerrainOnly: parts[4] === 'refine' && body.baseTerrainOnly === true,
           approvedCompositionPlan: body.approvedCompositionPlan,
+          approvedCode: body.approvedCode,
           sceneAgent: body.sceneAgent === true,
           onProgress,
           onPreview,

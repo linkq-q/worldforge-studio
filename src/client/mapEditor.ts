@@ -56,6 +56,7 @@ import {
 import { isCompositionEmptyMap, type SceneCompositionPlan } from '../shared/sceneComposition';
 import {
   mapCompositionPlacementQuality,
+  renderMapCodePlanApproval,
   renderMapCodePlanSummary,
   renderMapCompositionPlanApproval,
   renderMapCompositionSummary
@@ -372,6 +373,7 @@ class MapEditor {
   private mapAiReuseExistingAssets = false;
   private mapAiConfirmCompositionPlan = false;
   private pendingCompositionPlan: SceneCompositionPlan | null = null;
+  private pendingCodeSuggestion: MapAiSuggestion | null = null;
   private activeAssetLibraryId = '';
   private selectedLibraryAssetId = '';
   private projectExportProfiles: ProjectExportProfile[] = [];
@@ -1355,7 +1357,8 @@ class MapEditor {
     if (this.mapAiTargetVisualZoneId && !visualZones.some((zone) => zone.id === this.mapAiTargetVisualZoneId)) {
       this.mapAiTargetVisualZoneId = '';
     }
-    const generationBlocked = this.state.busy || this.state.dirty || !this.mapAiPrompt.trim() || !compositionAvailable || Boolean(this.pendingCompositionPlan);
+    const generationBlocked = this.state.busy || this.state.dirty || !this.mapAiPrompt.trim()
+      || !compositionAvailable || Boolean(this.pendingCompositionPlan || this.pendingCodeSuggestion);
     const refinementBlocked = generationBlocked || !hasRefinableMapContent(map);
     const mapAiOpen = host.querySelector<HTMLDetailsElement>('[data-inspector-section="map-ai"]')?.open ?? true;
     const layoutHtml = map.sceneMode === 'indoor' ? '' : this.renderMapLayoutHtml(map);
@@ -1364,7 +1367,7 @@ class MapEditor {
       <details class="inspector-disclosure" data-inspector-section="map-ai" ${mapAiOpen || this.state.busy || Boolean(suggestion) ? 'open' : ''}>
         <summary><span><b>${map.sceneMode === 'indoor' ? 'AI 生成室内场景' : 'AI 生成地图'}</b><small>一句话生成或继续调整</small></span></summary>
         <section class="editor-section inspector-body map-ai">
-        <textarea id="map-ai-prompt" rows="2" maxlength="1200" placeholder="${map.sceneMode === 'indoor' ? '例如：一间 1980 年代的教室' : '例如：一片树林里散布着许多小木屋'}" ${this.state.busy || this.pendingCompositionPlan ? 'disabled' : ''}>${escapeHtml(this.mapAiPrompt)}</textarea>
+        <textarea id="map-ai-prompt" rows="2" maxlength="1200" placeholder="${map.sceneMode === 'indoor' ? '例如：一间 1980 年代的教室' : '例如：一片树林里散布着许多小木屋'}" ${this.state.busy || this.pendingCompositionPlan || this.pendingCodeSuggestion ? 'disabled' : ''}>${escapeHtml(this.mapAiPrompt)}</textarea>
         <p class="empty inspector-note">建议只写一句场景描述；AI 会自行安排坐标、数量、密度和空间关系。</p>
         <div class="map-ai-options">
           ${map.sceneMode === 'outdoor' ? `<label class="field compact map-ai-toggle">
@@ -1372,8 +1375,8 @@ class MapEditor {
             <input id="map-ai-scene-agent" type="checkbox" ${this.mapAiUseSceneAgent ? 'checked' : ''} ${this.state.busy ? 'disabled' : ''} />
           </label>` : ''}
           ${map.sceneMode === 'indoor' ? `<label class="field compact map-ai-toggle">
-            <span>生成资产前先确认俯视规划</span>
-            <input id="map-ai-confirm-plan" type="checkbox" ${this.mapAiConfirmCompositionPlan ? 'checked' : ''} ${this.state.busy || this.pendingCompositionPlan ? 'disabled' : ''} />
+            <span>生成资产前先确认功能规划</span>
+            <input id="map-ai-confirm-plan" type="checkbox" ${this.mapAiConfirmCompositionPlan ? 'checked' : ''} ${this.state.busy || this.pendingCompositionPlan || this.pendingCodeSuggestion ? 'disabled' : ''} />
           </label>` : ''}
           <label class="field compact map-ai-toggle">
             <span>允许使用所选资产库</span>
@@ -1404,7 +1407,7 @@ class MapEditor {
           </label>` : ''}
         </div>
         <div class="map-ai-controls">
-          <button id="generate-map-ai" ${generationBlocked ? 'disabled' : ''}>${map.sceneMode === 'indoor' && this.mapAiConfirmCompositionPlan ? '先生成俯视规划' : '生成新规划'}</button>
+          <button id="generate-map-ai" ${generationBlocked ? 'disabled' : ''}>${map.sceneMode === 'indoor' && this.mapAiConfirmCompositionPlan ? '先生成室内规划' : '生成新规划'}</button>
           <button id="refine-map-ai" class="secondary" ${refinementBlocked ? 'disabled' : ''}>调整当前地图</button>
           ${this.mapAiAbortController ? '<button id="cancel-map-ai" class="secondary">取消</button>' : ''}
         </div>
@@ -1421,6 +1424,7 @@ class MapEditor {
             : `${map.sceneMode === 'outdoor' && this.mapAiUseSceneAgent ? '整体 Code 编排场景' : '场景规划'} · 生成 ${this.mapAiMinNewAssets}-${this.mapAiMaxNewAssets} 个新资产`}</p>
         </section>
       </details>
+      ${this.pendingCodeSuggestion ? renderMapCodePlanApproval(this.pendingCodeSuggestion) : ''}
       ${this.pendingCompositionPlan ? renderMapCompositionPlanApproval(this.pendingCompositionPlan) : ''}
       ${suggestion && this.mapAiPreviewMap ? `
         <section class="editor-section map-ai-result">
@@ -1557,7 +1561,7 @@ class MapEditor {
     });
     host.querySelector('#repair-map-ai-assets')?.addEventListener('click', () => {
       const failedDetails = (this.mapAiSuggestion?.diagnostics ?? [])
-        .filter((issue) => issue.code === 'asset.generation-degraded' && !issue.repaired)
+        .filter((issue) => (issue.code === 'asset.generation-degraded' || issue.code === 'asset.unplaced') && !issue.repaired)
         .map((issue) => issue.message)
         .join('；');
       const repairPrompt = `${this.mapAiPrompt}\n\n只修复上一轮没有生成成功的资产及其必要摆放：${failedDetails}。保留当前地形、水体、建筑和其余已经成功的内容，不要重做整个场景。`;
@@ -1574,6 +1578,19 @@ class MapEditor {
     });
     host.querySelector('#approve-composition-plan')?.addEventListener('click', () => {
       if (this.pendingCompositionPlan) void this.generateMapAiPreview('generate', this.pendingCompositionPlan);
+    });
+    host.querySelector('#discard-code-plan')?.addEventListener('click', () => {
+      this.pendingCodeSuggestion = null;
+      this.state.message = '已放弃室内功能规划，可以修改提示词后重试';
+      this.renderPanels();
+    });
+    host.querySelector('#regenerate-code-plan')?.addEventListener('click', () => {
+      this.pendingCodeSuggestion = null;
+      void this.generateCompositionPlanPreview();
+    });
+    host.querySelector('#approve-code-plan')?.addEventListener('click', () => {
+      const code = this.pendingCodeSuggestion?.codePlan?.code;
+      if (code) void this.generateMapAiPreview('generate', undefined, undefined, false, false, code);
     });
     host.querySelectorAll<HTMLButtonElement>('[data-map-preview-view]').forEach((button) => {
       button.addEventListener('click', async () => {
@@ -2058,10 +2075,10 @@ class MapEditor {
     this.mapAiAbortController = controller;
     this.mapAgentProgress = [];
     this.startMapAgentProgressTimer();
-    this.setBusy(true, '场景总导演正在绘制室内俯视规划...');
+    this.setBusy(true, 'AI 正在规划室内功能关系与资产清单...');
     this.renderMapAiPanel();
     try {
-      const { plan } = await editorAgentFetch<{ plan: SceneCompositionPlan }>(
+      const { suggestion } = await editorAgentFetch<{ suggestion: MapAiSuggestion }>(
         `/api/editor/maps/${encodeURIComponent(map.id)}/generate`,
         {
           method: 'POST',
@@ -2081,18 +2098,18 @@ class MapEditor {
           this.renderMapAiPanel();
         }
       );
-      this.pendingCompositionPlan = plan;
-      updateAgentProgress(this.mapAgentProgress, { phase: 'complete', label: '俯视空间规划已生成，等待确认' });
-      this.state.message = '俯视规划已生成；确认前不会生成任何 3D 资产';
+      this.pendingCodeSuggestion = suggestion;
+      updateAgentProgress(this.mapAgentProgress, { phase: 'complete', label: '室内功能规划与资产清单已生成，等待确认' });
+      this.state.message = '室内功能规划已生成；确认前不会生成任何 3D 资产';
     } catch (error) {
       const cancelled = error instanceof Error && error.name === 'AbortError';
       const detail = humanizeAgentError(error);
       updateAgentProgress(this.mapAgentProgress, {
         phase: 'failed',
-        label: cancelled ? '俯视规划已取消' : '俯视规划失败',
+        label: cancelled ? '室内功能规划已取消' : '室内功能规划失败',
         detail
       });
-      this.state.message = cancelled ? '已取消俯视规划' : `俯视规划失败：${detail}`;
+      this.state.message = cancelled ? '已取消室内功能规划' : `室内功能规划失败：${detail}`;
     } finally {
       if (this.mapAiAbortController === controller) this.mapAiAbortController = null;
       this.stopMapAgentProgressTimer();
@@ -2106,7 +2123,8 @@ class MapEditor {
     approvedCompositionPlan?: SceneCompositionPlan,
     promptOverride?: string,
     automatic = false,
-    visualRepair = false
+    visualRepair = false,
+    approvedCode?: string
   ): Promise<void> {
     const map = this.state.map;
     const prompt = (promptOverride ?? this.mapAiPrompt).trim();
@@ -2131,7 +2149,13 @@ class MapEditor {
     let livePreviewFailure: unknown = null;
     let liveGeneratedAssetCount = 0;
     let livePreviewObjectCount = this.mapAiPreviewMap?.objects.length ?? 0;
-    this.setBusy(true, mode === 'refine' ? '地图 Agent 正在调整当前地图...' : map.sceneMode === 'outdoor' && this.mapAiUseSceneAgent ? '场景 Code 正在统一规划地图...' : '地图 Agent 正在检查资产并规划场景...');
+    this.setBusy(true, mode === 'refine'
+      ? '地图 Agent 正在调整当前地图...'
+      : map.sceneMode === 'indoor'
+        ? 'AI 正在检查资产并生成室内场景...'
+        : map.sceneMode === 'outdoor' && this.mapAiUseSceneAgent
+          ? '场景 Code 正在统一规划地图...'
+          : '地图 Agent 正在检查资产并规划场景...');
     this.renderMapAiPanel();
     try {
       const { suggestion } = await editorAgentFetch<{ suggestion: MapAiSuggestion }>(
@@ -2149,6 +2173,7 @@ class MapEditor {
             targetRegionId: mode === 'refine' ? this.mapAiTargetRegionId || undefined : undefined,
             baseTerrainOnly: mode === 'refine' && this.mapAiBaseTerrainOnly,
             approvedCompositionPlan,
+            approvedCode,
             sceneAgent: map.sceneMode === 'outdoor' && this.mapAiUseSceneAgent,
             ...(previousSuggestion ? { baseOperations: previousSuggestion.operations } : {})
           }),
@@ -2213,6 +2238,7 @@ class MapEditor {
       this.mapPreviewKind = 'ai';
       this.mapAiSuggestion = combinedSuggestion;
       this.pendingCompositionPlan = null;
+      this.pendingCodeSuggestion = null;
       const previewBase = baseWasSaved ? this.state.map ?? map : map;
       this.mapAiPreviewMap = applyMapOperations(this.mapWithEditorAssets(previewBase), combinedSuggestion.operations);
       this.mapAiComparisonMap = baseWasSaved ? previewBase : comparisonMap;
@@ -2530,6 +2556,7 @@ class MapEditor {
   private clearMapAiPreview(): void {
     this.mapAiSuggestion = null;
     this.pendingCompositionPlan = null;
+    this.pendingCodeSuggestion = null;
     this.mapAiPreviewMap = null;
     this.mapAiPreviewVisible = true;
     this.mapAiComparisonMap = null;

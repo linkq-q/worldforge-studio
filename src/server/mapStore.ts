@@ -1107,6 +1107,42 @@ function normalizeMapAiTransactionMetadata(value: unknown): MapAiTransactionMeta
       placementCount: boundedInteger(codePlan.placementCount, 0, 10_000),
       functions: Array.isArray(codePlan.functions)
         ? codePlan.functions.slice(0, 100).map((item) => cleanText(item, 80)).filter(Boolean)
+        : [],
+      ...(codePlan.sceneIntent === 'natural' || codePlan.sceneIntent === 'authored'
+        ? { sceneIntent: codePlan.sceneIntent }
+        : {}),
+      ...(cleanText(codePlan.sceneIntentReason, 240)
+        ? { sceneIntentReason: cleanText(codePlan.sceneIntentReason, 240) }
+        : {}),
+      repairAttempts: boundedInteger(codePlan.repairAttempts, 0, 2),
+      assetRequirements: Array.isArray(codePlan.assetRequirements)
+        ? codePlan.assetRequirements.slice(0, 64).flatMap((item) => {
+            const key = cleanText(item?.key, 80);
+            const name = cleanText(item?.name, 120);
+            if (!key || !name) return [];
+            const role = item.role === 'structure' || item.role === 'environment'
+              || item.role === 'functional' || item.role === 'decor' ? item.role : undefined;
+            const dimensions = Array.isArray(item.dimensions) && item.dimensions.length === 3
+              ? item.dimensions.map((value) => finiteNumber(value, 1)) as [number, number, number]
+              : undefined;
+            return [{
+              key,
+              name,
+              variants: boundedInteger(item.variants, 1, 8),
+              ...(dimensions ? { dimensions } : {}),
+              ...(role ? { role } : {}),
+              ...(item.optional === true ? { optional: true } : {})
+            }];
+          })
+        : [],
+      diagnostics: Array.isArray(codePlan.diagnostics)
+        ? codePlan.diagnostics.slice(0, 100).flatMap((item) => {
+            const code = cleanText(item?.code, 120);
+            const message = cleanText(item?.message, 500);
+            if (!code || !message) return [];
+            const severity = item.severity === 'error' || item.severity === 'warning' ? item.severity : 'info';
+            return [{ code, message, severity, repaired: item.repaired === true }];
+          })
         : []
     } } : {}),
     generatedAssets: Array.isArray(input.generatedAssets)

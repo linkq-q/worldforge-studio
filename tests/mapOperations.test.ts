@@ -210,7 +210,15 @@ describe('map operation transactions', () => {
         codePlan: {
           code: 'function plan(api) { api.place({ position: [0, 0] }); }',
           placementCount: 1,
-          functions: ['place']
+          functions: ['place'],
+          repairAttempts: 1,
+          assetRequirements: [{
+            key: 'arena-shell', name: '竞技场', variants: 1,
+            dimensions: [8, 4, 8], role: 'structure'
+          }],
+          diagnostics: [{
+            code: 'object.overlap', severity: 'warning', message: '已移动重叠物体', repaired: true
+          }]
         },
         generatedAssets: [{ id: 'arena-shell', name: 'Arena shell' }]
       }
@@ -219,6 +227,13 @@ describe('map operation transactions', () => {
     expect(committed.map.name).toBe('after');
     expect(committed.transaction.ai?.prompt).toBe('Create a layered arena');
     expect(committed.transaction.ai?.codePlan?.placementCount).toBe(1);
+    expect(committed.transaction.ai?.codePlan?.repairAttempts).toBe(1);
+    expect(committed.transaction.ai?.codePlan?.assetRequirements).toEqual([expect.objectContaining({
+      key: 'arena-shell', variants: 1, role: 'structure'
+    })]);
+    expect(committed.transaction.ai?.codePlan?.diagnostics).toEqual([expect.objectContaining({
+      code: 'object.overlap', repaired: true
+    })]);
     expect(committed.transaction.ai?.generatedAssets).toEqual([{ id: 'arena-shell', name: 'Arena shell' }]);
     const restartedStore = new MapStore({ rootDir: store.rootDir });
     expect((await restartedStore.getUndoTransaction(original.id))?.id).toBe(committed.transaction.id);

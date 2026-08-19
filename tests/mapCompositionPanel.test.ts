@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  renderMapCodePlanApproval,
   renderMapCodePlanSummary,
   renderMapCompositionPlanApproval,
   renderMapCompositionSummary
@@ -7,6 +8,28 @@ import {
 import type { MapAiSuggestion } from '../src/shared/mapOperations';
 
 describe('map composition preview panel', () => {
+  it('renders an indoor Code approval without invoking the old director plan', () => {
+    const html = renderMapCodePlanApproval({
+      summary: '教室功能布局', operations: [], renderPromptSuggestions: [], generatedAssets: [],
+      codePlan: {
+        code: 'function plan(api) { api.roomPoint(0, 0); }',
+        functions: ['roomPoint', 'opening'], placementCount: 12, repairAttempts: 1,
+        assetRequirements: [
+          { key: 'desk', name: '课桌', variants: 2, role: 'functional', dimensions: [1.2, 0.75, 0.6] },
+          { key: 'plant', name: '盆栽', variants: 1, role: 'decor', optional: true }
+        ]
+      }
+    });
+
+    expect(html).toContain('待确认的室内功能规划');
+    expect(html).toContain('摆放意图 <b>12</b>');
+    expect(html).toContain('资产变体 <b>3</b>');
+    expect(html).toContain('课桌 · 功能 · 2 个');
+    expect(html).toContain('盆栽 · 装饰 · 1 个 · 可选');
+    expect(html).toContain('id="approve-code-plan"');
+    expect(html).not.toContain('房间俯视分区图');
+  });
+
   it('renders a top-down approval plan with explicit whitespace meaning before generation', () => {
     const plan = {
       version: 1 as const,

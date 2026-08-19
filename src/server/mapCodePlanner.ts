@@ -3,13 +3,19 @@ import {
   createId,
   getMapBounds,
   getMapPlayerMetrics,
+  normalizeMapRoom,
   sampleTerrainHeight,
   type EditableMap,
   type MapAsset,
+  type MapRoom,
+  type MapRoomOpening,
   type MapWaterBody,
-  type MapWaterBodyType
+  type MapWaterBodyType,
+  type RoomWall
 } from '../shared/map';
 import { assetFootprintRadius, normalizeAssetTags } from '../shared/mapAssetMetadata';
+import { planMapObjectAttachment } from '../shared/mapAttachment';
+import { indoorAssetTargetCount } from '../shared/indoorScenePlanning';
 import { normalizeMapAiMaxNewAssets, normalizeMapAiNewAssetRange } from '../shared/mapPlanning';
 import { calculateModelVisualBounds } from '../shared/modelBounds';
 import type { AgentProgressEvent, ChatProvider } from '../shared/protocol';
@@ -53,12 +59,13 @@ Enum fields are closed choices, not descriptions. Put descriptive meaning in id/
 const CODE_ASSET_ORIENTATION_PROMPT = 'Coordinate contract: local Y+ is up, local Z+ is the front, entrance, or forward direction, and local X+ is right. Put doors, facades, openings, windshields, noses, seats, and other recognizable front details toward local Z+. For a modular repeated element, explicitly choose the long axis: side-by-side modules span local X with depth/front on local Z; traversal modules span local Z. Keep the model centered at its origin.';
 const ENVIRONMENT_ASSET = /\b(?:tree|forest|plant|vegetation|grass|shrub|bush|flower|fern|moss|rock|stone|boulder|crystal|mushroom|cactus|reed|coral|animal|creature|wildlife|bird|fish|deer|horse|insect|nature|flora|fauna)s?\b|树|森林|植物|植被|草|灌木|花|蕨|苔藓|岩石|石头|巨石|水晶|蘑菇|仙人掌|芦苇|珊瑚|动物|生物|野生|鸟|鱼|鹿|马|昆虫|自然|生态/i;
 const ENTRANCE_ASSET = /\b(?:gate|entrance|door|portal|archway|moon gate)\b|门楼|城门|大门|入口|拱门|月洞门|传送门/i;
+const INDOOR_FORBIDDEN_CONTENT = /\b(?:whole|complete|entire)\s+(?:room|interior)\b|\broom\s+shell\b|\bfloor(?:ing)?\s+(?:finish|surface|plane|slab)\b|\bceiling\s+(?:finish|surface|plane|slab)\b|\bwall(?:paper|\s+(?:finish|surface|shell))\b|\b(?:carpet|rug)(?:\s+(?:finish|surface))?\b|\b(?:terrain|outdoor ground|building exterior)\b|整间房|整体房间|房间外壳|地板饰面|墙面饰面|天花饰面|墙纸|地毯|室外地形|建筑外立面/i;
 
 type Point2 = [number, number];
 type Point3 = [number, number, number];
 type MapCodeScope = 'general' | 'scene';
 type MapCodeRequestMode = 'generate' | 'refine';
-type CodeAssetRole = 'structure' | 'environment';
+type CodeAssetRole = 'structure' | 'environment' | 'functional' | 'decor';
 type CodeSceneIntent = 'natural' | 'authored';
 
 export interface MapCodePlannerOptions {
@@ -74,6 +81,10 @@ export interface MapCodePlannerOptions {
   scope?: MapCodeScope;
   /** Generate a complete scene or emit a delta over the supplied map. */
   mode?: MapCodeRequestMode;
+  /** Return the validated Code and declared asset list without generating assets. */
+  discoveryOnly?: boolean;
+  /** Reuse a user-approved Code candidate without asking the model to redesign it. */
+  approvedCode?: string;
   onProgress?: (event: AgentProgressEvent) => void;
   createAsset?: (request: AssetGenerationRequest, report: AssetTaskReporter) => Promise<MapAsset>;
 }
@@ -89,7 +100,7 @@ export interface MapCodePlanMetadata {
 interface PlacementInput {
   assetId?: string | null;
   name?: string;
-  position: Point2 | Point3 | { x: number; y?: number; z: number } | { point: Point2 | Point3 };
+  position?: Point2 | Point3 | { x: number; y?: number; z: number } | { point: Point2 | Point3 };
   rotationY?: number;
   facing?: Point2 | {
     direction?: Point2;
@@ -100,8 +111,10 @@ interface PlacementInput {
   };
   scale?: number | Point3;
   size?: Point3;
+  dimensions?: Point3;
   terrain?: boolean;
   role?: CodeAssetRole;
+  roomOpeningId?: string;
 }
 
 interface PlaceBetweenInput {
@@ -142,6 +155,7 @@ interface MoveObjectInput {
 }
 
 interface PlacementIntent {
+  referenceId: string;
   assetId: string | null;
   name: string;
   position: Point3;
@@ -152,6 +166,44 @@ interface PlacementIntent {
   role: CodeAssetRole;
   semantic: string;
   bridgeWaterId?: string;
+  roomOpeningId?: string;
+  attachment?: {
+    parentId: string;
+    kind: 'supported' | 'mounted';
+    side?: RoomWall;
+    offset?: Point2;
+    contact?: number;
+  };
+}
+
+interface AttachmentInput {
+  assetId?: string | null;
+  name?: string;
+  parentId: string;
+  kind: 'supported' | 'mounted';
+  side?: RoomWall;
+  offset?: Point2;
+  contact?: number;
+  scale?: number;
+  rotationY?: number;
+  role?: CodeAssetRole;
+}
+
+interface RoomOpeningInput {
+  id: string;
+  kind: 'door' | 'window';
+  wall: RoomWall;
+  offset?: number;
+  bottom?: number;
+  width?: number;
+  height?: number;
+}
+
+interface RoomWallFrame {
+  point: Point3;
+  inward: Point2;
+  outward: Point2;
+  tangent: Point2;
 }
 
 interface BezierFrame {
@@ -186,6 +238,7 @@ interface CodeExecutionOptions {
   mode?: 'discovery' | 'final';
   requestMode?: MapCodeRequestMode;
   assetBindings?: ReadonlyMap<string, readonly MapAsset[]>;
+  minNewAssets?: number;
   maxNewAssets?: number;
   scope?: MapCodeScope;
 }
@@ -205,8 +258,10 @@ export async function generateMapCodeSuggestion(
   options.onProgress?.({
     phase: 'planning',
     label: requestMode === 'refine'
-      ? 'AI 正在编写场景差量 Code'
-      : options.scope === 'scene' ? 'AI 正在编写完整场景 Code' : 'AI 正在编写程序化环境规划代码'
+      ? `AI 正在编写${map.sceneMode === 'indoor' ? '室内差量规划' : '场景差量 Code'}`
+      : map.sceneMode === 'indoor'
+        ? 'AI 正在编排完整室内布局'
+        : options.scope === 'scene' ? 'AI 正在编写完整场景 Code' : 'AI 正在编写程序化环境规划代码'
   });
   const assetRange = normalizeMapAiNewAssetRange(options.minNewAssets, options.maxNewAssets);
   const maxNewAssets = assetRange.max;
@@ -222,50 +277,29 @@ export async function generateMapCodeSuggestion(
     : [];
   const systemPrompt = buildMapCodePlannerSystemPrompt(map, reusableAssets, assetRange.min, maxNewAssets, options.scope, requestMode);
   const userPrompt = prompt.trim().slice(0, 1_200);
-  let code = extractCode(await llmChat([
-    { role: 'system', content: systemPrompt },
-    { role: 'user', content: userPrompt }
-  ], {
-    apiBase: options.apiBase,
-    provider: options.provider ?? 'gpt',
-    temperature: 0.25,
-    maxTokens: 6_000,
-    fetchImpl: options.fetchImpl,
-    signal: options.signal
-  }));
-  let execution = await discoverMapCodeWithRepairs(code, userPrompt, systemPrompt, map, reusableAssets, maxNewAssets, options);
+  let code = options.approvedCode
+    ? extractCode(options.approvedCode)
+    : extractCode(await llmChat([
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userPrompt }
+      ], {
+        apiBase: options.apiBase,
+        provider: options.provider ?? 'gpt',
+        temperature: 0.25,
+        maxTokens: 6_000,
+        fetchImpl: options.fetchImpl,
+        signal: options.signal
+      }));
+  const execution = await discoverMapCodeWithRepairs(code, userPrompt, systemPrompt, map, reusableAssets, maxNewAssets, options);
   code = execution.code;
-  let discovery = execution.discovery;
-  const requestedAssetCount = () => discovery.requirements.reduce((total, requirement) => total + requirement.variants, 0);
-  if (requestedAssetCount() < assetRange.min) {
-    options.onProgress?.({
-      phase: 'replanning',
-      label: `Code 规划正在补足至少 ${assetRange.min} 个新资产`
-    });
-    code = extractCode(await llmChat([
-      { role: 'system', content: systemPrompt },
-      { role: 'user', content: userPrompt },
-      { role: 'assistant', content: code },
-      {
-        role: 'user',
-        content: `This program is valid but declares only ${requestedAssetCount()} new assets. Revise it to declare and place at least ${assetRange.min} and at most ${maxNewAssets} prompt-specific generated assets through api.requireAsset and api.asset. Return corrected JavaScript only.`
-      }
-    ], {
-      apiBase: options.apiBase,
-      provider: options.provider ?? 'gpt',
-      temperature: 0.15,
-      maxTokens: 6_000,
-      fetchImpl: options.fetchImpl,
-      signal: options.signal
-    }));
-    execution = await discoverMapCodeWithRepairs(code, userPrompt, systemPrompt, map, reusableAssets, maxNewAssets, options);
-    code = execution.code;
-    discovery = execution.discovery;
-    if (requestedAssetCount() < assetRange.min) throw new Error('map_code_asset_minimum_not_met');
+  const discovery = execution.discovery;
+  if (options.discoveryOnly) {
+    options.onProgress?.({ phase: 'complete', label: '室内功能规划与资产清单已生成，等待确认' });
+    return withCodePlanDetails(discovery.suggestion, discovery.requirements, execution.repairAttempts);
   }
   if (discovery.requirements.length === 0) {
-    options.onProgress?.({ phase: 'complete', label: 'Code 规划已完成，未请求新资产' });
-    return discovery.suggestion;
+    options.onProgress?.({ phase: 'complete', label: `${map.sceneMode === 'indoor' ? '室内规划' : 'Code 规划'}已完成，未请求新资产` });
+    return withCodePlanDetails(discovery.suggestion, discovery.requirements, execution.repairAttempts);
   }
   if (!options.createAsset) throw new Error('map_code_asset_generation_unavailable');
 
@@ -289,7 +323,7 @@ export async function generateMapCodeSuggestion(
   ));
   options.onProgress?.({
     phase: 'checking-assets',
-    label: `Code 规划请求生成 ${tasks.length} 个新资产`,
+    label: `${map.sceneMode === 'indoor' ? '室内规划' : 'Code 规划'}请求生成 ${tasks.length} 个新资产`,
     current: 0,
     total: tasks.length
   });
@@ -317,7 +351,10 @@ export async function generateMapCodeSuggestion(
     family[task.variantIndex] = asset;
     bindings.set(task.key, family);
   });
-  options.onProgress?.({ phase: 'replanning', label: '使用新资产重放程序化环境规划' });
+  options.onProgress?.({
+    phase: 'replanning',
+    label: map.sceneMode === 'indoor' ? '使用新资产重放室内布局' : '使用新资产重放程序化环境规划'
+  });
   const final = runMapCodePlan(code, map, [...reusableAssets, ...generatedAssets], {
     mode: 'final',
     requestMode,
@@ -329,9 +366,6 @@ export async function generateMapCodeSuggestion(
     operation.type === 'object.add' && operation.object.assetId ? [operation.object.assetId] : []
   )));
   const unplacedGeneratedAssets = generatedAssets.filter((asset) => !placedAssetIds.has(asset.id));
-  if (unplacedGeneratedAssets.length > 0) {
-    throw new Error(`map_code_generated_assets_unplaced:${unplacedGeneratedAssets.map((asset) => asset.id).join(',')}`);
-  }
   const failedTasks = tasks.filter((_task, index) => generatedResults[index] === null);
   if (failedTasks.length > 0) {
     const allOptional = failedTasks.every((task) => (
@@ -345,17 +379,30 @@ export async function generateMapCodeSuggestion(
       detail: failedTasks.map((task) => task.name).join('、')
     });
   }
-  options.onProgress?.({ phase: 'complete', label: `整体 Code 与 ${generatedAssets.length} 个新资产已完成` });
-  return {
+  options.onProgress?.({
+    phase: 'complete',
+    label: `${map.sceneMode === 'indoor' ? '室内规划' : '整体 Code'}与 ${generatedAssets.length} 个新资产已完成`
+  });
+  const result: MapAiSuggestion = {
     ...final,
     generatedAssets: generatedAssets.map((asset) => ({ id: asset.id, name: asset.name })),
-    diagnostics: failedTasks.length > 0 ? [...(final.diagnostics ?? []), {
-      code: 'asset.generation-degraded',
-      severity: 'warning',
-      message: `资产“${failedTasks.map((task) => task.name).join('、')}”生成失败；其余可执行内容已保留，可稍后单独修复。`,
-      repaired: false
-    }] : final.diagnostics
+    diagnostics: [
+      ...(final.diagnostics ?? []),
+      ...(failedTasks.length > 0 ? [{
+        code: 'asset.generation-degraded' as const,
+        severity: 'warning' as const,
+        message: `资产“${failedTasks.map((task) => task.name).join('、')}”生成失败；其余可执行内容已保留，可稍后单独修复。`,
+        repaired: false
+      }] : []),
+      ...(unplacedGeneratedAssets.length > 0 ? [{
+        code: 'asset.unplaced' as const,
+        severity: 'warning' as const,
+        message: `资产“${unplacedGeneratedAssets.map((asset) => asset.name).join('、')}”已生成但未能安全落位；当前预览已保留，可稍后单独修复。`,
+        repaired: false
+      }] : [])
+    ]
   };
+  return withCodePlanDetails(result, discovery.requirements, execution.repairAttempts);
 }
 
 export function executeMapCodePlan(
@@ -396,6 +443,10 @@ function runMapCodePlan(
   const usedFunctions = new Set<string>();
   const assetById = new Map(assets.map((asset) => [asset.id, asset]));
   const roleByAssetId = new Map<string, CodeAssetRole>();
+  const indoorRoom = map.sceneMode === 'indoor' && map.room
+    ? normalizeMapRoom(map.room, map.box.size, map.room)
+    : null;
+  const roomOpenings = indoorRoom ? [...indoorRoom.openings] : [];
   const mode = options.mode ?? 'final';
   const requestMode = options.requestMode ?? 'generate';
   const scope = options.scope ?? 'general';
@@ -415,6 +466,61 @@ function runMapCodePlan(
     PHI: (1 + Math.sqrt(5)) / 2,
     seed: map.seed,
     bounds: Object.freeze(getMapBounds(map)),
+    room: indoorRoom ? Object.freeze({ ...indoorRoom, openings: Object.freeze([...roomOpenings]) }) : null,
+    roomPoint(localX: number, localZ: number, height = 0): Point3 {
+      record('roomPoint');
+      const room = requireIndoorRoom(indoorRoom);
+      const inset = room.wallThickness;
+      return [
+        room.position[0] + clampFinite(localX, -room.size[0] / 2 + inset, room.size[0] / 2 - inset),
+        room.position[1] + clampFinite(height, 0, room.size[1] - room.wallThickness),
+        room.position[2] + clampFinite(localZ, -room.size[2] / 2 + inset, room.size[2] / 2 - inset)
+      ];
+    },
+    wallFrame(wall: RoomWall, offset = 0, bottom = 0, inset = 0.02): RoomWallFrame {
+      record('wallFrame');
+      return roomWallFrame(requireIndoorRoom(indoorRoom), normalizeRoomWall(wall), offset, bottom, inset);
+    },
+    ceilingPoint(localX: number, localZ: number, objectHeight = 0, drop = 0): Point3 {
+      record('ceilingPoint');
+      const room = requireIndoorRoom(indoorRoom);
+      const point = roomInteriorPoint(room, localX, localZ);
+      return [
+        point[0],
+        room.position[1] + room.size[1] - room.wallThickness
+          - Math.max(0, finite(objectHeight)) - Math.max(0, finite(drop)),
+        point[1]
+      ];
+    },
+    opening(input: RoomOpeningInput): string {
+      record('opening');
+      const room = requireIndoorRoom(indoorRoom);
+      if (!input || typeof input !== 'object') throw new Error('invalid_map_code_room_opening');
+      const id = cleanText(input.id, 80);
+      if (!id) throw new Error('invalid_map_code_room_opening');
+      const existingIndex = roomOpenings.findIndex((opening) => opening.id === id);
+      if (existingIndex >= 0 && requestMode !== 'refine') return id;
+      const requestedOpening = {
+        id,
+        kind: input.kind === 'window' ? 'window' as const : 'door' as const,
+        wall: normalizeRoomWall(input.wall),
+        offset: input.offset ?? 0,
+        bottom: input.bottom ?? (input.kind === 'window' ? 1 : 0),
+        width: input.width ?? (input.kind === 'window' ? 1.8 : 1.2),
+        height: input.height ?? (input.kind === 'window' ? 1.2 : 2.1)
+      };
+      const requestedOpenings = existingIndex >= 0
+        ? roomOpenings.map((opening, index) => index === existingIndex ? requestedOpening : opening)
+        : [...roomOpenings, requestedOpening];
+      const normalizedRoom = normalizeMapRoom({
+        ...room,
+        openings: requestedOpenings
+      }, map.box.size, room);
+      const opening = normalizedRoom.openings.find((item) => item.id === id);
+      if (!opening) throw new Error('invalid_map_code_room_opening');
+      roomOpenings.splice(0, roomOpenings.length, ...normalizedRoom.openings);
+      return opening.id;
+    },
     sceneIntent(input: { kind: CodeSceneIntent; reason?: string }): CodeSceneIntent {
       record('sceneIntent');
       sceneIntentCallCount += 1;
@@ -434,10 +540,11 @@ function runMapCodePlan(
       const workingMap = sceneOperations.length > 0 ? applyMapOperations(map, sceneOperations) : map;
       const object = workingMap.objects.find((item) => item.id === objectId);
       if (!object) throw new Error(`unknown_map_code_object:${objectId}`);
+      if (object.locked) throw new Error(`locked_map_code_object:${objectId}`);
       const transform: NonNullable<Extract<MapOperation, { type: 'object.update' }>['patch']['transform']> = {};
       let heightMode = object.heightMode;
       if (input.position !== undefined) {
-        const terrain = placementUsesTerrain(input.position);
+        const terrain = map.sceneMode !== 'indoor' && placementUsesTerrain(input.position);
         transform.position = placementPosition(input.position, workingMap, terrain);
         heightMode = terrain ? 'terrain' : 'fixed';
       }
@@ -452,7 +559,9 @@ function runMapCodePlan(
       if (requestMode !== 'refine') throw new Error('map_code_refine_api_outside_refine');
       const objectId = String(objectIdValue ?? '').trim();
       const workingMap = sceneOperations.length > 0 ? applyMapOperations(map, sceneOperations) : map;
-      if (!workingMap.objects.some((item) => item.id === objectId)) throw new Error(`unknown_map_code_object:${objectId}`);
+      const object = workingMap.objects.find((item) => item.id === objectId);
+      if (!object) throw new Error(`unknown_map_code_object:${objectId}`);
+      if (object.locked) throw new Error(`locked_map_code_object:${objectId}`);
       emitSceneOperation({ type: 'object.remove', objectId });
       return objectId;
     },
@@ -823,7 +932,7 @@ function runMapCodePlan(
     },
     requireAsset(input: CodeAssetRequirementInput): string {
       record('requireAsset');
-      const requirement = normalizeCodeAssetRequirement(input, scope === 'scene');
+      const requirement = normalizeCodeAssetRequirement(input, scope === 'scene', map.sceneMode);
       const existing = requirements.get(requirement.key);
       if (existing && !sameCodeAssetRequirement(existing, requirement)) {
         throw new Error(`conflicting_map_code_asset_requirement:${requirement.key}`);
@@ -842,7 +951,8 @@ function runMapCodePlan(
       const requirement = requirements.get(normalizedKey);
       if (!requirement) throw new Error(`unknown_map_code_asset_requirement:${normalizedKey}`);
       const variantIndex = positiveModulo(Math.trunc(finite(index)), requirement.variants);
-      const role = requirement.role ?? inferCodeAssetRole(requirement.tags.join(' '));
+      const role = requirement.role
+        ?? (map.sceneMode === 'indoor' ? 'functional' : inferCodeAssetRole(requirement.tags.join(' ')));
       if (mode === 'discovery') {
         const placeholder = codeAssetPlaceholder(normalizedKey, variantIndex);
         roleByAssetId.set(placeholder, role);
@@ -859,37 +969,95 @@ function runMapCodePlan(
       roleByAssetId.set(asset.id, role);
       return asset.id;
     },
-    place(input: PlacementInput): void {
+    place(input: PlacementInput): string {
       record('place');
       if (placements.length >= MAX_PLACEMENTS) throw new Error('map_code_plan_too_many_placements');
       if (!input || typeof input !== 'object') throw new Error('invalid_map_code_placement');
+      const referenceId = codePlacementReference(placements.length);
       const requestedAssetId = typeof input.assetId === 'string' && input.assetId.trim() ? input.assetId.trim() : null;
-      if (requestedAssetId && isCodeMissingAsset(requestedAssetId)) return;
+      if (requestedAssetId && isCodeMissingAsset(requestedAssetId)) return referenceId;
       let assetId = requestedAssetId;
       if (assetId && !assetById.has(assetId) && !(mode === 'discovery' && isCodeAssetPlaceholder(assetId))) {
         assetId = resolveMapCodeAssetId(input.name, assets);
         if (!assetId) unresolvedAssetIds.add(requestedAssetId!);
       }
-      const terrain = input.terrain !== false && placementUsesTerrain(input.position);
-      const position = placementPosition(input.position, map, terrain);
+      const roomOpeningId = input.roomOpeningId?.trim();
+      if (roomOpeningId && !roomOpenings.some((opening) => opening.id === roomOpeningId)) {
+        throw new Error(`unknown_map_code_room_opening:${roomOpeningId}`);
+      }
+      if (input.position === undefined && !roomOpeningId) throw new Error('invalid_map_code_position');
+      const terrain = map.sceneMode !== 'indoor'
+        && input.terrain !== false
+        && input.position !== undefined
+        && placementUsesTerrain(input.position);
+      const position = input.position === undefined
+        ? roomOpeningPlacement(requireIndoorRoom(indoorRoom), roomOpenings, roomOpeningId!)
+        : placementPosition(input.position, map, terrain);
       const asset = assetId ? assetById.get(assetId) : undefined;
-      const role = roleByAssetId.get(assetId ?? '') ?? input.role ?? inferCodeAssetRole([
-        input.name,
-        asset?.name,
-        asset?.prompt,
-        ...(asset?.tags ?? [])
-      ].filter(Boolean).join(' '));
+      const role = roleByAssetId.get(assetId ?? '')
+        ?? normalizeCodePlacementRole(input.role, map.sceneMode)
+        ?? (map.sceneMode === 'indoor' ? 'functional' : inferCodeAssetRole([
+          input.name,
+          asset?.name,
+          asset?.prompt,
+          ...(asset?.tags ?? [])
+        ].filter(Boolean).join(' ')));
+      const dimensions = input.dimensions === undefined ? undefined : point3(input.dimensions);
+      const fitted = fittedPlacementTransform(asset, input.scale ?? 1, dimensions);
       placements.push({
+        referenceId,
         assetId,
         name: cleanText(input.name ?? assetById.get(assetId ?? '')?.name ?? '程序化物体', 80),
         position,
         rotationY: placementRotation(input.facing, position, input.rotationY),
-        scale: scale3(input.scale ?? 1),
-        size: point3(input.size ?? [1, 1, 1]),
+        scale: fitted.scale,
+        size: dimensions ?? point3(input.size ?? [1, 1, 1]),
         heightMode: terrain ? 'terrain' : 'fixed',
         role,
-        semantic: [input.name, asset?.name, asset?.prompt, ...(asset?.tags ?? [])].filter(Boolean).join(' ')
+        semantic: [input.name, asset?.name, asset?.prompt, ...(asset?.tags ?? [])].filter(Boolean).join(' '),
+        ...(roomOpeningId ? { roomOpeningId } : {})
       });
+      return referenceId;
+    },
+    attach(input: AttachmentInput): string {
+      record('attach');
+      requireIndoorRoom(indoorRoom);
+      if (placements.length >= MAX_PLACEMENTS) throw new Error('map_code_plan_too_many_placements');
+      if (!input || typeof input !== 'object') throw new Error('invalid_map_code_attachment');
+      const parentId = cleanText(input.parentId, 120);
+      if (!parentId) throw new Error('invalid_map_code_attachment_parent');
+      const referenceId = codePlacementReference(placements.length);
+      const requestedAssetId = typeof input.assetId === 'string' && input.assetId.trim() ? input.assetId.trim() : null;
+      if (requestedAssetId && isCodeMissingAsset(requestedAssetId)) return referenceId;
+      let assetId = requestedAssetId;
+      if (assetId && !assetById.has(assetId) && !(mode === 'discovery' && isCodeAssetPlaceholder(assetId))) {
+        assetId = resolveMapCodeAssetId(input.name, assets);
+        if (!assetId) unresolvedAssetIds.add(requestedAssetId!);
+      }
+      const asset = assetId ? assetById.get(assetId) : undefined;
+      const role = roleByAssetId.get(assetId ?? '')
+        ?? normalizeCodePlacementRole(input.role, map.sceneMode)
+        ?? 'decor';
+      placements.push({
+        referenceId,
+        assetId,
+        name: cleanText(input.name ?? asset?.name ?? '室内附件', 80),
+        position: [indoorRoom?.position[0] ?? 0, indoorRoom?.position[1] ?? 0, indoorRoom?.position[2] ?? 0],
+        rotationY: finite(input.rotationY ?? 0),
+        scale: scale3(input.scale ?? 1),
+        size: [1, 1, 1],
+        heightMode: 'fixed',
+        role,
+        semantic: [input.name, asset?.name, asset?.prompt, ...(asset?.tags ?? [])].filter(Boolean).join(' '),
+        attachment: {
+          parentId,
+          kind: input.kind === 'mounted' ? 'mounted' : 'supported',
+          ...(input.side ? { side: normalizeRoomWall(input.side) } : {}),
+          ...(input.offset ? { offset: point2(input.offset) } : {}),
+          ...(input.contact === undefined ? {} : { contact: finite(input.contact) })
+        }
+      });
+      return referenceId;
     },
     bridge(input: BridgeInput): void {
       record('bridge');
@@ -957,6 +1125,7 @@ function runMapCodePlan(
       );
       const worldScaleY = scale[1] * targetSize[1];
       placements.push({
+        referenceId: codePlacementReference(placements.length),
         assetId,
         name: cleanText(input.name ?? asset?.name ?? '跨水桥', 80),
         position: [center[0], supportHeight - localMinY * worldScaleY, center[1]],
@@ -988,7 +1157,7 @@ function runMapCodePlan(
         (start[0] + end[0]) / 2,
         (start[1] + end[1]) / 2
       );
-      const terrain = input.terrain !== false;
+      const terrain = map.sceneMode !== 'indoor' && input.terrain !== false;
       const position = placementPosition(center, map, terrain);
       const lineRotation = spanAxis === 'x'
         ? Math.atan2(-direction[1], direction[0])
@@ -1001,12 +1170,14 @@ function runMapCodePlan(
         if (!assetId) unresolvedAssetIds.add(requestedAssetId!);
       }
       const asset = assetId ? assetById.get(assetId) : undefined;
-      const role = roleByAssetId.get(assetId ?? '') ?? input.role ?? inferCodeAssetRole([
-        input.name,
-        asset?.name,
-        asset?.prompt,
-        ...(asset?.tags ?? [])
-      ].filter(Boolean).join(' '));
+      const role = roleByAssetId.get(assetId ?? '')
+        ?? normalizeCodePlacementRole(input.role, map.sceneMode)
+        ?? (map.sceneMode === 'indoor' ? 'functional' : inferCodeAssetRole([
+          input.name,
+          asset?.name,
+          asset?.prompt,
+          ...(asset?.tags ?? [])
+        ].filter(Boolean).join(' ')));
       const targetSize: Point3 = [...dimensions];
       targetSize[spanIndex] = fittedLength;
       const scale = scale3(input.scale ?? 1);
@@ -1021,6 +1192,7 @@ function runMapCodePlan(
         for (let axis = 0; axis < 3; axis += 1) scale[axis] /= actualDimensions[axis];
       }
       placements.push({
+        referenceId: codePlacementReference(placements.length),
         assetId,
         name: cleanText(input.name ?? assetById.get(assetId ?? '')?.name ?? '程序化连接', 80),
         position,
@@ -1048,8 +1220,18 @@ function runMapCodePlan(
   });
   const returned = script.runInContext(context, { timeout: EXECUTION_TIMEOUT_MS });
   if (returned && typeof returned.then === 'function') throw new Error('async_map_code_plan_not_supported');
-  if (requestMode === 'generate' && scope === 'scene' && !sceneIntent) throw new Error('missing_map_code_scene_intent');
-  if (mode === 'discovery' && requestMode === 'generate' && sceneIntent === 'authored'
+  if (indoorRoom && sceneOperations.some((operation) => (
+    operation.type.startsWith('terrain.') || operation.type.startsWith('water.') || operation.type.startsWith('grass.')
+  ))) {
+    throw new Error('indoor_map_code_outdoor_operation');
+  }
+  if (indoorRoom && placements.some((placement) => INDOOR_FORBIDDEN_CONTENT.test(placement.semantic))) {
+    throw new Error('indoor_map_code_forbidden_content');
+  }
+  if (map.sceneMode === 'outdoor' && requestMode === 'generate' && scope === 'scene' && !sceneIntent) {
+    throw new Error('missing_map_code_scene_intent');
+  }
+  if (map.sceneMode === 'outdoor' && mode === 'discovery' && requestMode === 'generate' && sceneIntent === 'authored'
     && !placements.some((placement) => placement.role === 'structure')) {
     throw new Error('authored_scene_missing_structure');
   }
@@ -1057,6 +1239,8 @@ function runMapCodePlan(
     throw new Error('empty_map_code_plan');
   }
   if (mode === 'discovery') {
+    const requestedAssetCount = [...requirements.values()].reduce((total, requirement) => total + requirement.variants, 0);
+    if (requestedAssetCount < (options.minNewAssets ?? 0)) throw new Error('map_code_asset_minimum_not_met');
     const placedAssetIds = new Set(placements.flatMap((placement) => placement.assetId ? [placement.assetId] : []));
     const unusedVariants = [...requirements.values()].flatMap((requirement) => (
       Array.from({ length: requirement.variants }, (_, index) => codeAssetPlaceholder(requirement.key, index))
@@ -1069,32 +1253,66 @@ function runMapCodePlan(
     ...map,
     assets: [...new Map([...(map.assets ?? []), ...assets].map((asset) => [asset.id, asset])).values()]
   };
-  const terrainMap = sceneOperations.length > 0
-    ? applyMapOperations(planningMap, sceneOperations)
+  const roomOperation = indoorRoom
+    ? { type: 'room.set', room: { ...indoorRoom, openings: roomOpenings } } satisfies MapOperation
+    : null;
+  const baseOperations = [...(roomOperation ? [roomOperation] : []), ...sceneOperations];
+  const terrainMap = baseOperations.length > 0
+    ? applyMapOperations(planningMap, baseOperations)
     : planningMap;
-  const objectOperations = placements.map((placement): Extract<MapOperation, { type: 'object.add' }> => ({
-    type: 'object.add',
-    object: {
-      id: createId('obj-code'),
-      name: placement.name,
-      assetId: placement.assetId,
-      locked: placement.role === 'structure',
-      heightMode: placement.heightMode,
-      transform: {
-        position: placement.heightMode === 'terrain'
-          ? [placement.position[0], sampleTerrainHeight(terrainMap, placement.position[0], placement.position[2]), placement.position[2]]
-          : placement.position,
-        rotation: [0, placement.rotationY, 0],
-        scale: placement.scale,
-        size: placement.size
+  const objectOperations: Extract<MapOperation, { type: 'object.add' }>[] = [];
+  const objectIdByReference = new Map<string, string>();
+  let workingMap = terrainMap;
+  let attachmentFallbackCount = 0;
+  for (const placement of placements) {
+    const objectId = createId('obj-code');
+    let object: Extract<MapOperation, { type: 'object.add' }>['object'];
+    if (placement.attachment) {
+      const parentId = objectIdByReference.get(placement.attachment.parentId)
+        ?? (workingMap.objects.some((item) => item.id === placement.attachment!.parentId)
+          ? placement.attachment.parentId
+          : null);
+      const asset = placement.assetId
+        ? (workingMap.assets ?? []).find((item) => item.id === placement.assetId)
+        : undefined;
+      if (parentId && asset) {
+        try {
+          object = planMapObjectAttachment(workingMap, {
+            id: objectId,
+            name: placement.name,
+            parentId,
+            asset,
+            kind: placement.attachment.kind,
+            side: placement.attachment.side,
+            scale: placement.scale[0],
+            yaw: placement.rotationY,
+            offset: placement.attachment.offset,
+            contact: placement.attachment.contact
+          });
+        } catch {
+          attachmentFallbackCount += mode === 'final' ? 1 : 0;
+          object = placementObject(placement, objectId, terrainMap, map.sceneMode);
+        }
+      } else {
+        attachmentFallbackCount += mode === 'final' ? 1 : 0;
+        object = placementObject(placement, objectId, terrainMap, map.sceneMode);
       }
+    } else {
+      object = placementObject(placement, objectId, terrainMap, map.sceneMode);
     }
-  }));
-  const accessRepair = scope === 'scene'
+    const operation = { type: 'object.add', object } satisfies Extract<MapOperation, { type: 'object.add' }>;
+    objectOperations.push(operation);
+    objectIdByReference.set(placement.referenceId, objectId);
+    workingMap = applyMapOperations(workingMap, [operation]);
+  }
+  const accessRepair = map.sceneMode === 'outdoor' && scope === 'scene'
     ? relocateOutdoorAccessBlockers(terrainMap, objectOperations, assets)
     : { operations: objectOperations, count: 0 };
-  const operations: MapOperation[] = [...sceneOperations, ...accessRepair.operations];
-  if ((requestMode === 'generate' && scope === 'scene') || spawnRequest) {
+  const operations: MapOperation[] = [
+    ...baseOperations,
+    ...accessRepair.operations
+  ];
+  if (map.sceneMode === 'outdoor' && ((requestMode === 'generate' && scope === 'scene') || spawnRequest)) {
     const candidate = applyMapOperations(planningMap, operations);
     const requestedSpawn = spawnRequest?.point
       ?? (map.spawnPoints[0] ? [map.spawnPoints[0][0], map.spawnPoints[0][2]] satisfies Point2 : [0, 0]);
@@ -1110,7 +1328,9 @@ function runMapCodePlan(
     operations.push({ type: 'reference.set', point, yaw: map.spawnYaw });
   }
   const suggestion: MapAiSuggestion = {
-    summary: `整体 Code 生成了 ${placements.length} 个摆放意图与 ${sceneOperations.length} 项环境操作`,
+    summary: map.sceneMode === 'indoor'
+      ? `室内功能规划生成了 ${placements.length} 个摆放意图与 ${roomOpenings.length} 个门窗预留`
+      : `整体 Code 生成了 ${placements.length} 个摆放意图与 ${sceneOperations.length} 项环境操作`,
     operations,
     renderPromptSuggestions,
     generatedAssets: [],
@@ -1128,7 +1348,13 @@ function runMapCodePlan(
     message: `已移动 ${accessRepair.count} 个阻挡入口通道的环境物体。`,
     repaired: true
   }] : [];
-  const unresolvedBridgeDiagnostics = placements.some((placement) => (
+  const attachmentDiagnostics = attachmentFallbackCount > 0 ? [{
+    code: 'object.invalid-support' as const,
+    severity: 'warning' as const,
+    message: `${attachmentFallbackCount} 个附件无法安全连接到父物体，已保留为独立可编辑物体。`,
+    repaired: true
+  }] : [];
+  const unresolvedBridgeDiagnostics = map.sceneMode === 'outdoor' && placements.some((placement) => (
     !placement.bridgeWaterId && /\bbridge\b|桥/i.test(placement.semantic)
   )) ? [{
     code: 'bridge.unresolved-crossing' as const,
@@ -1138,7 +1364,7 @@ function runMapCodePlan(
   }] : [];
   const validated = validateMapSuggestion(planningMap, {
     ...suggestion,
-    diagnostics: [...accessDiagnostics, ...unresolvedBridgeDiagnostics]
+    diagnostics: [...accessDiagnostics, ...attachmentDiagnostics, ...unresolvedBridgeDiagnostics]
   }).suggestion;
   return {
     suggestion: unresolvedAssetIds.size === 0 ? validated : {
@@ -1154,6 +1380,35 @@ function runMapCodePlan(
   };
 }
 
+function withCodePlanDetails(
+  suggestion: MapAiSuggestion,
+  requirements: readonly CodeAssetRequirement[],
+  repairAttempts: number
+): MapAiSuggestion {
+  if (!suggestion.codePlan) return suggestion;
+  return {
+    ...suggestion,
+    codePlan: {
+      ...suggestion.codePlan,
+      repairAttempts,
+      assetRequirements: requirements.map((requirement) => ({
+        key: requirement.key,
+        name: requirement.name,
+        variants: requirement.variants,
+        ...(requirement.dimensions ? { dimensions: requirement.dimensions } : {}),
+        ...(requirement.role ? { role: requirement.role } : {}),
+        ...(requirement.optional ? { optional: true } : {})
+      })),
+      diagnostics: (suggestion.diagnostics ?? []).slice(0, 100).map((issue) => ({
+        code: issue.code,
+        severity: issue.severity,
+        message: issue.message,
+        repaired: issue.repaired
+      }))
+    }
+  };
+}
+
 export function buildMapCodePlannerSystemPrompt(
   map: EditableMap,
   assets: readonly MapAsset[],
@@ -1162,6 +1417,9 @@ export function buildMapCodePlannerSystemPrompt(
   scope: MapCodeScope = 'general',
   requestMode: MapCodeRequestMode = 'generate'
 ): string {
+  if (map.sceneMode === 'indoor') {
+    return buildIndoorMapCodePlannerSystemPrompt(map, assets, minNewAssets, maxNewAssets, requestMode);
+  }
   const bounds = getMapBounds(map);
   const assetCatalog = assets.length > 0
     ? assets.map((asset) => `- ${asset.id}: ${asset.name}; tags=${asset.tags?.join(',') || 'none'}`).join('\n')
@@ -1274,6 +1532,80 @@ Reusable asset catalog:
 ${assetCatalog}`;
 }
 
+function buildIndoorMapCodePlannerSystemPrompt(
+  map: EditableMap,
+  assets: readonly MapAsset[],
+  minNewAssets: number,
+  maxNewAssets: number,
+  requestMode: MapCodeRequestMode
+): string {
+  const room = requireIndoorRoom(map.room);
+  const suggestedAssetCount = indoorAssetTargetCount(map, minNewAssets, maxNewAssets);
+  const assetCatalog = assets.length > 0
+    ? assets.map((asset) => `- ${asset.id}: ${asset.name}; tags=${asset.tags?.join(',') || 'none'}`).join('\n')
+    : '- No reusable assets are available. Declare the assets you need with api.requireAsset.';
+  const refineContext = requestMode === 'refine'
+    ? `\n## Indoor Code refinement\nReturn only a delta over the current room. Preserve every object, opening and finish the user did not ask to change. Never move or remove locked objects. Use api.move and api.removeObject for existing content; add new openings only when the user explicitly requests one. Existing objects: ${JSON.stringify(map.objects.slice(0, 240).map((object) => ({ id: object.id, name: object.name, assetId: object.assetId, position: object.transform.position, rotationY: object.transform.rotation[1], parentId: object.parentId, roomOpeningId: object.roomOpeningId, locked: object.locked })))}.\n`
+    : `\n## Unified indoor ownership\nYou are the single author of the complete indoor layout. No second director, specialist agent, or silent local backfill will redesign it. Local code only enforces room bounds, opening semantics, collision safety, attachment validity and door circulation. If a functional requirement is missing, this same Code Composer will receive a targeted repair request.\n`;
+  return `You are WorldForge Studio's procedural indoor-scene planner.${refineContext}
+
+## Output contract
+Return only one synchronous JavaScript function: function plan(api) { ... }.
+Do not return Markdown, explanations, JSON, imports, async code, promises, eval, Function, network, files, timers, or global state.
+Use api. on every WorldForge call and emit at least one placement or requested refinement delta. All loops must be bounded.
+
+## Indoor structural contract
+This is one standalone parameterized room. Its size is user-owned and must not be changed by Code.
+Room floor-center=${JSON.stringify(room.position)}, size=[width=${room.size[0]},height=${room.size[1]},depth=${room.size[2]}], wallThickness=${room.wallThickness}.
+Existing openings=${JSON.stringify(room.openings)}.
+Do not generate a whole room, floor, ceiling, wall shell, terrain, outdoor ground, sky, road, river, forest, garden, building exterior, Render Scheme, wallpaper, floor finish, carpet or rug finish.
+The room shell and interior finishes remain owned by existing map systems. Generate furniture, fixtures, doors, windows, wall-mounted objects, ceiling-mounted objects and their functional relationships.
+Indoor objects use fixed Y positions relative to the room floor; never use terrain-following placement.
+
+## Indoor coordinate API
+api.room is the current room data.
+api.roomPoint(localX,localZ,height?) returns [x,y,z] inside the room. localX/localZ are offsets from room center and height is above the floor.
+api.wallFrame(wall,offset?,bottom?,inset?) returns {point,inward,outward,tangent}. wall is north|south|east|west. Put wall-mounted assets at frame.point with facing:{direction:frame.inward}.
+api.ceilingPoint(localX,localZ,objectHeight?,drop?) returns [x,y,z] with the object below the ceiling. Pass its declared height.
+api.opening({id,kind:'door'|'window',wall,offset?,bottom?,width?,height?}) declares a parameterized opening and returns its ID. Then api.place({assetId,roomOpeningId:id,dimensions:[w,h,d]}) binds a separate door/window model to it; position and rotation are resolved locally.
+Every generated point supports both point[0]/point[1] and point.x/point.z where applicable. Never add or subtract arrays directly.
+
+## Placement and asset contract
+Every model uses local Y+ up, local Z+ front/forward, and local X+ right.
+api.place({assetId?,name?,position?,rotationY?,facing?,scale?,size?,dimensions?,roomOpeningId?,role:'functional'|'decor'}) places one object. dimensions is the intended world [width,height,depth] and is fitted to the generated model's actual visual bounds.
+api.attach({assetId?,name?,parentId,kind:'supported'|'mounted',side?,offset?,contact?,scale?,rotationY?,role:'functional'|'decor'}) attaches a child to an earlier api.place/api.attach return value or an existing object ID. supported uses local [x,z] offset on a surface; mounted requires side north|south|east|west and uses local [horizontal,vertical] offset.
+api.placeBetween remains available for connected counters, shelves, railings, partitions or bench rows.
+api.requireAsset({key,name,prompt,tags?,variants?,dimensions,role:'functional'|'decor',optional?}) declares assets; api.asset(key,index?) binds them. Functional families are core room content; only restrained decor may be optional.
+The hard user-selected range for all requireAsset variants is ${minNewAssets}-${maxNewAssets}. For this room size, aim for about ${suggestedAssetCount} reusable variants only when they serve distinct functional or visual roles; this is guidance, not permission to add filler. Each name is one short 2-8 character Simplified Chinese noun. Every declared variant must be placed.
+Use existing reusable IDs exactly as listed; never invent an asset ID. Do not generate assets already available and suitable for reuse.
+
+## Indoor composition philosophy
+Plan two conceptual passes inside this one program:
+1. Establish entrance/daylight fixtures, primary activity groups, service/storage furniture and one readable focal relationship.
+2. Add restrained lighting and decor only after function and circulation are clear.
+Build relationships rather than scattering props: desk+chair facing a board, dining chairs around a table, sofas around a focal table, checkout counter plus queue clearance, or workstations facing a shared screen.
+Keep a continuous route at least 0.8 world units wide from every door into the primary activity area. Keep door clearance empty and preserve useful negative space.
+Scale repeated furniture counts to room area. Avoid piling everything at the center or lining every wall.
+Wall-mounted objects must use wallFrame, ceiling objects must use ceilingPoint, and floor furniture must use roomPoint with height 0 unless intentionally supported above the floor.
+
+## Shared helpers
+Constants: api.TAU, api.PHI, api.seed, api.bounds, api.room.
+Math/layout: api.clamp, api.lerp, api.remap, api.smoothstep, api.random, api.rotate2D, api.distance2D, api.faceYaw, api.tangentYaw, api.gridPoints, api.circlePoint, api.linePoint.
+Refine: api.move({objectId,position?,rotationY?,scale?}); api.removeObject(objectId). These are available only during refinement and reject locked objects.
+
+## Final self-check
+1. Exactly one function named plan and no Markdown.
+2. No terrain, water, grass, outdoor scenery, whole-room asset or final render styling.
+3. Primary furniture and functional relationships exist before decor.
+4. Every door keeps a continuous 0.8-unit route to the main activity area.
+5. All objects stay inside the room; wall and ceiling objects use their dedicated APIs.
+6. Generated assets use requireAsset/api.asset, declare dimensions, use role:'functional'|'decor', and every variant is placed.
+7. ${requestMode === 'refine' ? 'Only the requested delta is emitted; locked and unrelated content is preserved.' : 'The complete room is authored in this one program without relying on a later director.'}
+
+Reusable asset catalog:
+${assetCatalog}`;
+}
+
 function extractCode(raw: string): string {
   const fenced = raw.match(/```(?:js|javascript|ts|typescript)?\s*([\s\S]*?)```/i);
   return (fenced?.[1] ?? raw).trim();
@@ -1287,15 +1619,17 @@ async function discoverMapCodeWithRepairs(
   assets: readonly MapAsset[],
   maxNewAssets: number,
   options: MapCodePlannerOptions
-): Promise<{ code: string; discovery: CodeExecutionResult }> {
+): Promise<{ code: string; discovery: CodeExecutionResult; repairAttempts: number }> {
   let code = initialCode;
   for (let repairAttempt = 0; repairAttempt <= 2; repairAttempt += 1) {
     try {
       return {
         code,
+        repairAttempts: repairAttempt,
         discovery: runMapCodePlan(code, map, assets, {
           mode: 'discovery',
           requestMode: options.mode ?? 'generate',
+          minNewAssets: options.minNewAssets,
           maxNewAssets,
           scope: options.scope
         })
@@ -1306,7 +1640,7 @@ async function discoverMapCodeWithRepairs(
       if (repairAttempt === 2) throw new Error(`map_code_execution_failed:${executionError}`);
       options.onProgress?.({
         phase: 'replanning',
-        label: `检测到代码参数或边界错误，AI 正在自动修复 ${repairAttempt + 1}/2`,
+        label: `检测到规划参数或边界错误，AI 正在自动修复 ${repairAttempt + 1}/2`,
         detail: executionError
       });
       code = extractCode(await llmChat([
@@ -1315,7 +1649,9 @@ async function discoverMapCodeWithRepairs(
         { role: 'assistant', content: code },
         {
           role: 'user',
-          content: `The program failed during its sandboxed discovery run with this error:\n${executionError}\n\nReturn corrected JavaScript only. Preserve the requested design. Check every array index, loop endpoint, division, vector component, enum field, and optional argument. JavaScript arrays cannot be added or subtracted directly; calculate x/z components separately. bezierPoint returns {point,tangent,normal}, sampleBezier returns point arrays, and sampleBezierFrames returns frame objects. Use facing:{tangent:frame.tangent} for along-curve objects and facing:{normal:frame.normal} for curve-side facades or walls. Ensure every numeric value passed to the API is finite.\n\n${MAP_CODE_ENVIRONMENT_FORM_CONTRACT}`
+          content: map.sceneMode === 'indoor'
+            ? `The indoor program failed during its sandboxed discovery run with this error:\n${executionError}\n\nReturn corrected JavaScript only. Preserve the requested room design. Check every array index, loop endpoint, division, room wall, opening ID, locked object and optional argument. Use roomPoint for floor furniture, wallFrame for wall objects, ceilingPoint for ceiling objects, and opening plus roomOpeningId for doors/windows. Never use terrain, water, grass or outdoor APIs. Ensure every numeric value is finite.`
+            : `The program failed during its sandboxed discovery run with this error:\n${executionError}\n\nReturn corrected JavaScript only. Preserve the requested design. Check every array index, loop endpoint, division, vector component, enum field, and optional argument. JavaScript arrays cannot be added or subtracted directly; calculate x/z components separately. bezierPoint returns {point,tangent,normal}, sampleBezier returns point arrays, and sampleBezierFrames returns frame objects. Use facing:{tangent:frame.tangent} for along-curve objects and facing:{normal:frame.normal} for curve-side facades or walls. Ensure every numeric value passed to the API is finite.\n\n${MAP_CODE_ENVIRONMENT_FORM_CONTRACT}`
         }
       ], {
         apiBase: options.apiBase,
@@ -1346,13 +1682,23 @@ function mapCodeExecutionErrorDetail(error: unknown, code?: string): string {
     .slice(0, 1_000);
 }
 
-function normalizeCodeAssetRequirement(input: CodeAssetRequirementInput, requireRole = false): CodeAssetRequirement {
+function normalizeCodeAssetRequirement(
+  input: CodeAssetRequirementInput,
+  requireRole = false,
+  sceneMode: EditableMap['sceneMode'] = 'outdoor'
+): CodeAssetRequirement {
   if (!input || typeof input !== 'object') throw new Error('invalid_map_code_asset_requirement');
   const key = normalizeCodeAssetKey(input.key);
   const name = cleanText(input.name, 42);
   const prompt = cleanText(input.prompt, 500);
   if (!name || !prompt) throw new Error('invalid_map_code_asset_requirement');
-  if (input.role !== undefined && input.role !== 'structure' && input.role !== 'environment') {
+  if (sceneMode === 'indoor' && INDOOR_FORBIDDEN_CONTENT.test(`${name} ${prompt} ${(input.tags ?? []).join(' ')}`)) {
+    throw new Error('indoor_map_code_forbidden_content');
+  }
+  const allowedRoles: readonly CodeAssetRole[] = sceneMode === 'indoor'
+    ? ['functional', 'decor']
+    : ['structure', 'environment'];
+  if (input.role !== undefined && !allowedRoles.includes(input.role)) {
     throw new Error('invalid_map_code_asset_role');
   }
   if (requireRole && input.role === undefined) throw new Error('missing_map_code_asset_role');
@@ -1405,12 +1751,40 @@ function codeMissingAsset(key: string, index: number): string {
   return `code-asset-missing://${key}/${index}`;
 }
 
+function codePlacementReference(index: number): string {
+  return `code-object://${index}`;
+}
+
 function isCodeAssetPlaceholder(value: string): boolean {
   return value.startsWith('code-asset://');
 }
 
 function isCodeMissingAsset(value: string): boolean {
   return value.startsWith('code-asset-missing://');
+}
+
+function placementObject(
+  placement: PlacementIntent,
+  objectId: string,
+  terrainMap: EditableMap,
+  sceneMode: EditableMap['sceneMode']
+): Extract<MapOperation, { type: 'object.add' }>['object'] {
+  return {
+    id: objectId,
+    name: placement.name,
+    assetId: placement.assetId,
+    locked: sceneMode === 'outdoor' && placement.role === 'structure',
+    heightMode: placement.heightMode,
+    ...(placement.roomOpeningId ? { roomOpeningId: placement.roomOpeningId } : {}),
+    transform: {
+      position: placement.heightMode === 'terrain'
+        ? [placement.position[0], sampleTerrainHeight(terrainMap, placement.position[0], placement.position[2]), placement.position[2]]
+        : placement.position,
+      rotation: [0, placement.rotationY, 0],
+      scale: placement.scale,
+      size: placement.size
+    }
+  };
 }
 
 function resolveMapCodeAssetId(name: string | undefined, assets: readonly MapAsset[]): string | null {
@@ -1422,6 +1796,18 @@ function resolveMapCodeAssetId(name: string | undefined, assets: readonly MapAss
 
 function inferCodeAssetRole(semantic: string): CodeAssetRole {
   return ENVIRONMENT_ASSET.test(semantic) ? 'environment' : 'structure';
+}
+
+function normalizeCodePlacementRole(
+  value: unknown,
+  sceneMode: EditableMap['sceneMode']
+): CodeAssetRole | undefined {
+  if (value === undefined) return undefined;
+  const allowed: readonly CodeAssetRole[] = sceneMode === 'indoor'
+    ? ['functional', 'decor']
+    : ['structure', 'environment'];
+  if (allowed.includes(value as CodeAssetRole)) return value as CodeAssetRole;
+  throw new Error('invalid_map_code_asset_role');
 }
 
 function normalizeCodeTerrainPreset(value: string): TerrainGenerationPreset | undefined {
@@ -1775,11 +2161,15 @@ function placementPosition(value: PlacementInput['position'], map: EditableMap, 
     const x = finite(value.x);
     const z = finite(value.z);
     if (value.y !== undefined) return [x, finite(value.y), z];
-    return [x, terrain ? sampleTerrainHeight(map, x, z) : 0, z];
+    return [x, terrain ? sampleTerrainHeight(map, x, z) : map.sceneMode === 'indoor' ? map.room?.position[1] ?? 0 : 0, z];
   }
   if (Array.isArray(value) && value.length === 2) {
     const position = point2(value);
-    return [position[0], terrain ? sampleTerrainHeight(map, position[0], position[1]) : 0, position[1]];
+    return [
+      position[0],
+      terrain ? sampleTerrainHeight(map, position[0], position[1]) : map.sceneMode === 'indoor' ? map.room?.position[1] ?? 0 : 0,
+      position[1]
+    ];
   }
   throw new Error(`invalid_map_code_position:${describeCodeValue(value)}`);
 }
@@ -1789,6 +2179,80 @@ function placementUsesTerrain(value: PlacementInput['position']): boolean {
   if (!value || typeof value !== 'object') return false;
   if ('point' in value) return placementUsesTerrain(value.point);
   return 'x' in value && 'z' in value && value.y === undefined;
+}
+
+function requireIndoorRoom(room: MapRoom | null): MapRoom {
+  if (!room) throw new Error('map_code_indoor_api_requires_room');
+  return room;
+}
+
+function normalizeRoomWall(value: unknown): RoomWall {
+  if (value === 'north' || value === 'south' || value === 'east' || value === 'west') return value;
+  throw new Error('invalid_map_code_room_wall');
+}
+
+function roomInteriorPoint(room: MapRoom, localX: number, localZ: number): Point2 {
+  const inset = room.wallThickness;
+  return codePoint(
+    room.position[0] + clampFinite(localX, -room.size[0] / 2 + inset, room.size[0] / 2 - inset),
+    room.position[2] + clampFinite(localZ, -room.size[2] / 2 + inset, room.size[2] / 2 - inset)
+  );
+}
+
+function roomWallFrame(
+  room: MapRoom,
+  wall: RoomWall,
+  rawOffset: number,
+  rawBottom: number,
+  rawInset: number
+): RoomWallFrame {
+  const horizontalLength = wall === 'north' || wall === 'south' ? room.size[0] : room.size[2];
+  const offset = clampFinite(rawOffset, -horizontalLength / 2 + room.wallThickness, horizontalLength / 2 - room.wallThickness);
+  const bottom = clampFinite(rawBottom, 0, room.size[1] - room.wallThickness);
+  const inset = Math.max(0, finite(rawInset)) + room.wallThickness / 2;
+  const directions: Record<RoomWall, { inward: Point2; tangent: Point2 }> = {
+    north: { inward: codePoint(0, 1), tangent: codePoint(1, 0) },
+    south: { inward: codePoint(0, -1), tangent: codePoint(-1, 0) },
+    east: { inward: codePoint(-1, 0), tangent: codePoint(0, 1) },
+    west: { inward: codePoint(1, 0), tangent: codePoint(0, -1) }
+  };
+  const direction = directions[wall];
+  const point: Point3 = wall === 'north'
+    ? [room.position[0] + offset, room.position[1] + bottom, room.position[2] - room.size[2] / 2 + inset]
+    : wall === 'south'
+      ? [room.position[0] + offset, room.position[1] + bottom, room.position[2] + room.size[2] / 2 - inset]
+      : wall === 'east'
+        ? [room.position[0] + room.size[0] / 2 - inset, room.position[1] + bottom, room.position[2] + offset]
+        : [room.position[0] - room.size[0] / 2 + inset, room.position[1] + bottom, room.position[2] + offset];
+  return {
+    point,
+    inward: direction.inward,
+    outward: codePoint(-direction.inward[0], -direction.inward[1]),
+    tangent: direction.tangent
+  };
+}
+
+function roomOpeningPlacement(room: MapRoom, openings: readonly MapRoomOpening[], openingId: string): Point3 {
+  const opening = openings.find((item) => item.id === openingId);
+  if (!opening) throw new Error(`unknown_map_code_room_opening:${openingId}`);
+  return roomWallFrame(room, opening.wall, opening.offset, opening.bottom, 0.02).point;
+}
+
+function fittedPlacementTransform(
+  asset: MapAsset | undefined,
+  rawScale: number | Point3,
+  dimensions?: Point3
+): { scale: Point3 } {
+  const scale = scale3(rawScale);
+  if (!asset || !dimensions) return { scale };
+  const bounds = calculateModelVisualBounds(asset.modelJson);
+  const actualDimensions: Point3 = [
+    Math.max(0.000001, bounds.max[0] - bounds.min[0]),
+    Math.max(0.000001, bounds.max[1] - bounds.min[1]),
+    Math.max(0.000001, bounds.max[2] - bounds.min[2])
+  ];
+  for (let axis = 0; axis < 3; axis += 1) scale[axis] /= actualDimensions[axis];
+  return { scale };
 }
 
 function placementRotation(

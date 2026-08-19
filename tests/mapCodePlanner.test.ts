@@ -10,6 +10,125 @@ import { applyMapOperations } from '../src/shared/mapOperations';
 import { isPointInsideWaterBody } from '../src/shared/mapWater';
 
 describe('map code planner', () => {
+  it('gives indoor maps one room-native Code Composer contract', () => {
+    const map = createEmptyMap('Classroom', 'indoor-code-prompt', [12, 4, 9], 'voxel', 'indoor', [12, 4, 9]);
+    const prompt = buildMapCodePlannerSystemPrompt(map, [], 3, 8, 'scene');
+
+    expect(prompt).toContain("WorldForge Studio's procedural indoor-scene planner");
+    expect(prompt).toContain('single author of the complete indoor layout');
+    expect(prompt).toContain('api.roomPoint(localX,localZ,height?)');
+    expect(prompt).toContain('api.wallFrame(wall,offset?,bottom?,inset?)');
+    expect(prompt).toContain('api.ceilingPoint(localX,localZ,objectHeight?,drop?)');
+    expect(prompt).toContain("api.opening({id,kind:'door'|'window'");
+    expect(prompt).toContain("api.attach({assetId?,name?,parentId,kind:'supported'|'mounted'");
+    expect(prompt).toContain('Keep a continuous route at least 0.8 world units wide');
+    expect(prompt).toContain('Do not generate a whole room, floor, ceiling, wall shell, terrain');
+    expect(prompt).toContain("role:'functional'|'decor'");
+    expect(prompt).not.toContain('Outdoor Scene Code refinement');
+    expect(prompt).not.toContain('Road curve:');
+    expect(prompt).not.toContain('Natural scatter:');
+  });
+
+  it('executes room-native placements and opening bindings in one transaction', () => {
+    const map = createEmptyMap('Classroom', 'indoor-code-execution', [12, 4, 9], 'voxel', 'indoor', [12, 4, 9]);
+    const suggestion = executeMapCodePlan(`function plan(api) {
+      const frame = api.wallFrame('north', 0, 1.1, 0.02);
+      const door = api.opening({ id: 'door-main', kind: 'door', wall: 'south', offset: 3, width: 1.2, height: 2.1 });
+      api.place({ name: 'desk', role: 'functional', position: api.roomPoint(0, 1, 0), dimensions: [1.2, 0.75, 0.6], facing: { direction: [0, -1] } });
+      api.place({ name: 'board', role: 'functional', position: frame.point, dimensions: [3, 1.4, 0.12], facing: { direction: frame.inward } });
+      api.place({ name: 'door', role: 'functional', roomOpeningId: door, dimensions: [1.2, 2.1, 0.12] });
+      api.place({ name: 'light', role: 'decor', position: api.ceilingPoint(0, 0, 0.3, 0.1), dimensions: [0.8, 0.3, 0.8] });
+    }`, map);
+    const roomOperation = suggestion.operations.find((operation) => operation.type === 'room.set');
+    const placements = suggestion.operations.filter((operation) => operation.type === 'object.add');
+
+    expect(roomOperation?.type).toBe('room.set');
+    if (roomOperation?.type !== 'room.set') throw new Error('missing room operation');
+    expect(roomOperation.room.openings).toEqual(expect.arrayContaining([
+      expect.objectContaining({ id: 'door-main', kind: 'door', wall: 'south' })
+    ]));
+    expect(placements).toHaveLength(4);
+    expect(placements.every((operation) => operation.object.heightMode === 'fixed')).toBe(true);
+    expect(placements[0].object.transform?.position).toEqual([0, 0, 1]);
+    expect(placements[1].object.transform?.position?.[1]).toBeCloseTo(1.1);
+    expect(placements[2].object.roomOpeningId).toBe('door-main');
+    expect(placements[3].object.transform?.position?.[1]).toBeCloseTo(3.44);
+    const applied = applyMapOperations(map, suggestion.operations);
+    const appliedDoor = applied.objects.find((object) => object.roomOpeningId === 'door-main');
+    expect(appliedDoor?.transform.position[2]).toBeGreaterThan(4);
+    expect(suggestion.codePlan?.functions).toEqual(expect.arrayContaining([
+      'ceilingPoint', 'opening', 'place', 'roomPoint', 'wallFrame'
+    ]));
+  });
+
+  it('compiles indoor attachments against earlier placement references', () => {
+    const map = createEmptyMap('Cafe', 'indoor-code-attachments', [12, 4, 9], 'voxel', 'indoor', [12, 4, 9]);
+    const counter: MapAsset = {
+      ...testAsset('asset-counter', '柜台'),
+      modelJson: {
+        format: 2,
+        nodes: [{ id: 'counter', transform: { pos: [0, 0.5, 0] }, mesh: { type: 'box', params: { width: 2, height: 1, depth: 1 } } }]
+      }
+    };
+    const register: MapAsset = {
+      ...testAsset('asset-register', '收银机'),
+      modelJson: {
+        format: 2,
+        nodes: [{ id: 'register', transform: { pos: [0, 0.2, 0] }, mesh: { type: 'box', params: { width: 0.4, height: 0.4, depth: 0.35 } } }]
+      }
+    };
+    const suggestion = executeMapCodePlan(`function plan(api) {
+      const counterRef = api.place({ assetId: 'asset-counter', name: '柜台', position: api.roomPoint(0, 0), dimensions: [2, 1, 1], role: 'functional' });
+      api.attach({ assetId: 'asset-register', name: '收银机', parentId: counterRef, kind: 'supported', offset: [0, 0], role: 'functional' });
+    }`, map, [counter, register]);
+    const objects = suggestion.operations.filter((operation) => operation.type === 'object.add');
+
+    expect(objects).toHaveLength(2);
+    expect(objects[0].object.transform?.size).toEqual([2, 1, 1]);
+    expect(objects[0].object.transform?.scale).toEqual([0.5, 1, 1]);
+    expect(objects[1].object.parentId).toBe(objects[0].object.id);
+    expect(objects[1].object.transform?.position?.[1]).toBeGreaterThan(0.9);
+    expect(suggestion.codePlan?.functions).toEqual(expect.arrayContaining(['attach', 'place', 'roomPoint']));
+    expect(suggestion.diagnostics?.some((issue) => issue.code === 'object.invalid-support')).toBe(false);
+  });
+
+  it('keeps a living-room group inside the user-owned room without outdoor operations', () => {
+    const map = createEmptyMap('Living room', 'indoor-code-living-room', [10, 4, 8], 'voxel', 'indoor', [10, 4, 8]);
+    const originalSize = [...map.room!.size];
+    const suggestion = executeMapCodePlan(`function plan(api) {
+      const door = api.opening({ id: 'living-door', kind: 'door', wall: 'south', offset: 0, width: 1.2, height: 2.1 });
+      api.place({ name: '客厅门', roomOpeningId: door, dimensions: [1.2, 2.1, 0.12], role: 'functional' });
+      api.place({ name: '沙发', position: api.roomPoint(-2.2, -0.4), facing: { target: [0, -0.4] }, dimensions: [2.4, 0.9, 0.9], role: 'functional' });
+      api.place({ name: '茶几', position: api.roomPoint(0, -0.4), dimensions: [1.2, 0.45, 0.7], role: 'functional' });
+      const frame = api.wallFrame('north', 0, 0.45);
+      api.place({ name: '电视', position: frame.point, facing: { direction: frame.inward }, dimensions: [1.8, 1.05, 0.12], role: 'functional' });
+      api.place({ name: '落地灯', position: api.roomPoint(3.6, -2.6), dimensions: [0.45, 1.7, 0.45], role: 'decor' });
+    }`, map);
+    const applied = applyMapOperations(map, suggestion.operations);
+
+    expect(applied.room?.size).toEqual(originalSize);
+    expect(applied.room?.openings).toEqual(expect.arrayContaining([expect.objectContaining({ id: 'living-door' })]));
+    expect(applied.objects).toHaveLength(5);
+    expect(applied.objects.every((object) => object.heightMode === 'fixed')).toBe(true);
+    expect(suggestion.operations.some((operation) => (
+      operation.type.startsWith('terrain.') || operation.type.startsWith('water.') || operation.type.startsWith('grass.')
+    ))).toBe(false);
+    expect(applied.objects.every((object) => Math.abs(object.transform.position[0]) < 5 && Math.abs(object.transform.position[2]) < 4.1)).toBe(true);
+  });
+
+  it('rejects room-shell ownership and outdoor operations from indoor programs', () => {
+    const map = createEmptyMap('Room', 'indoor-code-boundaries', [10, 4, 8], 'voxel', 'indoor', [10, 4, 8]);
+
+    expect(() => discoverMapCodeAssets(`function plan(api) {
+      const shell = api.requireAsset({ key: 'shell', name: '整间房', prompt: 'Complete room shell', role: 'functional' });
+      api.place({ assetId: api.asset(shell), position: api.roomPoint(0, 0), role: 'functional' });
+    }`, map, [], 1)).toThrow('indoor_map_code_forbidden_content');
+    expect(() => executeMapCodePlan(`function plan(api) {
+      api.terrain('plain');
+      api.place({ name: '桌子', position: api.roomPoint(0, 0), role: 'functional' });
+    }`, map)).toThrow('indoor_map_code_outdoor_operation');
+  });
+
   it('gives the model a complete Lite-style code and environment design contract', () => {
     const prompt = buildMapCodePlannerSystemPrompt(createEmptyMap(), [], 2, 4);
 

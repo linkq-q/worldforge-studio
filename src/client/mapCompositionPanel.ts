@@ -54,6 +54,34 @@ export function renderMapCompositionPlanApproval(plan: SceneCompositionPlan): st
   `;
 }
 
+export function renderMapCodePlanApproval(suggestion: MapAiSuggestion): string {
+  const plan = suggestion.codePlan;
+  if (!plan) return '';
+  const requirements = plan.assetRequirements ?? [];
+  const total = requirements.reduce((sum, item) => sum + item.variants, 0);
+  return `
+    <section class="editor-section map-composition-approval" aria-label="待确认的室内功能规划">
+      <span class="stage-kicker">生成前规划</span>
+      <h2>${escapeHtml(suggestion.summary)}</h2>
+      <p class="empty">AI 已统一确定门窗、功能关系与摆放逻辑；此时尚未生成任何 3D 资产。</p>
+      <div class="map-ai-stats">
+        <span>摆放意图 <b>${plan.placementCount}</b></span>
+        <span>资产变体 <b>${total}</b></span>
+        <span>自动修复 <b>${plan.repairAttempts ?? 0}</b></span>
+      </div>
+      <div class="style-tags">${requirements.map((item) => `
+        <span>${escapeHtml(item.name)} · ${item.role === 'decor' ? '装饰' : '功能'} · ${item.variants} 个${item.optional ? ' · 可选' : ''}</span>
+      `).join('')}</div>
+      ${renderMapCodePlanSummary(suggestion)}
+      <div class="map-ai-actions">
+        <button id="discard-code-plan" class="secondary">放弃并修改提示词</button>
+        <button id="regenerate-code-plan" class="secondary">重新规划</button>
+        <button id="approve-code-plan">确认规划并开始生成</button>
+      </div>
+    </section>
+  `;
+}
+
 export function renderMapCompositionSummary(suggestion: MapAiSuggestion): string {
   const composition = suggestion.composition;
   if (!composition) return '';
@@ -120,7 +148,7 @@ export function renderMapCodePlanSummary(suggestion: MapAiSuggestion): string {
   const codePlan = suggestion.codePlan;
   if (!codePlan) return '';
   const failedAssetIssues = (suggestion.diagnostics ?? [])
-    .filter((issue) => issue.code === 'asset.generation-degraded' && !issue.repaired);
+    .filter((issue) => (issue.code === 'asset.generation-degraded' || issue.code === 'asset.unplaced') && !issue.repaired);
   return `
     ${failedAssetIssues.length > 0 ? `
       <div class="map-composition-quality map-composition-quality-warning">
@@ -144,6 +172,7 @@ function mapCodeFunctionLabel(name: string): string {
     sceneIntent: '场景判断', terrain: '基础地形', modifyTerrain: '地形塑形', refineTerrain: '地形细化',
     surface: '地表绘制', water: '水体', grass: '草地', spawn: '出生点', renderSuggestion: '渲染建议',
     requireAsset: '新资产', asset: '选择资产', place: '物体摆放', placeBetween: '连接摆放',
+    roomPoint: '房间坐标', wallFrame: '墙面定位', ceilingPoint: '天花定位', opening: '门窗预留', attach: '附件连接',
     linePoint: '直线路径', bezierPoint: '曲线路径', sampleBezier: '曲线采样',
     sampleBezierFrames: '曲线朝向', sampleBezierFramesBySpacing: '等距曲线', circlePoint: '环形布局',
     gridPoints: '网格布局', poissonDisk: '自然散布', noise2D: '噪声变化', fbm2D: '自然变化',

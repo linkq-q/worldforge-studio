@@ -17,7 +17,6 @@ import { planLimits } from '../src/shared/mapPlanning';
 import { isSpawnPositionSafe } from '../src/shared/mapSpawnSafety';
 import { planMapComposition } from '../src/server/mapCompositionWorkflow';
 import { buildSceneDirectorPrompt } from '../src/server/mapCompositionPrompts';
-import type { SceneCompositionPlan } from '../src/shared/sceneComposition';
 
 const assets: MapAsset[] = [
   testAsset('asset-tree', 'Pine tree', ['tree', 'vegetation'], 'large'),
@@ -90,6 +89,32 @@ describe('map AI adapter', () => {
     expect(suggestion.operations.filter((operation) => operation.type === 'object.add')
       .every((operation) => operation.type === 'object.add' && operation.object.locked === true)).toBe(true);
     expect(suggestion.operations.some((operation) => operation.type === 'object.add')).toBe(true);
+  });
+
+  it('uses the same single Code Composer for indoor generation without a second director', async () => {
+    const map = createEmptyMap('classroom', 'unified-indoor-code', [12, 4, 9], 'voxel', 'indoor', [12, 4, 9]);
+    const fetchImpl = vi.fn().mockResolvedValueOnce(chatTextResponse(`function plan(api) {
+      const door = api.opening({ id: 'door-main', kind: 'door', wall: 'south', width: 1.2, height: 2.1 });
+      api.place({ name: '讲桌', role: 'functional', position: api.roomPoint(0, 1.5, 0), dimensions: [1.4, 0.8, 0.7] });
+      api.place({ name: '教室门', role: 'functional', roomOpeningId: door, dimensions: [1.2, 2.1, 0.12] });
+    }`));
+
+    const suggestion = await runMapAgent('一间保留中央通道的教室', map, [], {
+      apiBase: 'https://example.test', provider: 'gpt', fetchImpl,
+      createAsset: vi.fn(), minNewAssets: 0, maxNewAssets: 0
+    });
+    const request = JSON.parse(String((fetchImpl.mock.calls[0]?.[1] as RequestInit | undefined)?.body)) as {
+      messages: Array<{ content: string }>;
+    };
+
+    expect(fetchImpl).toHaveBeenCalledOnce();
+    expect(request.messages[0].content).toContain('procedural indoor-scene planner');
+    expect(request.messages[0].content).not.toContain('scene composition plan');
+    expect(suggestion.codePlan?.functions).toContain('roomPoint');
+    expect(suggestion.operations).toEqual(expect.arrayContaining([
+      expect.objectContaining({ type: 'room.set' }),
+      expect.objectContaining({ type: 'object.add' })
+    ]));
   });
 
   it('keeps outdoor refinement in Scene Code and emits delta map operations', async () => {
@@ -267,24 +292,15 @@ describe('map AI adapter', () => {
   });
 
   it('keeps successful indoor assets when one model family fails after its own retries', async () => {
-    const blackboardFamily = {
-      ...(family('front-blackboard', ['blackboard', 'wall-prop'], 'large') as Record<string, unknown>),
-      priority: 1
-    };
-    const plan = compositionPlan({
-      assetFamilies: [blackboardFamily, family('chairs', ['chair', 'furniture'], 'medium')],
-      zones: [zone('classroom', [
-        { familyId: 'front-blackboard', distribution: 'accent' },
-        { familyId: 'chairs', distribution: 'even' }
-      ])],
-      intentRequirements: [{
-        id: 'front-blackboard', kind: 'asset-family', description: 'front blackboard',
-        targetZoneId: 'classroom', familyId: 'front-blackboard', minCount: 1
-      }]
-    });
-    const fetchImpl = vi.fn()
-      .mockResolvedValueOnce(chatResponse(plan))
-      .mockResolvedValueOnce(chatResponse(reviewPass()));
+    const fetchImpl = vi.fn().mockResolvedValueOnce(chatTextResponse(`function plan(api) {
+      const board = api.requireAsset({ key: 'board', name: '黑板', prompt: '教室前墙黑板', tags: ['blackboard'], role: 'functional' });
+      const chairs = api.requireAsset({ key: 'chairs', name: '课椅', prompt: '独立教室课椅', tags: ['chair', 'furniture'], role: 'functional' });
+      const frame = api.wallFrame('north', 0, 1.1);
+      api.place({ assetId: api.asset(board), name: '黑板', position: frame.point, facing: { direction: frame.inward }, dimensions: [3, 1.3, 0.12], role: 'functional' });
+      for (const point of api.gridPoints({ rows: 2, columns: 3, spacing: [1.5, 1.6], center: [0, 0.5] })) {
+        api.place({ assetId: api.asset(chairs), name: '课椅', position: api.roomPoint(point[0], point[1]), facing: { direction: [0, -1] }, dimensions: [0.5, 0.85, 0.5], role: 'functional' });
+      }
+    }`));
     const createAsset = vi.fn()
       .mockRejectedValueOnce(new Error('map_asset_generation_failed:Front blackboard:gpt: HTTP 500'))
       .mockResolvedValueOnce(testAsset('asset-chair', 'Chair', ['chair', 'furniture'], 'medium'));
@@ -296,44 +312,26 @@ describe('map AI adapter', () => {
       { apiBase: 'https://example.test', provider: 'gpt', fetchImpl, createAsset, minNewAssets: 2, maxNewAssets: 2 }
     );
 
-    expect(fetchImpl).toHaveBeenCalledTimes(2);
+    expect(fetchImpl).toHaveBeenCalledOnce();
     expect(suggestion.generatedAssets).toEqual([{ id: 'asset-chair', name: 'Chair' }]);
     expect(suggestion.operations.some((operation) => (
       operation.type === 'object.add' && operation.object.assetId === 'asset-chair'
     ))).toBe(true);
-    expect(suggestion.composition?.outcome.checks).toEqual(expect.arrayContaining([expect.objectContaining({
-      requirementId: 'front-blackboard', status: 'warning'
-    })]));
     expect(suggestion.diagnostics).toEqual(expect.arrayContaining([
-      expect.objectContaining({ code: 'asset.minimum-degraded', severity: 'warning' })
+      expect.objectContaining({ code: 'asset.generation-degraded', severity: 'warning' })
+    ]));
+    expect(suggestion.codePlan?.diagnostics).toEqual(expect.arrayContaining([
+      expect.objectContaining({ code: 'asset.generation-degraded', repaired: false })
     ]));
   });
 
   it('places a generated indoor attachment even when its target family failed to generate', async () => {
-    const counter = {
-      ...(family('service-counter', ['service-counter', 'furniture'], 'large') as Record<string, unknown>),
-      priority: 1
-    };
-    const register = {
-      ...(family('cash-register', ['cash-register', 'counter-prop'], 'small') as Record<string, unknown>),
-      priority: 0.9
-    };
-    const plan = compositionPlan({
-      assetFamilies: [counter, register],
-      zones: [{
-        ...(zone('restaurant', []) as Record<string, unknown>),
-        layers: [{
-          familyId: 'service-counter', density: 0.01, scaleRange: [1, 1], distribution: 'even', edgeFalloff: 0,
-          placement: { mode: 'linear', pattern: 'row', intent: 'wall', direction: 0, offset: 0, facing: 'inward', maxPerGroup: 1 }
-        }, {
-          familyId: 'cash-register', density: 0.01, scaleRange: [1, 1], distribution: 'clustered', edgeFalloff: 0,
-          placement: { mode: 'attached', intent: 'attached-service', targetFamilyId: 'service-counter', direction: 0, offset: 0, facing: 'inward', maxPerGroup: 1 }
-        }]
-      }]
-    });
-    const fetchImpl = vi.fn()
-      .mockResolvedValueOnce(chatResponse(plan))
-      .mockResolvedValueOnce(chatResponse(reviewPass()));
+    const fetchImpl = vi.fn().mockResolvedValueOnce(chatTextResponse(`function plan(api) {
+      const counter = api.requireAsset({ key: 'counter', name: '柜台', prompt: '餐厅服务柜台', tags: ['service-counter', 'furniture'], role: 'functional' });
+      const register = api.requireAsset({ key: 'register', name: '收银机', prompt: '独立收银机', tags: ['cash-register', 'counter-prop'], role: 'functional' });
+      const counterRef = api.place({ assetId: api.asset(counter), name: '柜台', position: api.roomPoint(0, -2), dimensions: [2.4, 1, 0.8], role: 'functional' });
+      api.attach({ assetId: api.asset(register), name: '收银机', parentId: counterRef, kind: 'supported', role: 'functional' });
+    }`));
     const createAsset = vi.fn()
       .mockRejectedValueOnce(new Error('map_asset_generation_failed:Service counter:gpt: HTTP 500'))
       .mockResolvedValueOnce(testAsset('asset-register', 'Cash register', ['cash-register', 'counter-prop'], 'small'));
@@ -349,14 +347,18 @@ describe('map AI adapter', () => {
     expect(suggestion.operations.some((operation) => (
       operation.type === 'object.add' && operation.object.assetId === 'asset-register'
     ))).toBe(true);
+    expect(suggestion.diagnostics).toEqual(expect.arrayContaining([
+      expect.objectContaining({ code: 'object.invalid-support', repaired: true }),
+      expect.objectContaining({ code: 'asset.generation-degraded', repaired: false })
+    ]));
   });
 
-  it('continues from an approved composition without asking the director to redesign it', async () => {
-    const approvedPlan = compositionPlan({
-      assetFamilies: [family('chairs', ['chair', 'furniture'], 'medium')],
-      zones: [zone('seating', [{ familyId: 'chairs', distribution: 'even' }])]
-    });
-    const fetchImpl = vi.fn().mockResolvedValueOnce(chatResponse(reviewPass()));
+  it('continues from an approved indoor program without asking the model to redesign it', async () => {
+    const approvedCode = `function plan(api) {
+      const chairs = api.requireAsset({ key: 'chairs', name: '长椅', prompt: '教堂木制长椅', tags: ['pew', 'furniture'], role: 'functional' });
+      api.place({ assetId: api.asset(chairs), name: '长椅', position: api.roomPoint(0, 1), dimensions: [2.4, 0.9, 0.7], role: 'functional' });
+    }`;
+    const fetchImpl = vi.fn();
     const createAsset = vi.fn().mockResolvedValue(testAsset('approved-chair', 'Approved chair', ['chair', 'furniture'], 'medium'));
 
     const suggestion = await runMapAgent(
@@ -365,14 +367,14 @@ describe('map AI adapter', () => {
       [],
       {
         apiBase: 'https://example.test', provider: 'gpt', fetchImpl, createAsset,
-        approvedCompositionPlan: approvedPlan as SceneCompositionPlan,
+        approvedCode,
         maxNewAssets: 1
       }
     );
 
     expect(createAsset).toHaveBeenCalledOnce();
-    expect(fetchImpl).toHaveBeenCalledOnce();
-    expect(suggestion.composition?.plan.zones[0].id).toBe('seating');
+    expect(fetchImpl).not.toHaveBeenCalled();
+    expect(suggestion.codePlan?.code).toContain('api.roomPoint(0, 1)');
   });
 
   it('rejects an explicit interior prompt on an outdoor map before calling the model', async () => {
@@ -389,61 +391,18 @@ describe('map AI adapter', () => {
 
   it('composes an indoor chapel without terrain and keeps pew rows facing the altar across a center aisle', async () => {
     const map = createEmptyMap('Chapel', 'map-indoor-chapel', [20, 3, 20], 'voxel', 'indoor', [20, 3, 20]);
-    const plan = compositionPlan({
-      assetFamilies: [
-        family('altar', ['altar', 'lectern'], 'medium'),
-        family('pews', ['pew', 'furniture', 'wooden', 'honey-oak'], 'medium')
-      ],
-      zones: [{
-        id: 'sanctuary', label: 'Chapel sanctuary', role: 'primary', importance: 1,
-        region: { kind: 'circle', center: [0, -0.68], radius: 0.2 },
-        brief: {
-          atmosphere: 'quiet chapel sanctuary', hierarchy: 'altar is the clear focus',
-          openness: 0.35, transitionIntent: 'opens toward the nave'
-        },
-        terrain: { elevation: 0, roughness: 0, flatness: 1 },
-        layers: [{
-          familyId: 'altar', density: 0.01, scaleRange: [1, 1], distribution: 'accent', edgeFalloff: 0,
-          placement: { mode: 'anchor', intent: 'landmark', direction: 0, offset: 0, facing: 'guide' }
-        }],
-        grassLayers: [], excludeZoneIds: []
-      }, {
-        id: 'left-seating', label: 'Left chapel seating', role: 'secondary', importance: 0.9,
-        region: { kind: 'circle', center: [-0.42, 0.08], radius: 0.62 },
-        brief: {
-          atmosphere: 'orderly wooden pew rows', hierarchy: 'left rows lead to the altar',
-          openness: 0.45, transitionIntent: 'preserve the center aisle'
-        },
-        terrain: { elevation: 0, roughness: 0, flatness: 1 },
-        layers: [{
-          familyId: 'pews', density: 0.08, scaleRange: [1, 1], distribution: 'even', edgeFalloff: 0,
-          placement: {
-            mode: 'layout', pattern: 'grid', intent: 'audience', direction: 0, spacing: 2.2,
-            offset: 0, facing: 'inward', focusFamilyId: 'altar', maxPerGroup: 8, aisleEvery: 2
-          }
-        }],
-        grassLayers: [], excludeZoneIds: []
-      }, {
-        id: 'right-seating', label: 'Right chapel seating', role: 'secondary', importance: 0.9,
-        region: { kind: 'circle', center: [0.42, 0.08], radius: 0.62 },
-        brief: {
-          atmosphere: 'orderly wooden pew rows', hierarchy: 'right rows lead to the altar',
-          openness: 0.45, transitionIntent: 'preserve the center aisle'
-        },
-        terrain: { elevation: 0, roughness: 0, flatness: 1 },
-        layers: [{
-          familyId: 'pews', density: 0.08, scaleRange: [1, 1], distribution: 'even', edgeFalloff: 0,
-          placement: {
-            mode: 'layout', pattern: 'grid', intent: 'audience', direction: 0, spacing: 2.2,
-            offset: 0, facing: 'inward', focusFamilyId: 'altar', maxPerGroup: 8, aisleEvery: 2
-          }
-        }],
-        grassLayers: [], excludeZoneIds: []
-      }]
-    });
-    const fetchImpl = vi.fn()
-      .mockResolvedValueOnce(chatResponse(plan))
-      .mockResolvedValueOnce(chatResponse(reviewPass()));
+    const fetchImpl = vi.fn().mockResolvedValueOnce(chatTextResponse(`function plan(api) {
+      const altarAsset = api.requireAsset({ key: 'altar', name: '讲台', prompt: '教堂讲台', tags: ['altar', 'lectern'], dimensions: [2.2, 1.2, 0.9], role: 'functional' });
+      const pewAsset = api.requireAsset({ key: 'pews', name: '长椅', prompt: '教堂木制长椅', tags: ['pew', 'furniture'], dimensions: [2.6, 0.9, 0.7], role: 'functional' });
+      const altarPoint = api.roomPoint(0, -7);
+      api.place({ assetId: api.asset(altarAsset), name: '讲台', position: altarPoint, dimensions: [2.2, 1.2, 0.9], role: 'functional' });
+      for (let row = 0; row < 6; row += 1) {
+        const z = -3.5 + row * 1.45;
+        for (const x of [-3, 3]) {
+          api.place({ assetId: api.asset(pewAsset), name: '长椅', position: api.roomPoint(x, z), facing: { direction: [0, -1] }, dimensions: [4.6, 0.9, 0.7], role: 'functional' });
+        }
+      }
+    }`));
     const createAsset = vi.fn().mockImplementation(async (request: { tags: string[] }) => {
       if (request.tags.includes('altar')) {
         return testAssetWithBounds(
@@ -467,7 +426,7 @@ describe('map AI adapter', () => {
     const altar = applied.objects.find((object) => object.assetId === 'asset-indoor-altar');
     const pews = applied.objects.filter((object) => object.assetId === 'asset-indoor-pew');
 
-    expect(fetchImpl).toHaveBeenCalledTimes(2);
+    expect(fetchImpl).toHaveBeenCalledOnce();
     expect(createAsset).toHaveBeenCalledTimes(2);
     expect(suggestion.operations.some((operation) => (
       operation.type === 'terrain.generate'
@@ -478,24 +437,18 @@ describe('map AI adapter', () => {
       || operation.type.startsWith('grass.')
     ))).toBe(false);
     expect(altar).toBeDefined();
-    expect(pews.length).toBeGreaterThanOrEqual(40);
-    expect(pews.length).toBeLessThanOrEqual(200);
+    expect(pews).toHaveLength(12);
     expect(applied.objects.some((object) => object.id.startsWith('population-'))).toBe(false);
-    expect(pews.every((pew) => pew.transform.scale[0] < 0.74)).toBe(true);
-    expect(pews.every((pew) => pew.transform.scale[0] >= pew.transform.scale[1])).toBe(true);
     expect(pews.every((pew) => Math.abs(pew.transform.position[1]) < 0.001)).toBe(true);
-    expect(pews.every((pew) => (
-      pew.transform.position[1] + (3.475 - 1.22) * pew.transform.scale[1] <= 2.84
-    ))).toBe(true);
-    expect(pews.some((pew) => pew.transform.position[0] < -0.8)).toBe(true);
-    expect(pews.some((pew) => pew.transform.position[0] > 0.8)).toBe(true);
-    expect(pews.filter((pew) => Math.abs(pew.transform.position[0]) <= 0.6).length / pews.length).toBeLessThan(0.18);
+    expect(pews.some((pew) => pew.transform.position[0] < -2)).toBe(true);
+    expect(pews.some((pew) => pew.transform.position[0] > 2)).toBe(true);
+    expect(pews.filter((pew) => Math.abs(pew.transform.position[0]) <= 1).length).toBe(0);
     expect(pews.every((pew) => {
       const position = pew.transform.position;
       const forward = [Math.sin(pew.transform.rotation[1]), Math.cos(pew.transform.rotation[1])];
       const toAltar = [altar!.transform.position[0] - position[0], altar!.transform.position[2] - position[2]];
       const distance = Math.hypot(toAltar[0], toAltar[1]);
-      return (forward[0] * toAltar[0] + forward[1] * toAltar[1]) / distance > 0.98;
+      return (forward[0] * toAltar[0] + forward[1] * toAltar[1]) / distance > 0.74;
     })).toBe(true);
     expect(applied.objects.every((object) => (
       Math.abs(object.transform.position[0]) <= 9.4
