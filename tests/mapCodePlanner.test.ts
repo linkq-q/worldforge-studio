@@ -17,6 +17,8 @@ describe('map code planner', () => {
     expect(prompt).toContain('sampleBezierFrames(...) -> frame objects with point,tangent,normal');
     expect(prompt).toContain('sampleBezierFramesBySpacing(...,spacing,gapRatio?)');
     expect(prompt).toContain('api.placeBetween({assetId?,name?,start:[x,z],end:[x,z]');
+    expect(prompt).not.toContain("placeBetween({assetId?,name?,start:[x,z],end:[x,z],dimensions:[width,height,depth],spanAxis:'x'|'z',gapRatio?");
+    expect(prompt).not.toContain('use gapRatio:0.05-0.10');
     expect(prompt).toContain('For a continuous connected run, use one asset family and normally variants:1.');
     expect(prompt).toContain('facing:{normal:frame.normal}');
     expect(prompt).toContain('poissonDisk plus noise2D/fbm2D');

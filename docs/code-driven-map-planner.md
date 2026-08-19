@@ -106,7 +106,7 @@ function plan(api) {
 }
 ```
 
-With `spanAxis: 'x'`, the ordered `start -> end` line becomes local `X+`, and local `Z+` automatically faces the line's left side. Reverse the endpoints to flip the facade. Use `spanAxis: 'z'` when the asset's forward/traversal axis itself should connect the endpoints. A small `gapRatio` such as `0.05` to `0.10` shortens the fitted span around its midpoint when a visible seam is desired.
+With `spanAxis: 'x'`, the ordered `start -> end` line becomes local `X+`, and local `Z+` automatically faces the line's left side. Reverse the endpoints to flip the facade. Use `spanAxis: 'z'` when the asset's forward/traversal axis itself should connect the endpoints.
 
 WorldForge executes the code once to discover requirements, generates all requested variants through the shared unbounded-concurrency asset pool, then replays the same code from the same map seed with real persisted asset IDs. Asset generation remains outside the sandboxed VM. The request's `minNewAssets` and `maxNewAssets` values constrain the generated variant count; if a valid first program declares too few new assets, the planner requests one asset-focused revision before continuing.
 
