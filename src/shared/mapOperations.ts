@@ -59,6 +59,30 @@ import { normalizeMapGuides, type MapGuide } from './mapGuide';
 
 export type MapTransactionSource = 'basic-ai' | 'agent' | 'manual';
 
+export interface MapAiAgentTrace {
+  program: string;
+  iterations: number;
+  guideCount: number;
+  objectCount: number;
+  diagnostics: Array<{ severity: 'info' | 'warning' | 'error'; code: string; message: string }>;
+  trace: Array<{ iteration: number; action: string; summary: string }>;
+}
+
+export interface MapAiCodePlan {
+  code: string;
+  placementCount: number;
+  functions: string[];
+  sceneIntent?: 'natural' | 'authored';
+  sceneIntentReason?: string;
+}
+
+export interface MapAiTransactionMetadata {
+  prompt: string;
+  agent?: MapAiAgentTrace;
+  codePlan?: MapAiCodePlan;
+  generatedAssets?: Array<{ id: string; name: string }>;
+}
+
 export type MapObjectInput = Omit<Partial<MapObject>, 'transform'> & {
   transform?: Partial<Transform3D>;
 };
@@ -106,6 +130,7 @@ export interface MapTransactionRequest {
   label?: string;
   source: MapTransactionSource;
   operations: MapOperation[];
+  ai?: MapAiTransactionMetadata;
 }
 
 export interface MapTransactionSummary {
@@ -114,6 +139,7 @@ export interface MapTransactionSummary {
   source: MapTransactionSource;
   operationCount: number;
   createdAt: number;
+  ai?: MapAiTransactionMetadata;
 }
 
 export interface MapAiSuggestion {
@@ -123,16 +149,11 @@ export interface MapAiSuggestion {
   generatedAssets: Array<{ id: string; name: string }>;
   reusedAssets?: Array<{ id: string; name: string; libraryId: string }>;
   diagnostics?: MapLintIssue[];
-  /** Preview-only trace for the bounded model-directed Scene Program loop. */
-  agent?: {
-    program: string;
-    iterations: number;
-    guideCount: number;
-    objectCount: number;
-    diagnostics: Array<{ severity: 'info' | 'warning' | 'error'; code: string; message: string }>;
-    trace: Array<{ iteration: number; action: string; summary: string }>;
-  };
-  /** Preview-only reasoning artifact. Map transactions persist only compiled operations. */
+  /** An inspectable candidate that must not be committed until its outcome requirements pass. */
+  blocked?: boolean;
+  /** Trace for the bounded model-directed Scene Program loop. */
+  agent?: MapAiAgentTrace;
+  /** Preview-only composition reasoning artifact. */
   composition?: {
     plan: SceneCompositionPlan;
     metrics: SceneCompositionMetrics;
@@ -140,6 +161,8 @@ export interface MapAiSuggestion {
     review: SceneReviewResult;
     outcome: { checks: SceneOutcomeCheck[]; repairCount: number };
   };
+  /** Preview-only source and telemetry for the bounded procedural code planner. */
+  codePlan?: MapAiCodePlan;
 }
 
 const MAP_SURFACES = new Set<MapSurface>(['floor', 'ceiling', 'north', 'south', 'east', 'west', 'terrain']);

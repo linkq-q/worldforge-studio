@@ -44,6 +44,13 @@ export function updateAgentProgress(list: AgentProgressEvent[], event: AgentProg
 export function humanizeAgentError(error: unknown): string {
   if (error instanceof Error && error.name === 'AbortError') return '【用户取消】本次规划已中断，没有内容应用到地图。';
   const message = error instanceof Error ? error.message : String(error || 'unknown_error');
+  if (/^map_asset_generation_failed:/.test(message)) {
+    const payload = message.slice('map_asset_generation_failed:'.length);
+    const separator = payload.indexOf(':');
+    const assetName = shortChineseAssetName(separator >= 0 ? payload.slice(0, separator) : payload);
+    const cause = separator >= 0 ? payload.slice(separator + 1) : '未返回具体原因';
+    return `【资产生成失败】资产“${assetName || '未命名资产'}”在全部重试后仍失败。最后原因：${cause.slice(0, 240)}。这是上游模型资产生成失败，请稍后重试或切换模型提供方。`;
+  }
   if (/failed to fetch|econnrefused|networkerror|socket|connection (?:closed|reset)|terminated/i.test(message)) {
     return '【连接失败】无法连接 Voxel Studio 后端，或连接中途断开。请确认服务端仍在运行、网络连接正常，然后重试；本次规划没有应用。';
   }
@@ -74,19 +81,15 @@ export function humanizeAgentError(error: unknown): string {
     scene_agent_no_executable_program: '【Scene Agent 无可用候选】Agent 在决策轮数内没有成功解释执行任何 Scene Program。已经生成的资产仍保留在资产库中；请允许复用后重试或简化场景要求。'
   };
   if (labels[message]) return labels[message];
-  if (/^map_asset_generation_failed:/.test(message)) {
-    const payload = message.slice('map_asset_generation_failed:'.length);
-    const separator = payload.indexOf(':');
-    const assetName = separator >= 0 ? payload.slice(0, separator) : payload;
-    const cause = separator >= 0 ? payload.slice(separator + 1) : '未返回具体原因';
-    return `【资产生成失败】资产“${assetName || '未命名资产'}”在全部重试后仍失败。最后原因：${cause.slice(0, 240)}。请检查模型服务，或降低该资产描述的复杂度后重试。`;
-  }
   if (/^scene_outcome_missing_(?:asset_family|water):/.test(message)) {
     const target = message.slice(message.indexOf(':') + 1);
     return `【空间放置失败】规划中的“${target}”无法在边界、坡度、水体和碰撞限制内找到合法位置。请扩大目标区块、减少密度或缩小资产尺度后重试。`;
   }
   if (/^(?:unknown_map_asset|map_agent_existing_asset_reuse_disabled|generated_asset_mode_mismatch)/.test(message)) {
     return `【资产引用冲突】AI 引用了当前不可用、不可复用或生成模式不匹配的资产（${message}）。请检查资产库复用选项与地图资产模式后重试。`;
+  }
+  if (/^(?:map_code_execution_failed:)?(?:non_finite_map_code_value|invalid_map_code_point|invalid_map_code_position|unused_map_code_asset_variants|map_code_generated_assets_unplaced|missing_map_code_scene_intent|authored_scene_missing_structure)/.test(message)) {
+    return `【场景 Code 校验失败】整体程序仍有无效坐标、未使用资产或缺少必要结构。系统已阻止该候选进入地图，请重试或简化要求。服务端信息：${message.slice(0, 240)}`;
   }
   if (/^(?:invalid_|unknown_scene_|duplicate_scene_|forbidden_scene_|required_scene_|scene_composition_)/.test(message)) {
     return `【AI 规划校验失败】AI 返回的场景关系或地图操作不符合编辑器约束（${message}）。请重试；若重复出现，请简化区域关系与内容要求。`;
@@ -157,10 +160,11 @@ export function renderAgentProgress(
             ? humanizeAgentError(new Error(asset.detail))
             : agentStageLabel(asset.detail)
           : '';
+        const assetName = shortChineseAssetName(asset.name);
         return `
           <article class="agent-asset-card ${asset.status}">
             <div>
-              <strong title="${escapeHtml(asset.name)}">${escapeHtml(asset.name)}</strong>
+              <strong title="${escapeHtml(assetName)}">${escapeHtml(assetName)}</strong>
               ${asset.slot ? `<span>通道 ${asset.slot}</span>` : ''}
             </div>
             <b>${statusLabels[asset.status]}</b>
@@ -239,6 +243,45 @@ function agentStageLabel(stage: string): string {
     result: '资产完成'
   };
   return labels[stage] ?? stage;
+}
+
+function shortChineseAssetName(name: string): string {
+  const source = name.trim();
+  const chinese = source.match(/[\u3400-\u9fff]+/g)?.join('') ?? '';
+  if (chinese.length > 0 && chinese.length <= 8) return chinese;
+  const labels: Array<[RegExp, string]> = [
+    [/入口|城门|大门|\b(?:entry|entrance|gateway)\b/i, '入口'],
+    [/拱门|\barch(?:way)?\b/i, '拱门'],
+    [/看台|观众席|座席|\b(?:grandstands?|stands?|spectator|seating|bleachers?)\b/i, '看台'],
+    [/护栏|围栏|屏障|\b(?:barrier|railing|fence)\b/i, '护栏'],
+    [/灯塔|\blighthouse\b/i, '灯塔'],
+    [/塔柱|方尖碑|\b(?:pylon|obelisk)\b/i, '塔柱'],
+    [/塔楼|高塔|\btower\b/i, '塔楼'],
+    [/灯|火炬|\b(?:light|lamp|luminous|torch)\b/i, '灯具'],
+    [/立柱|柱廊|\b(?:pillar|column|colonnade)\b/i, '立柱'],
+    [/核心|\bcore\b/i, '核心'],
+    [/基座|\b(?:plinth|pedestal)\b/i, '基座'],
+    [/桥|\bbridge\b/i, '桥梁'],
+    [/道路|步道|通道|轴线|\b(?:road|path|street|causeway|walkway)\b/i, '道路'],
+    [/广场|庭院|\b(?:plaza|courtyard)\b/i, '广场'],
+    [/城墙|围墙|\b(?:wall|rampart)\b/i, '城墙'],
+    [/雕像|雕塑|\b(?:statue|sculpture)\b/i, '雕像'],
+    [/树|\b(?:tree|forest)\b/i, '树木'],
+    [/花|植物|灌木|\b(?:flower|plant|shrub|bush)\b/i, '植物'],
+    [/岩石|巨石|\b(?:rock|stone|boulder)\b/i, '岩石'],
+    [/鸟|\bbird\b/i, '鸟类'],
+    [/动物|生物|\b(?:animal|creature|wildlife)\b/i, '生物'],
+    [/长椅|\bbench\b/i, '长椅'],
+    [/座椅|椅子|\bchair\b/i, '座椅'],
+    [/桌|\btable\b/i, '桌子'],
+    [/门|\bdoor\b/i, '门'],
+    [/建筑|房屋|\b(?:building|house)\b/i, '建筑'],
+    [/竞技场|斗兽场|\b(?:arena|colosseum|stadium)\b/i, '竞技场']
+  ];
+  for (const [pattern, label] of labels) {
+    if (pattern.test(source)) return label;
+  }
+  return chinese ? chinese.slice(0, 8) : '场景资产';
 }
 
 function escapeHtml(value: string): string {

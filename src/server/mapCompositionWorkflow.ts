@@ -46,6 +46,7 @@ export interface MapCompositionWorkflowOptions {
   reusableAssetIds?: readonly string[];
   minNewAssets?: number;
   maxNewAssets?: number;
+  /** Continue from a composition plan that the user already confirmed. */
   approvedCompositionPlan?: SceneCompositionPlan;
   createAsset: (request: {
     name: string;

@@ -46,15 +46,20 @@ import {
   type TerrainBrushMode
 } from '../shared/map';
 import { lintMap } from '../shared/mapLint';
-import type { IndoorVisualReview } from '../shared/indoorVisualReview';
+import { mapVisualReviewAction, type MapVisualReview } from '../shared/indoorVisualReview';
 import {
   DEFAULT_MAP_AI_MIN_NEW_ASSETS,
   DEFAULT_MAP_AI_MAX_NEW_ASSETS,
   MAP_AI_MAX_NEW_ASSETS,
   normalizeMapAiNewAssetRange
 } from '../shared/mapPlanning';
-import { isCompositionEmptyMap, SCENE_COMPOSITION_LIMITS, type SceneCompositionPlan } from '../shared/sceneComposition';
-import { mapCompositionPlacementQuality, renderMapCompositionPlanApproval, renderMapCompositionSummary } from './mapCompositionPanel';
+import { isCompositionEmptyMap, type SceneCompositionPlan } from '../shared/sceneComposition';
+import {
+  mapCompositionPlacementQuality,
+  renderMapCodePlanSummary,
+  renderMapCompositionPlanApproval,
+  renderMapCompositionSummary
+} from './mapCompositionPanel';
 import {
   bindMaterialTagScenePanel,
   renderMaterialTagScenePanel
@@ -1334,6 +1339,7 @@ class MapEditor {
     }
     const suggestion = this.mapAiSuggestion;
     const isTerrainPreview = this.mapPreviewKind === 'terrain';
+    const suggestionBlocked = Boolean(suggestion?.blocked);
     const terrainCount = suggestion?.operations.filter((operation) => operation.type.startsWith('terrain.')).length ?? 0;
     const waterCount = suggestion?.operations.filter((operation) => operation.type.startsWith('water.')).length ?? 0;
     const objectCount = suggestion?.operations.filter((operation) => operation.type.startsWith('object.')).length ?? 0;
@@ -1362,7 +1368,7 @@ class MapEditor {
         <p class="empty inspector-note">建议只写一句场景描述；AI 会自行安排坐标、数量、密度和空间关系。</p>
         <div class="map-ai-options">
           ${map.sceneMode === 'outdoor' ? `<label class="field compact map-ai-toggle">
-            <span>Scene Agent（程序化规划）</span>
+            <span>整体 Code（统一地形、建筑与环境）</span>
             <input id="map-ai-scene-agent" type="checkbox" ${this.mapAiUseSceneAgent ? 'checked' : ''} ${this.state.busy ? 'disabled' : ''} />
           </label>` : ''}
           ${map.sceneMode === 'indoor' ? `<label class="field compact map-ai-toggle">
@@ -1408,11 +1414,11 @@ class MapEditor {
           slowAssetMode: map.assetGenerationMode === 'standard' || map.assetGenerationMode === 'voxel-pro',
           completionPercent: compositionCompletionPercent
         })}
-        <p class="empty inspector-note" title="总导演会先组织完整场景，按需调用最多 ${SCENE_COMPOSITION_LIMITS.consultationCount} 个专家；未开启复用时，新内容只使用本次生成的资产。">默认 ${map.assetGenerationMode.toUpperCase()} · ${this.state.dirty
+        <p class="empty inspector-note" title="整体 Code 会一次编排地形、水体、建筑与自然内容；本地约束负责边界、通行和资产使用。未开启复用时，新内容只使用本次生成的资产。">默认 ${map.assetGenerationMode.toUpperCase()} · ${this.state.dirty
           ? '请先保存当前手工修改，再生成 AI 地图预览。'
           : !compositionAvailable
             ? '当前地图已有内容，请使用“调整当前地图”继续 Refine。'
-            : `总导演编排场景 · 生成 ${this.mapAiMinNewAssets}-${this.mapAiMaxNewAssets} 个新资产`}</p>
+            : `${map.sceneMode === 'outdoor' && this.mapAiUseSceneAgent ? '整体 Code 编排场景' : '场景规划'} · 生成 ${this.mapAiMinNewAssets}-${this.mapAiMaxNewAssets} 个新资产`}</p>
         </section>
       </details>
       ${this.pendingCompositionPlan ? renderMapCompositionPlanApproval(this.pendingCompositionPlan) : ''}
@@ -1431,6 +1437,7 @@ class MapEditor {
             <span>出生点 <b>${hasSpawn ? '有' : '无'}</b></span>
           </div>
           ${renderMapCompositionSummary(suggestion)}
+          ${renderMapCodePlanSummary(suggestion)}
           ${suggestion.agent ? `
             <details class="inspector-disclosure compact map-ai-composition-details">
               <summary><span><b>Scene Agent 轨迹</b><small>${suggestion.agent.iterations} 轮 · ${suggestion.agent.guideCount} 条引导 · ${suggestion.agent.objectCount} 个物体</small></span></summary>
@@ -1459,7 +1466,7 @@ class MapEditor {
               <div class="style-tags">${suggestion.reusedAssets?.map((asset) => `<span>资产库 · ${escapeHtml(asset.name)}</span>`).join('')}</div>
             </details>
           ` : ''}
-          ${!suggestion.composition && (suggestion.diagnostics?.length ?? 0) > 0 ? `
+          ${(suggestion.diagnostics?.length ?? 0) > 0 ? `
             <div>
               <p class="empty">自动质检</p>
               <div class="style-tags">${suggestion.diagnostics?.map((issue) => `
@@ -1469,8 +1476,9 @@ class MapEditor {
           ` : ''}
           <div class="map-ai-actions">
             <button id="discard-map-ai" class="secondary" ${this.state.busy || this.mapAiAutoRefineRunning ? 'disabled' : ''}>放弃预览</button>
-            <button id="apply-map-ai" ${this.state.busy || this.mapAiRoundSavePromise ? 'disabled' : ''}>${this.mapAiAutoRefineRunning ? '保存当前轮' : '应用到地图'}</button>
+            <button id="apply-map-ai" ${this.state.busy || this.mapAiRoundSavePromise || suggestionBlocked ? 'disabled' : ''} title="${suggestionBlocked ? 'Scene Agent 尚未满足结构要求，请重新生成或调整提示词' : ''}">${this.mapAiAutoRefineRunning ? '保存当前轮' : '应用到地图'}</button>
           </div>
+          ${suggestionBlocked ? '<p class="empty inspector-note">当前候选未通过 Scene Agent 结构验收，只能审阅或放弃，不能应用。</p>' : ''}
         </section>
       ` : ''}
     `;
@@ -1545,6 +1553,14 @@ class MapEditor {
     host.querySelector('#apply-map-ai')?.addEventListener('click', () => void this.applyMapAiPreview());
     host.querySelector('#repair-map-ai-composition')?.addEventListener('click', () => {
       const repairPrompt = `${this.mapAiPrompt}\n\n在上一轮预览基础上继续修复规划完整性：优先补足未正常落位的资产与装饰，修复动线、贴墙、贴顶和关系组；保留已经合理的内容。`;
+      void this.generateMapAiPreview('refine', undefined, repairPrompt);
+    });
+    host.querySelector('#repair-map-ai-assets')?.addEventListener('click', () => {
+      const failedDetails = (this.mapAiSuggestion?.diagnostics ?? [])
+        .filter((issue) => issue.code === 'asset.generation-degraded' && !issue.repaired)
+        .map((issue) => issue.message)
+        .join('；');
+      const repairPrompt = `${this.mapAiPrompt}\n\n只修复上一轮没有生成成功的资产及其必要摆放：${failedDetails}。保留当前地形、水体、建筑和其余已经成功的内容，不要重做整个场景。`;
       void this.generateMapAiPreview('refine', undefined, repairPrompt);
     });
     host.querySelector('#discard-composition-plan')?.addEventListener('click', () => {
@@ -2115,7 +2131,7 @@ class MapEditor {
     let livePreviewFailure: unknown = null;
     let liveGeneratedAssetCount = 0;
     let livePreviewObjectCount = this.mapAiPreviewMap?.objects.length ?? 0;
-    this.setBusy(true, mode === 'refine' ? '地图 Agent 正在调整当前地图...' : '地图 Agent 正在检查资产并规划场景...');
+    this.setBusy(true, mode === 'refine' ? '地图 Agent 正在调整当前地图...' : map.sceneMode === 'outdoor' && this.mapAiUseSceneAgent ? '场景 Code 正在统一规划地图...' : '地图 Agent 正在检查资产并规划场景...');
     this.renderMapAiPanel();
     try {
       const { suggestion } = await editorAgentFetch<{ suggestion: MapAiSuggestion }>(
@@ -2133,7 +2149,7 @@ class MapEditor {
             targetRegionId: mode === 'refine' ? this.mapAiTargetRegionId || undefined : undefined,
             baseTerrainOnly: mode === 'refine' && this.mapAiBaseTerrainOnly,
             approvedCompositionPlan,
-            sceneAgent: mode === 'generate' && map.sceneMode === 'outdoor' && this.mapAiUseSceneAgent,
+            sceneAgent: map.sceneMode === 'outdoor' && this.mapAiUseSceneAgent,
             ...(previousSuggestion ? { baseOperations: previousSuggestion.operations } : {})
           }),
           signal: controller.signal
@@ -2188,6 +2204,9 @@ class MapEditor {
             ...suggestion,
             operations: [...previousSuggestion.operations, ...suggestion.operations],
             generatedAssets: [...previousSuggestion.generatedAssets, ...suggestion.generatedAssets],
+            blocked: Boolean(previousSuggestion.blocked || suggestion.blocked),
+            agent: suggestion.agent ?? previousSuggestion.agent,
+            codePlan: suggestion.codePlan ?? previousSuggestion.codePlan,
             composition: suggestion.composition ?? continuedComposition
           }
         : suggestion;
@@ -2207,11 +2226,11 @@ class MapEditor {
             combinedSuggestion.composition.metrics.objectCount
           )
         : null;
-      if (quality && quality.tone !== 'good') {
+      if (quality && quality.tone !== 'good' && !combinedSuggestion.codePlan) {
         const repairPrompt = `${this.mapAiPrompt}\n\n在第一轮可见结果基础上自动进行一次规划提升：补足未正常落位的资产，修复尺度、动线、操作净空、贴墙贴顶、窗户覆盖和支撑关系；保留已经合理的内容。`;
         window.setTimeout(() => void this.generateMapAiPreview('refine', undefined, repairPrompt, true), 0);
-      } else if (map.sceneMode === 'indoor' && !visualRepair) {
-        window.setTimeout(() => void this.runIndoorVisualFinalReview(), 0);
+      } else if (!visualRepair) {
+        window.setTimeout(() => void this.runMapVisualFinalReview(), 0);
       }
     } catch (error) {
       await livePreviewWork;
@@ -2237,21 +2256,25 @@ class MapEditor {
     }
   }
 
-  private async runIndoorVisualFinalReview(): Promise<void> {
+  private async runMapVisualFinalReview(): Promise<void> {
     const map = this.state.map;
     const preview = this.mapAiPreviewMap;
     const suggestion = this.mapAiSuggestion;
-    if (!map || !preview || !suggestion || preview.sceneMode !== 'indoor'
-      || this.mapAiVisualReviewRunning || this.mapAiVisualReviewCompleted || this.state.busy) return;
+    if (!map || !preview || !suggestion || suggestion.blocked || preview.sceneMode === 'mixed' || this.mapAiVisualReviewRunning
+      || this.mapAiVisualReviewCompleted || this.state.busy) return;
+    const indoor = preview.sceneMode === 'indoor';
     this.mapAiVisualReviewRunning = true;
     this.mapAiVisualReviewCompleted = true;
-    this.setBusy(true, '正在合成四角视图与俯视图，进行室内轻量终检...');
-    updateAgentProgress(this.mapAgentProgress, { phase: 'reviewing', label: '室内轻量终检：检查遮挡、漂浮、暗角与构图' });
+    this.setBusy(true, `正在合成四角视图与俯视图，进行${indoor ? '室内' : '室外'}轻量终检...`);
+    updateAgentProgress(this.mapAgentProgress, {
+      phase: 'reviewing',
+      label: indoor ? '室内轻量终检：检查遮挡、漂浮、暗角与构图' : '室外轻量终检：检查连续性、稀疏度、主次与路线'
+    });
     this.renderMapAiPanel();
     try {
-      const imageDataUrl = this.captureIndoorReviewContactSheet();
-      if (!imageDataUrl) throw new Error('indoor_review_capture_unavailable');
-      const { review } = await editorFetch<{ review: IndoorVisualReview }>(
+      const imageDataUrl = this.captureMapReviewContactSheet();
+      if (!imageDataUrl) throw new Error('map_review_capture_unavailable');
+      const { review } = await editorFetch<{ review: MapVisualReview }>(
         `/api/editor/maps/${encodeURIComponent(map.id)}/visual-review`,
         {
           method: 'POST',
@@ -2262,27 +2285,27 @@ class MapEditor {
           })
         }
       );
-      if (review.status === 'revise' && review.repairPrompt) {
+      if (mapVisualReviewAction(review) === 'repair') {
         this.setBusy(false);
-        this.state.message = '室内终检发现严重问题，正在进行一次定向修复；不会生成新资产。';
+        this.state.message = `${indoor ? '室内' : '室外'}终检提出修复建议，正在调整现有内容；不会生成新资产，也不会阻止用户操作。`;
         await this.generateMapAiPreview(
           'refine',
           undefined,
-          `${this.mapAiPrompt}\n\n室内五视角轻量终检要求：\n${review.repairPrompt}`,
+          `${this.mapAiPrompt}\n\n${indoor ? '室内' : '室外'}五视角轻量终检要求：\n${review.repairPrompt}`,
           true,
           true
         );
         return;
       }
-      updateAgentProgress(this.mapAgentProgress, { phase: 'complete', label: '室内轻量终检通过' });
-      this.state.message = `室内轻量终检通过：${review.summary}`;
+      updateAgentProgress(this.mapAgentProgress, { phase: 'complete', label: `${indoor ? '室内' : '室外'}轻量终检通过` });
+      this.state.message = `${indoor ? '室内' : '室外'}轻量终检通过：${review.summary}`;
     } catch (error) {
       updateAgentProgress(this.mapAgentProgress, {
         phase: 'complete',
-        label: '室内轻量终检已跳过',
+        label: `${indoor ? '室内' : '室外'}轻量终检已跳过`,
         detail: error instanceof Error ? error.message : String(error)
       });
-      this.state.message = '室内轻量终检暂不可用，已保留通过确定性检查的当前结果。';
+      this.state.message = `${indoor ? '室内' : '室外'}轻量终检暂不可用，已保留通过确定性检查的当前结果。`;
     } finally {
       this.mapAiVisualReviewRunning = false;
       this.setBusy(false);
@@ -2290,12 +2313,12 @@ class MapEditor {
     }
   }
 
-  private captureIndoorReviewContactSheet(): string | null {
+  private captureMapReviewContactSheet(): string | null {
     const map = this.mapAiPreviewMap;
     const camera = this.camera;
     const renderer = this.renderer;
     const orbit = this.orbit;
-    if (!map?.room || !camera || !renderer || !orbit || !this.renderScene || !this.renderedMap) return null;
+    if (!map || !camera || !renderer || !orbit || !this.renderScene || !this.renderedMap) return null;
     const savedPosition = camera.position.clone();
     const savedQuaternion = camera.quaternion.clone();
     const savedUp = camera.up.clone();
@@ -2323,7 +2346,7 @@ class MapEditor {
     try {
       for (let index = 0; index < directions.length; index += 1) {
         this.frameBox(box, directions[index]);
-        this.renderedMap.setRoomWallDisplayMode('cutaway', camera);
+        if (map.room) this.renderedMap.setRoomWallDisplayMode('cutaway', camera);
         this.renderScene.renderFrame(0, performance.now() / 1000);
         const column = index % 3;
         const row = Math.floor(index / 3);
@@ -2340,9 +2363,13 @@ class MapEditor {
       context.fillRect(852, 360, 428, 360);
       context.fillStyle = '#dce8ec';
       context.font = 'bold 24px sans-serif';
-      context.fillText('室内五视角轻量终检', 900, 500);
+      context.fillText(`${map.sceneMode === 'indoor' ? '室内' : '室外'}五视角轻量终检`, 900, 500);
       context.font = '16px sans-serif';
-      context.fillText('仅检查严重遮挡、漂浮、暗角与构图问题', 900, 540);
+      context.fillText(
+        map.sceneMode === 'indoor' ? '检查严重遮挡、漂浮、暗角与构图问题' : '检查连续性、稀疏度、主次与路线问题',
+        900,
+        540
+      );
       return sheet.toDataURL('image/jpeg', 0.78);
     } finally {
       camera.position.copy(savedPosition);
@@ -2350,7 +2377,7 @@ class MapEditor {
       camera.up.copy(savedUp);
       orbit.target.copy(savedTarget);
       orbit.update();
-      this.applyRoomWallDisplayMode();
+      if (map.room) this.applyRoomWallDisplayMode();
       this.renderScene.renderFrame(0, performance.now() / 1000);
     }
   }
@@ -2446,7 +2473,7 @@ class MapEditor {
     const map = this.state.map;
     const suggestion = this.mapAiSuggestion;
     if (!map || !suggestion || this.state.dirty || this.mapAiRoundSavePromise
-      || this.state.busy && !this.mapAiAutoRefineRunning) return;
+      || suggestion.blocked || this.state.busy && !this.mapAiAutoRefineRunning) return;
     const isTerrainPreview = this.mapPreviewKind === 'terrain';
     const savingDuringAutoRefine = this.mapAiAutoRefineRunning;
     if (!savingDuringAutoRefine) this.setBusy(true, isTerrainPreview ? '正在应用地形编辑...' : '正在应用 AI 地图...');
@@ -2456,9 +2483,15 @@ class MapEditor {
         {
           method: 'POST',
           body: JSON.stringify({
-            source: isTerrainPreview ? 'manual' : 'basic-ai',
+            source: isTerrainPreview ? 'manual' : suggestion.agent || suggestion.codePlan ? 'agent' : 'basic-ai',
             label: suggestion.summary,
-            operations: suggestion.operations
+            operations: suggestion.operations,
+            ai: !isTerrainPreview && (suggestion.agent || suggestion.codePlan) ? {
+              prompt: this.mapAiPrompt,
+              agent: suggestion.agent,
+              codePlan: suggestion.codePlan,
+              generatedAssets: suggestion.generatedAssets
+            } : undefined
           })
         }
       );

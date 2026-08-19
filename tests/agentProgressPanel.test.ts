@@ -42,6 +42,9 @@ describe('agent progress panel', () => {
     expect(humanizeAgentError(new Error('invalid_scatter_plan'))).toContain('【散布范围无效】');
     expect(humanizeAgentError(new Error('scene_outcome_missing_asset_family:ancient-tree'))).toContain('【空间放置失败】');
     expect(humanizeAgentError(new Error('map_asset_generation_failed:松树:gpt: HTTP 500'))).toContain('【资产生成失败】');
+    const upstreamAssetFailure = humanizeAgentError(new Error('map_asset_generation_failed:玄武岩:gpt: Failed to fetch'));
+    expect(upstreamAssetFailure).toContain('【资产生成失败】');
+    expect(upstreamAssetFailure).not.toContain('无法连接 Voxel Studio 后端');
     expect(humanizeAgentError(new Error('unknown_ecology_region'))).toContain('【目标区块失效】');
     expect(humanizeAgentError(new Error('indoor_prompt_requires_indoor_map'))).toContain('【场景类型不匹配】');
     expect(humanizeAgentError(new Error('Failed to fetch'))).toContain('【连接失败】');
@@ -82,6 +85,26 @@ describe('agent progress panel', () => {
     expect(html).toContain('生成失败');
     expect(html).toContain('【资产生成失败】');
     expect(html).toContain('0 / 3');
+  });
+
+  it('shows short Chinese asset types instead of English generation names', () => {
+    const html = renderAgentProgress([{
+      phase: 'generating-asset',
+      label: '并行生成资产',
+      assets: [
+        { key: 'stand', name: 'Radial spectator stands', status: 'running' },
+        { key: 'gate', name: 'Arena entry causeway', status: 'running' },
+        { key: 'pylon', name: 'Colosseum fusion pylon', status: 'failed', detail: 'map_asset_generation_failed:Colosseum fusion pylon:gpt: HTTP 500' }
+      ]
+    }], { running: true, elapsedMs: 5_000 });
+
+    expect(html).toContain('看台');
+    expect(html).toContain('入口');
+    expect(html).toContain('塔柱');
+    expect(html).not.toContain('Radial spectator stands');
+    expect(html).not.toContain('Colosseum fusion pylon');
+    expect(humanizeAgentError(new Error('map_asset_generation_failed:Colosseum fusion pylon:gpt: HTTP 500')))
+      .toContain('资产“塔柱”');
   });
 
   it('keeps a completed run compact and folds the detailed event history', () => {

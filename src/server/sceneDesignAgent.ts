@@ -5,6 +5,7 @@ import { normalizeMapAiNewAssetRange } from '../shared/mapPlanning';
 import type { AgentProgressEvent, ChatProvider } from '../shared/protocol';
 import { normalizeAssetTags, normalizeMapAssetLight, type MapAssetLight } from '../shared/mapAssetMetadata';
 import type { ModelGenerationMode } from '../shared/modelGenerationMode';
+import { sceneZoneWorldRegion, type SceneCompositionPlan } from '../shared/sceneComposition';
 import { validateMapSuggestion } from './mapSuggestionValidation';
 import { llmChat, type ChatMessage } from './modelApi';
 import { runAssetGenerationPool, type AssetTaskReporter } from './assetGenerationPool';
@@ -33,6 +34,8 @@ export interface SceneDesignAgentOptions {
   reusableAssetIds?: readonly string[];
   onProgress?: (event: AgentProgressEvent) => void;
   onPreview?: (suggestion: MapAiSuggestion) => void;
+  /** Optional high-level director intent. Geometry remains owned by the Scene Program. */
+  compositionPlan?: SceneCompositionPlan;
   createAsset: (request: SceneDesignAssetRequest, report: AssetTaskReporter) => Promise<MapAsset>;
   /** Test seam; production uses the configured chat backend. */
   chat?: (messages: readonly ChatMessage[]) => Promise<string>;
@@ -59,6 +62,7 @@ interface SceneOutcome {
 }
 
 const MAX_AGENT_ITERATIONS = 10;
+const MAX_DIRECTED_CODE_ITERATIONS = 5;
 
 export async function runSceneDesignAgent(
   prompt: string,
@@ -71,12 +75,16 @@ export async function runSceneDesignAgent(
   const assets = permittedInitialAssets(map, initialAssets, options);
   const generatedAssets: MapAsset[] = [];
   const trace: Array<{ iteration: number; action: string; summary: string }> = [];
+  const maxIterations = options.compositionPlan ? MAX_DIRECTED_CODE_ITERATIONS : MAX_AGENT_ITERATIONS;
+  if (options.compositionPlan) {
+    trace.push({ iteration: 0, action: 'director_brief', summary: options.compositionPlan.summary });
+  }
   const messages: ChatMessage[] = [{
     role: 'system',
-    content: buildSystemPrompt(map, bounds, assetRange.min, assetRange.max)
+    content: buildSystemPrompt(map, bounds, assetRange.min, assetRange.max, Boolean(options.compositionPlan))
   }, {
     role: 'user',
-    content: buildUserPrompt(prompt, assets)
+    content: buildUserPrompt(prompt, map, assets, options.compositionPlan)
   }];
   const chat = options.chat ?? ((history: readonly ChatMessage[]) => llmChat(history, {
     apiBase: options.apiBase,
@@ -91,13 +99,13 @@ export async function runSceneDesignAgent(
   let latestIssues: MapLintIssue[] = [];
   let latestOutcome: SceneOutcome | null = null;
 
-  for (let iteration = 1; iteration <= MAX_AGENT_ITERATIONS; iteration += 1) {
+  for (let iteration = 1; iteration <= maxIterations; iteration += 1) {
     options.signal?.throwIfAborted();
     options.onProgress?.({
       phase: iteration === 1 ? 'planning' : 'replanning',
       label: iteration === 1 ? 'Scene Agent 正在观察地图与资产' : `Scene Agent 正在进行第 ${iteration} 轮决策`,
       current: iteration,
-      total: MAX_AGENT_ITERATIONS
+      total: maxIterations
     });
     const content = await chat(messages);
     messages.push({ role: 'assistant', content });
@@ -225,7 +233,7 @@ export async function runSceneDesignAgent(
       latestResult,
       generatedAssets,
       trace,
-      MAX_AGENT_ITERATIONS,
+      maxIterations,
       outcome.unmet.length > 0
         ? 'Scene Agent 已达到决策上限，保留最后一个可执行候选供审阅'
         : trace.at(-1)?.summary ?? 'Scene Agent 已生成可执行候选',
@@ -255,6 +263,7 @@ function finalizeAgentSuggestion(
     operations: result.operations,
     renderPromptSuggestions: result.renderPromptSuggestions,
     generatedAssets: generatedAssets.map((asset) => ({ id: asset.id, name: asset.name })),
+    blocked: Boolean(outcome?.unmet.length),
     agent: {
       program,
       iterations,
@@ -271,20 +280,28 @@ function buildSystemPrompt(
   map: EditableMap,
   bounds: ReturnType<typeof getMapBounds>,
   minNewAssets: number,
-  maxNewAssets: number
+  maxNewAssets: number,
+  directedCode: boolean
 ): string {
   return [
-    'You are WorldForge Scene Agent, a bounded spatial-design agent. You decide the next tool action; local code owns physics and safety.',
+    directedCode
+      ? 'You are WorldForge Code Composer. A creative director has already supplied the scene hierarchy; express it as one coherent procedural Scene Program. Local code owns physics and safety.'
+      : 'You are WorldForge Scene Agent, a bounded spatial-design agent. You decide the next tool action; local code owns physics and safety.',
     'Return exactly one JSON object, never Markdown.',
     'Actions:',
     '{"action":"request_assets","summary":"...","assets":[{"name":"...","prompt":"standalone low-poly object, no ground/background","tags":["short-english-tag"]}]}',
     '{"action":"write_program","summary":"...","program":"const path = scene.guide(...); ..."}',
     '{"action":"finish","summary":"..."}',
     `You must request ${minNewAssets}-${maxNewAssets} new reusable assets across the run. Reuse listed assets for the remaining roles when suitable. Never invent asset IDs.`,
+    ...(directedCode ? [
+      'Treat the director brief as creative intent, not literal coordinates or a checklist of isolated zones. Preserve its focal hierarchy, connected structures, circulation, density rhythm and intentional negative space.',
+      'Request all missing asset families in one action when possible, then write one complete program. After a successful execution, finish when hard outcome requirements pass; otherwise make one targeted program repair.'
+    ] : []),
     'After execute_program, inspect outcome.unmet, outcome.warnings, counts and diagnostics. You may finish only when outcome.unmet is empty.',
     'Build outdoor scenes in layers: macro terrain, local terrain modifiers, drainage/water, semantic surfaces and grass, guides, relationship-aware objects, then spawn and render suggestions.',
     'Use guides for authored environments: parks, campuses, farms, plazas, roads, waterfronts and building groups. Surface important guides and use scatter only for natural populations.',
     'For cities, towns and campuses, prefer scene.streetGrid and iterate both streets and blocks instead of drawing unrelated parallel lines.',
+    'Asset manifests include local size=[x,y,z] and longAxis. For modular walls, arcades and grandstands whose longAxis is x, use placeAlong(..., { align:"side", contact:"seam" }); this keeps local X along the guide, allows only this assembly call to meet at seams, and keeps local +Z on the guide-left side. Order ring guides so the intended front is on the left.',
     'For tiered, stacked or multi-level structures, request reusable structural modules and connect them with scene.placeOn or scene.mountOn. Do not fake vertical hierarchy with unrelated ground objects.',
     'Every generated asset must be placed by the successful program. Never leave paid/generated assets unused.',
     `Map sceneMode=${map.sceneMode}; bounds X ${bounds.minX}..${bounds.maxX}, Z ${bounds.minZ}..${bounds.maxZ}; seed=${map.seed}.`,
@@ -292,18 +309,86 @@ function buildSystemPrompt(
   ].join('\n');
 }
 
-function buildUserPrompt(prompt: string, assets: readonly MapAsset[]): string {
-  return `${prompt}\n\nAvailable assets: ${JSON.stringify(assets.slice(0, 120).map(assetManifestItem))}`;
+function buildUserPrompt(
+  prompt: string,
+  map: EditableMap,
+  assets: readonly MapAsset[],
+  compositionPlan?: SceneCompositionPlan
+): string {
+  const brief = compositionPlan
+    ? `\n\nCreative director brief (world-space regions): ${JSON.stringify(compactDirectorBrief(compositionPlan, map))}`
+    : '';
+  return `${prompt}${brief}\n\nAvailable assets: ${JSON.stringify(assets.slice(0, 120).map(assetManifestItem))}`;
+}
+
+function compactDirectorBrief(plan: SceneCompositionPlan, map: EditableMap): unknown {
+  return {
+    summary: plan.summary,
+    global: {
+      spatialTheme: plan.globalBrief.spatialTheme,
+      visualHierarchy: plan.globalBrief.visualHierarchy,
+      assetArtDirection: plan.globalBrief.assetArtDirection,
+      focalZoneId: plan.globalBrief.focalZoneId,
+      terrainBase: plan.globalBrief.terrainBase
+    },
+    requirements: plan.intentRequirements.map((requirement) => ({
+      description: requirement.description,
+      targetZoneId: requirement.targetZoneId,
+      familyId: requirement.familyId,
+      minCount: requirement.minCount
+    })),
+    zones: plan.zones.map((zone) => ({
+      id: zone.id,
+      label: zone.label,
+      role: zone.role,
+      importance: zone.importance,
+      worldRegion: sceneZoneWorldRegion(zone, map),
+      brief: zone.brief,
+      terrain: zone.terrain,
+      water: zone.water,
+      familyIds: zone.layers.map((layer) => layer.familyId)
+    })),
+    transitions: plan.transitions,
+    assetFamilies: plan.assetFamilies.map((family) => ({
+      id: family.id,
+      label: family.label,
+      role: family.role,
+      tags: family.tags,
+      sizeClass: family.sizeClass,
+      desiredVariants: family.desiredVariants,
+      generationBrief: family.generationBrief
+    }))
+  };
 }
 
 function assetManifestItem(asset: MapAsset): unknown {
+  const size = assetColliderSize(asset);
   return {
     id: asset.id,
     name: asset.name,
     tags: asset.tags ?? [],
     footprintRadius: asset.footprintRadius ?? null,
-    sizeClass: asset.sizeClass ?? null
+    sizeClass: asset.sizeClass ?? null,
+    size,
+    longAxis: size[0] > size[2] * 1.15 ? 'x' : size[2] > size[0] * 1.15 ? 'z' : 'square'
   };
+}
+
+function assetColliderSize(asset: MapAsset): [number, number, number] {
+  const boxes = asset.colliderPlan?.boxes ?? [];
+  if (boxes.length === 0) {
+    const diameter = Math.max(0.2, (asset.footprintRadius ?? 0.5) * 2);
+    return [diameter, asset.sizeClass === 'large' ? 3 : asset.sizeClass === 'medium' ? 1.8 : 1, diameter];
+  }
+  const min = [Infinity, Infinity, Infinity];
+  const max = [-Infinity, -Infinity, -Infinity];
+  for (const box of boxes) {
+    for (let axis = 0; axis < 3; axis += 1) {
+      min[axis] = Math.min(min[axis], box.min[axis]);
+      max[axis] = Math.max(max[axis], box.max[axis]);
+    }
+  }
+  return max.map((value, axis) => Number((value - min[axis]).toFixed(3))) as [number, number, number];
 }
 
 function permittedInitialAssets(
@@ -350,7 +435,8 @@ function evaluateSceneOutcome(
   const needsBuildings = hasAny(text, ['campus', 'city', 'town', 'village', 'school', '校园', '城市', '城镇', '村庄', '学校']);
   const needsLayeredStructure = hasAny(text, [
     'multi-level', 'multilevel', 'multi-storey', 'multi-story', 'tiered', 'stacked', 'layered structure',
-    '多层', '层叠', '叠层', '分层建筑', '上下堆叠'
+    'grandstand', 'bleacher', 'stepped seating', 'tiered seating', 'arena seating',
+    '多层', '层叠', '叠层', '分层建筑', '上下堆叠', '环形看台', '阶梯看台', '台阶看台'
   ]);
   const semanticSurfaces = result.operations.filter((operation) => operation.type === 'terrain.surface').length;
   const playableLandRatio = sampledPlayableLandRatio(candidate);

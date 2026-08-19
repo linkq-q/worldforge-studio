@@ -54,7 +54,7 @@ import { completeMapVisualSemantics } from '../shared/mapVisualSemantics';
 import { patchMapVisualZone, type VisualZonePatch } from '../shared/mapVisualSemantics';
 import { VISUAL_ZONE_TAGS, normalizeMapVisualSemantics, type VisualZoneTag } from '../shared/visualDirection';
 import { runAssetGenerationPool, type AssetTaskReporter } from './assetGenerationPool';
-import { runSceneDesignAgent } from './sceneDesignAgent';
+import { generateMapCodeSuggestion } from './mapCodePlanner';
 import {
   findAdjacentMapRegion,
   isPointInsidePlayableArea,
@@ -81,7 +81,7 @@ export interface MapAiOptions {
   baseTerrainOnly?: boolean;
   /** User-approved director plan; skips a second director pass. */
   approvedCompositionPlan?: SceneCompositionPlan;
-  /** Use the bounded model-directed Scene Program loop for outdoor generation. */
+  /** Use one unified bounded Scene Code program for outdoor generation. */
   sceneAgent?: boolean;
 }
 
@@ -118,10 +118,12 @@ export async function runMapAgent(
   if (mode === 'generate' && map.sceneMode === 'outdoor' && requestsIndoorScene(prompt)) {
     throw new Error('indoor_prompt_requires_indoor_map');
   }
-  if (mode === 'generate' && map.sceneMode === 'outdoor' && options.sceneAgent) {
-    const suggestion = await runSceneDesignAgent(prompt, map, assets, options);
-    options.onProgress?.({ phase: 'complete', label: 'Scene Agent 已生成可审阅的地图程序预览' });
-    return suggestion;
+  if (map.sceneMode === 'outdoor' && options.sceneAgent) {
+    return generateMapCodeSuggestion(prompt, map, assets, {
+      ...options,
+      mode,
+      scope: 'scene'
+    });
   }
   if (mode === 'generate' && map.sceneMode !== 'mixed') {
     const result = await runMapCompositionWorkflow(prompt, map, assets, options);
@@ -754,7 +756,7 @@ function normalizeObjectRefineOperations(
             .map((id) => objectsById.get(id))
             .filter((object): object is EditableMap['objects'][number] => Boolean(object))
         : map.objects.filter((object) => assetId && object.assetId === assetId))
-        .filter((object) => !removed.has(object.id))
+        .filter((object) => !object.locked && !removed.has(object.id))
         .sort((a, b) => a.id.localeCompare(b.id));
       // A long-running refine may finish after the user has saved an earlier
       // round. Ignore stale model references and keep any still-valid edits.
@@ -773,7 +775,7 @@ function normalizeObjectRefineOperations(
       const input = item as Record<string, unknown>;
       const objectId = typeof input.objectId === 'string' ? input.objectId : '';
       const object = objectsById.get(objectId);
-      if (!object || operations.some((operation) => operation.type === 'object.remove' && operation.objectId === objectId)) continue;
+      if (!object || object.locked || operations.some((operation) => operation.type === 'object.remove' && operation.objectId === objectId)) continue;
       const position = [...object.transform.position] as Vec3;
       if (input.x !== undefined) position[0] = clamp(requiredNumber(input.x, 'invalid_object_refine_plan'), bounds.minX, bounds.maxX);
       if (input.z !== undefined) position[2] = clamp(requiredNumber(input.z, 'invalid_object_refine_plan'), bounds.minZ, bounds.maxZ);

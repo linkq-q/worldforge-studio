@@ -28,6 +28,7 @@ import type { Vec3 } from '../shared/protocol';
 import { normalizeModelGenerationMode, type ModelGenerationMode } from '../shared/modelGenerationMode';
 import {
   applyMapOperations,
+  type MapAiTransactionMetadata,
   type MapOperation,
   type MapTransactionRequest,
   type MapTransactionSummary
@@ -341,7 +342,8 @@ export class MapStore {
         label: cleanLabel(request.label),
         source: request.source,
         operationCount: request.operations.length,
-        createdAt: Date.now()
+        createdAt: Date.now(),
+        ai: normalizeMapAiTransactionMetadata(request.ai)
       };
       await atomicWriteJson(this.undoPath(mapId), {
         summary: transaction,
@@ -1072,6 +1074,57 @@ async function atomicWriteJson(destination: string, value: unknown): Promise<voi
   } finally {
     await rm(temporary, { force: true });
   }
+}
+
+function normalizeMapAiTransactionMetadata(value: unknown): MapAiTransactionMetadata | undefined {
+  if (!value || typeof value !== 'object') return undefined;
+  const input = value as Partial<MapAiTransactionMetadata>;
+  const agent = input.agent && typeof input.agent === 'object' ? input.agent : undefined;
+  const program = cleanText(agent?.program, 50_000);
+  const codePlan = input.codePlan && typeof input.codePlan === 'object' ? input.codePlan : undefined;
+  const code = cleanText(codePlan?.code, 50_000);
+  if (!program && !code) return undefined;
+  return {
+    prompt: cleanText(input.prompt, 1_200),
+    ...(program && agent ? { agent: {
+      program,
+      iterations: boundedInteger(agent.iterations, 0, 100),
+      guideCount: boundedInteger(agent.guideCount, 0, 10_000),
+      objectCount: boundedInteger(agent.objectCount, 0, 10_000),
+      diagnostics: Array.isArray(agent.diagnostics) ? agent.diagnostics.slice(0, 100).map((item) => ({
+        severity: item?.severity === 'error' || item?.severity === 'warning' ? item.severity : 'info',
+        code: cleanText(item?.code, 80),
+        message: cleanText(item?.message, 500)
+      })) : [],
+      trace: Array.isArray(agent.trace) ? agent.trace.slice(0, 100).map((item) => ({
+        iteration: boundedInteger(item?.iteration, 0, 100),
+        action: cleanText(item?.action, 80),
+        summary: cleanText(item?.summary, 500)
+      })) : []
+    } } : {}),
+    ...(code && codePlan ? { codePlan: {
+      code,
+      placementCount: boundedInteger(codePlan.placementCount, 0, 10_000),
+      functions: Array.isArray(codePlan.functions)
+        ? codePlan.functions.slice(0, 100).map((item) => cleanText(item, 80)).filter(Boolean)
+        : []
+    } } : {}),
+    generatedAssets: Array.isArray(input.generatedAssets)
+      ? input.generatedAssets.slice(0, 64).flatMap((asset) => {
+          const id = cleanText(asset?.id, 120);
+          const name = cleanText(asset?.name, 120);
+          return id && name ? [{ id, name }] : [];
+        })
+      : []
+  };
+}
+
+function cleanText(value: unknown, maxLength: number): string {
+  return typeof value === 'string' ? value.trim().slice(0, maxLength) : '';
+}
+
+function boundedInteger(value: unknown, min: number, max: number): number {
+  return Math.min(max, Math.max(min, Math.round(finiteNumber(value, min))));
 }
 
 async function readJsonFile<T>(file: string, fallback: T): Promise<T> {

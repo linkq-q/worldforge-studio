@@ -27,7 +27,7 @@ import {
 import type { RenderScheme } from '../shared/renderScheme';
 import type { RenderPlan } from '../shared/renderPlan';
 import { runMapAgent } from './mapAi';
-import { reviewIndoorMapVisual } from './indoorVisualReview';
+import { reviewMapVisual } from './indoorVisualReview';
 import { planMapComposition } from './mapCompositionWorkflow';
 import { generateMapLayoutSuggestion } from './mapLayoutAi';
 import { generateMapAssetWithRetry } from './mapAssetGenerationRetry';
@@ -379,7 +379,7 @@ async function handleEditorMaps(req: Req, res: Res, store: MapStore, parts: stri
     const provider = body.provider ?? 'gpt';
     const option = CHAT_PROVIDER_OPTIONS.find((item) => item.key === provider);
     if (!option || option.disabled) throw new HttpError(400, 'provider_unavailable');
-    if (!body.imageDataUrl) throw new HttpError(400, 'missing_indoor_review_image');
+    if (!body.imageDataUrl) throw new HttpError(400, 'missing_map_review_image');
     const controller = new AbortController();
     const abort = () => controller.abort();
     const abortIfOpen = () => {
@@ -393,7 +393,7 @@ async function handleEditorMaps(req: Req, res: Res, store: MapStore, parts: stri
       const planningMap = Array.isArray(body.baseOperations) && body.baseOperations.length > 0
         ? applyMapOperations(mapWithAssets, body.baseOperations)
         : mapWithAssets;
-      const review = await reviewIndoorMapVisual(planningMap, body.imageDataUrl, {
+      const review = await reviewMapVisual(planningMap, body.imageDataUrl, {
         provider,
         signal: controller.signal
       });

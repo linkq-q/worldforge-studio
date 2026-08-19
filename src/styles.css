@@ -1131,6 +1131,20 @@ p {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
+.map-code-plan-source {
+  max-height: 280px;
+  margin: 8px 0 0;
+  padding: 10px;
+  overflow: auto;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  background: rgba(3, 8, 10, 0.72);
+  color: #cfe9d6;
+  font-size: 11px;
+  line-height: 1.5;
+  white-space: pre;
+}
+
 .map-ai-options {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);

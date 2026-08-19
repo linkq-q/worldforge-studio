@@ -196,10 +196,30 @@ describe('map operation transactions', () => {
     const committed = await store.commitTransaction(original.id, {
       label: 'AI map pass',
       source: 'agent',
-      operations: [{ type: 'map.update', name: 'after' }]
+      operations: [{ type: 'map.update', name: 'after' }],
+      ai: {
+        prompt: 'Create a layered arena',
+        agent: {
+          program: 'const base = scene.placeAt("arena", [0,0]);',
+          iterations: 2,
+          guideCount: 0,
+          objectCount: 1,
+          diagnostics: [{ severity: 'info', code: 'program-note', message: 'ready' }],
+          trace: [{ iteration: 1, action: 'write_program', summary: 'Place arena' }]
+        },
+        codePlan: {
+          code: 'function plan(api) { api.place({ position: [0, 0] }); }',
+          placementCount: 1,
+          functions: ['place']
+        },
+        generatedAssets: [{ id: 'arena-shell', name: 'Arena shell' }]
+      }
     });
 
     expect(committed.map.name).toBe('after');
+    expect(committed.transaction.ai?.prompt).toBe('Create a layered arena');
+    expect(committed.transaction.ai?.codePlan?.placementCount).toBe(1);
+    expect(committed.transaction.ai?.generatedAssets).toEqual([{ id: 'arena-shell', name: 'Arena shell' }]);
     const restartedStore = new MapStore({ rootDir: store.rootDir });
     expect((await restartedStore.getUndoTransaction(original.id))?.id).toBe(committed.transaction.id);
 
@@ -212,7 +232,9 @@ describe('map operation transactions', () => {
     const redone = await restartedStore.redoTransaction(original.id);
     expect(redone.map.name).toBe('after');
     expect(redone.transaction.id).toBe(committed.transaction.id);
-    expect((await restartedStore.getUndoTransaction(original.id))?.id).toBe(committed.transaction.id);
+    const persisted = await restartedStore.getUndoTransaction(original.id);
+    expect(persisted?.id).toBe(committed.transaction.id);
+    expect(persisted?.ai).toEqual(committed.transaction.ai);
     expect(await restartedStore.getRedoTransaction(original.id)).toBeNull();
   });
 

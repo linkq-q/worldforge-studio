@@ -83,6 +83,44 @@ describe('bounded scene program', () => {
     expect(result.objectCount).toBeGreaterThanOrEqual(3);
   });
 
+  it('can align a modular asset side-on so its width follows a guide', () => {
+    const arcade = asset('arcade-a', 'Arcade Module', ['arcade']);
+    arcade.colliderPlan.boxes = [{ min: [-3, 0, -0.8], max: [3, 4, 0.8] }];
+    arcade.footprintRadius = 3;
+    const map = createEmptyMap('arcade', 'program-arcade');
+    const program = (align: 'forward' | 'side') => executeSceneProgram(`
+      const ring = scene.guide("ring", { points: [[-10,0],[10,0]], width: 2 });
+      scene.placeAlong("arcade", ring, { spacing: 6, count: 1, align: "${align}" });
+    `, map, [arcade]);
+    const rotation = (result: ReturnType<typeof program>) => result.operations.find(
+      (operation) => operation.type === 'object.add'
+    )?.object.transform?.rotation?.[1] ?? 0;
+    const delta = Math.atan2(
+      Math.sin(rotation(program('side')) - rotation(program('forward'))),
+      Math.cos(rotation(program('side')) - rotation(program('forward')))
+    );
+
+    expect(delta).toBeCloseTo(-Math.PI / 2, 5);
+    expect(SCENE_PROGRAM_API_REFERENCE).toContain('align?: "forward"|"side"');
+  });
+
+  it('allows one structural placement call to close its own seams without ignoring earlier objects', () => {
+    const arcade = asset('seam-arcade', 'Seam Arcade', ['seam-arcade']);
+    arcade.colliderPlan.boxes = [{ min: [-3, 0, -0.8], max: [3, 4, 0.8] }];
+    arcade.footprintRadius = 3;
+    const execute = (contact: string) => executeSceneProgram(`
+      const wall = scene.guide("wall", { points: [[-10,0],[10,0]], width: 2 });
+      scene.placeAlong("seam-arcade", wall, { spacing: 3, count: 5, align: "side"${contact} });
+    `, createEmptyMap('seam wall', 'program-seam-wall'), [arcade]);
+
+    const separated = execute('');
+    const connected = execute(', contact: "seam"');
+
+    expect(connected.objectCount).toBe(5);
+    expect(connected.objectCount).toBeGreaterThan(separated.objectCount);
+    expect(SCENE_PROGRAM_API_REFERENCE).toContain('contact?: "seam"');
+  });
+
   it('composes two guide families into a small street network instead of a city-only preset', () => {
     const result = executeSceneProgram(`
       const town = scene.streetGrid("town", [[-18,-14],[18,-14],[18,14],[-18,14]], {

@@ -27,6 +27,9 @@ export interface StructuredPlacementPlan {
   offset: number;
   direction: number;
   facing: 'random' | 'guide' | 'inward' | 'outward';
+  yawOffset?: number;
+  /** Allow placements emitted by this one structural call to meet or overlap at seams. */
+  allowInternalOverlap?: boolean;
   avoidWater: number;
   maxSlope: number;
   scaleRange: [number, number];
@@ -114,7 +117,7 @@ export function expandStructuredMapPlacement(
       : plan.mode === 'layout' ? spacing * 0.07 : spacing * 0.04;
     let x = slot.x + (random() - 0.5) * jitter;
     let z = slot.z + (random() - 0.5) * jitter;
-    const rotationY = placementYaw(plan.facing, slot, x, z, random);
+    const rotationY = placementYaw(plan.facing, slot, x, z, random) + (plan.yawOffset ?? 0);
     let candidateBounds = transformedHorizontalBounds(asset, scale, rotationY, x, z);
     if (plan.intent === 'wall') {
       const snapped = snapToRoomWall(map, plan.direction, x, z, candidateBounds);
@@ -129,12 +132,12 @@ export function expandStructuredMapPlacement(
       || candidateBounds.minZ < bounds.minZ || candidateBounds.maxZ > bounds.maxZ) continue;
     if (isNearWater(map, x, z, Math.max(0, plan.avoidWater))) continue;
     if (terrainFootprintSlopeDegrees(map, x, z, footprintRadius) > Math.min(89, Math.max(0, plan.maxSlope))) continue;
-    const collisionClearance = plan.intent === 'audience' || plan.intent === 'paired'
-      || plan.intent === 'social' || plan.intent === 'viewpoint'
+    const relationshipOverlap = plan.intent === 'audience' || plan.intent === 'paired'
+      || plan.intent === 'social' || plan.intent === 'viewpoint';
+    const collisionClearance = relationshipOverlap
       ? -Math.min(0.45, footprintRadius * 0.35)
-      : Math.min(0.24, spacing * 0.08);
-    const collisionBounds = plan.intent === 'audience' || plan.intent === 'paired'
-      || plan.intent === 'social' || plan.intent === 'viewpoint'
+      : plan.allowInternalOverlap ? 0.02 : Math.min(0.24, spacing * 0.08);
+    const collisionBounds = relationshipOverlap || plan.allowInternalOverlap
       ? occupiedBounds.slice(0, existingBoundsCount)
       : occupiedBounds;
     if ((!elevatedWallAsset && !ceilingAsset && collisionBounds.some((item) => horizontalBoundsOverlap(candidateBounds, item, collisionClearance)))

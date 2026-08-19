@@ -153,7 +153,7 @@ Available API:
 - scene.surfaceRegion(id, "grass"|"sand"|"rock"|"soil"|"paving", region, intensity?)
 - scene.water(id, { type: "lake"|"river"|"ocean", points: [[x,z],...], name?, width?, level?, depth?, shorelineSmoothness?, shorelineIrregularity? })
 - scene.grass(id, region, { name?, preset?, density?, variation?, softness?, height? })
-- scene.placeAlong(assetSelector, guide, { spacing, offset?, count?, scale?, facing?: "guide"|"inward"|"outward", groupSize? })
+- scene.placeAlong(assetSelector, guide, { spacing, offset?, count?, scale?, facing?: "guide"|"inward"|"outward", align?: "forward"|"side", contact?: "seam", groupSize? })
 - scene.scatter(assetSelector, { center: [x,z], radius }, { count?, density?, minSpacing?, avoidWater?, maxSlope?, scaleMin?, scaleMax?, clusterStrength?, edgeFalloff? })
 - scene.placeAt(assetSelector, [x,z], { yaw?, scale?, name?, searchRadius?, avoidWater?, maxSlope? })
 - scene.spawn([x,z], yawDegrees?)
@@ -452,6 +452,7 @@ function createSceneApi(context: SceneProgramContext): Record<string, SceneMetho
       const radius = Math.max(1, ...points.map((point) => Math.hypot(point[0] - centerX, point[1] - centerZ))) + Math.abs(finiteNumber(options.offset, 0)) + spacing;
       const scale = clamp(finiteNumber(options.scale, 1), 0.1, 8);
       const facing = options.facing === 'inward' || options.facing === 'outward' ? options.facing : 'guide';
+      const align = options.align === 'side' ? 'side' : 'forward';
       const placements = expandStructuredMapPlacement(context.workingMap, {
         mode: 'linear',
         intent: 'street-edge',
@@ -462,6 +463,8 @@ function createSceneApi(context: SceneProgramContext): Record<string, SceneMetho
         offset: finiteNumber(options.offset, 0),
         direction: 0,
         facing,
+        yawOffset: align === 'side' ? -Math.PI / 2 : 0,
+        allowInternalOverlap: options.contact === 'seam',
         avoidWater: clamp(finiteNumber(options.avoidWater, 0), 0, 30),
         maxSlope: clamp(finiteNumber(options.maxSlope, 35), 0, 89),
         scaleRange: [scale, scale],

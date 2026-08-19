@@ -44,7 +44,9 @@ describe('scene design agent', () => {
     expect(suggestion.operations.some((operation) => operation.type === 'guide.upsert')).toBe(true);
     expect(suggestion.operations.some((operation) => operation.type === 'object.add')).toBe(true);
     expect(messagesSeen[1]).toContain('"ok":true');
+    expect(messagesSeen[0]).toContain('"size":[1,1,0.6]');
     expect(previews).toHaveLength(1);
+    expect(suggestion.blocked).toBe(false);
   });
 
   it('can request a missing reusable asset before programming the layout', async () => {
@@ -98,6 +100,32 @@ describe('scene design agent', () => {
     expect(toolMessages.some((message) => message.includes('requested-layered-structure-is-missing'))).toBe(true);
     expect(suggestion.operations).toContainEqual(expect.objectContaining({
       type: 'object.add', object: expect.objectContaining({ parentId: expect.any(String) })
+    }));
+  });
+
+  it('treats a stepped arena grandstand as a layered structure requirement', async () => {
+    const replies = Array.from({ length: 10 }, (_, index) => JSON.stringify({
+      action: 'write_program',
+      summary: `Flat grandstand draft ${index + 1}`,
+      program: 'scene.placeAt("arena-tier", [0,0], { searchRadius: 1 });'
+    }));
+    const suggestion = await runSceneDesignAgent(
+      '创建对称的环形阶梯看台',
+      createEmptyMap('grandstand', 'agent-grandstand'),
+      [arenaTier],
+      {
+        maxNewAssets: 0,
+        reuseExistingAssets: true,
+        reusableAssetIds: [arenaTier.id],
+        createAsset: async () => { throw new Error('not expected'); },
+        chat: async () => replies.shift()!
+      }
+    );
+
+    expect(suggestion.blocked).toBe(true);
+    expect(suggestion.agent?.diagnostics).toContainEqual(expect.objectContaining({
+      code: 'scene-outcome-unmet',
+      message: expect.stringContaining('requested-layered-structure-is-missing')
     }));
   });
 
@@ -247,6 +275,7 @@ describe('scene design agent', () => {
     expect(suggestion.summary).toContain('保留最后一个可执行候选');
     expect(suggestion.operations.some((operation) => operation.type === 'object.add')).toBe(true);
     expect(suggestion.agent?.diagnostics.some((item) => item.code === 'scene-outcome-unmet')).toBe(true);
+    expect(suggestion.blocked).toBe(true);
   });
 
   it('keeps the last executable candidate when later repair programs fail', async () => {

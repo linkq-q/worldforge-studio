@@ -31,6 +31,7 @@ describe('map AI adapter', () => {
     expect(buildSceneDirectorPrompt(map, [], { maxNewAssets: 4 })).toContain('Use at most 16 asset families');
     expect(buildSceneDirectorPrompt(map, [], { maxNewAssets: 32 })).toContain('Use at most 32 asset families');
     expect(buildSceneDirectorPrompt(map, [], { maxNewAssets: 100 })).toContain('Use at most 64 asset families');
+    expect(buildSceneDirectorPrompt(map, [], { maxNewAssets: 4 })).toContain('one short 2-8-character Chinese noun phrase');
   });
 
   it('can return a director plan before generating any assets', async () => {
@@ -51,6 +52,195 @@ describe('map AI adapter', () => {
     expect(approved.zones[0].id).toBe('seating');
     expect(fetchImpl).toHaveBeenCalledOnce();
     expect(createAsset).not.toHaveBeenCalled();
+  });
+
+  it('asks one unified scene program to judge authored intent and compose the full outdoor map', async () => {
+    const arena = testAsset('arena-segment', 'Arena Segment', ['arena', 'wall'], 'large');
+    const map = createEmptyMap('arena', 'directed-code-arena');
+    map.assets = [arena];
+    const fetchImpl = vi.fn().mockResolvedValueOnce(chatTextResponse(`function plan(api) {
+        api.sceneIntent({ kind: 'authored', reason: 'A ceremonial arena is a purpose-built public place' });
+        api.terrain('hills', { amplitude: 1.5, roughness: 0.2 });
+        for (let index = 0; index < 8; index += 1) {
+          const point = api.circlePoint(index, 8, 12, [0, 0]);
+          api.place({ assetId: 'arena-segment', name: 'Arena Segment', role: 'structure', position: point, facing: { target: [0, 0] } });
+        }
+      }`));
+
+    const suggestion = await runMapAgent('Create a compact ceremonial arena', map, [arena], {
+      apiBase: 'https://example.test',
+      provider: 'gpt',
+      fetchImpl,
+      createAsset: vi.fn(),
+      maxNewAssets: 0,
+      reuseExistingAssets: true,
+      reusableAssetIds: [arena.id],
+      sceneAgent: true
+    });
+    const composerRequest = JSON.parse(String((fetchImpl.mock.calls[0]?.[1] as RequestInit | undefined)?.body)) as {
+      messages: Array<{ content: string }>;
+    };
+
+    expect(fetchImpl).toHaveBeenCalledOnce();
+    expect(composerRequest.messages[0].content).toContain('Unified scene ownership');
+    expect(composerRequest.messages[0].content).toContain('Decide this semantically');
+    expect(composerRequest.messages[1].content).toBe('Create a compact ceremonial arena');
+    expect(suggestion.codePlan?.sceneIntent).toBe('authored');
+    expect(suggestion.codePlan?.functions).toContain('circlePoint');
+    expect(suggestion.operations.filter((operation) => operation.type === 'object.add')
+      .every((operation) => operation.type === 'object.add' && operation.object.locked === true)).toBe(true);
+    expect(suggestion.operations.some((operation) => operation.type === 'object.add')).toBe(true);
+  });
+
+  it('keeps outdoor refinement in Scene Code and emits delta map operations', async () => {
+    const map = createEmptyMap('garden', 'scene-code-refine');
+    const pavilion = createMapObject('湖心亭');
+    pavilion.id = 'pavilion-1';
+    map.objects = [pavilion];
+    const fetchImpl = vi.fn().mockResolvedValueOnce(chatTextResponse(`function plan(api) {
+      api.move({ objectId: 'pavilion-1', position: [6, -4], rotationY: 35 });
+    }`));
+
+    const suggestion = await runMapAgent('把亭子移到池塘斜对岸并朝向水面', map, [], {
+      apiBase: 'https://example.test', provider: 'gpt', fetchImpl,
+      createAsset: vi.fn(), mode: 'refine', sceneAgent: true,
+      minNewAssets: 0, maxNewAssets: 0
+    });
+    const request = JSON.parse(String((fetchImpl.mock.calls[0]?.[1] as RequestInit | undefined)?.body)) as {
+      messages: Array<{ content: string }>;
+    };
+
+    expect(fetchImpl).toHaveBeenCalledOnce();
+    expect(request.messages[0].content).toContain('Outdoor Scene Code refinement');
+    expect(request.messages[0].content).toContain('pavilion-1');
+    expect(suggestion.operations).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        type: 'object.update',
+        objectId: 'pavilion-1',
+        patch: expect.objectContaining({
+          heightMode: 'terrain',
+          transform: expect.objectContaining({ position: [6, 0, -4] })
+        })
+      })
+    ]));
+    expect(suggestion.operations.some((operation) => operation.type === 'object.add')).toBe(false);
+  });
+
+  it('keeps structure and ecology in one program while repairing the gate corridor locally', async () => {
+    const gate = testAsset('arena-gate', 'Arena Gate', ['arena', 'gate'], 'large');
+    const tree = testAsset('grove-tree', 'Grove Tree', ['tree', 'vegetation'], 'large');
+    const map = createEmptyMap('arena ecology', 'hybrid-arena-ecology');
+    map.assets = [gate, tree];
+    const fetchImpl = vi.fn().mockResolvedValueOnce(chatTextResponse(`function plan(api) {
+        api.sceneIntent({ kind: 'authored', reason: 'The arena and its landscaped grounds are intentionally designed' });
+        api.spawn([0, -8], 0);
+        api.place({ assetId: 'arena-gate', name: 'Arena Gate', role: 'structure', position: [0, 0], facing: { direction: [0, 1] } });
+        api.place({ assetId: 'grove-tree', name: 'Grove Tree', role: 'environment', position: [0, 0] });
+      }`));
+
+    const suggestion = await runMapAgent('Create an arena surrounded by a natural grove', map, [gate, tree], {
+      apiBase: 'https://example.test',
+      provider: 'gpt',
+      fetchImpl,
+      createAsset: vi.fn(),
+      maxNewAssets: 0,
+      reuseExistingAssets: true,
+      reusableAssetIds: [gate.id, tree.id],
+      sceneAgent: true
+    });
+    const gateOperation = suggestion.operations.find((operation) => (
+      operation.type === 'object.add' && operation.object.assetId === gate.id
+    ));
+    const treeOperations = suggestion.operations.filter((operation) => (
+      operation.type === 'object.add' && operation.object.assetId === tree.id
+    ));
+
+    expect(fetchImpl).toHaveBeenCalledOnce();
+    expect(suggestion.generatedAssets).toEqual([]);
+    expect(gateOperation).toMatchObject({ type: 'object.add', object: { locked: true } });
+    expect(treeOperations).toHaveLength(1);
+    expect(treeOperations.every((operation) => operation.type === 'object.add' && !operation.object.locked)).toBe(true);
+    expect(treeOperations[0]).not.toMatchObject({ object: { transform: { position: [0, expect.any(Number), 0] } } });
+    expect(suggestion.diagnostics).toEqual(expect.arrayContaining([
+      expect.objectContaining({ code: 'outdoor.access-repaired', repaired: true })
+    ]));
+  });
+
+  it('keeps mandatory authored structure when an optional environment asset fails upstream', async () => {
+    const map = createEmptyMap('arena with resilient ecology', 'unified-arena-partial-ecology');
+    const fetchImpl = vi.fn().mockResolvedValueOnce(chatTextResponse(`function plan(api) {
+        api.sceneIntent({ kind: 'authored', reason: 'An arena is an authored place' });
+        const gate = api.requireAsset({ key: 'gate', name: 'Arena Gate', prompt: 'Standalone monumental arena entrance gate', tags: ['arena', 'gate'], variants: 1, role: 'structure' });
+        const rock = api.requireAsset({ key: 'rock', name: 'Basalt Rock', prompt: 'Standalone basalt landscape rock', tags: ['rock', 'stone'], variants: 1, role: 'environment', optional: true });
+        api.place({ assetId: api.asset(gate, 0), name: 'Arena Gate', position: [0, 0], facing: { direction: [0, 1] } });
+        api.place({ assetId: api.asset(rock, 0), name: 'Basalt Rock', position: [5, 5] });
+      }`));
+    const createAsset = vi.fn(async (request: { name: string; tags: string[] }) => {
+      if (request.tags.includes('rock')) {
+        throw new Error('map_asset_generation_failed:玄武岩:gpt: Failed to fetch');
+      }
+      return testAsset('generated-gate', request.name, request.tags, 'large');
+    });
+    const progressLabels: string[] = [];
+
+    const suggestion = await runMapAgent('Create an arena with trees and basalt rocks', map, [], {
+      apiBase: 'https://example.test', provider: 'gpt', fetchImpl, createAsset,
+      maxNewAssets: 2, sceneAgent: true,
+      onProgress: (event) => progressLabels.push(event.label)
+    });
+
+    expect(createAsset).toHaveBeenCalledTimes(2);
+    expect(suggestion.generatedAssets).toEqual([{ id: 'generated-gate', name: expect.any(String) }]);
+    expect(suggestion.operations).toEqual(expect.arrayContaining([
+      expect.objectContaining({ type: 'object.add', object: expect.objectContaining({ assetId: 'generated-gate', locked: true }) })
+    ]));
+    expect(suggestion.operations.some((operation) => operation.type === 'object.add' && operation.object.name === 'Basalt Rock')).toBe(false);
+    expect(progressLabels).toContain('1 个可选环境资产失败，已保留完整主体继续');
+  });
+
+  it('uses the full new-asset budget inside one coherent structure-and-environment program', async () => {
+    const fetchImpl = vi.fn().mockResolvedValueOnce(chatTextResponse(`function plan(api) {
+        api.sceneIntent({ kind: 'authored', reason: 'The arena is the structural focus of a designed landscape' });
+        const shell = api.requireAsset({
+          key: 'arena-shell', name: 'Arena Shell Module',
+          prompt: 'Standalone modular arena wall with a monumental arch',
+          tags: ['arena', 'wall'], variants: 1, dimensions: [4, 4, 2], role: 'structure'
+        });
+        const tree = api.requireAsset({ key: 'tree', name: 'Cypress Tree', prompt: 'Standalone cypress tree', tags: ['tree'], role: 'environment' });
+        const rock = api.requireAsset({ key: 'rock', name: 'Garden Rock', prompt: 'Standalone garden rock', tags: ['rock'], role: 'environment' });
+        const flower = api.requireAsset({ key: 'flower', name: 'Flower Bed', prompt: 'Standalone flower bed', tags: ['flower'], role: 'environment' });
+        for (let index = 0; index < 6; index += 1) {
+          const point = api.circlePoint(index, 6, 10, [0, 0]);
+          api.place({ assetId: api.asset(shell, 0), position: point, facing: { target: [0, 0] } });
+        }
+        api.place({ assetId: api.asset(tree, 0), position: [-14, 0] });
+        api.place({ assetId: api.asset(rock, 0), position: [14, 0] });
+        api.place({ assetId: api.asset(flower, 0), position: [0, 14] });
+      }`));
+    let generatedCount = 0;
+    const createAsset = vi.fn(async (request: { name: string; tags: string[] }) => {
+      generatedCount += 1;
+      return testAsset(`generated-${generatedCount}`, request.name, request.tags, 'medium');
+    });
+
+    const suggestion = await runMapAgent('Create a monumental arena surrounded by trees, rocks, flowers and birds', createEmptyMap(), [], {
+      apiBase: 'https://example.test',
+      provider: 'gpt',
+      fetchImpl,
+      createAsset,
+      maxNewAssets: 4,
+      sceneAgent: true
+    });
+    const architectureObjects = suggestion.operations.filter((operation) => (
+      operation.type === 'object.add' && operation.object.assetId === 'generated-1'
+    ));
+
+    expect(createAsset).toHaveBeenCalledTimes(4);
+    expect(fetchImpl).toHaveBeenCalledOnce();
+    expect(architectureObjects).toHaveLength(6);
+    expect(architectureObjects.every((operation) => (
+      operation.type === 'object.add' && operation.object.locked === true
+    ))).toBe(true);
   });
 
   it('repairs malformed director requirements locally instead of requesting a full replan', async () => {
@@ -453,6 +643,25 @@ describe('map AI adapter', () => {
     }), map, assets, 'refine');
 
     expect(suggestion.operations).toEqual([expect.objectContaining({ type: 'object.update', objectId: 'tree-live' })]);
+  });
+
+  it('does not let a generic refine move or remove locked architecture objects', () => {
+    const map = createEmptyMap('locked architecture', 'map-locked-architecture');
+    const gate = { ...createMapObject('Locked gate', 'asset-tree'), id: 'locked-gate', locked: true };
+    const shrub = { ...createMapObject('Loose shrub', 'asset-tree'), id: 'loose-shrub' };
+    map.objects = [gate, shrub];
+
+    const suggestion = normalizeMapSuggestion(JSON.stringify({
+      summary: 'adjust the loose environment only',
+      objectRemovals: [{ assetId: 'asset-tree', count: 2 }],
+      objectUpdates: [{ objectId: 'locked-gate', x: 8 }, { objectId: 'loose-shrub', x: 3 }]
+    }), map, assets, 'refine');
+
+    expect(suggestion.operations.some((operation) => (
+      (operation.type === 'object.remove' || operation.type === 'object.update')
+      && operation.objectId === 'locked-gate'
+    ))).toBe(false);
+    expect(suggestion.operations).toContainEqual(expect.objectContaining({ type: 'object.remove', objectId: 'loose-shrub' }));
   });
 
   it('turns an all-stale refine response into an empty retryable delta', () => {
@@ -1218,6 +1427,13 @@ function testAsset(
     createdAt: 1,
     updatedAt: 1
   };
+}
+
+function chatTextResponse(content: string): Response {
+  return new Response(JSON.stringify({ ok: true, content }), {
+    status: 200,
+    headers: { 'Content-Type': 'application/json' }
+  });
 }
 
 function testAssetWithBounds(

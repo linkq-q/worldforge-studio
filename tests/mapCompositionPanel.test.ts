@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { renderMapCompositionPlanApproval, renderMapCompositionSummary } from '../src/client/mapCompositionPanel';
+import {
+  renderMapCodePlanSummary,
+  renderMapCompositionPlanApproval,
+  renderMapCompositionSummary
+} from '../src/client/mapCompositionPanel';
 import type { MapAiSuggestion } from '../src/shared/mapOperations';
 
 describe('map composition preview panel', () => {
@@ -133,6 +137,43 @@ describe('map composition preview panel', () => {
     expect(renderMapCompositionSummary(compositionSuggestion(3, 12))).toContain('id="repair-map-ai-composition"');
     expect(renderMapCompositionSummary(compositionSuggestion(6, 12))).toContain('id="repair-map-ai-composition"');
     expect(renderMapCompositionSummary(compositionSuggestion(10, 12))).not.toContain('id="repair-map-ai-composition"');
+  });
+
+  it('shows the unified scene Code trace with simple Chinese tool labels and escaped source', () => {
+    const html = renderMapCodePlanSummary({
+      summary: 'arena', operations: [], renderPromptSuggestions: [], generatedAssets: [],
+      codePlan: {
+        code: 'place("gate", { label: "<main>" });',
+        functions: ['place', 'circlePoint'],
+        placementCount: 24,
+        sceneIntent: 'authored',
+        sceneIntentReason: '人工营造的<竞技场>'
+      }
+    });
+
+    expect(html).toContain('场景 Code 详情');
+    expect(html).toContain('营造场景');
+    expect(html).toContain('24 个摆放意图');
+    expect(html).toContain('<span>物体摆放</span>');
+    expect(html).toContain('<span>环形布局</span>');
+    expect(html).toContain('人工营造的&lt;竞技场&gt;');
+    expect(html).toContain('&lt;main&gt;');
+    expect(html).not.toContain('<main>');
+  });
+
+  it('offers a focused repair action when asset generation degraded the Scene Code result', () => {
+    const html = renderMapCodePlanSummary({
+      summary: 'garden', operations: [], renderPromptSuggestions: [], generatedAssets: [],
+      diagnostics: [{
+        code: 'asset.generation-degraded', severity: 'warning', repaired: false,
+        message: '资产“游廊”生成失败，其余内容已保留。'
+      }],
+      codePlan: { code: 'function plan(api) {}', functions: [], placementCount: 0 }
+    });
+
+    expect(html).toContain('资产“游廊”生成失败，其余内容已保留。');
+    expect(html).toContain('id="repair-map-ai-assets"');
+    expect(html).toContain('修复失败项');
   });
 });
 

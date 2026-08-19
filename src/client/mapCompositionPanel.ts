@@ -116,6 +116,42 @@ export function renderMapCompositionSummary(suggestion: MapAiSuggestion): string
   `;
 }
 
+export function renderMapCodePlanSummary(suggestion: MapAiSuggestion): string {
+  const codePlan = suggestion.codePlan;
+  if (!codePlan) return '';
+  const failedAssetIssues = (suggestion.diagnostics ?? [])
+    .filter((issue) => issue.code === 'asset.generation-degraded' && !issue.repaired);
+  return `
+    ${failedAssetIssues.length > 0 ? `
+      <div class="map-composition-quality map-composition-quality-warning">
+        <div><b>部分资产待修复</b><span>${failedAssetIssues.map((issue) => escapeHtml(issue.message)).join(' · ')}</span></div>
+        <button id="repair-map-ai-assets" class="secondary compact">修复失败项</button>
+      </div>
+    ` : ''}
+    <details class="inspector-disclosure compact map-code-plan-details">
+      <summary><span><b>场景 Code 详情</b><small>${codePlan.sceneIntent === 'authored' ? '营造场景' : codePlan.sceneIntent === 'natural' ? '自然场景' : '通用场景'} · ${codePlan.placementCount} 个摆放意图 · ${codePlan.functions.length} 种工具</small></span></summary>
+      <div class="inspector-body asset-library-details">
+        ${codePlan.sceneIntentReason ? `<p>${escapeHtml(codePlan.sceneIntentReason)}</p>` : ''}
+        <div class="style-tags">${codePlan.functions.map((name) => `<span>${escapeHtml(mapCodeFunctionLabel(name))}</span>`).join('')}</div>
+        <pre class="map-code-plan-source"><code>${escapeHtml(codePlan.code)}</code></pre>
+      </div>
+    </details>
+  `;
+}
+
+function mapCodeFunctionLabel(name: string): string {
+  return ({
+    sceneIntent: '场景判断', terrain: '基础地形', modifyTerrain: '地形塑形', refineTerrain: '地形细化',
+    surface: '地表绘制', water: '水体', grass: '草地', spawn: '出生点', renderSuggestion: '渲染建议',
+    requireAsset: '新资产', asset: '选择资产', place: '物体摆放', placeBetween: '连接摆放',
+    linePoint: '直线路径', bezierPoint: '曲线路径', sampleBezier: '曲线采样',
+    sampleBezierFrames: '曲线朝向', sampleBezierFramesBySpacing: '等距曲线', circlePoint: '环形布局',
+    gridPoints: '网格布局', poissonDisk: '自然散布', noise2D: '噪声变化', fbm2D: '自然变化',
+    random: '随机变化', rotate2D: '旋转', distance2D: '距离', tangentYaw: '沿线朝向', faceYaw: '面向目标',
+    clamp: '范围限制', lerp: '渐变', remap: '数值映射', smoothstep: '平滑过渡'
+  } as Record<string, string>)[name] ?? name;
+}
+
 export function mapCompositionPlacementQuality(initialObjectCount: number, objectCount: number): {
   label: '规划不足' | '需要注意' | '规划良好';
   tone: 'danger' | 'warning' | 'good';
