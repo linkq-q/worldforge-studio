@@ -12,4 +12,10 @@ describe('map code asset reuse controls', () => {
     expect(codeRequest).toContain('reuseExistingAssets: this.mapAiReuseExistingAssets');
     expect(codeRequest).toContain('assetLibraryId: this.mapAiReuseExistingAssets ? this.activeAssetLibraryId : undefined');
   });
+
+  it('exposes the indoor Code generation path for indoor maps', () => {
+    expect(source).toContain("map.sceneMode === 'indoor' ? '室内 Code 生成' : 'Code 生成'");
+    expect(source).toContain('房间、墙面、门窗与家具功能组 API');
+    expect(source).toContain('程序化室内规划代码');
+  });
 });

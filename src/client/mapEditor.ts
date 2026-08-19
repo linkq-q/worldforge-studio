@@ -1286,7 +1286,7 @@ class MapEditor {
         </div>
         <div class="map-ai-controls map-ai-generation-controls">
           <button id="generate-map-ai" ${generationBlocked ? 'disabled' : ''}>${map.sceneMode === 'indoor' && this.mapAiConfirmCompositionPlan ? '先生成俯视规划' : '生成新规划'}</button>
-          <button id="generate-map-code" class="secondary" title="让 AI 编写受限 JavaScript，并使用曲线、noise 和程序化分布生成布局" ${codeGenerationBlocked ? 'disabled' : ''}>Code 生成</button>
+          <button id="generate-map-code" class="secondary" title="${map.sceneMode === 'indoor' ? '让 AI 编写受限 JavaScript，使用房间、墙面、门窗、天花和家具功能组 API 生成室内布局' : '让 AI 编写受限 JavaScript，并使用曲线、noise 和程序化分布生成布局'}" ${codeGenerationBlocked ? 'disabled' : ''}>${map.sceneMode === 'indoor' ? '室内 Code 生成' : 'Code 生成'}</button>
           <button id="refine-map-ai" class="secondary" ${refinementBlocked ? 'disabled' : ''}>调整当前地图</button>
           ${this.mapAiAbortController ? '<button id="cancel-map-ai" class="secondary">取消</button>' : ''}
         </div>
@@ -2100,9 +2100,13 @@ class MapEditor {
     this.startMapAgentProgressTimer();
     updateAgentProgress(this.mapAgentProgress, {
       phase: 'planning',
-      label: 'AI 正在编写程序化环境规划代码'
+      label: map.sceneMode === 'indoor'
+        ? 'AI 正在编写程序化室内规划代码'
+        : 'AI 正在编写程序化环境规划代码'
     });
-    this.setBusy(true, 'AI 正在使用曲线、noise 与程序化分布规划地图...');
+    this.setBusy(true, map.sceneMode === 'indoor'
+      ? 'AI 正在使用房间、墙面、门窗与家具功能组 API 规划室内场景...'
+      : 'AI 正在使用曲线、noise 与程序化分布规划地图...');
     this.renderMapAiPanel();
     try {
       const { suggestion } = await editorAgentFetch<{ suggestion: MapAiSuggestion }>(
@@ -2126,7 +2130,7 @@ class MapEditor {
       );
       updateAgentProgress(this.mapAgentProgress, {
         phase: 'complete',
-        label: `Code 规划完成：${suggestion.codePlan?.placementCount ?? 0} 个摆放意图`
+        label: `${map.sceneMode === 'indoor' ? '室内 Code' : 'Code'} 规划完成：${suggestion.codePlan?.placementCount ?? 0} 个摆放意图`
       });
       if (suggestion.generatedAssets.length > 0) await this.reloadLists();
       this.mapPreviewKind = 'ai';
@@ -2136,7 +2140,9 @@ class MapEditor {
       this.mapAiComparisonMap = map;
       this.mapAiPreviewVisible = true;
       this.state.selectedObjectId = null;
-      this.state.message = 'Code 地图预览已生成，尚未应用';
+      this.state.message = map.sceneMode === 'indoor'
+        ? '室内 Code 场景预览已生成，尚未应用'
+        : 'Code 地图预览已生成，尚未应用';
       await this.refreshScene();
     } catch (error) {
       const cancelled = error instanceof Error && error.name === 'AbortError';

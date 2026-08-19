@@ -1,8 +1,19 @@
 import vm from 'node:vm';
-import { createId, getMapBounds, sampleTerrainHeight, type EditableMap, type MapAsset } from '../shared/map';
+import {
+  createId,
+  getMapBounds,
+  normalizeMapRoom,
+  sampleTerrainHeight,
+  type EditableMap,
+  type MapAsset,
+  type MapRoom,
+  type MapRoomOpening,
+  type RoomWall
+} from '../shared/map';
 import { normalizeAssetTags } from '../shared/mapAssetMetadata';
 import { normalizeMapAiMaxNewAssets, normalizeMapAiNewAssetRange } from '../shared/mapPlanning';
 import { calculateModelVisualBounds } from '../shared/modelBounds';
+import { indoorAssetTargetCount } from '../shared/indoorScenePlanning';
 import type { AgentProgressEvent, ChatProvider } from '../shared/protocol';
 import type { MapAiSuggestion, MapOperation } from '../shared/mapOperations';
 import { runAssetGenerationPool, type AssetTaskReporter } from './assetGenerationPool';
@@ -41,7 +52,7 @@ export interface MapCodePlanMetadata {
 interface PlacementInput {
   assetId?: string | null;
   name?: string;
-  position: Point2 | Point3 | { x: number; y?: number; z: number } | { point: Point2 | Point3 };
+  position?: Point2 | Point3 | { x: number; y?: number; z: number } | { point: Point2 | Point3 };
   rotationY?: number;
   facing?: Point2 | {
     direction?: Point2;
@@ -52,7 +63,9 @@ interface PlacementInput {
   };
   scale?: number | Point3;
   size?: Point3;
+  dimensions?: Point3;
   terrain?: boolean;
+  roomOpeningId?: string;
 }
 
 interface PlaceBetweenInput {
@@ -77,6 +90,24 @@ interface PlacementIntent {
   scale: Point3;
   size: Point3;
   heightMode: 'terrain' | 'fixed';
+  roomOpeningId?: string;
+}
+
+interface RoomOpeningInput {
+  id: string;
+  kind: 'door' | 'window';
+  wall: RoomWall;
+  offset?: number;
+  bottom?: number;
+  width?: number;
+  height?: number;
+}
+
+interface RoomWallFrame {
+  point: Point3;
+  inward: Point2;
+  outward: Point2;
+  tangent: Point2;
 }
 
 interface BezierFrame {
@@ -120,8 +151,20 @@ export async function generateMapCodeSuggestion(
   assets: readonly MapAsset[],
   options: MapCodePlannerOptions = {}
 ): Promise<MapAiSuggestion> {
-  options.onProgress?.({ phase: 'planning', label: 'AI 正在编写程序化环境规划代码' });
-  const assetRange = normalizeMapAiNewAssetRange(options.minNewAssets, options.maxNewAssets);
+  options.onProgress?.({
+    phase: 'planning',
+    label: map.sceneMode === 'indoor'
+      ? 'AI 正在编写程序化室内规划代码'
+      : 'AI 正在编写程序化环境规划代码'
+  });
+  const requestedAssetRange = normalizeMapAiNewAssetRange(options.minNewAssets, options.maxNewAssets);
+  const indoorTarget = map.sceneMode === 'indoor'
+    ? indoorAssetTargetCount(map, requestedAssetRange.min, requestedAssetRange.max)
+    : requestedAssetRange.min;
+  const assetRange = {
+    min: Math.min(requestedAssetRange.max, Math.max(requestedAssetRange.min, indoorTarget)),
+    max: requestedAssetRange.max
+  };
   const maxNewAssets = assetRange.max;
   const reusableIds = options.reusableAssetIds ? new Set(options.reusableAssetIds) : null;
   const reusableAssets = options.reuseExistingAssets === true
@@ -214,7 +257,12 @@ export async function generateMapCodeSuggestion(
     family.push(generatedAssets[index]);
     bindings.set(task.key, family);
   });
-  options.onProgress?.({ phase: 'replanning', label: '使用新资产重放程序化环境规划' });
+  options.onProgress?.({
+    phase: 'replanning',
+    label: map.sceneMode === 'indoor'
+      ? '使用新资产重放程序化室内规划'
+      : '使用新资产重放程序化环境规划'
+  });
   const final = runMapCodePlan(code, map, [...reusableAssets, ...generatedAssets], {
     mode: 'final',
     assetBindings: bindings,
@@ -261,6 +309,10 @@ function runMapCodePlan(
   const unresolvedAssetIds = new Set<string>();
   const usedFunctions = new Set<string>();
   const assetById = new Map(assets.map((asset) => [asset.id, asset]));
+  const indoorRoom = map.sceneMode === 'indoor' && map.room
+    ? normalizeMapRoom(map.room, map.box.size, map.room)
+    : null;
+  const roomOpenings = indoorRoom ? [...indoorRoom.openings] : [];
   const mode = options.mode ?? 'final';
   const maxNewAssets = options.maxNewAssets ?? normalizeMapAiMaxNewAssets(undefined);
   const random = mulberry32(map.seed);
@@ -270,6 +322,12 @@ function runMapCodePlan(
     PHI: (1 + Math.sqrt(5)) / 2,
     seed: map.seed,
     bounds: Object.freeze(getMapBounds(map)),
+    room: indoorRoom ? Object.freeze({
+      position: Object.freeze([...indoorRoom.position]),
+      size: Object.freeze([...indoorRoom.size]),
+      wallThickness: indoorRoom.wallThickness,
+      openings: Object.freeze(indoorRoom.openings.map((opening) => Object.freeze({ ...opening })))
+    }) : null,
     clamp(value: number, min: number, max: number) {
       record('clamp');
       return clampFinite(value, min, max);
@@ -427,6 +485,52 @@ function runMapCodePlan(
       const target = point2(to);
       return Math.atan2(target[0] - origin[0], target[1] - origin[1]);
     },
+    roomPoint(localX: number, localZ: number, height = 0): Point3 {
+      record('roomPoint');
+      const room = requireIndoorRoom(indoorRoom);
+      const inset = room.wallThickness;
+      return [
+        room.position[0] + clampFinite(localX, -room.size[0] / 2 + inset, room.size[0] / 2 - inset),
+        room.position[1] + clampFinite(height, 0, room.size[1] - room.wallThickness),
+        room.position[2] + clampFinite(localZ, -room.size[2] / 2 + inset, room.size[2] / 2 - inset)
+      ];
+    },
+    wallFrame(wall: RoomWall, offset = 0, bottom = 0, inset = 0.02): RoomWallFrame {
+      record('wallFrame');
+      return roomWallFrame(requireIndoorRoom(indoorRoom), normalizeRoomWall(wall), offset, bottom, inset);
+    },
+    ceilingPoint(localX: number, localZ: number, objectHeight = 0, drop = 0): Point3 {
+      record('ceilingPoint');
+      const room = requireIndoorRoom(indoorRoom);
+      const point = roomInteriorPoint(room, localX, localZ);
+      return [
+        point[0],
+        room.position[1] + room.size[1] - room.wallThickness - Math.max(0, finite(objectHeight)) - Math.max(0, finite(drop)),
+        point[1]
+      ];
+    },
+    opening(input: RoomOpeningInput): string {
+      record('opening');
+      const room = requireIndoorRoom(indoorRoom);
+      if (!input || typeof input !== 'object') throw new Error('invalid_map_code_room_opening');
+      const id = cleanText(input.id, 80);
+      if (roomOpenings.some((opening) => opening.id === id)) return id;
+      const opening = normalizeMapRoom({
+        ...room,
+        openings: [...roomOpenings, {
+          id,
+          kind: input.kind === 'window' ? 'window' : 'door',
+          wall: normalizeRoomWall(input.wall),
+          offset: input.offset ?? 0,
+          bottom: input.bottom ?? (input.kind === 'window' ? 1 : 0),
+          width: input.width ?? (input.kind === 'window' ? 1.8 : 1.2),
+          height: input.height ?? (input.kind === 'window' ? 1.2 : 2.1)
+        }]
+      }, map.box.size, room).openings.at(-1);
+      if (!opening) throw new Error('invalid_map_code_room_opening');
+      roomOpenings.push(opening);
+      return opening.id;
+    },
     requireAsset(input: CodeAssetRequirementInput): string {
       record('requireAsset');
       const requirement = normalizeCodeAssetRequirement(input);
@@ -464,16 +568,29 @@ function runMapCodePlan(
         assetId = resolveMapCodeAssetId(input.name, assets);
         if (!assetId) unresolvedAssetIds.add(requestedAssetId!);
       }
-      const terrain = input.terrain !== false && placementUsesTerrain(input.position);
-      const position = placementPosition(input.position, map, terrain);
+      const roomOpeningId = input.roomOpeningId?.trim();
+      if (roomOpeningId && !roomOpenings.some((opening) => opening.id === roomOpeningId)) {
+        throw new Error(`unknown_map_code_room_opening:${roomOpeningId}`);
+      }
+      if (input.position === undefined && !roomOpeningId) throw new Error('invalid_map_code_position');
+      const terrain = map.sceneMode !== 'indoor'
+        && input.terrain !== false
+        && input.position !== undefined
+        && placementUsesTerrain(input.position);
+      const position = input.position === undefined
+        ? roomOpeningPlacement(requireIndoorRoom(indoorRoom), roomOpenings, roomOpeningId!)
+        : placementPosition(input.position, map, terrain);
+      const dimensions = input.dimensions === undefined ? undefined : point3(input.dimensions);
+      const fitted = fittedPlacementTransform(assetId ? assetById.get(assetId) : undefined, input.scale ?? 1, dimensions);
       placements.push({
         assetId,
         name: cleanText(input.name ?? assetById.get(assetId ?? '')?.name ?? '程序化物体', 80),
         position,
         rotationY: placementRotation(input.facing, position, input.rotationY),
-        scale: scale3(input.scale ?? 1),
-        size: point3(input.size ?? [1, 1, 1]),
-        heightMode: terrain ? 'terrain' : 'fixed'
+        scale: fitted.scale,
+        size: dimensions ?? point3(input.size ?? [1, 1, 1]),
+        heightMode: terrain ? 'terrain' : 'fixed',
+        ...(roomOpeningId ? { roomOpeningId } : {})
       });
     },
     placeBetween(input: PlaceBetweenInput): void {
@@ -495,7 +612,7 @@ function runMapCodePlan(
         (start[0] + end[0]) / 2,
         (start[1] + end[1]) / 2
       );
-      const terrain = input.terrain !== false;
+      const terrain = map.sceneMode !== 'indoor' && input.terrain !== false;
       const position = placementPosition(center, map, terrain);
       const lineRotation = spanAxis === 'x'
         ? Math.atan2(-direction[1], direction[0])
@@ -547,13 +664,14 @@ function runMapCodePlan(
   if (returned && typeof returned.then === 'function') throw new Error('async_map_code_plan_not_supported');
   if (placements.length === 0) throw new Error('empty_map_code_plan');
 
-  const operations = placements.map((placement): MapOperation => ({
+  const placementOperations = placements.map((placement): MapOperation => ({
     type: 'object.add',
     object: {
       id: createId('obj-code'),
       name: placement.name,
       assetId: placement.assetId,
       heightMode: placement.heightMode,
+      ...(placement.roomOpeningId ? { roomOpeningId: placement.roomOpeningId } : {}),
       transform: {
         position: placement.position,
         rotation: [0, placement.rotationY, 0],
@@ -562,6 +680,9 @@ function runMapCodePlan(
       }
     }
   }));
+  const operations: MapOperation[] = indoorRoom
+    ? [{ type: 'room.set', room: { ...indoorRoom, openings: roomOpenings } }, ...placementOperations]
+    : placementOperations;
   const suggestion: MapAiSuggestion = {
     summary: `程序化代码规划生成了 ${placements.length} 个摆放意图`,
     operations,
@@ -594,6 +715,9 @@ export function buildMapCodePlannerSystemPrompt(
   minNewAssets = 0,
   maxNewAssets = normalizeMapAiMaxNewAssets(undefined)
 ): string {
+  if (map.sceneMode === 'indoor') {
+    return buildIndoorMapCodePlannerSystemPrompt(map, assets, minNewAssets, maxNewAssets);
+  }
   const bounds = getMapBounds(map);
   const assetCatalog = assets.length > 0
     ? assets.map((asset) => `- ${asset.id}: ${asset.name}; tags=${asset.tags?.join(',') || 'none'}`).join('\n')
@@ -689,6 +813,103 @@ Reusable asset catalog:
 ${assetCatalog}`;
 }
 
+function buildIndoorMapCodePlannerSystemPrompt(
+  map: EditableMap,
+  assets: readonly MapAsset[],
+  minNewAssets: number,
+  maxNewAssets: number
+): string {
+  const room = requireIndoorRoom(map.room ? normalizeMapRoom(map.room, map.box.size, map.room) : null);
+  const assetCatalog = assets.length > 0
+    ? assets.map((asset) => `- ${asset.id}: ${asset.name}; tags=${asset.tags?.join(',') || 'none'}`).join('\n')
+    : '- No reusable assets are available. Declare the indoor assets you need with api.requireAsset.';
+  return `You are WorldForge Studio's procedural indoor-scene planner.
+
+## Output contract
+Return only one synchronous JavaScript function: function plan(api) { ... }.
+Do not return markdown, explanations, JSON, imports, async code, promises, eval, Function, network, files, timers, or global state.
+Use api. on every WorldForge call. The code must call api.place or api.placeBetween at least once.
+Allowed JavaScript: const/let, numbers, strings, arrays, plain objects, local helper functions, for, for...of, while, if/else, and Math scalar functions.
+
+## Indoor structural contract
+This is a standalone indoor map. The existing parameterized room is structural map data, not an asset.
+Room floor-center=${JSON.stringify(room.position)}, size=[width=${room.size[0]},height=${room.size[1]},depth=${room.size[2]}], wallThickness=${room.wallThickness}.
+Existing openings=${JSON.stringify(room.openings)}.
+Do not generate a whole room, floor, ceiling, wall shell, terrain, outdoor ground, sky, road, river, forest, garden, or building exterior.
+Do not use terrain-following placement. Indoor objects use fixed Y positions relative to the room floor.
+The room shell automatically cuts wall segments around openings. Doors and windows are separate assets linked to declared openings.
+
+## Indoor coordinate API
+api.room is the current room data.
+api.roomPoint(localX,localZ,height?) returns [x,y,z] inside the room. localX/localZ are offsets from room center; height is above the room floor. Use this for floor furniture and functional groups.
+api.wallFrame(wall,offset?,bottom?,inset?) returns {point,inward,outward,tangent}. wall is north|south|east|west; offset runs along the wall; bottom is height above the floor. Place wall-mounted objects at frame.point with facing:{direction:frame.inward} so local Z+ faces into the room.
+api.ceilingPoint(localX,localZ,objectHeight?,drop?) returns a fixed [x,y,z] whose object top sits below the ceiling. Pass the declared object height.
+api.opening({id,kind:'door'|'window',wall,offset?,bottom?,width?,height?}) declares a parameterized opening and returns its ID. Then api.place({assetId,roomOpeningId:id,dimensions:[w,h,d]}) binds the generated model to that opening; position and rotation are automatic.
+Every generated point supports both point[0]/point[1] and point.x/point.z where applicable. Never add or subtract arrays directly.
+
+## Placement and size contract
+Every generated model uses local Y+ up, local Z+ front/forward, and local X+ right.
+api.place({assetId?,name?,position?,rotationY?,facing?,scale?,size?,dimensions?,roomOpeningId?}) places one indoor object. dimensions:[width,height,depth] is the intended world size and is fitted against the generated model's actual visual bounds after generation.
+facing may be [dx,dz], {direction}, {target}, {tangent}, or {normal}; it overrides rotationY.
+api.placeBetween remains available for genuinely connected indoor runs such as counters, shelves, railings, partitions, or bench rows.
+
+## Indoor composition philosophy
+Plan in two conceptual passes inside this one program:
+1. Establish entrance/daylight fixtures, primary activity groups, service/storage furniture, and one readable focal relationship.
+2. Add restrained lighting and decor only after the room functions and circulation are clear.
+Build functional groups rather than scattering unrelated props. Examples include desk+chair facing a board, dining chairs around tables, sofas around a focal table, checkout counter plus queue clearance, or workstations aligned to a shared screen.
+Keep a continuous route at least 0.8 world units wide from every door into the primary activity area. Do not place furniture in door clearance zones. Keep furniture inside the room shell.
+Use the room area: repeated furniture counts should scale with available floor area, but preserve aisles and negative space. Avoid piling everything at the center or lining every wall.
+Wall-mounted assets must use wallFrame. Ceiling-mounted assets must use ceilingPoint. Floor furniture must use roomPoint with height 0 unless its support relationship requires a raised position.
+
+## API quick reference
+Constants: api.TAU, api.PHI, api.seed, api.bounds, api.room.
+Scalar math: api.clamp, api.lerp, api.remap, api.smoothstep, api.random.
+Transforms/layouts: api.rotate2D, api.distance2D, api.faceYaw, api.tangentYaw, api.gridPoints, api.circlePoint, api.linePoint.
+Indoor: api.roomPoint, api.wallFrame, api.ceilingPoint, api.opening.
+Assets: api.requireAsset({key,name,prompt,tags?,variants?,dimensions:[width,height,depth]?}); api.asset(key,index?).
+Output: api.place(...); api.placeBetween(...).
+
+## Asset rules
+The sum of all requireAsset variants must be between ${minNewAssets} and ${maxNewAssets}.
+Use enough useful indoor asset families to express the requested room; do not spend the budget on tiny decorative variants before primary furniture exists.
+Each generated asset is one standalone reusable object with no room, floor, wall, background, scene, or unrelated props.
+Furniture prompts must state canonical dimensions and the local Z+ front. Chairs should face local Z+; desks/counters should put their user-facing front toward local Z+; wall art/boards should put the visible face toward local Z+.
+Door/window assets must include the English tag door or window. Window prompts must request a visible transparent glass pane tagged base:glass, while base:glass must not be put in asset tags.
+Do not request wall, floor, ceiling, or whole-room assets.
+
+## Correct indoor patterns
+Functional desk group:
+const desk = api.requireAsset({key:'desk',name:'Classroom desk',prompt:'Standalone classroom desk, student-facing side toward local Z+, canonical dimensions 1.2 wide x 0.75 high x 0.6 deep',dimensions:[1.2,0.75,0.6],tags:['desk','furniture'],variants:1});
+const chair = api.requireAsset({key:'chair',name:'Classroom chair',prompt:'Standalone classroom chair facing local Z+, canonical dimensions 0.5 wide x 0.85 high x 0.5 deep',dimensions:[0.5,0.85,0.5],tags:['chair','furniture'],variants:1});
+for (let row = 0; row < 3; row += 1) for (let column = 0; column < 4; column += 1) {
+  const x = (column - 1.5) * 1.8; const z = -1 + row * 1.8;
+  api.place({assetId:api.asset(desk,0),position:api.roomPoint(x,z,0),dimensions:[1.2,0.75,0.6],facing:{direction:[0,-1]}});
+  api.place({assetId:api.asset(chair,0),position:api.roomPoint(x,z+0.72,0),dimensions:[0.5,0.85,0.5],facing:{direction:[0,-1]}});
+}
+
+Wall-mounted focal object:
+const board = api.requireAsset({key:'board',name:'Wall board',prompt:'Standalone wall-mounted board with visible face toward local Z+, canonical dimensions 3 wide x 1.4 high x 0.12 deep',dimensions:[3,1.4,0.12],tags:['board','wall-mounted'],variants:1});
+const boardFrame = api.wallFrame('north',0,1.1,0.02);
+api.place({assetId:api.asset(board,0),position:boardFrame.point,dimensions:[3,1.4,0.12],facing:{direction:boardFrame.inward}});
+
+Door opening and bound door asset:
+const doorOpening = api.opening({id:'door-main',kind:'door',wall:'south',offset:0,width:1.2,height:2.1});
+const door = api.requireAsset({key:'door',name:'Main door',prompt:'Standalone interior door facing local Z+, canonical dimensions 1.2 wide x 2.1 high x 0.12 deep',dimensions:[1.2,2.1,0.12],tags:['door'],variants:1});
+api.place({assetId:api.asset(door,0),roomOpeningId:doorOpening,dimensions:[1.2,2.1,0.12]});
+
+## Final self-check
+1. Exactly one function named plan and no markdown.
+2. At least one api.place or api.placeBetween; all loops are bounded.
+3. No terrain/outdoor scenery and no whole-room asset.
+4. Primary furniture and functional relationships exist before decor.
+5. Door routes remain at least 0.8 units wide; wall and ceiling objects use the indoor APIs.
+6. Generated assets use requireAsset/api.asset and include dimensions.
+
+Reusable asset catalog:
+${assetCatalog}`;
+}
+
 function extractCode(raw: string): string {
   const fenced = raw.match(/```(?:js|javascript|ts|typescript)?\s*([\s\S]*?)```/i);
   return (fenced?.[1] ?? raw).trim();
@@ -728,7 +949,9 @@ async function discoverMapCodeWithRepairs(
         { role: 'assistant', content: code },
         {
           role: 'user',
-          content: `The program failed during its sandboxed discovery run with this error:\n${executionError}\n\nReturn corrected JavaScript only. Preserve the requested design. Check every array index, loop endpoint, division, vector component, and optional argument. JavaScript arrays cannot be added or subtracted directly; calculate x/z components separately. bezierPoint returns {point,tangent,normal}, sampleBezier returns point arrays, and sampleBezierFrames returns frame objects. Use facing:{tangent:frame.tangent} for along-curve objects and facing:{normal:frame.normal} for curve-side facades or walls. Ensure every numeric value passed to the API is finite.`
+          content: map.sceneMode === 'indoor'
+            ? `The indoor program failed during its sandboxed discovery run with this error:\n${executionError}\n\nReturn corrected JavaScript only. Preserve the requested room design. Check every array index, loop endpoint, division, vector component, room wall name, opening ID, and optional argument. Use api.roomPoint for floor furniture, api.wallFrame for wall-mounted objects, api.ceilingPoint for ceiling-mounted objects, and api.opening plus roomOpeningId for doors/windows. Never use terrain or outdoor placement. Ensure every numeric value passed to the API is finite.`
+            : `The program failed during its sandboxed discovery run with this error:\n${executionError}\n\nReturn corrected JavaScript only. Preserve the requested design. Check every array index, loop endpoint, division, vector component, and optional argument. JavaScript arrays cannot be added or subtracted directly; calculate x/z components separately. bezierPoint returns {point,tangent,normal}, sampleBezier returns point arrays, and sampleBezierFrames returns frame objects. Use facing:{tangent:frame.tangent} for along-curve objects and facing:{normal:frame.normal} for curve-side facades or walls. Ensure every numeric value passed to the API is finite.`
         }
       ], {
         apiBase: options.apiBase,
@@ -830,11 +1053,15 @@ function placementPosition(value: PlacementInput['position'], map: EditableMap, 
     const x = finite(value.x);
     const z = finite(value.z);
     if (value.y !== undefined) return [x, finite(value.y), z];
-    return [x, terrain ? sampleTerrainHeight(map, x, z) : 0, z];
+    return [x, terrain ? sampleTerrainHeight(map, x, z) : map.sceneMode === 'indoor' ? map.room?.position[1] ?? 0 : 0, z];
   }
   if (Array.isArray(value) && value.length === 2) {
     const position = point2(value);
-    return [position[0], terrain ? sampleTerrainHeight(map, position[0], position[1]) : 0, position[1]];
+    return [
+      position[0],
+      terrain ? sampleTerrainHeight(map, position[0], position[1]) : map.sceneMode === 'indoor' ? map.room?.position[1] ?? 0 : 0,
+      position[1]
+    ];
   }
   throw new Error(`invalid_map_code_position:${describeCodeValue(value)}`);
 }
@@ -865,6 +1092,80 @@ function placementRotation(
   if (facing.tangent !== undefined) return yawFromDirection(point2(facing.tangent)) + offsetY;
   if (facing.direction !== undefined) return yawFromDirection(point2(facing.direction)) + offsetY;
   throw new Error('invalid_map_code_facing');
+}
+
+function requireIndoorRoom(room: MapRoom | null): MapRoom {
+  if (!room) throw new Error('map_code_indoor_api_requires_room');
+  return room;
+}
+
+function normalizeRoomWall(value: unknown): RoomWall {
+  if (value === 'north' || value === 'south' || value === 'east' || value === 'west') return value;
+  throw new Error('invalid_map_code_room_wall');
+}
+
+function roomInteriorPoint(room: MapRoom, localX: number, localZ: number): Point2 {
+  const inset = room.wallThickness;
+  return codePoint(
+    room.position[0] + clampFinite(localX, -room.size[0] / 2 + inset, room.size[0] / 2 - inset),
+    room.position[2] + clampFinite(localZ, -room.size[2] / 2 + inset, room.size[2] / 2 - inset)
+  );
+}
+
+function roomWallFrame(
+  room: MapRoom,
+  wall: RoomWall,
+  rawOffset: number,
+  rawBottom: number,
+  rawInset: number
+): RoomWallFrame {
+  const horizontalLength = wall === 'north' || wall === 'south' ? room.size[0] : room.size[2];
+  const offset = clampFinite(rawOffset, -horizontalLength / 2 + room.wallThickness, horizontalLength / 2 - room.wallThickness);
+  const bottom = clampFinite(rawBottom, 0, room.size[1] - room.wallThickness);
+  const inset = Math.max(0, finite(rawInset)) + room.wallThickness / 2;
+  const directions: Record<RoomWall, { inward: Point2; tangent: Point2 }> = {
+    north: { inward: codePoint(0, 1), tangent: codePoint(1, 0) },
+    south: { inward: codePoint(0, -1), tangent: codePoint(-1, 0) },
+    east: { inward: codePoint(-1, 0), tangent: codePoint(0, 1) },
+    west: { inward: codePoint(1, 0), tangent: codePoint(0, -1) }
+  };
+  const direction = directions[wall];
+  const point: Point3 = wall === 'north'
+    ? [room.position[0] + offset, room.position[1] + bottom, room.position[2] - room.size[2] / 2 + inset]
+    : wall === 'south'
+      ? [room.position[0] + offset, room.position[1] + bottom, room.position[2] + room.size[2] / 2 - inset]
+      : wall === 'east'
+        ? [room.position[0] + room.size[0] / 2 - inset, room.position[1] + bottom, room.position[2] + offset]
+        : [room.position[0] - room.size[0] / 2 + inset, room.position[1] + bottom, room.position[2] + offset];
+  return {
+    point,
+    inward: direction.inward,
+    outward: codePoint(-direction.inward[0], -direction.inward[1]),
+    tangent: direction.tangent
+  };
+}
+
+function roomOpeningPlacement(room: MapRoom, openings: readonly MapRoomOpening[], openingId: string): Point3 {
+  const opening = openings.find((item) => item.id === openingId);
+  if (!opening) throw new Error(`unknown_map_code_room_opening:${openingId}`);
+  return roomWallFrame(room, opening.wall, opening.offset, opening.bottom, 0.02).point;
+}
+
+function fittedPlacementTransform(
+  asset: MapAsset | undefined,
+  rawScale: number | Point3,
+  dimensions?: Point3
+): { scale: Point3 } {
+  const scale = scale3(rawScale);
+  if (!asset || !dimensions) return { scale };
+  const bounds = calculateModelVisualBounds(asset.modelJson);
+  const actualDimensions: Point3 = [
+    Math.max(0.000001, bounds.max[0] - bounds.min[0]),
+    Math.max(0.000001, bounds.max[1] - bounds.min[1]),
+    Math.max(0.000001, bounds.max[2] - bounds.min[2])
+  ];
+  for (let axis = 0; axis < 3; axis += 1) scale[axis] /= actualDimensions[axis];
+  return { scale };
 }
 
 function yawFromDirection(direction: Point2): number {

@@ -31,6 +31,53 @@ describe('map code planner', () => {
     expect(prompt).toContain('No undefined point, invalid array index, direct array arithmetic');
   });
 
+  it('gives indoor maps a room-native code planning contract', () => {
+    const map = createEmptyMap('Classroom', 'indoor-code-prompt', [12, 4, 9], 'voxel', 'indoor', [12, 4, 9]);
+    const prompt = buildMapCodePlannerSystemPrompt(map, [], 3, 8);
+
+    expect(prompt).toContain("You are WorldForge Studio's procedural indoor-scene planner.");
+    expect(prompt).toContain('api.roomPoint(localX,localZ,height?)');
+    expect(prompt).toContain('api.wallFrame(wall,offset?,bottom?,inset?)');
+    expect(prompt).toContain('api.ceilingPoint(localX,localZ,objectHeight?,drop?)');
+    expect(prompt).toContain("api.opening({id,kind:'door'|'window'");
+    expect(prompt).toContain('Keep a continuous route at least 0.8 world units wide');
+    expect(prompt).toContain('Do not generate a whole room, floor, ceiling, wall shell, terrain');
+    expect(prompt).not.toContain('Road curve:');
+    expect(prompt).not.toContain('Natural scatter:');
+  });
+
+  it('executes room-native placements and opening bindings for indoor maps', () => {
+    const map = createEmptyMap('Classroom', 'indoor-code-execution', [12, 4, 9], 'voxel', 'indoor', [12, 4, 9]);
+    const suggestion = executeMapCodePlan(`
+      function plan(api) {
+        const frame = api.wallFrame('north', 0, 1.1, 0.02);
+        const door = api.opening({ id: 'door-main', kind: 'door', wall: 'south', offset: 3, width: 1.2, height: 2.1 });
+        api.place({ name: 'desk', position: api.roomPoint(0, 1, 0), dimensions: [1.2, 0.75, 0.6], facing: { direction: [0, -1] } });
+        api.place({ name: 'board', position: frame.point, dimensions: [3, 1.4, 0.12], facing: { direction: frame.inward } });
+        api.place({ name: 'door', roomOpeningId: door, dimensions: [1.2, 2.1, 0.12] });
+      }
+    `, map);
+    const roomOperation = suggestion.operations.find((operation) => operation.type === 'room.set');
+    const placements = suggestion.operations.filter((operation) => operation.type === 'object.add');
+
+    expect(roomOperation?.type).toBe('room.set');
+    if (roomOperation?.type !== 'room.set') throw new Error('missing room operation');
+    expect(roomOperation.room.openings).toEqual(expect.arrayContaining([
+      expect.objectContaining({ id: 'door-main', kind: 'door', wall: 'south' })
+    ]));
+    expect(placements).toHaveLength(3);
+    expect(placements.every((operation) => operation.object.heightMode === 'fixed')).toBe(true);
+    expect(placements[0].object.transform?.position).toEqual([0, 0, 1]);
+    expect(placements[1].object.transform?.position?.[1]).toBeCloseTo(1.1);
+    expect(placements[1].object.transform?.rotation?.[1]).toBeCloseTo(0);
+    expect(placements[2].object.roomOpeningId).toBe('door-main');
+    const applied = applyMapOperations(map, suggestion.operations);
+    const appliedDoor = applied.objects.find((object) => object.roomOpeningId === 'door-main');
+    expect(appliedDoor?.transform.position[2]).toBeGreaterThan(4);
+    expect(appliedDoor?.transform.rotation[1]).toBeCloseTo(Math.PI);
+    expect(suggestion.codePlan?.functions).toEqual(['opening', 'place', 'roomPoint', 'wallFrame']);
+  });
+
   it('hides existing assets by default and exposes only explicitly selected reusable assets', async () => {
     const selected = testAsset('asset-selected', 'Selected neon lamp');
     const unselected = testAsset('asset-unselected', 'Unselected old building');
