@@ -38,6 +38,10 @@ describe('structured map water rendering', () => {
     expect(material.emissive.getHex()).toBe(0x000000);
     expect(material.side).toBe(THREE.FrontSide);
     expect(material.vertexColors).toBe(true);
+    expect(material.roughness).toBe(1);
+    expect(material.roughnessMap).toBeInstanceOf(THREE.CanvasTexture);
+    expect(material.bumpMap).toBeInstanceOf(THREE.CanvasTexture);
+    expect(material.bumpScale).toBeGreaterThan(0);
     expect(terrain.geometry.getAttribute('color').count).toBe(terrain.geometry.getAttribute('position').count);
     rendered.dispose();
   });
@@ -419,6 +423,8 @@ describe('structured map water rendering', () => {
     const terrain = rendered.group.getObjectByName('terrain') as THREE.Mesh;
     const terrainMaterial = terrain.material as THREE.MeshStandardMaterial;
     const firstTexture = terrainMaterial.map;
+    const firstRoughness = terrainMaterial.roughnessMap;
+    const firstBump = terrainMaterial.bumpMap;
     const roofMaterial = new THREE.MeshStandardMaterial({ color: '#70452f', roughness: 0.7 });
     const roof = new THREE.Mesh(new THREE.BoxGeometry(2, 0.3, 2), roofMaterial);
     rendered.modelsRoot.add(roof);
@@ -427,6 +433,8 @@ describe('structured map water rendering', () => {
     rendered.setWeatherSurface(0.65, 0.9);
 
     expect(terrainMaterial.map).not.toBe(firstTexture);
+    expect(terrainMaterial.roughnessMap).not.toBe(firstRoughness);
+    expect(terrainMaterial.bumpMap).not.toBe(firstBump);
     expect(terrain.userData.terrainMaterialStyle).toEqual({
       detailStrength: 1,
       soilRecipe: 'moist',
@@ -571,6 +579,8 @@ describe('terrain-only refresh', () => {
     const material = terrain.material as THREE.MeshStandardMaterial;
     const firstGeometry = terrain.geometry;
     const firstTexture = material.map;
+    const firstRoughness = material.roughnessMap;
+    const firstBump = material.bumpMap;
     const firstIndex = rendered.runtimeIndex;
 
     map.terrain.heights = map.terrain.heights.map(() => 3);
@@ -582,6 +592,8 @@ describe('terrain-only refresh', () => {
     expect(terrain.geometry.getAttribute('position').getY(0)).toBeCloseTo(3, 5);
     expect(terrain.geometry.getAttribute('color').count).toBe(terrain.geometry.getAttribute('position').count);
     expect(material.map).not.toBe(firstTexture);
+    expect(material.roughnessMap).not.toBe(firstRoughness);
+    expect(material.bumpMap).not.toBe(firstBump);
     expect(rendered.runtimeIndex).toBe(firstIndex);
     rendered.dispose();
   });
