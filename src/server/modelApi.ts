@@ -1,6 +1,7 @@
 import {
   MODEL_API_BASE,
   MODEL_PROVIDERS,
+  type AgentProgressEvent,
   type ChatProvider,
   type ModelJobState
 } from '../shared/protocol';
@@ -40,6 +41,13 @@ export interface ChatApiOptions {
   maxTokens?: number;
   fetchImpl?: typeof fetch;
   signal?: AbortSignal;
+  onProgress?: (event: AgentProgressEvent) => void;
+}
+
+interface ChatApiResponse {
+  ok?: boolean;
+  content?: string;
+  error?: string;
 }
 
 export function parseSseModel(text: string): ParsedSseResult {
@@ -198,24 +206,38 @@ export async function llmChat(messages: readonly ChatMessage[], options: ChatApi
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
+      Accept: 'text/event-stream',
       Connection: 'close'
     },
     body: JSON.stringify({
       messages,
       temperature: options.temperature ?? 0.2,
       maxTokens: options.maxTokens ?? 1000,
-      provider: options.provider ?? 'gpt'
+      provider: options.provider ?? 'gpt',
+      stream: true,
+      reasoning: { summary: 'auto' }
     }),
     signal: options.signal
   };
   let lastError: unknown;
   for (let attempt = 1; attempt <= 3; attempt += 1) {
     options.signal?.throwIfAborted();
+    options.onProgress?.({
+      phase: 'consulting',
+      label: '正在连接上游模型流',
+      detail: `请求 ${attempt}/3`
+    });
     let response: Response;
-    let data: { ok?: boolean; content?: string; error?: string };
+    let data: ChatApiResponse;
     try {
       response = await fetcher(url, init);
-      data = await response.json() as { ok?: boolean; content?: string; error?: string };
+      const streaming = String(response.headers.get('content-type')).includes('text/event-stream');
+      options.onProgress?.({
+        phase: 'consulting',
+        label: streaming ? '上游模型流已连接' : '上游未返回流式日志',
+        detail: streaming ? '等待推理摘要' : '本次使用兼容 JSON 响应'
+      });
+      data = await readChatApiResponse(response, options.onProgress);
     } catch (error) {
       if (options.signal?.aborted || isAbortError(error)) throw error;
       if (attempt === 3) throw new Error('chat_service_unreachable');
@@ -233,6 +255,102 @@ export async function llmChat(messages: readonly ChatMessage[], options: ChatApi
     await abortableDelay(300, options.signal);
   }
   throw lastError instanceof Error ? lastError : new Error(String(lastError ?? 'chat_fetch_failed'));
+}
+
+async function readChatApiResponse(
+  response: Response,
+  onProgress?: ChatApiOptions['onProgress']
+): Promise<ChatApiResponse> {
+  if (!String(response.headers.get('content-type')).includes('text/event-stream')) {
+    return await response.json() as ChatApiResponse;
+  }
+  if (!response.body) return { ok: false, error: 'Empty AI response' };
+
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = '';
+  let content = '';
+  let reasoning = '';
+  let error = '';
+  const reportReasoning = () => onProgress?.({
+    phase: 'consulting',
+    label: '模型正在推理并返回摘要',
+    detail: reasoning.slice(-4_000)
+  });
+  const consume = (block: string) => {
+    if (!block.trim()) return;
+    let event = 'message';
+    const dataLines: string[] = [];
+    for (const line of block.split(/\r?\n/)) {
+      if (line.startsWith('event:')) event = line.slice(6).trim();
+      if (line.startsWith('data:')) dataLines.push(line.slice(5).trim());
+    }
+    if (dataLines.length === 0) return;
+    const data = dataLines.join('\n');
+    if (data === '[DONE]') return;
+    const payload = JSON.parse(data) as {
+      type?: string;
+      delta?: string;
+      text?: string;
+      summary?: string;
+      content?: string;
+      stage?: string;
+      reasoning?: string;
+      error?: string | { message?: string };
+      ok?: boolean;
+      done?: boolean;
+      choices?: Array<{
+        delta?: { content?: string; reasoning_content?: string };
+        message?: { content?: string };
+      }>;
+    };
+    const type = payload.type ?? event;
+    const chatDelta = payload.choices?.[0]?.delta;
+    const reasoningDelta = chatDelta?.reasoning_content
+      ?? payload.reasoning
+      ?? ((payload.stage?.startsWith('thinking') || payload.stage?.startsWith('reasoning')) ? payload.text : undefined);
+    if (reasoningDelta || type === 'response.reasoning_summary_text.delta' || event.startsWith('thinking') || event.startsWith('reasoning')) {
+      reasoning += reasoningDelta ?? payload.delta ?? payload.text ?? payload.summary ?? '';
+      reportReasoning();
+      return;
+    }
+    if (type === 'response.reasoning_summary_text.done') {
+      reasoning = payload.text ?? reasoning;
+      reportReasoning();
+      return;
+    }
+    if (type === 'response.output_text.delta' || event === 'content' || event === 'output_text') {
+      content += payload.delta ?? payload.text ?? payload.content ?? '';
+      return;
+    }
+    if (chatDelta?.content) {
+      content += chatDelta.content;
+      return;
+    }
+    if (type === 'response.output_text.done') {
+      content = payload.text ?? content;
+      return;
+    }
+    if (event === 'result' || event === 'done' || type === 'result' || type === 'done' || payload.done === true) {
+      content = payload.content ?? payload.choices?.[0]?.message?.content ?? content;
+    }
+    if (event === 'error' || type === 'response.error' || type === 'response.failed' || payload.stage === 'error' || payload.ok === false) {
+      error = typeof payload.error === 'string' ? payload.error : payload.error?.message ?? 'chat_stream_failed';
+    }
+  };
+
+  while (true) {
+    const { done, value } = await reader.read();
+    buffer += decoder.decode(value, { stream: !done });
+    const blocks = buffer.split(/\r?\n\r?\n/);
+    buffer = blocks.pop() ?? '';
+    for (const block of blocks) consume(block);
+    if (done) break;
+  }
+  consume(buffer);
+  return content.trim()
+    ? { ok: !error, content, ...(error ? { error } : {}) }
+    : { ok: false, error: error || 'Empty AI response' };
 }
 
 function isRetryableEmptyChatResponse(data: { ok?: boolean; content?: string; error?: string }): boolean {

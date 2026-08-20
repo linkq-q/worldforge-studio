@@ -43,7 +43,7 @@ describe('map layout AI normalization', () => {
       onProgress: (event) => progress.push(event.phase)
     });
 
-    expect(progress).toEqual(['planning', 'validating', 'complete']);
+    expect(progress).toEqual(['planning', 'consulting', 'consulting', 'validating', 'complete']);
     const request = JSON.parse(String((fetchImpl.mock.calls[0]?.[1] as RequestInit | undefined)?.body));
     expect(request.messages[0].content).toContain('one short sentence');
     expect(request.messages[0].content).toContain('Do not ask the player for coordinates');

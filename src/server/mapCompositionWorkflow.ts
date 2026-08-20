@@ -361,6 +361,7 @@ function requestModel(
     temperature,
     maxTokens: 8_192,
     fetchImpl: options.fetchImpl,
-    signal: options.signal
+    signal: options.signal,
+    onProgress: options.onProgress
   });
 }

@@ -47,7 +47,8 @@ export async function generateMapLayoutSuggestion(
       fetchImpl: options.fetchImpl,
       signal: options.signal,
       temperature: 0.2,
-      maxTokens: 2_400
+      maxTokens: 2_400,
+      onProgress: options.onProgress
     });
     previous = content;
     options.onProgress?.({ phase: 'validating', label: '检查区块数量、重叠、缺口与地图覆盖' });

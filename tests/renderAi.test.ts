@@ -517,7 +517,7 @@ describe('render AI adapter', () => {
 
     expect(suggestion.baseSchemeId).toBe(currentPlan.baseSchemeId);
     expect(suggestion.settings.fogDensity).toBe(0.024);
-    expect(progress).toEqual(['planning', 'validating', 'complete']);
+    expect(progress).toEqual(['planning', 'consulting', 'consulting', 'validating', 'complete']);
     const request = JSON.parse(String(fetchImpl.mock.calls[0][1]?.body));
     expect(request.messages[0].content).toContain('当前 RenderPlan');
   });

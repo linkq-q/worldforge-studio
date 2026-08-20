@@ -418,7 +418,8 @@ async function requestMapPlan(
     temperature: 0.2,
     maxTokens: 4096,
     fetchImpl: options.fetchImpl,
-    signal: options.signal
+    signal: options.signal,
+    onProgress: options.onProgress
   });
   return content;
 }

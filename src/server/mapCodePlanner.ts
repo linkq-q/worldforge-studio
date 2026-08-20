@@ -356,7 +356,8 @@ export async function generateMapCodeSuggestion(
         temperature: 0.25,
         maxTokens: 6_000,
         fetchImpl: options.fetchImpl,
-        signal: options.signal
+        signal: options.signal,
+        onProgress: options.onProgress
       }));
   const execution = await discoverMapCodeWithRepairs(code, userPrompt, systemPrompt, map, reusableAssets, maxNewAssets, options);
   code = execution.code;
@@ -2003,7 +2004,8 @@ async function discoverMapCodeWithRepairs(
           temperature: 0.15,
           maxTokens: 6_000,
           fetchImpl: options.fetchImpl,
-          signal: options.signal
+          signal: options.signal,
+          onProgress: options.onProgress
         }));
         continue;
       }
@@ -2043,7 +2045,8 @@ async function discoverMapCodeWithRepairs(
         temperature: 0.1,
         maxTokens: 6_000,
         fetchImpl: options.fetchImpl,
-        signal: options.signal
+        signal: options.signal,
+        onProgress: options.onProgress
       }));
     }
   }

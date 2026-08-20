@@ -96,7 +96,8 @@ export async function runSceneDesignAgent(
     fetchImpl: options.fetchImpl,
     signal: options.signal,
     temperature: 0.15,
-    maxTokens: 4_500
+    maxTokens: 4_500,
+    onProgress: options.onProgress
   }));
   let latestProgram = '';
   let latestResult: SceneProgramResult | null = null;

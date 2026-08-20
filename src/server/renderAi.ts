@@ -65,7 +65,8 @@ export async function generateRenderSuggestion(
     // 1000 tokens can truncate an otherwise valid plan before its closing brace.
     maxTokens: 4096,
     fetchImpl: options.fetchImpl,
-    signal: options.signal
+    signal: options.signal,
+    onProgress: options.onProgress
   };
   const content = await llmChat(messages, requestOptions);
   try {
