@@ -209,11 +209,11 @@ export interface RuntimeGrassStyle {
 }
 
 export const DEFAULT_RUNTIME_GRASS_STYLE: RuntimeGrassStyle = {
-  rootColor: '#72ad49', tipColor: '#b7df76', paletteVariation: 0.1, bands: 3,
+  rootColor: '#466638', tipColor: '#729052', paletteVariation: 0.14, bands: 3,
   bladeHeight: 0.95, bladeWidth: 0.18, windStrength: 0.22, windDirection: [1, 0.25],
   normalFlatten: 0.8, rootDarken: 0.8, gradientBias: 0.7, cellSize: 0.8,
   fadeStart: 72, fadeEnd: 140, maxInstances: 15000,
-  groundTint: true, groundColor: '#669746', groundTintStrength: 0.82
+  groundTint: true, groundColor: '#536444', groundTintStrength: 0.68
 };
 
 export interface RuntimeMaterialTheme {

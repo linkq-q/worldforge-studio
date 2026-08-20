@@ -25,6 +25,8 @@ export interface MapObjectAttachmentInput {
   yaw?: number;
   /** supported: local X/Z; mounted: local horizontal/vertical offset. */
   offset?: [number, number];
+  /** Vertical anchor on the host surface. */
+  anchorY?: 'bottom' | 'center' | 'top';
   /** World-space contact gap for supported objects or embed depth for mounted objects. */
   contact?: number;
 }
@@ -54,7 +56,7 @@ export function planMapObjectAttachment(map: EditableMap, input: MapObjectAttach
   object.transform.rotation[1] = boundedNumber(input.yaw, 0, -Math.PI * 8, Math.PI * 8);
   object.transform.position = input.kind === 'supported'
     ? supportedPosition(parentBounds, childBounds, localScale, parentWorld, offset, contact)
-    : mountedPosition(parentBounds, childBounds, localScale, parentWorld, input.side, offset, contact);
+    : mountedPosition(parentBounds, childBounds, localScale, parentWorld, input.side, offset, contact, input.anchorY);
 
   assertAttachmentFitsMap(map, object, input.asset);
   assertNoUnrelatedOverlap(map, object, input.asset);
@@ -119,7 +121,8 @@ function mountedPosition(
   parentWorld: WorldTransform,
   side: RoomWall | undefined,
   offset: [number, number],
-  contact: number
+  contact: number,
+  verticalAnchor: 'bottom' | 'center' | 'top' = 'center'
 ): Vec3 {
   if (side !== 'north' && side !== 'south' && side !== 'east' && side !== 'west') {
     throw new Error('map_attachment_side_required');
@@ -133,7 +136,11 @@ function mountedPosition(
   const childCenterY = (child.min[1] + child.max[1]) / 2;
   const childCenterZ = (child.min[2] + child.max[2]) / 2;
   const anchorX = centerX + (side === 'north' || side === 'south' ? horizontal : 0);
-  const anchorY = centerY + vertical;
+  const anchorY = (verticalAnchor === 'bottom'
+    ? parent.min[1]
+    : verticalAnchor === 'top'
+      ? parent.max[1]
+      : centerY) + vertical;
   const anchorZ = centerZ + (side === 'east' || side === 'west' ? horizontal : 0);
   if (anchorX < parent.min[0] || anchorX > parent.max[0]
     || anchorY < parent.min[1] || anchorY > parent.max[1]
@@ -142,24 +149,29 @@ function mountedPosition(
   }
   const insetX = contact / safeScaleMagnitude(parentWorld.scale[0]);
   const insetZ = contact / safeScaleMagnitude(parentWorld.scale[2]);
+  const childAnchorY = verticalAnchor === 'bottom'
+    ? child.min[1]
+    : verticalAnchor === 'top'
+      ? child.max[1]
+      : childCenterY;
   if (side === 'east') return [
     parent.max[0] - child.min[0] * localScale[0] - insetX,
-    anchorY - childCenterY * localScale[1],
+    anchorY - childAnchorY * localScale[1],
     anchorZ - childCenterZ * localScale[2]
   ];
   if (side === 'west') return [
     parent.min[0] - child.max[0] * localScale[0] + insetX,
-    anchorY - childCenterY * localScale[1],
+    anchorY - childAnchorY * localScale[1],
     anchorZ - childCenterZ * localScale[2]
   ];
   if (side === 'south') return [
     anchorX - childCenterX * localScale[0],
-    anchorY - childCenterY * localScale[1],
+    anchorY - childAnchorY * localScale[1],
     parent.max[2] - child.min[2] * localScale[2] - insetZ
   ];
   return [
     anchorX - childCenterX * localScale[0],
-    anchorY - childCenterY * localScale[1],
+    anchorY - childAnchorY * localScale[1],
     parent.min[2] - child.max[2] * localScale[2] + insetZ
   ];
 }

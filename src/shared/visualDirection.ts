@@ -4,7 +4,7 @@ export const CONTRAST_MODES = ['bright-cartoon', 'colored-shadow', 'dramatic'] a
 export const VISUAL_TIMES_OF_DAY = ['morning', 'noon', 'evening', 'night'] as const;
 export const VISUAL_TEMPERATURES = ['cool', 'warm'] as const;
 export const VISUAL_ZONE_TAGS = [
-  'grass', 'forest', 'water', 'lowland', 'dry', 'sand', 'soil', 'paving', 'settlement', 'rocky'
+  'grass', 'forest', 'water', 'lowland', 'dry', 'sand', 'soil', 'paving', 'settlement', 'rocky', 'clear'
 ] as const;
 export const MAX_VISUAL_ZONES = 96;
 

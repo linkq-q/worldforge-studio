@@ -31,6 +31,24 @@ const asset = (id: string, radius: number, height: number): MapAsset => ({
   updatedAt: 1
 });
 
+const boxedAsset = (id: string, width: number, height: number, depth: number): MapAsset => ({
+  ...asset(id, Math.max(width, depth) / 2, height),
+  modelJson: {
+    format: 2,
+    nodes: [{
+      id: `${id}-body`, transform: { pos: [0, height / 2, 0] },
+      mesh: { type: 'box', params: { width, height, depth } }
+    }]
+  },
+  colliderPlan: {
+    version: 1,
+    boxes: [{ min: [-width / 2, 0, -depth / 2], max: [width / 2, height, depth / 2] }],
+    sourceMeshCount: 1,
+    candidateCount: 1,
+    fallbackUsed: false
+  }
+});
+
 describe('map object attachments', () => {
   it('places supported and mounted children in a movable parent hierarchy', () => {
     const baseAsset = asset('base', 2, 3);
@@ -62,6 +80,23 @@ describe('map object attachments', () => {
     base.transform.position[0] += 6;
     const after = getObjectWorldTransforms(map).get(light.id)!.position;
     expect(after[0] - before[0]).toBeCloseTo(6);
+  });
+
+  it('can anchor a mounted entrance to the bottom of its host surface', () => {
+    const wallAsset = boxedAsset('wall', 4, 14, 1);
+    const gateAsset = boxedAsset('gate', 2, 6, 0.4);
+    const map = createEmptyMap('bottom mounted entrance', 'bottom-mounted-entrance');
+    map.assets = [wallAsset, gateAsset];
+    const wall = createMapObject('Wall', wallAsset.id);
+    wall.id = 'wall-object';
+    map.objects.push(wall);
+
+    const gate = planMapObjectAttachment(map, {
+      id: 'gate-object', name: 'Gate', parentId: wall.id, asset: gateAsset,
+      kind: 'mounted', side: 'south', anchorY: 'bottom'
+    });
+
+    expect(gate.transform.position[1]).toBeCloseTo(0);
   });
 
   it('rejects unrelated overlaps and hierarchies deeper than the bounded limit', () => {

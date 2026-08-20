@@ -1532,7 +1532,9 @@ function drawSemanticTerrainSurface(
   height: number
 ): void {
   for (const zone of map.visualSemantics.zones) {
-    const tag = [...zone.tags].reverse().find((item) => item in SEMANTIC_SURFACE_COLORS);
+    const tag = [...zone.tags].reverse().find((item): item is keyof typeof SEMANTIC_SURFACE_COLORS => (
+      item in SEMANTIC_SURFACE_COLORS
+    ));
     if (!tag) continue;
     const opacity = Math.min(0.24, 0.08 + zone.intensity * 0.12);
     const color = SEMANTIC_SURFACE_COLORS[tag];

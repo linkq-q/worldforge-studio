@@ -74,6 +74,7 @@ export interface TerrainSurfaceParams {
   region: TerrainRegion;
   intensity: number;
   zoneId: string;
+  clearNatural?: boolean;
 }
 
 export interface TerrainCapabilityDefinition {
@@ -181,7 +182,8 @@ export function normalizeTerrainSurfaceParams(value: unknown, map: EditableMap):
     surface,
     region,
     intensity: clamp(finiteNumber(input.intensity, 1), 0.05, 1),
-    zoneId: cleanZoneId(input.zoneId, surfaceZoneId(surface, region))
+    zoneId: cleanZoneId(input.zoneId, surfaceZoneId(surface, region)),
+    ...(input.clearNatural === true ? { clearNatural: true } : {})
   };
 }
 
@@ -458,7 +460,7 @@ export function applyTerrainSurfaceInPlace(map: EditableMap, value: unknown): Te
   };
   const zone = {
     id: params.zoneId,
-    tags: tagMap[params.surface],
+    tags: [...tagMap[params.surface], ...(params.clearNatural ? ['clear' as const] : [])],
     center: bounds.center,
     radius: bounds.radius,
     intensity: params.intensity,
