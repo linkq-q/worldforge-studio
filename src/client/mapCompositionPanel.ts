@@ -1,4 +1,5 @@
 import type { MapAiSuggestion } from '../shared/mapOperations';
+import type { EditableMap } from '../shared/map';
 import type { SceneCompositionPlan } from '../shared/sceneComposition';
 
 export function renderMapCompositionPlanApproval(plan: SceneCompositionPlan): string {
@@ -167,10 +168,47 @@ export function renderMapCodePlanSummary(suggestion: MapAiSuggestion): string {
   `;
 }
 
+export function renderMapDesignSummary(map: EditableMap): string {
+  const design = map.designSemantics;
+  if (design.groups.length === 0) return '';
+  const experience = design.experienceMode === 'immediate' ? '直接聚焦'
+    : design.experienceMode === 'sequential' ? '逐步展开' : '混合体验';
+  return `
+    <details class="inspector-disclosure compact map-design-details">
+      <summary><span><b>设计组与焦点</b><small>${experience} · ${design.groups.length} 组 · ${design.focuses.length} 个焦点</small></span></summary>
+      <div class="inspector-body asset-library-details">
+        ${design.intent ? `<p class="empty">${escapeHtml(design.intent)}</p>` : ''}
+        <div class="style-tags">${design.groups.map((group) => {
+          const focuses = design.focuses.filter((focus) => focus.groupId === group.id);
+          const layers = group.layers.map((layer) => `${layer.level}级${layer.density === 'tight' ? '密' : layer.density === 'open' ? '疏' : '中'}`).join('、');
+          return `<button type="button" class="secondary compact" data-map-design-group="${escapeHtml(group.id)}">${escapeHtml(group.name)} · ${focuses.length} 焦点${layers ? ` · ${escapeHtml(layers)}` : ''}</button>`;
+        }).join('')}</div>
+        ${design.focuses.length > 0 ? `<div class="style-tags">${design.focuses.map((focus) => `<span>${focus.kind === 'primary' ? '主焦点' : focus.kind === 'secondary' ? '次焦点' : '节点'} · ${escapeHtml(focus.name)} · ${focus.reveal === 'visible' ? '直接可见' : focus.reveal === 'framed' ? '框景' : focus.reveal === 'screened' ? '遮景' : '逐步揭示'}</span>`).join('')}</div>` : ''}
+      </div>
+    </details>
+  `;
+}
+
+export function renderMapGenerationFailure(
+  failure: { detail: string; retainedCandidate: boolean } | null,
+  busy = false
+): string {
+  if (!failure) return '';
+  return `
+    <section class="editor-section map-ai-result">
+      <span class="stage-kicker">生成未完成</span>
+      <h2>${failure.retainedCandidate ? '已保留最后可用结果' : '当前地图未受影响'}</h2>
+      <p class="empty inspector-note">错误只作为提示，不会阻断编辑。可以直接修改提示词，也可以让系统重新尝试。</p>
+      <details class="inspector-disclosure compact"><summary><span><b>错误详情</b><small>用于排查</small></span></summary><p class="empty inspector-body">${escapeHtml(failure.detail)}</p></details>
+      <div class="map-ai-actions"><button id="retry-map-ai" class="secondary" ${busy ? 'disabled' : ''}>重新尝试</button></div>
+    </section>
+  `;
+}
+
 function mapCodeFunctionLabel(name: string): string {
   return ({
-    sceneIntent: '场景判断', terrain: '基础地形', modifyTerrain: '地形塑形', refineTerrain: '地形细化',
-    surface: '地表绘制', water: '水体', grass: '草地', spawn: '出生点', renderSuggestion: '渲染建议',
+    sceneIntent: '场景判断', design: '构图设计', terrain: '基础地形', modifyTerrain: '地形塑形', refineTerrain: '地形细化',
+    surface: '地表绘制', route: '游览路线', water: '水体', grass: '草地', spawn: '出生点', renderSuggestion: '渲染建议',
     requireAsset: '新资产', asset: '选择资产', place: '物体摆放', placeBetween: '连接摆放',
     roomPoint: '房间坐标', wallFrame: '墙面定位', ceilingPoint: '天花定位', opening: '门窗预留', attach: '附件连接',
     linePoint: '直线路径', bezierPoint: '曲线路径', sampleBezier: '曲线采样',

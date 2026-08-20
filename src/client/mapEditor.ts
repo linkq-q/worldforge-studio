@@ -59,7 +59,9 @@ import {
   renderMapCodePlanApproval,
   renderMapCodePlanSummary,
   renderMapCompositionPlanApproval,
-  renderMapCompositionSummary
+  renderMapCompositionSummary,
+  renderMapDesignSummary,
+  renderMapGenerationFailure
 } from './mapCompositionPanel';
 import {
   bindMaterialTagScenePanel,
@@ -357,6 +359,8 @@ class MapEditor {
   private developerRenderView: DeveloperRenderView = 'tuning';
   private developerRenderCategory: RenderInspectorCategoryId = 'lighting';
   private mapAiPrompt = '';
+  private mapAiFocusPrompt = '';
+  private mapAiLastFailure: { detail: string; mode: 'generate' | 'refine'; retainedCandidate: boolean } | null = null;
   private mapLayoutPrompt = '';
   private mapLayoutSuggestion: { summary: string; layout: MapLayout } | null = null;
   private mapLayoutAbortController: AbortController | null = null;
@@ -1341,7 +1345,6 @@ class MapEditor {
     }
     const suggestion = this.mapAiSuggestion;
     const isTerrainPreview = this.mapPreviewKind === 'terrain';
-    const suggestionBlocked = Boolean(suggestion?.blocked);
     const terrainCount = suggestion?.operations.filter((operation) => operation.type.startsWith('terrain.')).length ?? 0;
     const waterCount = suggestion?.operations.filter((operation) => operation.type.startsWith('water.')).length ?? 0;
     const objectCount = suggestion?.operations.filter((operation) => operation.type.startsWith('object.')).length ?? 0;
@@ -1369,6 +1372,10 @@ class MapEditor {
         <section class="editor-section inspector-body map-ai">
         <textarea id="map-ai-prompt" rows="2" maxlength="1200" placeholder="${map.sceneMode === 'indoor' ? '例如：一间 1980 年代的教室' : '例如：一片树林里散布着许多小木屋'}" ${this.state.busy || this.pendingCompositionPlan || this.pendingCodeSuggestion ? 'disabled' : ''}>${escapeHtml(this.mapAiPrompt)}</textarea>
         <p class="empty inspector-note">建议只写一句场景描述；AI 会自行安排坐标、数量、密度和空间关系。</p>
+        <label class="field compact">
+          <span>焦点偏好（可选）</span>
+          <input id="map-ai-focus-prompt" maxlength="300" value="${escapeHtml(this.mapAiFocusPrompt)}" placeholder="例如：长廊、主楼，留空则由 AI 决定" ${this.state.busy ? 'disabled' : ''} />
+        </label>
         <div class="map-ai-options">
           ${map.sceneMode === 'outdoor' ? `<label class="field compact map-ai-toggle">
             <span>整体 Code（统一地形、建筑与环境）</span>
@@ -1417,6 +1424,7 @@ class MapEditor {
           slowAssetMode: map.assetGenerationMode === 'standard' || map.assetGenerationMode === 'voxel-pro',
           completionPercent: compositionCompletionPercent
         })}
+        ${renderMapDesignSummary(this.mapAiPreviewMap ?? map)}
         <p class="empty inspector-note" title="整体 Code 会一次编排地形、水体、建筑与自然内容；本地约束负责边界、通行和资产使用。未开启复用时，新内容只使用本次生成的资产。">默认 ${map.assetGenerationMode.toUpperCase()} · ${this.state.dirty
           ? '请先保存当前手工修改，再生成 AI 地图预览。'
           : !compositionAvailable
@@ -1426,6 +1434,7 @@ class MapEditor {
       </details>
       ${this.pendingCodeSuggestion ? renderMapCodePlanApproval(this.pendingCodeSuggestion) : ''}
       ${this.pendingCompositionPlan ? renderMapCompositionPlanApproval(this.pendingCompositionPlan) : ''}
+      ${renderMapGenerationFailure(this.mapAiLastFailure, this.state.busy)}
       ${suggestion && this.mapAiPreviewMap ? `
         <section class="editor-section map-ai-result">
           <span class="stage-kicker">${isTerrainPreview ? '地形编辑预览' : 'AI 地图建议'}</span>
@@ -1480,9 +1489,8 @@ class MapEditor {
           ` : ''}
           <div class="map-ai-actions">
             <button id="discard-map-ai" class="secondary" ${this.state.busy || this.mapAiAutoRefineRunning ? 'disabled' : ''}>放弃预览</button>
-            <button id="apply-map-ai" ${this.state.busy || this.mapAiRoundSavePromise || suggestionBlocked ? 'disabled' : ''} title="${suggestionBlocked ? 'Scene Agent 尚未满足结构要求，请重新生成或调整提示词' : ''}">${this.mapAiAutoRefineRunning ? '保存当前轮' : '应用到地图'}</button>
+            <button id="apply-map-ai" ${this.state.busy || this.mapAiRoundSavePromise ? 'disabled' : ''}>${this.mapAiAutoRefineRunning ? '保存当前轮' : '应用到地图'}</button>
           </div>
-          ${suggestionBlocked ? '<p class="empty inspector-note">当前候选未通过 Scene Agent 结构验收，只能审阅或放弃，不能应用。</p>' : ''}
         </section>
       ` : ''}
     `;
@@ -1495,6 +1503,18 @@ class MapEditor {
       if (generateButton) generateButton.disabled = blocked || !isCompositionEmptyMap(map);
       if (refineButton) refineButton.disabled = blocked || !hasRefinableMapContent(map);
     });
+    host.querySelector<HTMLInputElement>('#map-ai-focus-prompt')?.addEventListener('input', (event) => {
+      this.mapAiFocusPrompt = (event.target as HTMLInputElement).value;
+    });
+    for (const button of host.querySelectorAll<HTMLButtonElement>('[data-map-design-group]')) {
+      button.addEventListener('click', () => {
+        const designMap = this.mapAiPreviewMap ?? map;
+        const groupId = button.dataset.mapDesignGroup;
+        const focusId = designMap.designSemantics.focuses.find((focus) => focus.groupId === groupId)?.objectId;
+        const objectId = focusId ?? designMap.objects.find((object) => object.designGroupId === groupId)?.id ?? null;
+        this.selectObject(objectId);
+      });
+    }
     host.querySelector<HTMLInputElement>('#map-ai-reuse-assets')?.addEventListener('change', (event) => {
       this.mapAiReuseExistingAssets = (event.target as HTMLInputElement).checked;
     });
@@ -1555,6 +1575,9 @@ class MapEditor {
     });
     host.querySelector('#discard-map-ai')?.addEventListener('click', () => void this.discardMapAiPreview());
     host.querySelector('#apply-map-ai')?.addEventListener('click', () => void this.applyMapAiPreview());
+    host.querySelector('#retry-map-ai')?.addEventListener('click', () => {
+      void this.generateMapAiPreview(this.mapAiLastFailure?.mode ?? 'generate');
+    });
     host.querySelector('#repair-map-ai-composition')?.addEventListener('click', () => {
       const repairPrompt = `${this.mapAiPrompt}\n\n在上一轮预览基础上继续修复规划完整性：优先补足未正常落位的资产与装饰，修复动线、贴墙、贴顶和关系组；保留已经合理的内容。`;
       void this.generateMapAiPreview('refine', undefined, repairPrompt);
@@ -2141,6 +2164,7 @@ class MapEditor {
       this.mapAiAutoRefineBaseSaved = false;
     }
     this.mapAiAbortController = controller;
+    this.mapAiLastFailure = null;
     this.mapAgentProgress = [];
     this.startMapAgentProgressTimer();
     const previousSuggestion = mode === 'refine' ? this.mapAiSuggestion : null;
@@ -2175,6 +2199,7 @@ class MapEditor {
             approvedCompositionPlan,
             approvedCode,
             sceneAgent: map.sceneMode === 'outdoor' && this.mapAiUseSceneAgent,
+            focusPrompt: this.mapAiFocusPrompt.trim() || undefined,
             ...(previousSuggestion ? { baseOperations: previousSuggestion.operations } : {})
           }),
           signal: controller.signal
@@ -2229,7 +2254,7 @@ class MapEditor {
             ...suggestion,
             operations: [...previousSuggestion.operations, ...suggestion.operations],
             generatedAssets: [...previousSuggestion.generatedAssets, ...suggestion.generatedAssets],
-            blocked: Boolean(previousSuggestion.blocked || suggestion.blocked),
+            blocked: false,
             agent: suggestion.agent ?? previousSuggestion.agent,
             codePlan: suggestion.codePlan ?? previousSuggestion.codePlan,
             composition: suggestion.composition ?? continuedComposition
@@ -2237,6 +2262,7 @@ class MapEditor {
         : suggestion;
       this.mapPreviewKind = 'ai';
       this.mapAiSuggestion = combinedSuggestion;
+      this.mapAiLastFailure = null;
       this.pendingCompositionPlan = null;
       this.pendingCodeSuggestion = null;
       const previewBase = baseWasSaved ? this.state.map ?? map : map;
@@ -2263,6 +2289,7 @@ class MapEditor {
       const cancelled = error instanceof Error && error.name === 'AbortError';
       const retainedCandidate = Boolean(this.mapAiPreviewMap && this.mapAiSuggestion);
       const detail = humanizeAgentError(error);
+      if (!cancelled) this.mapAiLastFailure = { detail, mode, retainedCandidate };
       updateAgentProgress(this.mapAgentProgress, {
         phase: 'failed',
         label: cancelled ? '地图 Agent 已取消' : '地图 Agent 执行失败',
@@ -2286,7 +2313,7 @@ class MapEditor {
     const map = this.state.map;
     const preview = this.mapAiPreviewMap;
     const suggestion = this.mapAiSuggestion;
-    if (!map || !preview || !suggestion || suggestion.blocked || preview.sceneMode === 'mixed' || this.mapAiVisualReviewRunning
+    if (!map || !preview || !suggestion || preview.sceneMode === 'mixed' || this.mapAiVisualReviewRunning
       || this.mapAiVisualReviewCompleted || this.state.busy) return;
     const indoor = preview.sceneMode === 'indoor';
     this.mapAiVisualReviewRunning = true;
@@ -2499,7 +2526,7 @@ class MapEditor {
     const map = this.state.map;
     const suggestion = this.mapAiSuggestion;
     if (!map || !suggestion || this.state.dirty || this.mapAiRoundSavePromise
-      || suggestion.blocked || this.state.busy && !this.mapAiAutoRefineRunning) return;
+      || this.state.busy && !this.mapAiAutoRefineRunning) return;
     const isTerrainPreview = this.mapPreviewKind === 'terrain';
     const savingDuringAutoRefine = this.mapAiAutoRefineRunning;
     if (!savingDuringAutoRefine) this.setBusy(true, isTerrainPreview ? '正在应用地形编辑...' : '正在应用 AI 地图...');
@@ -2555,6 +2582,7 @@ class MapEditor {
 
   private clearMapAiPreview(): void {
     this.mapAiSuggestion = null;
+    this.mapAiLastFailure = null;
     this.pendingCompositionPlan = null;
     this.pendingCodeSuggestion = null;
     this.mapAiPreviewMap = null;

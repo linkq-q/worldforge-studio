@@ -3,9 +3,12 @@ import {
   renderMapCodePlanApproval,
   renderMapCodePlanSummary,
   renderMapCompositionPlanApproval,
-  renderMapCompositionSummary
+  renderMapCompositionSummary,
+  renderMapDesignSummary,
+  renderMapGenerationFailure
 } from '../src/client/mapCompositionPanel';
 import type { MapAiSuggestion } from '../src/shared/mapOperations';
+import { createEmptyMap } from '../src/shared/map';
 
 describe('map composition preview panel', () => {
   it('renders an indoor Code approval without invoking the old director plan', () => {
@@ -197,6 +200,36 @@ describe('map composition preview panel', () => {
     expect(html).toContain('资产“游廊”生成失败，其余内容已保留。');
     expect(html).toContain('id="repair-map-ai-assets"');
     expect(html).toContain('修复失败项');
+  });
+
+  it('renders selectable Chinese design groups, focus roles and layer density', () => {
+    const map = createEmptyMap();
+    map.designSemantics = {
+      version: 1, experienceMode: 'mixed', intent: '主次平衡', viewpoints: [], relations: [],
+      groups: [{
+        id: 'library', name: '图书馆组', intent: '突出主楼', focusIds: ['main'], guideIds: [],
+        entryGuideIds: [], exitGuideIds: [], axisGuideIds: [], protectedObjectIds: [], removableObjectIds: [],
+        layers: [{ level: 1, intent: '主体', density: 'tight' }, { level: 4, intent: '点景', density: 'open' }]
+      }],
+      focuses: [{ id: 'main', groupId: 'library', name: '主楼', kind: 'primary', rank: 1, reveal: 'visible' }]
+    };
+
+    const html = renderMapDesignSummary(map);
+    expect(html).toContain('设计组与焦点');
+    expect(html).toContain('data-map-design-group="library"');
+    expect(html).toContain('图书馆组');
+    expect(html).toContain('主焦点 · 主楼 · 直接可见');
+    expect(html).toContain('1级密、4级疏');
+  });
+
+  it('renders generation failure as a non-blocking retry action', () => {
+    const html = renderMapGenerationFailure({ detail: 'Empty <AI> response', retainedCandidate: false });
+    expect(html).toContain('当前地图未受影响');
+    expect(html).toContain('不会阻断编辑');
+    expect(html).toContain('id="retry-map-ai"');
+    expect(html).toContain('重新尝试');
+    expect(html).toContain('Empty &lt;AI&gt; response');
+    expect(html).not.toContain('disabled');
   });
 });
 
