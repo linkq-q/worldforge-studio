@@ -97,6 +97,28 @@ describe('model API adapter', () => {
     });
   });
 
+  it('reports reasoning returned by the JSON chat endpoint', async () => {
+    const onProgress = vi.fn();
+    const fetchImpl = vi.fn().mockResolvedValue(new Response(JSON.stringify({
+      ok: true,
+      content: '{"plan":{}}',
+      reasoning: '先检查地图边界，再安排道路。'
+    }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' }
+    }));
+
+    await expect(llmChat([{ role: 'user', content: 'plan a large map' }], {
+      fetchImpl,
+      onProgress
+    })).resolves.toBe('{"plan":{}}');
+    expect(onProgress).toHaveBeenLastCalledWith({
+      phase: 'consulting',
+      label: '模型返回思考摘要',
+      detail: '先检查地图边界，再安排道路。'
+    });
+  });
+
   it('streams reasoning summaries while preserving the final structured chat content', async () => {
     const onProgress = vi.fn();
     const fetchImpl = vi.fn().mockResolvedValue(new Response([

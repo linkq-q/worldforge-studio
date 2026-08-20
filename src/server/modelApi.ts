@@ -47,6 +47,7 @@ export interface ChatApiOptions {
 interface ChatApiResponse {
   ok?: boolean;
   content?: string;
+  reasoning?: string;
   error?: string;
 }
 
@@ -262,7 +263,14 @@ async function readChatApiResponse(
   onProgress?: ChatApiOptions['onProgress']
 ): Promise<ChatApiResponse> {
   if (!String(response.headers.get('content-type')).includes('text/event-stream')) {
-    return await response.json() as ChatApiResponse;
+    const data = await response.json() as ChatApiResponse;
+    const reasoning = data.reasoning?.trim();
+    if (reasoning) onProgress?.({
+      phase: 'consulting',
+      label: '模型返回思考摘要',
+      detail: reasoning.slice(-4_000)
+    });
+    return data;
   }
   if (!response.body) return { ok: false, error: 'Empty AI response' };
 
