@@ -65,7 +65,7 @@ npm install
 npm run dev
 ```
 
-浏览器打开 `http://localhost:5173`。本地编辑 API 默认运行在 `http://localhost:8797`。
+浏览器打开 `http://localhost:5180`。本地编辑 API 默认运行在 `http://localhost:8797`。
 
 渲染 Runtime 已作为固定快照随本仓库发布，并与本仓库的同一份 `three` 一起安装，避免出现两个 Three.js 实例导致的材质、后处理异常。首次启动空白数据目录时，会自动导入九张金样地图及其引用资产、渲染方案；已有 `data/map-editor` 不会被覆盖。
 

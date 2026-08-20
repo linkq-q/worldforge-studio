@@ -7,7 +7,7 @@ export default defineConfig({
     alias: voxelStudioAliases()
   },
   server: {
-    port: 5173
+    port: 5180
   },
   test: {
     include: ['tests/**/*.test.ts']

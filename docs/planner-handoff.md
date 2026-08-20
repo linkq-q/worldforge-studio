@@ -24,7 +24,7 @@
 1. 安装 Node.js 20 或更高版本，以及 Git LFS；无需安装或检出 `3d-generate`。
 2. PowerShell 进入 `worldforge-studio`：依次执行 `git lfs install`、`git lfs pull`、`npm install`（首次一次）。
 3. 启动：`npm run dev`。
-4. 浏览器打开 `http://localhost:5173`；若本机没有既有工作数据，会自动出现九张金样。
+4. 浏览器打开 `http://localhost:5180`；若本机没有既有工作数据，会自动出现九张金样。
 
 ## 策划日常操作
 

@@ -35,7 +35,7 @@ const server = http.createServer(async (req, res) => {
 });
 
 server.listen(port, host, () => {
-  const client = development ? 'http://localhost:5173' : `http://${host}:${port}`;
+  const client = development ? 'http://localhost:5180' : `http://${host}:${port}`;
   console.log(`WorldForge Studio: ${client}`);
   console.log(`Local API: http://${host}:${port}`);
 });
