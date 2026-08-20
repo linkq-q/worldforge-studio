@@ -56,6 +56,7 @@ import {
   type GrassRegion
 } from './mapGrass';
 import { normalizeMapGuides, type MapGuide } from './mapGuide';
+import type { MapDesignSemantics } from './mapDesign';
 
 export type MapTransactionSource = 'basic-ai' | 'agent' | 'manual';
 
@@ -114,7 +115,7 @@ export type MapWaterBodyInput = Omit<Partial<MapWaterBody>, 'points'> & {
 export type MapWaterBodyPatch = Omit<Partial<MapWaterBody>, 'id'>;
 
 export type MapOperation =
-  | { type: 'map.update'; name?: string; size?: Vec3; colors?: Partial<MapBoxColors>; playerHeight?: number; playerRadius?: number; worldScaleProfile?: WorldScaleProfile; renderPromptSuggestions?: string[]; visualSemantics?: MapVisualSemantics; layout?: MapLayout }
+  | { type: 'map.update'; name?: string; size?: Vec3; colors?: Partial<MapBoxColors>; playerHeight?: number; playerRadius?: number; worldScaleProfile?: WorldScaleProfile; renderPromptSuggestions?: string[]; visualSemantics?: MapVisualSemantics; designSemantics?: MapDesignSemantics; layout?: MapLayout }
   | { type: 'room.set'; room: Partial<MapRoom> }
   | { type: 'interior.art-direction.set'; artDirection: InteriorArtDirectionInput }
   | { type: 'terrain.set'; terrain: MapTerrain }
@@ -213,6 +214,7 @@ export function applyMapOperations(map: EditableMap, operations: readonly MapOpe
           next.renderPromptSuggestions = operation.renderPromptSuggestions;
         }
         if (operation.visualSemantics !== undefined) next.visualSemantics = operation.visualSemantics;
+        if (operation.designSemantics !== undefined) next.designSemantics = operation.designSemantics;
         if (operation.layout !== undefined) next.layout = operation.layout;
         if (operation.size !== undefined) next.box.size = operation.size;
         if (operation.colors !== undefined) Object.assign(next.box.colors, operation.colors);

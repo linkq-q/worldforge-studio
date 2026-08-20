@@ -34,6 +34,7 @@ import {
   type MapLayout
 } from './mapLayout';
 import { normalizeMapGuides, type MapGuide } from './mapGuide';
+import { normalizeMapDesignSemantics, type MapCompositionLayer, type MapDesignSemantics } from './mapDesign';
 
 export type MapSurface = 'floor' | 'ceiling' | 'north' | 'south' | 'east' | 'west' | 'terrain';
 export type TerrainBrushMode = 'raise' | 'lower' | 'flatten';
@@ -203,6 +204,9 @@ export interface MapObject {
   roomOpeningId?: string;
   behavior?: MapObjectBehavior;
   generation?: MapGenerationOwner;
+  /** Semantic composition membership; independent from physical parentId. */
+  designGroupId?: string;
+  compositionLayer?: MapCompositionLayer;
 }
 
 export interface EditableMap {
@@ -235,6 +239,7 @@ export interface EditableMap {
   visualSemantics: MapVisualSemantics;
   layout: MapLayout;
   guides: MapGuide[];
+  designSemantics: MapDesignSemantics;
   assets?: MapAsset[];
   collisionBake?: MapCollisionBake;
 }
@@ -781,6 +786,7 @@ export function normalizeMap(input: Partial<EditableMap>): EditableMap {
     visualSemantics: normalizeMapVisualSemantics(input.visualSemantics),
     layout: normalizeMapLayout(input.layout, boxSize),
     guides: normalizeMapGuides(input.guides, boxSize),
+    designSemantics: normalizeMapDesignSemantics(input.designSemantics, boxSize),
     assets: Array.isArray(input.assets) ? input.assets.map(normalizeAsset) : undefined,
     collisionBake: normalizeMapCollisionBake(input.collisionBake)
   };
@@ -1721,7 +1727,13 @@ function normalizeObject(input: Partial<MapObject>): MapObject {
       ? input.roomOpeningId.trim().slice(0, 80)
       : undefined,
     behavior: normalizeObjectBehavior(input.behavior),
-    generation: normalizeGenerationOwner(input.generation)
+    generation: normalizeGenerationOwner(input.generation),
+    designGroupId: typeof input.designGroupId === 'string' && input.designGroupId.trim()
+      ? input.designGroupId.trim().slice(0, 80)
+      : undefined,
+    compositionLayer: [1, 2, 3, 4].includes(Number(input.compositionLayer))
+      ? Number(input.compositionLayer) as MapCompositionLayer
+      : undefined
   };
 }
 

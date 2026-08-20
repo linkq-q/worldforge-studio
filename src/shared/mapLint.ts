@@ -24,8 +24,9 @@ export interface MapLintIssue {
     | 'object.wall-mounted'
     | 'water.exposed-terrain' | 'scene.sparse' | 'room.path-blocked' | 'asset.unplaced'
     | 'asset.minimum-degraded' | 'asset.generation-degraded' | 'interior.light-coverage' | 'interior.style-drift'
-    | 'interior.operational-clearance' | 'object.invalid-support' | 'outdoor.access-repaired'
-    | 'bridge.unresolved-crossing';
+    | 'interior.operational-clearance' | 'object.invalid-support' | 'outdoor.access-repaired' | 'outdoor.water-intrusion-repaired'
+    | 'outdoor.clearance-repaired'
+    | 'bridge.unresolved-crossing' | 'scene.design-missing' | 'scene.program-incomplete';
   severity: MapLintSeverity;
   message: string;
   objectIds?: string[];
