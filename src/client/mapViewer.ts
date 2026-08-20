@@ -75,6 +75,7 @@ export async function createMapViewer(options: MapViewerOptions): Promise<MapVie
     runtime.updateLighting();
     const rendered = await buildEditableMapGroup(map, {
       scene: runtime.scene,
+      renderer: runtime.renderer,
       motionAdapter: options.motionAdapter
     });
     runtime.scene.add(rendered.group);

@@ -5,6 +5,12 @@
 export function requiresRuntimeStandaloneMaterialTag(entry: {
   effectPackage?: unknown;
   runtimeEffectPackage?: unknown;
+  effectiveTags?: unknown[];
 }): boolean {
-  return Boolean(entry.runtimeEffectPackage);
+  return Boolean(entry.runtimeEffectPackage)
+    || entry.effectiveTags?.some((tag) => (
+      tag !== null
+      && typeof tag === 'object'
+      && (tag as { tag?: unknown }).tag === 'water'
+    )) === true;
 }

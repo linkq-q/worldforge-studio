@@ -26,6 +26,7 @@ export interface MapPrimitiveBatchInput {
 
 export interface MapPrimitiveBatchOptions {
   scene: THREE.Scene;
+  renderer?: THREE.WebGLRenderer;
   modelsRoot: THREE.Group;
   materialTagPolicy: MapMaterialTagPolicy;
 }
@@ -37,7 +38,7 @@ export interface MapPrimitiveBatchResult {
   pickables: THREE.Object3D[];
   syncObjectTransform: (objectId: string) => void;
   updateCulling: (camera: THREE.Camera, maxDistance: number) => MapObjectCullingStats;
-  updateMaterialEffects: (elapsedSeconds: number) => void;
+  updateMaterialEffects: (elapsedSeconds: number, camera: THREE.Camera) => void;
   restoreMaterialEffects: () => void;
   syncEnvironment: (environmentMap: THREE.Texture | null) => void;
   getBatchMeshes: () => THREE.Object3D[];
@@ -158,6 +159,7 @@ export async function buildMapPrimitiveBatches(
 
   const materialTagRuntime = new WorldForgeMaterialTagRuntime({
     scene: options.scene,
+    renderer: options.renderer,
     runtimeIndex,
     batchParent: root,
     objectGroups,
@@ -197,12 +199,12 @@ export async function buildMapPrimitiveBatches(
       cullingStats = objectCulling.update(camera, maxDistance);
       return cullingStats;
     },
-    updateMaterialEffects: (elapsedSeconds) => {
+    updateMaterialEffects: (elapsedSeconds, camera) => {
       effectRuntime.updateRuntimeUniforms(root, {
         uTime: elapsedSeconds,
         uChargeLevel: 1
       });
-      materialTagRuntime.updateRuntimeUniforms(elapsedSeconds);
+      materialTagRuntime.updateRuntimeUniforms(elapsedSeconds, camera);
     },
     restoreMaterialEffects: () => {
       restoreBaseMaterialEffects(root, effectRuntime);

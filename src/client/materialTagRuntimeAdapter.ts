@@ -5,16 +5,29 @@ import {
   EffectSlotManager,
   applyMaterialSurfaceBinding,
   compileModelMaterialTags,
-  createEffectRuntime
+  createEffectRuntime,
+  createParticleEffect,
+  removeParticleEffect,
+  tickParticleEffects
 } from '@voxel-studio/render-runtime/effects';
+import {
+  ModelWaterInstances,
+  selectMergedPoolReference
+} from '@voxel-studio/render-runtime/environment';
 import {
   filterMaterialTags,
   type MapMaterialTagPolicy
 } from '../shared/materialTagPolicy';
+import {
+  createMaterialTagFireConfigs,
+  type MaterialTagFireEntry,
+  type MaterialTagFireVocabulary
+} from './materialTagFireRuntime';
 
 interface TaggedNode {
   id: string;
   parent?: string;
+  name?: string;
   tags?: unknown[];
   mesh?: {
     type?: string;
@@ -53,6 +66,7 @@ export interface MaterialTagApplyResult {
 
 export interface WorldForgeMaterialTagRuntimeOptions {
   scene: THREE.Scene;
+  renderer?: THREE.WebGLRenderer;
   runtimeIndex: RuntimeIndex;
   batchParent: THREE.Group;
   objectGroups: Map<string, THREE.Group>;
@@ -78,6 +92,10 @@ export class WorldForgeMaterialTagRuntime {
     binding: Record<string, unknown>;
   }> = [];
   private readonly objectWorldMatrices = new Map<string, THREE.Matrix4>();
+  private readonly particleEffects = new Set<NonNullable<ReturnType<typeof createParticleEffect>>>();
+  private readonly hiddenEffectMeshes = new Set<THREE.Object3D>();
+  private readonly waterInstances: InstanceType<typeof ModelWaterInstances> | null;
+  private lastElapsedSeconds: number | null = null;
   private lastResult: MaterialTagApplyResult = emptyResult();
 
   constructor(private readonly options: WorldForgeMaterialTagRuntimeOptions) {
@@ -88,9 +106,13 @@ export class WorldForgeMaterialTagRuntime {
       batchParent: options.batchParent,
       effectBatchMinGroupSize: options.effectBatchMinGroupSize ?? 8
     }) as EffectSlotManagerWithBatches;
+    this.waterInstances = options.renderer
+      ? new ModelWaterInstances(options.scene, options.renderer)
+      : null;
   }
 
   apply(modelsRoot: THREE.Object3D): MaterialTagApplyResult {
+    this.clearRoutedEffects();
     this.effectTargets.clear();
     this.surfaceBindings.length = 0;
     const result = emptyResult();
@@ -111,6 +133,7 @@ export class WorldForgeMaterialTagRuntime {
       });
       const compiled = compileModelMaterialTags(model, materialTagVocabulary);
       result.diagnostics.push(...compiled.diagnostics);
+      this.applyRoutedEffects(modelRoot, modelId, model, objects, compiled.byPartId);
       for (const [rawPartId, entry] of compiled.byPartId) {
         if (entry.effectiveTags.length === 0) continue;
         result.taggedParts += 1;
@@ -191,7 +214,7 @@ export class WorldForgeMaterialTagRuntime {
     return restored;
   }
 
-  updateRuntimeUniforms(elapsedSeconds: number): number {
+  updateRuntimeUniforms(elapsedSeconds: number, camera?: THREE.Camera): number {
     let updated = 0;
     for (const target of this.activeEffectTargets()) {
       updated += this.effectRuntime.updateRuntimeUniforms(target, {
@@ -199,6 +222,12 @@ export class WorldForgeMaterialTagRuntime {
         uChargeLevel: 1
       });
     }
+    const deltaTime = this.lastElapsedSeconds === null
+      ? 0
+      : Math.min(0.1, Math.max(0, elapsedSeconds - this.lastElapsedSeconds));
+    this.lastElapsedSeconds = elapsedSeconds;
+    tickParticleEffects(deltaTime, camera ?? null, null, this.options.renderer?.domElement.height ?? null);
+    if (camera) this.waterInstances?.update(deltaTime, camera);
     return updated;
   }
 
@@ -255,9 +284,132 @@ export class WorldForgeMaterialTagRuntime {
   }
 
   dispose(): void {
+    this.clearRoutedEffects();
     this.effectTargets.clear();
     this.surfaceBindings.length = 0;
     this.objectWorldMatrices.clear();
+  }
+
+  private applyRoutedEffects(
+    modelRoot: THREE.Object3D,
+    modelId: string,
+    model: ReturnType<typeof toCompilerModel>,
+    objects: Map<string, THREE.Object3D>,
+    compiledByPartId: Map<string, {
+      effectiveTags: unknown[];
+      runtimeEffectPackage?: { companionEffects?: Array<{ type?: string; params?: Record<string, unknown> }> };
+    }>
+  ): void {
+    const partsByParent = new Map<string, typeof model.parts>();
+    for (const part of model.parts) {
+      if (!part.parent) continue;
+      const siblings = partsByParent.get(part.parent) ?? [];
+      siblings.push(part);
+      partsByParent.set(part.parent, siblings);
+    }
+
+    for (const part of model.parts) {
+      const explicitFire = readTag(part.tags, 'fire') as MaterialTagFireEntry | null;
+      if (canCreateParticleTextures() && explicitFire && Number(explicitFire.value) > 0) {
+        const anchor = objects.get(part.id);
+        if (anchor) {
+          const placeholders = part.isGroup
+            ? collectDirectMeshObjects(part.id, partsByParent, objects)
+            : [anchor];
+          const configs = createMaterialTagFireConfigs(
+            anchor,
+            explicitFire,
+            (materialTagVocabulary as { tags: { fire: MaterialTagFireVocabulary } }).tags.fire
+          );
+          const created = configs.flatMap((config) => {
+            const effect = createParticleEffect(
+              { attachTo: anchor, scene: this.options.scene },
+              { config }
+            );
+            return effect ? [effect] : [];
+          });
+          if (created.length > 0) {
+            created.forEach((effect) => this.particleEffects.add(effect));
+            placeholders.forEach((placeholder) => {
+              placeholder.visible = false;
+              this.hiddenEffectMeshes.add(placeholder);
+            });
+          }
+        }
+      }
+
+      const explicitSmoke = readTag(part.tags, 'smoke');
+      if (canCreateParticleTextures() && explicitSmoke && Number(explicitSmoke.value) >= 0.25) {
+        const anchor = objects.get(part.id);
+        const compiled = compiledByPartId.get(part.id);
+        const smoke = compiled?.runtimeEffectPackage?.companionEffects?.find(
+          (effect) => effect.type === 'Particles:smoke'
+        );
+        if (anchor && smoke) {
+          const effect = createParticleEffect(
+            { attachTo: anchor, scene: this.options.scene },
+            { preset: 'smoke', overrides: smoke.params ?? {} }
+          );
+          if (effect) this.particleEffects.add(effect);
+        }
+      }
+    }
+
+    if (!this.waterInstances) return;
+    const poolEntries: Array<{ partId: string; group: THREE.Object3D; source: THREE.Mesh }> = [];
+    const fallEntries: Array<{ partId: string; source: THREE.Mesh }> = [];
+    for (const part of model.parts) {
+      if (part.isGroup) continue;
+      const entry = compiledByPartId.get(part.id);
+      const water = entry?.effectiveTags.find((tag) => (
+        tag !== null
+        && typeof tag === 'object'
+        && (tag as { tag?: unknown }).tag === 'water'
+      )) as { value?: unknown } | undefined;
+      const source = objects.get(part.id) as THREE.Mesh | undefined;
+      if (!source?.isMesh || (water?.value !== 'pool' && water?.value !== 'fall')) continue;
+      if (water.value === 'pool') poolEntries.push({ partId: part.id, group: modelRoot, source });
+      else fallEntries.push({ partId: part.id, source });
+    }
+
+    for (const group of groupAdjacentPools(poolEntries)) {
+      const surfaceReference = selectMergedPoolReference(group);
+      const water = this.waterInstances.createMergedPool({
+        modelId,
+        entries: group,
+        surfaceReference,
+        containerBottom: findPoolContainerBottom(surfaceReference?.entry?.source)
+      });
+      if (!water) continue;
+      applyUniformParams(water.material?.uniforms, waterTagRuntime().poolTuning);
+      for (const entry of group) {
+        entry.source.visible = false;
+        this.hiddenEffectMeshes.add(entry.source);
+      }
+    }
+
+    for (const entry of fallEntries) {
+      const waterfall = this.waterInstances.create({
+        modelId,
+        globalPartId: `${modelId}:${entry.partId}`,
+        ref: { object: entry.source },
+        rootGroup: modelRoot,
+        kind: 'fall'
+      });
+      if (!waterfall) continue;
+      applyUniformParams(waterfall.material?.uniforms, waterTagRuntime().fallTuning);
+      entry.source.visible = false;
+      this.hiddenEffectMeshes.add(entry.source);
+    }
+  }
+
+  private clearRoutedEffects(): void {
+    for (const effect of this.particleEffects) removeParticleEffect(effect);
+    this.particleEffects.clear();
+    this.waterInstances?.disposeAll();
+    for (const mesh of this.hiddenEffectMeshes) mesh.visible = true;
+    this.hiddenEffectMeshes.clear();
+    this.lastElapsedSeconds = null;
   }
 
   private getBatchResults(): EffectBatchResult[] {
@@ -337,6 +489,121 @@ function emptyResult(): MaterialTagApplyResult {
     effectBatchParts: 0,
     diagnostics: []
   };
+}
+
+function readTag(tags: unknown[], name: string): { tag: string; value?: unknown; variant?: string } | null {
+  const tag = tags.find((entry) => (
+    entry !== null
+    && typeof entry === 'object'
+    && (entry as { tag?: unknown }).tag === name
+  ));
+  return tag as { tag: string; value?: unknown; variant?: string } | null;
+}
+
+function canCreateParticleTextures(): boolean {
+  return typeof document !== 'undefined' && typeof document.createElementNS === 'function';
+}
+
+function collectDirectMeshObjects(
+  parentId: string,
+  partsByParent: Map<string, ReturnType<typeof toCompilerModel>['parts']>,
+  objects: Map<string, THREE.Object3D>
+): THREE.Object3D[] {
+  return (partsByParent.get(parentId) ?? [])
+    .filter((part) => !part.isGroup)
+    .map((part) => objects.get(part.id))
+    .filter((object): object is THREE.Object3D => Boolean(object));
+}
+
+function groupAdjacentPools<T extends { source: THREE.Mesh }>(entries: T[]): T[][] {
+  if (entries.length <= 1) return entries.length ? [entries] : [];
+  const bounds = entries.map((entry) => {
+    entry.source.updateWorldMatrix(true, false);
+    return new THREE.Box3().setFromObject(entry.source);
+  });
+  const parent = entries.map((_, index) => index);
+  const find = (start: number): number => {
+    let index = start;
+    while (parent[index] !== index) {
+      parent[index] = parent[parent[index]];
+      index = parent[index];
+    }
+    return index;
+  };
+  const union = (left: number, right: number): void => { parent[find(left)] = find(right); };
+  for (let left = 0; left < bounds.length; left += 1) {
+    for (let right = left + 1; right < bounds.length; right += 1) {
+      const diagonal = Math.max(
+        bounds[left].getSize(new THREE.Vector3()).length(),
+        bounds[right].getSize(new THREE.Vector3()).length()
+      );
+      const gapX = Math.max(0, bounds[left].min.x - bounds[right].max.x, bounds[right].min.x - bounds[left].max.x);
+      const gapY = Math.max(0, bounds[left].min.y - bounds[right].max.y, bounds[right].min.y - bounds[left].max.y);
+      const gapZ = Math.max(0, bounds[left].min.z - bounds[right].max.z, bounds[right].min.z - bounds[left].max.z);
+      if (Math.hypot(gapX, gapY, gapZ) <= diagonal * 1e-4 + 1e-6) union(left, right);
+    }
+  }
+  const groups = new Map<number, T[]>();
+  entries.forEach((entry, index) => {
+    const root = find(index);
+    const group = groups.get(root) ?? [];
+    group.push(entry);
+    groups.set(root, group);
+  });
+  return [...groups.values()];
+}
+
+function findPoolContainerBottom(source?: THREE.Mesh): number | null {
+  if (!source) return null;
+  source.updateWorldMatrix(true, false);
+  const waterBounds = new THREE.Box3().setFromObject(source);
+  const waterSize = waterBounds.getSize(new THREE.Vector3());
+  const maxWidth = Math.max(waterSize.x * 1.35, waterSize.x + 0.35);
+  const maxDepth = Math.max(waterSize.z * 1.35, waterSize.z + 0.35);
+  let ancestor = source.parent;
+  while (ancestor) {
+    ancestor.updateWorldMatrix(true, false);
+    const bounds = new THREE.Box3().setFromObject(ancestor);
+    const size = bounds.getSize(new THREE.Vector3());
+    const enclosesFootprint = size.x >= waterSize.x * 0.9
+      && size.z >= waterSize.z * 0.9
+      && size.x <= maxWidth
+      && size.z <= maxDepth;
+    if (enclosesFootprint && bounds.min.y < waterBounds.min.y - 0.05) return bounds.min.y;
+    ancestor = ancestor.parent;
+  }
+  return null;
+}
+
+function applyUniformParams(
+  uniforms: Record<string, { value: unknown }> | undefined,
+  params: Record<string, unknown>
+): void {
+  if (!uniforms) return;
+  const vectors = new Map<string, [number, number]>();
+  for (const [name, value] of Object.entries(params)) {
+    const vector = name.match(/^(.+)_([xy])$/);
+    if (vector && typeof value === 'number') {
+      const uniform = uniforms[vector[1]]?.value as { x?: number; y?: number; set?: (x: number, y: number) => void } | undefined;
+      if (uniform?.set) {
+        const pending = vectors.get(vector[1]) ?? [Number(uniform.x) || 0, Number(uniform.y) || 0];
+        pending[vector[2] === 'x' ? 0 : 1] = value;
+        vectors.set(vector[1], pending);
+      }
+      continue;
+    }
+    if (uniforms[name]) uniforms[name].value = value;
+  }
+  for (const [name, value] of vectors) {
+    const vector = uniforms[name].value as { set: (x: number, y: number) => void };
+    vector.set(value[0], value[1]);
+  }
+}
+
+function waterTagRuntime(): { poolTuning: Record<string, unknown>; fallTuning: Record<string, unknown> } {
+  return (materialTagVocabulary as {
+    tags: { water: { runtime: { poolTuning: Record<string, unknown>; fallTuning: Record<string, unknown> } } };
+  }).tags.water.runtime;
 }
 
 function toCompilerModel(source: TaggedModelSource, materialTagPolicy: MapMaterialTagPolicy): {

@@ -363,6 +363,22 @@ declare module '@voxel-studio/render-runtime/environment' {
     ): void;
     dispose(): void;
   }
+  export class ModelWaterInstances {
+    constructor(
+      scene: import('three').Scene,
+      renderer: import('three').WebGLRenderer,
+      options?: Record<string, unknown>
+    );
+    create(options: Record<string, unknown>): WaterSurface | WaterfallSurface | null;
+    createMergedPool(options: Record<string, unknown>): WaterSurface | null;
+    update(deltaTime: number, camera: import('three').Camera): void;
+    disposeAll(): void;
+  }
+  export function selectMergedPoolReference(entries: Array<{
+    partId: string;
+    group: import('three').Object3D;
+    source: import('three').Mesh;
+  }>): { entry: { source: import('three').Mesh }; bounds: import('three').Box3 } | null;
 }
 
 declare module '@voxel-studio/render-runtime/effects' {
@@ -396,6 +412,17 @@ declare module '@voxel-studio/render-runtime/effects' {
     ): unknown;
     clearEffects(target: import('three').Object3D, options?: Record<string, unknown>): unknown;
   }
+  export function createParticleEffect(
+    anchor: { attachTo?: import('three').Object3D; scene?: import('three').Scene },
+    options: { preset?: string; config?: Record<string, unknown>; overrides?: Record<string, unknown> }
+  ): ParticleEmitter | null;
+  export function removeParticleEffect(emitter: ParticleEmitter): boolean;
+  export function tickParticleEffects(
+    deltaTime: number,
+    camera?: import('three').Camera | null,
+    depthTexture?: import('three').DepthTexture | null,
+    viewportHeight?: number | null
+  ): void;
   export function applyMaterialSurfaceBinding(
     target: import('three').Object3D | import('three').Material,
     binding: Record<string, unknown>,
@@ -409,6 +436,9 @@ declare module '@voxel-studio/render-runtime/effects' {
       part?: Record<string, unknown>;
       effectiveTags: unknown[];
       effectPackage?: { materialLayers?: unknown[] };
+      runtimeEffectPackage?: {
+        companionEffects?: Array<{ type?: string; params?: Record<string, unknown> }>;
+      };
       baseRecipe?: Record<string, unknown>;
       materialBindings?: {
         surface?: Record<string, unknown>;

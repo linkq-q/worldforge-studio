@@ -96,6 +96,7 @@ export interface RenderedMap {
 export interface MapRenderOptions {
   editorHelpers?: boolean;
   scene?: THREE.Scene;
+  renderer?: THREE.WebGLRenderer;
   motionAdapter?: MapMotionAdapter;
 }
 
@@ -192,6 +193,7 @@ export async function buildEditableMapGroup(input: EditableMap, options: MapRend
       : [];
   }), {
     scene: options.scene ?? new THREE.Scene(),
+    renderer: options.renderer,
     modelsRoot,
     materialTagPolicy: map.materialTagPolicy
   });
@@ -230,7 +232,7 @@ export async function buildEditableMapGroup(input: EditableMap, options: MapRend
       grass?.update(deltaTime);
       motionControllers.forEach((controller) => controller.update(deltaTime, materialElapsedSeconds));
       instancing.updateCulling(camera, maxDistance);
-      instancing.updateMaterialEffects(materialElapsedSeconds);
+      instancing.updateMaterialEffects(materialElapsedSeconds, camera);
       localLights.update(camera);
     },
     restoreMaterialEffects: instancing.restoreMaterialEffects,

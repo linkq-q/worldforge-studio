@@ -14,6 +14,12 @@ describe('map material-tag batching policy', () => {
     })).toBe(true);
   });
 
+  it('keeps routing-only model water on the standalone path', () => {
+    expect(requiresRuntimeStandaloneMaterialTag({
+      effectiveTags: [{ tag: 'water', value: 'pool' }]
+    })).toBe(true);
+  });
+
   it('does not confuse a base recipe with a runtime effect package', () => {
     expect(requiresRuntimeStandaloneMaterialTag({
       effectPackage: { materialLayers: [{ type: 'Triplanar' }] },

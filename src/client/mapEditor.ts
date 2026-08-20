@@ -4877,7 +4877,8 @@ class MapEditor {
     this.updateSceneLighting();
     const next = await buildEditableMapGroup(this.mapWithEditorAssets(), {
       editorHelpers: true,
-      scene: this.scene
+      scene: this.scene,
+      renderer: this.renderer ?? undefined
     });
     if (previous) {
       this.renderScene?.attach(null);
