@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { Mesh } from 'three';
+import type { Material, Mesh } from 'three';
 import { createEmptyMap, normalizeMap } from '../src/shared/map';
 import { combinedGrassDensity, inferGrassPreset, normalizeGrassLayers, sampleGrassDensity } from '../src/shared/mapGrass';
 import { applyMapOperations } from '../src/shared/mapOperations';
@@ -7,7 +7,7 @@ import { buildMapGrassField, deriveContactAwareGrassMap } from '../src/client/ma
 import { isNormalDepthPrePassMesh } from '../src/client/renderPrePassPolicy';
 
 describe('map grass layers', () => {
-  it('keeps grass cards out of the normal/depth pre-pass', () => {
+  it('keeps grass cards in the normal/depth pre-pass', () => {
     const map = applyMapOperations(createEmptyMap('pre-pass grass', 'pre-pass-grass'), [
       { type: 'grass.layer.add', layer: { id: 'meadow' } },
       { type: 'grass.fill', layerId: 'meadow', density: 1 }
@@ -18,7 +18,9 @@ describe('map grass layers', () => {
     );
 
     expect(grassMesh).toBeDefined();
-    expect(isNormalDepthPrePassMesh(grassMesh!)).toBe(false);
+    expect((grassMesh!.material as Material).type).toBe('MeshBasicMaterial');
+    expect(grassMesh!.receiveShadow).toBe(true);
+    expect(isNormalDepthPrePassMesh(grassMesh!)).toBe(true);
     field.dispose();
   });
 
@@ -83,6 +85,33 @@ describe('map grass layers', () => {
     }]);
     expect(combinedGrassDensity(deriveContactAwareGrassMap(paved), 0, 0)).toBe(0);
     expect(combinedGrassDensity(paved, 0, 0)).toBe(1);
+  });
+
+  it('clears grass from cleared dirt paths and only thins it on ordinary soil', () => {
+    const map = createEmptyMap('dirt path grass mask', 'map-dirt-path-grass-mask');
+    const layer = {
+      id: 'meadow', name: 'Meadow', visible: true, seed: 1,
+      preset: 'meadow' as const, height: 1,
+      resolutionX: map.terrain.resolutionX,
+      resolutionZ: map.terrain.resolutionZ,
+      densities: Array(map.terrain.resolutionX * map.terrain.resolutionZ).fill(1),
+      mix: { short: 0.8, tall: 0.18, flowers: 0.02 }
+    };
+    map.grassLayers = [layer];
+
+    const cleared = applyMapOperations(map, [{
+      type: 'terrain.surface', surface: 'soil', clearNatural: true,
+      region: { kind: 'path', points: [[-12, 0], [12, 0]], width: 4 }, zoneId: 'cleared-dirt-road'
+    }]);
+    const ordinary = applyMapOperations(map, [{
+      type: 'terrain.surface', surface: 'soil',
+      region: { kind: 'path', points: [[-12, 0], [12, 0]], width: 4 }, zoneId: 'ordinary-soil'
+    }]);
+
+    expect(combinedGrassDensity(deriveContactAwareGrassMap(cleared), 0, 0)).toBe(0);
+    expect(combinedGrassDensity(deriveContactAwareGrassMap(ordinary), 0, 0)).toBeGreaterThan(0.15);
+    expect(combinedGrassDensity(deriveContactAwareGrassMap(ordinary), 0, 0)).toBeLessThan(0.4);
+    expect(combinedGrassDensity(cleared, 0, 0)).toBe(1);
   });
 
   it('normalizes multiple density layers and variant ratios at terrain resolution', () => {

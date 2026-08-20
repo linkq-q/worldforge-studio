@@ -32,6 +32,11 @@ export function buildMapGrassField(map: EditableMap, style?: RuntimeGrassStyle):
     // Building with the style avoids a second full rebuild from setStyle.
     ...(style ? { style } : {}),
   });
+  // Grass keeps its custom material out of general shader rewriting, but still
+  // contributes geometry to SSAO, distance fog and depth/normal-based outlines.
+  field.group.traverse((object) => {
+    if ((object as THREE.Mesh).isMesh) object.userData.forceNormalDepthPrePass = true;
+  });
   refineFlowerGeometry(field.group);
   let interaction = new MapGrassInteraction(field.group);
   return {
@@ -58,7 +63,7 @@ export function buildMapGrassField(map: EditableMap, style?: RuntimeGrassStyle):
 /** Render-only contact mask. Persisted/manual grass densities remain untouched. */
 export function deriveContactAwareGrassMap(map: EditableMap): EditableMap {
   const hasNonGrassSurface = map.visualSemantics.zones.some(
-    (zone) => zone.tags.includes('sand') || zone.tags.includes('rocky') || zone.tags.includes('paving')
+    (zone) => zone.tags.some((tag) => ['sand', 'soil', 'rocky', 'paving', 'clear'].includes(tag))
   );
   if (map.waterBodies.length === 0 && map.objects.length === 0 && !hasNonGrassSurface && map.layout.edgeMask.kind === 'none') return map;
   const assets = new Map((map.assets ?? []).map((asset) => [asset.id, asset]));
@@ -86,7 +91,7 @@ export function deriveContactAwareGrassMap(map: EditableMap): EditableMap {
           continue;
         }
         const preset = normalizeGrassPreset(layer.preset);
-        let factor = grassSurfaceFactor(map, x, z, preset);
+        let factor = grassSurfaceCoverage(map, x, z, preset);
         factor = Math.min(factor, grassWaterFactor(map, x, z, preset));
         for (const obstacle of obstacles) {
           const edgeDistance = Math.hypot(x - obstacle.x, z - obstacle.z) - obstacle.radius;
@@ -101,14 +106,21 @@ export function deriveContactAwareGrassMap(map: EditableMap): EditableMap {
   return { ...map, grassLayers };
 }
 
-function grassSurfaceFactor(map: EditableMap, x: number, z: number, preset: GrassPresetId): number {
+export function grassSurfaceCoverage(
+  map: EditableMap,
+  x: number,
+  z: number,
+  preset: GrassPresetId = 'meadow'
+): number {
   const sand = terrainSemanticSurfaceWeight(map, x, z, ['sand']);
+  const soil = terrainSemanticSurfaceWeight(map, x, z, ['soil']);
   const rocky = terrainSemanticSurfaceWeight(map, x, z, ['rocky']);
   const paving = terrainSemanticSurfaceWeight(map, x, z, ['paving']);
-  if (preset === 'sand') return 1 - Math.max(rocky, paving);
-  if (preset === 'alpine-moss') return 1 - Math.max(sand, rocky * 0.78, paving);
-  if (preset === 'magic') return 1 - paving;
-  return 1 - Math.max(sand, rocky, paving);
+  const clear = terrainSemanticSurfaceWeight(map, x, z, ['clear']);
+  if (preset === 'sand') return 1 - Math.max(rocky, paving, soil * 0.72, clear);
+  if (preset === 'alpine-moss') return 1 - Math.max(sand, rocky * 0.78, paving, soil * 0.72, clear);
+  if (preset === 'magic') return 1 - Math.max(paving, clear);
+  return 1 - Math.max(sand, rocky, paving, soil * 0.72, clear);
 }
 
 function grassWaterFactor(map: EditableMap, x: number, z: number, preset: GrassPresetId): number {
