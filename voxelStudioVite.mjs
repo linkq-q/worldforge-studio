@@ -9,8 +9,8 @@ const REPO_ROOT = fileURLToPath(new URL('.', import.meta.url));
  * resolve from this checkout's node_modules tree, preventing split Three.js
  * identities that would break runtime material checks.
  */
-export function resolveVoxelStudioRoot() {
-  const root = path.resolve(REPO_ROOT).replaceAll('\\', '/');
+export function resolveVoxelStudioRoot(override) {
+  const root = path.resolve(override || REPO_ROOT).replaceAll('\\', '/');
   const missing = [
     `${root}/node_modules/@voxel-studio/render-runtime/src/index.js`,
     `${root}/node_modules/three/build/three.module.js`
@@ -27,19 +27,20 @@ export function resolveVoxelStudioRoot() {
 }
 
 /** Vite aliases keep application and runtime imports on the same Three.js build. */
-export function voxelStudioAliases() {
-  const root = resolveVoxelStudioRoot();
+export function voxelStudioAliases(override, cacheKey) {
+  const root = resolveVoxelStudioRoot(override);
   const runtime = `${root}/node_modules/@voxel-studio/render-runtime`;
+  const version = cacheKey ? `?v=${encodeURIComponent(cacheKey)}` : '';
   return [
     {
       find: '@voxel-studio/render-runtime/model/material-tags-v1.json',
-      replacement: `${runtime}/model/material-tags-v1.json`
+      replacement: `${runtime}/model/material-tags-v1.json${version}`
     },
-    { find: '@voxel-studio/render-runtime/postprocess', replacement: `${runtime}/src/postprocess.js` },
-    { find: '@voxel-studio/render-runtime/outline', replacement: `${runtime}/src/outline.js` },
-    { find: '@voxel-studio/render-runtime/environment', replacement: `${runtime}/src/environment.js` },
-    { find: '@voxel-studio/render-runtime/effects', replacement: `${runtime}/src/effects.js` },
-    { find: /^@voxel-studio\/render-runtime$/, replacement: `${runtime}/src/index.js` },
+    { find: '@voxel-studio/render-runtime/postprocess', replacement: `${runtime}/src/postprocess.js${version}` },
+    { find: '@voxel-studio/render-runtime/outline', replacement: `${runtime}/src/outline.js${version}` },
+    { find: '@voxel-studio/render-runtime/environment', replacement: `${runtime}/src/environment.js${version}` },
+    { find: '@voxel-studio/render-runtime/effects', replacement: `${runtime}/src/effects.js${version}` },
+    { find: /^@voxel-studio\/render-runtime$/, replacement: `${runtime}/src/index.js${version}` },
     { find: /^three$/, replacement: `${root}/node_modules/three/build/three.module.js` },
     { find: /^three\/examples\/jsm\/(.*)$/, replacement: `${root}/node_modules/three/examples/jsm/$1` }
   ];
