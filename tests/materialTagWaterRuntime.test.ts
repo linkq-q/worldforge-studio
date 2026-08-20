@@ -1,11 +1,33 @@
 import * as THREE from 'three';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import {
+  MaterialTagWaterRuntime,
   findPoolContainerBottom,
   resolveWaterFallRoutes
 } from '../src/client/materialTagWaterRuntime';
 
 describe('material-tag water routing', () => {
+  it('syncs the active environment into every generated model-water surface', () => {
+    const environmentMap = new THREE.Texture();
+    const first = {
+      setWaterEnvMap: vi.fn(),
+      setWaterReflectionParams: vi.fn()
+    };
+    const second = {
+      setWaterEnvMap: vi.fn(),
+      setWaterReflectionParams: vi.fn()
+    };
+    const runtime = Object.create(MaterialTagWaterRuntime.prototype) as MaterialTagWaterRuntime;
+    (runtime as unknown as { waterInstances: { waterSurfaces(): unknown[] } }).waterInstances = {
+      waterSurfaces: () => [first, second]
+    };
+
+    expect(runtime.syncEnvironment(environmentMap)).toBe(2);
+    expect(first.setWaterEnvMap).toHaveBeenCalledWith(environmentMap);
+    expect(first.setWaterReflectionParams).toHaveBeenCalledWith({ useSceneEnvironment: true });
+    expect(second.setWaterEnvMap).toHaveBeenCalledWith(environmentMap);
+  });
+
   it('keeps thin sheets as walls and routes volumetric bodies to wrap surfaces', () => {
     const root = new THREE.Group();
     const wall = new THREE.Mesh(new THREE.BoxGeometry(0.1, 2, 1));

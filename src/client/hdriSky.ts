@@ -43,7 +43,10 @@ export class HdriSkyController {
     private readonly renderer: THREE.WebGLRenderer,
     private readonly scene: THREE.Scene,
     private readonly fileUrl: (file: string) => string,
-    private readonly onEnvironmentChange: (texture: THREE.Texture | null) => void = () => {}
+    private readonly onEnvironmentChange: (
+      environmentMap: THREE.Texture | null,
+      waterEnvironmentMap: THREE.Texture | null
+    ) => void = () => {}
   ) {
     this.dome.setVisible(false);
     this.dome.addTo(scene);
@@ -131,7 +134,9 @@ export class HdriSkyController {
     this.environmentTarget = generated;
     this.environmentKey = key;
     this.scene.environment = generated.texture;
-    this.onEnvironmentChange(generated.texture);
+    // Standard materials consume PMREM/CubeUV; WaterSurface samples an
+    // equirectangular sampler2D and therefore needs the source panorama.
+    this.onEnvironmentChange(generated.texture, texture);
   }
 
   private clearEnvironment(): void {
@@ -139,7 +144,7 @@ export class HdriSkyController {
     this.environmentTarget?.dispose();
     this.environmentTarget = null;
     this.environmentKey = null;
-    this.onEnvironmentChange(null);
+    this.onEnvironmentChange(null, null);
   }
 
   private loadTexture(file: string): Promise<THREE.Texture> {

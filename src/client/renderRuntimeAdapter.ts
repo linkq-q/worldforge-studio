@@ -93,7 +93,11 @@ export class RenderRuntimeAdapter {
   private contentRoot: THREE.Object3D | null = null;
   private modelsRoot: THREE.Object3D | null = null;
   private restoreMaterialEffects: (() => void) | null = null;
-  private syncMaterialEnvironment: ((environmentMap: THREE.Texture | null) => void) | null = null;
+  private syncMaterialEnvironment: ((
+    environmentMap: THREE.Texture | null,
+    waterEnvironmentMap: THREE.Texture | null
+  ) => void) | null = null;
+  private waterEnvironmentMap: THREE.Texture | null = null;
   private pendingDeltaTime = 0;
   private pendingElapsedSeconds = 0;
   private width = 1;
@@ -168,7 +172,10 @@ export class RenderRuntimeAdapter {
     modelsRoot: THREE.Object3D | null,
     materialRuntime?: {
       restore: () => void;
-      syncEnvironment: (environmentMap: THREE.Texture | null) => void;
+      syncEnvironment: (
+        environmentMap: THREE.Texture | null,
+        waterEnvironmentMap: THREE.Texture | null
+      ) => void;
     }
   ): void {
     if (this.modelsRoot && this.modelsRoot !== modelsRoot) this.resetScopedCapabilities();
@@ -177,6 +184,7 @@ export class RenderRuntimeAdapter {
     this.modelsRoot = modelsRoot;
     this.restoreMaterialEffects = materialRuntime?.restore ?? null;
     this.syncMaterialEnvironment = materialRuntime?.syncEnvironment ?? null;
+    this.syncMaterialEnvironment?.(this.scene.environment, this.waterEnvironmentMap);
     if (sceneChanged && contentRoot) this.frameCoordinator.notifySceneLoaded();
   }
 
@@ -245,8 +253,12 @@ export class RenderRuntimeAdapter {
     return Math.min(this.camera.far, distanceAtFogOpacity(this.fogDensity));
   }
 
-  syncEnvironment(environmentMap: THREE.Texture | null = this.scene.environment): void {
-    this.syncMaterialEnvironment?.(environmentMap);
+  syncEnvironment(
+    environmentMap: THREE.Texture | null = this.scene.environment,
+    waterEnvironmentMap: THREE.Texture | null = this.waterEnvironmentMap
+  ): void {
+    this.waterEnvironmentMap = waterEnvironmentMap;
+    this.syncMaterialEnvironment?.(environmentMap, waterEnvironmentMap);
     // Shared primitive batches carry their tag base recipe on the material,
     // rather than on a per-node mesh, so HDRI changes need this parallel sync.
     this.modelsRoot?.traverse((object) => {
@@ -262,7 +274,7 @@ export class RenderRuntimeAdapter {
     });
     for (const binding of this.waterBindings) {
       if (!(binding.surface instanceof WaterSurface)) continue;
-      syncWaterSurfaceEnvironment(binding.surface, environmentMap);
+      syncWaterSurfaceEnvironment(binding.surface, waterEnvironmentMap);
     }
   }
 
@@ -577,7 +589,7 @@ export class RenderRuntimeAdapter {
           environmentStrength: style?.environmentReflectionStrength ?? recipe.environmentReflectionStrength,
           environmentExposure: style?.environmentReflectionExposure ?? 0.55
         });
-        syncWaterSurfaceEnvironment(surface, this.scene.environment);
+        syncWaterSurfaceEnvironment(surface, this.waterEnvironmentMap);
         const shore = mesh.userData.waterShore as WaterShoreBinding | undefined;
         if (shore?.texture?.isTexture && Array.isArray(shore.center) && shore.size > 0) {
           syncWaterSurfaceShore(surface, shore);

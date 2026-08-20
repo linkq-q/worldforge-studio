@@ -40,7 +40,10 @@ export interface MapPrimitiveBatchResult {
   updateCulling: (camera: THREE.Camera, maxDistance: number) => MapObjectCullingStats;
   updateMaterialEffects: (elapsedSeconds: number, camera: THREE.Camera) => void;
   restoreMaterialEffects: () => void;
-  syncEnvironment: (environmentMap: THREE.Texture | null) => void;
+  syncEnvironment: (
+    environmentMap: THREE.Texture | null,
+    waterEnvironmentMap: THREE.Texture | null
+  ) => void;
   getBatchMeshes: () => THREE.Object3D[];
   getStats: () => MapPrimitiveBatchStats;
   dispose: () => void;
@@ -210,8 +213,8 @@ export async function buildMapPrimitiveBatches(
       restoreBaseMaterialEffects(root, effectRuntime);
       materialTagRuntime.restoreShaderEffects();
     },
-    syncEnvironment: (environmentMap) => {
-      materialTagRuntime.syncEnvironment(environmentMap);
+    syncEnvironment: (environmentMap, waterEnvironmentMap) => {
+      materialTagRuntime.syncEnvironment(environmentMap, waterEnvironmentMap);
     },
     getBatchMeshes,
     getStats: () => {

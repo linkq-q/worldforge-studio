@@ -344,6 +344,9 @@ declare module '@voxel-studio/render-runtime/environment' {
     setPlanarReflectionMatrix(matrix: import('three').Matrix4): void;
     setShoreDistanceTexture(texture: import('three').Texture | null): void;
     setShoreWorldRegion(centerXZ: { x: number; y: number } | null, size?: number): void;
+    pinRippleDecalPoint(x: number, z: number): number;
+    updatePinnedRipplePoint(id: number, x: number, z: number): void;
+    unpinRippleDecalPoint(id: number): void;
     dispose(): void;
   }
   export class WaterfallSurface {

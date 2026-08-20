@@ -68,7 +68,10 @@ export interface RenderedMap {
   syncObjectTransform: (objectId: string) => void;
   update: (deltaTime: number, camera: THREE.Camera, maxDistance: number) => void;
   restoreMaterialEffects: () => void;
-  syncMaterialEnvironment: (environmentMap: THREE.Texture | null) => void;
+  syncMaterialEnvironment: (
+    environmentMap: THREE.Texture | null,
+    waterEnvironmentMap: THREE.Texture | null
+  ) => void;
   getRuntimeBatchMeshes: () => THREE.Object3D[];
   setGrassStyle: (style: RuntimeGrassStyle) => void;
   setTerrainMaterialStyle: (style: RuntimeTerrainMaterialStyle) => void;

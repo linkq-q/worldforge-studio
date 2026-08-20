@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { RuntimeIndex } from '@voxel-studio/render-runtime';
 import { WorldForgeMaterialTagRuntime } from '../src/client/materialTagRuntimeAdapter';
 import { normalizeMaterialTagPolicy, type MapMaterialTagPolicy } from '../src/shared/materialTagPolicy';
@@ -79,6 +79,31 @@ describe('WorldForge material tag runtime', () => {
     environment.dispose();
     mesh.geometry.dispose();
     material.dispose();
+  });
+
+  it('keeps the PMREM material environment separate from the water panorama', () => {
+    const scene = new THREE.Scene();
+    const modelsRoot = new THREE.Group();
+    const runtime = createRuntime(scene, modelsRoot, new Map());
+    const syncEnvironment = vi.fn(() => 1);
+    (runtime as unknown as { waterRuntime: {
+      syncEnvironment: typeof syncEnvironment;
+      clear: () => void;
+      dispose: () => void;
+    } }).waterRuntime = {
+      syncEnvironment,
+      clear: vi.fn(),
+      dispose: vi.fn()
+    };
+    const materialEnvironment = new THREE.Texture();
+    const waterPanorama = new THREE.Texture();
+
+    expect(runtime.syncEnvironment(materialEnvironment, waterPanorama)).toBe(1);
+    expect(syncEnvironment).toHaveBeenCalledWith(waterPanorama);
+
+    runtime.dispose();
+    materialEnvironment.dispose();
+    waterPanorama.dispose();
   });
 
   it('filters disabled tag values before compiling runtime effects', () => {

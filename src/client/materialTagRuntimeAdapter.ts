@@ -234,7 +234,10 @@ export class WorldForgeMaterialTagRuntime {
     return updated;
   }
 
-  syncEnvironment(environmentMap: THREE.Texture | null): number {
+  syncEnvironment(
+    environmentMap: THREE.Texture | null,
+    waterEnvironmentMap: THREE.Texture | null = environmentMap
+  ): number {
     let updated = 0;
     for (const entry of this.surfaceBindings) {
       if (!entry.object.parent) continue;
@@ -249,6 +252,7 @@ export class WorldForgeMaterialTagRuntime {
         }
       }
     }
+    updated += this.waterRuntime?.syncEnvironment(waterEnvironmentMap) ?? 0;
     return updated;
   }
 

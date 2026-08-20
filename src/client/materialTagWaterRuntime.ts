@@ -13,6 +13,7 @@ import {
   selectMergedPoolReference
 } from '@voxel-studio/render-runtime/environment';
 import { ParticleEngine, type ParticleEmitter } from '@voxel-studio/render-runtime/effects';
+import { syncWaterSurfaceEnvironment } from './renderEnvironmentBridge';
 
 interface WaterPart {
   id: string;
@@ -74,6 +75,8 @@ interface WaterSurfaceLike extends WaterRuntimeSurface {
   pinRippleDecalPoint(x: number, z: number): number;
   updatePinnedRipplePoint(id: number, x: number, z: number): void;
   unpinRippleDecalPoint(id: number): void;
+  setWaterEnvMap(texture: THREE.Texture | null): void;
+  setWaterReflectionParams(params: Record<string, unknown>): void;
   setWaterMode?: (mode: 'cartoon' | 'realistic' | 'hybrid') => void;
   applyWaveClearanceLift?: () => number;
 }
@@ -205,6 +208,12 @@ export class MaterialTagWaterRuntime {
       if (world) this.fountainChain.register({ partId: key, role: entry.role, worldY: world.y });
     }
     this.fountainChain.link();
+  }
+
+  syncEnvironment(environmentMap: THREE.Texture | null): number {
+    const surfaces = this.waterInstances.waterSurfaces() as WaterSurfaceLike[];
+    for (const surface of surfaces) syncWaterSurfaceEnvironment(surface, environmentMap);
+    return surfaces.length;
   }
 
   update(deltaTime: number, camera: THREE.Camera): void {

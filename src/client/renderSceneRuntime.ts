@@ -145,7 +145,7 @@ export class RenderSceneRuntime {
       this.renderer,
       this.scene,
       options.hdriUrl,
-      (environmentMap) => this.adapter.syncEnvironment(environmentMap)
+      (environmentMap, waterEnvironmentMap) => this.adapter.syncEnvironment(environmentMap, waterEnvironmentMap)
     );
     this.atmosphereFx = new AtmosphereFxRuntime(this.scene);
     this.weather = new WeatherRuntime(this.scene, this.camera, this.renderer);
