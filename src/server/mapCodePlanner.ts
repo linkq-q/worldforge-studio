@@ -2024,6 +2024,9 @@ async function discoverMapCodeWithRepairs(
       if (error instanceof Error && error.name === 'AbortError') throw error;
       const executionError = mapCodeExecutionErrorDetail(error, code);
       if (repairAttempt === 2) throw new Error(`map_code_execution_failed:${executionError}`);
+      const timeoutRepairGuidance = /script execution timed out/i.test(executionError)
+        ? `\n\nThis was an execution timeout. Do not scale loop counts from map width, map area, or fine coordinate steps. Replace manual area scans with bounded api.gridPoints, api.poissonDisk, or curve-sampling results and iterate each result once. Avoid while loops and nested placement loops; keep each explicit loop below ${MAX_POINT_RESULTS} iterations and total placements below ${MAX_PLACEMENTS}.`
+        : '';
       options.onProgress?.({
         phase: 'replanning',
         label: `检测到规划参数或边界错误，AI 正在自动修复 ${repairAttempt + 1}/2`,
@@ -2036,8 +2039,8 @@ async function discoverMapCodeWithRepairs(
         {
           role: 'user',
           content: map.sceneMode === 'indoor'
-            ? `The indoor program failed during its sandboxed discovery run with this error:\n${executionError}\n\nReturn corrected JavaScript only. Preserve the requested room design. Check every array index, loop endpoint, division, room wall, opening ID, locked object and optional argument. Use roomPoint for floor furniture, wallFrame for wall objects, ceilingPoint for ceiling objects, and opening plus roomOpeningId for doors/windows. Never use terrain, water, grass or outdoor APIs. Ensure every numeric value is finite.`
-            : `The program failed during its sandboxed discovery run with this error:\n${executionError}\n\nReturn corrected JavaScript only. Preserve the requested design. Check every array index, loop endpoint, division, vector component, enum field, and optional argument. JavaScript arrays cannot be added or subtracted directly; calculate x/z components separately. bezierPoint returns {point,tangent,normal}, sampleBezier returns point arrays, and sampleBezierFrames returns frame objects. Use facing:{tangent:frame.tangent} for along-curve objects and facing:{normal:frame.normal} for curve-side facades or walls. Ensure every numeric value passed to the API is finite.\n\n${MAP_CODE_ENVIRONMENT_FORM_CONTRACT}`
+            ? `The indoor program failed during its sandboxed discovery run with this error:\n${executionError}\n\nReturn corrected JavaScript only. Preserve the requested room design. Check every array index, loop endpoint, division, room wall, opening ID, locked object and optional argument. Use roomPoint for floor furniture, wallFrame for wall objects, ceilingPoint for ceiling objects, and opening plus roomOpeningId for doors/windows. Never use terrain, water, grass or outdoor APIs. Ensure every numeric value is finite.${timeoutRepairGuidance}`
+            : `The program failed during its sandboxed discovery run with this error:\n${executionError}\n\nReturn corrected JavaScript only. Preserve the requested design. Check every array index, loop endpoint, division, vector component, enum field, and optional argument. JavaScript arrays cannot be added or subtracted directly; calculate x/z components separately. bezierPoint returns {point,tangent,normal}, sampleBezier returns point arrays, and sampleBezierFrames returns frame objects. Use facing:{tangent:frame.tangent} for along-curve objects and facing:{normal:frame.normal} for curve-side facades or walls. Ensure every numeric value passed to the API is finite.${timeoutRepairGuidance}\n\n${MAP_CODE_ENVIRONMENT_FORM_CONTRACT}`
         }
       ], {
         apiBase: options.apiBase,

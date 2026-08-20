@@ -1316,6 +1316,40 @@ describe('map code planner', () => {
     expect(suggestion.operations.filter((operation) => operation.type === 'object.add')).toHaveLength(5);
   });
 
+  it('gives timeout-specific guidance when repairing an oversized map loop', async () => {
+    const brokenCode = `
+      function plan(api) {
+        let total = 0;
+        for (let index = 0; index < 1_000_000_000; index += 1) total += index % 2;
+        api.place({ name: 'marker', position: [total, 0] });
+      }
+    `;
+    const repairedCode = `
+      function plan(api) {
+        for (const point of api.gridPoints({ columns: 4, rows: 4, spacing: 6 })) {
+          api.place({ name: 'marker', position: point });
+        }
+      }
+    `;
+    const response = (content: string) => new Response(JSON.stringify({ ok: true, content }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' }
+    });
+    const fetchImpl = vi.fn()
+      .mockResolvedValueOnce(response(brokenCode))
+      .mockResolvedValueOnce(response(repairedCode));
+
+    const suggestion = await generateMapCodeSuggestion('make a large plaza', createEmptyMap(), [], {
+      apiBase: 'https://example.test',
+      provider: 'gpt',
+      fetchImpl
+    });
+
+    const repairRequest = JSON.parse(String(fetchImpl.mock.calls[1][1]?.body));
+    expect(repairRequest.messages.at(-1).content).toContain('Do not scale loop counts from map width, map area, or fine coordinate steps');
+    expect(suggestion.operations.filter((operation) => operation.type === 'object.add')).toHaveLength(16);
+  });
+
   it('replans when the code declares fewer than the requested new assets', async () => {
     const reusedOnlyCode = `
       function plan(api) {
