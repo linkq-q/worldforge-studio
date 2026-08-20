@@ -65,4 +65,22 @@ describe('model-water container mask', () => {
     expect(water[((height - 1) * width) * 4]).toBe(0);
     expect(water[(width * height - 1) * 4]).toBe(0);
   });
+
+  it('restores water below interior structures after using them for topology', () => {
+    const width = 9;
+    const height = 7;
+    const water = rgba(width, height);
+    const barrier = rgba(width, height, 0);
+    for (let y = 0; y < height; y++) {
+      const offset = (y * width + 6) * 4;
+      barrier[offset] = barrier[offset + 1] = barrier[offset + 2] = 255;
+    }
+    const interiorOffset = (3 * width + 3) * 4;
+    barrier[interiorOffset] = barrier[interiorOffset + 1] = barrier[interiorOffset + 2] = 255;
+
+    expect(retainLargestWaterRegion(water, barrier, width, height)).toBe(true);
+    expect(water[(3 * width + 2) * 4]).toBe(255);
+    expect(water[interiorOffset]).toBe(255);
+    expect(water[(3 * width + 8) * 4]).toBe(0);
+  });
 });

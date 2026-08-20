@@ -136,8 +136,10 @@ export function retainLargestWaterRegion(waterPixels, barrierPixels, width, heig
   const keep = new Uint8Array(count);
   for (const index of best) keep[index] = 1;
   for (let index = 0; index < count; index++) {
-    const value = keep[index] ? 255 : 0;
     const offset = index * 4;
+    // Barriers only split the authored water footprint into inside/outside regions.
+    // Restore water below structures; the scene depth buffer owns their occlusion.
+    const value = (keep[index] || (blocked[index] && waterPixels[offset] > 127)) ? 255 : 0;
     waterPixels[offset] = value;
     waterPixels[offset + 1] = value;
     waterPixels[offset + 2] = value;
