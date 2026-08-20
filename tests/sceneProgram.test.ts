@@ -213,6 +213,37 @@ describe('bounded scene program', () => {
     expect(SCENE_PROGRAM_API_REFERENCE).toContain('scene.mountOn');
   });
 
+  it('persists design groups, focus roles, composition layers and relationship layout in one program result', () => {
+    const table = asset('table-a', 'Reading Table', ['table']);
+    table.colliderPlan.boxes = [{ min: [-1.5, 0, -0.8], max: [1.5, 0.9, 0.8] }];
+    table.footprintRadius = 1.5;
+    const chair = asset('chair-a', 'Reading Chair', ['chair']);
+    const map = createEmptyMap('reading garden', 'program-design');
+    const result = executeSceneProgram(`
+      const tableId = scene.placeAt("table", [0,0], { groupId: "reading", layer: 2, searchRadius: 1 });
+      const points = scene.gridPoints({ center: [0,0], columns: 4, rows: 1, spacing: 3 });
+      for (const point of points) scene.placeAt("chair", point, { groupId: "reading", layer: 3, searchRadius: 1 });
+      scene.note(tableId);
+    `, map, [table, chair], {}, {
+      experienceMode: 'immediate',
+      groups: [{ id: 'reading', name: '阅读组', intent: '桌椅形成紧密但可通行的功能组' }],
+      focuses: [{ id: 'table-focus', groupId: 'reading', name: '主桌', kind: 'primary', rank: 1, selector: 'table' }],
+      relations: [{ id: 'chairs-around-table', kind: 'attract', sourceSelector: 'chair', targetSelector: 'table', strength: 'normal' }]
+    });
+    const generated = applyMapOperations({ ...map, assets: [table, chair] }, result.operations);
+    const chairs = generated.objects.filter((object) => object.assetId === chair.id);
+    const tableObject = generated.objects.find((object) => object.assetId === table.id)!;
+
+    expect(generated.designSemantics.groups).toContainEqual(expect.objectContaining({ id: 'reading' }));
+    expect(tableObject.designGroupId).toBe('reading');
+    expect(tableObject.compositionLayer).toBe(2);
+    expect(chairs.every((object) => object.designGroupId === 'reading' && object.compositionLayer === 3)).toBe(true);
+    expect(chairs.every((object) => Math.hypot(
+      object.transform.position[0] - tableObject.transform.position[0],
+      object.transform.position[2] - tableObject.transform.position[2]
+    ) < 4)).toBe(true);
+  });
+
   it('rejects arbitrary JavaScript and stops programs that exceed loop budgets', () => {
     expect(() => executeSceneProgram('while (true) { scene.note("x"); }', createEmptyMap(), assets))
       .toThrow(/unsupported_scene_program/);

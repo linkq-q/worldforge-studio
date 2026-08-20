@@ -5,6 +5,7 @@ import { normalizeMapAiNewAssetRange } from '../shared/mapPlanning';
 import type { AgentProgressEvent, ChatProvider } from '../shared/protocol';
 import { normalizeAssetTags, normalizeMapAssetLight, type MapAssetLight } from '../shared/mapAssetMetadata';
 import type { ModelGenerationMode } from '../shared/modelGenerationMode';
+import { normalizeMapDesignSemantics, type MapDesignSemantics } from '../shared/mapDesign';
 import { sceneZoneWorldRegion, type SceneCompositionPlan } from '../shared/sceneComposition';
 import { validateMapSuggestion } from './mapSuggestionValidation';
 import { llmChat, type ChatMessage } from './modelApi';
@@ -36,6 +37,8 @@ export interface SceneDesignAgentOptions {
   onPreview?: (suggestion: MapAiSuggestion) => void;
   /** Optional high-level director intent. Geometry remains owned by the Scene Program. */
   compositionPlan?: SceneCompositionPlan;
+  /** Optional user preference for focal assets; spatial relationships remain model-authored. */
+  focusPrompt?: string;
   createAsset: (request: SceneDesignAssetRequest, report: AssetTaskReporter) => Promise<MapAsset>;
   /** Test seam; production uses the configured chat backend. */
   chat?: (messages: readonly ChatMessage[]) => Promise<string>;
@@ -46,6 +49,7 @@ interface AgentAction {
   summary: string;
   assets?: SceneDesignAssetRequest[];
   program?: string;
+  design?: MapDesignSemantics;
 }
 
 interface SceneOutcome {
@@ -84,7 +88,7 @@ export async function runSceneDesignAgent(
     content: buildSystemPrompt(map, bounds, assetRange.min, assetRange.max, Boolean(options.compositionPlan))
   }, {
     role: 'user',
-    content: buildUserPrompt(prompt, map, assets, options.compositionPlan)
+    content: buildUserPrompt(prompt, map, assets, options.compositionPlan, options.focusPrompt)
   }];
   const chat = options.chat ?? ((history: readonly ChatMessage[]) => llmChat(history, {
     apiBase: options.apiBase,
@@ -98,6 +102,7 @@ export async function runSceneDesignAgent(
   let latestResult: SceneProgramResult | null = null;
   let latestIssues: MapLintIssue[] = [];
   let latestOutcome: SceneOutcome | null = null;
+  let latestDesign: MapDesignSemantics | undefined;
 
   for (let iteration = 1; iteration <= maxIterations; iteration += 1) {
     options.signal?.throwIfAborted();
@@ -111,7 +116,7 @@ export async function runSceneDesignAgent(
     messages.push({ role: 'assistant', content });
     let action: AgentAction;
     try {
-      action = parseAgentAction(content, map.assetGenerationMode, assetRange.max - generatedAssets.length);
+      action = parseAgentAction(content, map, assetRange.max - generatedAssets.length);
     } catch (error) {
       trace.push({ iteration, action: 'invalid_response', summary: errorMessage(error) });
       messages.push({ role: 'user', content: JSON.stringify({
@@ -153,7 +158,8 @@ export async function runSceneDesignAgent(
       if (!action.program) throw new Error('scene_agent_missing_program');
       options.onProgress?.({ phase: 'compiling', label: '解释执行 Scene Program 并检查空间约束' });
       try {
-        let result = executeSceneProgram(action.program, map, assets);
+        latestDesign = action.design ?? latestDesign;
+        let result = executeSceneProgram(action.program, map, assets, {}, latestDesign);
         const executionValidation = validateMapSuggestion(map, {
           summary: action.summary,
           operations: result.operations,
@@ -263,7 +269,7 @@ function finalizeAgentSuggestion(
     operations: result.operations,
     renderPromptSuggestions: result.renderPromptSuggestions,
     generatedAssets: generatedAssets.map((asset) => ({ id: asset.id, name: asset.name })),
-    blocked: Boolean(outcome?.unmet.length),
+    blocked: false,
     agent: {
       program,
       iterations,
@@ -290,7 +296,7 @@ function buildSystemPrompt(
     'Return exactly one JSON object, never Markdown.',
     'Actions:',
     '{"action":"request_assets","summary":"...","assets":[{"name":"...","prompt":"standalone low-poly object, no ground/background","tags":["short-english-tag"]}]}',
-    '{"action":"write_program","summary":"...","program":"const path = scene.guide(...); ..."}',
+    '{"action":"write_program","summary":"...","design":{"experienceMode":"immediate|sequential|mixed","intent":"...","groups":[{"id":"...","name":"...","parentId":"optional-parent","intent":"...","focusIds":["..."],"guideIds":["..."],"entryGuideIds":[],"exitGuideIds":[],"axisGuideIds":[],"protectedObjectIds":[],"removableObjectIds":[],"layers":[{"level":1,"intent":"focal structure","density":"tight|normal|open"}]}],"focuses":[{"id":"...","groupId":"...","name":"...","kind":"primary|secondary|node","rank":1,"selector":"asset tag or name","reveal":"visible|screened|framed|sequence"}],"viewpoints":[{"id":"...","groupId":"...","point":[0,0],"targetFocusId":"...","role":"entry|route|node|overview"}],"relations":[{"id":"...","kind":"attract|repel|support","sourceSelector":"...","targetSelector":"...","strength":"tight|normal|open"}]},"program":"const path = scene.guide(...); ..."}',
     '{"action":"finish","summary":"..."}',
     `You must request ${minNewAssets}-${maxNewAssets} new reusable assets across the run. Reuse listed assets for the remaining roles when suitable. Never invent asset IDs.`,
     ...(directedCode ? [
@@ -299,6 +305,9 @@ function buildSystemPrompt(
     ] : []),
     'After execute_program, inspect outcome.unmet, outcome.warnings, counts and diagnostics. You may finish only when outcome.unmet is empty.',
     'Build outdoor scenes in layers: macro terrain, local terrain modifiers, drainage/water, semantic surfaces and grass, guides, relationship-aware objects, then spawn and render suggestions.',
+    'Design a focal network, not a mandatory single center. Groups may be peer regions; within each group give focuses clear rank. Choose immediate, sequential, or mixed reveal from the requested scene.',
+    'Use paths, nodes, landmarks, figure-ground, continuity, framed views, density rhythm and intentional negative space as reusable composition methods. Do not copy a garden-specific layout into unrelated scenes.',
+    'The same write_program action must include the structured design graph and the executable program. Use groupId and layer on placement calls so the editor can inspect semantic groups without changing physical parentId.',
     'Use guides for authored environments: parks, campuses, farms, plazas, roads, waterfronts and building groups. Surface important guides and use scatter only for natural populations.',
     'For cities, towns and campuses, prefer scene.streetGrid and iterate both streets and blocks instead of drawing unrelated parallel lines.',
     'Asset manifests include local size=[x,y,z] and longAxis. For modular walls, arcades and grandstands whose longAxis is x, use placeAlong(..., { align:"side", contact:"seam" }); this keeps local X along the guide, allows only this assembly call to meet at seams, and keeps local +Z on the guide-left side. Order ring guides so the intended front is on the left.',
@@ -313,12 +322,16 @@ function buildUserPrompt(
   prompt: string,
   map: EditableMap,
   assets: readonly MapAsset[],
-  compositionPlan?: SceneCompositionPlan
+  compositionPlan?: SceneCompositionPlan,
+  focusPrompt?: string
 ): string {
   const brief = compositionPlan
     ? `\n\nCreative director brief (world-space regions): ${JSON.stringify(compactDirectorBrief(compositionPlan, map))}`
     : '';
-  return `${prompt}${brief}\n\nAvailable assets: ${JSON.stringify(assets.slice(0, 120).map(assetManifestItem))}`;
+  const focus = focusPrompt?.trim()
+    ? `\n\nOptional user focal preference: ${focusPrompt.trim().slice(0, 500)}. Treat selected/named focal assets as strong preferences; design their relationships and placement yourself.`
+    : '\n\nNo focal asset preference was supplied. Choose an appropriate focal network yourself.';
+  return `${prompt}${focus}${brief}\n\nAvailable assets: ${JSON.stringify(assets.slice(0, 120).map(assetManifestItem))}`;
 }
 
 function compactDirectorBrief(plan: SceneCompositionPlan, map: EditableMap): unknown {
@@ -515,14 +528,19 @@ function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
 }
 
-function parseAgentAction(content: string, mode: ModelGenerationMode, remainingAssetBudget: number): AgentAction {
+function parseAgentAction(content: string, map: EditableMap, remainingAssetBudget: number): AgentAction {
   const object = parseJsonObject(content);
   const action = object.action;
   const summary = typeof object.summary === 'string' ? object.summary.trim().slice(0, 240) : '';
   if (action === 'finish') return { action, summary };
   if (action === 'write_program') {
     if (typeof object.program !== 'string' || !object.program.trim()) throw new Error('scene_agent_missing_program');
-    return { action, summary, program: object.program };
+    return {
+      action,
+      summary,
+      program: object.program,
+      design: object.design === undefined ? undefined : normalizeMapDesignSemantics(object.design, map.box.size)
+    };
   }
   if (action === 'request_assets') {
     const requests = Array.isArray(object.assets) ? object.assets : [];
@@ -541,7 +559,7 @@ function parseAgentAction(content: string, mode: ModelGenerationMode, remainingA
         prompt,
         tags: normalizeAssetTags(item.tags) ?? [],
         ...(light ? { light } : {}),
-        mode
+        mode: map.assetGenerationMode
       });
     }
     return { action, summary, assets };

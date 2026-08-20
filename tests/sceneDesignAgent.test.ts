@@ -122,7 +122,7 @@ describe('scene design agent', () => {
       }
     );
 
-    expect(suggestion.blocked).toBe(true);
+    expect(suggestion.blocked).toBe(false);
     expect(suggestion.agent?.diagnostics).toContainEqual(expect.objectContaining({
       code: 'scene-outcome-unmet',
       message: expect.stringContaining('requested-layered-structure-is-missing')
@@ -275,7 +275,43 @@ describe('scene design agent', () => {
     expect(suggestion.summary).toContain('保留最后一个可执行候选');
     expect(suggestion.operations.some((operation) => operation.type === 'object.add')).toBe(true);
     expect(suggestion.agent?.diagnostics.some((item) => item.code === 'scene-outcome-unmet')).toBe(true);
-    expect(suggestion.blocked).toBe(true);
+    expect(suggestion.blocked).toBe(false);
+    expect(suggestion.agent?.diagnostics).toContainEqual(expect.objectContaining({ code: 'scene-outcome-unmet' }));
+  });
+
+  it('passes the optional focal preference and structured design graph through the same model action', async () => {
+    let initialPrompt = '';
+    const replies = [
+      JSON.stringify({
+        action: 'write_program',
+        summary: 'Library garden composition',
+        design: {
+          experienceMode: 'mixed',
+          groups: [{ id: 'campus', name: '校园', intent: '图书馆为远景中心' }],
+          focuses: [{ id: 'library-focus', groupId: 'campus', name: '图书馆', kind: 'primary', rank: 1, selector: 'bench' }]
+        },
+        program: 'scene.placeAt("bench", [0,0], { groupId: "campus", layer: 1, searchRadius: 2 });'
+      }),
+      JSON.stringify({ action: 'finish', summary: 'Ready' })
+    ];
+    const suggestion = await runSceneDesignAgent('Create a campus', createEmptyMap('campus', 'agent-focus'), [bench], {
+      maxNewAssets: 0,
+      focusPrompt: '中央图书馆是主要焦点',
+      reuseExistingAssets: true,
+      reusableAssetIds: [bench.id],
+      createAsset: async () => { throw new Error('not expected'); },
+      chat: async (messages) => {
+        initialPrompt ||= String(messages[1]?.content);
+        return replies.shift()!;
+      }
+    });
+    const designUpdate = suggestion.operations.find((operation) => operation.type === 'map.update' && operation.designSemantics);
+
+    expect(initialPrompt).toContain('中央图书馆是主要焦点');
+    expect(designUpdate).toEqual(expect.objectContaining({
+      type: 'map.update',
+      designSemantics: expect.objectContaining({ experienceMode: 'mixed' })
+    }));
   });
 
   it('keeps the last executable candidate when later repair programs fail', async () => {

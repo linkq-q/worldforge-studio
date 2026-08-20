@@ -37,6 +37,8 @@ import {
   type TerrainRegion,
   type TerrainSurfaceKind
 } from '../shared/terrainGeneration';
+import { normalizeMapDesignSemantics, type MapCompositionLayer, type MapDesignSemantics } from '../shared/mapDesign';
+import { compileMapDesignRelations } from '../shared/mapDesignRelations';
 
 export interface SceneProgramDiagnostic {
   severity: 'info' | 'warning' | 'error';
@@ -68,6 +70,7 @@ interface SceneProgramContext {
   steps: number;
   loopIterations: number;
   budget: SceneProgramBudget;
+  design?: MapDesignSemantics;
 }
 
 type RuntimeValue = unknown;
@@ -85,7 +88,8 @@ export function executeSceneProgram(
   source: string,
   map: EditableMap,
   assets: readonly MapAsset[],
-  budget: Partial<SceneProgramBudget> = {}
+  budget: Partial<SceneProgramBudget> = {},
+  designValue?: unknown
 ): SceneProgramResult {
   if (typeof source !== 'string' || !source.trim()) throw new Error('empty_scene_program');
   if (source.length > 24_000) throw new Error('scene_program_too_large');
@@ -104,11 +108,16 @@ export function executeSceneProgram(
     renderPromptSuggestions: [],
     steps: 0,
     loopIterations: 0,
-    budget: { ...DEFAULT_BUDGET, ...budget }
+    budget: { ...DEFAULT_BUDGET, ...budget },
+    design: designValue === undefined ? undefined : normalizeMapDesignSemantics(designValue, map.box.size)
   };
   const environment: Environment = new Map();
   environment.set('scene', createSceneApi(context));
   for (const statement of file.statements) executeStatement(statement, environment, context);
+  if (context.design) {
+    for (const operation of compileMapDesignRelations(context.workingMap, context.design)) emit(context, operation);
+    emit(context, { type: 'map.update', designSemantics: resolveDesignFocusObjects(context.workingMap, context.design) });
+  }
   if (context.renderPromptSuggestions.length > 0) {
     emit(context, {
       type: 'map.update',
@@ -147,15 +156,15 @@ Available API:
 - scene.fbm2D(x, z, { scale?, octaves?, lacunarity?, gain?, seed? }) -> number in [-1,1]
 - scene.clamp(value, min, max), scene.lerp(from, to, amount), scene.remap(value, inMin, inMax, outMin, outMax), scene.smoothstep(min, max, value)
 - scene.distance2D(left, right), scene.rotate2D(point, degrees, center?)
-- scene.placeOn(selector, parentId, { name?, scale?, yaw?, offset?: [localX,localZ], gap? }) -> objectId
-- scene.mountOn(selector, parentId, { side: "north"|"south"|"east"|"west", name?, scale?, yaw?, offset?: [horizontal,vertical], inset? }) -> objectId
+- scene.placeOn(selector, parentId, { name?, scale?, yaw?, offset?: [localX,localZ], gap?, groupId?, layer?: 1|2|3|4 }) -> objectId
+- scene.mountOn(selector, parentId, { side: "north"|"south"|"east"|"west", name?, scale?, yaw?, offset?: [horizontal,vertical], inset?, groupId?, layer?: 1|2|3|4 }) -> objectId
 - scene.surface(guide, "grass"|"sand"|"rock"|"soil"|"paving", intensity?)
 - scene.surfaceRegion(id, "grass"|"sand"|"rock"|"soil"|"paving", region, intensity?)
 - scene.water(id, { type: "lake"|"river"|"ocean", points: [[x,z],...], name?, width?, level?, depth?, shorelineSmoothness?, shorelineIrregularity? })
 - scene.grass(id, region, { name?, preset?, density?, variation?, softness?, height? })
-- scene.placeAlong(assetSelector, guide, { spacing, offset?, count?, scale?, facing?: "guide"|"inward"|"outward", align?: "forward"|"side", contact?: "seam", groupSize? })
-- scene.scatter(assetSelector, { center: [x,z], radius }, { count?, density?, minSpacing?, avoidWater?, maxSlope?, scaleMin?, scaleMax?, clusterStrength?, edgeFalloff? })
-- scene.placeAt(assetSelector, [x,z], { yaw?, scale?, name?, searchRadius?, avoidWater?, maxSlope? })
+- scene.placeAlong(assetSelector, guide, { spacing, offset?, count?, scale?, facing?: "guide"|"inward"|"outward", align?: "forward"|"side", contact?: "seam", groupSize?, groupId?, layer?: 1|2|3|4 })
+- scene.scatter(assetSelector, { center: [x,z], radius }, { count?, density?, minSpacing?, avoidWater?, maxSlope?, scaleMin?, scaleMax?, clusterStrength?, edgeFalloff?, groupId?, layer?: 1|2|3|4 })
+- scene.placeAt(assetSelector, [x,z], { yaw?, scale?, name?, searchRadius?, avoidWater?, maxSlope?, groupId?, layer?: 1|2|3|4 })
 - scene.spawn([x,z], yawDegrees?)
 - scene.renderSuggestion(text)
 - scene.range(count) or scene.range(start, end, step?) -> number[]
@@ -472,7 +481,8 @@ function createSceneApi(context: SceneProgramContext): Record<string, SceneMetho
         guidePoints: points,
         maxPerGroup: Math.max(1, Math.round(finiteNumber(options.groupSize, count)))
       }, selectedAssets, count, `program-${guide.id}-${cleanId(selector)}`);
-      for (const placement of placements) emitPlacement(context, placement);
+      const metadata = designPlacementMetadata(context, options);
+      for (const placement of pruneDesignPlacements(context, placements, count, metadata)) emitPlacement(context, placement, undefined, metadata);
       reportPlacementShortfall(context, `placeAlong:${selector}`, count, placements.length);
       return placements;
     },
@@ -509,7 +519,8 @@ function createSceneApi(context: SceneProgramContext): Record<string, SceneMetho
         count,
         `program-scatter-${cleanId(selector)}-${context.operations.length + 1}`
       );
-      for (const placement of placements) emitPlacement(context, placement);
+      const metadata = designPlacementMetadata(context, options);
+      for (const placement of pruneDesignPlacements(context, placements, count, metadata)) emitPlacement(context, placement, undefined, metadata);
       const quality = evaluateMapScatterQuality(plan, placements, count);
       for (const issue of quality.issues) {
         context.diagnostics.push({ severity: 'warning', code: issue, message: `${selector}: ${issue}` });
@@ -548,7 +559,7 @@ function createSceneApi(context: SceneProgramContext): Record<string, SceneMetho
         reportPlacementShortfall(context, `placeAt:${selector}`, 1, 0);
         return null;
       }
-      emitPlacement(context, placement, optionalString(options.name));
+      emitPlacement(context, placement, optionalString(options.name), designPlacementMetadata(context, options));
       return placement.id;
     },
     placeOn: (selectorValue, parentValue, optionsValue = {}) => placeAttached(
@@ -667,11 +678,17 @@ function placeAttached(
       ? clamp(finiteNumber(options.gap, 0.02), 0, 2)
       : clamp(finiteNumber(options.inset, 0.02), 0, 2)
   });
+  Object.assign(object, designPlacementMetadata(context, options));
   emit(context, { type: 'object.add', object });
   return object.id;
 }
 
-function emitPlacement(context: SceneProgramContext, placement: MapScatterPlacement, name?: string): void {
+function emitPlacement(
+  context: SceneProgramContext,
+  placement: MapScatterPlacement,
+  name?: string,
+  metadata: { designGroupId?: string; compositionLayer?: MapCompositionLayer } = {}
+): void {
   emit(context, {
     type: 'object.add',
     object: {
@@ -679,6 +696,7 @@ function emitPlacement(context: SceneProgramContext, placement: MapScatterPlacem
       name: name ?? placement.name,
       assetId: placement.assetId,
       heightMode: 'terrain',
+      ...metadata,
       transform: {
         position: [placement.x, placement.y, placement.z],
         rotation: [0, placement.rotationY, 0],
@@ -687,6 +705,58 @@ function emitPlacement(context: SceneProgramContext, placement: MapScatterPlacem
       }
     }
   });
+}
+
+function designPlacementMetadata(
+  context: SceneProgramContext,
+  options: Record<string, unknown>
+): { designGroupId?: string; compositionLayer?: MapCompositionLayer } {
+  const designGroupId = optionalString(options.groupId);
+  const layer = Number(options.layer);
+  return {
+    ...(designGroupId && context.design?.groups.some((group) => group.id === designGroupId) ? { designGroupId } : {}),
+    ...([1, 2, 3, 4].includes(layer) ? { compositionLayer: layer as MapCompositionLayer } : {})
+  };
+}
+
+function pruneDesignPlacements(
+  context: SceneProgramContext,
+  placements: MapScatterPlacement[],
+  count: number,
+  metadata: { designGroupId?: string; compositionLayer?: MapCompositionLayer }
+): MapScatterPlacement[] {
+  if (!metadata.compositionLayer || metadata.compositionLayer < 3 || placements.length <= count) return placements.slice(0, count);
+  const focus = context.design?.focuses.find((item) => item.groupId === metadata.designGroupId);
+  const focusObject = focus?.objectId ? context.workingMap.objects.find((object) => object.id === focus.objectId) : undefined;
+  return [...placements].sort((left, right) => {
+    const score = (placement: MapScatterPlacement) => {
+      const focusDistance = focusObject
+        ? Math.hypot(placement.x - focusObject.transform.position[0], placement.z - focusObject.transform.position[2])
+        : 0;
+      return focusDistance + hashString(placement.id) % 997 / 997;
+    };
+    return score(left) - score(right);
+  }).slice(0, count);
+}
+
+function resolveDesignFocusObjects(map: EditableMap, design: MapDesignSemantics): MapDesignSemantics {
+  const assets = new Map((map.assets ?? []).map((asset) => [asset.id, asset]));
+  return {
+    ...design,
+    focuses: design.focuses.map((focus) => {
+      if (focus.objectId && map.objects.some((object) => object.id === focus.objectId)) return focus;
+      const needle = focus.selector?.toLowerCase();
+      if (!needle) return focus;
+      const object = map.objects.find((candidate) => {
+        if (candidate.designGroupId && candidate.designGroupId !== focus.groupId) return false;
+        const asset = candidate.assetId ? assets.get(candidate.assetId) : undefined;
+        return candidate.name.toLowerCase().includes(needle)
+          || asset?.name.toLowerCase().includes(needle)
+          || asset?.tags?.some((tag) => tag.toLowerCase().includes(needle));
+      });
+      return object ? { ...focus, objectId: object.id } : focus;
+    })
+  };
 }
 
 function reportPlacementShortfall(context: SceneProgramContext, label: string, requested: number, placed: number): void {
