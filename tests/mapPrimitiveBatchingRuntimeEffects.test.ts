@@ -7,4 +7,10 @@ describe('map primitive batch runtime effects', () => {
   it('ticks base material shader uniforms for instanced batches', () => {
     expect(source).toMatch(/effectRuntime\.updateRuntimeUniforms\(root,\s*\{[\s\S]*uTime:/);
   });
+
+  it('retains a complete analysis tree for water-container masking', () => {
+    expect(source).toMatch(/defineProperty\(visual\.userData, 'materialTagClipSource'/);
+    expect(source).toMatch(/value:\s*template\.clone\(true\)/);
+    expect(source).toMatch(/enumerable:\s*false/);
+  });
 });

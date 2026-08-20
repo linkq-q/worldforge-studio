@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 import {
   RenderSceneRuntime,
   applyRenderScheme,
+  sampleRainRipplePoint,
   type RenderSchemeTargets
 } from '../src/client/renderSceneRuntime';
 import { RenderRuntimeAdapter } from '../src/client/renderRuntimeAdapter';
@@ -312,5 +313,60 @@ describe('RenderSceneRuntime sizing', () => {
     for (const renderTarget of [normalTarget, edgeTarget, boundaryTarget, edgePass]) {
       expect(renderTarget.setSize).toHaveBeenCalledWith(800, 600);
     }
+  });
+});
+
+describe('rain water ripples', () => {
+  it('samples rain impacts inside a natural water body near the camera', () => {
+    const map = createEmptyMap('rain lake', 'rain-lake', [24, 8, 24]);
+    map.waterBodies = [{
+      id: 'lake',
+      name: 'lake',
+      type: 'lake',
+      level: 0,
+      depth: 1,
+      width: 8,
+      points: [[-6, -6], [6, -6], [6, 6], [-6, 6]]
+    }];
+
+    const impact = sampleRainRipplePoint(map, 0, 0, 3);
+
+    expect(impact).toEqual(expect.objectContaining({ waterBodyId: 'lake' }));
+    expect(Math.abs(impact!.x)).toBeLessThanOrEqual(6);
+    expect(Math.abs(impact!.z)).toBeLessThanOrEqual(6);
+  });
+
+  it('routes active rain into the natural-water ripple adapter', () => {
+    const map = createEmptyMap('rain lake', 'rain-lake', [24, 8, 24]);
+    map.waterBodies = [{
+      id: 'lake', name: 'lake', type: 'lake', level: 0, depth: 1, width: 8,
+      points: [[-6, -6], [6, -6], [6, 6], [-6, 6]]
+    }];
+    const addRainRipple = vi.fn();
+    const runtime = Object.assign(Object.create(RenderSceneRuntime.prototype), {
+      map,
+      camera: new THREE.PerspectiveCamera(),
+      weather: { update: () => ({
+        enabled: true,
+        precipitationKind: 'rain',
+        precipitation: 1,
+        lightningFlash: 0
+      }) },
+      applyWeatherFrame: vi.fn(),
+      rendered: { update: vi.fn() },
+      atmosphereFx: { update: vi.fn() },
+      adapter: {
+        addRainRipple,
+        getContentVisibilityDistance: () => 100,
+        tick: vi.fn(),
+        render: vi.fn()
+      },
+      rainRippleBudget: 1,
+      rainRippleSequence: 0
+    }) as RenderSceneRuntime;
+
+    runtime.renderFrame(1 / 60, 4);
+
+    expect(addRainRipple).toHaveBeenCalledWith('lake', expect.any(Number), expect.any(Number), 4);
   });
 });

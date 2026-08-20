@@ -462,6 +462,7 @@ export class ModelWaterInstances {
     const localPos = rootGroup.worldToLocal(new THREE.Vector3(center.x, top, center.z));
     water.mesh.position.copy(localPos);
     water.mesh.userData.isModelWater = true;
+    water.mesh.userData.excludeFromPlanarReflection = true;
     water.mesh.userData.modelId = modelId;
     water.mesh.userData.globalPartId = globalPartId;
     const surfaceLift = water.applyWaveClearanceLift();
@@ -485,7 +486,7 @@ export class ModelWaterInstances {
       const localMatrix = new THREE.Matrix4()
         .copy(rootGroup.matrixWorld).invert()
         .multiply(sourceWorldMatrix);
-      skirt = this._buildPoolBody(water, sourceGeometry, localMatrix, surfaceLift, worldDepth);
+      skirt = this._buildPoolBody(water, sourceGeometry, localMatrix, surfaceLift, worldDepth, center, size);
       rootGroup.add(skirt);
     }
     if (worldDepth > Math.max(size * 0.002, 0.001)) {
@@ -502,7 +503,7 @@ export class ModelWaterInstances {
    * hidden water part's real geometry, positioned to exactly overlap where the
    * part used to sit. Matches any container silhouette because it IS the part.
    */
-  _buildPoolBody(water, sourceGeometry, localMatrix, surfaceLift = 0, worldDepth = null) {
+  _buildPoolBody(water, sourceGeometry, localMatrix, surfaceLift = 0, worldDepth = null, maskCenter = null, maskSize = 1) {
     const geometry = sourceGeometry.clone();
     geometry.computeBoundingBox();
     const bb = geometry.boundingBox;
@@ -569,6 +570,11 @@ export class ModelWaterInstances {
         uDistortionScale: { value: bodyParams.distortionScale },
         uAbsorptionStrength: { value: bodyParams.absorptionStrength },
         uCausticStrength: { value: bodyParams.causticStrength },
+        tShoreDistance: wu.tShoreDistance,
+        uInvertShoreDistance: wu.uInvertShoreDistance,
+        uShoreClipThreshold: wu.uShoreClipThreshold,
+        uBodyMaskWorldCenter: { value: new THREE.Vector2(maskCenter?.x || 0, maskCenter?.z || 0) },
+        uBodyMaskWorldSize: { value: Math.max(maskSize, 1e-4) },
       },
       vertexShader: /* glsl */`
         varying float vBodyY;
@@ -605,7 +611,21 @@ export class ModelWaterInstances {
         uniform float uDistortionScale;
         uniform float uAbsorptionStrength;
         uniform float uCausticStrength;
+        uniform sampler2D tShoreDistance;
+        uniform bool uInvertShoreDistance;
+        uniform float uShoreClipThreshold;
+        uniform vec2 uBodyMaskWorldCenter;
+        uniform float uBodyMaskWorldSize;
         void main() {
+          vec2 bodyMaskUv = vec2(
+            (vWorldPosition.x - uBodyMaskWorldCenter.x) / uBodyMaskWorldSize + 0.5,
+            0.5 - (vWorldPosition.z - uBodyMaskWorldCenter.y) / uBodyMaskWorldSize
+          );
+          if (bodyMaskUv.x < 0.0 || bodyMaskUv.x > 1.0 || bodyMaskUv.y < 0.0 || bodyMaskUv.y > 1.0) discard;
+          float bodyShoreDist = texture2D(tShoreDistance, bodyMaskUv).r;
+          if (uInvertShoreDistance) bodyShoreDist = 1.0 - bodyShoreDist;
+          if (bodyShoreDist < uShoreClipThreshold) discard;
+
           // Horizontal caps are owned by the animated surface and the merged
           // footprint bottom. This mesh contributes vertical volume only.
           if (abs(vLocalNormalY) > 0.98) discard;
@@ -866,7 +886,7 @@ export class ModelWaterInstances {
    * @param {{ modelId:string, entries:{partId:string,group:THREE.Object3D,source:THREE.Mesh}[] }} cfg
    * @returns {WaterSurface|null}
    */
-  createMergedPool({ modelId, entries, resolution = 512, containerBottom = null, surfaceReference = null }) {
+  createMergedPool({ modelId, entries, resolution = 512, containerBottom = null, surfaceReference = null, clipObject = null, ignoredMaskObjects = [] }) {
     if (!entries?.length) return null;
     const reference = surfaceReference || selectMergedPoolReference(entries);
     if (!reference?.entry?.group || !reference.entry.source) return null;
@@ -881,7 +901,10 @@ export class ModelWaterInstances {
     if (mergedGroup.children.length === 0) return null;
 
     this.disposePart(globalPartId);
-    const { canvas, size, center, bottom } = createMaskFromObject(this.renderer, mergedGroup, resolution);
+    const { canvas, size, center, bottom } = createMaskFromObject(this.renderer, mergedGroup, resolution, {
+      clipObject,
+      ignoredObjects: ignoredMaskObjects,
+    });
     // ponytail: dispose ONLY materials — geometry is shared with source part, do NOT dispose.
     for (const child of [...mergedGroup.children]) {
       child.material?.dispose?.();

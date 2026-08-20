@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { PlanarReflectionPass } from '@voxel-studio/render-runtime';
 import {
   FountainChain,
   ModelWaterInstances,
@@ -46,6 +47,12 @@ export interface WaterFallRoute extends WaterEntry {
   isFaucet: boolean;
 }
 
+export interface ModelWaterMaskSource {
+  clipObject: THREE.Object3D;
+  ignoredObjects: THREE.Object3D[];
+  objects: Map<string, THREE.Object3D>;
+}
+
 interface RoutedFall {
   modelId: string;
   partId: string;
@@ -72,11 +79,14 @@ interface WaterRuntimeSurface {
 }
 
 interface WaterSurfaceLike extends WaterRuntimeSurface {
+  mesh: THREE.Mesh;
   pinRippleDecalPoint(x: number, z: number): number;
   updatePinnedRipplePoint(id: number, x: number, z: number): void;
   unpinRippleDecalPoint(id: number): void;
   setWaterEnvMap(texture: THREE.Texture | null): void;
   setWaterReflectionParams(params: Record<string, unknown>): void;
+  setPlanarReflectionTexture(texture: THREE.Texture | null): void;
+  setPlanarReflectionMatrix(matrix: THREE.Matrix4): void;
   setWaterMode?: (mode: 'cartoon' | 'realistic' | 'hybrid') => void;
   applyWaveClearanceLift?: () => number;
 }
@@ -122,6 +132,9 @@ export class MaterialTagWaterRuntime {
   private readonly waterfalls = new Map<string, RoutedFall>();
   private readonly hiddenSources = new Set<THREE.Mesh>();
   private fountainChain = new FountainChain();
+  private planarReflection: PlanarReflectionPass | null = null;
+  private reflectionCamera: THREE.PerspectiveCamera | null = null;
+  private reflectedSurfaces: WaterSurfaceLike[] = [];
 
   constructor(
     private readonly scene: THREE.Scene,
@@ -154,9 +167,13 @@ export class MaterialTagWaterRuntime {
       waterSources.add(source);
     }
 
+    const waterPartIds = new Set(entries.map((entry) => entry.partId));
+    const maskSource = resolveModelWaterMaskSource(modelRoot, waterPartIds);
+    const structuralObjects = maskSource.clipObject === modelRoot ? objects : maskSource.objects;
+
     const structuralGroups = parts
       .filter((part) => part.isGroup && !readWaterKind(compiledByPartId.get(part.id)?.effectiveTags))
-      .map((part) => objects.get(part.id))
+      .map((part) => structuralObjects.get(part.id))
       .filter((object): object is THREE.Object3D => Boolean(object));
 
     for (const group of groupAdjacentPools(entries.filter((entry) => entry.kind === 'pool'))) {
@@ -165,6 +182,8 @@ export class MaterialTagWaterRuntime {
         modelId,
         entries: group,
         surfaceReference,
+        clipObject: maskSource.clipObject,
+        ignoredMaskObjects: maskSource.ignoredObjects,
         containerBottom: findPoolContainerBottom(
           surfaceReference?.entry?.source,
           structuralGroups,
@@ -183,10 +202,9 @@ export class MaterialTagWaterRuntime {
     }
 
     const fallEntries = entries.filter((entry) => entry.kind === 'fall');
-    const waterPartIds = new Set(entries.map((entry) => entry.partId));
     const nonWaterBoxes = parts
       .filter((part) => !part.isGroup && !waterPartIds.has(part.id))
-      .map((part) => objects.get(part.id))
+      .map((part) => structuralObjects.get(part.id))
       .filter((object): object is THREE.Object3D => Boolean(object))
       .map((object) => {
         object.updateWorldMatrix(true, false);
@@ -217,7 +235,13 @@ export class MaterialTagWaterRuntime {
   }
 
   update(deltaTime: number, camera: THREE.Camera): void {
+    for (const surface of this.waterInstances.waterSurfaces() as WaterSurfaceLike[]) {
+      if (surface.mesh && surface.material && surface.mesh.material !== surface.material) {
+        surface.mesh.material = surface.material;
+      }
+    }
     this.waterInstances.update(deltaTime, camera);
+    this.updatePlanarReflection(camera);
     for (const entry of this.waterfalls.values()) {
       if (!entry.registryOwned) entry.waterfall.update(deltaTime, camera, null);
       if (entry.rippleWater && entry.ripplePinId != null) {
@@ -245,6 +269,11 @@ export class MaterialTagWaterRuntime {
       if (entry.curtainEmitters) this.particleEngine.removeGroup(entry.curtainEmitters);
     }
     this.waterfalls.clear();
+    // Detach the reflection pass while WaterSurface materials still exist.
+    // disposeAll() clears those materials, so doing this afterwards would make
+    // PlanarReflectionPass try to write uniforms on an already disposed surface.
+    this.planarReflection?.setWaterSurfaces([]);
+    this.reflectedSurfaces = [];
     this.waterInstances.disposeAll();
     for (const source of this.hiddenSources) source.visible = true;
     this.hiddenSources.clear();
@@ -255,7 +284,36 @@ export class MaterialTagWaterRuntime {
 
   dispose(): void {
     this.clear();
+    this.planarReflection?.dispose();
+    this.planarReflection = null;
+    this.reflectionCamera = null;
     this.particleEngine.dispose();
+  }
+
+  private updatePlanarReflection(camera: THREE.Camera): void {
+    const perspectiveCamera = camera as THREE.PerspectiveCamera;
+    if (!perspectiveCamera.isPerspectiveCamera) return;
+    const surfaces = this.waterInstances.waterSurfaces() as WaterSurfaceLike[];
+    if (!surfaces.length) return;
+    if (!this.planarReflection || this.reflectionCamera !== camera) {
+      this.planarReflection?.dispose();
+      this.planarReflection = new PlanarReflectionPass({
+        renderer: this.renderer,
+        scene: this.scene,
+        camera: perspectiveCamera,
+        width: 512,
+        height: 256
+      });
+      this.reflectionCamera = perspectiveCamera;
+      this.reflectedSurfaces = [];
+    }
+    const changed = surfaces.length !== this.reflectedSurfaces.length
+      || surfaces.some((surface, index) => surface !== this.reflectedSurfaces[index]);
+    if (changed) {
+      this.planarReflection.setWaterSurfaces(surfaces);
+      this.reflectedSurfaces = [...surfaces];
+    }
+    this.planarReflection.render();
   }
 
   private createFall(modelRoot: THREE.Object3D, modelId: string, route: WaterFallRoute): void {
@@ -398,6 +456,30 @@ export class MaterialTagWaterRuntime {
     source.visible = false;
     this.hiddenSources.add(source);
   }
+}
+
+export function resolveModelWaterMaskSource(
+  modelRoot: THREE.Object3D,
+  waterPartIds: ReadonlySet<string>
+): ModelWaterMaskSource {
+  const candidate = modelRoot.userData.materialTagClipSource as THREE.Object3D | undefined;
+  const clipObject = candidate?.isObject3D ? candidate : modelRoot;
+  if (clipObject !== modelRoot) {
+    modelRoot.updateWorldMatrix(true, false);
+    clipObject.matrixAutoUpdate = false;
+    clipObject.matrix.copy(modelRoot.matrixWorld);
+    clipObject.updateWorldMatrix(false, true);
+  }
+
+  const objects = new Map<string, THREE.Object3D>();
+  const ignoredObjects: THREE.Object3D[] = [];
+  clipObject.traverse((object) => {
+    const partId = String(object.userData.rawNodeId ?? object.userData.nodeId ?? '');
+    if (!partId) return;
+    objects.set(partId, object);
+    if (waterPartIds.has(partId)) ignoredObjects.push(object);
+  });
+  return { clipObject, ignoredObjects, objects };
 }
 
 export function resolveWaterFallRoutes<T extends WaterEntry>(entries: T[], nonWaterBoxes: THREE.Box3[]): Array<T & WaterFallRoute> {

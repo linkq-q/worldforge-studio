@@ -27,6 +27,7 @@ const WATER_VERTEX_SHADER = /* glsl */ `
   ${WATER_NOISE_UTILS_GLSL}
 
   varying vec3 vWorldPosition;
+  varying vec3 vReflectionWorldPosition;
   varying vec3 vWorldNormal;
   varying vec3 vViewDir;
   varying vec4 vScreenPos;
@@ -289,8 +290,10 @@ const WATER_VERTEX_SHADER = /* glsl */ `
     vec3 perturbedNormal = normalize(cross(toZ, toX));
 
     vec4 worldPos = modelMatrix * vec4(displaced, 1.0);
+    vec4 reflectionWorldPos = modelMatrix * vec4(position, 1.0);
 
     vWorldPosition = worldPos.xyz;
+    vReflectionWorldPosition = reflectionWorldPos.xyz;
     vWorldNormal = normalize(mat3(modelMatrix) * perturbedNormal);
     vViewDir = normalize(cameraPosition - worldPos.xyz);
     vScreenPos = projectionMatrix * viewMatrix * worldPos;
@@ -317,6 +320,7 @@ const WATER_FRAGMENT_SHADER = /* glsl */ `
   ${WATER_RING_STRIPE_GLSL}
 
   varying vec3 vWorldPosition;
+  varying vec3 vReflectionWorldPosition;
   varying vec3 vWorldNormal;
   varying vec3 vViewDir;
   varying vec4 vScreenPos;
@@ -788,20 +792,12 @@ const WATER_FRAGMENT_SHADER = /* glsl */ `
       float distortedDist = shoreDist + (shoreNoise - 0.5) * uShoreWaveNoiseStrength;
       float waveCoord = distortedDist * uShoreWaveFrequency - uTime * uShoreWaveSpeed;
       float stripe = fract(waveCoord);
-      float stripeAa = max(fwidth(waveCoord), 0.002);
       float waveLine;
       if (uWaterMode < 0.5) {
         // cartoon：硬边浪线（Wind Waker 式白圈），前缘微软化抗锯齿
-        float lineWidth = max(uShoreWaveWidth, 0.001);
-        waveLine = smoothstep(0.0, stripeAa, stripe)
-          * (1.0 - smoothstep(lineWidth - stripeAa, lineWidth + stripeAa, stripe));
-        waveLine *= 1.0 - smoothstep(lineWidth * 0.8, lineWidth * 1.6, stripeAa);
+        waveLine = 1.0 - smoothstep(uShoreWaveWidth * 0.85, uShoreWaveWidth, stripe);
       } else {
-        waveLine = 1.0 - smoothstep(
-          max(uShoreWaveWidth - stripeAa, 0.0),
-          uShoreWaveWidth + stripeAa,
-          stripe
-        );
+        waveLine = 1.0 - smoothstep(0.0, uShoreWaveWidth, stripe);
       }
       shoreWave = waveLine * shoreRangeMask * shoreBreakup * uShoreWaveStrength;
       float shoreShadowStart = uShoreWaveWidth;
@@ -1006,7 +1002,15 @@ const WATER_FRAGMENT_SHADER = /* glsl */ `
     // uToonEnvReflection is on, so tag/scene cartoon water reflects the sky instead
     // of leaving the fed tWaterEnvMap unsampled (the old 'uWaterMode > 0.5' gate).
     if ((uWaterMode > 0.5 || uToonEnvReflection > 0.5) && uUseWaterEnvReflection) {
-      vec3 reflectionNormal = normalize(mix(baseNormal, finalWaterNormal, uWaterReflectionNormalInfluence));
+      // Cartoon water keeps the sky projection stable and lets only explicit
+      // interaction ripples perturb it. Broad animated wave normals otherwise make
+      // a static panorama twist across the whole surface while the camera is still.
+      vec3 cartoonReflectionNormal = normalize(
+        baseNormal + vec3(rippleSlope.x, 0.0, rippleSlope.y) * uWaterReflectionNormalInfluence
+      );
+      vec3 reflectionNormal = uWaterMode < 0.5
+        ? cartoonReflectionNormal
+        : normalize(mix(baseNormal, finalWaterNormal, uWaterReflectionNormalInfluence));
       vec3 V = normalize(vViewDir);
       vec3 R = reflect(-V, reflectionNormal);
       vec3 envColor = uHasWaterEnvMap
@@ -1041,13 +1045,16 @@ const WATER_FRAGMENT_SHADER = /* glsl */ `
     float planarWeight = 0.0;
     if (uHasPlanarReflection) {  // v4 Phase 3: 卡通模式(mode 0)也可采样倒影
       // 用 uPlanarReflectionMatrix 将世界坐标投影到反射纹理 UV 空间
-      vec4 clipPos = uPlanarReflectionMatrix * vec4(vWorldPosition, 1.0);
+      // Project the undisplaced plane position. Vertex waves animate height and
+      // shading, but must not move the reflection camera projection on a still view.
+      vec4 clipPos = uPlanarReflectionMatrix * vec4(vReflectionWorldPosition, 1.0);
       vec2 planarUv = clipPos.xy / max(clipPos.w, 0.0001);
       planarUv = planarUv * 0.5 + 0.5;  // NDC → [0,1]
 
       // Normal 扰动 UV（模拟水面波动对倒影的扭曲）
       float planarDistortion = uPlanarReflectionDistortion * uPlanarReflectionDistortionScale * uWaterNormalStrength;
-      planarUv += (finalWaterNormal.xz * planarDistortion);
+      vec2 planarSlope = uWaterMode < 0.5 ? rippleSlope : finalWaterNormal.xz;
+      planarUv += planarSlope * planarDistortion;
 
       // 透视裁剪：UV 超出 [0,1] 范围外不采样（倒影纹理不重复）
       float inBounds = step(0.0, planarUv.x) * step(planarUv.x, 1.0) *
@@ -1209,12 +1216,7 @@ const WATER_FRAGMENT_SHADER = /* glsl */ `
         float texturePattern = texture2D(tToonPattern, patternUv).r;
         pn = mix(pn, texturePattern, clamp(uToonPatternTextureMix, 0.0, 1.0));
       }
-      float patternAa = max(fwidth(pn), 0.001);
-      float patternWidth = max(uToonPatternWidth, 0.001);
-      float isoDistance = abs(pn - 0.5);
-      float isoBand = 1.0 - smoothstep(patternWidth, patternWidth + patternAa, isoDistance);
-      float patternDetail = 1.0 - smoothstep(patternWidth * 2.0, patternWidth * 6.0, patternAa);
-      isoBand *= patternDetail;
+      float isoBand = step(0.5 - uToonPatternWidth, pn) * step(pn, 0.5 + uToonPatternWidth);
       foam = clamp(foam + isoBand * uToonPatternIntensity, 0.0, 1.0);
     }
 

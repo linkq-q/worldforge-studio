@@ -279,8 +279,38 @@ export class RenderRuntimeAdapter {
   }
 
   addWaterInteraction(waterBodyId: string, x: number, z: number, elapsedSeconds: number): void {
+    this.addWaterRipple(waterBodyId, x, z, elapsedSeconds, 0.24, {
+      radius: 0.72,
+      speed: 1.35,
+      width: 0.13,
+      strength: 0.7,
+      lifetime: 1.25,
+      normalStrength: 0.42
+    });
+  }
+
+  addRainRipple(waterBodyId: string, x: number, z: number, elapsedSeconds: number): void {
+    this.addWaterRipple(waterBodyId, x, z, elapsedSeconds, 0.14, {
+      radius: 0.42,
+      frequency: 10,
+      speed: 1.6,
+      width: 0.1,
+      strength: 0.58,
+      lifetime: 0.9,
+      normalStrength: 0.32
+    });
+  }
+
+  private addWaterRipple(
+    waterBodyId: string,
+    x: number,
+    z: number,
+    elapsedSeconds: number,
+    cooldown: number,
+    params: Record<string, unknown>
+  ): void {
     const last = this.waterInteractionAt.get(waterBodyId) ?? -Infinity;
-    if (elapsedSeconds - last < 0.24) return;
+    if (elapsedSeconds - last < cooldown) return;
     const binding = this.waterBindings.find((candidate) => (
       candidate.mesh.userData.waterBodyId === waterBodyId
       || (Array.isArray(candidate.mesh.userData.waterBodyIds)
@@ -290,12 +320,7 @@ export class RenderRuntimeAdapter {
     const surface = binding.surface as InteractiveWaterSurface;
     surface.setRippleDecalParams({
       enabled: true,
-      radius: 0.72,
-      speed: 1.35,
-      width: 0.13,
-      strength: 0.7,
-      lifetime: 1.25,
-      normalStrength: 0.42
+      ...params
     });
     surface.addRippleDecalPoint(x, z);
     this.waterInteractionAt.set(waterBodyId, elapsedSeconds);
@@ -492,7 +517,8 @@ export class RenderRuntimeAdapter {
 
   private applyWaterStyles(styles: RuntimeWaterStyle[]): void {
     if (!this.modelsRoot) return;
-    const meshes = scopedMeshes(this.modelsRoot, { target: 'water', tag: 'water' });
+    const meshes = scopedMeshes(this.modelsRoot, { target: 'water', tag: 'water' })
+      .filter(shouldBindRenderPlanWaterSurface);
     for (const mesh of meshes) {
       const style = styles.find((candidate) => matchesScope(mesh, candidate.scope));
       const recipe = waterRecipe(style?.recipe ?? defaultWaterStyle(mesh).recipe);
@@ -908,6 +934,11 @@ export class RenderRuntimeAdapter {
     const target = pass.uniforms[name]?.value as THREE.Vector3 | undefined;
     target?.set(x, y, z);
   }
+}
+
+export function shouldBindRenderPlanWaterSurface(mesh: THREE.Mesh): boolean {
+  return mesh.userData.isModelWater !== true
+    && mesh.userData.isWaterRefractionBody !== true;
 }
 
 function scopedTargets(root: THREE.Object3D, scope: { target: string; tag?: string }): THREE.Object3D[] {

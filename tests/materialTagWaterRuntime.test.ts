@@ -3,10 +3,30 @@ import { describe, expect, it, vi } from 'vitest';
 import {
   MaterialTagWaterRuntime,
   findPoolContainerBottom,
+  resolveModelWaterMaskSource,
   resolveWaterFallRoutes
 } from '../src/client/materialTagWaterRuntime';
 
 describe('material-tag water routing', () => {
+  it('uses the complete pre-batching model tree for structural water masks', () => {
+    const modelRoot = new THREE.Group();
+    modelRoot.position.set(4, 2, -3);
+    const clipSource = new THREE.Group();
+    const rim = new THREE.Mesh(new THREE.BoxGeometry(3, 0.4, 0.3));
+    rim.userData.nodeId = 'rim';
+    const water = new THREE.Mesh(new THREE.BoxGeometry(2, 0.05, 2));
+    water.userData.nodeId = 'water';
+    clipSource.add(rim, water);
+    modelRoot.userData.materialTagClipSource = clipSource;
+
+    const resolved = resolveModelWaterMaskSource(modelRoot, new Set(['water']));
+
+    expect(resolved.clipObject).toBe(clipSource);
+    expect(resolved.objects.get('rim')).toBe(rim);
+    expect(resolved.ignoredObjects).toEqual([water]);
+    expect(clipSource.getWorldPosition(new THREE.Vector3()).toArray()).toEqual([4, 2, -3]);
+  });
+
   it('syncs the active environment into every generated model-water surface', () => {
     const environmentMap = new THREE.Texture();
     const first = {
@@ -26,6 +46,85 @@ describe('material-tag water routing', () => {
     expect(first.setWaterEnvMap).toHaveBeenCalledWith(environmentMap);
     expect(first.setWaterReflectionParams).toHaveBeenCalledWith({ useSceneEnvironment: true });
     expect(second.setWaterEnvMap).toHaveBeenCalledWith(environmentMap);
+  });
+
+  it('renders planar scene reflections for generated model-water surfaces each frame', () => {
+    const reflection = {
+      setWaterSurfaces: vi.fn(),
+      render: vi.fn()
+    };
+    const runtime = Object.create(MaterialTagWaterRuntime.prototype) as MaterialTagWaterRuntime;
+    Object.assign(runtime as unknown as Record<string, unknown>, {
+      waterInstances: {
+        waterSurfaces: () => [{ mesh: new THREE.Mesh() }],
+        update: vi.fn()
+      },
+      waterfalls: new Map(),
+      particleEngine: { update: vi.fn() },
+      fountainChain: { tick: vi.fn() },
+      planarReflection: reflection,
+      reflectionCamera: new THREE.PerspectiveCamera(),
+      reflectedSurfaces: [],
+      renderer: { domElement: { height: 720 } }
+    });
+
+    runtime.update(1 / 60, (runtime as unknown as { reflectionCamera: THREE.Camera }).reflectionCamera);
+
+    expect(reflection.setWaterSurfaces).toHaveBeenCalledOnce();
+    expect(reflection.render).toHaveBeenCalledOnce();
+  });
+
+  it('restores the model-water material when another runtime replaces the mesh material', () => {
+    const ownedMaterial = new THREE.ShaderMaterial();
+    const replacedMaterial = new THREE.ShaderMaterial();
+    const mesh = new THREE.Mesh(new THREE.PlaneGeometry(), replacedMaterial);
+    const surface = { mesh, material: ownedMaterial };
+    const runtime = Object.create(MaterialTagWaterRuntime.prototype) as MaterialTagWaterRuntime;
+    Object.assign(runtime as unknown as Record<string, unknown>, {
+      waterInstances: {
+        waterSurfaces: () => [surface],
+        update: vi.fn()
+      },
+      waterfalls: new Map(),
+      particleEngine: { update: vi.fn() },
+      fountainChain: { tick: vi.fn() },
+      planarReflection: { setWaterSurfaces: vi.fn(), render: vi.fn() },
+      reflectionCamera: new THREE.PerspectiveCamera(),
+      reflectedSurfaces: [],
+      renderer: { domElement: { height: 720 } }
+    });
+
+    runtime.update(1 / 60, (runtime as unknown as { reflectionCamera: THREE.Camera }).reflectionCamera);
+
+    expect(mesh.material).toBe(ownedMaterial);
+    mesh.geometry.dispose();
+    ownedMaterial.dispose();
+    replacedMaterial.dispose();
+  });
+
+  it('detaches planar reflections before disposing model-water materials', () => {
+    let waterDisposed = false;
+    const reflection = {
+      setWaterSurfaces: vi.fn(() => {
+        if (waterDisposed) throw new Error('water material was already disposed');
+      })
+    };
+    const runtime = Object.create(MaterialTagWaterRuntime.prototype) as MaterialTagWaterRuntime;
+    Object.assign(runtime as unknown as Record<string, unknown>, {
+      waterfalls: new Map(),
+      planarReflection: reflection,
+      reflectedSurfaces: [{}],
+      waterInstances: { disposeAll: () => { waterDisposed = true; } },
+      hiddenSources: new Set(),
+      poolsByModel: new Map(),
+      fountainChain: { dispose: vi.fn() },
+      particleEngine: { removeGroup: vi.fn() }
+    });
+
+    runtime.clear();
+
+    expect(reflection.setWaterSurfaces).toHaveBeenCalledWith([]);
+    expect(waterDisposed).toBe(true);
   });
 
   it('keeps thin sheets as walls and routes volumetric bodies to wrap surfaces', () => {

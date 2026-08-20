@@ -339,6 +339,15 @@ function addFallbackVisual(
   runtimeIndex: RuntimeIndex
 ): boolean {
   const visual = cloneAssetVisual(template);
+  if (hasAuthoredWater(template.userData.materialTagSource)) {
+    // Batching removes the static basin/rim meshes from the visible fallback tree.
+    // Keep one detached, geometry-sharing analysis tree so model-water masking can
+    // still see the complete authored container instead of only the water placeholders.
+    Object.defineProperty(visual.userData, 'materialTagClipSource', {
+      value: template.clone(true),
+      enumerable: false
+    });
+  }
   const batchedMeshes: THREE.Object3D[] = [];
   visual.traverse((child) => {
     if ((child as THREE.Mesh).isMesh && batchableNodeIds.has(String(child.userData.nodeId ?? ''))) {
@@ -395,6 +404,14 @@ function applyBaseRecipe(
     if (mesh) mesh.userData.materialTags = mesh.userData.materialTags ?? [];
     surfaceBindings?.push({ material, binding: bindings.surface });
   }
+}
+
+function hasAuthoredWater(modelJson: unknown): boolean {
+  return readNodes(modelJson).some((node) => Array.isArray(node.tags) && node.tags.some((entry) => (
+    entry !== null
+    && typeof entry === 'object'
+    && (entry as { tag?: unknown }).tag === 'water'
+  )));
 }
 
 /** Reinstall base tag patches after a render-scheme reset removes shared material patches. */

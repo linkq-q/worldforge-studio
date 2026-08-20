@@ -74,6 +74,78 @@ export function createPolygonMask(width, height, points) {
   return canvas;
 }
 
+/** Keep the largest connected water region after structural barriers are removed. */
+export function retainLargestWaterRegion(waterPixels, barrierPixels, width, height, barrierPadding = 0) {
+  const count = width * height;
+  if (waterPixels?.length !== count * 4 || barrierPixels?.length !== count * 4) return false;
+
+  const candidate = new Uint8Array(count);
+  const padding = Math.max(0, Math.floor(barrierPadding));
+  const blocked = new Uint8Array(count);
+  const visited = new Uint8Array(count);
+  const queue = new Int32Array(count);
+  let best = null;
+  let bestLength = 0;
+
+  for (let index = 0; index < count; index++) {
+    if (barrierPixels[index * 4] <= 127) continue;
+    const x = index % width;
+    const y = Math.floor(index / width);
+    for (let dy = -padding; dy <= padding; dy++) {
+      const yy = y + dy;
+      if (yy < 0 || yy >= height) continue;
+      for (let dx = -padding; dx <= padding; dx++) {
+        const xx = x + dx;
+        if (xx >= 0 && xx < width) blocked[yy * width + xx] = 1;
+      }
+    }
+  }
+  for (let index = 0; index < count; index++) {
+    candidate[index] = waterPixels[index * 4] > 127 && !blocked[index] ? 1 : 0;
+  }
+
+  for (let start = 0; start < count; start++) {
+    if (!candidate[start] || visited[start]) continue;
+    let head = 0;
+    let tail = 0;
+    queue[tail++] = start;
+    visited[start] = 1;
+    while (head < tail) {
+      const index = queue[head++];
+      const x = index % width;
+      const y = Math.floor(index / width);
+      const neighbors = [
+        x > 0 ? index - 1 : -1,
+        x + 1 < width ? index + 1 : -1,
+        y > 0 ? index - width : -1,
+        y + 1 < height ? index + width : -1,
+      ];
+      for (const next of neighbors) {
+        if (next < 0 || !candidate[next] || visited[next]) continue;
+        visited[next] = 1;
+        queue[tail++] = next;
+      }
+    }
+    if (tail > bestLength) {
+      bestLength = tail;
+      best = queue.slice(0, tail);
+    }
+  }
+
+  if (!best?.length) return false;
+  const keep = new Uint8Array(count);
+  for (const index of best) keep[index] = 1;
+  for (let index = 0; index < count; index++) {
+    const value = keep[index] ? 255 : 0;
+    const offset = index * 4;
+    waterPixels[offset] = value;
+    waterPixels[offset + 1] = value;
+    waterPixels[offset + 2] = value;
+    waterPixels[offset + 3] = 255;
+  }
+  return true;
+}
+
 /**
  * 对一个 Object3D 做正交俯视剪影快照，生成贴合其 XZ 轮廓的黑白 waterMask。
  *
@@ -138,6 +210,47 @@ export function createMaskFromObject(renderer, object3d, resolution = 512, optio
     renderer.autoClear = false;
     renderer.render(object3d, camera);
     renderer.readRenderTargetPixels(rt, 0, 0, resolution, resolution, pixels);
+
+    if (options.clipObject) {
+      const barrierPixels = new Uint8Array(resolution * resolution * 4);
+      const clipMaterials = [];
+      const ignoredVisibility = [];
+      try {
+        for (const ignored of options.ignoredObjects || []) {
+          ignoredVisibility.push([ignored, ignored.visible]);
+          ignored.visible = false;
+        }
+        options.clipObject.updateWorldMatrix(true, true);
+        const clipBox = new THREE.Box3().setFromObject(options.clipObject);
+        camera.position.y = Math.max(clipBox.max.y + 1, top + 1);
+        camera.far = Math.max(camera.position.y - top + Math.max(size * 0.005, 0.02), 1);
+        camera.lookAt(center.x, top, center.z);
+        camera.updateProjectionMatrix();
+        options.clipObject.traverse(o => {
+          if (o.isMesh || o.isInstancedMesh) {
+            clipMaterials.push([o, o.material]);
+            o.material = whiteMat;
+          }
+        });
+        renderer.setRenderTarget(rt);
+        renderer.setClearColor(0x000000, 1);
+        renderer.clear(true, true, true);
+        renderer.render(options.clipObject, camera);
+        renderer.readRenderTargetPixels(rt, 0, 0, resolution, resolution, barrierPixels);
+        // The complete pre-batching model tree supplies the real basin/rim silhouette.
+        // A one-pixel close only seals raster seams; container size never affects it.
+        retainLargestWaterRegion(
+          pixels,
+          barrierPixels,
+          resolution,
+          resolution,
+          1
+        );
+      } finally {
+        for (const [o, mat] of clipMaterials) o.material = mat;
+        for (const [ignored, visible] of ignoredVisibility) ignored.visible = visible;
+      }
+    }
   } finally {
     renderer.autoClear = prevAutoClear;
     for (const [o, mat] of prevMaterials) o.material = mat;

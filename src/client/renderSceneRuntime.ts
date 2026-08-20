@@ -9,6 +9,7 @@ import { configureRendererOutput } from './renderOutputPipeline';
 import type { RenderedMap } from './mapRenderer';
 import type { Vec3 } from '../shared/protocol';
 import { DEFAULT_SUN_POSITION, type EditableMap } from '../shared/map';
+import { isPointInsideWaterBody } from '../shared/mapWater';
 import type { RenderScheme } from '../shared/renderScheme';
 import type { VisualTimeOfDay } from '../shared/visualDirection';
 import { mixHexColors } from '../shared/colorDirector';
@@ -113,6 +114,8 @@ export class RenderSceneRuntime {
   private baseSunPosition = new THREE.Vector3(...DEFAULT_SUN_POSITION);
   private baseFogColor = '#111719';
   private baseFogDensity = 0;
+  private rainRippleBudget = 0;
+  private rainRippleSequence = 0;
 
   constructor(options: RenderSceneRuntimeOptions) {
     this.scene.background = new THREE.Color(NEUTRAL_BACKGROUND);
@@ -200,7 +203,9 @@ export class RenderSceneRuntime {
 
   /** Advances animated capabilities (grass, water, effects) and draws a frame. */
   renderFrame(deltaTime: number, elapsedSeconds: number): void {
-    this.applyWeatherFrame(this.weather.update(deltaTime));
+    const weatherFrame = this.weather.update(deltaTime);
+    this.applyWeatherFrame(weatherFrame);
+    this.updateRainRipples(weatherFrame, deltaTime, elapsedSeconds);
     this.rendered?.update(deltaTime, this.camera, this.adapter.getContentVisibilityDistance());
     this.atmosphereFx.update(deltaTime, elapsedSeconds);
     this.adapter.tick(deltaTime, elapsedSeconds);
@@ -336,6 +341,54 @@ export class RenderSceneRuntime {
     this.adapter.applyDistanceFog(this.baseFogColor, Math.max(this.baseFogDensity, frame.fogDensity));
     this.rendered?.setWeatherSurface(frame.wetness, frame.snowCover);
   }
+
+  private updateRainRipples(frame: WeatherFrame, deltaTime: number, elapsedSeconds: number): void {
+    if (!this.map || !frame.enabled || frame.precipitationKind !== 'rain' || frame.precipitation <= 0) {
+      this.rainRippleBudget = 0;
+      return;
+    }
+    this.rainRippleBudget += Math.max(0, deltaTime) * frame.precipitation * 5;
+    let emitted = 0;
+    while (this.rainRippleBudget >= 1 && emitted < 3) {
+      this.rainRippleBudget -= 1;
+      const impact = sampleRainRipplePoint(
+        this.map,
+        this.camera.position.x,
+        this.camera.position.z,
+        this.rainRippleSequence++
+      );
+      if (impact) {
+        this.adapter.addRainRipple(impact.waterBodyId, impact.x, impact.z, elapsedSeconds);
+      }
+      emitted += 1;
+    }
+  }
+}
+
+export function sampleRainRipplePoint(
+  map: EditableMap,
+  cameraX: number,
+  cameraZ: number,
+  sequence: number
+): { waterBodyId: string; x: number; z: number } | null {
+  const radius = 7;
+  for (let attempt = 0; attempt < 16; attempt += 1) {
+    const x = cameraX + (rainUnit(sequence, attempt * 2) * 2 - 1) * radius;
+    const z = cameraZ + (rainUnit(sequence, attempt * 2 + 1) * 2 - 1) * radius;
+    const water = map.waterBodies.find((candidate) => isPointInsideWaterBody(candidate, x, z, map));
+    if (water) return { waterBodyId: water.id, x, z };
+  }
+  return null;
+}
+
+function rainUnit(sequence: number, salt: number): number {
+  let value = (Math.trunc(sequence) ^ Math.imul(salt + 1, 0x9e3779b1)) >>> 0;
+  value ^= value >>> 16;
+  value = Math.imul(value, 0x7feb352d);
+  value ^= value >>> 15;
+  value = Math.imul(value, 0x846ca68b);
+  value ^= value >>> 16;
+  return (value >>> 0) / 4294967295;
 }
 
 /**

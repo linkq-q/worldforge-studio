@@ -167,6 +167,8 @@ declare module '@voxel-studio/render-runtime' {
       scene: import('three').Scene;
       camera: import('three').PerspectiveCamera;
       waterMesh?: import('three').Mesh | null;
+      width?: number;
+      height?: number;
     });
     setWaterSurfaces(surfaces: PlanarReflectionSurface[]): void;
     syncToRendererSize(): void;
@@ -303,6 +305,13 @@ declare module '@voxel-studio/render-runtime/environment' {
     url: string,
     extension: string
   ): Promise<import('three').Texture>;
+  export function retainLargestWaterRegion(
+    waterPixels: Uint8Array,
+    barrierPixels: Uint8Array,
+    width: number,
+    height: number,
+    barrierPadding?: number
+  ): boolean;
   export class HDRISkyDome {
     mesh: import('three').Mesh;
     material: import('three').ShaderMaterial;
