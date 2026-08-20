@@ -82,7 +82,8 @@ describe('map AI adapter', () => {
 
     expect(fetchImpl).toHaveBeenCalledOnce();
     expect(composerRequest.messages[0].content).toContain('Unified scene ownership');
-    expect(composerRequest.messages[0].content).toContain('Decide this semantically');
+    expect(composerRequest.messages[0].content).toContain('Decide semantically from the requested place');
+    expect(composerRequest.messages[0].content).toContain('api.design({experienceMode');
     expect(composerRequest.messages[1].content).toBe('Create a compact ceremonial arena');
     expect(suggestion.codePlan?.sceneIntent).toBe('authored');
     expect(suggestion.codePlan?.functions).toContain('circlePoint');

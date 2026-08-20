@@ -83,6 +83,8 @@ export interface MapAiOptions {
   approvedCompositionPlan?: SceneCompositionPlan;
   /** Use one unified bounded Scene Code program for outdoor generation. */
   sceneAgent?: boolean;
+  /** Optional user-authored preference for focal assets. */
+  focusPrompt?: string;
   /** Return an indoor Code candidate and asset declaration list without generating assets. */
   discoveryOnly?: boolean;
   /** Continue from a user-approved indoor Code candidate. */

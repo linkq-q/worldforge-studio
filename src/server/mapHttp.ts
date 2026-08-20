@@ -421,6 +421,7 @@ async function handleEditorMaps(req: Req, res: Res, store: MapStore, parts: stri
       approvedCompositionPlan?: SceneCompositionPlan;
       approvedCode?: string;
       sceneAgent?: boolean;
+      focusPrompt?: string;
     }>(req);
     const prompt = body.prompt?.trim();
     if (!prompt) throw new HttpError(400, 'missing_prompt');
@@ -475,6 +476,7 @@ async function handleEditorMaps(req: Req, res: Res, store: MapStore, parts: stri
             reusableAssetIds: libraryAssets.map((asset) => asset.id),
             minNewAssets: body.minNewAssets,
             maxNewAssets: body.maxNewAssets,
+            focusPrompt: body.focusPrompt,
             discoveryOnly: true,
             onProgress,
             createAsset: async () => { throw new Error('discovery_only_asset_generation'); }
@@ -518,6 +520,7 @@ async function handleEditorMaps(req: Req, res: Res, store: MapStore, parts: stri
           approvedCompositionPlan: body.approvedCompositionPlan,
           approvedCode: body.approvedCode,
           sceneAgent: body.sceneAgent === true,
+          focusPrompt: body.focusPrompt,
           onProgress,
           onPreview,
           createAsset: async (request, report) => {

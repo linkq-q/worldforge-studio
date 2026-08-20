@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { createEmptyMap, type MapAsset } from '../src/shared/map';
+import { createEmptyMap, getMapObjectAabbs, type MapAsset } from '../src/shared/map';
 import {
   buildMapCodePlannerSystemPrompt,
   discoverMapCodeAssets,
@@ -21,6 +21,7 @@ describe('map code planner', () => {
     expect(prompt).toContain('api.ceilingPoint(localX,localZ,objectHeight?,drop?)');
     expect(prompt).toContain("api.opening({id,kind:'door'|'window'");
     expect(prompt).toContain("api.attach({assetId?,name?,parentId,kind:'supported'|'mounted'");
+    expect(prompt).toContain("anchorY?:'bottom'|'center'|'top'");
     expect(prompt).toContain('Keep a continuous route at least 0.8 world units wide');
     expect(prompt).toContain('Do not generate a whole room, floor, ceiling, wall shell, terrain');
     expect(prompt).toContain("role:'functional'|'decor'");
@@ -92,6 +93,39 @@ describe('map code planner', () => {
     expect(suggestion.diagnostics?.some((issue) => issue.code === 'object.invalid-support')).toBe(false);
   });
 
+  it('mounts an outdoor entrance onto its authored structure instead of leaving it in world space', () => {
+    const arena: MapAsset = {
+      ...testAsset('asset-arena', '竞技场主体'),
+      modelJson: {
+        format: 2,
+        nodes: [{ id: 'arena', transform: { pos: [0, 3, 0] }, mesh: { type: 'box', params: { width: 10, height: 6, depth: 8 } } }]
+      }
+    };
+    const gate: MapAsset = {
+      ...testAsset('asset-gate', '竞技场门'),
+      modelJson: {
+        format: 2,
+        nodes: [{ id: 'gate', transform: { pos: [0, 1.5, 0] }, mesh: { type: 'box', params: { width: 2, height: 3, depth: 0.4 } } }]
+      }
+    };
+    const suggestion = executeMapCodePlan(`function plan(api) {
+      const arena = api.place({ assetId:'asset-arena', name:'竞技场主体', position:[0,0], dimensions:[10,6,8], role:'structure' });
+      api.attach({ assetId:'asset-gate', name:'竞技场门', parentId:arena, kind:'mounted', side:'south', offset:[0,14], contact:0.12, role:'structure' });
+    }`, createEmptyMap(), [arena, gate]);
+    const objects = suggestion.operations.filter((operation) => operation.type === 'object.add');
+
+    expect(objects).toHaveLength(2);
+    expect(objects[1].object.parentId).toBe(objects[0].object.id);
+    expect(objects[1].object.heightMode).toBe('fixed');
+    expect(objects[1].object.locked).toBe(true);
+    expect(suggestion.diagnostics?.some((issue) => issue.code === 'object.invalid-support')).toBe(false);
+    const applied = applyMapOperations(createEmptyMap(), suggestion.operations);
+    const gateBounds = getMapObjectAabbs({ ...applied, assets: [arena, gate] })
+      .find((box) => box.objectId === objects[1].object.id);
+    expect(gateBounds?.min[1]).toBeCloseTo(0);
+    expect(gateBounds?.max[1]).toBeCloseTo(3);
+  });
+
   it('keeps a living-room group inside the user-owned room without outdoor operations', () => {
     const map = createEmptyMap('Living room', 'indoor-code-living-room', [10, 4, 8], 'voxel', 'indoor', [10, 4, 8]);
     const originalSize = [...map.room!.size];
@@ -137,7 +171,22 @@ describe('map code planner', () => {
     expect(prompt).toContain('sampleBezierFrames(...) -> frame objects with point,tangent,normal');
     expect(prompt).toContain('sampleBezierFramesBySpacing(...,spacing,gapRatio?)');
     expect(prompt).toContain('api.placeBetween({assetId?,name?,start:[x,z],end:[x,z]');
+    expect(prompt).toContain('frontTarget?:[x,z]');
+    expect(prompt).toContain("api.attach({assetId?,name?,parentId,kind:'supported'|'mounted'");
+    expect(prompt).toContain("Entrances default to anchorY:'bottom'");
+    expect(prompt).toContain('Never use standalone api.place with [x,y,z] for a door, window, banner, sign or facade ornament');
+    expect(prompt).toContain("api.mirrorPoint(point,'x'|'z',coordinate?)");
     expect(prompt).toContain('For a continuous connected run, use one asset family and normally variants:1.');
+    expect(prompt).toContain('Continuous structures use gapRatio:0');
+    expect(prompt).toContain('connect the last point back to the first');
+    expect(prompt).toContain("Paired or axial decoration uses mirrorPoint and density:'tight'");
+    expect(prompt).toContain('complete a dedicated detail-fill pass');
+    expect(prompt).toContain('api.keepDry([x,z],clearance?)');
+    expect(prompt).toContain('rather than one ring');
+    expect(prompt).toContain('api.routeNetwork({id,nodes:[{id,point:[x,z],role?}],edges:');
+    expect(prompt).toContain('clearNatural:true');
+    expect(prompt).toContain('api.ellipsePoint(index,count,radiusX,radiusZ');
+    expect(prompt).toContain('mix?:{short?,tall?,flowers?}');
     expect(prompt).toContain('facing:{normal:frame.normal}');
     expect(prompt).toContain('poissonDisk plus noise2D/fbm2D');
     expect(prompt).toContain('gridPoints with an explicit center and spacing');
@@ -155,9 +204,16 @@ describe('map code planner', () => {
 
     expect(prompt).toContain('Unified scene ownership');
     expect(prompt).toContain("api.sceneIntent({kind:'natural'|'authored'");
-    expect(prompt).toContain('Decide this semantically');
-    expect(prompt).toContain('A Chinese garden should be recognized through relationships');
-    expect(prompt).toContain('entrance, screened turn, reveal, focal view, counter-view, and return path');
+    expect(prompt).toContain('Decide semantically from the requested place');
+    expect(prompt).toContain('api.design({experienceMode');
+    expect(prompt).toContain('one focus, multiple peer focuses, a primary-secondary hierarchy');
+    expect(prompt).toContain('framed/borrowed/opposed views');
+    expect(prompt).toContain('A library may reveal one dominant mass immediately');
+    expect(prompt).toContain('a Chinese garden may use several sequential scenes');
+    expect(prompt).toContain('Every leaf design group is a complete scene room');
+    expect(prompt).toContain('Every declared layer intent must be fulfilled by actual placements');
+    expect(prompt).toContain('minCount?:1..64');
+    expect(prompt).toContain('A large empty surface is not automatically meaningful negative space');
     expect(prompt).toContain('api.bridge({waterId');
     expect(prompt).toContain('api.terrain');
     expect(prompt).toContain('api.modifyTerrain');
@@ -168,6 +224,25 @@ describe('map code planner', () => {
     expect(prompt).toContain("api.grass({id:'short-id',name?,preset:'meadow'|'sand'|'wetland'");
     expect(prompt).toContain('Enum fields are closed choices, not descriptions.');
     expect(prompt).toContain("role:'structure'|'environment'");
+  });
+
+  it('passes the optional user focal preference in the same Code request', async () => {
+    const code = `function plan(api) {
+      api.sceneIntent({kind:'authored',reason:'library'});
+      api.design({experienceMode:'immediate',intent:'主楼突出',groups:[],focuses:[],viewpoints:[],relations:[]});
+      api.place({name:'图书馆',position:[0,0],role:'structure'});
+    }`;
+    const fetchImpl = vi.fn().mockResolvedValue(new Response(JSON.stringify({ ok: true, content: code }), {
+      status: 200, headers: { 'Content-Type': 'application/json' }
+    }));
+
+    await generateMapCodeSuggestion('生成大学校园', createEmptyMap(), [], {
+      apiBase: 'https://example.test', provider: 'gpt', fetchImpl,
+      scope: 'scene', minNewAssets: 0, maxNewAssets: 0, focusPrompt: '图书馆主楼'
+    });
+
+    const body = JSON.parse(String(fetchImpl.mock.calls[0][1]?.body)) as { messages: Array<{ role: string; content: string }> };
+    expect(body.messages.find((message) => message.role === 'user')?.content).toContain('图书馆主楼');
   });
 
   it('accepts structured terrain forms and normalizes common semantic enum labels', () => {
@@ -270,6 +345,29 @@ describe('map code planner', () => {
     ]));
   });
 
+  it('normalizes authored garden grass into a dense mixed-height layer', () => {
+    const suggestion = executeMapCodePlan(`function plan(api) {
+      api.sceneIntent({ kind:'authored', reason:'精修园林' });
+      api.grass({
+        id:'garden-grass', preset:'meadow',
+        region:{kind:'circle',center:[0,0],radius:18},
+        density:0.3, variation:0.8, height:0.25,
+        mix:{short:0.55,tall:0.4,flowers:0.05}
+      });
+    }`, createEmptyMap());
+    const layer = suggestion.operations.find((operation) => operation.type === 'grass.layer.add');
+    const generated = suggestion.operations.find((operation) => operation.type === 'grass.generate');
+
+    expect(layer).toEqual(expect.objectContaining({
+      type: 'grass.layer.add',
+      layer: expect.objectContaining({
+        height: 0.65,
+        mix: { short: 0.55, tall: 0.4, flowers: 0.05 }
+      })
+    }));
+    expect(generated).toEqual(expect.objectContaining({ density: 0.72, variation: 0.28 }));
+  });
+
   it('allows AI-declared natural scenes to compose terrain without inventing architecture', async () => {
     const code = `function plan(api) {
       api.sceneIntent({ kind: 'natural', reason: 'An untouched wetland has no authored construction' });
@@ -329,6 +427,78 @@ describe('map code planner', () => {
     expect(suggestion.codePlan?.sceneIntent).toBe('authored');
     expect(suggestion.operations).toEqual(expect.arrayContaining([
       expect.objectContaining({ type: 'object.add', object: expect.objectContaining({ assetId: gate.id, locked: true }) })
+    ]));
+  });
+
+  it('asks AI once to complete promised scene layers and an oversized empty arrival court', async () => {
+    const incomplete = `function plan(api) {
+      api.sceneIntent({ kind:'authored', reason:'人工园林' });
+      api.design({
+        experienceMode:'sequential', intent:'入口后展开水院',
+        groups:[{
+          id:'entry', name:'入口院', intent:'门内转折后进入园林',
+          region:{kind:'polygon',points:[[-12,-40],[12,-40],[12,-14],[-12,-14]]},
+          layers:[
+            {level:1,intent:'园门和两侧建筑共同围合前院',density:'tight',minCount:2},
+            {level:3,intent:'门侧竹石和坐凳',density:'tight'}
+          ]
+        }], focuses:[], viewpoints:[], relations:[]
+      });
+      api.surface({
+        id:'entry-court', surface:'paving', clearNatural:true,
+        region:{kind:'polygon',points:[[-9,-40],[9,-40],[9,-18],[-9,-18]]}
+      });
+      api.place({ name:'园门', position:[0,-38], role:'structure', groupId:'entry', layer:1 });
+    }`;
+    const repaired = `function plan(api) {
+      api.sceneIntent({ kind:'authored', reason:'人工园林' });
+      api.design({
+        experienceMode:'sequential', intent:'入口后展开水院',
+        groups:[{
+          id:'entry', name:'入口院', intent:'小前院由门、坐凳和竹石共同构成',
+          region:{kind:'polygon',points:[[-12,-40],[12,-40],[12,-14],[-12,-14]]},
+          layers:[
+            {level:1,intent:'园门和两侧建筑共同围合前院',density:'tight',minCount:2},
+            {level:2,intent:'两侧坐凳形成停留点',density:'normal'},
+            {level:3,intent:'门侧竹石围合',density:'tight'}
+          ]
+        }], focuses:[], viewpoints:[], relations:[]
+      });
+      api.surface({
+        id:'entry-court', surface:'paving', clearNatural:true,
+        region:{kind:'polygon',points:[[-5,-40],[5,-40],[5,-27],[-5,-27]]}
+      });
+      api.place({ name:'园门', position:[0,-38], role:'structure', groupId:'entry', layer:1 });
+      api.place({ name:'入口厢房', position:[-8,-26], role:'structure', groupId:'entry', layer:1 });
+      api.place({ name:'石桌凳', position:[-7,-27], role:'environment', groupId:'entry', layer:2 });
+      api.place({ name:'竹石组景', position:[7,-25], role:'environment', groupId:'entry', layer:3 });
+    }`;
+    const response = (content: string) => new Response(JSON.stringify({ ok: true, content }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' }
+    });
+    const fetchImpl = vi.fn()
+      .mockResolvedValueOnce(response(incomplete))
+      .mockResolvedValueOnce(response(repaired));
+
+    const suggestion = await generateMapCodeSuggestion('生成中式园林', createEmptyMap(), [], {
+      apiBase: 'https://example.test', provider: 'gpt', fetchImpl,
+      minNewAssets: 0, maxNewAssets: 0, scope: 'scene'
+    });
+    const repairRequest = JSON.parse(String((fetchImpl.mock.calls[1]?.[1] as RequestInit | undefined)?.body)) as {
+      messages: Array<{ content: string }>;
+    };
+    const applied = applyMapOperations(createEmptyMap(), suggestion.operations);
+
+    expect(fetchImpl).toHaveBeenCalledTimes(2);
+    expect(repairRequest.messages.at(-1)?.content).toContain('scene_group_underfilled_layer:entry:1:1/2');
+    expect(repairRequest.messages.at(-1)?.content).toContain('scene_group_missing_layer:entry:3');
+    expect(repairRequest.messages.at(-1)?.content).toContain('scene_group_oversized_clear_space:entry');
+    expect(applied.objects.filter((object) => object.designGroupId === 'entry')).toEqual(expect.arrayContaining([
+      expect.objectContaining({ name: '园门', compositionLayer: 1 }),
+      expect.objectContaining({ name: '入口厢房', compositionLayer: 1 }),
+      expect.objectContaining({ name: '石桌凳', compositionLayer: 2 }),
+      expect.objectContaining({ name: '竹石组景', compositionLayer: 3 })
     ]));
   });
 
@@ -497,6 +667,127 @@ describe('map code planner', () => {
     expect(suggestion.codePlan?.functions).toEqual(['placeBetween']);
   });
 
+  it('keeps arena seating connected on local X while its local front faces the arena', () => {
+    const stand: MapAsset = {
+      ...testAsset('asset-arena-stand', '环形看台'),
+      tags: ['stand', 'arena', 'seating'],
+      prompt: 'Modular spectator stand. Tangent connection axis is local X and spectator-facing front is local Z+.',
+      modelJson: {
+        format: 2,
+        nodes: [{
+          id: 'stand-body', transform: { pos: [0, 4, 0] },
+          mesh: { type: 'box', params: { width: 7, height: 8, depth: 8 } }
+        }]
+      }
+    };
+    const suggestion = executeMapCodePlan(`function plan(api) {
+      api.placeBetween({
+        assetId:'asset-arena-stand', name:'环形看台',
+        start:[24,0], end:[22,7], dimensions:[7,8,8],
+        spanAxis:'z', facing:{target:[0,0]}, groupId:'arena', layer:1
+      });
+    }`, createEmptyMap(), [stand]);
+    const placement = suggestion.operations.find((operation) => operation.type === 'object.add');
+
+    expect(placement?.type).toBe('object.add');
+    if (placement?.type !== 'object.add') throw new Error('missing arena stand');
+    expect(placement.object.transform?.size?.[0]).toBeCloseTo(Math.hypot(2, 7));
+    expect(placement.object.transform?.size?.[2]).toBeCloseTo(8);
+    const position = placement.object.transform?.position ?? [0, 0, 0];
+    const yaw = placement.object.transform?.rotation?.[1] ?? 0;
+    const front = [Math.sin(yaw), Math.cos(yaw)];
+    expect(front[0] * -position[0] + front[1] * -position[2]).toBeGreaterThan(0);
+  });
+
+  it('builds a closed ellipse from shared endpoints with bounded miter overlap', () => {
+    const wall: MapAsset = {
+      ...testAsset('asset-ellipse-wall', '竞技场外墙'),
+      tags: ['wall', 'arena'],
+      modelJson: {
+        format: 2,
+        nodes: [{
+          id: 'wall-body', transform: { pos: [0, 2, 0] },
+          mesh: { type: 'box', params: { width: 4, height: 4, depth: 1 } }
+        }]
+      }
+    };
+    const suggestion = executeMapCodePlan(`function plan(api) {
+      const points=[];
+      for(let i=0;i<12;i+=1) points.push(api.ellipsePoint(i,12,18,12));
+      for(let i=0;i<points.length;i+=1) api.placeBetween({
+        assetId:'asset-ellipse-wall', name:'竞技场外墙',
+        start:points[i], end:points[(i+1)%points.length],
+        dimensions:[4,4,1], spanAxis:'x', gapRatio:0,
+        role:'structure', groupId:'arena', layer:1
+      });
+    }`, createEmptyMap(), [wall]);
+    const objects = suggestion.operations
+      .filter((operation) => operation.type === 'object.add')
+      .map((operation) => operation.object);
+    const firstStart = [18, 0] as const;
+    const firstEnd = [18 * Math.cos(Math.PI / 6), 12 * Math.sin(Math.PI / 6)] as const;
+    const chord = Math.hypot(firstEnd[0] - firstStart[0], firstEnd[1] - firstStart[1]);
+
+    expect(objects).toHaveLength(12);
+    expect(objects[0].transform?.size?.[0]).toBeGreaterThan(chord);
+    expect(suggestion.codePlan?.functions).toEqual(['ellipsePoint', 'placeBetween']);
+  });
+
+  it('keeps walls and trees out of water without blocking the plan', () => {
+    const wall = { ...testAsset('asset-dry-wall', '园林围墙'), tags: ['wall', 'garden'] };
+    const tree = { ...testAsset('asset-dry-tree', '造型松'), tags: ['tree', 'pine'] };
+    const map = createEmptyMap('water repair', 'water-repair', [64, 12, 64]);
+    const suggestion = executeMapCodePlan(`function plan(api) {
+      api.water('pond',{type:'lake',points:[[-10,-10],[10,-10],[10,10],[-10,10]],level:0.2,depth:1.5});
+      api.place({assetId:'asset-dry-wall',name:'园林围墙',position:[0,0],role:'structure'});
+      api.place({assetId:'asset-dry-tree',name:'造型松',position:api.keepDry([2,2],1),role:'environment'});
+    }`, map, [wall, tree]);
+    const applied = applyMapOperations({ ...map, assets: [wall, tree] }, suggestion.operations);
+    const water = applied.waterBodies[0];
+
+    expect(applied.objects.every((object) => !isPointInsideWaterBody(
+      water, object.transform.position[0], object.transform.position[2], applied
+    ))).toBe(true);
+    expect(suggestion.diagnostics).toEqual(expect.arrayContaining([
+      expect.objectContaining({ code: 'outdoor.water-intrusion-repaired', repaired: true })
+    ]));
+    expect(suggestion.codePlan?.functions).toContain('keepDry');
+  });
+
+  it('repairs repeated ordinary wall samples into shared-endpoint segments', () => {
+    const wall: MapAsset = {
+      ...testAsset('asset-arc-wall', '竞技场外墙'),
+      tags: ['wall', 'arena'],
+      modelJson: {
+        format: 2,
+        nodes: [{
+          id: 'wall-body',
+          transform: { pos: [0, 2, 0] },
+          mesh: { type: 'box', params: { width: 4, height: 4, depth: 1 } }
+        }]
+      }
+    };
+    const suggestion = executeMapCodePlan(`function plan(api) {
+      const points = [[-8,0],[-4,2],[0,3],[4,2],[8,0]];
+      for (const point of points) api.place({
+        assetId:'asset-arc-wall', name:'竞技场外墙', position:point,
+        role:'structure', groupId:'outer-ring', layer:1
+      });
+    }`, createEmptyMap(), [wall]);
+    const objects = suggestion.operations
+      .filter((operation) => operation.type === 'object.add')
+      .map((operation) => operation.object);
+
+    expect(objects).toHaveLength(5);
+    expect(objects.every((object) => (object.transform?.size?.[0] ?? 0) > 3)).toBe(true);
+    for (let index = 0; index < objects.length - 1; index += 1) {
+      const left = horizontalSpanEndpoint(objects[index], wall, 1);
+      const right = horizontalSpanEndpoint(objects[index + 1], wall, -1);
+      expect(left[0]).toBeCloseTo(right[0], 5);
+      expect(left[1]).toBeCloseTo(right[1], 5);
+    }
+  });
+
   it('solves a bridge against the actual water boundary and fixes it above the water surface', () => {
     const bridge: MapAsset = {
       ...testAsset('asset-stone-bridge', '石拱桥'),
@@ -544,6 +835,125 @@ describe('map code planner', () => {
     expect(isPointInsideWaterBody(water!, -halfSpan, 0, applied)).toBe(false);
     expect(isPointInsideWaterBody(water!, halfSpan, 0, applied)).toBe(false);
     expect(suggestion.codePlan?.functions).toContain('bridge');
+    expect(applied.guides).toEqual(expect.arrayContaining([
+      expect.objectContaining({ tags: expect.arrayContaining(['bridge', 'route']) })
+    ]));
+    expect(applied.objects.filter((item) => item.name.includes('桥台'))).toHaveLength(2);
+  });
+
+  it('uses full bridge width for an irregular shore and compiles a curved bridge from local segments', () => {
+    const bridge = testAsset('asset-curve-bridge', '曲桥模块');
+    const map = createEmptyMap();
+    const suggestion = executeMapCodePlan(`function plan(api) {
+      api.water('pond', { type:'lake', points:[[-10,-6],[5,-6],[9,-2],[6,6],[-7,5],[-10,1]], level:0.4 });
+      api.bridge({
+        waterId:'pond', assetId:'asset-curve-bridge', name:'曲桥',
+        crossingCenter:[0,0], direction:[1,0], dimensions:[4,0.8,3],
+        kind:'curved', curveOffset:3, segmentCount:5, groupId:'water-scene', layer:2
+      });
+    }`, map, [bridge]);
+    const applied = applyMapOperations({ ...map, assets: [bridge] }, suggestion.operations);
+    const segments = applied.objects.filter((object) => object.assetId === bridge.id);
+    const guide = applied.guides.find((item) => item.tags.includes('bridge'));
+
+    expect(segments).toHaveLength(5);
+    expect(segments.every((object) => object.designGroupId === 'water-scene' && object.compositionLayer === 2)).toBe(true);
+    expect(guide?.curve).toBe('catmull-rom');
+    expect(guide?.points).toHaveLength(6);
+    const water = applied.waterBodies.find((item) => item.id === 'pond')!;
+    const start = guide!.points[0];
+    const end = guide!.points.at(-1)!;
+    expect(isPointInsideWaterBody(water, start[0], start[1] - 2, applied)).toBe(false);
+    expect(isPointInsideWaterBody(water, start[0], start[1] + 2, applied)).toBe(false);
+    expect(isPointInsideWaterBody(water, end[0], end[1] - 2, applied)).toBe(false);
+    expect(isPointInsideWaterBody(water, end[0], end[1] + 2, applied)).toBe(false);
+  });
+
+  it('persists AI-authored design groups, focuses, layers and deterministic relations in the same transaction', () => {
+    const map = createEmptyMap();
+    const suggestion = executeMapCodePlan(`function plan(api) {
+      api.sceneIntent({kind:'authored',reason:'garden'});
+      api.design({
+        experienceMode:'sequential', intent:'一步一景',
+        groups:[{id:'garden',name:'园林组',intent:'沿路线展开',focusIds:['pavilion-focus'],guideIds:[],entryGuideIds:[],exitGuideIds:[],axisGuideIds:[],protectedObjectIds:[],removableObjectIds:[],layers:[
+          {level:1,intent:'主体',density:'tight'}, {level:4,intent:'成对密铺点景',density:'tight'}
+        ]}],
+        focuses:[{id:'pavilion-focus',groupId:'garden',name:'主亭',kind:'primary',rank:1,selector:'主亭',reveal:'framed'}],
+        viewpoints:[{id:'entry',groupId:'garden',point:[-8,0],targetFocusId:'pavilion-focus',role:'entry'}],
+        relations:[{id:'stone-to-pavilion',kind:'attract',sourceSelector:'景石',targetSelector:'主亭',strength:'normal',minDistance:2,maxDistance:4}]
+      });
+      api.place({name:'主亭',position:[0,0],groupId:'garden',layer:1,size:[4,4,4],role:'structure'});
+      for (let i=0;i<6;i++) api.place({name:'景石',position:[10+i*2,0],groupId:'garden',layer:4,size:[1,1,1],role:'environment'});
+    }`, map);
+    const applied = applyMapOperations(map, suggestion.operations);
+    const focus = applied.designSemantics.focuses[0];
+    const pavilion = applied.objects.find((object) => object.name === '主亭');
+    const stones = applied.objects.filter((object) => object.name === '景石');
+
+    expect(applied.designSemantics.experienceMode).toBe('sequential');
+    expect(focus.objectId).toBe(pavilion?.id);
+    expect(pavilion?.designGroupId).toBe('garden');
+    expect(stones).toHaveLength(6);
+    expect(stones.every((stone) => Math.hypot(stone.transform.position[0], stone.transform.position[2]) <= 4.01)).toBe(true);
+    expect(suggestion.codePlan?.functions).toEqual(expect.arrayContaining(['design', 'place', 'sceneIntent']));
+  });
+
+  it('compiles circulation into both an editable guide and real paving', () => {
+    const map = createEmptyMap();
+    const suggestion = executeMapCodePlan(`function plan(api) {
+      api.route({id:'garden-walk',name:'园路',points:[[-10,-8],[-4,0],[4,3],[10,8]],curve:'catmull-rom',width:2,surface:'paving'});
+    }`, map);
+    const applied = applyMapOperations(map, suggestion.operations);
+
+    expect(applied.guides).toEqual([expect.objectContaining({ id: 'garden-walk', curve: 'catmull-rom', width: 2 })]);
+    expect(suggestion.operations).toEqual(expect.arrayContaining([
+      expect.objectContaining({ type: 'terrain.surface', surface: 'paving' })
+    ]));
+    expect(suggestion.codePlan?.functions).toContain('route');
+  });
+
+  it('compiles a free-form route graph into connected editable branches', () => {
+    const suggestion = executeMapCodePlan(`function plan(api) {
+      api.routeNetwork({
+        id:'garden-network',
+        nodes:[
+          {id:'entry',point:[0,-20],role:'entry'},
+          {id:'pond',point:[0,0],role:'junction'},
+          {id:'pavilion',point:[-16,12],role:'focus'},
+          {id:'rockery',point:[15,15],role:'quiet'}
+        ],
+        edges:[
+          {id:'arrival',from:'entry',to:'pond',via:[[-4,-10]],width:2.4,surface:'paving'},
+          {id:'west',from:'pond',to:'pavilion',via:[[-9,4]],curve:'catmull-rom',surface:'soil'},
+          {id:'east',from:'pond',to:'rockery',via:[[8,5]],curve:'catmull-rom',surface:'soil'},
+          {id:'cross-link',from:'pavilion',to:'rockery',via:[[0,18]],curve:'catmull-rom',surface:'rock'}
+        ]
+      });
+    }`, createEmptyMap());
+    const applied = applyMapOperations(createEmptyMap(), suggestion.operations);
+
+    expect(applied.guides).toHaveLength(4);
+    expect(applied.guides.filter((guide) => guide.points.some((point) => point[0] === 0 && point[1] === 0))).toHaveLength(3);
+    expect(applied.visualSemantics.zones.every((zone) => zone.tags.includes('clear'))).toBe(true);
+    expect(suggestion.codePlan?.functions).toContain('routeNetwork');
+  });
+
+  it('removes natural decoration from routes and AI-declared functional clearings without blocking', () => {
+    const tree = { ...testAsset('asset-clear-tree', '古树'), tags: ['tree'] };
+    const rock = { ...testAsset('asset-clear-rock', '景石'), tags: ['rock'] };
+    const suggestion = executeMapCodePlan(`function plan(api) {
+      api.route({id:'main-road',points:[[-12,0],[12,0]],width:3,surface:'paving'});
+      api.surface({id:'arena-floor',surface:'sand',region:{kind:'circle',x:0,z:10,radius:6},clearNatural:true});
+      api.place({assetId:'asset-clear-tree',name:'道路树',position:[0,0],role:'environment',groupId:'grounds',layer:3});
+      api.place({assetId:'asset-clear-rock',name:'场内景石',position:[0,10],role:'environment',groupId:'grounds',layer:4});
+      api.place({assetId:'asset-clear-tree',name:'保留树',position:[20,20],role:'environment',groupId:'grounds',layer:3});
+    }`, createEmptyMap(), [tree, rock]);
+    const applied = applyMapOperations({ ...createEmptyMap(), assets: [tree, rock] }, suggestion.operations);
+
+    expect(applied.objects.map((object) => object.name)).toEqual(['保留树']);
+    expect(suggestion.diagnostics).toEqual(expect.arrayContaining([
+      expect.objectContaining({ code: 'outdoor.clearance-repaired', repaired: true })
+    ]));
   });
 
   it('offers a non-blocking repair diagnostic when bridge scenery bypasses the crossing solver', () => {
@@ -701,6 +1111,22 @@ describe('map code planner', () => {
     expect(placement?.type).toBe('object.add');
     if (placement?.type !== 'object.add') throw new Error('missing placement');
     expect(placement.object.transform?.position?.every(Number.isFinite)).toBe(true);
+  });
+
+  it('mirrors authored decoration points across a declared coordinate axis', () => {
+    const suggestion = executeMapCodePlan(`function plan(api) {
+      const left = [-7, 4];
+      const right = api.mirrorPoint(left, 'x', 0);
+      api.place({ name:'左旗', position:left, groupId:'gate', layer:3 });
+      api.place({ name:'右旗', position:right, groupId:'gate', layer:3 });
+    }`, createEmptyMap());
+    const placements = suggestion.operations.filter((operation) => operation.type === 'object.add');
+
+    expect(placements.map((operation) => operation.object.transform?.position)).toEqual([
+      [-7, 0, 4],
+      [7, 0, 4]
+    ]);
+    expect(suggestion.codePlan?.functions).toContain('mirrorPoint');
   });
 
   it('blocks host globals and runaway code', () => {
@@ -941,4 +1367,22 @@ function testAsset(id: string, name: string): MapAsset {
     createdAt: 1,
     updatedAt: 1
   };
+}
+
+function horizontalSpanEndpoint(
+  object: Extract<ReturnType<typeof executeMapCodePlan>['operations'][number], { type: 'object.add' }>['object'],
+  asset: MapAsset,
+  direction: -1 | 1
+): [number, number] {
+  const transform = object.transform;
+  if (!transform?.scale || !transform.size || !transform.rotation || !transform.position) {
+    throw new Error('missing object transform');
+  }
+  const localWidth = Number((asset.modelJson as { nodes: Array<{ mesh: { params: { width: number } } }> }).nodes[0].mesh.params.width);
+  const halfLength = localWidth * transform.scale[0] * transform.size[0] / 2;
+  const yaw = transform.rotation[1];
+  return [
+    transform.position[0] + Math.cos(yaw) * halfLength * direction,
+    transform.position[2] - Math.sin(yaw) * halfLength * direction
+  ];
 }
