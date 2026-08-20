@@ -436,6 +436,22 @@ declare module '@voxel-studio/render-runtime/environment' {
   }>): { entry: { source: import('three').Mesh }; bounds: import('three').Box3 } | null;
 }
 
+declare module '@voxel-studio/render-runtime/model-water' {
+  export {
+    FountainChain,
+    ModelWaterInstances,
+    WaterStreamSurface,
+    WaterWrapSurface,
+    classifyFallShape,
+    createBallisticPath,
+    getBallisticDuration,
+    getWaterPartShapeSize,
+    inferFountainRoles,
+    inferWaterStreamGuide,
+    selectMergedPoolReference
+  } from '@voxel-studio/render-runtime/environment';
+}
+
 declare module '@voxel-studio/render-runtime/effects' {
   export interface ParticleEmitter {
     rate: number;

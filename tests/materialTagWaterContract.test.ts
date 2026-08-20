@@ -1,7 +1,22 @@
+import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import materialTagVocabulary from '@voxel-studio/render-runtime/model/material-tags-v1.json';
 
 describe('material-tag model water contract', () => {
+  it('loads model water through its own dev entry instead of the cached environment barrel', () => {
+    const source = readFileSync(
+      new URL('../src/client/materialTagWaterRuntime.ts', import.meta.url),
+      'utf8'
+    );
+    const runtimePackage = JSON.parse(readFileSync(
+      new URL('../vendor/voxel-render-runtime/package.json', import.meta.url),
+      'utf8'
+    )) as { exports: Record<string, string> };
+    expect(source).toContain("from '@voxel-studio/render-runtime/model-water'");
+    expect(source).not.toContain("from '@voxel-studio/render-runtime/environment';");
+    expect(runtimePackage.exports['./model-water']).toBe('./src/model-water.js');
+  });
+
   it('keeps the canonical 3d-generate pool and fall tuning values', () => {
     const water = (materialTagVocabulary as any).tags.water.runtime;
     expect(water.target).toBe('ModelWaterInstances');

@@ -10,6 +10,7 @@
     "./environment": "./src/environment.js",
     "./effects": "./src/effects.js",
     "./materials": "./src/materials.js",
+    "./model-water": "./src/model-water.js",
     "./outline": "./src/outline.js",
     "./postprocess": "./src/postprocess.js",
     "./*": "./src/*",

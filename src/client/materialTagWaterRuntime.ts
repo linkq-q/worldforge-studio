@@ -11,7 +11,7 @@ import {
   inferFountainRoles,
   inferWaterStreamGuide,
   selectMergedPoolReference
-} from '@voxel-studio/render-runtime/environment';
+} from '@voxel-studio/render-runtime/model-water';
 import { ParticleEngine, type ParticleEmitter } from '@voxel-studio/render-runtime/effects';
 import { syncWaterSurfaceEnvironment } from './renderEnvironmentBridge';
 
