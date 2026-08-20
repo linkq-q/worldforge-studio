@@ -371,9 +371,61 @@ declare module '@voxel-studio/render-runtime/environment' {
     );
     create(options: Record<string, unknown>): WaterSurface | WaterfallSurface | null;
     createMergedPool(options: Record<string, unknown>): WaterSurface | null;
+    waterSurfaces(): WaterSurface[];
+    findNearestPool(worldPoint: import('three').Vector3): WaterSurface | null;
     update(deltaTime: number, camera: import('three').Camera): void;
     disposeAll(): void;
   }
+  export class WaterWrapSurface {
+    mesh: import('three').Mesh | null;
+    material: import('three').ShaderMaterial | null;
+    splashGroup: import('three').Group | null;
+    constructor(
+      scene: import('three').Scene,
+      renderer: import('three').WebGLRenderer,
+      parent?: import('three').Object3D | null,
+      options?: Record<string, unknown>
+    );
+    update(deltaTime: number): void;
+    dispose(): void;
+  }
+  export class WaterStreamSurface extends WaterWrapSurface {
+    _worldBottomAnchor(target?: import('three').Vector3): import('three').Vector3;
+    setProfile(options?: { radius?: number; tailScale?: number }): void;
+  }
+  export class FountainChain {
+    register(config: { partId: string; role: string; worldY: number }): void;
+    link(): void;
+    tick(counts?: Array<{ partId: string; aliveCount: number }>): void;
+    dispose(): void;
+  }
+  export function classifyFallShape(size: import('three').Vector3): 'wall' | 'wrap' | 'jet';
+  export function getWaterPartShapeSize(
+    object: import('three').Object3D,
+    target?: import('three').Vector3
+  ): import('three').Vector3;
+  export function inferFountainRoles(parts: Array<{
+    size: import('three').Vector3;
+    worldCenter: import('three').Vector3;
+  }>): string[];
+  export function inferWaterStreamGuide(
+    object: import('three').Object3D,
+    otherBoxes?: import('three').Box3[],
+    options?: { preferDownward?: boolean }
+  ): {
+    origin: import('three').Vector3;
+    end: import('three').Vector3;
+    direction: import('three').Vector3;
+    length: number;
+    radius: number;
+    isFaucet: boolean;
+  };
+  export function createBallisticPath(options: {
+    origin: import('three').Vector3;
+    direction: import('three').Vector3;
+    speed: number;
+  }): import('three').Vector3[];
+  export function getBallisticDuration(direction: import('three').Vector3, speed: number): number;
   export function selectMergedPoolReference(entries: Array<{
     partId: string;
     group: import('three').Object3D;
@@ -388,12 +440,18 @@ declare module '@voxel-studio/render-runtime/effects' {
     capacity: number;
     worldPos: number[];
     config: Record<string, unknown>;
+    alive: number;
   }
 
   export class ParticleEngine {
     constructor(context: { THREE: typeof import('three'); scene: import('three').Scene });
     spawn(config: Record<string, unknown>, anchor?: { worldPos?: number[] }): ParticleEmitter;
+    multiSpawn(layers?: Array<{
+      config: Record<string, unknown>;
+      anchor?: { worldPos?: number[] };
+    }>): ParticleEmitter[];
     remove(emitter: ParticleEmitter): void;
+    removeGroup(emitters?: ParticleEmitter[]): void;
     update(
       deltaTime: number,
       camera?: import('three').Camera | null,
