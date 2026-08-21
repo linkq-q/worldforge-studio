@@ -1,10 +1,11 @@
 import { describe, expect, it, vi } from 'vitest';
-import { createEmptyMap, getMapObjectAabbs, type MapAsset } from '../src/shared/map';
+import { createEmptyMap, createMapObject, getMapObjectAabbs, getMapObjectVisualAabbs, type MapAsset } from '../src/shared/map';
 import {
   buildMapCodePlannerSystemPrompt,
   discoverMapCodeAssets,
   executeMapCodePlan,
-  generateMapCodeSuggestion
+  generateMapCodeSuggestion,
+  replayGeneratedMapCode
 } from '../src/server/mapCodePlanner';
 import { applyMapOperations } from '../src/shared/mapOperations';
 import { isPointInsideWaterBody } from '../src/shared/mapWater';
@@ -182,6 +183,7 @@ describe('map code planner', () => {
     expect(prompt).toContain("Paired or axial decoration uses mirrorPoint and density:'tight'");
     expect(prompt).toContain('complete a dedicated detail-fill pass');
     expect(prompt).toContain('api.keepDry([x,z],clearance?)');
+    expect(prompt).toContain('api.waterPoint(waterId,[x,z],draft?)');
     expect(prompt).toContain('rather than one ring');
     expect(prompt).toContain('api.routeNetwork({id,nodes:[{id,point:[x,z],role?}],edges:');
     expect(prompt).toContain('clearNatural:true');
@@ -197,6 +199,37 @@ describe('map code planner', () => {
     expect(prompt).toContain('one short Simplified Chinese noun');
     expect(prompt).toContain("const tree = api.requireAsset({key:'tree'");
     expect(prompt).toContain('No undefined point, invalid array index, direct array arithmetic');
+  });
+
+  it('injects the compact-settlement profile and callable capability bindings for town prompts', () => {
+    const prompt = buildMapCodePlannerSystemPrompt(
+      createEmptyMap('Town', 'town-capability-prompt', [96, 16, 96]),
+      [],
+      2,
+      8,
+      'scene',
+      'generate',
+      '生成一座紧凑、可游玩的中世纪小镇'
+    );
+
+    expect(prompt).toContain('## Active scene profile: settlement.compact-town');
+    expect(prompt).toContain('building footprint inside the settlement envelope: 25%-40%');
+    expect(prompt).toContain('api.streetGrid({id,region');
+    expect(prompt).toContain('api.placeAlongRoute({routeId');
+    expect(prompt).toContain('api.placeStreetFrontage({routeId');
+    expect(prompt).toContain('Public street furniture');
+    expect(prompt).toContain('shop terrace furniture');
+    expect(prompt).toContain('topology.create-route-network');
+    expect(prompt).toContain('settlement.create-street-grid');
+    expect(prompt).toContain('roadside.decorate-route');
+  });
+
+  it('does not inject a settlement density profile into a wilderness prompt', () => {
+    const prompt = buildMapCodePlannerSystemPrompt(
+      createEmptyMap(), [], 0, 4, 'scene', 'generate', '生成一片无人居住的原始森林'
+    );
+
+    expect(prompt).not.toContain('## Active scene profile: settlement.compact-town');
   });
 
   it('gives unified outdoor Code semantic intent and complete scene ownership', () => {
@@ -502,6 +535,102 @@ describe('map code planner', () => {
     ]));
   });
 
+  it('feeds sparse settlement metrics into the single bounded program repair', async () => {
+    const incomplete = `function plan(api) {
+      api.sceneIntent({ kind:'authored', reason:'紧凑小镇' });
+      api.streetGrid({
+        id:'town', region:[[-24,-24],[24,-24],[24,24],[-24,24]],
+        blockWidth:12, blockDepth:12, roadWidth:3, surface:'paving'
+      });
+      api.place({ name:'镇门', position:[0,-22], size:[8,5,3], role:'structure' });
+    }`;
+    const repaired = `function plan(api) {
+      api.sceneIntent({ kind:'authored', reason:'紧凑小镇' });
+      const town = api.streetGrid({
+        id:'town', region:[[-24,-24],[24,-24],[24,24],[-24,24]],
+        blockWidth:12, blockDepth:12, roadWidth:3, surface:'paving'
+      });
+      api.place({ name:'镇门', position:[0,-22], size:[8,5,3], role:'structure' });
+      const homes = [[-18,-18],[-6,-18],[6,-18],[18,-18],[-18,-6],[-6,-6],[6,-6],[18,-6],[-18,6],[-6,6],[6,6],[18,6],[-18,18],[-6,18],[6,18],[18,18]];
+      for (const point of homes) api.place({ name:'民居', position:point, size:[8,5,8], role:'structure' });
+      api.placeAlongRoute({ routeId:town.routeIds[0], name:'路灯', spacing:8, offset:2, side:'both' });
+    }`;
+    const response = (content: string) => new Response(JSON.stringify({ ok: true, content }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' }
+    });
+    const fetchImpl = vi.fn()
+      .mockResolvedValueOnce(response(incomplete))
+      .mockResolvedValueOnce(response(repaired));
+
+    const suggestion = await generateMapCodeSuggestion('生成紧凑且有生活感的小镇', createEmptyMap('Town', 'town', [72, 12, 72]), [], {
+      apiBase: 'https://example.test', provider: 'gpt', fetchImpl,
+      minNewAssets: 0, maxNewAssets: 0, scope: 'scene'
+    });
+    const repairRequest = JSON.parse(String((fetchImpl.mock.calls[1]?.[1] as RequestInit | undefined)?.body)) as {
+      messages: Array<{ content: string }>;
+    };
+
+    expect(fetchImpl).toHaveBeenCalledTimes(2);
+    expect(repairRequest.messages.at(-1)?.content).toContain('settlement.building-coverage-low');
+    expect(repairRequest.messages.at(-1)?.content).toContain('settlement.frontage-low');
+    expect(suggestion.codePlan?.repairAttempts).toBe(1);
+  });
+
+  it('keeps execution retries available after a scene-program completion repair times out', async () => {
+    const timedOut = `function plan(api) {
+      let total = 0;
+      for (let index = 0; index < 1_000_000_000; index += 1) total += index % 2;
+      api.place({ name:'marker', position:[total,0] });
+    }`;
+    const underfilled = `function plan(api) {
+      api.sceneIntent({ kind:'authored', reason:'人工园林' });
+      api.design({
+        experienceMode:'sequential', intent:'入口院',
+        groups:[{
+          id:'entry', name:'入口院', intent:'门内转折',
+          region:{kind:'polygon',points:[[-12,-12],[12,-12],[12,12],[-12,12]]},
+          layers:[{level:1,intent:'园门与厢房',density:'tight',minCount:2}]
+        }], focuses:[], viewpoints:[], relations:[]
+      });
+      api.place({ name:'园门', position:[0,-10], role:'structure', groupId:'entry', layer:1 });
+    }`;
+    const completed = `function plan(api) {
+      api.sceneIntent({ kind:'authored', reason:'人工园林' });
+      api.design({
+        experienceMode:'sequential', intent:'入口院',
+        groups:[{
+          id:'entry', name:'入口院', intent:'门内转折',
+          region:{kind:'polygon',points:[[-12,-12],[12,-12],[12,12],[-12,12]]},
+          layers:[{level:1,intent:'园门与厢房',density:'tight',minCount:2}]
+        }], focuses:[], viewpoints:[], relations:[]
+      });
+      api.place({ name:'园门', position:[0,-10], role:'structure', groupId:'entry', layer:1 });
+      api.place({ name:'入口厢房', position:[-6,-6], role:'structure', groupId:'entry', layer:1 });
+    }`;
+    const response = (content: string) => new Response(JSON.stringify({ ok: true, content }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' }
+    });
+    const fetchImpl = vi.fn()
+      .mockResolvedValueOnce(response(timedOut))
+      .mockResolvedValueOnce(response(underfilled))
+      .mockResolvedValueOnce(response(timedOut))
+      .mockResolvedValueOnce(response(completed));
+
+    const suggestion = await generateMapCodeSuggestion('生成中式园林', createEmptyMap(), [], {
+      apiBase: 'https://example.test', provider: 'gpt', fetchImpl,
+      minNewAssets: 0, maxNewAssets: 0, scope: 'scene'
+    });
+
+    expect(fetchImpl).toHaveBeenCalledTimes(4);
+    expect(suggestion.operations.filter((operation) => operation.type === 'object.add')).toHaveLength(2);
+    expect(suggestion.codePlan?.repairAttempts).toBe(3);
+    const completionRepairRequest = JSON.parse(String(fetchImpl.mock.calls[2][1]?.body));
+    expect(completionRepairRequest.messages.at(-1).content)
+      .toContain('Do not scale loop counts from map width, map area, or fine coordinate steps');
+  });
+
   it('hides existing assets by default and exposes only explicitly selected reusable assets', async () => {
     const selected = testAsset('asset-selected', 'Selected neon lamp');
     const unselected = testAsset('asset-unselected', 'Unselected old building');
@@ -754,6 +883,21 @@ describe('map code planner', () => {
     expect(suggestion.codePlan?.functions).toContain('keepDry');
   });
 
+  it('places boats at the authored water surface and keeps them movable', () => {
+    const boat = { ...testAsset('asset-boat', '乌篷船'), tags: ['boat', '船'] };
+    const map = createEmptyMap('water placement', 'water-placement', [64, 12, 64]);
+    const suggestion = executeMapCodePlan(`function plan(api) {
+      api.water('pond',{type:'lake',points:[[-10,-10],[10,-10],[10,10],[-10,10]],level:0.2,depth:1.5});
+      api.place({assetId:'asset-boat',name:'乌篷船',position:api.waterPoint('pond',[0,0]),role:'structure'});
+    }`, map, [boat]);
+    const applied = applyMapOperations({ ...map, assets: [boat] }, suggestion.operations);
+    const placedBoat = applied.objects[0];
+
+    expect(placedBoat.transform.position[1]).toBeCloseTo(0.2);
+    expect(placedBoat.locked).toBe(false);
+    expect(suggestion.codePlan?.functions).toContain('waterPoint');
+  });
+
   it('repairs repeated ordinary wall samples into shared-endpoint segments', () => {
     const wall: MapAsset = {
       ...testAsset('asset-arc-wall', '竞技场外墙'),
@@ -938,6 +1082,70 @@ describe('map code planner', () => {
     expect(suggestion.codePlan?.functions).toContain('routeNetwork');
   });
 
+  it('builds settlement streets and derives roadside objects from a route', () => {
+    const lamp = { ...testAsset('asset-town-lamp', '路灯'), tags: ['lamp', 'street'] };
+    const map = createEmptyMap('Tool town', 'tool-town', [72, 12, 72]);
+    const suggestion = executeMapCodePlan(`function plan(api) {
+      const town = api.streetGrid({
+        id:'town',
+        region:[[-26,-24],[26,-24],[26,24],[-26,24]],
+        direction:0,
+        blockWidth:12,
+        blockDepth:10,
+        roadWidth:3,
+        surface:'paving'
+      });
+      api.placeAlongRoute({
+        routeId:town.routeIds[0],
+        assetId:'asset-town-lamp',
+        name:'路灯',
+        spacing:8,
+        offset:2,
+        side:'both',
+        startInset:2,
+        endInset:2,
+        role:'environment'
+      });
+    }`, map, [lamp]);
+    const applied = applyMapOperations({ ...map, assets: [lamp] }, suggestion.operations);
+    const lamps = applied.objects.filter((object) => object.assetId === lamp.id);
+
+    expect(applied.guides.length).toBeGreaterThan(2);
+    expect(applied.guides.every((guide) => guide.tags.includes('street'))).toBe(true);
+    expect(lamps.length).toBeGreaterThan(4);
+    expect(lamps.every((object) => object.sourceGuideId === applied.guides[0].id)).toBe(true);
+    expect(new Set(lamps.map((object) => `${object.transform.position[0]}:${object.transform.position[2]}`)).size)
+      .toBe(lamps.length);
+    expect(suggestion.codePlan?.functions).toEqual(expect.arrayContaining(['placeAlongRoute', 'streetGrid']));
+  });
+
+  it('places varied buildings as a collision-free street frontage with route-derived facing', () => {
+    const shop = { ...testAsset('asset-town-shop', '商铺'), tags: ['building', 'shop'] };
+    const house = { ...testAsset('asset-town-house', '民居'), tags: ['building', 'house'] };
+    const map = createEmptyMap('Frontage town', 'frontage-town', [72, 12, 72]);
+    const suggestion = executeMapCodePlan(`function plan(api) {
+      api.route({id:'main-street',points:[[-24,0],[24,0]],width:4,surface:'paving',tags:['settlement','street']});
+      api.placeStreetFrontage({
+        routeId:'main-street', side:'left', startInset:3, gap:1, setback:0.8,
+        items:[
+          {assetId:'asset-town-shop',name:'商铺',dimensions:[8,6,6],role:'structure'},
+          {assetId:'asset-town-house',name:'民居',dimensions:[6,5,5],role:'structure'},
+          {assetId:'asset-town-shop',name:'商铺',dimensions:[7,6,6],role:'structure'}
+        ]
+      });
+    }`, map, [shop, house]);
+    const applied = applyMapOperations({ ...map, assets: [shop, house] }, suggestion.operations);
+    const buildings = applied.objects.filter((object) => object.sourceGuideId === 'main-street');
+    const boxes = getMapObjectVisualAabbs(applied).filter((box) => buildings.some((object) => object.id === box.objectId));
+
+    expect(buildings).toHaveLength(3);
+    expect(buildings.every((object) => object.transform.position[2] > 0)).toBe(true);
+    expect(buildings.every((object) => Math.abs(Math.abs(object.transform.rotation[1]) - Math.PI) < 0.001)).toBe(true);
+    expect(boxes[0].max[0]).toBeLessThan(boxes[1].min[0]);
+    expect(boxes[1].max[0]).toBeLessThan(boxes[2].min[0]);
+    expect(suggestion.codePlan?.functions).toEqual(expect.arrayContaining(['placeStreetFrontage', 'route']));
+  });
+
   it('removes natural decoration from routes and AI-declared functional clearings without blocking', () => {
     const tree = { ...testAsset('asset-clear-tree', '古树'), tags: ['tree'] };
     const rock = { ...testAsset('asset-clear-rock', '景石'), tags: ['rock'] };
@@ -1018,6 +1226,85 @@ describe('map code planner', () => {
       expect.objectContaining({ type: 'object.add', object: expect.objectContaining({ assetId: bridge.id }) })
     ]));
     expect(suggestion.operations.some((operation) => operation.type === 'reference.set')).toBe(false);
+  });
+
+  it('lets a refinement continue editing locked objects that belong to the current AI preview', async () => {
+    const map = createEmptyMap('Preview town', 'preview-town');
+    const house = createMapObject('AI 民居', null);
+    house.id = 'preview-house';
+    house.locked = true;
+    map.objects = [house];
+    const code = `function plan(api) {
+      api.move({ objectId:'preview-house', position:[12,8] });
+    }`;
+    const fetchImpl = vi.fn().mockImplementation(async () => new Response(JSON.stringify({ ok: true, content: code }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' }
+    }));
+
+    const suggestion = await generateMapCodeSuggestion('拉开当前预览中重叠的民居', map, [], {
+      apiBase: 'https://example.test', provider: 'gpt', fetchImpl,
+      mode: 'refine', scope: 'scene', minNewAssets: 0, maxNewAssets: 0,
+      refinableObjectIds: ['preview-house']
+    });
+
+    expect(suggestion.operations).toContainEqual(expect.objectContaining({
+      type: 'object.update', objectId: 'preview-house'
+    }));
+  });
+
+  it('keeps persisted locked objects protected and tells repair not to delete the same object', async () => {
+    const map = createEmptyMap('Saved town', 'saved-town');
+    const house = createMapObject('已保存民居', null);
+    house.id = 'saved-house';
+    house.locked = true;
+    map.objects = [house];
+    const code = `function plan(api) { api.move({ objectId:'saved-house', position:[12,8] }); }`;
+    const fetchImpl = vi.fn().mockImplementation(async () => new Response(JSON.stringify({ ok: true, content: code }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' }
+    }));
+
+    await expect(generateMapCodeSuggestion('移动已保存建筑', map, [], {
+      apiBase: 'https://example.test', provider: 'gpt', fetchImpl,
+      mode: 'refine', scope: 'scene', minNewAssets: 0, maxNewAssets: 0
+    })).rejects.toThrow('map_code_execution_failed:locked_map_code_object:saved-house');
+
+    const repairRequest = JSON.parse(String(fetchImpl.mock.calls[1][1]?.body));
+    expect(repairRequest.messages.at(-1).content).toContain('Leave it unchanged');
+    expect(repairRequest.messages.at(-1).content).toContain('Do not replace api.move with api.removeObject');
+  });
+
+  it('separates severely overlapping outdoor buildings before returning the preview', () => {
+    const house: MapAsset = {
+      ...testAsset('asset-town-house', '小镇民居'),
+      tags: ['building', 'house'],
+      modelJson: {
+        format: 2,
+        nodes: [{
+          id: 'house',
+          transform: { pos: [0, 2.5, 0] },
+          mesh: { type: 'box', params: { width: 8, height: 5, depth: 8 } }
+        }]
+      }
+    };
+    const map = createEmptyMap('Overlap town', 'overlap-town', [64, 12, 64]);
+    map.assets = [house];
+
+    const suggestion = executeMapCodePlan(`function plan(api) {
+      api.place({ assetId:'asset-town-house', name:'民居 A', position:[0,0], dimensions:[8,5,8], role:'structure' });
+      api.place({ assetId:'asset-town-house', name:'民居 B', position:[2,1], dimensions:[8,5,8], role:'structure' });
+    }`, map, [house]);
+    const applied = applyMapOperations(map, suggestion.operations);
+    const [left, right] = applied.objects;
+
+    expect(suggestion.diagnostics).toEqual(expect.arrayContaining([
+      expect.objectContaining({ code: 'object.overlap', repaired: true })
+    ]));
+    expect(Math.hypot(
+      left.transform.position[0] - right.transform.position[0],
+      left.transform.position[2] - right.transform.position[2]
+    )).toBeGreaterThan(7.5);
   });
 
   it('allows facing to override automatic line orientation', () => {
@@ -1348,6 +1635,82 @@ describe('map code planner', () => {
     const repairRequest = JSON.parse(String(fetchImpl.mock.calls[1][1]?.body));
     expect(repairRequest.messages.at(-1).content).toContain('Do not scale loop counts from map width, map area, or fine coordinate steps');
     expect(suggestion.operations.filter((operation) => operation.type === 'object.add')).toHaveLength(16);
+  });
+
+  it('gives validated final replay more time than discovery after real asset binding', async () => {
+    const code = `function plan(api) {
+      api.sceneIntent({ kind:'authored', reason:'性能回归测试' });
+      const house = api.asset(api.requireAsset({
+        key:'house', name:'民居', prompt:'compact town house', tags:['building'],
+        variants:1, dimensions:[8,5,8], role:'structure'
+      }));
+      if (!house.startsWith('code-asset://')) {
+        let checksum = 0;
+        for (let index = 0; index < 350000000; index += 1) checksum += index % 7;
+        if (checksum < 0) throw new Error('unreachable');
+      }
+      api.place({ assetId:house, name:'民居', position:[0,0], dimensions:[8,5,8], role:'structure' });
+    }`;
+    const fetchImpl = vi.fn().mockResolvedValue(new Response(JSON.stringify({ ok: true, content: code }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' }
+    }));
+    const createAsset = vi.fn(async () => testAsset('asset-house', '民居'));
+
+    const suggestion = await generateMapCodeSuggestion('生成紧凑小镇', createEmptyMap(), [], {
+      apiBase: 'https://example.test', provider: 'gpt', fetchImpl,
+      minNewAssets: 1, maxNewAssets: 1, scope: 'scene', createAsset
+    });
+
+    expect(createAsset).toHaveBeenCalledTimes(1);
+    expect(suggestion.generatedAssets).toEqual([{ id: 'asset-house', name: '民居' }]);
+  });
+
+  it('replays a timed-out final layout with saved asset bindings instead of regenerating assets', async () => {
+    const map = createEmptyMap('Replay town', 'replay-town');
+    const code = `function plan(api) {
+      api.sceneIntent({ kind:'authored', reason:'重放恢复测试' });
+      const house = api.asset(api.requireAsset({
+        key:'house', name:'民居', prompt:'compact town house', tags:['building'],
+        variants:1, dimensions:[8,5,8], role:'structure'
+      }));
+      if (house === 'asset-replay-house') {
+        const samples = [];
+        for (let index = 0; index < 500000; index += 1) samples.push(api.random());
+        if (samples.length < 0) throw new Error('unreachable');
+      }
+      api.place({ assetId:house, name:'民居', position:[0,0], dimensions:[8,5,8], role:'structure' });
+    }`;
+    const fetchImpl = vi.fn().mockResolvedValue(new Response(JSON.stringify({ ok: true, content: code }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' }
+    }));
+    const createAsset = vi.fn(async () => testAsset('asset-replay-house', '民居'));
+    let replayToken = '';
+    let replayError = '';
+
+    try {
+      await generateMapCodeSuggestion('生成紧凑小镇', map, [], {
+        apiBase: 'https://example.test', provider: 'gpt', fetchImpl,
+        minNewAssets: 1, maxNewAssets: 1, scope: 'scene', createAsset,
+        finalExecutionTimeoutMs: 1
+      });
+    } catch (error) {
+      replayError = error && typeof error === 'object' && 'message' in error
+        ? String(error.message)
+        : String(error ?? '');
+      replayToken = replayError
+        .match(/^map_code_final_replay_timed_out:(code-replay-[a-z0-9-]+)$/i)?.[1] ?? '';
+    }
+
+    expect(replayToken, replayError).not.toBe('');
+    const replayed = replayGeneratedMapCode(replayToken, map);
+    expect(createAsset).toHaveBeenCalledTimes(1);
+    expect(replayed.generatedAssets).toEqual([{ id: 'asset-replay-house', name: '民居' }]);
+    expect(replayed.operations).toEqual(expect.arrayContaining([
+      expect.objectContaining({ type: 'object.add', object: expect.objectContaining({ assetId: 'asset-replay-house' }) })
+    ]));
+    expect(() => replayGeneratedMapCode(replayToken, map)).toThrow('map_code_replay_expired');
   });
 
   it('replans when the code declares fewer than the requested new assets', async () => {

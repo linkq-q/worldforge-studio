@@ -84,6 +84,33 @@ api.surface({
 - 确定性变化：`random`、`noise2D`、`fbm2D`
 - 资产：`requireAsset`、`asset`
 
+## 可调用世界能力
+
+`src/shared/worldCapabilities.ts` 是 Agent 提示与编辑器能力目录的共同来源。第一批能力复用现有确定性执行器：
+
+- `topology.create-route-network` → `api.routeNetwork`
+- `settlement.create-street-grid` → `api.streetGrid`
+- `settlement.place-street-frontage` → `api.placeStreetFrontage`
+- `roadside.decorate-route` → `api.placeAlongRoute`
+
+`api.streetGrid` 返回持久化道路的 `routeIds` 与临时规划用的 `blocks`。AI 先为街区分配建筑、院落或公共空间，再用 `api.placeStreetFrontage` 提交同一侧的商铺、客栈、工坊和民居清单；本地根据每栋建筑的真实门面宽度与深度计算顺序、间距、退距和朝向。`api.placeAlongRoute` 继续将公共路灯、长椅、标牌和护栏绑定到具体路线；店铺外摆与庭院座椅则作为面向店铺、桌面或庭院焦点的功能组，不会被当成通用道路设施。
+
+本地编辑 API 通过 `GET /api/editor/capabilities` 返回同一份 manifest。manifest 只声明语义、输入 schema、运行时绑定和可能写入的 `MapOperation` 类型；最终地图修改仍通过一个原子事务预览、确认和提交。
+
+外部 Agent 不需要拼接 Scene Code，也不能直接写地图文件。它使用一个有上限的内存草稿会话：
+
+```text
+POST   /api/editor/maps/:mapId/agent-runs
+POST   /api/editor/agent-runs/:runId/tools/:capabilityId
+GET    /api/editor/agent-runs/:runId/preview
+POST   /api/editor/agent-runs/:runId/commit
+DELETE /api/editor/agent-runs/:runId
+```
+
+创建会话时可传入明确允许复用的 `assetIds`。每次工具调用的请求体是 `{ "input": {...} }`，服务器按 manifest 校验输入，再复用 Map Code 编译器生成操作；响应包含累计预览、操作列表、诊断以及聚落覆盖率等结构化 observation。每个会话最多调用 6 次工具、30 分钟过期。最终提交必须显式传 `{ "approved": true }`，全部操作才会作为一个 `source:"agent"` 事务原子落盘；其间地图版本发生变化时返回 `world_agent_run_stale`，不会覆盖手工编辑。取消或成功提交后草稿立即失效。
+
+聚落质量不再只用全图物体数量判断。道路标记出聚落包络后，本地会确定性计算建筑覆盖率、道路建筑界面覆盖率、未分配空地比例，并检查路灯、长椅、标牌和护栏是否保留有效 `sourceGuideId` 且仍在路线附近。目标分别为建筑 25% 以上、沿街界面 55% 以上、未分配空地不超过 10%、沿路设施全部绑定。它们是审美诊断，不会在本地盲目补建筑；对于模型生成的人工场景，这些指标会连同精确实测值进入现有唯一一次程序修复。若本轮预览仍把普通商铺或民居斜放在街边，本地会把它归属到最近街道，并按道路法线校正正面、退距与地形高度；公共长椅或路灯也会被吸附到道路边缘，但名称仅表示店铺/庭院椅子的对象不会被误判为公共设施。
+
 地图种子驱动随机和噪声。程序最多输出 2,000 个摆放意图和 256 项场景操作。
 
 ## 建筑与环境角色
@@ -185,7 +212,11 @@ POST /api/editor/maps/:mapId/generate
 
 SSE 进度显示完整场景 Code、资产生成、重放和验证阶段。响应仍使用 `MapAiSuggestion`：`generatedAssets` 列出新资产，`codePlan` 保存源码、场景意图、原因、摆放数量和使用的 API。地图只有在用户确认后，才通过现有事务接口一次性提交。
 
-审美或语义诊断不会禁止“应用到地图”。如果模型服务、代码修复或资产服务最终没有返回可用结果，编辑器保留原地图和最后一个可执行候选，显示可展开的错误详情与“重新尝试”按钮；用户仍可继续编辑或修改提示词，不会被失败卡片锁死。
+未经资产绑定的发现脚本保持 250ms 沙箱时限；通过发现校验后，使用真实模型尺寸的最终重放使用 1s 时限，并在进入沙箱前只计算一次每个资产的可视边界。如果这一步仍超时，服务器保留 30 分钟的内存重放票据，编辑器显示“重新重放布局”；该操作使用 3s 时限，只复用已保存的 Code 和资产绑定，不再请求 AI，也不再生成资产。票据过期、服务重启或地图版本变更时会拒绝旧重放，避免覆盖用户后续编辑。
+
+Refine 默认仍不能移动或删除已经保存的锁定建筑；但同一张尚未应用的 AI 预览中，由上一轮 `object.add` 新增的对象会被标记为本轮可调整，允许第二轮修复其排布。室外建筑按真实可视足迹检查相交，不再只处理大面积互穿；沿街建筑优先沿原道路寻找下一个空位，只有道路没有安全位置时才降级到附近旱地。只移动本轮预览中的建筑，已保存的锁定建筑只报告诊断、不自动改动；树木、桥梁、围墙和连续构件不进入这项建筑分离规则。
+
+审美或语义诊断不会禁止“应用到地图”。如果模型服务、代码修复或资产服务最终没有返回可用结果，编辑器保留原地图和最后一个可执行候选，显示可展开的错误详情与“重新尝试”按钮；如果是最终布局重放超时，则显示上述专用重放按钮。用户仍可继续编辑或修改提示词，不会被失败卡片锁死。
 
 室内默认仍是一键生成。用户可选“生成资产前先确认功能规划”：第一次请求使用 `planOnly:true`，只返回已验证的 `codePlan` 和资产清单，不创建资产；确认后客户端把 `approvedCode` 原样交回，服务器直接重放并生成资产，不再请模型重新设计。源码只在高级生成详情中展示。
 

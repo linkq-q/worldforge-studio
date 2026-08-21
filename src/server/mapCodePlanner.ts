@@ -17,7 +17,7 @@ import { assetFootprintRadius, normalizeAssetTags } from '../shared/mapAssetMeta
 import { planMapObjectAttachment } from '../shared/mapAttachment';
 import { indoorAssetTargetCount } from '../shared/indoorScenePlanning';
 import { normalizeMapAiMaxNewAssets, normalizeMapAiNewAssetRange } from '../shared/mapPlanning';
-import { calculateModelVisualBounds } from '../shared/modelBounds';
+import { calculateModelVisualBounds, type Aabb } from '../shared/modelBounds';
 import { normalizeMapDesignSemantics, type MapCompositionLayer, type MapDesignSemantics } from '../shared/mapDesign';
 import {
   compileMapDesignDensityFill,
@@ -38,6 +38,9 @@ import {
 } from '../shared/mapGrass';
 import { findSafeSpawnPosition } from '../shared/mapSpawnSafety';
 import { distanceToWater, isPointInsideWaterBody, waterBoundaryPoints, waterSurfaceLevelAt } from '../shared/mapWater';
+import { createMapStreetGrid, mapGuidePolyline, sampleMapGuide, type MapPlannedBlock } from '../shared/mapGuide';
+import { worldCapabilitySummary } from '../shared/worldCapabilities';
+import { evaluateSettlementQuality } from '../shared/settlementQuality';
 import {
   TERRAIN_ACCESS_MODES,
   TERRAIN_CLIFF_LAYOUTS,
@@ -64,7 +67,9 @@ const MAX_CODE_LENGTH = 40_000;
 const MAX_PLACEMENTS = 2_000;
 const MAX_SCENE_OPERATIONS = 256;
 const MAX_POINT_RESULTS = 512;
-const EXECUTION_TIMEOUT_MS = 250;
+const DISCOVERY_EXECUTION_TIMEOUT_MS = 250;
+const FINAL_EXECUTION_TIMEOUT_MS = 1_000;
+const REPLAY_EXECUTION_TIMEOUT_MS = 3_000;
 const MAP_CODE_ENVIRONMENT_FORM_CONTRACT = `Use these structured environment forms:
 api.terrain({preset:'plain'|'hills'|'valley'|'island'|'archipelago'|'canyon'|'cliff-plateau'|'dune-desert',amplitude?,roughness?,seed?,direction?:degrees|[x,z]});
 api.modifyTerrain({modifier:'mountain'|'ridge'|'valley'|'basin'|'cliff'|'terrace'|'dune'|'island',region:{kind:'circle',center:[x,z],radius}|{kind:'path',points:[[x,z],...],width}|{kind:'polygon',points:[[x,z],...]},amplitude?:positiveNumber,softness?:number,direction?:degrees|[x,z],variation?:number,layers?:number|stepArray,layout?:'plateau'|'coast'|'canyon'|'wall'|'terraces',access?:'walkable'|'scenic',seed?});
@@ -78,6 +83,7 @@ const CONTINUOUS_STRUCTURE_ASSET = /\b(?:wall|arcade|corridor|railing|fence|gran
 const ARENA_SEATING_ASSET = /\b(?:grandstand|bleacher|spectator stand|arena seating)\b|环形看台|竞技场看台|观众席/i;
 const DRY_LAND_ASSET = /\b(?:wall|gate|building|house|hall|tower|arcade|corridor|railing|fence|grandstand|bleacher|tree|pine|bamboo|lamp|lantern|bench|chair|table)\b|城墙|围墙|墙体|门楼|月洞门|建筑|楼阁|厅堂|塔|长廊|回廊|走廊|栏杆|围栏|看台|树|松|竹|灯笼|石灯|座椅|长凳|桌椅/i;
 const WATER_COMPATIBLE_ASSET = /\b(?:bridge|pier|dock|boat|ship|lotus|reed|water lily|aquatic|fish|fountain)\b|桥|桥台|码头|栈桥|船|舟|荷花|莲花|芦苇|水生|鱼|喷泉|湖心亭|水榭/i;
+const FLOATING_WATER_ASSET = /\b(?:boat|ship)\b|船|舟/i;
 const INDOOR_FORBIDDEN_CONTENT = /\b(?:whole|complete|entire)\s+(?:room|interior)\b|\broom\s+shell\b|\bfloor(?:ing)?\s+(?:finish|surface|plane|slab)\b|\bceiling\s+(?:finish|surface|plane|slab)\b|\bwall(?:paper|\s+(?:finish|surface|shell))\b|\b(?:carpet|rug)(?:\s+(?:finish|surface))?\b|\b(?:terrain|outdoor ground|building exterior)\b|整间房|整体房间|房间外壳|地板饰面|墙面饰面|天花饰面|墙纸|地毯|室外地形|建筑外立面/i;
 
 type Point2 = [number, number];
@@ -106,6 +112,10 @@ export interface MapCodePlannerOptions {
   approvedCode?: string;
   /** Optional user-authored preference for focal assets; the model still owns the composition. */
   focusPrompt?: string;
+  /** Optional bounded override used by local diagnostics; HTTP callers do not control it. */
+  finalExecutionTimeoutMs?: number;
+  /** Locked objects created by the current unapplied AI preview that refine may still adjust. */
+  refinableObjectIds?: readonly string[];
   onProgress?: (event: AgentProgressEvent) => void;
   createAsset?: (request: AssetGenerationRequest, report: AssetTaskReporter) => Promise<MapAsset>;
 }
@@ -138,6 +148,7 @@ interface PlacementInput {
   roomOpeningId?: string;
   groupId?: string;
   layer?: MapCompositionLayer;
+  sourceGuideId?: string;
 }
 
 interface PlaceBetweenInput {
@@ -197,6 +208,52 @@ interface RouteNetworkInput {
   edges: Array<Omit<RouteInput, 'points'> & { from: string; to: string; via?: Point2[] }>;
 }
 
+interface StreetGridInput {
+  id: string;
+  region: Point2[];
+  direction?: number;
+  blockWidth: number;
+  blockDepth: number;
+  roadWidth: number;
+  inset?: number;
+  surface?: TerrainSurfaceKind | 'none';
+  intensity?: number;
+  tags?: string[];
+}
+
+interface PlaceAlongRouteInput {
+  routeId: string;
+  assetId?: string | null;
+  name?: string;
+  spacing: number;
+  offset?: number;
+  side?: 'left' | 'right' | 'both' | 'alternate';
+  startInset?: number;
+  endInset?: number;
+  facing?: 'forward' | 'toward-route' | 'away-from-route';
+  scale?: number | Point3;
+  dimensions?: Point3;
+  size?: Point3;
+  terrain?: boolean;
+  role?: CodeAssetRole;
+  groupId?: string;
+  layer?: MapCompositionLayer;
+}
+
+interface StreetFrontageItem extends Omit<PlacementInput, 'position' | 'rotationY' | 'facing' | 'sourceGuideId'> {
+  dimensions: Point3;
+}
+
+interface PlaceStreetFrontageInput {
+  routeId: string;
+  side: 'left' | 'right';
+  items: StreetFrontageItem[];
+  startInset?: number;
+  endInset?: number;
+  gap?: number;
+  setback?: number;
+}
+
 interface MoveObjectInput {
   objectId: string;
   position?: PlacementInput['position'];
@@ -219,6 +276,7 @@ interface PlacementIntent {
   roomOpeningId?: string;
   designGroupId?: string;
   compositionLayer?: MapCompositionLayer;
+  sourceGuideId?: string;
   attachment?: {
     parentId: string;
     kind: 'supported' | 'mounted';
@@ -305,12 +363,35 @@ interface CodeExecutionOptions {
   minNewAssets?: number;
   maxNewAssets?: number;
   scope?: MapCodeScope;
+  executionTimeoutMs?: number;
+  refinableObjectIds?: ReadonlySet<string>;
 }
 
 interface CodeExecutionResult {
   suggestion: MapAiSuggestion;
   requirements: CodeAssetRequirement[];
 }
+
+interface MapCodeReplayContext {
+  mapId: string;
+  mapVersion: number;
+  planningMap: EditableMap;
+  expiresAt: number;
+  code: string;
+  assets: MapAsset[];
+  bindings: Map<string, MapAsset[]>;
+  generatedAssets: MapAsset[];
+  failedTasks: Array<{ key: string; name: string }>;
+  requirements: CodeAssetRequirement[];
+  repairAttempts: number;
+  requestMode: MapCodeRequestMode;
+  scope: MapCodeScope | undefined;
+  maxNewAssets: number;
+  refinableObjectIds: string[];
+}
+
+const MAP_CODE_REPLAY_TTL_MS = 30 * 60 * 1_000;
+const mapCodeReplayContexts = new Map<string, MapCodeReplayContext>();
 
 export async function generateMapCodeSuggestion(
   prompt: string,
@@ -339,7 +420,16 @@ export async function generateMapCodeSuggestion(
         && asset.libraryMetadata?.enabled !== false
       ))
     : [];
-  const systemPrompt = buildMapCodePlannerSystemPrompt(map, reusableAssets, assetRange.min, maxNewAssets, options.scope, requestMode);
+  const systemPrompt = buildMapCodePlannerSystemPrompt(
+    map,
+    reusableAssets,
+    assetRange.min,
+    maxNewAssets,
+    options.scope,
+    requestMode,
+    prompt,
+    options.refinableObjectIds
+  );
   const focalPreference = options.focusPrompt?.trim().slice(0, 300);
   const userPrompt = [
     prompt.trim().slice(0, 1_200),
@@ -424,18 +514,34 @@ export async function generateMapCodeSuggestion(
     phase: 'replanning',
     label: map.sceneMode === 'indoor' ? '使用新资产重放室内布局' : '使用新资产重放程序化环境规划'
   });
-  const final = runMapCodePlan(code, map, [...reusableAssets, ...generatedAssets], {
-    mode: 'final',
-    requestMode,
-    assetBindings: bindings,
-    maxNewAssets,
-    scope: options.scope
-  }).suggestion;
-  const placedAssetIds = new Set(final.operations.flatMap((operation) => (
-    operation.type === 'object.add' && operation.object.assetId ? [operation.object.assetId] : []
-  )));
-  const unplacedGeneratedAssets = generatedAssets.filter((asset) => !placedAssetIds.has(asset.id));
   const failedTasks = tasks.filter((_task, index) => generatedResults[index] === null);
+  const replayContext: Omit<MapCodeReplayContext, 'expiresAt'> = {
+    mapId: map.id,
+    mapVersion: map.version,
+    planningMap: map,
+    code,
+    assets: [...reusableAssets, ...generatedAssets],
+    bindings,
+    generatedAssets,
+    failedTasks: failedTasks.map((task) => ({ key: task.key, name: task.name })),
+    requirements: discovery.requirements,
+    repairAttempts: execution.repairAttempts,
+    requestMode,
+    scope: options.scope,
+    maxNewAssets,
+    refinableObjectIds: [...new Set(options.refinableObjectIds ?? [])]
+  };
+  let final: MapAiSuggestion;
+  try {
+    final = executeFinalMapCodeReplay(
+      replayContext,
+      clampInteger(options.finalExecutionTimeoutMs ?? FINAL_EXECUTION_TIMEOUT_MS, 1, FINAL_EXECUTION_TIMEOUT_MS)
+    );
+  } catch (error) {
+    if (!isScriptExecutionTimeout(error)) throw error;
+    const replayToken = rememberMapCodeReplay(replayContext);
+    throw new Error(`map_code_final_replay_timed_out:${replayToken}`);
+  }
   if (failedTasks.length > 0) {
     const allOptional = failedTasks.every((task) => (
       discovery.requirements.find((requirement) => requirement.key === task.key)?.optional === true
@@ -452,16 +558,61 @@ export async function generateMapCodeSuggestion(
     phase: 'complete',
     label: `${map.sceneMode === 'indoor' ? '室内规划' : '整体 Code'}与 ${generatedAssets.length} 个新资产已完成`
   });
+  return completeGeneratedMapCodeSuggestion(map, final, replayContext);
+}
+
+export function replayGeneratedMapCode(token: string, map: EditableMap): MapAiSuggestion {
+  pruneMapCodeReplayContexts();
+  const context = mapCodeReplayContexts.get(token);
+  if (!context) throw new Error('map_code_replay_expired');
+  if (context.mapId !== map.id || context.mapVersion !== map.version) {
+    mapCodeReplayContexts.delete(token);
+    throw new Error('map_code_replay_stale');
+  }
+  try {
+    const final = executeFinalMapCodeReplay(context, REPLAY_EXECUTION_TIMEOUT_MS);
+    mapCodeReplayContexts.delete(token);
+    return completeGeneratedMapCodeSuggestion(context.planningMap, final, context);
+  } catch (error) {
+    if (isScriptExecutionTimeout(error)) throw new Error(`map_code_final_replay_timed_out:${token}`);
+    throw error;
+  }
+}
+
+function executeFinalMapCodeReplay(
+  context: Omit<MapCodeReplayContext, 'expiresAt'>,
+  executionTimeoutMs: number
+): MapAiSuggestion {
+  return runMapCodePlan(context.code, context.planningMap, context.assets, {
+    mode: 'final',
+    requestMode: context.requestMode,
+    assetBindings: context.bindings,
+    maxNewAssets: context.maxNewAssets,
+    scope: context.scope,
+    executionTimeoutMs,
+    refinableObjectIds: new Set(context.refinableObjectIds)
+  }).suggestion;
+}
+
+function completeGeneratedMapCodeSuggestion(
+  map: EditableMap,
+  final: MapAiSuggestion,
+  context: Omit<MapCodeReplayContext, 'expiresAt'>
+): MapAiSuggestion {
+  const placedAssetIds = new Set(final.operations.flatMap((operation) => (
+    operation.type === 'object.add' && operation.object.assetId ? [operation.object.assetId] : []
+  )));
+  const unplacedGeneratedAssets = context.generatedAssets.filter((asset) => !placedAssetIds.has(asset.id));
   const finalProgramIssues = findAuthoredSceneProgramIssues(map, final);
-  const result: MapAiSuggestion = {
+  return withCodePlanDetails({
     ...final,
-    generatedAssets: generatedAssets.map((asset) => ({ id: asset.id, name: asset.name })),
+    generatedAssets: context.generatedAssets.map((asset) => ({ id: asset.id, name: asset.name })),
     diagnostics: [
       ...(final.diagnostics ?? []),
-      ...(failedTasks.length > 0 ? [{
+      ...(context.failedTasks.length > 0 ? [{
         code: 'asset.generation-degraded' as const,
         severity: 'warning' as const,
-        message: `资产“${failedTasks.map((task) => task.name).join('、')}”生成失败；其余可执行内容已保留，可稍后单独修复。`,
+        message: `资产“${context.failedTasks.map((task) => task.name).join('、')}”生成失败；其余可执行内容已保留，可稍后单独修复。`,
         repaired: false
       }] : []),
       ...(unplacedGeneratedAssets.length > 0 ? [{
@@ -472,8 +623,28 @@ export async function generateMapCodeSuggestion(
       }] : []),
       ...sceneProgramDiagnostics(finalProgramIssues)
     ]
-  };
-  return withCodePlanDetails(result, discovery.requirements, execution.repairAttempts);
+  }, context.requirements, context.repairAttempts);
+}
+
+function rememberMapCodeReplay(context: Omit<MapCodeReplayContext, 'expiresAt'>): string {
+  pruneMapCodeReplayContexts();
+  const token = createId('code-replay');
+  mapCodeReplayContexts.set(token, { ...context, expiresAt: Date.now() + MAP_CODE_REPLAY_TTL_MS });
+  return token;
+}
+
+function pruneMapCodeReplayContexts(): void {
+  const now = Date.now();
+  for (const [token, context] of mapCodeReplayContexts) {
+    if (context.expiresAt <= now) mapCodeReplayContexts.delete(token);
+  }
+}
+
+function isScriptExecutionTimeout(error: unknown): boolean {
+  const message = error && typeof error === 'object' && 'message' in error
+    ? String(error.message)
+    : String(error ?? '');
+  return /Script execution timed out after \d+ms/i.test(message);
 }
 
 export function executeMapCodePlan(
@@ -513,6 +684,8 @@ function runMapCodePlan(
   const missingAssetBindings = new Set<string>();
   const usedFunctions = new Set<string>();
   const assetById = new Map(assets.map((asset) => [asset.id, asset]));
+  // Asset geometry is immutable during one run; keep model traversal outside the sandbox time budget.
+  const assetBoundsById = new Map(assets.map((asset) => [asset.id, calculateModelVisualBounds(asset.modelJson)]));
   const roleByAssetId = new Map<string, CodeAssetRole>();
   const indoorRoom = map.sceneMode === 'indoor' && map.room
     ? normalizeMapRoom(map.room, map.box.size, map.room)
@@ -566,6 +739,57 @@ function runMapCodePlan(
       });
     }
     return id;
+  };
+  const emitPlacement = (input: PlacementInput): string => {
+    if (placements.length >= MAX_PLACEMENTS) throw new Error('map_code_plan_too_many_placements');
+    if (!input || typeof input !== 'object') throw new Error('invalid_map_code_placement');
+    const referenceId = codePlacementReference(placements.length);
+    const requestedAssetId = typeof input.assetId === 'string' && input.assetId.trim() ? input.assetId.trim() : null;
+    if (requestedAssetId && isCodeMissingAsset(requestedAssetId)) return referenceId;
+    let assetId = requestedAssetId;
+    if (assetId && !assetById.has(assetId) && !(mode === 'discovery' && isCodeAssetPlaceholder(assetId))) {
+      assetId = resolveMapCodeAssetId(input.name, assets);
+      if (!assetId) unresolvedAssetIds.add(requestedAssetId!);
+    }
+    const roomOpeningId = input.roomOpeningId?.trim();
+    if (roomOpeningId && !roomOpenings.some((opening) => opening.id === roomOpeningId)) {
+      throw new Error(`unknown_map_code_room_opening:${roomOpeningId}`);
+    }
+    if (input.position === undefined && !roomOpeningId) throw new Error('invalid_map_code_position');
+    const terrain = map.sceneMode !== 'indoor'
+      && input.terrain !== false
+      && input.position !== undefined
+      && placementUsesTerrain(input.position);
+    const position = input.position === undefined
+      ? roomOpeningPlacement(requireIndoorRoom(indoorRoom), roomOpenings, roomOpeningId!)
+      : placementPosition(input.position, map, terrain);
+    const asset = assetId ? assetById.get(assetId) : undefined;
+    const role = roleByAssetId.get(assetId ?? '')
+      ?? normalizeCodePlacementRole(input.role, map.sceneMode)
+      ?? (map.sceneMode === 'indoor' ? 'functional' : inferCodeAssetRole([
+        input.name,
+        asset?.name,
+        asset?.prompt,
+        ...(asset?.tags ?? [])
+      ].filter(Boolean).join(' ')));
+    const dimensions = input.dimensions === undefined ? undefined : point3(input.dimensions);
+    const fitted = fittedPlacementTransform(asset, input.scale ?? 1, dimensions, asset ? assetBoundsById.get(asset.id) : undefined);
+    placements.push({
+      referenceId,
+      assetId,
+      name: cleanText(input.name ?? assetById.get(assetId ?? '')?.name ?? '程序化物体', 80),
+      position,
+      rotationY: placementRotation(input.facing, position, input.rotationY),
+      scale: fitted.scale,
+      size: dimensions ?? point3(input.size ?? [1, 1, 1]),
+      heightMode: terrain ? 'terrain' : 'fixed',
+      role,
+      semantic: [input.name, asset?.name, asset?.prompt, ...(asset?.tags ?? [])].filter(Boolean).join(' '),
+      ...(roomOpeningId ? { roomOpeningId } : {}),
+      ...(input.sourceGuideId ? { sourceGuideId: cleanId(input.sourceGuideId, 'route') } : {}),
+      ...placementDesignMetadata(input.groupId, input.layer)
+    });
+    return referenceId;
   };
   const api = Object.freeze({
     TAU: Math.PI * 2,
@@ -653,7 +877,7 @@ function runMapCodePlan(
       const workingMap = sceneOperations.length > 0 ? applyMapOperations(map, sceneOperations) : map;
       const object = workingMap.objects.find((item) => item.id === objectId);
       if (!object) throw new Error(`unknown_map_code_object:${objectId}`);
-      if (object.locked) throw new Error(`locked_map_code_object:${objectId}`);
+      if (object.locked && !options.refinableObjectIds?.has(objectId)) throw new Error(`locked_map_code_object:${objectId}`);
       const transform: NonNullable<Extract<MapOperation, { type: 'object.update' }>['patch']['transform']> = {};
       let heightMode = object.heightMode;
       if (input.position !== undefined) {
@@ -674,7 +898,7 @@ function runMapCodePlan(
       const workingMap = sceneOperations.length > 0 ? applyMapOperations(map, sceneOperations) : map;
       const object = workingMap.objects.find((item) => item.id === objectId);
       if (!object) throw new Error(`unknown_map_code_object:${objectId}`);
-      if (object.locked) throw new Error(`locked_map_code_object:${objectId}`);
+      if (object.locked && !options.refinableObjectIds?.has(objectId)) throw new Error(`locked_map_code_object:${objectId}`);
       emitSceneOperation({ type: 'object.remove', objectId });
       return objectId;
     },
@@ -843,6 +1067,152 @@ function runMapCodePlan(
           ]
         });
       });
+    },
+    streetGrid(input: StreetGridInput): { routeIds: string[]; blocks: MapPlannedBlock[] } {
+      record('streetGrid');
+      if (!input || typeof input !== 'object') throw new Error('invalid_map_code_street_grid');
+      const id = cleanId(input.id, 'settlement');
+      const grid = createMapStreetGrid({
+        idPrefix: id,
+        region: codePointArray(input.region, 'invalid_map_code_street_grid_region'),
+        direction: finite(input.direction ?? 0),
+        blockWidth: clampFinite(input.blockWidth, 2, map.box.size[0]),
+        blockDepth: clampFinite(input.blockDepth, 2, map.box.size[2]),
+        roadWidth: clampFinite(input.roadWidth, 0.5, Math.min(map.box.size[0], map.box.size[2])),
+        inset: clampFinite(input.inset ?? input.roadWidth / 2, 0, Math.min(map.box.size[0], map.box.size[2]) / 2),
+        tags: normalizeAssetTags(['street', 'settlement', ...(input.tags ?? [])]) ?? ['street', 'settlement']
+      });
+      if (grid.streets.length === 0 || grid.blocks.length === 0) {
+        throw new Error('map_code_street_grid_empty');
+      }
+      const routeIds = grid.streets.map((street) => emitRoute({
+        id: street.id,
+        name: street.name,
+        points: street.points,
+        curve: street.curve,
+        closed: street.closed,
+        width: street.width,
+        surface: input.surface ?? 'paving',
+        intensity: input.intensity,
+        tags: street.tags
+      }));
+      return {
+        routeIds,
+        blocks: grid.blocks.map((block) => ({
+          id: block.id,
+          points: block.points.map((point) => [...point] as Point2),
+          center: [...block.center] as Point2
+        }))
+      };
+    },
+    placeAlongRoute(input: PlaceAlongRouteInput): string[] {
+      record('placeAlongRoute');
+      if (!input || typeof input !== 'object') throw new Error('invalid_map_code_place_along_route');
+      const routeId = cleanId(input.routeId, 'route');
+      const workingMap = sceneOperations.length > 0
+        ? applyMapOperations({ ...map, assets: [...assets] }, sceneOperations)
+        : map;
+      const guide = workingMap.guides.find((candidate) => candidate.id === routeId);
+      if (!guide) throw new Error(`unknown_map_code_route:${routeId}`);
+      const spacing = clampFinite(input.spacing, 1, 80);
+      const startOffset = clampFinite(input.startInset ?? 0, 0, Math.max(map.box.size[0], map.box.size[2]));
+      const endOffset = clampFinite(input.endInset ?? 0, 0, Math.max(map.box.size[0], map.box.size[2]));
+      const centerSamples = sampleMapGuide(guide, { spacing, startOffset, endOffset });
+      const offset = Math.max(0.1, Math.abs(finite(input.offset ?? guide.width / 2 + 0.8)));
+      const side = input.side ?? 'both';
+      const leftSamples = sampleMapGuide(guide, { spacing, offset, startOffset, endOffset });
+      const rightSamples = sampleMapGuide(guide, { spacing, offset: -offset, startOffset, endOffset });
+      const references: string[] = [];
+      const maxCount = Math.min(MAX_POINT_RESULTS, MAX_PLACEMENTS - placements.length);
+      for (let index = 0; index < centerSamples.length && references.length < maxCount; index += 1) {
+        const sides = side === 'both'
+          ? [leftSamples[index], rightSamples[index]]
+          : side === 'left'
+            ? [leftSamples[index]]
+            : side === 'right'
+              ? [rightSamples[index]]
+              : [index % 2 === 0 ? leftSamples[index] : rightSamples[index]];
+        for (const sample of sides) {
+          if (!sample || references.length >= maxCount) continue;
+          const center = centerSamples[index];
+          const facing: PlacementInput['facing'] = input.facing === 'toward-route'
+            ? { target: [center.x, center.z] }
+            : input.facing === 'away-from-route'
+              ? { target: [sample.x * 2 - center.x, sample.z * 2 - center.z] }
+              : { direction: [sample.tangentX, sample.tangentZ] };
+          references.push(emitPlacement({
+            assetId: input.assetId,
+            name: input.name,
+            position: [sample.x, sample.z],
+            facing,
+            scale: input.scale,
+            dimensions: input.dimensions,
+            size: input.size,
+            terrain: input.terrain,
+            role: input.role,
+            groupId: input.groupId,
+            layer: input.layer,
+            sourceGuideId: guide.id
+          }));
+        }
+      }
+      return references;
+    },
+    placeStreetFrontage(input: PlaceStreetFrontageInput): string[] {
+      record('placeStreetFrontage');
+      if (!input || typeof input !== 'object' || !Array.isArray(input.items) || input.items.length === 0) {
+        throw new Error('invalid_map_code_street_frontage');
+      }
+      if (input.side !== 'left' && input.side !== 'right') throw new Error('invalid_map_code_street_frontage_side');
+      const routeId = cleanId(input.routeId, 'route');
+      const workingMap = sceneOperations.length > 0
+        ? applyMapOperations({ ...map, assets: [...assets] }, sceneOperations)
+        : map;
+      const guide = workingMap.guides.find((candidate) => candidate.id === routeId);
+      if (!guide) throw new Error(`unknown_map_code_route:${routeId}`);
+      const points = mapGuidePolyline(guide);
+      const routeLength = points.slice(1).reduce((sum, point, index) => (
+        sum + Math.hypot(point[0] - points[index][0], point[1] - points[index][1])
+      ), 0);
+      const maxDimension = Math.max(map.box.size[0], map.box.size[1], map.box.size[2]);
+      const items = input.items.slice(0, 32).map((item) => ({
+        ...item,
+        dimensions: point3(item.dimensions).map((value) => clampFinite(value, 0.2, maxDimension)) as Point3
+      }));
+      const gap = clampFinite(input.gap ?? 0.8, 0.2, 8);
+      const setback = clampFinite(input.setback ?? 0.8, 0.2, 8);
+      const startInset = clampFinite(input.startInset ?? 0, 0, routeLength);
+      const endInset = clampFinite(input.endInset ?? 0, 0, routeLength);
+      const requiredLength = startInset + endInset
+        + items.reduce((sum, item) => sum + item.dimensions[0], 0)
+        + gap * Math.max(0, items.length - 1);
+      if (requiredLength > routeLength + 0.001) {
+        throw new Error(`map_code_street_frontage_too_short:required=${requiredLength.toFixed(2)}:available=${routeLength.toFixed(2)}`);
+      }
+      const references: string[] = [];
+      let cursor = startInset;
+      for (const item of items) {
+        cursor += item.dimensions[0] / 2;
+        const sampleOptions = {
+          spacing: routeLength + 1,
+          startOffset: cursor,
+          endOffset: routeLength - cursor
+        };
+        const center = sampleMapGuide(guide, sampleOptions)[0];
+        const offset = guide.width / 2 + item.dimensions[2] / 2 + setback;
+        const sample = sampleMapGuide(guide, {
+          ...sampleOptions,
+          offset: input.side === 'left' ? offset : -offset
+        })[0];
+        references.push(emitPlacement({
+          ...item,
+          position: [sample.x, sample.z],
+          facing: { target: [center.x, center.z] },
+          sourceGuideId: guide.id
+        }));
+        cursor += item.dimensions[0] / 2 + gap;
+      }
+      return references;
     },
     water(idValue: string, optionsValue: Record<string, unknown>): string {
       record('water');
@@ -1073,6 +1443,20 @@ function runMapCodePlan(
         : map;
       return nearestDryPoint(environmentMap, point, clampFinite(clearance, 0, 12));
     },
+    waterPoint(waterIdValue: string, pointValue: Point2, draft = 0): Point3 {
+      record('waterPoint');
+      const waterId = cleanText(waterIdValue, 80);
+      const point = point2(pointValue);
+      const environmentMap = sceneOperations.length > 0
+        ? applyMapOperations({ ...map, assets: [...assets] }, sceneOperations)
+        : map;
+      const water = environmentMap.waterBodies.find((candidate) => candidate.id === waterId);
+      if (!water) throw new Error(`unknown_map_code_water:${waterId}`);
+      if (!isPointInsideWaterBody(water, point[0], point[1], environmentMap)) {
+        throw new Error(`map_code_water_point_outside:${waterId}`);
+      }
+      return [point[0], waterSurfaceLevelAt(water, point[0], point[1]) - clampFinite(draft, 0, water.depth), point[1]];
+    },
     gridPoints(options: { center?: Point2; columns: number; rows: number; spacing: number | Point2 }): Point2[] {
       record('gridPoints');
       const columns = boundedCount(options.columns, 1, MAX_POINT_RESULTS);
@@ -1176,54 +1560,7 @@ function runMapCodePlan(
     },
     place(input: PlacementInput): string {
       record('place');
-      if (placements.length >= MAX_PLACEMENTS) throw new Error('map_code_plan_too_many_placements');
-      if (!input || typeof input !== 'object') throw new Error('invalid_map_code_placement');
-      const referenceId = codePlacementReference(placements.length);
-      const requestedAssetId = typeof input.assetId === 'string' && input.assetId.trim() ? input.assetId.trim() : null;
-      if (requestedAssetId && isCodeMissingAsset(requestedAssetId)) return referenceId;
-      let assetId = requestedAssetId;
-      if (assetId && !assetById.has(assetId) && !(mode === 'discovery' && isCodeAssetPlaceholder(assetId))) {
-        assetId = resolveMapCodeAssetId(input.name, assets);
-        if (!assetId) unresolvedAssetIds.add(requestedAssetId!);
-      }
-      const roomOpeningId = input.roomOpeningId?.trim();
-      if (roomOpeningId && !roomOpenings.some((opening) => opening.id === roomOpeningId)) {
-        throw new Error(`unknown_map_code_room_opening:${roomOpeningId}`);
-      }
-      if (input.position === undefined && !roomOpeningId) throw new Error('invalid_map_code_position');
-      const terrain = map.sceneMode !== 'indoor'
-        && input.terrain !== false
-        && input.position !== undefined
-        && placementUsesTerrain(input.position);
-      const position = input.position === undefined
-        ? roomOpeningPlacement(requireIndoorRoom(indoorRoom), roomOpenings, roomOpeningId!)
-        : placementPosition(input.position, map, terrain);
-      const asset = assetId ? assetById.get(assetId) : undefined;
-      const role = roleByAssetId.get(assetId ?? '')
-        ?? normalizeCodePlacementRole(input.role, map.sceneMode)
-        ?? (map.sceneMode === 'indoor' ? 'functional' : inferCodeAssetRole([
-          input.name,
-          asset?.name,
-          asset?.prompt,
-          ...(asset?.tags ?? [])
-        ].filter(Boolean).join(' ')));
-      const dimensions = input.dimensions === undefined ? undefined : point3(input.dimensions);
-      const fitted = fittedPlacementTransform(asset, input.scale ?? 1, dimensions);
-      placements.push({
-        referenceId,
-        assetId,
-        name: cleanText(input.name ?? assetById.get(assetId ?? '')?.name ?? '程序化物体', 80),
-        position,
-        rotationY: placementRotation(input.facing, position, input.rotationY),
-        scale: fitted.scale,
-        size: dimensions ?? point3(input.size ?? [1, 1, 1]),
-        heightMode: terrain ? 'terrain' : 'fixed',
-        role,
-        semantic: [input.name, asset?.name, asset?.prompt, ...(asset?.tags ?? [])].filter(Boolean).join(' '),
-        ...(roomOpeningId ? { roomOpeningId } : {}),
-        ...placementDesignMetadata(input.groupId, input.layer)
-      });
-      return referenceId;
+      return emitPlacement(input);
     },
     attach(input: AttachmentInput): string {
       record('attach');
@@ -1328,7 +1665,7 @@ function runMapCodePlan(
       const scale = scale3(input.scale ?? 1);
       let localMinY = 0;
       if (asset) {
-        const bounds = calculateModelVisualBounds(asset.modelJson);
+        const bounds = assetBoundsById.get(asset.id)!;
         const actualDimensions: Point3 = [
           Math.max(0.000001, bounds.max[0] - bounds.min[0]),
           Math.max(0.000001, bounds.max[1] - bounds.min[1]),
@@ -1465,7 +1802,7 @@ function runMapCodePlan(
       const scale = scale3(input.scale ?? 1);
       const boundAsset = assetId ? assetById.get(assetId) : undefined;
       if (boundAsset) {
-        const bounds = calculateModelVisualBounds(boundAsset.modelJson);
+        const bounds = assetBoundsById.get(boundAsset.id)!;
         const actualDimensions: Point3 = [
           Math.max(0.000001, bounds.max[0] - bounds.min[0]),
           Math.max(0.000001, bounds.max[1] - bounds.min[1]),
@@ -1505,7 +1842,9 @@ function runMapCodePlan(
   }, {
     codeGeneration: { strings: false, wasm: false }
   });
-  const returned = script.runInContext(context, { timeout: EXECUTION_TIMEOUT_MS });
+  const returned = script.runInContext(context, {
+    timeout: options.executionTimeoutMs ?? DISCOVERY_EXECUTION_TIMEOUT_MS
+  });
   if (returned && typeof returned.then === 'function') throw new Error('async_map_code_plan_not_supported');
   if (indoorRoom && sceneOperations.some((operation) => (
     operation.type.startsWith('terrain.') || operation.type.startsWith('water.') || operation.type.startsWith('grass.')
@@ -1699,10 +2038,14 @@ function runMapCodePlan(
       message: '本轮 Code 未填写设计组与焦点表，场景仍可应用；可点击“调整当前地图”补充构图语义。',
       repaired: false
     }] : [];
+  const repairableObjectIds = new Set([
+    ...objectOperations.map((operation) => operation.object.id!),
+    ...(options.refinableObjectIds ?? [])
+  ]);
   const validated = validateMapSuggestion(planningMap, {
     ...suggestion,
     diagnostics: [...waterDiagnostics, ...accessDiagnostics, ...clearanceDiagnostics, ...attachmentDiagnostics, ...unresolvedBridgeDiagnostics, ...missingDesignDiagnostics]
-  }).suggestion;
+  }, { repairableObjectIds }).suggestion;
   return {
     suggestion: unresolvedAssetIds.size === 0 ? validated : {
       ...validated,
@@ -1746,29 +2089,54 @@ function withCodePlanDetails(
   };
 }
 
+function buildMapCodeSceneProfile(taskPrompt: string): string {
+  if (!/\b(?:compact town|small town|town|village|settlement)\b|小镇|城镇|村庄|村落|聚落/i.test(taskPrompt)) return '';
+  return `
+## Active scene profile: settlement.compact-town
+Treat these as scale-aware composition targets inside the settlement envelope, not across the whole map:
+- building footprint inside the settlement envelope: 25%-40%; primary-street frontage: 55%-75%.
+- intentional named open space: 8%-18%; no unassigned empty area should consume more than 10% of the settlement envelope.
+- establish a compact center, a normal residential belt and a looser rural edge instead of one uniform sparse scatter.
+- call api.streetGrid before placing ordinary buildings; assign each returned block a use, route connection, building cluster or named public space.
+- use api.placeStreetFrontage for ordinary shops, inns, workshops and houses that address a street. It derives facade spacing, setback and facing from real building dimensions; do not manually rotate or scatter those buildings.
+- reserve free api.place for landmarks, courtyard buildings and rural outliers whose relationship is explicitly composed.
+- Public street furniture such as lamps, public benches, bins, signs and barriers must use api.placeAlongRoute. Furniture belonging to a shop terrace or courtyard is not generic roadside scatter: compose that shop terrace furniture as a small functional group facing its shop or table, with entrance and walking clearance.
+- complete routes, thresholds and street edges before decorative vegetation. Preserve only purposeful, bounded negative space.`;
+}
+
 export function buildMapCodePlannerSystemPrompt(
   map: EditableMap,
   assets: readonly MapAsset[],
   minNewAssets = 0,
   maxNewAssets = normalizeMapAiMaxNewAssets(undefined),
   scope: MapCodeScope = 'general',
-  requestMode: MapCodeRequestMode = 'generate'
+  requestMode: MapCodeRequestMode = 'generate',
+  taskPrompt = '',
+  refinableIds: readonly string[] = []
 ): string {
   if (map.sceneMode === 'indoor') {
-    return buildIndoorMapCodePlannerSystemPrompt(map, assets, minNewAssets, maxNewAssets, requestMode);
+    return buildIndoorMapCodePlannerSystemPrompt(map, assets, minNewAssets, maxNewAssets, requestMode, refinableIds);
   }
   const bounds = getMapBounds(map);
   const assetCatalog = assets.length > 0
     ? assets.map((asset) => `- ${asset.id}: ${asset.name}; tags=${asset.tags?.join(',') || 'none'}`).join('\n')
     : '- No reusable assets are available. Declare the assets you need with api.requireAsset.';
+  const refinableObjectIds = new Set(refinableIds);
   const refineContext = requestMode === 'refine'
-    ? `\n## Outdoor Scene Code refinement\nReturn a delta over the current map, not a rebuilt scene. Preserve everything the user did not ask to change. Do not call sceneIntent and do not regenerate base terrain unless explicitly requested. Use api.move, api.removeObject, api.updateWater and api.removeWater for existing content. To replace a misplaced bridge, call api.bridge with replaceObjectId and the existing or newly generated bridge asset. Existing objects: ${JSON.stringify(map.objects.slice(0, 240).map((object) => ({ id: object.id, name: object.name, assetId: object.assetId, position: object.transform.position, rotationY: object.transform.rotation[1], locked: object.locked })))}. Existing waters: ${JSON.stringify(map.waterBodies)}.\n`
+    ? `\n## Outdoor Scene Code refinement\nReturn a delta over the current map, not a rebuilt scene. Preserve everything the user did not ask to change. Do not call sceneIntent and do not regenerate base terrain unless explicitly requested. Use api.move, api.removeObject, api.updateWater and api.removeWater for existing content. Never move or remove an object with locked:true unless it also has refinable:true; those refinable objects belong to the current unapplied AI preview. To replace a misplaced bridge, call api.bridge with replaceObjectId and the existing or newly generated bridge asset. Existing objects: ${JSON.stringify(map.objects.slice(0, 240).map((object) => ({ id: object.id, name: object.name, assetId: object.assetId, position: object.transform.position, rotationY: object.transform.rotation[1], locked: object.locked, refinable: refinableObjectIds.has(object.id) })))}. Existing waters: ${JSON.stringify(map.waterBodies)}.\n`
     : '';
   const scopeContract = requestMode === 'refine'
     ? refineContext
     : scope === 'scene'
     ? `\n## Unified scene ownership\nYou are the single author of the complete outdoor scene. No separate director or later ecology planner will repair your composition. You own terrain, water, surfaces, grass, constructed forms, circulation, vegetation, rocks, creatures and their spatial relationships in one coordinate system.\nFirst call api.sceneIntent({kind:'natural'|'authored',reason:'short explanation'}). Decide semantically from the requested place, not from a keyword list. A culturally designed or purpose-built place such as a garden, courtyard, campus, park, village, arena or temple ground is normally authored even when plants and water dominate it. A wilderness without built intent is natural.\nThen call api.design({...}) once to describe the composition you are about to build. Choose one focus, multiple peer focuses, a primary-secondary hierarchy, a sequential experience, or a mixture according to the scene. Different groups may be peers while each group has its own hierarchy; groups may nest. Do not force every scene into a centered landmark or one fixed route pattern. Every leaf design group is a complete scene room: give it a purpose, at least one arrival or through-route, an anchor or spatial edge, supporting content and human-scale detail. Every declared layer intent must be fulfilled by actual placements carrying that exact groupId and layer; do not write aspirational layers that the code never builds.\nUse transferable spatial-design methods: hierarchy, axes or counter-axes, arrival and circulation, framed/borrowed/opposed views, thresholds, reveal timing, compression and release, rhythm, clustering, and intentional negative space. A library may reveal one dominant mass immediately; an arena may use a strong center and radial tiers; a Chinese garden may use several sequential scenes with enclosure, moon gates, pavilions, corridors, bridges, paving, pond, frame views and counter-views. Create recognizable architecture for authored scenes before natural decoration. For natural scenes, omit unnecessary architecture but still compose landform, paths, water and populations coherently. A large empty surface is not automatically meaningful negative space: it needs a specific use, proportionate dimensions, shaped boundaries and composed edges. In a large garden, do not spend the whole foreground on one broad empty arrival road; divide it into connected courts, planted pockets, side rooms or secondary destinations according to the design.\nPlace layer 1 anchors first, layer 2 supporting forms next, then intentionally over-place removable layer 3/4 scenery where richness is wanted; the local compiler may thin only those decorative layers. After structure and circulation, complete a dedicated detail-fill pass for thresholds, route rhythm, focal framing, vegetation masses and small accents. Preserve playable routes and deliberate empty space. Buildings that normally form an ensemble should be composed as related wings, halls, pavilions or corridors rather than represented by one token object. Compose water from multiple banks and arrival points: place waterside architecture, rocks, seating, lanterns and planting where routes reach, turn beside or cross the shore.\n`
     : '';
+  const activeSceneProfile = requestMode === 'generate' ? buildMapCodeSceneProfile(taskPrompt) : '';
+  const capabilityCatalog = worldCapabilitySummary('map-code').map((capability) => ({
+    id: capability.id,
+    description: capability.description,
+    method: capability.bindings[0]?.method,
+    inputSchema: capability.inputSchema
+  }));
   return `You are WorldForge Studio's procedural environment planner.${scopeContract}
 
 ## Output contract
@@ -1794,15 +2162,21 @@ Do not use random rotation for directional assets. For a ring or arena, use api.
 Build a readable composition, not a random pile. Let the requested place determine whether focus is singular, multiple, sequential, or mixed.
 Use big-medium-small hierarchy: a few large anchors, a moderate number of supporting pieces, and enough controlled small details to make authored space feel intentionally finished.
 Keep key routes clear, respect the map bounds, avoid filling every cell, and keep repeated elements deterministic from api.seed.
+Treat declared building dimensions as real footprints: keep standalone building footprints disjoint, with a small street or courtyard gap between their edges. Do not stack several houses at nearly the same center.
 Use proxy placements without assetId only for abstract markers or when no visual asset is appropriate; visible prompt-specific content should use real assets.
 ${scope === 'scene' ? "Set each design layer's optional minCount to the number of placements your own design actually needs, so an architectural ensemble or detail family is not collapsed into one token object." : ''}
+${activeSceneProfile}
+
+## Callable capability manifest
+Prefer these bounded semantic capabilities over manually emitting repeated coordinates. Their local implementations own geometry, sampling and operation limits:
+${JSON.stringify(capabilityCatalog)}
 
 ## API quick reference
 Constants: api.TAU, api.PHI, api.seed, api.bounds.
 Scene intent: api.sceneIntent({kind:'natural'|'authored',reason?}). ${requestMode === 'refine' ? 'Do not call it during refinement.' : 'Required exactly once for unified scene ownership.'}
 Design semantics: api.design({experienceMode:'immediate'|'sequential'|'mixed',intent,groups:[{id,name,parentId?,intent,region?,focusIds?,guideIds?,entryGuideIds?,exitGuideIds?,axisGuideIds?,protectedObjectIds?,removableObjectIds?,layers:[{level:1|2|3|4,intent,density:'tight'|'normal'|'open',minCount?:1..64}]}],focuses:[{id,groupId,name,kind:'primary'|'secondary'|'node',rank,selector?,objectId?,reveal:'visible'|'screened'|'framed'|'sequence'}],viewpoints:[{id,groupId?,point:[x,z],targetFocusId?,role:'entry'|'route'|'node'|'overview'}],relations:[{id,kind:'attract'|'repel'|'support',sourceSelector,targetSelector?,sourceGroupId?,targetGroupId?,strength:'tight'|'normal'|'open',minDistance?,maxDistance?}]}). ${requestMode === 'refine' ? 'Optional: call once only when the user changes composition semantics.' : 'Call once in unified scene ownership, after sceneIntent and before placement.'}
-Environment: api.terrain(preset,{amplitude?,roughness?,seed?,direction?}); api.refineTerrain({...}); api.water(id,{type:'lake'|'river'|'ocean',points,...}); api.grass(id,region,{preset:'meadow'|'sand'|'wetland'|'farm'|'magic'|'alpine-moss',density?,variation?,softness?,height?,mix?:{short?,tall?,flowers?}}); api.keepDry([x,z],clearance?) returns the nearest dry point after water operations; api.spawn([x,z],yawDegrees?); api.renderSuggestion(text).
-Circulation: api.route({id,name?,points:[[x,z],...],curve?:'polyline'|'catmull-rom',closed?,width?,surface?:'paving'|'soil'|'grass'|'sand'|'rock'|'none',intensity?,tags?}) records the editable guide and lays real terrain paving by default. api.routeNetwork({id,nodes:[{id,point:[x,z],role?}],edges:[{id,from,to,via?,curve?,width?,surface?,tags?}]}) expresses a free-form connected graph with shared junctions; you choose its topology. A large authored garden needs an experience network rather than one ring: combine an entrance sequence, asymmetric branches or shortcuts to local scenes, waterside or quiet routes, and intentional shared junctions according to the design. Do not force one fixed topology. Use bridge for water crossings; place generated stair/step modules where a route must change level.
+Environment: api.terrain(preset,{amplitude?,roughness?,seed?,direction?}); api.refineTerrain({...}); api.water(id,{type:'lake'|'river'|'ocean',points,...}); api.grass(id,region,{preset:'meadow'|'sand'|'wetland'|'farm'|'magic'|'alpine-moss',density?,variation?,softness?,height?,mix?:{short?,tall?,flowers?}}); api.keepDry([x,z],clearance?) returns the nearest dry point after water operations; api.waterPoint(waterId,[x,z],draft?) returns [x,y,z] on that water surface after water operations; use it for boats and other floating assets, normally with role:'environment'; api.spawn([x,z],yawDegrees?); api.renderSuggestion(text).
+Circulation: api.route({id,name?,points:[[x,z],...],curve?:'polyline'|'catmull-rom',closed?,width?,surface?:'paving'|'soil'|'grass'|'sand'|'rock'|'none',intensity?,tags?}) records the editable guide and lays real terrain paving by default. api.routeNetwork({id,nodes:[{id,point:[x,z],role?}],edges:[{id,from,to,via?,curve?,width?,surface?,tags?}]}) expresses a free-form connected graph with shared junctions; you choose its topology. api.streetGrid({id,region:[[x,z],...],direction?:degrees,blockWidth,blockDepth,roadWidth,inset?,surface?,tags?}) returns {routeIds,blocks}; use blocks for building groups and routeIds for roadside facilities. api.placeStreetFrontage({routeId,side:'left'|'right',items:[{assetId?,name,dimensions:[frontageWidth,height,depth],role?,groupId?,layer?},...],startInset?,endInset?,gap?,setback?}) sequentially fits varied ordinary buildings along one street side, keeps their real footprints separated and turns local Z+ facades toward the road. api.placeAlongRoute({routeId,assetId?,name?,spacing,offset?,side?:'left'|'right'|'both'|'alternate',startInset?,endInset?,facing?:'forward'|'toward-route'|'away-from-route',role?,groupId?,layer?}) derives repeated facilities from an existing route. A large authored garden needs an experience network rather than one ring: combine an entrance sequence, asymmetric branches or shortcuts to local scenes, waterside or quiet routes, and intentional shared junctions according to the design. Do not force one fixed topology. Use bridge for water crossings; place generated stair/step modules where a route must change level.
 ${MAP_CODE_ENVIRONMENT_FORM_CONTRACT}
 Regions: {kind:'circle',x,z,radius}, {kind:'path',points:[[x,z],...],width}, or {kind:'polygon',points:[[x,z],...]}.
 Scalar math: api.clamp(value,min,max), api.lerp(a,b,t), api.remap(value,inMin,inMax,outMin,outMax), api.smoothstep(min,max,value), api.random(min?,max?).
@@ -1811,7 +2185,7 @@ Curves: api.linePoint(t,a,b) -> [x,z]; api.bezierPoint(t,p0,p1,p2,p3) -> {point,
 Fields: api.noise2D(x,z,scale?,seed?) -> [-1,1]; api.fbm2D(x,z,{scale?,octaves?,lacunarity?,gain?,seed?}) -> [-1,1].
 Layouts: api.circlePoint(index,count,radius,center?) -> [x,z]; api.ellipsePoint(index,count,radiusX,radiusZ,center?,phase?) -> [x,z]; api.gridPoints({center?,columns,rows,spacing}) -> points; api.poissonDisk({bounds?,minDistance,maxPoints?,attempts?,seed?}) -> points.
 Assets: api.requireAsset({key,name,prompt,tags?,variants?,dimensions:[width,height,depth]?,role:'structure'|'environment',optional?}) -> key; api.asset(key,index?) -> generated assetId. role is required in unified scene ownership; only loose natural decoration may be optional.
-Output: api.place({assetId?,name?,position:[x,z]|[x,y,z],rotationY?,facing?,scale?,size?,terrain?,role?,groupId?,layer?:1|2|3|4}); api.attach({assetId?,name?,parentId,kind:'supported'|'mounted',side?,offset?,anchorY?:'bottom'|'center'|'top',contact?,scale?,rotationY?,role?,groupId?,layer?}) attaches a child to an earlier placement or existing object. Use supported for objects resting on top; use mounted for doors, windows, banners, signs and facade ornaments that must follow a host surface. mounted side is the host-local north|south|east|west face, offset is [horizontal,vertical], anchorY selects the host's vertical baseline, and contact is embed depth. Entrances default to anchorY:'bottom', so never put an absolute world height into offset. api.bridge({waterId,assetId?,name?,crossingCenter:[x,z],direction:[dx,dz],dimensions:[width,height,depth],kind?:'straight'|'curved',curveOffset?,segmentCount?,bankInset?,deckClearance?,abutments?,groupId?,layer?}). A curved bridge uses the asset as a repeatable module. The local solver samples the full bridge width, snaps both ends beyond the real shoreline, records the route guide, and creates small bridgeheads unless abutments:false.
+Output: api.place({assetId?,name?,position:[x,z]|[x,y,z],rotationY?,facing?,scale?,size?,terrain?,role?,groupId?,layer?:1|2|3|4}); api.placeStreetFrontage(...) for varied ordinary street-facing buildings; api.placeAlongRoute(...) for repeated street furniture. api.attach({assetId?,name?,parentId,kind:'supported'|'mounted',side?,offset?,anchorY?:'bottom'|'center'|'top',contact?,scale?,rotationY?,role?,groupId?,layer?}) attaches a child to an earlier placement or existing object. Use supported for objects resting on top; use mounted for doors, windows, banners, signs and facade ornaments that must follow a host surface. mounted side is the host-local north|south|east|west face, offset is [horizontal,vertical], anchorY selects the host's vertical baseline, and contact is embed depth. Entrances default to anchorY:'bottom', so never put an absolute world height into offset. api.bridge({waterId,assetId?,name?,crossingCenter:[x,z],direction:[dx,dz],dimensions:[width,height,depth],kind?:'straight'|'curved',curveOffset?,segmentCount?,bankInset?,deckClearance?,abutments?,groupId?,layer?}). A curved bridge uses the asset as a repeatable module. The local solver samples the full bridge width, snaps both ends beyond the real shoreline, records the route guide, and creates small bridgeheads unless abutments:false.
 Never use standalone api.place with [x,y,z] for a door, window, banner, sign or facade ornament intended as part of another structure. Either include it in the host asset itself or create the host first and use api.attach.
 Refine existing content: api.move({objectId,position?,rotationY?,scale?}); api.removeObject(objectId); api.updateWater({waterId,level?,depth?,width?,points?}); api.removeWater(waterId). These APIs are available only during refinement.
 facing may be a direction [dx,dz], {direction:[dx,dz]}, {tangent:[dx,dz]}, {normal:[nx,nz]}, {target:[x,z]}, or any of those with offsetY; it overrides rotationY when present.
@@ -1824,7 +2198,7 @@ For long connected dry-land scenery, prefer api.placeBetween({assetId?,name?,sta
 - For a continuous connected run, use one asset family and normally variants:1. Do not alternate visibly different variants along the same uninterrupted line. The ordered start->end direction determines which side local Z+ faces when spanAxis:'x'.
 - Elements whose long axis follows travel: use facing:{tangent:frame.tangent}; elements whose front faces across the curve: use facing:{normal:frame.normal}; add offsetY:api.TAU / 2 for the opposite side. If an interior anchor is known, facing:{target:interiorPoint} is the safest inward-facing choice.
 - Organic scatter: poissonDisk plus noise2D/fbm2D density filtering; enforce minDistance. When vegetation is part of the composition, use several bounded groves or edge buffers sized from the available area instead of one tiny global sample.
-- Dry structures and land vegetation must not be placed in water. Call api.keepDry after defining water for walls, gates, buildings, lamps and trees near a shoreline. Bridges alone use api.bridge. The local compiler performs one final non-blocking dry-land repair if a placement still intrudes.
+- Dry structures and land vegetation must not be placed in water. Call api.keepDry after defining water for walls, gates, buildings, lamps and trees near a shoreline. Place boats with api.waterPoint after defining their water body and use role:'environment'. Bridges alone use api.bridge. The local compiler performs one final non-blocking dry-land repair if a placement still intrudes.
 - Grass in an authored green landscape should read as a continuous ground layer rather than isolated tufts: normally use density 0.72-0.9, moderate variation, and a short/tall mix such as {short:0.62,tall:0.34,flowers:0.04}. Use meadow for the general garden floor and reserve wetland for a narrow shore band; do not color the whole garden as wetland merely because it contains a pond.
 - Paired or axial decoration uses mirrorPoint and density:'tight' so flags, lamps, statues, planters and gate ornaments remain complete pairs. Use normal/open only for scenery that may be asymmetrically thinned.
 - Before finishing an authored scene, complete a dedicated detail-fill pass: inspect each group for empty thresholds, unsupported route edges, unframed focuses, missing near/mid/far vegetation masses and absent small-scale accents. Keep intentional clearings, but do not confuse unplanned emptiness with negative space.
@@ -1888,15 +2262,17 @@ function buildIndoorMapCodePlannerSystemPrompt(
   assets: readonly MapAsset[],
   minNewAssets: number,
   maxNewAssets: number,
-  requestMode: MapCodeRequestMode
+  requestMode: MapCodeRequestMode,
+  refinableIds: readonly string[]
 ): string {
   const room = requireIndoorRoom(map.room);
   const suggestedAssetCount = indoorAssetTargetCount(map, minNewAssets, maxNewAssets);
   const assetCatalog = assets.length > 0
     ? assets.map((asset) => `- ${asset.id}: ${asset.name}; tags=${asset.tags?.join(',') || 'none'}`).join('\n')
     : '- No reusable assets are available. Declare the assets you need with api.requireAsset.';
+  const refinableObjectIds = new Set(refinableIds);
   const refineContext = requestMode === 'refine'
-    ? `\n## Indoor Code refinement\nReturn only a delta over the current room. Preserve every object, opening and finish the user did not ask to change. Never move or remove locked objects. Use api.move and api.removeObject for existing content; add new openings only when the user explicitly requests one. Existing objects: ${JSON.stringify(map.objects.slice(0, 240).map((object) => ({ id: object.id, name: object.name, assetId: object.assetId, position: object.transform.position, rotationY: object.transform.rotation[1], parentId: object.parentId, roomOpeningId: object.roomOpeningId, locked: object.locked })))}.\n`
+    ? `\n## Indoor Code refinement\nReturn only a delta over the current room. Preserve every object, opening and finish the user did not ask to change. Never move or remove an object with locked:true unless it also has refinable:true. Use api.move and api.removeObject for existing content; add new openings only when the user explicitly requests one. Existing objects: ${JSON.stringify(map.objects.slice(0, 240).map((object) => ({ id: object.id, name: object.name, assetId: object.assetId, position: object.transform.position, rotationY: object.transform.rotation[1], parentId: object.parentId, roomOpeningId: object.roomOpeningId, locked: object.locked, refinable: refinableObjectIds.has(object.id) })))}.\n`
     : `\n## Unified indoor ownership\nYou are the single author of the complete indoor layout. No second director, specialist agent, or silent local backfill will redesign it. Local code only enforces room bounds, opening semantics, collision safety, attachment validity and door circulation. If a functional requirement is missing, this same Code Composer will receive a targeted repair request.\n`;
   return `You are WorldForge Studio's procedural indoor-scene planner.${refineContext}
 
@@ -1973,18 +2349,22 @@ async function discoverMapCodeWithRepairs(
 ): Promise<{ code: string; discovery: CodeExecutionResult; repairAttempts: number }> {
   let code = initialCode;
   let programRepairAttempted = false;
-  for (let repairAttempt = 0; repairAttempt <= 2; repairAttempt += 1) {
+  let executionRepairAttempts = 0;
+  let repairAttempts = 0;
+  while (true) {
     try {
       const discovery = runMapCodePlan(code, map, assets, {
         mode: 'discovery',
         requestMode: options.mode ?? 'generate',
         minNewAssets: options.minNewAssets,
         maxNewAssets,
-        scope: options.scope
+        scope: options.scope,
+        refinableObjectIds: new Set(options.refinableObjectIds ?? [])
       });
       const programIssues = findAuthoredSceneProgramIssues(map, discovery.suggestion);
-      if (programIssues.length > 0 && !programRepairAttempted && repairAttempt < 2) {
+      if (programIssues.length > 0 && !programRepairAttempted) {
         programRepairAttempted = true;
+        repairAttempts += 1;
         options.onProgress?.({
           phase: 'replanning',
           label: '场景片区内容不足，AI 正在自动补全 1/1',
@@ -1996,7 +2376,7 @@ async function discoverMapCodeWithRepairs(
           { role: 'assistant', content: code },
           {
             role: 'user',
-            content: `The program executed, but its authored scene program is incomplete:\n${programIssues.join('\n')}\n\nReturn corrected JavaScript only. Preserve the overall concept, terrain and playable circulation, but complete every promised leaf-group layer with actual placements using the same groupId and layer. Do not merely rewrite the design descriptions. If a clear paved or grass area consumes most of a scene group while containing almost no authored content, shrink or reshape it and compose its edges with purposeful architecture, stopping places and near/mid/small details. Routes must connect distinct programmed destinations, and route nodes such as thresholds, bridgeheads, turns and waterside pauses should receive context-appropriate details beside the walkable surface. Keep deliberate negative space only when it has a specific use, a shaped boundary and enough surrounding content to read as intentional.`
+            content: `The program executed, but its authored scene program is incomplete:\n${programIssues.join('\n')}\n\nReturn corrected JavaScript only. Preserve the overall concept, terrain and playable circulation, but complete every promised leaf-group layer with actual placements using the same groupId and layer. Do not merely rewrite the design descriptions. If a clear paved or grass area consumes most of a scene group while containing almost no authored content, shrink or reshape it and compose its edges with purposeful architecture, stopping places and near/mid/small details. Routes must connect distinct programmed destinations, and route nodes such as thresholds, bridgeheads, turns and waterside pauses should receive context-appropriate details beside the walkable surface. Keep deliberate negative space only when it has a specific use, a shaped boundary and enough surrounding content to read as intentional. Do not scale loop counts from map width, map area, or fine coordinate steps. Use bounded api.gridPoints, api.poissonDisk, or curve-sampling results and iterate each result once; avoid while loops and nested placement loops.`
           }
         ], {
           apiBase: options.apiBase,
@@ -2011,7 +2391,7 @@ async function discoverMapCodeWithRepairs(
       }
       return {
         code,
-        repairAttempts: repairAttempt,
+        repairAttempts,
         discovery: programIssues.length > 0 ? {
           ...discovery,
           suggestion: {
@@ -2023,13 +2403,18 @@ async function discoverMapCodeWithRepairs(
     } catch (error) {
       if (error instanceof Error && error.name === 'AbortError') throw error;
       const executionError = mapCodeExecutionErrorDetail(error, code);
-      if (repairAttempt === 2) throw new Error(`map_code_execution_failed:${executionError}`);
+      if (executionRepairAttempts === 2) throw new Error(`map_code_execution_failed:${executionError}`);
+      executionRepairAttempts += 1;
+      repairAttempts += 1;
       const timeoutRepairGuidance = /script execution timed out/i.test(executionError)
         ? `\n\nThis was an execution timeout. Do not scale loop counts from map width, map area, or fine coordinate steps. Replace manual area scans with bounded api.gridPoints, api.poissonDisk, or curve-sampling results and iterate each result once. Avoid while loops and nested placement loops; keep each explicit loop below ${MAX_POINT_RESULTS} iterations and total placements below ${MAX_PLACEMENTS}.`
         : '';
+      const lockedObjectRepairGuidance = /locked_map_code_object:([^\s]+)/i.exec(executionError)
+        ? `\n\nThe referenced object is locked and not refinable. Leave it unchanged. Do not replace api.move with api.removeObject for the same ID; instead adjust only objects whose catalog entry has refinable:true, or add unlocked supporting content elsewhere.`
+        : '';
       options.onProgress?.({
         phase: 'replanning',
-        label: `检测到规划参数或边界错误，AI 正在自动修复 ${repairAttempt + 1}/2`,
+        label: `检测到规划参数或边界错误，AI 正在自动修复 ${executionRepairAttempts}/2`,
         detail: executionError
       });
       code = extractCode(await llmChat([
@@ -2039,8 +2424,8 @@ async function discoverMapCodeWithRepairs(
         {
           role: 'user',
           content: map.sceneMode === 'indoor'
-            ? `The indoor program failed during its sandboxed discovery run with this error:\n${executionError}\n\nReturn corrected JavaScript only. Preserve the requested room design. Check every array index, loop endpoint, division, room wall, opening ID, locked object and optional argument. Use roomPoint for floor furniture, wallFrame for wall objects, ceilingPoint for ceiling objects, and opening plus roomOpeningId for doors/windows. Never use terrain, water, grass or outdoor APIs. Ensure every numeric value is finite.${timeoutRepairGuidance}`
-            : `The program failed during its sandboxed discovery run with this error:\n${executionError}\n\nReturn corrected JavaScript only. Preserve the requested design. Check every array index, loop endpoint, division, vector component, enum field, and optional argument. JavaScript arrays cannot be added or subtracted directly; calculate x/z components separately. bezierPoint returns {point,tangent,normal}, sampleBezier returns point arrays, and sampleBezierFrames returns frame objects. Use facing:{tangent:frame.tangent} for along-curve objects and facing:{normal:frame.normal} for curve-side facades or walls. Ensure every numeric value passed to the API is finite.${timeoutRepairGuidance}\n\n${MAP_CODE_ENVIRONMENT_FORM_CONTRACT}`
+            ? `The indoor program failed during its sandboxed discovery run with this error:\n${executionError}\n\nReturn corrected JavaScript only. Preserve the requested room design. Check every array index, loop endpoint, division, room wall, opening ID, locked object and optional argument. Use roomPoint for floor furniture, wallFrame for wall objects, ceilingPoint for ceiling objects, and opening plus roomOpeningId for doors/windows. Never use terrain, water, grass or outdoor APIs. Ensure every numeric value is finite.${timeoutRepairGuidance}${lockedObjectRepairGuidance}`
+            : `The program failed during its sandboxed discovery run with this error:\n${executionError}\n\nReturn corrected JavaScript only. Preserve the requested design. Check every array index, loop endpoint, division, vector component, enum field, and optional argument. JavaScript arrays cannot be added or subtracted directly; calculate x/z components separately. bezierPoint returns {point,tangent,normal}, sampleBezier returns point arrays, and sampleBezierFrames returns frame objects. Use facing:{tangent:frame.tangent} for along-curve objects and facing:{normal:frame.normal} for curve-side facades or walls. Ensure every numeric value passed to the API is finite.${timeoutRepairGuidance}${lockedObjectRepairGuidance}\n\n${MAP_CODE_ENVIRONMENT_FORM_CONTRACT}`
         }
       ], {
         apiBase: options.apiBase,
@@ -2090,7 +2475,14 @@ function findAuthoredSceneProgramIssues(map: EditableMap, suggestion: MapAiSugge
     ));
     if (oversizedClearing) issues.push(`scene_group_oversized_clear_space:${group.id}`);
   }
+  for (const issue of evaluateSettlementQuality(candidate).issues) {
+    issues.push(`${issue.code}:${formatQualityValue(issue.actual)}/${formatQualityValue(issue.expected)}`);
+  }
   return [...new Set(issues)].slice(0, 12);
+}
+
+function formatQualityValue(value: number): string {
+  return Number.isInteger(value) ? String(value) : value.toFixed(2);
 }
 
 function sceneProgramDiagnostics(issues: readonly string[]): NonNullable<MapAiSuggestion['diagnostics']> {
@@ -2251,11 +2643,12 @@ function placementObject(
     id: objectId,
     name: placement.name,
     assetId: placement.assetId,
-    locked: sceneMode === 'outdoor' && placement.role === 'structure',
+    locked: sceneMode === 'outdoor' && placement.role === 'structure' && !FLOATING_WATER_ASSET.test(placement.semantic),
     heightMode: placement.heightMode,
     ...(placement.roomOpeningId ? { roomOpeningId: placement.roomOpeningId } : {}),
     ...(placement.designGroupId ? { designGroupId: placement.designGroupId } : {}),
     ...(placement.compositionLayer ? { compositionLayer: placement.compositionLayer } : {}),
+    ...(placement.sourceGuideId ? { sourceGuideId: placement.sourceGuideId } : {}),
     transform: {
       position: placement.heightMode === 'terrain'
         ? [placement.position[0], sampleTerrainHeight(terrainMap, placement.position[0], placement.position[2]), placement.position[2]]
@@ -2905,11 +3298,12 @@ function roomOpeningPlacement(room: MapRoom, openings: readonly MapRoomOpening[]
 function fittedPlacementTransform(
   asset: MapAsset | undefined,
   rawScale: number | Point3,
-  dimensions?: Point3
+  dimensions?: Point3,
+  visualBounds?: Aabb
 ): { scale: Point3 } {
   const scale = scale3(rawScale);
   if (!asset || !dimensions) return { scale };
-  const bounds = calculateModelVisualBounds(asset.modelJson);
+  const bounds = visualBounds ?? calculateModelVisualBounds(asset.modelJson);
   const actualDimensions: Point3 = [
     Math.max(0.000001, bounds.max[0] - bounds.min[0]),
     Math.max(0.000001, bounds.max[1] - bounds.min[1]),

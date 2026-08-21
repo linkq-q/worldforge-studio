@@ -89,6 +89,8 @@ export interface MapAiOptions {
   discoveryOnly?: boolean;
   /** Continue from a user-approved indoor Code candidate. */
   approvedCode?: string;
+  /** Locked objects created by the current unapplied AI preview that refine may still adjust. */
+  refinableObjectIds?: readonly string[];
 }
 
 export interface AssetGenerationRequest {

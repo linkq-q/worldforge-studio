@@ -27,6 +27,7 @@ import {
 import type { RenderScheme } from '../shared/renderScheme';
 import type { RenderPlan } from '../shared/renderPlan';
 import { runMapAgent } from './mapAi';
+import { replayGeneratedMapCode } from './mapCodePlanner';
 import { reviewMapVisual } from './indoorVisualReview';
 import { planMapComposition } from './mapCompositionWorkflow';
 import { generateMapLayoutSuggestion } from './mapLayoutAi';
@@ -56,9 +57,13 @@ import {
   type ProjectExportPlan
 } from './projectExport';
 import type { ProjectExportProfile } from '../shared/projectExport';
+import { worldCapabilitySummary } from '../shared/worldCapabilities';
+import { WorldAgentRunManager } from './worldAgentRuns';
 
 type Req = http.IncomingMessage;
 type Res = http.ServerResponse;
+
+const worldAgentManagers = new WeakMap<MapStore, WorldAgentRunManager>();
 
 export async function handleMapHttp(req: Req, res: Res, store: MapStore): Promise<boolean> {
   setCorsHeaders(res);
@@ -136,8 +141,18 @@ async function handleEditorRoute(req: Req, res: Res, store: MapStore, parts: str
     return;
   }
 
+  if (parts[2] === 'capabilities' && req.method === 'GET' && parts.length === 3) {
+    sendJson(res, 200, { capabilities: worldCapabilitySummary() });
+    return;
+  }
+
   if (parts[2] === 'maps') {
     await handleEditorMaps(req, res, store, parts);
+    return;
+  }
+
+  if (parts[2] === 'agent-runs') {
+    await handleWorldAgentRuns(req, res, store, parts);
     return;
   }
 
@@ -208,6 +223,59 @@ async function handleEditorImport(req: Req, res: Res, store: MapStore): Promise<
   });
 }
 
+async function handleWorldAgentRuns(req: Req, res: Res, store: MapStore, parts: string[]): Promise<void> {
+  const runId = parts[3];
+  if (!runId) throw new HttpError(404, 'not_found');
+  const manager = worldAgentManager(store);
+  try {
+    if (req.method === 'GET' && parts.length === 4) {
+      sendJson(res, 200, { run: manager.get(runId) });
+      return;
+    }
+    if (req.method === 'DELETE' && parts.length === 4) {
+      manager.cancel(runId);
+      sendJson(res, 200, { ok: true });
+      return;
+    }
+    if (req.method === 'GET' && parts[4] === 'preview' && parts.length === 5) {
+      sendJson(res, 200, manager.previewRun(runId));
+      return;
+    }
+    if (req.method === 'POST' && parts[4] === 'tools' && parts.length === 6) {
+      const body = await readJson<{ input?: unknown }>(req);
+      sendJson(res, 200, manager.execute(runId, decodeURIComponent(parts[5]), body.input));
+      return;
+    }
+    if (req.method === 'POST' && parts[4] === 'commit' && parts.length === 5) {
+      const body = await readJson<{ approved?: boolean; label?: string }>(req);
+      sendJson(res, 200, await manager.commit(runId, body.approved === true, body.label));
+      return;
+    }
+  } catch (error) {
+    throw worldAgentHttpError(error);
+  }
+  throw new HttpError(404, 'not_found');
+}
+
+function worldAgentManager(store: MapStore): WorldAgentRunManager {
+  const existing = worldAgentManagers.get(store);
+  if (existing) return existing;
+  const manager = new WorldAgentRunManager(store);
+  worldAgentManagers.set(store, manager);
+  return manager;
+}
+
+function worldAgentHttpError(error: unknown): HttpError {
+  const message = error instanceof Error ? error.message : 'world_agent_failed';
+  if (message === 'unknown_world_agent_run' || message.startsWith('unknown_world_agent_asset:')) {
+    return new HttpError(404, message);
+  }
+  if (message === 'world_agent_run_stale' || message === 'world_agent_tool_limit') {
+    return new HttpError(409, message);
+  }
+  return new HttpError(400, message);
+}
+
 const HDRI_CONTENT_TYPES: Record<string, string> = {
   hdr: 'image/vnd.radiance',
   exr: 'image/x-exr',
@@ -273,6 +341,32 @@ async function handleEditorMaps(req: Req, res: Res, store: MapStore, parts: stri
 
   const mapId = parts[3];
   if (!mapId) throw new HttpError(404, 'not_found');
+
+  if (parts[4] === 'agent-runs' && req.method === 'POST' && parts.length === 5) {
+    const body = await readJson<{ assetIds?: string[] }>(req);
+    try {
+      const run = await worldAgentManager(store).create(mapId, Array.isArray(body.assetIds) ? body.assetIds : []);
+      sendJson(res, 201, { run });
+    } catch (error) {
+      throw worldAgentHttpError(error);
+    }
+    return;
+  }
+
+  if (parts[4] === 'code-replay' && req.method === 'POST' && parts.length === 5) {
+    const body = await readJson<{ token?: string }>(req);
+    const token = body.token?.trim();
+    if (!token) throw new HttpError(400, 'missing_map_code_replay_token');
+    try {
+      sendJson(res, 200, { suggestion: replayGeneratedMapCode(token, await store.loadMap(mapId)) });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'map_code_replay_failed';
+      if (message === 'map_code_replay_expired') throw new HttpError(410, message);
+      if (message === 'map_code_replay_stale') throw new HttpError(409, message);
+      throw error;
+    }
+    return;
+  }
 
   if (req.method === 'GET' && parts.length === 4) {
     sendJson(res, 200, { map: await store.loadMap(mapId) });
@@ -454,9 +548,15 @@ async function handleEditorMaps(req: Req, res: Res, store: MapStore, parts: stri
       if (parts[4] === 'generate' && !isCompositionEmptyMap(map)) {
         throw new HttpError(409, 'map_composition_requires_empty_map');
       }
-      const planningMap = parts[4] === 'refine' && Array.isArray(body.baseOperations) && body.baseOperations.length > 0
-        ? applyMapOperations(map, body.baseOperations)
+      const baseOperations = parts[4] === 'refine' && Array.isArray(body.baseOperations)
+        ? body.baseOperations
+        : [];
+      const planningMap = baseOperations.length > 0
+        ? applyMapOperations(map, baseOperations)
         : map;
+      const refinableObjectIds = baseOperations.flatMap((operation) => (
+        operation.type === 'object.add' && operation.object.id ? [operation.object.id] : []
+      ));
       const modelProvider = provider === 'deepseek-v4-pro' ? 'deepseek' : provider;
       const planningAssets = dedupeAssets([
         ...assets,
@@ -521,6 +621,7 @@ async function handleEditorMaps(req: Req, res: Res, store: MapStore, parts: stri
           approvedCode: body.approvedCode,
           sceneAgent: body.sceneAgent === true,
           focusPrompt: body.focusPrompt,
+          refinableObjectIds,
           onProgress,
           onPreview,
           createAsset: async (request, report) => {

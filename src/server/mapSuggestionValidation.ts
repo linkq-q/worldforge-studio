@@ -11,9 +11,13 @@ export interface ValidatedMapSuggestion {
   repairCount: number;
 }
 
-export function validateMapSuggestion(map: EditableMap, suggestion: MapAiSuggestion): ValidatedMapSuggestion {
+export function validateMapSuggestion(
+  map: EditableMap,
+  suggestion: MapAiSuggestion,
+  options: { repairableObjectIds?: ReadonlySet<string> } = {}
+): ValidatedMapSuggestion {
   const candidate = applyMapOperations(map, suggestion.operations);
-  const lint = lintMap(candidate);
+  const lint = lintMap(candidate, options);
   const operations = [...suggestion.operations, ...lint.repairOperations];
   const issues = [...(suggestion.diagnostics ?? []), ...lint.issues];
   if (lint.repairOperations.length > 0) applyMapOperations(map, operations);

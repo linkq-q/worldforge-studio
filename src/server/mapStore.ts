@@ -330,10 +330,14 @@ export class MapStore {
 
   async commitTransaction(
     mapId: string,
-    request: MapTransactionRequest
+    request: MapTransactionRequest,
+    expectedVersion?: number
   ): Promise<{ map: EditableMap; transaction: MapTransactionSummary }> {
     return this.withTransactionLock(async () => {
       const before = await this.loadMap(mapId);
+      if (expectedVersion !== undefined && before.version !== expectedVersion) {
+        throw new Error('map_transaction_stale');
+      }
       await this.requireOperationAssets(request.operations);
       const next = applyMapOperations(before, request.operations);
       const map = await this.replaceMap(mapId, next);
@@ -1114,7 +1118,7 @@ function normalizeMapAiTransactionMetadata(value: unknown): MapAiTransactionMeta
       ...(cleanText(codePlan.sceneIntentReason, 240)
         ? { sceneIntentReason: cleanText(codePlan.sceneIntentReason, 240) }
         : {}),
-      repairAttempts: boundedInteger(codePlan.repairAttempts, 0, 2),
+      repairAttempts: boundedInteger(codePlan.repairAttempts, 0, 3),
       assetRequirements: Array.isArray(codePlan.assetRequirements)
         ? codePlan.assetRequirements.slice(0, 64).flatMap((item) => {
             const key = cleanText(item?.key, 80);
