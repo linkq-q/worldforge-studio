@@ -44,6 +44,9 @@ export function updateAgentProgress(list: AgentProgressEvent[], event: AgentProg
 export function humanizeAgentError(error: unknown): string {
   if (error instanceof Error && error.name === 'AbortError') return '【用户取消】本次规划已中断，没有内容应用到地图。';
   const message = error instanceof Error ? error.message : String(error || 'unknown_error');
+  if (mapCodeReplayToken(message)) {
+    return '【场景布局重放超时】3D 资产已经生成并保存，但最终布局尚未应用。可直接点击“重新重放布局”，不会再次生成资产。';
+  }
   if (/^map_asset_generation_failed:/.test(message)) {
     const payload = message.slice('map_asset_generation_failed:'.length);
     const separator = payload.indexOf(':');
@@ -78,7 +81,9 @@ export function humanizeAgentError(error: unknown): string {
     map_layout_region_limit: '【分区数量超限】AI 返回的区块数量超过当前地图尺寸允许的上限。请减少区块数量后重试。',
     invalid_map_layout_json: '【AI 输出格式错误】AI 没有返回可解析的分区 JSON，自动修正后仍失败。请重试或简化分区描述。',
     scene_agent_iteration_budget_exceeded: '【Scene Agent 未收敛】Agent 已达到本次最多决策轮数，仍有空间约束未满足。已经生成的资产仍保留在资产库中；请允许复用后重试，或减少一次生成的场景要求。',
-    scene_agent_no_executable_program: '【Scene Agent 无可用候选】Agent 在决策轮数内没有成功解释执行任何 Scene Program。已经生成的资产仍保留在资产库中；请允许复用后重试或简化场景要求。'
+    scene_agent_no_executable_program: '【Scene Agent 无可用候选】Agent 在决策轮数内没有成功解释执行任何 Scene Program。已经生成的资产仍保留在资产库中；请允许复用后重试或简化场景要求。',
+    map_code_replay_expired: '【布局重放已过期】已生成的 3D 资产仍然保留，但本次布局上下文已失效。请重新发起场景规划。',
+    map_code_replay_stale: '【地图已变更】生成资产后地图已被修改，旧布局不能安全重放。资产仍然保留，请基于当前地图重新规划。'
   };
   if (labels[message]) return labels[message];
   if (/^scene_outcome_missing_(?:asset_family|water):/.test(message)) {
@@ -91,6 +96,12 @@ export function humanizeAgentError(error: unknown): string {
   if (/^(?:map_code_execution_failed:)?(?:non_finite_map_code_value|invalid_map_code_point|invalid_map_code_position|unused_map_code_asset_variants|map_code_generated_assets_unplaced|missing_map_code_scene_intent|authored_scene_missing_structure)/.test(message)) {
     return `【场景 Code 校验失败】整体程序仍有无效坐标、未使用资产或缺少必要结构。系统已阻止该候选进入地图，请重试或简化要求。服务端信息：${message.slice(0, 240)}`;
   }
+  if (/^(?:map_code_execution_failed:)?locked_map_code_object:/.test(message)) {
+    return `【锁定对象不可修改】AI 连续尝试移动或删除已经保存并锁定的建筑，系统已阻止操作。当前地图未受影响；请明确要求“保留锁定建筑，只调整周边未锁定内容”，或先手动解锁目标建筑。服务端信息：${message.slice(0, 240)}`;
+  }
+  if (/^(?:map_code_execution_failed:)?(?:Error:\s*)?Script execution timed out after \d+ms/i.test(message)) {
+    return `【场景 Code 执行超时】AI 生成的场景程序计算量过大，自动精简后仍未在时限内完成。本次结果没有应用；请重试，若重复出现可减少一次生成的内容规模。服务端信息：${message.slice(0, 240)}`;
+  }
   if (/^(?:invalid_|unknown_scene_|duplicate_scene_|forbidden_scene_|required_scene_|scene_composition_)/.test(message)) {
     return `【AI 规划校验失败】AI 返回的场景关系或地图操作不符合编辑器约束（${message}）。请重试；若重复出现，请简化区域关系与内容要求。`;
   }
@@ -101,6 +112,11 @@ export function humanizeAgentError(error: unknown): string {
     return `【AI 服务失败】模型服务没有正常完成请求。服务端信息：${message.slice(0, 240)}。请稍后重试或切换模型提供方。`;
   }
   return `【未分类错误】地图生成未完成，服务端返回：${message.slice(0, 240)}。本次结果没有应用；请重试，并在重复出现时查看服务端日志。`;
+}
+
+export function mapCodeReplayToken(error: unknown): string | null {
+  const message = error instanceof Error ? error.message : String(error ?? '');
+  return message.match(/^map_code_final_replay_timed_out:(code-replay-[a-z0-9-]+)$/i)?.[1] ?? null;
 }
 
 export function humanizeRenderAgentError(error: unknown): string {

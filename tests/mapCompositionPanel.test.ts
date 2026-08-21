@@ -231,6 +231,18 @@ describe('map composition preview panel', () => {
     expect(html).toContain('Empty &lt;AI&gt; response');
     expect(html).not.toContain('disabled');
   });
+
+  it('offers layout-only replay after generated assets were preserved', () => {
+    const html = renderMapGenerationFailure({
+      detail: '资产已保存',
+      retainedCandidate: false,
+      replayAvailable: true
+    });
+
+    expect(html).toContain('重新重放布局');
+    expect(html).toContain('不会再次请求 AI 或生成重复资产');
+    expect(html).not.toContain('>重新尝试<');
+  });
 });
 
 function compositionSuggestion(initialObjectCount: number, objectCount: number): MapAiSuggestion {

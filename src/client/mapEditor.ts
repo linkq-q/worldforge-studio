@@ -90,6 +90,7 @@ import type { RenderInspectorCategoryId } from './renderInspectorCatalog';
 import {
   humanizeAgentError,
   humanizeRenderAgentError,
+  mapCodeReplayToken,
   renderAgentProgress,
   updateAgentProgress
 } from './agentProgressPanel';
@@ -360,7 +361,8 @@ class MapEditor {
   private developerRenderCategory: RenderInspectorCategoryId = 'lighting';
   private mapAiPrompt = '';
   private mapAiFocusPrompt = '';
-  private mapAiLastFailure: { detail: string; mode: 'generate' | 'refine'; retainedCandidate: boolean } | null = null;
+  private mapAiLastFailure: { detail: string; mode: 'generate' | 'refine'; retainedCandidate: boolean; replayAvailable?: boolean } | null = null;
+  private mapAiReplayToken: string | null = null;
   private mapLayoutPrompt = '';
   private mapLayoutSuggestion: { summary: string; layout: MapLayout } | null = null;
   private mapLayoutAbortController: AbortController | null = null;
@@ -1576,7 +1578,8 @@ class MapEditor {
     host.querySelector('#discard-map-ai')?.addEventListener('click', () => void this.discardMapAiPreview());
     host.querySelector('#apply-map-ai')?.addEventListener('click', () => void this.applyMapAiPreview());
     host.querySelector('#retry-map-ai')?.addEventListener('click', () => {
-      void this.generateMapAiPreview(this.mapAiLastFailure?.mode ?? 'generate');
+      if (this.mapAiReplayToken) void this.replayMapCodePreview();
+      else void this.generateMapAiPreview(this.mapAiLastFailure?.mode ?? 'generate');
     });
     host.querySelector('#repair-map-ai-composition')?.addEventListener('click', () => {
       const repairPrompt = `${this.mapAiPrompt}\n\n在上一轮预览基础上继续修复规划完整性：优先补足未正常落位的资产与装饰，修复动线、贴墙、贴顶和关系组；保留已经合理的内容。`;
@@ -2165,6 +2168,7 @@ class MapEditor {
     }
     this.mapAiAbortController = controller;
     this.mapAiLastFailure = null;
+    this.mapAiReplayToken = null;
     this.mapAgentProgress = [];
     this.startMapAgentProgressTimer();
     const previousSuggestion = mode === 'refine' ? this.mapAiSuggestion : null;
@@ -2263,6 +2267,7 @@ class MapEditor {
       this.mapPreviewKind = 'ai';
       this.mapAiSuggestion = combinedSuggestion;
       this.mapAiLastFailure = null;
+      this.mapAiReplayToken = null;
       this.pendingCompositionPlan = null;
       this.pendingCodeSuggestion = null;
       const previewBase = baseWasSaved ? this.state.map ?? map : map;
@@ -2289,7 +2294,14 @@ class MapEditor {
       const cancelled = error instanceof Error && error.name === 'AbortError';
       const retainedCandidate = Boolean(this.mapAiPreviewMap && this.mapAiSuggestion);
       const detail = humanizeAgentError(error);
-      if (!cancelled) this.mapAiLastFailure = { detail, mode, retainedCandidate };
+      const replayToken = mapCodeReplayToken(error);
+      if (replayToken) this.mapAiReplayToken = replayToken;
+      if (!cancelled) this.mapAiLastFailure = {
+        detail,
+        mode,
+        retainedCandidate,
+        replayAvailable: Boolean(replayToken)
+      };
       updateAgentProgress(this.mapAgentProgress, {
         phase: 'failed',
         label: cancelled ? '地图 Agent 已取消' : '地图 Agent 执行失败',
@@ -2304,6 +2316,69 @@ class MapEditor {
       if (this.mapAiAbortController === controller) this.mapAiAbortController = null;
       if (automatic) this.mapAiAutoRefineRunning = false;
       this.stopMapAgentProgressTimer();
+      this.setBusy(false);
+      this.renderPanels();
+    }
+  }
+
+  private async replayMapCodePreview(): Promise<void> {
+    const map = this.state.map;
+    const token = this.mapAiReplayToken;
+    if (!map || !token || this.state.busy) return;
+    if (this.state.dirty) {
+      this.state.message = '请先保存当前手工修改';
+      this.updateToolbarState();
+      return;
+    }
+    const controller = new AbortController();
+    const previousSuggestion = this.mapAiLastFailure?.mode === 'refine' ? this.mapAiSuggestion : null;
+    this.mapAiAbortController = controller;
+    this.setBusy(true, '正在使用已生成资产重新重放布局...');
+    try {
+      const { suggestion } = await editorAgentFetch<{ suggestion: MapAiSuggestion }>(
+        `/api/editor/maps/${encodeURIComponent(map.id)}/code-replay`,
+        { method: 'POST', body: JSON.stringify({ token }), signal: controller.signal },
+        () => {}
+      );
+      await this.reloadLists();
+      const combinedSuggestion = previousSuggestion ? {
+        ...suggestion,
+        operations: [...previousSuggestion.operations, ...suggestion.operations],
+        generatedAssets: [...previousSuggestion.generatedAssets, ...suggestion.generatedAssets],
+        blocked: false,
+        agent: suggestion.agent ?? previousSuggestion.agent,
+        codePlan: suggestion.codePlan ?? previousSuggestion.codePlan,
+        composition: suggestion.composition ?? previousSuggestion.composition
+      } : suggestion;
+      this.mapPreviewKind = 'ai';
+      this.mapAiSuggestion = combinedSuggestion;
+      this.mapAiPreviewMap = applyMapOperations(this.mapWithEditorAssets(map), combinedSuggestion.operations);
+      this.mapAiComparisonMap = map;
+      this.mapAiPreviewVisible = true;
+      this.mapAiLastFailure = null;
+      this.mapAiReplayToken = null;
+      this.state.selectedObjectId = null;
+      this.state.message = '已使用现有资产恢复场景布局，尚未应用';
+      await this.refreshScene();
+      window.setTimeout(() => void this.runMapVisualFinalReview(), 0);
+    } catch (error) {
+      const replayToken = mapCodeReplayToken(error);
+      const errorMessage = error instanceof Error ? error.message : String(error ?? '');
+      if (errorMessage === 'map_code_replay_expired' || errorMessage === 'map_code_replay_stale') {
+        this.mapAiReplayToken = null;
+      } else {
+        this.mapAiReplayToken = replayToken ?? this.mapAiReplayToken;
+      }
+      const detail = humanizeAgentError(error);
+      this.mapAiLastFailure = {
+        detail,
+        mode: this.mapAiLastFailure?.mode ?? 'generate',
+        retainedCandidate: Boolean(this.mapAiPreviewMap && this.mapAiSuggestion),
+        replayAvailable: Boolean(this.mapAiReplayToken)
+      };
+      this.state.message = `场景布局重放失败：${detail}`;
+    } finally {
+      if (this.mapAiAbortController === controller) this.mapAiAbortController = null;
       this.setBusy(false);
       this.renderPanels();
     }
@@ -2583,6 +2658,7 @@ class MapEditor {
   private clearMapAiPreview(): void {
     this.mapAiSuggestion = null;
     this.mapAiLastFailure = null;
+    this.mapAiReplayToken = null;
     this.pendingCompositionPlan = null;
     this.pendingCodeSuggestion = null;
     this.mapAiPreviewMap = null;

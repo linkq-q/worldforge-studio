@@ -190,7 +190,7 @@ export function renderMapDesignSummary(map: EditableMap): string {
 }
 
 export function renderMapGenerationFailure(
-  failure: { detail: string; retainedCandidate: boolean } | null,
+  failure: { detail: string; retainedCandidate: boolean; replayAvailable?: boolean } | null,
   busy = false
 ): string {
   if (!failure) return '';
@@ -198,9 +198,11 @@ export function renderMapGenerationFailure(
     <section class="editor-section map-ai-result">
       <span class="stage-kicker">生成未完成</span>
       <h2>${failure.retainedCandidate ? '已保留最后可用结果' : '当前地图未受影响'}</h2>
-      <p class="empty inspector-note">错误只作为提示，不会阻断编辑。可以直接修改提示词，也可以让系统重新尝试。</p>
+      <p class="empty inspector-note">${failure.replayAvailable
+        ? '资产已经保存。重新重放只恢复本轮布局，不会再次请求 AI 或生成重复资产。'
+        : '错误只作为提示，不会阻断编辑。可以直接修改提示词，也可以让系统重新尝试。'}</p>
       <details class="inspector-disclosure compact"><summary><span><b>错误详情</b><small>用于排查</small></span></summary><p class="empty inspector-body">${escapeHtml(failure.detail)}</p></details>
-      <div class="map-ai-actions"><button id="retry-map-ai" class="secondary" ${busy ? 'disabled' : ''}>重新尝试</button></div>
+      <div class="map-ai-actions"><button id="retry-map-ai" class="secondary" ${busy ? 'disabled' : ''}>${failure.replayAvailable ? '重新重放布局' : '重新尝试'}</button></div>
     </section>
   `;
 }

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   humanizeAgentError,
   humanizeRenderAgentError,
+  mapCodeReplayToken,
   renderAgentProgress,
   updateAgentProgress
 } from '../src/client/agentProgressPanel';
@@ -50,6 +51,15 @@ describe('agent progress panel', () => {
     expect(humanizeAgentError(new Error('Failed to fetch'))).toContain('【连接失败】');
     expect(humanizeAgentError(new Error('chat_service_unreachable'))).toContain('【AI 服务连接失败】');
     expect(humanizeAgentError(new Error('scene_agent_iteration_budget_exceeded'))).toContain('【Scene Agent 未收敛】');
+    expect(humanizeAgentError(new Error('map_code_execution_failed:Error: Script execution timed out after 250ms')))
+      .toContain('【场景 Code 执行超时】');
+    const replayError = new Error('map_code_final_replay_timed_out:code-replay-abc-123');
+    expect(humanizeAgentError(replayError)).toContain('不会再次生成资产');
+    expect(mapCodeReplayToken(replayError)).toBe('code-replay-abc-123');
+    expect(humanizeAgentError(new Error('map_code_replay_expired'))).toContain('【布局重放已过期】');
+    expect(humanizeAgentError(new Error('map_code_replay_stale'))).toContain('【地图已变更】');
+    expect(humanizeAgentError(new Error('map_code_execution_failed:locked_map_code_object:saved-house')))
+      .toContain('【锁定对象不可修改】');
   });
 
   it('explains a render JSON repair failure as a terminal two-attempt failure', () => {
