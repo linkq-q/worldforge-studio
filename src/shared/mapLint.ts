@@ -13,8 +13,10 @@ import { assetFootprintRadius } from './mapAssetMetadata';
 import { indoorSemanticDimensions, isCeilingMountedSemantic, isElevatedWallSemantic } from './indoorScale';
 import { evaluateIndoorLightCoverage } from './indoorLighting';
 import { applyMapOperations, type MapOperation } from './mapOperations';
+import { sampleMapGuide, type MapGuide, type MapGuideSample } from './mapGuide';
 import { findSafeSpawnPosition, isSpawnPositionSafe } from './mapSpawnSafety';
 import { isPointInsideWaterBody, waterSurfaceLevelAt } from './mapWater';
+import { evaluateSettlementQuality, isRoadsideSemantic, isSettlementBuildingSemantic } from './settlementQuality';
 
 export type MapLintSeverity = 'info' | 'warning' | 'error';
 
@@ -22,11 +24,15 @@ export interface MapLintIssue {
   code: 'spawn.unsafe' | 'object.out-of-bounds' | 'object.off-ground' | 'object.duplicate'
     | 'object.above-ceiling' | 'object.too-small' | 'object.scale-mismatch' | 'object.overlap'
     | 'object.wall-mounted'
+    | 'object.waterline'
     | 'water.exposed-terrain' | 'scene.sparse' | 'room.path-blocked' | 'asset.unplaced'
     | 'asset.minimum-degraded' | 'asset.generation-degraded' | 'interior.light-coverage' | 'interior.style-drift'
     | 'interior.operational-clearance' | 'object.invalid-support' | 'outdoor.access-repaired' | 'outdoor.water-intrusion-repaired'
     | 'outdoor.clearance-repaired'
-    | 'bridge.unresolved-crossing' | 'scene.design-missing' | 'scene.program-incomplete';
+    | 'bridge.unresolved-crossing' | 'scene.design-missing' | 'scene.program-incomplete'
+    | 'settlement.building-coverage-low' | 'settlement.frontage-low'
+    | 'settlement.unassigned-open-space' | 'settlement.building-aligned'
+    | 'roadside.route-unbound' | 'roadside.route-bound';
   severity: MapLintSeverity;
   message: string;
   objectIds?: string[];
@@ -38,14 +44,19 @@ export interface MapLintResult {
   repairOperations: MapOperation[];
 }
 
-export function lintMap(map: EditableMap): MapLintResult {
+export function lintMap(
+  map: EditableMap,
+  options: { repairableObjectIds?: ReadonlySet<string> } = {}
+): MapLintResult {
   const issues: MapLintIssue[] = [];
   const repairOperations: MapOperation[] = [];
   const removedIds = findExactDuplicates(map, issues, repairOperations);
   lintInvalidSupports(map, removedIds, issues, repairOperations);
   lintObjectPlacement(map, removedIds, issues, repairOperations);
   let workingMap = repairOperations.length > 0 ? applyMapOperations(map, repairOperations) : map;
-  lintOverlaps(workingMap, removedIds, issues, repairOperations);
+  lintSettlementRelations(workingMap, removedIds, issues, repairOperations, options.repairableObjectIds ?? new Set());
+  workingMap = repairOperations.length > 0 ? applyMapOperations(map, repairOperations) : map;
+  lintOverlaps(workingMap, removedIds, issues, repairOperations, options.repairableObjectIds ?? new Set());
   workingMap = repairOperations.length > 0 ? applyMapOperations(map, repairOperations) : map;
   lintRoomPaths(workingMap, issues, repairOperations);
   workingMap = repairOperations.length > 0 ? applyMapOperations(map, repairOperations) : map;
@@ -53,7 +64,15 @@ export function lintMap(map: EditableMap): MapLintResult {
   workingMap = repairOperations.length > 0 ? applyMapOperations(map, repairOperations) : map;
   lintSpawn(workingMap, issues, repairOperations);
   lintWaterExposure(map, issues, repairOperations);
+  lintFloatingObjects(workingMap, issues, repairOperations);
   lintInteriorQuality(workingMap, issues, repairOperations);
+  issues.push(...evaluateSettlementQuality(workingMap).issues.map((issue) => ({
+    code: issue.code,
+    severity: 'warning' as const,
+    message: issue.message,
+    objectIds: issue.objectIds,
+    repaired: false
+  })));
   if (map.objects.length < Math.max(2, Math.floor(map.box.size[0] * map.box.size[2] / 3000))) {
     issues.push({
       code: 'scene.sparse',
@@ -709,14 +728,168 @@ function lintWaterExposure(map: EditableMap, issues: MapLintIssue[], repairs: Ma
   }
 }
 
+function lintFloatingObjects(map: EditableMap, issues: MapLintIssue[], repairs: MapOperation[]): void {
+  if (map.sceneMode !== 'outdoor' || map.waterBodies.length === 0) return;
+  const assets = new Map((map.assets ?? []).map((asset) => [asset.id, asset]));
+  const objectBounds = aggregateObjectBounds(getMapObjectVisualAabbs(map));
+  for (const object of map.objects) {
+    if (!object.assetId || object.parentId) continue;
+    const asset = assets.get(object.assetId);
+    const semantic = [object.name, asset?.name, asset?.prompt, ...(asset?.tags ?? [])].filter(Boolean).join(' ');
+    if (!/\b(?:boat|ship)\b|船|舟/i.test(semantic)) continue;
+    const [x, y, z] = object.transform.position;
+    const water = map.waterBodies.find((candidate) => isPointInsideWaterBody(candidate, x, z, map));
+    const bounds = objectBounds.get(object.id);
+    if (!water || !bounds) continue;
+    const surfaceY = waterSurfaceLevelAt(water, x, z);
+    const offset = surfaceY - bounds.min[1];
+    if (Math.abs(offset) <= 0.01) continue;
+    repairs.push({
+      type: 'object.update',
+      objectId: object.id,
+      patch: { transform: { position: [x, y + offset, z] } }
+    });
+    issues.push({
+      code: 'object.waterline',
+      severity: 'warning',
+      message: '船只已重新贴合所在水体的水面。',
+      objectIds: [object.id],
+      repaired: true
+    });
+  }
+}
+
+function lintSettlementRelations(
+  map: EditableMap,
+  removedIds: ReadonlySet<string>,
+  issues: MapLintIssue[],
+  repairs: MapOperation[],
+  repairableObjectIds: ReadonlySet<string>
+): void {
+  if (map.sceneMode !== 'outdoor' || repairableObjectIds.size === 0) return;
+  const guides = map.guides.filter((guide) => guide.tags.some((tag) => tag === 'street' || tag === 'settlement'));
+  if (guides.length === 0) return;
+  const assets = new Map((map.assets ?? []).map((asset) => [asset.id, asset]));
+  for (const object of map.objects) {
+    if (removedIds.has(object.id) || !repairableObjectIds.has(object.id) || object.parentId) continue;
+    const asset = object.assetId ? assets.get(object.assetId) : undefined;
+    const semantic = [object.name, asset?.name, asset?.prompt, ...(asset?.tags ?? [])].filter(Boolean).join(' ');
+    const preferredGuide = object.sourceGuideId
+      ? guides.find((guide) => guide.id === object.sourceGuideId)
+      : undefined;
+    const nearest = nearestGuideSample(
+      preferredGuide ? [preferredGuide] : guides,
+      object.transform.position[0],
+      object.transform.position[2]
+    );
+    if (!nearest) continue;
+
+    if (isOrdinaryStreetBuilding(semantic)) {
+      const frontageDepth = Math.max(0.5, Math.min(object.transform.size[0], object.transform.size[2]) / 2);
+      if (!preferredGuide && nearest.distance > nearest.guide.width / 2 + frontageDepth + 4) continue;
+      const offset = nearest.guide.width / 2 + frontageDepth + 0.8;
+      const relation = streetEdgeTransform(map, object, nearest, offset);
+      if (!relationChanged(object, relation.position, relation.rotationY, nearest.guide.id)) continue;
+      repairs.push({
+        type: 'object.update',
+        objectId: object.id,
+        patch: {
+          sourceGuideId: nearest.guide.id,
+          transform: { position: relation.position, rotation: [0, relation.rotationY, 0] }
+        }
+      });
+      issues.push({
+        code: 'settlement.building-aligned',
+        severity: 'warning',
+        message: '普通商铺或民居已按最近街道重新设置退距与正面朝向。',
+        objectIds: [object.id],
+        repaired: true
+      });
+      continue;
+    }
+
+    if (!isRoadsideSemantic(semantic)) continue;
+    const relation = streetEdgeTransform(map, object, nearest, nearest.guide.width / 2 + 1);
+    if (!relationChanged(object, relation.position, relation.rotationY, nearest.guide.id)) continue;
+    repairs.push({
+      type: 'object.update',
+      objectId: object.id,
+      patch: {
+        sourceGuideId: nearest.guide.id,
+        transform: { position: relation.position, rotation: [0, relation.rotationY, 0] }
+      }
+    });
+    issues.push({
+      code: 'roadside.route-bound',
+      severity: 'warning',
+      message: '散落的公共路灯、长椅或标牌已绑定到最近街道边缘。',
+      objectIds: [object.id],
+      repaired: true
+    });
+  }
+}
+
+function isOrdinaryStreetBuilding(semantic: string): boolean {
+  return isSettlementBuildingSemantic(semantic)
+    && !/\b(?:landmark|tower|church|temple|hall|gate|pavilion|palace|castle)\b|地标|塔楼|教堂|寺庙|会馆|大厅|城门|牌坊|亭|宫殿|城堡/i.test(semantic);
+}
+
+function nearestGuideSample(
+  guides: readonly MapGuide[],
+  x: number,
+  z: number
+): { guide: MapGuide; sample: MapGuideSample; distance: number } | null {
+  let nearest: { guide: MapGuide; sample: MapGuideSample; distance: number } | null = null;
+  for (const guide of guides) {
+    for (const sample of sampleMapGuide(guide, { spacing: 1 })) {
+      const distance = Math.hypot(x - sample.x, z - sample.z);
+      if (!nearest || distance < nearest.distance) nearest = { guide, sample, distance };
+    }
+  }
+  return nearest;
+}
+
+function streetEdgeTransform(
+  map: EditableMap,
+  object: EditableMap['objects'][number],
+  nearest: { guide: MapGuide; sample: MapGuideSample },
+  offset: number
+): { position: [number, number, number]; rotationY: number } {
+  const normalX = -nearest.sample.tangentZ;
+  const normalZ = nearest.sample.tangentX;
+  const side = (object.transform.position[0] - nearest.sample.x) * normalX
+    + (object.transform.position[2] - nearest.sample.z) * normalZ >= 0 ? 1 : -1;
+  const x = nearest.sample.x + normalX * offset * side;
+  const z = nearest.sample.z + normalZ * offset * side;
+  return {
+    position: [x, object.heightMode === 'fixed' ? object.transform.position[1] : sampleTerrainHeight(map, x, z), z],
+    rotationY: Math.atan2(nearest.sample.x - x, nearest.sample.z - z)
+  };
+}
+
+function relationChanged(
+  object: EditableMap['objects'][number],
+  position: [number, number, number],
+  rotationY: number,
+  guideId: string
+): boolean {
+  return object.sourceGuideId !== guideId
+    || Math.hypot(object.transform.position[0] - position[0], object.transform.position[2] - position[2]) > 0.05
+    || Math.abs(Math.atan2(
+      Math.sin(object.transform.rotation[1] - rotationY),
+      Math.cos(object.transform.rotation[1] - rotationY)
+    )) > Math.PI / 36;
+}
+
 function lintOverlaps(
   map: EditableMap,
   removedIds: Set<string>,
   issues: MapLintIssue[],
-  repairs: MapOperation[]
+  repairs: MapOperation[],
+  repairableObjectIds: ReadonlySet<string>
 ): void {
   const room = map.room;
-  if (!room) return;
+  if (!room && map.sceneMode !== 'outdoor') return;
   const assets = new Map((map.assets ?? []).map((asset) => [asset.id, asset]));
   const objectsWithChildren = new Set(map.objects.flatMap((object) => object.parentId ? [object.parentId] : []));
   const ignoredIds = new Set(map.objects.flatMap((object) => {
@@ -727,6 +900,7 @@ function lintOverlaps(
       || isElevatedWallSemantic(semantic)
       || isCeilingMountedSemantic(semantic)
       || /rug|carpet|doormat|floor[-_ ]?textile|地毯|地垫/i.test(semantic)
+      || (!room && !isSettlementBuildingSemantic(semantic))
       ? [object.id]
       : [];
   }));
@@ -734,13 +908,14 @@ function lintOverlaps(
   let workingMap = map;
 
   for (let pass = 0; pass < map.objects.length * 2; pass += 1) {
-    const boundsById = aggregateObjectBounds(getMapObjectAabbs(workingMap).filter((box) => !removedIds.has(box.objectId)));
+    const objectBounds = room ? getMapObjectAabbs(workingMap) : getMapObjectVisualAabbs(workingMap);
+    const boundsById = aggregateObjectBounds(objectBounds.filter((box) => !removedIds.has(box.objectId)));
     const solidBounds = [...boundsById.values()].filter((bounds) => !ignoredIds.has(bounds.objectId));
     let overlap: [MapObjectAabb, MapObjectAabb] | null = null;
     for (let left = 0; left < solidBounds.length && !overlap; left += 1) {
       for (let right = left + 1; right < solidBounds.length; right += 1) {
         const pairKey = [solidBounds[left].objectId, solidBounds[right].objectId].sort().join(':');
-        if (reportedPairs.has(pairKey) || !isMeaningfulSolidOverlap(solidBounds[left], solidBounds[right])) continue;
+        if (reportedPairs.has(pairKey) || !isMeaningfulSolidOverlap(solidBounds[left], solidBounds[right], Boolean(room))) continue;
         overlap = [solidBounds[left], solidBounds[right]];
         break;
       }
@@ -753,14 +928,18 @@ function lintOverlaps(
     const movable = [rightBounds, leftBounds]
       .flatMap((bounds) => {
         const object = workingMap.objects.find((item) => item.id === bounds.objectId);
-        if (!object || object.locked || object.parentId || object.roomOpeningId || objectsWithChildren.has(object.id)) return [];
+        const canMove = room ? !object?.locked : repairableObjectIds.has(bounds.objectId);
+        if (!object || !canMove || object.parentId || object.roomOpeningId || objectsWithChildren.has(object.id)) return [];
         return [{ object, bounds, area: footprintArea(bounds) }];
       })
       .sort((left, right) => left.area - right.area);
     let repair: MapOperation | null = null;
     for (const candidate of movable) {
       const otherBounds = solidBounds.filter((bounds) => bounds.objectId !== candidate.object.id);
-      for (const position of roomEdgePositions(room, candidate.object.transform.position, candidate.bounds, getMapPlayerMetrics(map).radius)) {
+      const positions = room
+        ? roomEdgePositions(room, candidate.object.transform.position, candidate.bounds, getMapPlayerMetrics(map).radius)
+        : outdoorNearbyPositions(workingMap, candidate.object, candidate.bounds);
+      for (const position of positions) {
         const moved = translateBounds(
           candidate.bounds,
           position[0] - candidate.object.transform.position[0],
@@ -780,17 +959,103 @@ function lintOverlaps(
       code: 'object.overlap',
       severity: 'warning',
       message: repair
-        ? '检测到室内实体家具重叠，已将较易移动的物体移到房间边缘空位。'
-        : '检测到室内实体家具重叠，但当前没有可安全自动搬移的位置。',
+        ? room
+          ? '检测到室内实体家具重叠，已将较易移动的物体移到房间边缘空位。'
+          : '检测到室外建筑实体重叠，已将本轮 AI 预览中的建筑移到附近空位。'
+        : room
+          ? '检测到室内实体家具重叠，但当前没有可安全自动搬移的位置。'
+          : '检测到室外建筑实体重叠，但当前没有可安全自动搬移的位置。',
       objectIds: [leftBounds.objectId, rightBounds.objectId],
       repaired: Boolean(repair)
     });
   }
 }
 
-function isMeaningfulSolidOverlap(left: MapObjectAabb, right: MapObjectAabb): boolean {
+function outdoorNearbyPositions(
+  map: EditableMap,
+  object: EditableMap['objects'][number],
+  bounds: MapObjectAabb
+): Array<[number, number, number]> {
+  const mapBounds = getMapBounds(map);
+  const left = object.transform.position[0] - bounds.min[0];
+  const right = bounds.max[0] - object.transform.position[0];
+  const near = object.transform.position[2] - bounds.min[2];
+  const far = bounds.max[2] - object.transform.position[2];
+  const extent = Math.max(left + right, near + far);
+  const step = Math.max(1, extent * 0.5);
+  const result: Array<[number, number, number]> = [];
+  const sourceGuide = object.sourceGuideId ? map.guides.find((guide) => guide.id === object.sourceGuideId) : undefined;
+  if (sourceGuide) {
+    const nearest = nearestGuideSample([sourceGuide], object.transform.position[0], object.transform.position[2]);
+    if (nearest) {
+      const normalX = -nearest.sample.tangentZ;
+      const normalZ = nearest.sample.tangentX;
+      const side = (object.transform.position[0] - nearest.sample.x) * normalX
+        + (object.transform.position[2] - nearest.sample.z) * normalZ >= 0 ? 1 : -1;
+      const routeOffset = sourceGuide.width / 2
+        + Math.max(0.5, Math.min(object.transform.size[0], object.transform.size[2]) / 2) + 0.8;
+      const frontageWidth = Math.max(0.5, object.transform.size[0]);
+      const routeSamples = sampleMapGuide(sourceGuide, {
+        spacing: frontageWidth + 0.8,
+        offset: routeOffset * side,
+        startOffset: frontageWidth / 2,
+        endOffset: frontageWidth / 2
+      }).sort((a, b) => (
+        Math.hypot(a.x - object.transform.position[0], a.z - object.transform.position[2])
+        - Math.hypot(b.x - object.transform.position[0], b.z - object.transform.position[2])
+      ));
+      for (const sample of routeSamples) {
+        if (!isValidOutdoorFootprint(map, mapBounds, sample.x, sample.z, left, right, near, far)) continue;
+        result.push([
+          sample.x,
+          object.heightMode === 'terrain' ? sampleTerrainHeight(map, sample.x, sample.z) : object.transform.position[1],
+          sample.z
+        ]);
+      }
+    }
+  }
+  for (let radius = Math.max(step, extent * 0.75); radius <= Math.max(12, extent * 3); radius += step) {
+    for (let index = 0; index < 24; index += 1) {
+      const angle = index * Math.PI * 2 / 24;
+      const x = object.transform.position[0] + Math.cos(angle) * radius;
+      const z = object.transform.position[2] + Math.sin(angle) * radius;
+      if (!isValidOutdoorFootprint(map, mapBounds, x, z, left, right, near, far)) continue;
+      result.push([
+        x,
+        object.heightMode === 'terrain' ? sampleTerrainHeight(map, x, z) : object.transform.position[1],
+        z
+      ]);
+    }
+  }
+  return result;
+}
+
+function isValidOutdoorFootprint(
+  map: EditableMap,
+  mapBounds: ReturnType<typeof getMapBounds>,
+  x: number,
+  z: number,
+  left: number,
+  right: number,
+  near: number,
+  far: number
+): boolean {
+  if (x - left < mapBounds.minX || x + right > mapBounds.maxX
+    || z - near < mapBounds.minZ || z + far > mapBounds.maxZ) return false;
+  const footprint = [[x, z], [x - left, z - near], [x + right, z - near], [x + right, z + far], [x - left, z + far]];
+  return !footprint.some(([pointX, pointZ]) => map.waterBodies.some((water) => (
+    isPointInsideWaterBody(water, pointX, pointZ, map)
+  )));
+}
+
+function isMeaningfulSolidOverlap(left: MapObjectAabb, right: MapObjectAabb, indoor: boolean): boolean {
   const height = Math.min(left.max[1], right.max[1]) - Math.max(left.min[1], right.min[1]);
   if (height <= 0.06) return false;
+  if (!indoor) {
+    const width = Math.min(left.max[0], right.max[0]) - Math.max(left.min[0], right.min[0]);
+    const depth = Math.min(left.max[2], right.max[2]) - Math.max(left.min[2], right.min[2]);
+    return width > 0.15 && depth > 0.15;
+  }
   // Keep this conservative because generated furniture colliders may enclose
   // intentional hollow space, such as a chair tucked slightly under a table.
   return overlapRatio(left, right) >= 0.25;

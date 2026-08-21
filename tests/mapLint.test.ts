@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createEmptyMap, createMapObject, getMapObjectAabbs, type MapAsset } from '../src/shared/map';
+import { createEmptyMap, createMapObject, getMapObjectAabbs, getMapObjectVisualAabbs, type MapAsset } from '../src/shared/map';
 import { applyMapOperations } from '../src/shared/mapOperations';
 import { lintMap } from '../src/shared/mapLint';
 import { validateMapSuggestion } from '../src/server/mapSuggestionValidation';
@@ -104,6 +104,190 @@ describe('map lint and deterministic repair', () => {
     expect(lint.issues).toEqual(expect.arrayContaining([
       expect.objectContaining({ code: 'object.above-ceiling', repaired: true })
     ]));
+  });
+
+  it('snaps a locked boat bottom to the containing water surface', () => {
+    const boatModel = {
+      nodes: [{ id: 'hull', transform: { pos: [0, 0.5, 0] }, mesh: { type: 'box', params: { width: 2, height: 1, depth: 5 } } }]
+    };
+    const boatAsset = {
+      ...asset,
+      id: 'asset-boat',
+      name: '乌篷船',
+      prompt: 'traditional wooden boat',
+      tags: ['boat', '船'],
+      modelJson: boatModel,
+      colliderPlan: buildModelColliderPlan(boatModel)
+    } satisfies MapAsset;
+    const map = createEmptyMap('boat lint', 'boat-lint', [64, 12, 64]);
+    map.waterBodies = [{
+      id: 'river', name: 'River', type: 'river', level: 0.2, depth: 1.5, width: 12,
+      points: [[0, -20], [0, 20]]
+    }];
+    map.assets = [boatAsset];
+    const boat = createMapObject('乌篷船', boatAsset.id);
+    boat.id = 'boat';
+    boat.locked = true;
+    boat.heightMode = 'fixed';
+    boat.transform.position = [0, -0.2, 0];
+    map.objects = [boat];
+
+    const lint = lintMap(map);
+    const repaired = applyMapOperations(map, lint.repairOperations);
+
+    expect(repaired.objects[0].transform.position[1]).toBeCloseTo(0.2);
+    expect(lint.issues).toEqual(expect.arrayContaining([
+      expect.objectContaining({ code: 'object.waterline', repaired: true })
+    ]));
+  });
+
+  it('does not float an ordinary locked object that happens to be in water', () => {
+    const map = createEmptyMap('water object lint', 'water-object-lint', [64, 12, 64]);
+    map.waterBodies = [{
+      id: 'river', name: 'River', type: 'river', level: 0.2, depth: 1.5, width: 12,
+      points: [[0, -20], [0, 20]]
+    }];
+    map.assets = [asset];
+    const tree = createMapObject('Tree', asset.id);
+    tree.id = 'tree';
+    tree.locked = true;
+    tree.heightMode = 'fixed';
+    tree.transform.position = [0, -0.2, 0];
+    map.objects = [tree];
+
+    const lint = lintMap(map);
+
+    expect(lint.repairOperations).not.toEqual(expect.arrayContaining([
+      expect.objectContaining({ type: 'object.update', objectId: tree.id })
+    ]));
+  });
+
+  it('reports overlapping saved outdoor buildings without moving locked user content', () => {
+    const map = createEmptyMap('saved town', 'saved-overlap-town', [64, 12, 64]);
+    const first = createMapObject('民居 A', null);
+    first.id = 'saved-house-a';
+    first.locked = true;
+    first.transform.size = [8, 5, 8];
+    const second = createMapObject('民居 B', null);
+    second.id = 'saved-house-b';
+    second.locked = true;
+    second.transform.position = [2, 0, 1];
+    second.transform.size = [8, 5, 8];
+    map.objects = [first, second];
+
+    const lint = lintMap(map);
+
+    expect(lint.issues).toEqual(expect.arrayContaining([
+      expect.objectContaining({ code: 'object.overlap', repaired: false })
+    ]));
+    expect(lint.repairOperations.some((operation) => (
+      operation.type === 'object.update' && ['saved-house-a', 'saved-house-b'].includes(operation.objectId)
+    ))).toBe(false);
+  });
+
+  it('aligns a current-preview town building to the nearest settlement street', () => {
+    const map = createEmptyMap('street town', 'street-town', [64, 12, 64]);
+    map.guides = [{
+      id: 'main-street', name: '主街', points: [[-24, 0], [24, 0]], curve: 'polyline',
+      closed: false, width: 4, tags: ['street', 'settlement']
+    }];
+    const house = createMapObject('民居', null);
+    house.id = 'preview-house';
+    house.locked = true;
+    house.transform.position = [0, 0, 7];
+    house.transform.rotation = [0, Math.PI / 4, 0];
+    house.transform.size = [8, 5, 6];
+    map.objects = [house];
+
+    const lint = lintMap(map, { repairableObjectIds: new Set([house.id]) });
+    const repaired = applyMapOperations(map, lint.repairOperations).objects[0];
+
+    expect(repaired.sourceGuideId).toBe('main-street');
+    expect(repaired.transform.position[2]).toBeGreaterThan(4);
+    expect(repaired.transform.position[2]).toBeLessThan(6.5);
+    expect(Math.abs(Math.abs(repaired.transform.rotation[1]) - Math.PI)).toBeLessThan(0.001);
+    expect(lint.issues).toEqual(expect.arrayContaining([
+      expect.objectContaining({ code: 'settlement.building-aligned', repaired: true })
+    ]));
+  });
+
+  it('binds a loose public bench to the nearest street edge without treating every chair as roadside furniture', () => {
+    const map = createEmptyMap('bench town', 'bench-town', [64, 12, 64]);
+    map.guides = [{
+      id: 'main-street', name: '主街', points: [[-24, 0], [24, 0]], curve: 'polyline',
+      closed: false, width: 4, tags: ['street', 'settlement']
+    }];
+    const bench = createMapObject('公共长椅', null);
+    bench.id = 'preview-bench';
+    bench.transform.position = [5, 0, 9];
+    const cafeChair = createMapObject('咖啡店椅子', null);
+    cafeChair.id = 'cafe-chair';
+    cafeChair.transform.position = [10, 0, 9];
+    map.objects = [bench, cafeChair];
+
+    const lint = lintMap(map, { repairableObjectIds: new Set([bench.id, cafeChair.id]) });
+    const repaired = applyMapOperations(map, lint.repairOperations);
+    const repairedBench = repaired.objects.find((object) => object.id === bench.id)!;
+    const repairedChair = repaired.objects.find((object) => object.id === cafeChair.id)!;
+
+    expect(repairedBench.sourceGuideId).toBe('main-street');
+    expect(repairedBench.transform.position[2]).toBeCloseTo(3, 1);
+    expect(repairedChair.sourceGuideId).toBeUndefined();
+    expect(repairedChair.transform.position).toEqual(cafeChair.transform.position);
+    expect(lint.issues).toEqual(expect.arrayContaining([
+      expect.objectContaining({ code: 'roadside.route-bound', repaired: true, objectIds: [bench.id] })
+    ]));
+  });
+
+  it('repairs even shallow outdoor building intersections', () => {
+    const map = createEmptyMap('tight town', 'tight-town', [64, 12, 64]);
+    const first = createMapObject('民居 A', null);
+    first.id = 'house-a';
+    first.locked = true;
+    first.transform.size = [8, 5, 8];
+    const second = createMapObject('民居 B', null);
+    second.id = 'house-b';
+    second.locked = true;
+    second.transform.position = [7, 0, 0];
+    second.transform.size = [8, 5, 8];
+    map.objects = [first, second];
+
+    const lint = lintMap(map, { repairableObjectIds: new Set([first.id, second.id]) });
+
+    expect(lint.issues).toEqual(expect.arrayContaining([
+      expect.objectContaining({ code: 'object.overlap', repaired: true })
+    ]));
+  });
+
+  it('keeps overlapping street-bound buildings on their street while separating them', () => {
+    const map = createEmptyMap('frontage repair', 'frontage-repair', [64, 12, 64]);
+    map.guides = [{
+      id: 'main-street', name: '主街', points: [[-24, 0], [24, 0]], curve: 'polyline',
+      closed: false, width: 4, tags: ['street', 'settlement']
+    }];
+    const first = createMapObject('民居 A', null);
+    first.id = 'frontage-a';
+    first.locked = true;
+    first.sourceGuideId = 'main-street';
+    first.transform.position = [0, 0, 5.8];
+    first.transform.rotation = [0, Math.PI, 0];
+    first.transform.size = [8, 5, 6];
+    const second = createMapObject('民居 B', null);
+    second.id = 'frontage-b';
+    second.locked = true;
+    second.sourceGuideId = 'main-street';
+    second.transform.position = [2, 0, 5.8];
+    second.transform.rotation = [0, Math.PI, 0];
+    second.transform.size = [8, 5, 6];
+    map.objects = [first, second];
+
+    const lint = lintMap(map, { repairableObjectIds: new Set([first.id, second.id]) });
+    const repaired = applyMapOperations(map, lint.repairOperations);
+    const boxes = getMapObjectVisualAabbs(repaired);
+
+    expect(repaired.objects.every((object) => object.sourceGuideId === 'main-street')).toBe(true);
+    expect(repaired.objects.every((object) => Math.abs(object.transform.position[2] - 5.8) < 0.001)).toBe(true);
+    expect(boxes[0].max[0] <= boxes[1].min[0] || boxes[1].max[0] <= boxes[0].min[0]).toBe(true);
   });
 
   it('grounds indoor furniture by its visible feet instead of its simplified collider', () => {

@@ -207,6 +207,8 @@ export interface MapObject {
   /** Semantic composition membership; independent from physical parentId. */
   designGroupId?: string;
   compositionLayer?: MapCompositionLayer;
+  /** Guide used to derive this placement, for deterministic roadside validation and later regeneration. */
+  sourceGuideId?: string;
 }
 
 export interface EditableMap {
@@ -1733,6 +1735,9 @@ function normalizeObject(input: Partial<MapObject>): MapObject {
       : undefined,
     compositionLayer: [1, 2, 3, 4].includes(Number(input.compositionLayer))
       ? Number(input.compositionLayer) as MapCompositionLayer
+      : undefined,
+    sourceGuideId: typeof input.sourceGuideId === 'string' && input.sourceGuideId.trim()
+      ? input.sourceGuideId.trim().slice(0, 80)
       : undefined
   };
 }
