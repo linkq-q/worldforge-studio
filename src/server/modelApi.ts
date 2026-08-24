@@ -1,3 +1,4 @@
+import { appendFileSync } from 'node:fs';
 import {
   MODEL_API_BASE,
   MODEL_PROVIDERS,
@@ -203,6 +204,10 @@ export async function refineModel(modelJson: unknown, description: string, optio
 export async function llmChat(messages: readonly ChatMessage[], options: ChatApiOptions = {}): Promise<string> {
   const fetcher = options.fetchImpl ?? fetch;
   const url = `${options.apiBase ?? MODEL_API_BASE}/api/chat`;
+  // TEMP-DEBUG: 字节级调试日志(实验后移除)
+  const dbg = (line: string) => { try { appendFileSync('wf-llmchat-debug.log', `${new Date().toISOString()} ${line}\n`); } catch { /* ignore */ } };
+  const dbgT0 = Date.now();
+  dbg(`=== llmChat start msgs=${messages.map((m) => `${m.role}:${String(m.content).length}`).join(',')} temp=${options.temperature} max=${options.maxTokens}`);
   const init: RequestInit = {
     method: 'POST',
     headers: {
@@ -216,7 +221,7 @@ export async function llmChat(messages: readonly ChatMessage[], options: ChatApi
       maxTokens: options.maxTokens ?? 1000,
       provider: options.provider ?? 'gpt',
       stream: true,
-      reasoning: { summary: 'auto' }
+      thinking: true
     }),
     signal: options.signal
   };
@@ -232,14 +237,16 @@ export async function llmChat(messages: readonly ChatMessage[], options: ChatApi
     let data: ChatApiResponse;
     try {
       response = await fetcher(url, init);
+      dbg(`attempt ${attempt}: fetch resolved +${Date.now() - dbgT0}ms status=${response.status} ct=${response.headers.get('content-type')}`);
       const streaming = String(response.headers.get('content-type')).includes('text/event-stream');
       options.onProgress?.({
         phase: 'consulting',
         label: streaming ? '上游模型流已连接' : '上游未返回流式日志',
         detail: streaming ? '等待推理摘要' : '本次使用兼容 JSON 响应'
       });
-      data = await readChatApiResponse(response, options.onProgress);
+      data = await readChatApiResponse(response, options.onProgress, dbg);
     } catch (error) {
+      dbg(`attempt ${attempt}: EXCEPTION +${Date.now() - dbgT0}ms ${error instanceof Error ? error.message : String(error)}`);
       if (options.signal?.aborted || isAbortError(error)) throw error;
       if (attempt === 3) throw new Error('chat_service_unreachable');
       lastError = error;
@@ -248,9 +255,11 @@ export async function llmChat(messages: readonly ChatMessage[], options: ChatApi
     }
 
     if (response.ok && data.ok && typeof data.content === 'string' && data.content.trim()) {
+      dbg(`attempt ${attempt}: SUCCESS +${Date.now() - dbgT0}ms contentLen=${data.content.length}`);
       return data.content;
     }
     const error = new Error(data.error || (typeof data.content === 'string' ? 'Empty AI response' : `chat_http_${response.status}`));
+    dbg(`attempt ${attempt}: RETRYABLE-FAIL +${Date.now() - dbgT0}ms ok=${data.ok} contentLen=${typeof data.content === 'string' ? data.content.length : 'n/a'} err=${data.error ?? ''}`);
     if (!isRetryableEmptyChatResponse(data) || attempt === 3) throw error;
     lastError = error;
     await abortableDelay(300, options.signal);
@@ -260,7 +269,8 @@ export async function llmChat(messages: readonly ChatMessage[], options: ChatApi
 
 async function readChatApiResponse(
   response: Response,
-  onProgress?: ChatApiOptions['onProgress']
+  onProgress?: ChatApiOptions['onProgress'],
+  dbg?: (line: string) => void
 ): Promise<ChatApiResponse> {
   if (!String(response.headers.get('content-type')).includes('text/event-stream')) {
     const data = await response.json() as ChatApiResponse;
@@ -276,6 +286,8 @@ async function readChatApiResponse(
 
   const reader = response.body.getReader();
   const decoder = new TextDecoder();
+  const dbgT0 = Date.now();
+  let dbgTextFrames = 0;
   let buffer = '';
   let content = '';
   let reasoning = '';
@@ -295,7 +307,7 @@ async function readChatApiResponse(
     }
     if (dataLines.length === 0) return;
     const data = dataLines.join('\n');
-    if (data === '[DONE]') return;
+    if (data === '[DONE]') { dbg?.(`[DONE] frame +${Date.now() - dbgT0}ms`); return; }
     const payload = JSON.parse(data) as {
       type?: string;
       delta?: string;
@@ -327,35 +339,48 @@ async function readChatApiResponse(
       reportReasoning();
       return;
     }
-    if (type === 'response.output_text.delta' || event === 'content' || event === 'output_text') {
+    if (type === 'response.output_text.delta' || event === 'content' || event === 'output_text' || event === 'text' || type === 'text') {
       content += payload.delta ?? payload.text ?? payload.content ?? '';
+      dbgTextFrames += 1;
+      if (dbg && dbgTextFrames === 1) dbg(`first content frame +${Date.now() - dbgT0}ms event=${event}`);
       return;
     }
     if (chatDelta?.content) {
       content += chatDelta.content;
+      dbgTextFrames += 1;
+      if (dbg && dbgTextFrames === 1) dbg(`first chatDelta.content frame +${Date.now() - dbgT0}ms`);
       return;
     }
     if (type === 'response.output_text.done') {
       content = payload.text ?? content;
+      dbg?.(`output_text.done frame +${Date.now() - dbgT0}ms len=${(payload.text ?? '').length}`);
       return;
     }
     if (event === 'result' || event === 'done' || type === 'result' || type === 'done' || payload.done === true) {
       content = payload.content ?? payload.choices?.[0]?.message?.content ?? content;
+      dbg?.(`done frame +${Date.now() - dbgT0}ms contentLen=${(payload.content ?? payload.choices?.[0]?.message?.content ?? '').length}`);
     }
     if (event === 'error' || type === 'response.error' || type === 'response.failed' || payload.stage === 'error' || payload.ok === false) {
       error = typeof payload.error === 'string' ? payload.error : payload.error?.message ?? 'chat_stream_failed';
+      dbg?.(`error frame +${Date.now() - dbgT0}ms: ${data.slice(0, 300)}`);
     }
   };
 
-  while (true) {
-    const { done, value } = await reader.read();
-    buffer += decoder.decode(value, { stream: !done });
-    const blocks = buffer.split(/\r?\n\r?\n/);
-    buffer = blocks.pop() ?? '';
-    for (const block of blocks) consume(block);
-    if (done) break;
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      buffer += decoder.decode(value, { stream: !done });
+      const blocks = buffer.split(/\r?\n\r?\n/);
+      buffer = blocks.pop() ?? '';
+      for (const block of blocks) consume(block);
+      if (done) break;
+    }
+  } catch (streamError) {
+    dbg?.(`stream EXCEPTION +${Date.now() - dbgT0}ms: ${streamError instanceof Error ? streamError.message : String(streamError)}`);
+    throw streamError;
   }
   consume(buffer);
+  dbg?.(`stream complete +${Date.now() - dbgT0}ms textFrames=${dbgTextFrames} contentLen=${content.length} reasoningLen=${reasoning.length} err=${error}`);
   return content.trim()
     ? { ok: !error, content, ...(error ? { error } : {}) }
     : { ok: false, error: error || 'Empty AI response' };
@@ -363,6 +388,7 @@ async function readChatApiResponse(
 
 function isRetryableEmptyChatResponse(data: { ok?: boolean; content?: string; error?: string }): boolean {
   return /empty ai response/i.test(data.error ?? '')
+    || /terminated/i.test(data.error ?? '')
     || (data.ok === true && typeof data.content === 'string' && !data.content.trim());
 }
 

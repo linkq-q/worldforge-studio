@@ -359,7 +359,7 @@ function requestModel(
     apiBase: options.apiBase,
     provider: options.provider ?? 'gpt',
     temperature,
-    maxTokens: 8_192,
+    maxTokens: 16_384,
     fetchImpl: options.fetchImpl,
     signal: options.signal,
     onProgress: options.onProgress
