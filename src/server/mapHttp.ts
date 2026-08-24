@@ -57,6 +57,7 @@ import {
   type ProjectExportPlan
 } from './projectExport';
 import type { ProjectExportProfile } from '../shared/projectExport';
+import { paletteGenerationBrief, type ColorPalette } from '../shared/colorPalette';
 import { worldCapabilitySummary } from '../shared/worldCapabilities';
 import { WorldAgentRunManager } from './worldAgentRuns';
 
@@ -168,6 +169,11 @@ async function handleEditorRoute(req: Req, res: Res, store: MapStore, parts: str
 
   if (parts[2] === 'render-schemes') {
     await handleEditorRenderSchemes(req, res, store, parts);
+    return;
+  }
+
+  if (parts[2] === 'color-palettes') {
+    await handleEditorColorPalettes(req, res, store, parts);
     return;
   }
 
@@ -516,6 +522,7 @@ async function handleEditorMaps(req: Req, res: Res, store: MapStore, parts: stri
       approvedCode?: string;
       sceneAgent?: boolean;
       focusPrompt?: string;
+      paletteId?: string;
     }>(req);
     const prompt = body.prompt?.trim();
     if (!prompt) throw new HttpError(400, 'missing_prompt');
@@ -538,13 +545,17 @@ async function handleEditorMaps(req: Req, res: Res, store: MapStore, parts: stri
     req.once('aborted', abort);
     res.once('close', abortIfOpen);
     try {
-      const [map, assets, libraryAssets] = await Promise.all([
+      const [map, assets, libraryAssets, colorPalette] = await Promise.all([
         store.loadMap(mapId),
         store.listAssets(),
         body.reuseExistingAssets === true && body.assetLibraryId
           ? store.listAssetLibraryAssets(body.assetLibraryId)
-          : Promise.resolve([])
+          : Promise.resolve([]),
+        body.paletteId ? store.loadColorPalette(body.paletteId) : Promise.resolve(null)
       ]);
+      const directedPrompt = colorPalette
+        ? `${prompt}\n\n${paletteGenerationBrief(colorPalette)}`
+        : prompt;
       if (parts[4] === 'generate' && !isCompositionEmptyMap(map)) {
         throw new HttpError(409, 'map_composition_requires_empty_map');
       }
@@ -568,7 +579,7 @@ async function handleEditorMaps(req: Req, res: Res, store: MapStore, parts: stri
           throw new HttpError(400, 'composition_plan_preview_unavailable');
         }
         if (planningMap.sceneMode === 'indoor') {
-          const suggestion = await runMapAgent(prompt, planningMap, planningAssets, {
+          const suggestion = await runMapAgent(directedPrompt, planningMap, planningAssets, {
             provider,
             signal: controller.signal,
             mode: 'generate',
@@ -589,7 +600,7 @@ async function handleEditorMaps(req: Req, res: Res, store: MapStore, parts: stri
           }
           return;
         }
-        const plan = await planMapComposition(prompt, planningMap, planningAssets, {
+        const plan = await planMapComposition(directedPrompt, planningMap, planningAssets, {
           provider,
           signal: controller.signal,
           reuseExistingAssets: body.reuseExistingAssets === true,
@@ -606,7 +617,7 @@ async function handleEditorMaps(req: Req, res: Res, store: MapStore, parts: stri
         }
         return;
       }
-      const suggestion = await runMapAgent(prompt, planningMap, planningAssets, {
+      const suggestion = await runMapAgent(directedPrompt, planningMap, planningAssets, {
           provider,
           signal: controller.signal,
           mode: parts[4] === 'refine' ? 'refine' : 'generate',
@@ -1089,6 +1100,30 @@ async function handleEditorRenderSchemes(req: Req, res: Res, store: MapStore, pa
       const message = error instanceof Error ? error.message : 'delete_failed';
       throw new HttpError(message === 'builtin_scheme_readonly' ? 409 : 500, message);
     }
+    return;
+  }
+  throw new HttpError(404, 'not_found');
+}
+
+async function handleEditorColorPalettes(req: Req, res: Res, store: MapStore, parts: string[]): Promise<void> {
+  if (req.method === 'GET' && parts.length === 3) {
+    sendJson(res, 200, { colorPalettes: await store.listColorPalettes() });
+    return;
+  }
+  if (req.method === 'POST' && parts.length === 3) {
+    const body = await readJson<Partial<ColorPalette> & { colors?: unknown }>(req);
+    sendJson(res, 201, { colorPalette: await store.saveColorPalette(body) });
+    return;
+  }
+  const paletteId = parts[3];
+  if (!paletteId) throw new HttpError(404, 'not_found');
+  if (req.method === 'GET' && parts.length === 4) {
+    sendJson(res, 200, { colorPalette: await store.loadColorPalette(paletteId) });
+    return;
+  }
+  if (req.method === 'DELETE' && parts.length === 4) {
+    await store.deleteColorPalette(paletteId);
+    sendJson(res, 200, { ok: true });
     return;
   }
   throw new HttpError(404, 'not_found');

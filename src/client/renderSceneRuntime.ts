@@ -16,6 +16,13 @@ import { mixHexColors } from '../shared/colorDirector';
 import { compileAtmosphereFx } from '../shared/atmosphereFx';
 import { compileRuntimeWeather } from '../shared/weather';
 import {
+  paletteEffectRecipes,
+  paletteEnvironment,
+  paletteGrassStyle,
+  paletteHdriStyle,
+  paletteWaterStyles
+} from './colorPaletteRuntime';
+import {
   DEFAULT_RUNTIME_GRASS_STYLE,
   DEFAULT_RUNTIME_TERRAIN_MATERIAL_STYLE,
   compileRenderPlan,
@@ -58,7 +65,8 @@ export interface RenderSchemeTargets {
     | 'applyScopedCapabilities'
   >;
   hdriSky: Pick<HdriSkyController, 'apply' | 'clear'>;
-  rendered: Pick<RenderedMap, 'setGrassStyle' | 'setLightingTimeOfDay'> | null;
+  rendered: (Pick<RenderedMap, 'setGrassStyle' | 'setLightingTimeOfDay'>
+    & Partial<Pick<RenderedMap, 'setColorPalette'>>) | null;
   map?: EditableMap | null;
   updateLighting(): void;
 }
@@ -398,6 +406,7 @@ function rainUnit(sequence: number, salt: number): number {
  */
 export function applyRenderScheme(targets: RenderSchemeTargets, scheme: RenderScheme | null): void {
   const { scene, renderer, sunLight, hemisphereLight, styleManager, adapter, hdriSky } = targets;
+  targets.rendered?.setColorPalette?.(null);
   adapter.resetScopedCapabilities();
 
   if (!scheme) {
@@ -425,7 +434,9 @@ export function applyRenderScheme(targets: RenderSchemeTargets, scheme: RenderSc
   const plan = scheme.renderPlan;
   // The persisted settings remain the legacy fallback. A V2 plan is compiled
   // on every apply so developer sliders and visual direction stay live.
-  const settings = { ...scheme.settings, ...(plan ? compileRenderPlan(plan) : {}) };
+  const baseSettings = { ...scheme.settings, ...(plan ? compileRenderPlan(plan) : {}) };
+  const palette = scheme.paletteSnapshot;
+  const settings = palette ? paletteEnvironment(palette, baseSettings) : baseSettings;
   scene.background = new THREE.Color(settings.background);
   // One depth-based fog pass also covers custom ShaderMaterials such as water.
   scene.fog = null;
@@ -450,7 +461,7 @@ export function applyRenderScheme(targets: RenderSchemeTargets, scheme: RenderSc
   if (plan) applyLightRig(compileRuntimeLightRig(plan), sunLight, hemisphereLight, settings);
   const timeOfDay = renderTimeOfDay(plan);
   configureRendererOutput(renderer, applySceneLightingContext(targets, timeOfDay, settings.exposure));
-  targets.rendered?.setGrassStyle(grassStyleWithSharedWind(
+  const grassStyle = grassStyleWithSharedWind(
     plan ? compileRuntimeGrassStyle(plan) : DEFAULT_RUNTIME_GRASS_STYLE,
     targets.map,
     plan,
@@ -461,13 +472,20 @@ export function applyRenderScheme(targets: RenderSchemeTargets, scheme: RenderSc
       sunColor: `#${sunLight.color.getHexString()}`,
       exposure: settings.exposure
     }
-  ));
+  );
+  targets.rendered?.setGrassStyle(palette ? paletteGrassStyle(palette, grassStyle) : grassStyle);
+  const waterStyles = waterStylesWithSharedWind(plan ? compileRuntimeWaterStyles(plan) : [], targets.map, plan);
+  const effects = plan ? compileRuntimeEffectRecipes(plan) : [];
   adapter.applyScopedCapabilities(
     plan ? compileRuntimeMaterialThemes(plan) : [],
-    waterStylesWithSharedWind(plan ? compileRuntimeWaterStyles(plan) : [], targets.map, plan),
-    plan ? compileRuntimeEffectRecipes(plan) : []
+    palette ? paletteWaterStyles(palette, waterStyles) : waterStyles,
+    palette ? paletteEffectRecipes(palette, effects) : effects
   );
-  if (plan) void hdriSky.apply(compileRuntimeHdriSky(plan));
+  targets.rendered?.setColorPalette?.(palette ?? null);
+  if (plan) {
+    const hdri = compileRuntimeHdriSky(plan);
+    void hdriSky.apply(palette ? paletteHdriStyle(palette, hdri) : hdri);
+  }
   else hdriSky.clear();
 }
 

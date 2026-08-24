@@ -25,7 +25,7 @@ import {
 } from '../shared/map';
 import { buildModelGroup } from './modelRenderer';
 import { buildMapPrimitiveBatches } from './mapPrimitiveBatching';
-import { terrainSemanticSurfaceWeight, terrainVertexColor } from './terrainAppearance';
+import { terrainSemanticSurfaceWeight, terrainVertexColor, type TerrainPaletteColors } from './terrainAppearance';
 import { buildMapGrassField, deriveContactAwareGrassMap, grassSurfaceCoverage } from './mapGrassRenderer';
 import { combinedGrassDensity } from '../shared/mapGrass';
 import {
@@ -44,13 +44,22 @@ import type { Vec3 } from '../shared/protocol';
 import { buildMapLocalLights } from './mapLocalLights';
 import { isPointInsidePlayableArea } from '../shared/mapLayout';
 import { isPointInsideWaterBody, riverPathSamples, waterBoundaryPoints } from '../shared/mapWater';
-import type { SceneVisualZone, VisualTimeOfDay, VisualZoneRegion } from '../shared/visualDirection';
+import { mapGuidePolyline } from '../shared/mapGuide';
+import type {
+  SceneVisualZone,
+  TerrainSurfaceRecipe,
+  VisualTimeOfDay,
+  VisualZoneRegion
+} from '../shared/visualDirection';
 import {
   activeInteriorRugs,
   activeInteriorSurfaceFinish,
   type ProceduralRug,
   type SurfaceFinishRecipe
 } from '../shared/interiorArtDirection';
+import { inferPaletteRole, type ColorPalette } from '../shared/colorPalette';
+import { paletteTerrainColors } from './colorPaletteRuntime';
+import { PaletteMaterialRuntime, type PaletteCoverageReport } from './paletteMaterialRuntime';
 
 export interface RenderedMapDebugStats extends MapPrimitiveBatchStats {
   grassLayers: number;
@@ -75,6 +84,8 @@ export interface RenderedMap {
   getRuntimeBatchMeshes: () => THREE.Object3D[];
   setGrassStyle: (style: RuntimeGrassStyle) => void;
   setTerrainMaterialStyle: (style: RuntimeTerrainMaterialStyle) => void;
+  setColorPalette: (palette: ColorPalette | null) => PaletteCoverageReport;
+  getColorPaletteCoverage: () => PaletteCoverageReport;
   setWeatherSurface: (wetness: number, snowCover: number) => void;
   setSandFlowStrength: (strength: number) => void;
   setRoomWallDisplayMode: (mode: RoomWallDisplayMode, camera: THREE.Camera) => void;
@@ -147,6 +158,8 @@ export async function buildEditableMapGroup(input: EditableMap, options: MapRend
   // Grass is rebuilt on its own, so it keeps its own map snapshot and style.
   let grassStyle = DEFAULT_RUNTIME_GRASS_STYLE;
   let terrainMaterialStyle = DEFAULT_RUNTIME_TERRAIN_MATERIAL_STYLE;
+  let colorPalette: ColorPalette | null = null;
+  let terrainPalette: TerrainPaletteColors | undefined;
   const modelSnowUniforms = new Set<{ value: number }>();
   let materialElapsedSeconds = 0;
   const motionControllers: MapMotionController[] = [];
@@ -158,7 +171,7 @@ export async function buildEditableMapGroup(input: EditableMap, options: MapRend
     grass?.dispose();
     grass = buildMapGrassField(grassMap, grassStyle);
     if (grass) root.add(grass.group);
-    applyTerrainGrassTint(terrain, grassMap, grassStyle);
+    applyTerrainGrassTint(terrain, grassMap, grassStyle, terrainPalette);
   };
 
   const waterRoot = buildStructuredWaterGroup(map);
@@ -176,7 +189,9 @@ export async function buildEditableMapGroup(input: EditableMap, options: MapRend
   if (options.editorHelpers) {
     const playerSpawnGroup = buildPlayerSpawnGroup(map);
     const sunGroup = buildSunGroup(map);
-    root.add(playerSpawnGroup, sunGroup);
+    const roadGuides = buildRoadGuideHelpers(map);
+    root.add(playerSpawnGroup, sunGroup, roadGuides.group);
+    pickables.push(...roadGuides.pickables);
     objectGroups.set(PLAYER_SPAWN_OBJECT_ID, playerSpawnGroup);
     objectGroups.set(SUN_OBJECT_ID, sunGroup);
   }
@@ -200,6 +215,10 @@ export async function buildEditableMapGroup(input: EditableMap, options: MapRend
     modelsRoot,
     materialTagPolicy: map.materialTagPolicy
   });
+  const paletteMaterials = new PaletteMaterialRuntime(
+    instancing.runtimeIndex,
+    createPalettePartResolver(map, assets)
+  );
   modelsRoot.add(instancing.root);
   await populateObjectVisuals(map, assets, objectGroups, instancing.handledObjectIds);
   if (options.motionAdapter) {
@@ -244,7 +263,7 @@ export async function buildEditableMapGroup(input: EditableMap, options: MapRend
     setGrassStyle: (style) => {
       grassStyle = style;
       grass?.setStyle(style);
-      applyTerrainGrassTint(terrain, grassMap, style);
+      applyTerrainGrassTint(terrain, grassMap, style, terrainPalette);
     },
     setTerrainMaterialStyle: (style) => {
       terrainMaterialStyle = style;
@@ -252,10 +271,20 @@ export async function buildEditableMapGroup(input: EditableMap, options: MapRend
       sandFlow.soilMoist = style.soilRecipe === 'moist' ? 1 : 0;
       sandFlow.sandBeach = style.sandRecipe === 'beach' ? 1 : 0;
       const material = terrain.material as THREE.MeshStandardMaterial;
-      replaceTerrainTextures(material, currentMap, style);
+      replaceTerrainTextures(material, currentMap, style, colorPalette ?? undefined);
       terrain.userData.terrainMaterialStyle = { ...style };
       syncTerrainSandShader(sandFlow);
     },
+    setColorPalette: (palette) => {
+      colorPalette = palette;
+      terrainPalette = paletteTerrainColors(palette ?? undefined);
+      const report = palette ? paletteMaterials.apply(palette) : (paletteMaterials.clear(), paletteMaterials.report());
+      const material = terrain.material as THREE.MeshStandardMaterial;
+      replaceTerrainTextures(material, currentMap, terrainMaterialStyle, palette ?? undefined);
+      applyTerrainGrassTint(terrain, grassMap, grassStyle, terrainPalette);
+      return report;
+    },
+    getColorPaletteCoverage: () => paletteMaterials.report(),
     setWeatherSurface: (wetness, snowCover) => {
       sandFlow.wetness = THREE.MathUtils.clamp(wetness, 0, 1);
       sandFlow.snowCover = THREE.MathUtils.clamp(snowCover, 0, 1);
@@ -288,13 +317,14 @@ export async function buildEditableMapGroup(input: EditableMap, options: MapRend
       terrain.geometry = buildTerrainGeometry(next);
       // Keep the live material so an applied render scheme survives the swap.
       const material = terrain.material as THREE.MeshStandardMaterial;
-      replaceTerrainTextures(material, next, terrainMaterialStyle);
+      replaceTerrainTextures(material, next, terrainMaterialStyle, colorPalette ?? undefined);
       updateTerrainSandZones(sandFlow, next);
       // Blades sample terrain height, so they have to follow the new surface.
       rebuildGrass(next);
     },
     dispose: () => {
       motionControllers.forEach((controller) => controller.dispose());
+      paletteMaterials.clear();
       grass?.dispose();
       instancing.dispose();
       disposeObject(root);
@@ -405,7 +435,12 @@ function buildRoomShell(map: EditableMap): RoomShellRender | null {
   return { group, surfaceGroups, setDisplayMode };
 }
 
-function applyTerrainGrassTint(mesh: THREE.Mesh, map: EditableMap, style: RuntimeGrassStyle): void {
+function applyTerrainGrassTint(
+  mesh: THREE.Mesh,
+  map: EditableMap,
+  style: RuntimeGrassStyle,
+  palette?: TerrainPaletteColors
+): void {
   const geometry = mesh.geometry;
   const positions = geometry.getAttribute('position');
   const colors = geometry.getAttribute('color') as THREE.BufferAttribute;
@@ -417,7 +452,7 @@ function applyTerrainGrassTint(mesh: THREE.Mesh, map: EditableMap, style: Runtim
     const x = positions.getX(index);
     const y = positions.getY(index);
     const z = positions.getZ(index);
-    const base = terrainVertexColor(map, x, y, z);
+    const base = terrainVertexColor(map, x, y, z, palette);
     color.setRGB(base[0], base[1], base[2]);
     const isSurface = y >= sampleTerrainHeight(map, x, z) - 0.05;
     if (style.groundTint && isSurface) {
@@ -438,6 +473,9 @@ function buildTerrain(map: EditableMap): THREE.Mesh {
     roughnessMap: textures.roughnessMap,
     bumpMap: textures.bumpMap,
     bumpScale: terrainBumpScale(DEFAULT_RUNTIME_TERRAIN_MATERIAL_STYLE),
+    normalMap: textures.normalMap,
+    normalMapType: THREE.TangentSpaceNormalMap,
+    normalScale: terrainNormalScale(DEFAULT_RUNTIME_TERRAIN_MATERIAL_STYLE),
     color: 0xffffff,
     roughness: 1,
     vertexColors: true,
@@ -448,7 +486,7 @@ function buildTerrain(map: EditableMap): THREE.Mesh {
   mesh.castShadow = true;
   mesh.receiveShadow = true;
   mesh.userData.surface = 'terrain';
-  mesh.userData.terrainTextureChannels = ['color', 'roughness', 'bump'];
+  mesh.userData.terrainTextureChannels = ['color', 'roughness', 'bump', 'normal'];
   mesh.userData.sandFlow = installTerrainSandShader(material, map);
   return mesh;
 }
@@ -1129,6 +1167,99 @@ function deriveAssetTags(asset: MapAsset): string[] {
   return [...tags].slice(0, 24);
 }
 
+function createPalettePartResolver(
+  map: EditableMap,
+  assets: Map<string, MapAsset>
+): (partId: string) => {
+  role: ReturnType<typeof inferPaletteRole>;
+  variantKey: string;
+  assetId?: string;
+  assetTags?: string[];
+  technical?: boolean;
+} | null {
+  const objectContexts = new Map<string, {
+    asset: MapAsset;
+    assetTags: string[];
+    building: boolean;
+    variantKey: string;
+    nodeText: Map<string, { text: string; sourceColor?: string }>;
+  }>();
+  const byAsset = new Map<string, MapObject[]>();
+  for (const object of map.objects) {
+    if (!object.assetId) continue;
+    const siblings = byAsset.get(object.assetId) ?? [];
+    siblings.push(object);
+    byAsset.set(object.assetId, siblings);
+  }
+  for (const [assetId, objects] of byAsset) {
+    const asset = assets.get(assetId);
+    if (!asset) continue;
+    const assetTags = deriveAssetTags(asset);
+    const building = assetTags.includes('building');
+    const nodeText = paletteNodeText(asset.modelJson);
+    const variantCount = Math.min(4, Math.max(2, objects.length));
+    objects.forEach((object, index) => objectContexts.set(object.id, {
+      asset,
+      assetTags,
+      building,
+      variantKey: `${asset.id}:v${index % variantCount}`,
+      nodeText
+    }));
+  }
+  const objectIds = [...objectContexts.keys()].sort((a, b) => b.length - a.length);
+  return (partId) => {
+    const objectId = objectIds.find((id) => partId.startsWith(`${id}:`));
+    if (!objectId) return null;
+    const context = objectContexts.get(objectId)!;
+    const nodeId = partId.slice(objectId.length + 1);
+    const node = context.nodeText.get(nodeId);
+    const text = [
+      nodeId,
+      node?.text,
+      context.asset.name,
+      context.asset.prompt,
+      context.assetTags.join(' ')
+    ].filter(Boolean).join(' ');
+    return {
+      role: inferPaletteRole(text, context.building),
+      variantKey: context.variantKey,
+      sourceColor: node?.sourceColor,
+      assetId: context.asset.id,
+      assetTags: context.assetTags
+    };
+  };
+}
+
+function paletteNodeText(modelJson: unknown): Map<string, { text: string; sourceColor?: string }> {
+  if (!modelJson || typeof modelJson !== 'object') return new Map();
+  const nodes = (modelJson as { nodes?: unknown }).nodes;
+  if (!Array.isArray(nodes)) return new Map();
+  return new Map(nodes.flatMap((entry) => {
+    if (!entry || typeof entry !== 'object') return [];
+    const node = entry as { id?: unknown; tags?: unknown; mesh?: { color?: unknown } };
+    if (typeof node.id !== 'string') return [];
+    const tags = Array.isArray(node.tags) ? node.tags.map((tag) => {
+      if (typeof tag === 'string') return tag;
+      if (!tag || typeof tag !== 'object') return '';
+      const item = tag as { tag?: unknown; value?: unknown };
+      return `${String(item.tag ?? '')} ${String(item.value ?? '')}`;
+    }).join(' ') : '';
+    return [[node.id, {
+      text: `${node.id} ${tags}`,
+      sourceColor: paletteSourceHex(node.mesh?.color)
+    }] as [string, { text: string; sourceColor?: string }]];
+  }));
+}
+
+function paletteSourceHex(value: unknown): string | undefined {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return `#${Math.max(0, Math.min(0xffffff, Math.round(value))).toString(16).padStart(6, '0')}`.toUpperCase();
+  }
+  return typeof value === 'string' && /^#[0-9a-f]{6}$/i.test(value.trim())
+    ? value.trim().toUpperCase()
+    : undefined;
+}
+
 function applyObjectTransform(group: THREE.Group, object: MapObject): void {
   const { position, rotation, scale, size } = object.transform;
   group.position.set(position[0], position[1], position[2]);
@@ -1245,36 +1376,80 @@ function buildSunGroup(map: EditableMap): THREE.Group {
   return group;
 }
 
+function buildRoadGuideHelpers(map: EditableMap): { group: THREE.Group; pickables: THREE.Object3D[] } {
+  const group = new THREE.Group();
+  group.name = 'road-guide-helpers';
+  const pickables: THREE.Object3D[] = [];
+  for (const guide of map.guides.filter((item) => item.tags.includes('route') || item.tags.includes('street'))) {
+    const path = mapGuidePolyline(guide).map(([x, z]) => new THREE.Vector3(
+      x, sampleTerrainHeight(map, x, z) + 0.08, z
+    ));
+    const line = new THREE.Line(
+      new THREE.BufferGeometry().setFromPoints(path),
+      new THREE.LineBasicMaterial({ color: 0xd9f47a, transparent: true, opacity: 0.72, depthTest: false })
+    );
+    line.name = `road-guide:${guide.id}`;
+    line.renderOrder = 42;
+    line.userData.editorHelper = true;
+    group.add(line);
+    guide.points.forEach(([x, z], index) => {
+      const node = new THREE.Mesh(
+        new THREE.SphereGeometry(Math.max(0.14, Math.min(0.32, guide.width * 0.08)), 10, 8),
+        new THREE.MeshBasicMaterial({ color: 0xf5ffb8, depthTest: false })
+      );
+      node.position.set(x, sampleTerrainHeight(map, x, z) + 0.12, z);
+      node.renderOrder = 43;
+      node.userData.editorHelper = true;
+      node.userData.mapGuideId = guide.id;
+      node.userData.mapGuidePointIndex = index;
+      group.add(node);
+      pickables.push(node);
+    });
+  }
+  return { group, pickables };
+}
+
 interface TerrainTextureSet {
   map: THREE.CanvasTexture;
   roughnessMap: THREE.CanvasTexture;
   bumpMap: THREE.CanvasTexture;
+  normalMap: THREE.CanvasTexture;
 }
 
+const TERRAIN_TEXTURE_SIZE = 1536;
+const SURFACE_TEXTURE_SIZE = 768;
 type TerrainTextureChannel = 'roughness' | 'bump';
+type TerrainRecipeDetailChannel = 'color' | TerrainTextureChannel;
 type TerrainDetailSurface = 'grass' | 'soil' | 'sand' | 'rocky' | 'paving';
 
 function createTerrainTextureSet(
   map: EditableMap,
-  style: RuntimeTerrainMaterialStyle
+  style: RuntimeTerrainMaterialStyle,
+  palette?: ColorPalette
 ): TerrainTextureSet {
+  const bumpMap = createTerrainPropertyTexture(map, style, 'bump');
   return {
-    map: createSurfaceTexture(map, 'terrain', undefined, style),
+    map: createSurfaceTexture(map, 'terrain', undefined, style, palette),
     roughnessMap: createTerrainPropertyTexture(map, style, 'roughness'),
-    bumpMap: createTerrainPropertyTexture(map, style, 'bump')
+    bumpMap,
+    normalMap: createTerrainNormalTexture(bumpMap, style)
   };
 }
 
 function replaceTerrainTextures(
   material: THREE.MeshStandardMaterial,
   map: EditableMap,
-  style: RuntimeTerrainMaterialStyle
+  style: RuntimeTerrainMaterialStyle,
+  palette?: ColorPalette
 ): void {
-  const previous = [material.map, material.roughnessMap, material.bumpMap];
-  const textures = createTerrainTextureSet(map, style);
+  const previous = [material.map, material.roughnessMap, material.bumpMap, material.normalMap];
+  const textures = createTerrainTextureSet(map, style, palette);
   material.map = textures.map;
   material.roughnessMap = textures.roughnessMap;
   material.bumpMap = textures.bumpMap;
+  material.normalMap = textures.normalMap;
+  material.normalMapType = THREE.TangentSpaceNormalMap;
+  material.normalScale.copy(terrainNormalScale(style));
   material.roughness = 1;
   material.bumpScale = terrainBumpScale(style);
   material.needsUpdate = true;
@@ -1282,7 +1457,73 @@ function replaceTerrainTextures(
 }
 
 function terrainBumpScale(style: RuntimeTerrainMaterialStyle): number {
-  return 0.025 + style.detailStrength * 0.035;
+  return 0.065 + style.detailStrength * 0.095;
+}
+
+function terrainNormalScale(style: RuntimeTerrainMaterialStyle): THREE.Vector2 {
+  const strength = 1.1 + style.detailStrength * 1.4;
+  return new THREE.Vector2(strength, strength);
+}
+
+export function terrainNormalPixelsFromHeight(
+  heightPixels: Uint8ClampedArray,
+  width: number,
+  height: number,
+  strength: number
+): Uint8ClampedArray {
+  const output = new Uint8ClampedArray(width * height * 4);
+  const sample = (x: number, y: number): number => {
+    const safeX = Math.max(0, Math.min(width - 1, x));
+    const safeY = Math.max(0, Math.min(height - 1, y));
+    return heightPixels[(safeY * width + safeX) * 4] / 255;
+  };
+  for (let y = 0; y < height; y += 1) {
+    for (let x = 0; x < width; x += 1) {
+      const dx = (sample(x - 1, y) - sample(x + 1, y)) * strength;
+      const dy = (sample(x, y - 1) - sample(x, y + 1)) * strength;
+      const inverseLength = 1 / Math.hypot(dx, dy, 1);
+      const offset = (y * width + x) * 4;
+      output[offset] = Math.round((dx * inverseLength * 0.5 + 0.5) * 255);
+      output[offset + 1] = Math.round((dy * inverseLength * 0.5 + 0.5) * 255);
+      output[offset + 2] = Math.round((inverseLength * 0.5 + 0.5) * 255);
+      output[offset + 3] = 255;
+    }
+  }
+  return output;
+}
+
+function createTerrainNormalTexture(
+  bumpMap: THREE.CanvasTexture,
+  style: RuntimeTerrainMaterialStyle
+): THREE.CanvasTexture {
+  const source = bumpMap.image as HTMLCanvasElement;
+  const canvas = document.createElement('canvas');
+  canvas.width = source.width;
+  canvas.height = source.height;
+  const sourceContext = source.getContext('2d', { willReadFrequently: true });
+  const context = canvas.getContext('2d');
+  if (context) {
+    context.fillStyle = 'rgb(128, 128, 255)';
+    context.fillRect(0, 0, canvas.width, canvas.height);
+    const sourceImage = sourceContext?.getImageData(0, 0, canvas.width, canvas.height);
+    const normalImage = context.createImageData?.(canvas.width, canvas.height);
+    if (sourceImage?.data && normalImage?.data) {
+      normalImage.data.set(terrainNormalPixelsFromHeight(
+        sourceImage.data,
+        canvas.width,
+        canvas.height,
+        4 + style.detailStrength * 4
+      ));
+      context.putImageData(normalImage, 0, 0);
+    }
+  }
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.NoColorSpace;
+  texture.wrapS = THREE.ClampToEdgeWrapping;
+  texture.wrapT = THREE.ClampToEdgeWrapping;
+  texture.anisotropy = 8;
+  texture.needsUpdate = true;
+  return texture;
 }
 
 function createTerrainPropertyTexture(
@@ -1291,19 +1532,21 @@ function createTerrainPropertyTexture(
   channel: TerrainTextureChannel
 ): THREE.CanvasTexture {
   const canvas = document.createElement('canvas');
-  canvas.width = 768;
-  canvas.height = 768;
+  canvas.width = TERRAIN_TEXTURE_SIZE;
+  canvas.height = TERRAIN_TEXTURE_SIZE;
   const ctx = canvas.getContext('2d');
   if (ctx) {
     ctx.fillStyle = channel === 'roughness' ? '#eeeeee' : '#808080';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     drawTerrainMaterialZones(ctx, map, style, channel, canvas.width, canvas.height);
     drawProceduralTerrainPropertyDetail(ctx, map, style, channel, canvas.width, canvas.height);
+    drawTerrainRecipeDetails(ctx, map, canvas.width, canvas.height, channel);
   }
   const texture = new THREE.CanvasTexture(canvas);
   texture.colorSpace = THREE.NoColorSpace;
   texture.wrapS = THREE.ClampToEdgeWrapping;
   texture.wrapT = THREE.ClampToEdgeWrapping;
+  texture.anisotropy = 8;
   texture.needsUpdate = true;
   return texture;
 }
@@ -1312,11 +1555,13 @@ function createSurfaceTexture(
   map: EditableMap,
   surface: MapSurface,
   segment?: RoomShellSegment,
-  terrainStyle: RuntimeTerrainMaterialStyle = DEFAULT_RUNTIME_TERRAIN_MATERIAL_STYLE
+  terrainStyle: RuntimeTerrainMaterialStyle = DEFAULT_RUNTIME_TERRAIN_MATERIAL_STYLE,
+  palette?: ColorPalette
 ): THREE.CanvasTexture {
   const canvas = document.createElement('canvas');
-  canvas.width = 768;
-  canvas.height = 768;
+  const textureSize = surface === 'terrain' ? TERRAIN_TEXTURE_SIZE : SURFACE_TEXTURE_SIZE;
+  canvas.width = textureSize;
+  canvas.height = textureSize;
   const ctx = canvas.getContext('2d');
   if (ctx) {
     // Vertex colors own the terrain palette; a neutral base keeps paint strokes
@@ -1326,6 +1571,7 @@ function createSurfaceTexture(
     if (surface === 'terrain') {
       drawSemanticTerrainSurface(ctx, map, canvas.width, canvas.height);
       drawProceduralTerrainDetail(ctx, map, terrainStyle, canvas.width, canvas.height);
+      drawTerrainRecipeDetails(ctx, map, canvas.width, canvas.height, 'color');
     }
     const finish = surface !== 'terrain'
       ? activeInteriorSurfaceFinish(map.interiorArtDirection, surface as RoomSurface)
@@ -1336,11 +1582,13 @@ function createSurfaceTexture(
       if (stroke.surface !== surface && !(surface === 'terrain' && stroke.surface === 'floor')) continue;
       drawStroke(ctx, stroke, canvas.width, canvas.height);
     }
+    if (palette) quantizeCanvasToPalette(ctx, canvas.width, canvas.height, palette);
   }
   const texture = new THREE.CanvasTexture(canvas);
   texture.colorSpace = THREE.SRGBColorSpace;
   texture.wrapS = THREE.ClampToEdgeWrapping;
   texture.wrapT = THREE.ClampToEdgeWrapping;
+  if (surface === 'terrain') texture.anisotropy = 8;
   if (segment && segment.surface !== 'floor' && segment.surface !== 'ceiling' && map.room) {
     const span = segment.surface === 'north' || segment.surface === 'south'
       ? map.room.size[0]
@@ -1350,6 +1598,52 @@ function createSurfaceTexture(
   }
   texture.needsUpdate = true;
   return texture;
+}
+
+function quantizeCanvasToPalette(
+  ctx: CanvasRenderingContext2D,
+  width: number,
+  height: number,
+  palette: ColorPalette
+): void {
+  const image = ctx.getImageData(0, 0, width, height);
+  const colors = palette.colors.map((entry) => {
+    const value = Number.parseInt(entry.hex.slice(1), 16);
+    return [value >> 16 & 0xff, value >> 8 & 0xff, value & 0xff] as const;
+  });
+  const cache = new Map<number, readonly [number, number, number]>();
+  for (let index = 0; index < image.data.length; index += 4) {
+    if (image.data[index + 3] === 0) continue;
+    const red = image.data[index];
+    const green = image.data[index + 1];
+    const blue = image.data[index + 2];
+    const key = (red >> 3) << 10 | (green >> 3) << 5 | blue >> 3;
+    let nearest = cache.get(key);
+    if (!nearest) {
+      nearest = colors.reduce((best, candidate) => (
+        colorDistanceSq(red, green, blue, candidate) < colorDistanceSq(red, green, blue, best)
+          ? candidate
+          : best
+      ), colors[0]);
+      cache.set(key, nearest);
+    }
+    image.data[index] = nearest[0];
+    image.data[index + 1] = nearest[1];
+    image.data[index + 2] = nearest[2];
+    image.data[index + 3] = 255;
+  }
+  ctx.putImageData(image, 0, 0);
+}
+
+function colorDistanceSq(
+  red: number,
+  green: number,
+  blue: number,
+  candidate: readonly [number, number, number]
+): number {
+  return (red - candidate[0]) ** 2 * 0.3
+    + (green - candidate[1]) ** 2 * 0.59
+    + (blue - candidate[2]) ** 2 * 0.11;
 }
 
 function surfaceDimensions(map: EditableMap, surface: RoomSurface): [number, number] {
@@ -1592,6 +1886,28 @@ const SEMANTIC_SURFACE_COLORS = {
   rocky: '#c3c0b2'
 } as const;
 
+const TERRAIN_RECIPE_COLORS = {
+  'compacted-earth': '#916a43',
+  'garden-stone': '#aaa69a',
+  asphalt: '#555b5e',
+  concrete: '#9d9a91',
+  'brick-paver': '#a86f58',
+  cobblestone: '#85847f',
+  gravel: '#847867',
+  mud: '#654832'
+} as const satisfies Record<Exclude<TerrainSurfaceRecipe, 'default'>, string>;
+
+const TERRAIN_RECIPE_CHANNEL_COLORS = {
+  'compacted-earth': { roughness: '#d8d8d8', bump: '#858585' },
+  'garden-stone': { roughness: '#d2d2d2', bump: '#888888' },
+  asphalt: { roughness: '#9a9a9a', bump: '#7b7b7b' },
+  concrete: { roughness: '#d0d0d0', bump: '#8d8d8d' },
+  'brick-paver': { roughness: '#d0d0d0', bump: '#929292' },
+  cobblestone: { roughness: '#dedede', bump: '#9c9c9c' },
+  gravel: { roughness: '#e5e5e5', bump: '#a4a4a4' },
+  mud: { roughness: '#a8a8a8', bump: '#8d8d8d' }
+} as const satisfies Record<Exclude<TerrainSurfaceRecipe, 'default'>, { roughness: string; bump: string }>;
+
 const TERRAIN_ROUGHNESS_COLORS: Record<TerrainDetailSurface, string> = {
   grass: '#f0f0f0',
   soil: '#dddddd',
@@ -1619,8 +1935,13 @@ function drawSemanticTerrainSurface(
       item in SEMANTIC_SURFACE_COLORS
     ));
     if (!tag) continue;
-    const opacity = Math.min(0.24, 0.08 + zone.intensity * 0.12);
-    drawSemanticZoneShape(ctx, map, zone, SEMANTIC_SURFACE_COLORS[tag], opacity, width, height);
+    const recipeColor = zone.material && zone.material !== 'default'
+      ? TERRAIN_RECIPE_COLORS[zone.material]
+      : undefined;
+    const opacity = recipeColor
+      ? Math.min(0.88, 0.62 + zone.intensity * 0.22)
+      : Math.min(0.24, 0.08 + zone.intensity * 0.12);
+    drawSemanticZoneShape(ctx, map, zone, recipeColor ?? SEMANTIC_SURFACE_COLORS[tag], opacity, width, height);
   }
   for (const water of map.waterBodies) drawWetShore(ctx, map, water, width, height);
 }
@@ -1639,9 +1960,13 @@ function drawTerrainMaterialZones(
     ));
     if (!tag) continue;
     const colors = channel === 'roughness' ? TERRAIN_ROUGHNESS_COLORS : TERRAIN_BUMP_COLORS;
-    const color = tag === 'soil' && channel === 'roughness' && style.soilRecipe === 'moist'
+    const recipe = zone.material && zone.material !== 'default'
+      ? TERRAIN_RECIPE_CHANNEL_COLORS[zone.material]
+      : undefined;
+    const recipeColor = recipe?.[channel === 'roughness' ? 'roughness' : 'bump'];
+    const color = recipeColor ?? (tag === 'soil' && channel === 'roughness' && style.soilRecipe === 'moist'
       ? '#aaaaaa'
-      : colors[tag];
+      : colors[tag]);
     drawSemanticZoneShape(
       ctx,
       map,
@@ -1652,6 +1977,298 @@ function drawTerrainMaterialZones(
       height
     );
   }
+}
+
+function drawTerrainRecipeDetails(
+  ctx: CanvasRenderingContext2D,
+  map: EditableMap,
+  width: number,
+  height: number,
+  channel: TerrainRecipeDetailChannel
+): void {
+  for (const zone of map.visualSemantics.zones) {
+    if (!zone.material || zone.material === 'default' || zone.region?.kind !== 'path') continue;
+    const region = zone.region;
+    const pixelsPerMetre = (width / map.box.size[0] + height / map.box.size[2]) * 0.5;
+    const random = seededRandom(map.seed ^ stringSeed(zone.id));
+    if (zone.material === 'garden-stone') {
+      forEachPathSample(region.points, Math.max(0.75, region.width * 0.62), (sample) => {
+        const center = surfaceCanvasPoint(map, [sample.x, sample.z], width, height);
+        const halfWidth = region.width * pixelsPerMetre * (0.32 + random() * 0.08);
+        const halfLength = Math.max(3, region.width * pixelsPerMetre * (0.2 + random() * 0.08));
+        const tangent = [sample.tangentX, -sample.tangentZ] as const;
+        const normal = [-tangent[1], tangent[0]] as const;
+        const corners = [
+          [center[0] - tangent[0] * halfLength - normal[0] * halfWidth, center[1] - tangent[1] * halfLength - normal[1] * halfWidth],
+          [center[0] + tangent[0] * halfLength - normal[0] * halfWidth, center[1] + tangent[1] * halfLength - normal[1] * halfWidth],
+          [center[0] + tangent[0] * halfLength + normal[0] * halfWidth, center[1] + tangent[1] * halfLength + normal[1] * halfWidth],
+          [center[0] - tangent[0] * halfLength + normal[0] * halfWidth, center[1] - tangent[1] * halfLength + normal[1] * halfWidth]
+        ];
+        ctx.beginPath();
+        ctx.moveTo(corners[0][0], corners[0][1]);
+        corners.slice(1).forEach((point) => ctx.lineTo(point[0], point[1]));
+        ctx.closePath();
+        ctx.fillStyle = random() > 0.5
+          ? terrainRecipeDetailInk(channel, 'rgba(224, 218, 199, 0.58)', '#dedede', '#c4c4c4')
+          : terrainRecipeDetailInk(channel, 'rgba(103, 101, 95, 0.34)', '#b3b3b3', '#9a9a9a');
+        ctx.fill();
+        ctx.strokeStyle = terrainRecipeDetailInk(channel, 'rgba(62, 61, 58, 0.48)', '#969696', '#555555');
+        ctx.lineWidth = Math.max(1, pixelsPerMetre * 0.065);
+        ctx.stroke();
+      });
+      continue;
+    }
+    if (zone.material === 'concrete') {
+      drawCutStoneSidewalkDetails(ctx, map, region, width, height, channel, random);
+      continue;
+    }
+    if (zone.material === 'brick-paver') {
+      forEachPathSample(region.points, Math.max(0.42, region.width * 0.18), (sample) => {
+        const center = surfaceCanvasPoint(map, [sample.x, sample.z], width, height);
+        const angle = Math.atan2(-sample.tangentZ, sample.tangentX);
+        const brickWidth = Math.max(2, pixelsPerMetre * 0.34);
+        const brickHeight = Math.max(1.4, pixelsPerMetre * 0.18);
+        const lanes = Math.max(2, Math.floor(region.width / 0.45));
+        for (let lane = 0; lane < lanes; lane += 1) {
+          const across = (lane + 0.5) / lanes - 0.5;
+          ctx.save();
+          ctx.translate(
+            center[0] + -sample.tangentZ * across * region.width * pixelsPerMetre,
+            center[1] + -sample.tangentX * across * region.width * pixelsPerMetre
+          );
+          ctx.rotate(angle);
+          ctx.fillStyle = random() > 0.5
+            ? terrainRecipeDetailInk(channel, 'rgba(105, 45, 32, 0.42)', '#c0c0c0', '#a8a8a8')
+            : terrainRecipeDetailInk(channel, 'rgba(233, 174, 137, 0.34)', '#dedede', '#c5c5c5');
+          ctx.fillRect(-brickWidth / 2, -brickHeight / 2, brickWidth, brickHeight);
+          ctx.strokeStyle = terrainRecipeDetailInk(channel, 'rgba(58, 44, 39, 0.42)', '#949494', '#4f4f4f');
+          ctx.lineWidth = Math.max(0.8, pixelsPerMetre * 0.045);
+          ctx.strokeRect(-brickWidth / 2, -brickHeight / 2, brickWidth, brickHeight);
+          ctx.restore();
+        }
+      });
+      continue;
+    }
+    if (zone.material === 'cobblestone' || zone.material === 'gravel') {
+      const cobbled = zone.material === 'cobblestone';
+      const spacing = cobbled ? Math.max(0.32, region.width * 0.14) : Math.max(0.2, region.width * 0.09);
+      forEachPathSample(region.points, spacing, (sample) => {
+        const lanes = Math.max(2, Math.floor(region.width / (cobbled ? 0.42 : 0.28)));
+        for (let lane = 0; lane < lanes; lane += 1) {
+          const across = ((lane + random()) / lanes - 0.5) * region.width * 0.88;
+          const point = surfaceCanvasPoint(map, [
+            sample.x - sample.tangentZ * across,
+            sample.z + sample.tangentX * across
+          ], width, height);
+          const radius = pixelsPerMetre * (cobbled ? 0.14 + random() * 0.07 : 0.035 + random() * 0.06);
+          ctx.beginPath();
+          ctx.ellipse(point[0], point[1], radius * 1.2, radius, random() * Math.PI, 0, Math.PI * 2);
+          ctx.fillStyle = cobbled
+            ? terrainRecipeDetailInk(channel, 'rgba(48, 52, 53, 0.4)', '#d7d7d7', '#c9c9c9')
+            : terrainRecipeDetailInk(channel, 'rgba(55, 43, 32, 0.38)', '#dddddd', '#bababa');
+          ctx.fill();
+          if (cobbled) {
+            ctx.strokeStyle = terrainRecipeDetailInk(channel, 'rgba(31, 33, 34, 0.28)', '#a7a7a7', '#5a5a5a');
+            ctx.lineWidth = Math.max(0.55, pixelsPerMetre * 0.035);
+            ctx.stroke();
+          }
+        }
+      });
+      continue;
+    }
+    if (zone.material === 'mud') {
+      ctx.save();
+      for (const offset of [-0.23, 0.23]) {
+        const track = region.points.map((point, index) => {
+          const previous = region.points[Math.max(0, index - 1)];
+          const next = region.points[Math.min(region.points.length - 1, index + 1)];
+          const dx = next[0] - previous[0];
+          const dz = next[1] - previous[1];
+          const length = Math.max(0.0001, Math.hypot(dx, dz));
+          return [point[0] - dz / length * region.width * offset, point[1] + dx / length * region.width * offset] as [number, number];
+        });
+        drawCanvasPath(ctx, map, track, width, height);
+        ctx.strokeStyle = terrainRecipeDetailInk(channel, 'rgba(42, 25, 16, 0.48)', '#858585', '#505050');
+        ctx.lineWidth = Math.max(1, region.width * pixelsPerMetre * 0.13);
+        ctx.stroke();
+      }
+      ctx.restore();
+      continue;
+    }
+    ctx.save();
+    drawCanvasPath(ctx, map, region.points, width, height);
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    if (zone.material === 'asphalt') {
+      ctx.strokeStyle = terrainRecipeDetailInk(channel, 'rgba(104, 108, 108, 0.16)', '#ababab', '#898989');
+      ctx.lineWidth = Math.max(1, region.width * pixelsPerMetre * 0.82);
+      ctx.stroke();
+      drawCanvasPath(ctx, map, region.points, width, height);
+      ctx.strokeStyle = terrainRecipeDetailInk(channel, 'rgba(31, 34, 35, 0.34)', '#919191', '#737373');
+      ctx.lineWidth = Math.max(1, region.width * pixelsPerMetre * 0.72);
+      ctx.stroke();
+      drawAsphaltRoadDetails(ctx, map, region, width, height, channel, random);
+    } else {
+      ctx.setLineDash([Math.max(2, pixelsPerMetre * 0.35), Math.max(3, pixelsPerMetre * 0.7)]);
+      ctx.strokeStyle = terrainRecipeDetailInk(channel, 'rgba(71, 46, 27, 0.36)', '#b0b0b0', '#656565');
+      ctx.lineWidth = Math.max(1, region.width * pixelsPerMetre * 0.28);
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+}
+
+function drawCutStoneSidewalkDetails(
+  ctx: CanvasRenderingContext2D,
+  map: EditableMap,
+  region: { points: readonly [number, number][]; width: number },
+  width: number,
+  height: number,
+  channel: TerrainRecipeDetailChannel,
+  random: () => number
+): void {
+  const pixelsPerMetre = (width / map.box.size[0] + height / map.box.size[2]) * 0.5;
+  const lanes = Math.max(2, Math.round(region.width / 0.65));
+  const slabLength = pixelsPerMetre * 0.9;
+  const slabWidth = region.width * pixelsPerMetre / lanes;
+  forEachPathSample(region.points, 0.9, (sample) => {
+    const center = surfaceCanvasPoint(map, [sample.x, sample.z], width, height);
+    const angle = Math.atan2(-sample.tangentZ, sample.tangentX);
+    for (let lane = 0; lane < lanes; lane += 1) {
+      const across = (lane + 0.5) / lanes - 0.5;
+      ctx.save();
+      ctx.translate(
+        center[0] - sample.tangentZ * across * region.width * pixelsPerMetre,
+        center[1] - sample.tangentX * across * region.width * pixelsPerMetre
+      );
+      ctx.rotate(angle);
+      ctx.fillStyle = random() > 0.5
+        ? terrainRecipeDetailInk(channel, 'rgba(203, 200, 188, 0.24)', '#d7d7d7', '#a6a6a6')
+        : terrainRecipeDetailInk(channel, 'rgba(119, 118, 112, 0.12)', '#c1c1c1', '#969696');
+      ctx.fillRect(-slabLength * 0.47, -slabWidth * 0.46, slabLength * 0.94, slabWidth * 0.92);
+      ctx.strokeStyle = terrainRecipeDetailInk(channel, 'rgba(77, 76, 72, 0.42)', '#999999', '#555555');
+      ctx.lineWidth = Math.max(0.8, pixelsPerMetre * 0.045);
+      ctx.strokeRect(-slabLength * 0.47, -slabWidth * 0.46, slabLength * 0.94, slabWidth * 0.92);
+      if (random() > 0.74) {
+        ctx.beginPath();
+        ctx.moveTo(-slabLength * 0.28, slabWidth * (random() - 0.5) * 0.35);
+        ctx.lineTo(slabLength * 0.24, slabWidth * (random() - 0.5) * 0.35);
+        ctx.strokeStyle = terrainRecipeDetailInk(channel, 'rgba(91, 89, 84, 0.16)', '#b0b0b0', '#7f7f7f');
+        ctx.lineWidth = Math.max(0.5, pixelsPerMetre * 0.025);
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+  });
+}
+
+function drawAsphaltRoadDetails(
+  ctx: CanvasRenderingContext2D,
+  map: EditableMap,
+  region: { points: readonly [number, number][]; width: number },
+  width: number,
+  height: number,
+  channel: TerrainRecipeDetailChannel,
+  random: () => number
+): void {
+  const pixelsPerMetre = (width / map.box.size[0] + height / map.box.size[2]) * 0.5;
+  const lanes = Math.max(4, Math.floor(region.width / 0.55));
+  forEachPathSample(region.points, 0.38, (sample) => {
+    for (let lane = 0; lane < lanes; lane += 1) {
+      const across = ((lane + random()) / lanes - 0.5) * region.width * 0.82;
+      const point = surfaceCanvasPoint(map, [
+        sample.x - sample.tangentZ * across,
+        sample.z + sample.tangentX * across
+      ], width, height);
+      const grain = Math.max(0.45, pixelsPerMetre * (0.018 + random() * 0.035));
+      ctx.fillStyle = random() > 0.48
+        ? terrainRecipeDetailInk(channel, 'rgba(205, 208, 206, 0.1)', '#b3b3b3', '#999999')
+        : terrainRecipeDetailInk(channel, 'rgba(20, 22, 23, 0.12)', '#858585', '#696969');
+      ctx.fillRect(point[0], point[1], grain, Math.max(0.4, grain * (0.45 + random() * 0.4)));
+    }
+  });
+
+  forEachPathSample(region.points, Math.max(10, region.width * 1.55), (sample) => {
+    const center = surfaceCanvasPoint(map, [sample.x, sample.z], width, height);
+    const length = region.width * pixelsPerMetre * (0.08 + random() * 0.16);
+    const across = (random() - 0.5) * region.width * pixelsPerMetre * 0.45;
+    const nx = -sample.tangentZ;
+    const ny = -sample.tangentX;
+    ctx.beginPath();
+    ctx.moveTo(center[0] + nx * across, center[1] + ny * across);
+    ctx.lineTo(
+      center[0] + nx * (across + length * 0.45) + sample.tangentX * length * 0.18,
+      center[1] + ny * (across + length * 0.45) - sample.tangentZ * length * 0.18
+    );
+    ctx.lineTo(center[0] + nx * (across + length), center[1] + ny * (across + length));
+    ctx.strokeStyle = terrainRecipeDetailInk(channel, 'rgba(15, 17, 18, 0.18)', '#858585', '#555555');
+    ctx.lineWidth = Math.max(0.55, pixelsPerMetre * 0.03);
+    ctx.stroke();
+  });
+
+  if (channel === 'color' && region.width >= 5) {
+    drawCanvasPath(ctx, map, region.points, width, height);
+    ctx.setLineDash([pixelsPerMetre * 1.6, pixelsPerMetre * 1.1]);
+    ctx.strokeStyle = 'rgba(235, 222, 174, 0.68)';
+    ctx.lineWidth = Math.max(1.6, pixelsPerMetre * 0.09);
+    ctx.stroke();
+    ctx.setLineDash([]);
+  }
+}
+
+function terrainRecipeDetailInk(
+  channel: TerrainRecipeDetailChannel,
+  color: string,
+  roughness: string,
+  bump: string
+): string {
+  return channel === 'color' ? color : channel === 'roughness' ? roughness : bump;
+}
+
+function drawCanvasPath(
+  ctx: CanvasRenderingContext2D,
+  map: EditableMap,
+  points: readonly [number, number][],
+  width: number,
+  height: number
+): void {
+  const canvasPoints = points.map((point) => surfaceCanvasPoint(map, point, width, height));
+  ctx.beginPath();
+  ctx.moveTo(canvasPoints[0][0], canvasPoints[0][1]);
+  canvasPoints.slice(1).forEach((point) => ctx.lineTo(point[0], point[1]));
+}
+
+function forEachPathSample(
+  points: readonly [number, number][],
+  spacing: number,
+  visit: (sample: { x: number; z: number; tangentX: number; tangentZ: number }) => void
+): void {
+  let carried = 0;
+  for (let index = 1; index < points.length; index += 1) {
+    const start = points[index - 1];
+    const end = points[index];
+    const dx = end[0] - start[0];
+    const dz = end[1] - start[1];
+    const length = Math.hypot(dx, dz);
+    if (length < 0.0001) continue;
+    for (let distance = Math.max(0, spacing - carried); distance < length; distance += spacing) {
+      visit({
+        x: start[0] + dx * distance / length,
+        z: start[1] + dz * distance / length,
+        tangentX: dx / length,
+        tangentZ: dz / length
+      });
+    }
+    carried = (carried + length) % spacing;
+  }
+}
+
+function stringSeed(value: string): number {
+  let seed = 0x811c9dc5;
+  for (let index = 0; index < value.length; index += 1) {
+    seed = Math.imul(seed ^ value.charCodeAt(index), 0x01000193);
+  }
+  return seed >>> 0;
 }
 
 function drawSemanticZoneShape(
@@ -1707,7 +2324,7 @@ function drawProceduralTerrainDetail(
     rocky: ['#777873', '#b1ada3'],
     paving: ['#777b79', '#b8b6af']
   } as const;
-  const count = Math.round(450 + style.detailStrength * 1050);
+  const count = Math.round(700 + style.detailStrength * 1600);
   ctx.save();
   ctx.lineCap = 'round';
   for (let index = 0; index < count; index += 1) {
@@ -1719,7 +2336,7 @@ function drawProceduralTerrainDetail(
     const palette = palettes[selected];
     ctx.strokeStyle = palette[random() > 0.5 ? 0 : 1];
     ctx.fillStyle = ctx.strokeStyle;
-    ctx.globalAlpha = style.detailStrength * (0.07 + Math.max(0.25, selectedWeight) * 0.18);
+    ctx.globalAlpha = style.detailStrength * (0.1 + Math.max(0.25, selectedWeight) * 0.24);
     if (selected === 'soil' || selected === 'rocky') {
       const radius = selected === 'rocky' ? 1.1 + random() * 2.2 : 0.6 + random() * 1.4;
       ctx.fillRect(point[0], point[1], radius, radius * (0.5 + random()));
@@ -1749,21 +2366,21 @@ function drawProceduralTerrainPropertyDetail(
   if (style.detailStrength <= 0) return;
   const random = seededRandom(map.seed ^ (channel === 'roughness' ? 0x34b72a1 : 0x58d194f));
   const roughness = {
-    grass: ['#e2e2e2', '#fafafa'],
-    soil: style.soilRecipe === 'moist' ? ['#929292', '#b8b8b8'] : ['#cccccc', '#eeeeee'],
-    sand: ['#e8e8e8', '#ffffff'],
-    rocky: ['#b7b7b7', '#dddddd'],
-    paving: ['#a9a9a9', '#d0d0d0']
+    grass: ['#d8d8d8', '#ffffff'],
+    soil: style.soilRecipe === 'moist' ? ['#858585', '#c2c2c2'] : ['#b8b8b8', '#f4f4f4'],
+    sand: ['#dddddd', '#ffffff'],
+    rocky: ['#a0a0a0', '#e8e8e8'],
+    paving: ['#929292', '#dddddd']
   } as const;
   const bump = {
-    grass: ['#797979', '#929292'],
-    soil: ['#747474', '#999999'],
-    sand: ['#7b7b7b', '#929292'],
-    rocky: ['#696969', '#aaaaaa'],
-    paving: ['#6f6f6f', '#929292']
+    grass: ['#6c6c6c', '#a2a2a2'],
+    soil: ['#606060', '#b0b0b0'],
+    sand: ['#6a6a6a', '#a8a8a8'],
+    rocky: ['#464646', '#c4c4c4'],
+    paving: ['#505050', '#aaaaaa']
   } as const;
   const palettes = channel === 'roughness' ? roughness : bump;
-  const count = Math.round(650 + style.detailStrength * 1450);
+  const count = Math.round(900 + style.detailStrength * 2100);
   ctx.save();
   ctx.lineCap = 'round';
   for (let index = 0; index < count; index += 1) {
@@ -1775,7 +2392,7 @@ function drawProceduralTerrainPropertyDetail(
     const palette = palettes[surface];
     ctx.strokeStyle = palette[random() > 0.5 ? 0 : 1];
     ctx.fillStyle = ctx.strokeStyle;
-    ctx.globalAlpha = style.detailStrength * (0.18 + Math.max(0.2, weight) * 0.32);
+    ctx.globalAlpha = style.detailStrength * (0.24 + Math.max(0.2, weight) * 0.4);
     if (surface === 'soil' || surface === 'rocky') {
       const radius = surface === 'rocky' ? 1.4 + random() * 3.4 : 0.8 + random() * 2.2;
       ctx.fillRect(point[0], point[1], radius, radius * (0.45 + random() * 0.8));
@@ -1947,14 +2564,14 @@ function disposeObject(object: THREE.Object3D): void {
   const materials = new Set<THREE.Material>();
   const textures = new Set<THREE.Texture>();
   object.traverse((child) => {
-    const mesh = child as THREE.Mesh;
-    if (!mesh.isMesh) return;
+    if (!(child instanceof THREE.Mesh) && !(child instanceof THREE.Line)) return;
+    const mesh = child as THREE.Mesh | THREE.Line;
     if (mesh.geometry) geometries.add(mesh.geometry);
     const meshMaterials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
     for (const material of meshMaterials) {
       materials.add(material);
       const maybe = material as THREE.MeshStandardMaterial;
-      for (const texture of [maybe.map, maybe.roughnessMap, maybe.bumpMap]) {
+      for (const texture of [maybe.map, maybe.roughnessMap, maybe.bumpMap, maybe.normalMap]) {
         if (texture) textures.add(texture);
       }
     }

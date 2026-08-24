@@ -6,6 +6,7 @@ import {
   type RenderAccessPolicy,
   type RenderPlan
 } from './renderPlan';
+import { normalizeColorPalette, type ColorPalette } from './colorPalette';
 
 export interface RenderEnvironmentSettings {
   background: string;
@@ -26,6 +27,9 @@ export interface RenderScheme {
   sourcePrompt: string;
   styleTags: string[];
   provider?: string;
+  paletteId?: string;
+  /** Immutable snapshot keeps exported viewers self-contained if the library entry is later removed. */
+  paletteSnapshot?: ColorPalette;
   renderPlan?: RenderPlan;
   accessPolicy: RenderAccessPolicy;
   schemaVersion: 1;
@@ -145,6 +149,8 @@ export function normalizeRenderScheme(input: Partial<RenderScheme>): RenderSchem
     sourcePrompt: cleanText(input.sourcePrompt, '', 1000),
     styleTags: normalizeStyleTags(input.styleTags),
     provider: cleanText(input.provider, '', 40) || undefined,
+    paletteId: cleanText(input.paletteId, '', 80) || safePalette(input.paletteSnapshot)?.id,
+    paletteSnapshot: safePalette(input.paletteSnapshot),
     renderPlan: safeRenderPlan(input.renderPlan),
     accessPolicy,
     schemaVersion: 1,
@@ -153,6 +159,15 @@ export function normalizeRenderScheme(input: Partial<RenderScheme>): RenderSchem
     createdAt: finiteNumber(input.createdAt, now),
     updatedAt: finiteNumber(input.updatedAt, now)
   };
+}
+
+function safePalette(value: unknown): ColorPalette | undefined {
+  if (!value || typeof value !== 'object') return undefined;
+  try {
+    return normalizeColorPalette(value as Partial<ColorPalette>);
+  } catch {
+    return undefined;
+  }
 }
 
 function safeRenderPlan(value: unknown): RenderPlan | undefined {

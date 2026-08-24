@@ -46,6 +46,8 @@ import {
   type TerrainBrushMode
 } from '../shared/map';
 import { lintMap } from '../shared/mapLint';
+import { compileMapNaturalClearance } from '../shared/mapDesignRelations';
+import { sampleMapGuide, simplifyMapGuidePoints, type MapGuide, type MapGuideCurve } from '../shared/mapGuide';
 import { mapVisualReviewAction, type MapVisualReview } from '../shared/indoorVisualReview';
 import {
   DEFAULT_MAP_AI_MIN_NEW_ASSETS,
@@ -137,9 +139,12 @@ import {
   TERRAIN_GENERATION_PRESETS,
   TERRAIN_MODIFIERS,
   TERRAIN_SURFACES,
+  TERRAIN_SURFACE_RECIPES,
+  terrainSurfaceForRecipe,
   type TerrainCliffLayout,
   type TerrainGenerationPreset,
   type TerrainModifier,
+  type TerrainSurfaceRecipe,
   type TerrainSurfaceKind
 } from '../shared/terrainGeneration';
 import {
@@ -148,6 +153,14 @@ import {
 } from '../shared/protocol';
 import type { HdriTexture } from '../shared/hdri';
 import type { RenderScheme, RenderSuggestion } from '../shared/renderScheme';
+import {
+  COLOR_PALETTE_ROLES,
+  autoAssignPaletteRoles,
+  normalizeColorPalette,
+  parseHexPalette,
+  type ColorPalette,
+  type ColorPaletteRole
+} from '../shared/colorPalette';
 import {
   ASSET_LIBRARY_ZONE_TAGS,
   type AssetLibrary,
@@ -197,7 +210,7 @@ import {
 type EditorTool = 'select' | 'paint' | 'terrain' | 'grass';
 type TransformMode = 'translate' | 'rotate' | 'scale';
 type EditorStage = 'map' | 'render';
-type TerrainEditorAction = 'brush' | 'modifier' | 'surface';
+type TerrainEditorAction = 'brush' | 'modifier' | 'surface' | 'road';
 
 const CAMERA_MOVE_KEYS = new Set(['KeyW', 'KeyA', 'KeyS', 'KeyD', 'ArrowUp', 'ArrowDown']);
 const CAMERA_BASE_SPEED = 8;
@@ -215,6 +228,7 @@ interface EditorState {
   assetLibraries: AssetLibrary[];
   libraryAssets: MapAsset[];
   renderSchemes: RenderScheme[];
+  colorPalettes: ColorPalette[];
   map: EditableMap | null;
   selectedObjectId: string | null;
   selectedAssetId: string | null;
@@ -230,6 +244,10 @@ interface EditorState {
   terrainModifier: TerrainModifier;
   terrainCliffLayout: TerrainCliffLayout;
   terrainSurface: TerrainSurfaceKind;
+  terrainRoadMaterial: Exclude<TerrainSurfaceRecipe, 'default'>;
+  terrainRoadCurve: MapGuideCurve;
+  terrainRoadWidth: number;
+  terrainRoadSmooth: boolean;
   terrainSize: number;
   terrainStrength: number;
   terrainAmplitude: number;
@@ -256,6 +274,7 @@ class MapEditor {
     assetLibraries: [],
     libraryAssets: [],
     renderSchemes: [],
+    colorPalettes: [],
     map: null,
     selectedObjectId: null,
     selectedAssetId: null,
@@ -271,6 +290,10 @@ class MapEditor {
     terrainModifier: 'cliff',
     terrainCliffLayout: 'plateau',
     terrainSurface: 'sand',
+    terrainRoadMaterial: 'asphalt',
+    terrainRoadCurve: 'catmull-rom',
+    terrainRoadWidth: 4,
+    terrainRoadSmooth: false,
     terrainSize: 1.8,
     terrainStrength: 0.3,
     terrainAmplitude: 5,
@@ -316,6 +339,7 @@ class MapEditor {
   private terrainFlattenHeight: number | null = null;
   private terrainSeed: number | null = null;
   private terrainGesturePoints: Array<[number, number]> = [];
+  private draggingRoadPoint: { guideId: string; pointIndex: number; mesh: THREE.Object3D } | null = null;
   private previewRenderer: THREE.WebGLRenderer | null = null;
   private previewScene: THREE.Scene | null = null;
   private previewCamera: THREE.PerspectiveCamera | null = null;
@@ -343,6 +367,11 @@ class MapEditor {
   } | null = null;
   private objectClipboard: MapObjectClipboard | null = null;
   private renderDraft: RenderScheme | null = null;
+  private selectedPaletteId = '';
+  private paletteDraft: ColorPalette | null = null;
+  private paletteDraftChanged = false;
+  private paletteImportName = '街区色卡';
+  private paletteImportText = '';
   private renderDraftChanged = false;
   private renderAiPrompt = '';
   private renderAiProvider: ChatProvider = 'gpt';
@@ -391,6 +420,7 @@ class MapEditor {
   private mapAiMaxNewAssets = DEFAULT_MAP_AI_MAX_NEW_ASSETS;
   private mapAiTargetVisualZoneId = '';
   private selectedVisualZoneId = '';
+  private selectedRoadGuideId = '';
   private newMapAssetGenerationMode: ModelGenerationMode = 'voxel';
   private newMapSceneMode: MapSceneMode = 'outdoor';
   private newRoomSize: [number, number, number] = [10, 3, 8];
@@ -838,6 +868,7 @@ class MapEditor {
         this.state.tool = button.dataset.tool as EditorTool;
         if (this.renderer) this.renderer.domElement.style.cursor = this.state.tool === 'select' ? 'default' : 'crosshair';
         if (this.brushPreview) this.brushPreview.visible = false;
+        this.updateRoadGuideHelperVisibility();
         this.renderPanels();
       });
     });
@@ -969,11 +1000,12 @@ class MapEditor {
   }
 
   private async reloadLists(): Promise<void> {
-    const [maps, deletedMaps, assets, renderSchemes, assetLibraries, exportProfiles] = await Promise.all([
+    const [maps, deletedMaps, assets, renderSchemes, colorPalettes, assetLibraries, exportProfiles] = await Promise.all([
       editorFetch<{ maps: MapSummary[] }>('/api/editor/maps'),
       editorFetch<{ maps: DeletedMapSummary[] }>('/api/editor/maps/trash'),
       editorFetch<{ assets: MapAsset[] }>('/api/editor/assets'),
       editorFetch<{ renderSchemes: RenderScheme[] }>('/api/editor/render-schemes'),
+      editorFetch<{ colorPalettes: ColorPalette[] }>('/api/editor/color-palettes'),
       editorFetch<{ libraries: AssetLibrary[] }>('/api/editor/asset-libraries'),
       editorFetch<{ profiles: ProjectExportProfile[] }>('/api/editor/export-profiles')
     ]);
@@ -981,6 +1013,11 @@ class MapEditor {
     this.deletedMaps = deletedMaps.maps;
     this.state.assets = assets.assets;
     this.state.renderSchemes = renderSchemes.renderSchemes;
+    this.state.colorPalettes = colorPalettes.colorPalettes;
+    if (!this.state.colorPalettes.some((palette) => palette.id === this.selectedPaletteId)) {
+      this.selectedPaletteId = this.state.colorPalettes[0]?.id ?? '';
+      this.paletteDraft = this.state.colorPalettes[0] ? structuredClone(this.state.colorPalettes[0]) : null;
+    }
     this.state.assetLibraries = assetLibraries.libraries;
     this.projectExportProfiles = exportProfiles.profiles;
     if (!this.state.assetLibraries.some((library) => library.id === this.activeAssetLibraryId)) {
@@ -1379,6 +1416,13 @@ class MapEditor {
           <input id="map-ai-focus-prompt" maxlength="300" value="${escapeHtml(this.mapAiFocusPrompt)}" placeholder="例如：长廊、主楼，留空则由 AI 决定" ${this.state.busy ? 'disabled' : ''} />
         </label>
         <div class="map-ai-options">
+          <label class="field compact">
+            <span>生成色卡（可选）</span>
+            <select id="map-ai-color-palette" ${this.state.busy ? 'disabled' : ''}>
+              <option value="">不限制生成颜色</option>
+              ${this.state.colorPalettes.map((palette) => `<option value="${escapeHtml(palette.id)}" ${palette.id === this.selectedPaletteId ? 'selected' : ''}>${escapeHtml(palette.name)} · ${palette.colors.length} 色</option>`).join('')}
+            </select>
+          </label>
           ${map.sceneMode === 'outdoor' ? `<label class="field compact map-ai-toggle">
             <span>整体 Code（统一地形、建筑与环境）</span>
             <input id="map-ai-scene-agent" type="checkbox" ${this.mapAiUseSceneAgent ? 'checked' : ''} ${this.state.busy ? 'disabled' : ''} />
@@ -1507,6 +1551,9 @@ class MapEditor {
     });
     host.querySelector<HTMLInputElement>('#map-ai-focus-prompt')?.addEventListener('input', (event) => {
       this.mapAiFocusPrompt = (event.target as HTMLInputElement).value;
+    });
+    host.querySelector<HTMLSelectElement>('#map-ai-color-palette')?.addEventListener('change', (event) => {
+      this.selectColorPalette((event.target as HTMLSelectElement).value);
     });
     for (const button of host.querySelectorAll<HTMLButtonElement>('[data-map-design-group]')) {
       button.addEventListener('click', () => {
@@ -2115,6 +2162,7 @@ class MapEditor {
             assetLibraryId: this.mapAiReuseExistingAssets ? this.activeAssetLibraryId : undefined,
             minNewAssets: this.mapAiMinNewAssets,
             maxNewAssets: this.mapAiMaxNewAssets,
+            paletteId: this.selectedPaletteId || undefined,
             planOnly: true
           }),
           signal: controller.signal
@@ -2204,6 +2252,7 @@ class MapEditor {
             approvedCode,
             sceneAgent: map.sceneMode === 'outdoor' && this.mapAiUseSceneAgent,
             focusPrompt: this.mapAiFocusPrompt.trim() || undefined,
+            paletteId: this.selectedPaletteId || undefined,
             ...(previousSuggestion ? { baseOperations: previousSuggestion.operations } : {})
           }),
           signal: controller.signal
@@ -2529,6 +2578,50 @@ class MapEditor {
     const points = this.terrainGesturePoints;
     this.terrainGesturePoints = [];
     if (!map || points.length === 0 || this.state.terrainAction === 'brush') return;
+    if (this.state.terrainAction === 'road') {
+      const simplified = simplifyMapGuidePoints(points, Math.max(0.08, this.state.terrainRoadWidth * 0.06));
+      if (simplified.length < 2) {
+        this.state.message = '道路至少需要起点和终点';
+        this.renderPanels();
+        return;
+      }
+      const guideId = `manual-road-${crypto.randomUUID().slice(0, 8)}`;
+      const surface = terrainSurfaceForRecipe(this.state.terrainRoadMaterial);
+      const tags = this.state.terrainRoadMaterial === 'asphalt'
+        ? ['route', 'circulation', 'street', 'settlement', 'manual']
+        : ['route', 'circulation', 'path', 'manual'];
+      const operations: MapOperation[] = [{
+        type: 'guide.upsert',
+        guide: {
+          id: guideId,
+          name: terrainSurfaceRecipeLabel(this.state.terrainRoadMaterial),
+          points: simplified,
+          curve: this.state.terrainRoadCurve,
+          closed: false,
+          width: this.state.terrainRoadWidth,
+          tags
+        }
+      }, {
+        type: 'terrain.surface',
+        surface,
+        material: this.state.terrainRoadMaterial,
+        region: { kind: 'path', points: simplified, width: this.state.terrainRoadWidth },
+        intensity: 1,
+        clearNatural: true,
+        zoneId: roadZoneId(guideId)
+      }];
+      if (this.state.terrainRoadSmooth) {
+        operations.push(...roadSmoothingOperations(
+          map,
+          simplified,
+          this.state.terrainRoadWidth,
+          this.state.terrainRoadCurve
+        ));
+      }
+      this.selectedRoadGuideId = guideId;
+      await this.previewTerrainOperations(`道路：${terrainSurfaceRecipeLabel(this.state.terrainRoadMaterial)}`, operations);
+      return;
+    }
     const useCircle = points.length < 2 || this.state.terrainModifier === 'island';
     const region = useCircle
       ? { kind: 'circle' as const, x: points[0][0], z: points[0][1], radius: this.state.terrainSize }
@@ -2568,11 +2661,103 @@ class MapEditor {
     this.mapPreviewKind = 'terrain';
     this.mapAiSuggestion = { summary, operations, renderPromptSuggestions: [], generatedAssets: [] };
     this.mapAiComparisonMap = map;
-    this.mapAiPreviewMap = applyMapOperations(this.mapWithEditorAssets(map), operations);
+    const preview = applyMapOperations(this.mapWithEditorAssets(map), operations);
+    const needsNaturalClearance = operations.some((operation) => (
+      operation.type === 'terrain.surface' && operation.clearNatural === true
+    ));
+    const clearance = needsNaturalClearance ? compileMapNaturalClearance(preview) : [];
+    const finalOperations = clearance.length > 0 ? [...operations, ...clearance] : operations;
+    if (clearance.length > 0) this.mapAiSuggestion.operations = finalOperations;
+    this.mapAiPreviewMap = clearance.length > 0 ? applyMapOperations(preview, clearance) : preview;
     this.mapAiPreviewVisible = true;
     this.state.selectedObjectId = null;
     this.state.message = `${summary}预览已生成，尚未应用`;
     await this.refreshScene();
+    this.renderPanels();
+  }
+
+  private updateRoadGuide(
+    guideId: string,
+    patch: Partial<Pick<MapGuide, 'points' | 'curve' | 'width'>>,
+    material?: TerrainSurfaceRecipe
+  ): void {
+    const map = this.state.map;
+    const guide = map?.guides.find((item) => item.id === guideId);
+    if (!map || !guide) return;
+    const nextGuide: MapGuide = {
+      ...guide,
+      ...patch,
+      points: (patch.points ?? guide.points).map((point) => [...point] as [number, number]),
+      width: clampNumber(patch.width ?? guide.width, 0.6, 12)
+    };
+    const zone = roadZoneForGuide(map, guideId);
+    const nextMaterial = material ?? zone?.material ?? 'default';
+    const surface = nextMaterial === 'default'
+      ? zone?.tags.includes('soil') ? 'soil' : 'paving'
+      : terrainSurfaceForRecipe(nextMaterial);
+    const updated = applyMapOperations(map, [{ type: 'guide.upsert', guide: nextGuide }, {
+      type: 'terrain.surface',
+      surface,
+      material: nextMaterial,
+      region: { kind: 'path', points: nextGuide.points, width: nextGuide.width },
+      intensity: zone?.intensity ?? 1,
+      clearNatural: true,
+      zoneId: zone?.id ?? roadZoneId(guideId)
+    }]);
+    const clearance = compileMapNaturalClearance(this.mapWithEditorAssets(updated));
+    this.state.map = clearance.length > 0 ? applyMapOperations(updated, clearance) : updated;
+    this.markDirty();
+    this.state.message = `已更新道路：${nextGuide.name}`;
+    void this.refreshScene();
+    this.renderPanels();
+  }
+
+  private moveRoadGuidePoint(x: number, z: number): void {
+    const drag = this.draggingRoadPoint;
+    const map = this.state.map;
+    const guide = map?.guides.find((item) => item.id === drag?.guideId);
+    if (!map || !drag || !guide || !guide.points[drag.pointIndex]) return;
+    const points = guide.points.map((point) => [...point] as [number, number]);
+    points[drag.pointIndex] = [x, z];
+    const zone = roadZoneForGuide(map, guide.id);
+    const material = zone?.material ?? 'default';
+    const surface = material === 'default'
+      ? zone?.tags.includes('soil') ? 'soil' : 'paving'
+      : terrainSurfaceForRecipe(material);
+    const nextGuide = { ...guide, points };
+    this.state.map = applyMapOperations(map, [{ type: 'guide.upsert', guide: nextGuide }, {
+      type: 'terrain.surface',
+      surface,
+      material,
+      region: { kind: 'path', points, width: guide.width },
+      intensity: zone?.intensity ?? 1,
+      clearNatural: true,
+      zoneId: zone?.id ?? roadZoneId(guide.id)
+    }]);
+    drag.mesh.position.set(x, sampleTerrainHeight(this.state.map, x, z) + 0.12, z);
+    this.markDirty(false);
+    this.scheduleTerrainRefresh();
+  }
+
+  private deleteRoadGuide(guideId: string): void {
+    const map = this.state.map;
+    if (!map || !map.guides.some((guide) => guide.id === guideId)) return;
+    const zone = roadZoneForGuide(map, guideId);
+    this.state.map = normalizeMap({
+      ...map,
+      guides: map.guides.filter((guide) => guide.id !== guideId),
+      objects: map.objects.map((object) => object.sourceGuideId === guideId
+        ? { ...object, sourceGuideId: undefined }
+        : object),
+      visualSemantics: {
+        ...map.visualSemantics,
+        zones: zone ? map.visualSemantics.zones.filter((item) => item.id !== zone.id) : map.visualSemantics.zones
+      }
+    });
+    this.selectedRoadGuideId = '';
+    this.markDirty();
+    this.state.message = '已删除道路；沿路物体已解除绑定但保留';
+    void this.refreshScene();
     this.renderPanels();
   }
 
@@ -2794,6 +2979,12 @@ class MapEditor {
       this.selectedVisualZoneId = map.visualSemantics.zones[0]?.id ?? '';
     }
     const selectedZone = map.visualSemantics.zones.find((zone) => zone.id === this.selectedVisualZoneId) ?? null;
+    const roadGuides = map.guides.filter((guide) => guide.tags.includes('route') || guide.tags.includes('street'));
+    if (!roadGuides.some((guide) => guide.id === this.selectedRoadGuideId)) {
+      this.selectedRoadGuideId = roadGuides[0]?.id ?? '';
+    }
+    const selectedRoadGuide = roadGuides.find((guide) => guide.id === this.selectedRoadGuideId) ?? null;
+    const selectedRoadZone = selectedRoadGuide ? roadZoneForGuide(map, selectedRoadGuide.id) : null;
     const derived = inspectMapDerivedResults(map);
     host.innerHTML = `
       <details class="inspector-disclosure" data-inspector-section="map-settings" ${mapSettingsOpen ? 'open' : ''}>
@@ -2927,6 +3118,7 @@ class MapEditor {
           <option value="brush" ${this.state.terrainAction === 'brush' ? 'selected' : ''}>基础画笔</option>
           <option value="modifier" ${this.state.terrainAction === 'modifier' ? 'selected' : ''}>地貌修改器</option>
           <option value="surface" ${this.state.terrainAction === 'surface' ? 'selected' : ''}>地表区域</option>
+          <option value="road" ${this.state.terrainAction === 'road' ? 'selected' : ''}>道路</option>
         </select></label>
         ${this.state.terrainAction === 'brush' ? `<select data-terrain-mode>
           <option value="raise" ${this.state.terrainMode === 'raise' ? 'selected' : ''}>抬高</option>
@@ -2944,7 +3136,17 @@ class MapEditor {
         ${this.state.terrainAction === 'surface' ? `<label class="field compact"><span>地表</span><select data-terrain-surface>
           ${TERRAIN_SURFACES.map((surface) => `<option value="${surface}" ${this.state.terrainSurface === surface ? 'selected' : ''}>${terrainSurfaceLabel(surface)}</option>`).join('')}
         </select></label>` : ''}
-        <label class="field compact"><span>大小</span><input data-terrain-size type="range" min="0.3" max="8" step="0.1" value="${this.state.terrainSize}" /></label>
+        ${this.state.terrainAction === 'road' ? `
+          <label class="field compact"><span>道路材质</span><select data-road-material>
+            ${TERRAIN_SURFACE_RECIPES.filter((material) => material !== 'default').map((material) => `<option value="${material}" ${this.state.terrainRoadMaterial === material ? 'selected' : ''}>${terrainSurfaceRecipeLabel(material)}</option>`).join('')}
+          </select></label>
+          <label class="field compact"><span>线形</span><select data-road-curve>
+            <option value="catmull-rom" ${this.state.terrainRoadCurve === 'catmull-rom' ? 'selected' : ''}>平滑曲线</option>
+            <option value="polyline" ${this.state.terrainRoadCurve === 'polyline' ? 'selected' : ''}>折线</option>
+          </select></label>
+          <label class="field compact"><span>道路宽度</span><input data-road-width type="range" min="0.6" max="12" step="0.1" value="${this.state.terrainRoadWidth}" /></label>
+          <label class="toggle-row"><input data-road-smooth type="checkbox" ${this.state.terrainRoadSmooth ? 'checked' : ''} /><span>局部平顺地形</span></label>
+        ` : `<label class="field compact"><span>大小</span><input data-terrain-size type="range" min="0.3" max="8" step="0.1" value="${this.state.terrainSize}" /></label>`}
         ${this.state.terrainAction === 'brush'
           ? `<label class="field compact"><span>强度</span><input data-terrain-strength type="range" min="0.02" max="1.5" step="0.02" value="${this.state.terrainStrength}" /></label>`
           : this.state.terrainAction === 'modifier'
@@ -2955,7 +3157,10 @@ class MapEditor {
           <label class="field compact"><span>方向</span><input data-terrain-direction type="range" min="0" max="359" step="1" value="${this.state.terrainDirection}" /></label>
           ${this.state.terrainModifier === 'terrace' ? `<label class="field compact"><span>层数</span><input data-terrain-layers type="range" min="2" max="12" step="1" value="${this.state.terrainLayers}" /></label>` : ''}
         ` : ''}
-        ${this.state.terrainAction !== 'brush' ? '<p class="empty">在地形上单击盖章，或按住拖动绘制路径；松开后先预览，再统一应用。</p>' : ''}
+        ${this.state.terrainAction === 'road'
+          ? '<p class="empty">按住拖动自由绘制；按住 Shift 直接连接起点和当前位置。松开后自动简化为可编辑控制点，并先生成预览。</p>'
+          : this.state.terrainAction !== 'brush' ? '<p class="empty">在地形上单击盖章，或按住拖动绘制路径；松开后先预览，再统一应用。</p>' : ''}
+        ${this.state.terrainAction === 'road' ? renderRoadGuideEditor(roadGuides, selectedRoadGuide, selectedRoadZone?.material) : ''}
       </section>` : ''}
       ${this.state.tool === 'grass' ? renderGrassEditorPanel(map, this.grassEditorState) : ''}
     `;
@@ -3168,6 +3373,7 @@ class MapEditor {
     });
     host.querySelector<HTMLSelectElement>('[data-terrain-action]')?.addEventListener('change', (event) => {
       this.state.terrainAction = (event.target as HTMLSelectElement).value as TerrainEditorAction;
+      this.updateRoadGuideHelperVisibility();
       this.renderMapInspector();
     });
     host.querySelector<HTMLSelectElement>('[data-terrain-modifier]')?.addEventListener('change', (event) => {
@@ -3179,6 +3385,65 @@ class MapEditor {
     });
     host.querySelector<HTMLSelectElement>('[data-terrain-surface]')?.addEventListener('change', (event) => {
       this.state.terrainSurface = (event.target as HTMLSelectElement).value as TerrainSurfaceKind;
+    });
+    host.querySelector<HTMLSelectElement>('[data-road-material]')?.addEventListener('change', (event) => {
+      this.state.terrainRoadMaterial = (event.target as HTMLSelectElement).value as Exclude<TerrainSurfaceRecipe, 'default'>;
+    });
+    host.querySelector<HTMLSelectElement>('[data-road-curve]')?.addEventListener('change', (event) => {
+      this.state.terrainRoadCurve = (event.target as HTMLSelectElement).value as MapGuideCurve;
+    });
+    bindNumberState(host, '[data-road-width]', (value) => { this.state.terrainRoadWidth = value; });
+    host.querySelector<HTMLInputElement>('[data-road-smooth]')?.addEventListener('change', (event) => {
+      this.state.terrainRoadSmooth = (event.target as HTMLInputElement).checked;
+    });
+    host.querySelector<HTMLSelectElement>('[data-road-guide-select]')?.addEventListener('change', (event) => {
+      this.selectedRoadGuideId = (event.target as HTMLSelectElement).value;
+      this.renderMapInspector();
+    });
+    host.querySelector<HTMLInputElement>('[data-road-guide-width]')?.addEventListener('change', (event) => {
+      this.updateRoadGuide(this.selectedRoadGuideId, {
+        width: Number((event.target as HTMLInputElement).value)
+      });
+    });
+    host.querySelector<HTMLSelectElement>('[data-road-guide-curve]')?.addEventListener('change', (event) => {
+      this.updateRoadGuide(this.selectedRoadGuideId, {
+        curve: (event.target as HTMLSelectElement).value as MapGuideCurve
+      });
+    });
+    host.querySelector<HTMLSelectElement>('[data-road-guide-material]')?.addEventListener('change', (event) => {
+      this.updateRoadGuide(this.selectedRoadGuideId, {}, (event.target as HTMLSelectElement).value as Exclude<TerrainSurfaceRecipe, 'default'>);
+    });
+    host.querySelectorAll<HTMLInputElement>('[data-road-point]').forEach((input) => {
+      input.addEventListener('change', () => {
+        const guide = this.state.map?.guides.find((item) => item.id === this.selectedRoadGuideId);
+        const pointIndex = Number(input.dataset.roadPoint);
+        const axis = Number(input.dataset.axis);
+        const value = Number(input.value);
+        if (!guide || !Number.isInteger(pointIndex) || (axis !== 0 && axis !== 1) || !Number.isFinite(value)) return;
+        const points = guide.points.map((point) => [...point] as [number, number]);
+        points[pointIndex][axis] = value;
+        this.updateRoadGuide(guide.id, { points });
+      });
+    });
+    host.querySelectorAll<HTMLButtonElement>('[data-road-remove-point]').forEach((button) => {
+      button.addEventListener('click', () => {
+        const guide = this.state.map?.guides.find((item) => item.id === this.selectedRoadGuideId);
+        const pointIndex = Number(button.dataset.roadRemovePoint);
+        if (!guide || guide.points.length <= 2 || !Number.isInteger(pointIndex)) return;
+        this.updateRoadGuide(guide.id, { points: guide.points.filter((_, index) => index !== pointIndex) });
+      });
+    });
+    host.querySelector<HTMLButtonElement>('[data-road-add-point]')?.addEventListener('click', () => {
+      const guide = this.state.map?.guides.find((item) => item.id === this.selectedRoadGuideId);
+      if (!guide) return;
+      const last = guide.points.at(-1)!;
+      const previous = guide.points.at(-2)!;
+      this.updateRoadGuide(guide.id, {
+        points: [...guide.points, [last[0] + (last[0] - previous[0]), last[1] + (last[1] - previous[1])]]
+      });
+    });
+    host.querySelector<HTMLButtonElement>('[data-road-delete]')?.addEventListener('click', () => {
+      this.deleteRoadGuide(this.selectedRoadGuideId);
     });
     host.querySelector('[data-terrain-preview-base]')?.addEventListener('click', () => void this.previewTerrainBase());
     host.querySelector('[data-terrain-reroll]')?.addEventListener('click', () => {
@@ -3806,6 +4071,140 @@ class MapEditor {
     `;
   }
 
+  private selectColorPalette(id: string): void {
+    this.selectedPaletteId = id;
+    const palette = this.state.colorPalettes.find((entry) => entry.id === id) ?? null;
+    this.paletteDraft = palette ? structuredClone(palette) : null;
+    this.paletteDraftChanged = false;
+  }
+
+  private applySelectedColorPalette(): void {
+    if (!this.paletteDraft || this.paletteDraftChanged) return;
+    if (!this.renderDraft) this.resetRenderDraft();
+    if (!this.renderDraft) return;
+    this.renderDraft.paletteId = this.paletteDraft.id;
+    this.renderDraft.paletteSnapshot = structuredClone(this.paletteDraft);
+    this.state.message = `已预览色卡“${this.paletteDraft.name}”；保存渲染方案后会形成不可变引用`;
+    this.markRenderDraftChanged(true);
+    this.renderRenderInspector();
+  }
+
+  private clearRenderColorPalette(): void {
+    if (!this.renderDraft) this.resetRenderDraft();
+    if (!this.renderDraft) return;
+    delete this.renderDraft.paletteId;
+    delete this.renderDraft.paletteSnapshot;
+    this.state.message = '已从当前渲染方案预览中移除色卡';
+    this.markRenderDraftChanged(true);
+    this.renderRenderInspector();
+  }
+
+  private async importColorPalette(): Promise<void> {
+    const colors = parseHexPalette(this.paletteImportText);
+    if (colors.length < 2 || colors.length > 256 || this.state.busy) {
+      this.state.message = '色卡需要包含 2–256 个不重复的六位 HEX 颜色';
+      this.updateToolbarState();
+      return;
+    }
+    this.setBusy(true, '正在创建色卡...');
+    try {
+      const { colorPalette } = await editorFetch<{ colorPalette: ColorPalette }>('/api/editor/color-palettes', {
+        method: 'POST',
+        body: JSON.stringify({ name: this.paletteImportName.trim() || '未命名色卡', colors })
+      });
+      await this.reloadLists();
+      this.selectColorPalette(colorPalette.id);
+      this.state.message = `已创建 ${colorPalette.colors.length} 色色卡“${colorPalette.name}”`;
+    } catch (error) {
+      this.state.message = `色卡创建失败：${error instanceof Error ? error.message : '未知错误'}`;
+    } finally {
+      this.setBusy(false);
+      this.renderPanels();
+    }
+  }
+
+  private async readPaletteImage(file: File): Promise<void> {
+    try {
+      const colors = await extractPaletteColorsFromImage(file, 64);
+      this.paletteImportText = colors.join(', ');
+      if (!this.paletteImportName.trim() || this.paletteImportName === '街区色卡') {
+        this.paletteImportName = file.name.replace(/\.[^.]+$/, '').slice(0, 60) || '图片色卡';
+      }
+      this.state.message = `已从图片提取 ${colors.length} 个候选颜色；确认后点击创建色卡`;
+      this.renderRenderInspector();
+      this.updateToolbarState();
+    } catch (error) {
+      this.state.message = `图片色卡读取失败：${error instanceof Error ? error.message : '未知错误'}`;
+      this.updateToolbarState();
+    }
+  }
+
+  private async saveColorPaletteVersion(): Promise<void> {
+    if (!this.paletteDraft || !this.paletteDraftChanged || this.state.busy) return;
+    this.setBusy(true, '正在保存色卡新版本...');
+    try {
+      const draft = normalizeColorPalette({
+        ...this.paletteDraft,
+        name: `${this.paletteDraft.name} 新版本`
+      });
+      const { colorPalette } = await editorFetch<{ colorPalette: ColorPalette }>('/api/editor/color-palettes', {
+        method: 'POST',
+        body: JSON.stringify(draft)
+      });
+      await this.reloadLists();
+      this.selectColorPalette(colorPalette.id);
+      this.state.message = `已另存不可变色卡版本“${colorPalette.name}”`;
+    } catch (error) {
+      this.state.message = `色卡保存失败：${error instanceof Error ? error.message : '未知错误'}`;
+    } finally {
+      this.setBusy(false);
+      this.renderPanels();
+    }
+  }
+
+  private renderColorPalettePanel(open: boolean): string {
+    const palette = this.paletteDraft;
+    const applied = Boolean(this.renderDraft?.paletteSnapshot);
+    const coverage = this.renderedMap?.getColorPaletteCoverage();
+    const paletteOptions = this.state.colorPalettes.map((entry) => (
+      `<option value="${escapeHtml(entry.id)}" ${entry.id === this.selectedPaletteId ? 'selected' : ''}>${escapeHtml(entry.name)} · ${entry.colors.length} 色</option>`
+    )).join('');
+    return `
+      <details class="inspector-disclosure color-palette-panel" data-inspector-section="color-palette" ${open ? 'open' : ''}>
+        <summary><span><b>场景色卡</b><small>${palette ? `${palette.colors.length} 色 · ${applied ? '已套用' : '待套用'}` : '导入或选择'}</small></span></summary>
+        <section class="editor-section inspector-body">
+          <label class="field compact"><span>已有色卡</span><select id="render-color-palette"><option value="">未选择</option>${paletteOptions}</select></label>
+          ${palette ? `
+            <div class="palette-swatches" aria-label="${escapeHtml(palette.name)} 色样">
+              ${palette.colors.map((color) => `<button type="button" class="palette-swatch ${palette.lockedColors.includes(color.hex) ? 'locked' : ''}" data-palette-lock="${color.hex}" style="--palette-color:${color.hex}" title="${color.hex}${color.token ? ` · ${escapeHtml(color.token)}` : ''}"><span>${color.hex}</span></button>`).join('')}
+            </div>
+            <p class="empty inspector-note">点击色块锁定/解锁。锁定色会保留在当前版本中；材质物理属性不会被替换。</p>
+            <details class="inspector-disclosure compact">
+              <summary><span><b>语义分组与排除项</b><small>${this.paletteDraftChanged ? '有未保存修改' : '自动分组已就绪'}</small></span></summary>
+              <div class="inspector-body palette-role-grid">
+                ${COLOR_PALETTE_ROLES.map((role) => `<label class="field compact"><span>${paletteRoleLabel(role)}</span><select multiple size="3" data-palette-role="${role}">${palette.colors.map((color) => `<option value="${color.hex}" ${palette.roles[role].includes(color.hex) ? 'selected' : ''}>${color.hex}${color.token ? ` · ${escapeHtml(color.token)}` : ''}</option>`).join('')}</select></label>`).join('')}
+                <label class="field compact"><span>排除资产 ID（逗号分隔）</span><input id="palette-excluded-assets" value="${escapeHtml(palette.excludedAssetIds.join(', '))}" /></label>
+                <label class="field compact"><span>排除资产标签（逗号分隔）</span><input id="palette-excluded-tags" value="${escapeHtml(palette.excludedTags.join(', '))}" /></label>
+                <div class="map-ai-controls"><button id="auto-group-palette" class="secondary">重新自动分组</button><button id="save-palette-version" ${this.paletteDraftChanged ? '' : 'disabled'}>另存为新版本</button></div>
+              </div>
+            </details>
+            <div class="map-ai-controls"><button id="apply-color-palette" ${this.paletteDraftChanged ? 'disabled title="请先另存色卡版本"' : ''}>套用到当前渲染方案</button><button id="clear-color-palette" class="secondary">移除当前方案色卡</button></div>
+            ${coverage ? `<p class="empty">覆盖报告：严格 ${coverage.strictMaterials} · 近似贴图 ${coverage.approximateMaterials} · 技术材质 ${coverage.technicalMaterials} · 未匹配 ${coverage.unmatchedMaterials} · 使用 ${coverage.usedColors.length} 色</p>` : ''}
+          ` : '<p class="empty">暂无可复用色卡。可从 HEX 文本或图片创建。</p>'}
+          <details class="inspector-disclosure compact">
+            <summary><span><b>导入新色卡</b><small>2–256 色</small></span></summary>
+            <div class="inspector-body">
+              <label class="field compact"><span>名称</span><input id="palette-import-name" maxlength="60" value="${escapeHtml(this.paletteImportName)}" /></label>
+              <label class="field compact"><span>HEX 列表</span><textarea id="palette-import-text" rows="4" placeholder="#E7C393, #52362E, #76D0F2">${escapeHtml(this.paletteImportText)}</textarea></label>
+              <label class="field compact"><span>从图片提取（最多 64 色）</span><input id="palette-import-image" type="file" accept="image/*" /></label>
+              <button id="import-color-palette">创建色卡</button>
+            </div>
+          </details>
+        </section>
+      </details>
+    `;
+  }
+
   private renderRenderInspector(): void {
     const host = this.app.querySelector<HTMLElement>('#render-inspector');
     if (!host) return;
@@ -3823,6 +4222,7 @@ class MapEditor {
     const renderAiOpen = host.querySelector<HTMLDetailsElement>('[data-inspector-section="render-ai"]')?.open ?? true;
     const schemeLibraryOpen = host.querySelector<HTMLDetailsElement>('[data-inspector-section="scheme-library"]')?.open ?? true;
     const renderTuningOpen = host.querySelector<HTMLDetailsElement>('[data-inspector-section="render-tuning"]')?.open ?? false;
+    const colorPaletteOpen = host.querySelector<HTMLDetailsElement>('[data-inspector-section="color-palette"]')?.open ?? false;
     host.innerHTML = `
       ${draft && this.developerMode ? this.renderDeveloperPresetEditor(draft) : ''}
       <details class="inspector-disclosure" data-inspector-section="render-ai" ${renderAiOpen || this.state.busy || Boolean(this.renderAiPreview) ? 'open' : ''}>
@@ -3875,6 +4275,7 @@ class MapEditor {
           </div>
         </section>
       ` : ''}
+      ${this.renderColorPalettePanel(colorPaletteOpen)}
       <details class="inspector-disclosure scheme-library" data-inspector-section="scheme-library" ${schemeLibraryOpen ? 'open' : ''}>
         <summary><span><b>方案库</b><small>${this.state.renderSchemes.length} 个方案</small></span></summary>
         <section class="editor-section inspector-body">
@@ -3917,6 +4318,70 @@ class MapEditor {
         </details>
       ` : ''}
     `;
+    host.querySelector<HTMLSelectElement>('#render-color-palette')?.addEventListener('change', (event) => {
+      this.selectColorPalette((event.target as HTMLSelectElement).value);
+      this.renderRenderInspector();
+    });
+    host.querySelectorAll<HTMLButtonElement>('[data-palette-lock]').forEach((button) => {
+      button.addEventListener('click', () => {
+        const hex = button.dataset.paletteLock;
+        if (!hex || !this.paletteDraft) return;
+        const locks = new Set(this.paletteDraft.lockedColors);
+        if (locks.has(hex)) locks.delete(hex);
+        else locks.add(hex);
+        this.paletteDraft.lockedColors = [...locks];
+        this.paletteDraftChanged = true;
+        this.renderRenderInspector();
+      });
+    });
+    host.querySelectorAll<HTMLSelectElement>('[data-palette-role]').forEach((input) => {
+      input.addEventListener('change', () => {
+        const role = input.dataset.paletteRole as ColorPaletteRole;
+        if (!this.paletteDraft || !COLOR_PALETTE_ROLES.includes(role)) return;
+        this.paletteDraft.roles[role] = [...input.selectedOptions].map((option) => option.value);
+        this.paletteDraftChanged = true;
+        this.renderRenderInspector();
+      });
+    });
+    const updatePaletteExclusions = (): void => {
+      if (!this.paletteDraft) return;
+      this.paletteDraft.excludedAssetIds = splitPaletteTokens(host.querySelector<HTMLInputElement>('#palette-excluded-assets')?.value);
+      this.paletteDraft.excludedTags = splitPaletteTokens(host.querySelector<HTMLInputElement>('#palette-excluded-tags')?.value);
+      this.paletteDraftChanged = true;
+    };
+    host.querySelector<HTMLInputElement>('#palette-excluded-assets')?.addEventListener('change', () => {
+      updatePaletteExclusions();
+      this.renderRenderInspector();
+    });
+    host.querySelector<HTMLInputElement>('#palette-excluded-tags')?.addEventListener('change', () => {
+      updatePaletteExclusions();
+      this.renderRenderInspector();
+    });
+    host.querySelector('#auto-group-palette')?.addEventListener('click', () => {
+      if (!this.paletteDraft) return;
+      const automatic = autoAssignPaletteRoles(this.paletteDraft.colors);
+      for (const role of COLOR_PALETTE_ROLES) {
+        const locked = this.paletteDraft.roles[role].filter((hex) => this.paletteDraft?.lockedColors.includes(hex));
+        automatic[role] = [...new Set([...locked, ...automatic[role]])];
+      }
+      this.paletteDraft.roles = automatic;
+      this.paletteDraftChanged = true;
+      this.renderRenderInspector();
+    });
+    host.querySelector('#save-palette-version')?.addEventListener('click', () => void this.saveColorPaletteVersion());
+    host.querySelector('#apply-color-palette')?.addEventListener('click', () => this.applySelectedColorPalette());
+    host.querySelector('#clear-color-palette')?.addEventListener('click', () => this.clearRenderColorPalette());
+    host.querySelector<HTMLInputElement>('#palette-import-name')?.addEventListener('input', (event) => {
+      this.paletteImportName = (event.target as HTMLInputElement).value;
+    });
+    host.querySelector<HTMLTextAreaElement>('#palette-import-text')?.addEventListener('input', (event) => {
+      this.paletteImportText = (event.target as HTMLTextAreaElement).value;
+    });
+    host.querySelector<HTMLInputElement>('#palette-import-image')?.addEventListener('change', (event) => {
+      const file = (event.target as HTMLInputElement).files?.[0];
+      if (file) void this.readPaletteImage(file);
+    });
+    host.querySelector('#import-color-palette')?.addEventListener('click', () => void this.importColorPalette());
     host.querySelectorAll<HTMLButtonElement>('[data-dev-view]').forEach((button) => {
       button.addEventListener('click', () => {
         this.developerRenderView = button.dataset.devView === 'access' ? 'access' : 'tuning';
@@ -4098,6 +4563,12 @@ class MapEditor {
         if (!this.state.map) return;
         this.state.map.renderSchemeId = button.dataset.renderScheme ?? null;
         this.resetRenderDraft();
+        const palette = this.renderDraft?.paletteSnapshot
+          ?? this.state.colorPalettes.find((entry) => entry.id === this.renderDraft?.paletteId)
+          ?? null;
+        this.selectedPaletteId = palette?.id ?? '';
+        this.paletteDraft = palette ? structuredClone(palette) : null;
+        this.paletteDraftChanged = false;
         this.markDirty(true, false);
         this.applyCurrentRenderScheme();
         this.renderRenderInspector();
@@ -4963,10 +5434,16 @@ class MapEditor {
     }
     this.renderedMap = next;
     this.scene.add(next.group);
+    this.updateRoadGuideHelperVisibility();
     this.renderScene?.attach(next);
     this.applyRoomWallDisplayMode();
     this.attachSelectedTransform();
     this.applyCurrentRenderScheme();
+  }
+
+  private updateRoadGuideHelperVisibility(): void {
+    const helpers = this.renderedMap?.group.getObjectByName('road-guide-helpers');
+    if (helpers) helpers.visible = this.state.tool === 'terrain' && this.state.terrainAction === 'road';
   }
 
   private handlePointer(event: PointerEvent, first: boolean): void {
@@ -4975,6 +5452,27 @@ class MapEditor {
     if (this.mapAiPreviewMap) return;
     if (event.altKey) return;
     if (first && event.button !== 0) return;
+    if (first && this.state.tool === 'terrain' && this.state.terrainAction === 'road') {
+      const nodeHit = roadGuidePointHit(this.raycast(event));
+      if (nodeHit) {
+        this.draggingRoadPoint = {
+          guideId: nodeHit.object.userData.mapGuideId as string,
+          pointIndex: Number(nodeHit.object.userData.mapGuidePointIndex),
+          mesh: nodeHit.object
+        };
+        this.beginHistoryGesture();
+        event.preventDefault();
+        return;
+      }
+    }
+    if (!first && this.draggingRoadPoint) {
+      if ((event.buttons & 1) !== 0) {
+        const hit = groundSurfaceHit(this.raycast(event));
+        if (hit) this.moveRoadGuidePoint(hit.point.x, hit.point.z);
+      }
+      event.preventDefault();
+      return;
+    }
     const hoverOnly = !first && event.buttons === 0;
     if (hoverOnly) {
       const hits = this.raycast(event);
@@ -5029,8 +5527,13 @@ class MapEditor {
     this.updateBrushPreview(hit);
     if (this.state.tool === 'terrain' && this.state.terrainAction !== 'brush') {
       const point: [number, number] = [hit.point.x, hit.point.z];
+      if (this.state.terrainAction === 'road' && event.shiftKey && this.terrainGesturePoints.length > 0) {
+        this.terrainGesturePoints = [this.terrainGesturePoints[0], point];
+        return;
+      }
       const previous = this.terrainGesturePoints[this.terrainGesturePoints.length - 1];
-      if (!previous || Math.hypot(previous[0] - point[0], previous[1] - point[1]) >= Math.max(0.15, this.state.terrainSize * 0.2)) {
+      const gestureSize = this.state.terrainAction === 'road' ? this.state.terrainRoadWidth : this.state.terrainSize;
+      if (!previous || Math.hypot(previous[0] - point[0], previous[1] - point[1]) >= Math.max(0.15, gestureSize * 0.2)) {
         this.terrainGesturePoints.push(point);
       }
       return;
@@ -5102,7 +5605,7 @@ class MapEditor {
       ? hit.face.normal.clone().transformDirection(hit.object.matrixWorld)
       : new THREE.Vector3(0, 1, 0);
     const radius = this.state.tool === 'terrain'
-      ? this.state.terrainSize
+      ? this.state.terrainAction === 'road' ? this.state.terrainRoadWidth / 2 : this.state.terrainSize
       : this.state.tool === 'grass'
         ? this.grassEditorState.brushSize
         : this.state.brushSize;
@@ -5944,6 +6447,7 @@ class MapEditor {
   };
 
   private handleGlobalPointerEnd = (): void => {
+    const roadPointDrag = this.draggingRoadPoint;
     const shouldPreviewTerrainGesture = this.painting
       && this.state.tool === 'terrain'
       && this.state.terrainAction !== 'brush'
@@ -5952,7 +6456,20 @@ class MapEditor {
     this.terrainFlattenHeight = null;
     this.transformPointerActive = false;
     if (this.orbit) this.orbit.mouseButtons.LEFT = null;
+    if (roadPointDrag && this.state.map) {
+      const clearance = compileMapNaturalClearance(this.mapWithEditorAssets(this.state.map));
+      if (clearance.length > 0) this.state.map = applyMapOperations(this.state.map, clearance);
+      this.draggingRoadPoint = null;
+      this.state.message = clearance.length > 0
+        ? `道路控制点已更新，并清理 ${clearance.length} 个自然装饰`
+        : '道路控制点已更新';
+    }
     this.endHistoryGesture();
+    if (roadPointDrag) {
+      void this.refreshScene();
+      this.renderPanels();
+      return;
+    }
     if (shouldPreviewTerrainGesture) void this.previewTerrainGesture();
   };
 
@@ -6227,6 +6744,102 @@ function terrainSurfaceLabel(value: TerrainSurfaceKind): string {
   return ({ grass: '草地', sand: '沙地', rock: '岩地', soil: '土壤', paving: '铺装' } as const)[value];
 }
 
+function terrainSurfaceRecipeLabel(value: TerrainSurfaceRecipe): string {
+  return ({
+    default: '通用铺装',
+    'compacted-earth': '压实泥土小径',
+    'garden-stone': '园林石板路',
+    asphalt: '现代沥青路',
+    concrete: '混凝土人行道',
+    'brick-paver': '砖石铺地',
+    cobblestone: '鹅卵石路',
+    gravel: '碎石路',
+    mud: '泥地小路'
+  } as const)[value];
+}
+
+function roadZoneId(guideId: string): string {
+  return `manual:route:${guideId}`;
+}
+
+function roadZoneForGuide(map: EditableMap, guideId: string): EditableMap['visualSemantics']['zones'][number] | null {
+  const exactIds = new Set([roadZoneId(guideId), `code:route:${guideId}`, `scene-program:${guideId}`]);
+  const exact = map.visualSemantics.zones.find((zone) => exactIds.has(zone.id));
+  if (exact) return exact;
+  const guide = map.guides.find((item) => item.id === guideId);
+  if (!guide) return null;
+  return map.visualSemantics.zones.find((zone) => {
+    const region = zone.region;
+    return region?.kind === 'path'
+      && Math.abs(region.width - guide.width) < 0.001
+      && region.points.length === guide.points.length
+      && region.points.every((point, index) => (
+        Math.hypot(point[0] - guide.points[index][0], point[1] - guide.points[index][1]) < 0.001
+      ));
+  }) ?? null;
+}
+
+function renderRoadGuideEditor(
+  guides: readonly MapGuide[],
+  selected: MapGuide | null,
+  material: TerrainSurfaceRecipe = 'default'
+): string {
+  if (guides.length === 0 || !selected) return '<p class="empty">当前地图还没有道路；绘制并应用后可在这里编辑控制点。</p>';
+  return `
+    <details class="inspector-disclosure compact" open>
+      <summary><span><b>已应用道路</b><small>${guides.length} 条</small></span></summary>
+      <label class="field compact"><span>道路</span><select data-road-guide-select>
+        ${guides.map((guide) => `<option value="${escapeHtml(guide.id)}" ${guide.id === selected.id ? 'selected' : ''}>${escapeHtml(guide.name)}</option>`).join('')}
+      </select></label>
+      <label class="field compact"><span>材质</span><select data-road-guide-material>
+        ${TERRAIN_SURFACE_RECIPES.map((recipe) => `<option value="${recipe}" ${material === recipe ? 'selected' : ''}>${terrainSurfaceRecipeLabel(recipe)}</option>`).join('')}
+      </select></label>
+      <label class="field compact"><span>线形</span><select data-road-guide-curve>
+        <option value="catmull-rom" ${selected.curve === 'catmull-rom' ? 'selected' : ''}>平滑曲线</option>
+        <option value="polyline" ${selected.curve === 'polyline' ? 'selected' : ''}>折线</option>
+      </select></label>
+      <label class="field compact"><span>宽度</span><input data-road-guide-width type="number" min="0.6" max="12" step="0.1" value="${selected.width.toFixed(1)}" /></label>
+      <div class="map-ai-controls">
+        <button type="button" class="secondary small" data-road-add-point>延长一个控制点</button>
+        <button type="button" class="secondary small danger" data-road-delete>删除道路</button>
+      </div>
+      <div class="asset-library-zones">
+        ${selected.points.map((point, index) => `
+          <div class="triple">
+            <label><span>P${index + 1} X</span><input data-road-point="${index}" data-axis="0" type="number" step="0.1" value="${point[0].toFixed(2)}" /></label>
+            <label><span>P${index + 1} Z</span><input data-road-point="${index}" data-axis="1" type="number" step="0.1" value="${point[1].toFixed(2)}" /></label>
+            <button type="button" class="secondary small" data-road-remove-point="${index}" ${selected.points.length <= 2 ? 'disabled' : ''}>删除点</button>
+          </div>
+        `).join('')}
+      </div>
+    </details>
+  `;
+}
+
+function roadSmoothingOperations(
+  map: EditableMap,
+  points: Array<[number, number]>,
+  width: number,
+  curve: MapGuideCurve
+): MapOperation[] {
+  const guide: MapGuide = {
+    id: 'road-smoothing', name: 'road-smoothing', points,
+    curve, closed: false, width, tags: []
+  };
+  const samples = sampleMapGuide(guide, { spacing: Math.max(0.8, width * 0.55) }).slice(0, 48);
+  const heights = samples.map((sample) => sampleTerrainHeight(map, sample.x, sample.z));
+  return samples.map((sample, index): MapOperation => ({
+    type: 'terrain.brush',
+    mode: 'flatten',
+    point: [sample.x, heights[index], sample.z],
+    size: Math.max(0.4, width * 0.62),
+    strength: 0.28,
+    targetHeight: (
+      (heights[index - 1] ?? heights[index]) + heights[index] + (heights[index + 1] ?? heights[index])
+    ) / 3
+  }));
+}
+
 function terrainCliffLayoutLabel(value: TerrainCliffLayout): string {
   return ({ plateau: '台地', coast: '海岸峭壁', canyon: '峡谷壁', wall: '独立岩壁', terraces: '多层断崖' } as const)[value];
 }
@@ -6314,6 +6927,13 @@ export function shouldPromoteLiveMapPreview(previousObjectCount: number, candida
 
 function surfaceHit(hits: THREE.Intersection[]): THREE.Intersection | null {
   return hits.find((item) => findMapSurface(item.object)) ?? null;
+}
+
+function roadGuidePointHit(hits: THREE.Intersection[]): THREE.Intersection | null {
+  return hits.find((item) => (
+    typeof item.object.userData.mapGuideId === 'string'
+    && Number.isInteger(item.object.userData.mapGuidePointIndex)
+  )) ?? null;
 }
 
 function groundSurfaceHit(hits: THREE.Intersection[]): THREE.Intersection | null {
@@ -6434,6 +7054,65 @@ function atmosphereMasterStrength(scheme: RenderScheme): number {
   return typeof value === 'number'
     ? value
     : scheme.renderPlan?.visualDirection?.atmosphereFx.masterStrength ?? 0.35;
+}
+
+function paletteRoleLabel(role: ColorPaletteRole): string {
+  return ({
+    'building.wall': '建筑墙面',
+    'building.roof': '建筑屋顶',
+    'building.trim': '建筑装饰',
+    'building.window': '建筑窗户',
+    'terrain.ground': '地面',
+    'terrain.road': '道路',
+    'terrain.rock': '岩石',
+    'vegetation.grass': '草地',
+    'vegetation.foliage': '树木与叶片',
+    water: '水体',
+    'environment.sky': '天空',
+    'environment.fog': '雾',
+    lighting: '灯光',
+    effect: '特效'
+  } satisfies Record<ColorPaletteRole, string>)[role];
+}
+
+function splitPaletteTokens(value?: string): string[] {
+  return [...new Set((value ?? '').split(/[,，\n]/).map((entry) => entry.trim().toLowerCase()).filter(Boolean))].slice(0, 128);
+}
+
+async function extractPaletteColorsFromImage(file: File, maxColors: number): Promise<string[]> {
+  const bitmap = await createImageBitmap(file);
+  try {
+    const scale = Math.min(1, 256 / Math.max(bitmap.width, bitmap.height));
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.max(1, Math.round(bitmap.width * scale));
+    canvas.height = Math.max(1, Math.round(bitmap.height * scale));
+    const context = canvas.getContext('2d', { willReadFrequently: true });
+    if (!context) throw new Error('canvas_unavailable');
+    context.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+    const pixels = context.getImageData(0, 0, canvas.width, canvas.height).data;
+    const buckets = new Map<number, { count: number; r: number; g: number; b: number }>();
+    for (let index = 0; index < pixels.length; index += 4) {
+      if (pixels[index + 3] < 128) continue;
+      const r = pixels[index];
+      const g = pixels[index + 1];
+      const b = pixels[index + 2];
+      const key = (r >> 3) << 10 | (g >> 3) << 5 | (b >> 3);
+      const bucket = buckets.get(key) ?? { count: 0, r: 0, g: 0, b: 0 };
+      bucket.count += 1;
+      bucket.r += r;
+      bucket.g += g;
+      bucket.b += b;
+      buckets.set(key, bucket);
+    }
+    const colors = [...buckets.values()]
+      .sort((left, right) => right.count - left.count)
+      .slice(0, Math.min(256, Math.max(2, maxColors)))
+      .map((bucket) => `#${[bucket.r, bucket.g, bucket.b].map((sum) => Math.round(sum / bucket.count).toString(16).padStart(2, '0')).join('')}`.toUpperCase());
+    if (colors.length < 2) throw new Error('image_requires_at_least_two_colors');
+    return colors;
+  } finally {
+    bitmap.close();
+  }
 }
 
 function escapeHtml(value: string): string {

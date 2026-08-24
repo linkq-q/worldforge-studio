@@ -1,6 +1,10 @@
 import * as THREE from 'three';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { buildEditableMapGroup, buildStructuredWaterGroup } from '../src/client/mapRenderer';
+import {
+  buildEditableMapGroup,
+  buildStructuredWaterGroup,
+  terrainNormalPixelsFromHeight
+} from '../src/client/mapRenderer';
 import { createEmptyMap } from '../src/shared/map';
 import { applyMapOperations } from '../src/shared/mapOperations';
 import type { MapAsset } from '../src/shared/map';
@@ -22,6 +26,28 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
+describe('terrain normal generation', () => {
+  it('converts height changes into a non-flat tangent-space normal', () => {
+    const heightPixels = new Uint8ClampedArray(3 * 3 * 4);
+    for (let y = 0; y < 3; y += 1) {
+      for (let x = 0; x < 3; x += 1) {
+        const offset = (y * 3 + x) * 4;
+        heightPixels[offset] = x * 100;
+        heightPixels[offset + 1] = x * 100;
+        heightPixels[offset + 2] = x * 100;
+        heightPixels[offset + 3] = 255;
+      }
+    }
+
+    const normals = terrainNormalPixelsFromHeight(heightPixels, 3, 3, 4);
+    const center = (1 * 3 + 1) * 4;
+    expect(normals[center]).toBeLessThan(128);
+    expect(normals[center + 1]).toBe(128);
+    expect(normals[center + 2]).toBeGreaterThan(128);
+    expect(normals[center + 3]).toBe(255);
+  });
+});
+
 describe('structured map water rendering', () => {
   it('renders the map as an open terrain plane without enclosure faces', async () => {
     const rendered = await buildEditableMapGroup(createEmptyMap('open-map', 'map-open-plane'));
@@ -39,9 +65,18 @@ describe('structured map water rendering', () => {
     expect(material.side).toBe(THREE.FrontSide);
     expect(material.vertexColors).toBe(true);
     expect(material.roughness).toBe(1);
+    expect((material.map?.image as { width: number }).width).toBe(1536);
     expect(material.roughnessMap).toBeInstanceOf(THREE.CanvasTexture);
     expect(material.bumpMap).toBeInstanceOf(THREE.CanvasTexture);
-    expect(material.bumpScale).toBeGreaterThan(0);
+    expect(material.normalMap).toBeInstanceOf(THREE.CanvasTexture);
+    expect((material.roughnessMap?.image as { width: number }).width).toBe(1536);
+    expect((material.bumpMap?.image as { width: number }).width).toBe(1536);
+    expect((material.normalMap?.image as { width: number }).width).toBe(1536);
+    expect(material.bumpScale).toBeGreaterThanOrEqual(0.1);
+    expect(material.normalMapType).toBe(THREE.TangentSpaceNormalMap);
+    expect(material.normalScale.x).toBeGreaterThan(1);
+    expect(material.normalScale.y).toBeGreaterThan(1);
+    expect(terrain.userData.terrainTextureChannels).toContain('normal');
     expect(terrain.geometry.getAttribute('color').count).toBe(terrain.geometry.getAttribute('position').count);
     rendered.dispose();
   });
@@ -418,6 +453,80 @@ describe('structured map water rendering', () => {
     rendered.dispose();
   });
 
+  it('shows editable road control points only when editor helpers are requested', async () => {
+    const map = applyMapOperations(createEmptyMap('road helpers'), [{
+      type: 'guide.upsert',
+      guide: {
+        id: 'main-road', name: 'Main road', points: [[-8, 0], [0, 3], [8, 0]],
+        curve: 'catmull-rom', closed: false, width: 4, tags: ['route', 'street']
+      }
+    }]);
+    const editor = await buildEditableMapGroup(map, { editorHelpers: true });
+    const viewer = await buildEditableMapGroup(map);
+
+    const helper = editor.group.getObjectByName('road-guide-helpers');
+    expect(helper?.children.filter((child) => child.userData.mapGuidePointIndex !== undefined)).toHaveLength(3);
+    expect(editor.pickables.some((object) => object.userData.mapGuideId === 'main-road')).toBe(true);
+    expect(viewer.group.getObjectByName('road-guide-helpers')).toBeUndefined();
+
+    editor.dispose();
+    viewer.dispose();
+  });
+
+  it('draws fine asphalt grain and cut-stone sidewalks without ink-like blobs', async () => {
+    const strokes: Array<{ dash: number[]; style: unknown }> = [];
+    const fillRects: number[][] = [];
+    let strokeRects = 0;
+    let ellipses = 0;
+    const state: Record<PropertyKey, unknown> = { dash: [] };
+    const stack: Array<Record<PropertyKey, unknown>> = [];
+    const context = new Proxy({
+      save: () => stack.push({ ...state }),
+      restore: () => Object.assign(state, stack.pop() ?? {}),
+      setLineDash: (dash: number[]) => { state.dash = [...dash]; },
+      stroke: () => strokes.push({ dash: [...(state.dash as number[])], style: state.strokeStyle }),
+      fillRect: (...args: number[]) => fillRects.push(args),
+      strokeRect: () => { strokeRects += 1; },
+      ellipse: () => { ellipses += 1; },
+      createRadialGradient: () => ({ addColorStop: () => undefined })
+    }, {
+      get: (target, property) => property in target
+        ? Reflect.get(target, property)
+        : state[property] ?? (() => undefined),
+      set: (_target, property, value) => {
+        state[property] = value;
+        return true;
+      }
+    }) as unknown as CanvasRenderingContext2D;
+    vi.stubGlobal('document', {
+      createElement: () => ({ width: 0, height: 0, getContext: () => context })
+    });
+    const map = applyMapOperations(createEmptyMap('street material detail'), [
+      {
+        type: 'terrain.surface',
+        surface: 'paving',
+        material: 'asphalt',
+        region: { kind: 'path', points: [[-20, 0], [20, 0]], width: 8 },
+        zoneId: 'code:route:main-road'
+      },
+      {
+        type: 'terrain.surface',
+        surface: 'paving',
+        material: 'concrete',
+        region: { kind: 'path', points: [[-20, 8], [20, 8]], width: 2.6 },
+        zoneId: 'code:route:sidewalk'
+      }
+    ]);
+
+    const rendered = await buildEditableMapGroup(map);
+
+    expect(ellipses).toBe(0);
+    expect(fillRects.filter(([, , width, height]) => width <= 2 && height <= 2).length).toBeGreaterThan(100);
+    expect(strokeRects).toBeGreaterThan(20);
+    expect(strokes.some((stroke) => stroke.dash.length === 2)).toBe(true);
+    rendered.dispose();
+  });
+
   it('applies terrain recipes and snow to upward model surfaces', async () => {
     const rendered = await buildEditableMapGroup(createEmptyMap('weather-surface', 'map-weather-surface'));
     const terrain = rendered.group.getObjectByName('terrain') as THREE.Mesh;
@@ -425,6 +534,7 @@ describe('structured map water rendering', () => {
     const firstTexture = terrainMaterial.map;
     const firstRoughness = terrainMaterial.roughnessMap;
     const firstBump = terrainMaterial.bumpMap;
+    const firstNormal = terrainMaterial.normalMap;
     const roofMaterial = new THREE.MeshStandardMaterial({ color: '#70452f', roughness: 0.7 });
     const roof = new THREE.Mesh(new THREE.BoxGeometry(2, 0.3, 2), roofMaterial);
     rendered.modelsRoot.add(roof);
@@ -435,6 +545,7 @@ describe('structured map water rendering', () => {
     expect(terrainMaterial.map).not.toBe(firstTexture);
     expect(terrainMaterial.roughnessMap).not.toBe(firstRoughness);
     expect(terrainMaterial.bumpMap).not.toBe(firstBump);
+    expect(terrainMaterial.normalMap).not.toBe(firstNormal);
     expect(terrain.userData.terrainMaterialStyle).toEqual({
       detailStrength: 1,
       soilRecipe: 'moist',
@@ -581,6 +692,7 @@ describe('terrain-only refresh', () => {
     const firstTexture = material.map;
     const firstRoughness = material.roughnessMap;
     const firstBump = material.bumpMap;
+    const firstNormal = material.normalMap;
     const firstIndex = rendered.runtimeIndex;
 
     map.terrain.heights = map.terrain.heights.map(() => 3);
@@ -594,6 +706,7 @@ describe('terrain-only refresh', () => {
     expect(material.map).not.toBe(firstTexture);
     expect(material.roughnessMap).not.toBe(firstRoughness);
     expect(material.bumpMap).not.toBe(firstBump);
+    expect(material.normalMap).not.toBe(firstNormal);
     expect(rendered.runtimeIndex).toBe(firstIndex);
     rendered.dispose();
   });

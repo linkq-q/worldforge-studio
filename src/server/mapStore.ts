@@ -56,6 +56,12 @@ import {
   normalizeProjectExportProfile,
   type ProjectExportProfile
 } from '../shared/projectExport';
+import {
+  createColorPalette,
+  normalizeColorPalette,
+  type ColorPalette,
+  type ColorPaletteInput
+} from '../shared/colorPalette';
 
 export interface MapStoreOptions {
   rootDir?: string;
@@ -108,6 +114,7 @@ export class MapStore {
   private readonly historyDir: string;
   private readonly trashDir: string;
   private readonly renderSchemesDir: string;
+  private readonly colorPalettesDir: string;
   private readonly hdriDir: string;
   private readonly sharedHdriDir: string;
   private readonly starterDataDir: string | null;
@@ -124,6 +131,7 @@ export class MapStore {
     this.historyDir = path.join(this.rootDir, 'history');
     this.trashDir = path.join(this.rootDir, 'trash');
     this.renderSchemesDir = path.join(this.rootDir, 'render-schemes');
+    this.colorPalettesDir = path.join(this.rootDir, 'color-palettes');
     this.hdriDir = path.join(this.rootDir, 'hdri');
     this.sharedHdriDir = options.sharedHdriDir ?? path.join(process.cwd(), 'assets', 'hdri');
     this.starterDataDir = options.starterDataDir === undefined
@@ -140,6 +148,7 @@ export class MapStore {
     await mkdir(this.historyDir, { recursive: true });
     await mkdir(this.trashDir, { recursive: true });
     await mkdir(this.renderSchemesDir, { recursive: true });
+    await mkdir(this.colorPalettesDir, { recursive: true });
     await mkdir(this.hdriDir, { recursive: true });
     await this.seedStarterDataIfEmpty();
   }
@@ -595,7 +604,7 @@ export class MapStore {
 
   async saveRenderScheme(input: Partial<RenderScheme>): Promise<RenderScheme> {
     await this.ensureReady();
-    const scheme = createRenderScheme(input);
+    const scheme = createRenderScheme(await this.withPaletteSnapshot(input));
     await atomicWriteJson(this.renderSchemePath(scheme.id), scheme);
     return scheme;
   }
@@ -604,13 +613,13 @@ export class MapStore {
     await this.ensureReady();
     if (BUILTIN_RENDER_SCHEMES.some((scheme) => scheme.id === id)) throw new Error('builtin_scheme_readonly');
     const current = await this.loadRenderScheme(id);
-    const scheme = normalizeRenderScheme({
+    const scheme = normalizeRenderScheme(await this.withPaletteSnapshot({
       ...current,
       ...input,
       id: current.id,
       createdAt: current.createdAt,
       updatedAt: Date.now()
-    });
+    }));
     await atomicWriteJson(this.renderSchemePath(id), scheme);
     return scheme;
   }
@@ -632,6 +641,43 @@ export class MapStore {
       }));
     }
     await rm(this.renderSchemePath(id), { force: true });
+  }
+
+  async listColorPalettes(): Promise<ColorPalette[]> {
+    await this.ensureReady();
+    const files = await readdir(this.colorPalettesDir).catch(() => []);
+    const palettes = await Promise.all(files.filter((file) => file.endsWith('.json')).map((file) => (
+      this.loadColorPalette(path.basename(file, '.json')).catch(() => null)
+    )));
+    return palettes
+      .filter((palette): palette is ColorPalette => Boolean(palette))
+      .sort((a, b) => b.updatedAt - a.updatedAt);
+  }
+
+  async loadColorPalette(id: string): Promise<ColorPalette> {
+    const text = await readFile(this.colorPalettePath(id), 'utf8');
+    return normalizeColorPalette(JSON.parse(text) as Partial<ColorPalette>);
+  }
+
+  async saveColorPalette(input: ColorPaletteInput): Promise<ColorPalette> {
+    await this.ensureReady();
+    const palette = createColorPalette(input);
+    await atomicWriteJson(this.colorPalettePath(palette.id), palette);
+    return palette;
+  }
+
+  async deleteColorPalette(id: string): Promise<void> {
+    await rm(this.colorPalettePath(id), { force: true });
+  }
+
+  private async withPaletteSnapshot(input: Partial<RenderScheme>): Promise<Partial<RenderScheme>> {
+    const paletteId = typeof input.paletteId === 'string' ? input.paletteId.trim() : '';
+    if (!paletteId) return { ...input, paletteId: undefined, paletteSnapshot: undefined };
+    const palette = await this.loadColorPalette(paletteId).catch(() => {
+      if (input.paletteSnapshot?.id === paletteId) return normalizeColorPalette(input.paletteSnapshot);
+      throw new Error('unknown_color_palette');
+    });
+    return { ...input, paletteId: palette.id, paletteSnapshot: palette };
   }
 
   async listAssetLibraries(): Promise<AssetLibrary[]> {
@@ -965,6 +1011,10 @@ export class MapStore {
 
   private renderSchemePath(id: string): string {
     return path.join(this.renderSchemesDir, `${safeId(id)}.json`);
+  }
+
+  private colorPalettePath(id: string): string {
+    return path.join(this.colorPalettesDir, `${safeId(id)}.json`);
   }
 
   private undoPath(id: string): string {

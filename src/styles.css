@@ -2161,6 +2161,41 @@ p {
   backdrop-filter: blur(10px);
 }
 
+.palette-swatches {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(44px, 1fr));
+  gap: 5px;
+  max-height: 180px;
+  overflow: auto;
+}
+
+.palette-swatch {
+  min-width: 0;
+  height: 38px;
+  padding: 0;
+  border: 2px solid transparent;
+  border-radius: 6px;
+  background: var(--palette-color);
+}
+
+.palette-swatch.locked {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px #0d1719;
+}
+
+.palette-swatch span {
+  display: none;
+}
+
+.palette-role-grid {
+  display: grid;
+  gap: 9px;
+}
+
+.palette-role-grid select[multiple] {
+  min-height: 72px;
+}
+
 .hdri-classification {
   display: grid;
   grid-template-columns: minmax(0, 1fr) repeat(2, minmax(92px, 120px));
