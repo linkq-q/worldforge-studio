@@ -1,3 +1,6 @@
+import { appendFile, mkdir } from 'node:fs/promises';
+import path from 'node:path';
+import { randomUUID } from 'node:crypto';
 import {
   MODEL_API_BASE,
   MODEL_PROVIDERS,
@@ -42,6 +45,7 @@ export interface ChatApiOptions {
   fetchImpl?: typeof fetch;
   signal?: AbortSignal;
   onProgress?: (event: AgentProgressEvent) => void;
+  reasoningLogPath?: string | false;
 }
 
 interface ChatApiResponse {
@@ -49,6 +53,7 @@ interface ChatApiResponse {
   content?: string;
   reasoning?: string;
   error?: string;
+  streamEvents?: string[];
 }
 
 export function parseSseModel(text: string): ParsedSseResult {
@@ -220,6 +225,9 @@ export async function llmChat(messages: readonly ChatMessage[], options: ChatApi
     }),
     signal: options.signal
   };
+  const requestId = randomUUID();
+  const startedAt = new Date().toISOString();
+  const reasoningLogPath = resolveReasoningLogPath(options);
   let lastError: unknown;
   for (let attempt = 1; attempt <= 3; attempt += 1) {
     options.signal?.throwIfAborted();
@@ -239,6 +247,27 @@ export async function llmChat(messages: readonly ChatMessage[], options: ChatApi
         detail: streaming ? '等待推理摘要' : '本次使用兼容 JSON 响应'
       });
       data = await readChatApiResponse(response, options.onProgress);
+      if (reasoningLogPath) {
+        try {
+          await appendReasoningLog(reasoningLogPath, {
+            requestId,
+            startedAt,
+            completedAt: new Date().toISOString(),
+            provider: options.provider ?? 'gpt',
+            attempt,
+            transport: streaming ? 'sse' : 'json',
+            events: data.streamEvents ?? [],
+            reasoning: data.reasoning ?? '',
+            reasoningAvailable: Boolean(data.reasoning?.trim()),
+            ok: response.ok && data.ok === true,
+            ...(data.error ? { error: data.error } : {})
+          });
+        } catch (error) {
+          const detail = error instanceof Error ? error.message : String(error);
+          console.warn(`[modelApi] reasoning log write failed: ${detail}`);
+          options.onProgress?.({ phase: 'consulting', label: '思考日志保存失败', detail });
+        }
+      }
     } catch (error) {
       if (options.signal?.aborted || isAbortError(error)) throw error;
       if (attempt === 3) throw new Error('chat_service_unreachable');
@@ -267,7 +296,7 @@ async function readChatApiResponse(
     const reasoning = data.reasoning?.trim();
     if (reasoning) onProgress?.({
       phase: 'consulting',
-      label: '模型返回思考摘要',
+      label: '模型返回思考过程',
       detail: reasoning.slice(-4_000)
     });
     return data;
@@ -280,9 +309,10 @@ async function readChatApiResponse(
   let content = '';
   let reasoning = '';
   let error = '';
-  const reportReasoning = () => onProgress?.({
+  const streamEvents = new Set<string>();
+  const reportReasoning = (label = '模型正在推理并返回摘要') => onProgress?.({
     phase: 'consulting',
-    label: '模型正在推理并返回摘要',
+    label,
     detail: reasoning.slice(-4_000)
   });
   const consume = (block: string) => {
@@ -313,6 +343,26 @@ async function readChatApiResponse(
       }>;
     };
     const type = payload.type ?? event;
+    const stage = payload.stage ?? event;
+    streamEvents.add(payload.stage ?? payload.type ?? event);
+    if (stage === 'thinking_start') {
+      onProgress?.({ phase: 'consulting', label: '模型正在思考', detail: '等待思考结果' });
+      return;
+    }
+    if (stage === 'thinking_done') {
+      onProgress?.({ phase: 'consulting', label: '模型思考完成', detail: '正在接收正式回复' });
+      return;
+    }
+    if (stage === 'done' || event === 'done' || payload.done === true) {
+      content = payload.content ?? payload.choices?.[0]?.message?.content ?? content;
+      reasoning = payload.reasoning?.trim() || reasoning;
+      if (reasoning) reportReasoning('模型返回思考过程');
+      return;
+    }
+    if (stage === 'text' || event === 'text') {
+      content += payload.text ?? payload.delta ?? '';
+      return;
+    }
     const chatDelta = payload.choices?.[0]?.delta;
     const reasoningDelta = chatDelta?.reasoning_content
       ?? payload.reasoning
@@ -339,7 +389,7 @@ async function readChatApiResponse(
       content = payload.text ?? content;
       return;
     }
-    if (event === 'result' || event === 'done' || type === 'result' || type === 'done' || payload.done === true) {
+    if (event === 'result' || type === 'result') {
       content = payload.content ?? payload.choices?.[0]?.message?.content ?? content;
     }
     if (event === 'error' || type === 'response.error' || type === 'response.failed' || payload.stage === 'error' || payload.ok === false) {
@@ -357,8 +407,22 @@ async function readChatApiResponse(
   }
   consume(buffer);
   return content.trim()
-    ? { ok: !error, content, ...(error ? { error } : {}) }
-    : { ok: false, error: error || 'Empty AI response' };
+    ? { ok: !error, content, reasoning, streamEvents: [...streamEvents], ...(error ? { error } : {}) }
+    : { ok: false, reasoning, streamEvents: [...streamEvents], error: error || 'Empty AI response' };
+}
+
+function resolveReasoningLogPath(options: ChatApiOptions): string | null {
+  if (options.reasoningLogPath === false) return null;
+  if (typeof options.reasoningLogPath === 'string') return options.reasoningLogPath;
+  if (options.fetchImpl) return null;
+  if (process.env.WORLDFORGE_REASONING_LOG_PATH) return process.env.WORLDFORGE_REASONING_LOG_PATH;
+  const dataDir = process.env.WORLDFORGE_DATA_DIR ?? path.join(process.cwd(), 'data', 'map-editor');
+  return path.join(dataDir, 'logs', `model-reasoning-${new Date().toISOString().slice(0, 10)}.jsonl`);
+}
+
+async function appendReasoningLog(filePath: string, record: Record<string, unknown>): Promise<void> {
+  await mkdir(path.dirname(filePath), { recursive: true });
+  await appendFile(filePath, `${JSON.stringify(record)}\n`, 'utf8');
 }
 
 function isRetryableEmptyChatResponse(data: { ok?: boolean; content?: string; error?: string }): boolean {

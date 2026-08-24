@@ -1,4 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
+import { mkdtemp, readFile, rm } from 'node:fs/promises';
+import os from 'node:os';
+import path from 'node:path';
 import {
   generateModel,
   llmChat,
@@ -114,7 +117,7 @@ describe('model API adapter', () => {
     })).resolves.toBe('{"plan":{}}');
     expect(onProgress).toHaveBeenLastCalledWith({
       phase: 'consulting',
-      label: '模型返回思考摘要',
+      label: '模型返回思考过程',
       detail: '先检查地图边界，再安排道路。'
     });
   });
@@ -181,14 +184,23 @@ describe('model API adapter', () => {
     expect(onProgress).toHaveBeenCalledWith(expect.objectContaining({ detail: '检查资产' }));
   });
 
-  it('accepts the Voxel Studio stage and done event shape', async () => {
+  it('accepts the Voxel Studio chat stream and reports its final reasoning', async () => {
     const onProgress = vi.fn();
     const fetchImpl = vi.fn().mockResolvedValue(new Response([
-      'event: thinking',
-      'data: {"stage":"thinking","text":"规划道路"}',
+      'event: thinking_start',
+      'data: {"stage":"thinking_start"}',
       '',
-      'event: result',
-      'data: {"done":true,"content":"{\\"roads\\":[]}"}',
+      'event: thinking_done',
+      'data: {"stage":"thinking_done"}',
+      '',
+      'event: text',
+      'data: {"stage":"text","text":"{\\"roads\\":"}',
+      '',
+      'event: text',
+      'data: {"stage":"text","text":"[]}"}',
+      '',
+      'event: done',
+      'data: {"stage":"done","content":"{\\"roads\\":[]}","reasoning":"先确认地形，再规划道路。"}',
       ''
     ].join('\n'), {
       status: 200,
@@ -199,7 +211,55 @@ describe('model API adapter', () => {
       fetchImpl,
       onProgress
     })).resolves.toBe('{"roads":[]}');
-    expect(onProgress).toHaveBeenCalledWith(expect.objectContaining({ detail: '规划道路' }));
+    expect(onProgress).toHaveBeenCalledWith({
+      phase: 'consulting',
+      label: '模型正在思考',
+      detail: '等待思考结果'
+    });
+    expect(onProgress).toHaveBeenCalledWith({
+      phase: 'consulting',
+      label: '模型返回思考过程',
+      detail: '先确认地形，再规划道路。'
+    });
+  });
+
+  it('persists returned reasoning without storing prompts or final content', async () => {
+    const tempDir = await mkdtemp(path.join(os.tmpdir(), 'worldforge-reasoning-'));
+    const reasoningLogPath = path.join(tempDir, 'model-reasoning.jsonl');
+    const fetchImpl = vi.fn().mockResolvedValue(new Response([
+      'event: thinking_start',
+      'data: {"stage":"thinking_start"}',
+      '',
+      'event: text',
+      'data: {"stage":"text","text":"{\\"plan\\":{}}"}',
+      '',
+      'event: done',
+      'data: {"stage":"done","content":"{\\"plan\\":{}}","reasoning":"先检查边界，再安排道路。"}',
+      ''
+    ].join('\n'), {
+      status: 200,
+      headers: { 'Content-Type': 'text/event-stream' }
+    }));
+
+    try {
+      await llmChat([{ role: 'user', content: 'private map prompt' }], {
+        fetchImpl,
+        reasoningLogPath
+      });
+      const record = JSON.parse((await readFile(reasoningLogPath, 'utf8')).trim());
+      expect(record).toMatchObject({
+        provider: 'gpt',
+        attempt: 1,
+        transport: 'sse',
+        events: ['thinking_start', 'text', 'done'],
+        reasoning: '先检查边界，再安排道路。',
+        reasoningAvailable: true
+      });
+      expect(JSON.stringify(record)).not.toContain('private map prompt');
+      expect(JSON.stringify(record)).not.toContain('{"plan":{}}');
+    } finally {
+      await rm(tempDir, { recursive: true, force: true });
+    }
   });
 
   it('reports a stable upstream chat-service error after transport retries', async () => {
@@ -277,7 +337,10 @@ describe('model API adapter', () => {
     });
 
     const init = fetchImpl.mock.calls[0]?.[1] as RequestInit;
-    expect(JSON.parse(String(init.body)).materialTags.version).toBe('material-tags-v1');
+    const vocabulary = JSON.parse(String(init.body)).materialTags;
+    expect(vocabulary.version).toBe('material-tags-v1');
+    expect(vocabulary.tags.base.values).toContain('fabric');
+    expect(vocabulary.tags.base.variantEnum).toContain('red-white-vertical');
   });
 
   it('lifts dark inherited foliage colors without changing bark colors', async () => {
