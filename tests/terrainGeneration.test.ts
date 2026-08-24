@@ -12,6 +12,7 @@ import { PLAYER_GRAVITY, PLAYER_JUMP_SPEED } from '../src/shared/protocol';
 import {
   applyTerrainModifierInPlace,
   TERRAIN_CAPABILITIES,
+  TERRAIN_SURFACE_RECIPES,
   generateTerrainInPlace,
   refineTerrainInPlace
 } from '../src/shared/terrainGeneration';
@@ -64,6 +65,45 @@ describe('deterministic terrain generation', () => {
       'modifier.dune',
       'modifier.island',
       'surface.sand'
+    ]));
+    expect(TERRAIN_SURFACE_RECIPES).toEqual([
+      'default',
+      'compacted-earth',
+      'garden-stone',
+      'asphalt',
+      'concrete',
+      'brick-paver',
+      'cobblestone',
+      'gravel',
+      'mud'
+    ]);
+  });
+
+  it('persists compatible surface material recipes without changing the semantic surface', () => {
+    const map = applyMapOperations(createEmptyMap('road materials'), [
+      {
+        type: 'terrain.surface', surface: 'soil', material: 'compacted-earth',
+        region: { kind: 'path', points: [[-8, 0], [8, 0]], width: 2 }, zoneId: 'dirt-path'
+      },
+      {
+        type: 'terrain.surface', surface: 'paving', material: 'garden-stone',
+        region: { kind: 'path', points: [[0, -8], [0, 8]], width: 3 }, zoneId: 'garden-path'
+      },
+      {
+        type: 'terrain.surface', surface: 'paving', material: 'concrete',
+        region: { kind: 'path', points: [[-8, -4], [8, -4]], width: 3 }, zoneId: 'sidewalk'
+      },
+      {
+        type: 'terrain.surface', surface: 'soil', material: 'gravel',
+        region: { kind: 'path', points: [[-8, 4], [8, 4]], width: 2 }, zoneId: 'gravel-path'
+      }
+    ]);
+
+    expect(map.visualSemantics.zones).toEqual(expect.arrayContaining([
+      expect.objectContaining({ id: 'dirt-path', tags: ['soil'], material: 'compacted-earth' }),
+      expect.objectContaining({ id: 'garden-path', tags: ['paving', 'settlement'], material: 'garden-stone' }),
+      expect.objectContaining({ id: 'sidewalk', tags: ['paving', 'settlement'], material: 'concrete' }),
+      expect.objectContaining({ id: 'gravel-path', tags: ['soil'], material: 'gravel' })
     ]));
   });
 

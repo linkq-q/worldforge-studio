@@ -22,7 +22,8 @@
     "D14 polished marble surface (2026-07-24): stone:marble compiles a base-recipe surface binding and opts into the host environment map. Triplanar's shared marble field now perturbs pre-lighting roughness and normals, so reflections break along mineral structure instead of forming one uniform light-shaped blob. The material panel keeps satin, polished, and showcase presets and saves the selected marble surface plus micro-surface overrides.",
     "D15 solid core plus one fur shell (2026-07-24): discard can only remove silhouette pixels, so applying it to the only rendered mesh inevitably reads as torn material. EffectLayerInjector now keeps the original wool mesh solid by forcing its frayAmount to zero and creates one derived shell sharing the same geometry with the requested extrusion/discard values. Live tuning preserves that split. The shell mask uses narrow edge-aligned fiber cells with only a small 2D jitter contribution instead of blob-shaped value noise. Since the core can no longer be punched through, the old front-view protection is relaxed to a 0.8 floor so camera-facing voxel silhouettes keep a visible fine fringe. The visually verified preset is amount=0.85, reach=0.12, shellWidth=0.05, density=0.8, grainSize=0.25. Mesh and InstancedMesh are supported; BatchedMesh deliberately stays on the legacy single-pass path until its per-geometry matrix lifecycle has a measured need.",
     "D16 structured stone micro normals (2026-07-24): default rubble, brick, and cobblestone share one stoneNormalStrength control but derive different height fields from their authored structure. Rubble uses Voronoi F2-F1 edge distance plus low face noise, brick uses raised brick faces and recessed mortar, and cobblestone uses rounded F1 domes gated by the same cell-edge distance. Marble keeps its separate vein-driven micro-normal control.",
-    "D17 colored glass and balanced glass surface (2026-07-26): base:glass accepts red/amber/green/blue/purple/pink variants through the same finite-palette mechanism as colored fire. compileEnum now applies presetByVariant to every layer type, not only Triplanar. Glass keeps standaloneOnly and uses color plus attenuation presets; the shared physical material adds cheap world-space roughness variation and edge absorption without textures or an additional render pass. Transmission glass stays transparent=true and depthWrite=false so transparent water inside bottles and tanks remains visible."
+    "D17 colored glass and balanced glass surface (2026-07-26): base:glass accepts red/amber/green/blue/purple/pink variants through the same finite-palette mechanism as colored fire. compileEnum now applies presetByVariant to every layer type, not only Triplanar. Glass keeps standaloneOnly and uses color plus attenuation presets; the shared physical material adds cheap world-space roughness variation and edge absorption without textures or an additional render pass. Transmission glass stays transparent=true and depthWrite=false so transparent water inside bottles and tanks remains visible.",
+    "D18 patterned fabric presets (2026-08-24): base:fabric adds texture-free vertical stripe, horizontal stripe and checker Triplanar patterns for market awnings and plastic tarpaulins. Fixed variants preserve batching and keep AI output semantic."
   ],
   "README": {
     "purpose": "Closed vocabulary of material tags for the AI model-generation backend. The AI annotates model parts with semantic tags only; all rendering decisions (shader layers, presets, particles) are compiled from this file by the engine.",
@@ -83,7 +84,8 @@
         "glass",
         "wood",
         "stone",
-        "fur"
+        "fur",
+        "fabric"
       ],
       "variantEnum": [
         "default",
@@ -100,9 +102,16 @@
         "green",
         "blue",
         "purple",
-        "pink"
+        "pink",
+        "red-white-vertical",
+        "red-white-horizontal",
+        "red-white-checker",
+        "blue-white-vertical",
+        "blue-white-checker",
+        "green-white-vertical",
+        "yellow-white-vertical"
       ],
-      "description": "Base material of the part. Exactly one value, mutually exclusive. Use for parts whose material identity matters (a gold blade, a glass bottle). Use silver only when the user explicitly says silver; use metal for generic metal/steel or an unspecified reflective metallic surface so the part keeps its original color. Ordinary painted/colored parts need NO base tag. Variant is optional and scoped by value: 'birch'/'oak'/'pine'/'walnut'/'bark' only valid with value='wood' — omit unless the description explicitly names that wood species/tree bark, otherwise leave the default look (most prompts never name a wood species, and guessing fragments batching); 'bark' is for tree trunks/branches (rough, irregular vertical grooves), the others are for milled lumber (furniture, crates, planks); 'brick'/'marble'/'cobblestone' only valid with value='stone' — these have strong textual signals (a described brick wall, marble pillar, cobblestone street) so use them whenever the prompt clearly implies that stone structure, default is loose rubble; 'red'/'amber'/'green'/'blue'/'purple'/'pink' only valid with value='glass' — use the explicitly requested glass color, map yellow/orange glass to amber, and omit the variant for clear/colorless glass. Use 'fur' for plush/furry cartoon surfaces (a pet's body, a plush toy) — no variants yet.",
+      "description": "Base material of the part. Exactly one value, mutually exclusive. Use for parts whose material identity matters (a gold blade, a glass bottle). Use silver only when the user explicitly says silver; use metal for generic metal/steel or an unspecified reflective metallic surface so the part keeps its original color. Ordinary painted/colored parts need NO base tag. Variant is optional and scoped by value: 'birch'/'oak'/'pine'/'walnut'/'bark' only valid with value='wood'; 'brick'/'marble'/'cobblestone' only valid with value='stone'; 'red'/'amber'/'green'/'blue'/'purple'/'pink' only valid with value='glass'. Use 'fur' for plush/furry cartoon surfaces. Use 'fabric' for awnings, market canopies, plastic tarpaulins and striped cloth; choose the explicitly described color and vertical/horizontal/checker variant, defaulting to red-white-vertical for a generic striped market awning.",
       "runtime": {
         "_comment": "gold/silver/metal → 本地 MatCap 贴图槽位（反光身份，与空间位置无关）。glass → Glass override 层，standaloneOnly 永不合批。wood/stone → Triplanar 层：世界空间三投影程序化纹理，无需 UV/贴图资源，天然适配 AI 生成 primitive 与 InstancedMesh 合批；同一 layer 靠 params 区分木纹（各向异性拉丝）与石纹（各向同性斑驳）。colorLo/colorHi 是围绕 1.0 的乘法调制系数（不是绝对颜色），部件原本涂色始终保留，噪声只叠加明暗/色偏细节。",
         "presets": {
@@ -485,6 +494,35 @@
             },
             "tuning": {},
             "status": "implemented"
+          },
+          "fabric": {
+            "layer": "Triplanar",
+            "params": {
+              "pattern": 7,
+              "strength": 1.0,
+              "scale": 1.0,
+              "plankScale": 0.34,
+              "macroStrength": 0.0,
+              "fineNoise": 0.0,
+              "colorLo": [0.78, 0.035, 0.025],
+              "colorHi": [0.96, 0.96, 0.9]
+            },
+            "presetByVariant": {
+              "red-white-vertical": { "pattern": 7, "plankScale": 0.34, "colorLo": [0.78, 0.035, 0.025], "colorHi": [0.96, 0.96, 0.9] },
+              "red-white-horizontal": { "pattern": 8, "plankScale": 0.34, "colorLo": [0.78, 0.035, 0.025], "colorHi": [0.96, 0.96, 0.9] },
+              "red-white-checker": { "pattern": 9, "plankScale": 0.42, "colorLo": [0.78, 0.035, 0.025], "colorHi": [0.96, 0.96, 0.9] },
+              "blue-white-vertical": { "pattern": 7, "plankScale": 0.34, "colorLo": [0.08, 0.24, 0.72], "colorHi": [0.96, 0.96, 0.9] },
+              "blue-white-checker": { "pattern": 9, "plankScale": 0.42, "colorLo": [0.08, 0.24, 0.72], "colorHi": [0.96, 0.96, 0.9] },
+              "green-white-vertical": { "pattern": 7, "plankScale": 0.34, "colorLo": [0.06, 0.52, 0.18], "colorHi": [0.96, 0.96, 0.9] },
+              "yellow-white-vertical": { "pattern": 7, "plankScale": 0.34, "colorLo": [0.95, 0.58, 0.03], "colorHi": [0.98, 0.98, 0.91] }
+            },
+            "surface": {
+              "roughness": 0.58,
+              "metalness": 0.0,
+              "envMapIntensity": 0.12,
+              "environment": true
+            },
+            "status": "implemented"
           }
         }
       },
@@ -513,6 +551,10 @@
           },
           "stone": {
             "ignitionPoint": 1.5,
+            "conductive": false
+          },
+          "fabric": {
+            "ignitionPoint": 0.32,
             "conductive": false
           }
         }

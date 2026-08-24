@@ -1056,6 +1056,22 @@ describe('map code planner', () => {
     expect(suggestion.codePlan?.functions).toContain('route');
   });
 
+  it('lets AI select distinct road material recipes for paths and town streets', () => {
+    const map = createEmptyMap('material routes');
+    const suggestion = executeMapCodePlan(`function plan(api) {
+      api.route({id:'garden-walk',points:[[-12,-4],[0,2],[12,5]],curve:'catmull-rom',width:2.2,material:'garden-stone'});
+      api.route({id:'town-street',points:[[-12,0],[12,0]],width:4,material:'asphalt',tags:['street','settlement']});
+      api.route({id:'dirt-path',points:[[0,-12],[0,12]],width:1.6,material:'compacted-earth'});
+    }`, map);
+    const applied = applyMapOperations(map, suggestion.operations);
+
+    expect(applied.visualSemantics.zones).toEqual(expect.arrayContaining([
+      expect.objectContaining({ id: 'code:route:garden-walk', material: 'garden-stone', tags: expect.arrayContaining(['paving', 'clear']) }),
+      expect.objectContaining({ id: 'code:route:town-street', material: 'asphalt', tags: expect.arrayContaining(['paving', 'clear']) }),
+      expect.objectContaining({ id: 'code:route:dirt-path', material: 'compacted-earth', tags: expect.arrayContaining(['soil', 'clear']) })
+    ]));
+  });
+
   it('compiles a free-form route graph into connected editable branches', () => {
     const suggestion = executeMapCodePlan(`function plan(api) {
       api.routeNetwork({
@@ -1093,7 +1109,7 @@ describe('map code planner', () => {
         blockWidth:12,
         blockDepth:10,
         roadWidth:3,
-        surface:'paving'
+        material:'asphalt'
       });
       api.placeAlongRoute({
         routeId:town.routeIds[0],
@@ -1112,6 +1128,7 @@ describe('map code planner', () => {
 
     expect(applied.guides.length).toBeGreaterThan(2);
     expect(applied.guides.every((guide) => guide.tags.includes('street'))).toBe(true);
+    expect(applied.visualSemantics.zones.every((zone) => zone.material === 'asphalt')).toBe(true);
     expect(lamps.length).toBeGreaterThan(4);
     expect(lamps.every((object) => object.sourceGuideId === applied.guides[0].id)).toBe(true);
     expect(new Set(lamps.map((object) => `${object.transform.position[0]}:${object.transform.position[2]}`)).size)

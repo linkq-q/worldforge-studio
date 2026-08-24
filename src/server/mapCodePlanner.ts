@@ -47,15 +47,18 @@ import {
   TERRAIN_GENERATION_PRESETS,
   TERRAIN_MODIFIERS,
   TERRAIN_SURFACES,
+  TERRAIN_SURFACE_RECIPES,
   normalizeTerrainGenerationParams,
   normalizeTerrainModifierParams,
   normalizeTerrainRefinementParams,
   normalizeTerrainSurfaceParams,
+  terrainSurfaceForRecipe,
   type TerrainAccessMode,
   type TerrainCliffLayout,
   type TerrainGenerationPreset,
   type TerrainModifier,
   type TerrainRegion,
+  type TerrainSurfaceRecipe,
   type TerrainSurfaceKind
 } from '../shared/terrainGeneration';
 import { runAssetGenerationPool, type AssetTaskReporter } from './assetGenerationPool';
@@ -73,7 +76,7 @@ const REPLAY_EXECUTION_TIMEOUT_MS = 3_000;
 const MAP_CODE_ENVIRONMENT_FORM_CONTRACT = `Use these structured environment forms:
 api.terrain({preset:'plain'|'hills'|'valley'|'island'|'archipelago'|'canyon'|'cliff-plateau'|'dune-desert',amplitude?,roughness?,seed?,direction?:degrees|[x,z]});
 api.modifyTerrain({modifier:'mountain'|'ridge'|'valley'|'basin'|'cliff'|'terrace'|'dune'|'island',region:{kind:'circle',center:[x,z],radius}|{kind:'path',points:[[x,z],...],width}|{kind:'polygon',points:[[x,z],...]},amplitude?:positiveNumber,softness?:number,direction?:degrees|[x,z],variation?:number,layers?:number|stepArray,layout?:'plateau'|'coast'|'canyon'|'wall'|'terraces',access?:'walkable'|'scenic',seed?});
-api.surface({id:'short-id',surface:'grass'|'sand'|'rock'|'soil'|'paving',region:{kind:'circle'|'path'|'polygon',...},intensity?,clearNatural?}); Use clearNatural:true for arena floors, plazas, courtyards and other functional clearings where loose trees and rocks must be excluded. Route surfaces are clear automatically.
+api.surface({id:'short-id',surface:'grass'|'sand'|'rock'|'soil'|'paving',material?:'default'|'compacted-earth'|'garden-stone'|'asphalt',region:{kind:'circle'|'path'|'polygon',...},intensity?,clearNatural?}); Use clearNatural:true for arena floors, plazas, courtyards and other functional clearings where loose trees and rocks must be excluded. Route surfaces are clear automatically.
 api.grass({id:'short-id',name?,preset:'meadow'|'sand'|'wetland'|'farm'|'magic'|'alpine-moss',region:{kind:'circle',center:[x,z],radius}|{kind:'polygon',points:[[x,z],...]},density?,variation?,softness?,height?,mix?:{short?,tall?,flowers?},seed?});
 Enum fields are closed choices, not descriptions. Put descriptive meaning in id/name or comments; never write phrases such as "gentle central basin" in modifier or "packed earth" in surface.`;
 const CODE_ASSET_ORIENTATION_PROMPT = 'Coordinate contract: local Y+ is up, local Z+ is the front, entrance, or forward direction, and local X+ is right. Put doors, facades, openings, windshields, noses, seats, and other recognizable front details toward local Z+. For a modular repeated element, explicitly choose the long axis: side-by-side modules span local X with depth/front on local Z; traversal modules span local Z. Keep the model centered at its origin.';
@@ -198,6 +201,7 @@ interface RouteInput {
   closed?: boolean;
   width?: number;
   surface?: TerrainSurfaceKind | 'none';
+  material?: TerrainSurfaceRecipe;
   intensity?: number;
   tags?: string[];
 }
@@ -217,6 +221,7 @@ interface StreetGridInput {
   roadWidth: number;
   inset?: number;
   surface?: TerrainSurfaceKind | 'none';
+  material?: TerrainSurfaceRecipe;
   intensity?: number;
   tags?: string[];
 }
@@ -726,11 +731,17 @@ function runMapCodePlan(
       }
     });
     if (input.surface !== 'none') {
-      const surface = normalizeCodeTerrainSurface(input.surface ?? 'paving') ?? 'paving';
+      const material = TERRAIN_SURFACE_RECIPES.includes(input.material as TerrainSurfaceRecipe)
+        ? input.material as TerrainSurfaceRecipe
+        : 'default';
+      const surface = normalizeCodeTerrainSurface(input.surface ?? (
+        material === 'default' ? 'paving' : terrainSurfaceForRecipe(material)
+      )) ?? 'paving';
       emitSceneOperation({
         type: 'terrain.surface',
         ...normalizeTerrainSurfaceParams({
           surface,
+          material,
           region: { kind: 'path', points, width },
           intensity: input.intensity ?? 1,
           zoneId: `code:route:${id}`,
@@ -1022,6 +1033,7 @@ function runMapCodePlan(
       const intensity = form?.intensity ?? intensityValue;
       const params = normalizeTerrainSurfaceParams({
         surface,
+        material: form?.material,
         region: codeTerrainRegion(region),
         intensity,
         zoneId: `code:${cleanId(surfaceId, 'surface')}`,
@@ -1092,7 +1104,8 @@ function runMapCodePlan(
         curve: street.curve,
         closed: street.closed,
         width: street.width,
-        surface: input.surface ?? 'paving',
+        surface: input.surface,
+        material: input.material,
         intensity: input.intensity,
         tags: street.tags
       }));
@@ -2176,7 +2189,7 @@ Constants: api.TAU, api.PHI, api.seed, api.bounds.
 Scene intent: api.sceneIntent({kind:'natural'|'authored',reason?}). ${requestMode === 'refine' ? 'Do not call it during refinement.' : 'Required exactly once for unified scene ownership.'}
 Design semantics: api.design({experienceMode:'immediate'|'sequential'|'mixed',intent,groups:[{id,name,parentId?,intent,region?,focusIds?,guideIds?,entryGuideIds?,exitGuideIds?,axisGuideIds?,protectedObjectIds?,removableObjectIds?,layers:[{level:1|2|3|4,intent,density:'tight'|'normal'|'open',minCount?:1..64}]}],focuses:[{id,groupId,name,kind:'primary'|'secondary'|'node',rank,selector?,objectId?,reveal:'visible'|'screened'|'framed'|'sequence'}],viewpoints:[{id,groupId?,point:[x,z],targetFocusId?,role:'entry'|'route'|'node'|'overview'}],relations:[{id,kind:'attract'|'repel'|'support',sourceSelector,targetSelector?,sourceGroupId?,targetGroupId?,strength:'tight'|'normal'|'open',minDistance?,maxDistance?}]}). ${requestMode === 'refine' ? 'Optional: call once only when the user changes composition semantics.' : 'Call once in unified scene ownership, after sceneIntent and before placement.'}
 Environment: api.terrain(preset,{amplitude?,roughness?,seed?,direction?}); api.refineTerrain({...}); api.water(id,{type:'lake'|'river'|'ocean',points,...}); api.grass(id,region,{preset:'meadow'|'sand'|'wetland'|'farm'|'magic'|'alpine-moss',density?,variation?,softness?,height?,mix?:{short?,tall?,flowers?}}); api.keepDry([x,z],clearance?) returns the nearest dry point after water operations; api.waterPoint(waterId,[x,z],draft?) returns [x,y,z] on that water surface after water operations; use it for boats and other floating assets, normally with role:'environment'; api.spawn([x,z],yawDegrees?); api.renderSuggestion(text).
-Circulation: api.route({id,name?,points:[[x,z],...],curve?:'polyline'|'catmull-rom',closed?,width?,surface?:'paving'|'soil'|'grass'|'sand'|'rock'|'none',intensity?,tags?}) records the editable guide and lays real terrain paving by default. api.routeNetwork({id,nodes:[{id,point:[x,z],role?}],edges:[{id,from,to,via?,curve?,width?,surface?,tags?}]}) expresses a free-form connected graph with shared junctions; you choose its topology. api.streetGrid({id,region:[[x,z],...],direction?:degrees,blockWidth,blockDepth,roadWidth,inset?,surface?,tags?}) returns {routeIds,blocks}; use blocks for building groups and routeIds for roadside facilities. api.placeStreetFrontage({routeId,side:'left'|'right',items:[{assetId?,name,dimensions:[frontageWidth,height,depth],role?,groupId?,layer?},...],startInset?,endInset?,gap?,setback?}) sequentially fits varied ordinary buildings along one street side, keeps their real footprints separated and turns local Z+ facades toward the road. api.placeAlongRoute({routeId,assetId?,name?,spacing,offset?,side?:'left'|'right'|'both'|'alternate',startInset?,endInset?,facing?:'forward'|'toward-route'|'away-from-route',role?,groupId?,layer?}) derives repeated facilities from an existing route. A large authored garden needs an experience network rather than one ring: combine an entrance sequence, asymmetric branches or shortcuts to local scenes, waterside or quiet routes, and intentional shared junctions according to the design. Do not force one fixed topology. Use bridge for water crossings; place generated stair/step modules where a route must change level.
+Circulation: api.route({id,name?,points:[[x,z],...],curve?:'polyline'|'catmull-rom',closed?,width?,surface?:'paving'|'soil'|'grass'|'sand'|'rock'|'none',material?:'default'|'compacted-earth'|'garden-stone'|'asphalt'|'concrete'|'brick-paver'|'cobblestone'|'gravel'|'mud',intensity?,tags?}) records the editable guide and lays real terrain paving by default. Choose asphalt for modern vehicle streets, concrete for sidewalks, brick-paver for plazas and old streets, garden-stone or cobblestone for gardens, compacted-earth or gravel for informal paths, and mud only for visibly wet rustic ground. api.routeNetwork({id,nodes:[{id,point:[x,z],role?}],edges:[{id,from,to,via?,curve?,width?,surface?,material?,tags?}]}) expresses a free-form connected graph with shared junctions; you choose its topology. api.streetGrid({id,region:[[x,z],...],direction?:degrees,blockWidth,blockDepth,roadWidth,inset?,surface?,material?,tags?}) returns {routeIds,blocks}; use blocks for building groups and routeIds for roadside facilities. api.placeStreetFrontage({routeId,side:'left'|'right',items:[{assetId?,name,dimensions:[frontageWidth,height,depth],role?,groupId?,layer?},...],startInset?,endInset?,gap?,setback?}) sequentially fits varied ordinary buildings along one street side, keeps their real footprints separated and turns local Z+ facades toward the road. api.placeAlongRoute({routeId,assetId?,name?,spacing,offset?,side?:'left'|'right'|'both'|'alternate',startInset?,endInset?,facing?:'forward'|'toward-route'|'away-from-route',role?,groupId?,layer?}) derives repeated facilities from an existing route. A large authored garden needs an experience network rather than one ring: combine an entrance sequence, asymmetric branches or shortcuts to local scenes, waterside or quiet routes, and intentional shared junctions according to the design. Do not force one fixed topology. Use bridge for water crossings; place generated stair/step modules where a route must change level.
 ${MAP_CODE_ENVIRONMENT_FORM_CONTRACT}
 Regions: {kind:'circle',x,z,radius}, {kind:'path',points:[[x,z],...],width}, or {kind:'polygon',points:[[x,z],...]}.
 Scalar math: api.clamp(value,min,max), api.lerp(a,b,t), api.remap(value,inMin,inMax,outMin,outMax), api.smoothstep(min,max,value), api.random(min?,max?).

@@ -158,7 +158,7 @@ export const Triplanar = {
     scale: { type: 'float', default: 5.1, min: 0.1, max: 20 },
     stretch: { type: 'float', default: 9.0, min: 1, max: 12 },
     strength: { type: 'float', default: 0.9, min: 0, max: 1 },
-    pattern: { type: 'float', default: 0.0, min: 0, max: 6 },      // 0=grain(wood) 1=cellular(stone) 2=brick 3=marble 4=cobblestone 5=bark 6=plush(fur)
+    pattern: { type: 'float', default: 0.0, min: 0, max: 9 },      // 0..6=wood/stone/fur, 7=vertical stripe, 8=horizontal stripe, 9=checker fabric
     grainContrast: { type: 'float', default: 0.22, min: 0, max: 0.6 },
     plankScale: { type: 'float', default: 0.55, min: 0.05, max: 4 },
     edge: { type: 'float', default: 0.32, min: 0.02, max: 0.6 },

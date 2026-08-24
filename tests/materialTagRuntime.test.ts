@@ -1,10 +1,31 @@
 import * as THREE from 'three';
 import { describe, expect, it, vi } from 'vitest';
+import materialTagVocabulary from '@voxel-studio/render-runtime/model/material-tags-v1.json';
 import { RuntimeIndex } from '@voxel-studio/render-runtime';
+import { compileModelMaterialTags } from '@voxel-studio/render-runtime/effects';
 import { WorldForgeMaterialTagRuntime } from '../src/client/materialTagRuntimeAdapter';
 import { normalizeMaterialTagPolicy, type MapMaterialTagPolicy } from '../src/shared/materialTagPolicy';
 
 describe('WorldForge material tag runtime', () => {
+  it('compiles striped and checked plastic fabric into fixed batchable recipes', () => {
+    const model = {
+      name: 'market-awning',
+      parts: [
+        { id: 'vertical', isGroup: false, mesh: { type: 'box' }, tags: [{ tag: 'base', value: 'fabric', variant: 'red-white-vertical' }] },
+        { id: 'checker', isGroup: false, mesh: { type: 'box' }, tags: [{ tag: 'base', value: 'fabric', variant: 'blue-white-checker' }] }
+      ]
+    };
+    const compiled = compileModelMaterialTags(model, materialTagVocabulary);
+
+    expect(compiled.byPartId.get('vertical')?.baseRecipe).toMatchObject({
+      effectPackage: { materialLayers: [expect.objectContaining({ type: 'Triplanar', params: expect.objectContaining({ pattern: 7, plankScale: 0.34 }) })] },
+      materialBindings: { surface: expect.objectContaining({ roughness: 0.58 }) }
+    });
+    expect(compiled.byPartId.get('checker')?.baseRecipe).toMatchObject({
+      effectPackage: { materialLayers: [expect.objectContaining({ type: 'Triplanar', params: expect.objectContaining({ pattern: 9, colorLo: [0.08, 0.24, 0.72] }) })] }
+    });
+  });
+
   it('compiles inherited Voxel Studio tags onto the matching model mesh', () => {
     const scene = new THREE.Scene();
     const modelsRoot = new THREE.Group();

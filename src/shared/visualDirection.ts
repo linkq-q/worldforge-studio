@@ -6,12 +6,17 @@ export const VISUAL_TEMPERATURES = ['cool', 'warm'] as const;
 export const VISUAL_ZONE_TAGS = [
   'grass', 'forest', 'water', 'lowland', 'dry', 'sand', 'soil', 'paving', 'settlement', 'rocky', 'clear'
 ] as const;
+export const TERRAIN_SURFACE_RECIPES = [
+  'default', 'compacted-earth', 'garden-stone', 'asphalt',
+  'concrete', 'brick-paver', 'cobblestone', 'gravel', 'mud'
+] as const;
 export const MAX_VISUAL_ZONES = 96;
 
 export type ContrastMode = typeof CONTRAST_MODES[number];
 export type VisualTimeOfDay = typeof VISUAL_TIMES_OF_DAY[number];
 export type VisualTemperature = typeof VISUAL_TEMPERATURES[number];
 export type VisualZoneTag = typeof VISUAL_ZONE_TAGS[number];
+export type TerrainSurfaceRecipe = typeof TERRAIN_SURFACE_RECIPES[number];
 export const VISUAL_ZONE_FIELDS = ['center', 'radius', 'tags', 'intensity'] as const;
 export type VisualZoneField = typeof VISUAL_ZONE_FIELDS[number];
 
@@ -49,6 +54,8 @@ export interface SceneVisualZone {
   center: [number, number];
   radius: number;
   intensity: number;
+  /** Map-owned semantic material recipe; render schemes still own final styling. */
+  material?: TerrainSurfaceRecipe;
   /** Exact spatial mask when the semantic zone is not circular. */
   region?: VisualZoneRegion;
   /** Fields manually edited by the user and therefore preserved during AI recompute. */
@@ -234,12 +241,16 @@ function normalizeVisualZone(value: unknown): SceneVisualZone | null {
     .filter((field) => rawLocks[field] === true)
     .map((field) => [field, true])) as Partial<Record<VisualZoneField, true>>;
   const region = normalizeVisualZoneRegion(raw.region);
+  const material = TERRAIN_SURFACE_RECIPES.includes(raw.material as TerrainSurfaceRecipe)
+    ? raw.material as TerrainSurfaceRecipe
+    : undefined;
   return {
     id,
     tags,
     center: pairValue(raw.center, [0, 0]),
     radius: numberValue(raw.radius, 8, 0.5, 512),
     intensity: numberValue(raw.intensity, 1, 0, 1),
+    ...(material && material !== 'default' ? { material } : {}),
     ...(region ? { region } : {}),
     ...(Object.keys(locks).length > 0 ? { locks } : {})
   };

@@ -5,7 +5,14 @@ import {
   type EditableMap
 } from './map';
 import { PLAYER_GRAVITY, PLAYER_JUMP_SPEED } from './protocol';
-import { MAX_VISUAL_ZONES, type VisualZoneTag } from './visualDirection';
+import {
+  MAX_VISUAL_ZONES,
+  TERRAIN_SURFACE_RECIPES,
+  type TerrainSurfaceRecipe,
+  type VisualZoneTag
+} from './visualDirection';
+
+export { TERRAIN_SURFACE_RECIPES, type TerrainSurfaceRecipe } from './visualDirection';
 
 export const TERRAIN_GENERATION_PRESETS = [
   'plain',
@@ -71,6 +78,7 @@ export interface TerrainRefinementParams {
 
 export interface TerrainSurfaceParams {
   surface: TerrainSurfaceKind;
+  material?: TerrainSurfaceRecipe;
   region: TerrainRegion;
   intensity: number;
   zoneId: string;
@@ -177,9 +185,11 @@ export function normalizeTerrainSurfaceParams(value: unknown, map: EditableMap):
   const input = objectValue(value, 'invalid_terrain_surface');
   if (!TERRAIN_SURFACES.includes(input.surface as TerrainSurfaceKind)) throw new Error('invalid_terrain_surface');
   const surface = input.surface as TerrainSurfaceKind;
+  const material = normalizeTerrainSurfaceRecipe(input.material, surface);
   const region = normalizeTerrainRegion(input.region, map);
   return {
     surface,
+    ...(material !== 'default' ? { material } : {}),
     region,
     intensity: clamp(finiteNumber(input.intensity, 1), 0.05, 1),
     zoneId: cleanZoneId(input.zoneId, surfaceZoneId(surface, region)),
@@ -464,6 +474,7 @@ export function applyTerrainSurfaceInPlace(map: EditableMap, value: unknown): Te
     center: bounds.center,
     radius: bounds.radius,
     intensity: params.intensity,
+    ...(params.material ? { material: params.material } : {}),
     region: params.region
   };
   const existing = map.visualSemantics.zones.findIndex((item) => item.id === zone.id);
@@ -474,6 +485,25 @@ export function applyTerrainSurfaceInPlace(map: EditableMap, value: unknown): Te
     map.renderPromptSuggestions = [...map.renderPromptSuggestions, '沙地流动与低空飞沙'].slice(-8);
   }
   return params;
+}
+
+export function terrainSurfaceForRecipe(material: TerrainSurfaceRecipe): TerrainSurfaceKind {
+  return material === 'compacted-earth' || material === 'gravel' || material === 'mud'
+    ? 'soil'
+    : 'paving';
+}
+
+export function normalizeTerrainSurfaceRecipe(
+  value: unknown,
+  surface: TerrainSurfaceKind
+): TerrainSurfaceRecipe {
+  const material = TERRAIN_SURFACE_RECIPES.includes(value as TerrainSurfaceRecipe)
+    ? value as TerrainSurfaceRecipe
+    : 'default';
+  if (material !== 'default' && terrainSurfaceForRecipe(material) !== surface) {
+    throw new Error(`invalid_terrain_surface_material:${material}:${surface}`);
+  }
+  return material;
 }
 
 export function normalizeTerrainRegion(value: unknown, map: EditableMap): TerrainRegion {

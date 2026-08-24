@@ -7,6 +7,7 @@ import {
   mapGuidePolyline,
   normalizeMapGuides,
   sampleMapGuide,
+  simplifyMapGuidePoints,
   type MapGuide
 } from '../src/shared/mapGuide';
 
@@ -81,5 +82,18 @@ describe('map guide layout kernel', () => {
     ], [40, 20, 30]);
     expect(guides).toHaveLength(1);
     expect(guides[0].points).toEqual([[-20, 0], [20, 0]]);
+  });
+
+  it('simplifies a freehand road while preserving its endpoints and meaningful bend', () => {
+    const points = [
+      [0, 0], [1, 0.02], [2, -0.01], [3, 0.01],
+      [4, 0], [5, 1], [6, 2], [7, 3]
+    ] as Array<[number, number]>;
+    const simplified = simplifyMapGuidePoints(points, 0.15);
+
+    expect(simplified[0]).toEqual(points[0]);
+    expect(simplified.at(-1)).toEqual(points.at(-1));
+    expect(simplified.length).toBeLessThan(points.length);
+    expect(simplified.some((point) => point[0] === 4 && point[1] === 0)).toBe(true);
   });
 });

@@ -26,4 +26,26 @@ describe('Triplanar projection shader', () => {
 
     material.dispose();
   });
+
+  it('emits vertical, horizontal and checker fabric branches', () => {
+    const material = new THREE.MeshStandardMaterial();
+    createEffectRuntime().runtime.applyToMaterial(material, {
+      schemaVersion: '1.0',
+      materialLayers: ['Triplanar'],
+      layerParams: { Triplanar: { pattern: 7, plankScale: 0.34 } }
+    });
+    const shader = {
+      uniforms: {},
+      vertexShader: THREE.ShaderLib.standard.vertexShader,
+      fragmentShader: THREE.ShaderLib.standard.fragmentShader
+    };
+
+    material.onBeforeCompile(shader as THREE.WebGLProgramParametersWithUniforms, {} as THREE.WebGLRenderer);
+
+    expect(shader.fragmentShader).toContain('FABRIC VERTICAL STRIPES');
+    expect(shader.fragmentShader).toContain('FABRIC HORIZONTAL STRIPES');
+    expect(shader.fragmentShader).toContain('FABRIC CHECKER');
+    expect(shader.fragmentShader).toContain('triPatternIsAbsolute');
+    material.dispose();
+  });
 });

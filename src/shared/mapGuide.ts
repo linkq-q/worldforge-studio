@@ -139,6 +139,37 @@ export function mapGuidePolyline(guide: MapGuide, maxPoints = 64): Array<[number
   ));
 }
 
+/** Reduces noisy freehand input to stable editable control points. */
+export function simplifyMapGuidePoints(
+  points: readonly [number, number][],
+  tolerance: number,
+  maxPoints = 64
+): Array<[number, number]> {
+  if (points.length <= 2) return points.map(clonePoint);
+  const threshold = Math.max(0.001, tolerance) ** 2;
+  const keep = new Set<number>([0, points.length - 1]);
+  const visit = (start: number, end: number): void => {
+    let furthest = -1;
+    let furthestDistance = threshold;
+    for (let index = start + 1; index < end; index += 1) {
+      const distance = squaredDistanceToSegment(points[index], points[start], points[end]);
+      if (distance <= furthestDistance) continue;
+      furthest = index;
+      furthestDistance = distance;
+    }
+    if (furthest < 0) return;
+    keep.add(furthest);
+    visit(start, furthest);
+    visit(furthest, end);
+  };
+  visit(0, points.length - 1);
+  const simplified = [...keep].sort((left, right) => left - right).map((index) => clonePoint(points[index]));
+  if (simplified.length <= maxPoints) return simplified;
+  return Array.from({ length: maxPoints }, (_, index) => (
+    clonePoint(simplified[Math.round(index * (simplified.length - 1) / (maxPoints - 1))])
+  ));
+}
+
 /** Slices a polygon with parallel lines for farms, campuses, parks and street blocks. */
 export function createParallelMapGuides(options: ParallelMapGuideOptions): MapGuide[] {
   const polygon = normalizePolygon(options.region);
@@ -358,6 +389,21 @@ function pointOnSegment(x: number, z: number, start: [number, number], end: [num
   if (Math.abs(cross) > 0.0001) return false;
   return x >= Math.min(start[0], end[0]) - 0.0001 && x <= Math.max(start[0], end[0]) + 0.0001
     && z >= Math.min(start[1], end[1]) - 0.0001 && z <= Math.max(start[1], end[1]) + 0.0001;
+}
+
+function squaredDistanceToSegment(
+  point: readonly [number, number],
+  start: readonly [number, number],
+  end: readonly [number, number]
+): number {
+  const dx = end[0] - start[0];
+  const dz = end[1] - start[1];
+  const lengthSquared = dx * dx + dz * dz;
+  if (lengthSquared <= 0.0000001) return (point[0] - start[0]) ** 2 + (point[1] - start[1]) ** 2;
+  const amount = clamp(((point[0] - start[0]) * dx + (point[1] - start[1]) * dz) / lengthSquared, 0, 1);
+  const x = start[0] + dx * amount;
+  const z = start[1] + dz * amount;
+  return (point[0] - x) ** 2 + (point[1] - z) ** 2;
 }
 
 function normalizeTags(value: unknown): string[] {

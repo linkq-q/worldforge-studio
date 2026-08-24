@@ -112,6 +112,20 @@ declare module '@voxel-studio/render-runtime' {
       object: import('three').Object3D,
       options?: Record<string, unknown>
     ): unknown;
+    registerInstancedBatch(
+      batchId: string,
+      instancedMesh: import('three').InstancedMesh,
+      partIds: Array<string | null>,
+      options?: Record<string, unknown>
+    ): unknown;
+    getRenderRef(partId: string): {
+      mode?: string;
+      batchId?: string;
+      instanceId?: number;
+      object?: import('three').Object3D & {
+        material?: import('three').Material | import('three').Material[];
+      };
+    } | null;
     getPartIdFromHit(hit: import('three').Intersection): string | null;
     audit(options?: { table?: boolean }): Record<string, number>;
     clear(): void;
