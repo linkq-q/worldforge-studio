@@ -449,7 +449,7 @@ export async function generateMapCodeSuggestion(
         apiBase: options.apiBase,
         provider: options.provider ?? 'gpt',
         temperature: 0.25,
-        maxTokens: 6_000,
+        maxTokens: 16_000,
         fetchImpl: options.fetchImpl,
         signal: options.signal,
         onProgress: options.onProgress
@@ -2395,7 +2395,7 @@ async function discoverMapCodeWithRepairs(
           apiBase: options.apiBase,
           provider: options.provider ?? 'gpt',
           temperature: 0.15,
-          maxTokens: 6_000,
+          maxTokens: 16_000,
           fetchImpl: options.fetchImpl,
           signal: options.signal,
           onProgress: options.onProgress
@@ -2444,7 +2444,7 @@ async function discoverMapCodeWithRepairs(
         apiBase: options.apiBase,
         provider: options.provider ?? 'gpt',
         temperature: 0.1,
-        maxTokens: 6_000,
+        maxTokens: 16_000,
         fetchImpl: options.fetchImpl,
         signal: options.signal,
         onProgress: options.onProgress

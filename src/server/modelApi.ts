@@ -221,7 +221,7 @@ export async function llmChat(messages: readonly ChatMessage[], options: ChatApi
       maxTokens: options.maxTokens ?? 1000,
       provider: options.provider ?? 'gpt',
       stream: true,
-      reasoning: { summary: 'auto' }
+      thinking: true
     }),
     signal: options.signal
   };
@@ -377,7 +377,7 @@ async function readChatApiResponse(
       reportReasoning();
       return;
     }
-    if (type === 'response.output_text.delta' || event === 'content' || event === 'output_text') {
+    if (type === 'response.output_text.delta' || event === 'content' || event === 'output_text' || event === 'text' || type === 'text') {
       content += payload.delta ?? payload.text ?? payload.content ?? '';
       return;
     }
@@ -427,6 +427,7 @@ async function appendReasoningLog(filePath: string, record: Record<string, unkno
 
 function isRetryableEmptyChatResponse(data: { ok?: boolean; content?: string; error?: string }): boolean {
   return /empty ai response/i.test(data.error ?? '')
+    || /terminated/i.test(data.error ?? '')
     || (data.ok === true && typeof data.content === 'string' && !data.content.trim());
 }
 

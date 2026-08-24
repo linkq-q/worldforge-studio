@@ -159,7 +159,7 @@ describe('model API adapter', () => {
     expect(fetchImpl.mock.calls[0][1]?.headers).toEqual(expect.objectContaining({ Accept: 'text/event-stream' }));
     expect(JSON.parse(String(fetchImpl.mock.calls[0][1]?.body))).toMatchObject({
       stream: true,
-      reasoning: { summary: 'auto' }
+      thinking: true
     });
   });
 
@@ -223,6 +223,24 @@ describe('model API adapter', () => {
     });
   });
 
+  it('accepts type-only text deltas from the chat stream', async () => {
+    const fetchImpl = vi.fn().mockResolvedValue(new Response([
+      'data: {"type":"text","text":"{\\"plan\\":"}',
+      '',
+      'data: {"type":"text","text":"{}}"}',
+      '',
+      'data: [DONE]',
+      ''
+    ].join('\n'), {
+      status: 200,
+      headers: { 'Content-Type': 'text/event-stream' }
+    }));
+
+    await expect(llmChat([{ role: 'user', content: 'plan a grove' }], {
+      fetchImpl
+    })).resolves.toBe('{"plan":{}}');
+  });
+
   it('persists returned reasoning without storing prompts or final content', async () => {
     const tempDir = await mkdtemp(path.join(os.tmpdir(), 'worldforge-reasoning-'));
     const reasoningLogPath = path.join(tempDir, 'model-reasoning.jsonl');
@@ -275,6 +293,18 @@ describe('model API adapter', () => {
   it('retries when the model backend returns an empty chat response', async () => {
     const fetchImpl = vi.fn()
       .mockResolvedValueOnce(new Response(JSON.stringify({ ok: false, error: 'Empty AI response' }), { status: 502 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ ok: true, content: '{"plan":{}}' }), { status: 200 }));
+
+    await expect(llmChat([{ role: 'user', content: 'plan a grove' }], {
+      apiBase: 'https://example.test',
+      fetchImpl
+    })).resolves.toBe('{"plan":{}}');
+    expect(fetchImpl).toHaveBeenCalledTimes(2);
+  });
+
+  it('retries when the model backend reports a terminated stream', async () => {
+    const fetchImpl = vi.fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify({ ok: false, error: 'stream terminated unexpectedly' }), { status: 502 }))
       .mockResolvedValueOnce(new Response(JSON.stringify({ ok: true, content: '{"plan":{}}' }), { status: 200 }));
 
     await expect(llmChat([{ role: 'user', content: 'plan a grove' }], {
