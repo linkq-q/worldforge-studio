@@ -319,7 +319,12 @@ export class RenderPipeline {
         return (slotWeight[a.slot] - slotWeight[b.slot]) || (a.order - b.order);
       });
 
-    this.composer.passes = ordered.map(r => r.pass);
+    // EffectComposer.addPass() also sizes the pass to the composer's current
+    // effective resolution. Direct assignment skips that contract, leaving a
+    // pass that is enabled later (SSAO/bloom) at its constructor size (often
+    // 1x1) until the next viewport resize.
+    this.composer.passes = [];
+    for (const record of ordered) this.composer.addPass(record.pass);
 
     for (const pass of this.composer.passes) {
       pass.renderToScreen = false;

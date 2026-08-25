@@ -12,7 +12,11 @@ function createHarness(needsPrePass = true) {
   const camera = new THREE.PerspectiveCamera();
   const composer = {
     passes: [] as Array<{ enabled: boolean; renderToScreen: boolean }>,
-    render: vi.fn(() => order.push('composer'))
+    render: vi.fn(() => order.push('composer')),
+    addPass: vi.fn(function (this: typeof composer, pass: { enabled: boolean; renderToScreen: boolean; setSize?: (width: number, height: number) => void }) {
+      this.passes.push(pass);
+      pass.setSize?.(800, 600);
+    })
   };
   const normal = new THREE.Texture();
   const depth = new THREE.DepthTexture(1, 1);
@@ -57,6 +61,21 @@ describe('RenderFrameCoordinator', () => {
     coordinator.setPassEnabled('fog', true);
     coordinator.renderFrame(1 / 60, 2);
     expect(composer.passes).toEqual([base, fog]);
+  });
+
+  it('sizes a pass when it becomes active after the composer was already resized', () => {
+    const { coordinator } = createHarness(false);
+    const base = { name: 'base', enabled: true, renderToScreen: false };
+    const setSize = vi.fn();
+    const ssao = { name: 'ssao', enabled: false, renderToScreen: false, setSize };
+    coordinator.registerPass(base as never, 'base', 0, true);
+    coordinator.registerPass(ssao as never, 'ssao', 10, false);
+    coordinator.syncPasses();
+    setSize.mockClear();
+
+    coordinator.setPassEnabled('ssao', true);
+
+    expect(setSize).toHaveBeenCalledWith(800, 600);
   });
 
   it('does not produce or feed stale depth when no consumer needs the pre-pass', () => {
