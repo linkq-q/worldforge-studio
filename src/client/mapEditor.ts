@@ -500,6 +500,7 @@ class MapEditor {
                   <label><span>当前地图</span><select id="editor-map-select" aria-label="当前地图"></select></label>
                   <label><span>重命名当前地图</span><input id="rename-current-map-input" maxlength="80" aria-label="重命名当前地图" placeholder="输入地图名称"></label>
                   <button id="rename-current-map" class="secondary" type="button">重命名</button>
+                  <button id="duplicate-map" class="secondary" type="button">复制当前地图</button>
                   <button id="delete-map" class="secondary danger" type="button">删除当前地图</button>
                   <label><span>最近删除（保留 7 天）</span><select id="deleted-map-select" aria-label="最近删除的地图"></select></label>
                   <button id="restore-deleted-map" class="secondary" type="button">恢复所选地图</button>
@@ -706,6 +707,7 @@ class MapEditor {
       (event.currentTarget as HTMLElement).closest('details')?.removeAttribute('open');
       void this.createMap();
     });
+    this.app.querySelector('#duplicate-map')?.addEventListener('click', () => void this.duplicateCurrentMap());
     this.app.querySelector('#delete-map')?.addEventListener('click', () => void this.deleteCurrentMap());
     this.app.querySelector('#restore-deleted-map')?.addEventListener('click', () => void this.restoreSelectedDeletedMap());
     this.app.querySelector('#rename-current-map')?.addEventListener('click', () => {
@@ -1124,6 +1126,36 @@ class MapEditor {
     this.resetManualHistory(this.state.map, true);
     await this.refreshScene();
     this.renderPanels();
+  }
+
+  private async duplicateCurrentMap(): Promise<void> {
+    const source = this.state.map;
+    if (!source || this.state.busy || !await this.confirmLeaveDirtyMap()) return;
+    this.setBusy(true, '正在复制地图...');
+    try {
+      const { map } = await editorFetch<{ map: EditableMap }>(
+        `/api/editor/maps/${encodeURIComponent(source.id)}/duplicate`,
+        { method: 'POST', body: '{}' }
+      );
+      this.clearMapAiPreview();
+      this.state.map = normalizeMap(map);
+      this.state.undoTransaction = null;
+      this.state.redoTransaction = null;
+      this.state.selectedObjectId = null;
+      this.state.stage = 'map';
+      this.resetRenderDraft();
+      this.resetManualHistory(this.state.map, true);
+      await this.reloadLists();
+      await this.refreshScene();
+      this.app.querySelector('.toolbar-project-menu')?.removeAttribute('open');
+      this.state.message = `已复制为新地图“${this.state.map.name}”`;
+      this.renderPanels();
+    } catch (error) {
+      this.state.message = `复制地图失败：${error instanceof Error ? error.message : '未知错误'}`;
+      this.renderPanels();
+    } finally {
+      this.setBusy(false);
+    }
   }
 
   private async deleteCurrentMap(): Promise<void> {
@@ -5977,6 +6009,8 @@ class MapEditor {
     }
     const deleteMapButton = this.app.querySelector<HTMLButtonElement>('#delete-map');
     if (deleteMapButton) deleteMapButton.disabled = this.state.busy || !this.state.map;
+    const duplicateMapButton = this.app.querySelector<HTMLButtonElement>('#duplicate-map');
+    if (duplicateMapButton) duplicateMapButton.disabled = this.state.busy || !this.state.map || Boolean(this.mapAiPreviewMap);
     const deletedMapSelect = this.app.querySelector<HTMLSelectElement>('#deleted-map-select');
     if (deletedMapSelect) deletedMapSelect.disabled = this.state.busy || this.deletedMaps.length === 0;
     const restoreDeletedMapButton = this.app.querySelector<HTMLButtonElement>('#restore-deleted-map');

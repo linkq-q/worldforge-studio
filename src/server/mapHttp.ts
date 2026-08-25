@@ -348,6 +348,12 @@ async function handleEditorMaps(req: Req, res: Res, store: MapStore, parts: stri
   const mapId = parts[3];
   if (!mapId) throw new HttpError(404, 'not_found');
 
+  if (parts[4] === 'duplicate' && req.method === 'POST' && parts.length === 5) {
+    const body = await readJson<{ name?: string }>(req);
+    sendJson(res, 201, { map: await store.duplicateMap(mapId, body.name) });
+    return;
+  }
+
   if (parts[4] === 'agent-runs' && req.method === 'POST' && parts.length === 5) {
     const body = await readJson<{ assetIds?: string[] }>(req);
     try {

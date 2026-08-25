@@ -221,6 +221,22 @@ export class MapStore {
     return this.saveMap(map);
   }
 
+  async duplicateMap(id: string, name?: string): Promise<EditableMap> {
+    const source = await this.loadMap(id);
+    const now = Date.now();
+    const duplicate = normalizeMap({
+      ...source,
+      id: createId('map'),
+      name: name?.trim() || `${source.name} 副本`,
+      version: 1,
+      createdAt: now,
+      updatedAt: now,
+      assets: undefined
+    });
+    await atomicWriteJson(this.mapPath(duplicate.id), duplicate);
+    return this.hydrateMap(duplicate);
+  }
+
   async saveMap(map: EditableMap): Promise<EditableMap> {
     await this.ensureReady();
     const normalized = normalizeMap({
