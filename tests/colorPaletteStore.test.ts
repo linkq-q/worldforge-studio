@@ -1,4 +1,4 @@
-import { mkdtemp, rm } from 'node:fs/promises';
+import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
@@ -32,5 +32,28 @@ describe('color palette store', () => {
 
     await store.deleteColorPalette(first.id);
     expect((await store.loadRenderScheme(scheme.id)).paletteSnapshot?.id).toBe(first.id);
+  });
+
+  it('seeds starter color palettes for a new data directory', async () => {
+    const rootDir = await mkdtemp(path.join(os.tmpdir(), 'worldforge-palette-data-'));
+    const starterDataDir = await mkdtemp(path.join(os.tmpdir(), 'worldforge-palette-starter-'));
+    tempDirs.push(rootDir, starterDataDir);
+    const paletteDir = path.join(starterDataDir, 'color-palettes');
+    await mkdir(paletteDir, { recursive: true });
+    await Promise.all([
+      writeFile(path.join(starterDataDir, 'manifest.json'), JSON.stringify({ kind: 'worldforge-starter-data' })),
+      writeFile(path.join(paletteDir, 'palette-starter.json'), JSON.stringify({
+        id: 'palette-starter',
+        name: 'Starter palette',
+        colors: ['#FFFDF6', '#76D0F2']
+      }))
+    ]);
+
+    const store = new MapStore({ rootDir, starterDataDir });
+
+    expect(await store.listColorPalettes()).toMatchObject([{
+      id: 'palette-starter',
+      name: 'Starter palette'
+    }]);
   });
 });

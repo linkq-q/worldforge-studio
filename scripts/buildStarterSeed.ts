@@ -13,6 +13,8 @@ const GOLDEN_MAPS = [
   '海岛公园'
 ];
 
+const GOLDEN_COLOR_PALETTES = ['palette-2b9c0834-be76-4477'];
+
 void main().catch((error) => {
   console.error(error instanceof Error ? error.message : String(error));
   process.exitCode = 1;
@@ -36,25 +38,36 @@ async function main(): Promise<void> {
   const schemeIds = new Set(maps.map((map) => map.value.renderSchemeId).filter((id): id is string => typeof id === 'string'));
   const assetFiles = await readJsonFiles(path.join(sourceRoot, 'assets'));
   const schemeFiles = await readJsonFiles(path.join(sourceRoot, 'render-schemes'));
+  const paletteFiles = await readJsonFiles(path.join(sourceRoot, 'color-palettes'));
   const selectedAssets = assetFiles.filter((entry) => assetIds.has(entry.value.id));
   const selectedSchemes = schemeFiles.filter((entry) => schemeIds.has(entry.value.id));
+  const selectedPalettes = paletteFiles.filter((entry) => GOLDEN_COLOR_PALETTES.includes(entry.value.id));
   if (selectedAssets.length !== assetIds.size) throw new Error('starter_asset_missing');
   if (selectedSchemes.length !== schemeIds.size) throw new Error('starter_render_scheme_missing');
+  if (selectedPalettes.length !== GOLDEN_COLOR_PALETTES.length) throw new Error('starter_color_palette_missing');
 
-  await Promise.all(['maps', 'assets', 'render-schemes'].map((directory) => mkdir(path.join(outputRoot, directory), { recursive: true })));
+  await Promise.all(['maps', 'assets', 'render-schemes', 'color-palettes'].map((directory) => mkdir(path.join(outputRoot, directory), { recursive: true })));
   await Promise.all([
     ...maps.map((entry) => copyFile(entry.file, path.join(outputRoot, 'maps', path.basename(entry.file)))),
     ...selectedAssets.map((entry) => copyFile(entry.file, path.join(outputRoot, 'assets', path.basename(entry.file)))),
-    ...selectedSchemes.map((entry) => copyFile(entry.file, path.join(outputRoot, 'render-schemes', path.basename(entry.file))))
+    ...selectedSchemes.map((entry) => copyFile(entry.file, path.join(outputRoot, 'render-schemes', path.basename(entry.file)))),
+    ...selectedPalettes.map((entry) => copyFile(entry.file, path.join(outputRoot, 'color-palettes', path.basename(entry.file))))
   ]);
   await writeFile(path.join(outputRoot, 'manifest.json'), `${JSON.stringify({
     schemaVersion: 1,
     kind: 'worldforge-starter-data',
     maps: maps.map((entry) => ({ id: entry.value.id, name: entry.value.name })),
     assets: selectedAssets.map((entry) => entry.value.id),
-    renderSchemes: selectedSchemes.map((entry) => entry.value.id)
+    renderSchemes: selectedSchemes.map((entry) => entry.value.id),
+    colorPalettes: selectedPalettes.map((entry) => entry.value.id)
   }, null, 2)}\n`);
-  console.log(JSON.stringify({ outputRoot, maps: maps.length, assets: selectedAssets.length, renderSchemes: selectedSchemes.length }, null, 2));
+  console.log(JSON.stringify({
+    outputRoot,
+    maps: maps.length,
+    assets: selectedAssets.length,
+    renderSchemes: selectedSchemes.length,
+    colorPalettes: selectedPalettes.length
+  }, null, 2));
 }
 
 async function readJsonFiles(directory: string): Promise<Array<{ file: string; value: any }>> {

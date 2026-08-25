@@ -156,19 +156,20 @@ export class MapStore {
   private async seedStarterDataIfEmpty(): Promise<void> {
     if (!this.starterDataDir) return;
     if (await readFile(this.starterSeedPath).catch(() => null)) return;
-    const [maps, assets, schemes] = await Promise.all([
+    const [maps, assets, schemes, palettes] = await Promise.all([
       readdir(this.mapsDir).catch(() => []),
       readdir(this.assetsDir).catch(() => []),
-      readdir(this.renderSchemesDir).catch(() => [])
+      readdir(this.renderSchemesDir).catch(() => []),
+      readdir(this.colorPalettesDir).catch(() => [])
     ]);
-    if ([...maps, ...assets, ...schemes].some((file) => file.endsWith('.json'))) {
+    if ([...maps, ...assets, ...schemes, ...palettes].some((file) => file.endsWith('.json'))) {
       await atomicWriteJson(this.starterSeedPath, { status: 'existing-data', createdAt: Date.now() });
       return;
     }
     const manifest = await readFile(path.join(this.starterDataDir, 'manifest.json')).catch(() => null);
     if (!manifest) return;
 
-    for (const directory of ['maps', 'assets', 'render-schemes']) {
+    for (const directory of ['maps', 'assets', 'render-schemes', 'color-palettes']) {
       const source = path.join(this.starterDataDir, directory);
       const target = path.join(this.rootDir, directory);
       const files = await readdir(source).catch(() => []);
