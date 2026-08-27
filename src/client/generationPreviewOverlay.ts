@@ -169,6 +169,10 @@ export function createGenerationPreviewOverlay(scene: THREE.Scene): GenerationPr
         if (buildMs > 16) console.info(`[perf] generation preview built "${job.asset.name}" in ${buildMs.toFixed(0)}ms`);
         // A new plan may have cleared the layer while this build was in flight.
         if (entries.get(job.entry.key) !== job.entry) return;
+        // buildModelGroup already rests the visual bottom at y=0, centered in
+        // x/z (centerGroup), matching the final renderer's transform contract
+        // (position + scale * size). Scaling preserves that alignment, so no
+        // extra offset is applied here.
         if (job.fitToFootprint) {
           const footprint = footprintOf(job.entry.placement);
           const bounds = calculateModelVisualBounds(job.asset.modelJson);
@@ -178,15 +182,12 @@ export function createGenerationPreviewOverlay(scene: THREE.Scene): GenerationPr
             Math.max(0.000001, bounds.max[2] - bounds.min[2])
           ];
           model.scale.set(footprint[0] / boundsSize[0], footprint[1] / boundsSize[1], footprint[2] / boundsSize[2]);
-          // The pipeline anchors models by their visual bottom (see centerGroup):
-          // rest the fitted bounds on the placement point, centered in X/Z.
-          model.position.set(
-            -(bounds.min[0] + bounds.max[0]) / 2 * model.scale.x,
-            -bounds.min[1] * model.scale.y,
-            -(bounds.min[2] + bounds.max[2]) / 2 * model.scale.z
-          );
         } else {
-          model.scale.set(job.entry.placement.scale[0], job.entry.placement.scale[1], job.entry.placement.scale[2]);
+          model.scale.set(
+            job.entry.placement.scale[0] * job.entry.placement.size[0],
+            job.entry.placement.scale[1] * job.entry.placement.size[1],
+            job.entry.placement.scale[2] * job.entry.placement.size[2]
+          );
         }
         job.entry.status = 'success';
         attachModelRoot(job.entry, model);
