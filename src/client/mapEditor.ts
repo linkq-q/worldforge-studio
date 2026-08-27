@@ -2187,19 +2187,45 @@ class MapEditor {
   /** Streams the discovered code-plan layout into the viewport as ghost boxes while assets generate. */
   private showCodePlanPreview(plan: CodePlanPreviewPayload): void {
     if (!this.generationPreview) return;
-    this.generationPreview.showPlan(
-      plan,
-      (assetId) => this.state.assets.find((asset) => asset.id === assetId)
-    );
+    const planSignature = JSON.stringify({ p: plan.placements, s: plan.sceneOperations ?? [] });
+    if (planSignature !== this.lastCodePlanPreviewJson) {
+      this.lastCodePlanPreviewJson = planSignature;
+      this.generationPreview.showPlan(
+        plan,
+        (assetId) => this.state.assets.find((asset) => asset.id === assetId)
+      );
+      this.applyCodePlanSceneOperations(plan.sceneOperations ?? []);
+    }
     const pending = plan.placements.filter((placement) => placement.pending).length;
     this.state.message = pending > 0
       ? `规划已同步到场景：${plan.placements.length} 个摆放，其中 ${pending} 个等待资产生成`
       : `规划已同步到场景：${plan.placements.length} 个摆放`;
   }
 
+  /** Shows the plan's terrain, water, grass, routes and room shell before any object exists. */
+  private applyCodePlanSceneOperations(operations: readonly MapOperation[]): void {
+    const base = this.mapAiPreviewMap ?? this.state.map;
+    if (operations.length === 0 || !base) return;
+    try {
+      this.codePlanSceneMap = applyMapOperations(base, [...operations]);
+      void this.refreshScene();
+    } catch {
+      // A draft plan may reference unfinished state; keep the previous scene and wait for the next iteration.
+    }
+  }
+
   private clearCodePlanPreview(): void {
     this.generationPreview?.clear();
+    this.lastCodePlanPreviewJson = '';
+    if (this.codePlanSceneMap) {
+      this.codePlanSceneMap = null;
+      void this.refreshScene();
+    }
   }
+
+  private lastCodePlanPreviewJson = '';
+  /** The base map with the streaming plan's environment operations applied. */
+  private codePlanSceneMap: EditableMap | null = null;
 
   /**
    * Progress events can storm at streaming delta rate; the elapsed-time timer
@@ -5847,8 +5873,8 @@ class MapEditor {
   }
 
   private displayedMap(): EditableMap | null {
-    if (!this.mapAiPreviewMap) return this.state.map;
-    return this.mapAiPreviewVisible ? this.mapAiPreviewMap : this.mapAiComparisonMap ?? this.state.map;
+    if (!this.mapAiPreviewMap) return this.codePlanSceneMap ?? this.state.map;
+    return this.mapAiPreviewVisible ? this.mapAiPreviewMap : this.mapAiComparisonMap ?? this.codePlanSceneMap ?? this.state.map;
   }
 
   private mapWithEditorAssets(source = this.displayedMap()): EditableMap {

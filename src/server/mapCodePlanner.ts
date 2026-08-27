@@ -383,6 +383,8 @@ interface CodeExecutionOptions {
   scope?: MapCodeScope;
   executionTimeoutMs?: number;
   refinableObjectIds?: ReadonlySet<string>;
+  /** Emits the executed layout after every discovery run, including attempts later repaired away. */
+  onPlanPreview?: (plan: CodePlanPreviewPayload) => void;
 }
 
 interface CodeExecutionResult {
@@ -1875,6 +1877,19 @@ function runMapCodePlan(
     timeout: options.executionTimeoutMs ?? DISCOVERY_EXECUTION_TIMEOUT_MS
   });
   if (returned && typeof returned.then === 'function') throw new Error('async_map_code_plan_not_supported');
+  // Stream every executed discovery attempt immediately, even ones the checks
+  // below will repair away: the user sees the code's first version and each
+  // repair iteration rather than waiting for a validated plan.
+  if (mode === 'discovery' && options.onPlanPreview) {
+    const draftRoomOperation = indoorRoom
+      ? [{ type: 'room.set', room: { ...indoorRoom, openings: roomOpenings } } satisfies MapOperation]
+      : [];
+    options.onPlanPreview(distillDraftCodePlanPreview(
+      placements,
+      [...requirements.values()],
+      [...draftRoomOperation, ...sceneOperations]
+    ));
+  }
   if (indoorRoom && sceneOperations.some((operation) => (
     operation.type.startsWith('terrain.') || operation.type.startsWith('water.') || operation.type.startsWith('grass.')
   ))) {
@@ -2118,33 +2133,117 @@ function withCodePlanDetails(
   };
 }
 
-function distillCodePlanPreview(
-  suggestion: MapAiSuggestion,
+/** Environment-only operations safe to visualize before objects exist. */
+const SCENE_PREVIEW_OPERATION_TYPES = new Set([
+  'room.set',
+  'terrain.set',
+  'terrain.generate',
+  'terrain.brush',
+  'terrain.modify',
+  'terrain.refine',
+  'terrain.surface',
+  'water.add',
+  'water.update',
+  'water.remove',
+  'grass.layer.add',
+  'grass.layer.update',
+  'grass.layer.remove',
+  'grass.fill',
+  'grass.brush',
+  'grass.generate',
+  'guide.upsert',
+  'guide.remove',
+  'reference.set',
+  'sun.set',
+  'paint.add'
+]);
+
+function scenePreviewOperations(operations: readonly MapOperation[]): MapOperation[] {
+  return operations.filter((operation) => SCENE_PREVIEW_OPERATION_TYPES.has(operation.type));
+}
+
+function isUnitFootprint(value: readonly number[]): boolean {
+  return value.every((axis) => Math.abs(axis - 1) <= 0.05);
+}
+
+function requirementDimensionsByKey(
   requirements: readonly CodeAssetRequirement[]
-): CodePlanPreviewPayload {
-  const roleByKey = new Map(requirements.map((requirement) => [requirement.key, requirement.role]));
-  // requireAsset dimensions live in the generation contract, not in each place()
-  // call, so backfill them onto placeholder placements whose transform carried
-  // no explicit footprint.
-  const dimensionsByKey = new Map(
+): Map<string, Point3> {
+  return new Map(
     requirements
       .filter((requirement) => requirement.dimensions)
       .map((requirement) => [requirement.key, requirement.dimensions as Point3])
   );
-  const isUnitFootprint = (value: readonly number[]): boolean => value.every((axis) => Math.abs(axis - 1) <= 0.05);
+}
+
+function requirementPreviews(requirements: readonly CodeAssetRequirement[]): CodePlanRequirementPreview[] {
+  return requirements.map((requirement) => ({
+    key: requirement.key,
+    name: requirement.name,
+    variants: requirement.variants,
+    ...(requirement.role ? { role: requirement.role } : {}),
+    ...(requirement.optional ? { optional: true } : {})
+  }));
+}
+
+function placeholderKeyOf(assetId: string | null): string | null {
+  return assetId && isCodePlanPlaceholderAssetId(assetId)
+    ? assetId.slice('code-asset://'.length).split('/')[0]
+    : null;
+}
+
+function distillDraftCodePlanPreview(
+  placements: readonly PlacementIntent[],
+  requirements: readonly CodeAssetRequirement[],
+  sceneOperations: readonly MapOperation[]
+): CodePlanPreviewPayload {
+  const dimensionsByKey = requirementDimensionsByKey(requirements);
+  return {
+    summary: `代码已执行：${placements.length} 个摆放意图，等待校验与资产生成`,
+    placements: placements.map((placement): CodePlanPlacementPreview => {
+      const placeholderKey = placeholderKeyOf(placement.assetId);
+      const resolvedSize = placeholderKey && isUnitFootprint(placement.size)
+        ? dimensionsByKey.get(placeholderKey) ?? placement.size
+        : placement.size;
+      return {
+        objectId: placement.referenceId,
+        name: placement.name,
+        assetId: placement.assetId,
+        pending: placeholderKey !== null,
+        position: placement.position,
+        rotationY: placement.rotationY,
+        size: resolvedSize,
+        scale: placement.scale,
+        ...(placement.role ? { role: placement.role } : {})
+      };
+    }),
+    requirements: requirementPreviews(requirements),
+    sceneOperations: scenePreviewOperations(sceneOperations)
+  };
+}
+
+function distillCodePlanPreview(
+  suggestion: MapAiSuggestion,
+  requirements: readonly CodeAssetRequirement[]
+): CodePlanPreviewPayload {
+  // requireAsset dimensions live in the generation contract, not in each place()
+  // call, so backfill them onto placeholder placements whose transform carried
+  // no explicit footprint.
+  const dimensionsByKey = requirementDimensionsByKey(requirements);
   const placements = suggestion.operations.flatMap((operation): CodePlanPlacementPreview[] => {
     if (operation.type !== 'object.add') return [];
     const object = operation.object;
     const transform = object.transform;
     if (!transform?.position) return [];
     const assetId = object.assetId ?? null;
-    const placeholderKey = assetId && isCodePlanPlaceholderAssetId(assetId)
-      ? assetId.slice('code-asset://'.length).split('/')[0]
-      : null;
+    const placeholderKey = placeholderKeyOf(assetId);
     const declaredSize = transform.size ?? [1, 1, 1];
     const resolvedSize = placeholderKey && isUnitFootprint(declaredSize)
       ? dimensionsByKey.get(placeholderKey) ?? declaredSize
       : declaredSize;
+    const role = placeholderKey
+      ? requirements.find((requirement) => requirement.key === placeholderKey)?.role
+      : undefined;
     return [{
       objectId: object.id ?? '',
       name: object.name ?? '程序化物体',
@@ -2154,20 +2253,14 @@ function distillCodePlanPreview(
       rotationY: transform.rotation?.[1] ?? 0,
       size: resolvedSize,
       scale: transform.scale ?? [1, 1, 1],
-      ...(placeholderKey && roleByKey.get(placeholderKey) ? { role: roleByKey.get(placeholderKey) } : {})
+      ...(role ? { role } : {})
     }];
   });
-  const requirementPreviews: CodePlanRequirementPreview[] = requirements.map((requirement) => ({
-    key: requirement.key,
-    name: requirement.name,
-    variants: requirement.variants,
-    ...(requirement.role ? { role: requirement.role } : {}),
-    ...(requirement.optional ? { optional: true } : {})
-  }));
   return {
     summary: suggestion.summary,
     placements,
-    requirements: requirementPreviews
+    requirements: requirementPreviews(requirements),
+    sceneOperations: scenePreviewOperations(suggestion.operations)
   };
 }
 
@@ -2441,7 +2534,8 @@ async function discoverMapCodeWithRepairs(
         minNewAssets: options.minNewAssets,
         maxNewAssets,
         scope: options.scope,
-        refinableObjectIds: new Set(options.refinableObjectIds ?? [])
+        refinableObjectIds: new Set(options.refinableObjectIds ?? []),
+        onPlanPreview: options.onPlanPreview
       });
       const programIssues = findAuthoredSceneProgramIssues(map, discovery.suggestion);
       if (programIssues.length > 0 && !programRepairAttempted) {

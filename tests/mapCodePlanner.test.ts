@@ -1569,13 +1569,22 @@ describe('map code planner', () => {
     });
 
     expect(createAsset).toHaveBeenCalledTimes(2);
-    expect(plans).toHaveLength(1);
-    const plan = plans[0];
-    expect(plan.placements).toHaveLength(2);
-    expect(plan.placements.every((placement) => placement.pending && placement.assetId?.startsWith('code-asset://desk/'))).toBe(true);
-    expect(plan.placements.every((placement) => placement.size)).toEqual(true);
-    expect(plan.placements.map((placement) => placement.size)).toEqual([[1.6, 0.75, 0.8], [1.6, 0.75, 0.8]]);
-    expect(plan.requirements).toEqual([{ key: 'desk', name: '书桌', variants: 2 }]);
+    expect(plans).toHaveLength(2);
+    const [draft, validated] = plans;
+    expect(draft.summary).toContain('代码已执行');
+    expect(draft.placements).toHaveLength(2);
+    expect(draft.placements.every((placement) => placement.pending && placement.assetId?.startsWith('code-asset://desk/'))).toBe(true);
+    expect(draft.placements.map((placement) => placement.size)).toEqual([[1.6, 0.75, 0.8], [1.6, 0.75, 0.8]]);
+    expect(draft.sceneOperations).toEqual(expect.arrayContaining([
+      expect.objectContaining({ type: 'terrain.generate' })
+    ]));
+    expect(validated.placements).toHaveLength(2);
+    expect(validated.placements.every((placement) => placement.pending && placement.assetId?.startsWith('code-asset://desk/'))).toBe(true);
+    expect(validated.placements.map((placement) => placement.size)).toEqual([[1.6, 0.75, 0.8], [1.6, 0.75, 0.8]]);
+    expect(validated.sceneOperations).toEqual(expect.arrayContaining([
+      expect.objectContaining({ type: 'terrain.generate' })
+    ]));
+    expect(validated.requirements).toEqual([{ key: 'desk', name: '书桌', variants: 2 }]);
     expect(assetsReady.map((event) => `${event.key}/${event.variantIndex}`).sort()).toEqual(['desk/0', 'desk/1']);
     expect(assetsReady.every((event) => event.asset.id.startsWith('asset-'))).toBe(true);
   });
@@ -1605,15 +1614,17 @@ describe('map code planner', () => {
     });
 
     expect(suggestion.codePlan?.assetRequirements).toEqual([expect.objectContaining({ key: 'shelf', variants: 1 })]);
-    expect(plans).toHaveLength(1);
-    expect(plans[0].placements).toHaveLength(1);
-    expect(plans[0].placements[0]).toEqual(expect.objectContaining({
-      pending: true,
-      assetId: 'code-asset://shelf/0',
-      size: [1.2, 2.2, 0.4],
-      role: 'functional'
-    }));
-    expect(plans[0].requirements[0]).toEqual(expect.objectContaining({ key: 'shelf', role: 'functional' }));
+    expect(plans).toHaveLength(2);
+    for (const plan of plans) {
+      expect(plan.placements).toHaveLength(1);
+      expect(plan.placements[0]).toEqual(expect.objectContaining({
+        pending: true,
+        assetId: 'code-asset://shelf/0',
+        size: [1.2, 2.2, 0.4],
+        role: 'functional'
+      }));
+      expect(plan.requirements[0]).toEqual(expect.objectContaining({ key: 'shelf', role: 'functional' }));
+    }
   });
 
   it('keeps the usable scene when a required generated asset fails and reports a repairable warning', async () => {

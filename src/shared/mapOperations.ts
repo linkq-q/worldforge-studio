@@ -134,6 +134,8 @@ export interface CodePlanPreviewPayload {
   summary: string;
   placements: CodePlanPlacementPreview[];
   requirements: CodePlanRequirementPreview[];
+  /** Environment operations (terrain, water, grass, routes, room shell) for early viewport visualization. */
+  sceneOperations?: MapOperation[];
 }
 
 /** One generated asset, streamed the moment it is saved so the client can swap its placeholder for the real model. */
