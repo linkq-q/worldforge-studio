@@ -1627,6 +1627,46 @@ describe('map code planner', () => {
     }
   });
 
+  it('streams partial layouts from discovery attempts that crash mid-execution', async () => {
+    const code = `function plan(api) {
+      api.terrain('plain');
+      const hut = api.requireAsset({
+        key: 'hut', name: '小屋', prompt: 'small hut', tags: ['building'],
+        variants: 1, dimensions: [4, 3, 4], role: 'structure'
+      });
+      api.place({ assetId: api.asset(hut, 0), position: [2, 0], role: 'structure' });
+      crashHere.x = 1;
+    }`;
+    const fetchImpl = vi.fn().mockImplementation(async () => new Response(JSON.stringify({ ok: true, content: code }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' }
+    }));
+    const plans: CodePlanPreviewPayload[] = [];
+
+    await expect(generateMapCodeSuggestion('make a hut', createEmptyMap(), [], {
+      apiBase: 'https://example.test',
+      provider: 'gpt',
+      fetchImpl,
+      onPlanPreview: (plan) => plans.push(plan)
+    })).rejects.toThrow('map_code_execution_failed');
+
+    // The initial attempt plus two execution repairs, each crashing after the hut was placed.
+    expect(plans).toHaveLength(3);
+    for (const plan of plans) {
+      expect(plan.summary).toContain('执行中断');
+      expect(plan.placements).toHaveLength(1);
+      expect(plan.placements[0]).toEqual(expect.objectContaining({
+        pending: true,
+        assetId: 'code-asset://hut/0',
+        size: [4, 3, 4],
+        role: 'structure'
+      }));
+      expect(plan.sceneOperations).toEqual(expect.arrayContaining([
+        expect.objectContaining({ type: 'terrain.generate' })
+      ]));
+    }
+  });
+
   it('keeps the usable scene when a required generated asset fails and reports a repairable warning', async () => {
     const code = `function plan(api) {
       api.sceneIntent({ kind: 'authored', reason: 'A designed garden' });

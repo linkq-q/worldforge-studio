@@ -1873,23 +1873,41 @@ function runMapCodePlan(
   }, {
     codeGeneration: { strings: false, wasm: false }
   });
-  const returned = script.runInContext(context, {
-    timeout: options.executionTimeoutMs ?? DISCOVERY_EXECUTION_TIMEOUT_MS
-  });
-  if (returned && typeof returned.then === 'function') throw new Error('async_map_code_plan_not_supported');
-  // Stream every executed discovery attempt immediately, even ones the checks
-  // below will repair away: the user sees the code's first version and each
-  // repair iteration rather than waiting for a validated plan.
-  if (mode === 'discovery' && options.onPlanPreview) {
+  const emitDiscoveryDraft = (interrupted: boolean): void => {
+    if (mode !== 'discovery' || !options.onPlanPreview) return;
+    if (placements.length === 0 && sceneOperations.length === 0) return;
     const draftRoomOperation = indoorRoom
       ? [{ type: 'room.set', room: { ...indoorRoom, openings: roomOpenings } } satisfies MapOperation]
       : [];
-    options.onPlanPreview(distillDraftCodePlanPreview(
+    const plan = distillDraftCodePlanPreview(
       placements,
       [...requirements.values()],
       [...draftRoomOperation, ...sceneOperations]
-    ));
+    );
+    options.onPlanPreview(interrupted
+      ? { ...plan, summary: `代码执行中断：已产生 ${placements.length} 个摆放，正在自动修复` }
+      : plan);
+  };
+  const returned = (() => {
+    try {
+      return script.runInContext(context, {
+        timeout: options.executionTimeoutMs ?? DISCOVERY_EXECUTION_TIMEOUT_MS
+      });
+    } catch (error) {
+      // A crashed attempt still placed real content before dying; show it so
+      // the user watches each repair iteration rather than an empty scene.
+      emitDiscoveryDraft(true);
+      throw error;
+    }
+  })();
+  if (returned && typeof returned.then === 'function') {
+    emitDiscoveryDraft(true);
+    throw new Error('async_map_code_plan_not_supported');
   }
+  // Stream every executed discovery attempt immediately, even ones the checks
+  // below will repair away: the user sees the code's first version and each
+  // repair iteration rather than waiting for a validated plan.
+  emitDiscoveryDraft(false);
   if (indoorRoom && sceneOperations.some((operation) => (
     operation.type.startsWith('terrain.') || operation.type.startsWith('water.') || operation.type.startsWith('grass.')
   ))) {
