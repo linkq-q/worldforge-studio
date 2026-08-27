@@ -27,7 +27,16 @@ import {
   resolveMapDesignFocusObjects
 } from '../shared/mapDesignRelations';
 import type { AgentProgressEvent, ChatProvider } from '../shared/protocol';
-import { applyMapOperations, type MapAiSuggestion, type MapOperation } from '../shared/mapOperations';
+import {
+  applyMapOperations,
+  isCodePlanPlaceholderAssetId,
+  type CodePlanAssetReadyPayload,
+  type CodePlanPlacementPreview,
+  type CodePlanPreviewPayload,
+  type CodePlanRequirementPreview,
+  type MapAiSuggestion,
+  type MapOperation
+} from '../shared/mapOperations';
 import {
   GRASS_PRESET_DEFINITIONS,
   GRASS_PRESET_IDS,
@@ -120,6 +129,10 @@ export interface MapCodePlannerOptions {
   /** Locked objects created by the current unapplied AI preview that refine may still adjust. */
   refinableObjectIds?: readonly string[];
   onProgress?: (event: AgentProgressEvent) => void;
+  /** Streams the placement layout right after sandbox discovery, before asset generation starts. */
+  onPlanPreview?: (plan: CodePlanPreviewPayload) => void;
+  /** Streams each asset the moment it is generated and saved, keyed back to its plan placeholder. */
+  onAssetReady?: (event: CodePlanAssetReadyPayload) => void;
   createAsset?: (request: AssetGenerationRequest, report: AssetTaskReporter) => Promise<MapAsset>;
 }
 
@@ -457,6 +470,7 @@ export async function generateMapCodeSuggestion(
   const execution = await discoverMapCodeWithRepairs(code, userPrompt, systemPrompt, map, reusableAssets, maxNewAssets, options);
   code = execution.code;
   const discovery = execution.discovery;
+  options.onPlanPreview?.(distillCodePlanPreview(discovery.suggestion, discovery.requirements));
   if (options.discoveryOnly) {
     options.onProgress?.({ phase: 'complete', label: '室内功能规划与资产清单已生成，等待确认' });
     return withCodePlanDetails(discovery.suggestion, discovery.requirements, execution.repairAttempts);
@@ -495,7 +509,9 @@ export async function generateMapCodeSuggestion(
     tasks,
     async (task, _index, report) => {
       try {
-        return await options.createAsset!(task.request, report);
+        const asset = await options.createAsset!(task.request, report);
+        options.onAssetReady?.({ key: task.key, variantIndex: task.variantIndex, asset });
+        return asset;
       } catch (error) {
         options.signal?.throwIfAborted();
         const message = error instanceof Error ? error.message : String(error);
@@ -2099,6 +2115,59 @@ function withCodePlanDetails(
         repaired: issue.repaired
       }))
     }
+  };
+}
+
+function distillCodePlanPreview(
+  suggestion: MapAiSuggestion,
+  requirements: readonly CodeAssetRequirement[]
+): CodePlanPreviewPayload {
+  const roleByKey = new Map(requirements.map((requirement) => [requirement.key, requirement.role]));
+  // requireAsset dimensions live in the generation contract, not in each place()
+  // call, so backfill them onto placeholder placements whose transform carried
+  // no explicit footprint.
+  const dimensionsByKey = new Map(
+    requirements
+      .filter((requirement) => requirement.dimensions)
+      .map((requirement) => [requirement.key, requirement.dimensions as Point3])
+  );
+  const isUnitFootprint = (value: readonly number[]): boolean => value.every((axis) => Math.abs(axis - 1) <= 0.05);
+  const placements = suggestion.operations.flatMap((operation): CodePlanPlacementPreview[] => {
+    if (operation.type !== 'object.add') return [];
+    const object = operation.object;
+    const transform = object.transform;
+    if (!transform?.position) return [];
+    const assetId = object.assetId ?? null;
+    const placeholderKey = assetId && isCodePlanPlaceholderAssetId(assetId)
+      ? assetId.slice('code-asset://'.length).split('/')[0]
+      : null;
+    const declaredSize = transform.size ?? [1, 1, 1];
+    const resolvedSize = placeholderKey && isUnitFootprint(declaredSize)
+      ? dimensionsByKey.get(placeholderKey) ?? declaredSize
+      : declaredSize;
+    return [{
+      objectId: object.id ?? '',
+      name: object.name ?? '程序化物体',
+      assetId,
+      pending: placeholderKey !== null,
+      position: transform.position,
+      rotationY: transform.rotation?.[1] ?? 0,
+      size: resolvedSize,
+      scale: transform.scale ?? [1, 1, 1],
+      ...(placeholderKey && roleByKey.get(placeholderKey) ? { role: roleByKey.get(placeholderKey) } : {})
+    }];
+  });
+  const requirementPreviews: CodePlanRequirementPreview[] = requirements.map((requirement) => ({
+    key: requirement.key,
+    name: requirement.name,
+    variants: requirement.variants,
+    ...(requirement.role ? { role: requirement.role } : {}),
+    ...(requirement.optional ? { optional: true } : {})
+  }));
+  return {
+    summary: suggestion.summary,
+    placements,
+    requirements: requirementPreviews
   };
 }
 

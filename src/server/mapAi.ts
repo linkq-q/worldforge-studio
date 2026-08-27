@@ -1,5 +1,7 @@
 import {
   applyMapOperations,
+  type CodePlanAssetReadyPayload,
+  type CodePlanPreviewPayload,
   type MapAiSuggestion,
   type MapOperation,
   type MapWaterBodyPatch
@@ -69,6 +71,10 @@ export interface MapAiOptions {
   signal?: AbortSignal;
   onProgress?: (event: AgentProgressEvent) => void;
   onPreview?: (suggestion: MapAiSuggestion) => void;
+  /** Code-planner stream of the discovered placement layout, before assets are generated. */
+  onPlanPreview?: (plan: CodePlanPreviewPayload) => void;
+  /** Code-planner stream of each asset the moment it is generated and saved. */
+  onAssetReady?: (event: CodePlanAssetReadyPayload) => void;
   reuseExistingAssets?: boolean;
   reusableAssetIds?: readonly string[];
   minNewAssets?: number;

@@ -130,10 +130,13 @@ import {
 import type { ProjectExportProfile } from '../shared/projectExport';
 import {
   applyMapOperations,
+  type CodePlanAssetReadyPayload,
+  type CodePlanPreviewPayload,
   type MapAiSuggestion,
   type MapOperation,
   type MapTransactionSummary
 } from '../shared/mapOperations';
+import { createGenerationPreviewOverlay, type GenerationPreviewOverlay } from './generationPreviewOverlay';
 import {
   TERRAIN_CLIFF_LAYOUTS,
   TERRAIN_GENERATION_PRESETS,
@@ -349,6 +352,8 @@ class MapEditor {
   private previewAssetId: string | null = null;
   private previewRequestId = 0;
   private selectionOutline: THREE.BoxHelper | null = null;
+  /** View-only ghost boxes + streamed-in models for the running code-planner generation. */
+  private generationPreview: GenerationPreviewOverlay | null = null;
   private brushPreview: THREE.Mesh<THREE.RingGeometry, THREE.MeshBasicMaterial> | null = null;
   private placementPreview: THREE.Object3D | null = null;
   private placingAssetId: string | null = null;
@@ -906,6 +911,7 @@ class MapEditor {
       this.renderStats.setVisible(true);
     }
     host.appendChild(this.renderer.domElement);
+    this.generationPreview = createGenerationPreviewOverlay(this.scene);
 
     this.playMode = new PlayModeController({
       canvas: this.renderer.domElement,
@@ -1686,6 +1692,7 @@ class MapEditor {
     });
     host.querySelector('#discard-code-plan')?.addEventListener('click', () => {
       this.pendingCodeSuggestion = null;
+      this.clearCodePlanPreview();
       this.state.message = '已放弃室内功能规划，可以修改提示词后重试';
       this.renderPanels();
     });
@@ -2172,6 +2179,23 @@ class MapEditor {
     });
   }
 
+  /** Streams the discovered code-plan layout into the viewport as ghost boxes while assets generate. */
+  private showCodePlanPreview(plan: CodePlanPreviewPayload): void {
+    if (!this.generationPreview) return;
+    this.generationPreview.showPlan(
+      plan,
+      (assetId) => this.state.assets.find((asset) => asset.id === assetId)
+    );
+    const pending = plan.placements.filter((placement) => placement.pending).length;
+    this.state.message = pending > 0
+      ? `规划已同步到场景：${plan.placements.length} 个摆放，其中 ${pending} 个等待资产生成`
+      : `规划已同步到场景：${plan.placements.length} 个摆放`;
+  }
+
+  private clearCodePlanPreview(): void {
+    this.generationPreview?.clear();
+  }
+
   private async generateCompositionPlanPreview(): Promise<void> {
     const map = this.state.map;
     const prompt = this.mapAiPrompt.trim();
@@ -2179,6 +2203,7 @@ class MapEditor {
     const controller = new AbortController();
     this.mapAiAbortController = controller;
     this.mapAgentProgress = [];
+    this.clearCodePlanPreview();
     this.startMapAgentProgressTimer();
     this.setBusy(true, 'AI 正在规划室内功能关系与资产清单...');
     this.renderMapAiPanel();
@@ -2202,7 +2227,9 @@ class MapEditor {
         (event) => {
           updateAgentProgress(this.mapAgentProgress, event);
           this.renderMapAiPanel();
-        }
+        },
+        undefined,
+        (plan) => this.showCodePlanPreview(plan)
       );
       this.pendingCodeSuggestion = suggestion;
       updateAgentProgress(this.mapAgentProgress, { phase: 'complete', label: '室内功能规划与资产清单已生成，等待确认' });
@@ -2250,6 +2277,7 @@ class MapEditor {
     this.mapAiLastFailure = null;
     this.mapAiReplayToken = null;
     this.mapAgentProgress = [];
+    this.clearCodePlanPreview();
     this.startMapAgentProgressTimer();
     const previousSuggestion = mode === 'refine' ? this.mapAiSuggestion : null;
     const comparisonMap = mode === 'refine' && this.mapAiPreviewMap ? this.mapAiPreviewMap : map;
@@ -2291,6 +2319,7 @@ class MapEditor {
         },
         (event) => {
           updateAgentProgress(this.mapAgentProgress, event);
+          this.generationPreview?.updateAssetProgress(event);
           this.renderMapAiPanel();
         },
         (payload) => {
@@ -2315,7 +2344,9 @@ class MapEditor {
           }).catch((error) => {
             livePreviewFailure ??= error;
           });
-        }
+        },
+        (plan) => this.showCodePlanPreview(plan),
+        (payload) => this.generationPreview?.attachAsset(payload)
       );
       await livePreviewWork;
       if (livePreviewFailure) throw livePreviewFailure;
@@ -2358,6 +2389,7 @@ class MapEditor {
       this.state.selectedObjectId = null;
       this.state.message = automatic ? '第二轮规划提升已完成，尚未应用' : 'AI 地图预览已生成，尚未应用';
       await this.refreshScene();
+      this.clearCodePlanPreview();
       const quality = mode === 'generate' && combinedSuggestion.composition
         ? mapCompositionPlacementQuality(
             combinedSuggestion.composition.metrics.initialObjectCount ?? combinedSuggestion.composition.metrics.objectCount,
@@ -2374,6 +2406,9 @@ class MapEditor {
       await livePreviewWork;
       const cancelled = error instanceof Error && error.name === 'AbortError';
       const retainedCandidate = Boolean(this.mapAiPreviewMap && this.mapAiSuggestion);
+      // Ghost boxes only stay on when nothing else visualizes the plan; a retained
+      // candidate renders the real objects, so drop the overlay to avoid doubling.
+      if (retainedCandidate) this.clearCodePlanPreview();
       const detail = humanizeAgentError(error);
       const replayToken = mapCodeReplayToken(error);
       if (replayToken) this.mapAiReplayToken = replayToken;
@@ -2414,6 +2449,7 @@ class MapEditor {
     const controller = new AbortController();
     const previousSuggestion = this.mapAiLastFailure?.mode === 'refine' ? this.mapAiSuggestion : null;
     this.mapAiAbortController = controller;
+    this.clearCodePlanPreview();
     this.setBusy(true, '正在使用已生成资产重新重放布局...');
     try {
       const { suggestion } = await editorAgentFetch<{ suggestion: MapAiSuggestion }>(
@@ -2441,6 +2477,7 @@ class MapEditor {
       this.state.selectedObjectId = null;
       this.state.message = '已使用现有资产恢复场景布局，尚未应用';
       await this.refreshScene();
+      this.clearCodePlanPreview();
       window.setTimeout(() => void this.runMapVisualFinalReview(), 0);
     } catch (error) {
       const replayToken = mapCodeReplayToken(error);
@@ -2878,6 +2915,7 @@ class MapEditor {
     this.mapAiReplayToken = null;
     this.pendingCompositionPlan = null;
     this.pendingCodeSuggestion = null;
+    this.clearCodePlanPreview();
     this.mapAiPreviewMap = null;
     this.mapAiPreviewVisible = true;
     this.mapAiComparisonMap = null;
@@ -5482,6 +5520,8 @@ class MapEditor {
     if (this.playMode?.isActive) return;
     if (!this.renderer || !this.camera || !this.renderedMap || !this.state.map) return;
     if (this.mapAiPreviewMap) return;
+    // The generation preview is view-only; keep the waiting scene observable but not editable.
+    if (this.generationPreview?.active) return;
     if (event.altKey) return;
     if (first && event.button !== 0) return;
     if (first && this.state.tool === 'terrain' && this.state.terrainAction === 'road') {
@@ -5945,6 +5985,7 @@ class MapEditor {
     }
     this.applyRoomWallDisplayMode();
     this.selectionOutline?.update();
+    this.generationPreview?.update(now);
     this.renderStats?.beginFrame();
     const quality = this.adaptiveQuality.update(frameMs, dt);
     if (quality) this.renderScene?.setAdaptiveQuality(quality.scale);
@@ -6676,7 +6717,9 @@ async function editorAgentFetch<T>(
   path: string,
   init: RequestInit,
   onProgress: (event: AgentProgressEvent) => void,
-  onPreview?: (payload: unknown) => void
+  onPreview?: (payload: unknown) => void,
+  onPlan?: (plan: CodePlanPreviewPayload) => void,
+  onAssetReady?: (payload: CodePlanAssetReadyPayload) => void
 ): Promise<T> {
   const response = await fetch(`${serverHttpBase(location, import.meta.env.DEV)}${path}`, {
     ...init,
@@ -6710,6 +6753,8 @@ async function editorAgentFetch<T>(
     const payload = JSON.parse(data.join('\n')) as T & { error?: string };
     if (event === 'progress') onProgress(payload as unknown as AgentProgressEvent);
     else if (event === 'preview') onPreview?.(payload);
+    else if (event === 'plan') onPlan?.(payload as unknown as CodePlanPreviewPayload);
+    else if (event === 'asset-ready') onAssetReady?.(payload as unknown as CodePlanAssetReadyPayload);
     else if (event === 'result') result = payload;
     else if (event === 'error') throw new Error(payload.error ?? 'agent_failed');
   };

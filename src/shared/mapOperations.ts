@@ -9,6 +9,7 @@ import {
   placeRoomOpeningObjectInPlace,
   snapTerrainObjectsInPlace,
   type EditableMap,
+  type MapAsset,
   type MapBoxColors,
   type MapObject,
   type MapPaintStroke,
@@ -97,6 +98,57 @@ export interface MapAiTransactionMetadata {
   agent?: MapAiAgentTrace;
   codePlan?: MapAiCodePlan;
   generatedAssets?: Array<{ id: string; name: string }>;
+}
+
+export type CodePlanAssetRole = 'structure' | 'environment' | 'functional' | 'decor';
+
+/**
+ * Live wire-format for the code-driven planner preview: one entry per planned
+ * placement, streamed to the client as soon as sandbox discovery finishes so
+ * the viewport can show pending assets as translucent placeholder boxes while
+ * model generation is still running.
+ */
+export interface CodePlanPlacementPreview {
+  objectId: string;
+  name: string;
+  /** Resolved asset id, or a `code-asset://key/variant` placeholder id while the asset still needs generation. */
+  assetId: string | null;
+  pending: boolean;
+  position: Vec3;
+  rotationY: number;
+  /** Intended world footprint [width, height, depth]; [1, 1, 1] when the code declared none. */
+  size: Vec3;
+  scale: Vec3;
+  role?: CodePlanAssetRole;
+}
+
+export interface CodePlanRequirementPreview {
+  key: string;
+  name: string;
+  variants: number;
+  role?: CodePlanAssetRole;
+  optional?: boolean;
+}
+
+export interface CodePlanPreviewPayload {
+  summary: string;
+  placements: CodePlanPlacementPreview[];
+  requirements: CodePlanRequirementPreview[];
+}
+
+/** One generated asset, streamed the moment it is saved so the client can swap its placeholder for the real model. */
+export interface CodePlanAssetReadyPayload {
+  key: string;
+  variantIndex: number;
+  asset: MapAsset;
+}
+
+export function isCodePlanPlaceholderAssetId(assetId: string): boolean {
+  return assetId.startsWith('code-asset://');
+}
+
+export function codePlanPlaceholderAssetId(key: string, variantIndex: number): string {
+  return `code-asset://${key}/${variantIndex}`;
 }
 
 export type MapObjectInput = Omit<Partial<MapObject>, 'transform'> & {
