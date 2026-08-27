@@ -215,8 +215,7 @@ export function createGenerationPreviewOverlay(scene: THREE.Scene): GenerationPr
       faceMaterial = new THREE.MeshBasicMaterial({
         color: 0xffffff,
         transparent: true,
-        opacity: 0.12,
-        depthTest: false,
+        opacity: 0.14,
         depthWrite: false,
         side: THREE.DoubleSide
       });
@@ -233,8 +232,7 @@ export function createGenerationPreviewOverlay(scene: THREE.Scene): GenerationPr
       edgeMaterial = new THREE.LineBasicMaterial({
         vertexColors: true,
         transparent: true,
-        opacity: 0.55,
-        depthTest: false,
+        opacity: 0.6,
         depthWrite: false
       });
       edgeLines = new THREE.LineSegments(edgeGeometry, edgeMaterial);
@@ -259,9 +257,12 @@ export function createGenerationPreviewOverlay(scene: THREE.Scene): GenerationPr
         facesMesh!.setMatrixAt(index, matrix);
         facesMesh!.setColorAt(index, new THREE.Color(ROLE_COLORS[placement.role ?? ''] ?? DEFAULT_COLOR));
         for (let edgeVertex = 0; edgeVertex < EDGE_VERTEX_COUNT; edgeVertex += 1) {
+          // Raw edge coordinates already span ±0.5; scaling them and adding the
+          // face center (which carries the +h/2 bottom-anchor offset) yields the
+          // exact same box as the instanced face.
           vertex.set(
             UNIT_BOX_EDGE_POSITIONS[edgeVertex * 3] * footprint[0],
-            UNIT_BOX_EDGE_POSITIONS[edgeVertex * 3 + 1] * footprint[1] + footprint[1] / 2,
+            UNIT_BOX_EDGE_POSITIONS[edgeVertex * 3 + 1] * footprint[1],
             UNIT_BOX_EDGE_POSITIONS[edgeVertex * 3 + 2] * footprint[2]
           );
           vertex.applyQuaternion(quaternion).add(position);
