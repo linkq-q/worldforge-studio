@@ -1008,6 +1008,7 @@ class MapEditor {
   }
 
   private async reloadLists(): Promise<void> {
+    const reloadStartedAt = performance.now();
     const [maps, deletedMaps, assets, renderSchemes, colorPalettes, assetLibraries, exportProfiles] = await Promise.all([
       editorFetch<{ maps: MapSummary[] }>('/api/editor/maps'),
       editorFetch<{ maps: DeletedMapSummary[] }>('/api/editor/maps/trash'),
@@ -1040,6 +1041,10 @@ class MapEditor {
     if (!this.state.map && this.state.maps[0]) {
       await this.loadMap(this.state.maps[0].id);
       return;
+    }
+    const reloadMs = performance.now() - reloadStartedAt;
+    if (reloadMs > 250) {
+      console.info(`[perf] list reload: ${this.state.assets.length} assets in ${reloadMs.toFixed(0)}ms`);
     }
     if (!this.state.map && this.state.maps.length === 0) {
       const { map } = await editorFetch<{ map: EditableMap }>('/api/editor/maps', {
@@ -2196,6 +2201,19 @@ class MapEditor {
     this.generationPreview?.clear();
   }
 
+  /**
+   * Progress events can storm at streaming delta rate; the elapsed-time timer
+   * already refreshes the panel once per second, so collapse interim rebuilds.
+   */
+  private scheduleMapAiPanelRender(): void {
+    const now = performance.now();
+    if (now - this.mapAiPanelRenderedAt < 150) return;
+    this.mapAiPanelRenderedAt = now;
+    this.renderMapAiPanel();
+  }
+
+  private mapAiPanelRenderedAt = 0;
+
   private async generateCompositionPlanPreview(): Promise<void> {
     const map = this.state.map;
     const prompt = this.mapAiPrompt.trim();
@@ -2226,7 +2244,8 @@ class MapEditor {
         },
         (event) => {
           updateAgentProgress(this.mapAgentProgress, event);
-          this.renderMapAiPanel();
+          this.generationPreview?.updateAssetProgress(event);
+          this.scheduleMapAiPanelRender();
         },
         undefined,
         (plan) => this.showCodePlanPreview(plan)
@@ -2320,7 +2339,7 @@ class MapEditor {
         (event) => {
           updateAgentProgress(this.mapAgentProgress, event);
           this.generationPreview?.updateAssetProgress(event);
-          this.renderMapAiPanel();
+          this.scheduleMapAiPanelRender();
         },
         (payload) => {
           const liveSuggestion = (payload as { suggestion?: MapAiSuggestion }).suggestion;
@@ -5492,11 +5511,16 @@ class MapEditor {
       return;
     }
     this.updateSceneLighting();
+    const rebuildStartedAt = performance.now();
     const next = await buildEditableMapGroup(this.mapWithEditorAssets(), {
       editorHelpers: true,
       scene: this.scene,
       renderer: this.renderer ?? undefined
     });
+    const rebuildMs = performance.now() - rebuildStartedAt;
+    if (rebuildMs > 100) {
+      console.info(`[perf] scene rebuild: ${this.mapWithEditorAssets().objects.length} objects in ${rebuildMs.toFixed(0)}ms`);
+    }
     if (previous) {
       this.renderScene?.attach(null);
       this.scene.remove(previous.group);
