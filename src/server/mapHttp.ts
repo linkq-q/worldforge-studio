@@ -19,6 +19,8 @@ import {
 } from '../shared/protocol';
 import {
   applyMapOperations,
+  type CodePlanAssetReadyPayload,
+  type CodePlanPreviewPayload,
   type MapAiSuggestion,
   type MapOperation,
   type MapTransactionRequest,
@@ -544,6 +546,12 @@ async function handleEditorMaps(req: Req, res: Res, store: MapStore, parts: stri
     const onPreview = stream
       ? (suggestion: MapAiSuggestion) => sendSse(res, 'preview', { suggestion })
       : undefined;
+    const onPlanPreview = stream
+      ? (plan: CodePlanPreviewPayload) => sendSse(res, 'plan', plan)
+      : undefined;
+    const onAssetReady = stream
+      ? (event: CodePlanAssetReadyPayload) => sendSse(res, 'asset-ready', event)
+      : undefined;
     const abort = () => controller.abort();
     const abortIfOpen = () => {
       if (!res.writableEnded) abort();
@@ -596,6 +604,8 @@ async function handleEditorMaps(req: Req, res: Res, store: MapStore, parts: stri
             focusPrompt: body.focusPrompt,
             discoveryOnly: true,
             onProgress,
+            onPlanPreview,
+            onAssetReady,
             createAsset: async () => { throw new Error('discovery_only_asset_generation'); }
           });
           if (stream) {
@@ -641,6 +651,8 @@ async function handleEditorMaps(req: Req, res: Res, store: MapStore, parts: stri
           refinableObjectIds,
           onProgress,
           onPreview,
+          onPlanPreview,
+          onAssetReady,
           createAsset: async (request, report) => {
             const modelJson = await generateMapAssetWithRetry(request.name, () => generateModel(request.prompt, {
                 mode: request.mode,

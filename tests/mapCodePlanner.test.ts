@@ -7,7 +7,7 @@ import {
   generateMapCodeSuggestion,
   replayGeneratedMapCode
 } from '../src/server/mapCodePlanner';
-import { applyMapOperations } from '../src/shared/mapOperations';
+import { applyMapOperations, type CodePlanAssetReadyPayload, type CodePlanPreviewPayload } from '../src/shared/mapOperations';
 import { isPointInsideWaterBody } from '../src/shared/mapWater';
 
 describe('map code planner', () => {
@@ -1538,6 +1538,134 @@ describe('map code planner', () => {
     expect(new Set(assetIds).size).toBe(3);
     expect(assetIds.slice(0, 3)).toEqual(assetIds.slice(3, 6));
     expect(() => applyMapOperations(createEmptyMap(), suggestion.operations)).not.toThrow();
+  });
+
+  it('streams the discovered layout and each finished asset for live viewport preview', async () => {
+    const code = `function plan(api) {
+      api.terrain('plain');
+      const desk = api.requireAsset({
+        key: 'desk', name: '书桌', prompt: 'wooden desk', tags: ['furniture'],
+        variants: 2, dimensions: [1.6, 0.75, 0.8]
+      });
+      api.place({ assetId: api.asset(desk, 0), position: [1.5, 0] });
+      api.place({ assetId: api.asset(desk, 1), position: [-1.5, 0] });
+    }`;
+    const fetchImpl = vi.fn().mockResolvedValue(new Response(JSON.stringify({ ok: true, content: code }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' }
+    }));
+    const plans: CodePlanPreviewPayload[] = [];
+    const assetsReady: CodePlanAssetReadyPayload[] = [];
+    const createAsset = vi.fn(async (request: { name: string }) => testAsset(`asset-${request.name}`, request.name));
+
+    await generateMapCodeSuggestion('make a two-desk study', createEmptyMap(), [], {
+      apiBase: 'https://example.test',
+      provider: 'gpt',
+      fetchImpl,
+      maxNewAssets: 2,
+      onPlanPreview: (plan) => plans.push(plan),
+      onAssetReady: (event) => assetsReady.push(event),
+      createAsset
+    });
+
+    expect(createAsset).toHaveBeenCalledTimes(2);
+    expect(plans).toHaveLength(2);
+    const [draft, validated] = plans;
+    expect(draft.summary).toContain('代码已执行');
+    expect(draft.placements).toHaveLength(2);
+    expect(draft.placements.every((placement) => placement.pending && placement.assetId?.startsWith('code-asset://desk/'))).toBe(true);
+    expect(draft.placements.map((placement) => placement.size)).toEqual([[1.6, 0.75, 0.8], [1.6, 0.75, 0.8]]);
+    expect(draft.sceneOperations).toEqual(expect.arrayContaining([
+      expect.objectContaining({ type: 'terrain.generate' })
+    ]));
+    expect(validated.placements).toHaveLength(2);
+    expect(validated.placements.every((placement) => placement.pending && placement.assetId?.startsWith('code-asset://desk/'))).toBe(true);
+    expect(validated.placements.every((placement) => placement.heightMode === 'terrain')).toBe(true);
+    expect(validated.placements.map((placement) => placement.size)).toEqual([[1.6, 0.75, 0.8], [1.6, 0.75, 0.8]]);
+    expect(validated.sceneOperations).toEqual(expect.arrayContaining([
+      expect.objectContaining({ type: 'terrain.generate' })
+    ]));
+    expect(validated.requirements).toEqual([{ key: 'desk', name: '书桌', variants: 2 }]);
+    expect(assetsReady.map((event) => `${event.key}/${event.variantIndex}`).sort()).toEqual(['desk/0', 'desk/1']);
+    expect(assetsReady.every((event) => event.asset.id.startsWith('asset-'))).toBe(true);
+  });
+
+  it('streams the plan preview before returning a discovery-only suggestion', async () => {
+    const map = createEmptyMap('Study', 'indoor-plan-only', [12, 4, 9], 'voxel', 'indoor', [12, 4, 9]);
+    const code = `function plan(api) {
+      const shelf = api.requireAsset({
+        key: 'shelf', name: '书架', prompt: 'tall bookshelf', tags: ['furniture'],
+        variants: 1, dimensions: [1.2, 2.2, 0.4], role: 'functional'
+      });
+      api.place({ assetId: api.asset(shelf, 0), position: api.roomPoint(-3, 2, 0), role: 'functional' });
+    }`;
+    const fetchImpl = vi.fn().mockResolvedValue(new Response(JSON.stringify({ ok: true, content: code }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' }
+    }));
+    const plans: CodePlanPreviewPayload[] = [];
+
+    const suggestion = await generateMapCodeSuggestion('indoor study wall', map, [], {
+      apiBase: 'https://example.test',
+      provider: 'gpt',
+      fetchImpl,
+      scope: 'scene',
+      discoveryOnly: true,
+      onPlanPreview: (plan) => plans.push(plan)
+    });
+
+    expect(suggestion.codePlan?.assetRequirements).toEqual([expect.objectContaining({ key: 'shelf', variants: 1 })]);
+    expect(plans).toHaveLength(2);
+    for (const plan of plans) {
+      expect(plan.placements).toHaveLength(1);
+      expect(plan.placements[0]).toEqual(expect.objectContaining({
+        pending: true,
+        assetId: 'code-asset://shelf/0',
+        size: [1.2, 2.2, 0.4],
+        role: 'functional'
+      }));
+      expect(plan.requirements[0]).toEqual(expect.objectContaining({ key: 'shelf', role: 'functional' }));
+    }
+  });
+
+  it('streams partial layouts from discovery attempts that crash mid-execution', async () => {
+    const code = `function plan(api) {
+      api.terrain('plain');
+      const hut = api.requireAsset({
+        key: 'hut', name: '小屋', prompt: 'small hut', tags: ['building'],
+        variants: 1, dimensions: [4, 3, 4], role: 'structure'
+      });
+      api.place({ assetId: api.asset(hut, 0), position: [2, 0], role: 'structure' });
+      crashHere.x = 1;
+    }`;
+    const fetchImpl = vi.fn().mockImplementation(async () => new Response(JSON.stringify({ ok: true, content: code }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' }
+    }));
+    const plans: CodePlanPreviewPayload[] = [];
+
+    await expect(generateMapCodeSuggestion('make a hut', createEmptyMap(), [], {
+      apiBase: 'https://example.test',
+      provider: 'gpt',
+      fetchImpl,
+      onPlanPreview: (plan) => plans.push(plan)
+    })).rejects.toThrow('map_code_execution_failed');
+
+    // The initial attempt plus two execution repairs, each crashing after the hut was placed.
+    expect(plans).toHaveLength(3);
+    for (const plan of plans) {
+      expect(plan.summary).toContain('执行中断');
+      expect(plan.placements).toHaveLength(1);
+      expect(plan.placements[0]).toEqual(expect.objectContaining({
+        pending: true,
+        assetId: 'code-asset://hut/0',
+        size: [4, 3, 4],
+        role: 'structure'
+      }));
+      expect(plan.sceneOperations).toEqual(expect.arrayContaining([
+        expect.objectContaining({ type: 'terrain.generate' })
+      ]));
+    }
   });
 
   it('keeps the usable scene when a required generated asset fails and reports a repairable warning', async () => {

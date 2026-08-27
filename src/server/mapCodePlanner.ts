@@ -27,7 +27,16 @@ import {
   resolveMapDesignFocusObjects
 } from '../shared/mapDesignRelations';
 import type { AgentProgressEvent, ChatProvider } from '../shared/protocol';
-import { applyMapOperations, type MapAiSuggestion, type MapOperation } from '../shared/mapOperations';
+import {
+  applyMapOperations,
+  isCodePlanPlaceholderAssetId,
+  type CodePlanAssetReadyPayload,
+  type CodePlanPlacementPreview,
+  type CodePlanPreviewPayload,
+  type CodePlanRequirementPreview,
+  type MapAiSuggestion,
+  type MapOperation
+} from '../shared/mapOperations';
 import {
   GRASS_PRESET_DEFINITIONS,
   GRASS_PRESET_IDS,
@@ -120,6 +129,10 @@ export interface MapCodePlannerOptions {
   /** Locked objects created by the current unapplied AI preview that refine may still adjust. */
   refinableObjectIds?: readonly string[];
   onProgress?: (event: AgentProgressEvent) => void;
+  /** Streams the placement layout right after sandbox discovery, before asset generation starts. */
+  onPlanPreview?: (plan: CodePlanPreviewPayload) => void;
+  /** Streams each asset the moment it is generated and saved, keyed back to its plan placeholder. */
+  onAssetReady?: (event: CodePlanAssetReadyPayload) => void;
   createAsset?: (request: AssetGenerationRequest, report: AssetTaskReporter) => Promise<MapAsset>;
 }
 
@@ -370,6 +383,8 @@ interface CodeExecutionOptions {
   scope?: MapCodeScope;
   executionTimeoutMs?: number;
   refinableObjectIds?: ReadonlySet<string>;
+  /** Emits the executed layout after every discovery run, including attempts later repaired away. */
+  onPlanPreview?: (plan: CodePlanPreviewPayload) => void;
 }
 
 interface CodeExecutionResult {
@@ -457,6 +472,7 @@ export async function generateMapCodeSuggestion(
   const execution = await discoverMapCodeWithRepairs(code, userPrompt, systemPrompt, map, reusableAssets, maxNewAssets, options);
   code = execution.code;
   const discovery = execution.discovery;
+  options.onPlanPreview?.(distillCodePlanPreview(discovery.suggestion, discovery.requirements));
   if (options.discoveryOnly) {
     options.onProgress?.({ phase: 'complete', label: '室内功能规划与资产清单已生成，等待确认' });
     return withCodePlanDetails(discovery.suggestion, discovery.requirements, execution.repairAttempts);
@@ -495,7 +511,9 @@ export async function generateMapCodeSuggestion(
     tasks,
     async (task, _index, report) => {
       try {
-        return await options.createAsset!(task.request, report);
+        const asset = await options.createAsset!(task.request, report);
+        options.onAssetReady?.({ key: task.key, variantIndex: task.variantIndex, asset });
+        return asset;
       } catch (error) {
         options.signal?.throwIfAborted();
         const message = error instanceof Error ? error.message : String(error);
@@ -1855,10 +1873,41 @@ function runMapCodePlan(
   }, {
     codeGeneration: { strings: false, wasm: false }
   });
-  const returned = script.runInContext(context, {
-    timeout: options.executionTimeoutMs ?? DISCOVERY_EXECUTION_TIMEOUT_MS
-  });
-  if (returned && typeof returned.then === 'function') throw new Error('async_map_code_plan_not_supported');
+  const emitDiscoveryDraft = (interrupted: boolean): void => {
+    if (mode !== 'discovery' || !options.onPlanPreview) return;
+    if (placements.length === 0 && sceneOperations.length === 0) return;
+    const draftRoomOperation = indoorRoom
+      ? [{ type: 'room.set', room: { ...indoorRoom, openings: roomOpenings } } satisfies MapOperation]
+      : [];
+    const plan = distillDraftCodePlanPreview(
+      placements,
+      [...requirements.values()],
+      [...draftRoomOperation, ...sceneOperations]
+    );
+    options.onPlanPreview(interrupted
+      ? { ...plan, summary: `代码执行中断：已产生 ${placements.length} 个摆放，正在自动修复` }
+      : plan);
+  };
+  const returned = (() => {
+    try {
+      return script.runInContext(context, {
+        timeout: options.executionTimeoutMs ?? DISCOVERY_EXECUTION_TIMEOUT_MS
+      });
+    } catch (error) {
+      // A crashed attempt still placed real content before dying; show it so
+      // the user watches each repair iteration rather than an empty scene.
+      emitDiscoveryDraft(true);
+      throw error;
+    }
+  })();
+  if (returned && typeof returned.then === 'function') {
+    emitDiscoveryDraft(true);
+    throw new Error('async_map_code_plan_not_supported');
+  }
+  // Stream every executed discovery attempt immediately, even ones the checks
+  // below will repair away: the user sees the code's first version and each
+  // repair iteration rather than waiting for a validated plan.
+  emitDiscoveryDraft(false);
   if (indoorRoom && sceneOperations.some((operation) => (
     operation.type.startsWith('terrain.') || operation.type.startsWith('water.') || operation.type.startsWith('grass.')
   ))) {
@@ -2099,6 +2148,139 @@ function withCodePlanDetails(
         repaired: issue.repaired
       }))
     }
+  };
+}
+
+/** Environment-only operations safe to visualize before objects exist. */
+const SCENE_PREVIEW_OPERATION_TYPES = new Set([
+  'room.set',
+  'terrain.set',
+  'terrain.generate',
+  'terrain.brush',
+  'terrain.modify',
+  'terrain.refine',
+  'terrain.surface',
+  'water.add',
+  'water.update',
+  'water.remove',
+  'grass.layer.add',
+  'grass.layer.update',
+  'grass.layer.remove',
+  'grass.fill',
+  'grass.brush',
+  'grass.generate',
+  'guide.upsert',
+  'guide.remove',
+  'reference.set',
+  'sun.set',
+  'paint.add'
+]);
+
+function scenePreviewOperations(operations: readonly MapOperation[]): MapOperation[] {
+  return operations.filter((operation) => SCENE_PREVIEW_OPERATION_TYPES.has(operation.type));
+}
+
+function isUnitFootprint(value: readonly number[]): boolean {
+  return value.every((axis) => Math.abs(axis - 1) <= 0.05);
+}
+
+function requirementDimensionsByKey(
+  requirements: readonly CodeAssetRequirement[]
+): Map<string, Point3> {
+  return new Map(
+    requirements
+      .filter((requirement) => requirement.dimensions)
+      .map((requirement) => [requirement.key, requirement.dimensions as Point3])
+  );
+}
+
+function requirementPreviews(requirements: readonly CodeAssetRequirement[]): CodePlanRequirementPreview[] {
+  return requirements.map((requirement) => ({
+    key: requirement.key,
+    name: requirement.name,
+    variants: requirement.variants,
+    ...(requirement.role ? { role: requirement.role } : {}),
+    ...(requirement.optional ? { optional: true } : {})
+  }));
+}
+
+function placeholderKeyOf(assetId: string | null): string | null {
+  return assetId && isCodePlanPlaceholderAssetId(assetId)
+    ? assetId.slice('code-asset://'.length).split('/')[0]
+    : null;
+}
+
+function distillDraftCodePlanPreview(
+  placements: readonly PlacementIntent[],
+  requirements: readonly CodeAssetRequirement[],
+  sceneOperations: readonly MapOperation[]
+): CodePlanPreviewPayload {
+  const dimensionsByKey = requirementDimensionsByKey(requirements);
+  return {
+    summary: `代码已执行：${placements.length} 个摆放意图，等待校验与资产生成`,
+    placements: placements.map((placement): CodePlanPlacementPreview => {
+      const placeholderKey = placeholderKeyOf(placement.assetId);
+      const resolvedSize = placeholderKey && isUnitFootprint(placement.size)
+        ? dimensionsByKey.get(placeholderKey) ?? placement.size
+        : placement.size;
+      return {
+        objectId: placement.referenceId,
+        name: placement.name,
+        assetId: placement.assetId,
+        pending: placeholderKey !== null,
+        position: placement.position,
+        rotationY: placement.rotationY,
+        size: resolvedSize,
+        scale: placement.scale,
+        heightMode: placement.heightMode,
+        ...(placement.role ? { role: placement.role } : {})
+      };
+    }),
+    requirements: requirementPreviews(requirements),
+    sceneOperations: scenePreviewOperations(sceneOperations)
+  };
+}
+
+function distillCodePlanPreview(
+  suggestion: MapAiSuggestion,
+  requirements: readonly CodeAssetRequirement[]
+): CodePlanPreviewPayload {
+  // requireAsset dimensions live in the generation contract, not in each place()
+  // call, so backfill them onto placeholder placements whose transform carried
+  // no explicit footprint.
+  const dimensionsByKey = requirementDimensionsByKey(requirements);
+  const placements = suggestion.operations.flatMap((operation): CodePlanPlacementPreview[] => {
+    if (operation.type !== 'object.add') return [];
+    const object = operation.object;
+    const transform = object.transform;
+    if (!transform?.position) return [];
+    const assetId = object.assetId ?? null;
+    const placeholderKey = placeholderKeyOf(assetId);
+    const declaredSize = transform.size ?? [1, 1, 1];
+    const resolvedSize = placeholderKey && isUnitFootprint(declaredSize)
+      ? dimensionsByKey.get(placeholderKey) ?? declaredSize
+      : declaredSize;
+    const role = placeholderKey
+      ? requirements.find((requirement) => requirement.key === placeholderKey)?.role
+      : undefined;
+    return [{
+      objectId: object.id ?? '',
+      name: object.name ?? '程序化物体',
+      assetId,
+      pending: placeholderKey !== null,
+      position: transform.position,
+      rotationY: transform.rotation?.[1] ?? 0,
+      size: resolvedSize,
+      scale: transform.scale ?? [1, 1, 1],
+      heightMode: object.heightMode,
+      ...(role ? { role } : {})
+    }];
+  });
+  return {
+    summary: suggestion.summary,
+    placements,
+    requirements: requirementPreviews(requirements),
+    sceneOperations: scenePreviewOperations(suggestion.operations)
   };
 }
 
@@ -2372,7 +2554,8 @@ async function discoverMapCodeWithRepairs(
         minNewAssets: options.minNewAssets,
         maxNewAssets,
         scope: options.scope,
-        refinableObjectIds: new Set(options.refinableObjectIds ?? [])
+        refinableObjectIds: new Set(options.refinableObjectIds ?? []),
+        onPlanPreview: options.onPlanPreview
       });
       const programIssues = findAuthoredSceneProgramIssues(map, discovery.suggestion);
       if (programIssues.length > 0 && !programRepairAttempted) {

@@ -310,11 +310,26 @@ async function readChatApiResponse(
   let reasoning = '';
   let error = '';
   const streamEvents = new Set<string>();
-  const reportReasoning = (label = '模型正在推理并返回摘要') => onProgress?.({
-    phase: 'consulting',
-    label,
-    detail: reasoning.slice(-4_000)
-  });
+  // Reasoning deltas can arrive dozens of times per second; forwarding every
+  // one floods the client progress panel and freezes its main thread. Coalesce
+  // them into at most one summary per interval, flushed once at stream end.
+  const REASONING_REPORT_MIN_INTERVAL_MS = 400;
+  let lastReasoningReportAt = 0;
+  let pendingReasoningReport = false;
+  const reportReasoning = (label = '模型正在推理并返回摘要', force = false) => {
+    const now = Date.now();
+    if (!force && lastReasoningReportAt > 0 && now - lastReasoningReportAt < REASONING_REPORT_MIN_INTERVAL_MS) {
+      pendingReasoningReport = true;
+      return;
+    }
+    lastReasoningReportAt = now;
+    pendingReasoningReport = false;
+    onProgress?.({
+      phase: 'consulting',
+      label,
+      detail: reasoning.slice(-4_000)
+    });
+  };
   const consume = (block: string) => {
     if (!block.trim()) return;
     let event = 'message';
@@ -356,7 +371,7 @@ async function readChatApiResponse(
     if (stage === 'done' || event === 'done' || payload.done === true) {
       content = payload.content ?? payload.choices?.[0]?.message?.content ?? content;
       reasoning = payload.reasoning?.trim() || reasoning;
-      if (reasoning) reportReasoning('模型返回思考过程');
+      if (reasoning) reportReasoning('模型返回思考过程', true);
       return;
     }
     if (stage === 'text' || event === 'text') {
@@ -406,6 +421,7 @@ async function readChatApiResponse(
     if (done) break;
   }
   consume(buffer);
+  if (pendingReasoningReport) reportReasoning('模型正在推理并返回摘要', true);
   return content.trim()
     ? { ok: !error, content, reasoning, streamEvents: [...streamEvents], ...(error ? { error } : {}) }
     : { ok: false, reasoning, streamEvents: [...streamEvents], error: error || 'Empty AI response' };
