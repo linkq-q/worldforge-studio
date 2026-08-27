@@ -1580,6 +1580,7 @@ describe('map code planner', () => {
     ]));
     expect(validated.placements).toHaveLength(2);
     expect(validated.placements.every((placement) => placement.pending && placement.assetId?.startsWith('code-asset://desk/'))).toBe(true);
+    expect(validated.placements.every((placement) => placement.heightMode === 'terrain')).toBe(true);
     expect(validated.placements.map((placement) => placement.size)).toEqual([[1.6, 0.75, 0.8], [1.6, 0.75, 0.8]]);
     expect(validated.sceneOperations).toEqual(expect.arrayContaining([
       expect.objectContaining({ type: 'terrain.generate' })

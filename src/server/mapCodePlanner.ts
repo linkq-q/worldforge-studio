@@ -2232,6 +2232,7 @@ function distillDraftCodePlanPreview(
         rotationY: placement.rotationY,
         size: resolvedSize,
         scale: placement.scale,
+        heightMode: placement.heightMode,
         ...(placement.role ? { role: placement.role } : {})
       };
     }),
@@ -2271,6 +2272,7 @@ function distillCodePlanPreview(
       rotationY: transform.rotation?.[1] ?? 0,
       size: resolvedSize,
       scale: transform.scale ?? [1, 1, 1],
+      heightMode: object.heightMode,
       ...(role ? { role } : {})
     }];
   });

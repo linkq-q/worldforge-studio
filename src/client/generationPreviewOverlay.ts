@@ -178,9 +178,11 @@ export function createGenerationPreviewOverlay(scene: THREE.Scene): GenerationPr
             Math.max(0.000001, bounds.max[2] - bounds.min[2])
           ];
           model.scale.set(footprint[0] / boundsSize[0], footprint[1] / boundsSize[1], footprint[2] / boundsSize[2]);
+          // The pipeline anchors models by their visual bottom (see centerGroup):
+          // rest the fitted bounds on the placement point, centered in X/Z.
           model.position.set(
             -(bounds.min[0] + bounds.max[0]) / 2 * model.scale.x,
-            -(bounds.min[1] + bounds.max[1]) / 2 * model.scale.y,
+            -bounds.min[1] * model.scale.y,
             -(bounds.min[2] + bounds.max[2]) / 2 * model.scale.z
           );
         } else {
@@ -252,13 +254,13 @@ export function createGenerationPreviewOverlay(scene: THREE.Scene): GenerationPr
         position.set(placement.position[0], placement.position[1], placement.position[2]);
         quaternion.setFromAxisAngle(UP, placement.rotationY);
         scale.set(Math.max(0.05, footprint[0]), Math.max(0.05, footprint[1]), Math.max(0.05, footprint[2]));
-        matrix.compose(position, quaternion, scale);
+        matrix.compose(position.set(placement.position[0], placement.position[1] + footprint[1] / 2, placement.position[2]), quaternion, scale);
         facesMesh!.setMatrixAt(index, matrix);
         facesMesh!.setColorAt(index, new THREE.Color(ROLE_COLORS[placement.role ?? ''] ?? DEFAULT_COLOR));
         for (let edgeVertex = 0; edgeVertex < EDGE_VERTEX_COUNT; edgeVertex += 1) {
           vertex.set(
             UNIT_BOX_EDGE_POSITIONS[edgeVertex * 3] * footprint[0],
-            UNIT_BOX_EDGE_POSITIONS[edgeVertex * 3 + 1] * footprint[1],
+            UNIT_BOX_EDGE_POSITIONS[edgeVertex * 3 + 1] * footprint[1] + footprint[1] / 2,
             UNIT_BOX_EDGE_POSITIONS[edgeVertex * 3 + 2] * footprint[2]
           );
           vertex.applyQuaternion(quaternion).add(position);

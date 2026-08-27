@@ -131,6 +131,7 @@ import type { ProjectExportProfile } from '../shared/projectExport';
 import {
   applyMapOperations,
   type CodePlanAssetReadyPayload,
+  type CodePlanPlacementPreview,
   type CodePlanPreviewPayload,
   type MapAiSuggestion,
   type MapOperation,
@@ -2190,16 +2191,39 @@ class MapEditor {
     const planSignature = JSON.stringify({ p: plan.placements, s: plan.sceneOperations ?? [] });
     if (planSignature !== this.lastCodePlanPreviewJson) {
       this.lastCodePlanPreviewJson = planSignature;
+      // Terrain ops first, so ground-following placements can re-sample their
+      // height against the plan's own terrain instead of the pre-plan surface.
+      this.applyCodePlanSceneOperations(plan.sceneOperations ?? []);
       this.generationPreview.showPlan(
-        plan,
+        this.resampleCodePlanGroundHeights(plan),
         (assetId) => this.state.assets.find((asset) => asset.id === assetId)
       );
-      this.applyCodePlanSceneOperations(plan.sceneOperations ?? []);
     }
     const pending = plan.placements.filter((placement) => placement.pending).length;
     this.state.message = pending > 0
       ? `规划已同步到场景：${plan.placements.length} 个摆放，其中 ${pending} 个等待资产生成`
       : `规划已同步到场景：${plan.placements.length} 个摆放`;
+  }
+
+  /** Draft placements carry heights sampled from the pre-plan terrain; re-ground them on the applied one. */
+  private resampleCodePlanGroundHeights(plan: CodePlanPreviewPayload): CodePlanPreviewPayload {
+    const sceneMap = this.codePlanSceneMap;
+    if (!sceneMap || !plan.placements.some((placement) => placement.heightMode === 'terrain')) return plan;
+    return {
+      ...plan,
+      placements: plan.placements.map((placement): CodePlanPlacementPreview => (
+        placement.heightMode === 'terrain'
+          ? {
+              ...placement,
+              position: [
+                placement.position[0],
+                sampleTerrainHeight(sceneMap, placement.position[0], placement.position[2]),
+                placement.position[2]
+              ] as [number, number, number]
+            }
+          : placement
+      ))
+    };
   }
 
   /** Shows the plan's terrain, water, grass, routes and room shell before any object exists. */

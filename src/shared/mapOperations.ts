@@ -119,6 +119,8 @@ export interface CodePlanPlacementPreview {
   /** Intended world footprint [width, height, depth]; [1, 1, 1] when the code declared none. */
   size: Vec3;
   scale: Vec3;
+  /** 'terrain' placements re-sample their ground height against the applied plan terrain. */
+  heightMode?: 'terrain' | 'fixed';
   role?: CodePlanAssetRole;
 }
 
