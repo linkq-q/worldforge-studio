@@ -130,10 +130,14 @@ import {
 import type { ProjectExportProfile } from '../shared/projectExport';
 import {
   applyMapOperations,
+  type CodePlanAssetReadyPayload,
+  type CodePlanPlacementPreview,
+  type CodePlanPreviewPayload,
   type MapAiSuggestion,
   type MapOperation,
   type MapTransactionSummary
 } from '../shared/mapOperations';
+import { createGenerationPreviewOverlay, type GenerationPreviewOverlay } from './generationPreviewOverlay';
 import {
   TERRAIN_CLIFF_LAYOUTS,
   TERRAIN_GENERATION_PRESETS,
@@ -349,6 +353,8 @@ class MapEditor {
   private previewAssetId: string | null = null;
   private previewRequestId = 0;
   private selectionOutline: THREE.BoxHelper | null = null;
+  /** View-only ghost boxes + streamed-in models for the running code-planner generation. */
+  private generationPreview: GenerationPreviewOverlay | null = null;
   private brushPreview: THREE.Mesh<THREE.RingGeometry, THREE.MeshBasicMaterial> | null = null;
   private placementPreview: THREE.Object3D | null = null;
   private placingAssetId: string | null = null;
@@ -906,6 +912,7 @@ class MapEditor {
       this.renderStats.setVisible(true);
     }
     host.appendChild(this.renderer.domElement);
+    this.generationPreview = createGenerationPreviewOverlay(this.scene);
 
     this.playMode = new PlayModeController({
       canvas: this.renderer.domElement,
@@ -1002,6 +1009,7 @@ class MapEditor {
   }
 
   private async reloadLists(): Promise<void> {
+    const reloadStartedAt = performance.now();
     const [maps, deletedMaps, assets, renderSchemes, colorPalettes, assetLibraries, exportProfiles] = await Promise.all([
       editorFetch<{ maps: MapSummary[] }>('/api/editor/maps'),
       editorFetch<{ maps: DeletedMapSummary[] }>('/api/editor/maps/trash'),
@@ -1034,6 +1042,10 @@ class MapEditor {
     if (!this.state.map && this.state.maps[0]) {
       await this.loadMap(this.state.maps[0].id);
       return;
+    }
+    const reloadMs = performance.now() - reloadStartedAt;
+    if (reloadMs > 250) {
+      console.info(`[perf] list reload: ${this.state.assets.length} assets in ${reloadMs.toFixed(0)}ms`);
     }
     if (!this.state.map && this.state.maps.length === 0) {
       const { map } = await editorFetch<{ map: EditableMap }>('/api/editor/maps', {
@@ -1686,6 +1698,7 @@ class MapEditor {
     });
     host.querySelector('#discard-code-plan')?.addEventListener('click', () => {
       this.pendingCodeSuggestion = null;
+      this.clearCodePlanPreview();
       this.state.message = '已放弃室内功能规划，可以修改提示词后重试';
       this.renderPanels();
     });
@@ -2172,6 +2185,85 @@ class MapEditor {
     });
   }
 
+  /** Streams the discovered code-plan layout into the viewport as ghost boxes while assets generate. */
+  private showCodePlanPreview(plan: CodePlanPreviewPayload): void {
+    if (!this.generationPreview) return;
+    const planSignature = JSON.stringify({ p: plan.placements, s: plan.sceneOperations ?? [] });
+    if (planSignature !== this.lastCodePlanPreviewJson) {
+      this.lastCodePlanPreviewJson = planSignature;
+      // Terrain ops first, so ground-following placements can re-sample their
+      // height against the plan's own terrain instead of the pre-plan surface.
+      this.applyCodePlanSceneOperations(plan.sceneOperations ?? []);
+      this.generationPreview.showPlan(
+        this.resampleCodePlanGroundHeights(plan),
+        (assetId) => this.state.assets.find((asset) => asset.id === assetId)
+      );
+    }
+    const pending = plan.placements.filter((placement) => placement.pending).length;
+    this.state.message = pending > 0
+      ? `规划已同步到场景：${plan.placements.length} 个摆放，其中 ${pending} 个等待资产生成`
+      : `规划已同步到场景：${plan.placements.length} 个摆放`;
+  }
+
+  /** Draft placements carry heights sampled from the pre-plan terrain; re-ground them on the applied one. */
+  private resampleCodePlanGroundHeights(plan: CodePlanPreviewPayload): CodePlanPreviewPayload {
+    const sceneMap = this.codePlanSceneMap;
+    if (!sceneMap || !plan.placements.some((placement) => placement.heightMode === 'terrain')) return plan;
+    return {
+      ...plan,
+      placements: plan.placements.map((placement): CodePlanPlacementPreview => (
+        placement.heightMode === 'terrain'
+          ? {
+              ...placement,
+              position: [
+                placement.position[0],
+                sampleTerrainHeight(sceneMap, placement.position[0], placement.position[2]),
+                placement.position[2]
+              ] as [number, number, number]
+            }
+          : placement
+      ))
+    };
+  }
+
+  /** Shows the plan's terrain, water, grass, routes and room shell before any object exists. */
+  private applyCodePlanSceneOperations(operations: readonly MapOperation[]): void {
+    const base = this.mapAiPreviewMap ?? this.state.map;
+    if (operations.length === 0 || !base) return;
+    try {
+      this.codePlanSceneMap = applyMapOperations(base, [...operations]);
+      void this.refreshScene();
+    } catch {
+      // A draft plan may reference unfinished state; keep the previous scene and wait for the next iteration.
+    }
+  }
+
+  private clearCodePlanPreview(): void {
+    this.generationPreview?.clear();
+    this.lastCodePlanPreviewJson = '';
+    if (this.codePlanSceneMap) {
+      this.codePlanSceneMap = null;
+      void this.refreshScene();
+    }
+  }
+
+  private lastCodePlanPreviewJson = '';
+  /** The base map with the streaming plan's environment operations applied. */
+  private codePlanSceneMap: EditableMap | null = null;
+
+  /**
+   * Progress events can storm at streaming delta rate; the elapsed-time timer
+   * already refreshes the panel once per second, so collapse interim rebuilds.
+   */
+  private scheduleMapAiPanelRender(): void {
+    const now = performance.now();
+    if (now - this.mapAiPanelRenderedAt < 150) return;
+    this.mapAiPanelRenderedAt = now;
+    this.renderMapAiPanel();
+  }
+
+  private mapAiPanelRenderedAt = 0;
+
   private async generateCompositionPlanPreview(): Promise<void> {
     const map = this.state.map;
     const prompt = this.mapAiPrompt.trim();
@@ -2179,6 +2271,7 @@ class MapEditor {
     const controller = new AbortController();
     this.mapAiAbortController = controller;
     this.mapAgentProgress = [];
+    this.clearCodePlanPreview();
     this.startMapAgentProgressTimer();
     this.setBusy(true, 'AI 正在规划室内功能关系与资产清单...');
     this.renderMapAiPanel();
@@ -2201,8 +2294,11 @@ class MapEditor {
         },
         (event) => {
           updateAgentProgress(this.mapAgentProgress, event);
-          this.renderMapAiPanel();
-        }
+          this.generationPreview?.updateAssetProgress(event);
+          this.scheduleMapAiPanelRender();
+        },
+        undefined,
+        (plan) => this.showCodePlanPreview(plan)
       );
       this.pendingCodeSuggestion = suggestion;
       updateAgentProgress(this.mapAgentProgress, { phase: 'complete', label: '室内功能规划与资产清单已生成，等待确认' });
@@ -2250,6 +2346,7 @@ class MapEditor {
     this.mapAiLastFailure = null;
     this.mapAiReplayToken = null;
     this.mapAgentProgress = [];
+    this.clearCodePlanPreview();
     this.startMapAgentProgressTimer();
     const previousSuggestion = mode === 'refine' ? this.mapAiSuggestion : null;
     const comparisonMap = mode === 'refine' && this.mapAiPreviewMap ? this.mapAiPreviewMap : map;
@@ -2291,7 +2388,8 @@ class MapEditor {
         },
         (event) => {
           updateAgentProgress(this.mapAgentProgress, event);
-          this.renderMapAiPanel();
+          this.generationPreview?.updateAssetProgress(event);
+          this.scheduleMapAiPanelRender();
         },
         (payload) => {
           const liveSuggestion = (payload as { suggestion?: MapAiSuggestion }).suggestion;
@@ -2315,7 +2413,9 @@ class MapEditor {
           }).catch((error) => {
             livePreviewFailure ??= error;
           });
-        }
+        },
+        (plan) => this.showCodePlanPreview(plan),
+        (payload) => this.generationPreview?.attachAsset(payload)
       );
       await livePreviewWork;
       if (livePreviewFailure) throw livePreviewFailure;
@@ -2358,6 +2458,7 @@ class MapEditor {
       this.state.selectedObjectId = null;
       this.state.message = automatic ? '第二轮规划提升已完成，尚未应用' : 'AI 地图预览已生成，尚未应用';
       await this.refreshScene();
+      this.clearCodePlanPreview();
       const quality = mode === 'generate' && combinedSuggestion.composition
         ? mapCompositionPlacementQuality(
             combinedSuggestion.composition.metrics.initialObjectCount ?? combinedSuggestion.composition.metrics.objectCount,
@@ -2374,6 +2475,9 @@ class MapEditor {
       await livePreviewWork;
       const cancelled = error instanceof Error && error.name === 'AbortError';
       const retainedCandidate = Boolean(this.mapAiPreviewMap && this.mapAiSuggestion);
+      // Ghost boxes only stay on when nothing else visualizes the plan; a retained
+      // candidate renders the real objects, so drop the overlay to avoid doubling.
+      if (retainedCandidate) this.clearCodePlanPreview();
       const detail = humanizeAgentError(error);
       const replayToken = mapCodeReplayToken(error);
       if (replayToken) this.mapAiReplayToken = replayToken;
@@ -2414,6 +2518,7 @@ class MapEditor {
     const controller = new AbortController();
     const previousSuggestion = this.mapAiLastFailure?.mode === 'refine' ? this.mapAiSuggestion : null;
     this.mapAiAbortController = controller;
+    this.clearCodePlanPreview();
     this.setBusy(true, '正在使用已生成资产重新重放布局...');
     try {
       const { suggestion } = await editorAgentFetch<{ suggestion: MapAiSuggestion }>(
@@ -2441,6 +2546,7 @@ class MapEditor {
       this.state.selectedObjectId = null;
       this.state.message = '已使用现有资产恢复场景布局，尚未应用';
       await this.refreshScene();
+      this.clearCodePlanPreview();
       window.setTimeout(() => void this.runMapVisualFinalReview(), 0);
     } catch (error) {
       const replayToken = mapCodeReplayToken(error);
@@ -2878,6 +2984,7 @@ class MapEditor {
     this.mapAiReplayToken = null;
     this.pendingCompositionPlan = null;
     this.pendingCodeSuggestion = null;
+    this.clearCodePlanPreview();
     this.mapAiPreviewMap = null;
     this.mapAiPreviewVisible = true;
     this.mapAiComparisonMap = null;
@@ -5454,11 +5561,16 @@ class MapEditor {
       return;
     }
     this.updateSceneLighting();
+    const rebuildStartedAt = performance.now();
     const next = await buildEditableMapGroup(this.mapWithEditorAssets(), {
       editorHelpers: true,
       scene: this.scene,
       renderer: this.renderer ?? undefined
     });
+    const rebuildMs = performance.now() - rebuildStartedAt;
+    if (rebuildMs > 100) {
+      console.info(`[perf] scene rebuild: ${this.mapWithEditorAssets().objects.length} objects in ${rebuildMs.toFixed(0)}ms`);
+    }
     if (previous) {
       this.renderScene?.attach(null);
       this.scene.remove(previous.group);
@@ -5482,6 +5594,8 @@ class MapEditor {
     if (this.playMode?.isActive) return;
     if (!this.renderer || !this.camera || !this.renderedMap || !this.state.map) return;
     if (this.mapAiPreviewMap) return;
+    // The generation preview is view-only; keep the waiting scene observable but not editable.
+    if (this.generationPreview?.active) return;
     if (event.altKey) return;
     if (first && event.button !== 0) return;
     if (first && this.state.tool === 'terrain' && this.state.terrainAction === 'road') {
@@ -5783,8 +5897,8 @@ class MapEditor {
   }
 
   private displayedMap(): EditableMap | null {
-    if (!this.mapAiPreviewMap) return this.state.map;
-    return this.mapAiPreviewVisible ? this.mapAiPreviewMap : this.mapAiComparisonMap ?? this.state.map;
+    if (!this.mapAiPreviewMap) return this.codePlanSceneMap ?? this.state.map;
+    return this.mapAiPreviewVisible ? this.mapAiPreviewMap : this.mapAiComparisonMap ?? this.codePlanSceneMap ?? this.state.map;
   }
 
   private mapWithEditorAssets(source = this.displayedMap()): EditableMap {
@@ -5945,6 +6059,7 @@ class MapEditor {
     }
     this.applyRoomWallDisplayMode();
     this.selectionOutline?.update();
+    this.generationPreview?.update(now);
     this.renderStats?.beginFrame();
     const quality = this.adaptiveQuality.update(frameMs, dt);
     if (quality) this.renderScene?.setAdaptiveQuality(quality.scale);
@@ -6676,7 +6791,9 @@ async function editorAgentFetch<T>(
   path: string,
   init: RequestInit,
   onProgress: (event: AgentProgressEvent) => void,
-  onPreview?: (payload: unknown) => void
+  onPreview?: (payload: unknown) => void,
+  onPlan?: (plan: CodePlanPreviewPayload) => void,
+  onAssetReady?: (payload: CodePlanAssetReadyPayload) => void
 ): Promise<T> {
   const response = await fetch(`${serverHttpBase(location, import.meta.env.DEV)}${path}`, {
     ...init,
@@ -6710,6 +6827,8 @@ async function editorAgentFetch<T>(
     const payload = JSON.parse(data.join('\n')) as T & { error?: string };
     if (event === 'progress') onProgress(payload as unknown as AgentProgressEvent);
     else if (event === 'preview') onPreview?.(payload);
+    else if (event === 'plan') onPlan?.(payload as unknown as CodePlanPreviewPayload);
+    else if (event === 'asset-ready') onAssetReady?.(payload as unknown as CodePlanAssetReadyPayload);
     else if (event === 'result') result = payload;
     else if (event === 'error') throw new Error(payload.error ?? 'agent_failed');
   };
