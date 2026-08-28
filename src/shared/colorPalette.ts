@@ -1,20 +1,8 @@
 import { createId } from './map';
 
 export const COLOR_PALETTE_ROLES = [
-  'building.wall',
-  'building.roof',
-  'building.trim',
-  'building.window',
-  'terrain.ground',
-  'terrain.road',
-  'terrain.rock',
-  'vegetation.grass',
-  'vegetation.foliage',
-  'water',
-  'environment.sky',
-  'environment.fog',
-  'lighting',
-  'effect'
+  'primary', 'secondary', 'accent', 'plant',
+  'earth', 'water', 'atmosphere', 'effect'
 ] as const;
 
 export type ColorPaletteRole = typeof COLOR_PALETTE_ROLES[number];
@@ -44,25 +32,55 @@ export interface ColorPalette {
 
 export type ColorPaletteInput = Partial<Omit<ColorPalette, 'colors' | 'roles'>> & {
   colors?: unknown;
-  roles?: Partial<Record<ColorPaletteRole, unknown>>;
+  roles?: Partial<Record<ColorPaletteRole, unknown>> & Record<string, unknown>;
 };
 
 const ROLE_HINTS: Record<ColorPaletteRole, { pattern: RegExp; anchor: string }> = {
-  'building.wall': { pattern: /墙|墙体|建筑面|wall|facade|plaster|brick/i, anchor: '#f1d7b2' },
-  'building.roof': { pattern: /屋顶|房顶|roof|瓦|结构深色/i, anchor: '#714d48' },
-  'building.trim': { pattern: /装饰|边饰|窗框|门框|结构|金属|阳台|雨棚|招牌|栏杆|trim|frame|wood|metal|balcony|awning|signboard|railing/i, anchor: '#8e664d' },
-  'building.window': { pattern: /窗|玻璃|window|glass/i, anchor: '#76d0f2' },
-  'terrain.ground': { pattern: /地面|沙地|土|ground|sand|soil/i, anchor: '#f1d7b2' },
-  'terrain.road': { pattern: /道路|路面|砖地|石板|road|street|paving/i, anchor: '#e7c393' },
-  'terrain.rock': { pattern: /岩|石|rock|stone/i, anchor: '#8e8b82' },
-  'vegetation.grass': { pattern: /草|草坪|grass|meadow/i, anchor: '#aeb85b' },
-  'vegetation.foliage': { pattern: /树|树叶|叶面|植被|foliage|leaf|plant/i, anchor: '#76904c' },
-  water: { pattern: /水体|水面|深水|water|aqua/i, anchor: '#4bafca' },
-  'environment.sky': { pattern: /天空|sky|云边/i, anchor: '#76d0f2' },
-  'environment.fog': { pattern: /雾|薄雾|fog|mist|奶油白/i, anchor: '#eaf9ff' },
-  lighting: { pattern: /灯光|暖光|高光|light|highlight/i, anchor: '#ffd170' },
-  effect: { pattern: /特效|警示|受击|按钮|动作|effect|warning|cta/i, anchor: '#f06b3e' }
+  primary: { pattern: /主色|主体|主要|primary|main|body|base|crown|帽冠/i, anchor: '#f1d7b2' },
+  secondary: { pattern: /辅色|次要|secondary|support|brim|band|帽檐|帽带|边框|边缘|trim/i, anchor: '#8e664d' },
+  accent: { pattern: /强调|点缀|徽章|标志|纹样|花纹|accent|badge|emblem|detail|button|window|glass/i, anchor: '#f06b3e' },
+  plant: { pattern: /绿色植物|植物|草|叶|树冠|藤|苔藓|灌木|plant|grass|leaf|foliage|vine|moss|shrub|tree/i, anchor: '#76904c' },
+  earth: { pattern: /泥土|沙|岩|石|树干|树皮|大地|土壤|地面|道路|earth|soil|sand|rock|stone|trunk|bark|ground|road|paving/i, anchor: '#b89269' },
+  water: { pattern: /水|泡沫|浪花|water|foam|wave|aqua/i, anchor: '#4bafca' },
+  atmosphere: { pattern: /天空|云|雾|大气|sky|cloud|fog|mist|atmosphere/i, anchor: '#76d0f2' },
+  effect: { pattern: /特效|火焰|能量|警示|发光|灯光|effect|fire|flame|energy|warning|glow|light/i, anchor: '#f06b3e' }
 };
+
+const LEGACY_ROLE_MAP: Record<string, ColorPaletteRole> = {
+  'building.wall': 'primary', 'building.roof': 'secondary', 'building.trim': 'secondary',
+  'building.window': 'accent', 'terrain.ground': 'earth', 'terrain.road': 'earth',
+  'terrain.rock': 'earth', 'vegetation.grass': 'plant', 'vegetation.foliage': 'plant',
+  water: 'water', 'environment.sky': 'atmosphere', 'environment.fog': 'atmosphere',
+  lighting: 'effect', effect: 'effect'
+};
+
+const LEGACY_ROLE_SOURCES: Record<ColorPaletteRole, string[]> = {
+  primary: ['building.wall', 'terrain.ground'],
+  secondary: ['building.roof', 'building.trim', 'terrain.road', 'terrain.rock'],
+  accent: ['building.window', 'lighting', 'effect'],
+  plant: ['vegetation.grass', 'vegetation.foliage'],
+  earth: ['terrain.ground', 'terrain.road', 'terrain.rock', 'building.wall', 'building.roof', 'building.trim'],
+  water: ['water'],
+  atmosphere: ['environment.sky', 'environment.fog'],
+  effect: ['effect', 'lighting']
+};
+
+const COLOR_WORDS: Array<[RegExp, string]> = [
+  [/(?:海军蓝|藏蓝|\bnavy(?: blue)?\b)/i, '#163A70'],
+  [/(?:奶油白|米白|\b(?:cream|ivory)\b)/i, '#FFF2D0'],
+  [/(?:白色?|\bwhite\b)/i, '#FFFFFF'],
+  [/(?:黑色?|\bblack\b)/i, '#111111'],
+  [/(?:灰色?|灰白|\b(?:gray|grey)\b)/i, '#808080'],
+  [/(?:棕色?|褐色?|\bbrown\b)/i, '#8B5A2B'],
+  [/(?:橙色?|橘色?|\borange\b)/i, '#F06B3E'],
+  [/(?:红色?|\bred\b)/i, '#E53935'],
+  [/(?:黄色?|金黄|\byellow\b)/i, '#F6E24B'],
+  [/(?:青色?|\b(?:cyan|teal)\b)/i, '#22B8CF'],
+  [/(?:蓝色?|\bblue\b)/i, '#2563EB'],
+  [/(?:绿色?|\bgreen\b)/i, '#49A050'],
+  [/(?:紫色?|\b(?:purple|violet)\b)/i, '#7C3AED'],
+  [/(?:粉色?|\bpink\b)/i, '#EC4899']
+];
 
 export function createColorPalette(input: ColorPaletteInput): ColorPalette {
   const now = Date.now();
@@ -81,7 +99,9 @@ export function normalizeColorPalette(input: ColorPaletteInput): ColorPalette {
   const automatic = autoAssignPaletteRoles(colors);
   const roles = Object.fromEntries(COLOR_PALETTE_ROLES.map((role) => {
     const requested = normalizeHexList(input.roles?.[role], colors);
-    return [role, requested.length > 0 ? requested : automatic[role]];
+    const legacy = LEGACY_ROLE_SOURCES[role]
+      .flatMap((source) => normalizeHexList(input.roles?.[source], colors));
+    return [role, requested.length > 0 ? requested : legacy.length > 0 ? uniqueHexes(legacy) : automatic[role]];
   })) as Record<ColorPaletteRole, string[]>;
   return {
     id: cleanText(input.id, createId('palette'), 80),
@@ -99,7 +119,7 @@ export function normalizeColorPalette(input: ColorPaletteInput): ColorPalette {
 }
 
 export function parseHexPalette(text: string): ColorPaletteColor[] {
-  const matches = text.match(/#[0-9a-f]{6}\b/gi) ?? [];
+  const matches = text.match(/#[0-9a-f]{3,8}\b/gi) ?? [];
   return normalizeColors(matches);
 }
 
@@ -115,7 +135,7 @@ export function inferPaletteLevel(hex: string): ColorPaletteLevel {
 export function autoAssignPaletteRoles(
   colors: readonly ColorPaletteColor[]
 ): Record<ColorPaletteRole, string[]> {
-  return Object.fromEntries(COLOR_PALETTE_ROLES.map((role) => {
+  const roles = Object.fromEntries(COLOR_PALETTE_ROLES.map((role) => {
     const hint = ROLE_HINTS[role];
     const eligible = colors.filter((entry) => roleColorAllowed(role, entry.hex));
     const candidates = eligible.length >= Math.min(2, colors.length) ? eligible : colors;
@@ -130,28 +150,31 @@ export function autoAssignPaletteRoles(
     const pool = uniqueHexes([...described, ...ranked].map((entry) => entry.hex));
     return [role, pool.slice(0, Math.min(8, Math.max(2, Math.ceil(colors.length / 8))))];
   })) as Record<ColorPaletteRole, string[]>;
+  return roles;
 }
 
 export function pickPaletteColor(
   palette: ColorPalette,
-  role: ColorPaletteRole,
+  role: ColorPaletteRole | string,
   key: string,
   salt = 0
 ): string {
-  const pool = palette.roles[role]?.length > 0
-    ? palette.roles[role]
+  const normalizedRole = normalizePaletteRole(role);
+  const pool = palette.roles[normalizedRole]?.length > 0
+    ? palette.roles[normalizedRole]
     : palette.colors.map((entry) => entry.hex);
-  return pool[(stableHash(`${key}:${role}:${salt}`) % pool.length + pool.length) % pool.length];
+  return pool[(stableHash(`${key}:${normalizedRole}:${salt}`) % pool.length + pool.length) % pool.length];
 }
 
 export function pickPaletteColorForSource(
   palette: ColorPalette,
-  role: ColorPaletteRole,
+  role: ColorPaletteRole | string,
   source: string,
   variantKey: string
 ): string {
-  const pool = palette.roles[role]?.length > 0
-    ? palette.roles[role]
+  const normalizedRole = normalizePaletteRole(role);
+  const pool = palette.roles[normalizedRole]?.length > 0
+    ? palette.roles[normalizedRole]
     : palette.colors.map((entry) => entry.hex);
   const ranked = [...pool].sort((a, b) => colorDistance(a, source) - colorDistance(b, source));
   return ranked[stableHash(variantKey) % Math.min(2, ranked.length)];
@@ -160,36 +183,150 @@ export function pickPaletteColorForSource(
 export function nearestPaletteColor(
   palette: ColorPalette,
   source: string,
-  role?: ColorPaletteRole
+  role?: ColorPaletteRole | string
 ): string {
-  const pool = role && palette.roles[role]?.length > 0
-    ? palette.roles[role]
+  const normalizedRole = role ? normalizePaletteRole(role) : null;
+  const pool = normalizedRole && palette.roles[normalizedRole]?.length > 0
+    ? palette.roles[normalizedRole]
     : palette.colors.map((entry) => entry.hex);
   return [...pool].sort((a, b) => colorDistance(a, source) - colorDistance(b, source))[0];
+}
+
+/** Resolve an explicit color word from user/model semantic text before role fallback. */
+export function inferPaletteColorIntent(text: string): string | null {
+  const value = String(text || '');
+  return COLOR_WORDS.find(([pattern]) => pattern.test(value))?.[1] ?? null;
+}
+
+/** Deterministically snap model colors to a palette while preserving material shape and texture metadata. */
+export function applyPaletteToModelJson(modelJson: unknown, paletteInput: ColorPaletteInput | ColorPalette): Record<string, unknown> {
+  const palette = normalizeColorPalette(paletteInput);
+  const output = JSON.parse(JSON.stringify(modelJson && typeof modelJson === 'object' ? modelJson : {})) as Record<string, unknown>;
+  const report = {
+    appliedMaterials: 0,
+    appliedVertexColors: 0,
+    skippedTextures: 0,
+    explicitIntentColors: 0,
+    sourceColors: 0,
+    semanticFallbacks: 0,
+    usedColors: [] as string[]
+  };
+  const roots = [output.nodes, output.meshes, output.parts].flatMap((value) => Array.isArray(value) ? value : []);
+  const byId = new Map(roots.filter(isRecord).flatMap((node) => typeof node.id === 'string' ? [[node.id, node] as const] : []));
+  const visited = new Set<object>();
+  const used = new Set<string>();
+  const tagValue = (node: Record<string, unknown>, tagName: string): unknown => {
+    const tags = Array.isArray(node.tags) ? node.tags : [];
+    const tag = tags.find((entry) => isRecord(entry) && entry.tag === tagName);
+    return tag && isRecord(tag) ? tag.value : null;
+  };
+  const inheritedTag = (node: Record<string, unknown>, tagName: string): unknown => {
+    const seen = new Set<Record<string, unknown>>();
+    let current: Record<string, unknown> | undefined = node;
+    while (current && !seen.has(current)) {
+      seen.add(current);
+      const value = tagValue(current, tagName);
+      if (value != null) return value;
+      current = typeof current.parent === 'string' ? byId.get(current.parent) : undefined;
+    }
+    return null;
+  };
+  const sourceHex = (value: unknown): string | null => {
+    if (typeof value === 'string') return normalizeHex(value);
+    if (typeof value === 'number' && Number.isFinite(value)) return `#${(Math.max(0, Math.min(0xffffff, Math.round(value))) >>> 0).toString(16).padStart(6, '0')}`.toUpperCase();
+    if (Array.isArray(value) && value.length >= 3) {
+      const channels = value.slice(0, 3).map((channel) => Math.round(Math.max(0, Math.min(1, Number(channel))) * 255));
+      return channels.every(Number.isFinite) ? `#${channels.map((channel) => channel.toString(16).padStart(2, '0')).join('')}`.toUpperCase() : null;
+    }
+    return null;
+  };
+  const preserveType = (hex: string, source: unknown): unknown => {
+    if (typeof source === 'number') return Number.parseInt(hex.slice(1), 16);
+    if (Array.isArray(source)) {
+      const value = Number.parseInt(hex.slice(1), 16);
+      return [(value >> 16 & 255) / 255, (value >> 8 & 255) / 255, (value & 255) / 255];
+    }
+    return hex;
+  };
+  const applyNode = (value: unknown, index: number, inheritedRole?: ColorPaletteRole, inheritedIntent?: string): void => {
+    if (!isRecord(value) || visited.has(value)) return;
+    visited.add(value);
+    const semantic = [value.id, value.name, value.label, value.description, value.tags]
+      .flatMap((entry) => Array.isArray(entry) ? entry.map((tag) => isRecord(tag) ? `${String(tag.tag ?? '')} ${String(tag.value ?? '')}` : String(tag)) : [entry])
+      .filter(Boolean).join(' ');
+    const roleValue = inheritedTag(value, 'palette');
+    const role = typeof roleValue === 'string'
+      ? normalizePaletteRole(roleValue)
+      : inheritedRole ?? inferPaletteRole(semantic);
+    const intentValue = inheritedTag(value, 'palette-color');
+    const intent = (typeof intentValue === 'string' ? normalizeHex(intentValue) : null)
+      ?? inferPaletteColorIntent(semantic)
+      ?? inheritedIntent;
+    const targetFor = (source: unknown, key: string): string => {
+      const explicit = intent ?? null;
+      if (explicit) { report.explicitIntentColors += 1; return nearestPaletteColor(palette, explicit); }
+      const sourceValue = sourceHex(source);
+      if (sourceValue) { report.sourceColors += 1; return nearestPaletteColor(palette, sourceValue, role); }
+      report.semanticFallbacks += 1;
+      return pickPaletteColor(palette, role, `${String(value.id ?? value.name ?? 'part')}:${index}:${key}`);
+    };
+    const setColor = (owner: Record<string, unknown>, key: string, suffix: string): void => {
+      const source = owner[key];
+      if (source == null) return;
+      if (key === 'color' && owner.map) { report.skippedTextures += 1; return; }
+      const target = targetFor(source, suffix);
+      owner[key] = preserveType(target, source);
+      report.appliedMaterials += 1;
+      used.add(target);
+    };
+    const mesh = isRecord(value.mesh) ? value.mesh : null;
+    const material = mesh && isRecord(mesh.material) ? mesh.material : isRecord(value.material) ? value.material : null;
+    if (material) setColor(material, 'color', 'material');
+    if (mesh) setColor(mesh, 'color', 'mesh');
+    setColor(value, 'color', 'node');
+    if (Array.isArray(value.vertexColors)) value.vertexColors = value.vertexColors.map((source, vertexIndex) => {
+      const target = targetFor(source, `vertex:${vertexIndex}`);
+      used.add(target);
+      report.appliedVertexColors += 1;
+      return preserveType(target, source);
+    });
+    for (const collection of [value.shapes, value.voxels, value.boxes]) {
+      if (Array.isArray(collection)) collection.filter(isRecord).forEach((item, itemIndex) => setColor(item, 'color', `item:${itemIndex}`));
+    }
+    if (Array.isArray(value.children)) value.children.forEach((child, childIndex) => applyNode(child, childIndex, role, intent ?? undefined));
+  };
+  roots.forEach((node, index) => applyNode(node, index));
+  report.usedColors = [...used].sort();
+  output._meta = {
+    ...(isRecord(output._meta) ? output._meta : {}),
+    colorPalette: normalizeColorPalette(palette),
+    colorPaletteReport: report
+  };
+  return output;
 }
 
 export function paletteGenerationBrief(palette: ColorPalette): string {
   const colors = palette.colors.map((entry) => entry.hex).join(', ');
   const roles = COLOR_PALETTE_ROLES.map((role) => `${role}=${palette.roles[role].join('|')}`).join('; ');
   return [
-    `[Color palette: ${palette.name}]`,
-    `Use these colors for generated asset base and vertex colors: ${colors}.`,
-    `Semantic pools: ${roles}.`,
-    'Name every visual part semantically and add a tag object {"tag":"palette","value":"building.wall|building.roof|building.trim|building.window|terrain.rock|vegetation.foliage|effect"} when applicable.',
-    'Preserve glass, metal, water, transparency and emissive material behavior; the palette controls color, not material physics.'
+    `[目标色卡：${palette.name}]`,
+    `所有普通材质的 base/vertex color 必须从这些 HEX 中选择：${colors}。`,
+    '颜色优先级：用户明确指定的颜色最高；其次保留你为部件选择的原始颜色；仅在没有颜色意图时使用语义默认色。',
+    `抽象语义色池：${roles}。`,
+    '兼容旧资产语义别名：building.wall/building.roof/building.trim/building.window、terrain.*、vegetation.*、environment.*、lighting。',
+    '每个可见组或部件添加一个 {"tag":"palette","value":"primary|secondary|accent|plant|earth|water|atmosphere|effect"}；草、树叶、藤、苔藓统一使用 plant。',
+    '如果用户明确指定某部件颜色，再添加 {"tag":"palette-color","value":"#RRGGBB"} 保存原始颜色意图；子部件可继承组标签，也可覆盖。',
+    '保留玻璃、金属、水、透明、粗糙度、金属度、发光等材质物理属性；色卡只控制颜色。外部 PNG/JPG 贴图不做颜色重映射。'
   ].join('\n').slice(0, 3900);
 }
 
 export function inferPaletteRole(text: string, building = false): ColorPaletteRole {
   const normalized = text.toLowerCase();
-  const ordered: ColorPaletteRole[] = [
-    'building.window', 'building.roof', 'building.trim', 'terrain.road', 'terrain.rock',
-    'vegetation.grass', 'vegetation.foliage', 'water', 'effect', 'building.wall'
-  ];
+  const ordered: ColorPaletteRole[] = ['plant', 'earth', 'water', 'atmosphere', 'effect', 'accent', 'secondary', 'primary'];
   for (const role of ordered) {
     if (ROLE_HINTS[role].pattern.test(normalized) || normalized.includes(role)) return role;
   }
-  return building ? 'building.wall' : 'building.trim';
+  return building ? 'primary' : 'secondary';
 }
 
 function normalizeColors(value: unknown): ColorPaletteColor[] {
@@ -233,8 +370,11 @@ function uniqueHexes(values: readonly string[]): string[] {
 }
 
 function normalizeHex(value: unknown): string | null {
-  if (typeof value !== 'string' || !/^#[0-9a-f]{6}$/i.test(value.trim())) return null;
-  return value.trim().toUpperCase();
+  if (typeof value !== 'string' || !/^#[0-9a-f]{3,8}$/i.test(value.trim())) return null;
+  const raw = value.trim().slice(1);
+  if (raw.length === 3) return `#${raw.split('').map((channel) => channel + channel).join('')}`.toUpperCase();
+  if (raw.length !== 6) return null;
+  return `#${raw}`.toUpperCase();
 }
 
 function colorDistance(a: string, b: string): number {
@@ -251,8 +391,14 @@ function colorDistance(a: string, b: string): number {
 }
 
 function roleColorAllowed(role: ColorPaletteRole, hex: string): boolean {
-  if (role !== 'building.wall' && role !== 'terrain.ground' && role !== 'terrain.road') return true;
+  if (role !== 'primary' && role !== 'earth') return true;
   return hsl(rgb(hex))[2] >= 0.6;
+}
+
+export function normalizePaletteRole(value: string): ColorPaletteRole {
+  return COLOR_PALETTE_ROLES.includes(value as ColorPaletteRole)
+    ? value as ColorPaletteRole
+    : LEGACY_ROLE_MAP[value] ?? 'primary';
 }
 
 function rgb(hex: string): [number, number, number] {

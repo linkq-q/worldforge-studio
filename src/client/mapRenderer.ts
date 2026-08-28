@@ -1236,7 +1236,7 @@ function paletteNodeText(modelJson: unknown): Map<string, { text: string; source
   if (!Array.isArray(nodes)) return new Map();
   return new Map(nodes.flatMap((entry) => {
     if (!entry || typeof entry !== 'object') return [];
-    const node = entry as { id?: unknown; tags?: unknown; mesh?: { color?: unknown } };
+    const node = entry as { id?: unknown; tags?: unknown; color?: unknown; mesh?: { color?: unknown; material?: { color?: unknown } } };
     if (typeof node.id !== 'string') return [];
     const tags = Array.isArray(node.tags) ? node.tags.map((tag) => {
       if (typeof tag === 'string') return tag;
@@ -1246,7 +1246,10 @@ function paletteNodeText(modelJson: unknown): Map<string, { text: string; source
     }).join(' ') : '';
     return [[node.id, {
       text: `${node.id} ${tags}`,
-      sourceColor: paletteSourceHex(node.mesh?.color)
+      sourceColor: paletteTagColor(node.tags)
+        ?? paletteSourceHex(node.mesh?.material?.color)
+        ?? paletteSourceHex(node.mesh?.color)
+        ?? paletteSourceHex(node.color)
     }] as [string, { text: string; sourceColor?: string }]];
   }));
 }
@@ -1258,6 +1261,12 @@ function paletteSourceHex(value: unknown): string | undefined {
   return typeof value === 'string' && /^#[0-9a-f]{6}$/i.test(value.trim())
     ? value.trim().toUpperCase()
     : undefined;
+}
+
+function paletteTagColor(tags: unknown): string | undefined {
+  if (!Array.isArray(tags)) return undefined;
+  const tag = tags.find((entry) => entry && typeof entry === 'object' && (entry as { tag?: unknown }).tag === 'palette-color');
+  return paletteSourceHex(tag && typeof tag === 'object' ? (tag as { value?: unknown }).value : undefined);
 }
 
 function applyObjectTransform(group: THREE.Group, object: MapObject): void {

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  applyPaletteToModelJson,
   autoAssignPaletteRoles,
   createColorPalette,
   inferPaletteLevel,
@@ -25,9 +26,9 @@ describe('color palettes', () => {
     });
 
     expect(palette.colors[0]).toMatchObject({ level: 'L1', token: 'Cream-100' });
-    expect(palette.roles['environment.sky']).toContain('#76D0F2');
-    expect(palette.roles['vegetation.grass']).toContain('#DCDB22');
-    expect(palette.roles['building.roof']).toContain('#52362E');
+    expect(palette.roles.atmosphere).toContain('#76D0F2');
+    expect(palette.roles.plant).toContain('#DCDB22');
+    expect(palette.roles.secondary).toContain('#52362E');
   });
 
   it('accepts 2-256 unique colors, rejects smaller palettes and picks deterministically', () => {
@@ -71,9 +72,48 @@ describe('color palettes', () => {
     });
     const brief = paletteGenerationBrief(palette);
     expect(brief).toContain('palette');
-    expect(brief).toContain('building.wall');
+    expect(brief).toContain('primary=');
     expect(brief).toContain('#E7C393');
     expect(brief.length).toBeLessThan(4000);
+  });
+
+  it('accepts legacy role names but normalizes generation to the abstract protocol', () => {
+    const palette = createColorPalette({
+      colors: ['#F4E7D0', '#6E8F43', '#274C77'],
+      roles: {
+        'building.wall': ['#F4E7D0'],
+        'vegetation.foliage': ['#6E8F43'],
+        'environment.sky': ['#274C77']
+      }
+    });
+
+    expect(palette.roles.primary).toEqual(['#F4E7D0']);
+    expect(palette.roles.plant).toEqual(['#6E8F43']);
+    expect(palette.roles.atmosphere).toEqual(['#274C77']);
+  });
+
+  it('snaps explicit color intent before source color and semantic fallback', () => {
+    const palette = createColorPalette({
+      colors: ['#183B66', '#F7F7F2', '#C56A22', '#6B4A2E'],
+      roles: {
+        primary: ['#6B4A2E'],
+        secondary: ['#6B4A2E'],
+        accent: ['#C56A22']
+      }
+    });
+    const result = applyPaletteToModelJson({
+      nodes: [
+        { id: 'cap', name: '蓝色海军帽帽冠', mesh: { material: { color: '#6B4A2E' } } },
+        { id: 'brim', name: '白色帽檐', parent: 'cap', tags: [{ tag: 'palette', value: 'secondary' }], color: '#6B4A2E' },
+        { id: 'awning', name: '遮阳棚', tags: [{ tag: 'palette-color', value: '#F06B3E' }], color: '#6B4A2E' }
+      ]
+    }, palette);
+    const nodes = result.nodes as Array<Record<string, any>>;
+
+    expect(nodes[0].mesh.material.color).toBe('#183B66');
+    expect(nodes[1].color).toBe('#F7F7F2');
+    expect(nodes[2].color).toBe('#C56A22');
+    expect((result._meta as any).colorPaletteReport.explicitIntentColors).toBe(3);
   });
 
   it('keeps warm architectural roles out of nearby green families', () => {
@@ -87,11 +127,11 @@ describe('color palettes', () => {
       #D4C2A5 #B89269 #8E664D #714D48 #52362E
     `);
     const roles = autoAssignPaletteRoles(colors);
-    expect(roles['building.wall']).not.toContain('#AEAF6F');
-    expect(roles['building.trim']).not.toContain('#76904C');
-    expect(roles['building.trim']).not.toContain('#5F6F48');
-    expect(roles['building.wall'].every((hex) => hslLightness(hex) >= 0.6)).toBe(true);
-    expect(roles['terrain.road'].every((hex) => hslLightness(hex) >= 0.6)).toBe(true);
+    expect(roles.primary).not.toContain('#AEAF6F');
+    expect(roles.secondary).not.toContain('#76904C');
+    expect(roles.secondary).not.toContain('#5F6F48');
+    expect(roles.primary.every((hex) => hslLightness(hex) >= 0.6)).toBe(true);
+    expect(roles.earth.every((hex) => hslLightness(hex) >= 0.6)).toBe(true);
   });
 });
 

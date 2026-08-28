@@ -3808,6 +3808,12 @@ class MapEditor {
         <summary><span><b>资产</b><small>${selectedAsset ? escapeHtml(`${selectedAsset.name} · ${selectedAsset.mode.toUpperCase()}`) : `${availableAssets.length} 个可用`}</small></span></summary>
         <section class="editor-section inspector-body asset-tools">
         <textarea id="asset-prompt" placeholder="例如：一座低多边形林间小木屋"></textarea>
+        <label class="field compact"><span>生成色卡（可选）</span>
+          <select id="asset-color-palette">
+            <option value="">不限制生成颜色</option>
+            ${this.state.colorPalettes.map((palette) => `<option value="${escapeHtml(palette.id)}" ${palette.id === this.selectedPaletteId ? 'selected' : ''}>${escapeHtml(palette.name)} · ${palette.colors.length} 色</option>`).join('')}
+          </select>
+        </label>
         <p class="empty">新生成资产默认使用 ${this.state.map?.assetGenerationMode.toUpperCase() ?? 'VOXEL'}；已有资产可跨模式混合使用。</p>
         <button id="generate-asset" ${this.state.busy ? 'disabled' : ''}>生成资产</button>
         <p class="empty">资产列表显示全部模式，名称后会标注生成模式。</p>
@@ -5322,6 +5328,7 @@ class MapEditor {
   private async generateAsset(): Promise<void> {
     const promptInput = this.app.querySelector<HTMLTextAreaElement>('#asset-prompt');
     const prompt = promptInput?.value.trim() ?? '';
+    const paletteId = this.app.querySelector<HTMLSelectElement>('#asset-color-palette')?.value || undefined;
     if (!prompt) {
       this.state.message = '请输入资产提示词';
       this.renderPanels();
@@ -5331,7 +5338,7 @@ class MapEditor {
     try {
       const { asset } = await editorFetch<{ asset: MapAsset }>('/api/editor/assets/generate', {
         method: 'POST',
-        body: JSON.stringify({ prompt, mode: this.state.map?.assetGenerationMode ?? 'voxel' })
+        body: JSON.stringify({ prompt, mode: this.state.map?.assetGenerationMode ?? 'voxel', paletteId })
       });
       this.state.assets.unshift(asset);
       this.state.selectedAssetId = asset.id;
@@ -7211,19 +7218,13 @@ function atmosphereMasterStrength(scheme: RenderScheme): number {
 
 function paletteRoleLabel(role: ColorPaletteRole): string {
   return ({
-    'building.wall': '建筑墙面',
-    'building.roof': '建筑屋顶',
-    'building.trim': '建筑装饰',
-    'building.window': '建筑窗户',
-    'terrain.ground': '地面',
-    'terrain.road': '道路',
-    'terrain.rock': '岩石',
-    'vegetation.grass': '草地',
-    'vegetation.foliage': '树木与叶片',
+    primary: '主体',
+    secondary: '辅色',
+    accent: '强调与细节',
+    plant: '绿色植物',
+    earth: '土地与结构',
     water: '水体',
-    'environment.sky': '天空',
-    'environment.fog': '雾',
-    lighting: '灯光',
+    atmosphere: '天空与雾',
     effect: '特效'
   } satisfies Record<ColorPaletteRole, string>)[role];
 }
