@@ -1,0 +1,597 @@
+{
+  "id": "asset-f019523f-1592-496a",
+  "name": "家用电子游戏机",
+  "prompt": "A single reusable home video game console set consisting of one compact console and two connected controllers presented as one organized asset, recognizable ports and controls, approximately 0.42 meters wide, no television, furniture, floor, or background",
+  "tags": [
+    "game",
+    "electronics",
+    "prop"
+  ],
+  "modelJson": {
+    "name": "双手柄家庭游戏机",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "console",
+        "name": "游戏机主机",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.448,
+            0.124,
+            0.239
+          ],
+          "center": [
+            -0.001,
+            0.041,
+            0.044
+          ],
+          "axes": [
+            [
+              0.9998,
+              0.0197,
+              -0.0015
+            ],
+            [
+              -0.0193,
+              0.9882,
+              0.1522
+            ],
+            [
+              0.0044,
+              -0.1521,
+              0.9884
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "controller_left",
+        "name": "左手柄",
+        "parent": "console",
+        "transform": {
+          "pos": [
+            -0.055,
+            0.04,
+            0.076
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.167,
+            0.065,
+            0.088
+          ],
+          "center": [
+            -0.077,
+            0.003,
+            0.034
+          ],
+          "axes": [
+            [
+              0.979,
+              -0.1761,
+              0.1023
+            ],
+            [
+              0.1586,
+              0.9744,
+              0.1594
+            ],
+            [
+              -0.1278,
+              -0.1398,
+              0.9819
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "controller_right",
+        "name": "右手柄",
+        "parent": "console",
+        "transform": {
+          "pos": [
+            0.055,
+            0.04,
+            0.076
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.167,
+            0.063,
+            0.086
+          ],
+          "center": [
+            0.077,
+            0.001,
+            0.034
+          ],
+          "axes": [
+            [
+              0.9796,
+              0.1815,
+              -0.0861
+            ],
+            [
+              -0.1663,
+              0.9731,
+              0.1597
+            ],
+            [
+              0.1128,
+              -0.1421,
+              0.9834
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "console",
+        "transform": {
+          "pos": [
+            0,
+            0.04,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.22,
+            "height": 0.06,
+            "depth": 0.145
+          },
+          "color": 3488065
+        }
+      },
+      {
+        "id": "m1",
+        "parent": "console",
+        "transform": {
+          "pos": [
+            0,
+            0.076,
+            -0.006
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.19,
+            "height": 0.012,
+            "depth": 0.11
+          },
+          "color": 4935769
+        }
+      },
+      {
+        "id": "m2",
+        "parent": "console",
+        "transform": {
+          "pos": [
+            0,
+            0.084,
+            -0.012
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.105,
+            "height": 0.006,
+            "depth": 0.012
+          },
+          "color": 1513757
+        }
+      },
+      {
+        "id": "m3",
+        "parent": "console",
+        "transform": {
+          "pos": [
+            -0.055,
+            0.04,
+            0.076
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.038,
+            "height": 0.022,
+            "depth": 0.008
+          },
+          "color": 1382171
+        }
+      },
+      {
+        "id": "m4",
+        "parent": "console",
+        "transform": {
+          "pos": [
+            0.055,
+            0.04,
+            0.076
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.038,
+            "height": 0.022,
+            "depth": 0.008
+          },
+          "color": 1382171
+        }
+      },
+      {
+        "id": "m5",
+        "parent": "console",
+        "transform": {
+          "pos": [
+            0.078,
+            0.084,
+            0.034
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.018,
+            "height": 0.009,
+            "depth": 0.018
+          },
+          "color": 13189180
+        }
+      },
+      {
+        "id": "m6",
+        "parent": "controller_left",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0.029
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.009,
+            "height": 0.009,
+            "depth": 0.058
+          },
+          "color": 2106153
+        }
+      },
+      {
+        "id": "m7",
+        "parent": "controller_left",
+        "transform": {
+          "pos": [
+            -0.033,
+            0,
+            0.054
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.066,
+            "height": 0.009,
+            "depth": 0.009
+          },
+          "color": 2106153
+        }
+      },
+      {
+        "id": "m8",
+        "parent": "controller_left",
+        "transform": {
+          "pos": [
+            -0.108,
+            0.006,
+            0.032
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.094,
+            "height": 0.036,
+            "depth": 0.07
+          },
+          "color": 4014667
+        }
+      },
+      {
+        "id": "m9",
+        "parent": "controller_left",
+        "transform": {
+          "pos": [
+            -0.129,
+            0.028,
+            0.026
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.031,
+            "height": 0.007,
+            "depth": 0.01
+          },
+          "color": 1513757
+        }
+      },
+      {
+        "id": "m10",
+        "parent": "controller_left",
+        "transform": {
+          "pos": [
+            -0.129,
+            0.0285,
+            0.026
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.01,
+            "height": 0.008,
+            "depth": 0.031
+          },
+          "color": 1513757
+        }
+      },
+      {
+        "id": "m11",
+        "parent": "controller_left",
+        "transform": {
+          "pos": [
+            -0.088,
+            0.029,
+            0.018
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.012,
+            "height": 0.009,
+            "depth": 0.012
+          },
+          "color": 12139323
+        }
+      },
+      {
+        "id": "m12",
+        "parent": "controller_left",
+        "transform": {
+          "pos": [
+            -0.075,
+            0.029,
+            0.035
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.012,
+            "height": 0.009,
+            "depth": 0.012
+          },
+          "color": 12139323
+        }
+      },
+      {
+        "id": "m13",
+        "parent": "controller_right",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0.029
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.009,
+            "height": 0.009,
+            "depth": 0.058
+          },
+          "color": 2106153
+        }
+      },
+      {
+        "id": "m14",
+        "parent": "controller_right",
+        "transform": {
+          "pos": [
+            0.033,
+            0,
+            0.054
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.066,
+            "height": 0.009,
+            "depth": 0.009
+          },
+          "color": 2106153
+        }
+      },
+      {
+        "id": "m15",
+        "parent": "controller_right",
+        "transform": {
+          "pos": [
+            0.108,
+            0.006,
+            0.032
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.094,
+            "height": 0.036,
+            "depth": 0.07
+          },
+          "color": 4014667
+        }
+      },
+      {
+        "id": "m16",
+        "parent": "controller_right",
+        "transform": {
+          "pos": [
+            0.087,
+            0.028,
+            0.026
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.031,
+            "height": 0.007,
+            "depth": 0.01
+          },
+          "color": 1513757
+        }
+      },
+      {
+        "id": "m17",
+        "parent": "controller_right",
+        "transform": {
+          "pos": [
+            0.087,
+            0.0285,
+            0.026
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.01,
+            "height": 0.008,
+            "depth": 0.031
+          },
+          "color": 1513757
+        }
+      },
+      {
+        "id": "m18",
+        "parent": "controller_right",
+        "transform": {
+          "pos": [
+            0.128,
+            0.029,
+            0.018
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.012,
+            "height": 0.009,
+            "depth": 0.012
+          },
+          "color": 12139323
+        }
+      },
+      {
+        "id": "m19",
+        "parent": "controller_right",
+        "transform": {
+          "pos": [
+            0.141,
+            0.029,
+            0.035
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.012,
+            "height": 0.009,
+            "depth": 0.012
+          },
+          "color": 12139323
+        }
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1786871506819,
+        "provider": "gpt",
+        "data": "AbfY6r0wzPkk8o5DPoaqWIZtV6ObyRuOfHTWpsfGavhXuYdnDJ95WYo4ViiQZtlP8v8ManHSNRSzYBMV02arYj+8FkUfiZqOypSjErNg9wF3vHh40wzLYSyr4t8vNkIFFMWmsSoYVjf99YO0RkzKUKLfU5nrSxCzgsRdbYx+7ehNj3lSAD7psCvo4KvLRKTTaC8BocmsVH14UqwnEChVeAqVoLEAAOBTA/Isl8O+mfUObqzccAH5RZ8l+LxzmQWDQjK2rMRqzZhhxWpqkoKJ1McdjLNzrZDVbKMbJ6qYbRBmNSpBI9LIMxHJk22CJeyjDiuFQOYV+V7413jEo7RiVCltfjucQwjcEZeHW8FBDM/rfcTHz2gtjkTIQtKf+VS74jHgjyL39ERwGXFLZerhoRf+PFW3wOXm3tQ09lmN44x2mIppOILHKaunaQRyB+5yzoxPBqTncxxGL5P30sATmftiZ49Levk1aDs8PItDgZlbL9QsNtb9HUEDG2s7JhRA/gR5Vqup+KITngAbf4jadMXtI8CJhPPh/uPeUXW7et+08Uq79hv3V1BozeROMeMArz3Db+3LxGbuszdoMHDhbPfrs4cahB82e4y+W4gCRUiYT79PUEN3rWTGjdJiDT0Z6wYTgNvmtDsp9XnlSv9SVkV+2v5s3z/v3RD1Lv/Lnoc17iPqb5azvpTGf0lzFKooo/6t4MSolB7HnHPMltfA/oJCX8e+cGfKgrd8kamasEwFp+JvmduZsjN2IM9VLh7KxTuD0ga5ib7GD2fFKc/sBoXIukGR",
+        "edits": ""
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -0.21000000000000002,
+          0,
+          -0.10775000000000001
+        ],
+        "max": [
+          0.21000000000000002,
+          0.07900000000000001,
+          0.10775000000000001
+        ],
+        "sourceNodeId": "asset-bounds"
+      }
+    ],
+    "sourceMeshCount": 20,
+    "candidateCount": 1,
+    "fallbackUsed": true
+  },
+  "footprintRadius": 0.21000000000000002,
+  "sizeClass": "small",
+  "mode": "voxel",
+  "provider": "gpt",
+  "libraryId": "library-d7967286-cebf-4f99",
+  "libraryMetadata": {
+    "tags": [
+      "videogameconsole",
+      "gamingsystem",
+      "electronics",
+      "indoorprop"
+    ],
+    "applicableZones": [
+      "settlement"
+    ],
+    "repeatable": true,
+    "landmark": false,
+    "enabled": true,
+    "priority": 0.5,
+    "analysisStatus": "ready",
+    "rotation": "random"
+  },
+  "createdAt": 1787817551911,
+  "updatedAt": 1787817551911
+}

@@ -1,0 +1,1678 @@
+{
+  "id": "asset-f38706e6-7396-4b40",
+  "name": "恐龙玩具组合",
+  "prompt": "A single reusable organized group of three distinct chunky toy dinosaurs standing close together, including a long-neck dinosaur, horned dinosaur and friendly tyrannosaur, each approximately 0.3 to 0.45 meters tall, no floor, room, background, or scenery",
+  "tags": [
+    "toy",
+    "prop"
+  ],
+  "modelJson": {
+    "name": "三只厚块玩具恐龙组合",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "dinosaur_set",
+        "name": "恐龙组合",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            1.164,
+            0.96,
+            0.85
+          ],
+          "center": [
+            0.036,
+            0.231,
+            0.029
+          ],
+          "axes": [
+            [
+              0.9643,
+              0.0505,
+              -0.2598
+            ],
+            [
+              -0.0337,
+              0.9971,
+              0.0686
+            ],
+            [
+              0.2625,
+              -0.0574,
+              0.9632
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "longneck",
+        "name": "长颈恐龙",
+        "parent": "dinosaur_set",
+        "transform": {
+          "pos": [
+            -0.28,
+            0,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.619,
+            0.831,
+            0.276
+          ],
+          "center": [
+            0.082,
+            0.252,
+            -0.035
+          ],
+          "axes": [
+            [
+              0.9711,
+              0.1783,
+              -0.1584
+            ],
+            [
+              -0.1625,
+              0.9808,
+              0.1079
+            ],
+            [
+              0.1746,
+              -0.079,
+              0.9815
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "longneck_neck",
+        "name": "长颈与头",
+        "parent": "longneck",
+        "transform": {
+          "pos": [
+            -0.11,
+            0.27,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.15,
+            0.39,
+            0.173
+          ],
+          "center": [
+            -0.03,
+            0.147,
+            0.006
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              0.9732,
+              0.2302
+            ],
+            [
+              0,
+              -0.2302,
+              0.9732
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "longneck_tail",
+        "name": "长尾",
+        "parent": "longneck",
+        "transform": {
+          "pos": [
+            0.15,
+            0.24,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.244,
+            0.056,
+            0.103
+          ],
+          "center": [
+            0.12,
+            -0.03,
+            -0.05
+          ],
+          "axes": [
+            [
+              0.9539,
+              -0.0286,
+              -0.2988
+            ],
+            [
+              -0.0404,
+              0.9742,
+              -0.2221
+            ],
+            [
+              0.2975,
+              0.2239,
+              0.9281
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "longneck_leg_0",
+        "name": "长颈恐龙腿",
+        "parent": "longneck",
+        "transform": {
+          "pos": [
+            -0.095,
+            0.18,
+            -0.045
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.065,
+            0.18,
+            0.065
+          ],
+          "center": [
+            0,
+            -0.09,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "longneck_leg_1",
+        "name": "长颈恐龙腿",
+        "parent": "longneck",
+        "transform": {
+          "pos": [
+            -0.095,
+            0.18,
+            0.045
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.065,
+            0.18,
+            0.065
+          ],
+          "center": [
+            0,
+            -0.09,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "longneck_leg_2",
+        "name": "长颈恐龙腿",
+        "parent": "longneck",
+        "transform": {
+          "pos": [
+            0.095,
+            0.18,
+            -0.045
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.065,
+            0.18,
+            0.065
+          ],
+          "center": [
+            0,
+            -0.09,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "longneck_leg_3",
+        "name": "长颈恐龙腿",
+        "parent": "longneck",
+        "transform": {
+          "pos": [
+            0.095,
+            0.18,
+            0.045
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.065,
+            0.18,
+            0.065
+          ],
+          "center": [
+            0,
+            -0.09,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "horned",
+        "name": "角龙",
+        "parent": "dinosaur_set",
+        "transform": {
+          "pos": [
+            0.1,
+            0,
+            0.02
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.366,
+            0.779,
+            0.646
+          ],
+          "center": [
+            -0.002,
+            0.216,
+            0.05
+          ],
+          "axes": [
+            [
+              0.9994,
+              -0.0012,
+              0.0333
+            ],
+            [
+              -0.0002,
+              0.9991,
+              0.0434
+            ],
+            [
+              -0.0333,
+              -0.0434,
+              0.9985
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "horned_head",
+        "name": "角龙头部",
+        "parent": "horned",
+        "transform": {
+          "pos": [
+            0,
+            0.26,
+            0.08
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.325,
+            0.352,
+            0.32
+          ],
+          "center": [
+            -0.005,
+            0.09,
+            0.056
+          ],
+          "axes": [
+            [
+              0.9926,
+              -0.0941,
+              0.0767
+            ],
+            [
+              0.1213,
+              0.7866,
+              -0.6054
+            ],
+            [
+              -0.0034,
+              0.6103,
+              0.7922
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "horned_tail",
+        "name": "角龙尾",
+        "parent": "horned",
+        "transform": {
+          "pos": [
+            0,
+            0.2,
+            -0.09
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.09,
+            0.08,
+            0.2
+          ],
+          "center": [
+            0,
+            0.02,
+            -0.08
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 2
+        }
+      },
+      {
+        "id": "horned_leg_0",
+        "name": "角龙腿",
+        "parent": "horned",
+        "transform": {
+          "pos": [
+            -0.09,
+            0.17,
+            -0.045
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.075,
+            0.17,
+            0.075
+          ],
+          "center": [
+            0,
+            -0.085,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "horned_leg_1",
+        "name": "角龙腿",
+        "parent": "horned",
+        "transform": {
+          "pos": [
+            0.09,
+            0.17,
+            -0.045
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.075,
+            0.17,
+            0.075
+          ],
+          "center": [
+            0,
+            -0.085,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "horned_leg_2",
+        "name": "角龙腿",
+        "parent": "horned",
+        "transform": {
+          "pos": [
+            -0.09,
+            0.17,
+            0.045
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.075,
+            0.17,
+            0.075
+          ],
+          "center": [
+            0,
+            -0.085,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "horned_leg_3",
+        "name": "角龙腿",
+        "parent": "horned",
+        "transform": {
+          "pos": [
+            0.09,
+            0.17,
+            0.045
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.075,
+            0.17,
+            0.075
+          ],
+          "center": [
+            0,
+            -0.085,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "tyrannosaur",
+        "name": "友好霸王龙",
+        "parent": "dinosaur_set",
+        "transform": {
+          "pos": [
+            0.43,
+            0,
+            -0.01
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.31,
+            0.816,
+            0.655
+          ],
+          "center": [
+            -0.022,
+            0.19,
+            -0.053
+          ],
+          "axes": [
+            [
+              0.9885,
+              0.0164,
+              -0.1501
+            ],
+            [
+              -0.0031,
+              0.9961,
+              0.0885
+            ],
+            [
+              0.151,
+              -0.087,
+              0.9847
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "tyrannosaur_head",
+        "name": "霸王龙头",
+        "parent": "tyrannosaur",
+        "transform": {
+          "pos": [
+            0,
+            0.38,
+            0.06
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.25,
+            0.247,
+            0.246
+          ],
+          "center": [
+            0,
+            0.041,
+            0.054
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              0.9445,
+              -0.3286
+            ],
+            [
+              0,
+              0.3286,
+              0.9445
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "tyrannosaur_tail",
+        "name": "霸王龙尾",
+        "parent": "tyrannosaur",
+        "transform": {
+          "pos": [
+            0,
+            0.27,
+            -0.09
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.156,
+            0.153,
+            0.266
+          ],
+          "center": [
+            -0.05,
+            -0.05,
+            -0.13
+          ],
+          "axes": [
+            [
+              0.6895,
+              -0.6895,
+              0.2219
+            ],
+            [
+              0.7071,
+              0.7071,
+              0
+            ],
+            [
+              -0.1569,
+              0.1569,
+              0.9751
+            ]
+          ],
+          "_mainAxis": 2
+        }
+      },
+      {
+        "id": "tyrannosaur_leg_0",
+        "name": "霸王龙腿",
+        "parent": "tyrannosaur",
+        "transform": {
+          "pos": [
+            -0.075,
+            0.22,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.1,
+            0.247,
+            0.166
+          ],
+          "center": [
+            0,
+            -0.113,
+            0.017
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              0.9767,
+              -0.2147
+            ],
+            [
+              0,
+              0.2147,
+              0.9767
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "tyrannosaur_leg_1",
+        "name": "霸王龙腿",
+        "parent": "tyrannosaur",
+        "transform": {
+          "pos": [
+            0.075,
+            0.22,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.1,
+            0.247,
+            0.166
+          ],
+          "center": [
+            0,
+            -0.113,
+            0.017
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              0.9767,
+              -0.2147
+            ],
+            [
+              0,
+              0.2147,
+              0.9767
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "tyrannosaur_arm_0",
+        "name": "霸王龙短臂",
+        "parent": "tyrannosaur",
+        "transform": {
+          "pos": [
+            -0.13,
+            0.34,
+            0.06
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.045,
+            0.13,
+            0.045
+          ],
+          "center": [
+            0,
+            -0.055,
+            0.04
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "tyrannosaur_arm_1",
+        "name": "霸王龙短臂",
+        "parent": "tyrannosaur",
+        "transform": {
+          "pos": [
+            0.13,
+            0.34,
+            0.06
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.045,
+            0.13,
+            0.045
+          ],
+          "center": [
+            0,
+            -0.055,
+            0.04
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "longneck",
+        "transform": {
+          "pos": [
+            0,
+            0.22,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.3,
+            "height": 0.15,
+            "depth": 0.14
+          },
+          "color": 6469752
+        }
+      },
+      {
+        "id": "m1",
+        "parent": "longneck_neck",
+        "transform": {
+          "pos": [
+            -0.03,
+            0.11,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.1,
+            "height": 0.3,
+            "depth": 0.1
+          },
+          "color": 7391622
+        }
+      },
+      {
+        "id": "m2",
+        "parent": "longneck_neck",
+        "transform": {
+          "pos": [
+            -0.03,
+            0.28,
+            0.02
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.15,
+            "height": 0.1,
+            "depth": 0.12
+          },
+          "color": 7391622
+        }
+      },
+      {
+        "id": "m3",
+        "parent": "longneck_neck",
+        "transform": {
+          "pos": [
+            -0.07,
+            0.3,
+            0.086
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.025,
+            "height": 0.025,
+            "depth": 0.012
+          },
+          "color": 2106667
+        }
+      },
+      {
+        "id": "m4",
+        "parent": "longneck_neck",
+        "transform": {
+          "pos": [
+            0.01,
+            0.3,
+            0.086
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.025,
+            "height": 0.025,
+            "depth": 0.012
+          },
+          "color": 2106667
+        }
+      },
+      {
+        "id": "m5",
+        "parent": "longneck_tail",
+        "transform": {
+          "pos": [
+            0.12,
+            -0.03,
+            -0.05
+          ],
+          "quat": [
+            0.62,
+            0.11,
+            -0.12,
+            0.7
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.24,
+            "height": 0.11,
+            "depth": 0.06
+          },
+          "color": 5810800
+        }
+      },
+      {
+        "id": "m6",
+        "parent": "longneck_leg_0",
+        "transform": {
+          "pos": [
+            0,
+            -0.09,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.065,
+            "height": 0.18,
+            "depth": 0.065
+          },
+          "color": 5217640
+        }
+      },
+      {
+        "id": "m7",
+        "parent": "longneck_leg_1",
+        "transform": {
+          "pos": [
+            0,
+            -0.09,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.065,
+            "height": 0.18,
+            "depth": 0.065
+          },
+          "color": 5217640
+        }
+      },
+      {
+        "id": "m8",
+        "parent": "longneck_leg_2",
+        "transform": {
+          "pos": [
+            0,
+            -0.09,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.065,
+            "height": 0.18,
+            "depth": 0.065
+          },
+          "color": 5217640
+        }
+      },
+      {
+        "id": "m9",
+        "parent": "longneck_leg_3",
+        "transform": {
+          "pos": [
+            0,
+            -0.09,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.065,
+            "height": 0.18,
+            "depth": 0.065
+          },
+          "color": 5217640
+        }
+      },
+      {
+        "id": "m10",
+        "parent": "horned",
+        "transform": {
+          "pos": [
+            0,
+            0.2,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.3,
+            "height": 0.17,
+            "depth": 0.17
+          },
+          "color": 14195267
+        }
+      },
+      {
+        "id": "m11",
+        "parent": "horned_head",
+        "transform": {
+          "pos": [
+            0,
+            0.01,
+            0.05
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.22,
+            "height": 0.14,
+            "depth": 0.16
+          },
+          "color": 15051085
+        }
+      },
+      {
+        "id": "m12",
+        "parent": "horned_head",
+        "transform": {
+          "pos": [
+            0,
+            0.09,
+            -0.015
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.3,
+            "height": 0.24,
+            "depth": 0.055
+          },
+          "color": 13203512
+        }
+      },
+      {
+        "id": "m13",
+        "parent": "horned_head",
+        "transform": {
+          "pos": [
+            0,
+            0.06,
+            0.19
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.055,
+            "height": 0.055,
+            "depth": 0.14
+          },
+          "color": 15851437
+        }
+      },
+      {
+        "id": "m14",
+        "parent": "horned_head",
+        "transform": {
+          "pos": [
+            -0.08,
+            0.17,
+            0
+          ],
+          "quat": [
+            0.52,
+            0.48,
+            0.48,
+            0.52
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.13,
+            "height": 0.045,
+            "depth": 0.04
+          },
+          "color": 15851437
+        }
+      },
+      {
+        "id": "m15",
+        "parent": "horned_head",
+        "transform": {
+          "pos": [
+            0.09,
+            0.17,
+            0
+          ],
+          "quat": [
+            0.48,
+            0.52,
+            0.52,
+            0.48
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.13,
+            "height": 0.045,
+            "depth": 0.04
+          },
+          "color": 15851437
+        }
+      },
+      {
+        "id": "m16",
+        "parent": "horned_tail",
+        "transform": {
+          "pos": [
+            0,
+            0.02,
+            -0.08
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.09,
+            "height": 0.08,
+            "depth": 0.2
+          },
+          "color": 13207357
+        }
+      },
+      {
+        "id": "m17",
+        "parent": "horned_leg_0",
+        "transform": {
+          "pos": [
+            0,
+            -0.085,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.075,
+            "height": 0.17,
+            "depth": 0.075
+          },
+          "color": 12154421
+        }
+      },
+      {
+        "id": "m18",
+        "parent": "horned_leg_1",
+        "transform": {
+          "pos": [
+            0,
+            -0.085,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.075,
+            "height": 0.17,
+            "depth": 0.075
+          },
+          "color": 12154421
+        }
+      },
+      {
+        "id": "m19",
+        "parent": "horned_leg_2",
+        "transform": {
+          "pos": [
+            0,
+            -0.085,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.075,
+            "height": 0.17,
+            "depth": 0.075
+          },
+          "color": 12154421
+        }
+      },
+      {
+        "id": "m20",
+        "parent": "horned_leg_3",
+        "transform": {
+          "pos": [
+            0,
+            -0.085,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.075,
+            "height": 0.17,
+            "depth": 0.075
+          },
+          "color": 12154421
+        }
+      },
+      {
+        "id": "m21",
+        "parent": "tyrannosaur",
+        "transform": {
+          "pos": [
+            0,
+            0.25,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.24,
+            "height": 0.25,
+            "depth": 0.18
+          },
+          "color": 7045839
+        }
+      },
+      {
+        "id": "m22",
+        "parent": "tyrannosaur_head",
+        "transform": {
+          "pos": [
+            0,
+            0.05,
+            0.05
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.25,
+            "height": 0.17,
+            "depth": 0.2
+          },
+          "color": 7901150
+        }
+      },
+      {
+        "id": "m23",
+        "parent": "tyrannosaur_head",
+        "transform": {
+          "pos": [
+            0,
+            -0.015,
+            0.09
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.21,
+            "height": 0.055,
+            "depth": 0.2
+          },
+          "color": 12175347
+        }
+      },
+      {
+        "id": "m24",
+        "parent": "tyrannosaur_head",
+        "transform": {
+          "pos": [
+            -0.06,
+            0.09,
+            0.156
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.03,
+            "height": 0.03,
+            "depth": 0.012
+          },
+          "color": 2106667
+        }
+      },
+      {
+        "id": "m25",
+        "parent": "tyrannosaur_head",
+        "transform": {
+          "pos": [
+            0.06,
+            0.09,
+            0.156
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.03,
+            "height": 0.03,
+            "depth": 0.012
+          },
+          "color": 2106667
+        }
+      },
+      {
+        "id": "m26",
+        "parent": "tyrannosaur_tail",
+        "transform": {
+          "pos": [
+            -0.05,
+            -0.05,
+            -0.13
+          ],
+          "quat": [
+            -0.7,
+            0.7,
+            -0.11,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.11,
+            "height": 0.11,
+            "depth": 0.27
+          },
+          "color": 6124733
+        }
+      },
+      {
+        "id": "m27",
+        "parent": "tyrannosaur_leg_0",
+        "transform": {
+          "pos": [
+            0,
+            -0.11,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.085,
+            "height": 0.22,
+            "depth": 0.09
+          },
+          "color": 5401011
+        }
+      },
+      {
+        "id": "m28",
+        "parent": "tyrannosaur_leg_0",
+        "transform": {
+          "pos": [
+            0,
+            -0.195,
+            0.045
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.1,
+            "height": 0.045,
+            "depth": 0.14
+          },
+          "color": 5401011
+        }
+      },
+      {
+        "id": "m29",
+        "parent": "tyrannosaur_leg_1",
+        "transform": {
+          "pos": [
+            0,
+            -0.11,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.085,
+            "height": 0.22,
+            "depth": 0.09
+          },
+          "color": 5401011
+        }
+      },
+      {
+        "id": "m30",
+        "parent": "tyrannosaur_leg_1",
+        "transform": {
+          "pos": [
+            0,
+            -0.195,
+            0.045
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.1,
+            "height": 0.045,
+            "depth": 0.14
+          },
+          "color": 5401011
+        }
+      },
+      {
+        "id": "m31",
+        "parent": "tyrannosaur_arm_0",
+        "transform": {
+          "pos": [
+            0,
+            -0.055,
+            0.04
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.045,
+            "height": 0.13,
+            "depth": 0.045
+          },
+          "color": 6124733
+        }
+      },
+      {
+        "id": "m32",
+        "parent": "tyrannosaur_arm_1",
+        "transform": {
+          "pos": [
+            0,
+            -0.055,
+            0.04
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.045,
+            "height": 0.13,
+            "depth": 0.045
+          },
+          "color": 6124733
+        }
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1786874808275,
+        "provider": "gpt",
+        "data": "4lQ8MrZoKZ9ZB14CZU87H1KFitxoxBf0jHfZz4xIyoIIrz9f3h8zsvjfgm+A2HcYzOlYYpJRf2tKcG0GDKzBe8CgMpVk9W+m362tyniBZfWefzj+IqQfvxTwVxk2sEFybD1gT7wtD9r0hRQfFK/rM/fg32E4HU/a4JaAjMZQh9QQkddqnBWVSggi/d38nSMhdE/ZK78rT+/ADzka7ad/y2cx048NUwo24r6USWNaN/HFfDXtz3zoliYw8G6uw9SgGKYuR7fO09hR/kdW/c5VmOuebDYgvwXUPxmYM1SUxml2NBxMzqpAyfGWvJLcPVFl+28hstMDdkuzv8cTZGosWaZxkFv5BmAe/Iqt5+sHYQ/Up8ow8WKN3CFTLhxrDLt00XSFRmpdfk4CgyaJ8hncVn6ZgEj/Nb8cdOdTUdObZ5+M79IvYChK8yWCFT+Xc8ilQetZZzxXaeSPPoME7HSjid+NuzVdM7aMwnv1X292KV2jqIdQ189nKdRZ5RlgcbTZTmcfVhERVmgg4SRHnW8Na0FEPWcWTDIZ9ai9MCw3tgryp7r3yrSCiG05H3iwtGO9aFJMolYBDQ8Zxe40ikbe7odoyrJeuQbCtAsaWS1Djc8M1Yk29X/XDXhX56ffUFXiGmgVv03IEaUDIE06npxBPxoobk1tz2oMr7MvflvRResYQ4OQkfv6zavcEenHUp6oyWq5onvW0gvB/KfFTuToXo3bb342c9SuhKAMzRPDbWG3xlg5qBdcdeuQHom4LGOmoUQzDxk9DVOMjNTUVQawOY+/LZLxRWmxpMX4GA8OyXGEF88ibhUTdVi/SDbr6MQkIT5QuC9NmxYe3b855l5TUNyeLEqonoC2AfJh0tyFjZIwEdZPv+HuIua8ie3Q8qe2CDKX77adPHuAD/em7HEHVnrigvUvdNbYas3CBl8uC5ZkPbiQ6x2dspDG/xrulfjmVcL4uRNYIXpKotQRvzGfxywwceLvfRtoaGIlGAgux/nz/YGmaedHThHwdQKcQX8SJAmfgpv1DW3qGcirsOTVis8gwNFaJP3vEQMluEa6v4pyD/dOLdtW/GwfT6mQROF7kwz2it1qgLUHaJu3g5MVCkvg9W9HHamzc7oN/e0VfOESSLivitbVnI63TMNSb9jw+N3T7RdTIhYhA0cr6wi9khvss9FaNC7DMfzKR3t+r4OTNrrGIRG0OfsDiEirbgbZaHdBZDEH9d4QChOX7lT5FANSwa0YtM8KKs7u3RWHvoaj6o5JKkFteVIaqdQVRr+3djwS19us1cOU1pUfnvt8YcCvQm7M5aIgrY0ZN7zk1ieGMx3Jh5/gpeyuJwly77GgxuzzrjeAst/iYCBfyVfF4ctbR4YQNy8W8aZRGxw+ygwE+uZpldnuK9QYhifQponEBrzRpMH5v3iR0FMKD+4AqhDX8SZfEBq33ZxxNvTL4yWlqslI/ySoRa1RF9U55PW9uGofsQGRxohRE5ZH3zL9UduBtet5tQ+fI/ea2brXmxAzd1brYjH0tLdgn8I5UBsUamU2ZCVHs/MTPjiJbWmNm9zSQlIrUSLd6BAiVEENw2XzxPONDp1ZnW3e00gyjCN3C+DrinXxSCJ3wxnoVN8zw2Pji8EdCj4osRL0Zbez6jg3ZCscnMMEsB6XtC9iHzBTUvRVHOoAl72w12jp3xl6HDJEUyI2URzY3XtJgHyZcxZuubLFt5ElgcGSaxGPhQQZNjFylIbj54RtT01YO2nVy5saAMABMzT9xLLYcu4j38HdhKlLonCtINg=",
+        "edits": ""
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -0.5387500000000001,
+          0,
+          -0.3693909384134664
+        ],
+        "max": [
+          0.5387500000000001,
+          0.6000000000000001,
+          0.3693909384134664
+        ],
+        "sourceNodeId": "asset-bounds"
+      }
+    ],
+    "sourceMeshCount": 33,
+    "candidateCount": 1,
+    "fallbackUsed": true
+  },
+  "footprintRadius": 0.5387500000000001,
+  "sizeClass": "small",
+  "mode": "voxel",
+  "provider": "gpt",
+  "libraryId": "library-d7967286-cebf-4f99",
+  "libraryMetadata": {
+    "tags": [
+      "dinosaurtoyset",
+      "toydinosaurs",
+      "childrenstoy",
+      "playgroundprop"
+    ],
+    "applicableZones": [
+      "settlement"
+    ],
+    "repeatable": true,
+    "landmark": false,
+    "enabled": true,
+    "priority": 0.5,
+    "analysisStatus": "ready",
+    "rotation": "random"
+  },
+  "createdAt": 1787817325875,
+  "updatedAt": 1787817325875
+}

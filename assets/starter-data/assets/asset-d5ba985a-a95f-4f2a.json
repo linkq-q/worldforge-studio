@@ -1,0 +1,821 @@
+{
+  "id": "asset-d5ba985a-a95f-4f2a",
+  "name": "复杂游乐园/06碰碰车馆/载具/蓝色碰碰车",
+  "prompt": "Simple standalone voxel model of 蓝色碰碰车: a compact blue amusement park bumper car variant with angular nose, yellow bumper ring, low seat and rear power pole. Use 16 to 28 box meshes only, one grounded object, bold readable silhouette, bright amusement park colors, no terrain, no people, no floating pieces.",
+  "modelJson": {
+    "name": "蓝色碰碰车",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "bumperCar",
+        "name": "碰碰车整体",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "bumperCar",
+        "transform": {
+          "pos": [
+            -0.98,
+            0.18,
+            1.05
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.38,
+            "height": 0.36,
+            "depth": 0.68
+          },
+          "color": 2435131
+        }
+      },
+      {
+        "id": "m1",
+        "parent": "bumperCar",
+        "transform": {
+          "pos": [
+            0.98,
+            0.18,
+            1.05
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.38,
+            "height": 0.36,
+            "depth": 0.68
+          },
+          "color": 2435131
+        }
+      },
+      {
+        "id": "m2",
+        "parent": "bumperCar",
+        "transform": {
+          "pos": [
+            -0.98,
+            0.18,
+            -1.05
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.38,
+            "height": 0.36,
+            "depth": 0.68
+          },
+          "color": 2435131
+        }
+      },
+      {
+        "id": "m3",
+        "parent": "bumperCar",
+        "transform": {
+          "pos": [
+            0.98,
+            0.18,
+            -1.05
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.38,
+            "height": 0.36,
+            "depth": 0.68
+          },
+          "color": 2435131
+        }
+      },
+      {
+        "id": "m4",
+        "parent": "bumperCar",
+        "transform": {
+          "pos": [
+            0,
+            0.34,
+            2.02
+          ],
+          "quat": [
+            1,
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.52,
+            "height": 0.26,
+            "depth": 0.25
+          },
+          "color": 16765994
+        }
+      },
+      {
+        "id": "m5",
+        "parent": "bumperCar",
+        "transform": {
+          "pos": [
+            1.06,
+            0.34,
+            1.74
+          ],
+          "quat": [
+            0.93,
+            0,
+            -0.37,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.81,
+            "height": 0.26,
+            "depth": 0.25
+          },
+          "color": 16765994
+        }
+      },
+      {
+        "id": "m6",
+        "parent": "bumperCar",
+        "transform": {
+          "pos": [
+            1.35,
+            0.34,
+            0.08
+          ],
+          "quat": [
+            -0.71,
+            0,
+            0.71,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2.76,
+            "height": 0.26,
+            "depth": 0.25
+          },
+          "color": 16765994
+        }
+      },
+      {
+        "id": "m7",
+        "parent": "bumperCar",
+        "transform": {
+          "pos": [
+            1.13,
+            0.34,
+            -1.54
+          ],
+          "quat": [
+            -0.4,
+            0,
+            0.92,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.66,
+            "height": 0.26,
+            "depth": 0.25
+          },
+          "color": 16765994
+        }
+      },
+      {
+        "id": "m8",
+        "parent": "bumperCar",
+        "transform": {
+          "pos": [
+            0,
+            0.34,
+            -1.78
+          ],
+          "quat": [
+            0,
+            0,
+            1,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.8,
+            "height": 0.26,
+            "depth": 0.25
+          },
+          "color": 16765994
+        }
+      },
+      {
+        "id": "m9",
+        "parent": "bumperCar",
+        "transform": {
+          "pos": [
+            -1.12,
+            0.34,
+            -1.54
+          ],
+          "quat": [
+            0.4,
+            0,
+            0.92,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.66,
+            "height": 0.26,
+            "depth": 0.25
+          },
+          "color": 16765994
+        }
+      },
+      {
+        "id": "m10",
+        "parent": "bumperCar",
+        "transform": {
+          "pos": [
+            -1.35,
+            0.34,
+            0.08
+          ],
+          "quat": [
+            0.71,
+            0,
+            0.71,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2.76,
+            "height": 0.26,
+            "depth": 0.25
+          },
+          "color": 16765994
+        }
+      },
+      {
+        "id": "m11",
+        "parent": "bumperCar",
+        "transform": {
+          "pos": [
+            -1.06,
+            0.34,
+            1.74
+          ],
+          "quat": [
+            0.93,
+            0,
+            0.37,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.81,
+            "height": 0.26,
+            "depth": 0.25
+          },
+          "color": 16765994
+        }
+      },
+      {
+        "id": "m12",
+        "parent": "bumperCar",
+        "transform": {
+          "pos": [
+            0,
+            0.49,
+            0.02
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2.3,
+            "height": 0.42,
+            "depth": 3.2
+          },
+          "color": 1202360
+        }
+      },
+      {
+        "id": "m13",
+        "parent": "bumperCar",
+        "transform": {
+          "pos": [
+            0,
+            0.78,
+            0.12
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.82,
+            "height": 0.42,
+            "depth": 2.42
+          },
+          "color": 1475816
+        }
+      },
+      {
+        "id": "m14",
+        "parent": "bumperCar",
+        "transform": {
+          "pos": [
+            0,
+            0.99,
+            1.08
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.3,
+            "height": 0.36,
+            "depth": 1.12
+          },
+          "color": 2729983
+        }
+      },
+      {
+        "id": "m15",
+        "parent": "bumperCar",
+        "transform": {
+          "pos": [
+            -0.72,
+            0.97,
+            1.16
+          ],
+          "quat": [
+            -0.37,
+            0,
+            0.93,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.85,
+            "height": 0.36,
+            "depth": 0.58
+          },
+          "color": 1475816
+        }
+      },
+      {
+        "id": "m16",
+        "parent": "bumperCar",
+        "transform": {
+          "pos": [
+            0.73,
+            0.97,
+            1.15
+          ],
+          "quat": [
+            0.93,
+            0,
+            -0.37,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.85,
+            "height": 0.36,
+            "depth": 0.58
+          },
+          "color": 1475816
+        }
+      },
+      {
+        "id": "m17",
+        "parent": "bumperCar",
+        "transform": {
+          "pos": [
+            0,
+            1.04,
+            -0.28
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.34,
+            "height": 0.14,
+            "depth": 1.15
+          },
+          "color": 1521247
+        }
+      },
+      {
+        "id": "m18",
+        "parent": "bumperCar",
+        "transform": {
+          "pos": [
+            0,
+            1.18,
+            -0.53
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.92,
+            "height": 0.22,
+            "depth": 0.66
+          },
+          "color": 16735048
+        }
+      },
+      {
+        "id": "m19",
+        "parent": "bumperCar",
+        "transform": {
+          "pos": [
+            0,
+            1.49,
+            -0.93
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.94,
+            "height": 0.72,
+            "depth": 0.2
+          },
+          "color": 14958402
+        }
+      },
+      {
+        "id": "m20",
+        "parent": "bumperCar",
+        "transform": {
+          "pos": [
+            -0.51,
+            1.27,
+            -0.55
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.18,
+            "height": 0.34,
+            "depth": 0.72
+          },
+          "color": 16740958
+        }
+      },
+      {
+        "id": "m21",
+        "parent": "bumperCar",
+        "transform": {
+          "pos": [
+            0.51,
+            1.27,
+            -0.55
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.18,
+            "height": 0.34,
+            "depth": 0.72
+          },
+          "color": 16740958
+        }
+      },
+      {
+        "id": "m22",
+        "parent": "bumperCar",
+        "transform": {
+          "pos": [
+            0,
+            1.25,
+            0.32
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.18,
+            "height": 0.25,
+            "depth": 0.24
+          },
+          "color": 871580
+        }
+      },
+      {
+        "id": "m23",
+        "parent": "bumperCar",
+        "transform": {
+          "pos": [
+            0,
+            1.48,
+            0.25
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.1,
+            "height": 0.48,
+            "depth": 0.1
+          },
+          "color": 3291210
+        }
+      },
+      {
+        "id": "m24",
+        "parent": "bumperCar",
+        "transform": {
+          "pos": [
+            0,
+            1.7,
+            0.25
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.72,
+            "height": 0.1,
+            "depth": 0.12
+          },
+          "color": 16765994
+        }
+      },
+      {
+        "id": "m25",
+        "parent": "bumperCar",
+        "transform": {
+          "pos": [
+            0,
+            0.93,
+            -1.3
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.34,
+            "height": 0.38,
+            "depth": 0.54
+          },
+          "color": 1141964
+        }
+      },
+      {
+        "id": "m26",
+        "parent": "bumperCar",
+        "transform": {
+          "pos": [
+            0.73,
+            2.08,
+            -1.42
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.16,
+            "height": 2.18,
+            "depth": 0.16
+          },
+          "color": 14280430
+        }
+      },
+      {
+        "id": "m27",
+        "parent": "bumperCar",
+        "transform": {
+          "pos": [
+            0.5,
+            3.13,
+            -1.42
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.62,
+            "height": 0.15,
+            "depth": 0.15
+          },
+          "color": 16731998
+        }
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1784474704653,
+        "provider": "glm",
+        "data": "Qr9FQPNrMN0uragIaUtGC+7aFphp0cFMAP9YPTDvdAi9YHI/a9LjJJS+GA3spEkTsbLir50FwSFEmT6YmdnTkrPLjVaf8dIHKjuBzvJ42SjWY22pPmc2BErfP7WdkbbPq3srA04fEHHBU70oBz8INQB2OpLvsC7Gt/Ps+0dQuOjwxWqMAWIiNfIp8jBusj+GAwokMyGxDINHqKe6G1vcrNpd+4DMw/jPYlVG2sDrkoyhZN+ys2wXnXns7Gw/ayDegh26V+hzBDt2QvHf3pBiGUTvARGsnD8wfoXirkrmjAg2RWuJrIpTJEYZeI3K7ln57Wi1Souhy+61j/Qs7mecyFVvvEz+MzPoySGJ+i0ffYkgf6OG5YBUinpezuEdz0io4vCSHiCQgas60D1TyStYvc3wsNvLvz3CyjZEm/Nlr0VGgMJF8fvOfkLMAIdfsqfnhoXIyGEBIlglsTetKrIOEZHPsgjAgQP8WPRIk7D1IDd2anQ/UL3FkfCvCIjXWstYjP6rUXH/kKw+1UEjwJdf+A+Cuc/Qkt55nokknLbibNOCQErmIVnxmNeWz3SqIeS2OnrCe84gMfQvXt+BSlgXGQhMOD+rL2LI0r/+/6ForINw8GuICxaQ996RTM+ZX10/+4kkVeITWHFKm7VvUnG6UkMxBUiOjs2bcdWjWcTPlGFxdvUtUHMnGQp2axzAsyR2BZr+PrmXFZYfkivG0PflbLoiw5HXSwuH6vN6A8PPBKMOD9lJgjjbGGJYGEu1Zlv1K+/uoVixwH7Ff/tu3tKauztcpjaB7HpS1yguDH80/EBRdplrz852+m7aa2lSEnvScPPX/gsKHh1wEdOSz/uy8XBvtAYCojCoj0dHnpGABAW+WcH/ec/8YRkBW+t74LtyitA+VLm5iC495GqDDzTDKYyL4F9dTycpBhfuZd254GhxkT1bk6nIXE3djrf+DuzGX8rhu+UNILvOTWgC4VLxeyX7vrcf9ZsP/DRsF9UxVWkhPtG2JWEkyqyyTSlyF04c2lR8WmwftFaJib3pgxlIyDO5kk97PYd/WdV1UsjPdfQBzIa/Ti/SLxualtw7Svs+1pfNwEDBfJIFErOZGrEybEf+Rg87nAEQPHikOT6utHpN9EgZ+4++ghq9uwmYoqUGokoqBqwZYkBEeJsuhIGffL7IW7JSnG2/KfURKp9+D2uLHiZZgiPlDosz7RiMP+yX9lhxB8AUAqNM5bBFcle7yVtKGGVMyNxktvuW8uA7f144gcB4W1eWR+UMoXswaAPmcK0Pw4ZJnZv2VmSQcIDNYbW477XT3KHu9Y7kE1Lxcv/KDksi/SEl8tDxJQglljOMMKIkDfjkEUOEtif+uM5S4A==",
+        "edits": ""
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -1.15,
+          0.28,
+          -1.7000000000000002
+        ],
+        "max": [
+          1.15,
+          0.7,
+          1.5
+        ],
+        "sourceNodeId": "m12"
+      },
+      {
+        "min": [
+          -0.91,
+          0.5700000000000001,
+          -1.21
+        ],
+        "max": [
+          0.91,
+          0.99,
+          1.21
+        ],
+        "sourceNodeId": "m13"
+      },
+      {
+        "min": [
+          -0.65,
+          0.81,
+          0.4
+        ],
+        "max": [
+          0.65,
+          1.17,
+          1.52
+        ],
+        "sourceNodeId": "m14"
+      },
+      {
+        "min": [
+          -1.228063485725694,
+          0.7899999999999998,
+          0.5372998602515471
+        ],
+        "max": [
+          -0.21193651427430593,
+          1.1500000000000001,
+          1.5427001397484528
+        ],
+        "sourceNodeId": "m15"
+      },
+      {
+        "min": [
+          0.22193651427430627,
+          0.7899999999999998,
+          0.527299860251547
+        ],
+        "max": [
+          1.2380634857256938,
+          1.1500000000000001,
+          1.532700139748453
+        ],
+        "sourceNodeId": "m16"
+      },
+      {
+        "min": [
+          -0.67,
+          0.74,
+          -1.69
+        ],
+        "max": [
+          0.67,
+          1.12,
+          -1.15
+        ],
+        "sourceNodeId": "m25"
+      },
+      {
+        "min": [
+          -0.67,
+          0.97,
+          -0.975
+        ],
+        "max": [
+          0.67,
+          1.11,
+          0.17499999999999993
+        ],
+        "sourceNodeId": "m17"
+      },
+      {
+        "min": [
+          -1.475,
+          0.21000000000000008,
+          -1.42
+        ],
+        "max": [
+          -1.225,
+          0.47,
+          1.3399999999999999
+        ],
+        "sourceNodeId": "m10"
+      },
+      {
+        "min": [
+          1.225,
+          0.21000000000000008,
+          -1.42
+        ],
+        "max": [
+          1.475,
+          0.47,
+          1.3399999999999999
+        ],
+        "sourceNodeId": "m6"
+      },
+      {
+        "min": [
+          -1.4401806747853865,
+          0.2099999999999999,
+          1.2509433020562986
+        ],
+        "max": [
+          -0.6798193252146137,
+          0.47000000000000014,
+          1.9890566979437012
+        ],
+        "sourceNodeId": "m11"
+      },
+      {
+        "min": [
+          0.6798193252146137,
+          0.2099999999999999,
+          1.2509433020562986
+        ],
+        "max": [
+          1.4401806747853865,
+          0.47000000000000014,
+          1.9890566979437012
+        ],
+        "sourceNodeId": "m5"
+      },
+      {
+        "min": [
+          -0.47,
+          1.13,
+          -1.15
+        ],
+        "max": [
+          0.47,
+          1.85,
+          -0.9500000000000001
+        ],
+        "sourceNodeId": "m19"
+      }
+    ],
+    "sourceMeshCount": 28,
+    "candidateCount": 21,
+    "fallbackUsed": false
+  },
+  "mode": "lite",
+  "provider": "provider-fallback",
+  "createdAt": 1784474709168,
+  "updatedAt": 1784474709168
+}

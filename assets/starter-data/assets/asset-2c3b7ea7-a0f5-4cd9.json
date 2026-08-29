@@ -1,0 +1,433 @@
+{
+  "id": "asset-2c3b7ea7-a0f5-4cd9",
+  "name": "打开书本",
+  "prompt": "一本单独摊开的儿童图书，左右书页清晰可见。独立单件儿童房物品，浅亮柔和造型，圆润安全边缘，不包含成组物品，不包含场景、房间、地面或背景。基础色和顶点色仅使用：#FFFDF6,#FEF9EA,#FDF2D7,#E9DABD,#CDBA97,#F8E8CF,#F1D7B2,#E7C393,#C9A06E,#9E7A55,#FFF7A8,#FCEF72,#F6E24B,#D1B825,#9C8510,#FFF3B7,#FDE674,#FCD75F,#FECD4D,#D1900B,#FFE2A0,#FFD170,#F8BC44,#E39F1A,#A96F05,#FBE3BD,#FDD8A3,#FDCC8F,#F1AD69,#D99256,#FFD2BA,#FFB08A,#FF8A5B,#F06B3E,#B84A27,#EAF9FF,#DAF2F5,#95E5F9,#76D0F2,#45BDF6,#D9F8FB,#B2E9F2,#8ECCD6,#7BCFDF,#4BAFCA,#D8F7EF,#B8ECDD,#90DCC8,#74C4BB,#499D92,#F1F5AF,#E4E77F,#DCDB\nCoordinate contract: local Y+ is up, local Z+ is the front, entrance, or forward direction, and local X+ is right. Put doors, facades, openings, windshields, noses, seats, and other recognizable front details toward local Z+. For a modular repeated element, explicitly choose the long axis: side-by-side modules span local X with depth/front on local Z; traversal modules span local Z. Keep the model centered at its origin.\nCanonical dimensions contract: width=0.48, height=0.07, depth=0.34 world units. Keep the generated mesh within this centered bounding size.",
+  "tags": [
+    "indoor",
+    "single-object",
+    "child-safe"
+  ],
+  "modelJson": {
+    "name": "摊开的儿童图书",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "book",
+        "name": "儿童图书",
+        "transform": {
+          "pos": [
+            -0.01,
+            0.005,
+            0.01
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.512,
+            0.05,
+            0.377
+          ],
+          "center": [
+            0.01,
+            -0.005,
+            -0.01
+          ],
+          "axes": [
+            [
+              0.9947,
+              0.0016,
+              -0.1023
+            ],
+            [
+              -0.0022,
+              1,
+              -0.0059
+            ],
+            [
+              0.1023,
+              0.0061,
+              0.9947
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "book",
+        "transform": {
+          "pos": [
+            -0.11,
+            -0.015,
+            -0.01
+          ],
+          "quat": [
+            0,
+            0,
+            0.03,
+            1
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.24,
+            "height": 0.012,
+            "depth": 0.33
+          },
+          "color": 16747099
+        }
+      },
+      {
+        "id": "m1",
+        "parent": "book",
+        "transform": {
+          "pos": [
+            0.13,
+            -0.015,
+            -0.01
+          ],
+          "quat": [
+            0,
+            0,
+            -0.03,
+            1
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.24,
+            "height": 0.012,
+            "depth": 0.33
+          },
+          "color": 16747099
+        }
+      },
+      {
+        "id": "m2",
+        "parent": "book",
+        "transform": {
+          "pos": [
+            -0.1,
+            0.005,
+            -0.01
+          ],
+          "quat": [
+            0,
+            0,
+            0.03,
+            1
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.23,
+            "height": 0.006,
+            "depth": 0.31
+          },
+          "color": 16776694
+        }
+      },
+      {
+        "id": "m3",
+        "parent": "book",
+        "transform": {
+          "pos": [
+            0.12,
+            0.005,
+            -0.01
+          ],
+          "quat": [
+            0,
+            0,
+            -0.03,
+            1
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.23,
+            "height": 0.006,
+            "depth": 0.31
+          },
+          "color": 16710122
+        }
+      },
+      {
+        "id": "m4",
+        "parent": "book",
+        "transform": {
+          "pos": [
+            0.01,
+            0.001,
+            -0.01
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.014,
+            "height": 0.018,
+            "depth": 0.324
+          },
+          "color": 15188883
+        }
+      },
+      {
+        "id": "m5",
+        "parent": "book",
+        "transform": {
+          "pos": [
+            -0.11,
+            0.005,
+            -0.03
+          ],
+          "quat": [
+            0,
+            0,
+            0.03,
+            1
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.14,
+            "height": 0.003,
+            "depth": 0.16
+          },
+          "color": 9823737
+        }
+      },
+      {
+        "id": "m6",
+        "parent": "book",
+        "transform": {
+          "pos": [
+            -0.13,
+            0.015,
+            -0.01
+          ],
+          "quat": [
+            0,
+            0,
+            0.04,
+            1
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.05,
+            "height": 0.003,
+            "depth": 0.07
+          },
+          "color": 16576370
+        }
+      },
+      {
+        "id": "m7",
+        "parent": "book",
+        "transform": {
+          "pos": [
+            -0.11,
+            0.005,
+            0.09
+          ],
+          "quat": [
+            0,
+            0,
+            0.03,
+            1
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.15,
+            "height": 0.003,
+            "depth": 0.02
+          },
+          "color": 7652539
+        }
+      },
+      {
+        "id": "m8",
+        "parent": "book",
+        "transform": {
+          "pos": [
+            0.13,
+            0.005,
+            -0.09
+          ],
+          "quat": [
+            0,
+            0,
+            -0.03,
+            1
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.14,
+            "height": 0.003,
+            "depth": 0.02
+          },
+          "color": 16179787
+        }
+      },
+      {
+        "id": "m9",
+        "parent": "book",
+        "transform": {
+          "pos": [
+            0.12,
+            0.015,
+            -0.03
+          ],
+          "quat": [
+            0,
+            0,
+            -0.03,
+            1
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.12,
+            "height": 0.003,
+            "depth": 0.02
+          },
+          "color": 7786738
+        }
+      },
+      {
+        "id": "m10",
+        "parent": "book",
+        "transform": {
+          "pos": [
+            0.13,
+            0.005,
+            0.03
+          ],
+          "quat": [
+            0,
+            0,
+            -0.03,
+            1
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.15,
+            "height": 0.003,
+            "depth": 0.02
+          },
+          "color": 16756874
+        }
+      },
+      {
+        "id": "m11",
+        "parent": "book",
+        "transform": {
+          "pos": [
+            0.11,
+            0.015,
+            0.09
+          ],
+          "quat": [
+            0,
+            0,
+            -0.03,
+            1
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.1,
+            "height": 0.003,
+            "depth": 0.02
+          },
+          "color": 9493704
+        }
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1787769396443,
+        "provider": "gpt",
+        "data": "D2RBe4MUXkOGvv2pk+23j2pGN7AFF56zoRe2Q3ikSFtC4WHPO+oCk4iij5yNDL+kU1cceJSVqpYsWrAA7LB5Hxu1+nksRbXOtA4kX7IPjVTqFmte1M50ltM+tTdJhPtvm9hACZ8pNUdDc4BwFBZ07GDla3qmPUFEvuJeqvrY7tzsiOLy1vRgkiNC2xtBE84w47pYCtVc44rdJauvcpKiIfDMH8lwFN3SSchrrBWXaM54JHn5vLds6FzPhQ9tML0ZeS0F4JvGUhWI7qaYamVf+RKf3CA32v2riNkqQstpZ6WILRUTdwEh2jC6XvNj+Mcpm1OxLAblU+Fb79OQ/Hhbe0G7c4HPr+O9wVXVPzEQ8DFAYbWExRbKoRvo0Ow9Qq+SCUyInVwT5R8CPJm1Li6FH2gqxBVjRVyO3FAt4Y2ZoL4nHID2+QbIZGW3q3PBayVMWU5YS2HWlo2ky5QEIF0Tk82YwTNq/4xWTh28Uf9coRW4DQFg8VXgtB/vDtG2p71i489xCTtA3OK9pUJVxXmTyFR/GrumyTpDXXDmROhDBnPgSaZrH8n51CPU/rBQusHxZuW2BYvXd7tpo2H4bKyS9fhUFvBhOfXHnd4btvXPUTy2z4DaRJYTMC8QWC2AP/mR+3z/nn5vVKjp1sZFQC99TFvBahIjCPbZE+OQXoWojEZfe/cGGBlgKqkvyxDiYHpkV66gMsNng66885H2pG09qAGL5UTzgRur28rrOnwF6zHM44bCq2G+xjO/bCGE1hFwxaE8Mw/IHNMK2QcmkbUjJJyxqN5wqqW8WIFdRATq6J3AMQ/uCufLjmJuBjSWmpuLwA327/J186I2gVTpolYwajaDBR4mc3OrZlBbavi05hMMlcCtyKAQiA==",
+        "edits": ""
+      },
+      "semanticSnapshot": {
+        "v": 1,
+        "auto": true,
+        "text": "摊开的儿童图书 · 1组/12mesh · 世界坐标(Y上Z前), 原点=模型根\n# 阅读说明: G:=group行(可动画骨骼, 动画key用G:后的id; @p=pivot世界坐标; 倾(x,y,z)°=朝向偏离世界轴的欧拉角; 缩进=父子层级; 挂:=挂载于某组; G:id→id→…=chain折叠行, 每个id都是可独立动画的group, chain×N=waypoint数)\n# M:=mesh行(label[id 几何 @(世界坐标)], label可省略; ×N=for循环批量件(锚点=代表实例); cyl (起)→(末)或 轴上(Y)等方位词=延伸方向; 薄向=板面法向(扁板); 挂载组双代表=最大件+朝向件(嘴/管/檐所在); 无方向标注=均匀块(三向相近,如头),默认面向前(Z); 对称×2=镜像对)\nG:book 儿童图书 @p(0,0,0)\n  M:[m0 box 0.24×0.01×0.33 (-0.1,0,0) 薄向上(Y)]",
+        "stats": {
+          "groups": 1,
+          "meshes": 12,
+          "labeledMeshes": 0,
+          "labelCoverage": 0,
+          "batchLabels": 0,
+          "autoChains": 0,
+          "snapshotChars": 432
+        }
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -0.24014387051653513,
+          0,
+          -0.165
+        ],
+        "max": [
+          0.24014387051653513,
+          0.051770506544110306,
+          0.165
+        ],
+        "sourceNodeId": "asset-bounds"
+      }
+    ],
+    "sourceMeshCount": 12,
+    "candidateCount": 1,
+    "fallbackUsed": true
+  },
+  "footprintRadius": 0.24014387051653513,
+  "sizeClass": "small",
+  "mode": "voxel",
+  "provider": "gpt",
+  "libraryId": "library-d7967286-cebf-4f99",
+  "libraryMetadata": {
+    "tags": [
+      "openbook",
+      "childrensbook",
+      "storybook",
+      "indoorprop"
+    ],
+    "applicableZones": [
+      "settlement"
+    ],
+    "repeatable": true,
+    "landmark": false,
+    "enabled": true,
+    "priority": 0.5,
+    "analysisStatus": "ready",
+    "rotation": "random"
+  },
+  "createdAt": 1787816506498,
+  "updatedAt": 1787816506498
+}

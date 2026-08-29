@@ -1,0 +1,203 @@
+{
+  "id": "asset-1468f9f6-565c-457e",
+  "name": "儿童玩具球",
+  "prompt": "A single reusable medium-size children's play ball with broad geometric color panels, approximately 0.32 meters in diameter, standalone object with no floor, background, or extra items",
+  "tags": [
+    "toy",
+    "prop"
+  ],
+  "modelJson": {
+    "name": "几何彩色儿童玩具球",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "m0",
+        "transform": {
+          "pos": [
+            0,
+            0.16,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.24,
+            "height": 0.24,
+            "depth": 0.24
+          },
+          "color": 15909424
+        }
+      },
+      {
+        "id": "m1",
+        "transform": {
+          "pos": [
+            -0.14,
+            0.16,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.04,
+            "height": 0.16,
+            "depth": 0.16
+          },
+          "color": 15223612
+        }
+      },
+      {
+        "id": "m2",
+        "transform": {
+          "pos": [
+            0.14,
+            0.16,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.04,
+            "height": 0.16,
+            "depth": 0.16
+          },
+          "color": 3442644
+        }
+      },
+      {
+        "id": "m3",
+        "transform": {
+          "pos": [
+            0,
+            0.02,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.16,
+            "height": 0.04,
+            "depth": 0.16
+          },
+          "color": 7686584
+        }
+      },
+      {
+        "id": "m4",
+        "transform": {
+          "pos": [
+            0,
+            0.3,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.16,
+            "height": 0.04,
+            "depth": 0.16
+          },
+          "color": 4369768
+        }
+      },
+      {
+        "id": "m5",
+        "transform": {
+          "pos": [
+            0,
+            0.16,
+            -0.14
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.16,
+            "height": 0.16,
+            "depth": 0.04
+          },
+          "color": 15759410
+        }
+      },
+      {
+        "id": "m6",
+        "transform": {
+          "pos": [
+            0,
+            0.16,
+            0.14
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.16,
+            "height": 0.16,
+            "depth": 0.04
+          },
+          "color": 4569543
+        }
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1786871426153,
+        "provider": "gpt",
+        "data": "jCza+aBhNAngIA5JXZVTxze9qV5sAEkz69C7h3DfjUvHu/HgwpnDMt65GajDu/IiQrBMzudYfeEfePOMyBEMoq1xAL/gbpXuIpK7bYf0YCl4IJwMdxPLHsHoU09NwUn0gVIcQQEV+X1AAPLD9ywfsZXh55TPXQu2kRWrwEyc3/3snwTEvHa2yyWoL/wruethOArpv7X2dtJXozOmaW4+N5AjGTwFCTPUnHUX67dd2e9v65jru0+mU3T1kyl1vbmWxh8itZHFa1UiJ7uWq/Lv/ITFOS4dxLzQjjwOprLcbaYXqHvZS9i4v/lg10DAFu/4VIakG3rstaFvnrrGQM5M2aBcBuTylJWiZgf5hiQN/fqRkD1hKgyugnL4qk2o1ksurSwA2fd8RB4YyyA0y/Hmws6JFoKtXsc83xXOuYkXHtZAibcYbgf7YOFar2APdJzeYdyOChJz5CIFzw1v8rriHp1mw+ET5SfG",
+        "edits": ""
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -0.16,
+          0,
+          -0.16
+        ],
+        "max": [
+          0.16,
+          0.32,
+          0.16
+        ],
+        "sourceNodeId": "asset-bounds"
+      }
+    ],
+    "sourceMeshCount": 7,
+    "candidateCount": 1,
+    "fallbackUsed": true
+  },
+  "footprintRadius": 0.16,
+  "sizeClass": "small",
+  "mode": "voxel",
+  "provider": "gpt",
+  "libraryId": "library-d7967286-cebf-4f99",
+  "libraryMetadata": {
+    "tags": [
+      "childrensplayball",
+      "toy",
+      "playgroundprop"
+    ],
+    "applicableZones": [
+      "settlement"
+    ],
+    "repeatable": true,
+    "landmark": false,
+    "enabled": true,
+    "priority": 0.5,
+    "analysisStatus": "ready",
+    "rotation": "random"
+  },
+  "createdAt": 1787817648826,
+  "updatedAt": 1787817648826
+}

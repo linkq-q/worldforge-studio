@@ -1,0 +1,566 @@
+{
+  "id": "asset-ae0bf735-5057-4dc9",
+  "name": "Kitchen daily items",
+  "prompt": "One readable grouped countertop asset with bowls, plates and a fruit bowl; no counter.\n全局资产美术方向：平衡尺度的模块化商用不锈钢厨房设备，方正耐用、边缘略圆，采用银灰金属、深色玻璃、黑色炉面和少量安全色标识；所有设备保持独立可复用，避免生成瓶罐、食材和细碎餐具。\n资产角色：visible lived-in countertop detail；目标尺度：small。\n只生成一个可复用的独立物体，不要生成地面、背景、天空、完整场景或多个分散物体。",
+  "tags": [
+    "dishware",
+    "fruit-bowl",
+    "kitchen-decor"
+  ],
+  "modelJson": {
+    "name": "不锈钢餐具与水果碗组合",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "countertop_detail",
+        "name": "台面餐具组合",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            2.487,
+            0.742,
+            1.643
+          ],
+          "center": [
+            -0.166,
+            0.254,
+            -0.152
+          ],
+          "axes": [
+            [
+              0.9999,
+              0.006,
+              0.01
+            ],
+            [
+              -0.0066,
+              0.9982,
+              0.0599
+            ],
+            [
+              -0.0096,
+              -0.06,
+              0.9982
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "plate_stack",
+        "name": "叠放餐盘",
+        "parent": "countertop_detail",
+        "transform": {
+          "pos": [
+            -0.85,
+            0,
+            0.18
+          ]
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ],
+        "_obb": {
+          "size": [
+            1.067,
+            0.211,
+            0.822
+          ],
+          "center": [
+            -0.023,
+            0.115,
+            0.02
+          ],
+          "axes": [
+            [
+              1,
+              0.0012,
+              -0.0021
+            ],
+            [
+              -0.0012,
+              1,
+              0.0002
+            ],
+            [
+              0.0021,
+              -0.0002,
+              1
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "bowl_left",
+        "name": "小碗一",
+        "parent": "countertop_detail",
+        "transform": {
+          "pos": [
+            0.05,
+            0,
+            0.38
+          ]
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ],
+        "_obb": {
+          "size": [
+            0.62,
+            0.273,
+            0.55
+          ],
+          "center": [
+            0,
+            0.136,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "bowl_right",
+        "name": "小碗二",
+        "parent": "countertop_detail",
+        "transform": {
+          "pos": [
+            0.78,
+            0,
+            0.34
+          ]
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ],
+        "_obb": {
+          "size": [
+            0.58,
+            0.253,
+            0.52
+          ],
+          "center": [
+            0,
+            0.126,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "fruit_bowl",
+        "name": "深色玻璃水果碗",
+        "parent": "countertop_detail",
+        "transform": {
+          "pos": [
+            0.22,
+            0,
+            -0.48
+          ]
+        },
+        "_obb": {
+          "size": [
+            1.183,
+            0.623,
+            0.843
+          ],
+          "center": [
+            0.001,
+            0.277,
+            -0.011
+          ],
+          "axes": [
+            [
+              0.9991,
+              -0.0067,
+              0.0417
+            ],
+            [
+              0.0098,
+              0.9973,
+              -0.073
+            ],
+            [
+              -0.0411,
+              0.0733,
+              0.9965
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "plate_stack",
+        "transform": {
+          "pos": [
+            -0.03,
+            0.05,
+            0.02
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.05,
+            "height": 0.08,
+            "depth": 0.82
+          },
+          "color": 10331560
+        }
+      },
+      {
+        "id": "m1",
+        "parent": "plate_stack",
+        "transform": {
+          "pos": [
+            0.02,
+            0.125,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.98,
+            "height": 0.07,
+            "depth": 0.76
+          },
+          "color": 12633800
+        }
+      },
+      {
+        "id": "m2",
+        "parent": "plate_stack",
+        "transform": {
+          "pos": [
+            -0.02,
+            0.19,
+            0.02
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.9,
+            "height": 0.06,
+            "depth": 0.7
+          },
+          "color": 14738403
+        }
+      },
+      {
+        "id": "m3",
+        "parent": "bowl_left",
+        "transform": {
+          "pos": [
+            0,
+            0.12,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.62,
+            "height": 0.24,
+            "depth": 0.55
+          },
+          "color": 11450040
+        }
+      },
+      {
+        "id": "m4",
+        "parent": "bowl_left",
+        "transform": {
+          "pos": [
+            0,
+            0.255,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.46,
+            "height": 0.035,
+            "depth": 0.39
+          },
+          "color": 4147018
+        }
+      },
+      {
+        "id": "m5",
+        "parent": "bowl_right",
+        "transform": {
+          "pos": [
+            0,
+            0.11,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.58,
+            "height": 0.22,
+            "depth": 0.52
+          },
+          "color": 12107456
+        }
+      },
+      {
+        "id": "m6",
+        "parent": "bowl_right",
+        "transform": {
+          "pos": [
+            0,
+            0.235,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.42,
+            "height": 0.035,
+            "depth": 0.36
+          },
+          "color": 4344140
+        }
+      },
+      {
+        "id": "m7",
+        "parent": "fruit_bowl",
+        "transform": {
+          "pos": [
+            0,
+            0.125,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.15,
+            "height": 0.25,
+            "depth": 0.78
+          },
+          "color": 2634810
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass"
+          }
+        ]
+      },
+      {
+        "id": "m8",
+        "parent": "fruit_bowl",
+        "transform": {
+          "pos": [
+            0,
+            0.27,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.94,
+            "height": 0.035,
+            "depth": 0.59
+          },
+          "color": 1186077
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass"
+          }
+        ]
+      },
+      {
+        "id": "m9",
+        "parent": "fruit_bowl",
+        "transform": {
+          "pos": [
+            -0.3,
+            0.43,
+            -0.01
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.3,
+            "height": 0.3,
+            "depth": 0.3
+          },
+          "color": 13191989
+        }
+      },
+      {
+        "id": "m10",
+        "parent": "fruit_bowl",
+        "transform": {
+          "pos": [
+            0.03,
+            0.41,
+            -0.14
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.28,
+            "height": 0.28,
+            "depth": 0.28
+          },
+          "color": 14850610
+        }
+      },
+      {
+        "id": "m11",
+        "parent": "fruit_bowl",
+        "transform": {
+          "pos": [
+            0.28,
+            0.42,
+            0.08
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.29,
+            "height": 0.29,
+            "depth": 0.29
+          },
+          "color": 10335050
+        }
+      },
+      {
+        "id": "m12",
+        "parent": "fruit_bowl",
+        "transform": {
+          "pos": [
+            -0.02,
+            0.46,
+            0.16
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.25,
+            "height": 0.25,
+            "depth": 0.25
+          },
+          "color": 13982270
+        }
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1786784853137,
+        "provider": "gpt",
+        "data": "t4/jgNofY9qJVHXR9+M+auKsEuAItMXyibiY35sylyuPUQx2wUL13NH5V7BsVv2Noh+BjhdJKw9eTXNgo9qu9gF0g5YkwKqRDFugkUEcncq8zWcYECUD5i0E9fNyYz8Pq0O0g4sNMrsulVy7+ieUOa2XKRH0w88tkaIt9Evvptf5EEiQ2HcNTJ61cPtQKV7gRtmnabxZM49bcnTaCWKA5ZJuqqjRvpNR3KZVgXQKB8hqDM0uzT1p59r1UBDkgum/3/+94V3J56Rkp6fhRF8xBvGQtJiX8ipchLrMoU5YF+YYtHydfsLSH8G54NbSX5HCL3jFsulwq4oQnGtK41/gcFJf8RmgJjOx4pPDEC7K7NDSKwltBTOLManZtEpApM9lAltq/77xFf8qPsPOiTZAVZdskPXSJ9xSWPNqY3/madVgTWXq9ViKuLmLNYM/rl6IL3gygvUGmwPd6I030XHrZLQlmsJv/IT4p5WCBlfkoU1msRCHZT0+nunBPK0adXi0CfKMJEyubLTGZlMee0yk3/1FxWkdGCUn8TIATX9f6Xi6Z3iijZo90NdU+J8SP1zw3TRUQlYjvytpNyByLIzzOfdWKzGFCYD+dDvfp7wDeWUMfRv/gQOqalU2zoZ0iJGlwNM+s4eHQDpDODDddTj5Cn1nz3Pf7zrrDEmbi2it0RwEVD6ypRgsNlNe3hYfkHkGf2safXBsU7WhofVD0LX9AR0QeEeaNfcRuBFqC1sv95E4lrc+YvEEDBddrCG0L9Md5rKEpVre6UG4V/3OEI+4aNi4cagR9rdKhyp9tyuGgS/Y5DGQi93fBZU1VqKdHJ/Cp14gIOshLbb7UTDoHwjxWT/ozyAz1va69+moMuvgY5Pe1FLSV0tA+bMVFMFJc8o7DhWJMzI+kFGD6ernHnxz301fK0lH5Ut5FQpoWjDayFeFLz0ybxn5qgP8Dhk2r3QcUuIBXOdaBtOHn7doYaRU/x+UIncAiNt+dHiQS95vmrYjuikmZzaBO3A4aLvKN0JC3KUccJfJnqg+mvcWgry5s5W3SMOXFO+9yzDru3aaTg==",
+        "edits": ""
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -0.1875,
+          0,
+          -0.7625
+        ],
+        "max": [
+          0.9624999999999999,
+          0.25,
+          0.017500000000000016
+        ],
+        "sourceNodeId": "m7"
+      },
+      {
+        "min": [
+          -0.09250000000000003,
+          0,
+          0.21249999999999997
+        ],
+        "max": [
+          0.5275,
+          0.24,
+          0.7625
+        ],
+        "sourceNodeId": "m3"
+      }
+    ],
+    "sourceMeshCount": 13,
+    "candidateCount": 2,
+    "fallbackUsed": false
+  },
+  "footprintRadius": 0.9624999999999999,
+  "sizeClass": "medium",
+  "mode": "voxel",
+  "provider": "gpt",
+  "createdAt": 1786784855602,
+  "updatedAt": 1786784855602
+}

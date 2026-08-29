@@ -1,0 +1,543 @@
+{
+  "id": "asset-0f6008d7-951f-4205",
+  "name": "小飞机",
+  "prompt": "浅亮曼德鸭参考场景风格，圆润低多边形儿童家具或玩具，清晰轮廓，柔和哑光材质，适度细节。必须是一个完整、独立、可单独摆放的模型，不含场景、地面、底座、其他物品、成组附件、文字或标识。单架独立玩具螺旋桨飞机，短机翼、圆角机头和固定轮，不含支架。仅使用这些基础色与顶点色：#FFFDF6,#FEF9EA,#FDF2D7,#E9DABD,#CDBA97,#F8E8CF,#F1D7B2,#E7C393,#C9A06E,#9E7A55,#FFF7A8,#FCEF72,#F6E24B,#D1B825,#9C8510,#FFF3B7,#FDE674,#FCD75F,#FECD4D,#D1900B,#FFE2A0,#FFD170,#F8BC44,#E39F1A,#A96F05,#FBE3BD,#FDD8A3,#FDCC8F,#F1AD69,#D99256,#FFD2BA,#FFB08A,#FF8A5B,#F06B3E,#B84A27,#EAF9FF,#DAF2F5,#95E5F9,#76D0F2,#45BDF6,#D9F8FB,#B2E9F2,#8ECCD6,#7BCFDF,#4BAFCA,#D8F7EF\nCoordinate contract: local Y+ is up, local Z+ is the front, entrance, or forward direction, and local X+ is right. Put doors, facades, openings, windshields, noses, seats, and other recognizable front details toward local Z+. For a modular repeated element, explicitly choose the long axis: side-by-side modules span local X with depth/front on local Z; traversal modules span local Z. Keep the model centered at its origin.\nCanonical dimensions contract: width=0.48, height=0.18, depth=0.42 world units. Keep the generated mesh within this centered bounding size.",
+  "modelJson": {
+    "name": "浅亮儿童玩具螺旋桨飞机",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "body",
+        "name": "机身",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.46,
+            0.178,
+            0.427
+          ],
+          "center": [
+            0,
+            -0.001,
+            0.001
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              0.9995,
+              0.0312
+            ],
+            [
+              0,
+              -0.0312,
+              0.9995
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "leftWheel",
+        "name": "左固定轮",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            -0.13,
+            -0.063,
+            -0.015
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.036,
+            0.052,
+            0.052
+          ],
+          "center": [
+            0,
+            0,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "rightWheel",
+        "name": "右固定轮",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0.13,
+            -0.063,
+            -0.015
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.036,
+            0.052,
+            0.052
+          ],
+          "center": [
+            0,
+            0,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "propeller",
+        "name": "螺旋桨",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0,
+            0.005,
+            0.207
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.045,
+            0.145,
+            0.02
+          ],
+          "center": [
+            0,
+            0,
+            -0.004
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0,
+            0.005,
+            0.015
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.16,
+            "height": 0.09,
+            "depth": 0.28
+          },
+          "color": 16576370
+        }
+      },
+      {
+        "id": "m1",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0,
+            0.005,
+            0.175
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.14,
+            "height": 0.075,
+            "depth": 0.07
+          },
+          "color": 16698701
+        }
+      },
+      {
+        "id": "m2",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            -0.155
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.12,
+            "height": 0.065,
+            "depth": 0.075
+          },
+          "color": 16179787
+        }
+      },
+      {
+        "id": "m3",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0,
+            0.063,
+            0.025
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.12,
+            "height": 0.045,
+            "depth": 0.09
+          },
+          "color": 9823737
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass",
+            "variant": "blue"
+          }
+        ]
+      },
+      {
+        "id": "m4",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0,
+            -0.005,
+            0.015
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.46,
+            "height": 0.025,
+            "depth": 0.105
+          },
+          "color": 16776694
+        }
+      },
+      {
+        "id": "m5",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0,
+            0.018,
+            -0.165
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.25,
+            "height": 0.018,
+            "depth": 0.07
+          },
+          "color": 16312527
+        }
+      },
+      {
+        "id": "m6",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0,
+            0.045,
+            -0.172
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.025,
+            "height": 0.095,
+            "depth": 0.075
+          },
+          "color": 16747099
+        }
+      },
+      {
+        "id": "m7",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            -0.13,
+            -0.045,
+            -0.015
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.018,
+            "height": 0.05,
+            "depth": 0.018
+          },
+          "color": 15325885
+        }
+      },
+      {
+        "id": "m8",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0.13,
+            -0.045,
+            -0.015
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.018,
+            "height": 0.05,
+            "depth": 0.018
+          },
+          "color": 15325885
+        }
+      },
+      {
+        "id": "m9",
+        "parent": "leftWheel",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.034,
+            "height": 0.052,
+            "depth": 0.052
+          },
+          "color": 10386005
+        }
+      },
+      {
+        "id": "m10",
+        "parent": "leftWheel",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.036,
+            "height": 0.022,
+            "depth": 0.022
+          },
+          "color": 16642775
+        }
+      },
+      {
+        "id": "m11",
+        "parent": "rightWheel",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.034,
+            "height": 0.052,
+            "depth": 0.052
+          },
+          "color": 10386005
+        }
+      },
+      {
+        "id": "m12",
+        "parent": "rightWheel",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.036,
+            "height": 0.022,
+            "depth": 0.022
+          },
+          "color": 16642775
+        }
+      },
+      {
+        "id": "m13",
+        "parent": "propeller",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.026,
+            "height": 0.145,
+            "depth": 0.012
+          },
+          "color": 14917402
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ]
+      },
+      {
+        "id": "m14",
+        "parent": "propeller",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            -0.005
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.045,
+            "height": 0.045,
+            "depth": 0.018
+          },
+          "color": 16774071
+        }
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1787749901624,
+        "provider": "gpt",
+        "data": "0fuDYTxGWPb7cVsU806FVnhMv2ZpctX7DYRhK3whmXVKvccpD1V9zxwyctO6rZ3jMkksv5zrwoVKdvkcm9srSeZJEdkFpFSZIUqLhHzqssnSkGBdA8iHhc5BiXpV/4atQh9Ebq63ydu174MiC42vEeImCbDjch7UsoGUJfvsVgRBZHWNj4Akc+yhwTHN8ByZ7HJo/OEEcJqYcg622csnTD0pxwXAyZZRCh4MX4yaxYq92zJ1evvhvbkd8UfgmCz06a1WB1pcAduSESSz301XAKJwESIAjjxngdjmUPdeT8B15ymbNGC0xnl09liVG/9LVyfKaRGcW8SS3EfAvOMQ+yZn37fanGW5rmYL1OIXj+tI6PTTbCqpbt92vgUORictQMIkwQLPP8p0CLVfYuVamiwwgLnr7+YLKlxo4nmUFmZlsMBv9Dq1nn7vcBPm6v8zrVeUiTlcyKiSVdOyqmsIzCr6adXttMSJhdjkYwjxORKxO1MEjVZaG8uB0Cf3dni2BLU/lcAxzeNydwm4E/WgLeQU6vwtFS4bhzWJY/l6DBXuNUF4wXrYhMQjorOyQAfcGLuJ9w6Mx4+BKVzuWweQZQDN0flOOP/wduAZJrAxsnJXDmzYowaXGI+ttQDAptwcsPae8CIzquFluhBX0mdpx/NNR5V4VqjoCx6t/LhaQAAAK91Gl5exLYONu5r1zS8RJsPXORs7Ms62BIXi9lMWgPl36Nm18Qa/YPt0MkCqNBPTJxk/kkiqwnVQFTLQAoiNfnzTjWiY8Err32MNY7gBQ7ijE8wPPm4r1jXiSlRj0dNqncqjwDr2Z6+Fn6jHAukBn07JPto0SrxeSwJpTjpng8mRhLBK3HWhJ2+EhUEBbMHAZTN/MlZum0QSgAZNHEc4WKbI/qI=",
+        "edits": ""
+      },
+      "semanticSnapshot": {
+        "v": 1,
+        "auto": true,
+        "text": "浅亮儿童玩具螺旋桨飞机 · 4组/15mesh · 世界坐标(Y上Z前), 原点=模型根\n# 阅读说明: G:=group行(可动画骨骼, 动画key用G:后的id; @p=pivot世界坐标; 倾(x,y,z)°=朝向偏离世界轴的欧拉角; 缩进=父子层级; 挂:=挂载于某组; G:id→id→…=chain折叠行, 每个id都是可独立动画的group, chain×N=waypoint数)\n# M:=mesh行(label[id 几何 @(世界坐标)], label可省略; ×N=for循环批量件(锚点=代表实例); cyl (起)→(末)或 轴上(Y)等方位词=延伸方向; 薄向=板面法向(扁板); 挂载组双代表=最大件+朝向件(嘴/管/檐所在); 无方向标注=均匀块(三向相近,如头),默认面向前(Z); 对称×2=镜像对)\nG:body 机身 @p(0,0,0)\n  M:[m0 box 0.16×0.09×0.28 (0,0,0) 薄向上(Y)]\n  G:leftWheel 左固定轮 @p(-0.1,-0.1,0) 挂:body\n    M:[m9 box 0.03×0.05×0.05 (-0.1,-0.1,0) 薄向右(X)]\n  G:rightWheel 右固定轮 @p(0.1,-0.1,0) 挂:body\n    M:[m11 box 0.03×0.05×0.05 (0.1,-0.1,0) 薄向右(X)]\n  G:propeller 螺旋桨 @p(0,0,0.2) 挂:body\n    M:[m13 box 0.03×0.14×0.01 (0,0,0.2) 轴上(Y)]",
+        "stats": {
+          "groups": 4,
+          "meshes": 15,
+          "labeledMeshes": 0,
+          "labelCoverage": 0,
+          "batchLabels": 0,
+          "autoChains": 0,
+          "snapshotChars": 701
+        }
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -0.23,
+          0,
+          -0.21125
+        ],
+        "max": [
+          0.23,
+          0.1815,
+          0.21125
+        ],
+        "sourceNodeId": "asset-bounds"
+      }
+    ],
+    "sourceMeshCount": 15,
+    "candidateCount": 0,
+    "fallbackUsed": true
+  },
+  "footprintRadius": 0.23,
+  "sizeClass": "small",
+  "mode": "voxel",
+  "provider": "gpt",
+  "createdAt": 1787749905324,
+  "updatedAt": 1787749905324
+}

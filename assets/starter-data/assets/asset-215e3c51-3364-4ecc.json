@@ -1,0 +1,1340 @@
+{
+  "id": "asset-215e3c51-3364-4ecc",
+  "name": "会粘在墙上的那种蜘蛛侠玩具",
+  "prompt": "会粘在墙上的那种蜘蛛侠玩具",
+  "modelJson": {
+    "name": "贴墙蜘蛛侠玩具",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "body",
+        "name": "躯干",
+        "transform": {
+          "pos": [
+            0,
+            2.8,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            5.204,
+            5.49,
+            2.267
+          ],
+          "center": [
+            0.031,
+            -0.682,
+            -0.055
+          ],
+          "axes": [
+            [
+              1,
+              -0.0012,
+              0.0007
+            ],
+            [
+              0.0012,
+              0.9992,
+              0.0399
+            ],
+            [
+              -0.0007,
+              -0.0399,
+              0.9992
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "head",
+        "name": "面罩头部",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0,
+            0.72,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.897,
+            1.168,
+            1.092
+          ],
+          "center": [
+            0,
+            0.46,
+            0.02
+          ],
+          "axes": [
+            [
+              0.9999,
+              0.0065,
+              0.0156
+            ],
+            [
+              -0.0134,
+              0.8667,
+              0.4986
+            ],
+            [
+              -0.0103,
+              -0.4987,
+              0.8667
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "leftUpperArm",
+        "name": "左上臂",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            -0.55,
+            0.45,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            2.399,
+            0.971,
+            0.536
+          ],
+          "center": [
+            -0.748,
+            0.527,
+            -0.027
+          ],
+          "axes": [
+            [
+              0.8259,
+              -0.5629,
+              -0.0319
+            ],
+            [
+              0.5634,
+              0.8262,
+              0.0054
+            ],
+            [
+              0.0233,
+              -0.0224,
+              0.9995
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "leftForearm",
+        "name": "左前臂",
+        "parent": "leftUpperArm",
+        "transform": {
+          "pos": [
+            -0.63,
+            0.5,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            1.573,
+            0.855,
+            0.483
+          ],
+          "center": [
+            -0.43,
+            0.265,
+            -0.031
+          ],
+          "axes": [
+            [
+              0.8512,
+              -0.5232,
+              -0.0422
+            ],
+            [
+              0.5238,
+              0.8518,
+              0.0034
+            ],
+            [
+              0.0342,
+              -0.025,
+              0.9991
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "leftHand",
+        "name": "左手",
+        "parent": "leftForearm",
+        "transform": {
+          "pos": [
+            -0.6,
+            0.37,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.62,
+            0.62,
+            0.39
+          ],
+          "center": [
+            -0.13,
+            0.08,
+            -0.045
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "rightUpperArm",
+        "name": "右上臂",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0.55,
+            0.45,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            2.4,
+            0.972,
+            0.535
+          ],
+          "center": [
+            0.748,
+            0.528,
+            -0.027
+          ],
+          "axes": [
+            [
+              0.8256,
+              0.5633,
+              0.0321
+            ],
+            [
+              -0.5637,
+              0.826,
+              0.004
+            ],
+            [
+              -0.0243,
+              -0.0214,
+              0.9995
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "rightForearm",
+        "name": "右前臂",
+        "parent": "rightUpperArm",
+        "transform": {
+          "pos": [
+            0.63,
+            0.5,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            1.573,
+            0.855,
+            0.484
+          ],
+          "center": [
+            0.43,
+            0.265,
+            -0.031
+          ],
+          "axes": [
+            [
+              0.8516,
+              0.5224,
+              0.0422
+            ],
+            [
+              -0.523,
+              0.8523,
+              0.0023
+            ],
+            [
+              -0.0347,
+              -0.024,
+              0.9991
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "rightHand",
+        "name": "右手",
+        "parent": "rightForearm",
+        "transform": {
+          "pos": [
+            0.6,
+            0.37,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.62,
+            0.62,
+            0.39
+          ],
+          "center": [
+            0.13,
+            0.08,
+            -0.045
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "leftThigh",
+        "name": "左大腿",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            -0.32,
+            -0.75,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            1.65,
+            2.853,
+            1.744
+          ],
+          "center": [
+            -0.698,
+            -0.918,
+            -0.093
+          ],
+          "axes": [
+            [
+              0.7757,
+              -0.6299,
+              0.0392
+            ],
+            [
+              0.6311,
+              0.7737,
+              -0.0551
+            ],
+            [
+              0.0044,
+              0.0675,
+              0.9977
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "leftShin",
+        "name": "左小腿",
+        "parent": "leftThigh",
+        "transform": {
+          "pos": [
+            -0.6,
+            -0.67,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            1.188,
+            1.922,
+            1.127
+          ],
+          "center": [
+            -0.363,
+            -0.573,
+            -0.07
+          ],
+          "axes": [
+            [
+              0.5238,
+              -0.5325,
+              -0.6649
+            ],
+            [
+              0.6348,
+              0.7645,
+              -0.1121
+            ],
+            [
+              0.568,
+              -0.3634,
+              0.7384
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "leftFoot",
+        "name": "左脚",
+        "parent": "leftShin",
+        "transform": {
+          "pos": [
+            -0.5,
+            -0.73,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.72,
+            0.565,
+            0.748
+          ],
+          "center": [
+            -0.13,
+            -0.182,
+            -0.031
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              0.9832,
+              0.1824
+            ],
+            [
+              0,
+              -0.1824,
+              0.9832
+            ]
+          ],
+          "_mainAxis": 2
+        }
+      },
+      {
+        "id": "rightThigh",
+        "name": "右大腿",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0.32,
+            -0.75,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            1.623,
+            2.854,
+            1.739
+          ],
+          "center": [
+            0.7,
+            -0.917,
+            -0.094
+          ],
+          "axes": [
+            [
+              0.7715,
+              0.6117,
+              -0.1752
+            ],
+            [
+              -0.628,
+              0.7762,
+              -0.0554
+            ],
+            [
+              0.1021,
+              0.1527,
+              0.983
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "rightShin",
+        "name": "右小腿",
+        "parent": "rightThigh",
+        "transform": {
+          "pos": [
+            0.6,
+            -0.67,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            1.187,
+            1.922,
+            1.129
+          ],
+          "center": [
+            0.364,
+            -0.573,
+            -0.071
+          ],
+          "axes": [
+            [
+              0.5224,
+              0.5285,
+              0.6691
+            ],
+            [
+              -0.6311,
+              0.7673,
+              -0.1134
+            ],
+            [
+              -0.5734,
+              -0.3631,
+              0.7345
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "rightFoot",
+        "name": "右脚",
+        "parent": "rightShin",
+        "transform": {
+          "pos": [
+            0.5,
+            -0.73,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.72,
+            0.565,
+            0.748
+          ],
+          "center": [
+            0.13,
+            -0.182,
+            -0.031
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              0.9832,
+              0.1824
+            ],
+            [
+              0,
+              -0.1824,
+              0.9832
+            ]
+          ],
+          "_mainAxis": 2
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0,
+            -0.05,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.15,
+            "height": 1.55,
+            "depth": 0.48
+          },
+          "color": 1526428
+        }
+      },
+      {
+        "id": "m1",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0,
+            0.02,
+            0.28
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.72,
+            "height": 1.25,
+            "depth": 0.08
+          },
+          "color": 13181742
+        }
+      },
+      {
+        "id": "m2",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0,
+            0.05,
+            0.34
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.16,
+            "height": 0.42,
+            "depth": 0.08
+          },
+          "color": 1381653
+        }
+      },
+      {
+        "id": "m3",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0,
+            0.12,
+            0.34
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.48,
+            "height": 0.11,
+            "depth": 0.08
+          },
+          "color": 1381653
+        }
+      },
+      {
+        "id": "m4",
+        "parent": "head",
+        "transform": {
+          "pos": [
+            0,
+            0.46,
+            0.02
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.88,
+            "height": 0.92,
+            "depth": 0.72
+          },
+          "color": 13181742
+        }
+      },
+      {
+        "id": "m5",
+        "parent": "head",
+        "transform": {
+          "pos": [
+            -0.21,
+            0.52,
+            0.4
+          ],
+          "quat": [
+            0.71,
+            -0.06,
+            -0.1,
+            0.7
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.24,
+            "height": 0.045,
+            "depth": 0.25
+          },
+          "color": 15922414
+        }
+      },
+      {
+        "id": "m6",
+        "parent": "head",
+        "transform": {
+          "pos": [
+            0.22,
+            0.52,
+            0.4
+          ],
+          "quat": [
+            0.71,
+            0.06,
+            0.1,
+            0.7
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.24,
+            "height": 0.045,
+            "depth": 0.25
+          },
+          "color": 15922414
+        }
+      },
+      {
+        "id": "m7",
+        "parent": "leftUpperArm",
+        "transform": {
+          "pos": [
+            -0.31,
+            0.25,
+            0
+          ],
+          "quat": [
+            0.23,
+            0.67,
+            0.67,
+            0.23
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.8,
+            "height": 0.42,
+            "depth": 0.38
+          },
+          "color": 13181742
+        }
+      },
+      {
+        "id": "m8",
+        "parent": "leftForearm",
+        "transform": {
+          "pos": [
+            -0.3,
+            0.19,
+            0
+          ],
+          "quat": [
+            0.19,
+            0.68,
+            0.68,
+            0.19
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.7,
+            "height": 0.38,
+            "depth": 0.34
+          },
+          "color": 1526428
+        }
+      },
+      {
+        "id": "m9",
+        "parent": "leftHand",
+        "transform": {
+          "pos": [
+            -0.13,
+            0.08,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.42,
+            "height": 0.42,
+            "depth": 0.3
+          },
+          "color": 13181742
+        }
+      },
+      {
+        "id": "m10",
+        "parent": "leftHand",
+        "transform": {
+          "pos": [
+            -0.13,
+            0.08,
+            -0.2
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.62,
+            "height": 0.62,
+            "depth": 0.08
+          },
+          "color": 10410213
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass",
+            "variant": "blue"
+          }
+        ]
+      },
+      {
+        "id": "m11",
+        "parent": "rightUpperArm",
+        "transform": {
+          "pos": [
+            0.32,
+            0.25,
+            0
+          ],
+          "quat": [
+            0.67,
+            0.23,
+            0.23,
+            0.67
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.8,
+            "height": 0.42,
+            "depth": 0.38
+          },
+          "color": 13181742
+        }
+      },
+      {
+        "id": "m12",
+        "parent": "rightForearm",
+        "transform": {
+          "pos": [
+            0.3,
+            0.19,
+            0
+          ],
+          "quat": [
+            0.68,
+            0.19,
+            0.19,
+            0.68
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.7,
+            "height": 0.38,
+            "depth": 0.34
+          },
+          "color": 1526428
+        }
+      },
+      {
+        "id": "m13",
+        "parent": "rightHand",
+        "transform": {
+          "pos": [
+            0.13,
+            0.08,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.42,
+            "height": 0.42,
+            "depth": 0.3
+          },
+          "color": 13181742
+        }
+      },
+      {
+        "id": "m14",
+        "parent": "rightHand",
+        "transform": {
+          "pos": [
+            0.13,
+            0.08,
+            -0.2
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.62,
+            "height": 0.62,
+            "depth": 0.08
+          },
+          "color": 10410213
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass",
+            "variant": "blue"
+          }
+        ]
+      },
+      {
+        "id": "m15",
+        "parent": "leftThigh",
+        "transform": {
+          "pos": [
+            -0.3,
+            -0.33,
+            0
+          ],
+          "quat": [
+            -0.29,
+            0.65,
+            0.65,
+            -0.29
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.9,
+            "height": 0.46,
+            "depth": 0.46
+          },
+          "color": 1526428
+        }
+      },
+      {
+        "id": "m16",
+        "parent": "leftShin",
+        "transform": {
+          "pos": [
+            -0.25,
+            -0.37,
+            0
+          ],
+          "quat": [
+            -0.33,
+            0.63,
+            0.63,
+            -0.33
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.88,
+            "height": 0.42,
+            "depth": 0.4
+          },
+          "color": 13181742
+        }
+      },
+      {
+        "id": "m17",
+        "parent": "leftFoot",
+        "transform": {
+          "pos": [
+            -0.13,
+            -0.17,
+            0.03
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.58,
+            "height": 0.34,
+            "depth": 0.58
+          },
+          "color": 13181742
+        }
+      },
+      {
+        "id": "m18",
+        "parent": "leftFoot",
+        "transform": {
+          "pos": [
+            -0.13,
+            -0.13,
+            -0.31
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.72,
+            "height": 0.56,
+            "depth": 0.08
+          },
+          "color": 10410213
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass",
+            "variant": "blue"
+          }
+        ]
+      },
+      {
+        "id": "m19",
+        "parent": "rightThigh",
+        "transform": {
+          "pos": [
+            0.3,
+            -0.33,
+            0
+          ],
+          "quat": [
+            0.65,
+            -0.29,
+            -0.29,
+            0.65
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.9,
+            "height": 0.46,
+            "depth": 0.46
+          },
+          "color": 1526428
+        }
+      },
+      {
+        "id": "m20",
+        "parent": "rightShin",
+        "transform": {
+          "pos": [
+            0.25,
+            -0.37,
+            0
+          ],
+          "quat": [
+            0.63,
+            -0.33,
+            -0.33,
+            0.63
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.88,
+            "height": 0.42,
+            "depth": 0.4
+          },
+          "color": 13181742
+        }
+      },
+      {
+        "id": "m21",
+        "parent": "rightFoot",
+        "transform": {
+          "pos": [
+            0.13,
+            -0.17,
+            0.03
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.58,
+            "height": 0.34,
+            "depth": 0.58
+          },
+          "color": 13181742
+        }
+      },
+      {
+        "id": "m22",
+        "parent": "rightFoot",
+        "transform": {
+          "pos": [
+            0.13,
+            -0.13,
+            -0.31
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.72,
+            "height": 0.56,
+            "depth": 0.08
+          },
+          "color": 10410213
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass",
+            "variant": "blue"
+          }
+        ]
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1787825742674,
+        "provider": "glm",
+        "data": "mRbnWePcgVV4ZfBiC+18qS2wN5iDvBrRH6SMeSnQ3RRk6YR8rfnsL7hAEOXZ95GFZv8IzcB/Jj135Tqneav/N28IDiO4eR9wDvG2VZ7lk3Led+lY7jY5EdZuYMJVzDFE1M1GmWiGqS42hNwDHUSdjTxX8+xUzEdij/xAHh+/LnfpMEnSr70aCJc3iKeNUzZ6DVfU2qaWmakHBLl92tbZvXEf51c3tKVOh+eI4Mir7AO6tEQo2ZXFMS50/Ux0BVHxPRiyzOa8PntEsbT3lRfLuo2dD6rRFFFlZiGWn7fLyGcCKyMkE6Z8SdW/dyy8uQbZjynfSm9LbHJFzFn8peDxOrmM4F9uN5QEtZESqLS77CdcwzcxdNGRmg2PNJZceCEajgQX/Y2xZv/uZShc41qD+R8AUkJbgpiiQHSSCzM9mdKcvPMv/2JdTiRUua+A2dZJTtWD2PCIoy57z0ILJu2pWGC+rQcHHGXTiIb7k14+8kRs9guwf9zDyVVy4sJuEw7Nu9hH0CWQ9zTrJ2fWqWFFrQaV+UovRrlm4XdIV7BTunRl9HazP1miF1PKhtpCyw7WT3Ig9zLHDeJ3lG74TNf0ByA2723ftUQx9+t/a+J+H6q0b8o0L8AAfPezAktTdE67cO3FD8GvgWuR70BeE6cljsV+WDQsXlAs87eUVbsokxo1u6rPSyFWEn9QMWOySMpnhoh1XLWUYjvYABcyjJZYJxGdI3+ZCAyo8KTs9Frk90dRJXe5PHG6845LzT9dMD3lwkZKrh+DClS3IKeLCtce4aoXNeVzYsB3WkukR/IKx+wsTxntlX9Fx2ly7U4Cyslr4jpzX6didAGhzG6heHITP1d8laZJct79slSIgzj8R+S8gc4jY9KJgvMEZHUGuITwGqbApVST3IQ48uCytj68FMOs3MATCzlihFFUVhihkWBszVw+AIm67hWGwkd/AoxasGx+cBr8xLm4h7hJ9F54kpjQwOlJUYDqaH1AZdp/85II8rJzyRKtNPt2gIvLJQSzRFe9ncRxZos/JQatWwaLy2rHJ/DKcZooGaVwLGhRDUuZD1qH7VL4Hvk+H2MK5+nngbevbCD8AYyw4JJKRJ8HKeOwEZaiHXE/kvB3m4dpXWoYS3NuPYb3iBw79zztIvr7yoPCzCCTcdg+iYIA8fpUlno4ga2JGinKzBU1teWmlLcnIzOYDZ9KpzLhZdTzYNBw9Gb21wadZrBpfpVKCMQcKdvXO36TnRGc7TQOZkwvQfJvtwvnrT2QqlYXXCREQ6R6cV3z0iDJgBkefz4fdPo6oV4p2em3Td1ZHNv72GOQDPDbs7nfD4LwfQS5TbUN6vBMQaUy90gttk4eX7xtVgTuL2qMG10IeAM/TKyNh+5OgxzOZEd8S5J3Z3Pi0kTlR31s+/5UGNgdKXiGxkeAAPmfvgOx92CqNbrxfT8WOnSrk6r8FfWNB4VX1hKIBpRSBupy3mwpPFiSCUMLsTWT013KKhqnaY3B82PCbEE=",
+        "edits": ""
+      },
+      "semanticSnapshot": {
+        "v": 1,
+        "auto": true,
+        "text": "贴墙蜘蛛侠玩具 · 14组/23mesh · 世界坐标(Y上Z前), 原点=模型根\n# 阅读说明: G:=group行(可动画骨骼, 动画key用G:后的id; @p=pivot世界坐标; 倾(x,y,z)°=朝向偏离世界轴的欧拉角; 缩进=父子层级; 挂:=挂载于某组; G:id→id→…=chain折叠行, 每个id都是可独立动画的group, chain×N=waypoint数)\n# M:=mesh行(label[id 几何 @(世界坐标)], label可省略; ×N=for循环批量件(锚点=代表实例); cyl (起)→(末)或 轴上(Y)等方位词=延伸方向; 薄向=板面法向(扁板); 挂载组双代表=最大件+最远有向件(刃/嘴/管所在端); 无方向标注=均匀块(三向相近,如头),默认面向前(Z); 对称×2=镜像对)\nG:body 躯干 @p(0,2.8,0)\n  M:[m0 box 1.2×1.6×0.48 (0,2.8,0) 薄向前(Z)]\n  G:head 面罩头部 @p(0,3.5,0)\n    M:[m4 box 0.88×0.92×0.72 (0,4,0)]\n  G:leftUpperArm 左上臂 @p(-0.5,3.3,0)\n    M:[m7 box 0.8×0.42×0.38 (-0.9,3.5,0) 轴(-1.2,3.7,0)→(-0.5,3.3,0)]\n    G:leftForearm 左前臂 @p(-1.2,3.8,0)\n      M:[m8 box 0.7×0.38×0.34 (-1.5,3.9,0) 轴(-1.8,4.1,0)→(-1.2,3.8,0)]\n      G:leftHand 左手 @p(-1.8,4.1,0)\n        M:[m9 box 0.42×0.42×0.3 (-1.9,4.2,0)]\n  G:rightUpperArm 右上臂 @p(0.6,3.3,0)\n    M:[m11 box 0.8×0.42×0.38 (0.9,3.5,0) 轴(1.2,3.7,0)→(0.6,3.3,0)]\n    G:rightForearm 右前臂 @p(1.2,3.8,0)\n      M:[m12 box 0.7×0.38×0.34 (1.5,3.9,0) 轴(1.8,4.1,0)→(1.2,3.8,0)]\n      G:rightHand 右手 @p(1.8,4.1,0)\n        M:[m13 box 0.42×0.42×0.3 (1.9,4.2,0)]\n  G:leftThigh 左大腿 @p(-0.3,2.1,0)\n    M:[m15 box 0.9×0.46×0.46 (-0.6,1.7,0) 轴(-0.9,1.4,0)→(-0.3,2.1,0)]\n    G:leftShin 左小腿 @p(-0.9,1.4,0)\n      M:[m16 box 0.88×0.42×0.4 (-1.2,1,0) 轴(-1.4,0.6,0)→(-0.9,1.4,0)]\n      G:leftFoot 左脚 @p(-1.4,0.6,0)\n        M:[m17 box 0.58×0.34×0.58 (-1.5,0.5,0) 薄向上(Y)]\n  G:rightThigh 右大腿 @p(0.3,2.1,0)\n    M:[m19 box 0.9×0.46×0.46 (0.6,1.7,0) 轴(0.9,1.4,0)→(0.3,2.1,0)]\n    G:rightShin 右小腿 @p(0.9,1.4,0)\n      M:[m20 box 0.88×0.42×0.4 (1.2,1,0) 轴(1.4,0.6,0)→(0.9,1.4,0)]\n      G:rightFoot 右脚 @p(1.4,0.6,0)\n        M:[m21 box 0.58×0.34×0.58 (1.5,0.5,0) 薄向上(Y)]",
+        "stats": {
+          "groups": 14,
+          "meshes": 23,
+          "labeledMeshes": 0,
+          "labelCoverage": 0,
+          "batchLabels": 0,
+          "autoChains": 0,
+          "snapshotChars": 1668
+        }
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -0.575,
+          1.7350000000000003,
+          -0.28016200258013296
+        ],
+        "max": [
+          0.575,
+          3.285,
+          0.19983799741986702
+        ],
+        "sourceNodeId": "m0"
+      },
+      {
+        "min": [
+          -0.44,
+          3.28,
+          -0.38016200258013294
+        ],
+        "max": [
+          0.44,
+          4.199999999999999,
+          0.33983799741986703
+        ],
+        "sourceNodeId": "m4"
+      },
+      {
+        "min": [
+          0.14824713778128695,
+          0.9914844058428739,
+          -0.270162002580133
+        ],
+        "max": [
+          1.091752862218713,
+          1.9685155941571257,
+          0.18983799741986707
+        ],
+        "sourceNodeId": "m19"
+      },
+      {
+        "min": [
+          -1.091752862218713,
+          0.9914844058428739,
+          -0.270162002580133
+        ],
+        "max": [
+          -0.14824713778128712,
+          1.9685155941571257,
+          0.18983799741986704
+        ],
+        "sourceNodeId": "m15"
+      },
+      {
+        "min": [
+          -1.584946619217082,
+          0.2944128113879002,
+          -0.250162002580133
+        ],
+        "max": [
+          -0.755053380782918,
+          1.2455871886120997,
+          0.16983799741986705
+        ],
+        "sourceNodeId": "m16"
+      },
+      {
+        "min": [
+          0.7550533807829181,
+          0.2944128113879001,
+          -0.25016200258013305
+        ],
+        "max": [
+          1.5849466192170818,
+          1.2455871886120997,
+          0.1698379974198671
+        ],
+        "sourceNodeId": "m20"
+      },
+      {
+        "min": [
+          0.4376404942208052,
+          2.86438421681945,
+          -0.25016200258013305
+        ],
+        "max": [
+          1.302359505779195,
+          3.6556157831805502,
+          0.1698379974198671
+        ],
+        "sourceNodeId": "m11"
+      },
+      {
+        "min": [
+          -1.2923595057791948,
+          2.86438421681945,
+          -0.250162002580133
+        ],
+        "max": [
+          -0.4276404942208053,
+          3.6556157831805502,
+          0.16983799741986702
+        ],
+        "sourceNodeId": "m7"
+      },
+      {
+        "min": [
+          -1.8674282848545642,
+          3.373197592778335,
+          -0.2301620025801331
+        ],
+        "max": [
+          -1.0925717151454362,
+          4.026802407221665,
+          0.14983799741986717
+        ],
+        "sourceNodeId": "m8"
+      },
+      {
+        "min": [
+          1.0925717151454366,
+          3.373197592778335,
+          -0.23016200258013308
+        ],
+        "max": [
+          1.8674282848545638,
+          4.026802407221665,
+          0.14983799741986714
+        ],
+        "sourceNodeId": "m12"
+      },
+      {
+        "min": [
+          -1.8399999999999999,
+          0.06999999999999995,
+          -0.300162002580133
+        ],
+        "max": [
+          -1.2599999999999998,
+          0.41000000000000003,
+          0.279837997419867
+        ],
+        "sourceNodeId": "m17"
+      },
+      {
+        "min": [
+          1.2599999999999998,
+          0.06999999999999995,
+          -0.300162002580133
+        ],
+        "max": [
+          1.8399999999999999,
+          0.41000000000000003,
+          0.279837997419867
+        ],
+        "sourceNodeId": "m21"
+      }
+    ],
+    "sourceMeshCount": 23,
+    "candidateCount": 12,
+    "fallbackUsed": false
+  },
+  "footprintRadius": 1.8674282848545642,
+  "sizeClass": "medium",
+  "mode": "voxel",
+  "createdAt": 1787825741620,
+  "updatedAt": 1787825741620
+}

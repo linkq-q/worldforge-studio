@@ -1,0 +1,377 @@
+{
+  "id": "asset-ee45fb5e-4e82-4318",
+  "name": "北欧风格的，男孩房间里的矮桌子，象牙白和原木配色",
+  "prompt": "北欧风格的，男孩房间里的矮桌子，象牙白和原木配色",
+  "modelJson": {
+    "name": "北欧象牙白原木矮桌",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "table",
+        "name": "矮桌主体",
+        "transform": {
+          "pos": [
+            0,
+            0.69,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            3.8,
+            1.48,
+            2.3
+          ],
+          "center": [
+            0,
+            0.09,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "legs",
+        "name": "原木桌腿",
+        "parent": "table",
+        "transform": {
+          "pos": [
+            0,
+            -0.09,
+            0
+          ]
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "oak"
+          }
+        ],
+        "_obb": {
+          "size": [
+            3.24,
+            1.12,
+            1.78
+          ],
+          "center": [
+            0,
+            0,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "table",
+        "transform": {
+          "pos": [
+            0,
+            0.69,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 3.8,
+            "height": 0.28,
+            "depth": 2.3
+          },
+          "color": 15920093
+        }
+      },
+      {
+        "id": "m1",
+        "parent": "table",
+        "transform": {
+          "pos": [
+            0,
+            0.49,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 3.3,
+            "height": 0.22,
+            "depth": 1.82
+          },
+          "color": 14001775
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "oak"
+          }
+        ]
+      },
+      {
+        "id": "m2",
+        "parent": "legs",
+        "transform": {
+          "pos": [
+            -1.45,
+            0,
+            -0.72
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.34,
+            "height": 1.12,
+            "depth": 0.34
+          },
+          "color": 13210717
+        }
+      },
+      {
+        "id": "m3",
+        "parent": "legs",
+        "transform": {
+          "pos": [
+            -1.45,
+            0,
+            0.72
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.34,
+            "height": 1.12,
+            "depth": 0.34
+          },
+          "color": 13210717
+        }
+      },
+      {
+        "id": "m4",
+        "parent": "legs",
+        "transform": {
+          "pos": [
+            1.45,
+            0,
+            -0.72
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.34,
+            "height": 1.12,
+            "depth": 0.34
+          },
+          "color": 13210717
+        }
+      },
+      {
+        "id": "m5",
+        "parent": "legs",
+        "transform": {
+          "pos": [
+            1.45,
+            0,
+            0.72
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.34,
+            "height": 1.12,
+            "depth": 0.34
+          },
+          "color": 13210717
+        }
+      },
+      {
+        "id": "m6",
+        "parent": "table",
+        "transform": {
+          "pos": [
+            0,
+            -0.07,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2.25,
+            "height": 0.14,
+            "depth": 1.15
+          },
+          "color": 15327698
+        }
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1787819031752,
+        "provider": "glm",
+        "data": "B0JJJ6IozGjnVj+9UCb4XoHsD63hDLR5Z+ajMy9y3LMCr1aj//D/mt2vzrxH+Q5wPFpwfllIXwVQ3qDT1QqkVeBbIKqdGRtin29hzSVmAlwURb/pE+Ln//JnrXODiOb2xyfMrM07U5fhLbGlJPrFPbTOjtd4kQEBMOVyeHPQwNbtFrT7O482Auck2MTI0L5uPQO4ziA6UUBVMrQU9NuyR8qGXEmQWVhbq4CqkIz7xn+xhY5ckOuZQCqQPHCfzvGbAVNnAS1MvDAfi0ZRiJOQ9D79+X7OOI1wROIj0FKAsuxIOReRyrJtZWzYfMfi8nZJPTbogrxVbrLbiutof4lhWBsl/cVoeaZuiex6jy3OtewqpvPSrye9YZ7neEklT8bhKysFgYb/9HJlh1XWauD9EGlkn1fB0BP4AK/2G4+5mRnbF6mniA9+ZSwlsNIwQ7uxy272+obWnjA5MB5EYEATJg4F02RdMhD1LMrw9svGegQPfDD7lcAp557CRhn14BX9oU2juQnlib2A5tgRNOxnIQ9V7guDQstIDYB3GJXIdoR1fp8c4YJt47ZOwYXM29veQ85vxPj4a7qj06dvBKljw96/KVjDND07/2Onz9mibRH7igU9MCSd2Z0v2MuKLVbXHTgDF9iUJ8NToyQcjNPHlPj3e0oJcKC4ebf31T6mIA6ch78YUSmwOKCDhoY=",
+        "edits": ""
+      },
+      "semanticSnapshot": {
+        "v": 1,
+        "auto": true,
+        "text": "北欧象牙白原木矮桌 · 2组/7mesh · 世界坐标(Y上Z前), 原点=模型根\n# 阅读说明: G:=group行(可动画骨骼, 动画key用G:后的id; @p=pivot世界坐标; 倾(x,y,z)°=朝向偏离世界轴的欧拉角; 缩进=父子层级; 挂:=挂载于某组; G:id→id→…=chain折叠行, 每个id都是可独立动画的group, chain×N=waypoint数)\n# M:=mesh行(label[id 几何 @(世界坐标)], label可省略; ×N=for循环批量件(锚点=代表实例); cyl (起)→(末)或 轴上(Y)等方位词=延伸方向; 薄向=板面法向(扁板); 挂载组双代表=最大件+最远有向件(刃/嘴/管所在端); 无方向标注=均匀块(三向相近,如头),默认面向前(Z); 对称×2=镜像对)\nG:table 矮桌主体 @p(0,0.7,0)\n  M:[m0 box 3.8×0.28×2.3 (0,1.4,0) 薄向上(Y)]\n  G:legs 原木桌腿 @p(0,0.6,0)\n    M:[m2 box 0.34×1.1×0.34 (-1.4,0.6,-0.7) 轴上(Y)]",
+        "stats": {
+          "groups": 2,
+          "meshes": 7,
+          "labeledMeshes": 0,
+          "labelCoverage": 0,
+          "batchLabels": 0,
+          "autoChains": 0,
+          "snapshotChars": 513
+        }
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -1.9,
+          1.1999999999999997,
+          -1.15
+        ],
+        "max": [
+          1.9,
+          1.48,
+          1.15
+        ],
+        "sourceNodeId": "m0"
+      },
+      {
+        "min": [
+          -1.65,
+          1.0299999999999998,
+          -0.91
+        ],
+        "max": [
+          1.65,
+          1.25,
+          0.91
+        ],
+        "sourceNodeId": "m1"
+      },
+      {
+        "min": [
+          -1.125,
+          0.5099999999999999,
+          -0.575
+        ],
+        "max": [
+          1.125,
+          0.65,
+          0.575
+        ],
+        "sourceNodeId": "m6"
+      },
+      {
+        "min": [
+          -1.6199999999999999,
+          0,
+          -0.89
+        ],
+        "max": [
+          -1.28,
+          1.12,
+          -0.5499999999999999
+        ],
+        "sourceNodeId": "m2"
+      },
+      {
+        "min": [
+          -1.6199999999999999,
+          0,
+          0.5499999999999999
+        ],
+        "max": [
+          -1.28,
+          1.12,
+          0.89
+        ],
+        "sourceNodeId": "m3"
+      },
+      {
+        "min": [
+          1.28,
+          0,
+          -0.89
+        ],
+        "max": [
+          1.6199999999999999,
+          1.12,
+          -0.5499999999999999
+        ],
+        "sourceNodeId": "m4"
+      },
+      {
+        "min": [
+          1.28,
+          0,
+          0.5499999999999999
+        ],
+        "max": [
+          1.6199999999999999,
+          1.12,
+          0.89
+        ],
+        "sourceNodeId": "m5"
+      }
+    ],
+    "sourceMeshCount": 7,
+    "candidateCount": 7,
+    "fallbackUsed": false
+  },
+  "footprintRadius": 1.9,
+  "sizeClass": "medium",
+  "mode": "voxel",
+  "createdAt": 1787819030625,
+  "updatedAt": 1787819030625
+}

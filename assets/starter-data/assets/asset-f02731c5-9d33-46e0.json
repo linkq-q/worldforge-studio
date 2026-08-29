@@ -1,0 +1,781 @@
+{
+  "id": "asset-f02731c5-9d33-46e0",
+  "name": "复杂游乐园/02摩天轮广场/装饰/星形合影框",
+  "prompt": "Simple standalone voxel model of 星形合影框: a freestanding giant star-shaped amusement park photo frame on a stable base, hollow center and colorful bulbs. Use 16 to 28 box meshes only, one grounded object, bold readable silhouette, bright amusement park colors, no terrain, no people, no floating pieces.",
+  "modelJson": {
+    "name": "星形合影框",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "starPhotoFrame",
+        "name": "星形合影框主体",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "starPhotoFrame",
+        "transform": {
+          "pos": [
+            0,
+            0.2,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 7.2,
+            "height": 0.4,
+            "depth": 1.5
+          },
+          "color": 15679091
+        }
+      },
+      {
+        "id": "m1",
+        "parent": "starPhotoFrame",
+        "transform": {
+          "pos": [
+            0,
+            0.575,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 6,
+            "height": 0.35,
+            "depth": 1.1
+          },
+          "color": 1689300
+        }
+      },
+      {
+        "id": "m2",
+        "parent": "starPhotoFrame",
+        "transform": {
+          "pos": [
+            -2,
+            0.975,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.62,
+            "height": 0.75,
+            "depth": 0.65
+          },
+          "color": 16763176
+        }
+      },
+      {
+        "id": "m3",
+        "parent": "starPhotoFrame",
+        "transform": {
+          "pos": [
+            2,
+            0.975,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.62,
+            "height": 0.75,
+            "depth": 0.65
+          },
+          "color": 16763176
+        }
+      },
+      {
+        "id": "m4",
+        "parent": "starPhotoFrame",
+        "transform": {
+          "pos": [
+            0.51,
+            6.41,
+            0
+          ],
+          "quat": [
+            0.6,
+            -0.37,
+            -0.37,
+            0.6
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2.23,
+            "height": 0.7,
+            "depth": 0.62
+          },
+          "color": 16727399
+        }
+      },
+      {
+        "id": "m5",
+        "parent": "starPhotoFrame",
+        "transform": {
+          "pos": [
+            2.13,
+            5.23,
+            0
+          ],
+          "quat": [
+            0.7,
+            -0.06,
+            -0.06,
+            0.7
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2.23,
+            "height": 0.7,
+            "depth": 0.62
+          },
+          "color": 16747044
+        }
+      },
+      {
+        "id": "m6",
+        "parent": "starPhotoFrame",
+        "transform": {
+          "pos": [
+            2.45,
+            4.25,
+            0
+          ],
+          "quat": [
+            -0.27,
+            0.65,
+            0.65,
+            -0.27
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2.23,
+            "height": 0.7,
+            "depth": 0.62
+          },
+          "color": 16766254
+        }
+      },
+      {
+        "id": "m7",
+        "parent": "starPhotoFrame",
+        "transform": {
+          "pos": [
+            1.83,
+            2.35,
+            0
+          ],
+          "quat": [
+            0.54,
+            -0.46,
+            -0.46,
+            0.54
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2.23,
+            "height": 0.7,
+            "depth": 0.62
+          },
+          "color": 7787323
+        }
+      },
+      {
+        "id": "m8",
+        "parent": "starPhotoFrame",
+        "transform": {
+          "pos": [
+            1,
+            1.75,
+            0
+          ],
+          "quat": [
+            0.16,
+            0.69,
+            0.69,
+            0.16
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2.23,
+            "height": 0.7,
+            "depth": 0.62
+          },
+          "color": 1624024
+        }
+      },
+      {
+        "id": "m9",
+        "parent": "starPhotoFrame",
+        "transform": {
+          "pos": [
+            -1,
+            1.75,
+            0
+          ],
+          "quat": [
+            -0.16,
+            0.69,
+            0.69,
+            -0.16
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2.23,
+            "height": 0.7,
+            "depth": 0.62
+          },
+          "color": 3442927
+        }
+      },
+      {
+        "id": "m10",
+        "parent": "starPhotoFrame",
+        "transform": {
+          "pos": [
+            -1.83,
+            2.35,
+            0
+          ],
+          "quat": [
+            0.54,
+            0.46,
+            0.46,
+            0.54
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2.23,
+            "height": 0.7,
+            "depth": 0.62
+          },
+          "color": 7886300
+        }
+      },
+      {
+        "id": "m11",
+        "parent": "starPhotoFrame",
+        "transform": {
+          "pos": [
+            -2.45,
+            4.25,
+            0
+          ],
+          "quat": [
+            0.27,
+            0.65,
+            0.65,
+            0.27
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2.23,
+            "height": 0.7,
+            "depth": 0.62
+          },
+          "color": 13979601
+        }
+      },
+      {
+        "id": "m12",
+        "parent": "starPhotoFrame",
+        "transform": {
+          "pos": [
+            -2.13,
+            5.23,
+            0
+          ],
+          "quat": [
+            0.7,
+            0.06,
+            0.06,
+            0.7
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2.23,
+            "height": 0.7,
+            "depth": 0.62
+          },
+          "color": 16731546
+        }
+      },
+      {
+        "id": "m13",
+        "parent": "starPhotoFrame",
+        "transform": {
+          "pos": [
+            -0.51,
+            6.41,
+            0
+          ],
+          "quat": [
+            0.6,
+            0.37,
+            0.37,
+            0.6
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2.23,
+            "height": 0.7,
+            "depth": 0.62
+          },
+          "color": 16735298
+        }
+      },
+      {
+        "id": "m14",
+        "parent": "starPhotoFrame",
+        "transform": {
+          "pos": [
+            0,
+            7.4,
+            0.42
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.28,
+            "height": 0.28,
+            "depth": 0.24
+          },
+          "color": 16777215
+        }
+      },
+      {
+        "id": "m15",
+        "parent": "starPhotoFrame",
+        "transform": {
+          "pos": [
+            1.0286,
+            5.4158,
+            0.42
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.28,
+            "height": 0.28,
+            "depth": 0.24
+          },
+          "color": 16773194
+        }
+      },
+      {
+        "id": "m16",
+        "parent": "starPhotoFrame",
+        "transform": {
+          "pos": [
+            3.2336,
+            5.0507,
+            0.42
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.28,
+            "height": 0.28,
+            "depth": 0.24
+          },
+          "color": 16737219
+        }
+      },
+      {
+        "id": "m17",
+        "parent": "starPhotoFrame",
+        "transform": {
+          "pos": [
+            1.6643,
+            3.4592,
+            0.42
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.28,
+            "height": 0.28,
+            "depth": 0.24
+          },
+          "color": 6944255
+        }
+      },
+      {
+        "id": "m18",
+        "parent": "starPhotoFrame",
+        "transform": {
+          "pos": [
+            1.9985,
+            1.2493,
+            0.42
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.28,
+            "height": 0.28,
+            "depth": 0.24
+          },
+          "color": 16777215
+        }
+      },
+      {
+        "id": "m19",
+        "parent": "starPhotoFrame",
+        "transform": {
+          "pos": [
+            0,
+            2.25,
+            0.42
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.28,
+            "height": 0.28,
+            "depth": 0.24
+          },
+          "color": 16773194
+        }
+      },
+      {
+        "id": "m20",
+        "parent": "starPhotoFrame",
+        "transform": {
+          "pos": [
+            -1.9985,
+            1.2493,
+            0.42
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.28,
+            "height": 0.28,
+            "depth": 0.24
+          },
+          "color": 16737219
+        }
+      },
+      {
+        "id": "m21",
+        "parent": "starPhotoFrame",
+        "transform": {
+          "pos": [
+            -1.6643,
+            3.4592,
+            0.42
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.28,
+            "height": 0.28,
+            "depth": 0.24
+          },
+          "color": 6944255
+        }
+      },
+      {
+        "id": "m22",
+        "parent": "starPhotoFrame",
+        "transform": {
+          "pos": [
+            -3.2336,
+            5.0507,
+            0.42
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.28,
+            "height": 0.28,
+            "depth": 0.24
+          },
+          "color": 16777215
+        }
+      },
+      {
+        "id": "m23",
+        "parent": "starPhotoFrame",
+        "transform": {
+          "pos": [
+            -1.0286,
+            5.4158,
+            0.42
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.28,
+            "height": 0.28,
+            "depth": 0.24
+          },
+          "color": 16773194
+        }
+      },
+      {
+        "id": "m24",
+        "parent": "starPhotoFrame",
+        "transform": {
+          "pos": [
+            0.5143,
+            6.4079,
+            0.42
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.28,
+            "height": 0.28,
+            "depth": 0.24
+          },
+          "color": 16737219
+        }
+      },
+      {
+        "id": "m25",
+        "parent": "starPhotoFrame",
+        "transform": {
+          "pos": [
+            -0.9992,
+            1.7497,
+            0.42
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.28,
+            "height": 0.28,
+            "depth": 0.24
+          },
+          "color": 6944255
+        }
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1784474182935,
+        "provider": "glm",
+        "data": "hUM54RRO1t5vqOTrdaVHuzsjtSbwSEZYrAODTaUMb6gjGhhsDXfKCWoNudzawNsy1bS5DQUxf2qWwW3CHfH4ZOyvDFFsZf9S4Fs6vN7+94LwcCW+CLEZtPOvYUhU631DMma9DeBWz+ae+lDAH+6ZE0VK755+0Yj4AgCM6jWmP7x94qo5uTA/Ntx2nOjw0Bt5ggYUUAgmTSFjhZZw0kbuU4s4nHucxzhYzarFffYIeeOhiQPINN6AijAA3KGRn5+GKvcvqpZxjooqGYhg345oHt5RIF1PLNpFs3GAIOa2QISSBfUl+0TE+DwsPHO8DLjsuDheZkgUu6ngG1/IluklPP/7mm5xSKOpb1o6eDeChXBijzQWXhuV3L4KydI6XFpQTlyDJqA6o9kFhGvUFBb9BIaBa0Esqt4UNVZixIg7qACL0v8VWrfuk5LUz02B7XbCvXqARwMHB7QsevhvlCdg1kcJNR33Wg817Rg2ohEnYcR16+EESmtxmJguWR3u6P3A8HiwECJXG2Vcs/0cNYFA/7KPaYWXPJiD2C4UZNZgcjZm6XIaNuQrUooDYVsvJZMboxzkXicJsyN2sc+YMeWIspkBiW4Iz+ke99MhizAtVan34N3dKkzkRoOyLj2eYayXRM/QYZ/R6g2WKYB/WhZZmFwcR5+e2aGjRtRX+OPEHmHXnW+p3KxmExlACIF+GDCqWqcMtsC+kfzCX1cAw4Vu138pnpJlKtHMa1LGZe2k6JVJPTkyyYwRtIbHcg/YYtg5R+Tq1ZNVfqHgPMUh4pV7Wv99ku59UWLeKA8mUz5yN6p7AvaprozdmwDmgMyOLyfeQXlfw/H+crEvCg4XHGTnF3KRPdS/kqkhZWf0Di1zYIFC79axUqK+f5rTPu6my5Mq8guk+spYDABo+ItlUGnYAvFTsQZ4ZA9qw2exalz1E6uTIMXUGVhbVjQMomIyszSUUJdoK08KSYk9pxnSVBKdJYZxwxDlLnrzgIvgGaRgGu69NK9Rlx38SfNtp7PONIlYPONK2NrCmH54GYn5gO031cVL6FTvlK+GnHnF3gEvCbsXDVJhMjtV1SLFSeT+4Eg/D9bVKPunzxQ4IIGG0NyxHQutAVNxifk4Qm2j2qhAt6n0etaVKXUt6U5/oAlJMAKdvf5ffFFt4pZY1A==",
+        "edits": ""
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -3.6,
+          0,
+          -0.75
+        ],
+        "max": [
+          3.6,
+          0.4,
+          0.75
+        ],
+        "sourceNodeId": "m0"
+      },
+      {
+        "min": [
+          -3.4564876867178036,
+          3.2412373839321758,
+          -0.35
+        ],
+        "max": [
+          -1.4435123132821965,
+          5.258762616067824,
+          0.35
+        ],
+        "sourceNodeId": "m11"
+      },
+      {
+        "min": [
+          1.4435123132821965,
+          3.2412373839321758,
+          -0.35
+        ],
+        "max": [
+          3.4564876867178036,
+          5.258762616067824,
+          0.35
+        ],
+        "sourceNodeId": "m6"
+      },
+      {
+        "min": [
+          -1.287614208090159,
+          5.2745180116723684,
+          -0.3500000000000002
+        ],
+        "max": [
+          0.2676142080901588,
+          7.545481988327632,
+          0.3500000000000002
+        ],
+        "sourceNodeId": "m13"
+      },
+      {
+        "min": [
+          -0.2676142080901588,
+          5.2745180116723684,
+          -0.3500000000000002
+        ],
+        "max": [
+          1.287614208090159,
+          7.545481988327632,
+          0.3500000000000002
+        ],
+        "sourceNodeId": "m4"
+      },
+      {
+        "min": [
+          -0.1376430137532385,
+          0.9809208690452462,
+          -0.35
+        ],
+        "max": [
+          2.1376430137532383,
+          2.5190791309547538,
+          0.35
+        ],
+        "sourceNodeId": "m8"
+      },
+      {
+        "min": [
+          -2.1376430137532383,
+          0.9809208690452462,
+          -0.35
+        ],
+        "max": [
+          0.1376430137532385,
+          2.5190791309547538,
+          0.35
+        ],
+        "sourceNodeId": "m9"
+      },
+      {
+        "min": [
+          -3,
+          0.39999999999999997,
+          -0.55
+        ],
+        "max": [
+          3,
+          0.75,
+          0.55
+        ],
+        "sourceNodeId": "m1"
+      },
+      {
+        "min": [
+          -3.2814910858995137,
+          4.7347730956239875,
+          -0.35
+        ],
+        "max": [
+          -0.9785089141004861,
+          5.725226904376013,
+          0.35
+        ],
+        "sourceNodeId": "m12"
+      },
+      {
+        "min": [
+          0.9785089141004861,
+          4.7347730956239875,
+          -0.35
+        ],
+        "max": [
+          3.2814910858995137,
+          5.725226904376013,
+          0.35
+        ],
+        "sourceNodeId": "m5"
+      },
+      {
+        "min": [
+          -2.3133227344992053,
+          1.1998966613672497,
+          -0.3500000000000001
+        ],
+        "max": [
+          -1.3466772655007948,
+          3.5001033386327505,
+          0.3500000000000001
+        ],
+        "sourceNodeId": "m10"
+      },
+      {
+        "min": [
+          1.3466772655007948,
+          1.1998966613672497,
+          -0.3500000000000001
+        ],
+        "max": [
+          2.3133227344992053,
+          3.5001033386327505,
+          0.3500000000000001
+        ],
+        "sourceNodeId": "m7"
+      }
+    ],
+    "sourceMeshCount": 26,
+    "candidateCount": 14,
+    "fallbackUsed": false
+  },
+  "mode": "lite",
+  "provider": "provider-fallback",
+  "createdAt": 1784474186833,
+  "updatedAt": 1784474186833
+}

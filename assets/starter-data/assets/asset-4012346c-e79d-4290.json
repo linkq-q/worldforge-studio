@@ -1,0 +1,271 @@
+{
+  "id": "asset-4012346c-e79d-4290",
+  "name": "书架",
+  "prompt": "单独一个低矮儿童书架，多个空置开放格，所有格子为空，不包含书、玩具、箱子或装饰\nCoordinate contract: local Y+ is up, local Z+ is the front, entrance, or forward direction, and local X+ is right. Put doors, facades, openings, windshields, noses, seats, and other recognizable front details toward local Z+. For a modular repeated element, explicitly choose the long axis: side-by-side modules span local X with depth/front on local Z; traversal modules span local Z. Keep the model centered at its origin.\nCanonical dimensions contract: width=1.25, height=1.15, depth=0.38 world units. Keep the generated mesh within this centered bounding size.",
+  "modelJson": {
+    "name": "低矮儿童开放格书架",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "bookshelf",
+        "name": "书架主体",
+        "transform": {
+          "pos": [
+            0,
+            0.575,
+            -0.08
+          ]
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "oak"
+          }
+        ],
+        "_obb": {
+          "size": [
+            1.25,
+            1.15,
+            0.38
+          ],
+          "center": [
+            0,
+            0,
+            0.08
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "bookshelf",
+        "transform": {
+          "pos": [
+            0,
+            -0.535,
+            0.08
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.25,
+            "height": 0.08,
+            "depth": 0.38
+          },
+          "color": 12089663
+        }
+      },
+      {
+        "id": "m1",
+        "parent": "bookshelf",
+        "transform": {
+          "pos": [
+            0,
+            0.535,
+            0.08
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.25,
+            "height": 0.08,
+            "depth": 0.38
+          },
+          "color": 12089663
+        }
+      },
+      {
+        "id": "m2",
+        "parent": "bookshelf",
+        "transform": {
+          "pos": [
+            -0.585,
+            0,
+            0.08
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.08,
+            "height": 1.07,
+            "depth": 0.38
+          },
+          "color": 12879433
+        }
+      },
+      {
+        "id": "m3",
+        "parent": "bookshelf",
+        "transform": {
+          "pos": [
+            0.585,
+            0,
+            0.08
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.08,
+            "height": 1.07,
+            "depth": 0.38
+          },
+          "color": 12879433
+        }
+      },
+      {
+        "id": "m4",
+        "parent": "bookshelf",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0.095
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.09,
+            "height": 0.07,
+            "depth": 0.35
+          },
+          "color": 12089663
+        }
+      },
+      {
+        "id": "m5",
+        "parent": "bookshelf",
+        "transform": {
+          "pos": [
+            -0.19,
+            0,
+            0.095
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.06,
+            "height": 0.99,
+            "depth": 0.35
+          },
+          "color": 12879433
+        }
+      },
+      {
+        "id": "m6",
+        "parent": "bookshelf",
+        "transform": {
+          "pos": [
+            0.19,
+            0,
+            0.095
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.06,
+            "height": 0.99,
+            "depth": 0.35
+          },
+          "color": 12879433
+        }
+      },
+      {
+        "id": "m7",
+        "parent": "bookshelf",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            -0.095
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.09,
+            "height": 0.99,
+            "depth": 0.03
+          },
+          "color": 10446391
+        }
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1787766581294,
+        "provider": "gpt",
+        "data": "apJnA/I1GKDs4kydSpSD3Nmbddz/6mR+H+8/ckDFTcLIWrCqWIkGUeS+wantBmjbIs8Tb1mYEzVZQdUxQXHldDe5dlA1cL4BWr4lj5PxKVjiW3i2FUEDU/V+QTbfh/dQchFcAJVHYAm5L+hUGw447rUeLGE5xgEOssEOVsMHEmldQKkaHCdvwFasz0WmbbfFtGu4q2OKKMGyI/LtlCSt0xJN/BHq0vWvoRBOFRXy8POmBc0sqwCzOZ0YzMprVqBbdXdsq4Y2hZR+yKVaKq7U5YYzPgnK7IAn9cnYLt7A4Es29rmRp3I35Lldrtb9AsPjOabXfdY5xZYD3RK/ZNJ02vQCmiPOpEomD+aii2npyTfspJc2dL7OEY9NcoN/AEWfLFSTkb6a4pjOok5hshfmC7/sM2voYrVuvvDK5zRXKlGSQDTYNqeWCrEjsi7dX0zFlV0b28ZXni+tVJu8IgJf5jhpL+U/DtcySN6II+0c9nTVw2COEcc1OKHRa+DqxdAPUvMRtQcA4PhXvnAgdrAhnZoJrQgqfEx1Olv1EqygvHODpoIY3SPevyyOpGyXfT99Sm6dfyBpmiwSLsH+cNK1w6UWrjE=",
+        "edits": ""
+      },
+      "semanticSnapshot": {
+        "v": 1,
+        "auto": true,
+        "text": "低矮儿童开放格书架 · 1组/8mesh · 世界坐标(Y上Z前), 原点=模型根\n# 阅读说明: G:=group行(可动画骨骼, 动画key用G:后的id; @p=pivot世界坐标; 倾(x,y,z)°=朝向偏离世界轴的欧拉角; 缩进=父子层级; 挂:=挂载于某组; G:id→id→…=chain折叠行, 每个id都是可独立动画的group, chain×N=waypoint数)\n# M:=mesh行(label[id 几何 @(世界坐标)], label可省略; ×N=for循环批量件(锚点=代表实例); cyl (起)→(末)或 轴上(Y)等方位词=延伸方向; 薄向=板面法向(扁板); 挂载组双代表=最大件+朝向件(嘴/管/檐所在); 无方向标注=均匀块(三向相近,如头),默认面向前(Z); 对称×2=镜像对)\nG:bookshelf 书架主体 @p(0,0.6,-0.1)\n  M:[m0 box 1.3×0.08×0.38 (0,0,0) 薄向上(Y)]",
+        "stats": {
+          "groups": 1,
+          "meshes": 8,
+          "labeledMeshes": 0,
+          "labelCoverage": 0,
+          "batchLabels": 0,
+          "autoChains": 0,
+          "snapshotChars": 439
+        }
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -0.625,
+          0,
+          -0.19
+        ],
+        "max": [
+          0.625,
+          1.15,
+          0.19
+        ],
+        "sourceNodeId": "asset-bounds"
+      }
+    ],
+    "sourceMeshCount": 8,
+    "candidateCount": 0,
+    "fallbackUsed": true
+  },
+  "footprintRadius": 0.625,
+  "sizeClass": "small",
+  "mode": "voxel",
+  "provider": "gpt",
+  "createdAt": 1787766587212,
+  "updatedAt": 1787766587212
+}

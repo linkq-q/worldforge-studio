@@ -1,0 +1,403 @@
+{
+  "id": "asset-7c7e1d68-d2b7-4306",
+  "name": "乒乓球拍",
+  "prompt": "乒乓球拍",
+  "modelJson": {
+    "name": "体素乒乓球拍",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "paddle",
+        "name": "球拍",
+        "transform": {
+          "pos": [
+            0,
+            2.59,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            2.7,
+            5.295,
+            0.52
+          ],
+          "center": [
+            0,
+            0.108,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "paddle",
+        "transform": {
+          "pos": [
+            0,
+            0.86,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2.7,
+            "height": 2.5,
+            "depth": 0.28
+          },
+          "color": 2434341
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ]
+      },
+      {
+        "id": "m1",
+        "parent": "paddle",
+        "transform": {
+          "pos": [
+            0,
+            2.43,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2.15,
+            "height": 0.65,
+            "depth": 0.28
+          },
+          "color": 2434341
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ]
+      },
+      {
+        "id": "m2",
+        "parent": "paddle",
+        "transform": {
+          "pos": [
+            0,
+            0.89,
+            0.18
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2.52,
+            "height": 2.35,
+            "depth": 0.08
+          },
+          "color": 14232877
+        }
+      },
+      {
+        "id": "m3",
+        "parent": "paddle",
+        "transform": {
+          "pos": [
+            0,
+            2.41,
+            0.18
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.98,
+            "height": 0.58,
+            "depth": 0.08
+          },
+          "color": 14232877
+        }
+      },
+      {
+        "id": "m4",
+        "parent": "paddle",
+        "transform": {
+          "pos": [
+            0,
+            0.89,
+            -0.18
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2.52,
+            "height": 2.35,
+            "depth": 0.08
+          },
+          "color": 2105376
+        }
+      },
+      {
+        "id": "m5",
+        "parent": "paddle",
+        "transform": {
+          "pos": [
+            0,
+            2.41,
+            -0.18
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.98,
+            "height": 0.58,
+            "depth": 0.08
+          },
+          "color": 2105376
+        }
+      },
+      {
+        "id": "m6",
+        "parent": "paddle",
+        "transform": {
+          "pos": [
+            0,
+            -1.31,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.72,
+            "height": 2.15,
+            "depth": 0.48
+          },
+          "color": 12089406
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ]
+      },
+      {
+        "id": "m7",
+        "parent": "paddle",
+        "transform": {
+          "pos": [
+            0,
+            -0.24,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.88,
+            "height": 0.42,
+            "depth": 0.52
+          },
+          "color": 9196588
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ]
+      },
+      {
+        "id": "m8",
+        "parent": "paddle",
+        "transform": {
+          "pos": [
+            0,
+            -2.43,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.78,
+            "height": 0.22,
+            "depth": 0.52
+          },
+          "color": 7290917
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ]
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1786870986925,
+        "provider": "glm",
+        "data": "9lQkQA1Al5ONPA8XqlEIxtP/NeQS/MhbmoLf+4A8DqMYrYUskCa2uPZ8h3q865NE7jsSJ7njpe7Nt+pvcrG8qoZDi694iBeGeG77ceY3dJSwknSobfwosy5iK75zybjbSd+4APJVdhLFMPu9vkq7j3yMQjSVEBm3eQKK0wq0fDqCLyvxjAQwpeC+Lun6m1271knxqOpOuU/AbsHC5zlB6abvrICaAletV6B0tF1B5jymhbmpl6Q6SU14KemhbxZFA2b8F5C0VPZTgv1T87DW+frOmeSn3pNK1TwNKRNGkW2/Wb8lbuZ7vrLTBoybVpKK9wXoZwFa2FLzLAd/kJh/ujDp1lk1A0Yg8QoJL04q26ren96DEQgGVY8Hpm/H/BhOev4BwSlOC0TUg/VM/pyZKxWC/1Z9fePp7hyJKUFWZHNbTFNhmUkBUVIKWSlVOHKiI37TfospjThP8/BcU6L4uw8O3jk1/Qb1/cyZj4c1KE83Q/8XsmXF7OyhcI+V5b0j1kIq8lZA90s/gl+C8Uq0LQDp+aX+CFKJKGqpM2aWajBkd7Fp9O9Pcnkq0HZZTYJELJf6l+DggmeYbObwFJSVoLhzw4qmweYhz8wvoUD5K0A=",
+        "edits": ""
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -1.35,
+          2.15,
+          -0.14
+        ],
+        "max": [
+          1.35,
+          4.6499999999999995,
+          0.14
+        ],
+        "sourceNodeId": "m0"
+      },
+      {
+        "min": [
+          -0.36,
+          0.15500000000000014,
+          -0.24
+        ],
+        "max": [
+          0.36,
+          2.3049999999999997,
+          0.24
+        ],
+        "sourceNodeId": "m6"
+      },
+      {
+        "min": [
+          -1.26,
+          2.255,
+          0.13999999999999999
+        ],
+        "max": [
+          1.26,
+          4.605,
+          0.22
+        ],
+        "sourceNodeId": "m2"
+      },
+      {
+        "min": [
+          -1.26,
+          2.255,
+          -0.22
+        ],
+        "max": [
+          1.26,
+          4.605,
+          -0.13999999999999999
+        ],
+        "sourceNodeId": "m4"
+      },
+      {
+        "min": [
+          -1.075,
+          4.645,
+          -0.14
+        ],
+        "max": [
+          1.075,
+          5.295,
+          0.14
+        ],
+        "sourceNodeId": "m1"
+      },
+      {
+        "min": [
+          -0.44,
+          2.09,
+          -0.26
+        ],
+        "max": [
+          0.44,
+          2.51,
+          0.26
+        ],
+        "sourceNodeId": "m7"
+      },
+      {
+        "min": [
+          -0.99,
+          4.66,
+          0.13999999999999999
+        ],
+        "max": [
+          0.99,
+          5.24,
+          0.22
+        ],
+        "sourceNodeId": "m3"
+      },
+      {
+        "min": [
+          -0.99,
+          4.66,
+          -0.22
+        ],
+        "max": [
+          0.99,
+          5.24,
+          -0.13999999999999999
+        ],
+        "sourceNodeId": "m5"
+      },
+      {
+        "min": [
+          -0.39,
+          0,
+          -0.26
+        ],
+        "max": [
+          0.39,
+          0.21999999999999997,
+          0.26
+        ],
+        "sourceNodeId": "m8"
+      }
+    ],
+    "sourceMeshCount": 9,
+    "candidateCount": 9,
+    "fallbackUsed": false
+  },
+  "footprintRadius": 1.35,
+  "sizeClass": "medium",
+  "mode": "voxel",
+  "createdAt": 1786870987439,
+  "updatedAt": 1786870987439
+}

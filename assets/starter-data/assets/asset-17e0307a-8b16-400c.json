@@ -1,0 +1,480 @@
+{
+  "id": "asset-17e0307a-8b16-400c",
+  "name": "彩色积木箱",
+  "prompt": "A single reusable open toy box filled with large colorful wooden building blocks, the box and contained blocks forming one compact movable object, approximately 0.65 meters wide, no floor, background, person, or surrounding scene",
+  "tags": [
+    "toy",
+    "prop"
+  ],
+  "modelJson": {
+    "name": "彩色积木玩具箱",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "toy_box",
+        "name": "玩具箱整体",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.661,
+            0.486,
+            0.841
+          ],
+          "center": [
+            0,
+            0.268,
+            -0.128
+          ],
+          "axes": [
+            [
+              0.9998,
+              -0.0012,
+              0.0187
+            ],
+            [
+              -0.0118,
+              0.7346,
+              0.6783
+            ],
+            [
+              -0.0146,
+              -0.6784,
+              0.7345
+            ]
+          ],
+          "_mainAxis": 2
+        }
+      },
+      {
+        "id": "lid",
+        "name": "开启的箱盖",
+        "parent": "toy_box",
+        "transform": {
+          "pos": [
+            0,
+            0.31,
+            -0.19
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.65,
+            0.348,
+            0.048
+          ],
+          "center": [
+            0,
+            0.15,
+            -0.09
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              0.8568,
+              -0.5157
+            ],
+            [
+              0,
+              0.5157,
+              0.8568
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "toy_box",
+        "transform": {
+          "pos": [
+            0,
+            0.025,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.65,
+            "height": 0.05,
+            "depth": 0.38
+          },
+          "color": 10183221
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ]
+      },
+      {
+        "id": "m1",
+        "parent": "toy_box",
+        "transform": {
+          "pos": [
+            0,
+            0.175,
+            0.17
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.65,
+            "height": 0.25,
+            "depth": 0.04
+          },
+          "color": 12089407
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ]
+      },
+      {
+        "id": "m2",
+        "parent": "toy_box",
+        "transform": {
+          "pos": [
+            0,
+            0.175,
+            -0.17
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.65,
+            "height": 0.25,
+            "depth": 0.04
+          },
+          "color": 9393967
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ]
+      },
+      {
+        "id": "m3",
+        "parent": "toy_box",
+        "transform": {
+          "pos": [
+            -0.305,
+            0.175,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.04,
+            "height": 0.25,
+            "depth": 0.3
+          },
+          "color": 11102265
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ]
+      },
+      {
+        "id": "m4",
+        "parent": "toy_box",
+        "transform": {
+          "pos": [
+            0.305,
+            0.175,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.04,
+            "height": 0.25,
+            "depth": 0.3
+          },
+          "color": 11102265
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ]
+      },
+      {
+        "id": "m5",
+        "parent": "toy_box",
+        "transform": {
+          "pos": [
+            -0.18,
+            0.12,
+            -0.06
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.17,
+            "height": 0.13,
+            "depth": 0.14
+          },
+          "color": 14239803
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ]
+      },
+      {
+        "id": "m6",
+        "parent": "toy_box",
+        "transform": {
+          "pos": [
+            0,
+            0.145,
+            -0.07
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.14,
+            "height": 0.18,
+            "depth": 0.13
+          },
+          "color": 4159685
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ]
+      },
+      {
+        "id": "m7",
+        "parent": "toy_box",
+        "transform": {
+          "pos": [
+            0.18,
+            0.11,
+            -0.05
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.17,
+            "height": 0.11,
+            "depth": 0.15
+          },
+          "color": 15775541
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ]
+      },
+      {
+        "id": "m8",
+        "parent": "toy_box",
+        "transform": {
+          "pos": [
+            -0.13,
+            0.245,
+            0.02
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.16,
+            "height": 0.12,
+            "depth": 0.13
+          },
+          "color": 5613658
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ]
+      },
+      {
+        "id": "m9",
+        "parent": "toy_box",
+        "transform": {
+          "pos": [
+            0.05,
+            0.265,
+            0.01
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.13,
+            "height": 0.13,
+            "depth": 0.13
+          },
+          "color": 15169845
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ]
+      },
+      {
+        "id": "m10",
+        "parent": "toy_box",
+        "transform": {
+          "pos": [
+            0.19,
+            0.225,
+            0.04
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.14,
+            "height": 0.1,
+            "depth": 0.14
+          },
+          "color": 9069239
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ]
+      },
+      {
+        "id": "m11",
+        "parent": "lid",
+        "transform": {
+          "pos": [
+            0,
+            0.15,
+            -0.09
+          ],
+          "quat": [
+            0.87,
+            0,
+            0,
+            -0.49
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.65,
+            "height": 0.035,
+            "depth": 0.35
+          },
+          "color": 12089407
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ]
+      },
+      {
+        "id": "m12",
+        "parent": "lid",
+        "transform": {
+          "pos": [
+            0,
+            0.275,
+            -0.165
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.56,
+            "height": 0.035,
+            "depth": 0.035
+          },
+          "color": 9393967
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ]
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1786871414258,
+        "provider": "gpt",
+        "data": "gBfUcjHmrMWc3vB3HfnxcMOG1DrMF8yuVR/unsI5zZPxNsxDjewbkFmwbqfwo/pstuK1XZ2BIfBurcpbybYAb7YqI6ItvWLm+lG1P9T3or+BF1GSsG5VrWmcsTx00juyNfE4/F4SxDqe4fZdfy4CQdULKvukhNduw7j6sNvn0XqVLjbbTDglhUpti47m1lJebrFvYoo6FfEk+o/J+Pv5HMHdDfF2P+yAuuyVmCfoP0GMpCY+iD5rdZPqBUiIU+TWMbGaAxbPxvCdvQjvesxDGdVUy+8M5lD0U2d7CEBKSw2oSZ8W/KbV9ETNBkJI/pMa9NabwkCza+bRP4LjVQAuqbN0bGGyaBXTjUAC0GSIx5QkW0g3R8KJ0wUZ9jGCjnYWierKYew5Wd4H3WRkP77dUZ5MsN31lLBI1N0z9SQWfGGHeZJNc7dlN2MdCmWMOGNWbOeRYuE1AfdGfiLiDLJ51K36j9orN03aq7uMBhjfkNhWsrw0Io5GE/v/GVcdMHdLoprBt8lFUU3B2lEQ5RoPlxVbo1NyV9RcYymyzUfMKJx8fzDXXrQUkHiZcFRzvDd47sdve1Y2uCc8NywcbNTHjXD7HsZv5bQdGvNGmu17omOl838fOVJGf8I3yeuCcKiWWavUIeSlQAj1igGmKRdrP9ysbI+zSNcbsWvcfYZcrLQYhMWU5xW4yjmT/JQEbTfyaNRk/IIsKgnZUTl/1lTQsKMHkvnfyZIwE4Et/EcWb6dFcHc26FHX3HBxYXqAgrLBUBXgz153c2WKVb/FM9myPkzqP95f2gmqwjD8eCttNUn50Pp6UycgBtw0UMJpSBteoQ5fyt1X+jxGAAKcdZAJXHbGDvSiYBVrRe6IXlweXrmM2K6oDIZTkXb0DA8E47NrkLuoYvdegUcr1WV+zqJH0BSM2fcbL8WRr/p6kIzABHNCb64=",
+        "edits": ""
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -0.325,
+          0,
+          -0.28783876629889665
+        ],
+        "max": [
+          0.325,
+          0.6187251755265797,
+          0.28783876629889665
+        ],
+        "sourceNodeId": "asset-bounds"
+      }
+    ],
+    "sourceMeshCount": 13,
+    "candidateCount": 0,
+    "fallbackUsed": true
+  },
+  "footprintRadius": 0.325,
+  "sizeClass": "small",
+  "mode": "voxel",
+  "provider": "gpt",
+  "createdAt": 1786871415032,
+  "updatedAt": 1786871415032
+}

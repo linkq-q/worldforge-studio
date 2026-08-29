@@ -1,0 +1,556 @@
+{
+  "id": "asset-fd637779-3551-48f9",
+  "name": "篮筐",
+  "prompt": "单独一个可移动儿童篮球架，低位篮板、篮圈、球网和稳定底座，不包含篮球或人物\nCoordinate contract: local Y+ is up, local Z+ is the front, entrance, or forward direction, and local X+ is right. Put doors, facades, openings, windshields, noses, seats, and other recognizable front details toward local Z+. For a modular repeated element, explicitly choose the long axis: side-by-side modules span local X with depth/front on local Z; traversal modules span local Z. Keep the model centered at its origin.\nCanonical dimensions contract: width=0.85, height=1.75, depth=0.75 world units. Keep the generated mesh within this centered bounding size.",
+  "modelJson": {
+    "name": "儿童移动篮球架",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "stand",
+        "name": "篮球架整体",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.76,
+            1.75,
+            0.801
+          ],
+          "center": [
+            0,
+            0.805,
+            0.038
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              0.9792,
+              0.2027
+            ],
+            [
+              0,
+              -0.2027,
+              0.9792
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "stand",
+        "transform": {
+          "pos": [
+            0,
+            0.08,
+            -0.03
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.68,
+            "height": 0.16,
+            "depth": 0.62
+          },
+          "color": 2381734
+        }
+      },
+      {
+        "id": "m1",
+        "parent": "stand",
+        "transform": {
+          "pos": [
+            0,
+            0.2,
+            -0.2
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.54,
+            "height": 0.08,
+            "depth": 0.18
+          },
+          "color": 1589117
+        }
+      },
+      {
+        "id": "m2",
+        "parent": "stand",
+        "transform": {
+          "pos": [
+            0,
+            0.78,
+            -0.2
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.1,
+            "height": 1.22,
+            "depth": 0.1
+          },
+          "color": 9279910
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m3",
+        "parent": "stand",
+        "transform": {
+          "pos": [
+            0,
+            1.35,
+            -0.13
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.36,
+            "height": 0.08,
+            "depth": 0.08
+          },
+          "color": 9279910
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m4",
+        "parent": "stand",
+        "transform": {
+          "pos": [
+            0,
+            1.5,
+            -0.05
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.76,
+            "height": 0.42,
+            "depth": 0.06
+          },
+          "color": 15922413
+        }
+      },
+      {
+        "id": "m5",
+        "parent": "stand",
+        "transform": {
+          "pos": [
+            0,
+            1.42,
+            -0.014
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.44,
+            "height": 0.05,
+            "depth": 0.018
+          },
+          "color": 15028795
+        }
+      },
+      {
+        "id": "m6",
+        "parent": "stand",
+        "transform": {
+          "pos": [
+            -0.195,
+            1.5,
+            -0.014
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.05,
+            "height": 0.22,
+            "depth": 0.018
+          },
+          "color": 15028795
+        }
+      },
+      {
+        "id": "m7",
+        "parent": "stand",
+        "transform": {
+          "pos": [
+            0.195,
+            1.5,
+            -0.014
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.05,
+            "height": 0.22,
+            "depth": 0.018
+          },
+          "color": 15028795
+        }
+      },
+      {
+        "id": "m8",
+        "parent": "stand",
+        "transform": {
+          "pos": [
+            0,
+            1.3,
+            0.23
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.4,
+            "height": 0.045,
+            "depth": 0.045
+          },
+          "color": 15755812
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m9",
+        "parent": "stand",
+        "transform": {
+          "pos": [
+            -0.178,
+            1.3,
+            0.115
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.045,
+            "height": 0.045,
+            "depth": 0.27
+          },
+          "color": 15755812
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m10",
+        "parent": "stand",
+        "transform": {
+          "pos": [
+            0.178,
+            1.3,
+            0.115
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.045,
+            "height": 0.045,
+            "depth": 0.27
+          },
+          "color": 15755812
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m11",
+        "parent": "stand",
+        "transform": {
+          "pos": [
+            0,
+            1.3,
+            -0.01
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.4,
+            "height": 0.045,
+            "depth": 0.045
+          },
+          "color": 15755812
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m12",
+        "parent": "stand",
+        "transform": {
+          "pos": [
+            -0.12,
+            1.16,
+            0.08
+          ],
+          "quat": [
+            0.57,
+            0.06,
+            0,
+            0.81
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.05,
+            "height": 0.018,
+            "depth": 0.25
+          },
+          "color": 16119272
+        }
+      },
+      {
+        "id": "m13",
+        "parent": "stand",
+        "transform": {
+          "pos": [
+            0.12,
+            1.16,
+            0.08
+          ],
+          "quat": [
+            0.57,
+            -0.06,
+            0,
+            0.81
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.05,
+            "height": 0.018,
+            "depth": 0.25
+          },
+          "color": 16119272
+        }
+      },
+      {
+        "id": "m14",
+        "parent": "stand",
+        "transform": {
+          "pos": [
+            -0.12,
+            1.16,
+            0.21
+          ],
+          "quat": [
+            0.79,
+            0.09,
+            0,
+            0.58
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.05,
+            "height": 0.018,
+            "depth": 0.25
+          },
+          "color": 16119272
+        }
+      },
+      {
+        "id": "m15",
+        "parent": "stand",
+        "transform": {
+          "pos": [
+            0.12,
+            1.16,
+            0.21
+          ],
+          "quat": [
+            0.79,
+            -0.09,
+            0,
+            0.58
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.05,
+            "height": 0.018,
+            "depth": 0.25
+          },
+          "color": 16119272
+        }
+      },
+      {
+        "id": "m16",
+        "parent": "stand",
+        "transform": {
+          "pos": [
+            0,
+            1.12,
+            0.145
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.24,
+            "height": 0.018,
+            "depth": 0.018
+          },
+          "color": 16119272
+        }
+      },
+      {
+        "id": "m17",
+        "parent": "stand",
+        "transform": {
+          "pos": [
+            -0.25,
+            0.05,
+            -0.33
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.12,
+            "height": 0.1,
+            "depth": 0.12
+          },
+          "color": 3159099
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m18",
+        "parent": "stand",
+        "transform": {
+          "pos": [
+            0.25,
+            0.05,
+            -0.33
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.12,
+            "height": 0.1,
+            "depth": 0.12
+          },
+          "color": 3159099
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1787766628194,
+        "provider": "gpt",
+        "data": "aIDbaHvPMMMEZ+qBbcRTuiQBgXXuTaSe6BJ09oPe6/2sg7tQNkqXokC5GchhRF10wroLxiyNLIP9xQpG/n5aeYBAyGSb9KZs43Fp+PxvpkymXNzoS0Hut3wtMZKamCA1UIoqJb7I2D/BbMWL3R6sE5LqJXvSdcRuyZnGp2NMn1tskrKYfl6v6o2SUs1+8XetdrOdfDJT9DPcjdy7/MpsF/9nxKdKEK1m9XOdTAIAxJAjyqIMcyXqTDeSP1MnIv8jfyZuwrUM2x8mWU3oAP1UqQFnojeJEHZw04a16Gv9/DmXJaiFNGdqpXkgL2O9nsC/dVnZtSebFZ74TeLHpPd1OBdiJ5oqPflRwfEeCXFv7NzyWinoAENfZ6bQTj+G+7ndMMYpkTKlGWogiaYhPzVzPPbybos0xISUNFZiw7nkhny6tLUH9haA7Ksr+bZbE1FIkKLmPxeL2xvHHkyIAsHv1oJknFqDeW7LGw9vCYhijrlM7i/SpDsgZBU6VJSK0jRT15msV7mStrSi99Tgr8m/1ZRC7xUEHVJ+WsdS5VxgpS6a3QWAWosl1IQ96h+Vk2en+xzPfv6gz/pOt9zfcsayP8OYRFXnh9GqPNKv+WazkIjLo+Zy5Mas7RonvNNmP1TeEQmEvDmB5rfQ5BUBtLoCI2zoSXw+EzV4xozVv865N5aSXP77OeOqOP7xon1aiWxI4FxSIy0c/NYUuwC8q2rA9GS9S1/az1CUNs/i+x1oLtJy6PMFpNrI7jpR2MHQLVBmpiiKGDbyHEdWMw6iZDGVzlqb2+tymfiZlCRSppPjXqvtDblFosPD9FyuNabV7WUoIl9ufxFb+UdrqoEZtOaHTN99OtVtYtiDzQ5OyGrpILq83C6IIt30Mjw3+I9SZYLbhAA1dVR8R40iyHxDBYxczCLRg2XDlOfndmXyMVrLQQ==",
+        "edits": ""
+      },
+      "semanticSnapshot": {
+        "v": 1,
+        "auto": true,
+        "text": "儿童移动篮球架 · 1组/19mesh · 世界坐标(Y上Z前), 原点=模型根\n# 阅读说明: G:=group行(可动画骨骼, 动画key用G:后的id; @p=pivot世界坐标; 倾(x,y,z)°=朝向偏离世界轴的欧拉角; 缩进=父子层级; 挂:=挂载于某组; G:id→id→…=chain折叠行, 每个id都是可独立动画的group, chain×N=waypoint数)\n# M:=mesh行(label[id 几何 @(世界坐标)], label可省略; ×N=for循环批量件(锚点=代表实例); cyl (起)→(末)或 轴上(Y)等方位词=延伸方向; 薄向=板面法向(扁板); 挂载组双代表=最大件+朝向件(嘴/管/檐所在); 无方向标注=均匀块(三向相近,如头),默认面向前(Z); 对称×2=镜像对)\nG:stand 篮球架整体 @p(0,0,0)\n  M:[m0 box 0.68×0.16×0.62 (0,0.1,0) 薄向上(Y)]",
+        "stats": {
+          "groups": 1,
+          "meshes": 19,
+          "labeledMeshes": 0,
+          "labelCoverage": 0,
+          "batchLabels": 0,
+          "autoChains": 0,
+          "snapshotChars": 433
+        }
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -0.38,
+          0,
+          -0.335
+        ],
+        "max": [
+          0.38,
+          1.71,
+          0.335
+        ],
+        "sourceNodeId": "asset-bounds"
+      }
+    ],
+    "sourceMeshCount": 19,
+    "candidateCount": 0,
+    "fallbackUsed": true
+  },
+  "footprintRadius": 0.38,
+  "sizeClass": "small",
+  "mode": "voxel",
+  "provider": "gpt",
+  "createdAt": 1787766633712,
+  "updatedAt": 1787766633712
+}

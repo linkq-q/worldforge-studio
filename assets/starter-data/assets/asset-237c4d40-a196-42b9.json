@@ -1,0 +1,728 @@
+{
+  "id": "asset-237c4d40-a196-42b9",
+  "name": "小天平",
+  "prompt": "一台小型黄铜双盘天平，紧凑桌面尺寸，可搬动。精致写实的古典奇幻炼金术风格，独立单件，纯物件模型，无桌面、无柜体、无房间、无背景、无大型机器。\nCoordinate contract: local Y+ is up, local Z+ is the front, entrance, or forward direction, and local X+ is right. Put doors, facades, openings, windshields, noses, seats, and other recognizable front details toward local Z+. For a modular repeated element, explicitly choose the long axis: side-by-side modules span local X with depth/front on local Z; traversal modules span local Z. Keep the model centered at its origin.\nCanonical dimensions contract: width=0.54, height=0.44, depth=0.26 world units. Keep the generated mesh within this centered bounding size.",
+  "tags": [
+    "indoor",
+    "alchemy",
+    "instrument",
+    "handheld"
+  ],
+  "modelJson": {
+    "name": "小型黄铜双盘炼金天平",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "frame",
+        "name": "黄铜底座与立柱",
+        "transform": {
+          "pos": [
+            0,
+            -0.22,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.582,
+            0.632,
+            0.221
+          ],
+          "center": [
+            0.001,
+            0.124,
+            0.001
+          ],
+          "axes": [
+            [
+              1,
+              -0.0002,
+              0
+            ],
+            [
+              0.0002,
+              0.9999,
+              0.0121
+            ],
+            [
+              0,
+              -0.0121,
+              0.9999
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "beam",
+        "name": "横梁",
+        "parent": "frame",
+        "transform": {
+          "pos": [
+            0,
+            0.345,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.582,
+            0.227,
+            0.209
+          ],
+          "center": [
+            0.001,
+            -0.082,
+            0.001
+          ],
+          "axes": [
+            [
+              1,
+              0.0006,
+              0
+            ],
+            [
+              -0.0006,
+              0.9988,
+              0.0488
+            ],
+            [
+              0.0001,
+              -0.0488,
+              0.9988
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "left_pan",
+        "name": "左秤盘",
+        "parent": "beam",
+        "transform": {
+          "pos": [
+            -0.205,
+            0,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.17,
+            0.178,
+            0.2
+          ],
+          "center": [
+            0.001,
+            -0.101,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              -0.0079,
+              0
+            ],
+            [
+              0.0079,
+              1,
+              0.0002
+            ],
+            [
+              -0.0001,
+              -0.0002,
+              1
+            ]
+          ],
+          "_mainAxis": 2
+        }
+      },
+      {
+        "id": "right_pan",
+        "name": "右秤盘",
+        "parent": "beam",
+        "transform": {
+          "pos": [
+            0.205,
+            0,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.17,
+            0.178,
+            0.2
+          ],
+          "center": [
+            0.001,
+            -0.101,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              -0.0079,
+              0
+            ],
+            [
+              0.0079,
+              1,
+              0.0002
+            ],
+            [
+              -0.0001,
+              -0.0002,
+              1
+            ]
+          ],
+          "_mainAxis": 2
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "frame",
+        "transform": {
+          "pos": [
+            0,
+            0.0175,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.32,
+            "height": 0.035,
+            "depth": 0.22
+          },
+          "color": 7295520
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "gold"
+          }
+        ]
+      },
+      {
+        "id": "m1",
+        "parent": "frame",
+        "transform": {
+          "pos": [
+            0,
+            0.0475,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.24,
+            "height": 0.025,
+            "depth": 0.17
+          },
+          "color": 11897394
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "gold"
+          }
+        ]
+      },
+      {
+        "id": "m2",
+        "parent": "frame",
+        "transform": {
+          "pos": [
+            0,
+            0.0875,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.075,
+            "height": 0.055,
+            "depth": 0.075
+          },
+          "color": 14201944
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "gold"
+          }
+        ]
+      },
+      {
+        "id": "m3",
+        "parent": "frame",
+        "transform": {
+          "pos": [
+            0,
+            0.2375,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.035,
+            "height": 0.245,
+            "depth": 0.035
+          },
+          "color": 11897394
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "gold"
+          }
+        ]
+      },
+      {
+        "id": "m4",
+        "parent": "frame",
+        "transform": {
+          "pos": [
+            0,
+            0.3425,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.075,
+            "height": 0.055,
+            "depth": 0.05
+          },
+          "color": 7295520
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "gold"
+          }
+        ]
+      },
+      {
+        "id": "m5",
+        "parent": "frame",
+        "transform": {
+          "pos": [
+            0,
+            0.3875,
+            0.029
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.018,
+            "height": 0.105,
+            "depth": 0.012
+          },
+          "color": 14201944
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "gold"
+          }
+        ]
+      },
+      {
+        "id": "m6",
+        "parent": "frame",
+        "transform": {
+          "pos": [
+            0,
+            0.4225,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.035,
+            "height": 0.035,
+            "depth": 0.035
+          },
+          "color": 14201944
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "gold"
+          }
+        ]
+      },
+      {
+        "id": "m7",
+        "parent": "beam",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.46,
+            "height": 0.025,
+            "depth": 0.035
+          },
+          "color": 11897394
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "gold"
+          }
+        ]
+      },
+      {
+        "id": "m8",
+        "parent": "beam",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.035,
+            "height": 0.06,
+            "depth": 0.05
+          },
+          "color": 14201944
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "gold"
+          }
+        ]
+      },
+      {
+        "id": "m9",
+        "parent": "beam",
+        "transform": {
+          "pos": [
+            0,
+            -0.05,
+            0.028
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.012,
+            "height": 0.075,
+            "depth": 0.012
+          },
+          "color": 14201944
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "gold"
+          }
+        ]
+      },
+      {
+        "id": "m10",
+        "parent": "left_pan",
+        "transform": {
+          "pos": [
+            -0.025,
+            -0.085,
+            0
+          ],
+          "quat": [
+            0.42,
+            -0.57,
+            0.57,
+            -0.42
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.15,
+            "height": 0.012,
+            "depth": 0.01
+          },
+          "color": 7295520
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "gold"
+          }
+        ]
+      },
+      {
+        "id": "m11",
+        "parent": "left_pan",
+        "transform": {
+          "pos": [
+            0.025,
+            -0.085,
+            0
+          ],
+          "quat": [
+            -0.57,
+            0.42,
+            -0.42,
+            0.57
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.15,
+            "height": 0.012,
+            "depth": 0.01
+          },
+          "color": 7295520
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "gold"
+          }
+        ]
+      },
+      {
+        "id": "m12",
+        "parent": "left_pan",
+        "transform": {
+          "pos": [
+            0,
+            -0.18,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.17,
+            "height": 0.018,
+            "depth": 0.2
+          },
+          "color": 11897394
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "gold"
+          }
+        ]
+      },
+      {
+        "id": "m13",
+        "parent": "left_pan",
+        "transform": {
+          "pos": [
+            0,
+            -0.1665,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.145,
+            "height": 0.009,
+            "depth": 0.17
+          },
+          "color": 14201944
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "gold"
+          }
+        ]
+      },
+      {
+        "id": "m14",
+        "parent": "right_pan",
+        "transform": {
+          "pos": [
+            -0.025,
+            -0.085,
+            0
+          ],
+          "quat": [
+            0.42,
+            -0.57,
+            0.57,
+            -0.42
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.15,
+            "height": 0.012,
+            "depth": 0.01
+          },
+          "color": 7295520
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "gold"
+          }
+        ]
+      },
+      {
+        "id": "m15",
+        "parent": "right_pan",
+        "transform": {
+          "pos": [
+            0.025,
+            -0.085,
+            0
+          ],
+          "quat": [
+            -0.57,
+            0.42,
+            -0.42,
+            0.57
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.15,
+            "height": 0.012,
+            "depth": 0.01
+          },
+          "color": 7295520
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "gold"
+          }
+        ]
+      },
+      {
+        "id": "m16",
+        "parent": "right_pan",
+        "transform": {
+          "pos": [
+            0,
+            -0.18,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.17,
+            "height": 0.018,
+            "depth": 0.2
+          },
+          "color": 11897394
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "gold"
+          }
+        ]
+      },
+      {
+        "id": "m17",
+        "parent": "right_pan",
+        "transform": {
+          "pos": [
+            0,
+            -0.1665,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.145,
+            "height": 0.009,
+            "depth": 0.17
+          },
+          "color": 14201944
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "gold"
+          }
+        ]
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1787876982707,
+        "provider": "gpt",
+        "data": "aPE8fHlkFpwvKtjQvpEb5yhlzTFT9ElKQSMsFGu5ZAmVc4PAEfabeRrtknZ/Q2QGYNpzLxt7Aek4ZPxbkfTn0XJw7jkw+aol5ZKWhKo5qOS+Y2YLZ9MrVbi39bnPCehxYpSInnUIWZ3Ty5kFJer9EMsitBmX+G3MAqNon5ERCyvvNzB8reNAqSSe5yrDZ3B3tIBtqNW6UjQcH+3YyetaSfgIotlm3PnEXlYLxQb+2/c+5ppjJ8gPcezUJbnzTtOMtd0Cv8417vdzmNJCKyDPj65Yg2+1yMFivuy4V8F8ZFVHwp46WKbO9tZrZv1Cmn3T7yfierGaZbc+E2CnudHycZVzq07lGnQIbh2gDJwtmZy8lv2FE3aVCu2xX6x5Lm9t/eK0xCsHryNGPgWW+BtXbFKbP9asYWiCwhtN6ylu+e+Y3OLeRpdAALicTGI0Q5lnhLxcD9TJ6+sIq8mReCuVxi2yPP8Oyb8kSkeeVSlW1ejYJqbBTT8TisaWpsiSd/qFNbEKl3HYBj3GsEs84he5czyWDuqwDI4sVvwJ57qOF3cv2KOkdHdM2+zUT0M06McGbIPoJQqHVn6d00tGevMnlh0sG4qRbAMA+igz77Y/x9VDjDczzTya4Jjzb76H3sK6hq6ogHjSZtNw9bnARo+fzUyl+vb0d2+PVPDNrPbO3uPQ+QPiadQZtFY8IHXAA7mG+QWpP1vsqWvpDOgZ94fVxjiLn6wR/CNgrnyJ1f0XFZBtlM267QSQ703lB2xwTV5fRJurM5/Yes7lgpM/M6wc6mad3jIfb2L8C3GpTOhNC6qiM6CS+im75RzymDGIgSjwRZnWwN0YxWlJdZmztbqyzO+KiFE9AVr7qa1hezEZiueZ9o9lSWxRQN72Tgs2NHMuCMwwt9iXMSpJr174Hx1Pmihj6uInZ/oLynmThi5WonIvRxNCp80aGZfdTAa8vDG/piyDLEW8sBAM2ccpvLct4W7Y0b8TtOw4+LBIhXmkE99EwCTohaFrJVe8HKCOQXg2v1rwTp4YeA1+pBgjDcuSf8zLooncHw6LT+67Cxo2Fu1rm1OGUW0Q+fe7LkQa5hpHqvf3LNEjpTLtH7d9PdwLpp6SdMPKmZHcWOzs8zlO4QuSzkW5MLeHy5P5i+54688gqzLV4uC1EJbalPp82tIqoA/EKC/vPnv6JttE6qM=",
+        "edits": ""
+      },
+      "semanticSnapshot": {
+        "v": 1,
+        "auto": true,
+        "text": "小型黄铜双盘炼金天平 · 4组/18mesh · 世界坐标(Y上Z前), 原点=模型根\n# 阅读说明: G:=group行(可动画骨骼, 动画key用G:后的id; @p=pivot世界坐标; 倾(x,y,z)°=朝向偏离世界轴的欧拉角; 缩进=父子层级; 挂:=挂载于某组; G:id→id→…=chain折叠行, 每个id都是可独立动画的group, chain×N=waypoint数)\n# M:=mesh行(label[id 几何 @(世界坐标)], label可省略; ×N=for循环批量件(锚点=代表实例); cyl (起)→(末)或 轴上(Y)等方位词=延伸方向; 薄向=板面法向(扁板); 挂载组双代表=最大件+最远有向件(刃/嘴/管所在端); 无方向标注=均匀块(三向相近,如头),默认面向前(Z); 对称×2=镜像对)\nG:frame 黄铜底座与立柱 @p(0,-0.2,0)\n  M:[m0 box 0.32×0.04×0.22 (0,-0.2,0) 薄向上(Y)]\n  G:beam 横梁 @p(0,0.1,0)\n    M:[m7 box 0.46×0.03×0.04 (0,0.1,0) 轴右(X)]\n    G:left_pan 左秤盘 @p(-0.2,0.1,0)\n      M:[m12 box 0.17×0.02×0.2 (-0.2,-0.1,0) 薄向上(Y)]\n    G:right_pan 右秤盘 @p(0.2,0.1,0)\n      M:[m16 box 0.17×0.02×0.2 (0.2,-0.1,0) 薄向上(Y)]",
+        "stats": {
+          "groups": 4,
+          "meshes": 18,
+          "labeledMeshes": 0,
+          "labelCoverage": 0,
+          "batchLabels": 0,
+          "autoChains": 0,
+          "snapshotChars": 688
+        }
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -0.29,
+          0,
+          -0.11
+        ],
+        "max": [
+          0.29,
+          0.44000000000000006,
+          0.11
+        ],
+        "sourceNodeId": "asset-bounds"
+      }
+    ],
+    "sourceMeshCount": 18,
+    "candidateCount": 0,
+    "fallbackUsed": true
+  },
+  "footprintRadius": 0.29,
+  "sizeClass": "small",
+  "mode": "voxel",
+  "provider": "gpt",
+  "createdAt": 1787876982335,
+  "updatedAt": 1787876982335
+}

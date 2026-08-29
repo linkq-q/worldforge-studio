@@ -1,0 +1,813 @@
+{
+  "id": "asset-2e383e8b-d461-4299",
+  "name": "儿童摇摆木马",
+  "prompt": "单个可复用的儿童木质摇摆马，浅木马身、圆角握把、低座位和两条连续弧形摇摆底座，结构清晰且前后摇摆方向可读。\n全局资产美术方向：统一采用柔和圆角、略微夸张比例的精致体素风；家具以浅暖木、米白和雾蓝为主，玩具使用克制的砖红、芥末黄和深蓝点缀，所有边角适合儿童空间且尺度参照1.60米角色。; 现代温暖的儿童卧室，浅木地板、柔和蓝灰墙面和米白顶面保持安静背景，以木质家具和少量红黄蓝玩具形成分组色彩点缀；装饰集中于睡眠与学习区域，中央不堆放杂物。; 温暖, 现代儿童房, 圆角体素, 整洁生活感, 柔和配色; palette #E8DFC9, #B99062, #8EA6B4, #C65F4A, #D6A83E, #354C63; materials 浅色木材, 哑光烤漆, 棉织物, 粉末涂层金属, 透明玻璃\n资产角色：中央安静摇摆玩具；目标尺度：medium。\n只生成一个可复用的独立物体，不要生成地面、背景、天空、完整场景或多个分散物体。",
+  "modelJson": {
+    "name": "儿童木质摇摆马",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "rocking_horse",
+        "name": "摇摆马整体",
+        "transform": {
+          "pos": [
+            0,
+            0.12,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.84,
+            1.576,
+            2.155
+          ],
+          "center": [
+            0,
+            0.465,
+            0.162
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0.0001
+            ],
+            [
+              0,
+              0.768,
+              -0.6404
+            ],
+            [
+              -0.0001,
+              0.6404,
+              0.768
+            ]
+          ],
+          "_mainAxis": 2
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "rocking_horse",
+        "transform": {
+          "pos": [
+            -0.31,
+            0.04,
+            -0.62
+          ],
+          "quat": [
+            -0.57,
+            0.57,
+            -0.42,
+            -0.42
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.58,
+            "height": 0.15,
+            "depth": 0.11
+          },
+          "color": 12161122
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ]
+      },
+      {
+        "id": "m1",
+        "parent": "rocking_horse",
+        "transform": {
+          "pos": [
+            -0.31,
+            -0.04,
+            0
+          ],
+          "quat": [
+            0.5,
+            -0.5,
+            0.5,
+            0.5
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.7,
+            "height": 0.15,
+            "depth": 0.11
+          },
+          "color": 12161122
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ]
+      },
+      {
+        "id": "m2",
+        "parent": "rocking_horse",
+        "transform": {
+          "pos": [
+            -0.31,
+            0.04,
+            0.63
+          ],
+          "quat": [
+            0.42,
+            -0.42,
+            0.57,
+            0.57
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.58,
+            "height": 0.15,
+            "depth": 0.11
+          },
+          "color": 12161122
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ]
+      },
+      {
+        "id": "m3",
+        "parent": "rocking_horse",
+        "transform": {
+          "pos": [
+            0.31,
+            0.04,
+            -0.62
+          ],
+          "quat": [
+            -0.57,
+            0.57,
+            -0.42,
+            -0.42
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.58,
+            "height": 0.15,
+            "depth": 0.11
+          },
+          "color": 12161122
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ]
+      },
+      {
+        "id": "m4",
+        "parent": "rocking_horse",
+        "transform": {
+          "pos": [
+            0.31,
+            -0.04,
+            0
+          ],
+          "quat": [
+            0.5,
+            -0.5,
+            0.5,
+            0.5
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.7,
+            "height": 0.15,
+            "depth": 0.11
+          },
+          "color": 12161122
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ]
+      },
+      {
+        "id": "m5",
+        "parent": "rocking_horse",
+        "transform": {
+          "pos": [
+            0.31,
+            0.04,
+            0.63
+          ],
+          "quat": [
+            0.42,
+            -0.42,
+            0.57,
+            0.57
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.58,
+            "height": 0.15,
+            "depth": 0.11
+          },
+          "color": 12161122
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ]
+      },
+      {
+        "id": "m6",
+        "parent": "rocking_horse",
+        "transform": {
+          "pos": [
+            0,
+            0.08,
+            -0.5
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.78,
+            "height": 0.12,
+            "depth": 0.16
+          },
+          "color": 12161122
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ]
+      },
+      {
+        "id": "m7",
+        "parent": "rocking_horse",
+        "transform": {
+          "pos": [
+            0,
+            0.08,
+            0.5
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.78,
+            "height": 0.12,
+            "depth": 0.16
+          },
+          "color": 12161122
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ]
+      },
+      {
+        "id": "m8",
+        "parent": "rocking_horse",
+        "transform": {
+          "pos": [
+            -0.2,
+            0.26,
+            -0.37
+          ],
+          "quat": [
+            0.2,
+            -0.2,
+            0.68,
+            0.68
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.38,
+            "height": 0.14,
+            "depth": 0.13
+          },
+          "color": 12161122
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ]
+      },
+      {
+        "id": "m9",
+        "parent": "rocking_horse",
+        "transform": {
+          "pos": [
+            -0.2,
+            0.26,
+            0.38
+          ],
+          "quat": [
+            -0.2,
+            0.2,
+            0.68,
+            0.68
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.38,
+            "height": 0.14,
+            "depth": 0.13
+          },
+          "color": 12161122
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ]
+      },
+      {
+        "id": "m10",
+        "parent": "rocking_horse",
+        "transform": {
+          "pos": [
+            0.2,
+            0.26,
+            -0.37
+          ],
+          "quat": [
+            0.2,
+            -0.2,
+            0.68,
+            0.68
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.38,
+            "height": 0.14,
+            "depth": 0.13
+          },
+          "color": 12161122
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ]
+      },
+      {
+        "id": "m11",
+        "parent": "rocking_horse",
+        "transform": {
+          "pos": [
+            0.2,
+            0.26,
+            0.38
+          ],
+          "quat": [
+            -0.2,
+            0.2,
+            0.68,
+            0.68
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.38,
+            "height": 0.14,
+            "depth": 0.13
+          },
+          "color": 12161122
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ]
+      },
+      {
+        "id": "m12",
+        "parent": "rocking_horse",
+        "transform": {
+          "pos": [
+            0,
+            0.55,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.48,
+            "height": 0.4,
+            "depth": 0.72
+          },
+          "color": 15261641
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ]
+      },
+      {
+        "id": "m13",
+        "parent": "rocking_horse",
+        "transform": {
+          "pos": [
+            0,
+            0.78,
+            0.37
+          ],
+          "quat": [
+            0.22,
+            -0.22,
+            0.67,
+            0.67
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.45,
+            "height": 0.38,
+            "depth": 0.3
+          },
+          "color": 15261641
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ]
+      },
+      {
+        "id": "m14",
+        "parent": "rocking_horse",
+        "transform": {
+          "pos": [
+            0,
+            1.03,
+            0.61
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.4,
+            "height": 0.31,
+            "depth": 0.42
+          },
+          "color": 15261641
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ]
+      },
+      {
+        "id": "m15",
+        "parent": "rocking_horse",
+        "transform": {
+          "pos": [
+            0,
+            0.97,
+            0.93
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.34,
+            "height": 0.19,
+            "depth": 0.27
+          },
+          "color": 12161122
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ]
+      },
+      {
+        "id": "m16",
+        "parent": "rocking_horse",
+        "transform": {
+          "pos": [
+            -0.11,
+            1.26,
+            0.57
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.1,
+            "height": 0.2,
+            "depth": 0.12
+          },
+          "color": 12161122
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ]
+      },
+      {
+        "id": "m17",
+        "parent": "rocking_horse",
+        "transform": {
+          "pos": [
+            0.11,
+            1.26,
+            0.57
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.1,
+            "height": 0.2,
+            "depth": 0.12
+          },
+          "color": 12161122
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ]
+      },
+      {
+        "id": "m18",
+        "parent": "rocking_horse",
+        "transform": {
+          "pos": [
+            0,
+            0.82,
+            -0.08
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.64,
+            "height": 0.12,
+            "depth": 0.53
+          },
+          "color": 3492963
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ]
+      },
+      {
+        "id": "m19",
+        "parent": "rocking_horse",
+        "transform": {
+          "pos": [
+            0,
+            0.96,
+            0.48
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.72,
+            "height": 0.1,
+            "depth": 0.1
+          },
+          "color": 13000522
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ]
+      },
+      {
+        "id": "m20",
+        "parent": "rocking_horse",
+        "transform": {
+          "pos": [
+            -0.36,
+            0.96,
+            0.48
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.12,
+            "height": 0.14,
+            "depth": 0.14
+          },
+          "color": 13000522
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ]
+      },
+      {
+        "id": "m21",
+        "parent": "rocking_horse",
+        "transform": {
+          "pos": [
+            0.36,
+            0.96,
+            0.48
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.12,
+            "height": 0.14,
+            "depth": 0.14
+          },
+          "color": 13000522
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ]
+      },
+      {
+        "id": "m22",
+        "parent": "rocking_horse",
+        "transform": {
+          "pos": [
+            0,
+            0.67,
+            -0.51
+          ],
+          "quat": [
+            -0.36,
+            0.36,
+            0.61,
+            0.61
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.38,
+            "height": 0.18,
+            "depth": 0.12
+          },
+          "color": 12161122
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ]
+      },
+      {
+        "id": "m23",
+        "parent": "rocking_horse",
+        "transform": {
+          "pos": [
+            -0.205,
+            1.08,
+            0.75
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.035,
+            "height": 0.07,
+            "depth": 0.07
+          },
+          "color": 3492963
+        }
+      },
+      {
+        "id": "m24",
+        "parent": "rocking_horse",
+        "transform": {
+          "pos": [
+            0.205,
+            1.08,
+            0.75
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.035,
+            "height": 0.07,
+            "depth": 0.07
+          },
+          "color": 3492963
+        }
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1786869614750,
+        "provider": "gpt",
+        "data": "U56UUmMhc0bBt8XdDbGNfSbeezO7ff/cxONALEoDQQvzI0xs5YpTXzYyvYQv/BEOHJAEeTdKK407kIDYCSncsnZqAxzQHKQqKZW2M1x+0X6wTSM4AlUbo1oMJ2Fcgi9g3MqgwxFim1BspmJMBjaxK14FcRzRf1L4jUZPlQLWLFGreh0YxvltBkltXoJeZ0GiX+EXT6uOoCOE1PW/t1q2xCFJth/z/WOdIH0wTimj9DjGe3SFE0kb4vbt1SB8VXTWIp4QwjKwokaSLstpa6sSZI7s1dXvnEnaVf4GNVSNpVgUcmN/7Kz4Rg4vRxqymLeUPimLSpwx3uBGG5HRmagLkBTMjye4NPIXl9j5qerKF1wkqTjpIMz2vqOp9vr0DuRzHAu6Azt8DtObEuRt5jurMGXXMYVcJPp+jNgiehUlapKG8jm61octXRqnGOe5LhJTqp3Vpbdxhpu87EtY1f0bgiIO4QNcQLbwJl4sBAqfyT9tz7bGz71iBvyI1d8TmLWO0WLhcXhdBl83oTNaUkCkR6pNMQkAPOwFT1GdUbEeMTX35qPUzcKDj8D1EjVdZzbL0A9MQBdD2CnnS6dKM//LCEMZtDxpTY66Rv7m6qMgemPX6ZhiZR01YXF9avE+ZWeP/0YQDehLNig86g43Xo054AK/pbedF1eG8oxNAlBq9qNfo4I6bD0DDGHu3dMl2+jBU7WaoUh4XbGtrjyYIx9fRp1wrWoOlCgrw7Q3GXJsbTE+iNfALhFS/qeV7a0zI+cOp6h3YOC5YC+SnNmaw5jLozPsfNjzw7ntF/n8dGMrFMKEd14DQ3H2zK1TGgHclFdKz5QC1fxgs7Vqvm8C2f052VHUZlGQzOy3I6IE8VA2LdX0pD/1FBIIw/AAxXo9xjHe8vYNb7E7D7MOKzZr6fNiNFPt6A7Kve5AMEREj+/RlTJrI5LsTaq8hbImVkbSLJvawZyKBYXNYpt5ggXe8MDiMcFbqWh5+6iyWHOp7BTGOTCxfEWhTry3oA6e711uRwFg90m01gY21Eito6UeOxpHMeWY+jpOC5Ez0ml/efAlUo/v6j3BsxbdVU5N1ZYpRfqWH11rdj5A5JMiMdvXpB9HfgIm2p3kJFoJAfW/xXqQhUksnqdrFKSKhHtbKOg1GiRfImqUnxlQUHONU4ZNYojuIXIYlSi79P55WGRrqElAHAPZOdxlV6/Hrew/IV61i7YkwsrIdUbwFTrC1iNE2lD7CeY=",
+        "edits": ""
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -0.24,
+          0.4484380610412927,
+          -0.43586175942549366
+        ],
+        "max": [
+          0.24,
+          0.8484380610412927,
+          0.2841382405745063
+        ],
+        "sourceNodeId": "m12"
+      },
+      {
+        "min": [
+          -0.19000000000000006,
+          0.6083143932351394,
+          0.039955654610299596
+        ],
+        "max": [
+          0.19000000000000006,
+          1.148561728847446,
+          0.5483208265387131
+        ],
+        "sourceNodeId": "m13"
+      }
+    ],
+    "sourceMeshCount": 25,
+    "candidateCount": 2,
+    "fallbackUsed": false
+  },
+  "footprintRadius": 0.5483208265387131,
+  "sizeClass": "small",
+  "mode": "voxel",
+  "provider": "gpt",
+  "createdAt": 1786869619222,
+  "updatedAt": 1786869619222
+}

@@ -1,0 +1,894 @@
+{
+  "id": "asset-d3f33db3-f133-4a5a",
+  "name": "水果碗",
+  "prompt": "A single reusable broad rounded fruit bowl containing several apples, bananas, oranges and one pear arranged as one compact asset, approximately 0.42 meters wide, no table, knife, floor, room, or background",
+  "tags": [
+    "food",
+    "prop"
+  ],
+  "modelJson": {
+    "name": "紧凑体素水果碗",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "bowl",
+        "name": "宽口水果碗",
+        "transform": {
+          "pos": [
+            0,
+            0.06,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.486,
+            0.351,
+            0.42
+          ],
+          "center": [
+            0.011,
+            0.076,
+            0.031
+          ],
+          "axes": [
+            [
+              0.996,
+              0.0575,
+              0.0685
+            ],
+            [
+              -0.0835,
+              0.8723,
+              0.4819
+            ],
+            [
+              -0.0321,
+              -0.4857,
+              0.8736
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "apple_0",
+        "name": "苹果",
+        "parent": "bowl",
+        "transform": {
+          "pos": [
+            -0.09,
+            0.05,
+            0.025
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.085,
+            0.107,
+            0.08
+          ],
+          "center": [
+            0,
+            0.051,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "apple_1",
+        "name": "苹果",
+        "parent": "bowl",
+        "transform": {
+          "pos": [
+            0.015,
+            0.05,
+            0.045
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.085,
+            0.107,
+            0.08
+          ],
+          "center": [
+            0,
+            0.061,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "apple_2",
+        "name": "苹果",
+        "parent": "bowl",
+        "transform": {
+          "pos": [
+            0.095,
+            0.05,
+            -0.025
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.085,
+            0.107,
+            0.08
+          ],
+          "center": [
+            0,
+            0.051,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "orange_0",
+        "name": "橙子",
+        "parent": "bowl",
+        "transform": {
+          "pos": [
+            -0.145,
+            0.045,
+            -0.045
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.075,
+            0.07,
+            0.075
+          ],
+          "center": [
+            0,
+            0.03,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "orange_1",
+        "name": "橙子",
+        "parent": "bowl",
+        "transform": {
+          "pos": [
+            0.145,
+            0.045,
+            0.035
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.075,
+            0.07,
+            0.075
+          ],
+          "center": [
+            0,
+            0.03,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "banana_0",
+        "name": "香蕉",
+        "parent": "bowl",
+        "transform": {
+          "pos": [
+            -0.02,
+            0.06,
+            -0.075
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.225,
+            0.055,
+            0.04
+          ],
+          "center": [
+            -0.005,
+            0.07,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "banana_1",
+        "name": "香蕉",
+        "parent": "bowl",
+        "transform": {
+          "pos": [
+            0.015,
+            0.06,
+            -0.105
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.21,
+            0.05,
+            0.035
+          ],
+          "center": [
+            -0.01,
+            0.096,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "pear",
+        "name": "梨",
+        "parent": "bowl",
+        "transform": {
+          "pos": [
+            0.055,
+            0.06,
+            0.085
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.075,
+            0.167,
+            0.07
+          ],
+          "center": [
+            0,
+            0.086,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "bowl",
+        "transform": {
+          "pos": [
+            0,
+            -0.0275,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.28,
+            "height": 0.025,
+            "depth": 0.2
+          },
+          "color": 10182450
+        }
+      },
+      {
+        "id": "m1",
+        "parent": "bowl",
+        "transform": {
+          "pos": [
+            -0.03,
+            0.02,
+            0.1
+          ],
+          "quat": [
+            0.63,
+            0.29,
+            0,
+            0.51
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.42,
+            "height": 0.018,
+            "depth": 0.12
+          },
+          "color": 12154944
+        }
+      },
+      {
+        "id": "m2",
+        "parent": "bowl",
+        "transform": {
+          "pos": [
+            0.03,
+            0.02,
+            -0.1
+          ],
+          "quat": [
+            -0.18,
+            -0.38,
+            0.86,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.42,
+            "height": 0.018,
+            "depth": 0.12
+          },
+          "color": 12154944
+        }
+      },
+      {
+        "id": "m3",
+        "parent": "bowl",
+        "transform": {
+          "pos": [
+            -0.17,
+            0.02,
+            -0.03
+          ],
+          "quat": [
+            0.56,
+            -0.22,
+            0.72,
+            0.22
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.26,
+            "height": 0.018,
+            "depth": 0.12
+          },
+          "color": 11102264
+        }
+      },
+      {
+        "id": "m4",
+        "parent": "bowl",
+        "transform": {
+          "pos": [
+            0.18,
+            0.02,
+            0.03
+          ],
+          "quat": [
+            0.72,
+            0.22,
+            -0.56,
+            0.22
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.26,
+            "height": 0.018,
+            "depth": 0.12
+          },
+          "color": 11102264
+        }
+      },
+      {
+        "id": "m5",
+        "parent": "apple_0",
+        "transform": {
+          "pos": [
+            0,
+            0.035,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.085,
+            "height": 0.075,
+            "depth": 0.08
+          },
+          "color": 12004653
+        }
+      },
+      {
+        "id": "m6",
+        "parent": "apple_0",
+        "transform": {
+          "pos": [
+            0,
+            0.087,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.012,
+            "height": 0.035,
+            "depth": 0.012
+          },
+          "color": 6044448
+        }
+      },
+      {
+        "id": "m7",
+        "parent": "apple_1",
+        "transform": {
+          "pos": [
+            0,
+            0.045,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.085,
+            "height": 0.075,
+            "depth": 0.08
+          },
+          "color": 14041647
+        }
+      },
+      {
+        "id": "m8",
+        "parent": "apple_1",
+        "transform": {
+          "pos": [
+            0,
+            0.097,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.012,
+            "height": 0.035,
+            "depth": 0.012
+          },
+          "color": 6044448
+        }
+      },
+      {
+        "id": "m9",
+        "parent": "apple_2",
+        "transform": {
+          "pos": [
+            0,
+            0.035,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.085,
+            "height": 0.075,
+            "depth": 0.08
+          },
+          "color": 10430247
+        }
+      },
+      {
+        "id": "m10",
+        "parent": "apple_2",
+        "transform": {
+          "pos": [
+            0,
+            0.087,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.012,
+            "height": 0.035,
+            "depth": 0.012
+          },
+          "color": 6044448
+        }
+      },
+      {
+        "id": "m11",
+        "parent": "orange_0",
+        "transform": {
+          "pos": [
+            0,
+            0.03,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.075,
+            "height": 0.07,
+            "depth": 0.075
+          },
+          "color": 15829794
+        }
+      },
+      {
+        "id": "m12",
+        "parent": "orange_1",
+        "transform": {
+          "pos": [
+            0,
+            0.03,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.075,
+            "height": 0.07,
+            "depth": 0.075
+          },
+          "color": 15829794
+        }
+      },
+      {
+        "id": "m13",
+        "parent": "banana_0",
+        "transform": {
+          "pos": [
+            -0.08,
+            0.08,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.075,
+            "height": 0.035,
+            "depth": 0.04
+          },
+          "color": 15911996
+        }
+      },
+      {
+        "id": "m14",
+        "parent": "banana_0",
+        "transform": {
+          "pos": [
+            -0.005,
+            0.06,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.085,
+            "height": 0.035,
+            "depth": 0.04
+          },
+          "color": 16045386
+        }
+      },
+      {
+        "id": "m15",
+        "parent": "banana_0",
+        "transform": {
+          "pos": [
+            0.07,
+            0.08,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.075,
+            "height": 0.035,
+            "depth": 0.04
+          },
+          "color": 15648311
+        }
+      },
+      {
+        "id": "m16",
+        "parent": "banana_1",
+        "transform": {
+          "pos": [
+            -0.08,
+            0.105,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.07,
+            "height": 0.032,
+            "depth": 0.035
+          },
+          "color": 15252785
+        }
+      },
+      {
+        "id": "m17",
+        "parent": "banana_1",
+        "transform": {
+          "pos": [
+            -0.01,
+            0.087,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.085,
+            "height": 0.032,
+            "depth": 0.035
+          },
+          "color": 15978301
+        }
+      },
+      {
+        "id": "m18",
+        "parent": "banana_1",
+        "transform": {
+          "pos": [
+            0.06,
+            0.105,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.07,
+            "height": 0.032,
+            "depth": 0.035
+          },
+          "color": 15252785
+        }
+      },
+      {
+        "id": "m19",
+        "parent": "pear",
+        "transform": {
+          "pos": [
+            0,
+            0.045,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.075,
+            "height": 0.085,
+            "depth": 0.07
+          },
+          "color": 11124552
+        }
+      },
+      {
+        "id": "m20",
+        "parent": "pear",
+        "transform": {
+          "pos": [
+            0,
+            0.107,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.052,
+            "height": 0.06,
+            "depth": 0.052
+          },
+          "color": 12110677
+        }
+      },
+      {
+        "id": "m21",
+        "parent": "pear",
+        "transform": {
+          "pos": [
+            0,
+            0.152,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.011,
+            "height": 0.035,
+            "depth": 0.011
+          },
+          "color": 5980195
+        }
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1786874877428,
+        "provider": "gpt",
+        "data": "1lCDof9mkL7GkrpUmWPnWTgjKPFrw5TxuxbFwQYdd9oCrTnVMrktAEqeeENy5R6F3sq3iu87vQEr/bS0KSUTj7HUUAkPjp/yCGXz9IqXbqZiF7uMiDBu79YXm0qJHHx16OORDhvgZsukS3zCnj5kYfSkKDm4u7+A5J8bs799CkwwqtgWB/fgJsILONU0cMVp+vnLGDVOxf/ahChIht5K7/jl8apJFMrHrke8aWCQ80wjnapoR2eAxKTyXuxgsx4G6c9JzwUuom2pQae1b10j5jPMb1uMeQsPdXHP/qVd3I/zLcSevPn3x4GPcKvcBaG1Nhny/3D/5kbTGcFTo5sOgMHExs/dM9piUNkG3e6NJQ4w8nxy7lHeoc6SRim/rDjs+YTnvhRzRKKRKNvnKcKGpyb2sgcrGgQHV/dh191WEnJLadNJdrqW77XH4VoHfeQ2aovy2208SUcjQhjVsdEoQrTi8LjGVYDeELAftLR2H+UsVrq7drYbwbsDATQrpYXk17OixWNYGlc1RaFZNNnnUID7whVCUyX549/qwAvujZ62t1/Jrjd5VON8pbzg8lKZLWi7sfvIFylfuiqDIYMhTP0RPCU2y601krT0FboE82slL4iUVUo17TXZja2mcRU2jARk6AL2YrMeJN8w3rGv/TcxpmOYqtF+5Jt3VRBKZUJCes6QstmmVvo+PQTJHquQUTf2oIvdDQnZfo5NcFpTDjVr+Ha/o5LhjlYiKindvyNWWR2DUXWC1XifQYO3AwSDl83g5ntnoQLv2sGIb3g3CAGY/nAzwXKdz4mr+hOWd7KK1iDZcVuAfaru1G8J5KWN3P6cZqtZ5HS1sGT1B3X3fnmLZ/Bt879IhVxbBOZzDtvFvxSBm2P4NUK7CHzAk0+p3BFPmtgb51bM+quDxmiL1kQ2ATMNBPcSwWV4fHdu1KiHhRr6sl/1G5xek8e/OkXNEB9Tb4R14KW6QRQphVuAB+bq3Kcp7GaBZ2jP2rxCl26Ls4/wQrIoMUACgmhFVG/WXZrWgBJMTPrOtSl6rgORRW0+l74V2XgpsEYb5p5Ad54k4xPdDMn+VaQM/g5tVODrsTJEMIilXvqNtuMFrx5jc4XEWmLo7+pQRgWuspMxWlNOLZChCHkHO7DakKTHLbOLWXNqP2puvXk/m0hRCZ60C8wcxiS/GtySpkKNiTC0CfjMVe+WsAS0hOtzxXIszOC75FinxWJbjteIzSHP",
+        "edits": ""
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -0.2549621016365202,
+          0,
+          -0.21186071632168046
+        ],
+        "max": [
+          0.2549621016365202,
+          0.36570604506814197,
+          0.21186071632168046
+        ],
+        "sourceNodeId": "asset-bounds"
+      }
+    ],
+    "sourceMeshCount": 22,
+    "candidateCount": 0,
+    "fallbackUsed": true
+  },
+  "footprintRadius": 0.2549621016365202,
+  "sizeClass": "small",
+  "mode": "voxel",
+  "provider": "gpt",
+  "createdAt": 1786874878707,
+  "updatedAt": 1786874878707
+}

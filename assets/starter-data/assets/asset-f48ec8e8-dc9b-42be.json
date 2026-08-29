@@ -1,0 +1,327 @@
+{
+  "id": "asset-f48ec8e8-dc9b-42be",
+  "name": "圆角吸顶灯",
+  "prompt": "单个可复用的低矮圆角吸顶灯，米白外壳与磨砂暖白漫射罩，精致体素造型，适合按疏朗天花网格重复。\n全局资产美术方向：统一采用柔和圆角、略微夸张比例的精致体素风；家具以浅暖木、米白和雾蓝为主，玩具使用克制的砖红、芥末黄和深蓝点缀，所有边角适合儿童空间且尺度参照1.60米角色。; 现代温暖的儿童卧室，浅木地板、柔和蓝灰墙面和米白顶面保持安静背景，以木质家具和少量红黄蓝玩具形成分组色彩点缀；装饰集中于睡眠与学习区域，中央不堆放杂物。; 温暖, 现代儿童房, 圆角体素, 整洁生活感, 柔和配色; palette #E8DFC9, #B99062, #8EA6B4, #C65F4A, #D6A83E, #354C63; materials 浅色木材, 哑光烤漆, 棉织物, 粉末涂层金属, 透明玻璃\n资产角色：睡眠与游戏区域的局部基础照明；目标尺度：medium。\n只生成一个可复用的独立物体，不要生成地面、背景、天空、完整场景或多个分散物体。",
+  "tags": [
+    "ceiling-mounted"
+  ],
+  "modelJson": {
+    "name": "低矮圆角吸顶灯",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "fixture",
+        "name": "吸顶灯",
+        "transform": {
+          "pos": [
+            0,
+            0.3,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.9,
+            0.28,
+            0.7
+          ],
+          "center": [
+            0,
+            0,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "housing",
+        "name": "米白外壳",
+        "parent": "fixture",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.9,
+            0.16,
+            0.7
+          ],
+          "center": [
+            0,
+            0.06,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "diffuser",
+        "name": "磨砂暖白漫射罩",
+        "parent": "fixture",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.72,
+            0.14,
+            0.6
+          ],
+          "center": [
+            0,
+            -0.07,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "housing",
+        "transform": {
+          "pos": [
+            0,
+            0.04,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.82,
+            "height": 0.12,
+            "depth": 0.58
+          },
+          "color": 15261641
+        }
+      },
+      {
+        "id": "m1",
+        "parent": "housing",
+        "transform": {
+          "pos": [
+            0,
+            0.04,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.7,
+            "height": 0.12,
+            "depth": 0.7
+          },
+          "color": 15261641
+        }
+      },
+      {
+        "id": "m2",
+        "parent": "housing",
+        "transform": {
+          "pos": [
+            0,
+            0.1,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.9,
+            "height": 0.08,
+            "depth": 0.46
+          },
+          "color": 15261641
+        }
+      },
+      {
+        "id": "m3",
+        "parent": "diffuser",
+        "transform": {
+          "pos": [
+            0,
+            -0.05,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.72,
+            "height": 0.1,
+            "depth": 0.5
+          },
+          "color": 16773582
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass"
+          },
+          {
+            "tag": "emissive",
+            "value": 0.75
+          }
+        ]
+      },
+      {
+        "id": "m4",
+        "parent": "diffuser",
+        "transform": {
+          "pos": [
+            0,
+            -0.05,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.6,
+            "height": 0.1,
+            "depth": 0.6
+          },
+          "color": 16773582
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass"
+          },
+          {
+            "tag": "emissive",
+            "value": 0.75
+          }
+        ]
+      },
+      {
+        "id": "m5",
+        "parent": "diffuser",
+        "transform": {
+          "pos": [
+            0,
+            -0.12,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.64,
+            "height": 0.04,
+            "depth": 0.52
+          },
+          "color": 16770216
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass"
+          },
+          {
+            "tag": "emissive",
+            "value": 1
+          }
+        ]
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1786869690158,
+        "provider": "gpt",
+        "data": "LQUhMi7sazjBwK1kMpV+2IJ30tRwNk8G39E2Pd1q3yO7AMTXevG5vTVdyKaHafNiGD/a8rlmwp3LL6Cv3dbrySSkRei6z1nckmCi7ERQcDhxkZfKGO8uj9D+AfBwBVqTA/mx1pRttBcXZs+jERYbv28TpspM83DMM6qge6IZk7SvbficNYXBy5UodFr+dd0VOM06o77H3eEwgHX2BVRI0/WEpXpRP/lzeOkVLC+N1XXRp6SwLa5FBIUZV00JEj5PNKFLmfbOYFX41WZVMpww/j64fVnRskLWGGlHll4xyoctna//aB8wWyQwumstbInHpv03+hbH4LavpfIoIS3haKFnXXGQgm2zd5pEWz8aWAxXTdIlxXH58Qm//bfTg9yTDre9l0jw+HS5ugwP0d/x2kfcdcv8btKCOicQ3vjSM9x19sYHZyJ3JrL4Eef7SBzC+DdcFw91zpOjjFO1GN9rlqI9S8HVgU4lRV1D31ZbrRTGSrU1GT1eYYgWoTzPY/UAZDmtNhVX/uoTpfIHTNuG+zwl634JQj4eM1ZhMZXKlPOgBIMNzwQCcGoDbn0VJuhoW0qFbOIEwm3Dup9w9Ds1NTGGp0RGsieKqYHWQWK72ThxvPkkgxeDCssER/OHOMeWMzTAzq6NCAzuBk+YA9cW0LZaCHLu",
+        "edits": ""
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -0.45,
+          0,
+          -0.35
+        ],
+        "max": [
+          0.45,
+          0.28,
+          0.35
+        ],
+        "sourceNodeId": "asset-bounds"
+      }
+    ],
+    "sourceMeshCount": 6,
+    "candidateCount": 0,
+    "fallbackUsed": true
+  },
+  "footprintRadius": 0.45,
+  "sizeClass": "small",
+  "mode": "voxel",
+  "provider": "gpt",
+  "createdAt": 1786869691375,
+  "updatedAt": 1786869691375
+}

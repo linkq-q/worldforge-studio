@@ -1,0 +1,562 @@
+{
+  "id": "asset-66c929e1-3e93-45f2",
+  "name": "复杂游乐园/14公园休闲区/植物/花坛·粉蓝",
+  "prompt": "Standalone reusable voxel amusement park asset: a low pink blue flower bed. Box-only voxel model with purposeful grouped forms, centered at the origin, base grounded on y=0, no surrounding terrain, no people, no loose floating geometry, flat-shaded cohesive bright carnival palette. Keep the gameplay silhouette, openings and collision shape readable from all sides.",
+  "modelJson": {
+    "name": "魔法公园花坛",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "flower_bed",
+        "name": "不规则花坛",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "flower_bed",
+        "transform": {
+          "pos": [
+            -0.35,
+            0.12,
+            0.02
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.8,
+            "height": 0.24,
+            "depth": 1.25
+          },
+          "color": 7491652
+        }
+      },
+      {
+        "id": "m1",
+        "parent": "flower_bed",
+        "transform": {
+          "pos": [
+            0.65,
+            0.12,
+            -0.12
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.35,
+            "height": 0.24,
+            "depth": 1.45
+          },
+          "color": 7491652
+        }
+      },
+      {
+        "id": "m2",
+        "parent": "flower_bed",
+        "transform": {
+          "pos": [
+            -0.78,
+            0.12,
+            0.72
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.85,
+            "height": 0.24,
+            "depth": 0.75
+          },
+          "color": 7491652
+        }
+      },
+      {
+        "id": "m3",
+        "parent": "flower_bed",
+        "transform": {
+          "pos": [
+            0.88,
+            0.12,
+            0.62
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.72,
+            "height": 0.24,
+            "depth": 0.68
+          },
+          "color": 7491652
+        }
+      },
+      {
+        "id": "m4",
+        "parent": "flower_bed",
+        "transform": {
+          "pos": [
+            -0.88,
+            0.31,
+            -0.57
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.62,
+            "height": 0.34,
+            "depth": 0.38
+          },
+          "color": 5211735
+        }
+      },
+      {
+        "id": "m5",
+        "parent": "flower_bed",
+        "transform": {
+          "pos": [
+            -0.18,
+            0.3,
+            -0.7
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.72,
+            "height": 0.32,
+            "depth": 0.38
+          },
+          "color": 6658406
+        }
+      },
+      {
+        "id": "m6",
+        "parent": "flower_bed",
+        "transform": {
+          "pos": [
+            0.6,
+            0.32,
+            -0.72
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.65,
+            "height": 0.36,
+            "depth": 0.4
+          },
+          "color": 5211735
+        }
+      },
+      {
+        "id": "m7",
+        "parent": "flower_bed",
+        "transform": {
+          "pos": [
+            1.12,
+            0.31,
+            -0.25
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.42,
+            "height": 0.34,
+            "depth": 0.58
+          },
+          "color": 6658406
+        }
+      },
+      {
+        "id": "m8",
+        "parent": "flower_bed",
+        "transform": {
+          "pos": [
+            0.86,
+            0.3,
+            0.62
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.62,
+            "height": 0.32,
+            "depth": 0.4
+          },
+          "color": 5211735
+        }
+      },
+      {
+        "id": "m9",
+        "parent": "flower_bed",
+        "transform": {
+          "pos": [
+            0.12,
+            0.32,
+            0.73
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.72,
+            "height": 0.36,
+            "depth": 0.38
+          },
+          "color": 6658406
+        }
+      },
+      {
+        "id": "m10",
+        "parent": "flower_bed",
+        "transform": {
+          "pos": [
+            -0.65,
+            0.31,
+            0.75
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.58,
+            "height": 0.34,
+            "depth": 0.4
+          },
+          "color": 5211735
+        }
+      },
+      {
+        "id": "m11",
+        "parent": "flower_bed",
+        "transform": {
+          "pos": [
+            -1.1,
+            0.3,
+            0.15
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.38,
+            "height": 0.32,
+            "depth": 0.62
+          },
+          "color": 6658406
+        }
+      },
+      {
+        "id": "m12",
+        "parent": "flower_bed",
+        "transform": {
+          "pos": [
+            -0.52,
+            0.49,
+            -0.18
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.13,
+            "height": 0.5,
+            "depth": 0.13
+          },
+          "color": 4159311
+        }
+      },
+      {
+        "id": "m13",
+        "parent": "flower_bed",
+        "transform": {
+          "pos": [
+            -0.52,
+            0.84,
+            -0.18
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.42,
+            "height": 0.27,
+            "depth": 0.38
+          },
+          "color": 15239603
+        }
+      },
+      {
+        "id": "m14",
+        "parent": "flower_bed",
+        "transform": {
+          "pos": [
+            0.18,
+            0.56,
+            -0.36
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.13,
+            "height": 0.64,
+            "depth": 0.13
+          },
+          "color": 4159311
+        }
+      },
+      {
+        "id": "m15",
+        "parent": "flower_bed",
+        "transform": {
+          "pos": [
+            0.18,
+            0.98,
+            -0.36
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.38,
+            "height": 0.27,
+            "depth": 0.42
+          },
+          "color": 11459039
+        }
+      },
+      {
+        "id": "m16",
+        "parent": "flower_bed",
+        "transform": {
+          "pos": [
+            0.57,
+            0.505,
+            0.22
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.13,
+            "height": 0.53,
+            "depth": 0.13
+          },
+          "color": 4159311
+        }
+      },
+      {
+        "id": "m17",
+        "parent": "flower_bed",
+        "transform": {
+          "pos": [
+            0.57,
+            0.87,
+            0.22
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.42,
+            "height": 0.27,
+            "depth": 0.38
+          },
+          "color": 15834049
+        }
+      },
+      {
+        "id": "m18",
+        "parent": "flower_bed",
+        "transform": {
+          "pos": [
+            -0.22,
+            0.59,
+            0.38
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.13,
+            "height": 0.7,
+            "depth": 0.13
+          },
+          "color": 4159311
+        }
+      },
+      {
+        "id": "m19",
+        "parent": "flower_bed",
+        "transform": {
+          "pos": [
+            -0.22,
+            1.04,
+            0.38
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.38,
+            "height": 0.27,
+            "depth": 0.42
+          },
+          "color": 12182500
+        }
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1783921711061,
+        "provider": "gpt",
+        "data": "igoTUjVF3NzdRcEuhlYTESm0sYoMEe6OhDrIdV+/KoXNEHTmbt5KEefakjoGhFsCbQVQ0uksdZxySojv9HBeB+IBP5wk+3gkT48S2iTyjarmSpR5jTggz+H2EdO4tdq1qYywOaXD+LqDi+K6CSZKio5s6272NCChKgWKqarBQxCf6LZo/6CGbRr9RGsjmv+ZjhmOhg21v1ndR9zIyyd+ATEOrEARj09VoHlUOVm4/5s4sOm4QZ/i2Dxe/hKGpfeeV4mQ94JSn7OCyNy9hRjk0j+JnBcGv8InNPlen1IiuaUQTzDCKDEb6L3vPXPBJtpmNAc/kQWjw2krvS4CHVbg/RPl/Mov+gT9gzJAuE09Cu6ZXi/DSbB8uvxs5OOyjTdUza7XiLLTvYOm/96CyOhWDvWt3nmQIQZY870VxC92A5CnU3VgP3ybhVMoOFws/ZS+rmcLH3hS9HeprW9MYblZ7IBxyX8ly15N1+F1A9ocObY7Wvm+lJnrMRhHFALahTI4ADepHsd37PVd7KnkycDc8ycH1yMM0Gs0doYN7mdMNLSHqHmUQezoqv9hqMKVvylxJ95uw+Mx/0eWwou0zMiz8Q4PakEvbEfxrvIExDd77qtofxKSMfvDx4VGd5h9FV25X/KSLmuqwhyOLz9Cugb2RJXg2zOXqYvEZumpXkmbHRZxmUGxAbs3jJCp4C57JpnZUFj7yyLsbxsY940vfxy/wzAlICaL7L3IvQCZSGF/cl3ETVbSVLBSZtR02fkIYGf3jc+fKMF42yyCt4+PGQQYZEP/KcimQjbn2OW7NlIPbPzyKv6BAsQbStv7mwcQBKMBeRmbjgJnGhzHt3UM7h5iNPOa4FtQz+88Rxk0OadbuR6VlTHGD5eTXCtNkmaRbMIzM5RQ6lh5kbHm96FO0pud5ONv3hkfdjnBuFpyN8rqgrE4YgHbHqRnT45RBhKGExHhL0uhxMtruQQoOkKuZnxfEefp86vidivG5Q+NCrZz+HWJTGw2Hm2yKELTl6cCFPgFAY+EuRR3z+3sAFW5gJViVecgl/FcNZlPOXh60/QgSW5x8AYbEmwo",
+        "edits": ""
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -1.27,
+          0,
+          -0.6925
+        ],
+        "max": [
+          0.53,
+          0.24,
+          0.5575
+        ],
+        "sourceNodeId": "m0"
+      },
+      {
+        "min": [
+          -0.04500000000000004,
+          0,
+          -0.9325
+        ],
+        "max": [
+          1.3050000000000002,
+          0.24,
+          0.5175
+        ],
+        "sourceNodeId": "m1"
+      },
+      {
+        "min": [
+          -1.225,
+          0,
+          0.25749999999999995
+        ],
+        "max": [
+          -0.37500000000000006,
+          0.24,
+          1.0074999999999998
+        ],
+        "sourceNodeId": "m2"
+      },
+      {
+        "min": [
+          0.5,
+          0,
+          0.19249999999999995
+        ],
+        "max": [
+          1.22,
+          0.24,
+          0.8724999999999999
+        ],
+        "sourceNodeId": "m3"
+      },
+      {
+        "min": [
+          -0.26,
+          0.14,
+          0.4525
+        ],
+        "max": [
+          0.45999999999999996,
+          0.5,
+          0.8324999999999999
+        ],
+        "sourceNodeId": "m9"
+      },
+      {
+        "min": [
+          0.25499999999999995,
+          0.14,
+          -1.0074999999999998
+        ],
+        "max": [
+          0.905,
+          0.5,
+          -0.6075
+        ],
+        "sourceNodeId": "m6"
+      },
+      {
+        "min": [
+          -0.56,
+          0.13999999999999999,
+          -0.9774999999999999
+        ],
+        "max": [
+          0.15999999999999998,
+          0.45999999999999996,
+          -0.5975
+        ],
+        "sourceNodeId": "m5"
+      },
+      {
+        "min": [
+          0.8900000000000001,
+          0.13999999999999999,
+          -0.6275000000000001
+        ],
+        "max": [
+          1.31,
+          0.48,
+          -0.04750000000000004
+        ],
+        "sourceNodeId": "m7"
+      },
+      {
+        "min": [
+          -1.21,
+          0.13999999999999999,
+          -0.8475
+        ],
+        "max": [
+          -0.5900000000000001,
+          0.48,
+          -0.46749999999999997
+        ],
+        "sourceNodeId": "m4"
+      }
+    ],
+    "sourceMeshCount": 20,
+    "candidateCount": 9,
+    "fallbackUsed": false
+  },
+  "mode": "voxel",
+  "provider": "provider-fallback",
+  "createdAt": 1784472908901,
+  "updatedAt": 1784472908901
+}

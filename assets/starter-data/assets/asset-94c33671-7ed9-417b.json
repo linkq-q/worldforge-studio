@@ -1,0 +1,386 @@
+{
+  "id": "asset-94c33671-7ed9-417b",
+  "name": "葡萄罐",
+  "prompt": "单独一个紫色铝制易拉罐，淡紫色圆点图案，银色拉环，不是红色，无附属物\nCoordinate contract: local Y+ is up, local Z+ is the front, entrance, or forward direction, and local X+ is right. Put doors, facades, openings, windshields, noses, seats, and other recognizable front details toward local Z+. For a modular repeated element, explicitly choose the long axis: side-by-side modules span local X with depth/front on local Z; traversal modules span local Z. Keep the model centered at its origin.\nCanonical dimensions contract: width=0.13, height=0.26, depth=0.13 world units. Keep the generated mesh within this centered bounding size.",
+  "modelJson": {
+    "name": "紫色铝制易拉罐",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "can",
+        "name": "罐身",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.14,
+            0.274,
+            0.17
+          ],
+          "center": [
+            0,
+            0,
+            0
+          ],
+          "axes": [
+            [
+              0.9891,
+              0.0168,
+              0.146
+            ],
+            [
+              0.0062,
+              0.9878,
+              -0.1557
+            ],
+            [
+              -0.1468,
+              0.1549,
+              0.977
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "can",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.12,
+            "height": 0.23,
+            "depth": 0.118
+          },
+          "color": 8080307
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m1",
+        "parent": "can",
+        "transform": {
+          "pos": [
+            0,
+            0.1215,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.116,
+            "height": 0.015,
+            "depth": 0.116
+          },
+          "color": 12171714
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m2",
+        "parent": "can",
+        "transform": {
+          "pos": [
+            0,
+            -0.1215,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.116,
+            "height": 0.015,
+            "depth": 0.116
+          },
+          "color": 10329512
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m3",
+        "parent": "can",
+        "transform": {
+          "pos": [
+            -0.032,
+            0.072,
+            0.061
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.017,
+            "height": 0.017,
+            "depth": 0.004
+          },
+          "color": 13215720
+        }
+      },
+      {
+        "id": "m4",
+        "parent": "can",
+        "transform": {
+          "pos": [
+            0.024,
+            0.044,
+            0.061
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.017,
+            "height": 0.017,
+            "depth": 0.004
+          },
+          "color": 13215720
+        }
+      },
+      {
+        "id": "m5",
+        "parent": "can",
+        "transform": {
+          "pos": [
+            -0.018,
+            0.004,
+            0.061
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.017,
+            "height": 0.017,
+            "depth": 0.004
+          },
+          "color": 13215720
+        }
+      },
+      {
+        "id": "m6",
+        "parent": "can",
+        "transform": {
+          "pos": [
+            0.034,
+            -0.038,
+            0.061
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.017,
+            "height": 0.017,
+            "depth": 0.004
+          },
+          "color": 13215720
+        }
+      },
+      {
+        "id": "m7",
+        "parent": "can",
+        "transform": {
+          "pos": [
+            -0.028,
+            -0.078,
+            0.061
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.017,
+            "height": 0.017,
+            "depth": 0.004
+          },
+          "color": 13215720
+        }
+      },
+      {
+        "id": "m8",
+        "parent": "can",
+        "transform": {
+          "pos": [
+            0,
+            0.13,
+            0.014
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.034,
+            "height": 0.002,
+            "depth": 0.007
+          },
+          "color": 14211295
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "silver"
+          }
+        ]
+      },
+      {
+        "id": "m9",
+        "parent": "can",
+        "transform": {
+          "pos": [
+            0,
+            0.13,
+            -0.014
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.034,
+            "height": 0.002,
+            "depth": 0.007
+          },
+          "color": 14211295
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "silver"
+          }
+        ]
+      },
+      {
+        "id": "m10",
+        "parent": "can",
+        "transform": {
+          "pos": [
+            -0.0135,
+            0.13,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.007,
+            "height": 0.002,
+            "depth": 0.021
+          },
+          "color": 14211295
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "silver"
+          }
+        ]
+      },
+      {
+        "id": "m11",
+        "parent": "can",
+        "transform": {
+          "pos": [
+            0.0135,
+            0.13,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.007,
+            "height": 0.002,
+            "depth": 0.021
+          },
+          "color": 14211295
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "silver"
+          }
+        ]
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1787873895947,
+        "provider": "gpt",
+        "data": "qBc6H/9o6sQVc71exXmLAsW6vUHNXrF6fSM7y7GESNZkKJYhohzT7l6cPDhspMNmVCQMbMhkW9a9GCn2QI/eQyC9aHuoVY203f8sdsDH+T2yElUZKVi/CseB8Y2XCnQODG0hAR7FjF5bp4C3yYYbFDbY6+soeVWQOoOu8k1TxpKhiGsM7oyE5Y6F+IcvzF2QsyMmGz476Jfo4tYTrlxootfhxaHqjU5r6mJkOLR3EYno4aiJ2VEijEWidFV5SGpcUVSRFJfIhLXlqONAwuId5D6pea7OWwN7SRxOr16gAh50Yq9+gyJFZAvvnCR8Zjy7p3xlzCLkiA37Dok9WB2ICERqZgkzQYXHDWkNe4lMs12Yaf1EIsuVJoLGljoNou+O9AQxt5JdUV91yLVXKxtv38xtm+zOpuRjyPL0bqvb1KTvKr3e5BFIhDlIHn+9icOb+s5YHCbV8Zg0Aa5TRXrjo/FU0ab7RDjMcjBSz9DpNqdLlWWPDn8/BrD2dAVbLkjA09emyWH5zVHmQ1XIBbZmcRAxeuLXtKCSRqzbgkvNYULfARHr3zLXw5eltZVB4YJPlAqNtwd4EY4Yp69FqG0P2pwzstDBwLHOP09ZTaGqzStMKXKo1oENXzD45DcqNq8uInMQaFKND+DGZeCtUBWgO9W1mqDUCr3IOmeJYD1UzOjWIlgGV+8f5Mn3ZfNCHhyqyhO3qtoU/Uf+jogNqk4nnfKzfiV/Pl01O0UuzHD2inWH1bwgOmhChpXjAvUH+/CRW3rCgWcVbLxvsU9HtBEMaoB9A8wEv++OutHNmVxCU2jZVIH9YBCHGG7tkcyQ/CH+NfipAng0FunQnkSkmL62",
+        "edits": ""
+      },
+      "semanticSnapshot": {
+        "v": 1,
+        "auto": true,
+        "text": "紫色铝制易拉罐 · 1组/12mesh · 世界坐标(Y上Z前), 原点=模型根\n# 阅读说明: G:=group行(可动画骨骼, 动画key用G:后的id; @p=pivot世界坐标; 倾(x,y,z)°=朝向偏离世界轴的欧拉角; 缩进=父子层级; 挂:=挂载于某组; G:id→id→…=chain折叠行, 每个id都是可独立动画的group, chain×N=waypoint数)\n# M:=mesh行(label[id 几何 @(世界坐标)], label可省略; ×N=for循环批量件(锚点=代表实例); cyl (起)→(末)或 轴上(Y)等方位词=延伸方向; 薄向=板面法向(扁板); 挂载组双代表=最大件+最远有向件(刃/嘴/管所在端); 无方向标注=均匀块(三向相近,如头),默认面向前(Z); 对称×2=镜像对)\nG:can 罐身 @p(0,0,0)\n  M:[m0 box 0.12×0.23×0.12 (0,0,0) 轴上(Y)]",
+        "stats": {
+          "groups": 1,
+          "meshes": 12,
+          "labeledMeshes": 0,
+          "labelCoverage": 0,
+          "batchLabels": 0,
+          "autoChains": 0,
+          "snapshotChars": 428
+        }
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -0.06,
+          0,
+          -0.0625
+        ],
+        "max": [
+          0.06,
+          0.264,
+          0.0625
+        ],
+        "sourceNodeId": "asset-bounds"
+      }
+    ],
+    "sourceMeshCount": 12,
+    "candidateCount": 0,
+    "fallbackUsed": true
+  },
+  "footprintRadius": 0.1,
+  "sizeClass": "small",
+  "mode": "voxel",
+  "provider": "gpt",
+  "createdAt": 1787873895461,
+  "updatedAt": 1787873895461
+}

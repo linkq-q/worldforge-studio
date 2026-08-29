@@ -1,0 +1,1228 @@
+{
+  "id": "asset-a5aadb78-3ef0-4243",
+  "name": "玩具小汽车组合",
+  "prompt": "A single reusable organized set of five distinct child-size toy cars parked closely together, including a compact car, race car, pickup, taxi and small off-road vehicle, each approximately 0.16 to 0.22 meters long with chunky readable wheels, no track, floor, room, or background",
+  "tags": [
+    "toy",
+    "vehicle",
+    "prop"
+  ],
+  "modelJson": {
+    "name": "五辆儿童玩具车套装",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "taxi",
+        "name": "出租车",
+        "transform": {
+          "pos": [
+            0.125,
+            0,
+            0.005
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.605,
+            0.164,
+            0.227
+          ],
+          "center": [
+            -0.114,
+            0.043,
+            -0.002
+          ],
+          "axes": [
+            [
+              1,
+              -0.001,
+              -0.0026
+            ],
+            [
+              0.0011,
+              0.9978,
+              0.0655
+            ],
+            [
+              0.0025,
+              -0.0655,
+              0.9978
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "compact",
+        "name": "紧凑型轿车",
+        "parent": "taxi",
+        "transform": {
+          "pos": [
+            -0.365,
+            0,
+            -0.005
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.102,
+            0.126,
+            0.171
+          ],
+          "center": [
+            0,
+            0.041,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              0.9996,
+              0.0278
+            ],
+            [
+              0,
+              -0.0278,
+              0.9996
+            ]
+          ],
+          "_mainAxis": 2
+        }
+      },
+      {
+        "id": "compact_front",
+        "name": "前轮组",
+        "parent": "compact",
+        "transform": {
+          "pos": [
+            0,
+            0.027,
+            0.0544
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.102,
+            0.038,
+            0.026
+          ],
+          "center": [
+            0,
+            -0.003,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "compact_rear",
+        "name": "后轮组",
+        "parent": "compact",
+        "transform": {
+          "pos": [
+            0,
+            0.027,
+            -0.0544
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.102,
+            0.038,
+            0.026
+          ],
+          "center": [
+            0,
+            -0.003,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "race",
+        "name": "赛车",
+        "parent": "taxi",
+        "transform": {
+          "pos": [
+            -0.245,
+            0,
+            0.005
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.107,
+            0.113,
+            0.207
+          ],
+          "center": [
+            0,
+            0.034,
+            -0.005
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              0.9738,
+              0.2273
+            ],
+            [
+              0,
+              -0.2273,
+              0.9738
+            ]
+          ],
+          "_mainAxis": 2
+        }
+      },
+      {
+        "id": "race_front",
+        "name": "前轮组",
+        "parent": "race",
+        "transform": {
+          "pos": [
+            0,
+            0.027,
+            0.064
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.107,
+            0.038,
+            0.026
+          ],
+          "center": [
+            0,
+            -0.003,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "race_rear",
+        "name": "后轮组",
+        "parent": "race",
+        "transform": {
+          "pos": [
+            0,
+            0.027,
+            -0.064
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.107,
+            0.038,
+            0.026
+          ],
+          "center": [
+            0,
+            -0.003,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "pickup",
+        "name": "皮卡",
+        "parent": "taxi",
+        "transform": {
+          "pos": [
+            -0.125,
+            0,
+            -0.005
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.112,
+            0.135,
+            0.21
+          ],
+          "center": [
+            0,
+            0.045,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              -0.0077
+            ],
+            [
+              0,
+              0.0077,
+              1
+            ]
+          ],
+          "_mainAxis": 2
+        }
+      },
+      {
+        "id": "pickup_front",
+        "name": "前轮组",
+        "parent": "pickup",
+        "transform": {
+          "pos": [
+            0,
+            0.027,
+            0.0672
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.112,
+            0.038,
+            0.026
+          ],
+          "center": [
+            0,
+            -0.003,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "pickup_rear",
+        "name": "后轮组",
+        "parent": "pickup",
+        "transform": {
+          "pos": [
+            0,
+            0.027,
+            -0.0672
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.112,
+            0.038,
+            0.026
+          ],
+          "center": [
+            0,
+            -0.003,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "taxi_front",
+        "name": "前轮组",
+        "parent": "taxi",
+        "transform": {
+          "pos": [
+            0,
+            0.027,
+            0.0608
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.107,
+            0.038,
+            0.026
+          ],
+          "center": [
+            0,
+            -0.003,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "taxi_rear",
+        "name": "后轮组",
+        "parent": "taxi",
+        "transform": {
+          "pos": [
+            0,
+            0.027,
+            -0.0608
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.107,
+            0.038,
+            0.026
+          ],
+          "center": [
+            0,
+            -0.003,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "offroad",
+        "name": "小型越野车",
+        "parent": "taxi",
+        "transform": {
+          "pos": [
+            0.13,
+            0,
+            -0.005
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.117,
+            0.143,
+            0.206
+          ],
+          "center": [
+            0,
+            0.049,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              0.9998,
+              0.0182
+            ],
+            [
+              0,
+              -0.0182,
+              0.9998
+            ]
+          ],
+          "_mainAxis": 2
+        }
+      },
+      {
+        "id": "offroad_front",
+        "name": "前轮组",
+        "parent": "offroad",
+        "transform": {
+          "pos": [
+            0,
+            0.027,
+            0.0576
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.117,
+            0.046,
+            0.03
+          ],
+          "center": [
+            0,
+            0.001,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "offroad_rear",
+        "name": "后轮组",
+        "parent": "offroad",
+        "transform": {
+          "pos": [
+            0,
+            0.027,
+            -0.0576
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.117,
+            0.046,
+            0.03
+          ],
+          "center": [
+            0,
+            0.001,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "compact",
+        "transform": {
+          "pos": [
+            0,
+            0.047,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.08,
+            "height": 0.036,
+            "depth": 0.17
+          },
+          "color": 4367861
+        }
+      },
+      {
+        "id": "m1",
+        "parent": "compact",
+        "transform": {
+          "pos": [
+            0,
+            0.084,
+            -0.004
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.066,
+            "height": 0.038,
+            "depth": 0.082
+          },
+          "color": 9489145
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass",
+            "variant": "blue"
+          }
+        ]
+      },
+      {
+        "id": "m2",
+        "parent": "compact_front",
+        "transform": {
+          "pos": [
+            0,
+            -0.003,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.10200000000000001,
+            "height": 0.038,
+            "depth": 0.026
+          },
+          "color": 2105636
+        }
+      },
+      {
+        "id": "m3",
+        "parent": "compact_rear",
+        "transform": {
+          "pos": [
+            0,
+            -0.003,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.10200000000000001,
+            "height": 0.038,
+            "depth": 0.026
+          },
+          "color": 2105636
+        }
+      },
+      {
+        "id": "m4",
+        "parent": "race",
+        "transform": {
+          "pos": [
+            0,
+            0.047,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.085,
+            "height": 0.036,
+            "depth": 0.2
+          },
+          "color": 15022389
+        }
+      },
+      {
+        "id": "m5",
+        "parent": "race",
+        "transform": {
+          "pos": [
+            0,
+            0.077,
+            -0.018
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.056,
+            "height": 0.025,
+            "depth": 0.052
+          },
+          "color": 2503224
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass"
+          }
+        ]
+      },
+      {
+        "id": "m6",
+        "parent": "race",
+        "transform": {
+          "pos": [
+            0,
+            0.075,
+            -0.088
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.105,
+            "height": 0.012,
+            "depth": 0.025
+          },
+          "color": 12000284
+        }
+      },
+      {
+        "id": "m7",
+        "parent": "race_front",
+        "transform": {
+          "pos": [
+            0,
+            -0.003,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.10700000000000001,
+            "height": 0.038,
+            "depth": 0.026
+          },
+          "color": 2105636
+        }
+      },
+      {
+        "id": "m8",
+        "parent": "race_rear",
+        "transform": {
+          "pos": [
+            0,
+            -0.003,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.10700000000000001,
+            "height": 0.038,
+            "depth": 0.026
+          },
+          "color": 2105636
+        }
+      },
+      {
+        "id": "m9",
+        "parent": "pickup",
+        "transform": {
+          "pos": [
+            0,
+            0.047,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.09,
+            "height": 0.036,
+            "depth": 0.21
+          },
+          "color": 4431943
+        }
+      },
+      {
+        "id": "m10",
+        "parent": "pickup",
+        "transform": {
+          "pos": [
+            0,
+            0.089,
+            0.041
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.072,
+            "height": 0.048,
+            "depth": 0.068
+          },
+          "color": 10868391
+        }
+      },
+      {
+        "id": "m11",
+        "parent": "pickup",
+        "transform": {
+          "pos": [
+            0,
+            0.069,
+            -0.061
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.076,
+            "height": 0.018,
+            "depth": 0.074
+          },
+          "color": 3046706
+        }
+      },
+      {
+        "id": "m12",
+        "parent": "pickup_front",
+        "transform": {
+          "pos": [
+            0,
+            -0.003,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.11199999999999999,
+            "height": 0.038,
+            "depth": 0.026
+          },
+          "color": 2105636
+        }
+      },
+      {
+        "id": "m13",
+        "parent": "pickup_rear",
+        "transform": {
+          "pos": [
+            0,
+            -0.003,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.11199999999999999,
+            "height": 0.038,
+            "depth": 0.026
+          },
+          "color": 2105636
+        }
+      },
+      {
+        "id": "m14",
+        "parent": "taxi",
+        "transform": {
+          "pos": [
+            0,
+            0.047,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.085,
+            "height": 0.036,
+            "depth": 0.19
+          },
+          "color": 16498733
+        }
+      },
+      {
+        "id": "m15",
+        "parent": "taxi",
+        "transform": {
+          "pos": [
+            0,
+            0.086,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.067,
+            "height": 0.04,
+            "depth": 0.086
+          },
+          "color": 16769154
+        }
+      },
+      {
+        "id": "m16",
+        "parent": "taxi",
+        "transform": {
+          "pos": [
+            0,
+            0.114,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.038,
+            "height": 0.016,
+            "depth": 0.024
+          },
+          "color": 16763432
+        }
+      },
+      {
+        "id": "m17",
+        "parent": "taxi",
+        "transform": {
+          "pos": [
+            0,
+            0.052,
+            0.008
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.088,
+            "height": 0.009,
+            "depth": 0.022
+          },
+          "color": 2171169
+        }
+      },
+      {
+        "id": "m18",
+        "parent": "taxi_front",
+        "transform": {
+          "pos": [
+            0,
+            -0.003,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.10700000000000001,
+            "height": 0.038,
+            "depth": 0.026
+          },
+          "color": 2105636
+        }
+      },
+      {
+        "id": "m19",
+        "parent": "taxi_rear",
+        "transform": {
+          "pos": [
+            0,
+            -0.003,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.10700000000000001,
+            "height": 0.038,
+            "depth": 0.026
+          },
+          "color": 2105636
+        }
+      },
+      {
+        "id": "m20",
+        "parent": "offroad",
+        "transform": {
+          "pos": [
+            0,
+            0.047,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.095,
+            "height": 0.036,
+            "depth": 0.18
+          },
+          "color": 15690752
+        }
+      },
+      {
+        "id": "m21",
+        "parent": "offroad",
+        "transform": {
+          "pos": [
+            0,
+            0.094,
+            -0.008
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.076,
+            "height": 0.052,
+            "depth": 0.08
+          },
+          "color": 16758605
+        }
+      },
+      {
+        "id": "m22",
+        "parent": "offroad",
+        "transform": {
+          "pos": [
+            0,
+            0.052,
+            0.092
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.108,
+            "height": 0.016,
+            "depth": 0.022
+          },
+          "color": 6381921
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m23",
+        "parent": "offroad",
+        "transform": {
+          "pos": [
+            0,
+            0.052,
+            -0.092
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.108,
+            "height": 0.016,
+            "depth": 0.022
+          },
+          "color": 6381921
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m24",
+        "parent": "offroad_front",
+        "transform": {
+          "pos": [
+            0,
+            0.001,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.11699999999999999,
+            "height": 0.046,
+            "depth": 0.03
+          },
+          "color": 2105636
+        }
+      },
+      {
+        "id": "m25",
+        "parent": "offroad_rear",
+        "transform": {
+          "pos": [
+            0,
+            0.001,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.11699999999999999,
+            "height": 0.046,
+            "depth": 0.03
+          },
+          "color": 2105636
+        }
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1786874717597,
+        "provider": "gpt",
+        "data": "mRw/ikE0gcwoCAHjiJ9hHnn9QmBrhmo94ePjia+CbY39r1I+OjA7XuKZaWyfd/vD3nAQzWPs6YpwKyirs5XXxr9lh7giusD6d0CVFJUv1XljLBInsDt6c/s7IfZr+/Ny6ZM6JH39tsdM+eHfLn5XaB5iF/JeXGKIWb/a6cqZHhDbtazomXfOnI1u1OzD2S4N1M+nLcS67/VxbzWMzqiubwbyIqcF2ct/yXfUgm6o92tor2qYcTm8IdnN4d+hN+ZiLjrakqyVgRbPu4XMLoM+vClylST5f1uvyWNLb7JFsKoakkYIe8e19ZIslD898cKclCt57lyi2QS2SCqdTYffOneU43K77ac5tht7ORNyb0qZ9/rpmnLYGDM2Gaxw7URs8tAw0FxJT48Ry9MWEoc5lSv34wSSXBkFl5sowUaEyfwrQdkK9o0IUQXut2HWiagta8FAXI5YhTI3H1xcHQEafUKAq7cKp1fF7Gk7hz0tYwqPFZULDn8qaYPDKIRMxAdsE2aOOddPQu+0MiV/YGHkXWejITK6ux75X3KaNLFTeyjwpdqBk/Au+0LP/aDBE1GfN7ou5TwNQrYYG3dfKkMYhte4SkYnkp2RSZ0VbDDj8utShXc2zbNOR662+6R47XyaiJ4ypuvOmGw5bjOcUvuKvBUb5KufHdD+ZP1N1VS5LIh0oCgfTss/haj0rzTbrZDikIEVrS3yTNGZcUTC2fhrQuM/QkxnDME3BlgL/OcMOjxlG1IcEinOwuozlzIjimIfHdaKzZG1skinWro4RLTNksJiUcVJUbuxVXremRp9ApFhShnSUjRS6frfEDFl+Ei73d5w2wI9akrxyQDnjt/C7fEnXUQxEYdIClVRZtt0xdcvTlW2OmzKFjHcaTAz+pefeZCwBfxf8vRNxIIXWh0Gq+HTpYjEmsL/mhq7vQ/TJxIvl2wYEL49BdR2j2zrYu9bJbfFjHQW1oM+XETa8Q4EptB+E7k6BLnVjn7z6o/MNB67rz/Udjjaidn6gwwmoTDafQzwqP15snV5nsCY+gVahQxk397h9UFQVnBOF+bmPPYlpWU2ES6svKYSB+TMMIu7289Li+PSQ9SqOMKQ82n1Txv7vdCCvHQV2wccS6eMUMq/uMN0FZr3ftZqdHxMdQEvtaWWplD5CvttFFePAXjGDq8TwV5anWBj8U7b8xTV1mvZX5dbbqo9z36xvZ7GoiFs/rCnmPGfWvqJtO6nEhvTajtDWuzUcuzP6ykMMFh77i0wvRb6yWviZD51BUPUDsNlBrYiBMPzwsZjlbyBgPmv3Gpyp97dZ6WUU5uQsqDM0B2rv92nXxaZ1feYlS1AERioEoTSHnrnkts5g+mFBT99ds+i7wwEJ7CTrlD2QHAum7bu8VY55g6YYtiVciJduEPebbjI46Sh",
+        "edits": ""
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -0.30225,
+          0,
+          -0.1075
+        ],
+        "max": [
+          0.30225,
+          0.11699999999999999,
+          0.1075
+        ],
+        "sourceNodeId": "asset-bounds"
+      }
+    ],
+    "sourceMeshCount": 26,
+    "candidateCount": 0,
+    "fallbackUsed": true
+  },
+  "footprintRadius": 0.30225,
+  "sizeClass": "small",
+  "mode": "voxel",
+  "provider": "gpt",
+  "createdAt": 1786874720800,
+  "updatedAt": 1786874720800
+}

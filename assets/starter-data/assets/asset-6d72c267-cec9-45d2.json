@@ -1,0 +1,268 @@
+{
+  "id": "asset-6d72c267-cec9-45d2",
+  "name": "Kitchen ceiling light",
+  "prompt": "One compact ceiling-mounted kitchen light with a broad warm diffuser.\n全局资产美术方向：平衡尺度的模块化商用不锈钢厨房设备，方正耐用、边缘略圆，采用银灰金属、深色玻璃、黑色炉面和少量安全色标识；所有设备保持独立可复用，避免生成瓶罐、食材和细碎餐具。\n资产角色：even task lighting；目标尺度：medium。\n只生成一个可复用的独立物体，不要生成地面、背景、天空、完整场景或多个分散物体。",
+  "tags": [
+    "kitchen-ceiling-light",
+    "ceiling-light",
+    "ceiling-mounted",
+    "lighting"
+  ],
+  "light": {
+    "kind": "point",
+    "color": "#ffd8a0",
+    "intensity": 3,
+    "range": 7,
+    "offset": [
+      0,
+      -0.2,
+      0
+    ]
+  },
+  "modelJson": {
+    "name": "紧凑型暖光吸顶厨房灯",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "fixture",
+        "name": "吸顶灯主体",
+        "transform": {
+          "pos": [
+            0,
+            2.8,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            2.58,
+            0.44,
+            1.22
+          ],
+          "center": [
+            0,
+            -0.17,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "fixture",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.5,
+            "height": 0.1,
+            "depth": 0.72
+          },
+          "color": 9410201
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m1",
+        "parent": "fixture",
+        "transform": {
+          "pos": [
+            0,
+            -0.14,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2.4,
+            "height": 0.18,
+            "depth": 1.1
+          },
+          "color": 11449526
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m2",
+        "parent": "fixture",
+        "transform": {
+          "pos": [
+            0,
+            -0.28,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2.58,
+            "height": 0.1,
+            "depth": 1.22
+          },
+          "color": 7633790
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m3",
+        "parent": "fixture",
+        "transform": {
+          "pos": [
+            0,
+            -0.345,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2.28,
+            "height": 0.07,
+            "depth": 0.92
+          },
+          "color": 16766346
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass",
+            "variant": "amber"
+          },
+          {
+            "tag": "emissive",
+            "value": 0.75
+          }
+        ]
+      },
+      {
+        "id": "m4",
+        "parent": "fixture",
+        "transform": {
+          "pos": [
+            -1.23,
+            -0.33,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.12,
+            "height": 0.12,
+            "depth": 1.04
+          },
+          "color": 4935762
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m5",
+        "parent": "fixture",
+        "transform": {
+          "pos": [
+            1.23,
+            -0.33,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.12,
+            "height": 0.12,
+            "depth": 1.04
+          },
+          "color": 4935762
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1786784888298,
+        "provider": "gpt",
+        "data": "8bydi6UsGdHVguSCgeiE4hP2Exs64LZE9/yNqrfaqex7VY7/BNRWNAql0XERhty7lF2F8ro93t/RUlm+9LGPe672odXVCgoXl+XECZuKHq+LdIReMdva1kDJiRUDP5kPq7r1W9BuV/nUU1uG5hlqvYD/CxJoZ+2XyHe/BCCHRZAd3b9FpB7xFqVul6rU2bq9flv5w7x7CwADLsDLbglm6CRemWBrMkgrGbhBQydU0H5HM7vl71RJQQwFl5sA/fnoYytrbOMmFUdmU/dM7ud8A0ED/Gmt9R9beAnEciE/q/QVDje2AC+0C6NGqUq49M/XJkamDLRciHtMzWrhjo9dqaefC7M0tDs7l37nAa34D7d21E17mIr0wQH4pNJdgpn4D/hpo9KFz6HcY/d4p8pmTzbUqfh/Xu3vAacEVGm3KFRgU26z+8DekbFDud7egM8HJiZRUnviF03dw+/gK7XLNDmBFCkUdDFzZU73aUGDRuNXyuREDLBd/YagS56OaM44KyPmsbJ0FL+0wWIINqYGYSQhIr9bk1ZXXPlRf2ayQUxXaHdK5u6h4ljISI9xrThlcqOdBT8P2FJdX/3qgOSC0DtkL1mKKOGVUgxwSxxT5zZEjjurMmo5KJ5w/9E/guqySV7TB5nWwKd4FJ1+I4fJfkkdrUeF3jOamUId9ZT5ScgO",
+        "edits": ""
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -1.2,
+          0.16000000000000014,
+          -0.55
+        ],
+        "max": [
+          1.2,
+          0.33999999999999986,
+          0.55
+        ],
+        "sourceNodeId": "m1"
+      }
+    ],
+    "sourceMeshCount": 6,
+    "candidateCount": 1,
+    "fallbackUsed": false
+  },
+  "footprintRadius": 1.2,
+  "sizeClass": "medium",
+  "mode": "voxel",
+  "provider": "gpt",
+  "createdAt": 1786784889707,
+  "updatedAt": 1786784889707
+}

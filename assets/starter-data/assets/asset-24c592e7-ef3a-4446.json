@@ -1,0 +1,765 @@
+{
+  "id": "asset-24c592e7-ef3a-4446",
+  "name": "卷心菜",
+  "prompt": "卷心菜",
+  "modelJson": {
+    "name": "卷心菜",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "cabbage",
+        "name": "卷心菜主体",
+        "transform": {
+          "pos": [
+            0,
+            0.055,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            2.691,
+            1.805,
+            2.685
+          ],
+          "center": [
+            0,
+            0.807,
+            0.001
+          ],
+          "axes": [
+            [
+              0.9839,
+              0.0023,
+              0.1785
+            ],
+            [
+              -0.0032,
+              1,
+              0.0048
+            ],
+            [
+              -0.1784,
+              -0.0053,
+              0.9839
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "core",
+        "name": "菜心",
+        "parent": "cabbage",
+        "transform": {
+          "pos": [
+            0,
+            0.095,
+            0
+          ]
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ],
+        "_obb": {
+          "size": [
+            1.35,
+            1.565,
+            1.35
+          ],
+          "center": [
+            0,
+            0.827,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "leaf_left",
+        "name": "左叶",
+        "parent": "cabbage",
+        "transform": {
+          "pos": [
+            -0.48,
+            0.165,
+            0
+          ]
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ],
+        "_obb": {
+          "size": [
+            0.865,
+            0.181,
+            1.464
+          ],
+          "center": [
+            -0.37,
+            0.27,
+            0
+          ],
+          "axes": [
+            [
+              0.7728,
+              -0.6346,
+              0.0084
+            ],
+            [
+              0.6345,
+              0.7728,
+              0.0083
+            ],
+            [
+              -0.0117,
+              -0.0011,
+              0.9999
+            ]
+          ],
+          "_mainAxis": 2
+        }
+      },
+      {
+        "id": "leaf_right",
+        "name": "右叶",
+        "parent": "cabbage",
+        "transform": {
+          "pos": [
+            0.48,
+            0.165,
+            0
+          ]
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ],
+        "_obb": {
+          "size": [
+            0.88,
+            0.185,
+            1.49
+          ],
+          "center": [
+            0.37,
+            0.27,
+            0
+          ],
+          "axes": [
+            [
+              0.7719,
+              0.6353,
+              0.0221
+            ],
+            [
+              -0.6353,
+              0.7722,
+              -0.0083
+            ],
+            [
+              -0.0223,
+              -0.0076,
+              0.9997
+            ]
+          ],
+          "_mainAxis": 2
+        }
+      },
+      {
+        "id": "leaf_front",
+        "name": "前叶",
+        "parent": "cabbage",
+        "transform": {
+          "pos": [
+            0,
+            0.165,
+            0.48
+          ]
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ],
+        "_obb": {
+          "size": [
+            1.44,
+            0.18,
+            0.85
+          ],
+          "center": [
+            0,
+            0.27,
+            0.37
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              0.7689,
+              -0.6393
+            ],
+            [
+              0,
+              0.6393,
+              0.7689
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "leaf_back",
+        "name": "后叶",
+        "parent": "cabbage",
+        "transform": {
+          "pos": [
+            0,
+            0.165,
+            -0.48
+          ]
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ],
+        "_obb": {
+          "size": [
+            1.44,
+            0.18,
+            0.849
+          ],
+          "center": [
+            0,
+            0.27,
+            -0.37
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              0.7683,
+              0.6401
+            ],
+            [
+              0,
+              -0.6401,
+              0.7683
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "top_leaf_left",
+        "name": "顶部左叶",
+        "parent": "cabbage",
+        "transform": {
+          "pos": [
+            -0.12,
+            1.095,
+            0
+          ]
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ],
+        "_obb": {
+          "size": [
+            0.715,
+            0.14,
+            1.006
+          ],
+          "center": [
+            -0.3,
+            0.16,
+            0
+          ],
+          "axes": [
+            [
+              0.8408,
+              -0.5413,
+              0.0032
+            ],
+            [
+              0.5413,
+              0.8408,
+              0.0026
+            ],
+            [
+              -0.0042,
+              -0.0005,
+              1
+            ]
+          ],
+          "_mainAxis": 2
+        }
+      },
+      {
+        "id": "top_leaf_right",
+        "name": "顶部右叶",
+        "parent": "cabbage",
+        "transform": {
+          "pos": [
+            0.12,
+            1.095,
+            0
+          ]
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ],
+        "_obb": {
+          "size": [
+            0.723,
+            0.141,
+            1.018
+          ],
+          "center": [
+            0.3,
+            0.16,
+            0
+          ],
+          "axes": [
+            [
+              0.8406,
+              0.5415,
+              0.013
+            ],
+            [
+              -0.5415,
+              0.8407,
+              -0.0026
+            ],
+            [
+              -0.0123,
+              -0.0048,
+              0.9999
+            ]
+          ],
+          "_mainAxis": 2
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "core",
+        "transform": {
+          "pos": [
+            0,
+            0.67,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.35,
+            "height": 1.25,
+            "depth": 1.35
+          },
+          "color": 7907651
+        }
+      },
+      {
+        "id": "m1",
+        "parent": "core",
+        "transform": {
+          "pos": [
+            0,
+            0.79,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.05,
+            "height": 1.45,
+            "depth": 1.05
+          },
+          "color": 9554263
+        }
+      },
+      {
+        "id": "m2",
+        "parent": "core",
+        "transform": {
+          "pos": [
+            0,
+            1.4,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.72,
+            "height": 0.42,
+            "depth": 0.72
+          },
+          "color": 11590771
+        }
+      },
+      {
+        "id": "m3",
+        "parent": "leaf_left",
+        "transform": {
+          "pos": [
+            -0.37,
+            0.27,
+            0
+          ],
+          "quat": [
+            -0.24,
+            -0.67,
+            -0.24,
+            0.67
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.44,
+            "height": 0.18,
+            "depth": 0.85
+          },
+          "color": 6263097
+        }
+      },
+      {
+        "id": "m4",
+        "parent": "leaf_right",
+        "transform": {
+          "pos": [
+            0.37,
+            0.27,
+            0
+          ],
+          "quat": [
+            0.67,
+            0.24,
+            0.67,
+            -0.24
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.44,
+            "height": 0.18,
+            "depth": 0.85
+          },
+          "color": 6658877
+        }
+      },
+      {
+        "id": "m5",
+        "parent": "leaf_front",
+        "transform": {
+          "pos": [
+            0,
+            0.27,
+            0.37
+          ],
+          "quat": [
+            -0.34,
+            0,
+            0,
+            0.94
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.44,
+            "height": 0.18,
+            "depth": 0.85
+          },
+          "color": 7316801
+        }
+      },
+      {
+        "id": "m6",
+        "parent": "leaf_back",
+        "transform": {
+          "pos": [
+            0,
+            0.27,
+            -0.37
+          ],
+          "quat": [
+            0.94,
+            0,
+            0,
+            -0.34
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.44,
+            "height": 0.18,
+            "depth": 0.85
+          },
+          "color": 5802549
+        }
+      },
+      {
+        "id": "m7",
+        "parent": "top_leaf_left",
+        "transform": {
+          "pos": [
+            -0.3,
+            0.16,
+            0
+          ],
+          "quat": [
+            -0.2,
+            -0.68,
+            -0.2,
+            0.68
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1,
+            "height": 0.14,
+            "depth": 0.71
+          },
+          "color": 10341475
+        }
+      },
+      {
+        "id": "m8",
+        "parent": "top_leaf_right",
+        "transform": {
+          "pos": [
+            0.3,
+            0.16,
+            0
+          ],
+          "quat": [
+            0.68,
+            0.2,
+            0.68,
+            -0.2
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1,
+            "height": 0.14,
+            "depth": 0.71
+          },
+          "color": 10999148
+        }
+      },
+      {
+        "id": "m9",
+        "parent": "cabbage",
+        "transform": {
+          "pos": [
+            0,
+            0.055,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.42,
+            "height": 0.22,
+            "depth": 0.42
+          },
+          "color": 13687194
+        }
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1786786754944,
+        "provider": "glm",
+        "data": "94QQ8uwRE5XESQYvABVAJXvpvINLakhi2QsBsvIcfwR1Mq4Btty0irIXeXtkcTolvj2af8g/oX8oqRu0Qi0tC+JBNtIMbragWTe/d5/0+jj8tSYdM6P+sWsZjjRwvXnv1cBjEq0+NP7OKuBwGEPFScPLLTnaHgGUMnOQVqhmPr0+zPqi9jpANu15XU1VJ+vwZgGGB1hjBXUJc458RZfZPXk5BXPhDEFEF5QkcWtwoVFnUfpH0z/PVd/p3CzAUiS5zRHBK++YsEXqOJZKdkW/4yVifFHhbvEtBv3DWHMxIltKhIzF6m5t3zK4ry63k1ErKqvI9h5xld7dtQ1sfdXMZahHr5wDHiBBDHQzDmUj6ZdubNg7rIiRsH5WHzboKMagWWUuwNDwJwZxmxWnmXy6ADuJNuZV36lR8apMPEVHGMLdAvloTEWX05oj8Es3rdA5pqbx/FQQYEsYe4ps7ZfqNhsgoTajKw5227FrkXncpDnWRbH9RXZQ38DSYk7I0TH7cSSe/h6bH1wO9jlx4ihs0Vz84YjuWd4/PeNpLlQrPSAryFksOS1lAdo1/CJw4t+MC4dPy8uGLjPXz4skgLqN0/VG7bopuRsWCql+oKLc3v3jiXojWR7dlKkXa418we6ZACl7cA+JpT/33WBmcF5EHDfRu7xYnhETfTXexb3Dw4iWXq2U2YYEwilub6f9CXEvtwDqasEnyDq/8mqGPSgxQaKm7Qex2W2TBpBKkIetWbH7usUUuN5ar+YBYqNEIWYRgq/qZxXtCe9zM3SzEyzZpbkWFHtNBIXmcXXh9YqT6Avfszy/TacnwVeEXShyUzxtaJCqdCJffXgC4AmC7qP6ivRL4JodbxukAmPH/gEwWsRSBYFeWrQ2UfXW8O3MSx4KjY6QGKCiKZWCY62qRi+UDph4ZtOW4q02VcVKjejd",
+        "edits": ""
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -0.675,
+          0.19500000000000006,
+          -0.6750000000000002
+        ],
+        "max": [
+          0.675,
+          1.445,
+          0.6749999999999999
+        ],
+        "sourceNodeId": "m0"
+      },
+      {
+        "min": [
+          -0.525,
+          0.21500000000000008,
+          -0.5250000000000001
+        ],
+        "max": [
+          0.525,
+          1.665,
+          0.5249999999999999
+        ],
+        "sourceNodeId": "m1"
+      },
+      {
+        "min": [
+          -0.72,
+          0.14894715772618106,
+          0.46576461168935135
+        ],
+        "max": [
+          0.72,
+          0.8310528422738189,
+          1.2342353883106485
+        ],
+        "sourceNodeId": "m5"
+      },
+      {
+        "min": [
+          -0.72,
+          0.14894715772618106,
+          -1.2342353883106485
+        ],
+        "max": [
+          0.72,
+          0.8310528422738189,
+          -0.46576461168935174
+        ],
+        "sourceNodeId": "m6"
+      },
+      {
+        "min": [
+          -1.2354817374136229,
+          0.15061796643632774,
+          -0.7200000000000002
+        ],
+        "max": [
+          -0.4645182625863771,
+          0.8293820335636722,
+          0.72
+        ],
+        "sourceNodeId": "m3"
+      },
+      {
+        "min": [
+          0.4645182625863771,
+          0.1506179664363278,
+          -0.7200000000000002
+        ],
+        "max": [
+          1.2354817374136229,
+          0.8293820335636721,
+          0.72
+        ],
+        "sourceNodeId": "m4"
+      },
+      {
+        "min": [
+          0.08363057324840745,
+          1.058949044585987,
+          -0.5000000000000003
+        ],
+        "max": [
+          0.7563694267515926,
+          1.5610509554140126,
+          0.5000000000000001
+        ],
+        "sourceNodeId": "m8"
+      },
+      {
+        "min": [
+          -0.7563694267515924,
+          1.058949044585987,
+          -0.5000000000000002
+        ],
+        "max": [
+          -0.08363057324840756,
+          1.5610509554140126,
+          0.5
+        ],
+        "sourceNodeId": "m7"
+      },
+      {
+        "min": [
+          -0.36,
+          1.3399999999999999,
+          -0.3600000000000001
+        ],
+        "max": [
+          0.36,
+          1.7599999999999998,
+          0.3599999999999999
+        ],
+        "sourceNodeId": "m2"
+      }
+    ],
+    "sourceMeshCount": 10,
+    "candidateCount": 9,
+    "fallbackUsed": false
+  },
+  "footprintRadius": 1.2354817374136229,
+  "sizeClass": "medium",
+  "mode": "voxel",
+  "createdAt": 1786786756619,
+  "updatedAt": 1786786756619
+}

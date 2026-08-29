@@ -1,0 +1,451 @@
+{
+  "id": "asset-4d70dd6d-8e89-4adc",
+  "name": "游戏卡带",
+  "prompt": "游戏卡带",
+  "modelJson": {
+    "name": "复古游戏卡带",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "cartridge",
+        "name": "游戏卡带",
+        "transform": {
+          "pos": [
+            0,
+            2.18,
+            0.17
+          ]
+        },
+        "_obb": {
+          "size": [
+            3.219,
+            3.621,
+            0.687
+          ],
+          "center": [
+            0,
+            -0.08,
+            -0.147
+          ],
+          "axes": [
+            [
+              1,
+              -0.0047,
+              0.0038
+            ],
+            [
+              0.0046,
+              0.9999,
+              0.0139
+            ],
+            [
+              -0.0039,
+              -0.0139,
+              0.9999
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "cartridge",
+        "transform": {
+          "pos": [
+            0,
+            -0.08,
+            -0.17
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 3.2,
+            "height": 3.6,
+            "depth": 0.48
+          },
+          "color": 3422271
+        }
+      },
+      {
+        "id": "m1",
+        "parent": "cartridge",
+        "transform": {
+          "pos": [
+            0,
+            1.54,
+            -0.17
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2.7,
+            "height": 0.35,
+            "depth": 0.58
+          },
+          "color": 2698547
+        }
+      },
+      {
+        "id": "m2",
+        "parent": "cartridge",
+        "transform": {
+          "pos": [
+            0,
+            0.37,
+            0.11
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2.7,
+            "height": 1.75,
+            "depth": 0.08
+          },
+          "color": 4218778
+        }
+      },
+      {
+        "id": "m3",
+        "parent": "cartridge",
+        "transform": {
+          "pos": [
+            0,
+            0.92,
+            0.17
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2.25,
+            "height": 0.28,
+            "depth": 0.05
+          },
+          "color": 15911244
+        }
+      },
+      {
+        "id": "m4",
+        "parent": "cartridge",
+        "transform": {
+          "pos": [
+            -0.35,
+            0.44,
+            0.17
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.45,
+            "height": 0.18,
+            "depth": 0.05
+          },
+          "color": 16052703
+        }
+      },
+      {
+        "id": "m5",
+        "parent": "cartridge",
+        "transform": {
+          "pos": [
+            0.65,
+            0,
+            0.17
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.75,
+            "height": 0.55,
+            "depth": 0.05
+          },
+          "color": 14242893
+        }
+      },
+      {
+        "id": "m6",
+        "parent": "cartridge",
+        "transform": {
+          "pos": [
+            0,
+            -1.52,
+            -0.17
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2.45,
+            "height": 0.72,
+            "depth": 0.28
+          },
+          "color": 2106410
+        }
+      },
+      {
+        "id": "m7",
+        "parent": "cartridge",
+        "transform": {
+          "pos": [
+            -0.81,
+            -1.54,
+            0.01
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.22,
+            "height": 0.55,
+            "depth": 0.08
+          },
+          "color": 13211442
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m8",
+        "parent": "cartridge",
+        "transform": {
+          "pos": [
+            -0.54,
+            -1.54,
+            0.01
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.22,
+            "height": 0.55,
+            "depth": 0.08
+          },
+          "color": 13211442
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m9",
+        "parent": "cartridge",
+        "transform": {
+          "pos": [
+            -0.27,
+            -1.54,
+            0.01
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.22,
+            "height": 0.55,
+            "depth": 0.08
+          },
+          "color": 13211442
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m10",
+        "parent": "cartridge",
+        "transform": {
+          "pos": [
+            0,
+            -1.54,
+            0.01
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.22,
+            "height": 0.55,
+            "depth": 0.08
+          },
+          "color": 13211442
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m11",
+        "parent": "cartridge",
+        "transform": {
+          "pos": [
+            0.27,
+            -1.54,
+            0.01
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.22,
+            "height": 0.55,
+            "depth": 0.08
+          },
+          "color": 13211442
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m12",
+        "parent": "cartridge",
+        "transform": {
+          "pos": [
+            0.54,
+            -1.54,
+            0.01
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.22,
+            "height": 0.55,
+            "depth": 0.08
+          },
+          "color": 13211442
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m13",
+        "parent": "cartridge",
+        "transform": {
+          "pos": [
+            0.81,
+            -1.54,
+            0.01
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.22,
+            "height": 0.55,
+            "depth": 0.08
+          },
+          "color": 13211442
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1787826183375,
+        "provider": "glm",
+        "data": "RG+sWi30NaaZ84VXqtHZrlC7wjicD52LXTi6uwLzeuot9ekkMg3z3on6nwoowi/s1NFuPaWiNfZ9jsfKnml1A5lyr6OlZMWODniWYPA1nHmYz4kLITAIGg+xqJggvHmxDm+vXQAntUg1AOJthM79Q8vyZxKwO5U2uDkcnDxpEV0jff1LBbs3ZTPOFoFsP+B0QKXnTWP4+E/OvWQXacm5++xLv+kYbMUhlIPc007kC0NhF0rpNcHAa9kNBuo7pc9yOCec5ZU4rwFtfpa63+YZCwPam8ltcGpwD0QVoarb9l7rl/jGSfxBFlxSjq3bgYX71ND0BCCPnIgYY5LVYaMTeqjzF8KOiXecpFDrkVImsPnViRZFAfJWW6MwILsB6QUVt2Ro0hU0uYjRjUFi6X1BD9t8BEIdV+ippmNF0nbrq+dLy+qjCAP5G8kMBw7E+I2usr/iPBrNntGt5Zg+kypnzvBlJ7kzApqpgJckzUt9UQlslW6ShIniWg+H8JWx/eZsdRahIfkKkBU+0UXZWLYhEOCw9zEiEe60b5b+t8EMFgf/rvs5ty0b1iN290l9ytpYND0PlCHOqRUNtziU11lPicDQQU2c7bDe713UmA0m1/SSPkYj/LDPZr57+wTVevLPnmGwD2oLu+oxnXWF96kxLhgqIz83qdVI7JhZ04QbXOAxLd3lDujF0qImWrS9QA==",
+        "edits": ""
+      },
+      "semanticSnapshot": {
+        "v": 1,
+        "auto": true,
+        "text": "复古游戏卡带 · 1组/14mesh · 世界坐标(Y上Z前), 原点=模型根\n# 阅读说明: G:=group行(可动画骨骼, 动画key用G:后的id; @p=pivot世界坐标; 倾(x,y,z)°=朝向偏离世界轴的欧拉角; 缩进=父子层级; 挂:=挂载于某组; G:id→id→…=chain折叠行, 每个id都是可独立动画的group, chain×N=waypoint数)\n# M:=mesh行(label[id 几何 @(世界坐标)], label可省略; ×N=for循环批量件(锚点=代表实例); cyl (起)→(末)或 轴上(Y)等方位词=延伸方向; 薄向=板面法向(扁板); 挂载组双代表=最大件+最远有向件(刃/嘴/管所在端); 无方向标注=均匀块(三向相近,如头),默认面向前(Z); 对称×2=镜像对)\nG:cartridge 游戏卡带 @p(0,2.2,0.2)\n  M:[m0 box 3.2×3.6×0.48 (0,2.1,0) 薄向前(Z)]",
+        "stats": {
+          "groups": 1,
+          "meshes": 14,
+          "labeledMeshes": 0,
+          "labelCoverage": 0,
+          "batchLabels": 0,
+          "autoChains": 0,
+          "snapshotChars": 440
+        }
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -1.6,
+          0,
+          -0.2775
+        ],
+        "max": [
+          1.6,
+          3.6000000000000005,
+          0.20249999999999996
+        ],
+        "sourceNodeId": "m0"
+      },
+      {
+        "min": [
+          -1.35,
+          3.245,
+          -0.3275
+        ],
+        "max": [
+          1.35,
+          3.5949999999999998,
+          0.25249999999999995
+        ],
+        "sourceNodeId": "m1"
+      },
+      {
+        "min": [
+          -1.225,
+          1.1102230246251565e-16,
+          -0.17750000000000005
+        ],
+        "max": [
+          1.225,
+          0.72,
+          0.10249999999999998
+        ],
+        "sourceNodeId": "m6"
+      }
+    ],
+    "sourceMeshCount": 14,
+    "candidateCount": 3,
+    "fallbackUsed": false
+  },
+  "footprintRadius": 1.6,
+  "sizeClass": "medium",
+  "mode": "voxel",
+  "createdAt": 1787826187096,
+  "updatedAt": 1787826187096
+}

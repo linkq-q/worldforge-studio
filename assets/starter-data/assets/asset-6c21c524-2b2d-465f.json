@@ -1,0 +1,187 @@
+{
+  "id": "asset-6c21c524-2b2d-465f",
+  "name": "Kitchen runner rug",
+  "prompt": "One flat washable cartoon kitchen runner with a simple readable pattern; no raised border.\n全局资产美术方向：平衡尺度的模块化商用不锈钢厨房设备，方正耐用、边缘略圆，采用银灰金属、深色玻璃、黑色炉面和少量安全色标识；所有设备保持独立可复用，避免生成瓶罐、食材和细碎餐具。\n资产角色：soft floor accent outside the work route；目标尺度：large。\n只生成一个可复用的独立物体，不要生成地面、背景、天空、完整场景或多个分散物体。",
+  "tags": [
+    "kitchen-runner",
+    "area-rug",
+    "kitchen-decor"
+  ],
+  "modelJson": {
+    "name": "扁平卡通厨房地垫",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "m0",
+        "transform": {
+          "pos": [
+            0,
+            0.04,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 5.2,
+            "height": 0.08,
+            "depth": 1.5
+          },
+          "color": 4147789
+        }
+      },
+      {
+        "id": "m1",
+        "transform": {
+          "pos": [
+            0,
+            0.086,
+            -0.42
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 4.8,
+            "height": 0.012,
+            "depth": 0.24
+          },
+          "color": 14272908
+        }
+      },
+      {
+        "id": "m2",
+        "transform": {
+          "pos": [
+            0,
+            0.086,
+            0.42
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 4.8,
+            "height": 0.012,
+            "depth": 0.24
+          },
+          "color": 14272908
+        }
+      },
+      {
+        "id": "m3",
+        "transform": {
+          "pos": [
+            -1.65,
+            0.086,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.28,
+            "height": 0.012,
+            "depth": 0.72
+          },
+          "color": 6265755
+        }
+      },
+      {
+        "id": "m4",
+        "transform": {
+          "pos": [
+            -0.55,
+            0.086,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.28,
+            "height": 0.012,
+            "depth": 0.72
+          },
+          "color": 6265755
+        }
+      },
+      {
+        "id": "m5",
+        "transform": {
+          "pos": [
+            0.55,
+            0.086,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.28,
+            "height": 0.012,
+            "depth": 0.72
+          },
+          "color": 6265755
+        }
+      },
+      {
+        "id": "m6",
+        "transform": {
+          "pos": [
+            1.65,
+            0.086,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.28,
+            "height": 0.012,
+            "depth": 0.72
+          },
+          "color": 6265755
+        }
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1786784826494,
+        "provider": "gpt",
+        "data": "/ChA5JqREAA1BZvW0Zq75gVnJATQs4rJ2LA5OEV1t43n7fCib4hyMxw561OeS3CXZcETNvDs4MiRnfQJ8YBcm5HdGCPYxwqkE0irZr05xHyaQ+KmA5xw3SqQgBe3PFDum7nmCmsq26SU4RjjIfofdPmQY/OYVUZR/lI418NfCOiOwUmyX8xDPI08vzeSrwLKiEvUX4Bk0ip1Zc3w/DqGaDoGc8mvmRNrwiwaDFuPFD89VwF5R8vUmo85+Gx2iWFXBxnbOImGXyvs6Juv70IMQhJjxQ33D2k25Sm0a/LL1mNh+onWzAHlQ/Tnu+mvz09nhn9pxHqpyV3woTGPJEUQyaap/1rPeoT5N7ahLOZn8Nm/Od58c0LdbQskdh+J7lS2aiVqahv6r+YQrplGTurEvGrdY1soat9H9K9TMSeRj8MkbXsQs02T038xBlpbCbAY3E4uvtO2zHtWxA==",
+        "edits": ""
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -2.6,
+          0,
+          -0.75
+        ],
+        "max": [
+          2.6,
+          0.092,
+          0.75
+        ],
+        "sourceNodeId": "asset-bounds"
+      }
+    ],
+    "sourceMeshCount": 7,
+    "candidateCount": 0,
+    "fallbackUsed": true
+  },
+  "footprintRadius": 2.6,
+  "sizeClass": "large",
+  "mode": "voxel",
+  "provider": "gpt",
+  "createdAt": 1786784827375,
+  "updatedAt": 1786784827375
+}

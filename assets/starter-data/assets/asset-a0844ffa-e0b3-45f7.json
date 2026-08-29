@@ -1,0 +1,261 @@
+{
+  "id": "asset-a0844ffa-e0b3-45f7",
+  "name": "城堡棋子",
+  "prompt": "一枚单独的国际象棋城堡棋子，城垛顶端和稳定底座。独立单件儿童房物品，浅亮柔和造型，圆润安全边缘，不包含成组物品，不包含场景、房间、地面或背景。基础色和顶点色仅使用：#FFFDF6,#FEF9EA,#FDF2D7,#E9DABD,#CDBA97,#F8E8CF,#F1D7B2,#E7C393,#C9A06E,#9E7A55,#FFF7A8,#FCEF72,#F6E24B,#D1B825,#9C8510,#FFF3B7,#FDE674,#FCD75F,#FECD4D,#D1900B,#FFE2A0,#FFD170,#F8BC44,#E39F1A,#A96F05,#FBE3BD,#FDD8A3,#FDCC8F,#F1AD69,#D99256,#FFD2BA,#FFB08A,#FF8A5B,#F06B3E,#B84A27,#EAF9FF,#DAF2F5,#95E5F9,#76D0F2,#45BDF6,#D9F8FB,#B2E9F2,#8ECCD6,#7BCFDF,#4BAFCA,#D8F7EF,#B8ECDD,#90DCC8,#74C4BB,#499D92,#F1F5AF,#E4E77F,#D\nCoordinate contract: local Y+ is up, local Z+ is the front, entrance, or forward direction, and local X+ is right. Put doors, facades, openings, windshields, noses, seats, and other recognizable front details toward local Z+. For a modular repeated element, explicitly choose the long axis: side-by-side modules span local X with depth/front on local Z; traversal modules span local Z. Keep the model centered at its origin.\nCanonical dimensions contract: width=0.17, height=0.3, depth=0.17 world units. Keep the generated mesh within this centered bounding size.",
+  "tags": [
+    "indoor",
+    "single-object",
+    "child-safe"
+  ],
+  "modelJson": {
+    "name": "柔和彩色国际象棋城堡棋子",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "m0",
+        "transform": {
+          "pos": [
+            0,
+            -0.1375,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.17,
+            "height": 0.025,
+            "depth": 0.17
+          },
+          "color": 13482647
+        }
+      },
+      {
+        "id": "m1",
+        "transform": {
+          "pos": [
+            0,
+            -0.1125,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.155,
+            "height": 0.025,
+            "depth": 0.155
+          },
+          "color": 15325885
+        }
+      },
+      {
+        "id": "m2",
+        "transform": {
+          "pos": [
+            0,
+            -0.0875,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.135,
+            "height": 0.025,
+            "depth": 0.135
+          },
+          "color": 16642775
+        }
+      },
+      {
+        "id": "m3",
+        "transform": {
+          "pos": [
+            0,
+            -0.005,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.095,
+            "height": 0.14,
+            "depth": 0.095
+          },
+          "color": 16710122
+        }
+      },
+      {
+        "id": "m4",
+        "transform": {
+          "pos": [
+            0,
+            0.0775,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.115,
+            "height": 0.025,
+            "depth": 0.115
+          },
+          "color": 16642775
+        }
+      },
+      {
+        "id": "m5",
+        "transform": {
+          "pos": [
+            0,
+            0.1025,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.15,
+            "height": 0.025,
+            "depth": 0.15
+          },
+          "color": 15325885
+        }
+      },
+      {
+        "id": "m6",
+        "transform": {
+          "pos": [
+            -0.0525,
+            0.1325,
+            -0.0525
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.045,
+            "height": 0.035,
+            "depth": 0.045
+          },
+          "color": 16710122
+        }
+      },
+      {
+        "id": "m7",
+        "transform": {
+          "pos": [
+            0.0525,
+            0.1325,
+            -0.0525
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.045,
+            "height": 0.035,
+            "depth": 0.045
+          },
+          "color": 16710122
+        }
+      },
+      {
+        "id": "m8",
+        "transform": {
+          "pos": [
+            -0.0525,
+            0.1325,
+            0.0525
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.045,
+            "height": 0.035,
+            "depth": 0.045
+          },
+          "color": 16710122
+        }
+      },
+      {
+        "id": "m9",
+        "transform": {
+          "pos": [
+            0.0525,
+            0.1325,
+            0.0525
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.045,
+            "height": 0.035,
+            "depth": 0.045
+          },
+          "color": 16710122
+        }
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1787769428962,
+        "provider": "gpt",
+        "data": "n7+O81WOnY1u46augVK3X45puqQhCNE65kHDRDKNAuUT9YjK+lZ0he+2DQfvfBzQqru3OEPqMJsDWnIFlNFA+NajJ0CE0TvpnfRhpKC8Nhng4AyD0x2LgjMXCU92QvAlfWrd8mq2WLOTiwc3mtTszl+vtZwwVIAZ/B10T54UR7SZw/yMiVYkNopi2AOpLO+kNiXlpZ3jxpGvzb54z3ZrgWpfzG/T98FQFKDVAWgaxD6HsQW/zT365fNVAsLZ1ASJL8bGU68dTdOZel4Zk/TQNyUXZKUF3Xrvr4JufMGv0hsCoAVeqP22PbcNROm6JPPm1/+2gqvyEhvBBtfcySC8L88aLMV05ItcsIRJCkNXs6ev3uOftjArRyqYnBcblDm2LbRgZMxpURsCYIWUpwh3EuhFFqX43JpQvnI2JRY4mjCbUL1opGNteLrUefSk0FwXPOoTBWRwN/FURazOEy4Te5gzLdfj1uURqaQtZBrFjDZ+G3J8RjYyrAJ75/khI+RVvtDh5nXWgoMAoa6nb1T414EfgboE5n/wvoY41zaYSjlv7biWLxZ49dBUr9X8+EPSEmN4OSLe3/0bB88QZpFFN/Wu4OtY5nEZ+Mz9SGpx0d3DFDPW2uwqlDTxudPrT9h37miXOKtgdbk=",
+        "edits": ""
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -0.085,
+          0,
+          -0.085
+        ],
+        "max": [
+          0.085,
+          0.30000000000000004,
+          0.085
+        ],
+        "sourceNodeId": "asset-bounds"
+      }
+    ],
+    "sourceMeshCount": 10,
+    "candidateCount": 1,
+    "fallbackUsed": true
+  },
+  "footprintRadius": 0.1,
+  "sizeClass": "small",
+  "mode": "voxel",
+  "provider": "gpt",
+  "libraryId": "library-d7967286-cebf-4f99",
+  "libraryMetadata": {
+    "tags": [
+      "chessrook",
+      "chesspiece",
+      "toy"
+    ],
+    "applicableZones": [
+      "settlement"
+    ],
+    "repeatable": true,
+    "landmark": false,
+    "enabled": true,
+    "priority": 0.5,
+    "analysisStatus": "ready",
+    "rotation": "random"
+  },
+  "createdAt": 1787816409439,
+  "updatedAt": 1787816409439
+}

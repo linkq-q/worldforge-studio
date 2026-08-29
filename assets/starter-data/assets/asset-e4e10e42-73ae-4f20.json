@@ -1,0 +1,1202 @@
+{
+  "id": "asset-e4e10e42-73ae-4f20",
+  "name": "书架",
+  "prompt": "哈利波特风格魔法工坊与图书馆中的书架\nCoordinate contract: local Y+ is up, local Z+ is the front, entrance, or forward direction, and local X+ is right. Put doors, facades, openings, windshields, noses, seats, and other recognizable front details toward local Z+. For a modular repeated element, explicitly choose the long axis: side-by-side modules span local X with depth/front on local Z; traversal modules span local Z. Keep the model centered at its origin.\nCanonical dimensions contract: width=3.2, height=8.2, depth=0.8 world units. Keep the generated mesh within this centered bounding size.",
+  "modelJson": {
+    "name": "魔法工坊高书架",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "books",
+        "name": "魔法藏书",
+        "transform": {
+          "pos": [
+            0,
+            4.095,
+            0.13
+          ]
+        },
+        "_obb": {
+          "size": [
+            3.288,
+            8.247,
+            1.101
+          ],
+          "center": [
+            0,
+            0.004,
+            -0.054
+          ],
+          "axes": [
+            [
+              0.9999,
+              -0.0107,
+              -0.0008
+            ],
+            [
+              0.0107,
+              0.9999,
+              0.0122
+            ],
+            [
+              0.0007,
+              -0.0122,
+              0.9999
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "bookcase",
+        "name": "书架主体",
+        "parent": "books",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            -0.175
+          ]
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "walnut"
+          }
+        ],
+        "_obb": {
+          "size": [
+            3.2,
+            8.211,
+            0.924
+          ],
+          "center": [
+            0,
+            0.005,
+            0.045
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              0.9999,
+              0.0151
+            ],
+            [
+              0,
+              -0.0151,
+              0.9999
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "rune",
+        "name": "发光书架铭牌",
+        "parent": "books",
+        "transform": {
+          "pos": [
+            0,
+            3.805,
+            0.245
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.7,
+            0.42,
+            0.062
+          ],
+          "center": [
+            0,
+            0,
+            0.006
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "bookcase",
+        "transform": {
+          "pos": [
+            0,
+            -3.955,
+            0.045
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 3.2,
+            "height": 0.28,
+            "depth": 0.8
+          },
+          "color": 3875864
+        }
+      },
+      {
+        "id": "m1",
+        "parent": "bookcase",
+        "transform": {
+          "pos": [
+            0,
+            3.955,
+            0.045
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 3.2,
+            "height": 0.3,
+            "depth": 0.8
+          },
+          "color": 3875864
+        }
+      },
+      {
+        "id": "m2",
+        "parent": "bookcase",
+        "transform": {
+          "pos": [
+            -1.45,
+            -0.075,
+            0.045
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.3,
+            "height": 7.64,
+            "depth": 0.78
+          },
+          "color": 4926749
+        }
+      },
+      {
+        "id": "m3",
+        "parent": "bookcase",
+        "transform": {
+          "pos": [
+            1.45,
+            -0.075,
+            0.045
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.3,
+            "height": 7.64,
+            "depth": 0.78
+          },
+          "color": 4926749
+        }
+      },
+      {
+        "id": "m4",
+        "parent": "bookcase",
+        "transform": {
+          "pos": [
+            0,
+            -0.075,
+            -0.295
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2.6,
+            "height": 7.55,
+            "depth": 0.12
+          },
+          "color": 2956051
+        }
+      },
+      {
+        "id": "m5",
+        "parent": "bookcase",
+        "transform": {
+          "pos": [
+            0,
+            -2.545,
+            0.045
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2.9,
+            "height": 0.18,
+            "depth": 0.72
+          },
+          "color": 5780770
+        }
+      },
+      {
+        "id": "m6",
+        "parent": "bookcase",
+        "transform": {
+          "pos": [
+            0,
+            -1.045,
+            0.045
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2.9,
+            "height": 0.18,
+            "depth": 0.72
+          },
+          "color": 5780770
+        }
+      },
+      {
+        "id": "m7",
+        "parent": "bookcase",
+        "transform": {
+          "pos": [
+            0,
+            0.455,
+            0.045
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2.9,
+            "height": 0.18,
+            "depth": 0.72
+          },
+          "color": 5780770
+        }
+      },
+      {
+        "id": "m8",
+        "parent": "bookcase",
+        "transform": {
+          "pos": [
+            0,
+            1.955,
+            0.045
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2.9,
+            "height": 0.18,
+            "depth": 0.72
+          },
+          "color": 5780770
+        }
+      },
+      {
+        "id": "m9",
+        "parent": "bookcase",
+        "transform": {
+          "pos": [
+            0,
+            3.405,
+            0.045
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2.9,
+            "height": 0.18,
+            "depth": 0.72
+          },
+          "color": 5780770
+        }
+      },
+      {
+        "id": "m10",
+        "parent": "bookcase",
+        "transform": {
+          "pos": [
+            -0.78,
+            3.725,
+            0.295
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.05,
+            "height": 0.18,
+            "depth": 0.22
+          },
+          "color": 6964007
+        }
+      },
+      {
+        "id": "m11",
+        "parent": "bookcase",
+        "transform": {
+          "pos": [
+            0.78,
+            3.725,
+            0.295
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.05,
+            "height": 0.18,
+            "depth": 0.22
+          },
+          "color": 6964007
+        }
+      },
+      {
+        "id": "m12",
+        "parent": "books",
+        "transform": {
+          "pos": [
+            -1.05,
+            -3.16,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.28,
+            "height": 1.05,
+            "depth": 0.38
+          },
+          "color": 7216938
+        }
+      },
+      {
+        "id": "m13",
+        "parent": "books",
+        "transform": {
+          "pos": [
+            -0.68,
+            -3.275,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.34,
+            "height": 0.82,
+            "depth": 0.38
+          },
+          "color": 2510139
+        }
+      },
+      {
+        "id": "m14",
+        "parent": "books",
+        "transform": {
+          "pos": [
+            -0.28,
+            -3.125,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.28,
+            "height": 1.12,
+            "depth": 0.38
+          },
+          "color": 3096424
+        }
+      },
+      {
+        "id": "m15",
+        "parent": "books",
+        "transform": {
+          "pos": [
+            0.18,
+            -3.225,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.34,
+            "height": 0.92,
+            "depth": 0.38
+          },
+          "color": 7755039
+        }
+      },
+      {
+        "id": "m16",
+        "parent": "books",
+        "transform": {
+          "pos": [
+            0.62,
+            -3.095,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.28,
+            "height": 1.18,
+            "depth": 0.38
+          },
+          "color": 5056607
+        }
+      },
+      {
+        "id": "m17",
+        "parent": "books",
+        "transform": {
+          "pos": [
+            1.02,
+            -3.255,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.34,
+            "height": 0.86,
+            "depth": 0.38
+          },
+          "color": 8008996
+        }
+      },
+      {
+        "id": "m18",
+        "parent": "books",
+        "transform": {
+          "pos": [
+            -1.02,
+            -1.805,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.28,
+            "height": 1.08,
+            "depth": 0.38
+          },
+          "color": 7216938
+        }
+      },
+      {
+        "id": "m19",
+        "parent": "books",
+        "transform": {
+          "pos": [
+            -0.58,
+            -1.905,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.34,
+            "height": 0.88,
+            "depth": 0.38
+          },
+          "color": 2510139
+        }
+      },
+      {
+        "id": "m20",
+        "parent": "books",
+        "transform": {
+          "pos": [
+            -0.12,
+            -1.77,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.28,
+            "height": 1.15,
+            "depth": 0.38
+          },
+          "color": 3096424
+        }
+      },
+      {
+        "id": "m21",
+        "parent": "books",
+        "transform": {
+          "pos": [
+            0.38,
+            -1.955,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.34,
+            "height": 0.78,
+            "depth": 0.38
+          },
+          "color": 7755039
+        }
+      },
+      {
+        "id": "m22",
+        "parent": "books",
+        "transform": {
+          "pos": [
+            0.84,
+            -1.835,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.28,
+            "height": 1.02,
+            "depth": 0.38
+          },
+          "color": 5056607
+        }
+      },
+      {
+        "id": "m23",
+        "parent": "books",
+        "transform": {
+          "pos": [
+            -0.98,
+            -0.255,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.28,
+            "height": 1.12,
+            "depth": 0.38
+          },
+          "color": 8008996
+        }
+      },
+      {
+        "id": "m24",
+        "parent": "books",
+        "transform": {
+          "pos": [
+            -0.52,
+            -0.355,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.34,
+            "height": 0.92,
+            "depth": 0.38
+          },
+          "color": 7216938
+        }
+      },
+      {
+        "id": "m25",
+        "parent": "books",
+        "transform": {
+          "pos": [
+            -0.04,
+            -0.235,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.28,
+            "height": 1.16,
+            "depth": 0.38
+          },
+          "color": 2510139
+        }
+      },
+      {
+        "id": "m26",
+        "parent": "books",
+        "transform": {
+          "pos": [
+            0.45,
+            -0.385,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.34,
+            "height": 0.86,
+            "depth": 0.38
+          },
+          "color": 3096424
+        }
+      },
+      {
+        "id": "m27",
+        "parent": "books",
+        "transform": {
+          "pos": [
+            0.92,
+            -0.285,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.28,
+            "height": 1.06,
+            "depth": 0.38
+          },
+          "color": 7755039
+        }
+      },
+      {
+        "id": "m28",
+        "parent": "books",
+        "transform": {
+          "pos": [
+            -0.95,
+            1.215,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.28,
+            "height": 1.04,
+            "depth": 0.38
+          },
+          "color": 5056607
+        }
+      },
+      {
+        "id": "m29",
+        "parent": "books",
+        "transform": {
+          "pos": [
+            -0.48,
+            1.105,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.34,
+            "height": 0.82,
+            "depth": 0.38
+          },
+          "color": 8008996
+        }
+      },
+      {
+        "id": "m30",
+        "parent": "books",
+        "transform": {
+          "pos": [
+            0.02,
+            1.265,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.28,
+            "height": 1.14,
+            "depth": 0.38
+          },
+          "color": 7216938
+        }
+      },
+      {
+        "id": "m31",
+        "parent": "books",
+        "transform": {
+          "pos": [
+            0.52,
+            1.165,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.34,
+            "height": 0.94,
+            "depth": 0.38
+          },
+          "color": 2510139
+        }
+      },
+      {
+        "id": "m32",
+        "parent": "books",
+        "transform": {
+          "pos": [
+            0.98,
+            1.235,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.28,
+            "height": 1.08,
+            "depth": 0.38
+          },
+          "color": 3096424
+        }
+      },
+      {
+        "id": "m33",
+        "parent": "books",
+        "transform": {
+          "pos": [
+            -0.9,
+            2.745,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.28,
+            "height": 1.02,
+            "depth": 0.38
+          },
+          "color": 7755039
+        }
+      },
+      {
+        "id": "m34",
+        "parent": "books",
+        "transform": {
+          "pos": [
+            -0.42,
+            2.655,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.34,
+            "height": 0.84,
+            "depth": 0.38
+          },
+          "color": 5056607
+        }
+      },
+      {
+        "id": "m35",
+        "parent": "books",
+        "transform": {
+          "pos": [
+            0.08,
+            2.795,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.28,
+            "height": 1.12,
+            "depth": 0.38
+          },
+          "color": 8008996
+        }
+      },
+      {
+        "id": "m36",
+        "parent": "books",
+        "transform": {
+          "pos": [
+            0.58,
+            2.685,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.34,
+            "height": 0.9,
+            "depth": 0.38
+          },
+          "color": 7216938
+        }
+      },
+      {
+        "id": "m37",
+        "parent": "books",
+        "transform": {
+          "pos": [
+            1.02,
+            2.725,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.28,
+            "height": 0.98,
+            "depth": 0.38
+          },
+          "color": 2510139
+        }
+      },
+      {
+        "id": "m38",
+        "parent": "rune",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.7,
+            "height": 0.42,
+            "depth": 0.05
+          },
+          "color": 2760985
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m39",
+        "parent": "rune",
+        "transform": {
+          "pos": [
+            -0.16,
+            0,
+            0.024
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.12,
+            "height": 0.26,
+            "depth": 0.025
+          },
+          "color": 7397375
+        },
+        "tags": [
+          {
+            "tag": "emissive",
+            "value": 0.75
+          }
+        ]
+      },
+      {
+        "id": "m40",
+        "parent": "rune",
+        "transform": {
+          "pos": [
+            0.16,
+            0,
+            0.024
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.12,
+            "height": 0.26,
+            "depth": 0.025
+          },
+          "color": 7397375
+        },
+        "tags": [
+          {
+            "tag": "emissive",
+            "value": 0.75
+          }
+        ]
+      },
+      {
+        "id": "m41",
+        "parent": "rune",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0.024
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.32,
+            "height": 0.08,
+            "depth": 0.025
+          },
+          "color": 7397375
+        },
+        "tags": [
+          {
+            "tag": "emissive",
+            "value": 0.75
+          }
+        ]
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1787874340422,
+        "provider": "gpt",
+        "data": "/WBgcAGLHo2m5kJaX0ucYhuZJ02gvsH1AknDkw64J8TGOH80PwmBj+tZHUpWQYvnaO5Jjef3GOAh+s+pLCEoDm9E0CmX/JpFdlcykstq0ne7FFI9pv0dkNsY+zH8cpaQqxfP781eRt284hSBuOHZuCfg+qbCJNF+9rsBBvfqUqIoYTT5Y2D2sicx3pKQ1bbQ7oF8WSQEPqu4Pau6uL7OUXxMHBzyimkJqemMP+AkczyEI50SevR95Vc+mI3PbV9+eKOX4LcMY1aaD1b9I/9wMjogM7VL9gnBjruWsiRI9/A3tWHhWvBE/7OxrKo5ZHzOTJBucMH/+mxBq6+oSJmEYaKp+92m9YIeVJtNAON4kwLVPY7Xv2qlRnTteFGPM2YTZguyrGrJntYRrG0fAjmxJMVQWHQsv2a/xl04FVDQkM39an5KkODB/WvkhL3bFyfxp1po2OoaAl6iw1R8QTO1WnkjPbVlISV3jvSWUZidtNlvU4V+JhDzYdfr75ALpT2ewKi9bxkEotqM/Uo+gOOd80/H5OVne01gXc8QzeFf2DrEEo/uk9mqVNRPPhgLBYD9imWRkbYa+Pu/5HWeiiqZ1nwweeJXZAeXBSz4Q2Edn/aGgv57cIH033j6gG/36hsC5s3b/1NSnenZMI2FrEl/crHFDqjrEOxjn5WPDVtz5m+ap0I2al6QC6yvJXoZA1FsazL/84iEYb/WexxULqbPfgyrRNXOa6YH6MODbOAHKPyIKH0xSdtkBdEvhQTJXjmvPTvvPQO2kE3GLH7bS7wVjphd3zhCQCWToM4wHtH0D9MmEIp1ZHef39vkhbB9rFS0uZjjw/8bLtPJ9l5jRNbiALmbAeyTXgBzSI4nFu7H7Lz2ZKOQJtNw5JR4W0Rk3omltekv575wzr6nD7S5Hgu6+4yQ5GIDOu7qPpRTFd90UEsop/UsARK1BHG15ukZVdkW17q8JBRsxHxjTiBcj/psIB+EYDag7AVx70tCwgy1fc2ObjvvrFqgf3RnQvM/4kLDKyCsm0cogKg07+Hksqeyp8sm0MCU7+hH1iBZPmKywc0obRegGaafpADOd9z1n6cuvCUgBcfDoedSSc8ZKYOlgiO6onXU+zT+SlI4haVVxk3t6OLKH1e/C9VCLe9gK4WWvVUIkIyY0WQ151vEt2Il5u+k3FZR9fKuxvjsr5pLq90FEH4MpqRkkk1GqoIi6xQ1foUNYCjedqvpLUIUqweNTHxvXCmjXHg9GwK9mFJ6RDUGsV/EsCI7i0NglpkZBOavHTtC0TC1AP6BFtYQYBHovuwRuhPAr6Refz4S8tDc3vtTVsTWQaHjexWVciXKLwMkWfD/o/4UuaUUCTtmg8bcLXilZ6D1b2IpuwsNgDapE+IWoTufT69KEvBgCcDTJS9uc76QL1d8",
+        "edits": ""
+      },
+      "semanticSnapshot": {
+        "v": 1,
+        "auto": true,
+        "text": "魔法工坊高书架 · 3组/42mesh · 世界坐标(Y上Z前), 原点=模型根\n# 阅读说明: G:=group行(可动画骨骼, 动画key用G:后的id; @p=pivot世界坐标; 倾(x,y,z)°=朝向偏离世界轴的欧拉角; 缩进=父子层级; 挂:=挂载于某组; G:id→id→…=chain折叠行, 每个id都是可独立动画的group, chain×N=waypoint数)\n# M:=mesh行(label[id 几何 @(世界坐标)], label可省略; ×N=for循环批量件(锚点=代表实例); cyl (起)→(末)或 轴上(Y)等方位词=延伸方向; 薄向=板面法向(扁板); 挂载组双代表=最大件+最远有向件(刃/嘴/管所在端); 无方向标注=均匀块(三向相近,如头),默认面向前(Z); 对称×2=镜像对)\nG:books 魔法藏书 @p(0,4.1,0.1)\n  M:[m16 box 0.28×1.2×0.38 (0.6,1,0.1) 轴上(Y)]\n  G:bookcase 书架主体 @p(0,4.1,0)\n    M:[m4 box 2.6×7.6×0.12 (0,4,-0.3) 薄向前(Z)]\n  G:rune 发光书架铭牌 @p(0,7.9,0.4)\n    M:[m38 box 0.7×0.42×0.05 (0,7.9,0.4) 薄向前(Z)]",
+        "stats": {
+          "groups": 3,
+          "meshes": 42,
+          "labeledMeshes": 0,
+          "labelCoverage": 0,
+          "batchLabels": 0,
+          "autoChains": 0,
+          "snapshotChars": 595
+        }
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -1.3,
+          0.245,
+          -0.40574999999999994
+        ],
+        "max": [
+          1.3,
+          7.795,
+          -0.28574999999999995
+        ],
+        "sourceNodeId": "m4"
+      },
+      {
+        "min": [
+          -1.5999999999999999,
+          0.20000000000000007,
+          -0.39575000000000005
+        ],
+        "max": [
+          -1.3,
+          7.84,
+          0.38425
+        ],
+        "sourceNodeId": "m2"
+      },
+      {
+        "min": [
+          1.3,
+          0.20000000000000007,
+          -0.39575000000000005
+        ],
+        "max": [
+          1.5999999999999999,
+          7.84,
+          0.38425
+        ],
+        "sourceNodeId": "m3"
+      },
+      {
+        "min": [
+          -1.6,
+          7.9,
+          -0.40575000000000006
+        ],
+        "max": [
+          1.6,
+          8.200000000000001,
+          0.39425
+        ],
+        "sourceNodeId": "m1"
+      },
+      {
+        "min": [
+          -1.6,
+          0,
+          -0.40575000000000006
+        ],
+        "max": [
+          1.6,
+          0.28,
+          0.39425
+        ],
+        "sourceNodeId": "m0"
+      },
+      {
+        "min": [
+          -1.45,
+          1.46,
+          -0.36575
+        ],
+        "max": [
+          1.45,
+          1.6400000000000001,
+          0.35424999999999995
+        ],
+        "sourceNodeId": "m5"
+      },
+      {
+        "min": [
+          -1.45,
+          2.9600000000000004,
+          -0.36575
+        ],
+        "max": [
+          1.45,
+          3.14,
+          0.35424999999999995
+        ],
+        "sourceNodeId": "m6"
+      },
+      {
+        "min": [
+          -1.45,
+          4.46,
+          -0.36575
+        ],
+        "max": [
+          1.45,
+          4.64,
+          0.35424999999999995
+        ],
+        "sourceNodeId": "m7"
+      },
+      {
+        "min": [
+          -1.45,
+          5.96,
+          -0.36575
+        ],
+        "max": [
+          1.45,
+          6.14,
+          0.35424999999999995
+        ],
+        "sourceNodeId": "m8"
+      },
+      {
+        "min": [
+          -1.45,
+          7.41,
+          -0.36575
+        ],
+        "max": [
+          1.45,
+          7.59,
+          0.35424999999999995
+        ],
+        "sourceNodeId": "m9"
+      },
+      {
+        "min": [
+          0.48,
+          0.4099999999999999,
+          -0.06575
+        ],
+        "max": [
+          0.76,
+          1.5899999999999999,
+          0.31425000000000003
+        ],
+        "sourceNodeId": "m16"
+      },
+      {
+        "min": [
+          -0.18000000000000002,
+          3.2800000000000002,
+          -0.06575
+        ],
+        "max": [
+          0.1,
+          4.4399999999999995,
+          0.31425000000000003
+        ],
+        "sourceNodeId": "m25"
+      }
+    ],
+    "sourceMeshCount": 42,
+    "candidateCount": 36,
+    "fallbackUsed": false
+  },
+  "footprintRadius": 1.6,
+  "sizeClass": "medium",
+  "mode": "voxel",
+  "provider": "gpt",
+  "createdAt": 1787874340158,
+  "updatedAt": 1787874340158
+}

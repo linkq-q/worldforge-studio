@@ -1,0 +1,330 @@
+{
+  "id": "asset-a46e759d-bfd3-4c14",
+  "name": "蓝笔",
+  "prompt": "蓝笔",
+  "modelJson": {
+    "name": "蓝笔",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "body",
+        "name": "笔身",
+        "transform": {
+          "pos": [
+            0,
+            0.24,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            1.016,
+            0.652,
+            5.059
+          ],
+          "center": [
+            0.008,
+            0.007,
+            -0.199
+          ],
+          "axes": [
+            [
+              0.7194,
+              0.6944,
+              0.0145
+            ],
+            [
+              -0.6945,
+              0.7195,
+              0
+            ],
+            [
+              -0.0104,
+              -0.01,
+              0.9999
+            ]
+          ],
+          "_mainAxis": 2
+        }
+      },
+      {
+        "id": "mount01_cap",
+        "name": "笔帽",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            -1.25
+          ]
+        },
+        "mounted": true,
+        "_obb": {
+          "size": [
+            0.828,
+            0.651,
+            1.45
+          ],
+          "center": [
+            0.026,
+            0.025,
+            -0.704
+          ],
+          "axes": [
+            [
+              0.7138,
+              0.69,
+              -0.1198
+            ],
+            [
+              -0.695,
+              0.719,
+              0.0004
+            ],
+            [
+              0.0864,
+              0.083,
+              0.9928
+            ]
+          ],
+          "_mainAxis": 2
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0.15
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.34,
+            "height": 0.34,
+            "depth": 2.8
+          },
+          "color": 1534378
+        }
+      },
+      {
+        "id": "m1",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            1.69
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.3,
+            "height": 0.3,
+            "depth": 0.28
+          },
+          "color": 1200006
+        }
+      },
+      {
+        "id": "m2",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            2
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.2,
+            "height": 0.2,
+            "depth": 0.34
+          },
+          "color": 10135472
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m3",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            2.25
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.08,
+            "height": 0.08,
+            "depth": 0.16
+          },
+          "color": 3160128
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m4",
+        "parent": "mount01_cap",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            -0.63
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.42,
+            "height": 0.42,
+            "depth": 1.25
+          },
+          "color": 875932
+        }
+      },
+      {
+        "id": "m5",
+        "parent": "mount01_cap",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            -1.31
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.46,
+            "height": 0.46,
+            "depth": 0.16
+          },
+          "color": 542579
+        }
+      },
+      {
+        "id": "m6",
+        "parent": "mount01_cap",
+        "transform": {
+          "pos": [
+            0.25,
+            0.24,
+            -0.55
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.09,
+            "height": 0.1,
+            "depth": 0.95
+          },
+          "color": 9281709
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1787825298893,
+        "provider": "glm",
+        "data": "SQ+HtyGk2iObwSfPnIctMbfsnFtLO5FKjoBre873R2O5tg8KqHbOy1DUSVJLgn7EZPmx1JFs+HInrfW9gI6VKfTwIA3ug1ZjJ2MvMylhsESDRjOLwNzxFar+dmQlTTRxf4QpjB55WVizxJrkUeale34KTjJh0MtK1wSpcTVIDrMQEn0KJoXcFOFGbbc4gsS5ahoBGM9+YWC44DcNWV4E1Bt0MzEcroazE3xC1WObk3Y/8CaJcvibh//c6mjvYdqT+demrC6xFP1OerqbVkkNyUQDhZPMjmriahXBvyQuENW/z+6BProJZrDN376rvoO0UZ6bv8HLj6PPBtFC0Vv6k1YpXMi/bONaOKmPUPjCoBpi7yoWNeetK2MMz1QB8dxXATV3VzCr6GxXD1dKJ4U9mikPO4jQJhIHIQPfqJAEYsICy2h2+I1ZVK8+mr6Uvb0jyGatg11HNVnQOWLKwsk/WMGtKvE7gXcSLuJF8gWT/t0p/7bebSm5ypLX3BXpg9zBcg7Tsz7pqkO+PioAk0oG9a6826RhC4Ay8XHyJ64TopHpkjowVM6ksMH44hLLXw3pZ0/b83K3oaCnfTYw2OMi6nOtl8ob6CypvoOMRY4oKDDZbDilfRP9PJleVLK4jtUo9/12EjD2CDHxrU3TJOI25RKcyM1cA+pHW6CHsCiN0ljJ",
+        "edits": ""
+      },
+      "mounts": [
+        {
+          "id": "mount01_cap",
+          "mountedGroupId": "mount01_cap",
+          "name": "笔帽",
+          "source": {
+            "type": "codegen"
+          },
+          "description": "",
+          "visible": true,
+          "ts": 1787825298893
+        }
+      ],
+      "semanticSnapshot": {
+        "v": 1,
+        "auto": true,
+        "text": "蓝笔 · 2组/7mesh · 世界坐标(Y上Z前), 原点=模型根\n# 阅读说明: G:=group行(可动画骨骼, 动画key用G:后的id; @p=pivot世界坐标; 倾(x,y,z)°=朝向偏离世界轴的欧拉角; 缩进=父子层级; 挂:=挂载于某组; G:id→id→…=chain折叠行, 每个id都是可独立动画的group, chain×N=waypoint数)\n# M:=mesh行(label[id 几何 @(世界坐标)], label可省略; ×N=for循环批量件(锚点=代表实例); cyl (起)→(末)或 轴上(Y)等方位词=延伸方向; 薄向=板面法向(扁板); 挂载组双代表=最大件+最远有向件(刃/嘴/管所在端); 无方向标注=均匀块(三向相近,如头),默认面向前(Z); 对称×2=镜像对)\nG:body 笔身 @p(0,0.2,0)\n  M:[m0 box 0.34×0.34×2.8 (0,0.2,0.2) 轴前(Z)]\n  G:mount01_cap 笔帽 @p(0,0.2,-1.2) 挂:body\n    M:[m4 box 0.42×0.42×1.3 (0,0.2,-1.9) 轴前(Z)] | M:[m5 box 0.46×0.46×0.16 (0,0.2,-2.6) 薄向前(Z)]",
+        "stats": {
+          "groups": 2,
+          "meshes": 7,
+          "labeledMeshes": 0,
+          "labelCoverage": 0,
+          "batchLabels": 0,
+          "autoChains": 0,
+          "snapshotChars": 565
+        }
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -0.2025,
+          0.06,
+          -1.095
+        ],
+        "max": [
+          0.1375,
+          0.4,
+          1.7049999999999998
+        ],
+        "sourceNodeId": "m0"
+      },
+      {
+        "min": [
+          -0.2425,
+          0.020000000000000018,
+          -2.3499999999999996
+        ],
+        "max": [
+          0.1775,
+          0.43999999999999995,
+          -1.0999999999999999
+        ],
+        "sourceNodeId": "m4"
+      }
+    ],
+    "sourceMeshCount": 7,
+    "candidateCount": 2,
+    "fallbackUsed": false
+  },
+  "footprintRadius": 2.3499999999999996,
+  "sizeClass": "medium",
+  "mode": "voxel",
+  "createdAt": 1787825297587,
+  "updatedAt": 1787825297587
+}

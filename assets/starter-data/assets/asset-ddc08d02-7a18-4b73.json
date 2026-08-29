@@ -1,0 +1,371 @@
+{
+  "id": "asset-ddc08d02-7a18-4b73",
+  "name": "挂在墙上的相片，有相框的",
+  "prompt": "挂在墙上的相片，有相框的",
+  "modelJson": {
+    "name": "墙上相框照片",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "mount01_framed_photo",
+        "name": "挂墙相框",
+        "transform": {
+          "pos": [
+            0,
+            1.8,
+            0
+          ]
+        },
+        "mounted": true,
+        "_obb": {
+          "size": [
+            2.208,
+            1.711,
+            0.284
+          ],
+          "center": [
+            0,
+            0,
+            0.08
+          ],
+          "axes": [
+            [
+              1,
+              -0.0047,
+              0.0003
+            ],
+            [
+              0.0047,
+              1,
+              -0.002
+            ],
+            [
+              -0.0002,
+              0.002,
+              1
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "mount01_framed_photo",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2.2,
+            "height": 1.7,
+            "depth": 0.12
+          },
+          "color": 4861210
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "walnut"
+          }
+        ]
+      },
+      {
+        "id": "m1",
+        "parent": "mount01_framed_photo",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0.1
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.72,
+            "height": 1.22,
+            "depth": 0.08
+          },
+          "color": 14141349
+        }
+      },
+      {
+        "id": "m2",
+        "parent": "mount01_framed_photo",
+        "transform": {
+          "pos": [
+            0,
+            0.76,
+            0.12
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.9,
+            "height": 0.18,
+            "depth": 0.2
+          },
+          "color": 7028770
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "walnut"
+          }
+        ]
+      },
+      {
+        "id": "m3",
+        "parent": "mount01_framed_photo",
+        "transform": {
+          "pos": [
+            0,
+            -0.76,
+            0.12
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.9,
+            "height": 0.18,
+            "depth": 0.2
+          },
+          "color": 7028770
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "walnut"
+          }
+        ]
+      },
+      {
+        "id": "m4",
+        "parent": "mount01_framed_photo",
+        "transform": {
+          "pos": [
+            -0.86,
+            0,
+            0.12
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.18,
+            "height": 1.34,
+            "depth": 0.2
+          },
+          "color": 7028770
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "walnut"
+          }
+        ]
+      },
+      {
+        "id": "m5",
+        "parent": "mount01_framed_photo",
+        "transform": {
+          "pos": [
+            0.86,
+            0,
+            0.12
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.18,
+            "height": 1.34,
+            "depth": 0.2
+          },
+          "color": 7028770
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "walnut"
+          }
+        ]
+      },
+      {
+        "id": "m6",
+        "parent": "mount01_framed_photo",
+        "transform": {
+          "pos": [
+            0,
+            -0.42,
+            0.155
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.45,
+            "height": 0.42,
+            "depth": 0.025
+          },
+          "color": 6457768
+        }
+      },
+      {
+        "id": "m7",
+        "parent": "mount01_framed_photo",
+        "transform": {
+          "pos": [
+            -0.32,
+            0.07,
+            0.17
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.52,
+            "height": 0.62,
+            "depth": 0.03
+          },
+          "color": 4418376
+        }
+      },
+      {
+        "id": "m8",
+        "parent": "mount01_framed_photo",
+        "transform": {
+          "pos": [
+            0.36,
+            0.02,
+            0.17
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.46,
+            "height": 0.5,
+            "depth": 0.03
+          },
+          "color": 12946279
+        }
+      },
+      {
+        "id": "m9",
+        "parent": "mount01_framed_photo",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0.205
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.68,
+            "height": 1.18,
+            "depth": 0.025
+          },
+          "color": 14544639
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass"
+          }
+        ]
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1787825995879,
+        "provider": "glm",
+        "data": "2VGJThvxxA8M3067NEU+HkfQaTYZ9MbvFjxfh72nSrjwHjxQkVDDmmDGVJIdYEFMbyd9wKFeHWwIEk27SB1C8cWKNBZoyTcTwvKhRf+wH70RIegEz2Ik6RXZY1p/9f6ck7LBncXVy1TcNzBXUSECpWUFC+OMV/N4Lyglkngp3Hl/sYE/Yl/FBEO5yhPduR623EqpA9gS1h0VNY3ijiNUSEChc5o+z3yNr4FMnsboSsvho9In78YJ6NW9f+7X1oSZMtPn/oX3c1j1q3SfSPWvFwjp+p8KYLNLwk0mlRf1+YsGSA5zfAnmjtUpcqNeH68p45g1QkLJpM32Qdl025IcDtp08wNnMSKpCN+w9w1xjWXRGpDPEzs1hJUE9gMHicp7rz6aQA2k+FKuKma4o5jFhDbcZnf83IgKxbf2cN7R6+AmtRfLg+kihTjIe+6brDbr7PRi3nMo6DruHn/5eki6ahboN2/WnKXJ3FXON570v/ZIsoBHg6kaJespxA61ARRkj7jPTKwwse2szS32NJW6HQ+3QK5NqVxD76n3nw7E5o0fF/H5ZHQEaIeTS0SyfXS2F2Fv+XSInNqi7ZGnoPjiVc7jkOZHibkzcEYh3WrhOhRbZJ7L/0pe9JSEa6breBtG7UNO6xu/zAkasCUe3u7jo6YDTBJPLIEIimlQhkWr1wNOyQnHKnLLJ0p4QgL3GejfK1fi2Yw5+huKa4b8rWNXRFATph8JQhVsEDoWRCKaFQs=",
+        "edits": ""
+      },
+      "mounts": [
+        {
+          "id": "mount01_framed_photo",
+          "mountedGroupId": "mount01_framed_photo",
+          "name": "挂墙相框",
+          "source": {
+            "type": "codegen"
+          },
+          "description": "",
+          "visible": true,
+          "ts": 1787825995880
+        }
+      ],
+      "semanticSnapshot": {
+        "v": 1,
+        "auto": true,
+        "text": "墙上相框照片 · 1组/10mesh · 世界坐标(Y上Z前), 原点=模型根\n# 阅读说明: G:=group行(可动画骨骼, 动画key用G:后的id; @p=pivot世界坐标; 倾(x,y,z)°=朝向偏离世界轴的欧拉角; 缩进=父子层级; 挂:=挂载于某组; G:id→id→…=chain折叠行, 每个id都是可独立动画的group, chain×N=waypoint数)\n# M:=mesh行(label[id 几何 @(世界坐标)], label可省略; ×N=for循环批量件(锚点=代表实例); cyl (起)→(末)或 轴上(Y)等方位词=延伸方向; 薄向=板面法向(扁板); 挂载组双代表=最大件+最远有向件(刃/嘴/管所在端); 无方向标注=均匀块(三向相近,如头),默认面向前(Z); 对称×2=镜像对)\nG:mount01_framed_photo 挂墙相框 @p(0,1.8,0)\n  M:[m0 box 2.2×1.7×0.12 (0,1.8,0) 薄向前(Z)]",
+        "stats": {
+          "groups": 1,
+          "meshes": 10,
+          "labeledMeshes": 0,
+          "labelCoverage": 0,
+          "batchLabels": 0,
+          "autoChains": 0,
+          "snapshotChars": 449
+        }
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -1.1,
+          0,
+          -0.14
+        ],
+        "max": [
+          1.1,
+          1.6999999999999997,
+          -0.020000000000000004
+        ],
+        "sourceNodeId": "m0"
+      },
+      {
+        "min": [
+          -0.86,
+          0.23999999999999988,
+          -0.019999999999999997
+        ],
+        "max": [
+          0.86,
+          1.46,
+          0.06000000000000001
+        ],
+        "sourceNodeId": "m1"
+      }
+    ],
+    "sourceMeshCount": 10,
+    "candidateCount": 2,
+    "fallbackUsed": false
+  },
+  "footprintRadius": 1.1,
+  "sizeClass": "medium",
+  "mode": "voxel",
+  "createdAt": 1787825994458,
+  "updatedAt": 1787825994458
+}

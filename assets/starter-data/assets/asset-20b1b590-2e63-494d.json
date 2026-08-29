@@ -1,0 +1,687 @@
+{
+  "id": "asset-20b1b590-2e63-494d",
+  "name": "Kitchen counter",
+  "prompt": "One compact kitchen counter run with broad worktop and closed base storage; no appliances.\n全局资产美术方向：平衡尺度的模块化商用不锈钢厨房设备，方正耐用、边缘略圆，采用银灰金属、深色玻璃、黑色炉面和少量安全色标识；所有设备保持独立可复用，避免生成瓶罐、食材和细碎餐具。\n资产角色：primary preparation and storage run；目标尺度：large。\n只生成一个可复用的独立物体，不要生成地面、背景、天空、完整场景或多个分散物体。",
+  "tags": [
+    "kitchen-counter",
+    "base-cabinet",
+    "furniture"
+  ],
+  "modelJson": {
+    "name": "商用不锈钢备餐储物台",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "counter_run",
+        "name": "备餐储物台",
+        "transform": {
+          "pos": [
+            0,
+            1.3,
+            0.09
+          ]
+        },
+        "_obb": {
+          "size": [
+            8.12,
+            2.754,
+            1.959
+          ],
+          "center": [
+            0.019,
+            0.009,
+            -0.056
+          ],
+          "axes": [
+            [
+              0.9993,
+              0.025,
+              0.0279
+            ],
+            [
+              -0.0215,
+              0.9926,
+              -0.1192
+            ],
+            [
+              -0.0307,
+              0.1185,
+              0.9925
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "counter_run",
+        "transform": {
+          "pos": [
+            0,
+            1.12,
+            -0.09
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 6.4,
+            "height": 0.22,
+            "depth": 1.55
+          },
+          "color": 10331562
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m1",
+        "parent": "counter_run",
+        "transform": {
+          "pos": [
+            0,
+            -0.05,
+            -0.09
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 6.12,
+            "height": 2.1,
+            "depth": 1.38
+          },
+          "color": 7568256
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m2",
+        "parent": "counter_run",
+        "transform": {
+          "pos": [
+            -2.05,
+            -0.03,
+            -0.09
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.12,
+            "height": 1.9,
+            "depth": 1.32
+          },
+          "color": 5857638
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m3",
+        "parent": "counter_run",
+        "transform": {
+          "pos": [
+            0,
+            -0.03,
+            -0.09
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.12,
+            "height": 1.9,
+            "depth": 1.32
+          },
+          "color": 5857638
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m4",
+        "parent": "counter_run",
+        "transform": {
+          "pos": [
+            2.05,
+            -0.03,
+            -0.09
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.12,
+            "height": 1.9,
+            "depth": 1.32
+          },
+          "color": 5857638
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m5",
+        "parent": "counter_run",
+        "transform": {
+          "pos": [
+            0,
+            -1.12,
+            -0.09
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 6.2,
+            "height": 0.22,
+            "depth": 1.42
+          },
+          "color": 2501422
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m6",
+        "parent": "counter_run",
+        "transform": {
+          "pos": [
+            -3.08,
+            0.02,
+            0.63
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.92,
+            "height": 1.72,
+            "depth": 0.1
+          },
+          "color": 9015702
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m7",
+        "parent": "counter_run",
+        "transform": {
+          "pos": [
+            -1.02,
+            0.02,
+            0.63
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.92,
+            "height": 1.72,
+            "depth": 0.1
+          },
+          "color": 9015702
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m8",
+        "parent": "counter_run",
+        "transform": {
+          "pos": [
+            1.03,
+            0.02,
+            0.63
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.92,
+            "height": 1.72,
+            "depth": 0.1
+          },
+          "color": 9015702
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m9",
+        "parent": "counter_run",
+        "transform": {
+          "pos": [
+            3.08,
+            0.02,
+            0.63
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.92,
+            "height": 1.72,
+            "depth": 0.1
+          },
+          "color": 9015702
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m10",
+        "parent": "counter_run",
+        "transform": {
+          "pos": [
+            -2.05,
+            0.04,
+            0.695
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.32,
+            "height": 0.58,
+            "depth": 0.035
+          },
+          "color": 2107179
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass"
+          }
+        ]
+      },
+      {
+        "id": "m11",
+        "parent": "counter_run",
+        "transform": {
+          "pos": [
+            2.05,
+            0.04,
+            0.695
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.32,
+            "height": 0.58,
+            "depth": 0.035
+          },
+          "color": 2107179
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass"
+          }
+        ]
+      },
+      {
+        "id": "m12",
+        "parent": "counter_run",
+        "transform": {
+          "pos": [
+            -0.18,
+            0.04,
+            0.73
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.08,
+            "height": 0.62,
+            "depth": 0.08
+          },
+          "color": 4936535
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m13",
+        "parent": "counter_run",
+        "transform": {
+          "pos": [
+            0.18,
+            0.04,
+            0.73
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.08,
+            "height": 0.62,
+            "depth": 0.08
+          },
+          "color": 4936535
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m14",
+        "parent": "counter_run",
+        "transform": {
+          "pos": [
+            1.87,
+            0.04,
+            0.73
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.08,
+            "height": 0.62,
+            "depth": 0.08
+          },
+          "color": 4936535
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m15",
+        "parent": "counter_run",
+        "transform": {
+          "pos": [
+            2.23,
+            0.04,
+            0.73
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.08,
+            "height": 0.62,
+            "depth": 0.08
+          },
+          "color": 4936535
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m16",
+        "parent": "counter_run",
+        "transform": {
+          "pos": [
+            0,
+            0.98,
+            -0.73
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 6.05,
+            "height": 0.18,
+            "depth": 0.12
+          },
+          "color": 9410717
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m17",
+        "parent": "counter_run",
+        "transform": {
+          "pos": [
+            2.78,
+            0.99,
+            0.67
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.28,
+            "height": 0.08,
+            "depth": 0.035
+          },
+          "color": 14064425
+        }
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1786784615215,
+        "provider": "gpt",
+        "data": "lPn8V7tiSAZgPjy1uTZPRyQskMLDem0cGyiaexieNMA4tINnCNGHS80e2KW0yA+tqjzSkUpXgicWWW46T8sc90VARFfv/clp1xvN8JwM/AveJKlpG3Pbv1pRGeRwqYMZHOz6YezTyeqKPZ8pNPTbRVCwx4wc5TcJcGxzssCBLYRHWf+Ks2jgV/+JA/JiP6kMMcATm415XBeCItIwzwr6JYxveDgn5LaiVSkUfOMnagakC8Y5BcOfKHksE5WwKFk0ofDl13F+S/2eJwfVC/9OykWSoBs2TCCmnelAzb2NZkj0ru+hS7BmXfj18Bc0r77VV7pgepAHt2JgnWYvee9593S46HW9SvrHHKWbljT/nXwaHUXxaHSQuAjqggpegpXL70nV71e+aJLGdAt43xgKwqbXOouSzqd1vkDskWkdm49WdkpJQEIdoGn/prmICautuUK1SrpmH47vIMMXQi8SkrgYkERrPFXTI/0euhRXl7gZVitGvPhY97fteUgl/hQ0irJw7GFtsccET1jSzFAD6s5FE6lxVif4QlSvn6BwLcE1vRiKTsSfMrxJxvsKZksWOTKkw8cfdfCQ8tvtLo6iAF2YV6QbHzJH2M+g3qeUXG1xN7VFDN7hgH6U9LfjhtaTHGInWrUWbnasCfH3ZcYgYpZGFEBbNG0vghceIrnTp+KLhFZOc9F/9jsuN+VzgNZW84HkceDBk4gDcVtSzowVMZ3vR24/arA+kvsCt2KUHuXUEjutTCXiyGWyrutjdz3//L5PKHHXmJmC87FcTC7CLX9Cc7weOKVPlw==",
+        "edits": ""
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -3.06,
+          0.13,
+          -0.7324999999999999
+        ],
+        "max": [
+          3.06,
+          2.23,
+          0.6475
+        ],
+        "sourceNodeId": "m1"
+      },
+      {
+        "min": [
+          -3.2,
+          2.24,
+          -0.8175
+        ],
+        "max": [
+          3.2,
+          2.46,
+          0.7325
+        ],
+        "sourceNodeId": "m0"
+      },
+      {
+        "min": [
+          -3.1,
+          0,
+          -0.7525
+        ],
+        "max": [
+          3.1,
+          0.21999999999999997,
+          0.6675
+        ],
+        "sourceNodeId": "m5"
+      },
+      {
+        "min": [
+          -4.04,
+          0.3900000000000001,
+          0.6275
+        ],
+        "max": [
+          -2.12,
+          2.1100000000000003,
+          0.7275
+        ],
+        "sourceNodeId": "m6"
+      },
+      {
+        "min": [
+          -1.98,
+          0.3900000000000001,
+          0.6275
+        ],
+        "max": [
+          -0.06000000000000005,
+          2.1100000000000003,
+          0.7275
+        ],
+        "sourceNodeId": "m7"
+      },
+      {
+        "min": [
+          0.07000000000000006,
+          0.3900000000000001,
+          0.6275
+        ],
+        "max": [
+          1.99,
+          2.1100000000000003,
+          0.7275
+        ],
+        "sourceNodeId": "m8"
+      },
+      {
+        "min": [
+          2.12,
+          0.3900000000000001,
+          0.6275
+        ],
+        "max": [
+          4.04,
+          2.1100000000000003,
+          0.7275
+        ],
+        "sourceNodeId": "m9"
+      },
+      {
+        "min": [
+          -2.11,
+          0.2500000000000001,
+          -0.7025
+        ],
+        "max": [
+          -1.9899999999999998,
+          2.15,
+          0.6175
+        ],
+        "sourceNodeId": "m2"
+      },
+      {
+        "min": [
+          1.9899999999999998,
+          0.2500000000000001,
+          -0.7025
+        ],
+        "max": [
+          2.11,
+          2.15,
+          0.6175
+        ],
+        "sourceNodeId": "m4"
+      },
+      {
+        "min": [
+          -0.06,
+          0.2500000000000001,
+          -0.7025
+        ],
+        "max": [
+          0.06,
+          2.15,
+          0.6175
+        ],
+        "sourceNodeId": "m3"
+      },
+      {
+        "min": [
+          -3.025,
+          2.1200000000000006,
+          -0.7424999999999999
+        ],
+        "max": [
+          3.025,
+          2.3000000000000003,
+          -0.6225
+        ],
+        "sourceNodeId": "m16"
+      }
+    ],
+    "sourceMeshCount": 18,
+    "candidateCount": 11,
+    "fallbackUsed": false
+  },
+  "footprintRadius": 4.04,
+  "sizeClass": "large",
+  "mode": "voxel",
+  "provider": "gpt",
+  "createdAt": 1786784617160,
+  "updatedAt": 1786784617160
+}

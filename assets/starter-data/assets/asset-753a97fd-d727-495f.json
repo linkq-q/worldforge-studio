@@ -1,0 +1,827 @@
+{
+  "id": "asset-753a97fd-d727-495f",
+  "name": "复杂游乐园/10幽灵迷宫/装饰/道具棺木",
+  "prompt": "Simple standalone voxel model of 道具棺木: a closed theatrical coffin prop leaning slightly against a low stone base, purple brown wood and metal bands. Use 16 to 28 box meshes only, one grounded object, bold readable silhouette, bright amusement park colors, no terrain, no people, no floating pieces.",
+  "modelJson": {
+    "name": "欢乐剧场紫木棺",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "coffinProp",
+        "name": "棺木与石座",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "coffinProp",
+        "transform": {
+          "pos": [
+            -0.72,
+            0.17,
+            -0.34
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.72,
+            "height": 0.34,
+            "depth": 0.9
+          },
+          "color": 8312017
+        }
+      },
+      {
+        "id": "m1",
+        "parent": "coffinProp",
+        "transform": {
+          "pos": [
+            0,
+            0.17,
+            -0.34
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.72,
+            "height": 0.34,
+            "depth": 0.9
+          },
+          "color": 6731709
+        }
+      },
+      {
+        "id": "m2",
+        "parent": "coffinProp",
+        "transform": {
+          "pos": [
+            0.72,
+            0.17,
+            -0.34
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.72,
+            "height": 0.34,
+            "depth": 0.9
+          },
+          "color": 8312017
+        }
+      },
+      {
+        "id": "m3",
+        "parent": "coffinProp",
+        "transform": {
+          "pos": [
+            0,
+            0.42,
+            -0.34
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2.28,
+            "height": 0.16,
+            "depth": 1.02
+          },
+          "color": 10740696
+        }
+      },
+      {
+        "id": "m4",
+        "parent": "coffinProp",
+        "transform": {
+          "pos": [
+            0,
+            0.36,
+            0.24
+          ],
+          "quat": [
+            -0.77,
+            0,
+            0,
+            0.64
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.72,
+            "height": 0.42,
+            "depth": 0.48
+          },
+          "color": 6501207
+        }
+      },
+      {
+        "id": "m5",
+        "parent": "coffinProp",
+        "transform": {
+          "pos": [
+            0,
+            0.81,
+            0.15
+          ],
+          "quat": [
+            -0.77,
+            0,
+            0,
+            0.64
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.08,
+            "height": 0.42,
+            "depth": 0.44
+          },
+          "color": 7616351
+        }
+      },
+      {
+        "id": "m6",
+        "parent": "coffinProp",
+        "transform": {
+          "pos": [
+            0,
+            1.35,
+            0.06
+          ],
+          "quat": [
+            -0.77,
+            0,
+            0,
+            0.64
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.24,
+            "height": 0.42,
+            "depth": 0.66
+          },
+          "color": 8536164
+        }
+      },
+      {
+        "id": "m7",
+        "parent": "coffinProp",
+        "transform": {
+          "pos": [
+            0,
+            1.97,
+            -0.06
+          ],
+          "quat": [
+            -0.77,
+            0,
+            0,
+            0.64
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.34,
+            "height": 0.42,
+            "depth": 0.6
+          },
+          "color": 7747678
+        }
+      },
+      {
+        "id": "m8",
+        "parent": "coffinProp",
+        "transform": {
+          "pos": [
+            0,
+            2.53,
+            -0.16
+          ],
+          "quat": [
+            -0.77,
+            0,
+            0,
+            0.64
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1,
+            "height": 0.42,
+            "depth": 0.54
+          },
+          "color": 8733541
+        }
+      },
+      {
+        "id": "m9",
+        "parent": "coffinProp",
+        "transform": {
+          "pos": [
+            0,
+            2.97,
+            -0.24
+          ],
+          "quat": [
+            -0.77,
+            0,
+            0,
+            0.64
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.6,
+            "height": 0.42,
+            "depth": 0.36
+          },
+          "color": 6893648
+        }
+      },
+      {
+        "id": "m10",
+        "parent": "coffinProp",
+        "transform": {
+          "pos": [
+            0,
+            0.16,
+            0.51
+          ],
+          "quat": [
+            0.54,
+            -0.45,
+            0.54,
+            -0.45
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.1,
+            "height": 0.09,
+            "depth": 0.68
+          },
+          "color": 15771725
+        }
+      },
+      {
+        "id": "m11",
+        "parent": "coffinProp",
+        "transform": {
+          "pos": [
+            0.45,
+            0.43,
+            0.46
+          ],
+          "quat": [
+            -0.75,
+            0.12,
+            -0.15,
+            0.63
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.1,
+            "height": 0.09,
+            "depth": 0.59
+          },
+          "color": 15771725
+        }
+      },
+      {
+        "id": "m12",
+        "parent": "coffinProp",
+        "transform": {
+          "pos": [
+            0.62,
+            1.51,
+            0.27
+          ],
+          "quat": [
+            -0.77,
+            0.02,
+            -0.03,
+            0.64
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.11,
+            "height": 0.09,
+            "depth": 1.63
+          },
+          "color": 15771725
+        }
+      },
+      {
+        "id": "m13",
+        "parent": "coffinProp",
+        "transform": {
+          "pos": [
+            0.59,
+            2.57,
+            0.07
+          ],
+          "quat": [
+            -0.76,
+            -0.1,
+            0.12,
+            0.63
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.1,
+            "height": 0.09,
+            "depth": 0.57
+          },
+          "color": 15771725
+        }
+      },
+      {
+        "id": "m14",
+        "parent": "coffinProp",
+        "transform": {
+          "pos": [
+            0.4,
+            3.02,
+            -0.01
+          ],
+          "quat": [
+            -0.74,
+            -0.16,
+            0.19,
+            0.62
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.1,
+            "height": 0.09,
+            "depth": 0.41
+          },
+          "color": 15771725
+        }
+      },
+      {
+        "id": "m15",
+        "parent": "coffinProp",
+        "transform": {
+          "pos": [
+            0,
+            3.19,
+            -0.04
+          ],
+          "quat": [
+            -0.54,
+            -0.45,
+            0.54,
+            0.45
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.11,
+            "height": 0.09,
+            "depth": 0.6
+          },
+          "color": 15771725
+        }
+      },
+      {
+        "id": "m16",
+        "parent": "coffinProp",
+        "transform": {
+          "pos": [
+            -0.4,
+            3.02,
+            -0.01
+          ],
+          "quat": [
+            -0.19,
+            -0.62,
+            0.74,
+            0.16
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.11,
+            "height": 0.09,
+            "depth": 0.41
+          },
+          "color": 15771725
+        }
+      },
+      {
+        "id": "m17",
+        "parent": "coffinProp",
+        "transform": {
+          "pos": [
+            -0.58,
+            2.57,
+            0.07
+          ],
+          "quat": [
+            -0.12,
+            -0.63,
+            0.76,
+            0.1
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.1,
+            "height": 0.09,
+            "depth": 0.57
+          },
+          "color": 15771725
+        }
+      },
+      {
+        "id": "m18",
+        "parent": "coffinProp",
+        "transform": {
+          "pos": [
+            -0.61,
+            1.51,
+            0.27
+          ],
+          "quat": [
+            0.03,
+            -0.64,
+            0.77,
+            -0.02
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.1,
+            "height": 0.09,
+            "depth": 1.63
+          },
+          "color": 15771725
+        }
+      },
+      {
+        "id": "m19",
+        "parent": "coffinProp",
+        "transform": {
+          "pos": [
+            -0.45,
+            0.43,
+            0.46
+          ],
+          "quat": [
+            0.15,
+            -0.63,
+            0.75,
+            -0.12
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.11,
+            "height": 0.09,
+            "depth": 0.59
+          },
+          "color": 15771725
+        }
+      },
+      {
+        "id": "m20",
+        "parent": "coffinProp",
+        "transform": {
+          "pos": [
+            0,
+            1.25,
+            0.32
+          ],
+          "quat": [
+            -0.77,
+            0,
+            0,
+            0.64
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.68,
+            "height": 0.07,
+            "depth": 0.76
+          },
+          "color": 4924746
+        }
+      },
+      {
+        "id": "m21",
+        "parent": "coffinProp",
+        "transform": {
+          "pos": [
+            0,
+            2.18,
+            0.15
+          ],
+          "quat": [
+            -0.77,
+            0,
+            0,
+            0.64
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.84,
+            "height": 0.07,
+            "depth": 0.74
+          },
+          "color": 5318219
+        }
+      },
+      {
+        "id": "m22",
+        "parent": "coffinProp",
+        "transform": {
+          "pos": [
+            0,
+            0.73,
+            0.47
+          ],
+          "quat": [
+            -0.77,
+            0,
+            0,
+            0.64
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.12,
+            "height": 0.09,
+            "depth": 0.13
+          },
+          "color": 7922400
+        }
+      },
+      {
+        "id": "m23",
+        "parent": "coffinProp",
+        "transform": {
+          "pos": [
+            0,
+            1.74,
+            0.29
+          ],
+          "quat": [
+            -0.77,
+            0,
+            0,
+            0.64
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.32,
+            "height": 0.09,
+            "depth": 0.14
+          },
+          "color": 7922400
+        }
+      },
+      {
+        "id": "m24",
+        "parent": "coffinProp",
+        "transform": {
+          "pos": [
+            0,
+            2.62,
+            0.13
+          ],
+          "quat": [
+            -0.77,
+            0,
+            0,
+            0.64
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.04,
+            "height": 0.09,
+            "depth": 0.14
+          },
+          "color": 7922400
+        }
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1784475283600,
+        "provider": "glm",
+        "data": "XhTszN9imBv4e3AWECVEWqFaEVhUrD14zwV3JX7WV2nve+2ClWXdIJDQGpfwqXNPoxlrSjJY2arWR5Lo+GNsQuFI3OfWVaKGwjQYm1PyVr72RDt85tMze7j8YOJcOHN+hOztamQQzjuyaFOoB7rrbOgJ4Yats6Iqnmz9z/EUnfdODbJZTVK8nlw9TZtOYE7+S5vVXMHSY6SS9+Qxi0Jrc2cbSgjOcpg5NFTT2XOYzwSwId4pbrmSBHuiiWXsm9jTGZnQwNGkFxlg235JwvI3RSssDJd/MhIZ8AT4maS5SPb9e6NsrSPceIHDEbZIDQfs2LyZx6iHhS35OlBegDVDUS0yj1xRWI25M1rIc9a42jpK2Gu1euCE0iIf9WzejDHGskcH6n4ZSerkXF0Qb2z7lF7PndBpCm2bVzFnFHlAOZ+p3q89bO20N4FCmnBxDOU36ItBEsDjPrBvp7CrXhlPA/5/X+HelwtTyG4Xfphl80Uu+W6gJbNj4KN2HIRqsSO6iJuuzazL3HqPYvfRYc7BZls0Z1y+z3t2vNiL4Pu2eTPXFoNQlxDduLjG+lxYdNhYzSypXaOz+U7E+5kXwYJMHkrDUg5i6QShutMOQDsi8HfrGe0LK94opAogljWrS4b0bwlFzgG/hO0gJlgAhHUVaAl1cUzZ28fmfBsvKnuvD34cTlRBZ0oCxFxkEtCupuzdgWhWWE5W0r6Ra2GJCCIhISjcy5KlnilJsCT2mnvNJ2rYDSbY7K1gkROLfqJoUYOpI8DqqVMLkmtdU92UkloKWsleIzV4u8CrpZ5CWUE25LxK9njGvk08gEA0lMxYt2xQlGMTPGKvTsTnPTCi8KaghxOLPlyRSVa0MOAESF+z8ex8qofjtPxbzfYnrEDMjiPHIaPBikogSVBDhvrI+mCqFfo3hadYYb131ELG0PqFjrZwH5jqCx8SwuGXxpzJY04+rCUh7kkKLH6B+222a0r/aLbTKU3X1eppDknvaMMOB+85eXuxO5OEI0ospZtBn9BsCLm4qzl+gNVEldmlJ+99Lvb5292U5dXl3XgMqkhf7d2CYsQLqtFcptvFwx8b9SCyrGFYF4JN703NaavzhoJEQWH3E2Ug/fhqrAK1GoDmYDmL4vYjKCunnWcXo45RisArR4+OGov9JEoyTKBLpKYGua0RXzZ8bm9ygxEcwN7ypf1WGsYZPSrsktFh0FT8rVBhgDit/Or7QQpeRXwIGL/jhtBNXbZhvr3GeArDWZTzIPYZHhE1OFZezVCM3GIwjPjFLl28+ztAdQt9XTLBwVE0lmgT6DqJPij+8aNPLd2R",
+        "edits": ""
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -0.62,
+          0.9871660847880299,
+          -0.06343734924982625
+        ],
+        "max": [
+          0.62,
+          1.7128339152119703,
+          0.47015866072523615
+        ],
+        "sourceNodeId": "m6"
+      },
+      {
+        "min": [
+          -0.67,
+          1.636660349127182,
+          -0.17795206246678386
+        ],
+        "max": [
+          0.67,
+          2.303339650872818,
+          0.3446733739421938
+        ],
+        "sourceNodeId": "m7"
+      },
+      {
+        "min": [
+          -1.14,
+          0.33999999999999997,
+          -0.7066393442622951
+        ],
+        "max": [
+          1.14,
+          0.5,
+          0.31336065573770494
+        ],
+        "sourceNodeId": "m3"
+      },
+      {
+        "min": [
+          -0.5,
+          2.226154613466334,
+          -0.27246677568374145
+        ],
+        "max": [
+          0.5,
+          2.8338453865336657,
+          0.23918808715915132
+        ],
+        "sourceNodeId": "m8"
+      },
+      {
+        "min": [
+          -0.54,
+          0.5553117206982544,
+          0.04667536895466251
+        ],
+        "max": [
+          0.54,
+          1.0646882793017456,
+          0.5400459425207473
+        ],
+        "sourceNodeId": "m5"
+      },
+      {
+        "min": [
+          -1.08,
+          0,
+          -0.6466393442622951
+        ],
+        "max": [
+          -0.36,
+          0.34,
+          0.25336065573770494
+        ],
+        "sourceNodeId": "m0"
+      },
+      {
+        "min": [
+          0.36,
+          0,
+          -0.6466393442622951
+        ],
+        "max": [
+          1.08,
+          0.34,
+          0.25336065573770494
+        ],
+        "sourceNodeId": "m2"
+      },
+      {
+        "min": [
+          -0.36,
+          0,
+          -0.6466393442622951
+        ],
+        "max": [
+          0.36,
+          0.34,
+          0.25336065573770494
+        ],
+        "sourceNodeId": "m1"
+      },
+      {
+        "min": [
+          -0.36,
+          0.08564887780548625,
+          0.13301851109930096
+        ],
+        "max": [
+          0.36,
+          0.6343511221945137,
+          0.6337028003761089
+        ],
+        "sourceNodeId": "m4"
+      },
+      {
+        "min": [
+          0.5065062761506276,
+          0.6987198645148438,
+          0.21957603728781472
+        ],
+        "max": [
+          0.7334937238493724,
+          2.321280135485156,
+          0.6071452741875952
+        ],
+        "sourceNodeId": "m12"
+      },
+      {
+        "min": [
+          -0.7185066746363817,
+          0.6990645546921699,
+          0.21967864736950427
+        ],
+        "max": [
+          -0.5014933253636182,
+          2.32093544530783,
+          0.6070426641059057
+        ],
+        "sourceNodeId": "m18"
+      },
+      {
+        "min": [
+          -0.42,
+          1.8098379052369078,
+          0.19129881035117122
+        ],
+        "max": [
+          0.42,
+          2.5501620947630923,
+          0.3954225011242387
+        ],
+        "sourceNodeId": "m21"
+      }
+    ],
+    "sourceMeshCount": 25,
+    "candidateCount": 14,
+    "fallbackUsed": false
+  },
+  "mode": "lite",
+  "provider": "provider-fallback",
+  "createdAt": 1784475287491,
+  "updatedAt": 1784475287491
+}

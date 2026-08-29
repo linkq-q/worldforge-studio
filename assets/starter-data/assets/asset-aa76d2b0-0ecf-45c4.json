@@ -1,0 +1,649 @@
+{
+  "id": "asset-aa76d2b0-0ecf-45c4",
+  "name": "儿童滑板",
+  "prompt": "单个可复用的儿童四轮滑板，雾蓝上翘板面、芥末黄几何图案和砖红轮子，普通可见尺度，不与货架或墙体捆绑。\n全局资产美术方向：统一采用柔和圆角、略微夸张比例的精致体素风；家具以浅暖木、米白和雾蓝为主，玩具使用克制的砖红、芥末黄和深蓝点缀，所有边角适合儿童空间且尺度参照1.60米角色。; 现代温暖的儿童卧室，浅木地板、柔和蓝灰墙面和米白顶面保持安静背景，以木质家具和少量红黄蓝玩具形成分组色彩点缀；装饰集中于睡眠与学习区域，中央不堆放杂物。; 温暖, 现代儿童房, 圆角体素, 整洁生活感, 柔和配色; palette #E8DFC9, #B99062, #8EA6B4, #C65F4A, #D6A83E, #354C63; materials 浅色木材, 哑光烤漆, 棉织物, 粉末涂层金属, 透明玻璃\n资产角色：低位停放的轮式玩具；目标尺度：small。\n只生成一个可复用的独立物体，不要生成地面、背景、天空、完整场景或多个分散物体。",
+  "modelJson": {
+    "name": "雾蓝儿童四轮滑板",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "board",
+        "name": "滑板主体",
+        "transform": {
+          "pos": [
+            0,
+            0.28,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            1.184,
+            0.354,
+            0.518
+          ],
+          "center": [
+            0.002,
+            -0.037,
+            0
+          ],
+          "axes": [
+            [
+              0.9999,
+              0.0105,
+              0
+            ],
+            [
+              -0.0105,
+              0.9999,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "wheel_0",
+        "name": "轮子",
+        "parent": "board",
+        "transform": {
+          "pos": [
+            -0.31,
+            -0.14,
+            -0.21
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.14,
+            0.14,
+            0.098
+          ],
+          "center": [
+            0,
+            0,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "wheel_1",
+        "name": "轮子",
+        "parent": "board",
+        "transform": {
+          "pos": [
+            -0.31,
+            -0.14,
+            0.21
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.14,
+            0.14,
+            0.098
+          ],
+          "center": [
+            0,
+            0,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "wheel_2",
+        "name": "轮子",
+        "parent": "board",
+        "transform": {
+          "pos": [
+            0.31,
+            -0.14,
+            -0.21
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.14,
+            0.14,
+            0.098
+          ],
+          "center": [
+            0,
+            0,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "wheel_3",
+        "name": "轮子",
+        "parent": "board",
+        "transform": {
+          "pos": [
+            0.31,
+            -0.14,
+            0.21
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.14,
+            0.14,
+            0.098
+          ],
+          "center": [
+            0,
+            0,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "board",
+        "transform": {
+          "pos": [
+            0,
+            0.03,
+            0
+          ],
+          "quat": [
+            0,
+            0,
+            0,
+            1
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.84,
+            "height": 0.055,
+            "depth": 0.34
+          },
+          "color": 9348788
+        }
+      },
+      {
+        "id": "m1",
+        "parent": "board",
+        "transform": {
+          "pos": [
+            -0.5,
+            0.07,
+            0
+          ],
+          "quat": [
+            0,
+            0,
+            0.97,
+            0.23
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.18,
+            "height": 0.055,
+            "depth": 0.34
+          },
+          "color": 9348788
+        }
+      },
+      {
+        "id": "m2",
+        "parent": "board",
+        "transform": {
+          "pos": [
+            0.5,
+            0.07,
+            0
+          ],
+          "quat": [
+            0,
+            0,
+            0.23,
+            0.97
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.18,
+            "height": 0.055,
+            "depth": 0.34
+          },
+          "color": 9348788
+        }
+      },
+      {
+        "id": "m3",
+        "parent": "board",
+        "transform": {
+          "pos": [
+            -0.2,
+            0.064,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.2,
+            "height": 0.012,
+            "depth": 0.09
+          },
+          "color": 14067774
+        }
+      },
+      {
+        "id": "m4",
+        "parent": "board",
+        "transform": {
+          "pos": [
+            0.08,
+            0.064,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.09,
+            "height": 0.012,
+            "depth": 0.2
+          },
+          "color": 14067774
+        }
+      },
+      {
+        "id": "m5",
+        "parent": "board",
+        "transform": {
+          "pos": [
+            0.29,
+            0.064,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.12,
+            "height": 0.012,
+            "depth": 0.12
+          },
+          "color": 14067774
+        }
+      },
+      {
+        "id": "m6",
+        "parent": "board",
+        "transform": {
+          "pos": [
+            -0.31,
+            -0.06,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.09,
+            "height": 0.08,
+            "depth": 0.38
+          },
+          "color": 3492963
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m7",
+        "parent": "board",
+        "transform": {
+          "pos": [
+            0.31,
+            -0.06,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.09,
+            "height": 0.08,
+            "depth": 0.38
+          },
+          "color": 3492963
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m8",
+        "parent": "wheel_0",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.14,
+            "height": 0.14,
+            "depth": 0.09
+          },
+          "color": 13000522
+        }
+      },
+      {
+        "id": "m9",
+        "parent": "wheel_0",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.055,
+            "height": 0.055,
+            "depth": 0.098
+          },
+          "color": 3492963
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m10",
+        "parent": "wheel_1",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.14,
+            "height": 0.14,
+            "depth": 0.09
+          },
+          "color": 13000522
+        }
+      },
+      {
+        "id": "m11",
+        "parent": "wheel_1",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.055,
+            "height": 0.055,
+            "depth": 0.098
+          },
+          "color": 3492963
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m12",
+        "parent": "wheel_2",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.14,
+            "height": 0.14,
+            "depth": 0.09
+          },
+          "color": 13000522
+        }
+      },
+      {
+        "id": "m13",
+        "parent": "wheel_2",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.055,
+            "height": 0.055,
+            "depth": 0.098
+          },
+          "color": 3492963
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m14",
+        "parent": "wheel_3",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.14,
+            "height": 0.14,
+            "depth": 0.09
+          },
+          "color": 13000522
+        }
+      },
+      {
+        "id": "m15",
+        "parent": "wheel_3",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.055,
+            "height": 0.055,
+            "depth": 0.098
+          },
+          "color": 3492963
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1786869646155,
+        "provider": "gpt",
+        "data": "UTEnVzp9tR0OVqYhfJZNrKJnK2YEyMfgFb5RMSVw984gPXIIWFd/V49CxwsZPwwlmxJV5JQJqLuNJ6VZ6s4AX5Kx+hh1e1kATcTdytKj/rJGdeWh+OmABTqMeDMMKWPE5mHCkhZfcMZqTcwFiqzHp3SSNOSnaZiYx2sfnBpq7FBqpamYIkHDiw/NvDBLM6cXDpx7txZqdrOI0BMnPk2JyuK1b+hXTzKpquXDY5gL/pKZcvy6Lllb8iuXu78uZy3aBR6tmmBi7nW9bfZH/GQ0GXWa1VWgYRl4kVblfm58ERO5wdjZJwzXNXtEJhuUcaU2rFyhIQOEsDlLlFpbcrKSqyOo6y9NgZWbBRgj2m9nY05FqraZ+xVbESzTdc6QQWebU+Lq7Wq64+SHdOgBTB4hfQuCL1FsvNYcqrHXpEsR0wgjC6PC+2C+jWdtnJor2YFbVYJtRSP+9+4rZfxb7mTsIMPP5pranEQHMAuH5QujEvX8VWlSG95lCdZPIeGSoXsfYPPc0xvsyJ9/DShLPSGnGElqiFsb4xxw2eJFHLTyyLd7E2legjMrEBi3eRXL3qoECi27msSp2vo0scs95zrawZIo4Kx+PXPlok8vn/K8lgrGL2IZ7paLo37dBCseLglJcUt/miMNGGAFY21LdKmXnNDd8KYMST8qre3l/RWnPIkouNZIu1EHSHPrucAJYq9utR6OU3nq2Bmo1xvJzPTVGqdGgNy9l7o8CuKh2q2nc8LM3A7WR6ITbY/spDp2u6Sze67k8A2V6QZAcMtWhNO1mr0rAeibTho4zBXjIDsZHv0nJEpAqTo0s9F714I7dalMbKPXQhPNtQmZb2Y47wRxvl2/oqFHmA5G/kf01VFK2zHJQnOc13ZZnHMtOa1Lu8y9eVRtpzLI",
+        "edits": ""
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -0.5927656470114712,
+          0,
+          -0.259
+        ],
+        "max": [
+          0.5927656470114712,
+          0.34498088146508354,
+          0.259
+        ],
+        "sourceNodeId": "asset-bounds"
+      }
+    ],
+    "sourceMeshCount": 16,
+    "candidateCount": 1,
+    "fallbackUsed": true
+  },
+  "footprintRadius": 0.5927656470114712,
+  "sizeClass": "small",
+  "mode": "voxel",
+  "provider": "gpt",
+  "libraryId": "library-d7967286-cebf-4f99",
+  "libraryMetadata": {
+    "tags": [
+      "childrensskateboard",
+      "skateboard",
+      "ride-ontoy"
+    ],
+    "applicableZones": [
+      "settlement"
+    ],
+    "repeatable": true,
+    "landmark": false,
+    "enabled": true,
+    "priority": 0.5,
+    "analysisStatus": "ready",
+    "rotation": "random"
+  },
+  "createdAt": 1787817758335,
+  "updatedAt": 1787817758335
+}

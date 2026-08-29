@@ -1,0 +1,1287 @@
+{
+  "id": "asset-5edfc74c-74a5-484b",
+  "name": "玩具基洛夫飞艇",
+  "prompt": "玩具基洛夫飞艇",
+  "modelJson": {
+    "name": "玩具基洛夫飞艇",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "body",
+        "name": "飞艇主体",
+        "transform": {
+          "pos": [
+            0,
+            4.2,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            8.873,
+            4.976,
+            10.781
+          ],
+          "center": [
+            0,
+            0.025,
+            -0.262
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              0.993,
+              0.1185
+            ],
+            [
+              0,
+              -0.1185,
+              0.993
+            ]
+          ],
+          "_mainAxis": 2
+        }
+      },
+      {
+        "id": "tail_fins",
+        "name": "尾翼",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0,
+            0.3,
+            -3.7
+          ]
+        },
+        "_obb": {
+          "size": [
+            4.1,
+            2.633,
+            2.579
+          ],
+          "center": [
+            0,
+            0.99,
+            -0.184
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              0.9784,
+              -0.2066
+            ],
+            [
+              0,
+              0.2066,
+              0.9784
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "gondola",
+        "name": "吊舱",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0,
+            -0.75,
+            0.4
+          ]
+        },
+        "_obb": {
+          "size": [
+            1.55,
+            1.553,
+            4.021
+          ],
+          "center": [
+            0,
+            -0.544,
+            0.392
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              0.9869,
+              -0.1615
+            ],
+            [
+              0,
+              0.1615,
+              0.9869
+            ]
+          ],
+          "_mainAxis": 2
+        }
+      },
+      {
+        "id": "engine_left",
+        "name": "左发动机",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            -1.35,
+            -0.55,
+            0.3
+          ]
+        },
+        "_obb": {
+          "size": [
+            3.297,
+            2.535,
+            3.651
+          ],
+          "center": [
+            -0.63,
+            -0.072,
+            0.823
+          ],
+          "axes": [
+            [
+              0.7975,
+              -0.081,
+              0.5979
+            ],
+            [
+              -0.0332,
+              0.9836,
+              0.1775
+            ],
+            [
+              -0.6024,
+              -0.1615,
+              0.7817
+            ]
+          ],
+          "_mainAxis": 2
+        }
+      },
+      {
+        "id": "prop_left",
+        "name": "左螺旋桨",
+        "parent": "engine_left",
+        "transform": {
+          "pos": [
+            -0.7,
+            -0.2,
+            1.58
+          ]
+        },
+        "_obb": {
+          "size": [
+            2.35,
+            2.35,
+            0.41
+          ],
+          "center": [
+            0,
+            0,
+            0.145
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "engine_right",
+        "name": "右发动机",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            1.35,
+            -0.55,
+            0.3
+          ]
+        },
+        "_obb": {
+          "size": [
+            3.297,
+            2.535,
+            3.651
+          ],
+          "center": [
+            0.63,
+            -0.072,
+            0.823
+          ],
+          "axes": [
+            [
+              0.7975,
+              0.081,
+              -0.5979
+            ],
+            [
+              0.0332,
+              0.9836,
+              0.1775
+            ],
+            [
+              0.6024,
+              -0.1615,
+              0.7817
+            ]
+          ],
+          "_mainAxis": 2
+        }
+      },
+      {
+        "id": "prop_right",
+        "name": "右螺旋桨",
+        "parent": "engine_right",
+        "transform": {
+          "pos": [
+            0.7,
+            -0.2,
+            1.58
+          ]
+        },
+        "_obb": {
+          "size": [
+            2.35,
+            2.35,
+            0.41
+          ],
+          "center": [
+            0,
+            0,
+            0.145
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "rudder",
+        "name": "方向舵",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0,
+            0.95,
+            -4.5
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.22,
+            1.25,
+            1.05
+          ],
+          "center": [
+            0,
+            0.65,
+            -0.05
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "bomb_bay",
+        "name": "投弹舱门",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0,
+            -1.88,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.75,
+            0.14,
+            1.55
+          ],
+          "center": [
+            0,
+            -0.12,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 2
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0,
+            0.3,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2.8,
+            "height": 2.2,
+            "depth": 6.4
+          },
+          "color": 8332851
+        }
+      },
+      {
+        "id": "m1",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0,
+            0.3,
+            3.8
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2.4,
+            "height": 1.8,
+            "depth": 1.2
+          },
+          "color": 10302528
+        }
+      },
+      {
+        "id": "m2",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0,
+            0.3,
+            4.75
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.6,
+            "height": 1.25,
+            "depth": 0.75
+          },
+          "color": 11748173
+        }
+      },
+      {
+        "id": "m3",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0,
+            0.3,
+            -3.75
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2.3,
+            "height": 1.75,
+            "depth": 1.25
+          },
+          "color": 6889773
+        }
+      },
+      {
+        "id": "m4",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0,
+            0.3,
+            -4.75
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.5,
+            "height": 1.1,
+            "depth": 0.8
+          },
+          "color": 5644331
+        }
+      },
+      {
+        "id": "m5",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            -1.43,
+            0.35,
+            0.8
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.08,
+            "height": 0.9,
+            "depth": 0.9
+          },
+          "color": 15124300
+        }
+      },
+      {
+        "id": "m6",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            -1.44,
+            0.35,
+            0.8
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.08,
+            "height": 0.22,
+            "depth": 1.15
+          },
+          "color": 15124300
+        }
+      },
+      {
+        "id": "m7",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            1.43,
+            0.35,
+            0.8
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.08,
+            "height": 0.9,
+            "depth": 0.9
+          },
+          "color": 15124300
+        }
+      },
+      {
+        "id": "m8",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            1.44,
+            0.35,
+            0.8
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.08,
+            "height": 0.22,
+            "depth": 1.15
+          },
+          "color": 15124300
+        }
+      },
+      {
+        "id": "m9",
+        "parent": "tail_fins",
+        "transform": {
+          "pos": [
+            0,
+            1.25,
+            -0.2
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.3,
+            "height": 1.7,
+            "depth": 2.2
+          },
+          "color": 4081232
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m10",
+        "parent": "tail_fins",
+        "transform": {
+          "pos": [
+            0,
+            -0.05,
+            -0.35
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 4.1,
+            "height": 0.3,
+            "depth": 1.8
+          },
+          "color": 4081232
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m11",
+        "parent": "gondola",
+        "transform": {
+          "pos": [
+            0,
+            -0.6,
+            0.05
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.55,
+            "height": 1.05,
+            "depth": 3.2
+          },
+          "color": 3422530
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m12",
+        "parent": "gondola",
+        "transform": {
+          "pos": [
+            0,
+            -0.5,
+            1.95
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.25,
+            "height": 0.55,
+            "depth": 0.75
+          },
+          "color": 6056050
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m13",
+        "parent": "gondola",
+        "transform": {
+          "pos": [
+            0,
+            -0.4,
+            2.34
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.85,
+            "height": 0.32,
+            "depth": 0.08
+          },
+          "color": 7391464
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass",
+            "variant": "blue"
+          },
+          {
+            "tag": "emissive",
+            "value": 0.25
+          }
+        ]
+      },
+      {
+        "id": "m14",
+        "parent": "gondola",
+        "transform": {
+          "pos": [
+            0,
+            -1.25,
+            -0.6
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.1,
+            "height": 0.3,
+            "depth": 0.9
+          },
+          "color": 2106667
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m15",
+        "parent": "engine_left",
+        "transform": {
+          "pos": [
+            -0.7,
+            -0.2,
+            -0.05
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.05,
+            "height": 0.85,
+            "depth": 2.1
+          },
+          "color": 4739418
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m16",
+        "parent": "engine_left",
+        "transform": {
+          "pos": [
+            -0.7,
+            -0.2,
+            1.25
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.85,
+            "height": 0.65,
+            "depth": 0.55
+          },
+          "color": 2633011
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m17",
+        "parent": "engine_left",
+        "transform": {
+          "pos": [
+            -0.2,
+            0,
+            -0.1
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.8,
+            "height": 0.18,
+            "depth": 0.9
+          },
+          "color": 3160128
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m18",
+        "parent": "prop_left",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0.02
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.28,
+            "height": 2.35,
+            "depth": 0.16
+          },
+          "color": 13018700
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m19",
+        "parent": "prop_left",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0.02
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2.35,
+            "height": 0.28,
+            "depth": 0.16
+          },
+          "color": 13018700
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m20",
+        "parent": "prop_left",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0.16
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.46,
+            "height": 0.46,
+            "depth": 0.38
+          },
+          "color": 7808560
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m21",
+        "parent": "engine_right",
+        "transform": {
+          "pos": [
+            0.7,
+            -0.2,
+            -0.05
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.05,
+            "height": 0.85,
+            "depth": 2.1
+          },
+          "color": 4739418
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m22",
+        "parent": "engine_right",
+        "transform": {
+          "pos": [
+            0.7,
+            -0.2,
+            1.25
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.85,
+            "height": 0.65,
+            "depth": 0.55
+          },
+          "color": 2633011
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m23",
+        "parent": "engine_right",
+        "transform": {
+          "pos": [
+            0.2,
+            0,
+            -0.1
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.8,
+            "height": 0.18,
+            "depth": 0.9
+          },
+          "color": 3160128
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m24",
+        "parent": "prop_right",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0.02
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.28,
+            "height": 2.35,
+            "depth": 0.16
+          },
+          "color": 13018700
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m25",
+        "parent": "prop_right",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0.02
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2.35,
+            "height": 0.28,
+            "depth": 0.16
+          },
+          "color": 13018700
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m26",
+        "parent": "prop_right",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0.16
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.46,
+            "height": 0.46,
+            "depth": 0.38
+          },
+          "color": 7808560
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m27",
+        "parent": "rudder",
+        "transform": {
+          "pos": [
+            0,
+            0.65,
+            -0.05
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.22,
+            "height": 1.25,
+            "depth": 1.05
+          },
+          "color": 11832117
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m28",
+        "parent": "bomb_bay",
+        "transform": {
+          "pos": [
+            0,
+            -0.12,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.75,
+            "height": 0.14,
+            "depth": 1.55
+          },
+          "color": 1909288
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1787823742462,
+        "provider": "glm",
+        "data": "5IFzVIdndm13o0o73+ZdK+LDgCLQy5VLrHdsVsU84yw5yRYuim0wLg5Uh6cnlAx2fNcY5PQwDB94PmSFnuwhRDsEx6G9JbHOWU/eepfnk40Jam//RUzMuSs35mH5YECz1SE8nZ0RcJpZ/cBv1sP80auUA/u0fR4jzVIw/YZQnYljThpYatvXOL7atO/uoKA3f+9qR2zujm+squAUGPSjbgAYYHqiYF9kgKKOXkyK7fliRfTbIWTCDTuEfk4+/xlxDVAyTLaHGb5CFIkRMzKNh+Ov5/fzW/pdSYP+Sc0G6xRDW+7yLr/mIMwDrqeeajS/CyYe39z75tlmlCSxq9BFwaCXBM/nmZx+GQn54oYS4GFvxkRKbd9sk4HexVRK1w1GIOgby+y/Cc/II9VazZa131+eN7oPRjuctXJC6OUc/0ZcvELH/b47lh4Z19uqOqEVd50JDmitITn9xDmgtYibYMiFIJcxIlrfHEoVmLMxjSJY9uHCt0fHsWZ6w/X8K51C1uMT4sX+WgNAZ1wybsysLgJ03iHo2R01LK8A5IM7vbSaI2MEVfML/sUnsb8tyxyKy7RdFjgukGMEVcU91fiQ5b5Pb0SKjtOVUqGKdgfOPw2OYcQIyFVkTJvQbDUm7ynQs9bVM66aIUyqpJ7NV0eYzjVjqTa2htBNBAdzHxak+5yJlCm5KTr0gH3+TZQXl5Q6kKt/Qu7TDrVarYBMGI3zs6g0CvwB8dXQSqjRrOwRnY0aLSjEZbg1z28ZUWVG6J8rNKKIhr7HdCMDY8j/OICxHY6lH4VmWFkQ1VoWm7ixwbHezOH1bVqZ67RNH/xks+iw9QXoJDxO3YAC/MF02bO+grtZQMkTn/vwYTDcFil1ZpGm7G0W1qG3yY7obD2MMgmH2VDJCbSzWKvdxetbu2zjCBbCKvN13UUUwXOjuqV8Al8mkILpsMC9+N1AZr4Np25k+rh/xpCdfTdwS0eN1jQ4nFXpJueaYsHBYzhys6MDDieMG5bd8Vs/pbiJf+crvcyj8O4nOT87lST/xGHw6G/NxMHuJfx9C5SLXy994kh6wdGY1unKkRkaqPtm6nwDg2Bnb4UYZxcK2klmm5uWNBYT8OjJLHpwSYgMA37RKBL80FldTl3ZIIuHcQdorPLCg56ZPa67aGgUUpnGD0suoB0tIeGyqTG8urw0hwy4pzke64XgJuxgrjShgCFnt81UUul4GhZlzHnfwIcBMUDzMk74ey43gTe+tIFKW0alTrWUN03ryyleq2Msrkjx7S/VpOxjfmeCWDoCWNHGK4HhaSv6NYh9VEl9Hd8BCBZEccdaJX21MyGMuRb0K4+usEr3zZXNf+6m2P9N00rV3m5L4RYe0uViCmwtDfppYNLGjZjtaz7cHM1bYgY0n1Cg4gZnqlCvmsfaSe3PLOkSiLnS1BFgk5QchqXrq426DEW6xBZrLNmklbLQlo5aEURF5FrHq4IR16d1xYoQ",
+        "edits": ""
+      },
+      "semanticSnapshot": {
+        "v": 1,
+        "auto": true,
+        "text": "玩具基洛夫飞艇 · 9组/29mesh · 世界坐标(Y上Z前), 原点=模型根\n# 阅读说明: G:=group行(可动画骨骼, 动画key用G:后的id; @p=pivot世界坐标; 倾(x,y,z)°=朝向偏离世界轴的欧拉角; 缩进=父子层级; 挂:=挂载于某组; G:id→id→…=chain折叠行, 每个id都是可独立动画的group, chain×N=waypoint数)\n# M:=mesh行(label[id 几何 @(世界坐标)], label可省略; ×N=for循环批量件(锚点=代表实例); cyl (起)→(末)或 轴上(Y)等方位词=延伸方向; 薄向=板面法向(扁板); 挂载组双代表=最大件+最远有向件(刃/嘴/管所在端); 无方向标注=均匀块(三向相近,如头),默认面向前(Z); 对称×2=镜像对)\nG:body 飞艇主体 @p(0,4.2,0)\n  M:[m0 box 2.8×2.2×6.4 (0,4.5,0) 轴前(Z)]\n  G:tail_fins 尾翼 @p(0,4.5,-3.7)\n    M:[m10 box 4.1×0.3×1.8 (0,4.5,-4) 薄向上(Y)]\n  G:gondola 吊舱 @p(0,3.5,0.4)\n    M:[m11 box 1.6×1.1×3.2 (0,2.9,0.5) 轴前(Z)]\n  G:engine_left 左发动机 @p(-1.3,3.7,0.3)\n    M:[m15 box 1.1×0.85×2.1 (-2,3.5,0.3) 轴前(Z)]\n    G:prop_left 左螺旋桨 @p(-2,3.5,1.9)\n      M:[m18 box 0.28×2.4×0.16 (-2,3.5,1.9) 轴上(Y)]\n  G:engine_right 右发动机 @p(1.4,3.7,0.3)\n    M:[m21 box 1.1×0.85×2.1 (2.1,3.5,0.3) 轴前(Z)]\n    G:prop_right 右螺旋桨 @p(2.1,3.5,1.9)\n      M:[m24 box 0.28×2.4×0.16 (2.1,3.5,1.9) 轴上(Y)]\n  G:rudder 方向舵 @p(0,5.2,-4.5)\n    M:[m27 box 0.22×1.3×1.1 (0,5.8,-4.5) 薄向右(X)]\n  G:bomb_bay 投弹舱门 @p(0,2.3,0)\n    M:[m28 box 0.75×0.14×1.6 (0,2.2,0) 薄向上(Y)]",
+        "stats": {
+          "groups": 9,
+          "meshes": 29,
+          "labeledMeshes": 0,
+          "labelCoverage": 0,
+          "batchLabels": 0,
+          "autoChains": 0,
+          "snapshotChars": 1091
+        }
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -1.4,
+          1.3499999999999996,
+          -3.1875
+        ],
+        "max": [
+          1.4,
+          3.5499999999999994,
+          3.2125000000000004
+        ],
+        "sourceNodeId": "m0"
+      },
+      {
+        "min": [
+          -0.775,
+          0.2749999999999999,
+          -1.1375
+        ],
+        "max": [
+          0.775,
+          1.3249999999999997,
+          2.0625000000000004
+        ],
+        "sourceNodeId": "m11"
+      },
+      {
+        "min": [
+          -1.2,
+          1.5499999999999998,
+          3.2125
+        ],
+        "max": [
+          1.2,
+          3.35,
+          4.4125
+        ],
+        "sourceNodeId": "m1"
+      },
+      {
+        "min": [
+          -1.15,
+          1.5749999999999997,
+          -4.3625
+        ],
+        "max": [
+          1.15,
+          3.3249999999999997,
+          -3.1125
+        ],
+        "sourceNodeId": "m3"
+      },
+      {
+        "min": [
+          -2.05,
+          2.2499999999999996,
+          -4.9375
+        ],
+        "max": [
+          2.05,
+          2.5500000000000003,
+          -3.1374999999999997
+        ],
+        "sourceNodeId": "m10"
+      },
+      {
+        "min": [
+          -2.5749999999999997,
+          0.9750000000000001,
+          -0.7874999999999999
+        ],
+        "max": [
+          -1.525,
+          1.8249999999999997,
+          1.3125000000000002
+        ],
+        "sourceNodeId": "m15"
+      },
+      {
+        "min": [
+          1.525,
+          0.9750000000000001,
+          -0.7874999999999999
+        ],
+        "max": [
+          2.5749999999999997,
+          1.8249999999999997,
+          1.3125000000000002
+        ],
+        "sourceNodeId": "m21"
+      },
+      {
+        "min": [
+          -0.8,
+          1.8249999999999997,
+          4.3875
+        ],
+        "max": [
+          0.8,
+          3.0749999999999997,
+          5.1375
+        ],
+        "sourceNodeId": "m2"
+      },
+      {
+        "min": [
+          -0.75,
+          1.9,
+          -5.1375
+        ],
+        "max": [
+          0.75,
+          2.9999999999999996,
+          -4.3374999999999995
+        ],
+        "sourceNodeId": "m4"
+      },
+      {
+        "min": [
+          -0.15,
+          2.85,
+          -4.9875
+        ],
+        "max": [
+          0.15,
+          4.549999999999999,
+          -2.7875
+        ],
+        "sourceNodeId": "m9"
+      },
+      {
+        "min": [
+          -0.625,
+          0.625,
+          1.9875000000000003
+        ],
+        "max": [
+          0.625,
+          1.1749999999999998,
+          2.7375000000000003
+        ],
+        "sourceNodeId": "m12"
+      },
+      {
+        "min": [
+          -2.4749999999999996,
+          1.0749999999999997,
+          1.2875
+        ],
+        "max": [
+          -1.6249999999999998,
+          1.725,
+          1.8375000000000004
+        ],
+        "sourceNodeId": "m16"
+      }
+    ],
+    "sourceMeshCount": 29,
+    "candidateCount": 24,
+    "fallbackUsed": false
+  },
+  "footprintRadius": 5.1375,
+  "sizeClass": "large",
+  "mode": "voxel",
+  "createdAt": 1787823749140,
+  "updatedAt": 1787823749140
+}

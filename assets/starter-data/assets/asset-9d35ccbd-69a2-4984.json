@@ -1,0 +1,803 @@
+{
+  "id": "asset-9d35ccbd-69a2-4984",
+  "name": "书桌",
+  "prompt": "哈利波特风格魔法工坊与图书馆中的书桌\nCoordinate contract: local Y+ is up, local Z+ is the front, entrance, or forward direction, and local X+ is right. Put doors, facades, openings, windshields, noses, seats, and other recognizable front details toward local Z+. For a modular repeated element, explicitly choose the long axis: side-by-side modules span local X with depth/front on local Z; traversal modules span local Z. Keep the model centered at its origin.\nCanonical dimensions contract: width=2.4, height=0.8, depth=1.3 world units. Keep the generated mesh within this centered bounding size.",
+  "modelJson": {
+    "name": "魔法工坊图书馆书桌",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "desk",
+        "name": "书桌主体",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            2.446,
+            1.11,
+            1.407
+          ],
+          "center": [
+            0.029,
+            0.279,
+            0.024
+          ],
+          "axes": [
+            [
+              0.9948,
+              0.0958,
+              0.0351
+            ],
+            [
+              -0.0929,
+              0.9927,
+              -0.0764
+            ],
+            [
+              -0.0421,
+              0.0727,
+              0.9965
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "mount01_drawers",
+        "name": "前侧抽屉组",
+        "parent": "desk",
+        "transform": {
+          "pos": [
+            0.72,
+            0.5,
+            0.58
+          ]
+        },
+        "mounted": true,
+        "_obb": {
+          "size": [
+            0.72,
+            0.317,
+            0.403
+          ],
+          "center": [
+            0,
+            -0.098,
+            -0.117
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              0.9985,
+              -0.0553
+            ],
+            [
+              0,
+              0.0553,
+              0.9985
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "mount02_open_book",
+        "name": "摊开的魔法书",
+        "parent": "desk",
+        "transform": {
+          "pos": [
+            -0.25,
+            0.68,
+            0.05
+          ]
+        },
+        "mounted": true,
+        "_obb": {
+          "size": [
+            1.012,
+            0.086,
+            0.48
+          ],
+          "center": [
+            -0.02,
+            0.02,
+            -0.04
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "mount03_inkwell",
+        "name": "发光魔法墨水瓶",
+        "parent": "desk",
+        "transform": {
+          "pos": [
+            0.47,
+            0.66,
+            0.28
+          ]
+        },
+        "mounted": true,
+        "_obb": {
+          "size": [
+            0.2,
+            0.18,
+            0.2
+          ],
+          "center": [
+            0,
+            0.07,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "mount04_books",
+        "name": "叠放典籍",
+        "parent": "desk",
+        "transform": {
+          "pos": [
+            0.82,
+            0.66,
+            -0.28
+          ]
+        },
+        "mounted": true,
+        "_obb": {
+          "size": [
+            0.633,
+            0.178,
+            0.34
+          ],
+          "center": [
+            -0.005,
+            0.064,
+            0
+          ],
+          "axes": [
+            [
+              0.9999,
+              -0.0161,
+              0
+            ],
+            [
+              0.0161,
+              0.9999,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "desk",
+        "transform": {
+          "pos": [
+            0,
+            0.59,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2.4,
+            "height": 0.14,
+            "depth": 1.3
+          },
+          "color": 4860699
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "walnut"
+          }
+        ]
+      },
+      {
+        "id": "m1",
+        "parent": "desk",
+        "transform": {
+          "pos": [
+            -1.02,
+            0.26,
+            -0.45
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.18,
+            "height": 0.52,
+            "depth": 0.18
+          },
+          "color": 3481620
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "walnut"
+          }
+        ]
+      },
+      {
+        "id": "m2",
+        "parent": "desk",
+        "transform": {
+          "pos": [
+            -1.02,
+            0.26,
+            0.45
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.18,
+            "height": 0.52,
+            "depth": 0.18
+          },
+          "color": 3481620
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "walnut"
+          }
+        ]
+      },
+      {
+        "id": "m3",
+        "parent": "desk",
+        "transform": {
+          "pos": [
+            1.02,
+            0.26,
+            -0.45
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.18,
+            "height": 0.52,
+            "depth": 0.18
+          },
+          "color": 3481620
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "walnut"
+          }
+        ]
+      },
+      {
+        "id": "m4",
+        "parent": "desk",
+        "transform": {
+          "pos": [
+            1.02,
+            0.26,
+            0.45
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.18,
+            "height": 0.52,
+            "depth": 0.18
+          },
+          "color": 3481620
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "walnut"
+          }
+        ]
+      },
+      {
+        "id": "m5",
+        "parent": "desk",
+        "transform": {
+          "pos": [
+            0,
+            0.34,
+            -0.47
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2.02,
+            "height": 0.12,
+            "depth": 0.12
+          },
+          "color": 3875863
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "walnut"
+          }
+        ]
+      },
+      {
+        "id": "m6",
+        "parent": "mount01_drawers",
+        "transform": {
+          "pos": [
+            0,
+            -0.1,
+            -0.15
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.72,
+            "height": 0.3,
+            "depth": 0.32
+          },
+          "color": 5649182
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "walnut"
+          }
+        ]
+      },
+      {
+        "id": "m7",
+        "parent": "mount01_drawers",
+        "transform": {
+          "pos": [
+            0,
+            -0.16,
+            0.03
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.56,
+            "height": 0.09,
+            "depth": 0.04
+          },
+          "color": 7028773
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "walnut"
+          }
+        ]
+      },
+      {
+        "id": "m8",
+        "parent": "mount01_drawers",
+        "transform": {
+          "pos": [
+            0,
+            -0.16,
+            0.06
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.09,
+            "height": 0.045,
+            "depth": 0.04
+          },
+          "color": 11569731
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m9",
+        "parent": "mount01_drawers",
+        "transform": {
+          "pos": [
+            0,
+            -0.03,
+            0.03
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.56,
+            "height": 0.09,
+            "depth": 0.04
+          },
+          "color": 7028773
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "walnut"
+          }
+        ]
+      },
+      {
+        "id": "m10",
+        "parent": "mount01_drawers",
+        "transform": {
+          "pos": [
+            0,
+            -0.03,
+            0.06
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.09,
+            "height": 0.045,
+            "depth": 0.04
+          },
+          "color": 11569731
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m11",
+        "parent": "mount02_open_book",
+        "transform": {
+          "pos": [
+            -0.27,
+            0.02,
+            -0.04
+          ],
+          "quat": [
+            0,
+            0,
+            0.04,
+            1
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.51,
+            "height": 0.045,
+            "depth": 0.46
+          },
+          "color": 14271887
+        }
+      },
+      {
+        "id": "m12",
+        "parent": "mount02_open_book",
+        "transform": {
+          "pos": [
+            0.23,
+            0.02,
+            -0.04
+          ],
+          "quat": [
+            0,
+            0,
+            -0.04,
+            1
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.51,
+            "height": 0.045,
+            "depth": 0.46
+          },
+          "color": 14271887
+        }
+      },
+      {
+        "id": "m13",
+        "parent": "mount02_open_book",
+        "transform": {
+          "pos": [
+            -0.02,
+            0.01,
+            -0.04
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.05,
+            "height": 0.04,
+            "depth": 0.48
+          },
+          "color": 7020325
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "fabric",
+            "variant": "red"
+          }
+        ]
+      },
+      {
+        "id": "m14",
+        "parent": "mount03_inkwell",
+        "transform": {
+          "pos": [
+            0,
+            0.045,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.2,
+            "height": 0.13,
+            "depth": 0.2
+          },
+          "color": 2309445
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass",
+            "variant": "blue"
+          }
+        ]
+      },
+      {
+        "id": "m15",
+        "parent": "mount03_inkwell",
+        "transform": {
+          "pos": [
+            0,
+            0.135,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.11,
+            "height": 0.05,
+            "depth": 0.11
+          },
+          "color": 6412543
+        },
+        "tags": [
+          {
+            "tag": "emissive",
+            "value": 0.75
+          }
+        ]
+      },
+      {
+        "id": "m16",
+        "parent": "mount04_books",
+        "transform": {
+          "pos": [
+            0,
+            0.025,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.62,
+            "height": 0.09,
+            "depth": 0.34
+          },
+          "color": 2510133
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "fabric",
+            "variant": "green"
+          }
+        ]
+      },
+      {
+        "id": "m17",
+        "parent": "mount04_books",
+        "transform": {
+          "pos": [
+            -0.06,
+            0.11,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.52,
+            "height": 0.08,
+            "depth": 0.31
+          },
+          "color": 7022136
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "fabric",
+            "variant": "red"
+          }
+        ]
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1787874341205,
+        "provider": "gpt",
+        "data": "lpOxlJmu6vTubJ8oifqOSOLyC47vJkL7YLXivWsJs1ChMeBzjYKLqlq400/Kb/ZyqGKmpENUjiczUu8lUqzKlSxEU1SrDKWf4/PDPB4mlr4DEbXYpAuzY51XaI6b+76MnGIE7qcX3+pQ/HRrrqyhlUId/QJ+ktjyJB2RM5z7dJmB68dvvr8O97TwPfCvBUo2vDeTy1GWWgS4NCh5jtbj8AMMidcsIh7FmlmBK5cC2n/DihZYYkzRF+11kAWCypMiPmmsqEjZT4u5sT5n2z1ygmaERff4cTyFGRo59zuz40VZLjC/RYO3T42KiSNaDefC404Id8sML4j0v1aEG1NnYWwDVaE0154F+D3SyV28C8WUhsXFPfG+Q7Q/ciQOKBxiSAz8f4eFz1f6qNxh5vtn5RwgARP74k+5ysOcgkUmsxRo4DpkhDSYCpQLjBdjRF76Z4eHXMToGYqkN0UMlnqws1Y1qoRdQmEh3J6G41L2UuDoeGzgFozP+jFL4+e4yTHI+9r7SIODkUnD/sx73G9t7CoyIBHhMBtWhWDCZpNJJDX+2qi7vprT3GY3BxCGat6mYttYDS/WNaWz70ueAHMNz6xntwtU8QIay0msyNrSJ+nWdnL56R3b87Nc7T3WaoPVopMItoHAB873AoQZmX+ab2AFMPj3ls4kHZDJ4UPIvL2FBrlP3aEv4WNF1VvfwlnCRkvXE8XGMWpPWb26zfdAoyAuIbw2yF7C0RZRj74bCyb/uoyJ/c68UHqf8jV2rX4jkB7+etNMfGLWbD/bsRemWjyDOn6mVv9G5fbiWhZAdWY8Puct8pq2okzuw1VAOv23WlPcDu6bJhu/QuQZxKAF1zA/F/bIh+uMXZpmj9reD9vJWVALHaKNQh9ytpnWfiWZMeiwWrGsgvfrg1fwlRNZsRthNjlLVejtYWfJuf9U+VQuOpVgnzxDy7UEUarKUWSMMTyMYdcDPiqA3fLz2mLjUvKEffqJQpkeDMw1VZKRkejPtCYfYgyuQBUP0+0uvBfw6uVOeOhgcsFFqQvlPJYyNVndoFwxEB5w/i+B27n2RaLtCmBusOufRkG+PyJx3gKY7wtVrejQh06oguHcuNoiTntm9DfRfR9K6PheY2MCseyQi8zmTO06QhbtYgBna0EBFMbAxZdLpmwJs9qGQUlQbzOCgw5Rc08frLTu+BXCrHG/x/6BseiQTVr7GQusjyOc9S2PMQndR1Oh7za8q5hKVirh17Ddt2QdFbdwGBTUS1pnVT0J4tnMQCm5pMJ5wgRlpb2xXejvfhb4n8eznu1rmcIgqMRq9FmfMCaNa6bHGo53XTmsLhAo+9YM/CPs/L/N34A6yGCnf+SCnnMGyzXF6af6yhPmjtVaSAF4ylMrWuducqfXc9knxZ3uKiYVzy61q5sRVm4TJgYAAJ9nUDlhpGKC+G4=",
+        "edits": ""
+      },
+      "mounts": [
+        {
+          "id": "mount01_drawers",
+          "mountedGroupId": "mount01_drawers",
+          "name": "前侧抽屉组",
+          "source": {
+            "type": "codegen"
+          },
+          "description": "",
+          "visible": true,
+          "ts": 1787874341206
+        },
+        {
+          "id": "mount02_open_book",
+          "mountedGroupId": "mount02_open_book",
+          "name": "摊开的魔法书",
+          "source": {
+            "type": "codegen"
+          },
+          "description": "",
+          "visible": true,
+          "ts": 1787874341206
+        },
+        {
+          "id": "mount03_inkwell",
+          "mountedGroupId": "mount03_inkwell",
+          "name": "发光魔法墨水瓶",
+          "source": {
+            "type": "codegen"
+          },
+          "description": "",
+          "visible": true,
+          "ts": 1787874341206
+        },
+        {
+          "id": "mount04_books",
+          "mountedGroupId": "mount04_books",
+          "name": "叠放典籍",
+          "source": {
+            "type": "codegen"
+          },
+          "description": "",
+          "visible": true,
+          "ts": 1787874341206
+        }
+      ],
+      "semanticSnapshot": {
+        "v": 1,
+        "auto": true,
+        "text": "魔法工坊图书馆书桌 · 5组/18mesh · 世界坐标(Y上Z前), 原点=模型根\n# 阅读说明: G:=group行(可动画骨骼, 动画key用G:后的id; @p=pivot世界坐标; 倾(x,y,z)°=朝向偏离世界轴的欧拉角; 缩进=父子层级; 挂:=挂载于某组; G:id→id→…=chain折叠行, 每个id都是可独立动画的group, chain×N=waypoint数)\n# M:=mesh行(label[id 几何 @(世界坐标)], label可省略; ×N=for循环批量件(锚点=代表实例); cyl (起)→(末)或 轴上(Y)等方位词=延伸方向; 薄向=板面法向(扁板); 挂载组双代表=最大件+最远有向件(刃/嘴/管所在端); 无方向标注=均匀块(三向相近,如头),默认面向前(Z); 对称×2=镜像对)\nG:desk 书桌主体 @p(0,0,0)\n  M:[m0 box 2.4×0.14×1.3 (0,0.6,0) 薄向上(Y)]\n  G:mount01_drawers 前侧抽屉组 @p(0.7,0.5,0.6) 挂:desk\n    M:[m6 box 0.72×0.3×0.32 (0.7,0.4,0.4) 轴右(X)] | M:[m8 box 0.09×0.05×0.04 (0.7,0.3,0.6) 轴右(X)]\n  G:mount02_open_book 摊开的魔法书 @p(-0.2,0.7,0.1) 挂:desk\n    M:[m11 box 0.51×0.05×0.46 (-0.5,0.7,0) 薄向上(Y)] | M:[m12 box 0.51×0.05×0.46 (0,0.7,0) 薄向上(Y)]\n  G:mount03_inkwell 发光魔法墨水瓶 @p(0.5,0.7,0.3) 挂:desk\n    M:[m14 box 0.2×0.13×0.2 (0.5,0.7,0.3) 薄向上(Y)] | M:[m15 box 0.11×0.05×0.11 (0.5,0.8,0.3) 薄向上(Y)]\n  G:mount04_books 叠放典籍 @p(0.8,0.7,-0.3) 挂:desk\n    M:[m16 box 0.62×0.09×0.34 (0.8,0.7,-0.3) 薄向上(Y)] | M:[m17 box 0.52×0.08×0.31 (0.8,0.8,-0.3) 薄向上(Y)]",
+        "stats": {
+          "groups": 5,
+          "meshes": 18,
+          "labeledMeshes": 0,
+          "labelCoverage": 0,
+          "batchLabels": 0,
+          "autoChains": 0,
+          "snapshotChars": 1032
+        }
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -1.2,
+          0.52,
+          -0.655
+        ],
+        "max": [
+          1.2,
+          0.6599999999999999,
+          0.645
+        ],
+        "sourceNodeId": "m0"
+      }
+    ],
+    "sourceMeshCount": 18,
+    "candidateCount": 1,
+    "fallbackUsed": false
+  },
+  "footprintRadius": 1.2,
+  "sizeClass": "medium",
+  "mode": "voxel",
+  "provider": "gpt",
+  "createdAt": 1787874341640,
+  "updatedAt": 1787874341640
+}

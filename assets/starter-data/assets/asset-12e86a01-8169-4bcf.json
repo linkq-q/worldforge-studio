@@ -1,0 +1,334 @@
+{
+  "id": "asset-12e86a01-8169-4bcf",
+  "name": "卡通一点的桌子，放在男生房间的，类似餐桌，方形的",
+  "prompt": "卡通一点的桌子，放在男生房间的，类似餐桌，方形的",
+  "modelJson": {
+    "name": "男生房间方形餐桌",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "m0",
+        "transform": {
+          "pos": [
+            0,
+            2.15,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2.8,
+            "height": 0.22,
+            "depth": 2.2
+          },
+          "color": 12089669
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "oak"
+          }
+        ]
+      },
+      {
+        "id": "m1",
+        "transform": {
+          "pos": [
+            0,
+            1.9,
+            -0.92
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2.45,
+            "height": 0.28,
+            "depth": 0.18
+          },
+          "color": 9392431
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "oak"
+          }
+        ]
+      },
+      {
+        "id": "m2",
+        "transform": {
+          "pos": [
+            0,
+            1.9,
+            0.92
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2.45,
+            "height": 0.28,
+            "depth": 0.18
+          },
+          "color": 9392431
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "oak"
+          }
+        ]
+      },
+      {
+        "id": "m3",
+        "transform": {
+          "pos": [
+            -1.1,
+            0.95,
+            -0.78
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.22,
+            "height": 1.9,
+            "depth": 0.22
+          },
+          "color": 10312501
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "oak"
+          }
+        ]
+      },
+      {
+        "id": "m4",
+        "transform": {
+          "pos": [
+            1.1,
+            0.95,
+            -0.78
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.22,
+            "height": 1.9,
+            "depth": 0.22
+          },
+          "color": 10312501
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "oak"
+          }
+        ]
+      },
+      {
+        "id": "m5",
+        "transform": {
+          "pos": [
+            -1.1,
+            0.95,
+            0.78
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.22,
+            "height": 1.9,
+            "depth": 0.22
+          },
+          "color": 10312501
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "oak"
+          }
+        ]
+      },
+      {
+        "id": "m6",
+        "transform": {
+          "pos": [
+            1.1,
+            0.95,
+            0.78
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.22,
+            "height": 1.9,
+            "depth": 0.22
+          },
+          "color": 10312501
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "oak"
+          }
+        ]
+      },
+      {
+        "id": "m7",
+        "transform": {
+          "pos": [
+            0,
+            1.72,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.9,
+            "height": 0.16,
+            "depth": 0.55
+          },
+          "color": 7288869
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "oak"
+          }
+        ]
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1787771341229,
+        "provider": "glm",
+        "data": "Y+WLcpHuNdjHdD/+AsagMvZAxHzPyU+TVbvRODv6cI8nQ9O3O20HFT4RayJEV3sKMt6hm5k5Ic0/pWgqIrz+caJwbeTfx0I4nRtq1HqxrMkAVWt3kRfRgvm0Z88Ri2fR7qH76Zt6aFZOB7XKMY21hXFkS42T1ldk1ytn1N1Ltd8u0X/SWotgzxqo9gUEU3r94Ms4AFjMo0lX8Ciu/rBdnq77a7XDcxdGNd7pDaKe9rCuK6Pa5ddEcV8dEJK8iC8sPz9At5WShuMChxifC02xlwWjvTFr22DzWYJYnOJn6Wo+DY/OKm+/znPrGWTrvHJUF498lGHjPINzR1IdR8Efi4KEx9SdKjOQeDPBibOGCDFSEHQSRLSMGqYu3flvS1cU1W1HOYOKIV9qpG5/gRhv3Yc1puKidCuVcMOx29wh/Uzs2ZH/vvmY2vfTJdlY6ebOlO8b75x4esSuOzETZrLu+JNE9YZ82P6U0Q5tqcank8+zvL5ZbpD3z0Z2DZ76vmm/B739UFN+nwJtvuQQ+OndB33r7ygJkikntRGFB77yPVE6",
+        "edits": ""
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -1.4,
+          2.04,
+          -1.1
+        ],
+        "max": [
+          1.4,
+          2.26,
+          1.1
+        ],
+        "sourceNodeId": "m0"
+      },
+      {
+        "min": [
+          -1.225,
+          1.7599999999999998,
+          -1.01
+        ],
+        "max": [
+          1.225,
+          2.04,
+          -0.8300000000000001
+        ],
+        "sourceNodeId": "m1"
+      },
+      {
+        "min": [
+          -1.225,
+          1.7599999999999998,
+          0.8300000000000001
+        ],
+        "max": [
+          1.225,
+          2.04,
+          1.01
+        ],
+        "sourceNodeId": "m2"
+      },
+      {
+        "min": [
+          -1.2100000000000002,
+          0,
+          -0.89
+        ],
+        "max": [
+          -0.9900000000000001,
+          1.9,
+          -0.67
+        ],
+        "sourceNodeId": "m3"
+      },
+      {
+        "min": [
+          0.9900000000000001,
+          0,
+          -0.89
+        ],
+        "max": [
+          1.2100000000000002,
+          1.9,
+          -0.67
+        ],
+        "sourceNodeId": "m4"
+      },
+      {
+        "min": [
+          -1.2100000000000002,
+          0,
+          0.67
+        ],
+        "max": [
+          -0.9900000000000001,
+          1.9,
+          0.89
+        ],
+        "sourceNodeId": "m5"
+      },
+      {
+        "min": [
+          0.9900000000000001,
+          0,
+          0.67
+        ],
+        "max": [
+          1.2100000000000002,
+          1.9,
+          0.89
+        ],
+        "sourceNodeId": "m6"
+      }
+    ],
+    "sourceMeshCount": 8,
+    "candidateCount": 7,
+    "fallbackUsed": false
+  },
+  "footprintRadius": 1.4,
+  "sizeClass": "medium",
+  "mode": "voxel",
+  "createdAt": 1787771340827,
+  "updatedAt": 1787771340827
+}

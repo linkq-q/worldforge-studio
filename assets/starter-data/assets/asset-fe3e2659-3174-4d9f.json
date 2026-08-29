@@ -1,0 +1,276 @@
+{
+  "id": "asset-fe3e2659-3174-4d9f",
+  "name": "扳手",
+  "prompt": "单独一把儿童职业扮演塑料玩具扳手，圆润安全造型，不包含工具箱、螺丝或其他工具\nCoordinate contract: local Y+ is up, local Z+ is the front, entrance, or forward direction, and local X+ is right. Put doors, facades, openings, windshields, noses, seats, and other recognizable front details toward local Z+. For a modular repeated element, explicitly choose the long axis: side-by-side modules span local X with depth/front on local Z; traversal modules span local Z. Keep the model centered at its origin.\nCanonical dimensions contract: width=0.3, height=0.04, depth=0.1 world units. Keep the generated mesh within this centered bounding size.",
+  "modelJson": {
+    "name": "儿童塑料玩具扳手",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "wrench",
+        "name": "玩具扳手整体",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.293,
+            0.036,
+            0.1
+          ],
+          "center": [
+            -0.004,
+            0,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "wrench",
+        "transform": {
+          "pos": [
+            -0.005,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.165,
+            "height": 0.034,
+            "depth": 0.034
+          },
+          "color": 16752412
+        }
+      },
+      {
+        "id": "m1",
+        "parent": "wrench",
+        "transform": {
+          "pos": [
+            -0.117,
+            0,
+            0.041
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.066,
+            "height": 0.034,
+            "depth": 0.018
+          },
+          "color": 16758062
+        }
+      },
+      {
+        "id": "m2",
+        "parent": "wrench",
+        "transform": {
+          "pos": [
+            -0.117,
+            0,
+            -0.041
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.066,
+            "height": 0.034,
+            "depth": 0.018
+          },
+          "color": 16758062
+        }
+      },
+      {
+        "id": "m3",
+        "parent": "wrench",
+        "transform": {
+          "pos": [
+            -0.141,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.018,
+            "height": 0.034,
+            "depth": 0.064
+          },
+          "color": 16758062
+        }
+      },
+      {
+        "id": "m4",
+        "parent": "wrench",
+        "transform": {
+          "pos": [
+            -0.084,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.018,
+            "height": 0.034,
+            "depth": 0.064
+          },
+          "color": 16758062
+        }
+      },
+      {
+        "id": "m5",
+        "parent": "wrench",
+        "transform": {
+          "pos": [
+            0.1,
+            0,
+            0.02
+          ],
+          "quat": [
+            0.98,
+            0,
+            0.18,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.08,
+            "height": 0.034,
+            "depth": 0.03
+          },
+          "color": 16752412
+        }
+      },
+      {
+        "id": "m6",
+        "parent": "wrench",
+        "transform": {
+          "pos": [
+            0.1,
+            0,
+            -0.02
+          ],
+          "quat": [
+            0.98,
+            0,
+            -0.18,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.08,
+            "height": 0.034,
+            "depth": 0.03
+          },
+          "color": 16752412
+        }
+      },
+      {
+        "id": "m7",
+        "parent": "wrench",
+        "transform": {
+          "pos": [
+            0.075,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.018,
+            "height": 0.036,
+            "depth": 0.018
+          },
+          "color": 16762967
+        }
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1787766711778,
+        "provider": "gpt",
+        "data": "svjyXpiBXDdvSi45Xk1UHelDz7tDQQ6qCEt0ArLiRMFiyaWxXWjOGFtr2vYlSWETYQFJbL6WZ+wu/1JllfqwExLXXJjkce17RVg4U0EUAqgY+Tq9VvXCcUimXNdNwI8Mh6sX8uz+6qVUB0mfjVen4PwfFlU7N1kUjT0IeVv6OnZP7k82w+/2X/pSj+hcT4z23DxJuZsRsvUazv7SyzRSV/pRfwkZgC9f65uY2fFKjVuN2psT2UyuUMZI5CGl3RWsBW4ncpvIIfZ1yRfCPr+sCyX8+oi00HNX89H7X84nr5PYwpJHW9dI9WCB6YfnVSatnhn65Rm68E2QbdMbhM6Ntap5VSmvJg7Kg6WLQVRSCgcuV9KoKQLJiUK89Slj/gi27qE1K/G5kN1t3r4VF94NcqADhdfLUgReTIThX7sIz6qQtiZxULrfLpLr73/5bdCB8H64+RD6Eza2q5dbIQiWVM5gVE0QT2UNfyLLdS08wdWL2vGcllS53ZXUdc4XcactKPK1WmCzKsF8JjlCjTW7q6OfXm5ErBL6lNrb4VMq2oMzRQmI2SgSGyPrTac2u5XhDugmZiJMkgUyKxmHisyODcjcnpqv4+aKxuIum+4oOFSbkIxn1xDF1j6FxOXX4i/vasgQ7U7UC7LLOtT241gXjI2R7Z8RU+Es0kP803sYTyVXqg7l4uYjlPm5Ktpq3IE4vLrvyjrtHoaXInq0psO+JzaioETdmSyiWISloXuwMYXnd3ulSLnv4qjDbr/hchtP2y89QC6maN4XT4dZCm78khDdVVdqSOZu3S/tsw==",
+        "edits": ""
+      },
+      "semanticSnapshot": {
+        "v": 1,
+        "auto": true,
+        "text": "儿童塑料玩具扳手 · 1组/8mesh · 世界坐标(Y上Z前), 原点=模型根\n# 阅读说明: G:=group行(可动画骨骼, 动画key用G:后的id; @p=pivot世界坐标; 倾(x,y,z)°=朝向偏离世界轴的欧拉角; 缩进=父子层级; 挂:=挂载于某组; G:id→id→…=chain折叠行, 每个id都是可独立动画的group, chain×N=waypoint数)\n# M:=mesh行(label[id 几何 @(世界坐标)], label可省略; ×N=for循环批量件(锚点=代表实例); cyl (起)→(末)或 轴上(Y)等方位词=延伸方向; 薄向=板面法向(扁板); 挂载组双代表=最大件+朝向件(嘴/管/檐所在); 无方向标注=均匀块(三向相近,如头),默认面向前(Z); 对称×2=镜像对)\nG:wrench 玩具扳手整体 @p(0,0,0)\n  M:[m0 box 0.17×0.03×0.03 (0,0,0) 轴右(X)]",
+        "stats": {
+          "groups": 1,
+          "meshes": 8,
+          "labeledMeshes": 0,
+          "labelCoverage": 0,
+          "batchLabels": 0,
+          "autoChains": 0,
+          "snapshotChars": 432
+        }
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -0.14635979049153908,
+          0,
+          -0.05
+        ],
+        "max": [
+          0.14635979049153908,
+          0.036,
+          0.05
+        ],
+        "sourceNodeId": "asset-bounds"
+      }
+    ],
+    "sourceMeshCount": 8,
+    "candidateCount": 0,
+    "fallbackUsed": true
+  },
+  "footprintRadius": 0.14635979049153908,
+  "sizeClass": "small",
+  "mode": "voxel",
+  "provider": "gpt",
+  "createdAt": 1787766713593,
+  "updatedAt": 1787766713593
+}

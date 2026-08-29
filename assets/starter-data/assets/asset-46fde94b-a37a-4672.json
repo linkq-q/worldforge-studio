@@ -1,0 +1,260 @@
+{
+  "id": "asset-46fde94b-a37a-4672",
+  "name": "智能手机",
+  "prompt": "A single reusable modern smartphone with a child-safe protective case and clearly visible dark inactive screen, approximately 0.16 meters tall and intentionally small handheld scale, no charger, hand, floor, background, or extra objects",
+  "tags": [
+    "electronics",
+    "prop"
+  ],
+  "modelJson": {
+    "name": "儿童防护壳现代智能手机",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "phone",
+        "name": "智能手机",
+        "transform": {
+          "pos": [
+            0,
+            0.08,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.098,
+            0.163,
+            0.026
+          ],
+          "center": [
+            0,
+            0,
+            0
+          ],
+          "axes": [
+            [
+              0.9997,
+              -0.0235,
+              -0.011
+            ],
+            [
+              0.0237,
+              0.9996,
+              0.0155
+            ],
+            [
+              0.0107,
+              -0.0157,
+              0.9998
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "phone",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.086,
+            "height": 0.16,
+            "depth": 0.016
+          },
+          "color": 3713240
+        }
+      },
+      {
+        "id": "m1",
+        "parent": "phone",
+        "transform": {
+          "pos": [
+            0,
+            0.002,
+            0.009
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.07,
+            "height": 0.136,
+            "depth": 0.002
+          },
+          "color": 592914
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass"
+          }
+        ]
+      },
+      {
+        "id": "m2",
+        "parent": "phone",
+        "transform": {
+          "pos": [
+            0,
+            0.073,
+            0.0105
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.018,
+            "height": 0.003,
+            "depth": 0.001
+          },
+          "color": 1910320
+        }
+      },
+      {
+        "id": "m3",
+        "parent": "phone",
+        "transform": {
+          "pos": [
+            -0.041,
+            -0.069,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.012,
+            "height": 0.022,
+            "depth": 0.022
+          },
+          "color": 2391208
+        }
+      },
+      {
+        "id": "m4",
+        "parent": "phone",
+        "transform": {
+          "pos": [
+            0.041,
+            -0.069,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.012,
+            "height": 0.022,
+            "depth": 0.022
+          },
+          "color": 2391208
+        }
+      },
+      {
+        "id": "m5",
+        "parent": "phone",
+        "transform": {
+          "pos": [
+            -0.041,
+            0.069,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.012,
+            "height": 0.022,
+            "depth": 0.022
+          },
+          "color": 2391208
+        }
+      },
+      {
+        "id": "m6",
+        "parent": "phone",
+        "transform": {
+          "pos": [
+            0.041,
+            0.069,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.012,
+            "height": 0.022,
+            "depth": 0.022
+          },
+          "color": 2391208
+        }
+      },
+      {
+        "id": "m7",
+        "parent": "phone",
+        "transform": {
+          "pos": [
+            0.045,
+            0.025,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.004,
+            "height": 0.025,
+            "depth": 0.006
+          },
+          "color": 1596285
+        }
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1786871497169,
+        "provider": "gpt",
+        "data": "NmtpMe54tllKzw0gjrzH49Oq5j8nUNtWD9cQ/ONT2OnVY9fCLFa7EZTyd6yla+0hUwdrStLYU9cpzcsQ8kZFIXsLA03+5pJ1YHisMyZRSVUw6fjOfToUSG8OAZagDhVpLpqZbcgKbqwX6TivlwVo4TvqIzrpeAHvL5OXKqcrAySeJx/OFXKHwVt3EpYVLksjNR47axisWoaw7RWge1gianf0cr4Njd+IfSiP+hgTujVlJTAnyJKTyy7d7twixul8fn0e9K9/jSP2wbaZEZCJ/xe9XngCjF65LvlhdVs/cZUcpKSKcRSuZelnaexLncRk+M/SAL4RnwaSL0y8OgbjZ3siGkVDhR1YtedpwDGlreSRebPtklzUNI1dFo8oZ+xE89r/TOVlpbitkRiTkLaeo/uXShMX/l28QPYFIDNqAygO0v35SaTuF3jdG5qg8uUZvyb0Xk9L1JvMIIBZaLTxSrmtuWP3EHJrsao68mdSPb/WD4A3h8GcVSvcvNpM/x7QySr5rV9zwAqetpVX9MJCk8rvS0itn8t01ZoHc9DUIjRnhPdvp5G86ihLbXKnOpmMHKhc8rOp5Lvgbl3Uo1NYUqLrY3GrEKqJebG3vAr090nfYbBMD/H0mk5uz3Oy7rhjUYYBTNn4QlGJScu1SzbYw41q9IfsZgd49CP83yaHCRfEeuogJkT/u8SSU0Ua5vzn2Q==",
+        "edits": ""
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -0.0485,
+          0,
+          -0.01325
+        ],
+        "max": [
+          0.0485,
+          0.16000000000000003,
+          0.01325
+        ],
+        "sourceNodeId": "asset-bounds"
+      }
+    ],
+    "sourceMeshCount": 8,
+    "candidateCount": 0,
+    "fallbackUsed": true
+  },
+  "footprintRadius": 0.1,
+  "sizeClass": "small",
+  "mode": "voxel",
+  "provider": "gpt",
+  "createdAt": 1786871498163,
+  "updatedAt": 1786871498163
+}

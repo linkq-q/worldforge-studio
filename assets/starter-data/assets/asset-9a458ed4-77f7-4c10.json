@@ -1,0 +1,586 @@
+{
+  "id": "asset-9a458ed4-77f7-4c10",
+  "name": "材料箱",
+  "prompt": "哈利波特风格魔法工坊与图书馆中的材料箱\nCoordinate contract: local Y+ is up, local Z+ is the front, entrance, or forward direction, and local X+ is right. Put doors, facades, openings, windshields, noses, seats, and other recognizable front details toward local Z+. For a modular repeated element, explicitly choose the long axis: side-by-side modules span local X with depth/front on local Z; traversal modules span local Z. Keep the model centered at its origin.\nCanonical dimensions contract: width=1.3, height=0.8, depth=0.8 world units. Keep the generated mesh within this centered bounding size.",
+  "modelJson": {
+    "name": "魔法工坊与图书馆材料箱",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "crate",
+        "name": "材料箱主体",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            1.243,
+            0.854,
+            1.188
+          ],
+          "center": [
+            0.001,
+            0.382,
+            0.175
+          ],
+          "axes": [
+            [
+              1,
+              0.0002,
+              -0.0042
+            ],
+            [
+              0.0003,
+              0.9922,
+              0.1249
+            ],
+            [
+              0.0042,
+              -0.1249,
+              0.9922
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "lid",
+        "name": "可开启箱盖",
+        "parent": "crate",
+        "transform": {
+          "pos": [
+            0,
+            0.52,
+            -0.34
+          ]
+        },
+        "_obb": {
+          "size": [
+            1.22,
+            0.279,
+            0.767
+          ],
+          "center": [
+            0,
+            0.129,
+            0.352
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              0.9999,
+              0.0128
+            ],
+            [
+              0,
+              -0.0128,
+              0.9999
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "crate",
+        "transform": {
+          "pos": [
+            0,
+            0.27,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.18,
+            "height": 0.46,
+            "depth": 0.68
+          },
+          "color": 5977120
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "walnut"
+          }
+        ]
+      },
+      {
+        "id": "m1",
+        "parent": "crate",
+        "transform": {
+          "pos": [
+            0,
+            0.07,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.24,
+            "height": 0.1,
+            "depth": 0.74
+          },
+          "color": 3417116
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "walnut"
+          }
+        ]
+      },
+      {
+        "id": "m2",
+        "parent": "crate",
+        "transform": {
+          "pos": [
+            -0.53,
+            0.29,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.09,
+            "height": 0.5,
+            "depth": 0.72
+          },
+          "color": 2435114
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m3",
+        "parent": "crate",
+        "transform": {
+          "pos": [
+            0.53,
+            0.29,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.09,
+            "height": 0.5,
+            "depth": 0.72
+          },
+          "color": 2435114
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m4",
+        "parent": "crate",
+        "transform": {
+          "pos": [
+            0,
+            0.48,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.24,
+            "height": 0.08,
+            "depth": 0.74
+          },
+          "color": 2698028
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m5",
+        "parent": "crate",
+        "transform": {
+          "pos": [
+            0,
+            0.29,
+            0.353
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.54,
+            "height": 0.22,
+            "depth": 0.025
+          },
+          "color": 14073219
+        }
+      },
+      {
+        "id": "m6",
+        "parent": "crate",
+        "transform": {
+          "pos": [
+            -0.14,
+            0.29,
+            0.37
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.08,
+            "height": 0.08,
+            "depth": 0.035
+          },
+          "color": 6871457
+        },
+        "tags": [
+          {
+            "tag": "emissive",
+            "value": 0.75
+          }
+        ]
+      },
+      {
+        "id": "m7",
+        "parent": "crate",
+        "transform": {
+          "pos": [
+            0.06,
+            0.32,
+            0.37
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.18,
+            "height": 0.035,
+            "depth": 0.035
+          },
+          "color": 6871457
+        },
+        "tags": [
+          {
+            "tag": "emissive",
+            "value": 0.75
+          }
+        ]
+      },
+      {
+        "id": "m8",
+        "parent": "crate",
+        "transform": {
+          "pos": [
+            0.035,
+            0.25,
+            0.37
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.13,
+            "height": 0.035,
+            "depth": 0.035
+          },
+          "color": 6871457
+        },
+        "tags": [
+          {
+            "tag": "emissive",
+            "value": 0.75
+          }
+        ]
+      },
+      {
+        "id": "m9",
+        "parent": "crate",
+        "transform": {
+          "pos": [
+            0,
+            0.46,
+            0.385
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.2,
+            "height": 0.18,
+            "depth": 0.055
+          },
+          "color": 11635522
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m10",
+        "parent": "crate",
+        "transform": {
+          "pos": [
+            0,
+            0.43,
+            0.397
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.08,
+            "height": 0.09,
+            "depth": 0.065
+          },
+          "color": 2435114
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m11",
+        "parent": "lid",
+        "transform": {
+          "pos": [
+            0,
+            0.08,
+            0.34
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.22,
+            "height": 0.17,
+            "depth": 0.72
+          },
+          "color": 6766631
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "walnut"
+          }
+        ]
+      },
+      {
+        "id": "m12",
+        "parent": "lid",
+        "transform": {
+          "pos": [
+            0,
+            0.215,
+            0.34
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.1,
+            "height": 0.1,
+            "depth": 0.62
+          },
+          "color": 7950387
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "walnut"
+          }
+        ]
+      },
+      {
+        "id": "m13",
+        "parent": "lid",
+        "transform": {
+          "pos": [
+            -0.43,
+            0.12,
+            0.34
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.08,
+            "height": 0.25,
+            "depth": 0.74
+          },
+          "color": 2961457
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m14",
+        "parent": "lid",
+        "transform": {
+          "pos": [
+            0.43,
+            0.12,
+            0.34
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.08,
+            "height": 0.25,
+            "depth": 0.74
+          },
+          "color": 2961457
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m15",
+        "parent": "lid",
+        "transform": {
+          "pos": [
+            0,
+            0.11,
+            0.718
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.36,
+            "height": 0.045,
+            "depth": 0.035
+          },
+          "color": 9168829
+        },
+        "tags": [
+          {
+            "tag": "emissive",
+            "value": 0.5
+          }
+        ]
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1787874398665,
+        "provider": "gpt",
+        "data": "FOcSedMIBK1gmntERHwE17Gdu587H65PBL2BV7UEAu+szFMDH/34AR5ibIFBI94xropOb9w8JTgkl4xRM27ErSWj/MRQUNGZhF9+8sw6iKY9tSvOq+qjajrpYQ5ChYSgfbPK9exU4GVQ0BOjSDa68emP+GxqxOrBzIspdtQ2t7Hv98mN0rmOv4GtLThECemcCeRQ5KjfCH5UDNpUyO4t5nppCGPvEe7NVWsLX1hBWVLxjbgCrrT9wqO6A0/3FuU12j0H/5YP11V/wTRTgK+quqaUFnnCTsnZ0nDJw2pEy5agLOHGQrpCQmnIWc2lXpC7MuS4iskZyc9yivd1CNBYMospmkAfkhtkEzSDt4M+PCeOgtsxfH+fq6YLN0d7KcFjml0ud7yVy4vnOGoviqG+QAS2N4vHK7bw7TvyUoGiACJvh9lSaqsJ6JFmBUIjw7P/TrsaHfRO3bmKigQ3Zh5IcL9A6Sl+O5+6lDMlfrfe6sI+PZlMjxykRlhJKfCMbWtJkQM99eF0kT1LZcYDyuY2HQvKv5tatCZT58CjWleoB8qm9E7MEU2dp+Rah8Ku1eI0HOhgEdVWKVkgyRWWsfewUs6d/hmb1M92UEHQQYNHGVCqhSl8gbVZkwwbUFk9MuEeheuPqSOcbkCG1d7ixk3T4XeKWm9Cu74ul/Pc2bB1xdryJ7eH2ubOkAh+F8wG6HXDXKrt5rUzPYHWiyYcBCN2wdUa0h86wLXNSDO9iYy/a5PgfNCgOLr9bmynq5lPK84B/sWgkNwE824stfxHizmnbQxE/gvrj8iggBiMOEtOVH5vgnqyaCTegvVI8zUuyrvRQKQJ8p5LUhcl9pz44gzxPW71MXOiYzdYBbEozyrNJVfOxOj5Xes5E0p7npnyVJOLMb/OYO2reKDClKGCX3Xx/0jidVddumuoYCSKrixykEulYN0tTYMUW918F/yXIZw/2zH/y/ig3rTI3pT4+vhuUyThn9iaWQkPkTofOw1X3NSBUQAiKXcG18yFs3bf2Hs20uXIo4/O3i5HLyTBD5heroSf1lZcdllWB396Nt955smqe+0KdsAlyteP9Sg+lLX9Fvv6So+2MgmBfVuguS1xAae94Qf0D5Icjp78hGRZhn0PBkopa79ctwpwtYs=",
+        "edits": ""
+      },
+      "semanticSnapshot": {
+        "v": 1,
+        "auto": true,
+        "text": "魔法工坊与图书馆材料箱 · 2组/16mesh · 世界坐标(Y上Z前), 原点=模型根\n# 阅读说明: G:=group行(可动画骨骼, 动画key用G:后的id; @p=pivot世界坐标; 倾(x,y,z)°=朝向偏离世界轴的欧拉角; 缩进=父子层级; 挂:=挂载于某组; G:id→id→…=chain折叠行, 每个id都是可独立动画的group, chain×N=waypoint数)\n# M:=mesh行(label[id 几何 @(世界坐标)], label可省略; ×N=for循环批量件(锚点=代表实例); cyl (起)→(末)或 轴上(Y)等方位词=延伸方向; 薄向=板面法向(扁板); 挂载组双代表=最大件+最远有向件(刃/嘴/管所在端); 无方向标注=均匀块(三向相近,如头),默认面向前(Z); 对称×2=镜像对)\nG:crate 材料箱主体 @p(0,0,0)\n  M:[m0 box 1.2×0.46×0.68 (0,0.3,0) 轴右(X)]\n  G:lid 可开启箱盖 @p(0,0.5,-0.3)\n    M:[m11 box 1.2×0.17×0.72 (0,0.6,0) 薄向上(Y)]",
+        "stats": {
+          "groups": 2,
+          "meshes": 16,
+          "labeledMeshes": 0,
+          "labelCoverage": 0,
+          "batchLabels": 0,
+          "autoChains": 0,
+          "snapshotChars": 514
+        }
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -0.59,
+          0.020000000000000004,
+          -0.36975
+        ],
+        "max": [
+          0.59,
+          0.48,
+          0.31025
+        ],
+        "sourceNodeId": "m0"
+      },
+      {
+        "min": [
+          -0.61,
+          0.495,
+          -0.38975
+        ],
+        "max": [
+          0.61,
+          0.6649999999999999,
+          0.33025
+        ],
+        "sourceNodeId": "m11"
+      },
+      {
+        "min": [
+          -0.62,
+          0,
+          -0.39975
+        ],
+        "max": [
+          0.62,
+          0.1,
+          0.34025
+        ],
+        "sourceNodeId": "m1"
+      }
+    ],
+    "sourceMeshCount": 16,
+    "candidateCount": 3,
+    "fallbackUsed": false
+  },
+  "footprintRadius": 0.62,
+  "sizeClass": "small",
+  "mode": "voxel",
+  "provider": "gpt",
+  "createdAt": 1787874398840,
+  "updatedAt": 1787874398840
+}

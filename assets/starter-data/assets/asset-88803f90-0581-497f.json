@@ -1,0 +1,2415 @@
+{
+  "id": "asset-88803f90-0581-497f",
+  "name": "巨型仪器 5",
+  "prompt": "大型精致蒸汽朋克奇幻炼金仪器异形体，包括巨型烧瓶反应器、带符文坩埚、组合蒸馏塔、黄铜蛇形冷凝器、魔晶压力炉和多瓶联动萃取装置；结构可信，玻璃、铜管、阀门、压力表、符文与支架细节丰富，每种轮廓和用途不同\nCoordinate contract: local Y+ is up, local Z+ is the front, entrance, or forward direction, and local X+ is right. Put doors, facades, openings, windshields, noses, seats, and other recognizable front details toward local Z+. For a modular repeated element, explicitly choose the long axis: side-by-side modules span local X with depth/front on local Z; traversal modules span local Z. Keep the model centered at its origin.\nCanonical dimensions contract: width=3, height=3.8, depth=2.4 world units. Keep the generated mesh within this centered bounding size.\nCreate variation 5 of 6; preserve the same reusable asset family while varying silhouette and details.",
+  "tags": [
+    "indoor",
+    "alchemy",
+    "steampunk",
+    "large-instrument"
+  ],
+  "modelJson": {
+    "name": "蒸汽秘仪炼金异形体·变体五",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "root",
+        "name": "炼金仪器总成",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            3.611,
+            5.427,
+            2.95
+          ],
+          "center": [
+            0.098,
+            1.115,
+            -0.08
+          ],
+          "axes": [
+            [
+              0.9808,
+              0.1573,
+              0.1151
+            ],
+            [
+              -0.1173,
+              0.948,
+              -0.2958
+            ],
+            [
+              -0.1556,
+              0.2766,
+              0.9483
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "frame",
+        "name": "铸铁承重支架",
+        "parent": "root",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ],
+        "_obb": {
+          "size": [
+            2.9,
+            1.041,
+            2.2
+          ],
+          "center": [
+            0,
+            0.56,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              -0.0003
+            ],
+            [
+              0,
+              0.0003,
+              1
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "reactor",
+        "name": "巨型烧瓶反应器",
+        "parent": "root",
+        "transform": {
+          "pos": [
+            -0.72,
+            1.02,
+            0.12
+          ]
+        },
+        "_obb": {
+          "size": [
+            1.42,
+            2.152,
+            1.341
+          ],
+          "center": [
+            0,
+            0.991,
+            -0.075
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              0.9687,
+              -0.2482
+            ],
+            [
+              0,
+              0.2482,
+              0.9687
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "crucible",
+        "name": "符文坩埚",
+        "parent": "root",
+        "transform": {
+          "pos": [
+            -0.92,
+            1.02,
+            -0.72
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.88,
+            0.789,
+            0.837
+          ],
+          "center": [
+            0,
+            0.349,
+            0.029
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              0.9595,
+              -0.2817
+            ],
+            [
+              0,
+              0.2817,
+              0.9595
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "tower",
+        "name": "组合蒸馏塔",
+        "parent": "root",
+        "transform": {
+          "pos": [
+            0.2,
+            1.02,
+            -0.35
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.62,
+            2.8,
+            0.62
+          ],
+          "center": [
+            0,
+            1.35,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "condenser",
+        "name": "黄铜蛇形冷凝器",
+        "parent": "root",
+        "transform": {
+          "pos": [
+            0.45,
+            2.7,
+            -0.35
+          ]
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ],
+        "_obb": {
+          "size": [
+            1.299,
+            2.088,
+            0.966
+          ],
+          "center": [
+            0.385,
+            -0.44,
+            0.635
+          ],
+          "axes": [
+            [
+              0.9377,
+              0.3464,
+              0.0268
+            ],
+            [
+              -0.312,
+              0.8734,
+              -0.3738
+            ],
+            [
+              -0.1529,
+              0.3422,
+              0.9271
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "pressure_furnace",
+        "name": "魔晶压力炉",
+        "parent": "root",
+        "transform": {
+          "pos": [
+            0.88,
+            1.02,
+            -0.56
+          ]
+        },
+        "_obb": {
+          "size": [
+            1.003,
+            1.549,
+            1.174
+          ],
+          "center": [
+            0,
+            0.708,
+            -0.008
+          ],
+          "axes": [
+            [
+              0.9969,
+              -0.0054,
+              0.0782
+            ],
+            [
+              0.0312,
+              0.9428,
+              -0.332
+            ],
+            [
+              -0.0719,
+              0.3334,
+              0.94
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "extractors",
+        "name": "多瓶联动萃取装置",
+        "parent": "root",
+        "transform": {
+          "pos": [
+            0.45,
+            1.02,
+            0.78
+          ]
+        },
+        "_obb": {
+          "size": [
+            1.57,
+            1.455,
+            0.44
+          ],
+          "center": [
+            -0.059,
+            0.534,
+            0
+          ],
+          "axes": [
+            [
+              0.9427,
+              0.3337,
+              0
+            ],
+            [
+              -0.3337,
+              0.9427,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "front_controls",
+        "name": "前置阀门控制台",
+        "parent": "root",
+        "transform": {
+          "pos": [
+            0,
+            1.02,
+            1.02
+          ]
+        },
+        "_obb": {
+          "size": [
+            1.2,
+            0.398,
+            0.285
+          ],
+          "center": [
+            0,
+            0.2,
+            0.099
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              0.9973,
+              0.0733
+            ],
+            [
+              0,
+              -0.0733,
+              0.9973
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "chimney_smoke",
+        "name": "炉顶蒸汽",
+        "parent": "root",
+        "transform": {
+          "pos": [
+            0.88,
+            2.5,
+            -0.56
+          ]
+        },
+        "tags": [
+          {
+            "tag": "smoke",
+            "value": 0.25,
+            "variant": "steam"
+          }
+        ],
+        "_obb": {
+          "size": [
+            0.18,
+            0.32,
+            0.18
+          ],
+          "center": [
+            0,
+            0.23,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "frame",
+        "transform": {
+          "pos": [
+            0,
+            0.12,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2.9,
+            "height": 0.16,
+            "depth": 2.2
+          },
+          "color": 2502713
+        }
+      },
+      {
+        "id": "m1",
+        "parent": "frame",
+        "transform": {
+          "pos": [
+            0,
+            1.02,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2.72,
+            "height": 0.12,
+            "depth": 1.9
+          },
+          "color": 3687242
+        }
+      },
+      {
+        "id": "m2",
+        "parent": "frame",
+        "transform": {
+          "pos": [
+            -1.34,
+            0.56,
+            -0.94
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.14,
+            "height": 1.04,
+            "depth": 0.14
+          },
+          "color": 2699832
+        }
+      },
+      {
+        "id": "m3",
+        "parent": "frame",
+        "transform": {
+          "pos": [
+            -1.34,
+            0.56,
+            0.94
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.14,
+            "height": 1.04,
+            "depth": 0.14
+          },
+          "color": 2699832
+        }
+      },
+      {
+        "id": "m4",
+        "parent": "frame",
+        "transform": {
+          "pos": [
+            1.34,
+            0.56,
+            -0.94
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.14,
+            "height": 1.04,
+            "depth": 0.14
+          },
+          "color": 2699832
+        }
+      },
+      {
+        "id": "m5",
+        "parent": "frame",
+        "transform": {
+          "pos": [
+            1.34,
+            0.56,
+            0.94
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.14,
+            "height": 1.04,
+            "depth": 0.14
+          },
+          "color": 2699832
+        }
+      },
+      {
+        "id": "m6",
+        "parent": "frame",
+        "transform": {
+          "pos": [
+            0,
+            0.56,
+            -0.98
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2.82,
+            "height": 0.1,
+            "depth": 0.12
+          },
+          "color": 7293993
+        }
+      },
+      {
+        "id": "m7",
+        "parent": "frame",
+        "transform": {
+          "pos": [
+            -1.38,
+            0.56,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.12,
+            "height": 0.1,
+            "depth": 2.02
+          },
+          "color": 7293993
+        }
+      },
+      {
+        "id": "m8",
+        "parent": "frame",
+        "transform": {
+          "pos": [
+            1.38,
+            0.56,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.12,
+            "height": 0.1,
+            "depth": 2.02
+          },
+          "color": 7293993
+        }
+      },
+      {
+        "id": "m9",
+        "parent": "reactor",
+        "transform": {
+          "pos": [
+            0,
+            0.16,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.06,
+            "height": 0.28,
+            "depth": 0.94
+          },
+          "color": 7325378
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass"
+          }
+        ]
+      },
+      {
+        "id": "m10",
+        "parent": "reactor",
+        "transform": {
+          "pos": [
+            0,
+            0.65,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.3,
+            "height": 0.78,
+            "depth": 1.14
+          },
+          "color": 6469040
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass"
+          }
+        ]
+      },
+      {
+        "id": "m11",
+        "parent": "reactor",
+        "transform": {
+          "pos": [
+            0,
+            1.24,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.96,
+            "height": 0.4,
+            "depth": 0.9
+          },
+          "color": 8377037
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass"
+          }
+        ]
+      },
+      {
+        "id": "m12",
+        "parent": "reactor",
+        "transform": {
+          "pos": [
+            0,
+            1.7,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.38,
+            "height": 0.54,
+            "depth": 0.38
+          },
+          "color": 9100245
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass"
+          }
+        ]
+      },
+      {
+        "id": "m13",
+        "parent": "reactor",
+        "transform": {
+          "pos": [
+            0,
+            2,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.48,
+            "height": 0.12,
+            "depth": 0.48
+          },
+          "color": 11695666
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m14",
+        "parent": "reactor",
+        "transform": {
+          "pos": [
+            0,
+            0.4,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.42,
+            "height": 0.12,
+            "depth": 1.2
+          },
+          "color": 10906412
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m15",
+        "parent": "reactor",
+        "transform": {
+          "pos": [
+            0,
+            1,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.42,
+            "height": 0.12,
+            "depth": 1.2
+          },
+          "color": 10906412
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m16",
+        "parent": "reactor",
+        "transform": {
+          "pos": [
+            0,
+            0.7,
+            0.58
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.66,
+            "height": 0.12,
+            "depth": 0.06
+          },
+          "color": 5763787
+        },
+        "tags": [
+          {
+            "tag": "emissive",
+            "value": 0.75
+          }
+        ]
+      },
+      {
+        "id": "m17",
+        "parent": "reactor",
+        "transform": {
+          "pos": [
+            0,
+            0.7,
+            0.615
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.12,
+            "height": 0.26,
+            "depth": 0.06
+          },
+          "color": 1522742
+        }
+      },
+      {
+        "id": "m18",
+        "parent": "crucible",
+        "transform": {
+          "pos": [
+            0,
+            0.28,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.72,
+            "height": 0.52,
+            "depth": 0.62
+          },
+          "color": 3419435
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "stone"
+          },
+          {
+            "tag": "dirty",
+            "value": 0.5
+          }
+        ]
+      },
+      {
+        "id": "m19",
+        "parent": "crucible",
+        "transform": {
+          "pos": [
+            0,
+            0.58,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.88,
+            "height": 0.12,
+            "depth": 0.76
+          },
+          "color": 11628589
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m20",
+        "parent": "crucible",
+        "transform": {
+          "pos": [
+            -0.21,
+            0.28,
+            -0.325
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.1,
+            "height": 0.24,
+            "depth": 0.04
+          },
+          "color": 16751666
+        },
+        "tags": [
+          {
+            "tag": "emissive",
+            "value": 0.75
+          }
+        ]
+      },
+      {
+        "id": "m21",
+        "parent": "crucible",
+        "transform": {
+          "pos": [
+            0,
+            0.28,
+            -0.325
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.1,
+            "height": 0.24,
+            "depth": 0.04
+          },
+          "color": 16751666
+        },
+        "tags": [
+          {
+            "tag": "emissive",
+            "value": 0.75
+          }
+        ]
+      },
+      {
+        "id": "m22",
+        "parent": "crucible",
+        "transform": {
+          "pos": [
+            0.21,
+            0.28,
+            -0.325
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.1,
+            "height": 0.24,
+            "depth": 0.04
+          },
+          "color": 16751666
+        },
+        "tags": [
+          {
+            "tag": "emissive",
+            "value": 0.75
+          }
+        ]
+      },
+      {
+        "id": "m23",
+        "parent": "tower",
+        "transform": {
+          "pos": [
+            0,
+            0.28,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.48,
+            "height": 0.48,
+            "depth": 0.48
+          },
+          "color": 7850178
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass"
+          }
+        ]
+      },
+      {
+        "id": "m24",
+        "parent": "tower",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.62,
+            "height": 0.1,
+            "depth": 0.62
+          },
+          "color": 11827763
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m25",
+        "parent": "tower",
+        "transform": {
+          "pos": [
+            0,
+            0.9,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.48,
+            "height": 0.48,
+            "depth": 0.48
+          },
+          "color": 7850178
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass"
+          }
+        ]
+      },
+      {
+        "id": "m26",
+        "parent": "tower",
+        "transform": {
+          "pos": [
+            0,
+            0.62,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.62,
+            "height": 0.1,
+            "depth": 0.62
+          },
+          "color": 11827763
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m27",
+        "parent": "tower",
+        "transform": {
+          "pos": [
+            0,
+            1.52,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.48,
+            "height": 0.48,
+            "depth": 0.48
+          },
+          "color": 7850178
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass"
+          }
+        ]
+      },
+      {
+        "id": "m28",
+        "parent": "tower",
+        "transform": {
+          "pos": [
+            0,
+            1.24,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.62,
+            "height": 0.1,
+            "depth": 0.62
+          },
+          "color": 11827763
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m29",
+        "parent": "tower",
+        "transform": {
+          "pos": [
+            0,
+            2.01,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.3,
+            "height": 0.5,
+            "depth": 0.3
+          },
+          "color": 9559767
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass"
+          }
+        ]
+      },
+      {
+        "id": "m30",
+        "parent": "tower",
+        "transform": {
+          "pos": [
+            0,
+            2.3,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.48,
+            "height": 0.1,
+            "depth": 0.48
+          },
+          "color": 11827763
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m31",
+        "parent": "tower",
+        "transform": {
+          "pos": [
+            0,
+            2.55,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.12,
+            "height": 0.4,
+            "depth": 0.12
+          },
+          "color": 10184749
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m32",
+        "parent": "condenser",
+        "transform": {
+          "pos": [
+            0.25,
+            0.2,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.92,
+            "height": 0.1,
+            "depth": 0.1
+          },
+          "color": 12749366
+        }
+      },
+      {
+        "id": "m33",
+        "parent": "condenser",
+        "transform": {
+          "pos": [
+            0.45,
+            0.05,
+            0.83
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.78,
+            "height": 0.1,
+            "depth": 0.1
+          },
+          "color": 12749366
+        }
+      },
+      {
+        "id": "m34",
+        "parent": "condenser",
+        "transform": {
+          "pos": [
+            0.84,
+            -0.12,
+            0.83
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.1,
+            "height": 0.34,
+            "depth": 0.1
+          },
+          "color": 12749366
+        }
+      },
+      {
+        "id": "m35",
+        "parent": "condenser",
+        "transform": {
+          "pos": [
+            0.45,
+            -0.29,
+            0.83
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.78,
+            "height": 0.1,
+            "depth": 0.1
+          },
+          "color": 12749366
+        }
+      },
+      {
+        "id": "m36",
+        "parent": "condenser",
+        "transform": {
+          "pos": [
+            0.06,
+            -0.46,
+            0.83
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.1,
+            "height": 0.34,
+            "depth": 0.1
+          },
+          "color": 12749366
+        }
+      },
+      {
+        "id": "m37",
+        "parent": "condenser",
+        "transform": {
+          "pos": [
+            0.45,
+            -0.63,
+            0.83
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.78,
+            "height": 0.1,
+            "depth": 0.1
+          },
+          "color": 12749366
+        }
+      },
+      {
+        "id": "m38",
+        "parent": "condenser",
+        "transform": {
+          "pos": [
+            0.84,
+            -0.8,
+            0.83
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.1,
+            "height": 0.34,
+            "depth": 0.1
+          },
+          "color": 12749366
+        }
+      },
+      {
+        "id": "m39",
+        "parent": "condenser",
+        "transform": {
+          "pos": [
+            0.45,
+            -0.97,
+            0.83
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.78,
+            "height": 0.1,
+            "depth": 0.1
+          },
+          "color": 12749366
+        }
+      },
+      {
+        "id": "m40",
+        "parent": "condenser",
+        "transform": {
+          "pos": [
+            0.06,
+            -1.14,
+            0.83
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.1,
+            "height": 0.34,
+            "depth": 0.1
+          },
+          "color": 12749366
+        }
+      },
+      {
+        "id": "m41",
+        "parent": "condenser",
+        "transform": {
+          "pos": [
+            0.04,
+            0.12,
+            0.415
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.1,
+            "height": 0.16,
+            "depth": 0.88
+          },
+          "color": 12749366
+        }
+      },
+      {
+        "id": "m42",
+        "parent": "condenser",
+        "transform": {
+          "pos": [
+            0.84,
+            -0.98,
+            0.83
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.1,
+            "height": 0.74,
+            "depth": 0.1
+          },
+          "color": 12749366
+        }
+      },
+      {
+        "id": "m43",
+        "parent": "pressure_furnace",
+        "transform": {
+          "pos": [
+            0,
+            0.44,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.82,
+            "height": 0.82,
+            "depth": 0.72
+          },
+          "color": 3949899
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m44",
+        "parent": "pressure_furnace",
+        "transform": {
+          "pos": [
+            0,
+            0.88,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.94,
+            "height": 0.12,
+            "depth": 0.84
+          },
+          "color": 11958064
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m45",
+        "parent": "pressure_furnace",
+        "transform": {
+          "pos": [
+            0,
+            0.45,
+            0.4
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.42,
+            "height": 0.46,
+            "depth": 0.08
+          },
+          "color": 6634789
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m46",
+        "parent": "pressure_furnace",
+        "transform": {
+          "pos": [
+            0,
+            0.5,
+            0.48
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.22,
+            "height": 0.52,
+            "depth": 0.22
+          },
+          "color": 11557375
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass",
+            "variant": "purple"
+          },
+          {
+            "tag": "emissive",
+            "value": 1
+          }
+        ]
+      },
+      {
+        "id": "m47",
+        "parent": "pressure_furnace",
+        "transform": {
+          "pos": [
+            0,
+            1.16,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.5,
+            "height": 0.5,
+            "depth": 0.12
+          },
+          "color": 14213589
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass"
+          }
+        ]
+      },
+      {
+        "id": "m48",
+        "parent": "pressure_furnace",
+        "transform": {
+          "pos": [
+            0.1,
+            1.16,
+            0.075
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.05,
+            "height": 0.22,
+            "depth": 0.05
+          },
+          "color": 10365732
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m49",
+        "parent": "pressure_furnace",
+        "transform": {
+          "pos": [
+            0,
+            1.46,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.28,
+            "height": 0.1,
+            "depth": 0.1
+          },
+          "color": 11958064
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m50",
+        "parent": "extractors",
+        "transform": {
+          "pos": [
+            -0.5,
+            0.33,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.34,
+            "height": 0.5,
+            "depth": 0.36
+          },
+          "color": 7980751
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass"
+          }
+        ]
+      },
+      {
+        "id": "m51",
+        "parent": "extractors",
+        "transform": {
+          "pos": [
+            -0.5,
+            0.68,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.18,
+            "height": 0.2,
+            "depth": 0.2
+          },
+          "color": 9099217
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass"
+          }
+        ]
+      },
+      {
+        "id": "m52",
+        "parent": "extractors",
+        "transform": {
+          "pos": [
+            -0.5,
+            0.06,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.42,
+            "height": 0.08,
+            "depth": 0.44
+          },
+          "color": 10447405
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m53",
+        "parent": "extractors",
+        "transform": {
+          "pos": [
+            -0.02,
+            0.39,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.34,
+            "height": 0.62,
+            "depth": 0.36
+          },
+          "color": 10318541
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass"
+          }
+        ]
+      },
+      {
+        "id": "m54",
+        "parent": "extractors",
+        "transform": {
+          "pos": [
+            -0.02,
+            0.8,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.18,
+            "height": 0.2,
+            "depth": 0.2
+          },
+          "color": 9099217
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass"
+          }
+        ]
+      },
+      {
+        "id": "m55",
+        "parent": "extractors",
+        "transform": {
+          "pos": [
+            -0.02,
+            0.06,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.42,
+            "height": 0.08,
+            "depth": 0.44
+          },
+          "color": 10447405
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m56",
+        "parent": "extractors",
+        "transform": {
+          "pos": [
+            0.46,
+            0.45,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.34,
+            "height": 0.74,
+            "depth": 0.36
+          },
+          "color": 7980751
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass"
+          }
+        ]
+      },
+      {
+        "id": "m57",
+        "parent": "extractors",
+        "transform": {
+          "pos": [
+            0.46,
+            0.92,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.18,
+            "height": 0.2,
+            "depth": 0.2
+          },
+          "color": 9099217
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass"
+          }
+        ]
+      },
+      {
+        "id": "m58",
+        "parent": "extractors",
+        "transform": {
+          "pos": [
+            0.46,
+            0.06,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.42,
+            "height": 0.08,
+            "depth": 0.44
+          },
+          "color": 10447405
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m59",
+        "parent": "extractors",
+        "transform": {
+          "pos": [
+            -0.02,
+            1.06,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.18,
+            "height": 0.1,
+            "depth": 0.1
+          },
+          "color": 12024625
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m60",
+        "parent": "extractors",
+        "transform": {
+          "pos": [
+            -0.5,
+            0.85,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.08,
+            "height": 0.42,
+            "depth": 0.08
+          },
+          "color": 12024625
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m61",
+        "parent": "extractors",
+        "transform": {
+          "pos": [
+            -0.02,
+            0.85,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.08,
+            "height": 0.42,
+            "depth": 0.08
+          },
+          "color": 12024625
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m62",
+        "parent": "extractors",
+        "transform": {
+          "pos": [
+            0.46,
+            0.85,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.08,
+            "height": 0.42,
+            "depth": 0.08
+          },
+          "color": 12024625
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m63",
+        "parent": "front_controls",
+        "transform": {
+          "pos": [
+            0,
+            0.2,
+            0.04
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.2,
+            "height": 0.38,
+            "depth": 0.14
+          },
+          "color": 3423555
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m64",
+        "parent": "front_controls",
+        "transform": {
+          "pos": [
+            -0.4,
+            0.25,
+            0.15
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.2,
+            "height": 0.2,
+            "depth": 0.08
+          },
+          "color": 12681524
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m65",
+        "parent": "front_controls",
+        "transform": {
+          "pos": [
+            -0.4,
+            0.25,
+            0.205
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.06,
+            "height": 0.28,
+            "depth": 0.06
+          },
+          "color": 5515809
+        }
+      },
+      {
+        "id": "m66",
+        "parent": "front_controls",
+        "transform": {
+          "pos": [
+            -0.4,
+            0.25,
+            0.205
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.28,
+            "height": 0.06,
+            "depth": 0.06
+          },
+          "color": 5515809
+        }
+      },
+      {
+        "id": "m67",
+        "parent": "front_controls",
+        "transform": {
+          "pos": [
+            0,
+            0.25,
+            0.15
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.2,
+            "height": 0.2,
+            "depth": 0.08
+          },
+          "color": 12681524
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m68",
+        "parent": "front_controls",
+        "transform": {
+          "pos": [
+            0,
+            0.25,
+            0.205
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.06,
+            "height": 0.28,
+            "depth": 0.06
+          },
+          "color": 5515809
+        }
+      },
+      {
+        "id": "m69",
+        "parent": "front_controls",
+        "transform": {
+          "pos": [
+            0,
+            0.25,
+            0.205
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.28,
+            "height": 0.06,
+            "depth": 0.06
+          },
+          "color": 5515809
+        }
+      },
+      {
+        "id": "m70",
+        "parent": "front_controls",
+        "transform": {
+          "pos": [
+            0.4,
+            0.25,
+            0.15
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.2,
+            "height": 0.2,
+            "depth": 0.08
+          },
+          "color": 12681524
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m71",
+        "parent": "front_controls",
+        "transform": {
+          "pos": [
+            0.4,
+            0.25,
+            0.205
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.06,
+            "height": 0.28,
+            "depth": 0.06
+          },
+          "color": 5515809
+        }
+      },
+      {
+        "id": "m72",
+        "parent": "front_controls",
+        "transform": {
+          "pos": [
+            0.4,
+            0.25,
+            0.205
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.28,
+            "height": 0.06,
+            "depth": 0.06
+          },
+          "color": 5515809
+        }
+      },
+      {
+        "id": "m73",
+        "parent": "chimney_smoke",
+        "transform": {
+          "pos": [
+            0,
+            0.23,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.18,
+            "height": 0.32,
+            "depth": 0.18
+          },
+          "color": 14149348
+        }
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1787875847563,
+        "provider": "gpt",
+        "data": "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",
+        "edits": ""
+      },
+      "semanticSnapshot": {
+        "v": 1,
+        "auto": true,
+        "text": "蒸汽秘仪炼金异形体·变体五 · 10组/74mesh · 世界坐标(Y上Z前), 原点=模型根\n# 阅读说明: G:=group行(可动画骨骼, 动画key用G:后的id; @p=pivot世界坐标; 倾(x,y,z)°=朝向偏离世界轴的欧拉角; 缩进=父子层级; 挂:=挂载于某组; G:id→id→…=chain折叠行, 每个id都是可独立动画的group, chain×N=waypoint数)\n# M:=mesh行(label[id 几何 @(世界坐标)], label可省略; ×N=for循环批量件(锚点=代表实例); cyl (起)→(末)或 轴上(Y)等方位词=延伸方向; 薄向=板面法向(扁板); 挂载组双代表=最大件+最远有向件(刃/嘴/管所在端); 无方向标注=均匀块(三向相近,如头),默认面向前(Z); 对称×2=镜像对)\nG:root 炼金仪器总成 @p(0,0,0)\n  G:frame 铸铁承重支架 @p(0,0,0)\n    M:[m0 box 2.9×0.16×2.2 (0,0.1,0) 薄向上(Y)]\n  G:reactor 巨型烧瓶反应器 @p(-0.7,1,0.1)\n    M:[m10 box 1.3×0.78×1.1 (-0.7,1.7,0.1)]\n  G:crucible 符文坩埚 @p(-0.9,1,-0.7)\n    M:[m18 box 0.72×0.52×0.62 (-0.9,1.3,-0.7)]\n  G:tower 组合蒸馏塔 @p(0.2,1,-0.3)\n    M:[m23 box 0.48×0.48×0.48 (0.2,1.3,-0.3)]\n  G:condenser 黄铜蛇形冷凝器 @p(0.5,2.7,-0.3)\n    M:[m41 box 0.1×0.16×0.88 (0.5,2.8,0.1) 轴前(Z)]\n  G:pressure_furnace 魔晶压力炉 @p(0.9,1,-0.6)\n    M:[m43 box 0.82×0.82×0.72 (0.9,1.5,-0.6)]\n  G:extractors 多瓶联动萃取装置 @p(0.5,1,0.8)\n    M:[m56 box 0.34×0.74×0.36 (0.9,1.5,0.8) 轴上(Y)]\n  G:front_controls 前置阀门控制台 @p(0,1,1)\n    M:[m63 box 1.2×0.38×0.14 (0,1.2,1.1) 轴右(X)]\n  G:chimney_smoke 炉顶蒸汽 @p(0.9,2.5,-0.6)\n    M:[m73 box 0.18×0.32×0.18 (0.9,2.7,-0.6) 轴上(Y)]",
+        "stats": {
+          "groups": 10,
+          "meshes": 74,
+          "labeledMeshes": 0,
+          "labelCoverage": 0,
+          "batchLabels": 0,
+          "autoChains": 0,
+          "snapshotChars": 1150
+        }
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -1.37,
+          1.2399999999999998,
+          -0.5275
+        ],
+        "max": [
+          -0.06999999999999995,
+          2.02,
+          0.6124999999999999
+        ],
+        "sourceNodeId": "m10"
+      },
+      {
+        "min": [
+          -1.45,
+          0,
+          -1.1775000000000002
+        ],
+        "max": [
+          1.45,
+          0.16000000000000003,
+          1.0225
+        ],
+        "sourceNodeId": "m0"
+      },
+      {
+        "min": [
+          -1.36,
+          0.9199999999999999,
+          -1.0274999999999999
+        ],
+        "max": [
+          1.36,
+          1.04,
+          0.8724999999999999
+        ],
+        "sourceNodeId": "m1"
+      },
+      {
+        "min": [
+          0.47000000000000003,
+          1.01,
+          -0.9975
+        ],
+        "max": [
+          1.29,
+          1.8299999999999998,
+          -0.2775000000000001
+        ],
+        "sourceNodeId": "m43"
+      },
+      {
+        "min": [
+          -1.2,
+          2.0199999999999996,
+          -0.40750000000000003
+        ],
+        "max": [
+          -0.24,
+          2.42,
+          0.49250000000000005
+        ],
+        "sourceNodeId": "m11"
+      },
+      {
+        "min": [
+          -1.25,
+          1,
+          -0.4275
+        ],
+        "max": [
+          -0.18999999999999995,
+          1.2799999999999998,
+          0.5125
+        ],
+        "sourceNodeId": "m9"
+      },
+      {
+        "min": [
+          -1.28,
+          1,
+          -1.1075
+        ],
+        "max": [
+          -0.56,
+          1.52,
+          -0.4875
+        ],
+        "sourceNodeId": "m18"
+      },
+      {
+        "min": [
+          -1.43,
+          1.3199999999999998,
+          -0.5575
+        ],
+        "max": [
+          -0.010000000000000009,
+          1.44,
+          0.6425
+        ],
+        "sourceNodeId": "m14"
+      },
+      {
+        "min": [
+          -1.43,
+          1.92,
+          -0.5575
+        ],
+        "max": [
+          -0.010000000000000009,
+          2.04,
+          0.6425
+        ],
+        "sourceNodeId": "m15"
+      },
+      {
+        "min": [
+          -0.03999999999999998,
+          2.26,
+          -0.6675
+        ],
+        "max": [
+          0.44,
+          2.74,
+          -0.1875
+        ],
+        "sourceNodeId": "m27"
+      },
+      {
+        "min": [
+          -0.03999999999999998,
+          1.64,
+          -0.6675
+        ],
+        "max": [
+          0.44,
+          2.12,
+          -0.1875
+        ],
+        "sourceNodeId": "m25"
+      },
+      {
+        "min": [
+          -0.03999999999999998,
+          1.02,
+          -0.6675
+        ],
+        "max": [
+          0.44,
+          1.5,
+          -0.1875
+        ],
+        "sourceNodeId": "m23"
+      }
+    ],
+    "sourceMeshCount": 74,
+    "candidateCount": 15,
+    "fallbackUsed": false
+  },
+  "footprintRadius": 1.45,
+  "sizeClass": "medium",
+  "mode": "voxel",
+  "provider": "gpt",
+  "createdAt": 1787875847235,
+  "updatedAt": 1787875847235
+}

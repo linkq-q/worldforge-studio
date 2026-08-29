@@ -1,0 +1,317 @@
+{
+  "id": "asset-efd61214-6112-4251",
+  "name": "异形笔 1",
+  "prompt": "单独一把笔，完整独立模型，不带笔盒、纸张、书本或其他物品。六种外观必须明显不同，依次为蓝色圆珠笔、红色按动笔、黑色钢笔、绿色自动铅笔、紫色荧光笔、橙色粗头马克笔；每种具有不同笔帽、笔夹、笔杆轮廓和材质细节。\nCoordinate contract: local Y+ is up, local Z+ is the front, entrance, or forward direction, and local X+ is right. Put doors, facades, openings, windshields, noses, seats, and other recognizable front details toward local Z+. For a modular repeated element, explicitly choose the long axis: side-by-side modules span local X with depth/front on local Z; traversal modules span local Z. Keep the model centered at its origin.\nCanonical dimensions contract: width=0.05, height=0.04, depth=0.22 world units. Keep the generated mesh within this centered bounding size.\nCreate variation 1 of 6; preserve the same reusable asset family while varying silhouette and details.",
+  "tags": [
+    "indoor",
+    "single-object",
+    "pen"
+  ],
+  "modelJson": {
+    "name": "蓝色圆珠笔",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "pen_body",
+        "name": "笔身",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.034,
+            0.058,
+            0.228
+          ],
+          "center": [
+            0,
+            0.002,
+            -0.003
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0.0048
+            ],
+            [
+              0,
+              -0.0048,
+              1
+            ]
+          ],
+          "_mainAxis": 2
+        }
+      },
+      {
+        "id": "mount01_cap",
+        "name": "后置笔帽",
+        "parent": "pen_body",
+        "transform": {
+          "pos": [
+            0,
+            0.0095,
+            -0.072
+          ]
+        },
+        "mounted": true,
+        "_obb": {
+          "size": [
+            0.034,
+            0.044,
+            0.066
+          ],
+          "center": [
+            0,
+            -0.006,
+            -0.008
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              0.9826,
+              -0.1858
+            ],
+            [
+              0,
+              0.1858,
+              0.9826
+            ]
+          ],
+          "_mainAxis": 2
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "pen_body",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            -0.012
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.026,
+            "height": 0.026,
+            "depth": 0.15
+          },
+          "color": 1534402
+        }
+      },
+      {
+        "id": "m1",
+        "parent": "pen_body",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0.072
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.022,
+            "height": 0.022,
+            "depth": 0.018
+          },
+          "color": 1200025
+        }
+      },
+      {
+        "id": "m2",
+        "parent": "pen_body",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0.09
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.016,
+            "height": 0.016,
+            "depth": 0.018
+          },
+          "color": 12108492
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m3",
+        "parent": "pen_body",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0.105
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.007,
+            "height": 0.007,
+            "depth": 0.012
+          },
+          "color": 5858157
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m4",
+        "parent": "mount01_cap",
+        "transform": {
+          "pos": [
+            0,
+            -0.0095,
+            -0.018
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.034,
+            "height": 0.034,
+            "depth": 0.04
+          },
+          "color": 874157
+        }
+      },
+      {
+        "id": "m5",
+        "parent": "mount01_cap",
+        "transform": {
+          "pos": [
+            0,
+            0.0095,
+            -0.008
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.008,
+            "height": 0.005,
+            "depth": 0.048
+          },
+          "color": 672649
+        }
+      },
+      {
+        "id": "m6",
+        "parent": "mount01_cap",
+        "transform": {
+          "pos": [
+            0,
+            0.0065,
+            0.018
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.014,
+            "height": 0.006,
+            "depth": 0.008
+          },
+          "color": 672649
+        }
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1787876419717,
+        "provider": "gpt",
+        "data": "TGPzmjvYKUE8PJYmvXitLk+NY4a08FyUaWPGYxobCujddFpiHCppXIVjtgoCtseMI+pGHfrJ/7QNkZhKdvQhzU5r3YZHSgLLdj8VygR7IK90Wkj/N5fhXVGBRZQLPGbOc0UvNOEuhH5M8SbKwBBL9cHxOIKxus8iGl/GADbbSWQxmB62sgJnNyJDUd+Z+vYS+1a6wvqtjDF1BD9+J8Hbg7nr+wJ71zZ7p48PjdVGNmPFFV3rYOVuG/FoMN2yqUWaoCS9s8BcDO7g5Fsybua8//etj8eNdEC1RiLiGnO9C2vLc4cUt9r8HQIokIjyu/cuocuV58ncXcBPiEMXX4IaBE2QmcNVMIt3IhJpcLXAK+fR5OpiPx2dQF415UQH7tnYBkfbPoVlNbV+RIMRyv8wHNt3EG13FPa92pW7w/fawpKG4rpzOwD3aGnZMHCGHrHfTM5FCWGUA6piAfaXiOwho2OOT0qQF7CpSoHO3gjvbDwRoGYq2zmfKVbACZBv2fvhv+Mg793pY+zcgGVnntyeeHgk7DQa0F7UCic8QLy6Mx+asw+3i1RNf54NCerotOIG1RJxlH9x5OxZ9ekyLsp7jEGzyZ5VB/Mm+Oh+630i3U4TQwVS8tv4vzYvCwV5icQQHelOE81rHKz8U/DNvyfL/YXtzn6cuQxebN20u/IAdGaHdoxVpKc=",
+        "edits": ""
+      },
+      "mounts": [
+        {
+          "id": "mount01_cap",
+          "mountedGroupId": "mount01_cap",
+          "name": "后置笔帽",
+          "source": {
+            "type": "codegen"
+          },
+          "description": "",
+          "visible": true,
+          "ts": 1787876419718
+        }
+      ],
+      "semanticSnapshot": {
+        "v": 1,
+        "auto": true,
+        "text": "蓝色圆珠笔 · 2组/7mesh · 世界坐标(Y上Z前), 原点=模型根\n# 阅读说明: G:=group行(可动画骨骼, 动画key用G:后的id; @p=pivot世界坐标; 倾(x,y,z)°=朝向偏离世界轴的欧拉角; 缩进=父子层级; 挂:=挂载于某组; G:id→id→…=chain折叠行, 每个id都是可独立动画的group, chain×N=waypoint数)\n# M:=mesh行(label[id 几何 @(世界坐标)], label可省略; ×N=for循环批量件(锚点=代表实例); cyl (起)→(末)或 轴上(Y)等方位词=延伸方向; 薄向=板面法向(扁板); 挂载组双代表=最大件+最远有向件(刃/嘴/管所在端); 无方向标注=均匀块(三向相近,如头),默认面向前(Z); 对称×2=镜像对)\nG:pen_body 笔身 @p(0,0,0)\n  M:[m0 box 0.03×0.03×0.15 (0,0,0) 轴前(Z)]\n  G:mount01_cap 后置笔帽 @p(0,0,-0.1) 挂:pen_body\n    M:[m4 box 0.03×0.03×0.04 (0,0,-0.1)] | M:[m6 box 0.01×0.01×0.01 (0,0,-0.1) 轴右(X)]",
+        "stats": {
+          "groups": 2,
+          "meshes": 7,
+          "labeledMeshes": 0,
+          "labelCoverage": 0,
+          "batchLabels": 0,
+          "autoChains": 0,
+          "snapshotChars": 561
+        }
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -0.017,
+          0,
+          -0.1105
+        ],
+        "max": [
+          0.017,
+          0.041,
+          0.1105
+        ],
+        "sourceNodeId": "asset-bounds"
+      }
+    ],
+    "sourceMeshCount": 7,
+    "candidateCount": 0,
+    "fallbackUsed": true
+  },
+  "footprintRadius": 0.1105,
+  "sizeClass": "small",
+  "mode": "voxel",
+  "provider": "gpt",
+  "createdAt": 1787876420145,
+  "updatedAt": 1787876420145
+}

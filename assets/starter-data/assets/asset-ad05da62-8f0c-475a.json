@@ -1,0 +1,624 @@
+{
+  "id": "asset-ad05da62-8f0c-475a",
+  "name": "儿童滑板车",
+  "prompt": "单个可复用的儿童两轮滑板车，砖红踏板、深蓝立杆、圆角握把和清晰车轮，保持直立停放姿态。\n全局资产美术方向：统一采用柔和圆角、略微夸张比例的精致体素风；家具以浅暖木、米白和雾蓝为主，玩具使用克制的砖红、芥末黄和深蓝点缀，所有边角适合儿童空间且尺度参照1.60米角色。; 现代温暖的儿童卧室，浅木地板、柔和蓝灰墙面和米白顶面保持安静背景，以木质家具和少量红黄蓝玩具形成分组色彩点缀；装饰集中于睡眠与学习区域，中央不堆放杂物。; 温暖, 现代儿童房, 圆角体素, 整洁生活感, 柔和配色; palette #E8DFC9, #B99062, #8EA6B4, #C65F4A, #D6A83E, #354C63; materials 浅色木材, 哑光烤漆, 棉织物, 粉末涂层金属, 透明玻璃\n资产角色：直立停放的儿童骑行器材；目标尺度：medium。\n只生成一个可复用的独立物体，不要生成地面、背景、天空、完整场景或多个分散物体。",
+  "modelJson": {
+    "name": "儿童两轮滑板车",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "body",
+        "name": "砖红踏板",
+        "transform": {
+          "pos": [
+            0,
+            0.48,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            1.291,
+            2.439,
+            2.015
+          ],
+          "center": [
+            -0.006,
+            0.052,
+            0.279
+          ],
+          "axes": [
+            [
+              0.993,
+              0.0981,
+              -0.0652
+            ],
+            [
+              -0.0394,
+              0.7984,
+              0.6008
+            ],
+            [
+              0.111,
+              -0.5941,
+              0.7967
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "rear_wheel",
+        "name": "后轮",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0,
+            -0.26,
+            -0.84
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.18,
+            0.42,
+            0.42
+          ],
+          "center": [
+            0,
+            0,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "steering",
+        "name": "转向立杆",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0,
+            0.02,
+            0.62
+          ]
+        },
+        "_obb": {
+          "size": [
+            1.1,
+            1.389,
+            0.708
+          ],
+          "center": [
+            0,
+            0.195,
+            0.144
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              0.9948,
+              0.1021
+            ],
+            [
+              0,
+              -0.1021,
+              0.9948
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "front_wheel",
+        "name": "前轮",
+        "parent": "steering",
+        "transform": {
+          "pos": [
+            0,
+            -0.28,
+            0.22
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.18,
+            0.42,
+            0.42
+          ],
+          "center": [
+            0,
+            0,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "kickstand",
+        "name": "侧支架",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0.13,
+            -0.05,
+            0.08
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.06,
+            0.397,
+            0.08
+          ],
+          "center": [
+            0.1,
+            -0.17,
+            0
+          ],
+          "axes": [
+            [
+              0.9209,
+              0.3897,
+              -0.0079
+            ],
+            [
+              -0.3898,
+              0.9209,
+              -0.0087
+            ],
+            [
+              0.0038,
+              0.0111,
+              0.9999
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            -0.04
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.42,
+            "height": 0.12,
+            "depth": 1.3
+          },
+          "color": 13000522
+        }
+      },
+      {
+        "id": "m1",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0,
+            -0.075,
+            -0.04
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.34,
+            "height": 0.07,
+            "depth": 1.16
+          },
+          "color": 3492963
+        }
+      },
+      {
+        "id": "m2",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0,
+            0.01,
+            -0.75
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.32,
+            "height": 0.08,
+            "depth": 0.42
+          },
+          "color": 13000522
+        }
+      },
+      {
+        "id": "m3",
+        "parent": "rear_wheel",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.14,
+            "height": 0.42,
+            "depth": 0.42
+          },
+          "color": 2504518
+        }
+      },
+      {
+        "id": "m4",
+        "parent": "rear_wheel",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.18,
+            "height": 0.15,
+            "depth": 0.15
+          },
+          "color": 9348788
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m5",
+        "parent": "steering",
+        "transform": {
+          "pos": [
+            0,
+            0.36,
+            0.13
+          ],
+          "quat": [
+            -0.47,
+            -0.47,
+            -0.53,
+            0.53
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.12,
+            "height": 0.12,
+            "depth": 0.79
+          },
+          "color": 3492963
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m6",
+        "parent": "steering",
+        "transform": {
+          "pos": [
+            0,
+            0.06,
+            0.06
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.22,
+            "height": 0.16,
+            "depth": 0.22
+          },
+          "color": 14067774
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m7",
+        "parent": "steering",
+        "transform": {
+          "pos": [
+            0,
+            0.8,
+            0.18
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.92,
+            "height": 0.1,
+            "depth": 0.1
+          },
+          "color": 3492963
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m8",
+        "parent": "steering",
+        "transform": {
+          "pos": [
+            -0.35,
+            0.8,
+            0.18
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.3,
+            "height": 0.14,
+            "depth": 0.16
+          },
+          "color": 9348788
+        }
+      },
+      {
+        "id": "m9",
+        "parent": "steering",
+        "transform": {
+          "pos": [
+            0.35,
+            0.8,
+            0.18
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.3,
+            "height": 0.14,
+            "depth": 0.16
+          },
+          "color": 9348788
+        }
+      },
+      {
+        "id": "m10",
+        "parent": "steering",
+        "transform": {
+          "pos": [
+            -0.515,
+            0.8,
+            0.18
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.07,
+            "height": 0.16,
+            "depth": 0.18
+          },
+          "color": 3492963
+        }
+      },
+      {
+        "id": "m11",
+        "parent": "steering",
+        "transform": {
+          "pos": [
+            0.515,
+            0.8,
+            0.18
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.07,
+            "height": 0.16,
+            "depth": 0.18
+          },
+          "color": 3492963
+        }
+      },
+      {
+        "id": "m12",
+        "parent": "front_wheel",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.14,
+            "height": 0.42,
+            "depth": 0.42
+          },
+          "color": 2504518
+        }
+      },
+      {
+        "id": "m13",
+        "parent": "front_wheel",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.18,
+            "height": 0.15,
+            "depth": 0.15
+          },
+          "color": 9348788
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m14",
+        "parent": "kickstand",
+        "transform": {
+          "pos": [
+            0.1,
+            -0.17,
+            0
+          ],
+          "quat": [
+            0.69,
+            0.14,
+            0.14,
+            0.69
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.06,
+            "height": 0.08,
+            "depth": 0.4
+          },
+          "color": 3492963
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1786869641226,
+        "provider": "gpt",
+        "data": "KLuPYWmEJ7UfiweTh2mb6OVEdnBGDcwzW8tzxg1tImGZKD4mxMLU9a3FwKikNNIa5VapQN9qCIlPKXB4bz31eTWU9oibTSnSphOjyfemnjo9tfeNF8fdgJRXma2ruMTw6tRLTNwECqqr5WosM/CLR8cNU+fi2p0lomiPCSDbhMZ7SjR+Y1wW0d3ZvCBM7Pzi/wGc2TxmyAJmDWHJS8fzzgiYii9L2VQheR/W1YkRRF8kp/4jnjBb3+sSyO/lIeibWaOfbkNxGd6e23qhl26ZSkeRlNYNcj9U08RKyThde5Pg97XQ8ln5uNtTCJDnUoI8MND+iApLE11RgPSbvZ5pAE/t+PQ0eNJFNVGdoNwYnL0q8MArI5v7hoch6F6uVMXuJHPy4K3n0J1jkHyL2XLulY1vLJyOR4c7SHZtKWxuuEvzN/TAe3MqtCLALMWizYG2xiqD+0OzTWkjVe0OCNt5CW12pVdyFwUrnBWanmUFI7+7+WxXS/vH0tn667jKS6n7Z1dDiW3t+TZdNr8RmRb0NBToZwAE+rjoEuVQh+DLVxZfkJm3EIOdSuYm3RJURagYyJfw6P3G+Flt+j6elOFppWFa6PAJV3hWDGINNcdrbEzfSY3DI1kBM2C2ieWxtOF7G3Djh+mXU87kPo1Z1Yz9rBtoJgdf+G1nqTqT5XbCzaEhUS9m0AHvbEui6aivIH3PWWeDrIWqLbZbZpke6iEq3sBGTna94PpjB/CruJg3gCofSYQVMThLOZTXgKvLhkUorx3gBiaVcWyZuCalRCBhfgW0eVPC9Ald1KGTTXCuoox04SqgNmFsx0J19uSSpUUq6ZwetsqS9wwiO4Zk0ioe2F55XLAndzSrT2NL9ND8lxtOzLIs9qi+AX0AsGMfgqzocOOVK1eGZSkJtqPe0akToUAby95/za878KYM8rwcEkeUD4jLswbfzZo5VGzg55kbnVEdH/bumQxxibyGOeA=",
+        "edits": ""
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -0.55,
+          0,
+          -1.05
+        ],
+        "max": [
+          0.55,
+          1.37,
+          1.05
+        ],
+        "sourceNodeId": "asset-bounds"
+      }
+    ],
+    "sourceMeshCount": 15,
+    "candidateCount": 1,
+    "fallbackUsed": true
+  },
+  "footprintRadius": 1.05,
+  "sizeClass": "medium",
+  "mode": "voxel",
+  "provider": "gpt",
+  "libraryId": "library-d7967286-cebf-4f99",
+  "libraryMetadata": {
+    "tags": [
+      "childrensscooter",
+      "kickscooter",
+      "ride-ontoy",
+      "playgroundequipment"
+    ],
+    "applicableZones": [
+      "settlement"
+    ],
+    "repeatable": true,
+    "landmark": false,
+    "enabled": true,
+    "priority": 0.5,
+    "analysisStatus": "ready",
+    "rotation": "random"
+  },
+  "createdAt": 1787817777162,
+  "updatedAt": 1787817777162
+}

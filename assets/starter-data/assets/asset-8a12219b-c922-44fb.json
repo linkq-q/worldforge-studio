@@ -1,0 +1,676 @@
+{
+  "id": "asset-8a12219b-c922-44fb",
+  "name": "星星手鼓",
+  "prompt": "原创儿童玩具，单个星形儿童手鼓，厚实圆角框架，短握柄，彩色小铃片，紫红与青色配色，无文字无角色，独立单体\nCoordinate contract: local Y+ is up, local Z+ is the front, entrance, or forward direction, and local X+ is right. Put doors, facades, openings, windshields, noses, seats, and other recognizable front details toward local Z+. For a modular repeated element, explicitly choose the long axis: side-by-side modules span local X with depth/front on local Z; traversal modules span local Z. Keep the model centered at its origin.\nCanonical dimensions contract: width=0.45, height=0.12, depth=0.55 world units. Keep the generated mesh within this centered bounding size.",
+  "modelJson": {
+    "name": "星星彩铃手鼓",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "body",
+        "name": "星形鼓框",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.429,
+            0.1,
+            0.548
+          ],
+          "center": [
+            0,
+            0.011,
+            -0.002
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              0.9999,
+              -0.0141
+            ],
+            [
+              0,
+              0.0141,
+              0.9999
+            ]
+          ],
+          "_mainAxis": 2
+        }
+      },
+      {
+        "id": "bell_0",
+        "name": "彩色小铃片",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            -0.145,
+            0.035,
+            0.105
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.04,
+            0.025,
+            0.028
+          ],
+          "center": [
+            0,
+            0.013,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "bell_1",
+        "name": "彩色小铃片",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0.145,
+            0.035,
+            0.105
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.04,
+            0.025,
+            0.028
+          ],
+          "center": [
+            0,
+            0.013,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "bell_2",
+        "name": "彩色小铃片",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            -0.105,
+            0.035,
+            -0.035
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.04,
+            0.025,
+            0.028
+          ],
+          "center": [
+            0,
+            0.013,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "bell_3",
+        "name": "彩色小铃片",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0.105,
+            0.035,
+            -0.035
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.04,
+            0.025,
+            0.028
+          ],
+          "center": [
+            0,
+            0.013,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            -0.03,
+            0,
+            0.2
+          ],
+          "quat": [
+            -0.53,
+            0,
+            0.85,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.14,
+            "height": 0.07,
+            "depth": 0.04
+          },
+          "color": 11872899
+        }
+      },
+      {
+        "id": "m1",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            -0.13,
+            0,
+            0.13
+          ],
+          "quat": [
+            -0.06,
+            0,
+            1,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.14,
+            "height": 0.07,
+            "depth": 0.04
+          },
+          "color": 2146241
+        }
+      },
+      {
+        "id": "m2",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            -0.15,
+            0,
+            0.07
+          ],
+          "quat": [
+            0.93,
+            0,
+            -0.37,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.14,
+            "height": 0.07,
+            "depth": 0.04
+          },
+          "color": 11872899
+        }
+      },
+      {
+        "id": "m3",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            -0.11,
+            0,
+            -0.05
+          ],
+          "quat": [
+            -0.64,
+            0,
+            0.77,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.14,
+            "height": 0.07,
+            "depth": 0.04
+          },
+          "color": 2146241
+        }
+      },
+      {
+        "id": "m4",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            -0.06,
+            0,
+            -0.08
+          ],
+          "quat": [
+            0.97,
+            0,
+            0.25,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.14,
+            "height": 0.07,
+            "depth": 0.04
+          },
+          "color": 11872899
+        }
+      },
+      {
+        "id": "m5",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0.06,
+            0,
+            -0.08
+          ],
+          "quat": [
+            0.97,
+            0,
+            -0.25,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.14,
+            "height": 0.07,
+            "depth": 0.04
+          },
+          "color": 2146241
+        }
+      },
+      {
+        "id": "m6",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0.11,
+            0,
+            -0.05
+          ],
+          "quat": [
+            0.64,
+            0,
+            0.77,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.14,
+            "height": 0.07,
+            "depth": 0.04
+          },
+          "color": 11872899
+        }
+      },
+      {
+        "id": "m7",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0.15,
+            0,
+            0.07
+          ],
+          "quat": [
+            0.93,
+            0,
+            0.37,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.14,
+            "height": 0.07,
+            "depth": 0.04
+          },
+          "color": 2146241
+        }
+      },
+      {
+        "id": "m8",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0.13,
+            0,
+            0.13
+          ],
+          "quat": [
+            0.06,
+            0,
+            1,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.14,
+            "height": 0.07,
+            "depth": 0.04
+          },
+          "color": 11872899
+        }
+      },
+      {
+        "id": "m9",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0.03,
+            0,
+            0.2
+          ],
+          "quat": [
+            0.53,
+            0,
+            0.85,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.14,
+            "height": 0.07,
+            "depth": 0.04
+          },
+          "color": 2146241
+        }
+      },
+      {
+        "id": "m10",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            -0.2025
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.078,
+            "height": 0.075,
+            "depth": 0.145
+          },
+          "color": 11872899
+        }
+      },
+      {
+        "id": "m11",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            -0.24
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.058,
+            "height": 0.082,
+            "depth": 0.07
+          },
+          "color": 2146241
+        }
+      },
+      {
+        "id": "m12",
+        "parent": "bell_0",
+        "transform": {
+          "pos": [
+            0,
+            0.0125,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.04,
+            "height": 0.025,
+            "depth": 0.028
+          },
+          "color": 16763448
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m13",
+        "parent": "bell_1",
+        "transform": {
+          "pos": [
+            0,
+            0.0125,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.04,
+            "height": 0.025,
+            "depth": 0.028
+          },
+          "color": 7000927
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m14",
+        "parent": "bell_2",
+        "transform": {
+          "pos": [
+            0,
+            0.0125,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.04,
+            "height": 0.025,
+            "depth": 0.028
+          },
+          "color": 16740428
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m15",
+        "parent": "bell_3",
+        "transform": {
+          "pos": [
+            0,
+            0.0125,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.04,
+            "height": 0.025,
+            "depth": 0.028
+          },
+          "color": 5082623
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1787770785668,
+        "provider": "gpt",
+        "data": "mQNMw2XqZ/ukfK0dClgjipU66jCxebALrgFHU8vSfqQzQ8MnX80V7Vf7ejVvXWs8DTfBdVdRpg/lc5RpcHmxdmMS4d+cdIijmO/DLXs+Ks95f9weVSeWxfDoINyp6OlBO+neIuahAL1vDQWZaku/KMdKoY02e4Rsec3RVkUj8NhbANsB4GzO3iySaaIiLA8tJSTeAdpRVhliST+joQJOIemoB17wqXm3QoQszWmXMnkhMz41NLlcpthzlWFsXB+Uudvc66+lY8ZwRzetjOtk0Ya0EwV2FnQObIlE6P4HO/QyKkfDHY2j4nYylP6XZeGYKnN9nzV/Aer7OxeRbhgIz7d/FU5h2zNIIZEPG+V0lmYaZRDHqqqZaS9GMSrUbMvDXKNSjCFXDpmNHuwpDCsk0e0JRr1mQn/4kzphWtNRjCEX0obeHcXp3c5Feur3HbzL/kdOtpTGrWd0QH1X2uknt67B04KyK3RHALH+TPseK9Au2PefUgdUDSJ8c5+UEaMKj9sIjCBZtAya28gdImbgdj91sTAiWZwwu1tNGS1iyNNqZlIsnYN1O+Dufa6d3bPRVz/C8Mpp0KQGwmG0SE/x3J5seYt7xtXNRx5Uprq8l+j3yEQalaQ7hErySyRsD45aXKMx6i33C0wY0kPCItkqebrtG/VDBC8msgtSKoVSTgRltmn8oFGOzpK1Ww1Ugw/3F/nRUvSnLbwD90FU9vOhlc6/l9mdZTOJOBGby7O10wOQJhNThsVxAAQCUVLkf+bZXe+9UCc0yJOYXcO+gTlJQ/wLyxvtE6xe2WowCACCmT5ACcrWAPRHKQYS4GeOJdm571F0vyOIPRruwwQ0fMiG0ZdV9w2Tn/gJ/cT84MLsCenPdgkY9ummjwB8FffywQGdalRHA8ufktnLwW+qcT+gTk7NOTXuhqD1yI6KEwawKXviIF2xH+tYR37UQA5O94CfawuaNbRSxFF/ia8BzFju6G9H9ooi11+Yc9Uy6ZlEz36BpfHuqFBbR49M2hdC4JB17GR+LUiBmptpo/iUpnsGGcSIM4I0YP7fUsyGbNRv9xkB9a1xVwAmayTIAvdjNOpOPzTzXG3O0vjjC5Q8PqHYDR1IaC+oYNRh",
+        "edits": ""
+      },
+      "semanticSnapshot": {
+        "v": 1,
+        "auto": true,
+        "text": "星星彩铃手鼓 · 5组/16mesh · 世界坐标(Y上Z前), 原点=模型根\n# 阅读说明: G:=group行(可动画骨骼, 动画key用G:后的id; @p=pivot世界坐标; 倾(x,y,z)°=朝向偏离世界轴的欧拉角; 缩进=父子层级; 挂:=挂载于某组; G:id→id→…=chain折叠行, 每个id都是可独立动画的group, chain×N=waypoint数)\n# M:=mesh行(label[id 几何 @(世界坐标)], label可省略; ×N=for循环批量件(锚点=代表实例); cyl (起)→(末)或 轴上(Y)等方位词=延伸方向; 薄向=板面法向(扁板); 挂载组双代表=最大件+朝向件(嘴/管/檐所在); 无方向标注=均匀块(三向相近,如头),默认面向前(Z); 对称×2=镜像对)\nG:body 星形鼓框 @p(0,0,0)\n  M:[m10 box 0.08×0.08×0.14 (0,0,-0.2) 轴前(Z)]\n  G:bell_0 彩色小铃片 @p(-0.1,0,0.1) 挂:body\n    M:[m12 box 0.04×0.03×0.03 (-0.1,0,0.1)]\n  G:bell_1 彩色小铃片 @p(0.1,0,0.1) 挂:body\n    M:[m13 box 0.04×0.03×0.03 (0.1,0,0.1)]\n  G:bell_2 彩色小铃片 @p(-0.1,0,0) 挂:body\n    M:[m14 box 0.04×0.03×0.03 (-0.1,0,0)]\n  G:bell_3 彩色小铃片 @p(0.1,0,0) 挂:body\n    M:[m15 box 0.04×0.03×0.03 (0.1,0,0)]",
+        "stats": {
+          "groups": 5,
+          "meshes": 16,
+          "labeledMeshes": 0,
+          "labelCoverage": 0,
+          "batchLabels": 0,
+          "autoChains": 0,
+          "snapshotChars": 751
+        }
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -0.21460770612896785,
+          0,
+          -0.2733291807853299
+        ],
+        "max": [
+          0.21460770612896785,
+          0.101,
+          0.2733291807853299
+        ],
+        "sourceNodeId": "asset-bounds"
+      }
+    ],
+    "sourceMeshCount": 16,
+    "candidateCount": 0,
+    "fallbackUsed": true
+  },
+  "footprintRadius": 0.2733291807853299,
+  "sizeClass": "small",
+  "mode": "voxel",
+  "provider": "gpt",
+  "createdAt": 1787770785553,
+  "updatedAt": 1787770785553
+}

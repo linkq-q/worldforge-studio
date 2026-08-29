@@ -1,0 +1,600 @@
+{
+  "id": "asset-cc5a65e9-43d4-4532",
+  "name": "探险相机",
+  "prompt": "原创儿童玩具，单个儿童探险相机，超大圆形镜头，双侧把手，耐摔圆角外壳，红蓝黄配色，无文字无品牌，独立单体\nCoordinate contract: local Y+ is up, local Z+ is the front, entrance, or forward direction, and local X+ is right. Put doors, facades, openings, windshields, noses, seats, and other recognizable front details toward local Z+. For a modular repeated element, explicitly choose the long axis: side-by-side modules span local X with depth/front on local Z; traversal modules span local Z. Keep the model centered at its origin.\nCanonical dimensions contract: width=0.48, height=0.34, depth=0.24 world units. Keep the generated mesh within this centered bounding size.",
+  "modelJson": {
+    "name": "儿童探险相机",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "camera_body",
+        "name": "耐摔相机外壳",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.489,
+            0.35,
+            0.239
+          ],
+          "center": [
+            0,
+            -0.004,
+            0.02
+          ],
+          "axes": [
+            [
+              0.9989,
+              0.0465,
+              -0.0104
+            ],
+            [
+              -0.0471,
+              0.9963,
+              -0.0716
+            ],
+            [
+              0.007,
+              0.072,
+              0.9974
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "lens",
+        "name": "超大圆形镜头",
+        "parent": "camera_body",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0.07
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.244,
+            0.243,
+            0.057
+          ],
+          "center": [
+            0,
+            0,
+            0.025
+          ],
+          "axes": [
+            [
+              0.7664,
+              -0.6418,
+              -0.0282
+            ],
+            [
+              0.6421,
+              0.7666,
+              0.0045
+            ],
+            [
+              0.0187,
+              -0.0215,
+              0.9996
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "shutter_button",
+        "name": "快门按钮",
+        "parent": "camera_body",
+        "transform": {
+          "pos": [
+            0.085,
+            0.125,
+            -0.005
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.075,
+            0.045,
+            0.065
+          ],
+          "center": [
+            0,
+            0.022,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "camera_body",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            -0.01
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.34,
+            "height": 0.17,
+            "depth": 0.16
+          },
+          "color": 15022389
+        }
+      },
+      {
+        "id": "m1",
+        "parent": "camera_body",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            -0.01
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.3,
+            "height": 0.25,
+            "depth": 0.16
+          },
+          "color": 15747646
+        }
+      },
+      {
+        "id": "m2",
+        "parent": "camera_body",
+        "transform": {
+          "pos": [
+            0,
+            -0.103,
+            0.076
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.24,
+            "height": 0.035,
+            "depth": 0.012
+          },
+          "color": 16764722
+        }
+      },
+      {
+        "id": "m3",
+        "parent": "camera_body",
+        "transform": {
+          "pos": [
+            -0.225,
+            0,
+            -0.005
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.03,
+            "height": 0.19,
+            "depth": 0.09
+          },
+          "color": 2520281
+        }
+      },
+      {
+        "id": "m4",
+        "parent": "camera_body",
+        "transform": {
+          "pos": [
+            -0.18,
+            0.078,
+            -0.005
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.06,
+            "height": 0.035,
+            "depth": 0.09
+          },
+          "color": 2520281
+        }
+      },
+      {
+        "id": "m5",
+        "parent": "camera_body",
+        "transform": {
+          "pos": [
+            -0.18,
+            -0.078,
+            -0.005
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.06,
+            "height": 0.035,
+            "depth": 0.09
+          },
+          "color": 2520281
+        }
+      },
+      {
+        "id": "m6",
+        "parent": "camera_body",
+        "transform": {
+          "pos": [
+            -0.145,
+            0.103,
+            0.076
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.032,
+            "height": 0.045,
+            "depth": 0.012
+          },
+          "color": 16764722
+        }
+      },
+      {
+        "id": "m7",
+        "parent": "camera_body",
+        "transform": {
+          "pos": [
+            -0.145,
+            -0.103,
+            0.076
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.032,
+            "height": 0.045,
+            "depth": 0.012
+          },
+          "color": 16764722
+        }
+      },
+      {
+        "id": "m8",
+        "parent": "camera_body",
+        "transform": {
+          "pos": [
+            0.225,
+            0,
+            -0.005
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.03,
+            "height": 0.19,
+            "depth": 0.09
+          },
+          "color": 2520281
+        }
+      },
+      {
+        "id": "m9",
+        "parent": "camera_body",
+        "transform": {
+          "pos": [
+            0.18,
+            0.078,
+            -0.005
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.06,
+            "height": 0.035,
+            "depth": 0.09
+          },
+          "color": 2520281
+        }
+      },
+      {
+        "id": "m10",
+        "parent": "camera_body",
+        "transform": {
+          "pos": [
+            0.18,
+            -0.078,
+            -0.005
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.06,
+            "height": 0.035,
+            "depth": 0.09
+          },
+          "color": 2520281
+        }
+      },
+      {
+        "id": "m11",
+        "parent": "camera_body",
+        "transform": {
+          "pos": [
+            0.145,
+            0.103,
+            0.076
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.032,
+            "height": 0.045,
+            "depth": 0.012
+          },
+          "color": 16764722
+        }
+      },
+      {
+        "id": "m12",
+        "parent": "camera_body",
+        "transform": {
+          "pos": [
+            0.145,
+            -0.103,
+            0.076
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.032,
+            "height": 0.045,
+            "depth": 0.012
+          },
+          "color": 16764722
+        }
+      },
+      {
+        "id": "m13",
+        "parent": "lens",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0.0175
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.2,
+            "height": 0.14,
+            "depth": 0.035
+          },
+          "color": 1594789
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m14",
+        "parent": "lens",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0.0175
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.14,
+            "height": 0.2,
+            "depth": 0.035
+          },
+          "color": 1594789
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m15",
+        "parent": "lens",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0.0175
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.17,
+            "height": 0.17,
+            "depth": 0.035
+          },
+          "color": 2386882
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m16",
+        "parent": "lens",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0.0425
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.125,
+            "height": 0.125,
+            "depth": 0.015
+          },
+          "color": 7522792
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass",
+            "variant": "blue"
+          }
+        ]
+      },
+      {
+        "id": "m17",
+        "parent": "lens",
+        "transform": {
+          "pos": [
+            -0.022,
+            0.025,
+            0.051
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.052,
+            "height": 0.04,
+            "depth": 0.006
+          },
+          "color": 13235455
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass",
+            "variant": "blue"
+          }
+        ]
+      },
+      {
+        "id": "m18",
+        "parent": "shutter_button",
+        "transform": {
+          "pos": [
+            0,
+            0.0225,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.075,
+            "height": 0.045,
+            "depth": 0.065
+          },
+          "color": 16764722
+        }
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1787770871593,
+        "provider": "gpt",
+        "data": "ANMiSHD48d2ZvSrO9EeGPDa0/RXIfISUJ/gETi7oTfdnh1J30UW6iB+DG90x4OwIP1SsQ7njoM/va4sPx7M9OxokhhZRVycYRfOV45lZeA70FVmOBH8ozy57ZlidyvWq893glcSgCviWLaGxOyn9fUlBpq1ALDxmu/unCo8pj8So1ggtLdRPaaFZjGQIaRJNS2iGg98CJ1jP2vwYQTYaq9EdUD1Mk5sySnJHqfZgXb/lPma+6f0zn4Lgi9E6gZEsDpY9pKKXT7ZSiOi0aFSg5FdgO/HBaT62fiFGX2BcLFIb7AXcqi90PcbKdiZcmawD1Og5EDp+SKKyT4z802GyK7VgxaXiM2+hiQTpeD6QAejUJ3FwD3AMZoxLx24WDIOljIT+nOZ4qQqG8C1rhWKlWJGvw+qtCq0unEuXGYm+7Y7Eb7PTPKFqEpsPSTmeQO4HcLrsuu/bbBhbhn8n2Razw3gyU6xUdzmtA1PijTOXdQS6uzkxXJFBT0CPeHS0xZKzHtSl00tr6hVyd4L2FgFAVAYvmUuMwYzwBf5NzoFX674G1LsUzDWx+7yJQx/OQhvRfhH4FNY5Letdje/xgi77wxrGhQ2qxQfh7hy7vf/fJ+ZDv14dnQSwM51A7Tsep45TajgeelYgxulBj6y2wSnJj/vNHyWXjkAY7tzzwhWjOEglW/VBh33ZIMWIHy+Y0SvJc2pGneCRSU3vWqg28ZKazlPruVaK9NPX5GTNIibQWHhlCs/ehhk2Yk0Np80jpCFBFQT3CwZe7NDugCSrk78iUBH/eChITKz61fTVelCDxswKxd4YkAFPSD5iCNaX1T1cxmFhtpWwrEolS1wQj2hlKGV/MNDfIfEoTR4ol2sc3IVb4CO5bJj/90yBHyd93uv67LGRtItQNBLsgHQMOzDcMBylxv5dYG/UhYtm1zY=",
+        "edits": ""
+      },
+      "semanticSnapshot": {
+        "v": 1,
+        "auto": true,
+        "text": "儿童探险相机 · 3组/19mesh · 世界坐标(Y上Z前), 原点=模型根\n# 阅读说明: G:=group行(可动画骨骼, 动画key用G:后的id; @p=pivot世界坐标; 倾(x,y,z)°=朝向偏离世界轴的欧拉角; 缩进=父子层级; 挂:=挂载于某组; G:id→id→…=chain折叠行, 每个id都是可独立动画的group, chain×N=waypoint数)\n# M:=mesh行(label[id 几何 @(世界坐标)], label可省略; ×N=for循环批量件(锚点=代表实例); cyl (起)→(末)或 轴上(Y)等方位词=延伸方向; 薄向=板面法向(扁板); 挂载组双代表=最大件+朝向件(嘴/管/檐所在); 无方向标注=均匀块(三向相近,如头),默认面向前(Z); 对称×2=镜像对)\nG:camera_body 耐摔相机外壳 @p(0,0,0)\n  M:[m1 box 0.3×0.25×0.16 (0,0,0) 薄向前(Z)]\n  G:lens 超大圆形镜头 @p(0,0,0.1) 挂:camera_body\n    M:[m15 box 0.17×0.17×0.04 (0,0,0.1) 薄向前(Z)]\n  G:shutter_button 快门按钮 @p(0.1,0.1,0) 挂:camera_body\n    M:[m18 box 0.08×0.05×0.07 (0.1,0.1,0)]",
+        "stats": {
+          "groups": 3,
+          "meshes": 19,
+          "labeledMeshes": 0,
+          "labelCoverage": 0,
+          "batchLabels": 0,
+          "autoChains": 0,
+          "snapshotChars": 621
+        }
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -0.24,
+          0,
+          -0.108
+        ],
+        "max": [
+          0.24,
+          0.2955,
+          0.108
+        ],
+        "sourceNodeId": "asset-bounds"
+      }
+    ],
+    "sourceMeshCount": 19,
+    "candidateCount": 0,
+    "fallbackUsed": true
+  },
+  "footprintRadius": 0.24,
+  "sizeClass": "small",
+  "mode": "voxel",
+  "provider": "gpt",
+  "createdAt": 1787770873519,
+  "updatedAt": 1787770873519
+}

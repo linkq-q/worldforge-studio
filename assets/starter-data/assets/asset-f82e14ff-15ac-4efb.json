@@ -1,0 +1,1422 @@
+{
+  "id": "asset-f82e14ff-15ac-4efb",
+  "name": "药柜",
+  "prompt": "哈利波特风格魔法工坊与图书馆中的药柜\nCoordinate contract: local Y+ is up, local Z+ is the front, entrance, or forward direction, and local X+ is right. Put doors, facades, openings, windshields, noses, seats, and other recognizable front details toward local Z+. For a modular repeated element, explicitly choose the long axis: side-by-side modules span local X with depth/front on local Z; traversal modules span local Z. Keep the model centered at its origin.\nCanonical dimensions contract: width=1.8, height=2.5, depth=0.65 world units. Keep the generated mesh within this centered bounding size.",
+  "modelJson": {
+    "name": "魔法工坊药柜",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "cabinet",
+        "name": "药柜主体",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            1.8,
+            2.534,
+            0.696
+          ],
+          "center": [
+            0,
+            1.265,
+            0.015
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0.0072
+            ],
+            [
+              0,
+              -0.0072,
+              1
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "leftDoor",
+        "name": "左下柜门",
+        "parent": "cabinet",
+        "transform": {
+          "pos": [
+            -0.76,
+            0.16,
+            0.285
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.721,
+            0.43,
+            0.097
+          ],
+          "center": [
+            0.37,
+            0.245,
+            0.008
+          ],
+          "axes": [
+            [
+              0.9999,
+              0,
+              0.0157
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              -0.0157,
+              0,
+              0.9999
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "rightDoor",
+        "name": "右下柜门",
+        "parent": "cabinet",
+        "transform": {
+          "pos": [
+            0.76,
+            0.16,
+            0.285
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.721,
+            0.43,
+            0.097
+          ],
+          "center": [
+            -0.37,
+            0.245,
+            0.008
+          ],
+          "axes": [
+            [
+              0.9999,
+              0,
+              -0.0157
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0.0157,
+              0,
+              0.9999
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "cabinet",
+        "transform": {
+          "pos": [
+            0,
+            1.18,
+            -0.255
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.68,
+            "height": 2.28,
+            "depth": 0.12
+          },
+          "color": 2824210
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "walnut"
+          }
+        ]
+      },
+      {
+        "id": "m1",
+        "parent": "cabinet",
+        "transform": {
+          "pos": [
+            -0.83,
+            1.15,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.14,
+            "height": 2.3,
+            "depth": 0.58
+          },
+          "color": 3875095
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "walnut"
+          }
+        ]
+      },
+      {
+        "id": "m2",
+        "parent": "cabinet",
+        "transform": {
+          "pos": [
+            0.83,
+            1.15,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.14,
+            "height": 2.3,
+            "depth": 0.58
+          },
+          "color": 3875095
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "walnut"
+          }
+        ]
+      },
+      {
+        "id": "m3",
+        "parent": "cabinet",
+        "transform": {
+          "pos": [
+            0,
+            0.08,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.8,
+            "height": 0.16,
+            "depth": 0.65
+          },
+          "color": 2692623
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "walnut"
+          }
+        ]
+      },
+      {
+        "id": "m4",
+        "parent": "cabinet",
+        "transform": {
+          "pos": [
+            0,
+            2.34,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.8,
+            "height": 0.16,
+            "depth": 0.65
+          },
+          "color": 2692623
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "walnut"
+          }
+        ]
+      },
+      {
+        "id": "m5",
+        "parent": "cabinet",
+        "transform": {
+          "pos": [
+            0,
+            2.46,
+            -0.01
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.48,
+            "height": 0.14,
+            "depth": 0.54
+          },
+          "color": 4860443
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "walnut"
+          }
+        ]
+      },
+      {
+        "id": "m6",
+        "parent": "cabinet",
+        "transform": {
+          "pos": [
+            0,
+            1.72,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.52,
+            "height": 0.1,
+            "depth": 0.52
+          },
+          "color": 4860443
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "walnut"
+          }
+        ]
+      },
+      {
+        "id": "m7",
+        "parent": "cabinet",
+        "transform": {
+          "pos": [
+            0,
+            1.16,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.52,
+            "height": 0.1,
+            "depth": 0.52
+          },
+          "color": 4860443
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "walnut"
+          }
+        ]
+      },
+      {
+        "id": "m8",
+        "parent": "cabinet",
+        "transform": {
+          "pos": [
+            0,
+            0.67,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.52,
+            "height": 0.1,
+            "depth": 0.52
+          },
+          "color": 4860443
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "walnut"
+          }
+        ]
+      },
+      {
+        "id": "m9",
+        "parent": "cabinet",
+        "transform": {
+          "pos": [
+            0,
+            1.96,
+            -0.01
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.08,
+            "height": 0.48,
+            "depth": 0.48
+          },
+          "color": 3743766
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "walnut"
+          }
+        ]
+      },
+      {
+        "id": "m10",
+        "parent": "cabinet",
+        "transform": {
+          "pos": [
+            -0.39,
+            0.9,
+            0.255
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.68,
+            "height": 0.26,
+            "depth": 0.1
+          },
+          "color": 5649441
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "walnut"
+          }
+        ]
+      },
+      {
+        "id": "m11",
+        "parent": "cabinet",
+        "transform": {
+          "pos": [
+            0.39,
+            0.9,
+            0.255
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.68,
+            "height": 0.26,
+            "depth": 0.1
+          },
+          "color": 5649441
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "walnut"
+          }
+        ]
+      },
+      {
+        "id": "m12",
+        "parent": "cabinet",
+        "transform": {
+          "pos": [
+            -0.39,
+            0.9,
+            0.325
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.12,
+            "height": 0.06,
+            "depth": 0.07
+          },
+          "color": 11963196
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "gold"
+          }
+        ]
+      },
+      {
+        "id": "m13",
+        "parent": "cabinet",
+        "transform": {
+          "pos": [
+            0.39,
+            0.9,
+            0.325
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.12,
+            "height": 0.06,
+            "depth": 0.07
+          },
+          "color": 11963196
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "gold"
+          }
+        ]
+      },
+      {
+        "id": "m14",
+        "parent": "cabinet",
+        "transform": {
+          "pos": [
+            0,
+            2.25,
+            0.315
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.58,
+            "height": 0.16,
+            "depth": 0.04
+          },
+          "color": 1445901
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m15",
+        "parent": "cabinet",
+        "transform": {
+          "pos": [
+            0,
+            2.25,
+            0.325
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.42,
+            "height": 0.08,
+            "depth": 0.02
+          },
+          "color": 12886363
+        }
+      },
+      {
+        "id": "m16",
+        "parent": "leftDoor",
+        "transform": {
+          "pos": [
+            0.37,
+            0.245,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.72,
+            "height": 0.43,
+            "depth": 0.07
+          },
+          "color": 3941144
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "walnut"
+          }
+        ]
+      },
+      {
+        "id": "m17",
+        "parent": "leftDoor",
+        "transform": {
+          "pos": [
+            0.37,
+            0.245,
+            0.04
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.5,
+            "height": 0.25,
+            "depth": 0.025
+          },
+          "color": 2430223
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "walnut"
+          }
+        ]
+      },
+      {
+        "id": "m18",
+        "parent": "leftDoor",
+        "transform": {
+          "pos": [
+            0.66,
+            0.245,
+            0.04
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.07,
+            "height": 0.09,
+            "depth": 0.04
+          },
+          "color": 11963196
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "gold"
+          }
+        ]
+      },
+      {
+        "id": "m19",
+        "parent": "rightDoor",
+        "transform": {
+          "pos": [
+            -0.37,
+            0.245,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.72,
+            "height": 0.43,
+            "depth": 0.07
+          },
+          "color": 3941144
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "walnut"
+          }
+        ]
+      },
+      {
+        "id": "m20",
+        "parent": "rightDoor",
+        "transform": {
+          "pos": [
+            -0.37,
+            0.245,
+            0.04
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.5,
+            "height": 0.25,
+            "depth": 0.025
+          },
+          "color": 2430223
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "walnut"
+          }
+        ]
+      },
+      {
+        "id": "m21",
+        "parent": "rightDoor",
+        "transform": {
+          "pos": [
+            -0.66,
+            0.245,
+            0.04
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.07,
+            "height": 0.09,
+            "depth": 0.04
+          },
+          "color": 11963196
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "gold"
+          }
+        ]
+      },
+      {
+        "id": "m22",
+        "transform": {
+          "pos": [
+            -0.53,
+            1.92,
+            0.17
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.18,
+            "height": 0.28,
+            "depth": 0.16
+          },
+          "color": 5405257
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass"
+          }
+        ]
+      },
+      {
+        "id": "m23",
+        "transform": {
+          "pos": [
+            -0.53,
+            2.11,
+            0.17
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.08,
+            "height": 0.1,
+            "depth": 0.08
+          },
+          "color": 5405257
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass"
+          }
+        ]
+      },
+      {
+        "id": "m24",
+        "transform": {
+          "pos": [
+            -0.53,
+            2.185,
+            0.17
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.1,
+            "height": 0.05,
+            "depth": 0.1
+          },
+          "color": 9069888
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ]
+      },
+      {
+        "id": "m25",
+        "transform": {
+          "pos": [
+            -0.2,
+            1.86,
+            0.17
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.18,
+            "height": 0.22,
+            "depth": 0.16
+          },
+          "color": 7030397
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass"
+          }
+        ]
+      },
+      {
+        "id": "m26",
+        "transform": {
+          "pos": [
+            -0.2,
+            2.02,
+            0.17
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.08,
+            "height": 0.1,
+            "depth": 0.08
+          },
+          "color": 7030397
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass"
+          }
+        ]
+      },
+      {
+        "id": "m27",
+        "transform": {
+          "pos": [
+            -0.2,
+            2.095,
+            0.17
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.1,
+            "height": 0.05,
+            "depth": 0.1
+          },
+          "color": 9069888
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ]
+      },
+      {
+        "id": "m28",
+        "transform": {
+          "pos": [
+            0.25,
+            1.92,
+            0.17
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.18,
+            "height": 0.28,
+            "depth": 0.16
+          },
+          "color": 3235443
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass"
+          }
+        ]
+      },
+      {
+        "id": "m29",
+        "transform": {
+          "pos": [
+            0.25,
+            2.11,
+            0.17
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.08,
+            "height": 0.1,
+            "depth": 0.08
+          },
+          "color": 3235443
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass"
+          }
+        ]
+      },
+      {
+        "id": "m30",
+        "transform": {
+          "pos": [
+            0.25,
+            2.185,
+            0.17
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.1,
+            "height": 0.05,
+            "depth": 0.1
+          },
+          "color": 9069888
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ]
+      },
+      {
+        "id": "m31",
+        "transform": {
+          "pos": [
+            0.56,
+            1.88,
+            0.17
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.18,
+            "height": 0.24,
+            "depth": 0.16
+          },
+          "color": 9062962
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass"
+          }
+        ]
+      },
+      {
+        "id": "m32",
+        "transform": {
+          "pos": [
+            0.56,
+            2.05,
+            0.17
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.08,
+            "height": 0.1,
+            "depth": 0.08
+          },
+          "color": 9062962
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass"
+          }
+        ]
+      },
+      {
+        "id": "m33",
+        "transform": {
+          "pos": [
+            0.56,
+            2.125,
+            0.17
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.1,
+            "height": 0.05,
+            "depth": 0.1
+          },
+          "color": 9069888
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ]
+      },
+      {
+        "id": "m34",
+        "transform": {
+          "pos": [
+            -0.48,
+            1.33,
+            0.17
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.18,
+            "height": 0.24,
+            "depth": 0.16
+          },
+          "color": 7889198
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass"
+          }
+        ]
+      },
+      {
+        "id": "m35",
+        "transform": {
+          "pos": [
+            -0.48,
+            1.5,
+            0.17
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.08,
+            "height": 0.1,
+            "depth": 0.08
+          },
+          "color": 7889198
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass"
+          }
+        ]
+      },
+      {
+        "id": "m36",
+        "transform": {
+          "pos": [
+            -0.48,
+            1.575,
+            0.17
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.1,
+            "height": 0.05,
+            "depth": 0.1
+          },
+          "color": 9069888
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ]
+      },
+      {
+        "id": "m37",
+        "transform": {
+          "pos": [
+            0,
+            1.345,
+            0.17
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.18,
+            "height": 0.27,
+            "depth": 0.16
+          },
+          "color": 3766623
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass",
+            "variant": "green"
+          },
+          {
+            "tag": "emissive",
+            "value": 0.75
+          }
+        ]
+      },
+      {
+        "id": "m38",
+        "transform": {
+          "pos": [
+            0,
+            1.53,
+            0.17
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.08,
+            "height": 0.1,
+            "depth": 0.08
+          },
+          "color": 3766623
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass",
+            "variant": "green"
+          },
+          {
+            "tag": "emissive",
+            "value": 0.75
+          }
+        ]
+      },
+      {
+        "id": "m39",
+        "transform": {
+          "pos": [
+            0,
+            1.605,
+            0.17
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.1,
+            "height": 0.05,
+            "depth": 0.1
+          },
+          "color": 9069888
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ]
+      },
+      {
+        "id": "m40",
+        "transform": {
+          "pos": [
+            0.48,
+            1.33,
+            0.17
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.18,
+            "height": 0.24,
+            "depth": 0.16
+          },
+          "color": 7747919
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass"
+          }
+        ]
+      },
+      {
+        "id": "m41",
+        "transform": {
+          "pos": [
+            0.48,
+            1.5,
+            0.17
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.08,
+            "height": 0.1,
+            "depth": 0.08
+          },
+          "color": 7747919
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass"
+          }
+        ]
+      },
+      {
+        "id": "m42",
+        "transform": {
+          "pos": [
+            0.48,
+            1.575,
+            0.17
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.1,
+            "height": 0.05,
+            "depth": 0.1
+          },
+          "color": 9069888
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ]
+      },
+      {
+        "id": "m43",
+        "transform": {
+          "pos": [
+            -0.45,
+            2,
+            0.15
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.34,
+            "height": 0.22,
+            "depth": 0.18
+          },
+          "color": 3360818
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass",
+            "variant": "green"
+          }
+        ]
+      },
+      {
+        "id": "m44",
+        "transform": {
+          "pos": [
+            0.45,
+            2,
+            0.15
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.34,
+            "height": 0.22,
+            "depth": 0.18
+          },
+          "color": 4469595
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass",
+            "variant": "purple"
+          }
+        ]
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1787874477804,
+        "provider": "gpt",
+        "data": "r8WxGDafGF3jZpCl8BSqrlZBWpdwHkCAy5Jk16aJ0vM2cTtI/Hn5L+g9cF4o//6dOEHvpCs3CbtcjTcBVZIwl3QEWTvz0XsnnhRjlfH6faKqgz31sxZ0b3jBx0HGDS5nIgSvrYZ4tXgSCjUnoifaCBPENj3wgiIT9j5gRXn/eqXEWtbqbWOa+4tgkZvF3H0EPQh3eXsurchzyyIhWKhdrl6xKsQ/+r/5qeFi3bsYNd12cHA5ALzTzDSsTwZfirG+35PH0DczHFyd2E8Gq1MgCsvQ79vI7XVMrRo9Ere76DZpwAV1avwb5dvQIwhK4H6L8UaZnSSiFxt19sI3OuTf2KZOFXubW3B0lMGfRq3dhtl+w21MPjvckyw7NoD1i0siiQwAXyCK62zTCBizjOjNhcGPhGPUzBUsg6r+qZgvTiW+oIMz/8tUUNLwH2dh6IwozbhZkiJmjKwauVxWOvuoXtAGRKbE18THz0V+lb5MkVXkM25vfAEleU6amU0TJBnwaD5ZG31kJW2CR4fOlAHHkbqvhkM6sCI6J3Bp0zFGeR5upmhM9vSth6zh109vmjNEU/ga+7bgPO0nl5/zCZt1kwYn/A5MKr4HxbhdqVZVqUpBlP+nw+Drnikn+UHx+hm2vUpoGkIB5074OfH5UqU6QbWz/0iq/hU1IFivHV4kVVoI99ozyzQVrbsN35iZBQHirNODUaQGrq4SJjAb5KehWGfc4uQ/obihn8EhOtxF5ZvEN2exOyh+7r+Iq1o2eaLMSCJXZT0V8FzIL6zR1W6KuswQhkG9m8ltkWoNlzvehKvMFz+AHJTFK130RlBAg5ZTLPhsscJqrdl9QaDTtIGZei0lMzNAkRbTvSgFoKIfGIPIdC+xcETQLDlu9W0C1PHPdiRyLhDXds41/Y775ae+gDfca+bBTvwzktm6b7++DDHz2RVFe68fiFbWeAFrnHWWc01wgsEqIaY83aIxc9HhUr22orLeEX5IsdxZu7hHe335l0otiVKUuWppBlo8wzhhGOLD7iOxLIktX+PvNukImHQXpUV2Pls8vxJ/OZY0DBPeGVFNj5eOoIEeb/P8fIlW4nAY36GOpkTKuzG/hRrFYoCALzgQsHm13sA80xBIeNq0OPgZoEw2X4uVvGmioEJAdPwIissCOGKikOdC3oNq7pnDB17KDNltDe0yFLqpdNLcpa/OQuWV4/rkjAABejuMe7Gl8zcJiBT+fr8zXc+voHoi/zo2J+eddWpiXm5oWyac4+KBR/H025DI0LI8SwGV+nVfZbdFzSYo7UmmuCpJ5gCrFfXhj2K31m34eooTky+vXuk/A0UlvZIxKfQ4wWXYdi2MdEYmPu6tS0Dt8mdMpr02HB+mH1BAOx6wbNzDBEMC5MlngSmFwlfQAwcf8QhEoss2tU2Rq+V8sUJ9pbPof6pXujtcrC5XalUpLN8+GjvXYOCF0gc/IW5Hb3b22VN+D4R9tLUhyOO21czi73HpdfR4ARE2YwtyVn+gkXOCrRJ0FtiSgtM1EzUdzic1SOhTRIT+PdEH56aPPsb+TweMnaBWIAbEgIXkeQ43bzhzVlrBZGGnTBSg1TRDxxsl/7dPFo47ZDNbf0ruxnt/LA==",
+        "edits": ""
+      },
+      "semanticSnapshot": {
+        "v": 1,
+        "auto": true,
+        "text": "魔法工坊药柜 · 3组/45mesh · 世界坐标(Y上Z前), 原点=模型根\n# 阅读说明: G:=group行(可动画骨骼, 动画key用G:后的id; @p=pivot世界坐标; 倾(x,y,z)°=朝向偏离世界轴的欧拉角; 缩进=父子层级; 挂:=挂载于某组; G:id→id→…=chain折叠行, 每个id都是可独立动画的group, chain×N=waypoint数)\n# M:=mesh行(label[id 几何 @(世界坐标)], label可省略; ×N=for循环批量件(锚点=代表实例); cyl (起)→(末)或 轴上(Y)等方位词=延伸方向; 薄向=板面法向(扁板); 挂载组双代表=最大件+最远有向件(刃/嘴/管所在端); 无方向标注=均匀块(三向相近,如头),默认面向前(Z); 对称×2=镜像对)\nG:cabinet 药柜主体 @p(0,0,0)\n  M:[m0 box 1.7×2.3×0.12 (0,1.2,-0.3) 薄向前(Z)]\n  G:leftDoor 左下柜门 @p(-0.8,0.2,0.3)\n    M:[m16 box 0.72×0.43×0.07 (-0.4,0.4,0.3) 薄向前(Z)]\n  G:rightDoor 右下柜门 @p(0.8,0.2,0.3)\n    M:[m19 box 0.72×0.43×0.07 (0.4,0.4,0.3) 薄向前(Z)]",
+        "stats": {
+          "groups": 3,
+          "meshes": 45,
+          "labeledMeshes": 0,
+          "labelCoverage": 0,
+          "batchLabels": 0,
+          "autoChains": 0,
+          "snapshotChars": 612
+        }
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -0.84,
+          0.040000000000000036,
+          -0.3325
+        ],
+        "max": [
+          0.84,
+          2.32,
+          -0.2125
+        ],
+        "sourceNodeId": "m0"
+      },
+      {
+        "min": [
+          -0.9,
+          2.26,
+          -0.3425
+        ],
+        "max": [
+          0.9,
+          2.42,
+          0.3075
+        ],
+        "sourceNodeId": "m4"
+      },
+      {
+        "min": [
+          -0.9,
+          0,
+          -0.3425
+        ],
+        "max": [
+          0.9,
+          0.16,
+          0.3075
+        ],
+        "sourceNodeId": "m3"
+      },
+      {
+        "min": [
+          -0.8999999999999999,
+          0,
+          -0.3075
+        ],
+        "max": [
+          -0.76,
+          2.3,
+          0.27249999999999996
+        ],
+        "sourceNodeId": "m1"
+      },
+      {
+        "min": [
+          0.76,
+          0,
+          -0.3075
+        ],
+        "max": [
+          0.8999999999999999,
+          2.3,
+          0.27249999999999996
+        ],
+        "sourceNodeId": "m2"
+      },
+      {
+        "min": [
+          -0.74,
+          2.39,
+          -0.2975
+        ],
+        "max": [
+          0.74,
+          2.53,
+          0.24250000000000002
+        ],
+        "sourceNodeId": "m5"
+      }
+    ],
+    "sourceMeshCount": 45,
+    "candidateCount": 6,
+    "fallbackUsed": false
+  },
+  "footprintRadius": 0.9,
+  "sizeClass": "medium",
+  "mode": "voxel",
+  "provider": "gpt",
+  "createdAt": 1787874480051,
+  "updatedAt": 1787874480051
+}

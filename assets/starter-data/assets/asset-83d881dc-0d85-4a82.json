@@ -1,0 +1,689 @@
+{
+  "id": "asset-83d881dc-0d85-4a82",
+  "name": "复杂游乐园/07天空塔区/设施/自由落体塔",
+  "prompt": "Simple standalone voxel model of 自由落体塔: a very tall amusement park drop tower with square central mast, ring-shaped passenger carriage, four support feet and bright beacon top. Use 16 to 28 box meshes only, one grounded object, bold readable silhouette, bright amusement park colors, no terrain, no people, no floating pieces.",
+  "modelJson": {
+    "name": "自由落体塔",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "m0",
+        "transform": {
+          "pos": [
+            0,
+            1.4,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.58,
+            "height": 2.2,
+            "depth": 0.58
+          },
+          "color": 1484505
+        }
+      },
+      {
+        "id": "m1",
+        "transform": {
+          "pos": [
+            0,
+            3.6,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.58,
+            "height": 2.2,
+            "depth": 0.58
+          },
+          "color": 16726863
+        }
+      },
+      {
+        "id": "m2",
+        "transform": {
+          "pos": [
+            0,
+            5.8,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.58,
+            "height": 2.2,
+            "depth": 0.58
+          },
+          "color": 1484505
+        }
+      },
+      {
+        "id": "m3",
+        "transform": {
+          "pos": [
+            0,
+            8,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.58,
+            "height": 2.2,
+            "depth": 0.58
+          },
+          "color": 16726863
+        }
+      },
+      {
+        "id": "m4",
+        "transform": {
+          "pos": [
+            0,
+            10.2,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.58,
+            "height": 2.2,
+            "depth": 0.58
+          },
+          "color": 1484505
+        }
+      },
+      {
+        "id": "m5",
+        "transform": {
+          "pos": [
+            1.55,
+            0.15,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.2,
+            "height": 0.3,
+            "depth": 0.8
+          },
+          "color": 5846708
+        }
+      },
+      {
+        "id": "m6",
+        "transform": {
+          "pos": [
+            -1.55,
+            0.15,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.2,
+            "height": 0.3,
+            "depth": 0.8
+          },
+          "color": 5846708
+        }
+      },
+      {
+        "id": "m7",
+        "transform": {
+          "pos": [
+            0,
+            0.15,
+            1.55
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.8,
+            "height": 0.3,
+            "depth": 1.2
+          },
+          "color": 5846708
+        }
+      },
+      {
+        "id": "m8",
+        "transform": {
+          "pos": [
+            0,
+            0.15,
+            -1.55
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.8,
+            "height": 0.3,
+            "depth": 1.2
+          },
+          "color": 5846708
+        }
+      },
+      {
+        "id": "m9",
+        "transform": {
+          "pos": [
+            0.9,
+            1.65,
+            0
+          ],
+          "quat": [
+            -0.38,
+            -0.6,
+            0.6,
+            0.38
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 3,
+            "height": 0.28,
+            "depth": 0.28
+          },
+          "color": 16763176
+        }
+      },
+      {
+        "id": "m10",
+        "transform": {
+          "pos": [
+            0,
+            1.65,
+            -0.9
+          ],
+          "quat": [
+            0.16,
+            -0.16,
+            0.69,
+            0.69
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 3,
+            "height": 0.28,
+            "depth": 0.28
+          },
+          "color": 16763176
+        }
+      },
+      {
+        "id": "m11",
+        "transform": {
+          "pos": [
+            -0.9,
+            1.65,
+            0
+          ],
+          "quat": [
+            0.6,
+            0.38,
+            0.38,
+            0.6
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 3,
+            "height": 0.28,
+            "depth": 0.28
+          },
+          "color": 16763176
+        }
+      },
+      {
+        "id": "m12",
+        "transform": {
+          "pos": [
+            0,
+            1.65,
+            0.9
+          ],
+          "quat": [
+            0.69,
+            0.69,
+            -0.16,
+            0.16
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 3,
+            "height": 0.28,
+            "depth": 0.28
+          },
+          "color": 16763176
+        }
+      },
+      {
+        "id": "m13",
+        "transform": {
+          "pos": [
+            0,
+            7.25,
+            1.37
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 3.2,
+            "height": 0.46,
+            "depth": 0.46
+          },
+          "color": 16735013
+        }
+      },
+      {
+        "id": "m14",
+        "transform": {
+          "pos": [
+            0,
+            7.25,
+            -1.37
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 3.2,
+            "height": 0.46,
+            "depth": 0.46
+          },
+          "color": 16735013
+        }
+      },
+      {
+        "id": "m15",
+        "transform": {
+          "pos": [
+            1.37,
+            7.25,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.46,
+            "height": 0.46,
+            "depth": 2.28
+          },
+          "color": 16735013
+        }
+      },
+      {
+        "id": "m16",
+        "transform": {
+          "pos": [
+            -1.37,
+            7.25,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.46,
+            "height": 0.46,
+            "depth": 2.28
+          },
+          "color": 16735013
+        }
+      },
+      {
+        "id": "m17",
+        "transform": {
+          "pos": [
+            0,
+            6.75,
+            1.42
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.15,
+            "height": 0.58,
+            "depth": 0.28
+          },
+          "color": 16768050
+        }
+      },
+      {
+        "id": "m18",
+        "transform": {
+          "pos": [
+            0,
+            6.75,
+            -1.42
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.15,
+            "height": 0.58,
+            "depth": 0.28
+          },
+          "color": 16768050
+        }
+      },
+      {
+        "id": "m19",
+        "transform": {
+          "pos": [
+            1.42,
+            6.75,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.28,
+            "height": 0.58,
+            "depth": 1.15
+          },
+          "color": 16768050
+        }
+      },
+      {
+        "id": "m20",
+        "transform": {
+          "pos": [
+            -1.42,
+            6.75,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.28,
+            "height": 0.58,
+            "depth": 1.15
+          },
+          "color": 16768050
+        }
+      },
+      {
+        "id": "m21",
+        "transform": {
+          "pos": [
+            0,
+            11.48,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.05,
+            "height": 0.28,
+            "depth": 1.05
+          },
+          "color": 5846708
+        }
+      },
+      {
+        "id": "m22",
+        "transform": {
+          "pos": [
+            0,
+            11.81,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.56,
+            "height": 0.38,
+            "depth": 0.56
+          },
+          "color": 16763176
+        }
+      },
+      {
+        "id": "m23",
+        "transform": {
+          "pos": [
+            0,
+            12.24,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.4,
+            "height": 0.48,
+            "depth": 0.4
+          },
+          "color": 6747647
+        }
+      },
+      {
+        "id": "m24",
+        "transform": {
+          "pos": [
+            0,
+            12.59,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.72,
+            "height": 0.22,
+            "depth": 0.72
+          },
+          "color": 16726863
+        }
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1784474765088,
+        "provider": "glm",
+        "data": "NlTQH1kWf6Rn0KN2m9QJHY1Ndvng9Wpzby6bz+PGo4gPzoGTBHjHmXASC625gC64v1dqpINbcW5NpQ38h8xro4tSjOL8Y6Cwq7nbOLZvLlKrbW/cWHBixYNftjQYiKoOeQv1QjHdPJXj3GNMgust0S9tdRgx+KlHa8z5abw2R5KjL42r+JCX/lV3ZgNwuREoS9KKu1tBBDFb7YeG4COW8iD+GSmnPA85zPtqG1qSXDXXliwyfhCU6T8JhufYtyJflH1tw1qmymcWnB9lIBysjXUVG6VgQkp4iqTm1LjVOKAiLPVvjlOd99vKi14hsOkheyVHCARn39L82fhkTfRNt2hHi8zUVuxlJG7zP5RtCOVYIqGLIu2qbnHSI3xb2ec4kXq1YOhBm/eWrIHmb0R0wuEi76Qv6BLB5IZFiQr0oyYLAUv/Q2cIO0n2KN1GVEGZFndkVzkrGXByMXpbbf/9eRMr7SOHV/PNea384/+Rj22IH+oi9TtQZgD2zPWda8mm7NpSG/9M1hZXREvm5Gi7SpaoBpghA/fTBXSs/EGNj9qgxOEeHiRRC9apKaYouwbQX4Lh53p+rMlRmpqSMf9DtJIQAOl0UzohwYgKdorPzzXoHnGbQqytlu5MT0IfHeqXsHRxC22YpdtxE9EQh5NUk4UIjw6Nc99wKCqJnFhq8G7zHIhA4tYQhK/Ld/O1KnofzQmaGfJabVZvNyOMNtz7Kh9UcanEdR5x2EXj1IhjK/N4V3bMO1715+QMp8U02zo6325zE+yDJZf0r+YDT7xm99awSduObuYMzCUTnWNRWY/anbRn7TQta0O6H82hzNwAG026oVAJsw9afleSKobd0NMt/J+OySuCo9cUJbT3XDU2A1c9BqwTLoTXRD/htLRWblCilZg3hOzzxeyrFQHMZzdebKwALHbELMTE28LZrYzEr6ttAMsN6AmNzuzNSploRJGxjg==",
+        "edits": ""
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -0.14000000000000057,
+          0.24146501893561934,
+          0.11413195136535814
+        ],
+        "max": [
+          0.14000000000000057,
+          3.0585349810643807,
+          1.6858680486346418
+        ],
+        "sourceNodeId": "m12"
+      },
+      {
+        "min": [
+          -0.14000000000000012,
+          0.24146501893561867,
+          -1.6858680486346422
+        ],
+        "max": [
+          0.14000000000000012,
+          3.058534981064381,
+          -0.1141319513653577
+        ],
+        "sourceNodeId": "m10"
+      },
+      {
+        "min": [
+          -1.667724028548771,
+          0.2340919904837433,
+          -0.14
+        ],
+        "max": [
+          -0.13227597145122905,
+          3.0659080095162565,
+          0.14
+        ],
+        "sourceNodeId": "m11"
+      },
+      {
+        "min": [
+          0.1322759714512297,
+          0.2340919904837433,
+          -0.14
+        ],
+        "max": [
+          1.6677240285487702,
+          3.0659080095162565,
+          0.14
+        ],
+        "sourceNodeId": "m9"
+      },
+      {
+        "min": [
+          -0.29,
+          4.699999999999999,
+          -0.29
+        ],
+        "max": [
+          0.29,
+          6.9,
+          0.29
+        ],
+        "sourceNodeId": "m2"
+      },
+      {
+        "min": [
+          -0.29,
+          0.2999999999999998,
+          -0.29
+        ],
+        "max": [
+          0.29,
+          2.5,
+          0.29
+        ],
+        "sourceNodeId": "m0"
+      },
+      {
+        "min": [
+          -0.29,
+          2.5,
+          -0.29
+        ],
+        "max": [
+          0.29,
+          4.7,
+          0.29
+        ],
+        "sourceNodeId": "m1"
+      },
+      {
+        "min": [
+          -0.29,
+          6.9,
+          -0.29
+        ],
+        "max": [
+          0.29,
+          9.1,
+          0.29
+        ],
+        "sourceNodeId": "m3"
+      },
+      {
+        "min": [
+          -0.29,
+          9.1,
+          -0.29
+        ],
+        "max": [
+          0.29,
+          11.299999999999999,
+          0.29
+        ],
+        "sourceNodeId": "m4"
+      },
+      {
+        "min": [
+          -1.6,
+          7.02,
+          1.1400000000000001
+        ],
+        "max": [
+          1.6,
+          7.48,
+          1.6
+        ],
+        "sourceNodeId": "m13"
+      },
+      {
+        "min": [
+          -1.6,
+          7.02,
+          -1.6
+        ],
+        "max": [
+          1.6,
+          7.48,
+          -1.1400000000000001
+        ],
+        "sourceNodeId": "m14"
+      },
+      {
+        "min": [
+          1.1400000000000001,
+          7.02,
+          -1.14
+        ],
+        "max": [
+          1.6,
+          7.48,
+          1.14
+        ],
+        "sourceNodeId": "m15"
+      }
+    ],
+    "sourceMeshCount": 25,
+    "candidateCount": 24,
+    "fallbackUsed": false
+  },
+  "mode": "lite",
+  "provider": "provider-fallback",
+  "createdAt": 1784474769186,
+  "updatedAt": 1784474769186
+}

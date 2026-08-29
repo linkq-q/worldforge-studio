@@ -1,0 +1,251 @@
+{
+  "id": "asset-2c06051c-dbe7-43af",
+  "name": "大书架",
+  "prompt": "单个宽层距儿童书架，开放式大格层板，架面完全空置，不含任何书籍或装饰\nCoordinate contract: local Y+ is up, local Z+ is the front, entrance, or forward direction, and local X+ is right. Put doors, facades, openings, windshields, noses, seats, and other recognizable front details toward local Z+. For a modular repeated element, explicitly choose the long axis: side-by-side modules span local X with depth/front on local Z; traversal modules span local Z. Keep the model centered at its origin.\nCanonical dimensions contract: width=1.45, height=1.8, depth=0.42 world units. Keep the generated mesh within this centered bounding size.",
+  "modelJson": {
+    "name": "宽层距儿童书架",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "bookcase",
+        "name": "书架主体",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "birch"
+          }
+        ],
+        "_obb": {
+          "size": [
+            1.45,
+            1.8,
+            0.42
+          ],
+          "center": [
+            0,
+            0.9,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "bookcase",
+        "transform": {
+          "pos": [
+            -0.68,
+            0.9,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.09,
+            "height": 1.8,
+            "depth": 0.42
+          },
+          "color": 14264422
+        }
+      },
+      {
+        "id": "m1",
+        "parent": "bookcase",
+        "transform": {
+          "pos": [
+            0.68,
+            0.9,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.09,
+            "height": 1.8,
+            "depth": 0.42
+          },
+          "color": 14264422
+        }
+      },
+      {
+        "id": "m2",
+        "parent": "bookcase",
+        "transform": {
+          "pos": [
+            0,
+            0.045,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.27,
+            "height": 0.09,
+            "depth": 0.42
+          },
+          "color": 14264422
+        }
+      },
+      {
+        "id": "m3",
+        "parent": "bookcase",
+        "transform": {
+          "pos": [
+            0,
+            1.755,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.27,
+            "height": 0.09,
+            "depth": 0.42
+          },
+          "color": 14264422
+        }
+      },
+      {
+        "id": "m4",
+        "parent": "bookcase",
+        "transform": {
+          "pos": [
+            0,
+            0.61,
+            0.015
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.27,
+            "height": 0.075,
+            "depth": 0.39
+          },
+          "color": 15253116
+        }
+      },
+      {
+        "id": "m5",
+        "parent": "bookcase",
+        "transform": {
+          "pos": [
+            0,
+            1.19,
+            0.015
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.27,
+            "height": 0.075,
+            "depth": 0.39
+          },
+          "color": 15253116
+        }
+      },
+      {
+        "id": "m6",
+        "parent": "bookcase",
+        "transform": {
+          "pos": [
+            0,
+            0.9,
+            -0.1875
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.27,
+            "height": 1.62,
+            "depth": 0.045
+          },
+          "color": 13209938
+        }
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1787768459694,
+        "provider": "gpt",
+        "data": "iyK0t5zFvl6tSw3TZ3FT3B9j3nYBmgBXNzFRqRpOP8vMkcHXrBYnZYD/wVGpI5tnEmp9M6vp+sAstIlX7XbyugFi7r75fZJnTLBIO8dRXnAT2tmdNd2dgfbbFHML7rfKq8fCW8s8wZ92fD2dHx8NmGmN8Docd8/mZGN8az9fZ7wN8JawK23Cfe2WRdz90FL07oXY0qaNu0atjv3VrVGCv8iy8v5gXIMgH6xUmEnhB/sAR+eL0PonkTnaD9KUfYW9M+w/4vdGUeMeRMJ2h0XhGjGL8GMG5OEHtYIXoriqn6iJScYkVqfNjcXZMLjFxlfssKo+Wwilo+1kLpZQaqP+ASQWjRhp5MTMdi/Xmt5ha8bQEgkKlE1DPyU5lzNfbAepMX9UX7k1bSU7QtgKo4d4++4/M80E5T2LKViHjT/XtLRFju7H+P76ztSX8kc+FL66va5SnU0aXX/XoAINq2V7IVlt6kn7LDWIjGlr94UNwNy7VkZmt67IS5tKDj5HzftoQ2MAZyPKPO/fjzQNRijLuthXB/JED+SBp19WCo4McCUZVnqgmVn73oIsZw6SeT9TaalSugAfgGcKDmFHJ9nBSeAhVZVbBDKzzJFdCd2jMXsOfrYkYcBF6LTcwWV3t+mYuWJ9P6p6iSFVLMKo3u80X8sluhUQnw==",
+        "edits": ""
+      },
+      "semanticSnapshot": {
+        "v": 1,
+        "auto": true,
+        "text": "宽层距儿童书架 · 1组/7mesh · 世界坐标(Y上Z前), 原点=模型根\n# 阅读说明: G:=group行(可动画骨骼, 动画key用G:后的id; @p=pivot世界坐标; 倾(x,y,z)°=朝向偏离世界轴的欧拉角; 缩进=父子层级; 挂:=挂载于某组; G:id→id→…=chain折叠行, 每个id都是可独立动画的group, chain×N=waypoint数)\n# M:=mesh行(label[id 几何 @(世界坐标)], label可省略; ×N=for循环批量件(锚点=代表实例); cyl (起)→(末)或 轴上(Y)等方位词=延伸方向; 薄向=板面法向(扁板); 挂载组双代表=最大件+朝向件(嘴/管/檐所在); 无方向标注=均匀块(三向相近,如头),默认面向前(Z); 对称×2=镜像对)\nG:bookcase 书架主体 @p(0,0,0)\n  M:[m6 box 1.3×1.6×0.05 (0,0.9,-0.2) 薄向前(Z)]",
+        "stats": {
+          "groups": 1,
+          "meshes": 7,
+          "labeledMeshes": 0,
+          "labelCoverage": 0,
+          "batchLabels": 0,
+          "autoChains": 0,
+          "snapshotChars": 435
+        }
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -0.7250000000000001,
+          0,
+          -0.21000000000000002
+        ],
+        "max": [
+          0.7250000000000001,
+          1.8,
+          0.21000000000000002
+        ],
+        "sourceNodeId": "asset-bounds"
+      }
+    ],
+    "sourceMeshCount": 7,
+    "candidateCount": 0,
+    "fallbackUsed": true
+  },
+  "footprintRadius": 0.7250000000000001,
+  "sizeClass": "small",
+  "mode": "voxel",
+  "provider": "gpt",
+  "createdAt": 1787768459525,
+  "updatedAt": 1787768459525
+}

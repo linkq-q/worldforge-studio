@@ -1,0 +1,491 @@
+{
+  "id": "asset-a3c59858-91df-4281",
+  "name": "直线玩具轨道扩展组",
+  "prompt": "A single reusable organized toy track extension consisting of several connected straight sections, one junction and one gentle ramp forming one movable assembly, approximately 1.5 meters long, no vehicles, floor, room, background, or extra toys",
+  "tags": [
+    "toy",
+    "track",
+    "prop"
+  ],
+  "modelJson": {
+    "name": "模块化玩具轨道延伸组件",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "track_assembly",
+        "name": "可移动轨道组件",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.666,
+            0.192,
+            1.598
+          ],
+          "center": [
+            0.174,
+            0.063,
+            -0.01
+          ],
+          "axes": [
+            [
+              0.994,
+              -0.087,
+              -0.0656
+            ],
+            [
+              0.0817,
+              0.9935,
+              -0.0796
+            ],
+            [
+              0.0721,
+              0.0738,
+              0.9947
+            ]
+          ],
+          "_mainAxis": 2
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "track_assembly",
+        "transform": {
+          "pos": [
+            0,
+            0.03,
+            -0.6
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.2,
+            "height": 0.04,
+            "depth": 0.3
+          },
+          "color": 4159669
+        }
+      },
+      {
+        "id": "m1",
+        "parent": "track_assembly",
+        "transform": {
+          "pos": [
+            -0.07,
+            0.0675,
+            -0.6
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.025,
+            "height": 0.035,
+            "depth": 0.3
+          },
+          "color": 15911244
+        }
+      },
+      {
+        "id": "m2",
+        "parent": "track_assembly",
+        "transform": {
+          "pos": [
+            0.07,
+            0.0675,
+            -0.6
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.025,
+            "height": 0.035,
+            "depth": 0.3
+          },
+          "color": 15911244
+        }
+      },
+      {
+        "id": "m3",
+        "parent": "track_assembly",
+        "transform": {
+          "pos": [
+            0,
+            0.03,
+            -0.3
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.2,
+            "height": 0.04,
+            "depth": 0.3
+          },
+          "color": 4159669
+        }
+      },
+      {
+        "id": "m4",
+        "parent": "track_assembly",
+        "transform": {
+          "pos": [
+            -0.07,
+            0.0675,
+            -0.3
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.025,
+            "height": 0.035,
+            "depth": 0.3
+          },
+          "color": 15911244
+        }
+      },
+      {
+        "id": "m5",
+        "parent": "track_assembly",
+        "transform": {
+          "pos": [
+            0.07,
+            0.0675,
+            -0.3
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.025,
+            "height": 0.035,
+            "depth": 0.3
+          },
+          "color": 15911244
+        }
+      },
+      {
+        "id": "m6",
+        "parent": "track_assembly",
+        "transform": {
+          "pos": [
+            0,
+            0.03,
+            0.05
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.2,
+            "height": 0.04,
+            "depth": 0.4
+          },
+          "color": 4159669
+        }
+      },
+      {
+        "id": "m7",
+        "parent": "track_assembly",
+        "transform": {
+          "pos": [
+            -0.07,
+            0.0675,
+            0.05
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.025,
+            "height": 0.035,
+            "depth": 0.4
+          },
+          "color": 15911244
+        }
+      },
+      {
+        "id": "m8",
+        "parent": "track_assembly",
+        "transform": {
+          "pos": [
+            0.07,
+            0.0675,
+            0.05
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.025,
+            "height": 0.035,
+            "depth": 0.4
+          },
+          "color": 15911244
+        }
+      },
+      {
+        "id": "m9",
+        "parent": "track_assembly",
+        "transform": {
+          "pos": [
+            0.21,
+            0.05,
+            0.06
+          ],
+          "quat": [
+            0.47,
+            0,
+            0.88,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.18,
+            "height": 0.04,
+            "depth": 0.5
+          },
+          "color": 4159669
+        }
+      },
+      {
+        "id": "m10",
+        "parent": "track_assembly",
+        "transform": {
+          "pos": [
+            0.28,
+            0.09,
+            0.01
+          ],
+          "quat": [
+            0.47,
+            0,
+            0.88,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.03,
+            "height": 0.035,
+            "depth": 0.5
+          },
+          "color": 15911244
+        }
+      },
+      {
+        "id": "m11",
+        "parent": "track_assembly",
+        "transform": {
+          "pos": [
+            0.16,
+            0.09,
+            0.1
+          ],
+          "quat": [
+            0.47,
+            0,
+            0.88,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.03,
+            "height": 0.035,
+            "depth": 0.5
+          },
+          "color": 15911244
+        }
+      },
+      {
+        "id": "m12",
+        "parent": "track_assembly",
+        "transform": {
+          "pos": [
+            0,
+            0.11,
+            0.5
+          ],
+          "quat": [
+            -0.12,
+            0,
+            0,
+            0.99
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.2,
+            "height": 0.04,
+            "depth": 0.51
+          },
+          "color": 4159669
+        }
+      },
+      {
+        "id": "m13",
+        "parent": "track_assembly",
+        "transform": {
+          "pos": [
+            -0.07,
+            0.15,
+            0.5
+          ],
+          "quat": [
+            -0.12,
+            0,
+            0,
+            0.99
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.03,
+            "height": 0.035,
+            "depth": 0.51
+          },
+          "color": 15911244
+        }
+      },
+      {
+        "id": "m14",
+        "parent": "track_assembly",
+        "transform": {
+          "pos": [
+            0.07,
+            0.15,
+            0.5
+          ],
+          "quat": [
+            -0.12,
+            0,
+            0,
+            0.99
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.03,
+            "height": 0.035,
+            "depth": 0.51
+          },
+          "color": 15911244
+        }
+      },
+      {
+        "id": "m15",
+        "parent": "track_assembly",
+        "transform": {
+          "pos": [
+            0,
+            0.025,
+            -0.765
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.14,
+            "height": 0.025,
+            "depth": 0.055
+          },
+          "color": 2575479
+        }
+      },
+      {
+        "id": "m16",
+        "parent": "track_assembly",
+        "transform": {
+          "pos": [
+            0.485,
+            0.025,
+            0.17
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.055,
+            "height": 0.025,
+            "depth": 0.14
+          },
+          "color": 2575479
+        }
+      },
+      {
+        "id": "m17",
+        "parent": "track_assembly",
+        "transform": {
+          "pos": [
+            0,
+            0.16,
+            0.765
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.14,
+            "height": 0.025,
+            "depth": 0.055
+          },
+          "color": 2575479
+        }
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1786874767455,
+        "provider": "gpt",
+        "data": "ikdwip2sSWzeSIQIe1lIhNHfnZeZoclytdkFtgor3Tw0VOMQTnpWRsXQF3g6JjUAYGSSNWWeDtOAh9eT7WBRxtyTUQ+9bTC5i6nH45p0UH3JPtJW2MMcHHIqjojN6wlgpg02ezD0ZLHU+4iz7NqcUCT6oHyr8obJ9WI1h3hoOMBgJQYf+s2hRmYKwljyFpkcT1KA8v8hRzVsf0oCB+z2+GL6IDvYdKuGdnkxHLC5dEEnWje4bIJshOo8XsHIG0Pt6nxYJmT4knSZEseYsPXYMvyhrXOAjxY82Ax1gU2X8VXY3DUlg+sbr7pvYdYuIokdCrl4p6BH3bnc0cIPsOAytCcGSNtd7o8lYs6Ujw6f2xkh2RBF/CIXheLlVA7tFfzCIARX9mDC6BOfbXVCofi+7sOlpvrjiNSmtlNCHCB+7i1v9UMUZjUJ99pThoDqoQOwb1CHQx5wG76Brj87BeMxeJ2KDL8hTmuFoEqeWSrGubUSfRjvkTsq2z3MP912oBgNU4rLSbxNe3k2+ApgNDkbKvaF3/p0Nn155TMbyCKL+gNxjdxbNJXVC9F5C7D1yS2FKzPDwAgl1Jhty/3TBjdTHX8s8F4ZY1WPXRLh0FLW0DT4ycfmNjX4SEr7r4e2B4SLT2E+f6QitOVYoenoNZ8cjqjoJHYraqw54ZqqcwMS24XHruiOiPJCH5LCFP3T3dJ4ctnDaqijijGQWI8HR1A90xApYLIEUWbw8wNPxrr6uPnuMh6nvCo3yLgIp60vNtP8pC+BFaZBboQ8WamOKpJscwDZyhN2Y8E2cagDIDNJrZf9T/ryTdB3TKq5n6kbS1patQ1yXiQPQ05s6twAV2o3AwL/C6O0hGzKzQGSD6EX+Hr4g1Zc9Qvg+RNbRI9qwZJknUj5xhBrkTeWMZJR8vVrkZRgDM4F4BK4ynggL6+I+yfWOffhnhUNuRVLDPda0I64MdMfFqRpAJRxyRs=",
+        "edits": ""
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -0.30625,
+          0,
+          -0.7925
+        ],
+        "max": [
+          0.30624999999999997,
+          0.21791628959276016,
+          0.7925
+        ],
+        "sourceNodeId": "asset-bounds"
+      }
+    ],
+    "sourceMeshCount": 18,
+    "candidateCount": 0,
+    "fallbackUsed": true
+  },
+  "footprintRadius": 0.7925,
+  "sizeClass": "small",
+  "mode": "voxel",
+  "provider": "gpt",
+  "createdAt": 1786874768353,
+  "updatedAt": 1786874768353
+}

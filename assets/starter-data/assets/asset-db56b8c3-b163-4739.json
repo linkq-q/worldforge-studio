@@ -1,0 +1,469 @@
+{
+  "id": "asset-db56b8c3-b163-4739",
+  "name": "异形笔 3",
+  "prompt": "单独一把笔，完整独立模型，不带笔盒、纸张、书本或其他物品。六种外观必须明显不同，依次为蓝色圆珠笔、红色按动笔、黑色钢笔、绿色自动铅笔、紫色荧光笔、橙色粗头马克笔；每种具有不同笔帽、笔夹、笔杆轮廓和材质细节。\nCoordinate contract: local Y+ is up, local Z+ is the front, entrance, or forward direction, and local X+ is right. Put doors, facades, openings, windshields, noses, seats, and other recognizable front details toward local Z+. For a modular repeated element, explicitly choose the long axis: side-by-side modules span local X with depth/front on local Z; traversal modules span local Z. Keep the model centered at its origin.\nCanonical dimensions contract: width=0.05, height=0.04, depth=0.22 world units. Keep the generated mesh within this centered bounding size.\nCreate variation 3 of 6; preserve the same reusable asset family while varying silhouette and details.",
+  "tags": [
+    "indoor",
+    "single-object",
+    "pen"
+  ],
+  "modelJson": {
+    "name": "黑色钢笔",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "pen",
+        "name": "钢笔主体",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.077,
+            0.058,
+            0.228
+          ],
+          "center": [
+            0,
+            -0.002,
+            -0.002
+          ],
+          "axes": [
+            [
+              0.9012,
+              0.4313,
+              0.0426
+            ],
+            [
+              -0.4323,
+              0.9016,
+              0.0178
+            ],
+            [
+              -0.0307,
+              -0.0344,
+              0.9989
+            ]
+          ],
+          "_mainAxis": 2
+        }
+      },
+      {
+        "id": "nib",
+        "name": "钢笔尖",
+        "parent": "pen",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0.085
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.024,
+            0.008,
+            0.032
+          ],
+          "center": [
+            0,
+            -0.003,
+            0.011
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 2
+        }
+      },
+      {
+        "id": "mount01_cap",
+        "name": "可拆笔帽",
+        "parent": "pen",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            -0.021
+          ]
+        },
+        "mounted": true,
+        "_obb": {
+          "size": [
+            0.062,
+            0.05,
+            0.093
+          ],
+          "center": [
+            0.002,
+            0,
+            -0.044
+          ],
+          "axes": [
+            [
+              0.8601,
+              0.5032,
+              -0.0839
+            ],
+            [
+              -0.506,
+              0.8624,
+              -0.0151
+            ],
+            [
+              0.0648,
+              0.0554,
+              0.9964
+            ]
+          ],
+          "_mainAxis": 2
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "pen",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0.026
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.032,
+            "height": 0.026,
+            "depth": 0.082
+          },
+          "color": 1119000
+        }
+      },
+      {
+        "id": "m1",
+        "parent": "pen",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0.076
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.028,
+            "height": 0.022,
+            "depth": 0.018
+          },
+          "color": 1513758
+        }
+      },
+      {
+        "id": "m2",
+        "parent": "pen",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            -0.018
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.034,
+            "height": 0.029,
+            "depth": 0.006
+          },
+          "color": 12166506
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m3",
+        "parent": "nib",
+        "transform": {
+          "pos": [
+            0,
+            -0.003,
+            0.002
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.024,
+            "height": 0.008,
+            "depth": 0.014
+          },
+          "color": 13808735
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m4",
+        "parent": "nib",
+        "transform": {
+          "pos": [
+            0,
+            -0.003,
+            0.015
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.016,
+            "height": 0.006,
+            "depth": 0.012
+          },
+          "color": 13808735
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m5",
+        "parent": "nib",
+        "transform": {
+          "pos": [
+            0,
+            -0.003,
+            0.022
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.006,
+            "height": 0.004,
+            "depth": 0.01
+          },
+          "color": 3882306
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m6",
+        "parent": "mount01_cap",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            -0.045
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.038,
+            "height": 0.032,
+            "depth": 0.082
+          },
+          "color": 526604
+        }
+      },
+      {
+        "id": "m7",
+        "parent": "mount01_cap",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            -0.003
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.04,
+            "height": 0.034,
+            "depth": 0.006
+          },
+          "color": 2435118
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m8",
+        "parent": "mount01_cap",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            -0.086
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.034,
+            "height": 0.03,
+            "depth": 0.006
+          },
+          "color": 329225
+        }
+      },
+      {
+        "id": "m9",
+        "parent": "mount01_cap",
+        "transform": {
+          "pos": [
+            0.02,
+            0.017,
+            -0.045
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.006,
+            "height": 0.006,
+            "depth": 0.058
+          },
+          "color": 12041410
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m10",
+        "parent": "mount01_cap",
+        "transform": {
+          "pos": [
+            0.018,
+            0.016,
+            -0.013
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.01,
+            "height": 0.005,
+            "depth": 0.008
+          },
+          "color": 12041410
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1787876424172,
+        "provider": "gpt",
+        "data": "tevIPovnfs5qQtDErJNKb05Y1pV41nOPCLgt3f1CmFdjWEvGGK893eqwmbKSNB024isP8rmyiaw7O/DJS1Hh33wkaI3ajqpeQQCqi6rxxNLEa1hF8wG6jPGsS4r5pgeI3qHBIQCX6TmRp1TsrLUtvPewuZjTmiII8pUR0nRHdRDf4T48w6l5au9SZAM2VG2yGJGLIc6dwvEQvMV4A21oYyM1sYJeInCSWa/qoqRcLjQ8LL2MnSCJtBX7EOT2vZ0d7cLaghBYgFI6w0R3SPhyQ4LUzrUrW3A1QzNNiHvDMgENvoJVP0pgYT+nlYf1F/9fw6Xs3/N7pIf3gKh9uc7OzPLmcTAjDn59DdoM9+pyxxxQPKoW4yXlH4KuwnQStLw7xNs6D2GsLbQ159Wvhr7KWXAh2SQSJj02yKzaQivBMnBwTQRZIUKi88YGy8sODqldsmgGxe9LfsiHbDaMfnr0mSpL5l5pfJKlk+d88l+Y/4UhcVCOr8APe0KqoWt2dHpffJ2jjs/DvbBFcrJWHs5dowo9XgPacGNz3CYNJB5KZQ+hYNjXPvu62h/DM7Do0Xkt7Xbm/RDEXIH/SvLSIo9Mug5k/HCkr788NGx5/QuM07KRzn86y1mQqFBYD8Nvob90dL274DOAxh7ntDNDzAQMxgUOmvq8P3GY8ID8u7/kcf4poFaROywvRfwDzxI88+XF/WZKZO07ajarGwBqRAlWMiISA9hyJZ1x5TriOjBBK2KqaLi4QbKByn8dBiAHY7TbLBdonTc06lK9Bg/zKeAN6zFqvMs2YaKSn8Cn6HEMBS9u3kcerNIadJsGqW813DBfN09kuxNVfYZ5",
+        "edits": ""
+      },
+      "mounts": [
+        {
+          "id": "mount01_cap",
+          "mountedGroupId": "mount01_cap",
+          "name": "可拆笔帽",
+          "source": {
+            "type": "codegen"
+          },
+          "description": "",
+          "visible": true,
+          "ts": 1787876424172
+        }
+      ],
+      "semanticSnapshot": {
+        "v": 1,
+        "auto": true,
+        "text": "黑色钢笔 · 3组/11mesh · 世界坐标(Y上Z前), 原点=模型根\n# 阅读说明: G:=group行(可动画骨骼, 动画key用G:后的id; @p=pivot世界坐标; 倾(x,y,z)°=朝向偏离世界轴的欧拉角; 缩进=父子层级; 挂:=挂载于某组; G:id→id→…=chain折叠行, 每个id都是可独立动画的group, chain×N=waypoint数)\n# M:=mesh行(label[id 几何 @(世界坐标)], label可省略; ×N=for循环批量件(锚点=代表实例); cyl (起)→(末)或 轴上(Y)等方位词=延伸方向; 薄向=板面法向(扁板); 挂载组双代表=最大件+最远有向件(刃/嘴/管所在端); 无方向标注=均匀块(三向相近,如头),默认面向前(Z); 对称×2=镜像对)\nG:pen 钢笔主体 @p(0,0,0)\n  M:[m0 box 0.03×0.03×0.08 (0,0,0) 轴前(Z)]\n  G:nib 钢笔尖 @p(0,0,0.1)\n    M:[m3 box 0.02×0.01×0.01 (0,0,0.1) 薄向上(Y)]\n  G:mount01_cap 可拆笔帽 @p(0,0,0) 挂:pen\n    M:[m6 box 0.04×0.03×0.08 (0,0,-0.1) 轴前(Z)] | M:[m8 box 0.03×0.03×0.01 (0,0,-0.1) 薄向前(Z)]",
+        "stats": {
+          "groups": 3,
+          "meshes": 11,
+          "labeledMeshes": 0,
+          "labelCoverage": 0,
+          "batchLabels": 0,
+          "autoChains": 0,
+          "snapshotChars": 628
+        }
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -0.0225,
+          0,
+          -0.11200000000000002
+        ],
+        "max": [
+          0.0225,
+          0.03900000000000001,
+          0.11200000000000002
+        ],
+        "sourceNodeId": "asset-bounds"
+      }
+    ],
+    "sourceMeshCount": 11,
+    "candidateCount": 0,
+    "fallbackUsed": true
+  },
+  "footprintRadius": 0.11200000000000002,
+  "sizeClass": "small",
+  "mode": "voxel",
+  "provider": "gpt",
+  "createdAt": 1787876424066,
+  "updatedAt": 1787876424066
+}

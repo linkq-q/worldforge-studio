@@ -1,0 +1,468 @@
+{
+  "id": "asset-e3544144-499d-44ce",
+  "name": "滑板",
+  "prompt": "单独一块儿童滑板，完整板面和四个轮子，不包含人物、护具、坡道或展示架\nCoordinate contract: local Y+ is up, local Z+ is the front, entrance, or forward direction, and local X+ is right. Put doors, facades, openings, windshields, noses, seats, and other recognizable front details toward local Z+. For a modular repeated element, explicitly choose the long axis: side-by-side modules span local X with depth/front on local Z; traversal modules span local Z. Keep the model centered at its origin.\nCanonical dimensions contract: width=0.78, height=0.12, depth=0.24 world units. Keep the generated mesh within this centered bounding size.",
+  "modelJson": {
+    "name": "儿童滑板",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "skateboard",
+        "name": "滑板主体",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.78,
+            0.132,
+            0.243
+          ],
+          "center": [
+            0,
+            -0.003,
+            -0.002
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              0.9971,
+              -0.0767
+            ],
+            [
+              0,
+              0.0767,
+              0.9971
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "wheel_fl",
+        "name": "前左轮",
+        "parent": "skateboard",
+        "transform": {
+          "pos": [
+            0.26,
+            -0.035,
+            0.1025
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.06,
+            0.05,
+            0.035
+          ],
+          "center": [
+            0,
+            0,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "wheel_fr",
+        "name": "前右轮",
+        "parent": "skateboard",
+        "transform": {
+          "pos": [
+            -0.26,
+            -0.035,
+            0.1025
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.06,
+            0.05,
+            0.035
+          ],
+          "center": [
+            0,
+            0,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "wheel_bl",
+        "name": "后左轮",
+        "parent": "skateboard",
+        "transform": {
+          "pos": [
+            0.26,
+            -0.035,
+            -0.1025
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.06,
+            0.05,
+            0.035
+          ],
+          "center": [
+            0,
+            0,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "wheel_br",
+        "name": "后右轮",
+        "parent": "skateboard",
+        "transform": {
+          "pos": [
+            -0.26,
+            -0.035,
+            -0.1025
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.06,
+            0.05,
+            0.035
+          ],
+          "center": [
+            0,
+            0,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "skateboard",
+        "transform": {
+          "pos": [
+            0,
+            0.0375,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.78,
+            "height": 0.035,
+            "depth": 0.22
+          },
+          "color": 4762072
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "birch"
+          }
+        ]
+      },
+      {
+        "id": "m1",
+        "parent": "skateboard",
+        "transform": {
+          "pos": [
+            0,
+            0.0575,
+            0.085
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.42,
+            "height": 0.005,
+            "depth": 0.035
+          },
+          "color": 15912773
+        }
+      },
+      {
+        "id": "m2",
+        "parent": "skateboard",
+        "transform": {
+          "pos": [
+            -0.26,
+            0.005,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.055,
+            "height": 0.025,
+            "depth": 0.19
+          },
+          "color": 7371138
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m3",
+        "parent": "skateboard",
+        "transform": {
+          "pos": [
+            0.26,
+            0.005,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.055,
+            "height": 0.025,
+            "depth": 0.19
+          },
+          "color": 7371138
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m4",
+        "parent": "wheel_fl",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.06,
+            "height": 0.05,
+            "depth": 0.035
+          },
+          "color": 15895344
+        }
+      },
+      {
+        "id": "m5",
+        "parent": "wheel_fr",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.06,
+            "height": 0.05,
+            "depth": 0.035
+          },
+          "color": 15895344
+        }
+      },
+      {
+        "id": "m6",
+        "parent": "wheel_bl",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.06,
+            "height": 0.05,
+            "depth": 0.035
+          },
+          "color": 15895344
+        }
+      },
+      {
+        "id": "m7",
+        "parent": "wheel_br",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.06,
+            "height": 0.05,
+            "depth": 0.035
+          },
+          "color": 15895344
+        }
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1787766608489,
+        "provider": "gpt",
+        "data": "uCciGzm4XqGyD1gEy86ZUdWBjbTS/Q9JAeRxZ6jFDZgxE6UFUvio/pDo9KdMH5uSPHsnIOVxCiiHgkswzaVrQtA9s60Phr4UoGwUxWKjzS6NkbPw/htNbtfC7nUueoWPt0209Eor3hH9cU370YGZc8yCMYTqK+7vpfuM7EW8jQ0Kup0CXwcAq7585ROwYprXsOYtLXdiVvKJh+4lRm1GMBAtpSywfL3I0FLfRlRSleB3s8axVyP6s8K3fGybhVnPSXOX92W/Wp7ONv4cJBiHtD8u9Z8Puig3trpk1kDDV9vnvIUlhcj0Y71QjeYxzcZwDJupS/z8+ZUYHcqlFSqbwwNw5frr66/P91zaK0ERoNEwyOaFXhSU2XPTFck/aDxWkZ/eECaIwtpA/MAN07Pl3wVVcsdvkwvSx1Ntp7fIeFrZZv1YcfWUfWgBqjNVbOyTpYa4fkD8mt5oH2Kqbddpetf85EdQqxUL+YIO6GfVLsnkmIIXaT7Pueu0yTh5Q/IcZ0mux2io6/HqQBBoVLGED5Wzaty+kygRrEjNqm537Of1gy+9ex65L1vUaQVCjPTMreLBY3TLLuVMxpobWLD+wGuoPOnsywMicJR60WASscXGwmbky9+MJkOvooyafPDn8vPHdjKn9nboUfuZ7siVIxO6TYRYMbe3q49EWb6ZaWHAtSeX8MfB/QFvjUDBubZub3TJXUgrwTMCSHdlU2vGn6GeWiMk53OvnN3qZcJqb4t4CIfkHfErTQmt2SFnw90x7NO3QTmpMHg+",
+        "edits": ""
+      },
+      "semanticSnapshot": {
+        "v": 1,
+        "auto": true,
+        "text": "儿童滑板 · 5组/8mesh · 世界坐标(Y上Z前), 原点=模型根\n# 阅读说明: G:=group行(可动画骨骼, 动画key用G:后的id; @p=pivot世界坐标; 倾(x,y,z)°=朝向偏离世界轴的欧拉角; 缩进=父子层级; 挂:=挂载于某组; G:id→id→…=chain折叠行, 每个id都是可独立动画的group, chain×N=waypoint数)\n# M:=mesh行(label[id 几何 @(世界坐标)], label可省略; ×N=for循环批量件(锚点=代表实例); cyl (起)→(末)或 轴上(Y)等方位词=延伸方向; 薄向=板面法向(扁板); 挂载组双代表=最大件+朝向件(嘴/管/檐所在); 无方向标注=均匀块(三向相近,如头),默认面向前(Z); 对称×2=镜像对)\nG:skateboard 滑板主体 @p(0,0,0)\n  M:[m0 box 0.78×0.04×0.22 (0,0,0) 薄向上(Y)]\n  G:wheel_fl 前左轮 @p(0.3,0,0.1) 挂:skateboard\n    M:[m4 box 0.06×0.05×0.04 (0.3,0,0.1)]\n  G:wheel_fr 前右轮 @p(-0.3,0,0.1) 挂:skateboard\n    M:[m5 box 0.06×0.05×0.04 (-0.3,0,0.1)]\n  G:wheel_bl 后左轮 @p(0.3,0,-0.1) 挂:skateboard\n    M:[m6 box 0.06×0.05×0.04 (0.3,0,-0.1)]\n  G:wheel_br 后右轮 @p(-0.3,0,-0.1) 挂:skateboard\n    M:[m7 box 0.06×0.05×0.04 (-0.3,0,-0.1)]",
+        "stats": {
+          "groups": 5,
+          "meshes": 8,
+          "labeledMeshes": 0,
+          "labelCoverage": 0,
+          "batchLabels": 0,
+          "autoChains": 0,
+          "snapshotChars": 783
+        }
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -0.39,
+          0,
+          -0.12
+        ],
+        "max": [
+          0.39,
+          0.1225,
+          0.12
+        ],
+        "sourceNodeId": "asset-bounds"
+      }
+    ],
+    "sourceMeshCount": 8,
+    "candidateCount": 1,
+    "fallbackUsed": true
+  },
+  "footprintRadius": 0.39,
+  "sizeClass": "small",
+  "mode": "voxel",
+  "provider": "gpt",
+  "libraryId": "library-d7967286-cebf-4f99",
+  "libraryMetadata": {
+    "tags": [
+      "skateboard",
+      "childrenstoy",
+      "sportsequipment"
+    ],
+    "applicableZones": [
+      "settlement"
+    ],
+    "repeatable": true,
+    "landmark": false,
+    "enabled": true,
+    "priority": 0.5,
+    "analysisStatus": "ready",
+    "rotation": "random"
+  },
+  "createdAt": 1787817031483,
+  "updatedAt": 1787817031483
+}

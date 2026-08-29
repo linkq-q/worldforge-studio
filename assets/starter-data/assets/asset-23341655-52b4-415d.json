@@ -1,0 +1,384 @@
+{
+  "id": "asset-23341655-52b4-415d",
+  "name": "儿童衣帽架",
+  "prompt": "A single reusable freestanding child-height coat rack with a broad stable base and several rounded hooks, approximately 1.25 meters tall, no clothing, bags, floor, room, or background",
+  "tags": [
+    "furniture",
+    "storage"
+  ],
+  "modelJson": {
+    "name": "儿童落地衣帽架",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "rack",
+        "name": "衣帽架主体",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ],
+        "_obb": {
+          "size": [
+            0.89,
+            1.25,
+            0.83
+          ],
+          "center": [
+            0,
+            0.625,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0.0001,
+              0.0005
+            ],
+            [
+              -0.0001,
+              1,
+              0
+            ],
+            [
+              -0.0005,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "rack",
+        "transform": {
+          "pos": [
+            0,
+            0.05,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.72,
+            "height": 0.1,
+            "depth": 0.18
+          },
+          "color": 10118200
+        }
+      },
+      {
+        "id": "m1",
+        "parent": "rack",
+        "transform": {
+          "pos": [
+            0,
+            0.055,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.18,
+            "height": 0.11,
+            "depth": 0.72
+          },
+          "color": 10118200
+        }
+      },
+      {
+        "id": "m2",
+        "parent": "rack",
+        "transform": {
+          "pos": [
+            0,
+            0.13,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.3,
+            "height": 0.12,
+            "depth": 0.3
+          },
+          "color": 11038527
+        }
+      },
+      {
+        "id": "m3",
+        "parent": "rack",
+        "transform": {
+          "pos": [
+            0,
+            0.695,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.14,
+            "height": 1.03,
+            "depth": 0.14
+          },
+          "color": 12024645
+        }
+      },
+      {
+        "id": "m4",
+        "parent": "rack",
+        "transform": {
+          "pos": [
+            0,
+            1.17,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.22,
+            "height": 0.16,
+            "depth": 0.22
+          },
+          "color": 12946000
+        }
+      },
+      {
+        "id": "m5",
+        "parent": "rack",
+        "transform": {
+          "pos": [
+            -0.21,
+            1.04,
+            0
+          ],
+          "quat": [
+            0,
+            0,
+            0.99,
+            -0.12
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.35,
+            "height": 0.11,
+            "depth": 0.14
+          },
+          "color": 12024645
+        }
+      },
+      {
+        "id": "m6",
+        "parent": "rack",
+        "transform": {
+          "pos": [
+            -0.39,
+            1.08,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.11,
+            "height": 0.2,
+            "depth": 0.14
+          },
+          "color": 12946000
+        }
+      },
+      {
+        "id": "m7",
+        "parent": "rack",
+        "transform": {
+          "pos": [
+            0.21,
+            1.04,
+            0
+          ],
+          "quat": [
+            0,
+            0,
+            -0.12,
+            0.99
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.35,
+            "height": 0.11,
+            "depth": 0.14
+          },
+          "color": 12024645
+        }
+      },
+      {
+        "id": "m8",
+        "parent": "rack",
+        "transform": {
+          "pos": [
+            0.39,
+            1.08,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.11,
+            "height": 0.2,
+            "depth": 0.14
+          },
+          "color": 12946000
+        }
+      },
+      {
+        "id": "m9",
+        "parent": "rack",
+        "transform": {
+          "pos": [
+            0,
+            1.07,
+            0.19
+          ],
+          "quat": [
+            0.7,
+            -0.09,
+            0.7,
+            -0.09
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.32,
+            "height": 0.11,
+            "depth": 0.14
+          },
+          "color": 12024645
+        }
+      },
+      {
+        "id": "m10",
+        "parent": "rack",
+        "transform": {
+          "pos": [
+            0,
+            1.11,
+            0.36
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.14,
+            "height": 0.19,
+            "depth": 0.11
+          },
+          "color": 12946000
+        }
+      },
+      {
+        "id": "m11",
+        "parent": "rack",
+        "transform": {
+          "pos": [
+            0,
+            1.07,
+            -0.19
+          ],
+          "quat": [
+            -0.09,
+            0.7,
+            -0.09,
+            0.7
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.32,
+            "height": 0.11,
+            "depth": 0.14
+          },
+          "color": 12024645
+        }
+      },
+      {
+        "id": "m12",
+        "parent": "rack",
+        "transform": {
+          "pos": [
+            0,
+            1.11,
+            -0.36
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.14,
+            "height": 0.19,
+            "depth": 0.11
+          },
+          "color": 12946000
+        }
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1786874657526,
+        "provider": "gpt",
+        "data": "AaIh3/rbd/oDUD5+L//01mnocJV+0Jjau+1S1S9Uo4gRwSE4ijkfT1DC3ZszuDH+yX2xDvIjlaUWZ1jtjbF+Mvxm14fSL9QMglFu9B6TVtvQOdtR80C0zxihQqMvhN3Y+li8qoObjHEAMDJF/nU5H3q91MhwXn1J/3/zCqwrkDv4C1atxJU3/8vFyGVyMtCWFA0hRY+ku6v6t57n9LVco5nnxhFXiw1eI4+SKSFL/pW0lv6JhuQHHt01qk1wwn9GeyTvfzXtFMWKhAUBpwmJQWWMOC7ZP52rHAVx7fsUvehxWuVOHQknJ0iAtAzwr9WaGH/qC2CwyGYu8LeIFfcP3RmRRyGQNRrynSUFvaSREp2dQ7H0v3BZXgN2XgGMTcN97GVbwkaEBPy/0l3Ij3s9I7hwerOBzWktDslL7LWC2LtHVcqijViukRgIYfitlR3WddAsm1jRPgXtzd83PYeG39EP0HTOMbhdY+Wjyey/0ORwxWGRdNjD44b87g3y78i53Ieh+HICBrYk4Lr6BS0VDqdH3rRdMkZJKFDqr9xVDJHMjhKM8Q69xTohkoUQ129Ziekf7WEIJNt+0dybR0B+qSmoSRKNuTVN15Ry78iIRuf6dFzxdAF8GIPEaMzS3OPdLSnooYBhdvVu1c0UGgUNKrggs1QwdPNDazaOQrprVG/SgACLnT6C04aoOTV8BpAkQ5MYxhr6DyUYRbEHN6gnc5OMPUdxOyy2t2d0XZqhQw==",
+        "edits": ""
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -0.445,
+          0,
+          -0.415
+        ],
+        "max": [
+          0.445,
+          1.25,
+          0.415
+        ],
+        "sourceNodeId": "asset-bounds"
+      }
+    ],
+    "sourceMeshCount": 13,
+    "candidateCount": 0,
+    "fallbackUsed": true
+  },
+  "footprintRadius": 0.445,
+  "sizeClass": "small",
+  "mode": "voxel",
+  "provider": "gpt",
+  "createdAt": 1786874659035,
+  "updatedAt": 1786874659035
+}

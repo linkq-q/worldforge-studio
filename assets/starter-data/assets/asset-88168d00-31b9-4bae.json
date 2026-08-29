@@ -1,0 +1,341 @@
+{
+  "id": "asset-88168d00-31b9-4bae",
+  "name": "牛奶瓶",
+  "prompt": "单瓶儿童牛奶饮料，带瓶盖与简洁标签，完整独立物体\nCoordinate contract: local Y+ is up, local Z+ is the front, entrance, or forward direction, and local X+ is right. Put doors, facades, openings, windshields, noses, seats, and other recognizable front details toward local Z+. For a modular repeated element, explicitly choose the long axis: side-by-side modules span local X with depth/front on local Z; traversal modules span local Z. Keep the model centered at its origin.\nCanonical dimensions contract: width=0.08, height=0.22, depth=0.08 world units. Keep the generated mesh within this centered bounding size.",
+  "modelJson": {
+    "name": "儿童牛奶饮料瓶",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "bottle",
+        "name": "牛奶瓶",
+        "transform": {
+          "pos": [
+            0,
+            0.0255,
+            0.0203
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.076,
+            0.227,
+            0.107
+          ],
+          "center": [
+            0,
+            -0.028,
+            -0.026
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              0.9701,
+              -0.2428
+            ],
+            [
+              0,
+              0.2428,
+              0.9701
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "bottle",
+        "transform": {
+          "pos": [
+            0,
+            -0.068,
+            -0.0202
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.076,
+            "height": 0.135,
+            "depth": 0.068
+          },
+          "color": 16118236
+        }
+      },
+      {
+        "id": "m1",
+        "parent": "bottle",
+        "transform": {
+          "pos": [
+            0,
+            0.0105,
+            -0.0202
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.066,
+            "height": 0.022,
+            "depth": 0.062
+          },
+          "color": 16118236
+        }
+      },
+      {
+        "id": "m2",
+        "parent": "bottle",
+        "transform": {
+          "pos": [
+            0,
+            0.0305,
+            -0.0202
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.052,
+            "height": 0.018,
+            "depth": 0.052
+          },
+          "color": 16118236
+        }
+      },
+      {
+        "id": "m3",
+        "parent": "bottle",
+        "transform": {
+          "pos": [
+            0,
+            0.0485,
+            -0.0202
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.034,
+            "height": 0.018,
+            "depth": 0.034
+          },
+          "color": 16118236
+        }
+      },
+      {
+        "id": "m4",
+        "parent": "bottle",
+        "transform": {
+          "pos": [
+            0,
+            0.0705,
+            -0.0202
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.042,
+            "height": 0.028,
+            "depth": 0.042
+          },
+          "color": 5548520
+        }
+      },
+      {
+        "id": "m5",
+        "parent": "bottle",
+        "transform": {
+          "pos": [
+            0,
+            0.0825,
+            -0.0202
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.043,
+            "height": 0.005,
+            "depth": 0.043
+          },
+          "color": 3245768
+        }
+      },
+      {
+        "id": "m6",
+        "parent": "bottle",
+        "transform": {
+          "pos": [
+            0,
+            -0.0605,
+            0.0157
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.064,
+            "height": 0.068,
+            "depth": 0.004
+          },
+          "color": 7521775
+        }
+      },
+      {
+        "id": "m7",
+        "parent": "bottle",
+        "transform": {
+          "pos": [
+            0,
+            -0.0825,
+            0.0188
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.052,
+            "height": 0.013,
+            "depth": 0.002
+          },
+          "color": 16777215
+        }
+      },
+      {
+        "id": "m8",
+        "parent": "bottle",
+        "transform": {
+          "pos": [
+            0,
+            -0.0505,
+            0.0188
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.024,
+            "height": 0.024,
+            "depth": 0.002
+          },
+          "color": 16774351
+        }
+      },
+      {
+        "id": "m9",
+        "parent": "bottle",
+        "transform": {
+          "pos": [
+            -0.006,
+            -0.0475,
+            0.0203
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.008,
+            "height": 0.008,
+            "depth": 0.002
+          },
+          "color": 3689320
+        }
+      },
+      {
+        "id": "m10",
+        "parent": "bottle",
+        "transform": {
+          "pos": [
+            0.006,
+            -0.0475,
+            0.0203
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.008,
+            "height": 0.008,
+            "depth": 0.002
+          },
+          "color": 3689320
+        }
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1787768490342,
+        "provider": "gpt",
+        "data": "cimBmeeEh8KzH1asiL8AwEc9WpeBk7JO16cDKE+YkUI+mMtyDdeuo4CPEw0Z3guwNQS54Wleo+rqc2T/M8MWIBLJTVyei4KPZx/t7kK5NSmDgjZTdgDoeEbj7j3mOJAvhskHo9R43d8WuBEZqkI1dXpf4afXJTggz0B+qF6pfcDDKfhL0UOl9okCgNUFKMtoMj0rDPF8WEqpE2SaftzH19LfGADmmndPNRvr6rETU9xCMEVstZ363skXTf3NJYckkl4caA+73ToGTBF2KyRQM1pDYrk8gQUBoDxSEhPrDrXjFSJSVjt9RSM3ME2AKmiP0RVYW/DWTIKm9iLglqkZ6Tt+L8sOQOoCPKj1rNFIUkRRx/YHLGvuc8oRTHupGYOEutZs57pYMAhVzAGPXxeqYAUXMbPr4h7sBs0NSUUB4kpq2hM8CfijVCYBMjsQp9QtHvGO+vJoGKANCxbnJADyxf24aq+2yvUQ3ZrazqLF9UHgUdM8jBAshDDGtiRAq/BGY7le1IAE+tGxYthCkQEtUrf5/DCq8Vz+ZIYVEZKc1qDQuoDeRTCu3t4EdYtlOTtm9qJ72HLN9COBQ/spGcH3fPtQG9dFNMHr5LMJat9VqjOXHDmuSimV9BZ0KQ==",
+        "edits": ""
+      },
+      "semanticSnapshot": {
+        "v": 1,
+        "auto": true,
+        "text": "儿童牛奶饮料瓶 · 1组/11mesh · 世界坐标(Y上Z前), 原点=模型根\n# 阅读说明: G:=group行(可动画骨骼, 动画key用G:后的id; @p=pivot世界坐标; 倾(x,y,z)°=朝向偏离世界轴的欧拉角; 缩进=父子层级; 挂:=挂载于某组; G:id→id→…=chain折叠行, 每个id都是可独立动画的group, chain×N=waypoint数)\n# M:=mesh行(label[id 几何 @(世界坐标)], label可省略; ×N=for循环批量件(锚点=代表实例); cyl (起)→(末)或 轴上(Y)等方位词=延伸方向; 薄向=板面法向(扁板); 挂载组双代表=最大件+朝向件(嘴/管/檐所在); 无方向标注=均匀块(三向相近,如头),默认面向前(Z); 对称×2=镜像对)\nG:bottle 牛奶瓶 @p(0,0,0)\n  M:[m0 box 0.08×0.14×0.07 (0,0,0) 轴上(Y)]",
+        "stats": {
+          "groups": 1,
+          "meshes": 11,
+          "labeledMeshes": 0,
+          "labelCoverage": 0,
+          "batchLabels": 0,
+          "autoChains": 0,
+          "snapshotChars": 429
+        }
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -0.038,
+          0,
+          -0.039749999999999994
+        ],
+        "max": [
+          0.038,
+          0.22300000000000003,
+          0.039749999999999994
+        ],
+        "sourceNodeId": "asset-bounds"
+      }
+    ],
+    "sourceMeshCount": 11,
+    "candidateCount": 1,
+    "fallbackUsed": true
+  },
+  "footprintRadius": 0.1,
+  "sizeClass": "small",
+  "mode": "voxel",
+  "provider": "gpt",
+  "libraryId": "library-d7967286-cebf-4f99",
+  "libraryMetadata": {
+    "tags": [
+      "milkbottle",
+      "beverage",
+      "childrensdrink"
+    ],
+    "applicableZones": [
+      "settlement"
+    ],
+    "repeatable": true,
+    "landmark": false,
+    "enabled": true,
+    "priority": 0.5,
+    "analysisStatus": "ready",
+    "rotation": "random"
+  },
+  "createdAt": 1787816750364,
+  "updatedAt": 1787816750364
+}

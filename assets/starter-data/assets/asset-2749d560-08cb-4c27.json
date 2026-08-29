@@ -1,0 +1,1006 @@
+{
+  "id": "asset-2749d560-08cb-4c27",
+  "name": "蕨类盆栽",
+  "prompt": "一盆室内蕨类植物，蓬松弧形叶片，矮陶盆。独立单件儿童房物品，浅亮柔和造型，圆润安全边缘，不包含成组物品，不包含场景、房间、地面或背景。基础色和顶点色仅使用：#FFFDF6,#FEF9EA,#FDF2D7,#E9DABD,#CDBA97,#F8E8CF,#F1D7B2,#E7C393,#C9A06E,#9E7A55,#FFF7A8,#FCEF72,#F6E24B,#D1B825,#9C8510,#FFF3B7,#FDE674,#FCD75F,#FECD4D,#D1900B,#FFE2A0,#FFD170,#F8BC44,#E39F1A,#A96F05,#FBE3BD,#FDD8A3,#FDCC8F,#F1AD69,#D99256,#FFD2BA,#FFB08A,#FF8A5B,#F06B3E,#B84A27,#EAF9FF,#DAF2F5,#95E5F9,#76D0F2,#45BDF6,#D9F8FB,#B2E9F2,#8ECCD6,#7BCFDF,#4BAFCA,#D8F7EF,#B8ECDD,#90DCC8,#74C4BB,#499D92,#F1F5AF,#E4E77F,#DCDB2\nCoordinate contract: local Y+ is up, local Z+ is the front, entrance, or forward direction, and local X+ is right. Put doors, facades, openings, windshields, noses, seats, and other recognizable front details toward local Z+. For a modular repeated element, explicitly choose the long axis: side-by-side modules span local X with depth/front on local Z; traversal modules span local Z. Keep the model centered at its origin.\nCanonical dimensions contract: width=0.7, height=0.72, depth=0.7 world units. Keep the generated mesh within this centered bounding size.",
+  "tags": [
+    "indoor",
+    "single-object",
+    "child-safe"
+  ],
+  "modelJson": {
+    "name": "儿童房矮陶盆蕨类植物",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "pot",
+        "name": "矮陶盆",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.677,
+            0.716,
+            0.657
+          ],
+          "center": [
+            0.005,
+            0.341,
+            0.001
+          ],
+          "axes": [
+            [
+              0.9779,
+              0.0371,
+              0.2057
+            ],
+            [
+              -0.0497,
+              0.9972,
+              0.0565
+            ],
+            [
+              -0.2031,
+              -0.0655,
+              0.977
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "frond_front",
+        "name": "弧形蕨叶",
+        "parent": "pot",
+        "transform": {
+          "pos": [
+            0,
+            0.27,
+            0.025
+          ]
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ],
+        "_obb": {
+          "size": [
+            0.092,
+            0.382,
+            0.216
+          ],
+          "center": [
+            0.001,
+            0.139,
+            0.124
+          ],
+          "axes": [
+            [
+              0.9999,
+              0.0166,
+              -0.0035
+            ],
+            [
+              -0.0125,
+              0.8618,
+              0.507
+            ],
+            [
+              0.0114,
+              -0.5069,
+              0.8619
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "frond_back",
+        "name": "弧形蕨叶",
+        "parent": "pot",
+        "transform": {
+          "pos": [
+            0,
+            0.27,
+            -0.025
+          ]
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ],
+        "_obb": {
+          "size": [
+            0.092,
+            0.337,
+            0.2
+          ],
+          "center": [
+            0.001,
+            0.128,
+            -0.121
+          ],
+          "axes": [
+            [
+              0.9999,
+              0.0166,
+              0.0023
+            ],
+            [
+              -0.0133,
+              0.8682,
+              -0.4961
+            ],
+            [
+              -0.0102,
+              0.496,
+              0.8683
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "frond_right",
+        "name": "弧形蕨叶",
+        "parent": "pot",
+        "transform": {
+          "pos": [
+            0.025,
+            0.27,
+            0
+          ]
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ],
+        "_obb": {
+          "size": [
+            0.21,
+            0.34,
+            0.091
+          ],
+          "center": [
+            0.126,
+            0.118,
+            0
+          ],
+          "axes": [
+            [
+              0.7956,
+              -0.6058,
+              0
+            ],
+            [
+              0.6058,
+              0.7956,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "frond_left",
+        "name": "弧形蕨叶",
+        "parent": "pot",
+        "transform": {
+          "pos": [
+            -0.025,
+            0.27,
+            0
+          ]
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ],
+        "_obb": {
+          "size": [
+            0.219,
+            0.366,
+            0.09
+          ],
+          "center": [
+            -0.124,
+            0.137,
+            0
+          ],
+          "axes": [
+            [
+              0.8526,
+              0.5225,
+              0
+            ],
+            [
+              -0.5225,
+              0.8526,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "frond_front_right",
+        "name": "弧形蕨叶",
+        "parent": "pot",
+        "transform": {
+          "pos": [
+            0.0177,
+            0.27,
+            0.0177
+          ]
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ],
+        "_obb": {
+          "size": [
+            0.206,
+            0.435,
+            0.091
+          ],
+          "center": [
+            0.094,
+            0.187,
+            0.096
+          ],
+          "axes": [
+            [
+              0.6608,
+              -0.316,
+              0.6808
+            ],
+            [
+              0.2264,
+              0.9487,
+              0.2207
+            ],
+            [
+              -0.7156,
+              0.0083,
+              0.6984
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "frond_front_left",
+        "name": "弧形蕨叶",
+        "parent": "pot",
+        "transform": {
+          "pos": [
+            -0.0177,
+            0.27,
+            0.0177
+          ]
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ],
+        "_obb": {
+          "size": [
+            0.09,
+            0.417,
+            0.209
+          ],
+          "center": [
+            -0.091,
+            0.168,
+            0.091
+          ],
+          "axes": [
+            [
+              0.7055,
+              -0.0044,
+              0.7087
+            ],
+            [
+              -0.2899,
+              0.9107,
+              0.2943
+            ],
+            [
+              -0.6467,
+              -0.413,
+              0.6413
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "frond_back_right",
+        "name": "弧形蕨叶",
+        "parent": "pot",
+        "transform": {
+          "pos": [
+            0.0177,
+            0.27,
+            -0.0177
+          ]
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ],
+        "_obb": {
+          "size": [
+            0.09,
+            0.39,
+            0.193
+          ],
+          "center": [
+            0.076,
+            0.159,
+            -0.077
+          ],
+          "axes": [
+            [
+              0.7096,
+              0,
+              0.7046
+            ],
+            [
+              0.2668,
+              0.9255,
+              -0.2688
+            ],
+            [
+              -0.6521,
+              0.3787,
+              0.6567
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "frond_back_left",
+        "name": "弧形蕨叶",
+        "parent": "pot",
+        "transform": {
+          "pos": [
+            -0.0177,
+            0.27,
+            -0.0177
+          ]
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ],
+        "_obb": {
+          "size": [
+            0.091,
+            0.42,
+            0.194
+          ],
+          "center": [
+            -0.09,
+            0.18,
+            -0.09
+          ],
+          "axes": [
+            [
+              0.7076,
+              -0.0022,
+              -0.7066
+            ],
+            [
+              -0.2492,
+              0.935,
+              -0.2525
+            ],
+            [
+              0.6612,
+              0.3547,
+              0.6611
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "pot",
+        "transform": {
+          "pos": [
+            0,
+            0.03,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.34,
+            "height": 0.06,
+            "depth": 0.34
+          },
+          "color": 13213806
+        }
+      },
+      {
+        "id": "m1",
+        "parent": "pot",
+        "transform": {
+          "pos": [
+            0,
+            0.13,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.3,
+            "height": 0.16,
+            "depth": 0.3
+          },
+          "color": 15188883
+        }
+      },
+      {
+        "id": "m2",
+        "parent": "pot",
+        "transform": {
+          "pos": [
+            0,
+            0.24,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.36,
+            "height": 0.06,
+            "depth": 0.36
+          },
+          "color": 15849394
+        }
+      },
+      {
+        "id": "m3",
+        "parent": "pot",
+        "transform": {
+          "pos": [
+            0,
+            0.276,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.28,
+            "height": 0.025,
+            "depth": 0.28
+          },
+          "color": 10386005
+        }
+      },
+      {
+        "id": "m4",
+        "parent": "frond_front",
+        "transform": {
+          "pos": [
+            0,
+            0.17,
+            0.065
+          ],
+          "quat": [
+            0.59,
+            0.4,
+            0.59,
+            0.4
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.37,
+            "height": 0.025,
+            "depth": 0.09
+          },
+          "color": 7652539
+        }
+      },
+      {
+        "id": "m5",
+        "parent": "frond_front",
+        "transform": {
+          "pos": [
+            0,
+            0.28,
+            0.215
+          ],
+          "quat": [
+            0.67,
+            -0.22,
+            0.67,
+            -0.22
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.2,
+            "height": 0.025,
+            "depth": 0.07
+          },
+          "color": 7652539
+        }
+      },
+      {
+        "id": "m6",
+        "parent": "frond_back",
+        "transform": {
+          "pos": [
+            0,
+            0.16,
+            -0.065
+          ],
+          "quat": [
+            0.59,
+            0.4,
+            -0.59,
+            -0.4
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.33,
+            "height": 0.025,
+            "depth": 0.09
+          },
+          "color": 4824466
+        }
+      },
+      {
+        "id": "m7",
+        "parent": "frond_back",
+        "transform": {
+          "pos": [
+            0,
+            0.25,
+            -0.195
+          ],
+          "quat": [
+            0.67,
+            -0.22,
+            -0.67,
+            0.22
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.19,
+            "height": 0.025,
+            "depth": 0.07
+          },
+          "color": 4824466
+        }
+      },
+      {
+        "id": "m8",
+        "parent": "frond_right",
+        "transform": {
+          "pos": [
+            0.075,
+            0.15,
+            0
+          ],
+          "quat": [
+            0.85,
+            0.53,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.33,
+            "height": 0.025,
+            "depth": 0.09
+          },
+          "color": 9493704
+        }
+      },
+      {
+        "id": "m9",
+        "parent": "frond_right",
+        "transform": {
+          "pos": [
+            0.225,
+            0.24,
+            0
+          ],
+          "quat": [
+            0.95,
+            -0.32,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.2,
+            "height": 0.025,
+            "depth": 0.07
+          },
+          "color": 9493704
+        }
+      },
+      {
+        "id": "m10",
+        "parent": "frond_left",
+        "transform": {
+          "pos": [
+            -0.065,
+            0.17,
+            0
+          ],
+          "quat": [
+            0,
+            0,
+            0.83,
+            0.56
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.36,
+            "height": 0.025,
+            "depth": 0.09
+          },
+          "color": 7652539
+        }
+      },
+      {
+        "id": "m11",
+        "parent": "frond_left",
+        "transform": {
+          "pos": [
+            -0.215,
+            0.27,
+            0
+          ],
+          "quat": [
+            0,
+            0,
+            0.95,
+            -0.32
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.2,
+            "height": 0.025,
+            "depth": 0.07
+          },
+          "color": 7652539
+        }
+      },
+      {
+        "id": "m12",
+        "parent": "frond_front_right",
+        "transform": {
+          "pos": [
+            0.0423,
+            0.21,
+            0.0423
+          ],
+          "quat": [
+            0.74,
+            0.56,
+            0.3,
+            0.23
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.43,
+            "height": 0.025,
+            "depth": 0.09
+          },
+          "color": 12119261
+        }
+      },
+      {
+        "id": "m13",
+        "parent": "frond_front_right",
+        "transform": {
+          "pos": [
+            0.1323,
+            0.34,
+            0.1323
+          ],
+          "quat": [
+            0.86,
+            -0.34,
+            0.36,
+            -0.14
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.21,
+            "height": 0.025,
+            "depth": 0.07
+          },
+          "color": 12119261
+        }
+      },
+      {
+        "id": "m14",
+        "parent": "frond_front_left",
+        "transform": {
+          "pos": [
+            -0.0423,
+            0.19,
+            0.0423
+          ],
+          "quat": [
+            0.31,
+            0.22,
+            0.75,
+            0.54
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.4,
+            "height": 0.025,
+            "depth": 0.09
+          },
+          "color": 9493704
+        }
+      },
+      {
+        "id": "m15",
+        "parent": "frond_front_left",
+        "transform": {
+          "pos": [
+            -0.1423,
+            0.32,
+            0.1423
+          ],
+          "quat": [
+            0.36,
+            -0.13,
+            0.87,
+            -0.32
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.2,
+            "height": 0.025,
+            "depth": 0.07
+          },
+          "color": 9493704
+        }
+      },
+      {
+        "id": "m16",
+        "parent": "frond_back_right",
+        "transform": {
+          "pos": [
+            0.0323,
+            0.18,
+            -0.0323
+          ],
+          "quat": [
+            0.74,
+            0.55,
+            -0.31,
+            -0.23
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.38,
+            "height": 0.025,
+            "depth": 0.09
+          },
+          "color": 4824466
+        }
+      },
+      {
+        "id": "m17",
+        "parent": "frond_back_right",
+        "transform": {
+          "pos": [
+            0.1223,
+            0.3,
+            -0.1223
+          ],
+          "quat": [
+            0.87,
+            -0.32,
+            -0.36,
+            0.13
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.18,
+            "height": 0.025,
+            "depth": 0.07
+          },
+          "color": 4824466
+        }
+      },
+      {
+        "id": "m18",
+        "parent": "frond_back_left",
+        "transform": {
+          "pos": [
+            -0.0423,
+            0.2,
+            -0.0423
+          ],
+          "quat": [
+            -0.31,
+            -0.23,
+            0.74,
+            0.55
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.41,
+            "height": 0.025,
+            "depth": 0.09
+          },
+          "color": 7652539
+        }
+      },
+      {
+        "id": "m19",
+        "parent": "frond_back_left",
+        "transform": {
+          "pos": [
+            -0.1323,
+            0.33,
+            -0.1323
+          ],
+          "quat": [
+            -0.36,
+            0.14,
+            0.86,
+            -0.34
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.19,
+            "height": 0.025,
+            "depth": 0.07
+          },
+          "color": 7652539
+        }
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1787769353723,
+        "provider": "gpt",
+        "data": "P8I/EC0Me0pJi/UcxqmUnQUdEx2uQmcwfCPCYj6dsoyMjBj1OsUHITx881b193y5SMeex7y69unpN/T3cc5xSG+/RV91hgwCOjWvZDPwK4oUhXEgxb4/EMQWM2t63AO2PtIC9/ccb7XK/zaqC6wM6W7JndSfKpkgSChBr0WbqGnyAe4/K3dR9q9v/d/qjZxh8VI96BDx9CWqOGvYlFVXPBg4jJyeGhxtI6aI0XRePZUVo7xYvYijF2fpwHRLIxQzC7kIg0AzWTpqYgOpvCvwvO5T+L38FKeURctdeMAga4cX9QGgz9K6O/F8TxleR9i+7Tf4J5VwGWdUP85lJrKwmdy6SK8iapMz9U+aV/lpeLKSbBpAQol4VXyMEc2fDLmBMk/VhA/pN+xhAlj4gHHXXYdSCe6Asmi5n9VULu70Dku076IpWJDWvDd1pkMljTsXaZ7qe+arM77cexSPCwMErSwgknb5xxcRti5ixylq71Gjdj+f16Qdy1IJ8nqHeXyO15WqUmv4xosfrjH5sVwBuNSjCYcFMB98FIZp/pvOBcUYq2g0/h6Lx9kWfGvouOG/m4Bd/JTJe4lMe1kYrmPAX0HONZsXl1VpNQ+xC9E3GU/efEab+HOyydb3IHLURcbc6n0/Rs0285Fvb8BwxaToOmAMXy6Dqn/VR47SbzUVKH5NC4C0iIn9PX9GzacWtedxMrTkmtI+8CxMHybq0DX2AC+GMDPUiqO6PA/hlewPzrsMlzJcXHea1TM5RzsIf0keaQ4pkIm9tM4+GdEzO8m5JwtZYk1Lxm+4KgL4JZv9KUMhB8JyBcYDKnz/DWConPJS8pDTnlcbByd/Pp/QFf2Qc6UNMeqZYN1zeKGH5JdT4cHj58zcL91NUAtP+7ucJb8SmQuU9glCWRcIFHa2xzTxrvHkOF32fSe0vnFyyMEqmf4cs5ecrGuGH47JzY9so5ppqSlp2GajKUuvbbnCb7wK1wFBVmYJv85NFIGQGILDcFxM/x7CUuDnCgmTkM5JDnvDGmFSZHNVn/uvVqBWSpcGGi9IQzZh8zYHwF9p2oWrpSwVb8eLUBKRnoM1o8XmdlAbEJWkyZJEWyj6V7LaIAAYpv+112lO3NHzQPkzl70Yf/J55TNAc3NQOlO/gJP84Lwzx1KHpZ8+fnjCzGjI7RxEnrEsaPgqbHDkyOWa",
+        "edits": ""
+      },
+      "semanticSnapshot": {
+        "v": 1,
+        "auto": true,
+        "text": "儿童房矮陶盆蕨类植物 · 9组/20mesh · 世界坐标(Y上Z前), 原点=模型根\n# 阅读说明: G:=group行(可动画骨骼, 动画key用G:后的id; @p=pivot世界坐标; 倾(x,y,z)°=朝向偏离世界轴的欧拉角; 缩进=父子层级; 挂:=挂载于某组; G:id→id→…=chain折叠行, 每个id都是可独立动画的group, chain×N=waypoint数)\n# M:=mesh行(label[id 几何 @(世界坐标)], label可省略; ×N=for循环批量件(锚点=代表实例); cyl (起)→(末)或 轴上(Y)等方位词=延伸方向; 薄向=板面法向(扁板); 挂载组双代表=最大件+朝向件(嘴/管/檐所在); 无方向标注=均匀块(三向相近,如头),默认面向前(Z); 对称×2=镜像对)\nG:pot 矮陶盆 @p(0,0,0)\n  M:[m1 box 0.3×0.16×0.3 (0,0.1,0) 薄向上(Y)]\n  G:frond_front 弧形蕨叶 @p(0,0.3,0) 挂:pot\n    M:[m4 box 0.37×0.03×0.09 (0,0.4,0.1) 轴(0,0.6,0.2)→(0,0.3,0)]\n  G:frond_back 弧形蕨叶 @p(0,0.3,0) 挂:pot\n    M:[m6 box 0.33×0.03×0.09 (0,0.4,-0.1) 轴(0,0.6,-0.2)→(0,0.3,0)]\n  G:frond_right 弧形蕨叶 @p(0,0.3,0) 挂:pot\n    M:[m8 box 0.33×0.03×0.09 (0.1,0.4,0) 轴(0.2,0.6,0)→(0,0.3,0)]\n  G:frond_left 弧形蕨叶 @p(0,0.3,0) 挂:pot\n    M:[m10 box 0.36×0.03×0.09 (-0.1,0.4,0) 轴(-0.2,0.6,0)→(0,0.3,0)]\n  G:frond_front_right 弧形蕨叶 @p(0,0.3,0) 挂:pot\n    M:[m12 box 0.43×0.03×0.09 (0.1,0.5,0.1) 轴上(Y)]\n  G:frond_front_left 弧形蕨叶 @p(0,0.3,0) 挂:pot\n    M:[m14 box 0.4×0.03×0.09 (-0.1,0.5,0.1) 轴(-0.1,0.6,0.1)→(0,0.3,0)]\n  G:frond_back_right 弧形蕨叶 @p(0,0.3,0) 挂:pot\n    M:[m16 box 0.38×0.03×0.09 (0.1,0.5,0) 轴(0.1,0.6,-0.1)→(0,0.3,0)]\n  G:frond_back_left 弧形蕨叶 @p(0,0.3,0) 挂:pot\n    M:[m18 box 0.41×0.03×0.09 (-0.1,0.5,-0.1) 轴(-0.1,0.7,-0.1)→(0,0.3,0)]",
+        "stats": {
+          "groups": 9,
+          "meshes": 20,
+          "labeledMeshes": 0,
+          "labelCoverage": 0,
+          "batchLabels": 0,
+          "autoChains": 0,
+          "snapshotChars": 1290
+        }
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -0.33218280425913027,
+          0,
+          -0.31593153026342247
+        ],
+        "max": [
+          0.33218280425913027,
+          0.690946833930705,
+          0.31593153026342247
+        ],
+        "sourceNodeId": "asset-bounds"
+      }
+    ],
+    "sourceMeshCount": 20,
+    "candidateCount": 1,
+    "fallbackUsed": true
+  },
+  "footprintRadius": 0.33218280425913027,
+  "sizeClass": "small",
+  "mode": "voxel",
+  "provider": "gpt",
+  "libraryId": "library-d7967286-cebf-4f99",
+  "libraryMetadata": {
+    "tags": [
+      "pottedfern",
+      "houseplant",
+      "indoordecor"
+    ],
+    "applicableZones": [
+      "settlement"
+    ],
+    "repeatable": true,
+    "landmark": false,
+    "enabled": true,
+    "priority": 0.5,
+    "analysisStatus": "ready",
+    "rotation": "random"
+  },
+  "createdAt": 1787816616916,
+  "updatedAt": 1787816616916
+}

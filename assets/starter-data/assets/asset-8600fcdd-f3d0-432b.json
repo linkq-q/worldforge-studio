@@ -1,0 +1,718 @@
+{
+  "id": "asset-8600fcdd-f3d0-432b",
+  "name": "复杂游乐园/05海盗港/装饰/木桶货箱组",
+  "prompt": "Simple standalone voxel model of 木桶货箱组: a grounded cluster of two wooden barrels and three stacked shipping crates with rope accents, compact cover silhouette. Use 16 to 28 box meshes only, one grounded object, bold readable silhouette, bright amusement park colors, no terrain, no people, no floating pieces.",
+  "modelJson": {
+    "name": "木桶货箱组",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "cargoCluster",
+        "name": "木桶货箱组",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "cargoCluster",
+        "transform": {
+          "pos": [
+            -1.25,
+            0.12,
+            0.22
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.78,
+            "height": 0.24,
+            "depth": 0.72
+          },
+          "color": 13195071
+        }
+      },
+      {
+        "id": "m1",
+        "parent": "cargoCluster",
+        "transform": {
+          "pos": [
+            -1.25,
+            0.82,
+            0.22
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1,
+            "height": 1.16,
+            "depth": 0.9
+          },
+          "color": 15895608
+        }
+      },
+      {
+        "id": "m2",
+        "parent": "cargoCluster",
+        "transform": {
+          "pos": [
+            -1.25,
+            1.52,
+            0.22
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.78,
+            "height": 0.24,
+            "depth": 0.72
+          },
+          "color": 13195071
+        }
+      },
+      {
+        "id": "m3",
+        "parent": "cargoCluster",
+        "transform": {
+          "pos": [
+            -1.25,
+            0.43,
+            0.71
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.06,
+            "height": 0.12,
+            "depth": 0.08
+          },
+          "color": 2475720
+        }
+      },
+      {
+        "id": "m4",
+        "parent": "cargoCluster",
+        "transform": {
+          "pos": [
+            -1.25,
+            1.21,
+            0.71
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.06,
+            "height": 0.12,
+            "depth": 0.08
+          },
+          "color": 2475720
+        }
+      },
+      {
+        "id": "m5",
+        "parent": "cargoCluster",
+        "transform": {
+          "pos": [
+            -1.5,
+            0.82,
+            0.705
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.11,
+            "height": 1.28,
+            "depth": 0.07
+          },
+          "color": 16768360
+        }
+      },
+      {
+        "id": "m6",
+        "parent": "cargoCluster",
+        "transform": {
+          "pos": [
+            -1,
+            0.82,
+            0.705
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.11,
+            "height": 1.28,
+            "depth": 0.07
+          },
+          "color": 16768360
+        }
+      },
+      {
+        "id": "m7",
+        "parent": "cargoCluster",
+        "transform": {
+          "pos": [
+            -0.52,
+            0.12,
+            -0.45
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.78,
+            "height": 0.24,
+            "depth": 0.72
+          },
+          "color": 15234613
+        }
+      },
+      {
+        "id": "m8",
+        "parent": "cargoCluster",
+        "transform": {
+          "pos": [
+            -0.52,
+            0.82,
+            -0.45
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1,
+            "height": 1.16,
+            "depth": 0.9
+          },
+          "color": 16760126
+        }
+      },
+      {
+        "id": "m9",
+        "parent": "cargoCluster",
+        "transform": {
+          "pos": [
+            -0.52,
+            1.52,
+            -0.45
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.78,
+            "height": 0.24,
+            "depth": 0.72
+          },
+          "color": 15234613
+        }
+      },
+      {
+        "id": "m10",
+        "parent": "cargoCluster",
+        "transform": {
+          "pos": [
+            -0.52,
+            0.43,
+            0.04
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.06,
+            "height": 0.12,
+            "depth": 0.08
+          },
+          "color": 4351957
+        }
+      },
+      {
+        "id": "m11",
+        "parent": "cargoCluster",
+        "transform": {
+          "pos": [
+            -0.52,
+            1.21,
+            0.04
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.06,
+            "height": 0.12,
+            "depth": 0.08
+          },
+          "color": 4351957
+        }
+      },
+      {
+        "id": "m12",
+        "parent": "cargoCluster",
+        "transform": {
+          "pos": [
+            -0.77,
+            0.82,
+            0.035
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.11,
+            "height": 1.28,
+            "depth": 0.07
+          },
+          "color": 16768360
+        }
+      },
+      {
+        "id": "m13",
+        "parent": "cargoCluster",
+        "transform": {
+          "pos": [
+            -0.27,
+            0.82,
+            0.035
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.11,
+            "height": 1.28,
+            "depth": 0.07
+          },
+          "color": 16768360
+        }
+      },
+      {
+        "id": "m14",
+        "parent": "cargoCluster",
+        "transform": {
+          "pos": [
+            0.45,
+            0.46,
+            0.16
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.94,
+            "height": 0.92,
+            "depth": 0.82
+          },
+          "color": 2275495
+        }
+      },
+      {
+        "id": "m15",
+        "parent": "cargoCluster",
+        "transform": {
+          "pos": [
+            0.45,
+            0.46,
+            0.61
+          ],
+          "quat": [
+            0.66,
+            0.26,
+            0.26,
+            0.66
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.92,
+            "height": 0.08,
+            "depth": 0.11
+          },
+          "color": 556940
+        }
+      },
+      {
+        "id": "m16",
+        "parent": "cargoCluster",
+        "transform": {
+          "pos": [
+            0.45,
+            0.46,
+            0.61
+          ],
+          "quat": [
+            -0.26,
+            -0.66,
+            0.66,
+            0.26
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.92,
+            "height": 0.08,
+            "depth": 0.11
+          },
+          "color": 556940
+        }
+      },
+      {
+        "id": "m17",
+        "parent": "cargoCluster",
+        "transform": {
+          "pos": [
+            0.45,
+            0.46,
+            0.61
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.1,
+            "height": 0.96,
+            "depth": 0.07
+          },
+          "color": 16766044
+        }
+      },
+      {
+        "id": "m18",
+        "parent": "cargoCluster",
+        "transform": {
+          "pos": [
+            1.4,
+            0.46,
+            0.16
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.94,
+            "height": 0.92,
+            "depth": 0.82
+          },
+          "color": 15686518
+        }
+      },
+      {
+        "id": "m19",
+        "parent": "cargoCluster",
+        "transform": {
+          "pos": [
+            1.4,
+            0.46,
+            0.61
+          ],
+          "quat": [
+            0.66,
+            0.26,
+            0.26,
+            0.66
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.92,
+            "height": 0.08,
+            "depth": 0.11
+          },
+          "color": 12139880
+        }
+      },
+      {
+        "id": "m20",
+        "parent": "cargoCluster",
+        "transform": {
+          "pos": [
+            1.4,
+            0.46,
+            0.61
+          ],
+          "quat": [
+            -0.26,
+            -0.66,
+            0.66,
+            0.26
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.92,
+            "height": 0.08,
+            "depth": 0.11
+          },
+          "color": 12139880
+        }
+      },
+      {
+        "id": "m21",
+        "parent": "cargoCluster",
+        "transform": {
+          "pos": [
+            1.4,
+            0.46,
+            0.61
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.1,
+            "height": 0.96,
+            "depth": 0.07
+          },
+          "color": 16766044
+        }
+      },
+      {
+        "id": "m22",
+        "parent": "cargoCluster",
+        "transform": {
+          "pos": [
+            0.925,
+            1.38,
+            0.16
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.94,
+            "height": 0.92,
+            "depth": 0.82
+          },
+          "color": 7755733
+        }
+      },
+      {
+        "id": "m23",
+        "parent": "cargoCluster",
+        "transform": {
+          "pos": [
+            0.93,
+            1.38,
+            0.61
+          ],
+          "quat": [
+            0.66,
+            0.26,
+            0.26,
+            0.66
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.92,
+            "height": 0.08,
+            "depth": 0.11
+          },
+          "color": 4799138
+        }
+      },
+      {
+        "id": "m24",
+        "parent": "cargoCluster",
+        "transform": {
+          "pos": [
+            0.93,
+            1.38,
+            0.61
+          ],
+          "quat": [
+            -0.26,
+            -0.66,
+            0.66,
+            0.26
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.92,
+            "height": 0.08,
+            "depth": 0.11
+          },
+          "color": 4799138
+        }
+      },
+      {
+        "id": "m25",
+        "parent": "cargoCluster",
+        "transform": {
+          "pos": [
+            0.925,
+            1.38,
+            0.61
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.1,
+            "height": 0.96,
+            "depth": 0.07
+          },
+          "color": 16766044
+        }
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1784476166555,
+        "provider": "glm",
+        "data": "Vn27wYOxcVo6k1BHSVpQ5BTxKF0ri2mcExxMvUoPA3I8ITSOkk8sjT94njIHW5hWRkNdsUTuNnnvOTJDEM/G/Bs7kxfJtnU9iEq7h+27FK0XYBpQp6dB+gh0g/izaopRmmdrtHJt76ROEdPl1bcK/5JHE8F5Bm9pIPQmC1BJ+hLGgILCCWfLnvXqLIoUh36AAnCCo3WM9Z8GLvk0NApynBB15Hq6I2Y1D41dWjZIf7M7EunKCu5MXEi5bUEig/7d6pXQioC0igYvql69aaGoDxxsGQLbxM+wUhdNl2Y59xaKusPnu0qGKxMN240s5HgancXgafUAeMaXeElOUg4K+rUIhHA6De0O9rzGZ1aNCdrG/x1KCUgwZ3nQ9XI4o7+UckY/ojFQcMcRXjdAgWg351ehhCZiHDrBVn3N6P8OoSBgbKy+SyjOR15VKiNkgWPdtv9B8+kVRXf5fwNY3uK0GpotU4V26UBkhHjYMVbGnXcdueUwDexCUje67+VsZZmKfhSlotV6KeAjQWttQBrHyphkZRErxgbDShnzii1Q989d1L1hGzeZY6eRRqydefSBgXU0MKi3TpPF1mv6FplQUAdOfkzFXrlFG0mWL9PrnyyZYZnZHUe9xKAyZBbtsRq/bk6VhbV53/m7cs9QDkWY08UEFoKsP7Czcr4yiFDyja6uxaQOOYErxI/CvE5OvT4Si2oNvvRuPOSorEHiZrN+tD9+LAPN99rOBztU4QXsI9wYsB9yqA2qDllm/MhFVte11/BuY3ZRHb3YFRTlUna2VQ1921+db6dTLXQE9F5WkqfoqCSxKaes810R7SCVWAkFxCtWqWzBrcmhCeaFEfuXkJrSyJiA+NVZ0xlDJvgB8mdtmt9G5T//ke+udC8pUFLeskDrviVV0m4nwkyCla+DOFmPhlrtLdScamjdZMms+kZgcrhoGlyavqDL6u8mq68LghMd0a1+JfSwD8HiTqBfU5IpD0P3RUis8jrXLUYBYt3NLIpQURm3xYz5nRjQtLdwbeHpjN84Od4Zm6jueqalVTqF/KME6y+U7MRF+7ObxpDmCZ1vN7OnZkOdvg8hvJsjYu31keBmltRjonjpEDIGuCMtoLmjd+SgFHVyqy52/lS2m7Ix/jOXrtiuvwDY08IdOc9aBwNEcMoq3Hs=",
+        "edits": ""
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -1.795,
+          0.25999999999999995,
+          -0.155
+        ],
+        "max": [
+          -0.7949999999999999,
+          1.42,
+          0.7450000000000001
+        ],
+        "sourceNodeId": "m1"
+      },
+      {
+        "min": [
+          -1.065,
+          0.25999999999999995,
+          -0.825
+        ],
+        "max": [
+          -0.06499999999999995,
+          1.42,
+          0.07500000000000001
+        ],
+        "sourceNodeId": "m8"
+      },
+      {
+        "min": [
+          -0.06499999999999989,
+          0.019999999999999962,
+          -0.17499999999999996
+        ],
+        "max": [
+          0.875,
+          0.94,
+          0.645
+        ],
+        "sourceNodeId": "m14"
+      },
+      {
+        "min": [
+          0.885,
+          0.019999999999999962,
+          -0.17499999999999996
+        ],
+        "max": [
+          1.825,
+          0.94,
+          0.645
+        ],
+        "sourceNodeId": "m18"
+      },
+      {
+        "min": [
+          0.41000000000000014,
+          0.94,
+          -0.17499999999999996
+        ],
+        "max": [
+          1.35,
+          1.8599999999999999,
+          0.645
+        ],
+        "sourceNodeId": "m22"
+      },
+      {
+        "min": [
+          -1.685,
+          1.42,
+          -0.06499999999999997
+        ],
+        "max": [
+          -0.9049999999999999,
+          1.6600000000000001,
+          0.655
+        ],
+        "sourceNodeId": "m2"
+      },
+      {
+        "min": [
+          -0.955,
+          1.42,
+          -0.7350000000000001
+        ],
+        "max": [
+          -0.17499999999999993,
+          1.6600000000000001,
+          -0.015000000000000013
+        ],
+        "sourceNodeId": "m9"
+      },
+      {
+        "min": [
+          -1.685,
+          0.019999999999999962,
+          -0.06499999999999997
+        ],
+        "max": [
+          -0.9049999999999999,
+          0.25999999999999995,
+          0.655
+        ],
+        "sourceNodeId": "m0"
+      },
+      {
+        "min": [
+          -0.955,
+          0.019999999999999962,
+          -0.7350000000000001
+        ],
+        "max": [
+          -0.17499999999999993,
+          0.25999999999999995,
+          -0.015000000000000013
+        ],
+        "sourceNodeId": "m7"
+      }
+    ],
+    "sourceMeshCount": 26,
+    "candidateCount": 9,
+    "fallbackUsed": false
+  },
+  "mode": "lite",
+  "provider": "provider-fallback",
+  "createdAt": 1784476170560,
+  "updatedAt": 1784476170560
+}

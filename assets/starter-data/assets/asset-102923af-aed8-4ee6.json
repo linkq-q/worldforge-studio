@@ -1,0 +1,681 @@
+{
+  "id": "asset-102923af-aed8-4ee6",
+  "name": "复杂公园/池畔垂柳",
+  "prompt": "Standalone reusable voxel park asset: a compact weeping willow tree, hanging lime-green voxel fronds around a curved trunk, open space under canopy, pond-side landmark. Box-only voxel model around 20 purposeful boxes, centered at the origin, base grounded on y=0, no surrounding terrain, no people, no loose floating geometry, flat-shaded cohesive enchanted municipal park palette. Keep the gameplay silhouette and collision shape readable from all sides.",
+  "modelJson": {
+    "name": " enchanted park weeping willow",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "trunk",
+        "name": "curved trunk",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        }
+      },
+      {
+        "id": "crown",
+        "name": "central canopy",
+        "parent": "trunk",
+        "transform": {
+          "pos": [
+            0.18,
+            3.15,
+            0.12
+          ]
+        }
+      },
+      {
+        "id": "east_bough",
+        "name": "east hanging bough",
+        "parent": "trunk",
+        "transform": {
+          "pos": [
+            0.18,
+            3.15,
+            0.12
+          ]
+        }
+      },
+      {
+        "id": "west_bough",
+        "name": "west hanging bough",
+        "parent": "trunk",
+        "transform": {
+          "pos": [
+            0.18,
+            3.15,
+            0.12
+          ]
+        }
+      },
+      {
+        "id": "north_bough",
+        "name": "north hanging bough",
+        "parent": "trunk",
+        "transform": {
+          "pos": [
+            0.18,
+            3.15,
+            0.12
+          ]
+        }
+      },
+      {
+        "id": "south_bough",
+        "name": "south hanging bough",
+        "parent": "trunk",
+        "transform": {
+          "pos": [
+            0.18,
+            3.15,
+            0.12
+          ]
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "trunk",
+        "transform": {
+          "pos": [
+            0,
+            0.65,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.78,
+            "height": 1.3,
+            "depth": 0.78
+          },
+          "color": 7754042
+        }
+      },
+      {
+        "id": "m1",
+        "parent": "trunk",
+        "transform": {
+          "pos": [
+            0.12,
+            1.56,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.68,
+            "height": 0.82,
+            "depth": 0.68
+          },
+          "color": 8411710
+        }
+      },
+      {
+        "id": "m2",
+        "parent": "trunk",
+        "transform": {
+          "pos": [
+            0.28,
+            2.25,
+            0.06
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.6,
+            "height": 0.72,
+            "depth": 0.6
+          },
+          "color": 7754042
+        }
+      },
+      {
+        "id": "m3",
+        "parent": "trunk",
+        "transform": {
+          "pos": [
+            0.18,
+            2.91,
+            0.12
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.54,
+            "height": 0.72,
+            "depth": 0.54
+          },
+          "color": 6899250
+        }
+      },
+      {
+        "id": "m4",
+        "parent": "crown",
+        "transform": {
+          "pos": [
+            -0.03,
+            0.63,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2.15,
+            "height": 1.05,
+            "depth": 2.15
+          },
+          "color": 7977292
+        }
+      },
+      {
+        "id": "m5",
+        "parent": "east_bough",
+        "transform": {
+          "pos": [
+            1.07,
+            0.17,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2.65,
+            "height": 0.32,
+            "depth": 0.34
+          },
+          "color": 6834741
+        }
+      },
+      {
+        "id": "m6",
+        "parent": "east_bough",
+        "transform": {
+          "pos": [
+            0.86,
+            -0.72,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.52,
+            "height": 1.55,
+            "depth": 0.66
+          },
+          "color": 9161296
+        }
+      },
+      {
+        "id": "m7",
+        "parent": "east_bough",
+        "transform": {
+          "pos": [
+            1.59,
+            -0.97,
+            0.04
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.48,
+            "height": 2.05,
+            "depth": 0.62
+          },
+          "color": 7518275
+        }
+      },
+      {
+        "id": "m8",
+        "parent": "east_bough",
+        "transform": {
+          "pos": [
+            2.22,
+            -1.15,
+            -0.02
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.54,
+            "height": 2.4,
+            "depth": 0.68
+          },
+          "color": 9555797
+        }
+      },
+      {
+        "id": "m9",
+        "parent": "west_bough",
+        "transform": {
+          "pos": [
+            -1.28,
+            0.17,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2.55,
+            "height": 0.32,
+            "depth": 0.34
+          },
+          "color": 6834741
+        }
+      },
+      {
+        "id": "m10",
+        "parent": "west_bough",
+        "transform": {
+          "pos": [
+            -1,
+            -0.7,
+            -0.02
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.52,
+            "height": 1.5,
+            "depth": 0.66
+          },
+          "color": 9161296
+        }
+      },
+      {
+        "id": "m11",
+        "parent": "west_bough",
+        "transform": {
+          "pos": [
+            -1.68,
+            -0.95,
+            0.03
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.48,
+            "height": 2,
+            "depth": 0.62
+          },
+          "color": 7518275
+        }
+      },
+      {
+        "id": "m12",
+        "parent": "west_bough",
+        "transform": {
+          "pos": [
+            -2.32,
+            -1.11,
+            -0.03
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.54,
+            "height": 2.32,
+            "depth": 0.68
+          },
+          "color": 9555797
+        }
+      },
+      {
+        "id": "m13",
+        "parent": "north_bough",
+        "transform": {
+          "pos": [
+            0,
+            0.17,
+            1.13
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.34,
+            "height": 0.32,
+            "depth": 2.55
+          },
+          "color": 7359797
+        }
+      },
+      {
+        "id": "m14",
+        "parent": "north_bough",
+        "transform": {
+          "pos": [
+            0,
+            -0.69,
+            0.86
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.66,
+            "height": 1.48,
+            "depth": 0.52
+          },
+          "color": 9555797
+        }
+      },
+      {
+        "id": "m15",
+        "parent": "north_bough",
+        "transform": {
+          "pos": [
+            -0.04,
+            -0.93,
+            1.56
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.62,
+            "height": 1.96,
+            "depth": 0.48
+          },
+          "color": 7518275
+        }
+      },
+      {
+        "id": "m16",
+        "parent": "north_bough",
+        "transform": {
+          "pos": [
+            0.02,
+            -1.12,
+            2.2
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.68,
+            "height": 2.34,
+            "depth": 0.54
+          },
+          "color": 8701514
+        }
+      },
+      {
+        "id": "m17",
+        "parent": "south_bough",
+        "transform": {
+          "pos": [
+            0,
+            0.17,
+            -1.12
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.34,
+            "height": 0.32,
+            "depth": 2.45
+          },
+          "color": 7359797
+        }
+      },
+      {
+        "id": "m18",
+        "parent": "south_bough",
+        "transform": {
+          "pos": [
+            0,
+            -0.71,
+            -0.87
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.66,
+            "height": 1.52,
+            "depth": 0.52
+          },
+          "color": 8701514
+        }
+      },
+      {
+        "id": "m19",
+        "parent": "south_bough",
+        "transform": {
+          "pos": [
+            0.04,
+            -0.96,
+            -1.54
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.62,
+            "height": 2.02,
+            "depth": 0.48
+          },
+          "color": 7518275
+        }
+      },
+      {
+        "id": "m20",
+        "parent": "south_bough",
+        "transform": {
+          "pos": [
+            -0.02,
+            -1.14,
+            -2.16
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.68,
+            "height": 2.38,
+            "depth": 0.54
+          },
+          "color": 9555797
+        }
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1783921597952,
+        "provider": "gpt",
+        "data": "GNkNnyrxJL26TsCT6r//Wd71bbBg1YEVaQT61Jk6PR+ELc8vcygA2RdMYz/Gdt9K/n7S1VL94Sy3uDTsenUm3hF4fbuR95uKAG4GWCoGNzR2JlaLy6gUPEV/eIeNoGpS37VIfWCUpbnpNrm3deEFofTtAR4uOuLx93Yey/BBWH9GIg45p2kFCYsW0u97l8Twg1FVIQetElULitiC5xMFtAIAQaqx/JI7BNMDpLgOGDOk50uTLncTc7MtmsXzzXeyESUXBEyLgsgkgpfxdM9jCjy1Cy29yER/mqKpBRGcZI2k3hKHuLNVlxZzzKyggQH2i31ZVJLfoxRbUgOprud9kil5w7q804LIC5m/uH7tKz+zh9fKOOPFiyKctg7f1AEQ/6O85o2ILusvXdBoibe7trrF/yGQu8hrtZzWC9aF3h7X9XZ9IlULgciRAY8gVc/z5U6HUELPZuWKbHdIJGYGqL+z9sNdIvChEFcl9Ow9MR5OH3llyXrXeD69RxaZ1mYXrgKVNnyCoYMocUM4zjvg9wh8QyLOsyCH3UWsEGDFaNMSWLQ8WdF94pdOgndpOWmj0yII9VIebgpeERC5xuzhTg0GaWL/g+Vh0MDrnWmeY31VR11zjSAcxFzbMwPr0Sul6/fIRr0lbOonI5GIfEL8tfNFSPx72W+LVo95/X5oMFTfc3e/4bFRr/nJJ8FFK2TfKVpJnMvWntOKx/drot0p/jgM4vJ7SmlcEWVg7snO35A2GG/bPRNbBTxWY5t8Kicr/73rIsXT7fTwOLwCnPLKN6lJb0Ibg+3XWW2EXiBo2FqdXY+1jMBxKYAh24sNuxtjFaql8lpli+Z63oZZK91bqYZ/mQrj/w/YWwFjTPqW1l5+//NQ6wLrwzTXj0fN9j9FDud5Etdp/2Y19TeWxzN7d97IxhnP9ZWi76n4dttHf/QRI/vtvbW1lv6v7VPfqMF5jzJ3+AOu3vY55KJeJjN7aRZvyw==",
+        "edits": ""
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -1.0550000000000002,
+          3.255,
+          -1.0950000000000002
+        ],
+        "max": [
+          1.0949999999999995,
+          4.305,
+          1.0549999999999997
+        ],
+        "sourceNodeId": "m4"
+      },
+      {
+        "min": [
+          2,
+          0.8,
+          -0.38000000000000017
+        ],
+        "max": [
+          2.54,
+          3.2,
+          0.2999999999999999
+        ],
+        "sourceNodeId": "m8"
+      },
+      {
+        "min": [
+          -0.3100000000000004,
+          0.8199999999999998,
+          -2.45
+        ],
+        "max": [
+          0.36999999999999966,
+          3.1999999999999997,
+          -1.9100000000000001
+        ],
+        "sourceNodeId": "m20"
+      },
+      {
+        "min": [
+          -0.27000000000000035,
+          0.8599999999999999,
+          1.9100000000000001
+        ],
+        "max": [
+          0.4099999999999997,
+          3.1999999999999997,
+          2.45
+        ],
+        "sourceNodeId": "m16"
+      },
+      {
+        "min": [
+          -2.54,
+          0.8800000000000001,
+          -0.3900000000000001
+        ],
+        "max": [
+          -2,
+          3.2,
+          0.2899999999999999
+        ],
+        "sourceNodeId": "m12"
+      },
+      {
+        "min": [
+          -0.5200000000000004,
+          0,
+          -0.5300000000000001
+        ],
+        "max": [
+          0.2599999999999997,
+          1.3,
+          0.2499999999999999
+        ],
+        "sourceNodeId": "m0"
+      },
+      {
+        "min": [
+          1.3999999999999997,
+          1.1549999999999998,
+          -0.29000000000000015
+        ],
+        "max": [
+          1.8799999999999994,
+          3.2049999999999996,
+          0.32999999999999985
+        ],
+        "sourceNodeId": "m7"
+      },
+      {
+        "min": [
+          -0.22000000000000033,
+          1.18,
+          -1.8
+        ],
+        "max": [
+          0.3999999999999997,
+          3.2,
+          -1.32
+        ],
+        "sourceNodeId": "m19"
+      },
+      {
+        "min": [
+          -1.8700000000000003,
+          1.2000000000000002,
+          -0.30000000000000016
+        ],
+        "max": [
+          -1.3900000000000003,
+          3.2,
+          0.31999999999999984
+        ],
+        "sourceNodeId": "m11"
+      },
+      {
+        "min": [
+          -0.3000000000000004,
+          1.2399999999999998,
+          1.3
+        ],
+        "max": [
+          0.3199999999999996,
+          3.1999999999999997,
+          1.78
+        ],
+        "sourceNodeId": "m15"
+      },
+      {
+        "min": [
+          0.6499999999999997,
+          1.6549999999999998,
+          -0.35000000000000014
+        ],
+        "max": [
+          1.1699999999999997,
+          3.2049999999999996,
+          0.3099999999999999
+        ],
+        "sourceNodeId": "m6"
+      },
+      {
+        "min": [
+          -0.28000000000000036,
+          1.68,
+          -1.1500000000000001
+        ],
+        "max": [
+          0.37999999999999967,
+          3.2,
+          -0.6300000000000001
+        ],
+        "sourceNodeId": "m18"
+      }
+    ],
+    "sourceMeshCount": 21,
+    "candidateCount": 21,
+    "fallbackUsed": false
+  },
+  "mode": "voxel",
+  "provider": "provider-fallback",
+  "createdAt": 1783922422384,
+  "updatedAt": 1783922422384
+}

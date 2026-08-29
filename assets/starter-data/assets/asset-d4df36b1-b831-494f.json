@@ -1,0 +1,434 @@
+{
+  "id": "asset-d4df36b1-b831-494f",
+  "name": "棒球手套",
+  "prompt": "独立儿童棒球手套\nCoordinate contract: local Y+ is up, local Z+ is the front, entrance, or forward direction, and local X+ is right. Put doors, facades, openings, windshields, noses, seats, and other recognizable front details toward local Z+. For a modular repeated element, explicitly choose the long axis: side-by-side modules span local X with depth/front on local Z; traversal modules span local Z. Keep the model centered at its origin.\nCanonical dimensions contract: width=0.35, height=0.22, depth=0.12 world units. Keep the generated mesh within this centered bounding size.",
+  "tags": [
+    "indoor",
+    "child-safe"
+  ],
+  "modelJson": {
+    "name": "独立儿童棒球手套",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "glove",
+        "name": "棒球手套",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.275,
+            0.228,
+            0.139
+          ],
+          "center": [
+            -0.008,
+            0.003,
+            0.001
+          ],
+          "axes": [
+            [
+              0.992,
+              -0.0448,
+              -0.1181
+            ],
+            [
+              0.0234,
+              0.9841,
+              -0.176
+            ],
+            [
+              0.1241,
+              0.1719,
+              0.9773
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "glove",
+        "transform": {
+          "pos": [
+            0.012,
+            -0.018,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.22,
+            "height": 0.115,
+            "depth": 0.09
+          },
+          "color": 10112802
+        }
+      },
+      {
+        "id": "m1",
+        "parent": "glove",
+        "transform": {
+          "pos": [
+            0.008,
+            -0.078,
+            -0.004
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.17,
+            "height": 0.055,
+            "depth": 0.075
+          },
+          "color": 7615764
+        }
+      },
+      {
+        "id": "m2",
+        "parent": "glove",
+        "transform": {
+          "pos": [
+            -0.075,
+            0.066,
+            -0.002
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.043,
+            "height": 0.088,
+            "depth": 0.082
+          },
+          "color": 9126684
+        }
+      },
+      {
+        "id": "m3",
+        "parent": "glove",
+        "transform": {
+          "pos": [
+            -0.025,
+            0.075,
+            -0.002
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.045,
+            "height": 0.07,
+            "depth": 0.082
+          },
+          "color": 11033385
+        }
+      },
+      {
+        "id": "m4",
+        "parent": "glove",
+        "transform": {
+          "pos": [
+            0.026,
+            0.076,
+            -0.002
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.045,
+            "height": 0.068,
+            "depth": 0.082
+          },
+          "color": 11033385
+        }
+      },
+      {
+        "id": "m5",
+        "parent": "glove",
+        "transform": {
+          "pos": [
+            0.077,
+            0.064,
+            -0.002
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.041,
+            "height": 0.076,
+            "depth": 0.082
+          },
+          "color": 9126684
+        }
+      },
+      {
+        "id": "m6",
+        "parent": "glove",
+        "transform": {
+          "pos": [
+            -0.11,
+            -0.01,
+            0.04
+          ],
+          "quat": [
+            0.39,
+            -0.59,
+            0.59,
+            -0.4
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.09,
+            "height": 0.036,
+            "depth": 0.03
+          },
+          "color": 10112802
+        }
+      },
+      {
+        "id": "m7",
+        "parent": "glove",
+        "transform": {
+          "pos": [
+            -0.087,
+            0.024,
+            0.051
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.09,
+            "height": 0.052,
+            "depth": 0.012
+          },
+          "color": 6500372
+        }
+      },
+      {
+        "id": "m8",
+        "parent": "glove",
+        "transform": {
+          "pos": [
+            -0.108,
+            0.025,
+            0.058
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.007,
+            "height": 0.05,
+            "depth": 0.014
+          },
+          "color": 13666885
+        }
+      },
+      {
+        "id": "m9",
+        "parent": "glove",
+        "transform": {
+          "pos": [
+            -0.08,
+            0.025,
+            0.058
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.007,
+            "height": 0.05,
+            "depth": 0.014
+          },
+          "color": 13666885
+        }
+      },
+      {
+        "id": "m10",
+        "parent": "glove",
+        "transform": {
+          "pos": [
+            0.012,
+            -0.048,
+            0.051
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.118,
+            "height": 0.052,
+            "depth": 0.012
+          },
+          "color": 3875094
+        }
+      },
+      {
+        "id": "m11",
+        "parent": "glove",
+        "transform": {
+          "pos": [
+            0.01,
+            -0.075,
+            0.056
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.14,
+            "height": 0.009,
+            "depth": 0.009
+          },
+          "color": 13666885
+        }
+      },
+      {
+        "id": "m12",
+        "parent": "glove",
+        "transform": {
+          "pos": [
+            -0.055,
+            0.027,
+            0.054
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.006,
+            "height": 0.008,
+            "depth": 0.01
+          },
+          "color": 14721372
+        }
+      },
+      {
+        "id": "m13",
+        "parent": "glove",
+        "transform": {
+          "pos": [
+            -0.018,
+            0.027,
+            0.054
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.006,
+            "height": 0.008,
+            "depth": 0.01
+          },
+          "color": 14721372
+        }
+      },
+      {
+        "id": "m14",
+        "parent": "glove",
+        "transform": {
+          "pos": [
+            0.019,
+            0.027,
+            0.054
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.006,
+            "height": 0.008,
+            "depth": 0.01
+          },
+          "color": 14721372
+        }
+      },
+      {
+        "id": "m15",
+        "parent": "glove",
+        "transform": {
+          "pos": [
+            0.056,
+            0.027,
+            0.054
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.006,
+            "height": 0.008,
+            "depth": 0.01
+          },
+          "color": 14721372
+        }
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1787770179587,
+        "provider": "gpt",
+        "data": "hugJ5NMF+StfG6WJDqjZI9GurWXRSTL4P6ofRn4bscp25PjuSWWz6u7aAayf8KM0kYbO5FhBSfsq7b8QpMzbQhtgVYynt+OisI5ECwO45OOOK+l3NR2hLU+ObTgJwRbQBFAHNZxJ+GwiAoP6xAO9cX3x3Cj6I3IScoQ8zkQisRxTVAstl0D9cKPm1x3qFyqZJSfbnT+TrdwlXo94L0bHJDs6HnTUnVU6O5iDS7sM3OHa12Fhur40uU8YMNDWtMIlUpcdN76OoLCARDjdHPIDrIc/CiRSQeoj6romaKtC4Elb4bM73hPNaSDOGy2eNq1RMSvhznUhexOD5s+hguEn/t+HgQ57I5Vtr8X2qilstrCLCJFAwBnP8qx8tZHqu95BnYJMiWNK2mqtP0pDsm9hW9K52XQGid3P8C4WvdVLWZBaUZ89kHmnOfC5cRhKKOOob6tOWXZsJjoLiv6RPAj/0qEciBlW6R4KhLwc4ErOuSqMhj1d5aJ+KRdFGp/BShIcIQyoc5SFyRZrKGOl7T3pa0H3/9znVGOV/emZu3lC0AdL2/FnEUOG6W9xurtKYfTKYF5MIWgh1oUG/ci1O2TV5n/PXT/IG3CKOTr27F3X+pF4Q88GwghYzapvMZZopCmV4r3f6Og93DuKgMCMndHhYZPCbSOW+xAK8zpN2BMFOjXcl7IcXw2cFT/lafz0OUFh56TssrVPv5FHWonBdlfvgFFmwBrDsiuMQtZoByf/KPeNRY+iwzavrjKl7VfVkAXnz5KBzRMLEfsYU7FKamXRp55ehcu6LaUMuvKLyOy9vWbflHQTgtPO4C/NI7ybuPnmCLp0in8HziK8iqkvLFq4/9u0c7gEUcixI853UjK0gt3R2TeMIvpTdqnKoe1oREa7k42dzxnLBXIYOpxuH6V+ZBOwy5diOjp2cg==",
+        "edits": ""
+      },
+      "semanticSnapshot": {
+        "v": 1,
+        "auto": true,
+        "text": "独立儿童棒球手套 · 1组/16mesh · 世界坐标(Y上Z前), 原点=模型根\n# 阅读说明: G:=group行(可动画骨骼, 动画key用G:后的id; @p=pivot世界坐标; 倾(x,y,z)°=朝向偏离世界轴的欧拉角; 缩进=父子层级; 挂:=挂载于某组; G:id→id→…=chain折叠行, 每个id都是可独立动画的group, chain×N=waypoint数)\n# M:=mesh行(label[id 几何 @(世界坐标)], label可省略; ×N=for循环批量件(锚点=代表实例); cyl (起)→(末)或 轴上(Y)等方位词=延伸方向; 薄向=板面法向(扁板); 挂载组双代表=最大件+朝向件(嘴/管/檐所在); 无方向标注=均匀块(三向相近,如头),默认面向前(Z); 对称×2=镜像对)\nG:glove 棒球手套 @p(0,0,0)\n  M:[m0 box 0.22×0.12×0.09 (0,0,0) 轴右(X)]",
+        "stats": {
+          "groups": 1,
+          "meshes": 16,
+          "labeledMeshes": 0,
+          "labelCoverage": 0,
+          "batchLabels": 0,
+          "autoChains": 0,
+          "snapshotChars": 430
+        }
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -0.13161038381434098,
+          0,
+          -0.055
+        ],
+        "max": [
+          0.13161038381434098,
+          0.2155,
+          0.055
+        ],
+        "sourceNodeId": "asset-bounds"
+      }
+    ],
+    "sourceMeshCount": 16,
+    "candidateCount": 0,
+    "fallbackUsed": true
+  },
+  "footprintRadius": 0.13161038381434098,
+  "sizeClass": "small",
+  "mode": "voxel",
+  "provider": "gpt",
+  "createdAt": 1787770179497,
+  "updatedAt": 1787770179497
+}

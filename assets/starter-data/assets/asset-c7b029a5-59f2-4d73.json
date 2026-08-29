@@ -1,0 +1,696 @@
+{
+  "id": "asset-c7b029a5-59f2-4d73",
+  "name": "恐龙",
+  "prompt": "单独一个儿童霸王龙玩具模型，友好卡通比例，可独立站立，不包含底座、植物或其他动物\nCoordinate contract: local Y+ is up, local Z+ is the front, entrance, or forward direction, and local X+ is right. Put doors, facades, openings, windshields, noses, seats, and other recognizable front details toward local Z+. For a modular repeated element, explicitly choose the long axis: side-by-side modules span local X with depth/front on local Z; traversal modules span local Z. Keep the model centered at its origin.\nCanonical dimensions contract: width=0.5, height=0.35, depth=0.2 world units. Keep the generated mesh within this centered bounding size.",
+  "modelJson": {
+    "name": "友好儿童霸王龙玩具",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "body",
+        "name": "躯干",
+        "transform": {
+          "pos": [
+            0,
+            -0.01,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.586,
+            0.451,
+            0.238
+          ],
+          "center": [
+            0,
+            -0.023,
+            0.012
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              0.9615,
+              0.2749
+            ],
+            [
+              0,
+              -0.2749,
+              0.9615
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "head",
+        "name": "头部",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0,
+            0.085,
+            0.025
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.25,
+            0.133,
+            0.126
+          ],
+          "center": [
+            0,
+            0.044,
+            0.023
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              0.9499,
+              0.3126
+            ],
+            [
+              0,
+              -0.3126,
+              0.9499
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "tail",
+        "name": "尾巴",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0,
+            0.005,
+            -0.065
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.2,
+            0.107,
+            0.089
+          ],
+          "center": [
+            0,
+            -0.012,
+            0.008
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              0.9795,
+              0.2015
+            ],
+            [
+              0,
+              -0.2015,
+              0.9795
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "left_leg",
+        "name": "左腿",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            -0.09,
+            -0.045,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.247,
+            0.166,
+            0.106
+          ],
+          "center": [
+            -0.053,
+            -0.069,
+            0.003
+          ],
+          "axes": [
+            [
+              0.9075,
+              0.4065,
+              -0.1056
+            ],
+            [
+              -0.4155,
+              0.9056,
+              -0.0852
+            ],
+            [
+              0.061,
+              0.1212,
+              0.9908
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "right_leg",
+        "name": "右腿",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0.09,
+            -0.045,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.247,
+            0.166,
+            0.106
+          ],
+          "center": [
+            0.053,
+            -0.069,
+            0.003
+          ],
+          "axes": [
+            [
+              0.9075,
+              -0.4065,
+              0.1056
+            ],
+            [
+              0.4155,
+              0.9056,
+              -0.0852
+            ],
+            [
+              -0.061,
+              0.1212,
+              0.9908
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "left_arm",
+        "name": "左短臂",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            -0.115,
+            0.065,
+            0.035
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.075,
+            0.035,
+            0.035
+          ],
+          "center": [
+            -0.03,
+            -0.02,
+            0.02
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "right_arm",
+        "name": "右短臂",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0.115,
+            0.065,
+            0.035
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.075,
+            0.035,
+            0.035
+          ],
+          "center": [
+            0.03,
+            -0.02,
+            0.02
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0,
+            0.005,
+            -0.005
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.28,
+            "height": 0.16,
+            "depth": 0.13
+          },
+          "color": 6535258
+        }
+      },
+      {
+        "id": "m1",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0,
+            0.085,
+            0.005
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.2,
+            "height": 0.06,
+            "depth": 0.12
+          },
+          "color": 7916648
+        }
+      },
+      {
+        "id": "m2",
+        "parent": "head",
+        "transform": {
+          "pos": [
+            0,
+            0.045,
+            0.02
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.25,
+            "height": 0.11,
+            "depth": 0.09
+          },
+          "color": 7325793
+        }
+      },
+      {
+        "id": "m3",
+        "parent": "head",
+        "transform": {
+          "pos": [
+            0,
+            0.0125,
+            0.0425
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.2,
+            "height": 0.045,
+            "depth": 0.055
+          },
+          "color": 9163382
+        }
+      },
+      {
+        "id": "m4",
+        "parent": "head",
+        "transform": {
+          "pos": [
+            0,
+            0.008,
+            0.071
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.13,
+            "height": 0.012,
+            "depth": 0.008
+          },
+          "color": 7420731
+        }
+      },
+      {
+        "id": "m5",
+        "parent": "head",
+        "transform": {
+          "pos": [
+            -0.073,
+            0.065,
+            0.069
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.038,
+            "height": 0.035,
+            "depth": 0.008
+          },
+          "color": 16777215
+        }
+      },
+      {
+        "id": "m6",
+        "parent": "head",
+        "transform": {
+          "pos": [
+            0.073,
+            0.065,
+            0.069
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.038,
+            "height": 0.035,
+            "depth": 0.008
+          },
+          "color": 16777215
+        }
+      },
+      {
+        "id": "m7",
+        "parent": "head",
+        "transform": {
+          "pos": [
+            -0.073,
+            0.063,
+            0.074
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.014,
+            "height": 0.018,
+            "depth": 0.006
+          },
+          "color": 2437929
+        }
+      },
+      {
+        "id": "m8",
+        "parent": "head",
+        "transform": {
+          "pos": [
+            0.073,
+            0.063,
+            0.074
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.014,
+            "height": 0.018,
+            "depth": 0.006
+          },
+          "color": 2437929
+        }
+      },
+      {
+        "id": "m9",
+        "parent": "tail",
+        "transform": {
+          "pos": [
+            0,
+            -0.01,
+            0.01
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.2,
+            "height": 0.09,
+            "depth": 0.07
+          },
+          "color": 5941840
+        }
+      },
+      {
+        "id": "m10",
+        "parent": "tail",
+        "transform": {
+          "pos": [
+            0,
+            -0.03,
+            -0.01
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.11,
+            "height": 0.055,
+            "depth": 0.05
+          },
+          "color": 5152328
+        }
+      },
+      {
+        "id": "m11",
+        "parent": "left_leg",
+        "transform": {
+          "pos": [
+            -0.01,
+            -0.05,
+            -0.005
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.1,
+            "height": 0.13,
+            "depth": 0.08
+          },
+          "color": 5744974
+        }
+      },
+      {
+        "id": "m12",
+        "parent": "left_leg",
+        "transform": {
+          "pos": [
+            -0.1,
+            -0.1025,
+            0.01
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.12,
+            "height": 0.035,
+            "depth": 0.095
+          },
+          "color": 7849317
+        }
+      },
+      {
+        "id": "m13",
+        "parent": "right_leg",
+        "transform": {
+          "pos": [
+            0.01,
+            -0.05,
+            -0.005
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.1,
+            "height": 0.13,
+            "depth": 0.08
+          },
+          "color": 5744974
+        }
+      },
+      {
+        "id": "m14",
+        "parent": "right_leg",
+        "transform": {
+          "pos": [
+            0.1,
+            -0.1025,
+            0.01
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.12,
+            "height": 0.035,
+            "depth": 0.095
+          },
+          "color": 7849317
+        }
+      },
+      {
+        "id": "m15",
+        "parent": "left_arm",
+        "transform": {
+          "pos": [
+            -0.03,
+            -0.02,
+            0.02
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.075,
+            "height": 0.035,
+            "depth": 0.035
+          },
+          "color": 6666330
+        }
+      },
+      {
+        "id": "m16",
+        "parent": "right_arm",
+        "transform": {
+          "pos": [
+            0.03,
+            -0.02,
+            0.02
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.075,
+            "height": 0.035,
+            "depth": 0.035
+          },
+          "color": 6666330
+        }
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1787766642735,
+        "provider": "gpt",
+        "data": "QoIHDGBeIIGeCQXbR+08gJsq9qbpUHGMBruOgOcv42tu/RYW7cBdeRFSM5nxsiNdaA5LAX0Eui3vUfd/EL6Rl0tJMsdxhtgWPiw+asEuxyAUrJvpM8w5vwqX6U1hs5KvxItLHH6FL9LdqO7pvQgWW5/z8iFxEpeOoFhoNPJwnZbF6J4RfWPb23jKCTh9RXU96793zRimDU+cD8Pz848dDzObpOdJiQUwT6LMjgFvoD2zbkNTs2fY0w3mor8UAqWfYGfafCQkH8jU0mPbOsjXcsmM8/JjAdzTYoqPCKaGcm+1uv7Oolr4Vl740ftN54nV5AVCkVwIfWSKtqGL/6clGOSDMAcXVU2xfTM5LrCPAz2JU0p2zdSGswHLI63AR96L26KdxgjeZF3ML4aKaA2T4s/D08EK6vBBIyAiCCTiKyBoknqqQjGiDLeZiyvPKpOnIA1jgdWuXt3hRrlBGZYe5ds7gvL8ZQ0IKkmSzaxiBsT7FUFQx/hZOnrzvd1YS1l7DnISMBLuvEYFe9wuRUxQ2/ME3DtDLgZJDjSJJbbol3ij6ahLP/Sm9I3TZemU8t557ZPsMSR2C17Fq8E4EaL7gmyn4RTqXNARSdpAfeIXakUcz30Imav4npH44t1H3iAztOov9bSen+JXsomuroCqsikZYEOKSlTTFn34pzad9IaX+6sJVuSqg7syVOZpCEBpqfDKa0Ty8ex1Fa/MyTsSThy1YASYuJp9MBTSJzSbj3v/TGTqb8/FPBMZ13RfSnq3mC0Grp7YE9KPlU7Ht9CunvDuaODtADW/lXOBWJt55c8rlC+Po0b2sliFbe2ZlOFHeAYu9ymCGQy0dkpBxmaGEw1zMvBdFR6kNfsU5tuHY3h30njPUKb09O/Ec5bObvIgYi+576Zzx0OQiNYux6EPfU0QsO0yI2epSl7T",
+        "edits": ""
+      },
+      "semanticSnapshot": {
+        "v": 1,
+        "auto": true,
+        "text": "友好儿童霸王龙玩具 · 7组/17mesh · 世界坐标(Y上Z前), 原点=模型根\n# 阅读说明: G:=group行(可动画骨骼, 动画key用G:后的id; @p=pivot世界坐标; 倾(x,y,z)°=朝向偏离世界轴的欧拉角; 缩进=父子层级; 挂:=挂载于某组; G:id→id→…=chain折叠行, 每个id都是可独立动画的group, chain×N=waypoint数)\n# M:=mesh行(label[id 几何 @(世界坐标)], label可省略; ×N=for循环批量件(锚点=代表实例); cyl (起)→(末)或 轴上(Y)等方位词=延伸方向; 薄向=板面法向(扁板); 挂载组双代表=最大件+朝向件(嘴/管/檐所在); 无方向标注=均匀块(三向相近,如头),默认面向前(Z); 对称×2=镜像对)\nG:body 躯干 @p(0,0,0)\n  M:[m0 box 0.28×0.16×0.13 (0,0,0) 轴右(X)]\n  G:head 头部 @p(0,0.1,0) 挂:body\n    M:[m2 box 0.25×0.11×0.09 (0,0.1,0) 轴右(X)]\n  G:tail 尾巴 @p(0,0,-0.1) 挂:body\n    M:[m9 box 0.2×0.09×0.07 (0,0,-0.1) 轴右(X)]\n  G:left_leg 左腿 @p(-0.1,-0.1,0) 挂:body\n    M:[m11 box 0.1×0.13×0.08 (-0.1,-0.1,0)] | M:[m12 box 0.12×0.04×0.1 (-0.2,-0.2,0) 薄向上(Y)]\n  G:right_leg 右腿 @p(0.1,-0.1,0) 挂:body\n    M:[m13 box 0.1×0.13×0.08 (0.1,-0.1,0)] | M:[m14 box 0.12×0.04×0.1 (0.2,-0.2,0) 薄向上(Y)]\n  G:left_arm 左短臂 @p(-0.1,0.1,0) 挂:body\n    M:[m15 box 0.08×0.04×0.04 (-0.1,0,0.1) 轴右(X)]\n  G:right_arm 右短臂 @p(0.1,0.1,0) 挂:body\n    M:[m16 box 0.08×0.04×0.04 (0.1,0,0.1) 轴右(X)]",
+        "stats": {
+          "groups": 7,
+          "meshes": 17,
+          "labeledMeshes": 0,
+          "labelCoverage": 0,
+          "batchLabels": 0,
+          "autoChains": 0,
+          "snapshotChars": 1022
+        }
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -0.25,
+          0,
+          -0.10200000000000001
+        ],
+        "max": [
+          0.25,
+          0.35,
+          0.10200000000000001
+        ],
+        "sourceNodeId": "asset-bounds"
+      }
+    ],
+    "sourceMeshCount": 17,
+    "candidateCount": 0,
+    "fallbackUsed": true
+  },
+  "footprintRadius": 0.25,
+  "sizeClass": "small",
+  "mode": "voxel",
+  "provider": "gpt",
+  "createdAt": 1787766647305,
+  "updatedAt": 1787766647305
+}

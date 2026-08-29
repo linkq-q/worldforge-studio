@@ -1,0 +1,325 @@
+{
+  "id": "asset-b6ffe76f-6993-490e",
+  "name": "MP3音乐播放器",
+  "prompt": "A single reusable pocket MP3 music player with small inactive display, tactile navigation controls and a visible headphone socket, approximately 0.11 meters tall and intentionally small handheld scale, no headphones, floor, background, or extra objects",
+  "tags": [
+    "electronics",
+    "music",
+    "prop"
+  ],
+  "modelJson": {
+    "name": "口袋MP3音乐播放器",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "player",
+        "name": "播放器机身",
+        "transform": {
+          "pos": [
+            0,
+            0.055,
+            0
+          ]
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ],
+        "_obb": {
+          "size": [
+            0.074,
+            0.119,
+            0.02
+          ],
+          "center": [
+            0,
+            0,
+            0
+          ],
+          "axes": [
+            [
+              0.9834,
+              -0.1783,
+              0.0323
+            ],
+            [
+              0.1798,
+              0.9822,
+              -0.0533
+            ],
+            [
+              -0.0222,
+              0.0582,
+              0.9981
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "player",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.055,
+            "height": 0.11,
+            "depth": 0.012
+          },
+          "color": 7305088
+        }
+      },
+      {
+        "id": "m1",
+        "parent": "player",
+        "transform": {
+          "pos": [
+            0,
+            0.028,
+            0.0065
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.045,
+            "height": 0.032,
+            "depth": 0.0015
+          },
+          "color": 1581350
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass"
+          }
+        ]
+      },
+      {
+        "id": "m2",
+        "parent": "player",
+        "transform": {
+          "pos": [
+            0,
+            -0.014,
+            0.0068
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.017,
+            "height": 0.017,
+            "depth": 0.002
+          },
+          "color": 13159889
+        }
+      },
+      {
+        "id": "m3",
+        "parent": "player",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0.0068
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.012,
+            "height": 0.006,
+            "depth": 0.002
+          },
+          "color": 11449786
+        }
+      },
+      {
+        "id": "m4",
+        "parent": "player",
+        "transform": {
+          "pos": [
+            0,
+            -0.028,
+            0.0068
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.012,
+            "height": 0.006,
+            "depth": 0.002
+          },
+          "color": 11449786
+        }
+      },
+      {
+        "id": "m5",
+        "parent": "player",
+        "transform": {
+          "pos": [
+            -0.014,
+            -0.014,
+            0.0068
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.006,
+            "height": 0.012,
+            "depth": 0.002
+          },
+          "color": 11449786
+        }
+      },
+      {
+        "id": "m6",
+        "parent": "player",
+        "transform": {
+          "pos": [
+            0.014,
+            -0.014,
+            0.0068
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.006,
+            "height": 0.012,
+            "depth": 0.002
+          },
+          "color": 11449786
+        }
+      },
+      {
+        "id": "m7",
+        "parent": "player",
+        "transform": {
+          "pos": [
+            0.017,
+            0.0555,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.011,
+            "height": 0.0015,
+            "depth": 0.009
+          },
+          "color": 2435115
+        }
+      },
+      {
+        "id": "m8",
+        "parent": "player",
+        "transform": {
+          "pos": [
+            0.017,
+            0.0563,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.006,
+            "height": 0.001,
+            "depth": 0.005
+          },
+          "color": 329223
+        }
+      },
+      {
+        "id": "m9",
+        "parent": "player",
+        "transform": {
+          "pos": [
+            -0.029,
+            0.011,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.003,
+            "height": 0.016,
+            "depth": 0.003
+          },
+          "color": 3422526
+        }
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1786871517345,
+        "provider": "gpt",
+        "data": "EhVUyuQp1y0q/7xkC8Lok3mnhzNOxeMDskx4fr1U8bWVF06rCmO8/KFuYCHjSlPMcWCXsmv6PKJMRAqfek1woavXliBf1iBCyejP0IwX2D578pmIFqYBhiWoeZ7/a6ac5+ftGPVIY8gUthm8nh7yW791OpBCE0pNiFpGSfYzmUN3VDQpDXBeFUb44kpeea124Kjsqq4qAItvXA2+HtK6VFo+Wr3lmkvRdrG8VI/dXoKIEvksKuQgzP7y12s1UlSNp8CDyPhN3xrbX4JfG/+Nr8+RLAwO8S7oz2PFl7SUpVfoQhONrvLOIQnmi9dBkcq41nhtTomUJfAVLpGjx3fz1kd1eA4wuowT6VnKjSnHRbXFgY0eGQTysmJIlbp3Gm3IHP/RXvGPBWajdkhHr0ackRW/cuL0YCO/PvikJCmWuZOodJUkHSJJ8HDB8dpizv7dqT91j4eQl4dXzhi+nYivaaJdWkZPI0gx8mEO7terSICD+UqtvSGOqObfSNSrGYRBlL5P5XcqYd0d+vlmC3lmREsKv5V776dpgeNqzRR7JS6njE+4puAoPwaFq1AZcKT5+JMnK10curQspxX+qIQTZHeRrV10wMTJNxTM1goyP4ro1PqTtcsw9gRu17uEmFDOg8WLvmn2IvY6Ey+i8Kyu6wEI6f74eemNff5DAMoQ3CGf5zK8/xiBLQt+E6Xce7he",
+        "edits": ""
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -0.03075,
+          0,
+          -0.0089
+        ],
+        "max": [
+          0.03075,
+          0.11630000000000001,
+          0.0089
+        ],
+        "sourceNodeId": "asset-bounds"
+      }
+    ],
+    "sourceMeshCount": 10,
+    "candidateCount": 1,
+    "fallbackUsed": true
+  },
+  "footprintRadius": 0.1,
+  "sizeClass": "small",
+  "mode": "voxel",
+  "provider": "gpt",
+  "libraryId": "library-d7967286-cebf-4f99",
+  "libraryMetadata": {
+    "tags": [
+      "mp3player",
+      "musicplayer",
+      "electronics",
+      "handhelddevice"
+    ],
+    "applicableZones": [
+      "settlement"
+    ],
+    "repeatable": true,
+    "landmark": false,
+    "enabled": true,
+    "priority": 0.5,
+    "analysisStatus": "ready",
+    "rotation": "random"
+  },
+  "createdAt": 1787817510135,
+  "updatedAt": 1787817510135
+}

@@ -1,0 +1,1097 @@
+{
+  "id": "asset-8639bb08-a04f-4a70",
+  "name": "小狗玩偶",
+  "prompt": "小狗玩偶",
+  "modelJson": {
+    "name": "小狗玩偶",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "body",
+        "name": "身体",
+        "transform": {
+          "pos": [
+            0,
+            0.9,
+            0
+          ]
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "fur"
+          }
+        ],
+        "_obb": {
+          "size": [
+            1.581,
+            3.671,
+            3.191
+          ],
+          "center": [
+            0,
+            0.686,
+            -0.06
+          ],
+          "axes": [
+            [
+              1,
+              -0.0002,
+              0.0003
+            ],
+            [
+              0.0001,
+              0.9354,
+              0.3535
+            ],
+            [
+              -0.0004,
+              -0.3535,
+              0.9354
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "head",
+        "name": "头部",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0,
+            0.75,
+            0.55
+          ]
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "fur"
+          }
+        ],
+        "_obb": {
+          "size": [
+            1.58,
+            1.766,
+            1.772
+          ],
+          "center": [
+            0,
+            0.53,
+            0.288
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              0.9645,
+              0.264
+            ],
+            [
+              0,
+              -0.264,
+              0.9645
+            ]
+          ],
+          "_mainAxis": 2
+        }
+      },
+      {
+        "id": "ear_l",
+        "name": "左耳",
+        "parent": "head",
+        "transform": {
+          "pos": [
+            -0.5,
+            0.9,
+            0.1
+          ]
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "fur"
+          }
+        ],
+        "_obb": {
+          "size": [
+            0.42,
+            0.8,
+            0.38
+          ],
+          "center": [
+            -0.08,
+            0.17,
+            -0.09
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "ear_r",
+        "name": "右耳",
+        "parent": "head",
+        "transform": {
+          "pos": [
+            0.5,
+            0.9,
+            0.1
+          ]
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "fur"
+          }
+        ],
+        "_obb": {
+          "size": [
+            0.42,
+            0.8,
+            0.38
+          ],
+          "center": [
+            0.08,
+            0.17,
+            -0.09
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "leg_fl",
+        "name": "左前腿",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            -0.42,
+            0.05,
+            0.55
+          ]
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "fur"
+          }
+        ],
+        "_obb": {
+          "size": [
+            0.48,
+            1.022,
+            0.687
+          ],
+          "center": [
+            0,
+            -0.45,
+            0.037
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              0.989,
+              -0.1478
+            ],
+            [
+              0,
+              0.1478,
+              0.989
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "leg_fr",
+        "name": "右前腿",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0.42,
+            0.05,
+            0.55
+          ]
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "fur"
+          }
+        ],
+        "_obb": {
+          "size": [
+            0.48,
+            1.022,
+            0.687
+          ],
+          "center": [
+            0,
+            -0.45,
+            0.037
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              0.989,
+              -0.1478
+            ],
+            [
+              0,
+              0.1478,
+              0.989
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "leg_bl",
+        "name": "左后腿",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            -0.42,
+            0.05,
+            -0.55
+          ]
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "fur"
+          }
+        ],
+        "_obb": {
+          "size": [
+            0.52,
+            1.016,
+            0.732
+          ],
+          "center": [
+            0,
+            -0.48,
+            0.021
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              0.9784,
+              -0.2069
+            ],
+            [
+              0,
+              0.2069,
+              0.9784
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "leg_br",
+        "name": "右后腿",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0.42,
+            0.05,
+            -0.55
+          ]
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "fur"
+          }
+        ],
+        "_obb": {
+          "size": [
+            0.52,
+            1.016,
+            0.732
+          ],
+          "center": [
+            0,
+            -0.48,
+            0.021
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              0.9784,
+              -0.2069
+            ],
+            [
+              0,
+              0.2069,
+              0.9784
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "tail",
+        "name": "尾巴",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0,
+            0.35,
+            -0.82
+          ]
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "fur"
+          }
+        ],
+        "_obb": {
+          "size": [
+            0.343,
+            0.996,
+            0.304
+          ],
+          "center": [
+            0,
+            0.15,
+            -0.48
+          ],
+          "axes": [
+            [
+              0.9999,
+              -0.0133,
+              -0.0087
+            ],
+            [
+              0.0056,
+              0.8051,
+              -0.593
+            ],
+            [
+              0.0149,
+              0.5929,
+              0.8051
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "mount01_collar",
+        "name": "项圈",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0,
+            0.6,
+            0.5
+          ]
+        },
+        "mounted": true,
+        "_obb": {
+          "size": [
+            1.3,
+            0.39,
+            1.215
+          ],
+          "center": [
+            0,
+            0.106,
+            0.056
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              0.9942,
+              0.1078
+            ],
+            [
+              0,
+              -0.1078,
+              0.9942
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0,
+            0.25,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.25,
+            "height": 1.15,
+            "depth": 1.75
+          },
+          "color": 13208402
+        }
+      },
+      {
+        "id": "m1",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0,
+            0.3,
+            0.9
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.8,
+            "height": 0.65,
+            "depth": 0.12
+          },
+          "color": 15187334
+        }
+      },
+      {
+        "id": "m2",
+        "parent": "head",
+        "transform": {
+          "pos": [
+            0,
+            0.5,
+            0.1
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.35,
+            "height": 1.2,
+            "depth": 1.15
+          },
+          "color": 13208402
+        }
+      },
+      {
+        "id": "m3",
+        "parent": "head",
+        "transform": {
+          "pos": [
+            0,
+            0.33,
+            0.73
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.8,
+            "height": 0.48,
+            "depth": 0.55
+          },
+          "color": 15187334
+        }
+      },
+      {
+        "id": "m4",
+        "parent": "head",
+        "transform": {
+          "pos": [
+            0,
+            0.47,
+            1.07
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.28,
+            "height": 0.22,
+            "depth": 0.18
+          },
+          "color": 3482910
+        }
+      },
+      {
+        "id": "m5",
+        "parent": "head",
+        "transform": {
+          "pos": [
+            -0.3,
+            0.73,
+            0.68
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.16,
+            "height": 0.2,
+            "depth": 0.1
+          },
+          "color": 2366232
+        }
+      },
+      {
+        "id": "m6",
+        "parent": "head",
+        "transform": {
+          "pos": [
+            0.3,
+            0.73,
+            0.68
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.16,
+            "height": 0.2,
+            "depth": 0.1
+          },
+          "color": 2366232
+        }
+      },
+      {
+        "id": "m7",
+        "parent": "ear_l",
+        "transform": {
+          "pos": [
+            -0.08,
+            0.17,
+            -0.09
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.42,
+            "height": 0.8,
+            "depth": 0.38
+          },
+          "color": 9132087
+        }
+      },
+      {
+        "id": "m8",
+        "parent": "ear_r",
+        "transform": {
+          "pos": [
+            0.08,
+            0.17,
+            -0.09
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.42,
+            "height": 0.8,
+            "depth": 0.38
+          },
+          "color": 9132087
+        }
+      },
+      {
+        "id": "m9",
+        "parent": "leg_fl",
+        "transform": {
+          "pos": [
+            0,
+            -0.45,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.42,
+            "height": 0.95,
+            "depth": 0.48
+          },
+          "color": 13208402
+        }
+      },
+      {
+        "id": "m10",
+        "parent": "leg_fl",
+        "transform": {
+          "pos": [
+            0,
+            -0.8,
+            0.13
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.48,
+            "height": 0.22,
+            "depth": 0.58
+          },
+          "color": 15187334
+        }
+      },
+      {
+        "id": "m11",
+        "parent": "leg_fr",
+        "transform": {
+          "pos": [
+            0,
+            -0.45,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.42,
+            "height": 0.95,
+            "depth": 0.48
+          },
+          "color": 13208402
+        }
+      },
+      {
+        "id": "m12",
+        "parent": "leg_fr",
+        "transform": {
+          "pos": [
+            0,
+            -0.8,
+            0.13
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.48,
+            "height": 0.22,
+            "depth": 0.58
+          },
+          "color": 15187334
+        }
+      },
+      {
+        "id": "m13",
+        "parent": "leg_bl",
+        "transform": {
+          "pos": [
+            0,
+            -0.47,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.48,
+            "height": 0.9,
+            "depth": 0.52
+          },
+          "color": 12154950
+        }
+      },
+      {
+        "id": "m14",
+        "parent": "leg_bl",
+        "transform": {
+          "pos": [
+            0,
+            -0.8,
+            0.13
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.52,
+            "height": 0.22,
+            "depth": 0.62
+          },
+          "color": 15187334
+        }
+      },
+      {
+        "id": "m15",
+        "parent": "leg_br",
+        "transform": {
+          "pos": [
+            0,
+            -0.47,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.48,
+            "height": 0.9,
+            "depth": 0.52
+          },
+          "color": 12154950
+        }
+      },
+      {
+        "id": "m16",
+        "parent": "leg_br",
+        "transform": {
+          "pos": [
+            0,
+            -0.8,
+            0.13
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.52,
+            "height": 0.22,
+            "depth": 0.62
+          },
+          "color": 15187334
+        }
+      },
+      {
+        "id": "m17",
+        "parent": "tail",
+        "transform": {
+          "pos": [
+            0,
+            0.15,
+            -0.48
+          ],
+          "quat": [
+            -0.22,
+            0.22,
+            0.67,
+            0.67
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1,
+            "height": 0.34,
+            "depth": 0.3
+          },
+          "color": 12154950
+        }
+      },
+      {
+        "id": "m18",
+        "parent": "mount01_collar",
+        "transform": {
+          "pos": [
+            0,
+            0.16,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.3,
+            "height": 0.18,
+            "depth": 1.08
+          },
+          "color": 14238017
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "fabric"
+          }
+        ]
+      },
+      {
+        "id": "m19",
+        "parent": "mount01_collar",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0.58
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.22,
+            "height": 0.28,
+            "depth": 0.12
+          },
+          "color": 14724402
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "gold"
+          }
+        ]
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1787828781068,
+        "provider": "glm",
+        "data": "om0UEFDFSKpmL5recemXSYI6E4hhu/ltIHVs8Xz7z80haSSz7kvAn29VMDc7Ya5JDYZGwrcf/yMA6XQMGwKdLoIZFHN9uWV19ZiT5ztXMpYiCedNmtIoa9uU2qbNsn/qkCNO0+Yi0c/7qKnraAx8l7wUtnLupyhRSnu2GTwzSjPW9+yQwfzk+A/S+UzPjpLa4IkogpbXiaR+fFLvT7fz9Vb2lfEDXHCGes+yYi3FXj3hlshQYjYJbxPiAmZ9zwZN69URgKPXEndfM9yTzn7cRmKjFt1d1Y98Jvb/qDT0C2UbjXLa0A6OSMYxnoiJNnVAkSHv0+wSzcZfHv8kA7vFiusk0DAKl7wSr2CBf5KtlzVABf2BuO7Yl+/5e4PJlIaeFIenmlh03Jz56yyUGTzufIsLU7uUE/pWC3W2/mN9OpO8o9R7z5Y5njZ02FbQqOll5KfOSDCdji4CMkb4Feg+Tdo00plP0VQsZb9DsnrMBp+KQUtoE3phz1zu5U7itcrD2mrnkc4hNa2pZtlnMQ3shWKh5oj69LZL9RlQpdTQj3TJEJheF/0d4W0Wkqg8Aae5mqPn8dDGQU5kkdLROTTp7p+7oOTxGlpCahjX3vG+XjAXqy43BlYValO4JF5S4/O4jhut9HCGMPglZ7UBeTq9JlS8aXZpZjHEOG8xJaz/kohLMMAXIIK4t3rDgkU6C9Mu359EWmwJOJPLwoe9IFJP66VRd3m6VIxkR/3KR4Ezsprt+M77Ls8v8cv42wnEE6cnOO9eWHYPQFnUkAlbqMXeY4KCPsrtnsdQ0QaZbPH8qrRc7OvpR8cFn/SV8hzSKeFmxBTbMcFqhvBthTiFfIUqHm4+2vamseNBAAYzVWm6MoZThTtHhxcUbQRC5rMgcu9MRDAYaJkYXPun/G3UIf5O0qT7rKBfARfwqk4+fnvMSJP5Wj1FnapMEEHHWb80KtWMvhsATBmcWUisigQE5DPOY4EjbYZbcKLuBhzNKPTrMXfjo8iw5tYeLlh/3CYsScdKwiWLZinby68vjlp3nL2fW2bn3gIppzgRRqfdsgPr378BowLz9g53a3mceCK+89sVGeqxda7haAc47J2xZ5gVnLYbFCZ2eAV/ciyTEcg=",
+        "edits": ""
+      },
+      "mounts": [
+        {
+          "id": "mount01_collar",
+          "mountedGroupId": "mount01_collar",
+          "name": "项圈",
+          "source": {
+            "type": "codegen"
+          },
+          "description": "",
+          "visible": true,
+          "ts": 1787828781068
+        }
+      ],
+      "semanticSnapshot": {
+        "v": 1,
+        "auto": true,
+        "text": "小狗玩偶 · 10组/20mesh · 世界坐标(Y上Z前), 原点=模型根\n# 阅读说明: G:=group行(可动画骨骼, 动画key用G:后的id; @p=pivot世界坐标; 倾(x,y,z)°=朝向偏离世界轴的欧拉角; 缩进=父子层级; 挂:=挂载于某组; G:id→id→…=chain折叠行, 每个id都是可独立动画的group, chain×N=waypoint数)\n# M:=mesh行(label[id 几何 @(世界坐标)], label可省略; ×N=for循环批量件(锚点=代表实例); cyl (起)→(末)或 轴上(Y)等方位词=延伸方向; 薄向=板面法向(扁板); 挂载组双代表=最大件+最远有向件(刃/嘴/管所在端); 无方向标注=均匀块(三向相近,如头),默认面向前(Z); 对称×2=镜像对)\nG:body 身体 @p(0,0.9,0)\n  M:[m0 box 1.3×1.2×1.8 (0,1.2,0)]\n  G:head 头部 @p(0,1.7,0.6)\n    M:[m2 box 1.4×1.2×1.2 (0,2.2,0.7)]\n    G:ear_l 左耳 @p(-0.5,2.6,0.7)\n      M:[m7 box 0.42×0.8×0.38 (-0.6,2.7,0.6) 轴上(Y)]\n    G:ear_r 右耳 @p(0.5,2.6,0.7)\n      M:[m8 box 0.42×0.8×0.38 (0.6,2.7,0.6) 轴上(Y)]\n  G:leg_fl 左前腿 @p(-0.4,1,0.6)\n    M:[m9 box 0.42×0.95×0.48 (-0.4,0.5,0.6) 轴上(Y)]\n  G:leg_fr 右前腿 @p(0.4,1,0.6)\n    M:[m11 box 0.42×0.95×0.48 (0.4,0.5,0.6) 轴上(Y)]\n  G:leg_bl 左后腿 @p(-0.4,1,-0.5)\n    M:[m13 box 0.48×0.9×0.52 (-0.4,0.5,-0.5) 轴上(Y)]\n  G:leg_br 右后腿 @p(0.4,1,-0.5)\n    M:[m15 box 0.48×0.9×0.52 (0.4,0.5,-0.5) 轴上(Y)]\n  G:tail 尾巴 @p(0,1.3,-0.8)\n    M:[m17 box 1×0.34×0.3 (0,1.4,-1.3) 轴(0,1.8,-1.6)→(0,1,-1)]\n  G:mount01_collar 项圈 @p(0,1.5,0.5) 挂:body\n    M:[m18 box 1.3×0.18×1.1 (0,1.7,0.5) 薄向上(Y)] | M:[m19 box 0.22×0.28×0.12 (0,1.5,1.1) 薄向前(Z)]",
+        "stats": {
+          "groups": 10,
+          "meshes": 20,
+          "labeledMeshes": 0,
+          "labelCoverage": 0,
+          "batchLabels": 0,
+          "autoChains": 0,
+          "snapshotChars": 1207
+        }
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -0.625,
+          0.5499999999999999,
+          -0.8713985521817819
+        ],
+        "max": [
+          0.625,
+          1.6999999999999997,
+          0.8786014478182181
+        ],
+        "sourceNodeId": "m0"
+      },
+      {
+        "min": [
+          -0.675,
+          1.525,
+          0.0786014478182182
+        ],
+        "max": [
+          0.675,
+          2.725,
+          1.2286014478182183
+        ],
+        "sourceNodeId": "m2"
+      },
+      {
+        "min": [
+          -0.1700000000000001,
+          0.8834053891011461,
+          -1.7136014478182182
+        ],
+        "max": [
+          0.1700000000000001,
+          1.8665946108988538,
+          -0.8791956565453449
+        ],
+        "sourceNodeId": "m17"
+      },
+      {
+        "min": [
+          -0.65,
+          1.545,
+          -0.036398552181781896
+        ],
+        "max": [
+          0.65,
+          1.725,
+          1.0436014478182183
+        ],
+        "sourceNodeId": "m18"
+      },
+      {
+        "min": [
+          -0.6599999999999999,
+          0.00500000000000006,
+          -0.8063985521817819
+        ],
+        "max": [
+          -0.18,
+          0.9050000000000001,
+          -0.2863985521817819
+        ],
+        "sourceNodeId": "m13"
+      },
+      {
+        "min": [
+          0.18,
+          0.00500000000000006,
+          -0.8063985521817819
+        ],
+        "max": [
+          0.6599999999999999,
+          0.9050000000000001,
+          -0.2863985521817819
+        ],
+        "sourceNodeId": "m15"
+      },
+      {
+        "min": [
+          -0.4,
+          1.7149999999999999,
+          1.0086014478182181
+        ],
+        "max": [
+          0.4,
+          2.195,
+          1.5586014478182184
+        ],
+        "sourceNodeId": "m3"
+      },
+      {
+        "min": [
+          0.21,
+          0,
+          0.3136014478182182
+        ],
+        "max": [
+          0.63,
+          0.95,
+          0.7936014478182182
+        ],
+        "sourceNodeId": "m11"
+      },
+      {
+        "min": [
+          -0.63,
+          0,
+          0.3136014478182182
+        ],
+        "max": [
+          -0.21,
+          0.95,
+          0.7936014478182182
+        ],
+        "sourceNodeId": "m9"
+      },
+      {
+        "min": [
+          -0.7899999999999999,
+          2.295,
+          0.3736014478182182
+        ],
+        "max": [
+          -0.37,
+          3.0949999999999998,
+          0.7536014478182181
+        ],
+        "sourceNodeId": "m7"
+      },
+      {
+        "min": [
+          0.37,
+          2.295,
+          0.3736014478182182
+        ],
+        "max": [
+          0.7899999999999999,
+          3.0949999999999998,
+          0.7536014478182181
+        ],
+        "sourceNodeId": "m8"
+      }
+    ],
+    "sourceMeshCount": 20,
+    "candidateCount": 11,
+    "fallbackUsed": false
+  },
+  "footprintRadius": 1.7136014478182182,
+  "sizeClass": "medium",
+  "mode": "voxel",
+  "createdAt": 1787828779930,
+  "updatedAt": 1787828779930
+}

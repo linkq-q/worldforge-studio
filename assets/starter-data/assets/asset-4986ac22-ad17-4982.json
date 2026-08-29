@@ -1,0 +1,273 @@
+{
+  "id": "asset-4986ac22-ad17-4982",
+  "name": "分类垃圾 5",
+  "prompt": "单件独立垃圾模型，不成堆、不成组、不带垃圾桶或环境底座。五种类型依次为一张揉皱废纸、一个空薯片包装袋、一个空糖果包装袋、一个皱褶塑料包装袋、一个压瘪的空牛奶盒；每个变体只包含一件垃圾。\nCoordinate contract: local Y+ is up, local Z+ is the front, entrance, or forward direction, and local X+ is right. Put doors, facades, openings, windshields, noses, seats, and other recognizable front details toward local Z+. For a modular repeated element, explicitly choose the long axis: side-by-side modules span local X with depth/front on local Z; traversal modules span local Z. Keep the model centered at its origin.\nCanonical dimensions contract: width=0.22, height=0.12, depth=0.18 world units. Keep the generated mesh within this centered bounding size.\nCreate variation 5 of 5; preserve the same reusable asset family while varying silhouette and details.",
+  "tags": [
+    "indoor",
+    "single-object",
+    "trash"
+  ],
+  "modelJson": {
+    "name": "压瘪的空牛奶盒",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "carton",
+        "name": "废弃牛奶盒",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.169,
+            0.131,
+            0.143
+          ],
+          "center": [
+            -0.005,
+            0.047,
+            0.003
+          ],
+          "axes": [
+            [
+              0.9954,
+              0.0239,
+              0.0933
+            ],
+            [
+              -0.0488,
+              0.9605,
+              0.274
+            ],
+            [
+              -0.083,
+              -0.2773,
+              0.9572
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "carton",
+        "transform": {
+          "pos": [
+            -0.008,
+            0.0325,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.15,
+            "height": 0.065,
+            "depth": 0.115
+          },
+          "color": 15262159
+        },
+        "tags": [
+          {
+            "tag": "damage",
+            "value": 0.75
+          },
+          {
+            "tag": "dirty",
+            "value": 0.25
+          }
+        ]
+      },
+      {
+        "id": "m1",
+        "parent": "carton",
+        "transform": {
+          "pos": [
+            0.015,
+            0.073,
+            -0.006
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.12,
+            "height": 0.025,
+            "depth": 0.095
+          },
+          "color": 14143678
+        },
+        "tags": [
+          {
+            "tag": "damage",
+            "value": 1
+          },
+          {
+            "tag": "dirty",
+            "value": 0.25
+          }
+        ]
+      },
+      {
+        "id": "m2",
+        "parent": "carton",
+        "transform": {
+          "pos": [
+            -0.022,
+            0.094,
+            -0.004
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.075,
+            "height": 0.018,
+            "depth": 0.085
+          },
+          "color": 15656917
+        },
+        "tags": [
+          {
+            "tag": "damage",
+            "value": 0.75
+          }
+        ]
+      },
+      {
+        "id": "m3",
+        "parent": "carton",
+        "transform": {
+          "pos": [
+            0.012,
+            0.108,
+            -0.003
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.105,
+            "height": 0.008,
+            "depth": 0.018
+          },
+          "color": 13222318
+        },
+        "tags": [
+          {
+            "tag": "damage",
+            "value": 1
+          }
+        ]
+      },
+      {
+        "id": "m4",
+        "parent": "carton",
+        "transform": {
+          "pos": [
+            -0.006,
+            0.041,
+            0.0605
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.105,
+            "height": 0.025,
+            "depth": 0.006
+          },
+          "color": 6132138
+        },
+        "tags": [
+          {
+            "tag": "dirty",
+            "value": 0.25
+          }
+        ]
+      },
+      {
+        "id": "m5",
+        "parent": "carton",
+        "transform": {
+          "pos": [
+            0.025,
+            0.071,
+            0.0505
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.035,
+            "height": 0.022,
+            "depth": 0.007
+          },
+          "color": 15130830
+        },
+        "tags": [
+          {
+            "tag": "damage",
+            "value": 0.5
+          }
+        ]
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1787876451271,
+        "provider": "gpt",
+        "data": "2HL6BDsWnOzA/2Fw9/Whzg5l5cJgTR4NxusDqRTq/CQd6L+r/B2OXHyzHwzX/gPP1N+2iaRrNIf6w+6tY/KJn1HESALP6pgojrtfuWIGv5Qh0qzejhffy9ZqczqZz9Uv5qcZbLBaPrVHuj5vbWS6BnDZ0pEtqpB34iB68tXGNUpGo+XW1PSzlbLsk7gn8hp6uAfeIQNo0InaOdC0om/1uv3Bf75HAs2xWsXx1rYrAS8olp7VPH+GEPrlRp9HUvtgaHBbXZ05vTjS2cJCxivKIp4LTGhFoJy5mKBwRsVzFRhCv05nqbjgm07isR18YtvqgScfHQk+ixeSZEGAMBi3Dv/SflN4+l9Fm6zIg7t3BaatKR+8/9z7wXU+ezA+REIiU63g9fdySciBeGDnUUpj/jzr4giA9vvi2fOZD9eWTCNsZw455FpEjbL3tj5JLVUPI4Eq/7qr+XnVwq9R2YkeS1Q6dJAi++YD3F4GZ4m3fVfINpad4eLd3GqV6gl3je7ETlYAwqMHMnL4Q5Ea8rANLaRD9q3BUWysuAWFMJx8bskPdNuM/HxBHB48l8pmBwV7uxUry2G0u6j5T3R4jTX3rC0PFOTB5+4dA4kD40sKzOQeAT9YeF13pEyeX/GgfKtDC9GgnbXnNKexvprDEiskfkHCI/WftFjtEYxbUNigZw==",
+        "edits": ""
+      },
+      "semanticSnapshot": {
+        "v": 1,
+        "auto": true,
+        "text": "压瘪的空牛奶盒 · 1组/6mesh · 世界坐标(Y上Z前), 原点=模型根\n# 阅读说明: G:=group行(可动画骨骼, 动画key用G:后的id; @p=pivot世界坐标; 倾(x,y,z)°=朝向偏离世界轴的欧拉角; 缩进=父子层级; 挂:=挂载于某组; G:id→id→…=chain折叠行, 每个id都是可独立动画的group, chain×N=waypoint数)\n# M:=mesh行(label[id 几何 @(世界坐标)], label可省略; ×N=for循环批量件(锚点=代表实例); cyl (起)→(末)或 轴上(Y)等方位词=延伸方向; 薄向=板面法向(扁板); 挂载组双代表=最大件+最远有向件(刃/嘴/管所在端); 无方向标注=均匀块(三向相近,如头),默认面向前(Z); 对称×2=镜像对)\nG:carton 废弃牛奶盒 @p(0,0,0)\n  M:[m0 box 0.15×0.07×0.12 (0,0,0) 薄向上(Y)]",
+        "stats": {
+          "groups": 1,
+          "meshes": 6,
+          "labeledMeshes": 0,
+          "labelCoverage": 0,
+          "batchLabels": 0,
+          "autoChains": 0,
+          "snapshotChars": 434
+        }
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -0.07899999999999999,
+          0,
+          -0.0615
+        ],
+        "max": [
+          0.07899999999999999,
+          0.113,
+          0.0615
+        ],
+        "sourceNodeId": "asset-bounds"
+      }
+    ],
+    "sourceMeshCount": 6,
+    "candidateCount": 0,
+    "fallbackUsed": true
+  },
+  "footprintRadius": 0.1,
+  "sizeClass": "small",
+  "mode": "voxel",
+  "provider": "gpt",
+  "createdAt": 1787876450640,
+  "updatedAt": 1787876450640
+}

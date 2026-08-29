@@ -1,0 +1,8972 @@
+{
+  "id": "map-d346369d-9635-4d63",
+  "seed": 3326256767,
+  "name": "炼金工坊",
+  "assetGenerationMode": "voxel",
+  "version": 12,
+  "createdAt": 1787878396561,
+  "updatedAt": 1787988432304,
+  "box": {
+    "size": [
+      36,
+      10,
+      24
+    ],
+    "colors": {
+      "floor": "#8a765e",
+      "ceiling": "#ded8ca",
+      "north": "#c9c0ae",
+      "south": "#c9c0ae",
+      "east": "#d1c8b7",
+      "west": "#d1c8b7"
+    }
+  },
+  "sceneMode": "indoor",
+  "playerHeight": 1.6,
+  "playerRadius": 0.38,
+  "worldScaleProfile": "balanced",
+  "room": {
+    "position": [
+      0,
+      0,
+      0
+    ],
+    "size": [
+      36,
+      10,
+      24
+    ],
+    "wallThickness": 0.16,
+    "openings": []
+  },
+  "interiorArtDirection": null,
+  "lighting": {
+    "sunPosition": [
+      -18,
+      24,
+      14
+    ]
+  },
+  "terrain": {
+    "resolutionX": 33,
+    "resolutionZ": 33,
+    "heights": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ]
+  },
+  "grassLayers": [],
+  "waterBodies": [],
+  "paintStrokes": [],
+  "objects": [
+    {
+      "id": "obj-3f6bc766-a15a-42de",
+      "name": "药柜",
+      "parentId": null,
+      "assetId": "asset-f82e14ff-15ac-4efb",
+      "transform": {
+        "position": [
+          -9.158661039797037,
+          0,
+          4.611396347102184
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "terrain",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "obj-cb31dbec-495d-46b6",
+      "name": "羽笔台",
+      "parentId": null,
+      "assetId": "asset-c257ba26-9a92-4ddd",
+      "transform": {
+        "position": [
+          -6.106967497226366,
+          0,
+          3.718038916634643
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "terrain",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "obj-b01c96a2-617e-45ac",
+      "name": "沙漏",
+      "parentId": null,
+      "assetId": "asset-5e85c353-1ade-49d2",
+      "transform": {
+        "position": [
+          -5.017687909367478,
+          0,
+          3.8891404921575496
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "terrain",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "obj-61f8a5f2-87df-48f0",
+      "name": "魔镜",
+      "parentId": null,
+      "assetId": "asset-7c7e5c45-a504-479f",
+      "transform": {
+        "position": [
+          14.70794023199469,
+          0.3420280377758961,
+          0.5620693107590153
+        ],
+        "rotation": [
+          0,
+          -1.5707963267948966,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "terrain",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "obj-22674c4b-5b7b-435e",
+      "name": "长椅",
+      "parentId": null,
+      "assetId": "asset-e436d516-72a2-4ea1",
+      "transform": {
+        "position": [
+          -6.9989184324963025,
+          0,
+          7.494448959218347
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "terrain",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "obj-b6048b9b-06b5-4ed9",
+      "name": "符文毯",
+      "parentId": null,
+      "assetId": "asset-8d616fc6-d4a9-42fb",
+      "transform": {
+        "position": [
+          -0.06940259956669559,
+          0,
+          5.04969178067302
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "terrain",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "obj-51626877-1518-4f34",
+      "name": "魔灯",
+      "parentId": null,
+      "assetId": "asset-068eabf2-a3da-4bf4",
+      "transform": {
+        "position": [
+          -4.3226998244251575,
+          0,
+          5.232478032530129
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "terrain",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "obj-6d23fbfb-40c2-41b3",
+      "name": "药材桶",
+      "parentId": null,
+      "assetId": "asset-dbb74d80-807f-4d4a",
+      "transform": {
+        "position": [
+          -9.46791670098396,
+          0,
+          6.467880360272604
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "terrain",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "obj-1b8cba19-5d59-40df",
+      "name": "吊灯",
+      "parentId": null,
+      "assetId": "asset-cb301d43-1799-439b",
+      "transform": {
+        "position": [
+          -1.3793483664079815,
+          9.033478945156894,
+          7.05665632701229
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "terrain",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "obj-8e901a2d-42bb-4fad",
+      "name": "星象仪",
+      "parentId": null,
+      "assetId": "asset-1e01e78f-547b-4c38",
+      "transform": {
+        "position": [
+          -1.2007286288119638,
+          0,
+          7.8748229798261935
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "terrain",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "obj-8cf98bad-d2cf-4e33",
+      "name": "法杖架",
+      "parentId": null,
+      "assetId": "asset-218357ec-1774-4796",
+      "transform": {
+        "position": [
+          1.930189341264732,
+          0,
+          7.566175752217955
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "terrain",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "obj-49812f3a-b8cf-4391",
+      "name": "讲台",
+      "parentId": null,
+      "assetId": "asset-6ae882d1-0b75-4282",
+      "transform": {
+        "position": [
+          0.22664481024325284,
+          0,
+          7.800058230573356
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "terrain",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "obj-757c0a58-b0d7-4185",
+      "name": "水晶球",
+      "parentId": null,
+      "assetId": "asset-f9ee0e24-023d-4301",
+      "transform": {
+        "position": [
+          3.550465253753618,
+          0,
+          7.332522173670965
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "terrain",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "obj-04489acc-4db4-4570",
+      "name": "魔法书",
+      "parentId": null,
+      "assetId": "asset-b16eb213-fe3f-4000",
+      "transform": {
+        "position": [
+          -2.979650673914316,
+          0,
+          8.626764755270138
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "terrain",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "obj-56e6b812-96bd-4d6d",
+      "name": "符文板",
+      "parentId": null,
+      "assetId": "asset-f384c097-05b2-43f7",
+      "transform": {
+        "position": [
+          17.736912244354627,
+          6.059492379281513,
+          4.19309282058171
+        ],
+        "rotation": [
+          0,
+          -1.5707963267948966,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "terrain",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "obj-0f429f7a-e903-456e",
+      "name": "材料箱",
+      "parentId": null,
+      "assetId": "asset-cf1aef97-6edb-4738",
+      "transform": {
+        "position": [
+          -5.026667853301587,
+          0,
+          8.835657750419678
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "terrain",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "obj-9d046fbe-9f71-40a9",
+      "name": "材料箱",
+      "parentId": null,
+      "assetId": "asset-9a458ed4-77f7-4c10",
+      "transform": {
+        "position": [
+          -7.182388694427439,
+          0,
+          9.04646877355112
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "terrain",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "obj-eb073bc3-98e5-48c1",
+      "name": "蒸馏器",
+      "parentId": null,
+      "assetId": "asset-8fd899fa-47ed-441e",
+      "transform": {
+        "position": [
+          -9.459114574327973,
+          0,
+          8.856842271278252
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "terrain",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "obj-7bd92701-7811-4e20",
+      "name": "法台",
+      "parentId": null,
+      "assetId": "asset-4eafa3c3-41e6-4a95",
+      "transform": {
+        "position": [
+          -12.495217446332017,
+          0,
+          8.297585937223417
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "terrain",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "obj-31b5268b-131b-424f",
+      "name": "炼金台",
+      "parentId": null,
+      "assetId": "asset-d8379a5e-d915-4fff",
+      "transform": {
+        "position": [
+          -15.703662129899405,
+          0,
+          7.644067374875816
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "terrain",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "obj-b4042ab2-9d25-42d4",
+      "name": "坩埚",
+      "parentId": null,
+      "assetId": "asset-ac824bad-93e4-42ea",
+      "transform": {
+        "position": [
+          -12.00277885029223,
+          0,
+          5.579381099576669
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "terrain",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "obj-2272f516-35c7-45d7",
+      "name": "药瓶",
+      "parentId": null,
+      "assetId": "asset-1b752035-7c9a-40e2",
+      "transform": {
+        "position": [
+          -10.759927486169754,
+          0,
+          6.229962986604255
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "terrain",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "obj-66ce0fab-78e6-4dfb",
+      "name": "椅子",
+      "parentId": null,
+      "assetId": "asset-ead89f56-df33-4d2c",
+      "transform": {
+        "position": [
+          -13.672275836227946,
+          0,
+          3.473500660281669
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "terrain",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "obj-a142d3fe-872f-4d5f",
+      "name": "木门",
+      "parentId": null,
+      "assetId": "asset-3f1f0a22-8e91-48f8",
+      "transform": {
+        "position": [
+          7.541839677708615,
+          0,
+          11.777668302032387
+        ],
+        "rotation": [
+          0,
+          -3.141592653589793,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "terrain",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "obj-0ff7aebb-c03a-4e8c",
+      "name": "书桌",
+      "parentId": null,
+      "assetId": "asset-9d35ccbd-69a2-4984",
+      "transform": {
+        "position": [
+          -2.7887878185899604,
+          0,
+          0.295590840700688
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "terrain",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "obj-a036bba6-fe69-4c65",
+      "name": "书架",
+      "parentId": null,
+      "assetId": "asset-e4e10e42-73ae-4f20",
+      "transform": {
+        "position": [
+          6.025264434672084,
+          0,
+          -11.431372339282216
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          0.5412558657117358,
+          1.2227373703269366
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "terrain",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "obj-d29e1ca0-e19b-4ba6",
+      "name": "异形书架 4",
+      "parentId": null,
+      "assetId": "asset-5c3fe558-99fe-4569",
+      "transform": {
+        "position": [
+          2.8430641747703858,
+          4.793567188807919,
+          -11.446060002343867
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1.2242861525723698,
+          0.935133399078975,
+          1.011586784832608
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "terrain",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "obj-dd7f5a62-3440-4f8b",
+      "name": "异形书桌 1",
+      "parentId": null,
+      "assetId": "asset-e791ac14-ef97-482b",
+      "transform": {
+        "position": [
+          2.621845947391061,
+          0,
+          0.7292796261330121
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "terrain",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "obj-e94ca193-e995-4a2f",
+      "name": "异形书架 2",
+      "parentId": null,
+      "assetId": "asset-642ee70a-5188-4773",
+      "transform": {
+        "position": [
+          5.908989998846006,
+          4.815371620923021,
+          -11.426386684438548
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1.1867899151547052,
+          0.9287520493182031,
+          1
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "terrain",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "obj-0e4f0f61-3590-44bb",
+      "name": "异形书桌 2",
+      "parentId": null,
+      "assetId": "asset-695a985b-b9bc-4d10",
+      "transform": {
+        "position": [
+          6.653236259609466,
+          0,
+          0.6283854018617676
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "terrain",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "obj-a734c2b2-205d-4da3",
+      "name": "异形书架 3",
+      "parentId": null,
+      "assetId": "asset-ff1f4a1d-5ea6-4a11",
+      "transform": {
+        "position": [
+          12.1658715560189,
+          -0.023765022231158506,
+          -11.419331280794838
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1.2004502740079084,
+          0.9387825972656696,
+          1.2239085867309139
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "terrain",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "obj-144fa69b-16b8-4173",
+      "name": "异形书架 1",
+      "parentId": null,
+      "assetId": "asset-6423a4ad-ab21-4d92",
+      "transform": {
+        "position": [
+          8.993421775572921,
+          4.794688569290898,
+          -11.393689085779158
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1.1993401542514976,
+          0.9266514104129897,
+          1
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "terrain",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "obj-b9704093-67a5-4e3e",
+      "name": "异形书桌 4",
+      "parentId": null,
+      "assetId": "asset-7655a09c-f94f-4814",
+      "transform": {
+        "position": [
+          10.594683458061274,
+          0,
+          0.7735415312187275
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "terrain",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "obj-415da6a3-fdcb-4164",
+      "name": "异形书桌 3",
+      "parentId": null,
+      "assetId": "asset-b219c8a5-fa39-40c3",
+      "transform": {
+        "position": [
+          -2.2635578408593524,
+          0,
+          -2.6869892253128103
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "terrain",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "obj-14aa4fc1-8e4e-462c",
+      "name": "小天平",
+      "parentId": null,
+      "assetId": "asset-237c4d40-a196-42b9",
+      "transform": {
+        "position": [
+          3.8492161888592866,
+          0,
+          3.9550675635347523
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1.2493392262124896,
+          1.2493392262124896,
+          1.2493392262124896
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "terrain",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "obj-1e824a54-7685-4489",
+      "name": "炼金镊",
+      "parentId": null,
+      "assetId": "asset-c2cdc7a1-2953-4449",
+      "transform": {
+        "position": [
+          3.6431955755860237,
+          0,
+          4.639973295614474
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          2.059066797989887,
+          2.059066797989887,
+          2.059066797989887
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "terrain",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "obj-1e6ded34-4172-4861",
+      "name": "书架 副本",
+      "parentId": null,
+      "assetId": "asset-e4e10e42-73ae-4f20",
+      "transform": {
+        "position": [
+          15.111391969225227,
+          4.777287359983108,
+          -11.450916766884774
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1.0227641005931418,
+          0.5469832747152582,
+          1
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "terrain",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "obj-786c88bc-ce4d-4b7f",
+      "name": "异形书架 4 副本",
+      "parentId": null,
+      "assetId": "asset-5c3fe558-99fe-4569",
+      "transform": {
+        "position": [
+          15.327335022555605,
+          0,
+          -11.415558143619142
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1.2472628462530928,
+          0.9244223166020459,
+          1.2274579934626033
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "terrain",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "obj-dc0cec7c-1e79-4d6c",
+      "name": "实验药柜 3",
+      "parentId": null,
+      "assetId": "asset-7e7cd09d-c7a5-49ca",
+      "transform": {
+        "position": [
+          -3.748211215024933,
+          0,
+          -9.464570600554502
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "terrain",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "obj-59b2a1f0-9eac-4eed",
+      "name": "实验药柜 4",
+      "parentId": null,
+      "assetId": "asset-9b1cc076-8387-4b67",
+      "transform": {
+        "position": [
+          -6.183101772307446,
+          0,
+          -9.167629441708836
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "terrain",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "obj-300174bb-989b-4d83",
+      "name": "实验药柜 1",
+      "parentId": null,
+      "assetId": "asset-101455a3-3448-49ba",
+      "transform": {
+        "position": [
+          -8.648763371686801,
+          0,
+          -8.888277142899318
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "terrain",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "obj-6e5ad472-4ac1-4d8b",
+      "name": "实验药柜 2",
+      "parentId": null,
+      "assetId": "asset-de8fdcd8-64c6-40f3",
+      "transform": {
+        "position": [
+          -11.111639719484922,
+          0,
+          -8.304360584300143
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "terrain",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "obj-52611d78-410f-4163",
+      "name": "秘术黑板 1",
+      "parentId": null,
+      "assetId": "asset-14d40a65-da27-4df9",
+      "transform": {
+        "position": [
+          -2.023568559177019,
+          1.803451618277153,
+          11.691182959257713
+        ],
+        "rotation": [
+          0,
+          3.141592653589793,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "terrain",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "obj-d9b95918-8461-4b70",
+      "name": "秘术黑板 2",
+      "parentId": null,
+      "assetId": "asset-9247e6d3-e355-4010",
+      "transform": {
+        "position": [
+          17.83117760547863,
+          3.323977649228474,
+          8.782069778518967
+        ],
+        "rotation": [
+          0,
+          -1.5707963267948966,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "terrain",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "obj-a94817e2-75cf-490f",
+      "name": "秘术黑板 3",
+      "parentId": null,
+      "assetId": "asset-9419589a-3b41-4741",
+      "transform": {
+        "position": [
+          13.48173863087154,
+          1.7935063296097855,
+          11.743842178440227
+        ],
+        "rotation": [
+          0,
+          3.141592653589793,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "terrain",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "obj-2834dc06-13c1-4a4d",
+      "name": "秘术黑板 4",
+      "parentId": null,
+      "assetId": "asset-8a7e421c-beb5-4d36",
+      "transform": {
+        "position": [
+          3.1859460474035592,
+          4.865976929053013,
+          11.717962985158035
+        ],
+        "rotation": [
+          0,
+          -3.141592653589793,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "terrain",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "obj-6ca1ad86-613b-4075",
+      "name": "炼金工台 1",
+      "parentId": null,
+      "assetId": "asset-2ddbab59-f55f-4508",
+      "transform": {
+        "position": [
+          2.7389565482782317,
+          0,
+          -7.036404372988919
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "terrain",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "obj-03286215-844a-44e5",
+      "name": "炼金药柜 2",
+      "parentId": null,
+      "assetId": "asset-7f8861fe-a453-41e5",
+      "transform": {
+        "position": [
+          5.983554394030451,
+          0,
+          -6.122301346056231
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "terrain",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "obj-13d659a8-a788-4824",
+      "name": "炼金药柜 3",
+      "parentId": null,
+      "assetId": "asset-ae6abe9b-6b47-48b5",
+      "transform": {
+        "position": [
+          9.520535941992371,
+          0,
+          -5.996397316827417
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "terrain",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "obj-b16a9b4b-b9f8-4d9a",
+      "name": "炼金药柜 4",
+      "parentId": null,
+      "assetId": "asset-cf108ab8-b751-4e59",
+      "transform": {
+        "position": [
+          12.823807169803402,
+          0,
+          -5.6720877474883356
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "terrain",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "obj-d9993781-aa39-44e0",
+      "name": "炼金药柜 5",
+      "parentId": null,
+      "assetId": "asset-526ef050-a07a-4cce",
+      "transform": {
+        "position": [
+          -0.6923668058760831,
+          0,
+          -5.485275031246092
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "terrain",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "obj-63a0104b-e717-4b54",
+      "name": "幻象屏",
+      "parentId": null,
+      "assetId": "asset-554e88bc-9973-46bf",
+      "transform": {
+        "position": [
+          11.376278208857928,
+          7.281874552274671,
+          11.741701791324878
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "terrain",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "obj-1cb382f3-d7ec-4c47",
+      "name": "承重立柱",
+      "parentId": null,
+      "assetId": "asset-e1575654-71ed-4714",
+      "transform": {
+        "position": [
+          -14.44444330277292,
+          0,
+          -8.613937339699778
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "terrain",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "obj-3426dda8-6c47-47c9",
+      "name": "承重立柱",
+      "parentId": null,
+      "assetId": "asset-bf38dab1-342e-415f",
+      "transform": {
+        "position": [
+          -6.269594871151443,
+          0,
+          -1.1942505569393425
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          0.8656902567284057,
+          1
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "terrain",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "obj-b83240d3-465d-465d",
+      "name": "木质楼梯",
+      "parentId": null,
+      "assetId": "asset-04f1859d-754f-4ba3",
+      "transform": {
+        "position": [
+          16.055976126524847,
+          -0.4497156094153676,
+          2.775858137097482
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "terrain",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "obj-3fe6d2d8-0461-4b80",
+      "name": "秘术桌椅 2",
+      "parentId": null,
+      "assetId": "asset-cf390698-f4a7-40d0",
+      "transform": {
+        "position": [
+          6.4146574409861135,
+          0,
+          3.279689316185557
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "terrain",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "obj-8b1c43e1-464c-4c1d",
+      "name": "秘术书架 1",
+      "parentId": null,
+      "assetId": "asset-8c89a2bb-d189-43e5",
+      "transform": {
+        "position": [
+          11.995546259068083,
+          4.7491428352039335,
+          -11.411097433687708
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1.105727447560934,
+          1.3244183204432047,
+          1.2437265125334924
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "terrain",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "obj-0343ad77-01f4-405b",
+      "name": "秘术书架 4",
+      "parentId": null,
+      "assetId": "asset-2736e921-8f82-4897",
+      "transform": {
+        "position": [
+          2.814939105535487,
+          0,
+          -11.341143937342197
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1.1660078265993126,
+          1.308309770322835,
+          1
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "terrain",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "obj-e3a2b264-d641-469e",
+      "name": "秘术书架 2",
+      "parentId": null,
+      "assetId": "asset-769fd0fb-afbb-4f5f",
+      "transform": {
+        "position": [
+          -9.27364102944901,
+          0,
+          -4.824853803307699
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "terrain",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "obj-97b3ddcb-d140-44a2",
+      "name": "秘术书架 3",
+      "parentId": null,
+      "assetId": "asset-8e91825a-5898-4efb",
+      "transform": {
+        "position": [
+          9.09951346891612,
+          0,
+          -11.369461826276053
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1.133127303691034,
+          1.3102471397907838,
+          1.3076419202377803
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "terrain",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "obj-1c0d05b1-2d8a-4ee7",
+      "name": "秘术桌椅 1",
+      "parentId": null,
+      "assetId": "asset-8b7540db-4d70-457a",
+      "transform": {
+        "position": [
+          3.0041874565723603,
+          0,
+          -1.9960308317710629
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "terrain",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "obj-f7ce52be-2976-48b2",
+      "name": "秘术桌椅 3",
+      "parentId": null,
+      "assetId": "asset-a4b8ad97-d92e-4a96",
+      "transform": {
+        "position": [
+          7.192887762594645,
+          0,
+          -2.0831153678414385
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "terrain",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "obj-4d85c41a-3b51-44fb",
+      "name": "秘术桌椅 4",
+      "parentId": null,
+      "assetId": "asset-39fc7732-5b1a-41be",
+      "transform": {
+        "position": [
+          11.232637860671545,
+          0,
+          -2.2026409677237684
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "terrain",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "obj-bc0cd6b4-ffd4-4545",
+      "name": "木质夹层",
+      "parentId": null,
+      "assetId": "asset-6828baba-5764-4e1d",
+      "transform": {
+        "position": [
+          -0.028262113513247478,
+          4.417026131373209,
+          -5.950213948674533
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1.806558475578341,
+          1,
+          1.2519720561235292
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "terrain",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "obj-3cc0cf28-6d75-41cc",
+      "name": "承重立柱 副本",
+      "parentId": null,
+      "assetId": "asset-bf38dab1-342e-415f",
+      "transform": {
+        "position": [
+          0.37928125844947413,
+          0,
+          -1.0640170503951802
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          0.8656902567284057,
+          1
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "terrain",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "obj-48c7d598-f547-434c",
+      "name": "木质夹层 副本",
+      "parentId": null,
+      "assetId": "asset-6828baba-5764-4e1d",
+      "transform": {
+        "position": [
+          -11.573928087959835,
+          4.417026131373209,
+          5.870821035991486
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          0.6410691353793393,
+          1,
+          1.2519720561235292
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "terrain",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "obj-22c056a1-a139-423d",
+      "name": "承重立柱 副本 副本",
+      "parentId": null,
+      "assetId": "asset-bf38dab1-342e-415f",
+      "transform": {
+        "position": [
+          13.476888765138053,
+          0,
+          -1.1893829067564294
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          0.8656902567284057,
+          1
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "terrain",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "obj-26ee21ae-4441-4854",
+      "name": "承重立柱 副本 副本 副本",
+      "parentId": null,
+      "assetId": "asset-bf38dab1-342e-415f",
+      "transform": {
+        "position": [
+          7.12451302750956,
+          0,
+          -1.0900997115267481
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          0.8656902567284057,
+          1
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "terrain",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "obj-bdb43ca4-c0ae-4b11",
+      "name": "承重立柱 副本",
+      "parentId": null,
+      "assetId": "asset-bf38dab1-342e-415f",
+      "transform": {
+        "position": [
+          -6.4336527782954835,
+          0,
+          4.849219370182585
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          0.8656902567284057,
+          1
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "terrain",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "obj-28ce70a8-6046-4c37",
+      "name": "承重立柱 副本 副本",
+      "parentId": null,
+      "assetId": "asset-bf38dab1-342e-415f",
+      "transform": {
+        "position": [
+          -6.427622443636627,
+          0,
+          10.807107653595743
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          0.8656902567284057,
+          1
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "terrain",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "obj-223328e7-dc82-49a1",
+      "name": "秘术书架 1 副本",
+      "parentId": null,
+      "assetId": "asset-8c89a2bb-d189-43e5",
+      "transform": {
+        "position": [
+          17.334226294958256,
+          0.003260896615343345,
+          -9.523479788472237
+        ],
+        "rotation": [
+          0,
+          -1.5707963267948966,
+          0
+        ],
+        "scale": [
+          1.105727447560934,
+          1.3244183204432047,
+          1.4134113547851541
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "terrain",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "obj-ff64ab0a-df2b-4c54",
+      "name": "异形书架 1 副本",
+      "parentId": null,
+      "assetId": "asset-6423a4ad-ab21-4d92",
+      "transform": {
+        "position": [
+          17.363514305247076,
+          -0.005508162665179617,
+          -6.449434888123991
+        ],
+        "rotation": [
+          0,
+          -1.5707963267948966,
+          0
+        ],
+        "scale": [
+          1.1993401542514976,
+          0.9432902611612631,
+          1.4771915349302833
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "terrain",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "obj-c29ce6d8-b321-4781",
+      "name": "异形书架 2 副本",
+      "parentId": null,
+      "assetId": "asset-642ee70a-5188-4773",
+      "transform": {
+        "position": [
+          17.052870778974512,
+          0.06152270953107686,
+          -3.331615721355208
+        ],
+        "rotation": [
+          0,
+          -1.5707963267948966,
+          0
+        ],
+        "scale": [
+          1.1867899151547052,
+          0.9316708669289242,
+          1
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "terrain",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "obj-c16d9083-f779-49a1",
+      "name": "异形书架 4 副本",
+      "parentId": null,
+      "assetId": "asset-5c3fe558-99fe-4569",
+      "transform": {
+        "position": [
+          15.300928431782008,
+          0.02579908926950214,
+          -1.3271612617032558
+        ],
+        "rotation": [
+          0,
+          -3.141592653589793,
+          0
+        ],
+        "scale": [
+          1.2242861525723698,
+          0.9611417717529965,
+          1.3959076389552774
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "terrain",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "obj-fdb86d5c-82e7-4b5a",
+      "name": "吊灯 副本",
+      "parentId": null,
+      "assetId": "asset-cb301d43-1799-439b",
+      "transform": {
+        "position": [
+          10.929522205270025,
+          9.033478945156894,
+          7.55665632701229
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "heightMode": "terrain",
+      "visible": true,
+      "locked": false
+    }
+  ],
+  "spawnPoints": [
+    [
+      0,
+      0,
+      0
+    ]
+  ],
+  "spawnYaw": 0,
+  "confirmedAt": null,
+  "renderSchemeId": null,
+  "renderPromptSuggestions": [],
+  "materialTagPolicy": {
+    "disabled": [
+      "base:fabric",
+      "base:fur",
+      "emissive",
+      "fire"
+    ]
+  },
+  "visualSemantics": {
+    "version": 1,
+    "zones": [],
+    "wind": {
+      "direction": [
+        0.9701425001453319,
+        0.24253562503633297
+      ],
+      "speed": 0.22,
+      "gustStrength": 0.18,
+      "gustFrequency": 0.12
+    }
+  },
+  "layout": {
+    "version": 1,
+    "globalPrompt": "",
+    "regions": [],
+    "edgeMask": {
+      "kind": "none",
+      "points": [
+        [
+          -18,
+          -12
+        ],
+        [
+          18,
+          -12
+        ],
+        [
+          18,
+          12
+        ],
+        [
+          -18,
+          12
+        ]
+      ],
+      "seed": 1,
+      "irregularity": 0.22
+    },
+    "stitchSources": [],
+    "seams": []
+  },
+  "guides": [],
+  "designSemantics": {
+    "version": 1,
+    "experienceMode": "mixed",
+    "intent": "",
+    "groups": [],
+    "focuses": [],
+    "viewpoints": [],
+    "relations": []
+  },
+  "collisionBake": {
+    "version": 1,
+    "sourceHash": "1y2olkd",
+    "sourceBoxCount": 363,
+    "boxes": [
+      {
+        "objectId": "obj-3f6bc766-a15a-42de",
+        "min": [
+          -9.998661039797037,
+          0.040000000000000036,
+          4.278896347102185
+        ],
+        "max": [
+          -8.318661039797037,
+          2.32,
+          4.398896347102184
+        ]
+      },
+      {
+        "objectId": "obj-3f6bc766-a15a-42de",
+        "min": [
+          -10.058661039797038,
+          0,
+          4.268896347102184
+        ],
+        "max": [
+          -8.258661039797037,
+          0.16,
+          4.9188963471021845
+        ]
+      },
+      {
+        "objectId": "obj-3f6bc766-a15a-42de",
+        "min": [
+          -10.058661039797038,
+          2.26,
+          4.268896347102184
+        ],
+        "max": [
+          -8.258661039797037,
+          2.42,
+          4.9188963471021845
+        ]
+      },
+      {
+        "objectId": "obj-3f6bc766-a15a-42de",
+        "min": [
+          -10.058661039797038,
+          0,
+          4.303896347102184
+        ],
+        "max": [
+          -9.918661039797037,
+          2.3,
+          4.883896347102184
+        ]
+      },
+      {
+        "objectId": "obj-3f6bc766-a15a-42de",
+        "min": [
+          -8.398661039797037,
+          0,
+          4.303896347102184
+        ],
+        "max": [
+          -8.258661039797037,
+          2.3,
+          4.883896347102184
+        ]
+      },
+      {
+        "objectId": "obj-3f6bc766-a15a-42de",
+        "min": [
+          -9.898661039797037,
+          2.39,
+          4.313896347102184
+        ],
+        "max": [
+          -8.418661039797037,
+          2.53,
+          4.853896347102184
+        ]
+      },
+      {
+        "objectId": "obj-cb31dbec-495d-46b6",
+        "min": [
+          -6.586967497226366,
+          0,
+          3.4380389166346426
+        ],
+        "max": [
+          -5.6269674972263655,
+          0.795,
+          3.998038916634643
+        ]
+      },
+      {
+        "objectId": "obj-b01c96a2-617e-45ac",
+        "min": [
+          -5.257687909367478,
+          0,
+          3.67164049215755
+        ],
+        "max": [
+          -4.777687909367478,
+          1.08,
+          4.10664049215755
+        ]
+      },
+      {
+        "objectId": "obj-61f8a5f2-87df-48f0",
+        "min": [
+          14.59294023199469,
+          0.3420280377758961,
+          -0.13793068924098462
+        ],
+        "max": [
+          14.822940231994691,
+          2.7814255306994706,
+          1.2620693107590153
+        ]
+      },
+      {
+        "objectId": "obj-22674c4b-5b7b-435e",
+        "min": [
+          -8.198918432496303,
+          0.29999999999999993,
+          7.274448959218347
+        ],
+        "max": [
+          -5.798918432496302,
+          0.45999999999999996,
+          7.854448959218347
+        ]
+      },
+      {
+        "objectId": "obj-22674c4b-5b7b-435e",
+        "min": [
+          -8.088918432496303,
+          0.46,
+          7.144448959218347
+        ],
+        "max": [
+          -5.908918432496303,
+          0.8799999999999999,
+          7.284448959218347
+        ]
+      },
+      {
+        "objectId": "obj-b6048b9b-06b5-4ed9",
+        "min": [
+          -2.5694025995666956,
+          0,
+          3.4496917806730196
+        ],
+        "max": [
+          2.4305974004333044,
+          0.05,
+          6.64969178067302
+        ]
+      },
+      {
+        "objectId": "obj-51626877-1518-4f34",
+        "min": [
+          -4.502699824425157,
+          0,
+          5.062478032530129
+        ],
+        "max": [
+          -4.142699824425158,
+          0.7004999999999999,
+          5.402478032530129
+        ]
+      },
+      {
+        "objectId": "obj-6d23fbfb-40c2-41b3",
+        "min": [
+          -9.77791670098396,
+          0,
+          6.145380360272604
+        ],
+        "max": [
+          -9.157916700983959,
+          0.6599999999999999,
+          6.765380360272604
+        ]
+      },
+      {
+        "objectId": "obj-6d23fbfb-40c2-41b3",
+        "min": [
+          -9.81791670098396,
+          0.15000000000000002,
+          6.105380360272604
+        ],
+        "max": [
+          -9.11791670098396,
+          0.53,
+          6.805380360272604
+        ]
+      },
+      {
+        "objectId": "obj-1b8cba19-5d59-40df",
+        "min": [
+          -2.3893483664079813,
+          9.033478945156894,
+          6.046656327012291
+        ],
+        "max": [
+          -0.3693483664079815,
+          9.715307244044016,
+          8.066656327012291
+        ]
+      },
+      {
+        "objectId": "obj-8e901a2d-42bb-4fad",
+        "min": [
+          -1.4407286288119638,
+          0.12,
+          7.684822979826193
+        ],
+        "max": [
+          -0.9607286288119639,
+          0.6,
+          8.064822979826193
+        ]
+      },
+      {
+        "objectId": "obj-8cf98bad-d2cf-4e33",
+        "min": [
+          1.370189341264732,
+          0.1299999999999999,
+          7.399925752217955
+        ],
+        "max": [
+          2.490189341264732,
+          1.63,
+          7.479925752217955
+        ]
+      },
+      {
+        "objectId": "obj-49812f3a-b8cf-4391",
+        "min": [
+          -0.15335518975674717,
+          0,
+          7.540058230573356
+        ],
+        "max": [
+          0.6066448102432529,
+          1.3,
+          8.060058230573356
+        ]
+      },
+      {
+        "objectId": "obj-757c0a58-b0d7-4185",
+        "min": [
+          3.270465253753618,
+          0,
+          7.0525221736709645
+        ],
+        "max": [
+          3.8304652537536183,
+          0.77,
+          7.612522173670965
+        ]
+      },
+      {
+        "objectId": "obj-04489acc-4db4-4570",
+        "min": [
+          -3.204650673914316,
+          0,
+          8.301764755270138
+        ],
+        "max": [
+          -2.7546506739143157,
+          0.12,
+          8.951764755270137
+        ]
+      },
+      {
+        "objectId": "obj-56e6b812-96bd-4d6d",
+        "min": [
+          17.721912244354627,
+          6.299492379281514,
+          3.0230928205817102
+        ],
+        "max": [
+          17.80191224435463,
+          7.659492379281513,
+          5.36309282058171
+        ]
+      },
+      {
+        "objectId": "obj-56e6b812-96bd-4d6d",
+        "min": [
+          17.661912244354628,
+          6.079492379281513,
+          2.7930928205817103
+        ],
+        "max": [
+          17.811912244354627,
+          6.299492379281514,
+          5.59309282058171
+        ]
+      },
+      {
+        "objectId": "obj-56e6b812-96bd-4d6d",
+        "min": [
+          17.661912244354628,
+          7.659492379281513,
+          2.7930928205817103
+        ],
+        "max": [
+          17.811912244354627,
+          7.879492379281514,
+          5.59309282058171
+        ]
+      },
+      {
+        "objectId": "obj-0f429f7a-e903-456e",
+        "min": [
+          -5.4366678533015875,
+          0,
+          8.569657750419678
+        ],
+        "max": [
+          -4.616667853301587,
+          0.38,
+          9.049657750419678
+        ]
+      },
+      {
+        "objectId": "obj-9d046fbe-9f71-40a9",
+        "min": [
+          -7.7723886944274385,
+          0.020000000000000004,
+          8.67671877355112
+        ],
+        "max": [
+          -6.592388694427439,
+          0.48,
+          9.356718773551119
+        ]
+      },
+      {
+        "objectId": "obj-9d046fbe-9f71-40a9",
+        "min": [
+          -7.792388694427439,
+          0.495,
+          8.65671877355112
+        ],
+        "max": [
+          -6.572388694427438,
+          0.6649999999999999,
+          9.376718773551119
+        ]
+      },
+      {
+        "objectId": "obj-9d046fbe-9f71-40a9",
+        "min": [
+          -7.802388694427439,
+          0,
+          8.64671877355112
+        ],
+        "max": [
+          -6.5623886944274386,
+          0.1,
+          9.386718773551118
+        ]
+      },
+      {
+        "objectId": "obj-eb073bc3-98e5-48c1",
+        "min": [
+          -9.739114574327973,
+          0.48000000000000004,
+          8.596842271278252
+        ],
+        "max": [
+          -9.179114574327974,
+          0.8600000000000001,
+          9.076842271278252
+        ]
+      },
+      {
+        "objectId": "obj-eb073bc3-98e5-48c1",
+        "min": [
+          -9.909114574327972,
+          0,
+          8.486842271278253
+        ],
+        "max": [
+          -9.009114574327974,
+          0.16,
+          9.186842271278252
+        ]
+      },
+      {
+        "objectId": "obj-7bd92701-7811-4e20",
+        "min": [
+          -13.845217446332017,
+          0.45,
+          7.707585937223417
+        ],
+        "max": [
+          -11.145217446332017,
+          0.5900000000000001,
+          8.787585937223417
+        ]
+      },
+      {
+        "objectId": "obj-7bd92701-7811-4e20",
+        "min": [
+          -13.620217446332017,
+          0.14999999999999997,
+          7.8975859372234165
+        ],
+        "max": [
+          -11.370217446332017,
+          0.25,
+          8.597585937223418
+        ]
+      },
+      {
+        "objectId": "obj-7bd92701-7811-4e20",
+        "min": [
+          -13.115217446332016,
+          0.5934191990340109,
+          8.012098917702387
+        ],
+        "max": [
+          -11.875217446332018,
+          0.8265808009659891,
+          8.383072956744448
+        ]
+      },
+      {
+        "objectId": "obj-31b5268b-131b-424f",
+        "min": [
+          -17.303662129899404,
+          0.605,
+          7.079067374875816
+        ],
+        "max": [
+          -14.103662129899405,
+          0.7849999999999999,
+          8.259067374875816
+        ]
+      },
+      {
+        "objectId": "obj-31b5268b-131b-424f",
+        "min": [
+          -17.153662129899406,
+          0.7850000000000001,
+          7.214067374875817
+        ],
+        "max": [
+          -14.253662129899405,
+          0.905,
+          8.164067374875817
+        ]
+      },
+      {
+        "objectId": "obj-31b5268b-131b-424f",
+        "min": [
+          -17.028662129899406,
+          0.255,
+          7.349067374875816
+        ],
+        "max": [
+          -14.378662129899405,
+          0.375,
+          8.069067374875816
+        ]
+      },
+      {
+        "objectId": "obj-31b5268b-131b-424f",
+        "min": [
+          -17.228662129899405,
+          0.44500000000000006,
+          7.029067374875816
+        ],
+        "max": [
+          -14.178662129899404,
+          0.5450000000000002,
+          7.749067374875816
+        ]
+      },
+      {
+        "objectId": "obj-31b5268b-131b-424f",
+        "min": [
+          -17.228662129899405,
+          0.905,
+          7.029067374875816
+        ],
+        "max": [
+          -14.178662129899404,
+          1.0050000000000001,
+          7.749067374875816
+        ]
+      },
+      {
+        "objectId": "obj-31b5268b-131b-424f",
+        "min": [
+          -16.833662129899405,
+          0.8400000000000001,
+          7.409067374875816
+        ],
+        "max": [
+          -16.013662129899405,
+          1.09,
+          7.989067374875816
+        ]
+      },
+      {
+        "objectId": "obj-b4042ab2-9d25-42d4",
+        "min": [
+          -12.43277885029223,
+          0.43999999999999995,
+          5.169381099576669
+        ],
+        "max": [
+          -11.57277885029223,
+          0.72,
+          5.989381099576669
+        ]
+      },
+      {
+        "objectId": "obj-b4042ab2-9d25-42d4",
+        "min": [
+          -12.51277885029223,
+          0.6900000000000001,
+          5.09938109957667
+        ],
+        "max": [
+          -11.49277885029223,
+          0.89,
+          6.059381099576669
+        ]
+      },
+      {
+        "objectId": "obj-2272f516-35c7-45d7",
+        "min": [
+          -10.919927486169755,
+          0,
+          6.068962986604255
+        ],
+        "max": [
+          -10.599927486169754,
+          0.6799999999999999,
+          6.390962986604254
+        ]
+      },
+      {
+        "objectId": "obj-66ce0fab-78e6-4dfb",
+        "min": [
+          -14.002275836227946,
+          0,
+          3.174750660281669
+        ],
+        "max": [
+          -13.342275836227946,
+          1.1700000000000002,
+          3.772250660281669
+        ]
+      },
+      {
+        "objectId": "obj-a142d3fe-872f-4d5f",
+        "min": [
+          6.631839677708615,
+          0,
+          11.735168302032386
+        ],
+        "max": [
+          8.451839677708614,
+          2.72,
+          11.895168302032387
+        ]
+      },
+      {
+        "objectId": "obj-a142d3fe-872f-4d5f",
+        "min": [
+          6.341839677708615,
+          0,
+          11.690168302032387
+        ],
+        "max": [
+          6.5618396777086145,
+          3.2,
+          11.940168302032387
+        ]
+      },
+      {
+        "objectId": "obj-a142d3fe-872f-4d5f",
+        "min": [
+          8.521839677708615,
+          0,
+          11.690168302032387
+        ],
+        "max": [
+          8.741839677708615,
+          3.2,
+          11.940168302032387
+        ]
+      },
+      {
+        "objectId": "obj-a142d3fe-872f-4d5f",
+        "min": [
+          6.341839677708615,
+          2.95,
+          11.690168302032387
+        ],
+        "max": [
+          8.741839677708615,
+          3.2,
+          11.940168302032387
+        ]
+      },
+      {
+        "objectId": "obj-0ff7aebb-c03a-4e8c",
+        "min": [
+          -3.9887878185899606,
+          0.52,
+          -0.35940915929931205
+        ],
+        "max": [
+          -1.5887878185899604,
+          0.6599999999999999,
+          0.940590840700688
+        ]
+      },
+      {
+        "objectId": "obj-a036bba6-fe69-4c65",
+        "min": [
+          4.725264434672084,
+          0.13260768709937526,
+          -11.927498027292371
+        ],
+        "max": [
+          7.325264434672084,
+          4.21908947322298,
+          -11.780769542853138
+        ]
+      },
+      {
+        "objectId": "obj-a036bba6-fe69-4c65",
+        "min": [
+          4.425264434672084,
+          0.1082511731423472,
+          -11.9152706535891
+        ],
+        "max": [
+          4.725264434672084,
+          4.243445987180008,
+          -10.96153550473409
+        ]
+      },
+      {
+        "objectId": "obj-a036bba6-fe69-4c65",
+        "min": [
+          7.325264434672084,
+          0.1082511731423472,
+          -11.9152706535891
+        ],
+        "max": [
+          7.625264434672084,
+          4.243445987180008,
+          -10.96153550473409
+        ]
+      },
+      {
+        "objectId": "obj-a036bba6-fe69-4c65",
+        "min": [
+          4.4252644346720835,
+          0,
+          -11.927498027292371
+        ],
+        "max": [
+          7.625264434672085,
+          0.15155164239928604,
+          -10.949308131030822
+        ]
+      },
+      {
+        "objectId": "obj-a036bba6-fe69-4c65",
+        "min": [
+          4.4252644346720835,
+          4.275921339122713,
+          -11.927498027292371
+        ],
+        "max": [
+          7.625264434672085,
+          4.438298098836234,
+          -10.949308131030822
+        ]
+      },
+      {
+        "objectId": "obj-a036bba6-fe69-4c65",
+        "min": [
+          4.575264434672084,
+          0.7902335639391342,
+          -11.878588532479293
+        ],
+        "max": [
+          7.475264434672084,
+          0.8876596197672467,
+          -10.9982176258439
+        ]
+      },
+      {
+        "objectId": "obj-a036bba6-fe69-4c65",
+        "min": [
+          4.575264434672084,
+          1.6021173625067382,
+          -11.878588532479293
+        ],
+        "max": [
+          7.475264434672084,
+          1.6995434183348503,
+          -10.9982176258439
+        ]
+      },
+      {
+        "objectId": "obj-a036bba6-fe69-4c65",
+        "min": [
+          4.575264434672084,
+          2.4140011610743417,
+          -11.878588532479293
+        ],
+        "max": [
+          7.475264434672084,
+          2.511427216902454,
+          -10.9982176258439
+        ]
+      },
+      {
+        "objectId": "obj-a036bba6-fe69-4c65",
+        "min": [
+          4.575264434672084,
+          3.225884959641945,
+          -11.878588532479293
+        ],
+        "max": [
+          7.475264434672084,
+          3.3233110154700576,
+          -10.9982176258439
+        ]
+      },
+      {
+        "objectId": "obj-a036bba6-fe69-4c65",
+        "min": [
+          4.575264434672084,
+          4.010705964923962,
+          -11.878588532479293
+        ],
+        "max": [
+          7.475264434672084,
+          4.108132020752074,
+          -10.9982176258439
+        ]
+      },
+      {
+        "objectId": "obj-a036bba6-fe69-4c65",
+        "min": [
+          6.505264434672084,
+          0.22191490494181162,
+          -11.511767321381212
+        ],
+        "max": [
+          6.785264434672084,
+          0.8605968264816598,
+          -11.047127120656976
+        ]
+      },
+      {
+        "objectId": "obj-a036bba6-fe69-4c65",
+        "min": [
+          5.845264434672084,
+          1.7753192395344934,
+          -11.511767321381212
+        ],
+        "max": [
+          6.125264434672084,
+          2.4031760437601064,
+          -11.047127120656976
+        ]
+      },
+      {
+        "objectId": "obj-d29e1ca0-e19b-4ba6",
+        "min": [
+          1.4963494069407788,
+          5.0834585425224015,
+          -11.825405046656094
+        ],
+        "max": [
+          4.189778942599993,
+          8.992316150672517,
+          -11.724246368172833
+        ]
+      },
+      {
+        "objectId": "obj-d29e1ca0-e19b-4ba6",
+        "min": [
+          1.2759778994777524,
+          5.046053206559242,
+          -11.810231244883605
+        ],
+        "max": [
+          1.496349406940779,
+          9.029721486635676,
+          -11.122352231197432
+        ]
+      },
+      {
+        "objectId": "obj-d29e1ca0-e19b-4ba6",
+        "min": [
+          4.189778942599992,
+          5.046053206559242,
+          -11.810231244883605
+        ],
+        "max": [
+          4.4101504500630195,
+          9.029721486635676,
+          -11.122352231197432
+        ]
+      },
+      {
+        "objectId": "obj-d29e1ca0-e19b-4ba6",
+        "min": [
+          1.251492176426305,
+          4.793567188807919,
+          -11.825405046656094
+        ],
+        "max": [
+          4.434636173114466,
+          4.980593868623714,
+          -11.066714958031639
+        ]
+      },
+      {
+        "objectId": "obj-d29e1ca0-e19b-4ba6",
+        "min": [
+          1.251492176426305,
+          9.113883492552784,
+          -11.825405046656094
+        ],
+        "max": [
+          4.434636173114466,
+          9.282207504387,
+          -11.066714958031639
+        ]
+      },
+      {
+        "objectId": "obj-d29e1ca0-e19b-4ba6",
+        "min": [
+          1.3616779301578184,
+          4.980593868623714,
+          -11.805173310959443
+        ],
+        "max": [
+          4.324450419382953,
+          5.13021521247635,
+          -11.107178429424943
+        ]
+      },
+      {
+        "objectId": "obj-d29e1ca0-e19b-4ba6",
+        "min": [
+          1.3861636532092658,
+          8.964262148700147,
+          -11.805173310959443
+        ],
+        "max": [
+          4.2999646963315055,
+          9.113883492552784,
+          -11.107178429424943
+        ]
+      },
+      {
+        "objectId": "obj-d29e1ca0-e19b-4ba6",
+        "min": [
+          1.4963494069407788,
+          5.733376254882289,
+          -11.789999509186954
+        ],
+        "max": [
+          4.189778942599993,
+          5.836240928780976,
+          -11.122352231197432
+        ]
+      },
+      {
+        "objectId": "obj-d29e1ca0-e19b-4ba6",
+        "min": [
+          1.4963494069407788,
+          6.537590978090208,
+          -11.789999509186954
+        ],
+        "max": [
+          4.189778942599993,
+          6.640455651988895,
+          -11.122352231197432
+        ]
+      },
+      {
+        "objectId": "obj-d29e1ca0-e19b-4ba6",
+        "min": [
+          1.4963494069407788,
+          7.341805701298126,
+          -11.789999509186954
+        ],
+        "max": [
+          4.189778942599993,
+          7.4446703751968135,
+          -11.122352231197432
+        ]
+      },
+      {
+        "objectId": "obj-d29e1ca0-e19b-4ba6",
+        "min": [
+          1.4963494069407788,
+          8.146020424506045,
+          -11.789999509186954
+        ],
+        "max": [
+          4.189778942599993,
+          8.248885098404731,
+          -11.122352231197432
+        ]
+      },
+      {
+        "objectId": "obj-dd7f5a62-3440-4f8b",
+        "min": [
+          0.9218459473910612,
+          0.93,
+          -0.3482203738669878
+        ],
+        "max": [
+          4.321845947391061,
+          1.11,
+          0.9017796261330122
+        ]
+      },
+      {
+        "objectId": "obj-dd7f5a62-3440-4f8b",
+        "min": [
+          1.981845947391061,
+          0.54,
+          1.086779626133012
+        ],
+        "max": [
+          3.2618459473910613,
+          0.7,
+          1.806779626133012
+        ]
+      },
+      {
+        "objectId": "obj-dd7f5a62-3440-4f8b",
+        "min": [
+          1.0968459473910612,
+          0.7200000000000001,
+          -0.3432203738669879
+        ],
+        "max": [
+          4.146845947391061,
+          0.9400000000000001,
+          -0.2232203738669878
+        ]
+      },
+      {
+        "objectId": "obj-e94ca193-e995-4a2f",
+        "min": [
+          4.366163109144889,
+          4.815371620923021,
+          -11.801386684438548
+        ],
+        "max": [
+          4.556049495569642,
+          9.273381457650396,
+          -11.051386684438548
+        ]
+      },
+      {
+        "objectId": "obj-e94ca193-e995-4a2f",
+        "min": [
+          7.26193050212237,
+          4.815371620923021,
+          -11.801386684438548
+        ],
+        "max": [
+          7.451816888547123,
+          9.273381457650396,
+          -11.051386684438548
+        ]
+      },
+      {
+        "objectId": "obj-e94ca193-e995-4a2f",
+        "min": [
+          4.366163109144889,
+          9.087631047786756,
+          -11.801386684438548
+        ],
+        "max": [
+          7.451816888547123,
+          9.273381457650396,
+          -11.051386684438548
+        ]
+      },
+      {
+        "objectId": "obj-e94ca193-e995-4a2f",
+        "min": [
+          4.556049495569642,
+          4.815371620923021,
+          -11.801386684438548
+        ],
+        "max": [
+          7.26193050212237,
+          4.982546989800298,
+          -11.051386684438548
+        ]
+      },
+      {
+        "objectId": "obj-e94ca193-e995-4a2f",
+        "min": [
+          4.556049495569642,
+          5.669823506295768,
+          -11.776386684438547
+        ],
+        "max": [
+          7.26193050212237,
+          5.781273752213953,
+          -11.076386684438548
+        ]
+      },
+      {
+        "objectId": "obj-e94ca193-e995-4a2f",
+        "min": [
+          4.556049495569642,
+          6.505700350682151,
+          -11.776386684438547
+        ],
+        "max": [
+          7.26193050212237,
+          6.617150596600336,
+          -11.076386684438548
+        ]
+      },
+      {
+        "objectId": "obj-e94ca193-e995-4a2f",
+        "min": [
+          4.556049495569642,
+          7.341577195068534,
+          -11.776386684438547
+        ],
+        "max": [
+          7.26193050212237,
+          7.453027440986718,
+          -11.076386684438548
+        ]
+      },
+      {
+        "objectId": "obj-e94ca193-e995-4a2f",
+        "min": [
+          4.556049495569642,
+          8.177454039454917,
+          -11.776386684438547
+        ],
+        "max": [
+          7.26193050212237,
+          8.2889042853731,
+          -11.076386684438548
+        ]
+      },
+      {
+        "objectId": "obj-e94ca193-e995-4a2f",
+        "min": [
+          6.395573864059435,
+          6.645013158079882,
+          -11.556386684438548
+        ],
+        "max": [
+          7.131383611455353,
+          6.997938936820798,
+          -11.136386684438548
+        ]
+      },
+      {
+        "objectId": "obj-0e4f0f61-3590-44bb",
+        "min": [
+          4.853236259609466,
+          0.9400000000000001,
+          -0.4966145981382324
+        ],
+        "max": [
+          8.453236259609467,
+          1.1,
+          0.7833854018617676
+        ]
+      },
+      {
+        "objectId": "obj-0e4f0f61-3590-44bb",
+        "min": [
+          6.063236259609466,
+          0.49999999999999994,
+          0.9333854018617678
+        ],
+        "max": [
+          7.243236259609466,
+          0.6599999999999999,
+          1.7533854018617676
+        ]
+      },
+      {
+        "objectId": "obj-a734c2b2-205d-4da3",
+        "min": [
+          10.797358243649883,
+          0.2390941050032292,
+          -11.87829700081893
+        ],
+        "max": [
+          13.534384868387916,
+          4.200756665464355,
+          -11.75590614214584
+        ]
+      },
+      {
+        "objectId": "obj-a734c2b2-205d-4da3",
+        "min": [
+          10.605286199808619,
+          -0.023765022231158506,
+          -11.87829700081893
+        ],
+        "max": [
+          13.72645691222918,
+          0.23909410500322903,
+          -10.960365560770745
+        ]
+      },
+      {
+        "objectId": "obj-a734c2b2-205d-4da3",
+        "min": [
+          10.605286199808619,
+          4.200756665464355,
+          -11.87829700081893
+        ],
+        "max": [
+          13.72645691222918,
+          4.4823914446440565,
+          -10.960365560770745
+        ]
+      },
+      {
+        "objectId": "obj-a734c2b2-205d-4da3",
+        "min": [
+          10.605286199808619,
+          0.2390941050032292,
+          -11.835460200283348
+        ],
+        "max": [
+          10.845376254610201,
+          4.200756665464355,
+          -11.003202361306327
+        ]
+      },
+      {
+        "objectId": "obj-a734c2b2-205d-4da3",
+        "min": [
+          13.486366857427598,
+          0.2390941050032292,
+          -11.835460200283348
+        ],
+        "max": [
+          13.72645691222918,
+          4.200756665464355,
+          -11.003202361306327
+        ]
+      },
+      {
+        "objectId": "obj-a734c2b2-205d-4da3",
+        "min": [
+          10.815364997760003,
+          0.48317758029230307,
+          -11.82322111441604
+        ],
+        "max": [
+          13.516378114277796,
+          0.6333827958548102,
+          -11.015441447173636
+        ]
+      },
+      {
+        "objectId": "obj-a734c2b2-205d-4da3",
+        "min": [
+          10.815364997760003,
+          1.3656332217220324,
+          -11.82322111441604
+        ],
+        "max": [
+          13.516378114277796,
+          1.5158384372845397,
+          -11.015441447173636
+        ]
+      },
+      {
+        "objectId": "obj-a734c2b2-205d-4da3",
+        "min": [
+          10.815364997760003,
+          2.2480888631517617,
+          -11.82322111441604
+        ],
+        "max": [
+          13.516378114277796,
+          2.398294078714269,
+          -11.015441447173636
+        ]
+      },
+      {
+        "objectId": "obj-a734c2b2-205d-4da3",
+        "min": [
+          10.815364997760003,
+          3.130544504581491,
+          -11.82322111441604
+        ],
+        "max": [
+          13.516378114277796,
+          3.280749720143999,
+          -11.015441447173636
+        ]
+      },
+      {
+        "objectId": "obj-144fa69b-16b8-4173",
+        "min": [
+          7.6981344089813035,
+          4.998551879581756,
+          -11.768689085779158
+        ],
+        "max": [
+          10.288709142164539,
+          8.983152944357611,
+          -11.668689085779159
+        ]
+      },
+      {
+        "objectId": "obj-144fa69b-16b8-4173",
+        "min": [
+          7.458266378131004,
+          4.998551879581756,
+          -11.753689085779158
+        ],
+        "max": [
+          7.6981344089813035,
+          9.001685972565872,
+          -11.033689085779159
+        ]
+      },
+      {
+        "objectId": "obj-144fa69b-16b8-4173",
+        "min": [
+          10.288709142164539,
+          4.998551879581756,
+          -11.753689085779158
+        ],
+        "max": [
+          10.528577173014838,
+          9.001685972565872,
+          -11.033689085779159
+        ]
+      },
+      {
+        "objectId": "obj-144fa69b-16b8-4173",
+        "min": [
+          7.434279575045974,
+          4.794688569290898,
+          -11.768689085779158
+        ],
+        "max": [
+          10.552563976099869,
+          4.998551879581756,
+          -11.018689085779158
+        ]
+      },
+      {
+        "objectId": "obj-144fa69b-16b8-4173",
+        "min": [
+          7.434279575045974,
+          9.075818085398911,
+          -11.768689085779158
+        ],
+        "max": [
+          10.552563976099869,
+          9.242615339273248,
+          -11.018689085779158
+        ]
+      },
+      {
+        "objectId": "obj-144fa69b-16b8-4173",
+        "min": [
+          7.626173999726214,
+          8.946086887941092,
+          -11.733689085779158
+        ],
+        "max": [
+          10.360669551419628,
+          9.075818085398911,
+          -11.053689085779158
+        ]
+      },
+      {
+        "objectId": "obj-144fa69b-16b8-4173",
+        "min": [
+          7.686141007438788,
+          5.758406036120407,
+          -11.733689085779158
+        ],
+        "max": [
+          10.300702543707054,
+          5.869604205369965,
+          -11.053689085779158
+        ]
+      },
+      {
+        "objectId": "obj-144fa69b-16b8-4173",
+        "min": [
+          7.686141007438788,
+          6.592392305492098,
+          -11.733689085779158
+        ],
+        "max": [
+          10.300702543707054,
+          6.703590474741656,
+          -11.053689085779158
+        ]
+      },
+      {
+        "objectId": "obj-144fa69b-16b8-4173",
+        "min": [
+          7.686141007438788,
+          7.426378574863788,
+          -11.733689085779158
+        ],
+        "max": [
+          10.300702543707054,
+          7.537576744113347,
+          -11.053689085779158
+        ]
+      },
+      {
+        "objectId": "obj-144fa69b-16b8-4173",
+        "min": [
+          7.686141007438788,
+          8.260364844235479,
+          -11.733689085779158
+        ],
+        "max": [
+          10.300702543707054,
+          8.371563013485037,
+          -11.053689085779158
+        ]
+      },
+      {
+        "objectId": "obj-144fa69b-16b8-4173",
+        "min": [
+          9.485151238816036,
+          6.610925333700358,
+          -11.543689085779159
+        ],
+        "max": [
+          10.180768528281904,
+          7.018651954282073,
+          -11.123689085779159
+        ]
+      },
+      {
+        "objectId": "obj-b9704093-67a5-4e3e",
+        "min": [
+          8.794683458061273,
+          1.13,
+          -0.42895846878127264
+        ],
+        "max": [
+          12.394683458061275,
+          1.31,
+          0.9210415312187274
+        ]
+      },
+      {
+        "objectId": "obj-b9704093-67a5-4e3e",
+        "min": [
+          10.034683458061274,
+          0.54,
+          1.2260415312187274
+        ],
+        "max": [
+          11.154683458061275,
+          0.7,
+          1.9460415312187274
+        ]
+      },
+      {
+        "objectId": "obj-b9704093-67a5-4e3e",
+        "min": [
+          8.954683458061274,
+          0.94,
+          0.7960415312187274
+        ],
+        "max": [
+          12.234683458061275,
+          1.1600000000000001,
+          0.9160415312187276
+        ]
+      },
+      {
+        "objectId": "obj-b9704093-67a5-4e3e",
+        "min": [
+          9.204683458061274,
+          0.25999999999999995,
+          -0.2939584687812724
+        ],
+        "max": [
+          11.984683458061275,
+          0.44,
+          -0.1339584687812726
+        ]
+      },
+      {
+        "objectId": "obj-415da6a3-fdcb-4164",
+        "min": [
+          -3.9635578408593526,
+          0.9299999999999999,
+          -3.8594892253128106
+        ],
+        "max": [
+          -0.5635578408593525,
+          1.11,
+          -2.5094892253128105
+        ]
+      },
+      {
+        "objectId": "obj-415da6a3-fdcb-4164",
+        "min": [
+          -2.8535578408593523,
+          0.4800000000000001,
+          -2.3344892253128102
+        ],
+        "max": [
+          -1.6735578408593526,
+          0.6400000000000001,
+          -1.5144892253128104
+        ]
+      },
+      {
+        "objectId": "obj-415da6a3-fdcb-4164",
+        "min": [
+          -3.6385578408593524,
+          0.6199999999999999,
+          -3.8444892253128105
+        ],
+        "max": [
+          -0.8885578408593524,
+          0.8999999999999999,
+          -3.7244892253128103
+        ]
+      },
+      {
+        "objectId": "obj-14aa4fc1-8e4e-462c",
+        "min": [
+          3.4869078132576647,
+          0,
+          3.8176402486513785
+        ],
+        "max": [
+          4.211524564460909,
+          0.5497092595334955,
+          4.092494878418126
+        ]
+      },
+      {
+        "objectId": "obj-1e824a54-7685-4489",
+        "min": [
+          3.5711857477514837,
+          0,
+          4.289931939956193
+        ],
+        "max": [
+          3.7152054034205637,
+          0.05044713655075224,
+          4.990014651272754
+        ]
+      },
+      {
+        "objectId": "obj-1e6ded34-4172-4861",
+        "min": [
+          13.781798638454143,
+          4.911298262288346,
+          -11.856666766884773
+        ],
+        "max": [
+          16.440985299996314,
+          9.041021986388547,
+          -11.736666766884774
+        ]
+      },
+      {
+        "objectId": "obj-1e6ded34-4172-4861",
+        "min": [
+          13.4749694082762,
+          4.88668401492616,
+          -11.846666766884773
+        ],
+        "max": [
+          13.781798638454143,
+          9.065636233750732,
+          -11.066666766884774
+        ]
+      },
+      {
+        "objectId": "obj-1e6ded34-4172-4861",
+        "min": [
+          16.440985299996314,
+          4.88668401492616,
+          -11.846666766884773
+        ],
+        "max": [
+          16.747814530174253,
+          9.065636233750732,
+          -11.066666766884774
+        ]
+      },
+      {
+        "objectId": "obj-1e6ded34-4172-4861",
+        "min": [
+          13.4749694082762,
+          4.777287359983108,
+          -11.856666766884773
+        ],
+        "max": [
+          16.747814530174253,
+          4.93044267690338,
+          -11.056666766884774
+        ]
+      },
+      {
+        "objectId": "obj-1e6ded34-4172-4861",
+        "min": [
+          13.4749694082762,
+          9.098455230233647,
+          -11.856666766884773
+        ],
+        "max": [
+          16.747814530174253,
+          9.262550212648225,
+          -11.056666766884774
+        ]
+      },
+      {
+        "objectId": "obj-1e6ded34-4172-4861",
+        "min": [
+          13.628384023365172,
+          5.575882941067385,
+          -11.816666766884774
+        ],
+        "max": [
+          16.594399915085283,
+          5.6743399305161315,
+          -11.096666766884773
+        ]
+      },
+      {
+        "objectId": "obj-1e6ded34-4172-4861",
+        "min": [
+          13.628384023365172,
+          6.396357853140272,
+          -11.816666766884774
+        ],
+        "max": [
+          16.594399915085283,
+          6.494814842589019,
+          -11.096666766884773
+        ]
+      },
+      {
+        "objectId": "obj-1e6ded34-4172-4861",
+        "min": [
+          13.628384023365172,
+          7.216832765213159,
+          -11.816666766884774
+        ],
+        "max": [
+          16.594399915085283,
+          7.315289754661905,
+          -11.096666766884773
+        ]
+      },
+      {
+        "objectId": "obj-1e6ded34-4172-4861",
+        "min": [
+          13.628384023365172,
+          8.037307677286046,
+          -11.816666766884774
+        ],
+        "max": [
+          16.594399915085283,
+          8.135764666734794,
+          -11.096666766884773
+        ]
+      },
+      {
+        "objectId": "obj-1e6ded34-4172-4861",
+        "min": [
+          13.628384023365172,
+          8.83043342562317,
+          -11.816666766884774
+        ],
+        "max": [
+          16.594399915085283,
+          8.928890415071917,
+          -11.096666766884773
+        ]
+      },
+      {
+        "objectId": "obj-1e6ded34-4172-4861",
+        "min": [
+          15.602318737509936,
+          5.001550502616364,
+          -11.516666766884773
+        ],
+        "max": [
+          15.888692685676014,
+          5.646990766780368,
+          -11.136666766884774
+        ]
+      },
+      {
+        "objectId": "obj-1e6ded34-4172-4861",
+        "min": [
+          14.927294431118462,
+          6.5713925010491545,
+          -11.516666766884773
+        ],
+        "max": [
+          15.213668379284542,
+          7.205893099718853,
+          -11.136666766884774
+        ]
+      },
+      {
+        "objectId": "obj-786c88bc-ce4d-4b7f",
+        "min": [
+          13.955345891677203,
+          0.28657091814663466,
+          -11.875854891167618
+        ],
+        "max": [
+          16.699324153434006,
+          4.150656201543186,
+          -11.753109091821358
+        ]
+      },
+      {
+        "objectId": "obj-786c88bc-ce4d-4b7f",
+        "min": [
+          13.730838579351646,
+          0.24959402548255283,
+          -11.857443021265679
+        ],
+        "max": [
+          13.955345891677203,
+          4.187633094207268,
+          -11.022771585711109
+        ]
+      },
+      {
+        "objectId": "obj-786c88bc-ce4d-4b7f",
+        "min": [
+          16.699324153434006,
+          0.24959402548255283,
+          -11.857443021265679
+        ],
+        "max": [
+          16.923831465759562,
+          4.187633094207268,
+          -11.022771585711109
+        ]
+      },
+      {
+        "objectId": "obj-786c88bc-ce4d-4b7f",
+        "min": [
+          13.705893322426585,
+          0,
+          -11.875854891167618
+        ],
+        "max": [
+          16.948776722684627,
+          0.18488446332040934,
+          -10.955261396070666
+        ]
+      },
+      {
+        "objectId": "obj-786c88bc-ce4d-4b7f",
+        "min": [
+          13.705893322426585,
+          4.270831102701453,
+          -11.875854891167618
+        ],
+        "max": [
+          16.948776722684627,
+          4.437227119689821,
+          -10.955261396070666
+        ]
+      },
+      {
+        "objectId": "obj-786c88bc-ce4d-4b7f",
+        "min": [
+          13.818146978589363,
+          0.18488446332040934,
+          -11.851305731298366
+        ],
+        "max": [
+          16.83652306652185,
+          0.3327920339767368,
+          -11.00435971580917
+        ]
+      },
+      {
+        "objectId": "obj-786c88bc-ce4d-4b7f",
+        "min": [
+          13.843092235514424,
+          4.1229235320451245,
+          -11.851305731298366
+        ],
+        "max": [
+          16.811577809596784,
+          4.270831102701452,
+          -11.00435971580917
+        ]
+      },
+      {
+        "objectId": "obj-786c88bc-ce4d-4b7f",
+        "min": [
+          13.955345891677203,
+          0.9290444281850564,
+          -11.832893861396428
+        ],
+        "max": [
+          16.699324153434006,
+          1.0307308830112814,
+          -11.022771585711109
+        ]
+      },
+      {
+        "objectId": "obj-786c88bc-ce4d-4b7f",
+        "min": [
+          13.955345891677203,
+          1.7240476204628157,
+          -11.832893861396428
+        ],
+        "max": [
+          16.699324153434006,
+          1.825734075289041,
+          -11.022771585711109
+        ]
+      },
+      {
+        "objectId": "obj-786c88bc-ce4d-4b7f",
+        "min": [
+          13.955345891677203,
+          2.5190508127405753,
+          -11.832893861396428
+        ],
+        "max": [
+          16.699324153434006,
+          2.6207372675668004,
+          -11.022771585711109
+        ]
+      },
+      {
+        "objectId": "obj-786c88bc-ce4d-4b7f",
+        "min": [
+          13.955345891677203,
+          3.3140540050183347,
+          -11.832893861396428
+        ],
+        "max": [
+          16.699324153434006,
+          3.4157404598445598,
+          -11.022771585711109
+        ]
+      },
+      {
+        "objectId": "obj-dc0cec7c-1e79-4d6c",
+        "min": [
+          -4.9482112150249336,
+          0.15999999999999992,
+          -9.889570600554503
+        ],
+        "max": [
+          -4.788211215024933,
+          3.24,
+          -9.039570600554502
+        ]
+      },
+      {
+        "objectId": "obj-dc0cec7c-1e79-4d6c",
+        "min": [
+          -2.708211215024933,
+          0.15999999999999992,
+          -9.889570600554503
+        ],
+        "max": [
+          -2.5482112150249328,
+          3.24,
+          -9.039570600554502
+        ]
+      },
+      {
+        "objectId": "obj-dc0cec7c-1e79-4d6c",
+        "min": [
+          -4.948211215024933,
+          0,
+          -9.889570600554503
+        ],
+        "max": [
+          -2.548211215024933,
+          0.16000000000000014,
+          -9.039570600554502
+        ]
+      },
+      {
+        "objectId": "obj-dc0cec7c-1e79-4d6c",
+        "min": [
+          -4.948211215024933,
+          3.2199999999999998,
+          -9.889570600554503
+        ],
+        "max": [
+          -2.548211215024933,
+          3.4000000000000004,
+          -9.039570600554502
+        ]
+      },
+      {
+        "objectId": "obj-59b2a1f0-9eac-4eed",
+        "min": [
+          -7.383101772307446,
+          0,
+          -9.617629441708836
+        ],
+        "max": [
+          -7.223101772307446,
+          3.4,
+          -8.767629441708836
+        ]
+      },
+      {
+        "objectId": "obj-59b2a1f0-9eac-4eed",
+        "min": [
+          -5.143101772307446,
+          0,
+          -9.617629441708836
+        ],
+        "max": [
+          -4.983101772307446,
+          3.4,
+          -8.767629441708836
+        ]
+      },
+      {
+        "objectId": "obj-59b2a1f0-9eac-4eed",
+        "min": [
+          -7.223101772307446,
+          0,
+          -9.617629441708836
+        ],
+        "max": [
+          -5.143101772307446,
+          0.18,
+          -8.767629441708836
+        ]
+      },
+      {
+        "objectId": "obj-59b2a1f0-9eac-4eed",
+        "min": [
+          -7.223101772307446,
+          3.22,
+          -9.617629441708836
+        ],
+        "max": [
+          -5.143101772307446,
+          3.4,
+          -8.767629441708836
+        ]
+      },
+      {
+        "objectId": "obj-59b2a1f0-9eac-4eed",
+        "min": [
+          -7.013101772307446,
+          2.67,
+          -9.427629441708836
+        ],
+        "max": [
+          -6.353101772307446,
+          3.1500000000000004,
+          -8.997629441708836
+        ]
+      },
+      {
+        "objectId": "obj-300174bb-989b-4d83",
+        "min": [
+          -9.6887633716868,
+          0.15999999999999992,
+          -9.333277142899318
+        ],
+        "max": [
+          -7.608763371686801,
+          3.24,
+          -9.233277142899318
+        ]
+      },
+      {
+        "objectId": "obj-300174bb-989b-4d83",
+        "min": [
+          -9.8487633716868,
+          0.15999999999999992,
+          -9.333277142899318
+        ],
+        "max": [
+          -9.6887633716868,
+          3.24,
+          -8.483277142899318
+        ]
+      },
+      {
+        "objectId": "obj-300174bb-989b-4d83",
+        "min": [
+          -7.608763371686801,
+          0.15999999999999992,
+          -9.333277142899318
+        ],
+        "max": [
+          -7.448763371686801,
+          3.24,
+          -8.483277142899318
+        ]
+      },
+      {
+        "objectId": "obj-300174bb-989b-4d83",
+        "min": [
+          -9.8487633716868,
+          0,
+          -9.333277142899318
+        ],
+        "max": [
+          -7.448763371686801,
+          0.16,
+          -8.483277142899318
+        ]
+      },
+      {
+        "objectId": "obj-300174bb-989b-4d83",
+        "min": [
+          -9.8487633716868,
+          3.22,
+          -9.333277142899318
+        ],
+        "max": [
+          -7.448763371686801,
+          3.4,
+          -8.483277142899318
+        ]
+      },
+      {
+        "objectId": "obj-300174bb-989b-4d83",
+        "min": [
+          -8.698763371686802,
+          0.16999999999999993,
+          -9.278277142899318
+        ],
+        "max": [
+          -8.5987633716868,
+          3.19,
+          -8.558277142899318
+        ]
+      },
+      {
+        "objectId": "obj-300174bb-989b-4d83",
+        "min": [
+          -9.6887633716868,
+          1.1199999999999999,
+          -9.278277142899318
+        ],
+        "max": [
+          -7.608763371686801,
+          1.24,
+          -8.558277142899318
+        ]
+      },
+      {
+        "objectId": "obj-300174bb-989b-4d83",
+        "min": [
+          -9.6887633716868,
+          2.12,
+          -9.278277142899318
+        ],
+        "max": [
+          -7.608763371686801,
+          2.24,
+          -8.558277142899318
+        ]
+      },
+      {
+        "objectId": "obj-6e5ad472-4ac1-4d8b",
+        "min": [
+          -12.151639719484923,
+          0.15999999999999992,
+          -8.759360584300143
+        ],
+        "max": [
+          -10.07163971948492,
+          3.24,
+          -8.659360584300144
+        ]
+      },
+      {
+        "objectId": "obj-6e5ad472-4ac1-4d8b",
+        "min": [
+          -12.311639719484923,
+          0.15999999999999992,
+          -8.759360584300143
+        ],
+        "max": [
+          -12.151639719484923,
+          3.24,
+          -7.909360584300144
+        ]
+      },
+      {
+        "objectId": "obj-6e5ad472-4ac1-4d8b",
+        "min": [
+          -10.07163971948492,
+          0.15999999999999992,
+          -8.759360584300143
+        ],
+        "max": [
+          -9.91163971948492,
+          3.24,
+          -7.909360584300144
+        ]
+      },
+      {
+        "objectId": "obj-6e5ad472-4ac1-4d8b",
+        "min": [
+          -12.311639719484921,
+          0,
+          -8.759360584300143
+        ],
+        "max": [
+          -9.911639719484922,
+          0.16,
+          -7.909360584300144
+        ]
+      },
+      {
+        "objectId": "obj-6e5ad472-4ac1-4d8b",
+        "min": [
+          -12.311639719484921,
+          3.2399999999999998,
+          -8.759360584300143
+        ],
+        "max": [
+          -9.911639719484922,
+          3.4,
+          -7.909360584300144
+        ]
+      },
+      {
+        "objectId": "obj-6e5ad472-4ac1-4d8b",
+        "min": [
+          -11.15163971948492,
+          0.15999999999999992,
+          -8.684360584300144
+        ],
+        "max": [
+          -11.071639719484923,
+          3.24,
+          -8.004360584300143
+        ]
+      },
+      {
+        "objectId": "obj-6e5ad472-4ac1-4d8b",
+        "min": [
+          -12.151639719484923,
+          0.7699999999999999,
+          -8.684360584300144
+        ],
+        "max": [
+          -10.07163971948492,
+          0.87,
+          -8.004360584300143
+        ]
+      },
+      {
+        "objectId": "obj-6e5ad472-4ac1-4d8b",
+        "min": [
+          -12.151639719484923,
+          1.53,
+          -8.684360584300144
+        ],
+        "max": [
+          -10.07163971948492,
+          1.6300000000000001,
+          -8.004360584300143
+        ]
+      },
+      {
+        "objectId": "obj-52611d78-410f-4163",
+        "min": [
+          -3.563568559177019,
+          1.9734516182771529,
+          11.633682959257712
+        ],
+        "max": [
+          -0.4835685591770189,
+          3.753451618277153,
+          11.713682959257714
+        ]
+      },
+      {
+        "objectId": "obj-52611d78-410f-4163",
+        "min": [
+          -3.7235685591770187,
+          1.813451618277153,
+          11.613682959257712
+        ],
+        "max": [
+          -0.323568559177019,
+          1.9734516182771529,
+          11.773682959257712
+        ]
+      },
+      {
+        "objectId": "obj-52611d78-410f-4163",
+        "min": [
+          -3.7235685591770187,
+          3.753451618277153,
+          11.613682959257712
+        ],
+        "max": [
+          -0.323568559177019,
+          3.9134516182771533,
+          11.773682959257712
+        ]
+      },
+      {
+        "objectId": "obj-d9b95918-8461-4b70",
+        "min": [
+          17.79117760547863,
+          3.533977649228474,
+          7.272069778518967
+        ],
+        "max": [
+          17.87117760547863,
+          5.2139776492284735,
+          10.292069778518966
+        ]
+      },
+      {
+        "objectId": "obj-d9b95918-8461-4b70",
+        "min": [
+          17.751177605478627,
+          3.323977649228474,
+          7.082069778518966
+        ],
+        "max": [
+          17.91117760547863,
+          3.533977649228474,
+          10.482069778518966
+        ]
+      },
+      {
+        "objectId": "obj-d9b95918-8461-4b70",
+        "min": [
+          17.751177605478627,
+          5.2139776492284735,
+          7.082069778518966
+        ],
+        "max": [
+          17.91117760547863,
+          5.423977649228474,
+          10.482069778518966
+        ]
+      },
+      {
+        "objectId": "obj-a94817e2-75cf-490f",
+        "min": [
+          11.96173863087154,
+          1.9835063296097855,
+          11.695092178440227
+        ],
+        "max": [
+          15.00173863087154,
+          3.7035063296097857,
+          11.795092178440227
+        ]
+      },
+      {
+        "objectId": "obj-a94817e2-75cf-490f",
+        "min": [
+          11.78173863087154,
+          1.7935063296097855,
+          11.665092178440227
+        ],
+        "max": [
+          15.18173863087154,
+          1.9835063296097855,
+          11.825092178440228
+        ]
+      },
+      {
+        "objectId": "obj-a94817e2-75cf-490f",
+        "min": [
+          11.78173863087154,
+          3.7035063296097857,
+          11.665092178440227
+        ],
+        "max": [
+          15.18173863087154,
+          3.8935063296097856,
+          11.825092178440228
+        ]
+      },
+      {
+        "objectId": "obj-2834dc06-13c1-4a4d",
+        "min": [
+          1.6459460474035592,
+          5.035976929053013,
+          11.677962985158034
+        ],
+        "max": [
+          4.725946047403559,
+          6.815976929053013,
+          11.757962985158036
+        ]
+      },
+      {
+        "objectId": "obj-6ca1ad86-613b-4075",
+        "min": [
+          1.7189565482782316,
+          0.15999999999999992,
+          -7.411404372988919
+        ],
+        "max": [
+          3.7589565482782317,
+          2.84,
+          -7.311404372988919
+        ]
+      },
+      {
+        "objectId": "obj-6ca1ad86-613b-4075",
+        "min": [
+          1.5389565482782315,
+          0.15999999999999992,
+          -7.411404372988919
+        ],
+        "max": [
+          1.7189565482782316,
+          2.84,
+          -6.661404372988919
+        ]
+      },
+      {
+        "objectId": "obj-6ca1ad86-613b-4075",
+        "min": [
+          3.7589565482782317,
+          0.15999999999999992,
+          -7.411404372988919
+        ],
+        "max": [
+          3.938956548278232,
+          2.84,
+          -6.661404372988919
+        ]
+      },
+      {
+        "objectId": "obj-6ca1ad86-613b-4075",
+        "min": [
+          1.5389565482782317,
+          0,
+          -7.411404372988919
+        ],
+        "max": [
+          3.938956548278232,
+          0.16,
+          -6.661404372988919
+        ]
+      },
+      {
+        "objectId": "obj-6ca1ad86-613b-4075",
+        "min": [
+          1.5389565482782317,
+          2.84,
+          -7.411404372988919
+        ],
+        "max": [
+          3.938956548278232,
+          3,
+          -6.661404372988919
+        ]
+      },
+      {
+        "objectId": "obj-6ca1ad86-613b-4075",
+        "min": [
+          1.7189565482782316,
+          0.73,
+          -7.351404372988919
+        ],
+        "max": [
+          3.7589565482782317,
+          0.8300000000000001,
+          -6.6814043729889185
+        ]
+      },
+      {
+        "objectId": "obj-6ca1ad86-613b-4075",
+        "min": [
+          1.7189565482782316,
+          1.5,
+          -7.351404372988919
+        ],
+        "max": [
+          3.7589565482782317,
+          1.6,
+          -6.6814043729889185
+        ]
+      },
+      {
+        "objectId": "obj-6ca1ad86-613b-4075",
+        "min": [
+          2.9889565482782317,
+          2.29,
+          -7.186404372988919
+        ],
+        "max": [
+          3.6089565482782318,
+          2.63,
+          -6.8064043729889185
+        ]
+      },
+      {
+        "objectId": "obj-03286215-844a-44e5",
+        "min": [
+          4.863554394030451,
+          0.13999999999999985,
+          -6.459801346056231
+        ],
+        "max": [
+          5.023554394030451,
+          2.8600000000000003,
+          -5.779801346056231
+        ]
+      },
+      {
+        "objectId": "obj-03286215-844a-44e5",
+        "min": [
+          6.943554394030451,
+          0.13999999999999985,
+          -6.459801346056231
+        ],
+        "max": [
+          7.103554394030451,
+          2.8600000000000003,
+          -5.779801346056231
+        ]
+      },
+      {
+        "objectId": "obj-03286215-844a-44e5",
+        "min": [
+          4.863554394030451,
+          0,
+          -6.459801346056231
+        ],
+        "max": [
+          7.103554394030451,
+          0.14,
+          -5.779801346056231
+        ]
+      },
+      {
+        "objectId": "obj-03286215-844a-44e5",
+        "min": [
+          4.863554394030451,
+          2.86,
+          -6.459801346056231
+        ],
+        "max": [
+          7.103554394030451,
+          2.9999999999999996,
+          -5.779801346056231
+        ]
+      },
+      {
+        "objectId": "obj-03286215-844a-44e5",
+        "min": [
+          5.023554394030451,
+          0.6699999999999999,
+          -6.439801346056231
+        ],
+        "max": [
+          6.943554394030451,
+          0.77,
+          -5.819801346056231
+        ]
+      },
+      {
+        "objectId": "obj-03286215-844a-44e5",
+        "min": [
+          5.023554394030451,
+          1.3699999999999999,
+          -6.439801346056231
+        ],
+        "max": [
+          6.943554394030451,
+          1.47,
+          -5.819801346056231
+        ]
+      },
+      {
+        "objectId": "obj-13d659a8-a788-4824",
+        "min": [
+          8.46053594199237,
+          0.10999999999999979,
+          -6.378897316827417
+        ],
+        "max": [
+          10.580535941992371,
+          2.73,
+          -6.258897316827417
+        ]
+      },
+      {
+        "objectId": "obj-13d659a8-a788-4824",
+        "min": [
+          8.320535941992372,
+          2.7600000000000002,
+          -6.393897316827417
+        ],
+        "max": [
+          10.72053594199237,
+          2.94,
+          -5.643897316827417
+        ]
+      },
+      {
+        "objectId": "obj-13d659a8-a788-4824",
+        "min": [
+          8.40053594199237,
+          0,
+          -6.378897316827417
+        ],
+        "max": [
+          10.640535941992372,
+          0.18,
+          -5.658897316827416
+        ]
+      },
+      {
+        "objectId": "obj-13d659a8-a788-4824",
+        "min": [
+          8.40053594199237,
+          2.58,
+          -6.378897316827417
+        ],
+        "max": [
+          10.640535941992372,
+          2.76,
+          -5.658897316827416
+        ]
+      },
+      {
+        "objectId": "obj-13d659a8-a788-4824",
+        "min": [
+          8.36053594199237,
+          0.07999999999999977,
+          -6.343897316827417
+        ],
+        "max": [
+          8.520535941992371,
+          2.8000000000000003,
+          -5.6938973168274165
+        ]
+      },
+      {
+        "objectId": "obj-13d659a8-a788-4824",
+        "min": [
+          10.520535941992371,
+          0.07999999999999977,
+          -6.343897316827417
+        ],
+        "max": [
+          10.680535941992371,
+          2.8000000000000003,
+          -5.6938973168274165
+        ]
+      },
+      {
+        "objectId": "obj-13d659a8-a788-4824",
+        "min": [
+          8.49553594199237,
+          0.9099999999999998,
+          -6.3188973168274165
+        ],
+        "max": [
+          10.545535941992371,
+          1.01,
+          -5.698897316827416
+        ]
+      },
+      {
+        "objectId": "obj-13d659a8-a788-4824",
+        "min": [
+          8.49553594199237,
+          1.67,
+          -6.3188973168274165
+        ],
+        "max": [
+          10.545535941992371,
+          1.77,
+          -5.698897316827416
+        ]
+      },
+      {
+        "objectId": "obj-b16a9b4b-b9f8-4d9a",
+        "min": [
+          11.633807169803402,
+          2.49,
+          -6.0470877474883356
+        ],
+        "max": [
+          14.013807169803401,
+          2.67,
+          -5.2970877474883356
+        ]
+      },
+      {
+        "objectId": "obj-b16a9b4b-b9f8-4d9a",
+        "min": [
+          11.653807169803402,
+          0.06,
+          -6.012087747488335
+        ],
+        "max": [
+          11.813807169803402,
+          2.84,
+          -5.332087747488336
+        ]
+      },
+      {
+        "objectId": "obj-b16a9b4b-b9f8-4d9a",
+        "min": [
+          13.833807169803402,
+          0.06,
+          -6.012087747488335
+        ],
+        "max": [
+          13.993807169803402,
+          2.84,
+          -5.332087747488336
+        ]
+      },
+      {
+        "objectId": "obj-b16a9b4b-b9f8-4d9a",
+        "min": [
+          11.733807169803402,
+          0.6299999999999999,
+          -6.012087747488335
+        ],
+        "max": [
+          13.913807169803402,
+          0.73,
+          -5.332087747488336
+        ]
+      },
+      {
+        "objectId": "obj-b16a9b4b-b9f8-4d9a",
+        "min": [
+          11.733807169803402,
+          1.25,
+          -6.012087747488335
+        ],
+        "max": [
+          13.913807169803402,
+          1.35,
+          -5.332087747488336
+        ]
+      },
+      {
+        "objectId": "obj-b16a9b4b-b9f8-4d9a",
+        "min": [
+          11.733807169803402,
+          1.9,
+          -6.012087747488335
+        ],
+        "max": [
+          13.913807169803402,
+          2,
+          -5.332087747488336
+        ]
+      },
+      {
+        "objectId": "obj-d9993781-aa39-44e0",
+        "min": [
+          -1.772366805876083,
+          0.1200000000000001,
+          -5.860275031246092
+        ],
+        "max": [
+          0.38763319412391695,
+          2.88,
+          -5.760275031246092
+        ]
+      },
+      {
+        "objectId": "obj-d9993781-aa39-44e0",
+        "min": [
+          -1.8923668058760832,
+          0.1200000000000001,
+          -5.860275031246092
+        ],
+        "max": [
+          -1.772366805876083,
+          2.88,
+          -5.110275031246092
+        ]
+      },
+      {
+        "objectId": "obj-d9993781-aa39-44e0",
+        "min": [
+          0.3876331941239167,
+          0.1200000000000001,
+          -5.860275031246092
+        ],
+        "max": [
+          0.5076331941239168,
+          2.88,
+          -5.110275031246092
+        ]
+      },
+      {
+        "objectId": "obj-d9993781-aa39-44e0",
+        "min": [
+          -1.8923668058760832,
+          5.551115123125783e-17,
+          -5.860275031246092
+        ],
+        "max": [
+          0.5076331941239168,
+          0.12000000000000005,
+          -5.110275031246092
+        ]
+      },
+      {
+        "objectId": "obj-d9993781-aa39-44e0",
+        "min": [
+          -1.8923668058760832,
+          2.88,
+          -5.860275031246092
+        ],
+        "max": [
+          0.5076331941239168,
+          3,
+          -5.110275031246092
+        ]
+      },
+      {
+        "objectId": "obj-d9993781-aa39-44e0",
+        "min": [
+          -1.772366805876083,
+          0.63,
+          -5.8252750312460915
+        ],
+        "max": [
+          0.38763319412391695,
+          0.7300000000000001,
+          -5.145275031246092
+        ]
+      },
+      {
+        "objectId": "obj-d9993781-aa39-44e0",
+        "min": [
+          -1.772366805876083,
+          1.25,
+          -5.8252750312460915
+        ],
+        "max": [
+          0.38763319412391695,
+          1.35,
+          -5.145275031246092
+        ]
+      },
+      {
+        "objectId": "obj-d9993781-aa39-44e0",
+        "min": [
+          -1.772366805876083,
+          1.8699999999999999,
+          -5.8252750312460915
+        ],
+        "max": [
+          0.38763319412391695,
+          1.97,
+          -5.145275031246092
+        ]
+      },
+      {
+        "objectId": "obj-63a0104b-e717-4b54",
+        "min": [
+          9.876278208857928,
+          7.6218745522746705,
+          11.686991276212064
+        ],
+        "max": [
+          12.876278208857928,
+          9.12187455227467,
+          11.766991276212064
+        ]
+      },
+      {
+        "objectId": "obj-63a0104b-e717-4b54",
+        "min": [
+          9.876278208857928,
+          7.321874552274671,
+          11.626991276212065
+        ],
+        "max": [
+          12.876278208857928,
+          7.6218745522746705,
+          11.826991276212064
+        ]
+      },
+      {
+        "objectId": "obj-63a0104b-e717-4b54",
+        "min": [
+          9.876278208857928,
+          9.12187455227467,
+          11.626991276212065
+        ],
+        "max": [
+          12.876278208857928,
+          9.421874552274671,
+          11.826991276212064
+        ]
+      },
+      {
+        "objectId": "obj-63a0104b-e717-4b54",
+        "min": [
+          9.576278208857929,
+          7.321874552274671,
+          11.626991276212065
+        ],
+        "max": [
+          9.876278208857928,
+          9.421874552274671,
+          11.826991276212064
+        ]
+      },
+      {
+        "objectId": "obj-63a0104b-e717-4b54",
+        "min": [
+          12.876278208857928,
+          7.321874552274671,
+          11.626991276212065
+        ],
+        "max": [
+          13.176278208857926,
+          9.421874552274671,
+          11.826991276212064
+        ]
+      },
+      {
+        "objectId": "obj-1cb382f3-d7ec-4c47",
+        "min": [
+          -15.64444330277292,
+          0.15999999999999992,
+          -9.058937339699778
+        ],
+        "max": [
+          -15.48444330277292,
+          3.24,
+          -8.208937339699778
+        ]
+      },
+      {
+        "objectId": "obj-1cb382f3-d7ec-4c47",
+        "min": [
+          -13.404443302772918,
+          0.15999999999999992,
+          -9.058937339699778
+        ],
+        "max": [
+          -13.244443302772918,
+          3.24,
+          -8.208937339699778
+        ]
+      },
+      {
+        "objectId": "obj-1cb382f3-d7ec-4c47",
+        "min": [
+          -15.48444330277292,
+          0,
+          -9.058937339699778
+        ],
+        "max": [
+          -13.404443302772918,
+          0.16,
+          -8.208937339699778
+        ]
+      },
+      {
+        "objectId": "obj-1cb382f3-d7ec-4c47",
+        "min": [
+          -15.48444330277292,
+          3.2399999999999998,
+          -9.058937339699778
+        ],
+        "max": [
+          -13.404443302772918,
+          3.4,
+          -8.208937339699778
+        ]
+      },
+      {
+        "objectId": "obj-1cb382f3-d7ec-4c47",
+        "min": [
+          -15.394443302772919,
+          0.22999999999999998,
+          -8.903937339699777
+        ],
+        "max": [
+          -14.734443302772918,
+          0.71,
+          -8.423937339699778
+        ]
+      },
+      {
+        "objectId": "obj-1cb382f3-d7ec-4c47",
+        "min": [
+          -14.28444330277292,
+          2.23,
+          -8.893937339699777
+        ],
+        "max": [
+          -13.564443302772919,
+          2.6700000000000004,
+          -8.433937339699778
+        ]
+      },
+      {
+        "objectId": "obj-1cb382f3-d7ec-4c47",
+        "min": [
+          -15.48444330277292,
+          1.13,
+          -9.003937339699778
+        ],
+        "max": [
+          -13.404443302772918,
+          1.23,
+          -8.303937339699777
+        ]
+      },
+      {
+        "objectId": "obj-3426dda8-6c47-47c9",
+        "min": [
+          -6.469594871151443,
+          0.5194141540370432,
+          -1.3942505569393424
+        ],
+        "max": [
+          -6.069594871151443,
+          3.938890668114246,
+          -0.9942505569393425
+        ]
+      },
+      {
+        "objectId": "obj-3426dda8-6c47-47c9",
+        "min": [
+          -6.594594871151443,
+          0,
+          -1.5192505569393424
+        ],
+        "max": [
+          -5.944594871151443,
+          0.3029915898549417,
+          -0.8692505569393425
+        ]
+      },
+      {
+        "objectId": "obj-3426dda8-6c47-47c9",
+        "min": [
+          -6.594594871151443,
+          4.371735796478448,
+          -1.5192505569393424
+        ],
+        "max": [
+          -5.944594871151443,
+          4.54487384782413,
+          -0.8692505569393425
+        ]
+      },
+      {
+        "objectId": "obj-3426dda8-6c47-47c9",
+        "min": [
+          -6.559594871151443,
+          4.155313232296347,
+          -1.4842505569393425
+        ],
+        "max": [
+          -5.979594871151443,
+          4.371735796478449,
+          -0.9042505569393424
+        ]
+      },
+      {
+        "objectId": "obj-b83240d3-465d-465d",
+        "min": [
+          14.555976126524847,
+          -0.4497156094153676,
+          -0.9480758629025177
+        ],
+        "max": [
+          14.775976126524847,
+          4.647020390584633,
+          6.810436137097482
+        ]
+      },
+      {
+        "objectId": "obj-b83240d3-465d-465d",
+        "min": [
+          17.335976126524848,
+          -0.4497156094153676,
+          -0.9480758629025177
+        ],
+        "max": [
+          17.555976126524847,
+          4.647020390584633,
+          6.810436137097482
+        ]
+      },
+      {
+        "objectId": "obj-b83240d3-465d-465d",
+        "min": [
+          14.515976126524848,
+          0.3623806999549848,
+          -0.9526235317175877
+        ],
+        "max": [
+          14.695976126524847,
+          4.894924081214281,
+          6.754983805912552
+        ]
+      },
+      {
+        "objectId": "obj-b83240d3-465d-465d",
+        "min": [
+          17.415976126524846,
+          0.3623806999549848,
+          -0.9526235317175877
+        ],
+        "max": [
+          17.595976126524846,
+          4.894924081214281,
+          6.754983805912552
+        ]
+      },
+      {
+        "objectId": "obj-b83240d3-465d-465d",
+        "min": [
+          14.805976126524847,
+          -0.4213476094153672,
+          -0.8587198629025177
+        ],
+        "max": [
+          17.305976126524847,
+          4.698652390584633,
+          -0.383719862902518
+        ]
+      },
+      {
+        "objectId": "obj-b83240d3-465d-465d",
+        "min": [
+          14.805976126524847,
+          -0.42134760941536675,
+          -0.3837198629025176
+        ],
+        "max": [
+          17.305976126524847,
+          4.378652390584634,
+          0.09128013709748206
+        ]
+      },
+      {
+        "objectId": "obj-b83240d3-465d-465d",
+        "min": [
+          14.805976126524847,
+          -0.4213476094153672,
+          0.0912801370974825
+        ],
+        "max": [
+          17.305976126524847,
+          4.0586523905846335,
+          0.5662801370974822
+        ]
+      },
+      {
+        "objectId": "obj-b83240d3-465d-465d",
+        "min": [
+          14.805976126524847,
+          -0.4213476094153672,
+          0.5662801370974826
+        ],
+        "max": [
+          17.305976126524847,
+          3.738652390584633,
+          1.0412801370974825
+        ]
+      },
+      {
+        "objectId": "obj-b83240d3-465d-465d",
+        "min": [
+          14.805976126524847,
+          -0.421347609415367,
+          1.0412801370974822
+        ],
+        "max": [
+          17.305976126524847,
+          3.418652390584633,
+          1.5162801370974823
+        ]
+      },
+      {
+        "objectId": "obj-b83240d3-465d-465d",
+        "min": [
+          14.805976126524847,
+          -0.421347609415367,
+          1.5162801370974823
+        ],
+        "max": [
+          17.305976126524847,
+          3.0986523905846335,
+          1.9912801370974824
+        ]
+      },
+      {
+        "objectId": "obj-b83240d3-465d-465d",
+        "min": [
+          14.805976126524847,
+          -0.4213476094153672,
+          1.9912801370974822
+        ],
+        "max": [
+          17.305976126524847,
+          2.778652390584633,
+          2.466280137097482
+        ]
+      },
+      {
+        "objectId": "obj-b83240d3-465d-465d",
+        "min": [
+          14.805976126524847,
+          -0.421347609415367,
+          2.466280137097482
+        ],
+        "max": [
+          17.305976126524847,
+          2.458652390584633,
+          2.941280137097482
+        ]
+      },
+      {
+        "objectId": "obj-3fe6d2d8-0461-4b80",
+        "min": [
+          5.0396574409861135,
+          0.81,
+          2.512189316185557
+        ],
+        "max": [
+          7.7896574409861135,
+          0.95,
+          3.292189316185557
+        ]
+      },
+      {
+        "objectId": "obj-3fe6d2d8-0461-4b80",
+        "min": [
+          5.904657440986114,
+          0.45,
+          3.532189316185557
+        ],
+        "max": [
+          6.924657440986113,
+          0.5900000000000001,
+          4.152189316185558
+        ]
+      },
+      {
+        "objectId": "obj-8b1c43e1-464c-4c1d",
+        "min": [
+          10.447527832482775,
+          4.961049766474846,
+          -11.852620345637098
+        ],
+        "max": [
+          10.646558773043743,
+          9.040258193439918,
+          -10.982011786863653
+        ]
+      },
+      {
+        "objectId": "obj-8b1c43e1-464c-4c1d",
+        "min": [
+          13.344533745092424,
+          4.961049766474846,
+          -11.852620345637098
+        ],
+        "max": [
+          13.543564685653392,
+          9.040258193439918,
+          -10.982011786863653
+        ]
+      },
+      {
+        "objectId": "obj-8b1c43e1-464c-4c1d",
+        "min": [
+          10.447527832482777,
+          4.7491428352039335,
+          -11.852620345637098
+        ],
+        "max": [
+          13.54356468565339,
+          4.961049766474846,
+          -10.982011786863653
+        ]
+      },
+      {
+        "objectId": "obj-8b1c43e1-464c-4c1d",
+        "min": [
+          10.447527832482777,
+          9.013769827031053,
+          -11.852620345637098
+        ],
+        "max": [
+          13.54356468565339,
+          9.25216512471083,
+          -10.982011786863653
+        ]
+      },
+      {
+        "objectId": "obj-8b1c43e1-464c-4c1d",
+        "min": [
+          10.646558773043743,
+          5.808677491558497,
+          -11.802871285135758
+        ],
+        "max": [
+          13.344533745092424,
+          5.967607690011682,
+          -11.031760847364993
+        ]
+      },
+      {
+        "objectId": "obj-8b1c43e1-464c-4c1d",
+        "min": [
+          10.646558773043743,
+          6.85496796470863,
+          -11.802871285135758
+        ],
+        "max": [
+          13.344533745092424,
+          7.013898163161814,
+          -11.031760847364993
+        ]
+      },
+      {
+        "objectId": "obj-8b1c43e1-464c-4c1d",
+        "min": [
+          10.646558773043743,
+          7.901258437858761,
+          -11.802871285135758
+        ],
+        "max": [
+          13.344533745092424,
+          8.060188636311945,
+          -11.031760847364993
+        ]
+      },
+      {
+        "objectId": "obj-0343ad77-01f4-405b",
+        "min": [
+          1.1825281482964494,
+          0,
+          -11.716143937342197
+        ],
+        "max": [
+          4.447350062774524,
+          0.2354957586581103,
+          -11.016143937342198
+        ]
+      },
+      {
+        "objectId": "obj-0343ad77-01f4-405b",
+        "min": [
+          1.1825281482964494,
+          4.186591265033072,
+          -11.716143937342197
+        ],
+        "max": [
+          4.447350062774524,
+          4.448253219097639,
+          -11.016143937342198
+        ]
+      },
+      {
+        "objectId": "obj-0343ad77-01f4-405b",
+        "min": [
+          1.1825281482964491,
+          0.2354957586581104,
+          -11.696143937342198
+        ],
+        "max": [
+          1.3924095570843256,
+          4.186591265033072,
+          -11.036143937342198
+        ]
+      },
+      {
+        "objectId": "obj-0343ad77-01f4-405b",
+        "min": [
+          4.237468653986648,
+          0.2354957586581104,
+          -11.696143937342198
+        ],
+        "max": [
+          4.447350062774524,
+          4.186591265033072,
+          -11.036143937342198
+        ]
+      },
+      {
+        "objectId": "obj-0343ad77-01f4-405b",
+        "min": [
+          1.3574293222863463,
+          0.9943154254453545,
+          -11.686143937342198
+        ],
+        "max": [
+          4.272448888784627,
+          1.1513125978840948,
+          -11.046143937342197
+        ]
+      },
+      {
+        "objectId": "obj-0343ad77-01f4-405b",
+        "min": [
+          1.3574293222863463,
+          1.9886308508907093,
+          -11.686143937342198
+        ],
+        "max": [
+          4.272448888784627,
+          2.14562802332945,
+          -11.046143937342197
+        ]
+      },
+      {
+        "objectId": "obj-0343ad77-01f4-405b",
+        "min": [
+          1.3574293222863463,
+          3.035278667148977,
+          -11.686143937342198
+        ],
+        "max": [
+          4.272448888784627,
+          3.1922758395877175,
+          -11.046143937342197
+        ]
+      },
+      {
+        "objectId": "obj-e3a2b264-d641-469e",
+        "min": [
+          -10.67364102944901,
+          3.18,
+          -5.189853803307699
+        ],
+        "max": [
+          -7.87364102944901,
+          3.4,
+          -4.489853803307699
+        ]
+      },
+      {
+        "objectId": "obj-e3a2b264-d641-469e",
+        "min": [
+          -10.67364102944901,
+          0.08,
+          -5.179853803307699
+        ],
+        "max": [
+          -10.49364102944901,
+          3.2600000000000002,
+          -4.4998538033076985
+        ]
+      },
+      {
+        "objectId": "obj-e3a2b264-d641-469e",
+        "min": [
+          -8.05364102944901,
+          0.08,
+          -5.179853803307699
+        ],
+        "max": [
+          -7.87364102944901,
+          3.2600000000000002,
+          -4.4998538033076985
+        ]
+      },
+      {
+        "objectId": "obj-e3a2b264-d641-469e",
+        "min": [
+          -10.59364102944901,
+          0,
+          -5.169853803307698
+        ],
+        "max": [
+          -7.95364102944901,
+          0.16000000000000003,
+          -4.509853803307698
+        ]
+      },
+      {
+        "objectId": "obj-e3a2b264-d641-469e",
+        "min": [
+          -10.55364102944901,
+          3.06,
+          -5.159853803307699
+        ],
+        "max": [
+          -7.99364102944901,
+          3.18,
+          -4.519853803307699
+        ]
+      },
+      {
+        "objectId": "obj-e3a2b264-d641-469e",
+        "min": [
+          -10.50364102944901,
+          0.5599999999999999,
+          -5.159853803307699
+        ],
+        "max": [
+          -8.04364102944901,
+          0.68,
+          -4.519853803307699
+        ]
+      },
+      {
+        "objectId": "obj-e3a2b264-d641-469e",
+        "min": [
+          -10.50364102944901,
+          1.16,
+          -5.159853803307699
+        ],
+        "max": [
+          -8.04364102944901,
+          1.28,
+          -4.519853803307699
+        ]
+      },
+      {
+        "objectId": "obj-e3a2b264-d641-469e",
+        "min": [
+          -10.50364102944901,
+          1.78,
+          -5.159853803307699
+        ],
+        "max": [
+          -8.04364102944901,
+          1.9000000000000001,
+          -4.519853803307699
+        ]
+      },
+      {
+        "objectId": "obj-e3a2b264-d641-469e",
+        "min": [
+          -10.50364102944901,
+          2.4,
+          -5.159853803307699
+        ],
+        "max": [
+          -8.04364102944901,
+          2.52,
+          -4.519853803307699
+        ]
+      },
+      {
+        "objectId": "obj-97b3ddcb-d140-44a2",
+        "min": [
+          7.717098158413059,
+          0.22274201376443334,
+          -11.840212917561654
+        ],
+        "max": [
+          10.481928779419182,
+          4.179688375932601,
+          -11.709448725537875
+        ]
+      },
+      {
+        "objectId": "obj-97b3ddcb-d140-44a2",
+        "min": [
+          7.513135243748672,
+          0.2096395423665255,
+          -11.8140600791569
+        ],
+        "max": [
+          7.717098158413059,
+          4.192790847330508,
+          -10.951016411799964
+        ]
+      },
+      {
+        "objectId": "obj-97b3ddcb-d140-44a2",
+        "min": [
+          10.481928779419182,
+          0.2096395423665255,
+          -11.8140600791569
+        ],
+        "max": [
+          10.685891694083567,
+          4.192790847330508,
+          -10.951016411799964
+        ]
+      },
+      {
+        "objectId": "obj-97b3ddcb-d140-44a2",
+        "min": [
+          7.615116701080865,
+          0,
+          -11.8140600791569
+        ],
+        "max": [
+          10.583910236751375,
+          0.23584448516234108,
+          -10.951016411799964
+        ]
+      },
+      {
+        "objectId": "obj-97b3ddcb-d140-44a2",
+        "min": [
+          7.615116701080865,
+          4.1927908473305076,
+          -11.8140600791569
+        ],
+        "max": [
+          10.583910236751375,
+          4.454840275288665,
+          -10.951016411799964
+        ]
+      },
+      {
+        "objectId": "obj-97b3ddcb-d140-44a2",
+        "min": [
+          7.717098158413059,
+          1.0481977118326269,
+          -11.787907240752142
+        ],
+        "max": [
+          10.481928779419182,
+          1.2054273686075212,
+          -10.97716925020472
+        ]
+      },
+      {
+        "objectId": "obj-97b3ddcb-d140-44a2",
+        "min": [
+          7.717098158413059,
+          2.096395423665254,
+          -11.787907240752142
+        ],
+        "max": [
+          10.481928779419182,
+          2.2536250804401483,
+          -10.97716925020472
+        ]
+      },
+      {
+        "objectId": "obj-97b3ddcb-d140-44a2",
+        "min": [
+          7.717098158413059,
+          3.144593135497881,
+          -11.787907240752142
+        ],
+        "max": [
+          10.481928779419182,
+          3.301822792272775,
+          -10.97716925020472
+        ]
+      },
+      {
+        "objectId": "obj-1c0d05b1-2d8a-4ee7",
+        "min": [
+          1.8291874565723603,
+          0.86,
+          -2.811030831771063
+        ],
+        "max": [
+          4.17918745657236,
+          1.02,
+          -1.991030831771063
+        ]
+      },
+      {
+        "objectId": "obj-f7ce52be-2976-48b2",
+        "min": [
+          5.742887762594645,
+          0.8400000000000001,
+          -2.891793705472861
+        ],
+        "max": [
+          8.642887762594645,
+          1,
+          -2.1117937054728606
+        ]
+      },
+      {
+        "objectId": "obj-4d85c41a-3b51-44fb",
+        "min": [
+          9.682637860671544,
+          0.8300000000000001,
+          -3.1426409677237683
+        ],
+        "max": [
+          12.782637860671546,
+          0.99,
+          -2.3226409677237685
+        ]
+      },
+      {
+        "objectId": "obj-4d85c41a-3b51-44fb",
+        "min": [
+          10.732637860671545,
+          0.455,
+          -1.9626409677237684
+        ],
+        "max": [
+          11.732637860671545,
+          0.605,
+          -1.2426409677237684
+        ]
+      },
+      {
+        "objectId": "obj-4d85c41a-3b51-44fb",
+        "min": [
+          11.742637860671545,
+          0.595,
+          -2.9926409677237684
+        ],
+        "max": [
+          12.522637860671544,
+          0.845,
+          -2.5326409677237685
+        ]
+      },
+      {
+        "objectId": "obj-bc0cd6b4-ffd4-4545",
+        "min": [
+          -18.09384686929666,
+          4.717026131373209,
+          -11.897081215261299
+        ],
+        "max": [
+          18.037322642270166,
+          4.867026131373209,
+          -0.003346682087769004
+        ]
+      },
+      {
+        "objectId": "obj-bc0cd6b4-ffd4-4545",
+        "min": [
+          -18.09384686929666,
+          4.417026131373209,
+          -11.897081215261299
+        ],
+        "max": [
+          18.037322642270166,
+          4.717026131373209,
+          -11.33369379000571
+        ]
+      },
+      {
+        "objectId": "obj-bc0cd6b4-ffd4-4545",
+        "min": [
+          -18.09384686929666,
+          4.417026131373209,
+          -0.5667341073433567
+        ],
+        "max": [
+          18.037322642270166,
+          4.717026131373209,
+          -0.003346682087769004
+        ]
+      },
+      {
+        "objectId": "obj-3cc0cf28-6d75-41cc",
+        "min": [
+          0.17928125844947412,
+          0.5194141540370432,
+          -1.2640170503951802
+        ],
+        "max": [
+          0.5792812584494742,
+          3.938890668114246,
+          -0.8640170503951803
+        ]
+      },
+      {
+        "objectId": "obj-3cc0cf28-6d75-41cc",
+        "min": [
+          0.054281258449474123,
+          0,
+          -1.3890170503951802
+        ],
+        "max": [
+          0.7042812584494742,
+          0.3029915898549417,
+          -0.7390170503951803
+        ]
+      },
+      {
+        "objectId": "obj-3cc0cf28-6d75-41cc",
+        "min": [
+          0.054281258449474123,
+          4.371735796478448,
+          -1.3890170503951802
+        ],
+        "max": [
+          0.7042812584494742,
+          4.54487384782413,
+          -0.7390170503951803
+        ]
+      },
+      {
+        "objectId": "obj-3cc0cf28-6d75-41cc",
+        "min": [
+          0.08928125844947415,
+          4.155313232296347,
+          -1.3540170503951803
+        ],
+        "max": [
+          0.6692812584494741,
+          4.371735796478449,
+          -0.7740170503951802
+        ]
+      },
+      {
+        "objectId": "obj-48c7d598-f547-434c",
+        "min": [
+          -17.984619441753228,
+          4.717026131373209,
+          -0.07604623059527871
+        ],
+        "max": [
+          -5.163236734166443,
+          4.867026131373209,
+          11.81768830257825
+        ]
+      },
+      {
+        "objectId": "obj-48c7d598-f547-434c",
+        "min": [
+          -17.984619441753228,
+          4.417026131373209,
+          -0.07604623059527871
+        ],
+        "max": [
+          -5.163236734166443,
+          4.717026131373209,
+          0.487341194660309
+        ]
+      },
+      {
+        "objectId": "obj-48c7d598-f547-434c",
+        "min": [
+          -17.984619441753228,
+          4.417026131373209,
+          11.254300877322663
+        ],
+        "max": [
+          -5.163236734166443,
+          4.717026131373209,
+          11.81768830257825
+        ]
+      },
+      {
+        "objectId": "obj-22c056a1-a139-423d",
+        "min": [
+          13.276888765138054,
+          0.5194141540370432,
+          -1.3893829067564294
+        ],
+        "max": [
+          13.676888765138052,
+          3.938890668114246,
+          -0.9893829067564295
+        ]
+      },
+      {
+        "objectId": "obj-22c056a1-a139-423d",
+        "min": [
+          13.151888765138054,
+          0,
+          -1.5143829067564294
+        ],
+        "max": [
+          13.801888765138052,
+          0.3029915898549417,
+          -0.8643829067564295
+        ]
+      },
+      {
+        "objectId": "obj-22c056a1-a139-423d",
+        "min": [
+          13.151888765138054,
+          4.371735796478448,
+          -1.5143829067564294
+        ],
+        "max": [
+          13.801888765138052,
+          4.54487384782413,
+          -0.8643829067564295
+        ]
+      },
+      {
+        "objectId": "obj-22c056a1-a139-423d",
+        "min": [
+          13.186888765138054,
+          4.155313232296347,
+          -1.4793829067564295
+        ],
+        "max": [
+          13.766888765138052,
+          4.371735796478449,
+          -0.8993829067564294
+        ]
+      },
+      {
+        "objectId": "obj-26ee21ae-4441-4854",
+        "min": [
+          6.92451302750956,
+          0.5194141540370432,
+          -1.290099711526748
+        ],
+        "max": [
+          7.3245130275095605,
+          3.938890668114246,
+          -0.8900997115267482
+        ]
+      },
+      {
+        "objectId": "obj-26ee21ae-4441-4854",
+        "min": [
+          6.79951302750956,
+          0,
+          -1.415099711526748
+        ],
+        "max": [
+          7.4495130275095605,
+          0.3029915898549417,
+          -0.7650997115267482
+        ]
+      },
+      {
+        "objectId": "obj-26ee21ae-4441-4854",
+        "min": [
+          6.79951302750956,
+          4.371735796478448,
+          -1.415099711526748
+        ],
+        "max": [
+          7.4495130275095605,
+          4.54487384782413,
+          -0.7650997115267482
+        ]
+      },
+      {
+        "objectId": "obj-26ee21ae-4441-4854",
+        "min": [
+          6.83451302750956,
+          4.155313232296347,
+          -1.3800997115267482
+        ],
+        "max": [
+          7.41451302750956,
+          4.371735796478449,
+          -0.8000997115267481
+        ]
+      },
+      {
+        "objectId": "obj-bdb43ca4-c0ae-4b11",
+        "min": [
+          -6.633652778295484,
+          0.5194141540370432,
+          4.649219370182585
+        ],
+        "max": [
+          -6.233652778295483,
+          3.938890668114246,
+          5.049219370182585
+        ]
+      },
+      {
+        "objectId": "obj-bdb43ca4-c0ae-4b11",
+        "min": [
+          -6.758652778295484,
+          0,
+          4.524219370182585
+        ],
+        "max": [
+          -6.108652778295483,
+          0.3029915898549417,
+          5.174219370182585
+        ]
+      },
+      {
+        "objectId": "obj-bdb43ca4-c0ae-4b11",
+        "min": [
+          -6.758652778295484,
+          4.371735796478448,
+          4.524219370182585
+        ],
+        "max": [
+          -6.108652778295483,
+          4.54487384782413,
+          5.174219370182585
+        ]
+      },
+      {
+        "objectId": "obj-bdb43ca4-c0ae-4b11",
+        "min": [
+          -6.723652778295484,
+          4.155313232296347,
+          4.559219370182585
+        ],
+        "max": [
+          -6.1436527782954835,
+          4.371735796478449,
+          5.139219370182585
+        ]
+      },
+      {
+        "objectId": "obj-28ce70a8-6046-4c37",
+        "min": [
+          -6.627622443636628,
+          0.5194141540370432,
+          10.607107653595744
+        ],
+        "max": [
+          -6.227622443636627,
+          3.938890668114246,
+          11.007107653595742
+        ]
+      },
+      {
+        "objectId": "obj-28ce70a8-6046-4c37",
+        "min": [
+          -6.752622443636628,
+          0,
+          10.482107653595744
+        ],
+        "max": [
+          -6.102622443636627,
+          0.3029915898549417,
+          11.132107653595742
+        ]
+      },
+      {
+        "objectId": "obj-28ce70a8-6046-4c37",
+        "min": [
+          -6.752622443636628,
+          4.371735796478448,
+          10.482107653595744
+        ],
+        "max": [
+          -6.102622443636627,
+          4.54487384782413,
+          11.132107653595742
+        ]
+      },
+      {
+        "objectId": "obj-28ce70a8-6046-4c37",
+        "min": [
+          -6.717622443636627,
+          4.155313232296347,
+          10.517107653595744
+        ],
+        "max": [
+          -6.137622443636627,
+          4.371735796478449,
+          11.097107653595742
+        ]
+      },
+      {
+        "objectId": "obj-223328e7-dc82-49a1",
+        "min": [
+          16.84659937755738,
+          0.21516782788625594,
+          -11.071498215057545
+        ],
+        "max": [
+          17.835987325906984,
+          4.294376254851327,
+          -10.872467274496577
+        ]
+      },
+      {
+        "objectId": "obj-223328e7-dc82-49a1",
+        "min": [
+          16.84659937755738,
+          0.21516782788625594,
+          -8.174492302447897
+        ],
+        "max": [
+          17.835987325906984,
+          4.294376254851327,
+          -7.9754613618869294
+        ]
+      },
+      {
+        "objectId": "obj-223328e7-dc82-49a1",
+        "min": [
+          16.84659937755738,
+          0.003260896615343345,
+          -11.071498215057545
+        ],
+        "max": [
+          17.835987325906984,
+          0.21516782788625613,
+          -7.9754613618869294
+        ]
+      },
+      {
+        "objectId": "obj-223328e7-dc82-49a1",
+        "min": [
+          16.84659937755738,
+          4.267887888442463,
+          -11.071498215057545
+        ],
+        "max": [
+          17.835987325906984,
+          4.506283186122239,
+          -7.9754613618869294
+        ]
+      },
+      {
+        "objectId": "obj-223328e7-dc82-49a1",
+        "min": [
+          16.903135831748784,
+          1.0627955529699071,
+          -10.872467274496577
+        ],
+        "max": [
+          17.77945087171558,
+          1.2217257514230917,
+          -8.174492302447897
+        ]
+      },
+      {
+        "objectId": "obj-223328e7-dc82-49a1",
+        "min": [
+          16.903135831748784,
+          2.109086026120039,
+          -10.872467274496577
+        ],
+        "max": [
+          17.77945087171558,
+          2.268016224573224,
+          -8.174492302447897
+        ]
+      },
+      {
+        "objectId": "obj-223328e7-dc82-49a1",
+        "min": [
+          16.903135831748784,
+          3.1553764992701705,
+          -10.872467274496577
+        ],
+        "max": [
+          17.77945087171558,
+          3.3143066977233553,
+          -8.174492302447897
+        ]
+      },
+      {
+        "objectId": "obj-ff64ab0a-df2b-4c54",
+        "min": [
+          17.769741977352904,
+          0.20201569479029816,
+          -7.744722254715609
+        ],
+        "max": [
+          17.917461130845933,
+          4.258163817783729,
+          -5.154147521532374
+        ]
+      },
+      {
+        "objectId": "obj-ff64ab0a-df2b-4c54",
+        "min": [
+          16.831725352672173,
+          0.20201569479029816,
+          -7.9845902855659086
+        ],
+        "max": [
+          17.89530325782198,
+          4.277029623006956,
+          -7.744722254715609
+        ]
+      },
+      {
+        "objectId": "obj-ff64ab0a-df2b-4c54",
+        "min": [
+          16.831725352672173,
+          0.20201569479029816,
+          -5.154147521532374
+        ],
+        "max": [
+          17.89530325782198,
+          4.277029623006956,
+          -4.914279490682074
+        ]
+      },
+      {
+        "objectId": "obj-ff64ab0a-df2b-4c54",
+        "min": [
+          16.80956747964822,
+          -0.005508162665179617,
+          -8.008577088650938
+        ],
+        "max": [
+          17.917461130845933,
+          0.20201569479029824,
+          -4.890292687597045
+        ]
+      },
+      {
+        "objectId": "obj-ff64ab0a-df2b-4c54",
+        "min": [
+          16.80956747964822,
+          4.352492843899856,
+          -8.008577088650938
+        ],
+        "max": [
+          17.917461130845933,
+          4.522285090908883,
+          -4.890292687597045
+        ]
+      },
+      {
+        "objectId": "obj-ff64ab0a-df2b-4c54",
+        "min": [
+          16.86126918337078,
+          4.2204322073372795,
+          -7.816682663970699
+        ],
+        "max": [
+          17.865759427123372,
+          4.3524928438998565,
+          -5.082187112277284
+        ]
+      },
+      {
+        "objectId": "obj-ff64ab0a-df2b-4c54",
+        "min": [
+          16.86126918337078,
+          0.9755137089425339,
+          -7.756715656258124
+        ],
+        "max": [
+          17.865759427123372,
+          1.0887085402818855,
+          -5.142154119989859
+        ]
+      },
+      {
+        "objectId": "obj-ff64ab0a-df2b-4c54",
+        "min": [
+          16.86126918337078,
+          1.8244749439876706,
+          -7.756715656258124
+        ],
+        "max": [
+          17.865759427123372,
+          1.937669775327022,
+          -5.142154119989859
+        ]
+      },
+      {
+        "objectId": "obj-ff64ab0a-df2b-4c54",
+        "min": [
+          16.86126918337078,
+          2.673436179032808,
+          -7.756715656258124
+        ],
+        "max": [
+          17.865759427123372,
+          2.786631010372159,
+          -5.142154119989859
+        ]
+      },
+      {
+        "objectId": "obj-ff64ab0a-df2b-4c54",
+        "min": [
+          16.86126918337078,
+          3.522397414077944,
+          -7.756715656258124
+        ],
+        "max": [
+          17.865759427123372,
+          3.6355922454172953,
+          -5.142154119989859
+        ]
+      },
+      {
+        "objectId": "obj-ff64ab0a-df2b-4c54",
+        "min": [
+          16.9646725908159,
+          1.8433407492108962,
+          -5.957705424880877
+        ],
+        "max": [
+          17.58509303548662,
+          2.258388464121852,
+          -5.262088135415008
+        ]
+      },
+      {
+        "objectId": "obj-c29ce6d8-b321-4781",
+        "min": [
+          16.677870778974512,
+          0.06152270953107699,
+          -4.874442611056325
+        ],
+        "max": [
+          17.427870778974512,
+          4.533542870789913,
+          -4.684556224631572
+        ]
+      },
+      {
+        "objectId": "obj-c29ce6d8-b321-4781",
+        "min": [
+          16.677870778974512,
+          0.06152270953107699,
+          -1.978675218078844
+        ],
+        "max": [
+          17.427870778974512,
+          4.533542870789913,
+          -1.788788831654091
+        ]
+      },
+      {
+        "objectId": "obj-c29ce6d8-b321-4781",
+        "min": [
+          16.677870778974512,
+          4.347208697404128,
+          -4.874442611056325
+        ],
+        "max": [
+          17.427870778974512,
+          4.533542870789913,
+          -1.788788831654091
+        ]
+      },
+      {
+        "objectId": "obj-c29ce6d8-b321-4781",
+        "min": [
+          16.677870778974512,
+          0.06152270953107686,
+          -4.684556224631572
+        ],
+        "max": [
+          17.427870778974512,
+          0.22922346557828321,
+          -1.978675218078844
+        ]
+      },
+      {
+        "objectId": "obj-c29ce6d8-b321-4781",
+        "min": [
+          16.70287077897451,
+          0.9186599071056871,
+          -4.684556224631572
+        ],
+        "max": [
+          17.402870778974513,
+          1.0304604111371582,
+          -1.978675218078844
+        ]
+      },
+      {
+        "objectId": "obj-c29ce6d8-b321-4781",
+        "min": [
+          16.70287077897451,
+          1.757163687341719,
+          -4.684556224631572
+        ],
+        "max": [
+          17.402870778974513,
+          1.86896419137319,
+          -1.978675218078844
+        ]
+      },
+      {
+        "objectId": "obj-c29ce6d8-b321-4781",
+        "min": [
+          16.70287077897451,
+          2.5956674675777505,
+          -4.684556224631572
+        ],
+        "max": [
+          17.402870778974513,
+          2.707467971609222,
+          -1.978675218078844
+        ]
+      },
+      {
+        "objectId": "obj-c29ce6d8-b321-4781",
+        "min": [
+          16.70287077897451,
+          3.434171247813782,
+          -4.684556224631572
+        ],
+        "max": [
+          17.402870778974513,
+          3.5459717518452534,
+          -1.978675218078844
+        ]
+      },
+      {
+        "objectId": "obj-c29ce6d8-b321-4781",
+        "min": [
+          16.762870778974513,
+          1.8969143173810579,
+          -2.8450318561417784
+        ],
+        "max": [
+          17.18287077897451,
+          2.2509492468140486,
+          -2.109222108745861
+        ]
+      },
+      {
+        "objectId": "obj-c16d9083-f779-49a1",
+        "min": [
+          13.954213663952402,
+          0.3237530385129315,
+          -0.9432866609905546
+        ],
+        "max": [
+          16.647643199611615,
+          4.341325644440457,
+          -0.8036958970950266
+        ]
+      },
+      {
+        "objectId": "obj-c16d9083-f779-49a1",
+        "min": [
+          13.733842156489375,
+          0.28530736764281167,
+          -1.7738517061689443
+        ],
+        "max": [
+          13.954213663952402,
+          4.379771315310577,
+          -0.8246345116793556
+        ]
+      },
+      {
+        "objectId": "obj-c16d9083-f779-49a1",
+        "min": [
+          16.647643199611615,
+          0.28530736764281167,
+          -1.7738517061689447
+        ],
+        "max": [
+          16.868014707074643,
+          4.379771315310577,
+          -0.824634511679356
+        ]
+      },
+      {
+        "objectId": "obj-c16d9083-f779-49a1",
+        "min": [
+          13.709356433437927,
+          0.02579908926950214,
+          -1.850626626311485
+        ],
+        "max": [
+          16.892500430126088,
+          0.21802744362010162,
+          -0.8036958970950265
+        ]
+      },
+      {
+        "objectId": "obj-c16d9083-f779-49a1",
+        "min": [
+          13.709356433437927,
+          4.466274074768347,
+          -1.850626626311485
+        ],
+        "max": [
+          16.892500430126088,
+          4.639279593683886,
+          -0.8036958970950265
+        ]
+      },
+      {
+        "objectId": "obj-c16d9083-f779-49a1",
+        "min": [
+          13.819542187169441,
+          0.21802744362010162,
+          -1.7947903207532738
+        ],
+        "max": [
+          16.782314676394577,
+          0.3718101271005812,
+          -0.8316140498741322
+        ]
+      },
+      {
+        "objectId": "obj-c16d9083-f779-49a1",
+        "min": [
+          13.844027910220888,
+          4.312491391287867,
+          -1.7947903207532738
+        ],
+        "max": [
+          16.75782895334313,
+          4.4662740747683465,
+          -0.8316140498741322
+        ]
+      },
+      {
+        "objectId": "obj-c16d9083-f779-49a1",
+        "min": [
+          13.954213663952402,
+          0.991746569881264,
+          -1.7738517061689447
+        ],
+        "max": [
+          16.647643199611615,
+          1.0974721647740935,
+          -0.8525526644584613
+        ]
+      },
+      {
+        "objectId": "obj-c16d9083-f779-49a1",
+        "min": [
+          13.954213663952402,
+          1.8183284935888409,
+          -1.7738517061689447
+        ],
+        "max": [
+          16.647643199611615,
+          1.9240540884816706,
+          -0.8525526644584613
+        ]
+      },
+      {
+        "objectId": "obj-c16d9083-f779-49a1",
+        "min": [
+          13.954213663952402,
+          2.644910417296418,
+          -1.7738517061689447
+        ],
+        "max": [
+          16.647643199611615,
+          2.750636012189248,
+          -0.8525526644584613
+        ]
+      },
+      {
+        "objectId": "obj-c16d9083-f779-49a1",
+        "min": [
+          13.954213663952402,
+          3.4714923410039953,
+          -1.7738517061689447
+        ],
+        "max": [
+          16.647643199611615,
+          3.5772179358968246,
+          -0.8525526644584613
+        ]
+      },
+      {
+        "objectId": "obj-fdb86d5c-82e7-4b5a",
+        "min": [
+          9.919522205270026,
+          9.033478945156894,
+          6.546656327012291
+        ],
+        "max": [
+          11.939522205270025,
+          9.715307244044016,
+          8.566656327012291
+        ]
+      },
+      {
+        "objectId": "__room__:floor:0",
+        "min": [
+          -18,
+          -0.16,
+          -12
+        ],
+        "max": [
+          18,
+          0,
+          12
+        ]
+      },
+      {
+        "objectId": "__room__:ceiling:1",
+        "min": [
+          -18,
+          9.84,
+          -12
+        ],
+        "max": [
+          18,
+          10,
+          12
+        ]
+      },
+      {
+        "objectId": "__room__:north:2",
+        "min": [
+          -18,
+          0,
+          -12
+        ],
+        "max": [
+          18,
+          10,
+          -11.84
+        ]
+      },
+      {
+        "objectId": "__room__:south:3",
+        "min": [
+          -18,
+          0,
+          11.84
+        ],
+        "max": [
+          18,
+          10,
+          12
+        ]
+      },
+      {
+        "objectId": "__room__:west:5",
+        "min": [
+          -18,
+          0,
+          -12
+        ],
+        "max": [
+          -17.840000000000003,
+          10,
+          12
+        ]
+      },
+      {
+        "objectId": "__room__:east:4",
+        "min": [
+          17.840000000000003,
+          0,
+          -12
+        ],
+        "max": [
+          18,
+          10,
+          12
+        ]
+      }
+    ],
+    "cellSize": 4,
+    "cells": {
+      "-3,1": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        9,
+        10,
+        13,
+        14,
+        30,
+        31,
+        39,
+        40,
+        41,
+        281,
+        339,
+        340
+      ],
+      "-2,0": [
+        6,
+        7,
+        281,
+        282,
+        339,
+        340
+      ],
+      "-2,1": [
+        7,
+        9,
+        10,
+        12,
+        281,
+        292,
+        293,
+        294,
+        295,
+        339,
+        340
+      ],
+      "3,-1": [
+        8,
+        105,
+        224,
+        226,
+        228,
+        229,
+        271,
+        273,
+        274,
+        276,
+        284,
+        285,
+        286,
+        287,
+        327,
+        328,
+        330,
+        331,
+        332,
+        333,
+        334,
+        335,
+        336,
+        337,
+        339,
+        340
+      ],
+      "3,0": [
+        8,
+        105,
+        107,
+        224,
+        226,
+        229,
+        230,
+        231,
+        232,
+        233,
+        234,
+        235,
+        339,
+        340
+      ],
+      "-1,0": [
+        11,
+        47,
+        339,
+        340
+      ],
+      "0,0": [
+        11,
+        71,
+        72,
+        112,
+        339,
+        340
+      ],
+      "-1,1": [
+        11,
+        15,
+        16,
+        18,
+        339,
+        340
+      ],
+      "0,1": [
+        11,
+        17,
+        18,
+        19,
+        112,
+        113,
+        339,
+        340
+      ],
+      "-1,2": [
+        15,
+        16,
+        18,
+        20,
+        162,
+        163,
+        164,
+        339,
+        340,
+        342
+      ],
+      "0,2": [
+        18,
+        171,
+        339,
+        340,
+        342
+      ],
+      "4,0": [
+        21,
+        22,
+        23,
+        225,
+        227,
+        229,
+        230,
+        231,
+        232,
+        233,
+        234,
+        235,
+        339,
+        340,
+        344
+      ],
+      "4,1": [
+        21,
+        22,
+        23,
+        165,
+        166,
+        167,
+        225,
+        227,
+        339,
+        340,
+        344
+      ],
+      "-2,2": [
+        24,
+        25,
+        26,
+        27,
+        281,
+        283,
+        296,
+        297,
+        298,
+        299,
+        339,
+        340,
+        342
+      ],
+      "-3,2": [
+        28,
+        29,
+        30,
+        31,
+        32,
+        281,
+        283,
+        339,
+        340,
+        342
+      ],
+      "-4,1": [
+        30,
+        31,
+        33,
+        34,
+        35,
+        36,
+        37,
+        39,
+        40,
+        281,
+        339,
+        340
+      ],
+      "-4,2": [
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        281,
+        283,
+        339,
+        340,
+        342
+      ],
+      "-5,1": [
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        281,
+        339,
+        340,
+        343
+      ],
+      "-5,2": [
+        33,
+        34,
+        35,
+        281,
+        283,
+        339,
+        340,
+        342,
+        343
+      ],
+      "-4,0": [
+        42,
+        281,
+        282,
+        339,
+        340
+      ],
+      "1,2": [
+        43,
+        44,
+        46,
+        171,
+        339,
+        340,
+        342
+      ],
+      "2,2": [
+        43,
+        45,
+        46,
+        168,
+        169,
+        170,
+        208,
+        209,
+        210,
+        211,
+        338,
+        339,
+        340,
+        342
+      ],
+      "-1,-1": [
+        47,
+        109,
+        110,
+        111,
+        274,
+        276,
+        339,
+        340
+      ],
+      "1,-3": [
+        48,
+        49,
+        50,
+        51,
+        52,
+        53,
+        54,
+        55,
+        56,
+        57,
+        58,
+        59,
+        60,
+        62,
+        63,
+        64,
+        65,
+        66,
+        67,
+        68,
+        69,
+        70,
+        74,
+        75,
+        76,
+        77,
+        78,
+        79,
+        80,
+        81,
+        82,
+        94,
+        95,
+        97,
+        98,
+        99,
+        100,
+        101,
+        102,
+        103,
+        245,
+        246,
+        248,
+        249,
+        250,
+        251,
+        261,
+        262,
+        264,
+        265,
+        266,
+        267,
+        268,
+        274,
+        275,
+        339,
+        340,
+        341
+      ],
+      "0,-3": [
+        60,
+        61,
+        63,
+        64,
+        65,
+        66,
+        67,
+        68,
+        69,
+        70,
+        245,
+        246,
+        247,
+        249,
+        250,
+        251,
+        274,
+        275,
+        339,
+        340,
+        341
+      ],
+      "0,-1": [
+        71,
+        73,
+        269,
+        274,
+        276,
+        277,
+        278,
+        279,
+        280,
+        339,
+        340
+      ],
+      "1,-1": [
+        71,
+        73,
+        83,
+        269,
+        270,
+        274,
+        276,
+        288,
+        289,
+        290,
+        291,
+        339,
+        340
+      ],
+      "1,0": [
+        71,
+        83,
+        84,
+        112,
+        236,
+        237,
+        339,
+        340
+      ],
+      "2,-1": [
+        83,
+        105,
+        108,
+        270,
+        271,
+        272,
+        273,
+        274,
+        276,
+        339,
+        340
+      ],
+      "2,0": [
+        83,
+        105,
+        106,
+        107,
+        339,
+        340
+      ],
+      "2,-3": [
+        85,
+        86,
+        87,
+        88,
+        90,
+        91,
+        92,
+        93,
+        94,
+        96,
+        97,
+        98,
+        99,
+        100,
+        101,
+        102,
+        103,
+        104,
+        238,
+        240,
+        241,
+        242,
+        243,
+        244,
+        261,
+        263,
+        264,
+        265,
+        266,
+        267,
+        268,
+        274,
+        275,
+        339,
+        340,
+        341
+      ],
+      "3,-3": [
+        85,
+        86,
+        87,
+        89,
+        90,
+        91,
+        92,
+        93,
+        114,
+        115,
+        117,
+        118,
+        119,
+        120,
+        121,
+        122,
+        123,
+        124,
+        125,
+        126,
+        127,
+        129,
+        130,
+        131,
+        132,
+        133,
+        134,
+        135,
+        136,
+        239,
+        240,
+        241,
+        242,
+        243,
+        244,
+        274,
+        275,
+        339,
+        340,
+        341
+      ],
+      "1,1": [
+        112,
+        237,
+        339,
+        340
+      ],
+      "4,-3": [
+        114,
+        116,
+        117,
+        118,
+        119,
+        120,
+        121,
+        122,
+        123,
+        126,
+        128,
+        129,
+        130,
+        131,
+        132,
+        133,
+        134,
+        135,
+        136,
+        274,
+        275,
+        300,
+        301,
+        302,
+        303,
+        304,
+        305,
+        306,
+        310,
+        311,
+        339,
+        340,
+        341,
+        344
+      ],
+      "-2,-3": [
+        137,
+        139,
+        140,
+        141,
+        142,
+        143,
+        144,
+        145,
+        146,
+        148,
+        149,
+        150,
+        152,
+        153,
+        274,
+        275,
+        339,
+        340,
+        341
+      ],
+      "-1,-3": [
+        138,
+        139,
+        140,
+        274,
+        275,
+        339,
+        340,
+        341
+      ],
+      "-3,-3": [
+        146,
+        147,
+        149,
+        150,
+        151,
+        152,
+        153,
+        154,
+        156,
+        157,
+        158,
+        159,
+        160,
+        161,
+        274,
+        275,
+        339,
+        340,
+        341
+      ],
+      "-4,-3": [
+        154,
+        155,
+        157,
+        158,
+        160,
+        161,
+        213,
+        214,
+        215,
+        216,
+        217,
+        218,
+        219,
+        274,
+        275,
+        339,
+        340,
+        341
+      ],
+      "-4,-2": [
+        155,
+        157,
+        158,
+        274,
+        339,
+        340
+      ],
+      "-3,-2": [
+        156,
+        157,
+        158,
+        252,
+        253,
+        254,
+        255,
+        256,
+        257,
+        258,
+        259,
+        260,
+        274,
+        339,
+        340
+      ],
+      "4,2": [
+        165,
+        166,
+        167,
+        339,
+        340,
+        342,
+        344
+      ],
+      "3,2": [
+        168,
+        169,
+        170,
+        208,
+        209,
+        210,
+        212,
+        339,
+        340,
+        342
+      ],
+      "0,-2": [
+        172,
+        173,
+        174,
+        175,
+        176,
+        177,
+        178,
+        179,
+        200,
+        202,
+        203,
+        204,
+        205,
+        206,
+        207,
+        274,
+        339,
+        340
+      ],
+      "1,-2": [
+        180,
+        181,
+        182,
+        183,
+        184,
+        185,
+        274,
+        339,
+        340
+      ],
+      "2,-2": [
+        186,
+        187,
+        188,
+        189,
+        190,
+        191,
+        192,
+        193,
+        194,
+        195,
+        197,
+        198,
+        199,
+        274,
+        339,
+        340
+      ],
+      "3,-2": [
+        194,
+        196,
+        197,
+        198,
+        199,
+        274,
+        339,
+        340
+      ],
+      "-1,-2": [
+        200,
+        201,
+        203,
+        204,
+        205,
+        206,
+        207,
+        274,
+        339,
+        340
+      ],
+      "-2,-1": [
+        220,
+        221,
+        222,
+        223,
+        274,
+        276,
+        281,
+        282,
+        339,
+        340
+      ],
+      "3,1": [
+        224,
+        226,
+        339,
+        340
+      ],
+      "4,-1": [
+        225,
+        227,
+        228,
+        229,
+        274,
+        276,
+        319,
+        320,
+        321,
+        322,
+        323,
+        324,
+        325,
+        326,
+        327,
+        329,
+        330,
+        331,
+        332,
+        333,
+        334,
+        335,
+        336,
+        337,
+        339,
+        340,
+        344
+      ],
+      "-2,-2": [
+        252,
+        254,
+        255,
+        256,
+        274,
+        339,
+        340
+      ],
+      "-5,-3": [
+        274,
+        275,
+        339,
+        340,
+        341,
+        343
+      ],
+      "-5,-2": [
+        274,
+        339,
+        340,
+        343
+      ],
+      "4,-2": [
+        274,
+        301,
+        302,
+        303,
+        307,
+        308,
+        309,
+        310,
+        311,
+        312,
+        313,
+        314,
+        315,
+        316,
+        317,
+        318,
+        320,
+        321,
+        322,
+        323,
+        324,
+        325,
+        339,
+        340,
+        344
+      ],
+      "-5,-1": [
+        274,
+        276,
+        281,
+        282,
+        339,
+        340,
+        343
+      ],
+      "-4,-1": [
+        274,
+        276,
+        281,
+        282,
+        339,
+        340
+      ],
+      "-3,-1": [
+        274,
+        276,
+        281,
+        282,
+        339,
+        340
+      ],
+      "-5,0": [
+        281,
+        282,
+        339,
+        340,
+        343
+      ],
+      "-3,0": [
+        281,
+        282,
+        339,
+        340
+      ],
+      "2,1": [
+        338,
+        339,
+        340
+      ],
+      "-5,3": [
+        339,
+        340,
+        342,
+        343
+      ],
+      "-4,3": [
+        339,
+        340,
+        342
+      ],
+      "-3,3": [
+        339,
+        340,
+        342
+      ],
+      "-2,3": [
+        339,
+        340,
+        342
+      ],
+      "-1,3": [
+        339,
+        340,
+        342
+      ],
+      "0,3": [
+        339,
+        340,
+        342
+      ],
+      "1,3": [
+        339,
+        340,
+        342
+      ],
+      "2,3": [
+        339,
+        340,
+        342
+      ],
+      "3,3": [
+        339,
+        340,
+        342
+      ],
+      "4,3": [
+        339,
+        340,
+        342,
+        344
+      ]
+    }
+  }
+}

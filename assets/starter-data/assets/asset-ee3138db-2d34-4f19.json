@@ -1,0 +1,344 @@
+{
+  "id": "asset-ee3138db-2d34-4f19",
+  "name": "童椅",
+  "prompt": "单独一把儿童学习椅，符合儿童尺寸，圆角靠背，不包含书桌或坐垫玩具\nCoordinate contract: local Y+ is up, local Z+ is the front, entrance, or forward direction, and local X+ is right. Put doors, facades, openings, windshields, noses, seats, and other recognizable front details toward local Z+. For a modular repeated element, explicitly choose the long axis: side-by-side modules span local X with depth/front on local Z; traversal modules span local Z. Keep the model centered at its origin.\nCanonical dimensions contract: width=0.48, height=0.78, depth=0.5 world units. Keep the generated mesh within this centered bounding size.",
+  "modelJson": {
+    "name": "儿童学习椅",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "chair",
+        "name": "儿童学习椅",
+        "transform": {
+          "pos": [
+            0,
+            0.4625,
+            -0.01
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.44,
+            0.895,
+            0.566
+          ],
+          "center": [
+            0,
+            -0.095,
+            -0.046
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              0.9043,
+              -0.4268
+            ],
+            [
+              0,
+              0.4268,
+              0.9043
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "chair",
+        "transform": {
+          "pos": [
+            0,
+            -0.0725,
+            0.03
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.44,
+            "height": 0.07,
+            "depth": 0.42
+          },
+          "color": 4827558
+        }
+      },
+      {
+        "id": "m1",
+        "parent": "chair",
+        "transform": {
+          "pos": [
+            -0.18,
+            -0.2825,
+            -0.15
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.07,
+            "height": 0.36,
+            "depth": 0.07
+          },
+          "color": 15771206
+        }
+      },
+      {
+        "id": "m2",
+        "parent": "chair",
+        "transform": {
+          "pos": [
+            -0.18,
+            -0.2825,
+            0.19
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.07,
+            "height": 0.36,
+            "depth": 0.07
+          },
+          "color": 15771206
+        }
+      },
+      {
+        "id": "m3",
+        "parent": "chair",
+        "transform": {
+          "pos": [
+            0.18,
+            -0.2825,
+            -0.15
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.07,
+            "height": 0.36,
+            "depth": 0.07
+          },
+          "color": 15771206
+        }
+      },
+      {
+        "id": "m4",
+        "parent": "chair",
+        "transform": {
+          "pos": [
+            0.18,
+            -0.2825,
+            0.19
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.07,
+            "height": 0.36,
+            "depth": 0.07
+          },
+          "color": 15771206
+        }
+      },
+      {
+        "id": "m5",
+        "parent": "chair",
+        "transform": {
+          "pos": [
+            0,
+            -0.2625,
+            -0.15
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.36,
+            "height": 0.045,
+            "depth": 0.05
+          },
+          "color": 3900805
+        }
+      },
+      {
+        "id": "m6",
+        "parent": "chair",
+        "transform": {
+          "pos": [
+            0,
+            -0.2625,
+            0.19
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.36,
+            "height": 0.045,
+            "depth": 0.05
+          },
+          "color": 3900805
+        }
+      },
+      {
+        "id": "m7",
+        "parent": "chair",
+        "transform": {
+          "pos": [
+            -0.18,
+            0.1125,
+            -0.18
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.065,
+            "height": 0.35,
+            "depth": 0.065
+          },
+          "color": 15771206
+        }
+      },
+      {
+        "id": "m8",
+        "parent": "chair",
+        "transform": {
+          "pos": [
+            0.18,
+            0.1125,
+            -0.18
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.065,
+            "height": 0.35,
+            "depth": 0.065
+          },
+          "color": 15771206
+        }
+      },
+      {
+        "id": "m9",
+        "parent": "chair",
+        "transform": {
+          "pos": [
+            0,
+            0.1025,
+            -0.19
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.38,
+            "height": 0.14,
+            "depth": 0.06
+          },
+          "color": 4827558
+        }
+      },
+      {
+        "id": "m10",
+        "parent": "chair",
+        "transform": {
+          "pos": [
+            0,
+            0.2275,
+            -0.19
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.4,
+            "height": 0.11,
+            "depth": 0.06
+          },
+          "color": 4827558
+        }
+      },
+      {
+        "id": "m11",
+        "parent": "chair",
+        "transform": {
+          "pos": [
+            0,
+            0.2825,
+            -0.19
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.34,
+            "height": 0.07,
+            "depth": 0.06
+          },
+          "color": 4827558
+        }
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1787766588197,
+        "provider": "gpt",
+        "data": "/8ca3vxLSac+hth3mPRJENPmgq2EhDqkHuEn+l0megVINXRxf+tD9F0DIrOnl+LpLAw+Vri4V8s+Y5YW2HkqQQ11U+4al5zXMDFCImkAknYYQQrNKAMCb5S/XdHmibyl9yKvlqz78OZwa3Dgrw0vgSf6jkM5o5AVYlAO5WG37Sa/h7eyEqpjukpi86u93y0lfCy+918yacbdEUcZzKGvuDfyxpCLkxY7hdG0ksz3kT+qlqCM2LYDuuidx+4k9g0GYgne0EHGe2HFPoY6YnI97JMyStz9mMqLInt21YuWDkr6/Gugp5flGhqaku3VSoiTQ0G6Yxh+1BidXhP28pcj/5DYizUneE4tvjWkHFwgdf01kJytDnBKutoiAEsr00TJgUULQCUIihBvxCCbqOYiPvVZLO5kQrQSAy03lkTDxI309agjqfiakGv4svdQs7b2vz2D3+kXzMVx3zcqGH8ave0y29+hwA/QqUQ7YLYwAUrOXUncu3p8IHojesmw4mSAXpG5umWNAY63Lh0cnO0UI5jHSuEdazzDK/Eoas2gKewageJSvZqnvik1fkRGisHMdTWP9CZwwJlanHeb84DfkV8ClHP6eHpDNI4KhlYUE7PeUc2Sym4gnctMd7ywHHkC5j0aD4Q15kqv0UC2QvWVZECy3+BDcGtAw3kxCziIxDN1jpE=",
+        "edits": ""
+      },
+      "semanticSnapshot": {
+        "v": 1,
+        "auto": true,
+        "text": "儿童学习椅 · 1组/12mesh · 世界坐标(Y上Z前), 原点=模型根\n# 阅读说明: G:=group行(可动画骨骼, 动画key用G:后的id; @p=pivot世界坐标; 倾(x,y,z)°=朝向偏离世界轴的欧拉角; 缩进=父子层级; 挂:=挂载于某组; G:id→id→…=chain折叠行, 每个id都是可独立动画的group, chain×N=waypoint数)\n# M:=mesh行(label[id 几何 @(世界坐标)], label可省略; ×N=for循环批量件(锚点=代表实例); cyl (起)→(末)或 轴上(Y)等方位词=延伸方向; 薄向=板面法向(扁板); 挂载组双代表=最大件+朝向件(嘴/管/檐所在); 无方向标注=均匀块(三向相近,如头),默认面向前(Z); 对称×2=镜像对)\nG:chair 儿童学习椅 @p(0,0.5,0)\n  M:[m0 box 0.44×0.07×0.42 (0,0.4,0) 薄向上(Y)]",
+        "stats": {
+          "groups": 1,
+          "meshes": 12,
+          "labeledMeshes": 0,
+          "labelCoverage": 0,
+          "batchLabels": 0,
+          "autoChains": 0,
+          "snapshotChars": 433
+        }
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -0.22,
+          0,
+          -0.22999999999999998
+        ],
+        "max": [
+          0.22,
+          0.78,
+          0.22999999999999998
+        ],
+        "sourceNodeId": "asset-bounds"
+      }
+    ],
+    "sourceMeshCount": 12,
+    "candidateCount": 0,
+    "fallbackUsed": true
+  },
+  "footprintRadius": 0.22999999999999998,
+  "sizeClass": "small",
+  "mode": "voxel",
+  "provider": "gpt",
+  "createdAt": 1787766588209,
+  "updatedAt": 1787766588209
+}

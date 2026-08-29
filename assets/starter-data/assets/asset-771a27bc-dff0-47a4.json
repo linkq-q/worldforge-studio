@@ -1,0 +1,507 @@
+{
+  "id": "asset-771a27bc-dff0-47a4",
+  "name": "复杂游乐园/11亲子乐园/设施/旋转茶杯",
+  "prompt": "Standalone 旋转茶杯 amusement park prop in simple voxel style. Use about 16 large box meshes, one grounded object, recognizable silhouette, bright colors, no terrain, no people, no loose pieces.",
+  "modelJson": {
+    "name": "旋转茶杯游乐设施",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "base",
+        "name": "固定底座",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        }
+      },
+      {
+        "id": "spinningCup",
+        "name": "旋转茶杯",
+        "parent": "base",
+        "transform": {
+          "pos": [
+            0,
+            0.5,
+            0
+          ]
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "base",
+        "transform": {
+          "pos": [
+            0,
+            0.125,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 3.8,
+            "height": 0.25,
+            "depth": 3.8
+          },
+          "color": 2664928
+        }
+      },
+      {
+        "id": "m1",
+        "parent": "base",
+        "transform": {
+          "pos": [
+            0,
+            0.375,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 3.25,
+            "height": 0.25,
+            "depth": 3.25
+          },
+          "color": 16765503
+        }
+      },
+      {
+        "id": "m2",
+        "parent": "spinningCup",
+        "transform": {
+          "pos": [
+            0,
+            0.06,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 3.05,
+            "height": 0.18,
+            "depth": 3.05
+          },
+          "color": 16735864
+        }
+      },
+      {
+        "id": "m3",
+        "parent": "spinningCup",
+        "transform": {
+          "pos": [
+            0,
+            0.23,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2.65,
+            "height": 0.16,
+            "depth": 2.65
+          },
+          "color": 16773544
+        }
+      },
+      {
+        "id": "m4",
+        "parent": "spinningCup",
+        "transform": {
+          "pos": [
+            0,
+            0.46,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.72,
+            "height": 0.34,
+            "depth": 0.72
+          },
+          "color": 8146380
+        }
+      },
+      {
+        "id": "m5",
+        "parent": "spinningCup",
+        "transform": {
+          "pos": [
+            0,
+            0.68,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.5,
+            "height": 0.3,
+            "depth": 1.45
+          },
+          "color": 2541274
+        }
+      },
+      {
+        "id": "m6",
+        "parent": "spinningCup",
+        "transform": {
+          "pos": [
+            0,
+            1.06,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.88,
+            "height": 0.46,
+            "depth": 1.68
+          },
+          "color": 3331302
+        }
+      },
+      {
+        "id": "m7",
+        "parent": "spinningCup",
+        "transform": {
+          "pos": [
+            0,
+            1.57,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2.25,
+            "height": 0.66,
+            "depth": 1.9
+          },
+          "color": 4711661
+        }
+      },
+      {
+        "id": "m8",
+        "parent": "spinningCup",
+        "transform": {
+          "pos": [
+            0,
+            1.98,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2.52,
+            "height": 0.18,
+            "depth": 2.12
+          },
+          "color": 16773980
+        }
+      },
+      {
+        "id": "m9",
+        "parent": "spinningCup",
+        "transform": {
+          "pos": [
+            0,
+            2.09,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2.08,
+            "height": 0.08,
+            "depth": 1.68
+          },
+          "color": 8077087
+        }
+      },
+      {
+        "id": "m10",
+        "parent": "spinningCup",
+        "transform": {
+          "pos": [
+            1.47,
+            1.7,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.84,
+            "height": 0.25,
+            "depth": 0.38
+          },
+          "color": 16739210
+        }
+      },
+      {
+        "id": "m11",
+        "parent": "spinningCup",
+        "transform": {
+          "pos": [
+            1.79,
+            1.28,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.3,
+            "height": 0.9,
+            "depth": 0.38
+          },
+          "color": 16739210
+        }
+      },
+      {
+        "id": "m12",
+        "parent": "spinningCup",
+        "transform": {
+          "pos": [
+            1.46,
+            0.86,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.76,
+            "height": 0.25,
+            "depth": 0.38
+          },
+          "color": 16739210
+        }
+      },
+      {
+        "id": "m13",
+        "parent": "spinningCup",
+        "transform": {
+          "pos": [
+            0,
+            1.58,
+            1.005
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.92,
+            "height": 0.16,
+            "depth": 0.1
+          },
+          "color": 16777215
+        }
+      },
+      {
+        "id": "m14",
+        "parent": "spinningCup",
+        "transform": {
+          "pos": [
+            0,
+            1.22,
+            1.01
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.46,
+            "height": 0.46,
+            "depth": 0.11
+          },
+          "color": 16735864
+        }
+      },
+      {
+        "id": "m15",
+        "parent": "spinningCup",
+        "transform": {
+          "pos": [
+            0,
+            0.24,
+            1.38
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.2,
+            "height": 0.14,
+            "depth": 0.12
+          },
+          "color": 8146380
+        }
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1784476316014,
+        "provider": "glm",
+        "data": "VAV0WsG+IEfQZeIMxSN/eNrIib38ejYzvLABonyywgkAYpWXVLYADKBoc+c9ZbmupFAqW1WYkXVTBN/zqV38wpiV5C8sbHUjpLzGx5SeaWZCAbedVYcr1x3ODGNnnls20mlv1HN1a3xUMKLgf55VciJ5UbVafwJorMTzyaXNk5BxrZoW3Y9nU1IfuBQgkG9Da0XOC18ZljAotToC7EKs0BOeWHSxiYYWDiMaYHTp2LvredaOm5EU9om0R2U767t4Hm4pAvmVn+o0gvPnEhMRrHcrlLSkFe/ts2w4p7TTVzq4YA3mzYNnP7bkiI+mJYsTlvUzhp6YOT5t+Izilzkqp36yzH6+RdxZZmIHFJ5r59/SeQX0UD41ekqZxSIBFZV+8fgfnlkxOyK4qj34fvCa3Rrw1/Rhw34LF8OnnHXEaPzIONL+t7nwObF6I69dvKJG0LuxAAe+FK/p8UOPA7Y3b4wiRtAXTA0gS11hmYzm9c2lxIOBQ20IBfIGI8Y4bre0nNX/sa8VMMGYtj/eF6/fs88Sua8ME53OkAQ30bFy1jGYrmJOUMzRA26xYl5bxcQ89B/g4lopsAvXTk3Xk4hibPHfhe47o4UzQKpX4KACRdXcUKKr0jI42ckLMzb3ZOmyeSCVl56ZLsjH+W9yq/V5I4JnE9VATtnOk6DWxCiJS6+1KnSqe3y72K2jet0nnLDDvnYnG54CJApU5RaGODGBLfFckzbA/Z/jfc1rbN1yKoqjmUgbSBZo0qcoegM2S5ckHP8aHfhlin3jwAP5sbJQcbjUYxysIIyZW3LpQHvwbKfeMRsAl7rTNA==",
+        "edits": ""
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -1.92,
+          0,
+          -1.9
+        ],
+        "max": [
+          1.88,
+          0.25,
+          1.9
+        ],
+        "sourceNodeId": "m0"
+      },
+      {
+        "min": [
+          -1.145,
+          1.7400000000000002,
+          -0.95
+        ],
+        "max": [
+          1.105,
+          2.4000000000000004,
+          0.95
+        ],
+        "sourceNodeId": "m7"
+      },
+      {
+        "min": [
+          -1.645,
+          0.25,
+          -1.625
+        ],
+        "max": [
+          1.605,
+          0.5,
+          1.625
+        ],
+        "sourceNodeId": "m1"
+      },
+      {
+        "min": [
+          -1.545,
+          0.4700000000000001,
+          -1.525
+        ],
+        "max": [
+          1.505,
+          0.65,
+          1.525
+        ],
+        "sourceNodeId": "m2"
+      },
+      {
+        "min": [
+          -0.96,
+          1.33,
+          -0.84
+        ],
+        "max": [
+          0.9199999999999999,
+          1.79,
+          0.84
+        ],
+        "sourceNodeId": "m6"
+      },
+      {
+        "min": [
+          -1.345,
+          0.65,
+          -1.325
+        ],
+        "max": [
+          1.305,
+          0.8099999999999999,
+          1.325
+        ],
+        "sourceNodeId": "m3"
+      },
+      {
+        "min": [
+          -1.28,
+          2.39,
+          -1.06
+        ],
+        "max": [
+          1.24,
+          2.57,
+          1.06
+        ],
+        "sourceNodeId": "m8"
+      },
+      {
+        "min": [
+          -0.77,
+          1.0300000000000002,
+          -0.725
+        ],
+        "max": [
+          0.73,
+          1.33,
+          0.725
+        ],
+        "sourceNodeId": "m5"
+      },
+      {
+        "min": [
+          -0.38,
+          0.7899999999999999,
+          -0.36
+        ],
+        "max": [
+          0.33999999999999997,
+          1.13,
+          0.36
+        ],
+        "sourceNodeId": "m4"
+      },
+      {
+        "min": [
+          1.62,
+          1.33,
+          -0.19
+        ],
+        "max": [
+          1.92,
+          2.23,
+          0.19
+        ],
+        "sourceNodeId": "m11"
+      }
+    ],
+    "sourceMeshCount": 16,
+    "candidateCount": 10,
+    "fallbackUsed": false
+  },
+  "mode": "lite",
+  "provider": "provider-fallback",
+  "createdAt": 1784476319877,
+  "updatedAt": 1784476319877
+}

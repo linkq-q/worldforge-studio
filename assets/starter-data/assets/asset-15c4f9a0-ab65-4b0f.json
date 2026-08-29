@@ -1,0 +1,430 @@
+{
+  "id": "asset-15c4f9a0-ab65-4b0f",
+  "name": "魔方",
+  "prompt": "独立魔方玩具\nCoordinate contract: local Y+ is up, local Z+ is the front, entrance, or forward direction, and local X+ is right. Put doors, facades, openings, windshields, noses, seats, and other recognizable front details toward local Z+. For a modular repeated element, explicitly choose the long axis: side-by-side modules span local X with depth/front on local Z; traversal modules span local Z. Keep the model centered at its origin.\nCanonical dimensions contract: width=0.18, height=0.18, depth=0.18 world units. Keep the generated mesh within this centered bounding size.",
+  "tags": [
+    "indoor",
+    "child-safe"
+  ],
+  "modelJson": {
+    "name": "Independent Rubik Cube Toy",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "m0",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.17,
+            "height": 0.17,
+            "depth": 0.17
+          },
+          "color": 1381653
+        }
+      },
+      {
+        "id": "m1",
+        "transform": {
+          "pos": [
+            -0.054,
+            -0.054,
+            0.0865
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.05,
+            "height": 0.05,
+            "depth": 0.006
+          },
+          "color": 14034984
+        }
+      },
+      {
+        "id": "m2",
+        "transform": {
+          "pos": [
+            0,
+            -0.054,
+            0.0865
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.05,
+            "height": 0.05,
+            "depth": 0.006
+          },
+          "color": 15921906
+        }
+      },
+      {
+        "id": "m3",
+        "transform": {
+          "pos": [
+            0.054,
+            -0.054,
+            0.0865
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.05,
+            "height": 0.05,
+            "depth": 0.006
+          },
+          "color": 3120708
+        }
+      },
+      {
+        "id": "m4",
+        "transform": {
+          "pos": [
+            -0.054,
+            0,
+            0.0865
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.05,
+            "height": 0.05,
+            "depth": 0.006
+          },
+          "color": 15764480
+        }
+      },
+      {
+        "id": "m5",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0.0865
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.05,
+            "height": 0.05,
+            "depth": 0.006
+          },
+          "color": 2450411
+        }
+      },
+      {
+        "id": "m6",
+        "transform": {
+          "pos": [
+            0.054,
+            0,
+            0.0865
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.05,
+            "height": 0.05,
+            "depth": 0.006
+          },
+          "color": 14034984
+        }
+      },
+      {
+        "id": "m7",
+        "transform": {
+          "pos": [
+            -0.054,
+            0.054,
+            0.0865
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.05,
+            "height": 0.05,
+            "depth": 0.006
+          },
+          "color": 3120708
+        }
+      },
+      {
+        "id": "m8",
+        "transform": {
+          "pos": [
+            0,
+            0.054,
+            0.0865
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.05,
+            "height": 0.05,
+            "depth": 0.006
+          },
+          "color": 15921906
+        }
+      },
+      {
+        "id": "m9",
+        "transform": {
+          "pos": [
+            0.054,
+            0.054,
+            0.0865
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.05,
+            "height": 0.05,
+            "depth": 0.006
+          },
+          "color": 15764480
+        }
+      },
+      {
+        "id": "m10",
+        "transform": {
+          "pos": [
+            -0.054,
+            0.0865,
+            -0.054
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.05,
+            "height": 0.006,
+            "depth": 0.05
+          },
+          "color": 15921906
+        }
+      },
+      {
+        "id": "m11",
+        "transform": {
+          "pos": [
+            0,
+            0.0865,
+            -0.054
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.05,
+            "height": 0.006,
+            "depth": 0.05
+          },
+          "color": 15921906
+        }
+      },
+      {
+        "id": "m12",
+        "transform": {
+          "pos": [
+            0.054,
+            0.0865,
+            -0.054
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.05,
+            "height": 0.006,
+            "depth": 0.05
+          },
+          "color": 15921906
+        }
+      },
+      {
+        "id": "m13",
+        "transform": {
+          "pos": [
+            -0.054,
+            0.0865,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.05,
+            "height": 0.006,
+            "depth": 0.05
+          },
+          "color": 15921906
+        }
+      },
+      {
+        "id": "m14",
+        "transform": {
+          "pos": [
+            0,
+            0.0865,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.05,
+            "height": 0.006,
+            "depth": 0.05
+          },
+          "color": 15921906
+        }
+      },
+      {
+        "id": "m15",
+        "transform": {
+          "pos": [
+            0.054,
+            0.0865,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.05,
+            "height": 0.006,
+            "depth": 0.05
+          },
+          "color": 15921906
+        }
+      },
+      {
+        "id": "m16",
+        "transform": {
+          "pos": [
+            -0.054,
+            0.0865,
+            0.054
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.05,
+            "height": 0.006,
+            "depth": 0.05
+          },
+          "color": 15921906
+        }
+      },
+      {
+        "id": "m17",
+        "transform": {
+          "pos": [
+            0,
+            0.0865,
+            0.054
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.05,
+            "height": 0.006,
+            "depth": 0.05
+          },
+          "color": 15921906
+        }
+      },
+      {
+        "id": "m18",
+        "transform": {
+          "pos": [
+            0.054,
+            0.0865,
+            0.054
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.05,
+            "height": 0.006,
+            "depth": 0.05
+          },
+          "color": 15921906
+        }
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1787770151285,
+        "provider": "gpt",
+        "data": "Ea+wsMCZkkVa2V2efcOzyzGmzLWApVCtQ/Fihus7RwvMStCUZLjTlt+1syiOrv3/y2c3FopZ9w7ySvzDKRgnK4Prg8V/snLAu8IjFOMycT/i/5xnzmAPbPhl4tPj28aTN27Ue2UwMnHr+0EVItmjXHOs5n2OeuHcMuyXAQdi7/ls4xy8K2BlIzfYz4wfkm4zzz+S5DfRrMAn+//q/4D0KXv6EVySGO8waZSaYB2aKncuhlSu3uohBM2QotKa0UX0+mxpXMbykCjDdLxh+qBrQWAPFuvDyHC26MJMPXX1yfNVWPmL/+2dVFqaZG1HtgYCKctBQXbiDe/o0PN+aaQNBCtuiz3lxxgUid1DGazIZbE2UNv3GJsYKLttSe9deVNvI7cLKYzHOxUp5rzUCfK4GYC9HAggfeV5Xk13DEb49xIwg697PwcQx2nMExSwUT7l0YK1ExKRmL7+GjqN02VSmfipiaQzNTY43/zWdhsOZNMCl/NBzwGCHvwQ+rFXWPEpO6imA03u7lX5Xxk/vmjVow4Th9JrprsZQ01BGmGWdLGaAWCHa96gVrbo6oDIGYtAG7VPfPP/+WWdAYtRHz47agyYvojFAuDe/ohOV1nKwh/82MZz6ol6yL27tA==",
+        "edits": ""
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -0.085,
+          0,
+          -0.08825
+        ],
+        "max": [
+          0.085,
+          0.1765,
+          0.08825
+        ],
+        "sourceNodeId": "asset-bounds"
+      }
+    ],
+    "sourceMeshCount": 19,
+    "candidateCount": 1,
+    "fallbackUsed": true
+  },
+  "footprintRadius": 0.1,
+  "sizeClass": "small",
+  "mode": "voxel",
+  "provider": "gpt",
+  "libraryId": "library-d7967286-cebf-4f99",
+  "libraryMetadata": {
+    "tags": [
+      "rubikscube",
+      "puzzletoy"
+    ],
+    "applicableZones": [
+      "settlement"
+    ],
+    "repeatable": true,
+    "landmark": false,
+    "enabled": true,
+    "priority": 0.5,
+    "analysisStatus": "ready",
+    "rotation": "random"
+  },
+  "createdAt": 1787816177115,
+  "updatedAt": 1787816177115
+}

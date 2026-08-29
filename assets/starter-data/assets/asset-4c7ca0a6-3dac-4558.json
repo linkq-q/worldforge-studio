@@ -1,0 +1,331 @@
+{
+  "id": "asset-4c7ca0a6-3dac-4558",
+  "name": "茶几",
+  "prompt": "儿童房小型茶几\nCoordinate contract: local Y+ is up, local Z+ is the front, entrance, or forward direction, and local X+ is right. Put doors, facades, openings, windshields, noses, seats, and other recognizable front details toward local Z+. For a modular repeated element, explicitly choose the long axis: side-by-side modules span local X with depth/front on local Z; traversal modules span local Z. Keep the model centered at its origin.\nCanonical dimensions contract: width=1.5, height=0.45, depth=0.8 world units. Keep the generated mesh within this centered bounding size.",
+  "tags": [
+    "indoor",
+    "child-safe"
+  ],
+  "modelJson": {
+    "name": "儿童房小型茶几",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "table",
+        "name": "茶几主体",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "birch"
+          }
+        ],
+        "_obb": {
+          "size": [
+            1.5,
+            0.494,
+            0.803
+          ],
+          "center": [
+            0,
+            0.219,
+            0.007
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              0.9992,
+              -0.04
+            ],
+            [
+              0,
+              0.04,
+              0.9992
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "front_bins",
+        "name": "前侧收纳盒",
+        "parent": "table",
+        "transform": {
+          "pos": [
+            0,
+            0.18,
+            0.29
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.84,
+            0.16,
+            0.18
+          ],
+          "center": [
+            0,
+            0.055,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "table",
+        "transform": {
+          "pos": [
+            0,
+            0.4,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.5,
+            "height": 0.1,
+            "depth": 0.8
+          },
+          "color": 15911033
+        }
+      },
+      {
+        "id": "m1",
+        "parent": "table",
+        "transform": {
+          "pos": [
+            -0.62,
+            0.175,
+            -0.27
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.16,
+            "height": 0.35,
+            "depth": 0.16
+          },
+          "color": 14261074
+        }
+      },
+      {
+        "id": "m2",
+        "parent": "table",
+        "transform": {
+          "pos": [
+            -0.62,
+            0.175,
+            0.27
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.16,
+            "height": 0.35,
+            "depth": 0.16
+          },
+          "color": 14261074
+        }
+      },
+      {
+        "id": "m3",
+        "parent": "table",
+        "transform": {
+          "pos": [
+            0.62,
+            0.175,
+            -0.27
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.16,
+            "height": 0.35,
+            "depth": 0.16
+          },
+          "color": 14261074
+        }
+      },
+      {
+        "id": "m4",
+        "parent": "table",
+        "transform": {
+          "pos": [
+            0.62,
+            0.175,
+            0.27
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.16,
+            "height": 0.35,
+            "depth": 0.16
+          },
+          "color": 14261074
+        }
+      },
+      {
+        "id": "m5",
+        "parent": "table",
+        "transform": {
+          "pos": [
+            0,
+            0.16,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.92,
+            "height": 0.07,
+            "depth": 0.5
+          },
+          "color": 15186280
+        }
+      },
+      {
+        "id": "m6",
+        "parent": "front_bins",
+        "transform": {
+          "pos": [
+            -0.23,
+            0.055,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.38,
+            "height": 0.16,
+            "depth": 0.18
+          },
+          "color": 6662616
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "fabric",
+            "variant": "blue"
+          }
+        ]
+      },
+      {
+        "id": "m7",
+        "parent": "front_bins",
+        "transform": {
+          "pos": [
+            0.23,
+            0.055,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.38,
+            "height": 0.16,
+            "depth": 0.18
+          },
+          "color": 15764600
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "fabric",
+            "variant": "red"
+          }
+        ]
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1787770187059,
+        "provider": "gpt",
+        "data": "S6rP/CJKh1Z0RPJEg84thmqAxKA0GUWTNND9ompdKEleetmPn9NIPSN8ZuGXWTHx/iKGx1EKdViHwZUb4UDlXZKMrBgNejayPlNjwhryekv4YqAwMv8zG6FVB6nbah1t9vTl6Jr8mi1O+l5O67MJ9lbMmJJyCaGum3yqUP6lh8KH+rf3DpCoAvcNAVwYAtw+FfURGGnF+BRv9gf7NIYL89EvCILDdW7OUBbbeMDT1kKW4YEKUHSJanEcUCJzISEzeV6VYIhBbt4HwVHD+tqrA9xx6OCy9LYvdUj9wur4DX6oXWe7uEcOl3ukja5FUk9o0xEi5gJ6U1RlEajeae7zlX+N4Xci543nTnkOC1eqkD3D/Yrkso5ecWPKVCq6Bl19AL1GZMfpbBgF7sw6ZKnHB/jxJCgQHheKpM6ZlQbiO/pxdgj9xUnMxTd6uYJK1KKPpgb9g5hE2+Jv4PEArOdZ7+MgxoZEK5vvT7jIYt6DiiGID7JUDiCSH12yKDp8D1LEeOwtCy8kwix3t2RU72YgaORJr9XWaaqEcdEvRrn2AMx8LYiyJheF8/gJ6QF03NOzX4RXd7V0NQ8yYtYF4xzfrIrdP+QUoR+S3zwS0UlpCnElg0ltgJqXSR4f+klHJRjZ8XQ4AjwdFxJtWaG8NUf21FBAE1a9LM9O0NICwtwKJRFtkRga7lqT4YWnAFIFcJ4sVuNrkf7n531gASbhFxt9gMI+srXkCVV37Mx49rLdc6nET1GQQhtH/PaqzKC7icSZRAGSKunOD2Dm7ouxXcYatkLhwuit/zF51A==",
+        "edits": ""
+      },
+      "semanticSnapshot": {
+        "v": 1,
+        "auto": true,
+        "text": "儿童房小型茶几 · 2组/8mesh · 世界坐标(Y上Z前), 原点=模型根\n# 阅读说明: G:=group行(可动画骨骼, 动画key用G:后的id; @p=pivot世界坐标; 倾(x,y,z)°=朝向偏离世界轴的欧拉角; 缩进=父子层级; 挂:=挂载于某组; G:id→id→…=chain折叠行, 每个id都是可独立动画的group, chain×N=waypoint数)\n# M:=mesh行(label[id 几何 @(世界坐标)], label可省略; ×N=for循环批量件(锚点=代表实例); cyl (起)→(末)或 轴上(Y)等方位词=延伸方向; 薄向=板面法向(扁板); 挂载组双代表=最大件+朝向件(嘴/管/檐所在); 无方向标注=均匀块(三向相近,如头),默认面向前(Z); 对称×2=镜像对)\nG:table 茶几主体 @p(0,0,0)\n  M:[m0 box 1.5×0.1×0.8 (0,0.4,0) 薄向上(Y)]\n  G:front_bins 前侧收纳盒 @p(0,0.2,0.3)\n    M:[m6 box 0.38×0.16×0.18 (-0.2,0.2,0.3) 轴右(X)]",
+        "stats": {
+          "groups": 2,
+          "meshes": 8,
+          "labeledMeshes": 0,
+          "labelCoverage": 0,
+          "batchLabels": 0,
+          "autoChains": 0,
+          "snapshotChars": 514
+        }
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -0.75,
+          0,
+          -0.4
+        ],
+        "max": [
+          0.75,
+          0.45,
+          0.4
+        ],
+        "sourceNodeId": "asset-bounds"
+      }
+    ],
+    "sourceMeshCount": 8,
+    "candidateCount": 0,
+    "fallbackUsed": true
+  },
+  "footprintRadius": 0.75,
+  "sizeClass": "small",
+  "mode": "voxel",
+  "provider": "gpt",
+  "createdAt": 1787770186753,
+  "updatedAt": 1787770186753
+}

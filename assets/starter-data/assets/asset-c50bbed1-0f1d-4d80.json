@@ -1,0 +1,374 @@
+{
+  "id": "asset-c50bbed1-0f1d-4d80",
+  "name": "房门",
+  "prompt": "单独一扇儿童房室内木门，圆角装饰线条，独立模型，不包含墙体、门框外家具或其他物品\nCoordinate contract: local Y+ is up, local Z+ is the front, entrance, or forward direction, and local X+ is right. Put doors, facades, openings, windshields, noses, seats, and other recognizable front details toward local Z+. For a modular repeated element, explicitly choose the long axis: side-by-side modules span local X with depth/front on local Z; traversal modules span local Z. Keep the model centered at its origin.\nCanonical dimensions contract: width=1.1, height=2.2, depth=0.12 world units. Keep the generated mesh within this centered bounding size.",
+  "modelJson": {
+    "name": "儿童房圆角装饰木门",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "door",
+        "name": "门扇",
+        "transform": {
+          "pos": [
+            -0.55,
+            0,
+            0
+          ]
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ],
+        "_obb": {
+          "size": [
+            1.241,
+            2.22,
+            0.143
+          ],
+          "center": [
+            0.5,
+            0.001,
+            -0.004
+          ],
+          "axes": [
+            [
+              0.9996,
+              -0.0185,
+              0.0202
+            ],
+            [
+              0.0185,
+              0.9998,
+              0.003
+            ],
+            [
+              -0.0202,
+              -0.0027,
+              0.9998
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "handle",
+        "name": "门把手",
+        "parent": "door",
+        "transform": {
+          "pos": [
+            0.93,
+            -0.08,
+            0.04
+          ]
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ],
+        "_obb": {
+          "size": [
+            0.148,
+            0.055,
+            0.026
+          ],
+          "center": [
+            -0.046,
+            0,
+            0.008
+          ],
+          "axes": [
+            [
+              0.9999,
+              0,
+              0.011
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              -0.011,
+              0,
+              0.9999
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "door",
+        "transform": {
+          "pos": [
+            0.55,
+            0,
+            -0.01
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.1,
+            "height": 2.2,
+            "depth": 0.1
+          },
+          "color": 15249084
+        }
+      },
+      {
+        "id": "m1",
+        "parent": "door",
+        "transform": {
+          "pos": [
+            0.18,
+            -0.12,
+            0.05
+          ],
+          "quat": [
+            0.5,
+            0.5,
+            0.5,
+            0.5
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.2,
+            "height": 0.018,
+            "depth": 0.04
+          },
+          "color": 16243151
+        }
+      },
+      {
+        "id": "m2",
+        "parent": "door",
+        "transform": {
+          "pos": [
+            0.22,
+            0.54,
+            0.05
+          ],
+          "quat": [
+            0.62,
+            0.34,
+            0.34,
+            0.62
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.15,
+            "height": 0.018,
+            "depth": 0.04
+          },
+          "color": 16243151
+        }
+      },
+      {
+        "id": "m3",
+        "parent": "door",
+        "transform": {
+          "pos": [
+            0.55,
+            0.61,
+            0.05
+          ],
+          "quat": [
+            0.71,
+            0,
+            0,
+            0.71
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.58,
+            "height": 0.018,
+            "depth": 0.03
+          },
+          "color": 16243151
+        }
+      },
+      {
+        "id": "m4",
+        "parent": "door",
+        "transform": {
+          "pos": [
+            0.88,
+            0.55,
+            0.05
+          ],
+          "quat": [
+            0.62,
+            -0.34,
+            -0.34,
+            0.62
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.15,
+            "height": 0.018,
+            "depth": 0.04
+          },
+          "color": 16243151
+        }
+      },
+      {
+        "id": "m5",
+        "parent": "door",
+        "transform": {
+          "pos": [
+            0.92,
+            -0.12,
+            0.05
+          ],
+          "quat": [
+            -0.5,
+            0.5,
+            0.5,
+            -0.5
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.2,
+            "height": 0.018,
+            "depth": 0.04
+          },
+          "color": 16243151
+        }
+      },
+      {
+        "id": "m6",
+        "parent": "door",
+        "transform": {
+          "pos": [
+            0.55,
+            -0.72,
+            0.05
+          ],
+          "quat": [
+            0,
+            0.71,
+            0.71,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.74,
+            "height": 0.018,
+            "depth": 0.03
+          },
+          "color": 16243151
+        }
+      },
+      {
+        "id": "m7",
+        "parent": "handle",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0.01
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.055,
+            "height": 0.055,
+            "depth": 0.02
+          },
+          "color": 14267231
+        }
+      },
+      {
+        "id": "m8",
+        "parent": "handle",
+        "transform": {
+          "pos": [
+            -0.055,
+            0,
+            0.0075
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.13,
+            "height": 0.045,
+            "depth": 0.025
+          },
+          "color": 15123823
+        }
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1787766572845,
+        "provider": "gpt",
+        "data": "2fbE9QuM6Wo1Vin2FUChDV9pgWgVoi+nLN2l9I/1YzXJ5vfS5fUyfAc8hx//mboQWMhOoxIZsyBV7cQd2zDb32ph4f6638M9igLz7asHOFOtRX094ZIIpgCEf9nk8qJESPTvoG0vrTUFau+OV3fxQ/htG+gro6yGZ8VjCwAXdSQtXwTGaMUlhtYMbWvz8Va4TLDoo6/sMpfcv7lS1taBORq5tpZvKrYsor5rptKN51lXoSBpHpcokCGpbv635gtnJnjjvIR7gqR5fvI9+UeCQN3OPVncv4C4F2uQhKzriIQ+O064pr5y+QZqsruTGA7VCZOg93GZswyYDrYwh3JtnT/Ndxvhu14YeS+U7cZUy5vgdYk8VbpVAsD2CgNL/vf+PI5VPC786wK656PoJJpnFBdsYmnNJRbHxU421Fgeyj+V0aDugNcYtHYJEIxIsDjSOFIzxG7UP7c2I18uvqY/xnGKW7eO9KfIMaC1odC3yFonjl3JKhoBXqaX22WLxovywFQrUOhmOgtoWO5jvB3TxsbKddzmz1LgpkiGmVGmxXiCiEEYM+lz3E+03zCr4XmbKSzuX1cKKIYvipeo2QGpKRzlqzqtYks8mJQ9oMxiD55eyjx4smBISDz1T/k0j/fxqkBuYqv3hyF/jaU4Uyj4ooJrykFcXAHrW8+yiEiXLE7xEpX+vZdVb6OoYaooHx0yN8OE9o9nlmVpVApdjhOTQfpM3dZWpy2qk6OqdWNMZIdWHGIYMQ50lPmk8Zx9CqGaM5Fv3+H3dtr5VK6GiRnTpGKt3t0byLrzmOu7Sinn03HXNeK+oUuPj4xZL5nVJP7DvQuej7+ZEpV12NFgHAIc7aALL1FF0YhnGp+JmC7zJVg+ECs5ZHeQPvWP83R148B/4FajTQEwGasNPdyn7K45FxU5FrD0kjboeVMNBAr+FZL981qMrKgm0rTO",
+        "edits": ""
+      },
+      "semanticSnapshot": {
+        "v": 1,
+        "auto": true,
+        "text": "儿童房圆角装饰木门 · 2组/9mesh · 世界坐标(Y上Z前), 原点=模型根\n# 阅读说明: G:=group行(可动画骨骼, 动画key用G:后的id; @p=pivot世界坐标; 倾(x,y,z)°=朝向偏离世界轴的欧拉角; 缩进=父子层级; 挂:=挂载于某组; G:id→id→…=chain折叠行, 每个id都是可独立动画的group, chain×N=waypoint数)\n# M:=mesh行(label[id 几何 @(世界坐标)], label可省略; ×N=for循环批量件(锚点=代表实例); cyl (起)→(末)或 轴上(Y)等方位词=延伸方向; 薄向=板面法向(扁板); 挂载组双代表=最大件+朝向件(嘴/管/檐所在); 无方向标注=均匀块(三向相近,如头),默认面向前(Z); 对称×2=镜像对)\nG:door 门扇 @p(-0.5,0,0)\n  M:[m0 box 1.1×2.2×0.1 (0,0,0) 薄向前(Z)]\n  G:handle 门把手 @p(0.4,-0.1,0)\n    M:[m8 box 0.13×0.05×0.03 (0.3,-0.1,0) 轴右(X)]",
+        "stats": {
+          "groups": 2,
+          "meshes": 9,
+          "labeledMeshes": 0,
+          "labelCoverage": 0,
+          "batchLabels": 0,
+          "autoChains": 0,
+          "snapshotChars": 507
+        }
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -0.55,
+          0,
+          -0.060000000000000005
+        ],
+        "max": [
+          0.55,
+          2.2,
+          0.04
+        ],
+        "sourceNodeId": "m0"
+      }
+    ],
+    "sourceMeshCount": 9,
+    "candidateCount": 1,
+    "fallbackUsed": false
+  },
+  "footprintRadius": 0.55,
+  "sizeClass": "small",
+  "mode": "voxel",
+  "provider": "gpt",
+  "createdAt": 1787766575339,
+  "updatedAt": 1787766575339
+}

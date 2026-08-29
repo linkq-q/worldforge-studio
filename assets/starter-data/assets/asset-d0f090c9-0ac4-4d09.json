@@ -1,0 +1,969 @@
+{
+  "id": "asset-d0f090c9-0ac4-4d09",
+  "name": "游戏手柄",
+  "prompt": "单个现代电子游戏手柄，完整独立设备，不带线缆或主机\nCoordinate contract: local Y+ is up, local Z+ is the front, entrance, or forward direction, and local X+ is right. Put doors, facades, openings, windshields, noses, seats, and other recognizable front details toward local Z+. For a modular repeated element, explicitly choose the long axis: side-by-side modules span local X with depth/front on local Z; traversal modules span local Z. Keep the model centered at its origin.\nCanonical dimensions contract: width=0.19, height=0.07, depth=0.13 world units. Keep the generated mesh within this centered bounding size.",
+  "modelJson": {
+    "name": "现代电子游戏手柄",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "body",
+        "name": "手柄主体",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.195,
+            0.079,
+            0.144
+          ],
+          "center": [
+            0,
+            0.001,
+            -0.002
+          ],
+          "axes": [
+            [
+              0.9975,
+              0.0555,
+              0.0431
+            ],
+            [
+              -0.0477,
+              0.9851,
+              -0.1654
+            ],
+            [
+              -0.0516,
+              0.1629,
+              0.9853
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "left_stick",
+        "name": "左摇杆",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            -0.031,
+            0.019,
+            -0.014
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.019,
+            0.016,
+            0.019
+          ],
+          "center": [
+            0,
+            0.008,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "right_stick",
+        "name": "右摇杆",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0.026,
+            0.019,
+            -0.026
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.019,
+            0.016,
+            0.019
+          ],
+          "center": [
+            0,
+            0.008,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "dpad",
+        "name": "方向键",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            -0.046,
+            0.019,
+            0.018
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.031,
+            0.009,
+            0.031
+          ],
+          "center": [
+            0,
+            0.008,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "face_button_0",
+        "name": "功能按钮",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0.057,
+            0.019,
+            0.03
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.011,
+            0.012,
+            0.011
+          ],
+          "center": [
+            0,
+            0.008,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "face_button_1",
+        "name": "功能按钮",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0.071,
+            0.019,
+            0.017
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.011,
+            0.012,
+            0.011
+          ],
+          "center": [
+            0,
+            0.008,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "face_button_2",
+        "name": "功能按钮",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0.043,
+            0.019,
+            0.017
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.011,
+            0.012,
+            0.011
+          ],
+          "center": [
+            0,
+            0.008,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "face_button_3",
+        "name": "功能按钮",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0.057,
+            0.019,
+            0.004
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.011,
+            0.012,
+            0.011
+          ],
+          "center": [
+            0,
+            0.008,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "left_bumper",
+        "name": "左肩键",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            -0.055,
+            0.006,
+            0.047
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.049,
+            0.014,
+            0.018
+          ],
+          "center": [
+            0,
+            0.005,
+            0.008
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "right_bumper",
+        "name": "右肩键",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0.055,
+            0.006,
+            0.047
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.049,
+            0.014,
+            0.018
+          ],
+          "center": [
+            0,
+            0.005,
+            0.008
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "menu_left",
+        "name": "选项键",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            -0.018,
+            0.019,
+            0.018
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.012,
+            0.008,
+            0.007
+          ],
+          "center": [
+            0,
+            0.007,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "menu_right",
+        "name": "菜单键",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0.018,
+            0.019,
+            0.018
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.012,
+            0.008,
+            0.007
+          ],
+          "center": [
+            0,
+            0.007,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0.012
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.14,
+            "height": 0.038,
+            "depth": 0.075
+          },
+          "color": 2435633
+        }
+      },
+      {
+        "id": "m1",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            -0.0775,
+            -0.002,
+            0.008
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.035,
+            "height": 0.042,
+            "depth": 0.07
+          },
+          "color": 2106668
+        }
+      },
+      {
+        "id": "m2",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0.0775,
+            -0.002,
+            0.008
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.035,
+            "height": 0.042,
+            "depth": 0.07
+          },
+          "color": 2106668
+        }
+      },
+      {
+        "id": "m3",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            -0.067,
+            -0.008,
+            -0.027
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.045,
+            "height": 0.05,
+            "depth": 0.075
+          },
+          "color": 1843495
+        }
+      },
+      {
+        "id": "m4",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0.067,
+            -0.008,
+            -0.027
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.045,
+            "height": 0.05,
+            "depth": 0.075
+          },
+          "color": 1843495
+        }
+      },
+      {
+        "id": "m5",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0,
+            0.022,
+            0.019
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.038,
+            "height": 0.006,
+            "depth": 0.032
+          },
+          "color": 3423044
+        }
+      },
+      {
+        "id": "m6",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0,
+            0.025,
+            0.038
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.028,
+            "height": 0.004,
+            "depth": 0.004
+          },
+          "color": 4767743
+        },
+        "tags": [
+          {
+            "tag": "emissive",
+            "value": 0.75
+          }
+        ]
+      },
+      {
+        "id": "m7",
+        "parent": "left_stick",
+        "transform": {
+          "pos": [
+            0,
+            0.008,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.019,
+            "height": 0.016,
+            "depth": 0.019
+          },
+          "color": 1119257
+        }
+      },
+      {
+        "id": "m8",
+        "parent": "right_stick",
+        "transform": {
+          "pos": [
+            0,
+            0.008,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.019,
+            "height": 0.016,
+            "depth": 0.019
+          },
+          "color": 1119257
+        }
+      },
+      {
+        "id": "m9",
+        "parent": "dpad",
+        "transform": {
+          "pos": [
+            0,
+            0.008,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.031,
+            "height": 0.009,
+            "depth": 0.011
+          },
+          "color": 921877
+        }
+      },
+      {
+        "id": "m10",
+        "parent": "dpad",
+        "transform": {
+          "pos": [
+            0,
+            0.008,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.011,
+            "height": 0.009,
+            "depth": 0.031
+          },
+          "color": 921877
+        }
+      },
+      {
+        "id": "m11",
+        "parent": "face_button_0",
+        "transform": {
+          "pos": [
+            0,
+            0.008,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.011,
+            "height": 0.012,
+            "depth": 0.011
+          },
+          "color": 15223637
+        }
+      },
+      {
+        "id": "m12",
+        "parent": "face_button_1",
+        "transform": {
+          "pos": [
+            0,
+            0.008,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.011,
+            "height": 0.012,
+            "depth": 0.011
+          },
+          "color": 5618028
+        }
+      },
+      {
+        "id": "m13",
+        "parent": "face_button_2",
+        "transform": {
+          "pos": [
+            0,
+            0.008,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.011,
+            "height": 0.012,
+            "depth": 0.011
+          },
+          "color": 5083112
+        }
+      },
+      {
+        "id": "m14",
+        "parent": "face_button_3",
+        "transform": {
+          "pos": [
+            0,
+            0.008,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.011,
+            "height": 0.012,
+            "depth": 0.011
+          },
+          "color": 15187272
+        }
+      },
+      {
+        "id": "m15",
+        "parent": "left_bumper",
+        "transform": {
+          "pos": [
+            0,
+            0.005,
+            0.008
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.049,
+            "height": 0.014,
+            "depth": 0.018
+          },
+          "color": 1382686
+        }
+      },
+      {
+        "id": "m16",
+        "parent": "right_bumper",
+        "transform": {
+          "pos": [
+            0,
+            0.005,
+            0.008
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.049,
+            "height": 0.014,
+            "depth": 0.018
+          },
+          "color": 1382686
+        }
+      },
+      {
+        "id": "m17",
+        "parent": "menu_left",
+        "transform": {
+          "pos": [
+            0,
+            0.007,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.012,
+            "height": 0.008,
+            "depth": 0.007
+          },
+          "color": 1119257
+        }
+      },
+      {
+        "id": "m18",
+        "parent": "menu_right",
+        "transform": {
+          "pos": [
+            0,
+            0.007,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.012,
+            "height": 0.008,
+            "depth": 0.007
+          },
+          "color": 1119257
+        }
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1787768519499,
+        "provider": "gpt",
+        "data": "Qu+5AXg05geEPKxa+A8BrJQa+Ukecv1vQqaNxsnQAsEdrtJd7P5Wr7rkPYBlCto6ARtY1jbv2zliYtMgpDIUA9UhQEJ3USll8NQ3umqostHsHpssQb2m/XVtmJrtHxTIz84zQKSud2lOZKfuDzrtmL/um+FTsTVEEThjR4BqldYgSC67o1KnQFY25AgiUTakeqn+JrRqt3Vf9ruyu2xC1D9hnmiUXIxX/GIiARiILV5gfigc/4+U9JTMflF73Kwj2IqL+22vXqZOdxW+eeftlCTCwL3Sx56fxAQHVEMgaxRjTknXHcDlytlXLXxUXmZoZNTz7vGVeE8AKcxuAS3SRNS2nDujmRGLFQoTDXNDhsUQ8a++bQb2xxAXlwjIS4jNNUcLRdc0oSvD/HC+yXWJFnlc28YZSn0sk6JCwTSLWELIZNFOuD1fOessbjEXRKBc6L/vW52HXiwmY7vimJ2154HzocNfUqyc+r3IyaKFKjAhKFp4g6qSnDyuwrpXvBzPSN9cWyatP+uCsXKCgIi4dy+vq8uXiByyIXFb38piIuUbfy8ub27skld96T0arHlF3pZlLbcBN6Ct/idhhXZQKdvtDbHLR8acdfLlrJseewAcUw/FJixmursZEe1q5SCWqyDemZd69ytZgcYuGSqb5N4RUMmAYvJMdWhm2yRUlgtj4qA5gXLX3C5rDEslh5+KF8caXidN+dCrvsgRl+sQYdoDrJr0ujbY1rNlrpMB2ieIw8OSnz+r94FC77sAxSj/oVmKQeJwOeEl2MgmxKYStLx+c5RiIeDMjAQBTitvJIU4wxJo7JjkANj8VaTacVgYRqvSOHRnf5r1TShH8rMez8JHQAdBO7a8TxYZOnD5icelcC6DhbCpkC+Z7YB65uHRTHEhjPjposTsjMQonARRwwjYqtSBLqMZ7EFcp1PNEES0dcIVeuS+NUdaP/4y5IKTfkbAWA1QTI2reAbxMoWq1sJi+FD22Sfn70wTUj0qKBLg8ADO3EzM3uahivlaNgi5s2EQcOlM6MiEn17zxVTLXY9Rw3h/Sf6sgH+t5y6mgIo2CKMp/XxdKrkp0kMm4Ds5v67mxEQ7BNB9Rm+JzaSQzfIGXoubgOPIXyhnO2L2Kw5sYzWIQIi832avVgRv/Hbn4Ivc+9FPpFtRA3ua82Oeki6xgwkYZRrtKSXAuGLVcIv1ykIU+u/9rynzlK/I5ogkwiBixOk=",
+        "edits": ""
+      },
+      "semanticSnapshot": {
+        "v": 1,
+        "auto": true,
+        "text": "现代电子游戏手柄 · 12组/19mesh · 世界坐标(Y上Z前), 原点=模型根\n# 阅读说明: G:=group行(可动画骨骼, 动画key用G:后的id; @p=pivot世界坐标; 倾(x,y,z)°=朝向偏离世界轴的欧拉角; 缩进=父子层级; 挂:=挂载于某组; G:id→id→…=chain折叠行, 每个id都是可独立动画的group, chain×N=waypoint数)\n# M:=mesh行(label[id 几何 @(世界坐标)], label可省略; ×N=for循环批量件(锚点=代表实例); cyl (起)→(末)或 轴上(Y)等方位词=延伸方向; 薄向=板面法向(扁板); 挂载组双代表=最大件+朝向件(嘴/管/檐所在); 无方向标注=均匀块(三向相近,如头),默认面向前(Z); 对称×2=镜像对)\nG:body 手柄主体 @p(0,0,0)\n  M:[m0 box 0.14×0.04×0.08 (0,0,0) 薄向上(Y)]\n  G:left_stick 左摇杆 @p(0,0,0) 挂:body\n    M:[m7 box 0.02×0.02×0.02 (0,0,0)]\n  G:right_stick 右摇杆 @p(0,0,0) 挂:body\n    M:[m8 box 0.02×0.02×0.02 (0,0,0)]\n  G:dpad 方向键 @p(0,0,0) 挂:body\n    M:[m9 box 0.03×0.01×0.01 (0,0,0) 轴右(X)]\n  G:face_button_0 功能按钮 @p(0.1,0,0) 挂:body\n    M:[m11 box 0.01×0.01×0.01 (0.1,0,0)]\n  G:face_button_1 功能按钮 @p(0.1,0,0) 挂:body\n    M:[m12 box 0.01×0.01×0.01 (0.1,0,0)]\n  G:face_button_2 功能按钮 @p(0,0,0) 挂:body\n    M:[m13 box 0.01×0.01×0.01 (0,0,0)]\n  G:face_button_3 功能按钮 @p(0.1,0,0) 挂:body\n    M:[m14 box 0.01×0.01×0.01 (0.1,0,0)]\n  G:left_bumper 左肩键 @p(-0.1,0,0) 挂:body\n    M:[m15 box 0.05×0.01×0.02 (-0.1,0,0.1) 轴右(X)]\n  G:right_bumper 右肩键 @p(0.1,0,0) 挂:body\n    M:[m16 box 0.05×0.01×0.02 (0.1,0,0.1) 轴右(X)]\n  G:menu_left 选项键 @p(0,0,0) 挂:body\n    M:[m17 box 0.01×0.01×0.01 (0,0,0) 轴右(X)]\n  G:menu_right 菜单键 @p(0,0,0) 挂:body\n    M:[m18 box 0.01×0.01×0.01 (0,0,0) 轴右(X)]",
+        "stats": {
+          "groups": 12,
+          "meshes": 19,
+          "labeledMeshes": 0,
+          "labelCoverage": 0,
+          "batchLabels": 0,
+          "autoChains": 0,
+          "snapshotChars": 1322
+        }
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -0.095,
+          0,
+          -0.06425
+        ],
+        "max": [
+          0.095,
+          0.068,
+          0.06425
+        ],
+        "sourceNodeId": "asset-bounds"
+      }
+    ],
+    "sourceMeshCount": 19,
+    "candidateCount": 1,
+    "fallbackUsed": true
+  },
+  "footprintRadius": 0.1,
+  "sizeClass": "small",
+  "mode": "voxel",
+  "provider": "gpt",
+  "libraryId": "library-d7967286-cebf-4f99",
+  "libraryMetadata": {
+    "tags": [
+      "gamecontroller",
+      "gamingaccessory",
+      "electronicdevice"
+    ],
+    "applicableZones": [
+      "settlement"
+    ],
+    "repeatable": true,
+    "landmark": false,
+    "enabled": true,
+    "priority": 0.5,
+    "analysisStatus": "ready",
+    "rotation": "random"
+  },
+  "createdAt": 1787816685385,
+  "updatedAt": 1787816685385
+}

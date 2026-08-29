@@ -1,0 +1,364 @@
+{
+  "id": "asset-a11a56f8-12b2-41bf",
+  "name": "曲奇 2",
+  "prompt": "单块圆形巧克力豆曲奇，烘烤纹理明显，仅一个物品无包装无盘子\nCoordinate contract: local Y+ is up, local Z+ is the front, entrance, or forward direction, and local X+ is right. Put doors, facades, openings, windshields, noses, seats, and other recognizable front details toward local Z+. For a modular repeated element, explicitly choose the long axis: side-by-side modules span local X with depth/front on local Z; traversal modules span local Z. Keep the model centered at its origin.\nCanonical dimensions contract: width=0.27, height=0.06, depth=0.27 world units. Keep the generated mesh within this centered bounding size.\nCreate variation 2 of 2; preserve the same reusable asset family while varying silhouette and details.",
+  "modelJson": {
+    "name": "圆形巧克力豆曲奇·变化2",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "cookie",
+        "name": "曲奇",
+        "transform": {
+          "pos": [
+            0,
+            0.012,
+            0.001
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.322,
+            0.065,
+            0.329
+          ],
+          "center": [
+            0,
+            -0.013,
+            -0.001
+          ],
+          "axes": [
+            [
+              0.7536,
+              0.0063,
+              -0.6573
+            ],
+            [
+              -0.0164,
+              0.9998,
+              -0.0093
+            ],
+            [
+              0.6572,
+              0.0178,
+              0.7535
+            ]
+          ],
+          "_mainAxis": 2
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "cookie",
+        "transform": {
+          "pos": [
+            0,
+            -0.015,
+            -0.001
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.19,
+            "height": 0.054,
+            "depth": 0.27
+          },
+          "color": 13207877
+        }
+      },
+      {
+        "id": "m1",
+        "parent": "cookie",
+        "transform": {
+          "pos": [
+            -0.115,
+            -0.015,
+            -0.005
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.04,
+            "height": 0.054,
+            "depth": 0.19
+          },
+          "color": 12416824
+        }
+      },
+      {
+        "id": "m2",
+        "parent": "cookie",
+        "transform": {
+          "pos": [
+            0.115,
+            -0.015,
+            0.005
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.04,
+            "height": 0.054,
+            "depth": 0.18
+          },
+          "color": 13668941
+        }
+      },
+      {
+        "id": "m3",
+        "parent": "cookie",
+        "transform": {
+          "pos": [
+            -0.055,
+            0.0135,
+            0.086
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.052,
+            "height": 0.003,
+            "depth": 0.035
+          },
+          "color": 11100205
+        }
+      },
+      {
+        "id": "m4",
+        "parent": "cookie",
+        "transform": {
+          "pos": [
+            0.072,
+            0.0135,
+            -0.087
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.044,
+            "height": 0.003,
+            "depth": 0.03
+          },
+          "color": 14722143
+        }
+      },
+      {
+        "id": "m5",
+        "parent": "cookie",
+        "transform": {
+          "pos": [
+            0.085,
+            0.0135,
+            0.058
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.035,
+            "height": 0.003,
+            "depth": 0.026
+          },
+          "color": 12152372
+        }
+      },
+      {
+        "id": "m6",
+        "parent": "cookie",
+        "transform": {
+          "pos": [
+            -0.061,
+            0.015,
+            0.062
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.025,
+            "height": 0.006,
+            "depth": 0.021
+          },
+          "color": 4858904
+        }
+      },
+      {
+        "id": "m7",
+        "parent": "cookie",
+        "transform": {
+          "pos": [
+            0.025,
+            0.015,
+            0.087
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.022,
+            "height": 0.006,
+            "depth": 0.019
+          },
+          "color": 5975324
+        }
+      },
+      {
+        "id": "m8",
+        "parent": "cookie",
+        "transform": {
+          "pos": [
+            0.076,
+            0.015,
+            0.017
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.026,
+            "height": 0.006,
+            "depth": 0.022
+          },
+          "color": 4858904
+        }
+      },
+      {
+        "id": "m9",
+        "parent": "cookie",
+        "transform": {
+          "pos": [
+            -0.018,
+            0.015,
+            0.012
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.024,
+            "height": 0.006,
+            "depth": 0.024
+          },
+          "color": 5975324
+        }
+      },
+      {
+        "id": "m10",
+        "parent": "cookie",
+        "transform": {
+          "pos": [
+            -0.081,
+            0.015,
+            -0.037
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.022,
+            "height": 0.006,
+            "depth": 0.019
+          },
+          "color": 4858904
+        }
+      },
+      {
+        "id": "m11",
+        "parent": "cookie",
+        "transform": {
+          "pos": [
+            0.038,
+            0.015,
+            -0.058
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.027,
+            "height": 0.006,
+            "depth": 0.02
+          },
+          "color": 5975324
+        }
+      },
+      {
+        "id": "m12",
+        "parent": "cookie",
+        "transform": {
+          "pos": [
+            0.094,
+            0.015,
+            -0.067
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.018,
+            "height": 0.006,
+            "depth": 0.017
+          },
+          "color": 4858904
+        }
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1787875061568,
+        "provider": "gpt",
+        "data": "2Wpah/TkMVIRhKX8GC+uOwtLwvhaiP/UIMWLa3r9lUbsre9YqdOY4Ue8vS+SL6DxnqqjxlSfQTTOQrtFXyWASdBGOX16C05KtfXUeob7WaaW3CxCy7N4am/FD+/rZmo3KoqIFVfwMPShkmOI1Ce/4o5CehaIDcezA/17/7tjMzyWcxInpkxwbN6QSKmBFlZZ4Rtnu9NkagbRqVG/U3SYh9QMRzqOAH8b/OMLL10UqSjKAvW8lmvKCtJebgYm4w/CfMklRFu7ucS+H3oOdxFweYVDb5FJ2QB57Dgrm6qX4jBJXSwc7DGWZgAglxBlKgwYFj/52iL4FsRjs4VtjRiTgMqZie8yRp+nPWpyHYmiPf0f8sgdg33W2iI1Yp9J5xjbxDKFt/gw8/FpEs6t7/nDabd4A6S8kSPH7DeoDZipkyrF7ZPcUrVMp4boAjD02n72aCgRsM/ufmCKKuQyi6Warvi56p/2Ff+tL3J0x0z1MalhEQ15I/TPiL1dmar8dfRkt+HvBx27E/vEikiOa3cqF4zYUwJIO4LJ4XdA1lSrmjkF3PXsNU7QeJXngQXIvt4z8BJd9q7O1nBUJaO6VTn5/XGmkjgeSb6COt4yJqTBBLovF4yvgVjv735KHBO4UcEZK3cdyUbUGw+ga+l95d4vzbRQtmOsI+5/OQb/hdVUqnkHLAH+HMsgtsx7Fx2sBArNbmBLRB9r4OYurG0P0cKR5w4tilloDKrkJW2zkvk0nsNkCmmWCzWGugJQPmmJJw7e1TYtewWLwNE0tjfth/2M+vGIYzMz3N0ZNNPCGAMR6qKsurSrBf3QrwDqvVE/",
+        "edits": ""
+      },
+      "semanticSnapshot": {
+        "v": 1,
+        "auto": true,
+        "text": "圆形巧克力豆曲奇·变化2 · 1组/13mesh · 世界坐标(Y上Z前), 原点=模型根\n# 阅读说明: G:=group行(可动画骨骼, 动画key用G:后的id; @p=pivot世界坐标; 倾(x,y,z)°=朝向偏离世界轴的欧拉角; 缩进=父子层级; 挂:=挂载于某组; G:id→id→…=chain折叠行, 每个id都是可独立动画的group, chain×N=waypoint数)\n# M:=mesh行(label[id 几何 @(世界坐标)], label可省略; ×N=for循环批量件(锚点=代表实例); cyl (起)→(末)或 轴上(Y)等方位词=延伸方向; 薄向=板面法向(扁板); 挂载组双代表=最大件+最远有向件(刃/嘴/管所在端); 无方向标注=均匀块(三向相近,如头),默认面向前(Z); 对称×2=镜像对)\nG:cookie 曲奇 @p(0,0,0)\n  M:[m0 box 0.19×0.05×0.27 (0,0,0) 薄向上(Y)]",
+        "stats": {
+          "groups": 1,
+          "meshes": 13,
+          "labeledMeshes": 0,
+          "labelCoverage": 0,
+          "batchLabels": 0,
+          "autoChains": 0,
+          "snapshotChars": 437
+        }
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -0.135,
+          0,
+          -0.135
+        ],
+        "max": [
+          0.135,
+          0.062,
+          0.135
+        ],
+        "sourceNodeId": "asset-bounds"
+      }
+    ],
+    "sourceMeshCount": 13,
+    "candidateCount": 0,
+    "fallbackUsed": true
+  },
+  "footprintRadius": 0.135,
+  "sizeClass": "small",
+  "mode": "voxel",
+  "provider": "gpt",
+  "createdAt": 1787875060914,
+  "updatedAt": 1787875060914
+}

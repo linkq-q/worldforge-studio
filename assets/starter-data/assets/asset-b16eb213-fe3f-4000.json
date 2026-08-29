@@ -1,0 +1,472 @@
+{
+  "id": "asset-b16eb213-fe3f-4000",
+  "name": "魔法书",
+  "prompt": "哈利波特风格魔法工坊与图书馆中的魔法书\nCoordinate contract: local Y+ is up, local Z+ is the front, entrance, or forward direction, and local X+ is right. Put doors, facades, openings, windshields, noses, seats, and other recognizable front details toward local Z+. For a modular repeated element, explicitly choose the long axis: side-by-side modules span local X with depth/front on local Z; traversal modules span local Z. Keep the model centered at its origin.\nCanonical dimensions contract: width=0.45, height=0.12, depth=0.65 world units. Keep the generated mesh within this centered bounding size.",
+  "modelJson": {
+    "name": "魔法工坊藏书",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "book",
+        "name": "魔法书",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.561,
+            0.154,
+            0.804
+          ],
+          "center": [
+            0.037,
+            0.003,
+            -0.059
+          ],
+          "axes": [
+            [
+              0.9974,
+              0.0311,
+              0.0657
+            ],
+            [
+              -0.0331,
+              0.999,
+              0.0291
+            ],
+            [
+              -0.0647,
+              -0.0312,
+              0.9974
+            ]
+          ],
+          "_mainAxis": 2
+        }
+      },
+      {
+        "id": "gold_fittings",
+        "name": "金色封边",
+        "parent": "book",
+        "transform": {
+          "pos": [
+            -0.1012,
+            0.005,
+            0.152
+          ]
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "gold"
+          }
+        ],
+        "_obb": {
+          "size": [
+            0.405,
+            0.08,
+            0.62
+          ],
+          "center": [
+            0.101,
+            0.024,
+            -0.135
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              0.9995,
+              0.032
+            ],
+            [
+              0,
+              -0.032,
+              0.9995
+            ]
+          ],
+          "_mainAxis": 2
+        }
+      },
+      {
+        "id": "rune",
+        "name": "发光符文",
+        "parent": "book",
+        "transform": {
+          "pos": [
+            0,
+            0.055,
+            0.015
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.13,
+            0.01,
+            0.18
+          ],
+          "center": [
+            0,
+            0,
+            -0.03
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 2
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "book",
+        "transform": {
+          "pos": [
+            0,
+            -0.05,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.45,
+            "height": 0.02,
+            "depth": 0.65
+          },
+          "color": 3678272
+        }
+      },
+      {
+        "id": "m1",
+        "parent": "book",
+        "transform": {
+          "pos": [
+            0.01,
+            -0.005,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.405,
+            "height": 0.07,
+            "depth": 0.59
+          },
+          "color": 14207387
+        }
+      },
+      {
+        "id": "m2",
+        "parent": "book",
+        "transform": {
+          "pos": [
+            0.01,
+            -0.005,
+            0.304
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.405,
+            "height": 0.012,
+            "depth": 0.018
+          },
+          "color": 11968368
+        }
+      },
+      {
+        "id": "m3",
+        "parent": "book",
+        "transform": {
+          "pos": [
+            0,
+            0.04,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.45,
+            "height": 0.02,
+            "depth": 0.65
+          },
+          "color": 4924507
+        }
+      },
+      {
+        "id": "m4",
+        "parent": "book",
+        "transform": {
+          "pos": [
+            -0.2125,
+            -0.005,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.025,
+            "height": 0.08,
+            "depth": 0.61
+          },
+          "color": 2692399
+        }
+      },
+      {
+        "id": "m5",
+        "parent": "gold_fittings",
+        "transform": {
+          "pos": [
+            -0.0888,
+            0.05,
+            -0.152
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.025,
+            "height": 0.01,
+            "depth": 0.56
+          },
+          "color": 12949037
+        }
+      },
+      {
+        "id": "m6",
+        "parent": "gold_fittings",
+        "transform": {
+          "pos": [
+            0.2913,
+            0.05,
+            -0.152
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.025,
+            "height": 0.01,
+            "depth": 0.56
+          },
+          "color": 12949037
+        }
+      },
+      {
+        "id": "m7",
+        "parent": "gold_fittings",
+        "transform": {
+          "pos": [
+            0.1012,
+            0.05,
+            -0.432
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.355,
+            "height": 0.01,
+            "depth": 0.025
+          },
+          "color": 12949037
+        }
+      },
+      {
+        "id": "m8",
+        "parent": "gold_fittings",
+        "transform": {
+          "pos": [
+            0.1012,
+            0.05,
+            0.128
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.355,
+            "height": 0.01,
+            "depth": 0.025
+          },
+          "color": 12949037
+        }
+      },
+      {
+        "id": "m9",
+        "parent": "gold_fittings",
+        "transform": {
+          "pos": [
+            0.1012,
+            0,
+            0.1605
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.08,
+            "height": 0.05,
+            "depth": 0.025
+          },
+          "color": 13804598
+        }
+      },
+      {
+        "id": "m10",
+        "parent": "rune",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            -0.03
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.025,
+            "height": 0.01,
+            "depth": 0.18
+          },
+          "color": 6609407
+        },
+        "tags": [
+          {
+            "tag": "emissive",
+            "value": 0.75
+          }
+        ]
+      },
+      {
+        "id": "m11",
+        "parent": "rune",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.13,
+            "height": 0.01,
+            "depth": 0.025
+          },
+          "color": 6609407
+        },
+        "tags": [
+          {
+            "tag": "emissive",
+            "value": 0.75
+          }
+        ]
+      },
+      {
+        "id": "m12",
+        "parent": "rune",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            -0.09
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.09,
+            "height": 0.01,
+            "depth": 0.025
+          },
+          "color": 6609407
+        },
+        "tags": [
+          {
+            "tag": "emissive",
+            "value": 0.75
+          }
+        ]
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1787874408945,
+        "provider": "gpt",
+        "data": "d3dEEHtkg3F1RDjaPFdY5rzFSaRUCOTpp6f5BtuxZgke+lx3dNxU+wavMZ1HWyP8HPWEAM2gdK4UozoigS4ZOMsMpNjyxYXKrZQy3FaFS2WDxtoNWQQWdpTeYmeeZJzj1DEktYlOI2uyN0LJgfRGSUikWVqYTj5tv2zUJiu/P0dNGVcfpe+VGeygWETOo/el41fVk9vgksGDaAVpiJK1smLutytopXi5Jpg6OCB0SypsFhrHM1xRQod+KHlW41D1FT5O8BfUi7ndV0T6XhoPDiJQcNBvuN0jtjGDtkcz3+kt9hzxez87E1aGAyV1aLbPOJ54CNr2tq2OLJgvPCKmRALrR/ZXjp5P5zoLc0Arit0pkczfxLbFTrZFcnlCVH4cKCOk0pSFtVdTYjCeFE4rb68dy/ZmiDu6TBP7049aimrjwZCZQ/1ktbzDzyJ+kf8XOdN/tdprr8DSiWeoUNYPdhOFj/d+T3c/FPDFmlssj8uc6PpSYRBcPvAQzYZ+u46zr8jvGlPZAk/0dUlrEG88X4j1JHswZYiEAJDu9ThT8ARHiyz8NeOf+liMpu64KZZ7c4wVbXYUgIArcmrjYUwXkU/wliS0H9Wd4t/L5mdxX+BbgwCzuGStjghZ1jG21zxGy4FoHGKQTz9jiZIi0cTDzpOzWWNKUnJkg5BFJtQQFBS1/6c/r9ipF3MgvzPVMva53qZiiFccYVINrULOseFE4+e1AkzXMgMhn6bo4DMEMjDVWfHNp07Frc6vklCCv0ShqNSP1PD5XBat1KUSMLJ3OugwjvVw4LvfBMFqO6eZ7L2Hpv3EluTV2OpO66NcTjD1Htpsb3EBJTk/Mvu1IsogzA2cqqmOe92Nq2kJdq9rDQPNtWyFUQ7NjGBakZO/iCX3VYVbsH5tKiBmgySRe+Ga2Y9RETn4sgCOCPLx91xwTg6tSW1OpcmcNU83EsYAKzsuIbsUaC2VTeCwS62WiVZwAMze",
+        "edits": ""
+      },
+      "semanticSnapshot": {
+        "v": 1,
+        "auto": true,
+        "text": "魔法工坊藏书 · 3组/13mesh · 世界坐标(Y上Z前), 原点=模型根\n# 阅读说明: G:=group行(可动画骨骼, 动画key用G:后的id; @p=pivot世界坐标; 倾(x,y,z)°=朝向偏离世界轴的欧拉角; 缩进=父子层级; 挂:=挂载于某组; G:id→id→…=chain折叠行, 每个id都是可独立动画的group, chain×N=waypoint数)\n# M:=mesh行(label[id 几何 @(世界坐标)], label可省略; ×N=for循环批量件(锚点=代表实例); cyl (起)→(末)或 轴上(Y)等方位词=延伸方向; 薄向=板面法向(扁板); 挂载组双代表=最大件+最远有向件(刃/嘴/管所在端); 无方向标注=均匀块(三向相近,如头),默认面向前(Z); 对称×2=镜像对)\nG:book 魔法书 @p(0,0,0)\n  M:[m1 box 0.41×0.07×0.59 (0,0,0) 薄向上(Y)]\n  G:gold_fittings 金色封边 @p(-0.1,0,0.2)\n    M:[m5 box 0.03×0.01×0.56 (-0.2,0.1,0) 轴前(Z)]\n  G:rune 发光符文 @p(0,0.1,0)\n    M:[m10 box 0.03×0.01×0.18 (0,0.1,0) 轴前(Z)]",
+        "stats": {
+          "groups": 3,
+          "meshes": 13,
+          "labeledMeshes": 0,
+          "labelCoverage": 0,
+          "batchLabels": 0,
+          "autoChains": 0,
+          "snapshotChars": 590
+        }
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -0.225,
+          0,
+          -0.325
+        ],
+        "max": [
+          0.225,
+          0.12,
+          0.325
+        ],
+        "sourceNodeId": "asset-bounds"
+      }
+    ],
+    "sourceMeshCount": 13,
+    "candidateCount": 0,
+    "fallbackUsed": true
+  },
+  "footprintRadius": 0.325,
+  "sizeClass": "small",
+  "mode": "voxel",
+  "provider": "gpt",
+  "createdAt": 1787874408379,
+  "updatedAt": 1787874408379
+}

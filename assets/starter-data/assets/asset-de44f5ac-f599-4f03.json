@@ -1,0 +1,276 @@
+{
+  "id": "asset-de44f5ac-f599-4f03",
+  "name": "带翻盖垃圾桶",
+  "prompt": "A single reusable medium indoor trash bin with a clearly visible closed swing lid, rounded child-safe body and stable base, approximately 0.55 meters tall, no garbage, floor, room, or background",
+  "tags": [
+    "bin",
+    "prop"
+  ],
+  "modelJson": {
+    "name": "室内儿童安全摇盖垃圾桶",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "body",
+        "name": "桶身",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.36,
+            0.55,
+            0.32
+          ],
+          "center": [
+            0,
+            0.258,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "swing_lid",
+        "name": "闭合摇盖",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0,
+            0.505,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.359,
+            0.045,
+            0.245
+          ],
+          "center": [
+            0,
+            0.005,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0,
+            0.255,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.34,
+            "height": 0.43,
+            "depth": 0.27
+          },
+          "color": 9085869
+        }
+      },
+      {
+        "id": "m1",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0,
+            0.255,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.3,
+            "height": 0.43,
+            "depth": 0.31
+          },
+          "color": 9085869
+        }
+      },
+      {
+        "id": "m2",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0,
+            0.0175,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.32,
+            "height": 0.035,
+            "depth": 0.29
+          },
+          "color": 5399917
+        }
+      },
+      {
+        "id": "m3",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0,
+            0.4775,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.36,
+            "height": 0.055,
+            "depth": 0.32
+          },
+          "color": 6322048
+        }
+      },
+      {
+        "id": "m4",
+        "parent": "swing_lid",
+        "transform": {
+          "pos": [
+            0,
+            0.01,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.29,
+            "height": 0.035,
+            "depth": 0.22
+          },
+          "color": 3426127
+        }
+      },
+      {
+        "id": "m5",
+        "parent": "swing_lid",
+        "transform": {
+          "pos": [
+            -0.162,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.035,
+            "height": 0.035,
+            "depth": 0.245
+          },
+          "color": 4414051
+        }
+      },
+      {
+        "id": "m6",
+        "parent": "swing_lid",
+        "transform": {
+          "pos": [
+            0.162,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.035,
+            "height": 0.035,
+            "depth": 0.245
+          },
+          "color": 4414051
+        }
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1786874673840,
+        "provider": "gpt",
+        "data": "KSmJczzx9KsB/0oPuiGMRuZ6ZlAcAsX/zOQrcoUVkJbkB+pVW1CStfBaeE4nCEqP5oGxDPcR9tvp3ZQ5GKH3IvT0Tl5WSg/SArjsLiyb/ReifSdPBjn7KsszcxuLUUyEkted09areCehWkFnicC6A/RsWHjxzGyKaJ2slfb3yAO4A6oev39EKmVlUCLbTAhB03WDWpo2KxrGNhKKMWKS8y9HhaKgBZ1ID8Fr3B+ibr8W8XIsirbJQcsOg3zssEHntbwdSseSlBT+mPuhNq4GWpTOgpaiGtFJYNXY5pSpS+d8eqTE83fBvyqfu6U2L2qMFlrc2kdzR/dmRmcWn37r4yBPxuOZYvtZA3u6urFhs0Zpud7W/siek2M9AI33Qb5IiW61XOI2Y+p6gT/kcNifch3OJc4Tbr+F8CBBl6HvQcb3soEx34TpnXyCTk7BJVibeCXSvKi+mXsJTue93gskq/NoZa/dcBkHDArMkyZuJeoePIlCsMgOlyzjN3B/xSGPNzyNx22knOe4OEKNJ3MuAuH5dac68OPJd0ehrOKBqcKIkmZAY+9GEClTUInDh1T5EVRbT+X9+FHdlIHVORiNw1IuMe5k",
+        "edits": ""
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -0.18,
+          0,
+          -0.16
+        ],
+        "max": [
+          0.18,
+          0.5325,
+          0.16
+        ],
+        "sourceNodeId": "asset-bounds"
+      }
+    ],
+    "sourceMeshCount": 7,
+    "candidateCount": 0,
+    "fallbackUsed": true
+  },
+  "footprintRadius": 0.18,
+  "sizeClass": "small",
+  "mode": "voxel",
+  "provider": "gpt",
+  "createdAt": 1786874675048,
+  "updatedAt": 1786874675048
+}

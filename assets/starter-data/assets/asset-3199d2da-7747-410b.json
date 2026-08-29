@@ -1,0 +1,814 @@
+{
+  "id": "asset-3199d2da-7747-410b",
+  "name": "象玩偶",
+  "prompt": "单独一个坐姿浅灰色毛绒象玩偶，大耳朵和短卷鼻，无衣服，无底座\nCoordinate contract: local Y+ is up, local Z+ is the front, entrance, or forward direction, and local X+ is right. Put doors, facades, openings, windshields, noses, seats, and other recognizable front details toward local Z+. For a modular repeated element, explicitly choose the long axis: side-by-side modules span local X with depth/front on local Z; traversal modules span local Z. Keep the model centered at its origin.\nCanonical dimensions contract: width=0.5, height=0.58, depth=0.44 world units. Keep the generated mesh within this centered bounding size.",
+  "modelJson": {
+    "name": "坐姿浅灰色毛绒象玩偶",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "body",
+        "name": "身体",
+        "transform": {
+          "pos": [
+            0,
+            0.1,
+            0
+          ]
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "fur"
+          }
+        ],
+        "_obb": {
+          "size": [
+            0.49,
+            0.761,
+            0.569
+          ],
+          "center": [
+            0,
+            0.201,
+            0.051
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              0.9936,
+              -0.1133
+            ],
+            [
+              0,
+              0.1133,
+              0.9936
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "head",
+        "name": "头部",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0,
+            0.25,
+            0
+          ]
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "fur"
+          }
+        ],
+        "_obb": {
+          "size": [
+            0.49,
+            0.388,
+            0.435
+          ],
+          "center": [
+            0,
+            0.055,
+            0.039
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              0.9224,
+              0.3862
+            ],
+            [
+              0,
+              -0.3862,
+              0.9224
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "earL",
+        "name": "左大耳朵",
+        "parent": "head",
+        "transform": {
+          "pos": [
+            -0.145,
+            0.15,
+            0
+          ]
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "fur"
+          }
+        ],
+        "_obb": {
+          "size": [
+            0.12,
+            0.19,
+            0.1
+          ],
+          "center": [
+            -0.04,
+            -0.025,
+            0.005
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "earR",
+        "name": "右大耳朵",
+        "parent": "head",
+        "transform": {
+          "pos": [
+            0.145,
+            0.15,
+            0
+          ]
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "fur"
+          }
+        ],
+        "_obb": {
+          "size": [
+            0.12,
+            0.19,
+            0.1
+          ],
+          "center": [
+            0.04,
+            -0.025,
+            0.005
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "trunk",
+        "name": "短卷鼻",
+        "parent": "head",
+        "transform": {
+          "pos": [
+            0,
+            0.08,
+            0.14
+          ]
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "fur"
+          }
+        ],
+        "_obb": {
+          "size": [
+            0.09,
+            0.126,
+            0.154
+          ],
+          "center": [
+            0,
+            -0.034,
+            0.044
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              0.9029,
+              0.4298
+            ],
+            [
+              0,
+              -0.4298,
+              0.9029
+            ]
+          ],
+          "_mainAxis": 2
+        }
+      },
+      {
+        "id": "armL",
+        "name": "左前臂",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            -0.135,
+            0.21,
+            0.01
+          ]
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "fur"
+          }
+        ],
+        "_obb": {
+          "size": [
+            0.09,
+            0.2,
+            0.105
+          ],
+          "center": [
+            -0.02,
+            -0.075,
+            0.065
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "armR",
+        "name": "右前臂",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0.135,
+            0.21,
+            0.01
+          ]
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "fur"
+          }
+        ],
+        "_obb": {
+          "size": [
+            0.09,
+            0.2,
+            0.105
+          ],
+          "center": [
+            0.02,
+            -0.075,
+            0.065
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "legL",
+        "name": "左后腿",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            -0.09,
+            0.08,
+            0.02
+          ]
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "fur"
+          }
+        ],
+        "_obb": {
+          "size": [
+            0.16,
+            0.13,
+            0.18
+          ],
+          "center": [
+            -0.015,
+            -0.075,
+            0.07
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 2
+        }
+      },
+      {
+        "id": "legR",
+        "name": "右后腿",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0.09,
+            0.08,
+            0.02
+          ]
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "fur"
+          }
+        ],
+        "_obb": {
+          "size": [
+            0.16,
+            0.13,
+            0.18
+          ],
+          "center": [
+            0.015,
+            -0.075,
+            0.07
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 2
+        }
+      },
+      {
+        "id": "tail",
+        "name": "小尾巴",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0,
+            0.12,
+            -0.13
+          ]
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "fur"
+          }
+        ],
+        "_obb": {
+          "size": [
+            0.09,
+            0.09,
+            0.07
+          ],
+          "center": [
+            0,
+            0,
+            -0.035
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0,
+            0.135,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.3,
+            "height": 0.27,
+            "depth": 0.29
+          },
+          "color": 12105906
+        }
+      },
+      {
+        "id": "m1",
+        "parent": "head",
+        "transform": {
+          "pos": [
+            0,
+            0.095,
+            0.015
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.33,
+            "height": 0.24,
+            "depth": 0.29
+          },
+          "color": 12105906
+        }
+      },
+      {
+        "id": "m2",
+        "parent": "head",
+        "transform": {
+          "pos": [
+            -0.095,
+            0.135,
+            0.155
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.055,
+            "height": 0.055,
+            "depth": 0.025
+          },
+          "color": 3158062
+        },
+        "tags": [
+          {
+            "tag": "emissive",
+            "value": 0.25
+          }
+        ]
+      },
+      {
+        "id": "m3",
+        "parent": "head",
+        "transform": {
+          "pos": [
+            0.095,
+            0.135,
+            0.155
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.055,
+            "height": 0.055,
+            "depth": 0.025
+          },
+          "color": 3158062
+        },
+        "tags": [
+          {
+            "tag": "emissive",
+            "value": 0.25
+          }
+        ]
+      },
+      {
+        "id": "m4",
+        "parent": "earL",
+        "transform": {
+          "pos": [
+            -0.04,
+            -0.025,
+            0.005
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.12,
+            "height": 0.19,
+            "depth": 0.1
+          },
+          "color": 11184805
+        }
+      },
+      {
+        "id": "m5",
+        "parent": "earR",
+        "transform": {
+          "pos": [
+            0.04,
+            -0.025,
+            0.005
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.12,
+            "height": 0.19,
+            "depth": 0.1
+          },
+          "color": 11184805
+        }
+      },
+      {
+        "id": "m6",
+        "parent": "trunk",
+        "transform": {
+          "pos": [
+            0,
+            -0.025,
+            0.035
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.09,
+            "height": 0.08,
+            "depth": 0.105
+          },
+          "color": 11382184
+        }
+      },
+      {
+        "id": "m7",
+        "parent": "trunk",
+        "transform": {
+          "pos": [
+            0,
+            -0.065,
+            0.065
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.085,
+            "height": 0.065,
+            "depth": 0.07
+          },
+          "color": 11382184
+        }
+      },
+      {
+        "id": "m8",
+        "parent": "armL",
+        "transform": {
+          "pos": [
+            -0.02,
+            -0.075,
+            0.065
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.09,
+            "height": 0.2,
+            "depth": 0.105
+          },
+          "color": 11711149
+        }
+      },
+      {
+        "id": "m9",
+        "parent": "armR",
+        "transform": {
+          "pos": [
+            0.02,
+            -0.075,
+            0.065
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.09,
+            "height": 0.2,
+            "depth": 0.105
+          },
+          "color": 11711149
+        }
+      },
+      {
+        "id": "m10",
+        "parent": "legL",
+        "transform": {
+          "pos": [
+            -0.015,
+            -0.075,
+            0.07
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.16,
+            "height": 0.13,
+            "depth": 0.18
+          },
+          "color": 11645356
+        }
+      },
+      {
+        "id": "m11",
+        "parent": "legR",
+        "transform": {
+          "pos": [
+            0.015,
+            -0.075,
+            0.07
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.16,
+            "height": 0.13,
+            "depth": 0.18
+          },
+          "color": 11645356
+        }
+      },
+      {
+        "id": "m12",
+        "parent": "tail",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            -0.035
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.09,
+            "height": 0.09,
+            "depth": 0.07
+          },
+          "color": 11184805
+        }
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1787873937762,
+        "provider": "gpt",
+        "data": "iwH0g2x7akxC94NzhtXT05/uavcaNL1jCzCzaFhTLhkjIJ9gtDFJVkD/7JSr90XrH7pMX6/cl2XguTgdiggSVwydInPVkV0X1dHUmz81Ma6enmOCRcng10jvwAOK99NSuiCr6hsc3v76goY4HoPpxo4JuzTc2t0Hej2umH4CHlFtBSyonryuyGcYyUXItr42vgWKwYToyX8bMfwfleMzJi7xb6W7pLOOresrSVP8eIipAfcXY4iyx3D0YN9OmLc/ptdho894GUl/ovECnMG6gSIcfEEw5qc2qjSO/3bYpgsdiyF8pROVNBtW7hRy36sg7P3iPHrzmTKE290F73+CC7Mc2/OFpeA77WlgHag+OGNl/y2U+XZS/OdgP5o1HcKSZ+gBnkkXoSQea4NSidIwsx8nbSUq3flAcPTUJHMGZSohk2PkchjK264qr7rctKXbo0BB5HoxHaSh90AJV493qOGus+DJMJBibR4BZMPiErJncPGu/7JLVQo0PCBOo1l3BU2megUEY1Bflp8HwlvuTER/EvdubmJ1UZhCgYwEStr7S3XVXbuPP8s5zHOFL7ZorXo14+w7Re7/EJoX4W1kLZucGmoAQMtUonipDUZxtwvE6Mih1kk4ot3wc/DdfUh/qSa5f47F+BDSldlYlrPWpOhTwo1oLwi5m9wnKOFBS4Ahm5Eoi4SyqPZgSEN6UZWlGinP3npyzveDbg7Q6BonSL8+o6J3ZfI/x1Zyeqjv9ReisR2GtqwJRmuO3n2U/b57bXOMXp4Wq6ytkiQJnGHNe9KZ58lGxVlaVQwyEwHjnK5BbFrnhyvlApJauQuLBEpxtPYvUBMAItovojOfEo1QwHLO+sUwVeRfop2EreL94dg6k3yr4ij+7h3G4UmA4z4kNbhzAeGuWHj+9QMgAE/9i3z6FrntJu0VpTNaaKFv3yK8wRi7MEwIJ/lfpjuPfRC1fJJAJGK9duk5D4TcNGSTZFpXNtpZBIXVOc4pkcUjcKI773RvCfYcznRwSrDoX9IzmA+vf6L9d0sulBY+O2HKE0CI/pMamUME1mk1qWFxPmWS",
+        "edits": ""
+      },
+      "semanticSnapshot": {
+        "v": 1,
+        "auto": true,
+        "text": "坐姿浅灰色毛绒象玩偶 · 10组/13mesh · 世界坐标(Y上Z前), 原点=模型根\n# 阅读说明: G:=group行(可动画骨骼, 动画key用G:后的id; @p=pivot世界坐标; 倾(x,y,z)°=朝向偏离世界轴的欧拉角; 缩进=父子层级; 挂:=挂载于某组; G:id→id→…=chain折叠行, 每个id都是可独立动画的group, chain×N=waypoint数)\n# M:=mesh行(label[id 几何 @(世界坐标)], label可省略; ×N=for循环批量件(锚点=代表实例); cyl (起)→(末)或 轴上(Y)等方位词=延伸方向; 薄向=板面法向(扁板); 挂载组双代表=最大件+最远有向件(刃/嘴/管所在端); 无方向标注=均匀块(三向相近,如头),默认面向前(Z); 对称×2=镜像对)\nG:body 身体 @p(0,0.1,0)\n  M:[m0 box 0.3×0.27×0.29 (0,0.2,0)]\n  G:head 头部 @p(0,0.4,0)\n    M:[m1 box 0.33×0.24×0.29 (0,0.4,0)]\n    G:earL 左大耳朵 @p(-0.1,0.5,0)\n      M:[m4 box 0.12×0.19×0.1 (-0.2,0.5,0) 轴上(Y)]\n    G:earR 右大耳朵 @p(0.1,0.5,0)\n      M:[m5 box 0.12×0.19×0.1 (0.2,0.5,0) 轴上(Y)]\n    G:trunk 短卷鼻 @p(0,0.4,0.1)\n      M:[m6 box 0.09×0.08×0.11 (0,0.4,0.2)]\n  G:armL 左前臂 @p(-0.1,0.3,0)\n    M:[m8 box 0.09×0.2×0.11 (-0.2,0.2,0.1) 轴上(Y)]\n  G:armR 右前臂 @p(0.1,0.3,0)\n    M:[m9 box 0.09×0.2×0.11 (0.2,0.2,0.1) 轴上(Y)]\n  G:legL 左后腿 @p(-0.1,0.2,0)\n    M:[m10 box 0.16×0.13×0.18 (-0.1,0.1,0.1)]\n  G:legR 右后腿 @p(0.1,0.2,0)\n    M:[m11 box 0.16×0.13×0.18 (0.1,0.1,0.1)]\n  G:tail 小尾巴 @p(0,0.2,-0.1)\n    M:[m12 box 0.09×0.09×0.07 (0,0.2,-0.2)]",
+        "stats": {
+          "groups": 10,
+          "meshes": 13,
+          "labeledMeshes": 0,
+          "labelCoverage": 0,
+          "batchLabels": 0,
+          "autoChains": 0,
+          "snapshotChars": 1100
+        }
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -0.245,
+          0,
+          -0.22000000000000003
+        ],
+        "max": [
+          0.245,
+          0.5299999999999999,
+          0.22000000000000003
+        ],
+        "sourceNodeId": "asset-bounds"
+      }
+    ],
+    "sourceMeshCount": 13,
+    "candidateCount": 0,
+    "fallbackUsed": true
+  },
+  "footprintRadius": 0.245,
+  "sizeClass": "small",
+  "mode": "voxel",
+  "provider": "gpt",
+  "createdAt": 1787873937289,
+  "updatedAt": 1787873937289
+}

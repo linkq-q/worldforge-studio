@@ -1,0 +1,546 @@
+{
+  "id": "asset-9d94322a-f866-47d6",
+  "name": "风筝",
+  "prompt": "风筝",
+  "modelJson": {
+    "name": "彩色菱形风筝",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "kite",
+        "name": "风筝主体",
+        "transform": {
+          "pos": [
+            0,
+            3,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            2.688,
+            4.547,
+            1.351
+          ],
+          "center": [
+            0.179,
+            -0.899,
+            0.187
+          ],
+          "axes": [
+            [
+              0.9591,
+              0.2265,
+              0.1696
+            ],
+            [
+              -0.1863,
+              0.9565,
+              -0.2244
+            ],
+            [
+              -0.213,
+              0.1836,
+              0.9596
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "tail01",
+        "name": "风筝尾绳",
+        "parent": "kite",
+        "transform": {
+          "pos": [
+            0,
+            -1.4,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.908,
+            1.692,
+            0.091
+          ],
+          "center": [
+            -0.011,
+            -0.831,
+            0.009
+          ],
+          "axes": [
+            [
+              0.9986,
+              0.0528,
+              -0.0059
+            ],
+            [
+              -0.0528,
+              0.9986,
+              -0.0032
+            ],
+            [
+              0.0057,
+              0.0035,
+              1
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "tail02",
+        "name": "尾绳末段",
+        "parent": "tail01",
+        "transform": {
+          "pos": [
+            0.22,
+            -0.9,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.423,
+            0.741,
+            0.075
+          ],
+          "center": [
+            -0.14,
+            -0.348,
+            0.014
+          ],
+          "axes": [
+            [
+              0.8523,
+              -0.523,
+              0.0092
+            ],
+            [
+              0.523,
+              0.8523,
+              -0.0017
+            ],
+            [
+              -0.0069,
+              0.0063,
+              1
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "flying_line",
+        "name": "牵引线",
+        "parent": "kite",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            -0.08
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.05,
+            3.288,
+            0.025
+          ],
+          "center": [
+            0.61,
+            -1.42,
+            0.64
+          ],
+          "axes": [
+            [
+              0.977,
+              0.1137,
+              -0.1803
+            ],
+            [
+              -0.1866,
+              0.8651,
+              -0.4656
+            ],
+            [
+              0.1031,
+              0.4885,
+              0.8664
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "kite",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ],
+          "quat": [
+            0.65,
+            -0.27,
+            -0.27,
+            0.65
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.98,
+            "height": 0.08,
+            "depth": 1.98
+          },
+          "color": 15223612
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "fabric"
+          }
+        ]
+      },
+      {
+        "id": "m1",
+        "parent": "kite",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0.07
+          ],
+          "quat": [
+            0.71,
+            0,
+            0,
+            0.71
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.1,
+            "height": 0.06,
+            "depth": 2.7
+          },
+          "color": 9132587
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "bark"
+          }
+        ]
+      },
+      {
+        "id": "m2",
+        "parent": "kite",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0.07
+          ],
+          "quat": [
+            0.5,
+            -0.5,
+            0.5,
+            -0.5
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.1,
+            "height": 0.06,
+            "depth": 2.64
+          },
+          "color": 9132587
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "bark"
+          }
+        ]
+      },
+      {
+        "id": "m3",
+        "parent": "kite",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0.11
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.22,
+            "height": 0.22,
+            "depth": 0.14
+          },
+          "color": 16041282
+        }
+      },
+      {
+        "id": "m4",
+        "parent": "tail01",
+        "transform": {
+          "pos": [
+            0.11,
+            -0.45,
+            0
+          ],
+          "quat": [
+            0.69,
+            0.08,
+            0,
+            0.71
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.07,
+            "height": 0.04,
+            "depth": 0.93
+          },
+          "color": 14205850
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "fabric"
+          }
+        ]
+      },
+      {
+        "id": "m5",
+        "parent": "tail01",
+        "transform": {
+          "pos": [
+            0.05,
+            -0.34,
+            0.03
+          ],
+          "quat": [
+            -0.68,
+            0.2,
+            -0.2,
+            0.68
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.37,
+            "height": 0.04,
+            "depth": 0.19
+          },
+          "color": 3779035
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "fabric"
+          }
+        ]
+      },
+      {
+        "id": "m6",
+        "parent": "tail02",
+        "transform": {
+          "pos": [
+            -0.17,
+            -0.33,
+            0
+          ],
+          "quat": [
+            0.69,
+            -0.16,
+            -0.18,
+            0.68
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.08,
+            "height": 0.04,
+            "depth": 0.74
+          },
+          "color": 14205850
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "fabric"
+          }
+        ]
+      },
+      {
+        "id": "m7",
+        "parent": "tail02",
+        "transform": {
+          "pos": [
+            -0.04,
+            -0.24,
+            0.03
+          ],
+          "quat": [
+            -0.68,
+            0.2,
+            -0.2,
+            0.68
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.36,
+            "height": 0.04,
+            "depth": 0.19
+          },
+          "color": 15975228
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "fabric"
+          }
+        ]
+      },
+      {
+        "id": "m8",
+        "parent": "tail02",
+        "transform": {
+          "pos": [
+            -0.28,
+            -0.52,
+            0.03
+          ],
+          "quat": [
+            -0.68,
+            0.2,
+            -0.2,
+            0.68
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.36,
+            "height": 0.04,
+            "depth": 0.19
+          },
+          "color": 8148423
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "fabric"
+          }
+        ]
+      },
+      {
+        "id": "m9",
+        "parent": "flying_line",
+        "transform": {
+          "pos": [
+            0.61,
+            -1.42,
+            0.64
+          ],
+          "quat": [
+            0.51,
+            0.11,
+            0,
+            0.83
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.05,
+            "height": 0.025,
+            "depth": 3.36
+          },
+          "color": 15196623
+        }
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1787828944030,
+        "provider": "glm",
+        "data": "hXHfyIUltiY6/VEFXIW9JgOh5SLwv+46i4aaITMKwwQDWSyfIttzNHboVU1jmOfcEUdeQ2nzE3GypuQ+WrHXbpNpYPSNrXxBmAJx8wC0qG6wcWK3Zu2QUuoLtbXpp14MrVWYZsWYv8DaH0bteSER8Z5crUNN07FIP5w9olm5x3cf1h3nuJ3F177abcTivb3h+eBb1Loo069z7/G3/cGK0aaC+IplHQsTzUngQc6u5N/JSBZ2UJaW83AfJoEaii5pYnjD3zsfeDQp7WMF/d6kL8c9mB0rTS6auiOQrab2DXQ3b59lW/8HkYg9U5/ILCPgxK0kGw7s1Sf6JPoam19+j+X/GIUnnpHcopHSibrxZTcNyOw0j56qx1wHVeyELX0PtSNtdENZ7mvtX0N98YJMExMmAOoOBoJ7SzVftNLH5I/5JqbFK8u7X3dNLEaUJ1oQYgcanC4wN28BdUb2Trh9rbKRmkl2t905WorLgFbPdXhgeAiOGcs+mqrBBXpwu6lg8DatSN+Sf87CpC7aSSCdVmITtIO3/NXiIUBnpqkKNKJn62gZzRzJDfNEwsAIYtxmAhcTSNIWfJbtCQgJ5ih+DEDVq6Eglruzc/GyOTkvStwX61GAzfWI3Hxs7Bmcsn4ALAWd5u4yWF+7jbAKWPrykO9eYeDIigsiE8RvI9BE3JhVxAo21Sb/VXE8UKvmQlVMh3OhSn4Ef3+1nVhYdkuOzKhCHDm3oyp5MoARzuYR4YmSsg0xSmpWfsubWo7N5GGUd9ByTcgQICh+GRTbDLfT/lAcOguxtCH0B1ze3g1A/TCFplB2uhf8kZp5oxKGvdO+Vxpv/IaIKXJUKofE0/aML9WsJ/eKje/0kUGxxAxY9m7nx3DM18Bv57qxj6wLpE2BQgvcfO7XLMQ3PdV66ujqWrsHXiPmD562w0ZgpoBYOdcLqCckfYQsxaJOoIEnGPNyomolNoiPBOvOHFA7v5DYhrDvE3pOxOUoTrpHjw==",
+        "edits": ""
+      },
+      "semanticSnapshot": {
+        "v": 1,
+        "auto": true,
+        "text": "彩色菱形风筝 · 4组/10mesh · 世界坐标(Y上Z前), 原点=模型根\n# 阅读说明: G:=group行(可动画骨骼, 动画key用G:后的id; @p=pivot世界坐标; 倾(x,y,z)°=朝向偏离世界轴的欧拉角; 缩进=父子层级; 挂:=挂载于某组; G:id→id→…=chain折叠行, 每个id都是可独立动画的group, chain×N=waypoint数)\n# M:=mesh行(label[id 几何 @(世界坐标)], label可省略; ×N=for循环批量件(锚点=代表实例); cyl (起)→(末)或 轴上(Y)等方位词=延伸方向; 薄向=板面法向(扁板); 挂载组双代表=最大件+最远有向件(刃/嘴/管所在端); 无方向标注=均匀块(三向相近,如头),默认面向前(Z); 对称×2=镜像对)\nG:kite 风筝主体 @p(0,3,0)\n  M:[m0 box 2×0.08×2 (0,3,0) 轴(0.7,2.3,0)→(-0.7,3.7,0)]\n  G:tail01 风筝尾绳 @p(0,1.6,0)\n    M:[m5 box 0.37×0.04×0.19 (0.1,1.3,0) 轴(0.2,1.2,0)→(-0.1,1.4,0)]\n    G:tail02 尾绳末段 @p(0.2,0.7,0)\n      M:[m7 box 0.36×0.04×0.19 (0.2,0.5,0) 轴(0.3,0.4,0)→(0,0.6,0)]\n  G:flying_line 牵引线 @p(0,3,-0.1)\n    M:[m9 box 0.05×0.03×3.4 (0.6,1.6,0.6) 轴(0.9,0.2,1.3)→(0.3,3,-0.2)]",
+        "stats": {
+          "groups": 4,
+          "meshes": 10,
+          "labeledMeshes": 0,
+          "labelCoverage": 0,
+          "batchLabels": 0,
+          "autoChains": 0,
+          "snapshotChars": 743
+        }
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          0.26498595359483923,
+          0.08881766149058248,
+          -0.7441509728436165
+        ],
+        "max": [
+          0.9550140464051607,
+          3.0658320200380804,
+          0.7441509728436166
+        ],
+        "sourceNodeId": "m9"
+      },
+      {
+        "min": [
+          -1.4000686314089625,
+          1.5972562093553686,
+          -0.6000000000000001
+        ],
+        "max": [
+          1.4000686314089625,
+          4.3973934721732935,
+          -0.52
+        ],
+        "sourceNodeId": "m0"
+      }
+    ],
+    "sourceMeshCount": 10,
+    "candidateCount": 2,
+    "fallbackUsed": false
+  },
+  "footprintRadius": 1.4000686314089625,
+  "sizeClass": "medium",
+  "mode": "voxel",
+  "createdAt": 1787828942886,
+  "updatedAt": 1787828942886
+}

@@ -1,0 +1,537 @@
+{
+  "id": "asset-788e4592-a584-473f",
+  "name": "泡泡战车",
+  "prompt": "原创儿童玩具，单辆非武器化泡泡履带车，顶部透明泡泡发生器，宽圆角履带，薄荷绿与橙色配色，无文字无人物，独立单体\nCoordinate contract: local Y+ is up, local Z+ is the front, entrance, or forward direction, and local X+ is right. Put doors, facades, openings, windshields, noses, seats, and other recognizable front details toward local Z+. For a modular repeated element, explicitly choose the long axis: side-by-side modules span local X with depth/front on local Z; traversal modules span local Z. Keep the model centered at its origin.\nCanonical dimensions contract: width=0.72, height=0.48, depth=0.5 world units. Keep the generated mesh within this centered bounding size.",
+  "modelJson": {
+    "name": "薄荷泡泡履带车",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "body",
+        "name": "车身",
+        "transform": {
+          "pos": [
+            0,
+            0.15,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.74,
+            0.49,
+            0.489
+          ],
+          "center": [
+            0,
+            0.098,
+            -0.002
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              0.9972,
+              -0.0752
+            ],
+            [
+              0,
+              0.0752,
+              0.9972
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "left_track",
+        "name": "左履带",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            -0.285,
+            -0.04,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.16,
+            0.18,
+            0.46
+          ],
+          "center": [
+            -0.005,
+            0,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 2
+        }
+      },
+      {
+        "id": "right_track",
+        "name": "右履带",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0.285,
+            -0.04,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.16,
+            0.18,
+            0.46
+          ],
+          "center": [
+            0.005,
+            0,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 2
+        }
+      },
+      {
+        "id": "bubble_generator",
+        "name": "透明泡泡发生器",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0,
+            0.12,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.3,
+            0.245,
+            0.274
+          ],
+          "center": [
+            0,
+            0.094,
+            0.005
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              0.9999,
+              -0.0168
+            ],
+            [
+              0,
+              0.0168,
+              0.9999
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "bubble_outlet",
+        "name": "泡泡出口",
+        "parent": "bubble_generator",
+        "transform": {
+          "pos": [
+            0,
+            0.19,
+            0.055
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.1,
+            0.048,
+            0.13
+          ],
+          "center": [
+            0,
+            -0.002,
+            0.019
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              0.9979,
+              0.0641
+            ],
+            [
+              0,
+              -0.0641,
+              0.9979
+            ]
+          ],
+          "_mainAxis": 2
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0,
+            0.03,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.46,
+            "height": 0.18,
+            "depth": 0.38
+          },
+          "color": 7526576
+        }
+      },
+      {
+        "id": "m1",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0,
+            0.08,
+            0.19
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.38,
+            "height": 0.08,
+            "depth": 0.08
+          },
+          "color": 16751170
+        }
+      },
+      {
+        "id": "m2",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0,
+            0.1,
+            0.236
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.16,
+            "height": 0.04,
+            "depth": 0.012
+          },
+          "color": 13238258
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass",
+            "variant": "green"
+          }
+        ]
+      },
+      {
+        "id": "m3",
+        "parent": "left_track",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.15,
+            "height": 0.18,
+            "depth": 0.46
+          },
+          "color": 3627864
+        }
+      },
+      {
+        "id": "m4",
+        "parent": "left_track",
+        "transform": {
+          "pos": [
+            -0.076,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.018,
+            "height": 0.1,
+            "depth": 0.3
+          },
+          "color": 16751170
+        }
+      },
+      {
+        "id": "m5",
+        "parent": "right_track",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.15,
+            "height": 0.18,
+            "depth": 0.46
+          },
+          "color": 3627864
+        }
+      },
+      {
+        "id": "m6",
+        "parent": "right_track",
+        "transform": {
+          "pos": [
+            0.076,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.018,
+            "height": 0.1,
+            "depth": 0.3
+          },
+          "color": 16751170
+        }
+      },
+      {
+        "id": "m7",
+        "parent": "bubble_generator",
+        "transform": {
+          "pos": [
+            0,
+            0.085,
+            -0.015
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.3,
+            "height": 0.15,
+            "depth": 0.23
+          },
+          "color": 12255214
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass",
+            "variant": "green"
+          }
+        ]
+      },
+      {
+        "id": "m8",
+        "parent": "bubble_generator",
+        "transform": {
+          "pos": [
+            0,
+            0.085,
+            -0.015
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.09,
+            "height": 0.11,
+            "depth": 0.09
+          },
+          "color": 16752970
+        }
+      },
+      {
+        "id": "m9",
+        "parent": "bubble_generator",
+        "transform": {
+          "pos": [
+            0,
+            0.1925,
+            -0.015
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.18,
+            "height": 0.035,
+            "depth": 0.15
+          },
+          "color": 16751170
+        }
+      },
+      {
+        "id": "m10",
+        "parent": "bubble_outlet",
+        "transform": {
+          "pos": [
+            0,
+            0.0025,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.1,
+            "height": 0.035,
+            "depth": 0.09
+          },
+          "color": 16760940
+        }
+      },
+      {
+        "id": "m11",
+        "parent": "bubble_outlet",
+        "transform": {
+          "pos": [
+            0,
+            -0.005,
+            0.06
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.045,
+            "height": 0.045,
+            "depth": 0.045
+          },
+          "color": 14221302
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass",
+            "variant": "green"
+          },
+          {
+            "tag": "emissive",
+            "value": 0.25
+          }
+        ]
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1787770851888,
+        "provider": "gpt",
+        "data": "KOfwHdC5BQAMcA1suT4YeX0rRvQq28u3T81X5bOAk7aez0tI1hRWnM1sRXZC08xztevRHz1zDMbY7/Parc06qFQ7J+JQSJDgeoFzMBwkMDDQEZ41j55UDgT13xw6OeyyE98gCOx4pXILaoZLQjPveE/ec13OWG8RUFBO12p4PcMVIGbw2Ou7T0xlIpVF79xdXxhjAR0YcGDEiHOgCzQi7BO3YcQjq7qLZpQ9kSEGehZHmv8bxZ5jLyLVUPbRC+K0HABmQ7dsO6B3XJV//i+gRyVkUl9fPqeS/HpeTb6jChHdJvSFEq3m7Q7TIxA9FYw50oFOAE5lK8mdX16fwosts1l4+866W1uuGT8J0mzfjUPR5IKWpchdpyGI/RW31wL3p7eHiJwDu0kWp/SBpXiPH4mpX3sKwrqnwALdtBx6NMCsKPcaAIVdvUQuolWXszCPFXaQuSEpZ4+xnFG82+p0U2NZETIV1LKAHtOAaDe09Blrv9FusCt21+ds8dUOMrwD+BVSOqhs+DAB/bA2B3yGSEsOxtXughDDPxsTBJsTXJufgcFk16Waf1dSiz8e4Bh/0vb3pg5iKWGhXiq4NUpdKrhPiPXN1muYdTx1Lyi+0zwGTuu7w8aJj6ssKGYtNtug1haF09Q5X3/20X2ulWRK2ACduxSJ9saaYf+/pozxuzaeFlf2fc2vL7sVl8t+2BL+P9pfZTzmKsfoEF0acN+B/hztnD8uULSCsWBndn9CtuPkBKId/8hhFMY+S+m9KIjZvZCnWFY4AZCUugS2JiK7W+AgpVEtAaI0FMHSxcFqevHnTp6EwRxHxpyp1EySLEQREs/dsOtoKpS+o4YKvEsU3BGBN+f+60k3/7jbalKErH2yD9QIfk4HgRiOdvICXKzt56HiW7j4lcFoplrh/gT3x6Tt4P9I9Dc=",
+        "edits": ""
+      },
+      "semanticSnapshot": {
+        "v": 1,
+        "auto": true,
+        "text": "薄荷泡泡履带车 · 5组/12mesh · 世界坐标(Y上Z前), 原点=模型根\n# 阅读说明: G:=group行(可动画骨骼, 动画key用G:后的id; @p=pivot世界坐标; 倾(x,y,z)°=朝向偏离世界轴的欧拉角; 缩进=父子层级; 挂:=挂载于某组; G:id→id→…=chain折叠行, 每个id都是可独立动画的group, chain×N=waypoint数)\n# M:=mesh行(label[id 几何 @(世界坐标)], label可省略; ×N=for循环批量件(锚点=代表实例); cyl (起)→(末)或 轴上(Y)等方位词=延伸方向; 薄向=板面法向(扁板); 挂载组双代表=最大件+朝向件(嘴/管/檐所在); 无方向标注=均匀块(三向相近,如头),默认面向前(Z); 对称×2=镜像对)\nG:body 车身 @p(0,0.2,0)\n  M:[m0 box 0.46×0.18×0.38 (0,0.2,0) 薄向上(Y)]\n  G:left_track 左履带 @p(-0.3,0.1,0) 挂:body\n    M:[m3 box 0.15×0.18×0.46 (-0.3,0.1,0) 轴前(Z)]\n  G:right_track 右履带 @p(0.3,0.1,0) 挂:body\n    M:[m5 box 0.15×0.18×0.46 (0.3,0.1,0) 轴前(Z)]\n  G:bubble_generator 透明泡泡发生器 @p(0,0.3,0) 挂:body\n    M:[m7 box 0.3×0.15×0.23 (0,0.4,0) 薄向上(Y)]\n    G:bubble_outlet 泡泡出口 @p(0,0.5,0.1) 挂:bubble_generator\n      M:[m10 box 0.1×0.04×0.09 (0,0.5,0.1) 薄向上(Y)]",
+        "stats": {
+          "groups": 5,
+          "meshes": 12,
+          "labeledMeshes": 0,
+          "labelCoverage": 0,
+          "batchLabels": 0,
+          "autoChains": 0,
+          "snapshotChars": 813
+        }
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -0.37,
+          0,
+          -0.236
+        ],
+        "max": [
+          0.37,
+          0.4600000000000001,
+          0.236
+        ],
+        "sourceNodeId": "asset-bounds"
+      }
+    ],
+    "sourceMeshCount": 12,
+    "candidateCount": 0,
+    "fallbackUsed": true
+  },
+  "footprintRadius": 0.37,
+  "sizeClass": "small",
+  "mode": "voxel",
+  "provider": "gpt",
+  "createdAt": 1787770851578,
+  "updatedAt": 1787770851578
+}

@@ -1,0 +1,1151 @@
+{
+  "id": "asset-1757fc3a-c1d3-449c",
+  "name": "绿色的塑料玩具士兵，就是用在战争游戏中的那种",
+  "prompt": "绿色的塑料玩具士兵，就是用在战争游戏中的那种",
+  "modelJson": {
+    "name": "绿色塑料玩具士兵",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "body",
+        "name": "士兵躯干",
+        "transform": {
+          "pos": [
+            0,
+            0.24,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            3.213,
+            4.757,
+            1.445
+          ],
+          "center": [
+            0.277,
+            0.769,
+            0.071
+          ],
+          "axes": [
+            [
+              0.9986,
+              -0.0112,
+              -0.0516
+            ],
+            [
+              0.0075,
+              0.9974,
+              -0.0714
+            ],
+            [
+              0.0523,
+              0.0709,
+              0.9961
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "stand",
+        "name": "玩具底座",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0,
+            -0.04,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            1.65,
+            0.24,
+            1.05
+          ],
+          "center": [
+            0,
+            -0.08,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "head",
+        "name": "头部",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0,
+            2.01,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.78,
+            1.048,
+            0.933
+          ],
+          "center": [
+            0,
+            0.448,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              0.8979,
+              0.4401
+            ],
+            [
+              0,
+              -0.4401,
+              0.8979
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "left_arm",
+        "name": "左臂",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            -0.5,
+            1.88,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.404,
+            1.263,
+            0.345
+          ],
+          "center": [
+            -0.318,
+            -0.527,
+            0.181
+          ],
+          "axes": [
+            [
+              0.8597,
+              -0.5107,
+              0.0087
+            ],
+            [
+              0.5107,
+              0.8598,
+              0.0028
+            ],
+            [
+              -0.009,
+              0.002,
+              1
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "right_arm",
+        "name": "右臂",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0.5,
+            1.88,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            1.953,
+            2.323,
+            0.611
+          ],
+          "center": [
+            -0.111,
+            -0.568,
+            0.2
+          ],
+          "axes": [
+            [
+              0.7676,
+              0.5971,
+              -0.2327
+            ],
+            [
+              -0.6308,
+              0.7681,
+              -0.1101
+            ],
+            [
+              0.113,
+              0.2313,
+              0.9663
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "mount01_rifle",
+        "name": "玩具步枪",
+        "parent": "right_arm",
+        "transform": {
+          "pos": [
+            -0.32,
+            -0.82,
+            0.38
+          ]
+        },
+        "mounted": true,
+        "_obb": {
+          "size": [
+            1.833,
+            0.528,
+            0.274
+          ],
+          "center": [
+            0.08,
+            -0.095,
+            0.058
+          ],
+          "axes": [
+            [
+              0.883,
+              -0.4694,
+              -0.0006
+            ],
+            [
+              0.461,
+              0.8674,
+              -0.1874
+            ],
+            [
+              0.0885,
+              0.1651,
+              0.9823
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "left_leg",
+        "name": "左腿",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            -0.25,
+            0.78,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.44,
+            0.99,
+            0.705
+          ],
+          "center": [
+            -0.02,
+            -0.403,
+            0.058
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              0.9823,
+              -0.1873
+            ],
+            [
+              0,
+              0.1873,
+              0.9823
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "right_leg",
+        "name": "右腿",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0.25,
+            0.78,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.571,
+            1.003,
+            0.717
+          ],
+          "center": [
+            0.13,
+            -0.444,
+            0.139
+          ],
+          "axes": [
+            [
+              0.9495,
+              0.3138,
+              0.0065
+            ],
+            [
+              -0.3136,
+              0.9475,
+              0.0623
+            ],
+            [
+              0.0134,
+              -0.0612,
+              0.998
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "mount02_pack",
+        "name": "背包",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0,
+            1.81,
+            -0.25
+          ]
+        },
+        "mounted": true,
+        "_obb": {
+          "size": [
+            0.66,
+            0.85,
+            0.34
+          ],
+          "center": [
+            0,
+            -0.315,
+            -0.12
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "stand",
+        "transform": {
+          "pos": [
+            0,
+            -0.12,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.65,
+            "height": 0.16,
+            "depth": 1.05
+          },
+          "color": 2644259
+        }
+      },
+      {
+        "id": "m1",
+        "parent": "stand",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.25,
+            "height": 0.08,
+            "depth": 0.78
+          },
+          "color": 4161330
+        }
+      },
+      {
+        "id": "m2",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0,
+            1.38,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.9,
+            "height": 1.25,
+            "depth": 0.48
+          },
+          "color": 4161330
+        }
+      },
+      {
+        "id": "m3",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0,
+            1.94,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.02,
+            "height": 0.18,
+            "depth": 0.54
+          },
+          "color": 5609028
+        }
+      },
+      {
+        "id": "m4",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0,
+            0.78,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.82,
+            "height": 0.16,
+            "depth": 0.55
+          },
+          "color": 2644259
+        }
+      },
+      {
+        "id": "m5",
+        "parent": "head",
+        "transform": {
+          "pos": [
+            0,
+            0.3,
+            0.02
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.58,
+            "height": 0.62,
+            "depth": 0.55
+          },
+          "color": 4161330
+        }
+      },
+      {
+        "id": "m6",
+        "parent": "head",
+        "transform": {
+          "pos": [
+            0,
+            0.55,
+            0.02
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.64,
+            "height": 0.13,
+            "depth": 0.7
+          },
+          "color": 2644259
+        }
+      },
+      {
+        "id": "m7",
+        "parent": "head",
+        "transform": {
+          "pos": [
+            0,
+            0.65,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.78,
+            "height": 0.12,
+            "depth": 0.72
+          },
+          "color": 4161330
+        }
+      },
+      {
+        "id": "m8",
+        "parent": "head",
+        "transform": {
+          "pos": [
+            0,
+            0.77,
+            -0.01
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.62,
+            "height": 0.25,
+            "depth": 0.58
+          },
+          "color": 4161330
+        }
+      },
+      {
+        "id": "m9",
+        "parent": "head",
+        "transform": {
+          "pos": [
+            -0.15,
+            0.37,
+            0.31
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.08,
+            "height": 0.07,
+            "depth": 0.035
+          },
+          "color": 2644259
+        }
+      },
+      {
+        "id": "m10",
+        "parent": "head",
+        "transform": {
+          "pos": [
+            0.15,
+            0.37,
+            0.31
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.08,
+            "height": 0.07,
+            "depth": 0.035
+          },
+          "color": 2644259
+        }
+      },
+      {
+        "id": "m11",
+        "parent": "head",
+        "transform": {
+          "pos": [
+            0,
+            0.23,
+            0.31
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.12,
+            "height": 0.16,
+            "depth": 0.08
+          },
+          "color": 5609028
+        }
+      },
+      {
+        "id": "m12",
+        "parent": "left_arm",
+        "transform": {
+          "pos": [
+            -0.27,
+            -0.4,
+            0.18
+          ],
+          "quat": [
+            0.68,
+            -0.2,
+            -0.19,
+            0.68
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.19,
+            "height": 0.34,
+            "depth": 0.99
+          },
+          "color": 4161330
+        }
+      },
+      {
+        "id": "m13",
+        "parent": "left_arm",
+        "transform": {
+          "pos": [
+            -0.54,
+            -0.9,
+            0.18
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.3,
+            "height": 0.28,
+            "depth": 0.34
+          },
+          "color": 5609028
+        }
+      },
+      {
+        "id": "m14",
+        "parent": "right_arm",
+        "transform": {
+          "pos": [
+            -0.16,
+            -0.4,
+            0.2
+          ],
+          "quat": [
+            0.69,
+            -0.14,
+            -0.14,
+            0.69
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.18,
+            "height": 0.34,
+            "depth": 0.87
+          },
+          "color": 4161330
+        }
+      },
+      {
+        "id": "m15",
+        "parent": "right_arm",
+        "transform": {
+          "pos": [
+            -0.32,
+            -0.87,
+            0.2
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.3,
+            "height": 0.27,
+            "depth": 0.34
+          },
+          "color": 5609028
+        }
+      },
+      {
+        "id": "m16",
+        "parent": "mount01_rifle",
+        "transform": {
+          "pos": [
+            0.14,
+            -0.1,
+            0.05
+          ],
+          "quat": [
+            0.6,
+            0.38,
+            0.38,
+            0.6
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.17,
+            "height": 0.15,
+            "depth": 1.7
+          },
+          "color": 2644259
+        }
+      },
+      {
+        "id": "m17",
+        "parent": "mount01_rifle",
+        "transform": {
+          "pos": [
+            -0.6,
+            0.26,
+            0.05
+          ],
+          "quat": [
+            0.59,
+            0.38,
+            0.37,
+            0.6
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.3,
+            "height": 0.2,
+            "depth": 0.29
+          },
+          "color": 4161330
+        }
+      },
+      {
+        "id": "m18",
+        "parent": "mount01_rifle",
+        "transform": {
+          "pos": [
+            0.15,
+            -0.2,
+            0.05
+          ],
+          "quat": [
+            0.55,
+            0.16,
+            -0.16,
+            0.69
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.13,
+            "height": 0.14,
+            "depth": 0.41
+          },
+          "color": 2644259
+        }
+      },
+      {
+        "id": "m19",
+        "parent": "mount01_rifle",
+        "transform": {
+          "pos": [
+            -0.16,
+            0.2,
+            0.05
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.22,
+            "height": 0.11,
+            "depth": 0.2
+          },
+          "color": 5609028
+        }
+      },
+      {
+        "id": "m20",
+        "parent": "left_leg",
+        "transform": {
+          "pos": [
+            -0.02,
+            -0.4,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.38,
+            "height": 0.9,
+            "depth": 0.42
+          },
+          "color": 4161330
+        }
+      },
+      {
+        "id": "m21",
+        "parent": "left_leg",
+        "transform": {
+          "pos": [
+            -0.02,
+            -0.73,
+            0.12
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.44,
+            "height": 0.2,
+            "depth": 0.68
+          },
+          "color": 2644259
+        }
+      },
+      {
+        "id": "m22",
+        "parent": "right_leg",
+        "transform": {
+          "pos": [
+            0.09,
+            -0.37,
+            0.16
+          ],
+          "quat": [
+            0.69,
+            0.08,
+            0,
+            0.71
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.35,
+            "height": 0.4,
+            "depth": 0.76
+          },
+          "color": 4161330
+        }
+      },
+      {
+        "id": "m23",
+        "parent": "right_leg",
+        "transform": {
+          "pos": [
+            0.25,
+            -0.73,
+            0.12
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.48,
+            "height": 0.2,
+            "depth": 0.7
+          },
+          "color": 2644259
+        }
+      },
+      {
+        "id": "m24",
+        "parent": "mount02_pack",
+        "transform": {
+          "pos": [
+            0,
+            -0.33,
+            -0.12
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.66,
+            "height": 0.82,
+            "depth": 0.3
+          },
+          "color": 2644259
+        }
+      },
+      {
+        "id": "m25",
+        "parent": "mount02_pack",
+        "transform": {
+          "pos": [
+            0,
+            0.04,
+            -0.12
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.48,
+            "height": 0.14,
+            "depth": 0.34
+          },
+          "color": 4161330
+        }
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1787824621305,
+        "provider": "glm",
+        "data": "0+UDi8yydFvZZH6Fm0oHEFFrXqvM5Kb1snKDAmNi9X64PHt8SPZv2CLQvbJlRrP/lvCqYefy/RiCNp6FWcbgbssgv2SQyj0+Di2fqcYusvLEh0JgZoZdPkn9Lsi3vfgY4RuiEUlLsTKXkwkD/k5gbBkefnvV3i6G+IBMHjNJPibWT5pCzVk74F1oVbve9CcaeFeUwv40OdtYT+DCm8tMLBM8bVMHnz9+CXGFeImpDXZLYV3rmDPj4kv+v/917FVVyCP2t7K7viehHYz9aY8LOZKU9XqSP8XoxdmD2yNB6ic9WXFJCwIHZybbsVNEvS9bFUoo78BxeKcFH/NfUxpql/IeSgYG5SLbIEc+E9vXSYDKLt/8lmkxyNERGW9BOS6ltM2mv5s0ihXLMErUxJuyd7UDMJgvkVkdZndOLuxBA4Sd7jtBAwXBpqOlzzQ41G9N+LV0OsETaUWsmuNzLPSH13H4jQSmeH7qk49BbYwxQqrQ4acduOcZMdUe2NXqAhy/GYorEgg374QoFwwB4sp++9wlX1zsQ6WZ3v0tQnS427Sr2POUAGrUvWnOdDIysbt+Hc/gIKJY8WxKcgsV+mcRF2xL0EI2j3tKtbsGpRaOdAX6dn2FifVkEId1Nsz0HpT5Wz1EY0HxlbUJcMvgzZ10tZohRhPuFsgqphr15eERqejyB6ix5RCnLoje0pRnTsfyW0x7nIzyLtnzVK6bwltCBylhHmo2vpwNmVUqUoIgvHRTpzTq1e34ydB+5/OmRc/0vEe4U0LReyDsBD/MQvrfzgu4st9rs5Oi+D3lCWj4+HR/xwMB1h1f9xr50qcQ3kglxAGWF/0GPJWOUHR4w5fpS5FxFMyTOjlstCcsSEhWv2YBpYqCyUqTfE0dnIiZxJ2x2za3CnXy/nx8uxsWLQfcjCSrjNh2Lj2Psrw00ysvXfIEoNiGoPKy2yjY/YV/n17IN6AQKfPaWPyTduLZTOI2RD6LVTTQf1ZG2oQ1reSwFfR0Nt2B0xabbWTo5TvC/6dTC94xn3dmpjRS+uCBl9Znc7Oa6z/fyQyovfeEll7fHZOaDxWqB4Ln1OeqSK3MtjJI5UsoasSeYe4E/twkUfKkRiOY+Z+hZdhjLCPWAai8B1F/l5GYErYEOl9mTkj05452twtHYGyJ2C//+RSI84Ae0t/hEPGhRk4EnSjM4sR5oZ/kMiqUseglCH67vU3tGYTuO0CWLzYMtIrYA1Jel3TV2S+Do9JukNt2H5fF/8YpAFTrPdH8Zrn2kntq9/ocGVRuG9APGiUopJqzI+KSvKyUoO88Op/IHOJn0hf/8DNoJXB8aU4kXtqiHpEXLX5Ooxp3+7VDEVnUikELhvexTuBaBGGgqwTooBYu/cBKbjclUKW0/pc/HJfQTvjK076DcJEWfh9xOtXAQzT39px6+WaOY5JZw4duk3bxYga+j/0KLid6sTCVhTfR2iPMVF1i/UgiZFCinw==",
+        "edits": ""
+      },
+      "mounts": [
+        {
+          "id": "mount01_rifle",
+          "mountedGroupId": "mount01_rifle",
+          "name": "玩具步枪",
+          "source": {
+            "type": "codegen"
+          },
+          "description": "",
+          "visible": true,
+          "ts": 1787824621305
+        },
+        {
+          "id": "mount02_pack",
+          "mountedGroupId": "mount02_pack",
+          "name": "背包",
+          "source": {
+            "type": "codegen"
+          },
+          "description": "",
+          "visible": true,
+          "ts": 1787824621305
+        }
+      ],
+      "semanticSnapshot": {
+        "v": 1,
+        "auto": true,
+        "text": "绿色塑料玩具士兵 · 9组/26mesh · 世界坐标(Y上Z前), 原点=模型根\n# 阅读说明: G:=group行(可动画骨骼, 动画key用G:后的id; @p=pivot世界坐标; 倾(x,y,z)°=朝向偏离世界轴的欧拉角; 缩进=父子层级; 挂:=挂载于某组; G:id→id→…=chain折叠行, 每个id都是可独立动画的group, chain×N=waypoint数)\n# M:=mesh行(label[id 几何 @(世界坐标)], label可省略; ×N=for循环批量件(锚点=代表实例); cyl (起)→(末)或 轴上(Y)等方位词=延伸方向; 薄向=板面法向(扁板); 挂载组双代表=最大件+最远有向件(刃/嘴/管所在端); 无方向标注=均匀块(三向相近,如头),默认面向前(Z); 对称×2=镜像对)\nG:body 士兵躯干 @p(0,0.2,0)\n  M:[m2 box 0.9×1.3×0.48 (0,1.6,0) 薄向前(Z)]\n  G:stand 玩具底座 @p(0,0.2,0)\n    M:[m0 box 1.7×0.16×1.1 (0,0.1,0) 薄向上(Y)]\n  G:head 头部 @p(0,2.3,0)\n    M:[m5 box 0.58×0.62×0.55 (0,2.6,0)]\n  G:left_arm 左臂 @p(-0.5,2.1,0)\n    M:[m12 box 0.19×0.34×0.99 (-0.8,1.7,0.2) 轴(-1,1.3,0.2)→(-0.5,2.1,0.2)]\n  G:right_arm 右臂 @p(0.5,2.1,0)\n    M:[m14 box 0.18×0.34×0.87 (0.3,1.7,0.2) 轴(0.2,1.3,0.2)→(0.5,2.1,0.2)]\n    G:mount01_rifle 玩具步枪 @p(0.2,1.3,0.4) 挂:right_arm\n      M:[m16 box 0.17×0.15×1.7 (0.3,1.2,0.4) 轴(1.1,0.8,0.4)→(-0.5,1.6,0.4)] | M:[m19 box 0.22×0.11×0.2 (0,1.5,0.4) 薄向上(Y)]\n  G:left_leg 左腿 @p(-0.2,1,0)\n    M:[m20 box 0.38×0.9×0.42 (-0.3,0.6,0) 轴上(Y)]\n  G:right_leg 右腿 @p(0.3,1,0)\n    M:[m22 box 0.35×0.4×0.76 (0.3,0.7,0.2) 轴下(Y)]\n  G:mount02_pack 背包 @p(0,2.1,-0.2) 挂:body\n    M:[m24 box 0.66×0.82×0.3 (0,1.7,-0.4) 薄向前(Z)] | M:[m25 box 0.48×0.14×0.34 (0,2.1,-0.4) 薄向上(Y)]",
+        "stats": {
+          "groups": 9,
+          "meshes": 26,
+          "labeledMeshes": 0,
+          "labelCoverage": 0,
+          "batchLabels": 0,
+          "autoChains": 0,
+          "snapshotChars": 1256
+        }
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -0.4173850118953211,
+          0.9949999999999999,
+          -0.2518389973487587
+        ],
+        "max": [
+          0.4826149881046789,
+          2.245,
+          0.22816100265124128
+        ],
+        "sourceNodeId": "m2"
+      },
+      {
+        "min": [
+          -0.7923850118953211,
+          0,
+          -0.5368389973487587
+        ],
+        "max": [
+          0.8576149881046788,
+          0.15999999999999998,
+          0.5131610026512413
+        ],
+        "sourceNodeId": "m0"
+      },
+      {
+        "min": [
+          -1.082560853637753,
+          1.2492167049655312,
+          -0.005041614992879029
+        ],
+        "max": [
+          -0.3922091701528893,
+          2.1907832950344694,
+          0.3413636202953616
+        ],
+        "sourceNodeId": "m12"
+      },
+      {
+        "min": [
+          -0.4521550356859632,
+          0.759833465503569,
+          0.3431610026512409
+        ],
+        "max": [
+          1.157385011895321,
+          1.6401665344964313,
+          0.49316100265124163
+        ],
+        "sourceNodeId": "m16"
+      },
+      {
+        "min": [
+          -0.2573850118953211,
+          2.2399999999999998,
+          -0.2668389973487587
+        ],
+        "max": [
+          0.32261498810467887,
+          2.86,
+          0.28316100265124133
+        ],
+        "sourceNodeId": "m5"
+      },
+      {
+        "min": [
+          0.13375121352531538,
+          0.24606324751672404,
+          -0.07893001701224941
+        ],
+        "max": [
+          0.6114787626840423,
+          1.053936752483276,
+          0.375252022314732
+        ],
+        "sourceNodeId": "m22"
+      },
+      {
+        "min": [
+          -0.2973850118953211,
+          1.3099999999999998,
+          -0.5318389973487587
+        ],
+        "max": [
+          0.3626149881046789,
+          2.13,
+          -0.2318389973487587
+        ],
+        "sourceNodeId": "m24"
+      },
+      {
+        "min": [
+          0.12019013436249604,
+          1.2843221706677428,
+          0.018161002651241154
+        ],
+        "max": [
+          0.6250398418468617,
+          2.155677829332258,
+          0.35816100265124146
+        ],
+        "sourceNodeId": "m14"
+      },
+      {
+        "min": [
+          -0.42738501189532113,
+          0.16999999999999998,
+          -0.2218389973487587
+        ],
+        "max": [
+          -0.04738501189532113,
+          1.07,
+          0.19816100265124129
+        ],
+        "sourceNodeId": "m20"
+      },
+      {
+        "min": [
+          -0.4773850118953211,
+          2.09,
+          -0.2818389973487587
+        ],
+        "max": [
+          0.5426149881046789,
+          2.2699999999999996,
+          0.2581610026512413
+        ],
+        "sourceNodeId": "m3"
+      },
+      {
+        "min": [
+          -0.2773850118953211,
+          2.895,
+          -0.3118389973487587
+        ],
+        "max": [
+          0.3426149881046789,
+          3.145,
+          0.26816100265124126
+        ],
+        "sourceNodeId": "m8"
+      }
+    ],
+    "sourceMeshCount": 26,
+    "candidateCount": 11,
+    "fallbackUsed": false
+  },
+  "footprintRadius": 1.157385011895321,
+  "sizeClass": "medium",
+  "mode": "voxel",
+  "createdAt": 1787824620100,
+  "updatedAt": 1787824620100
+}

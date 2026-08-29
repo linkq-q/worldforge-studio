@@ -1,0 +1,348 @@
+{
+  "id": "asset-0affb7bc-750f-4aa1",
+  "name": "壁挂电视",
+  "prompt": "大型壁挂式儿童房电视\nCoordinate contract: local Y+ is up, local Z+ is the front, entrance, or forward direction, and local X+ is right. Put doors, facades, openings, windshields, noses, seats, and other recognizable front details toward local Z+. For a modular repeated element, explicitly choose the long axis: side-by-side modules span local X with depth/front on local Z; traversal modules span local Z. Keep the model centered at its origin.\nCanonical dimensions contract: width=3.2, height=1.8, depth=0.18 world units. Keep the generated mesh within this centered bounding size.",
+  "tags": [
+    "indoor",
+    "child-safe"
+  ],
+  "modelJson": {
+    "name": "大型壁挂式儿童房电视",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "m0",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 3.2,
+            "height": 1.7,
+            "depth": 0.14
+          },
+          "color": 2503224
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m1",
+        "transform": {
+          "pos": [
+            0,
+            0.03,
+            0.079
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2.82,
+            "height": 1.38,
+            "depth": 0.018
+          },
+          "color": 1054752
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass"
+          }
+        ]
+      },
+      {
+        "id": "m2",
+        "transform": {
+          "pos": [
+            0,
+            -0.73,
+            0.079
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.5,
+            "height": 0.08,
+            "depth": 0.012
+          },
+          "color": 4545124
+        }
+      },
+      {
+        "id": "m3",
+        "transform": {
+          "pos": [
+            0,
+            -0.84,
+            -0.055
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.55,
+            "height": 0.08,
+            "depth": 0.018
+          },
+          "color": 3622735
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m4",
+        "transform": {
+          "pos": [
+            -0.28,
+            -0.61,
+            -0.055
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.08,
+            "height": 0.42,
+            "depth": 0.018
+          },
+          "color": 3622735
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m5",
+        "transform": {
+          "pos": [
+            0.28,
+            -0.61,
+            -0.055
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.08,
+            "height": 0.42,
+            "depth": 0.018
+          },
+          "color": 3622735
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m6",
+        "transform": {
+          "pos": [
+            -0.86,
+            0.42,
+            0.095
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.62,
+            "height": 0.32,
+            "depth": 0.012
+          },
+          "color": 5227511
+        }
+      },
+      {
+        "id": "m7",
+        "transform": {
+          "pos": [
+            -0.86,
+            0.55,
+            0.102
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.28,
+            "height": 0.2,
+            "depth": 0.012
+          },
+          "color": 16766287
+        }
+      },
+      {
+        "id": "m8",
+        "transform": {
+          "pos": [
+            -0.48,
+            0.22,
+            0.102
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.16,
+            "height": 0.16,
+            "depth": 0.012
+          },
+          "color": 16740419
+        }
+      },
+      {
+        "id": "m9",
+        "transform": {
+          "pos": [
+            0.48,
+            0.22,
+            0.102
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.16,
+            "height": 0.16,
+            "depth": 0.012
+          },
+          "color": 6732650
+        }
+      },
+      {
+        "id": "m10",
+        "transform": {
+          "pos": [
+            0.85,
+            -0.47,
+            0.102
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.52,
+            "height": 0.12,
+            "depth": 0.012
+          },
+          "color": 16763432
+        }
+      },
+      {
+        "id": "m11",
+        "transform": {
+          "pos": [
+            0.63,
+            -0.29,
+            0.102
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.12,
+            "height": 0.38,
+            "depth": 0.012
+          },
+          "color": 11225020
+        }
+      },
+      {
+        "id": "m12",
+        "transform": {
+          "pos": [
+            -1.12,
+            -0.38,
+            0.102
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.12,
+            "height": 0.12,
+            "depth": 0.012
+          },
+          "color": 15684432
+        }
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1787770197669,
+        "provider": "gpt",
+        "data": "AfKiJI734NVxkMNtKMIFfewNeRV/jx2YLIdoXM2pUv/LTkFgzLw6juMUTOppwL8lH0HPEF3Pqq6E2dKwYFkp0Bhz7BwXW1A4KLwZYjjRHH1KlUpxR3UNL/YdsEmwvNSKnl4gMGfO+W8Dzy6fYkZrMWpxGUPPqqtRpokUdi7c0PwvScoqnbUV3+WX9iRVGF0uaiE+opoZBJRNQjlJDWqrTIJ7R40xyTpEHhhlJEPwwdxovxSi8HoOVvx4MM8jlcnplYLhTF8BSEK8BCH3c0fBa8smN0Py8Pwd4vPsuyt6JUuq0E6QRNuILJuhhWNnFM8Ybpgze5ldyChWU5n2Leg6KubELI30GQh6ujn46OUCm3Jli41t8Ldo9qrNpGVlu9qamwqKvuVh+E1sh/hMCgHApT6G1lBh7Y1/pG3SBGzDpA9VwIOnqi/AdHH29iZaSkQ1QAjqlo0hw8CWFG7Jd9qxTtWZvMVExq3eX2PltwdJhPrH07yNsjvMztZT0c/cxSpBq7kMtYX4d970D6VBkcPD17xI+MP+XlzyxT9YU5c9sp8ls9cIsqZH8GdsyFGu3+Nsc7kXvar5Y33PQHzwxhUUW3d5X3Pku/fOChPyaxc8Tm0Qz68AIZ5wnQ9PoTnVW3JKDJJbM1f5DW2AyxmqjKFGdgyQ9NS68SJnBbt9OL6Y83E1RrhVIu5k4uNJwNLU6OG039aq+mxUGfTkNh8ETCMYewPVGQSj",
+        "edits": ""
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -1.6,
+          0.030000000000000027,
+          -0.089
+        ],
+        "max": [
+          1.6,
+          1.73,
+          0.05100000000000001
+        ],
+        "sourceNodeId": "m0"
+      }
+    ],
+    "sourceMeshCount": 13,
+    "candidateCount": 1,
+    "fallbackUsed": false
+  },
+  "footprintRadius": 1.6,
+  "sizeClass": "medium",
+  "mode": "voxel",
+  "provider": "gpt",
+  "libraryId": "library-d7967286-cebf-4f99",
+  "libraryMetadata": {
+    "tags": [
+      "wall-mountedtelevision",
+      "display",
+      "childrensroom",
+      "indoorfurnishing"
+    ],
+    "applicableZones": [
+      "settlement"
+    ],
+    "repeatable": true,
+    "landmark": false,
+    "enabled": true,
+    "priority": 0.5,
+    "analysisStatus": "ready",
+    "rotation": "random"
+  },
+  "createdAt": 1787816047251,
+  "updatedAt": 1787816047251
+}

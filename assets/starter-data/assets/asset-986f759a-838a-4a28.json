@@ -1,0 +1,481 @@
+{
+  "id": "asset-986f759a-838a-4a28",
+  "name": "桌面盆栽",
+  "prompt": "一盆小型桌面绿植，紧凑叶簇，小圆盆。独立单件儿童房物品，浅亮柔和造型，圆润安全边缘，不包含成组物品，不包含场景、房间、地面或背景。基础色和顶点色仅使用：#FFFDF6,#FEF9EA,#FDF2D7,#E9DABD,#CDBA97,#F8E8CF,#F1D7B2,#E7C393,#C9A06E,#9E7A55,#FFF7A8,#FCEF72,#F6E24B,#D1B825,#9C8510,#FFF3B7,#FDE674,#FCD75F,#FECD4D,#D1900B,#FFE2A0,#FFD170,#F8BC44,#E39F1A,#A96F05,#FBE3BD,#FDD8A3,#FDCC8F,#F1AD69,#D99256,#FFD2BA,#FFB08A,#FF8A5B,#F06B3E,#B84A27,#EAF9FF,#DAF2F5,#95E5F9,#76D0F2,#45BDF6,#D9F8FB,#B2E9F2,#8ECCD6,#7BCFDF,#4BAFCA,#D8F7EF,#B8ECDD,#90DCC8,#74C4BB,#499D92,#F1F5AF,#E4E77F,#DCDB22,\nCoordinate contract: local Y+ is up, local Z+ is the front, entrance, or forward direction, and local X+ is right. Put doors, facades, openings, windshields, noses, seats, and other recognizable front details toward local Z+. For a modular repeated element, explicitly choose the long axis: side-by-side modules span local X with depth/front on local Z; traversal modules span local Z. Keep the model centered at its origin.\nCanonical dimensions contract: width=0.34, height=0.42, depth=0.34 world units. Keep the generated mesh within this centered bounding size.",
+  "tags": [
+    "indoor",
+    "single-object",
+    "child-safe"
+  ],
+  "modelJson": {
+    "name": "小型桌面绿植",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "root",
+        "name": "绿植单件",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.445,
+            0.584,
+            0.378
+          ],
+          "center": [
+            0.016,
+            0.035,
+            0.002
+          ],
+          "axes": [
+            [
+              0.9543,
+              0.296,
+              -0.0406
+            ],
+            [
+              -0.2809,
+              0.9352,
+              0.2156
+            ],
+            [
+              0.1018,
+              -0.1943,
+              0.9756
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "pot",
+        "name": "小圆盆",
+        "parent": "root",
+        "transform": {
+          "pos": [
+            0,
+            -0.1003,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.27,
+            0.211,
+            0.27
+          ],
+          "center": [
+            0,
+            -0.004,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "foliage",
+        "name": "紧凑叶簇",
+        "parent": "root",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ],
+        "_obb": {
+          "size": [
+            0.286,
+            0.232,
+            0.277
+          ],
+          "center": [
+            0.007,
+            0.119,
+            0.003
+          ],
+          "axes": [
+            [
+              0.8311,
+              -0.5086,
+              -0.2249
+            ],
+            [
+              0.5547,
+              0.73,
+              0.3993
+            ],
+            [
+              -0.0389,
+              -0.4566,
+              0.8888
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "pot",
+        "transform": {
+          "pos": [
+            0,
+            -0.0922,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.2,
+            "height": 0.035,
+            "depth": 0.2
+          },
+          "color": 14258774
+        }
+      },
+      {
+        "id": "m1",
+        "parent": "pot",
+        "transform": {
+          "pos": [
+            0,
+            -0.0097,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.24,
+            "height": 0.13,
+            "depth": 0.24
+          },
+          "color": 15838569
+        }
+      },
+      {
+        "id": "m2",
+        "parent": "pot",
+        "transform": {
+          "pos": [
+            0,
+            0.0728,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.27,
+            "height": 0.035,
+            "depth": 0.27
+          },
+          "color": 16632975
+        }
+      },
+      {
+        "id": "m3",
+        "parent": "pot",
+        "transform": {
+          "pos": [
+            0,
+            0.0923,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.215,
+            "height": 0.018,
+            "depth": 0.215
+          },
+          "color": 10386005
+        }
+      },
+      {
+        "id": "m4",
+        "parent": "foliage",
+        "transform": {
+          "pos": [
+            0,
+            0.065,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.035,
+            "height": 0.15,
+            "depth": 0.035
+          },
+          "color": 10257680
+        }
+      },
+      {
+        "id": "m5",
+        "parent": "foliage",
+        "transform": {
+          "pos": [
+            0.07,
+            0.07,
+            0
+          ],
+          "quat": [
+            0,
+            0,
+            0.22,
+            0.98
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.19,
+            "height": 0.018,
+            "depth": 0.06
+          },
+          "color": 13744165
+        }
+      },
+      {
+        "id": "m6",
+        "parent": "foliage",
+        "transform": {
+          "pos": [
+            -0.07,
+            0.08,
+            0
+          ],
+          "quat": [
+            0.26,
+            0.97,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.19,
+            "height": 0.018,
+            "depth": 0.05
+          },
+          "color": 14474018
+        }
+      },
+      {
+        "id": "m7",
+        "parent": "foliage",
+        "transform": {
+          "pos": [
+            0,
+            0.07,
+            0.07
+          ],
+          "quat": [
+            0.68,
+            0.18,
+            0.68,
+            0.18
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.18,
+            "height": 0.018,
+            "depth": 0.05
+          },
+          "color": 15001471
+        }
+      },
+      {
+        "id": "m8",
+        "parent": "foliage",
+        "transform": {
+          "pos": [
+            0,
+            0.09,
+            -0.07
+          ],
+          "quat": [
+            -0.68,
+            -0.2,
+            0.68,
+            0.2
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.17,
+            "height": 0.018,
+            "depth": 0.05
+          },
+          "color": 13744165
+        }
+      },
+      {
+        "id": "m9",
+        "parent": "foliage",
+        "transform": {
+          "pos": [
+            0.04,
+            0.12,
+            0
+          ],
+          "quat": [
+            0,
+            0,
+            0.4,
+            0.92
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.19,
+            "height": 0.02,
+            "depth": 0.05
+          },
+          "color": 15857071
+        }
+      },
+      {
+        "id": "m10",
+        "parent": "foliage",
+        "transform": {
+          "pos": [
+            -0.03,
+            0.13,
+            0
+          ],
+          "quat": [
+            0.44,
+            0.9,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.18,
+            "height": 0.02,
+            "depth": 0.05
+          },
+          "color": 15001471
+        }
+      },
+      {
+        "id": "m11",
+        "parent": "foliage",
+        "transform": {
+          "pos": [
+            0,
+            0.13,
+            0.04
+          ],
+          "quat": [
+            0.64,
+            0.3,
+            0.64,
+            0.3
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.17,
+            "height": 0.02,
+            "depth": 0.04
+          },
+          "color": 14474018
+        }
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1787769338579,
+        "provider": "gpt",
+        "data": "3y3nB7bcz3/NcXTf6YdLoP59dZRa0xGGE6VKGqai3hv7J4vkM/9SImwrnB329p8LAniYEQK5GLL4/jW2OtsgFa6rPmGcWK5Kk2dCDKTTBH0LVjCtFqu4YzvoBQW9GMKiA87ryqqWM9aqvrUq+B2OmjdvfApSggF1lgZvCDMpl8lFneI3qr/W81Ja1v5u+SwafSclXZvMGfEd0o8T9tUuZXeJTkQt/u2gDs3O1iRogJTS19eUqQCe20BMZAF7e4SrWnCD2oZVSgDE1wgbBReE4tz8SBQPDDDykI6PIIWjhUiynbGUWjukhzTkd9vuwHuIWISWOFGHpj95w48sZztxVm7iw2f5EIA4Cb3Whp/BhDlKeNBERB+EkMZLGSDVGatpvYbYHi8KnXVvWFkaymQKVbeed6QpQohUS9JhjJ/wYn7ik2+th44loObxOWEeEjpLNtxi0Ec4pTJdurrO+pnT4x8YnAjQXRUAHiLbBvd/QHUOGmBg0eJAdXWV5LN3wjZ6pfElUNlWwTGLKwsKj8JZStyc2HCk7R37zj1tFTn+d3ldwjUUZAKYVSbvWuEfiNCofX1NxTcoEKTo0vIR+efhFHwlIlwZ7KIeT5CR5UhARNpm38WrGbLsL3AgtBqqw45l7R6L18uvWnP8ioRMypqW9Ga9LGCKFiWmCprmNGkHPQJDAdlaHmPWrY8u2NcjFQ2N5+GS5+sOyHB1CgqaHx8OdxIU0BeIAG1hyDQRP6egoepvAwMzGB+BWa6ug623NgWrgqlfgiInrCd68xbCS+/8E/5wNINY7neHr7j/tu5kXlx6Rw5dwxsJNUF9X4Mz5pgpdUCQ2JiBZADVXv3jMs0UW2O1NVU5kODtwYhlD0sMO9DClUFtvXiZrHUXvfaTEpUMFujMUWwR7ZRiTu/opUZhYCHkUNoZ7gB0nspQenHk6IeeKk8xoOp0C215gQ==",
+        "edits": ""
+      },
+      "semanticSnapshot": {
+        "v": 1,
+        "auto": true,
+        "text": "小型桌面绿植 · 3组/12mesh · 世界坐标(Y上Z前), 原点=模型根\n# 阅读说明: G:=group行(可动画骨骼, 动画key用G:后的id; @p=pivot世界坐标; 倾(x,y,z)°=朝向偏离世界轴的欧拉角; 缩进=父子层级; 挂:=挂载于某组; G:id→id→…=chain折叠行, 每个id都是可独立动画的group, chain×N=waypoint数)\n# M:=mesh行(label[id 几何 @(世界坐标)], label可省略; ×N=for循环批量件(锚点=代表实例); cyl (起)→(末)或 轴上(Y)等方位词=延伸方向; 薄向=板面法向(扁板); 挂载组双代表=最大件+朝向件(嘴/管/檐所在); 无方向标注=均匀块(三向相近,如头),默认面向前(Z); 对称×2=镜像对)\nG:root 绿植单件 @p(0,0,0)\n  G:pot 小圆盆 @p(0,-0.1,0)\n    M:[m1 box 0.24×0.13×0.24 (0,-0.1,0) 薄向上(Y)]\n  G:foliage 紧凑叶簇 @p(0,0,0)\n    M:[m5 box 0.19×0.02×0.06 (0.1,0.1,0) 轴(0.2,0.1,0)→(0,0,0)]",
+        "stats": {
+          "groups": 3,
+          "meshes": 12,
+          "labeledMeshes": 0,
+          "labelCoverage": 0,
+          "batchLabels": 0,
+          "autoChains": 0,
+          "snapshotChars": 548
+        }
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -0.15824837910276526,
+          0,
+          -0.14950185367310476
+        ],
+        "max": [
+          0.15824837910276526,
+          0.4171662016739737,
+          0.14950185367310476
+        ],
+        "sourceNodeId": "asset-bounds"
+      }
+    ],
+    "sourceMeshCount": 12,
+    "candidateCount": 0,
+    "fallbackUsed": true
+  },
+  "footprintRadius": 0.15824837910276526,
+  "sizeClass": "small",
+  "mode": "voxel",
+  "provider": "gpt",
+  "createdAt": 1787769339103,
+  "updatedAt": 1787769339103
+}

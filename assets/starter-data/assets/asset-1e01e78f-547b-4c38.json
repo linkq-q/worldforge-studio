@@ -1,0 +1,717 @@
+{
+  "id": "asset-1e01e78f-547b-4c38",
+  "name": "星象仪",
+  "prompt": "哈利波特风格魔法工坊与图书馆中的星象仪\nCoordinate contract: local Y+ is up, local Z+ is the front, entrance, or forward direction, and local X+ is right. Put doors, facades, openings, windshields, noses, seats, and other recognizable front details toward local Z+. For a modular repeated element, explicitly choose the long axis: side-by-side modules span local X with depth/front on local Z; traversal modules span local Z. Keep the model centered at its origin.\nCanonical dimensions contract: width=1.1, height=1.5, depth=1.1 world units. Keep the generated mesh within this centered bounding size.",
+  "modelJson": {
+    "name": "魔法工坊星象仪",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "root",
+        "name": "星象仪主体",
+        "transform": {
+          "pos": [
+            0,
+            -0.75,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            1.736,
+            2.381,
+            0.96
+          ],
+          "center": [
+            -0.035,
+            0.669,
+            0
+          ],
+          "axes": [
+            [
+              0.9946,
+              -0.1041,
+              0
+            ],
+            [
+              0.1041,
+              0.9946,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "pedestal",
+        "name": "雕花木座",
+        "parent": "root",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "walnut"
+          }
+        ],
+        "_obb": {
+          "size": [
+            0.68,
+            0.79,
+            0.58
+          ],
+          "center": [
+            0,
+            0.395,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "outer_ring",
+        "name": "外层经环",
+        "parent": "root",
+        "transform": {
+          "pos": [
+            0,
+            1,
+            0
+          ]
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "gold"
+          }
+        ],
+        "_obb": {
+          "size": [
+            1.31,
+            1.261,
+            0.96
+          ],
+          "center": [
+            0,
+            0,
+            0
+          ],
+          "axes": [
+            [
+              0.9357,
+              0.3528,
+              0
+            ],
+            [
+              -0.3528,
+              0.9357,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "meridian_ring",
+        "name": "子午环",
+        "parent": "outer_ring",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ],
+        "_obb": {
+          "size": [
+            0.05,
+            0.895,
+            0.96
+          ],
+          "center": [
+            0,
+            0,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 2
+        }
+      },
+      {
+        "id": "equator_ring",
+        "name": "黄道环",
+        "parent": "outer_ring",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "gold"
+          }
+        ],
+        "_obb": {
+          "size": [
+            0.898,
+            0.545,
+            0.9
+          ],
+          "center": [
+            0,
+            0,
+            0
+          ],
+          "axes": [
+            [
+              0.9918,
+              0.1281,
+              0
+            ],
+            [
+              -0.1281,
+              0.9918,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 2
+        }
+      },
+      {
+        "id": "star_core",
+        "name": "魔法星核",
+        "parent": "equator_ring",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.721,
+            0.25,
+            0.18
+          ],
+          "center": [
+            0,
+            0,
+            0
+          ],
+          "axes": [
+            [
+              0.831,
+              0.5563,
+              0
+            ],
+            [
+              -0.5563,
+              0.831,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "pedestal",
+        "transform": {
+          "pos": [
+            0,
+            0.06,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.68,
+            "height": 0.12,
+            "depth": 0.58
+          },
+          "color": 4927008
+        }
+      },
+      {
+        "id": "m1",
+        "parent": "pedestal",
+        "transform": {
+          "pos": [
+            0,
+            0.36,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.48,
+            "height": 0.48,
+            "depth": 0.38
+          },
+          "color": 5846818
+        }
+      },
+      {
+        "id": "m2",
+        "parent": "pedestal",
+        "transform": {
+          "pos": [
+            0,
+            0.65,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.58,
+            "height": 0.1,
+            "depth": 0.48
+          },
+          "color": 7357992
+        }
+      },
+      {
+        "id": "m3",
+        "parent": "pedestal",
+        "transform": {
+          "pos": [
+            0,
+            0.74,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.34,
+            "height": 0.1,
+            "depth": 0.3
+          },
+          "color": 4007193
+        }
+      },
+      {
+        "id": "m4",
+        "parent": "outer_ring",
+        "transform": {
+          "pos": [
+            0,
+            0.45,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.04,
+            "height": 0.055,
+            "depth": 0.055
+          },
+          "color": 12815143
+        }
+      },
+      {
+        "id": "m5",
+        "parent": "outer_ring",
+        "transform": {
+          "pos": [
+            0,
+            -0.45,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.04,
+            "height": 0.055,
+            "depth": 0.055
+          },
+          "color": 12815143
+        }
+      },
+      {
+        "id": "m6",
+        "parent": "outer_ring",
+        "transform": {
+          "pos": [
+            -0.4925,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.055,
+            "height": 0.9,
+            "depth": 0.055
+          },
+          "color": 14001210
+        }
+      },
+      {
+        "id": "m7",
+        "parent": "outer_ring",
+        "transform": {
+          "pos": [
+            0.4925,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.055,
+            "height": 0.9,
+            "depth": 0.055
+          },
+          "color": 14001210
+        }
+      },
+      {
+        "id": "m8",
+        "parent": "meridian_ring",
+        "transform": {
+          "pos": [
+            0,
+            0.42,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.05,
+            "height": 0.055,
+            "depth": 0.96
+          },
+          "color": 12024356
+        }
+      },
+      {
+        "id": "m9",
+        "parent": "meridian_ring",
+        "transform": {
+          "pos": [
+            0,
+            -0.42,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.05,
+            "height": 0.055,
+            "depth": 0.96
+          },
+          "color": 12024356
+        }
+      },
+      {
+        "id": "m10",
+        "parent": "meridian_ring",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            -0.4525
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.05,
+            "height": 0.84,
+            "depth": 0.055
+          },
+          "color": 13867570
+        }
+      },
+      {
+        "id": "m11",
+        "parent": "meridian_ring",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0.4525
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.05,
+            "height": 0.84,
+            "depth": 0.055
+          },
+          "color": 13867570
+        }
+      },
+      {
+        "id": "m12",
+        "parent": "equator_ring",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            -0.425
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.9,
+            "height": 0.045,
+            "depth": 0.05
+          },
+          "color": 14724414
+        }
+      },
+      {
+        "id": "m13",
+        "parent": "equator_ring",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0.425
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.9,
+            "height": 0.045,
+            "depth": 0.05
+          },
+          "color": 14724414
+        }
+      },
+      {
+        "id": "m14",
+        "parent": "equator_ring",
+        "transform": {
+          "pos": [
+            -0.425,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.05,
+            "height": 0.045,
+            "depth": 0.8
+          },
+          "color": 14724414
+        }
+      },
+      {
+        "id": "m15",
+        "parent": "equator_ring",
+        "transform": {
+          "pos": [
+            0.425,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.05,
+            "height": 0.045,
+            "depth": 0.8
+          },
+          "color": 14724414
+        }
+      },
+      {
+        "id": "m16",
+        "parent": "star_core",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.18,
+            "height": 0.18,
+            "depth": 0.18
+          },
+          "color": 7983103
+        },
+        "tags": [
+          {
+            "tag": "emissive",
+            "value": 1
+          }
+        ]
+      },
+      {
+        "id": "m17",
+        "parent": "star_core",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ],
+          "quat": [
+            0,
+            0,
+            0.29,
+            0.96
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.72,
+            "height": 0.035,
+            "depth": 0.05
+          },
+          "color": 15121749
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "gold"
+          }
+        ]
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1787874431733,
+        "provider": "gpt",
+        "data": "/XS51qwYpxa1/4j1cLPg2jiK/yGcwJ9NjsgTX47iwuKKFhUzYxwDubhCqBi+bPQnjgWTGtzDKgGLFnkXAjzxgF0SCGQ+tjG+EyHPySpFwrJJvR4C1HkWqyc8y0FP7q8IrsvBrA1+J5LiUb5ECsSycWV6werx/6OtA1AfcJIqTkpZvOMeA2RfI9EP3LA2oJGC3Qv8sdO9b/VqO0R2VonV94SKJu4+x04ep1NF+j41Vqn53cQXBhshSverGKSxoQMdXGCgjmHJFHVsMM7btBRZ26kCWpwGsiS1Zz40lCkP4FMbj5WZIjrJVTlPT2hL/FyK8/K3uAn/ne79BpW5VVzGq8KVgf3oZd0LvlogB+0yTYivUwOz7AsrW13XjE00bbC5iCbBLpzO/HBiWufuLX1XfczKhOh7fSFTx9Cqfot+v9d7VQ7IISU/M3XUUI4OJTLAuxWpqkmGov+RSNgub8NlLobFmZXFECaUu7Qu43Tqd2crSWKGqCjGnmV6ECL0+feTmSnJyZL7TjwGiib9XG9zpKaySHfTVQDTXD/KauuCIM3+12zMexj9D8HsGamEydG8qcqDRYWtfNbRzDL6l4ZAYXTzLTUXQaoJmClHfIhnl7Yy4Par0wZKr2Cz3mnIgcP96VFiOE60YxSPp70vfLyUFs2D74GHwiBOBeT3PtoAv+0wAqzI1qmqS0iUmevJtVhzKABa/Z+IfYH817eZJGn5DrZIEi02FyroVGayGI4LZpEHOvtNsE8GZREoHZoaZmdwyJ7SrN/OMBo4XCW7/4yd8AT0/4ozDV7isq4aAB4zpbcVl7W1x8GkTzdV58LpIVNrnZ8Jumjv4hlW9eQUPzNdqPQWvR3u472+/vXYi8tnh9686WJT/iUVa4LmhJHl6eYfYJh8E8V7ZviFwrwvSmad41xmggtWaGXMqEeB13izM6f8t0KN62cWcCN2irW6dAF6sb8bptElcANL8mTwyqRbqxMbeIVBtV1Fy9PkKDwTG0HrtfvHsHAq45kkqJkIpnREcRm0GA62U2buo141yYhm2skbSILZzytqT2gkJnaMTg7JhREUuvC6nksRjTcxoJy48QvOLham4IshXgofkA8CDzYmhcSnijjExTl5JAkAS5IHbBZLaBZCeC1P4BafYibPpUPCFZCvkaOJxmwf3WIv9JPJns32NHhqiFQmq00K/jCN3vfGaIyVSqQ5Nw==",
+        "edits": ""
+      },
+      "semanticSnapshot": {
+        "v": 1,
+        "auto": true,
+        "text": "魔法工坊星象仪 · 6组/18mesh · 世界坐标(Y上Z前), 原点=模型根\n# 阅读说明: G:=group行(可动画骨骼, 动画key用G:后的id; @p=pivot世界坐标; 倾(x,y,z)°=朝向偏离世界轴的欧拉角; 缩进=父子层级; 挂:=挂载于某组; G:id→id→…=chain折叠行, 每个id都是可独立动画的group, chain×N=waypoint数)\n# M:=mesh行(label[id 几何 @(世界坐标)], label可省略; ×N=for循环批量件(锚点=代表实例); cyl (起)→(末)或 轴上(Y)等方位词=延伸方向; 薄向=板面法向(扁板); 挂载组双代表=最大件+最远有向件(刃/嘴/管所在端); 无方向标注=均匀块(三向相近,如头),默认面向前(Z); 对称×2=镜像对)\nG:root 星象仪主体 @p(0,-0.7,0)\n  G:pedestal 雕花木座 @p(0,-0.7,0)\n    M:[m1 box 0.48×0.48×0.38 (0,-0.4,0)]\n  G:outer_ring 外层经环 @p(0,0.3,0)\n    M:[m4 box 1×0.06×0.06 (0,0.7,0) 轴右(X)]\n    G:meridian_ring 子午环 @p(0,0.3,0)\n      M:[m8 box 0.05×0.06×0.96 (0,0.7,0) 轴前(Z)]\n    G:equator_ring 黄道环 @p(0,0.3,0)\n      M:[m12 box 0.9×0.05×0.05 (0,0.3,-0.4) 轴右(X)]\n      G:star_core 魔法星核 @p(0,0.3,0)\n        M:[m16 box 0.18×0.18×0.18 (0,0.3,0)]",
+        "stats": {
+          "groups": 6,
+          "meshes": 18,
+          "labeledMeshes": 0,
+          "labelCoverage": 0,
+          "batchLabels": 0,
+          "autoChains": 0,
+          "snapshotChars": 790
+        }
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -0.24,
+          0.12,
+          -0.19
+        ],
+        "max": [
+          0.24,
+          0.6,
+          0.19
+        ],
+        "sourceNodeId": "m1"
+      }
+    ],
+    "sourceMeshCount": 18,
+    "candidateCount": 1,
+    "fallbackUsed": false
+  },
+  "footprintRadius": 0.24,
+  "sizeClass": "small",
+  "mode": "voxel",
+  "provider": "gpt",
+  "createdAt": 1787874432187,
+  "updatedAt": 1787874432187
+}

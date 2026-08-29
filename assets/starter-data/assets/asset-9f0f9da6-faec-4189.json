@@ -1,0 +1,780 @@
+{
+  "id": "asset-9f0f9da6-faec-4189",
+  "name": "挖掘机",
+  "prompt": "单独一辆儿童玩具挖掘机，履带底盘和可见挖斗，不包含泥土、人物或其他工程车辆\nCoordinate contract: local Y+ is up, local Z+ is the front, entrance, or forward direction, and local X+ is right. Put doors, facades, openings, windshields, noses, seats, and other recognizable front details toward local Z+. For a modular repeated element, explicitly choose the long axis: side-by-side modules span local X with depth/front on local Z; traversal modules span local Z. Keep the model centered at its origin.\nCanonical dimensions contract: width=0.45, height=0.25, depth=0.2 world units. Keep the generated mesh within this centered bounding size.",
+  "modelJson": {
+    "name": "儿童玩具挖掘机",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "chassis",
+        "name": "底盘",
+        "transform": {
+          "pos": [
+            0,
+            0.04,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.567,
+            0.581,
+            0.284
+          ],
+          "center": [
+            0.033,
+            0.084,
+            0.009
+          ],
+          "axes": [
+            [
+              0.9746,
+              -0.1829,
+              0.129
+            ],
+            [
+              0.2058,
+              0.959,
+              -0.1946
+            ],
+            [
+              -0.0881,
+              0.2162,
+              0.9724
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "left_track",
+        "name": "左履带",
+        "parent": "chassis",
+        "transform": {
+          "pos": [
+            -0.17,
+            0,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.079,
+            0.065,
+            0.19
+          ],
+          "center": [
+            0,
+            0,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 2
+        }
+      },
+      {
+        "id": "right_track",
+        "name": "右履带",
+        "parent": "chassis",
+        "transform": {
+          "pos": [
+            0.17,
+            0,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.079,
+            0.065,
+            0.19
+          ],
+          "center": [
+            0,
+            0,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 2
+        }
+      },
+      {
+        "id": "upper",
+        "name": "回转平台",
+        "parent": "chassis",
+        "transform": {
+          "pos": [
+            0,
+            0.055,
+            -0.005
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.372,
+            0.418,
+            0.213
+          ],
+          "center": [
+            0.033,
+            0.03,
+            0.018
+          ],
+          "axes": [
+            [
+              0.842,
+              0.5338,
+              0.078
+            ],
+            [
+              -0.515,
+              0.8384,
+              -0.1787
+            ],
+            [
+              -0.1607,
+              0.1103,
+              0.9808
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "cab",
+        "name": "驾驶室",
+        "parent": "upper",
+        "transform": {
+          "pos": [
+            -0.055,
+            0.04,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.159,
+            0.127,
+            0.139
+          ],
+          "center": [
+            0.002,
+            0.055,
+            0.001
+          ],
+          "axes": [
+            [
+              0.9911,
+              0.0422,
+              0.1261
+            ],
+            [
+              -0.0557,
+              0.9928,
+              0.1057
+            ],
+            [
+              -0.1208,
+              -0.1117,
+              0.9864
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "boom",
+        "parent": "upper",
+        "transform": {
+          "pos": [
+            0.085,
+            0.055,
+            0.01
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.152,
+            0.263,
+            0.141
+          ],
+          "center": [
+            0.003,
+            -0.046,
+            0.045
+          ],
+          "axes": [
+            [
+              0.9946,
+              -0.1017,
+              0.0214
+            ],
+            [
+              0.1032,
+              0.9905,
+              -0.0912
+            ],
+            [
+              -0.0119,
+              0.0929,
+              0.9956
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "stick",
+        "parent": "boom",
+        "transform": {
+          "pos": [
+            0,
+            0.068,
+            0.042
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.136,
+            0.198,
+            0.068
+          ],
+          "center": [
+            0.005,
+            -0.09,
+            0.019
+          ],
+          "axes": [
+            [
+              0.9835,
+              -0.1721,
+              0.0551
+            ],
+            [
+              0.1806,
+              0.9479,
+              -0.2626
+            ],
+            [
+              -0.007,
+              0.2682,
+              0.9633
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "bucket",
+        "name": "挖斗",
+        "parent": "stick",
+        "transform": {
+          "pos": [
+            0,
+            -0.103,
+            0.036
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.115,
+            0.069,
+            0.044
+          ],
+          "center": [
+            0,
+            -0.036,
+            -0.003
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              0.9966,
+              -0.0821
+            ],
+            [
+              0,
+              0.0821,
+              0.9966
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "chassis",
+        "transform": {
+          "pos": [
+            0,
+            0.025,
+            -0.005
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.3,
+            "height": 0.035,
+            "depth": 0.14
+          },
+          "color": 15906565
+        }
+      },
+      {
+        "id": "m1",
+        "parent": "chassis",
+        "transform": {
+          "pos": [
+            0,
+            0.05,
+            -0.005
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.2,
+            "height": 0.018,
+            "depth": 0.12
+          },
+          "color": 3355443
+        }
+      },
+      {
+        "id": "m2",
+        "parent": "left_track",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.075,
+            "height": 0.065,
+            "depth": 0.19
+          },
+          "color": 2368548
+        }
+      },
+      {
+        "id": "m3",
+        "parent": "left_track",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0.001
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.079,
+            "height": 0.025,
+            "depth": 0.13
+          },
+          "color": 5592405
+        }
+      },
+      {
+        "id": "m4",
+        "parent": "right_track",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.075,
+            "height": 0.065,
+            "depth": 0.19
+          },
+          "color": 2368548
+        }
+      },
+      {
+        "id": "m5",
+        "parent": "right_track",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0.001
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.079,
+            "height": 0.025,
+            "depth": 0.13
+          },
+          "color": 5592405
+        }
+      },
+      {
+        "id": "m6",
+        "parent": "upper",
+        "transform": {
+          "pos": [
+            0,
+            0.02,
+            -0.003
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.29,
+            "height": 0.045,
+            "depth": 0.13
+          },
+          "color": 16172046
+        }
+      },
+      {
+        "id": "m7",
+        "parent": "upper",
+        "transform": {
+          "pos": [
+            -0.105,
+            0.06,
+            -0.035
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.09,
+            "height": 0.055,
+            "depth": 0.08
+          },
+          "color": 16172046
+        }
+      },
+      {
+        "id": "m8",
+        "parent": "cab",
+        "transform": {
+          "pos": [
+            0,
+            0.045,
+            0.003
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.13,
+            "height": 0.09,
+            "depth": 0.105
+          },
+          "color": 16040461
+        }
+      },
+      {
+        "id": "m9",
+        "parent": "cab",
+        "transform": {
+          "pos": [
+            0,
+            0.058,
+            0.059
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.09,
+            "height": 0.052,
+            "depth": 0.008
+          },
+          "color": 7912922
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass",
+            "variant": "blue"
+          }
+        ]
+      },
+      {
+        "id": "m10",
+        "parent": "cab",
+        "transform": {
+          "pos": [
+            -0.069,
+            0.058,
+            0.007
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.008,
+            "height": 0.052,
+            "depth": 0.065
+          },
+          "color": 7912922
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass",
+            "variant": "blue"
+          }
+        ]
+      },
+      {
+        "id": "m11",
+        "parent": "cab",
+        "transform": {
+          "pos": [
+            0,
+            0.099,
+            0.003
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.145,
+            "height": 0.018,
+            "depth": 0.115
+          },
+          "color": 16172046
+        }
+      },
+      {
+        "id": "m12",
+        "parent": "boom",
+        "transform": {
+          "pos": [
+            0.005,
+            0.03,
+            0.025
+          ],
+          "quat": [
+            0.68,
+            0.68,
+            0.19,
+            -0.19
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.08,
+            "height": 0.045,
+            "depth": 0.03
+          },
+          "color": 16172046
+        }
+      },
+      {
+        "id": "m13",
+        "parent": "stick",
+        "transform": {
+          "pos": [
+            0.005,
+            -0.048,
+            0.023
+          ],
+          "quat": [
+            -0.12,
+            -0.12,
+            -0.7,
+            0.7
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.11,
+            "height": 0.04,
+            "depth": 0.03
+          },
+          "color": 15247616
+        }
+      },
+      {
+        "id": "m14",
+        "parent": "bucket",
+        "transform": {
+          "pos": [
+            0,
+            -0.03,
+            0.002
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.095,
+            "height": 0.055,
+            "depth": 0.028
+          },
+          "color": 14192640
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m15",
+        "parent": "bucket",
+        "transform": {
+          "pos": [
+            0,
+            -0.057,
+            -0.004
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.105,
+            "height": 0.014,
+            "depth": 0.038
+          },
+          "color": 13138176
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m16",
+        "parent": "bucket",
+        "transform": {
+          "pos": [
+            0,
+            -0.063,
+            0.01
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.115,
+            "height": 0.012,
+            "depth": 0.015
+          },
+          "color": 12152064
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1787766682175,
+        "provider": "gpt",
+        "data": "8WZ6WhZaK2Ls0TLGhxkpPyxJ+SBMSjgkqtZNQ0lbPhGc/UbBnmnfipnwonJoIbjI26jS2xQcm9gwQbh/lbpNBl9C5+0VCDiIpiGvw8NBAEch7goT0xAg77MBiaemZSUqQr9mkpnxeA3gWOlHXv2A/dzvXNduag8XiOwatx2QY9c2RRbXDBjv6ykkReXfisH9pEuf9AKsLmYjSCO+fKdGtyd/5neB8BoksMEEyN4QB/7pUIZoL0Jp+EThZ3wxdiyEWnbx8k/IcoJGDqzNwWPhdHLypVhAvi2nl5XgJxDclZpVrBOZLX/pOsCd3bQ39XMVqAvnXc3/f6A1r8gzmeHcfRyoRcJpZWW3H64lkslliNvlatoI6qbJLU8IBKIruazAScaR7ZkCw1iNaXvaYb7kQO1mmBcPc5npU0qRQxcaa+0KfLtWgFC2duKQyQUqVnf436gPZfeh0i7NENsmGayrxLnekxb2Brtt83SAazaanOJHFDbekXw8Zke7+1ZJIFoVVLsJlXXRtcqaRW4WL2Z7IrJoQFJlcHL6ZnGJyfDsaJcfoxI4rpJEz/1DdyGRSoQfzfBqHtLnXbYpqpf2cXVwpOfJ7xtrPn1VrrftmFQPhlq412OZeiC2hC8w/HTk123R3WB2zfRo8zMQIUb9yxHej60LrDEBBXq5aKfX9dAjYpoJvYv+pFxNcVhjQ870D62oJwZEwlhj2uia8lHJRX/S4ecx5m6xGvmxsBOfwN9Nv9J6zAm90CkYu+mZcmUiLa6YG9sjXG5q4OZJaD1mdYde1wsg3qDmsw9HVvL6HCOdDI/o2+x4XcYkrrXgMJmXHbd52T4RuGKgyJXdg4VaOsj1XKdPIK8+2M/20i+Ilz62I9QDNnnxxYvORk6yy/yY1B8+p7dNVDplOaSeYnQJYvtsWiLcNdvRpPAzsO1InBY525MoB442WeosZYmq/l/eX5YgNdxvhFlkILcCmwa1J9NmS+jdPj1DY3Hf6PNXWiOs7Vdo37uDvyBdZ6lfqznLkv4D3EbVE9bsuOizs2vnP6Cp2yLBqjjT+o+Uf2nrVcZBsZ1T+uQ9/m9754e2YKdY+RmHhal28YHcnralWMvSqZtINPK7o28ncZGssYgUnlD8D1RxZccQeG+INIXefh9TYCQbRslOhBjSi9WslVpBeNqFUAcUzk0UQbZTXs/KQuxMVTAYwY3VGH3U0MLC3btuaRNkgdQ1C5eJFc8Dp1jMuImJhvQ0UqFl3yAdQ5BwfYN7YDcF9dBuJun0EwuwyzBZexTKLv+jtlOA+5IXddHFaDGHzwX2e9ZjIW5MmnTkjuljEfiMdN7XPI/uaRRHIAGGaqq5cr9TMnBcrKQW6cF3DzKU1uD1+da0bMlE8Q==",
+        "edits": ""
+      },
+      "semanticSnapshot": {
+        "v": 1,
+        "auto": true,
+        "text": "儿童玩具挖掘机 · 8组/17mesh · 世界坐标(Y上Z前), 原点=模型根\n# 阅读说明: G:=group行(可动画骨骼, 动画key用G:后的id; @p=pivot世界坐标; 倾(x,y,z)°=朝向偏离世界轴的欧拉角; 缩进=父子层级; 挂:=挂载于某组; G:id→id→…=chain折叠行, 每个id都是可独立动画的group, chain×N=waypoint数)\n# M:=mesh行(label[id 几何 @(世界坐标)], label可省略; ×N=for循环批量件(锚点=代表实例); cyl (起)→(末)或 轴上(Y)等方位词=延伸方向; 薄向=板面法向(扁板); 挂载组双代表=最大件+朝向件(嘴/管/檐所在); 无方向标注=均匀块(三向相近,如头),默认面向前(Z); 对称×2=镜像对)\nG:chassis 底盘 @p(0,0,0)\n  M:[m0 box 0.3×0.04×0.14 (0,0.1,0) 薄向上(Y)]\n  G:left_track 左履带 @p(-0.2,0,0) 挂:chassis\n    M:[m2 box 0.08×0.07×0.19 (-0.2,0,0) 轴前(Z)]\n  G:right_track 右履带 @p(0.2,0,0) 挂:chassis\n    M:[m4 box 0.08×0.07×0.19 (0.2,0,0) 轴前(Z)]\n  G:upper 回转平台 @p(0,0.1,0) 挂:chassis\n    M:[m6 box 0.29×0.05×0.13 (0,0.1,0) 薄向上(Y)]\n    G:cab 驾驶室 @p(-0.1,0.1,0) 挂:upper\n      M:[m8 box 0.13×0.09×0.11 (-0.1,0.2,0)] | M:[m11 box 0.14×0.02×0.12 (-0.1,0.2,0) 薄向上(Y)]\n    G:boom @p(0.1,0.2,0) 挂:upper\n      M:[m12 box 0.08×0.05×0.03 (0.1,0.2,0) 轴(0.1,0.2,0.1)→(0.1,0.1,0)]\n      G:stick @p(0.1,0.2,0) 挂:boom\n        M:[m13 box 0.11×0.04×0.03 (0.1,0.2,0.1) 轴(0.1,0.1,0.1)→(0.1,0.2,0.1)]\n        G:bucket 挖斗 @p(0.1,0.1,0.1) 挂:stick\n          M:[m14 box 0.1×0.06×0.03 (0.1,0.1,0.1) 薄向前(Z)]",
+        "stats": {
+          "groups": 8,
+          "meshes": 17,
+          "labeledMeshes": 0,
+          "labelCoverage": 0,
+          "batchLabels": 0,
+          "autoChains": 0,
+          "snapshotChars": 1142
+        }
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -0.20950000000000002,
+          0,
+          -0.09873116574147503
+        ],
+        "max": [
+          0.20950000000000002,
+          0.23550000000000001,
+          0.09873116574147503
+        ],
+        "sourceNodeId": "asset-bounds"
+      }
+    ],
+    "sourceMeshCount": 17,
+    "candidateCount": 0,
+    "fallbackUsed": true
+  },
+  "footprintRadius": 0.20950000000000002,
+  "sizeClass": "small",
+  "mode": "voxel",
+  "provider": "gpt",
+  "createdAt": 1787766688192,
+  "updatedAt": 1787766688192
+}

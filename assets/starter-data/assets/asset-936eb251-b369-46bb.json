@@ -1,0 +1,407 @@
+{
+  "id": "asset-936eb251-b369-46bb",
+  "name": "玩具蛇",
+  "prompt": "单条儿童玩具蛇，彩色橡胶材质，弯曲但不盘成多层，完整独立模型，不带人物、包装或其他玩具。\nCoordinate contract: local Y+ is up, local Z+ is the front, entrance, or forward direction, and local X+ is right. Put doors, facades, openings, windshields, noses, seats, and other recognizable front details toward local Z+. For a modular repeated element, explicitly choose the long axis: side-by-side modules span local X with depth/front on local Z; traversal modules span local Z. Keep the model centered at its origin.\nCanonical dimensions contract: width=0.35, height=0.12, depth=0.8 world units. Keep the generated mesh within this centered bounding size.",
+  "tags": [
+    "indoor",
+    "single-object",
+    "toy"
+  ],
+  "modelJson": {
+    "name": "彩色橡胶玩具蛇",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "snake",
+        "name": "玩具蛇",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.27,
+            0.24,
+            0.866
+          ],
+          "center": [
+            0.011,
+            -0.014,
+            0.034
+          ],
+          "axes": [
+            [
+              0.9556,
+              -0.1624,
+              -0.2459
+            ],
+            [
+              0.1491,
+              0.9862,
+              -0.0718
+            ],
+            [
+              0.2542,
+              0.0319,
+              0.9666
+            ]
+          ],
+          "_mainAxis": 2
+        }
+      },
+      {
+        "id": "head",
+        "name": "蛇头",
+        "parent": "snake",
+        "transform": {
+          "pos": [
+            0.06,
+            0,
+            0.27
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.17,
+            0.156,
+            0.164
+          ],
+          "center": [
+            0,
+            0,
+            0.065
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              0.8277,
+              -0.5611
+            ],
+            [
+              0,
+              0.5611,
+              0.8277
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "snake",
+        "transform": {
+          "pos": [
+            -0.06,
+            0,
+            -0.34
+          ],
+          "quat": [
+            0.41,
+            0,
+            0.91,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.13,
+            "height": 0.075,
+            "depth": 0.04
+          },
+          "color": 9323693
+        }
+      },
+      {
+        "id": "m1",
+        "parent": "snake",
+        "transform": {
+          "pos": [
+            -0.11,
+            0,
+            -0.23
+          ],
+          "quat": [
+            0.74,
+            0,
+            0.68,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.12,
+            "height": 0.075,
+            "depth": 0.06
+          },
+          "color": 3447003
+        }
+      },
+      {
+        "id": "m2",
+        "parent": "snake",
+        "transform": {
+          "pos": [
+            -0.04,
+            0,
+            -0.12
+          ],
+          "quat": [
+            0.95,
+            0,
+            0.32,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.15,
+            "height": 0.075,
+            "depth": 0.07
+          },
+          "color": 3066993
+        }
+      },
+      {
+        "id": "m3",
+        "parent": "snake",
+        "transform": {
+          "pos": [
+            0.06,
+            0,
+            -0.02
+          ],
+          "quat": [
+            0.89,
+            0,
+            0.45,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.14,
+            "height": 0.075,
+            "depth": 0.08
+          },
+          "color": 15844367
+        }
+      },
+      {
+        "id": "m4",
+        "parent": "snake",
+        "transform": {
+          "pos": [
+            0.1,
+            0,
+            0.1
+          ],
+          "quat": [
+            0.68,
+            0,
+            0.73,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.13,
+            "height": 0.075,
+            "depth": 0.09
+          },
+          "color": 15965202
+        }
+      },
+      {
+        "id": "m5",
+        "parent": "snake",
+        "transform": {
+          "pos": [
+            0.08,
+            0,
+            0.22
+          ],
+          "quat": [
+            0.62,
+            0,
+            0.79,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.12,
+            "height": 0.075,
+            "depth": 0.1
+          },
+          "color": 15158332
+        }
+      },
+      {
+        "id": "m6",
+        "parent": "head",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0.065
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.17,
+            "height": 0.1,
+            "depth": 0.13
+          },
+          "color": 15158332
+        }
+      },
+      {
+        "id": "m7",
+        "parent": "head",
+        "transform": {
+          "pos": [
+            -0.05,
+            0.052,
+            0.093
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.035,
+            "height": 0.016,
+            "depth": 0.032
+          },
+          "color": 16777215
+        }
+      },
+      {
+        "id": "m8",
+        "parent": "head",
+        "transform": {
+          "pos": [
+            0.05,
+            0.052,
+            0.093
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.035,
+            "height": 0.016,
+            "depth": 0.032
+          },
+          "color": 16777215
+        }
+      },
+      {
+        "id": "m9",
+        "parent": "head",
+        "transform": {
+          "pos": [
+            -0.05,
+            0.052,
+            0.11
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.014,
+            "height": 0.018,
+            "depth": 0.012
+          },
+          "color": 1447446
+        }
+      },
+      {
+        "id": "m10",
+        "parent": "head",
+        "transform": {
+          "pos": [
+            0.05,
+            0.052,
+            0.11
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.014,
+            "height": 0.018,
+            "depth": 0.012
+          },
+          "color": 1447446
+        }
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1787876490025,
+        "provider": "gpt",
+        "data": "EFo1rKfwyZnm53s/Byh4YmE9NJj1vBtpjAw8QNLGXsYA8Tvl6crb49OeckIjp7nwwE9fFkGwtSWTpElFZy8rmYY7C8g61upP6AzA/AF13twlbIxMDG81ffpMLZvHU6Jeq1gV5hQJjQtfmJmTOG++fdjYUVrvZ5AvP+5cYqB0R9N7kxtO+GZFqxe2CjRziEwWyNQOQn0c3URKdaBxlVZ8HQjsNrB29smOMomZNCSVQIDCPzyE2Ner9x2+CaOlefmyk2wHvyvOmY3aNEz4jDDr85ryvlW7zeoBO02SJCGcqpuJvudUCEw57Y8XP0tqX3eKyXtRuy4tK5DikVFisgwwN0U+wv+UgR3b6PjSy0v6KkujwPGS3t4GgUFdarBLuSmaEfgXy8+sRgU2Z+G5bDH4sHKAYYBTjkuvnCjGRNStWSV837Egc27yObb8smI+b62gY+Ipm7gOK/63O0KbZLZUsAUMYHnSQlgQRolGHyPFdTZj+6JGOfKjgQBdmjy4aphOP2ZLDI17isLXpABq/Psva8SNZEHBillNpcPJatJWN1DAisQ7hRuK2u4XhSrAcjjPavInZZ6jvcwwAn0Eu3BT4Vx3jKcHv8tlLMSJhoKPS5Pqagj+ZKW1lKB9U2ucn1mGXgNswMGQo3j1wxEk1vL7VzLUA01FtWhJB52b/QAt6bMIKKt/b2dzVNsWregbnmwmJxHbQ1QnZEm6FPuebCSk1rjYYLG7eJMjhTdLRWDNGj3p0iF9yaN7b8p50Rf20gv0NEs2Z40XWTp7bM7g95mTAbnPjhKrLJxFhmIvXyOhv8+7RqnEHt9uL6YqIgBXPdRjSp0iPpFUKqSBJTk+MaEsXjn9RTv04oYe3Q1M2R9XYKtqQtoJcaErJj4jpBzy3msWdIQ1UQS4cLfMbhJpeR1GGyBOON7hwFoe/pJTX9kPaOa0ZD966tdWdAE5C/Il9HjH9pdE",
+        "edits": ""
+      },
+      "semanticSnapshot": {
+        "v": 1,
+        "auto": true,
+        "text": "彩色橡胶玩具蛇 · 2组/11mesh · 世界坐标(Y上Z前), 原点=模型根\n# 阅读说明: G:=group行(可动画骨骼, 动画key用G:后的id; @p=pivot世界坐标; 倾(x,y,z)°=朝向偏离世界轴的欧拉角; 缩进=父子层级; 挂:=挂载于某组; G:id→id→…=chain折叠行, 每个id都是可独立动画的group, chain×N=waypoint数)\n# M:=mesh行(label[id 几何 @(世界坐标)], label可省略; ×N=for循环批量件(锚点=代表实例); cyl (起)→(末)或 轴上(Y)等方位词=延伸方向; 薄向=板面法向(扁板); 挂载组双代表=最大件+最远有向件(刃/嘴/管所在端); 无方向标注=均匀块(三向相近,如头),默认面向前(Z); 对称×2=镜像对)\nG:snake 玩具蛇 @p(0,0,0)\n  M:[m5 box 0.12×0.08×0.1 (0.1,0,0.2)]\n  G:head 蛇头 @p(0.1,0,0.3)\n    M:[m6 box 0.17×0.1×0.13 (0.1,0,0.3)]",
+        "stats": {
+          "groups": 2,
+          "meshes": 11,
+          "labeledMeshes": 0,
+          "labelCoverage": 0,
+          "batchLabels": 0,
+          "autoChains": 0,
+          "snapshotChars": 495
+        }
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -0.14722278182706244,
+          0,
+          -0.40096918289500105
+        ],
+        "max": [
+          0.14722278182706244,
+          0.111,
+          0.40096918289500105
+        ],
+        "sourceNodeId": "asset-bounds"
+      }
+    ],
+    "sourceMeshCount": 11,
+    "candidateCount": 0,
+    "fallbackUsed": true
+  },
+  "footprintRadius": 0.40096918289500105,
+  "sizeClass": "small",
+  "mode": "voxel",
+  "provider": "gpt",
+  "createdAt": 1787876490125,
+  "updatedAt": 1787876490125
+}

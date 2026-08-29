@@ -1,0 +1,237 @@
+{
+  "id": "asset-1b1e73fb-f06a-4b34",
+  "name": "分类垃圾 1",
+  "prompt": "单件独立垃圾模型，不成堆、不成组、不带垃圾桶或环境底座。五种类型依次为一张揉皱废纸、一个空薯片包装袋、一个空糖果包装袋、一个皱褶塑料包装袋、一个压瘪的空牛奶盒；每个变体只包含一件垃圾。\nCoordinate contract: local Y+ is up, local Z+ is the front, entrance, or forward direction, and local X+ is right. Put doors, facades, openings, windshields, noses, seats, and other recognizable front details toward local Z+. For a modular repeated element, explicitly choose the long axis: side-by-side modules span local X with depth/front on local Z; traversal modules span local Z. Keep the model centered at its origin.\nCanonical dimensions contract: width=0.22, height=0.12, depth=0.18 world units. Keep the generated mesh within this centered bounding size.\nCreate variation 1 of 5; preserve the same reusable asset family while varying silhouette and details.",
+  "tags": [
+    "indoor",
+    "single-object",
+    "trash"
+  ],
+  "modelJson": {
+    "name": "揉皱废纸",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "paper",
+        "name": "单张揉皱废纸",
+        "transform": {
+          "pos": [
+            0,
+            0.05,
+            0.005
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.27,
+            0.084,
+            0.145
+          ],
+          "center": [
+            -0.016,
+            0,
+            0.01
+          ],
+          "axes": [
+            [
+              0.8407,
+              0.1505,
+              0.5203
+            ],
+            [
+              -0.1966,
+              0.9799,
+              0.0343
+            ],
+            [
+              -0.5046,
+              -0.1311,
+              0.8533
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "paper",
+        "transform": {
+          "pos": [
+            -0.07,
+            -0.02,
+            -0.055
+          ],
+          "quat": [
+            -0.21,
+            0,
+            0,
+            0.98
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.08,
+            "height": 0.006,
+            "depth": 0.07
+          },
+          "color": 15262677
+        },
+        "tags": [
+          {
+            "tag": "dirty",
+            "value": 0.25
+          }
+        ]
+      },
+      {
+        "id": "m1",
+        "parent": "paper",
+        "transform": {
+          "pos": [
+            0.01,
+            0.02,
+            0.005
+          ],
+          "quat": [
+            -0.31,
+            0,
+            0,
+            0.95
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.07,
+            "height": 0.007,
+            "depth": 0.06
+          },
+          "color": 15920866
+        },
+        "tags": [
+          {
+            "tag": "dirty",
+            "value": 0.25
+          }
+        ]
+      },
+      {
+        "id": "m2",
+        "parent": "paper",
+        "transform": {
+          "pos": [
+            0.07,
+            0.01,
+            0.055
+          ],
+          "quat": [
+            0.43,
+            0,
+            0,
+            0.9
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.07,
+            "height": 0.006,
+            "depth": 0.07
+          },
+          "color": 14604746
+        },
+        "tags": [
+          {
+            "tag": "dirty",
+            "value": 0.25
+          }
+        ]
+      },
+      {
+        "id": "m3",
+        "parent": "paper",
+        "transform": {
+          "pos": [
+            -0.02,
+            -0.02,
+            0.025
+          ],
+          "quat": [
+            0.18,
+            0,
+            0,
+            0.98
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.1,
+            "height": 0.006,
+            "depth": 0.07
+          },
+          "color": 15657436
+        },
+        "tags": [
+          {
+            "tag": "dirty",
+            "value": 0.25
+          }
+        ]
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1787876436230,
+        "provider": "gpt",
+        "data": "3R9yPN+gacN/QwGhXWBlIGebdk86TuN+foZezZFdjR1UabESFbDhJlauncleh4kY40+BDknRk4lhCs/pOTpDuf1PjzJynyqLtGBBIaFbQ7YZ6KzP0ltnauXq/LUdMH6sPBfTYrntq8NE5QGp1OShzGrC4f2PNKY1Lky11/Jfy/d2QgagDe17rI0pa/bil3vkWGTgmA4ewFPWIoB7LXh4bm0imcxlF5T9yOW20Zu3793Z0tJ5laYbl7iUgiUBdBdJGG2esgz2Ttt5+fcwYxy8j6BmdveOXHHeX0AgSE2iymb3zjxPabxBzg64I/DwgMpPgEiFSS6ovWb09eN8D44u2r6Fe8bbZXbOuC/XYefaTKBoL+IvgaVf4BN2EnTU6b0eYtpdWkrM6+xXvbiJUxaNS880Ts5JA/lp1oGAcEtgxX3UEZdj9Lre+Rgh1fMN9a0fmHyqoK4BhdZlSSt8D+i/i+xRTgzB/Qp4oNXvuFpJ/Z4+3bVeYV3aoeoT8m1olAML6qdyv5wbhUS1ME5JAtkXspvYbj5IaKzQFauhGWkMXqP/3xz1ZxLx7paLDM3AOttebHKJ0Tw=",
+        "edits": ""
+      },
+      "semanticSnapshot": {
+        "v": 1,
+        "auto": true,
+        "text": "揉皱废纸 · 1组/4mesh · 世界坐标(Y上Z前), 原点=模型根\n# 阅读说明: G:=group行(可动画骨骼, 动画key用G:后的id; @p=pivot世界坐标; 倾(x,y,z)°=朝向偏离世界轴的欧拉角; 缩进=父子层级; 挂:=挂载于某组; G:id→id→…=chain折叠行, 每个id都是可独立动画的group, chain×N=waypoint数)\n# M:=mesh行(label[id 几何 @(世界坐标)], label可省略; ×N=for循环批量件(锚点=代表实例); cyl (起)→(末)或 轴上(Y)等方位词=延伸方向; 薄向=板面法向(扁板); 挂载组双代表=最大件+最远有向件(刃/嘴/管所在端); 无方向标注=均匀块(三向相近,如头),默认面向前(Z); 对称×2=镜像对)\nG:paper 单张揉皱废纸 @p(0,0.1,0)\n  M:[m3 box 0.1×0.01×0.07 (0,0,0) 薄向上(Y)]",
+        "stats": {
+          "groups": 1,
+          "meshes": 4,
+          "labeledMeshes": 0,
+          "labelCoverage": 0,
+          "batchLabels": 0,
+          "autoChains": 0,
+          "snapshotChars": 432
+        }
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -0.10750000000000001,
+          0,
+          -0.08492805012882776
+        ],
+        "max": [
+          0.10750000000000001,
+          0.08063486441994404,
+          0.08492805012882776
+        ],
+        "sourceNodeId": "asset-bounds"
+      }
+    ],
+    "sourceMeshCount": 4,
+    "candidateCount": 0,
+    "fallbackUsed": true
+  },
+  "footprintRadius": 0.10750000000000001,
+  "sizeClass": "small",
+  "mode": "voxel",
+  "provider": "gpt",
+  "createdAt": 1787876435608,
+  "updatedAt": 1787876435608
+}

@@ -1,0 +1,414 @@
+{
+  "id": "asset-86c6136d-1087-4509",
+  "name": "智能手机",
+  "prompt": "智能手机",
+  "modelJson": {
+    "name": "智能手机",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "phone",
+        "name": "手机主体",
+        "transform": {
+          "pos": [
+            0,
+            1.695,
+            -0.0265
+          ]
+        },
+        "_obb": {
+          "size": [
+            1.623,
+            2.95,
+            0.426
+          ],
+          "center": [
+            0.006,
+            -0.044,
+            0.039
+          ],
+          "axes": [
+            [
+              0.9956,
+              0.0341,
+              0.0871
+            ],
+            [
+              -0.0312,
+              0.9989,
+              -0.0338
+            ],
+            [
+              -0.0882,
+              0.031,
+              0.9956
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "phone",
+        "transform": {
+          "pos": [
+            0,
+            -0.045,
+            0.0265
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.5,
+            "height": 2.9,
+            "depth": 0.18
+          },
+          "color": 3159099
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m1",
+        "parent": "phone",
+        "transform": {
+          "pos": [
+            0,
+            -0.005,
+            0.1335
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.36,
+            "height": 2.58,
+            "depth": 0.035
+          },
+          "color": 1451323
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass",
+            "variant": "blue"
+          }
+        ]
+      },
+      {
+        "id": "m2",
+        "parent": "phone",
+        "transform": {
+          "pos": [
+            0,
+            1.215,
+            0.1585
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.42,
+            "height": 0.055,
+            "depth": 0.025
+          },
+          "color": 1118481
+        }
+      },
+      {
+        "id": "m3",
+        "parent": "phone",
+        "transform": {
+          "pos": [
+            0.34,
+            1.215,
+            0.1585
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.1,
+            "height": 0.1,
+            "depth": 0.025
+          },
+          "color": 2245734
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass",
+            "variant": "blue"
+          }
+        ]
+      },
+      {
+        "id": "m4",
+        "parent": "phone",
+        "transform": {
+          "pos": [
+            0,
+            -1.215,
+            0.1585
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.78,
+            "height": 0.12,
+            "depth": 0.025
+          },
+          "color": 14215423
+        },
+        "tags": [
+          {
+            "tag": "emissive",
+            "value": 0.5
+          }
+        ]
+      },
+      {
+        "id": "m5",
+        "parent": "phone",
+        "transform": {
+          "pos": [
+            -0.3,
+            0.675,
+            -0.0935
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.7,
+            "height": 0.82,
+            "depth": 0.06
+          },
+          "color": 2106153
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass"
+          }
+        ]
+      },
+      {
+        "id": "m6",
+        "parent": "phone",
+        "transform": {
+          "pos": [
+            -0.48,
+            0.895,
+            -0.1585
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.22,
+            "height": 0.22,
+            "depth": 0.07
+          },
+          "color": 1518408
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass",
+            "variant": "blue"
+          }
+        ]
+      },
+      {
+        "id": "m7",
+        "parent": "phone",
+        "transform": {
+          "pos": [
+            -0.12,
+            0.895,
+            -0.1585
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.22,
+            "height": 0.22,
+            "depth": 0.07
+          },
+          "color": 1518408
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass",
+            "variant": "blue"
+          }
+        ]
+      },
+      {
+        "id": "m8",
+        "parent": "phone",
+        "transform": {
+          "pos": [
+            -0.48,
+            0.535,
+            -0.1585
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.22,
+            "height": 0.22,
+            "depth": 0.07
+          },
+          "color": 1518408
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass",
+            "variant": "blue"
+          }
+        ]
+      },
+      {
+        "id": "m9",
+        "parent": "phone",
+        "transform": {
+          "pos": [
+            -0.12,
+            0.535,
+            -0.1585
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.14,
+            "height": 0.14,
+            "depth": 0.07
+          },
+          "color": 16770720
+        },
+        "tags": [
+          {
+            "tag": "emissive",
+            "value": 0.75
+          }
+        ]
+      },
+      {
+        "id": "m10",
+        "parent": "phone",
+        "transform": {
+          "pos": [
+            0.772,
+            0.355,
+            0.0265
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.045,
+            "height": 0.52,
+            "depth": 0.12
+          },
+          "color": 5593956
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m11",
+        "parent": "phone",
+        "transform": {
+          "pos": [
+            -0.772,
+            0.425,
+            0.0265
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.045,
+            "height": 0.28,
+            "depth": 0.12
+          },
+          "color": 5593956
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1787828021449,
+        "provider": "glm",
+        "data": "MJ9t9e3X1SAvQDYih8qmPTrfLlN7+QTksUqbJl43LP2nOmDNnCNg1xrX2r6xmEbxBNUbIUGqRYE3xDK/x/+5LZwo6Ll2uLMrsV3Vpd11E1D2hY5/ueqfaOn5rtzum9CqB85nR+GRQIs3XRHOKOUYs1PqTaIIpfSWUwXu5PmvIMekzZTT9l5oTnlFa4uEhGNSLQGAaZC17jXWILuDhKKKwujvJSSFljhKAooQWmfy1T8e86Is4IwzHyr+kUWE5fScDv8xW8JhD1U3/WC0CxS2oqdvD01Xq0Ncfxfy7byGtEG/JZ34PYRp5V2lYmbJBct1EZ/HJkKL9dnYd5zt3B7HB/ZTvmCgqW5NWLncJIlLbdDlkXAOyC4UR1qmd6OKrWm5HTVDSlZvebi+jDV7e2yCbxnUZgkKE2YFBS1Bj4/C8EylzdzON8zF0kdDouRzJ7fsmvyAq+Xgz5RgpzE5DDFAMHa+e/4bLrq0GwDToDvkt9Bs1cOOfGM7TfChIF26s4WpVe5b6DzK9bQvp7ZtT+p/IA8ZsJqzAMqn4XmgPRyvcuDChpbab7SxwOBDd4HcdiIlqzX+yVF9lKjVT8roVjkOzWvzGrG0Z9tCZTwc2KeW5fLf+b24DgR95r2Ib8k8SgzpeyGUhQCffEik6Lna/1nP41c+aKxqa5rOHLcoARFBkFQCTnqGdUxXt166JmM85I9P6b2Clp50XTQU0kr0lJDkqw9NwguchZJmGhU3VcOafKw0f3qhCvauF18kqT7WEpxTg5vdi6Eg+6+kYaRYDwXESWHVS5zX2Rt55J7y8WH0h3SIYfWHuW0mUoaMxLTKWar+eTSmIcZQfe+8zjsUfxxbhXZ77JtyiMITMAwx1tfBbZu24Yo=",
+        "edits": ""
+      },
+      "semanticSnapshot": {
+        "v": 1,
+        "auto": true,
+        "text": "智能手机 · 1组/12mesh · 世界坐标(Y上Z前), 原点=模型根\n# 阅读说明: G:=group行(可动画骨骼, 动画key用G:后的id; @p=pivot世界坐标; 倾(x,y,z)°=朝向偏离世界轴的欧拉角; 缩进=父子层级; 挂:=挂载于某组; G:id→id→…=chain折叠行, 每个id都是可独立动画的group, chain×N=waypoint数)\n# M:=mesh行(label[id 几何 @(世界坐标)], label可省略; ×N=for循环批量件(锚点=代表实例); cyl (起)→(末)或 轴上(Y)等方位词=延伸方向; 薄向=板面法向(扁板); 挂载组双代表=最大件+最远有向件(刃/嘴/管所在端); 无方向标注=均匀块(三向相近,如头),默认面向前(Z); 对称×2=镜像对)\nG:phone 手机主体 @p(0,1.7,0)\n  M:[m0 box 1.5×2.9×0.18 (0,1.7,0) 薄向前(Z)]",
+        "stats": {
+          "groups": 1,
+          "meshes": 12,
+          "labeledMeshes": 0,
+          "labelCoverage": 0,
+          "batchLabels": 0,
+          "autoChains": 0,
+          "snapshotChars": 432
+        }
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -0.75,
+          0,
+          -0.052250000000000005
+        ],
+        "max": [
+          0.75,
+          2.9,
+          0.12774999999999997
+        ],
+        "sourceNodeId": "m0"
+      }
+    ],
+    "sourceMeshCount": 12,
+    "candidateCount": 1,
+    "fallbackUsed": false
+  },
+  "footprintRadius": 0.75,
+  "sizeClass": "small",
+  "mode": "voxel",
+  "createdAt": 1787828020150,
+  "updatedAt": 1787828020150
+}

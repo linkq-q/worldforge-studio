@@ -1,0 +1,877 @@
+{
+  "id": "asset-ce571e24-309a-4b38",
+  "name": "复杂游乐园/06碰碰车馆/载具/红色碰碰车",
+  "prompt": "Standalone reusable voxel amusement park asset: a compact red amusement park bumper car with thick rubber bumper ring, low seat, steering wheel and rear power pole. Box-only voxel model with purposeful grouped forms, centered at the origin, base grounded on y=0, no surrounding terrain, no people, no loose floating geometry, flat-shaded cohesive bright carnival palette. Keep the gameplay silhouette, openings and collision shape readable from all sides.",
+  "modelJson": {
+    "name": "体素游乐园碰碰车",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "carRoot",
+        "name": "碰碰车主体",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        }
+      },
+      {
+        "id": "steering",
+        "name": "方向盘",
+        "parent": "carRoot",
+        "transform": {
+          "pos": [
+            0,
+            0.69,
+            0.45
+          ]
+        }
+      },
+      {
+        "id": "powerPole",
+        "name": "后置取电杆",
+        "parent": "carRoot",
+        "transform": {
+          "pos": [
+            0.62,
+            0.68,
+            -1.08
+          ]
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "carRoot",
+        "transform": {
+          "pos": [
+            0,
+            0.08,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2.45,
+            "height": 0.16,
+            "depth": 2.75
+          },
+          "color": 4870232
+        }
+      },
+      {
+        "id": "m1",
+        "parent": "carRoot",
+        "transform": {
+          "pos": [
+            0,
+            0.3,
+            1.53
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2.8,
+            "height": 0.34,
+            "depth": 0.34
+          },
+          "color": 2106667
+        }
+      },
+      {
+        "id": "m2",
+        "parent": "carRoot",
+        "transform": {
+          "pos": [
+            0,
+            0.3,
+            -1.53
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2.8,
+            "height": 0.34,
+            "depth": 0.34
+          },
+          "color": 2106667
+        }
+      },
+      {
+        "id": "m3",
+        "parent": "carRoot",
+        "transform": {
+          "pos": [
+            -1.23,
+            0.3,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.34,
+            "height": 0.34,
+            "depth": 2.72
+          },
+          "color": 2106667
+        }
+      },
+      {
+        "id": "m4",
+        "parent": "carRoot",
+        "transform": {
+          "pos": [
+            1.23,
+            0.3,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.34,
+            "height": 0.34,
+            "depth": 2.72
+          },
+          "color": 2106667
+        }
+      },
+      {
+        "id": "m5",
+        "parent": "carRoot",
+        "transform": {
+          "pos": [
+            0,
+            0.4,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2.18,
+            "height": 0.42,
+            "depth": 2.45
+          },
+          "color": 14230826
+        }
+      },
+      {
+        "id": "m6",
+        "parent": "carRoot",
+        "transform": {
+          "pos": [
+            0,
+            0.65,
+            -0.2
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.72,
+            "height": 0.12,
+            "depth": 1.24
+          },
+          "color": 3422529
+        }
+      },
+      {
+        "id": "m7",
+        "parent": "carRoot",
+        "transform": {
+          "pos": [
+            -0.97,
+            0.72,
+            -0.08
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.25,
+            "height": 0.38,
+            "depth": 1.48
+          },
+          "color": 15743540
+        }
+      },
+      {
+        "id": "m8",
+        "parent": "carRoot",
+        "transform": {
+          "pos": [
+            0.97,
+            0.72,
+            -0.08
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.25,
+            "height": 0.38,
+            "depth": 1.48
+          },
+          "color": 15743540
+        }
+      },
+      {
+        "id": "m9",
+        "parent": "carRoot",
+        "transform": {
+          "pos": [
+            0,
+            0.69,
+            0.88
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.95,
+            "height": 0.32,
+            "depth": 0.82
+          },
+          "color": 15874865
+        }
+      },
+      {
+        "id": "m10",
+        "parent": "carRoot",
+        "transform": {
+          "pos": [
+            0,
+            0.92,
+            0.82
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.62,
+            "height": 0.24,
+            "depth": 0.48
+          },
+          "color": 16732484
+        }
+      },
+      {
+        "id": "m11",
+        "parent": "carRoot",
+        "transform": {
+          "pos": [
+            0,
+            0.7,
+            -1.03
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.98,
+            "height": 0.3,
+            "depth": 0.55
+          },
+          "color": 12130594
+        }
+      },
+      {
+        "id": "m12",
+        "parent": "carRoot",
+        "transform": {
+          "pos": [
+            0,
+            0.76,
+            -0.48
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.35,
+            "height": 0.22,
+            "depth": 0.55
+          },
+          "color": 2634042
+        }
+      },
+      {
+        "id": "m13",
+        "parent": "carRoot",
+        "transform": {
+          "pos": [
+            0,
+            0.99,
+            -0.83
+          ],
+          "quat": [
+            -0.85,
+            0,
+            0,
+            0.53
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.36,
+            "height": 0.2,
+            "depth": 0.51
+          },
+          "color": 3160387
+        }
+      },
+      {
+        "id": "m14",
+        "parent": "carRoot",
+        "transform": {
+          "pos": [
+            0,
+            0.88,
+            -0.47
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.15,
+            "height": 0.1,
+            "depth": 0.38
+          },
+          "color": 5858157
+        }
+      },
+      {
+        "id": "m15",
+        "parent": "carRoot",
+        "transform": {
+          "pos": [
+            -0.58,
+            0.71,
+            1.415
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.38,
+            "height": 0.22,
+            "depth": 0.08
+          },
+          "color": 16766023
+        }
+      },
+      {
+        "id": "m16",
+        "parent": "carRoot",
+        "transform": {
+          "pos": [
+            0.58,
+            0.71,
+            1.415
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.38,
+            "height": 0.22,
+            "depth": 0.08
+          },
+          "color": 16766023
+        }
+      },
+      {
+        "id": "m17",
+        "parent": "carRoot",
+        "transform": {
+          "pos": [
+            0,
+            0.49,
+            1.375
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.5,
+            "height": 0.12,
+            "depth": 0.06
+          },
+          "color": 16183008
+        }
+      },
+      {
+        "id": "m18",
+        "parent": "carRoot",
+        "transform": {
+          "pos": [
+            -0.75,
+            0.16,
+            0.76
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.42,
+            "height": 0.18,
+            "depth": 0.2
+          },
+          "color": 1185307
+        }
+      },
+      {
+        "id": "m19",
+        "parent": "carRoot",
+        "transform": {
+          "pos": [
+            0.75,
+            0.16,
+            0.76
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.42,
+            "height": 0.18,
+            "depth": 0.2
+          },
+          "color": 1185307
+        }
+      },
+      {
+        "id": "m20",
+        "parent": "carRoot",
+        "transform": {
+          "pos": [
+            -0.75,
+            0.16,
+            -0.76
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.42,
+            "height": 0.18,
+            "depth": 0.2
+          },
+          "color": 1185307
+        }
+      },
+      {
+        "id": "m21",
+        "parent": "carRoot",
+        "transform": {
+          "pos": [
+            0.75,
+            0.16,
+            -0.76
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.42,
+            "height": 0.18,
+            "depth": 0.2
+          },
+          "color": 1185307
+        }
+      },
+      {
+        "id": "m22",
+        "parent": "steering",
+        "transform": {
+          "pos": [
+            0,
+            0.13,
+            -0.03
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.18,
+            "height": 0.38,
+            "depth": 0.18
+          },
+          "color": 7173243
+        }
+      },
+      {
+        "id": "m23",
+        "parent": "steering",
+        "transform": {
+          "pos": [
+            0,
+            0.61,
+            -0.08
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.62,
+            "height": 0.12,
+            "depth": 0.13
+          },
+          "color": 2106667
+        }
+      },
+      {
+        "id": "m24",
+        "parent": "steering",
+        "transform": {
+          "pos": [
+            0,
+            0.19,
+            -0.08
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.62,
+            "height": 0.12,
+            "depth": 0.13
+          },
+          "color": 2106667
+        }
+      },
+      {
+        "id": "m25",
+        "parent": "steering",
+        "transform": {
+          "pos": [
+            -0.25,
+            0.4,
+            -0.08
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.12,
+            "height": 0.54,
+            "depth": 0.13
+          },
+          "color": 2106667
+        }
+      },
+      {
+        "id": "m26",
+        "parent": "steering",
+        "transform": {
+          "pos": [
+            0.25,
+            0.4,
+            -0.08
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.12,
+            "height": 0.54,
+            "depth": 0.13
+          },
+          "color": 2106667
+        }
+      },
+      {
+        "id": "m27",
+        "parent": "steering",
+        "transform": {
+          "pos": [
+            0,
+            0.4,
+            -0.08
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.44,
+            "height": 0.09,
+            "depth": 0.1
+          },
+          "color": 5857642
+        }
+      },
+      {
+        "id": "m28",
+        "parent": "steering",
+        "transform": {
+          "pos": [
+            0,
+            0.4,
+            -0.08
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.14,
+            "height": 0.14,
+            "depth": 0.17
+          },
+          "color": 16762941
+        }
+      },
+      {
+        "id": "m29",
+        "parent": "powerPole",
+        "transform": {
+          "pos": [
+            0,
+            0.94,
+            -0.12
+          ],
+          "quat": [
+            -0.76,
+            0,
+            0,
+            0.65
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.18,
+            "height": 0.16,
+            "depth": 1.89
+          },
+          "color": 7634308
+        }
+      },
+      {
+        "id": "m30",
+        "parent": "powerPole",
+        "transform": {
+          "pos": [
+            0,
+            1.9,
+            -0.27
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.72,
+            "height": 0.16,
+            "depth": 0.18
+          },
+          "color": 3159612
+        }
+      },
+      {
+        "id": "m31",
+        "parent": "powerPole",
+        "transform": {
+          "pos": [
+            0,
+            1.75,
+            -0.25
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.2,
+            "height": 0.28,
+            "depth": 0.22
+          },
+          "color": 16765245
+        }
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1784474617510,
+        "provider": "glm",
+        "data": "OttZt4KhaPGk5flscfFjbc7Bj8cEluFpRShAi1gjxnKjkrTT3+w2jqTWBj3v31ijQysQQoVbzJAUCnGSe5VVkX+QxhUl7yjuxC/aH4wSZ3pPiFfetuF66DcTeNM0lgCDePpDrcsa4kuP7WCep7cise7lfYwv7kjcnt/5LDD54cRRDUjrKueRvA34PX88H+uIH9xgQdvOaOy765nTBqragJOonEj+TrF07Mt6IRcJSQtckS/kPcRixl23jNSfKsWZvzTlWPGZRmWIoDqNh7RZpbvdiHg5rUifOldTR7mK2shS28dbsGxt93oAABvxJtxz7YxvVvmW12V6RuW90vluNf9Nt1KOUj2tg0Mb3o1EuKusU7dFu5BN06gPWOEfEEtfE2U8MpDd1/D6qY8TihceLV3QZ01F3IzDJwLYxGFZALHMrgNJcjb6HKlSXNev3BGr6XLRl2NOZxvwaLglIQ/K0VtbbA2YCJD69Qyctw0zCT3PoNnjTkQffyqtqs0sQV0VAjohSbdOxSQW8p5HXJs14JrrHJmBg6MV2mAHISsdsOPg7DJFXofX8uHFmYZJ1d5cCv/RUEkTaKigE/cfUe/mFO1sfacxYIWaC5iaieoqlpsW2+17xTZn5ac15mykz+NvCOVHNtLAWpTD+gck4nNmpHG0v9zWQw+CagDTqId8XN9mtQe1SPdczuYc7s+ghP20UI6DrYbzhm4DD7Mef2XALSxatwOGu8LfgdlmBgOrf+8q5Aud4uXokcu+HeWBf/4YQqMzMeJDmaNgQ+aazhz3za3aJGEKuPF1WdnRcLjEV9FWV68ljGzrkwXydzL9Eq9Bm5tGbxi+ju4GI0NG92Kqk7Xe+eIgUDB13nVudoybuuOPA2SPUO1cYoG5mH9ynArZnxHxUO7uPsoDJObXjMW5inUd6urLUNDLC/hTrOwLg8mrySoxP2R+bWV15SrEc5qi0bdJqm7n2GF4gSMjrsmCRaX7Af9guPJPyAeT96GxkEAPY0NcpJy+IxNLPxhi/wSvMs2h+rZq6EyCropx1JIKLWVnYh+ejND0VSKk/8vKwX75Nf1lc+O/dwmsME8Ki5CZ7bVoTZ7Oa6rul0ux7Lfd/onTm/1630L33M0CCqZmFH0x+545545s7PDVfwCK0ZJxuiEOPW37XV5e8aQTPQ6RmEXc+78t0RMcVy+cR6uSJwhwpfFlylsquawZz6o2VBTPD9vhdrAPzA4kcK8yJJ2OqOw=",
+        "edits": ""
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -1.09,
+          0.19000000000000003,
+          -1.225
+        ],
+        "max": [
+          1.09,
+          0.61,
+          1.225
+        ],
+        "sourceNodeId": "m5"
+      },
+      {
+        "min": [
+          -1.225,
+          0,
+          -1.375
+        ],
+        "max": [
+          1.225,
+          0.16,
+          1.375
+        ],
+        "sourceNodeId": "m0"
+      },
+      {
+        "min": [
+          -0.975,
+          0.5299999999999999,
+          0.47000000000000003
+        ],
+        "max": [
+          0.975,
+          0.85,
+          1.29
+        ],
+        "sourceNodeId": "m9"
+      },
+      {
+        "min": [
+          -0.99,
+          0.5499999999999999,
+          -1.3050000000000002
+        ],
+        "max": [
+          0.99,
+          0.85,
+          -0.755
+        ],
+        "sourceNodeId": "m11"
+      },
+      {
+        "min": [
+          -1.4,
+          0.12999999999999998,
+          1.36
+        ],
+        "max": [
+          1.4,
+          0.47,
+          1.7
+        ],
+        "sourceNodeId": "m1"
+      },
+      {
+        "min": [
+          -1.4,
+          0.12999999999999998,
+          -1.7
+        ],
+        "max": [
+          1.4,
+          0.47,
+          -1.36
+        ],
+        "sourceNodeId": "m2"
+      },
+      {
+        "min": [
+          -1.4,
+          0.12999999999999998,
+          -1.36
+        ],
+        "max": [
+          -1.06,
+          0.47,
+          1.36
+        ],
+        "sourceNodeId": "m3"
+      },
+      {
+        "min": [
+          1.06,
+          0.12999999999999998,
+          -1.36
+        ],
+        "max": [
+          1.4,
+          0.47,
+          1.36
+        ],
+        "sourceNodeId": "m4"
+      },
+      {
+        "min": [
+          -0.68,
+          0.7170131552720749,
+          -1.0320211281642415
+        ],
+        "max": [
+          0.68,
+          1.262986844727925,
+          -0.6279788718357584
+        ],
+        "sourceNodeId": "m13"
+      },
+      {
+        "min": [
+          -0.86,
+          0.5900000000000001,
+          -0.8200000000000001
+        ],
+        "max": [
+          0.86,
+          0.71,
+          0.42
+        ],
+        "sourceNodeId": "m6"
+      },
+      {
+        "min": [
+          -0.81,
+          0.8,
+          0.58
+        ],
+        "max": [
+          0.81,
+          1.04,
+          1.06
+        ],
+        "sourceNodeId": "m10"
+      },
+      {
+        "min": [
+          -0.675,
+          0.65,
+          -0.755
+        ],
+        "max": [
+          0.675,
+          0.87,
+          -0.20499999999999996
+        ],
+        "sourceNodeId": "m12"
+      }
+    ],
+    "sourceMeshCount": 32,
+    "candidateCount": 15,
+    "fallbackUsed": false
+  },
+  "mode": "lite",
+  "provider": "provider-fallback",
+  "createdAt": 1784474622337,
+  "updatedAt": 1784474622337
+}

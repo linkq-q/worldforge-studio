@@ -1,0 +1,727 @@
+{
+  "id": "asset-be8894eb-e486-480a",
+  "name": "复杂公园/飞鸟雕像",
+  "prompt": "Standalone reusable voxel park asset: a bronze park sculpture of an abstract bird taking flight on a square stone plinth, dynamic asymmetric silhouette, solid pedestal collision. Box-only voxel model around 20 purposeful boxes, centered at the origin, base grounded on y=0, no surrounding terrain, no people, no loose floating geometry, flat-shaded cohesive enchanted municipal park palette. Keep the gameplay silhouette and collision shape readable from all sides.",
+  "modelJson": {
+    "name": "青铜飞鸟公园雕塑",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "plinth",
+        "name": "石质基座",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        }
+      },
+      {
+        "id": "bird",
+        "name": "飞鸟躯干",
+        "parent": "plinth",
+        "transform": {
+          "pos": [
+            0,
+            1.5,
+            0
+          ]
+        }
+      },
+      {
+        "id": "tail",
+        "name": "尾羽",
+        "parent": "bird",
+        "transform": {
+          "pos": [
+            0,
+            0.26,
+            -0.12
+          ]
+        }
+      },
+      {
+        "id": "leftWing",
+        "name": "高扬左翼",
+        "parent": "bird",
+        "transform": {
+          "pos": [
+            -0.18,
+            1.12,
+            0.28
+          ]
+        }
+      },
+      {
+        "id": "rightWing",
+        "name": "下掠右翼",
+        "parent": "bird",
+        "transform": {
+          "pos": [
+            0.18,
+            1.12,
+            0.28
+          ]
+        }
+      },
+      {
+        "id": "head",
+        "name": "鸟首",
+        "parent": "bird",
+        "transform": {
+          "pos": [
+            0,
+            1.26,
+            0.42
+          ]
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "plinth",
+        "transform": {
+          "pos": [
+            0,
+            0.14,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2.8,
+            "height": 0.28,
+            "depth": 2.8
+          },
+          "color": 5857640
+        }
+      },
+      {
+        "id": "m1",
+        "parent": "plinth",
+        "transform": {
+          "pos": [
+            0,
+            0.42,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2.42,
+            "height": 0.28,
+            "depth": 2.42
+          },
+          "color": 7370618
+        }
+      },
+      {
+        "id": "m2",
+        "parent": "plinth",
+        "transform": {
+          "pos": [
+            0,
+            0.94,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.82,
+            "height": 0.76,
+            "depth": 1.82
+          },
+          "color": 6449772
+        }
+      },
+      {
+        "id": "m3",
+        "parent": "plinth",
+        "transform": {
+          "pos": [
+            0,
+            1.41,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2.02,
+            "height": 0.18,
+            "depth": 2.02
+          },
+          "color": 8225665
+        }
+      },
+      {
+        "id": "m4",
+        "parent": "bird",
+        "transform": {
+          "pos": [
+            0,
+            0.09,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.76,
+            "height": 0.18,
+            "depth": 0.72
+          },
+          "color": 7755310
+        }
+      },
+      {
+        "id": "m5",
+        "parent": "bird",
+        "transform": {
+          "pos": [
+            0,
+            0.7,
+            0.1
+          ],
+          "quat": [
+            -0.52,
+            0,
+            0,
+            0.85
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.64,
+            "height": 0.42,
+            "depth": 1.4
+          },
+          "color": 10119986
+        }
+      },
+      {
+        "id": "m6",
+        "parent": "bird",
+        "transform": {
+          "pos": [
+            0,
+            0.93,
+            0.31
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.72,
+            "height": 0.72,
+            "depth": 0.62
+          },
+          "color": 10449207
+        }
+      },
+      {
+        "id": "m7",
+        "parent": "tail",
+        "transform": {
+          "pos": [
+            -0.17,
+            -0.1,
+            -0.63
+          ],
+          "quat": [
+            1,
+            0,
+            0,
+            0.09
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.22,
+            "height": 0.13,
+            "depth": 1.28
+          },
+          "color": 8411439
+        }
+      },
+      {
+        "id": "m8",
+        "parent": "tail",
+        "transform": {
+          "pos": [
+            0.14,
+            -0.04,
+            -0.49
+          ],
+          "quat": [
+            1,
+            0,
+            0,
+            0.04
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.23,
+            "height": 0.15,
+            "depth": 1.02
+          },
+          "color": 10842933
+        }
+      },
+      {
+        "id": "m9",
+        "parent": "leftWing",
+        "transform": {
+          "pos": [
+            -0.61,
+            0.29,
+            0.02
+          ],
+          "quat": [
+            0,
+            0,
+            0.97,
+            0.25
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.59,
+            "height": 0.24,
+            "depth": 0.52
+          },
+          "color": 11105847
+        }
+      },
+      {
+        "id": "m10",
+        "parent": "leftWing",
+        "transform": {
+          "pos": [
+            -1.78,
+            0.98,
+            -0.05
+          ],
+          "quat": [
+            0,
+            0,
+            0.96,
+            0.27
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.78,
+            "height": 0.2,
+            "depth": 0.3
+          },
+          "color": 11565880
+        }
+      },
+      {
+        "id": "m11",
+        "parent": "leftWing",
+        "transform": {
+          "pos": [
+            -1.56,
+            0.56,
+            -0.02
+          ],
+          "quat": [
+            0,
+            0,
+            0.99,
+            0.11
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.48,
+            "height": 0.17,
+            "depth": 0.26
+          },
+          "color": 8871983
+        }
+      },
+      {
+        "id": "m12",
+        "parent": "rightWing",
+        "transform": {
+          "pos": [
+            0.52,
+            0.18,
+            0.02
+          ],
+          "quat": [
+            0,
+            0,
+            0.2,
+            0.98
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.31,
+            "height": 0.24,
+            "depth": 0.5
+          },
+          "color": 10382644
+        }
+      },
+      {
+        "id": "m13",
+        "parent": "rightWing",
+        "transform": {
+          "pos": [
+            1.48,
+            0.11,
+            0
+          ],
+          "quat": [
+            0,
+            0,
+            -0.16,
+            0.99
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.35,
+            "height": 0.2,
+            "depth": 0.31
+          },
+          "color": 11105590
+        }
+      },
+      {
+        "id": "m14",
+        "parent": "rightWing",
+        "transform": {
+          "pos": [
+            1.27,
+            -0.14,
+            0.09
+          ],
+          "quat": [
+            0,
+            0,
+            -0.27,
+            0.96
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.24,
+            "height": 0.17,
+            "depth": 0.26
+          },
+          "color": 8411696
+        }
+      },
+      {
+        "id": "m15",
+        "parent": "head",
+        "transform": {
+          "pos": [
+            0,
+            0.17,
+            0.13
+          ],
+          "quat": [
+            -0.4,
+            0,
+            0,
+            0.91
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.5,
+            "height": 0.32,
+            "depth": 0.62
+          },
+          "color": 9725490
+        }
+      },
+      {
+        "id": "m16",
+        "parent": "head",
+        "transform": {
+          "pos": [
+            0,
+            0.59,
+            0.44
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.68,
+            "height": 0.56,
+            "depth": 0.62
+          },
+          "color": 11039541
+        }
+      },
+      {
+        "id": "m17",
+        "parent": "head",
+        "transform": {
+          "pos": [
+            0,
+            0.47,
+            1.01
+          ],
+          "quat": [
+            0.08,
+            0,
+            0,
+            1
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.44,
+            "height": 0.18,
+            "depth": 0.67
+          },
+          "color": 12683836
+        }
+      },
+      {
+        "id": "m18",
+        "parent": "head",
+        "transform": {
+          "pos": [
+            -0.35,
+            0.68,
+            0.65
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.06,
+            "height": 0.1,
+            "depth": 0.1
+          },
+          "color": 2640965
+        }
+      },
+      {
+        "id": "m19",
+        "parent": "head",
+        "transform": {
+          "pos": [
+            0.35,
+            0.68,
+            0.65
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.06,
+            "height": 0.1,
+            "depth": 0.1
+          },
+          "color": 2640965
+        }
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1783922161312,
+        "provider": "gpt",
+        "data": "1yfnh5v9jNjs7fjI2wnpFBL1CDdSKMsJFuLlSh8nGM1TsCLJzNnejqxwxzwet4LSdNhCVTyrmY3KkPRbPTje7O/LAF0Prwb9VyOreCPEw3CegLaly/RRcUc87ToVe9hV8CF0bUJIV/RGBjObYferNSnQD+MLLoWRPfgV9zs5CtHW/DD0Qlhudl0GE9hkKgLMmOLw21dM9h2/r0sqQAlyrYJWba74UdTRjyJrn9oSTQ8jvxZoPpUCCOmsWtgWsmMSHGMSQsSYqVaJgvaRB5FFSbs+xkwzC7GWqWGaC4XeCTIXiwKF8bdWq+AWtHp3ifb/SzWHeqik3zgFCZpbs2W56IQiR4ACemDqVyXISKeMcvnV45QBRPpuM8SCfrPWqhyOmm3Zv16vOS06nphqS5UeCLZr0ifD0IipVuGPzrss1ljW6ArJ9US/opEE57kpYr1Xv66F119DJ7gyES1RmG+mTqlaQN8JMSbALE+AR+NUYagU/x6Htwuchsg/BGrs+OB7yGPBhdhkcIcYGxntoKqVAaym7zITbVjjSpykcLwyrEdWpvJ9c7MmBQDVLxcJh2TGwrjJsJRyGNzpxG7DOxxbCZbzKOrUCNKmLaWjeab1We4QZxnfe1BcMo8c4DrtEkcd8J4e8Q1aNMBceetqFBXIhFu5BFDdEKEUEBei+MIgNx6yhOklktHXw1DB4x9i7qCynNHdkJeGEWw7801xtfk/euibVqbwR7tq1rxrkL3S8pFiGYJ62HBUMxjcn+D+VcpT+aqD0iTjgQItaNzDOX153GlQTIXeFrkaM0MYba6ZOUgzdtlgX1CLIV6b8F+2v1rI6QzfN9x1cPYfp+1P5tjCSQyhvbgRrsuufb8X7oYAt6K7q0wUuH4ggYwkpPA9DGoIeUllevY5ZKfr6vm4TKgrkIEl7b0EiSqzhhce7OGtcilDKQ6L6EACRlqlKOi6wdtoI5gi+zVkeC6lIMOZcT7+tER38V+JK75j6OUWpll1+sc022zuxRXxVGwNkq8VAd8wtIu8ahWPmJRSQvogxmty7poJUcF7k/olsasK3BeA5ACMf3r1stGPgT4BA64N/ChrwG5nuouS84GH+/BVZ1gN8FPNKTRwur9SeFysdROZQ3n1rDahKOBkphEI+RLU4a/F6la9DaL7uIDnlFqqHoVFH8Se2h4OAQFyQN2liO6fsX+ZwLJEeXG0w2bV7/yaxIi3B0lLhnPARbd6Nh30ztWYgfvvPLAs9Kl96nogN3B8fI3rvQ9WgRcfX8mgy75kk78cEpdtKVnXKZZbxsZeFBSrFnaMat1Q2TG1u1hiiYVXUQ3E+skM/VgkoBASSZSi692i4AIahdMB5AWcxOrVhDdHozQ=",
+        "edits": ""
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -0.6902446320678016,
+          0.5599999999999999,
+          -1.0975238473767885
+        ],
+        "max": [
+          1.1297553679321983,
+          1.3199999999999998,
+          0.7224761526232114
+        ],
+        "sourceNodeId": "m2"
+      },
+      {
+        "min": [
+          -1.1802446320678015,
+          0,
+          -1.5875238473767885
+        ],
+        "max": [
+          1.6197553679321983,
+          0.28,
+          1.2124761526232113
+        ],
+        "sourceNodeId": "m0"
+      },
+      {
+        "min": [
+          -0.9902446320678016,
+          0.27999999999999997,
+          -1.3975238473767886
+        ],
+        "max": [
+          1.4297553679321984,
+          0.56,
+          1.0224761526232113
+        ],
+        "sourceNodeId": "m1"
+      },
+      {
+        "min": [
+          -0.1002446320678016,
+          1.48115520193373,
+          -0.5932243207376507
+        ],
+        "max": [
+          0.5397553679321985,
+          2.9188447980662704,
+          0.41817662598407346
+        ],
+        "sourceNodeId": "m5"
+      },
+      {
+        "min": [
+          -1.32420915269766,
+          2.4206806856687266,
+          -0.14752384737678859
+        ],
+        "max": [
+          0.1837198885620568,
+          3.3993193143312737,
+          0.37247615262321143
+        ],
+        "sourceNodeId": "m9"
+      },
+      {
+        "min": [
+          -0.7902446320678016,
+          1.3199999999999998,
+          -1.1975238473767886
+        ],
+        "max": [
+          1.2297553679321984,
+          1.5,
+          0.8224761526232114
+        ],
+        "sourceNodeId": "m3"
+      },
+      {
+        "min": [
+          -2.551891690891331,
+          3.0507330316742083,
+          -0.10752384737678858
+        ],
+        "max": [
+          -0.928597573244272,
+          4.149266968325792,
+          0.19247615262321138
+        ],
+        "sourceNodeId": "m10"
+      },
+      {
+        "min": [
+          0.27011322478945543,
+          2.432938824470212,
+          -0.13752384737678858
+        ],
+        "max": [
+          1.5693975110749412,
+          3.1670611755297884,
+          0.3624761526232114
+        ],
+        "sourceNodeId": "m12"
+      },
+      {
+        "min": [
+          -0.14024463206780158,
+          2.0700000000000003,
+          -0.18752384737678862
+        ],
+        "max": [
+          0.5797553679321984,
+          2.79,
+          0.4324761526232114
+        ],
+        "sourceNodeId": "m6"
+      },
+      {
+        "min": [
+          1.2076190449730655,
+          2.422462961121607,
+          -0.0625238473767886
+        ],
+        "max": [
+          2.551891690891331,
+          3.037537038878393,
+          0.24747615262321143
+        ],
+        "sourceNodeId": "m13"
+      },
+      {
+        "min": [
+          -0.12024463206780162,
+          3.0699999999999994,
+          0.3624761526232114
+        ],
+        "max": [
+          0.5597553679321985,
+          3.63,
+          0.9824761526232113
+        ],
+        "sourceNodeId": "m16"
+      },
+      {
+        "min": [
+          1.096343603226316,
+          2.0842760180995477,
+          0.05247615262321137
+        ],
+        "max": [
+          2.2431671326380807,
+          2.8757239819004523,
+          0.3124761526232114
+        ],
+        "sourceNodeId": "m14"
+      }
+    ],
+    "sourceMeshCount": 20,
+    "candidateCount": 17,
+    "fallbackUsed": false
+  },
+  "mode": "voxel",
+  "provider": "provider-fallback",
+  "createdAt": 1783922422403,
+  "updatedAt": 1783922422403
+}

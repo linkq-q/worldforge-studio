@@ -1,0 +1,649 @@
+{
+  "id": "asset-3a65e9ab-0bcd-4ad3",
+  "name": "复杂公园/樱花树·圆冠",
+  "prompt": "Standalone reusable voxel park asset: a flowering cherry tree, rounded pink blossom canopy, dark twisting trunk, airy gaps beneath branches, decorative hiding landmark. Box-only voxel model around 20 purposeful boxes, centered at the origin, base grounded on y=0, no surrounding terrain, no people, no loose floating geometry, flat-shaded cohesive enchanted municipal park palette. Keep the gameplay silhouette and collision shape readable from all sides.",
+  "modelJson": {
+    "name": " enchanted flowering cherry tree",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "cherry_tree",
+        "name": "樱花树",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "cherry_tree",
+        "transform": {
+          "pos": [
+            0,
+            0.35,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.9,
+            "height": 0.7,
+            "depth": 0.8
+          },
+          "color": 3877167
+        }
+      },
+      {
+        "id": "m1",
+        "parent": "cherry_tree",
+        "transform": {
+          "pos": [
+            0.09,
+            1.3,
+            0
+          ],
+          "quat": [
+            0,
+            0,
+            0.64,
+            0.77
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.52,
+            "height": 0.68,
+            "depth": 0.68
+          },
+          "color": 4796473
+        }
+      },
+      {
+        "id": "m2",
+        "parent": "cherry_tree",
+        "transform": {
+          "pos": [
+            0.05,
+            2.5,
+            0
+          ],
+          "quat": [
+            0,
+            0,
+            0.79,
+            0.61
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.34,
+            "height": 0.6,
+            "depth": 0.6
+          },
+          "color": 4336436
+        }
+      },
+      {
+        "id": "m3",
+        "parent": "cherry_tree",
+        "transform": {
+          "pos": [
+            0.02,
+            3.54,
+            0
+          ],
+          "quat": [
+            0,
+            0,
+            0.63,
+            0.78
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.31,
+            "height": 0.5,
+            "depth": 0.5
+          },
+          "color": 5321789
+        }
+      },
+      {
+        "id": "m4",
+        "parent": "cherry_tree",
+        "transform": {
+          "pos": [
+            -0.85,
+            2.95,
+            0
+          ],
+          "quat": [
+            0,
+            0,
+            0.95,
+            0.32
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2,
+            "height": 0.46,
+            "depth": 0.46
+          },
+          "color": 4862008
+        }
+      },
+      {
+        "id": "m5",
+        "parent": "cherry_tree",
+        "transform": {
+          "pos": [
+            -1.67,
+            3.55,
+            0
+          ],
+          "quat": [
+            0,
+            0,
+            0.95,
+            0.32
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.56,
+            "height": 0.38,
+            "depth": 0.38
+          },
+          "color": 5321532
+        }
+      },
+      {
+        "id": "m6",
+        "parent": "cherry_tree",
+        "transform": {
+          "pos": [
+            0.86,
+            3.26,
+            0
+          ],
+          "quat": [
+            0,
+            0,
+            0.29,
+            0.96
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2.02,
+            "height": 0.44,
+            "depth": 0.44
+          },
+          "color": 4599350
+        }
+      },
+      {
+        "id": "m7",
+        "parent": "cherry_tree",
+        "transform": {
+          "pos": [
+            0,
+            3.43,
+            0.74
+          ],
+          "quat": [
+            0.68,
+            0.18,
+            0.68,
+            0.18
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.71,
+            "height": 0.42,
+            "depth": 0.42
+          },
+          "color": 5256251
+        }
+      },
+      {
+        "id": "m8",
+        "parent": "cherry_tree",
+        "transform": {
+          "pos": [
+            0,
+            3.59,
+            -0.71
+          ],
+          "quat": [
+            0.18,
+            0.68,
+            0.18,
+            0.68
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.65,
+            "height": 0.4,
+            "depth": 0.4
+          },
+          "color": 4402485
+        }
+      },
+      {
+        "id": "m9",
+        "parent": "cherry_tree",
+        "transform": {
+          "pos": [
+            0,
+            4.55,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2,
+            "height": 1.3,
+            "depth": 1.8
+          },
+          "color": 15830702
+        }
+      },
+      {
+        "id": "m10",
+        "parent": "cherry_tree",
+        "transform": {
+          "pos": [
+            0.18,
+            5.35,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.5,
+            "height": 0.85,
+            "depth": 1.4
+          },
+          "color": 16164799
+        }
+      },
+      {
+        "id": "m11",
+        "parent": "cherry_tree",
+        "transform": {
+          "pos": [
+            -1.22,
+            4.4,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.55,
+            "height": 1.25,
+            "depth": 1.55
+          },
+          "color": 15302565
+        }
+      },
+      {
+        "id": "m12",
+        "parent": "cherry_tree",
+        "transform": {
+          "pos": [
+            -2.15,
+            4.15,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.2,
+            "height": 1,
+            "depth": 1.3
+          },
+          "color": 15768247
+        }
+      },
+      {
+        "id": "m13",
+        "parent": "cherry_tree",
+        "transform": {
+          "pos": [
+            1.22,
+            4.42,
+            0.08
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.55,
+            "height": 1.2,
+            "depth": 1.5
+          },
+          "color": 16030389
+        }
+      },
+      {
+        "id": "m14",
+        "parent": "cherry_tree",
+        "transform": {
+          "pos": [
+            2.12,
+            4.16,
+            0.1
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.18,
+            "height": 0.95,
+            "depth": 1.25
+          },
+          "color": 15303592
+        }
+      },
+      {
+        "id": "m15",
+        "parent": "cherry_tree",
+        "transform": {
+          "pos": [
+            0,
+            4.25,
+            1.15
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.55,
+            "height": 1.1,
+            "depth": 1.2
+          },
+          "color": 16098749
+        }
+      },
+      {
+        "id": "m16",
+        "parent": "cherry_tree",
+        "transform": {
+          "pos": [
+            -1.18,
+            4.12,
+            1.02
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.25,
+            "height": 0.95,
+            "depth": 1.15
+          },
+          "color": 15568303
+        }
+      },
+      {
+        "id": "m17",
+        "parent": "cherry_tree",
+        "transform": {
+          "pos": [
+            0.18,
+            4.3,
+            -1.12
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.5,
+            "height": 1.05,
+            "depth": 1.2
+          },
+          "color": 15169696
+        }
+      },
+      {
+        "id": "m18",
+        "parent": "cherry_tree",
+        "transform": {
+          "pos": [
+            1.32,
+            4.2,
+            -0.92
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.25,
+            "height": 0.95,
+            "depth": 1.15
+          },
+          "color": 15900857
+        }
+      },
+      {
+        "id": "m19",
+        "parent": "cherry_tree",
+        "transform": {
+          "pos": [
+            -0.95,
+            5.03,
+            -0.18
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.35,
+            "height": 0.9,
+            "depth": 1.25
+          },
+          "color": 16231875
+        }
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1783921576960,
+        "provider": "gpt",
+        "data": "fOo3rQo1Zl5LT5EEMd28jQBxsivsS3R/7kXiSiq50IfZcGCJ7BJRvNLTLTEsHPjJv5QEBYlF6lMGN1SnVMcRA6s13KBSFtF80riCckhNWaGPAudM0I/ve5vIoqRGCjQN09CEVMnLqMmhkeU+Jne59tHletYRUxQvipyd1vl10v93DcSpruHHNkzD8050gffYZSKVlTOcpEW+sud05OJhBFACiBWsBDgAT3Nn+oNOrntauH/Cw6Mfzbu6+b0JYYEt7S1WD/heETr1FWA6b+ZZIc6Jx0dwWp9H33XtWPFwa9y45Q0nEZ7Evfs3BRbQPmNUFtbQ4PwB+qoD4dK1zWpyD+LoJ2cXNY770ExGw1byCNLD4s95f6KHCUNt3qQTznUNsVBkKYkacJg7JnVXqdrrG10Odf2Eg1PuNX85DNgDKRMftckYUpLExqZzqgY8YOn8LsjoWAa3ir9IvFJvg6dHcPaYwoEIcVdP8TTaqhgSE7SK9UIG8ZuIiPUElaEc1oBk12axXAnlIwQDIp2XSGcT/2VS1jyFCgIlxa+2Y2nEMU7ai7vOkEQcCDQldCWUhPq1NUNGaDusEuH61xexecv4sHFUsF/QlcOpUU8/5U34vvACMFuM1JCOe8bTw2vM6S8cu2h39634vSxVE3F2Y4dp8N+eTPDY4tpZjElSVoidoq5NHDlNvXqpHRAfYTXvfGH/El65rpz3bGHC1YhvRSA5hf6yWMLoPlWxZ9cyznJ8gNAiR0p3xATEzt/5+sdYNT+MVIC3N9/8bpvA9Yln1YdGor/CyOoCpQwX5pKXuL8LE0+7CQ4razBUPeOAp8d44obWNvZYQMIbBo6MU5u3GoYdQbdUz47OmyyAip9L8EmeclutPLjl2ofRTpM4pu+IbRStUpuP0fSlweMWebE4AF/TZVqVooW7TgvS4eZI+ozVbniIZ88RdwcB2bFybYZcH3M/ZAEyLp1efphCzpP12E+9g2dXFIM2Uzu1IbeejQQwF7zZANd0UobrOgGlm9HdXbBNnUoCXQS5AN8+BMrlGSnIdQ9Mw2u5XUoTTRP3LHDpfGxC1en2Ph/efdf0q06cZTFz7yTeUjQXoE0cDKsNXEFRNFZwyiNBAnk=",
+        "edits": ""
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -0.98,
+          3.9,
+          -0.9149999999999999
+        ],
+        "max": [
+          1.02,
+          5.2,
+          0.8850000000000001
+        ],
+        "sourceNodeId": "m9"
+      },
+      {
+        "min": [
+          -1.975,
+          3.7750000000000004,
+          -0.7899999999999999
+        ],
+        "max": [
+          -0.42499999999999993,
+          5.025,
+          0.7600000000000001
+        ],
+        "sourceNodeId": "m11"
+      },
+      {
+        "min": [
+          0.46499999999999997,
+          3.82,
+          -0.6849999999999999
+        ],
+        "max": [
+          2.015,
+          5.02,
+          0.8150000000000001
+        ],
+        "sourceNodeId": "m13"
+      },
+      {
+        "min": [
+          -0.755,
+          3.7,
+          0.535
+        ],
+        "max": [
+          0.795,
+          4.8,
+          1.735
+        ],
+        "sourceNodeId": "m15"
+      },
+      {
+        "min": [
+          -0.55,
+          3.775,
+          -1.735
+        ],
+        "max": [
+          0.95,
+          4.825,
+          -0.535
+        ],
+        "sourceNodeId": "m17"
+      },
+      {
+        "min": [
+          -0.55,
+          4.925,
+          -0.7149999999999999
+        ],
+        "max": [
+          0.95,
+          5.7749999999999995,
+          0.685
+        ],
+        "sourceNodeId": "m10"
+      },
+      {
+        "min": [
+          -2.73,
+          3.6500000000000004,
+          -0.6649999999999999
+        ],
+        "max": [
+          -1.5299999999999998,
+          4.65,
+          0.6350000000000001
+        ],
+        "sourceNodeId": "m12"
+      },
+      {
+        "min": [
+          -1.605,
+          4.58,
+          -0.8199999999999998
+        ],
+        "max": [
+          -0.2549999999999999,
+          5.48,
+          0.4300000000000001
+        ],
+        "sourceNodeId": "m19"
+      },
+      {
+        "min": [
+          1.5500000000000003,
+          3.685,
+          -0.5399999999999999
+        ],
+        "max": [
+          2.73,
+          4.635,
+          0.7100000000000001
+        ],
+        "sourceNodeId": "m14"
+      },
+      {
+        "min": [
+          -1.785,
+          3.645,
+          0.43000000000000016
+        ],
+        "max": [
+          -0.5349999999999999,
+          4.595,
+          1.58
+        ],
+        "sourceNodeId": "m16"
+      },
+      {
+        "min": [
+          0.7150000000000001,
+          3.725,
+          -1.51
+        ],
+        "max": [
+          1.965,
+          4.675,
+          -0.36
+        ],
+        "sourceNodeId": "m18"
+      },
+      {
+        "min": [
+          -1.7653567519156137,
+          2.1618389889541247,
+          -0.2449999999999999
+        ],
+        "max": [
+          0.10535675191561378,
+          3.7381610110458756,
+          0.2150000000000001
+        ],
+        "sourceNodeId": "m4"
+      }
+    ],
+    "sourceMeshCount": 20,
+    "candidateCount": 20,
+    "fallbackUsed": false
+  },
+  "mode": "voxel",
+  "provider": "provider-fallback",
+  "createdAt": 1783922422382,
+  "updatedAt": 1783922422382
+}

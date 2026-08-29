@@ -1,0 +1,521 @@
+{
+  "id": "asset-92a9fc4c-87c2-46e3",
+  "name": "复杂公园/鸟屋柱",
+  "prompt": "Standalone reusable voxel park asset: a whimsical wooden birdhouse on a tall post, tiny green roof, circular entrance and perch, narrow decorative collision. Box-only voxel model around 20 purposeful boxes, centered at the origin, base grounded on y=0, no surrounding terrain, no people, no loose floating geometry, flat-shaded cohesive enchanted municipal park palette. Keep the gameplay silhouette and collision shape readable from all sides.",
+  "modelJson": {
+    "name": "魔法公园木制鸟屋",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "birdhouse",
+        "name": "木制鸟屋",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "birdhouse",
+        "transform": {
+          "pos": [
+            0,
+            0.09,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.2,
+            "height": 0.18,
+            "depth": 0.34
+          },
+          "color": 6309167
+        }
+      },
+      {
+        "id": "m1",
+        "parent": "birdhouse",
+        "transform": {
+          "pos": [
+            0,
+            0.09,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.34,
+            "height": 0.18,
+            "depth": 1.2
+          },
+          "color": 6309167
+        }
+      },
+      {
+        "id": "m2",
+        "parent": "birdhouse",
+        "transform": {
+          "pos": [
+            0,
+            0.29,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.56,
+            "height": 0.22,
+            "depth": 0.56
+          },
+          "color": 7951671
+        }
+      },
+      {
+        "id": "m3",
+        "parent": "birdhouse",
+        "transform": {
+          "pos": [
+            0,
+            2,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.3,
+            "height": 3.3,
+            "depth": 0.3
+          },
+          "color": 7753779
+        }
+      },
+      {
+        "id": "m4",
+        "parent": "birdhouse",
+        "transform": {
+          "pos": [
+            0,
+            3.48,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.48,
+            "height": 0.18,
+            "depth": 0.48
+          },
+          "color": 9990218
+        }
+      },
+      {
+        "id": "m5",
+        "parent": "birdhouse",
+        "transform": {
+          "pos": [
+            -0.37,
+            3.35,
+            0
+          ],
+          "quat": [
+            0.26,
+            0.66,
+            0.66,
+            0.26
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.67,
+            "height": 0.16,
+            "depth": 0.12
+          },
+          "color": 6833711
+        }
+      },
+      {
+        "id": "m6",
+        "parent": "birdhouse",
+        "transform": {
+          "pos": [
+            0.38,
+            3.35,
+            0
+          ],
+          "quat": [
+            0.66,
+            0.26,
+            0.26,
+            0.66
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.67,
+            "height": 0.16,
+            "depth": 0.12
+          },
+          "color": 6833711
+        }
+      },
+      {
+        "id": "m7",
+        "parent": "birdhouse",
+        "transform": {
+          "pos": [
+            0,
+            3.55,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.35,
+            "height": 0.16,
+            "depth": 0.2
+          },
+          "color": 6833711
+        }
+      },
+      {
+        "id": "m8",
+        "parent": "birdhouse",
+        "transform": {
+          "pos": [
+            0,
+            4.2,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.4,
+            "height": 1.3,
+            "depth": 1.2
+          },
+          "color": 12157518
+        }
+      },
+      {
+        "id": "m9",
+        "parent": "birdhouse",
+        "transform": {
+          "pos": [
+            -0.62,
+            4.18,
+            0.62
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.11,
+            "height": 1.15,
+            "depth": 0.08
+          },
+          "color": 14725741
+        }
+      },
+      {
+        "id": "m10",
+        "parent": "birdhouse",
+        "transform": {
+          "pos": [
+            0.62,
+            4.18,
+            0.62
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.11,
+            "height": 1.15,
+            "depth": 0.08
+          },
+          "color": 14725741
+        }
+      },
+      {
+        "id": "m11",
+        "parent": "birdhouse",
+        "transform": {
+          "pos": [
+            0,
+            3.62,
+            0.63
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.15,
+            "height": 0.1,
+            "depth": 0.09
+          },
+          "color": 14725741
+        }
+      },
+      {
+        "id": "m12",
+        "parent": "birdhouse",
+        "transform": {
+          "pos": [
+            -0.45,
+            5.14,
+            0
+          ],
+          "quat": [
+            0.21,
+            -0.67,
+            0.21,
+            0.67
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.56,
+            "height": 0.12,
+            "depth": 1.1
+          },
+          "color": 5209931
+        }
+      },
+      {
+        "id": "m13",
+        "parent": "birdhouse",
+        "transform": {
+          "pos": [
+            0.45,
+            5.14,
+            0
+          ],
+          "quat": [
+            0,
+            0,
+            -0.3,
+            0.95
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.1,
+            "height": 0.12,
+            "depth": 1.56
+          },
+          "color": 6132309
+        }
+      },
+      {
+        "id": "m14",
+        "parent": "birdhouse",
+        "transform": {
+          "pos": [
+            0,
+            5.46,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.12,
+            "height": 0.12,
+            "depth": 1.62
+          },
+          "color": 3563323
+        }
+      },
+      {
+        "id": "m15",
+        "parent": "birdhouse",
+        "transform": {
+          "pos": [
+            0,
+            4.17,
+            0.622
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.28,
+            "height": 0.12,
+            "depth": 0.04
+          },
+          "color": 3156775
+        }
+      },
+      {
+        "id": "m16",
+        "parent": "birdhouse",
+        "transform": {
+          "pos": [
+            0,
+            4.38,
+            0.622
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.48,
+            "height": 0.3,
+            "depth": 0.04
+          },
+          "color": 3156775
+        }
+      },
+      {
+        "id": "m17",
+        "parent": "birdhouse",
+        "transform": {
+          "pos": [
+            0,
+            4.59,
+            0.622
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.28,
+            "height": 0.12,
+            "depth": 0.04
+          },
+          "color": 3156775
+        }
+      },
+      {
+        "id": "m18",
+        "parent": "birdhouse",
+        "transform": {
+          "pos": [
+            0,
+            3.98,
+            0.91
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.12,
+            "height": 0.12,
+            "depth": 0.68
+          },
+          "color": 13672546
+        }
+      },
+      {
+        "id": "m19",
+        "parent": "birdhouse",
+        "transform": {
+          "pos": [
+            0,
+            3.82,
+            0.64
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.14,
+            "height": 0.3,
+            "depth": 0.12
+          },
+          "color": 7753779
+        }
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1783922419540,
+        "provider": "gpt",
+        "data": "Xrey+wfHBeRUbAZuZtQnzxp9u28vFI48UAEkEf1qse+iWXSHhN4NqBrx2in4RtKC1uFEfOfWJc865XJLWPr0iGZ0EY9W1wRqmZ8f+aO0mCcCg1prB2d5pn1+WbJPjctdBb2e2bGG6wynNPjBiNXv5yzfmLySZqZzlsaZtnyY+qAwNSJzQaVl9Uzzb23bz/rxKBuX86ut8QUJiG6JuSWP6T8MEsscF1eqYaPAal16KzMRZp7WI/dTTENz9vi1YTgTr0KgXBrijwGtFwRmHJLOLejiMM2RjxOuBH9K02nI6ItxEsNDdJcvZFGS2fbSFunNfMswCUbVqjXtzQaV0zHa3bXxTFHioTlusQai6KNe7AnGtz7Ilb+smz6xlr2W13B3DJvRQw/+GspJG+A3F8VyBOG2/zBuJRuFcYOqB3vqiQg7fQ1H7MMxyJ+wP/WEBueMUXLemLYyba0u+5QULQ+mxjyMiCHSjqteIvyfJJknFPcr9X7qBRLPEJLnMDyixhM5EOOR1vWv9lwWD9UpVBkIHTsWuI2gG6rkb6E0LpHex1p4bFtmrVAgkpIuJwaQlNmM8LH+B44Ydie5hnTI9nB/NH/OW/CkQYhkaXAwoL7uX82HTrc4hEZR3b7g4QAVCmAyVH8h8OYZYv9xQgrxPZRTYeoi+ctjsFo5Y9LZAg5KysIMLbnSv4UPs1SnSbHcqOind93hgU6z+wzJFWp1bNIi4Lhz4xNFcAdQyzmCenDbj+SVKjCtohN8rmECt/fQxrBmaWEQaLZj4eOHHTWxW5oUpWYpnYTBy1Bli34Vi61WQgAGJucx7T2frZIVdvQxHHcBFm0ryJexX9GsFW+F2kRsm3JyEQUaPbBug4Sc8gf+YYiGTcAqxVL426PiUIXLmg2oHOu2zUBMW88b0cZersNW2rcwY5MWnRvk6ZQHjC+ae6VDvHRqscT8pHLiVSZsrIDOXdOg1NGuc7j4rplepI/Ii8eSwD1WGK2qZ1XOWkcu/AeVMRNsUtSJtJYG/G/en7EtN5zgkO1JKxGSu13BDmRX94X2oa0TPXKj9jjKdLBOjygv5nDUUxihw9cuEwd0YMxVX8fGzmEDgxSfxdqY6yiHKGFMhf7lunUX6+oxsHqR",
+        "edits": ""
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -0.6994302144378989,
+          3.5500000000000003,
+          -0.82
+        ],
+        "max": [
+          0.700569785562101,
+          4.8500000000000005,
+          0.38
+        ],
+        "sourceNodeId": "m8"
+      },
+      {
+        "min": [
+          -0.03414054189381838,
+          4.775012594458438,
+          -1
+        ],
+        "max": [
+          0.9352801130180205,
+          5.504987405541561,
+          0.56
+        ],
+        "sourceNodeId": "m13"
+      },
+      {
+        "min": [
+          -0.9352801130180205,
+          4.7767991886409735,
+          -1
+        ],
+        "max": [
+          0.036419684142222686,
+          5.503200811359026,
+          0.5600000000000002
+        ],
+        "sourceNodeId": "m12"
+      },
+      {
+        "min": [
+          -0.14943021443789892,
+          0.3500000000000001,
+          -0.37
+        ],
+        "max": [
+          0.15056978556210107,
+          3.65,
+          -0.06999999999999998
+        ],
+        "sourceNodeId": "m3"
+      }
+    ],
+    "sourceMeshCount": 20,
+    "candidateCount": 4,
+    "fallbackUsed": false
+  },
+  "mode": "voxel",
+  "provider": "provider-fallback",
+  "createdAt": 1783922422412,
+  "updatedAt": 1783922422412
+}

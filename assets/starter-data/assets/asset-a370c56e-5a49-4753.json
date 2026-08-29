@@ -1,0 +1,420 @@
+{
+  "id": "asset-a370c56e-5a49-4753",
+  "name": "挂在墙上的风筝",
+  "prompt": "挂在墙上的风筝",
+  "modelJson": {
+    "name": "挂在墙上的风筝",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "wall",
+        "name": "墙面",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            5.408,
+            7.654,
+            0.784
+          ],
+          "center": [
+            0.066,
+            0.9,
+            -0.034
+          ],
+          "axes": [
+            [
+              0.9989,
+              0.0463,
+              -0.0035
+            ],
+            [
+              -0.0464,
+              0.9987,
+              -0.0218
+            ],
+            [
+              0.0024,
+              0.022,
+              0.9998
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "mount01_kite",
+        "name": "墙上风筝",
+        "parent": "wall",
+        "transform": {
+          "pos": [
+            0,
+            3.05,
+            0
+          ]
+        },
+        "mounted": true,
+        "_obb": {
+          "size": [
+            2.341,
+            4.074,
+            0.416
+          ],
+          "center": [
+            0.059,
+            -0.888,
+            0.053
+          ],
+          "axes": [
+            [
+              0.9975,
+              0.0705,
+              -0.0042
+            ],
+            [
+              -0.0705,
+              0.9974,
+              0.0123
+            ],
+            [
+              0.0051,
+              -0.0119,
+              0.9999
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "wall",
+        "transform": {
+          "pos": [
+            0,
+            2.3,
+            -0.25
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 5.2,
+            "height": 4.6,
+            "depth": 0.3
+          },
+          "color": 14206890
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "stone",
+            "variant": "brick"
+          }
+        ]
+      },
+      {
+        "id": "m1",
+        "parent": "mount01_kite",
+        "transform": {
+          "pos": [
+            0,
+            -0.05,
+            0.02
+          ],
+          "quat": [
+            0.69,
+            -0.23,
+            -0.28,
+            0.65
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.52,
+            "height": 0.12,
+            "depth": 1.75
+          },
+          "color": 14240573
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "fabric"
+          }
+        ]
+      },
+      {
+        "id": "m2",
+        "parent": "mount01_kite",
+        "transform": {
+          "pos": [
+            0,
+            -0.03,
+            0.11
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.09,
+            "height": 2.35,
+            "depth": 0.13
+          },
+          "color": 9132587
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "bamboo"
+          }
+        ]
+      },
+      {
+        "id": "m3",
+        "parent": "mount01_kite",
+        "transform": {
+          "pos": [
+            0,
+            -0.02,
+            0.12
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.9,
+            "height": 0.08,
+            "depth": 0.13
+          },
+          "color": 9132587
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ]
+      },
+      {
+        "id": "m4",
+        "parent": "mount01_kite",
+        "transform": {
+          "pos": [
+            0,
+            -0.02,
+            0.2
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.2,
+            "height": 0.2,
+            "depth": 0.14
+          },
+          "color": 15911244
+        }
+      },
+      {
+        "id": "m5",
+        "parent": "mount01_kite",
+        "transform": {
+          "pos": [
+            0.16,
+            -1.6,
+            0.08
+          ],
+          "quat": [
+            0.65,
+            0.14,
+            0,
+            0.71
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.07,
+            "height": 0.06,
+            "depth": 0.8
+          },
+          "color": 7295029
+        }
+      },
+      {
+        "id": "m6",
+        "parent": "mount01_kite",
+        "transform": {
+          "pos": [
+            0.47,
+            -2.01,
+            0.09
+          ],
+          "quat": [
+            0.66,
+            0.25,
+            0.25,
+            0.66
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.2,
+            "height": 0.08,
+            "depth": 0.35
+          },
+          "color": 15911244
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "fabric"
+          }
+        ]
+      },
+      {
+        "id": "m7",
+        "parent": "mount01_kite",
+        "transform": {
+          "pos": [
+            0.18,
+            -2.52,
+            0.08
+          ],
+          "quat": [
+            0.62,
+            -0.17,
+            0,
+            0.71
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.07,
+            "height": 0.06,
+            "depth": 0.65
+          },
+          "color": 7295029
+        }
+      },
+      {
+        "id": "m8",
+        "parent": "mount01_kite",
+        "transform": {
+          "pos": [
+            0.07,
+            -2.73,
+            0.09
+          ],
+          "quat": [
+            0.66,
+            0.25,
+            0.25,
+            0.66
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.2,
+            "height": 0.08,
+            "depth": 0.35
+          },
+          "color": 4886745
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "fabric"
+          }
+        ]
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1787828884562,
+        "provider": "glm",
+        "data": "GTTBx0zPc9fCFMPPG51g6v+lv4nxzxuPz2gzk8+51wgmwsLHrOHxWBW5LVBlazJzAji7C2ISG4jyGKM7tD3YaA37w8jbFFKxHbFX4Nfx2os82MmD3U9dKAwbPSpHhb8Dk4RTX4+bJJP7GXW6eqR2yRiBXNqpVCYXxK/+Hu7/nZHJUil+4+SeiLrzTuTBWTsGDAfd0A8ehOKryIiSa8zAlWqEw8rgA36Be7ka/AdkudDYLl5lp0JaNINXKQwTDBfVt8K5tmjqT7L0qcQeiO0UX/67uNw1gJQddys6JhguYmrrHuRqeEIinQq0YWy8WwtB23nYvAcy9VELnwA9WQKmXBiZ9yjcVfSij4i7oCDfCxtJoa7m43qWGCral9FYma+IQtB0JJC7z+OCPQVIdbwWrUbfF0ETdCr1KRg/TG0wp5l9Vt3zzbUYO0p/o3hrlUNFQ50teItOOw3p8deqGsIxnfWvTT9oLXIW5/dqVdWPwyuxFyCtuWWZpgFunC3qM9UCrphZ8YLsAbGRgNl/Qp0I+vQk4LKrlRRVatbRS7IprGQU65525m7Jok8HJd1HfK8i92yUR+OzMLXD5UXETDAdmZfhvTZxSZUrvpsLSOERbbzZC86y/67mf+FV1BFTURj6mSAplENA9nbTERaUegHmOm1BfVGduVy6AF6wfOw7zZ0mwqaljJeBEEpSviSmarhL8UarOLf890iZWIoUxscN7qXKjvfbAYSYKJK3Gsa02I51wnDfSb/bHCjLMp86FRiWvgXTPyvIuCb+9rcYlrWrANlGQGhwLR9SSZgdohVhK9YhrKapCW1l2oVYfsvkRxjMe+qcIW1xXhcti8W2DMW4Tx0nhySq/ZM9UjgQYZB7MUyjtjOtzE7FvX86u85cGaizyUTODtbj4oUR2+6aWAXjptFH8+6AXbBdSyK3z3lmkJILNYj09bE=",
+        "edits": ""
+      },
+      "mounts": [
+        {
+          "id": "mount01_kite",
+          "mountedGroupId": "mount01_kite",
+          "name": "墙上风筝",
+          "source": {
+            "type": "codegen"
+          },
+          "description": "",
+          "visible": true,
+          "ts": 1787828884562
+        }
+      ],
+      "semanticSnapshot": {
+        "v": 1,
+        "auto": true,
+        "text": "挂在墙上的风筝 · 2组/9mesh · 世界坐标(Y上Z前), 原点=模型根\n# 阅读说明: G:=group行(可动画骨骼, 动画key用G:后的id; @p=pivot世界坐标; 倾(x,y,z)°=朝向偏离世界轴的欧拉角; 缩进=父子层级; 挂:=挂载于某组; G:id→id→…=chain折叠行, 每个id都是可独立动画的group, chain×N=waypoint数)\n# M:=mesh行(label[id 几何 @(世界坐标)], label可省略; ×N=for循环批量件(锚点=代表实例); cyl (起)→(末)或 轴上(Y)等方位词=延伸方向; 薄向=板面法向(扁板); 挂载组双代表=最大件+最远有向件(刃/嘴/管所在端); 无方向标注=均匀块(三向相近,如头),默认面向前(Z); 对称×2=镜像对)\nG:wall 墙面 @p(0,0,0)\n  M:[m0 box 5.2×4.6×0.3 (0,2.3,-0.2) 薄向前(Z)]\n  G:mount01_kite 墙上风筝 @p(0,3.1,0) 挂:wall\n    M:[m1 box 1.5×0.12×1.8 (0,3,0) 轴(-0.6,2.3,0)→(0.6,3.7,0.1)] | M:[m8 box 0.2×0.08×0.35 (0.1,0.3,0.1) 轴(0.2,0.2,0.1)→(0,0.5,0.1)]",
+        "stats": {
+          "groups": 2,
+          "meshes": 9,
+          "labeledMeshes": 0,
+          "labelCoverage": 0,
+          "batchLabels": 0,
+          "autoChains": 0,
+          "snapshotChars": 604
+        }
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -2.6,
+          0,
+          -0.335
+        ],
+        "max": [
+          2.6,
+          4.6,
+          -0.035
+        ],
+        "sourceNodeId": "m0"
+      },
+      {
+        "min": [
+          -1.1512467229828138,
+          1.8399019322264296,
+          -0.06313040100980702
+        ],
+        "max": [
+          1.1512467229828138,
+          4.16009806777357,
+          0.233130401009807
+        ],
+        "sourceNodeId": "m1"
+      }
+    ],
+    "sourceMeshCount": 9,
+    "candidateCount": 2,
+    "fallbackUsed": false
+  },
+  "footprintRadius": 2.6,
+  "sizeClass": "large",
+  "mode": "voxel",
+  "createdAt": 1787828886907,
+  "updatedAt": 1787828886907
+}

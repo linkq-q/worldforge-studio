@@ -1,0 +1,745 @@
+{
+  "id": "asset-7ac3deb4-9ff6-4165",
+  "name": "复杂游乐园/10幽灵迷宫/设施/幽灵古宅",
+  "prompt": "Simple standalone voxel model of 幽灵古宅: a crooked two-story haunted attraction facade with open dark entrance, uneven purple roof, boarded windows and small corner tower. Use 16 to 28 box meshes only, one grounded object, bold readable silhouette, bright amusement park colors, no terrain, no people, no floating pieces.",
+  "modelJson": {
+    "name": "幽灵古宅",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "hauntedHouse",
+        "name": "幽灵古宅主体",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "hauntedHouse",
+        "transform": {
+          "pos": [
+            0,
+            1.2,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 5.2,
+            "height": 2.4,
+            "depth": 2
+          },
+          "color": 15755826
+        }
+      },
+      {
+        "id": "m1",
+        "parent": "hauntedHouse",
+        "transform": {
+          "pos": [
+            -0.25,
+            3.35,
+            -0.05
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 4.7,
+            "height": 2,
+            "depth": 1.85
+          },
+          "color": 2668457
+        }
+      },
+      {
+        "id": "m2",
+        "parent": "hauntedHouse",
+        "transform": {
+          "pos": [
+            -0.27,
+            4.7,
+            0.6
+          ],
+          "quat": [
+            0.32,
+            0,
+            0,
+            0.95
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 5.05,
+            "height": 0.18,
+            "depth": 1.5
+          },
+          "color": 8077254
+        }
+      },
+      {
+        "id": "m3",
+        "parent": "hauntedHouse",
+        "transform": {
+          "pos": [
+            -0.27,
+            4.7,
+            -0.6
+          ],
+          "quat": [
+            -0.32,
+            0,
+            0,
+            0.95
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 5.05,
+            "height": 0.18,
+            "depth": 1.5
+          },
+          "color": 9846737
+        }
+      },
+      {
+        "id": "m4",
+        "parent": "hauntedHouse",
+        "transform": {
+          "pos": [
+            0,
+            1.08,
+            1.04
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.35,
+            "height": 2.15,
+            "depth": 0.12
+          },
+          "color": 1380646
+        }
+      },
+      {
+        "id": "m5",
+        "parent": "hauntedHouse",
+        "transform": {
+          "pos": [
+            -0.78,
+            1.13,
+            1.08
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.18,
+            "height": 2.25,
+            "depth": 0.2
+          },
+          "color": 16766023
+        }
+      },
+      {
+        "id": "m6",
+        "parent": "hauntedHouse",
+        "transform": {
+          "pos": [
+            0.78,
+            1.13,
+            1.08
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.18,
+            "height": 2.25,
+            "depth": 0.2
+          },
+          "color": 16766023
+        }
+      },
+      {
+        "id": "m7",
+        "parent": "hauntedHouse",
+        "transform": {
+          "pos": [
+            0,
+            2.22,
+            1.08
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.74,
+            "height": 0.2,
+            "depth": 0.2
+          },
+          "color": 16766023
+        }
+      },
+      {
+        "id": "m8",
+        "parent": "hauntedHouse",
+        "transform": {
+          "pos": [
+            -1.55,
+            3.45,
+            0.92
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.9,
+            "height": 0.95,
+            "depth": 0.12
+          },
+          "color": 1512235
+        }
+      },
+      {
+        "id": "m9",
+        "parent": "hauntedHouse",
+        "transform": {
+          "pos": [
+            -1.55,
+            3.62,
+            1
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.08,
+            "height": 0.16,
+            "depth": 0.18
+          },
+          "color": 16764733
+        }
+      },
+      {
+        "id": "m10",
+        "parent": "hauntedHouse",
+        "transform": {
+          "pos": [
+            -1.55,
+            3.28,
+            1
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.08,
+            "height": 0.16,
+            "depth": 0.18
+          },
+          "color": 16748082
+        }
+      },
+      {
+        "id": "m11",
+        "parent": "hauntedHouse",
+        "transform": {
+          "pos": [
+            0.95,
+            3.5,
+            0.92
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.9,
+            "height": 0.95,
+            "depth": 0.12
+          },
+          "color": 1512235
+        }
+      },
+      {
+        "id": "m12",
+        "parent": "hauntedHouse",
+        "transform": {
+          "pos": [
+            0.95,
+            3.7,
+            1
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.08,
+            "height": 0.16,
+            "depth": 0.18
+          },
+          "color": 16764733
+        }
+      },
+      {
+        "id": "m13",
+        "parent": "hauntedHouse",
+        "transform": {
+          "pos": [
+            0.95,
+            3.34,
+            1
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.08,
+            "height": 0.16,
+            "depth": 0.18
+          },
+          "color": 16748082
+        }
+      },
+      {
+        "id": "m14",
+        "parent": "hauntedHouse",
+        "transform": {
+          "pos": [
+            -1.75,
+            1.25,
+            1.04
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.85,
+            "height": 0.85,
+            "depth": 0.12
+          },
+          "color": 1512235
+        }
+      },
+      {
+        "id": "m15",
+        "parent": "hauntedHouse",
+        "transform": {
+          "pos": [
+            -1.75,
+            1.43,
+            1.11
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.02,
+            "height": 0.15,
+            "depth": 0.18
+          },
+          "color": 16766023
+        }
+      },
+      {
+        "id": "m16",
+        "parent": "hauntedHouse",
+        "transform": {
+          "pos": [
+            -1.75,
+            1.1,
+            1.11
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.02,
+            "height": 0.15,
+            "depth": 0.18
+          },
+          "color": 16748082
+        }
+      },
+      {
+        "id": "m17",
+        "parent": "hauntedHouse",
+        "transform": {
+          "pos": [
+            2.3,
+            2.35,
+            0.2
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.35,
+            "height": 4.7,
+            "depth": 1.55
+          },
+          "color": 15289990
+        }
+      },
+      {
+        "id": "m18",
+        "parent": "hauntedHouse",
+        "transform": {
+          "pos": [
+            2.3,
+            4.66,
+            0.2
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.5,
+            "height": 0.24,
+            "depth": 1.7
+          },
+          "color": 16766023
+        }
+      },
+      {
+        "id": "m19",
+        "parent": "hauntedHouse",
+        "transform": {
+          "pos": [
+            2.3,
+            3.85,
+            1
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.55,
+            "height": 0.75,
+            "depth": 0.12
+          },
+          "color": 1512235
+        }
+      },
+      {
+        "id": "m20",
+        "parent": "hauntedHouse",
+        "transform": {
+          "pos": [
+            2.3,
+            3.85,
+            1.08
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.72,
+            "height": 0.15,
+            "depth": 0.18
+          },
+          "color": 16751413
+        }
+      },
+      {
+        "id": "m21",
+        "parent": "hauntedHouse",
+        "transform": {
+          "pos": [
+            1.88,
+            5.08,
+            0.2
+          ],
+          "quat": [
+            0.66,
+            0.26,
+            0.66,
+            -0.26
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.7,
+            "height": 0.16,
+            "depth": 1.17
+          },
+          "color": 7157175
+        }
+      },
+      {
+        "id": "m22",
+        "parent": "hauntedHouse",
+        "transform": {
+          "pos": [
+            2.72,
+            5.08,
+            0.2
+          ],
+          "quat": [
+            0.66,
+            -0.26,
+            0.66,
+            0.26
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.7,
+            "height": 0.16,
+            "depth": 1.17
+          },
+          "color": 9518800
+        }
+      },
+      {
+        "id": "m23",
+        "parent": "hauntedHouse",
+        "transform": {
+          "pos": [
+            0,
+            2.55,
+            1.03
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.25,
+            "height": 0.38,
+            "depth": 0.18
+          },
+          "color": 9691963
+        }
+      },
+      {
+        "id": "m24",
+        "parent": "hauntedHouse",
+        "transform": {
+          "pos": [
+            -1.75,
+            5.05,
+            -0.35
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.48,
+            "height": 1.25,
+            "depth": 0.55
+          },
+          "color": 3813720
+        }
+      },
+      {
+        "id": "m25",
+        "parent": "hauntedHouse",
+        "transform": {
+          "pos": [
+            -1.75,
+            5.7,
+            -0.35
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.66,
+            "height": 0.18,
+            "depth": 0.7
+          },
+          "color": 16735048
+        }
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1784475191908,
+        "provider": "glm",
+        "data": "6IhLozO7dS289KwDZA+/pmnklxFveHXSXGk+kNjzxuS4ca1T3QmlGDioMpos0preijttR9mtP2+yTQaUdAlNn+ZFQidgQU88KaLsdkEOOwppvyv1wE2FSO6BnK9/H+Jff5JKEjD7W9qfyTCCMrK57UjtNNXleX98vNTUORnays4aKx8PcjiJPzltvASFHVEDB/5YhPTXlvgxtQ6NLDy+M04fL9VhcYpN71RPf5KWoj1bpaXj5dXhDDrWcHA5KvDUuovga7oOt4mdLxDvjqZv5BtOWmDNFtMwCqNPOapFnc8Sha6cUdu52ivUVC7PxxhOvATehSwZRaag3hLcQmav+8pIYijfAEj7Sg9758nIjMIMjeiRDUnoL7gMcnwKNp3e6YaTNJdWKDKxzaWz3zqr4Mg76BaePiI4iHwLntNggiqe3n80Wp+NgNayfkKN4+LcCiF+Q8qsNC5+tgasHjRiEa3oISAtk9t/g/KdEsgis5rTyT2qReWz+d54XGa1dLIkedJGP1GF+Wy4rZ5ulS8PrVA5gHLblx8ZfGkNLjMLLsZpTnGVoETSDZUJ7sd5TqPVtpzInaGi+i74p+mgm3sFWGMA92V5uRH2D+q3LkzxDTSSJktXBstQ+Nv6KDUI11dqyAuNGy16Nzgn/v9VYawZ1hjdH14aNkz0sX9vXXzQzJfzdt47cXYP7jIiP68UBedWF65eXfhMjrExj1NA2UtZcfSN+Eyq74WH/Xya/vLBM0R3sH0wumgtJTIUZC46Xl3+y2dE3O5DsFXK1zUiNQYpw4/NAkXbjLNRgqjmZ7DHtF/zJyVglagn38OYOQ3YINTpgjzW6kBb6GKqr4dXYDAcx9AYwYgeUb/vX0w5sNATHBdkeQ3cPJmkJmZuVdYqkFX19Ehps35EMQ1Vc7Tp0rAh+R1rtXOaR1AruH4KC76XO3qBlQcNwJQg9Qn+U6LvF+gI6eZz+liuJMmjE/HQB3JzlUzhnwIh/nzXEOMTkWv0ZqeSueXiBuY8TztVspwHhh2touOIlW2rPSLBTRVaVlOcqTInCSeUJXj4",
+        "edits": ""
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -2.803692368839428,
+          0,
+          -1
+        ],
+        "max": [
+          2.396307631160572,
+          2.4,
+          1
+        ],
+        "sourceNodeId": "m0"
+      },
+      {
+        "min": [
+          -2.803692368839428,
+          2.35,
+          -0.9750000000000001
+        ],
+        "max": [
+          1.8963076311605722,
+          4.35,
+          0.875
+        ],
+        "sourceNodeId": "m1"
+      },
+      {
+        "min": [
+          1.421307631160572,
+          0,
+          -0.575
+        ],
+        "max": [
+          2.771307631160572,
+          4.7,
+          0.9750000000000001
+        ],
+        "sourceNodeId": "m17"
+      },
+      {
+        "min": [
+          -2.9986923688394276,
+          4.174565628420739,
+          -0.05160214946760877
+        ],
+        "max": [
+          2.0513076311605722,
+          5.2254343715792615,
+          1.2516021494676086
+        ],
+        "sourceNodeId": "m2"
+      },
+      {
+        "min": [
+          -2.9986923688394276,
+          4.174565628420739,
+          -1.2516021494676086
+        ],
+        "max": [
+          2.0513076311605722,
+          5.2254343715792615,
+          0.05160214946760877
+        ],
+        "sourceNodeId": "m3"
+      },
+      {
+        "min": [
+          1.1939228934817165,
+          4.6225039745627985,
+          -0.6499999999999999
+        ],
+        "max": [
+          2.1586923688394277,
+          5.537496025437202,
+          1.05
+        ],
+        "sourceNodeId": "m21"
+      },
+      {
+        "min": [
+          2.0339228934817166,
+          4.6225039745627985,
+          -0.6499999999999999
+        ],
+        "max": [
+          2.9986923688394276,
+          5.537496025437202,
+          1.05
+        ],
+        "sourceNodeId": "m22"
+      },
+      {
+        "min": [
+          1.346307631160572,
+          4.54,
+          -0.6499999999999999
+        ],
+        "max": [
+          2.846307631160572,
+          4.78,
+          1.05
+        ],
+        "sourceNodeId": "m18"
+      },
+      {
+        "min": [
+          -0.8786923688394279,
+          0.0050000000000001155,
+          0.98
+        ],
+        "max": [
+          0.47130763116057217,
+          2.1550000000000002,
+          1.1
+        ],
+        "sourceNodeId": "m4"
+      },
+      {
+        "min": [
+          -2.193692368839428,
+          4.425,
+          -0.625
+        ],
+        "max": [
+          -1.7136923688394279,
+          5.675,
+          -0.07499999999999996
+        ],
+        "sourceNodeId": "m24"
+      },
+      {
+        "min": [
+          0.29630763116057207,
+          3.025,
+          0.8600000000000001
+        ],
+        "max": [
+          1.196307631160572,
+          3.975,
+          0.98
+        ],
+        "sourceNodeId": "m11"
+      },
+      {
+        "min": [
+          -2.2036923688394277,
+          2.975,
+          0.8600000000000001
+        ],
+        "max": [
+          -1.303692368839428,
+          3.9250000000000003,
+          0.98
+        ],
+        "sourceNodeId": "m8"
+      }
+    ],
+    "sourceMeshCount": 26,
+    "candidateCount": 15,
+    "fallbackUsed": false
+  },
+  "mode": "lite",
+  "provider": "provider-fallback",
+  "createdAt": 1784475195903,
+  "updatedAt": 1784475195903
+}

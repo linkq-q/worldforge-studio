@@ -1,0 +1,454 @@
+{
+  "id": "asset-9846dd67-d2a7-40ad",
+  "name": "塞试管",
+  "prompt": "单个带软木塞的透明试管，空试管，独立小型仪器。精致写实的古典奇幻炼金术风格，独立单件，纯物件模型，无桌面、无柜体、无房间、无背景、无大型机器。\nCoordinate contract: local Y+ is up, local Z+ is the front, entrance, or forward direction, and local X+ is right. Put doors, facades, openings, windshields, noses, seats, and other recognizable front details toward local Z+. For a modular repeated element, explicitly choose the long axis: side-by-side modules span local X with depth/front on local Z; traversal modules span local Z. Keep the model centered at its origin.\nCanonical dimensions contract: width=0.1, height=0.34, depth=0.1 world units. Keep the generated mesh within this centered bounding size.",
+  "tags": [
+    "indoor",
+    "alchemy",
+    "instrument",
+    "handheld"
+  ],
+  "modelJson": {
+    "name": "古典炼金术软木塞试管",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "tube",
+        "name": "透明试管",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.1,
+            0.332,
+            0.1
+          ],
+          "center": [
+            0,
+            0.004,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "mount01_cork",
+        "name": "可拆卸软木塞",
+        "parent": "tube",
+        "transform": {
+          "pos": [
+            0,
+            0.106,
+            0
+          ]
+        },
+        "mounted": true,
+        "_obb": {
+          "size": [
+            0.068,
+            0.06,
+            0.068
+          ],
+          "center": [
+            0,
+            0.034,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "tube",
+        "transform": {
+          "pos": [
+            -0.036,
+            -0.025,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.008,
+            "height": 0.25,
+            "depth": 0.08
+          },
+          "color": 12446184
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass"
+          }
+        ]
+      },
+      {
+        "id": "m1",
+        "parent": "tube",
+        "transform": {
+          "pos": [
+            0.036,
+            -0.025,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.008,
+            "height": 0.25,
+            "depth": 0.08
+          },
+          "color": 12446184
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass"
+          }
+        ]
+      },
+      {
+        "id": "m2",
+        "parent": "tube",
+        "transform": {
+          "pos": [
+            0,
+            -0.025,
+            -0.036
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.064,
+            "height": 0.25,
+            "depth": 0.008
+          },
+          "color": 11460061
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass"
+          }
+        ]
+      },
+      {
+        "id": "m3",
+        "parent": "tube",
+        "transform": {
+          "pos": [
+            0,
+            -0.025,
+            0.036
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.064,
+            "height": 0.25,
+            "depth": 0.008
+          },
+          "color": 14221311
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass"
+          }
+        ]
+      },
+      {
+        "id": "m4",
+        "parent": "tube",
+        "transform": {
+          "pos": [
+            0,
+            -0.156,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.08,
+            "height": 0.012,
+            "depth": 0.08
+          },
+          "color": 12446184
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass"
+          }
+        ]
+      },
+      {
+        "id": "m5",
+        "parent": "tube",
+        "transform": {
+          "pos": [
+            0,
+            0.106,
+            -0.044
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.1,
+            "height": 0.012,
+            "depth": 0.012
+          },
+          "color": 14221311
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass"
+          }
+        ]
+      },
+      {
+        "id": "m6",
+        "parent": "tube",
+        "transform": {
+          "pos": [
+            0,
+            0.106,
+            0.044
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.1,
+            "height": 0.012,
+            "depth": 0.012
+          },
+          "color": 14221311
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass"
+          }
+        ]
+      },
+      {
+        "id": "m7",
+        "parent": "tube",
+        "transform": {
+          "pos": [
+            -0.044,
+            0.106,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.012,
+            "height": 0.012,
+            "depth": 0.076
+          },
+          "color": 12446184
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass"
+          }
+        ]
+      },
+      {
+        "id": "m8",
+        "parent": "tube",
+        "transform": {
+          "pos": [
+            0.044,
+            0.106,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.012,
+            "height": 0.012,
+            "depth": 0.076
+          },
+          "color": 12446184
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass"
+          }
+        ]
+      },
+      {
+        "id": "m9",
+        "parent": "mount01_cork",
+        "transform": {
+          "pos": [
+            0,
+            0.033,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.068,
+            "height": 0.058,
+            "depth": 0.068
+          },
+          "color": 10183479
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "bark"
+          }
+        ]
+      },
+      {
+        "id": "m10",
+        "parent": "mount01_cork",
+        "transform": {
+          "pos": [
+            0,
+            0.06,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.058,
+            "height": 0.008,
+            "depth": 0.058
+          },
+          "color": 12024389
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "bark"
+          }
+        ]
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1787876939856,
+        "provider": "gpt",
+        "data": "ot11B/EoJil4ArBJfs33afaQqF5peFSkOVZ6jCUFZ0wuLisPqy119X5sY/Yo9WJt9udOpcQPVn6hZB6K9QOKcpmyGtsXQkCOT0+mLCtAlu0wgCIqT4ltP42w9l1VHfDVS132tvQzNb48Ldpuo8EATxQV0x0c/PPxjiTky4jSaxyG1DlCN7PKsF/3p0nl3wosOk6QCI0/dqj72ICj5TkREa0FGzgDz92CiEzUieJfp1e3FowoCN5AFkM9vTHOigWMsKilaZOqrakXA/f76pP4EdRO07ZTeoKkxNrKeZrKBkIZc1K1ow5pRsj8CP4hQd7cLDsdAMVpEu6Rb/keft9ohMu/F3mqExcoZFRspsiID/CJbCC1JkMasxYDgWQwrKuumk6lBZgM6jlwAgpcIIzVQiq+XDAkTuOoCrKJDCnbC6nIRwIL6GbML6LlaYUOm9ybCHQO02dSXdKhHBi0spneJZsbWS83XdZk04LYEZ2Yd0X1OdSMvC6Kz2tEwnd9Vb0Bpv31XthFLMRayExWXvOTr3SThcPtd/P7YCZCJNHSjFy8IkKuXIFp1KJqYgHaKdDYtSZDAWGg1LHIR5yx0pjKA3SyewPAeBXOL/ocxYi3mDE6SfUETX2rQdwZgE8rpMQy26O3zjqIpM49bIZEfIxXWhN3e+1ij3HUG5N9tf+il5nonFIHhko9dTmufSH8SvUuGzdqxiDNrLNtNx4uzqSmx7lTOmjYIybqXjTDMUn5Tb6nsR6D4yRHObK9enqiPE0MHgPAqj+JK8uezXZ+5W1qRKTHOa9Y5AEG",
+        "edits": ""
+      },
+      "mounts": [
+        {
+          "id": "mount01_cork",
+          "mountedGroupId": "mount01_cork",
+          "name": "可拆卸软木塞",
+          "source": {
+            "type": "codegen"
+          },
+          "description": "",
+          "visible": true,
+          "ts": 1787876939856
+        }
+      ],
+      "semanticSnapshot": {
+        "v": 1,
+        "auto": true,
+        "text": "古典炼金术软木塞试管 · 2组/11mesh · 世界坐标(Y上Z前), 原点=模型根\n# 阅读说明: G:=group行(可动画骨骼, 动画key用G:后的id; @p=pivot世界坐标; 倾(x,y,z)°=朝向偏离世界轴的欧拉角; 缩进=父子层级; 挂:=挂载于某组; G:id→id→…=chain折叠行, 每个id都是可独立动画的group, chain×N=waypoint数)\n# M:=mesh行(label[id 几何 @(世界坐标)], label可省略; ×N=for循环批量件(锚点=代表实例); cyl (起)→(末)或 轴上(Y)等方位词=延伸方向; 薄向=板面法向(扁板); 挂载组双代表=最大件+最远有向件(刃/嘴/管所在端); 无方向标注=均匀块(三向相近,如头),默认面向前(Z); 对称×2=镜像对)\nG:tube 透明试管 @p(0,0,0)\n  M:[m0 box 0.01×0.25×0.08 (0,0,0) 薄向右(X)]\n  G:mount01_cork 可拆卸软木塞 @p(0,0.1,0) 挂:tube\n    M:[m9 box 0.07×0.06×0.07 (0,0.1,0)] | M:[m10 box 0.06×0.01×0.06 (0,0.2,0) 薄向上(Y)]",
+        "stats": {
+          "groups": 2,
+          "meshes": 11,
+          "labeledMeshes": 0,
+          "labelCoverage": 0,
+          "batchLabels": 0,
+          "autoChains": 0,
+          "snapshotChars": 564
+        }
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -0.05,
+          0,
+          -0.049999999999999996
+        ],
+        "max": [
+          0.05,
+          0.33299999999999996,
+          0.049999999999999996
+        ],
+        "sourceNodeId": "asset-bounds"
+      }
+    ],
+    "sourceMeshCount": 11,
+    "candidateCount": 0,
+    "fallbackUsed": true
+  },
+  "footprintRadius": 0.1,
+  "sizeClass": "small",
+  "mode": "voxel",
+  "provider": "gpt",
+  "createdAt": 1787876939292,
+  "updatedAt": 1787876939292
+}

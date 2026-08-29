@@ -1,0 +1,671 @@
+{
+  "id": "asset-c69b835e-381b-46d6",
+  "name": "Kitchen spice shelf",
+  "prompt": "One shallow wall-mounted spice shelf with a few broad readable jars; no wall.\n全局资产美术方向：平衡尺度的模块化商用不锈钢厨房设备，方正耐用、边缘略圆，采用银灰金属、深色玻璃、黑色炉面和少量安全色标识；所有设备保持独立可复用，避免生成瓶罐、食材和细碎餐具。\n资产角色：reachable wall storage detail；目标尺度：medium。\n只生成一个可复用的独立物体，不要生成地面、背景、天空、完整场景或多个分散物体。",
+  "tags": [
+    "kitchen-spice-shelf",
+    "wall-prop",
+    "kitchen-storage"
+  ],
+  "modelJson": {
+    "name": "壁挂式香料架",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "shelf",
+        "name": "不锈钢壁挂架",
+        "transform": {
+          "pos": [
+            0,
+            1.25,
+            -0.32
+          ]
+        },
+        "_obb": {
+          "size": [
+            3.201,
+            1.709,
+            1.239
+          ],
+          "center": [
+            0,
+            0.236,
+            0.353
+          ],
+          "axes": [
+            [
+              1,
+              -0.0011,
+              -0.0001
+            ],
+            [
+              0.0011,
+              0.9946,
+              -0.1034
+            ],
+            [
+              0.0002,
+              0.1034,
+              0.9946
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "jar_left",
+        "name": "宽口香料罐",
+        "parent": "shelf",
+        "transform": {
+          "pos": [
+            -0.92,
+            0.07,
+            0.32
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.68,
+            0.887,
+            0.88
+          ],
+          "center": [
+            0,
+            0.375,
+            0.011
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              0.7241,
+              -0.6897
+            ],
+            [
+              0,
+              0.6897,
+              0.7241
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "jar_center",
+        "name": "宽口香料罐",
+        "parent": "shelf",
+        "transform": {
+          "pos": [
+            0,
+            0.07,
+            0.32
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.76,
+            0.957,
+            0.851
+          ],
+          "center": [
+            0,
+            0.413,
+            0.018
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              0.8745,
+              -0.485
+            ],
+            [
+              0,
+              0.485,
+              0.8745
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "jar_right",
+        "name": "宽口香料罐",
+        "parent": "shelf",
+        "transform": {
+          "pos": [
+            0.94,
+            0.07,
+            0.32
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.7,
+            0.862,
+            0.836
+          ],
+          "center": [
+            0,
+            0.355,
+            0.006
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              0.7897,
+              0.6135
+            ],
+            [
+              0,
+              -0.6135,
+              0.7897
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "shelf",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0.32
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 3.2,
+            "height": 0.14,
+            "depth": 0.72
+          },
+          "color": 10133926
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m1",
+        "parent": "shelf",
+        "transform": {
+          "pos": [
+            0,
+            0.23,
+            -0.02
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 3.2,
+            "height": 0.5,
+            "depth": 0.12
+          },
+          "color": 8752530
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m2",
+        "parent": "shelf",
+        "transform": {
+          "pos": [
+            0,
+            0.13,
+            0.66
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 3.2,
+            "height": 0.16,
+            "depth": 0.1
+          },
+          "color": 11449528
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m3",
+        "parent": "shelf",
+        "transform": {
+          "pos": [
+            -1.18,
+            -0.27,
+            -0.02
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.16,
+            "height": 0.62,
+            "depth": 0.12
+          },
+          "color": 7568256
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m4",
+        "parent": "shelf",
+        "transform": {
+          "pos": [
+            -1.18,
+            -0.53,
+            0.27
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.16,
+            "height": 0.14,
+            "depth": 0.58
+          },
+          "color": 7568256
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m5",
+        "parent": "shelf",
+        "transform": {
+          "pos": [
+            1.18,
+            -0.27,
+            -0.02
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.16,
+            "height": 0.62,
+            "depth": 0.12
+          },
+          "color": 7568256
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m6",
+        "parent": "shelf",
+        "transform": {
+          "pos": [
+            1.18,
+            -0.53,
+            0.27
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.16,
+            "height": 0.14,
+            "depth": 0.58
+          },
+          "color": 7568256
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m7",
+        "parent": "jar_left",
+        "transform": {
+          "pos": [
+            0,
+            0.29,
+            0.01
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.62,
+            "height": 0.58,
+            "depth": 0.5
+          },
+          "color": 4209202
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass"
+          }
+        ]
+      },
+      {
+        "id": "m8",
+        "parent": "jar_left",
+        "transform": {
+          "pos": [
+            0,
+            0.65,
+            0.01
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.6799999999999999,
+            "height": 0.14,
+            "depth": 0.56
+          },
+          "color": 6843760
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m9",
+        "parent": "jar_left",
+        "transform": {
+          "pos": [
+            0,
+            0.27,
+            0.278
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.44639999999999996,
+            "height": 0.22,
+            "depth": 0.035
+          },
+          "color": 13015882
+        }
+      },
+      {
+        "id": "m10",
+        "parent": "jar_center",
+        "transform": {
+          "pos": [
+            0,
+            0.33,
+            0.01
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.7,
+            "height": 0.66,
+            "depth": 0.5
+          },
+          "color": 3419947
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass"
+          }
+        ]
+      },
+      {
+        "id": "m11",
+        "parent": "jar_center",
+        "transform": {
+          "pos": [
+            0,
+            0.73,
+            0.01
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.76,
+            "height": 0.14,
+            "depth": 0.56
+          },
+          "color": 6843760
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m12",
+        "parent": "jar_center",
+        "transform": {
+          "pos": [
+            0,
+            0.31,
+            0.278
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.504,
+            "height": 0.22,
+            "depth": 0.035
+          },
+          "color": 12147525
+        }
+      },
+      {
+        "id": "m13",
+        "parent": "jar_right",
+        "transform": {
+          "pos": [
+            0,
+            0.27,
+            0.01
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.64,
+            "height": 0.54,
+            "depth": 0.5
+          },
+          "color": 4012335
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass"
+          }
+        ]
+      },
+      {
+        "id": "m14",
+        "parent": "jar_right",
+        "transform": {
+          "pos": [
+            0,
+            0.61,
+            0.01
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.7,
+            "height": 0.14,
+            "depth": 0.56
+          },
+          "color": 6843760
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m15",
+        "parent": "jar_right",
+        "transform": {
+          "pos": [
+            0,
+            0.25,
+            0.278
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.4608,
+            "height": 0.22,
+            "depth": 0.035
+          },
+          "color": 7901274
+        }
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1786784861988,
+        "provider": "gpt",
+        "data": "Icdms9pYrhsxvPRVwPEKA+6z14xtW2W2mWerOdbvtjUzDN04HP0teleefoCj6MuHXiY7ylW1DNLzhSil7ijAoYKNI2EmKrbx4EooMpxDrOEaiNE/AGGw2LUw+hYl2o6lRvp/8ST5O1Xo9ef5kSynRazuhH+YHK9rKFF+4772tIlz0vhlGgz+KI46tJBMNhUM5LygxVQE88z7myHBDMcr2FiT//zzNLJNox+B8lQZbGEGZdT4E+dB98r+riPeDACI6TqSqmD5oG5H98wAVaIavN9FNAZ8R+CoYHIFagHb9Iz8STQvHYVyow9ZwGv1VHt3W7SMBx9+jrMrcCEO1qyRpEo71wy+Ccv2PpWJ6k8fUSIeMLYmfjAPK7BWd1TF9xpLNCE9HiK9+29fEblkypFqkCOvd55T0MAyW7lJKS++yXCUyWXYkt1Fm+IdcFlDw7YtBUAja0A0WWv2CS4vBnXaZ2H2bnFPpkbxQC1wg9R93swKoXjlzc4+VvErP+iFtNIDyO+0BP+e7U2GRSHxaXZdayTzzcKd5S120E/iQvycOVzmcMqQElob4kd1+Dhrj4aAmGxskqzl2l1fytDcKvC6DGaLGJfIOIXP7dBpiO0yoQDT3GqJtObDwRfaqM/963tUhC3zVIYJmaogmx1jzuSvidBUiC8EUO9ZKn980AWGB4ga1QA2yo6JJLy1Hb/g7A3p8ZENBMtYVpVzJSNzKiPDMhOFjcu8BzYJTNH2zFvcr8nko9QWqdcdbWVz9y/LkGOMoIk5teMGLlzRVaRof6gYuoZCWiAIM4D+/xTk5Jbl2X3Gh17BvhNpz2vFqIHRP42jAaHAKFsHelVE20MQBysKxw8Wf0w9WNqd6oOO9lUTm4paj7o5Ltl2oLdngthSTmYfH/uZN/qJt/F1n9ZurJvuQfHKdJtO/wemYmyUZ62sZ0y8tMsuqLOEFaAyT7gblN1lmNjJXpTKnLFRQRH83SQssZpSCxoa9tsS4RFJc1mFNIBmO7lSfPc=",
+        "edits": ""
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -1.6,
+          0.53,
+          -0.355
+        ],
+        "max": [
+          1.6,
+          0.6700000000000002,
+          0.365
+        ],
+        "sourceNodeId": "m0"
+      },
+      {
+        "min": [
+          -0.35,
+          0.6700000000000002,
+          -0.235
+        ],
+        "max": [
+          0.35,
+          1.3300000000000003,
+          0.265
+        ],
+        "sourceNodeId": "m10"
+      },
+      {
+        "min": [
+          -1.6,
+          0.5800000000000001,
+          -0.395
+        ],
+        "max": [
+          1.6,
+          1.08,
+          -0.275
+        ],
+        "sourceNodeId": "m1"
+      },
+      {
+        "min": [
+          -1.23,
+          0.6700000000000002,
+          -0.235
+        ],
+        "max": [
+          -0.6100000000000001,
+          1.2500000000000002,
+          0.265
+        ],
+        "sourceNodeId": "m7"
+      },
+      {
+        "min": [
+          0.6199999999999999,
+          0.6700000000000002,
+          -0.235
+        ],
+        "max": [
+          1.26,
+          1.2100000000000002,
+          0.265
+        ],
+        "sourceNodeId": "m13"
+      }
+    ],
+    "sourceMeshCount": 16,
+    "candidateCount": 5,
+    "fallbackUsed": false
+  },
+  "footprintRadius": 1.6,
+  "sizeClass": "medium",
+  "mode": "voxel",
+  "provider": "gpt",
+  "createdAt": 1786784865564,
+  "updatedAt": 1786784865564
+}

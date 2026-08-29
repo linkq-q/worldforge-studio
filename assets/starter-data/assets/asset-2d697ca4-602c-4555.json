@@ -1,0 +1,304 @@
+{
+  "id": "asset-2d697ca4-602c-4555",
+  "name": "足球",
+  "prompt": "单独一个儿童尺寸足球，经典拼块图案，不包含球门、人物、草地或其他球\nCoordinate contract: local Y+ is up, local Z+ is the front, entrance, or forward direction, and local X+ is right. Put doors, facades, openings, windshields, noses, seats, and other recognizable front details toward local Z+. For a modular repeated element, explicitly choose the long axis: side-by-side modules span local X with depth/front on local Z; traversal modules span local Z. Keep the model centered at its origin.\nCanonical dimensions contract: width=0.23, height=0.23, depth=0.23 world units. Keep the generated mesh within this centered bounding size.",
+  "modelJson": {
+    "name": "儿童经典拼块足球",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "ball",
+        "name": "足球",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.23,
+            0.23,
+            0.23
+          ],
+          "center": [
+            0,
+            0,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "ball",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.19,
+            "height": 0.19,
+            "depth": 0.19
+          },
+          "color": 16053488
+        }
+      },
+      {
+        "id": "m1",
+        "parent": "ball",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.23,
+            "height": 0.15,
+            "depth": 0.15
+          },
+          "color": 16053488
+        }
+      },
+      {
+        "id": "m2",
+        "parent": "ball",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.15,
+            "height": 0.23,
+            "depth": 0.15
+          },
+          "color": 16053488
+        }
+      },
+      {
+        "id": "m3",
+        "parent": "ball",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.15,
+            "height": 0.15,
+            "depth": 0.23
+          },
+          "color": 16053488
+        }
+      },
+      {
+        "id": "m4",
+        "parent": "ball",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0.112
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.065,
+            "height": 0.065,
+            "depth": 0.006
+          },
+          "color": 1513755
+        }
+      },
+      {
+        "id": "m5",
+        "parent": "ball",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            -0.112
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.065,
+            "height": 0.065,
+            "depth": 0.006
+          },
+          "color": 1513755
+        }
+      },
+      {
+        "id": "m6",
+        "parent": "ball",
+        "transform": {
+          "pos": [
+            0.112,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.006,
+            "height": 0.065,
+            "depth": 0.065
+          },
+          "color": 1513755
+        }
+      },
+      {
+        "id": "m7",
+        "parent": "ball",
+        "transform": {
+          "pos": [
+            -0.112,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.006,
+            "height": 0.065,
+            "depth": 0.065
+          },
+          "color": 1513755
+        }
+      },
+      {
+        "id": "m8",
+        "parent": "ball",
+        "transform": {
+          "pos": [
+            0,
+            0.112,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.065,
+            "height": 0.006,
+            "depth": 0.065
+          },
+          "color": 1513755
+        }
+      },
+      {
+        "id": "m9",
+        "parent": "ball",
+        "transform": {
+          "pos": [
+            0,
+            -0.112,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.065,
+            "height": 0.006,
+            "depth": 0.065
+          },
+          "color": 1513755
+        }
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1787766724456,
+        "provider": "gpt",
+        "data": "Qiwb4QmemBhvieZnBcylbhatfXEw4dwiPMyg3vmYuFj2ofibi8V+Yiy/rnUArBCyYXwvEV09Zj3fUPgpvk39SL7idsq6nD1Z3v0ghfYQnwO2rkHff2XwKJDCmkLmyvDD9eFikvyK8zxVayr4XR0mGT+nSGF1zAxaLMcKXWBoV8MK/GFPuMkWLHC0eoFj+ZG27t8IwA78hAHHoUN/j/U5u53gbisAvkzD6Yfhv15+VPZznjitTefzcqxXW5aR3+vgtj1m4FPDoNYN9pu9nIHcHcFJuZ8d/c8L8C20HFbcYy+Bivq/7VWIgvNv695DM1POzL/kFYiJK1wxhF/3f6STY8qCWMu7M6EY1O5O5ZHZBmydt8o0EbidT+IaWIyuUFiKXPGbpLDdiHZ+aVdO/rVuGovn+tikaDvIjS42WyzxArVzS14LDGk0g80UnWtvW7gQ2HIUmG2p9e04tttLx6yc6Hg7OdCY9h9G4L6/X0pdDlhQoBguHMToYYPNIH8G8X4=",
+        "edits": ""
+      },
+      "semanticSnapshot": {
+        "v": 1,
+        "auto": true,
+        "text": "儿童经典拼块足球 · 1组/10mesh · 世界坐标(Y上Z前), 原点=模型根\n# 阅读说明: G:=group行(可动画骨骼, 动画key用G:后的id; @p=pivot世界坐标; 倾(x,y,z)°=朝向偏离世界轴的欧拉角; 缩进=父子层级; 挂:=挂载于某组; G:id→id→…=chain折叠行, 每个id都是可独立动画的group, chain×N=waypoint数)\n# M:=mesh行(label[id 几何 @(世界坐标)], label可省略; ×N=for循环批量件(锚点=代表实例); cyl (起)→(末)或 轴上(Y)等方位词=延伸方向; 薄向=板面法向(扁板); 挂载组双代表=最大件+朝向件(嘴/管/檐所在); 无方向标注=均匀块(三向相近,如头),默认面向前(Z); 对称×2=镜像对)\nG:ball 足球 @p(0,0,0)\n  M:[m0 box 0.19×0.19×0.19 (0,0,0)]",
+        "stats": {
+          "groups": 1,
+          "meshes": 10,
+          "labeledMeshes": 0,
+          "labelCoverage": 0,
+          "batchLabels": 0,
+          "autoChains": 0,
+          "snapshotChars": 421
+        }
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -0.117,
+          0,
+          -0.117
+        ],
+        "max": [
+          0.117,
+          0.234,
+          0.117
+        ],
+        "sourceNodeId": "asset-bounds"
+      }
+    ],
+    "sourceMeshCount": 10,
+    "candidateCount": 0,
+    "fallbackUsed": true
+  },
+  "footprintRadius": 0.117,
+  "sizeClass": "small",
+  "mode": "voxel",
+  "provider": "gpt",
+  "createdAt": 1787766726998,
+  "updatedAt": 1787766726998
+}

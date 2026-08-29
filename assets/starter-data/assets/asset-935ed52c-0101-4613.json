@@ -1,0 +1,865 @@
+{
+  "id": "asset-935ed52c-0101-4613",
+  "name": "侧梯木质双层双人床",
+  "prompt": "单个可复用的儿童木质双层床模块，上下各一个完整床位，侧面集成宽踏步阶梯与安全护栏；浅暖木圆角框架、雾蓝与米白寝具，不包含周边房间布局。\n全局资产美术方向：统一采用柔和圆角、略微夸张比例的精致体素风；家具以浅暖木、米白和雾蓝为主，玩具使用克制的砖红、芥末黄和深蓝点缀，所有边角适合儿童空间且尺度参照1.60米角色。; 现代温暖的儿童卧室，浅木地板、柔和蓝灰墙面和米白顶面保持安静背景，以木质家具和少量红黄蓝玩具形成分组色彩点缀；装饰集中于睡眠与学习区域，中央不堆放杂物。; 温暖, 现代儿童房, 圆角体素, 整洁生活感, 柔和配色; palette #E8DFC9, #B99062, #8EA6B4, #C65F4A, #D6A83E, #354C63; materials 浅色木材, 哑光烤漆, 棉织物, 粉末涂层金属, 透明玻璃\n资产角色：睡眠区主家具与房间视觉焦点；目标尺度：large。\n只生成一个可复用的独立物体，不要生成地面、背景、天空、完整场景或多个分散物体。",
+  "modelJson": {
+    "name": "儿童木质双层床模块",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "frame",
+        "name": "浅暖木床架",
+        "transform": {
+          "pos": [
+            0,
+            1.08,
+            0
+          ]
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ],
+        "_obb": {
+          "size": [
+            2.546,
+            2.597,
+            1.949
+          ],
+          "center": [
+            -0.01,
+            -0.212,
+            0.169
+          ],
+          "axes": [
+            [
+              0.9977,
+              -0.0637,
+              0.0246
+            ],
+            [
+              0.068,
+              0.9599,
+              -0.2719
+            ],
+            [
+              -0.0063,
+              0.273,
+              0.962
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "lower_bed",
+        "name": "下层床位",
+        "parent": "frame",
+        "transform": {
+          "pos": [
+            0,
+            -0.43,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            2.063,
+            0.313,
+            0.94
+          ],
+          "center": [
+            0.001,
+            -0.133,
+            0
+          ],
+          "axes": [
+            [
+              0.9997,
+              -0.0235,
+              0
+            ],
+            [
+              0.0235,
+              0.9997,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "upper_bed",
+        "name": "上层床位",
+        "parent": "frame",
+        "transform": {
+          "pos": [
+            0,
+            0.29,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            2.063,
+            0.313,
+            0.94
+          ],
+          "center": [
+            0.001,
+            0.047,
+            0
+          ],
+          "axes": [
+            [
+              0.9997,
+              -0.0235,
+              0
+            ],
+            [
+              0.0235,
+              0.9997,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "stairs",
+        "name": "侧面宽踏步阶梯",
+        "parent": "frame",
+        "transform": {
+          "pos": [
+            0.8,
+            -0.55,
+            0.41
+          ]
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ],
+        "_obb": {
+          "size": [
+            0.54,
+            1.432,
+            1.068
+          ],
+          "center": [
+            0,
+            -0.085,
+            0.199
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              0.8849,
+              -0.4657
+            ],
+            [
+              0,
+              0.4657,
+              0.8849
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "frame",
+        "transform": {
+          "pos": [
+            0,
+            -0.74,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2.35,
+            "height": 0.16,
+            "depth": 1.12
+          },
+          "color": 14137742
+        }
+      },
+      {
+        "id": "m1",
+        "parent": "frame",
+        "transform": {
+          "pos": [
+            0,
+            0.16,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2.35,
+            "height": 0.16,
+            "depth": 1.12
+          },
+          "color": 14137742
+        }
+      },
+      {
+        "id": "m2",
+        "parent": "frame",
+        "transform": {
+          "pos": [
+            -1.12,
+            -0.12,
+            -0.51
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.16,
+            "height": 1.92,
+            "depth": 0.16
+          },
+          "color": 12161122
+        }
+      },
+      {
+        "id": "m3",
+        "parent": "frame",
+        "transform": {
+          "pos": [
+            -1.12,
+            -0.12,
+            0.51
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.16,
+            "height": 1.92,
+            "depth": 0.16
+          },
+          "color": 12161122
+        }
+      },
+      {
+        "id": "m4",
+        "parent": "frame",
+        "transform": {
+          "pos": [
+            1.12,
+            -0.12,
+            -0.51
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.16,
+            "height": 1.92,
+            "depth": 0.16
+          },
+          "color": 12161122
+        }
+      },
+      {
+        "id": "m5",
+        "parent": "frame",
+        "transform": {
+          "pos": [
+            1.12,
+            -0.12,
+            0.51
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.16,
+            "height": 1.92,
+            "depth": 0.16
+          },
+          "color": 12161122
+        }
+      },
+      {
+        "id": "m6",
+        "parent": "frame",
+        "transform": {
+          "pos": [
+            0,
+            0.74,
+            -0.51
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2.08,
+            "height": 0.12,
+            "depth": 0.12
+          },
+          "color": 12161122
+        }
+      },
+      {
+        "id": "m7",
+        "parent": "frame",
+        "transform": {
+          "pos": [
+            0,
+            0.47,
+            -0.51
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2.08,
+            "height": 0.12,
+            "depth": 0.12
+          },
+          "color": 12161122
+        }
+      },
+      {
+        "id": "m8",
+        "parent": "frame",
+        "transform": {
+          "pos": [
+            -0.36,
+            0.74,
+            0.51
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.36,
+            "height": 0.12,
+            "depth": 0.12
+          },
+          "color": 12161122
+        }
+      },
+      {
+        "id": "m9",
+        "parent": "frame",
+        "transform": {
+          "pos": [
+            -0.36,
+            0.47,
+            0.51
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.36,
+            "height": 0.12,
+            "depth": 0.12
+          },
+          "color": 12161122
+        }
+      },
+      {
+        "id": "m10",
+        "parent": "frame",
+        "transform": {
+          "pos": [
+            0.28,
+            0.49,
+            0.51
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.12,
+            "height": 0.54,
+            "depth": 0.12
+          },
+          "color": 12161122
+        }
+      },
+      {
+        "id": "m11",
+        "parent": "frame",
+        "transform": {
+          "pos": [
+            -1.12,
+            0.49,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.12,
+            "height": 0.54,
+            "depth": 0.86
+          },
+          "color": 12161122
+        }
+      },
+      {
+        "id": "m12",
+        "parent": "frame",
+        "transform": {
+          "pos": [
+            1.12,
+            0.49,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.12,
+            "height": 0.54,
+            "depth": 0.86
+          },
+          "color": 12161122
+        }
+      },
+      {
+        "id": "m13",
+        "parent": "frame",
+        "transform": {
+          "pos": [
+            -1.12,
+            0.74,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.12,
+            "height": 0.12,
+            "depth": 0.86
+          },
+          "color": 12161122
+        }
+      },
+      {
+        "id": "m14",
+        "parent": "frame",
+        "transform": {
+          "pos": [
+            1.12,
+            0.74,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.12,
+            "height": 0.12,
+            "depth": 0.86
+          },
+          "color": 12161122
+        }
+      },
+      {
+        "id": "m15",
+        "parent": "lower_bed",
+        "transform": {
+          "pos": [
+            0,
+            -0.18,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2.06,
+            "height": 0.17,
+            "depth": 0.92
+          },
+          "color": 15261641
+        }
+      },
+      {
+        "id": "m16",
+        "parent": "lower_bed",
+        "transform": {
+          "pos": [
+            0.38,
+            -0.055,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.18,
+            "height": 0.08,
+            "depth": 0.94
+          },
+          "color": 9348788
+        }
+      },
+      {
+        "id": "m17",
+        "parent": "lower_bed",
+        "transform": {
+          "pos": [
+            -0.72,
+            -0.03,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.48,
+            "height": 0.13,
+            "depth": 0.7
+          },
+          "color": 15920093
+        }
+      },
+      {
+        "id": "m18",
+        "parent": "lower_bed",
+        "transform": {
+          "pos": [
+            -0.43,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.06,
+            "height": 0.04,
+            "depth": 0.72
+          },
+          "color": 3492963
+        }
+      },
+      {
+        "id": "m19",
+        "parent": "upper_bed",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2.06,
+            "height": 0.17,
+            "depth": 0.92
+          },
+          "color": 15261641
+        }
+      },
+      {
+        "id": "m20",
+        "parent": "upper_bed",
+        "transform": {
+          "pos": [
+            0.38,
+            0.125,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.18,
+            "height": 0.08,
+            "depth": 0.94
+          },
+          "color": 9348788
+        }
+      },
+      {
+        "id": "m21",
+        "parent": "upper_bed",
+        "transform": {
+          "pos": [
+            -0.72,
+            0.15,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.48,
+            "height": 0.13,
+            "depth": 0.7
+          },
+          "color": 15920093
+        }
+      },
+      {
+        "id": "m22",
+        "parent": "upper_bed",
+        "transform": {
+          "pos": [
+            -0.43,
+            0.18,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.06,
+            "height": 0.04,
+            "depth": 0.72
+          },
+          "color": 3492963
+        }
+      },
+      {
+        "id": "m23",
+        "parent": "stairs",
+        "transform": {
+          "pos": [
+            0,
+            -0.39,
+            0.72
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.54,
+            "height": 0.28,
+            "depth": 0.34
+          },
+          "color": 14137742
+        }
+      },
+      {
+        "id": "m24",
+        "parent": "stairs",
+        "transform": {
+          "pos": [
+            0,
+            -0.26,
+            0.48
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.54,
+            "height": 0.54,
+            "depth": 0.34
+          },
+          "color": 14137742
+        }
+      },
+      {
+        "id": "m25",
+        "parent": "stairs",
+        "transform": {
+          "pos": [
+            0,
+            -0.13,
+            0.24
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.54,
+            "height": 0.8,
+            "depth": 0.34
+          },
+          "color": 14137742
+        }
+      },
+      {
+        "id": "m26",
+        "parent": "stairs",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.54,
+            "height": 1.06,
+            "depth": 0.34
+          },
+          "color": 14137742
+        }
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1786869553274,
+        "provider": "gpt",
+        "data": "o8r2JRxr0z9qUYUXs/tqMC4JAYt9hsoI0e5pyk3dyTNMLpkXjDo6qA+PLQFX+D2YQ+MpUHDbpSjYLB4YfZUKTDnJLAhO8Te6aG7RjY7weXdoOR2AL120m2rM53X17eiGR+zCaMBCql4UWDvmt4+ER433bPOVyurS1xlGw1BbAvpeEM4JONUp/Ivy5EoJZY5JhqJNdqUdENLY1ADe6dZ1UmzCo1IHqD3V+qB+gs9/tjRl9rxAPdCZ8BppgoCqiRs4+CRBC0Urgrg173MngicdqEZhgX7C/45+q0+L4mfjQTSBknZmkOZ+jZoWrHyYw6ouP1Rz7FdSGv4GJi2NE352nua1zSCc9SP25OsMjkqSh4+sNIj1iZ+8tBQ5QhluzyXCEllYISJG8zyoGYfCOFEASMpYpC5Ed7fMEmDA+E0LFI+hBO/jDTPWrIS0HRnQ4b/DX+Jw6ob8qSYXs0okg34bNHPhKKmfK9L2bL+dKX2Yk/TqsNttwaocuZf8/iCgVgg/AtQygOP5mBr/noJqxO2r+THSv/B13ucBnAGqdqiCOCpR4Yy1xILDr3Kn+QKsLTeszkqzZrmSgXm56JZXdKC0fi4eWXecBeMkCBWuuJ2jcfpUowKO2IWIaVshujqzeMYFy2rZxClYo2ZVYyBc9MGn0b0uvGhYIK5dJRohTOsg6/taZnNphXpbSaOHMBD79A5aUcFAzKFHCzdutzjkGTxMuv3vDoQtN161KAet/hNCb0VI6N7iP6m4t9vWgEO2GUjfKJdqHGtrv4sypnFu0dcziZUiOeveREJjoTIFSQpV1K5cBZzEpOz2zHPXad8J944CsajQ6gawcEMoHP9v4nFCxOacV7LvBnOjr/zB7SgdEMudgkJfU1DhNKr1OfGYLhqqiPUIHQxuiW4F6lOIhV71VhQKTcTNRnjm9YxguQTvnGJf4/TimPlczuEHddlujoN/3870xtq/3M8rsM0CuRtoNB4eL+VMgHVuMrpnBTGXS0BBZ035gg95ndqGIlO8Mv16pIO3SmufD1Xx/AnARKHxxexadcn0aRMFUTPyRdumrP/dn2K8lvSdHwbjFLUd3NsqRXSOfsEYQU7hVVPxjvdTIo+98zaRNi0qJO4HdaAS5takcaofIg==",
+        "edits": ""
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -1.175,
+          1.16,
+          -0.915
+        ],
+        "max": [
+          1.175,
+          1.32,
+          0.20500000000000013
+        ],
+        "sourceNodeId": "m1"
+      },
+      {
+        "min": [
+          -1.175,
+          0.26000000000000006,
+          -0.915
+        ],
+        "max": [
+          1.175,
+          0.4200000000000001,
+          0.20500000000000013
+        ],
+        "sourceNodeId": "m0"
+      },
+      {
+        "min": [
+          -1.03,
+          0.3850000000000001,
+          -0.815
+        ],
+        "max": [
+          1.03,
+          0.5550000000000002,
+          0.1050000000000001
+        ],
+        "sourceNodeId": "m15"
+      },
+      {
+        "min": [
+          -1.03,
+          1.2850000000000001,
+          -0.815
+        ],
+        "max": [
+          1.03,
+          1.455,
+          0.1050000000000001
+        ],
+        "sourceNodeId": "m19"
+      },
+      {
+        "min": [
+          0.53,
+          0,
+          -0.11499999999999996
+        ],
+        "max": [
+          1.07,
+          1.06,
+          0.22500000000000003
+        ],
+        "sourceNodeId": "m26"
+      },
+      {
+        "min": [
+          0.53,
+          0,
+          0.12499999999999994
+        ],
+        "max": [
+          1.07,
+          0.8,
+          0.465
+        ],
+        "sourceNodeId": "m25"
+      },
+      {
+        "min": [
+          0.53,
+          0,
+          0.36499999999999994
+        ],
+        "max": [
+          1.07,
+          0.54,
+          0.7049999999999998
+        ],
+        "sourceNodeId": "m24"
+      }
+    ],
+    "sourceMeshCount": 27,
+    "candidateCount": 7,
+    "fallbackUsed": false
+  },
+  "footprintRadius": 1.175,
+  "sizeClass": "medium",
+  "mode": "voxel",
+  "provider": "gpt",
+  "libraryId": "library-d7967286-cebf-4f99",
+  "libraryMetadata": {
+    "tags": [
+      "bunkbed",
+      "childrensbed",
+      "bedroomfurniture",
+      "sleepingfurniture",
+      "stairbunk"
+    ],
+    "applicableZones": [
+      "settlement"
+    ],
+    "repeatable": true,
+    "landmark": false,
+    "enabled": true,
+    "priority": 0.5,
+    "analysisStatus": "ready",
+    "rotation": "random"
+  },
+  "createdAt": 1787817817993,
+  "updatedAt": 1787817817993
+}

@@ -1,0 +1,458 @@
+{
+  "id": "asset-ed298831-a7cf-4add",
+  "name": "复杂公园/芦苇丛",
+  "prompt": "Standalone reusable voxel park asset: a compact cluster of pond reeds and cattails, varied green stalk heights and brown seed heads, narrow organic silhouette. Box-only voxel model around 20 purposeful boxes, centered at the origin, base grounded on y=0, no surrounding terrain, no people, no loose floating geometry, flat-shaded cohesive enchanted municipal park palette. Keep the gameplay silhouette and collision shape readable from all sides.",
+  "modelJson": {
+    "name": "魔法公园香蒲丛",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "reed_cluster",
+        "name": "香蒲与芦苇",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "reed_cluster",
+        "transform": {
+          "pos": [
+            -0.38,
+            1.36,
+            -0.26
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.1,
+            "height": 2.72,
+            "depth": 0.1
+          },
+          "color": 4159058
+        }
+      },
+      {
+        "id": "m1",
+        "parent": "reed_cluster",
+        "transform": {
+          "pos": [
+            -0.38,
+            2.95,
+            -0.26
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.2,
+            "height": 0.56,
+            "depth": 0.2
+          },
+          "color": 7950392
+        }
+      },
+      {
+        "id": "m2",
+        "parent": "reed_cluster",
+        "transform": {
+          "pos": [
+            -0.08,
+            1.54,
+            -0.38
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.11,
+            "height": 3.08,
+            "depth": 0.11
+          },
+          "color": 4949080
+        }
+      },
+      {
+        "id": "m3",
+        "parent": "reed_cluster",
+        "transform": {
+          "pos": [
+            -0.08,
+            3.34,
+            -0.38
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.21000000000000002,
+            "height": 0.62,
+            "depth": 0.21000000000000002
+          },
+          "color": 6832943
+        }
+      },
+      {
+        "id": "m4",
+        "parent": "reed_cluster",
+        "transform": {
+          "pos": [
+            0.27,
+            1.21,
+            -0.3
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.1,
+            "height": 2.42,
+            "depth": 0.1
+          },
+          "color": 3500875
+        }
+      },
+      {
+        "id": "m5",
+        "parent": "reed_cluster",
+        "transform": {
+          "pos": [
+            0.27,
+            2.62,
+            -0.3
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.2,
+            "height": 0.5,
+            "depth": 0.2
+          },
+          "color": 8542010
+        }
+      },
+      {
+        "id": "m6",
+        "parent": "reed_cluster",
+        "transform": {
+          "pos": [
+            0.46,
+            1.44,
+            -0.02
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.11,
+            "height": 2.88,
+            "depth": 0.11
+          },
+          "color": 5079377
+        }
+      },
+      {
+        "id": "m7",
+        "parent": "reed_cluster",
+        "transform": {
+          "pos": [
+            0.46,
+            3.12,
+            -0.02
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.21000000000000002,
+            "height": 0.58,
+            "depth": 0.21000000000000002
+          },
+          "color": 7357743
+        }
+      },
+      {
+        "id": "m8",
+        "parent": "reed_cluster",
+        "transform": {
+          "pos": [
+            0.18,
+            1.66,
+            0.22
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.1,
+            "height": 3.32,
+            "depth": 0.1
+          },
+          "color": 4027472
+        }
+      },
+      {
+        "id": "m9",
+        "parent": "reed_cluster",
+        "transform": {
+          "pos": [
+            0.18,
+            3.59,
+            0.22
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.2,
+            "height": 0.64,
+            "depth": 0.2
+          },
+          "color": 6438958
+        }
+      },
+      {
+        "id": "m10",
+        "parent": "reed_cluster",
+        "transform": {
+          "pos": [
+            -0.22,
+            1.29,
+            0.3
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.12,
+            "height": 2.58,
+            "depth": 0.12
+          },
+          "color": 5671767
+        }
+      },
+      {
+        "id": "m11",
+        "parent": "reed_cluster",
+        "transform": {
+          "pos": [
+            -0.22,
+            2.79,
+            0.3
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.22,
+            "height": 0.52,
+            "depth": 0.22
+          },
+          "color": 9067581
+        }
+      },
+      {
+        "id": "m12",
+        "parent": "reed_cluster",
+        "transform": {
+          "pos": [
+            -0.48,
+            1.59,
+            0.08
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.1,
+            "height": 3.18,
+            "depth": 0.1
+          },
+          "color": 3763532
+        }
+      },
+      {
+        "id": "m13",
+        "parent": "reed_cluster",
+        "transform": {
+          "pos": [
+            -0.48,
+            3.43,
+            0.08
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.2,
+            "height": 0.6,
+            "depth": 0.2
+          },
+          "color": 7095858
+        }
+      },
+      {
+        "id": "m14",
+        "parent": "reed_cluster",
+        "transform": {
+          "pos": [
+            0.02,
+            1.12,
+            0.02
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.09,
+            "height": 2.24,
+            "depth": 0.09
+          },
+          "color": 6329436
+        }
+      },
+      {
+        "id": "m15",
+        "parent": "reed_cluster",
+        "transform": {
+          "pos": [
+            0.52,
+            0.98,
+            0.34
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.09,
+            "height": 1.96,
+            "depth": 0.09
+          },
+          "color": 4685395
+        }
+      },
+      {
+        "id": "m16",
+        "parent": "reed_cluster",
+        "transform": {
+          "pos": [
+            -0.58,
+            1.06,
+            -0.14
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.09,
+            "height": 2.12,
+            "depth": 0.09
+          },
+          "color": 5474905
+        }
+      },
+      {
+        "id": "m17",
+        "parent": "reed_cluster",
+        "transform": {
+          "pos": [
+            -0.66,
+            0.82,
+            0.28
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.16,
+            "height": 1.64,
+            "depth": 0.13
+          },
+          "color": 6001243
+        }
+      },
+      {
+        "id": "m18",
+        "parent": "reed_cluster",
+        "transform": {
+          "pos": [
+            0.66,
+            0.69,
+            -0.2
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.14,
+            "height": 1.38,
+            "depth": 0.15
+          },
+          "color": 4684880
+        }
+      },
+      {
+        "id": "m19",
+        "parent": "reed_cluster",
+        "transform": {
+          "pos": [
+            0.34,
+            0.93,
+            0.52
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.15,
+            "height": 1.86,
+            "depth": 0.12
+          },
+          "color": 6856800
+        }
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1783922137340,
+        "provider": "gpt",
+        "data": "dJVcG4YVAVnIkXeaII60eU1Gj9eHg3O38aViWFjeyWheEH6ePzW43nbZZHbD576ek7jUDdmvQDbFvPeXbcOalmPvOObZ3G1h/VnTHT0/avJ6E3OZ9UY2CfoclK84RLygSV6yZgYk/s14nxvOiooQ9unpUiKCTtbjNmKTGNSypdOZF5R656Fn6d1F3FWBzjPLHpIiqqmksOBTUT0tXcRI369KH3TzbLZELY2tvoz3om2Ju42WIPXk2MKYlw1RVo8or4H+yQyTCYLlAKGyck9+Vo+IIQtT4GbEPuXmJrRIidI8eW0R4k/fhG0U3wnpSnHdzXz0UanKEJwxzpNBseQfhLItzF4rZv1I2EH4zhMJiFf8VPqRf09jQh2pMRh/4/mI070Fi1CB7w4lUhqzRNC8PjoAa4jhwtzNU6DqOfhzunxR4pVmVIYIzx37CQ/wdKygmPnnGx0fN4V4Wm2BD17cpeZwNDwU6QtOzV+ufnxrWO/SAPZt/JqZgR9Ge5b6p4A9S3Q2DX9e0jxsUhSAt58jDiCtSjACu7i/9Yg9ZNrfdWLvmW5GiWTeiqLBZ+5oLKIlEoVFhgaOd1t4YyS0+Vr7ivtKkGnB7aOmZt4cfZAHqLr4X9kLGM4fOpBQeCBn687eutoetEM8LyLyxGLuurdDZnVAu+iGTdMNTaLcjv4Z/X0f9tC7tvaC0iKSeYoKgN+/Dh3BKePLv3Qm01aE7a7bS1MyNKKFqhASdRycXtresVCHcIdQmj4MoSXkY3OQSeiQWk1YQo7tknAsXOctv1se337e3CIYhMlayR1WZRmsq0mp7xDfP6GHI9tfH008iYT3k5RhAc6+78VpwD9141Jp+tvytPxmFV7bcQGThOeKRulG22UhCysD6CenMFE4B89vorY5Awij/fPxUkLeDclojnzAFkZ6vrNzWYgjPeRE4TYtAOoSbOwxYhdYIG9RB1ZfD4VdKtvcFDz8xuz4XNmeigTkPTQHOwrwwsasQiKS7VRSZ2+rlVBeyI29PxhENxZG5Ug6FDq/",
+        "edits": ""
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -0.735,
+          0,
+          -0.5325
+        ],
+        "max": [
+          0.735,
+          3.9099999999999997,
+          0.5325
+        ],
+        "sourceNodeId": "asset-bounds"
+      }
+    ],
+    "sourceMeshCount": 20,
+    "candidateCount": 1,
+    "fallbackUsed": true
+  },
+  "mode": "voxel",
+  "provider": "provider-fallback",
+  "createdAt": 1783922422405,
+  "updatedAt": 1783922422405
+}

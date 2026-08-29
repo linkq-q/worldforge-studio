@@ -1,0 +1,1013 @@
+{
+  "id": "asset-4a6d8230-e61e-4591",
+  "name": "消防车",
+  "prompt": "单辆红色儿童玩具消防车，完整独立模型，带警灯、消防梯和车轮，不带人物、场景、包装盒或其他玩具。\nCoordinate contract: local Y+ is up, local Z+ is the front, entrance, or forward direction, and local X+ is right. Put doors, facades, openings, windshields, noses, seats, and other recognizable front details toward local Z+. For a modular repeated element, explicitly choose the long axis: side-by-side modules span local X with depth/front on local Z; traversal modules span local Z. Keep the model centered at its origin.\nCanonical dimensions contract: width=0.46, height=0.36, depth=0.7 world units. Keep the generated mesh within this centered bounding size.",
+  "tags": [
+    "indoor",
+    "single-object",
+    "toy",
+    "vehicle"
+  ],
+  "modelJson": {
+    "name": "红色儿童玩具消防车",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "body",
+        "name": "消防车车身",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.462,
+            0.387,
+            0.728
+          ],
+          "center": [
+            0,
+            -0.001,
+            0.067
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              0.9975,
+              -0.0708
+            ],
+            [
+              0,
+              0.0708,
+              0.9975
+            ]
+          ],
+          "_mainAxis": 2
+        }
+      },
+      {
+        "id": "mount01_siren",
+        "name": "警灯",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0,
+            0.154,
+            0.18
+          ]
+        },
+        "mounted": true,
+        "_obb": {
+          "size": [
+            0.131,
+            0.055,
+            0.055
+          ],
+          "center": [
+            0,
+            0.018,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "mount02_ladder",
+        "name": "消防梯",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0,
+            0.125,
+            -0.255
+          ]
+        },
+        "mounted": true,
+        "_obb": {
+          "size": [
+            0.235,
+            0.026,
+            0.43
+          ],
+          "center": [
+            0,
+            0.01,
+            0.215
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 2
+        }
+      },
+      {
+        "id": "wheel_fl",
+        "name": "车轮",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0.19,
+            -0.115,
+            0.21
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.082,
+            0.13,
+            0.13
+          ],
+          "center": [
+            0,
+            0,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "wheel_fr",
+        "name": "车轮",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            -0.19,
+            -0.115,
+            0.21
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.082,
+            0.13,
+            0.13
+          ],
+          "center": [
+            0,
+            0,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "wheel_rl",
+        "name": "车轮",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0.19,
+            -0.115,
+            -0.21
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.082,
+            0.13,
+            0.13
+          ],
+          "center": [
+            0,
+            0,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "wheel_rr",
+        "name": "车轮",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            -0.19,
+            -0.115,
+            -0.21
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.082,
+            0.13,
+            0.13
+          ],
+          "center": [
+            0,
+            0,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0,
+            -0.045,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.42,
+            "height": 0.13,
+            "depth": 0.58
+          },
+          "color": 14230307
+        }
+      },
+      {
+        "id": "m1",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0,
+            0.075,
+            0.205
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.38,
+            "height": 0.14,
+            "depth": 0.22
+          },
+          "color": 15675440
+        }
+      },
+      {
+        "id": "m2",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0,
+            0.055,
+            -0.15
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.38,
+            "height": 0.11,
+            "depth": 0.27
+          },
+          "color": 13180703
+        }
+      },
+      {
+        "id": "m3",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0,
+            -0.075,
+            0.315
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.44,
+            "height": 0.035,
+            "depth": 0.06
+          },
+          "color": 15909424
+        }
+      },
+      {
+        "id": "m4",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0,
+            0.09,
+            0.321
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.25,
+            "height": 0.075,
+            "depth": 0.012
+          },
+          "color": 7780821
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass",
+            "variant": "blue"
+          }
+        ]
+      },
+      {
+        "id": "m5",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0.196,
+            0.085,
+            0.205
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.012,
+            "height": 0.075,
+            "depth": 0.12
+          },
+          "color": 7780821
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass",
+            "variant": "blue"
+          }
+        ]
+      },
+      {
+        "id": "m6",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            -0.196,
+            0.085,
+            0.205
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.012,
+            "height": 0.075,
+            "depth": 0.12
+          },
+          "color": 7780821
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass",
+            "variant": "blue"
+          }
+        ]
+      },
+      {
+        "id": "m7",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0,
+            -0.015,
+            0.333
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.22,
+            "height": 0.045,
+            "depth": 0.014
+          },
+          "color": 5593441
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m8",
+        "parent": "mount01_siren",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.13,
+            "height": 0.018,
+            "depth": 0.055
+          },
+          "color": 3356221
+        }
+      },
+      {
+        "id": "m9",
+        "parent": "mount01_siren",
+        "transform": {
+          "pos": [
+            -0.043,
+            0.026,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.045,
+            "height": 0.04,
+            "depth": 0.045
+          },
+          "color": 4033791
+        },
+        "tags": [
+          {
+            "tag": "emissive",
+            "value": 0.75
+          }
+        ]
+      },
+      {
+        "id": "m10",
+        "parent": "mount01_siren",
+        "transform": {
+          "pos": [
+            0.043,
+            0.026,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.045,
+            "height": 0.04,
+            "depth": 0.045
+          },
+          "color": 16725301
+        },
+        "tags": [
+          {
+            "tag": "emissive",
+            "value": 0.75
+          }
+        ]
+      },
+      {
+        "id": "m11",
+        "parent": "mount02_ladder",
+        "transform": {
+          "pos": [
+            -0.105,
+            0.01,
+            0.215
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.025,
+            "height": 0.025,
+            "depth": 0.43
+          },
+          "color": 14211805
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m12",
+        "parent": "mount02_ladder",
+        "transform": {
+          "pos": [
+            0.105,
+            0.01,
+            0.215
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.025,
+            "height": 0.025,
+            "depth": 0.43
+          },
+          "color": 14211805
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m13",
+        "parent": "mount02_ladder",
+        "transform": {
+          "pos": [
+            0,
+            0.013,
+            0.035
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.235,
+            "height": 0.02,
+            "depth": 0.022
+          },
+          "color": 13159376
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m14",
+        "parent": "mount02_ladder",
+        "transform": {
+          "pos": [
+            0,
+            0.013,
+            0.125
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.235,
+            "height": 0.02,
+            "depth": 0.022
+          },
+          "color": 13159376
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m15",
+        "parent": "mount02_ladder",
+        "transform": {
+          "pos": [
+            0,
+            0.013,
+            0.215
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.235,
+            "height": 0.02,
+            "depth": 0.022
+          },
+          "color": 13159376
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m16",
+        "parent": "mount02_ladder",
+        "transform": {
+          "pos": [
+            0,
+            0.013,
+            0.305
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.235,
+            "height": 0.02,
+            "depth": 0.022
+          },
+          "color": 13159376
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m17",
+        "parent": "mount02_ladder",
+        "transform": {
+          "pos": [
+            0,
+            0.013,
+            0.395
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.235,
+            "height": 0.02,
+            "depth": 0.022
+          },
+          "color": 13159376
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m18",
+        "parent": "wheel_fl",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.08,
+            "height": 0.13,
+            "depth": 0.13
+          },
+          "color": 2434859
+        }
+      },
+      {
+        "id": "m19",
+        "parent": "wheel_fl",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.082,
+            "height": 0.055,
+            "depth": 0.055
+          },
+          "color": 12106946
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m20",
+        "parent": "wheel_fr",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.08,
+            "height": 0.13,
+            "depth": 0.13
+          },
+          "color": 2434859
+        }
+      },
+      {
+        "id": "m21",
+        "parent": "wheel_fr",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.082,
+            "height": 0.055,
+            "depth": 0.055
+          },
+          "color": 12106946
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m22",
+        "parent": "wheel_rl",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.08,
+            "height": 0.13,
+            "depth": 0.13
+          },
+          "color": 2434859
+        }
+      },
+      {
+        "id": "m23",
+        "parent": "wheel_rl",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.082,
+            "height": 0.055,
+            "depth": 0.055
+          },
+          "color": 12106946
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m24",
+        "parent": "wheel_rr",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.08,
+            "height": 0.13,
+            "depth": 0.13
+          },
+          "color": 2434859
+        }
+      },
+      {
+        "id": "m25",
+        "parent": "wheel_rr",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.082,
+            "height": 0.055,
+            "depth": 0.055
+          },
+          "color": 12106946
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1787876472596,
+        "provider": "gpt",
+        "data": "CXBsEy6Ac1hNcxYs6ZFG6mRFnc27cnD/QjuocmSPxS/VSqzi1mtpEvF7uJQpkAFxmoeLLGK4acbAGB2myYBtgSqZcOQCITL/lFPWHBHfPLZZx3LFhaedZ0DWJgNu60Qo3kXTmbRISa5/kkpXAq/ma00XjkBCN2KackaiAoaI3EXRv5cSXmBoigFKA/i/Ba30jLkgEk/pCBGBhsTJZi1NHzb2PuK3VJMXgWRGmVhwjv3N6TqWuqxXdu+TAkchJRKPLKKRy0JZMHBYJg1vvgLMu3E1ZdsHTJxMPiJbpgywONspoE08QeyDb9FZZMC287N3Hof67mRM50atX52Li++EhEaeYjgavcE5fOLHTLyBED99JCkzBy1n1r9o9bG3IyBQJz+N59T5h5JHiNsux+dlnbz97PafPjoIbNHWdCtNyrJdCsFLFJ7P3hOjkD+onK7q5uomEPwEGCqKwMxU1teXdmNABoRKSUtozXfDmnS1n7gPBLvivpMsrGtwnzjsLk/8SQc7wsn/zXNghtG6zou+vJ2I9zCH9GghngZFy+qO0PxESztpLTRtur8oXktvJOCVH+hj8GmWRfg5cfV2//BICQClPuzTyvS/hQ4y3Z+zp1twNJUXMnYrHdN5LNqNbuRBVPGCAxU20FFj+nAeHSlBzVTD4I9q9y/upJI9vkB8M+1F1NdpV1HWRMRgpX0azeh7OavzLAj+NWbIWkJJLWUYGZfUqjw5qRpfkDfXU6gsYVVjXY1gwpJ9DAsmElo3XAdNqFQeSjCx3py+sDvV2q3kJOjHHdLow1rPySdn8YVM2YuRL+l8qF3+7QT5L7zN/MTrgs2B+LcvxKg/wCos8JIXh9OMk2NjGdt/Qfdw4Vhd/hm7dxcwF4Ldts2cUzVQt1TzEbGRO2cjJriztdKhUpKesPYHFtL+xtY5iljO6aS8oYCQd8nUTG9Le21muHDhi64c8g9VBqyENaqzrI2UxKDD6OnodLW49SmOWqXukG+Sp12tONsd1ggLlw91CxM0fVhK17mAPuGV7+Rf0IA3x1CSECGo7TcWgEmHRTEHBCkioVDrt6P/ibgT+JbFDslRLa9lH+LOvI3vNA1viBB4V3eIVJj0vcAvcB6BKK/YKy5Q3CxnHaq3/ejAWoslmyf39ABwH5s=",
+        "edits": ""
+      },
+      "mounts": [
+        {
+          "id": "mount01_siren",
+          "mountedGroupId": "mount01_siren",
+          "name": "警灯",
+          "source": {
+            "type": "codegen"
+          },
+          "description": "",
+          "visible": true,
+          "ts": 1787876472597
+        },
+        {
+          "id": "mount02_ladder",
+          "mountedGroupId": "mount02_ladder",
+          "name": "消防梯",
+          "source": {
+            "type": "codegen"
+          },
+          "description": "",
+          "visible": true,
+          "ts": 1787876472597
+        }
+      ],
+      "semanticSnapshot": {
+        "v": 1,
+        "auto": true,
+        "text": "红色儿童玩具消防车 · 7组/26mesh · 世界坐标(Y上Z前), 原点=模型根\n# 阅读说明: G:=group行(可动画骨骼, 动画key用G:后的id; @p=pivot世界坐标; 倾(x,y,z)°=朝向偏离世界轴的欧拉角; 缩进=父子层级; 挂:=挂载于某组; G:id→id→…=chain折叠行, 每个id都是可独立动画的group, chain×N=waypoint数)\n# M:=mesh行(label[id 几何 @(世界坐标)], label可省略; ×N=for循环批量件(锚点=代表实例); cyl (起)→(末)或 轴上(Y)等方位词=延伸方向; 薄向=板面法向(扁板); 挂载组双代表=最大件+最远有向件(刃/嘴/管所在端); 无方向标注=均匀块(三向相近,如头),默认面向前(Z); 对称×2=镜像对)\nG:body 消防车车身 @p(0,0,0)\n  M:[m0 box 0.42×0.13×0.58 (0,0,0) 薄向上(Y)]\n  G:mount01_siren 警灯 @p(0,0.2,0.2) 挂:body\n    M:[m8 box 0.13×0.02×0.06 (0,0.2,0.2) 薄向上(Y)]\n  G:mount02_ladder 消防梯 @p(0,0.1,-0.3) 挂:body\n    M:[m11 box 0.03×0.03×0.43 (-0.1,0.1,0) 轴前(Z)] | M:[m17 box 0.24×0.02×0.02 (0,0.1,0.1) 轴右(X)]\n  G:wheel_fl 车轮 @p(0.2,-0.1,0.2)\n    M:[m18 box 0.08×0.13×0.13 (0.2,-0.1,0.2) 薄向右(X)]\n  G:wheel_fr 车轮 @p(-0.2,-0.1,0.2)\n    M:[m20 box 0.08×0.13×0.13 (-0.2,-0.1,0.2) 薄向右(X)]\n  G:wheel_rl 车轮 @p(0.2,-0.1,-0.2)\n    M:[m22 box 0.08×0.13×0.13 (0.2,-0.1,-0.2) 薄向右(X)]\n  G:wheel_rr 车轮 @p(-0.2,-0.1,-0.2)\n    M:[m24 box 0.08×0.13×0.13 (-0.2,-0.1,-0.2) 薄向右(X)]",
+        "stats": {
+          "groups": 7,
+          "meshes": 26,
+          "labeledMeshes": 0,
+          "labelCoverage": 0,
+          "batchLabels": 0,
+          "autoChains": 0,
+          "snapshotChars": 1020
+        }
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -0.231,
+          0,
+          -0.3175
+        ],
+        "max": [
+          0.231,
+          0.38,
+          0.3175
+        ],
+        "sourceNodeId": "asset-bounds"
+      }
+    ],
+    "sourceMeshCount": 26,
+    "candidateCount": 0,
+    "fallbackUsed": true
+  },
+  "footprintRadius": 0.3175,
+  "sizeClass": "small",
+  "mode": "voxel",
+  "provider": "gpt",
+  "createdAt": 1787876472240,
+  "updatedAt": 1787876472240
+}

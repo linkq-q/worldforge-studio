@@ -1,0 +1,883 @@
+{
+  "id": "asset-1e0d144a-88ce-4c08",
+  "name": "救护车",
+  "prompt": "单辆白色儿童玩具救护车，完整独立模型，带红色急救标识和车顶警灯，不带人物、场景、包装盒或其他玩具。\nCoordinate contract: local Y+ is up, local Z+ is the front, entrance, or forward direction, and local X+ is right. Put doors, facades, openings, windshields, noses, seats, and other recognizable front details toward local Z+. For a modular repeated element, explicitly choose the long axis: side-by-side modules span local X with depth/front on local Z; traversal modules span local Z. Keep the model centered at its origin.\nCanonical dimensions contract: width=0.44, height=0.33, depth=0.66 world units. Keep the generated mesh within this centered bounding size.",
+  "tags": [
+    "indoor",
+    "single-object",
+    "toy",
+    "vehicle"
+  ],
+  "modelJson": {
+    "name": "白色儿童玩具救护车",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "body",
+        "name": "救护车车身",
+        "transform": {
+          "pos": [
+            0,
+            0.16,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.442,
+            0.315,
+            0.62
+          ],
+          "center": [
+            0,
+            0.012,
+            0.019
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              -0.0027
+            ],
+            [
+              0,
+              0.0027,
+              1
+            ]
+          ],
+          "_mainAxis": 2
+        }
+      },
+      {
+        "id": "mount01_roof_light",
+        "name": "车顶警灯",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0,
+            0.11,
+            0.08
+          ]
+        },
+        "mounted": true,
+        "_obb": {
+          "size": [
+            0.21,
+            0.045,
+            0.07
+          ],
+          "center": [
+            0,
+            0.037,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "wheel_fl",
+        "name": "车轮",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            -0.19,
+            -0.09,
+            0.19
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.062,
+            0.11,
+            0.11
+          ],
+          "center": [
+            0,
+            0,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "wheel_fr",
+        "name": "车轮",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0.19,
+            -0.09,
+            0.19
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.062,
+            0.11,
+            0.11
+          ],
+          "center": [
+            0,
+            0,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "wheel_rl",
+        "name": "车轮",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            -0.19,
+            -0.09,
+            -0.19
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.062,
+            0.11,
+            0.11
+          ],
+          "center": [
+            0,
+            0,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "wheel_rr",
+        "name": "车轮",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0.19,
+            -0.09,
+            -0.19
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.062,
+            0.11,
+            0.11
+          ],
+          "center": [
+            0,
+            0,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.38,
+            "height": 0.18,
+            "depth": 0.56
+          },
+          "color": 16119282
+        }
+      },
+      {
+        "id": "m1",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0,
+            -0.085,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.36,
+            "height": 0.07,
+            "depth": 0.58
+          },
+          "color": 14277078
+        }
+      },
+      {
+        "id": "m2",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0,
+            0.045,
+            0.286
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.34,
+            "height": 0.095,
+            "depth": 0.012
+          },
+          "color": 7976915
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass",
+            "variant": "blue"
+          }
+        ]
+      },
+      {
+        "id": "m3",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            -0.095,
+            0.045,
+            0.293
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.15,
+            "height": 0.065,
+            "depth": 0.012
+          },
+          "color": 11131112
+        }
+      },
+      {
+        "id": "m4",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0.095,
+            0.045,
+            0.293
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.15,
+            "height": 0.065,
+            "depth": 0.012
+          },
+          "color": 11131112
+        }
+      },
+      {
+        "id": "m5",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            -0.12,
+            -0.035,
+            0.31
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.055,
+            "height": 0.035,
+            "depth": 0.018
+          },
+          "color": 16769899
+        },
+        "tags": [
+          {
+            "tag": "emissive",
+            "value": 0.5
+          }
+        ]
+      },
+      {
+        "id": "m6",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0.12,
+            -0.035,
+            0.31
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.055,
+            "height": 0.035,
+            "depth": 0.018
+          },
+          "color": 16769899
+        },
+        "tags": [
+          {
+            "tag": "emissive",
+            "value": 0.5
+          }
+        ]
+      },
+      {
+        "id": "m7",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0,
+            -0.095,
+            0.312
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.36,
+            "height": 0.025,
+            "depth": 0.035
+          },
+          "color": 14540253
+        }
+      },
+      {
+        "id": "m8",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            -0.196,
+            0.045,
+            0.13
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.012,
+            "height": 0.055,
+            "depth": 0.055
+          },
+          "color": 7188171
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass",
+            "variant": "blue"
+          }
+        ]
+      },
+      {
+        "id": "m9",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0.196,
+            0.045,
+            0.13
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.012,
+            "height": 0.055,
+            "depth": 0.055
+          },
+          "color": 7188171
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass",
+            "variant": "blue"
+          }
+        ]
+      },
+      {
+        "id": "m10",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            -0.196,
+            0.03,
+            -0.1
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.012,
+            "height": 0.09,
+            "depth": 0.03
+          },
+          "color": 14034984
+        }
+      },
+      {
+        "id": "m11",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            -0.196,
+            0.03,
+            -0.1
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.012,
+            "height": 0.03,
+            "depth": 0.09
+          },
+          "color": 14034984
+        }
+      },
+      {
+        "id": "m12",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0.196,
+            0.03,
+            -0.1
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.012,
+            "height": 0.09,
+            "depth": 0.03
+          },
+          "color": 14034984
+        }
+      },
+      {
+        "id": "m13",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0.196,
+            0.03,
+            -0.1
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.012,
+            "height": 0.03,
+            "depth": 0.09
+          },
+          "color": 14034984
+        }
+      },
+      {
+        "id": "m14",
+        "parent": "mount01_roof_light",
+        "transform": {
+          "pos": [
+            -0.055,
+            0.0375,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.1,
+            "height": 0.045,
+            "depth": 0.07
+          },
+          "color": 14886454
+        },
+        "tags": [
+          {
+            "tag": "emissive",
+            "value": 0.75
+          }
+        ]
+      },
+      {
+        "id": "m15",
+        "parent": "mount01_roof_light",
+        "transform": {
+          "pos": [
+            0.055,
+            0.0375,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.1,
+            "height": 0.045,
+            "depth": 0.07
+          },
+          "color": 2652368
+        },
+        "tags": [
+          {
+            "tag": "emissive",
+            "value": 0.75
+          }
+        ]
+      },
+      {
+        "id": "m16",
+        "parent": "wheel_fl",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.06,
+            "height": 0.11,
+            "depth": 0.11
+          },
+          "color": 2434341
+        }
+      },
+      {
+        "id": "m17",
+        "parent": "wheel_fl",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.062,
+            "height": 0.045,
+            "depth": 0.045
+          },
+          "color": 12040119
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m18",
+        "parent": "wheel_fr",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.06,
+            "height": 0.11,
+            "depth": 0.11
+          },
+          "color": 2434341
+        }
+      },
+      {
+        "id": "m19",
+        "parent": "wheel_fr",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.062,
+            "height": 0.045,
+            "depth": 0.045
+          },
+          "color": 12040119
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m20",
+        "parent": "wheel_rl",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.06,
+            "height": 0.11,
+            "depth": 0.11
+          },
+          "color": 2434341
+        }
+      },
+      {
+        "id": "m21",
+        "parent": "wheel_rl",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.062,
+            "height": 0.045,
+            "depth": 0.045
+          },
+          "color": 12040119
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m22",
+        "parent": "wheel_rr",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.06,
+            "height": 0.11,
+            "depth": 0.11
+          },
+          "color": 2434341
+        }
+      },
+      {
+        "id": "m23",
+        "parent": "wheel_rr",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.062,
+            "height": 0.045,
+            "depth": 0.045
+          },
+          "color": 12040119
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1787876481122,
+        "provider": "gpt",
+        "data": "TmLvFgZvB6AmCXSGlZbSr6DXELtksKgbNbu/3M+s/pMNuDwjY17duS/hxsCbu/a28fH2owqcnSHDtK0ZnP/+zXxkc2VjnX48xmSIdFi1jju9+JiRsLvJcEe+WtgOHgfIJx2ax1BI2V3CDRoNSLHA/8SzY3zAdqNrHSK51waXr7DMnw77eqQKyS2r67rGlMmD8DzErC6WS621AbEH45Fyo/cOhoML0IekltF1eofom6AxzjI8FA+gBsBC4e4QaentxsnSUz/G5PtST1ZimSMd25xsOfpfyn/L7igz/wub19eUl3bvY1vY0l9fL1jNrORyXvdrrQdbgXilbQyqvvZfFQQKO+3ri8IID3QrgT3OKw5Pu/8AM1fmYRS5BIihtXFWuJvnGdgLkbgM9+km61XCVreKuJlwJRxdHSk+TYGFL8Sf15C1YI58Ro+wu0mR0/N7mvDS166Ei0fzWnl4iOTVkfhSJtx+r7s5A7llPxd0DW3WIaLUD5VaWtxNrD9THAztjsX6vHifACbMAelYFT7AYEGUM2W5J7U79lGP81HJClitVoBqnw/V8SnAxaxcOR2/RvHDqmC4kXoAyi5XEzOAPIW/MNU+0ld/ba0MtxmTzpMdmr3vGYLdQ8LLb71RXa7/8P+7+/6D4faiXF3nVFmzSZJg/g6QQV8Fmw4B4v+GmxwbU60YMtbNonVmSdmNGA/fUGUREANdeekwe3Qreiqzxv4Bb7dSjOZYiaF6kTzEL2+yDe107C0779Ze1HsiRbR/nheLNPLFpDI7+ccPMeUtLX3UJKA6I1UqFr1BEyKXTsUvvWBY5Ht2sC6R3KnbnyLZQHKrAnRw3si6YfB386UKMJHo8LDvyxMBCm74lrOQpCUFC2TXNuWOW2T/nMs1kewsXHXwiKP5RDuYRd0fLRaAs/41TTBBsiU1Kx9I/Ob5Ftn4KbQRKeAvjBoMDKdrN/0OzIYQQ+S+4d+8iRatsc5EmQHy0GhOtNvKtFrL5pJxJngThTGKkhEU1WeP97MhklYbOl5nV8zyLPs30pP0v88WKeRMQY46gV3y9j2pa5l8bDS5Qw5B/o5p99I73CPqpBoBSEihrgT4xRGhdktazLqIXKY=",
+        "edits": ""
+      },
+      "mounts": [
+        {
+          "id": "mount01_roof_light",
+          "mountedGroupId": "mount01_roof_light",
+          "name": "车顶警灯",
+          "source": {
+            "type": "codegen"
+          },
+          "description": "",
+          "visible": true,
+          "ts": 1787876481123
+        }
+      ],
+      "semanticSnapshot": {
+        "v": 1,
+        "auto": true,
+        "text": "白色儿童玩具救护车 · 6组/24mesh · 世界坐标(Y上Z前), 原点=模型根\n# 阅读说明: G:=group行(可动画骨骼, 动画key用G:后的id; @p=pivot世界坐标; 倾(x,y,z)°=朝向偏离世界轴的欧拉角; 缩进=父子层级; 挂:=挂载于某组; G:id→id→…=chain折叠行, 每个id都是可独立动画的group, chain×N=waypoint数)\n# M:=mesh行(label[id 几何 @(世界坐标)], label可省略; ×N=for循环批量件(锚点=代表实例); cyl (起)→(末)或 轴上(Y)等方位词=延伸方向; 薄向=板面法向(扁板); 挂载组双代表=最大件+最远有向件(刃/嘴/管所在端); 无方向标注=均匀块(三向相近,如头),默认面向前(Z); 对称×2=镜像对)\nG:body 救护车车身 @p(0,0.2,0)\n  M:[m0 box 0.38×0.18×0.56 (0,0.2,0) 薄向上(Y)]\n  G:mount01_roof_light 车顶警灯 @p(0,0.3,0.1) 挂:body\n    M:[m14 box 0.1×0.05×0.07 (-0.1,0.3,0.1) 薄向上(Y)] | M:[m15 box 0.1×0.05×0.07 (0.1,0.3,0.1) 薄向上(Y)]\n  G:wheel_fl 车轮 @p(-0.2,0.1,0.2)\n    M:[m16 box 0.06×0.11×0.11 (-0.2,0.1,0.2) 薄向右(X)]\n  G:wheel_fr 车轮 @p(0.2,0.1,0.2)\n    M:[m18 box 0.06×0.11×0.11 (0.2,0.1,0.2) 薄向右(X)]\n  G:wheel_rl 车轮 @p(-0.2,0.1,-0.2)\n    M:[m20 box 0.06×0.11×0.11 (-0.2,0.1,-0.2) 薄向右(X)]\n  G:wheel_rr 车轮 @p(0.2,0.1,-0.2)\n    M:[m22 box 0.06×0.11×0.11 (0.2,0.1,-0.2) 薄向右(X)]",
+        "stats": {
+          "groups": 6,
+          "meshes": 24,
+          "labeledMeshes": 0,
+          "labelCoverage": 0,
+          "batchLabels": 0,
+          "autoChains": 0,
+          "snapshotChars": 933
+        }
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -0.221,
+          0,
+          -0.30974999999999997
+        ],
+        "max": [
+          0.221,
+          0.315,
+          0.30974999999999997
+        ],
+        "sourceNodeId": "asset-bounds"
+      }
+    ],
+    "sourceMeshCount": 24,
+    "candidateCount": 0,
+    "fallbackUsed": true
+  },
+  "footprintRadius": 0.30974999999999997,
+  "sizeClass": "small",
+  "mode": "voxel",
+  "provider": "gpt",
+  "createdAt": 1787876480531,
+  "updatedAt": 1787876480531
+}

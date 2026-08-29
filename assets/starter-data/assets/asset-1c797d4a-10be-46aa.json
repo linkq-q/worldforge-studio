@@ -1,0 +1,264 @@
+{
+  "id": "asset-1c797d4a-10be-46aa",
+  "name": "消防帽",
+  "prompt": "单独一顶儿童职业扮演消防员头盔，鲜明红色玩具造型，不包含人物、制服或其他装备\nCoordinate contract: local Y+ is up, local Z+ is the front, entrance, or forward direction, and local X+ is right. Put doors, facades, openings, windshields, noses, seats, and other recognizable front details toward local Z+. For a modular repeated element, explicitly choose the long axis: side-by-side modules span local X with depth/front on local Z; traversal modules span local Z. Keep the model centered at its origin.\nCanonical dimensions contract: width=0.3, height=0.2, depth=0.34 world units. Keep the generated mesh within this centered bounding size.",
+  "modelJson": {
+    "name": "儿童消防员头盔",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "helmet",
+        "name": "消防员头盔",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.3,
+            0.219,
+            0.343
+          ],
+          "center": [
+            0,
+            -0.004,
+            -0.006
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              0.9968,
+              -0.0796
+            ],
+            [
+              0,
+              0.0796,
+              0.9968
+            ]
+          ],
+          "_mainAxis": 2
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "helmet",
+        "transform": {
+          "pos": [
+            0,
+            -0.0875,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.3,
+            "height": 0.025,
+            "depth": 0.34
+          },
+          "color": 15014691
+        }
+      },
+      {
+        "id": "m1",
+        "parent": "helmet",
+        "transform": {
+          "pos": [
+            0,
+            -0.05,
+            -0.015
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.27,
+            "height": 0.055,
+            "depth": 0.27
+          },
+          "color": 15738413
+        }
+      },
+      {
+        "id": "m2",
+        "parent": "helmet",
+        "transform": {
+          "pos": [
+            0,
+            0.01,
+            -0.02
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.23,
+            "height": 0.065,
+            "depth": 0.23
+          },
+          "color": 15870770
+        }
+      },
+      {
+        "id": "m3",
+        "parent": "helmet",
+        "transform": {
+          "pos": [
+            0,
+            0.07,
+            -0.025
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.17,
+            "height": 0.055,
+            "depth": 0.17
+          },
+          "color": 15409192
+        }
+      },
+      {
+        "id": "m4",
+        "parent": "helmet",
+        "transform": {
+          "pos": [
+            0,
+            0.025,
+            0.105
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.025,
+            "height": 0.13,
+            "depth": 0.035
+          },
+          "color": 16726336
+        }
+      },
+      {
+        "id": "m5",
+        "parent": "helmet",
+        "transform": {
+          "pos": [
+            0,
+            0.015,
+            0.1475
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.09,
+            "height": 0.07,
+            "depth": 0.015
+          },
+          "color": 16765746
+        }
+      },
+      {
+        "id": "m6",
+        "parent": "helmet",
+        "transform": {
+          "pos": [
+            0,
+            0.015,
+            0.159
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.018,
+            "height": 0.047,
+            "depth": 0.008
+          },
+          "color": 16249296
+        }
+      },
+      {
+        "id": "m7",
+        "parent": "helmet",
+        "transform": {
+          "pos": [
+            0,
+            0.015,
+            0.159
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.052,
+            "height": 0.018,
+            "depth": 0.008
+          },
+          "color": 16249296
+        }
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1787766702548,
+        "provider": "gpt",
+        "data": "jrLvmzUDW//CzdFngJvMJe6iToSoBdKN2/Nzmey+En/I4vBJCe7SXVZeEq/pPqOm1HFpvYkxBvLzyj8hT1ionJUohCe2si6a+dxV/IcEhnBefG27RO3vFJXi0Mrxq6DG6RWuqPHadt2iECrxYBX4ELJicQgqm+LND55r5D8u/22hL7ftHTcWJv0bMaedofT3eHHCXQId2FIH9Vvv3KDcqx3GVzKbnqSeMiWOm/mzRm3lVEer1DtDqGDks05SLJcZhjrf0mXO129aJpNS/WVN5iK/NLWJRWmMTWhMOUulDWeOUZCdPonkgG0JWOZ6w+oyiuXpVbGbfsHAWZfABlRPjmrxK4eYw0/3xX6Hi+3krmzkxFHIHlYroCZb6vyq3E0qOtGmTjxGDzQEmSylOLhZc4V/flcIgDxvjy8c4aCaHLvxFOiMFr3cNPQr9K89gFtf03S6UWfcG4eaZKWONFiPidPGj7mWCyl1bBJKRirwBA0TSwYgp8drJ8abpM3c+8SPB/r5ZEogouH5+7nd3tC9DT7Ky3PMJksN7a1Rh8nNfbXfnFopvAEeqZn7v02Osr28dqX8hyBuGYrDb9LM7OAb4CInqQdp",
+        "edits": ""
+      },
+      "semanticSnapshot": {
+        "v": 1,
+        "auto": true,
+        "text": "儿童消防员头盔 · 1组/8mesh · 世界坐标(Y上Z前), 原点=模型根\n# 阅读说明: G:=group行(可动画骨骼, 动画key用G:后的id; @p=pivot世界坐标; 倾(x,y,z)°=朝向偏离世界轴的欧拉角; 缩进=父子层级; 挂:=挂载于某组; G:id→id→…=chain折叠行, 每个id都是可独立动画的group, chain×N=waypoint数)\n# M:=mesh行(label[id 几何 @(世界坐标)], label可省略; ×N=for循环批量件(锚点=代表实例); cyl (起)→(末)或 轴上(Y)等方位词=延伸方向; 薄向=板面法向(扁板); 挂载组双代表=最大件+朝向件(嘴/管/檐所在); 无方向标注=均匀块(三向相近,如头),默认面向前(Z); 对称×2=镜像对)\nG:helmet 消防员头盔 @p(0,0,0)\n  M:[m1 box 0.27×0.06×0.27 (0,0,0) 薄向上(Y)]",
+        "stats": {
+          "groups": 1,
+          "meshes": 8,
+          "labeledMeshes": 0,
+          "labelCoverage": 0,
+          "batchLabels": 0,
+          "autoChains": 0,
+          "snapshotChars": 431
+        }
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -0.15,
+          0,
+          -0.17
+        ],
+        "max": [
+          0.15,
+          0.1975,
+          0.17
+        ],
+        "sourceNodeId": "asset-bounds"
+      }
+    ],
+    "sourceMeshCount": 8,
+    "candidateCount": 0,
+    "fallbackUsed": true
+  },
+  "footprintRadius": 0.17,
+  "sizeClass": "small",
+  "mode": "voxel",
+  "provider": "gpt",
+  "createdAt": 1787766704505,
+  "updatedAt": 1787766704505
+}

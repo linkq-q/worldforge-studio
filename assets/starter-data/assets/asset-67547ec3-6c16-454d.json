@@ -1,0 +1,808 @@
+{
+  "id": "asset-67547ec3-6c16-454d",
+  "name": "卷蕨叶",
+  "prompt": "一小束卷曲的深绿色蕨叶，风干植物标本，手持尺寸。精致写实的古典奇幻炼金术风格，独立单件，纯物件模型，无桌面、无柜体、无房间、无背景、无大型机器。\nCoordinate contract: local Y+ is up, local Z+ is the front, entrance, or forward direction, and local X+ is right. Put doors, facades, openings, windshields, noses, seats, and other recognizable front details toward local Z+. For a modular repeated element, explicitly choose the long axis: side-by-side modules span local X with depth/front on local Z; traversal modules span local Z. Keep the model centered at its origin.\nCanonical dimensions contract: width=0.4, height=0.16, depth=0.24 world units. Keep the generated mesh within this centered bounding size.",
+  "tags": [
+    "indoor",
+    "alchemy",
+    "material",
+    "handheld"
+  ],
+  "modelJson": {
+    "name": "风干卷曲深绿蕨叶标本",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "specimen",
+        "name": "蕨叶标本",
+        "transform": {
+          "pos": [
+            0,
+            0.005,
+            0.0065
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.399,
+            0.073,
+            0.218
+          ],
+          "center": [
+            0,
+            -0.005,
+            -0.008
+          ],
+          "axes": [
+            [
+              0.9983,
+              -0.0267,
+              0.0515
+            ],
+            [
+              0.0324,
+              0.9931,
+              -0.1127
+            ],
+            [
+              -0.0481,
+              0.1141,
+              0.9923
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "specimen",
+        "transform": {
+          "pos": [
+            -0.02,
+            -0.025,
+            -0.0165
+          ],
+          "quat": [
+            0.73,
+            0,
+            0.68,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.2,
+            "height": 0.012,
+            "depth": 0.01
+          },
+          "color": 4543546
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m1",
+        "parent": "specimen",
+        "transform": {
+          "pos": [
+            0.04,
+            -0.005,
+            -0.0165
+          ],
+          "quat": [
+            0.82,
+            0,
+            0.57,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.19,
+            "height": 0.012,
+            "depth": 0.01
+          },
+          "color": 4018229
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m2",
+        "parent": "specimen",
+        "transform": {
+          "pos": [
+            -0.05,
+            0.015,
+            -0.0265
+          ],
+          "quat": [
+            0.51,
+            0,
+            0.86,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.17,
+            "height": 0.012,
+            "depth": 0.01
+          },
+          "color": 3557937
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m3",
+        "parent": "specimen",
+        "transform": {
+          "pos": [
+            -0.06,
+            0.005,
+            -0.0365
+          ],
+          "quat": [
+            0.17,
+            0,
+            0.99,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.1,
+            "height": 0.012,
+            "depth": 0.03
+          },
+          "color": 2704686
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m4",
+        "parent": "specimen",
+        "transform": {
+          "pos": [
+            0.05,
+            0.005,
+            -0.0165
+          ],
+          "quat": [
+            0.99,
+            0,
+            0.13,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.11,
+            "height": 0.012,
+            "depth": 0.03
+          },
+          "color": 3231800
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m5",
+        "parent": "specimen",
+        "transform": {
+          "pos": [
+            -0.07,
+            0.015,
+            0.0035
+          ],
+          "quat": [
+            0.13,
+            0,
+            0.99,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.13,
+            "height": 0.012,
+            "depth": 0.03
+          },
+          "color": 2638893
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m6",
+        "parent": "specimen",
+        "transform": {
+          "pos": [
+            0.07,
+            0.015,
+            0.0235
+          ],
+          "quat": [
+            0.99,
+            0,
+            0.12,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.15,
+            "height": 0.012,
+            "depth": 0.03
+          },
+          "color": 3165492
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m7",
+        "parent": "specimen",
+        "transform": {
+          "pos": [
+            -0.06,
+            0.015,
+            0.0535
+          ],
+          "quat": [
+            0.15,
+            0,
+            0.99,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.13,
+            "height": 0.012,
+            "depth": 0.03
+          },
+          "color": 2507051
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m8",
+        "parent": "specimen",
+        "transform": {
+          "pos": [
+            0.06,
+            0.025,
+            0.0735
+          ],
+          "quat": [
+            0.99,
+            0,
+            0.17,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.12,
+            "height": 0.012,
+            "depth": 0.02
+          },
+          "color": 3429176
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m9",
+        "parent": "specimen",
+        "transform": {
+          "pos": [
+            0.09,
+            0.005,
+            -0.0265
+          ],
+          "quat": [
+            0.99,
+            0,
+            0.1,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.1,
+            "height": 0.012,
+            "depth": 0.03
+          },
+          "color": 2967857
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m10",
+        "parent": "specimen",
+        "transform": {
+          "pos": [
+            -0.01,
+            0.005,
+            0.0035
+          ],
+          "quat": [
+            0.14,
+            0,
+            0.99,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.13,
+            "height": 0.012,
+            "depth": 0.03
+          },
+          "color": 2704686
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m11",
+        "parent": "specimen",
+        "transform": {
+          "pos": [
+            0.11,
+            0.005,
+            0.0335
+          ],
+          "quat": [
+            0.99,
+            0,
+            0.14,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.11,
+            "height": 0.012,
+            "depth": 0.03
+          },
+          "color": 3494970
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m12",
+        "parent": "specimen",
+        "transform": {
+          "pos": [
+            0.04,
+            0.015,
+            0.0535
+          ],
+          "quat": [
+            0.28,
+            0,
+            0.96,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.07,
+            "height": 0.012,
+            "depth": 0.02
+          },
+          "color": 2836271
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m13",
+        "parent": "specimen",
+        "transform": {
+          "pos": [
+            -0.09,
+            0.015,
+            -0.0265
+          ],
+          "quat": [
+            0.13,
+            0,
+            0.99,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.11,
+            "height": 0.012,
+            "depth": 0.03
+          },
+          "color": 3165236
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m14",
+        "parent": "specimen",
+        "transform": {
+          "pos": [
+            -0.01,
+            0.025,
+            0.0135
+          ],
+          "quat": [
+            0.97,
+            0,
+            0.25,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.1,
+            "height": 0.012,
+            "depth": 0.03
+          },
+          "color": 2704429
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m15",
+        "parent": "specimen",
+        "transform": {
+          "pos": [
+            -0.12,
+            0.025,
+            0.0235
+          ],
+          "quat": [
+            0.14,
+            0,
+            0.99,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.1,
+            "height": 0.012,
+            "depth": 0.03
+          },
+          "color": 3560250
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m16",
+        "parent": "specimen",
+        "transform": {
+          "pos": [
+            -0.05,
+            0.025,
+            0.0535
+          ],
+          "quat": [
+            0.95,
+            0,
+            0.31,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.07,
+            "height": 0.012,
+            "depth": 0.02
+          },
+          "color": 2836271
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m17",
+        "parent": "specimen",
+        "transform": {
+          "pos": [
+            -0.18,
+            0.025,
+            0.0235
+          ],
+          "quat": [
+            -0.44,
+            0,
+            0.9,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.04,
+            "height": 0.012,
+            "depth": 0.02
+          },
+          "color": 3230772
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m18",
+        "parent": "specimen",
+        "transform": {
+          "pos": [
+            -0.18,
+            0.025,
+            0.0035
+          ],
+          "quat": [
+            0.89,
+            0,
+            -0.45,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.03,
+            "height": 0.012,
+            "depth": 0.02
+          },
+          "color": 2704429
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m19",
+        "parent": "specimen",
+        "transform": {
+          "pos": [
+            0.18,
+            0.015,
+            0.0335
+          ],
+          "quat": [
+            0.93,
+            0,
+            -0.37,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.03,
+            "height": 0.012,
+            "depth": 0.02
+          },
+          "color": 3692091
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m20",
+        "parent": "specimen",
+        "transform": {
+          "pos": [
+            0.18,
+            0.015,
+            0.0135
+          ],
+          "quat": [
+            -0.52,
+            0,
+            0.86,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.03,
+            "height": 0.012,
+            "depth": 0.02
+          },
+          "color": 2967857
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m21",
+        "parent": "specimen",
+        "transform": {
+          "pos": [
+            0,
+            -0.011,
+            -0.0735
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.105,
+            "height": 0.026,
+            "depth": 0.032
+          },
+          "color": 9136192
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "fabric"
+          }
+        ]
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1787876870529,
+        "provider": "gpt",
+        "data": "GMwEZ1kALU/wdM9Mg6QtDmhurTeQlQw31J6IdSrmU0k/wtv98Sbl10ovKXJg/Byes71ucvLSZjx2ugT0J7PV6EbL9XbGvO9g8E29oiPv2gqE/F5euGBDUmnd3DwL/dsvN0cJS1xibpDyJPxzmhDwy96qS/bgy+qdHtfkdXu67dPu/pMiIk1WrStZzJSXEwtrJxbbLXADkIhWCX/s4Iuu4T3q5ijjQuyVD0NjnYsuCdQ7FbeegK6dmhGVNy0DNSqXBqGSSrb5AAc3dDFAMFPtB+5JMXK2JHxe3zzg515SaRlsQxY0JrCe/TynH0+t+ysTTIJgWCflNYDOw97EfDg1+aS4bCEbP/NiS6TsKUzKKLV8h1DFGBhJA56kSwQmHrF3+e4CSCpTeS5pv5K1RSJlGvgoOzYEK91J48gDvhJZ5g+Ra13KTX7cdHxJ4BpJRfmrv+f6af/Ra02jEecTnMrqGJnfB5YGYxSeV1uD5IfTNuRCJvSb+f1VKV1eiJsR7dcYvwZAXbc29RuRhnVajSIYIvpnh//MYozyaoZZ6yydy0qEsXrE4KIJ2R/qCopY5Xr2I/5OVu0KN57/KDWdt+I6J0s3rrdxZ9zr78uhzErbB+tuaxQa8VrOEDSJ0LE7AIEZvvj5oPuEzBB+41UjzcR47mr/9CUQsMIpG2+rDen0hg7niecEtWKoHwEyjKPMZZgzZWfU07bLTkyOiGiQG4+dwj4tB472hY5djUw3eNwlVqvbeFvsSIhd6Q6NAptsKmLFvhwSbrLGM89UNKBfSNje7NOnRJ29eM9jg3EcFXdHBZv/FmztIpwsuamSbODWrpp9z6A/4rnKGzsRXUk2/n5MNSaieG6ZW+x9fA15fmHT7fsCqS+7YNHQnnAzkU3XSZufvfNweE2LGcGZP6705czkkn0wf9zPY86Bx3pGS2BYVv0Rqv42FbuI9kp+Xr+u0nOzQO4WknFdvcAWghHo723f58FDnXxGge1lPX/5s7tLFII9AuOr7kkCIKZE/vC6Zdscn7tvzoDZsmwWSs/bl471b8A3bYkmDHk8UJERZGX/JiPMWEM2jkjfUGApcoI59XLcY1rrnNWUFMVICb2oMSFQKuESgDTZZJJn+SO9xPXA0U+ai7GxEow1WgCURnbXvLTOtj4HTt/tE/cahKcdroSJiyLTag54vYUi3InbNVBwR9VKRVZhu5wVFDtSA6PhIOlygzR9h5I1PcuQMxEswZLf/JKjvBgNjKVWmxMuIBcNPmY5BnZ7Uvm9UlPkiUFK3FwizaB/UoAnR4F2b5hrJVeyoEpyaSC6n0fUuiQQDuX2f5gQQv4WohYX2/reXHVz7YJFmAR0Yrzp5Pt/S0HOWEeFxuNYBEnEv5BFJGFgFs5HTHEMVUlXq6DJIed/ZlQsVg==",
+        "edits": ""
+      },
+      "semanticSnapshot": {
+        "v": 1,
+        "auto": true,
+        "text": "风干卷曲深绿蕨叶标本 · 1组/22mesh · 世界坐标(Y上Z前), 原点=模型根\n# 阅读说明: G:=group行(可动画骨骼, 动画key用G:后的id; @p=pivot世界坐标; 倾(x,y,z)°=朝向偏离世界轴的欧拉角; 缩进=父子层级; 挂:=挂载于某组; G:id→id→…=chain折叠行, 每个id都是可独立动画的group, chain×N=waypoint数)\n# M:=mesh行(label[id 几何 @(世界坐标)], label可省略; ×N=for循环批量件(锚点=代表实例); cyl (起)→(末)或 轴上(Y)等方位词=延伸方向; 薄向=板面法向(扁板); 挂载组双代表=最大件+最远有向件(刃/嘴/管所在端); 无方向标注=均匀块(三向相近,如头),默认面向前(Z); 对称×2=镜像对)\nG:specimen 蕨叶标本 @p(0,0,0)\n  M:[m21 box 0.11×0.03×0.03 (0,0,-0.1) 轴右(X)]",
+        "stats": {
+          "groups": 1,
+          "meshes": 22,
+          "labeledMeshes": 0,
+          "labelCoverage": 0,
+          "batchLabels": 0,
+          "autoChains": 0,
+          "snapshotChars": 442
+        }
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -0.19897269132381162,
+          0,
+          -0.10977299845448038
+        ],
+        "max": [
+          0.19897269132381162,
+          0.062000000000000006,
+          0.10977299845448038
+        ],
+        "sourceNodeId": "asset-bounds"
+      }
+    ],
+    "sourceMeshCount": 22,
+    "candidateCount": 0,
+    "fallbackUsed": true
+  },
+  "footprintRadius": 0.19897269132381162,
+  "sizeClass": "small",
+  "mode": "voxel",
+  "provider": "gpt",
+  "createdAt": 1787876869902,
+  "updatedAt": 1787876869902
+}

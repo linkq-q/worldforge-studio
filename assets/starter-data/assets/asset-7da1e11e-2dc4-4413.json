@@ -1,0 +1,518 @@
+{
+  "id": "asset-7da1e11e-2dc4-4413",
+  "name": "玩具坦克 2",
+  "prompt": "单个绿色塑料玩具坦克，履带炮塔和短炮管清晰，明显玩具比例，仅一个物品无底座无配件\nCoordinate contract: local Y+ is up, local Z+ is the front, entrance, or forward direction, and local X+ is right. Put doors, facades, openings, windshields, noses, seats, and other recognizable front details toward local Z+. For a modular repeated element, explicitly choose the long axis: side-by-side modules span local X with depth/front on local Z; traversal modules span local Z. Keep the model centered at its origin.\nCanonical dimensions contract: width=0.62, height=0.34, depth=0.82 world units. Keep the generated mesh within this centered bounding size.\nCreate variation 2 of 2; preserve the same reusable asset family while varying silhouette and details.",
+  "modelJson": {
+    "name": "绿色塑料玩具坦克·变化二",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "body",
+        "name": "坦克车体",
+        "transform": {
+          "pos": [
+            0,
+            0.08,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.656,
+            0.397,
+            0.798
+          ],
+          "center": [
+            0,
+            0.104,
+            0.036
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              0.9999,
+              -0.0157
+            ],
+            [
+              0,
+              0.0157,
+              0.9999
+            ]
+          ],
+          "_mainAxis": 2
+        }
+      },
+      {
+        "id": "left_track",
+        "name": "左履带",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            -0.245,
+            0.01,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.148,
+            0.18,
+            0.72
+          ],
+          "center": [
+            -0.009,
+            0,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 2
+        }
+      },
+      {
+        "id": "right_track",
+        "name": "右履带",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0.245,
+            0.01,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.148,
+            0.18,
+            0.72
+          ],
+          "center": [
+            0.009,
+            0,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 2
+        }
+      },
+      {
+        "id": "turret",
+        "name": "旋转炮塔",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0,
+            0.155,
+            0.015
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.3,
+            0.191,
+            0.551
+          ],
+          "center": [
+            0,
+            0.027,
+            0.135
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              0.9966,
+              0.0827
+            ],
+            [
+              0,
+              -0.0827,
+              0.9966
+            ]
+          ],
+          "_mainAxis": 2
+        }
+      },
+      {
+        "id": "cannon",
+        "name": "短炮管",
+        "parent": "turret",
+        "transform": {
+          "pos": [
+            0,
+            0.055,
+            0.125
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.1,
+            0.1,
+            0.315
+          ],
+          "center": [
+            0,
+            -0.005,
+            0.127
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 2
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0,
+            0.055,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.42,
+            "height": 0.13,
+            "depth": 0.62
+          },
+          "color": 4161340
+        }
+      },
+      {
+        "id": "m1",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0,
+            0.12,
+            0.01
+          ],
+          "quat": [
+            0,
+            0,
+            0,
+            1
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.42,
+            "height": 0.08,
+            "depth": 0.46
+          },
+          "color": 5083463
+        }
+      },
+      {
+        "id": "m2",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0,
+            0.155,
+            0.18
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.3,
+            "height": 0.06,
+            "depth": 0.14
+          },
+          "color": 5741648
+        }
+      },
+      {
+        "id": "m3",
+        "parent": "left_track",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.13,
+            "height": 0.18,
+            "depth": 0.72
+          },
+          "color": 2377002
+        }
+      },
+      {
+        "id": "m4",
+        "parent": "left_track",
+        "transform": {
+          "pos": [
+            -0.071,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.025,
+            "height": 0.12,
+            "depth": 0.56
+          },
+          "color": 3235124
+        }
+      },
+      {
+        "id": "m5",
+        "parent": "right_track",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.13,
+            "height": 0.18,
+            "depth": 0.72
+          },
+          "color": 2377002
+        }
+      },
+      {
+        "id": "m6",
+        "parent": "right_track",
+        "transform": {
+          "pos": [
+            0.071,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.025,
+            "height": 0.12,
+            "depth": 0.56
+          },
+          "color": 3235124
+        }
+      },
+      {
+        "id": "m7",
+        "parent": "turret",
+        "transform": {
+          "pos": [
+            0,
+            0.052,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.3,
+            "height": 0.105,
+            "depth": 0.27
+          },
+          "color": 3766840
+        }
+      },
+      {
+        "id": "m8",
+        "parent": "turret",
+        "transform": {
+          "pos": [
+            0,
+            0.092,
+            -0.005
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.2,
+            "height": 0.025,
+            "depth": 0.15
+          },
+          "color": 6662234
+        }
+      },
+      {
+        "id": "m9",
+        "parent": "cannon",
+        "transform": {
+          "pos": [
+            0,
+            -0.005,
+            0.015
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.1,
+            "height": 0.1,
+            "depth": 0.09
+          },
+          "color": 3436341
+        }
+      },
+      {
+        "id": "m10",
+        "parent": "cannon",
+        "transform": {
+          "pos": [
+            0,
+            -0.005,
+            0.16
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.065,
+            "height": 0.065,
+            "depth": 0.22
+          },
+          "color": 3107122
+        }
+      },
+      {
+        "id": "m11",
+        "parent": "cannon",
+        "transform": {
+          "pos": [
+            0,
+            -0.005,
+            0.257
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.085,
+            "height": 0.085,
+            "depth": 0.055
+          },
+          "color": 2645293
+        }
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1787875110658,
+        "provider": "gpt",
+        "data": "8Lun6CL//1niY+Niuba3D6pn1iyIYfdk1QjC6+pgLtWhm+rOeffRFoqnQWT7MVk5o3pe0+UesnKyVbAR27wjjFxAnMszdluDbPXmaVi2fwg/OjoiruHISBf/lfkiwP4FTjDsM7vChhBHIHrvVeEyzUp1Iv6d9JmmL9yocVct12H/rqRvRCjdD+lU+42Fy3/J+B63Z1ceEj1Ha+mmKBu0KgTOwqPZbtj/Q2le3u7FjzBxdxC08q1Hw7VtDLGSJeZ4v6iewwMf4Kp9XqdJ00y+mxX4isyY4Vzb1qrB+skyj1EUJbiiP+kN2Z2f8Rf37wbEh30wNHAoFYZNuhYV18AQwlqI8n9gdJWYBtZDI0ZTP6rsKa8eVJ95WCDxfWHihZQp0LsXR+OMkyu6gY7bxBHc18tzR4I5DMI55rYC6kGOfZbsKW2linVqh+EqOuCOZGxsoznJi7N6jZq92J0nzDNdFv/bSGf3mEyJCaTfuhzah3/PXdDXJGeg5F9pnAjT5hocNqNWJZKIL7rTxWInfKXhjWPd93oJty7Ldc5XSlscqoAIh5i8tMwRcq7MDArel6powKn9ofRBBlx7Avap0f2NRmP8dlYqX5Iu26Zr/D2WFBAEOAo3+a+ESt5zjZlriPlhoN0SA3Sc32K93CfjMM8aKWIDPakdbxLiDJgWfMp+NdJiyToNXY/oNQNF+jhLGypBorImqTybvJ8d2uSZeDzAR3AEhj0dZcuqQPuUWRhXt6dKK3WM2Y3KOk9kbjWChYI8Y/x8NqvYoGOANII7xhMRe7nxN+/O15kB2JARZihriGx1+T7LbRuGwJi1XTBRxNRy/pVPLeEVXoX4BZ0MAWP3XvNoBjinZzp7zoegmfuang70TypDTGntRGMVJYrVtduLUeCbYvMKlYG5+1tYCkMOITjUNZiPZUzoyB0=",
+        "edits": ""
+      },
+      "semanticSnapshot": {
+        "v": 1,
+        "auto": true,
+        "text": "绿色塑料玩具坦克·变化二 · 5组/12mesh · 世界坐标(Y上Z前), 原点=模型根\n# 阅读说明: G:=group行(可动画骨骼, 动画key用G:后的id; @p=pivot世界坐标; 倾(x,y,z)°=朝向偏离世界轴的欧拉角; 缩进=父子层级; 挂:=挂载于某组; G:id→id→…=chain折叠行, 每个id都是可独立动画的group, chain×N=waypoint数)\n# M:=mesh行(label[id 几何 @(世界坐标)], label可省略; ×N=for循环批量件(锚点=代表实例); cyl (起)→(末)或 轴上(Y)等方位词=延伸方向; 薄向=板面法向(扁板); 挂载组双代表=最大件+最远有向件(刃/嘴/管所在端); 无方向标注=均匀块(三向相近,如头),默认面向前(Z); 对称×2=镜像对)\nG:body 坦克车体 @p(0,0.1,0)\n  M:[m0 box 0.42×0.13×0.62 (0,0.1,0) 薄向上(Y)]\n  G:left_track 左履带 @p(-0.2,0.1,0)\n    M:[m3 box 0.13×0.18×0.72 (-0.2,0.1,0) 轴前(Z)]\n  G:right_track 右履带 @p(0.2,0.1,0)\n    M:[m5 box 0.13×0.18×0.72 (0.2,0.1,0) 轴前(Z)]\n  G:turret 旋转炮塔 @p(0,0.2,0)\n    M:[m7 box 0.3×0.11×0.27 (0,0.3,0) 薄向上(Y)]\n    G:cannon 短炮管 @p(0,0.3,0.1)\n      M:[m10 box 0.07×0.07×0.22 (0,0.3,0.3) 轴前(Z)]",
+        "stats": {
+          "groups": 5,
+          "meshes": 12,
+          "labeledMeshes": 0,
+          "labelCoverage": 0,
+          "batchLabels": 0,
+          "autoChains": 0,
+          "snapshotChars": 762
+        }
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -0.3285,
+          0,
+          -0.39225
+        ],
+        "max": [
+          0.3285,
+          0.33949999999999997,
+          0.39225
+        ],
+        "sourceNodeId": "asset-bounds"
+      }
+    ],
+    "sourceMeshCount": 12,
+    "candidateCount": 0,
+    "fallbackUsed": true
+  },
+  "footprintRadius": 0.39225,
+  "sizeClass": "small",
+  "mode": "voxel",
+  "provider": "gpt",
+  "createdAt": 1787875110139,
+  "updatedAt": 1787875110139
+}

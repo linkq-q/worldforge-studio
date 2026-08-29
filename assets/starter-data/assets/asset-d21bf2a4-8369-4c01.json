@@ -1,0 +1,788 @@
+{
+  "id": "asset-d21bf2a4-8369-4c01",
+  "name": "单辆工程玩具卡车",
+  "prompt": "A single reusable yellow toy dump truck with a raised readable dump bed, rounded cab and four chunky wheels, approximately 0.34 meters long, no cargo, floor, room, background, or extra vehicles",
+  "tags": [
+    "toy",
+    "vehicle",
+    "prop"
+  ],
+  "modelJson": {
+    "name": "黄色玩具自卸卡车",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "body",
+        "name": "车身",
+        "transform": {
+          "pos": [
+            0,
+            0.08,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.228,
+            0.319,
+            0.383
+          ],
+          "center": [
+            0,
+            0.06,
+            0.018
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              0.9508,
+              -0.3097
+            ],
+            [
+              0,
+              0.3097,
+              0.9508
+            ]
+          ],
+          "_mainAxis": 2
+        }
+      },
+      {
+        "id": "wheel_0_0",
+        "name": "车轮",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            -0.09,
+            -0.025,
+            -0.105
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.048,
+            0.085,
+            0.075
+          ],
+          "center": [
+            0,
+            0,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "wheel_0_1",
+        "name": "车轮",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            -0.09,
+            -0.025,
+            0.105
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.048,
+            0.085,
+            0.075
+          ],
+          "center": [
+            0,
+            0,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "wheel_1_0",
+        "name": "车轮",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0.09,
+            -0.025,
+            -0.105
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.048,
+            0.085,
+            0.075
+          ],
+          "center": [
+            0,
+            0,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "wheel_1_1",
+        "name": "车轮",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0.09,
+            -0.025,
+            0.105
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.048,
+            0.085,
+            0.075
+          ],
+          "center": [
+            0,
+            0,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "dump_bed",
+        "name": "升起的货斗",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0,
+            0.045,
+            -0.145
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.214,
+            0.127,
+            0.233
+          ],
+          "center": [
+            0,
+            0.089,
+            0.088
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              0.9569,
+              -0.2903
+            ],
+            [
+              0,
+              0.2903,
+              0.9569
+            ]
+          ],
+          "_mainAxis": 2
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0,
+            0.005,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.17,
+            "height": 0.045,
+            "depth": 0.29
+          },
+          "color": 15906565
+        }
+      },
+      {
+        "id": "m1",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0,
+            0.035,
+            -0.005
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.14,
+            "height": 0.025,
+            "depth": 0.31
+          },
+          "color": 16763928
+        }
+      },
+      {
+        "id": "m2",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0,
+            -0.005,
+            0.155
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.18,
+            "height": 0.035,
+            "depth": 0.045
+          },
+          "color": 15771904
+        }
+      },
+      {
+        "id": "m3",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0,
+            0.08,
+            0.095
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.15,
+            "height": 0.095,
+            "depth": 0.09
+          },
+          "color": 16763156
+        }
+      },
+      {
+        "id": "m4",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0,
+            0.142,
+            0.09
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.135,
+            "height": 0.035,
+            "depth": 0.075
+          },
+          "color": 16766251
+        }
+      },
+      {
+        "id": "m5",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0,
+            0.107,
+            0.141
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.105,
+            "height": 0.055,
+            "depth": 0.008
+          },
+          "color": 7387601
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass",
+            "variant": "blue"
+          }
+        ]
+      },
+      {
+        "id": "m6",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            -0.076,
+            0.1,
+            0.097
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.008,
+            "height": 0.05,
+            "depth": 0.052
+          },
+          "color": 7387601
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass",
+            "variant": "blue"
+          }
+        ]
+      },
+      {
+        "id": "m7",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0.076,
+            0.1,
+            0.097
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.008,
+            "height": 0.05,
+            "depth": 0.052
+          },
+          "color": 7387601
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass",
+            "variant": "blue"
+          }
+        ]
+      },
+      {
+        "id": "m8",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0,
+            0.055,
+            0.166
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.085,
+            "height": 0.014,
+            "depth": 0.009
+          },
+          "color": 4473924
+        }
+      },
+      {
+        "id": "m9",
+        "parent": "wheel_0_0",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.045,
+            "height": 0.085,
+            "depth": 0.075
+          },
+          "color": 2434341
+        }
+      },
+      {
+        "id": "m10",
+        "parent": "wheel_0_0",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.048,
+            "height": 0.035,
+            "depth": 0.035
+          },
+          "color": 14723349
+        }
+      },
+      {
+        "id": "m11",
+        "parent": "wheel_0_1",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.045,
+            "height": 0.085,
+            "depth": 0.075
+          },
+          "color": 2434341
+        }
+      },
+      {
+        "id": "m12",
+        "parent": "wheel_0_1",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.048,
+            "height": 0.035,
+            "depth": 0.035
+          },
+          "color": 14723349
+        }
+      },
+      {
+        "id": "m13",
+        "parent": "wheel_1_0",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.045,
+            "height": 0.085,
+            "depth": 0.075
+          },
+          "color": 2434341
+        }
+      },
+      {
+        "id": "m14",
+        "parent": "wheel_1_0",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.048,
+            "height": 0.035,
+            "depth": 0.035
+          },
+          "color": 14723349
+        }
+      },
+      {
+        "id": "m15",
+        "parent": "wheel_1_1",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.045,
+            "height": 0.085,
+            "depth": 0.075
+          },
+          "color": 2434341
+        }
+      },
+      {
+        "id": "m16",
+        "parent": "wheel_1_1",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.048,
+            "height": 0.035,
+            "depth": 0.035
+          },
+          "color": 14723349
+        }
+      },
+      {
+        "id": "m17",
+        "parent": "dump_bed",
+        "transform": {
+          "pos": [
+            0,
+            0.055,
+            0.105
+          ],
+          "quat": [
+            -0.23,
+            0,
+            0,
+            0.97
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.14,
+            "height": 0.016,
+            "depth": 0.22
+          },
+          "color": 16103424
+        }
+      },
+      {
+        "id": "m18",
+        "parent": "dump_bed",
+        "transform": {
+          "pos": [
+            -0.08,
+            0.095,
+            0.095
+          ],
+          "quat": [
+            -0.13,
+            0,
+            0.69,
+            0.69
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.1,
+            "height": 0.014,
+            "depth": 0.2
+          },
+          "color": 16762904
+        }
+      },
+      {
+        "id": "m19",
+        "parent": "dump_bed",
+        "transform": {
+          "pos": [
+            0.08,
+            0.095,
+            0.095
+          ],
+          "quat": [
+            -0.13,
+            0,
+            -0.69,
+            0.69
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.1,
+            "height": 0.014,
+            "depth": 0.2
+          },
+          "color": 16762904
+        }
+      },
+      {
+        "id": "m20",
+        "parent": "dump_bed",
+        "transform": {
+          "pos": [
+            0,
+            0.065,
+            -0.005
+          ],
+          "quat": [
+            -0.71,
+            0,
+            0,
+            0.71
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.16,
+            "height": 0.014,
+            "depth": 0.1
+          },
+          "color": 15247104
+        }
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1786874732426,
+        "provider": "gpt",
+        "data": "ZCcNbUYkPEEkTpQSiT4w36VGEESaYJDEUf7oVMxFWiOssQiO3rP83K2oBFAZjyo7sS9QA76xreOH1k9Zvv3T3/8T61yvytxsgdLT3fWtTtTo3aKjy9aH4mlnOP+A5Q6v6/cnHP+xV2AZdXNKKQF32yD1j80/yXIC6oWXSILe60f2hv1mzR9CN+GkhOX79wLUCqlxE7SM5kVkaj2sV6sXCOKFtqkbwa9jWJzdBc8lixzpk0JwKzZN/lzKSIsB8E90mK5sZKWnJ6MsQQpQ3iq3f+Y/TvSjHEUkjPuAtz05+vJGFvT/qmxdEZdoa1zb3/4wD67FDkU9T5uMesgCWBugd3fI01qMv1MxYpVNLQVlS67YPHxlYwAwCUwj4Rdo6AcSP8Q0/Xko3nRMlkjWBCj0UFA37Al/3VYnUEBCu+3TznuB5FNMmyR+WVuvFFtwmgSCuAlKAUudxzQ7672OymPnIVKTCOwrTmqu9RD5s+hmmmC2zGseuW2nfW0t/Z8CkvM3zoa1Pv+av8EInWqbuffi5etkdmo2YtVf31qRAkGtbqDvvhuvzZWFn4pRdfoBP6uB7Mkk6Yk9/4Q1D2wSdyfIiumzj9Mr2nMzVgkcT5e4ApDg7Ws627Hu9bXRU7jLDWYqEDu3rxuoj/Mxl1VGGThSOpvSxFv9sadUS41rIS3F0lgx0kSAdXxT/8wd50689oBd1NsbiaFbujsGVgb0CjLVaA2Gvd5uUyLynnlw9Jzk0SgaxCEn50/PTpJguqxRu3HEGrC15AxKspoLNyDkAPAhQnnIysXRxe1XIBjlIg5bhWJr03efWbhR0qEc3C9ygP2z9km7kT0I713XpHe8vhLdwdLyISV0sI9i8Q5HTyVGJ9p0QNV849lZslNoGfd/xhQ5+M8kv/52npJpBeXE6YSekqCxVQx6Mzh9aLGSLn/s6vh3j98LHECSAqcv4lpDZ2B0+YVhRt+DA1651muzr2GF8CzsXtu6M9RhPbs1+omqObCGH5vgQxSbq9hLZj6nVC0wi7j715FCLlVk0fO5reCkn11aISgvYg/dho5rRqV2Ur7Rr6tB96+XiTjXcIzUtnfmttcJBwtvfCxa0JXmBZ0O2EEvZvxhUIqDZ4cezw==",
+        "edits": ""
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -0.11399999999999999,
+          0,
+          -0.16875
+        ],
+        "max": [
+          0.11399999999999999,
+          0.2752621504488701,
+          0.16875
+        ],
+        "sourceNodeId": "asset-bounds"
+      }
+    ],
+    "sourceMeshCount": 21,
+    "candidateCount": 1,
+    "fallbackUsed": true
+  },
+  "footprintRadius": 0.16875,
+  "sizeClass": "small",
+  "mode": "voxel",
+  "provider": "gpt",
+  "libraryId": "library-d7967286-cebf-4f99",
+  "libraryMetadata": {
+    "tags": [
+      "toy",
+      "dumptruck",
+      "constructionvehicle",
+      "playgroundprop"
+    ],
+    "applicableZones": [
+      "settlement"
+    ],
+    "repeatable": true,
+    "landmark": false,
+    "enabled": true,
+    "priority": 0.5,
+    "analysisStatus": "ready",
+    "rotation": "random"
+  },
+  "createdAt": 1787817380063,
+  "updatedAt": 1787817380063
+}

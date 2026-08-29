@@ -1,0 +1,182 @@
+{
+  "id": "asset-058c64cb-2541-4618",
+  "name": "特技机",
+  "prompt": "单独一个流线型特技玩具飞机，紫色与白色涂装，短翼，完整独立个体，无底座，无其他物品\nCoordinate contract: local Y+ is up, local Z+ is the front, entrance, or forward direction, and local X+ is right. Put doors, facades, openings, windshields, noses, seats, and other recognizable front details toward local Z+. For a modular repeated element, explicitly choose the long axis: side-by-side modules span local X with depth/front on local Z; traversal modules span local Z. Keep the model centered at its origin.\nCanonical dimensions contract: width=0.5, height=0.19, depth=0.48 world units. Keep the generated mesh within this centered bounding size.",
+  "modelJson": {
+    "name": "紫白流线特技玩具飞机",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "m0",
+        "transform": {
+          "pos": [
+            0,
+            0.085,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.15,
+            "height": 0.09,
+            "depth": 0.42
+          },
+          "color": 7288232
+        }
+      },
+      {
+        "id": "m1",
+        "transform": {
+          "pos": [
+            0,
+            0.08,
+            0.195
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.13,
+            "height": 0.075,
+            "depth": 0.11
+          },
+          "color": 16777215
+        }
+      },
+      {
+        "id": "m2",
+        "transform": {
+          "pos": [
+            0,
+            0.075,
+            0.015
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.5,
+            "height": 0.025,
+            "depth": 0.145
+          },
+          "color": 7288232
+        }
+      },
+      {
+        "id": "m3",
+        "transform": {
+          "pos": [
+            0,
+            0.06,
+            -0.165
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.31,
+            "height": 0.018,
+            "depth": 0.09
+          },
+          "color": 16777215
+        }
+      },
+      {
+        "id": "m4",
+        "transform": {
+          "pos": [
+            0,
+            0.125,
+            -0.145
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.035,
+            "height": 0.095,
+            "depth": 0.105
+          },
+          "color": 7288232
+        }
+      },
+      {
+        "id": "m5",
+        "transform": {
+          "pos": [
+            0,
+            0.145,
+            0.055
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.075,
+            "height": 0.035,
+            "depth": 0.075
+          },
+          "color": 16777215
+        }
+      },
+      {
+        "id": "m6",
+        "transform": {
+          "pos": [
+            0,
+            0.165,
+            0.095
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.055,
+            "height": 0.018,
+            "depth": 0.035
+          },
+          "color": 7288232
+        }
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1787873819776,
+        "provider": "gpt",
+        "data": "PGMZw/Z6L7C86ww47mtsGrq/dr9hGgb1dy2Pn7RRronY3+Okri6itOrlMMdg1UWas7G5Wx3O9F2HzRfCB2dP62uulP0vPoLNILN+TeJEZ1H+nXZbjzv7Hapw15zc2PrSP20/xF+h+SgwMkLNtkhAeAbzElTZLdcUoHVNsTyhggv3IVZ6nHTtnJRAmD0ha5RnLwf8m7BgVUJ+nu6XE3LLIRL+Xjf3AxIMRnUNoTNn6d5hZRaFPZlZy7S9mkzROoMgGykPRrNs0FBMjDQwtuSkCoxIIgF3crowXddRX8KULtcN457OG19I77yTgq1xGOXo8BXkTbqYqkO8RW7ijjuc74LVWgLJCHe6NGNSmVkuJ/RDXyFm2qQBzN7A5F9I0yu52FnEbdEY6uc4pM1zHxcAAlFKzkXHUq0nHfssObcMEPaH0MsEihC5pxOTQL4vnrzjj+FY5zIRtXbKVKASPjWSTMILWhOAcy3i558q9PnvmjqBSLGDLihicN9/SS0dtjClDWxz6Ad6q/dyfF2IVDQwO5S/oxP+HergeZXsWAhgXQPLllCvAT+tg3wMKCLOYXEdfTgkmNrKKZCqsWE+p67tul0wzTKnP9E95GVYLmZ4/Q==",
+        "edits": ""
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -0.25,
+          0,
+          -0.23
+        ],
+        "max": [
+          0.25,
+          0.134,
+          0.23
+        ],
+        "sourceNodeId": "asset-bounds"
+      }
+    ],
+    "sourceMeshCount": 7,
+    "candidateCount": 0,
+    "fallbackUsed": true
+  },
+  "footprintRadius": 0.25,
+  "sizeClass": "small",
+  "mode": "voxel",
+  "provider": "gpt",
+  "createdAt": 1787873819601,
+  "updatedAt": 1787873819601
+}

@@ -1,0 +1,524 @@
+{
+  "id": "asset-0a930f2b-9820-4c7e",
+  "name": "台灯",
+  "prompt": "台灯",
+  "modelJson": {
+    "name": "体素台灯",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "base",
+        "name": "底座",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            1.5,
+            3.075,
+            2.724
+          ],
+          "center": [
+            0,
+            1.262,
+            0.327
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              0.9218,
+              0.3876
+            ],
+            [
+              0,
+              -0.3876,
+              0.9218
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "lower_arm",
+        "name": "下灯臂",
+        "parent": "base",
+        "transform": {
+          "pos": [
+            0,
+            0.18,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            1.12,
+            2.821,
+            2.561
+          ],
+          "center": [
+            0,
+            1.131,
+            0.348
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              0.8971,
+              0.4417
+            ],
+            [
+              0,
+              -0.4417,
+              0.8971
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "upper_arm",
+        "name": "上灯臂",
+        "parent": "lower_arm",
+        "transform": {
+          "pos": [
+            0,
+            1.24,
+            -0.32
+          ]
+        },
+        "_obb": {
+          "size": [
+            1.12,
+            1.107,
+            1.894
+          ],
+          "center": [
+            0,
+            0.296,
+            0.582
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              0.9056,
+              -0.4242
+            ],
+            [
+              0,
+              0.4242,
+              0.9056
+            ]
+          ],
+          "_mainAxis": 2
+        }
+      },
+      {
+        "id": "lamp_head",
+        "name": "灯头",
+        "parent": "upper_arm",
+        "transform": {
+          "pos": [
+            0,
+            0.66,
+            0.66
+          ]
+        },
+        "_obb": {
+          "size": [
+            1.12,
+            0.402,
+            1.02
+          ],
+          "center": [
+            0,
+            -0.078,
+            0.234
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              0.9969,
+              0.0783
+            ],
+            [
+              0,
+              -0.0783,
+              0.9969
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "base",
+        "transform": {
+          "pos": [
+            0,
+            0.09,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.5,
+            "height": 0.18,
+            "depth": 1.05
+          },
+          "color": 3159872
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m1",
+        "parent": "base",
+        "transform": {
+          "pos": [
+            0,
+            0.2,
+            0.2
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.72,
+            "height": 0.12,
+            "depth": 0.18
+          },
+          "color": 5265763
+        }
+      },
+      {
+        "id": "m2",
+        "parent": "lower_arm",
+        "transform": {
+          "pos": [
+            0,
+            0.62,
+            -0.2
+          ],
+          "quat": [
+            -0.77,
+            0,
+            0,
+            0.64
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.18,
+            "height": 0.16,
+            "depth": 1.26
+          },
+          "color": 5858157
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m3",
+        "parent": "lower_arm",
+        "transform": {
+          "pos": [
+            0,
+            0.12,
+            -0.1
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.34,
+            "height": 0.34,
+            "depth": 0.28
+          },
+          "color": 2370096
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m4",
+        "parent": "upper_arm",
+        "transform": {
+          "pos": [
+            0,
+            0.3,
+            0.31
+          ],
+          "quat": [
+            -0.39,
+            0,
+            0,
+            0.92
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.18,
+            "height": 0.16,
+            "depth": 1
+          },
+          "color": 5858157
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m5",
+        "parent": "upper_arm",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.32,
+            "height": 0.32,
+            "depth": 0.3
+          },
+          "color": 2370096
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m6",
+        "parent": "lamp_head",
+        "transform": {
+          "pos": [
+            0,
+            -0.04,
+            0.28
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.12,
+            "height": 0.22,
+            "depth": 0.92
+          },
+          "color": 3423301
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m7",
+        "parent": "lamp_head",
+        "transform": {
+          "pos": [
+            0,
+            -0.17,
+            0.34
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.96,
+            "height": 0.18,
+            "depth": 0.72
+          },
+          "color": 16770720
+        },
+        "tags": [
+          {
+            "tag": "emissive",
+            "value": 1
+          }
+        ]
+      },
+      {
+        "id": "m8",
+        "parent": "lamp_head",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            -0.12
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.22,
+            "height": 0.28,
+            "depth": 0.28
+          },
+          "color": 2370096
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1786870777273,
+        "provider": "glm",
+        "data": "o7JKwvhHnSrHr/qLK331JRKgh/3VlYWHBDbGtdJ26FHprGs4QlE110aXZ2+KDfKy0GiOh9ZTQyOfW8yvDE5F9pnw+Y7WiJ+Uu2sufKnXv28/cxMX8BrTHQxkHlCb3u8xgP7dejvUVC3kE1hTKNbZJcwo2uq3SkoLSrlGY31CWN1byfZwoWptxHDHbVCXtR7vUQp52JaegqWgUz4QYYmfMcSG/ttXLij0rB1G7SzxXdj01PN70FNeEjKkkWeG3uyO9La5etm1MfTQj7JzYzKpxpAR1BQnLZ/5d13XWWJP/zyF5sydywsThp32Tq1E3uiYZh97BVkpPSdHj3WFsYpOhinnDkTRgzYK3uPdtpjGXiFNRLrbUMFhMAXs2fyrMSHpFAnZmIaUgC7otK2Lxqlg9wkEYP6Jx1tXLKtRzv0MKfBOzeZEL5TLtatZANTIRqojDmYTUrNZ7RxyY6cyvfguVqNAuZDbT+syUIj74X+oO2jfD6WuK7bRFE39uwxDu9ND56jlM0R4YV2tZr6Gy8Jcp3GFFeHEhuKcHewBHyCTp+5Eh29X6JrJKKYWnyg3Y6XwQ2vaX1ssmBTDD050jdX4Gx43qA0U5dY23Cz+ZxN+aZOmsPjUsJicG0YO3czZvnnhsBwichYJJ5QSBooCDrkLxXg4XT5bipvKbzKOffalf72ckx1hq/cKCP2KPWd493Y64mhNFwjmUt9tmXAv1vEAB8+xMuMXii5vUiyPadzmvwJy5xRzvyfN6KGZRwmv2Py6vl2J9waLyqA7d6AykDqLEVKKzffbcbar8mm/4QXh32tsU+pgDcyYQOXW+A==",
+        "edits": ""
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -0.75,
+          0,
+          -0.8025
+        ],
+        "max": [
+          0.75,
+          0.18,
+          0.2475
+        ],
+        "sourceNodeId": "m0"
+      },
+      {
+        "min": [
+          -0.56,
+          1.93,
+          -0.11749999999999994
+        ],
+        "max": [
+          0.56,
+          2.15,
+          0.8025
+        ],
+        "sourceNodeId": "m6"
+      },
+      {
+        "min": [
+          -0.48,
+          1.82,
+          0.04250000000000004
+        ],
+        "max": [
+          0.48,
+          2,
+          0.7625
+        ],
+        "sourceNodeId": "m7"
+      },
+      {
+        "min": [
+          -0.09,
+          1.3050335503254882,
+          -0.6926657486229344
+        ],
+        "max": [
+          0.09,
+          2.1349664496745118,
+          0.11766574862293439
+        ],
+        "sourceNodeId": "m4"
+      },
+      {
+        "min": [
+          -0.09,
+          0.16599301745635908,
+          -0.6713423940149625
+        ],
+        "max": [
+          0.09,
+          1.434006982543641,
+          -0.28365760598503753
+        ],
+        "sourceNodeId": "m2"
+      }
+    ],
+    "sourceMeshCount": 9,
+    "candidateCount": 5,
+    "fallbackUsed": false
+  },
+  "footprintRadius": 0.8025,
+  "sizeClass": "medium",
+  "mode": "voxel",
+  "libraryId": "library-d7967286-cebf-4f99",
+  "libraryMetadata": {
+    "tags": [
+      "desklamp",
+      "lighting",
+      "furniture"
+    ],
+    "applicableZones": [
+      "settlement"
+    ],
+    "repeatable": true,
+    "landmark": false,
+    "enabled": true,
+    "priority": 0.5,
+    "analysisStatus": "ready",
+    "rotation": "random"
+  },
+  "createdAt": 1787817700520,
+  "updatedAt": 1787817700520
+}

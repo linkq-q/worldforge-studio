@@ -1,0 +1,356 @@
+{
+  "id": "asset-ff212bba-02d7-4909",
+  "name": "儿童书架",
+  "prompt": "单个可复用的中高儿童书架，浅木开放格、稳定宽底座和圆角侧板，格口尺度适合图书与较大玩具，不生成独立散落物。\n全局资产美术方向：统一采用柔和圆角、略微夸张比例的精致体素风；家具以浅暖木、米白和雾蓝为主，玩具使用克制的砖红、芥末黄和深蓝点缀，所有边角适合儿童空间且尺度参照1.60米角色。; 现代温暖的儿童卧室，浅木地板、柔和蓝灰墙面和米白顶面保持安静背景，以木质家具和少量红黄蓝玩具形成分组色彩点缀；装饰集中于睡眠与学习区域，中央不堆放杂物。; 温暖, 现代儿童房, 圆角体素, 整洁生活感, 柔和配色; palette #E8DFC9, #B99062, #8EA6B4, #C65F4A, #D6A83E, #354C63; materials 浅色木材, 哑光烤漆, 棉织物, 粉末涂层金属, 透明玻璃\n资产角色：学习区开放式垂直书籍收纳；目标尺度：large。\n只生成一个可复用的独立物体，不要生成地面、背景、天空、完整场景或多个分散物体。",
+  "modelJson": {
+    "name": "浅木儿童开放书架",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "bookcase",
+        "name": "儿童书架主体",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ],
+        "_obb": {
+          "size": [
+            1.28,
+            1.59,
+            0.543
+          ],
+          "center": [
+            0,
+            0.777,
+            -0.027
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              0.9971,
+              -0.0758
+            ],
+            [
+              0,
+              0.0758,
+              0.9971
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "bookcase",
+        "transform": {
+          "pos": [
+            0,
+            0.08,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.28,
+            "height": 0.16,
+            "depth": 0.48
+          },
+          "color": 12161122
+        }
+      },
+      {
+        "id": "m1",
+        "parent": "bookcase",
+        "transform": {
+          "pos": [
+            0,
+            0.22,
+            -0.01
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.14,
+            "height": 0.12,
+            "depth": 0.42
+          },
+          "color": 15261641
+        }
+      },
+      {
+        "id": "m2",
+        "parent": "bookcase",
+        "transform": {
+          "pos": [
+            -0.54,
+            0.82,
+            -0.01
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.12,
+            "height": 1.12,
+            "depth": 0.42
+          },
+          "color": 14271390
+        }
+      },
+      {
+        "id": "m3",
+        "parent": "bookcase",
+        "transform": {
+          "pos": [
+            -0.54,
+            1.47,
+            -0.04
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.12,
+            "height": 0.18,
+            "depth": 0.36
+          },
+          "color": 14271390
+        }
+      },
+      {
+        "id": "m4",
+        "parent": "bookcase",
+        "transform": {
+          "pos": [
+            0.54,
+            0.82,
+            -0.01
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.12,
+            "height": 1.12,
+            "depth": 0.42
+          },
+          "color": 14271390
+        }
+      },
+      {
+        "id": "m5",
+        "parent": "bookcase",
+        "transform": {
+          "pos": [
+            0.54,
+            1.47,
+            -0.04
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.12,
+            "height": 0.18,
+            "depth": 0.36
+          },
+          "color": 14271390
+        }
+      },
+      {
+        "id": "m6",
+        "parent": "bookcase",
+        "transform": {
+          "pos": [
+            0,
+            0.83,
+            -0.185
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.96,
+            "height": 1.14,
+            "depth": 0.07
+          },
+          "color": 15261641
+        }
+      },
+      {
+        "id": "m7",
+        "parent": "bookcase",
+        "transform": {
+          "pos": [
+            0,
+            0.48,
+            -0.01
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.98,
+            "height": 0.1,
+            "depth": 0.4
+          },
+          "color": 14271390
+        }
+      },
+      {
+        "id": "m8",
+        "parent": "bookcase",
+        "transform": {
+          "pos": [
+            0,
+            0.82,
+            -0.01
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.98,
+            "height": 0.1,
+            "depth": 0.4
+          },
+          "color": 14271390
+        }
+      },
+      {
+        "id": "m9",
+        "parent": "bookcase",
+        "transform": {
+          "pos": [
+            0,
+            1.16,
+            -0.01
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.98,
+            "height": 0.1,
+            "depth": 0.4
+          },
+          "color": 14271390
+        }
+      },
+      {
+        "id": "m10",
+        "parent": "bookcase",
+        "transform": {
+          "pos": [
+            0,
+            1.48,
+            -0.02
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.92,
+            "height": 0.08,
+            "depth": 0.38
+          },
+          "color": 14271390
+        }
+      },
+      {
+        "id": "m11",
+        "parent": "bookcase",
+        "transform": {
+          "pos": [
+            -0.47,
+            0.34,
+            0.205
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.06,
+            "height": 0.24,
+            "depth": 0.06
+          },
+          "color": 9348788
+        }
+      },
+      {
+        "id": "m12",
+        "parent": "bookcase",
+        "transform": {
+          "pos": [
+            0.47,
+            0.34,
+            0.205
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.06,
+            "height": 0.24,
+            "depth": 0.06
+          },
+          "color": 9348788
+        }
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1786869672032,
+        "provider": "gpt",
+        "data": "PhLTZ1XpULqulaNZzvNujTdl3uUn+PvaAt/QkBPiyyUpB+uvkndLhTghhy7rMDfknC8Tm6vDjke8pvAZq0+rls3N76JTDFGRNJ9SnHWcuqvQkS9vAOhxCNR2nirSBxnCzCHqrq5Q1W1EusKcjECi0DKrKEIO/xLYahmYUvlIOPLq7ssNeI3TyRbvM/AuHn5Z3Lpt5sF0jyBGHOBu7wXTPil12G42MZqu+ZtmLNaS/BFryEgbBZjjY1K/yFw7eHyhvjGnG0tuFKpMlpm3/fqZCUcMyCcBCFRn8oqigOn9OdiG3/LF6dmwwitcySl1Ffnn4LB7+f4qFkmvsy67D8bWtrEgql69as1trgRTHJlfZVTAzgGNHUd7kPCF7hkUSS03PfrlHpngM5onQhwS276ZRgvayaSxikB13fztircRG96zbP74titQPp23vh6Bq3DBOAWB724ZfHJ/orTo+gfdlXXJ80YatZpnmWJIAqK0kiV2sa/JO+HF/jtUxiOGNjgbEDxRibY4g1lfoQmfrTRiNK/zpe4XLOZqn8r6e1h0SU5wZIOroJ3ZDBLWkFbfesJrtakWYoJwVEzN7M1l9kuAe3XZZrp45ykoRwZEmh0NDWgXYpyAcSyGUrKc25B8jBAoq7T2deeAftYzL0SCqdLuP7dAognOW07E1q/FXdrc/adM80hx8tl3TCvgaeCY7YIMrfWyf13OVzPfBKajU6BZpGtQBrIPP0tE9sTQLSdve35D4tuIrfnO1xY=",
+        "edits": ""
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -0.64,
+          0,
+          -0.24
+        ],
+        "max": [
+          0.64,
+          0.16,
+          0.24
+        ],
+        "sourceNodeId": "m0"
+      }
+    ],
+    "sourceMeshCount": 13,
+    "candidateCount": 1,
+    "fallbackUsed": false
+  },
+  "footprintRadius": 0.64,
+  "sizeClass": "small",
+  "mode": "voxel",
+  "provider": "gpt",
+  "createdAt": 1786869673994,
+  "updatedAt": 1786869673994
+}

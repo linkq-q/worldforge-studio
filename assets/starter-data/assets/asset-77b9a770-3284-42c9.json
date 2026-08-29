@@ -1,0 +1,493 @@
+{
+  "id": "asset-77b9a770-3284-42c9",
+  "name": "衣柜",
+  "prompt": "浅亮曼德鸭参考场景风格，圆润低多边形儿童家具或玩具，清晰轮廓，柔和哑光材质，适度细节。必须是一个完整、独立、可单独摆放的模型，不含场景、地面、底座、其他物品、成组附件、文字或标识。单个双门儿童衣柜，圆角柜体、短木脚、两个安全把手，不含衣物。仅使用这些基础色与顶点色：#FFFDF6,#FEF9EA,#FDF2D7,#E9DABD,#CDBA97,#F8E8CF,#F1D7B2,#E7C393,#C9A06E,#9E7A55,#FFF7A8,#FCEF72,#F6E24B,#D1B825,#9C8510,#FFF3B7,#FDE674,#FCD75F,#FECD4D,#D1900B,#FFE2A0,#FFD170,#F8BC44,#E39F1A,#A96F05,#FBE3BD,#FDD8A3,#FDCC8F,#F1AD69,#D99256,#FFD2BA,#FFB08A,#FF8A5B,#F06B3E,#B84A27,#EAF9FF,#DAF2F5,#95E5F9,#76D0F2,#45BDF6,#D9F8FB,#B2E9F2,#8ECCD6,#7BCFDF,#4BAFCA,#D8F7EF\nCoordinate contract: local Y+ is up, local Z+ is the front, entrance, or forward direction, and local X+ is right. Put doors, facades, openings, windshields, noses, seats, and other recognizable front details toward local Z+. For a modular repeated element, explicitly choose the long axis: side-by-side modules span local X with depth/front on local Z; traversal modules span local Z. Keep the model centered at its origin.\nCanonical dimensions contract: width=1.8, height=2.25, depth=0.72 world units. Keep the generated mesh within this centered bounding size.",
+  "modelJson": {
+    "name": "浅亮双门儿童衣柜",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "cabinet",
+        "name": "柜体",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            1.8,
+            2.274,
+            0.839
+          ],
+          "center": [
+            0,
+            -0.001,
+            0.034
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              0.9992,
+              0.0404
+            ],
+            [
+              0,
+              -0.0404,
+              0.9992
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "leftDoor",
+        "name": "左柜门",
+        "parent": "cabinet",
+        "transform": {
+          "pos": [
+            -0.84,
+            0.22,
+            0.29
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.822,
+            1.66,
+            0.169
+          ],
+          "center": [
+            0.408,
+            0,
+            0.031
+          ],
+          "axes": [
+            [
+              0.9983,
+              0,
+              0.0579
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              -0.0579,
+              0,
+              0.9983
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "rightDoor",
+        "name": "右柜门",
+        "parent": "cabinet",
+        "transform": {
+          "pos": [
+            0.84,
+            0.22,
+            0.29
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.822,
+            1.66,
+            0.169
+          ],
+          "center": [
+            -0.408,
+            0,
+            0.031
+          ],
+          "axes": [
+            [
+              0.9983,
+              0,
+              -0.0579
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0.0579,
+              0,
+              0.9983
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "cabinet",
+        "transform": {
+          "pos": [
+            0,
+            0.17,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.72,
+            "height": 1.78,
+            "depth": 0.58
+          },
+          "color": 16710122
+        }
+      },
+      {
+        "id": "m1",
+        "parent": "cabinet",
+        "transform": {
+          "pos": [
+            0,
+            1.065,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.8,
+            "height": 0.12,
+            "depth": 0.68
+          },
+          "color": 16776694
+        }
+      },
+      {
+        "id": "m2",
+        "parent": "cabinet",
+        "transform": {
+          "pos": [
+            0,
+            -0.76,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.8,
+            "height": 0.14,
+            "depth": 0.64
+          },
+          "color": 16642775
+        }
+      },
+      {
+        "id": "m3",
+        "parent": "cabinet",
+        "transform": {
+          "pos": [
+            -0.68,
+            -0.945,
+            -0.2
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.2,
+            "height": 0.36,
+            "depth": 0.2
+          },
+          "color": 13213806
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "oak"
+          }
+        ]
+      },
+      {
+        "id": "m4",
+        "parent": "cabinet",
+        "transform": {
+          "pos": [
+            -0.68,
+            -0.945,
+            0.2
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.2,
+            "height": 0.36,
+            "depth": 0.2
+          },
+          "color": 13213806
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "oak"
+          }
+        ]
+      },
+      {
+        "id": "m5",
+        "parent": "cabinet",
+        "transform": {
+          "pos": [
+            0.68,
+            -0.945,
+            -0.2
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.2,
+            "height": 0.36,
+            "depth": 0.2
+          },
+          "color": 13213806
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "oak"
+          }
+        ]
+      },
+      {
+        "id": "m6",
+        "parent": "cabinet",
+        "transform": {
+          "pos": [
+            0.68,
+            -0.945,
+            0.2
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.2,
+            "height": 0.36,
+            "depth": 0.2
+          },
+          "color": 13213806
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "oak"
+          }
+        ]
+      },
+      {
+        "id": "m7",
+        "parent": "leftDoor",
+        "transform": {
+          "pos": [
+            0.41,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.82,
+            "height": 1.66,
+            "depth": 0.06
+          },
+          "color": 16775080
+        }
+      },
+      {
+        "id": "m8",
+        "parent": "leftDoor",
+        "transform": {
+          "pos": [
+            0.72,
+            0,
+            0.08
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.12,
+            "height": 0.42,
+            "depth": 0.1
+          },
+          "color": 15188883
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "oak"
+          }
+        ]
+      },
+      {
+        "id": "m9",
+        "parent": "rightDoor",
+        "transform": {
+          "pos": [
+            -0.41,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.82,
+            "height": 1.66,
+            "depth": 0.06
+          },
+          "color": 16639604
+        }
+      },
+      {
+        "id": "m10",
+        "parent": "rightDoor",
+        "transform": {
+          "pos": [
+            -0.72,
+            0,
+            0.08
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.12,
+            "height": 0.42,
+            "depth": 0.1
+          },
+          "color": 15188883
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "oak"
+          }
+        ]
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1787749378145,
+        "provider": "gpt",
+        "data": "LLv5spphJKSeRmCE+TQHnLIYpRBE2Ful+m4qq/EzuRGzF26gONeh+eUq5Rwhpyn3lgVgHfcVlosVNcNYIabW/Em0y9APs2tiBNCMGdU+nvdfyKsJa0ds3iThiRCZNdiflHcy2UgcuUZDD6inu0LZ6HBJ1PoQf4w2IpnelHw4JnHONYe7UutsSrx/nxe9/RezMX/ienvRsZg1kxB12Wi04wAZPzGZu5meUDT6fyxg8aauk19K+G1qLPWuRxISPqRe5bF45OkmE8k4czMlP78uiRKwNLhgBkEPJxfjmL1ipeawfiyArJNu+BtRWy8Vez4EAYFZ84ap0ztVoJoPRvkUJnfDh9NXWLHj9A8SHzrWPVnaY3SmJojIvg+GJDRlvNCov74TRiPMUVrX77HcITXJCDfZiTqslEBbaDJrRwaA/nyIYiFA6OgNWJao0dbLb49xhWgHfdLFSZ9wEYILKDnY7dgbYLfrrLo/OOzCvmNhxR+m2QgP9hv6+4T9eWRYDy+7odBiUNiVukj8lNgWB5JVpjM3ZvRwFfNCbbXwDi6sUUS0AvXQ3BUlKJicYtHtPTr0pwbX7RIOyCT+g3OmwxN7mDSZfDk4HXVoN3geSXfZU6+C5wnGqldJBkktPNEJ10e4URd4PdpVsCbEhhT65tgzcHSc3NodlRNbpq9PDo34h4UsUXV792+XIx75jT932hFXbfdhsc+8CQkZTu9xrHcqKs5o3YQXF18IHCbqxhsJ+FqhGbHQ39IoYbaqi0mJZ5QT8YiDQGM1Fo/dxG89PnmYzyKXYpY1nu0/UNJO8sPAup51OKk=",
+        "edits": ""
+      },
+      "semanticSnapshot": {
+        "v": 1,
+        "auto": true,
+        "text": "浅亮双门儿童衣柜 · 3组/11mesh · 世界坐标(Y上Z前), 原点=模型根\n# 阅读说明: G:=group行(可动画骨骼, 动画key用G:后的id; @p=pivot世界坐标; 倾(x,y,z)°=朝向偏离世界轴的欧拉角; 缩进=父子层级; 挂:=挂载于某组; G:id→id→…=chain折叠行, 每个id都是可独立动画的group, chain×N=waypoint数)\n# M:=mesh行(label[id 几何 @(世界坐标)], label可省略; ×N=for循环批量件(锚点=代表实例); cyl (起)→(末)或 轴上(Y)等方位词=延伸方向; 薄向=板面法向(扁板); 挂载组双代表=最大件+朝向件(嘴/管/檐所在); 无方向标注=均匀块(三向相近,如头),默认面向前(Z); 对称×2=镜像对)\nG:cabinet 柜体 @p(0,0,0)\n  M:[m0 box 1.7×1.8×0.58 (0,0.2,0) 薄向前(Z)]\n  G:leftDoor 左柜门 @p(-0.8,0.2,0.3)\n    M:[m7 box 0.82×1.7×0.06 (-0.4,0.2,0.3) 薄向前(Z)]\n  G:rightDoor 右柜门 @p(0.8,0.2,0.3)\n    M:[m9 box 0.82×1.7×0.06 (0.4,0.2,0.3) 薄向前(Z)]",
+        "stats": {
+          "groups": 3,
+          "meshes": 11,
+          "labeledMeshes": 0,
+          "labelCoverage": 0,
+          "batchLabels": 0,
+          "autoChains": 0,
+          "snapshotChars": 600
+        }
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -0.86,
+          0.405,
+          -0.32999999999999996
+        ],
+        "max": [
+          0.86,
+          2.185,
+          0.25
+        ],
+        "sourceNodeId": "m0"
+      },
+      {
+        "min": [
+          -0.9,
+          0.29499999999999993,
+          -0.36
+        ],
+        "max": [
+          0.9,
+          0.43500000000000005,
+          0.28
+        ],
+        "sourceNodeId": "m2"
+      },
+      {
+        "min": [
+          -0.9,
+          2.13,
+          -0.38
+        ],
+        "max": [
+          0.9,
+          2.25,
+          0.30000000000000004
+        ],
+        "sourceNodeId": "m1"
+      }
+    ],
+    "sourceMeshCount": 11,
+    "candidateCount": 3,
+    "fallbackUsed": false
+  },
+  "footprintRadius": 0.9,
+  "sizeClass": "medium",
+  "mode": "voxel",
+  "provider": "gpt",
+  "libraryId": "library-d7967286-cebf-4f99",
+  "libraryMetadata": {
+    "tags": [
+      "wardrobe",
+      "childrensfurniture",
+      "storagecabinet"
+    ],
+    "applicableZones": [
+      "settlement"
+    ],
+    "repeatable": true,
+    "landmark": false,
+    "enabled": true,
+    "priority": 0.5,
+    "analysisStatus": "ready",
+    "rotation": "random"
+  },
+  "createdAt": 1787817269344,
+  "updatedAt": 1787817269344
+}

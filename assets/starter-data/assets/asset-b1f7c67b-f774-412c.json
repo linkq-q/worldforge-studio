@@ -1,0 +1,628 @@
+{
+  "id": "asset-b1f7c67b-f774-412c",
+  "name": "儿童水杯与零食盘",
+  "prompt": "A single reusable organized snack setting consisting of one lidded child-safe drinking cup and one divided plate holding crackers and sliced fruit, approximately 0.45 meters wide overall, no table, furniture, floor, room, or background",
+  "tags": [
+    "food",
+    "prop"
+  ],
+  "modelJson": {
+    "name": "儿童可重复使用点心餐具",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "plate",
+        "name": "分隔餐盘",
+        "transform": {
+          "pos": [
+            0.075,
+            0.02,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.447,
+            0.194,
+            0.205
+          ],
+          "center": [
+            -0.082,
+            0.078,
+            -0.002
+          ],
+          "axes": [
+            [
+              0.9978,
+              -0.0637,
+              0.0173
+            ],
+            [
+              0.0639,
+              0.9979,
+              -0.0139
+            ],
+            [
+              -0.0164,
+              0.0149,
+              0.9998
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "crackers",
+        "name": "饼干",
+        "parent": "plate",
+        "transform": {
+          "pos": [
+            -0.074,
+            0.022,
+            0
+          ]
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ],
+        "_obb": {
+          "size": [
+            0.07,
+            0.029,
+            0.091
+          ],
+          "center": [
+            -0.001,
+            0.024,
+            -0.012
+          ],
+          "axes": [
+            [
+              0.9903,
+              0.0015,
+              -0.1392
+            ],
+            [
+              -0.015,
+              0.9953,
+              -0.0959
+            ],
+            [
+              0.1384,
+              0.097,
+              0.9856
+            ]
+          ],
+          "_mainAxis": 2
+        }
+      },
+      {
+        "id": "fruit",
+        "name": "水果切片",
+        "parent": "plate",
+        "transform": {
+          "pos": [
+            0.055,
+            0.022,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.106,
+            0.022,
+            0.134
+          ],
+          "center": [
+            -0.008,
+            0.019,
+            0.001
+          ],
+          "axes": [
+            [
+              0.974,
+              0.0578,
+              -0.219
+            ],
+            [
+              -0.0594,
+              0.9982,
+              -0.0009
+            ],
+            [
+              0.2186,
+              0.0139,
+              0.9757
+            ]
+          ],
+          "_mainAxis": 2
+        }
+      },
+      {
+        "id": "cup",
+        "name": "儿童防洒杯",
+        "parent": "plate",
+        "transform": {
+          "pos": [
+            -0.23,
+            0,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.139,
+            0.168,
+            0.11
+          ],
+          "center": [
+            0,
+            0.081,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              0.9984,
+              -0.0562
+            ],
+            [
+              0,
+              0.0562,
+              0.9984
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "lid",
+        "name": "防洒杯盖",
+        "parent": "cup",
+        "transform": {
+          "pos": [
+            0,
+            0.115,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.102,
+            0.053,
+            0.104
+          ],
+          "center": [
+            0,
+            0.022,
+            -0.001
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              0.9967,
+              -0.0817
+            ],
+            [
+              0,
+              0.0817,
+              0.9967
+            ]
+          ],
+          "_mainAxis": 2
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "plate",
+        "transform": {
+          "pos": [
+            0,
+            0.009,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.27,
+            "height": 0.018,
+            "depth": 0.2
+          },
+          "color": 7977425
+        }
+      },
+      {
+        "id": "m1",
+        "parent": "plate",
+        "transform": {
+          "pos": [
+            0,
+            0.031,
+            -0.094
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.27,
+            "height": 0.026,
+            "depth": 0.012
+          },
+          "color": 6003896
+        }
+      },
+      {
+        "id": "m2",
+        "parent": "plate",
+        "transform": {
+          "pos": [
+            0,
+            0.031,
+            0.094
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.27,
+            "height": 0.026,
+            "depth": 0.012
+          },
+          "color": 6003896
+        }
+      },
+      {
+        "id": "m3",
+        "parent": "plate",
+        "transform": {
+          "pos": [
+            -0.129,
+            0.031,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.012,
+            "height": 0.026,
+            "depth": 0.176
+          },
+          "color": 6003896
+        }
+      },
+      {
+        "id": "m4",
+        "parent": "plate",
+        "transform": {
+          "pos": [
+            0.129,
+            0.031,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.012,
+            "height": 0.026,
+            "depth": 0.176
+          },
+          "color": 6003896
+        }
+      },
+      {
+        "id": "m5",
+        "parent": "plate",
+        "transform": {
+          "pos": [
+            -0.023,
+            0.03,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.012,
+            "height": 0.025,
+            "depth": 0.176
+          },
+          "color": 6003896
+        }
+      },
+      {
+        "id": "m6",
+        "parent": "crackers",
+        "transform": {
+          "pos": [
+            -0.006,
+            0.015,
+            -0.025
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.055,
+            "height": 0.008,
+            "depth": 0.055
+          },
+          "color": 14198876
+        }
+      },
+      {
+        "id": "m7",
+        "parent": "crackers",
+        "transform": {
+          "pos": [
+            0.003,
+            0.024,
+            -0.014
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.055,
+            "height": 0.008,
+            "depth": 0.055
+          },
+          "color": 14726507
+        }
+      },
+      {
+        "id": "m8",
+        "parent": "crackers",
+        "transform": {
+          "pos": [
+            -0.002,
+            0.033,
+            0.001
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.055,
+            "height": 0.008,
+            "depth": 0.055
+          },
+          "color": 13210958
+        }
+      },
+      {
+        "id": "m9",
+        "parent": "fruit",
+        "transform": {
+          "pos": [
+            -0.018,
+            0.015,
+            -0.045
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.055,
+            "height": 0.012,
+            "depth": 0.028
+          },
+          "color": 16044894
+        }
+      },
+      {
+        "id": "m10",
+        "parent": "fruit",
+        "transform": {
+          "pos": [
+            0.009,
+            0.023,
+            -0.025
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.055,
+            "height": 0.012,
+            "depth": 0.028
+          },
+          "color": 15895592
+        }
+      },
+      {
+        "id": "m11",
+        "parent": "fruit",
+        "transform": {
+          "pos": [
+            -0.026,
+            0.015,
+            0.034
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.052,
+            "height": 0.012,
+            "depth": 0.026
+          },
+          "color": 15228253
+        }
+      },
+      {
+        "id": "m12",
+        "parent": "fruit",
+        "transform": {
+          "pos": [
+            0.018,
+            0.021,
+            0.045
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.052,
+            "height": 0.012,
+            "depth": 0.026
+          },
+          "color": 16181159
+        }
+      },
+      {
+        "id": "m13",
+        "parent": "cup",
+        "transform": {
+          "pos": [
+            0,
+            0.0575,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.09,
+            "height": 0.115,
+            "depth": 0.09
+          },
+          "color": 15764106
+        }
+      },
+      {
+        "id": "m14",
+        "parent": "cup",
+        "transform": {
+          "pos": [
+            -0.057,
+            0.062,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.025,
+            "height": 0.055,
+            "depth": 0.018
+          },
+          "color": 14970742
+        }
+      },
+      {
+        "id": "m15",
+        "parent": "cup",
+        "transform": {
+          "pos": [
+            0.057,
+            0.062,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.025,
+            "height": 0.055,
+            "depth": 0.018
+          },
+          "color": 14970742
+        }
+      },
+      {
+        "id": "m16",
+        "parent": "lid",
+        "transform": {
+          "pos": [
+            0,
+            0.012,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.102,
+            "height": 0.024,
+            "depth": 0.102
+          },
+          "color": 5219237
+        }
+      },
+      {
+        "id": "m17",
+        "parent": "lid",
+        "transform": {
+          "pos": [
+            0,
+            0.036,
+            0.018
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.034,
+            "height": 0.025,
+            "depth": 0.042
+          },
+          "color": 3901324
+        }
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1786874885272,
+        "provider": "gpt",
+        "data": "X8lS0o9cR2Kim3SiMvS5JXgs0tYSJeq+fYT0xH1dWmA4k0dDiJ8tb9pBNTvipCKwZDTtXwPHiRGqC2KseE1AzH2PWMb5OXSqkH4aHqgmQuu1oAq+izI9kPSdyqjV+oc4r0RNz3ymsnaixvgzFJqJ/oCJjPnKXTZ+1yg/rDMPWCN/eKQYQ5G6fq0+ZFb37Ki83TFtKbrmRaXw+XrgqbJHozct31/2S3CrNfFDTumzxiyKJKMh5+KfF64nVBZ96MVG6LWcipDWAYsORPWv0kVvyKn+eo3h5ih7Uxhzd/TxHYwKmUBejCnR8QpGf1YRBy87IF5Fk0piBb6utsuOBexkgn4hY1ggoPiH4lrgeNLduVf38GyaY/sqd5GPtZ0f5ZsfrEJvIO5b7je1+bC2e8YTTaZlv1nXoqMBKD0h5pOWIJJH6qZaF1B/+n7cPHMf0unAB8SwVo5ZHw/gSve2/F6b05kvSWj8Vsycqwb7UN0MUxSl6tzd6KRpW/jNURiL0ojmOsLtLDySqLNni3MX6Oc07rh+Xg1VbF0y57H60J5UXT51bc5+fEa4qHMpNaKC/NIJU9SxtPH2aQ00TgAeZp7K1+kwN/mVN8rGYcM+TxCQOzpcdp1A1jw/DXbBQ8MHnYRQ3dVCQ5RjEKDqXrwZHVH35p15Q35cPehpbLQ6m9uQn67uZxynFZLodDmXZso/pKIJJMjGeGoc9Lj1d6MSYWZBg1qs7keAFNUtKVNaGeJtby8e0uhTlVUnqmNq9RU8S6JESjgU187KNxY4C9HHfgvnO0A+t66u/tOYpvT/8ir5Yz99mKswpsimMO6NxufVf7S28jKYwpsT7tXuwiDFI3sMV+uZit16dOrqS3YpGPc936CX6AFz2LcMWoVeeyQGtO2ciaL8ftOxvOySE6nwPu3W3cLWXpaLJsE4SUpLLVZeBKbh5mjSgswl1Pb7mr3qbcsyxSinAJdmTdwj8nVKAMcDdcvihwbhuTi2Bvr1BA4YLC6HyhbvFIxipy+cVfwnzPxG",
+        "edits": ""
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -0.21725000000000003,
+          0,
+          -0.1
+        ],
+        "max": [
+          0.21725000000000003,
+          0.16350000000000003,
+          0.1
+        ],
+        "sourceNodeId": "asset-bounds"
+      }
+    ],
+    "sourceMeshCount": 18,
+    "candidateCount": 0,
+    "fallbackUsed": true
+  },
+  "footprintRadius": 0.21725000000000003,
+  "sizeClass": "small",
+  "mode": "voxel",
+  "provider": "gpt",
+  "createdAt": 1786874886536,
+  "updatedAt": 1786874886536
+}

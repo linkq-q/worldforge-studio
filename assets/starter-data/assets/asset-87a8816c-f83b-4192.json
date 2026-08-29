@@ -1,0 +1,369 @@
+{
+  "id": "asset-87a8816c-f83b-4192",
+  "name": "蜡笔",
+  "prompt": "独立彩色蜡笔\nCoordinate contract: local Y+ is up, local Z+ is the front, entrance, or forward direction, and local X+ is right. Put doors, facades, openings, windshields, noses, seats, and other recognizable front details toward local Z+. For a modular repeated element, explicitly choose the long axis: side-by-side modules span local X with depth/front on local Z; traversal modules span local Z. Keep the model centered at its origin.\nCanonical dimensions contract: width=0.25, height=0.12, depth=0.08 world units. Keep the generated mesh within this centered bounding size.",
+  "tags": [
+    "indoor",
+    "child-safe"
+  ],
+  "modelJson": {
+    "name": "独立彩色蜡笔",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "crayon",
+        "name": "彩色蜡笔",
+        "transform": {
+          "pos": [
+            0.0035,
+            0,
+            0.0185
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.25,
+            0.074,
+            0.076
+          ],
+          "center": [
+            -0.004,
+            0,
+            -0.017
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0.0075
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              -0.0075,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "crayon",
+        "transform": {
+          "pos": [
+            -0.031,
+            0,
+            -0.0185
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.165,
+            "height": 0.068,
+            "depth": 0.068
+          },
+          "color": 15219525
+        }
+      },
+      {
+        "id": "m1",
+        "parent": "crayon",
+        "transform": {
+          "pos": [
+            -0.1195,
+            0,
+            -0.0185
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.018,
+            "height": 0.072,
+            "depth": 0.072
+          },
+          "color": 12132146
+        }
+      },
+      {
+        "id": "m2",
+        "parent": "crayon",
+        "transform": {
+          "pos": [
+            0.0645,
+            0,
+            -0.0185
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.026,
+            "height": 0.052,
+            "depth": 0.052
+          },
+          "color": 15751777
+        }
+      },
+      {
+        "id": "m3",
+        "parent": "crayon",
+        "transform": {
+          "pos": [
+            0.0885,
+            0,
+            -0.0185
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.022,
+            "height": 0.036,
+            "depth": 0.036
+          },
+          "color": 15891071
+        }
+      },
+      {
+        "id": "m4",
+        "parent": "crayon",
+        "transform": {
+          "pos": [
+            0.1095,
+            0,
+            -0.0185
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.02,
+            "height": 0.02,
+            "depth": 0.02
+          },
+          "color": 12919349
+        }
+      },
+      {
+        "id": "m5",
+        "parent": "crayon",
+        "transform": {
+          "pos": [
+            0.1195,
+            0,
+            -0.0185
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.004,
+            "height": 0.01,
+            "depth": 0.01
+          },
+          "color": 9377575
+        }
+      },
+      {
+        "id": "m6",
+        "parent": "crayon",
+        "transform": {
+          "pos": [
+            -0.0755,
+            0,
+            -0.0185
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.012,
+            "height": 0.074,
+            "depth": 0.074
+          },
+          "color": 16763176
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "fabric"
+          }
+        ]
+      },
+      {
+        "id": "m7",
+        "parent": "crayon",
+        "transform": {
+          "pos": [
+            -0.0555,
+            0,
+            -0.0185
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.012,
+            "height": 0.074,
+            "depth": 0.074
+          },
+          "color": 3778650
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "fabric"
+          }
+        ]
+      },
+      {
+        "id": "m8",
+        "parent": "crayon",
+        "transform": {
+          "pos": [
+            -0.0355,
+            0,
+            -0.0185
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.012,
+            "height": 0.074,
+            "depth": 0.074
+          },
+          "color": 3508694
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "fabric"
+          }
+        ]
+      },
+      {
+        "id": "m9",
+        "parent": "crayon",
+        "transform": {
+          "pos": [
+            -0.0155,
+            0,
+            -0.0185
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.012,
+            "height": 0.074,
+            "depth": 0.074
+          },
+          "color": 7754429
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "fabric"
+          }
+        ]
+      },
+      {
+        "id": "m10",
+        "parent": "crayon",
+        "transform": {
+          "pos": [
+            0.0185,
+            0,
+            0.0185
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.036,
+            "height": 0.012,
+            "depth": 0.004
+          },
+          "color": 16768102
+        }
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1787770119765,
+        "provider": "gpt",
+        "data": "mFVovfkXG3k2uC2SI97EVxW5CEenJIhOkCl8FRZ5pf8pA6mnLOpbtyDNbI2iV1dCIaLd6oVFpmVmfhNG61arXdMKFmk2WOJrJ3s7A+dzIApphaO4BcCE+RuwI7Ja2JXB+pOaFVZLFMn6q3dwTqGIFFW1XMyvriXq9ccyJf8lGpoNJPU4lJZzoBfNu+ZTRQMfy1Ag2NaIsHdhhMmOPTBOffe5E19YjvuzxIQB+pDWhJwB8TDVNwvWES7TQvWuvE7YLj6MOPh6Zk1WdqrrIH5QaQjHKuI0bd1KYCiqhpOpY7ov6JTzXdj7IgOwEBaGov/fQfA3hUVnbYSb7UKi+QAe0r8ztwCzHeyjOwmDLiaH4tcg8BMNHTfcjUlQwHfzRPtesAvP6FFxEonv0wDWVU9GSnF/tTAXWJBhcAu6dpxWkkISsOugOZ0LwztgwT4ft6NEYuYr1iMB9OrN52ioRX2nDhufTDn8jmDFbtw/P2pC6sEgzkF5uCepI8sREkiYTr0f09iNI900IAoYILPKmypSrSgSyX8aC+WXsra1w784pY85n6OecZXOKldvyFX4lcgfOnJBf9O1mW17j/UjlWsy812tYziv874UsMr+a93ZXrFgs7miyR2+kYfi7/yoRIaiMafDL4VyQ/ZgKgFbgRaZYatLI1OMPQT46amim4UH9mnJbm7dbJSR4Ce7b0zFHNXZe4M81mDcd2WVyN2529ImM2p0tPFftPvhLkrn6/pmSdTFevNBT5c=",
+        "edits": ""
+      },
+      "semanticSnapshot": {
+        "v": 1,
+        "auto": true,
+        "text": "独立彩色蜡笔 · 1组/11mesh · 世界坐标(Y上Z前), 原点=模型根\n# 阅读说明: G:=group行(可动画骨骼, 动画key用G:后的id; @p=pivot世界坐标; 倾(x,y,z)°=朝向偏离世界轴的欧拉角; 缩进=父子层级; 挂:=挂载于某组; G:id→id→…=chain折叠行, 每个id都是可独立动画的group, chain×N=waypoint数)\n# M:=mesh行(label[id 几何 @(世界坐标)], label可省略; ×N=for循环批量件(锚点=代表实例); cyl (起)→(末)或 轴上(Y)等方位词=延伸方向; 薄向=板面法向(扁板); 挂载组双代表=最大件+朝向件(嘴/管/檐所在); 无方向标注=均匀块(三向相近,如头),默认面向前(Z); 对称×2=镜像对)\nG:crayon 彩色蜡笔 @p(0,0,0)\n  M:[m0 box 0.17×0.07×0.07 (0,0,0) 轴右(X)]",
+        "stats": {
+          "groups": 1,
+          "meshes": 11,
+          "labeledMeshes": 0,
+          "labelCoverage": 0,
+          "batchLabels": 0,
+          "autoChains": 0,
+          "snapshotChars": 429
+        }
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -0.1265,
+          0,
+          -0.03949999999999999
+        ],
+        "max": [
+          0.1265,
+          0.074,
+          0.03949999999999999
+        ],
+        "sourceNodeId": "asset-bounds"
+      }
+    ],
+    "sourceMeshCount": 11,
+    "candidateCount": 1,
+    "fallbackUsed": true
+  },
+  "footprintRadius": 0.1265,
+  "sizeClass": "small",
+  "mode": "voxel",
+  "provider": "gpt",
+  "libraryId": "library-d7967286-cebf-4f99",
+  "libraryMetadata": {
+    "tags": [
+      "crayon",
+      "drawing-tool",
+      "toy"
+    ],
+    "applicableZones": [
+      "settlement"
+    ],
+    "repeatable": true,
+    "landmark": false,
+    "enabled": true,
+    "priority": 0.5,
+    "analysisStatus": "ready",
+    "rotation": "random"
+  },
+  "createdAt": 1787816319427,
+  "updatedAt": 1787816319427
+}

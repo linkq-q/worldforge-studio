@@ -1,0 +1,345 @@
+{
+  "id": "asset-d94cb90b-3098-4944",
+  "name": "催化液",
+  "prompt": "一只装有深红催化液的小型密封药剂瓶，黄铜标签。精致写实的古典奇幻炼金术风格，独立单件，纯物件模型，无桌面、无柜体、无房间、无背景、无大型机器。\nCoordinate contract: local Y+ is up, local Z+ is the front, entrance, or forward direction, and local X+ is right. Put doors, facades, openings, windshields, noses, seats, and other recognizable front details toward local Z+. For a modular repeated element, explicitly choose the long axis: side-by-side modules span local X with depth/front on local Z; traversal modules span local Z. Keep the model centered at its origin.\nCanonical dimensions contract: width=0.2, height=0.3, depth=0.2 world units. Keep the generated mesh within this centered bounding size.",
+  "tags": [
+    "indoor",
+    "alchemy",
+    "material",
+    "handheld"
+  ],
+  "modelJson": {
+    "name": "深红催化液密封药剂瓶",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "bottle",
+        "name": "药剂瓶",
+        "transform": {
+          "pos": [
+            0,
+            0.0248,
+            0.0395
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.16,
+            0.304,
+            0.184
+          ],
+          "center": [
+            0,
+            -0.031,
+            -0.053
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              0.9588,
+              -0.2842
+            ],
+            [
+              0,
+              0.2842,
+              0.9588
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "bottle",
+        "transform": {
+          "pos": [
+            0,
+            -0.0897,
+            -0.0395
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.16,
+            "height": 0.15,
+            "depth": 0.14
+          },
+          "color": 10205101
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass"
+          }
+        ]
+      },
+      {
+        "id": "m1",
+        "parent": "bottle",
+        "transform": {
+          "pos": [
+            0,
+            0.0027,
+            -0.0395
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.13,
+            "height": 0.035,
+            "depth": 0.12
+          },
+          "color": 10205101
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass"
+          }
+        ]
+      },
+      {
+        "id": "m2",
+        "parent": "bottle",
+        "transform": {
+          "pos": [
+            0,
+            0.0528,
+            -0.0395
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.07,
+            "height": 0.065,
+            "depth": 0.07
+          },
+          "color": 10205101
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass"
+          }
+        ]
+      },
+      {
+        "id": "m3",
+        "parent": "bottle",
+        "transform": {
+          "pos": [
+            0,
+            -0.1027,
+            -0.0395
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.13,
+            "height": 0.105,
+            "depth": 0.105
+          },
+          "color": 6621976
+        },
+        "tags": [
+          {
+            "tag": "emissive",
+            "value": 0.25
+          }
+        ]
+      },
+      {
+        "id": "m4",
+        "parent": "bottle",
+        "transform": {
+          "pos": [
+            0,
+            0.1028,
+            -0.0395
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.075,
+            "height": 0.035,
+            "depth": 0.075
+          },
+          "color": 6308395
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "walnut"
+          }
+        ]
+      },
+      {
+        "id": "m5",
+        "parent": "bottle",
+        "transform": {
+          "pos": [
+            0,
+            0.0802,
+            -0.0395
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.085,
+            "height": 0.018,
+            "depth": 0.085
+          },
+          "color": 11830830
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m6",
+        "parent": "bottle",
+        "transform": {
+          "pos": [
+            0,
+            -0.0547,
+            0.0345
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.105,
+            "height": 0.065,
+            "depth": 0.008
+          },
+          "color": 12752701
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m7",
+        "parent": "bottle",
+        "transform": {
+          "pos": [
+            0,
+            -0.0547,
+            0.0395
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.012,
+            "height": 0.038,
+            "depth": 0.004
+          },
+          "color": 7290904
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m8",
+        "parent": "bottle",
+        "transform": {
+          "pos": [
+            0,
+            -0.0547,
+            0.0395
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.045,
+            "height": 0.008,
+            "depth": 0.004
+          },
+          "color": 7290904
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1787876903510,
+        "provider": "gpt",
+        "data": "/jvECQsTvF9szm+TIbI7qZy3WAXsx/csJ9NsYmZ0EtxU6LlL5OJQDm1n0APySpCTWl6szvuRAUdN2yXVJ4f4sQVb7vi+NOXnxVa/N9d72eDEbtBQbipnpCo3aH6GvpexsrhLE7pGB//B7etPLVbQbBeOuuztYUXbbn43KCCOTqCSn3j4GY1v7oB9iIfulEymwY/ng5PAD0JeNfgjZoPbs2rCNIobz0d0LNkQjTmAV/ZCNM6/lWvD14dfK1E5WkKyX2Wz38ai0yZZGjxXe5W6Q3llH3t90n3Y2wJKgf+8/uUIb1iVTlsksqQt7NKmJZX2UfgkyTdrB0Und6kXtuJ+ulsjT0143By/rFFHGVgQtHbK1yBhAFS0y6q/V6DHLdM6T6M/bYifaltbshIEE5mnEG6kuDPMRnbRHoclnuqAofo35V7J3oviK3yuFmgf1cD74A3REb6xzbgDG0/Ly2sqwJeba4r4k97hAYoMl53qf4v6vPrxRoe6GrXkKET8fCY4GHR50bakjW6JG6hEvvzIOdbf3BOofNreqb/+lzD1UeQchz1axTaYK7KoDf8mSnSrwPbQgc+hS0Y1zdYbTSb0Xx9dlnwBR75wfwmI5/dD5c68F22cbJys2T3XusQ+3n2Jh+L+r7/ckwvETgksY1/B+NX+g/pTQMgaRX/XKRK6eWhFQ5Sge3wcw3/c",
+        "edits": ""
+      },
+      "semanticSnapshot": {
+        "v": 1,
+        "auto": true,
+        "text": "深红催化液密封药剂瓶 · 1组/9mesh · 世界坐标(Y上Z前), 原点=模型根\n# 阅读说明: G:=group行(可动画骨骼, 动画key用G:后的id; @p=pivot世界坐标; 倾(x,y,z)°=朝向偏离世界轴的欧拉角; 缩进=父子层级; 挂:=挂载于某组; G:id→id→…=chain折叠行, 每个id都是可独立动画的group, chain×N=waypoint数)\n# M:=mesh行(label[id 几何 @(世界坐标)], label可省略; ×N=for循环批量件(锚点=代表实例); cyl (起)→(末)或 轴上(Y)等方位词=延伸方向; 薄向=板面法向(扁板); 挂载组双代表=最大件+最远有向件(刃/嘴/管所在端); 无方向标注=均匀块(三向相近,如头),默认面向前(Z); 对称×2=镜像对)\nG:bottle 药剂瓶 @p(0,0,0)\n  M:[m0 box 0.16×0.15×0.14 (0,-0.1,0)]",
+        "stats": {
+          "groups": 1,
+          "meshes": 9,
+          "labeledMeshes": 0,
+          "labelCoverage": 0,
+          "batchLabels": 0,
+          "autoChains": 0,
+          "snapshotChars": 431
+        }
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -0.08,
+          0,
+          -0.07700000000000001
+        ],
+        "max": [
+          0.08,
+          0.28500000000000003,
+          0.07700000000000001
+        ],
+        "sourceNodeId": "asset-bounds"
+      }
+    ],
+    "sourceMeshCount": 9,
+    "candidateCount": 0,
+    "fallbackUsed": true
+  },
+  "footprintRadius": 0.1,
+  "sizeClass": "small",
+  "mode": "voxel",
+  "provider": "gpt",
+  "createdAt": 1787876902772,
+  "updatedAt": 1787876902772
+}

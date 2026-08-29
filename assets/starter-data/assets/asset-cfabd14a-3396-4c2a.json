@@ -1,0 +1,656 @@
+{
+  "id": "asset-cfabd14a-3396-4c2a",
+  "name": "听诊器",
+  "prompt": "单独一副儿童职业扮演玩具听诊器，软管和听诊头完整，不包含医疗箱、医生玩偶或其他工具\nCoordinate contract: local Y+ is up, local Z+ is the front, entrance, or forward direction, and local X+ is right. Put doors, facades, openings, windshields, noses, seats, and other recognizable front details toward local Z+. For a modular repeated element, explicitly choose the long axis: side-by-side modules span local X with depth/front on local Z; traversal modules span local Z. Keep the model centered at its origin.\nCanonical dimensions contract: width=0.28, height=0.04, depth=0.34 world units. Keep the generated mesh within this centered bounding size.",
+  "modelJson": {
+    "name": "儿童职业扮演玩具听诊器",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "stethoscope",
+        "name": "听诊器",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.259,
+            0.033,
+            0.347
+          ],
+          "center": [
+            0,
+            0.003,
+            -0.004
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0.0008
+            ],
+            [
+              0,
+              1,
+              -0.0045
+            ],
+            [
+              -0.0008,
+              0.0045,
+              1
+            ]
+          ],
+          "_mainAxis": 2
+        }
+      },
+      {
+        "id": "hose",
+        "name": "柔软双管",
+        "parent": "stethoscope",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.259,
+            0.014,
+            0.213
+          ],
+          "center": [
+            0,
+            0,
+            0.024
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0.0007
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              -0.0007,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "left_earpiece",
+        "name": "左耳管",
+        "parent": "stethoscope",
+        "transform": {
+          "pos": [
+            -0.055,
+            0,
+            -0.075
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.034,
+            0.016,
+            0.103
+          ],
+          "center": [
+            -0.025,
+            0,
+            -0.049
+          ],
+          "axes": [
+            [
+              0.8553,
+              0,
+              -0.5182
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0.5182,
+              0,
+              0.8553
+            ]
+          ],
+          "_mainAxis": 2
+        }
+      },
+      {
+        "id": "right_earpiece",
+        "name": "右耳管",
+        "parent": "stethoscope",
+        "transform": {
+          "pos": [
+            0.055,
+            0,
+            -0.075
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.034,
+            0.016,
+            0.104
+          ],
+          "center": [
+            0.025,
+            0,
+            -0.049
+          ],
+          "axes": [
+            [
+              0.8508,
+              0,
+              0.5256
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              -0.5256,
+              0,
+              0.8508
+            ]
+          ],
+          "_mainAxis": 2
+        }
+      },
+      {
+        "id": "chestpiece",
+        "name": "听诊头",
+        "parent": "stethoscope",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0.126
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.058,
+            0.033,
+            0.058
+          ],
+          "center": [
+            0,
+            0.004,
+            0.015
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "hose",
+        "transform": {
+          "pos": [
+            -0.09,
+            0,
+            -0.05
+          ],
+          "quat": [
+            0.34,
+            0,
+            0.94,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.09,
+            "height": 0.012,
+            "depth": 0.01
+          },
+          "color": 3582433
+        }
+      },
+      {
+        "id": "m1",
+        "parent": "hose",
+        "transform": {
+          "pos": [
+            -0.12,
+            0,
+            0.02
+          ],
+          "quat": [
+            0.74,
+            0,
+            0.67,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.09,
+            "height": 0.012,
+            "depth": 0.01
+          },
+          "color": 3582433
+        }
+      },
+      {
+        "id": "m2",
+        "parent": "hose",
+        "transform": {
+          "pos": [
+            -0.07,
+            0,
+            0.08
+          ],
+          "quat": [
+            0.98,
+            0,
+            0.2,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.08,
+            "height": 0.012,
+            "depth": 0.01
+          },
+          "color": 3582433
+        }
+      },
+      {
+        "id": "m3",
+        "parent": "hose",
+        "transform": {
+          "pos": [
+            0.09,
+            0,
+            -0.05
+          ],
+          "quat": [
+            0.94,
+            0,
+            0.34,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.09,
+            "height": 0.012,
+            "depth": 0.01
+          },
+          "color": 3582433
+        }
+      },
+      {
+        "id": "m4",
+        "parent": "hose",
+        "transform": {
+          "pos": [
+            0.12,
+            0,
+            0.02
+          ],
+          "quat": [
+            0.67,
+            0,
+            0.74,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.09,
+            "height": 0.012,
+            "depth": 0.01
+          },
+          "color": 3582433
+        }
+      },
+      {
+        "id": "m5",
+        "parent": "hose",
+        "transform": {
+          "pos": [
+            0.07,
+            0,
+            0.08
+          ],
+          "quat": [
+            0.2,
+            0,
+            0.98,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.08,
+            "height": 0.012,
+            "depth": 0.01
+          },
+          "color": 3582433
+        }
+      },
+      {
+        "id": "m6",
+        "parent": "hose",
+        "transform": {
+          "pos": [
+            -0.02,
+            0,
+            0.1
+          ],
+          "quat": [
+            0.99,
+            0,
+            0.14,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.04,
+            "height": 0.013,
+            "depth": 0.01
+          },
+          "color": 3582433
+        }
+      },
+      {
+        "id": "m7",
+        "parent": "hose",
+        "transform": {
+          "pos": [
+            0.02,
+            0,
+            0.1
+          ],
+          "quat": [
+            0.14,
+            0,
+            0.99,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.04,
+            "height": 0.013,
+            "depth": 0.01
+          },
+          "color": 3582433
+        }
+      },
+      {
+        "id": "m8",
+        "parent": "hose",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0.12
+          ],
+          "quat": [
+            0.71,
+            0,
+            0.71,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.02,
+            "height": 0.014,
+            "depth": 0.01
+          },
+          "color": 3582433
+        }
+      },
+      {
+        "id": "m9",
+        "parent": "left_earpiece",
+        "transform": {
+          "pos": [
+            -0.015,
+            0,
+            -0.035
+          ],
+          "quat": [
+            -0.5,
+            0,
+            0.86,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.07,
+            "height": 0.01,
+            "depth": 0.01
+          },
+          "color": 12109004
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m10",
+        "parent": "left_earpiece",
+        "transform": {
+          "pos": [
+            -0.043,
+            0,
+            -0.078
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.025,
+            "height": 0.016,
+            "depth": 0.025
+          },
+          "color": 5211074
+        }
+      },
+      {
+        "id": "m11",
+        "parent": "right_earpiece",
+        "transform": {
+          "pos": [
+            0.015,
+            0,
+            -0.035
+          ],
+          "quat": [
+            0.86,
+            0,
+            -0.5,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.07,
+            "height": 0.01,
+            "depth": 0.01
+          },
+          "color": 12109004
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m12",
+        "parent": "right_earpiece",
+        "transform": {
+          "pos": [
+            0.043,
+            0,
+            -0.078
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.025,
+            "height": 0.016,
+            "depth": 0.025
+          },
+          "color": 5211074
+        }
+      },
+      {
+        "id": "m13",
+        "parent": "chestpiece",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0.015
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.058,
+            "height": 0.026,
+            "depth": 0.058
+          },
+          "color": 11451332
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m14",
+        "parent": "chestpiece",
+        "transform": {
+          "pos": [
+            0,
+            0.014,
+            0.015
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.042,
+            "height": 0.012,
+            "depth": 0.042
+          },
+          "color": 15332343
+        }
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1787766710838,
+        "provider": "gpt",
+        "data": "nMOmZD+//uIvspfRqBraOP78MGy8+wmmt7H7jsp1uOwmQDUDDts5Q7P3YNFtQe0RlHUujccrO78k6RWuR3/Z81GpUiTHrVe+gT59e3cacw+8TJHEirgRRMiidXd0uN7vOx65AIjsHGgwYX5Gwxmxp5vi1VHpGfnuFI/5nKSeUJ/WCJI8rTN/snCp54pWRGaiiR6IVB/yWWd8n/wH08B1H0J3hF9FNOMshgBHVDXcA9YV51FpBnNsArXFZbL7s6BIMHAaxCClPA6v9gRbeg7VxZ3VrxUAKoxhMD+Nw3Jr3rDag+WB5gusO4zsuzO+eHO+IZP3FskNvd1B72nn1tMmIAr3LPZpcUr2FoEiqKD42fznZZpYRwJsR3LDtl745bIjMInNXlv2ByUyQRLn3lEGGLDdhxD1tHchaaCrRZ7u9MC0eBYSBltc7qeidQ0sZHCHj8oFR/g2tRltkKfxSmHFLr/5VnZdUKsFRULEWip/m8A6w/sisMLtfoAtfydaURjoWf9hSamh6IaA93rUL1wgfiLDg8KPQcKdqJFvPqQEGYox6Y+F0EXUWyJS3Phc6+fOBt+GHAqEwywnBhcwv8t2eGs17EG8hzQue5GL42BEgVh1YHKslGUN5upTCxETfT0wV3P+5/BgnPVyXwZBDE05mhGAboLjrOQPpsWIizoi2AkteTFTH0zqRTci00/uRhgofqM3JkAW/XSBY/jWNMp+/0G3I+pfpHQoLIF0pnPRwGZk1X+sCiQKzYbDGYWB1WqYptAOeaVk9gFgzYyiLRsRgoRkdStac1hCEMLUkafBl12UlBd02FR2btbI6Qrtcnw0fHKS7YHpg1Jd7fcV8+pd+MhRo7O4nSpMuttoF9MheftYZj5GzwwNCSvotIxx9wNIUVptnQC41Ew4ROqo0P2ut7mCCVECAlXncNU2o62jcInb9ArAIMlBvqsJZ5S4y+qKwBchrhnvrwGmrVvEJUGHoawvcOT0qJjxobS9q8grhEaLLgU7cO2HANVBSFyq++8TtUYI1V9KD1c+l3mP9jg3EHbpkq6H5x7fd0j+eJ68yIuBBMetOVzWmyqUnkWkTgBxBLjf/63c0ROs/33U04e2RW6VOfVCN8kGqBkLPKM=",
+        "edits": ""
+      },
+      "semanticSnapshot": {
+        "v": 1,
+        "auto": true,
+        "text": "儿童职业扮演玩具听诊器 · 5组/15mesh · 世界坐标(Y上Z前), 原点=模型根\n# 阅读说明: G:=group行(可动画骨骼, 动画key用G:后的id; @p=pivot世界坐标; 倾(x,y,z)°=朝向偏离世界轴的欧拉角; 缩进=父子层级; 挂:=挂载于某组; G:id→id→…=chain折叠行, 每个id都是可独立动画的group, chain×N=waypoint数)\n# M:=mesh行(label[id 几何 @(世界坐标)], label可省略; ×N=for循环批量件(锚点=代表实例); cyl (起)→(末)或 轴上(Y)等方位词=延伸方向; 薄向=板面法向(扁板); 挂载组双代表=最大件+朝向件(嘴/管/檐所在); 无方向标注=均匀块(三向相近,如头),默认面向前(Z); 对称×2=镜像对)\nG:stethoscope 听诊器 @p(0,0,0)\n  G:hose 柔软双管 @p(0,0,0)\n    M:[m0 box 0.09×0.01×0.01 (-0.1,0,0) 轴(-0.1,0,0)→(-0.1,0,-0.1)]\n  G:left_earpiece 左耳管 @p(-0.1,0,-0.1)\n    M:[m10 box 0.03×0.02×0.03 (-0.1,0,-0.2) 薄向上(Y)]\n  G:right_earpiece 右耳管 @p(0.1,0,-0.1)\n    M:[m12 box 0.03×0.02×0.03 (0.1,0,-0.2) 薄向上(Y)]\n  G:chestpiece 听诊头 @p(0,0,0.1)\n    M:[m13 box 0.06×0.03×0.06 (0,0,0.1) 薄向上(Y)]",
+        "stats": {
+          "groups": 5,
+          "meshes": 15,
+          "labeledMeshes": 0,
+          "labelCoverage": 0,
+          "batchLabels": 0,
+          "autoChains": 0,
+          "snapshotChars": 745
+        }
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -0.129432513798294,
+          0,
+          -0.16775
+        ],
+        "max": [
+          0.129432513798294,
+          0.033,
+          0.16775
+        ],
+        "sourceNodeId": "asset-bounds"
+      }
+    ],
+    "sourceMeshCount": 15,
+    "candidateCount": 0,
+    "fallbackUsed": true
+  },
+  "footprintRadius": 0.16775,
+  "sizeClass": "small",
+  "mode": "voxel",
+  "provider": "gpt",
+  "createdAt": 1787766712285,
+  "updatedAt": 1787766712285
+}

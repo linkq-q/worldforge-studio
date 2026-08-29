@@ -1,0 +1,441 @@
+{
+  "id": "asset-aa5bab0d-0cb4-460f",
+  "name": "小船",
+  "prompt": "浅亮曼德鸭参考场景风格，圆润低多边形儿童家具或玩具，清晰轮廓，柔和哑光材质，适度细节。必须是一个完整、独立、可单独摆放的模型，不含场景、地面、底座、其他物品、成组附件、文字或标识。单艘独立玩具帆船，一体船身、一根桅杆和一面圆角船帆，不含水面。仅使用这些基础色与顶点色：#FFFDF6,#FEF9EA,#FDF2D7,#E9DABD,#CDBA97,#F8E8CF,#F1D7B2,#E7C393,#C9A06E,#9E7A55,#FFF7A8,#FCEF72,#F6E24B,#D1B825,#9C8510,#FFF3B7,#FDE674,#FCD75F,#FECD4D,#D1900B,#FFE2A0,#FFD170,#F8BC44,#E39F1A,#A96F05,#FBE3BD,#FDD8A3,#FDCC8F,#F1AD69,#D99256,#FFD2BA,#FFB08A,#FF8A5B,#F06B3E,#B84A27,#EAF9FF,#DAF2F5,#95E5F9,#76D0F2,#45BDF6,#D9F8FB,#B2E9F2,#8ECCD6,#7BCFDF,#4BAFCA,#D8F7E\nCoordinate contract: local Y+ is up, local Z+ is the front, entrance, or forward direction, and local X+ is right. Put doors, facades, openings, windshields, noses, seats, and other recognizable front details toward local Z+. For a modular repeated element, explicitly choose the long axis: side-by-side modules span local X with depth/front on local Z; traversal modules span local Z. Keep the model centered at its origin.\nCanonical dimensions contract: width=0.42, height=0.42, depth=0.18 world units. Keep the generated mesh within this centered bounding size.",
+  "modelJson": {
+    "name": "浅亮玩具帆船",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "hull",
+        "name": "一体船身",
+        "transform": {
+          "pos": [
+            -0.0375,
+            -0.1065,
+            0.0223
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.382,
+            0.446,
+            0.171
+          ],
+          "center": [
+            0.033,
+            0.131,
+            -0.022
+          ],
+          "axes": [
+            [
+              0.9993,
+              0.0376,
+              0.0078
+            ],
+            [
+              -0.0372,
+              0.9985,
+              -0.0401
+            ],
+            [
+              -0.0093,
+              0.0398,
+              0.9992
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "mast",
+        "name": "桅杆",
+        "parent": "hull",
+        "transform": {
+          "pos": [
+            0,
+            0.1085,
+            -0.0282
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.227,
+            0.273,
+            0.018
+          ],
+          "center": [
+            0.034,
+            0.08,
+            0
+          ],
+          "axes": [
+            [
+              0.9361,
+              0.3518,
+              0
+            ],
+            [
+              -0.3518,
+              0.9361,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "sail",
+        "name": "圆角船帆",
+        "parent": "hull",
+        "transform": {
+          "pos": [
+            0.05,
+            0.194,
+            -0.0162
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.2,
+            0.185,
+            0.012
+          ],
+          "center": [
+            0.026,
+            0.024,
+            0
+          ],
+          "axes": [
+            [
+              0.9787,
+              -0.2053,
+              0
+            ],
+            [
+              0.2053,
+              0.9787,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "hull",
+        "transform": {
+          "pos": [
+            0.0375,
+            -0.0385,
+            -0.0372
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.34,
+            "height": 0.09,
+            "depth": 0.12
+          },
+          "color": 15188883
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ]
+      },
+      {
+        "id": "m1",
+        "parent": "hull",
+        "transform": {
+          "pos": [
+            0.0375,
+            -0.0285,
+            0.0403
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.25,
+            "height": 0.075,
+            "depth": 0.055
+          },
+          "color": 16301124
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ]
+      },
+      {
+        "id": "m2",
+        "parent": "hull",
+        "transform": {
+          "pos": [
+            0.0375,
+            0.0165,
+            -0.0272
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.38,
+            "height": 0.025,
+            "depth": 0.13
+          },
+          "color": 16642775
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ]
+      },
+      {
+        "id": "m3",
+        "parent": "hull",
+        "transform": {
+          "pos": [
+            -0.0375,
+            0.0385,
+            -0.0402
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.15,
+            "height": 0.025,
+            "depth": 0.07
+          },
+          "color": 13213806
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ]
+      },
+      {
+        "id": "m4",
+        "parent": "mast",
+        "transform": {
+          "pos": [
+            -0.0175,
+            0.0605,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.018,
+            "height": 0.285,
+            "depth": 0.018
+          },
+          "color": 10386005
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ]
+      },
+      {
+        "id": "m5",
+        "parent": "mast",
+        "transform": {
+          "pos": [
+            0.0775,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.21,
+            "height": 0.014,
+            "depth": 0.014
+          },
+          "color": 13482647
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ]
+      },
+      {
+        "id": "m6",
+        "parent": "sail",
+        "transform": {
+          "pos": [
+            0.0275,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.17,
+            "height": 0.105,
+            "depth": 0.012
+          },
+          "color": 16576370
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "fabric"
+          }
+        ]
+      },
+      {
+        "id": "m7",
+        "parent": "sail",
+        "transform": {
+          "pos": [
+            0.01,
+            0.0725,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.135,
+            "height": 0.04,
+            "depth": 0.012
+          },
+          "color": 16775080
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "fabric"
+          }
+        ]
+      },
+      {
+        "id": "m8",
+        "parent": "sail",
+        "transform": {
+          "pos": [
+            0,
+            0.1025,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.115,
+            "height": 0.02,
+            "depth": 0.012
+          },
+          "color": 16774071
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "fabric"
+          }
+        ]
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1787749483411,
+        "provider": "gpt",
+        "data": "xjlG0fcYI+FYlV44hmSAKReDOVzX+PY6sna5EnFvou4Tu3sXsd95XBc2+8A7Qp8Hl4467u/nCvr7fGfeXz/UpCLeQuitPEBeL3yBD+vo7lZPy3eEqaz8fHkjxhEuqDmeTfm8d5JaOX+4esDfuhdkzU6eRoBTRJ3NeEc4MzVafyvuKnoBgfrk8RqX3rAdOubhzfZYjraU7y8OCpI6d44E7WoR09jWj130gBqIZgQKlMhSi+r9jN5NjACbRb6adSGigeUUrP1t+1BBYn5ucyp7Tbc0DfnefSbZxiGNV48TFl0wJyOOgmzVHoAPBWJIgMvrH0cvbsJSm+4cfeWeAgjOi0ZNUA8gPmUvUB5Y6M/M3UK8F9CqJI7yLFRADl/WJo8dsYmRKsFn2t/Ik0T7mVTk1HVh/hmxvP3WWbSQ7jXHyWYBkcVqSCr31ACz7vqYA85vNFy+f22lgBzvH/xTSc9DPs2QVUglgV+CPkFpULui0z+pJVayVB/zOOWj+ojDFI3HeR+ZtZhL0kU6SurPfodk8TXeWzOi5R76dBzDu+h3urNlwpH9fhhT9c2OCChnvBksXQVqAz8zloMi8rL98SyDlm31rso5V+mCGC7EnmqwGnG5C1fXUbTtMR0IYpKEjJ3uPIuvm+Y75Fdm/vjJzfHuwlyY2GH3l57fCIDk516QlskEjjeE9ixqJsOjDVZuUwEgaEWPhzmf4hPJ+vUASQzQLL06EEQQRabKwXOfCf8vqA54Sf9JRocEgAG4obV6HeaqiwafbicyQp1SAiDLonUs",
+        "edits": ""
+      },
+      "semanticSnapshot": {
+        "v": 1,
+        "auto": true,
+        "text": "浅亮玩具帆船 · 3组/9mesh · 世界坐标(Y上Z前), 原点=模型根\n# 阅读说明: G:=group行(可动画骨骼, 动画key用G:后的id; @p=pivot世界坐标; 倾(x,y,z)°=朝向偏离世界轴的欧拉角; 缩进=父子层级; 挂:=挂载于某组; G:id→id→…=chain折叠行, 每个id都是可独立动画的group, chain×N=waypoint数)\n# M:=mesh行(label[id 几何 @(世界坐标)], label可省略; ×N=for循环批量件(锚点=代表实例); cyl (起)→(末)或 轴上(Y)等方位词=延伸方向; 薄向=板面法向(扁板); 挂载组双代表=最大件+朝向件(嘴/管/檐所在); 无方向标注=均匀块(三向相近,如头),默认面向前(Z); 对称×2=镜像对)\nG:hull 一体船身 @p(0,-0.1,0)\n  M:[m0 box 0.34×0.09×0.12 (0,-0.1,0) 轴右(X)]\n  G:mast 桅杆 @p(0,0,0) 挂:hull\n    M:[m4 box 0.02×0.28×0.02 (-0.1,0.1,0) 轴上(Y)]\n  G:sail 圆角船帆 @p(0,0.1,0) 挂:hull\n    M:[m6 box 0.17×0.11×0.01 (0,0.1,0) 薄向前(Z)]",
+        "stats": {
+          "groups": 3,
+          "meshes": 9,
+          "labeledMeshes": 0,
+          "labelCoverage": 0,
+          "batchLabels": 0,
+          "autoChains": 0,
+          "snapshotChars": 590
+        }
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -0.19,
+          0,
+          -0.08249999999999999
+        ],
+        "max": [
+          0.19,
+          0.395,
+          0.08249999999999999
+        ],
+        "sourceNodeId": "asset-bounds"
+      }
+    ],
+    "sourceMeshCount": 9,
+    "candidateCount": 1,
+    "fallbackUsed": true
+  },
+  "footprintRadius": 0.19,
+  "sizeClass": "small",
+  "mode": "voxel",
+  "provider": "gpt",
+  "libraryId": "library-d7967286-cebf-4f99",
+  "libraryMetadata": {
+    "tags": [
+      "toysailboat",
+      "sailboat",
+      "boat",
+      "toy"
+    ],
+    "applicableZones": [
+      "water",
+      "settlement"
+    ],
+    "repeatable": true,
+    "landmark": false,
+    "enabled": true,
+    "priority": 0.5,
+    "analysisStatus": "ready",
+    "rotation": "random"
+  },
+  "createdAt": 1787817167703,
+  "updatedAt": 1787817167703
+}

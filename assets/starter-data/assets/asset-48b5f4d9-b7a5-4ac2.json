@@ -1,0 +1,430 @@
+{
+  "id": "asset-48b5f4d9-b7a5-4ac2",
+  "name": "儿童学习椅",
+  "prompt": "单个可复用的儿童学习椅，雾蓝弧形靠背、浅木椅腿和米白坐垫，比例与L形学习桌匹配，不与桌子合并生成。\n全局资产美术方向：统一采用柔和圆角、略微夸张比例的精致体素风；家具以浅暖木、米白和雾蓝为主，玩具使用克制的砖红、芥末黄和深蓝点缀，所有边角适合儿童空间且尺度参照1.60米角色。; 现代温暖的儿童卧室，浅木地板、柔和蓝灰墙面和米白顶面保持安静背景，以木质家具和少量红黄蓝玩具形成分组色彩点缀；装饰集中于睡眠与学习区域，中央不堆放杂物。; 温暖, 现代儿童房, 圆角体素, 整洁生活感, 柔和配色; palette #E8DFC9, #B99062, #8EA6B4, #C65F4A, #D6A83E, #354C63; materials 浅色木材, 哑光烤漆, 棉织物, 粉末涂层金属, 透明玻璃\n资产角色：与L形学习桌配对的座椅；目标尺度：medium。\n只生成一个可复用的独立物体，不要生成地面、背景、天空、完整场景或多个分散物体。",
+  "modelJson": {
+    "name": "雾蓝儿童学习椅",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "back",
+        "name": "弧形靠背",
+        "transform": {
+          "pos": [
+            0,
+            0.865,
+            -0.1725
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.58,
+            1.143,
+            0.639
+          ],
+          "center": [
+            -0.001,
+            -0.326,
+            0.123
+          ],
+          "axes": [
+            [
+              1,
+              0.0005,
+              -0.0002
+            ],
+            [
+              -0.0006,
+              0.9871,
+              -0.1604
+            ],
+            [
+              0.0001,
+              0.1604,
+              0.9871
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "seat",
+        "name": "椅座",
+        "parent": "back",
+        "transform": {
+          "pos": [
+            0,
+            -0.29,
+            0.1725
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.5,
+            0.191,
+            0.46
+          ],
+          "center": [
+            0,
+            -0.05,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              -0.0027
+            ],
+            [
+              0,
+              0.0027,
+              1
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "legs",
+        "name": "浅木椅腿",
+        "parent": "back",
+        "transform": {
+          "pos": [
+            0,
+            -0.64,
+            0.0125
+          ]
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ],
+        "_obb": {
+          "size": [
+            0.455,
+            0.45,
+            0.395
+          ],
+          "center": [
+            0,
+            0,
+            0.16
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "seat",
+        "transform": {
+          "pos": [
+            0,
+            -0.095,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.5,
+            "height": 0.1,
+            "depth": 0.46
+          },
+          "color": 12161122
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ]
+      },
+      {
+        "id": "m1",
+        "parent": "seat",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0.005
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.46,
+            "height": 0.09,
+            "depth": 0.42
+          },
+          "color": 15261641
+        }
+      },
+      {
+        "id": "m2",
+        "parent": "legs",
+        "transform": {
+          "pos": [
+            -0.19,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.075,
+            "height": 0.45,
+            "depth": 0.075
+          },
+          "color": 13214836
+        }
+      },
+      {
+        "id": "m3",
+        "parent": "legs",
+        "transform": {
+          "pos": [
+            -0.19,
+            0,
+            0.32
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.075,
+            "height": 0.45,
+            "depth": 0.075
+          },
+          "color": 13214836
+        }
+      },
+      {
+        "id": "m4",
+        "parent": "legs",
+        "transform": {
+          "pos": [
+            0.19,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.075,
+            "height": 0.45,
+            "depth": 0.075
+          },
+          "color": 13214836
+        }
+      },
+      {
+        "id": "m5",
+        "parent": "legs",
+        "transform": {
+          "pos": [
+            0.19,
+            0,
+            0.32
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.075,
+            "height": 0.45,
+            "depth": 0.075
+          },
+          "color": 13214836
+        }
+      },
+      {
+        "id": "m6",
+        "parent": "back",
+        "transform": {
+          "pos": [
+            -0.19,
+            -0.075,
+            -0.0025
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.07,
+            "height": 0.48,
+            "depth": 0.07
+          },
+          "color": 12161122
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ]
+      },
+      {
+        "id": "m7",
+        "parent": "back",
+        "transform": {
+          "pos": [
+            0.19,
+            -0.075,
+            -0.0025
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.07,
+            "height": 0.48,
+            "depth": 0.07
+          },
+          "color": 12161122
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ]
+      },
+      {
+        "id": "m8",
+        "parent": "back",
+        "transform": {
+          "pos": [
+            0,
+            0.075,
+            -0.0125
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.32,
+            "height": 0.3,
+            "depth": 0.075
+          },
+          "color": 9348788
+        }
+      },
+      {
+        "id": "m9",
+        "parent": "back",
+        "transform": {
+          "pos": [
+            -0.22,
+            0.075,
+            0.0125
+          ],
+          "quat": [
+            -0.41,
+            -0.41,
+            0.58,
+            0.58
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.3,
+            "height": 0.075,
+            "depth": 0.12
+          },
+          "color": 9348788
+        }
+      },
+      {
+        "id": "m10",
+        "parent": "back",
+        "transform": {
+          "pos": [
+            0.22,
+            0.075,
+            0.0125
+          ],
+          "quat": [
+            -0.7,
+            -0.12,
+            -0.12,
+            0.7
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.12,
+            "height": 0.075,
+            "depth": 0.3
+          },
+          "color": 9348788
+        }
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1786869708726,
+        "provider": "gpt",
+        "data": "UZOHyN/qkmH3Cy4EaK9cflw9R+GxkX8ORjKPuy4nDv7mhNay8mZhQE5IWfn/yJXfvyLJQpmm9QX0K4rpH/G1Mzp8OKvPvs9yFCjLzSWx/nb3oHCxhdEJPJGlLcCtmmBvE7xYOqkxTDzi0seF+zc5z+7iMpL6vXqnlYjHr4bvobnGLe+bl8VHV7tGTRAYECeuSqGKrjBij/RAyLXqeqWxWYFYdnVcZWImkxQE74+Vb9GLFkCYGxYNHaOZleF36eSq6t68R4Tpkt+eTg5GVK+ZeVKhLfuRVs29NhWSeDj7QIvucT9OMfMAh3Ok783fiMX9xRGjU6iaUi8O2IgxQLwjs63s+LlPxSDy7WPekN3TwzT3LTtPB0QKUG7i93DPtY9HEXevAhP795t3MdCOa2uK3AwU4B7pg+Q8iaW8oud+yafGNLwe/BXajyKvtH5WINq9pd7vmkMxKiymlbXfUCWRTlpXWYFwOr/xXsjcERh4LUrHkFUzqaRtew3pkIr1/ps/kLcCv9J9t/47FmRDvODrXDf6YcReq+v/yYkrpiUMG7qx7QsOE+CdBJEfhRyBbkk6ahFNsVgSzZu0AaEK5yYKInXedijsYsA20fblC2i5GE1LzCVC6v94nYO7Pwngh1xIdbrfnFP7REuRvj3WtpAzGiIsS/H6u4HfvyCfEEK0NkQnFGgv7UKCWCWBWp+k8tYWF9IiAqfLnyXNiMZ1O0Qfvxfz5GRS7gGts2a+YEjyfADvd05YSWNm+eZ3lLhvzzNUsn2A6vR6ME6+GDa7syAoB3nLlc/LpQMMn/1Z",
+        "edits": ""
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -0.28906853956736717,
+          0,
+          -0.23
+        ],
+        "max": [
+          0.28906853956736717,
+          1.09,
+          0.23
+        ],
+        "sourceNodeId": "asset-bounds"
+      }
+    ],
+    "sourceMeshCount": 11,
+    "candidateCount": 0,
+    "fallbackUsed": true
+  },
+  "footprintRadius": 0.28906853956736717,
+  "sizeClass": "small",
+  "mode": "voxel",
+  "provider": "gpt",
+  "createdAt": 1786869708955,
+  "updatedAt": 1786869708955
+}

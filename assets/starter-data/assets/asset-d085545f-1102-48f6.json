@@ -1,0 +1,1235 @@
+{
+  "id": "asset-d085545f-1102-48f6",
+  "name": "环形玩具车轨道",
+  "prompt": "A single reusable assembled children's toy vehicle track forming a broad closed loop with two gentle curves, short bridge ramp and connected chunky track segments, approximately 2.2 meters long overall, no toy cars, floor, room, background, or scenery",
+  "tags": [
+    "toy",
+    "track",
+    "prop"
+  ],
+  "modelJson": {
+    "name": "儿童拼装环形玩具车道",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "track",
+        "name": "拼装环形车道",
+        "transform": {
+          "pos": [
+            0,
+            0.0685,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            2.418,
+            0.338,
+            1.211
+          ],
+          "center": [
+            0,
+            0.045,
+            -0.003
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0.0007
+            ],
+            [
+              0,
+              0.9989,
+              0.0461
+            ],
+            [
+              -0.0007,
+              -0.0461,
+              0.9989
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "front_left",
+        "name": "前侧左直道",
+        "parent": "track",
+        "transform": {
+          "pos": [
+            -0.51,
+            0.0215,
+            0.46
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.53,
+            0.075,
+            0.28
+          ],
+          "center": [
+            0,
+            0,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "front_center",
+        "name": "前侧中央直道",
+        "parent": "track",
+        "transform": {
+          "pos": [
+            0,
+            0.0215,
+            0.46
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.5,
+            0.075,
+            0.28
+          ],
+          "center": [
+            0,
+            0,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "front_right",
+        "name": "前侧右直道",
+        "parent": "track",
+        "transform": {
+          "pos": [
+            0.52,
+            0.0215,
+            0.46
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.53,
+            0.075,
+            0.28
+          ],
+          "center": [
+            0,
+            0,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "curve_right_lower",
+        "name": "右弯下段",
+        "parent": "track",
+        "transform": {
+          "pos": [
+            0.88,
+            0.0215,
+            0.38
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.278,
+            0.074,
+            0.296
+          ],
+          "center": [
+            0,
+            0,
+            0
+          ],
+          "axes": [
+            [
+              0.7313,
+              0,
+              -0.6821
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0.6821,
+              0,
+              0.7313
+            ]
+          ],
+          "_mainAxis": 2
+        }
+      },
+      {
+        "id": "curve_right_middle",
+        "name": "右弯中段",
+        "parent": "track",
+        "transform": {
+          "pos": [
+            1.02,
+            0.0215,
+            0.15
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.295,
+            0.074,
+            0.328
+          ],
+          "center": [
+            0,
+            0,
+            0
+          ],
+          "axes": [
+            [
+              0.9569,
+              0,
+              0.2904
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              -0.2904,
+              0,
+              0.9569
+            ]
+          ],
+          "_mainAxis": 2
+        }
+      },
+      {
+        "id": "curve_right_upper",
+        "name": "右弯上段",
+        "parent": "track",
+        "transform": {
+          "pos": [
+            1.02,
+            0.0215,
+            -0.15
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.297,
+            0.074,
+            0.328
+          ],
+          "center": [
+            0,
+            0,
+            0
+          ],
+          "axes": [
+            [
+              0.9878,
+              0,
+              -0.1555
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0.1555,
+              0,
+              0.9878
+            ]
+          ],
+          "_mainAxis": 2
+        }
+      },
+      {
+        "id": "curve_right_exit",
+        "name": "右弯出口",
+        "parent": "track",
+        "transform": {
+          "pos": [
+            0.88,
+            0.0215,
+            -0.38
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.27,
+            0.074,
+            0.294
+          ],
+          "center": [
+            0,
+            0,
+            0
+          ],
+          "axes": [
+            [
+              0.8137,
+              0,
+              0.5813
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              -0.5813,
+              0,
+              0.8137
+            ]
+          ],
+          "_mainAxis": 2
+        }
+      },
+      {
+        "id": "bridge_ramp_up",
+        "name": "桥梁上坡",
+        "parent": "track",
+        "transform": {
+          "pos": [
+            0.56,
+            0.1115,
+            -0.46
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.463,
+            0.074,
+            0.28
+          ],
+          "center": [
+            0,
+            0,
+            0
+          ],
+          "axes": [
+            [
+              0.9338,
+              -0.3578,
+              0
+            ],
+            [
+              0.3578,
+              0.9338,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "bridge_top_right",
+        "name": "桥面右段",
+        "parent": "track",
+        "transform": {
+          "pos": [
+            0.17,
+            0.1915,
+            -0.46
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.34,
+            0.075,
+            0.28
+          ],
+          "center": [
+            0,
+            0,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "bridge_top_left",
+        "name": "桥面左段",
+        "parent": "track",
+        "transform": {
+          "pos": [
+            -0.17,
+            0.1915,
+            -0.46
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.34,
+            0.075,
+            0.28
+          ],
+          "center": [
+            0,
+            0,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "bridge_ramp_down",
+        "name": "桥梁下坡",
+        "parent": "track",
+        "transform": {
+          "pos": [
+            -0.56,
+            0.1115,
+            -0.46
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.463,
+            0.074,
+            0.28
+          ],
+          "center": [
+            0,
+            0,
+            0
+          ],
+          "axes": [
+            [
+              0.9338,
+              0.3578,
+              0
+            ],
+            [
+              -0.3578,
+              0.9338,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "curve_left_upper",
+        "name": "左弯上段",
+        "parent": "track",
+        "transform": {
+          "pos": [
+            -0.88,
+            0.0215,
+            -0.38
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.27,
+            0.074,
+            0.294
+          ],
+          "center": [
+            0,
+            0,
+            0
+          ],
+          "axes": [
+            [
+              0.8137,
+              0,
+              -0.5813
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0.5813,
+              0,
+              0.8137
+            ]
+          ],
+          "_mainAxis": 2
+        }
+      },
+      {
+        "id": "curve_left_middle",
+        "name": "左弯中段",
+        "parent": "track",
+        "transform": {
+          "pos": [
+            -1.02,
+            0.0215,
+            -0.15
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.297,
+            0.074,
+            0.328
+          ],
+          "center": [
+            0,
+            0,
+            0
+          ],
+          "axes": [
+            [
+              0.9878,
+              0,
+              0.1555
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              -0.1555,
+              0,
+              0.9878
+            ]
+          ],
+          "_mainAxis": 2
+        }
+      },
+      {
+        "id": "curve_left_lower",
+        "name": "左弯下段",
+        "parent": "track",
+        "transform": {
+          "pos": [
+            -1.02,
+            0.0215,
+            0.15
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.295,
+            0.074,
+            0.328
+          ],
+          "center": [
+            0,
+            0,
+            0
+          ],
+          "axes": [
+            [
+              0.9569,
+              0,
+              -0.2904
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0.2904,
+              0,
+              0.9569
+            ]
+          ],
+          "_mainAxis": 2
+        }
+      },
+      {
+        "id": "curve_left_exit",
+        "name": "左弯出口",
+        "parent": "track",
+        "transform": {
+          "pos": [
+            -0.88,
+            0.0215,
+            0.38
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.278,
+            0.074,
+            0.296
+          ],
+          "center": [
+            0,
+            0,
+            0
+          ],
+          "axes": [
+            [
+              0.7313,
+              0,
+              0.6821
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              -0.6821,
+              0,
+              0.7313
+            ]
+          ],
+          "_mainAxis": 2
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "front_left",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ],
+          "quat": [
+            1,
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.53,
+            "height": 0.075,
+            "depth": 0.28
+          },
+          "color": 15120447
+        }
+      },
+      {
+        "id": "m1",
+        "parent": "front_center",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ],
+          "quat": [
+            1,
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.5,
+            "height": 0.075,
+            "depth": 0.28
+          },
+          "color": 15911253
+        }
+      },
+      {
+        "id": "m2",
+        "parent": "front_right",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ],
+          "quat": [
+            1,
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.53,
+            "height": 0.075,
+            "depth": 0.28
+          },
+          "color": 15120447
+        }
+      },
+      {
+        "id": "m3",
+        "parent": "curve_right_lower",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ],
+          "quat": [
+            0.94,
+            0,
+            -0.33,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.26,
+            "height": 0.075,
+            "depth": 0.28
+          },
+          "color": 15911253
+        }
+      },
+      {
+        "id": "m4",
+        "parent": "curve_right_middle",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ],
+          "quat": [
+            0.78,
+            0,
+            -0.62,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.31,
+            "height": 0.075,
+            "depth": 0.28
+          },
+          "color": 15120447
+        }
+      },
+      {
+        "id": "m5",
+        "parent": "curve_right_upper",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ],
+          "quat": [
+            -0.62,
+            0,
+            0.78,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.31,
+            "height": 0.075,
+            "depth": 0.28
+          },
+          "color": 15911253
+        }
+      },
+      {
+        "id": "m6",
+        "parent": "curve_right_exit",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ],
+          "quat": [
+            -0.33,
+            0,
+            0.94,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.26,
+            "height": 0.075,
+            "depth": 0.28
+          },
+          "color": 15120447
+        }
+      },
+      {
+        "id": "m7",
+        "parent": "bridge_ramp_up",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ],
+          "quat": [
+            0,
+            0,
+            0.98,
+            0.18
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.47,
+            "height": 0.075,
+            "depth": 0.28
+          },
+          "color": 15911253
+        }
+      },
+      {
+        "id": "m8",
+        "parent": "bridge_top_right",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ],
+          "quat": [
+            0,
+            0,
+            1,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.34,
+            "height": 0.075,
+            "depth": 0.28
+          },
+          "color": 15120447
+        }
+      },
+      {
+        "id": "m9",
+        "parent": "bridge_top_left",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ],
+          "quat": [
+            0,
+            0,
+            1,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.34,
+            "height": 0.075,
+            "depth": 0.28
+          },
+          "color": 15911253
+        }
+      },
+      {
+        "id": "m10",
+        "parent": "bridge_ramp_down",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ],
+          "quat": [
+            0,
+            0,
+            0.98,
+            -0.18
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.47,
+            "height": 0.075,
+            "depth": 0.28
+          },
+          "color": 15120447
+        }
+      },
+      {
+        "id": "m11",
+        "parent": "curve_left_upper",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ],
+          "quat": [
+            0.33,
+            0,
+            0.94,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.26,
+            "height": 0.075,
+            "depth": 0.28
+          },
+          "color": 15911253
+        }
+      },
+      {
+        "id": "m12",
+        "parent": "curve_left_middle",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ],
+          "quat": [
+            0.62,
+            0,
+            0.78,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.31,
+            "height": 0.075,
+            "depth": 0.28
+          },
+          "color": 15120447
+        }
+      },
+      {
+        "id": "m13",
+        "parent": "curve_left_lower",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ],
+          "quat": [
+            0.78,
+            0,
+            0.62,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.31,
+            "height": 0.075,
+            "depth": 0.28
+          },
+          "color": 15911253
+        }
+      },
+      {
+        "id": "m14",
+        "parent": "curve_left_exit",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ],
+          "quat": [
+            0.94,
+            0,
+            0.33,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.26,
+            "height": 0.075,
+            "depth": 0.28
+          },
+          "color": 15120447
+        }
+      },
+      {
+        "id": "m15",
+        "parent": "track",
+        "transform": {
+          "pos": [
+            -0.22,
+            0.0465,
+            -0.46
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.18,
+            "height": 0.23,
+            "depth": 0.22
+          },
+          "color": 14195243
+        }
+      },
+      {
+        "id": "m16",
+        "parent": "track",
+        "transform": {
+          "pos": [
+            0.22,
+            0.0465,
+            -0.46
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.18,
+            "height": 0.23,
+            "depth": 0.22
+          },
+          "color": 14195243
+        }
+      },
+      {
+        "id": "m17",
+        "parent": "track",
+        "transform": {
+          "pos": [
+            -0.76,
+            0.0685,
+            0.46
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.055,
+            "height": 0.025,
+            "depth": 0.18
+          },
+          "color": 14252077
+        }
+      },
+      {
+        "id": "m18",
+        "parent": "track",
+        "transform": {
+          "pos": [
+            -0.25,
+            0.0685,
+            0.46
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.055,
+            "height": 0.025,
+            "depth": 0.18
+          },
+          "color": 14252077
+        }
+      },
+      {
+        "id": "m19",
+        "parent": "track",
+        "transform": {
+          "pos": [
+            0.25,
+            0.0685,
+            0.46
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.055,
+            "height": 0.025,
+            "depth": 0.18
+          },
+          "color": 14252077
+        }
+      },
+      {
+        "id": "m20",
+        "parent": "track",
+        "transform": {
+          "pos": [
+            0.76,
+            0.0685,
+            0.46
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.055,
+            "height": 0.025,
+            "depth": 0.18
+          },
+          "color": 14252077
+        }
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1786874755226,
+        "provider": "gpt",
+        "data": "JUcKVsirLJybB1nvnreG/+dqr3Rap7W3P4PW6z3p625/vC2R8gO4WICXq6ts2G7yOmQ3LehWbfPoNmWxP+WaZZFNJkMuyxLKo/15/Go+0QIJJntfV8/Qkz2iNmFgPPpzB5mLLPFNaSCHnalexs+2WI1wxVs+COkMcB65p52xEDYu+T3aZ45Y91sBKttWJr+vVUWZI5BG8hMH0UBGiAw9D6RPcdN8Po5erKl5Ij4oizjUlCAC7QnnQaSkxJdCkGgbYDO54X+pYQW/yWvUKTdgOUnRg6R8VVf5KfpYvzsoa5sdy0UroCu14Z3yCggpBFU5jpCCUrB3bBr2Yc7l3kBNLtt6U2J3t4Xao9g8HtP30AGwCr+gjd7ZWIDMv+JgjFiyu6cAtPKUATX9ryFkknaXy50GvIVWQ9wzUiGrHEU/NGl5xoe3HRwrFed6ZwUFDDhmN33XxqxAb2568bcBcckE57rqZUhOGeZfjv0H+2EmW4ppvb1GEBMimp0maOztm9uVuxG1qkP6R1cGGrfRkqne+o3uYHoym2B2DEEZbvsBLhFR6/b0mPHf7seI2In6Im1OAwDJy5xnWilhiUocGo81nSOwaagSr+H4GJw9/wXeWRAyUKC7GqDJGh1w1a3J8V5qjdccbVGZCPOjQ/e4aHt/pTK2Q+NRobEaknM+c1ZLEVc5OQw6+mt1VLEk7vrZM2lYkx1QZGAZimg07tTvnfx6IUj7EAoCbLq6lREWSA6X5nIeTC1J+whWgXEx3V79VOQUYk64OvOotXe1MRVxeCXKUdgu6kUBeP/8v/4F+EG1bCUOsYZY99SuCXnC6D0RJzc4H7WUnyVUKge5u0Nc0HmbNngmiTvu90MuMgmxb1+CrKlK9OcUC0AzkiDi+id6lXK0eXUDBf5K/WJ3mk99lHQpu394JfxCx0OVlm/3wSVtOwSNd+azPo/YsuxAG9Wyuov1MuWbG3d0ECh3bmEJYXQ5k2VXTkwjuCEpwylobK77eSUuqi9zSIIQcwmudJlRMBfQcTq7aJys2V3VES/1R+SUwOpSAqM1ZdKft+3r1odwWdJb5I7fH2cCTfiiqnJUOjE6kPwWBT5h/1d9CTaTmSusIoNLwSjTP7+EhCW+BSECdWr5aEOt6w/jG70fdmOt5RuD8eUMuVZPo/F8WprzZqb+l0xEukqbbQsOzIR924E8er3+4cq4IaYItBPWKIxPlKIhkKrg6sSq4gKJSmDGxOUrGfhLg5T5ekY7X/VXTbqxSk4g4XZGSawV+bZJqBBEDwYblIJ8PKHPPkTi3eq6P7K0NXfKqMT1eRizaSxvij5o9zZKPU3eXbPCKVJFn14VbJOlDvg=",
+        "edits": ""
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -1.191361804995971,
+          0,
+          -0.6000000000000001
+        ],
+        "max": [
+          1.191361804995971,
+          0.2985616438356164,
+          0.6000000000000001
+        ],
+        "sourceNodeId": "asset-bounds"
+      }
+    ],
+    "sourceMeshCount": 21,
+    "candidateCount": 0,
+    "fallbackUsed": true
+  },
+  "footprintRadius": 1.191361804995971,
+  "sizeClass": "medium",
+  "mode": "voxel",
+  "provider": "gpt",
+  "createdAt": 1786874756931,
+  "updatedAt": 1786874756931
+}

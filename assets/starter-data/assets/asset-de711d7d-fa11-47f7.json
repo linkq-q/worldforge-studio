@@ -1,0 +1,755 @@
+{
+  "id": "asset-de711d7d-fa11-47f7",
+  "name": "玩具ufo",
+  "prompt": "玩具ufo",
+  "modelJson": {
+    "name": "玩具UFO",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "body",
+        "name": "飞碟主体",
+        "transform": {
+          "pos": [
+            0,
+            1.45,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            3.484,
+            3.334,
+            3.154
+          ],
+          "center": [
+            0,
+            0.003,
+            -0.035
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              0.8212,
+              0.5707
+            ],
+            [
+              0,
+              -0.5707,
+              0.8212
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "cockpit",
+        "name": "透明驾驶舱",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0,
+            0.27,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            1.35,
+            1.31,
+            1.35
+          ],
+          "center": [
+            0,
+            0.615,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "leg_fl",
+        "name": "起落架",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            -0.72,
+            -0.33,
+            0.72
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.52,
+            0.98,
+            0.52
+          ],
+          "center": [
+            0,
+            -0.48,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "leg_fr",
+        "name": "起落架",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0.72,
+            -0.33,
+            0.72
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.52,
+            0.98,
+            0.52
+          ],
+          "center": [
+            0,
+            -0.48,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "leg_back",
+        "name": "起落架",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0,
+            -0.33,
+            -0.82
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.52,
+            0.98,
+            0.52
+          ],
+          "center": [
+            0,
+            -0.48,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0,
+            0.17,
+            0
+          ],
+          "quat": [
+            0,
+            -0.38,
+            0,
+            0.92
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2.47,
+            "height": 0.28,
+            "depth": 2.47
+          },
+          "color": 5809865
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m1",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2.55,
+            "height": 0.42,
+            "depth": 2.55
+          },
+          "color": 14240600
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m2",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0,
+            -0.25,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.75,
+            "height": 0.3,
+            "depth": 1.75
+          },
+          "color": 3689315
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m3",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            -1.2,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.26,
+            "height": 0.16,
+            "depth": 0.26
+          },
+          "color": 16769882
+        },
+        "tags": [
+          {
+            "tag": "emissive",
+            "value": 1
+          }
+        ]
+      },
+      {
+        "id": "m4",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            1.2,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.26,
+            "height": 0.16,
+            "depth": 0.26
+          },
+          "color": 6550271
+        },
+        "tags": [
+          {
+            "tag": "emissive",
+            "value": 1
+          }
+        ]
+      },
+      {
+        "id": "m5",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            1.2
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.26,
+            "height": 0.16,
+            "depth": 0.26
+          },
+          "color": 9240424
+        },
+        "tags": [
+          {
+            "tag": "emissive",
+            "value": 1
+          }
+        ]
+      },
+      {
+        "id": "m6",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            -1.2
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.26,
+            "height": 0.16,
+            "depth": 0.26
+          },
+          "color": 16742615
+        },
+        "tags": [
+          {
+            "tag": "emissive",
+            "value": 1
+          }
+        ]
+      },
+      {
+        "id": "m7",
+        "parent": "cockpit",
+        "transform": {
+          "pos": [
+            0,
+            0.2,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.35,
+            "height": 0.48,
+            "depth": 1.35
+          },
+          "color": 7987186
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass",
+            "variant": "blue"
+          }
+        ]
+      },
+      {
+        "id": "m8",
+        "parent": "cockpit",
+        "transform": {
+          "pos": [
+            0,
+            0.58,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.88,
+            "height": 0.32,
+            "depth": 0.88
+          },
+          "color": 11137023
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass",
+            "variant": "blue"
+          }
+        ]
+      },
+      {
+        "id": "m9",
+        "parent": "cockpit",
+        "transform": {
+          "pos": [
+            0,
+            0.9,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.16,
+            "height": 0.34,
+            "depth": 0.16
+          },
+          "color": 15251518
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m10",
+        "parent": "cockpit",
+        "transform": {
+          "pos": [
+            0,
+            1.16,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.28,
+            "height": 0.22,
+            "depth": 0.28
+          },
+          "color": 16730962
+        },
+        "tags": [
+          {
+            "tag": "emissive",
+            "value": 1
+          }
+        ]
+      },
+      {
+        "id": "m11",
+        "parent": "leg_fl",
+        "transform": {
+          "pos": [
+            0,
+            -0.4,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.22,
+            "height": 0.82,
+            "depth": 0.22
+          },
+          "color": 5857645
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m12",
+        "parent": "leg_fl",
+        "transform": {
+          "pos": [
+            0,
+            -0.89,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.52,
+            "height": 0.16,
+            "depth": 0.52
+          },
+          "color": 3160133
+        }
+      },
+      {
+        "id": "m13",
+        "parent": "leg_fr",
+        "transform": {
+          "pos": [
+            0,
+            -0.4,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.22,
+            "height": 0.82,
+            "depth": 0.22
+          },
+          "color": 5857645
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m14",
+        "parent": "leg_fr",
+        "transform": {
+          "pos": [
+            0,
+            -0.89,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.52,
+            "height": 0.16,
+            "depth": 0.52
+          },
+          "color": 3160133
+        }
+      },
+      {
+        "id": "m15",
+        "parent": "leg_back",
+        "transform": {
+          "pos": [
+            0,
+            -0.4,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.22,
+            "height": 0.82,
+            "depth": 0.22
+          },
+          "color": 5857645
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m16",
+        "parent": "leg_back",
+        "transform": {
+          "pos": [
+            0,
+            -0.89,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.52,
+            "height": 0.16,
+            "depth": 0.52
+          },
+          "color": 3160133
+        }
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1787823371704,
+        "provider": "glm",
+        "data": "t+IMiSB8M/I0/s9KMz0qzqxvychjgZYzjMRapDIonQPLPMXIsodD6mnaM8ImaldBz0gZtP6VuW2JxPJAsVURSHmseXm9rsbHbBScWutGidWiKMacl3iNCmkv6YX/+ghCybAxY5l+l1vTw1ESqaCUvxtBiRKsJH+edImcrv5sc4nSIPwMSRfGVLqJY3Po45efhGJndIoKBCa4sQSuGotfvQOaMRVuo/WO/3pS+T1wgo8r8Il9HUHXI+u9KrMDMveAKI1erlrVlBH48wYI6u2LLE8iLM6JRR1WiGwDeQcSoows0bMTuB/JwA1xICJnRyUr1Aa6CNxIt8mEr1YbeNNq94mVFfT36A2t+tLvJ0hTcGFJA6XuQlQeUQO2oKFYGpENXe/FxgjZpMriK9tzYTYtpZJEe9aEiWqZkz131m/ARIkESD0G1bQP2m0iv1XwDocFsfD9ByuEzAQkTSY9r+dBMPUoWzj2fOaSkVFtrkP/Ald0k7BONjmpy+IPy/zFTcpdLGjjnxHsiojl6SiSsor4SWDpDcwjHOKR6iPmHwHCw+CqLS9pXxYyBzJOnDdagZ9ZjEntFHQQa/xt71/5RquYoy9gTwrVqeNCWmWR3Q9upBhEoUTsJoumtIbaH6hb+uNG/PYlyw78DIIVTXYzgKJ30JOUskFnBb4fyw6RyyftKOXfhxChVsVgqNTXuo0cQ86nmXqKEF73AHCxxUWPtWyFfC0YOO234bVKa+/jExFs1wpPr5lk4vc8BLLkZJy9Wu5cmWcofkI76btpFvmiJYiG+rk9JkYOzTll6ZYPu/4jnn6B+Ib338iAd29efclm5qe49IeLZZayCTKIWUgPiOE9AGLE984jYaoHtFYmbWlyInprakqykzEiUNq+RA1FjbIcPFRc52ZfUVc4frrpOMsRv3ZrcKdMh3mV60nLQKu56WglfA+WPunrQtGZwY+XnzHM0WJ9d6bVIBo9v6YUcZkFlGx1KjWunwO+Mn96Io5BKVEzabnTgKibbBib1ONFx4CijFFTAhxqElx1hm87rjZYdyFce/shK09k/q1bYDmrL9cclAMnkLJWtMVrER1LyWJzQl/Yo2glPIFr/+zYWnbE2DzP",
+        "edits": ""
+      },
+      "semanticSnapshot": {
+        "v": 1,
+        "auto": true,
+        "text": "玩具UFO · 5组/17mesh · 世界坐标(Y上Z前), 原点=模型根\n# 阅读说明: G:=group行(可动画骨骼, 动画key用G:后的id; @p=pivot世界坐标; 倾(x,y,z)°=朝向偏离世界轴的欧拉角; 缩进=父子层级; 挂:=挂载于某组; G:id→id→…=chain折叠行, 每个id都是可独立动画的group, chain×N=waypoint数)\n# M:=mesh行(label[id 几何 @(世界坐标)], label可省略; ×N=for循环批量件(锚点=代表实例); cyl (起)→(末)或 轴上(Y)等方位词=延伸方向; 薄向=板面法向(扁板); 挂载组双代表=最大件+最远有向件(刃/嘴/管所在端); 无方向标注=均匀块(三向相近,如头),默认面向前(Z); 对称×2=镜像对)\nG:body 飞碟主体 @p(0,1.5,0)\n  M:[m1 box 2.6×0.42×2.6 (0,1.5,0) 薄向上(Y)]\n  G:cockpit 透明驾驶舱 @p(0,1.7,0)\n    M:[m7 box 1.4×0.48×1.4 (0,1.9,0) 薄向上(Y)]\n  G:leg_fl 起落架 @p(-0.7,1.1,0.7)\n    M:[m12 box 0.52×0.16×0.52 (-0.7,0.2,0.7) 薄向上(Y)]\n  G:leg_fr 起落架 @p(0.7,1.1,0.7)\n    M:[m14 box 0.52×0.16×0.52 (0.7,0.2,0.7) 薄向上(Y)]\n  G:leg_back 起落架 @p(0,1.1,-0.8)\n    M:[m16 box 0.52×0.16×0.52 (0,0.2,-0.8) 薄向上(Y)]",
+        "stats": {
+          "groups": 5,
+          "meshes": 17,
+          "labeledMeshes": 0,
+          "labelCoverage": 0,
+          "batchLabels": 0,
+          "autoChains": 0,
+          "snapshotChars": 758
+        }
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -1.746550262414211,
+          1.33,
+          -1.746550262414211
+        ],
+        "max": [
+          1.746550262414211,
+          1.6099999999999999,
+          1.746550262414211
+        ],
+        "sourceNodeId": "m0"
+      },
+      {
+        "min": [
+          -1.275,
+          1.09,
+          -1.275
+        ],
+        "max": [
+          1.275,
+          1.51,
+          1.275
+        ],
+        "sourceNodeId": "m1"
+      },
+      {
+        "min": [
+          -0.875,
+          0.9000000000000001,
+          -0.875
+        ],
+        "max": [
+          0.875,
+          1.2,
+          0.875
+        ],
+        "sourceNodeId": "m2"
+      },
+      {
+        "min": [
+          -0.675,
+          1.53,
+          -0.675
+        ],
+        "max": [
+          0.675,
+          2.0100000000000002,
+          0.675
+        ],
+        "sourceNodeId": "m7"
+      },
+      {
+        "min": [
+          -0.44,
+          1.9899999999999998,
+          -0.44
+        ],
+        "max": [
+          0.44,
+          2.31,
+          0.44
+        ],
+        "sourceNodeId": "m8"
+      }
+    ],
+    "sourceMeshCount": 17,
+    "candidateCount": 5,
+    "fallbackUsed": false
+  },
+  "footprintRadius": 1.746550262414211,
+  "sizeClass": "medium",
+  "mode": "voxel",
+  "createdAt": 1787823377701,
+  "updatedAt": 1787823377701
+}

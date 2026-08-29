@@ -1,0 +1,721 @@
+{
+  "id": "asset-1464d5d5-6ffb-4728",
+  "name": "复杂游乐园/13美食广场/餐饮/汉堡餐车",
+  "prompt": "Simple standalone voxel model of 汉堡餐车: a compact red yellow amusement park burger food stall with service counter, striped awning and rooftop burger icon, no text. Use 16 to 28 box meshes only, one grounded object, bold readable silhouette, bright amusement park colors, no terrain, no people, no floating pieces.",
+  "modelJson": {
+    "name": "汉堡餐车",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "burger_cart",
+        "name": "汉堡餐车",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "burger_cart",
+        "transform": {
+          "pos": [
+            0,
+            1.3,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 3.8,
+            "height": 2,
+            "depth": 2
+          },
+          "color": 14233391
+        }
+      },
+      {
+        "id": "m1",
+        "parent": "burger_cart",
+        "transform": {
+          "pos": [
+            0,
+            0.55,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 4,
+            "height": 0.45,
+            "depth": 2.08
+          },
+          "color": 16763176
+        }
+      },
+      {
+        "id": "m2",
+        "parent": "burger_cart",
+        "transform": {
+          "pos": [
+            0,
+            1.12,
+            1.18
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 3.5,
+            "height": 0.18,
+            "depth": 0.48
+          },
+          "color": 16767037
+        }
+      },
+      {
+        "id": "m3",
+        "parent": "burger_cart",
+        "transform": {
+          "pos": [
+            0,
+            1.75,
+            1.04
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2.65,
+            "height": 1.05,
+            "depth": 0.08
+          },
+          "color": 3682109
+        }
+      },
+      {
+        "id": "m4",
+        "parent": "burger_cart",
+        "transform": {
+          "pos": [
+            -1.65,
+            1.7,
+            1.08
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.34,
+            "height": 1.25,
+            "depth": 0.18
+          },
+          "color": 16765493
+        }
+      },
+      {
+        "id": "m5",
+        "parent": "burger_cart",
+        "transform": {
+          "pos": [
+            1.65,
+            1.7,
+            1.08
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.34,
+            "height": 1.25,
+            "depth": 0.18
+          },
+          "color": 16765493
+        }
+      },
+      {
+        "id": "m6",
+        "parent": "burger_cart",
+        "transform": {
+          "pos": [
+            0,
+            2.24,
+            1.08
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 3.65,
+            "height": 0.28,
+            "depth": 0.2
+          },
+          "color": 16765493
+        }
+      },
+      {
+        "id": "m7",
+        "parent": "burger_cart",
+        "transform": {
+          "pos": [
+            0,
+            2.48,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 4.2,
+            "height": 0.25,
+            "depth": 2.3
+          },
+          "color": 16103715
+        }
+      },
+      {
+        "id": "m8",
+        "parent": "burger_cart",
+        "transform": {
+          "pos": [
+            -1.75,
+            2.4,
+            1.35
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.7,
+            "height": 0.18,
+            "depth": 1
+          },
+          "color": 15282738
+        }
+      },
+      {
+        "id": "m9",
+        "parent": "burger_cart",
+        "transform": {
+          "pos": [
+            -1.05,
+            2.4,
+            1.35
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.7,
+            "height": 0.18,
+            "depth": 1
+          },
+          "color": 16768831
+        }
+      },
+      {
+        "id": "m10",
+        "parent": "burger_cart",
+        "transform": {
+          "pos": [
+            -0.35,
+            2.4,
+            1.35
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.7,
+            "height": 0.18,
+            "depth": 1
+          },
+          "color": 15282738
+        }
+      },
+      {
+        "id": "m11",
+        "parent": "burger_cart",
+        "transform": {
+          "pos": [
+            0.35,
+            2.4,
+            1.35
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.7,
+            "height": 0.18,
+            "depth": 1
+          },
+          "color": 16768831
+        }
+      },
+      {
+        "id": "m12",
+        "parent": "burger_cart",
+        "transform": {
+          "pos": [
+            1.05,
+            2.4,
+            1.35
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.7,
+            "height": 0.18,
+            "depth": 1
+          },
+          "color": 15282738
+        }
+      },
+      {
+        "id": "m13",
+        "parent": "burger_cart",
+        "transform": {
+          "pos": [
+            1.75,
+            2.4,
+            1.35
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.7,
+            "height": 0.18,
+            "depth": 1
+          },
+          "color": 16768831
+        }
+      },
+      {
+        "id": "m14",
+        "parent": "burger_cart",
+        "transform": {
+          "pos": [
+            -1.48,
+            0.25,
+            0.72
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.62,
+            "height": 0.5,
+            "depth": 0.5
+          },
+          "color": 3420475
+        }
+      },
+      {
+        "id": "m15",
+        "parent": "burger_cart",
+        "transform": {
+          "pos": [
+            1.48,
+            0.25,
+            0.72
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.62,
+            "height": 0.5,
+            "depth": 0.5
+          },
+          "color": 3420475
+        }
+      },
+      {
+        "id": "m16",
+        "parent": "burger_cart",
+        "transform": {
+          "pos": [
+            -1.48,
+            0.25,
+            -0.72
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.62,
+            "height": 0.5,
+            "depth": 0.5
+          },
+          "color": 3420475
+        }
+      },
+      {
+        "id": "m17",
+        "parent": "burger_cart",
+        "transform": {
+          "pos": [
+            1.48,
+            0.25,
+            -0.72
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.62,
+            "height": 0.5,
+            "depth": 0.5
+          },
+          "color": 3420475
+        }
+      },
+      {
+        "id": "m18",
+        "parent": "burger_cart",
+        "transform": {
+          "pos": [
+            0,
+            2.88,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.22,
+            "height": 0.62,
+            "depth": 0.22
+          },
+          "color": 16765496
+        }
+      },
+      {
+        "id": "m19",
+        "parent": "burger_cart",
+        "transform": {
+          "pos": [
+            0,
+            3.18,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.45,
+            "height": 0.22,
+            "depth": 0.48
+          },
+          "color": 15115051
+        }
+      },
+      {
+        "id": "m20",
+        "parent": "burger_cart",
+        "transform": {
+          "pos": [
+            0,
+            3.37,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.55,
+            "height": 0.16,
+            "depth": 0.5
+          },
+          "color": 7286814
+        }
+      },
+      {
+        "id": "m21",
+        "parent": "burger_cart",
+        "transform": {
+          "pos": [
+            0,
+            3.52,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.7,
+            "height": 0.14,
+            "depth": 0.52
+          },
+          "color": 6404158
+        }
+      },
+      {
+        "id": "m22",
+        "parent": "burger_cart",
+        "transform": {
+          "pos": [
+            0,
+            3.65,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.55,
+            "height": 0.12,
+            "depth": 0.5
+          },
+          "color": 16765741
+        }
+      },
+      {
+        "id": "m23",
+        "parent": "burger_cart",
+        "transform": {
+          "pos": [
+            0,
+            3.82,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.55,
+            "height": 0.22,
+            "depth": 0.48
+          },
+          "color": 15115051
+        }
+      },
+      {
+        "id": "m24",
+        "parent": "burger_cart",
+        "transform": {
+          "pos": [
+            0,
+            4.03,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.2,
+            "height": 0.2,
+            "depth": 0.46
+          },
+          "color": 15774780
+        }
+      },
+      {
+        "id": "m25",
+        "parent": "burger_cart",
+        "transform": {
+          "pos": [
+            0,
+            4.21,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.72,
+            "height": 0.16,
+            "depth": 0.44
+          },
+          "color": 16171853
+        }
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1784475544542,
+        "provider": "glm",
+        "data": "KE9sneRE67VI76gehPw89aYrGMOG1MuQrQrVEWah3c9uhkA8Fm1rCqcp6IQoA+nd6vDxq6uYDVjD0MB4IAesnifE9sztoSHomyAGdXNp/35lKaNO6vmAXw8Zz/TgOhjOoMf//gfUo29gg7T7voRC9k1ABO5tH5bWuSVCWKF0Q0mMez2WRh2iMAosT8CaZzanVWmYlCTsv9iFFPNhOfADLwekslpqTOa2GnMx8kEbJVJlaSwOt7OsrKx7OmEq5E4U6K1sQ+saC2ZtNucOikEyBtqTxRttXiQ3KPuVPwsXs+eX7+194kXwDfQqH3bKZ8k4TZEUQMHQpIxB+QwJ6GY6Gm3RGnqW/nAYJf98UD+qU2APHG4QucuvCDkZjc5Qdojnu4HX2bT9MYjEWR8A2a7DpIT73M5jKyRV72DV2amB3K4u5BGFUJhSZXjJlauzfAcJn60sa5YnAjmjEBa99RReNmL4K8l5KDzU54kVtD3ZMXn2NSyscJIFYKOgjY/yPAlE1kZKWxn/FVRgURkpKg31MIya9DEYAM+mtmee5HYjhfHcvivg3Y4IjeLQZmMyNaI5U35bBByGG8mpY/8QJM8VY5YF0opP2K8zOOjphsP+1cvfDVNjKWNYbQRLfWHfIVAn4WQ1nsu9N398HWQTp2aPSziKs5/RyizFFsvyHu/FNpOPlHw6p0dQSpK+DsFnxd00KpDfjG5yFx3RRaOkpNf2INm1nSlj7SfCBxiaPc/9wpczNkkeErndXSMrdHW/81pjMzaJO3VG+LgqawHHoJlCxOaUoPdu5w06a+ApLF5dFcaQ3dE5wvj/n7wFviZMGy/yBAEJJ5ITBg/v9uar2wrKa7IkK2yRuaDB",
+        "edits": ""
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -1.9,
+          0.30000000000000004,
+          -1.35
+        ],
+        "max": [
+          1.9,
+          2.3,
+          0.6499999999999999
+        ],
+        "sourceNodeId": "m0"
+      },
+      {
+        "min": [
+          -2,
+          0.32500000000000007,
+          -1.3900000000000001
+        ],
+        "max": [
+          2,
+          0.775,
+          0.69
+        ],
+        "sourceNodeId": "m1"
+      },
+      {
+        "min": [
+          -2.1,
+          2.355,
+          -1.5
+        ],
+        "max": [
+          2.1,
+          2.605,
+          0.7999999999999998
+        ],
+        "sourceNodeId": "m7"
+      },
+      {
+        "min": [
+          -1.75,
+          1.03,
+          0.5899999999999999
+        ],
+        "max": [
+          1.75,
+          1.2100000000000002,
+          1.0699999999999998
+        ],
+        "sourceNodeId": "m2"
+      },
+      {
+        "min": [
+          -1.325,
+          1.225,
+          0.6499999999999999
+        ],
+        "max": [
+          1.325,
+          2.275,
+          0.73
+        ],
+        "sourceNodeId": "m3"
+      },
+      {
+        "min": [
+          -1.825,
+          2.1,
+          0.63
+        ],
+        "max": [
+          1.825,
+          2.3800000000000003,
+          0.8300000000000001
+        ],
+        "sourceNodeId": "m6"
+      },
+      {
+        "min": [
+          -0.775,
+          3.71,
+          -0.5900000000000001
+        ],
+        "max": [
+          0.775,
+          3.9299999999999997,
+          -0.1100000000000001
+        ],
+        "sourceNodeId": "m23"
+      },
+      {
+        "min": [
+          -1.79,
+          0,
+          0.11999999999999988
+        ],
+        "max": [
+          -1.17,
+          0.5,
+          0.6199999999999999
+        ],
+        "sourceNodeId": "m14"
+      },
+      {
+        "min": [
+          1.17,
+          0,
+          0.11999999999999988
+        ],
+        "max": [
+          1.79,
+          0.5,
+          0.6199999999999999
+        ],
+        "sourceNodeId": "m15"
+      },
+      {
+        "min": [
+          -1.79,
+          0,
+          -1.32
+        ],
+        "max": [
+          -1.17,
+          0.5,
+          -0.8200000000000001
+        ],
+        "sourceNodeId": "m16"
+      },
+      {
+        "min": [
+          1.17,
+          0,
+          -1.32
+        ],
+        "max": [
+          1.79,
+          0.5,
+          -0.8200000000000001
+        ],
+        "sourceNodeId": "m17"
+      },
+      {
+        "min": [
+          -0.725,
+          3.0700000000000003,
+          -0.5900000000000001
+        ],
+        "max": [
+          0.725,
+          3.29,
+          -0.1100000000000001
+        ],
+        "sourceNodeId": "m19"
+      }
+    ],
+    "sourceMeshCount": 26,
+    "candidateCount": 22,
+    "fallbackUsed": false
+  },
+  "mode": "lite",
+  "provider": "provider-fallback",
+  "createdAt": 1784475548641,
+  "updatedAt": 1784475548641
+}

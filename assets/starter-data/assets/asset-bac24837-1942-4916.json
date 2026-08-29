@@ -1,0 +1,296 @@
+{
+  "id": "asset-bac24837-1942-4916",
+  "name": "儿童豆袋椅",
+  "prompt": "A single reusable child-size beanbag chair with a soft slouched body and clearly readable sitting hollow, approximately 0.85 meters wide, no person, floor, room, background, or extra cushions",
+  "tags": [
+    "furniture",
+    "seat"
+  ],
+  "modelJson": {
+    "name": "儿童豆袋椅",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "beanbag",
+        "name": "柔软下垂椅身",
+        "transform": {
+          "pos": [
+            0,
+            0.265,
+            0.01
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.85,
+            0.613,
+            0.87
+          ],
+          "center": [
+            0,
+            -0.016,
+            -0.048
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              0.9655,
+              0.2605
+            ],
+            [
+              0,
+              -0.2605,
+              0.9655
+            ]
+          ],
+          "_mainAxis": 2
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "beanbag",
+        "transform": {
+          "pos": [
+            0,
+            -0.135,
+            -0.01
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.72,
+            "height": 0.24,
+            "depth": 0.66
+          },
+          "color": 14254699
+        }
+      },
+      {
+        "id": "m1",
+        "parent": "beanbag",
+        "transform": {
+          "pos": [
+            0,
+            -0.085,
+            0.26
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.64,
+            "height": 0.18,
+            "depth": 0.2
+          },
+          "color": 14914680
+        }
+      },
+      {
+        "id": "m2",
+        "parent": "beanbag",
+        "transform": {
+          "pos": [
+            0,
+            0.135,
+            -0.26
+          ],
+          "quat": [
+            -0.8,
+            0,
+            0,
+            0.59
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.58,
+            "height": 0.22,
+            "depth": 0.38
+          },
+          "color": 14254699
+        }
+      },
+      {
+        "id": "m3",
+        "parent": "beanbag",
+        "transform": {
+          "pos": [
+            -0.34,
+            0.035,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.17,
+            "height": 0.34,
+            "depth": 0.55
+          },
+          "color": 14914680
+        }
+      },
+      {
+        "id": "m4",
+        "parent": "beanbag",
+        "transform": {
+          "pos": [
+            0.34,
+            0.035,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.17,
+            "height": 0.34,
+            "depth": 0.55
+          },
+          "color": 14914680
+        }
+      },
+      {
+        "id": "m5",
+        "parent": "beanbag",
+        "transform": {
+          "pos": [
+            0,
+            -0.045,
+            -0.02
+          ],
+          "quat": [
+            0.99,
+            0,
+            0,
+            0.11
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.5,
+            "height": 0.12,
+            "depth": 0.33
+          },
+          "color": 11095881
+        }
+      },
+      {
+        "id": "m6",
+        "parent": "beanbag",
+        "transform": {
+          "pos": [
+            -0.27,
+            -0.135,
+            0.23
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.16,
+            "height": 0.13,
+            "depth": 0.18
+          },
+          "color": 13200989
+        }
+      },
+      {
+        "id": "m7",
+        "parent": "beanbag",
+        "transform": {
+          "pos": [
+            0.27,
+            -0.135,
+            0.23
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.16,
+            "height": 0.13,
+            "depth": 0.18
+          },
+          "color": 13200989
+        }
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1786874638162,
+        "provider": "gpt",
+        "data": "2aAOLcb1QjxnXt2gkamv08gKKvLK7vvfIL0bkW9ABsaOPrc+No4z/M4gE1rcuJAaWIJmoIc1s7oYObP8xiQ+OISWihDxY1MhibXpehx12NDTp+QBWL2oaQLWUnMM6KlVoa0TxobqEr0jKFpGrpAr2fSeV2RGUoUyBG/p32jQwxHgyqN2vZoLl5uzlPHiF0Lt6P2pF4Z9UrKirqH3GmqRJY4Mjhk9R7pW9CA6agW4bgCchsTBG0KtRCWDtxRn2CezeTLqjGyVXBmEGgdwlqHpfTIYJv28WjHF8qgKROAo4xu3JqclEWn8dxxChl69iONjxPTRcjRuBlHI6cmuVdW+Q1ZICrAV/diGZEVZPwlACr+oEcvJyZHQo6BUyxEYIveH0XHZrzsax5TkOKAbzeY6d7Nu52+xsHPWYWDp339k4xMrvfA4Go5ZbOjpSMLf2HdW0nPL6t5p89l3uUoOOGh/DTdK7/ZQkU8AjReYhrNV/95wsSiaRTYnSiLwYQHxyOBXmqNY9FJA2h25j7+dFHZ+DkvUjlmwapurfYEPXEggZLSBmwIVq+Pdj44pQ1yQHBl7mpLAFHkzR9dPPcGsXClep6rjnCl2r33G0s7FUJ/0BIC3Zq2M9avHiHTRlGJLyNBDHaSQ+9TYjQ==",
+        "edits": ""
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -0.36,
+          0,
+          -0.309390243902439
+        ],
+        "max": [
+          0.36,
+          0.24,
+          0.350609756097561
+        ],
+        "sourceNodeId": "m0"
+      },
+      {
+        "min": [
+          -0.29,
+          0.1759842121242789,
+          -0.390609756097561
+        ],
+        "max": [
+          0.29,
+          0.6040157878757211,
+          -0.06817073170731702
+        ],
+        "sourceNodeId": "m2"
+      }
+    ],
+    "sourceMeshCount": 8,
+    "candidateCount": 2,
+    "fallbackUsed": false
+  },
+  "footprintRadius": 0.390609756097561,
+  "sizeClass": "small",
+  "mode": "voxel",
+  "provider": "gpt",
+  "libraryId": "library-d7967286-cebf-4f99",
+  "libraryMetadata": {
+    "tags": [
+      "childrensbeanbagchair",
+      "seat",
+      "furniture"
+    ],
+    "applicableZones": [
+      "settlement"
+    ],
+    "repeatable": true,
+    "landmark": false,
+    "enabled": true,
+    "priority": 0.5,
+    "analysisStatus": "ready",
+    "rotation": "random"
+  },
+  "createdAt": 1787817451098,
+  "updatedAt": 1787817451098
+}

@@ -1,0 +1,906 @@
+{
+  "id": "asset-b219c8a5-fa39-40c3",
+  "name": "异形书桌 3",
+  "prompt": "同一规格的古典魔法学院木书桌与配套木椅组合，共四种使用状态变体，桌椅外形和尺寸一致。第一种是少量阅读主题，只放一本打开的书和羽笔；第二种是大量研读主题，有多本不同封面书籍、卷轴和笔记；第三种是小型实验主题，有安全摆放的药瓶、试管架和实验记录；第四种是无人使用的空桌，仅保留整洁桌面。椅子均在桌前并朝向桌面，桌面物品不得悬空。\nCoordinate contract: local Y+ is up, local Z+ is the front, entrance, or forward direction, and local X+ is right. Put doors, facades, openings, windshields, noses, seats, and other recognizable front details toward local Z+. For a modular repeated element, explicitly choose the long axis: side-by-side modules span local X with depth/front on local Z; traversal modules span local Z. Keep the model centered at its origin.\nCanonical dimensions contract: width=3.8, height=1.65, depth=2.8 world units. Keep the generated mesh within this centered bounding size.\nCreate variation 3 of 4; preserve the same reusable asset family while varying silhouette and details.",
+  "tags": [
+    "indoor",
+    "desk",
+    "chair",
+    "magic-study",
+    "content-variants"
+  ],
+  "modelJson": {
+    "name": "古典魔法学院书桌与木椅·小型实验",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "desk",
+        "name": "古典木书桌",
+        "transform": {
+          "pos": [
+            0,
+            0.51,
+            -0.46
+          ]
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "walnut"
+          }
+        ],
+        "_obb": {
+          "size": [
+            3.463,
+            2.88,
+            3.092
+          ],
+          "center": [
+            0.046,
+            0.259,
+            0.818
+          ],
+          "axes": [
+            [
+              0.9978,
+              0.0484,
+              -0.0461
+            ],
+            [
+              -0.0386,
+              0.9804,
+              0.1933
+            ],
+            [
+              0.0546,
+              -0.1911,
+              0.98
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "mount01_experiment",
+        "name": "安全魔法实验用品",
+        "parent": "desk",
+        "transform": {
+          "pos": [
+            0,
+            0.622,
+            0
+          ]
+        },
+        "mounted": true,
+        "_obb": {
+          "size": [
+            2.816,
+            1.811,
+            2.507
+          ],
+          "center": [
+            0.083,
+            -0.138,
+            0.883
+          ],
+          "axes": [
+            [
+              0.9874,
+              0.1083,
+              -0.1151
+            ],
+            [
+              -0.0544,
+              0.9167,
+              0.3958
+            ],
+            [
+              0.1484,
+              -0.3845,
+              0.9111
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "chair",
+        "name": "配套木椅",
+        "parent": "mount01_experiment",
+        "transform": {
+          "pos": [
+            0,
+            -0.622,
+            1.1
+          ]
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "walnut"
+          }
+        ],
+        "_obb": {
+          "size": [
+            1.18,
+            1.59,
+            0.975
+          ],
+          "center": [
+            0,
+            0.178,
+            0.363
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              0.9445,
+              0.3284
+            ],
+            [
+              0,
+              -0.3284,
+              0.9445
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "desk",
+        "transform": {
+          "pos": [
+            0,
+            0.51,
+            0.08
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 3.4,
+            "height": 0.18,
+            "depth": 1.35
+          },
+          "color": 7357739
+        }
+      },
+      {
+        "id": "m1",
+        "parent": "desk",
+        "transform": {
+          "pos": [
+            -1.45,
+            -0.04,
+            -0.36
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.22,
+            "height": 0.94,
+            "depth": 0.22
+          },
+          "color": 5320735
+        }
+      },
+      {
+        "id": "m2",
+        "parent": "desk",
+        "transform": {
+          "pos": [
+            1.45,
+            -0.04,
+            -0.36
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.22,
+            "height": 0.94,
+            "depth": 0.22
+          },
+          "color": 5320735
+        }
+      },
+      {
+        "id": "m3",
+        "parent": "desk",
+        "transform": {
+          "pos": [
+            -1.45,
+            -0.04,
+            0.52
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.22,
+            "height": 0.94,
+            "depth": 0.22
+          },
+          "color": 5320735
+        }
+      },
+      {
+        "id": "m4",
+        "parent": "desk",
+        "transform": {
+          "pos": [
+            1.45,
+            -0.04,
+            0.52
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.22,
+            "height": 0.94,
+            "depth": 0.22
+          },
+          "color": 5320735
+        }
+      },
+      {
+        "id": "m5",
+        "parent": "desk",
+        "transform": {
+          "pos": [
+            0,
+            0.25,
+            -0.52
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2.75,
+            "height": 0.28,
+            "depth": 0.12
+          },
+          "color": 5977891
+        }
+      },
+      {
+        "id": "m6",
+        "parent": "mount01_experiment",
+        "transform": {
+          "pos": [
+            0.95,
+            0.013,
+            -0.02
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.8,
+            "height": 0.07,
+            "depth": 0.58
+          },
+          "color": 4008221
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "walnut"
+          }
+        ]
+      },
+      {
+        "id": "m7",
+        "parent": "mount01_experiment",
+        "transform": {
+          "pos": [
+            0.85,
+            0.238,
+            -0.04
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.28,
+            "height": 0.38,
+            "depth": 0.28
+          },
+          "color": 7977384
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass",
+            "variant": "green"
+          }
+        ]
+      },
+      {
+        "id": "m8",
+        "parent": "mount01_experiment",
+        "transform": {
+          "pos": [
+            0.85,
+            0.488,
+            -0.04
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.14,
+            "height": 0.12,
+            "depth": 0.14
+          },
+          "color": 4797222
+        }
+      },
+      {
+        "id": "m9",
+        "parent": "mount01_experiment",
+        "transform": {
+          "pos": [
+            1.18,
+            0.183,
+            -0.04
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.22,
+            "height": 0.27,
+            "depth": 0.22
+          },
+          "color": 10385592
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass",
+            "variant": "purple"
+          }
+        ]
+      },
+      {
+        "id": "m10",
+        "parent": "mount01_experiment",
+        "transform": {
+          "pos": [
+            1.18,
+            0.368,
+            -0.04
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.1,
+            "height": 0.1,
+            "depth": 0.1
+          },
+          "color": 4797222
+        }
+      },
+      {
+        "id": "m11",
+        "parent": "mount01_experiment",
+        "transform": {
+          "pos": [
+            -0.15,
+            0.023,
+            -0.1
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.72,
+            "height": 0.09,
+            "depth": 0.26
+          },
+          "color": 6897958
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "walnut"
+          }
+        ]
+      },
+      {
+        "id": "m12",
+        "parent": "mount01_experiment",
+        "transform": {
+          "pos": [
+            -0.47,
+            0.228,
+            -0.1
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.09,
+            "height": 0.34,
+            "depth": 0.12
+          },
+          "color": 6897958
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "walnut"
+          }
+        ]
+      },
+      {
+        "id": "m13",
+        "parent": "mount01_experiment",
+        "transform": {
+          "pos": [
+            0.17,
+            0.228,
+            -0.1
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.09,
+            "height": 0.34,
+            "depth": 0.12
+          },
+          "color": 6897958
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "walnut"
+          }
+        ]
+      },
+      {
+        "id": "m14",
+        "parent": "mount01_experiment",
+        "transform": {
+          "pos": [
+            -0.15,
+            0.348,
+            -0.1
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.72,
+            "height": 0.1,
+            "depth": 0.14
+          },
+          "color": 6897958
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "walnut"
+          }
+        ]
+      },
+      {
+        "id": "m15",
+        "parent": "mount01_experiment",
+        "transform": {
+          "pos": [
+            -0.35,
+            0.188,
+            -0.1
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.1,
+            "height": 0.32,
+            "depth": 0.1
+          },
+          "color": 7518161
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass",
+            "variant": "blue"
+          }
+        ]
+      },
+      {
+        "id": "m16",
+        "parent": "mount01_experiment",
+        "transform": {
+          "pos": [
+            -0.15,
+            0.188,
+            -0.1
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.1,
+            "height": 0.32,
+            "depth": 0.1
+          },
+          "color": 13207483
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass",
+            "variant": "pink"
+          }
+        ]
+      },
+      {
+        "id": "m17",
+        "parent": "mount01_experiment",
+        "transform": {
+          "pos": [
+            0.05,
+            0.188,
+            -0.1
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.1,
+            "height": 0.32,
+            "depth": 0.1
+          },
+          "color": 8632683
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass",
+            "variant": "green"
+          }
+        ]
+      },
+      {
+        "id": "m18",
+        "parent": "mount01_experiment",
+        "transform": {
+          "pos": [
+            -0.94,
+            0,
+            0.21
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.92,
+            "height": 0.045,
+            "depth": 0.58
+          },
+          "color": 14930597
+        }
+      },
+      {
+        "id": "m19",
+        "parent": "mount01_experiment",
+        "transform": {
+          "pos": [
+            -1.05,
+            0.038,
+            0.21
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.34,
+            "height": 0.035,
+            "depth": 0.05
+          },
+          "color": 5327427
+        }
+      },
+      {
+        "id": "m20",
+        "parent": "mount01_experiment",
+        "transform": {
+          "pos": [
+            -1.02,
+            0.038,
+            0.36
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.42,
+            "height": 0.035,
+            "depth": 0.05
+          },
+          "color": 5327427
+        }
+      },
+      {
+        "id": "m21",
+        "parent": "mount01_experiment",
+        "transform": {
+          "pos": [
+            -0.65,
+            0.048,
+            0.01
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.5,
+            "height": 0.055,
+            "depth": 0.07
+          },
+          "color": 3876121
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "walnut"
+          }
+        ]
+      },
+      {
+        "id": "m22",
+        "parent": "chair",
+        "transform": {
+          "pos": [
+            0,
+            0.05,
+            0.24
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.18,
+            "height": 0.16,
+            "depth": 0.82
+          },
+          "color": 7357739
+        }
+      },
+      {
+        "id": "m23",
+        "parent": "chair",
+        "transform": {
+          "pos": [
+            -0.46,
+            -0.24,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.16,
+            "height": 0.54,
+            "depth": 0.16
+          },
+          "color": 5320735
+        }
+      },
+      {
+        "id": "m24",
+        "parent": "chair",
+        "transform": {
+          "pos": [
+            0.46,
+            -0.24,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.16,
+            "height": 0.54,
+            "depth": 0.16
+          },
+          "color": 5320735
+        }
+      },
+      {
+        "id": "m25",
+        "parent": "chair",
+        "transform": {
+          "pos": [
+            -0.46,
+            0.05,
+            0.56
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.16,
+            "height": 1.12,
+            "depth": 0.16
+          },
+          "color": 5320735
+        }
+      },
+      {
+        "id": "m26",
+        "parent": "chair",
+        "transform": {
+          "pos": [
+            0.46,
+            0.05,
+            0.56
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.16,
+            "height": 1.12,
+            "depth": 0.16
+          },
+          "color": 5320735
+        }
+      },
+      {
+        "id": "m27",
+        "parent": "chair",
+        "transform": {
+          "pos": [
+            0,
+            0.54,
+            0.56
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.08,
+            "height": 0.5,
+            "depth": 0.14
+          },
+          "color": 6832167
+        }
+      },
+      {
+        "id": "m28",
+        "parent": "chair",
+        "transform": {
+          "pos": [
+            0,
+            0.86,
+            0.56
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.86,
+            "height": 0.12,
+            "depth": 0.18
+          },
+          "color": 5189406
+        }
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1787875054729,
+        "provider": "gpt",
+        "data": "e6ngi6DNdRp6N0vtXOfl5w6lZxM+DM4hoRR+H+1SuLN3ssZkY0tOK7cz6A5qaBn6bOq56u2O9e4GcWTdnszSTZ2xo6iTkgcRC6z8TDQzjB81kzEIGGve77YJDAyPTlrcqViSsX3il27gw98Er4d7tRcRN+jCHvsdMSLI8uAEz8JSFxTXRlKEGEwbzWybPpetEvGsyjVq36FNpjrfkt7X0rWmpCMbBXRDHZfq9vbEE6Styk2Mj796VXO3C/wOawE70C3IrHmnXAcrzkxH+dSDMaxJ+Dg7dre0/ZWgoJwaW24qT/gey1a/5mwBoKacbzzO/6qiWss/0dqxbwoSCHRxaKvt1mRPfLmWfl9gH5JiRt/cKUJmTTRECczv+kcimnZBe6m2KxPUk4syqy8FVWXNN0nJq6mfPccdtvLQuxZO0ckCkDI0fHXA8P+tY5ObKqigy/fmOa/5mvOx7n1N8aJKr66i1lu7VOYiOnjE3aVDsIrTsccbElBsCkF3VU9n66IYRKGgkYB0+BW4b9nSJsxwbe48Enb0AY29nwGz0RexjnE4RXMf/E8bjhmJ5FwEqr+H/cZbJ+0LKzeTC0mJZUSHdPYriFejn/POX+1OmQOgiF9mGzrrlhpxLmqoF+i95rUIcbimk/4X8JeGBMnL+aVbyy/y7LoeXhixdR2tuSvj/UNqnNnH1e5G+ZnvrELNK9wZMt8GA/55L5eAY8o430RT6CEjxmmvWZj2V+s8btmjIzr48YgaQVreLrzEOKI4vXgp0duP30eB5PI7yHoMfknRy0q6dXqCQtnZBwTIJ8Uxz6wqr3zQsqzAmq4qnOcSH+CbNmGJgVmI/Sf0g4WCBecRMOocqlrRkI2xAftJudkV0zOkt9QruOvR0Ak/JaQ9q3DqUHOTAlKoHwblGXT4yCswOu47A3OmLYkhybjVLGdqkgstEp2h+iZkC4mMEmVs3ALdhpcuVCz2v81oo/7BydXyjILVPyce94MvU+S258kOlUGQwkq214bPYMuI+U1kj9jdTsQBcVesBDctyn2g+C8iAOblDKl6xM8rOuZjWTi8CkGppTZrCR75B06jtAvTn2iSHpRjT0sDOOY8aFarl7NKsRnnDRa3WK3FLOvvuAuJ/SsgGHUYf8N7bzSMmPeLJeXCBALDO1MkbN0VnO1T38V4SOvHS9yVbYA3csndPqiwrqbUxellxzeTw1HmE1kxu1VoL/KurhtpnKUIQu2wbLHVjkoK10YWz+LYfQi+HzRRaP4aFwxd95ccsJz7hZ8QyfOQjC8k4Okw/DYy/nxMKGSeRKq50n9Kyq8bmXMCR8/oIndtvg==",
+        "edits": ""
+      },
+      "mounts": [
+        {
+          "id": "mount01_experiment",
+          "mountedGroupId": "mount01_experiment",
+          "name": "安全魔法实验用品",
+          "source": {
+            "type": "codegen"
+          },
+          "description": "",
+          "visible": true,
+          "ts": 1787875054730
+        }
+      ],
+      "semanticSnapshot": {
+        "v": 1,
+        "auto": true,
+        "text": "古典魔法学院书桌与木椅·小型实验 · 3组/29mesh · 世界坐标(Y上Z前), 原点=模型根\n# 阅读说明: G:=group行(可动画骨骼, 动画key用G:后的id; @p=pivot世界坐标; 倾(x,y,z)°=朝向偏离世界轴的欧拉角; 缩进=父子层级; 挂:=挂载于某组; G:id→id→…=chain折叠行, 每个id都是可独立动画的group, chain×N=waypoint数)\n# M:=mesh行(label[id 几何 @(世界坐标)], label可省略; ×N=for循环批量件(锚点=代表实例); cyl (起)→(末)或 轴上(Y)等方位词=延伸方向; 薄向=板面法向(扁板); 挂载组双代表=最大件+最远有向件(刃/嘴/管所在端); 无方向标注=均匀块(三向相近,如头),默认面向前(Z); 对称×2=镜像对)\nG:desk 古典木书桌 @p(0,0.5,-0.5)\n  M:[m0 box 3.4×0.18×1.4 (0,1,-0.4) 薄向上(Y)]\n  G:mount01_experiment 安全魔法实验用品 @p(0,1.1,-0.5) 挂:desk\n    M:[m6 box 0.8×0.07×0.58 (1,1.1,-0.5) 薄向上(Y)] | M:[m20 box 0.42×0.04×0.05 (-1,1.2,-0.1) 轴右(X)]\n    G:chair 配套木椅 @p(0,0.5,0.6)\n      M:[m22 box 1.2×0.16×0.82 (0,0.6,0.9) 薄向上(Y)]",
+        "stats": {
+          "groups": 3,
+          "meshes": 29,
+          "labeledMeshes": 0,
+          "labelCoverage": 0,
+          "batchLabels": 0,
+          "autoChains": 0,
+          "snapshotChars": 682
+        }
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -1.7,
+          0.9299999999999999,
+          -1.1725000000000003
+        ],
+        "max": [
+          1.7,
+          1.11,
+          0.1775
+        ],
+        "sourceNodeId": "m0"
+      },
+      {
+        "min": [
+          -0.59,
+          0.4800000000000001,
+          0.3525000000000001
+        ],
+        "max": [
+          0.59,
+          0.6400000000000001,
+          1.1724999999999999
+        ],
+        "sourceNodeId": "m22"
+      },
+      {
+        "min": [
+          -1.375,
+          0.6199999999999999,
+          -1.1575000000000002
+        ],
+        "max": [
+          1.375,
+          0.8999999999999999,
+          -1.0375
+        ],
+        "sourceNodeId": "m5"
+      }
+    ],
+    "sourceMeshCount": 29,
+    "candidateCount": 3,
+    "fallbackUsed": false
+  },
+  "footprintRadius": 1.7,
+  "sizeClass": "medium",
+  "mode": "voxel",
+  "provider": "gpt",
+  "createdAt": 1787875054240,
+  "updatedAt": 1787875054240
+}

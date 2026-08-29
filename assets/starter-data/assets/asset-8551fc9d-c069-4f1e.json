@@ -1,0 +1,368 @@
+{
+  "id": "asset-8551fc9d-c069-4f1e",
+  "name": "骑士棋子",
+  "prompt": "单个国际象棋骑士棋子\nCoordinate contract: local Y+ is up, local Z+ is the front, entrance, or forward direction, and local X+ is right. Put doors, facades, openings, windshields, noses, seats, and other recognizable front details toward local Z+. For a modular repeated element, explicitly choose the long axis: side-by-side modules span local X with depth/front on local Z; traversal modules span local Z. Keep the model centered at its origin.\nCanonical dimensions contract: width=0.12, height=0.25, depth=0.12 world units. Keep the generated mesh within this centered bounding size.",
+  "tags": [
+    "indoor",
+    "child-safe"
+  ],
+  "modelJson": {
+    "name": "国际象棋骑士",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "knight",
+        "name": "骑士棋子",
+        "transform": {
+          "pos": [
+            0,
+            -0.125,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.12,
+            0.26,
+            0.122
+          ],
+          "center": [
+            0,
+            0.119,
+            0.018
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              0.9862,
+              0.1655
+            ],
+            [
+              0,
+              -0.1655,
+              0.9862
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "knight",
+        "transform": {
+          "pos": [
+            0,
+            0.011,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.12,
+            "height": 0.022,
+            "depth": 0.12
+          },
+          "color": 2434341
+        }
+      },
+      {
+        "id": "m1",
+        "parent": "knight",
+        "transform": {
+          "pos": [
+            0,
+            0.031,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.098,
+            "height": 0.018,
+            "depth": 0.098
+          },
+          "color": 3158064
+        }
+      },
+      {
+        "id": "m2",
+        "parent": "knight",
+        "transform": {
+          "pos": [
+            0,
+            0.049,
+            0.002
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.072,
+            "height": 0.018,
+            "depth": 0.074
+          },
+          "color": 3684408
+        }
+      },
+      {
+        "id": "m3",
+        "parent": "knight",
+        "transform": {
+          "pos": [
+            0,
+            0.087,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.052,
+            "height": 0.062,
+            "depth": 0.052
+          },
+          "color": 3421236
+        }
+      },
+      {
+        "id": "m4",
+        "parent": "knight",
+        "transform": {
+          "pos": [
+            0,
+            0.127,
+            0.006
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.058,
+            "height": 0.018,
+            "depth": 0.066
+          },
+          "color": 4013373
+        }
+      },
+      {
+        "id": "m5",
+        "parent": "knight",
+        "transform": {
+          "pos": [
+            0,
+            0.158,
+            0.004
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.05,
+            "height": 0.048,
+            "depth": 0.046
+          },
+          "color": 3487029
+        }
+      },
+      {
+        "id": "m6",
+        "parent": "knight",
+        "transform": {
+          "pos": [
+            0,
+            0.194,
+            0.012
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.05,
+            "height": 0.046,
+            "depth": 0.05
+          },
+          "color": 3881787
+        }
+      },
+      {
+        "id": "m7",
+        "parent": "knight",
+        "transform": {
+          "pos": [
+            0,
+            0.22,
+            0.025
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.052,
+            "height": 0.038,
+            "depth": 0.056
+          },
+          "color": 4210752
+        }
+      },
+      {
+        "id": "m8",
+        "parent": "knight",
+        "transform": {
+          "pos": [
+            0,
+            0.221,
+            0.047
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.048,
+            "height": 0.025,
+            "depth": 0.058
+          },
+          "color": 4539717
+        }
+      },
+      {
+        "id": "m9",
+        "parent": "knight",
+        "transform": {
+          "pos": [
+            -0.015,
+            0.237,
+            0.014
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.014,
+            "height": 0.026,
+            "depth": 0.014
+          },
+          "color": 3158064
+        }
+      },
+      {
+        "id": "m10",
+        "parent": "knight",
+        "transform": {
+          "pos": [
+            0.015,
+            0.237,
+            0.014
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.014,
+            "height": 0.026,
+            "depth": 0.014
+          },
+          "color": 3158064
+        }
+      },
+      {
+        "id": "m11",
+        "parent": "knight",
+        "transform": {
+          "pos": [
+            -0.026,
+            0.23,
+            0.041
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.007,
+            "height": 0.007,
+            "depth": 0.004
+          },
+          "color": 14202954
+        }
+      },
+      {
+        "id": "m12",
+        "parent": "knight",
+        "transform": {
+          "pos": [
+            0.026,
+            0.23,
+            0.041
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.007,
+            "height": 0.007,
+            "depth": 0.004
+          },
+          "color": 14202954
+        }
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1787770157592,
+        "provider": "gpt",
+        "data": "VIxrzeSp1Ajq6vToqQ7lXL4QhXTytkMYxVvCDaNDDcI8wqiZvSR39IZvTt9Rt7BjVY3bwQQl8ZF+xGx+FjoLz6NhpWEM+UymN+uFXHwm4AsX0XV9B4u9lKs2qO+HymXAxW7Tkysb8+dh5JqGnvLXfUjM/vBbGxtrdy2ajCv3q0re6TOzo/Z6m/BRxvfUuZKIV/tFIVFQ880eAzfz9AIOA98zBVSwkCAMg78vchkzc9rT4bf9K+n8PoY1lA+JVwLnsuiDe8xvabDOWyRQMv/1ogVvbI0lzEvulWb2ZBLiPjg7MIKHb33s3vGWbnpYXAYlffYdZ+ju0QQhw5ehBJg42+HzUqvyxjNuBSvI6R/2qDW3rdGaYcVxMuOofVmpKjoJ/9J5N6ugPLEXlANyTWQ0yUBKlRUVUZJlPQ7/JvG6wmkyAMTku17PlLqKXi4qDjueJeMHLnoFDtOFu7/iTgkSqv1WUPFeqG6WMHDaXnQuTEIe5qVQhKo8Uq8EyLShfAXO6qhhraBHihEm01VaE9Mf95hTBzKTB6hEGyKTh2tXYzv9ZdMN8UyzoRvmavd/UQOrrD+SbKjBh27947VjSjXuhlRZoushwiRx/xGQOaReqjmvf/0kLBUWnxzgo+WxVSUDl0QaNqkIX/KaivzesW3k0twmRaQJERnvr05jmKS7x1lkpRzeDGjvk+d3zA==",
+        "edits": ""
+      },
+      "semanticSnapshot": {
+        "v": 1,
+        "auto": true,
+        "text": "国际象棋骑士 · 1组/13mesh · 世界坐标(Y上Z前), 原点=模型根\n# 阅读说明: G:=group行(可动画骨骼, 动画key用G:后的id; @p=pivot世界坐标; 倾(x,y,z)°=朝向偏离世界轴的欧拉角; 缩进=父子层级; 挂:=挂载于某组; G:id→id→…=chain折叠行, 每个id都是可独立动画的group, chain×N=waypoint数)\n# M:=mesh行(label[id 几何 @(世界坐标)], label可省略; ×N=for循环批量件(锚点=代表实例); cyl (起)→(末)或 轴上(Y)等方位词=延伸方向; 薄向=板面法向(扁板); 挂载组双代表=最大件+朝向件(嘴/管/檐所在); 无方向标注=均匀块(三向相近,如头),默认面向前(Z); 对称×2=镜像对)\nG:knight 骑士棋子 @p(0,-0.1,0)\n  M:[m0 box 0.12×0.02×0.12 (0,-0.1,0) 薄向上(Y)]",
+        "stats": {
+          "groups": 1,
+          "meshes": 13,
+          "labeledMeshes": 0,
+          "labelCoverage": 0,
+          "batchLabels": 0,
+          "autoChains": 0,
+          "snapshotChars": 436
+        }
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -0.06,
+          0,
+          -0.068
+        ],
+        "max": [
+          0.06,
+          0.25,
+          0.068
+        ],
+        "sourceNodeId": "asset-bounds"
+      }
+    ],
+    "sourceMeshCount": 13,
+    "candidateCount": 0,
+    "fallbackUsed": true
+  },
+  "footprintRadius": 0.1,
+  "sizeClass": "small",
+  "mode": "voxel",
+  "provider": "gpt",
+  "createdAt": 1787770157309,
+  "updatedAt": 1787770157309
+}

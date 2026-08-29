@@ -1,0 +1,316 @@
+{
+  "id": "asset-d3573543-3ae4-4ce9",
+  "name": "保龄球",
+  "prompt": "保龄球",
+  "modelJson": {
+    "name": "保龄球",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "m0",
+        "transform": {
+          "pos": [
+            0,
+            1.1,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.8,
+            "height": 1.8,
+            "depth": 1.8
+          },
+          "color": 2367556
+        }
+      },
+      {
+        "id": "m1",
+        "transform": {
+          "pos": [
+            0,
+            2.05,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.45,
+            "height": 0.4,
+            "depth": 1.45
+          },
+          "color": 3155802
+        }
+      },
+      {
+        "id": "m2",
+        "transform": {
+          "pos": [
+            0,
+            0.15,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.45,
+            "height": 0.4,
+            "depth": 1.45
+          },
+          "color": 1512749
+        }
+      },
+      {
+        "id": "m3",
+        "transform": {
+          "pos": [
+            1,
+            1.1,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.4,
+            "height": 1.35,
+            "depth": 1.45
+          },
+          "color": 3155802
+        }
+      },
+      {
+        "id": "m4",
+        "transform": {
+          "pos": [
+            -1,
+            1.1,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.4,
+            "height": 1.35,
+            "depth": 1.45
+          },
+          "color": 1512749
+        }
+      },
+      {
+        "id": "m5",
+        "transform": {
+          "pos": [
+            0,
+            1.1,
+            1
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.45,
+            "height": 1.35,
+            "depth": 0.4
+          },
+          "color": 3155802
+        }
+      },
+      {
+        "id": "m6",
+        "transform": {
+          "pos": [
+            0,
+            1.1,
+            -1
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.45,
+            "height": 1.35,
+            "depth": 0.4
+          },
+          "color": 1512749
+        }
+      },
+      {
+        "id": "m7",
+        "transform": {
+          "pos": [
+            -0.34,
+            1.52,
+            0.94
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.28,
+            "height": 0.22,
+            "depth": 0.08
+          },
+          "color": 526354
+        }
+      },
+      {
+        "id": "m8",
+        "transform": {
+          "pos": [
+            0.34,
+            1.52,
+            0.94
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.28,
+            "height": 0.22,
+            "depth": 0.08
+          },
+          "color": 526354
+        }
+      },
+      {
+        "id": "m9",
+        "transform": {
+          "pos": [
+            0,
+            1.18,
+            0.94
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.28,
+            "height": 0.22,
+            "depth": 0.08
+          },
+          "color": 526354
+        }
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1786872170034,
+        "provider": "glm",
+        "data": "i4QHTY22E1iR7P2J19qLv8lmqpRftC+TOVPRdWhpQ4RYBFRHFhjN8ldbLKgg+fDTEAA3Cc001S7t1aB1eiz9WS5xWrOI/pQf2eophTjJdeHqJ0l+7Q1fTb96/5cHr3wISRlTEJIx8qFtU5eoqA0HA3mTGEAOVVU+rdPKhFFK+7d9d7R2KBD88Bq5FtAG06SGNKO687N96Er/4xxxyK+3ZlrFzYEjrfE7uHOXP2KtGY98aPGfsHsEUKvtmH5GQxOeDMgf7ty6/VffA2T6iuTh48nbobtg1tSzRhbSwPngDnGVYetd1mkU2g21WX8b4lHcEmVdNBb2o7ncQ+HBQETYuw+06hxKB6Fw8zbF2+OxL6J/6j7TSNyS5E+hCss7WfM7SXPnYchsQL4mD1nGN5ZhxxS9FWAHYh70/PRiNJn57Abwq2xrIWmOPm9L66dixyMTPSR6T6BUCCYmyW7SsIlYjg45/Aj2hAiHu1FaPhfN",
+        "edits": ""
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -0.9,
+          0.2500000000000001,
+          -0.9
+        ],
+        "max": [
+          0.9,
+          2.05,
+          0.9
+        ],
+        "sourceNodeId": "m0"
+      },
+      {
+        "min": [
+          -0.725,
+          0,
+          -0.725
+        ],
+        "max": [
+          0.725,
+          0.4,
+          0.725
+        ],
+        "sourceNodeId": "m2"
+      },
+      {
+        "min": [
+          -0.725,
+          1.9,
+          -0.725
+        ],
+        "max": [
+          0.725,
+          2.3,
+          0.725
+        ],
+        "sourceNodeId": "m1"
+      },
+      {
+        "min": [
+          0.8,
+          0.4750000000000001,
+          -0.725
+        ],
+        "max": [
+          1.2,
+          1.8250000000000002,
+          0.725
+        ],
+        "sourceNodeId": "m3"
+      },
+      {
+        "min": [
+          -1.2,
+          0.4750000000000001,
+          -0.725
+        ],
+        "max": [
+          -0.8,
+          1.8250000000000002,
+          0.725
+        ],
+        "sourceNodeId": "m4"
+      },
+      {
+        "min": [
+          -0.725,
+          0.4750000000000001,
+          0.8
+        ],
+        "max": [
+          0.725,
+          1.8250000000000002,
+          1.2
+        ],
+        "sourceNodeId": "m5"
+      },
+      {
+        "min": [
+          -0.725,
+          0.4750000000000001,
+          -1.2
+        ],
+        "max": [
+          0.725,
+          1.8250000000000002,
+          -0.8
+        ],
+        "sourceNodeId": "m6"
+      }
+    ],
+    "sourceMeshCount": 10,
+    "candidateCount": 7,
+    "fallbackUsed": false
+  },
+  "footprintRadius": 1.2,
+  "sizeClass": "medium",
+  "mode": "voxel",
+  "createdAt": 1786872170615,
+  "updatedAt": 1786872170615
+}

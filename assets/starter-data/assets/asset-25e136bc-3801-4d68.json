@@ -1,0 +1,567 @@
+{
+  "id": "asset-25e136bc-3801-4d68",
+  "name": "行走小灯",
+  "prompt": "原创儿童玩具，单个会走路的玩具灯，圆形灯罩身体，两条短机械腿，侧面发条，暖黄与湖蓝配色，不参考现有角色，独立单体\nCoordinate contract: local Y+ is up, local Z+ is the front, entrance, or forward direction, and local X+ is right. Put doors, facades, openings, windshields, noses, seats, and other recognizable front details toward local Z+. For a modular repeated element, explicitly choose the long axis: side-by-side modules span local X with depth/front on local Z; traversal modules span local Z. Keep the model centered at its origin.\nCanonical dimensions contract: width=0.42, height=0.62, depth=0.36 world units. Keep the generated mesh within this centered bounding size.",
+  "modelJson": {
+    "name": "湖蓝发条行走灯",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "body",
+        "name": "圆形灯罩身体",
+        "transform": {
+          "pos": [
+            0,
+            0.3,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.431,
+            0.619,
+            0.337
+          ],
+          "center": [
+            -0.007,
+            0.011,
+            0.004
+          ],
+          "axes": [
+            [
+              0.986,
+              -0.1214,
+              -0.1141
+            ],
+            [
+              0.1267,
+              0.9911,
+              0.0412
+            ],
+            [
+              0.1081,
+              -0.0551,
+              0.9926
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "left_leg",
+        "name": "左机械腿",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            -0.105,
+            0,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.12,
+            0.254,
+            0.157
+          ],
+          "center": [
+            0,
+            -0.141,
+            0.011
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              0.9865,
+              -0.1639
+            ],
+            [
+              0,
+              0.1639,
+              0.9865
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "right_leg",
+        "name": "右机械腿",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0.105,
+            0,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.12,
+            0.254,
+            0.157
+          ],
+          "center": [
+            0,
+            -0.141,
+            0.011
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              0.9865,
+              -0.1639
+            ],
+            [
+              0,
+              0.1639,
+              0.9865
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "winding_key",
+        "name": "侧面发条",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0.175,
+            0.13,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.045,
+            0.14,
+            0.12
+          ],
+          "center": [
+            0.013,
+            0,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0,
+            0.27,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.28,
+            "height": 0.06,
+            "depth": 0.22
+          },
+          "color": 5814468
+        }
+      },
+      {
+        "id": "m1",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0,
+            0.13,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.35,
+            "height": 0.22,
+            "depth": 0.27
+          },
+          "color": 6538447
+        }
+      },
+      {
+        "id": "m2",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0,
+            0.13,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.38,
+            "height": 0.12,
+            "depth": 0.24
+          },
+          "color": 4434360
+        }
+      },
+      {
+        "id": "m3",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0,
+            -0.01,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.28,
+            "height": 0.06,
+            "depth": 0.22
+          },
+          "color": 5814468
+        }
+      },
+      {
+        "id": "m4",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0,
+            0.14,
+            0.148
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.25,
+            "height": 0.18,
+            "depth": 0.025
+          },
+          "color": 16767091
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass",
+            "variant": "amber"
+          },
+          {
+            "tag": "emissive",
+            "value": 0.75
+          }
+        ]
+      },
+      {
+        "id": "m5",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0,
+            0.035,
+            0.163
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.08,
+            "height": 0.025,
+            "depth": 0.012
+          },
+          "color": 16772266
+        },
+        "tags": [
+          {
+            "tag": "emissive",
+            "value": 0.5
+          }
+        ]
+      },
+      {
+        "id": "m6",
+        "parent": "left_leg",
+        "transform": {
+          "pos": [
+            0,
+            -0.11,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.07,
+            "height": 0.18,
+            "depth": 0.07
+          },
+          "color": 15776079
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m7",
+        "parent": "left_leg",
+        "transform": {
+          "pos": [
+            0,
+            -0.2275,
+            0.025
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.12,
+            "height": 0.055,
+            "depth": 0.15
+          },
+          "color": 16764514
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m8",
+        "parent": "right_leg",
+        "transform": {
+          "pos": [
+            0,
+            -0.11,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.07,
+            "height": 0.18,
+            "depth": 0.07
+          },
+          "color": 15776079
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m9",
+        "parent": "right_leg",
+        "transform": {
+          "pos": [
+            0,
+            -0.2275,
+            0.025
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.12,
+            "height": 0.055,
+            "depth": 0.15
+          },
+          "color": 16764514
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m10",
+        "parent": "winding_key",
+        "transform": {
+          "pos": [
+            0.0125,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.045,
+            "height": 0.045,
+            "depth": 0.045
+          },
+          "color": 15908177
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m11",
+        "parent": "winding_key",
+        "transform": {
+          "pos": [
+            0.0175,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.035,
+            "height": 0.14,
+            "depth": 0.035
+          },
+          "color": 16766315
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m12",
+        "parent": "winding_key",
+        "transform": {
+          "pos": [
+            0.0175,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.035,
+            "height": 0.045,
+            "depth": 0.12
+          },
+          "color": 16766315
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1787770825011,
+        "provider": "gpt",
+        "data": "VBJaUXhvHGymgvcP9zfHTWvcQV4muGIZcjyyzOMMqn1z/Pxl9MxHcoaDDTnyI6Zt0nTwxWxC572zXxsJ0t5qAbzKmPY46X9hwRNEkHQwiO7fSI9qLqrkjSl0ZSKFUPNw/B9ljhLeaK1KTabUirSB8kQ0RY7INOjMK4kD0aaYHoOlkFaO3pUKUakR28dWjU4yBl8GZizxC0oN5xE7hxdQu/Op50lWQkgueM6Q62el2tgqHqQPiTgLzHZDJ91Gn5l2n/0JbebyXZ5yZpeKN9z1cyhmRJLDg27CTZ3jipcXif6LkIJH8SuUR3YsvW2JYIRon/YFtWMY0EeN0stpjI/Oiju7KoV2Lc1QWV+WmKrieHLwvpHm5B79UP9sqgSLAhLDOPT3bK+rDc/PgIUXiXG4Cb+AX8fZbY0i2MdMsZk+4O0eABnd9y00WW/AkPPp5pOChAc8LW/sT45pozFkko74EpMbugE6teEgawFzpXx6Z9zOoMbx4aMek7PP3IAAg6zFeLZDlBzP7mExzvE54e/MXq+Dor42Dguzb27Prwi/KfZ9mRdl76iImF4UUEUObfEUfDi4p3A/W9te6UPnQDlZdAczIWJTPHXGWJSkL1re8P2P5yO6ZXA9rRan0eLK/Ipz+XOK/0DRIfca5D4JrgrZMcVZ3xE8Ty+z5b2C9a0Hi9MIJcDpz5gPxE7GuOmIdjQs5zJFma3igApvb2lCt6Au7y+6Wlyq31WvsrqMOKNnnwgW/ORNdOq3YvLhyyIBwtsoHNeumxAgv+DMLl/YII4FbivSNcbZpB5P8ZjyXgYfhWXoh5KpAbvP3bWdz2o5azeIRl6itMQvalPIMQBp0PWQIGVz6gy5PoHBlddnOdIfJ45ooI6G6EWF2zO0+09ueXD+Vdke/YtpiYJWc6n0uF8wV11QW4C0qd24kLkQ",
+        "edits": ""
+      },
+      "semanticSnapshot": {
+        "v": 1,
+        "auto": true,
+        "text": "湖蓝发条行走灯 · 4组/13mesh · 世界坐标(Y上Z前), 原点=模型根\n# 阅读说明: G:=group行(可动画骨骼, 动画key用G:后的id; @p=pivot世界坐标; 倾(x,y,z)°=朝向偏离世界轴的欧拉角; 缩进=父子层级; 挂:=挂载于某组; G:id→id→…=chain折叠行, 每个id都是可独立动画的group, chain×N=waypoint数)\n# M:=mesh行(label[id 几何 @(世界坐标)], label可省略; ×N=for循环批量件(锚点=代表实例); cyl (起)→(末)或 轴上(Y)等方位词=延伸方向; 薄向=板面法向(扁板); 挂载组双代表=最大件+朝向件(嘴/管/檐所在); 无方向标注=均匀块(三向相近,如头),默认面向前(Z); 对称×2=镜像对)\nG:body 圆形灯罩身体 @p(0,0.3,0)\n  M:[m1 box 0.35×0.22×0.27 (0,0.4,0)]\n  G:left_leg 左机械腿 @p(-0.1,0.3,0) 挂:body\n    M:[m7 box 0.12×0.06×0.15 (-0.1,0.1,0) 薄向上(Y)]\n  G:right_leg 右机械腿 @p(0.1,0.3,0) 挂:body\n    M:[m9 box 0.12×0.06×0.15 (0.1,0.1,0) 薄向上(Y)]\n  G:winding_key 侧面发条 @p(0.2,0.4,0) 挂:body\n    M:[m12 box 0.04×0.05×0.12 (0.2,0.4,0) 轴前(Z)]",
+        "stats": {
+          "groups": 4,
+          "meshes": 13,
+          "labeledMeshes": 0,
+          "labelCoverage": 0,
+          "batchLabels": 0,
+          "autoChains": 0,
+          "snapshotChars": 698
+        }
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -0.2,
+          0,
+          -0.15200000000000002
+        ],
+        "max": [
+          0.2,
+          0.5550000000000002,
+          0.15200000000000002
+        ],
+        "sourceNodeId": "asset-bounds"
+      }
+    ],
+    "sourceMeshCount": 13,
+    "candidateCount": 1,
+    "fallbackUsed": true
+  },
+  "footprintRadius": 0.2,
+  "sizeClass": "small",
+  "mode": "voxel",
+  "provider": "gpt",
+  "libraryId": "library-d7967286-cebf-4f99",
+  "libraryMetadata": {
+    "tags": [
+      "walkinglamp",
+      "wind-uptoy",
+      "childrenstoy",
+      "animateddecor"
+    ],
+    "applicableZones": [
+      "settlement"
+    ],
+    "repeatable": true,
+    "landmark": false,
+    "enabled": true,
+    "priority": 0.5,
+    "analysisStatus": "ready",
+    "rotation": "random"
+  },
+  "createdAt": 1787815949774,
+  "updatedAt": 1787815949774
+}

@@ -1,0 +1,855 @@
+{
+  "id": "asset-ef759c4c-cb1a-4ddb",
+  "name": "森林营地/图纸工具工作台",
+  "prompt": "Voxel forest campsite prop: a sturdy rectangular outdoor carpentry workbench with four connected legs, thick tabletop, lower shelf and a small attached drawer bank; one flat blue plan sheet, one rolled blueprint, hammer, wrench, short hand saw and closed toolbox all resting directly on the tabletop; broad interactive silhouette, grounded continuous construction, no readable text and no floating tools. Use only 20 to 32 purposeful boxes. Center and ground it at y=0. No surrounding scene, people or floating parts. Use pine green, bark brown, warm amber and slate gray. Keep a clear gameplay silhouette.",
+  "modelJson": {
+    "name": "森林营地木工工作台",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "bench",
+        "name": "工作台主体",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        }
+      },
+      {
+        "id": "plan_sheet",
+        "name": "平铺蓝图",
+        "parent": "bench",
+        "transform": {
+          "pos": [
+            -1.45,
+            3.4,
+            0.08
+          ]
+        }
+      },
+      {
+        "id": "rolled_blueprint",
+        "name": "卷起蓝图",
+        "parent": "bench",
+        "transform": {
+          "pos": [
+            -1.55,
+            3.4,
+            -0.72
+          ]
+        }
+      },
+      {
+        "id": "hammer",
+        "name": "锤子",
+        "parent": "bench",
+        "transform": {
+          "pos": [
+            -0.15,
+            3.4,
+            0.9
+          ]
+        }
+      },
+      {
+        "id": "wrench",
+        "name": "扳手",
+        "parent": "bench",
+        "transform": {
+          "pos": [
+            0,
+            3.4,
+            -0.68
+          ]
+        }
+      },
+      {
+        "id": "hand_saw",
+        "name": "短手锯",
+        "parent": "bench",
+        "transform": {
+          "pos": [
+            0.95,
+            3.4,
+            0.48
+          ]
+        }
+      },
+      {
+        "id": "toolbox",
+        "name": "闭合工具箱",
+        "parent": "bench",
+        "transform": {
+          "pos": [
+            2,
+            3.4,
+            -0.55
+          ]
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "bench",
+        "transform": {
+          "pos": [
+            0,
+            3.15,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 6,
+            "height": 0.5,
+            "depth": 2.8
+          },
+          "color": 12945978
+        }
+      },
+      {
+        "id": "m1",
+        "parent": "bench",
+        "transform": {
+          "pos": [
+            -2.45,
+            1.45,
+            -0.9
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.48,
+            "height": 2.9,
+            "depth": 0.48
+          },
+          "color": 7029800
+        }
+      },
+      {
+        "id": "m2",
+        "parent": "bench",
+        "transform": {
+          "pos": [
+            -2.45,
+            1.45,
+            0.9
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.48,
+            "height": 2.9,
+            "depth": 0.48
+          },
+          "color": 7029800
+        }
+      },
+      {
+        "id": "m3",
+        "parent": "bench",
+        "transform": {
+          "pos": [
+            2.45,
+            1.45,
+            -0.9
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.48,
+            "height": 2.9,
+            "depth": 0.48
+          },
+          "color": 7029800
+        }
+      },
+      {
+        "id": "m4",
+        "parent": "bench",
+        "transform": {
+          "pos": [
+            2.45,
+            1.45,
+            0.9
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.48,
+            "height": 2.9,
+            "depth": 0.48
+          },
+          "color": 7029800
+        }
+      },
+      {
+        "id": "m5",
+        "parent": "bench",
+        "transform": {
+          "pos": [
+            0,
+            2.625,
+            1.05
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 4.9,
+            "height": 0.55,
+            "depth": 0.25
+          },
+          "color": 3104069
+        }
+      },
+      {
+        "id": "m6",
+        "parent": "bench",
+        "transform": {
+          "pos": [
+            0,
+            2.625,
+            -1.05
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 4.9,
+            "height": 0.55,
+            "depth": 0.25
+          },
+          "color": 3104069
+        }
+      },
+      {
+        "id": "m7",
+        "parent": "bench",
+        "transform": {
+          "pos": [
+            -2.45,
+            2.625,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.25,
+            "height": 0.55,
+            "depth": 1.85
+          },
+          "color": 3104069
+        }
+      },
+      {
+        "id": "m8",
+        "parent": "bench",
+        "transform": {
+          "pos": [
+            2.45,
+            2.625,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.25,
+            "height": 0.55,
+            "depth": 1.85
+          },
+          "color": 3104069
+        }
+      },
+      {
+        "id": "m9",
+        "parent": "bench",
+        "transform": {
+          "pos": [
+            0,
+            0.82,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 4.65,
+            "height": 0.26,
+            "depth": 1.65
+          },
+          "color": 7029800
+        }
+      },
+      {
+        "id": "m10",
+        "parent": "bench",
+        "transform": {
+          "pos": [
+            1.65,
+            2.275,
+            0.75
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.7,
+            "height": 1.25,
+            "depth": 0.85
+          },
+          "color": 7029800
+        }
+      },
+      {
+        "id": "m11",
+        "parent": "bench",
+        "transform": {
+          "pos": [
+            1.65,
+            2.56,
+            1.235
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.5,
+            "height": 0.42,
+            "depth": 0.12
+          },
+          "color": 3104069
+        }
+      },
+      {
+        "id": "m12",
+        "parent": "bench",
+        "transform": {
+          "pos": [
+            1.65,
+            2.03,
+            1.235
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.5,
+            "height": 0.42,
+            "depth": 0.12
+          },
+          "color": 3104069
+        }
+      },
+      {
+        "id": "m13",
+        "parent": "plan_sheet",
+        "transform": {
+          "pos": [
+            0,
+            0.02,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.7,
+            "height": 0.04,
+            "depth": 1.15
+          },
+          "color": 4157327
+        }
+      },
+      {
+        "id": "m14",
+        "parent": "rolled_blueprint",
+        "transform": {
+          "pos": [
+            0,
+            0.12,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.45,
+            "height": 0.24,
+            "depth": 0.24
+          },
+          "color": 4157327
+        }
+      },
+      {
+        "id": "m15",
+        "parent": "rolled_blueprint",
+        "transform": {
+          "pos": [
+            -0.65,
+            0.14,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.13,
+            "height": 0.28,
+            "depth": 0.28
+          },
+          "color": 5858157
+        }
+      },
+      {
+        "id": "m16",
+        "parent": "rolled_blueprint",
+        "transform": {
+          "pos": [
+            0.65,
+            0.14,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.13,
+            "height": 0.28,
+            "depth": 0.28
+          },
+          "color": 5858157
+        }
+      },
+      {
+        "id": "m17",
+        "parent": "hammer",
+        "transform": {
+          "pos": [
+            0,
+            0.07,
+            0
+          ],
+          "quat": [
+            0,
+            -0.12,
+            0,
+            0.99
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.2,
+            "height": 0.14,
+            "depth": 0.16
+          },
+          "color": 7029800
+        }
+      },
+      {
+        "id": "m18",
+        "parent": "hammer",
+        "transform": {
+          "pos": [
+            0.56,
+            0.12,
+            0.14
+          ],
+          "quat": [
+            0,
+            -0.79,
+            0,
+            0.61
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.66,
+            "height": 0.24,
+            "depth": 0.3
+          },
+          "color": 5858157
+        }
+      },
+      {
+        "id": "m19",
+        "parent": "wrench",
+        "transform": {
+          "pos": [
+            0,
+            0.05,
+            0
+          ],
+          "quat": [
+            0,
+            0.06,
+            0,
+            1
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.15,
+            "height": 0.1,
+            "depth": 0.18
+          },
+          "color": 5858157
+        }
+      },
+      {
+        "id": "m20",
+        "parent": "wrench",
+        "transform": {
+          "pos": [
+            0.59,
+            0.05,
+            -0.16
+          ],
+          "quat": [
+            0,
+            0.31,
+            0,
+            0.95
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.42,
+            "height": 0.1,
+            "depth": 0.16
+          },
+          "color": 5858157
+        }
+      },
+      {
+        "id": "m21",
+        "parent": "wrench",
+        "transform": {
+          "pos": [
+            0.6,
+            0.05,
+            0.11
+          ],
+          "quat": [
+            0,
+            -0.19,
+            0,
+            0.98
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.42,
+            "height": 0.1,
+            "depth": 0.16
+          },
+          "color": 5858157
+        }
+      },
+      {
+        "id": "m22",
+        "parent": "hand_saw",
+        "transform": {
+          "pos": [
+            -0.17,
+            0.04,
+            0
+          ],
+          "quat": [
+            0,
+            0.05,
+            0,
+            1
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.25,
+            "height": 0.08,
+            "depth": 0.34
+          },
+          "color": 5858157
+        }
+      },
+      {
+        "id": "m23",
+        "parent": "hand_saw",
+        "transform": {
+          "pos": [
+            0.55,
+            0.1,
+            -0.07
+          ],
+          "quat": [
+            0,
+            0.05,
+            0,
+            1
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.48,
+            "height": 0.2,
+            "depth": 0.42
+          },
+          "color": 12945978
+        }
+      },
+      {
+        "id": "m24",
+        "parent": "toolbox",
+        "transform": {
+          "pos": [
+            0,
+            0.275,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.35,
+            "height": 0.55,
+            "depth": 0.8
+          },
+          "color": 3104069
+        }
+      },
+      {
+        "id": "m25",
+        "parent": "toolbox",
+        "transform": {
+          "pos": [
+            0,
+            0.64,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.45,
+            "height": 0.18,
+            "depth": 0.86
+          },
+          "color": 5858157
+        }
+      },
+      {
+        "id": "m26",
+        "parent": "toolbox",
+        "transform": {
+          "pos": [
+            0,
+            0.81,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.7,
+            "height": 0.16,
+            "depth": 0.22
+          },
+          "color": 12945978
+        }
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1784538440123,
+        "provider": "glm",
+        "data": "V5jQL1H4OVKNJ9ORwZfnDVcWk8auAB54tKb8IKNVD7nSluCtr6+TXub9i2k43Eos+iO6Ve9Kh973JbNkKxdPG6k4KaSxgXX31SHdInkX9Fs2i9nsBVDWHTbkglDNukOe6L+Ue8vTvmfhBn7JvaqOCS2k8gCbAiDk8A40B7dYaBFIR92Zv7cWWCYZh5TcouYuap8Sfab0aL5gKfujVEwaArqrUtSX+ypQT94dj4St4+GGxy1JoyM85qhfuZN63k8xaFqs7uJHlU99ABmR/xCo2q/p14iQ4AMlgYHBGMmQeclqvIY08z/pZazd4rcvhYOJLqckQWuVh9qe/BBaleK/NFIJrweaAjfSCLD1zkPtdLSxZsleIA/Ow17FLgfuwhtL8C+sGq8X1PLimaDQgOJ5CxfgNkv36/XiC9VizrQlj7FwSOjiNgtNJ3Cs/faPD+goT+zOSZkeFGh/KfFARY97ZgZ6vK1srsUPr7vzZHErqOtPMU1APLIRHlOlZ7w3rL+v0ITKWJGO2GRViiaMqd5W0Dk43PGs7+g0QlrVccjk2LZYP/NzDs1AvDCOiWpTTV0Hnbh3wkrO9Gojp87ur+QBN4JjojTjSpeLyPrSizPyLKcq1tH8Pw2J6yOSUBozQ3LNKIp627ul34f+D4HigZzpRGOAlwNsKBN/c6Nt2cSnZ28b8YzFG593+Ln06BK0XKDzLwrFGXsi1Razp2LUMPdNi3qbQHXDeZwsE/CfQclYI5hrON64DsiBYTBcWmmn6gePgQppqM36vZPOGmkfY6H4R2yQesi10nU0vfkHg400Zm2zT4JSYbJm8vIkW49SJc3yW1q9rc8feqhGV10UD35DRCKmE1ebAbnavVHbibRHiovYH6wGB+R1QIFEH7RFYdmU8KlG3JjczYk2alpPs0aeBtKqrkyqclpGyiariGfxGq1GkGAhRd+taGU053giagqMYaFy+2obI5ZWYuSMOIKtNSg7PhKNzZN7v1plEZFkURCYFV0POWVk8Oqxlmdzs4qC6KvdkuYYtkHMIm6pzwU2W3tJQwUbomz6aaGKZAoonvH5Dtj5j6ZGzmS0rAdLAwHARC0Z6bXyIepoxdxGsVRT61Kv78FQ94A/iMl2VFgG5uRC1SCqc2QJ5DFSw289Pd5gMA0QjvafVMquHpnuNHK2TBzs+3b8tzXBTpycrYzSWffX7HyfMXJFAq3+B+JpM/vxvLIfAoskC7M3RYdbVR3jyardJ26WMxFlY4q3jpRBiPPucWzxhzwE4Fm988BB7qs0EQ/UABmo+uGeLylGd/57K/SnfYnVYd4zxfgsR+5lIYlWUbgcK+W9He+1aPEqqjiNS1C3JP3aukuJDfTckC+MXODLtFkD515FhPAj8ARX/a/+ZShOZ2+dGNeWXXe+q20D4PTAT8/XZRepX0CwVw1K/z5REWKquTne3QnUZhEWIjBD93p4Str3lPwza9K+Q6hfsg2XuXFAW4iyc8HjYSFjIjiYtgQh+9USrMVYPGNK9ht+jH81/02oyKZS8MKsqbKug33Bn5juDFPYlOCBAxoI4ukPt6+ikWbT",
+        "edits": ""
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -3,
+          2.9,
+          -1.4
+        ],
+        "max": [
+          3,
+          3.4,
+          1.4
+        ],
+        "sourceNodeId": "m0"
+      },
+      {
+        "min": [
+          -2.325,
+          0.69,
+          -0.825
+        ],
+        "max": [
+          2.325,
+          0.95,
+          0.825
+        ],
+        "sourceNodeId": "m9"
+      },
+      {
+        "min": [
+          0.7999999999999999,
+          1.65,
+          0.325
+        ],
+        "max": [
+          2.5,
+          2.9,
+          1.175
+        ],
+        "sourceNodeId": "m10"
+      },
+      {
+        "min": [
+          -2.45,
+          2.35,
+          0.925
+        ],
+        "max": [
+          2.45,
+          2.9,
+          1.175
+        ],
+        "sourceNodeId": "m5"
+      },
+      {
+        "min": [
+          -2.45,
+          2.35,
+          -1.175
+        ],
+        "max": [
+          2.45,
+          2.9,
+          -0.925
+        ],
+        "sourceNodeId": "m6"
+      },
+      {
+        "min": [
+          -2.6900000000000004,
+          0,
+          -1.1400000000000001
+        ],
+        "max": [
+          -2.21,
+          2.9,
+          -0.66
+        ],
+        "sourceNodeId": "m1"
+      },
+      {
+        "min": [
+          -2.6900000000000004,
+          0,
+          0.66
+        ],
+        "max": [
+          -2.21,
+          2.9,
+          1.1400000000000001
+        ],
+        "sourceNodeId": "m2"
+      },
+      {
+        "min": [
+          2.21,
+          0,
+          -1.1400000000000001
+        ],
+        "max": [
+          2.6900000000000004,
+          2.9,
+          -0.66
+        ],
+        "sourceNodeId": "m3"
+      },
+      {
+        "min": [
+          2.21,
+          0,
+          0.66
+        ],
+        "max": [
+          2.6900000000000004,
+          2.9,
+          1.1400000000000001
+        ],
+        "sourceNodeId": "m4"
+      },
+      {
+        "min": [
+          1.325,
+          3.4,
+          -0.9500000000000001
+        ],
+        "max": [
+          2.675,
+          3.9499999999999997,
+          -0.15000000000000002
+        ],
+        "sourceNodeId": "m24"
+      },
+      {
+        "min": [
+          -2.575,
+          2.35,
+          -0.925
+        ],
+        "max": [
+          -2.325,
+          2.9,
+          0.925
+        ],
+        "sourceNodeId": "m7"
+      },
+      {
+        "min": [
+          2.325,
+          2.35,
+          -0.925
+        ],
+        "max": [
+          2.575,
+          2.9,
+          0.925
+        ],
+        "sourceNodeId": "m8"
+      }
+    ],
+    "sourceMeshCount": 27,
+    "candidateCount": 14,
+    "fallbackUsed": false
+  },
+  "mode": "voxel",
+  "provider": "provider-fallback",
+  "createdAt": 1784538450344,
+  "updatedAt": 1784538450344
+}

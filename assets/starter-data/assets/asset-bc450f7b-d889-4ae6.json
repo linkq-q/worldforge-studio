@@ -1,0 +1,713 @@
+{
+  "id": "asset-bc450f7b-d889-4ae6",
+  "name": "复杂游乐园/08激流勇进/设施/激流站台",
+  "prompt": "Simple standalone voxel model of 激流站台: an open log flume loading station with rustic roof, raised dock, safety rails and a clear water channel through the middle. Use 16 to 28 box meshes only, one grounded object, bold readable silhouette, bright amusement park colors, no terrain, no people, no floating pieces.",
+  "modelJson": {
+    "name": "激流站台",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "station",
+        "name": "激流站台",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "station",
+        "transform": {
+          "pos": [
+            0,
+            0.09,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2,
+            "height": 0.18,
+            "depth": 8
+          },
+          "color": 2735592
+        }
+      },
+      {
+        "id": "m1",
+        "parent": "station",
+        "transform": {
+          "pos": [
+            -2,
+            0.225,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2,
+            "height": 0.45,
+            "depth": 8
+          },
+          "color": 14260805
+        }
+      },
+      {
+        "id": "m2",
+        "parent": "station",
+        "transform": {
+          "pos": [
+            2,
+            0.225,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2,
+            "height": 0.45,
+            "depth": 8
+          },
+          "color": 14260805
+        }
+      },
+      {
+        "id": "m3",
+        "parent": "station",
+        "transform": {
+          "pos": [
+            -1.08,
+            0.53,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.18,
+            "height": 0.16,
+            "depth": 8
+          },
+          "color": 16766011
+        }
+      },
+      {
+        "id": "m4",
+        "parent": "station",
+        "transform": {
+          "pos": [
+            1.08,
+            0.53,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.18,
+            "height": 0.16,
+            "depth": 8
+          },
+          "color": 16766011
+        }
+      },
+      {
+        "id": "m5",
+        "parent": "station",
+        "transform": {
+          "pos": [
+            -2.75,
+            1.725,
+            -3.5
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.34,
+            "height": 2.55,
+            "depth": 0.34
+          },
+          "color": 7554347
+        }
+      },
+      {
+        "id": "m6",
+        "parent": "station",
+        "transform": {
+          "pos": [
+            -2.75,
+            1.725,
+            3.5
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.34,
+            "height": 2.55,
+            "depth": 0.34
+          },
+          "color": 7554347
+        }
+      },
+      {
+        "id": "m7",
+        "parent": "station",
+        "transform": {
+          "pos": [
+            2.75,
+            1.725,
+            -3.5
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.34,
+            "height": 2.55,
+            "depth": 0.34
+          },
+          "color": 7554347
+        }
+      },
+      {
+        "id": "m8",
+        "parent": "station",
+        "transform": {
+          "pos": [
+            2.75,
+            1.725,
+            3.5
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.34,
+            "height": 2.55,
+            "depth": 0.34
+          },
+          "color": 7554347
+        }
+      },
+      {
+        "id": "m9",
+        "parent": "station",
+        "transform": {
+          "pos": [
+            0,
+            2.92,
+            -3.5
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 5.85,
+            "height": 0.3,
+            "depth": 0.34
+          },
+          "color": 7554347
+        }
+      },
+      {
+        "id": "m10",
+        "parent": "station",
+        "transform": {
+          "pos": [
+            0,
+            2.92,
+            3.5
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 5.85,
+            "height": 0.3,
+            "depth": 0.34
+          },
+          "color": 7554347
+        }
+      },
+      {
+        "id": "m11",
+        "parent": "station",
+        "transform": {
+          "pos": [
+            -1.65,
+            3.45,
+            0
+          ],
+          "quat": [
+            -0.7,
+            -0.09,
+            0.7,
+            -0.09
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 8.6,
+            "height": 0.22,
+            "depth": 3.42
+          },
+          "color": 15226431
+        }
+      },
+      {
+        "id": "m12",
+        "parent": "station",
+        "transform": {
+          "pos": [
+            1.65,
+            3.45,
+            0
+          ],
+          "quat": [
+            -0.7,
+            0.09,
+            0.7,
+            0.09
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 8.6,
+            "height": 0.22,
+            "depth": 3.42
+          },
+          "color": 16741704
+        }
+      },
+      {
+        "id": "m13",
+        "parent": "station",
+        "transform": {
+          "pos": [
+            0,
+            3.82,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 5.6,
+            "height": 0.18,
+            "depth": 0.18
+          },
+          "color": 7027496
+        }
+      },
+      {
+        "id": "m14",
+        "parent": "station",
+        "transform": {
+          "pos": [
+            -2.95,
+            1.27,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.16,
+            "height": 0.16,
+            "depth": 7
+          },
+          "color": 1288354
+        }
+      },
+      {
+        "id": "m15",
+        "parent": "station",
+        "transform": {
+          "pos": [
+            -2.95,
+            0.86,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.18,
+            "height": 0.82,
+            "depth": 0.18
+          },
+          "color": 555899
+        }
+      },
+      {
+        "id": "m16",
+        "parent": "station",
+        "transform": {
+          "pos": [
+            2.95,
+            1.27,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.16,
+            "height": 0.16,
+            "depth": 7
+          },
+          "color": 1288354
+        }
+      },
+      {
+        "id": "m17",
+        "parent": "station",
+        "transform": {
+          "pos": [
+            2.95,
+            0.86,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.18,
+            "height": 0.82,
+            "depth": 0.18
+          },
+          "color": 555899
+        }
+      },
+      {
+        "id": "m18",
+        "parent": "station",
+        "transform": {
+          "pos": [
+            -1.18,
+            1.14,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.14,
+            "height": 0.14,
+            "depth": 6.8
+          },
+          "color": 16766011
+        }
+      },
+      {
+        "id": "m19",
+        "parent": "station",
+        "transform": {
+          "pos": [
+            -1.18,
+            0.8,
+            -2.8
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.18,
+            "height": 0.7,
+            "depth": 0.18
+          },
+          "color": 15968551
+        }
+      },
+      {
+        "id": "m20",
+        "parent": "station",
+        "transform": {
+          "pos": [
+            -1.18,
+            0.8,
+            2.8
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.18,
+            "height": 0.7,
+            "depth": 0.18
+          },
+          "color": 15968551
+        }
+      },
+      {
+        "id": "m21",
+        "parent": "station",
+        "transform": {
+          "pos": [
+            1.18,
+            1.14,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.14,
+            "height": 0.14,
+            "depth": 6.8
+          },
+          "color": 16766011
+        }
+      },
+      {
+        "id": "m22",
+        "parent": "station",
+        "transform": {
+          "pos": [
+            1.18,
+            0.8,
+            -2.8
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.18,
+            "height": 0.7,
+            "depth": 0.18
+          },
+          "color": 15968551
+        }
+      },
+      {
+        "id": "m23",
+        "parent": "station",
+        "transform": {
+          "pos": [
+            1.18,
+            0.8,
+            2.8
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.18,
+            "height": 0.7,
+            "depth": 0.18
+          },
+          "color": 15968551
+        }
+      },
+      {
+        "id": "m24",
+        "parent": "station",
+        "transform": {
+          "pos": [
+            0,
+            2.46,
+            3.67
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 3,
+            "height": 0.65,
+            "depth": 0.16
+          },
+          "color": 2920139
+        }
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1784474893317,
+        "provider": "glm",
+        "data": "RXR8w2HpAMqNmUeoZK38Ts9OtXeXzcA+1jjPpEHbDa+4IM+d/uqkLp/4UpwFg6vzGpf4mgxShNXNgXDRoMYvFbvvaOHPhguCDhC7pNad8gmPhLgY3zp/xP27u5EqAyqctmQ6bhaOjadIzgxSWxNtWv9njxFLZrMiBTf2mNzommNkToYvlxDPandzN6XSeZ4FoQyw5BV3Mk0nkcCpkSDSgFzfMI/v5owu5SKYqI9Y3Sc5I712/KJFPLUmbS/P6eQe+kP4MMLNMs+eb7B+76KarVFRvuLN6vjqzjcYgamcOP2T08/1pMJwrk8B0ZbGkMk+o7jRnWnkcr9MPFikNlh4282Ar2QMuP5eAwygYKiQAdPNx5Lv9iNf9V95eDMJzjbVONXtva6CprFYc+5lOr5SthJ0zXbOJAzgeE2trNMen2yxJHve7IL1DQ5MNkejnes6I7CZt/u2ovY84ihYR49Ze9uJiadFImTAQkiCOSa5GjCiZmXRk3vQG8J4JRDlDE3KmBVaAJMlgWKz/bgXd4KwPep+j8CaJJL7v7AaWeAfRFw/XF06jDbcy/T5L4Ebf1l7U3ivCaFWXRx+P1FwCn8EqiNOiZmRTOj/6YIjo9VU5Rfat378jNP0Xqv2NzgsQHoqSLZlbHo9/4SXDeh4Qvxs0Ez/mIcqmFevHJ5SOhXWdreO4Ao1vvSND9Ab3cS/28G+wvp8PKDe3AXKOFNTuANNIzWGMnTj0MK2LsApUMxnnsbDZ/GyZQgKPG5ngJ+VwXY/x4U2gV2GD3LQXJ5A68Er+8+/icA360+rIA1MIy16IcofmOTvM/kiOrl4+AkLECFSYXZ+E+8wCZgpSfjMIPYTHABWEJcnQg==",
+        "edits": ""
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -3.332210399518168,
+          2.911013852640032,
+          -4.300000000000001
+        ],
+        "max": [
+          0.0322103995181684,
+          3.9889861473599684,
+          4.300000000000001
+        ],
+        "sourceNodeId": "m11"
+      },
+      {
+        "min": [
+          -0.0322103995181684,
+          2.911013852640032,
+          -4.300000000000001
+        ],
+        "max": [
+          3.332210399518168,
+          3.9889861473599684,
+          4.300000000000001
+        ],
+        "sourceNodeId": "m12"
+      },
+      {
+        "min": [
+          -3,
+          0,
+          -4
+        ],
+        "max": [
+          -1,
+          0.45,
+          4
+        ],
+        "sourceNodeId": "m1"
+      },
+      {
+        "min": [
+          1,
+          0,
+          -4
+        ],
+        "max": [
+          3,
+          0.45,
+          4
+        ],
+        "sourceNodeId": "m2"
+      },
+      {
+        "min": [
+          -1,
+          0,
+          -4
+        ],
+        "max": [
+          1,
+          0.18,
+          4
+        ],
+        "sourceNodeId": "m0"
+      },
+      {
+        "min": [
+          -2.925,
+          2.77,
+          3.33
+        ],
+        "max": [
+          2.925,
+          3.07,
+          3.67
+        ],
+        "sourceNodeId": "m10"
+      },
+      {
+        "min": [
+          -2.925,
+          2.77,
+          -3.67
+        ],
+        "max": [
+          2.925,
+          3.07,
+          -3.33
+        ],
+        "sourceNodeId": "m9"
+      },
+      {
+        "min": [
+          -1.5,
+          2.135,
+          3.59
+        ],
+        "max": [
+          1.5,
+          2.785,
+          3.75
+        ],
+        "sourceNodeId": "m24"
+      },
+      {
+        "min": [
+          -2.92,
+          0.4500000000000002,
+          -3.67
+        ],
+        "max": [
+          -2.58,
+          3,
+          -3.33
+        ],
+        "sourceNodeId": "m5"
+      },
+      {
+        "min": [
+          -2.92,
+          0.4500000000000002,
+          3.33
+        ],
+        "max": [
+          -2.58,
+          3,
+          3.67
+        ],
+        "sourceNodeId": "m6"
+      },
+      {
+        "min": [
+          2.58,
+          0.4500000000000002,
+          -3.67
+        ],
+        "max": [
+          2.92,
+          3,
+          -3.33
+        ],
+        "sourceNodeId": "m7"
+      },
+      {
+        "min": [
+          2.58,
+          0.4500000000000002,
+          3.33
+        ],
+        "max": [
+          2.92,
+          3,
+          3.67
+        ],
+        "sourceNodeId": "m8"
+      }
+    ],
+    "sourceMeshCount": 25,
+    "candidateCount": 19,
+    "fallbackUsed": false
+  },
+  "mode": "lite",
+  "provider": "provider-fallback",
+  "createdAt": 1784474897559,
+  "updatedAt": 1784474897559
+}

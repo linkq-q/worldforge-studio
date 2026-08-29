@@ -1,0 +1,636 @@
+{
+  "id": "asset-2697afd6-0aa7-4607",
+  "name": "烧杯",
+  "prompt": "单个透明玻璃烧杯，带刻度和导流嘴，手持尺寸。精致写实的古典奇幻炼金术风格，独立单件，纯物件模型，无桌面、无柜体、无房间、无背景、无大型机器。\nCoordinate contract: local Y+ is up, local Z+ is the front, entrance, or forward direction, and local X+ is right. Put doors, facades, openings, windshields, noses, seats, and other recognizable front details toward local Z+. For a modular repeated element, explicitly choose the long axis: side-by-side modules span local X with depth/front on local Z; traversal modules span local Z. Keep the model centered at its origin.\nCanonical dimensions contract: width=0.3, height=0.32, depth=0.26 world units. Keep the generated mesh within this centered bounding size.",
+  "tags": [
+    "indoor",
+    "alchemy",
+    "instrument",
+    "handheld"
+  ],
+  "modelJson": {
+    "name": "古典炼金术玻璃烧杯",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "beaker",
+        "name": "烧杯主体",
+        "transform": {
+          "pos": [
+            0,
+            -0.16,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.399,
+            0.379,
+            0.361
+          ],
+          "center": [
+            -0.001,
+            0.153,
+            0.008
+          ],
+          "axes": [
+            [
+              0.7942,
+              -0.2886,
+              -0.5348
+            ],
+            [
+              0.1752,
+              0.9514,
+              -0.2533
+            ],
+            [
+              0.5819,
+              0.1075,
+              0.8062
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "beaker",
+        "transform": {
+          "pos": [
+            0,
+            0.006,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.216,
+            "height": 0.012,
+            "depth": 0.216
+          },
+          "color": 12447730
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass"
+          }
+        ]
+      },
+      {
+        "id": "m1",
+        "parent": "beaker",
+        "transform": {
+          "pos": [
+            -0.114,
+            0.147,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.012,
+            "height": 0.27,
+            "depth": 0.216
+          },
+          "color": 13235445
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass"
+          }
+        ]
+      },
+      {
+        "id": "m2",
+        "parent": "beaker",
+        "transform": {
+          "pos": [
+            0.114,
+            0.147,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.012,
+            "height": 0.27,
+            "depth": 0.216
+          },
+          "color": 13235445
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass"
+          }
+        ]
+      },
+      {
+        "id": "m3",
+        "parent": "beaker",
+        "transform": {
+          "pos": [
+            0,
+            0.147,
+            -0.114
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.216,
+            "height": 0.27,
+            "depth": 0.012
+          },
+          "color": 12184045
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass"
+          }
+        ]
+      },
+      {
+        "id": "m4",
+        "parent": "beaker",
+        "transform": {
+          "pos": [
+            0,
+            0.147,
+            0.114
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.216,
+            "height": 0.27,
+            "depth": 0.012
+          },
+          "color": 14219512
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass"
+          }
+        ]
+      },
+      {
+        "id": "m5",
+        "parent": "beaker",
+        "transform": {
+          "pos": [
+            -0.12,
+            0.288,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.012,
+            "height": 0.012,
+            "depth": 0.24
+          },
+          "color": 14876671
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass"
+          }
+        ]
+      },
+      {
+        "id": "m6",
+        "parent": "beaker",
+        "transform": {
+          "pos": [
+            0.12,
+            0.288,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.012,
+            "height": 0.012,
+            "depth": 0.24
+          },
+          "color": 14876671
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass"
+          }
+        ]
+      },
+      {
+        "id": "m7",
+        "parent": "beaker",
+        "transform": {
+          "pos": [
+            0,
+            0.288,
+            -0.12
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.24,
+            "height": 0.012,
+            "depth": 0.012
+          },
+          "color": 14876671
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass"
+          }
+        ]
+      },
+      {
+        "id": "m8",
+        "parent": "beaker",
+        "transform": {
+          "pos": [
+            -0.0825,
+            0.288,
+            0.12
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.075,
+            "height": 0.012,
+            "depth": 0.012
+          },
+          "color": 14876671
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass"
+          }
+        ]
+      },
+      {
+        "id": "m9",
+        "parent": "beaker",
+        "transform": {
+          "pos": [
+            0.0825,
+            0.288,
+            0.12
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.075,
+            "height": 0.012,
+            "depth": 0.012
+          },
+          "color": 14876671
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass"
+          }
+        ]
+      },
+      {
+        "id": "m10",
+        "parent": "beaker",
+        "transform": {
+          "pos": [
+            0,
+            0.3,
+            0.12
+          ],
+          "quat": [
+            -0.48,
+            0,
+            0,
+            0.88
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.09,
+            "height": 0.008,
+            "depth": 0.03
+          },
+          "color": 14286847
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass"
+          }
+        ]
+      },
+      {
+        "id": "m11",
+        "parent": "beaker",
+        "transform": {
+          "pos": [
+            0.068,
+            0.07,
+            0.122
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.058,
+            "height": 0.005,
+            "depth": 0.004
+          },
+          "color": 13015606
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "gold"
+          }
+        ]
+      },
+      {
+        "id": "m12",
+        "parent": "beaker",
+        "transform": {
+          "pos": [
+            0.078,
+            0.115,
+            0.122
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.038,
+            "height": 0.005,
+            "depth": 0.004
+          },
+          "color": 13015606
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "gold"
+          }
+        ]
+      },
+      {
+        "id": "m13",
+        "parent": "beaker",
+        "transform": {
+          "pos": [
+            0.068,
+            0.16,
+            0.122
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.058,
+            "height": 0.005,
+            "depth": 0.004
+          },
+          "color": 13015606
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "gold"
+          }
+        ]
+      },
+      {
+        "id": "m14",
+        "parent": "beaker",
+        "transform": {
+          "pos": [
+            0.078,
+            0.205,
+            0.122
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.038,
+            "height": 0.005,
+            "depth": 0.004
+          },
+          "color": 13015606
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "gold"
+          }
+        ]
+      },
+      {
+        "id": "m15",
+        "parent": "beaker",
+        "transform": {
+          "pos": [
+            0.068,
+            0.25,
+            0.122
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.058,
+            "height": 0.005,
+            "depth": 0.004
+          },
+          "color": 13015606
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "gold"
+          }
+        ]
+      },
+      {
+        "id": "m16",
+        "parent": "beaker",
+        "transform": {
+          "pos": [
+            0.101,
+            0.16,
+            0.122
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.006,
+            "height": 0.19,
+            "depth": 0.004
+          },
+          "color": 13015606
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "gold"
+          }
+        ]
+      },
+      {
+        "id": "m17",
+        "parent": "beaker",
+        "transform": {
+          "pos": [
+            -0.072,
+            0.035,
+            0.122
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.035,
+            "height": 0.006,
+            "depth": 0.004
+          },
+          "color": 13015606
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "gold"
+          }
+        ]
+      },
+      {
+        "id": "m18",
+        "parent": "beaker",
+        "transform": {
+          "pos": [
+            -0.087,
+            0.047,
+            0.122
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.006,
+            "height": 0.028,
+            "depth": 0.004
+          },
+          "color": 13015606
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "gold"
+          }
+        ]
+      },
+      {
+        "id": "m19",
+        "parent": "beaker",
+        "transform": {
+          "pos": [
+            -0.057,
+            0.047,
+            0.122
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.006,
+            "height": 0.028,
+            "depth": 0.004
+          },
+          "color": 13015606
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "gold"
+          }
+        ]
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1787876944674,
+        "provider": "gpt",
+        "data": "6VIJdZgGnJuRoXIU4CWDKbO+meU4jUWaJBFTnNl24goaGC5m0ed/Yi+yvLS8jFWMveQAix+YB2Xrkhfd1rlqcbupaJPgfkdS2SC4Ej91DciyP7/tADC4bsuXInmzdbr+TU5WK0nDgqTTYP9HtaHZ//lkFGm9GmN1hawNZAPRQyFz84PUDEDxO5BbrsZ1DaO9aOAlACYymz8myIKuFSjIpG3xZrCDGt4BcE3iB+qBT2IFCVK17TBMlVPHjvx8t2/KJ6zSzYMTtZi0uAEnCTKMHGhr7ly+3eKo+I9VaalfYTTufszzLI0IAvRA/WT0xwKXM4zM0gfPQn5h80UzMWDxBmDjIQjWyl/WYIMtbCtMwPVe8OuIRl1cet1vRxCHsW1SMWy8YNPbFdFTM6hNTul1V2uIh0B4XQXdg4tKgp3u4oqbLQdLqnOH9C4WSJMtvIrpXp+fJNP6Ztpa9DtuXb65uvZFLXw2OJywYE5R0QBQ0oCjO6LGmFWKhIaEG0ApzaRwBQ/YECPJhLaTshp4qM2vQ18irjkw2dW6p7hxOFyg6OLfZ/GFRasmlx5itIywsxwlgb6uEdMyvLWl+2PCPqMZ5fqoZkBzHT1c2upf8dOzVjgkPyEUXuyYT4nS6EFLH9o3RJZzVp4+OWSZylDto/6TkrxpNesSQts+EVW0G9bCgFZZw3xDamngPce6WXEDJ7Ve3LyjyYYaOgUDLSj+heEnJs1S2C8zoAQhJvFr0hgC6Kucrcc3mk9+gJ3us5OTTCtvp+ZTRajujBctfonvSgBE8wFShY9YhuVhsQlDbcE4Mfd6SL1oko8O22By3hH0BAYcvW8CwvPnwdJnEPGE3ZDgnIgBBGwzsRFgJpULG1XkeXPWShOTTfMZwS4zSZVH+1fu8poX7x6gfBnlAfesWOVIMhgnps67c075Qx3BPCjoJAJaUBg7FhxvwlbrhkxuDOeR9zIDN0TJpcDzJwu2C1qh3gD7IK4=",
+        "edits": ""
+      },
+      "semanticSnapshot": {
+        "v": 1,
+        "auto": true,
+        "text": "古典炼金术玻璃烧杯 · 1组/20mesh · 世界坐标(Y上Z前), 原点=模型根\n# 阅读说明: G:=group行(可动画骨骼, 动画key用G:后的id; @p=pivot世界坐标; 倾(x,y,z)°=朝向偏离世界轴的欧拉角; 缩进=父子层级; 挂:=挂载于某组; G:id→id→…=chain折叠行, 每个id都是可独立动画的group, chain×N=waypoint数)\n# M:=mesh行(label[id 几何 @(世界坐标)], label可省略; ×N=for循环批量件(锚点=代表实例); cyl (起)→(末)或 轴上(Y)等方位词=延伸方向; 薄向=板面法向(扁板); 挂载组双代表=最大件+最远有向件(刃/嘴/管所在端); 无方向标注=均匀块(三向相近,如头),默认面向前(Z); 对称×2=镜像对)\nG:beaker 烧杯主体 @p(0,-0.2,0)\n  M:[m1 box 0.01×0.27×0.22 (-0.1,0,0) 薄向右(X)]",
+        "stats": {
+          "groups": 1,
+          "meshes": 20,
+          "labeledMeshes": 0,
+          "labelCoverage": 0,
+          "batchLabels": 0,
+          "autoChains": 0,
+          "snapshotChars": 442
+        }
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -0.126,
+          0,
+          -0.1291624203821656
+        ],
+        "max": [
+          0.126,
+          0.3153184713375796,
+          0.1291624203821656
+        ],
+        "sourceNodeId": "asset-bounds"
+      }
+    ],
+    "sourceMeshCount": 20,
+    "candidateCount": 0,
+    "fallbackUsed": true
+  },
+  "footprintRadius": 0.1291624203821656,
+  "sizeClass": "small",
+  "mode": "voxel",
+  "provider": "gpt",
+  "createdAt": 1787876944123,
+  "updatedAt": 1787876944123
+}

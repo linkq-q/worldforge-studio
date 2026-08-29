@@ -1,0 +1,659 @@
+{
+  "id": "asset-734714d6-52f6-47ba",
+  "name": "小汽车",
+  "prompt": "浅亮曼德鸭参考场景风格，圆润低多边形儿童家具或玩具，清晰轮廓，柔和哑光材质，适度细节。必须是一个完整、独立、可单独摆放的模型，不含场景、地面、底座、其他物品、成组附件、文字或标识。单辆独立玩具小汽车，圆润车身、四个清晰车轮和淡蓝车窗，不含赛道。仅使用这些基础色与顶点色：#FFFDF6,#FEF9EA,#FDF2D7,#E9DABD,#CDBA97,#F8E8CF,#F1D7B2,#E7C393,#C9A06E,#9E7A55,#FFF7A8,#FCEF72,#F6E24B,#D1B825,#9C8510,#FFF3B7,#FDE674,#FCD75F,#FECD4D,#D1900B,#FFE2A0,#FFD170,#F8BC44,#E39F1A,#A96F05,#FBE3BD,#FDD8A3,#FDCC8F,#F1AD69,#D99256,#FFD2BA,#FFB08A,#FF8A5B,#F06B3E,#B84A27,#EAF9FF,#DAF2F5,#95E5F9,#76D0F2,#45BDF6,#D9F8FB,#B2E9F2,#8ECCD6,#7BCFDF,#4BAFCA,#D8F7\nCoordinate contract: local Y+ is up, local Z+ is the front, entrance, or forward direction, and local X+ is right. Put doors, facades, openings, windshields, noses, seats, and other recognizable front details toward local Z+. For a modular repeated element, explicitly choose the long axis: side-by-side modules span local X with depth/front on local Z; traversal modules span local Z. Keep the model centered at its origin.\nCanonical dimensions contract: width=0.38, height=0.2, depth=0.22 world units. Keep the generated mesh within this centered bounding size.",
+  "modelJson": {
+    "name": "浅亮儿童玩具小汽车",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "body",
+        "name": "车身",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.382,
+            0.215,
+            0.221
+          ],
+          "center": [
+            0,
+            -0.005,
+            0.006
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              0.9889,
+              0.1485
+            ],
+            [
+              0,
+              -0.1485,
+              0.9889
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "wheel_fl",
+        "name": "车轮",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            -0.1675,
+            -0.07,
+            0.062
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.047,
+            0.06,
+            0.052
+          ],
+          "center": [
+            0,
+            0,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "wheel_fr",
+        "name": "车轮",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0.1675,
+            -0.07,
+            0.062
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.047,
+            0.06,
+            0.052
+          ],
+          "center": [
+            0,
+            0,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "wheel_rl",
+        "name": "车轮",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            -0.1675,
+            -0.07,
+            -0.062
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.047,
+            0.06,
+            0.052
+          ],
+          "center": [
+            0,
+            0,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "wheel_rr",
+        "name": "车轮",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0.1675,
+            -0.07,
+            -0.062
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.047,
+            0.06,
+            0.052
+          ],
+          "center": [
+            0,
+            0,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0,
+            -0.0225,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.32,
+            "height": 0.075,
+            "depth": 0.19
+          },
+          "color": 16576370
+        }
+      },
+      {
+        "id": "m1",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0,
+            0.0325,
+            -0.015
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.28,
+            "height": 0.035,
+            "depth": 0.13
+          },
+          "color": 16179787
+        }
+      },
+      {
+        "id": "m2",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0,
+            0.0875,
+            -0.0225
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.22,
+            "height": 0.025,
+            "depth": 0.105
+          },
+          "color": 16775080
+        }
+      },
+      {
+        "id": "m3",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0,
+            -0.045,
+            0.104
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.34,
+            "height": 0.025,
+            "depth": 0.012
+          },
+          "color": 16301124
+        }
+      },
+      {
+        "id": "m4",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0,
+            -0.045,
+            -0.104
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.34,
+            "height": 0.025,
+            "depth": 0.012
+          },
+          "color": 14917402
+        }
+      },
+      {
+        "id": "m5",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0,
+            0.06,
+            0.03
+          ],
+          "quat": [
+            0.87,
+            0,
+            0,
+            -0.5
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.2,
+            "height": 0.008,
+            "depth": 0.05
+          },
+          "color": 11725298
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass",
+            "variant": "blue"
+          }
+        ]
+      },
+      {
+        "id": "m6",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            -0.112,
+            0.061,
+            -0.024
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.008,
+            "height": 0.042,
+            "depth": 0.065
+          },
+          "color": 9823737
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass",
+            "variant": "blue"
+          }
+        ]
+      },
+      {
+        "id": "m7",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0.112,
+            0.061,
+            -0.024
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.008,
+            "height": 0.042,
+            "depth": 0.065
+          },
+          "color": 9823737
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass",
+            "variant": "blue"
+          }
+        ]
+      },
+      {
+        "id": "m8",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            -0.09,
+            -0.008,
+            0.108
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.045,
+            "height": 0.022,
+            "depth": 0.008
+          },
+          "color": 16776694
+        }
+      },
+      {
+        "id": "m9",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0.09,
+            -0.008,
+            0.108
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.045,
+            "height": 0.022,
+            "depth": 0.008
+          },
+          "color": 16776694
+        }
+      },
+      {
+        "id": "m10",
+        "parent": "wheel_fl",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.045,
+            "height": 0.06,
+            "depth": 0.052
+          },
+          "color": 10386005
+        }
+      },
+      {
+        "id": "m11",
+        "parent": "wheel_fl",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.047,
+            "height": 0.025,
+            "depth": 0.026
+          },
+          "color": 15325885
+        }
+      },
+      {
+        "id": "m12",
+        "parent": "wheel_fr",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.045,
+            "height": 0.06,
+            "depth": 0.052
+          },
+          "color": 10386005
+        }
+      },
+      {
+        "id": "m13",
+        "parent": "wheel_fr",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.047,
+            "height": 0.025,
+            "depth": 0.026
+          },
+          "color": 15325885
+        }
+      },
+      {
+        "id": "m14",
+        "parent": "wheel_rl",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.045,
+            "height": 0.06,
+            "depth": 0.052
+          },
+          "color": 10386005
+        }
+      },
+      {
+        "id": "m15",
+        "parent": "wheel_rl",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.047,
+            "height": 0.025,
+            "depth": 0.026
+          },
+          "color": 15325885
+        }
+      },
+      {
+        "id": "m16",
+        "parent": "wheel_rr",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.045,
+            "height": 0.06,
+            "depth": 0.052
+          },
+          "color": 10386005
+        }
+      },
+      {
+        "id": "m17",
+        "parent": "wheel_rr",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.047,
+            "height": 0.025,
+            "depth": 0.026
+          },
+          "color": 15325885
+        }
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1787749468554,
+        "provider": "gpt",
+        "data": "mCxCphCNkRnhMi3MfccOBv1BBUB+mCQKMUXVvjSoyHAPYmO1yvG1fj1DQeu9CP9DCIh7lmi6GyYv9pBl6naBALnDuH+H8fKuu0SHa8XADRFwWS4kfTQYuV77m9ODPIEqk7ONgFsvaEVf6o7OulJfWUHTw0ahxoFXYw3j/VdpYGOTVqD7b7JMfBPDCHzGDpbsH8VV+jNEXW55CjWNmYB4RBi3535HXvHjT4qi+ojKjYHDMq231rzIdh4tni3UhUe1J7vFms2M1l8ND1VrpOsbeb5AMlEG8pySWzgtoSKg+NB1T90gwEwUhSr1wYM4imK5nZwt0iH/TNs+9umVzdLfMKsfrgfgRYnj2lOIxuL3+Xh7K+9nHrt2OjaI6Yxf1wSiser+Grkt4UxKl8fTmBGlFHRY6IpbJYc3fg4VqvFiMvyuiNs/JH/xEj39qqYw4JD2LQNQwt8eMLT/NQnAT0ZHvJtCTLWUWs4z5SEhGi8Ze6oJwzY4+YSk10RJk2cmMrAE0u86ymbGxW6OV7AlYo5ixAmpCQDLZ8yL/kXlbKZa4m4RCeyj4RcR45xUInFfk6CpPeaKPkwct3M9rnFP8BqihKLjf8GOQQY4zWx3dL8MU46Kajn/P3GG4uD3i6bOfC7rnCCzGC22jow1ZceV/78to0bvh9vRjNEn9F1gk/OsgDZGG8M+c0ECH3ePnYxyu7wRb1vB8JA54zU82xVKalVFLKAn/pN9b6ANp07hWao4tLmJpVBQfsTvXEFububOFktm2322vpIvOvxm0jFi9MhW2GGKsP83prmWx66C1n2fH+lDOeeX3AQijUr8siCzMpDAfCs5zwpU+Ofsh0Jo7KI4wTxHkFBiwcb2f6zRwmTHZ4DjA74gUgDk7IUtw4C3UN5rEDNGec56cCCyG+SyW10aZ5K4raUFwsQ7qepu/hPJFdwJFrrLyFHYtWM0o98wBeAbqKW+WTkCswNls2CJM3tk",
+        "edits": ""
+      },
+      "semanticSnapshot": {
+        "v": 1,
+        "auto": true,
+        "text": "浅亮儿童玩具小汽车 · 5组/18mesh · 世界坐标(Y上Z前), 原点=模型根\n# 阅读说明: G:=group行(可动画骨骼, 动画key用G:后的id; @p=pivot世界坐标; 倾(x,y,z)°=朝向偏离世界轴的欧拉角; 缩进=父子层级; 挂:=挂载于某组; G:id→id→…=chain折叠行, 每个id都是可独立动画的group, chain×N=waypoint数)\n# M:=mesh行(label[id 几何 @(世界坐标)], label可省略; ×N=for循环批量件(锚点=代表实例); cyl (起)→(末)或 轴上(Y)等方位词=延伸方向; 薄向=板面法向(扁板); 挂载组双代表=最大件+朝向件(嘴/管/檐所在); 无方向标注=均匀块(三向相近,如头),默认面向前(Z); 对称×2=镜像对)\nG:body 车身 @p(0,0,0)\n  M:[m0 box 0.32×0.08×0.19 (0,0,0) 薄向上(Y)]\n  G:wheel_fl 车轮 @p(-0.2,-0.1,0.1) 挂:body\n    M:[m10 box 0.05×0.06×0.05 (-0.2,-0.1,0.1)] | M:[m11 box 0.05×0.03×0.03 (-0.2,-0.1,0.1) 轴右(X)]\n  G:wheel_fr 车轮 @p(0.2,-0.1,0.1) 挂:body\n    M:[m12 box 0.05×0.06×0.05 (0.2,-0.1,0.1)] | M:[m13 box 0.05×0.03×0.03 (0.2,-0.1,0.1) 轴右(X)]\n  G:wheel_rl 车轮 @p(-0.2,-0.1,-0.1) 挂:body\n    M:[m14 box 0.05×0.06×0.05 (-0.2,-0.1,-0.1)] | M:[m15 box 0.05×0.03×0.03 (-0.2,-0.1,-0.1) 轴右(X)]\n  G:wheel_rr 车轮 @p(0.2,-0.1,-0.1) 挂:body\n    M:[m16 box 0.05×0.06×0.05 (0.2,-0.1,-0.1)] | M:[m17 box 0.05×0.03×0.03 (0.2,-0.1,-0.1) 轴右(X)]",
+        "stats": {
+          "groups": 5,
+          "meshes": 18,
+          "labeledMeshes": 0,
+          "labelCoverage": 0,
+          "batchLabels": 0,
+          "autoChains": 0,
+          "snapshotChars": 985
+        }
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -0.191,
+          0,
+          -0.1115
+        ],
+        "max": [
+          0.191,
+          0.2,
+          0.1115
+        ],
+        "sourceNodeId": "asset-bounds"
+      }
+    ],
+    "sourceMeshCount": 18,
+    "candidateCount": 0,
+    "fallbackUsed": true
+  },
+  "footprintRadius": 0.191,
+  "sizeClass": "small",
+  "mode": "voxel",
+  "provider": "gpt",
+  "createdAt": 1787749471061,
+  "updatedAt": 1787749471061
+}

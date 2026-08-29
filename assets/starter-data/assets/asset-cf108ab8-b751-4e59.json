@@ -1,0 +1,1628 @@
+{
+  "id": "asset-cf108ab8-b751-4e59",
+  "name": "炼金药柜 4",
+  "prompt": "同一规格的精致开放式炼金药剂与实验器材柜，无柜门无玻璃门，深色木材、黄铜包角与蒸汽朋克奇幻细节；五种内容异形体分别陈列不同颜色药瓶、烧杯、研钵、线圈、量具、草药盒和空置格，每种空位数量与位置不同，避免全部摆满\nCoordinate contract: local Y+ is up, local Z+ is the front, entrance, or forward direction, and local X+ is right. Put doors, facades, openings, windshields, noses, seats, and other recognizable front details toward local Z+. For a modular repeated element, explicitly choose the long axis: side-by-side modules span local X with depth/front on local Z; traversal modules span local Z. Keep the model centered at its origin.\nCanonical dimensions contract: width=2.4, height=3, depth=0.75 world units. Keep the generated mesh within this centered bounding size.\nCreate variation 4 of 5; preserve the same reusable asset family while varying silhouette and details.",
+  "tags": [
+    "indoor",
+    "alchemy",
+    "open-cabinet",
+    "content-variants"
+  ],
+  "modelJson": {
+    "name": "开放式炼金器材柜·异形体四",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "cabinet",
+        "name": "深色木柜",
+        "transform": {
+          "pos": [
+            0,
+            1.52,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            3.292,
+            3.594,
+            1.025
+          ],
+          "center": [
+            0,
+            0.001,
+            -0.047
+          ],
+          "axes": [
+            [
+              0.9334,
+              0.3589,
+              0.0025
+            ],
+            [
+              -0.3589,
+              0.9333,
+              0.0116
+            ],
+            [
+              0.0018,
+              -0.0117,
+              0.9999
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "brass_trim",
+        "name": "黄铜包角",
+        "parent": "cabinet",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0.17
+          ]
+        },
+        "_obb": {
+          "size": [
+            2.4,
+            2.906,
+            0.85
+          ],
+          "center": [
+            0,
+            0,
+            -0.17
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              0.9993,
+              0.0385
+            ],
+            [
+              0,
+              -0.0385,
+              0.9993
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "top_instrument",
+        "name": "顶部蒸汽压力表",
+        "parent": "cabinet",
+        "transform": {
+          "pos": [
+            0,
+            1.26,
+            0.17
+          ]
+        },
+        "_obb": {
+          "size": [
+            1.352,
+            0.357,
+            0.252
+          ],
+          "center": [
+            -0.086,
+            0.011,
+            -0.097
+          ],
+          "axes": [
+            [
+              0.9864,
+              -0.022,
+              -0.1631
+            ],
+            [
+              0.0261,
+              0.9994,
+              0.0229
+            ],
+            [
+              0.1625,
+              -0.0268,
+              0.9863
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "potions",
+        "name": "彩色药剂瓶",
+        "parent": "cabinet",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0.12
+          ]
+        },
+        "_obb": {
+          "size": [
+            2.147,
+            0.458,
+            0.18
+          ],
+          "center": [
+            0.06,
+            -0.374,
+            0
+          ],
+          "axes": [
+            [
+              0.9268,
+              0.3756,
+              0
+            ],
+            [
+              -0.3756,
+              0.9268,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "beaker_set",
+        "name": "烧杯与研钵",
+        "parent": "cabinet",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0.13
+          ]
+        },
+        "_obb": {
+          "size": [
+            1.351,
+            0.5,
+            0.45
+          ],
+          "center": [
+            -0.342,
+            -0.374,
+            -0.027
+          ],
+          "axes": [
+            [
+              0.7806,
+              -0.6249,
+              -0.0099
+            ],
+            [
+              0.5203,
+              0.641,
+              0.5643
+            ],
+            [
+              -0.3463,
+              -0.4456,
+              0.8255
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "coil_tools",
+        "name": "线圈与量具",
+        "parent": "cabinet",
+        "transform": {
+          "pos": [
+            0,
+            0.5,
+            0.13
+          ]
+        },
+        "_obb": {
+          "size": [
+            1.782,
+            0.447,
+            0.084
+          ],
+          "center": [
+            -0.03,
+            0.194,
+            -0.01
+          ],
+          "axes": [
+            [
+              0.9999,
+              -0.0027,
+              0.0131
+            ],
+            [
+              0.0027,
+              1,
+              0.0006
+            ],
+            [
+              -0.0131,
+              -0.0006,
+              0.9999
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "herb_box",
+        "name": "草药收纳盒",
+        "parent": "cabinet",
+        "transform": {
+          "pos": [
+            0.76,
+            -1.18,
+            0.17
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.52,
+            0.302,
+            0.48
+          ],
+          "center": [
+            0,
+            -0.018,
+            -0.077
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              0.9984,
+              -0.0557
+            ],
+            [
+              0,
+              0.0557,
+              0.9984
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "cabinet",
+        "transform": {
+          "pos": [
+            0,
+            -0.04,
+            -0.337
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2.18,
+            "height": 2.72,
+            "depth": 0.05
+          },
+          "color": 3679514
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "walnut"
+          }
+        ]
+      },
+      {
+        "id": "m1",
+        "parent": "cabinet",
+        "transform": {
+          "pos": [
+            -1.09,
+            -0.07,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.16,
+            "height": 2.78,
+            "depth": 0.68
+          },
+          "color": 2365458
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "walnut"
+          }
+        ]
+      },
+      {
+        "id": "m2",
+        "parent": "cabinet",
+        "transform": {
+          "pos": [
+            1.09,
+            -0.07,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.16,
+            "height": 2.78,
+            "depth": 0.68
+          },
+          "color": 2365458
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "walnut"
+          }
+        ]
+      },
+      {
+        "id": "m3",
+        "parent": "cabinet",
+        "transform": {
+          "pos": [
+            0,
+            -1.38,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2.18,
+            "height": 0.1,
+            "depth": 0.68
+          },
+          "color": 3679514
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "walnut"
+          }
+        ]
+      },
+      {
+        "id": "m4",
+        "parent": "cabinet",
+        "transform": {
+          "pos": [
+            0,
+            -0.84,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2.18,
+            "height": 0.1,
+            "depth": 0.68
+          },
+          "color": 3679514
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "walnut"
+          }
+        ]
+      },
+      {
+        "id": "m5",
+        "parent": "cabinet",
+        "transform": {
+          "pos": [
+            0,
+            -0.22,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2.18,
+            "height": 0.1,
+            "depth": 0.68
+          },
+          "color": 3679514
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "walnut"
+          }
+        ]
+      },
+      {
+        "id": "m6",
+        "parent": "cabinet",
+        "transform": {
+          "pos": [
+            0,
+            0.43,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2.18,
+            "height": 0.1,
+            "depth": 0.68
+          },
+          "color": 3679514
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "walnut"
+          }
+        ]
+      },
+      {
+        "id": "m7",
+        "parent": "cabinet",
+        "transform": {
+          "pos": [
+            0,
+            1.06,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2.38,
+            "height": 0.18,
+            "depth": 0.75
+          },
+          "color": 2365458
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "walnut"
+          }
+        ]
+      },
+      {
+        "id": "m8",
+        "parent": "cabinet",
+        "transform": {
+          "pos": [
+            -0.32,
+            -1.11,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.1,
+            "height": 0.54,
+            "depth": 0.62
+          },
+          "color": 3679514
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "walnut"
+          }
+        ]
+      },
+      {
+        "id": "m9",
+        "parent": "cabinet",
+        "transform": {
+          "pos": [
+            0.46,
+            -0.53,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.1,
+            "height": 0.62,
+            "depth": 0.62
+          },
+          "color": 3679514
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "walnut"
+          }
+        ]
+      },
+      {
+        "id": "m10",
+        "parent": "cabinet",
+        "transform": {
+          "pos": [
+            -0.58,
+            0.105,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.1,
+            "height": 0.65,
+            "depth": 0.62
+          },
+          "color": 3679514
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "walnut"
+          }
+        ]
+      },
+      {
+        "id": "m11",
+        "parent": "cabinet",
+        "transform": {
+          "pos": [
+            0.2,
+            0.745,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.1,
+            "height": 0.63,
+            "depth": 0.62
+          },
+          "color": 3679514
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "walnut"
+          }
+        ]
+      },
+      {
+        "id": "m12",
+        "parent": "cabinet",
+        "transform": {
+          "pos": [
+            -0.91,
+            -1.46,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.26,
+            "height": 0.12,
+            "depth": 0.64
+          },
+          "color": 2365458
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "walnut"
+          }
+        ]
+      },
+      {
+        "id": "m13",
+        "parent": "cabinet",
+        "transform": {
+          "pos": [
+            0.91,
+            -1.46,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.26,
+            "height": 0.12,
+            "depth": 0.64
+          },
+          "color": 2365458
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "walnut"
+          }
+        ]
+      },
+      {
+        "id": "m14",
+        "parent": "brass_trim",
+        "transform": {
+          "pos": [
+            -1.16,
+            1.34,
+            -0.17
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.08,
+            "height": 0.2,
+            "depth": 0.74
+          },
+          "color": 12093746
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m15",
+        "parent": "brass_trim",
+        "transform": {
+          "pos": [
+            1.16,
+            1.34,
+            -0.17
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.08,
+            "height": 0.2,
+            "depth": 0.74
+          },
+          "color": 12093746
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m16",
+        "parent": "brass_trim",
+        "transform": {
+          "pos": [
+            -1.16,
+            -1.34,
+            -0.17
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.08,
+            "height": 0.2,
+            "depth": 0.74
+          },
+          "color": 12093746
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m17",
+        "parent": "brass_trim",
+        "transform": {
+          "pos": [
+            1.16,
+            -1.34,
+            -0.17
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.08,
+            "height": 0.2,
+            "depth": 0.74
+          },
+          "color": 12093746
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m18",
+        "parent": "brass_trim",
+        "transform": {
+          "pos": [
+            0,
+            1.21,
+            0.17
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2.36,
+            "height": 0.07,
+            "depth": 0.07
+          },
+          "color": 12093746
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m19",
+        "parent": "brass_trim",
+        "transform": {
+          "pos": [
+            0,
+            -0.15,
+            0.165
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2.18,
+            "height": 0.04,
+            "depth": 0.06
+          },
+          "color": 7361314
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m20",
+        "parent": "brass_trim",
+        "transform": {
+          "pos": [
+            0,
+            0.5,
+            0.165
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2.18,
+            "height": 0.04,
+            "depth": 0.06
+          },
+          "color": 7361314
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m21",
+        "parent": "top_instrument",
+        "transform": {
+          "pos": [
+            -0.48,
+            0.02,
+            -0.05
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.54,
+            "height": 0.34,
+            "depth": 0.12
+          },
+          "color": 7361314
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m22",
+        "parent": "top_instrument",
+        "transform": {
+          "pos": [
+            -0.48,
+            0.02,
+            0.03
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.38,
+            "height": 0.22,
+            "depth": 0.04
+          },
+          "color": 14207117
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass",
+            "variant": "amber"
+          }
+        ]
+      },
+      {
+        "id": "m23",
+        "parent": "top_instrument",
+        "transform": {
+          "pos": [
+            -0.43,
+            0.03,
+            0.055
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.04,
+            "height": 0.15,
+            "depth": 0.035
+          },
+          "color": 5582870
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m24",
+        "parent": "top_instrument",
+        "transform": {
+          "pos": [
+            0.48,
+            0,
+            -0.17
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.18,
+            "height": 0.2,
+            "depth": 0.18
+          },
+          "color": 12093746
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m25",
+        "parent": "potions",
+        "transform": {
+          "pos": [
+            -0.82,
+            -0.68,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.18,
+            "height": 0.31999999999999995,
+            "depth": 0.18
+          },
+          "color": 12597579
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass",
+            "variant": "red"
+          }
+        ]
+      },
+      {
+        "id": "m26",
+        "parent": "potions",
+        "transform": {
+          "pos": [
+            -0.82,
+            -0.62,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.08,
+            "height": 0.12,
+            "depth": 0.08
+          },
+          "color": 12597579
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass",
+            "variant": "red"
+          }
+        ]
+      },
+      {
+        "id": "m27",
+        "parent": "potions",
+        "transform": {
+          "pos": [
+            -0.57,
+            -0.69,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.18,
+            "height": 0.29999999999999993,
+            "depth": 0.18
+          },
+          "color": 5671894
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass",
+            "variant": "blue"
+          }
+        ]
+      },
+      {
+        "id": "m28",
+        "parent": "potions",
+        "transform": {
+          "pos": [
+            -0.57,
+            -0.64,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.08,
+            "height": 0.12,
+            "depth": 0.08
+          },
+          "color": 5671894
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass",
+            "variant": "blue"
+          }
+        ]
+      },
+      {
+        "id": "m29",
+        "parent": "potions",
+        "transform": {
+          "pos": [
+            0.75,
+            -0.055,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.18,
+            "height": 0.32999999999999985,
+            "depth": 0.18
+          },
+          "color": 6465627
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass",
+            "variant": "green"
+          }
+        ]
+      },
+      {
+        "id": "m30",
+        "parent": "potions",
+        "transform": {
+          "pos": [
+            0.75,
+            0.01,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.08,
+            "height": 0.12,
+            "depth": 0.08
+          },
+          "color": 6465627
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass",
+            "variant": "green"
+          }
+        ]
+      },
+      {
+        "id": "m31",
+        "parent": "potions",
+        "transform": {
+          "pos": [
+            0.94,
+            -0.065,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.18,
+            "height": 0.30999999999999983,
+            "depth": 0.18
+          },
+          "color": 10181046
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass",
+            "variant": "purple"
+          }
+        ]
+      },
+      {
+        "id": "m32",
+        "parent": "potions",
+        "transform": {
+          "pos": [
+            0.94,
+            -0.01,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.08,
+            "height": 0.12,
+            "depth": 0.08
+          },
+          "color": 10181046
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass",
+            "variant": "purple"
+          }
+        ]
+      },
+      {
+        "id": "m33",
+        "parent": "beaker_set",
+        "transform": {
+          "pos": [
+            0.02,
+            -0.66,
+            -0.03
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.32,
+            "height": 0.28,
+            "depth": 0.26
+          },
+          "color": 7515832
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass",
+            "variant": "blue"
+          }
+        ]
+      },
+      {
+        "id": "m34",
+        "parent": "beaker_set",
+        "transform": {
+          "pos": [
+            -0.82,
+            -0.12,
+            -0.05
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.22,
+            "height": 0.1,
+            "depth": 0.22
+          },
+          "color": 8485488
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "stone"
+          }
+        ]
+      },
+      {
+        "id": "m35",
+        "parent": "beaker_set",
+        "transform": {
+          "pos": [
+            -0.76,
+            0.09,
+            0
+          ],
+          "quat": [
+            -0.23,
+            0.29,
+            0.24,
+            0.66
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.08,
+            "height": 0.07,
+            "depth": 0.33
+          },
+          "color": 7761508
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "stone"
+          }
+        ]
+      },
+      {
+        "id": "m36",
+        "parent": "coil_tools",
+        "transform": {
+          "pos": [
+            0.44,
+            0.18,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.07,
+            "height": 0.38,
+            "depth": 0.07
+          },
+          "color": 12093746
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m37",
+        "parent": "coil_tools",
+        "transform": {
+          "pos": [
+            0.62,
+            0.18,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.07,
+            "height": 0.34,
+            "depth": 0.07
+          },
+          "color": 12093746
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m38",
+        "parent": "coil_tools",
+        "transform": {
+          "pos": [
+            0.8,
+            0.18,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.07,
+            "height": 0.3,
+            "depth": 0.07
+          },
+          "color": 12093746
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m39",
+        "parent": "coil_tools",
+        "transform": {
+          "pos": [
+            0.62,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.48,
+            "height": 0.06,
+            "depth": 0.07
+          },
+          "color": 7361314
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m40",
+        "parent": "coil_tools",
+        "transform": {
+          "pos": [
+            -0.88,
+            0.21,
+            -0.02
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.08,
+            "height": 0.42,
+            "depth": 0.08
+          },
+          "color": 12093746
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m41",
+        "parent": "coil_tools",
+        "transform": {
+          "pos": [
+            -0.78,
+            0.06,
+            -0.02
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.28,
+            "height": 0.06,
+            "depth": 0.08
+          },
+          "color": 12093746
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m42",
+        "parent": "herb_box",
+        "transform": {
+          "pos": [
+            0,
+            -0.02,
+            -0.11
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.52,
+            "height": 0.28,
+            "depth": 0.4
+          },
+          "color": 5913120
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "oak"
+          }
+        ]
+      },
+      {
+        "id": "m43",
+        "parent": "herb_box",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0.105
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.4,
+            "height": 0.05,
+            "depth": 0.04
+          },
+          "color": 12093746
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m44",
+        "parent": "herb_box",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0.14
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.1,
+            "height": 0.08,
+            "depth": 0.04
+          },
+          "color": 7361314
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1787875786155,
+        "provider": "gpt",
+        "data": "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",
+        "edits": ""
+      },
+      "semanticSnapshot": {
+        "v": 1,
+        "auto": true,
+        "text": "开放式炼金器材柜·异形体四 · 7组/45mesh · 世界坐标(Y上Z前), 原点=模型根\n# 阅读说明: G:=group行(可动画骨骼, 动画key用G:后的id; @p=pivot世界坐标; 倾(x,y,z)°=朝向偏离世界轴的欧拉角; 缩进=父子层级; 挂:=挂载于某组; G:id→id→…=chain折叠行, 每个id都是可独立动画的group, chain×N=waypoint数)\n# M:=mesh行(label[id 几何 @(世界坐标)], label可省略; ×N=for循环批量件(锚点=代表实例); cyl (起)→(末)或 轴上(Y)等方位词=延伸方向; 薄向=板面法向(扁板); 挂载组双代表=最大件+最远有向件(刃/嘴/管所在端); 无方向标注=均匀块(三向相近,如头),默认面向前(Z); 对称×2=镜像对)\nG:cabinet 深色木柜 @p(0,1.5,0)\n  M:[m7 box 2.4×0.18×0.75 (0,2.6,0) 薄向上(Y)]\n  G:brass_trim 黄铜包角 @p(0,1.5,0.2)\n    M:[m14 box 0.08×0.2×0.74 (-1.2,2.9,0) 轴前(Z)]\n  G:top_instrument 顶部蒸汽压力表 @p(0,2.8,0.2)\n    M:[m21 box 0.54×0.34×0.12 (-0.5,2.8,0.1) 薄向前(Z)]\n  G:potions 彩色药剂瓶 @p(0,1.5,0.1)\n    M:[m29 box 0.18×0.33×0.18 (0.8,1.5,0.1) 轴上(Y)]\n  G:beaker_set 烧杯与研钵 @p(0,1.5,0.1)\n    M:[m33 box 0.32×0.28×0.26 (0,0.9,0.1)]\n  G:coil_tools 线圈与量具 @p(0,2,0.1)\n    M:[m40 box 0.08×0.42×0.08 (-0.9,2.2,0.1) 轴上(Y)]\n  G:herb_box 草药收纳盒 @p(0.8,0.3,0.2)\n    M:[m42 box 0.52×0.28×0.4 (0.8,0.3,0.1)]",
+        "stats": {
+          "groups": 7,
+          "meshes": 45,
+          "labeledMeshes": 0,
+          "labelCoverage": 0,
+          "batchLabels": 0,
+          "autoChains": 0,
+          "snapshotChars": 946
+        }
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -1.19,
+          2.49,
+          -0.375
+        ],
+        "max": [
+          1.19,
+          2.67,
+          0.375
+        ],
+        "sourceNodeId": "m7"
+      },
+      {
+        "min": [
+          -1.1700000000000002,
+          0.06,
+          -0.34
+        ],
+        "max": [
+          -1.01,
+          2.84,
+          0.34
+        ],
+        "sourceNodeId": "m1"
+      },
+      {
+        "min": [
+          1.01,
+          0.06,
+          -0.34
+        ],
+        "max": [
+          1.1700000000000002,
+          2.84,
+          0.34
+        ],
+        "sourceNodeId": "m2"
+      },
+      {
+        "min": [
+          -1.09,
+          0.6299999999999999,
+          -0.34
+        ],
+        "max": [
+          1.09,
+          0.73,
+          0.34
+        ],
+        "sourceNodeId": "m4"
+      },
+      {
+        "min": [
+          -1.09,
+          1.25,
+          -0.34
+        ],
+        "max": [
+          1.09,
+          1.35,
+          0.34
+        ],
+        "sourceNodeId": "m5"
+      },
+      {
+        "min": [
+          -1.09,
+          1.9,
+          -0.34
+        ],
+        "max": [
+          1.09,
+          2,
+          0.34
+        ],
+        "sourceNodeId": "m6"
+      }
+    ],
+    "sourceMeshCount": 45,
+    "candidateCount": 6,
+    "fallbackUsed": false
+  },
+  "footprintRadius": 1.19,
+  "sizeClass": "medium",
+  "mode": "voxel",
+  "provider": "gpt",
+  "createdAt": 1787875785820,
+  "updatedAt": 1787875785820
+}

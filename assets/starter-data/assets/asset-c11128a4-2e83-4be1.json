@@ -1,0 +1,386 @@
+{
+  "id": "asset-c11128a4-2e83-4be1",
+  "name": "童床",
+  "prompt": "单独一张儿童单人床，圆角木质床架，带床垫和简洁床头板，不包含床头柜、玩具、书本或成套家具\nCoordinate contract: local Y+ is up, local Z+ is the front, entrance, or forward direction, and local X+ is right. Put doors, facades, openings, windshields, noses, seats, and other recognizable front details toward local Z+. For a modular repeated element, explicitly choose the long axis: side-by-side modules span local X with depth/front on local Z; traversal modules span local Z. Keep the model centered at its origin.\nCanonical dimensions contract: width=2.1, height=0.85, depth=1.15 world units. Keep the generated mesh within this centered bounding size.",
+  "modelJson": {
+    "name": "儿童单人木床",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "bed",
+        "name": "儿童单人床",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            2.1,
+            0.861,
+            1.263
+          ],
+          "center": [
+            0,
+            0.329,
+            -0.009
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              0.9813,
+              0.1924
+            ],
+            [
+              0,
+              -0.1924,
+              0.9813
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "bed",
+        "transform": {
+          "pos": [
+            0,
+            0.28,
+            0.505
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2.1,
+            "height": 0.16,
+            "depth": 0.14
+          },
+          "color": 12157518
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "oak"
+          }
+        ]
+      },
+      {
+        "id": "m1",
+        "parent": "bed",
+        "transform": {
+          "pos": [
+            0,
+            0.28,
+            -0.505
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2.1,
+            "height": 0.16,
+            "depth": 0.14
+          },
+          "color": 12157518
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "oak"
+          }
+        ]
+      },
+      {
+        "id": "m2",
+        "parent": "bed",
+        "transform": {
+          "pos": [
+            -0.98,
+            0.28,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.14,
+            "height": 0.2,
+            "depth": 0.88
+          },
+          "color": 12157518
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "oak"
+          }
+        ]
+      },
+      {
+        "id": "m3",
+        "parent": "bed",
+        "transform": {
+          "pos": [
+            0.98,
+            0.28,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.14,
+            "height": 0.2,
+            "depth": 0.88
+          },
+          "color": 12157518
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "oak"
+          }
+        ]
+      },
+      {
+        "id": "m4",
+        "parent": "bed",
+        "transform": {
+          "pos": [
+            0,
+            0.47,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.82,
+            "height": 0.22,
+            "depth": 0.86
+          },
+          "color": 15919318
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "fabric"
+          }
+        ]
+      },
+      {
+        "id": "m5",
+        "parent": "bed",
+        "transform": {
+          "pos": [
+            -0.97,
+            0.36,
+            -0.49
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.16,
+            "height": 0.72,
+            "depth": 0.16
+          },
+          "color": 13671011
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "oak"
+          }
+        ]
+      },
+      {
+        "id": "m6",
+        "parent": "bed",
+        "transform": {
+          "pos": [
+            0.97,
+            0.36,
+            -0.49
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.16,
+            "height": 0.72,
+            "depth": 0.16
+          },
+          "color": 13671011
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "oak"
+          }
+        ]
+      },
+      {
+        "id": "m7",
+        "parent": "bed",
+        "transform": {
+          "pos": [
+            0,
+            0.64,
+            -0.49
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.82,
+            "height": 0.42,
+            "depth": 0.12
+          },
+          "color": 13671011
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "oak"
+          }
+        ]
+      },
+      {
+        "id": "m8",
+        "parent": "bed",
+        "transform": {
+          "pos": [
+            -0.97,
+            0.16,
+            0.49
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.16,
+            "height": 0.32,
+            "depth": 0.16
+          },
+          "color": 13671011
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "oak"
+          }
+        ]
+      },
+      {
+        "id": "m9",
+        "parent": "bed",
+        "transform": {
+          "pos": [
+            0.97,
+            0.16,
+            0.49
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.16,
+            "height": 0.32,
+            "depth": 0.16
+          },
+          "color": 13671011
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "oak"
+          }
+        ]
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1787766553318,
+        "provider": "gpt",
+        "data": "N9j2Ybnx+IMCA6xLrrIs9ASYlYg5Y69zsTpEOQDYxtbvW+yl/roiu6bosOKNLe6VYKPHMGJuer57hN4e/QtcsPjyWbO6lmBp64+w06bNEk/eDJcEVH0H2PJ8TTv3qvA5A6fXQdIz+VtSlSfifX4ZM7asY8Vhg06k29eZ7bQCKAqS4Ib4HQUBuaw8M9oMqbIxlExd0IjJoadV7j+XOdXbP6bLzDmxYcnaQ0itoDrdZrFe4J0Hyelpy4GhnqDNIbBhYGplZnzY4lnyDSbAb0cTzQrFjiWwKtfiH3XEVfe3d4tclM8VYvGuuW/khMWTGKaoN7+jHGT2o01uqTfmIn9tnwgDABrKmC0/xMsoPjecD+rhhX4ban9MrsCAKMS12VSyJTARCfkxy2XpyG9/dlp4Pg0/f+Ru3455phdKO+TGdMXoQjpyOPq7WDNq0VuPhjx7E/pTz8QWYTJIE1s3YfMrduoOeZoDABSV8hiVFRs9yG3q34H25w7NUrylRdxXzNhojo/6UNnqFnSzdgp2leLk5ZHO4RvKj5usw9PVshGLAVFoBzcQ6+uNgkPGoMYIUnh3py9tghVZFgdZ6fswp3eBImKFMoSdpMzW0MAw7KmZP/qXX2YeSHVDvv21xlXGnQJxJqveKTvDnVcOtedfeVq7R4To4oa+6yxO",
+        "edits": ""
+      },
+      "semanticSnapshot": {
+        "v": 1,
+        "auto": true,
+        "text": "儿童单人木床 · 1组/10mesh · 世界坐标(Y上Z前), 原点=模型根\n# 阅读说明: G:=group行(可动画骨骼, 动画key用G:后的id; @p=pivot世界坐标; 倾(x,y,z)°=朝向偏离世界轴的欧拉角; 缩进=父子层级; 挂:=挂载于某组; G:id→id→…=chain折叠行, 每个id都是可独立动画的group, chain×N=waypoint数)\n# M:=mesh行(label[id 几何 @(世界坐标)], label可省略; ×N=for循环批量件(锚点=代表实例); cyl (起)→(末)或 轴上(Y)等方位词=延伸方向; 薄向=板面法向(扁板); 挂载组双代表=最大件+朝向件(嘴/管/檐所在); 无方向标注=均匀块(三向相近,如头),默认面向前(Z); 对称×2=镜像对)\nG:bed 儿童单人床 @p(0,0,0)\n  M:[m4 box 1.8×0.22×0.86 (0,0.5,0) 薄向上(Y)]",
+        "stats": {
+          "groups": 1,
+          "meshes": 10,
+          "labeledMeshes": 0,
+          "labelCoverage": 0,
+          "batchLabels": 0,
+          "autoChains": 0,
+          "snapshotChars": 429
+        }
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -0.91,
+          0.36,
+          -0.43
+        ],
+        "max": [
+          0.91,
+          0.58,
+          0.43
+        ],
+        "sourceNodeId": "m4"
+      },
+      {
+        "min": [
+          -0.91,
+          0.43000000000000005,
+          -0.55
+        ],
+        "max": [
+          0.91,
+          0.85,
+          -0.43
+        ],
+        "sourceNodeId": "m7"
+      }
+    ],
+    "sourceMeshCount": 10,
+    "candidateCount": 2,
+    "fallbackUsed": false
+  },
+  "footprintRadius": 0.91,
+  "sizeClass": "medium",
+  "mode": "voxel",
+  "provider": "gpt",
+  "createdAt": 1787766557973,
+  "updatedAt": 1787766557973
+}

@@ -1,0 +1,303 @@
+{
+  "id": "asset-3fe3d59e-00f9-486b",
+  "name": "儿童房软地毯",
+  "prompt": "A single reusable rectangular children's area rug with a low soft pile, rounded corners and simple large geometric motifs, approximately 2.6 by 1.8 meters, completely flat and independent, no floor, furniture, room, background, or loose objects",
+  "tags": [
+    "furniture",
+    "rug"
+  ],
+  "modelJson": {
+    "name": "儿童几何图案软绒地毯",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "rug",
+        "name": "圆角儿童地毯",
+        "transform": {
+          "pos": [
+            0,
+            0.05,
+            -0.04
+          ]
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "fur"
+          }
+        ],
+        "_obb": {
+          "size": [
+            2.761,
+            0.082,
+            2.055
+          ],
+          "center": [
+            0,
+            -0.013,
+            0.04
+          ],
+          "axes": [
+            [
+              0.9938,
+              -0.0002,
+              -0.1109
+            ],
+            [
+              0.0006,
+              1,
+              0.0037
+            ],
+            [
+              0.1109,
+              -0.0038,
+              0.9938
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "rug",
+        "transform": {
+          "pos": [
+            0,
+            -0.02,
+            0.04
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2.4,
+            "height": 0.06,
+            "depth": 1.8
+          },
+          "color": 15915441
+        }
+      },
+      {
+        "id": "m1",
+        "parent": "rug",
+        "transform": {
+          "pos": [
+            0,
+            -0.02,
+            0.04
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2.6,
+            "height": 0.06,
+            "depth": 1.6
+          },
+          "color": 15915441
+        }
+      },
+      {
+        "id": "m2",
+        "parent": "rug",
+        "transform": {
+          "pos": [
+            0,
+            -0.02,
+            0.04
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2.52,
+            "height": 0.06,
+            "depth": 1.72
+          },
+          "color": 15915441
+        }
+      },
+      {
+        "id": "m3",
+        "parent": "rug",
+        "transform": {
+          "pos": [
+            -0.72,
+            0.016,
+            0.42
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.52,
+            "height": 0.012,
+            "depth": 0.52
+          },
+          "color": 16038210
+        }
+      },
+      {
+        "id": "m4",
+        "parent": "rug",
+        "transform": {
+          "pos": [
+            0.14,
+            0.02,
+            0.28
+          ],
+          "quat": [
+            0.92,
+            0,
+            -0.38,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.58,
+            "height": 0.012,
+            "depth": 0.58
+          },
+          "color": 5214153
+        }
+      },
+      {
+        "id": "m5",
+        "parent": "rug",
+        "transform": {
+          "pos": [
+            0.72,
+            0.016,
+            -0.42
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.72,
+            "height": 0.012,
+            "depth": 0.24
+          },
+          "color": 15101793
+        }
+      },
+      {
+        "id": "m6",
+        "parent": "rug",
+        "transform": {
+          "pos": [
+            0.72,
+            0.016,
+            -0.42
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.24,
+            "height": 0.012,
+            "depth": 0.72
+          },
+          "color": 15101793
+        }
+      },
+      {
+        "id": "m7",
+        "parent": "rug",
+        "transform": {
+          "pos": [
+            -0.58,
+            0.016,
+            -0.39
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.62,
+            "height": 0.012,
+            "depth": 0.15
+          },
+          "color": 7382635
+        }
+      },
+      {
+        "id": "m8",
+        "parent": "rug",
+        "transform": {
+          "pos": [
+            -0.58,
+            0.016,
+            -0.39
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.15,
+            "height": 0.012,
+            "depth": 0.62
+          },
+          "color": 7382635
+        }
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1786874652007,
+        "provider": "gpt",
+        "data": "8Q5QzsjPcJmQnG5PO64creUpo/uyoQ9XVFKEtdrCUsg7UPcUVB2omPhDaC/4uoWsXSSrc40VNf0FjKFqxuR/a7BbcY54jXzUtJltVwbyIqs3kNEtJv36ogJM5GTi3Z1/OM9EJreQ/F6oy86eVqkGlapXtyan0Mcja1c/m3ja4vk2ZeulbMZnJ+OOL3zqpJcJVQA3x1rbdYDuxtFKOEIeEpMFJXl5qvhvofbds4Cf2KJSW1iwis1pdm0N3Xf/GRIiQdfQC9yELDnyxgXMiEXgBjQjGJlLX3yVfxaVKPWAPPy/QL44cYlAX8YTc/tNP+mlul5mMw/WSt2Ke7Y3EZnlktmSefhqSTGfU+ZfbXwNLKqkZzahpXe/DQMrCAqYHhizUBUhDfE6ftbXdguJ2HSRD/uoyr2TjsVxGxqPZCPudroDBhJ5iXJhy36Rf63k6rb+46QEZqe+yEoVABE9gCHhtZIJhBzVG4PiADP1OXyAUErzSwnzk46cHYU2Rp33GT41vHmoY9vQGVnnIcWLxmftcXfqflzgJAoW4HZeKpzIT4iC4hT37oyVSuhhxWocdUe5XdTBZv3B95TZTEIkw8BRGAGe6wo9dS/ctyGnzRBSw+AoLzHuqjIIMWOiH+/w1Q81ttPEqsvcR8baDx8qPIdShv5VxVlt3YbOwg==",
+        "edits": ""
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -1.3,
+          0,
+          -0.9
+        ],
+        "max": [
+          1.3,
+          0.07600000000000001,
+          0.9
+        ],
+        "sourceNodeId": "asset-bounds"
+      }
+    ],
+    "sourceMeshCount": 9,
+    "candidateCount": 1,
+    "fallbackUsed": true
+  },
+  "footprintRadius": 1.3,
+  "sizeClass": "medium",
+  "mode": "voxel",
+  "provider": "gpt",
+  "libraryId": "library-d7967286-cebf-4f99",
+  "libraryMetadata": {
+    "tags": [
+      "childrensrug",
+      "arearug",
+      "nurserydecor"
+    ],
+    "applicableZones": [
+      "settlement"
+    ],
+    "repeatable": true,
+    "landmark": false,
+    "enabled": true,
+    "priority": 0.5,
+    "analysisStatus": "ready",
+    "rotation": "random"
+  },
+  "createdAt": 1787817446385,
+  "updatedAt": 1787817446385
+}

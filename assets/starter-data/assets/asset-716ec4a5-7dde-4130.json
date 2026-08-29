@@ -1,0 +1,571 @@
+{
+  "id": "asset-716ec4a5-7dde-4130",
+  "name": "胶囊飞行器",
+  "prompt": "原创儿童玩具，单架胶囊形未来飞行器，短机翼，双尾翼，圆角安全造型，白色青色和橙色配色，无标志，独立单体\nCoordinate contract: local Y+ is up, local Z+ is the front, entrance, or forward direction, and local X+ is right. Put doors, facades, openings, windshields, noses, seats, and other recognizable front details toward local Z+. For a modular repeated element, explicitly choose the long axis: side-by-side modules span local X with depth/front on local Z; traversal modules span local Z. Keep the model centered at its origin.\nCanonical dimensions contract: width=0.7, height=0.3, depth=0.65 world units. Keep the generated mesh within this centered bounding size.",
+  "modelJson": {
+    "name": "胶囊形未来玩具飞行器",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "fuselage",
+        "name": "胶囊机身",
+        "transform": {
+          "pos": [
+            0,
+            -0.03,
+            -0.2262
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.7,
+            0.357,
+            0.653
+          ],
+          "center": [
+            0,
+            0.058,
+            0.225
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              0.9999,
+              -0.0157
+            ],
+            [
+              0,
+              0.0157,
+              0.9999
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "cockpit",
+        "name": "前置座舱",
+        "parent": "fuselage",
+        "transform": {
+          "pos": [
+            0,
+            0.105,
+            0.3413
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.26,
+            0.05,
+            0.14
+          ],
+          "center": [
+            0,
+            0,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "wings",
+        "name": "短机翼",
+        "parent": "fuselage",
+        "transform": {
+          "pos": [
+            0,
+            -0.095,
+            0.1713
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.7,
+            0.048,
+            0.2
+          ],
+          "center": [
+            0,
+            -0.001,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "tail",
+        "name": "双尾翼",
+        "parent": "fuselage",
+        "transform": {
+          "pos": [
+            0,
+            0.1363,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.3,
+            0.173,
+            0.17
+          ],
+          "center": [
+            0,
+            -0.021,
+            0.016
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              0.8594,
+              -0.5113
+            ],
+            [
+              0,
+              0.5113,
+              0.8594
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "thrusters",
+        "name": "后部推进器",
+        "parent": "fuselage",
+        "transform": {
+          "pos": [
+            0,
+            -0.005,
+            -0.0862
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.3,
+            0.07,
+            0.025
+          ],
+          "center": [
+            0,
+            0,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "fuselage",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0.2063
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.38,
+            "height": 0.2,
+            "depth": 0.48
+          },
+          "color": 16054261
+        }
+      },
+      {
+        "id": "m1",
+        "parent": "fuselage",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0.4988
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.28,
+            "height": 0.14,
+            "depth": 0.105
+          },
+          "color": 16054261
+        }
+      },
+      {
+        "id": "m2",
+        "parent": "fuselage",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            -0.0662
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.3,
+            "height": 0.15,
+            "depth": 0.065
+          },
+          "color": 3459284
+        }
+      },
+      {
+        "id": "m3",
+        "parent": "fuselage",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0.5388
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.18,
+            "height": 0.08,
+            "depth": 0.025
+          },
+          "color": 16747058
+        }
+      },
+      {
+        "id": "m4",
+        "parent": "cockpit",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.26,
+            "height": 0.05,
+            "depth": 0.14
+          },
+          "color": 5823717
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass",
+            "variant": "blue"
+          }
+        ]
+      },
+      {
+        "id": "m5",
+        "parent": "wings",
+        "transform": {
+          "pos": [
+            0,
+            -0.005,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.7,
+            "height": 0.04,
+            "depth": 0.2
+          },
+          "color": 3262418
+        }
+      },
+      {
+        "id": "m6",
+        "parent": "wings",
+        "transform": {
+          "pos": [
+            -0.29,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.12,
+            "height": 0.045,
+            "depth": 0.12
+          },
+          "color": 16747058
+        }
+      },
+      {
+        "id": "m7",
+        "parent": "wings",
+        "transform": {
+          "pos": [
+            0.29,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.12,
+            "height": 0.045,
+            "depth": 0.12
+          },
+          "color": 16747058
+        }
+      },
+      {
+        "id": "m8",
+        "parent": "tail",
+        "transform": {
+          "pos": [
+            -0.12,
+            -0.0213,
+            0.0163
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.055,
+            "height": 0.13,
+            "depth": 0.12
+          },
+          "color": 3262418
+        }
+      },
+      {
+        "id": "m9",
+        "parent": "tail",
+        "transform": {
+          "pos": [
+            0.12,
+            -0.0213,
+            0.0163
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.055,
+            "height": 0.13,
+            "depth": 0.12
+          },
+          "color": 3262418
+        }
+      },
+      {
+        "id": "m10",
+        "parent": "tail",
+        "transform": {
+          "pos": [
+            -0.12,
+            0.0212,
+            -0.0162
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.06,
+            "height": 0.045,
+            "depth": 0.055
+          },
+          "color": 16747058
+        }
+      },
+      {
+        "id": "m11",
+        "parent": "tail",
+        "transform": {
+          "pos": [
+            0.12,
+            0.0212,
+            -0.0162
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.06,
+            "height": 0.045,
+            "depth": 0.055
+          },
+          "color": 16747058
+        }
+      },
+      {
+        "id": "m12",
+        "parent": "thrusters",
+        "transform": {
+          "pos": [
+            -0.105,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.09,
+            "height": 0.07,
+            "depth": 0.025
+          },
+          "color": 5401459
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m13",
+        "parent": "thrusters",
+        "transform": {
+          "pos": [
+            0.105,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.09,
+            "height": 0.07,
+            "depth": 0.025
+          },
+          "color": 5401459
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1787770826364,
+        "provider": "gpt",
+        "data": "vKakkdiR8CXWgwcWML6EbXAtgjU7o/6gy3jMSx8lLTcKNkp9k/1KbdCagWVPyRtNzrBvMGzQ7H83nUqNWrYYLTmOTUZbpH5xN/dors6iotyBE20Q2EXICJIY4Z78zxLwVOXDDWcp6guQDS/FwLhoAnvD5qM6W8np98vAQf0rBde6BsvDujVZ+lz6lW3YcCCTjKjl0ScCBG3yppi0ZjNgzyt/TwrNABHBoCN7S0087FfqpHuyACM3zXEvrJCPHNyFdGmosyzy0WlMkjD0hSW9c+Qy1XLF1u1jgLmJACouueybEhTHdIZ0GYXkBMS/DljhXCgiN/HXhtDe6feL3P/+x8yedDEe/gI4pmO09GoJMJLuv3JyF/HgF4/TflvNGwL0LIvRPnBggavn3Kv3l6+W/J4rBHLZ7silzVQEzyuDVZWAeZLlzE4r8NKr98/c4ZuVcu77+Xo7bcDHT8ROctaj1pCcUjJ84GuP3+enPkp5vgK+jb2ubJanRTsML4wvq1qASTc6b124VciZfYfyqv8uNbwHHl+98r4owKY/OomRJc2NTUcAKtuEhvnRoZDhrNyl2LQS8MRy6JijsqZH0hXHzL+7ymrFovY72vbtm+qra+xMj2NNiJ62kN9n4DqdqMeA4pQ5tV9l2oFVJaiBn2y2CSauRudFfUcRfaFfYgmtzrts4SV/mUZKwzQxcIcyQJ1tj2tdgfML1WX+WowdYjJRjz/+r3k9s88azCIyWQ48s5QYVA3HbvVeNfGIYwMRy0/+HVlGh9kKgrmZaeJQ+m/9OQuoxTIPlDQs+OhM+cUFEV+njAzT/iSeRyY2DuH9pftuXdBiG3+q8c0imln2PdeF7H+yt/cZtWW6S2U09wiK/gAHQHCI6LKGEthUBqkUrum6",
+        "edits": ""
+      },
+      "semanticSnapshot": {
+        "v": 1,
+        "auto": true,
+        "text": "胶囊形未来玩具飞行器 · 5组/14mesh · 世界坐标(Y上Z前), 原点=模型根\n# 阅读说明: G:=group行(可动画骨骼, 动画key用G:后的id; @p=pivot世界坐标; 倾(x,y,z)°=朝向偏离世界轴的欧拉角; 缩进=父子层级; 挂:=挂载于某组; G:id→id→…=chain折叠行, 每个id都是可独立动画的group, chain×N=waypoint数)\n# M:=mesh行(label[id 几何 @(世界坐标)], label可省略; ×N=for循环批量件(锚点=代表实例); cyl (起)→(末)或 轴上(Y)等方位词=延伸方向; 薄向=板面法向(扁板); 挂载组双代表=最大件+朝向件(嘴/管/檐所在); 无方向标注=均匀块(三向相近,如头),默认面向前(Z); 对称×2=镜像对)\nG:fuselage 胶囊机身 @p(0,0,-0.2)\n  M:[m0 box 0.38×0.2×0.48 (0,0,0) 薄向上(Y)]\n  G:cockpit 前置座舱 @p(0,0.1,0.1)\n    M:[m4 box 0.26×0.05×0.14 (0,0.1,0.1) 薄向上(Y)]\n  G:wings 短机翼 @p(0,-0.1,-0.1) 挂:fuselage\n    M:[m5 box 0.7×0.04×0.2 (0,-0.1,-0.1) 薄向上(Y)]\n  G:tail 双尾翼 @p(0,0.1,-0.2) 挂:fuselage\n    M:[m8 box 0.06×0.13×0.12 (-0.1,0.1,-0.2) 薄向右(X)]\n  G:thrusters 后部推进器 @p(0,0,-0.3) 挂:fuselage\n    M:[m12 box 0.09×0.07×0.03 (-0.1,0,-0.3) 薄向前(Z)]",
+        "stats": {
+          "groups": 5,
+          "meshes": 14,
+          "labeledMeshes": 0,
+          "labelCoverage": 0,
+          "batchLabels": 0,
+          "autoChains": 0,
+          "snapshotChars": 796
+        }
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -0.35,
+          0,
+          -0.325
+        ],
+        "max": [
+          0.35,
+          0.30000000000000004,
+          0.325
+        ],
+        "sourceNodeId": "asset-bounds"
+      }
+    ],
+    "sourceMeshCount": 14,
+    "candidateCount": 0,
+    "fallbackUsed": true
+  },
+  "footprintRadius": 0.35,
+  "sizeClass": "small",
+  "mode": "voxel",
+  "provider": "gpt",
+  "createdAt": 1787770828289,
+  "updatedAt": 1787770828289
+}

@@ -1,0 +1,574 @@
+{
+  "id": "asset-85bcc6fc-8ede-4649",
+  "name": "儿童图书组合",
+  "prompt": "A single reusable organized collection of assorted children's books forming one compact asset, with several upright books between rounded bookends and a short horizontal stack, varied readable cover colors without legible text, approximately 0.65 meters wide, no shelf, floor, background, or loose distant items",
+  "tags": [
+    "book",
+    "prop"
+  ],
+  "modelJson": {
+    "name": "儿童图书组合",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "collection",
+        "name": "图书组合",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.687,
+            0.438,
+            0.2
+          ],
+          "center": [
+            -0.013,
+            0.08,
+            0
+          ],
+          "axes": [
+            [
+              0.9956,
+              -0.0938,
+              0
+            ],
+            [
+              0.0938,
+              0.9956,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "left_bookend",
+        "name": "左圆角书挡",
+        "parent": "collection",
+        "transform": {
+          "pos": [
+            -0.2912,
+            0.1088,
+            0
+          ]
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ],
+        "_obb": {
+          "size": [
+            0.092,
+            0.237,
+            0.2
+          ],
+          "center": [
+            0.003,
+            0.006,
+            0
+          ],
+          "axes": [
+            [
+              0.9966,
+              0.0822,
+              0
+            ],
+            [
+              -0.0822,
+              0.9966,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "upright_books",
+        "name": "立放童书",
+        "parent": "collection",
+        "transform": {
+          "pos": [
+            -0.113,
+            0.1275,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.296,
+            0.296,
+            0.19
+          ],
+          "center": [
+            -0.001,
+            0.016,
+            0
+          ],
+          "axes": [
+            [
+              0.9995,
+              0.031,
+              0
+            ],
+            [
+              -0.031,
+              0.9995,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "book_stack",
+        "name": "横放童书",
+        "parent": "collection",
+        "transform": {
+          "pos": [
+            0.17,
+            0.075,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.22,
+            0.15,
+            0.18
+          ],
+          "center": [
+            0,
+            0,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "right_bookend",
+        "name": "右圆角书挡",
+        "parent": "collection",
+        "transform": {
+          "pos": [
+            0.2913,
+            0.1088,
+            0
+          ]
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ],
+        "_obb": {
+          "size": [
+            0.092,
+            0.237,
+            0.2
+          ],
+          "center": [
+            -0.003,
+            0.006,
+            0
+          ],
+          "axes": [
+            [
+              0.9966,
+              -0.0822,
+              0
+            ],
+            [
+              0.0822,
+              0.9966,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "left_bookend",
+        "transform": {
+          "pos": [
+            -0.0112,
+            -0.0188,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.045,
+            "height": 0.18,
+            "depth": 0.2
+          },
+          "color": 15770462
+        }
+      },
+      {
+        "id": "m1",
+        "parent": "left_bookend",
+        "transform": {
+          "pos": [
+            -0.0112,
+            0.0962,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.045,
+            "height": 0.05,
+            "depth": 0.16
+          },
+          "color": 15770462
+        }
+      },
+      {
+        "id": "m2",
+        "parent": "left_bookend",
+        "transform": {
+          "pos": [
+            0.0112,
+            -0.0962,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.09,
+            "height": 0.025,
+            "depth": 0.2
+          },
+          "color": 15770462
+        }
+      },
+      {
+        "id": "m3",
+        "parent": "upright_books",
+        "transform": {
+          "pos": [
+            -0.122,
+            0.0075,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.045,
+            "height": 0.27,
+            "depth": 0.17
+          },
+          "color": 15228277
+        }
+      },
+      {
+        "id": "m4",
+        "parent": "upright_books",
+        "transform": {
+          "pos": [
+            -0.074,
+            -0.0125,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.043,
+            "height": 0.23,
+            "depth": 0.18
+          },
+          "color": 4696280
+        }
+      },
+      {
+        "id": "m5",
+        "parent": "upright_books",
+        "transform": {
+          "pos": [
+            -0.026,
+            0.0175,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.047,
+            "height": 0.29,
+            "depth": 0.17
+          },
+          "color": 15911244
+        }
+      },
+      {
+        "id": "m6",
+        "parent": "upright_books",
+        "transform": {
+          "pos": [
+            0.024,
+            -0.0025,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.045,
+            "height": 0.25,
+            "depth": 0.19
+          },
+          "color": 6469743
+        }
+      },
+      {
+        "id": "m7",
+        "parent": "upright_books",
+        "transform": {
+          "pos": [
+            0.072,
+            0.0125,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.047,
+            "height": 0.28,
+            "depth": 0.18
+          },
+          "color": 10187471
+        }
+      },
+      {
+        "id": "m8",
+        "parent": "upright_books",
+        "transform": {
+          "pos": [
+            0.122,
+            -0.0175,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.045,
+            "height": 0.22,
+            "depth": 0.17
+          },
+          "color": 15895371
+        }
+      },
+      {
+        "id": "m9",
+        "parent": "book_stack",
+        "transform": {
+          "pos": [
+            0,
+            -0.05,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.22,
+            "height": 0.05,
+            "depth": 0.18
+          },
+          "color": 4163271
+        }
+      },
+      {
+        "id": "m10",
+        "parent": "book_stack",
+        "transform": {
+          "pos": [
+            0,
+            0.0025,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.19,
+            "height": 0.045,
+            "depth": 0.17
+          },
+          "color": 15756383
+        }
+      },
+      {
+        "id": "m11",
+        "parent": "book_stack",
+        "transform": {
+          "pos": [
+            0,
+            0.05,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.21,
+            "height": 0.05,
+            "depth": 0.16
+          },
+          "color": 7781734
+        }
+      },
+      {
+        "id": "m12",
+        "parent": "right_bookend",
+        "transform": {
+          "pos": [
+            0.0112,
+            -0.0188,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.045,
+            "height": 0.18,
+            "depth": 0.2
+          },
+          "color": 6666148
+        }
+      },
+      {
+        "id": "m13",
+        "parent": "right_bookend",
+        "transform": {
+          "pos": [
+            0.0112,
+            0.0962,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.045,
+            "height": 0.05,
+            "depth": 0.16
+          },
+          "color": 6666148
+        }
+      },
+      {
+        "id": "m14",
+        "parent": "right_bookend",
+        "transform": {
+          "pos": [
+            -0.0112,
+            -0.0962,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.09,
+            "height": 0.025,
+            "depth": 0.2
+          },
+          "color": 6666148
+        }
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1786871537448,
+        "provider": "gpt",
+        "data": "aui4gWlO3kQd6zRyyNFgmkFNR3K5NFYMgtjk4Rua++n2zQhLr+tFe6n8k4ZQC0olMtkS1Fqs1dODgKDlaPaWvp3TZ0c0sBygMl22wB1cE0w9ShBzXBg/1X6wwirpYBmrI1BHqweKp1RIWE+6m0HBJIYuYWauQMjaR1rkt4/BOcKfsH8+/IKWM4WVvx66Ne+kM4l9ZKJI/7rDF6o9WVRS/1Br9fK7d+mPzieK5cF59NcAIy6NzBEJGFMeyNN6jXFdmZJdrJxLuha7vYCdV4IODMTBFoCFOtlDNVlPtasEbkKP7uKOrvi8xsXcZ2RkyTkU9jAyIM7RnyIW50qsLpvBFUoZ9xI4VUwicPktcp2DqxmX08hPSjbhom893ZMuSi1ljfgg5wz1v3kjuXxhLcQ7co2ccUr1qETpZByX7dC1mqKv4hTlk8UjVcRpJCkff914M32ynqKQ/R4xP6qc4jy9wKyRIa1V4SHd/iOvxvk/MoDsdjcLNTmJblH9qJ/KjN+KIdinQWkc9pNcRVCOgx62MWn9g/QOdQb8hJEIccRVlqz9mK6XxmaKPiMPgEWsupuW6Qma36JVlrUGpYEjCzbO273e16k4MyK7DTCXiuVACLZ8F/ADYieTGYHwFuLfP3982Iywszcu/Pz7CmAqCax/fJs3OGseiWU0tp+50FNMWJvUxDddn0SUQS/uIzvoXw6ZszVRZu+CUZzSA0Dt48qe05dHDCLEiRMDGdaw5JUI5R3c7mAVlpdckijJrH15LSM1W7LLGqyn206Il8T6Z405Kx3NYSS9iqlVT19yI+m53/awLOsXBtZVfKUjFHQ34nXNy3vHJL5Vsl5vVafCZJlQLPMIZQUUUi944lOlZFdji0VqoU57W0Uxy4VfatIerxaSWoqyDZM/5Ii5kP3Z0uADc38vxlW3qXcH7+M+8lbJOlBDm/JmVNuxdpeDc41RoEa2iQ==",
+        "edits": ""
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -0.32505,
+          0,
+          -0.1
+        ],
+        "max": [
+          0.32505,
+          0.29000000000000004,
+          0.1
+        ],
+        "sourceNodeId": "asset-bounds"
+      }
+    ],
+    "sourceMeshCount": 15,
+    "candidateCount": 0,
+    "fallbackUsed": true
+  },
+  "footprintRadius": 0.32505,
+  "sizeClass": "small",
+  "mode": "voxel",
+  "provider": "gpt",
+  "createdAt": 1786871538919,
+  "updatedAt": 1786871538919
+}

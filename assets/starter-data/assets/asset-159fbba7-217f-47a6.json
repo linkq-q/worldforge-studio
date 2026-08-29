@@ -1,0 +1,360 @@
+{
+  "id": "asset-159fbba7-217f-47a6",
+  "name": "软垫阅读长凳",
+  "prompt": "A single reusable low children's reading bench with rounded wooden frame, padded seat and two shallow storage cubbies, approximately 1.25 meters wide, no books, toys, floor, room, or background",
+  "tags": [
+    "furniture",
+    "seat"
+  ],
+  "modelJson": {
+    "name": "儿童阅读收纳凳",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "bench",
+        "name": "阅读凳",
+        "transform": {
+          "pos": [
+            0,
+            0.298,
+            -0.0875
+          ]
+        },
+        "_obb": {
+          "size": [
+            1.27,
+            0.562,
+            0.526
+          ],
+          "center": [
+            0,
+            -0.024,
+            0.083
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              0.9584,
+              -0.2853
+            ],
+            [
+              0,
+              0.2853,
+              0.9584
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "bench",
+        "transform": {
+          "pos": [
+            0,
+            -0.218,
+            0.0875
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.25,
+            "height": 0.07,
+            "depth": 0.42
+          },
+          "color": 11104060
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ]
+      },
+      {
+        "id": "m1",
+        "parent": "bench",
+        "transform": {
+          "pos": [
+            0,
+            0.082,
+            0.0875
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.11,
+            "height": 0.06,
+            "depth": 0.4
+          },
+          "color": 12024645
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ]
+      },
+      {
+        "id": "m2",
+        "parent": "bench",
+        "transform": {
+          "pos": [
+            0,
+            -0.073,
+            -0.1025
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.11,
+            "height": 0.25,
+            "depth": 0.04
+          },
+          "color": 10117687
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ]
+      },
+      {
+        "id": "m3",
+        "parent": "bench",
+        "transform": {
+          "pos": [
+            -0.59,
+            -0.038,
+            0.0875
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.07,
+            "height": 0.36,
+            "depth": 0.42
+          },
+          "color": 11104060
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ]
+      },
+      {
+        "id": "m4",
+        "parent": "bench",
+        "transform": {
+          "pos": [
+            0.59,
+            -0.038,
+            0.0875
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.07,
+            "height": 0.36,
+            "depth": 0.42
+          },
+          "color": 11104060
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ]
+      },
+      {
+        "id": "m5",
+        "parent": "bench",
+        "transform": {
+          "pos": [
+            -0.59,
+            0.172,
+            0.0875
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.09,
+            "height": 0.06,
+            "depth": 0.36
+          },
+          "color": 12024645
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ]
+      },
+      {
+        "id": "m6",
+        "parent": "bench",
+        "transform": {
+          "pos": [
+            0.59,
+            0.172,
+            0.0875
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.09,
+            "height": 0.06,
+            "depth": 0.36
+          },
+          "color": 12024645
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ]
+      },
+      {
+        "id": "m7",
+        "parent": "bench",
+        "transform": {
+          "pos": [
+            0,
+            -0.073,
+            0.0875
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.055,
+            "height": 0.25,
+            "depth": 0.38
+          },
+          "color": 10117687
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ]
+      },
+      {
+        "id": "m8",
+        "parent": "bench",
+        "transform": {
+          "pos": [
+            0,
+            0.162,
+            0.0975
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.08,
+            "height": 0.1,
+            "depth": 0.38
+          },
+          "color": 6195624
+        }
+      },
+      {
+        "id": "m9",
+        "parent": "bench",
+        "transform": {
+          "pos": [
+            0,
+            0.218,
+            0.1025
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.96,
+            "height": 0.025,
+            "depth": 0.3
+          },
+          "color": 8366274
+        }
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1786874635613,
+        "provider": "gpt",
+        "data": "cU9uJXDyZeYW70dg+dAY1/mPq2UvEGDYNELFKDDdGTjcnMX8gIvhJZoHYpSzzWI8yi/UvnE+ShilupPj1SdERqSPaUJlTMl6flG6Ha7a9UAIn6sCKMyNG2ouGPvXGKCF01Q41kbal05jC3NabMTVZb6NwdIlIRe6d3kyVrA0eB9YuhAL9NFNYUdbAVgYaLw9bibFXr24IDzjS8pSSINo7IBFzbipYmxNCjgAYUPgEzMX53oohRb0p/8nxrxqNCJnInUWNhgMnwvkGOGlrE2smyl+NYcmYzGx4YER6DvSqj8hGvS0KCDYa1vY0shzLMekoRHiWpcmAHywphVjqTSRL1P2EFtC/DXW07qpFUr3hWIvsyFze1pwlOg5SVQj5H0G2mkBi5q6jjhavCXUikcBOw3NXfFTc4YTA1TmTkIf76yLlm69v9SP96uEDH15r9a6sNUKfZ5kfDskVuRTFq52C2GGu8pu78jwZuKb78b7Bru2VJiWvVB3bSixZvK0KDb12Ot3cVm5fcfaonBIPStjJnscTNk9nWCAH4AOgMw58zxgW+QdWEEqrkLk9RbLnBTluwMcJqC2Xorb0/DzsqXYKliGcnhGgUKAg2YPAcIojGLSXF/MIM+H9KVk2x28wlTI",
+        "edits": ""
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -0.635,
+          0,
+          -0.21
+        ],
+        "max": [
+          0.635,
+          0.4835,
+          0.21
+        ],
+        "sourceNodeId": "asset-bounds"
+      }
+    ],
+    "sourceMeshCount": 10,
+    "candidateCount": 1,
+    "fallbackUsed": true
+  },
+  "footprintRadius": 0.635,
+  "sizeClass": "small",
+  "mode": "voxel",
+  "provider": "gpt",
+  "libraryId": "library-d7967286-cebf-4f99",
+  "libraryMetadata": {
+    "tags": [
+      "childrensreadingbench",
+      "seating",
+      "storagebench",
+      "classroomfurniture"
+    ],
+    "applicableZones": [
+      "settlement"
+    ],
+    "repeatable": true,
+    "landmark": false,
+    "enabled": true,
+    "priority": 0.5,
+    "analysisStatus": "ready",
+    "rotation": "random"
+  },
+  "createdAt": 1787817456033,
+  "updatedAt": 1787817456033
+}

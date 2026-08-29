@@ -1,0 +1,368 @@
+{
+  "id": "asset-c547104c-74cb-47ac",
+  "name": "儿童床头柜",
+  "prompt": "A single reusable compact children's bedside cabinet with rounded corners, one drawer, one open shelf and short stable legs, approximately 0.55 meters tall, no lamp, books, floor, room, background, or extra objects",
+  "tags": [
+    "furniture",
+    "storage"
+  ],
+  "modelJson": {
+    "name": "儿童床头柜",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "cabinet",
+        "name": "柜体",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ],
+        "_obb": {
+          "size": [
+            0.46,
+            0.605,
+            0.418
+          ],
+          "center": [
+            0,
+            0.259,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              0.9978,
+              0.0655
+            ],
+            [
+              0,
+              -0.0655,
+              0.9978
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "drawer",
+        "name": "抽屉",
+        "parent": "cabinet",
+        "transform": {
+          "pos": [
+            0,
+            0.43,
+            0.18
+          ]
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ],
+        "_obb": {
+          "size": [
+            0.36,
+            0.115,
+            0.058
+          ],
+          "center": [
+            0,
+            0.015,
+            0.009
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "cabinet",
+        "transform": {
+          "pos": [
+            0,
+            0.5325,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.46,
+            "height": 0.035,
+            "depth": 0.38
+          },
+          "color": 14263919
+        }
+      },
+      {
+        "id": "m1",
+        "parent": "cabinet",
+        "transform": {
+          "pos": [
+            0,
+            0.205,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.42,
+            "height": 0.035,
+            "depth": 0.35
+          },
+          "color": 13209429
+        }
+      },
+      {
+        "id": "m2",
+        "parent": "cabinet",
+        "transform": {
+          "pos": [
+            -0.1925,
+            0.36,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.035,
+            "height": 0.31,
+            "depth": 0.35
+          },
+          "color": 13671009
+        }
+      },
+      {
+        "id": "m3",
+        "parent": "cabinet",
+        "transform": {
+          "pos": [
+            0.1925,
+            0.36,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.035,
+            "height": 0.31,
+            "depth": 0.35
+          },
+          "color": 13671009
+        }
+      },
+      {
+        "id": "m4",
+        "parent": "cabinet",
+        "transform": {
+          "pos": [
+            0,
+            0.36,
+            -0.1625
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.385,
+            "height": 0.29,
+            "depth": 0.025
+          },
+          "color": 12155203
+        }
+      },
+      {
+        "id": "m5",
+        "parent": "cabinet",
+        "transform": {
+          "pos": [
+            -0.16,
+            0.05,
+            -0.12
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.055,
+            "height": 0.1,
+            "depth": 0.055
+          },
+          "color": 11038527
+        }
+      },
+      {
+        "id": "m6",
+        "parent": "cabinet",
+        "transform": {
+          "pos": [
+            -0.16,
+            0.05,
+            0.12
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.055,
+            "height": 0.1,
+            "depth": 0.055
+          },
+          "color": 11038527
+        }
+      },
+      {
+        "id": "m7",
+        "parent": "cabinet",
+        "transform": {
+          "pos": [
+            0.16,
+            0.05,
+            -0.12
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.055,
+            "height": 0.1,
+            "depth": 0.055
+          },
+          "color": 11038527
+        }
+      },
+      {
+        "id": "m8",
+        "parent": "cabinet",
+        "transform": {
+          "pos": [
+            0.16,
+            0.05,
+            0.12
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.055,
+            "height": 0.1,
+            "depth": 0.055
+          },
+          "color": 11038527
+        }
+      },
+      {
+        "id": "m9",
+        "parent": "drawer",
+        "transform": {
+          "pos": [
+            0,
+            0.015,
+            -0.0025
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.36,
+            "height": 0.115,
+            "depth": 0.035
+          },
+          "color": 14724470
+        }
+      },
+      {
+        "id": "m10",
+        "parent": "drawer",
+        "transform": {
+          "pos": [
+            0,
+            0.015,
+            0.025
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.095,
+            "height": 0.025,
+            "depth": 0.025
+          },
+          "color": 7753781
+        }
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1786874611273,
+        "provider": "gpt",
+        "data": "kS3RKwUJyiMSgcgudfB0YmWsr+7pVDsHwmkv0gEofQHFzGDcbxmvrGianCXVj55QpLI4KwgqE4bFMfBBMEwhvjY1LaewH/vzflZ95vJ/N0NWWRmaNianVKJNaZOiauM0NlkDvpfK7u6ZkfM2Pf653F8X+R83AwLbH/b9EDv20XORPYRlrZR+laREeVncbx3SCvjRhHLC2cBb3Of3XT6oUaFEMrGzbGarTUJrEQUlvu+GrFS/f/3XC8sgrWCSNzfDoK2NncSWEfOiYk8+OzLorxgKRwpXQaBAqGvk69QDq4q7n719moDEt4AUh0wFiXzhv6qZNTqiojkCMkl1Ke7k7gwGt7jUXQuAAngj9z4fbTgrpBnVg+kjrPiL9pjixKRVUaS4D87GfIu8MUiwJPND4HtXjUSCEbqY93YPnxlQzIB65ltqY+lUINxrN7GQwPKvG4vpVmaZxIsfkK3gmKLFn80OZhIhdUPxTiflDoPHF8bjjjlONhdgrxqhl3qcDnhRajD2DCOpNMCvCEsaaMMEzuJNLC3HSLGT/6bpBQK6UqJHCiukAbXjEXkw1JfaJd17EfzrdGomOQZuMpcrxUgT/gvPGQ6S5JDKCrMqjDhG8qMHvdxepntT531aHaDgUz3go99dPSNwywyf8BdbHLN+jFZWSVzqgRx+tBYPVqUg0TaALUECW1PMVpZrwCWfmViDvfwMB8Csx+1rGawWq7iHvsAzrEPIouaI",
+        "edits": ""
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -0.23,
+          0,
+          -0.20375
+        ],
+        "max": [
+          0.23,
+          0.5499999999999999,
+          0.20375
+        ],
+        "sourceNodeId": "asset-bounds"
+      }
+    ],
+    "sourceMeshCount": 11,
+    "candidateCount": 0,
+    "fallbackUsed": true
+  },
+  "footprintRadius": 0.23,
+  "sizeClass": "small",
+  "mode": "voxel",
+  "provider": "gpt",
+  "createdAt": 1786874611554,
+  "updatedAt": 1786874611554
+}

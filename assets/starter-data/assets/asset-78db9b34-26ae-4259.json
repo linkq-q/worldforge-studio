@@ -1,0 +1,212 @@
+{
+  "id": "asset-78db9b34-26ae-4259",
+  "name": "平板电视",
+  "prompt": "A single reusable freestanding flat-screen television with a stable low tabletop base, approximately 1.25 meters wide, screen powered off with no emitted light, no wall, cabinet, floor, background, or extra electronics",
+  "tags": [
+    "electronics",
+    "prop"
+  ],
+  "modelJson": {
+    "name": "Freestanding Flat-Screen Television",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "television",
+        "name": "电视机",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            1.25,
+            1.084,
+            0.252
+          ],
+          "center": [
+            0,
+            0.538,
+            0.015
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              0.9996,
+              0.029
+            ],
+            [
+              0,
+              -0.029,
+              0.9996
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "television",
+        "transform": {
+          "pos": [
+            0,
+            0.72,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.25,
+            "height": 0.72,
+            "depth": 0.08
+          },
+          "color": 1579549
+        }
+      },
+      {
+        "id": "m1",
+        "parent": "television",
+        "transform": {
+          "pos": [
+            0,
+            0.73,
+            0.0525
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.17,
+            "height": 0.64,
+            "depth": 0.025
+          },
+          "color": 329223
+        }
+      },
+      {
+        "id": "m2",
+        "parent": "television",
+        "transform": {
+          "pos": [
+            0,
+            0.235,
+            -0.005
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.05,
+            "height": 0.25,
+            "depth": 0.08
+          },
+          "color": 3422269
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m3",
+        "parent": "television",
+        "transform": {
+          "pos": [
+            0,
+            0.03,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.58,
+            "height": 0.06,
+            "depth": 0.25
+          },
+          "color": 3422269
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m4",
+        "parent": "television",
+        "transform": {
+          "pos": [
+            0,
+            0.0725,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.42,
+            "height": 0.025,
+            "depth": 0.17
+          },
+          "color": 2435373
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1786871479636,
+        "provider": "gpt",
+        "data": "AnrJxU4P2xiUhihSmn4LS17XuRiUUerkjygVucoKftK7YuzlK+mgkeNLJF6SlHNDRqJiB4bGI+go1upH+iqqSNX1UY/zGGdTIlNfNCKxP6zaa+afbky/lndmE9vX5wMcoFXLIWvxZg8CVNrH0tYgyxLPAsHUTKtfYxYrVUafi0DM6wPQrRTFT9gIyHd5tMvlniH8OODplIEDXEhykwJ8C37KP3IHoK2tXMaelLWIULaDbVQTTC+LqwgvN0UdYcguGf5XYevWWgjbFXv7pHEe1AosPDlrwLRFoWSiX9fBED1GbfO7LwCi3a9ZJ9U+x3qKx64r5f6IstHZ2FewOgSUe4qVIpOc9vSaBhkvWxejCAUqhkvYwDrtwJM0+BdHnQq/z8UMkR5Wt3vU3tHesthlDyzG0kcHMkpEgZftx/KzGTIGEkWtxd/AIdtajTFL9dwW0NZN1x1BjaEpbfArhPQyP1xm4cNNhkyhZEjwWwX92Zx9jRpOyMTn8EWw/OBwDr7Xalb8jz6oasMDB/jfJnHSMmZ2IxEQaRDJ2AHo73/KRmgNW4JB94nIJCzP5g==",
+        "edits": ""
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -0.625,
+          0,
+          -0.125
+        ],
+        "max": [
+          0.625,
+          1.08,
+          0.125
+        ],
+        "sourceNodeId": "asset-bounds"
+      }
+    ],
+    "sourceMeshCount": 5,
+    "candidateCount": 0,
+    "fallbackUsed": true
+  },
+  "footprintRadius": 0.625,
+  "sizeClass": "small",
+  "mode": "voxel",
+  "provider": "gpt",
+  "createdAt": 1786871480575,
+  "updatedAt": 1786871480575
+}

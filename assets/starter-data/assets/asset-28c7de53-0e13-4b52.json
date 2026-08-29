@@ -1,0 +1,640 @@
+{
+  "id": "asset-28c7de53-0e13-4b52",
+  "name": "打开的科普图书",
+  "prompt": "A single reusable open children's science book with clearly different page layouts showing simple planets, animals and diagrams without legible text, approximately 0.42 meters wide when open, no hands, other books, floor, room, or background",
+  "tags": [
+    "book",
+    "prop"
+  ],
+  "modelJson": {
+    "name": "儿童科学图画书",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "book",
+        "name": "打开的科学书",
+        "transform": {
+          "pos": [
+            0,
+            0.03,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.494,
+            0.074,
+            0.365
+          ],
+          "center": [
+            -0.028,
+            0.016,
+            -0.002
+          ],
+          "axes": [
+            [
+              0.9995,
+              -0.0135,
+              -0.0282
+            ],
+            [
+              0.0133,
+              0.9999,
+              -0.0081
+            ],
+            [
+              0.0283,
+              0.0078,
+              0.9996
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "left_page",
+        "name": "动物页面",
+        "parent": "book",
+        "transform": {
+          "pos": [
+            -0.005,
+            0.015,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.256,
+            0.042,
+            0.31
+          ],
+          "center": [
+            -0.106,
+            0.008,
+            0
+          ],
+          "axes": [
+            [
+              0.9731,
+              0.0521,
+              0.2244
+            ],
+            [
+              -0.0514,
+              0.9986,
+              -0.0088
+            ],
+            [
+              -0.2245,
+              -0.0029,
+              0.9745
+            ]
+          ],
+          "_mainAxis": 2
+        }
+      },
+      {
+        "id": "right_page",
+        "name": "行星与图解页面",
+        "parent": "book",
+        "transform": {
+          "pos": [
+            0.005,
+            0.015,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.208,
+            0.037,
+            0.276
+          ],
+          "center": [
+            0.106,
+            0.006,
+            0
+          ],
+          "axes": [
+            [
+              0.9954,
+              -0.0904,
+              -0.0313
+            ],
+            [
+              0.0899,
+              0.9958,
+              -0.0158
+            ],
+            [
+              0.0326,
+              0.0129,
+              0.9994
+            ]
+          ],
+          "_mainAxis": 2
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "book",
+        "transform": {
+          "pos": [
+            -0.11,
+            0,
+            0
+          ],
+          "quat": [
+            0.03,
+            -0.71,
+            0.03,
+            0.71
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.29,
+            "height": 0.012,
+            "depth": 0.21
+          },
+          "color": 2652328
+        }
+      },
+      {
+        "id": "m1",
+        "parent": "book",
+        "transform": {
+          "pos": [
+            0.11,
+            0,
+            0
+          ],
+          "quat": [
+            0,
+            0,
+            -0.05,
+            1
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.21,
+            "height": 0.012,
+            "depth": 0.29
+          },
+          "color": 2652328
+        }
+      },
+      {
+        "id": "m2",
+        "parent": "left_page",
+        "transform": {
+          "pos": [
+            -0.105,
+            -0.005,
+            0
+          ],
+          "quat": [
+            0.03,
+            -0.71,
+            0.03,
+            0.71
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.27,
+            "height": 0.008,
+            "depth": 0.2
+          },
+          "color": 16774351
+        }
+      },
+      {
+        "id": "m3",
+        "parent": "left_page",
+        "transform": {
+          "pos": [
+            -0.107,
+            0.014,
+            -0.055
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.065,
+            "height": 0.008,
+            "depth": 0.052
+          },
+          "color": 15771211
+        }
+      },
+      {
+        "id": "m4",
+        "parent": "left_page",
+        "transform": {
+          "pos": [
+            -0.107,
+            0.02,
+            -0.012
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.042,
+            "height": 0.012,
+            "depth": 0.038
+          },
+          "color": 16170338
+        }
+      },
+      {
+        "id": "m5",
+        "parent": "left_page",
+        "transform": {
+          "pos": [
+            -0.132,
+            0.021,
+            0.012
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.014,
+            "height": 0.012,
+            "depth": 0.018
+          },
+          "color": 8080685
+        }
+      },
+      {
+        "id": "m6",
+        "parent": "left_page",
+        "transform": {
+          "pos": [
+            -0.082,
+            0.021,
+            0.012
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.014,
+            "height": 0.012,
+            "depth": 0.018
+          },
+          "color": 8080685
+        }
+      },
+      {
+        "id": "m7",
+        "parent": "left_page",
+        "transform": {
+          "pos": [
+            -0.14,
+            0.01,
+            0.075
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.055,
+            "height": 0.008,
+            "depth": 0.042
+          },
+          "color": 6465899
+        }
+      },
+      {
+        "id": "m8",
+        "parent": "left_page",
+        "transform": {
+          "pos": [
+            -0.1,
+            0.016,
+            0.075
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.034,
+            "height": 0.012,
+            "depth": 0.034
+          },
+          "color": 8635517
+        }
+      },
+      {
+        "id": "m9",
+        "parent": "left_page",
+        "transform": {
+          "pos": [
+            -0.169,
+            0.016,
+            0.075
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.012,
+            "height": 0.014,
+            "depth": 0.058
+          },
+          "color": 5014870
+        }
+      },
+      {
+        "id": "m10",
+        "parent": "right_page",
+        "transform": {
+          "pos": [
+            0.105,
+            -0.005,
+            0
+          ],
+          "quat": [
+            0,
+            0,
+            -0.05,
+            1
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.2,
+            "height": 0.008,
+            "depth": 0.27
+          },
+          "color": 16775388
+        }
+      },
+      {
+        "id": "m11",
+        "parent": "right_page",
+        "transform": {
+          "pos": [
+            0.07,
+            0.012,
+            -0.065
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.055,
+            "height": 0.012,
+            "depth": 0.055
+          },
+          "color": 5208273
+        }
+      },
+      {
+        "id": "m12",
+        "parent": "right_page",
+        "transform": {
+          "pos": [
+            0.07,
+            0.02,
+            -0.065
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.085,
+            "height": 0.006,
+            "depth": 0.014
+          },
+          "color": 15910987
+        }
+      },
+      {
+        "id": "m13",
+        "parent": "right_page",
+        "transform": {
+          "pos": [
+            0.15,
+            0.004,
+            -0.035
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.032,
+            "height": 0.014,
+            "depth": 0.032
+          },
+          "color": 14244677
+        }
+      },
+      {
+        "id": "m14",
+        "parent": "right_page",
+        "transform": {
+          "pos": [
+            0.12,
+            0.008,
+            0.025
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.022,
+            "height": 0.014,
+            "depth": 0.022
+          },
+          "color": 7517656
+        }
+      },
+      {
+        "id": "m15",
+        "parent": "right_page",
+        "transform": {
+          "pos": [
+            0.07,
+            0.013,
+            0.075
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.012,
+            "height": 0.01,
+            "depth": 0.09
+          },
+          "color": 6845053
+        }
+      },
+      {
+        "id": "m16",
+        "parent": "right_page",
+        "transform": {
+          "pos": [
+            0.112,
+            0.009,
+            0.075
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.085,
+            "height": 0.01,
+            "depth": 0.012
+          },
+          "color": 6845053
+        }
+      },
+      {
+        "id": "m17",
+        "parent": "right_page",
+        "transform": {
+          "pos": [
+            0.07,
+            0.019,
+            0.03
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.024,
+            "height": 0.012,
+            "depth": 0.024
+          },
+          "color": 9135544
+        }
+      },
+      {
+        "id": "m18",
+        "parent": "right_page",
+        "transform": {
+          "pos": [
+            0.07,
+            0.019,
+            0.12
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.024,
+            "height": 0.012,
+            "depth": 0.024
+          },
+          "color": 14714691
+        }
+      },
+      {
+        "id": "m19",
+        "parent": "right_page",
+        "transform": {
+          "pos": [
+            0.155,
+            0.013,
+            0.075
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.024,
+            "height": 0.012,
+            "depth": 0.024
+          },
+          "color": 5875829
+        }
+      },
+      {
+        "id": "m20",
+        "parent": "book",
+        "transform": {
+          "pos": [
+            0,
+            -0.003,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.018,
+            "height": 0.025,
+            "depth": 0.286
+          },
+          "color": 1857656
+        }
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1786874840745,
+        "provider": "gpt",
+        "data": "oAiAM4sLJe/VS7v4q4yV9xI/K6pBY7qkEQj2f2UxFDdLpqAS4pGEQ1nMBo+PGZ16zm5tiuX7ZAuL/B0gWflDlNSRUycv9H2HUhf5M5IUkFrAUv5xDzoXK5kyQhS62hMx/Xn+J2AuaywZGWH2BAmNz9tM9EPtLjtY30WU2u4MgvY6cIuUEE+TSxOWVqq2Rhp/soJF2Gw32y6sV2UKEtuONUJhlcUjrGdVn3OBtsInLwdAQqX2dpshjkQRUH4eqIU243fm7QQAVm1rW3aUVDT6xr6xqgsB4zcKFNShEuY/bj0F5J5QV/d+cjmotb8XDzKFNPiE3BRWQyZwrhEq47PuN4fAhoJ3OJAFTpC/UafZvk/YHb2MhBZr7d7JJ/d/THr9ZDqqwJu8ttLgwdP3nA4DjcT2ubiU2svb8kmBnz6bIlVtVdGIt2D+wEDRj1Q2G1hI1cthPEhhhavYf0w5WPuKYo24DiMjsvmdcEo6ahNaDMz3dsMJ2GlZLOi8t6Ta2nK5T0+aBe8CWxsytovfVZ+q2HQrNYv/InV1LuhnnmCuw9kAODCSccBggWIvzdCcgmBYmZsEYLHfTSLjrcC+xepCV1I3q4SJBrbCN1lKMAtXJtbrupJ2GghJJj6qh9yT8sITJQUkK5QpP05sYM1qySmVqSE0uNs7A/cWfh/W35vBcrSePvQ9eOzKKR2QSrlRKOjQwYm4xp3pm9Z/YopV7VrTgJFvlnoxNzFyrxUmmQRhLeQBeW2JGtkBuA5lGZ+sWLPQmYX5Bng97kfa1UmZ31JwkWMY1wVIVTOoWesOV0GzNAAb0SqP8fnFDntHzZwnZDRvJ+xy4dwisTGBNaMGVBXbVpYMo68ZrFa59PDHQC2uKMKA9dbtMSN9Qs39NDdqv3a6nwZvikrHwFA3XGWpM6RJNvcyw+Y37hxhj8oixSGY34OdV7ak5JpoH5zAJGN1k0g8oX/p2xEVKzrNCaroDyZVkitfsIIZ3kXz3tKX1pjl2aadDS9i0rGbqkVhEn+ierugxZSVLvWiUfw4lzD7ZuYKAj8+fEPt1bm0ja0WKWsAwJ96/7hhKQa6YZxG7D3INKW9GbHFc+yCRWj1KqRCp8S3zLbn+8Ie",
+        "edits": ""
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -0.21510334707784995,
+          0,
+          -0.14500000000000005
+        ],
+        "max": [
+          0.21510334707784995,
+          0.05844389027431422,
+          0.14500000000000005
+        ],
+        "sourceNodeId": "asset-bounds"
+      }
+    ],
+    "sourceMeshCount": 21,
+    "candidateCount": 1,
+    "fallbackUsed": true
+  },
+  "footprintRadius": 0.21510334707784995,
+  "sizeClass": "small",
+  "mode": "voxel",
+  "provider": "gpt",
+  "libraryId": "library-d7967286-cebf-4f99",
+  "libraryMetadata": {
+    "tags": [
+      "openbook",
+      "sciencebook",
+      "childrensbook",
+      "educationalprop"
+    ],
+    "applicableZones": [
+      "settlement"
+    ],
+    "repeatable": true,
+    "landmark": false,
+    "enabled": true,
+    "priority": 0.5,
+    "analysisStatus": "ready",
+    "rotation": "random"
+  },
+  "createdAt": 1787817321332,
+  "updatedAt": 1787817321332
+}

@@ -1,0 +1,702 @@
+{
+  "id": "asset-f6fc8928-6315-4a88",
+  "name": "玩具摩托车",
+  "prompt": "玩具摩托车",
+  "modelJson": {
+    "name": "玩具摩托车",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "body",
+        "name": "车身",
+        "transform": {
+          "pos": [
+            0,
+            0.9,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            1.149,
+            1.824,
+            3.343
+          ],
+          "center": [
+            0.051,
+            -0.062,
+            0.08
+          ],
+          "axes": [
+            [
+              0.9965,
+              0.0794,
+              0.026
+            ],
+            [
+              -0.0769,
+              0.9935,
+              -0.0842
+            ],
+            [
+              -0.0325,
+              0.0819,
+              0.9961
+            ]
+          ],
+          "_mainAxis": 2
+        }
+      },
+      {
+        "id": "rearWheel",
+        "name": "后轮",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0,
+            -0.32,
+            -1.02
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.38,
+            1.02,
+            1.02
+          ],
+          "center": [
+            0,
+            0,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "frontWheel",
+        "name": "前轮",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0,
+            -0.32,
+            1.22
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.38,
+            1.02,
+            1.02
+          ],
+          "center": [
+            0,
+            0,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "steering",
+        "name": "转向组件",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0,
+            0.38,
+            0.82
+          ]
+        },
+        "_obb": {
+          "size": [
+            1.05,
+            1.131,
+            0.537
+          ],
+          "center": [
+            0,
+            -0.108,
+            0.181
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              0.9426,
+              -0.3339
+            ],
+            [
+              0,
+              0.3339,
+              0.9426
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "mount01_exhaust",
+        "name": "排气管",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0.35,
+            -0.22,
+            -0.2
+          ]
+        },
+        "mounted": true,
+        "_obb": {
+          "size": [
+            0.18,
+            0.158,
+            1.068
+          ],
+          "center": [
+            0.09,
+            -0.05,
+            -0.17
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              0.9707,
+              -0.2402
+            ],
+            [
+              0,
+              0.2402,
+              0.9707
+            ]
+          ],
+          "_mainAxis": 2
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0,
+            0.02,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.62,
+            "height": 0.28,
+            "depth": 1.65
+          },
+          "color": 14233391
+        }
+      },
+      {
+        "id": "m1",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0,
+            0.3,
+            0.18
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.68,
+            "height": 0.48,
+            "depth": 0.72
+          },
+          "color": 14957362
+        }
+      },
+      {
+        "id": "m2",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0,
+            0.46,
+            -0.55
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.58,
+            "height": 0.18,
+            "depth": 0.82
+          },
+          "color": 2369323
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "fabric"
+          }
+        ]
+      },
+      {
+        "id": "m3",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0,
+            -0.18,
+            0.02
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.58,
+            "height": 0.48,
+            "depth": 0.56
+          },
+          "color": 7830400
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m4",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0,
+            -0.47,
+            -0.58
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.76,
+            "height": 0.12,
+            "depth": 0.42
+          },
+          "color": 5593438
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m5",
+        "parent": "rearWheel",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.3,
+            "height": 1.02,
+            "depth": 1.02
+          },
+          "color": 1513756
+        }
+      },
+      {
+        "id": "m6",
+        "parent": "rearWheel",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.38,
+            "height": 0.28,
+            "depth": 0.28
+          },
+          "color": 11449530
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m7",
+        "parent": "frontWheel",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.3,
+            "height": 1.02,
+            "depth": 1.02
+          },
+          "color": 1513756
+        }
+      },
+      {
+        "id": "m8",
+        "parent": "frontWheel",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.38,
+            "height": 0.28,
+            "depth": 0.28
+          },
+          "color": 11449530
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m9",
+        "parent": "steering",
+        "transform": {
+          "pos": [
+            0,
+            -0.28,
+            0.13
+          ],
+          "quat": [
+            0.47,
+            0,
+            0,
+            0.88
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.5,
+            "height": 0.12,
+            "depth": 0.84
+          },
+          "color": 9147033
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m10",
+        "parent": "steering",
+        "transform": {
+          "pos": [
+            0,
+            0.35,
+            0.01
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.05,
+            "height": 0.12,
+            "depth": 0.12
+          },
+          "color": 5593953
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m11",
+        "parent": "steering",
+        "transform": {
+          "pos": [
+            0,
+            0.2,
+            0.2
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.22,
+            "height": 0.18,
+            "depth": 0.25
+          },
+          "color": 16770954
+        },
+        "tags": [
+          {
+            "tag": "emissive",
+            "value": 0.75
+          }
+        ]
+      },
+      {
+        "id": "m12",
+        "parent": "mount01_exhaust",
+        "transform": {
+          "pos": [
+            0.09,
+            -0.05,
+            -0.17
+          ],
+          "quat": [
+            0.99,
+            0,
+            0,
+            0.12
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.18,
+            "height": 0.16,
+            "depth": 1.08
+          },
+          "color": 9607325
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1787825628820,
+        "provider": "glm",
+        "data": "RyBnN9DNGKJjMBloXpA4ZTz4Y/b19Et9O3wkv/8+8XuUES/TDPiNk+GcbNqHaoKH4RYKLg0js1ZIHW2HDizyDb5yb4uyIwZDlqTRcer4d9b68NS4kaiDdPRqy304a0vjGUfp3dXuGh13kXby7NGZaQdthkpYkw5TSnpSsDoFD5jJa+T0/8oIKRpqZ4GrXMsLnJYKhwN20oQY9W8yG57fA/zaLQH03/KDsMKVWtQXJ+W0t7K8+YH40t+fqSrLFc3RWtFMxbKXZc6d6azOHYcwS7N1fqPj5LGRzuuzGRk8VfdQnYcUFOZv+sMpzeSGANQ2NcAWyCyhNlwWT+Z+2f8xy5V8N5/sgsUlbhrfrLv7Z82KrEpxacobcroNA9lJclgTQ3SYv5jXAU7Af+5hGWpJg93FEINJNyBTEIwMsnMSowCxIfOUJIScJTPH2hNMSMbLLxLmgm99kAr3XnzKdmvqJvk4Ktb37ygOEqE355U3Wa4mKkSvggsHxQHMI3erAZk+ELVMyJFiWgoxlpgQAXC0XsHwFJMvu/zdtThveVvFFCR4wExCS+besgf5NFO0qRUzkNUhD1sUarytGNuoehDPWRENn3j5lJ82NyYc1u4+x8ICl7Zv+rs+u+tX2HOpZN6MPpbWDF2S3CYhchEUia1MnKPzk9zXV801TLav5txXqr7qKgtXqyf+Uru/CjzMy/IqoOsYAozRRb5VcedNJUQj5Jdcmd8W8qCVYvmeUfg3Pv8fsUzzCM+xjQA/n9pQvm9G5bfG7QBM6R8dT69PxyJFjT5Rv5sugVWrPRtEyD0oJVMKa2+IJMrppZQ/c41ds3pu80mbXzQxgzo5txEwOvvlf3x4P429gnkmRN5o2qMeuz6eaCCcmuFOSny+B6tUnodYYGHNviSyVW6LWzN8xz8P0E2EGWow85HlWF0LOv/jOdBRw5tpjplOlC6i20esY6AfPqBaFAmxMGiChNzYuMYS3B/DPAGYWepgkS/wSDTZ/4u87lw1eSepwHAPZ32d/ypXo6BXBA==",
+        "edits": ""
+      },
+      "mounts": [
+        {
+          "id": "mount01_exhaust",
+          "mountedGroupId": "mount01_exhaust",
+          "name": "排气管",
+          "source": {
+            "type": "codegen"
+          },
+          "description": "",
+          "visible": true,
+          "ts": 1787825628821
+        }
+      ],
+      "semanticSnapshot": {
+        "v": 1,
+        "auto": true,
+        "text": "玩具摩托车 · 5组/13mesh · 世界坐标(Y上Z前), 原点=模型根\n# 阅读说明: G:=group行(可动画骨骼, 动画key用G:后的id; @p=pivot世界坐标; 倾(x,y,z)°=朝向偏离世界轴的欧拉角; 缩进=父子层级; 挂:=挂载于某组; G:id→id→…=chain折叠行, 每个id都是可独立动画的group, chain×N=waypoint数)\n# M:=mesh行(label[id 几何 @(世界坐标)], label可省略; ×N=for循环批量件(锚点=代表实例); cyl (起)→(末)或 轴上(Y)等方位词=延伸方向; 薄向=板面法向(扁板); 挂载组双代表=最大件+最远有向件(刃/嘴/管所在端); 无方向标注=均匀块(三向相近,如头),默认面向前(Z); 对称×2=镜像对)\nG:body 车身 @p(0,0.9,0)\n  M:[m0 box 0.62×0.28×1.7 (0,0.9,0) 轴前(Z)]\n  G:rearWheel 后轮 @p(0,0.6,-1)\n    M:[m5 box 0.3×1×1 (0,0.6,-1) 薄向右(X)]\n  G:frontWheel 前轮 @p(0,0.6,1.2)\n    M:[m7 box 0.3×1×1 (0,0.6,1.2) 薄向右(X)]\n  G:steering 转向组件 @p(0,1.3,0.8)\n    M:[m9 box 0.5×0.12×0.84 (0,1,1) 轴(0,0.7,1.2)→(0,1.3,0.7)]\n  G:mount01_exhaust 排气管 @p(0.4,0.7,-0.2) 挂:body\n    M:[m12 box 0.18×0.16×1.1 (0.4,0.6,-0.4) 轴后(Z)]",
+        "stats": {
+          "groups": 5,
+          "meshes": 13,
+          "labeledMeshes": 0,
+          "labelCoverage": 0,
+          "batchLabels": 0,
+          "autoChains": 0,
+          "snapshotChars": 768
+        }
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -0.15249999999999994,
+          0,
+          -1.63
+        ],
+        "max": [
+          0.14750000000000005,
+          1.02,
+          -0.61
+        ],
+        "sourceNodeId": "m5"
+      },
+      {
+        "min": [
+          -0.15249999999999994,
+          0,
+          0.61
+        ],
+        "max": [
+          0.14750000000000005,
+          1.02,
+          1.63
+        ],
+        "sourceNodeId": "m7"
+      },
+      {
+        "min": [
+          -0.31249999999999994,
+          0.71,
+          -0.9249999999999999
+        ],
+        "max": [
+          0.30750000000000005,
+          0.99,
+          0.725
+        ],
+        "sourceNodeId": "m0"
+      },
+      {
+        "min": [
+          -0.34249999999999997,
+          0.8899999999999999,
+          -0.27999999999999997
+        ],
+        "max": [
+          0.3375000000000001,
+          1.3699999999999999,
+          0.44000000000000006
+        ],
+        "sourceNodeId": "m1"
+      },
+      {
+        "min": [
+          -0.25249999999999995,
+          0.5475685722897619,
+          0.5665658595398372
+        ],
+        "max": [
+          0.24750000000000005,
+          1.312431427710238,
+          1.1334341404601629
+        ],
+        "sourceNodeId": "m9"
+      },
+      {
+        "min": [
+          -0.2924999999999999,
+          0.4099999999999999,
+          -0.36
+        ],
+        "max": [
+          0.28750000000000003,
+          0.8899999999999999,
+          0.20000000000000007
+        ],
+        "sourceNodeId": "m3"
+      },
+      {
+        "min": [
+          -0.2924999999999999,
+          1.2,
+          -1.06
+        ],
+        "max": [
+          0.28750000000000003,
+          1.3800000000000001,
+          -0.24000000000000005
+        ],
+        "sourceNodeId": "m2"
+      },
+      {
+        "min": [
+          0.34750000000000003,
+          0.3533031674208144,
+          -1.0134751131221722
+        ],
+        "max": [
+          0.5275,
+          0.7666968325791854,
+          0.07347511312217214
+        ],
+        "sourceNodeId": "m12"
+      }
+    ],
+    "sourceMeshCount": 13,
+    "candidateCount": 8,
+    "fallbackUsed": false
+  },
+  "footprintRadius": 1.63,
+  "sizeClass": "medium",
+  "mode": "voxel",
+  "createdAt": 1787825627585,
+  "updatedAt": 1787825627585
+}

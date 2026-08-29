@@ -1,0 +1,688 @@
+{
+  "id": "asset-3f850c03-511b-40d6",
+  "name": "玩具机器人",
+  "prompt": "A single reusable chunky toy robot with articulated-looking arms, sturdy feet and large friendly face details, approximately 0.45 meters tall, no active illumination, floor, background, or extra objects",
+  "tags": [
+    "toy",
+    "prop"
+  ],
+  "modelJson": {
+    "name": "友好积木机器人",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "body",
+        "name": "躯干",
+        "transform": {
+          "pos": [
+            0,
+            0.18,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.34,
+            0.501,
+            0.238
+          ],
+          "center": [
+            0,
+            0.047,
+            0.012
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              0.9933,
+              0.1159
+            ],
+            [
+              0,
+              -0.1159,
+              0.9933
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "head",
+        "name": "头部",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0,
+            0.15,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.19,
+            0.138,
+            0.164
+          ],
+          "center": [
+            0,
+            0.061,
+            0.009
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              0.989,
+              -0.1482
+            ],
+            [
+              0,
+              0.1482,
+              0.989
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "left_arm",
+        "name": "左臂",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            -0.105,
+            0.125,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.07,
+            0.178,
+            0.075
+          ],
+          "center": [
+            -0.03,
+            -0.076,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "right_arm",
+        "name": "右臂",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0.105,
+            0.125,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.07,
+            0.178,
+            0.075
+          ],
+          "center": [
+            0.03,
+            -0.076,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "left_leg",
+        "name": "左腿",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            -0.05,
+            -0.01,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.085,
+            0.187,
+            0.146
+          ],
+          "center": [
+            0,
+            -0.085,
+            0.018
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              0.9858,
+              -0.1682
+            ],
+            [
+              0,
+              0.1682,
+              0.9858
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "left_foot",
+        "name": "左脚",
+        "parent": "left_leg",
+        "transform": {
+          "pos": [
+            0,
+            -0.105,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.085,
+            0.06,
+            0.12
+          ],
+          "center": [
+            0,
+            -0.035,
+            0.018
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 2
+        }
+      },
+      {
+        "id": "right_leg",
+        "name": "右腿",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0.05,
+            -0.01,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.085,
+            0.187,
+            0.146
+          ],
+          "center": [
+            0,
+            -0.085,
+            0.018
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              0.9858,
+              -0.1682
+            ],
+            [
+              0,
+              0.1682,
+              0.9858
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "right_foot",
+        "name": "右脚",
+        "parent": "right_leg",
+        "transform": {
+          "pos": [
+            0,
+            -0.105,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.085,
+            0.06,
+            0.12
+          ],
+          "center": [
+            0,
+            -0.035,
+            0.018
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 2
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0,
+            0.065,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.18,
+            "height": 0.17,
+            "depth": 0.11
+          },
+          "color": 4161471
+        }
+      },
+      {
+        "id": "m1",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0,
+            0.075,
+            0.061
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.1,
+            "height": 0.035,
+            "depth": 0.012
+          },
+          "color": 15774761
+        }
+      },
+      {
+        "id": "m2",
+        "parent": "head",
+        "transform": {
+          "pos": [
+            0,
+            0.06,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.19,
+            "height": 0.12,
+            "depth": 0.13
+          },
+          "color": 7909088
+        }
+      },
+      {
+        "id": "m3",
+        "parent": "head",
+        "transform": {
+          "pos": [
+            0,
+            0.067,
+            0.071
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.135,
+            "height": 0.068,
+            "depth": 0.012
+          },
+          "color": 15265522
+        }
+      },
+      {
+        "id": "m4",
+        "parent": "head",
+        "transform": {
+          "pos": [
+            -0.043,
+            0.08,
+            0.08
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.032,
+            "height": 0.032,
+            "depth": 0.012
+          },
+          "color": 2373446
+        }
+      },
+      {
+        "id": "m5",
+        "parent": "head",
+        "transform": {
+          "pos": [
+            0.043,
+            0.08,
+            0.08
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.032,
+            "height": 0.032,
+            "depth": 0.012
+          },
+          "color": 2373446
+        }
+      },
+      {
+        "id": "m6",
+        "parent": "head",
+        "transform": {
+          "pos": [
+            0,
+            0.042,
+            0.08
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.07,
+            "height": 0.012,
+            "depth": 0.012
+          },
+          "color": 4161471
+        }
+      },
+      {
+        "id": "m7",
+        "parent": "left_arm",
+        "transform": {
+          "pos": [
+            -0.03,
+            -0.055,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.055,
+            "height": 0.135,
+            "depth": 0.065
+          },
+          "color": 15774761
+        }
+      },
+      {
+        "id": "m8",
+        "parent": "left_arm",
+        "transform": {
+          "pos": [
+            -0.03,
+            -0.14,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.07,
+            "height": 0.05,
+            "depth": 0.075
+          },
+          "color": 7909088
+        }
+      },
+      {
+        "id": "m9",
+        "parent": "right_arm",
+        "transform": {
+          "pos": [
+            0.03,
+            -0.055,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.055,
+            "height": 0.135,
+            "depth": 0.065
+          },
+          "color": 15774761
+        }
+      },
+      {
+        "id": "m10",
+        "parent": "right_arm",
+        "transform": {
+          "pos": [
+            0.03,
+            -0.14,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.07,
+            "height": 0.05,
+            "depth": 0.075
+          },
+          "color": 7909088
+        }
+      },
+      {
+        "id": "m11",
+        "parent": "left_leg",
+        "transform": {
+          "pos": [
+            0,
+            -0.055,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.065,
+            "height": 0.11,
+            "depth": 0.075
+          },
+          "color": 5069155
+        }
+      },
+      {
+        "id": "m12",
+        "parent": "left_foot",
+        "transform": {
+          "pos": [
+            0,
+            -0.035,
+            0.018
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.085,
+            "height": 0.06,
+            "depth": 0.12
+          },
+          "color": 3095365
+        }
+      },
+      {
+        "id": "m13",
+        "parent": "right_leg",
+        "transform": {
+          "pos": [
+            0,
+            -0.055,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.065,
+            "height": 0.11,
+            "depth": 0.075
+          },
+          "color": 5069155
+        }
+      },
+      {
+        "id": "m14",
+        "parent": "right_foot",
+        "transform": {
+          "pos": [
+            0,
+            -0.035,
+            0.018
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.085,
+            "height": 0.06,
+            "depth": 0.12
+          },
+          "color": 3095365
+        }
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1786871452419,
+        "provider": "gpt",
+        "data": "XIGM0zDnLkhPTWwxIlWB30u2ivX5vd40hqg139TEWjR08azNZ6BiYi6H/MYTzowXVjVgc8uPrOA/hQUrVOhYac/Y8l1uKlGxd/9iLaetscRynKqq5SorYsLXHq+Emk925JIe5OlImp8L19NoAo59ouKBRrbVUX2phDi0rnmvX039cC12kFSrcA+MaBBNI+cfPBSR2+Qky0xYCxzsqj4eMbhxvkdEeRaNFPm2jOy2/rldqAC/K+XtYUoU/xVScU+p3OCTkF52mQfihnVvOj/HtC46+WQtMomD3x6TMCB3mwLWDKT1B8hJF1E7+e+3OhkRIk9eWiu51izNicHw+FCLj/dA2ulWRWHmoYSx76oLWMIl3ylyA18WfqsTTltPuS3StjxK7cZWNFY7nIGdeM8izkrF+DnzfpIuS8dM9NDqHymT9d0OOFNKRzKwQvzF8+76iCqWW28YIm2EM0mMdhOhv+QC6VFam3/58MTWSCKrjXFf/FC28UnoGOoFApBWl+ylkrVGU8n8/0cd+a06oncaryesnrptUDackNOr/zP1nuAJ2/Q3I+aRw+MGi2Zesb0/K6YfJ769eHjQVjoNqhHpOnfgkeIZY12w8z3z1M6Cngc657n+799V1Fpa7mxytLkqOfrATmhtl+Cytv3pTkP0wInCJWoloFoMOCpTKIvBRkzskEaSZC7o2poCq48Tw1VBDjSsurNmGGDyeVBY4HIOw7WHO0raMYaYM99NMQ3alaEtF/LS8lX3Pr88v6fIkEb2lKRQwG6yxEZqBfeVZfrBmGFaiuJVxmyQ7t80zHKZNGAelS0EK/nDHxS1SN/IFhS86gSWfYgTyaAdxA==",
+        "edits": ""
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -0.17,
+          0,
+          -0.07550000000000001
+        ],
+        "max": [
+          0.17,
+          0.44999999999999996,
+          0.07550000000000001
+        ],
+        "sourceNodeId": "asset-bounds"
+      }
+    ],
+    "sourceMeshCount": 15,
+    "candidateCount": 0,
+    "fallbackUsed": true
+  },
+  "footprintRadius": 0.17,
+  "sizeClass": "small",
+  "mode": "voxel",
+  "provider": "gpt",
+  "createdAt": 1786871454309,
+  "updatedAt": 1786871454309
+}

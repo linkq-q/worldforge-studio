@@ -1,0 +1,521 @@
+{
+  "id": "asset-cbe72d14-8410-412c",
+  "name": "三角尺",
+  "prompt": "独立三角尺\nCoordinate contract: local Y+ is up, local Z+ is the front, entrance, or forward direction, and local X+ is right. Put doors, facades, openings, windshields, noses, seats, and other recognizable front details toward local Z+. For a modular repeated element, explicitly choose the long axis: side-by-side modules span local X with depth/front on local Z; traversal modules span local Z. Keep the model centered at its origin.\nCanonical dimensions contract: width=0.25, height=0.02, depth=0.25 world units. Keep the generated mesh within this centered bounding size.",
+  "tags": [
+    "indoor",
+    "child-safe"
+  ],
+  "modelJson": {
+    "name": "独立三角尺",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "markings",
+        "name": "刻度",
+        "transform": {
+          "pos": [
+            -0.012,
+            0.0075,
+            -0.0195
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.329,
+            0.02,
+            0.232
+          ],
+          "center": [
+            -0.02,
+            -0.004,
+            -0.017
+          ],
+          "axes": [
+            [
+              0.7398,
+              0.0009,
+              -0.6728
+            ],
+            [
+              -0.0016,
+              1,
+              -0.0005
+            ],
+            [
+              0.6728,
+              0.0015,
+              0.7398
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "ruler",
+        "name": "透明尺身",
+        "parent": "markings",
+        "transform": {
+          "pos": [
+            -0.0405,
+            -0.0075,
+            -0.033
+          ]
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass",
+            "variant": "blue"
+          }
+        ],
+        "_obb": {
+          "size": [
+            0.315,
+            0.012,
+            0.168
+          ],
+          "center": [
+            0.001,
+            0,
+            0
+          ],
+          "axes": [
+            [
+              0.7116,
+              0,
+              -0.7025
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0.7025,
+              0,
+              0.7116
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "ruler",
+        "transform": {
+          "pos": [
+            0.0525,
+            0,
+            -0.0525
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.218,
+            "height": 0.012,
+            "depth": 0.018
+          },
+          "color": 7653864
+        }
+      },
+      {
+        "id": "m1",
+        "parent": "ruler",
+        "transform": {
+          "pos": [
+            -0.0525,
+            0,
+            0.0525
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.018,
+            "height": 0.012,
+            "depth": 0.218
+          },
+          "color": 7653864
+        }
+      },
+      {
+        "id": "m2",
+        "parent": "ruler",
+        "transform": {
+          "pos": [
+            0.0525,
+            0,
+            0.0525
+          ],
+          "quat": [
+            0.92,
+            0,
+            -0.38,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.3,
+            "height": 0.012,
+            "depth": 0.02
+          },
+          "color": 7653864
+        }
+      },
+      {
+        "id": "m3",
+        "parent": "markings",
+        "transform": {
+          "pos": [
+            -0.068,
+            0,
+            -0.0845
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.002,
+            "height": 0.003,
+            "depth": 0.012
+          },
+          "color": 1526364
+        }
+      },
+      {
+        "id": "m4",
+        "parent": "markings",
+        "transform": {
+          "pos": [
+            -0.048,
+            0,
+            -0.0845
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.002,
+            "height": 0.003,
+            "depth": 0.008
+          },
+          "color": 1526364
+        }
+      },
+      {
+        "id": "m5",
+        "parent": "markings",
+        "transform": {
+          "pos": [
+            -0.028,
+            0,
+            -0.0845
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.002,
+            "height": 0.003,
+            "depth": 0.012
+          },
+          "color": 1526364
+        }
+      },
+      {
+        "id": "m6",
+        "parent": "markings",
+        "transform": {
+          "pos": [
+            -0.008,
+            0,
+            -0.0845
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.002,
+            "height": 0.003,
+            "depth": 0.008
+          },
+          "color": 1526364
+        }
+      },
+      {
+        "id": "m7",
+        "parent": "markings",
+        "transform": {
+          "pos": [
+            0.012,
+            0,
+            -0.0845
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.002,
+            "height": 0.003,
+            "depth": 0.012
+          },
+          "color": 1526364
+        }
+      },
+      {
+        "id": "m8",
+        "parent": "markings",
+        "transform": {
+          "pos": [
+            0.032,
+            0,
+            -0.0845
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.002,
+            "height": 0.003,
+            "depth": 0.008
+          },
+          "color": 1526364
+        }
+      },
+      {
+        "id": "m9",
+        "parent": "markings",
+        "transform": {
+          "pos": [
+            0.052,
+            0,
+            -0.0845
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.002,
+            "height": 0.003,
+            "depth": 0.012
+          },
+          "color": 1526364
+        }
+      },
+      {
+        "id": "m10",
+        "parent": "markings",
+        "transform": {
+          "pos": [
+            0.072,
+            0,
+            -0.0845
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.002,
+            "height": 0.003,
+            "depth": 0.008
+          },
+          "color": 1526364
+        }
+      },
+      {
+        "id": "m11",
+        "parent": "markings",
+        "transform": {
+          "pos": [
+            0.092,
+            0,
+            -0.0845
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.002,
+            "height": 0.003,
+            "depth": 0.012
+          },
+          "color": 1526364
+        }
+      },
+      {
+        "id": "m12",
+        "parent": "markings",
+        "transform": {
+          "pos": [
+            -0.092,
+            0,
+            -0.0555
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.012,
+            "height": 0.003,
+            "depth": 0.002
+          },
+          "color": 1526364
+        }
+      },
+      {
+        "id": "m13",
+        "parent": "markings",
+        "transform": {
+          "pos": [
+            -0.092,
+            0,
+            -0.0205
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.008,
+            "height": 0.003,
+            "depth": 0.002
+          },
+          "color": 1526364
+        }
+      },
+      {
+        "id": "m14",
+        "parent": "markings",
+        "transform": {
+          "pos": [
+            -0.092,
+            0,
+            0.0145
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.012,
+            "height": 0.003,
+            "depth": 0.002
+          },
+          "color": 1526364
+        }
+      },
+      {
+        "id": "m15",
+        "parent": "markings",
+        "transform": {
+          "pos": [
+            -0.092,
+            0,
+            0.0495
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.008,
+            "height": 0.003,
+            "depth": 0.002
+          },
+          "color": 1526364
+        }
+      },
+      {
+        "id": "m16",
+        "parent": "markings",
+        "transform": {
+          "pos": [
+            -0.092,
+            0,
+            0.0845
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.012,
+            "height": 0.003,
+            "depth": 0.002
+          },
+          "color": 1526364
+        }
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1787770153338,
+        "provider": "gpt",
+        "data": "avYEVZ0x6evU7LtFDl7F6bWtOyAacR0npny298lLqO/7XLmyyb02VlWY1G9KJU1+etrCc19SW2ucWSGIpA7VsWvEU0Qq+dtC1G/77WBhsBQS8xkk+OZXAYccgTBL0Dccs5BzVSlmsqgpWJ/0xQ1EHcHAD05YHYLc9T/zYtPwPSAlcec35EmJNg4uXOw1zaAFOQrnO83BoSNdyMPACFXWj7EbPU17ppOu7zcGK1MtzSeXM4++ZD/qMwFz+GP1DkHdQmRu4AXpuwFpjIKzpEaCiQ4iOOMljlNyJveqh4Z3wWlIRrRfoMGuRQYJNVxp8eHAfoB7qQsJwbFdFef2NEY+6VNgLW9Sfy+kraynAs/WL1W/xmQ36SWzUxcBwAP/7LYJma61VXh+gEzIzXnjYMFH2E27kQSU1dKlKafz9Zoh2cORYOjlbmLHCG2EBAlv89XT+J8T5iatfcPt397YVuGpBGurxPKa7MGNdz+Fd/xVKEnKe6eN4nXZWU/er78mgkTmdHQ2cIuB3LcOn+CTznQ6OrWz9R+i5bwviWSThp9Lfy9bRB5PLPJwi6Yvyk69dPJ7CARJhcV+wPpZfRUaJdFCJEUFQjm88r4jEzT+veLUYqJBpqr94HHkSOSH7mRkN3BZ5qd1lWLuDm3Y9NxC4fh8ZkojF2EcLgOvEimWZgOhwLIho+1KOb1n9gkSPKiC6hCQCc/bybUQ67zvaRYRbK0lwtGjJOAsXi5LEkLN44Hz039IG6NMI3awLlSwQJRJtSWaS4M=",
+        "edits": ""
+      },
+      "semanticSnapshot": {
+        "v": 1,
+        "auto": true,
+        "text": "独立三角尺 · 2组/17mesh · 世界坐标(Y上Z前), 原点=模型根\n# 阅读说明: G:=group行(可动画骨骼, 动画key用G:后的id; @p=pivot世界坐标; 倾(x,y,z)°=朝向偏离世界轴的欧拉角; 缩进=父子层级; 挂:=挂载于某组; G:id→id→…=chain折叠行, 每个id都是可独立动画的group, chain×N=waypoint数)\n# M:=mesh行(label[id 几何 @(世界坐标)], label可省略; ×N=for循环批量件(锚点=代表实例); cyl (起)→(末)或 轴上(Y)等方位词=延伸方向; 薄向=板面法向(扁板); 挂载组双代表=最大件+朝向件(嘴/管/檐所在); 无方向标注=均匀块(三向相近,如头),默认面向前(Z); 对称×2=镜像对)\nG:markings 刻度 @p(0,0,0)\n  M:[m3 box 0×0×0.01 (-0.1,0,-0.1) 轴前(Z)]\n  G:ruler 透明尺身 @p(-0.1,0,-0.1) 挂:markings\n    M:[m2 box 0.3×0.01×0.02 (0,0,0) 轴(0.1,0,-0.1)→(-0.1,0,0.1)]",
+        "stats": {
+          "groups": 2,
+          "meshes": 17,
+          "labeledMeshes": 0,
+          "labelCoverage": 0,
+          "batchLabels": 0,
+          "autoChains": 0,
+          "snapshotChars": 534
+        }
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -0.11366733952361727,
+          0,
+          -0.11346951958013726
+        ],
+        "max": [
+          0.11366733952361727,
+          0.018500000000000003,
+          0.11346951958013726
+        ],
+        "sourceNodeId": "asset-bounds"
+      }
+    ],
+    "sourceMeshCount": 17,
+    "candidateCount": 1,
+    "fallbackUsed": true
+  },
+  "footprintRadius": 0.11366733952361727,
+  "sizeClass": "small",
+  "mode": "voxel",
+  "provider": "gpt",
+  "libraryId": "library-d7967286-cebf-4f99",
+  "libraryMetadata": {
+    "tags": [
+      "setsquare",
+      "draftingtool",
+      "measuringtool",
+      "stationery"
+    ],
+    "applicableZones": [
+      "settlement"
+    ],
+    "repeatable": true,
+    "landmark": false,
+    "enabled": true,
+    "priority": 0.5,
+    "analysisStatus": "ready",
+    "rotation": "random"
+  },
+  "createdAt": 1787816158749,
+  "updatedAt": 1787816158749
+}

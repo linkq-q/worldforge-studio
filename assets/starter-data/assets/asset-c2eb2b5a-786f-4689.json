@@ -1,0 +1,651 @@
+{
+  "id": "asset-c2eb2b5a-786f-4689",
+  "name": "拼图游戏盒",
+  "prompt": "A single reusable children's jigsaw puzzle box with several large puzzle pieces arranged visibly beside and partly on the box as one compact asset, approximately 0.45 meters wide, no floor or background",
+  "tags": [
+    "toy",
+    "game",
+    "prop"
+  ],
+  "modelJson": {
+    "name": "儿童拼图收纳盒",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "root",
+        "name": "拼图盒组合",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.45,
+            0.123,
+            0.276
+          ],
+          "center": [
+            0.022,
+            0.03,
+            0.009
+          ],
+          "axes": [
+            [
+              0.9996,
+              -0.0266,
+              -0.0132
+            ],
+            [
+              0.0268,
+              0.9995,
+              0.0148
+            ],
+            [
+              0.0128,
+              -0.0151,
+              0.9998
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "box",
+        "name": "木质拼图盒",
+        "parent": "root",
+        "transform": {
+          "pos": [
+            -0.04,
+            0.025,
+            0
+          ]
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ],
+        "_obb": {
+          "size": [
+            0.32,
+            0.08,
+            0.25
+          ],
+          "center": [
+            0,
+            0.015,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "piece_red",
+        "name": "红色拼图块",
+        "parent": "root",
+        "transform": {
+          "pos": [
+            -0.105,
+            0.08,
+            0.025
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.11,
+            0.018,
+            0.106
+          ],
+          "center": [
+            0.006,
+            0,
+            0
+          ],
+          "axes": [
+            [
+              0.8077,
+              0,
+              -0.5895
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0.5895,
+              0,
+              0.8077
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "piece_blue",
+        "name": "蓝色拼图块",
+        "parent": "root",
+        "transform": {
+          "pos": [
+            0.025,
+            0.081,
+            -0.045
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.105,
+            0.018,
+            0.103
+          ],
+          "center": [
+            0.003,
+            0,
+            0
+          ],
+          "axes": [
+            [
+              0.7512,
+              0,
+              0.6601
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              -0.6601,
+              0,
+              0.7512
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "piece_yellow",
+        "name": "黄色拼图块",
+        "parent": "root",
+        "transform": {
+          "pos": [
+            0.17,
+            0.018,
+            0.068
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.103,
+            0.018,
+            0.105
+          ],
+          "center": [
+            0,
+            0,
+            0.004
+          ],
+          "axes": [
+            [
+              0.763,
+              0,
+              0.6464
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              -0.6464,
+              0,
+              0.763
+            ]
+          ],
+          "_mainAxis": 2
+        }
+      },
+      {
+        "id": "piece_green",
+        "name": "绿色拼图块",
+        "parent": "root",
+        "transform": {
+          "pos": [
+            0.178,
+            0.019,
+            -0.058
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.108,
+            0.018,
+            0.103
+          ],
+          "center": [
+            -0.006,
+            0,
+            0
+          ],
+          "axes": [
+            [
+              0.8275,
+              0,
+              -0.5614
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0.5614,
+              0,
+              0.8275
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "box",
+        "transform": {
+          "pos": [
+            0,
+            -0.0125,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.32,
+            "height": 0.025,
+            "depth": 0.25
+          },
+          "color": 14067814
+        }
+      },
+      {
+        "id": "m1",
+        "parent": "box",
+        "transform": {
+          "pos": [
+            0,
+            0.0275,
+            -0.116
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.32,
+            "height": 0.055,
+            "depth": 0.018
+          },
+          "color": 12157512
+        }
+      },
+      {
+        "id": "m2",
+        "parent": "box",
+        "transform": {
+          "pos": [
+            0,
+            0.0275,
+            0.116
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.32,
+            "height": 0.055,
+            "depth": 0.018
+          },
+          "color": 12157512
+        }
+      },
+      {
+        "id": "m3",
+        "parent": "box",
+        "transform": {
+          "pos": [
+            -0.151,
+            0.0275,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.018,
+            "height": 0.055,
+            "depth": 0.214
+          },
+          "color": 12157512
+        }
+      },
+      {
+        "id": "m4",
+        "parent": "box",
+        "transform": {
+          "pos": [
+            0.151,
+            0.0275,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.018,
+            "height": 0.055,
+            "depth": 0.214
+          },
+          "color": 12157512
+        }
+      },
+      {
+        "id": "m5",
+        "parent": "piece_red",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.075,
+            "height": 0.018,
+            "depth": 0.068
+          },
+          "color": 14895941
+        }
+      },
+      {
+        "id": "m6",
+        "parent": "piece_red",
+        "transform": {
+          "pos": [
+            0.051,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.027,
+            "height": 0.018,
+            "depth": 0.025
+          },
+          "color": 14895941
+        }
+      },
+      {
+        "id": "m7",
+        "parent": "piece_red",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0.047
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.025,
+            "height": 0.018,
+            "depth": 0.027
+          },
+          "color": 14895941
+        }
+      },
+      {
+        "id": "m8",
+        "parent": "piece_blue",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.072,
+            "height": 0.018,
+            "depth": 0.07
+          },
+          "color": 4360150
+        }
+      },
+      {
+        "id": "m9",
+        "parent": "piece_blue",
+        "transform": {
+          "pos": [
+            0.049,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.026,
+            "height": 0.018,
+            "depth": 0.024
+          },
+          "color": 4360150
+        }
+      },
+      {
+        "id": "m10",
+        "parent": "piece_blue",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            -0.047
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.024,
+            "height": 0.018,
+            "depth": 0.026
+          },
+          "color": 4360150
+        }
+      },
+      {
+        "id": "m11",
+        "parent": "piece_yellow",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.068,
+            "height": 0.018,
+            "depth": 0.072
+          },
+          "color": 15910724
+        }
+      },
+      {
+        "id": "m12",
+        "parent": "piece_yellow",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0.049
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.025,
+            "height": 0.018,
+            "depth": 0.026
+          },
+          "color": 15910724
+        }
+      },
+      {
+        "id": "m13",
+        "parent": "piece_yellow",
+        "transform": {
+          "pos": [
+            0.047,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.026,
+            "height": 0.018,
+            "depth": 0.024
+          },
+          "color": 15910724
+        }
+      },
+      {
+        "id": "m14",
+        "parent": "piece_green",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.074,
+            "height": 0.018,
+            "depth": 0.066
+          },
+          "color": 6731866
+        }
+      },
+      {
+        "id": "m15",
+        "parent": "piece_green",
+        "transform": {
+          "pos": [
+            -0.05,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.026,
+            "height": 0.018,
+            "depth": 0.024
+          },
+          "color": 6731866
+        }
+      },
+      {
+        "id": "m16",
+        "parent": "piece_green",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            -0.045
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.024,
+            "height": 0.018,
+            "depth": 0.026
+          },
+          "color": 6731866
+        }
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1786871463814,
+        "provider": "gpt",
+        "data": "f6MZa2gwkorA53J4OiRmenlAC1uU52oMqxxHzro+ra3+ImhYmGnXfLcRsaHfuLBbtvJLuyX0xUvROR4C3IIcr0Mjab5ILcdQ7CD9kaCZPKBA4kWaKvbBz0Ur3Vpke6LJPk3R5x8lhV9IFZs1gEQ9SnLJbpO0n0yv/AoaF9G+8ynZ+9iC0iNWAhv+TxXbflaETI7yqouQusqPEzY3+6tZQj1xH++jpbjE5Eb3XgIRUpxh3ne/ppJQyYce/qRzusme6EdMLKVyL/KDYx0N11oQKxKDqVj9a7Z71HD/v0yByElI+ncdFfGAeRaH7Mxb85xOP1t8Rex0GLq9eLswfTQFbUKylYMuN93Bv+SfiV+Blki/CzZSG+PzXMhv3+dYnqgRQZzolf+4fF8L6UunvN8eOOra8HamYh3V+JKRWKVaanc2ZzEBLIdb7krTKZyhHVpE+qACkaTFGkGrK5Q6LbMtMif1PE7KIDYDc9HwS8EZFh4WH7Pm2qGR928mLMW15H6gbi7wf6Rat/itfGdzrcZ4sEOcCm3ayXY6zbeIBPI8Wi9SiYq9O0AUIFEqt7Ebu7XXiet35jTo/7g2ZJplYB4bTPY8UA0A4or/f6kZioJSwCoRf7RroCAvRb2AXkqQNea+ESA+Csz9ecSvU5n5C1IDBKnsveMtXNHLvMo9itQYiQXgQL1xxB/tiiaTIjRPqX07ZFeGfOjLdYasE/BwhrmsnxmgA43cpLm8V+kvVBC+CM5fYfYYvo8rza40NtyMsA1W1OZWDfCeOiJyBzQgU8Vza8126doE/8ZNYnUayvY851vcRyndaTs5mhzIzVGKA3gRvara1wRdCS6yDPUs6uYLJLJakzvYOSoz2tvfZKBY5e/VEWrAEbbegOKhT38V1cFONnQ6DWEn",
+        "edits": ""
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -0.21500000000000002,
+          0,
+          -0.1275
+        ],
+        "max": [
+          0.21500000000000002,
+          0.09,
+          0.1275
+        ],
+        "sourceNodeId": "asset-bounds"
+      }
+    ],
+    "sourceMeshCount": 17,
+    "candidateCount": 0,
+    "fallbackUsed": true
+  },
+  "footprintRadius": 0.21500000000000002,
+  "sizeClass": "small",
+  "mode": "voxel",
+  "provider": "gpt",
+  "createdAt": 1786871464785,
+  "updatedAt": 1786871464785
+}

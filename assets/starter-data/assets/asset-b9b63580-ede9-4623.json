@@ -1,0 +1,771 @@
+{
+  "id": "asset-b9b63580-ede9-4623",
+  "name": "复杂游乐园/05海盗港/服务/港口值守亭",
+  "prompt": "Simple standalone voxel model of 港口值守亭: a tiny pirate harbor ride operator hut with plank walls, striped awning, service window and nautical colors. Use 16 to 28 box meshes only, one grounded object, bold readable silhouette, bright amusement park colors, no terrain, no people, no floating pieces.",
+  "modelJson": {
+    "name": "港口值守亭",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "harborHut",
+        "name": "港口值守亭",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "harborHut",
+        "transform": {
+          "pos": [
+            0,
+            0.1,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 3.8,
+            "height": 0.2,
+            "depth": 2.8
+          },
+          "color": 1194845
+        }
+      },
+      {
+        "id": "m1",
+        "parent": "harborHut",
+        "transform": {
+          "pos": [
+            0,
+            1.6,
+            -1.1
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 3.4,
+            "height": 2.8,
+            "depth": 0.2
+          },
+          "color": 2139814
+        }
+      },
+      {
+        "id": "m2",
+        "parent": "harborHut",
+        "transform": {
+          "pos": [
+            -1.6,
+            1.6,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.2,
+            "height": 2.8,
+            "depth": 2.2
+          },
+          "color": 2139814
+        }
+      },
+      {
+        "id": "m3",
+        "parent": "harborHut",
+        "transform": {
+          "pos": [
+            1.6,
+            1.6,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.2,
+            "height": 2.8,
+            "depth": 2.2
+          },
+          "color": 2139814
+        }
+      },
+      {
+        "id": "m4",
+        "parent": "harborHut",
+        "transform": {
+          "pos": [
+            0,
+            0.6,
+            1.1
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 3.4,
+            "height": 0.8,
+            "depth": 0.2
+          },
+          "color": 16766023
+        }
+      },
+      {
+        "id": "m5",
+        "parent": "harborHut",
+        "transform": {
+          "pos": [
+            0,
+            2.7,
+            1.1
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 3.4,
+            "height": 0.6,
+            "depth": 0.2
+          },
+          "color": 16766023
+        }
+      },
+      {
+        "id": "m6",
+        "parent": "harborHut",
+        "transform": {
+          "pos": [
+            -1.35,
+            1.7,
+            1.1
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.5,
+            "height": 1.4,
+            "depth": 0.2
+          },
+          "color": 16766023
+        }
+      },
+      {
+        "id": "m7",
+        "parent": "harborHut",
+        "transform": {
+          "pos": [
+            1.35,
+            1.7,
+            1.1
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.5,
+            "height": 1.4,
+            "depth": 0.2
+          },
+          "color": 16766023
+        }
+      },
+      {
+        "id": "m8",
+        "parent": "harborHut",
+        "transform": {
+          "pos": [
+            0,
+            1.75,
+            1.22
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2.2,
+            "height": 1.35,
+            "depth": 0.08
+          },
+          "color": 1520205
+        }
+      },
+      {
+        "id": "m9",
+        "parent": "harborHut",
+        "transform": {
+          "pos": [
+            0,
+            1.08,
+            1.4
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2.8,
+            "height": 0.18,
+            "depth": 0.58
+          },
+          "color": 15817565
+        }
+      },
+      {
+        "id": "m10",
+        "parent": "harborHut",
+        "transform": {
+          "pos": [
+            0,
+            2.42,
+            1.28
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2.45,
+            "height": 0.14,
+            "depth": 0.12
+          },
+          "color": 16249301
+        }
+      },
+      {
+        "id": "m11",
+        "parent": "harborHut",
+        "transform": {
+          "pos": [
+            0,
+            1.08,
+            1.28
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2.45,
+            "height": 0.14,
+            "depth": 0.12
+          },
+          "color": 16249301
+        }
+      },
+      {
+        "id": "m12",
+        "parent": "harborHut",
+        "transform": {
+          "pos": [
+            -1.16,
+            1.75,
+            1.28
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.14,
+            "height": 1.48,
+            "depth": 0.12
+          },
+          "color": 16249301
+        }
+      },
+      {
+        "id": "m13",
+        "parent": "harborHut",
+        "transform": {
+          "pos": [
+            1.16,
+            1.75,
+            1.28
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.14,
+            "height": 1.48,
+            "depth": 0.12
+          },
+          "color": 16249301
+        }
+      },
+      {
+        "id": "m14",
+        "parent": "harborHut",
+        "transform": {
+          "pos": [
+            0,
+            3.08,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 3.8,
+            "height": 0.22,
+            "depth": 2.7
+          },
+          "color": 1194845
+        }
+      },
+      {
+        "id": "m15",
+        "parent": "harborHut",
+        "transform": {
+          "pos": [
+            0,
+            2.96,
+            1.27
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 3.8,
+            "height": 0.34,
+            "depth": 0.18
+          },
+          "color": 15817565
+        }
+      },
+      {
+        "id": "m16",
+        "parent": "harborHut",
+        "transform": {
+          "pos": [
+            -1.44,
+            2.3,
+            1.63
+          ],
+          "quat": [
+            0.29,
+            0,
+            0,
+            0.96
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.72,
+            "height": 0.12,
+            "depth": 0.9
+          },
+          "color": 16249301
+        }
+      },
+      {
+        "id": "m17",
+        "parent": "harborHut",
+        "transform": {
+          "pos": [
+            -0.72,
+            2.3,
+            1.63
+          ],
+          "quat": [
+            0.29,
+            0,
+            0,
+            0.96
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.72,
+            "height": 0.12,
+            "depth": 0.9
+          },
+          "color": 15817565
+        }
+      },
+      {
+        "id": "m18",
+        "parent": "harborHut",
+        "transform": {
+          "pos": [
+            0,
+            2.3,
+            1.63
+          ],
+          "quat": [
+            0.29,
+            0,
+            0,
+            0.96
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.72,
+            "height": 0.12,
+            "depth": 0.9
+          },
+          "color": 16249301
+        }
+      },
+      {
+        "id": "m19",
+        "parent": "harborHut",
+        "transform": {
+          "pos": [
+            0.72,
+            2.3,
+            1.63
+          ],
+          "quat": [
+            0.29,
+            0,
+            0,
+            0.96
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.72,
+            "height": 0.12,
+            "depth": 0.9
+          },
+          "color": 15817565
+        }
+      },
+      {
+        "id": "m20",
+        "parent": "harborHut",
+        "transform": {
+          "pos": [
+            1.44,
+            2.3,
+            1.63
+          ],
+          "quat": [
+            0.29,
+            0,
+            0,
+            0.96
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.72,
+            "height": 0.12,
+            "depth": 0.9
+          },
+          "color": 16249301
+        }
+      },
+      {
+        "id": "m21",
+        "parent": "harborHut",
+        "transform": {
+          "pos": [
+            -0.82,
+            3.34,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.14,
+            "height": 0.34,
+            "depth": 0.14
+          },
+          "color": 16249301
+        }
+      },
+      {
+        "id": "m22",
+        "parent": "harborHut",
+        "transform": {
+          "pos": [
+            0.82,
+            3.34,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.14,
+            "height": 0.34,
+            "depth": 0.14
+          },
+          "color": 16249301
+        }
+      },
+      {
+        "id": "m23",
+        "parent": "harborHut",
+        "transform": {
+          "pos": [
+            0,
+            3.68,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2.35,
+            "height": 0.55,
+            "depth": 0.18
+          },
+          "color": 1194845
+        }
+      },
+      {
+        "id": "m24",
+        "parent": "harborHut",
+        "transform": {
+          "pos": [
+            -0.65,
+            3.68,
+            0.12
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.42,
+            "height": 0.34,
+            "depth": 0.06
+          },
+          "color": 16766023
+        }
+      },
+      {
+        "id": "m25",
+        "parent": "harborHut",
+        "transform": {
+          "pos": [
+            0,
+            3.68,
+            0.12
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.42,
+            "height": 0.34,
+            "depth": 0.06
+          },
+          "color": 15817565
+        }
+      },
+      {
+        "id": "m26",
+        "parent": "harborHut",
+        "transform": {
+          "pos": [
+            0.65,
+            3.68,
+            0.12
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.42,
+            "height": 0.34,
+            "depth": 0.06
+          },
+          "color": 16766023
+        }
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1784474537447,
+        "provider": "glm",
+        "data": "hoS+HD+a9zecn6qWnLK3Z5tYu+j7IxSQSkL3zB4DopMTQBwThz4g39Vr/Q1bIH1F4urier70bYPNVnQUDVOtHMNxAPBxzpPmPJOJH0p1bXzZh6vThSx05Bt3HAD/9TTJFxCwf5KtmSvQBt5V6Ti4pO6z5G56qQgtd+c3OOV0fiDvq5Kk7TSvN8TZJTZa9Z/MWR4JikA9LVdwDh+GtJc3TNcFJlS06esJuavOCf64GVF9u74IrsN/w2SJQitY/NovVTTGtzATd0MPh/y2DCu6IfzwLN/dbH+1m/LUB3TmlgDOSNWAJ+mMb5W7kIoEQwHfD3NLIVbFluVbmAn82JRSCQM53t8HnI9tjBCLVFqZHXwfOY3Ndg+hEQaXwvJipGObKYU6IXOpDn5IeXKOwaKAXWGDmFyMDNC6OkVnbH30vLk0dRq2ipqYX3GtxrY1lTmVHC/1Ys9SedLz7lsrwMRffJodUpGwbsJO+ZOt0iYyXZLkZPp2wp6gcrezwWXszxOApc3N0YAqAaZdTMFUU+LlUUO/V3i9Tc4N+PZHmbMD2X3aXPlF9Zxyljrj2W0177F3dPC5OXDXBpuk6g816pdGpTCH/9GOJIlaP7NOmaSrtGX+xfngbY9uqjqC9znHpqWxs03lGKQxNvm0PRHnt3MdEnQRyf/NEn1lyUB/3lqclG/Knjj/eirPgIL/xMjVScJh4zEV1NB9BmgWe3CK3/Ry8X8Mkrh0L+HwHem/vT/1RleZ25ku3+BK2KTA7SYOq5mbAifsCTaloVjsu+ze8FNpF0hKqn8aMUxC7Tpc4AHrjfqyENhOgEFWg3iMxJiJ+eHJL7ynF39enQuUK1UvSZ6suY2TZBgc8OOnoyx7Gc139HvSr/WmcEm99NtE6ini/S6McUxZDPiAzAleTE8=",
+        "edits": ""
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -1.9,
+          2.97,
+          -1.6689788207218854
+        ],
+        "max": [
+          1.9,
+          3.19,
+          1.0310211792781148
+        ],
+        "sourceNodeId": "m14"
+      },
+      {
+        "min": [
+          -1.9,
+          0,
+          -1.7189788207218852
+        ],
+        "max": [
+          1.9,
+          0.2,
+          1.0810211792781146
+        ],
+        "sourceNodeId": "m0"
+      },
+      {
+        "min": [
+          -1.7,
+          0.20000000000000018,
+          -1.5189788207218855
+        ],
+        "max": [
+          1.7,
+          3,
+          -1.3189788207218853
+        ],
+        "sourceNodeId": "m1"
+      },
+      {
+        "min": [
+          -1.7000000000000002,
+          0.20000000000000018,
+          -1.4189788207218854
+        ],
+        "max": [
+          -1.5,
+          3,
+          0.7810211792781148
+        ],
+        "sourceNodeId": "m2"
+      },
+      {
+        "min": [
+          1.5,
+          0.20000000000000018,
+          -1.4189788207218854
+        ],
+        "max": [
+          1.7000000000000002,
+          3,
+          0.7810211792781148
+        ],
+        "sourceNodeId": "m3"
+      },
+      {
+        "min": [
+          -1.7,
+          0.19999999999999996,
+          0.6810211792781147
+        ],
+        "max": [
+          1.7,
+          1,
+          0.8810211792781149
+        ],
+        "sourceNodeId": "m4"
+      },
+      {
+        "min": [
+          -1.7,
+          2.4000000000000004,
+          0.6810211792781147
+        ],
+        "max": [
+          1.7,
+          3,
+          0.8810211792781149
+        ],
+        "sourceNodeId": "m5"
+      },
+      {
+        "min": [
+          -1.08,
+          2.000894899075271,
+          0.9030635378343441
+        ],
+        "max": [
+          -0.36,
+          2.599105100924729,
+          1.7189788207218852
+        ],
+        "sourceNodeId": "m17"
+      },
+      {
+        "min": [
+          0.36,
+          2.000894899075271,
+          0.9030635378343441
+        ],
+        "max": [
+          1.08,
+          2.599105100924729,
+          1.7189788207218852
+        ],
+        "sourceNodeId": "m19"
+      },
+      {
+        "min": [
+          -0.36,
+          2.000894899075271,
+          0.9030635378343441
+        ],
+        "max": [
+          0.36,
+          2.599105100924729,
+          1.7189788207218852
+        ],
+        "sourceNodeId": "m18"
+      },
+      {
+        "min": [
+          -1.7999999999999998,
+          2.000894899075271,
+          0.9030635378343441
+        ],
+        "max": [
+          -1.08,
+          2.599105100924729,
+          1.7189788207218852
+        ],
+        "sourceNodeId": "m16"
+      },
+      {
+        "min": [
+          1.08,
+          2.000894899075271,
+          0.9030635378343441
+        ],
+        "max": [
+          1.7999999999999998,
+          2.599105100924729,
+          1.7189788207218852
+        ],
+        "sourceNodeId": "m20"
+      }
+    ],
+    "sourceMeshCount": 27,
+    "candidateCount": 18,
+    "fallbackUsed": false
+  },
+  "mode": "lite",
+  "provider": "provider-fallback",
+  "createdAt": 1784474541502,
+  "updatedAt": 1784474541502
+}

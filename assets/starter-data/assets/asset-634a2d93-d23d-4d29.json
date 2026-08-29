@@ -1,0 +1,325 @@
+{
+  "id": "asset-634a2d93-d23d-4d29",
+  "name": "异形笔 5",
+  "prompt": "单独一把笔，完整独立模型，不带笔盒、纸张、书本或其他物品。六种外观必须明显不同，依次为蓝色圆珠笔、红色按动笔、黑色钢笔、绿色自动铅笔、紫色荧光笔、橙色粗头马克笔；每种具有不同笔帽、笔夹、笔杆轮廓和材质细节。\nCoordinate contract: local Y+ is up, local Z+ is the front, entrance, or forward direction, and local X+ is right. Put doors, facades, openings, windshields, noses, seats, and other recognizable front details toward local Z+. For a modular repeated element, explicitly choose the long axis: side-by-side modules span local X with depth/front on local Z; traversal modules span local Z. Keep the model centered at its origin.\nCanonical dimensions contract: width=0.05, height=0.04, depth=0.22 world units. Keep the generated mesh within this centered bounding size.\nCreate variation 5 of 6; preserve the same reusable asset family while varying silhouette and details.",
+  "tags": [
+    "indoor",
+    "single-object",
+    "pen"
+  ],
+  "modelJson": {
+    "name": "紫色荧光笔",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "body",
+        "name": "荧光笔笔身",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            -0.11
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.108,
+            0.074,
+            0.253
+          ],
+          "center": [
+            0.003,
+            -0.003,
+            0.122
+          ],
+          "axes": [
+            [
+              0.9641,
+              -0.2632,
+              0.036
+            ],
+            [
+              0.2642,
+              0.9641,
+              -0.0265
+            ],
+            [
+              -0.0277,
+              0.0351,
+              0.999
+            ]
+          ],
+          "_mainAxis": 2
+        }
+      },
+      {
+        "id": "mount01_cap",
+        "name": "可拆卸笔帽",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0.15
+          ]
+        },
+        "mounted": true,
+        "_obb": {
+          "size": [
+            0.077,
+            0.062,
+            0.084
+          ],
+          "center": [
+            0.001,
+            -0.001,
+            0.04
+          ],
+          "axes": [
+            [
+              0.87,
+              -0.217,
+              0.4427
+            ],
+            [
+              0.3162,
+              0.9345,
+              -0.1633
+            ],
+            [
+              -0.3783,
+              0.282,
+              0.8817
+            ]
+          ],
+          "_mainAxis": 2
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0.074
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.042,
+            "height": 0.032,
+            "depth": 0.132
+          },
+          "color": 10181046
+        }
+      },
+      {
+        "id": "m1",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0.002
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.036,
+            "height": 0.028,
+            "depth": 0.012
+          },
+          "color": 6501498
+        }
+      },
+      {
+        "id": "m2",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0.146
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.044,
+            "height": 0.034,
+            "depth": 0.012
+          },
+          "color": 7684236
+        }
+      },
+      {
+        "id": "m3",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0,
+            -0.019,
+            0.078
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.024,
+            "height": 0.006,
+            "depth": 0.052
+          },
+          "color": 14862061
+        }
+      },
+      {
+        "id": "m4",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0.157
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.026,
+            "height": 0.01,
+            "depth": 0.014
+          },
+          "color": 14198504
+        }
+      },
+      {
+        "id": "m5",
+        "parent": "mount01_cap",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0.042
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.05,
+            "height": 0.04,
+            "depth": 0.056
+          },
+          "color": 7419530
+        }
+      },
+      {
+        "id": "m6",
+        "parent": "mount01_cap",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0.066
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.044,
+            "height": 0.034,
+            "depth": 0.008
+          },
+          "color": 5711981
+        }
+      },
+      {
+        "id": "m7",
+        "parent": "mount01_cap",
+        "transform": {
+          "pos": [
+            0.018,
+            -0.019,
+            0.031
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.009,
+            "height": 0.007,
+            "depth": 0.045
+          },
+          "color": 12946392
+        }
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1787876414995,
+        "provider": "gpt",
+        "data": "Vag2wcduTod86wWMClTZWOkxOPMDyK0lwKTsfNAgpPi9x78Xv1kjIkTupl9gW9cqFB/v7TsH+SvF0ehfVwXGiNUCiRmjO5NnCpgtWtp3lOqmaKl3WZZb94QSiCwlTLJud4zbnep8VJtKumErgcvvF4rkwmQIR8inSL083GOq8vQR7YAZwTP4NWiMs/rzR3SyMPmGV1T50cH7Uw3lc7/wJh0JNiS0ucwABl/rk0dc/V5w0GuSr6YZBw7d5pH6aE3XHt0lVQ6khsiPsg/6Fpkn9NOPjyBla6mKuKOsuFDe2CpMFFkU8izb0MZJlMy1oTUGuDfWrqc7Hy6V9ZpBhn/zn5odUOclbqTM5PqNYfaUxsadgnBYtoS/WQjX/bRIIzANTEk64V5kJDS5qrGxB88SV9mEuxc1wiY7/ymaS4Kfesduqhc7qwF4zsj+kZgor43JO8K5R1VqKbcSmYV9QP6Ac49mJS39kVosFfWpM5j+O2M74Wh01UV9UXwrQD4YzgeWhCLUE1v6+pwFtq9umA5kHkg+kIMWqsDEeRab0ZNvKl/PWRKPK7xYBVS5QvYm6qXKc8/u7ZsYce7oP5jPLoOoLmq7DYsPbIjtAQis2qDoD3JIXOJjYC/nucLvbaD2aYPreiCG1ZOnv7wK//x/itErzuGatkFBWOoZB5nBvlJbH7uz7+qOj9aD",
+        "edits": ""
+      },
+      "mounts": [
+        {
+          "id": "mount01_cap",
+          "mountedGroupId": "mount01_cap",
+          "name": "可拆卸笔帽",
+          "source": {
+            "type": "codegen"
+          },
+          "description": "",
+          "visible": true,
+          "ts": 1787876414996
+        }
+      ],
+      "semanticSnapshot": {
+        "v": 1,
+        "auto": true,
+        "text": "紫色荧光笔 · 2组/8mesh · 世界坐标(Y上Z前), 原点=模型根\n# 阅读说明: G:=group行(可动画骨骼, 动画key用G:后的id; @p=pivot世界坐标; 倾(x,y,z)°=朝向偏离世界轴的欧拉角; 缩进=父子层级; 挂:=挂载于某组; G:id→id→…=chain折叠行, 每个id都是可独立动画的group, chain×N=waypoint数)\n# M:=mesh行(label[id 几何 @(世界坐标)], label可省略; ×N=for循环批量件(锚点=代表实例); cyl (起)→(末)或 轴上(Y)等方位词=延伸方向; 薄向=板面法向(扁板); 挂载组双代表=最大件+最远有向件(刃/嘴/管所在端); 无方向标注=均匀块(三向相近,如头),默认面向前(Z); 对称×2=镜像对)\nG:body 荧光笔笔身 @p(0,0,-0.1)\n  M:[m0 box 0.04×0.03×0.13 (0,0,0) 轴前(Z)]\n  G:mount01_cap 可拆卸笔帽 @p(0,0,0) 挂:body\n    M:[m5 box 0.05×0.04×0.06 (0,0,0.1)] | M:[m6 box 0.04×0.03×0.01 (0,0,0.1) 薄向前(Z)]",
+        "stats": {
+          "groups": 2,
+          "meshes": 8,
+          "labeledMeshes": 0,
+          "labelCoverage": 0,
+          "batchLabels": 0,
+          "autoChains": 0,
+          "snapshotChars": 556
+        }
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -0.025,
+          0,
+          -0.1125
+        ],
+        "max": [
+          0.025,
+          0.044,
+          0.1125
+        ],
+        "sourceNodeId": "asset-bounds"
+      }
+    ],
+    "sourceMeshCount": 8,
+    "candidateCount": 0,
+    "fallbackUsed": true
+  },
+  "footprintRadius": 0.1125,
+  "sizeClass": "small",
+  "mode": "voxel",
+  "provider": "gpt",
+  "createdAt": 1787876414371,
+  "updatedAt": 1787876414371
+}

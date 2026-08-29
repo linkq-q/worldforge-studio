@@ -1,0 +1,445 @@
+{
+  "id": "asset-38bc5930-83de-4065",
+  "name": "儿童房入口门",
+  "prompt": "单个可复用的室内单扇木门模型，米白门板、浅木门框、儿童友好的圆角把手与明确铰链侧；不包含墙体，门前开启区域必须为空。\n全局资产美术方向：统一采用柔和圆角、略微夸张比例的精致体素风；家具以浅暖木、米白和雾蓝为主，玩具使用克制的砖红、芥末黄和深蓝点缀，所有边角适合儿童空间且尺度参照1.60米角色。; 现代温暖的儿童卧室，浅木地板、柔和蓝灰墙面和米白顶面保持安静背景，以木质家具和少量红黄蓝玩具形成分组色彩点缀；装饰集中于睡眠与学习区域，中央不堆放杂物。; 温暖, 现代儿童房, 圆角体素, 整洁生活感, 柔和配色; palette #E8DFC9, #B99062, #8EA6B4, #C65F4A, #D6A83E, #354C63; materials 浅色木材, 哑光烤漆, 棉织物, 粉末涂层金属, 透明玻璃\n资产角色：独立入口模型与墙体开口对应物；目标尺度：large。\n只生成一个可复用的独立物体，不要生成地面、背景、天空、完整场景或多个分散物体。",
+  "tags": [
+    "openable-front"
+  ],
+  "modelJson": {
+    "name": "儿童房单扇木门",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "frame",
+        "name": "浅木门框",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            1.61,
+            3.469,
+            0.458
+          ],
+          "center": [
+            0.094,
+            0.639,
+            0.12
+          ],
+          "axes": [
+            [
+              0.9966,
+              0.0809,
+              0.0152
+            ],
+            [
+              -0.0806,
+              0.9966,
+              -0.0182
+            ],
+            [
+              -0.0167,
+              0.0169,
+              0.9997
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "door",
+        "name": "米白门板",
+        "parent": "frame",
+        "transform": {
+          "pos": [
+            -0.43,
+            1.08,
+            0.01
+          ]
+        },
+        "_obb": {
+          "size": [
+            1.102,
+            2.082,
+            0.36
+          ],
+          "center": [
+            0.32,
+            0,
+            0.126
+          ],
+          "axes": [
+            [
+              0.9997,
+              -0.0028,
+              0.0255
+            ],
+            [
+              0.0028,
+              1,
+              0
+            ],
+            [
+              -0.0255,
+              0.0001,
+              0.9997
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "handle",
+        "name": "儿童圆角把手",
+        "parent": "door",
+        "transform": {
+          "pos": [
+            0.74,
+            0,
+            0.09
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.343,
+            0.18,
+            0.199
+          ],
+          "center": [
+            -0.069,
+            0,
+            0.097
+          ],
+          "axes": [
+            [
+              0.989,
+              0,
+              -0.1478
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0.1478,
+              0,
+              0.989
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "frame",
+        "transform": {
+          "pos": [
+            -0.52,
+            1.1,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.14,
+            "height": 2.2,
+            "depth": 0.18
+          },
+          "color": 12161122
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ]
+      },
+      {
+        "id": "m1",
+        "parent": "frame",
+        "transform": {
+          "pos": [
+            0.52,
+            1.1,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.14,
+            "height": 2.2,
+            "depth": 0.18
+          },
+          "color": 12161122
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ]
+      },
+      {
+        "id": "m2",
+        "parent": "frame",
+        "transform": {
+          "pos": [
+            0,
+            2.24,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.18,
+            "height": 0.16,
+            "depth": 0.18
+          },
+          "color": 12161122
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ]
+      },
+      {
+        "id": "m3",
+        "parent": "door",
+        "transform": {
+          "pos": [
+            0.43,
+            0,
+            0.01
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.88,
+            "height": 2.08,
+            "depth": 0.1
+          },
+          "color": 15261641
+        }
+      },
+      {
+        "id": "m4",
+        "parent": "door",
+        "transform": {
+          "pos": [
+            0.43,
+            0.64,
+            0.075
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.64,
+            "height": 0.06,
+            "depth": 0.025
+          },
+          "color": 14208437
+        }
+      },
+      {
+        "id": "m5",
+        "parent": "door",
+        "transform": {
+          "pos": [
+            0.43,
+            -0.62,
+            0.075
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.64,
+            "height": 0.06,
+            "depth": 0.025
+          },
+          "color": 14208437
+        }
+      },
+      {
+        "id": "m6",
+        "parent": "door",
+        "transform": {
+          "pos": [
+            -0.03,
+            -0.66,
+            0.07
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.08,
+            "height": 0.22,
+            "depth": 0.08
+          },
+          "color": 9142900
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m7",
+        "parent": "door",
+        "transform": {
+          "pos": [
+            -0.03,
+            0,
+            0.07
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.08,
+            "height": 0.22,
+            "depth": 0.08
+          },
+          "color": 9142900
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m8",
+        "parent": "door",
+        "transform": {
+          "pos": [
+            -0.03,
+            0.66,
+            0.07
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.08,
+            "height": 0.22,
+            "depth": 0.08
+          },
+          "color": 9142900
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m9",
+        "parent": "handle",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0.05
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.18,
+            "height": 0.18,
+            "depth": 0.1
+          },
+          "color": 14067774
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m10",
+        "parent": "handle",
+        "transform": {
+          "pos": [
+            -0.09,
+            0,
+            0.13
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.28,
+            "height": 0.1,
+            "depth": 0.1
+          },
+          "color": 14067774
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1786869585036,
+        "provider": "gpt",
+        "data": "bfb7DXvUjBpG083lFU+zx39C+Z0EvuX20YmxC5DIzzBnW6iRvS88ir1N2CTplUtT0IFjf/s3z37iw7eVBk+QsZFpAdLVaP3qthjAWV4FTIXCKn+3P0xT2Onk661lwtow1YruZi8RlZBJ4Z95T4TnjCE6i0e9MJn4LzqxIHo+Tf/t/YcmMbOgkUOQzE/hERGnQYYJLt0pSEhzkkgiN7zcZxWXHcCCcz5mIeKS2jQvWyP+AqcPam8F017SwDF7GhNVjfWc/c/hUmjJIVHlQcTrvU+zUWnBy23CsnvgeQmY5Y8MlgCXWKQ7lfWacrL9I5ymwc23n3ScLj+ARTGItJvlT7wz6F0Tm8AIgG1dOqIHkPmlbMJUBcMU3S1gt+7XwSuManGonYfJfZjAYa7YO8rp6hb2h0scrFqRXZhZOhsN3Nocu1KThOp920mQXeR4np4M9TPUZKrAIBflev5tieQhw5vsHx0uR+77p63x/dFdsh+YLqscPdd7IJQ8J54Mtla29poyWZA6dqviYmtJIV0Vo5gJd24TO8y2xTgr1oe0sUgf+4yuKY1cdFh9iAYT0niZ8Ctmdx7HxwrtaB7ozQASbGPaXg1OoLfd4hDFl9ddltUwbItSxX9Gg4qrJso6rjxGvOqV75oj6bjQMOtc2iICrxifsgmZgw18KsKQyIWDJ3Pyrgv1NbeDak9V07O/FbIu7LO/T77xnyBd8oiiVZxeN0hlC/imxhOXCK4jAl9A0eegYLxYjaOUgf0BN/yyPLnt2edKdwoAT3DBV6ISG2lT6x7WVCx0FkBKt2jEVm68qGP0cIlU70Hw25nUEPX22Gntz/GroJbexgdL",
+        "edits": ""
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -0.44,
+          0.040000000000000036,
+          -0.12499999999999999
+        ],
+        "max": [
+          0.44,
+          2.12,
+          -0.02499999999999998
+        ],
+        "sourceNodeId": "m3"
+      }
+    ],
+    "sourceMeshCount": 11,
+    "candidateCount": 1,
+    "fallbackUsed": false
+  },
+  "footprintRadius": 0.44,
+  "sizeClass": "small",
+  "mode": "voxel",
+  "provider": "gpt",
+  "createdAt": 1786869586816,
+  "updatedAt": 1786869586816
+}

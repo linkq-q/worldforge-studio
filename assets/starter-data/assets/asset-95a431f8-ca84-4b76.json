@@ -1,0 +1,433 @@
+{
+  "id": "asset-95a431f8-ca84-4b76",
+  "name": "挂画",
+  "prompt": "挂画",
+  "modelJson": {
+    "name": "山景挂画",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "painting",
+        "name": "挂画",
+        "transform": {
+          "pos": [
+            0,
+            3.2,
+            0.15
+          ]
+        },
+        "_obb": {
+          "size": [
+            5.042,
+            4.42,
+            0.698
+          ],
+          "center": [
+            0.024,
+            -0.335,
+            0.067
+          ],
+          "axes": [
+            [
+              0.9972,
+              0.0739,
+              0.0089
+            ],
+            [
+              -0.074,
+              0.9972,
+              0.0105
+            ],
+            [
+              -0.0081,
+              -0.0111,
+              0.9999
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "painting",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            -0.15
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 4.8,
+            "height": 3.4,
+            "depth": 0.18
+          },
+          "color": 7028514
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "walnut"
+          }
+        ]
+      },
+      {
+        "id": "m1",
+        "parent": "painting",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            -0.01
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 4.2,
+            "height": 2.8,
+            "depth": 0.12
+          },
+          "color": 10471384
+        }
+      },
+      {
+        "id": "m2",
+        "parent": "painting",
+        "transform": {
+          "pos": [
+            0,
+            1.56,
+            0.05
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 4.8,
+            "height": 0.28,
+            "depth": 0.28
+          },
+          "color": 9065773
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "walnut"
+          }
+        ]
+      },
+      {
+        "id": "m3",
+        "parent": "painting",
+        "transform": {
+          "pos": [
+            0,
+            -1.56,
+            0.05
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 4.8,
+            "height": 0.28,
+            "depth": 0.28
+          },
+          "color": 9065773
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "walnut"
+          }
+        ]
+      },
+      {
+        "id": "m4",
+        "parent": "painting",
+        "transform": {
+          "pos": [
+            -2.26,
+            0,
+            0.05
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.28,
+            "height": 2.84,
+            "depth": 0.28
+          },
+          "color": 9065773
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "walnut"
+          }
+        ]
+      },
+      {
+        "id": "m5",
+        "parent": "painting",
+        "transform": {
+          "pos": [
+            2.26,
+            0,
+            0.05
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.28,
+            "height": 2.84,
+            "depth": 0.28
+          },
+          "color": 9065773
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "walnut"
+          }
+        ]
+      },
+      {
+        "id": "m6",
+        "parent": "painting",
+        "transform": {
+          "pos": [
+            -0.8,
+            -1.15,
+            0.08
+          ],
+          "quat": [
+            0.71,
+            0.18,
+            0.31,
+            0.64
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2.17,
+            "height": 0.08,
+            "depth": 1.9
+          },
+          "color": 4549461
+        }
+      },
+      {
+        "id": "m7",
+        "parent": "painting",
+        "transform": {
+          "pos": [
+            0.93,
+            -1.15,
+            0.1
+          ],
+          "quat": [
+            0.7,
+            0.22,
+            0.3,
+            0.64
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.84,
+            "height": 0.08,
+            "depth": 1.69
+          },
+          "color": 3495751
+        }
+      },
+      {
+        "id": "m8",
+        "parent": "painting",
+        "transform": {
+          "pos": [
+            0,
+            -1.05,
+            0.15
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 4.05,
+            "height": 0.72,
+            "depth": 0.08
+          },
+          "color": 5602136
+        }
+      },
+      {
+        "id": "m9",
+        "parent": "painting",
+        "transform": {
+          "pos": [
+            1.45,
+            0.85,
+            0.15
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.5,
+            "height": 0.5,
+            "depth": 0.08
+          },
+          "color": 15909982
+        },
+        "tags": [
+          {
+            "tag": "emissive",
+            "value": 0.25
+          }
+        ]
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1786870853824,
+        "provider": "glm",
+        "data": "qCep106SURgQgtnecbKcYSAgxsaRaPZFZ/aDDqIXiM3AB5A1+RxBQXXEcMqFXKEZTxseAeTIgGoCgF6mgRQ7DFvBLeFy0pd++V3oXHcNWJC7c0WOtWvks3mGo1DuY6CaW99A9848tupYI1gqdchbojXLCWESfJlQZjzAbM0LIClrYv2V8tYjgv7BplTahcfRUL3xtAEOmixmpog++dwH/uUu0J2cJuJFYfUlzoLAM/aPK5onbu+bGqCyqXxhYYj4gV/PoHYZJG+QG8D1UjhJvDzaMX7H/o/vpnwO0raYTumUY4BbG3UXg5P48rBqBQuG1ywLrkgWXcNOG2YbV0MK6Q+eMUoMOWAgUIE+Qkc/QgladPEBxQEd0cDpPgjbaxqy5s+S9FFrP10R8sOenWf97qtX0Agr7rxCyx2PamuNtsUzgtlxGYlj76GAtyZSuiVKdJQq8JCK+TialKnMThjjrkfJdC+9CPSDw/wMwA/hqkz6uqxp6mMfhMNap0vghb7+YsQ2fZ+JxUhqnfp0MhYdqwC4FTz91mxdob2mDQWeDY0iUS4ql9PapSLYERpH7v6UmSLOXbmMnjyytqMd5yOM0FSQR3K2JwVoiP6VT10lQ+BQ+bHj8Fbk+vPtftx2KZMNHp7dRQTcnjc451U2vUuXhBkiCuSm1U+iSvubdstvb+PoNhdU+SKjwruYjykzKwNPoC37ovFGMMz+t21eoi5kdfeFa7+4KFFxXXtd2YX9mOUjJ9bpiPfiZ6Sf7b6Seh5C5UZQxssirSk5cxvwRIuNgW2P1jKYjIRBRw==",
+        "edits": ""
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -2.2341393206678184,
+          0,
+          -0.26848157743235507
+        ],
+        "max": [
+          0.6341393206678181,
+          2.8238764152753797,
+          0.30282719247745166
+        ],
+        "sourceNodeId": "m6"
+      },
+      {
+        "min": [
+          -2.4,
+          0.8619382076376898,
+          -0.3028271924774517
+        ],
+        "max": [
+          2.4,
+          4.26193820763769,
+          -0.12282719247745169
+        ],
+        "sourceNodeId": "m0"
+      },
+      {
+        "min": [
+          -0.3187437379576107,
+          0.1719574754604256,
+          -0.15669424450057307
+        ],
+        "max": [
+          2.178743737957611,
+          2.651918939814954,
+          0.2310398595456697
+        ],
+        "sourceNodeId": "m7"
+      },
+      {
+        "min": [
+          -2.1,
+          1.1619382076376898,
+          -0.1328271924774517
+        ],
+        "max": [
+          2.1,
+          3.9619382076376892,
+          -0.012827192477451704
+        ],
+        "sourceNodeId": "m1"
+      },
+      {
+        "min": [
+          -2.4,
+          0.8619382076376896,
+          -0.1528271924774517
+        ],
+        "max": [
+          2.4,
+          1.1419382076376898,
+          0.12717280752254834
+        ],
+        "sourceNodeId": "m3"
+      },
+      {
+        "min": [
+          -2.4,
+          3.9819382076376897,
+          -0.1528271924774517
+        ],
+        "max": [
+          2.4,
+          4.261938207637689,
+          0.12717280752254834
+        ],
+        "sourceNodeId": "m2"
+      },
+      {
+        "min": [
+          -2.4,
+          1.1419382076376898,
+          -0.1528271924774517
+        ],
+        "max": [
+          -2.1199999999999997,
+          3.9819382076376897,
+          0.12717280752254834
+        ],
+        "sourceNodeId": "m4"
+      },
+      {
+        "min": [
+          2.1199999999999997,
+          1.1419382076376898,
+          -0.1528271924774517
+        ],
+        "max": [
+          2.4,
+          3.9819382076376897,
+          0.12717280752254834
+        ],
+        "sourceNodeId": "m5"
+      }
+    ],
+    "sourceMeshCount": 10,
+    "candidateCount": 8,
+    "fallbackUsed": false
+  },
+  "footprintRadius": 2.4,
+  "sizeClass": "medium",
+  "mode": "voxel",
+  "createdAt": 1786870854930,
+  "updatedAt": 1786870854930
+}

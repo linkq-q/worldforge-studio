@@ -1,0 +1,554 @@
+{
+  "id": "asset-059f77f5-deac-4714",
+  "name": "竹风铃",
+  "prompt": "单独一个悬挂式竹制风铃，三根天然竹管与一片木质摆片，完整独立个体，无安装架，无其他装饰\nCoordinate contract: local Y+ is up, local Z+ is the front, entrance, or forward direction, and local X+ is right. Put doors, facades, openings, windshields, noses, seats, and other recognizable front details toward local Z+. For a modular repeated element, explicitly choose the long axis: side-by-side modules span local X with depth/front on local Z; traversal modules span local Z. Keep the model centered at its origin.\nCanonical dimensions contract: width=0.34, height=0.72, depth=0.34 world units. Keep the generated mesh within this centered bounding size.",
+  "modelJson": {
+    "name": "悬挂式竹制风铃",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "mount_chime_paddle",
+        "name": "木质摆片",
+        "transform": {
+          "pos": [
+            0,
+            0.31,
+            0.035
+          ]
+        },
+        "mounted": true,
+        "_obb": {
+          "size": [
+            0.276,
+            0.547,
+            0.115
+          ],
+          "center": [
+            0.001,
+            -0.243,
+            -0.015
+          ],
+          "axes": [
+            [
+              1,
+              0.0052,
+              -0.0011
+            ],
+            [
+              -0.0052,
+              0.9996,
+              -0.0286
+            ],
+            [
+              0.001,
+              0.0286,
+              0.9996
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "chime_tube_left",
+        "name": "左侧竹管",
+        "parent": "mount_chime_paddle",
+        "transform": {
+          "pos": [
+            -0.105,
+            0,
+            -0.035
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.065,
+            0.27,
+            0.065
+          ],
+          "center": [
+            0,
+            -0.135,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "chime_tube_center",
+        "name": "中间竹管",
+        "parent": "mount_chime_paddle",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            -0.035
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.07,
+            0.34,
+            0.07
+          ],
+          "center": [
+            0,
+            -0.17,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "chime_tube_right",
+        "name": "右侧竹管",
+        "parent": "mount_chime_paddle",
+        "transform": {
+          "pos": [
+            0.105,
+            0,
+            -0.035
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.065,
+            0.3,
+            0.065
+          ],
+          "center": [
+            0,
+            -0.15,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "left_string",
+        "name": "左侧悬线",
+        "parent": "mount_chime_paddle",
+        "transform": {
+          "pos": [
+            -0.105,
+            0.03,
+            -0.035
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.012,
+            0.055,
+            0.012
+          ],
+          "center": [
+            0,
+            -0.028,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "center_string",
+        "name": "中间悬线",
+        "parent": "mount_chime_paddle",
+        "transform": {
+          "pos": [
+            0,
+            0.03,
+            -0.035
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.012,
+            0.055,
+            0.012
+          ],
+          "center": [
+            0,
+            -0.028,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "right_string",
+        "name": "右侧悬线",
+        "parent": "mount_chime_paddle",
+        "transform": {
+          "pos": [
+            0.105,
+            0.03,
+            -0.035
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.012,
+            0.055,
+            0.012
+          ],
+          "center": [
+            0,
+            -0.028,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "chime_tube_left",
+        "transform": {
+          "pos": [
+            0,
+            -0.135,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.065,
+            "height": 0.27,
+            "depth": 0.065
+          },
+          "color": 12157499
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ]
+      },
+      {
+        "id": "m1",
+        "parent": "chime_tube_center",
+        "transform": {
+          "pos": [
+            0,
+            -0.17,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.07,
+            "height": 0.34,
+            "depth": 0.07
+          },
+          "color": 13211467
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ]
+      },
+      {
+        "id": "m2",
+        "parent": "chime_tube_right",
+        "transform": {
+          "pos": [
+            0,
+            -0.15,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.065,
+            "height": 0.3,
+            "depth": 0.065
+          },
+          "color": 11039537
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ]
+      },
+      {
+        "id": "m3",
+        "parent": "left_string",
+        "transform": {
+          "pos": [
+            0,
+            -0.028,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.012,
+            "height": 0.055,
+            "depth": 0.012
+          },
+          "color": 7688235
+        }
+      },
+      {
+        "id": "m4",
+        "parent": "center_string",
+        "transform": {
+          "pos": [
+            0,
+            -0.028,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.012,
+            "height": 0.055,
+            "depth": 0.012
+          },
+          "color": 7688235
+        }
+      },
+      {
+        "id": "m5",
+        "parent": "right_string",
+        "transform": {
+          "pos": [
+            0,
+            -0.028,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.012,
+            "height": 0.055,
+            "depth": 0.012
+          },
+          "color": 7688235
+        }
+      },
+      {
+        "id": "m6",
+        "parent": "mount_chime_paddle",
+        "transform": {
+          "pos": [
+            0,
+            -0.43,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.145,
+            "height": 0.17,
+            "depth": 0.025
+          },
+          "color": 9394994
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ]
+      },
+      {
+        "id": "m7",
+        "parent": "mount_chime_paddle",
+        "transform": {
+          "pos": [
+            0,
+            -0.288,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.012,
+            "height": 0.115,
+            "depth": 0.012
+          },
+          "color": 7030056
+        }
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1787873922053,
+        "provider": "gpt",
+        "data": "k15ocGYXIw98IN6ovStW33gF6Emowkyggfw3tIIKoG2MRWwjcKpAu10WD6FVoxE6eS5vX+rVN9auVimOQdVAZsqWgF94dYZs0Sh35IFI5TAy6oUhpOIONUN+Y8oHlJL/R1S/BvP+scrORPhhG2TcV0x7xTOBJGM0qF20sWPxpeWXVhBxY2GuB+pwTF8K2lqWPnSF6UV5LSemCiy6h596PFjPkXHf05gQvrkoUEr9syjY5SiYkEL2rfu8Kx8eZi37sRF0NkAWypC/4HBw9HyIKfB/w3EhRzJ3x2TRPUe3+zKLY4vFJpdut1L5kl/3YsnK100hcIVy6EjV6OcC8/XXvzsGddJhBc0e8TMm8bQfwCwl0nMdD5STb7b6M0Cw2nKULTyur8vkEDqrT4x0jVUwhjJrqwNWE0MLQJHRBx7ya3xu214XwaYIXh27Uwl1z8oF5FGXmPX07IF9z5czGGOLN9IuYeh0G2ChjgRfke+z9phKNhF6Tez73zZkJrCmzLK3yFsb4A3gf2+7QKNct0gYdwbNqKNXz/RBVISCbfvg0+9uK9Kc1VAgNrqjGL1mlRBlbaZ2F1T31pkWfhQefeRsrHBz7gFWMeBSVXNlTlMMZ0VcU0rS5ieULHctU2gF5hyFbdnTcyIjuBYuuxSI7K2slwjDUDzx54O3qWmqUdUG9JpltqVI5eVvHEbMew9SI6WdkmYC448wS92mNDEo3Z7lf48Zff4YG+lXFYW+6BJEGBnNLDC/gtsb8YO3ZUAEBsGaYNuO8MZf+FmOjdHHeQUPSYSIyfhVIf0MRFAKOXL8qpqKxnCH5paBMl3JG1S8rzX1FiuIFTRNvaH+bl+wgPI/U9A7pH3Xyu/JE3EvC8Ga18uEuMeGbhmdYdgqBj8OiwY52jNm+3Z2PR+laz6f7lDU",
+        "edits": ""
+      },
+      "mounts": [
+        {
+          "id": "mount_chime_paddle",
+          "mountedGroupId": "mount_chime_paddle",
+          "name": "木质摆片",
+          "source": {
+            "type": "codegen"
+          },
+          "description": "",
+          "visible": true,
+          "ts": 1787873922054
+        }
+      ],
+      "semanticSnapshot": {
+        "v": 1,
+        "auto": true,
+        "text": "悬挂式竹制风铃 · 7组/8mesh · 世界坐标(Y上Z前), 原点=模型根\n# 阅读说明: G:=group行(可动画骨骼, 动画key用G:后的id; @p=pivot世界坐标; 倾(x,y,z)°=朝向偏离世界轴的欧拉角; 缩进=父子层级; 挂:=挂载于某组; G:id→id→…=chain折叠行, 每个id都是可独立动画的group, chain×N=waypoint数)\n# M:=mesh行(label[id 几何 @(世界坐标)], label可省略; ×N=for循环批量件(锚点=代表实例); cyl (起)→(末)或 轴上(Y)等方位词=延伸方向; 薄向=板面法向(扁板); 挂载组双代表=最大件+最远有向件(刃/嘴/管所在端); 无方向标注=均匀块(三向相近,如头),默认面向前(Z); 对称×2=镜像对)\nG:mount_chime_paddle 木质摆片 @p(0,0.3,0)\n  M:[m6 box 0.14×0.17×0.03 (0,-0.1,0) 薄向前(Z)]\n  G:chime_tube_left 左侧竹管 @p(-0.1,0.3,0)\n    M:[m0 box 0.07×0.27×0.07 (-0.1,0.2,0) 轴上(Y)]\n  G:chime_tube_center 中间竹管 @p(0,0.3,0)\n    M:[m1 box 0.07×0.34×0.07 (0,0.1,0) 轴上(Y)]\n  G:chime_tube_right 右侧竹管 @p(0.1,0.3,0)\n    M:[m2 box 0.07×0.3×0.07 (0.1,0.2,0) 轴上(Y)]\n  G:left_string 左侧悬线 @p(-0.1,0.3,0)\n    M:[m3 box 0.01×0.06×0.01 (-0.1,0.3,0) 轴上(Y)]\n  G:center_string 中间悬线 @p(0,0.3,0)\n    M:[m4 box 0.01×0.06×0.01 (0,0.3,0) 轴上(Y)]\n  G:right_string 右侧悬线 @p(0.1,0.3,0)\n    M:[m5 box 0.01×0.06×0.01 (0.1,0.3,0) 轴上(Y)]",
+        "stats": {
+          "groups": 7,
+          "meshes": 8,
+          "labeledMeshes": 0,
+          "labelCoverage": 0,
+          "batchLabels": 0,
+          "autoChains": 0,
+          "snapshotChars": 961
+        }
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -0.1375,
+          0,
+          -0.04125
+        ],
+        "max": [
+          0.1375,
+          0.5445,
+          0.04125
+        ],
+        "sourceNodeId": "asset-bounds"
+      }
+    ],
+    "sourceMeshCount": 8,
+    "candidateCount": 0,
+    "fallbackUsed": true
+  },
+  "footprintRadius": 0.1375,
+  "sizeClass": "small",
+  "mode": "voxel",
+  "provider": "gpt",
+  "createdAt": 1787873921959,
+  "updatedAt": 1787873921959
+}

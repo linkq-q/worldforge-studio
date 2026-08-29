@@ -1,0 +1,516 @@
+{
+  "id": "asset-d28f8b74-6431-4e47",
+  "name": "整齐成堆的儿童图书",
+  "prompt": "A single reusable organized pile of eight children's books in mixed thicknesses, with two short horizontal stacks and varied colorful covers without legible text, approximately 0.55 meters wide, no shelf, floor, room, background, or loose distant books",
+  "tags": [
+    "book",
+    "prop"
+  ],
+  "modelJson": {
+    "name": "两摞彩色儿童书",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "book_pile",
+        "name": "整齐的双书摞",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.566,
+            0.304,
+            0.256
+          ],
+          "center": [
+            -0.001,
+            0.049,
+            -0.021
+          ],
+          "axes": [
+            [
+              1,
+              0.0017,
+              -0.0005
+            ],
+            [
+              -0.0017,
+              0.9996,
+              -0.0275
+            ],
+            [
+              0.0004,
+              0.0275,
+              0.9996
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "stack_0",
+        "name": "短书摞",
+        "parent": "book_pile",
+        "transform": {
+          "pos": [
+            -0.143,
+            0.096,
+            0.0485
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.27,
+            0.199,
+            0.197
+          ],
+          "center": [
+            -0.006,
+            0.002,
+            -0.045
+          ],
+          "axes": [
+            [
+              1,
+              0.0032,
+              -0.0006
+            ],
+            [
+              -0.0032,
+              0.9999,
+              0.0118
+            ],
+            [
+              0.0007,
+              -0.0118,
+              0.9999
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "stack_1",
+        "name": "短书摞",
+        "parent": "book_pile",
+        "transform": {
+          "pos": [
+            0.144,
+            0.101,
+            0.0498
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.265,
+            0.197,
+            0.201
+          ],
+          "center": [
+            0.005,
+            -0.003,
+            -0.047
+          ],
+          "axes": [
+            [
+              1,
+              0.0006,
+              0.0009
+            ],
+            [
+              -0.0006,
+              1,
+              -0.0024
+            ],
+            [
+              -0.0009,
+              0.0024,
+              1
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "stack_0",
+        "transform": {
+          "pos": [
+            -0.002,
+            -0.076,
+            -0.0485
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.26,
+            "height": 0.04,
+            "depth": 0.19
+          },
+          "color": 15751783
+        }
+      },
+      {
+        "id": "m1",
+        "parent": "stack_0",
+        "transform": {
+          "pos": [
+            -0.002,
+            -0.076,
+            0.0485
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.24200000000000002,
+            "height": 0.026000000000000002,
+            "depth": 0.008
+          },
+          "color": 16774098
+        }
+      },
+      {
+        "id": "m2",
+        "parent": "stack_0",
+        "transform": {
+          "pos": [
+            0.006,
+            -0.0225,
+            -0.0485
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.245,
+            "height": 0.055,
+            "depth": 0.175
+          },
+          "color": 3582433
+        }
+      },
+      {
+        "id": "m3",
+        "parent": "stack_0",
+        "transform": {
+          "pos": [
+            0.006,
+            -0.0225,
+            0.041
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.227,
+            "height": 0.041,
+            "depth": 0.008
+          },
+          "color": 16774098
+        }
+      },
+      {
+        "id": "m4",
+        "parent": "stack_0",
+        "transform": {
+          "pos": [
+            -0.006,
+            0.0285,
+            -0.0485
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.27,
+            "height": 0.035,
+            "depth": 0.185
+          },
+          "color": 16041282
+        }
+      },
+      {
+        "id": "m5",
+        "parent": "stack_0",
+        "transform": {
+          "pos": [
+            -0.006,
+            0.0285,
+            0.046
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.252,
+            "height": 0.021000000000000005,
+            "depth": 0.008
+          },
+          "color": 16774098
+        }
+      },
+      {
+        "id": "m6",
+        "parent": "stack_0",
+        "transform": {
+          "pos": [
+            0.004,
+            0.076,
+            -0.0485
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.235,
+            "height": 0.048,
+            "depth": 0.18
+          },
+          "color": 6732139
+        }
+      },
+      {
+        "id": "m7",
+        "parent": "stack_0",
+        "transform": {
+          "pos": [
+            0.004,
+            0.076,
+            0.0435
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.217,
+            "height": 0.034,
+            "depth": 0.008
+          },
+          "color": 16774098
+        }
+      },
+      {
+        "id": "m8",
+        "parent": "stack_1",
+        "transform": {
+          "pos": [
+            0.001,
+            -0.076,
+            -0.0497
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.255,
+            "height": 0.05,
+            "depth": 0.185
+          },
+          "color": 9136324
+        }
+      },
+      {
+        "id": "m9",
+        "parent": "stack_1",
+        "transform": {
+          "pos": [
+            0.001,
+            -0.076,
+            0.0448
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.23700000000000002,
+            "height": 0.036000000000000004,
+            "depth": 0.008
+          },
+          "color": 16774098
+        }
+      },
+      {
+        "id": "m10",
+        "parent": "stack_1",
+        "transform": {
+          "pos": [
+            -0.005,
+            -0.029,
+            -0.0497
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.23,
+            "height": 0.032,
+            "depth": 0.175
+          },
+          "color": 15895608
+        }
+      },
+      {
+        "id": "m11",
+        "parent": "stack_1",
+        "transform": {
+          "pos": [
+            -0.005,
+            -0.029,
+            0.0397
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.21200000000000002,
+            "height": 0.018000000000000002,
+            "depth": 0.008
+          },
+          "color": 16774098
+        }
+      },
+      {
+        "id": "m12",
+        "parent": "stack_1",
+        "transform": {
+          "pos": [
+            0.005,
+            0.022,
+            -0.0497
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.265,
+            "height": 0.058,
+            "depth": 0.195
+          },
+          "color": 15162017
+        }
+      },
+      {
+        "id": "m13",
+        "parent": "stack_1",
+        "transform": {
+          "pos": [
+            0.005,
+            0.022,
+            0.0498
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.24700000000000003,
+            "height": 0.044000000000000004,
+            "depth": 0.008
+          },
+          "color": 16774098
+        }
+      },
+      {
+        "id": "m14",
+        "parent": "stack_1",
+        "transform": {
+          "pos": [
+            -0.002,
+            0.076,
+            -0.0497
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.24,
+            "height": 0.038,
+            "depth": 0.18
+          },
+          "color": 3520421
+        }
+      },
+      {
+        "id": "m15",
+        "parent": "stack_1",
+        "transform": {
+          "pos": [
+            -0.002,
+            0.076,
+            0.0422
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.222,
+            "height": 0.024,
+            "depth": 0.008
+          },
+          "color": 16774098
+        }
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1786874787075,
+        "provider": "gpt",
+        "data": "28gTHaWrCECNAaXOpkgDdcfOWphcruWLNglPRhutkhh/LoWwgYghDUnIA+JZvYtsHK1gXY3b72C0f/j2PvFyX4d+J2qUwF+EGvtxx2bLE6fQnVf4CnNizMtGMgSJNftKhZxcmWL94JVl8a5ZG9q+WbcjheMpAdTeAPaIy5WG2vvpKsKGlr8obl2g0gTcnN8OEdI4eOMrWcnESPYyTScWfcNnVctnsdJcATtHUbpoU3StQch5Tcj0xNICb8s1SlUfVKBlmRvmIBC51f6FTLBpgYy4y/mRxTNQxd3B/iFoYeIZ8oRxRmsOvy5EdGCIokjv9xhSkzuXpHdghemyyp2H2gRs3AEkhAm5meV9JmuqwvJ5SH9avqxw9HYyStQvzh4gqHi25av1Vloors6/IySQwXg9+KuOXUz7/b2gSJ0P6y+ilyUTHAkUvuxtfZ82FXix3PpjC7aNpZj2TUG5x4ZKGPTL2344U0LMQRijNSrtzytSj+A4Pq9K7XTFQNq6ZsRic3QYIiN5B03V+pS+87e/5Ggo6s1aOBz2Qj6cXVR5LOmzcNX9n8ZTLHYUocBKX93kGTYeoGFNueWEH11h2oijJ1P176ERPR29HfymDmGZ2CgCOc0hV+me1GK6eCreTq6sskvES/Lf+pJBUOGgCz2dSDtbx4oAWJFQrlcVVJY72Pp3shQj6eSjG2naZXsP2QZ29ovjhvB91Cn4MU7o4nK3n1uJGSEe0SL9pcHYfPtUhEQPayhEknoDdAlRx6bf3Qb/lw7rxSQJZN+/sEm5Hqu28VKshrakvG2lLNloV8Y3kAWtp3LfG8oUotauo8Tev5ceYUTWj871uwlLARVUu1xQQyS1HrzXkH6z1NdusSYlboRe+4fayPJZteILmp3CTQ/1dy9c6sbojDSg+gLDRE4oP+IZwP8kvE0XbS6opd3afv9tM3AFwQPNJju2X2RxQPzVKL+MdCuM74KTK2hARCAHSMiQcSMC",
+        "edits": ""
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -0.28275,
+          0,
+          -0.101
+        ],
+        "max": [
+          0.28275,
+          0.19599999999999998,
+          0.101
+        ],
+        "sourceNodeId": "asset-bounds"
+      }
+    ],
+    "sourceMeshCount": 16,
+    "candidateCount": 1,
+    "fallbackUsed": true
+  },
+  "footprintRadius": 0.28275,
+  "sizeClass": "small",
+  "mode": "voxel",
+  "provider": "gpt",
+  "libraryId": "library-d7967286-cebf-4f99",
+  "libraryMetadata": {
+    "tags": [
+      "childrensbooks",
+      "bookpile",
+      "organizedstack",
+      "educationalprop"
+    ],
+    "applicableZones": [
+      "settlement"
+    ],
+    "repeatable": true,
+    "landmark": false,
+    "enabled": true,
+    "priority": 0.5,
+    "analysisStatus": "ready",
+    "rotation": "random"
+  },
+  "createdAt": 1787817341065,
+  "updatedAt": 1787817341065
+}

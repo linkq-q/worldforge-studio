@@ -1,0 +1,895 @@
+{
+  "id": "asset-037a81da-f675-4f13",
+  "name": "磁力吊车",
+  "prompt": "原创儿童玩具，单辆迷你磁力吊车，圆角工程车造型，可见吊臂与圆盘磁铁，黄色与深青色配色，无文字无品牌，独立单体\nCoordinate contract: local Y+ is up, local Z+ is the front, entrance, or forward direction, and local X+ is right. Put doors, facades, openings, windshields, noses, seats, and other recognizable front details toward local Z+. For a modular repeated element, explicitly choose the long axis: side-by-side modules span local X with depth/front on local Z; traversal modules span local Z. Keep the model centered at its origin.\nCanonical dimensions contract: width=0.75, height=0.65, depth=0.45 world units. Keep the generated mesh within this centered bounding size.",
+  "modelJson": {
+    "name": "迷你磁力吊车",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "chassis",
+        "name": "车身底盘",
+        "transform": {
+          "pos": [
+            0,
+            0.16,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.756,
+            0.826,
+            0.646
+          ],
+          "center": [
+            0,
+            0.085,
+            0.02
+          ],
+          "axes": [
+            [
+              1,
+              0.0016,
+              0.0021
+            ],
+            [
+              -0.0025,
+              0.8381,
+              0.5455
+            ],
+            [
+              -0.0008,
+              -0.5455,
+              0.8381
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "cab",
+        "name": "驾驶室",
+        "parent": "chassis",
+        "transform": {
+          "pos": [
+            0,
+            0.15,
+            0.03
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.36,
+            0.319,
+            0.316
+          ],
+          "center": [
+            0,
+            0.117,
+            0.065
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              0.9108,
+              -0.4128
+            ],
+            [
+              0,
+              0.4128,
+              0.9108
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "wheel_fl",
+        "name": "车轮",
+        "parent": "chassis",
+        "transform": {
+          "pos": [
+            -0.34,
+            -0.085,
+            0.13
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.075,
+            0.15,
+            0.15
+          ],
+          "center": [
+            0,
+            0,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "wheel_fr",
+        "name": "车轮",
+        "parent": "chassis",
+        "transform": {
+          "pos": [
+            0.34,
+            -0.085,
+            0.13
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.075,
+            0.15,
+            0.15
+          ],
+          "center": [
+            0,
+            0,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "wheel_bl",
+        "name": "车轮",
+        "parent": "chassis",
+        "transform": {
+          "pos": [
+            -0.34,
+            -0.085,
+            -0.13
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.075,
+            0.15,
+            0.15
+          ],
+          "center": [
+            0,
+            0,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "wheel_br",
+        "name": "车轮",
+        "parent": "chassis",
+        "transform": {
+          "pos": [
+            0.34,
+            -0.085,
+            -0.13
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.075,
+            0.15,
+            0.15
+          ],
+          "center": [
+            0,
+            0,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "boom",
+        "name": "吊臂",
+        "parent": "chassis",
+        "transform": {
+          "pos": [
+            0,
+            0.19,
+            -0.12
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.195,
+            0.65,
+            0.376
+          ],
+          "center": [
+            0,
+            -0.06,
+            0.094
+          ],
+          "axes": [
+            [
+              0.9999,
+              0.0032,
+              -0.0146
+            ],
+            [
+              0.0019,
+              0.9419,
+              0.3358
+            ],
+            [
+              0.0148,
+              -0.3357,
+              0.9418
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "cable",
+        "name": "吊索",
+        "parent": "boom",
+        "transform": {
+          "pos": [
+            0,
+            0.22,
+            0.19
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.19,
+            0.345,
+            0.16
+          ],
+          "center": [
+            0,
+            -0.17,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "magnet",
+        "name": "圆盘磁铁",
+        "parent": "cable",
+        "transform": {
+          "pos": [
+            0,
+            -0.27,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.19,
+            0.075,
+            0.16
+          ],
+          "center": [
+            0,
+            -0.035,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "chassis",
+        "transform": {
+          "pos": [
+            0,
+            0.03,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.66,
+            "height": 0.16,
+            "depth": 0.38
+          },
+          "color": 15906565
+        }
+      },
+      {
+        "id": "m1",
+        "parent": "chassis",
+        "transform": {
+          "pos": [
+            0,
+            0.14,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.56,
+            "height": 0.08,
+            "depth": 0.43
+          },
+          "color": 1005920
+        }
+      },
+      {
+        "id": "m2",
+        "parent": "chassis",
+        "transform": {
+          "pos": [
+            0,
+            0.04,
+            0.195
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.48,
+            "height": 0.07,
+            "depth": 0.06
+          },
+          "color": 16238888
+        }
+      },
+      {
+        "id": "m3",
+        "parent": "cab",
+        "transform": {
+          "pos": [
+            0,
+            0.115,
+            0.06
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.36,
+            "height": 0.25,
+            "depth": 0.22
+          },
+          "color": 15906565
+        }
+      },
+      {
+        "id": "m4",
+        "parent": "cab",
+        "transform": {
+          "pos": [
+            0,
+            0.16,
+            0.182
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.25,
+            "height": 0.11,
+            "depth": 0.025
+          },
+          "color": 8705491
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass",
+            "variant": "blue"
+          }
+        ]
+      },
+      {
+        "id": "m5",
+        "parent": "cab",
+        "transform": {
+          "pos": [
+            -0.11,
+            0.05,
+            0.184
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.08,
+            "height": 0.055,
+            "depth": 0.025
+          },
+          "color": 16769902
+        }
+      },
+      {
+        "id": "m6",
+        "parent": "cab",
+        "transform": {
+          "pos": [
+            0.11,
+            0.05,
+            0.184
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.08,
+            "height": 0.055,
+            "depth": 0.025
+          },
+          "color": 16769902
+        }
+      },
+      {
+        "id": "m7",
+        "parent": "wheel_fl",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.07,
+            "height": 0.15,
+            "depth": 0.15
+          },
+          "color": 1456960
+        }
+      },
+      {
+        "id": "m8",
+        "parent": "wheel_fl",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.075,
+            "height": 0.065,
+            "depth": 0.065
+          },
+          "color": 9086115
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m9",
+        "parent": "wheel_fr",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.07,
+            "height": 0.15,
+            "depth": 0.15
+          },
+          "color": 1456960
+        }
+      },
+      {
+        "id": "m10",
+        "parent": "wheel_fr",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.075,
+            "height": 0.065,
+            "depth": 0.065
+          },
+          "color": 9086115
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m11",
+        "parent": "wheel_bl",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.07,
+            "height": 0.15,
+            "depth": 0.15
+          },
+          "color": 1456960
+        }
+      },
+      {
+        "id": "m12",
+        "parent": "wheel_bl",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.075,
+            "height": 0.065,
+            "depth": 0.065
+          },
+          "color": 9086115
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m13",
+        "parent": "wheel_br",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.07,
+            "height": 0.15,
+            "depth": 0.15
+          },
+          "color": 1456960
+        }
+      },
+      {
+        "id": "m14",
+        "parent": "wheel_br",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.075,
+            "height": 0.065,
+            "depth": 0.065
+          },
+          "color": 9086115
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m15",
+        "parent": "boom",
+        "transform": {
+          "pos": [
+            0,
+            0.1,
+            0.09
+          ],
+          "quat": [
+            0.64,
+            0.29,
+            0.64,
+            0.29
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.3,
+            "height": 0.07,
+            "depth": 0.13
+          },
+          "color": 15906565
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m16",
+        "parent": "boom",
+        "transform": {
+          "pos": [
+            0,
+            0.02,
+            0.005
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.18,
+            "height": 0.09,
+            "depth": 0.13
+          },
+          "color": 1005920
+        }
+      },
+      {
+        "id": "m17",
+        "parent": "cable",
+        "transform": {
+          "pos": [
+            0,
+            -0.135,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.025,
+            "height": 0.27,
+            "depth": 0.025
+          },
+          "color": 2571327
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m18",
+        "parent": "magnet",
+        "transform": {
+          "pos": [
+            0,
+            -0.025,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.19,
+            "height": 0.055,
+            "depth": 0.16
+          },
+          "color": 1005920
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m19",
+        "parent": "magnet",
+        "transform": {
+          "pos": [
+            0,
+            -0.06,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.13,
+            "height": 0.025,
+            "depth": 0.11
+          },
+          "color": 15906565
+        }
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1787770785840,
+        "provider": "gpt",
+        "data": "3oJBGfm9cyXr9Byzf2je9+m2WuVWzPi5zkMwGFzI/nu7RoTAlN5IecKfq4PuaW4c2Gajc5stqLsMfu0ScT1I5zQGO4jFEt+4A5cgQeALC5YJxliUZWPSp/qs/iTpPo2hNIj2x5YBRI1arCNmD1kBYLWq4MbY0M+jsWYUv9jN5E6jK1XQR6WJwqsUvUpfSEcn0ygm831uMQx/ic5srPWMXgLerB0A4TWz1qD+I4YsH2TvzL3DaRQ8xSAxcP6eOD5a5AlmgDIPW0LYwaQRujT1T31zfnmdFtsv6iB19vNTd5NsWxymTo7pnvQ6Nzp56sV/grHiUloLPmW65aEmbxpN4RP0nAbmdZe78y2R03lAVnGbWbbhA+c5vFzrH+/fD+LhneA0N6VnItOrYOOFXXCahVbVUdFrSWGqo75IE9cpRrvfFjjah3Lz0VY13ErJAm2KfgVn26nvt6DjPksUd10/9z+NToeXyL2ysIGRlbWH7NjjbIgTRb0QP5hB48fKoY8FUn9jtWAuZ/6gArbgttcyRMu8ld/pZsHAwqb4pKYhnFsbT45pIoLlGufjSdD+XEAsJnjDSDWW7Fkpss29GoRGAbHxnvkhAfATdaXPq73qoCTC6DuA9wbkNUz20GUMMnpf6qmYzzOnes1VJVmQI35y09OuO/FriPgGU7cU0sMsUFoSTWkQFo921O5WPTmmqtoTYO/c7wVZVoU8HYS2I7axTogs6/6G0LcBOszpzX0zDYq/laaQTQqW+togF6u3DA0mH3kC/9IHYKBjOK1LlqWXVV8Yq2vHh2n5/rhbbufXm376a+UP8jOoIE4CQSofP0hybK6/bIm4v4xecl4CpJGBy6HfRFcUNVfK9XVmbmoHViMk0eRbpNez5yuZp36kBf7Nnlv9qOJkWUwSWpGmHxXvQLr1Tdq6IbYf8JseywZSzRULGirx471ODjIaIi4le3GHqQAFqtfjRH2bKsiZyuFpgz9yg+/zw1x8O9BxdyctZGi4aL9EZirCLDDhEYqlk/+W3gr4n60WZ6qMt31cR8cBtwhvc76iLlOCyf4zHeJZqyk3i58K4BWi60Lz85CXW3CDDvsKRfy+aUYBInBtXn0BhAx6XEKFGBA+Et16jjnMPt2PYXVPn39iF3r0",
+        "edits": ""
+      },
+      "semanticSnapshot": {
+        "v": 1,
+        "auto": true,
+        "text": "迷你磁力吊车 · 9组/20mesh · 世界坐标(Y上Z前), 原点=模型根\n# 阅读说明: G:=group行(可动画骨骼, 动画key用G:后的id; @p=pivot世界坐标; 倾(x,y,z)°=朝向偏离世界轴的欧拉角; 缩进=父子层级; 挂:=挂载于某组; G:id→id→…=chain折叠行, 每个id都是可独立动画的group, chain×N=waypoint数)\n# M:=mesh行(label[id 几何 @(世界坐标)], label可省略; ×N=for循环批量件(锚点=代表实例); cyl (起)→(末)或 轴上(Y)等方位词=延伸方向; 薄向=板面法向(扁板); 挂载组双代表=最大件+朝向件(嘴/管/檐所在); 无方向标注=均匀块(三向相近,如头),默认面向前(Z); 对称×2=镜像对)\nG:chassis 车身底盘 @p(0,0.2,0)\n  M:[m0 box 0.66×0.16×0.38 (0,0.2,0) 薄向上(Y)]\n  G:cab 驾驶室 @p(0,0.3,0) 挂:chassis\n    M:[m3 box 0.36×0.25×0.22 (0,0.4,0.1)] | M:[m4 box 0.25×0.11×0.03 (0,0.5,0.2) 薄向前(Z)]\n  G:wheel_fl 车轮 @p(-0.3,0.1,0.1)\n    M:[m7 box 0.07×0.15×0.15 (-0.3,0.1,0.1) 薄向右(X)]\n  G:wheel_fr 车轮 @p(0.3,0.1,0.1)\n    M:[m9 box 0.07×0.15×0.15 (0.3,0.1,0.1) 薄向右(X)]\n  G:wheel_bl 车轮 @p(-0.3,0.1,-0.1)\n    M:[m11 box 0.07×0.15×0.15 (-0.3,0.1,-0.1) 薄向右(X)]\n  G:wheel_br 车轮 @p(0.3,0.1,-0.1)\n    M:[m13 box 0.07×0.15×0.15 (0.3,0.1,-0.1) 薄向右(X)]\n  G:boom 吊臂 @p(0,0.4,-0.1) 挂:chassis\n    M:[m15 box 0.3×0.07×0.13 (0,0.5,0) 轴(0,0.6,0.1)→(0,0.3,-0.1)]\n    G:cable 吊索 @p(0,0.6,0.1) 挂:boom\n      M:[m17 box 0.03×0.27×0.03 (0,0.4,0.1) 轴上(Y)]\n      G:magnet 圆盘磁铁 @p(0,0.3,0.1) 挂:cable\n        M:[m18 box 0.19×0.06×0.16 (0,0.3,0.1) 薄向上(Y)]",
+        "stats": {
+          "groups": 9,
+          "meshes": 20,
+          "labeledMeshes": 0,
+          "labelCoverage": 0,
+          "batchLabels": 0,
+          "autoChains": 0,
+          "snapshotChars": 1186
+        }
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -0.3775,
+          0,
+          -0.22075
+        ],
+        "max": [
+          0.3775,
+          0.5858567956248733,
+          0.22075
+        ],
+        "sourceNodeId": "asset-bounds"
+      }
+    ],
+    "sourceMeshCount": 20,
+    "candidateCount": 0,
+    "fallbackUsed": true
+  },
+  "footprintRadius": 0.3775,
+  "sizeClass": "small",
+  "mode": "voxel",
+  "provider": "gpt",
+  "createdAt": 1787770788181,
+  "updatedAt": 1787770788181
+}

@@ -1,0 +1,529 @@
+{
+  "id": "asset-80632e08-1e5d-44f2",
+  "name": "羽毛球",
+  "prompt": "一个羽毛球，圆形软木球头和裙状羽片。独立单件儿童房物品，浅亮柔和造型，圆润安全边缘，不包含成组物品，不包含场景、房间、地面或背景。基础色和顶点色仅使用：#FFFDF6,#FEF9EA,#FDF2D7,#E9DABD,#CDBA97,#F8E8CF,#F1D7B2,#E7C393,#C9A06E,#9E7A55,#FFF7A8,#FCEF72,#F6E24B,#D1B825,#9C8510,#FFF3B7,#FDE674,#FCD75F,#FECD4D,#D1900B,#FFE2A0,#FFD170,#F8BC44,#E39F1A,#A96F05,#FBE3BD,#FDD8A3,#FDCC8F,#F1AD69,#D99256,#FFD2BA,#FFB08A,#FF8A5B,#F06B3E,#B84A27,#EAF9FF,#DAF2F5,#95E5F9,#76D0F2,#45BDF6,#D9F8FB,#B2E9F2,#8ECCD6,#7BCFDF,#4BAFCA,#D8F7EF,#B8ECDD,#90DCC8,#74C4BB,#499D92,#F1F5AF,#E4E77F,#DCDB22,\nCoordinate contract: local Y+ is up, local Z+ is the front, entrance, or forward direction, and local X+ is right. Put doors, facades, openings, windshields, noses, seats, and other recognizable front details toward local Z+. For a modular repeated element, explicitly choose the long axis: side-by-side modules span local X with depth/front on local Z; traversal modules span local Z. Keep the model centered at its origin.\nCanonical dimensions contract: width=0.16, height=0.2, depth=0.16 world units. Keep the generated mesh within this centered bounding size.",
+  "tags": [
+    "indoor",
+    "single-object",
+    "child-safe"
+  ],
+  "modelJson": {
+    "name": "柔彩软木羽毛球",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "shuttlecock",
+        "name": "羽毛球",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.137,
+            0.216,
+            0.14
+          ],
+          "center": [
+            0,
+            0.008,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0.0007
+            ],
+            [
+              0,
+              -0.0007,
+              1
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "cork_head",
+        "name": "软木球头",
+        "parent": "shuttlecock",
+        "transform": {
+          "pos": [
+            0,
+            -0.035,
+            0
+          ]
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ],
+        "_obb": {
+          "size": [
+            0.076,
+            0.064,
+            0.076
+          ],
+          "center": [
+            0,
+            -0.033,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "feather_front",
+        "name": "前羽片",
+        "parent": "shuttlecock",
+        "transform": {
+          "pos": [
+            0,
+            -0.025,
+            0.014
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.04,
+            0.13,
+            0.007
+          ],
+          "center": [
+            0,
+            0.055,
+            0.026
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              0.9087,
+              0.4175
+            ],
+            [
+              0,
+              -0.4175,
+              0.9087
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "feather_back",
+        "name": "后羽片",
+        "parent": "shuttlecock",
+        "transform": {
+          "pos": [
+            0,
+            -0.025,
+            -0.014
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.04,
+            0.13,
+            0.007
+          ],
+          "center": [
+            0,
+            0.055,
+            -0.026
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              0.9108,
+              -0.4128
+            ],
+            [
+              0,
+              0.4128,
+              0.9108
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "feather_right",
+        "name": "右羽片",
+        "parent": "shuttlecock",
+        "transform": {
+          "pos": [
+            0.014,
+            -0.025,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.007,
+            0.13,
+            0.04
+          ],
+          "center": [
+            0.026,
+            0.055,
+            0
+          ],
+          "axes": [
+            [
+              0.92,
+              -0.3918,
+              -0.0004
+            ],
+            [
+              0.3918,
+              0.92,
+              -0.0004
+            ],
+            [
+              0.0005,
+              0.0002,
+              1
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "feather_left",
+        "name": "左羽片",
+        "parent": "shuttlecock",
+        "transform": {
+          "pos": [
+            -0.014,
+            -0.025,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.007,
+            0.13,
+            0.04
+          ],
+          "center": [
+            -0.026,
+            0.055,
+            0
+          ],
+          "axes": [
+            [
+              0.92,
+              0.3918,
+              0.0004
+            ],
+            [
+              -0.3918,
+              0.92,
+              -0.0004
+            ],
+            [
+              -0.0005,
+              0.0002,
+              1
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "cork_head",
+        "transform": {
+          "pos": [
+            0,
+            -0.059,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.052,
+            "height": 0.012,
+            "depth": 0.052
+          },
+          "color": 13213806
+        }
+      },
+      {
+        "id": "m1",
+        "parent": "cork_head",
+        "transform": {
+          "pos": [
+            0,
+            -0.036,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.068,
+            "height": 0.034,
+            "depth": 0.068
+          },
+          "color": 15188883
+        }
+      },
+      {
+        "id": "m2",
+        "parent": "cork_head",
+        "transform": {
+          "pos": [
+            0,
+            -0.01,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.076,
+            "height": 0.018,
+            "depth": 0.076
+          },
+          "color": 15849394
+        }
+      },
+      {
+        "id": "m3",
+        "parent": "shuttlecock",
+        "transform": {
+          "pos": [
+            0,
+            -0.031,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.082,
+            "height": 0.012,
+            "depth": 0.082
+          },
+          "color": 16642775
+        }
+      },
+      {
+        "id": "m4",
+        "parent": "feather_front",
+        "transform": {
+          "pos": [
+            0,
+            0.055,
+            0.026
+          ],
+          "quat": [
+            -0.54,
+            0,
+            0,
+            0.84
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.04,
+            "height": 0.007,
+            "depth": 0.13
+          },
+          "color": 16776694
+        }
+      },
+      {
+        "id": "m5",
+        "parent": "feather_back",
+        "transform": {
+          "pos": [
+            0,
+            0.055,
+            -0.026
+          ],
+          "quat": [
+            0,
+            0.84,
+            0.54,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.04,
+            "height": 0.007,
+            "depth": 0.13
+          },
+          "color": 16710122
+        }
+      },
+      {
+        "id": "m6",
+        "parent": "feather_right",
+        "transform": {
+          "pos": [
+            0.026,
+            0.055,
+            0
+          ],
+          "quat": [
+            -0.39,
+            0.59,
+            0.39,
+            0.59
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.04,
+            "height": 0.007,
+            "depth": 0.13
+          },
+          "color": 16776694
+        }
+      },
+      {
+        "id": "m7",
+        "parent": "feather_left",
+        "transform": {
+          "pos": [
+            -0.026,
+            0.055,
+            0
+          ],
+          "quat": [
+            -0.39,
+            -0.59,
+            -0.39,
+            0.59
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.04,
+            "height": 0.007,
+            "depth": 0.13
+          },
+          "color": 16642775
+        }
+      },
+      {
+        "id": "m8",
+        "parent": "shuttlecock",
+        "transform": {
+          "pos": [
+            0,
+            0.033,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.014,
+            "height": 0.124,
+            "depth": 0.014
+          },
+          "color": 15325885
+        }
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1787769462620,
+        "provider": "gpt",
+        "data": "GK5d/+ThuHTCBIsb/zZARt4LaKuM+9u4043ciiXjl6so0G5y70UYHrebHWGFS9XSLMEIcgOGTPeBSGmE7p2seCR5AoFliY5333vbDc3TmQikhLXonDB6Ow3lwvDriXV7XU2WCGCS7Xh+W/k3ayhQcjlTWJenHKI433LFlLqjhtzh5b82Z18Au4LYcc2HXFpYENmuPRfLsHKMUQ4+42ns3yyeKXsKwpnHa1M1DjAbERSfmY8YlCpMEDkVjAC4M60wAGJIoY2zvafmKy/fB5V5/FlbNZV1bBElPNQR8xSpXu81LhUV04KY+uv9Xiu7MOoRaq9h1w5oyUy6s6+QVnx6hjpZXO1n3+fTGRotmW7qxDRDh7PmvgCD/9jtG1sOjlykdt+9194T3eowUBSwvzkl6rI5eKKwKGL082vUmb7kDA+kjlpirKbMTM7LsPBOeBAUZ8BVlus9Q+zjqy/VECFufWZFR218ZpvPr1e1ntBdgQPDaGnsKNQc7bdJuxs5T8OCxySwGM6llaCtS9WwL+pxjVX69JtvT/PzbcJOfaT0oiO5zrzizXRZc9VFWB1nWp0daXvWEJO3hd4PaWRhpkvIs8tS0UTU7TneN0U1XiqK5ByB1GAYiMuo6zMCwQuOB0HufevbV8142T9UBIAHhtunUgwtU8UA0zUxaQarcoQOPG8izRYf18mJdLPUonefhZpEFVrtzFWqbU7SiL8oYJbuyclvsmuVocQbpJ/YD4QkwJUqpF0Mpl2bS3Alw4IIWI36BCi/U6LuDnsjY5Y73B9tFYBixZn8oveXvCxBVXUuwwpJmZ9UEO448222hkJysSPB002rBmf7NGou9aGnFcM4YrpgJlVfz2HLH6gbGkB9A56YPGRl1yN+SngGChkr10K4Pkw+ow==",
+        "edits": ""
+      },
+      "semanticSnapshot": {
+        "v": 1,
+        "auto": true,
+        "text": "柔彩软木羽毛球 · 6组/9mesh · 世界坐标(Y上Z前), 原点=模型根\n# 阅读说明: G:=group行(可动画骨骼, 动画key用G:后的id; @p=pivot世界坐标; 倾(x,y,z)°=朝向偏离世界轴的欧拉角; 缩进=父子层级; 挂:=挂载于某组; G:id→id→…=chain折叠行, 每个id都是可独立动画的group, chain×N=waypoint数)\n# M:=mesh行(label[id 几何 @(世界坐标)], label可省略; ×N=for循环批量件(锚点=代表实例); cyl (起)→(末)或 轴上(Y)等方位词=延伸方向; 薄向=板面法向(扁板); 挂载组双代表=最大件+朝向件(嘴/管/檐所在); 无方向标注=均匀块(三向相近,如头),默认面向前(Z); 对称×2=镜像对)\nG:shuttlecock 羽毛球 @p(0,0,0)\n  M:[m3 box 0.08×0.01×0.08 (0,0,0) 薄向上(Y)]\n  G:cork_head 软木球头 @p(0,0,0) 挂:shuttlecock\n    M:[m1 box 0.07×0.03×0.07 (0,-0.1,0) 薄向上(Y)]\n  G:feather_front 前羽片 @p(0,0,0) 挂:shuttlecock\n    M:[m4 box 0.04×0.01×0.13 (0,0,0) 轴(0,0.1,0.1)→(0,0,0)]\n  G:feather_back 后羽片 @p(0,0,0) 挂:shuttlecock\n    M:[m5 box 0.04×0.01×0.13 (0,0,0) 轴(0,0.1,-0.1)→(0,0,0)]\n  G:feather_right 右羽片 @p(0,0,0) 挂:shuttlecock\n    M:[m6 box 0.04×0.01×0.13 (0,0,0) 轴(0.1,0.1,0)→(0,0,0)]\n  G:feather_left 左羽片 @p(0,0,0) 挂:shuttlecock\n    M:[m7 box 0.04×0.01×0.13 (0,0,0) 轴(-0.1,0.1,0)→(0,0,0)]",
+        "stats": {
+          "groups": 6,
+          "meshes": 9,
+          "labeledMeshes": 0,
+          "labelCoverage": 0,
+          "batchLabels": 0,
+          "autoChains": 0,
+          "snapshotChars": 945
+        }
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -0.07006997201119552,
+          0,
+          -0.07153429602888087
+        ],
+        "max": [
+          0.07006997201119552,
+          0.195,
+          0.07153429602888087
+        ],
+        "sourceNodeId": "asset-bounds"
+      }
+    ],
+    "sourceMeshCount": 9,
+    "candidateCount": 0,
+    "fallbackUsed": true
+  },
+  "footprintRadius": 0.1,
+  "sizeClass": "small",
+  "mode": "voxel",
+  "provider": "gpt",
+  "createdAt": 1787769462452,
+  "updatedAt": 1787769462452
+}

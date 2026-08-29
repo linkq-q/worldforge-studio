@@ -1,0 +1,437 @@
+{
+  "id": "asset-fb0a6d94-a390-4c7d",
+  "name": "空管架",
+  "prompt": "一个空的木质试管架，可放数支试管，但当前完全空置。精致写实的古典奇幻炼金术风格，独立单件，纯物件模型，无桌面、无柜体、无房间、无背景、无大型机器。\nCoordinate contract: local Y+ is up, local Z+ is the front, entrance, or forward direction, and local X+ is right. Put doors, facades, openings, windshields, noses, seats, and other recognizable front details toward local Z+. For a modular repeated element, explicitly choose the long axis: side-by-side modules span local X with depth/front on local Z; traversal modules span local Z. Keep the model centered at its origin.\nCanonical dimensions contract: width=0.48, height=0.3, depth=0.22 world units. Keep the generated mesh within this centered bounding size.",
+  "tags": [
+    "indoor",
+    "alchemy",
+    "instrument",
+    "handheld"
+  ],
+  "modelJson": {
+    "name": "古典炼金术木质试管架",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "rack",
+        "name": "试管架",
+        "transform": {
+          "pos": [
+            0,
+            0.1495,
+            0
+          ]
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "walnut"
+          }
+        ],
+        "_obb": {
+          "size": [
+            0.48,
+            0.3,
+            0.22
+          ],
+          "center": [
+            0,
+            0.001,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "rack",
+        "transform": {
+          "pos": [
+            0,
+            -0.1365,
+            0.099
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.48,
+            "height": 0.026,
+            "depth": 0.022
+          },
+          "color": 4926232
+        }
+      },
+      {
+        "id": "m1",
+        "parent": "rack",
+        "transform": {
+          "pos": [
+            0,
+            -0.1365,
+            -0.099
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.48,
+            "height": 0.026,
+            "depth": 0.022
+          },
+          "color": 4926232
+        }
+      },
+      {
+        "id": "m2",
+        "parent": "rack",
+        "transform": {
+          "pos": [
+            -0.222,
+            -0.001,
+            0.082
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.032,
+            "height": 0.265,
+            "depth": 0.032
+          },
+          "color": 6371872
+        }
+      },
+      {
+        "id": "m3",
+        "parent": "rack",
+        "transform": {
+          "pos": [
+            0.222,
+            -0.001,
+            0.082
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.032,
+            "height": 0.265,
+            "depth": 0.032
+          },
+          "color": 6371872
+        }
+      },
+      {
+        "id": "m4",
+        "parent": "rack",
+        "transform": {
+          "pos": [
+            -0.222,
+            -0.001,
+            -0.082
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.032,
+            "height": 0.265,
+            "depth": 0.032
+          },
+          "color": 6371872
+        }
+      },
+      {
+        "id": "m5",
+        "parent": "rack",
+        "transform": {
+          "pos": [
+            0.222,
+            -0.001,
+            -0.082
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.032,
+            "height": 0.265,
+            "depth": 0.032
+          },
+          "color": 6371872
+        }
+      },
+      {
+        "id": "m6",
+        "parent": "rack",
+        "transform": {
+          "pos": [
+            0,
+            -0.0585,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.42,
+            "height": 0.024,
+            "depth": 0.15
+          },
+          "color": 7357736
+        }
+      },
+      {
+        "id": "m7",
+        "parent": "rack",
+        "transform": {
+          "pos": [
+            0,
+            0.1365,
+            0.087
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.448,
+            "height": 0.028,
+            "depth": 0.026
+          },
+          "color": 7686186
+        }
+      },
+      {
+        "id": "m8",
+        "parent": "rack",
+        "transform": {
+          "pos": [
+            0,
+            0.1365,
+            -0.087
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.448,
+            "height": 0.028,
+            "depth": 0.026
+          },
+          "color": 7686186
+        }
+      },
+      {
+        "id": "m9",
+        "parent": "rack",
+        "transform": {
+          "pos": [
+            -0.176,
+            0.1365,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.022,
+            "height": 0.028,
+            "depth": 0.148
+          },
+          "color": 8540979
+        }
+      },
+      {
+        "id": "m10",
+        "parent": "rack",
+        "transform": {
+          "pos": [
+            -0.088,
+            0.1365,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.022,
+            "height": 0.028,
+            "depth": 0.148
+          },
+          "color": 8540979
+        }
+      },
+      {
+        "id": "m11",
+        "parent": "rack",
+        "transform": {
+          "pos": [
+            0,
+            0.1365,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.022,
+            "height": 0.028,
+            "depth": 0.148
+          },
+          "color": 8540979
+        }
+      },
+      {
+        "id": "m12",
+        "parent": "rack",
+        "transform": {
+          "pos": [
+            0.088,
+            0.1365,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.022,
+            "height": 0.028,
+            "depth": 0.148
+          },
+          "color": 8540979
+        }
+      },
+      {
+        "id": "m13",
+        "parent": "rack",
+        "transform": {
+          "pos": [
+            0.176,
+            0.1365,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.022,
+            "height": 0.028,
+            "depth": 0.148
+          },
+          "color": 8540979
+        }
+      },
+      {
+        "id": "m14",
+        "parent": "rack",
+        "transform": {
+          "pos": [
+            -0.222,
+            -0.0865,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.028,
+            "height": 0.042,
+            "depth": 0.188
+          },
+          "color": 5714460
+        }
+      },
+      {
+        "id": "m15",
+        "parent": "rack",
+        "transform": {
+          "pos": [
+            0.222,
+            -0.0865,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.028,
+            "height": 0.042,
+            "depth": 0.188
+          },
+          "color": 5714460
+        }
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1787876943048,
+        "provider": "gpt",
+        "data": "mZ/+aEUraQd69kzguT0hxrMFuLX9vubC5/cy6J9rN0SawMZA/fF/LxE6aQoT2trQIaHCSOMssSBpWmQQjmPTOmzg+IejCJBMgajYizSq19tDltgLV9LIrsWkofxHZ9nUOFz9io5v5Ncp2zvhr6sPZDrH346FTGYnI3KVJhyO9mwOPpallABukIh2L6+odMvsnwDDAkU0jvHaVg0ZFYOo8mN8uD/WdvxnSjXGCE8zI8eM3jJbBqMEoz+m6EJ58DxZZCsC+Qz8CFLMXalW6jXbhh8Bh020mtWJYDah3ibcTrno+qLdmwov4mHXkfPafVzeFnJvkWGzU3l2l5rdClRL7iuxE0NsMVJYDYPVKsNR0hLZmM5xrPMSe02FQDxe+LZcq4/SHTLdMgdHOhwD8NSDw8Q1BYUJLa5eT2IKoFZPa987LAP8SJwIxfrbMkECBAUjowkbng+VeucL/yqTJ3M5sJblrKUapdAeeme0pkCZnUASIk6xF6/X6XU8sS/13hh2n6YOWuoPIn3+ITLzZ4gNfN8DsjutIz8/B6bXdUXsjjoM5nwR2o0ruNGQUOLAhfNEUvBT0IyvsY7Btaw8OgI/r5PptQTEK7TiONVVPcYVTdgluGQgpB8SXUnNplf2WR+F5vKwtRjTb60PlUy0QvtHM+vUGkjVv8Q0HYZP5fEN8vhR3WfjYTHCqiZc0EiA5I9xFC8NCIzRnF/KcX3HQLj8A86T7pgz62aD3Q7CtmI=",
+        "edits": ""
+      },
+      "semanticSnapshot": {
+        "v": 1,
+        "auto": true,
+        "text": "古典炼金术木质试管架 · 1组/16mesh · 世界坐标(Y上Z前), 原点=模型根\n# 阅读说明: G:=group行(可动画骨骼, 动画key用G:后的id; @p=pivot世界坐标; 倾(x,y,z)°=朝向偏离世界轴的欧拉角; 缩进=父子层级; 挂:=挂载于某组; G:id→id→…=chain折叠行, 每个id都是可独立动画的group, chain×N=waypoint数)\n# M:=mesh行(label[id 几何 @(世界坐标)], label可省略; ×N=for循环批量件(锚点=代表实例); cyl (起)→(末)或 轴上(Y)等方位词=延伸方向; 薄向=板面法向(扁板); 挂载组双代表=最大件+最远有向件(刃/嘴/管所在端); 无方向标注=均匀块(三向相近,如头),默认面向前(Z); 对称×2=镜像对)\nG:rack 试管架 @p(0,0.1,0)\n  M:[m6 box 0.42×0.02×0.15 (0,0.1,0) 薄向上(Y)]",
+        "stats": {
+          "groups": 1,
+          "meshes": 16,
+          "labeledMeshes": 0,
+          "labelCoverage": 0,
+          "batchLabels": 0,
+          "autoChains": 0,
+          "snapshotChars": 438
+        }
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -0.24,
+          0,
+          -0.11
+        ],
+        "max": [
+          0.24,
+          0.30000000000000004,
+          0.11
+        ],
+        "sourceNodeId": "asset-bounds"
+      }
+    ],
+    "sourceMeshCount": 16,
+    "candidateCount": 0,
+    "fallbackUsed": true
+  },
+  "footprintRadius": 0.24,
+  "sizeClass": "small",
+  "mode": "voxel",
+  "provider": "gpt",
+  "createdAt": 1787876942610,
+  "updatedAt": 1787876942610
+}

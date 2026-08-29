@@ -1,0 +1,1326 @@
+{
+  "id": "asset-1e86482b-670f-418f",
+  "name": "商用煤气灶",
+  "prompt": "单个可复用的多眼商用煤气灶，不锈钢机身、黑色炉架、前置旋钮和下部封闭底座，适合连续贴墙排列。\n全局资产美术方向：平衡尺度的模块化商用不锈钢厨房设备，方正耐用、边缘略圆，采用银灰金属、深色玻璃、黑色炉面和少量安全色标识；所有设备保持独立可复用，避免生成瓶罐、食材和细碎餐具。\n资产角色：热厨主烹饪设备；目标尺度：large。\n只生成一个可复用的独立物体，不要生成地面、背景、天空、完整场景或多个分散物体。",
+  "tags": [
+    "appliance",
+    "gas-range",
+    "hot-line"
+  ],
+  "modelJson": {
+    "name": "六眼商用煤气灶",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "body",
+        "name": "不锈钢机身",
+        "transform": {
+          "pos": [
+            0,
+            1.385,
+            0.095
+          ]
+        },
+        "_obb": {
+          "size": [
+            4.9,
+            3.183,
+            3.827
+          ],
+          "center": [
+            0,
+            -0.007,
+            -0.046
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              0.985,
+              0.1725
+            ],
+            [
+              0,
+              -0.1725,
+              0.985
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "knob_0",
+        "name": "前置旋钮",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            -1.75,
+            0.385,
+            1.665
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.38,
+            0.49,
+            0.421
+          ],
+          "center": [
+            0,
+            0.011,
+            0.026
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              0.8933,
+              0.4495
+            ],
+            [
+              0,
+              -0.4495,
+              0.8933
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "knob_1",
+        "name": "前置旋钮",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            -1.05,
+            0.385,
+            1.665
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.38,
+            0.49,
+            0.421
+          ],
+          "center": [
+            0,
+            0.011,
+            0.026
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              0.8933,
+              0.4495
+            ],
+            [
+              0,
+              -0.4495,
+              0.8933
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "knob_2",
+        "name": "前置旋钮",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            -0.35,
+            0.385,
+            1.665
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.38,
+            0.49,
+            0.421
+          ],
+          "center": [
+            0,
+            0.011,
+            0.026
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              0.8933,
+              0.4495
+            ],
+            [
+              0,
+              -0.4495,
+              0.8933
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "knob_3",
+        "name": "前置旋钮",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0.35,
+            0.385,
+            1.665
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.38,
+            0.49,
+            0.421
+          ],
+          "center": [
+            0,
+            0.011,
+            0.026
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              0.8933,
+              0.4495
+            ],
+            [
+              0,
+              -0.4495,
+              0.8933
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "knob_4",
+        "name": "前置旋钮",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            1.05,
+            0.385,
+            1.665
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.38,
+            0.49,
+            0.421
+          ],
+          "center": [
+            0,
+            0.011,
+            0.026
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              0.8933,
+              0.4495
+            ],
+            [
+              0,
+              -0.4495,
+              0.8933
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "knob_5",
+        "name": "前置旋钮",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            1.75,
+            0.385,
+            1.665
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.38,
+            0.49,
+            0.421
+          ],
+          "center": [
+            0,
+            0.011,
+            0.026
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              0.8933,
+              0.4495
+            ],
+            [
+              0,
+              -0.4495,
+              0.8933
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0,
+            -0.235,
+            -0.095
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 4.8,
+            "height": 2.1,
+            "depth": 3.2
+          },
+          "color": 10331304
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m1",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0,
+            0.895,
+            -0.095
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 4.9,
+            "height": 0.18,
+            "depth": 3.3
+          },
+          "color": 12962766
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m2",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0,
+            1.035,
+            -0.015
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 4.55,
+            "height": 0.12,
+            "depth": 2.75
+          },
+          "color": 1513754
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m3",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0,
+            1.295,
+            -1.615
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 4.8,
+            "height": 0.75,
+            "depth": 0.16
+          },
+          "color": 11449784
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m4",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0,
+            0.365,
+            1.545
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 4.5,
+            "height": 0.42,
+            "depth": 0.12
+          },
+          "color": 2369321
+        }
+      },
+      {
+        "id": "m5",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0,
+            0.145,
+            1.615
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 4.25,
+            "height": 0.08,
+            "depth": 0.06
+          },
+          "color": 13804829
+        }
+      },
+      {
+        "id": "m6",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            -1.5,
+            1.145,
+            -0.815
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.62,
+            "height": 0.12,
+            "depth": 0.62
+          },
+          "color": 3158836
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m7",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            -1.5,
+            1.145,
+            0.685
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.62,
+            "height": 0.12,
+            "depth": 0.62
+          },
+          "color": 3158836
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m8",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0,
+            1.145,
+            -0.815
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.62,
+            "height": 0.12,
+            "depth": 0.62
+          },
+          "color": 3158836
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m9",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0,
+            1.145,
+            0.685
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.62,
+            "height": 0.12,
+            "depth": 0.62
+          },
+          "color": 3158836
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m10",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            1.5,
+            1.145,
+            -0.815
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.62,
+            "height": 0.12,
+            "depth": 0.62
+          },
+          "color": 3158836
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m11",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            1.5,
+            1.145,
+            0.685
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.62,
+            "height": 0.12,
+            "depth": 0.62
+          },
+          "color": 3158836
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m12",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            -2.18,
+            1.275,
+            -0.015
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.12,
+            "height": 0.18,
+            "depth": 2.72
+          },
+          "color": 1118996
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m13",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            -0.75,
+            1.275,
+            -0.015
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.12,
+            "height": 0.18,
+            "depth": 2.72
+          },
+          "color": 1118996
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m14",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0.75,
+            1.275,
+            -0.015
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.12,
+            "height": 0.18,
+            "depth": 2.72
+          },
+          "color": 1118996
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m15",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            2.18,
+            1.275,
+            -0.015
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.12,
+            "height": 0.18,
+            "depth": 2.72
+          },
+          "color": 1118996
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m16",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0,
+            1.275,
+            -1.245
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 4.45,
+            "height": 0.18,
+            "depth": 0.12
+          },
+          "color": 1118996
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m17",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0,
+            1.275,
+            -0.065
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 4.45,
+            "height": 0.18,
+            "depth": 0.12
+          },
+          "color": 1118996
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m18",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0,
+            1.275,
+            1.135
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 4.45,
+            "height": 0.18,
+            "depth": 0.12
+          },
+          "color": 1118996
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m19",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0,
+            -1.085,
+            1.545
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 4.25,
+            "height": 0.08,
+            "depth": 0.08
+          },
+          "color": 7370618
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m20",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            -2.12,
+            -1.295,
+            1.125
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.18,
+            "height": 0.18,
+            "depth": 0.18
+          },
+          "color": 2369063
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m21",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            2.12,
+            -1.295,
+            1.125
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.18,
+            "height": 0.18,
+            "depth": 0.18
+          },
+          "color": 2369063
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m22",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            -2.12,
+            -1.295,
+            -1.315
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.18,
+            "height": 0.18,
+            "depth": 0.18
+          },
+          "color": 2369063
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m23",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            2.12,
+            -1.295,
+            -1.315
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.18,
+            "height": 0.18,
+            "depth": 0.18
+          },
+          "color": 2369063
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m24",
+        "parent": "knob_0",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0.02
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.38,
+            "height": 0.38,
+            "depth": 0.28
+          },
+          "color": 1184789
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m25",
+        "parent": "knob_0",
+        "transform": {
+          "pos": [
+            0,
+            0.11,
+            0.19
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.07,
+            "height": 0.16,
+            "depth": 0.05
+          },
+          "color": 14240306
+        }
+      },
+      {
+        "id": "m26",
+        "parent": "knob_1",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0.02
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.38,
+            "height": 0.38,
+            "depth": 0.28
+          },
+          "color": 1184789
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m27",
+        "parent": "knob_1",
+        "transform": {
+          "pos": [
+            0,
+            0.11,
+            0.19
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.07,
+            "height": 0.16,
+            "depth": 0.05
+          },
+          "color": 14858031
+        }
+      },
+      {
+        "id": "m28",
+        "parent": "knob_2",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0.02
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.38,
+            "height": 0.38,
+            "depth": 0.28
+          },
+          "color": 1184789
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m29",
+        "parent": "knob_2",
+        "transform": {
+          "pos": [
+            0,
+            0.11,
+            0.19
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.07,
+            "height": 0.16,
+            "depth": 0.05
+          },
+          "color": 14858031
+        }
+      },
+      {
+        "id": "m30",
+        "parent": "knob_3",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0.02
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.38,
+            "height": 0.38,
+            "depth": 0.28
+          },
+          "color": 1184789
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m31",
+        "parent": "knob_3",
+        "transform": {
+          "pos": [
+            0,
+            0.11,
+            0.19
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.07,
+            "height": 0.16,
+            "depth": 0.05
+          },
+          "color": 14858031
+        }
+      },
+      {
+        "id": "m32",
+        "parent": "knob_4",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0.02
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.38,
+            "height": 0.38,
+            "depth": 0.28
+          },
+          "color": 1184789
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m33",
+        "parent": "knob_4",
+        "transform": {
+          "pos": [
+            0,
+            0.11,
+            0.19
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.07,
+            "height": 0.16,
+            "depth": 0.05
+          },
+          "color": 14858031
+        }
+      },
+      {
+        "id": "m34",
+        "parent": "knob_5",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0.02
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.38,
+            "height": 0.38,
+            "depth": 0.28
+          },
+          "color": 1184789
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m35",
+        "parent": "knob_5",
+        "transform": {
+          "pos": [
+            0,
+            0.11,
+            0.19
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.07,
+            "height": 0.16,
+            "depth": 0.05
+          },
+          "color": 14858031
+        }
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1786784614245,
+        "provider": "gpt",
+        "data": "BLfdoguYW8lYCzskfeLNg0cSPbjJVkwqU25/J08NM1smZCNJ+ZTTFNcRUH1W/QSqGpe8BlCJkUFMS5BoqCaQ2H84sWLF44+SuZC+myiaBKl2x0w/fmk+yodHN+5fgglctU34nWu6AQ15rKYZ6aPoXYNOa3iw3DAzMAJkhJmp2m/P0kTH4sMfw9bUq31H6bdgewCphzhphjpBFQ8A3MZGJGpjbG44r6gdj2QEM0LPKNn80Bx4laN7nin0Qc3woMiDE9a7d1Hq5lshh1cKOfwunHLeEsoCHb/S2K3SvMCsQjM5oSL/fIJHLijffO9u2FxgPlOc8QMFcVtoUzpOhMTMUfCw6upWltM+uLdi6xDHsegYNFGb30iRDUroAV1CixoraaTlAHLNathQH9mO7uWdIzHEDKDu/PTg1aSkcNc9pVHvXBPD00O9PsZUaRSAz7/Jo8ikxchceEuizrK8eEWbCop/NzEhS6n3okC+ATYkFgmogizsxYt+zX6BrdJL1pCRE4vOhNl8LY8NOv4Bu0axx3MMyGLL+PX9ZwfQq5H99T1C+NrLAvj749clOynoL/CLeNd3p5b8iSqtZ4edPpKSv0I7Nr/OVO7KTQTbXEEPP3/xqrVlQ1elw3ZxHk6P5+DRY1rtB5vbFZoshHHYQT68/Zy8C8x7m2zUwE3cH8zeXTTbvz2VJpKNM9bxqS26U3hLKFoLPOAaf5g8dTRg6TCmNjQY/Ai2+sm7x4qH2gLny9cwEKbUa93ttosobyXkJV0RL70eT25gBIkHS0WUYDdljV+YWfyx78oxlQVuW1hcvu2Wb5ljbPXISl5jk0iRE0liR4l3LYUcR9MIpUPvbh85BgFfvXX+cbcOVg2KXl586CNKOGhzJMrD4LG5ZUCe+WQfDPkeyB/JCzE7e0GXw0toI6I9IXVf67134IYX4azeUrCyfCAQXftZhkU9D1YWWZXMuRjaLoyozhYT2T6xJ7CoX1YPT5vDVuBXiiyDejYmCZZPNJSxvsePcvztgEvE3QUt8y9zhvG88rlLjhJmeIHWn1noOLXSCNfnRjPsavCh0FDUxuIIfhHVRPTCOoudRebpL6AH9g6Afulz4jABD54wZS+XlyJcwqhKfO5v86IisrKf8WJWdTvToCe6SOYogRumvaT1Br1M",
+        "edits": ""
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -2.4,
+          0.09999999999999978,
+          -1.7625000000000002
+        ],
+        "max": [
+          2.4,
+          2.2,
+          1.4375
+        ],
+        "sourceNodeId": "m0"
+      },
+      {
+        "min": [
+          -2.45,
+          2.1900000000000004,
+          -1.8125
+        ],
+        "max": [
+          2.45,
+          2.37,
+          1.4874999999999998
+        ],
+        "sourceNodeId": "m1"
+      },
+      {
+        "min": [
+          -2.275,
+          2.36,
+          -1.4575
+        ],
+        "max": [
+          2.275,
+          2.48,
+          1.2925
+        ],
+        "sourceNodeId": "m2"
+      },
+      {
+        "min": [
+          -2.4,
+          2.3049999999999997,
+          -1.7625000000000002
+        ],
+        "max": [
+          2.4,
+          3.0549999999999997,
+          -1.6025
+        ],
+        "sourceNodeId": "m3"
+      },
+      {
+        "min": [
+          -2.25,
+          1.54,
+          1.4175
+        ],
+        "max": [
+          2.25,
+          1.96,
+          1.5375
+        ],
+        "sourceNodeId": "m4"
+      },
+      {
+        "min": [
+          -2.225,
+          2.5700000000000003,
+          -1.3725
+        ],
+        "max": [
+          2.225,
+          2.75,
+          -1.2525
+        ],
+        "sourceNodeId": "m16"
+      },
+      {
+        "min": [
+          -2.225,
+          2.5700000000000003,
+          1.0074999999999998
+        ],
+        "max": [
+          2.225,
+          2.75,
+          1.1275
+        ],
+        "sourceNodeId": "m18"
+      },
+      {
+        "min": [
+          -2.225,
+          2.5700000000000003,
+          -0.19249999999999998
+        ],
+        "max": [
+          2.225,
+          2.75,
+          -0.07249999999999998
+        ],
+        "sourceNodeId": "m17"
+      }
+    ],
+    "sourceMeshCount": 36,
+    "candidateCount": 8,
+    "fallbackUsed": false
+  },
+  "footprintRadius": 2.45,
+  "sizeClass": "medium",
+  "mode": "voxel",
+  "provider": "gpt",
+  "createdAt": 1786784620727,
+  "updatedAt": 1786784620727
+}

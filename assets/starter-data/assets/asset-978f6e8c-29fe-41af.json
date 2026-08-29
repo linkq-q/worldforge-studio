@@ -1,0 +1,426 @@
+{
+  "id": "asset-978f6e8c-29fe-41af",
+  "name": "零食包装垃圾小堆",
+  "prompt": "A single reusable compact cluster of two empty snack wrappers, one flattened juice carton and one short paper straw forming one organized loose-trash asset, intentionally small everyday scale, no food, bin, floor, room, or background",
+  "tags": [
+    "trash",
+    "prop"
+  ],
+  "modelJson": {
+    "name": "紧凑零食包装垃圾组",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "trash_cluster",
+        "name": "松散垃圾组",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            1.694,
+            0.33,
+            0.893
+          ],
+          "center": [
+            0.008,
+            0.108,
+            -0.124
+          ],
+          "axes": [
+            [
+              0.9943,
+              0.0616,
+              0.0874
+            ],
+            [
+              -0.0558,
+              0.9962,
+              -0.0676
+            ],
+            [
+              -0.0912,
+              0.0624,
+              0.9939
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "wrapper_left",
+        "name": "空零食包装一",
+        "parent": "trash_cluster",
+        "transform": {
+          "pos": [
+            -0.32,
+            0.04,
+            0.02
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.747,
+            0.062,
+            0.463
+          ],
+          "center": [
+            -0.122,
+            0.007,
+            -0.052
+          ],
+          "axes": [
+            [
+              0.9737,
+              -0.0189,
+              0.2268
+            ],
+            [
+              0.0189,
+              0.9998,
+              0.002
+            ],
+            [
+              -0.2268,
+              0.0024,
+              0.9739
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "wrapper_right",
+        "name": "空零食包装二",
+        "parent": "trash_cluster",
+        "transform": {
+          "pos": [
+            0.37,
+            0.06,
+            0.12
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.76,
+            0.087,
+            0.46
+          ],
+          "center": [
+            0.041,
+            0.043,
+            -0.097
+          ],
+          "axes": [
+            [
+              0.9697,
+              0.0853,
+              -0.2289
+            ],
+            [
+              -0.0986,
+              0.994,
+              -0.0472
+            ],
+            [
+              0.2235,
+              0.0684,
+              0.9723
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "carton",
+        "name": "压扁果汁盒",
+        "parent": "trash_cluster",
+        "transform": {
+          "pos": [
+            0.02,
+            0.08,
+            -0.25
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.602,
+            0.095,
+            0.414
+          ],
+          "center": [
+            -0.03,
+            0.069,
+            -0.103
+          ],
+          "axes": [
+            [
+              0.9981,
+              0.029,
+              0.0535
+            ],
+            [
+              -0.0106,
+              0.9487,
+              -0.316
+            ],
+            [
+              -0.06,
+              0.3148,
+              0.9473
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "straw",
+        "name": "短纸吸管",
+        "parent": "trash_cluster",
+        "transform": {
+          "pos": [
+            0.08,
+            0.22,
+            0.14
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.59,
+            0.025,
+            0.05
+          ],
+          "center": [
+            0.01,
+            0,
+            0.04
+          ],
+          "axes": [
+            [
+              0.9681,
+              0.0008,
+              0.2504
+            ],
+            [
+              -0.1501,
+              0.8023,
+              0.5778
+            ],
+            [
+              -0.2004,
+              -0.5969,
+              0.7768
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "wrapper_left",
+        "transform": {
+          "pos": [
+            -0.1,
+            0,
+            -0.05
+          ],
+          "quat": [
+            0,
+            -0.07,
+            0,
+            1
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.67,
+            "height": 0.035,
+            "depth": 0.4
+          },
+          "color": 14240581
+        }
+      },
+      {
+        "id": "m1",
+        "parent": "wrapper_left",
+        "transform": {
+          "pos": [
+            -0.4,
+            0.02,
+            -0.1
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.09,
+            "height": 0.045,
+            "depth": 0.42
+          },
+          "color": 15976523
+        }
+      },
+      {
+        "id": "m2",
+        "parent": "wrapper_right",
+        "transform": {
+          "pos": [
+            0,
+            0.03,
+            -0.09
+          ],
+          "quat": [
+            -0.05,
+            0.08,
+            0.04,
+            1
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.65,
+            "height": 0.04,
+            "depth": 0.41
+          },
+          "color": 4883398
+        }
+      },
+      {
+        "id": "m3",
+        "parent": "wrapper_right",
+        "transform": {
+          "pos": [
+            0.32,
+            0.07,
+            -0.14
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.1,
+            "height": 0.055,
+            "depth": 0.4
+          },
+          "color": 15199730
+        }
+      },
+      {
+        "id": "m4",
+        "parent": "carton",
+        "transform": {
+          "pos": [
+            -0.03,
+            0.06,
+            -0.1
+          ],
+          "quat": [
+            -0.16,
+            0,
+            0,
+            0.99
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.58,
+            "height": 0.07,
+            "depth": 0.38
+          },
+          "color": 15774780
+        }
+      },
+      {
+        "id": "m5",
+        "parent": "carton",
+        "transform": {
+          "pos": [
+            0.05,
+            0.11,
+            -0.03
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.2,
+            "height": 0.025,
+            "depth": 0.12
+          },
+          "color": 7977050
+        }
+      },
+      {
+        "id": "m6",
+        "parent": "straw",
+        "transform": {
+          "pos": [
+            0.01,
+            0,
+            0.04
+          ],
+          "quat": [
+            0.94,
+            0.04,
+            0.12,
+            -0.31
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.59,
+            "height": 0.025,
+            "depth": 0.05
+          },
+          "color": 16051938
+        }
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1786874703699,
+        "provider": "gpt",
+        "data": "Tl9ZGTzzvi3fRWOs5Uj0X3wesbUmh1SAQhD1ZfCpiuuStfZ8GA7cv+3lUh3sRFw0/2unL2BD6cZCJv1esz3yoCUSfLUEWR0wceWxZOlhpw/GZiA4QHnrI67TMn0SU+aGlbksChtgSxuCDqDcrDJSqasHTIMwHkO/df/L+7xOISF2QtZj7OQqnBIKsD3O/aQNx2Hw2it5M/Yb1wX73ACCsFgkN22xRhGnadJDIZU10GlhMSsaM3FiEV1P4FUk2Y0dbIxL7h3/ivmnh4BMMpr/Zxu13KnP14eM8SidmMr5/9UxMehZqXXA9CcyolvrlZ8SrQUwoFC/1bXgWLGCRZZ9u4PmlmDc9xEOd/E8MvHZD22rzSERvqkvLzMtrHiXw1oCMhRs2ibVplDLEeO1LMjHFu8WiRg8LutSyhYsxj8gpw+z7MD7dUt3bKshSThwSN+B3DWOqKPkc/kXG+g5XAH2RhXFFeWTkfsPol5frTb86/U1WnEIi6/uuu/ihMW/PSEl9HBS5qU1c46ywRC2H5lSnStEjJYd9z6fl8kA+JCKINOwr3DTJtS5Fs5N6q5Ey4HjOPt1oaxfu6hWCTOobxkyl5GMZUjoGyt1guamstRK732sG2xDOZoBTHk+H2OxkyZ7fKfQ7m3ONpIn3SvJfs8/nlZhOXe8UBDCc2lYnnA0FzgWPeommL37ttuxUJeOz9b4PoSX4JFDjzKNxyUU3n7R3njnq3jZ07ruNsHzsZAt6QEHjDI05rzz6dIjKkzk6tw3k3o+K616Q3K+TzmBPRam60XucKvaE7bgx8U2vTItfpo5F9RribwxswABeMCaVn/i5Q3qfEZkjXhSFqPdkg45uUspifqmJJEj436998+S4c5j8ie2QvqCIllA2FlBTdiWs7Iw37BmGdiOg2NSUGCrzYLyhrfLnIzkrCPHj80/66SBkg==",
+        "edits": ""
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -0.7597982386307096,
+          0,
+          -0.41366996091108
+        ],
+        "max": [
+          0.7597982386307096,
+          0.22265792909510898,
+          0.41366996091108
+        ],
+        "sourceNodeId": "asset-bounds"
+      }
+    ],
+    "sourceMeshCount": 7,
+    "candidateCount": 0,
+    "fallbackUsed": true
+  },
+  "footprintRadius": 0.7597982386307096,
+  "sizeClass": "small",
+  "mode": "voxel",
+  "provider": "gpt",
+  "createdAt": 1786874703971,
+  "updatedAt": 1786874703971
+}

@@ -1,0 +1,776 @@
+{
+  "id": "asset-dab595eb-71ef-45f6",
+  "name": "木制玩具火车",
+  "prompt": "A single reusable wooden toy train with locomotive and two short cars permanently connected as one compact object, clearly readable wheels and child-safe rounded forms, approximately 0.85 meters long, no floor or background",
+  "tags": [
+    "toy",
+    "prop"
+  ],
+  "modelJson": {
+    "name": "木制玩具小火车",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "train",
+        "name": "一体式玩具火车",
+        "transform": {
+          "pos": [
+            0,
+            0.2,
+            0.01
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.245,
+            0.324,
+            0.816
+          ],
+          "center": [
+            0,
+            -0.031,
+            -0.007
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              0.997,
+              -0.0769
+            ],
+            [
+              0,
+              0.0769,
+              0.997
+            ]
+          ],
+          "_mainAxis": 2
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "train",
+        "transform": {
+          "pos": [
+            0,
+            -0.095,
+            0.26
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.18,
+            "height": 0.045,
+            "depth": 0.29
+          },
+          "color": 13208133
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ]
+      },
+      {
+        "id": "m1",
+        "parent": "train",
+        "transform": {
+          "pos": [
+            0,
+            -0.095,
+            -0.04
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.18,
+            "height": 0.045,
+            "depth": 0.22
+          },
+          "color": 13208133
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ]
+      },
+      {
+        "id": "m2",
+        "parent": "train",
+        "transform": {
+          "pos": [
+            0,
+            -0.095,
+            -0.3
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.18,
+            "height": 0.045,
+            "depth": 0.22
+          },
+          "color": 13208133
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ]
+      },
+      {
+        "id": "m3",
+        "parent": "train",
+        "transform": {
+          "pos": [
+            0,
+            -0.005,
+            0.31
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.15,
+            "height": 0.14,
+            "depth": 0.15
+          },
+          "color": 14240573
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ]
+      },
+      {
+        "id": "m4",
+        "parent": "train",
+        "transform": {
+          "pos": [
+            0,
+            0.02,
+            0.19
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.14,
+            "height": 0.19,
+            "depth": 0.095
+          },
+          "color": 15120463
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ]
+      },
+      {
+        "id": "m5",
+        "parent": "train",
+        "transform": {
+          "pos": [
+            0,
+            0.125,
+            0.19
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.17,
+            "height": 0.035,
+            "depth": 0.115
+          },
+          "color": 4161129
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ]
+      },
+      {
+        "id": "m6",
+        "parent": "train",
+        "transform": {
+          "pos": [
+            0,
+            0.115,
+            0.35
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.055,
+            "height": 0.075,
+            "depth": 0.055
+          },
+          "color": 4928549
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "walnut"
+          }
+        ]
+      },
+      {
+        "id": "m7",
+        "parent": "train",
+        "transform": {
+          "pos": [
+            0,
+            -0.02,
+            -0.04
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.15,
+            "height": 0.105,
+            "depth": 0.17
+          },
+          "color": 5214661
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ]
+      },
+      {
+        "id": "m8",
+        "parent": "train",
+        "transform": {
+          "pos": [
+            0,
+            0.05,
+            -0.04
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.165,
+            "height": 0.03,
+            "depth": 0.19
+          },
+          "color": 15912818
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ]
+      },
+      {
+        "id": "m9",
+        "parent": "train",
+        "transform": {
+          "pos": [
+            0,
+            -0.02,
+            -0.3
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.15,
+            "height": 0.105,
+            "depth": 0.17
+          },
+          "color": 14917947
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ]
+      },
+      {
+        "id": "m10",
+        "parent": "train",
+        "transform": {
+          "pos": [
+            0,
+            0.05,
+            -0.3
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.165,
+            "height": 0.03,
+            "depth": 0.19
+          },
+          "color": 15912818
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ]
+      },
+      {
+        "id": "m11",
+        "parent": "train",
+        "transform": {
+          "pos": [
+            0,
+            -0.085,
+            0.135
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.055,
+            "height": 0.035,
+            "depth": 0.055
+          },
+          "color": 7029544
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "walnut"
+          }
+        ]
+      },
+      {
+        "id": "m12",
+        "parent": "train",
+        "transform": {
+          "pos": [
+            0,
+            -0.085,
+            -0.175
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.055,
+            "height": 0.035,
+            "depth": 0.055
+          },
+          "color": 7029544
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "walnut"
+          }
+        ]
+      },
+      {
+        "id": "m13",
+        "parent": "train",
+        "transform": {
+          "pos": [
+            -0.105,
+            -0.125,
+            0.35
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.035,
+            "height": 0.075,
+            "depth": 0.075
+          },
+          "color": 4797478
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "walnut"
+          }
+        ]
+      },
+      {
+        "id": "m14",
+        "parent": "train",
+        "transform": {
+          "pos": [
+            0.105,
+            -0.125,
+            0.35
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.035,
+            "height": 0.075,
+            "depth": 0.075
+          },
+          "color": 4797478
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "walnut"
+          }
+        ]
+      },
+      {
+        "id": "m15",
+        "parent": "train",
+        "transform": {
+          "pos": [
+            -0.105,
+            -0.125,
+            0.19
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.035,
+            "height": 0.075,
+            "depth": 0.075
+          },
+          "color": 4797478
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "walnut"
+          }
+        ]
+      },
+      {
+        "id": "m16",
+        "parent": "train",
+        "transform": {
+          "pos": [
+            0.105,
+            -0.125,
+            0.19
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.035,
+            "height": 0.075,
+            "depth": 0.075
+          },
+          "color": 4797478
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "walnut"
+          }
+        ]
+      },
+      {
+        "id": "m17",
+        "parent": "train",
+        "transform": {
+          "pos": [
+            -0.105,
+            -0.125,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.035,
+            "height": 0.065,
+            "depth": 0.065
+          },
+          "color": 4797478
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "walnut"
+          }
+        ]
+      },
+      {
+        "id": "m18",
+        "parent": "train",
+        "transform": {
+          "pos": [
+            0.105,
+            -0.125,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.035,
+            "height": 0.065,
+            "depth": 0.065
+          },
+          "color": 4797478
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "walnut"
+          }
+        ]
+      },
+      {
+        "id": "m19",
+        "parent": "train",
+        "transform": {
+          "pos": [
+            -0.105,
+            -0.125,
+            -0.085
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.035,
+            "height": 0.065,
+            "depth": 0.065
+          },
+          "color": 4797478
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "walnut"
+          }
+        ]
+      },
+      {
+        "id": "m20",
+        "parent": "train",
+        "transform": {
+          "pos": [
+            0.105,
+            -0.125,
+            -0.085
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.035,
+            "height": 0.065,
+            "depth": 0.065
+          },
+          "color": 4797478
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "walnut"
+          }
+        ]
+      },
+      {
+        "id": "m21",
+        "parent": "train",
+        "transform": {
+          "pos": [
+            -0.105,
+            -0.125,
+            -0.26
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.035,
+            "height": 0.065,
+            "depth": 0.065
+          },
+          "color": 4797478
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "walnut"
+          }
+        ]
+      },
+      {
+        "id": "m22",
+        "parent": "train",
+        "transform": {
+          "pos": [
+            0.105,
+            -0.125,
+            -0.26
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.035,
+            "height": 0.065,
+            "depth": 0.065
+          },
+          "color": 4797478
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "walnut"
+          }
+        ]
+      },
+      {
+        "id": "m23",
+        "parent": "train",
+        "transform": {
+          "pos": [
+            -0.105,
+            -0.125,
+            -0.35
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.035,
+            "height": 0.065,
+            "depth": 0.065
+          },
+          "color": 4797478
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "walnut"
+          }
+        ]
+      },
+      {
+        "id": "m24",
+        "parent": "train",
+        "transform": {
+          "pos": [
+            0.105,
+            -0.125,
+            -0.35
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.035,
+            "height": 0.065,
+            "depth": 0.065
+          },
+          "color": 4797478
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "walnut"
+          }
+        ]
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1786871410060,
+        "provider": "gpt",
+        "data": "DCpW+yfYr5tQQmA2BMBhGvLS+wzFCyA95CAUmbtqlljwy+uAWe65QTqq1OFTK+xWxFcUfArY4ksK2MDfu0+nmnVC0BCt0wx3uyWIx1b+JoLFUqMSf+OXa6e0Z4cRz+yU74yTscRHwSFSPHZflocIH6uEHm5vUNM1/GX+GUAdNqOX8setpSbSpNZFD1ewWQhU72j6A/1GgruiExrSg4xAhojmZkD+GiPClQFl6uGNqFqTRvDPGT+gFq0iXzLicmzAZlsz3pq99lTMh+Mu5eqSxIDttZBJdcFahAYnx2ahtiyqEtxQrmzBGU1hlLmAn1hMphP+pnawbd/gSSrrfC5YQik7IHTYCXLRa55CTc3u3nbRaAt4ZkIv6LM2gxp+1LC8DPwT8SVIW6h8++aJKzMzjkOPx4rLq2RqbJggamdRt6pr3vA9Dtwg31GpBIpH9w+LpwnYBkP++Kv1xIKxytw0qxa/LsRjGODtaGTKrB1l0nlLhltbm/PCmhUheR6+F8lSMRmVClFecTZBcJ3cDHUCR3oeL8cGVnJcMlvgnL05HJMrJaBNhZJ0fCPOAsWGtywooS1fmzAWcoZOeeOiqDAU76tRA2uUfMoqONxxI6RIV/UCflAQKCt+O480o2M9LsE6yM1KBTFac1YFLF2epwN0Dfe6uEY8JLD/t+w7uPBn2LVOQCAMnuShxemyOpTNKHeXQpe5eTNC20lI+vTByupjrotpqVWNy2aNl/aN6Y9n2m2CNclbpJ6wgOQChvccSDWJ7yEZd/wrgxHpIFTcPE6zFW2k97u2MzdWrt5lmx5hqw2BmOYIgGchA4Whn+s3Ed9wbpM9agkFZgI7noTbYs5Td4U3VIEyZ99G2Eg+NLjGHYCpOfoV/+l6+Dlf+2VqFqxDfLwrbOwgpdA3yBEuXAiEazMckZ8yTJXo9f1Xy7IW+tYrEwpSCbMpBf1oeYw+tf5Jqsk0nSRt1kx3d2wItuA4JgyJF7nnJHxEj1kekL3l4kefjIDu5PwNJ5ZOxg==",
+        "edits": ""
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -0.1225,
+          0,
+          -0.4075
+        ],
+        "max": [
+          0.1225,
+          0.31499999999999995,
+          0.4075
+        ],
+        "sourceNodeId": "asset-bounds"
+      }
+    ],
+    "sourceMeshCount": 25,
+    "candidateCount": 1,
+    "fallbackUsed": true
+  },
+  "footprintRadius": 0.4075,
+  "sizeClass": "small",
+  "mode": "voxel",
+  "provider": "gpt",
+  "libraryId": "library-d7967286-cebf-4f99",
+  "libraryMetadata": {
+    "tags": [
+      "toytrain",
+      "childrenstoy",
+      "playroomprop"
+    ],
+    "applicableZones": [
+      "settlement"
+    ],
+    "repeatable": true,
+    "landmark": false,
+    "enabled": true,
+    "priority": 0.5,
+    "analysisStatus": "ready",
+    "rotation": "random"
+  },
+  "createdAt": 1787817692778,
+  "updatedAt": 1787817692778
+}

@@ -1,0 +1,442 @@
+{
+  "id": "asset-f419404d-c73f-41ea",
+  "name": "葡萄汁 2",
+  "prompt": "单瓶葡萄汁，透明塑料瓶，紫色果汁，紫色瓶盖，简洁葡萄标签，仅一瓶\nCoordinate contract: local Y+ is up, local Z+ is the front, entrance, or forward direction, and local X+ is right. Put doors, facades, openings, windshields, noses, seats, and other recognizable front details toward local Z+. For a modular repeated element, explicitly choose the long axis: side-by-side modules span local X with depth/front on local Z; traversal modules span local Z. Keep the model centered at its origin.\nCanonical dimensions contract: width=0.22, height=0.62, depth=0.22 world units. Keep the generated mesh within this centered bounding size.\nCreate variation 2 of 2; preserve the same reusable asset family while varying silhouette and details.",
+  "modelJson": {
+    "name": "透明塑料瓶葡萄汁·变化二",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "bottle",
+        "name": "葡萄汁瓶",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.28,
+            0.676,
+            0.22
+          ],
+          "center": [
+            0.002,
+            0.282,
+            0.007
+          ],
+          "axes": [
+            [
+              0.9997,
+              0.0076,
+              0.0216
+            ],
+            [
+              -0.0076,
+              1,
+              -0.0026
+            ],
+            [
+              -0.0216,
+              0.0024,
+              0.9998
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "label",
+        "name": "简洁葡萄标签",
+        "parent": "bottle",
+        "transform": {
+          "pos": [
+            0,
+            0.24,
+            0.1
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.199,
+            0.197,
+            0.016
+          ],
+          "center": [
+            0,
+            0.01,
+            0.006
+          ],
+          "axes": [
+            [
+              0.7504,
+              0.6607,
+              0.0204
+            ],
+            [
+              -0.6609,
+              0.7503,
+              0.0141
+            ],
+            [
+              -0.006,
+              -0.024,
+              0.9997
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "mount01_cap",
+        "name": "紫色瓶盖",
+        "parent": "bottle",
+        "transform": {
+          "pos": [
+            0,
+            0.52,
+            0
+          ]
+        },
+        "mounted": true,
+        "_obb": {
+          "size": [
+            0.125,
+            0.077,
+            0.125
+          ],
+          "center": [
+            0,
+            0.061,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "bottle",
+        "transform": {
+          "pos": [
+            0,
+            0.2,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.18,
+            "height": 0.34,
+            "depth": 0.18
+          },
+          "color": 7021454
+        }
+      },
+      {
+        "id": "m1",
+        "parent": "bottle",
+        "transform": {
+          "pos": [
+            0,
+            0.41,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.16,
+            "height": 0.08,
+            "depth": 0.16
+          },
+          "color": 7744155
+        }
+      },
+      {
+        "id": "m2",
+        "parent": "bottle",
+        "transform": {
+          "pos": [
+            0,
+            0.485,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.1,
+            "height": 0.07,
+            "depth": 0.1
+          },
+          "color": 8073887
+        }
+      },
+      {
+        "id": "m3",
+        "parent": "bottle",
+        "transform": {
+          "pos": [
+            -0.094,
+            0.22,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.012,
+            "height": 0.38,
+            "depth": 0.2
+          },
+          "color": 14276072
+        }
+      },
+      {
+        "id": "m4",
+        "parent": "bottle",
+        "transform": {
+          "pos": [
+            0.094,
+            0.22,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.012,
+            "height": 0.38,
+            "depth": 0.2
+          },
+          "color": 14276072
+        }
+      },
+      {
+        "id": "m5",
+        "parent": "bottle",
+        "transform": {
+          "pos": [
+            0,
+            0.021,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.2,
+            "height": 0.018,
+            "depth": 0.2
+          },
+          "color": 14276072
+        }
+      },
+      {
+        "id": "m6",
+        "parent": "bottle",
+        "transform": {
+          "pos": [
+            0,
+            0.455,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.18,
+            "height": 0.018,
+            "depth": 0.18
+          },
+          "color": 15065581
+        }
+      },
+      {
+        "id": "m7",
+        "parent": "label",
+        "transform": {
+          "pos": [
+            0,
+            0.01,
+            0.004
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.15,
+            "height": 0.13,
+            "depth": 0.008
+          },
+          "color": 15854039
+        }
+      },
+      {
+        "id": "m8",
+        "parent": "label",
+        "transform": {
+          "pos": [
+            0,
+            0.025,
+            0.011
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.055,
+            "height": 0.045,
+            "depth": 0.006
+          },
+          "color": 7417999
+        }
+      },
+      {
+        "id": "m9",
+        "parent": "label",
+        "transform": {
+          "pos": [
+            0.026,
+            0.065,
+            0.011
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.012,
+            "height": 0.035,
+            "depth": 0.006
+          },
+          "color": 5078326
+        }
+      },
+      {
+        "id": "m10",
+        "parent": "mount01_cap",
+        "transform": {
+          "pos": [
+            0,
+            0.055,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.115,
+            "height": 0.065,
+            "depth": 0.115
+          },
+          "color": 5513327
+        }
+      },
+      {
+        "id": "m11",
+        "parent": "mount01_cap",
+        "transform": {
+          "pos": [
+            0,
+            0.093,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.125,
+            "height": 0.012,
+            "depth": 0.125
+          },
+          "color": 6825862
+        }
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1787875111374,
+        "provider": "gpt",
+        "data": "fnFJjsOd8ynJUUBuqzgaKuaNzW9mFSOus0twcTpfpbOKP+v06juO2cuVn9Zj9ngSmFay+iJoNqqvBH0V3mW1YCmss+78TFBNjCgQ1ZzfHN2/7BcORqWy0xtXK/TUb4givrOHnXj2QEqCvLSp4jHqlYXJ62xHku7N95kpdVVBKZ+4xsNdlEUwUa93hHeQk3ZkH1eWEgCdgUVHtupBwoks3o67nXlkEktK6eK6v6KL0NK9Zk7TsAdKfCcvutAKlrI9L76kMG7PScUM64xyMYqluaM1IOuWK284bZ+++dNg7KK58BiYUS2nht59el1BzQCSt8hNtwbQq3ce+rLMxdV6cI5qDb0EIK/y9vfewAom4LELX3jYRvnIVkycwZQlLCW3PDyPw/LB4O6uTiy4yTpAt3IGufjPQbX3V1p2DFH2oMP23YuXHTCLNkh+mKhjaipvoaXilfOv9tW8XMjwbCa7C9Bxva6B6Gty7QZzvsdcTrM+WqQXXPdPd/+vbP+H0EohR4G3KB2uaaoNJTd2GNPnZwgTpSpEwEo67MRcFmRMggBxji2BZhTJi6YHYnkEUFZ/Jd7Qv2LegTcZIdPb5NQYp1TM4f46V2ttNNFksPhlt8A9gnoC+PksHdhiCCoBhA1n6iuPHmFsilgZryfElfD13l+Z3I/ya4ksQ055DZLnPwzl6b5eMbgOJCPZnU2QuQW9DIwCNUw5RjkpJOPcHRtBbx535wblv88t1qRWyeC1/xlHqd281YAfN/r77RKBuDa1dEwJnwSJF01DIAbGaXRGBnHGim2SeYAYtvSbbdk4M0I3SmsuZUNLM8WNtQ==",
+        "edits": ""
+      },
+      "mounts": [
+        {
+          "id": "mount01_cap",
+          "mountedGroupId": "mount01_cap",
+          "name": "紫色瓶盖",
+          "source": {
+            "type": "codegen"
+          },
+          "description": "",
+          "visible": true,
+          "ts": 1787875111375
+        }
+      ],
+      "semanticSnapshot": {
+        "v": 1,
+        "auto": true,
+        "text": "透明塑料瓶葡萄汁·变化二 · 3组/12mesh · 世界坐标(Y上Z前), 原点=模型根\n# 阅读说明: G:=group行(可动画骨骼, 动画key用G:后的id; @p=pivot世界坐标; 倾(x,y,z)°=朝向偏离世界轴的欧拉角; 缩进=父子层级; 挂:=挂载于某组; G:id→id→…=chain折叠行, 每个id都是可独立动画的group, chain×N=waypoint数)\n# M:=mesh行(label[id 几何 @(世界坐标)], label可省略; ×N=for循环批量件(锚点=代表实例); cyl (起)→(末)或 轴上(Y)等方位词=延伸方向; 薄向=板面法向(扁板); 挂载组双代表=最大件+最远有向件(刃/嘴/管所在端); 无方向标注=均匀块(三向相近,如头),默认面向前(Z); 对称×2=镜像对)\nG:bottle 葡萄汁瓶 @p(0,0,0)\n  M:[m0 box 0.18×0.34×0.18 (0,0.2,0) 轴上(Y)]\n  G:label 简洁葡萄标签 @p(0,0.2,0.1)\n    M:[m7 box 0.15×0.13×0.01 (0,0.3,0.1) 薄向前(Z)]\n  G:mount01_cap 紫色瓶盖 @p(0,0.5,0) 挂:bottle\n    M:[m10 box 0.12×0.07×0.12 (0,0.6,0) 薄向上(Y)] | M:[m11 box 0.13×0.01×0.13 (0,0.6,0) 薄向上(Y)]",
+        "stats": {
+          "groups": 3,
+          "meshes": 12,
+          "labeledMeshes": 0,
+          "labelCoverage": 0,
+          "batchLabels": 0,
+          "autoChains": 0,
+          "snapshotChars": 656
+        }
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -0.1,
+          0,
+          -0.10800000000000001
+        ],
+        "max": [
+          0.1,
+          0.607,
+          0.10800000000000001
+        ],
+        "sourceNodeId": "asset-bounds"
+      }
+    ],
+    "sourceMeshCount": 12,
+    "candidateCount": 0,
+    "fallbackUsed": true
+  },
+  "footprintRadius": 0.10800000000000001,
+  "sizeClass": "small",
+  "mode": "voxel",
+  "provider": "gpt",
+  "createdAt": 1787875110711,
+  "updatedAt": 1787875110711
+}

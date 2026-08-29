@@ -1,0 +1,622 @@
+{
+  "id": "asset-c2cdc7a1-2953-4449",
+  "name": "炼金镊",
+  "prompt": "一把细长黄铜炼金镊子，尖端精细，独立手持工具。精致写实的古典奇幻炼金术风格，独立单件，纯物件模型，无桌面、无柜体、无房间、无背景、无大型机器。\nCoordinate contract: local Y+ is up, local Z+ is the front, entrance, or forward direction, and local X+ is right. Put doors, facades, openings, windshields, noses, seats, and other recognizable front details toward local Z+. For a modular repeated element, explicitly choose the long axis: side-by-side modules span local X with depth/front on local Z; traversal modules span local Z. Keep the model centered at its origin.\nCanonical dimensions contract: width=0.06, height=0.04, depth=0.34 world units. Keep the generated mesh within this centered bounding size.",
+  "tags": [
+    "indoor",
+    "alchemy",
+    "instrument",
+    "handheld"
+  ],
+  "modelJson": {
+    "name": "黄铜炼金镊子",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "mount01_tweezers",
+        "name": "独立炼金镊子",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mounted": true,
+        "_obb": {
+          "size": [
+            0.078,
+            0.029,
+            0.505
+          ],
+          "center": [
+            0,
+            0,
+            0.082
+          ],
+          "axes": [
+            [
+              1,
+              0.0002,
+              0.0001
+            ],
+            [
+              -0.0002,
+              1,
+              0.002
+            ],
+            [
+              -0.0001,
+              -0.002,
+              1
+            ]
+          ],
+          "_mainAxis": 2
+        }
+      },
+      {
+        "id": "left_arm",
+        "name": "左弹性镊臂",
+        "parent": "mount01_tweezers",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            -0.165
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.044,
+            0.017,
+            0.33
+          ],
+          "center": [
+            -0.014,
+            0,
+            0.17
+          ],
+          "axes": [
+            [
+              0.9819,
+              -0.1887,
+              -0.0133
+            ],
+            [
+              0.1889,
+              0.9819,
+              0.0118
+            ],
+            [
+              0.0108,
+              -0.0141,
+              0.9998
+            ]
+          ],
+          "_mainAxis": 2
+        }
+      },
+      {
+        "id": "right_arm",
+        "name": "右弹性镊臂",
+        "parent": "mount01_tweezers",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            -0.165
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.045,
+            0.017,
+            0.34
+          ],
+          "center": [
+            0.014,
+            0,
+            0.165
+          ],
+          "axes": [
+            [
+              0.9827,
+              0.185,
+              0.0097
+            ],
+            [
+              -0.1851,
+              0.9827,
+              0.0112
+            ],
+            [
+              -0.0075,
+              -0.0128,
+              0.9999
+            ]
+          ],
+          "_mainAxis": 2
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "mount01_tweezers",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            -0.153
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.028,
+            "height": 0.016,
+            "depth": 0.034
+          },
+          "color": 7360549
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m1",
+        "parent": "mount01_tweezers",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            -0.132
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.034,
+            "height": 0.02,
+            "depth": 0.01
+          },
+          "color": 13806165
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m2",
+        "parent": "left_arm",
+        "transform": {
+          "pos": [
+            -0.01,
+            0,
+            0.115
+          ],
+          "quat": [
+            0.67,
+            0,
+            0.74,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.22,
+            "height": 0.012,
+            "depth": 0.01
+          },
+          "color": 11897402
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m3",
+        "parent": "left_arm",
+        "transform": {
+          "pos": [
+            -0.02,
+            0,
+            0.275
+          ],
+          "quat": [
+            0.77,
+            0,
+            0.64,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.11,
+            "height": 0.01,
+            "depth": 0.01
+          },
+          "color": 13806165
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m4",
+        "parent": "left_arm",
+        "transform": {
+          "pos": [
+            -0.004,
+            0,
+            0.326
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.006,
+            "height": 0.006,
+            "depth": 0.018
+          },
+          "color": 7360549
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m5",
+        "parent": "left_arm",
+        "transform": {
+          "pos": [
+            -0.0215,
+            0.007,
+            0.16
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.011,
+            "height": 0.002,
+            "depth": 0.004
+          },
+          "color": 7360549
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m6",
+        "parent": "left_arm",
+        "transform": {
+          "pos": [
+            -0.0215,
+            0.007,
+            0.178
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.011,
+            "height": 0.002,
+            "depth": 0.004
+          },
+          "color": 7360549
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m7",
+        "parent": "left_arm",
+        "transform": {
+          "pos": [
+            -0.0215,
+            0.007,
+            0.196
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.011,
+            "height": 0.002,
+            "depth": 0.004
+          },
+          "color": 7360549
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m8",
+        "parent": "right_arm",
+        "transform": {
+          "pos": [
+            0.01,
+            0,
+            0.105
+          ],
+          "quat": [
+            0.74,
+            0,
+            0.67,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.22,
+            "height": 0.012,
+            "depth": 0.01
+          },
+          "color": 11897402
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m9",
+        "parent": "right_arm",
+        "transform": {
+          "pos": [
+            0.02,
+            0,
+            0.275
+          ],
+          "quat": [
+            0.64,
+            0,
+            0.77,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.11,
+            "height": 0.01,
+            "depth": 0.01
+          },
+          "color": 13806165
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m10",
+        "parent": "right_arm",
+        "transform": {
+          "pos": [
+            0.004,
+            0,
+            0.326
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.006,
+            "height": 0.006,
+            "depth": 0.018
+          },
+          "color": 7360549
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m11",
+        "parent": "right_arm",
+        "transform": {
+          "pos": [
+            0.0215,
+            0.007,
+            0.16
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.011,
+            "height": 0.002,
+            "depth": 0.004
+          },
+          "color": 7360549
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m12",
+        "parent": "right_arm",
+        "transform": {
+          "pos": [
+            0.0215,
+            0.007,
+            0.178
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.011,
+            "height": 0.002,
+            "depth": 0.004
+          },
+          "color": 7360549
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m13",
+        "parent": "right_arm",
+        "transform": {
+          "pos": [
+            0.0215,
+            0.007,
+            0.196
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.011,
+            "height": 0.002,
+            "depth": 0.004
+          },
+          "color": 7360549
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m14",
+        "parent": "mount01_tweezers",
+        "transform": {
+          "pos": [
+            0,
+            0.0095,
+            -0.151
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.018,
+            "height": 0.003,
+            "depth": 0.028
+          },
+          "color": 13806165
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1787876974165,
+        "provider": "gpt",
+        "data": "O1qIzgWV7i25BRlpIl9n3LJNIjgfvUVdjeBh+OzM9QUZxV//KmzfzDrqmp1kSdQnu8cN/a+RHwRYO86kqOT7cGu4XVQ4upHSbT1GG3twRWoy2deYqsHNJ6At2Rp6cil1uh3omS4b9iWO/uwpuzu1DgOl1rYVoOOqh4bdeVE+y9T4nR7PkdnhqvCfYO/ybxtpdNcEti6Af1fK1e/aUkvn6AXtOiHjF++PeXPWzE1Wh/yZIGy81GIDk0gLDf14i7LOZOvrP6m1TBJ5VykM9UTZ9PqZk+OIF4qDpUCK4TOjbcYNX9CkFsv/nVEdUqX73ShjNPJTllPpcjf1MGVRGpiIfr3Tq8qrOi7UEgmBijEaObgMro4A+CAnecbno/EMpdJIDZSJuiE2P/uA5zp96nDnSIthTDQczyAANE2tDfyB1kswbW8huStoWDLG4KgLrJQ4UcfeCmqOy3Y7sdUy1y7JnmZQl/Po55Ha2pMCsBpsNGs4b/4nPc66ikYF9+98XK82hsIqfXop5Y5CQ+4EUl1oTkNMBKOTlEhvsw2GSLC6wO7sqL6pl70IjVmWM//D8oTJOP/b4WY71jLxkNqP2Z2xyd5NBCCCaFG2qSm1ZgSZLccmBdH9RKAnCkzLzBKdUR0DRcpdRM+H6Ry52bc8/heXaiXZ15SHEkbdAT9ztnclCCYmPvwlDy6uhfPMDEqt+Yiw3djVqFi6tc4ozulRNZmIMLuDutuFf3IPHyrSkXKCw+bLwL9Q/7XSkYzmCoPrXU82SuAPVzi7lCwrLJ7bkKaS1tVTdlYpD2nTNUz1CdEVapYWPpde5C3PW4wg6nHhc7ZCUtrVREjyIMW+GXl6+ENt6Fw+2vzj9kEaPpBYCfpsSrk0LOUmRzStcSDrIBPjJJZbZqTQRHLnJ/lRjnfI65nI5PGd9pctKn1V+HrdU/GCaUZrr02nwZ3hkhCtCEmNHP3TzKaYUNLoHvy6PC5ouncZNsLpk8BAkT+n+QVPi43qBhSjAqDGXZpm3/dyNSOiSPXu8xVJTUP9ERRkPj1qmfrhtugSzPB2dLr45QTbV9SXrbh9CCeCRHQxzWnXA3sBO/r79UcCfPKmbzkhyT1gLNJAOS53iUkU0ry6nH+4clESbDo1AjoOQL4=",
+        "edits": ""
+      },
+      "mounts": [
+        {
+          "id": "mount01_tweezers",
+          "mountedGroupId": "mount01_tweezers",
+          "name": "独立炼金镊子",
+          "source": {
+            "type": "codegen"
+          },
+          "description": "",
+          "visible": true,
+          "ts": 1787876974166
+        }
+      ],
+      "semanticSnapshot": {
+        "v": 1,
+        "auto": true,
+        "text": "黄铜炼金镊子 · 3组/15mesh · 世界坐标(Y上Z前), 原点=模型根\n# 阅读说明: G:=group行(可动画骨骼, 动画key用G:后的id; @p=pivot世界坐标; 倾(x,y,z)°=朝向偏离世界轴的欧拉角; 缩进=父子层级; 挂:=挂载于某组; G:id→id→…=chain折叠行, 每个id都是可独立动画的group, chain×N=waypoint数)\n# M:=mesh行(label[id 几何 @(世界坐标)], label可省略; ×N=for循环批量件(锚点=代表实例); cyl (起)→(末)或 轴上(Y)等方位词=延伸方向; 薄向=板面法向(扁板); 挂载组双代表=最大件+最远有向件(刃/嘴/管所在端); 无方向标注=均匀块(三向相近,如头),默认面向前(Z); 对称×2=镜像对)\nG:mount01_tweezers 独立炼金镊子 @p(0,0,0)\n  M:[m0 box 0.03×0.02×0.03 (0,0,-0.2) 薄向上(Y)]\n  G:left_arm 左弹性镊臂 @p(0,0,-0.2)\n    M:[m2 box 0.22×0.01×0.01 (0,0,0) 轴前(Z)]\n  G:right_arm 右弹性镊臂 @p(0,0,-0.2)\n    M:[m8 box 0.22×0.01×0.01 (0,0,-0.1) 轴前(Z)]",
+        "stats": {
+          "groups": 3,
+          "meshes": 15,
+          "labeledMeshes": 0,
+          "labelCoverage": 0,
+          "batchLabels": 0,
+          "autoChains": 0,
+          "snapshotChars": 604
+        }
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -0.03497206982543641,
+          0,
+          -0.16999999999999998
+        ],
+        "max": [
+          0.03497206982543641,
+          0.0245,
+          0.16999999999999998
+        ],
+        "sourceNodeId": "asset-bounds"
+      }
+    ],
+    "sourceMeshCount": 15,
+    "candidateCount": 0,
+    "fallbackUsed": true
+  },
+  "footprintRadius": 0.16999999999999998,
+  "sizeClass": "small",
+  "mode": "voxel",
+  "provider": "gpt",
+  "createdAt": 1787876974069,
+  "updatedAt": 1787876974069
+}

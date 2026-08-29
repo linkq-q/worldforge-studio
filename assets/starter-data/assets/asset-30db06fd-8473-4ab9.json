@@ -1,0 +1,570 @@
+{
+  "id": "asset-30db06fd-8473-4ab9",
+  "name": "复杂公园/池塘水面",
+  "prompt": "Standalone reusable voxel park asset: a very shallow irregular oval pond water surface made of layered blue and teal voxels, flat low silhouette, no shore or surrounding scene. Box-only voxel model around 20 purposeful boxes, centered at the origin, base grounded on y=0, no surrounding terrain, no people, no loose floating geometry, flat-shaded cohesive enchanted municipal park palette. Keep the gameplay silhouette and collision shape readable from all sides.",
+  "modelJson": {
+    "name": "魔法公园浅水池",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "m0",
+        "transform": {
+          "pos": [
+            0.1,
+            0.06,
+            -2.2
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.8,
+            "height": 0.12,
+            "depth": 0.5
+          },
+          "color": 1535878
+        }
+      },
+      {
+        "id": "m1",
+        "transform": {
+          "pos": [
+            -0.15,
+            0.06,
+            -1.8
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 3.2,
+            "height": 0.12,
+            "depth": 0.5
+          },
+          "color": 1670545
+        }
+      },
+      {
+        "id": "m2",
+        "transform": {
+          "pos": [
+            -0.2,
+            0.06,
+            -1.4
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 4.5,
+            "height": 0.12,
+            "depth": 0.5
+          },
+          "color": 1476762
+        }
+      },
+      {
+        "id": "m3",
+        "transform": {
+          "pos": [
+            -0.1,
+            0.06,
+            -1
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 5.4,
+            "height": 0.12,
+            "depth": 0.5
+          },
+          "color": 1341838
+        }
+      },
+      {
+        "id": "m4",
+        "transform": {
+          "pos": [
+            0,
+            0.06,
+            -0.6
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 6,
+            "height": 0.12,
+            "depth": 0.5
+          },
+          "color": 1477792
+        }
+      },
+      {
+        "id": "m5",
+        "transform": {
+          "pos": [
+            0.05,
+            0.06,
+            -0.2
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 6.4,
+            "height": 0.12,
+            "depth": 0.5
+          },
+          "color": 1208200
+        }
+      },
+      {
+        "id": "m6",
+        "transform": {
+          "pos": [
+            0,
+            0.06,
+            0.2
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 6.3,
+            "height": 0.12,
+            "depth": 0.5
+          },
+          "color": 1474454
+        }
+      },
+      {
+        "id": "m7",
+        "transform": {
+          "pos": [
+            -0.1,
+            0.06,
+            0.6
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 5.9,
+            "height": 0.12,
+            "depth": 0.5
+          },
+          "color": 1346464
+        }
+      },
+      {
+        "id": "m8",
+        "transform": {
+          "pos": [
+            -0.05,
+            0.06,
+            1
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 5.3,
+            "height": 0.12,
+            "depth": 0.5
+          },
+          "color": 1407117
+        }
+      },
+      {
+        "id": "m9",
+        "transform": {
+          "pos": [
+            0.15,
+            0.06,
+            1.4
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 4.4,
+            "height": 0.12,
+            "depth": 0.5
+          },
+          "color": 1673626
+        }
+      },
+      {
+        "id": "m10",
+        "transform": {
+          "pos": [
+            0.1,
+            0.06,
+            1.8
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 3.1,
+            "height": 0.12,
+            "depth": 0.5
+          },
+          "color": 1537931
+        }
+      },
+      {
+        "id": "m11",
+        "transform": {
+          "pos": [
+            -0.05,
+            0.06,
+            2.2
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.7,
+            "height": 0.12,
+            "depth": 0.5
+          },
+          "color": 1535363
+        }
+      },
+      {
+        "id": "m12",
+        "transform": {
+          "pos": [
+            -0.15,
+            0.16,
+            -1.4
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.5,
+            "height": 0.08,
+            "depth": 0.42
+          },
+          "color": 2664621
+        }
+      },
+      {
+        "id": "m13",
+        "transform": {
+          "pos": [
+            0.2,
+            0.16,
+            -1
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2.4,
+            "height": 0.08,
+            "depth": 0.42
+          },
+          "color": 2470834
+        }
+      },
+      {
+        "id": "m14",
+        "transform": {
+          "pos": [
+            -0.2,
+            0.16,
+            -0.6
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 3.2,
+            "height": 0.08,
+            "depth": 0.42
+          },
+          "color": 2997688
+        }
+      },
+      {
+        "id": "m15",
+        "transform": {
+          "pos": [
+            0.15,
+            0.16,
+            -0.2
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 3.8,
+            "height": 0.08,
+            "depth": 0.42
+          },
+          "color": 3524029
+        }
+      },
+      {
+        "id": "m16",
+        "transform": {
+          "pos": [
+            -0.1,
+            0.16,
+            0.2
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 3.5,
+            "height": 0.08,
+            "depth": 0.42
+          },
+          "color": 3259317
+        }
+      },
+      {
+        "id": "m17",
+        "transform": {
+          "pos": [
+            0.2,
+            0.16,
+            0.6
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2.8,
+            "height": 0.08,
+            "depth": 0.42
+          },
+          "color": 2730665
+        }
+      },
+      {
+        "id": "m18",
+        "transform": {
+          "pos": [
+            -0.15,
+            0.16,
+            1
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2,
+            "height": 0.08,
+            "depth": 0.42
+          },
+          "color": 3520433
+        }
+      },
+      {
+        "id": "m19",
+        "transform": {
+          "pos": [
+            0.1,
+            0.16,
+            1.4
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.1,
+            "height": 0.08,
+            "depth": 0.42
+          },
+          "color": 4376509
+        }
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1783922085497,
+        "provider": "gpt",
+        "data": "kqNJDR8Iuw69jy+uofWRqvOGb5NXeH2yjxvG4HOGRBSQfI1n4gbKjR91EGKJA3hLASgNExlc5FO2eJFt1pSNN2zWnYUwCcntmmX+ND6ZzQt1qWnBAI04LPjPG9UaJdw5WPR61WLXtAbDYDJ1PqILqpZ6PmJbbJr8RFEfUQ+Zxs5z4lNkroLmwg5tfKTEQqctTylnhB1172C9G3JtfJSK845Xlgg6Q0/9G6nIsBPR4XhcNRfcgPN843bsT0Qmk3l4mqcCjsFRZWRBlOFWS9MqMtoDOfGO7hWzYLG9XoAr+kYi6bAdUZCkT5IbyDz470v7FIRX6puCZoujXnoggH/gM9z7nKhi+Sq3kIcGXlYpdNI79SYUg1np06dzCE3gXvTB8Y7oXhlrLk5LEG8pZP1GFDoIGiRyHRnTIRNdb5hOIW2NBmt0n3tmfnFD43jABCW82wH6rlZRlaSB639MCH7A/AmTOtPYSCuHuvkyEA+x8DfFAH3Hm+q4IbPyI7EtmMbzEiNoeJ7LwqdW/cTcnniNIF8zbIBuoZJDIJ0jnRC7vZQVdCkqTB9B6dcy7dnwDLMDV3I2HPOzL3Hu5m3KSxifAfmll893Mg5KEzQlyUh6oe6Qz+x01KuqcgZg9JiVinCrJlmIpymxleM0XMMiYkHMljBqXHzqxeN0nT+yjcIe0FVHXAUQvPWUeXKa63nQYNZoYwoXlHr64Gj2h22iNRtS4pU0+V30feNFuI8RaLXIZ7qvtxICojlMVStw6agRzT2vbAkOdsAkEs/PU7s9jAuq5ldENw4gxJet9GIYuapGnQPSvxxfzUBw1ktnl2f6ZgDtKDb8jPZvjwNXsQ==",
+        "edits": ""
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -3.2,
+          0,
+          -0.45
+        ],
+        "max": [
+          3.2,
+          0.12,
+          0.04999999999999999
+        ],
+        "sourceNodeId": "m5"
+      },
+      {
+        "min": [
+          -3.1999999999999997,
+          0,
+          -0.04999999999999999
+        ],
+        "max": [
+          3.1,
+          0.12,
+          0.45
+        ],
+        "sourceNodeId": "m6"
+      },
+      {
+        "min": [
+          -3.05,
+          0,
+          -0.85
+        ],
+        "max": [
+          2.95,
+          0.12,
+          -0.35
+        ],
+        "sourceNodeId": "m4"
+      },
+      {
+        "min": [
+          -3.1,
+          0,
+          0.35
+        ],
+        "max": [
+          2.8000000000000003,
+          0.12,
+          0.85
+        ],
+        "sourceNodeId": "m7"
+      },
+      {
+        "min": [
+          -2.85,
+          0,
+          -1.25
+        ],
+        "max": [
+          2.5500000000000003,
+          0.12,
+          -0.75
+        ],
+        "sourceNodeId": "m3"
+      },
+      {
+        "min": [
+          -2.7499999999999996,
+          0,
+          0.75
+        ],
+        "max": [
+          2.5500000000000003,
+          0.12,
+          1.25
+        ],
+        "sourceNodeId": "m8"
+      },
+      {
+        "min": [
+          -2.5,
+          0,
+          -1.65
+        ],
+        "max": [
+          2,
+          0.12,
+          -1.15
+        ],
+        "sourceNodeId": "m2"
+      },
+      {
+        "min": [
+          -2.1,
+          0,
+          1.15
+        ],
+        "max": [
+          2.3000000000000003,
+          0.12,
+          1.65
+        ],
+        "sourceNodeId": "m9"
+      },
+      {
+        "min": [
+          -1.7999999999999998,
+          0,
+          -2.05
+        ],
+        "max": [
+          1.4000000000000004,
+          0.12,
+          -1.55
+        ],
+        "sourceNodeId": "m1"
+      },
+      {
+        "min": [
+          -1.4999999999999998,
+          0,
+          1.55
+        ],
+        "max": [
+          1.6000000000000003,
+          0.12,
+          2.05
+        ],
+        "sourceNodeId": "m10"
+      },
+      {
+        "min": [
+          -0.8499999999999999,
+          0,
+          -2.45
+        ],
+        "max": [
+          0.9500000000000002,
+          0.12,
+          -1.9500000000000002
+        ],
+        "sourceNodeId": "m0"
+      },
+      {
+        "min": [
+          -0.9499999999999998,
+          0,
+          1.9500000000000002
+        ],
+        "max": [
+          0.7500000000000001,
+          0.12,
+          2.45
+        ],
+        "sourceNodeId": "m11"
+      }
+    ],
+    "sourceMeshCount": 20,
+    "candidateCount": 12,
+    "fallbackUsed": false
+  },
+  "mode": "voxel",
+  "provider": "provider-fallback",
+  "createdAt": 1783922422404,
+  "updatedAt": 1783922422404
+}

@@ -1,0 +1,443 @@
+{
+  "id": "asset-c888738b-c4bc-4227",
+  "name": "透明玻璃儿童房窗",
+  "prompt": "单个可复用的宽幅室内窗模型，透明玻璃面板、浅木窗框和较低但安全的窗台；玻璃保持透明材质，不包含墙体或窗外场景。\n全局资产美术方向：统一采用柔和圆角、略微夸张比例的精致体素风；家具以浅暖木、米白和雾蓝为主，玩具使用克制的砖红、芥末黄和深蓝点缀，所有边角适合儿童空间且尺度参照1.60米角色。; 现代温暖的儿童卧室，浅木地板、柔和蓝灰墙面和米白顶面保持安静背景，以木质家具和少量红黄蓝玩具形成分组色彩点缀；装饰集中于睡眠与学习区域，中央不堆放杂物。; 温暖, 现代儿童房, 圆角体素, 整洁生活感, 柔和配色; palette #E8DFC9, #B99062, #8EA6B4, #C65F4A, #D6A83E, #354C63; materials 浅色木材, 哑光烤漆, 棉织物, 粉末涂层金属, 透明玻璃\n资产角色：两面墙上对称分布的自然采光构件；目标尺度：large。\n只生成一个可复用的独立物体，不要生成地面、背景、天空、完整场景或多个分散物体。",
+  "modelJson": {
+    "name": "宽幅浅木室内窗",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "window",
+        "name": "宽幅室内窗",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            4.82,
+            4.045,
+            0.748
+          ],
+          "center": [
+            0,
+            0.802,
+            0.101
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0.0011
+            ],
+            [
+              0,
+              -0.0011,
+              1
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "frame",
+        "name": "浅木窗框",
+        "parent": "window",
+        "transform": {
+          "pos": [
+            0,
+            1.56,
+            0.065
+          ]
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ],
+        "_obb": {
+          "size": [
+            4.82,
+            2.484,
+            0.684
+          ],
+          "center": [
+            0,
+            0.014,
+            0.037
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              0.9997,
+              -0.0244
+            ],
+            [
+              0,
+              0.0244,
+              0.9997
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "glass",
+        "name": "透明玻璃",
+        "parent": "window",
+        "transform": {
+          "pos": [
+            0,
+            1.64,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            4.02,
+            1.82,
+            0.08
+          ],
+          "center": [
+            0,
+            0,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "frame",
+        "transform": {
+          "pos": [
+            0,
+            1.14,
+            -0.065
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 4.4,
+            "height": 0.22,
+            "depth": 0.3
+          },
+          "color": 12161122
+        }
+      },
+      {
+        "id": "m1",
+        "parent": "frame",
+        "transform": {
+          "pos": [
+            0,
+            -0.98,
+            -0.015
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 4.6,
+            "height": 0.24,
+            "depth": 0.48
+          },
+          "color": 12161122
+        }
+      },
+      {
+        "id": "m2",
+        "parent": "frame",
+        "transform": {
+          "pos": [
+            -2.08,
+            -0.04,
+            -0.065
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.24,
+            "height": 2.36,
+            "depth": 0.3
+          },
+          "color": 12161122
+        }
+      },
+      {
+        "id": "m3",
+        "parent": "frame",
+        "transform": {
+          "pos": [
+            2.08,
+            -0.04,
+            -0.065
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.24,
+            "height": 2.36,
+            "depth": 0.3
+          },
+          "color": 12161122
+        }
+      },
+      {
+        "id": "m4",
+        "parent": "frame",
+        "transform": {
+          "pos": [
+            0,
+            0.08,
+            -0.065
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.18,
+            "height": 1.9,
+            "depth": 0.24
+          },
+          "color": 12161122
+        }
+      },
+      {
+        "id": "m5",
+        "parent": "frame",
+        "transform": {
+          "pos": [
+            0,
+            -1.14,
+            0.065
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 4.82,
+            "height": 0.16,
+            "depth": 0.68
+          },
+          "color": 15261641
+        }
+      },
+      {
+        "id": "m6",
+        "parent": "glass",
+        "transform": {
+          "pos": [
+            -1.055,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.91,
+            "height": 1.82,
+            "depth": 0.08
+          },
+          "color": 9348788
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass"
+          }
+        ]
+      },
+      {
+        "id": "m7",
+        "parent": "glass",
+        "transform": {
+          "pos": [
+            1.055,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.91,
+            "height": 1.82,
+            "depth": 0.08
+          },
+          "color": 9348788
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass"
+          }
+        ]
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1786869650957,
+        "provider": "gpt",
+        "data": "ML7XVFnPIQxdJuVIgEBYiohLLUBl+fngkqXBf8Io4Hc/LqG71tOQHPIYiaY8rrR2jzswltz4USlJxY4TPfS9Ciw/O/u16nY3ny0PKzWUUvMbwKO8kelMk51Bq6YvnXb+ToixmtYBlSknjS6D0z5gfvh8aViZnDJdKEKEOLxkqM0u+XtqgvfhA7jKtyjMZaPuCNU2JxyJSJEqqLRHx00ZmfKGTBcrgOsxO6H8gbW/P4iTKUMD5yuil38An5LXEm3mGASFl1TtoomMPAZiESv2JEKP2Tr9DMRNRaavQoIcRdOq23qpaV/clhyOiMxJtNKhUIv4A0Ij4wzh67P5L9TwCmKwZ8yODjOV+Kv4ZbkVSLjXnoNHpzRjbjlIAqrqLStrJqfAaNMQFlTyIIaoQhBSrDGPvWQ65tRONhCAGgCUlItB3wx83mxqgoyOxX9jDAXAhFn6tI14oj4U05xV4GNmdee4vOFljkdCaWHEiZYMxCMbt/J1TEGLqrinH1kSqkNbiNfqnN6jZFwhMaatZ3rqafCPNbokM1xlbg1rhepZyhhtY8MU+i/Eq22fWLeHR6gkKPvhAGvRVDdol2Sw4xXNPcLCeAqbX+0c81HtnAXStVa+qh0z5e+WXorNmbVUeV5JNpRelcLUXIXZn0s5GBwDKFsriFKgvY5YF//l7J0ImZBuHJwrMlYiZ55eehBEG8AwMxybVWpzh+TKNEZxOeXf",
+        "edits": ""
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -2.3,
+          0.12,
+          -0.32
+        ],
+        "max": [
+          2.3,
+          0.36,
+          0.15999999999999998
+        ],
+        "sourceNodeId": "m1"
+      },
+      {
+        "min": [
+          -2.41,
+          5.551115123125783e-17,
+          -0.34
+        ],
+        "max": [
+          2.41,
+          0.16000000000000003,
+          0.34
+        ],
+        "sourceNodeId": "m5"
+      },
+      {
+        "min": [
+          -2.2,
+          2.25,
+          -0.28
+        ],
+        "max": [
+          2.2,
+          2.4699999999999998,
+          0.01999999999999999
+        ],
+        "sourceNodeId": "m0"
+      },
+      {
+        "min": [
+          -2.01,
+          0.3899999999999998,
+          -0.17
+        ],
+        "max": [
+          -0.09999999999999998,
+          2.21,
+          -0.09
+        ],
+        "sourceNodeId": "m6"
+      },
+      {
+        "min": [
+          0.09999999999999998,
+          0.3899999999999998,
+          -0.17
+        ],
+        "max": [
+          2.01,
+          2.21,
+          -0.09
+        ],
+        "sourceNodeId": "m7"
+      },
+      {
+        "min": [
+          -2.2,
+          0,
+          -0.28
+        ],
+        "max": [
+          -1.96,
+          2.3600000000000003,
+          0.01999999999999999
+        ],
+        "sourceNodeId": "m2"
+      },
+      {
+        "min": [
+          1.96,
+          0,
+          -0.28
+        ],
+        "max": [
+          2.2,
+          2.3600000000000003,
+          0.01999999999999999
+        ],
+        "sourceNodeId": "m3"
+      },
+      {
+        "min": [
+          -0.09,
+          0.3500000000000001,
+          -0.25
+        ],
+        "max": [
+          0.09,
+          2.25,
+          -0.010000000000000009
+        ],
+        "sourceNodeId": "m4"
+      }
+    ],
+    "sourceMeshCount": 8,
+    "candidateCount": 8,
+    "fallbackUsed": false
+  },
+  "footprintRadius": 2.41,
+  "sizeClass": "medium",
+  "mode": "voxel",
+  "provider": "gpt",
+  "createdAt": 1786869655574,
+  "updatedAt": 1786869655574
+}

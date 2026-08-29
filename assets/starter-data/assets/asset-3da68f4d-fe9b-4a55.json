@@ -1,0 +1,757 @@
+{
+  "id": "asset-3da68f4d-fe9b-4a55",
+  "name": "单辆红色玩具跑车",
+  "prompt": "A single reusable small red toy sports car with chunky child-safe proportions, visible windows and four readable wheels, approximately 0.22 meters long, no track, floor, room, background, or extra vehicles",
+  "tags": [
+    "toy",
+    "vehicle",
+    "prop"
+  ],
+  "modelJson": {
+    "name": "红色儿童玩具跑车",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "body",
+        "name": "车身",
+        "transform": {
+          "pos": [
+            0,
+            0.05,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.124,
+            0.116,
+            0.22
+          ],
+          "center": [
+            0,
+            0.008,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              0.9994,
+              0.0335
+            ],
+            [
+              0,
+              -0.0335,
+              0.9994
+            ]
+          ],
+          "_mainAxis": 2
+        }
+      },
+      {
+        "id": "wheel_fl",
+        "name": "左前轮",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            -0.052,
+            -0.023,
+            0.057
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.02,
+            0.05,
+            0.05
+          ],
+          "center": [
+            0,
+            0,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "wheel_fr",
+        "name": "右前轮",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0.052,
+            -0.023,
+            0.057
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.02,
+            0.05,
+            0.05
+          ],
+          "center": [
+            0,
+            0,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "wheel_rl",
+        "name": "左后轮",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            -0.052,
+            -0.023,
+            -0.057
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.02,
+            0.05,
+            0.05
+          ],
+          "center": [
+            0,
+            0,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "wheel_rr",
+        "name": "右后轮",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0.052,
+            -0.023,
+            -0.057
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.02,
+            0.05,
+            0.05
+          ],
+          "center": [
+            0,
+            0,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0,
+            0.005,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.09,
+            "height": 0.045,
+            "depth": 0.18
+          },
+          "color": 14229286
+        }
+      },
+      {
+        "id": "m1",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0,
+            0.033,
+            0.061
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.086,
+            "height": 0.018,
+            "depth": 0.055
+          },
+          "color": 15675448
+        }
+      },
+      {
+        "id": "m2",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0,
+            0.032,
+            -0.069
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.082,
+            "height": 0.018,
+            "depth": 0.038
+          },
+          "color": 15675448
+        }
+      },
+      {
+        "id": "m3",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0,
+            0.049,
+            -0.012
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.078,
+            "height": 0.032,
+            "depth": 0.072
+          },
+          "color": 13179940
+        }
+      },
+      {
+        "id": "m4",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0,
+            0.05,
+            0.03
+          ],
+          "quat": [
+            0.51,
+            0,
+            0,
+            0.86
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.07,
+            "height": 0.003,
+            "depth": 0.03
+          },
+          "color": 7715281
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass",
+            "variant": "blue"
+          }
+        ]
+      },
+      {
+        "id": "m5",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0,
+            0.05,
+            -0.05
+          ],
+          "quat": [
+            0.82,
+            0,
+            0,
+            0.57
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.07,
+            "height": 0.003,
+            "depth": 0.03
+          },
+          "color": 7715281
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass",
+            "variant": "blue"
+          }
+        ]
+      },
+      {
+        "id": "m6",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            -0.0405,
+            0.052,
+            -0.011
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.003,
+            "height": 0.025,
+            "depth": 0.046
+          },
+          "color": 7715281
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass",
+            "variant": "blue"
+          }
+        ]
+      },
+      {
+        "id": "m7",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0.0405,
+            0.052,
+            -0.011
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.003,
+            "height": 0.025,
+            "depth": 0.046
+          },
+          "color": 7715281
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass",
+            "variant": "blue"
+          }
+        ]
+      },
+      {
+        "id": "m8",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            -0.026,
+            0.012,
+            0.093
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.025,
+            "height": 0.012,
+            "depth": 0.006
+          },
+          "color": 16770976
+        },
+        "tags": [
+          {
+            "tag": "emissive",
+            "value": 0.5
+          }
+        ]
+      },
+      {
+        "id": "m9",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0.026,
+            0.012,
+            0.093
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.025,
+            "height": 0.012,
+            "depth": 0.006
+          },
+          "color": 16770976
+        },
+        "tags": [
+          {
+            "tag": "emissive",
+            "value": 0.5
+          }
+        ]
+      },
+      {
+        "id": "m10",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0,
+            -0.007,
+            0.104
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.094,
+            "height": 0.018,
+            "depth": 0.012
+          },
+          "color": 11867677
+        }
+      },
+      {
+        "id": "m11",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0,
+            -0.007,
+            -0.104
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.094,
+            "height": 0.018,
+            "depth": 0.012
+          },
+          "color": 11867677
+        }
+      },
+      {
+        "id": "m12",
+        "parent": "wheel_fl",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.018,
+            "height": 0.05,
+            "depth": 0.05
+          },
+          "color": 2434346
+        }
+      },
+      {
+        "id": "m13",
+        "parent": "wheel_fl",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.02,
+            "height": 0.022,
+            "depth": 0.022
+          },
+          "color": 12107205
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m14",
+        "parent": "wheel_fr",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.018,
+            "height": 0.05,
+            "depth": 0.05
+          },
+          "color": 2434346
+        }
+      },
+      {
+        "id": "m15",
+        "parent": "wheel_fr",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.02,
+            "height": 0.022,
+            "depth": 0.022
+          },
+          "color": 12107205
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m16",
+        "parent": "wheel_rl",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.018,
+            "height": 0.05,
+            "depth": 0.05
+          },
+          "color": 2434346
+        }
+      },
+      {
+        "id": "m17",
+        "parent": "wheel_rl",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.02,
+            "height": 0.022,
+            "depth": 0.022
+          },
+          "color": 12107205
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m18",
+        "parent": "wheel_rr",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.018,
+            "height": 0.05,
+            "depth": 0.05
+          },
+          "color": 2434346
+        }
+      },
+      {
+        "id": "m19",
+        "parent": "wheel_rr",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.02,
+            "height": 0.022,
+            "depth": 0.022
+          },
+          "color": 12107205
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1786874726854,
+        "provider": "gpt",
+        "data": "smLB98do/tuNoHmTUP3ic2UnXDUqtZ0sMUfeZ7G32n+I7Ol1y6IMD6T0BgiyEz83uTUDBPkkCVTL5s53HbmuSCM7Juh+jSd5zXS40YVJMj4hdT7JxLmfEUzongDyxmD30vPJdoH367dXVvDkDmBOE3dHKgPvZIVXf23UAMc477vM1ZCXeTJbnIK83H4hHhOqPmBmOEwGeF2yymxu4FYjlEg1DUqCOt0Gdkm4l0Z2FQqQJR8yj3vIoC4ijdcrvn0dMihhwJw8je5ghYzxWvf1lyciA83h/l1qTCWccIn0jVqAG0sk7lbVM2m7Fz6ZpIWJzsGLbO6SSob+WwHGRA3FDoObup6t64XXnikLaZ3T7AEYENWrTxBbjqVBwMRtcur1uZolCzwsRfBabnJqYjYAVI+JEw7btxYFx5LM2RyVtbY6T/EIyeVYLle5OQpk99AKHSENeFQlH3GhcpOkz3OxSiNkV5UAKI/heA8BF6Si63uwrzACXlNwEa2lMYsChdCF4ZiNCDiuKGGoBagE6HmIQjHYIqhhqrzch1iYpLtJdcDKNwfgrN30nvAElw4BsGYIrTDMtoR41II99MPRZmihATZsklX+2Xry3JJiyuHllp0r1hBYE6oxBZD5cKuU3Lr0+n/OOqNRyrcae3f64ujXJ65xVevNvpQAIufrfJIFBnmW7scNFCkivCXTS/6B3+N+bLFKrxVTsRQg+HlPg/xo5t7S82BbSLpxpIm28ipZJEwVdrM0gElnVyTMRV/ZrdZ2NqtggYrZ2vC8b8sKynK9GuYHQHNk0Rac+fKc9CBxpeLoNqsBdlVhqKe8gk/qIB326kaFzDcBB8Y2mgGsd/9UALOxvDdvzcyV58vEFJrJx20LJWW+wZbim66x3l1NLOBZusmq20vB9pbkARyGPEQWEiVwqKAmR3QZ3Qz8rsFIjc2YV2dQnrlx6MASs8uuJya7IwT+qkB98O5ZVfZXXI9jD80bQqlc3HXgn7cyAm3Q98RPV0boYNfWU2F5ATLc0wuas7wVCQ==",
+        "edits": ""
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -0.062,
+          0,
+          -0.11
+        ],
+        "max": [
+          0.062,
+          0.11380216584778903,
+          0.11
+        ],
+        "sourceNodeId": "asset-bounds"
+      }
+    ],
+    "sourceMeshCount": 20,
+    "candidateCount": 1,
+    "fallbackUsed": true
+  },
+  "footprintRadius": 0.11,
+  "sizeClass": "small",
+  "mode": "voxel",
+  "provider": "gpt",
+  "libraryId": "library-d7967286-cebf-4f99",
+  "libraryMetadata": {
+    "tags": [
+      "toycar",
+      "sportscar",
+      "vehicle",
+      "playgroundprop"
+    ],
+    "applicableZones": [
+      "settlement"
+    ],
+    "repeatable": true,
+    "landmark": false,
+    "enabled": true,
+    "priority": 0.5,
+    "analysisStatus": "ready",
+    "rotation": "random"
+  },
+  "createdAt": 1787817387301,
+  "updatedAt": 1787817387301
+}

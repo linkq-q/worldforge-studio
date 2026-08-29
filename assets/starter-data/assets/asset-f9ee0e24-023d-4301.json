@@ -1,0 +1,540 @@
+{
+  "id": "asset-f9ee0e24-023d-4301",
+  "name": "水晶球",
+  "prompt": "哈利波特风格魔法工坊与图书馆中的水晶球\nCoordinate contract: local Y+ is up, local Z+ is the front, entrance, or forward direction, and local X+ is right. Put doors, facades, openings, windshields, noses, seats, and other recognizable front details toward local Z+. For a modular repeated element, explicitly choose the long axis: side-by-side modules span local X with depth/front on local Z; traversal modules span local Z. Keep the model centered at its origin.\nCanonical dimensions contract: width=0.65, height=0.8, depth=0.65 world units. Keep the generated mesh within this centered bounding size.",
+  "modelJson": {
+    "name": "魔法工坊图书馆水晶球",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "base",
+        "name": "木质藏书底座",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "walnut"
+          }
+        ],
+        "_obb": {
+          "size": [
+            0.56,
+            0.858,
+            0.568
+          ],
+          "center": [
+            0,
+            0.369,
+            0.041
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              -0.0062
+            ],
+            [
+              0,
+              0.0062,
+              1
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "books",
+        "name": "魔法藏书",
+        "parent": "base",
+        "transform": {
+          "pos": [
+            0,
+            0.22,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.34,
+            0.122,
+            0.526
+          ],
+          "center": [
+            0,
+            0.05,
+            0.06
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              0.9982,
+              -0.0595
+            ],
+            [
+              0,
+              0.0595,
+              0.9982
+            ]
+          ],
+          "_mainAxis": 2
+        }
+      },
+      {
+        "id": "crystal_mount",
+        "name": "水晶球托座",
+        "parent": "base",
+        "transform": {
+          "pos": [
+            0,
+            0.32,
+            0
+          ]
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ],
+        "_obb": {
+          "size": [
+            0.34,
+            0.531,
+            0.431
+          ],
+          "center": [
+            0,
+            0.197,
+            0.009
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              0.9969,
+              -0.0786
+            ],
+            [
+              0,
+              0.0786,
+              0.9969
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "crystal",
+        "name": "发光水晶球",
+        "parent": "crystal_mount",
+        "transform": {
+          "pos": [
+            0,
+            0.13,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.34,
+            0.392,
+            0.41
+          ],
+          "center": [
+            0,
+            0.13,
+            0.008
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              0.9989,
+              -0.0459
+            ],
+            [
+              0,
+              0.0459,
+              0.9989
+            ]
+          ],
+          "_mainAxis": 2
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "base",
+        "transform": {
+          "pos": [
+            0,
+            0.04,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.56,
+            "height": 0.08,
+            "depth": 0.48
+          },
+          "color": 4859928
+        }
+      },
+      {
+        "id": "m1",
+        "parent": "base",
+        "transform": {
+          "pos": [
+            0,
+            0.12,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.46,
+            "height": 0.08,
+            "depth": 0.42
+          },
+          "color": 7028002
+        }
+      },
+      {
+        "id": "m2",
+        "parent": "base",
+        "transform": {
+          "pos": [
+            0,
+            0.19,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.38,
+            "height": 0.06,
+            "depth": 0.34
+          },
+          "color": 3678230
+        }
+      },
+      {
+        "id": "m3",
+        "parent": "books",
+        "transform": {
+          "pos": [
+            0,
+            0.025,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.3,
+            "height": 0.055,
+            "depth": 0.4
+          },
+          "color": 2706747
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "fabric"
+          }
+        ]
+      },
+      {
+        "id": "m4",
+        "parent": "books",
+        "transform": {
+          "pos": [
+            0,
+            0.075,
+            0.01
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.34,
+            "height": 0.045,
+            "depth": 0.36
+          },
+          "color": 7218224
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "fabric"
+          }
+        ]
+      },
+      {
+        "id": "m5",
+        "parent": "books",
+        "transform": {
+          "pos": [
+            0,
+            0.099,
+            0.195
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.05,
+            "height": 0.018,
+            "depth": 0.25
+          },
+          "color": 14069061
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "gold"
+          }
+        ]
+      },
+      {
+        "id": "m6",
+        "parent": "crystal_mount",
+        "transform": {
+          "pos": [
+            0,
+            0.03,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.28,
+            "height": 0.07,
+            "depth": 0.28
+          },
+          "color": 10123579
+        }
+      },
+      {
+        "id": "m7",
+        "parent": "crystal_mount",
+        "transform": {
+          "pos": [
+            0,
+            0.095,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.2,
+            "height": 0.08,
+            "depth": 0.2
+          },
+          "color": 7165230
+        }
+      },
+      {
+        "id": "m8",
+        "parent": "crystal",
+        "transform": {
+          "pos": [
+            0,
+            0.13,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.34,
+            "height": 0.26,
+            "depth": 0.34
+          },
+          "color": 9204440
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass",
+            "variant": "purple"
+          },
+          {
+            "tag": "emissive",
+            "value": 0.5
+          }
+        ]
+      },
+      {
+        "id": "m9",
+        "parent": "crystal",
+        "transform": {
+          "pos": [
+            0,
+            0.13,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.26,
+            "height": 0.38,
+            "depth": 0.26
+          },
+          "color": 11375359
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass",
+            "variant": "purple"
+          },
+          {
+            "tag": "emissive",
+            "value": 0.75
+          }
+        ]
+      },
+      {
+        "id": "m10",
+        "parent": "crystal",
+        "transform": {
+          "pos": [
+            0,
+            0.13,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.18,
+            "height": 0.3,
+            "depth": 0.38
+          },
+          "color": 7758013
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass",
+            "variant": "purple"
+          },
+          {
+            "tag": "emissive",
+            "value": 0.5
+          }
+        ]
+      },
+      {
+        "id": "m11",
+        "parent": "crystal",
+        "transform": {
+          "pos": [
+            0,
+            0.14,
+            0.198
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.08,
+            "height": 0.12,
+            "depth": 0.025
+          },
+          "color": 15260927
+        },
+        "tags": [
+          {
+            "tag": "emissive",
+            "value": 1
+          }
+        ]
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1787874410967,
+        "provider": "gpt",
+        "data": "CmyCVQjNT69Iv6gFGnHGKHfUVl+KIbC+TXv8aXTd7tE36hUoN1KKwRKXJCAV3Qt96zGxbrzGQi7ZgzSn7B1ACG1pJwlmt76zJXT/On+Zt5+BeI/h2LWdhawQduTfePZQ37AlK4XlzYb1JYyZn/VIU1g83Iymvn0yjyxHEcWKNeDg4jYRv8i3wDbHq/ism2XQZRPTfLjR1VzJxknISRJMtPlnwa0zNq75x3c1kz82cmtGmtvmVGtv15pGrIAAnEavFLdilgUgtX0TQoLxD19QQxm/csGmlZ5R6DUeMVOou5xoVlJGsAxB77ILTxwk5yFonQsBmpRzQwTTBsx5EPYwFMmA5GZMWO3arvQuVnZM4ND2WzipOs5vhSmMbuO9s9AHGRpzNyhVPlvZ5SmfXdRGrLKAbstiN3Zpl97Nbmi938sv7aUa3eTnNRf5a2Tg8YcOLB+coEYPfVGhHUTykh8u4SPnQRVlvapxYhT71/1J8mNY/oOTS7PjZoUtsavUb/vbsRLlietIxV9epBl1XssfE7H1xWUMAttcpnMLAAzEnigrWWzt0Eqp/WKbg/L0BREBbyi6h5b1lJ5aHvgEcYdk4QbpC2n5VDImmv7KH6NJ7BJFpd+FnxJqkR9XEPbyrWW4wLufSIvFTXKTcuYjKc/knaHfMnMlINUMGQRGY4lzWSCfoGC4mc1kpfWq2ZOmWoPac15HQOH1bw69fXV0ZH+EoYo1r4UfubEVPv9nAG0woba9mGnd6S3iQUR2vzHHGnO0eJurYC4unqTUUWfoA51hxWtVCn/oswV9qRKxEelW9yxSfiYy1Y22Zvp9zUmQK0i+wtt+0D5P487XqVmSzUyifCVzwBjSkVnvMHC9r3hFGGomtJLFjqfhcf85+55x32o8DPW/J3jga3lxrmuOGZB0+KSZugq5APBVaRqgpMour0xaTD2wKlrJskcMau6q+5itizzoAPBYI4YILt7NkduEn1pEjrRHnXxSjkUWbvfA3Ur3FdwRRhjvRd11xsOKarqBR7NpGGVRGqkLTk6DWGpYX/vi6Q==",
+        "edits": ""
+      },
+      "semanticSnapshot": {
+        "v": 1,
+        "auto": true,
+        "text": "魔法工坊图书馆水晶球 · 4组/12mesh · 世界坐标(Y上Z前), 原点=模型根\n# 阅读说明: G:=group行(可动画骨骼, 动画key用G:后的id; @p=pivot世界坐标; 倾(x,y,z)°=朝向偏离世界轴的欧拉角; 缩进=父子层级; 挂:=挂载于某组; G:id→id→…=chain折叠行, 每个id都是可独立动画的group, chain×N=waypoint数)\n# M:=mesh行(label[id 几何 @(世界坐标)], label可省略; ×N=for循环批量件(锚点=代表实例); cyl (起)→(末)或 轴上(Y)等方位词=延伸方向; 薄向=板面法向(扁板); 挂载组双代表=最大件+最远有向件(刃/嘴/管所在端); 无方向标注=均匀块(三向相近,如头),默认面向前(Z); 对称×2=镜像对)\nG:base 木质藏书底座 @p(0,0,0)\n  M:[m0 box 0.56×0.08×0.48 (0,0,0) 薄向上(Y)]\n  G:books 魔法藏书 @p(0,0.2,0)\n    M:[m3 box 0.3×0.06×0.4 (0,0.2,0) 薄向上(Y)]\n  G:crystal_mount 水晶球托座 @p(0,0.3,0)\n    M:[m6 box 0.28×0.07×0.28 (0,0.4,0) 薄向上(Y)]\n    G:crystal 发光水晶球 @p(0,0.5,0)\n      M:[m8 box 0.34×0.26×0.34 (0,0.6,0)]",
+        "stats": {
+          "groups": 4,
+          "meshes": 12,
+          "labeledMeshes": 0,
+          "labelCoverage": 0,
+          "batchLabels": 0,
+          "autoChains": 0,
+          "snapshotChars": 666
+        }
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -0.28,
+          0,
+          -0.28
+        ],
+        "max": [
+          0.28,
+          0.77,
+          0.28
+        ],
+        "sourceNodeId": "asset-bounds"
+      }
+    ],
+    "sourceMeshCount": 12,
+    "candidateCount": 0,
+    "fallbackUsed": true
+  },
+  "footprintRadius": 0.28,
+  "sizeClass": "small",
+  "mode": "voxel",
+  "provider": "gpt",
+  "createdAt": 1787874410436,
+  "updatedAt": 1787874410436
+}

@@ -1,0 +1,761 @@
+{
+  "id": "asset-d00e29d4-25b6-47c4",
+  "name": "森林营地/劈柴堆",
+  "prompt": "Voxel forest campsite prop: a neat low rectangular stack of twelve short chopped firewood logs arranged in three interlocked rows, square voxel log bodies with lighter cut ends facing outward, two simple side supports and one thin bark cover resting directly on top; compact grounded cover silhouette with no loose or floating logs. Use only 20 to 32 purposeful boxes. Center and ground it at y=0. No surrounding scene, people or floating parts. Use pine green, bark brown, warm amber and slate gray. Keep a clear gameplay silhouette.",
+  "modelJson": {
+    "name": "林地露营柴堆",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "woodpile",
+        "name": "整齐柴堆",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "woodpile",
+        "transform": {
+          "pos": [
+            -0.78,
+            0.23,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.46,
+            "height": 0.46,
+            "depth": 3.2
+          },
+          "color": 7028774
+        }
+      },
+      {
+        "id": "m1",
+        "parent": "woodpile",
+        "transform": {
+          "pos": [
+            -0.78,
+            0.23,
+            1.63
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.38,
+            "height": 0.38,
+            "depth": 0.06
+          },
+          "color": 14064200
+        }
+      },
+      {
+        "id": "m2",
+        "parent": "woodpile",
+        "transform": {
+          "pos": [
+            -0.26,
+            0.23,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.46,
+            "height": 0.46,
+            "depth": 3.2
+          },
+          "color": 7028774
+        }
+      },
+      {
+        "id": "m3",
+        "parent": "woodpile",
+        "transform": {
+          "pos": [
+            -0.26,
+            0.23,
+            1.63
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.38,
+            "height": 0.38,
+            "depth": 0.06
+          },
+          "color": 14064200
+        }
+      },
+      {
+        "id": "m4",
+        "parent": "woodpile",
+        "transform": {
+          "pos": [
+            0.26,
+            0.23,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.46,
+            "height": 0.46,
+            "depth": 3.2
+          },
+          "color": 7028774
+        }
+      },
+      {
+        "id": "m5",
+        "parent": "woodpile",
+        "transform": {
+          "pos": [
+            0.26,
+            0.23,
+            1.63
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.38,
+            "height": 0.38,
+            "depth": 0.06
+          },
+          "color": 14064200
+        }
+      },
+      {
+        "id": "m6",
+        "parent": "woodpile",
+        "transform": {
+          "pos": [
+            0.78,
+            0.23,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.46,
+            "height": 0.46,
+            "depth": 3.2
+          },
+          "color": 7028774
+        }
+      },
+      {
+        "id": "m7",
+        "parent": "woodpile",
+        "transform": {
+          "pos": [
+            0.78,
+            0.23,
+            1.63
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.38,
+            "height": 0.38,
+            "depth": 0.06
+          },
+          "color": 14064200
+        }
+      },
+      {
+        "id": "m8",
+        "parent": "woodpile",
+        "transform": {
+          "pos": [
+            -0.82,
+            0.69,
+            0.1
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.46,
+            "height": 0.46,
+            "depth": 3.2
+          },
+          "color": 7028774
+        }
+      },
+      {
+        "id": "m9",
+        "parent": "woodpile",
+        "transform": {
+          "pos": [
+            -0.82,
+            0.69,
+            1.73
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.38,
+            "height": 0.38,
+            "depth": 0.06
+          },
+          "color": 14064200
+        }
+      },
+      {
+        "id": "m10",
+        "parent": "woodpile",
+        "transform": {
+          "pos": [
+            -0.22,
+            0.69,
+            0.1
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.46,
+            "height": 0.46,
+            "depth": 3.2
+          },
+          "color": 7028774
+        }
+      },
+      {
+        "id": "m11",
+        "parent": "woodpile",
+        "transform": {
+          "pos": [
+            -0.22,
+            0.69,
+            1.73
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.38,
+            "height": 0.38,
+            "depth": 0.06
+          },
+          "color": 14064200
+        }
+      },
+      {
+        "id": "m12",
+        "parent": "woodpile",
+        "transform": {
+          "pos": [
+            0.22,
+            0.69,
+            0.1
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.46,
+            "height": 0.46,
+            "depth": 3.2
+          },
+          "color": 7028774
+        }
+      },
+      {
+        "id": "m13",
+        "parent": "woodpile",
+        "transform": {
+          "pos": [
+            0.22,
+            0.69,
+            1.73
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.38,
+            "height": 0.38,
+            "depth": 0.06
+          },
+          "color": 14064200
+        }
+      },
+      {
+        "id": "m14",
+        "parent": "woodpile",
+        "transform": {
+          "pos": [
+            0.82,
+            0.69,
+            0.1
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.46,
+            "height": 0.46,
+            "depth": 3.2
+          },
+          "color": 7028774
+        }
+      },
+      {
+        "id": "m15",
+        "parent": "woodpile",
+        "transform": {
+          "pos": [
+            0.82,
+            0.69,
+            1.73
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.38,
+            "height": 0.38,
+            "depth": 0.06
+          },
+          "color": 14064200
+        }
+      },
+      {
+        "id": "m16",
+        "parent": "woodpile",
+        "transform": {
+          "pos": [
+            -0.78,
+            1.15,
+            -0.08
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.46,
+            "height": 0.46,
+            "depth": 3.2
+          },
+          "color": 7028774
+        }
+      },
+      {
+        "id": "m17",
+        "parent": "woodpile",
+        "transform": {
+          "pos": [
+            -0.78,
+            1.15,
+            1.55
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.38,
+            "height": 0.38,
+            "depth": 0.06
+          },
+          "color": 14064200
+        }
+      },
+      {
+        "id": "m18",
+        "parent": "woodpile",
+        "transform": {
+          "pos": [
+            -0.26,
+            1.15,
+            -0.08
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.46,
+            "height": 0.46,
+            "depth": 3.2
+          },
+          "color": 7028774
+        }
+      },
+      {
+        "id": "m19",
+        "parent": "woodpile",
+        "transform": {
+          "pos": [
+            -0.26,
+            1.15,
+            1.55
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.38,
+            "height": 0.38,
+            "depth": 0.06
+          },
+          "color": 14064200
+        }
+      },
+      {
+        "id": "m20",
+        "parent": "woodpile",
+        "transform": {
+          "pos": [
+            0.26,
+            1.15,
+            -0.08
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.46,
+            "height": 0.46,
+            "depth": 3.2
+          },
+          "color": 7028774
+        }
+      },
+      {
+        "id": "m21",
+        "parent": "woodpile",
+        "transform": {
+          "pos": [
+            0.26,
+            1.15,
+            1.55
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.38,
+            "height": 0.38,
+            "depth": 0.06
+          },
+          "color": 14064200
+        }
+      },
+      {
+        "id": "m22",
+        "parent": "woodpile",
+        "transform": {
+          "pos": [
+            0.78,
+            1.15,
+            -0.08
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.46,
+            "height": 0.46,
+            "depth": 3.2
+          },
+          "color": 7028774
+        }
+      },
+      {
+        "id": "m23",
+        "parent": "woodpile",
+        "transform": {
+          "pos": [
+            0.78,
+            1.15,
+            1.55
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.38,
+            "height": 0.38,
+            "depth": 0.06
+          },
+          "color": 14064200
+        }
+      },
+      {
+        "id": "m24",
+        "parent": "woodpile",
+        "transform": {
+          "pos": [
+            -1.18,
+            0.45,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.16,
+            "height": 0.9,
+            "depth": 3.42
+          },
+          "color": 5661547
+        }
+      },
+      {
+        "id": "m25",
+        "parent": "woodpile",
+        "transform": {
+          "pos": [
+            1.18,
+            0.45,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.16,
+            "height": 0.9,
+            "depth": 3.42
+          },
+          "color": 5661547
+        }
+      },
+      {
+        "id": "m26",
+        "parent": "woodpile",
+        "transform": {
+          "pos": [
+            0,
+            1.45,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2.52,
+            "height": 0.14,
+            "depth": 3.58
+          },
+          "color": 7028774
+        }
+      },
+      {
+        "id": "m27",
+        "parent": "woodpile",
+        "transform": {
+          "pos": [
+            0,
+            1.54,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2.42,
+            "height": 0.04,
+            "depth": 3.48
+          },
+          "color": 3234618
+        }
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1784538681307,
+        "provider": "glm",
+        "data": "MVDrgD3sHy6hLUhkVVatwPQp3SIrhryThu0OiCKCIuD3vYt02RxTyV7lZuWgaHI2tE6MX5tg7Z0obfnTvztMQkdaFRWy1PErHYTiJLwFPCgDARCVR1/mheI14iLoCn30fVwSHScsFxCpEW7610MiimDUIHj1J5aUA2Q0QQauigwjhratIOh2mosa27V4DQNjb8QHNsNKOXPi3QzkGRYXTx4UcKOhIW6N+OeU4AbCCx8DOz2Nmc/CYhFxEMBEAHBvYwB51ESEJ1j0c3kQ5yP/MTevjNc1ExpsJH9rROIpHG0UEjAGvOIuKJjKZSbs2eKZqMjrG96EOnbbgLzK0sV1jTZRmTsied6O3Mf24XDmBdR7L3auduAWt59piaJCOU+nzOv1m5dqiOtkQ1Jy1O67dsL3/nxmcFeb1xpykpwyD05i4/PMDWaYIw2jq+/Ya6Tzra58T0rqRhIfanzyWedY6aKVZC6eWMKzp4CWruPuyxymPZP2eUaUzSZ9nAsgmgkMx08eL38JGtmuM3Zk13E7XSUEIedlXKZkd847YFoV4hvZJCXTjIAYShy6frON5KDt5aWOqKTXnIxMgtydr6ZCcsqDy7GyoSIlfJlU+0vqZI/vWacpPEALiRVraAk/D2n5RAa4K3rC+jm1iqDXVFYx/qokwD4LcDI5uTC4NMEuuV7jGqL8GkVnfekOUTijjfOYb/znaQdnjZk60pgBpYLD0lJGQbGmIw/8M+UOe3XNOfW/wyOoJ07B7IFpHbKhT5PiThS2ZXwItvYZLwcy9494H65wok0zDMUTeIm/1eovVT0ANe/ClcX5TqAbWGWYmT31/G7Y08kgHzv7tpbLDQdvUnYhQ2ZXk/4=",
+        "edits": ""
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -1.26,
+          1.38,
+          -1.79
+        ],
+        "max": [
+          1.26,
+          1.52,
+          1.79
+        ],
+        "sourceNodeId": "m26"
+      },
+      {
+        "min": [
+          0.59,
+          0.45999999999999996,
+          -1.5
+        ],
+        "max": [
+          1.05,
+          0.9199999999999999,
+          1.7000000000000002
+        ],
+        "sourceNodeId": "m14"
+      },
+      {
+        "min": [
+          -1.05,
+          0.45999999999999996,
+          -1.5
+        ],
+        "max": [
+          -0.59,
+          0.9199999999999999,
+          1.7000000000000002
+        ],
+        "sourceNodeId": "m8"
+      },
+      {
+        "min": [
+          -1.01,
+          0,
+          -1.6
+        ],
+        "max": [
+          -0.55,
+          0.46,
+          1.6
+        ],
+        "sourceNodeId": "m0"
+      },
+      {
+        "min": [
+          -0.45,
+          0.45999999999999996,
+          -1.5
+        ],
+        "max": [
+          0.010000000000000009,
+          0.9199999999999999,
+          1.7000000000000002
+        ],
+        "sourceNodeId": "m10"
+      },
+      {
+        "min": [
+          -0.010000000000000009,
+          0.45999999999999996,
+          -1.5
+        ],
+        "max": [
+          0.45,
+          0.9199999999999999,
+          1.7000000000000002
+        ],
+        "sourceNodeId": "m12"
+      },
+      {
+        "min": [
+          -1.01,
+          0.9199999999999999,
+          -1.6800000000000002
+        ],
+        "max": [
+          -0.55,
+          1.38,
+          1.52
+        ],
+        "sourceNodeId": "m16"
+      },
+      {
+        "min": [
+          -0.49,
+          0.9199999999999999,
+          -1.6800000000000002
+        ],
+        "max": [
+          -0.03,
+          1.38,
+          1.52
+        ],
+        "sourceNodeId": "m18"
+      },
+      {
+        "min": [
+          -0.49,
+          0,
+          -1.6
+        ],
+        "max": [
+          -0.03,
+          0.46,
+          1.6
+        ],
+        "sourceNodeId": "m2"
+      },
+      {
+        "min": [
+          0.03,
+          0.9199999999999999,
+          -1.6800000000000002
+        ],
+        "max": [
+          0.49,
+          1.38,
+          1.52
+        ],
+        "sourceNodeId": "m20"
+      },
+      {
+        "min": [
+          0.55,
+          0.9199999999999999,
+          -1.6800000000000002
+        ],
+        "max": [
+          1.01,
+          1.38,
+          1.52
+        ],
+        "sourceNodeId": "m22"
+      },
+      {
+        "min": [
+          0.03,
+          0,
+          -1.6
+        ],
+        "max": [
+          0.49,
+          0.46,
+          1.6
+        ],
+        "sourceNodeId": "m4"
+      }
+    ],
+    "sourceMeshCount": 28,
+    "candidateCount": 15,
+    "fallbackUsed": false
+  },
+  "mode": "voxel",
+  "provider": "provider-fallback",
+  "createdAt": 1784538692013,
+  "updatedAt": 1784538692013
+}

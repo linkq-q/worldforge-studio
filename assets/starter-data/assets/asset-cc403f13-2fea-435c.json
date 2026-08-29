@@ -1,0 +1,435 @@
+{
+  "id": "asset-cc403f13-2fea-435c",
+  "name": "龙血脂",
+  "prompt": "一块深红半透明龙血树脂，琥珀状裂纹，炼金材料。精致写实的古典奇幻炼金术风格，独立单件，纯物件模型，无桌面、无柜体、无房间、无背景、无大型机器。\nCoordinate contract: local Y+ is up, local Z+ is the front, entrance, or forward direction, and local X+ is right. Put doors, facades, openings, windshields, noses, seats, and other recognizable front details toward local Z+. For a modular repeated element, explicitly choose the long axis: side-by-side modules span local X with depth/front on local Z; traversal modules span local Z. Keep the model centered at its origin.\nCanonical dimensions contract: width=0.28, height=0.22, depth=0.24 world units. Keep the generated mesh within this centered bounding size.",
+  "tags": [
+    "indoor",
+    "alchemy",
+    "material",
+    "handheld"
+  ],
+  "modelJson": {
+    "name": "龙血树脂",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "resin",
+        "name": "深红龙血树脂",
+        "transform": {
+          "pos": [
+            0.0008,
+            -0.005,
+            0.056
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.305,
+            0.26,
+            0.308
+          ],
+          "center": [
+            -0.011,
+            -0.002,
+            -0.052
+          ],
+          "axes": [
+            [
+              0.7271,
+              0.0388,
+              -0.6854
+            ],
+            [
+              -0.1892,
+              0.9711,
+              -0.1457
+            ],
+            [
+              0.6599,
+              0.2356,
+              0.7135
+            ]
+          ],
+          "_mainAxis": 2
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "resin",
+        "transform": {
+          "pos": [
+            -0.0008,
+            -0.005,
+            -0.056
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.2,
+            "height": 0.15,
+            "depth": 0.19
+          },
+          "color": 6624545
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass",
+            "variant": "red"
+          }
+        ]
+      },
+      {
+        "id": "m1",
+        "parent": "resin",
+        "transform": {
+          "pos": [
+            -0.0128,
+            -0.0825,
+            -0.051
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.16,
+            "height": 0.045,
+            "depth": 0.21
+          },
+          "color": 4918552
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass",
+            "variant": "red"
+          }
+        ]
+      },
+      {
+        "id": "m2",
+        "parent": "resin",
+        "transform": {
+          "pos": [
+            0.0113,
+            0.0825,
+            -0.064
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.135,
+            "height": 0.055,
+            "depth": 0.15
+          },
+          "color": 8200240
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass",
+            "variant": "red"
+          }
+        ]
+      },
+      {
+        "id": "m3",
+        "parent": "resin",
+        "transform": {
+          "pos": [
+            -0.1182,
+            -0.007,
+            -0.062
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.045,
+            "height": 0.085,
+            "depth": 0.14
+          },
+          "color": 5836829
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass",
+            "variant": "red"
+          }
+        ]
+      },
+      {
+        "id": "m4",
+        "parent": "resin",
+        "transform": {
+          "pos": [
+            0.1183,
+            0.013,
+            -0.052
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.038,
+            "height": 0.065,
+            "depth": 0.125
+          },
+          "color": 7608359
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass",
+            "variant": "red"
+          }
+        ]
+      },
+      {
+        "id": "m5",
+        "parent": "resin",
+        "transform": {
+          "pos": [
+            0.0243,
+            0.023,
+            0.0515
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.09,
+            "height": 0.07,
+            "depth": 0.035
+          },
+          "color": 9119284
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass",
+            "variant": "red"
+          }
+        ]
+      },
+      {
+        "id": "m6",
+        "parent": "resin",
+        "transform": {
+          "pos": [
+            -0.0907,
+            0.035,
+            0.054
+          ],
+          "quat": [
+            0.67,
+            -0.21,
+            -0.21,
+            0.67
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.02,
+            "height": 0.004,
+            "depth": 0.07
+          },
+          "color": 14123815
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass",
+            "variant": "amber"
+          }
+        ]
+      },
+      {
+        "id": "m7",
+        "parent": "resin",
+        "transform": {
+          "pos": [
+            -0.0708,
+            0.025,
+            0.054
+          ],
+          "quat": [
+            -0.66,
+            0.25,
+            -0.25,
+            0.66
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.01,
+            "height": 0.004,
+            "depth": 0.05
+          },
+          "color": 15769914
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass",
+            "variant": "amber"
+          }
+        ]
+      },
+      {
+        "id": "m8",
+        "parent": "resin",
+        "transform": {
+          "pos": [
+            -0.0307,
+            0.025,
+            0.064
+          ],
+          "quat": [
+            -0.67,
+            0.22,
+            -0.22,
+            0.67
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.02,
+            "height": 0.004,
+            "depth": 0.06
+          },
+          "color": 13201440
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass",
+            "variant": "amber"
+          }
+        ]
+      },
+      {
+        "id": "m9",
+        "parent": "resin",
+        "transform": {
+          "pos": [
+            -0.0607,
+            -0.035,
+            0.064
+          ],
+          "quat": [
+            0.68,
+            -0.2,
+            -0.2,
+            0.68
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.01,
+            "height": 0.004,
+            "depth": 0.06
+          },
+          "color": 14847276
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass",
+            "variant": "amber"
+          }
+        ]
+      },
+      {
+        "id": "m10",
+        "parent": "resin",
+        "transform": {
+          "pos": [
+            0.0473,
+            0.041,
+            0.058
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.024,
+            "height": 0.012,
+            "depth": 0.008
+          },
+          "color": 16760148
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass",
+            "variant": "amber"
+          },
+          {
+            "tag": "emissive",
+            "value": 0.25
+          }
+        ]
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1787876887210,
+        "provider": "gpt",
+        "data": "fNy+75f1T5vPgCwxFKZrYbuM+JWGE54loI94gEtMa7j4bH62sxlOPLkghlGomoJHwM9aNav7N2Cm0zDQTjzi3kEJqeAe61w5syO5Ztk5xo5oacFbiAgv9s1yiPNdFd2RPY0Vux1ZIcDhbYIpGBi6KYgND9ZccW52RlXTbW/mWwqaGGb7ap6NtMWaq3efhZo4FRHHD/9fFlm6m4B3anm4YM0vFdugSti4jtVT7xYY2660e3n7esJ2UrOoXViEpio8aUlb+Fd6u1y0GwZZAazbUAZfGrQrn2kftzvnlejKB4kuvhZbet9qzhg1gOhh2ubwxsKEy7oJSJ047oKox9g76gcYsb3x0niUlPIuHorguBdXGncohj4InB3XKMmi8m82L/H3R2g2joAAzeq2iA19V9uPaM459f8X1mu4rL0OE90oBXu33YvIv0fZ4L7H4jhi7OhVVnoC8s6xcLVEwuyB3c5NVjjHnUIYrhaRnwzL5FrD7wovOTjqJcpWXe7ejI6g+NiqcB6NqXypPD61cp4xRPvHVmqPwU9NjFnQ3k5nxFE34qnMAJBl3hUqF8YkjizUoDoHPpOoNM4QUB/NEEJn4Sg0c4kJmFQYfUiHFRfsLRB04vZneQuhcs60mWSN71BPfPGqrdcZNAvynjVUPlsFn5S8o1ILiZ5r3KnWc84g+ANaUSl+Fd7mpTnenUsdKyPcOhaWrjI5wULULsvL6X3xu3KRt1w0n8Y1+dknbqcY5pzQmjLeYl1vPLiqcfN5Ea8eSf+sdvRcLEGjz/6vXARw2ZBL9gRj/ZlWVXfISZtMjbe2smgIuyK8j2yqjBfR76uDio3g0eSaeDSMnvwjmUw58PGJRR3mRTxur8nK1kLrKNb2r6fAUeE4erOtxlKFS3bMnfHI6vlENwzsAsLn0uIEtxGH/MhfsyLRQPteouizYXZIQyw=",
+        "edits": ""
+      },
+      "semanticSnapshot": {
+        "v": 1,
+        "auto": true,
+        "text": "龙血树脂 · 1组/11mesh · 世界坐标(Y上Z前), 原点=模型根\n# 阅读说明: G:=group行(可动画骨骼, 动画key用G:后的id; @p=pivot世界坐标; 倾(x,y,z)°=朝向偏离世界轴的欧拉角; 缩进=父子层级; 挂:=挂载于某组; G:id→id→…=chain折叠行, 每个id都是可独立动画的group, chain×N=waypoint数)\n# M:=mesh行(label[id 几何 @(世界坐标)], label可省略; ×N=for循环批量件(锚点=代表实例); cyl (起)→(末)或 轴上(Y)等方位词=延伸方向; 薄向=板面法向(扁板); 挂载组双代表=最大件+最远有向件(刃/嘴/管所在端); 无方向标注=均匀块(三向相近,如头),默认面向前(Z); 对称×2=镜像对)\nG:resin 深红龙血树脂 @p(0,0,0.1)\n  M:[m0 box 0.2×0.15×0.19 (0,0,0)]",
+        "stats": {
+          "groups": 1,
+          "meshes": 11,
+          "labeledMeshes": 0,
+          "labelCoverage": 0,
+          "batchLabels": 0,
+          "autoChains": 0,
+          "snapshotChars": 426
+        }
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -0.139,
+          0,
+          -0.11249999999999999
+        ],
+        "max": [
+          0.139,
+          0.21500000000000002,
+          0.11249999999999999
+        ],
+        "sourceNodeId": "asset-bounds"
+      }
+    ],
+    "sourceMeshCount": 11,
+    "candidateCount": 0,
+    "fallbackUsed": true
+  },
+  "footprintRadius": 0.139,
+  "sizeClass": "small",
+  "mode": "voxel",
+  "provider": "gpt",
+  "createdAt": 1787876886621,
+  "updatedAt": 1787876886621
+}

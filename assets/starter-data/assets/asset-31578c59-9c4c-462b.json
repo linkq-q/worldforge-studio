@@ -1,0 +1,678 @@
+{
+  "id": "asset-31578c59-9c4c-462b",
+  "name": "儿童零食收纳篮",
+  "prompt": "A single reusable shallow handled snack basket containing an organized assortment of sealed cracker packets, granola bars and small juice boxes, forming one compact asset approximately 0.5 meters wide, no loose trash, table, floor, room, or background",
+  "tags": [
+    "food",
+    "prop"
+  ],
+  "modelJson": {
+    "name": "便携式什锦零食篮",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "basket",
+        "name": "浅口提手篮",
+        "transform": {
+          "pos": [
+            0,
+            0.1825,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.487,
+            0.349,
+            0.317
+          ],
+          "center": [
+            -0.001,
+            0.001,
+            0.001
+          ],
+          "axes": [
+            [
+              0.9999,
+              0.0113,
+              0.0036
+            ],
+            [
+              -0.0113,
+              0.9999,
+              0.0083
+            ],
+            [
+              -0.0035,
+              -0.0084,
+              1
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "cracker_packets",
+        "name": "密封饼干包",
+        "parent": "basket",
+        "transform": {
+          "pos": [
+            0,
+            -0.0665,
+            -0.055
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.325,
+            0.065,
+            0.105
+          ],
+          "center": [
+            -0.035,
+            -0.026,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "granola_bars",
+        "name": "密封燕麦棒",
+        "parent": "basket",
+        "transform": {
+          "pos": [
+            0,
+            -0.0685,
+            0.075
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.28,
+            0.074,
+            0.045
+          ],
+          "center": [
+            -0.058,
+            -0.019,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "juice_boxes",
+        "name": "小果汁盒",
+        "parent": "basket",
+        "transform": {
+          "pos": [
+            0.14,
+            0,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.087,
+            0.225,
+            0.175
+          ],
+          "center": [
+            0.004,
+            -0.023,
+            0.015
+          ],
+          "axes": [
+            [
+              0.9958,
+              -0.0914,
+              0
+            ],
+            [
+              0.0914,
+              0.9958,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "basket",
+        "transform": {
+          "pos": [
+            0,
+            -0.1575,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.46,
+            "height": 0.025,
+            "depth": 0.29
+          },
+          "color": 4165533
+        }
+      },
+      {
+        "id": "m1",
+        "parent": "basket",
+        "transform": {
+          "pos": [
+            0,
+            -0.1025,
+            0.145
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.46,
+            "height": 0.09,
+            "depth": 0.025
+          },
+          "color": 3440267
+        }
+      },
+      {
+        "id": "m2",
+        "parent": "basket",
+        "transform": {
+          "pos": [
+            0,
+            -0.1025,
+            -0.145
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.46,
+            "height": 0.09,
+            "depth": 0.025
+          },
+          "color": 3440267
+        }
+      },
+      {
+        "id": "m3",
+        "parent": "basket",
+        "transform": {
+          "pos": [
+            0.23,
+            -0.1025,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.025,
+            "height": 0.09,
+            "depth": 0.265
+          },
+          "color": 3440267
+        }
+      },
+      {
+        "id": "m4",
+        "parent": "basket",
+        "transform": {
+          "pos": [
+            -0.23,
+            -0.1025,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.025,
+            "height": 0.09,
+            "depth": 0.265
+          },
+          "color": 3440267
+        }
+      },
+      {
+        "id": "m5",
+        "parent": "basket",
+        "transform": {
+          "pos": [
+            0.205,
+            0.0425,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.025,
+            "height": 0.23,
+            "depth": 0.035
+          },
+          "color": 2648179
+        }
+      },
+      {
+        "id": "m6",
+        "parent": "basket",
+        "transform": {
+          "pos": [
+            -0.205,
+            0.0425,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.025,
+            "height": 0.23,
+            "depth": 0.035
+          },
+          "color": 2648179
+        }
+      },
+      {
+        "id": "m7",
+        "parent": "basket",
+        "transform": {
+          "pos": [
+            0,
+            0.1575,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.435,
+            "height": 0.03,
+            "depth": 0.04
+          },
+          "color": 2648179
+        }
+      },
+      {
+        "id": "m8",
+        "parent": "cracker_packets",
+        "transform": {
+          "pos": [
+            -0.145,
+            -0.031,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.105,
+            "height": 0.055,
+            "depth": 0.105
+          },
+          "color": 15774761
+        }
+      },
+      {
+        "id": "m9",
+        "parent": "cracker_packets",
+        "transform": {
+          "pos": [
+            -0.035,
+            -0.031,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.105,
+            "height": 0.055,
+            "depth": 0.105
+          },
+          "color": 14965573
+        }
+      },
+      {
+        "id": "m10",
+        "parent": "cracker_packets",
+        "transform": {
+          "pos": [
+            0.075,
+            -0.031,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.105,
+            "height": 0.055,
+            "depth": 0.105
+          },
+          "color": 8024016
+        }
+      },
+      {
+        "id": "m11",
+        "parent": "cracker_packets",
+        "transform": {
+          "pos": [
+            -0.145,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.075,
+            "height": 0.012,
+            "depth": 0.018
+          },
+          "color": 16769953
+        }
+      },
+      {
+        "id": "m12",
+        "parent": "cracker_packets",
+        "transform": {
+          "pos": [
+            -0.035,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.075,
+            "height": 0.012,
+            "depth": 0.018
+          },
+          "color": 16762296
+        }
+      },
+      {
+        "id": "m13",
+        "parent": "cracker_packets",
+        "transform": {
+          "pos": [
+            0.075,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.075,
+            "height": 0.012,
+            "depth": 0.018
+          },
+          "color": 14012671
+        }
+      },
+      {
+        "id": "m14",
+        "parent": "granola_bars",
+        "transform": {
+          "pos": [
+            -0.13,
+            -0.039,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.135,
+            "height": 0.035,
+            "depth": 0.045
+          },
+          "color": 9394998
+        }
+      },
+      {
+        "id": "m15",
+        "parent": "granola_bars",
+        "transform": {
+          "pos": [
+            0.015,
+            -0.039,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.135,
+            "height": 0.035,
+            "depth": 0.045
+          },
+          "color": 6266706
+        }
+      },
+      {
+        "id": "m16",
+        "parent": "granola_bars",
+        "transform": {
+          "pos": [
+            -0.13,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.135,
+            "height": 0.035,
+            "depth": 0.045
+          },
+          "color": 12876348
+        }
+      },
+      {
+        "id": "m17",
+        "parent": "granola_bars",
+        "transform": {
+          "pos": [
+            0.015,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.135,
+            "height": 0.035,
+            "depth": 0.045
+          },
+          "color": 4488778
+        }
+      },
+      {
+        "id": "m18",
+        "parent": "juice_boxes",
+        "transform": {
+          "pos": [
+            0,
+            -0.0675,
+            0.065
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.075,
+            "height": 0.13,
+            "depth": 0.075
+          },
+          "color": 15895608
+        }
+      },
+      {
+        "id": "m19",
+        "parent": "juice_boxes",
+        "transform": {
+          "pos": [
+            0,
+            -0.0675,
+            -0.035
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.075,
+            "height": 0.13,
+            "depth": 0.075
+          },
+          "color": 6662616
+        }
+      },
+      {
+        "id": "m20",
+        "parent": "juice_boxes",
+        "transform": {
+          "pos": [
+            0.018,
+            0.0425,
+            0.065
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.012,
+            "height": 0.09,
+            "depth": 0.012
+          },
+          "color": 15921896
+        }
+      },
+      {
+        "id": "m21",
+        "parent": "juice_boxes",
+        "transform": {
+          "pos": [
+            0.018,
+            0.0425,
+            -0.035
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.012,
+            "height": 0.09,
+            "depth": 0.012
+          },
+          "color": 15921896
+        }
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1786874859727,
+        "provider": "gpt",
+        "data": "WmRNkTGMYAHe4eQv2csQi+C2Y6K1cO9gl/RNYwE8yoL3OdyaihyotaaeZhVGPSDcIswOWQlVo8jP8qbEj6/XrnzETNLHiBS2oUic8HZcrXUTB7CtMs+7rRhcb5oKoXiSRXi9LGXD8gGhwYxUAp7qzd2oBXMXPXYk1yUoXEn3N6+ES0wLD0fvc957kJwiuP0xDp06cGFWwGj65P174eZfgNtqNs7tc+gVf3Z7U00Q0FNl8MAGdfWvc0RRkpSMJDBicYOvGXbaVodjW+jNC5OD5mDde6av/gkHE6bchwWv9QbpeBuxUeIotvvxQ591zaLGhqDtx8O6Xir44elyjPFMxLPxf80bSiFYPZ11qxozhPmFL3G8TzAcI0Anqma2s9tzkOQ8DOcEKQssu/S9PBpS2peZB3B68mmnZWuJZrkFGnGdOvCFewX9NYKfVnKRnujXMfGLQFKuUVt4Em+CIazgKpNicvK0ORBz31bbady67Z9ZHkolCG6MxfN/avgMap5nauZdjdCnyfrXd4UcN3RWVnL1O3N5fISyoeG3NJ0ywPx0225wv6ieASxrIggP45lisTC2j9u+idkTJWQ7/6ihJWhZjoRG3ZkB6rozQQ8dtVmMf/zUpV8aHvkCHQtSSPO9HLhYef4UzBKUNf1zmP70cXK1Z6mcvXpoNTQrSFBqREBSPqo8LQ7LgeMnbqN3d6IHm1RwNYfkiFu89VPW1VkmMZFmLvWT2hUGY3PKKJtVRtEauP6fXLUpgMdndfYTCRXW1gxO+GwA0GtdL9QuPhK/G2hBdJgLSKvKcY5Ji9tBjrr0TQlmLL3Jfd4+qPI48ia0kSShr156HVKV8kGE4S3/LNF9KdKPn8UYxoZlupeKNTw8Kz79uepCohIA0fZMxSwnMb3XuIceRNg+vA4w2V+Ee2RIGzc=",
+        "edits": ""
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -0.24250000000000002,
+          0,
+          -0.1575
+        ],
+        "max": [
+          0.24250000000000002,
+          0.34249999999999997,
+          0.1575
+        ],
+        "sourceNodeId": "asset-bounds"
+      }
+    ],
+    "sourceMeshCount": 22,
+    "candidateCount": 1,
+    "fallbackUsed": true
+  },
+  "footprintRadius": 0.24250000000000002,
+  "sizeClass": "small",
+  "mode": "voxel",
+  "provider": "gpt",
+  "libraryId": "library-d7967286-cebf-4f99",
+  "libraryMetadata": {
+    "tags": [
+      "snackbasket",
+      "foodstorage",
+      "childrenssnackassortment",
+      "portablecontainer"
+    ],
+    "applicableZones": [
+      "settlement"
+    ],
+    "repeatable": true,
+    "landmark": false,
+    "enabled": true,
+    "priority": 0.5,
+    "analysisStatus": "ready",
+    "rotation": "random"
+  },
+  "createdAt": 1787817314405,
+  "updatedAt": 1787817314405
+}

@@ -1,0 +1,953 @@
+{
+  "id": "asset-3db3207b-0637-49b0",
+  "name": "水泥罐车",
+  "prompt": "单辆儿童玩具水泥搅拌罐车，完整独立模型，带驾驶室、车轮和可辨识的圆筒搅拌罐，不带人物、道路、包装盒或其他玩具。\nCoordinate contract: local Y+ is up, local Z+ is the front, entrance, or forward direction, and local X+ is right. Put doors, facades, openings, windshields, noses, seats, and other recognizable front details toward local Z+. For a modular repeated element, explicitly choose the long axis: side-by-side modules span local X with depth/front on local Z; traversal modules span local Z. Keep the model centered at its origin.\nCanonical dimensions contract: width=0.48, height=0.34, depth=0.72 world units. Keep the generated mesh within this centered bounding size.",
+  "tags": [
+    "indoor",
+    "single-object",
+    "toy",
+    "vehicle"
+  ],
+  "modelJson": {
+    "name": "儿童玩具水泥搅拌罐车",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "chassis",
+        "name": "车架",
+        "transform": {
+          "pos": [
+            0,
+            0.11,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.469,
+            0.444,
+            0.765
+          ],
+          "center": [
+            0,
+            0.096,
+            0.018
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              0.9982,
+              -0.0598
+            ],
+            [
+              0,
+              0.0598,
+              0.9982
+            ]
+          ],
+          "_mainAxis": 2
+        }
+      },
+      {
+        "id": "cab",
+        "name": "驾驶室",
+        "parent": "chassis",
+        "transform": {
+          "pos": [
+            0,
+            0.04,
+            0.12
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.374,
+            0.277,
+            0.311
+          ],
+          "center": [
+            0,
+            0.094,
+            0.076
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              0.9112,
+              0.412
+            ],
+            [
+              0,
+              -0.412,
+              0.9112
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "mixer",
+        "name": "搅拌罐",
+        "parent": "chassis",
+        "transform": {
+          "pos": [
+            0,
+            0.11,
+            -0.11
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.325,
+            0.215,
+            0.41
+          ],
+          "center": [
+            0,
+            0.015,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 2
+        }
+      },
+      {
+        "id": "rear_chute",
+        "name": "卸料槽",
+        "parent": "chassis",
+        "transform": {
+          "pos": [
+            0,
+            0.08,
+            -0.31
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.2,
+            0.099,
+            0.025
+          ],
+          "center": [
+            0,
+            -0.03,
+            -0.01
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              0.7805,
+              0.6252
+            ],
+            [
+              0,
+              -0.6252,
+              0.7805
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "wheel_0_left",
+        "name": "车轮",
+        "parent": "chassis",
+        "transform": {
+          "pos": [
+            -0.205,
+            -0.04,
+            -0.22
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.059,
+            0.14,
+            0.14
+          ],
+          "center": [
+            0,
+            0,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "wheel_0_right",
+        "name": "车轮",
+        "parent": "chassis",
+        "transform": {
+          "pos": [
+            0.205,
+            -0.04,
+            -0.22
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.059,
+            0.14,
+            0.14
+          ],
+          "center": [
+            0,
+            0,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "wheel_1_left",
+        "name": "车轮",
+        "parent": "chassis",
+        "transform": {
+          "pos": [
+            -0.205,
+            -0.04,
+            0.22
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.059,
+            0.14,
+            0.14
+          ],
+          "center": [
+            0,
+            0,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "wheel_1_right",
+        "name": "车轮",
+        "parent": "chassis",
+        "transform": {
+          "pos": [
+            0.205,
+            -0.04,
+            0.22
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.059,
+            0.14,
+            0.14
+          ],
+          "center": [
+            0,
+            0,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "chassis",
+        "transform": {
+          "pos": [
+            0,
+            0.005,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.42,
+            "height": 0.07,
+            "depth": 0.62
+          },
+          "color": 15906565
+        }
+      },
+      {
+        "id": "m1",
+        "parent": "chassis",
+        "transform": {
+          "pos": [
+            0,
+            0.005,
+            0.325
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.46,
+            "height": 0.055,
+            "depth": 0.07
+          },
+          "color": 15305488
+        }
+      },
+      {
+        "id": "m2",
+        "parent": "chassis",
+        "transform": {
+          "pos": [
+            0,
+            0.005,
+            -0.325
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.42,
+            "height": 0.055,
+            "depth": 0.055
+          },
+          "color": 15305488
+        }
+      },
+      {
+        "id": "m3",
+        "parent": "cab",
+        "transform": {
+          "pos": [
+            0,
+            0.075,
+            0.08
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.36,
+            "height": 0.17,
+            "depth": 0.22
+          },
+          "color": 16106776
+        }
+      },
+      {
+        "id": "m4",
+        "parent": "cab",
+        "transform": {
+          "pos": [
+            0,
+            0.177,
+            0.07
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.32,
+            "height": 0.035,
+            "depth": 0.24
+          },
+          "color": 15309323
+        }
+      },
+      {
+        "id": "m5",
+        "parent": "cab",
+        "transform": {
+          "pos": [
+            0,
+            0.115,
+            0.196
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.25,
+            "height": 0.09,
+            "depth": 0.012
+          },
+          "color": 6863320
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass",
+            "variant": "blue"
+          }
+        ]
+      },
+      {
+        "id": "m6",
+        "parent": "cab",
+        "transform": {
+          "pos": [
+            -0.181,
+            0.115,
+            0.08
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.012,
+            "height": 0.09,
+            "depth": 0.13
+          },
+          "color": 6863320
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass",
+            "variant": "blue"
+          }
+        ]
+      },
+      {
+        "id": "m7",
+        "parent": "cab",
+        "transform": {
+          "pos": [
+            0.181,
+            0.115,
+            0.08
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.012,
+            "height": 0.09,
+            "depth": 0.13
+          },
+          "color": 6863320
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass",
+            "variant": "blue"
+          }
+        ]
+      },
+      {
+        "id": "m8",
+        "parent": "cab",
+        "transform": {
+          "pos": [
+            -0.1,
+            0.02,
+            0.198
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.07,
+            "height": 0.035,
+            "depth": 0.014
+          },
+          "color": 16773792
+        },
+        "tags": [
+          {
+            "tag": "emissive",
+            "value": 0.5
+          }
+        ]
+      },
+      {
+        "id": "m9",
+        "parent": "cab",
+        "transform": {
+          "pos": [
+            0.1,
+            0.02,
+            0.198
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.07,
+            "height": 0.035,
+            "depth": 0.014
+          },
+          "color": 16773792
+        },
+        "tags": [
+          {
+            "tag": "emissive",
+            "value": 0.5
+          }
+        ]
+      },
+      {
+        "id": "m10",
+        "parent": "mixer",
+        "transform": {
+          "pos": [
+            0,
+            0.015,
+            0.01
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.31,
+            "height": 0.2,
+            "depth": 0.21
+          },
+          "color": 4892376
+        }
+      },
+      {
+        "id": "m11",
+        "parent": "mixer",
+        "transform": {
+          "pos": [
+            0,
+            0.015,
+            -0.15
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.25,
+            "height": 0.16,
+            "depth": 0.11
+          },
+          "color": 6733285
+        }
+      },
+      {
+        "id": "m12",
+        "parent": "mixer",
+        "transform": {
+          "pos": [
+            0,
+            0.015,
+            0.16
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.2,
+            "height": 0.14,
+            "depth": 0.09
+          },
+          "color": 6733285
+        }
+      },
+      {
+        "id": "m13",
+        "parent": "mixer",
+        "transform": {
+          "pos": [
+            0,
+            0.015,
+            -0.06
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.325,
+            "height": 0.215,
+            "depth": 0.025
+          },
+          "color": 15921896
+        }
+      },
+      {
+        "id": "m14",
+        "parent": "mixer",
+        "transform": {
+          "pos": [
+            0,
+            0.015,
+            0.08
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.315,
+            "height": 0.205,
+            "depth": 0.025
+          },
+          "color": 15921896
+        }
+      },
+      {
+        "id": "m15",
+        "parent": "rear_chute",
+        "transform": {
+          "pos": [
+            0,
+            -0.03,
+            -0.01
+          ],
+          "quat": [
+            0.9,
+            0,
+            0,
+            0.43
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.2,
+            "height": 0.025,
+            "depth": 0.1
+          },
+          "color": 10332076
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m16",
+        "parent": "wheel_0_left",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.055,
+            "height": 0.14,
+            "depth": 0.14
+          },
+          "color": 2698032
+        }
+      },
+      {
+        "id": "m17",
+        "parent": "wheel_0_left",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.059,
+            "height": 0.065,
+            "depth": 0.065
+          },
+          "color": 12108231
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m18",
+        "parent": "wheel_0_right",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.055,
+            "height": 0.14,
+            "depth": 0.14
+          },
+          "color": 2698032
+        }
+      },
+      {
+        "id": "m19",
+        "parent": "wheel_0_right",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.059,
+            "height": 0.065,
+            "depth": 0.065
+          },
+          "color": 12108231
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m20",
+        "parent": "wheel_1_left",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.055,
+            "height": 0.14,
+            "depth": 0.14
+          },
+          "color": 2698032
+        }
+      },
+      {
+        "id": "m21",
+        "parent": "wheel_1_left",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.059,
+            "height": 0.065,
+            "depth": 0.065
+          },
+          "color": 12108231
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m22",
+        "parent": "wheel_1_right",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.055,
+            "height": 0.14,
+            "depth": 0.14
+          },
+          "color": 2698032
+        }
+      },
+      {
+        "id": "m23",
+        "parent": "wheel_1_right",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.059,
+            "height": 0.065,
+            "depth": 0.065
+          },
+          "color": 12108231
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1787876459390,
+        "provider": "gpt",
+        "data": "xJezsEbtNitLjXa97Afq4nFF9NVYQFqfXdTjvpnXrUwWgBZt2IeFVuXUGvs7/ctsBbdhyOIywseHXcUtwQAL6bLTiy7HfmdrXWCBd5JYh/4IPsnBRbSALOVp3GRFrYUuiJAS3piY04DUQIxDHsSqQijk09qoiINK2stx8OWVpp9XLzuHxY3zG8GVCoP8/KZL0Dd/xFq1UAZ22r2UjAzdDnaD3PoH4H6hBxqdQp+5GcDVgIQ/pdFes8OOOOUhHa/I0FYqSmU6NY8oxOSiZX4tJviCAXX+E0gr+qyP7u8kexyx5T6mMcDmCUmkDf8F4Ry5nlQadxgNmFPVdvw7sg1+CncYrcydZec6deWZt4tFB2kbOZr1q0W8zFdnGvq641vLPIrj43nMRgKOI1p7RdDMjmRyMbLc9POVeYcSwAoZWduhWQ4q99iUqX4tsCtFjxAY822NX9OzCpUaWX5NK0EYeG6UF0Koie5El6wYAz13nx6/tnJCWgfdxlvNbCOZHLo7waBnoExkxN7X18h4dqhIPKxGCPY0J58vAoPV7J0ICDwvoJzPLaCRv0zIfBGzC8x/vn8eMBICFb+bGfJfvMbROwmrOFofNvQ5FMaSxI98gR8Zkxb2KjqHVNP43r44N0Qv1beePQptRGtDJdIiNu7QRZ1Z9qMIXT8hfYDu5bqboJt+JzH4ESG+WnZK7h4ik95yJ7S8IvxUam7dhVNYlMaSWhHuJnyuIzNI1eCKeZ2zQ/Xlu5U+aT/sBR9/FQEImgkYkPCOEBtJqWwdGi8/vY9uNU1+upOTgA/4qxB/1oyeHvSA7fyP5JweJ1aZ/SvMSSRnCyLFPW8U25AUmSiZKEONzG8nGY1PcE7S3RDbkvH8MSziZ9ey/v4UX2DtK9nf75ZNcr0WIDhVgtR9elEL+IVuSaICU0809/ehasq4iow+rH2zVUdrRLm3UXEA64Lu1HQgGGMKfV23WNaWuzHNYzWYQNeIslR/enc1prizKeLjnu52rXj1Fdwb6UMs/2l5iSv8rjD+W+PZ2Ko+BJWozZ8epbIKJA5F1XWwok5ZXgUeSWgkQm6gZhBMkosCQ2wmDycBo8fQ6bvH4X6iWJ4NPUZsoqbNmFSoIuJPjykBfmQgWtAcYicdRSR+oPVOiU+4k5czYClNwP7tdS30Z+nOop07a9JsAU9sxAij7psrIn88IYga6/x7c4HODWJly2B1MG5dKHIHujwRIsfu0fn5EAK2L93AtBqnkqbF0Ed07tw/hpAw7Q018HU=",
+        "edits": ""
+      },
+      "semanticSnapshot": {
+        "v": 1,
+        "auto": true,
+        "text": "儿童玩具水泥搅拌罐车 · 8组/24mesh · 世界坐标(Y上Z前), 原点=模型根\n# 阅读说明: G:=group行(可动画骨骼, 动画key用G:后的id; @p=pivot世界坐标; 倾(x,y,z)°=朝向偏离世界轴的欧拉角; 缩进=父子层级; 挂:=挂载于某组; G:id→id→…=chain折叠行, 每个id都是可独立动画的group, chain×N=waypoint数)\n# M:=mesh行(label[id 几何 @(世界坐标)], label可省略; ×N=for循环批量件(锚点=代表实例); cyl (起)→(末)或 轴上(Y)等方位词=延伸方向; 薄向=板面法向(扁板); 挂载组双代表=最大件+最远有向件(刃/嘴/管所在端); 无方向标注=均匀块(三向相近,如头),默认面向前(Z); 对称×2=镜像对)\nG:chassis 车架 @p(0,0.1,0)\n  M:[m0 box 0.42×0.07×0.62 (0,0.1,0) 薄向上(Y)]\n  G:cab 驾驶室 @p(0,0.2,0.1)\n    M:[m3 box 0.36×0.17×0.22 (0,0.2,0.2) 轴右(X)]\n  G:mixer 搅拌罐 @p(0,0.2,-0.1)\n    M:[m10 box 0.31×0.2×0.21 (0,0.2,-0.1)]\n  G:rear_chute 卸料槽 @p(0,0.2,-0.3)\n    M:[m15 box 0.2×0.03×0.1 (0,0.2,-0.3) 轴右(X)]\n  G:wheel_0_left 车轮 @p(-0.2,0.1,-0.2)\n    M:[m16 box 0.06×0.14×0.14 (-0.2,0.1,-0.2) 薄向右(X)]\n  G:wheel_0_right 车轮 @p(0.2,0.1,-0.2)\n    M:[m18 box 0.06×0.14×0.14 (0.2,0.1,-0.2) 薄向右(X)]\n  G:wheel_1_left 车轮 @p(-0.2,0.1,0.2)\n    M:[m20 box 0.06×0.14×0.14 (-0.2,0.1,0.2) 薄向右(X)]\n  G:wheel_1_right 车轮 @p(0.2,0.1,0.2)\n    M:[m22 box 0.06×0.14×0.14 (0.2,0.1,0.2) 薄向右(X)]",
+        "stats": {
+          "groups": 8,
+          "meshes": 24,
+          "labeledMeshes": 0,
+          "labelCoverage": 0,
+          "batchLabels": 0,
+          "autoChains": 0,
+          "snapshotChars": 1030
+        }
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -0.2345,
+          0,
+          -0.3605699065232687
+        ],
+        "max": [
+          0.2345,
+          0.3445,
+          0.3605699065232687
+        ],
+        "sourceNodeId": "asset-bounds"
+      }
+    ],
+    "sourceMeshCount": 24,
+    "candidateCount": 0,
+    "fallbackUsed": true
+  },
+  "footprintRadius": 0.3605699065232687,
+  "sizeClass": "small",
+  "mode": "voxel",
+  "provider": "gpt",
+  "createdAt": 1787876459496,
+  "updatedAt": 1787876459496
+}

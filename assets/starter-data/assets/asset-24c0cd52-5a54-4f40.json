@@ -1,0 +1,438 @@
+{
+  "id": "asset-24c0cd52-5a54-4f40",
+  "name": "月光粉",
+  "prompt": "一只装有银白月光珍珠粉的小玻璃罐，黄铜盖。精致写实的古典奇幻炼金术风格，独立单件，纯物件模型，无桌面、无柜体、无房间、无背景、无大型机器。\nCoordinate contract: local Y+ is up, local Z+ is the front, entrance, or forward direction, and local X+ is right. Put doors, facades, openings, windshields, noses, seats, and other recognizable front details toward local Z+. For a modular repeated element, explicitly choose the long axis: side-by-side modules span local X with depth/front on local Z; traversal modules span local Z. Keep the model centered at its origin.\nCanonical dimensions contract: width=0.22, height=0.28, depth=0.22 world units. Keep the generated mesh within this centered bounding size.",
+  "tags": [
+    "indoor",
+    "alchemy",
+    "material",
+    "handheld"
+  ],
+  "modelJson": {
+    "name": "银白月光珍珠粉玻璃罐",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "jar",
+        "name": "炼金玻璃罐",
+        "transform": {
+          "pos": [
+            0,
+            -0.0317,
+            0.0495
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.28,
+            0.299,
+            0.271
+          ],
+          "center": [
+            -0.01,
+            0.03,
+            -0.049
+          ],
+          "axes": [
+            [
+              0.9902,
+              0.1389,
+              0.0109
+            ],
+            [
+              -0.139,
+              0.9902,
+              0.0098
+            ],
+            [
+              -0.0094,
+              -0.0112,
+              0.9999
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "powder",
+        "name": "月光珍珠粉",
+        "parent": "jar",
+        "transform": {
+          "pos": [
+            -0.006,
+            -0.0257,
+            -0.0465
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.201,
+            0.084,
+            0.199
+          ],
+          "center": [
+            0.006,
+            -0.016,
+            -0.003
+          ],
+          "axes": [
+            [
+              0.8937,
+              -0.0396,
+              -0.4469
+            ],
+            [
+              0.0354,
+              0.9992,
+              -0.0177
+            ],
+            [
+              0.4472,
+              0,
+              0.8944
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "mount01_lid",
+        "name": "黄铜盖",
+        "parent": "jar",
+        "transform": {
+          "pos": [
+            0,
+            0.1118,
+            -0.0495
+          ]
+        },
+        "mounted": true,
+        "_obb": {
+          "size": [
+            0.145,
+            0.05,
+            0.145
+          ],
+          "center": [
+            0,
+            0.035,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "jar",
+        "transform": {
+          "pos": [
+            0,
+            -0.0033,
+            -0.0495
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.18,
+            "height": 0.17,
+            "depth": 0.18
+          },
+          "color": 14478320
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass",
+            "variant": "blue"
+          }
+        ]
+      },
+      {
+        "id": "m1",
+        "parent": "jar",
+        "transform": {
+          "pos": [
+            0,
+            -0.0992,
+            -0.0495
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.15,
+            "height": 0.018,
+            "depth": 0.15
+          },
+          "color": 13163746
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass",
+            "variant": "blue"
+          }
+        ]
+      },
+      {
+        "id": "m2",
+        "parent": "jar",
+        "transform": {
+          "pos": [
+            0,
+            0.0993,
+            -0.0495
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.12,
+            "height": 0.035,
+            "depth": 0.12
+          },
+          "color": 15069941
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass"
+          }
+        ]
+      },
+      {
+        "id": "m3",
+        "parent": "powder",
+        "transform": {
+          "pos": [
+            0.006,
+            -0.0195,
+            -0.003
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.148,
+            "height": 0.07,
+            "depth": 0.148
+          },
+          "color": 15659775
+        },
+        "tags": [
+          {
+            "tag": "emissive",
+            "value": 0.5
+          }
+        ]
+      },
+      {
+        "id": "m4",
+        "parent": "powder",
+        "transform": {
+          "pos": [
+            -0.006,
+            0.0195,
+            0.003
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.11,
+            "height": 0.008,
+            "depth": 0.11
+          },
+          "color": 16777215
+        },
+        "tags": [
+          {
+            "tag": "emissive",
+            "value": 0.75
+          }
+        ]
+      },
+      {
+        "id": "m5",
+        "parent": "jar",
+        "transform": {
+          "pos": [
+            0,
+            0.0168,
+            0.0445
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.09,
+            "height": 0.055,
+            "depth": 0.008
+          },
+          "color": 2502986
+        }
+      },
+      {
+        "id": "m6",
+        "parent": "jar",
+        "transform": {
+          "pos": [
+            0,
+            0.0168,
+            0.0495
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.07,
+            "height": 0.006,
+            "depth": 0.01
+          },
+          "color": 13874271
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "gold"
+          }
+        ]
+      },
+      {
+        "id": "m7",
+        "parent": "mount01_lid",
+        "transform": {
+          "pos": [
+            0,
+            0.0325,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.145,
+            "height": 0.045,
+            "depth": 0.145
+          },
+          "color": 11897144
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m8",
+        "parent": "mount01_lid",
+        "transform": {
+          "pos": [
+            0,
+            0.055,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.11,
+            "height": 0.01,
+            "depth": 0.11
+          },
+          "color": 13675090
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1787876850222,
+        "provider": "gpt",
+        "data": "3Sw7xT0vrZjy+1O8jFZU5Fp/KosWxLnUno4MdmEUE7tJZXJm3w0uGvCjwBltKXr6K8wM/0XJjM18YrCYhEZyyggIwT4JHvv6y7mtb05fsbJQ24FBoyAYemv9fscEkV8NSSXWYx8TTr1JvEdA5/YPGJoEG59sdkAGGKNKlDHgn709tvUU3gy2VU3KCM7GiBNtHlL54gbPzk3XclCFOwhFJliEYB9f/p6bULeBsnt4M4IjGUpf4N3CwmMgdND6458tPM440N6SHQQCnTAEUGPZ8oPry+S7eAwre9X2ez/XWMk3JvoqnEuiXojREYTQ2Ldx19LcPb5uSceI0ZryAVdormfJfzMBjZb0mqWRKJUM6T06CxJwWf3U9QmE0OGLvdr/xi5wxIa66wGgUs2wlBx70rTfX+yXheyUkub+p5fYxYzKlDkwsqGUh0CG/yrbQdnNR8fVNeCy/IKuHOrpVoSyU7hfo9SBrUR64lClQCJOnE6QpD7BwawwnOPLWL3+70AFK4xbfae+8sk/lFFzT1nVRk77PwcrGZlFZgEFPR0A709kS5+8xTzCW0cGlMsQiaFsOLu5jvOjEXBmirpfnZ2jdKjplayuy6KHMIsiJPyOY6tOfpvxE+56aMjLOQoekCrYGqn/fhj3WXhXajUMN+SUa2Bvf506RFuJpe8xPX/xnNbF5QGsFqGPb4vUHoTEkH8EjPRXVWRvu2ZZ+eNGUgPiju/K0a05FgKziVjaZ6hxNr1M6fwXU7KHG9+RdedNIeugBO8fdLt6QIGVn3Tv4dYSNOTuss0vKkF3wlqBUf03z0mwhg8rHqN4R+HuetjRiikXGJCYpUrwC6+VGCGFr1Z60bGys1+kF10XEFnC",
+        "edits": ""
+      },
+      "mounts": [
+        {
+          "id": "mount01_lid",
+          "mountedGroupId": "mount01_lid",
+          "name": "黄铜盖",
+          "source": {
+            "type": "codegen"
+          },
+          "description": "",
+          "visible": true,
+          "ts": 1787876850222
+        }
+      ],
+      "semanticSnapshot": {
+        "v": 1,
+        "auto": true,
+        "text": "银白月光珍珠粉玻璃罐 · 3组/9mesh · 世界坐标(Y上Z前), 原点=模型根\n# 阅读说明: G:=group行(可动画骨骼, 动画key用G:后的id; @p=pivot世界坐标; 倾(x,y,z)°=朝向偏离世界轴的欧拉角; 缩进=父子层级; 挂:=挂载于某组; G:id→id→…=chain折叠行, 每个id都是可独立动画的group, chain×N=waypoint数)\n# M:=mesh行(label[id 几何 @(世界坐标)], label可省略; ×N=for循环批量件(锚点=代表实例); cyl (起)→(末)或 轴上(Y)等方位词=延伸方向; 薄向=板面法向(扁板); 挂载组双代表=最大件+最远有向件(刃/嘴/管所在端); 无方向标注=均匀块(三向相近,如头),默认面向前(Z); 对称×2=镜像对)\nG:jar 炼金玻璃罐 @p(0,0,0)\n  M:[m0 box 0.18×0.17×0.18 (0,0,0)]\n  G:powder 月光珍珠粉 @p(0,-0.1,0)\n    M:[m3 box 0.15×0.07×0.15 (0,-0.1,0) 薄向上(Y)]\n  G:mount01_lid 黄铜盖 @p(0,0.1,0) 挂:jar\n    M:[m7 box 0.14×0.05×0.14 (0,0.1,0) 薄向上(Y)] | M:[m8 box 0.11×0.01×0.11 (0,0.1,0) 薄向上(Y)]",
+        "stats": {
+          "groups": 3,
+          "meshes": 9,
+          "labeledMeshes": 0,
+          "labelCoverage": 0,
+          "batchLabels": 0,
+          "autoChains": 0,
+          "snapshotChars": 635
+        }
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -0.09,
+          0,
+          -0.097
+        ],
+        "max": [
+          0.09,
+          0.28,
+          0.097
+        ],
+        "sourceNodeId": "asset-bounds"
+      }
+    ],
+    "sourceMeshCount": 9,
+    "candidateCount": 0,
+    "fallbackUsed": true
+  },
+  "footprintRadius": 0.1,
+  "sizeClass": "small",
+  "mode": "voxel",
+  "provider": "gpt",
+  "createdAt": 1787876849663,
+  "updatedAt": 1787876849663
+}

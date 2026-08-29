@@ -1,0 +1,539 @@
+{
+  "id": "asset-bad5d341-b60e-428d",
+  "name": "立式商用冰箱",
+  "prompt": "单台高大的双门商用立式冰箱，不锈钢门板、醒目竖向把手和简洁顶部状态面板，适合重复形成整齐冷藏墙。\n全局资产美术方向：平衡尺度的模块化商用不锈钢厨房设备，方正耐用、边缘略圆，采用银灰金属、深色玻璃、黑色炉面和少量安全色标识；所有设备保持独立可复用，避免生成瓶罐、食材和细碎餐具。\n资产角色：主要冷藏存储模块；目标尺度：large。\n只生成一个可复用的独立物体，不要生成地面、背景、天空、完整场景或多个分散物体。",
+  "tags": [
+    "appliance",
+    "refrigerator",
+    "cold-storage",
+    "upright-refrigerator"
+  ],
+  "modelJson": {
+    "name": "双门商用立式冰箱",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "fridge",
+        "name": "冰箱主体",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            3.886,
+            7.18,
+            2.704
+          ],
+          "center": [
+            -0.001,
+            3.477,
+            0.161
+          ],
+          "axes": [
+            [
+              0.9991,
+              -0.0424,
+              -0.0005
+            ],
+            [
+              0.0423,
+              0.9967,
+              0.0699
+            ],
+            [
+              -0.0025,
+              -0.0698,
+              0.9976
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "fridge",
+        "transform": {
+          "pos": [
+            0,
+            3.5,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 3.6,
+            "height": 6.8,
+            "depth": 1.9
+          },
+          "color": 9410201
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m1",
+        "parent": "fridge",
+        "transform": {
+          "pos": [
+            0,
+            3.35,
+            1.03
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 3.28,
+            "height": 5.7,
+            "depth": 0.16
+          },
+          "color": 12896714
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m2",
+        "parent": "fridge",
+        "transform": {
+          "pos": [
+            0,
+            3.35,
+            1.14
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.08,
+            "height": 5.65,
+            "depth": 0.2
+          },
+          "color": 4869969
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m3",
+        "parent": "fridge",
+        "transform": {
+          "pos": [
+            0,
+            6.58,
+            1.05
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 3.28,
+            "height": 0.72,
+            "depth": 0.2
+          },
+          "color": 3159608
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass"
+          }
+        ]
+      },
+      {
+        "id": "m4",
+        "parent": "fridge",
+        "transform": {
+          "pos": [
+            0,
+            6.58,
+            1.17
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.72,
+            "height": 0.18,
+            "depth": 0.05
+          },
+          "color": 6477513
+        },
+        "tags": [
+          {
+            "tag": "emissive",
+            "value": 0.75
+          }
+        ]
+      },
+      {
+        "id": "m5",
+        "parent": "fridge",
+        "transform": {
+          "pos": [
+            1.25,
+            6.58,
+            1.17
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.16,
+            "height": 0.16,
+            "depth": 0.05
+          },
+          "color": 7456875
+        },
+        "tags": [
+          {
+            "tag": "emissive",
+            "value": 0.75
+          }
+        ]
+      },
+      {
+        "id": "m6",
+        "parent": "fridge",
+        "transform": {
+          "pos": [
+            -0.48,
+            3.35,
+            1.28
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.14,
+            "height": 3.9,
+            "depth": 0.18
+          },
+          "color": 5725535
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m7",
+        "parent": "fridge",
+        "transform": {
+          "pos": [
+            -0.48,
+            5.3,
+            1.16
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.26,
+            "height": 0.18,
+            "depth": 0.28
+          },
+          "color": 6646637
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m8",
+        "parent": "fridge",
+        "transform": {
+          "pos": [
+            -0.48,
+            1.4,
+            1.16
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.26,
+            "height": 0.18,
+            "depth": 0.28
+          },
+          "color": 6646637
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m9",
+        "parent": "fridge",
+        "transform": {
+          "pos": [
+            0.48,
+            3.35,
+            1.28
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.14,
+            "height": 3.9,
+            "depth": 0.18
+          },
+          "color": 5725535
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m10",
+        "parent": "fridge",
+        "transform": {
+          "pos": [
+            0.48,
+            5.3,
+            1.16
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.26,
+            "height": 0.18,
+            "depth": 0.28
+          },
+          "color": 6646637
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m11",
+        "parent": "fridge",
+        "transform": {
+          "pos": [
+            0.48,
+            1.4,
+            1.16
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.26,
+            "height": 0.18,
+            "depth": 0.28
+          },
+          "color": 6646637
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m12",
+        "parent": "fridge",
+        "transform": {
+          "pos": [
+            0,
+            0.28,
+            1.02
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 3.25,
+            "height": 0.18,
+            "depth": 0.18
+          },
+          "color": 4014660
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m13",
+        "parent": "fridge",
+        "transform": {
+          "pos": [
+            -1.35,
+            0.11,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.42,
+            "height": 0.22,
+            "depth": 1.35
+          },
+          "color": 2698542
+        }
+      },
+      {
+        "id": "m14",
+        "parent": "fridge",
+        "transform": {
+          "pos": [
+            1.35,
+            0.11,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.42,
+            "height": 0.22,
+            "depth": 1.35
+          },
+          "color": 2698542
+        }
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1786784634693,
+        "provider": "gpt",
+        "data": "JXGESvT8mz3qXl14JYzZG4d0tLLCFHANSl6qVO7KICmHVNoaf3d+lXq4qYt1Sh5Pjkiu3X+FfZ38ohelBNXaB2rm0EwqheZRjc4R1A5ckJDVi1zXlA00yV8yXp5vjzQCivIfXXg630WyLjChaqbPwhPndwSWapvg2+RuxKdihZoLAcT/ja+bJcHxUpFZAQfzq5W93ofPzpZoExIN+GHUO9Iv1/USYUzGTQa128v0kODZYhBa9A8gA4/r35lhFXsAiW7BQtwWl5yv8s9g4RMBWO9HTgIJt68uVId5H/KmJbLnFCHZ+nOkRDqq2tH55bJ0ZwklA0XRtZlH3+R8HSTJbc3Qq1bXslFdxnE8u5lexAL0D1q2jGDGsgPqQa+QKuQB3IBgztoUWS1oEBzG4sjiz2UVO7vFydJDyv5VUOBpxPCPHYtxSYLLwjB3vICmZpqc1IkaPzy90mOYkmkgigHx2WO4ahTIEVWfxv253H+TFk0lA9QCi7333lTLpPB641OvMe0HeeoW15OWQhjVinYhv/bQhhT38CcqludTMTh3Tv2oHm4SdmXmLBMsxDww0udV2MrISXvKxj/FisXG8tLlWucDmU3vpWWn6zjAexfXrsha/zUat6aHgHHEx8oLuSqWzc1V+0cjhVwepWtFaFfN5+2rJjpc4xIUueWmO2D21rP/ZOOhsezfAElBYOX8ZefF/O85kTVfOvG+HNeVxbEyyPGrNA4Y337dQiKMrB5e+J0w4dx4A0Fok5i84MhzED0RI9cOvvy7hGrH5IyG08T+bB69L/QdC/ltAGNxJnGiRzlIb6Y=",
+        "edits": ""
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -1.8,
+          0.10000000000000009,
+          -1.1600000000000001
+        ],
+        "max": [
+          1.8,
+          6.9,
+          0.7399999999999999
+        ],
+        "sourceNodeId": "m0"
+      },
+      {
+        "min": [
+          -1.64,
+          0.5,
+          0.74
+        ],
+        "max": [
+          1.64,
+          6.2,
+          0.9
+        ],
+        "sourceNodeId": "m1"
+      },
+      {
+        "min": [
+          -1.64,
+          6.22,
+          0.74
+        ],
+        "max": [
+          1.64,
+          6.94,
+          0.9400000000000001
+        ],
+        "sourceNodeId": "m3"
+      },
+      {
+        "min": [
+          -1.56,
+          0,
+          -0.8850000000000001
+        ],
+        "max": [
+          -1.1400000000000001,
+          0.22,
+          0.46499999999999997
+        ],
+        "sourceNodeId": "m13"
+      },
+      {
+        "min": [
+          1.1400000000000001,
+          0,
+          -0.8850000000000001
+        ],
+        "max": [
+          1.56,
+          0.22,
+          0.46499999999999997
+        ],
+        "sourceNodeId": "m14"
+      },
+      {
+        "min": [
+          -1.625,
+          0.19000000000000003,
+          0.72
+        ],
+        "max": [
+          1.625,
+          0.37,
+          0.9
+        ],
+        "sourceNodeId": "m12"
+      }
+    ],
+    "sourceMeshCount": 15,
+    "candidateCount": 6,
+    "fallbackUsed": false
+  },
+  "footprintRadius": 1.8,
+  "sizeClass": "medium",
+  "mode": "voxel",
+  "provider": "gpt",
+  "createdAt": 1786784636865,
+  "updatedAt": 1786784636865
+}

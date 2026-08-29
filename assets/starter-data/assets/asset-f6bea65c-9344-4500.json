@@ -1,0 +1,875 @@
+{
+  "id": "asset-f6bea65c-9344-4500",
+  "name": "羽毛球拍",
+  "prompt": "一支儿童羽毛球拍，完整拍框、网线和握柄。独立单件儿童房物品，浅亮柔和造型，圆润安全边缘，不包含成组物品，不包含场景、房间、地面或背景。基础色和顶点色仅使用：#FFFDF6,#FEF9EA,#FDF2D7,#E9DABD,#CDBA97,#F8E8CF,#F1D7B2,#E7C393,#C9A06E,#9E7A55,#FFF7A8,#FCEF72,#F6E24B,#D1B825,#9C8510,#FFF3B7,#FDE674,#FCD75F,#FECD4D,#D1900B,#FFE2A0,#FFD170,#F8BC44,#E39F1A,#A96F05,#FBE3BD,#FDD8A3,#FDCC8F,#F1AD69,#D99256,#FFD2BA,#FFB08A,#FF8A5B,#F06B3E,#B84A27,#EAF9FF,#DAF2F5,#95E5F9,#76D0F2,#45BDF6,#D9F8FB,#B2E9F2,#8ECCD6,#7BCFDF,#4BAFCA,#D8F7EF,#B8ECDD,#90DCC8,#74C4BB,#499D92,#F1F5AF,#E4E77F,#DCDB2\nCoordinate contract: local Y+ is up, local Z+ is the front, entrance, or forward direction, and local X+ is right. Put doors, facades, openings, windshields, noses, seats, and other recognizable front details toward local Z+. For a modular repeated element, explicitly choose the long axis: side-by-side modules span local X with depth/front on local Z; traversal modules span local Z. Keep the model centered at its origin.\nCanonical dimensions contract: width=0.3, height=0.04, depth=0.72 world units. Keep the generated mesh within this centered bounding size.",
+  "tags": [
+    "indoor",
+    "single-object",
+    "child-safe"
+  ],
+  "modelJson": {
+    "name": "儿童羽毛球拍",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "racket",
+        "name": "球拍整体",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.322,
+            0.04,
+            0.727
+          ],
+          "center": [
+            0,
+            0,
+            0.003
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0.0012
+            ],
+            [
+              0,
+              1,
+              0.0004
+            ],
+            [
+              -0.0012,
+              -0.0004,
+              1
+            ]
+          ],
+          "_mainAxis": 2
+        }
+      },
+      {
+        "id": "frame",
+        "name": "完整拍框",
+        "parent": "racket",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            -0.01
+          ]
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ],
+        "_obb": {
+          "size": [
+            0.306,
+            0.035,
+            0.377
+          ],
+          "center": [
+            0,
+            0,
+            0.179
+          ],
+          "axes": [
+            [
+              0.999,
+              0,
+              0.0448
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              -0.0448,
+              0,
+              0.999
+            ]
+          ],
+          "_mainAxis": 2
+        }
+      },
+      {
+        "id": "strings",
+        "name": "网线",
+        "parent": "racket",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0.17
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.264,
+            0.008,
+            0.34
+          ],
+          "center": [
+            0,
+            0.001,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 2
+        }
+      },
+      {
+        "id": "shaft",
+        "name": "拍杆",
+        "parent": "racket",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ],
+        "_obb": {
+          "size": [
+            0.052,
+            0.03,
+            0.175
+          ],
+          "center": [
+            0,
+            0,
+            -0.083
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 2
+        }
+      },
+      {
+        "id": "grip",
+        "name": "柔软握柄",
+        "parent": "racket",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            -0.15
+          ]
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "fabric"
+          }
+        ],
+        "_obb": {
+          "size": [
+            0.078,
+            0.04,
+            0.21
+          ],
+          "center": [
+            0,
+            0,
+            -0.105
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 2
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "frame",
+        "transform": {
+          "pos": [
+            0.05,
+            0,
+            0.34
+          ],
+          "quat": [
+            0.99,
+            0,
+            -0.16,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.11,
+            "height": 0.034,
+            "depth": 0.02
+          },
+          "color": 16179787
+        }
+      },
+      {
+        "id": "m1",
+        "parent": "frame",
+        "transform": {
+          "pos": [
+            0.12,
+            0,
+            0.28
+          ],
+          "quat": [
+            0.82,
+            0,
+            -0.57,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.1,
+            "height": 0.034,
+            "depth": 0.02
+          },
+          "color": 16179787
+        }
+      },
+      {
+        "id": "m2",
+        "parent": "frame",
+        "transform": {
+          "pos": [
+            0.14,
+            0,
+            0.16
+          ],
+          "quat": [
+            -0.71,
+            0,
+            0.71,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.14,
+            "height": 0.034,
+            "depth": 0.02
+          },
+          "color": 16179787
+        }
+      },
+      {
+        "id": "m3",
+        "parent": "frame",
+        "transform": {
+          "pos": [
+            0.12,
+            0,
+            0.06
+          ],
+          "quat": [
+            -0.44,
+            0,
+            0.9,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.08,
+            "height": 0.034,
+            "depth": 0.02
+          },
+          "color": 16179787
+        }
+      },
+      {
+        "id": "m4",
+        "parent": "frame",
+        "transform": {
+          "pos": [
+            0.05,
+            0,
+            0.01
+          ],
+          "quat": [
+            -0.11,
+            0,
+            0.99,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.09,
+            "height": 0.034,
+            "depth": 0.02
+          },
+          "color": 16179787
+        }
+      },
+      {
+        "id": "m5",
+        "parent": "frame",
+        "transform": {
+          "pos": [
+            -0.04,
+            0,
+            0.01
+          ],
+          "quat": [
+            0.11,
+            0,
+            0.99,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.09,
+            "height": 0.034,
+            "depth": 0.02
+          },
+          "color": 16179787
+        }
+      },
+      {
+        "id": "m6",
+        "parent": "frame",
+        "transform": {
+          "pos": [
+            -0.11,
+            0,
+            0.06
+          ],
+          "quat": [
+            0.44,
+            0,
+            0.9,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.08,
+            "height": 0.034,
+            "depth": 0.02
+          },
+          "color": 16179787
+        }
+      },
+      {
+        "id": "m7",
+        "parent": "frame",
+        "transform": {
+          "pos": [
+            -0.14,
+            0,
+            0.16
+          ],
+          "quat": [
+            0.71,
+            0,
+            0.71,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.14,
+            "height": 0.034,
+            "depth": 0.02
+          },
+          "color": 16179787
+        }
+      },
+      {
+        "id": "m8",
+        "parent": "frame",
+        "transform": {
+          "pos": [
+            -0.12,
+            0,
+            0.28
+          ],
+          "quat": [
+            0.82,
+            0,
+            0.57,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.1,
+            "height": 0.034,
+            "depth": 0.02
+          },
+          "color": 16179787
+        }
+      },
+      {
+        "id": "m9",
+        "parent": "frame",
+        "transform": {
+          "pos": [
+            -0.05,
+            0,
+            0.34
+          ],
+          "quat": [
+            0.99,
+            0,
+            0.16,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.11,
+            "height": 0.034,
+            "depth": 0.02
+          },
+          "color": 16179787
+        }
+      },
+      {
+        "id": "m10",
+        "parent": "strings",
+        "transform": {
+          "pos": [
+            -0.08,
+            0.001,
+            -0.007
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.004,
+            "height": 0.008,
+            "depth": 0.298
+          },
+          "color": 16776694
+        }
+      },
+      {
+        "id": "m11",
+        "parent": "strings",
+        "transform": {
+          "pos": [
+            -0.04,
+            0.001,
+            -0.002
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.004,
+            "height": 0.008,
+            "depth": 0.328
+          },
+          "color": 16776694
+        }
+      },
+      {
+        "id": "m12",
+        "parent": "strings",
+        "transform": {
+          "pos": [
+            0,
+            0.001,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.004,
+            "height": 0.008,
+            "depth": 0.34
+          },
+          "color": 16776694
+        }
+      },
+      {
+        "id": "m13",
+        "parent": "strings",
+        "transform": {
+          "pos": [
+            0.04,
+            0.001,
+            -0.002
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.004,
+            "height": 0.008,
+            "depth": 0.328
+          },
+          "color": 16776694
+        }
+      },
+      {
+        "id": "m14",
+        "parent": "strings",
+        "transform": {
+          "pos": [
+            0.08,
+            0.001,
+            -0.007
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.004,
+            "height": 0.008,
+            "depth": 0.298
+          },
+          "color": 16776694
+        }
+      },
+      {
+        "id": "m15",
+        "parent": "strings",
+        "transform": {
+          "pos": [
+            0,
+            0.001,
+            -0.125
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.21,
+            "height": 0.008,
+            "depth": 0.004
+          },
+          "color": 16776694
+        }
+      },
+      {
+        "id": "m16",
+        "parent": "strings",
+        "transform": {
+          "pos": [
+            0,
+            0.001,
+            -0.08
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.254,
+            "height": 0.008,
+            "depth": 0.004
+          },
+          "color": 16776694
+        }
+      },
+      {
+        "id": "m17",
+        "parent": "strings",
+        "transform": {
+          "pos": [
+            0,
+            0.001,
+            -0.035
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.264,
+            "height": 0.008,
+            "depth": 0.004
+          },
+          "color": 16776694
+        }
+      },
+      {
+        "id": "m18",
+        "parent": "strings",
+        "transform": {
+          "pos": [
+            0,
+            0.001,
+            0.01
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.264,
+            "height": 0.008,
+            "depth": 0.004
+          },
+          "color": 16776694
+        }
+      },
+      {
+        "id": "m19",
+        "parent": "strings",
+        "transform": {
+          "pos": [
+            0,
+            0.001,
+            0.055
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.26,
+            "height": 0.008,
+            "depth": 0.004
+          },
+          "color": 16776694
+        }
+      },
+      {
+        "id": "m20",
+        "parent": "strings",
+        "transform": {
+          "pos": [
+            0,
+            0.001,
+            0.1
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.244,
+            "height": 0.008,
+            "depth": 0.004
+          },
+          "color": 16776694
+        }
+      },
+      {
+        "id": "m21",
+        "parent": "strings",
+        "transform": {
+          "pos": [
+            0,
+            0.001,
+            0.135
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.21,
+            "height": 0.008,
+            "depth": 0.004
+          },
+          "color": 16776694
+        }
+      },
+      {
+        "id": "m22",
+        "parent": "shaft",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            -0.085
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.024,
+            "height": 0.026,
+            "depth": 0.17
+          },
+          "color": 16576370
+        }
+      },
+      {
+        "id": "m23",
+        "parent": "shaft",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            -0.0125
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.052,
+            "height": 0.03,
+            "depth": 0.035
+          },
+          "color": 16698701
+        }
+      },
+      {
+        "id": "m24",
+        "parent": "grip",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            -0.105
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.07,
+            "height": 0.04,
+            "depth": 0.21
+          },
+          "color": 7786738
+        }
+      },
+      {
+        "id": "m25",
+        "parent": "grip",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            -0.1975
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.078,
+            "height": 0.04,
+            "depth": 0.025
+          },
+          "color": 4960202
+        }
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1787769479867,
+        "provider": "gpt",
+        "data": "8q9YI5uGRseUKMKBorbnqU7H8/OVacgvHUL6PIMm4QXZWHS3MQHkT4ZUc2BbCafjgORbCC8IMMLMeyhNqQjKDQY074jCltp973Om0MkkqalVKi3Y/iP1w9lKieocpDufcLtnBwhCJGOiI21SJ33zl6VGKC19I7MryZUo4lzL08Hn26GZcFIqRSZHkGPp0l4j7b8RGn1L+yNAnJtgjoc+vF1JvHV2laGiqbaxjl1ZzlCOmzPgCN+K+uSDduvCyVASIxDaYpwRHLCGduGyzdmAEE8SExzM5+PYr/8gi8jEPM/5eBJ2mWrr4/lxpOnmauXx8+4Dsov7fyJWPhXnYYgcmg46bkPIVwg6otGesUVJPg7PfbIoTvhljXzgeojM/+NRKbnox3xNQ1Y0eA3zJva63pUqbLeBCYuZYnneoePq2CessxEiGKHybYrvUo4sDHQ42oJOC6W3Szfdg2v/IhssqLZ/UN98biJh423FTbsU8AgrsffPasVTti71+LCiM4NuJkAsOpK41DHgfSc61V3rNjdz6ZswU86hccsdsxJtHNun5kg9S7sLGoYQO7AFusBsiQTGEVrMWmWZAeTZ/awaRbhtu2jW30nI81E6bbS8KlmKDGQYhELZyHZ4Bqo81s0IqqRA3xp0YOhaURCl30H846cMyi8BGmbm4nJ/BLJoID8XGiRYEmYyVzx+VJr+sf2iFOMCCPKtXoNEbBfy3+emqo7t3gnyQywGfXcwQqoGS2/+rvBfk1gESeb7+tNFbz0HiNh2oZQ9KxhXLqKNy2nIF0Y2esV9oMgrrhNoQk5IVKPLhJyS/mXKq4LZ8hO+l/r+wuN3FduZMBbk8yN+DxR++BotYwyjL6qPnrE+LzZ/2Kh6trFvYAE3MVnuiCdrj0rBzEykklg5mtyy2S7X48eFb6Mtgutt8Jugv0/L/FokWF6BjnADfQhazn2z19wB4yo4uJLBlzilE6CAKV12EQXoEGF8z1i0LeHDclyQyvB0FxG5+qIp1mqDRvOtm8h9WXSHBVJ5wQ+XG3rH2afOid3mu/8hhRGJ6KHPX+Z2mHLJIUXNzUzwybL9sH6zKH6uPE3ArQOXhsa78xi7+FoP3aqnuQabGG6R8mTKoiWr+/mPxC7wWGtAY8Om5c9NwlB0DUo35Z7vKsIPLlowro2ZRafROUmGLIYy7bRPul/ifRN3NmQvBt16iGAvZHFZffiOU1yY8Vk0gOO4mW8EAJF3AEyIAZ9+M0JU8nGjrflFn+x2aI198/WPtsxFe0eEJesmSmTSwhIWg1mYKK2ikidYRn/f7jPK5XCIMkWIRR/v2VZQgAKQ2aRrHqlMwlJrCxW2p4r2hvNEdG5k9plBZzjG6jfF6hUVYPC8+g==",
+        "edits": ""
+      },
+      "semanticSnapshot": {
+        "v": 1,
+        "auto": true,
+        "text": "儿童羽毛球拍 · 5组/26mesh · 世界坐标(Y上Z前), 原点=模型根\n# 阅读说明: G:=group行(可动画骨骼, 动画key用G:后的id; @p=pivot世界坐标; 倾(x,y,z)°=朝向偏离世界轴的欧拉角; 缩进=父子层级; 挂:=挂载于某组; G:id→id→…=chain折叠行, 每个id都是可独立动画的group, chain×N=waypoint数)\n# M:=mesh行(label[id 几何 @(世界坐标)], label可省略; ×N=for循环批量件(锚点=代表实例); cyl (起)→(末)或 轴上(Y)等方位词=延伸方向; 薄向=板面法向(扁板); 挂载组双代表=最大件+朝向件(嘴/管/檐所在); 无方向标注=均匀块(三向相近,如头),默认面向前(Z); 对称×2=镜像对)\nG:racket 球拍整体 @p(0,0,0)\n  G:frame 完整拍框 @p(0,0,0)\n    M:[m2 box 0.14×0.03×0.02 (0.1,0,0.2) 轴后(Z)]\n  G:strings 网线 @p(0,0,0.2)\n    M:[m12 box 0×0.01×0.34 (0,0,0.2) 轴前(Z)]\n  G:shaft 拍杆 @p(0,0,0)\n    M:[m22 box 0.02×0.03×0.17 (0,0,-0.1) 轴前(Z)]\n  G:grip 柔软握柄 @p(0,0,-0.1)\n    M:[m24 box 0.07×0.04×0.21 (0,0,-0.3) 轴前(Z)]",
+        "stats": {
+          "groups": 5,
+          "meshes": 26,
+          "labeledMeshes": 0,
+          "labelCoverage": 0,
+          "batchLabels": 0,
+          "autoChains": 0,
+          "snapshotChars": 677
+        }
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -0.15122957353527305,
+          0,
+          -0.3584080739783236
+        ],
+        "max": [
+          0.15122957353527305,
+          0.04,
+          0.3584080739783236
+        ],
+        "sourceNodeId": "asset-bounds"
+      }
+    ],
+    "sourceMeshCount": 26,
+    "candidateCount": 0,
+    "fallbackUsed": true
+  },
+  "footprintRadius": 0.3584080739783236,
+  "sizeClass": "small",
+  "mode": "voxel",
+  "provider": "gpt",
+  "createdAt": 1787769486641,
+  "updatedAt": 1787769486641
+}

@@ -1,0 +1,499 @@
+{
+  "id": "asset-f3ac726a-0c9f-4539",
+  "name": "后厨采光玻璃窗",
+  "prompt": "独立商用厨房玻璃窗模型，厚实金属窗框与完整透明玻璃材质，易清洁、简洁，不附带墙体。\n全局资产美术方向：平衡尺度的模块化商用不锈钢厨房设备，方正耐用、边缘略圆，采用银灰金属、深色玻璃、黑色炉面和少量安全色标识；所有设备保持独立可复用，避免生成瓶罐、食材和细碎餐具。\n资产角色：墙面自然采光与空间方向提示；目标尺度：large。\n只生成一个可复用的独立物体，不要生成地面、背景、天空、完整场景或多个分散物体。",
+  "tags": [
+    "window",
+    "glass",
+    "daylight",
+    "kitchen-glazing"
+  ],
+  "modelJson": {
+    "name": "独立商用厨房玻璃窗",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "window",
+        "name": "独立窗体",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            6,
+            6.791,
+            0.794
+          ],
+          "center": [
+            0,
+            1.212,
+            0.055
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0.0092
+            ],
+            [
+              0,
+              -0.0092,
+              1
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "frame",
+        "name": "厚实不锈钢窗框",
+        "parent": "window",
+        "transform": {
+          "pos": [
+            0,
+            2.24,
+            0.04
+          ]
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ],
+        "_obb": {
+          "size": [
+            6,
+            4.545,
+            0.721
+          ],
+          "center": [
+            0,
+            0.09,
+            0.025
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              -0.0069
+            ],
+            [
+              0,
+              0.0069,
+              1
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "glass",
+        "name": "透明玻璃",
+        "parent": "window",
+        "transform": {
+          "pos": [
+            0,
+            2.4,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            4.96,
+            3.36,
+            0.12
+          ],
+          "center": [
+            0,
+            0,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "gasket",
+        "name": "深色密封胶条",
+        "parent": "window",
+        "transform": {
+          "pos": [
+            0,
+            2.4,
+            0.27
+          ]
+        },
+        "_obb": {
+          "size": [
+            5.06,
+            3.42,
+            0.06
+          ],
+          "center": [
+            0,
+            0,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "frame",
+        "transform": {
+          "pos": [
+            -2.74,
+            0.16,
+            -0.04
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.52,
+            "height": 4.4,
+            "depth": 0.48
+          },
+          "color": 10134182
+        }
+      },
+      {
+        "id": "m1",
+        "parent": "frame",
+        "transform": {
+          "pos": [
+            2.74,
+            0.16,
+            -0.04
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.52,
+            "height": 4.4,
+            "depth": 0.48
+          },
+          "color": 10134182
+        }
+      },
+      {
+        "id": "m2",
+        "parent": "frame",
+        "transform": {
+          "pos": [
+            0,
+            -1.79,
+            -0.04
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 5.48,
+            "height": 0.5,
+            "depth": 0.48
+          },
+          "color": 9279130
+        }
+      },
+      {
+        "id": "m3",
+        "parent": "frame",
+        "transform": {
+          "pos": [
+            0,
+            2.11,
+            -0.04
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 5.48,
+            "height": 0.5,
+            "depth": 0.48
+          },
+          "color": 11186612
+        }
+      },
+      {
+        "id": "m4",
+        "parent": "frame",
+        "transform": {
+          "pos": [
+            0,
+            -2.11,
+            0.04
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 6,
+            "height": 0.14,
+            "depth": 0.72
+          },
+          "color": 8358285
+        }
+      },
+      {
+        "id": "m5",
+        "parent": "glass",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 4.96,
+            "height": 3.36,
+            "depth": 0.12
+          },
+          "color": 5400173
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass"
+          }
+        ]
+      },
+      {
+        "id": "m6",
+        "parent": "gasket",
+        "transform": {
+          "pos": [
+            0,
+            -1.67,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 5.02,
+            "height": 0.08,
+            "depth": 0.06
+          },
+          "color": 2106920
+        }
+      },
+      {
+        "id": "m7",
+        "parent": "gasket",
+        "transform": {
+          "pos": [
+            0,
+            1.67,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 5.02,
+            "height": 0.08,
+            "depth": 0.06
+          },
+          "color": 2106920
+        }
+      },
+      {
+        "id": "m8",
+        "parent": "gasket",
+        "transform": {
+          "pos": [
+            -2.49,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.08,
+            "height": 3.42,
+            "depth": 0.06
+          },
+          "color": 2106920
+        }
+      },
+      {
+        "id": "m9",
+        "parent": "gasket",
+        "transform": {
+          "pos": [
+            2.49,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.08,
+            "height": 3.42,
+            "depth": 0.06
+          },
+          "color": 2106920
+        }
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1786784887424,
+        "provider": "gpt",
+        "data": "Wj1EBfql85znKv2zzlzeKRydyVw13ohca6a7jYSwYjKNiA5sl7yfSMmPTgKVIN1+zbjJ2m6CHmPtnOjKHnMI2wSZdyR9MrSFTpPI9ZlbRzSaQDTM41QE1Qp2aW9D9HpHZM9Bcl3lOT8x2skDdiTzfho02F778uHV+T6aRkTew8LyNoNY1zj0XH1UedIvP/42guoX2ASBqEbiTMB7qFBKTD+S7IEsz08pNZzZiuLn3YcyivVlda7JPlcSUde6XRpYFEpGX1pU/RSAAmXKOh0bi9KL0cC6v5YUpaBzFRvxzQR/fydKnH0K5OHOq8Nmj5lXTanimzlIQTbwIzthaHbVGapDPXavWNnjEVyuumdjAPgD+BtrpSCMMWVrrDEkfnlx8GdHq7xWmltI34lLa/4o4Il8difGo103N7L43gVcUAOaT892qWb6AEdSp4lkvG2pT/FMyYlC8RxvOeFjHmdgDkGiLMIHbLve/BtZgwEX+uud1ySP37dmwn0XBbKldloo/BaUK4VS207l6KPEFlVJzLZ+VNC6a4ahJPL8KzUbTCbe9S244vN6EP5+tb6uSR6UXcUO4u/oZOWyjp7o8YOVcP8UtEUr0rUo+iQMjaaPyOcYqRvb86UpXB1sjuuHO+nSOOgG6pZmDEQXZEXvl2IqbMeJYwHIXRpfvOOQX4QtNH3w/JWQpmfyUbTGh+l5u0sVQVhogsQqQU8NcwdI+W5hqP5kKZzJQwrZLQouwFLOf3fH+/iEsviJznfaBnWoLilR50HiIYXGNSCTULmId3LoRW0e/GnnlKNOeQ==",
+        "edits": ""
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -2.48,
+          0.6599999999999997,
+          -0.14
+        ],
+        "max": [
+          2.48,
+          4.02,
+          -0.020000000000000018
+        ],
+        "sourceNodeId": "m5"
+      },
+      {
+        "min": [
+          -2.74,
+          0.13999999999999985,
+          -0.32
+        ],
+        "max": [
+          2.74,
+          0.6399999999999999,
+          0.15999999999999998
+        ],
+        "sourceNodeId": "m2"
+      },
+      {
+        "min": [
+          -2.74,
+          4.039999999999999,
+          -0.32
+        ],
+        "max": [
+          2.74,
+          4.539999999999999,
+          0.15999999999999998
+        ],
+        "sourceNodeId": "m3"
+      },
+      {
+        "min": [
+          -3,
+          0.13999999999999985,
+          -0.32
+        ],
+        "max": [
+          -2.4800000000000004,
+          4.54,
+          0.15999999999999998
+        ],
+        "sourceNodeId": "m0"
+      },
+      {
+        "min": [
+          2.4800000000000004,
+          0.13999999999999985,
+          -0.32
+        ],
+        "max": [
+          3,
+          4.54,
+          0.15999999999999998
+        ],
+        "sourceNodeId": "m1"
+      },
+      {
+        "min": [
+          -3,
+          0,
+          -0.36
+        ],
+        "max": [
+          3,
+          0.14,
+          0.36
+        ],
+        "sourceNodeId": "m4"
+      }
+    ],
+    "sourceMeshCount": 10,
+    "candidateCount": 6,
+    "fallbackUsed": false
+  },
+  "footprintRadius": 3,
+  "sizeClass": "large",
+  "mode": "voxel",
+  "provider": "gpt",
+  "createdAt": 1786784888208,
+  "updatedAt": 1786784888208
+}

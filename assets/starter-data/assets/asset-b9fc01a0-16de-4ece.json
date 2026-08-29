@@ -1,0 +1,851 @@
+{
+  "id": "asset-b9fc01a0-16de-4ece",
+  "name": "Cooktop counter",
+  "prompt": "One compact cooking counter with cooktop and closed base storage.\n全局资产美术方向：平衡尺度的模块化商用不锈钢厨房设备，方正耐用、边缘略圆，采用银灰金属、深色玻璃、黑色炉面和少量安全色标识；所有设备保持独立可复用，避免生成瓶罐、食材和细碎餐具。\n资产角色：cooking work center；目标尺度：large。\n只生成一个可复用的独立物体，不要生成地面、背景、天空、完整场景或多个分散物体。",
+  "tags": [
+    "cooktop-counter",
+    "kitchen-counter",
+    "furniture"
+  ],
+  "modelJson": {
+    "name": "紧凑商用烹饪工作台",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "cooktop",
+        "name": "黑色炉面",
+        "transform": {
+          "pos": [
+            0.255,
+            1.81,
+            0.03
+          ]
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass"
+          }
+        ],
+        "_obb": {
+          "size": [
+            3.239,
+            2.831,
+            1.628
+          ],
+          "center": [
+            -0.126,
+            -0.485,
+            0.003
+          ],
+          "axes": [
+            [
+              0.9999,
+              0.0124,
+              0.0033
+            ],
+            [
+              -0.0116,
+              0.9825,
+              -0.1859
+            ],
+            [
+              -0.0056,
+              0.1858,
+              0.9826
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "counter_body",
+        "name": "不锈钢柜体",
+        "parent": "cooktop",
+        "transform": {
+          "pos": [
+            -0.255,
+            -0.86,
+            -0.03
+          ]
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ],
+        "_obb": {
+          "size": [
+            2.95,
+            1.58,
+            1.15
+          ],
+          "center": [
+            0,
+            0.04,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "storage_front",
+        "name": "封闭式下部储物柜",
+        "parent": "cooktop",
+        "transform": {
+          "pos": [
+            0,
+            -0.86,
+            0.535
+          ]
+        },
+        "_obb": {
+          "size": [
+            2.695,
+            1.062,
+            0.131
+          ],
+          "center": [
+            -0.255,
+            -0.01,
+            0.002
+          ],
+          "axes": [
+            [
+              1,
+              0.0046,
+              0.0079
+            ],
+            [
+              -0.0046,
+              1,
+              0.0012
+            ],
+            [
+              -0.0079,
+              -0.0012,
+              1
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "control_panel",
+        "name": "控制面板",
+        "parent": "cooktop",
+        "transform": {
+          "pos": [
+            0,
+            -0.33,
+            0.54
+          ]
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ],
+        "_obb": {
+          "size": [
+            2.65,
+            0.22,
+            0.12
+          ],
+          "center": [
+            -0.255,
+            0,
+            0.02
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "back_guard",
+        "name": "后侧挡板",
+        "parent": "cooktop",
+        "transform": {
+          "pos": [
+            -0.255,
+            0.17,
+            -0.51
+          ]
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ],
+        "_obb": {
+          "size": [
+            2.8,
+            0.38,
+            0.1
+          ],
+          "center": [
+            0,
+            0,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "feet",
+        "name": "底部支脚",
+        "parent": "cooktop",
+        "transform": {
+          "pos": [
+            0,
+            -1.69,
+            0.35
+          ]
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ],
+        "_obb": {
+          "size": [
+            2.5,
+            0.28,
+            0.94
+          ],
+          "center": [
+            -0.255,
+            0,
+            -0.38
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "counter_body",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2.8,
+            "height": 1.35,
+            "depth": 1.05
+          },
+          "color": 9147545
+        }
+      },
+      {
+        "id": "m1",
+        "parent": "counter_body",
+        "transform": {
+          "pos": [
+            0,
+            0.75,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2.95,
+            "height": 0.16,
+            "depth": 1.15
+          },
+          "color": 12042436
+        }
+      },
+      {
+        "id": "m2",
+        "parent": "counter_body",
+        "transform": {
+          "pos": [
+            0,
+            -0.7,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2.82,
+            "height": 0.1,
+            "depth": 1.08
+          },
+          "color": 6910840
+        }
+      },
+      {
+        "id": "m3",
+        "parent": "cooktop",
+        "transform": {
+          "pos": [
+            -0.075,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2.35,
+            "height": 0.06,
+            "depth": 0.72
+          },
+          "color": 1514269
+        }
+      },
+      {
+        "id": "m4",
+        "parent": "cooktop",
+        "transform": {
+          "pos": [
+            -0.835,
+            0.04,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.72,
+            "height": 0.025,
+            "depth": 0.08
+          },
+          "color": 4541520
+        }
+      },
+      {
+        "id": "m5",
+        "parent": "cooktop",
+        "transform": {
+          "pos": [
+            -0.835,
+            0.04,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.08,
+            "height": 0.025,
+            "depth": 0.48
+          },
+          "color": 4541520
+        }
+      },
+      {
+        "id": "m6",
+        "parent": "cooktop",
+        "transform": {
+          "pos": [
+            0.325,
+            0.04,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.72,
+            "height": 0.025,
+            "depth": 0.08
+          },
+          "color": 4541520
+        }
+      },
+      {
+        "id": "m7",
+        "parent": "cooktop",
+        "transform": {
+          "pos": [
+            0.325,
+            0.04,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.08,
+            "height": 0.025,
+            "depth": 0.48
+          },
+          "color": 4541520
+        }
+      },
+      {
+        "id": "m8",
+        "parent": "storage_front",
+        "transform": {
+          "pos": [
+            -0.945,
+            -0.01,
+            -0.025
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.31,
+            "height": 1.05,
+            "depth": 0.055
+          },
+          "color": 7502976
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m9",
+        "parent": "storage_front",
+        "transform": {
+          "pos": [
+            0.435,
+            -0.01,
+            -0.025
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.31,
+            "height": 1.05,
+            "depth": 0.055
+          },
+          "color": 7502976
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m10",
+        "parent": "storage_front",
+        "transform": {
+          "pos": [
+            -0.435,
+            0.01,
+            0.025
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.07,
+            "height": 0.7,
+            "depth": 0.08
+          },
+          "color": 2435628
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m11",
+        "parent": "storage_front",
+        "transform": {
+          "pos": [
+            -0.075,
+            0.01,
+            0.025
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.07,
+            "height": 0.7,
+            "depth": 0.08
+          },
+          "color": 2435628
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m12",
+        "parent": "storage_front",
+        "transform": {
+          "pos": [
+            0.945,
+            0.01,
+            0.025
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.07,
+            "height": 0.7,
+            "depth": 0.08
+          },
+          "color": 2435628
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m13",
+        "parent": "control_panel",
+        "transform": {
+          "pos": [
+            -0.255,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2.65,
+            "height": 0.22,
+            "depth": 0.08
+          },
+          "color": 4542034
+        }
+      },
+      {
+        "id": "m14",
+        "parent": "control_panel",
+        "transform": {
+          "pos": [
+            -1.105,
+            0,
+            0.06
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.12,
+            "height": 0.12,
+            "depth": 0.04
+          },
+          "color": 14043954
+        }
+      },
+      {
+        "id": "m15",
+        "parent": "control_panel",
+        "transform": {
+          "pos": [
+            -0.735,
+            0,
+            0.06
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.14,
+            "height": 0.14,
+            "depth": 0.04
+          },
+          "color": 2106663
+        }
+      },
+      {
+        "id": "m16",
+        "parent": "control_panel",
+        "transform": {
+          "pos": [
+            0.225,
+            0,
+            0.06
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.14,
+            "height": 0.14,
+            "depth": 0.04
+          },
+          "color": 2106663
+        }
+      },
+      {
+        "id": "m17",
+        "parent": "control_panel",
+        "transform": {
+          "pos": [
+            0.595,
+            0,
+            0.06
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.14,
+            "height": 0.14,
+            "depth": 0.04
+          },
+          "color": 2106663
+        }
+      },
+      {
+        "id": "m18",
+        "parent": "back_guard",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2.8,
+            "height": 0.38,
+            "depth": 0.1
+          },
+          "color": 9147545
+        }
+      },
+      {
+        "id": "m19",
+        "parent": "feet",
+        "transform": {
+          "pos": [
+            -1.415,
+            0,
+            -0.76
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.18,
+            "height": 0.28,
+            "depth": 0.18
+          },
+          "color": 4278604
+        }
+      },
+      {
+        "id": "m20",
+        "parent": "feet",
+        "transform": {
+          "pos": [
+            0.905,
+            0,
+            -0.76
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.18,
+            "height": 0.28,
+            "depth": 0.18
+          },
+          "color": 4278604
+        }
+      },
+      {
+        "id": "m21",
+        "parent": "feet",
+        "transform": {
+          "pos": [
+            -1.415,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.18,
+            "height": 0.28,
+            "depth": 0.18
+          },
+          "color": 4278604
+        }
+      },
+      {
+        "id": "m22",
+        "parent": "feet",
+        "transform": {
+          "pos": [
+            0.905,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.18,
+            "height": 0.28,
+            "depth": 0.18
+          },
+          "color": 4278604
+        }
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1786784671473,
+        "provider": "gpt",
+        "data": "l9OxIQ+oOcjcdKiApEPgKZty7irrs54nG/385mA7A6BEK+EiJgSEw1/XTU5QeNFJbv9O9lIhyfmBxyrLGR7SlwRGjb3WB85t/i94uWFuRQEcqXFSFT8RlKJKdKELz9AZyU4kYfww370VMN3r4SmlMX4tqgxqzkChMj/8xzCJA49XREnJMAesbG+L7Pxm0wOXCv9g5oCwDzYmXMw/ZDhppZPwroBxh+FNs1H0DRzmxFlw3RE9aOlokyO6GKrzUCGSGxh1fJynfg+KeBLL7usvb4WaFxplr/rFDT5x5cRHeWKCrxAMcSj63jwbf8WL8MTlTC45kus2j6aUw+Cn/Tj8Qd5DgTDEZTX0pJqJZRy2WnmkbBVKWvcn2EDU/7Id03B1vRdQVuyX1EjE2lJe3kmI5AhMVi8sWYDZuQfryXLE92SBGb4OdiqdouGcoGQHDPW9sbARqogjN3RZd9KwTZ5tU9DId8jIXTBrYZN3NNacQYBGHkf9WcSUqMXpWDVFPnublFn12zL3zlfBac2aH81XPo9sWp0lOtxHYnyJweIeUhG1jzQ08X4wYOz7JDg9TTuFOBTqXswOm94GfGg2Sq17ggPMliqHbw9IN6ufV+2TTYGpJ3izrRLQWQSRTNXx2plG4M+rsmjo/lfmL96zTS4UXtVU4L01TD0wjVxQB/AkBvVnOOqAbDzx9Ei83NsrzYPTnN4RemP+ybcsXxF9302Ln5FGzLT1lz/hWYemVG5RiJh5sTPDIFh0wqxsVRMPe+poONcBReDEpTV921KlWFPjQ9jBQdKuQ7F75JqwnYIKBxgY8Ar6AHd7zY+D5fxTYTedO6kQZlremj1eJS232HKgLizL3Pq1cDJViv0X2oV8nbMFVbOM54ev16btsxEl2ou5mppRkOpFNVy5lesiajaNfpShb3s/0kDqT+ktOKu2kLRkuGO5rMDSdM4Fq6eCDH/zxDe6hr+7beZpBcAbWzT/FBLJgCPmTWgVnWGVUVwOTKLDxMGlZ7aaz/gCq2aePb5Os2Y6OJGnzkvR1iJb83VGdmOhyGqoQPnHPTVTyJ/I6LgxfRfKKRa+pGs=",
+        "edits": ""
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -1.4,
+          0.29499999999999993,
+          -0.5625000000000001
+        ],
+        "max": [
+          1.4,
+          1.645,
+          0.48749999999999993
+        ],
+        "sourceNodeId": "m0"
+      },
+      {
+        "min": [
+          -1.475,
+          1.6400000000000001,
+          -0.6125
+        ],
+        "max": [
+          1.475,
+          1.8000000000000003,
+          0.5374999999999999
+        ],
+        "sourceNodeId": "m1"
+      },
+      {
+        "min": [
+          -1.4,
+          1.81,
+          -0.5675000000000001
+        ],
+        "max": [
+          1.4,
+          2.19,
+          -0.4675000000000001
+        ],
+        "sourceNodeId": "m18"
+      }
+    ],
+    "sourceMeshCount": 23,
+    "candidateCount": 3,
+    "fallbackUsed": false
+  },
+  "footprintRadius": 1.475,
+  "sizeClass": "medium",
+  "mode": "voxel",
+  "provider": "gpt",
+  "createdAt": 1786784678769,
+  "updatedAt": 1786784678769
+}

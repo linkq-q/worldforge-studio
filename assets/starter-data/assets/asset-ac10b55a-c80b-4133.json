@@ -1,0 +1,124 @@
+{
+  "id": "asset-ac10b55a-c80b-4133",
+  "name": "航海志",
+  "prompt": "单独一本合上的深蓝色布面航海图书，银色罗盘压纹，仅一本书，无附属物\nCoordinate contract: local Y+ is up, local Z+ is the front, entrance, or forward direction, and local X+ is right. Put doors, facades, openings, windshields, noses, seats, and other recognizable front details toward local Z+. For a modular repeated element, explicitly choose the long axis: side-by-side modules span local X with depth/front on local Z; traversal modules span local Z. Keep the model centered at its origin.\nCanonical dimensions contract: width=0.3, height=0.065, depth=0.42 world units. Keep the generated mesh within this centered bounding size.",
+  "modelJson": {
+    "name": "合上的深蓝色航海图书",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "m0",
+        "transform": {
+          "pos": [
+            0,
+            0.03,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.3,
+            "height": 0.06,
+            "depth": 0.42
+          },
+          "color": 1059413
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "fabric"
+          }
+        ]
+      },
+      {
+        "id": "m1",
+        "transform": {
+          "pos": [
+            0,
+            0.062,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.018,
+            "height": 0.004,
+            "depth": 0.12
+          },
+          "color": 12634065
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "silver"
+          }
+        ]
+      },
+      {
+        "id": "m2",
+        "transform": {
+          "pos": [
+            0,
+            0.062,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.12,
+            "height": 0.004,
+            "depth": 0.018
+          },
+          "color": 12634065
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "silver"
+          }
+        ]
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1787873853532,
+        "provider": "gpt",
+        "data": "b3oUzxN86hQ+D5sKv7hSVyb6y0X5kjrxoPhHQqiO5kjcyyVNgCrbqDFEu9zoW2X7lKSyQQ+C7Za2Jx8L/PRAFCSbnE/kkHh2gtlY6Ec6Xlp279gTXcow5b7WEmmB98OVRTZKtAtY/K6IawjEonkQaeRXNIkbJrO1WH23YNtpnuR7EnIsXTAzfmTMzxuaNJfU1TSvBEH/xNII28tCSwucEyyWkzypYkESGe5zdIH7SZic+sY5sqrLLciJdtM2jif1c8x/kU6BL7TOHoogTDr3+GLVVwdsOFxNx/DwgNMjEZBER5YjTwW/gu+pv2f/2y4G1c7+7j6mNsA4Lb7pT3aNhSbBDbgTYNdjBG8G0HRviLn2Cknu/hTn2iea5UY29B1OvHoFrHXTAE3ZsdjBl2v2ySUqr7tadcjIIFf4IV0EsarTJHFS1kobiIpeXl2/DX/VQnM+H5sYsz4rlu7YRDfP04XH4qjZNnaPHHZ11y3+V89I+AM1ekmMUw3Ief84WrUSJ+XhtW5I2I0uoduzOQY4KycxEJee9nyhn3DdTQ==",
+        "edits": ""
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -0.15,
+          0,
+          -0.21
+        ],
+        "max": [
+          0.15,
+          0.067,
+          0.21
+        ],
+        "sourceNodeId": "asset-bounds"
+      }
+    ],
+    "sourceMeshCount": 3,
+    "candidateCount": 0,
+    "fallbackUsed": true
+  },
+  "footprintRadius": 0.21,
+  "sizeClass": "small",
+  "mode": "voxel",
+  "provider": "gpt",
+  "createdAt": 1787873853078,
+  "updatedAt": 1787873853078
+}

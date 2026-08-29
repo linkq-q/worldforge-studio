@@ -1,0 +1,1346 @@
+{
+  "id": "asset-ff1f4a1d-5ea6-4a11",
+  "name": "异形书架 3",
+  "prompt": "同一规格的高大古典魔法图书馆木书架，共四种内容变体。保持完全相同的外框尺寸、木材风格和层板结构，但每种书架的书籍种类、颜色、厚度、横放竖放方式都不同。每种都必须明显留出若干空位，四种变体的空位位置和空位总数各不相同；部分层板较空，局部可摆卷轴、封存盒或单个魔法器物，禁止全部摆满。\nCoordinate contract: local Y+ is up, local Z+ is the front, entrance, or forward direction, and local X+ is right. Put doors, facades, openings, windshields, noses, seats, and other recognizable front details toward local Z+. For a modular repeated element, explicitly choose the long axis: side-by-side modules span local X with depth/front on local Z; traversal modules span local Z. Keep the model centered at its origin.\nCanonical dimensions contract: width=2.6, height=4.8, depth=0.75 world units. Keep the generated mesh within this centered bounding size.\nCreate variation 3 of 4; preserve the same reusable asset family while varying silhouette and details.",
+  "tags": [
+    "indoor",
+    "bookshelf",
+    "magic-library",
+    "content-variants"
+  ],
+  "modelJson": {
+    "name": "古典魔法图书馆木书架·变体3",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "bookcase",
+        "name": "胡桃木书架",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            2.713,
+            4.816,
+            0.802
+          ],
+          "center": [
+            0,
+            2.4,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0.0032,
+              -0.0001
+            ],
+            [
+              -0.0032,
+              0.9999,
+              0.0108
+            ],
+            [
+              0.0001,
+              -0.0108,
+              0.9999
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "arcane_relic",
+        "name": "单个魔法棱晶",
+        "parent": "bookcase",
+        "transform": {
+          "pos": [
+            0.05,
+            3.44,
+            0.1
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.38,
+            0.4,
+            0.34
+          ],
+          "center": [
+            0,
+            0.2,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "bookcase",
+        "transform": {
+          "pos": [
+            0,
+            0.14,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2.6,
+            "height": 0.28,
+            "depth": 0.75
+          },
+          "color": 4796447
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "walnut"
+          }
+        ]
+      },
+      {
+        "id": "m1",
+        "parent": "bookcase",
+        "transform": {
+          "pos": [
+            0,
+            4.65,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2.6,
+            "height": 0.3,
+            "depth": 0.75
+          },
+          "color": 5650468
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "walnut"
+          }
+        ]
+      },
+      {
+        "id": "m2",
+        "parent": "bookcase",
+        "transform": {
+          "pos": [
+            0,
+            2.39,
+            -0.325
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2.28,
+            "height": 4.22,
+            "depth": 0.1
+          },
+          "color": 3679515
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "walnut"
+          }
+        ]
+      },
+      {
+        "id": "m3",
+        "parent": "bookcase",
+        "transform": {
+          "pos": [
+            -1.2,
+            2.39,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.2,
+            "height": 4.22,
+            "depth": 0.68
+          },
+          "color": 6307879
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "walnut"
+          }
+        ]
+      },
+      {
+        "id": "m4",
+        "parent": "bookcase",
+        "transform": {
+          "pos": [
+            -1.2,
+            0.42,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.3,
+            "height": 0.18,
+            "depth": 0.75
+          },
+          "color": 4927520
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "walnut"
+          }
+        ]
+      },
+      {
+        "id": "m5",
+        "parent": "bookcase",
+        "transform": {
+          "pos": [
+            -1.2,
+            4.37,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.3,
+            "height": 0.18,
+            "depth": 0.75
+          },
+          "color": 4927520
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "walnut"
+          }
+        ]
+      },
+      {
+        "id": "m6",
+        "parent": "bookcase",
+        "transform": {
+          "pos": [
+            1.2,
+            2.39,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.2,
+            "height": 4.22,
+            "depth": 0.68
+          },
+          "color": 6307879
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "walnut"
+          }
+        ]
+      },
+      {
+        "id": "m7",
+        "parent": "bookcase",
+        "transform": {
+          "pos": [
+            1.2,
+            0.42,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.3,
+            "height": 0.18,
+            "depth": 0.75
+          },
+          "color": 4927520
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "walnut"
+          }
+        ]
+      },
+      {
+        "id": "m8",
+        "parent": "bookcase",
+        "transform": {
+          "pos": [
+            1.2,
+            4.37,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.3,
+            "height": 0.18,
+            "depth": 0.75
+          },
+          "color": 4927520
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "walnut"
+          }
+        ]
+      },
+      {
+        "id": "m9",
+        "parent": "bookcase",
+        "transform": {
+          "pos": [
+            0,
+            0.62,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2.25,
+            "height": 0.16,
+            "depth": 0.66
+          },
+          "color": 6636330
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "walnut"
+          }
+        ]
+      },
+      {
+        "id": "m10",
+        "parent": "bookcase",
+        "transform": {
+          "pos": [
+            0,
+            1.56,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2.25,
+            "height": 0.16,
+            "depth": 0.66
+          },
+          "color": 6636330
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "walnut"
+          }
+        ]
+      },
+      {
+        "id": "m11",
+        "parent": "bookcase",
+        "transform": {
+          "pos": [
+            0,
+            2.5,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2.25,
+            "height": 0.16,
+            "depth": 0.66
+          },
+          "color": 6636330
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "walnut"
+          }
+        ]
+      },
+      {
+        "id": "m12",
+        "parent": "bookcase",
+        "transform": {
+          "pos": [
+            0,
+            3.44,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2.25,
+            "height": 0.16,
+            "depth": 0.66
+          },
+          "color": 6636330
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "walnut"
+          }
+        ]
+      },
+      {
+        "id": "m13",
+        "parent": "bookcase",
+        "transform": {
+          "pos": [
+            0,
+            4.42,
+            0.27
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.55,
+            "height": 0.12,
+            "depth": 0.18
+          },
+          "color": 4073756
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "walnut"
+          }
+        ]
+      },
+      {
+        "id": "m14",
+        "parent": "bookcase",
+        "transform": {
+          "pos": [
+            -0.93,
+            0.91,
+            0.11
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.18,
+            "height": 0.5,
+            "depth": 0.42
+          },
+          "color": 7356719
+        }
+      },
+      {
+        "id": "m15",
+        "parent": "bookcase",
+        "transform": {
+          "pos": [
+            -0.72,
+            0.94,
+            0.11
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.2,
+            "height": 0.56,
+            "depth": 0.42
+          },
+          "color": 2706274
+        }
+      },
+      {
+        "id": "m16",
+        "parent": "bookcase",
+        "transform": {
+          "pos": [
+            -0.48,
+            0.9,
+            0.11
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.24,
+            "height": 0.48,
+            "depth": 0.42
+          },
+          "color": 8482874
+        }
+      },
+      {
+        "id": "m17",
+        "parent": "bookcase",
+        "transform": {
+          "pos": [
+            0.25,
+            0.93,
+            0.11
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.16,
+            "height": 0.54,
+            "depth": 0.42
+          },
+          "color": 5582692
+        }
+      },
+      {
+        "id": "m18",
+        "parent": "bookcase",
+        "transform": {
+          "pos": [
+            0.46,
+            0.89,
+            0.11
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.24,
+            "height": 0.46,
+            "depth": 0.42
+          },
+          "color": 3234114
+        }
+      },
+      {
+        "id": "m19",
+        "parent": "bookcase",
+        "transform": {
+          "pos": [
+            0.72,
+            0.95,
+            0.11
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.18,
+            "height": 0.58,
+            "depth": 0.42
+          },
+          "color": 9128242
+        }
+      },
+      {
+        "id": "m20",
+        "parent": "bookcase",
+        "transform": {
+          "pos": [
+            0.94,
+            0.91,
+            0.11
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.2,
+            "height": 0.5,
+            "depth": 0.42
+          },
+          "color": 3887736
+        }
+      },
+      {
+        "id": "m21",
+        "parent": "bookcase",
+        "transform": {
+          "pos": [
+            -0.95,
+            1.88,
+            0.11
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.22,
+            "height": 0.56,
+            "depth": 0.42
+          },
+          "color": 5976368
+        }
+      },
+      {
+        "id": "m22",
+        "parent": "bookcase",
+        "transform": {
+          "pos": [
+            -0.7,
+            1.84,
+            0.11
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.24,
+            "height": 0.48,
+            "depth": 0.42
+          },
+          "color": 10123320
+        }
+      },
+      {
+        "id": "m23",
+        "parent": "bookcase",
+        "transform": {
+          "pos": [
+            -0.44,
+            1.9,
+            0.11
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.18,
+            "height": 0.6,
+            "depth": 0.42
+          },
+          "color": 3296624
+        }
+      },
+      {
+        "id": "m24",
+        "parent": "bookcase",
+        "transform": {
+          "pos": [
+            0.66,
+            1.86,
+            0.11
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.28,
+            "height": 0.52,
+            "depth": 0.42
+          },
+          "color": 6308983
+        }
+      },
+      {
+        "id": "m25",
+        "parent": "bookcase",
+        "transform": {
+          "pos": [
+            0.94,
+            1.89,
+            0.11
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.2,
+            "height": 0.58,
+            "depth": 0.42
+          },
+          "color": 4809531
+        }
+      },
+      {
+        "id": "m26",
+        "parent": "bookcase",
+        "transform": {
+          "pos": [
+            -0.9,
+            2.82,
+            0.11
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.16,
+            "height": 0.54,
+            "depth": 0.42
+          },
+          "color": 8862777
+        }
+      },
+      {
+        "id": "m27",
+        "parent": "bookcase",
+        "transform": {
+          "pos": [
+            -0.7,
+            2.79,
+            0.11
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.22,
+            "height": 0.48,
+            "depth": 0.42
+          },
+          "color": 4352130
+        }
+      },
+      {
+        "id": "m28",
+        "parent": "bookcase",
+        "transform": {
+          "pos": [
+            -0.45,
+            2.85,
+            0.11
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.2,
+            "height": 0.6,
+            "depth": 0.42
+          },
+          "color": 8416310
+        }
+      },
+      {
+        "id": "m29",
+        "parent": "bookcase",
+        "transform": {
+          "pos": [
+            0.74,
+            2.8,
+            0.11
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.18,
+            "height": 0.5,
+            "depth": 0.42
+          },
+          "color": 6502227
+        }
+      },
+      {
+        "id": "m30",
+        "parent": "bookcase",
+        "transform": {
+          "pos": [
+            0.95,
+            2.84,
+            0.11
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.2,
+            "height": 0.58,
+            "depth": 0.42
+          },
+          "color": 3496777
+        }
+      },
+      {
+        "id": "m31",
+        "parent": "bookcase",
+        "transform": {
+          "pos": [
+            -0.97,
+            3.75,
+            0.11
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.18,
+            "height": 0.46,
+            "depth": 0.42
+          },
+          "color": 5006981
+        }
+      },
+      {
+        "id": "m32",
+        "parent": "bookcase",
+        "transform": {
+          "pos": [
+            -0.75,
+            3.79,
+            0.11
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.22,
+            "height": 0.54,
+            "depth": 0.42
+          },
+          "color": 9326899
+        }
+      },
+      {
+        "id": "m33",
+        "parent": "bookcase",
+        "transform": {
+          "pos": [
+            0.54,
+            3.78,
+            0.11
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.2,
+            "height": 0.52,
+            "depth": 0.42
+          },
+          "color": 6898035
+        }
+      },
+      {
+        "id": "m34",
+        "parent": "bookcase",
+        "transform": {
+          "pos": [
+            0.77,
+            3.74,
+            0.11
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.22,
+            "height": 0.44,
+            "depth": 0.42
+          },
+          "color": 9466938
+        }
+      },
+      {
+        "id": "m35",
+        "parent": "bookcase",
+        "transform": {
+          "pos": [
+            1,
+            3.8,
+            0.11
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.18,
+            "height": 0.56,
+            "depth": 0.42
+          },
+          "color": 4022348
+        }
+      },
+      {
+        "id": "m36",
+        "parent": "bookcase",
+        "transform": {
+          "pos": [
+            -0.05,
+            1.72,
+            0.11
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.52,
+            "height": 0.16,
+            "depth": 0.4
+          },
+          "color": 4545656
+        }
+      },
+      {
+        "id": "m37",
+        "parent": "bookcase",
+        "transform": {
+          "pos": [
+            -0.05,
+            1.87,
+            0.11
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.44,
+            "height": 0.14,
+            "depth": 0.4
+          },
+          "color": 8276280
+        }
+      },
+      {
+        "id": "m38",
+        "parent": "bookcase",
+        "transform": {
+          "pos": [
+            -0.05,
+            2,
+            0.11
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.35,
+            "height": 0.12,
+            "depth": 0.38
+          },
+          "color": 9007679
+        }
+      },
+      {
+        "id": "m39",
+        "parent": "bookcase",
+        "transform": {
+          "pos": [
+            0.14,
+            2.7,
+            0.08
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.62,
+            "height": 0.24,
+            "depth": 0.48
+          },
+          "color": 5190949
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "walnut"
+          }
+        ]
+      },
+      {
+        "id": "m40",
+        "parent": "bookcase",
+        "transform": {
+          "pos": [
+            0.14,
+            2.855,
+            0.08
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.66,
+            "height": 0.07,
+            "depth": 0.5
+          },
+          "color": 7491634
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "walnut"
+          }
+        ]
+      },
+      {
+        "id": "m41",
+        "parent": "bookcase",
+        "transform": {
+          "pos": [
+            0.14,
+            2.87,
+            0.345
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.1,
+            "height": 0.08,
+            "depth": 0.04
+          },
+          "color": 11569981
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m42",
+        "parent": "bookcase",
+        "transform": {
+          "pos": [
+            -0.3,
+            3.59,
+            0.12
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.5,
+            "height": 0.13,
+            "depth": 0.18
+          },
+          "color": 13084266
+        }
+      },
+      {
+        "id": "m43",
+        "parent": "bookcase",
+        "transform": {
+          "pos": [
+            -0.57,
+            3.59,
+            0.12
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.08,
+            "height": 0.19,
+            "depth": 0.22
+          },
+          "color": 6897958
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "walnut"
+          }
+        ]
+      },
+      {
+        "id": "m44",
+        "parent": "bookcase",
+        "transform": {
+          "pos": [
+            -0.03,
+            3.59,
+            0.12
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.08,
+            "height": 0.19,
+            "depth": 0.22
+          },
+          "color": 6897958
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "walnut"
+          }
+        ]
+      },
+      {
+        "id": "m45",
+        "parent": "arcane_relic",
+        "transform": {
+          "pos": [
+            0,
+            0.23,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.24,
+            "height": 0.34,
+            "depth": 0.24
+          },
+          "color": 5619168
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass",
+            "variant": "blue"
+          },
+          {
+            "tag": "emissive",
+            "value": 0.75
+          }
+        ]
+      },
+      {
+        "id": "m46",
+        "parent": "arcane_relic",
+        "transform": {
+          "pos": [
+            0,
+            0.05,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.38,
+            "height": 0.1,
+            "depth": 0.34
+          },
+          "color": 7165493
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "walnut"
+          }
+        ]
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1787875019427,
+        "provider": "gpt",
+        "data": "DsaM8fGwdS+LyPoD4keiIX25ciG3JoQTP3LEhwCBmkBhKaMM1o/wOfBxgsFnO22DPy4yA+XT3PDziIc4arOrWlZG3w02iPACqb97+vRlQhDYaKib2gIQZemQ1T1ae2VvWlqzmUzMcyIMm90/sQsjWebpAHEVhkE4XqgNgdgqyJbIvVCoItBWMDLiuVtKV9kNiXSzAwb9bevshLkWDbVLiz6fwV/GFyM9n4/yoRGi0Ngdmzl9x9XwWuyF6CNNLXj2NkLYc8dF9gdgP6FkQsLVKrCrCSJsP5F2dYeXp6EFj3p6UWpZoSI1PYVjVNej4xPtGcJz4r5pkgCIryUd4CNSZ9VUP/DQiy9Dk4FgzdmMKbflmrVkFYYUhH6QEGeWWM3rxeK6YM4+jd83k8U59KLzZ921gTfCh6Xo9jcV0cHeCdMYRvr21cE8ukn88g165GRuPrOAWzBYh3INT5iM3fQpZEMrNkl5YXO2nv0G4G5hhktpAb822K/XSgks4C75ZYkllzGAQXTA+ohF9JEO0s7l5GZdau/qYtb/12Be5t7yAaW2UTajxgsTg5H2acCr5YOzyEjMFHa3RFEVSGoyQBm5UNrSi+6sMnuCXFO2kguPFKwoD9ZhTRo3vHpY9nOhRyj7DJz9sbwYD6VxvdoVLKnCrMywWSuRNanMBN2YeNqJTl0G0uQkALsixCVCLe+J4hVIHdCNWuwlNFDD24YtqXzckGWxaSUzKiRVRyL4Jwt5zh51BoBEvjNf6tIcUOpO0QEO4Qzgcl/nEqw63iNWa42t9lDPx7XqpKKwy+OT47zItv4it57nDr8KjX8y+GPi5JAoR2YBGlZ8K2fLvO89YsscXLr1iIoGLnKTMjWd1iTDADuEYeuVhGMpKPJfXLxU3NPMeaTACkP+UU4vt540AS59yYHNYwxN4ungyiA5O1QFmgSbLUBM8TiZ9bQj7X+NnB4csutLwYudggFQYQQcUtJSTHssmqhMWch695q0xNn65nOsByEtaMA0ZebohaHz7QKx+iCojdaLwFJSg/VEPHvMuVj9nBhfAVM6zfiIxTlLspNHPelTS5RGh34y1O+iA4JSuSjd7qiinwIRmpA4hFypPj7J4YwSeNfir7dUnbq0qV+DA8Ggtl4yGq15n08t/gvomaSqWWjcbTgxFui1Z8QFUkqK+DdmKBeFz1EJlNHd3XsCUZBM6e2H36nU+wq9zNabrPrNsJaasOmSKXk9nCsEpCdtXS8Lx8MBxPbOjNhjlU6SgQXbVv+deQcifSXXIm+th+Pl4YIJ3c3xn98+nonx/nVHe4J6YnzH8PAggrP/6iCwAjmy5zSR+MPMT+sbNyVM0pddEj47k2zmiramEUvUUkuFAGLYOCa0mVly+6f/T1IjzRvV4GHL824wKMz766w7XNOy1tXufly12SaDW3uXOYsAznYpmbk+4LsoicjFhme4rrfO4Gbxay0KdQ4iQ/hRacjKfH3yGFXtGkoCEssWTCPrCwBmxmdS0if8eiviTsRb2bhGbiy4ysE0IVKtuebOdop2HRYpS4jpWs3F4yBEY0HKgvYioFcUfKi+0FevCOrBjrSl5SyRbyhUYuA/+dBv4P+qzMCjoTniiysUJrXuc8yEC9J70KFdWswG8vj5gktzAR+uP7HyONssZ57c8D0qZvsj2kpii0QRgVIq2daR35x7a2GnSvL6SVnwOQ==",
+        "edits": ""
+      },
+      "semanticSnapshot": {
+        "v": 1,
+        "auto": true,
+        "text": "古典魔法图书馆木书架·变体3 · 2组/47mesh · 世界坐标(Y上Z前), 原点=模型根\n# 阅读说明: G:=group行(可动画骨骼, 动画key用G:后的id; @p=pivot世界坐标; 倾(x,y,z)°=朝向偏离世界轴的欧拉角; 缩进=父子层级; 挂:=挂载于某组; G:id→id→…=chain折叠行, 每个id都是可独立动画的group, chain×N=waypoint数)\n# M:=mesh行(label[id 几何 @(世界坐标)], label可省略; ×N=for循环批量件(锚点=代表实例); cyl (起)→(末)或 轴上(Y)等方位词=延伸方向; 薄向=板面法向(扁板); 挂载组双代表=最大件+最远有向件(刃/嘴/管所在端); 无方向标注=均匀块(三向相近,如头),默认面向前(Z); 对称×2=镜像对)\nG:bookcase 胡桃木书架 @p(0,0,0)\n  M:[m2 box 2.3×4.2×0.1 (0,2.4,-0.3) 薄向前(Z)]\n  G:arcane_relic 单个魔法棱晶 @p(0.1,3.4,0.1)\n    M:[m45 box 0.24×0.34×0.24 (0.1,3.7,0.1)]",
+        "stats": {
+          "groups": 2,
+          "meshes": 47,
+          "labeledMeshes": 0,
+          "labelCoverage": 0,
+          "batchLabels": 0,
+          "autoChains": 0,
+          "snapshotChars": 531
+        }
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -1.14,
+          0.28000000000000025,
+          -0.375
+        ],
+        "max": [
+          1.14,
+          4.5,
+          -0.275
+        ],
+        "sourceNodeId": "m2"
+      },
+      {
+        "min": [
+          -1.3,
+          4.5,
+          -0.375
+        ],
+        "max": [
+          1.3,
+          4.800000000000001,
+          0.375
+        ],
+        "sourceNodeId": "m1"
+      },
+      {
+        "min": [
+          -1.3,
+          0.28000000000000025,
+          -0.34
+        ],
+        "max": [
+          -1.0999999999999999,
+          4.5,
+          0.34
+        ],
+        "sourceNodeId": "m3"
+      },
+      {
+        "min": [
+          1.0999999999999999,
+          0.28000000000000025,
+          -0.34
+        ],
+        "max": [
+          1.3,
+          4.5,
+          0.34
+        ],
+        "sourceNodeId": "m6"
+      },
+      {
+        "min": [
+          -1.3,
+          0,
+          -0.375
+        ],
+        "max": [
+          1.3,
+          0.28,
+          0.375
+        ],
+        "sourceNodeId": "m0"
+      },
+      {
+        "min": [
+          -1.125,
+          1.48,
+          -0.33
+        ],
+        "max": [
+          1.125,
+          1.6400000000000001,
+          0.33
+        ],
+        "sourceNodeId": "m10"
+      },
+      {
+        "min": [
+          -1.125,
+          2.42,
+          -0.33
+        ],
+        "max": [
+          1.125,
+          2.58,
+          0.33
+        ],
+        "sourceNodeId": "m11"
+      },
+      {
+        "min": [
+          -1.125,
+          3.36,
+          -0.33
+        ],
+        "max": [
+          1.125,
+          3.52,
+          0.33
+        ],
+        "sourceNodeId": "m12"
+      },
+      {
+        "min": [
+          -1.125,
+          0.54,
+          -0.33
+        ],
+        "max": [
+          1.125,
+          0.7,
+          0.33
+        ],
+        "sourceNodeId": "m9"
+      }
+    ],
+    "sourceMeshCount": 47,
+    "candidateCount": 9,
+    "fallbackUsed": false
+  },
+  "footprintRadius": 1.3,
+  "sizeClass": "medium",
+  "mode": "voxel",
+  "provider": "gpt",
+  "createdAt": 1787875022007,
+  "updatedAt": 1787875022007
+}

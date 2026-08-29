@@ -1,0 +1,552 @@
+{
+  "id": "asset-ab1be31b-e05e-4512",
+  "name": "干蘑菇",
+  "prompt": "一串风干奇幻蘑菇，棕紫色菌盖，细绳捆扎。精致写实的古典奇幻炼金术风格，独立单件，纯物件模型，无桌面、无柜体、无房间、无背景、无大型机器。\nCoordinate contract: local Y+ is up, local Z+ is the front, entrance, or forward direction, and local X+ is right. Put doors, facades, openings, windshields, noses, seats, and other recognizable front details toward local Z+. For a modular repeated element, explicitly choose the long axis: side-by-side modules span local X with depth/front on local Z; traversal modules span local Z. Keep the model centered at its origin.\nCanonical dimensions contract: width=0.36, height=0.22, depth=0.24 world units. Keep the generated mesh within this centered bounding size.",
+  "tags": [
+    "indoor",
+    "alchemy",
+    "material",
+    "handheld"
+  ],
+  "modelJson": {
+    "name": "风干奇幻蘑菇串",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "bundle",
+        "name": "蘑菇束",
+        "transform": {
+          "pos": [
+            -0.004,
+            0.01,
+            0.005
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.37,
+            0.222,
+            0.177
+          ],
+          "center": [
+            0.002,
+            -0.01,
+            0.001
+          ],
+          "axes": [
+            [
+              0.9679,
+              -0.008,
+              0.2511
+            ],
+            [
+              0.0381,
+              0.9926,
+              -0.1152
+            ],
+            [
+              -0.2483,
+              0.121,
+              0.9611
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "bundle",
+        "transform": {
+          "pos": [
+            -0.014,
+            0.069,
+            -0.005
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.008,
+            "height": 0.058,
+            "depth": 0.008
+          },
+          "color": 8413252
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "fabric"
+          }
+        ]
+      },
+      {
+        "id": "m1",
+        "parent": "bundle",
+        "transform": {
+          "pos": [
+            0.022,
+            0.069,
+            -0.005
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.008,
+            "height": 0.058,
+            "depth": 0.008
+          },
+          "color": 8413252
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "fabric"
+          }
+        ]
+      },
+      {
+        "id": "m2",
+        "parent": "bundle",
+        "transform": {
+          "pos": [
+            0.004,
+            0.096,
+            -0.005
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.044,
+            "height": 0.008,
+            "depth": 0.008
+          },
+          "color": 8413252
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "fabric"
+          }
+        ]
+      },
+      {
+        "id": "m3",
+        "parent": "bundle",
+        "transform": {
+          "pos": [
+            0.004,
+            0.037,
+            -0.001
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.122,
+            "height": 0.014,
+            "depth": 0.018
+          },
+          "color": 7622713
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "fabric"
+          }
+        ]
+      },
+      {
+        "id": "m4",
+        "parent": "bundle",
+        "transform": {
+          "pos": [
+            0.06,
+            0.02,
+            0.005
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.016,
+            "height": 0.034,
+            "depth": 0.012
+          },
+          "color": 7622713
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "fabric"
+          }
+        ]
+      },
+      {
+        "id": "m5",
+        "parent": "bundle",
+        "transform": {
+          "pos": [
+            -0.076,
+            -0.01,
+            -0.045
+          ],
+          "quat": [
+            -0.29,
+            0.64,
+            0.64,
+            -0.29
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.12,
+            "height": 0.018,
+            "depth": 0.02
+          },
+          "color": 10122840
+        },
+        "tags": [
+          {
+            "tag": "dirty",
+            "value": 0.25
+          }
+        ]
+      },
+      {
+        "id": "m6",
+        "parent": "bundle",
+        "transform": {
+          "pos": [
+            -0.026,
+            -0.02,
+            0.035
+          ],
+          "quat": [
+            -0.45,
+            0.55,
+            0.55,
+            -0.45
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.11,
+            "height": 0.017,
+            "depth": 0.02
+          },
+          "color": 10122840
+        },
+        "tags": [
+          {
+            "tag": "dirty",
+            "value": 0.25
+          }
+        ]
+      },
+      {
+        "id": "m7",
+        "parent": "bundle",
+        "transform": {
+          "pos": [
+            0.034,
+            -0.01,
+            -0.015
+          ],
+          "quat": [
+            0.57,
+            -0.42,
+            -0.42,
+            0.57
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.09,
+            "height": 0.019,
+            "depth": 0.02
+          },
+          "color": 10122840
+        },
+        "tags": [
+          {
+            "tag": "dirty",
+            "value": 0.25
+          }
+        ]
+      },
+      {
+        "id": "m8",
+        "parent": "bundle",
+        "transform": {
+          "pos": [
+            0.084,
+            -0.01,
+            0.045
+          ],
+          "quat": [
+            0.62,
+            -0.33,
+            -0.33,
+            0.62
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.12,
+            "height": 0.016,
+            "depth": 0.02
+          },
+          "color": 10122840
+        },
+        "tags": [
+          {
+            "tag": "dirty",
+            "value": 0.25
+          }
+        ]
+      },
+      {
+        "id": "m9",
+        "parent": "bundle",
+        "transform": {
+          "pos": [
+            -0.116,
+            -0.073,
+            -0.04
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.105,
+            "height": 0.027,
+            "depth": 0.08
+          },
+          "color": 5650247
+        },
+        "tags": [
+          {
+            "tag": "dirty",
+            "value": 0.25
+          }
+        ]
+      },
+      {
+        "id": "m10",
+        "parent": "bundle",
+        "transform": {
+          "pos": [
+            -0.116,
+            -0.053,
+            -0.04
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.067,
+            "height": 0.018,
+            "depth": 0.058
+          },
+          "color": 7753796
+        }
+      },
+      {
+        "id": "m11",
+        "parent": "bundle",
+        "transform": {
+          "pos": [
+            -0.036,
+            -0.096,
+            0.031
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.102,
+            "height": 0.026,
+            "depth": 0.096
+          },
+          "color": 4927557
+        },
+        "tags": [
+          {
+            "tag": "dirty",
+            "value": 0.25
+          }
+        ]
+      },
+      {
+        "id": "m12",
+        "parent": "bundle",
+        "transform": {
+          "pos": [
+            -0.036,
+            -0.077,
+            0.031
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.064,
+            "height": 0.017,
+            "depth": 0.066
+          },
+          "color": 7358292
+        }
+      },
+      {
+        "id": "m13",
+        "parent": "bundle",
+        "transform": {
+          "pos": [
+            0.049,
+            -0.074,
+            -0.011
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.112,
+            "height": 0.029,
+            "depth": 0.088
+          },
+          "color": 6307919
+        },
+        "tags": [
+          {
+            "tag": "dirty",
+            "value": 0.25
+          }
+        ]
+      },
+      {
+        "id": "m14",
+        "parent": "bundle",
+        "transform": {
+          "pos": [
+            0.049,
+            -0.053,
+            -0.011
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.07,
+            "height": 0.019,
+            "depth": 0.06
+          },
+          "color": 8410953
+        }
+      },
+      {
+        "id": "m15",
+        "parent": "bundle",
+        "transform": {
+          "pos": [
+            0.116,
+            -0.088,
+            0.042
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.11,
+            "height": 0.025,
+            "depth": 0.082
+          },
+          "color": 5058622
+        },
+        "tags": [
+          {
+            "tag": "dirty",
+            "value": 0.25
+          }
+        ]
+      },
+      {
+        "id": "m16",
+        "parent": "bundle",
+        "transform": {
+          "pos": [
+            0.116,
+            -0.069,
+            0.042
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.068,
+            "height": 0.017,
+            "depth": 0.056
+          },
+          "color": 7358270
+        }
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1787876895363,
+        "provider": "gpt",
+        "data": "9VZcM2cijIXLEl0Ui8C126J4ivoIw34f4DHXBxWuiPwIXdZGWK20er1laEATabWPNgE/HlPIQY7ujooQGTHOQwQueo9YtWv3sszIB1MSAGbQjYMUUgqm/8hv6ZbUbHd3jnakyBW8MvTgHTUbNNkYIJ1aX5aEdiOShZz1FZlHrvU9W2dC5pQpVXoEzyn8XwGj14T9XfyMGup1S++Erft21n0ukLjO09nIO08hTjXwCywAvrVf5VNboEnVk9xeseEaFTAGa1nIN7iyaDzq3cDI7tDU/RVE9jP6aF5C1syLzN9UuwvrDkyXkz0sr3cHfwg/9TvtG7deMYOEG+yg2AYxSAhqKvy3JGis77gfO8dLGyEF6hLVoxY6h6BHMPQEc2LU51ltTJ4OJ4din/kx7vMQvKMArdsZR4jl/j220doxmBAacCKs3Upysf2j3WOEywUpM0YnLJuw4w71qyjXVgnUQn89LOOnZCwRm7SuIf0TfGHiI3ZDy7irNshfikEnQU+GM4gR4YzHVs9Lp48UqxZJxwzs5tKGVJy5eOvO32TKT8WEWu295DllzWefZuKGymJuaeged79UF8BwvMpeRm2QJXqdUwvE0V4K/xBvAgMIGd4cnUQ8rInMWNfIvNmsVTRiSS0hVEAD2K+Q6Pebbk9f7uNQOh41UxRU5/ZqpctqIumgCdP0+XcWfMuB955sy/xdQ5yRa3Iju8msm0pgoKzwnWjx+ywm92J2f+qMZuL0xfNPp7p/9KGZv98v751AH+QbR8btV/XuQwfRJIMB6IDUaI3EBv34rEIHRTHUR7IOlfxF9YRngKEbf4PdpdXsVuE69oeK/LeYrSwEi5iIw6CSiUMxF8Cz04GTWlLz0CliBPxgyvrBsHh0hEJMq70+4T6REr9BPzJMbs+yIW4AszkLfqc+zD4ujIVtRysdEjfR9NAqn8dmWhAVJiCL4qcdRDMzH0rBwFsHI18+aod3LSbNznNp5kqhl7CNh4WVSj2ij+7//eu0ipAGPRVoMNaJc0ryoJrsEKJA48GvBbxSV9iGnqHaoX++x8ejLpfmjB5tncjoHqQ91GMwCi9g81x5J31EYTjLopQz9qLmL4ss1AhyY+kk36ov",
+        "edits": ""
+      },
+      "semanticSnapshot": {
+        "v": 1,
+        "auto": true,
+        "text": "风干奇幻蘑菇串 · 1组/17mesh · 世界坐标(Y上Z前), 原点=模型根\n# 阅读说明: G:=group行(可动画骨骼, 动画key用G:后的id; @p=pivot世界坐标; 倾(x,y,z)°=朝向偏离世界轴的欧拉角; 缩进=父子层级; 挂:=挂载于某组; G:id→id→…=chain折叠行, 每个id都是可独立动画的group, chain×N=waypoint数)\n# M:=mesh行(label[id 几何 @(世界坐标)], label可省略; ×N=for循环批量件(锚点=代表实例); cyl (起)→(末)或 轴上(Y)等方位词=延伸方向; 薄向=板面法向(扁板); 挂载组双代表=最大件+最远有向件(刃/嘴/管所在端); 无方向标注=均匀块(三向相近,如头),默认面向前(Z); 对称×2=镜像对)\nG:bundle 蘑菇束 @p(0,0,0)\n  M:[m13 box 0.11×0.03×0.09 (0,-0.1,0) 薄向上(Y)]",
+        "stats": {
+          "groups": 1,
+          "meshes": 17,
+          "labeledMeshes": 0,
+          "labelCoverage": 0,
+          "batchLabels": 0,
+          "autoChains": 0,
+          "snapshotChars": 437
+        }
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -0.16975,
+          0,
+          -0.0815
+        ],
+        "max": [
+          0.16975,
+          0.21000000000000002,
+          0.0815
+        ],
+        "sourceNodeId": "asset-bounds"
+      }
+    ],
+    "sourceMeshCount": 17,
+    "candidateCount": 0,
+    "fallbackUsed": true
+  },
+  "footprintRadius": 0.16975,
+  "sizeClass": "small",
+  "mode": "voxel",
+  "provider": "gpt",
+  "createdAt": 1787876894725,
+  "updatedAt": 1787876894725
+}

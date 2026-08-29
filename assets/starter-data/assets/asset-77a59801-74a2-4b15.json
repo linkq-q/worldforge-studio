@@ -1,0 +1,611 @@
+{
+  "id": "asset-77a59801-74a2-4b15",
+  "name": "摇摇马",
+  "prompt": "单独一个木质儿童摇摇马，弧形底座完整，不包含儿童、其他玩具或场景平台\nCoordinate contract: local Y+ is up, local Z+ is the front, entrance, or forward direction, and local X+ is right. Put doors, facades, openings, windshields, noses, seats, and other recognizable front details toward local Z+. For a modular repeated element, explicitly choose the long axis: side-by-side modules span local X with depth/front on local Z; traversal modules span local Z. Keep the model centered at its origin.\nCanonical dimensions contract: width=1.05, height=0.82, depth=0.42 world units. Keep the generated mesh within this centered bounding size.",
+  "modelJson": {
+    "name": "木质儿童摇摇马",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "rocking_horse",
+        "name": "摇摇马整体",
+        "transform": {
+          "pos": [
+            0,
+            0.06,
+            0
+          ]
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "oak"
+          }
+        ],
+        "_obb": {
+          "size": [
+            1.052,
+            0.864,
+            0.483
+          ],
+          "center": [
+            0.019,
+            0.352,
+            0.033
+          ],
+          "axes": [
+            [
+              0.9979,
+              0.0629,
+              0.0179
+            ],
+            [
+              -0.0653,
+              0.972,
+              0.2259
+            ],
+            [
+              -0.0032,
+              -0.2266,
+              0.974
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "rocking_horse",
+        "transform": {
+          "pos": [
+            -0.34,
+            0,
+            -0.13
+          ],
+          "quat": [
+            0.15,
+            0,
+            0,
+            0.99
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.1,
+            "height": 0.04,
+            "depth": 0.13
+          },
+          "color": 7356447
+        }
+      },
+      {
+        "id": "m1",
+        "parent": "rocking_horse",
+        "transform": {
+          "pos": [
+            -0.34,
+            -0.025,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.1,
+            "height": 0.04,
+            "depth": 0.13
+          },
+          "color": 7356447
+        }
+      },
+      {
+        "id": "m2",
+        "parent": "rocking_horse",
+        "transform": {
+          "pos": [
+            -0.34,
+            0,
+            0.13
+          ],
+          "quat": [
+            -0.15,
+            0,
+            0,
+            0.99
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.1,
+            "height": 0.04,
+            "depth": 0.13
+          },
+          "color": 7356447
+        }
+      },
+      {
+        "id": "m3",
+        "parent": "rocking_horse",
+        "transform": {
+          "pos": [
+            0.34,
+            0,
+            -0.13
+          ],
+          "quat": [
+            0.15,
+            0,
+            0,
+            0.99
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.1,
+            "height": 0.04,
+            "depth": 0.13
+          },
+          "color": 7356447
+        }
+      },
+      {
+        "id": "m4",
+        "parent": "rocking_horse",
+        "transform": {
+          "pos": [
+            0.34,
+            -0.025,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.1,
+            "height": 0.04,
+            "depth": 0.13
+          },
+          "color": 7356447
+        }
+      },
+      {
+        "id": "m5",
+        "parent": "rocking_horse",
+        "transform": {
+          "pos": [
+            0.34,
+            0,
+            0.13
+          ],
+          "quat": [
+            -0.15,
+            0,
+            0,
+            0.99
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.1,
+            "height": 0.04,
+            "depth": 0.13
+          },
+          "color": 7356447
+        }
+      },
+      {
+        "id": "m6",
+        "parent": "rocking_horse",
+        "transform": {
+          "pos": [
+            0,
+            0.07,
+            -0.02
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.78,
+            "height": 0.07,
+            "depth": 0.12
+          },
+          "color": 12089661
+        }
+      },
+      {
+        "id": "m7",
+        "parent": "rocking_horse",
+        "transform": {
+          "pos": [
+            -0.25,
+            0.21,
+            -0.06
+          ],
+          "quat": [
+            -0.66,
+            0,
+            0,
+            0.75
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.09,
+            "height": 0.08,
+            "depth": 0.25
+          },
+          "color": 12089661
+        }
+      },
+      {
+        "id": "m8",
+        "parent": "rocking_horse",
+        "transform": {
+          "pos": [
+            -0.25,
+            0.21,
+            0.06
+          ],
+          "quat": [
+            -0.75,
+            0,
+            0,
+            0.66
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.09,
+            "height": 0.08,
+            "depth": 0.25
+          },
+          "color": 12089661
+        }
+      },
+      {
+        "id": "m9",
+        "parent": "rocking_horse",
+        "transform": {
+          "pos": [
+            0.25,
+            0.21,
+            -0.06
+          ],
+          "quat": [
+            -0.66,
+            0,
+            0,
+            0.75
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.09,
+            "height": 0.08,
+            "depth": 0.25
+          },
+          "color": 12089661
+        }
+      },
+      {
+        "id": "m10",
+        "parent": "rocking_horse",
+        "transform": {
+          "pos": [
+            0.25,
+            0.21,
+            0.06
+          ],
+          "quat": [
+            -0.75,
+            0,
+            0,
+            0.66
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.09,
+            "height": 0.08,
+            "depth": 0.25
+          },
+          "color": 12089661
+        }
+      },
+      {
+        "id": "m11",
+        "parent": "rocking_horse",
+        "transform": {
+          "pos": [
+            0,
+            0.39,
+            -0.015
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.62,
+            "height": 0.24,
+            "depth": 0.25
+          },
+          "color": 13998677
+        }
+      },
+      {
+        "id": "m12",
+        "parent": "rocking_horse",
+        "transform": {
+          "pos": [
+            -0.04,
+            0.535,
+            -0.025
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.48,
+            "height": 0.055,
+            "depth": 0.28
+          },
+          "color": 7356447
+        }
+      },
+      {
+        "id": "m13",
+        "parent": "rocking_horse",
+        "transform": {
+          "pos": [
+            0,
+            0.53,
+            0.09
+          ],
+          "quat": [
+            -0.59,
+            0,
+            0,
+            0.81
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.22,
+            "height": 0.15,
+            "depth": 0.23
+          },
+          "color": 12089661
+        }
+      },
+      {
+        "id": "m14",
+        "parent": "rocking_horse",
+        "transform": {
+          "pos": [
+            0,
+            0.62,
+            0.14
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.28,
+            "height": 0.22,
+            "depth": 0.1
+          },
+          "color": 13998677
+        }
+      },
+      {
+        "id": "m15",
+        "parent": "rocking_horse",
+        "transform": {
+          "pos": [
+            0,
+            0.565,
+            0.18
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.24,
+            "height": 0.11,
+            "depth": 0.06
+          },
+          "color": 12089661
+        }
+      },
+      {
+        "id": "m16",
+        "parent": "rocking_horse",
+        "transform": {
+          "pos": [
+            -0.075,
+            0.695,
+            0.125
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.07,
+            "height": 0.13,
+            "depth": 0.055
+          },
+          "color": 7356447
+        }
+      },
+      {
+        "id": "m17",
+        "parent": "rocking_horse",
+        "transform": {
+          "pos": [
+            0.075,
+            0.695,
+            0.125
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.07,
+            "height": 0.13,
+            "depth": 0.055
+          },
+          "color": 7356447
+        }
+      },
+      {
+        "id": "m18",
+        "parent": "rocking_horse",
+        "transform": {
+          "pos": [
+            0,
+            0.63,
+            0.095
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.05,
+            "height": 0.055,
+            "depth": 0.055
+          },
+          "color": 7356447
+        }
+      },
+      {
+        "id": "m19",
+        "parent": "rocking_horse",
+        "transform": {
+          "pos": [
+            -0.075,
+            0.645,
+            0.201
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.035,
+            "height": 0.035,
+            "depth": 0.018
+          },
+          "color": 2430735
+        }
+      },
+      {
+        "id": "m20",
+        "parent": "rocking_horse",
+        "transform": {
+          "pos": [
+            0.075,
+            0.645,
+            0.201
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.035,
+            "height": 0.035,
+            "depth": 0.018
+          },
+          "color": 2430735
+        }
+      },
+      {
+        "id": "m21",
+        "parent": "rocking_horse",
+        "transform": {
+          "pos": [
+            0,
+            0.4,
+            -0.15
+          ],
+          "quat": [
+            0.94,
+            0,
+            0,
+            0.33
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.5,
+            "height": 0.055,
+            "depth": 0.1
+          },
+          "color": 7356447
+        }
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1787766630400,
+        "provider": "gpt",
+        "data": "S0O7SZd+GX0v/U5OdRqOgeT7oBiBqe7gap1WGw5qg2sINSZWl6g2Lk+5af4oPj0lwzmIfFyFvRpHkhMwIaM+pyrLNpyBruXr0oL0UaKef6YezIXfpvfTB0biGMt91soRHTRPdWWrhi9ykxnE7LZxicFBCqqPxrkg8NJ3H5SGDcBszt3KiyAWTNU01V1DKdtWhUe+wreVMTJ+dF225ArCcXwbfYE8CjWzlpB/7nZxxpTh5NtaGqb36/x/7LvD0+0djZ64aqGzFDu8o6hDloMLwk1//WIu57rAW38XPEDJYTR4ovPl8wL3+WbPmgCJGCn4c+eKZpQgIocpEacrE9LIDaP0OnpwyFSV2E6uNRxQy8cWt6EhpzVQO2RQgoc6FkosyscmbQbjtj7BreFpJlgF1aZ8bEMLATkP2ELO8FtvFmMPzN2pofaJSj1WKqswn7LMmeinVCO4bFsUJH3qGwCnuUqrzwHZR+7X+nmwVJYoL9ZTVwRY+if+8JqEjSCFKn5Q9r72wdEE1v3TmGhJwMXeTgHycOijFZPU+DQB1XiVGME2lbcxnwuxzsFznIZR3v4p1mKpPeLfJ50dGBbmpNnHHo7E5ItlOnAZJRC8l+HHEs56zx0vtqKz4zX/B5sLMQpY3nlG0dNsexoK/Ww8ikOAjSizwSIfvTmls17R/als+CHwkCKUNrRwu4wJoXQem2dT5mzE4F6c24oeZIBHSjE5FDNxfgUZ6rGS0rGdE/dQLIHK1mGkHDGTdrJCvgX7BwhG0kkDgnJWqy3J4UMjXvwZ64III8rtM8ou2CnV0lAjAe3N3dYe5mtIjlgrRC9wSGF4kxdviST6VDdVv+6+eP6S4CfJS+l2E9QJVGvYYbO2Uhxp6os/0LhLVeg7ARom203y4sz9EmpOkuTuajZz11Z2I0/CSdkBxPW2LZeluZ6MXBfsnqGA6qGpGCsYTF1n2qk37aClR5m9dfjaf2/OpOQi9AEWvJwaQ46xq0/WbBK7Np2MWzcbGEvbiLPtO3bUbVx0NQ2fYhO6t+rfhUHON0iwUa2dPRqb83BAMB30TCH3b0PxWplkzmx2QlyLsjBMG92kyX2wGAXc0RxmSFk=",
+        "edits": ""
+      },
+      "semanticSnapshot": {
+        "v": 1,
+        "auto": true,
+        "text": "木质儿童摇摇马 · 1组/22mesh · 世界坐标(Y上Z前), 原点=模型根\n# 阅读说明: G:=group行(可动画骨骼, 动画key用G:后的id; @p=pivot世界坐标; 倾(x,y,z)°=朝向偏离世界轴的欧拉角; 缩进=父子层级; 挂:=挂载于某组; G:id→id→…=chain折叠行, 每个id都是可独立动画的group, chain×N=waypoint数)\n# M:=mesh行(label[id 几何 @(世界坐标)], label可省略; ×N=for循环批量件(锚点=代表实例); cyl (起)→(末)或 轴上(Y)等方位词=延伸方向; 薄向=板面法向(扁板); 挂载组双代表=最大件+朝向件(嘴/管/檐所在); 无方向标注=均匀块(三向相近,如头),默认面向前(Z); 对称×2=镜像对)\nG:rocking_horse 摇摇马整体 @p(0,0.1,0)\n  M:[m11 box 0.62×0.24×0.25 (0,0.5,0) 轴右(X)]",
+        "stats": {
+          "groups": 1,
+          "meshes": 22,
+          "labeledMeshes": 0,
+          "labelCoverage": 0,
+          "batchLabels": 0,
+          "autoChains": 0,
+          "snapshotChars": 443
+        }
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -0.525,
+          0,
+          -0.2081088161209068
+        ],
+        "max": [
+          0.525,
+          0.8049999999999998,
+          0.2081088161209068
+        ],
+        "sourceNodeId": "asset-bounds"
+      }
+    ],
+    "sourceMeshCount": 22,
+    "candidateCount": 0,
+    "fallbackUsed": true
+  },
+  "footprintRadius": 0.525,
+  "sizeClass": "small",
+  "mode": "voxel",
+  "provider": "gpt",
+  "createdAt": 1787766638949,
+  "updatedAt": 1787766638949
+}

@@ -1,0 +1,358 @@
+{
+  "id": "asset-58a55d51-8f6a-43b8",
+  "name": "红笔",
+  "prompt": "红笔",
+  "modelJson": {
+    "name": "红笔",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "body",
+        "name": "笔身",
+        "transform": {
+          "pos": [
+            0,
+            0.36,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            1.525,
+            1.111,
+            5.408
+          ],
+          "center": [
+            0.007,
+            -0.01,
+            -0.313
+          ],
+          "axes": [
+            [
+              0.8676,
+              0.4973,
+              0.0069
+            ],
+            [
+              -0.4973,
+              0.8676,
+              -0.0003
+            ],
+            [
+              -0.0061,
+              -0.0032,
+              1
+            ]
+          ],
+          "_mainAxis": 2
+        }
+      },
+      {
+        "id": "mount01_cap",
+        "name": "笔帽",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            -1.7
+          ]
+        },
+        "mounted": true,
+        "_obb": {
+          "size": [
+            1.115,
+            0.924,
+            1.342
+          ],
+          "center": [
+            0.018,
+            -0.004,
+            -0.489
+          ],
+          "axes": [
+            [
+              0.7733,
+              0.579,
+              -0.2584
+            ],
+            [
+              -0.5813,
+              0.8101,
+              0.0757
+            ],
+            [
+              0.2532,
+              0.0916,
+              0.9631
+            ]
+          ],
+          "_mainAxis": 2
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.46,
+            "height": 0.46,
+            "depth": 3.4
+          },
+          "color": 14230821
+        }
+      },
+      {
+        "id": "m1",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            1.62
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.48,
+            "height": 0.48,
+            "depth": 0.16
+          },
+          "color": 15915205
+        }
+      },
+      {
+        "id": "m2",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            1.91
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.32,
+            "height": 0.32,
+            "depth": 0.42
+          },
+          "color": 12983581
+        }
+      },
+      {
+        "id": "m3",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            2.25
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.14,
+            "height": 0.14,
+            "depth": 0.28
+          },
+          "color": 3487029
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m4",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            -1.62
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.5,
+            "height": 0.5,
+            "depth": 0.1
+          },
+          "color": 9375760
+        }
+      },
+      {
+        "id": "m5",
+        "parent": "mount01_cap",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            -0.42
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.58,
+            "height": 0.58,
+            "depth": 1.05
+          },
+          "color": 14756394
+        }
+      },
+      {
+        "id": "m6",
+        "parent": "mount01_cap",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            -1
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.62,
+            "height": 0.62,
+            "depth": 0.14
+          },
+          "color": 11014160
+        }
+      },
+      {
+        "id": "m7",
+        "parent": "mount01_cap",
+        "transform": {
+          "pos": [
+            0.35,
+            0.22,
+            -0.38
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.12,
+            "height": 0.12,
+            "depth": 0.82
+          },
+          "color": 10358800
+        }
+      },
+      {
+        "id": "m8",
+        "parent": "mount01_cap",
+        "transform": {
+          "pos": [
+            0.35,
+            0.1,
+            0.02
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.12,
+            "height": 0.32,
+            "depth": 0.12
+          },
+          "color": 10358800
+        }
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1787825240628,
+        "provider": "glm",
+        "data": "4J64h9vD4JLBJxYVa4JDWuHP9GgQIS7hl+RyWebEPwgwKmJk6oZ4+31U8DJCstGXe4jTiKIxzjFUgv6wAxmFsOVL4dSlJ3Q8N6PiLz4xlt6denVR5hAN5p/ke4fMI0p2yqMOl8yArJCYgur2/ycGFgAMkwSKXRCBgLqJ4bnnUcTKHE/b6yjeu83fRUbOchJLmLxWsvGCaBisJ+hDJlyoP8kH9wFzFXB5jy7dkhHNFHYHHiJK9zhJyOnPLP2FMnPY9kNEQbKQHtTJPZlI3zY9OT3Gs+vjZtkg/KqOY5ptTKwSwhiob1gt90Ldr8kcjYY+aBsLR3P/rKR9IpjY0AIFmqQIBjMNrAOXP4DQ88elk1qfdRRUbTHjVuYATjfyjK6R74TjgGFisxfsnK31KfWdX5u/fgIjxxQ6K0uoLYcNGBrVBDwgC1tJPPAovDIZdaGGKbwnFTsV35IXi8rKYwL12pMXqA//ZNXqrAat3S73VxTeAMdgPSUULDRs5gne5ve7kwmjWhLkqLFG0U2MsY4XzW+hes2zbY6ihHwuByxtHuOTLfNcVOyyhNv7ZrLNk6NUFH35v5sLJwK7qUODhuYxzOUhP8unuQHjFiHvicY0M21iDaMUQL0UAsLZPZR43SqtQcDuYAO5b4lX/UCANLqQOYNgcqvNK9R9l3NW/UEASzkGc6xx87hQxkLkrDXC8BRJmYdItg==",
+        "edits": ""
+      },
+      "mounts": [
+        {
+          "id": "mount01_cap",
+          "mountedGroupId": "mount01_cap",
+          "name": "笔帽",
+          "source": {
+            "type": "codegen"
+          },
+          "description": "",
+          "visible": true,
+          "ts": 1787825240629
+        }
+      ],
+      "semanticSnapshot": {
+        "v": 1,
+        "auto": true,
+        "text": "红笔 · 2组/9mesh · 世界坐标(Y上Z前), 原点=模型根\n# 阅读说明: G:=group行(可动画骨骼, 动画key用G:后的id; @p=pivot世界坐标; 倾(x,y,z)°=朝向偏离世界轴的欧拉角; 缩进=父子层级; 挂:=挂载于某组; G:id→id→…=chain折叠行, 每个id都是可独立动画的group, chain×N=waypoint数)\n# M:=mesh行(label[id 几何 @(世界坐标)], label可省略; ×N=for循环批量件(锚点=代表实例); cyl (起)→(末)或 轴上(Y)等方位词=延伸方向; 薄向=板面法向(扁板); 挂载组双代表=最大件+最远有向件(刃/嘴/管所在端); 无方向标注=均匀块(三向相近,如头),默认面向前(Z); 对称×2=镜像对)\nG:body 笔身 @p(0,0.4,0)\n  M:[m0 box 0.46×0.46×3.4 (0,0.4,0) 轴前(Z)]\n  G:mount01_cap 笔帽 @p(0,0.4,-1.7) 挂:body\n    M:[m5 box 0.58×0.58×1.1 (0,0.4,-2.1) 轴前(Z)] | M:[m6 box 0.62×0.62×0.14 (0,0.4,-2.7) 薄向前(Z)]",
+        "stats": {
+          "groups": 2,
+          "meshes": 9,
+          "labeledMeshes": 0,
+          "labelCoverage": 0,
+          "batchLabels": 0,
+          "autoChains": 0,
+          "snapshotChars": 563
+        }
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -0.28,
+          0.07999999999999999,
+          -1.51
+        ],
+        "max": [
+          0.18000000000000002,
+          0.54,
+          1.89
+        ],
+        "sourceNodeId": "m0"
+      },
+      {
+        "min": [
+          -0.33999999999999997,
+          0.020000000000000018,
+          -2.455
+        ],
+        "max": [
+          0.24,
+          0.5999999999999999,
+          -1.4050000000000002
+        ],
+        "sourceNodeId": "m5"
+      }
+    ],
+    "sourceMeshCount": 9,
+    "candidateCount": 2,
+    "fallbackUsed": false
+  },
+  "footprintRadius": 2.455,
+  "sizeClass": "medium",
+  "mode": "voxel",
+  "createdAt": 1787825241815,
+  "updatedAt": 1787825241815
+}

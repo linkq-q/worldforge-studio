@@ -1,0 +1,361 @@
+{
+  "id": "asset-eab66420-fa16-46b0",
+  "name": "国际象棋棋子，米色",
+  "prompt": "国际象棋棋子，米色",
+  "modelJson": {
+    "name": "米色国际象棋国王",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "piece",
+        "name": "国王棋子",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            1.5,
+            3.81,
+            1.5
+          ],
+          "center": [
+            0,
+            1.905,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "piece",
+        "transform": {
+          "pos": [
+            0,
+            0.11,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.5,
+            "height": 0.22,
+            "depth": 1.5
+          },
+          "color": 12363132
+        }
+      },
+      {
+        "id": "m1",
+        "parent": "piece",
+        "transform": {
+          "pos": [
+            0,
+            0.33,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.25,
+            "height": 0.22,
+            "depth": 1.25
+          },
+          "color": 14205850
+        }
+      },
+      {
+        "id": "m2",
+        "parent": "piece",
+        "transform": {
+          "pos": [
+            0,
+            0.55,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.95,
+            "height": 0.22,
+            "depth": 0.95
+          },
+          "color": 15127725
+        }
+      },
+      {
+        "id": "m3",
+        "parent": "piece",
+        "transform": {
+          "pos": [
+            0,
+            1.35,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.72,
+            "height": 1.45,
+            "depth": 0.72
+          },
+          "color": 14205850
+        }
+      },
+      {
+        "id": "m4",
+        "parent": "piece",
+        "transform": {
+          "pos": [
+            0,
+            2.16,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.9,
+            "height": 0.28,
+            "depth": 0.9
+          },
+          "color": 15127725
+        }
+      },
+      {
+        "id": "m5",
+        "parent": "piece",
+        "transform": {
+          "pos": [
+            0,
+            2.41,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.08,
+            "height": 0.22,
+            "depth": 1.08
+          },
+          "color": 12363132
+        }
+      },
+      {
+        "id": "m6",
+        "parent": "piece",
+        "transform": {
+          "pos": [
+            0,
+            2.73,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.72,
+            "height": 0.42,
+            "depth": 0.72
+          },
+          "color": 14205850
+        }
+      },
+      {
+        "id": "m7",
+        "parent": "piece",
+        "transform": {
+          "pos": [
+            0,
+            3.36,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.26,
+            "height": 0.9,
+            "depth": 0.26
+          },
+          "color": 15127725
+        }
+      },
+      {
+        "id": "m8",
+        "parent": "piece",
+        "transform": {
+          "pos": [
+            0,
+            3.48,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.78,
+            "height": 0.25,
+            "depth": 0.26
+          },
+          "color": 15127725
+        }
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1787825511129,
+        "provider": "glm",
+        "data": "eaIpTjwgdokClU6n5c48l/NsQIwrr5aqrtYe9uelc4u72nky9Qm/SMfz4KIsEL7KGM2JB0Vbu++eh2WScFpt8PzSubbjmIrkCl7JYHXdXhY4HzyhU2El+annYy3ubtjaP4fvGq1Z+uEj8WrBRrHfR3Opv43LLM/auvc0xi6RqiO1B1+mtWPBTcZO6+5PSIilBxLP/fbcob98XWKcw/NgF9oGytdJd93zK8UjnnomcF90CNq6QBKBK8o8FDTAr4ptsDPlRb/XJZZ4zIFj124HKONd1JuhxQ8nkuWfFsvXeXsClVEUnHVIogU3fxopwyy5fZNKZz2DIC/N2TScIzVkO1DXtRYQ1kOi/ujpxeZtCxsc40jXcFukteqannMg0568lF2W486gzo9Vsdcka+X7LyGwvFyL+ZN3t6m90+QQTITgSG9MwQwPuWhT0RXc9JKbsJCoNuHPZHY//KMyF00HHt2rDoSjbXIBhL/PM4vo/rG0tsK2n4rHpWRThiMZDoqeGqBxnZBalLBFq+XAUwbreN214xrIkteDR5IEQCKjNxgn8er0530SjX0WbcS7n+fH3UVga5ufmdy5mxYPO3Ec7uVzcFH/wErbSr9Ca2j1vQvL0v05",
+        "edits": ""
+      },
+      "semanticSnapshot": {
+        "v": 1,
+        "auto": true,
+        "text": "米色国际象棋国王 · 1组/9mesh · 世界坐标(Y上Z前), 原点=模型根\n# 阅读说明: G:=group行(可动画骨骼, 动画key用G:后的id; @p=pivot世界坐标; 倾(x,y,z)°=朝向偏离世界轴的欧拉角; 缩进=父子层级; 挂:=挂载于某组; G:id→id→…=chain折叠行, 每个id都是可独立动画的group, chain×N=waypoint数)\n# M:=mesh行(label[id 几何 @(世界坐标)], label可省略; ×N=for循环批量件(锚点=代表实例); cyl (起)→(末)或 轴上(Y)等方位词=延伸方向; 薄向=板面法向(扁板); 挂载组双代表=最大件+最远有向件(刃/嘴/管所在端); 无方向标注=均匀块(三向相近,如头),默认面向前(Z); 对称×2=镜像对)\nG:piece 国王棋子 @p(0,0,0)\n  M:[m3 box 0.72×1.5×0.72 (0,1.4,0) 轴上(Y)]",
+        "stats": {
+          "groups": 1,
+          "meshes": 9,
+          "labeledMeshes": 0,
+          "labelCoverage": 0,
+          "batchLabels": 0,
+          "autoChains": 0,
+          "snapshotChars": 433
+        }
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -0.36,
+          0.6250000000000001,
+          -0.36
+        ],
+        "max": [
+          0.36,
+          2.075,
+          0.36
+        ],
+        "sourceNodeId": "m3"
+      },
+      {
+        "min": [
+          -0.75,
+          0,
+          -0.75
+        ],
+        "max": [
+          0.75,
+          0.22,
+          0.75
+        ],
+        "sourceNodeId": "m0"
+      },
+      {
+        "min": [
+          -0.625,
+          0.22000000000000003,
+          -0.625
+        ],
+        "max": [
+          0.625,
+          0.44,
+          0.625
+        ],
+        "sourceNodeId": "m1"
+      },
+      {
+        "min": [
+          -0.54,
+          2.3000000000000003,
+          -0.54
+        ],
+        "max": [
+          0.54,
+          2.52,
+          0.54
+        ],
+        "sourceNodeId": "m5"
+      },
+      {
+        "min": [
+          -0.45,
+          2.02,
+          -0.45
+        ],
+        "max": [
+          0.45,
+          2.3000000000000003,
+          0.45
+        ],
+        "sourceNodeId": "m4"
+      },
+      {
+        "min": [
+          -0.36,
+          2.52,
+          -0.36
+        ],
+        "max": [
+          0.36,
+          2.94,
+          0.36
+        ],
+        "sourceNodeId": "m6"
+      },
+      {
+        "min": [
+          -0.475,
+          0.44000000000000006,
+          -0.475
+        ],
+        "max": [
+          0.475,
+          0.66,
+          0.475
+        ],
+        "sourceNodeId": "m2"
+      }
+    ],
+    "sourceMeshCount": 9,
+    "candidateCount": 7,
+    "fallbackUsed": false
+  },
+  "footprintRadius": 0.75,
+  "sizeClass": "small",
+  "mode": "voxel",
+  "createdAt": 1787825512600,
+  "updatedAt": 1787825512600
+}

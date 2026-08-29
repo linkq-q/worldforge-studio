@@ -1,0 +1,717 @@
+{
+  "id": "asset-1cadc4fa-66e8-45f7",
+  "name": "望远镜",
+  "prompt": "望远镜",
+  "modelJson": {
+    "name": "三脚架望远镜",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "tripod",
+        "name": "三脚架",
+        "transform": {
+          "pos": [
+            0.005,
+            1.175,
+            0.135
+          ]
+        },
+        "_obb": {
+          "size": [
+            1.979,
+            2.836,
+            3.189
+          ],
+          "center": [
+            0.078,
+            0.134,
+            0.142
+          ],
+          "axes": [
+            [
+              0.9953,
+              -0.0892,
+              0.0373
+            ],
+            [
+              0.0956,
+              0.9652,
+              -0.2435
+            ],
+            [
+              -0.0143,
+              0.2459,
+              0.9692
+            ]
+          ],
+          "_mainAxis": 2
+        }
+      },
+      {
+        "id": "azimuth",
+        "name": "水平转台",
+        "parent": "tripod",
+        "transform": {
+          "pos": [
+            -0.005,
+            0.705,
+            -0.135
+          ]
+        },
+        "_obb": {
+          "size": [
+            1.172,
+            1.003,
+            3.107
+          ],
+          "center": [
+            0,
+            0.204,
+            0.098
+          ],
+          "axes": [
+            [
+              0.9995,
+              0.0293,
+              0.0118
+            ],
+            [
+              -0.0263,
+              0.9784,
+              -0.205
+            ],
+            [
+              -0.0176,
+              0.2046,
+              0.9787
+            ]
+          ],
+          "_mainAxis": 2
+        }
+      },
+      {
+        "id": "elevation",
+        "name": "俯仰支架",
+        "parent": "azimuth",
+        "transform": {
+          "pos": [
+            0,
+            0.27,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            1.163,
+            0.738,
+            3.051
+          ],
+          "center": [
+            -0.004,
+            0.062,
+            0.099
+          ],
+          "axes": [
+            [
+              0.9991,
+              0.0406,
+              0.0093
+            ],
+            [
+              -0.0379,
+              0.9781,
+              -0.2046
+            ],
+            [
+              -0.0174,
+              0.204,
+              0.9788
+            ]
+          ],
+          "_mainAxis": 2
+        }
+      },
+      {
+        "id": "mount01_telescope",
+        "name": "光学望远镜",
+        "parent": "elevation",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ],
+        "mounted": true,
+        "_obb": {
+          "size": [
+            1.027,
+            0.608,
+            3.047
+          ],
+          "center": [
+            0.051,
+            0.118,
+            0.088
+          ],
+          "axes": [
+            [
+              0.9993,
+              0.0367,
+              0.011
+            ],
+            [
+              -0.0338,
+              0.9793,
+              -0.1997
+            ],
+            [
+              -0.0181,
+              0.1991,
+              0.9798
+            ]
+          ],
+          "_mainAxis": 2
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "tripod",
+        "transform": {
+          "pos": [
+            -0.005,
+            0.175,
+            -0.135
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.75,
+            "height": 0.22,
+            "depth": 0.75
+          },
+          "color": 4936536
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m1",
+        "parent": "tripod",
+        "transform": {
+          "pos": [
+            -0.005,
+            -0.495,
+            0.395
+          ],
+          "quat": [
+            0,
+            -0.41,
+            0.91,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.18,
+            "height": 0.14,
+            "depth": 1.59
+          },
+          "color": 5594466
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m2",
+        "parent": "tripod",
+        "transform": {
+          "pos": [
+            -0.455,
+            -0.495,
+            -0.395
+          ],
+          "quat": [
+            0.79,
+            0.21,
+            -0.45,
+            0.36
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.18,
+            "height": 0.14,
+            "depth": 1.6
+          },
+          "color": 5594466
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m3",
+        "parent": "tripod",
+        "transform": {
+          "pos": [
+            0.455,
+            -0.495,
+            -0.395
+          ],
+          "quat": [
+            0.79,
+            -0.21,
+            0.45,
+            0.36
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.18,
+            "height": 0.14,
+            "depth": 1.6
+          },
+          "color": 5594466
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m4",
+        "parent": "tripod",
+        "transform": {
+          "pos": [
+            -0.005,
+            0.495,
+            -0.135
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.28,
+            "height": 0.55,
+            "depth": 0.28
+          },
+          "color": 3357248
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m5",
+        "parent": "azimuth",
+        "transform": {
+          "pos": [
+            0,
+            0.04,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.85,
+            "height": 0.18,
+            "depth": 0.55
+          },
+          "color": 3423040
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m6",
+        "parent": "elevation",
+        "transform": {
+          "pos": [
+            -0.48,
+            -0.02,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.18,
+            "height": 0.55,
+            "depth": 0.18
+          },
+          "color": 4541778
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m7",
+        "parent": "elevation",
+        "transform": {
+          "pos": [
+            0.48,
+            -0.02,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.18,
+            "height": 0.55,
+            "depth": 0.18
+          },
+          "color": 4541778
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m8",
+        "parent": "mount01_telescope",
+        "transform": {
+          "pos": [
+            0,
+            0.12,
+            0.15
+          ],
+          "quat": [
+            -0.1,
+            0,
+            0,
+            0.99
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.68,
+            "height": 0.46,
+            "depth": 2.45
+          },
+          "color": 4744562
+        }
+      },
+      {
+        "id": "m9",
+        "parent": "mount01_telescope",
+        "transform": {
+          "pos": [
+            0,
+            -0.08,
+            -0.82
+          ],
+          "quat": [
+            -0.1,
+            0,
+            0,
+            0.99
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.86,
+            "height": 0.55,
+            "depth": 0.63
+          },
+          "color": 2436144
+        }
+      },
+      {
+        "id": "m10",
+        "parent": "mount01_telescope",
+        "transform": {
+          "pos": [
+            0,
+            0.33,
+            1.13
+          ],
+          "quat": [
+            -0.1,
+            0,
+            0,
+            0.99
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.86,
+            "height": 0.56,
+            "depth": 0.83
+          },
+          "color": 2436144
+        }
+      },
+      {
+        "id": "m11",
+        "parent": "mount01_telescope",
+        "transform": {
+          "pos": [
+            0,
+            0.41,
+            1.53
+          ],
+          "quat": [
+            -0.78,
+            0,
+            0,
+            0.63
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.68,
+            "height": 0.08,
+            "depth": 0.58
+          },
+          "color": 4892104
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass",
+            "variant": "blue"
+          }
+        ]
+      },
+      {
+        "id": "m12",
+        "parent": "mount01_telescope",
+        "transform": {
+          "pos": [
+            0,
+            -0.15,
+            -1.25
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.34,
+            "height": 0.3,
+            "depth": 0.26
+          },
+          "color": 1514528
+        }
+      },
+      {
+        "id": "m13",
+        "parent": "mount01_telescope",
+        "transform": {
+          "pos": [
+            0.47,
+            0.1,
+            -0.18
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.18,
+            "height": 0.42,
+            "depth": 0.18
+          },
+          "color": 2435887
+        }
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1787829101415,
+        "provider": "glm",
+        "data": "CaPrX5VatUWLNR0+BDtTBYQTzq0QMljFSgd13uxaP5lgp8NcBEix2jfxhhGd5Tl7q1NSyCuxiZikwLcvnG2BedBz+hyRVJlLAyUvZN8aLr6Loe11NU1Kr2Z3NHSH6LoQBPn9fMVM9KaIK8zCc46tRwEpTvvIwzWwGK/2UiSggpGHl51M2fzoZPLin4c3tAqTQlLiOZ+HlIk3qf6OcaWuyCXVk35XKomeQg3hxYoEjPYsz1i2FNg4IjJiKWFCQbOs6rRPGJMfecOMmkI4nDuUTarkRqsusKBuw1BgOX9UhXXB8lKNJzYRFfc7fk7tHMN7wJryUFmz2Y3guSh+qWWi3feqFxYqrf4DIW0e/ggNnMCQ4fD+/vuXdmJn1tct74cSEYJsym0DNALAlDCnniBBB5mo7bSWVqin1cXRqiiqtfDp+krCKnHjjlNn++L2orNgIeMnAyoWpVExheKdMPwr0YnHKLfxuE1LYscMbh8ECpCEhCuPU9kIeSTGcn0FjoKeC0m2ejweJPRX6tnwKaQo3yNLrjWSdctda6Nk4vGdfYakSLDgkSxVOZGmcHb0kmy0B4NjF5EY4k8DiTt+Dkobz1kRMx3TL8Zawa5OH8O4HCPZBSjwkizNkA/DGAvMmQP/0F2GFBQJXEiHPeRg8tZPWb7Iwbb/KMGWJ74dtyDdXMH6RsUUmbS8xJmko0X9FmdlFXX/SmMheLXP6WTXfXp96/cz7MVEVYbLONg4i0FBa16QvxzkNpqDZdx6qjS/RA6DSzisnch/oRg9xSqiXFQAiAhvA9YOif8VZjchJPEUOGx4+fJLolBZEnsg5dgvMrcE1mo6tnHkyqmDHYaOgFXFAQHXIIRNyKSNI04VUh5+S3kkJ5vCYxnwXv1nv6NRs0jg8eTAmr46IxeZvWmM/qw/80xUBfiir/kJgWeAiQxt8QZnleN0O7qW5qme6fDt433/77C7jnHIZ44UydZggVl8G3hQj8avDbbP8e98txfxhlAbs8kN9aLd5sezCgLQjtDWJpjmRxQM8Wo49FqNDcR2E7xu5f9wADlXHUygsYY4oDtg5OkMinAr5t3LWbkXhqlJasJVg9Ge1yo8pX6gUuwvYlpy4gP0XQ/3RjTqYTU/OzNibm34XcNMts17cCx8HHvsesN0ZGdAQNi2lecE5A74unmZFQLv1u8gHHlNoHUI8rW2vi9JAkyO43ZNa/YMJWUghwrTKFfxw1F18a5tWi5SDJyg6QWOBJWkB56rA2LTf2lYyBB/y7ZbLBCw1Rsi4hZ9vGkao7Lzl6jNb39dPs3Ly6s4GoltRSngk3FF0ZS37dNOfAdIR+3SPZ4cvdH+PIovEB7hI1IS3SXxIp/dNwOSmXzoyWtDA9j1fsu02Rf+OIVZxv2hyHEOgxXUv/uW2IAUT6JDvwYSyaZhIw==",
+        "edits": ""
+      },
+      "mounts": [
+        {
+          "id": "mount01_telescope",
+          "mountedGroupId": "mount01_telescope",
+          "name": "光学望远镜",
+          "source": {
+            "type": "codegen"
+          },
+          "description": "",
+          "visible": true,
+          "ts": 1787829101415
+        }
+      ],
+      "semanticSnapshot": {
+        "v": 1,
+        "auto": true,
+        "text": "三脚架望远镜 · 4组/14mesh · 世界坐标(Y上Z前), 原点=模型根\n# 阅读说明: G:=group行(可动画骨骼, 动画key用G:后的id; @p=pivot世界坐标; 倾(x,y,z)°=朝向偏离世界轴的欧拉角; 缩进=父子层级; 挂:=挂载于某组; G:id→id→…=chain折叠行, 每个id都是可独立动画的group, chain×N=waypoint数)\n# M:=mesh行(label[id 几何 @(世界坐标)], label可省略; ×N=for循环批量件(锚点=代表实例); cyl (起)→(末)或 轴上(Y)等方位词=延伸方向; 薄向=板面法向(扁板); 挂载组双代表=最大件+最远有向件(刃/嘴/管所在端); 无方向标注=均匀块(三向相近,如头),默认面向前(Z); 对称×2=镜像对)\nG:tripod 三脚架 @p(0,1.2,0.1)\n  M:[m0 box 0.75×0.22×0.75 (0,1.4,0) 薄向上(Y)]\n  G:azimuth 水平转台 @p(0,1.9,0)\n    M:[m5 box 0.85×0.18×0.55 (0,1.9,0) 薄向上(Y)]\n    G:elevation 俯仰支架 @p(0,2.2,0)\n      M:[m6 box 0.18×0.55×0.18 (-0.5,2.1,0) 轴上(Y)]\n      G:mount01_telescope 光学望远镜 @p(0,2.2,0) 挂:elevation\n        M:[m8 box 0.68×0.46×2.5 (0,2.3,0.2) 轴前(Z)] | M:[m11 box 0.68×0.08×0.58 (0,2.6,1.5) 薄向后(Z)]",
+        "stats": {
+          "groups": 4,
+          "meshes": 14,
+          "labeledMeshes": 0,
+          "labelCoverage": 0,
+          "batchLabels": 0,
+          "autoChains": 0,
+          "snapshotChars": 753
+        }
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -0.34500000000000003,
+          1.7721200055496933,
+          -1.221308570334223
+        ],
+        "max": [
+          0.335,
+          2.712778524891174,
+          1.2711921871650196
+        ],
+        "sourceNodeId": "m8"
+      },
+      {
+        "min": [
+          -0.994223233030091,
+          0,
+          -0.7580103059502916
+        ],
+        "max": [
+          0.08422323303009088,
+          1.3048985304408673,
+          -0.01210607721891166
+        ],
+        "sourceNodeId": "m2"
+      },
+      {
+        "min": [
+          -0.08422323303009088,
+          0,
+          -0.7580103059502916
+        ],
+        "max": [
+          0.994223233030091,
+          1.3048985304408673,
+          -0.01210607721891166
+        ],
+        "sourceNodeId": "m3"
+      },
+      {
+        "min": [
+          -0.435,
+          2.0951136425560564,
+          0.5423304560267507
+        ],
+        "max": [
+          0.425,
+          2.809784887884811,
+          1.4675531608040457
+        ],
+        "sourceNodeId": "m10"
+      },
+      {
+        "min": [
+          -0.435,
+          1.7100106226590759,
+          -1.3086896429531503
+        ],
+        "max": [
+          0.425,
+          2.374887907781791,
+          -0.5814267402160529
+        ],
+        "sourceNodeId": "m9"
+      },
+      {
+        "min": [
+          -0.095,
+          0.010581166445087442,
+          -0.17419290348984162
+        ],
+        "max": [
+          0.08499999999999999,
+          1.2943173639957801,
+          0.9840765203206385
+        ],
+        "sourceNodeId": "m1"
+      },
+      {
+        "min": [
+          -0.38,
+          1.2124492652204335,
+          -0.5000581915846016
+        ],
+        "max": [
+          0.37,
+          1.4324492652204337,
+          0.24994180841539837
+        ],
+        "sourceNodeId": "m0"
+      },
+      {
+        "min": [
+          -0.43,
+          1.8024492652204334,
+          -0.40005819158460165
+        ],
+        "max": [
+          0.42,
+          1.9824492652204335,
+          0.1499418084153984
+        ],
+        "sourceNodeId": "m5"
+      }
+    ],
+    "sourceMeshCount": 14,
+    "candidateCount": 8,
+    "fallbackUsed": false
+  },
+  "footprintRadius": 1.4675531608040457,
+  "sizeClass": "medium",
+  "mode": "voxel",
+  "createdAt": 1787829100445,
+  "updatedAt": 1787829100445
+}

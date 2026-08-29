@@ -1,0 +1,621 @@
+{
+  "id": "asset-fda8c112-faed-4585",
+  "name": "望远镜",
+  "prompt": "哈利波特风格魔法工坊与图书馆中的望远镜\nCoordinate contract: local Y+ is up, local Z+ is the front, entrance, or forward direction, and local X+ is right. Put doors, facades, openings, windshields, noses, seats, and other recognizable front details toward local Z+. For a modular repeated element, explicitly choose the long axis: side-by-side modules span local X with depth/front on local Z; traversal modules span local Z. Keep the model centered at its origin.\nCanonical dimensions contract: width=1.5, height=1.6, depth=0.6 world units. Keep the generated mesh within this centered bounding size.",
+  "modelJson": {
+    "name": "魔法工坊黄铜望远镜",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "stand",
+        "name": "木质三脚架",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            1.008,
+            2.068,
+            1.079
+          ],
+          "center": [
+            0.026,
+            0.722,
+            0.054
+          ],
+          "axes": [
+            [
+              0.9261,
+              -0.0139,
+              0.377
+            ],
+            [
+              0.0028,
+              0.9995,
+              0.0301
+            ],
+            [
+              -0.3772,
+              -0.0269,
+              0.9257
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "telescope",
+        "name": "可转动望远镜",
+        "parent": "stand",
+        "transform": {
+          "pos": [
+            0,
+            1.12,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.605,
+            0.788,
+            0.501
+          ],
+          "center": [
+            0.014,
+            0.115,
+            0.064
+          ],
+          "axes": [
+            [
+              0.8934,
+              0.2239,
+              -0.3894
+            ],
+            [
+              0.0752,
+              0.7801,
+              0.6211
+            ],
+            [
+              0.4429,
+              -0.5842,
+              0.6801
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "focus_wheel",
+        "name": "调焦轮",
+        "parent": "telescope",
+        "transform": {
+          "pos": [
+            0.19,
+            0.16,
+            0.02
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.1,
+            0.24,
+            0.24
+          ],
+          "center": [
+            0,
+            0,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "mount01_star_charm",
+        "name": "星纹魔法挂饰",
+        "parent": "telescope",
+        "transform": {
+          "pos": [
+            -0.17,
+            0.13,
+            0.04
+          ]
+        },
+        "mounted": true,
+        "_obb": {
+          "size": [
+            0.16,
+            0.325,
+            0.05
+          ],
+          "center": [
+            0,
+            -0.147,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "stand",
+        "transform": {
+          "pos": [
+            0,
+            0.72,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.16,
+            "height": 0.78,
+            "depth": 0.16
+          },
+          "color": 5976605
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "walnut"
+          }
+        ]
+      },
+      {
+        "id": "m1",
+        "parent": "stand",
+        "transform": {
+          "pos": [
+            -0.28,
+            0.4,
+            0
+          ],
+          "quat": [
+            0.39,
+            -0.31,
+            0.64,
+            -0.31
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.81,
+            "height": 0.12,
+            "depth": 0.1
+          },
+          "color": 4859928
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "walnut"
+          }
+        ]
+      },
+      {
+        "id": "m2",
+        "parent": "stand",
+        "transform": {
+          "pos": [
+            0.28,
+            0.4,
+            0
+          ],
+          "quat": [
+            0.31,
+            -0.39,
+            -0.31,
+            0.64
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.81,
+            "height": 0.12,
+            "depth": 0.1
+          },
+          "color": 4859928
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "walnut"
+          }
+        ]
+      },
+      {
+        "id": "m3",
+        "parent": "stand",
+        "transform": {
+          "pos": [
+            0,
+            0.4,
+            0.13
+          ],
+          "quat": [
+            0.58,
+            -0.41,
+            0.58,
+            -0.41
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.68,
+            "height": 0.11,
+            "depth": 0.1
+          },
+          "color": 5582876
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "walnut"
+          }
+        ]
+      },
+      {
+        "id": "m4",
+        "parent": "stand",
+        "transform": {
+          "pos": [
+            0,
+            1.08,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.42,
+            "height": 0.14,
+            "depth": 0.34
+          },
+          "color": 10119712
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m5",
+        "parent": "telescope",
+        "transform": {
+          "pos": [
+            0,
+            0.14,
+            0.02
+          ],
+          "quat": [
+            0.35,
+            -0.35,
+            0.61,
+            0.62
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.56,
+            "height": 0.3,
+            "depth": 0.12
+          },
+          "color": 11565604
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m6",
+        "parent": "telescope",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            -0.18
+          ],
+          "quat": [
+            0.35,
+            -0.35,
+            0.62,
+            0.61
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.17,
+            "height": 0.22,
+            "depth": 0.14
+          },
+          "color": 3417117
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m7",
+        "parent": "telescope",
+        "transform": {
+          "pos": [
+            0,
+            0.29,
+            0.27
+          ],
+          "quat": [
+            0.31,
+            -0.27,
+            0.68,
+            0.64
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.18,
+            "height": 0.38,
+            "depth": 0.11
+          },
+          "color": 13870138
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "gold"
+          }
+        ]
+      },
+      {
+        "id": "m8",
+        "parent": "telescope",
+        "transform": {
+          "pos": [
+            0,
+            0.32,
+            0.32
+          ],
+          "quat": [
+            0.3,
+            -0.26,
+            0.68,
+            0.64
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.07,
+            "height": 0.28,
+            "depth": 0.08
+          },
+          "color": 6001062
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass",
+            "variant": "blue"
+          }
+        ]
+      },
+      {
+        "id": "m9",
+        "parent": "focus_wheel",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.1,
+            "height": 0.24,
+            "depth": 0.24
+          },
+          "color": 13013551
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "gold"
+          }
+        ]
+      },
+      {
+        "id": "m10",
+        "parent": "mount01_star_charm",
+        "transform": {
+          "pos": [
+            0,
+            -0.1,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.05,
+            "height": 0.23,
+            "depth": 0.05
+          },
+          "color": 9069092
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m11",
+        "parent": "mount01_star_charm",
+        "transform": {
+          "pos": [
+            0,
+            -0.23,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.16,
+            "height": 0.16,
+            "depth": 0.05
+          },
+          "color": 6535633
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass",
+            "variant": "blue"
+          },
+          {
+            "tag": "emissive",
+            "value": 0.5
+          }
+        ]
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1787874442234,
+        "provider": "gpt",
+        "data": "91TjShkbTQJ6gRcdhxggXls8H6JyZDN1JllAIhXEU5JswV7b3EqLxAYyF0ZWrv1Gvv3UtdBpShm0W9K+JnB52Pj4zte0R621pQAKxWtANnWwy73CQdqi3U6gidgvx+wtQrwZ6II3PDkcdr1uKgLvRbY8DVsRps4xoF7aeeBdrhP8Yz9pMtFMp2b/qGIlxhcMKaTeRMBNjx73KoL0QGcjPhP2UhfmykEYcDlZg98qHIAah3PoUxV4v7cZPosc+i8t367h44vWFWncjeou2EMXLrcci+1riaKG3rx+5HdX9HKCNq1nOEXJqLdmksDSRI/koL2NP1crzDjs2llghthgrdlLCiQannpCT2M+ERE5xaxRCNxmrRni/MxHksLNat5n+tNrTokC++klsJh6Gt7uB9XfjkNWjkYRW0cZyf1p+ijeOhe7QtvxmufCU6eErBQS2kAIyD+nLQJU2l4rV5BSMia9VPnmu4qbnw/jf3Yagjt0WySQ3Sp7ky8EMcxCqot/CrzWfl4ZcXPlwh25AOHkFX2DIOTcOeP2T3+/2TnRTpTUmzwi7PoEc+AxBMu5ueiYFnWCWKRmHLOiR+La/D8R7iNmxFqUjFxqupOpc30EGdFIGB7qS1hBNzZi4wwVoGS1itFcY+rX7NJX48HzIxZHFLImIp2MHMyt0VFSOXkbmJj8VmsEY6AQAr6oUk0ifcb3bEPxkpLualUClV6QHA1bqW99QbrMz/lJm3YI/jxN8hfuH6jAWwNYUuX/nPgzsLB9ugpeUANNoTluYaXaMbZ+MfeYNJB3dNaeaiuX9Rgjxt891+V4qfOaqxmaX94EVvc+9B1kYXRkAJnxJ0Eti5Ke/0M0MvIykPLIsZ+QvnjSB6VQMCsSpprlaXJAAUMTvEq6qFOpp7UnjaCFZjnQjrxclPuR/etFKnJl/BXXcyK89BtZu0m1r22dpHJqh3hSiCK0OBlTL58uHfVw8C1Q85NGzIiB1v39jGYQKEocsncq0SJGnQNvnWT9H7ByK1tz2SOR8O1g2HFe1EE4R1aqykYiS8XDD8vEB3yyrLk9imakdjDXnB5okTLj28mrMF5ucXTZRF8dh6ZO3CZC6zbOvD0MTkI2rr/zRtl5eA9w6vYBHhAcmIP7j4267O/uSA1h5yiUIP/WdPDX83rsMD7d5Jwmy0r3JG7KPnmITt+I47ace5zuNwvUY//spf41SHVInz55w+/J/6X52bycm8tju29EvQLu7PRimewuHFr/JUquTzZyHrKC+3aoc7c83ZQhFmIb0xXk6ZoRuZOeU+pzDmfRExDTNG8bhQ81kA==",
+        "edits": ""
+      },
+      "mounts": [
+        {
+          "id": "mount01_star_charm",
+          "mountedGroupId": "mount01_star_charm",
+          "name": "星纹魔法挂饰",
+          "source": {
+            "type": "codegen"
+          },
+          "description": "",
+          "visible": true,
+          "ts": 1787874442235
+        }
+      ],
+      "semanticSnapshot": {
+        "v": 1,
+        "auto": true,
+        "text": "魔法工坊黄铜望远镜 · 4组/12mesh · 世界坐标(Y上Z前), 原点=模型根\n# 阅读说明: G:=group行(可动画骨骼, 动画key用G:后的id; @p=pivot世界坐标; 倾(x,y,z)°=朝向偏离世界轴的欧拉角; 缩进=父子层级; 挂:=挂载于某组; G:id→id→…=chain折叠行, 每个id都是可独立动画的group, chain×N=waypoint数)\n# M:=mesh行(label[id 几何 @(世界坐标)], label可省略; ×N=for循环批量件(锚点=代表实例); cyl (起)→(末)或 轴上(Y)等方位词=延伸方向; 薄向=板面法向(扁板); 挂载组双代表=最大件+最远有向件(刃/嘴/管所在端); 无方向标注=均匀块(三向相近,如头),默认面向前(Z); 对称×2=镜像对)\nG:stand 木质三脚架 @p(0,0,0)\n  M:[m4 box 0.42×0.14×0.34 (0,1.1,0) 薄向上(Y)]\n  G:telescope 可转动望远镜 @p(0,1.1,0)\n    M:[m5 box 0.56×0.3×0.12 (0,1.3,0) 轴(0,1.4,0.3)→(0,1.1,-0.2)]\n    G:focus_wheel 调焦轮 @p(0.2,1.3,0)\n      M:[m9 box 0.1×0.24×0.24 (0.2,1.3,0) 薄向右(X)]\n    G:mount01_star_charm 星纹魔法挂饰 @p(-0.2,1.3,0) 挂:telescope\n      M:[m11 box 0.16×0.16×0.05 (-0.2,1,0) 薄向前(Z)] | M:[m10 box 0.05×0.23×0.05 (-0.2,1.2,0) 轴上(Y)]",
+        "stats": {
+          "groups": 4,
+          "meshes": 12,
+          "labeledMeshes": 0,
+          "labelCoverage": 0,
+          "batchLabels": 0,
+          "autoChains": 0,
+          "snapshotChars": 780
+        }
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -0.4765214219392493,
+          0,
+          -0.27746277808904596
+        ],
+        "max": [
+          -0.08347857806075085,
+          0.7654940973603928,
+          0.18818518583189853
+        ],
+        "sourceNodeId": "m1"
+      },
+      {
+        "min": [
+          0.08347857806075074,
+          5.551115123125783e-17,
+          -0.27746277808904596
+        ],
+        "max": [
+          0.4765214219392493,
+          0.7654940973603925,
+          0.1881851858318985
+        ],
+        "sourceNodeId": "m2"
+      }
+    ],
+    "sourceMeshCount": 12,
+    "candidateCount": 2,
+    "fallbackUsed": false
+  },
+  "footprintRadius": 0.4765214219392493,
+  "sizeClass": "small",
+  "mode": "voxel",
+  "provider": "gpt",
+  "createdAt": 1787874441665,
+  "updatedAt": 1787874441665
+}

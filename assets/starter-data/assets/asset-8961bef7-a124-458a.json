@@ -1,0 +1,530 @@
+{
+  "id": "asset-8961bef7-a124-458a",
+  "name": "滑板车",
+  "prompt": "单独一辆儿童两轮滑板车，直立车把和踏板完整，不包含骑手、头盔或其他物品\nCoordinate contract: local Y+ is up, local Z+ is the front, entrance, or forward direction, and local X+ is right. Put doors, facades, openings, windshields, noses, seats, and other recognizable front details toward local Z+. For a modular repeated element, explicitly choose the long axis: side-by-side modules span local X with depth/front on local Z; traversal modules span local Z. Keep the model centered at its origin.\nCanonical dimensions contract: width=0.75, height=1, depth=0.32 world units. Keep the generated mesh within this centered bounding size.",
+  "modelJson": {
+    "name": "儿童两轮滑板车",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "body",
+        "name": "车身",
+        "transform": {
+          "pos": [
+            0,
+            -0.4,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.751,
+            0.971,
+            0.33
+          ],
+          "center": [
+            0.001,
+            0.372,
+            -0.026
+          ],
+          "axes": [
+            [
+              1,
+              0.0009,
+              0.0003
+            ],
+            [
+              -0.0009,
+              0.9978,
+              -0.0663
+            ],
+            [
+              -0.0003,
+              0.0663,
+              0.9978
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "rearWheel",
+        "name": "后轮",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0,
+            -0.04,
+            -0.13
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.125,
+            0.12,
+            0.061
+          ],
+          "center": [
+            0,
+            0,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "steering",
+        "name": "转向车把",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0,
+            0.01,
+            0.115
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.75,
+            0.969,
+            0.078
+          ],
+          "center": [
+            0.001,
+            0.37,
+            -0.022
+          ],
+          "axes": [
+            [
+              1,
+              0.0016,
+              -0.0001
+            ],
+            [
+              -0.0016,
+              0.9969,
+              -0.0792
+            ],
+            [
+              0,
+              0.0792,
+              0.9969
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "frontWheel",
+        "name": "前轮",
+        "parent": "steering",
+        "transform": {
+          "pos": [
+            0,
+            -0.05,
+            0.015
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.125,
+            0.12,
+            0.061
+          ],
+          "center": [
+            0,
+            0,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0,
+            -0.005,
+            -0.005
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.18,
+            "height": 0.055,
+            "depth": 0.22
+          },
+          "color": 3516873
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m1",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0,
+            0.032,
+            -0.015
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.14,
+            "height": 0.018,
+            "depth": 0.17
+          },
+          "color": 16762941
+        }
+      },
+      {
+        "id": "m2",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0,
+            -0.005,
+            0.115
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.12,
+            "height": 0.07,
+            "depth": 0.045
+          },
+          "color": 3516873
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m3",
+        "parent": "rearWheel",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.105,
+            "height": 0.12,
+            "depth": 0.055
+          },
+          "color": 2369581
+        }
+      },
+      {
+        "id": "m4",
+        "parent": "rearWheel",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.125,
+            "height": 0.035,
+            "depth": 0.061
+          },
+          "color": 6911101
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m5",
+        "parent": "steering",
+        "transform": {
+          "pos": [
+            0,
+            0.41,
+            -0.035
+          ],
+          "quat": [
+            0.71,
+            0.71,
+            -0.03,
+            0.03
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.78,
+            "height": 0.038,
+            "depth": 0.04
+          },
+          "color": 3516873
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m6",
+        "parent": "steering",
+        "transform": {
+          "pos": [
+            0,
+            0.82,
+            -0.062
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.62,
+            "height": 0.035,
+            "depth": 0.035
+          },
+          "color": 6911101
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m7",
+        "parent": "steering",
+        "transform": {
+          "pos": [
+            -0.3425,
+            0.82,
+            -0.062
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.065,
+            "height": 0.06,
+            "depth": 0.06
+          },
+          "color": 2435888
+        }
+      },
+      {
+        "id": "m8",
+        "parent": "steering",
+        "transform": {
+          "pos": [
+            0.3425,
+            0.82,
+            -0.062
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.065,
+            "height": 0.06,
+            "depth": 0.06
+          },
+          "color": 2435888
+        }
+      },
+      {
+        "id": "m9",
+        "parent": "steering",
+        "transform": {
+          "pos": [
+            0,
+            0.75,
+            -0.052
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.11,
+            "height": 0.045,
+            "depth": 0.025
+          },
+          "color": 16762941
+        }
+      },
+      {
+        "id": "m10",
+        "parent": "frontWheel",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.105,
+            "height": 0.12,
+            "depth": 0.055
+          },
+          "color": 2369581
+        }
+      },
+      {
+        "id": "m11",
+        "parent": "frontWheel",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.125,
+            "height": 0.035,
+            "depth": 0.061
+          },
+          "color": 6911101
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1787766635615,
+        "provider": "gpt",
+        "data": "y8OUyU+oXww3vm03sFsTBYYKoI1EFRTOKorl7uV8olnrg2FbusTBmV/gUwv+WeJ2KEvaAC+mNELIw7+A/5uHYT17tMtdb/4f7yYgso/ZTZYhCV0XYhpDZPNVnSm2IqjVNaed/yQBHnfkYqTmexHT177goCGol1SxlkXtB6iLcoODXX6uCh9BKMb8LShS7hymMxXfZGvA1zKrSrX1L7/P58fRnU/wCZhegUZ/0Wp9SpHyHePqXhKp5xoPKG9mCIr94kc0NIARvwePiOeKvLju2wD4Nyq2h5EZrmkWUi1UqkMPvcSx9eA5Sg8G9I9F7hVlqyuKC3UUyvVQZixc8Z2oS+BrkmOZKV+K0RJKFgNoXByrkrSm3HVYD/mLYw2q6bxZjBk+zyoeQGTP6a7O2FrdP6iuUCK8sHjZ1cfAVR7RLuiYQLk7hIlQ1jOK8F+R5QX7l2R7UiKb1Q3/LNA32+HnbBPfmS2GYA5ZnkNPQYPI5VP4SZGhIQvZTQpqD0DuLucM/Ou1l/SbgnZhmLLHosLdrEZ0dZ7aflo6boRQnJj4j3jKqn0OBlD6xCHblms2QyJVB8QTdPjOU6M6XsDGvtkIOGaQ6D3AQA/1Nh78iVWo8Op6tXCwb037HAQvLnvMvyXHdD8g3uJQE0DI3slYoIrLtfbvJAcMbbub2u+TKS+lcu++TEhxbZnz6ilMHMafOmfq9t4cjqsD0Zu01o3p/gdCVjz/MTfvjB/HbOSx3UOjzxhcpPNT7ANJ/7r9muQbWdxHAX9B889LN23GObPmPjK+VtBSy9I4eECuHPZS43b9NT+wdjQlEnw9jDjUf4vZk903BSpEO9UqnOf6QMPLSmsXF7QnfQ091bT7HGfzI0Ua8tHCvV3MSw/StnlA+48qkNeg0xj8flkxe1JTa1eioCZxTrubZTs3xOKf3+EI1/l4ausdpowb+kBcj/o6skJOmkOCjGToKY8zzOeabSAYUXMvQ3DZge8+C4w1LFN6Omeb4isHiDYaw19PhTi42cThBVg6dTsr7rwwrp3VyBhMUoZhwA==",
+        "edits": ""
+      },
+      "semanticSnapshot": {
+        "v": 1,
+        "auto": true,
+        "text": "儿童两轮滑板车 · 4组/12mesh · 世界坐标(Y上Z前), 原点=模型根\n# 阅读说明: G:=group行(可动画骨骼, 动画key用G:后的id; @p=pivot世界坐标; 倾(x,y,z)°=朝向偏离世界轴的欧拉角; 缩进=父子层级; 挂:=挂载于某组; G:id→id→…=chain折叠行, 每个id都是可独立动画的group, chain×N=waypoint数)\n# M:=mesh行(label[id 几何 @(世界坐标)], label可省略; ×N=for循环批量件(锚点=代表实例); cyl (起)→(末)或 轴上(Y)等方位词=延伸方向; 薄向=板面法向(扁板); 挂载组双代表=最大件+朝向件(嘴/管/檐所在); 无方向标注=均匀块(三向相近,如头),默认面向前(Z); 对称×2=镜像对)\nG:body 车身 @p(0,-0.4,0)\n  M:[m0 box 0.18×0.06×0.22 (0,-0.4,0) 薄向上(Y)]\n  G:rearWheel 后轮 @p(0,-0.4,-0.1) 挂:body\n    M:[m3 box 0.11×0.12×0.06 (0,-0.4,-0.1) 薄向前(Z)]\n  G:steering 转向车把 @p(0,-0.4,0.1) 挂:body\n    M:[m5 box 0.78×0.04×0.04 (0,0,0.1) 轴上(Y)]\n    G:frontWheel 前轮 @p(0,-0.4,0.1) 挂:steering\n      M:[m10 box 0.11×0.12×0.06 (0,-0.4,0.1) 薄向前(Z)]",
+        "stats": {
+          "groups": 4,
+          "meshes": 12,
+          "labeledMeshes": 0,
+          "labelCoverage": 0,
+          "batchLabels": 0,
+          "autoChains": 0,
+          "snapshotChars": 709
+        }
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -0.375,
+          0,
+          -0.1605
+        ],
+        "max": [
+          0.375,
+          0.96,
+          0.1605
+        ],
+        "sourceNodeId": "asset-bounds"
+      }
+    ],
+    "sourceMeshCount": 12,
+    "candidateCount": 1,
+    "fallbackUsed": true
+  },
+  "footprintRadius": 0.375,
+  "sizeClass": "small",
+  "mode": "voxel",
+  "provider": "gpt",
+  "libraryId": "library-d7967286-cebf-4f99",
+  "libraryMetadata": {
+    "tags": [
+      "childrensscooter",
+      "kickscooter",
+      "vehicle",
+      "playequipment"
+    ],
+    "applicableZones": [
+      "settlement"
+    ],
+    "repeatable": true,
+    "landmark": false,
+    "enabled": true,
+    "priority": 0.5,
+    "analysisStatus": "ready",
+    "rotation": "random"
+  },
+  "createdAt": 1787817008199,
+  "updatedAt": 1787817008199
+}

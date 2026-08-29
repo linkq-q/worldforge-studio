@@ -1,0 +1,628 @@
+{
+  "id": "asset-6247c873-41b8-43b1",
+  "name": "转角L形学习桌",
+  "prompt": "单个可复用的儿童尺度L形学习桌，左右桌翼沿两面墙相交，浅木桌面、雾蓝柜体、圆角边缘并带少量正面抽屉；不包含椅子、书架或其他房间家具。\n全局资产美术方向：统一采用柔和圆角、略微夸张比例的精致体素风；家具以浅暖木、米白和雾蓝为主，玩具使用克制的砖红、芥末黄和深蓝点缀，所有边角适合儿童空间且尺度参照1.60米角色。; 现代温暖的儿童卧室，浅木地板、柔和蓝灰墙面和米白顶面保持安静背景，以木质家具和少量红黄蓝玩具形成分组色彩点缀；装饰集中于睡眠与学习区域，中央不堆放杂物。; 温暖, 现代儿童房, 圆角体素, 整洁生活感, 柔和配色; palette #E8DFC9, #B99062, #8EA6B4, #C65F4A, #D6A83E, #354C63; materials 浅色木材, 哑光烤漆, 棉织物, 粉末涂层金属, 透明玻璃\n资产角色：儿童阅读书写工作中心；目标尺度：large。\n只生成一个可复用的独立物体，不要生成地面、背景、天空、完整场景或多个分散物体。",
+  "tags": [
+    "openable-front",
+    "l"
+  ],
+  "modelJson": {
+    "name": "儿童L形学习桌",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "desk",
+        "name": "L形学习桌",
+        "transform": {
+          "pos": [
+            0.125,
+            0.24,
+            -0.145
+          ]
+        },
+        "_obb": {
+          "size": [
+            3.394,
+            1.331,
+            2.654
+          ],
+          "center": [
+            -0.006,
+            0.107,
+            0.544
+          ],
+          "axes": [
+            [
+              0.8946,
+              -0.0019,
+              -0.4468
+            ],
+            [
+              -0.0235,
+              0.9984,
+              -0.0513
+            ],
+            [
+              0.4462,
+              0.0564,
+              0.8932
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "desktop",
+        "name": "浅木桌面",
+        "parent": "desk",
+        "transform": {
+          "pos": [
+            0,
+            0.465,
+            0.145
+          ]
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ],
+        "_obb": {
+          "size": [
+            3.079,
+            0.137,
+            2.234
+          ],
+          "center": [
+            -0.032,
+            0.021,
+            0.426
+          ],
+          "axes": [
+            [
+              0.9413,
+              -0.0008,
+              -0.3377
+            ],
+            [
+              0.0024,
+              1,
+              0.0042
+            ],
+            [
+              0.3377,
+              -0.0047,
+              0.9413
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "cabinet",
+        "name": "雾蓝抽屉柜",
+        "parent": "desk",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0.135
+          ]
+        },
+        "_obb": {
+          "size": [
+            1.604,
+            0.945,
+            0.845
+          ],
+          "center": [
+            0.536,
+            0.097,
+            -0.03
+          ],
+          "axes": [
+            [
+              0.9911,
+              0.0719,
+              0.1124
+            ],
+            [
+              -0.1229,
+              0.8206,
+              0.5581
+            ],
+            [
+              -0.0521,
+              -0.567,
+              0.8221
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "drawer_top",
+        "name": "上抽屉",
+        "parent": "cabinet",
+        "transform": {
+          "pos": [
+            0.975,
+            0.33,
+            0.28
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.52,
+            0.2,
+            0.088
+          ],
+          "center": [
+            0,
+            0,
+            0.043
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "drawer_bottom",
+        "name": "下抽屉",
+        "parent": "cabinet",
+        "transform": {
+          "pos": [
+            0.975,
+            0.05,
+            0.28
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.52,
+            0.271,
+            0.091
+          ],
+          "center": [
+            0,
+            -0.001,
+            0.042
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              0.9997,
+              0.0256
+            ],
+            [
+              0,
+              -0.0256,
+              0.9997
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "side_support",
+        "name": "侧翼支撑",
+        "parent": "desk",
+        "transform": {
+          "pos": [
+            -0.865,
+            0,
+            1.825
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.58,
+            0.678,
+            0.203
+          ],
+          "center": [
+            0,
+            0.114,
+            0.013
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              0.999,
+              0.044
+            ],
+            [
+              0,
+              -0.044,
+              0.999
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "desktop",
+        "transform": {
+          "pos": [
+            0.075,
+            0.035,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2.5,
+            "height": 0.1,
+            "depth": 0.7
+          },
+          "color": 15261641
+        }
+      },
+      {
+        "id": "m1",
+        "parent": "desktop",
+        "transform": {
+          "pos": [
+            -0.865,
+            0.035,
+            1.075
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.62,
+            "height": 0.1,
+            "depth": 1.45
+          },
+          "color": 15261641
+        }
+      },
+      {
+        "id": "m2",
+        "parent": "desktop",
+        "transform": {
+          "pos": [
+            0.105,
+            0,
+            0.35
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2.38,
+            "height": 0.09,
+            "depth": 0.07
+          },
+          "color": 12161122
+        }
+      },
+      {
+        "id": "m3",
+        "parent": "desktop",
+        "transform": {
+          "pos": [
+            -0.555,
+            0,
+            1.105
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.07,
+            "height": 0.09,
+            "depth": 1.36
+          },
+          "color": 12161122
+        }
+      },
+      {
+        "id": "m4",
+        "parent": "cabinet",
+        "transform": {
+          "pos": [
+            0.975,
+            0.115,
+            0.01
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.62,
+            "height": 0.65,
+            "depth": 0.54
+          },
+          "color": 9348788
+        }
+      },
+      {
+        "id": "m5",
+        "parent": "cabinet",
+        "transform": {
+          "pos": [
+            0.975,
+            -0.185,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.54,
+            "height": 0.07,
+            "depth": 0.48
+          },
+          "color": 3492963
+        }
+      },
+      {
+        "id": "m6",
+        "parent": "drawer_top",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0.022
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.52,
+            "height": 0.2,
+            "depth": 0.045
+          },
+          "color": 9348788
+        }
+      },
+      {
+        "id": "m7",
+        "parent": "drawer_top",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0.065
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.18,
+            "height": 0.035,
+            "depth": 0.045
+          },
+          "color": 3492963
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m8",
+        "parent": "drawer_bottom",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0.022
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.52,
+            "height": 0.27,
+            "depth": 0.045
+          },
+          "color": 9348788
+        }
+      },
+      {
+        "id": "m9",
+        "parent": "drawer_bottom",
+        "transform": {
+          "pos": [
+            0,
+            0.02,
+            0.065
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.18,
+            "height": 0.035,
+            "depth": 0.045
+          },
+          "color": 3492963
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m10",
+        "parent": "side_support",
+        "transform": {
+          "pos": [
+            0,
+            0.125,
+            0.04
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.52,
+            "height": 0.65,
+            "depth": 0.12
+          },
+          "color": 9348788
+        }
+      },
+      {
+        "id": "m11",
+        "parent": "side_support",
+        "transform": {
+          "pos": [
+            0,
+            -0.185,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.58,
+            "height": 0.07,
+            "depth": 0.2
+          },
+          "color": 3492963
+        }
+      },
+      {
+        "id": "m12",
+        "parent": "desk",
+        "transform": {
+          "pos": [
+            0.125,
+            0.24,
+            -0.145
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.42,
+            "height": 0.34,
+            "depth": 0.08
+          },
+          "color": 9348788
+        }
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1786869562872,
+        "provider": "gpt",
+        "data": "eooJU2SgBDI30KXu4otgOO50/ZW09NFLgJkqBavMBkmHt7tMusM4PNaAqYcQ9t4b5EIVcJ56HFYAaNMeeXCkgDXG/194RNXP8ixQzXbQv6Fjc25sc+ByOD6y2/SP75NLceTLpMf6SkCanvcZvSj49Lk4bL73NJiFQiOjeRCbJMc2BPCb6FTvkh2zUIK3nbX2fsqLRhYA7yySN20rhHiAh0j8TV7kqjKVEHq3Q+wya0EyUDRgBcFvX+enltBXyPBn8Ui/eoJw1AHPAkH8CM+0FnRL0L/ZJypfOgC1I5FlB4JX3Nc/vz398DKKT/KNKb07gFtuznV9J6Yuj0pGrQEgcrfWaiCOCoxmeg/vGmTbpc8WuDQ3iz9yrnIyMpehyErLqVdrJIU7e/5GTHW+gNYNAU4N+aKCx6P3w8lgwx4/1n2Sms5Hf7OdzS5xPZ3KxEGoFTLFUy5wB+EQcJBAZxdFPN4O7au9yXpeeeHs1Os8LtLYK+Y+tcTg9+pLi3HtbjHDnVPYB9o/RLoh2FsufgfSsHPWmGdEyoGllne8PeV6DpYVzTxHGYm3/37p42OUjsT1q6FTvnBpHIuZk1YeY8dZeaVfnbkN8dLo6rJGB+Vm1LkiN/DbuMM7Hn9/aXhALJAmyhSjPB0w1qLL1LWrxxe7WK02B/9jqx1WcVNobG0x1bnY1Y+430uqmEHdgFQYHxqYGyoKVBqcMi3EoLrql4WySGzH4ny+S58ueOVfipJ5FhGMDSsh0NoGKYRDmSNW+OywZDpSWh/VnMhmV8vYTbBZW1GeXcAMw31TxOtSCBqOuu30mCRgF03xNJDbYuIjT0IJH5RWaYJ8VoZD7tWCiqtoN3hkq1J+V6z09t1lR9nazfqVOhLuoCsu6n9e/5EIDqa+cDDOoRViNjbGTOBXLKh07X+BoPdb3NZ2nphqHbXWiMKPas5lO1uTThbbJXlLebrqahNP7IF/5mmJeeF599Qtbg==",
+        "edits": ""
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          0.5900000000000001,
+          0.009999999999999981,
+          -0.9949999999999999
+        ],
+        "max": [
+          1.2100000000000002,
+          0.6599999999999999,
+          -0.45499999999999985
+        ],
+        "sourceNodeId": "m4"
+      },
+      {
+        "min": [
+          -1.25,
+          0.67,
+          -1.0749999999999997
+        ],
+        "max": [
+          1.25,
+          0.7700000000000001,
+          -0.3749999999999999
+        ],
+        "sourceNodeId": "m0"
+      },
+      {
+        "min": [
+          -1.25,
+          0.67,
+          -0.3749999999999999
+        ],
+        "max": [
+          -0.6299999999999999,
+          0.7700000000000001,
+          1.075
+        ],
+        "sourceNodeId": "m1"
+      }
+    ],
+    "sourceMeshCount": 13,
+    "candidateCount": 3,
+    "fallbackUsed": false
+  },
+  "footprintRadius": 1.25,
+  "sizeClass": "medium",
+  "mode": "voxel",
+  "provider": "gpt",
+  "libraryId": "library-d7967286-cebf-4f99",
+  "libraryMetadata": {
+    "tags": [
+      "l-shapeddesk",
+      "studydesk",
+      "childrensfurniture",
+      "cornerdesk",
+      "writingstation",
+      "drawerdesk"
+    ],
+    "applicableZones": [
+      "settlement"
+    ],
+    "repeatable": true,
+    "landmark": false,
+    "enabled": true,
+    "priority": 0.5,
+    "analysisStatus": "ready",
+    "rotation": "random"
+  },
+  "createdAt": 1787817808928,
+  "updatedAt": 1787817808928
+}

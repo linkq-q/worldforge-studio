@@ -1,0 +1,498 @@
+{
+  "id": "asset-2d566cf9-b425-4043",
+  "name": "敞口收纳箱",
+  "prompt": "单个可复用的无盖敞口收纳箱，宽口、圆角、可见空腔和侧面提手，芥末黄耐磨塑料质感，不生成盖子或内部散落玩具。\n全局资产美术方向：统一采用柔和圆角、略微夸张比例的精致体素风；家具以浅暖木、米白和雾蓝为主，玩具使用克制的砖红、芥末黄和深蓝点缀，所有边角适合儿童空间且尺度参照1.60米角色。; 现代温暖的儿童卧室，浅木地板、柔和蓝灰墙面和米白顶面保持安静背景，以木质家具和少量红黄蓝玩具形成分组色彩点缀；装饰集中于睡眠与学习区域，中央不堆放杂物。; 温暖, 现代儿童房, 圆角体素, 整洁生活感, 柔和配色; palette #E8DFC9, #B99062, #8EA6B4, #C65F4A, #D6A83E, #354C63; materials 浅色木材, 哑光烤漆, 棉织物, 粉末涂层金属, 透明玻璃\n资产角色：低位可直接取放的玩具收纳；目标尺度：medium。\n只生成一个可复用的独立物体，不要生成地面、背景、天空、完整场景或多个分散物体。",
+  "modelJson": {
+    "name": "芥末黄敞口收纳箱",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "storage_bin",
+        "name": "收纳箱",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            1.078,
+            0.526,
+            0.809
+          ],
+          "center": [
+            0.005,
+            0.268,
+            0.002
+          ],
+          "axes": [
+            [
+              0.9998,
+              0.0001,
+              0.0178
+            ],
+            [
+              0.0001,
+              1,
+              -0.0096
+            ],
+            [
+              -0.0178,
+              0.0096,
+              0.9998
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "storage_bin",
+        "transform": {
+          "pos": [
+            0,
+            0.08,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.78,
+            "height": 0.08,
+            "depth": 0.48
+          },
+          "color": 12093998
+        }
+      },
+      {
+        "id": "m1",
+        "parent": "storage_bin",
+        "transform": {
+          "pos": [
+            0.03,
+            0.29,
+            0.29
+          ],
+          "quat": [
+            -0.62,
+            -0.05,
+            0,
+            0.78
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.84,
+            "height": 0.055,
+            "depth": 0.39
+          },
+          "color": 14067774
+        }
+      },
+      {
+        "id": "m2",
+        "parent": "storage_bin",
+        "transform": {
+          "pos": [
+            -0.03,
+            0.29,
+            -0.29
+          ],
+          "quat": [
+            0,
+            0.78,
+            0.62,
+            0.05
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.84,
+            "height": 0.055,
+            "depth": 0.39
+          },
+          "color": 14067774
+        }
+      },
+      {
+        "id": "m3",
+        "parent": "storage_bin",
+        "transform": {
+          "pos": [
+            -0.45,
+            0.19,
+            0.02
+          ],
+          "quat": [
+            -0.43,
+            -0.62,
+            -0.43,
+            0.54
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.5,
+            "height": 0.055,
+            "depth": 0.18
+          },
+          "color": 13212214
+        }
+      },
+      {
+        "id": "m4",
+        "parent": "storage_bin",
+        "transform": {
+          "pos": [
+            -0.48,
+            0.38,
+            -0.21
+          ],
+          "quat": [
+            0.5,
+            0.5,
+            0.5,
+            -0.5
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.14,
+            "height": 0.055,
+            "depth": 0.21
+          },
+          "color": 14067774
+        }
+      },
+      {
+        "id": "m5",
+        "parent": "storage_bin",
+        "transform": {
+          "pos": [
+            -0.48,
+            0.38,
+            0.21
+          ],
+          "quat": [
+            0.5,
+            0.5,
+            0.5,
+            -0.5
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.14,
+            "height": 0.055,
+            "depth": 0.21
+          },
+          "color": 14067774
+        }
+      },
+      {
+        "id": "m6",
+        "parent": "storage_bin",
+        "transform": {
+          "pos": [
+            -0.495,
+            0.455,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.07,
+            "height": 0.075,
+            "depth": 0.34
+          },
+          "color": 14726476
+        }
+      },
+      {
+        "id": "m7",
+        "parent": "storage_bin",
+        "transform": {
+          "pos": [
+            0.45,
+            0.19,
+            0.02
+          ],
+          "quat": [
+            0.61,
+            0.38,
+            0.54,
+            -0.38
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.5,
+            "height": 0.055,
+            "depth": 0.18
+          },
+          "color": 13212214
+        }
+      },
+      {
+        "id": "m8",
+        "parent": "storage_bin",
+        "transform": {
+          "pos": [
+            0.48,
+            0.38,
+            -0.21
+          ],
+          "quat": [
+            0.5,
+            0.5,
+            0.5,
+            -0.5
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.14,
+            "height": 0.055,
+            "depth": 0.21
+          },
+          "color": 14067774
+        }
+      },
+      {
+        "id": "m9",
+        "parent": "storage_bin",
+        "transform": {
+          "pos": [
+            0.48,
+            0.38,
+            0.21
+          ],
+          "quat": [
+            0.5,
+            0.5,
+            0.5,
+            -0.5
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.14,
+            "height": 0.055,
+            "depth": 0.21
+          },
+          "color": 14067774
+        }
+      },
+      {
+        "id": "m10",
+        "parent": "storage_bin",
+        "transform": {
+          "pos": [
+            0.495,
+            0.455,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.07,
+            "height": 0.075,
+            "depth": 0.34
+          },
+          "color": 14726476
+        }
+      },
+      {
+        "id": "m11",
+        "parent": "storage_bin",
+        "transform": {
+          "pos": [
+            0,
+            0.49,
+            0.35
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.02,
+            "height": 0.075,
+            "depth": 0.09
+          },
+          "color": 14726476
+        }
+      },
+      {
+        "id": "m12",
+        "parent": "storage_bin",
+        "transform": {
+          "pos": [
+            0,
+            0.49,
+            -0.35
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.02,
+            "height": 0.075,
+            "depth": 0.09
+          },
+          "color": 14726476
+        }
+      },
+      {
+        "id": "m13",
+        "parent": "storage_bin",
+        "transform": {
+          "pos": [
+            0,
+            0.135,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.72,
+            "height": 0.025,
+            "depth": 0.42
+          },
+          "color": 10318888
+        }
+      },
+      {
+        "id": "m14",
+        "parent": "storage_bin",
+        "transform": {
+          "pos": [
+            -0.33,
+            0.025,
+            -0.19
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.11,
+            "height": 0.035,
+            "depth": 0.11
+          },
+          "color": 11633714
+        }
+      },
+      {
+        "id": "m15",
+        "parent": "storage_bin",
+        "transform": {
+          "pos": [
+            -0.33,
+            0.025,
+            0.19
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.11,
+            "height": 0.035,
+            "depth": 0.11
+          },
+          "color": 11633714
+        }
+      },
+      {
+        "id": "m16",
+        "parent": "storage_bin",
+        "transform": {
+          "pos": [
+            0.33,
+            0.025,
+            -0.19
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.11,
+            "height": 0.035,
+            "depth": 0.11
+          },
+          "color": 11633714
+        }
+      },
+      {
+        "id": "m17",
+        "parent": "storage_bin",
+        "transform": {
+          "pos": [
+            0.33,
+            0.025,
+            0.19
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.11,
+            "height": 0.035,
+            "depth": 0.11
+          },
+          "color": 11633714
+        }
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1786869683419,
+        "provider": "gpt",
+        "data": "xRoBsZO9iK9nW2IJ2oQuUO8CysCYS03TVeg4c7iDi3hu4yS9aJBEbV5YsB0yLLVe5FihhIFq2oKpE6adCCjlOTSEspFxCe3KfdXNoqpJyHo/Xe1ZXPqNhgTtyIfwTt3DUH+K6WFRhpYcr9ZLPkKS2xtkdRAb/sRAErIhbuDPtMcPZGKocjZsba3phYU29S6CcrAdmemYReQPt60b2MbN0mVEXnksFmNb1vfOXImILQ8kiLqjkS5hvccCSQcqHEwo7ADIg3ZqbTdv2GbMPRn0I6fo8GrUFQJnQO3oj+VhGVpbz5PyA6sAczIK07169wuXD0akku6/HL17ZqG3NtOU0LocZPNs0DDIPwPQ2AcG2K35TAvozUbCayZ0g1EsP6GgS0+UFsxpkBz7gL4TezShuHUpynbFDa/9dU+L7UxliYoh2CXL73IOsLikKeWhRC+8hQsBcWQfm8p1JnsssFlLAC1RmPews9yFVIFLTS+91263F+n/9J+yIn8dILrfBv5Hs2J/OvCF8hQ31B17rs0KFZu2r/n7sUzgggZKzXHh+SuA0cs1cM56YJ/2Hr+/i8JO9v0I4p00p7OU7ngJ2Ryj8naY9w7IrL1WYBmvu9/S8c90m9E8gdu5TJcEd6KXKxfKVslIhFH2mJ+NghNuCakwYzQre5a9frFQ9Yvn4djV+wb7ROix/6Qc270e4SsPo+kuApv5symwRiOlWQn6wQ1nRkK8XDp1POFJsD6eoDpJq09YRCwd3SjJPm8ucfX2+S3MCzFBr7fbUvl+vnG1z646hZof72z65dXT9avCmyt0nbALdOyXMkhzfpq68qD+5AxgSAA9kb1dkefnHUKq/ltwymoISrGLuMpGtwH9DmEmahseGSsAtXHLDmbF0cULHt2atu3obzIdcQ==",
+        "edits": ""
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -0.5306614173228346,
+          0,
+          -0.39499999999999996
+        ],
+        "max": [
+          0.5306614173228346,
+          0.52,
+          0.39499999999999996
+        ],
+        "sourceNodeId": "asset-bounds"
+      }
+    ],
+    "sourceMeshCount": 18,
+    "candidateCount": 0,
+    "fallbackUsed": true
+  },
+  "footprintRadius": 0.5306614173228346,
+  "sizeClass": "small",
+  "mode": "voxel",
+  "provider": "gpt",
+  "createdAt": 1786869686354,
+  "updatedAt": 1786869686354
+}

@@ -1,0 +1,961 @@
+{
+  "id": "asset-d8bbd35e-7c9d-4ceb",
+  "name": "炼金工台 1",
+  "prompt": "同一规格的精致重型炼金工作台，深色木材、黄铜框架与耐热石台面，蒸汽朋克奇幻风格；四种异形体分别为空置校准台、药剂调配台、小型蒸馏台、符文金属实验台，器具、书本、瓶罐和留空区域各不相同，细节精细且不显杂乱\nCoordinate contract: local Y+ is up, local Z+ is the front, entrance, or forward direction, and local X+ is right. Put doors, facades, openings, windshields, noses, seats, and other recognizable front details toward local Z+. For a modular repeated element, explicitly choose the long axis: side-by-side modules span local X with depth/front on local Z; traversal modules span local Z. Keep the model centered at its origin.\nCanonical dimensions contract: width=3.5, height=1.8, depth=1.8 world units. Keep the generated mesh within this centered bounding size.\nCreate variation 1 of 4; preserve the same reusable asset family while varying silhouette and details.",
+  "tags": [
+    "indoor",
+    "alchemy-workbench",
+    "steampunk",
+    "content-variants"
+  ],
+  "modelJson": {
+    "name": "重型炼金工作台·空置校准台",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "wood_body",
+        "name": "深色木制台体",
+        "transform": {
+          "pos": [
+            0,
+            0.76,
+            0.065
+          ]
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "walnut"
+          }
+        ],
+        "_obb": {
+          "size": [
+            3.341,
+            1.734,
+            2.262
+          ],
+          "center": [
+            0,
+            -0.063,
+            -0.221
+          ],
+          "axes": [
+            [
+              1,
+              0.0005,
+              0.0003
+            ],
+            [
+              -0.0005,
+              0.9203,
+              0.3912
+            ],
+            [
+              -0.0001,
+              -0.3912,
+              0.9203
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "stone_top",
+        "name": "耐热石台面",
+        "parent": "wood_body",
+        "transform": {
+          "pos": [
+            0,
+            0.252,
+            0
+          ]
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "stone",
+            "variant": "marble"
+          }
+        ],
+        "_obb": {
+          "size": [
+            3.34,
+            0.213,
+            1.621
+          ],
+          "center": [
+            0,
+            -0.082,
+            -0.065
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              -0.0075
+            ],
+            [
+              0,
+              0.0075,
+              1
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "brass_frame",
+        "name": "黄铜框架",
+        "parent": "wood_body",
+        "transform": {
+          "pos": [
+            0,
+            0.4,
+            0
+          ]
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ],
+        "_obb": {
+          "size": [
+            3.25,
+            0.833,
+            2.003
+          ],
+          "center": [
+            0,
+            -0.236,
+            -0.188
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              0.7994,
+              0.6008
+            ],
+            [
+              0,
+              -0.6008,
+              0.7994
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "calibration_panel",
+        "name": "校准仪表板",
+        "parent": "wood_body",
+        "transform": {
+          "pos": [
+            0,
+            0.4,
+            -0.645
+          ]
+        },
+        "_obb": {
+          "size": [
+            1.424,
+            0.564,
+            0.205
+          ],
+          "center": [
+            0,
+            0.216,
+            -0.069
+          ],
+          "axes": [
+            [
+              1,
+              0.0076,
+              0.0041
+            ],
+            [
+              -0.0074,
+              0.9993,
+              -0.0379
+            ],
+            [
+              -0.0044,
+              0.0378,
+              0.9993
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "calibration_guides",
+        "name": "空置校准导轨",
+        "parent": "wood_body",
+        "transform": {
+          "pos": [
+            0,
+            0.35,
+            0.055
+          ]
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ],
+        "_obb": {
+          "size": [
+            1.88,
+            0.125,
+            0.96
+          ],
+          "center": [
+            0,
+            -0.023,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "wood_body",
+        "transform": {
+          "pos": [
+            -1.42,
+            -0.37,
+            -0.685
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.22,
+            "height": 0.78,
+            "depth": 0.22
+          },
+          "color": 2824726
+        }
+      },
+      {
+        "id": "m1",
+        "parent": "wood_body",
+        "transform": {
+          "pos": [
+            -1.42,
+            -0.37,
+            0.555
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.22,
+            "height": 0.78,
+            "depth": 0.22
+          },
+          "color": 2824726
+        }
+      },
+      {
+        "id": "m2",
+        "parent": "wood_body",
+        "transform": {
+          "pos": [
+            1.42,
+            -0.37,
+            -0.685
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.22,
+            "height": 0.78,
+            "depth": 0.22
+          },
+          "color": 2824726
+        }
+      },
+      {
+        "id": "m3",
+        "parent": "wood_body",
+        "transform": {
+          "pos": [
+            1.42,
+            -0.37,
+            0.555
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.22,
+            "height": 0.78,
+            "depth": 0.22
+          },
+          "color": 2824726
+        }
+      },
+      {
+        "id": "m4",
+        "parent": "wood_body",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            -0.065
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 3.08,
+            "height": 0.18,
+            "depth": 1.38
+          },
+          "color": 3416089
+        }
+      },
+      {
+        "id": "m5",
+        "parent": "wood_body",
+        "transform": {
+          "pos": [
+            0,
+            -0.54,
+            -0.065
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2.72,
+            "height": 0.12,
+            "depth": 1.08
+          },
+          "color": 2693396
+        }
+      },
+      {
+        "id": "m6",
+        "parent": "wood_body",
+        "transform": {
+          "pos": [
+            0,
+            -0.21,
+            -0.645
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2.72,
+            "height": 0.32,
+            "depth": 0.16
+          },
+          "color": 3153945
+        }
+      },
+      {
+        "id": "m7",
+        "parent": "wood_body",
+        "transform": {
+          "pos": [
+            -0.78,
+            -0.2,
+            0.665
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.18,
+            "height": 0.28,
+            "depth": 0.1
+          },
+          "color": 3810589
+        }
+      },
+      {
+        "id": "m8",
+        "parent": "wood_body",
+        "transform": {
+          "pos": [
+            0.78,
+            -0.2,
+            0.665
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.18,
+            "height": 0.28,
+            "depth": 0.1
+          },
+          "color": 3810589
+        }
+      },
+      {
+        "id": "m9",
+        "parent": "stone_top",
+        "transform": {
+          "pos": [
+            0,
+            -0.102,
+            -0.065
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 3.34,
+            "height": 0.16,
+            "depth": 1.62
+          },
+          "color": 6381145
+        }
+      },
+      {
+        "id": "m10",
+        "parent": "stone_top",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0.055
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2.02,
+            "height": 0.045,
+            "depth": 0.82
+          },
+          "color": 7828331
+        }
+      },
+      {
+        "id": "m11",
+        "parent": "brass_frame",
+        "transform": {
+          "pos": [
+            -1.58,
+            0.16,
+            -0.725
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.09,
+            "height": 0.96,
+            "depth": 0.09
+          },
+          "color": 12028726
+        }
+      },
+      {
+        "id": "m12",
+        "parent": "brass_frame",
+        "transform": {
+          "pos": [
+            1.58,
+            0.16,
+            -0.725
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.09,
+            "height": 0.96,
+            "depth": 0.09
+          },
+          "color": 12028726
+        }
+      },
+      {
+        "id": "m13",
+        "parent": "brass_frame",
+        "transform": {
+          "pos": [
+            0,
+            0.6,
+            -0.725
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 3.25,
+            "height": 0.1,
+            "depth": 0.1
+          },
+          "color": 12028726
+        }
+      },
+      {
+        "id": "m14",
+        "parent": "brass_frame",
+        "transform": {
+          "pos": [
+            0,
+            -0.1,
+            -0.725
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 3.25,
+            "height": 0.08,
+            "depth": 0.08
+          },
+          "color": 10318892
+        }
+      },
+      {
+        "id": "m15",
+        "parent": "brass_frame",
+        "transform": {
+          "pos": [
+            -0.72,
+            0.24,
+            -0.715
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.08,
+            "height": 0.62,
+            "depth": 0.08
+          },
+          "color": 12028726
+        }
+      },
+      {
+        "id": "m16",
+        "parent": "brass_frame",
+        "transform": {
+          "pos": [
+            0.72,
+            0.24,
+            -0.715
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.08,
+            "height": 0.62,
+            "depth": 0.08
+          },
+          "color": 12028726
+        }
+      },
+      {
+        "id": "m17",
+        "parent": "brass_frame",
+        "transform": {
+          "pos": [
+            0,
+            0.52,
+            -0.705
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.52,
+            "height": 0.07,
+            "depth": 0.07
+          },
+          "color": 12819013
+        }
+      },
+      {
+        "id": "m18",
+        "parent": "brass_frame",
+        "transform": {
+          "pos": [
+            -1.35,
+            -0.6,
+            0.725
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.25,
+            "height": 0.07,
+            "depth": 0.08
+          },
+          "color": 12687943
+        }
+      },
+      {
+        "id": "m19",
+        "parent": "brass_frame",
+        "transform": {
+          "pos": [
+            1.35,
+            -0.6,
+            0.725
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.25,
+            "height": 0.07,
+            "depth": 0.08
+          },
+          "color": 12687943
+        }
+      },
+      {
+        "id": "m20",
+        "parent": "calibration_panel",
+        "transform": {
+          "pos": [
+            0,
+            0.24,
+            -0.11
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.42,
+            "height": 0.5,
+            "depth": 0.1
+          },
+          "color": 2698026
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m21",
+        "parent": "calibration_panel",
+        "transform": {
+          "pos": [
+            -0.39,
+            0.28,
+            -0.045
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.48,
+            "height": 0.3,
+            "depth": 0.035
+          },
+          "color": 14735287
+        }
+      },
+      {
+        "id": "m22",
+        "parent": "calibration_panel",
+        "transform": {
+          "pos": [
+            0.39,
+            0.28,
+            -0.045
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.48,
+            "height": 0.3,
+            "depth": 0.035
+          },
+          "color": 14735287
+        }
+      },
+      {
+        "id": "m23",
+        "parent": "calibration_panel",
+        "transform": {
+          "pos": [
+            -0.34,
+            0.27,
+            -0.02
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.035,
+            "height": 0.19,
+            "depth": 0.035
+          },
+          "color": 9119008
+        }
+      },
+      {
+        "id": "m24",
+        "parent": "calibration_panel",
+        "transform": {
+          "pos": [
+            0.38,
+            0.28,
+            -0.01
+          ],
+          "quat": [
+            -0.59,
+            0.19,
+            0,
+            0.71
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.03,
+            "height": 0.025,
+            "depth": 0.2
+          },
+          "color": 2434341
+        }
+      },
+      {
+        "id": "m25",
+        "parent": "calibration_panel",
+        "transform": {
+          "pos": [
+            0,
+            -0.02,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.46,
+            "height": 0.08,
+            "depth": 0.08
+          },
+          "color": 12028726
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m26",
+        "parent": "calibration_guides",
+        "transform": {
+          "pos": [
+            -0.83,
+            -0.05,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.1,
+            "height": 0.07,
+            "depth": 0.96
+          },
+          "color": 10976560
+        }
+      },
+      {
+        "id": "m27",
+        "parent": "calibration_guides",
+        "transform": {
+          "pos": [
+            0.83,
+            -0.05,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.1,
+            "height": 0.07,
+            "depth": 0.96
+          },
+          "color": 10976560
+        }
+      },
+      {
+        "id": "m28",
+        "parent": "calibration_guides",
+        "transform": {
+          "pos": [
+            -0.83,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.22,
+            "height": 0.08,
+            "depth": 0.28
+          },
+          "color": 12884805
+        }
+      },
+      {
+        "id": "m29",
+        "parent": "calibration_guides",
+        "transform": {
+          "pos": [
+            0.83,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.22,
+            "height": 0.08,
+            "depth": 0.28
+          },
+          "color": 12884805
+        }
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1787875883189,
+        "provider": "gpt",
+        "data": "Y8qR4BKOhd6M+seWWSRiFeGFivOlSuXtHKLiqe7AgExJdCnQ6s9ckw8t1G57KviJ0X9Ek/IHB7BPsOmd0JNuEfC+kkLC0WS3UkWSqdoVneCL2JtS1kdWSQH200/v6g3YM4gQ5tJGGh/PNxzuOTUr5Al7HkKBhhwZTOsYDWVtE0M2s6IimscioKazcjr7nT9Iak9UdtMGGvI+noq9r1+IC1m/oWHzINOXFMVlqsLDrq+Ext0YjpNogWK1Xj9VEjXUh2ftllMw4zwngY6ghFTlFzLXEsOe8iuGg3p9G0mLaHD46ygZTa5VblI4jm7ExM/ZG4zN9S3vQdE0LwP4AFuNGwpPxQONgiPlfrl6EluGbCxmOEWpL1QWyPFxl7Zf86DrTA7lMH91wt7vTqX1mbZO/JKUc4dxjYlZ3VuJrPmrfx7hXrNBMCiCsm75yHeppHMZtjkzm+wZBadPb3XCUX0XQyWBk69Qa/UtGKu/TOZ+tyVH4PY5coszNC0MOntzhLo2E79p35pu5TuaE5jXwx3q+/ee39WPEq1xqoJCElvOEo1yPa4Af1xNt7wbQJ6SByzksqZw2JuzHcgiw0Fcx1KV0geCAFeq/wkDDJiOS0N1UX+rrz76HDtHDEuEaDTwsX7TdxWWy8JvcQEYfpiNxgiF6mJGyFAURz+5uqu0YYUBeIAJI26aq54aPAmy7BoGkl/eAuUkG7n5V9I73K/NOi7yjEC+zrCReK/IZdbHzvjTKohh8zl+3wiU9sgGsODFBT2tgVi4obtdZcO6mshuNmCUXQwcGSLW9zCKZ/rWLuzpDxe+lOLvM+LVEPMC6zpdNKHT2CLlpd+1+rQsjz51m7pHK5KEUStpsW2LT6UUiW146XbmvhK3HEGybEjkMJ++pSn5uHm70CZ2X+Kuo3kPzqxMczS7UEcgSLhTXSfw0PRl0GLWZo7kAfC8t2ktD0sBkjeIxcm0MtLJnjtLLvIfnbAIaVhDKLVA0FrGYr5ICQoIT55CfLgebjQ/F8VjOd1TbE+3vTjXXgF6v2cojCw912As3pOiRtASTIXwFgJd0h3hECR0U96WY7y84275v67m9l/aVnL68hCTISWQM4cRZmoS8kHjiyrMlgtJWef7DMnBGkm1S6L3qWX9blVwVlF+Mzq0EVNNOEcA2Op/b/NS64KfGjiOk6UB9c6Z3KKcBVwBYYZTjsgs3wKolR00Upw7wF5VfZtoZv+UaQYW6wE5eGPADyrY8Gc55fPTtiDj9YUOoqA8Ugkbi2LooyBjTzUJ3vCxLbnEhxgwO+2XpxLVq4muCK/65X6Dot75iwT3v5v/I4mzLo2sDj6feIZKWXqDryzV",
+        "edits": ""
+      },
+      "semanticSnapshot": {
+        "v": 1,
+        "auto": true,
+        "text": "重型炼金工作台·空置校准台 · 5组/30mesh · 世界坐标(Y上Z前), 原点=模型根\n# 阅读说明: G:=group行(可动画骨骼, 动画key用G:后的id; @p=pivot世界坐标; 倾(x,y,z)°=朝向偏离世界轴的欧拉角; 缩进=父子层级; 挂:=挂载于某组; G:id→id→…=chain折叠行, 每个id都是可独立动画的group, chain×N=waypoint数)\n# M:=mesh行(label[id 几何 @(世界坐标)], label可省略; ×N=for循环批量件(锚点=代表实例); cyl (起)→(末)或 轴上(Y)等方位词=延伸方向; 薄向=板面法向(扁板); 挂载组双代表=最大件+最远有向件(刃/嘴/管所在端); 无方向标注=均匀块(三向相近,如头),默认面向前(Z); 对称×2=镜像对)\nG:wood_body 深色木制台体 @p(0,0.8,0.1)\n  M:[m4 box 3.1×0.18×1.4 (0,0.8,0) 薄向上(Y)]\n  G:stone_top 耐热石台面 @p(0,1,0.1)\n    M:[m9 box 3.3×0.16×1.6 (0,0.9,0) 薄向上(Y)]\n  G:brass_frame 黄铜框架 @p(0,1.2,0.1)\n    M:[m13 box 3.3×0.1×0.1 (0,1.8,-0.7) 轴右(X)]\n  G:calibration_panel 校准仪表板 @p(0,1.2,-0.6)\n    M:[m20 box 1.4×0.5×0.1 (0,1.4,-0.7) 薄向前(Z)]\n  G:calibration_guides 空置校准导轨 @p(0,1.1,0.1)\n    M:[m26 box 0.1×0.07×0.96 (-0.8,1.1,0.1) 轴前(Z)]",
+        "stats": {
+          "groups": 5,
+          "meshes": 30,
+          "labeledMeshes": 0,
+          "labelCoverage": 0,
+          "batchLabels": 0,
+          "autoChains": 0,
+          "snapshotChars": 794
+        }
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -1.67,
+          0.8300000000000001,
+          -0.8200000000000001
+        ],
+        "max": [
+          1.67,
+          0.99,
+          0.8
+        ],
+        "sourceNodeId": "m9"
+      },
+      {
+        "min": [
+          -1.54,
+          0.67,
+          -0.7
+        ],
+        "max": [
+          1.54,
+          0.85,
+          0.6799999999999999
+        ],
+        "sourceNodeId": "m4"
+      },
+      {
+        "min": [
+          -1.36,
+          0.15999999999999998,
+          -0.55
+        ],
+        "max": [
+          1.36,
+          0.27999999999999997,
+          0.53
+        ],
+        "sourceNodeId": "m5"
+      },
+      {
+        "min": [
+          -1.36,
+          0.39,
+          -0.67
+        ],
+        "max": [
+          1.36,
+          0.7100000000000001,
+          -0.5100000000000001
+        ],
+        "sourceNodeId": "m6"
+      }
+    ],
+    "sourceMeshCount": 30,
+    "candidateCount": 4,
+    "fallbackUsed": false
+  },
+  "footprintRadius": 1.67,
+  "sizeClass": "medium",
+  "mode": "voxel",
+  "provider": "gpt",
+  "createdAt": 1787875882681,
+  "updatedAt": 1787875882681
+}

@@ -1,0 +1,536 @@
+{
+  "id": "asset-faef2735-569d-40f8",
+  "name": "复杂公园/饮水台",
+  "prompt": "Standalone reusable voxel park asset: a compact public drinking fountain on a stone pedestal, silver basin and tap, sturdy waist-high collision, clean park style. Box-only voxel model around 20 purposeful boxes, centered at the origin, base grounded on y=0, no surrounding terrain, no people, no loose floating geometry, flat-shaded cohesive enchanted municipal park palette. Keep the gameplay silhouette and collision shape readable from all sides.",
+  "modelJson": {
+    "name": "魔法公园公共饮水台",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "fountain",
+        "name": "饮水台",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "fountain",
+        "transform": {
+          "pos": [
+            0,
+            0.1,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.35,
+            "height": 0.2,
+            "depth": 1.2
+          },
+          "color": 5468016
+        }
+      },
+      {
+        "id": "m1",
+        "parent": "fountain",
+        "transform": {
+          "pos": [
+            0,
+            0.28,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.15,
+            "height": 0.16,
+            "depth": 1
+          },
+          "color": 6784134
+        }
+      },
+      {
+        "id": "m2",
+        "parent": "fountain",
+        "transform": {
+          "pos": [
+            0,
+            0.72,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.85,
+            "height": 0.72,
+            "depth": 0.72
+          },
+          "color": 5797753
+        }
+      },
+      {
+        "id": "m3",
+        "parent": "fountain",
+        "transform": {
+          "pos": [
+            0,
+            1.23,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.76,
+            "height": 0.3,
+            "depth": 0.66
+          },
+          "color": 6588297
+        }
+      },
+      {
+        "id": "m4",
+        "parent": "fountain",
+        "transform": {
+          "pos": [
+            0,
+            1.55,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.68,
+            "height": 0.34,
+            "depth": 0.62
+          },
+          "color": 7574164
+        }
+      },
+      {
+        "id": "m5",
+        "parent": "fountain",
+        "transform": {
+          "pos": [
+            0,
+            1.81,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.82,
+            "height": 0.18,
+            "depth": 0.72
+          },
+          "color": 4811373
+        }
+      },
+      {
+        "id": "m6",
+        "parent": "fountain",
+        "transform": {
+          "pos": [
+            0,
+            1.93,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.28,
+            "height": 0.22,
+            "depth": 1.02
+          },
+          "color": 10399664
+        }
+      },
+      {
+        "id": "m7",
+        "parent": "fountain",
+        "transform": {
+          "pos": [
+            -0.56,
+            2.08,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.16,
+            "height": 0.14,
+            "depth": 1.02
+          },
+          "color": 12832975
+        }
+      },
+      {
+        "id": "m8",
+        "parent": "fountain",
+        "transform": {
+          "pos": [
+            0.56,
+            2.08,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.16,
+            "height": 0.14,
+            "depth": 1.02
+          },
+          "color": 12832975
+        }
+      },
+      {
+        "id": "m9",
+        "parent": "fountain",
+        "transform": {
+          "pos": [
+            0,
+            2.08,
+            0.43
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.96,
+            "height": 0.14,
+            "depth": 0.16
+          },
+          "color": 12110023
+        }
+      },
+      {
+        "id": "m10",
+        "parent": "fountain",
+        "transform": {
+          "pos": [
+            0,
+            2.08,
+            -0.43
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.96,
+            "height": 0.14,
+            "depth": 0.16
+          },
+          "color": 12110023
+        }
+      },
+      {
+        "id": "m11",
+        "parent": "fountain",
+        "transform": {
+          "pos": [
+            0,
+            2,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.96,
+            "height": 0.08,
+            "depth": 0.7
+          },
+          "color": 7308678
+        }
+      },
+      {
+        "id": "m12",
+        "parent": "fountain",
+        "transform": {
+          "pos": [
+            0,
+            2.055,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.86,
+            "height": 0.025,
+            "depth": 0.6
+          },
+          "color": 6469298
+        }
+      },
+      {
+        "id": "m13",
+        "parent": "fountain",
+        "transform": {
+          "pos": [
+            0,
+            2.075,
+            0.08
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.16,
+            "height": 0.03,
+            "depth": 0.16
+          },
+          "color": 3493717
+        }
+      },
+      {
+        "id": "m14",
+        "parent": "fountain",
+        "transform": {
+          "pos": [
+            0,
+            2.31,
+            -0.43
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.92,
+            "height": 0.48,
+            "depth": 0.16
+          },
+          "color": 9413797
+        }
+      },
+      {
+        "id": "m15",
+        "parent": "fountain",
+        "transform": {
+          "pos": [
+            0.27,
+            2.51,
+            -0.36
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.16,
+            "height": 0.42,
+            "depth": 0.16
+          },
+          "color": 13161940
+        }
+      },
+      {
+        "id": "m16",
+        "parent": "fountain",
+        "transform": {
+          "pos": [
+            0.27,
+            2.64,
+            -0.23
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.16,
+            "height": 0.16,
+            "depth": 0.42
+          },
+          "color": 14016477
+        }
+      },
+      {
+        "id": "m17",
+        "parent": "fountain",
+        "transform": {
+          "pos": [
+            0.27,
+            2.55,
+            -0.03
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.13,
+            "height": 0.2,
+            "depth": 0.13
+          },
+          "color": 11058363
+        }
+      },
+      {
+        "id": "m18",
+        "parent": "fountain",
+        "transform": {
+          "pos": [
+            -0.28,
+            2.31,
+            -0.31
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.25,
+            "height": 0.25,
+            "depth": 0.12
+          },
+          "color": 7440779
+        }
+      },
+      {
+        "id": "m19",
+        "parent": "fountain",
+        "transform": {
+          "pos": [
+            -0.28,
+            2.31,
+            -0.215
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.13,
+            "height": 0.13,
+            "depth": 0.07
+          },
+          "color": 13874539
+        }
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1783922031435,
+        "provider": "gpt",
+        "data": "OZARWZHdjC7cipn7TjWxC+Z9fel30DZFc+2Blp41hGr8jI9kz9IIXsr3zyczLFt3P2UdqfmhuEQTZiuHjNKW0CxgfZwPxIuf/J1dvrzpoDuRxxt6ZgoZGYc2THEzXDhVKC4Qzkx7cfnbTgnfWyeDCZHjY2yo1zZNXniLKfEHPWaZMpAi8bNaP5R2KD/F4TNP35qIRuwfEADZUoyqbUwGcpth18G0Y5wXBo5dFt410SnmBDdnCKEUykBYuiO7bMNfQNH8Phft8z/JWz0fRPk19yxeC2IPSHt185Ww1kDlPgAyaiUmW0EOJ9NIWiNoGPuLjB/wWiNddvIO2jyz88NdE5d49dU8B0RQ7V1t8qojyirZgMDmbEv4bIRdIq1zcbGW670IGjl4PSLG6bUq8Y7/4U28jbu0lmA0ut19NImDF68t51/rhRzZerN8mUJMgW/+qnGsR9ctq1ktYJanGkCgcJI+J6eeWyyMp9Vy7Wqrb2QiCdsHd2EZD+zoGCOmxTeDAF7PLxjA97fcA1hRmxElbtDHGpxUfExZH4oSkizkgXJSZNF18DGpNm8nFwK4QPgIBLvFnuqykLRS2P/eVVIwJ1idcCeuuaumGLn5c6vVHG/IUiurZxPmDTV+n0DKOhLLBYy7OOCuQI9NTRCZ17qBROcqvtgkWyunAi1tzf41V1oZ+Kooxat7xe/qClBmKSdvJe1TPk4Znp8zOat0ydPk/djI/wRz6YorXzk6cOcQOFY+oC3PqplOR7Bq8hueyt2wxIdD3U1SVGlsUlvQgVPHp+iiKem3XswoD86JCazXzcvYbmruDEn6y3WmbfShe9e0U13OZlchvyI=",
+        "edits": ""
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -0.425,
+          0.36,
+          -0.36
+        ],
+        "max": [
+          0.425,
+          1.08,
+          0.36
+        ],
+        "sourceNodeId": "m2"
+      },
+      {
+        "min": [
+          -0.675,
+          0,
+          -0.6
+        ],
+        "max": [
+          0.675,
+          0.2,
+          0.6
+        ],
+        "sourceNodeId": "m0"
+      },
+      {
+        "min": [
+          -0.64,
+          1.8199999999999998,
+          -0.51
+        ],
+        "max": [
+          0.64,
+          2.04,
+          0.51
+        ],
+        "sourceNodeId": "m6"
+      },
+      {
+        "min": [
+          -0.575,
+          0.2,
+          -0.5
+        ],
+        "max": [
+          0.575,
+          0.36000000000000004,
+          0.5
+        ],
+        "sourceNodeId": "m1"
+      },
+      {
+        "min": [
+          -0.38,
+          1.08,
+          -0.33
+        ],
+        "max": [
+          0.38,
+          1.38,
+          0.33
+        ],
+        "sourceNodeId": "m3"
+      },
+      {
+        "min": [
+          -0.34,
+          1.3800000000000001,
+          -0.31
+        ],
+        "max": [
+          0.34,
+          1.72,
+          0.31
+        ],
+        "sourceNodeId": "m4"
+      },
+      {
+        "min": [
+          -0.41,
+          1.72,
+          -0.36
+        ],
+        "max": [
+          0.41,
+          1.9000000000000001,
+          0.36
+        ],
+        "sourceNodeId": "m5"
+      }
+    ],
+    "sourceMeshCount": 20,
+    "candidateCount": 7,
+    "fallbackUsed": false
+  },
+  "mode": "voxel",
+  "provider": "provider-fallback",
+  "createdAt": 1783922422401,
+  "updatedAt": 1783922422401
+}

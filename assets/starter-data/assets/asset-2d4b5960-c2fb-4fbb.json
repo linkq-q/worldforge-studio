@@ -1,0 +1,163 @@
+{
+  "id": "asset-2d4b5960-c2fb-4fbb",
+  "name": "小说",
+  "prompt": "单独一本合上的平装小说，橙色封面配黑色抽象图形，无任何附属物\nCoordinate contract: local Y+ is up, local Z+ is the front, entrance, or forward direction, and local X+ is right. Put doors, facades, openings, windshields, noses, seats, and other recognizable front details toward local Z+. For a modular repeated element, explicitly choose the long axis: side-by-side modules span local X with depth/front on local Z; traversal modules span local Z. Keep the model centered at its origin.\nCanonical dimensions contract: width=0.27, height=0.04, depth=0.39 world units. Keep the generated mesh within this centered bounding size.",
+  "modelJson": {
+    "name": "合上的橙色平装小说",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "m0",
+        "transform": {
+          "pos": [
+            0,
+            0.017,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.27,
+            "height": 0.006,
+            "depth": 0.39
+          },
+          "color": 14181928
+        }
+      },
+      {
+        "id": "m1",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.255,
+            "height": 0.028,
+            "depth": 0.382
+          },
+          "color": 14864806
+        }
+      },
+      {
+        "id": "m2",
+        "transform": {
+          "pos": [
+            0,
+            -0.017,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.27,
+            "height": 0.006,
+            "depth": 0.39
+          },
+          "color": 14181928
+        }
+      },
+      {
+        "id": "m3",
+        "transform": {
+          "pos": [
+            -0.045,
+            0.0205,
+            0.055
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.012,
+            "height": 0.003,
+            "depth": 0.12
+          },
+          "color": 1512211
+        }
+      },
+      {
+        "id": "m4",
+        "transform": {
+          "pos": [
+            0.045,
+            0.0205,
+            0.055
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.012,
+            "height": 0.003,
+            "depth": 0.12
+          },
+          "color": 1512211
+        }
+      },
+      {
+        "id": "m5",
+        "transform": {
+          "pos": [
+            0,
+            0.0205,
+            -0.025
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.09,
+            "height": 0.003,
+            "depth": 0.012
+          },
+          "color": 1512211
+        }
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1787873853702,
+        "provider": "gpt",
+        "data": "R86zh1wdZWJ+5QVDB2TEaJL7BQNNqDsAxnXQL30q4WS5fvmYTYktYtcEgv1+OeBQVSQErC1Jkv3yf0xdrm4PfUQMZgrDJfc4iYcuKndfUpHjvWQ383CtmzJFSy3FR+xHxiJdXnyvCv29PdS5dlsqNfFmGIHPxihyaEeThdAr2xUwNfJeu6oSWHfR4UHy0N9LMIoY/+6sIqh7x6Bh9ktlhgru6EpQ93cs/cC5RIkWvqGUvFzbgw4ao2wXCh9o97eNjVhhbgH4VfBGUEVU8zAQ+UbTWidSM3KT/nI3l6ucknReN9hUgi5SkiCZPU8HLNbBDJhgZx92KvtgzIYEP5ma8VzegN5wOpoMghJ/NZdxopOQbc2FBZWV/BCGM74BMZjlkrKIIAqB8/WNVQbqbM/xXmLp19qYgyN7PXY8oe8rg6jQCfiDd+kEUT6300sNQ/FduTSQ6e4FhJlP6IaY1WSWoznXLBnkgo0ZTK8ncoMqAXmyTbO/uNCwKP92mEYcsB2iCPz4uqwLD6Le2uQbI8xh60TUy1v2zrc/2mmAkxsNvefdHik5lFy2GA==",
+        "edits": ""
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -0.135,
+          0,
+          -0.195
+        ],
+        "max": [
+          0.135,
+          0.0475,
+          0.195
+        ],
+        "sourceNodeId": "asset-bounds"
+      }
+    ],
+    "sourceMeshCount": 6,
+    "candidateCount": 0,
+    "fallbackUsed": true
+  },
+  "footprintRadius": 0.195,
+  "sizeClass": "small",
+  "mode": "voxel",
+  "provider": "gpt",
+  "createdAt": 1787873853053,
+  "updatedAt": 1787873853053
+}

@@ -1,0 +1,346 @@
+{
+  "id": "asset-f7e2f03f-f7d3-4f55",
+  "name": "废纸垃圾小堆",
+  "prompt": "A single reusable compact cluster of several visibly crumpled paper balls and two small torn paper scraps forming one organized loose-trash asset, pieces approximately 0.1 to 0.18 meters each, no bin, food waste, floor, room, or background",
+  "tags": [
+    "trash",
+    "prop"
+  ],
+  "modelJson": {
+    "name": "揉皱废纸团与碎纸片",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "paper_trash",
+        "name": "松散废纸组合",
+        "transform": {
+          "pos": [
+            0.016,
+            0.0535,
+            0.0445
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.53,
+            0.165,
+            0.351
+          ],
+          "center": [
+            -0.019,
+            0.028,
+            -0.031
+          ],
+          "axes": [
+            [
+              0.8753,
+              0.001,
+              0.4837
+            ],
+            [
+              -0.0395,
+              0.9968,
+              0.0694
+            ],
+            [
+              -0.4821,
+              -0.0798,
+              0.8725
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "paper_trash",
+        "transform": {
+          "pos": [
+            -0.126,
+            0.0115,
+            -0.0245
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.13,
+            "height": 0.0936,
+            "depth": 0.1066
+          },
+          "color": 15262680
+        }
+      },
+      {
+        "id": "m1",
+        "parent": "paper_trash",
+        "transform": {
+          "pos": [
+            -0.1104,
+            0.0219,
+            -0.0375
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.0806,
+            "height": 0.1248,
+            "depth": 0.07020000000000001
+          },
+          "color": 16118505
+        }
+      },
+      {
+        "id": "m2",
+        "parent": "paper_trash",
+        "transform": {
+          "pos": [
+            0.014,
+            0.0215,
+            0.0255
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.15,
+            "height": 0.108,
+            "depth": 0.12299999999999998
+          },
+          "color": 15855333
+        }
+      },
+      {
+        "id": "m3",
+        "parent": "paper_trash",
+        "transform": {
+          "pos": [
+            0.032,
+            0.0335,
+            0.0105
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.093,
+            "height": 0.144,
+            "depth": 0.081
+          },
+          "color": 14209993
+        }
+      },
+      {
+        "id": "m4",
+        "parent": "paper_trash",
+        "transform": {
+          "pos": [
+            0.114,
+            0.0065,
+            -0.0745
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.12,
+            "height": 0.08639999999999999,
+            "depth": 0.09839999999999999
+          },
+          "color": 14604750
+        }
+      },
+      {
+        "id": "m5",
+        "parent": "paper_trash",
+        "transform": {
+          "pos": [
+            0.1284,
+            0.0161,
+            -0.0865
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.0744,
+            "height": 0.1152,
+            "depth": 0.0648
+          },
+          "color": 16118505
+        }
+      },
+      {
+        "id": "m6",
+        "parent": "paper_trash",
+        "transform": {
+          "pos": [
+            -0.046,
+            0.0015,
+            -0.1445
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.11,
+            "height": 0.07919999999999999,
+            "depth": 0.09019999999999999
+          },
+          "color": 15657696
+        }
+      },
+      {
+        "id": "m7",
+        "parent": "paper_trash",
+        "transform": {
+          "pos": [
+            -0.0328,
+            0.0103,
+            -0.1555
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.0682,
+            "height": 0.1056,
+            "depth": 0.0594
+          },
+          "color": 14209993
+        }
+      },
+      {
+        "id": "m8",
+        "parent": "paper_trash",
+        "transform": {
+          "pos": [
+            0.164,
+            -0.0035,
+            0.0555
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.1,
+            "height": 0.072,
+            "depth": 0.082
+          },
+          "color": 15065301
+        }
+      },
+      {
+        "id": "m9",
+        "parent": "paper_trash",
+        "transform": {
+          "pos": [
+            0.176,
+            0.0045,
+            0.0455
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.062,
+            "height": 0.096,
+            "depth": 0.054000000000000006
+          },
+          "color": 16118505
+        }
+      },
+      {
+        "id": "m10",
+        "parent": "paper_trash",
+        "transform": {
+          "pos": [
+            -0.176,
+            -0.0335,
+            -0.1245
+          ],
+          "quat": [
+            -0.05,
+            0.13,
+            0.03,
+            0.99
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.16,
+            "height": 0.008,
+            "depth": 0.07
+          },
+          "color": 15328732
+        }
+      },
+      {
+        "id": "m11",
+        "parent": "paper_trash",
+        "transform": {
+          "pos": [
+            0.104,
+            -0.0335,
+            0.1555
+          ],
+          "quat": [
+            0.08,
+            0.14,
+            0.06,
+            0.99
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.12,
+            "height": 0.007,
+            "depth": 0.07
+          },
+          "color": 15986920
+        }
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1786874693416,
+        "provider": "gpt",
+        "data": "QwduOzV6idQYhhkGvCBvsagpw7zuV9sYHcCNN2PoRkHagQDgG2+pMmH2p33Ppfm87W1ahKFk0hj2A5gfcDHzA3ET5uRoBM9tgELzE+UOm8A/rEW0CSx49Zn1QHPxhezhYVinLqNgnxkKtgjvHrhRYqBbwVjxQVdtG46hn0D5z54KY0t24lEwcIhwPuXKP6TXU1y0UJ4bpFlpOkp8qj+Z/9Ns1wovmgnL96a9d0wY/YDALAfjzzZbjyilQnEzej8nAhZ91zXIUysW4qH6EcjP9MYVLybY+yYd0KSvrOPGh/8V9roAxEx48wjsiRrXs1aa0FB1FgCAre/YEqK2Cwa3m0O4txq/210bqEip/lRZitBolilhlWyabO7fmwQropYybSKoGOxfA8IDgUcuN+q+0wbU2+n1ad92SsCwtTOCSk9N2FQGHgSRdwMTkfqcF36WmVEN9tJPOP4FwpHW9xGdebhqTF6nNndlPllDuweNL2I8UbHDuysNg+5bJNxXQm/7Ck7MlmLfZcFBXUjRvxSWKB/eGt3kESXcsrlgPKpup1Of7etFKHfowa48+W29JS+kubaOsX41zC92EJewNa6byEKfL5Wp4wpuTv3UeEEohQV/vj0XorxyN2ljfetTOZgC04VSbcjbqFWBRlD7ykPSeRUj2EguG5gmrPzRXYYeQQHJ64vDFL8ky9H4XvPWIdtJSIXGCqRKwcjVzct9GC5F0cVExLguyAscgbBifKFOwFzDcEb9N6dpzVPjkv5BxrAGy4Yg1zTBfRmeF8DMxH8LsKW63T1ZTTCQ2Nd30W7CGlZqTQRvMjoODgDLINVSczYRIw0nn0FoQSpzTlxdyrQnIGAuj/5plmPn9LXz0QNgofwtC/WmmQ==",
+        "edits": ""
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -0.2382077169132347,
+          0,
+          -0.1975334109141329
+        ],
+        "max": [
+          0.2382077169132347,
+          0.15719996038427253,
+          0.1975334109141329
+        ],
+        "sourceNodeId": "asset-bounds"
+      }
+    ],
+    "sourceMeshCount": 12,
+    "candidateCount": 0,
+    "fallbackUsed": true
+  },
+  "footprintRadius": 0.2382077169132347,
+  "sizeClass": "small",
+  "mode": "voxel",
+  "provider": "gpt",
+  "createdAt": 1786874696435,
+  "updatedAt": 1786874696435
+}

@@ -1,0 +1,594 @@
+{
+  "id": "asset-a449ac48-26a1-4c36",
+  "name": "复杂公园/石木南门",
+  "prompt": "Standalone reusable voxel park asset: a grand park entrance arch combining pale stone pillars and a timber sign beam, wide clearly open doorway, ivy accents, strong landmark silhouette. Box-only voxel model around 20 purposeful boxes, centered at the origin, base grounded on y=0, no surrounding terrain, no people, no loose floating geometry, flat-shaded cohesive enchanted municipal park palette. Keep the gameplay silhouette and collision shape readable from all sides.",
+  "modelJson": {
+    "name": "Enchanted Park Grand Entrance",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "m0",
+        "transform": {
+          "pos": [
+            -3.2,
+            0.225,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.5,
+            "height": 0.45,
+            "depth": 1.3
+          },
+          "color": 12498075
+        }
+      },
+      {
+        "id": "m1",
+        "transform": {
+          "pos": [
+            -3.2,
+            2.325,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.05,
+            "height": 3.75,
+            "depth": 0.9
+          },
+          "color": 14209208
+        }
+      },
+      {
+        "id": "m2",
+        "transform": {
+          "pos": [
+            -3.2,
+            4.4,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.45,
+            "height": 0.5,
+            "depth": 1.15
+          },
+          "color": 15262156
+        }
+      },
+      {
+        "id": "m3",
+        "transform": {
+          "pos": [
+            3.2,
+            0.225,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.5,
+            "height": 0.45,
+            "depth": 1.3
+          },
+          "color": 12498075
+        }
+      },
+      {
+        "id": "m4",
+        "transform": {
+          "pos": [
+            3.2,
+            2.325,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.05,
+            "height": 3.75,
+            "depth": 0.9
+          },
+          "color": 14209208
+        }
+      },
+      {
+        "id": "m5",
+        "transform": {
+          "pos": [
+            3.2,
+            4.4,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.45,
+            "height": 0.5,
+            "depth": 1.15
+          },
+          "color": 15262156
+        }
+      },
+      {
+        "id": "m6",
+        "transform": {
+          "pos": [
+            0,
+            5.05,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 8,
+            "height": 0.8,
+            "depth": 1.1
+          },
+          "color": 7359278
+        }
+      },
+      {
+        "id": "m7",
+        "transform": {
+          "pos": [
+            -3.88,
+            5.05,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.28,
+            "height": 1,
+            "depth": 1.25
+          },
+          "color": 4993828
+        }
+      },
+      {
+        "id": "m8",
+        "transform": {
+          "pos": [
+            3.88,
+            5.05,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.28,
+            "height": 1,
+            "depth": 1.25
+          },
+          "color": 4993828
+        }
+      },
+      {
+        "id": "m9",
+        "transform": {
+          "pos": [
+            0,
+            5.85,
+            0.12
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 4.4,
+            "height": 0.9,
+            "depth": 0.72
+          },
+          "color": 9068599
+        }
+      },
+      {
+        "id": "m10",
+        "transform": {
+          "pos": [
+            -1.35,
+            6.4,
+            0
+          ],
+          "quat": [
+            0,
+            0,
+            0.99,
+            -0.11
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2.77,
+            "height": 0.18,
+            "depth": 1.4
+          },
+          "color": 4993828
+        }
+      },
+      {
+        "id": "m11",
+        "transform": {
+          "pos": [
+            1.35,
+            6.4,
+            0
+          ],
+          "quat": [
+            0.7,
+            -0.08,
+            0.7,
+            0.08
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.4,
+            "height": 0.18,
+            "depth": 2.77
+          },
+          "color": 4993828
+        }
+      },
+      {
+        "id": "m12",
+        "transform": {
+          "pos": [
+            -2.19,
+            4.47,
+            0
+          ],
+          "quat": [
+            0.69,
+            0.17,
+            0.17,
+            0.69
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.1,
+            "height": 0.72,
+            "depth": 0.22
+          },
+          "color": 4993828
+        }
+      },
+      {
+        "id": "m13",
+        "transform": {
+          "pos": [
+            2.19,
+            4.47,
+            0
+          ],
+          "quat": [
+            0.17,
+            0.69,
+            0.69,
+            0.17
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.1,
+            "height": 0.72,
+            "depth": 0.22
+          },
+          "color": 4993828
+        }
+      },
+      {
+        "id": "m14",
+        "transform": {
+          "pos": [
+            0,
+            5.86,
+            0.53
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.45,
+            "height": 0.18,
+            "depth": 0.14
+          },
+          "color": 13938264
+        }
+      },
+      {
+        "id": "m15",
+        "transform": {
+          "pos": [
+            -3.1,
+            2.15,
+            0.5
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.18,
+            "height": 1.55,
+            "depth": 0.18
+          },
+          "color": 5208135
+        }
+      },
+      {
+        "id": "m16",
+        "transform": {
+          "pos": [
+            -2.9,
+            2.58,
+            0.51
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.5,
+            "height": 0.26,
+            "depth": 0.2
+          },
+          "color": 7444055
+        }
+      },
+      {
+        "id": "m17",
+        "transform": {
+          "pos": [
+            -3.31,
+            1.72,
+            0.51
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.48,
+            "height": 0.28,
+            "depth": 0.2
+          },
+          "color": 5208135
+        }
+      },
+      {
+        "id": "m18",
+        "transform": {
+          "pos": [
+            -2.62,
+            4.82,
+            0.6
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.35,
+            "height": 0.18,
+            "depth": 0.18
+          },
+          "color": 5208135
+        }
+      },
+      {
+        "id": "m19",
+        "transform": {
+          "pos": [
+            -2.05,
+            4.96,
+            0.61
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.42,
+            "height": 0.38,
+            "depth": 0.2
+          },
+          "color": 7444055
+        }
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1783921981151,
+        "provider": "gpt",
+        "data": "KwNWzLa9eU3Dg8nVQLTqWAZojpS2hiDhoOw/LIZ52kmnu2yr62cdU9IARMqMMm8pu5RwOvOb4jJ/pjyrmLZsqqHeD7IDCTQnWXSy1dXHjlG456/qE9JTyrfKwpzTtZEpEVe+iNOzFZEekpWF+iIpMTxAyQLrzYIG9yP5QZI4BLeO6OWs9ipv6OP2mURTAEssaxNYtWAxTePucbnwDRdg7tWjs9n1mulSxUjQ6+3IXqYU2HP6kC71/Kx+9n0IWc9rDMFBYL44akHwSyg9ZqCbiHpLjxQULSe++xHNUibxI1Y7WJizz+fgiIb4skZO/+3eV2tJJooDVrLmn9UO7qr2SCF4qg2XW39L9VnxIMsfuafgMcqn8vHRLsTsAY11miwY6I2623f7Fapbn83Za7uGnzofpmfyqODWgNsMSNIinA3dJxGD3Gh6vNpFadbhhpJXeKwIEgCVMXtMROb2A6FPQISNCatzNoH2XUGD6ztxogJhxhICUxWsYbJM+L/r2x5JSeJCJ3t6s1LJRlBu/XJUlaYCY8UdGQT9syHf//FU5JBxvI0j1+dc3IIqlvlU3F9s5EiOBS5X9jKjOYGW1MVs3AXgts/EzDrFM0O7PxpoCu2eW6tCh6W1XGGioiawdaYmX8k73MAJ7UTXblllekTJURM5nEvh0P7TqZ9/ulD3LibglT0uAvr4zcDy7zTLQ+QxIjQqeeND5ehxhuxo4OgyTEdFCGZo67E+t8WICxDvtKhGlZG5X6WaJGEdndnXnLckaG2vabQ/v04onOJbTL0xPsoCUj7QuPsNHwAPKwmSkr6xfOHwgAqqLHt6K6CcDMHHKD9BWADY7y00wRhRK1yFm4jshy3oqqTQACvuNm6+Q04WwqFN/F8mUYMnFOgsIwyAfVz1Dzp9IokEa99FGIcRuxQl6kxEqsNAzj0nK1MtHpT2/xjSS294B4RZLlTHVO3pXKD+PcWXpD9nYdjzZ13tbejFGvYArQqRWNPnbAbttcZQ+0rh1bBuQGJS/J/4O1CEEzKVSBz+5iA37kIHktvAklMKMk5gsuopKLdvuXZuGWDhe6sxOo4s8O947R6x5M3/NKEsy3H7D9FzarpcyMGmjG8u7HY=",
+        "edits": ""
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -4,
+          4.6499999999999995,
+          -0.5549999999999997
+        ],
+        "max": [
+          4,
+          5.45,
+          0.5450000000000004
+        ],
+        "sourceNodeId": "m6"
+      },
+      {
+        "min": [
+          -3.725,
+          0.4500000000000002,
+          -0.4549999999999997
+        ],
+        "max": [
+          -2.6750000000000003,
+          4.2,
+          0.44500000000000034
+        ],
+        "sourceNodeId": "m1"
+      },
+      {
+        "min": [
+          2.6750000000000003,
+          0.4500000000000002,
+          -0.4549999999999997
+        ],
+        "max": [
+          3.725,
+          4.2,
+          0.44500000000000034
+        ],
+        "sourceNodeId": "m4"
+      },
+      {
+        "min": [
+          -0.01959307010475464,
+          5.99983078162772,
+          -0.7050000000000003
+        ],
+        "max": [
+          2.7195930701047546,
+          6.800169218372281,
+          0.695000000000001
+        ],
+        "sourceNodeId": "m11"
+      },
+      {
+        "min": [
+          -2.7209756097560978,
+          6.008170731707318,
+          -0.7049999999999996
+        ],
+        "max": [
+          0.02097560975609758,
+          6.791829268292683,
+          0.6950000000000003
+        ],
+        "sourceNodeId": "m10"
+      },
+      {
+        "min": [
+          -2.2,
+          5.3999999999999995,
+          -0.24499999999999966
+        ],
+        "max": [
+          2.2,
+          6.3,
+          0.4750000000000003
+        ],
+        "sourceNodeId": "m9"
+      },
+      {
+        "min": [
+          -3.95,
+          0,
+          -0.6549999999999997
+        ],
+        "max": [
+          -2.45,
+          0.45,
+          0.6450000000000004
+        ],
+        "sourceNodeId": "m0"
+      },
+      {
+        "min": [
+          2.45,
+          0,
+          -0.6549999999999997
+        ],
+        "max": [
+          3.95,
+          0.45,
+          0.6450000000000004
+        ],
+        "sourceNodeId": "m3"
+      },
+      {
+        "min": [
+          -3.9250000000000003,
+          4.15,
+          -0.5799999999999996
+        ],
+        "max": [
+          -2.475,
+          4.65,
+          0.5700000000000003
+        ],
+        "sourceNodeId": "m2"
+      },
+      {
+        "min": [
+          2.475,
+          4.15,
+          -0.5799999999999996
+        ],
+        "max": [
+          3.9250000000000003,
+          4.65,
+          0.5700000000000003
+        ],
+        "sourceNodeId": "m5"
+      },
+      {
+        "min": [
+          1.6518495049504947,
+          4.117085148514851,
+          -0.36499999999999977
+        ],
+        "max": [
+          2.7281504950495052,
+          4.822914851485148,
+          0.3550000000000004
+        ],
+        "sourceNodeId": "m13"
+      },
+      {
+        "min": [
+          -2.728150495049505,
+          4.117085148514851,
+          -0.36499999999999977
+        ],
+        "max": [
+          -1.651849504950495,
+          4.822914851485148,
+          0.3550000000000004
+        ],
+        "sourceNodeId": "m12"
+      }
+    ],
+    "sourceMeshCount": 20,
+    "candidateCount": 14,
+    "fallbackUsed": false
+  },
+  "mode": "voxel",
+  "provider": "provider-fallback",
+  "createdAt": 1783922422398,
+  "updatedAt": 1783922422398
+}

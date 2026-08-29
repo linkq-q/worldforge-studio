@@ -1,0 +1,554 @@
+{
+  "id": "asset-d93f621a-d55a-4973",
+  "name": "立式街机",
+  "prompt": "A single reusable child-friendly upright arcade game cabinet with screen, joystick and buttons, approximately 1.55 meters tall, display appears powered off and emits no environmental light, no floor, background, person, or surrounding scene",
+  "tags": [
+    "game",
+    "electronics",
+    "prop"
+  ],
+  "modelJson": {
+    "name": "儿童立式街机柜",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "cabinet",
+        "name": "街机柜",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.85,
+            1.606,
+            0.887
+          ],
+          "center": [
+            -0.001,
+            0.768,
+            0.021
+          ],
+          "axes": [
+            [
+              0.9932,
+              -0.0176,
+              0.1153
+            ],
+            [
+              0.0021,
+              0.9911,
+              0.1332
+            ],
+            [
+              -0.1166,
+              -0.1321,
+              0.9844
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "joystick",
+        "name": "摇杆",
+        "parent": "cabinet",
+        "transform": {
+          "pos": [
+            -0.2,
+            0.98,
+            0.29
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.14,
+            0.29,
+            0.14
+          ],
+          "center": [
+            0,
+            0.135,
+            0.02
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "button_red",
+        "name": "红色按钮",
+        "parent": "cabinet",
+        "transform": {
+          "pos": [
+            0.08,
+            0.99,
+            0.35
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.11,
+            0.055,
+            0.11
+          ],
+          "center": [
+            0,
+            0.025,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "button_blue",
+        "name": "蓝色按钮",
+        "parent": "cabinet",
+        "transform": {
+          "pos": [
+            0.23,
+            0.96,
+            0.38
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.11,
+            0.055,
+            0.11
+          ],
+          "center": [
+            0,
+            0.025,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "coin_button",
+        "name": "开始按钮",
+        "parent": "cabinet",
+        "transform": {
+          "pos": [
+            0,
+            0.62,
+            0.33
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.1,
+            0.07,
+            0.055
+          ],
+          "center": [
+            0,
+            0,
+            0.02
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "cabinet",
+        "transform": {
+          "pos": [
+            0,
+            0.46,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.72,
+            "height": 0.92,
+            "depth": 0.58
+          },
+          "color": 4026569
+        }
+      },
+      {
+        "id": "m1",
+        "parent": "cabinet",
+        "transform": {
+          "pos": [
+            0,
+            1.16,
+            -0.06
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.72,
+            "height": 0.48,
+            "depth": 0.46
+          },
+          "color": 5014236
+        }
+      },
+      {
+        "id": "m2",
+        "parent": "cabinet",
+        "transform": {
+          "pos": [
+            0,
+            1.465,
+            -0.03
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.76,
+            "height": 0.17,
+            "depth": 0.5
+          },
+          "color": 15776047
+        }
+      },
+      {
+        "id": "m3",
+        "parent": "cabinet",
+        "transform": {
+          "pos": [
+            0,
+            1.2,
+            0.185
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.6,
+            "height": 0.38,
+            "depth": 0.035
+          },
+          "color": 1581107
+        }
+      },
+      {
+        "id": "m4",
+        "parent": "cabinet",
+        "transform": {
+          "pos": [
+            0,
+            1.2,
+            0.207
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.48,
+            "height": 0.28,
+            "depth": 0.018
+          },
+          "color": 527120
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass"
+          }
+        ]
+      },
+      {
+        "id": "m5",
+        "parent": "cabinet",
+        "transform": {
+          "pos": [
+            0,
+            0.93,
+            0.35
+          ],
+          "quat": [
+            0.35,
+            0,
+            0,
+            0.94
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.76,
+            "height": 0.08,
+            "depth": 0.18
+          },
+          "color": 15776047
+        }
+      },
+      {
+        "id": "m6",
+        "parent": "cabinet",
+        "transform": {
+          "pos": [
+            0,
+            0.62,
+            0.307
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.46,
+            "height": 0.08,
+            "depth": 0.035
+          },
+          "color": 2306122
+        }
+      },
+      {
+        "id": "m7",
+        "parent": "cabinet",
+        "transform": {
+          "pos": [
+            0,
+            1.465,
+            0.238
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.18,
+            "height": 0.12,
+            "depth": 0.025
+          },
+          "color": 16768341
+        }
+      },
+      {
+        "id": "m8",
+        "parent": "joystick",
+        "transform": {
+          "pos": [
+            0,
+            0.09,
+            0.02
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.07,
+            "height": 0.2,
+            "depth": 0.07
+          },
+          "color": 3488325
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m9",
+        "parent": "joystick",
+        "transform": {
+          "pos": [
+            0,
+            0.21,
+            0.02
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.14,
+            "height": 0.14,
+            "depth": 0.14
+          },
+          "color": 15024963
+        }
+      },
+      {
+        "id": "m10",
+        "parent": "button_red",
+        "transform": {
+          "pos": [
+            0,
+            0.025,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.11,
+            "height": 0.055,
+            "depth": 0.11
+          },
+          "color": 15223627
+        }
+      },
+      {
+        "id": "m11",
+        "parent": "button_blue",
+        "transform": {
+          "pos": [
+            0,
+            0.025,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.11,
+            "height": 0.055,
+            "depth": 0.11
+          },
+          "color": 4964584
+        }
+      },
+      {
+        "id": "m12",
+        "parent": "coin_button",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0.02
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.1,
+            "height": 0.07,
+            "depth": 0.055
+          },
+          "color": 15980110
+        }
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1786871482299,
+        "provider": "gpt",
+        "data": "4cmvXEUsOWraWncaWSYUZRB0q+7TyI1bhQN//BZ9HhdvqA5cfGHE5K9KxX8fi1pXm0mBDlAVs81NNs6ffRFrOP5DGHFJFrAEAJzVEor1MzLRj/tdCsi4ZbSt7HWOqn62IfzNYQnx9SHjC/HH3wm9LtHaPkMHW3bl6JgzFCLbQsf21Rtv5YFfs4ZHjQVz7EWq3dZI5eEjIUYt6jYN3HD4sLfHgYDDuJ4E0a1nHYEBiTLostCZKtLqJ2apGIEVfuSRJzUq8CDukrHVZg/D8/QahGYVwnlpv0l3cR4w3cPhj2Ut9oS2u6duylX8Wi8XrRsn6mnaMN8JfbF3UFXTtLDE5ePoksKIn0rspe0Lpa4bFo+8r713dJ8EF0sKyEIZmjELIXJxFfLSmf8y1mkR9h1mDRDpj3KxjUSgjq/q0JfdQwQ5mcPIN1SlrXKQaa4E5G1muGBc+kOzaYv5ksUfPQZookTSVQrV++9WTa4KXSO0RSjWDMBm7pYqkcKg2RebrwM1XqnkgTaFLJ+1DbppNA4p0y6x0RCxkTbsuxoSAKsMq3ts9LZNDa9k89yhl8AjMKwo4e7cq2re24qpB/tHufwteeAcNWJEYqpIFOSrL7cEklJ6SFGPkZlWFZ1L1d3XAbkp0a+hUUUB1G2lGm8yyME7XhDBIKIil9jYji2BB/cH+AoCZdnlgENWwcl4yNZPpbFrQ3sUqcIoFCcfHGZvvL312Re8Myrll5ap+FHeOXSay7/2KUH770Ph9N1We4HCwy/201xmyQvmXF34uAPiogkJPQWVNuU3BE8VEHYkDZjzhXGlnek6eTAXXpMG2tpFcwYRoqH/WlubtQOH6CiMwAbxj/7woDrLyDQcI8KWRhfww9eh1DkFInbJGQqNJP0RNJBIqg8+FSM0EYH6SrO2bscjGFUBaiQ/kXIlj5lNqu6nyiGxamCAwEPT8V1FZfgc6iYBVCAFSnQjTOkQEgTY4v2B/KzHT/mSLbQOwg==",
+        "edits": ""
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -0.36,
+          0,
+          -0.3671220554616837
+        ],
+        "max": [
+          0.36,
+          0.92,
+          0.21287794453831627
+        ],
+        "sourceNodeId": "m0"
+      },
+      {
+        "min": [
+          -0.36,
+          0.9199999999999999,
+          -0.36712205546168375
+        ],
+        "max": [
+          0.36,
+          1.4,
+          0.0928779445383163
+        ],
+        "sourceNodeId": "m1"
+      }
+    ],
+    "sourceMeshCount": 13,
+    "candidateCount": 2,
+    "fallbackUsed": false
+  },
+  "footprintRadius": 0.36712205546168375,
+  "sizeClass": "small",
+  "mode": "voxel",
+  "provider": "gpt",
+  "createdAt": 1786871483544,
+  "updatedAt": 1786871483544
+}

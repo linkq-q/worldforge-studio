@@ -1,0 +1,1480 @@
+{
+  "id": "asset-2736e921-8f82-4897",
+  "name": "秘术书架 4",
+  "prompt": "同一规格的精致开放式深色木质书架，蒸汽朋克与奇幻学院风格，无柜门无玻璃门；四种内容异形体分别具有不同数量和位置的空格，书籍疏密、尺寸、装帧、卷轴、黄铜小仪器与标本各不相同，明确保留大量不规则空位，结构一致但陈列差异明显，细节精致\nCoordinate contract: local Y+ is up, local Z+ is the front, entrance, or forward direction, and local X+ is right. Put doors, facades, openings, windshields, noses, seats, and other recognizable front details toward local Z+. For a modular repeated element, explicitly choose the long axis: side-by-side modules span local X with depth/front on local Z; traversal modules span local Z. Keep the model centered at its origin.\nCanonical dimensions contract: width=2.8, height=3.4, depth=0.7 world units. Keep the generated mesh within this centered bounding size.\nCreate variation 4 of 4; preserve the same reusable asset family while varying silhouette and details.",
+  "tags": [
+    "indoor",
+    "open-shelf",
+    "magic-library",
+    "content-variants"
+  ],
+  "modelJson": {
+    "name": "奇幻学院深色木质书架·异形体四",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "bookcase",
+        "name": "开放式书架",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            4.363,
+            5.919,
+            0.944
+          ],
+          "center": [
+            0.105,
+            1.003,
+            0
+          ],
+          "axes": [
+            [
+              0.9628,
+              0.27,
+              0.013
+            ],
+            [
+              -0.2703,
+              0.9618,
+              0.0427
+            ],
+            [
+              -0.001,
+              -0.0446,
+              0.999
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "frame",
+        "name": "深色木质框架",
+        "parent": "bookcase",
+        "transform": {
+          "pos": [
+            0,
+            1.695,
+            0
+          ]
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "walnut"
+          }
+        ],
+        "_obb": {
+          "size": [
+            3.831,
+            4.189,
+            0.81
+          ],
+          "center": [
+            0,
+            0.005,
+            0
+          ],
+          "axes": [
+            [
+              0.9352,
+              0.3538,
+              0.013
+            ],
+            [
+              -0.3541,
+              0.9348,
+              0.0276
+            ],
+            [
+              -0.0024,
+              -0.0304,
+              0.9995
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "books_lower",
+        "name": "下层书籍",
+        "parent": "bookcase",
+        "transform": {
+          "pos": [
+            -0.025,
+            0.475,
+            0.19
+          ]
+        },
+        "_obb": {
+          "size": [
+            2.377,
+            0.631,
+            0.405
+          ],
+          "center": [
+            -0.012,
+            0.033,
+            -0.002
+          ],
+          "axes": [
+            [
+              1,
+              -0.0023,
+              0.0011
+            ],
+            [
+              0.0023,
+              1,
+              -0.0096
+            ],
+            [
+              -0.0011,
+              0.0096,
+              1
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "books_middle",
+        "name": "中层疏落书籍",
+        "parent": "bookcase",
+        "transform": {
+          "pos": [
+            -0.055,
+            1.09,
+            0.165
+          ]
+        },
+        "_obb": {
+          "size": [
+            2.38,
+            0.672,
+            0.348
+          ],
+          "center": [
+            0.057,
+            0.066,
+            0.003
+          ],
+          "axes": [
+            [
+              0.9982,
+              -0.0597,
+              -0.005
+            ],
+            [
+              0.0597,
+              0.9982,
+              0.0022
+            ],
+            [
+              0.0049,
+              -0.0025,
+              1
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "scrolls",
+        "name": "卷轴",
+        "parent": "bookcase",
+        "transform": {
+          "pos": [
+            -0.89,
+            1.83,
+            0.125
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.712,
+            0.311,
+            0.234
+          ],
+          "center": [
+            0,
+            -0.007,
+            0.007
+          ],
+          "axes": [
+            [
+              0.9999,
+              0.0121,
+              -0.0006
+            ],
+            [
+              -0.012,
+              0.9818,
+              -0.1898
+            ],
+            [
+              -0.0017,
+              0.1897,
+              0.9818
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "brass_device",
+        "name": "黄铜学院仪器",
+        "parent": "bookcase",
+        "transform": {
+          "pos": [
+            0.655,
+            1.83,
+            0.135
+          ]
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ],
+        "_obb": {
+          "size": [
+            0.625,
+            0.633,
+            0.283
+          ],
+          "center": [
+            0.047,
+            0.094,
+            -0.008
+          ],
+          "axes": [
+            [
+              0.9961,
+              -0.088,
+              -0.0008
+            ],
+            [
+              0.088,
+              0.9957,
+              0.0294
+            ],
+            [
+              -0.0018,
+              -0.0294,
+              0.9996
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "upper_books",
+        "name": "上层不对称书列",
+        "parent": "bookcase",
+        "transform": {
+          "pos": [
+            0.33,
+            2.745,
+            0.16
+          ]
+        },
+        "_obb": {
+          "size": [
+            1.564,
+            0.624,
+            0.34
+          ],
+          "center": [
+            0,
+            0.042,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              -0.0065,
+              0
+            ],
+            [
+              0.0065,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "specimen",
+        "name": "玻璃标本匣",
+        "parent": "bookcase",
+        "transform": {
+          "pos": [
+            -0.95,
+            2.575,
+            0.155
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.54,
+            0.631,
+            0.432
+          ],
+          "center": [
+            0,
+            0.101,
+            -0.021
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              0.9889,
+              0.1485
+            ],
+            [
+              0,
+              -0.1485,
+              0.9889
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "frame",
+        "transform": {
+          "pos": [
+            0,
+            -1.605,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2.8,
+            "height": 0.18,
+            "depth": 0.7
+          },
+          "color": 2365199
+        }
+      },
+      {
+        "id": "m1",
+        "parent": "frame",
+        "transform": {
+          "pos": [
+            0,
+            1.605,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2.8,
+            "height": 0.2,
+            "depth": 0.7
+          },
+          "color": 2956306
+        }
+      },
+      {
+        "id": "m2",
+        "parent": "frame",
+        "transform": {
+          "pos": [
+            -1.31,
+            -0.005,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.18,
+            "height": 3.02,
+            "depth": 0.66
+          },
+          "color": 2758927
+        }
+      },
+      {
+        "id": "m3",
+        "parent": "frame",
+        "transform": {
+          "pos": [
+            1.31,
+            -0.005,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.18,
+            "height": 3.02,
+            "depth": 0.66
+          },
+          "color": 2758927
+        }
+      },
+      {
+        "id": "m4",
+        "parent": "frame",
+        "transform": {
+          "pos": [
+            0,
+            -0.005,
+            -0.31
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2.44,
+            "height": 3.02,
+            "depth": 0.08
+          },
+          "color": 2102286
+        }
+      },
+      {
+        "id": "m5",
+        "parent": "frame",
+        "transform": {
+          "pos": [
+            0,
+            -0.875,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2.5,
+            "height": 0.12,
+            "depth": 0.64
+          },
+          "color": 3678742
+        }
+      },
+      {
+        "id": "m6",
+        "parent": "frame",
+        "transform": {
+          "pos": [
+            0,
+            -0.115,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2.5,
+            "height": 0.12,
+            "depth": 0.64
+          },
+          "color": 3678742
+        }
+      },
+      {
+        "id": "m7",
+        "parent": "frame",
+        "transform": {
+          "pos": [
+            0,
+            0.685,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2.5,
+            "height": 0.12,
+            "depth": 0.64
+          },
+          "color": 3678742
+        }
+      },
+      {
+        "id": "m8",
+        "parent": "frame",
+        "transform": {
+          "pos": [
+            0.7,
+            -0.595,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.12,
+            "height": 0.48,
+            "depth": 0.64
+          },
+          "color": 3678742
+        }
+      },
+      {
+        "id": "m9",
+        "parent": "frame",
+        "transform": {
+          "pos": [
+            -0.62,
+            0.995,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.12,
+            "height": 0.5,
+            "depth": 0.64
+          },
+          "color": 3678742
+        }
+      },
+      {
+        "id": "m10",
+        "parent": "frame",
+        "transform": {
+          "pos": [
+            0,
+            1.525,
+            0.31
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.46,
+            "height": 0.1,
+            "depth": 0.18
+          },
+          "color": 4861209
+        }
+      },
+      {
+        "id": "m11",
+        "parent": "books_lower",
+        "transform": {
+          "pos": [
+            -1.075,
+            0.005,
+            -0.01
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.25,
+            "height": 0.56,
+            "depth": 0.34
+          },
+          "color": 7286570
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "fabric"
+          }
+        ]
+      },
+      {
+        "id": "m12",
+        "parent": "books_lower",
+        "transform": {
+          "pos": [
+            -0.845,
+            -0.025,
+            0.01
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.2,
+            "height": 0.5,
+            "depth": 0.34
+          },
+          "color": 2506585
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "fabric"
+          }
+        ]
+      },
+      {
+        "id": "m13",
+        "parent": "books_lower",
+        "transform": {
+          "pos": [
+            -0.645,
+            0.025,
+            -0.01
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.18,
+            "height": 0.6,
+            "depth": 0.34
+          },
+          "color": 7691049
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "fabric"
+          }
+        ]
+      },
+      {
+        "id": "m14",
+        "parent": "books_lower",
+        "transform": {
+          "pos": [
+            0.445,
+            -0.005,
+            0.01
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.24,
+            "height": 0.54,
+            "depth": 0.34
+          },
+          "color": 4877141
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "fabric"
+          }
+        ]
+      },
+      {
+        "id": "m15",
+        "parent": "books_lower",
+        "transform": {
+          "pos": [
+            0.675,
+            0.035,
+            -0.02
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.18,
+            "height": 0.62,
+            "depth": 0.34
+          },
+          "color": 7419949
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "fabric"
+          }
+        ]
+      },
+      {
+        "id": "m16",
+        "parent": "books_lower",
+        "transform": {
+          "pos": [
+            0.865,
+            -0.035,
+            0.03
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.18,
+            "height": 0.48,
+            "depth": 0.34
+          },
+          "color": 4076891
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "fabric"
+          }
+        ]
+      },
+      {
+        "id": "m17",
+        "parent": "books_lower",
+        "transform": {
+          "pos": [
+            1.075,
+            0.015,
+            -0.03
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.2,
+            "height": 0.58,
+            "depth": 0.34
+          },
+          "color": 9071157
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "fabric"
+          }
+        ]
+      },
+      {
+        "id": "m18",
+        "parent": "books_lower",
+        "transform": {
+          "pos": [
+            -0.365,
+            0.015,
+            -0.03
+          ],
+          "quat": [
+            -0.71,
+            -0.05,
+            0.05,
+            0.71
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.14,
+            "height": 0.32,
+            "depth": 0.57
+          },
+          "color": 6042667
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "fabric"
+          }
+        ]
+      },
+      {
+        "id": "m19",
+        "parent": "books_middle",
+        "transform": {
+          "pos": [
+            -1.025,
+            0.09,
+            0.005
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.18,
+            "height": 0.58,
+            "depth": 0.34
+          },
+          "color": 3362146
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "fabric"
+          }
+        ]
+      },
+      {
+        "id": "m20",
+        "parent": "books_middle",
+        "transform": {
+          "pos": [
+            -0.825,
+            0.05,
+            0.005
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.16,
+            "height": 0.5,
+            "depth": 0.34
+          },
+          "color": 7488824
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "fabric"
+          }
+        ]
+      },
+      {
+        "id": "m21",
+        "parent": "books_middle",
+        "transform": {
+          "pos": [
+            -0.005,
+            0.1,
+            0.005
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.2,
+            "height": 0.6,
+            "depth": 0.34
+          },
+          "color": 5859901
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "fabric"
+          }
+        ]
+      },
+      {
+        "id": "m22",
+        "parent": "books_middle",
+        "transform": {
+          "pos": [
+            0.235,
+            0.04,
+            0.005
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.16,
+            "height": 0.48,
+            "depth": 0.34
+          },
+          "color": 8862772
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "fabric"
+          }
+        ]
+      },
+      {
+        "id": "m23",
+        "parent": "books_middle",
+        "transform": {
+          "pos": [
+            0.985,
+            -0.1,
+            -0.005
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.5,
+            "height": 0.13,
+            "depth": 0.3
+          },
+          "color": 6638380
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "fabric"
+          }
+        ]
+      },
+      {
+        "id": "m24",
+        "parent": "books_middle",
+        "transform": {
+          "pos": [
+            1.025,
+            0.02,
+            -0.005
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.42,
+            "height": 0.11,
+            "depth": 0.28
+          },
+          "color": 3493205
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "fabric"
+          }
+        ]
+      },
+      {
+        "id": "m25",
+        "parent": "scrolls",
+        "transform": {
+          "pos": [
+            -0.05,
+            -0.07,
+            0.005
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.58,
+            "height": 0.15,
+            "depth": 0.18
+          },
+          "color": 12953197
+        }
+      },
+      {
+        "id": "m26",
+        "parent": "scrolls",
+        "transform": {
+          "pos": [
+            0.01,
+            0.07,
+            -0.005
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.64,
+            "height": 0.12,
+            "depth": 0.16
+          },
+          "color": 12096348
+        }
+      },
+      {
+        "id": "m27",
+        "parent": "scrolls",
+        "transform": {
+          "pos": [
+            -0.31,
+            0,
+            0.005
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.09,
+            "height": 0.2,
+            "depth": 0.2
+          },
+          "color": 6897701
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "walnut"
+          }
+        ]
+      },
+      {
+        "id": "m28",
+        "parent": "scrolls",
+        "transform": {
+          "pos": [
+            0.31,
+            0,
+            0.005
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.09,
+            "height": 0.18,
+            "depth": 0.19
+          },
+          "color": 6897701
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "walnut"
+          }
+        ]
+      },
+      {
+        "id": "m29",
+        "parent": "brass_device",
+        "transform": {
+          "pos": [
+            0.025,
+            -0.15,
+            -0.015
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.62,
+            "height": 0.08,
+            "depth": 0.28
+          },
+          "color": 10908973
+        }
+      },
+      {
+        "id": "m30",
+        "parent": "brass_device",
+        "transform": {
+          "pos": [
+            0.025,
+            0.1,
+            -0.005
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.08,
+            "height": 0.46,
+            "depth": 0.08
+          },
+          "color": 12028477
+        }
+      },
+      {
+        "id": "m31",
+        "parent": "brass_device",
+        "transform": {
+          "pos": [
+            -0.025,
+            0.15,
+            0.015
+          ],
+          "quat": [
+            -0.67,
+            0.22,
+            -0.22,
+            0.67
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.09,
+            "height": 0.07,
+            "depth": 0.57
+          },
+          "color": 12818504
+        }
+      },
+      {
+        "id": "m32",
+        "parent": "brass_device",
+        "transform": {
+          "pos": [
+            0.025,
+            0.14,
+            0.015
+          ],
+          "quat": [
+            -0.66,
+            -0.27,
+            0.27,
+            0.65
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.08,
+            "height": 0.07,
+            "depth": 0.49
+          },
+          "color": 9331751
+        }
+      },
+      {
+        "id": "m33",
+        "parent": "upper_books",
+        "transform": {
+          "pos": [
+            -0.69,
+            0.025,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.18,
+            "height": 0.58,
+            "depth": 0.34
+          },
+          "color": 5847650
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "fabric"
+          }
+        ]
+      },
+      {
+        "id": "m34",
+        "parent": "upper_books",
+        "transform": {
+          "pos": [
+            -0.48,
+            -0.015,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.19,
+            "height": 0.5,
+            "depth": 0.34
+          },
+          "color": 3036000
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "fabric"
+          }
+        ]
+      },
+      {
+        "id": "m35",
+        "parent": "upper_books",
+        "transform": {
+          "pos": [
+            -0.26,
+            0.045,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.17,
+            "height": 0.62,
+            "depth": 0.34
+          },
+          "color": 8083248
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "fabric"
+          }
+        ]
+      },
+      {
+        "id": "m36",
+        "parent": "upper_books",
+        "transform": {
+          "pos": [
+            -0.05,
+            -0.045,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.2,
+            "height": 0.44,
+            "depth": 0.34
+          },
+          "color": 6897721
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "fabric"
+          }
+        ]
+      },
+      {
+        "id": "m37",
+        "parent": "upper_books",
+        "transform": {
+          "pos": [
+            0.69,
+            0.015,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.18,
+            "height": 0.56,
+            "depth": 0.34
+          },
+          "color": 4153671
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "fabric"
+          }
+        ]
+      },
+      {
+        "id": "m38",
+        "parent": "specimen",
+        "transform": {
+          "pos": [
+            0,
+            0.145,
+            -0.025
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.44,
+            "height": 0.5,
+            "depth": 0.34
+          },
+          "color": 9352877
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass",
+            "variant": "green"
+          }
+        ]
+      },
+      {
+        "id": "m39",
+        "parent": "specimen",
+        "transform": {
+          "pos": [
+            0,
+            0.085,
+            0.045
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.12,
+            "height": 0.24,
+            "depth": 0.12
+          },
+          "color": 8809541
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "stone"
+          }
+        ]
+      },
+      {
+        "id": "m40",
+        "parent": "specimen",
+        "transform": {
+          "pos": [
+            0,
+            -0.145,
+            -0.045
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.54,
+            "height": 0.08,
+            "depth": 0.4
+          },
+          "color": 10778934
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1787875721631,
+        "provider": "gpt",
+        "data": "q+py6Oe+34UGwspfGF7MZdJ14I6epeLfq59ZO67kJgXs4WSNSE3B0Fosw1U3/yIlkeyoPIWXphyclqlc0GH9XO7s4ycqF4vo4D8xJNE1qfBsm3tKAnUfK93BTfC8W+rkXzKpKk4HbecWZ1BiTVbDi/8MDcpGpQRPDXjjR26ZfMMdPXazULhIUR4uEVW8J6EWJbnPR9EolZ9hYef4M6w8S+6vAwpQuEF+I8OeOiaKvSKJE1Rl016mgQtmEVvDOvrW94MxmneqF1utU0w2Idw8Xw2d+9nV4FS0GkAB1kTPZttAUv8bXgpwLv3PpANt0Faj6Py6c7wbdILqfY5LCYGSkAApNF6n8I4lDzm31UFawFfzy0M8IXf9uRFHlQxovtMEVSRE014c9YT4K2kNXhV1jGloqKxA4qYuTqR4kaVDm4ooDDYN8/k7iXZdqjYP9U1SL5U/O3XlHtELUg6FfcN10qUjrOwsqWBC2HkjZPq1bU19KOxZyH0krFuk5ogv5OeRL7kA6nn27PCkaJYDeZz8o2RG/I8IUZFTNR/foxVbbOcmBEmGozwI26+KwXwu230muDwvZ23anjoCtWSv2uHpB4QxCcD0A8ia443hruCqZIBiv532wvtIn4Mjy0VCiA4ysfnvYjnaCOOt9eMwaX5KAiitfd38Qay/a2ozvRgPkFpYq0p8xf43oAj5pwZ9omjblGL9s1z1pcNPZua/OvCfxY2Az2gCeNthbSM1x8/XDfd3Usi+tWjIR9i3XZ8d8/gCQ00PNZslhOae3Lizwrz/8XqMtZOrypsgzKm7tgYzw3b4BefoDn6i1XZ1IZ7v/jxtezAfdlhdLAqCrWnQNM5q0RbFqYgm9QYRs3Ryx7eh6i8QIF0s0gDk4QK1dUFT1y6jz+0wRMDY98zqYyBIgxifVxcKe6fPSQfiuiJQ9qF5+Jr7H2mpqjeiZ6B//dvNwZNASNhz40uAazlicRg7C0rNuQc+CAJe7tN109oe5XNoMyFxza1nv3Mp+ZYRAOb+Rj9i1kKZr1pe1K/UMhUk3T4E5ma3scrMEMrQr71NbeO69Bj3vjZYsMz/CrWsQJemAVj+rN+GrsbDNkDYfHiQ0TjvrwXBwSs8afCvhUFFeLaC2ztjBdhBgT5yEiZwJZ/k9Vg6PVMWaC6xoEnTykvdazLk4ON1aT+0YY3PL1cJu8ciAYmDjLV/ZlUQpgdyXsb69ja0R2PJEQJYHyiN2atIubuOwV3KqFILoWQKdsosCVTDw75DDaw2btYOM/491fKlghXX/wrzbgqvAwFuLmWSk/ywdfrGSo0KHrKWvMQyUFtQowPS/2imHFIchdJj75HT21avFbf6c0FuUilVVTo1XWtKCpTXXrW4VcOnjVERBKc59Fdw2FT13yc5WpBI9YTD0NJWhDLHY6WIhF/7Y/1vyd1Mlgvrc8s1qVgIDIuj1lFnkiC41NeAY/gea9NE9GC6KSK2rb/piQCYtgC9IaNG3HzwCRGpLiz2yA043Nw5fQKmo8mAIwoMS/sTo+4YvfGrQOfFuZlmxCrc6anotZINyjrDYmCiF9M9Zb8B5kIVqfWP8w0h5h+/BAimGT0wDRBBQlT0kEmZHp2wyfYpDYwR6JiR1xbM88RpZtWNQiK4tIIaseHj4BhScBfbuENGuhNXiMkkFGGhCUoRY9y1wxQr7l2x3ZRbe5dsdwcxvg2kNCOaFPI5ZGAgOLJ3Jb78/58sTfghVMmHkSTVYC5yc08BgyLQ+R4UKlb14enLCoj32v/5JfDp/LE4jGtC9sx9TQs4kk7dgaaOBrhLSgW1Vdqqfr4QrP70kBbaRLve7GCRCUAhlpDtSwRTQDOnQcosTbOcV4nKKwME95qkmqrgwL++x+WesOTFQQy7z7wc8MVqSP+E5vxz/H0u",
+        "edits": ""
+      },
+      "semanticSnapshot": {
+        "v": 1,
+        "auto": true,
+        "text": "奇幻学院深色木质书架·异形体四 · 8组/41mesh · 世界坐标(Y上Z前), 原点=模型根\n# 阅读说明: G:=group行(可动画骨骼, 动画key用G:后的id; @p=pivot世界坐标; 倾(x,y,z)°=朝向偏离世界轴的欧拉角; 缩进=父子层级; 挂:=挂载于某组; G:id→id→…=chain折叠行, 每个id都是可独立动画的group, chain×N=waypoint数)\n# M:=mesh行(label[id 几何 @(世界坐标)], label可省略; ×N=for循环批量件(锚点=代表实例); cyl (起)→(末)或 轴上(Y)等方位词=延伸方向; 薄向=板面法向(扁板); 挂载组双代表=最大件+最远有向件(刃/嘴/管所在端); 无方向标注=均匀块(三向相近,如头),默认面向前(Z); 对称×2=镜像对)\nG:bookcase 开放式书架 @p(0,0,0)\n  G:frame 深色木质框架 @p(0,1.7,0)\n    M:[m4 box 2.4×3×0.08 (0,1.7,-0.3) 薄向前(Z)]\n  G:books_lower 下层书籍 @p(0,0.5,0.2)\n    M:[m11 box 0.25×0.56×0.34 (-1.1,0.5,0.2) 轴上(Y)]\n  G:books_middle 中层疏落书籍 @p(-0.1,1.1,0.2)\n    M:[m21 box 0.2×0.6×0.34 (-0.1,1.2,0.2) 轴上(Y)]\n  G:scrolls 卷轴 @p(-0.9,1.8,0.1)\n    M:[m25 box 0.58×0.15×0.18 (-0.9,1.8,0.1) 轴右(X)]\n  G:brass_device 黄铜学院仪器 @p(0.7,1.8,0.1)\n    M:[m29 box 0.62×0.08×0.28 (0.7,1.7,0.1) 薄向上(Y)]\n  G:upper_books 上层不对称书列 @p(0.3,2.7,0.2)\n    M:[m35 box 0.17×0.62×0.34 (0.1,2.8,0.2) 薄向右(X)]\n  G:specimen 玻璃标本匣 @p(-0.9,2.6,0.2)\n    M:[m38 box 0.44×0.5×0.34 (-0.9,2.7,0.1)]",
+        "stats": {
+          "groups": 8,
+          "meshes": 41,
+          "labeledMeshes": 0,
+          "labelCoverage": 0,
+          "batchLabels": 0,
+          "autoChains": 0,
+          "snapshotChars": 1004
+        }
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -1.4,
+          3.1999999999999997,
+          -0.375
+        ],
+        "max": [
+          1.4,
+          3.4,
+          0.32499999999999996
+        ],
+        "sourceNodeId": "m1"
+      },
+      {
+        "min": [
+          -1.4000000000000001,
+          0.18000000000000008,
+          -0.35500000000000004
+        ],
+        "max": [
+          -1.22,
+          3.2,
+          0.305
+        ],
+        "sourceNodeId": "m2"
+      },
+      {
+        "min": [
+          1.22,
+          0.18000000000000008,
+          -0.35500000000000004
+        ],
+        "max": [
+          1.4000000000000001,
+          3.2,
+          0.305
+        ],
+        "sourceNodeId": "m3"
+      },
+      {
+        "min": [
+          -1.4,
+          0,
+          -0.375
+        ],
+        "max": [
+          1.4,
+          0.18,
+          0.32499999999999996
+        ],
+        "sourceNodeId": "m0"
+      },
+      {
+        "min": [
+          -1.25,
+          0.7599999999999999,
+          -0.34500000000000003
+        ],
+        "max": [
+          1.25,
+          0.88,
+          0.295
+        ],
+        "sourceNodeId": "m5"
+      },
+      {
+        "min": [
+          -1.25,
+          1.52,
+          -0.34500000000000003
+        ],
+        "max": [
+          1.25,
+          1.6400000000000001,
+          0.295
+        ],
+        "sourceNodeId": "m6"
+      },
+      {
+        "min": [
+          -1.25,
+          2.32,
+          -0.34500000000000003
+        ],
+        "max": [
+          1.25,
+          2.44,
+          0.295
+        ],
+        "sourceNodeId": "m7"
+      }
+    ],
+    "sourceMeshCount": 41,
+    "candidateCount": 7,
+    "fallbackUsed": false
+  },
+  "footprintRadius": 1.4000000000000001,
+  "sizeClass": "medium",
+  "mode": "voxel",
+  "provider": "gpt",
+  "createdAt": 1787875721471,
+  "updatedAt": 1787875721471
+}

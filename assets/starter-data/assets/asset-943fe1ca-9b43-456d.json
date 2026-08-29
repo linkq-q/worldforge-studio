@@ -1,0 +1,287 @@
+{
+  "id": "asset-943fe1ca-9b43-456d",
+  "name": "小饼干",
+  "prompt": "浅亮曼德鸭参考场景风格，圆润低多边形儿童家具或玩具，清晰轮廓，柔和哑光材质，适度细节。必须是一个完整、独立、可单独摆放的模型，不含场景、地面、底座、其他物品、成组附件、文字或标识。单块独立星形儿童饼干，略厚、圆钝边缘、表面少量压点，不带包装或盘子。仅使用这些基础色与顶点色：#FFFDF6,#FEF9EA,#FDF2D7,#E9DABD,#CDBA97,#F8E8CF,#F1D7B2,#E7C393,#C9A06E,#9E7A55,#FFF7A8,#FCEF72,#F6E24B,#D1B825,#9C8510,#FFF3B7,#FDE674,#FCD75F,#FECD4D,#D1900B,#FFE2A0,#FFD170,#F8BC44,#E39F1A,#A96F05,#FBE3BD,#FDD8A3,#FDCC8F,#F1AD69,#D99256,#FFD2BA,#FFB08A,#FF8A5B,#F06B3E,#B84A27,#EAF9FF,#DAF2F5,#95E5F9,#76D0F2,#45BDF6,#D9F8FB,#B2E9F2,#8ECCD6,#7BCFDF,#4BAFCA,#D8\nCoordinate contract: local Y+ is up, local Z+ is the front, entrance, or forward direction, and local X+ is right. Put doors, facades, openings, windshields, noses, seats, and other recognizable front details toward local Z+. For a modular repeated element, explicitly choose the long axis: side-by-side modules span local X with depth/front on local Z; traversal modules span local Z. Keep the model centered at its origin.\nCanonical dimensions contract: width=0.12, height=0.025, depth=0.12 world units. Keep the generated mesh within this centered bounding size.",
+  "modelJson": {
+    "name": "星形儿童饼干",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "m0",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0.02
+          ],
+          "quat": [
+            0.71,
+            0,
+            0.71,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.07,
+            "height": 0.022,
+            "depth": 0.02
+          },
+          "color": 16570207
+        }
+      },
+      {
+        "id": "m1",
+        "transform": {
+          "pos": [
+            -0.02,
+            0,
+            0.01
+          ],
+          "quat": [
+            0.16,
+            0,
+            0.99,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.07,
+            "height": 0.022,
+            "depth": 0.02
+          },
+          "color": 16570207
+        }
+      },
+      {
+        "id": "m2",
+        "transform": {
+          "pos": [
+            -0.01,
+            0,
+            -0.02
+          ],
+          "quat": [
+            -0.45,
+            0,
+            0.89,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.07,
+            "height": 0.022,
+            "depth": 0.02
+          },
+          "color": 16570207
+        }
+      },
+      {
+        "id": "m3",
+        "transform": {
+          "pos": [
+            0.01,
+            0,
+            -0.02
+          ],
+          "quat": [
+            0.89,
+            0,
+            -0.45,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.07,
+            "height": 0.022,
+            "depth": 0.02
+          },
+          "color": 16570207
+        }
+      },
+      {
+        "id": "m4",
+        "transform": {
+          "pos": [
+            0.02,
+            0,
+            0.01
+          ],
+          "quat": [
+            0.99,
+            0,
+            0.16,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.07,
+            "height": 0.022,
+            "depth": 0.02
+          },
+          "color": 16570207
+        }
+      },
+      {
+        "id": "m5",
+        "transform": {
+          "pos": [
+            -0.018,
+            0.012,
+            0.017
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.006,
+            "height": 0.002,
+            "depth": 0.006
+          },
+          "color": 13733899
+        }
+      },
+      {
+        "id": "m6",
+        "transform": {
+          "pos": [
+            0.019,
+            0.012,
+            0.014
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.006,
+            "height": 0.002,
+            "depth": 0.006
+          },
+          "color": 13733899
+        }
+      },
+      {
+        "id": "m7",
+        "transform": {
+          "pos": [
+            -0.015,
+            0.012,
+            -0.018
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.006,
+            "height": 0.002,
+            "depth": 0.006
+          },
+          "color": 13733899
+        }
+      },
+      {
+        "id": "m8",
+        "transform": {
+          "pos": [
+            0.017,
+            0.012,
+            -0.017
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.006,
+            "height": 0.002,
+            "depth": 0.006
+          },
+          "color": 13733899
+        }
+      },
+      {
+        "id": "m9",
+        "transform": {
+          "pos": [
+            0,
+            0.012,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.006,
+            "height": 0.002,
+            "depth": 0.006
+          },
+          "color": 13733899
+        }
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1787749539607,
+        "provider": "gpt",
+        "data": "BSsP/YL43gPyv/ULl6c1LdWOWBHiXlVcwdoWMJcUAGWsBVZ3LV5iu/3NW+VAxuiEdLLroljFmFN4cNG7m7d6gYNYuAOsbdIsX4mmNkxC/tHMsgkSGm3kE9Kp7oLqIUx+yfp2HDrOA7bOhQV2ng5dk2mIUulO7+ceAqf+C/yYoa7+x3IZ7gviq8kBnwr6y99IGSyBh7pP6ACX4qSmstZrvPoyMjb9VHFq7IqXQqsSXIuDgp6tMOkPtVt0Ho9LHD6H5OFJej7FRUefk9k/szObj2tliBoXrPhoxEp6wIYyL2lWyKCJ1LCXGe1Q8/7feyL1npFODazLt9MzZOyzk4Gula5LZPYh17djjhsjNwR4HEeG2AE7JE2ugx+ZEU3w+nFHlSlsdKFTL0nkzRunpF+hw3wDeuImhJ5GWoqSFsuaMBKAOwXq7dpb/qI6tecukIBLZ6FN2Eqcis6jqFdBVrGneu9L6rhsCnGyFySlJl/3PsOOculIuVXYflSVZTPhZn2Kv1AKxGa1rPn07KxprOoMJc9jGMgurq1Xk2I/xSQUstt9dNdl2Y9peVHWv1ITvHr5XnbsoGe2/2tbJRhVfYWXhZKRFtdJB3dtkWnk79fZSIDQboIRn1eTYYyWkQSNIpaVftqAW+0qcKXtHHAzt1lf9wzQedwVtnkbwA26rs1PyCPfB/9C+7ZOBC66o3N0HewzWSWg89d/y2KTfQNqUQ9rp9VhVoSKFIW1pXmpaA87OC38XtPkjuE=",
+        "edits": ""
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -0.056368201252858706,
+          0,
+          -0.054557611099939674
+        ],
+        "max": [
+          0.056368201252858706,
+          0.027999999999999997,
+          0.054557611099939674
+        ],
+        "sourceNodeId": "asset-bounds"
+      }
+    ],
+    "sourceMeshCount": 10,
+    "candidateCount": 1,
+    "fallbackUsed": true
+  },
+  "footprintRadius": 0.1,
+  "sizeClass": "small",
+  "mode": "voxel",
+  "provider": "gpt",
+  "libraryId": "library-d7967286-cebf-4f99",
+  "libraryMetadata": {
+    "tags": [
+      "cookie",
+      "star-shaped",
+      "snack",
+      "childrensfood"
+    ],
+    "applicableZones": [
+      "settlement"
+    ],
+    "repeatable": true,
+    "landmark": false,
+    "enabled": true,
+    "priority": 0.5,
+    "analysisStatus": "ready",
+    "rotation": "random"
+  },
+  "createdAt": 1787817123733,
+  "updatedAt": 1787817123733
+}

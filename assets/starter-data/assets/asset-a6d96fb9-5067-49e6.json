@@ -1,0 +1,1135 @@
+{
+  "id": "asset-a6d96fb9-5067-49e6",
+  "name": "动漫海报",
+  "prompt": "动漫海报",
+  "modelJson": {
+    "name": "动漫海报·星刃少女",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "body",
+        "name": "躯干",
+        "transform": {
+          "pos": [
+            0,
+            1.75,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            2.843,
+            6.41,
+            1.509
+          ],
+          "center": [
+            0.054,
+            1.332,
+            -0.002
+          ],
+          "axes": [
+            [
+              0.9905,
+              -0.1369,
+              -0.0123
+            ],
+            [
+              0.1369,
+              0.9906,
+              -0.0041
+            ],
+            [
+              0.0128,
+              0.0023,
+              0.9999
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "cape",
+        "name": "披风",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0,
+            0.97,
+            -0.2
+          ]
+        },
+        "_obb": {
+          "size": [
+            1.24,
+            1.577,
+            0.118
+          ],
+          "center": [
+            0.1,
+            -0.78,
+            -0.17
+          ],
+          "axes": [
+            [
+              0.9951,
+              -0.075,
+              0.065
+            ],
+            [
+              0.0659,
+              0.9891,
+              0.1319
+            ],
+            [
+              -0.0742,
+              -0.1269,
+              0.9891
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "leftArm",
+        "name": "左臂",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            -0.58,
+            0.9,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.516,
+            1.434,
+            0.442
+          ],
+          "center": [
+            -0.12,
+            -0.702,
+            0.067
+          ],
+          "axes": [
+            [
+              0.9347,
+              -0.3473,
+              0.0758
+            ],
+            [
+              0.3543,
+              0.9274,
+              -0.1198
+            ],
+            [
+              -0.0287,
+              0.1388,
+              0.9899
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "rightArm",
+        "name": "右臂",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0.58,
+            0.9,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            1.147,
+            3.607,
+            0.717
+          ],
+          "center": [
+            0.368,
+            1.695,
+            0.092
+          ],
+          "axes": [
+            [
+              0.9892,
+              -0.1067,
+              0.1005
+            ],
+            [
+              0.1042,
+              0.9941,
+              0.03
+            ],
+            [
+              -0.1031,
+              -0.0192,
+              0.9945
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "mount01_starSword",
+        "name": "星光长剑",
+        "parent": "rightArm",
+        "transform": {
+          "pos": [
+            0.44,
+            1.03,
+            0.1
+          ]
+        },
+        "mounted": true,
+        "_obb": {
+          "size": [
+            0.72,
+            2.485,
+            0.18
+          ],
+          "center": [
+            0.06,
+            1.182,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "leftLeg",
+        "name": "左腿",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            -0.3,
+            -0.35,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.5,
+            1.571,
+            0.651
+          ],
+          "center": [
+            -0.04,
+            -0.628,
+            0.076
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              0.999,
+              -0.044
+            ],
+            [
+              0,
+              0.044,
+              0.999
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "rightLeg",
+        "name": "右腿",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0.3,
+            -0.35,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.689,
+            1.574,
+            0.796
+          ],
+          "center": [
+            0.253,
+            -0.702,
+            0.165
+          ],
+          "axes": [
+            [
+              0.9722,
+              0.1142,
+              -0.2043
+            ],
+            [
+              -0.1477,
+              0.9765,
+              -0.1572
+            ],
+            [
+              0.1815,
+              0.183,
+              0.9662
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "head",
+        "name": "头部",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0,
+            1.15,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            2.144,
+            1.721,
+            1.106
+          ],
+          "center": [
+            0.093,
+            0.538,
+            -0.003
+          ],
+          "axes": [
+            [
+              0.9099,
+              0.3819,
+              -0.162
+            ],
+            [
+              -0.3945,
+              0.9173,
+              -0.0533
+            ],
+            [
+              0.1282,
+              0.1124,
+              0.9853
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "mount02_hairRibbon",
+        "name": "发带",
+        "parent": "head",
+        "transform": {
+          "pos": [
+            0.48,
+            0.98,
+            -0.1
+          ]
+        },
+        "mounted": true,
+        "_obb": {
+          "size": [
+            0.543,
+            0.487,
+            0.123
+          ],
+          "center": [
+            0.24,
+            -0.02,
+            0.02
+          ],
+          "axes": [
+            [
+              0.8028,
+              0.5886,
+              0.0951
+            ],
+            [
+              -0.5934,
+              0.8043,
+              0.031
+            ],
+            [
+              -0.0583,
+              -0.0813,
+              0.995
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0,
+            0.5,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.15,
+            "height": 1.35,
+            "depth": 0.48
+          },
+          "color": 2372703
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "fabric"
+          }
+        ]
+      },
+      {
+        "id": "m1",
+        "parent": "body",
+        "transform": {
+          "pos": [
+            0,
+            -0.03,
+            0.02
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.92,
+            "height": 0.28,
+            "depth": 0.54
+          },
+          "color": 15317067
+        }
+      },
+      {
+        "id": "m2",
+        "parent": "cape",
+        "transform": {
+          "pos": [
+            0.1,
+            -0.78,
+            -0.17
+          ],
+          "quat": [
+            0.75,
+            -0.05,
+            0,
+            0.65
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.24,
+            "height": 0.12,
+            "depth": 1.6
+          },
+          "color": 12005194
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "fabric"
+          }
+        ]
+      },
+      {
+        "id": "m3",
+        "parent": "leftArm",
+        "transform": {
+          "pos": [
+            -0.06,
+            -0.52,
+            0.06
+          ],
+          "quat": [
+            0.64,
+            -0.14,
+            -0.12,
+            0.74
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.32,
+            "height": 0.38,
+            "depth": 1.05
+          },
+          "color": 3032958
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "fabric"
+          }
+        ]
+      },
+      {
+        "id": "m4",
+        "parent": "leftArm",
+        "transform": {
+          "pos": [
+            -0.28,
+            -1.12,
+            0.12
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.38,
+            "height": 0.38,
+            "depth": 0.38
+          },
+          "color": 15910309
+        }
+      },
+      {
+        "id": "m5",
+        "parent": "rightArm",
+        "transform": {
+          "pos": [
+            0.1,
+            0.42,
+            0.04
+          ],
+          "quat": [
+            -0.57,
+            0.14,
+            0.12,
+            0.72
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.32,
+            "height": 0.38,
+            "depth": 1.02
+          },
+          "color": 3032958
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "fabric"
+          }
+        ]
+      },
+      {
+        "id": "m6",
+        "parent": "rightArm",
+        "transform": {
+          "pos": [
+            0.44,
+            1.03,
+            0.1
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.38,
+            "height": 0.38,
+            "depth": 0.38
+          },
+          "color": 15910309
+        }
+      },
+      {
+        "id": "m7",
+        "parent": "mount01_starSword",
+        "transform": {
+          "pos": [
+            0.06,
+            0.3,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.18,
+            "height": 0.72,
+            "depth": 0.18
+          },
+          "color": 6505007
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "walnut"
+          }
+        ]
+      },
+      {
+        "id": "m8",
+        "parent": "mount01_starSword",
+        "transform": {
+          "pos": [
+            0.06,
+            0.62,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.72,
+            "height": 0.16,
+            "depth": 0.18
+          },
+          "color": 15055170
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "gold"
+          }
+        ]
+      },
+      {
+        "id": "m9",
+        "parent": "mount01_starSword",
+        "transform": {
+          "pos": [
+            0.06,
+            1.55,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.22,
+            "height": 1.75,
+            "depth": 0.1
+          },
+          "color": 9560063
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          },
+          {
+            "tag": "emissive",
+            "value": 0.75
+          }
+        ]
+      },
+      {
+        "id": "m10",
+        "parent": "leftLeg",
+        "transform": {
+          "pos": [
+            -0.04,
+            -0.58,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.42,
+            "height": 1.45,
+            "depth": 0.44
+          },
+          "color": 15845031
+        }
+      },
+      {
+        "id": "m11",
+        "parent": "leftLeg",
+        "transform": {
+          "pos": [
+            -0.04,
+            -1.11,
+            0.1
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.5,
+            "height": 0.58,
+            "depth": 0.62
+          },
+          "color": 3225949
+        }
+      },
+      {
+        "id": "m12",
+        "parent": "rightLeg",
+        "transform": {
+          "pos": [
+            0.14,
+            -0.64,
+            0.06
+          ],
+          "quat": [
+            0.67,
+            0.06,
+            0,
+            0.74
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.42,
+            "height": 0.42,
+            "depth": 1.34
+          },
+          "color": 15845031
+        }
+      },
+      {
+        "id": "m13",
+        "parent": "rightLeg",
+        "transform": {
+          "pos": [
+            0.32,
+            -1.11,
+            0.23
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.5,
+            "height": 0.58,
+            "depth": 0.62
+          },
+          "color": 3225949
+        }
+      },
+      {
+        "id": "m14",
+        "parent": "head",
+        "transform": {
+          "pos": [
+            0,
+            0.45,
+            0.03
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.08,
+            "height": 1.05,
+            "depth": 0.82
+          },
+          "color": 15976362
+        }
+      },
+      {
+        "id": "m15",
+        "parent": "head",
+        "transform": {
+          "pos": [
+            0,
+            0.88,
+            -0.03
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.25,
+            "height": 0.52,
+            "depth": 0.9
+          },
+          "color": 3418966
+        }
+      },
+      {
+        "id": "m16",
+        "parent": "head",
+        "transform": {
+          "pos": [
+            -0.54,
+            0.36,
+            0.18
+          ],
+          "quat": [
+            0.59,
+            -0.35,
+            0.29,
+            0.68
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.5,
+            "height": 0.16,
+            "depth": 0.92
+          },
+          "color": 3418966
+        }
+      },
+      {
+        "id": "m17",
+        "parent": "head",
+        "transform": {
+          "pos": [
+            0.54,
+            0.36,
+            0.18
+          ],
+          "quat": [
+            0.59,
+            0.35,
+            -0.29,
+            0.68
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.5,
+            "height": 0.16,
+            "depth": 0.92
+          },
+          "color": 3418966
+        }
+      },
+      {
+        "id": "m18",
+        "parent": "head",
+        "transform": {
+          "pos": [
+            -0.24,
+            0.5,
+            0.47
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.2,
+            "height": 0.28,
+            "depth": 0.08
+          },
+          "color": 5427199
+        },
+        "tags": [
+          {
+            "tag": "emissive",
+            "value": 0.5
+          }
+        ]
+      },
+      {
+        "id": "m19",
+        "parent": "head",
+        "transform": {
+          "pos": [
+            0.24,
+            0.5,
+            0.47
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.2,
+            "height": 0.28,
+            "depth": 0.08
+          },
+          "color": 5427199
+        },
+        "tags": [
+          {
+            "tag": "emissive",
+            "value": 0.5
+          }
+        ]
+      },
+      {
+        "id": "m20",
+        "parent": "mount02_hairRibbon",
+        "transform": {
+          "pos": [
+            0.24,
+            -0.02,
+            0.02
+          ],
+          "quat": [
+            0.7,
+            0.17,
+            0.23,
+            0.67
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.51,
+            "height": 0.12,
+            "depth": 0.45
+          },
+          "color": 14235227
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "fabric"
+          }
+        ]
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1787825900842,
+        "provider": "glm",
+        "data": "WIUXkkjA9acM3PogtVw6L4Xx+wbmzRE+qfW2prePEf/xI0IOMMGNfJGuASjfzOSgCStl4OJbRPPr6YpnOHOyY82aAY7cuLCAfPgnrCPEEGZK3+v2/SldRVclXG7M+fP+5S5YU6OLgIKMRSqEUGS63FvxsQwW1zJpaCXtS4HBm33tFhn/xa6rdIRFxRFm2qRXU+aJPLrKS2gpDJPG+t4ggp/O2t+xD6102rkU5dGo0gyXIOmW61RtaI5S7SfOWaP31WSh7LDZBHSM05BOwk7o3j7DJlBHie9bchH/IxB8qwJOcCwbunagfaFJuOJWX1HL7CqxKerCPwQchW2buIv49AFxlPt0JA5/hvLGyOEUy3wuEuI3Yj0MK1xC503HNnFR1E3ue/FGcgmt6pbEu5UHHa8s8fq9HKQ0ZCzKqK6R01u6Kn5OqGS1HatVss1KnhjIA+QWLKDLHPJQZ5CZ3vt6DE/fdjJaqKX5MATsxnPOyqkES5JZ41sFWtqplGgbmwIwyspTqhLa9DXCGyk7+YBTUbMU1sR+IKRnFs2VXOLjVQlPd2EOqg19NBsIo0tmzmaPxhZXaqA1IN/qS5tbED/GCufoHBzAjHXp+ThkUYIUIiHOVb8UwIrV/y6dyUbbQTudDWfiixyFAKhFrvWAhqnUDznmmRYT5K6WaFnOo+8FfV7oZJXXYsND+vEvdmDX5Dq7rqtDBl8oGV9lxl8amJDt42wa4PA7acBH7Rtt6PU7VT14d3UasHtgsCHJfKW+GfHwRBKCim5p8szmHvV8ytxPesSghLlMn9XxXWqFq/zwx7/4A5Ixr6KHB55/s+bLBq7+xT3KHYwVgm5dZbTsG554tOnBhdu59Sn30pva8v+exWyu6rdjIlZnQqhDvL5JFzimgQJ+B3eDaehlWuBsy/bNBXmUX7W9LOb6l3UidIBLQd+s4W8gs3dx5j/RqAUWm9kJ4e/z2oySIgwLHt4ZZ0heOcF6lc7Kpm5XJfgHDywVSZlhjLp/l43CclqvYTHwSCYvHUBE6ApOTXm0kUUXt4dccbBMkKSq8YXe2223ois3SB65B0Ffu+Pm5qlEdf8GiKfEbVocXxHr/2M7r1ODj0zr721AW+D4iAdd1rh/PJDVUWo4gs4zMP90dng53PvAa1hMPHRd/OZgz6kaVOFKwJJUZOz8Kqta+2EmZsAM1aAMDFb75O0pAZQrLUYtqp7BlTEp3h7jFckMK8HdoAW9rgbShGQK5y/32CkaLN5IZ+pwiedD1DCG73CRjhfZ+CgTVxmchEUfV5g2j7487jzM943LzgMP4k/7xAPCkdCpawJP7NP/VG3ohlKf5JfkRodPJQbJV6Ikd4SUeykDkX15DqRhNnBWmQDLIo8/voRL0N8CR87OfT13ntgSIBI6b8Xf9vykou0cIjZhdbkspY9CDkYoI35z2nExK7cGZsc/9OzIYUSlmsPqhPmj4ZJ2gFpBk1zN77budfjTr9d57yGud/YGHThKu8/U+b6lbqDaRhhhjZKLsQsI5fhVPbbpI7b32ftK0GVIYGZXSRwojk/OtBSrcM1ZJh4Z41X480qPTuBnIyFY15k=",
+        "edits": ""
+      },
+      "mounts": [
+        {
+          "id": "mount01_starSword",
+          "mountedGroupId": "mount01_starSword",
+          "name": "星光长剑",
+          "source": {
+            "type": "codegen"
+          },
+          "description": "",
+          "visible": true,
+          "ts": 1787825900843
+        },
+        {
+          "id": "mount02_hairRibbon",
+          "mountedGroupId": "mount02_hairRibbon",
+          "name": "发带",
+          "source": {
+            "type": "codegen"
+          },
+          "description": "",
+          "visible": true,
+          "ts": 1787825900843
+        }
+      ],
+      "semanticSnapshot": {
+        "v": 1,
+        "auto": true,
+        "text": "动漫海报·星刃少女 · 9组/21mesh · 世界坐标(Y上Z前), 原点=模型根\n# 阅读说明: G:=group行(可动画骨骼, 动画key用G:后的id; @p=pivot世界坐标; 倾(x,y,z)°=朝向偏离世界轴的欧拉角; 缩进=父子层级; 挂:=挂载于某组; G:id→id→…=chain折叠行, 每个id都是可独立动画的group, chain×N=waypoint数)\n# M:=mesh行(label[id 几何 @(世界坐标)], label可省略; ×N=for循环批量件(锚点=代表实例); cyl (起)→(末)或 轴上(Y)等方位词=延伸方向; 薄向=板面法向(扁板); 挂载组双代表=最大件+最远有向件(刃/嘴/管所在端); 无方向标注=均匀块(三向相近,如头),默认面向前(Z); 对称×2=镜像对)\nG:body 躯干 @p(0,1.8,0)\n  M:[m0 box 1.2×1.4×0.48 (0,2.3,0) 薄向前(Z)]\n  G:cape 披风 @p(0,2.7,-0.2)\n    M:[m2 box 1.2×0.12×1.6 (0.1,1.9,-0.4) 薄向前(Z)]\n  G:leftArm 左臂 @p(-0.6,2.7,0)\n    M:[m3 box 0.32×0.38×1.1 (-0.6,2.1,0.1) 轴(-0.8,1.7,0.1)→(-0.5,2.6,0)]\n  G:rightArm 右臂 @p(0.6,2.7,0)\n    M:[m5 box 0.32×0.38×1 (0.7,3.1,0) 轴(0.7,3.5,0.2)→(0.6,2.6,-0.1)]\n    G:mount01_starSword 星光长剑 @p(1,3.7,0.1) 挂:rightArm\n      M:[m9 box 0.22×1.8×0.1 (1.1,5.2,0.1) 轴上(Y)] | M:[m8 box 0.72×0.16×0.18 (1.1,4.3,0.1) 轴右(X)]\n  G:leftLeg 左腿 @p(-0.3,1.4,0)\n    M:[m10 box 0.42×1.5×0.44 (-0.3,0.8,0) 轴上(Y)]\n  G:rightLeg 右腿 @p(0.3,1.4,0)\n    M:[m12 box 0.42×0.42×1.3 (0.4,0.8,0.1) 轴下(Y)]\n  G:head 头部 @p(0,2.9,0)\n    M:[m14 box 1.1×1.1×0.82 (0,3.4,0)]\n    G:mount02_hairRibbon 发带 @p(0.5,3.9,-0.1) 挂:head\n      M:[m20 box 0.51×0.12×0.45 (0.7,3.9,-0.1) 轴(0.9,4,-0.1)→(0.5,3.7,-0.1)]",
+        "stats": {
+          "groups": 9,
+          "meshes": 21,
+          "labeledMeshes": 0,
+          "labelCoverage": 0,
+          "batchLabels": 0,
+          "autoChains": 0,
+          "snapshotChars": 1216
+        }
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -0.7690759493670886,
+          1.0946835443037977,
+          -0.5627468354430376
+        ],
+        "max": [
+          0.5790759493670886,
+          2.785316455696202,
+          -0.13175949367088707
+        ],
+        "sourceNodeId": "m2"
+      },
+      {
+        "min": [
+          -0.735,
+          2.825,
+          -0.3572531645569624
+        ],
+        "max": [
+          0.3450000000000001,
+          3.875,
+          0.4627468354430376
+        ],
+        "sourceNodeId": "m14"
+      },
+      {
+        "min": [
+          -0.7699999999999999,
+          1.5750000000000002,
+          -0.21725316455696236
+        ],
+        "max": [
+          0.38,
+          2.925,
+          0.2627468354430376
+        ],
+        "sourceNodeId": "m0"
+      },
+      {
+        "min": [
+          -0.82,
+          3.5199999999999996,
+          -0.45725316455696235
+        ],
+        "max": [
+          0.43000000000000005,
+          4.04,
+          0.44274683544303767
+        ],
+        "sourceNodeId": "m15"
+      },
+      {
+        "min": [
+          -0.03986051394860507,
+          0.05733126687331286,
+          -0.20782510736268178
+        ],
+        "max": [
+          0.5298605139486051,
+          1.4626687331266874,
+          0.37331877824875703
+        ],
+        "sourceNodeId": "m12"
+      },
+      {
+        "min": [
+          -1.1754317998385795,
+          1.5610573042776432,
+          -0.18425074324945628
+        ],
+        "max": [
+          -0.4945682001614202,
+          2.698942695722357,
+          0.34974441413553153
+        ],
+        "sourceNodeId": "m3"
+      },
+      {
+        "min": [
+          0.2277425054143395,
+          2.527871879630685,
+          -0.2789207811077432
+        ],
+        "max": [
+          0.7422574945856605,
+          3.6121281203693147,
+          0.4044144519938184
+        ],
+        "sourceNodeId": "m5"
+      },
+      {
+        "min": [
+          -1.0074560023596502,
+          2.7887090748205683,
+          -0.07983698129081362
+        ],
+        "max": [
+          -0.46254399764035,
+          3.7312909251794313,
+          0.48533065217688887
+        ],
+        "sourceNodeId": "m16"
+      },
+      {
+        "min": [
+          0.07254399764035008,
+          2.7887090748205683,
+          -0.07983698129081362
+        ],
+        "max": [
+          0.6174560023596501,
+          3.7312909251794313,
+          0.48533065217688887
+        ],
+        "sourceNodeId": "m17"
+      },
+      {
+        "min": [
+          -0.7449999999999999,
+          0.09500000000000014,
+          -0.19725316455696237
+        ],
+        "max": [
+          -0.32499999999999996,
+          1.5450000000000002,
+          0.24274683544303763
+        ],
+        "sourceNodeId": "m10"
+      },
+      {
+        "min": [
+          -0.7849999999999999,
+          0,
+          -0.18725316455696236
+        ],
+        "max": [
+          -0.2849999999999999,
+          0.5800000000000001,
+          0.43274683544303766
+        ],
+        "sourceNodeId": "m11"
+      },
+      {
+        "min": [
+          0.17500000000000004,
+          0,
+          -0.05725316455696236
+        ],
+        "max": [
+          0.675,
+          0.5800000000000001,
+          0.5627468354430376
+        ],
+        "sourceNodeId": "m13"
+      }
+    ],
+    "sourceMeshCount": 21,
+    "candidateCount": 13,
+    "fallbackUsed": false
+  },
+  "footprintRadius": 1.1754317998385795,
+  "sizeClass": "medium",
+  "mode": "voxel",
+  "createdAt": 1787825899602,
+  "updatedAt": 1787825899602
+}

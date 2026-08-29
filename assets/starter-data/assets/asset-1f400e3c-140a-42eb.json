@@ -1,0 +1,1025 @@
+{
+  "id": "asset-1f400e3c-140a-42eb",
+  "name": "复杂游乐园/08激流勇进/载具/原木船",
+  "prompt": "Standalone reusable voxel amusement park asset: a hollow log flume boat shaped like a carved tree trunk with four passenger seats and dark underside runners. Box-only voxel model with purposeful grouped forms, centered at the origin, base grounded on y=0, no surrounding terrain, no people, no loose floating geometry, flat-shaded cohesive bright carnival palette. Keep the gameplay silhouette, openings and collision shape readable from all sides.",
+  "modelJson": {
+    "name": "四座原木激流勇进船",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "boat_root",
+        "name": "船体",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        }
+      },
+      {
+        "id": "underside_runners",
+        "name": "船底滑轨",
+        "parent": "boat_root",
+        "transform": {
+          "pos": [
+            0,
+            0.3,
+            0
+          ]
+        }
+      },
+      {
+        "id": "passenger_seats",
+        "name": "四座乘客席",
+        "parent": "boat_root",
+        "transform": {
+          "pos": [
+            0,
+            0.95,
+            -2.35
+          ]
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "boat_root",
+        "transform": {
+          "pos": [
+            0,
+            0.58,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.75,
+            "height": 0.38,
+            "depth": 5.9
+          },
+          "color": 12081700
+        }
+      },
+      {
+        "id": "m1",
+        "parent": "boat_root",
+        "transform": {
+          "pos": [
+            0,
+            0.82,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.55,
+            "height": 0.22,
+            "depth": 5.45
+          },
+          "color": 15043115
+        }
+      },
+      {
+        "id": "m2",
+        "parent": "boat_root",
+        "transform": {
+          "pos": [
+            -0.88,
+            1.18,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.32,
+            "height": 0.82,
+            "depth": 5.55
+          },
+          "color": 13199909
+        }
+      },
+      {
+        "id": "m3",
+        "parent": "boat_root",
+        "transform": {
+          "pos": [
+            0.88,
+            1.18,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.32,
+            "height": 0.82,
+            "depth": 5.55
+          },
+          "color": 13199909
+        }
+      },
+      {
+        "id": "m4",
+        "parent": "boat_root",
+        "transform": {
+          "pos": [
+            -1.02,
+            1.62,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.22,
+            "height": 0.2,
+            "depth": 5.75
+          },
+          "color": 16757819
+        }
+      },
+      {
+        "id": "m5",
+        "parent": "boat_root",
+        "transform": {
+          "pos": [
+            1.02,
+            1.62,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.22,
+            "height": 0.2,
+            "depth": 5.75
+          },
+          "color": 16757819
+        }
+      },
+      {
+        "id": "m6",
+        "parent": "boat_root",
+        "transform": {
+          "pos": [
+            0,
+            1.15,
+            2.93
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2,
+            "height": 0.78,
+            "depth": 0.48
+          },
+          "color": 14185512
+        }
+      },
+      {
+        "id": "m7",
+        "parent": "boat_root",
+        "transform": {
+          "pos": [
+            0,
+            0.9,
+            3.36
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.62,
+            "height": 0.54,
+            "depth": 0.42
+          },
+          "color": 15964721
+        }
+      },
+      {
+        "id": "m8",
+        "parent": "boat_root",
+        "transform": {
+          "pos": [
+            0,
+            0.7,
+            3.72
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.16,
+            "height": 0.3,
+            "depth": 0.34
+          },
+          "color": 16757819
+        }
+      },
+      {
+        "id": "m9",
+        "parent": "boat_root",
+        "transform": {
+          "pos": [
+            0,
+            1.15,
+            -2.93
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2,
+            "height": 0.78,
+            "depth": 0.48
+          },
+          "color": 14185512
+        }
+      },
+      {
+        "id": "m10",
+        "parent": "boat_root",
+        "transform": {
+          "pos": [
+            0,
+            0.9,
+            -3.36
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.62,
+            "height": 0.54,
+            "depth": 0.42
+          },
+          "color": 15964721
+        }
+      },
+      {
+        "id": "m11",
+        "parent": "boat_root",
+        "transform": {
+          "pos": [
+            0,
+            0.7,
+            -3.72
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.16,
+            "height": 0.3,
+            "depth": 0.34
+          },
+          "color": 16757819
+        }
+      },
+      {
+        "id": "m12",
+        "parent": "boat_root",
+        "transform": {
+          "pos": [
+            0,
+            0.93,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.42,
+            "height": 0.08,
+            "depth": 5.25
+          },
+          "color": 5713951
+        }
+      },
+      {
+        "id": "m13",
+        "parent": "boat_root",
+        "transform": {
+          "pos": [
+            -1.065,
+            1.18,
+            -2.25
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.1,
+            "height": 0.55,
+            "depth": 0.24
+          },
+          "color": 8929823
+        }
+      },
+      {
+        "id": "m14",
+        "parent": "boat_root",
+        "transform": {
+          "pos": [
+            1.065,
+            1.18,
+            -2.25
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.1,
+            "height": 0.55,
+            "depth": 0.24
+          },
+          "color": 8929823
+        }
+      },
+      {
+        "id": "m15",
+        "parent": "boat_root",
+        "transform": {
+          "pos": [
+            -1.065,
+            1.18,
+            -0.75
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.1,
+            "height": 0.55,
+            "depth": 0.24
+          },
+          "color": 8929823
+        }
+      },
+      {
+        "id": "m16",
+        "parent": "boat_root",
+        "transform": {
+          "pos": [
+            1.065,
+            1.18,
+            -0.75
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.1,
+            "height": 0.55,
+            "depth": 0.24
+          },
+          "color": 8929823
+        }
+      },
+      {
+        "id": "m17",
+        "parent": "boat_root",
+        "transform": {
+          "pos": [
+            -1.065,
+            1.18,
+            0.75
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.1,
+            "height": 0.55,
+            "depth": 0.24
+          },
+          "color": 8929823
+        }
+      },
+      {
+        "id": "m18",
+        "parent": "boat_root",
+        "transform": {
+          "pos": [
+            1.065,
+            1.18,
+            0.75
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.1,
+            "height": 0.55,
+            "depth": 0.24
+          },
+          "color": 8929823
+        }
+      },
+      {
+        "id": "m19",
+        "parent": "boat_root",
+        "transform": {
+          "pos": [
+            -1.065,
+            1.18,
+            2.25
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.1,
+            "height": 0.55,
+            "depth": 0.24
+          },
+          "color": 8929823
+        }
+      },
+      {
+        "id": "m20",
+        "parent": "boat_root",
+        "transform": {
+          "pos": [
+            1.065,
+            1.18,
+            2.25
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.1,
+            "height": 0.55,
+            "depth": 0.24
+          },
+          "color": 8929823
+        }
+      },
+      {
+        "id": "m21",
+        "parent": "boat_root",
+        "transform": {
+          "pos": [
+            0,
+            1.2,
+            3.185
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.72,
+            "height": 0.16,
+            "depth": 0.08
+          },
+          "color": 8206876
+        }
+      },
+      {
+        "id": "m22",
+        "parent": "boat_root",
+        "transform": {
+          "pos": [
+            0,
+            0.91,
+            3.585
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.4,
+            "height": 0.16,
+            "depth": 0.08
+          },
+          "color": 16765274
+        }
+      },
+      {
+        "id": "m23",
+        "parent": "boat_root",
+        "transform": {
+          "pos": [
+            0,
+            1.2,
+            -3.185
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.72,
+            "height": 0.16,
+            "depth": 0.08
+          },
+          "color": 8206876
+        }
+      },
+      {
+        "id": "m24",
+        "parent": "underside_runners",
+        "transform": {
+          "pos": [
+            -0.55,
+            -0.16,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.34,
+            "height": 0.28,
+            "depth": 6.15
+          },
+          "color": 2435893
+        }
+      },
+      {
+        "id": "m25",
+        "parent": "underside_runners",
+        "transform": {
+          "pos": [
+            0.55,
+            -0.16,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.34,
+            "height": 0.28,
+            "depth": 6.15
+          },
+          "color": 2435893
+        }
+      },
+      {
+        "id": "m26",
+        "parent": "underside_runners",
+        "transform": {
+          "pos": [
+            0,
+            -0.03,
+            -2.45
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.45,
+            "height": 0.18,
+            "depth": 0.34
+          },
+          "color": 3423046
+        }
+      },
+      {
+        "id": "m27",
+        "parent": "underside_runners",
+        "transform": {
+          "pos": [
+            0,
+            -0.03,
+            2.45
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.45,
+            "height": 0.18,
+            "depth": 0.34
+          },
+          "color": 3423046
+        }
+      },
+      {
+        "id": "m28",
+        "parent": "passenger_seats",
+        "transform": {
+          "pos": [
+            0,
+            0.09,
+            0.5
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.32,
+            "height": 0.16,
+            "depth": 0.62
+          },
+          "color": 2730439
+        }
+      },
+      {
+        "id": "m29",
+        "parent": "passenger_seats",
+        "transform": {
+          "pos": [
+            0,
+            0.36,
+            0.12
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.42,
+            "height": 0.58,
+            "depth": 0.18
+          },
+          "color": 2730439
+        }
+      },
+      {
+        "id": "m30",
+        "parent": "passenger_seats",
+        "transform": {
+          "pos": [
+            0,
+            0.61,
+            0.01
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.08,
+            "height": 0.12,
+            "depth": 0.12
+          },
+          "color": 16767050
+        }
+      },
+      {
+        "id": "m31",
+        "parent": "passenger_seats",
+        "transform": {
+          "pos": [
+            0,
+            0.09,
+            1.73
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.32,
+            "height": 0.16,
+            "depth": 0.62
+          },
+          "color": 15683141
+        }
+      },
+      {
+        "id": "m32",
+        "parent": "passenger_seats",
+        "transform": {
+          "pos": [
+            0,
+            0.36,
+            1.35
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.42,
+            "height": 0.58,
+            "depth": 0.18
+          },
+          "color": 15683141
+        }
+      },
+      {
+        "id": "m33",
+        "parent": "passenger_seats",
+        "transform": {
+          "pos": [
+            0,
+            0.61,
+            1.24
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.08,
+            "height": 0.12,
+            "depth": 0.12
+          },
+          "color": 16767050
+        }
+      },
+      {
+        "id": "m34",
+        "parent": "passenger_seats",
+        "transform": {
+          "pos": [
+            0,
+            0.09,
+            2.97
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.32,
+            "height": 0.16,
+            "depth": 0.62
+          },
+          "color": 2730439
+        }
+      },
+      {
+        "id": "m35",
+        "parent": "passenger_seats",
+        "transform": {
+          "pos": [
+            0,
+            0.36,
+            2.59
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.42,
+            "height": 0.58,
+            "depth": 0.18
+          },
+          "color": 2730439
+        }
+      },
+      {
+        "id": "m36",
+        "parent": "passenger_seats",
+        "transform": {
+          "pos": [
+            0,
+            0.61,
+            2.48
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.08,
+            "height": 0.12,
+            "depth": 0.12
+          },
+          "color": 16767050
+        }
+      },
+      {
+        "id": "m37",
+        "parent": "passenger_seats",
+        "transform": {
+          "pos": [
+            0,
+            0.09,
+            4.2
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.32,
+            "height": 0.16,
+            "depth": 0.62
+          },
+          "color": 15683141
+        }
+      },
+      {
+        "id": "m38",
+        "parent": "passenger_seats",
+        "transform": {
+          "pos": [
+            0,
+            0.36,
+            3.82
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.42,
+            "height": 0.58,
+            "depth": 0.18
+          },
+          "color": 15683141
+        }
+      },
+      {
+        "id": "m39",
+        "parent": "passenger_seats",
+        "transform": {
+          "pos": [
+            0,
+            0.61,
+            3.71
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.08,
+            "height": 0.12,
+            "depth": 0.12
+          },
+          "color": 16767050
+        }
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1784474869681,
+        "provider": "glm",
+        "data": "9IcGBqthVUceJjfe8GbWpRdKUHuu2GBKXqV3kYI31xtWubyETpVZmpmVWGzTDSuDeWVmm8udctRAhmyblp/qZCF2B7F3Dvfxdo+HvCaeNeTV7B7sjV3/nOIdlrh/qRLdh2T0fulB1GojLcQXPcWLjqYNi13cf7zkMcucvMyEEQ3+W/XSCEU61hYhtWZbRAuFAT/ROyFOSZJvLL1ABcEHdYihSu6iqr/qaDEubfgOn8Djz8mAuG8sRjybJ4EZtMRWnXhE1mqahUnyS4ihjRndecy1bt9GI5ti8VBeZA0YFXYgRVsWDyZ/6TF2wnlffD9DKI0YPcEPKnqQocFhCkiKg7KMYKSLjOE2oyrQlWfplyUH7JU+A9wXZz2zYiA12vWGOTSf6LCxB0RVxWC5NhZiytSPf4FZ9RFRxFFrTMyzKjAeXF4L7JVSvpdsB4NXCbZUBgJaDHgNXcd1cGyA1pebXSj40xXbF4LMKHrMBqWlmJZjX9rm5l3riyiKJlc0JEdhmRYndvVxehQey17KdeNFR2xRPCbtuvKHc0bWghN3NlPgSwwB4y72WMse1UPsFC9GvtzEMdP7Djg5gKGNkcHfPKPwcR8diWwT59j+AL+0WbnP39Va9rFyINglrtrmrE11Md4tQcK22RR/H8SyF2+mDktNwUIu4+IAYWuHgu3FnSbykXIuvrzh8UaS4RdKJkq7DxDgToIkEgLE3qlKrxvrP9Iiykxvqm02KJyF6xLuVLDUFyfpPiuAh64+lMQQNmBq2z5kbLifEYXnpJvmryU0WzCp6relhR8SsOm6uObjavIL08LG3jndaEDUKfRp04ua625nevltfJWq2Ooi7b2thjAo0G1v3DhwymyFQa8N4oVtuMArsvhzRNDtVMONPkcACPL+0+8XrYgK4Tcj9GyOMmcD5LGer8BH9pHd0m4CPmfGUBAkQEmfDZSemLFdG8gtOpDZy2dMPp1yMLvVQssLioXDbhpPibbGnkVs/UVql1s5pLFfOEzCtOVT+VOPtYlNEtvrV12egYs92hS0bnRD1UwVW6qJGYb/YZlCSU+OieLxdxzCOpbsP/WRz8pUqZfQPzgdSmfwg/AGyP2Z2WAOdnD7OzzLXstBr3tZZ5OfY5+uMyldd/y7ptPrvy4ML3ksVly/p0uzPYPGocK01vf0pyrBSmdDnC0a",
+        "edits": ""
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -0.875,
+          0.39,
+          -2.95
+        ],
+        "max": [
+          0.875,
+          0.77,
+          2.95
+        ],
+        "sourceNodeId": "m0"
+      },
+      {
+        "min": [
+          -0.775,
+          0.71,
+          -2.725
+        ],
+        "max": [
+          0.775,
+          0.9299999999999999,
+          2.725
+        ],
+        "sourceNodeId": "m1"
+      },
+      {
+        "min": [
+          -1.04,
+          0.77,
+          -2.775
+        ],
+        "max": [
+          -0.72,
+          1.5899999999999999,
+          2.775
+        ],
+        "sourceNodeId": "m2"
+      },
+      {
+        "min": [
+          0.72,
+          0.77,
+          -2.775
+        ],
+        "max": [
+          1.04,
+          1.5899999999999999,
+          2.775
+        ],
+        "sourceNodeId": "m3"
+      },
+      {
+        "min": [
+          -1,
+          0.7599999999999999,
+          2.6900000000000004
+        ],
+        "max": [
+          1,
+          1.54,
+          3.17
+        ],
+        "sourceNodeId": "m6"
+      },
+      {
+        "min": [
+          -1,
+          0.7599999999999999,
+          -3.17
+        ],
+        "max": [
+          1,
+          1.54,
+          -2.6900000000000004
+        ],
+        "sourceNodeId": "m9"
+      },
+      {
+        "min": [
+          -0.7200000000000001,
+          0,
+          -3.075
+        ],
+        "max": [
+          -0.38,
+          0.28,
+          3.075
+        ],
+        "sourceNodeId": "m24"
+      },
+      {
+        "min": [
+          0.38,
+          0,
+          -3.075
+        ],
+        "max": [
+          0.7200000000000001,
+          0.28,
+          3.075
+        ],
+        "sourceNodeId": "m25"
+      },
+      {
+        "min": [
+          -0.81,
+          0.63,
+          -3.57
+        ],
+        "max": [
+          0.81,
+          1.17,
+          -3.15
+        ],
+        "sourceNodeId": "m10"
+      },
+      {
+        "min": [
+          -0.81,
+          0.63,
+          3.15
+        ],
+        "max": [
+          0.81,
+          1.17,
+          3.57
+        ],
+        "sourceNodeId": "m7"
+      },
+      {
+        "min": [
+          -1.1300000000000001,
+          1.52,
+          -2.875
+        ],
+        "max": [
+          -0.91,
+          1.7200000000000002,
+          2.875
+        ],
+        "sourceNodeId": "m4"
+      },
+      {
+        "min": [
+          0.91,
+          1.52,
+          -2.875
+        ],
+        "max": [
+          1.1300000000000001,
+          1.7200000000000002,
+          2.875
+        ],
+        "sourceNodeId": "m5"
+      }
+    ],
+    "sourceMeshCount": 40,
+    "candidateCount": 24,
+    "fallbackUsed": false
+  },
+  "mode": "lite",
+  "provider": "provider-fallback",
+  "createdAt": 1784474874295,
+  "updatedAt": 1784474874295
+}

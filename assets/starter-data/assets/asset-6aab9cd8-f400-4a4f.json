@@ -1,0 +1,618 @@
+{
+  "id": "asset-6aab9cd8-f400-4a4f",
+  "name": "头戴式耳机",
+  "prompt": "A single reusable over-ear headphone set with padded headband, rounded ear cups and a short neatly coiled cable, approximately 0.22 meters wide and intentionally small wearable scale, no stand, person, floor, or background",
+  "tags": [
+    "electronics",
+    "music",
+    "prop"
+  ],
+  "modelJson": {
+    "name": "小型可复用包耳式耳机",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "headband",
+        "name": "软垫头梁",
+        "transform": {
+          "pos": [
+            0,
+            0.13,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.27,
+            0.252,
+            0.086
+          ],
+          "center": [
+            -0.018,
+            -0.034,
+            0.002
+          ],
+          "axes": [
+            [
+              0.8941,
+              0.4476,
+              -0.0162
+            ],
+            [
+              -0.4477,
+              0.8941,
+              -0.0058
+            ],
+            [
+              0.0119,
+              0.0124,
+              0.9999
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "leftCup",
+        "name": "左耳罩",
+        "parent": "headband",
+        "transform": {
+          "pos": [
+            -0.091,
+            -0.015,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.1,
+            0.165,
+            0.065
+          ],
+          "center": [
+            0.009,
+            -0.07,
+            0.003
+          ],
+          "axes": [
+            [
+              0.8988,
+              0.4266,
+              -0.1006
+            ],
+            [
+              -0.4209,
+              0.9041,
+              0.074
+            ],
+            [
+              0.1225,
+              -0.0242,
+              0.9922
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "cable",
+        "name": "短盘绕线缆",
+        "parent": "leftCup",
+        "transform": {
+          "pos": [
+            -0.005,
+            -0.066,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.084,
+            0.047,
+            0.009
+          ],
+          "center": [
+            0.019,
+            -0.039,
+            0
+          ],
+          "axes": [
+            [
+              0.7828,
+              -0.6223,
+              0
+            ],
+            [
+              0.6223,
+              0.7828,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "rightCup",
+        "name": "右耳罩",
+        "parent": "headband",
+        "transform": {
+          "pos": [
+            0.091,
+            -0.015,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.043,
+            0.072,
+            0.061
+          ],
+          "center": [
+            0.005,
+            -0.03,
+            0.006
+          ],
+          "axes": [
+            [
+              0.9996,
+              0,
+              -0.0296
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0.0296,
+              0,
+              0.9996
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "headband",
+        "transform": {
+          "pos": [
+            0,
+            0.075,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.09,
+            "height": 0.022,
+            "depth": 0.032
+          },
+          "color": 2435117
+        }
+      },
+      {
+        "id": "m1",
+        "parent": "headband",
+        "transform": {
+          "pos": [
+            0,
+            0.065,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.045,
+            "height": 0.026,
+            "depth": 0.038
+          },
+          "color": 1382170
+        }
+      },
+      {
+        "id": "m2",
+        "parent": "headband",
+        "transform": {
+          "pos": [
+            -0.065,
+            0.05,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.025,
+            "height": 0.055,
+            "depth": 0.026
+          },
+          "color": 2435117
+        }
+      },
+      {
+        "id": "m3",
+        "parent": "headband",
+        "transform": {
+          "pos": [
+            0.065,
+            0.05,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.025,
+            "height": 0.055,
+            "depth": 0.026
+          },
+          "color": 2435117
+        }
+      },
+      {
+        "id": "m4",
+        "parent": "headband",
+        "transform": {
+          "pos": [
+            -0.091,
+            0.005,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.018,
+            "height": 0.055,
+            "depth": 0.018
+          },
+          "color": 5593955
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m5",
+        "parent": "headband",
+        "transform": {
+          "pos": [
+            0.091,
+            0.005,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.018,
+            "height": 0.055,
+            "depth": 0.018
+          },
+          "color": 5593955
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m6",
+        "parent": "leftCup",
+        "transform": {
+          "pos": [
+            -0.003,
+            -0.03,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.036,
+            "height": 0.072,
+            "depth": 0.044
+          },
+          "color": 2106153
+        }
+      },
+      {
+        "id": "m7",
+        "parent": "leftCup",
+        "transform": {
+          "pos": [
+            -0.005,
+            -0.03,
+            0.002
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.041,
+            "height": 0.058,
+            "depth": 0.052
+          },
+          "color": 3159099
+        }
+      },
+      {
+        "id": "m8",
+        "parent": "leftCup",
+        "transform": {
+          "pos": [
+            -0.005,
+            -0.03,
+            0.029
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.034,
+            "height": 0.05,
+            "depth": 0.014
+          },
+          "color": 1118997
+        }
+      },
+      {
+        "id": "m9",
+        "parent": "rightCup",
+        "transform": {
+          "pos": [
+            0.003,
+            -0.03,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.036,
+            "height": 0.072,
+            "depth": 0.044
+          },
+          "color": 2106153
+        }
+      },
+      {
+        "id": "m10",
+        "parent": "rightCup",
+        "transform": {
+          "pos": [
+            0.005,
+            -0.03,
+            0.002
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.041,
+            "height": 0.058,
+            "depth": 0.052
+          },
+          "color": 3159099
+        }
+      },
+      {
+        "id": "m11",
+        "parent": "rightCup",
+        "transform": {
+          "pos": [
+            0.005,
+            -0.03,
+            0.029
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.034,
+            "height": 0.05,
+            "depth": 0.014
+          },
+          "color": 1118997
+        }
+      },
+      {
+        "id": "m12",
+        "parent": "cable",
+        "transform": {
+          "pos": [
+            0,
+            -0.017,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.006,
+            "height": 0.035,
+            "depth": 0.006
+          },
+          "color": 1579549
+        }
+      },
+      {
+        "id": "m13",
+        "parent": "cable",
+        "transform": {
+          "pos": [
+            0.022,
+            -0.032,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.045,
+            "height": 0.006,
+            "depth": 0.006
+          },
+          "color": 1579549
+        }
+      },
+      {
+        "id": "m14",
+        "parent": "cable",
+        "transform": {
+          "pos": [
+            0.042,
+            -0.0445,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.006,
+            "height": 0.025,
+            "depth": 0.006
+          },
+          "color": 1579549
+        }
+      },
+      {
+        "id": "m15",
+        "parent": "cable",
+        "transform": {
+          "pos": [
+            0.023,
+            -0.054,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.038,
+            "height": 0.006,
+            "depth": 0.006
+          },
+          "color": 1579549
+        }
+      },
+      {
+        "id": "m16",
+        "parent": "cable",
+        "transform": {
+          "pos": [
+            0.007,
+            -0.048,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.006,
+            "height": 0.018,
+            "depth": 0.006
+          },
+          "color": 1579549
+        }
+      },
+      {
+        "id": "m17",
+        "parent": "cable",
+        "transform": {
+          "pos": [
+            0.042,
+            -0.063,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.009,
+            "height": 0.018,
+            "depth": 0.009
+          },
+          "color": 4146251
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1786871541072,
+        "provider": "gpt",
+        "data": "CUQLL1XzUa005OcWmXnguSizHK1dNiqP3+4/cdtOqy/Da+7us2Yej1ajSjTVeqyCKP0oJxSAnFy2wGlqBvItKVFogRa7lmk9mHQ+4REm+S3GFUBRo1ITgAoK+y9QJX9uiKJOmoWONLMkdwH1eNXCF38Q4s/bzwTB1vlOQTWT9Q0u+e+dv4AThtRWt7hmCfcw0IgM0oiwmEXwgzA9eEJWA7kVcQfDpxf5otKlPaVbRagTuWtKS58kDk8mAu1ils8oPFTqKZYPquTrWDOWoAQp/lpbRCAL9HknzPTMXexdOxOU0lY5LOaK7jWUyaF4wFL7CS3o58xZ5iyHn4Ysl91ZYlo9nogiUTSEL2TeiYiq6K/199jVhwiDB8XfU3iSkBLE+5BCPgV0HMjxUTMk3dUn6XSkhJXNvYrW8YGoQlou79ZEUR/GRtiZoSc7SNO7hqjQMZR7REBifTXXMSnfojx/qmm1KfkiUPeVjG0QbU8FV4ZGk8mQ8t8A2C/sKX1cw4Qj6qmG++y1R/fT1qPFF0PfxGyVH14evOYO2a1hoBzSjzgHTlk9ijnr/mC5w/DeTC/fYFGQ5TEt7xP25kNbgn6P0JDk0GEYmb+gPcSW66vTvGKx9gOlLEtIKdKvgViGCKd2AaEdaKtmpeygUgBvF0mGSuJTjXVOIabsqZ2XVoiGGmmNBTBWBLI2rSM5xNdItHtPaO+oejhWOuiMIXbr6CoCI6ZASlymlNuUvjQ7F7+XLsAkiwftX2cRotZLHxy1fhl9l8mFon6YRADf40Umjy++/olNQhnTQoMXqsHlZwvHeYYSrKtm0LFLmnmJRGbSvAOKko0hYdjmCc+dZMWeLAwNaOyV4ISwB1p5pTphO8LyKUd59eNrRw7qfk5t1ptkp0Y=",
+        "edits": ""
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -0.1165,
+          0,
+          -0.030000000000000002
+        ],
+        "max": [
+          0.1165,
+          0.23900000000000002,
+          0.030000000000000002
+        ],
+        "sourceNodeId": "asset-bounds"
+      }
+    ],
+    "sourceMeshCount": 18,
+    "candidateCount": 1,
+    "fallbackUsed": true
+  },
+  "footprintRadius": 0.1165,
+  "sizeClass": "small",
+  "mode": "voxel",
+  "provider": "gpt",
+  "libraryId": "library-d7967286-cebf-4f99",
+  "libraryMetadata": {
+    "tags": [
+      "headphones",
+      "electronics",
+      "audio",
+      "wearable",
+      "prop"
+    ],
+    "applicableZones": [
+      "settlement"
+    ],
+    "repeatable": true,
+    "landmark": false,
+    "enabled": true,
+    "priority": 0.5,
+    "analysisStatus": "ready",
+    "rotation": "random"
+  },
+  "createdAt": 1787817502422,
+  "updatedAt": 1787817502422
+}

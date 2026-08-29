@@ -1,0 +1,567 @@
+{
+  "id": "asset-ab141cc3-182c-4e22",
+  "name": "蕨类盆栽",
+  "prompt": "小型蕨类室内盆栽\nCoordinate contract: local Y+ is up, local Z+ is the front, entrance, or forward direction, and local X+ is right. Put doors, facades, openings, windshields, noses, seats, and other recognizable front details toward local Z+. For a modular repeated element, explicitly choose the long axis: side-by-side modules span local X with depth/front on local Z; traversal modules span local Z. Keep the model centered at its origin.\nCanonical dimensions contract: width=0.8, height=0.9, depth=0.8 world units. Keep the generated mesh within this centered bounding size.",
+  "tags": [
+    "indoor",
+    "child-safe"
+  ],
+  "modelJson": {
+    "name": "小型蕨类室内盆栽",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "fern_center",
+        "name": "蕨类中心",
+        "transform": {
+          "pos": [
+            0,
+            0.35,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.656,
+            0.533,
+            0.474
+          ],
+          "center": [
+            0.01,
+            0.217,
+            -0.013
+          ],
+          "axes": [
+            [
+              0.9936,
+              0.1042,
+              0.0443
+            ],
+            [
+              -0.1065,
+              0.993,
+              0.0508
+            ],
+            [
+              -0.0387,
+              -0.0552,
+              0.9977
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "fern_left",
+        "name": "左侧叶片",
+        "parent": "fern_center",
+        "transform": {
+          "pos": [
+            0,
+            0.01,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.07,
+            0.427,
+            0.07
+          ],
+          "center": [
+            -0.16,
+            0.16,
+            0
+          ],
+          "axes": [
+            [
+              0.7509,
+              0.6604,
+              0
+            ],
+            [
+              -0.6604,
+              0.7509,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "fern_right",
+        "name": "右侧叶片",
+        "parent": "fern_center",
+        "transform": {
+          "pos": [
+            0,
+            0.01,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.07,
+            0.429,
+            0.07
+          ],
+          "center": [
+            0.16,
+            0.16,
+            0
+          ],
+          "axes": [
+            [
+              0.7472,
+              -0.6646,
+              0
+            ],
+            [
+              0.6646,
+              0.7472,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "fern_front",
+        "name": "前侧叶片",
+        "parent": "fern_center",
+        "transform": {
+          "pos": [
+            0,
+            0.01,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.077,
+            0.428,
+            0.062
+          ],
+          "center": [
+            0.06,
+            0.2,
+            0.1
+          ],
+          "axes": [
+            [
+              0.9618,
+              -0.068,
+              0.2651
+            ],
+            [
+              -0.0667,
+              0.8813,
+              0.4679
+            ],
+            [
+              -0.2654,
+              -0.4677,
+              0.8431
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "fern_back",
+        "name": "后侧叶片",
+        "parent": "fern_center",
+        "transform": {
+          "pos": [
+            0,
+            0.01,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.085,
+            0.463,
+            0.07
+          ],
+          "center": [
+            0.07,
+            0.18,
+            -0.11
+          ],
+          "axes": [
+            [
+              0.9333,
+              0.0996,
+              -0.345
+            ],
+            [
+              -0.231,
+              0.902,
+              -0.3647
+            ],
+            [
+              0.2748,
+              0.4201,
+              0.8649
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "fern_top",
+        "name": "顶部叶片",
+        "parent": "fern_center",
+        "transform": {
+          "pos": [
+            0,
+            0.03,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.075,
+            0.444,
+            0.057
+          ],
+          "center": [
+            0.03,
+            0.23,
+            -0.01
+          ],
+          "axes": [
+            [
+              0.9696,
+              -0.0444,
+              0.2407
+            ],
+            [
+              0.0147,
+              0.9922,
+              0.1239
+            ],
+            [
+              -0.2444,
+              -0.1166,
+              0.9627
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "m0",
+        "transform": {
+          "pos": [
+            0,
+            0.12,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.5,
+            "height": 0.24,
+            "depth": 0.5
+          },
+          "color": 12146495
+        }
+      },
+      {
+        "id": "m1",
+        "transform": {
+          "pos": [
+            0,
+            0.27,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.58,
+            "height": 0.1,
+            "depth": 0.58
+          },
+          "color": 13200205
+        }
+      },
+      {
+        "id": "m2",
+        "transform": {
+          "pos": [
+            0,
+            0.34,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.42,
+            "height": 0.04,
+            "depth": 0.42
+          },
+          "color": 4927524
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "soil"
+          }
+        ]
+      },
+      {
+        "id": "m3",
+        "parent": "fern_center",
+        "transform": {
+          "pos": [
+            0,
+            0.21,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.08,
+            "height": 0.42,
+            "depth": 0.08
+          },
+          "color": 4028984
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m4",
+        "parent": "fern_left",
+        "transform": {
+          "pos": [
+            -0.16,
+            0.16,
+            0
+          ],
+          "quat": [
+            0,
+            0,
+            0.91,
+            0.41
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.43,
+            "height": 0.07,
+            "depth": 0.07
+          },
+          "color": 5084735
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m5",
+        "parent": "fern_right",
+        "transform": {
+          "pos": [
+            0.16,
+            0.16,
+            0
+          ],
+          "quat": [
+            0,
+            0,
+            0.41,
+            0.91
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.43,
+            "height": 0.07,
+            "depth": 0.07
+          },
+          "color": 4425271
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m6",
+        "parent": "fern_front",
+        "transform": {
+          "pos": [
+            0.06,
+            0.2,
+            0.1
+          ],
+          "quat": [
+            0.53,
+            0.35,
+            0.64,
+            0.35
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.45,
+            "height": 0.06,
+            "depth": 0.07
+          },
+          "color": 5941062
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m7",
+        "parent": "fern_back",
+        "transform": {
+          "pos": [
+            0.07,
+            0.18,
+            -0.11
+          ],
+          "quat": [
+            0.4,
+            0.68,
+            0.4,
+            0.52
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.43,
+            "height": 0.06,
+            "depth": 0.07
+          },
+          "color": 3767092
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m8",
+        "parent": "fern_top",
+        "transform": {
+          "pos": [
+            0.03,
+            0.23,
+            -0.01
+          ],
+          "quat": [
+            0.48,
+            0.45,
+            0.54,
+            0.45
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.47,
+            "height": 0.055,
+            "depth": 0.07
+          },
+          "color": 6729037
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1787770129078,
+        "provider": "gpt",
+        "data": "zY4tuJ0RkDnBKJ5bnrNs0nYqwLiUKvw7ZWnL6z01muaJ1iUoXDxfZcm3SYDhMKF64MfebazSuaIZO7y1wNLcS9fGzV2J9QtMs98ifzv6Oq0vN4jvD9939V4lwqeXHqHmG3FP7U0dJ1irhrvgRLRf8XjZvPMSBU/nJSHFpoUmnQ9wnmP3khp3BeMmv++ugoC6quk1agZ2XTzYd/uyp2cF3mL3AoBO2qWD2Ce5O9apr/PvhUAfg4VbbaAURPoefIZLeCQSfDz0wOjGUyxwvEjm87kxNwLXn022JLdL6flVJTT0d2YlrQ10sMwPe1U/+rWNNqKDZIOAFqoa47WmRYIfSHCNa89PZ9tC+wYN0RRstbavCKxd+gbSF+zJfP/+kIbf6KF+0sj648Bmh69KBQbTsgiV+0/YE5hf52N50vf5ucGXKIbXlDpVwFnVnkPh/6pGf4rExIpTlt0ehUPnwJcURlBjwC/TaOOJAmu6baSGoi91o+5USs9wBX4Ug93JhW1SzLuJC5ctXrzc6TEnZYr8iT2gwevhfeTVojViDie8E/3j1A0ht50JsB1E3rpUx0DpA2cDwF45RNZUlG/W1A+1WhKAa9nSQPmygZIRYbn37atZtT2SSBon+4lJ5Cuut4E+mHdDoemypOMRGAvrMEKdFdAFQ8moF2Mgc7wAnZl3ssBh/+BYtHYH8R+X7j+6AnPaoQSaesn2TibNyRaJVlj2JtJqxC6YOsJ/k3pnftK/Nnfj4TmaAKyhMsfgaYHAHIwtVaRGEEeyjLlJVtIUjW8YQEazLjAdvv+2MQgLsZMbLrDB1cZP1jzyoYFsSLgktlYs3zUZhNIPWBbxJzj0/ifKBSQC4kkO7qsgeQCvbVx33/J8nI52ToXgGNTRvBaYUZ+vMXwCYQ6m",
+        "edits": ""
+      },
+      "semanticSnapshot": {
+        "v": 1,
+        "auto": true,
+        "text": "小型蕨类室内盆栽 · 6组/9mesh · 世界坐标(Y上Z前), 原点=模型根\n# 阅读说明: G:=group行(可动画骨骼, 动画key用G:后的id; @p=pivot世界坐标; 倾(x,y,z)°=朝向偏离世界轴的欧拉角; 缩进=父子层级; 挂:=挂载于某组; G:id→id→…=chain折叠行, 每个id都是可独立动画的group, chain×N=waypoint数)\n# M:=mesh行(label[id 几何 @(世界坐标)], label可省略; ×N=for循环批量件(锚点=代表实例); cyl (起)→(末)或 轴上(Y)等方位词=延伸方向; 薄向=板面法向(扁板); 挂载组双代表=最大件+朝向件(嘴/管/檐所在); 无方向标注=均匀块(三向相近,如头),默认面向前(Z); 对称×2=镜像对)\nG:fern_center 蕨类中心 @p(0,0.4,0)\n  M:[m3 box 0.08×0.42×0.08 (0,0.6,0) 轴上(Y)]\n  G:fern_left 左侧叶片 @p(0,0.4,0) 挂:fern_center\n    M:[m4 box 0.43×0.07×0.07 (-0.2,0.5,0) 轴(-0.3,0.7,0)→(0,0.4,0)]\n  G:fern_right 右侧叶片 @p(0,0.4,0) 挂:fern_center\n    M:[m5 box 0.43×0.07×0.07 (0.2,0.5,0) 轴(0.3,0.7,0)→(0,0.4,0)]\n  G:fern_front 前侧叶片 @p(0,0.4,0) 挂:fern_center\n    M:[m6 box 0.45×0.06×0.07 (0.1,0.6,0.1) 轴(0,0.7,0.2)→(0.1,0.4,0)]\n  G:fern_back 后侧叶片 @p(0,0.4,0) 挂:fern_center\n    M:[m7 box 0.43×0.06×0.07 (0.1,0.5,-0.1) 轴上(Y)]\n  G:fern_top 顶部叶片 @p(0,0.4,0) 挂:fern_center\n    M:[m8 box 0.47×0.06×0.07 (0,0.6,0) 轴(0,0.8,0)→(0,0.4,0)]",
+        "stats": {
+          "groups": 6,
+          "meshes": 9,
+          "labeledMeshes": 0,
+          "labelCoverage": 0,
+          "batchLabels": 0,
+          "autoChains": 0,
+          "snapshotChars": 978
+        }
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -0.3286579000200763,
+          0,
+          -0.29
+        ],
+        "max": [
+          0.3286579000200763,
+          0.8482281553398057,
+          0.29
+        ],
+        "sourceNodeId": "asset-bounds"
+      }
+    ],
+    "sourceMeshCount": 9,
+    "candidateCount": 0,
+    "fallbackUsed": true
+  },
+  "footprintRadius": 0.3286579000200763,
+  "sizeClass": "small",
+  "mode": "voxel",
+  "provider": "gpt",
+  "createdAt": 1787770128818,
+  "updatedAt": 1787770128818
+}

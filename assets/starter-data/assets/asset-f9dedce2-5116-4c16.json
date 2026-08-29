@@ -1,0 +1,784 @@
+{
+  "id": "asset-f9dedce2-5116-4c16",
+  "name": "风铃",
+  "prompt": "风铃",
+  "modelJson": {
+    "name": "清风风铃",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "frame",
+        "name": "风铃支架",
+        "transform": {
+          "pos": [
+            0,
+            3.8,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            2.232,
+            3.722,
+            2.23
+          ],
+          "center": [
+            -0.013,
+            -1.76,
+            -0.006
+          ],
+          "axes": [
+            [
+              0.9956,
+              -0.0176,
+              0.0921
+            ],
+            [
+              0.017,
+              0.9998,
+              0.0081
+            ],
+            [
+              -0.0922,
+              -0.0065,
+              0.9957
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "chime_left",
+        "name": "悬挂音管",
+        "parent": "frame",
+        "transform": {
+          "pos": [
+            -0.78,
+            -0.98,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.26,
+            1.95,
+            0.26
+          ],
+          "center": [
+            0,
+            -1.015,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "chime_right",
+        "name": "悬挂音管",
+        "parent": "frame",
+        "transform": {
+          "pos": [
+            0.78,
+            -0.98,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.26,
+            1.68,
+            0.26
+          ],
+          "center": [
+            0,
+            -0.88,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "chime_back",
+        "name": "悬挂音管",
+        "parent": "frame",
+        "transform": {
+          "pos": [
+            0,
+            -0.98,
+            -0.78
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.26,
+            1.82,
+            0.26
+          ],
+          "center": [
+            0,
+            -0.95,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "chime_front",
+        "name": "悬挂音管",
+        "parent": "frame",
+        "transform": {
+          "pos": [
+            0,
+            -0.98,
+            0.78
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.26,
+            1.52,
+            0.26
+          ],
+          "center": [
+            0,
+            -0.8,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "clapper",
+        "name": "中央撞锤",
+        "parent": "frame",
+        "transform": {
+          "pos": [
+            0,
+            -0.98,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.926,
+            2.596,
+            0.787
+          ],
+          "center": [
+            -0.044,
+            -1.337,
+            -0.004
+          ],
+          "axes": [
+            [
+              0.9951,
+              -0.0199,
+              0.0969
+            ],
+            [
+              0.0202,
+              0.9998,
+              -0.0029
+            ],
+            [
+              -0.0968,
+              0.0048,
+              0.9953
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "sail",
+        "name": "迎风坠片",
+        "parent": "clapper",
+        "transform": {
+          "pos": [
+            0,
+            -1.27,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.871,
+            1.317,
+            0.12
+          ],
+          "center": [
+            -0.045,
+            -0.696,
+            -0.003
+          ],
+          "axes": [
+            [
+              0.9942,
+              -0.0436,
+              0.0979
+            ],
+            [
+              0.0448,
+              0.9989,
+              -0.0103
+            ],
+            [
+              -0.0974,
+              0.0147,
+              0.9951
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "frame",
+        "transform": {
+          "pos": [
+            0,
+            -0.45,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.12,
+            "height": 1.1,
+            "depth": 0.12
+          },
+          "color": 9132587
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "walnut"
+          }
+        ]
+      },
+      {
+        "id": "m1",
+        "parent": "frame",
+        "transform": {
+          "pos": [
+            0,
+            -0.98,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2.2,
+            "height": 0.18,
+            "depth": 0.42
+          },
+          "color": 10118968
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "walnut"
+          }
+        ]
+      },
+      {
+        "id": "m2",
+        "parent": "frame",
+        "transform": {
+          "pos": [
+            0,
+            -0.98,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.42,
+            "height": 0.18,
+            "depth": 2.2
+          },
+          "color": 10118968
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "walnut"
+          }
+        ]
+      },
+      {
+        "id": "m3",
+        "parent": "chime_left",
+        "transform": {
+          "pos": [
+            0,
+            -0.28,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.055,
+            "height": 0.48,
+            "depth": 0.055
+          },
+          "color": 7232068
+        }
+      },
+      {
+        "id": "m4",
+        "parent": "chime_left",
+        "transform": {
+          "pos": [
+            0,
+            -1.265,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.26,
+            "height": 1.45,
+            "depth": 0.26
+          },
+          "color": 12174796
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m5",
+        "parent": "chime_right",
+        "transform": {
+          "pos": [
+            0,
+            -0.28,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.055,
+            "height": 0.48,
+            "depth": 0.055
+          },
+          "color": 7232068
+        }
+      },
+      {
+        "id": "m6",
+        "parent": "chime_right",
+        "transform": {
+          "pos": [
+            0,
+            -1.13,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.26,
+            "height": 1.18,
+            "depth": 0.26
+          },
+          "color": 13807692
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m7",
+        "parent": "chime_back",
+        "transform": {
+          "pos": [
+            0,
+            -0.28,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.055,
+            "height": 0.48,
+            "depth": 0.055
+          },
+          "color": 7232068
+        }
+      },
+      {
+        "id": "m8",
+        "parent": "chime_back",
+        "transform": {
+          "pos": [
+            0,
+            -1.2,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.26,
+            "height": 1.32,
+            "depth": 0.26
+          },
+          "color": 11451332
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m9",
+        "parent": "chime_front",
+        "transform": {
+          "pos": [
+            0,
+            -0.28,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.055,
+            "height": 0.48,
+            "depth": 0.055
+          },
+          "color": 7232068
+        }
+      },
+      {
+        "id": "m10",
+        "parent": "chime_front",
+        "transform": {
+          "pos": [
+            0,
+            -1.05,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.26,
+            "height": 1.02,
+            "depth": 0.26
+          },
+          "color": 13936707
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m11",
+        "parent": "clapper",
+        "transform": {
+          "pos": [
+            0,
+            -0.7,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.07,
+            "height": 1.3,
+            "depth": 0.07
+          },
+          "color": 7361338
+        }
+      },
+      {
+        "id": "m12",
+        "parent": "clapper",
+        "transform": {
+          "pos": [
+            0,
+            -1.27,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.72,
+            "height": 0.18,
+            "depth": 0.72
+          },
+          "color": 11897418
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "oak"
+          }
+        ]
+      },
+      {
+        "id": "m13",
+        "parent": "sail",
+        "transform": {
+          "pos": [
+            0,
+            -0.4,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.06,
+            "height": 0.72,
+            "depth": 0.06
+          },
+          "color": 7361338
+        }
+      },
+      {
+        "id": "m14",
+        "parent": "sail",
+        "transform": {
+          "pos": [
+            -0.06,
+            -1.03,
+            0
+          ],
+          "quat": [
+            0.69,
+            -0.07,
+            0,
+            0.71
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.84,
+            "height": 0.1,
+            "depth": 0.61
+          },
+          "color": 5214109
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ]
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1787829235306,
+        "provider": "glm",
+        "data": "WE5LKmf2xUOtGEyF87oj/+dZOS6p3tWuGxaogfJtiVj7j496JsXtUkTpeg4CB4mSoTULim5lc4a0dE2CKzZdRMPhI3cGF9MSze0N53stTm6FYlxmLhQneDQ6+tctlne90dZv6eL5JlXwCKxloWFIDFS4jzVDichyY0A7Z6OUTEj6xPKX7fKI4oOSAvC3jCu4iujvxaCFJJfhkS2ymAz6w4SeTuba4h9hMCTpHE4ecfz1xQMWNYzCH8hM2323nK3mxZ391zxYw2qNiFUGJli9gk/+PRDoD4pi39BmGFMMX8VeOv0pmCOj4mYm3SJAnhBe1u1pEjpZuGpAuWBuW5+SEaMyOA5ZstGuo5iwOIHD90yUaNeMt1RZ76Xra+cX9GD3tqS6IBCZ4CCMxniY1Z26GfUiV4jBqQHVElTiYErgZUMIYylhDSTUkBQ9O5yFUw1T4kwNc/KQJIMzXZACA+u650QN+r969RDc3w99wX0MHtJGh5JhEcVgJWqBQFO5dEIHO3rdM0OAq/0xJxUSmGfeIWDBNaoMYXISVJlAMZeb/+WOpEhyTBshKwOTQTHUoRLh4ZUKEtgWVuwRtywusOBbAXm7bXGyAFvW1V5XhWNJ3pJ330HsPHaejR/ysKWcxUTHCIBDXXmIzDVOjEve3SFbKLzJpXl9H9EeEXU7pc6SMZMy/MpoxO4wGNEhX9WwWH3yfethdGOJvTk2i6+RmIL85oVeRcsVE5e//7+kUS3dbMLUz02vsLJ48dmjkhKgMDsgEglpea662l1pUvEz7S7naGbkG6Z7W5YBOXY/KqgUBMICZxmc1Q9+TuPvO2/BGUj0NsVufj/sm05Od6fh/WSzfzhdJOkutAx08cpEU6zyvgcIs/KNWKpORpX5stMvoOnkStt0DKThp5zv7O3g1smyBLINtEOANg8kDGwE2TwLwtuDz5BSCDdj+7H8UjZTbdlPlcoCxEvxQiqnEdCvEtnd+WU4FjtSTfVzctUeNQ4sIfBkP/7gX3DBHkY/917/a3mvN2GxF3yUoC6ndtOVLqWxFU7RadWEGPNlCoXbfNg9Jr0FQyIhqB3FPO7/pElq8RU=",
+        "edits": ""
+      },
+      "semanticSnapshot": {
+        "v": 1,
+        "auto": true,
+        "text": "清风风铃 · 7组/15mesh · 世界坐标(Y上Z前), 原点=模型根\n# 阅读说明: G:=group行(可动画骨骼, 动画key用G:后的id; @p=pivot世界坐标; 倾(x,y,z)°=朝向偏离世界轴的欧拉角; 缩进=父子层级; 挂:=挂载于某组; G:id→id→…=chain折叠行, 每个id都是可独立动画的group, chain×N=waypoint数)\n# M:=mesh行(label[id 几何 @(世界坐标)], label可省略; ×N=for循环批量件(锚点=代表实例); cyl (起)→(末)或 轴上(Y)等方位词=延伸方向; 薄向=板面法向(扁板); 挂载组双代表=最大件+最远有向件(刃/嘴/管所在端); 无方向标注=均匀块(三向相近,如头),默认面向前(Z); 对称×2=镜像对)\nG:frame 风铃支架 @p(0,3.8,0)\n  M:[m2 box 0.42×0.18×2.2 (0,2.8,0) 轴前(Z)]\n  G:chime_left 悬挂音管 @p(-0.8,2.8,0)\n    M:[m4 box 0.26×1.5×0.26 (-0.8,1.6,0) 轴上(Y)]\n  G:chime_right 悬挂音管 @p(0.8,2.8,0)\n    M:[m6 box 0.26×1.2×0.26 (0.8,1.7,0) 轴上(Y)]\n  G:chime_back 悬挂音管 @p(0,2.8,-0.8)\n    M:[m8 box 0.26×1.3×0.26 (0,1.6,-0.8) 轴上(Y)]\n  G:chime_front 悬挂音管 @p(0,2.8,0.8)\n    M:[m10 box 0.26×1×0.26 (0,1.8,0.8) 轴上(Y)]\n  G:clapper 中央撞锤 @p(0,2.8,0)\n    M:[m12 box 0.72×0.18×0.72 (0,1.5,0) 薄向上(Y)]\n    G:sail 迎风坠片 @p(0,1.5,0)\n      M:[m14 box 0.84×0.1×0.61 (-0.1,0.5,0) 薄向前(Z)]",
+        "stats": {
+          "groups": 7,
+          "meshes": 15,
+          "labeledMeshes": 0,
+          "labelCoverage": 0,
+          "batchLabels": 0,
+          "autoChains": 0,
+          "snapshotChars": 918
+        }
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -1.1,
+          2.556214597502792,
+          -0.21
+        ],
+        "max": [
+          1.1,
+          2.7362145975027916,
+          0.21
+        ],
+        "sourceNodeId": "m1"
+      },
+      {
+        "min": [
+          -0.21,
+          2.556214597502792,
+          -1.1
+        ],
+        "max": [
+          0.21,
+          2.7362145975027916,
+          1.1
+        ],
+        "sourceNodeId": "m2"
+      },
+      {
+        "min": [
+          -0.5115003552938788,
+          0,
+          -0.09926251142016046
+        ],
+        "max": [
+          0.39150035529387883,
+          0.692429195005583,
+          0.09926251142016046
+        ],
+        "sourceNodeId": "m14"
+      },
+      {
+        "min": [
+          -0.91,
+          0.6562145975027918,
+          -0.13
+        ],
+        "max": [
+          -0.65,
+          2.1062145975027917,
+          0.13
+        ],
+        "sourceNodeId": "m4"
+      },
+      {
+        "min": [
+          -0.36,
+          1.2862145975027914,
+          -0.36
+        ],
+        "max": [
+          0.36,
+          1.4662145975027916,
+          0.36
+        ],
+        "sourceNodeId": "m12"
+      },
+      {
+        "min": [
+          -0.13,
+          0.7862145975027917,
+          -0.91
+        ],
+        "max": [
+          0.13,
+          2.1062145975027917,
+          -0.65
+        ],
+        "sourceNodeId": "m8"
+      }
+    ],
+    "sourceMeshCount": 15,
+    "candidateCount": 6,
+    "fallbackUsed": false
+  },
+  "footprintRadius": 1.1,
+  "sizeClass": "medium",
+  "mode": "voxel",
+  "createdAt": 1787829234733,
+  "updatedAt": 1787829234733
+}

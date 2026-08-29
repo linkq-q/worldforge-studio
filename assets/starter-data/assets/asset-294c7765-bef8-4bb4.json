@@ -1,0 +1,405 @@
+{
+  "id": "asset-294c7765-bef8-4bb4",
+  "name": "腿细一点的塑料餐桌，颜色偏卡通一点，男生房间的",
+  "prompt": "腿细一点的塑料餐桌，颜色偏卡通一点，男生房间的",
+  "modelJson": {
+    "name": "卡通蓝色塑料餐桌",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "table",
+        "name": "餐桌",
+        "transform": {
+          "pos": [
+            0,
+            1.7,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            5.074,
+            4.268,
+            3.251
+          ],
+          "center": [
+            0.151,
+            0.023,
+            -0.122
+          ],
+          "axes": [
+            [
+              0.9854,
+              0.1662,
+              0.036
+            ],
+            [
+              -0.1691,
+              0.9806,
+              0.0997
+            ],
+            [
+              -0.0187,
+              -0.1043,
+              0.9944
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "table",
+        "transform": {
+          "pos": [
+            0,
+            1.45,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 4.8,
+            "height": 0.28,
+            "depth": 3.1
+          },
+          "color": 4165608
+        }
+      },
+      {
+        "id": "m1",
+        "parent": "table",
+        "transform": {
+          "pos": [
+            0,
+            1.23,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 4.2,
+            "height": 0.22,
+            "depth": 2.5
+          },
+          "color": 2450856
+        }
+      },
+      {
+        "id": "m2",
+        "parent": "table",
+        "transform": {
+          "pos": [
+            -1.85,
+            -0.27,
+            -1.05
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.32,
+            "height": 2.85,
+            "depth": 0.32
+          },
+          "color": 2504783
+        }
+      },
+      {
+        "id": "m3",
+        "parent": "table",
+        "transform": {
+          "pos": [
+            -1.85,
+            -1.63,
+            -1.05
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.48,
+            "height": 0.14,
+            "depth": 0.48
+          },
+          "color": 1516595
+        }
+      },
+      {
+        "id": "m4",
+        "parent": "table",
+        "transform": {
+          "pos": [
+            1.85,
+            -0.27,
+            -1.05
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.32,
+            "height": 2.85,
+            "depth": 0.32
+          },
+          "color": 2504783
+        }
+      },
+      {
+        "id": "m5",
+        "parent": "table",
+        "transform": {
+          "pos": [
+            1.85,
+            -1.63,
+            -1.05
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.48,
+            "height": 0.14,
+            "depth": 0.48
+          },
+          "color": 1516595
+        }
+      },
+      {
+        "id": "m6",
+        "parent": "table",
+        "transform": {
+          "pos": [
+            -1.85,
+            -0.27,
+            1.05
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.32,
+            "height": 2.85,
+            "depth": 0.32
+          },
+          "color": 2504783
+        }
+      },
+      {
+        "id": "m7",
+        "parent": "table",
+        "transform": {
+          "pos": [
+            -1.85,
+            -1.63,
+            1.05
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.48,
+            "height": 0.14,
+            "depth": 0.48
+          },
+          "color": 1516595
+        }
+      },
+      {
+        "id": "m8",
+        "parent": "table",
+        "transform": {
+          "pos": [
+            1.85,
+            -0.27,
+            1.05
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.32,
+            "height": 2.85,
+            "depth": 0.32
+          },
+          "color": 2504783
+        }
+      },
+      {
+        "id": "m9",
+        "parent": "table",
+        "transform": {
+          "pos": [
+            1.85,
+            -1.63,
+            1.05
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.48,
+            "height": 0.14,
+            "depth": 0.48
+          },
+          "color": 1516595
+        }
+      },
+      {
+        "id": "m10",
+        "parent": "table",
+        "transform": {
+          "pos": [
+            1.38,
+            1.63,
+            0.62
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.15,
+            "height": 0.08,
+            "depth": 0.72
+          },
+          "color": 6732031
+        }
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1787771608816,
+        "provider": "glm",
+        "data": "zhMWDMKuNvlH0y2j0nLkSLVxSM70YCT3nAucImhhk7EUeELD1HmGLzNpxg6TMK013k0ryVmNMHVkUHQJyhMw46UmfKDeS6LQaaiJg/s0aiI1w70sYFx1hG4oMr3lnEMqHq3u7UQUgAAxowip6zSmVbEHWP+fG9ar1JpIOl7c0oBYRSAPk8opxhZMi5ZOQ1K99YofhkOM8TdgXOxv1y4WcLL+OSES834n/FRSLoYGmsQ6c8g4QCDcSa3Stx+1WT3ffbLXG99cLZHWB0CpLXHLJwsUb5nImXQjDtuoBaREGx9UUvMNQe6xa5s9qwgtSKEHxj3WVywm//67JzgJi2KUXWQ9wIyYajYX5mlIOQoNx3VzKNFjjR6D9c39d+pQU2Ed6iLv45XHgXSYxPgmuMzkKVRkrd+rsG7WB/Dld3HSdUu9CjQlDIyWxkVJ7LcaEDEwcken0yD4z3amVZWyoJ1I44Z8K1FGQMhT2K/FUjiVX5Mp1Wr4n/PQoLWJPZd15VvS36B6dvA+xMPrekYGqKJ5G4P1ns3NzTLh9r+Jn5VhP9WO4vqG1DrJ+gCQzvDAHFkg8uta3p63ABT2OqMEHBJBfN5RXvcgGngGexQsbbU3Ur0v",
+        "edits": ""
+      },
+      "semanticSnapshot": {
+        "v": 1,
+        "auto": true,
+        "text": "卡通蓝色塑料餐桌 · 1组/11mesh · 世界坐标(Y上Z前), 原点=模型根\n# 阅读说明: G:=group行(可动画骨骼, 动画key用G:后的id; @p=pivot世界坐标; 倾(x,y,z)°=朝向偏离世界轴的欧拉角; 缩进=父子层级; 挂:=挂载于某组; G:id→id→…=chain折叠行, 每个id都是可独立动画的group, chain×N=waypoint数)\n# M:=mesh行(label[id 几何 @(世界坐标)], label可省略; ×N=for循环批量件(锚点=代表实例); cyl (起)→(末)或 轴上(Y)等方位词=延伸方向; 薄向=板面法向(扁板); 挂载组双代表=最大件+朝向件(嘴/管/檐所在); 无方向标注=均匀块(三向相近,如头),默认面向前(Z); 对称×2=镜像对)\nG:table 餐桌 @p(0,1.7,0)\n  M:[m0 box 4.8×0.28×3.1 (0,3.2,0) 薄向上(Y)]",
+        "stats": {
+          "groups": 1,
+          "meshes": 11,
+          "labeledMeshes": 0,
+          "labelCoverage": 0,
+          "batchLabels": 0,
+          "autoChains": 0,
+          "snapshotChars": 431
+        }
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -2.4,
+          3.01,
+          -1.55
+        ],
+        "max": [
+          2.4,
+          3.29,
+          1.55
+        ],
+        "sourceNodeId": "m0"
+      },
+      {
+        "min": [
+          -2.1,
+          2.82,
+          -1.25
+        ],
+        "max": [
+          2.1,
+          3.0399999999999996,
+          1.25
+        ],
+        "sourceNodeId": "m1"
+      },
+      {
+        "min": [
+          -2.0100000000000002,
+          0.004999999999999838,
+          -1.21
+        ],
+        "max": [
+          -1.6900000000000002,
+          2.855,
+          -0.89
+        ],
+        "sourceNodeId": "m2"
+      },
+      {
+        "min": [
+          1.6900000000000002,
+          0.004999999999999838,
+          -1.21
+        ],
+        "max": [
+          2.0100000000000002,
+          2.855,
+          -0.89
+        ],
+        "sourceNodeId": "m4"
+      },
+      {
+        "min": [
+          -2.0100000000000002,
+          0.004999999999999838,
+          0.89
+        ],
+        "max": [
+          -1.6900000000000002,
+          2.855,
+          1.21
+        ],
+        "sourceNodeId": "m6"
+      },
+      {
+        "min": [
+          1.6900000000000002,
+          0.004999999999999838,
+          0.89
+        ],
+        "max": [
+          2.0100000000000002,
+          2.855,
+          1.21
+        ],
+        "sourceNodeId": "m8"
+      }
+    ],
+    "sourceMeshCount": 11,
+    "candidateCount": 6,
+    "fallbackUsed": false
+  },
+  "footprintRadius": 2.4,
+  "sizeClass": "medium",
+  "mode": "voxel",
+  "libraryId": "library-d7967286-cebf-4f99",
+  "libraryMetadata": {
+    "tags": [
+      "cartoondiningtable",
+      "plastictable",
+      "indoorfurniture"
+    ],
+    "applicableZones": [
+      "settlement"
+    ],
+    "repeatable": true,
+    "landmark": false,
+    "enabled": true,
+    "priority": 0.5,
+    "analysisStatus": "ready",
+    "rotation": "random"
+  },
+  "createdAt": 1787815850382,
+  "updatedAt": 1787815850382
+}

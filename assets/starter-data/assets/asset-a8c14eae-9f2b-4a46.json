@@ -1,0 +1,555 @@
+{
+  "id": "asset-a8c14eae-9f2b-4a46",
+  "name": "云朵潜艇",
+  "prompt": "原创儿童玩具，单艘幻想潜艇，云朵形船体，圆形舷窗，小型螺旋桨，淡蓝与珊瑚红配色，无角色无标志，独立单体\nCoordinate contract: local Y+ is up, local Z+ is the front, entrance, or forward direction, and local X+ is right. Put doors, facades, openings, windshields, noses, seats, and other recognizable front details toward local Z+. For a modular repeated element, explicitly choose the long axis: side-by-side modules span local X with depth/front on local Z; traversal modules span local Z. Keep the model centered at its origin.\nCanonical dimensions contract: width=0.7, height=0.42, depth=0.38 world units. Keep the generated mesh within this centered bounding size.",
+  "modelJson": {
+    "name": "云朵幻想潜艇",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "hull",
+        "name": "云朵形船体",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.707,
+            0.442,
+            0.422
+          ],
+          "center": [
+            0,
+            -0.004,
+            -0.004
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              0.9391,
+              -0.3436
+            ],
+            [
+              0,
+              0.3436,
+              0.9391
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "propeller",
+        "name": "小型螺旋桨",
+        "parent": "hull",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            -0.165
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.219,
+            0.218,
+            0.033
+          ],
+          "center": [
+            0,
+            0,
+            -0.009
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0.0001
+            ],
+            [
+              0,
+              -0.0001,
+              1
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "hull",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0.025
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.58,
+            "height": 0.2,
+            "depth": 0.28
+          },
+          "color": 10410986
+        }
+      },
+      {
+        "id": "m1",
+        "parent": "hull",
+        "transform": {
+          "pos": [
+            0,
+            0.025,
+            0.025
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.42,
+            "height": 0.1,
+            "depth": 0.32
+          },
+          "color": 12381171
+        }
+      },
+      {
+        "id": "m2",
+        "parent": "hull",
+        "transform": {
+          "pos": [
+            -0.235,
+            0.045,
+            0.02
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.18,
+            "height": 0.09,
+            "depth": 0.23
+          },
+          "color": 11461615
+        }
+      },
+      {
+        "id": "m3",
+        "parent": "hull",
+        "transform": {
+          "pos": [
+            0.235,
+            0.045,
+            0.02
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.18,
+            "height": 0.09,
+            "depth": 0.23
+          },
+          "color": 11461615
+        }
+      },
+      {
+        "id": "m4",
+        "parent": "hull",
+        "transform": {
+          "pos": [
+            0,
+            -0.11,
+            0.015
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.28,
+            "height": 0.09,
+            "depth": 0.2
+          },
+          "color": 9424863
+        }
+      },
+      {
+        "id": "m5",
+        "parent": "hull",
+        "transform": {
+          "pos": [
+            0,
+            0.145,
+            0.005
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.22,
+            "height": 0.09,
+            "depth": 0.16
+          },
+          "color": 15826803
+        }
+      },
+      {
+        "id": "m6",
+        "parent": "hull",
+        "transform": {
+          "pos": [
+            0,
+            0.195,
+            0.015
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.12,
+            "height": 0.05,
+            "depth": 0.1
+          },
+          "color": 11461615
+        }
+      },
+      {
+        "id": "m7",
+        "parent": "hull",
+        "transform": {
+          "pos": [
+            0,
+            0.025,
+            0.181
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.28,
+            "height": 0.11,
+            "depth": 0.018
+          },
+          "color": 6535376
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass",
+            "variant": "blue"
+          }
+        ]
+      },
+      {
+        "id": "m8",
+        "parent": "hull",
+        "transform": {
+          "pos": [
+            -0.341,
+            0.025,
+            0.045
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.018,
+            "height": 0.12,
+            "depth": 0.12
+          },
+          "color": 15826803
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m9",
+        "parent": "hull",
+        "transform": {
+          "pos": [
+            -0.343,
+            0.025,
+            0.045
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.021,
+            "height": 0.072,
+            "depth": 0.072
+          },
+          "color": 7521498
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass",
+            "variant": "blue"
+          }
+        ]
+      },
+      {
+        "id": "m10",
+        "parent": "hull",
+        "transform": {
+          "pos": [
+            0.341,
+            0.025,
+            0.045
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.018,
+            "height": 0.12,
+            "depth": 0.12
+          },
+          "color": 15826803
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m11",
+        "parent": "hull",
+        "transform": {
+          "pos": [
+            0.343,
+            0.025,
+            0.045
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.021,
+            "height": 0.072,
+            "depth": 0.072
+          },
+          "color": 7521498
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "glass",
+            "variant": "blue"
+          }
+        ]
+      },
+      {
+        "id": "m12",
+        "parent": "hull",
+        "transform": {
+          "pos": [
+            0,
+            -0.1925,
+            0.015
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.18,
+            "height": 0.035,
+            "depth": 0.12
+          },
+          "color": 15826803
+        }
+      },
+      {
+        "id": "m13",
+        "parent": "hull",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            -0.13
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.06,
+            "height": 0.06,
+            "depth": 0.1
+          },
+          "color": 15826803
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m14",
+        "parent": "propeller",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            -0.01
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.055,
+            "height": 0.055,
+            "depth": 0.03
+          },
+          "color": 15164512
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m15",
+        "parent": "propeller",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            -0.005
+          ],
+          "quat": [
+            -0.65,
+            -0.27,
+            0.27,
+            0.65
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.27,
+            "height": 0.025,
+            "depth": 0.04
+          },
+          "color": 15826803
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m16",
+        "parent": "propeller",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            -0.005
+          ],
+          "quat": [
+            -0.65,
+            0.27,
+            -0.27,
+            0.65
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.27,
+            "height": 0.025,
+            "depth": 0.04
+          },
+          "color": 15826803
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1787770789939,
+        "provider": "gpt",
+        "data": "pJtQAaqpPsOs7ojTuzRo7DhDWc3AOZL6/dAaFMkEM+z6TNuk/ZdibcL6invq+5RB9p+c0RBHIozx3enUuk1pnzl3KEP/DPVSpF+KrPQ+PhSwNCqDvgVWJKW+buafulFzb++fgKXh/oN9N4IKlMZ7YkkgBauyCuvH1erApU2eQIvcMDIktt5+GBge5DFMlriNBYix5L3K3gh+SUcoO8vj2HzsP2oFicUHukC8qWHpCQKR/q3MF1g4nkYL8ZvhKgKTkmlVHzlKpHHOxiW4JR1f0OVElJQ2cB/tIvDFDh1YJ5++AQctk4TKyQP23dICsQ2LIhsXvSFdqBHdfXwv2TdJovfano7wkLnsOXET8DLZSwongA+lOGPOwKsVzUC7WbZ80/s+h+pS9dz7IaxuwvfyaJen4hH94cb5xCVTSFYGT5tBGSOAK0SLYrqxA3tvxvPzNaCC9khKYMoh1ecNWQDZa1VGbOYX7k1UY8YcEjW/X0hFaDcjzNV8F9ifhkRlti1VyVx29kxzxEZcHf1P77dZZSaxX7zvdlTBzsiWrVcjwQF9is4RSpdboJa4hM8qDK0IA0sVWxGXqo0oeyaM3UrSB00ii1P/p3qFJ8BPTPyJxU8DVR2+TYBC9j4LcOCjBm0RU4ckIjqPn0CoLvn/Jo651+IOZdlhQJOk3glUnjpHfOjqFPIGPnLtODVnVneBKSyBnGQzoCV+U0RPEHJMkCoAW+c2oOZRogV6m8PXF27Bczd2xdlPouwFyITktjYLC22fzjgtdy0a8XQgb5C1jQwLbMMrn/VCUQe8Ub+7ECy/bqpIC2YnxU6rmyHNbkhwNPKvBcXgiUN+89sakM/Al9+gaXq35X34/QcNUmypqzz7+f0pllbWROIGjL2o4UR46afPaf49YaT7vr9Xcq9DcDL8Wvd3vj7+dseC5mUqyI3aylQue7azG4PylIyDloq1hKibb1xIr1n57kShLA0MTyjFmQ1B9CJJZ5pLE/HfiYZB2mgOLuRWOyQ/mQfotUXhwtZUxlM=",
+        "edits": ""
+      },
+      "semanticSnapshot": {
+        "v": 1,
+        "auto": true,
+        "text": "云朵幻想潜艇 · 2组/17mesh · 世界坐标(Y上Z前), 原点=模型根\n# 阅读说明: G:=group行(可动画骨骼, 动画key用G:后的id; @p=pivot世界坐标; 倾(x,y,z)°=朝向偏离世界轴的欧拉角; 缩进=父子层级; 挂:=挂载于某组; G:id→id→…=chain折叠行, 每个id都是可独立动画的group, chain×N=waypoint数)\n# M:=mesh行(label[id 几何 @(世界坐标)], label可省略; ×N=for循环批量件(锚点=代表实例); cyl (起)→(末)或 轴上(Y)等方位词=延伸方向; 薄向=板面法向(扁板); 挂载组双代表=最大件+朝向件(嘴/管/檐所在); 无方向标注=均匀块(三向相近,如头),默认面向前(Z); 对称×2=镜像对)\nG:hull 云朵形船体 @p(0,0,0)\n  M:[m0 box 0.58×0.2×0.28 (0,0,0) 轴右(X)]\n  G:propeller 小型螺旋桨 @p(0,0,-0.2) 挂:hull\n    M:[m15 box 0.27×0.03×0.04 (0,0,-0.2) 轴(0.1,0.1,-0.2)→(-0.1,-0.1,-0.2)]",
+        "stats": {
+          "groups": 2,
+          "meshes": 17,
+          "labeledMeshes": 0,
+          "labelCoverage": 0,
+          "batchLabels": 0,
+          "autoChains": 0,
+          "snapshotChars": 542
+        }
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -0.35350000000000004,
+          0,
+          -0.19
+        ],
+        "max": [
+          0.35350000000000004,
+          0.43000000000000005,
+          0.19
+        ],
+        "sourceNodeId": "asset-bounds"
+      }
+    ],
+    "sourceMeshCount": 17,
+    "candidateCount": 0,
+    "fallbackUsed": true
+  },
+  "footprintRadius": 0.35350000000000004,
+  "sizeClass": "small",
+  "mode": "voxel",
+  "provider": "gpt",
+  "createdAt": 1787770789645,
+  "updatedAt": 1787770789645
+}

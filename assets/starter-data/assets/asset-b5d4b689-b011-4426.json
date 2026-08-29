@@ -1,0 +1,353 @@
+{
+  "id": "asset-b5d4b689-b011-4426",
+  "name": "主教棋子",
+  "prompt": "一枚单独的国际象棋主教棋子，经典尖顶和稳定底座。独立单件儿童房物品，浅亮柔和造型，圆润安全边缘，不包含成组物品，不包含场景、房间、地面或背景。基础色和顶点色仅使用：#FFFDF6,#FEF9EA,#FDF2D7,#E9DABD,#CDBA97,#F8E8CF,#F1D7B2,#E7C393,#C9A06E,#9E7A55,#FFF7A8,#FCEF72,#F6E24B,#D1B825,#9C8510,#FFF3B7,#FDE674,#FCD75F,#FECD4D,#D1900B,#FFE2A0,#FFD170,#F8BC44,#E39F1A,#A96F05,#FBE3BD,#FDD8A3,#FDCC8F,#F1AD69,#D99256,#FFD2BA,#FFB08A,#FF8A5B,#F06B3E,#B84A27,#EAF9FF,#DAF2F5,#95E5F9,#76D0F2,#45BDF6,#D9F8FB,#B2E9F2,#8ECCD6,#7BCFDF,#4BAFCA,#D8F7EF,#B8ECDD,#90DCC8,#74C4BB,#499D92,#F1F5AF,#E4E77F,#D\nCoordinate contract: local Y+ is up, local Z+ is the front, entrance, or forward direction, and local X+ is right. Put doors, facades, openings, windshields, noses, seats, and other recognizable front details toward local Z+. For a modular repeated element, explicitly choose the long axis: side-by-side modules span local X with depth/front on local Z; traversal modules span local Z. Keep the model centered at its origin.\nCanonical dimensions contract: width=0.16, height=0.36, depth=0.16 world units. Keep the generated mesh within this centered bounding size.",
+  "tags": [
+    "indoor",
+    "single-object",
+    "child-safe"
+  ],
+  "modelJson": {
+    "name": "柔和彩色国际象棋主教",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "bishop",
+        "name": "主教棋子",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.162,
+            0.37,
+            0.163
+          ],
+          "center": [
+            0,
+            0.002,
+            0.006
+          ],
+          "axes": [
+            [
+              0.9999,
+              -0.0027,
+              0.0106
+            ],
+            [
+              0.0023,
+              0.9994,
+              0.0353
+            ],
+            [
+              -0.0107,
+              -0.0352,
+              0.9993
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "bishop",
+        "transform": {
+          "pos": [
+            0,
+            -0.167,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.16,
+            "height": 0.026,
+            "depth": 0.16
+          },
+          "color": 13213806
+        }
+      },
+      {
+        "id": "m1",
+        "parent": "bishop",
+        "transform": {
+          "pos": [
+            0,
+            -0.143,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.142,
+            "height": 0.022,
+            "depth": 0.142
+          },
+          "color": 15188883
+        }
+      },
+      {
+        "id": "m2",
+        "parent": "bishop",
+        "transform": {
+          "pos": [
+            0,
+            -0.12,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.12,
+            "height": 0.024,
+            "depth": 0.12
+          },
+          "color": 15849394
+        }
+      },
+      {
+        "id": "m3",
+        "parent": "bishop",
+        "transform": {
+          "pos": [
+            0,
+            -0.092,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.086,
+            "height": 0.032,
+            "depth": 0.086
+          },
+          "color": 16312527
+        }
+      },
+      {
+        "id": "m4",
+        "parent": "bishop",
+        "transform": {
+          "pos": [
+            0,
+            -0.028,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.06,
+            "height": 0.096,
+            "depth": 0.06
+          },
+          "color": 16710122
+        }
+      },
+      {
+        "id": "m5",
+        "parent": "bishop",
+        "transform": {
+          "pos": [
+            0,
+            0.032,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.076,
+            "height": 0.024,
+            "depth": 0.076
+          },
+          "color": 16642775
+        }
+      },
+      {
+        "id": "m6",
+        "parent": "bishop",
+        "transform": {
+          "pos": [
+            0,
+            0.055,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.094,
+            "height": 0.022,
+            "depth": 0.094
+          },
+          "color": 15325885
+        }
+      },
+      {
+        "id": "m7",
+        "parent": "bishop",
+        "transform": {
+          "pos": [
+            0,
+            0.095,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.068,
+            "height": 0.058,
+            "depth": 0.068
+          },
+          "color": 16776694
+        }
+      },
+      {
+        "id": "m8",
+        "parent": "bishop",
+        "transform": {
+          "pos": [
+            0,
+            0.14,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.052,
+            "height": 0.042,
+            "depth": 0.052
+          },
+          "color": 16710122
+        }
+      },
+      {
+        "id": "m9",
+        "parent": "bishop",
+        "transform": {
+          "pos": [
+            0,
+            0.174,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.026,
+            "height": 0.026,
+            "depth": 0.026
+          },
+          "color": 16642775
+        }
+      },
+      {
+        "id": "m10",
+        "parent": "bishop",
+        "transform": {
+          "pos": [
+            0,
+            0.12,
+            0.04
+          ],
+          "quat": [
+            0.65,
+            0.27,
+            0.27,
+            0.65
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.05,
+            "height": 0.004,
+            "depth": 0.01
+          },
+          "color": 13482647
+        }
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1787769435356,
+        "provider": "gpt",
+        "data": "GdBx1ydRhgWq6EhVFPe3JULOpANvxazCjoowF2C/EXmqAnDcnSUk1sQ+XLOKwrisBFoTTpuNXzyAp0ueTvksH326aI93lYWYMvJnr0A7NjpgkjEQ+bGPwJ+lUlYX0tx1IXa382HbU6LKv5j+kXz534zKDmexeHiQaCHNSm6KQLxVhIkXFxgvyVba7nWFsSVh1SwygjRHPnv9VU3vLywRbgEIO6cNnCFxLwbTgq77BOe3nqBq69SEnJ0/QY/6kiS7EPpjrY4mp3yChCCak6gv5oAJLBcNm61sCrwVRQResai5rg7NwImOb/iMS/ZKyKJs0hzrRThZNSGcW+Yq62FKu6jP1LwPeEcfvY7cJ892a2CEcQJWLUScJVF84DFw0gwCkd0VPH0eXJz+C78IkgnxDqznZELh85LN3F9gpGGcuwNZnXD5yiZ5QaJ8JPgQAh794huh6kXF10pecN0Fwtic/HwkA8YVeKCzvONGRpHof9hlLLYStbnnEtXvN9K0l+IEGK4s+1c3wu+oT7OjxhP9DH18UfeSR9c8Uo2iVijzPANmn/sUzvY6Wy76lBTn8C4MPl5SSmg25tjRGlbQ2r9yheQPik/P6QYBFr0LQzuz9RSFZ628grlLTCEzPMrW/s2TPlhwOJXEHoEepRW+rIwuTgzNVi3UEPC+xDuSc81NsQ/jx/RNU4oVV6cFi9bzpu9xWacorKPdlXeCqyjfrVfiWzILCppU9ffccSbHkzur",
+        "edits": ""
+      },
+      "semanticSnapshot": {
+        "v": 1,
+        "auto": true,
+        "text": "柔和彩色国际象棋主教 · 1组/11mesh · 世界坐标(Y上Z前), 原点=模型根\n# 阅读说明: G:=group行(可动画骨骼, 动画key用G:后的id; @p=pivot世界坐标; 倾(x,y,z)°=朝向偏离世界轴的欧拉角; 缩进=父子层级; 挂:=挂载于某组; G:id→id→…=chain折叠行, 每个id都是可独立动画的group, chain×N=waypoint数)\n# M:=mesh行(label[id 几何 @(世界坐标)], label可省略; ×N=for循环批量件(锚点=代表实例); cyl (起)→(末)或 轴上(Y)等方位词=延伸方向; 薄向=板面法向(扁板); 挂载组双代表=最大件+朝向件(嘴/管/檐所在); 无方向标注=均匀块(三向相近,如头),默认面向前(Z); 对称×2=镜像对)\nG:bishop 主教棋子 @p(0,0,0)\n  M:[m0 box 0.16×0.03×0.16 (0,-0.2,0) 薄向上(Y)]",
+        "stats": {
+          "groups": 1,
+          "meshes": 11,
+          "labeledMeshes": 0,
+          "labelCoverage": 0,
+          "batchLabels": 0,
+          "autoChains": 0,
+          "snapshotChars": 437
+        }
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -0.08,
+          0,
+          -0.08
+        ],
+        "max": [
+          0.08,
+          0.367,
+          0.08
+        ],
+        "sourceNodeId": "asset-bounds"
+      }
+    ],
+    "sourceMeshCount": 11,
+    "candidateCount": 1,
+    "fallbackUsed": true
+  },
+  "footprintRadius": 0.1,
+  "sizeClass": "small",
+  "mode": "voxel",
+  "provider": "gpt",
+  "libraryId": "library-d7967286-cebf-4f99",
+  "libraryMetadata": {
+    "tags": [
+      "chessbishop",
+      "chesspiece",
+      "toy",
+      "indoordecor"
+    ],
+    "applicableZones": [
+      "settlement"
+    ],
+    "repeatable": true,
+    "landmark": false,
+    "enabled": true,
+    "priority": 0.5,
+    "analysisStatus": "ready",
+    "rotation": "random"
+  },
+  "createdAt": 1787816396219,
+  "updatedAt": 1787816396219
+}

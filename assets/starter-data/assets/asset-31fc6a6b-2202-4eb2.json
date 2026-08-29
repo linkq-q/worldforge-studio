@@ -1,0 +1,453 @@
+{
+  "id": "asset-31fc6a6b-2202-4eb2",
+  "name": "积木城堡组合",
+  "prompt": "A single reusable compact children's building-block castle assembled from large colorful blocks with two towers, an archway and broad stable base, approximately 0.65 meters wide, no loose distant blocks, floor, room, or background",
+  "tags": [
+    "toy",
+    "blocks",
+    "prop"
+  ],
+  "modelJson": {
+    "name": "彩色积木城堡",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "castle",
+        "name": "城堡主体",
+        "transform": {
+          "pos": [
+            0,
+            0.2725,
+            0.005
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.67,
+            0.541,
+            0.28
+          ],
+          "center": [
+            0,
+            -0.003,
+            -0.006
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              -0.0058
+            ],
+            [
+              0,
+              0.0058,
+              1
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "castle",
+        "transform": {
+          "pos": [
+            0,
+            -0.2325,
+            -0.005
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.65,
+            "height": 0.08,
+            "depth": 0.28
+          },
+          "color": 4161496
+        }
+      },
+      {
+        "id": "m1",
+        "parent": "castle",
+        "transform": {
+          "pos": [
+            -0.23,
+            -0.1125,
+            -0.005
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.17,
+            "height": 0.16,
+            "depth": 0.22
+          },
+          "color": 15224141
+        }
+      },
+      {
+        "id": "m2",
+        "parent": "castle",
+        "transform": {
+          "pos": [
+            -0.23,
+            0.0475,
+            -0.005
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.17,
+            "height": 0.16,
+            "depth": 0.22
+          },
+          "color": 15910987
+        }
+      },
+      {
+        "id": "m3",
+        "parent": "castle",
+        "transform": {
+          "pos": [
+            -0.23,
+            0.1625,
+            -0.005
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.21,
+            "height": 0.07,
+            "depth": 0.25
+          },
+          "color": 5683312
+        }
+      },
+      {
+        "id": "m4",
+        "parent": "castle",
+        "transform": {
+          "pos": [
+            -0.29,
+            0.2325,
+            -0.005
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.07,
+            "height": 0.07,
+            "depth": 0.09
+          },
+          "color": 9331655
+        }
+      },
+      {
+        "id": "m5",
+        "parent": "castle",
+        "transform": {
+          "pos": [
+            -0.17,
+            0.2325,
+            -0.005
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.07,
+            "height": 0.07,
+            "depth": 0.09
+          },
+          "color": 9331655
+        }
+      },
+      {
+        "id": "m6",
+        "parent": "castle",
+        "transform": {
+          "pos": [
+            0.23,
+            -0.1125,
+            -0.005
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.17,
+            "height": 0.16,
+            "depth": 0.22
+          },
+          "color": 15224141
+        }
+      },
+      {
+        "id": "m7",
+        "parent": "castle",
+        "transform": {
+          "pos": [
+            0.23,
+            0.0475,
+            -0.005
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.17,
+            "height": 0.16,
+            "depth": 0.22
+          },
+          "color": 15910987
+        }
+      },
+      {
+        "id": "m8",
+        "parent": "castle",
+        "transform": {
+          "pos": [
+            0.23,
+            0.1625,
+            -0.005
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.21,
+            "height": 0.07,
+            "depth": 0.25
+          },
+          "color": 5683312
+        }
+      },
+      {
+        "id": "m9",
+        "parent": "castle",
+        "transform": {
+          "pos": [
+            0.17,
+            0.2325,
+            -0.005
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.07,
+            "height": 0.07,
+            "depth": 0.09
+          },
+          "color": 9331655
+        }
+      },
+      {
+        "id": "m10",
+        "parent": "castle",
+        "transform": {
+          "pos": [
+            0.29,
+            0.2325,
+            -0.005
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.07,
+            "height": 0.07,
+            "depth": 0.09
+          },
+          "color": 9331655
+        }
+      },
+      {
+        "id": "m11",
+        "parent": "castle",
+        "transform": {
+          "pos": [
+            -0.1,
+            -0.0925,
+            0.005
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.1,
+            "height": 0.2,
+            "depth": 0.18
+          },
+          "color": 15895608
+        }
+      },
+      {
+        "id": "m12",
+        "parent": "castle",
+        "transform": {
+          "pos": [
+            0.1,
+            -0.0925,
+            0.005
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.1,
+            "height": 0.2,
+            "depth": 0.18
+          },
+          "color": 15895608
+        }
+      },
+      {
+        "id": "m13",
+        "parent": "castle",
+        "transform": {
+          "pos": [
+            0,
+            0.0525,
+            0.005
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.3,
+            "height": 0.09,
+            "depth": 0.18
+          },
+          "color": 5023400
+        }
+      },
+      {
+        "id": "m14",
+        "parent": "castle",
+        "transform": {
+          "pos": [
+            -0.12,
+            0.1325,
+            0.005
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.055,
+            "height": 0.07,
+            "depth": 0.19
+          },
+          "color": 5023400
+        }
+      },
+      {
+        "id": "m15",
+        "parent": "castle",
+        "transform": {
+          "pos": [
+            0,
+            0.1325,
+            0.005
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.055,
+            "height": 0.07,
+            "depth": 0.19
+          },
+          "color": 5023400
+        }
+      },
+      {
+        "id": "m16",
+        "parent": "castle",
+        "transform": {
+          "pos": [
+            0.12,
+            0.1325,
+            0.005
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.055,
+            "height": 0.07,
+            "depth": 0.19
+          },
+          "color": 5023400
+        }
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1786874752461,
+        "provider": "gpt",
+        "data": "AX1NP7jub6o3CHHeUViSCzyMBraaD3tWU8KAve37hCqHT+v3dj+kysDNh31yhfSZiy1Hnn1ESu02taGyifi6mOX/3m1e/eDAlgPT5DPKjyzo+s/0TfuIwXpGl0b2lrF47xOV2COCK47UK1vHqPLDr7+Tx8ULwY+JJP4mqTXxrfqO1PIfWjNnB6nr3RBNptqhaoPMOTWEJ4EVqGqaNFMy8QhaOs1ErgPSHbTmplnp1sEnfoeJ8Lbb9PTj9GYISj7UMrOs3jEPBn5I+xtyHNz1euDvFYi5+bJyH4gbKxrjaqSwqSwU6FGPhojQHutKvJB3L+5B4OAUZugRlBBNZ0ZVnMZNGNF028KacdsRglT5MepjCRI0OyMvWy8/yaqqClEoCHLmhky4kO5tdprbNTv+ta1DSxCcD3iy59GUHZjNeul6VHdr2Qqe79bYELsbgbhPnJT1ryQRLtI44GF9TvVYuTUVkeTm1PXdG66+nQCx9+mOHhj+U1p2FtV6+nl3f2vb9IbKRaNShAdabziQMrZXUy7K92OiI/C3iexSdPPnI/IYVUkNZp8w62Vkm1VLZ5cCAvbUpHPXK19N2n/ZiSjL6H8lL8d66OULV0mj/tLS2+X5Av5VhzLhJrNs+UQ/Pg2peg==",
+        "edits": ""
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -0.335,
+          0,
+          -0.14
+        ],
+        "max": [
+          0.335,
+          0.54,
+          0.14
+        ],
+        "sourceNodeId": "asset-bounds"
+      }
+    ],
+    "sourceMeshCount": 17,
+    "candidateCount": 1,
+    "fallbackUsed": true
+  },
+  "footprintRadius": 0.335,
+  "sizeClass": "small",
+  "mode": "voxel",
+  "provider": "gpt",
+  "libraryId": "library-81608487-14f9-4d3f",
+  "libraryMetadata": {
+    "tags": [
+      "toycastle",
+      "buildingblocks",
+      "childrenstoy",
+      "playset"
+    ],
+    "applicableZones": [
+      "settlement"
+    ],
+    "repeatable": true,
+    "landmark": false,
+    "enabled": true,
+    "priority": 0.5,
+    "analysisStatus": "ready",
+    "rotation": "random"
+  },
+  "createdAt": 1787658250340,
+  "updatedAt": 1787658250340
+}

@@ -1,0 +1,440 @@
+{
+  "id": "asset-553d86ee-731a-468a",
+  "name": "拼图板",
+  "prompt": "一块单独的儿童拼图板，带大块圆角拼图片纹理。独立单件儿童房物品，浅亮柔和造型，圆润安全边缘，不包含成组物品，不包含场景、房间、地面或背景。基础色和顶点色仅使用：#FFFDF6,#FEF9EA,#FDF2D7,#E9DABD,#CDBA97,#F8E8CF,#F1D7B2,#E7C393,#C9A06E,#9E7A55,#FFF7A8,#FCEF72,#F6E24B,#D1B825,#9C8510,#FFF3B7,#FDE674,#FCD75F,#FECD4D,#D1900B,#FFE2A0,#FFD170,#F8BC44,#E39F1A,#A96F05,#FBE3BD,#FDD8A3,#FDCC8F,#F1AD69,#D99256,#FFD2BA,#FFB08A,#FF8A5B,#F06B3E,#B84A27,#EAF9FF,#DAF2F5,#95E5F9,#76D0F2,#45BDF6,#D9F8FB,#B2E9F2,#8ECCD6,#7BCFDF,#4BAFCA,#D8F7EF,#B8ECDD,#90DCC8,#74C4BB,#499D92,#F1F5AF,#E4E77F,#DCD\nCoordinate contract: local Y+ is up, local Z+ is the front, entrance, or forward direction, and local X+ is right. Put doors, facades, openings, windshields, noses, seats, and other recognizable front details toward local Z+. For a modular repeated element, explicitly choose the long axis: side-by-side modules span local X with depth/front on local Z; traversal modules span local Z. Keep the model centered at its origin.\nCanonical dimensions contract: width=0.58, height=0.04, depth=0.42 world units. Keep the generated mesh within this centered bounding size.",
+  "tags": [
+    "indoor",
+    "single-object",
+    "child-safe"
+  ],
+  "modelJson": {
+    "name": "圆角儿童拼图板",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "puzzle_board",
+        "name": "儿童拼图板",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.58,
+            0.038,
+            0.42
+          ],
+          "center": [
+            0,
+            0.019,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "puzzle_board",
+        "transform": {
+          "pos": [
+            0,
+            0.013,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.58,
+            "height": 0.026,
+            "depth": 0.36
+          },
+          "color": 15325885
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "birch"
+          }
+        ]
+      },
+      {
+        "id": "m1",
+        "parent": "puzzle_board",
+        "transform": {
+          "pos": [
+            0,
+            0.013,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.52,
+            "height": 0.026,
+            "depth": 0.42
+          },
+          "color": 15325885
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "birch"
+          }
+        ]
+      },
+      {
+        "id": "m2",
+        "parent": "puzzle_board",
+        "transform": {
+          "pos": [
+            -0.18,
+            0.03,
+            0.095
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.17,
+            "height": 0.008,
+            "depth": 0.174
+          },
+          "color": 16775080
+        }
+      },
+      {
+        "id": "m3",
+        "parent": "puzzle_board",
+        "transform": {
+          "pos": [
+            0,
+            0.03,
+            0.095
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.17,
+            "height": 0.008,
+            "depth": 0.174
+          },
+          "color": 9823737
+        }
+      },
+      {
+        "id": "m4",
+        "parent": "puzzle_board",
+        "transform": {
+          "pos": [
+            0.18,
+            0.03,
+            0.095
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.17,
+            "height": 0.008,
+            "depth": 0.174
+          },
+          "color": 16765626
+        }
+      },
+      {
+        "id": "m5",
+        "parent": "puzzle_board",
+        "transform": {
+          "pos": [
+            -0.18,
+            0.03,
+            -0.095
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.17,
+            "height": 0.008,
+            "depth": 0.174
+          },
+          "color": 12119261
+        }
+      },
+      {
+        "id": "m6",
+        "parent": "puzzle_board",
+        "transform": {
+          "pos": [
+            0,
+            0.03,
+            -0.095
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.17,
+            "height": 0.008,
+            "depth": 0.174
+          },
+          "color": 16639604
+        }
+      },
+      {
+        "id": "m7",
+        "parent": "puzzle_board",
+        "transform": {
+          "pos": [
+            0.18,
+            0.03,
+            -0.095
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.17,
+            "height": 0.008,
+            "depth": 0.174
+          },
+          "color": 16301124
+        }
+      },
+      {
+        "id": "m8",
+        "parent": "puzzle_board",
+        "transform": {
+          "pos": [
+            -0.09,
+            0.034,
+            0.095
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.042,
+            "height": 0.008,
+            "depth": 0.034
+          },
+          "color": 16775080
+        }
+      },
+      {
+        "id": "m9",
+        "parent": "puzzle_board",
+        "transform": {
+          "pos": [
+            0.09,
+            0.034,
+            0.095
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.042,
+            "height": 0.008,
+            "depth": 0.034
+          },
+          "color": 9823737
+        }
+      },
+      {
+        "id": "m10",
+        "parent": "puzzle_board",
+        "transform": {
+          "pos": [
+            -0.09,
+            0.034,
+            -0.095
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.042,
+            "height": 0.008,
+            "depth": 0.034
+          },
+          "color": 12119261
+        }
+      },
+      {
+        "id": "m11",
+        "parent": "puzzle_board",
+        "transform": {
+          "pos": [
+            0.09,
+            0.034,
+            -0.095
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.042,
+            "height": 0.008,
+            "depth": 0.034
+          },
+          "color": 16639604
+        }
+      },
+      {
+        "id": "m12",
+        "parent": "puzzle_board",
+        "transform": {
+          "pos": [
+            -0.18,
+            0.034,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.034,
+            "height": 0.008,
+            "depth": 0.042
+          },
+          "color": 16775080
+        }
+      },
+      {
+        "id": "m13",
+        "parent": "puzzle_board",
+        "transform": {
+          "pos": [
+            0,
+            0.034,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.034,
+            "height": 0.008,
+            "depth": 0.042
+          },
+          "color": 16639604
+        }
+      },
+      {
+        "id": "m14",
+        "parent": "puzzle_board",
+        "transform": {
+          "pos": [
+            0.18,
+            0.034,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.034,
+            "height": 0.008,
+            "depth": 0.042
+          },
+          "color": 16765626
+        }
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1787769409025,
+        "provider": "gpt",
+        "data": "7ae8pciSdzFk5MdeGbLSBaqEFVyzU12qjgh4EypfvDnuxC+vgyniGm7RkUtHCHJUc0y2J62poSHnAmCWcEeveTi6/YC9FwmmlS/cinyQ31mjKfaMZMu1GQchEts1gOmeejSRR4hQDKIaGhOokCIiXHppf8Bbd2QbExUn9Exm8uPE0K5vU9Faw47wrOPX4U1eVEzUbQ4C5PgyT/tKzI7aaxNxMjLUJOK4Gurp+1RJ+RZInN00hRY36g49Y0YtVvmzO2QJMoPWMaRKt5Y6a1Eb31+g72katSiJMScim22Q+1XnBBlqn0aPzVNcTARNt8LUbEAMugPkaQx0kcI0Ob7q/4xK4BDW1N4AIV7HgOPnPoBdjRV3MML/3Xlg/nQIPOTMp6rhiIyEAA3Ecp2su5w2HwYShAKRvTZ+UVNW2S2koK6RjM22ZI9mcBoZw5Khw9G3kNpE6qOuhHFST3/ckzgFUbSagqYLyNrGwU5zTez66Gx/YhIQTl7/f5I2JWD1O1Cic2ejV3lnw44SKTxx9ynXqNG5gLuXiixUMoefYmqtpEsgJhA6lGLVhvIIjD9Zon5+k5iOd9QTiMtHjE1P944E4bJrg2COaJYAhkAtQB9gxpvVEDbk3QQyYX0leX8XQo+QCvl6Mrquogx7n5nF0S55N1Y/YcViZQP2PwP3x11kTcsXaKaVQvTgfF+bTP86Q2Tc9P1Uj1L3Y9da4qVCPBUoD/jRTFCeQLs246eNK96TUWBlQdh1QBr/jykh8JYY4RAUDXbXUSuyg/7ZZqrz9RoaBX/qc/W0ECZmcZhyhvxKNI8MA8G7Vy8rfj+6zMD8FqZjalI=",
+        "edits": ""
+      },
+      "semanticSnapshot": {
+        "v": 1,
+        "auto": true,
+        "text": "圆角儿童拼图板 · 1组/15mesh · 世界坐标(Y上Z前), 原点=模型根\n# 阅读说明: G:=group行(可动画骨骼, 动画key用G:后的id; @p=pivot世界坐标; 倾(x,y,z)°=朝向偏离世界轴的欧拉角; 缩进=父子层级; 挂:=挂载于某组; G:id→id→…=chain折叠行, 每个id都是可独立动画的group, chain×N=waypoint数)\n# M:=mesh行(label[id 几何 @(世界坐标)], label可省略; ×N=for循环批量件(锚点=代表实例); cyl (起)→(末)或 轴上(Y)等方位词=延伸方向; 薄向=板面法向(扁板); 挂载组双代表=最大件+朝向件(嘴/管/檐所在); 无方向标注=均匀块(三向相近,如头),默认面向前(Z); 对称×2=镜像对)\nG:puzzle_board 儿童拼图板 @p(0,0,0)\n  M:[m1 box 0.52×0.03×0.42 (0,0,0) 薄向上(Y)]",
+        "stats": {
+          "groups": 1,
+          "meshes": 15,
+          "labeledMeshes": 0,
+          "labelCoverage": 0,
+          "batchLabels": 0,
+          "autoChains": 0,
+          "snapshotChars": 438
+        }
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -0.29,
+          0,
+          -0.21
+        ],
+        "max": [
+          0.29,
+          0.039,
+          0.21
+        ],
+        "sourceNodeId": "asset-bounds"
+      }
+    ],
+    "sourceMeshCount": 15,
+    "candidateCount": 1,
+    "fallbackUsed": true
+  },
+  "footprintRadius": 0.29,
+  "sizeClass": "small",
+  "mode": "voxel",
+  "provider": "gpt",
+  "libraryId": "library-d7967286-cebf-4f99",
+  "libraryMetadata": {
+    "tags": [
+      "puzzleboard",
+      "childrenstoy",
+      "indoorplay"
+    ],
+    "applicableZones": [
+      "settlement"
+    ],
+    "repeatable": true,
+    "landmark": false,
+    "enabled": true,
+    "priority": 0.5,
+    "analysisStatus": "ready",
+    "rotation": "random"
+  },
+  "createdAt": 1787816469782,
+  "updatedAt": 1787816469782
+}

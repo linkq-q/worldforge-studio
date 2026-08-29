@@ -1,0 +1,1076 @@
+{
+  "id": "asset-ece885df-4e1e-4dcb",
+  "name": "儿童自行车",
+  "prompt": "单个可复用的儿童自行车，深蓝小车架、浅棕车座、可读的车把脚踏链罩和一对辅助轮，比例适合儿童，不附带人物。\n全局资产美术方向：统一采用柔和圆角、略微夸张比例的精致体素风；家具以浅暖木、米白和雾蓝为主，玩具使用克制的砖红、芥末黄和深蓝点缀，所有边角适合儿童空间且尺度参照1.60米角色。; 现代温暖的儿童卧室，浅木地板、柔和蓝灰墙面和米白顶面保持安静背景，以木质家具和少量红黄蓝玩具形成分组色彩点缀；装饰集中于睡眠与学习区域，中央不堆放杂物。; 温暖, 现代儿童房, 圆角体素, 整洁生活感, 柔和配色; palette #E8DFC9, #B99062, #8EA6B4, #C65F4A, #D6A83E, #354C63; materials 浅色木材, 哑光烤漆, 棉织物, 粉末涂层金属, 透明玻璃\n资产角色：墙边骑行器材；目标尺度：medium。\n只生成一个可复用的独立物体，不要生成地面、背景、天空、完整场景或多个分散物体。",
+  "modelJson": {
+    "name": "儿童辅助轮自行车",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "frame",
+        "name": "深蓝车架",
+        "transform": {
+          "pos": [
+            0,
+            0.48,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            2.585,
+            1.959,
+            1.402
+          ],
+          "center": [
+            0.092,
+            -0.045,
+            -0.011
+          ],
+          "axes": [
+            [
+              0.9468,
+              0.3159,
+              -0.0614
+            ],
+            [
+              -0.3203,
+              0.9433,
+              -0.0872
+            ],
+            [
+              0.0304,
+              0.1022,
+              0.9943
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "rear_wheel",
+        "name": "后轮",
+        "parent": "frame",
+        "transform": {
+          "pos": [
+            -0.68,
+            -0.04,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.797,
+            0.789,
+            0.159
+          ],
+          "center": [
+            0,
+            0,
+            0
+          ],
+          "axes": [
+            [
+              0.9247,
+              -0.3806,
+              -0.0042
+            ],
+            [
+              0.3805,
+              0.9247,
+              -0.0086
+            ],
+            [
+              0.0071,
+              0.0064,
+              1
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "steering",
+        "name": "车把与前叉",
+        "parent": "frame",
+        "transform": {
+          "pos": [
+            0.4,
+            0.38,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            1.131,
+            1.444,
+            0.834
+          ],
+          "center": [
+            0.224,
+            -0.26,
+            0
+          ],
+          "axes": [
+            [
+              0.922,
+              0.226,
+              0.3143
+            ],
+            [
+              -0.2373,
+              0.9714,
+              -0.0022
+            ],
+            [
+              -0.3058,
+              -0.0725,
+              0.9493
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "front_wheel",
+        "name": "前轮",
+        "parent": "steering",
+        "transform": {
+          "pos": [
+            0.28,
+            -0.42,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.797,
+            0.789,
+            0.159
+          ],
+          "center": [
+            0,
+            0,
+            0
+          ],
+          "axes": [
+            [
+              0.9247,
+              -0.3806,
+              -0.0042
+            ],
+            [
+              0.3805,
+              0.9247,
+              -0.0086
+            ],
+            [
+              0.0071,
+              0.0064,
+              1
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "seat",
+        "name": "浅棕车座",
+        "parent": "frame",
+        "transform": {
+          "pos": [
+            -0.18,
+            0.48,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.433,
+            0.309,
+            0.3
+          ],
+          "center": [
+            -0.068,
+            0.138,
+            0
+          ],
+          "axes": [
+            [
+              0.9915,
+              -0.13,
+              0
+            ],
+            [
+              0.13,
+              0.9915,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "pedals",
+        "name": "脚踏",
+        "parent": "frame",
+        "transform": {
+          "pos": [
+            0.02,
+            0,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.918,
+            0.219,
+            0.458
+          ],
+          "center": [
+            0.046,
+            0.016,
+            0.07
+          ],
+          "axes": [
+            [
+              0.6588,
+              0.5081,
+              -0.5548
+            ],
+            [
+              -0.5204,
+              0.8403,
+              0.1518
+            ],
+            [
+              0.5434,
+              0.1887,
+              0.818
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "left_trainer",
+        "name": "左辅助轮",
+        "parent": "frame",
+        "transform": {
+          "pos": [
+            -0.68,
+            -0.04,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.357,
+            0.514,
+            0.313
+          ],
+          "center": [
+            -0.004,
+            -0.183,
+            0.437
+          ],
+          "axes": [
+            [
+              0.9987,
+              -0.0103,
+              -0.0493
+            ],
+            [
+              -0.002,
+              0.97,
+              -0.2429
+            ],
+            [
+              0.0504,
+              0.2427,
+              0.9688
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "right_trainer",
+        "name": "右辅助轮",
+        "parent": "frame",
+        "transform": {
+          "pos": [
+            -0.68,
+            -0.04,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.355,
+            0.514,
+            0.313
+          ],
+          "center": [
+            0.002,
+            -0.183,
+            -0.438
+          ],
+          "axes": [
+            [
+              0.9995,
+              0.0107,
+              -0.0297
+            ],
+            [
+              -0.0033,
+              0.9709,
+              0.2396
+            ],
+            [
+              0.0314,
+              -0.2394,
+              0.9704
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "frame",
+        "transform": {
+          "pos": [
+            -0.43,
+            0.22,
+            0
+          ],
+          "quat": [
+            0.65,
+            0.28,
+            0.28,
+            0.65
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.72,
+            "height": 0.16,
+            "depth": 0.11
+          },
+          "color": 3492963
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m1",
+        "parent": "frame",
+        "transform": {
+          "pos": [
+            -0.14,
+            0.17,
+            0
+          ],
+          "quat": [
+            0.69,
+            0.13,
+            0.13,
+            0.69
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.16,
+            "height": 0.16,
+            "depth": 0.11
+          },
+          "color": 3492963
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m2",
+        "parent": "frame",
+        "transform": {
+          "pos": [
+            0.11,
+            0.43,
+            0
+          ],
+          "quat": [
+            0.7,
+            -0.06,
+            -0.06,
+            0.7
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.59,
+            "height": 0.16,
+            "depth": 0.11
+          },
+          "color": 3492963
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m3",
+        "parent": "frame",
+        "transform": {
+          "pos": [
+            -0.33,
+            -0.02,
+            0
+          ],
+          "quat": [
+            0.71,
+            0.02,
+            0.02,
+            0.71
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.7,
+            "height": 0.16,
+            "depth": 0.1
+          },
+          "color": 3492963
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m4",
+        "parent": "frame",
+        "transform": {
+          "pos": [
+            -0.08,
+            0.24,
+            0
+          ],
+          "quat": [
+            0.39,
+            0.59,
+            0.59,
+            0.39
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.52,
+            "height": 0.16,
+            "depth": 0.1
+          },
+          "color": 3492963
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m5",
+        "parent": "frame",
+        "transform": {
+          "pos": [
+            -0.3,
+            -0.01,
+            0.15
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.78,
+            "height": 0.3,
+            "depth": 0.1
+          },
+          "color": 3492963
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m6",
+        "parent": "rear_wheel",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ],
+          "quat": [
+            0.65,
+            -0.27,
+            -0.27,
+            0.65
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.61,
+            "height": 0.14,
+            "depth": 0.61
+          },
+          "color": 2699834
+        }
+      },
+      {
+        "id": "m7",
+        "parent": "rear_wheel",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ],
+          "quat": [
+            0.65,
+            -0.27,
+            -0.27,
+            0.65
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.41,
+            "height": 0.16,
+            "depth": 0.41
+          },
+          "color": 9348788
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m8",
+        "parent": "steering",
+        "transform": {
+          "pos": [
+            0.14,
+            -0.21,
+            0
+          ],
+          "quat": [
+            0.62,
+            -0.33,
+            -0.33,
+            0.62
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.5,
+            "height": 0.14,
+            "depth": 0.1
+          },
+          "color": 3492963
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m9",
+        "parent": "steering",
+        "transform": {
+          "pos": [
+            0.05,
+            0.14,
+            0
+          ],
+          "quat": [
+            0.57,
+            0.42,
+            0.42,
+            0.57
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.3,
+            "height": 0.13,
+            "depth": 0.09
+          },
+          "color": 3492963
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m10",
+        "parent": "steering",
+        "transform": {
+          "pos": [
+            0.09,
+            0.3,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.12,
+            "height": 0.12,
+            "depth": 0.66
+          },
+          "color": 3492963
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m11",
+        "parent": "steering",
+        "transform": {
+          "pos": [
+            0.09,
+            0.3,
+            0.33
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.15,
+            "height": 0.14,
+            "depth": 0.16
+          },
+          "color": 12161122
+        }
+      },
+      {
+        "id": "m12",
+        "parent": "steering",
+        "transform": {
+          "pos": [
+            0.09,
+            0.3,
+            -0.33
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.15,
+            "height": 0.14,
+            "depth": 0.16
+          },
+          "color": 12161122
+        }
+      },
+      {
+        "id": "m13",
+        "parent": "front_wheel",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ],
+          "quat": [
+            0.65,
+            -0.27,
+            -0.27,
+            0.65
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.61,
+            "height": 0.14,
+            "depth": 0.61
+          },
+          "color": 2699834
+        }
+      },
+      {
+        "id": "m14",
+        "parent": "front_wheel",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ],
+          "quat": [
+            0.65,
+            -0.27,
+            -0.27,
+            0.65
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.41,
+            "height": 0.16,
+            "depth": 0.41
+          },
+          "color": 9348788
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m15",
+        "parent": "seat",
+        "transform": {
+          "pos": [
+            0,
+            0.08,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.1,
+            "height": 0.2,
+            "depth": 0.1
+          },
+          "color": 3492963
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m16",
+        "parent": "seat",
+        "transform": {
+          "pos": [
+            -0.06,
+            0.2,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.42,
+            "height": 0.13,
+            "depth": 0.3
+          },
+          "color": 12161122
+        }
+      },
+      {
+        "id": "m17",
+        "parent": "pedals",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0.2
+          ],
+          "quat": [
+            0.66,
+            0.25,
+            0.25,
+            0.66
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.43,
+            "height": 0.07,
+            "depth": 0.07
+          },
+          "color": 14067774
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m18",
+        "parent": "pedals",
+        "transform": {
+          "pos": [
+            -0.2,
+            -0.17,
+            0.2
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.24,
+            "height": 0.07,
+            "depth": 0.12
+          },
+          "color": 14067774
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m19",
+        "parent": "pedals",
+        "transform": {
+          "pos": [
+            0.2,
+            0.17,
+            -0.2
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.24,
+            "height": 0.07,
+            "depth": 0.12
+          },
+          "color": 14067774
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m20",
+        "parent": "left_trainer",
+        "transform": {
+          "pos": [
+            0,
+            -0.13,
+            0.35
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.11,
+            "height": 0.36,
+            "depth": 0.08
+          },
+          "color": 3492963
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m21",
+        "parent": "left_trainer",
+        "transform": {
+          "pos": [
+            0,
+            -0.24,
+            0.52
+          ],
+          "quat": [
+            0.65,
+            -0.27,
+            -0.27,
+            0.65
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.25,
+            "height": 0.1,
+            "depth": 0.25
+          },
+          "color": 2699834
+        }
+      },
+      {
+        "id": "m22",
+        "parent": "right_trainer",
+        "transform": {
+          "pos": [
+            0,
+            -0.13,
+            -0.35
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.11,
+            "height": 0.36,
+            "depth": 0.08
+          },
+          "color": 3492963
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "metal"
+          }
+        ]
+      },
+      {
+        "id": "m23",
+        "parent": "right_trainer",
+        "transform": {
+          "pos": [
+            0,
+            -0.24,
+            -0.52
+          ],
+          "quat": [
+            0.65,
+            -0.27,
+            -0.27,
+            0.65
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.25,
+            "height": 0.1,
+            "depth": 0.25
+          },
+          "color": 2699834
+        }
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1786869607187,
+        "provider": "gpt",
+        "data": "2ntmFbVAaGlvvxofVEaj5YT+EHuA8vVBM4aMwiMb4k6LtXkmH/M+HeUQyHrZDsg4nOCqkVCnRHDYoA7399OofeUgbae9Dh0CpQbzsX4C02M08kk0BcStH11H4aIoXJ+nJSMae0OR1ra/Els1hiW3gLIlhHxuZ8OYoZ79MbZoqxFXun5MncZNKgyN2nGU3qmgGEQlwyLTKNuAmvvGCjsFyA7LdyABuXm1r8wqKkbUkrBAIIXa+nPHTIUSZhqb9WoNp56mJ+fARWCfyxK5y9Zbeg6BwsiwsdzXZvJIbqt6y70RSmIM5wtxeMjFhdIR6XHSAiy0o5lvBJfYjOJnwxai4AAVogmblciCDMHP8csiMmX00ZS311pU2fMdueux8GweowQQuYp2+7NANpFmpGwYJmHNG4e6jWiR2Ghrxy5YoyzPTgPgoEqlLnoGxFPNWdvyABnij5yTLro8vwgeuEni7DtGOSeNxcIaei/hFSGh9Mdu6to0/6mnR07D6WDT5IIEL5msdp0qGzpY7uY0zSFubI6uv7ylQqXwYFvgkOChJ+YaToZM9Mz5g1Gwe4kKeEfrikUgjyiWQP838u1xlN0SUwzKnTvSIelc6/ONyTPJlVVWHx/jqMIXXESDGjf94qG/nK//RMTwPFkYyflTqKcZBFN6ZP4OpEB+Fm1lWnkw+vwsNqazNDmK13ykNLYKbZJPMK2skAmrxPa2O0IS7BFo2aewRbFYDU8YdL9c4zhMqA/uahK0BLdyGzpGWdu0zs8SBQ/8ZgPP5GzeM8yTseGQhMyLpxRxpQI5hpei+e0sXYSlYK3ofQHgQy/LdD18pZdC41kCUsfsjQtc44kCeQPIPWqUzqu1TscnTaSQaelDbLKgEzK6zgB22oibwFHlnd4yHSCxc9L7ilH5F3KzL4fOMKKbDX9MwjrLDw2AGHPdJSM5+tJB6/eSihC1f3AC7lUJhISDLZ9JCWMVf6gohxn/Ej/URDcUUHtr8sApUY4gb3f+d0581y4mSCbnNpwVZHaIqmxTMBSQZH/ziRW0xGnkVHYK2aAxL1jTXMxzTFmRbqTi9g09SA57bcBrhy0FCY9U1TLL04aVgGd0a2ib6lo0eB+IglXoN1cVi3IMDF5mTWqTm/eiFougV2GQUDN2swJpErEfk/6lO4i/Olne4Z+azdBahSUlpVZrppSBEMR0JAToTSzq6GvYOyDejbst0hEIDwowJL9mqFMOM7jPyLiz5KK4KYVOMFJTr1Oa9+CPdNXOL04e+6DsKWQ9lbIwk9Mqm9lLTeifKejKNKrwVhuDqpazK99KKu+fG/3Xy8gF6CpL98QKwoNvXzbGS0ySeARG4kSSaWp+UchTkwFxf8IgBC/2oMy8SRMbi7XLfMvXpgcF5h+/3g8bFWdA09xnSg0C9yZV7jgpYNRc+eB1qTtHciC6gLi/TPxzcw04+ZN6Ql+zuEI=",
+        "edits": ""
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          0.24866572466693582,
+          0,
+          -0.07000000000000006
+        ],
+        "max": [
+          1.1113342753330642,
+          0.8626685506661282,
+          0.07000000000000006
+        ],
+        "sourceNodeId": "m13"
+      },
+      {
+        "min": [
+          -1.1113342753330642,
+          0,
+          -0.07000000000000006
+        ],
+        "max": [
+          -0.24866572466693582,
+          0.8626685506661282,
+          0.07000000000000006
+        ],
+        "sourceNodeId": "m6"
+      },
+      {
+        "min": [
+          -0.7002494929006086,
+          0.3790462428787029,
+          -0.08000000000000006
+        ],
+        "max": [
+          0.42024949290060853,
+          0.9036223077874252,
+          0.08000000000000006
+        ],
+        "sourceNodeId": "m1"
+      }
+    ],
+    "sourceMeshCount": 24,
+    "candidateCount": 3,
+    "fallbackUsed": false
+  },
+  "footprintRadius": 1.1113342753330642,
+  "sizeClass": "medium",
+  "mode": "voxel",
+  "provider": "gpt",
+  "createdAt": 1786869610695,
+  "updatedAt": 1786869610695
+}

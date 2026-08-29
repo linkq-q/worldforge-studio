@@ -1,0 +1,903 @@
+{
+  "id": "asset-4eafa3c3-41e6-4a95",
+  "name": "法台",
+  "prompt": "哈利波特风格魔法工坊与图书馆中的法台\nCoordinate contract: local Y+ is up, local Z+ is the front, entrance, or forward direction, and local X+ is right. Put doors, facades, openings, windshields, noses, seats, and other recognizable front details toward local Z+. For a modular repeated element, explicitly choose the long axis: side-by-side modules span local X with depth/front on local Z; traversal modules span local Z. Keep the model centered at its origin.\nCanonical dimensions contract: width=2.8, height=0.9, depth=1.2 world units. Keep the generated mesh within this centered bounding size.",
+  "modelJson": {
+    "name": "魔法工坊图书馆法台",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "table",
+        "name": "胡桃木法台",
+        "transform": {
+          "pos": [
+            0,
+            0.36,
+            0.075
+          ]
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "walnut"
+          }
+        ],
+        "_obb": {
+          "size": [
+            2.707,
+            0.931,
+            1.193
+          ],
+          "center": [
+            0.002,
+            0.074,
+            -0.026
+          ],
+          "axes": [
+            [
+              0.9998,
+              0.0215,
+              -0.0042
+            ],
+            [
+              -0.0215,
+              0.9997,
+              0.0099
+            ],
+            [
+              0.0044,
+              -0.0098,
+              0.9999
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "lectern",
+        "name": "倾斜阅读台",
+        "parent": "table",
+        "transform": {
+          "pos": [
+            0,
+            0.29,
+            0
+          ]
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "oak"
+          }
+        ],
+        "_obb": {
+          "size": [
+            1.32,
+            0.236,
+            0.527
+          ],
+          "center": [
+            0,
+            0.051,
+            -0.05
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              0.9965,
+              -0.0837
+            ],
+            [
+              0,
+              0.0837,
+              0.9965
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "mount01_spellbook",
+        "name": "可拆卸魔法书",
+        "parent": "table",
+        "transform": {
+          "pos": [
+            0,
+            0.37,
+            -0.095
+          ]
+        },
+        "mounted": true,
+        "_obb": {
+          "size": [
+            0.96,
+            0.217,
+            0.326
+          ],
+          "center": [
+            0.005,
+            0,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              -0.0004
+            ],
+            [
+              -0.0001,
+              0.9499,
+              -0.3126
+            ],
+            [
+              0.0004,
+              0.3126,
+              0.9499
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "books",
+        "name": "台下藏书",
+        "parent": "table",
+        "transform": {
+          "pos": [
+            0,
+            -0.05,
+            0.265
+          ]
+        },
+        "_obb": {
+          "size": [
+            1.68,
+            0.241,
+            0.12
+          ],
+          "center": [
+            -0.07,
+            -0.009,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0.002,
+              0
+            ],
+            [
+              -0.002,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "crystal",
+        "name": "发光魔法晶石",
+        "parent": "table",
+        "transform": {
+          "pos": [
+            0.96,
+            0.23,
+            -0.045
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.34,
+            0.36,
+            0.34
+          ],
+          "center": [
+            0,
+            0.145,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "front_details",
+        "name": "正面符文抽屉",
+        "parent": "table",
+        "transform": {
+          "pos": [
+            0,
+            0.04,
+            0.51
+          ]
+        },
+        "_obb": {
+          "size": [
+            1.99,
+            0.18,
+            0.08
+          ],
+          "center": [
+            0,
+            0,
+            0.015
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "table",
+        "transform": {
+          "pos": [
+            0,
+            0.16,
+            -0.075
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2.7,
+            "height": 0.14,
+            "depth": 1.08
+          },
+          "color": 4927268
+        }
+      },
+      {
+        "id": "m1",
+        "parent": "table",
+        "transform": {
+          "pos": [
+            -1.12,
+            -0.11,
+            -0.425
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.22,
+            "height": 0.5,
+            "depth": 0.22
+          },
+          "color": 3678745
+        }
+      },
+      {
+        "id": "m2",
+        "parent": "table",
+        "transform": {
+          "pos": [
+            1.12,
+            -0.11,
+            -0.425
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.22,
+            "height": 0.5,
+            "depth": 0.22
+          },
+          "color": 3678745
+        }
+      },
+      {
+        "id": "m3",
+        "parent": "table",
+        "transform": {
+          "pos": [
+            -1.12,
+            -0.11,
+            0.275
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.22,
+            "height": 0.5,
+            "depth": 0.22
+          },
+          "color": 3678745
+        }
+      },
+      {
+        "id": "m4",
+        "parent": "table",
+        "transform": {
+          "pos": [
+            1.12,
+            -0.11,
+            0.275
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.22,
+            "height": 0.5,
+            "depth": 0.22
+          },
+          "color": 3678745
+        }
+      },
+      {
+        "id": "m5",
+        "parent": "table",
+        "transform": {
+          "pos": [
+            0,
+            -0.16,
+            -0.075
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2.25,
+            "height": 0.1,
+            "depth": 0.7
+          },
+          "color": 4204317
+        }
+      },
+      {
+        "id": "m6",
+        "parent": "table",
+        "transform": {
+          "pos": [
+            0,
+            0.03,
+            0.425
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2.4,
+            "height": 0.18,
+            "depth": 0.12
+          },
+          "color": 5978152
+        }
+      },
+      {
+        "id": "m7",
+        "parent": "lectern",
+        "transform": {
+          "pos": [
+            0,
+            0.06,
+            -0.125
+          ],
+          "quat": [
+            -0.23,
+            0,
+            0,
+            0.97
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.24,
+            "height": 0.07,
+            "depth": 0.38
+          },
+          "color": 9067314
+        }
+      },
+      {
+        "id": "m8",
+        "parent": "lectern",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0.165
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.32,
+            "height": 0.09,
+            "depth": 0.1
+          },
+          "color": 6635554
+        }
+      },
+      {
+        "id": "m9",
+        "parent": "mount01_spellbook",
+        "transform": {
+          "pos": [
+            -0.25,
+            0,
+            -0.02
+          ],
+          "quat": [
+            -0.23,
+            0,
+            0,
+            0.97
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.45,
+            "height": 0.035,
+            "depth": 0.28
+          },
+          "color": 14207387
+        }
+      },
+      {
+        "id": "m10",
+        "parent": "mount01_spellbook",
+        "transform": {
+          "pos": [
+            0.26,
+            0,
+            -0.02
+          ],
+          "quat": [
+            -0.23,
+            0,
+            0,
+            0.97
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.45,
+            "height": 0.035,
+            "depth": 0.28
+          },
+          "color": 14207387
+        }
+      },
+      {
+        "id": "m11",
+        "parent": "mount01_spellbook",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.06,
+            "height": 0.13,
+            "depth": 0.3
+          },
+          "color": 7151399
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "fabric",
+            "variant": "red"
+          }
+        ]
+      },
+      {
+        "id": "m12",
+        "parent": "books",
+        "transform": {
+          "pos": [
+            -0.82,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.18,
+            "height": 0.22,
+            "depth": 0.12
+          },
+          "color": 7877176
+        }
+      },
+      {
+        "id": "m13",
+        "parent": "books",
+        "transform": {
+          "pos": [
+            -0.58,
+            -0.01,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.16,
+            "height": 0.22,
+            "depth": 0.11
+          },
+          "color": 2706279
+        }
+      },
+      {
+        "id": "m14",
+        "parent": "books",
+        "transform": {
+          "pos": [
+            -0.35,
+            -0.02,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.14,
+            "height": 0.22,
+            "depth": 0.1
+          },
+          "color": 5399611
+        }
+      },
+      {
+        "id": "m15",
+        "parent": "books",
+        "transform": {
+          "pos": [
+            0.42,
+            -0.01,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.16,
+            "height": 0.22,
+            "depth": 0.12
+          },
+          "color": 7357995
+        }
+      },
+      {
+        "id": "m16",
+        "parent": "books",
+        "transform": {
+          "pos": [
+            0.68,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.18,
+            "height": 0.22,
+            "depth": 0.11
+          },
+          "color": 4798827
+        }
+      },
+      {
+        "id": "m17",
+        "parent": "crystal",
+        "transform": {
+          "pos": [
+            0,
+            0.09,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.2,
+            "height": 0.2,
+            "depth": 0.2
+          },
+          "color": 8148456
+        },
+        "tags": [
+          {
+            "tag": "emissive",
+            "value": 0.75
+          }
+        ]
+      },
+      {
+        "id": "m18",
+        "parent": "crystal",
+        "transform": {
+          "pos": [
+            0,
+            0.25,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.12,
+            "height": 0.15,
+            "depth": 0.12
+          },
+          "color": 11967743
+        },
+        "tags": [
+          {
+            "tag": "emissive",
+            "value": 1
+          }
+        ]
+      },
+      {
+        "id": "m19",
+        "parent": "crystal",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.34,
+            "height": 0.07,
+            "depth": 0.34
+          },
+          "color": 5591132
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "stone"
+          }
+        ]
+      },
+      {
+        "id": "m20",
+        "parent": "front_details",
+        "transform": {
+          "pos": [
+            -0.72,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.55,
+            "height": 0.18,
+            "depth": 0.05
+          },
+          "color": 3875868
+        }
+      },
+      {
+        "id": "m21",
+        "parent": "front_details",
+        "transform": {
+          "pos": [
+            0.72,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.55,
+            "height": 0.18,
+            "depth": 0.05
+          },
+          "color": 3875868
+        }
+      },
+      {
+        "id": "m22",
+        "parent": "front_details",
+        "transform": {
+          "pos": [
+            -0.72,
+            0,
+            0.035
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.09,
+            "height": 0.09,
+            "depth": 0.04
+          },
+          "color": 13805895
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "gold"
+          }
+        ]
+      },
+      {
+        "id": "m23",
+        "parent": "front_details",
+        "transform": {
+          "pos": [
+            0.72,
+            0,
+            0.035
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.09,
+            "height": 0.09,
+            "depth": 0.04
+          },
+          "color": 13805895
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "gold"
+          }
+        ]
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1787874379766,
+        "provider": "gpt",
+        "data": "2DjM8OnYz6QlMG87eAeQXk8dRDWw7w2hZ0t662NtcfOWTd3edjHb3HlbBivuQfTNcYb/A06HqZOK7H8C4G2oO0jZ6OaAdogHnQdSdvH77qqhlVZis8UrfDeH2Eqm3IEfsH3n/NnWxOTmIx3VjIoB3sFetkTXsag33m+jnjrPl5rziy6dbUjUXxOQTEnCL1IzA2y/a8HTUL80i9AeZROKquoYA3lyWNPSSR76QhwI4YOI3OjUv0ttVcaqcO6YR8zsYE6+RMADMZIDUoLeCuWE0RhFPG3xiNptwMpsGqqwWNZ0dAAoS62N+DTtBNMq+xflKyN47jnMkQXOu/O6dSiIx7QNhQb/vDbtgH6LSsX0Mgd1vIP+26Z6UIug/afu3T6+3zAy5m0SvnY6zq1vPptBsEAiri8DoZqQyHbVG37zX6cuYrSbQfDZrLl1w0tYIF/lP7r9LLPaJ1zRPt1GXeZeR+xcdmGqtikV9exHFw3ov4fEHnJnEAkpGfssYNxmyDQ55oOzCwe0Bpbz2j51g7TOIF/tWh9f0p4kbcnHUdm274XPIcqqRjDm1Dn9ApDFQCo9ESCU43bZ/ziHaxHXaveNkppxOtKX3O2qgaTGSWw0x995xesvSGITlwm6oXnxvPKwKZZiTqrxyY6+5TMQKRHU3/J4wPqZSDm2j66hEtra2paofgOeK2T3011vsPSY66cP5fhiSKGQumy0WshzbFpGN1l6gz5y9bALt2RmlyJgK/NVAYQXAyjwLK48ThiMQ5fvFNw13H6bLhMIzXUIh5Cfil3eTHeNi7CV7udxqyNQeoLhw/VrGD7tjhGyfZs1oedO76pvH4VCzsRaOJyB4toKaoN9z6wj+c8d9Tx1kldhyQxsmIUDPpQySUaCA6gyYuKbBc0SD6E7HTZWOcbLErzjT++wAZQ4ltOd5jV7efqb/usi38p1X0JylDeSagOmy5JVjKshBYJuTFYYbxC34LTn83cUo9oD2RnNCVCRBjiLu+9coRisoRKAnQ+muO2vbvaoreAVmdkeRFX3nU/AhYqLXwg61aVBdRuKyCAMF8GxMOA1F0tWkbBYomBuIx+UMLPl990A4lUgYZ0pcIKRtzU7h9GTAVzF/wYtuoK0YQvF28YYhlG8CvnxOiMTEIfaJVhsazhexGU03dqvy0mxcdOiwobek5J7T6Iq2hZtd3RwFLr5WeRELHI86aJc4UKqmwa07dhApYNl0ay+K5qoE54gWx6h3VmSVmQGvAzUYbJzsRD+rs1bMC1cXL1+X02ILhzkkLl1bcZn7EjqbaGCO5NkUTcenyU5e1z53XSQPGs/DVDcIfMu7VnPnd89xhchJGwHAM9oOTLGgbPfWieZxAxMywVmc7lHbIMQAIWxL1f7kq7UDiXG4Q25WngQjjBq/R4kJuwgqw8R3iE4sgfVgWLvLKIfDeCXx5AKDLKhQ6HltdZp4c3qTjWaxx+7OayqPYNLznvrFAkbRz0M10zq8yHOOdI13zNeOtI0zhdQ3p9rMCyoJOkwaFAddwKDkKk5qA==",
+        "edits": ""
+      },
+      "mounts": [
+        {
+          "id": "mount01_spellbook",
+          "mountedGroupId": "mount01_spellbook",
+          "name": "可拆卸魔法书",
+          "source": {
+            "type": "codegen"
+          },
+          "description": "",
+          "visible": true,
+          "ts": 1787874379767
+        }
+      ],
+      "semanticSnapshot": {
+        "v": 1,
+        "auto": true,
+        "text": "魔法工坊图书馆法台 · 6组/24mesh · 世界坐标(Y上Z前), 原点=模型根\n# 阅读说明: G:=group行(可动画骨骼, 动画key用G:后的id; @p=pivot世界坐标; 倾(x,y,z)°=朝向偏离世界轴的欧拉角; 缩进=父子层级; 挂:=挂载于某组; G:id→id→…=chain折叠行, 每个id都是可独立动画的group, chain×N=waypoint数)\n# M:=mesh行(label[id 几何 @(世界坐标)], label可省略; ×N=for循环批量件(锚点=代表实例); cyl (起)→(末)或 轴上(Y)等方位词=延伸方向; 薄向=板面法向(扁板); 挂载组双代表=最大件+最远有向件(刃/嘴/管所在端); 无方向标注=均匀块(三向相近,如头),默认面向前(Z); 对称×2=镜像对)\nG:table 胡桃木法台 @p(0,0.4,0.1)\n  M:[m0 box 2.7×0.14×1.1 (0,0.5,0) 薄向上(Y)]\n  G:lectern 倾斜阅读台 @p(0,0.6,0.1)\n    M:[m7 box 1.2×0.07×0.38 (0,0.7,0) 轴右(X)]\n  G:mount01_spellbook 可拆卸魔法书 @p(0,0.7,0) 挂:table\n    M:[m9+m10 box 0.45×0.04×0.28 (-0.2,0.7,0) 轴右(X) 对称×2]\n  G:books 台下藏书 @p(0,0.3,0.3)\n    M:[m12 box 0.18×0.22×0.12 (-0.8,0.3,0.3) 薄向前(Z)]\n  G:crystal 发光魔法晶石 @p(1,0.6,0)\n    M:[m19 box 0.34×0.07×0.34 (1,0.6,0) 薄向上(Y)]\n  G:front_details 正面符文抽屉 @p(0,0.4,0.6)\n    M:[m20 box 0.55×0.18×0.05 (-0.7,0.4,0.6) 薄向前(Z)]",
+        "stats": {
+          "groups": 6,
+          "meshes": 24,
+          "labeledMeshes": 0,
+          "labelCoverage": 0,
+          "batchLabels": 0,
+          "autoChains": 0,
+          "snapshotChars": 877
+        }
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -1.35,
+          0.45,
+          -0.5900000000000001
+        ],
+        "max": [
+          1.35,
+          0.5900000000000001,
+          0.49000000000000005
+        ],
+        "sourceNodeId": "m0"
+      },
+      {
+        "min": [
+          -1.125,
+          0.14999999999999997,
+          -0.39999999999999997
+        ],
+        "max": [
+          1.125,
+          0.25,
+          0.3
+        ],
+        "sourceNodeId": "m5"
+      },
+      {
+        "min": [
+          -0.62,
+          0.5934191990340109,
+          -0.2854870195210304
+        ],
+        "max": [
+          0.62,
+          0.8265808009659891,
+          0.08548701952103038
+        ],
+        "sourceNodeId": "m7"
+      }
+    ],
+    "sourceMeshCount": 24,
+    "candidateCount": 3,
+    "fallbackUsed": false
+  },
+  "footprintRadius": 1.35,
+  "sizeClass": "medium",
+  "mode": "voxel",
+  "provider": "gpt",
+  "createdAt": 1787874379472,
+  "updatedAt": 1787874379472
+}
