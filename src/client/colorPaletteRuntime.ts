@@ -20,20 +20,20 @@ export function paletteEnvironment(
 ): RenderEnvironmentSettings {
   return {
     ...fallback,
-    background: levelColor(palette, 'environment.sky', ['L3', 'L4'], 'background'),
-    fogColor: levelColor(palette, 'environment.fog', ['L1', 'L2'], 'fog'),
-    hemisphereSkyColor: levelColor(palette, 'environment.fog', ['L1', 'L2'], 'sky-light'),
-    hemisphereGroundColor: levelColor(palette, 'terrain.ground', ['L4', 'L5'], 'ground-light'),
-    sunColor: levelColor(palette, 'lighting', ['L1', 'L2'], 'sun')
+    background: levelColor(palette, 'atmosphere', ['L3', 'L4'], 'background'),
+    fogColor: levelColor(palette, 'atmosphere', ['L1', 'L2'], 'fog'),
+    hemisphereSkyColor: levelColor(palette, 'atmosphere', ['L1', 'L2'], 'sky-light'),
+    hemisphereGroundColor: levelColor(palette, 'earth', ['L4', 'L5'], 'ground-light'),
+    sunColor: levelColor(palette, 'effect', ['L1', 'L2'], 'sun')
   };
 }
 
 export function paletteGrassStyle(palette: ColorPalette, style: RuntimeGrassStyle): RuntimeGrassStyle {
   return {
     ...style,
-    rootColor: levelColor(palette, 'vegetation.grass', ['L4', 'L5'], 'grass-root'),
-    tipColor: levelColor(palette, 'vegetation.grass', ['L1', 'L2', 'L3'], 'grass-tip'),
-    groundColor: levelColor(palette, 'terrain.ground', ['L2', 'L3'], 'grass-ground')
+    rootColor: levelColor(palette, 'plant', ['L4', 'L5'], 'grass-root'),
+    tipColor: levelColor(palette, 'plant', ['L1', 'L2', 'L3'], 'grass-tip'),
+    groundColor: levelColor(palette, 'earth', ['L2', 'L3'], 'grass-ground')
   };
 }
 
@@ -46,7 +46,7 @@ export function paletteWaterStyles(palette: ColorPalette, styles: RuntimeWaterSt
     color: levelColor(palette, 'water', ['L3', 'L4'], `water-${index}`),
     shallowColor: levelColor(palette, 'water', ['L1', 'L2'], `water-shallow-${index}`),
     depthColor: levelColor(palette, 'water', ['L4', 'L5'], `water-depth-${index}`),
-    foamColor: levelColor(palette, 'environment.fog', ['L1'], `water-foam-${index}`)
+    foamColor: levelColor(palette, 'atmosphere', ['L1'], `water-foam-${index}`)
   }));
 }
 
@@ -60,7 +60,7 @@ export function paletteEffectRecipes(palette: ColorPalette, effects: RuntimeEffe
 export function paletteHdriStyle(palette: ColorPalette, style: RuntimeHdriSky): RuntimeHdriSky {
   return {
     ...style,
-    tint: levelColor(palette, 'environment.sky', ['L2', 'L3'], 'hdri'),
+    tint: levelColor(palette, 'atmosphere', ['L2', 'L3'], 'hdri'),
     tintStrength: Math.max(0.35, style.tintStrength)
   };
 }
@@ -68,16 +68,16 @@ export function paletteHdriStyle(palette: ColorPalette, style: RuntimeHdriSky): 
 export function paletteTerrainColors(palette?: ColorPalette): TerrainPaletteColors | undefined {
   if (!palette) return undefined;
   return {
-    base: levelColor(palette, 'terrain.ground', ['L2', 'L3'], 'terrain-base'),
-    dry: levelColor(palette, 'terrain.ground', ['L3', 'L4'], 'terrain-dry'),
-    sand: levelColor(palette, 'terrain.ground', ['L1', 'L2'], 'terrain-sand'),
-    soil: levelColor(palette, 'terrain.ground', ['L4', 'L5'], 'terrain-soil'),
-    rock: levelColor(palette, 'terrain.rock', ['L3', 'L4'], 'terrain-rock'),
-    paving: levelColor(palette, 'terrain.road', ['L2', 'L3', 'L4'], 'terrain-paving'),
-    grass: levelColor(palette, 'vegetation.grass', ['L2', 'L3'], 'terrain-grass'),
-    foliage: levelColor(palette, 'vegetation.foliage', ['L2', 'L3'], 'terrain-foliage'),
+    base: levelColor(palette, 'earth', ['L2', 'L3'], 'terrain-base'),
+    dry: levelColor(palette, 'earth', ['L3', 'L4'], 'terrain-dry'),
+    sand: levelColor(palette, 'earth', ['L1', 'L2'], 'terrain-sand'),
+    soil: levelColor(palette, 'earth', ['L4', 'L5'], 'terrain-soil'),
+    rock: levelColor(palette, 'earth', ['L3', 'L4'], 'terrain-rock'),
+    paving: levelColor(palette, 'earth', ['L2', 'L3', 'L4'], 'terrain-paving'),
+    grass: levelColor(palette, 'plant', ['L2', 'L3'], 'terrain-grass'),
+    foliage: levelColor(palette, 'plant', ['L2', 'L3'], 'terrain-foliage'),
     water: levelColor(palette, 'water', ['L2', 'L3'], 'terrain-water'),
-    settlement: levelColor(palette, 'building.wall', ['L2', 'L3'], 'terrain-settlement')
+    settlement: levelColor(palette, 'primary', ['L2', 'L3'], 'terrain-settlement')
   };
 }
 

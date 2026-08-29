@@ -1236,7 +1236,7 @@ function paletteNodeText(modelJson: unknown): Map<string, { text: string; source
   if (!Array.isArray(nodes)) return new Map();
   return new Map(nodes.flatMap((entry) => {
     if (!entry || typeof entry !== 'object') return [];
-    const node = entry as { id?: unknown; tags?: unknown; mesh?: { color?: unknown } };
+    const node = entry as { id?: unknown; tags?: unknown; color?: unknown; mesh?: { color?: unknown; material?: { color?: unknown } } };
     if (typeof node.id !== 'string') return [];
     const tags = Array.isArray(node.tags) ? node.tags.map((tag) => {
       if (typeof tag === 'string') return tag;
@@ -1246,7 +1246,10 @@ function paletteNodeText(modelJson: unknown): Map<string, { text: string; source
     }).join(' ') : '';
     return [[node.id, {
       text: `${node.id} ${tags}`,
-      sourceColor: paletteSourceHex(node.mesh?.color)
+      sourceColor: paletteTagColor(node.tags)
+        ?? paletteSourceHex(node.mesh?.material?.color)
+        ?? paletteSourceHex(node.mesh?.color)
+        ?? paletteSourceHex(node.color)
     }] as [string, { text: string; sourceColor?: string }]];
   }));
 }
@@ -1258,6 +1261,12 @@ function paletteSourceHex(value: unknown): string | undefined {
   return typeof value === 'string' && /^#[0-9a-f]{6}$/i.test(value.trim())
     ? value.trim().toUpperCase()
     : undefined;
+}
+
+function paletteTagColor(tags: unknown): string | undefined {
+  if (!Array.isArray(tags)) return undefined;
+  const tag = tags.find((entry) => entry && typeof entry === 'object' && (entry as { tag?: unknown }).tag === 'palette-color');
+  return paletteSourceHex(tag && typeof tag === 'object' ? (tag as { value?: unknown }).value : undefined);
 }
 
 function applyObjectTransform(group: THREE.Group, object: MapObject): void {
@@ -1891,7 +1900,7 @@ const TERRAIN_RECIPE_COLORS = {
   'garden-stone': '#aaa69a',
   asphalt: '#555b5e',
   concrete: '#9d9a91',
-  'brick-paver': '#a86f58',
+  'brick-paver': '#b45738',
   cobblestone: '#85847f',
   gravel: '#847867',
   mud: '#654832'
@@ -1902,7 +1911,7 @@ const TERRAIN_RECIPE_CHANNEL_COLORS = {
   'garden-stone': { roughness: '#d2d2d2', bump: '#888888' },
   asphalt: { roughness: '#9a9a9a', bump: '#7b7b7b' },
   concrete: { roughness: '#d0d0d0', bump: '#8d8d8d' },
-  'brick-paver': { roughness: '#d0d0d0', bump: '#929292' },
+  'brick-paver': { roughness: '#d0d0d0', bump: '#909090' },
   cobblestone: { roughness: '#dedede', bump: '#9c9c9c' },
   gravel: { roughness: '#e5e5e5', bump: '#a4a4a4' },
   mud: { roughness: '#a8a8a8', bump: '#8d8d8d' }
@@ -2023,30 +2032,7 @@ function drawTerrainRecipeDetails(
       continue;
     }
     if (zone.material === 'brick-paver') {
-      forEachPathSample(region.points, Math.max(0.42, region.width * 0.18), (sample) => {
-        const center = surfaceCanvasPoint(map, [sample.x, sample.z], width, height);
-        const angle = Math.atan2(-sample.tangentZ, sample.tangentX);
-        const brickWidth = Math.max(2, pixelsPerMetre * 0.34);
-        const brickHeight = Math.max(1.4, pixelsPerMetre * 0.18);
-        const lanes = Math.max(2, Math.floor(region.width / 0.45));
-        for (let lane = 0; lane < lanes; lane += 1) {
-          const across = (lane + 0.5) / lanes - 0.5;
-          ctx.save();
-          ctx.translate(
-            center[0] + -sample.tangentZ * across * region.width * pixelsPerMetre,
-            center[1] + -sample.tangentX * across * region.width * pixelsPerMetre
-          );
-          ctx.rotate(angle);
-          ctx.fillStyle = random() > 0.5
-            ? terrainRecipeDetailInk(channel, 'rgba(105, 45, 32, 0.42)', '#c0c0c0', '#a8a8a8')
-            : terrainRecipeDetailInk(channel, 'rgba(233, 174, 137, 0.34)', '#dedede', '#c5c5c5');
-          ctx.fillRect(-brickWidth / 2, -brickHeight / 2, brickWidth, brickHeight);
-          ctx.strokeStyle = terrainRecipeDetailInk(channel, 'rgba(58, 44, 39, 0.42)', '#949494', '#4f4f4f');
-          ctx.lineWidth = Math.max(0.8, pixelsPerMetre * 0.045);
-          ctx.strokeRect(-brickWidth / 2, -brickHeight / 2, brickWidth, brickHeight);
-          ctx.restore();
-        }
-      });
+      drawBrickPaverDetails(ctx, map, region, width, height, channel, random);
       continue;
     }
     if (zone.material === 'cobblestone' || zone.material === 'gravel') {
@@ -2116,6 +2102,61 @@ function drawTerrainRecipeDetails(
     }
     ctx.restore();
   }
+}
+
+function drawBrickPaverDetails(
+  ctx: CanvasRenderingContext2D,
+  map: EditableMap,
+  region: { points: readonly [number, number][]; width: number },
+  width: number,
+  height: number,
+  channel: TerrainRecipeDetailChannel,
+  random: () => number
+): void {
+  const pixelsPerMetre = (width / map.box.size[0] + height / map.box.size[2]) * 0.5;
+  const brickLength = 0.9;
+  const lanes = Math.max(2, Math.round(region.width / 0.42));
+  const rowWidth = region.width / lanes;
+
+  ctx.save();
+  drawCanvasPath(ctx, map, region.points, width, height);
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  ctx.strokeStyle = terrainRecipeDetailInk(channel, 'rgba(182, 175, 159, 0.72)', '#d7d7d7', '#8d8d8d');
+  ctx.lineWidth = Math.max(1, region.width * pixelsPerMetre * 0.98);
+  ctx.stroke();
+  drawCanvasPath(ctx, map, region.points, width, height);
+  ctx.strokeStyle = terrainRecipeDetailInk(channel, '#b45738', '#d0d0d0', '#909090');
+  ctx.lineWidth = Math.max(1, region.width * pixelsPerMetre * 0.86);
+  ctx.stroke();
+  ctx.restore();
+
+  forEachPathSample(region.points, brickLength, (sample) => {
+    const center = surfaceCanvasPoint(map, [sample.x, sample.z], width, height);
+    const angle = Math.atan2(-sample.tangentZ, sample.tangentX);
+    for (let lane = 0; lane < lanes; lane += 1) {
+      const across = (lane + 0.5) / lanes - 0.5;
+      const stagger = lane % 2 === 0 ? 0 : brickLength * 0.5;
+      const brickWidth = brickLength * pixelsPerMetre * (0.9 + random() * 0.04);
+      const brickHeight = Math.min(rowWidth * 0.78, brickLength * 0.45) * pixelsPerMetre;
+      ctx.save();
+      ctx.translate(
+        center[0] + sample.tangentX * stagger * pixelsPerMetre
+          - sample.tangentZ * across * region.width * pixelsPerMetre,
+        center[1] - sample.tangentZ * stagger * pixelsPerMetre
+          - sample.tangentX * across * region.width * pixelsPerMetre
+      );
+      ctx.rotate(angle);
+      ctx.fillStyle = random() > 0.5
+        ? terrainRecipeDetailInk(channel, '#aa472f', '#cccccc', '#969696')
+        : terrainRecipeDetailInk(channel, '#c96948', '#d5d5d5', '#999999');
+      ctx.fillRect(-brickWidth / 2, -brickHeight / 2, brickWidth, brickHeight);
+      ctx.strokeStyle = terrainRecipeDetailInk(channel, '#773323', '#c0c0c0', '#858585');
+      ctx.lineWidth = Math.max(0.55, pixelsPerMetre * 0.025);
+      ctx.strokeRect(-brickWidth / 2, -brickHeight / 2, brickWidth, brickHeight);
+      ctx.restore();
+    }
+  });
 }
 
 function drawCutStoneSidewalkDetails(

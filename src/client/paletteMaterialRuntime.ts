@@ -7,7 +7,7 @@ import {
 } from '../shared/colorPalette';
 
 export interface PalettePartResolution {
-  role: ColorPaletteRole;
+  role: ColorPaletteRole | string;
   variantKey: string;
   assetId?: string;
   assetTags?: string[];

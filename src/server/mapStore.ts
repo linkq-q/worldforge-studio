@@ -67,7 +67,7 @@ export interface MapStoreOptions {
   rootDir?: string;
   /** Read-only, Git LFS-managed panoramas shipped with this checkout. */
   sharedHdriDir?: string;
-  /** Golden maps/assets copied only when a new data directory is empty. */
+  /** Golden maps/assets seed empty data; newly shipped schemes/palettes are added once without overwriting local files. */
   starterDataDir?: string | null;
 }
 
@@ -150,38 +150,58 @@ export class MapStore {
     await mkdir(this.renderSchemesDir, { recursive: true });
     await mkdir(this.colorPalettesDir, { recursive: true });
     await mkdir(this.hdriDir, { recursive: true });
-    await this.seedStarterDataIfEmpty();
+    await this.syncStarterData();
   }
 
-  private async seedStarterDataIfEmpty(): Promise<void> {
+  private async syncStarterData(): Promise<void> {
     if (!this.starterDataDir) return;
-    if (await readFile(this.starterSeedPath).catch(() => null)) return;
-    const [maps, assets, schemes, palettes] = await Promise.all([
-      readdir(this.mapsDir).catch(() => []),
-      readdir(this.assetsDir).catch(() => []),
-      readdir(this.renderSchemesDir).catch(() => []),
-      readdir(this.colorPalettesDir).catch(() => [])
-    ]);
-    if ([...maps, ...assets, ...schemes, ...palettes].some((file) => file.endsWith('.json'))) {
-      await atomicWriteJson(this.starterSeedPath, { status: 'existing-data', createdAt: Date.now() });
-      return;
-    }
     const manifest = await readFile(path.join(this.starterDataDir, 'manifest.json')).catch(() => null);
     if (!manifest) return;
+    const seed = await readFile(this.starterSeedPath, 'utf8').then((text) => JSON.parse(text) as {
+      status?: string;
+      createdAt?: number;
+      files?: string[];
+    }).catch(() => null);
+    let status = seed?.status ?? 'existing-data';
+    if (!seed) {
+      const existingFiles = await Promise.all([
+        readdir(this.mapsDir).catch(() => []),
+        readdir(this.assetsDir).catch(() => []),
+        readdir(this.renderSchemesDir).catch(() => []),
+        readdir(this.colorPalettesDir).catch(() => [])
+      ]);
+      status = existingFiles.some((files) => files.some((file) => file.endsWith('.json')))
+        ? 'existing-data'
+        : 'seeded';
+    }
 
-    for (const directory of ['maps', 'assets', 'render-schemes', 'color-palettes']) {
+    const handledFiles = new Set(seed?.files ?? []);
+    const directories = seed || status === 'existing-data'
+      ? ['render-schemes', 'color-palettes']
+      : ['maps', 'assets', 'render-schemes', 'color-palettes'];
+    let changed = !seed;
+    for (const directory of directories) {
       const source = path.join(this.starterDataDir, directory);
       const target = path.join(this.rootDir, directory);
       const files = await readdir(source).catch(() => []);
-      await Promise.all(files.filter((file) => file.endsWith('.json')).map((file) => copyFile(
+      const pending = files.filter((file) => file.endsWith('.json') && !handledFiles.has(`${directory}/${file}`));
+      await Promise.all(pending.map((file) => copyFile(
         path.join(source, file),
         path.join(target, file),
         fsConstants.COPYFILE_EXCL
       ).catch((error: NodeJS.ErrnoException) => {
         if (error.code !== 'EEXIST') throw error;
       })));
+      for (const file of pending) handledFiles.add(`${directory}/${file}`);
+      changed ||= pending.length > 0;
     }
-    await atomicWriteJson(this.starterSeedPath, { status: 'seeded', createdAt: Date.now() });
+    if (changed) {
+      await atomicWriteJson(this.starterSeedPath, {
+        status,
+        createdAt: seed?.createdAt ?? Date.now(),
+        files: [...handledFiles].sort()
+      });
+    }
   }
 
   async listMapSummaries(): Promise<MapSummary[]> {

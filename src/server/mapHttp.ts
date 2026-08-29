@@ -19,6 +19,8 @@ import {
 } from '../shared/protocol';
 import {
   applyMapOperations,
+  type CodePlanAssetReadyPayload,
+  type CodePlanPreviewPayload,
   type MapAiSuggestion,
   type MapOperation,
   type MapTransactionRequest,
@@ -57,7 +59,7 @@ import {
   type ProjectExportPlan
 } from './projectExport';
 import type { ProjectExportProfile } from '../shared/projectExport';
-import { paletteGenerationBrief, type ColorPalette } from '../shared/colorPalette';
+import { applyPaletteToModelJson, paletteGenerationBrief, type ColorPalette } from '../shared/colorPalette';
 import { worldCapabilitySummary } from '../shared/worldCapabilities';
 import { WorldAgentRunManager } from './worldAgentRuns';
 
@@ -544,6 +546,12 @@ async function handleEditorMaps(req: Req, res: Res, store: MapStore, parts: stri
     const onPreview = stream
       ? (suggestion: MapAiSuggestion) => sendSse(res, 'preview', { suggestion })
       : undefined;
+    const onPlanPreview = stream
+      ? (plan: CodePlanPreviewPayload) => sendSse(res, 'plan', plan)
+      : undefined;
+    const onAssetReady = stream
+      ? (event: CodePlanAssetReadyPayload) => sendSse(res, 'asset-ready', event)
+      : undefined;
     const abort = () => controller.abort();
     const abortIfOpen = () => {
       if (!res.writableEnded) abort();
@@ -596,6 +604,8 @@ async function handleEditorMaps(req: Req, res: Res, store: MapStore, parts: stri
             focusPrompt: body.focusPrompt,
             discoveryOnly: true,
             onProgress,
+            onPlanPreview,
+            onAssetReady,
             createAsset: async () => { throw new Error('discovery_only_asset_generation'); }
           });
           if (stream) {
@@ -641,8 +651,10 @@ async function handleEditorMaps(req: Req, res: Res, store: MapStore, parts: stri
           refinableObjectIds,
           onProgress,
           onPreview,
+          onPlanPreview,
+          onAssetReady,
           createAsset: async (request, report) => {
-            const modelJson = await generateMapAssetWithRetry(request.name, () => generateModel(request.prompt, {
+            const generatedModelJson = await generateMapAssetWithRetry(request.name, () => generateModel(request.prompt, {
                 mode: request.mode,
                 providers: [modelProvider],
                 signal: controller.signal,
@@ -655,6 +667,9 @@ async function handleEditorMaps(req: Req, res: Res, store: MapStore, parts: stri
                 detail: event.detail ?? event.label
               })
             });
+            const modelJson = colorPalette
+              ? applyPaletteToModelJson(generatedModelJson, colorPalette)
+              : generatedModelJson;
             return store.saveAsset({
               name: request.name,
               prompt: request.prompt,
@@ -799,11 +814,17 @@ async function handleEditorAssets(req: Req, res: Res, store: MapStore, parts: st
       tags?: string[];
       light?: MapAssetLight;
       mode?: ModelGenerationMode;
+      paletteId?: string;
     }>(req);
     const prompt = body.prompt?.trim();
     if (!prompt) throw new HttpError(400, 'missing_prompt');
     const mode = normalizeModelGenerationMode(body.mode);
-    const modelJson = await generateModel(prompt, { mode });
+    const colorPalette = body.paletteId ? await store.loadColorPalette(body.paletteId) : null;
+    const directedPrompt = colorPalette ? `${prompt}\n\n${paletteGenerationBrief(colorPalette)}` : prompt;
+    const generatedModelJson = await generateModel(directedPrompt, { mode });
+    const modelJson = colorPalette
+      ? applyPaletteToModelJson(generatedModelJson, colorPalette)
+      : generatedModelJson;
     const asset = await store.saveAsset({ prompt, name: body.name, tags: body.tags, light: body.light, modelJson, mode });
     sendJson(res, 201, { asset });
     return;

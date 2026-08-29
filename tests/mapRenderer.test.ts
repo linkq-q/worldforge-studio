@@ -473,10 +473,11 @@ describe('structured map water rendering', () => {
     viewer.dispose();
   });
 
-  it('draws fine asphalt grain and cut-stone sidewalks without ink-like blobs', async () => {
-    const strokes: Array<{ dash: number[]; style: unknown }> = [];
-    const fillRects: number[][] = [];
-    let strokeRects = 0;
+  it('draws fine asphalt, cut-stone sidewalks, and staggered long brick pavers', async () => {
+    const strokes: Array<{ dash: number[]; style: unknown; width: number }> = [];
+    const fillRects: Array<{ args: number[]; style: unknown }> = [];
+    const strokeRects: Array<{ args: number[]; style: unknown }> = [];
+    const translations: number[][] = [];
     let ellipses = 0;
     const state: Record<PropertyKey, unknown> = { dash: [] };
     const stack: Array<Record<PropertyKey, unknown>> = [];
@@ -484,9 +485,14 @@ describe('structured map water rendering', () => {
       save: () => stack.push({ ...state }),
       restore: () => Object.assign(state, stack.pop() ?? {}),
       setLineDash: (dash: number[]) => { state.dash = [...dash]; },
-      stroke: () => strokes.push({ dash: [...(state.dash as number[])], style: state.strokeStyle }),
-      fillRect: (...args: number[]) => fillRects.push(args),
-      strokeRect: () => { strokeRects += 1; },
+      stroke: () => strokes.push({
+        dash: [...(state.dash as number[])],
+        style: state.strokeStyle,
+        width: Number(state.lineWidth ?? 0)
+      }),
+      fillRect: (...args: number[]) => fillRects.push({ args, style: state.fillStyle }),
+      strokeRect: (...args: number[]) => strokeRects.push({ args, style: state.strokeStyle }),
+      translate: (...args: number[]) => translations.push(args),
       ellipse: () => { ellipses += 1; },
       createRadialGradient: () => ({ addColorStop: () => undefined })
     }, {
@@ -502,6 +508,13 @@ describe('structured map water rendering', () => {
       createElement: () => ({ width: 0, height: 0, getContext: () => context })
     });
     const map = applyMapOperations(createEmptyMap('street material detail'), [
+      {
+        type: 'terrain.surface',
+        surface: 'paving',
+        material: 'brick-paver',
+        region: { kind: 'path', points: [[-20, -8], [20, -8]], width: 4 },
+        zoneId: 'code:route:market-pavers'
+      },
       {
         type: 'terrain.surface',
         surface: 'paving',
@@ -521,9 +534,15 @@ describe('structured map water rendering', () => {
     const rendered = await buildEditableMapGroup(map);
 
     expect(ellipses).toBe(0);
-    expect(fillRects.filter(([, , width, height]) => width <= 2 && height <= 2).length).toBeGreaterThan(100);
-    expect(strokeRects).toBeGreaterThan(20);
+    expect(fillRects.filter(({ args: [, , width, height] }) => width <= 2 && height <= 2).length).toBeGreaterThan(100);
+    expect(strokeRects.length).toBeGreaterThan(20);
     expect(strokes.some((stroke) => stroke.dash.length === 2)).toBe(true);
+    const longPavers = strokeRects.filter(({ args: [, , width, height] }) => width >= height * 2);
+    expect(longPavers.length).toBeGreaterThan(800);
+    expect(longPavers.length).toBeLessThan(1_600);
+    expect(fillRects.some(({ style }) => style === '#c96948' || style === '#aa472f')).toBe(true);
+    expect(translations[0][0]).not.toBeCloseTo(translations[1][0]);
+    expect(strokeRects.some(({ style }) => style === '#4f4f4f')).toBe(false);
     rendered.dispose();
   });
 

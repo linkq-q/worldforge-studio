@@ -138,6 +138,61 @@ describe('portable WorldForge scene packages', () => {
     expect(JSON.parse(await readFile(path.join(rootDir, '.starter-seed.json'), 'utf8'))).toMatchObject({ status: 'seeded' });
   });
 
+  it('adds newly shipped shared schemes and palettes to existing data without overwriting local files', async () => {
+    const rootDir = await mkdtemp(path.join(os.tmpdir(), 'worldforge-existing-data-'));
+    const starterDataDir = await mkdtemp(path.join(os.tmpdir(), 'worldforge-updated-starter-'));
+    tempDirs.push(rootDir, starterDataDir);
+    await Promise.all([
+      mkdir(path.join(rootDir, 'color-palettes'), { recursive: true }),
+      mkdir(path.join(starterDataDir, 'render-schemes'), { recursive: true }),
+      mkdir(path.join(starterDataDir, 'color-palettes'), { recursive: true })
+    ]);
+    await Promise.all([
+      writeFile(path.join(rootDir, '.starter-seed.json'), JSON.stringify({ status: 'existing-data', createdAt: 1 })),
+      writeFile(path.join(rootDir, 'color-palettes', 'palette-local.json'), JSON.stringify({
+        id: 'palette-local',
+        name: 'Local palette',
+        colors: ['#123456', '#654321']
+      })),
+      writeFile(path.join(starterDataDir, 'manifest.json'), JSON.stringify({ kind: 'worldforge-starter-data' })),
+      writeFile(path.join(starterDataDir, 'render-schemes', 'render-shared.json'), JSON.stringify({
+        id: 'render-shared',
+        name: 'Shared scheme'
+      })),
+      writeFile(path.join(starterDataDir, 'color-palettes', 'palette-shared.json'), JSON.stringify({
+        id: 'palette-shared',
+        name: 'Shared palette',
+        colors: ['#ABCDEF', '#FEDCBA']
+      })),
+      writeFile(path.join(starterDataDir, 'color-palettes', 'palette-local.json'), JSON.stringify({
+        id: 'palette-local',
+        name: 'Starter replacement',
+        colors: ['#FFFFFF', '#000000']
+      }))
+    ]);
+
+    const store = new MapStore({ rootDir, starterDataDir });
+    await store.ensureReady();
+
+    expect((await store.loadRenderScheme('render-shared')).name).toBe('Shared scheme');
+    expect((await store.loadColorPalette('palette-shared')).name).toBe('Shared palette');
+    expect((await store.loadColorPalette('palette-local')).name).toBe('Local palette');
+
+    await Promise.all([
+      rm(path.join(rootDir, 'render-schemes', 'render-shared.json')),
+      rm(path.join(rootDir, 'color-palettes', 'palette-shared.json')),
+      writeFile(path.join(starterDataDir, 'color-palettes', 'palette-later.json'), JSON.stringify({
+        id: 'palette-later',
+        name: 'Later palette',
+        colors: ['#112233', '#445566']
+      }))
+    ]);
+    await store.ensureReady();
+    expect((await store.loadColorPalette('palette-later')).name).toBe('Later palette');
+    await expect(store.loadRenderScheme('render-shared')).rejects.toThrow();
+    await expect(store.loadColorPalette('palette-shared')).rejects.toThrow();
+  });
+
   it('rejects a map whose referenced assets are not embedded', async () => {
     const store = await createStore();
     const source = createEmptyMap('坏包');
