@@ -41,22 +41,36 @@ describe('first-person play mode', () => {
     expect(Math.abs(wadingStep.position[2] - entered.position[2])).toBeCloseTo(0.21 * 0.62, 4);
   });
 
-  it('only bends nearby grass instances and restores their baseline matrices', () => {
+  it('bends grass in the shader without rewriting instance matrices', () => {
     const root = new THREE.Group();
-    const mesh = new THREE.InstancedMesh(new THREE.PlaneGeometry(), new THREE.MeshBasicMaterial(), 2);
+    const material = new THREE.MeshBasicMaterial();
+    material.userData.grassUniforms = {};
+    const mesh = new THREE.InstancedMesh(new THREE.PlaneGeometry(), material, 2);
     mesh.userData.grassBladeCount = 2;
     mesh.setMatrixAt(0, new THREE.Matrix4().makeTranslation(0.4, 0, 0));
     mesh.setMatrixAt(1, new THREE.Matrix4().makeTranslation(8, 0, 0));
     root.add(mesh);
     const interaction = new MapGrassInteraction(root, 1.5);
-    const beforeNear = matrixAt(mesh, 0);
-    const beforeFar = matrixAt(mesh, 1);
+    const before = Array.from(mesh.instanceMatrix.array);
+    const shader: any = {
+      uniforms: {},
+      vertexShader: `#include <common>
+uniform float uGrassNormalFlatten;
+#include <begin_vertex>
+transformed += grassLocalWind * (grassWave * uGrassWindStrength * vGrassBladeT * vGrassBladeT);
+#include <defaultnormal_vertex>`,
+      fragmentShader: ''
+    };
 
     interaction.update([0, 0, 0], 1);
-    expect(matrixAt(mesh, 0).elements).not.toEqual(beforeNear.elements);
-    expect(matrixAt(mesh, 1).elements).toEqual(beforeFar.elements);
+    material.onBeforeCompile(shader, {} as never);
+    expect(shader.vertexShader).toContain('uGrassInteractionPosition');
+    expect(shader.vertexShader).toContain('grassInteractionInfluence');
+    expect(shader.uniforms).toHaveProperty('uGrassInteractionStrength');
+    expect(shader.uniforms.uGrassInteractionStrength.value).toBe(0.48);
+    expect(Array.from(mesh.instanceMatrix.array)).toEqual(before);
     interaction.restore();
-    expect(matrixAt(mesh, 0).elements).toEqual(beforeNear.elements);
+    expect(shader.uniforms.uGrassInteractionStrength.value).toBe(0);
   });
 });
 
@@ -80,10 +94,4 @@ function lake(): MapWaterBody {
     width: 2,
     points: [[-3, -3], [3, -3], [3, 3], [-3, 3]]
   };
-}
-
-function matrixAt(mesh: THREE.InstancedMesh, index: number): THREE.Matrix4 {
-  const matrix = new THREE.Matrix4();
-  mesh.getMatrixAt(index, matrix);
-  return matrix;
 }
