@@ -1,0 +1,2897 @@
+{
+  "id": "asset-80cbf2e9-1a1f-411e",
+  "name": "炼金植物 3",
+  "prompt": "九种浅亮奇幻炼金植物道具，固定顺序：第1至4种为仍在栽培的不同药材盆栽，叶形、枝态和药用特征明显不同，盆内可见泥土；第5至6种为只有泥土而没有植物的空栽培盆，与前四种盆器属于同一设计家族，但盆口、刻纹、足座和釉面分区有所区别；第7种为已采摘的叶片、根茎和干燥花枝组成的炼金素材束，不带花盆；第8至9种为公司入口尺度的大型观赏盆栽，分别是挺拔宽叶型和舒展树形。普通材质颜色仅可选自：#FFFDF6,#FEF9EA,#FDF2D7,#E9DABD,#CDBA97,#F8E8CF,#F1D7B2,#E7C393,#C9A06E,#9E7A55,#FFF7A8,#FCEF72,#F6E24B,#D1B825,#9C8510,#FFF3B7,#FDE674,#FCD75F,#FECD4D,#D1900B,#FFE2A0,#FFD170,#F8BC44,#E39F1A,#A96F05,#FBE3BD,#FDD8A3,#FDCC8F,#F1AD69,#D99256,#FFD2BA,#FFB08A,#FF8A5B,#F06B3E,#B84A27,#EAF9FF,#DAF2F5,#95E5F9,#76D0F\nCoordinate contract: local Y+ is up, local Z+ is the front, entrance, or forward direction, and local X+ is right. Put doors, facades, openings, windshields, noses, seats, and other recognizable front details toward local Z+. For a modular repeated element, explicitly choose the long axis: side-by-side modules span local X with depth/front on local Z; traversal modules span local Z. Keep the model centered at its origin.\nCanonical dimensions contract: width=1, height=1.4, depth=1 world units. Keep the generated mesh within this centered bounding size.\nCreate variation 3 of 8; preserve the same reusable asset family while varying silhouette and details.",
+  "tags": [
+    "indoor",
+    "alchemy",
+    "plant",
+    "herb",
+    "potted",
+    "soil"
+  ],
+  "modelJson": {
+    "name": "浅亮奇幻炼金植物道具·变化3",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "item07_bundle",
+        "name": "第7种·采摘炼金素材束",
+        "transform": {
+          "pos": [
+            -0.305,
+            -0.41,
+            -0.33
+          ]
+        },
+        "_obb": {
+          "size": [
+            1.3,
+            1.067,
+            1.563
+          ],
+          "center": [
+            0.42,
+            0.108,
+            0.229
+          ],
+          "axes": [
+            [
+              0.7103,
+              -0.0666,
+              0.7007
+            ],
+            [
+              -0.3665,
+              0.8149,
+              0.449
+            ],
+            [
+              -0.6009,
+              -0.5758,
+              0.5545
+            ]
+          ],
+          "_mainAxis": 2
+        }
+      },
+      {
+        "id": "item01_pot",
+        "name": "第1种·星瓣药草盆栽",
+        "parent": "item07_bundle",
+        "transform": {
+          "pos": [
+            -0.035,
+            -0.1108,
+            0.682
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.16,
+            0.233,
+            0.231
+          ],
+          "center": [
+            0,
+            -0.009,
+            -0.032
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              0.738,
+              -0.6748
+            ],
+            [
+              0,
+              0.6748,
+              0.738
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "item01_plant",
+        "name": "星瓣药草",
+        "parent": "item07_bundle",
+        "transform": {
+          "pos": [
+            -0.035,
+            0.155,
+            0.65
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.178,
+            0.3,
+            0.06
+          ],
+          "center": [
+            0.002,
+            -0.036,
+            0
+          ],
+          "axes": [
+            [
+              0.9949,
+              -0.101,
+              0
+            ],
+            [
+              0.101,
+              0.9949,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "item02_pot",
+        "name": "第2种·宽叶蜜药盆栽",
+        "parent": "item07_bundle",
+        "transform": {
+          "pos": [
+            0.305,
+            -0.1108,
+            0.6836
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.16,
+            0.233,
+            0.23
+          ],
+          "center": [
+            0,
+            -0.009,
+            -0.033
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              0.7529,
+              -0.6582
+            ],
+            [
+              0,
+              0.6582,
+              0.7529
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "item02_plant",
+        "name": "宽叶蜜药",
+        "parent": "item07_bundle",
+        "transform": {
+          "pos": [
+            0.3075,
+            0.165,
+            0.65
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.25,
+            0.298,
+            0.075
+          ],
+          "center": [
+            0.002,
+            -0.046,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              -0.0026,
+              0
+            ],
+            [
+              0.0026,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "item03_pot",
+        "name": "第3种·垂枝露珠草盆栽",
+        "parent": "item07_bundle",
+        "transform": {
+          "pos": [
+            0.645,
+            -0.1108,
+            0.6861
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.16,
+            0.215,
+            0.182
+          ],
+          "center": [
+            0,
+            -0.009,
+            -0.038
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              0.9754,
+              0.2204
+            ],
+            [
+              0,
+              -0.2204,
+              0.9754
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "item03_plant",
+        "name": "垂枝露珠草",
+        "parent": "item07_bundle",
+        "transform": {
+          "pos": [
+            0.705,
+            0.155,
+            0.65
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.187,
+            0.301,
+            0.089
+          ],
+          "center": [
+            -0.007,
+            -0.016,
+            0.003
+          ],
+          "axes": [
+            [
+              0.9291,
+              0.3646,
+              0.0613
+            ],
+            [
+              -0.3456,
+              0.9153,
+              -0.2066
+            ],
+            [
+              -0.1314,
+              0.1708,
+              0.9765
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "item04_pot",
+        "name": "第4种·双根冠叶盆栽",
+        "parent": "item07_bundle",
+        "transform": {
+          "pos": [
+            -0.035,
+            -0.1108,
+            0.33
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.16,
+            0.192,
+            0.152
+          ],
+          "center": [
+            0,
+            -0.008,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "item04_plant",
+        "name": "双根冠叶药材",
+        "parent": "item07_bundle",
+        "transform": {
+          "pos": [
+            -0.04,
+            0.15,
+            0.33
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.181,
+            0.293,
+            0.075
+          ],
+          "center": [
+            0.006,
+            -0.036,
+            0
+          ],
+          "axes": [
+            [
+              0.9984,
+              0.0559,
+              0
+            ],
+            [
+              -0.0559,
+              0.9984,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "item05_empty_pot",
+        "name": "第5种·宽口刻纹空盆",
+        "parent": "item07_bundle",
+        "transform": {
+          "pos": [
+            0.305,
+            -0.1093,
+            0.3651
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.176,
+            0.242,
+            0.23
+          ],
+          "center": [
+            0,
+            -0.009,
+            -0.036
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              0.8739,
+              0.4861
+            ],
+            [
+              0,
+              -0.4861,
+              0.8739
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "item05_marks",
+        "name": "宽口刻纹",
+        "parent": "item07_bundle",
+        "transform": {
+          "pos": [
+            0.305,
+            -0.13,
+            0.414
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.108,
+            0.07,
+            0.012
+          ],
+          "center": [
+            0,
+            0,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "item06_empty_pot",
+        "name": "第6种·高足分釉空盆",
+        "parent": "item07_bundle",
+        "transform": {
+          "pos": [
+            0.645,
+            -0.1101,
+            0.3653
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.168,
+            0.241,
+            0.236
+          ],
+          "center": [
+            0,
+            -0.009,
+            -0.035
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              0.763,
+              0.6464
+            ],
+            [
+              0,
+              -0.6464,
+              0.763
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "item06_feet",
+        "name": "高足座",
+        "parent": "item07_bundle",
+        "transform": {
+          "pos": [
+            0.645,
+            -0.235,
+            0.29
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.155,
+            0.055,
+            0.045
+          ],
+          "center": [
+            0,
+            0,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "item08_large_pot",
+        "name": "第8种·入口宽叶观赏盆栽",
+        "parent": "item07_bundle",
+        "transform": {
+          "pos": [
+            0.305,
+            -0.1066,
+            0.0562
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.205,
+            0.228,
+            0.202
+          ],
+          "center": [
+            0,
+            0,
+            -0.049
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              0.997,
+              0.0771
+            ],
+            [
+              0,
+              -0.0771,
+              0.997
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "item08_plant",
+        "name": "挺拔宽叶冠",
+        "parent": "item07_bundle",
+        "transform": {
+          "pos": [
+            0.3075,
+            0.39,
+            0.01
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.303,
+            0.684,
+            0.085
+          ],
+          "center": [
+            -0.004,
+            -0.074,
+            0
+          ],
+          "axes": [
+            [
+              0.9966,
+              -0.0828,
+              0
+            ],
+            [
+              0.0828,
+              0.9966,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "item09_large_pot",
+        "name": "第9种·入口舒展树形观赏盆栽",
+        "parent": "item07_bundle",
+        "transform": {
+          "pos": [
+            0.645,
+            -0.1066,
+            0.0509
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.205,
+            0.253,
+            0.231
+          ],
+          "center": [
+            0,
+            -0.001,
+            -0.042
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              0.9624,
+              0.2716
+            ],
+            [
+              0,
+              -0.2716,
+              0.9624
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "item09_tree",
+        "name": "舒展树冠",
+        "parent": "item07_bundle",
+        "transform": {
+          "pos": [
+            0.635,
+            0.43,
+            0.01
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.393,
+            0.763,
+            0.16
+          ],
+          "center": [
+            0,
+            -0.069,
+            0
+          ],
+          "axes": [
+            [
+              0.9996,
+              -0.0265,
+              0.002
+            ],
+            [
+              0.0265,
+              0.9996,
+              0.0006
+            ],
+            [
+              -0.002,
+              -0.0005,
+              1
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "item01_pot",
+        "transform": {
+          "pos": [
+            0,
+            -0.0812,
+            -0.032
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.1558,
+            "height": 0.045099999999999994,
+            "depth": 0.1394
+          },
+          "color": 7770188
+        }
+      },
+      {
+        "id": "m1",
+        "parent": "item01_pot",
+        "transform": {
+          "pos": [
+            0,
+            0.0291,
+            -0.032
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.1394,
+            "height": 0.1066,
+            "depth": 0.12299999999999998
+          },
+          "color": 7770188
+        }
+      },
+      {
+        "id": "m2",
+        "parent": "item01_pot",
+        "transform": {
+          "pos": [
+            0,
+            0.0648,
+            -0.032
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.1599,
+            "height": 0.0287,
+            "depth": 0.1517
+          },
+          "color": 7770188
+        }
+      },
+      {
+        "id": "m3",
+        "parent": "item01_pot",
+        "transform": {
+          "pos": [
+            0,
+            0.0812,
+            -0.032
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.11889999999999998,
+            "height": 0.014759999999999999,
+            "depth": 0.1107
+          },
+          "color": 10386005
+        }
+      },
+      {
+        "id": "m4",
+        "parent": "item01_pot",
+        "transform": {
+          "pos": [
+            0,
+            -0.0192,
+            0.032
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.09839999999999999,
+            "height": 0.014759999999999999,
+            "depth": 0.00984
+          },
+          "color": 15325885
+        }
+      },
+      {
+        "id": "m5",
+        "parent": "item01_plant",
+        "transform": {
+          "pos": [
+            0,
+            -0.075,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.025,
+            "height": 0.22,
+            "depth": 0.025
+          },
+          "color": 10257680
+        }
+      },
+      {
+        "id": "m6",
+        "parent": "item01_plant",
+        "transform": {
+          "pos": [
+            -0.045,
+            -0.085,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.09,
+            "height": 0.035,
+            "depth": 0.06
+          },
+          "color": 15325885
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m7",
+        "parent": "item01_plant",
+        "transform": {
+          "pos": [
+            0.045,
+            -0.035,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.09,
+            "height": 0.035,
+            "depth": 0.06
+          },
+          "color": 15325885
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m8",
+        "parent": "item01_plant",
+        "transform": {
+          "pos": [
+            0,
+            0.03,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.12,
+            "height": 0.025,
+            "depth": 0.055
+          },
+          "color": 15325885
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m9",
+        "parent": "item01_plant",
+        "transform": {
+          "pos": [
+            0,
+            0.085,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.055,
+            "height": 0.055,
+            "depth": 0.055
+          },
+          "color": 15325885
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m10",
+        "parent": "item02_pot",
+        "transform": {
+          "pos": [
+            0,
+            -0.0812,
+            -0.0336
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.1558,
+            "height": 0.045099999999999994,
+            "depth": 0.1394
+          },
+          "color": 15188883
+        }
+      },
+      {
+        "id": "m11",
+        "parent": "item02_pot",
+        "transform": {
+          "pos": [
+            0,
+            0.0291,
+            -0.0336
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.12299999999999998,
+            "height": 0.1066,
+            "depth": 0.1394
+          },
+          "color": 15325885
+        }
+      },
+      {
+        "id": "m12",
+        "parent": "item02_pot",
+        "transform": {
+          "pos": [
+            0,
+            0.0648,
+            -0.0336
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.1599,
+            "height": 0.0287,
+            "depth": 0.1517
+          },
+          "color": 15188883
+        }
+      },
+      {
+        "id": "m13",
+        "parent": "item02_pot",
+        "transform": {
+          "pos": [
+            0,
+            0.0812,
+            -0.0336
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.11889999999999998,
+            "height": 0.014759999999999999,
+            "depth": 0.1107
+          },
+          "color": 10386005
+        }
+      },
+      {
+        "id": "m14",
+        "parent": "item02_pot",
+        "transform": {
+          "pos": [
+            0,
+            -0.0292,
+            0.0336
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.0205,
+            "height": 0.06559999999999999,
+            "depth": 0.00984
+          },
+          "color": 15325885
+        }
+      },
+      {
+        "id": "m15",
+        "parent": "item02_plant",
+        "transform": {
+          "pos": [
+            -0.0025,
+            -0.075,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.03,
+            "height": 0.24,
+            "depth": 0.03
+          },
+          "color": 11448175
+        }
+      },
+      {
+        "id": "m16",
+        "parent": "item02_plant",
+        "transform": {
+          "pos": [
+            -0.0675,
+            -0.04,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.11,
+            "height": 0.055,
+            "depth": 0.07
+          },
+          "color": 15325885
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m17",
+        "parent": "item02_plant",
+        "transform": {
+          "pos": [
+            0.0675,
+            0.015,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.12,
+            "height": 0.06,
+            "depth": 0.075
+          },
+          "color": 15325885
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m18",
+        "parent": "item02_plant",
+        "transform": {
+          "pos": [
+            -0.0475,
+            0.075,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.1,
+            "height": 0.055,
+            "depth": 0.065
+          },
+          "color": 15325885
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m19",
+        "parent": "item03_pot",
+        "transform": {
+          "pos": [
+            0,
+            -0.0812,
+            -0.0361
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.1558,
+            "height": 0.045099999999999994,
+            "depth": 0.1394
+          },
+          "color": 15756094
+        }
+      },
+      {
+        "id": "m20",
+        "parent": "item03_pot",
+        "transform": {
+          "pos": [
+            0,
+            0.0291,
+            -0.0361
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.1394,
+            "height": 0.1066,
+            "depth": 0.12299999999999998
+          },
+          "color": 15849394
+        }
+      },
+      {
+        "id": "m21",
+        "parent": "item03_pot",
+        "transform": {
+          "pos": [
+            0,
+            0.0648,
+            -0.0361
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.1599,
+            "height": 0.0287,
+            "depth": 0.1517
+          },
+          "color": 15756094
+        }
+      },
+      {
+        "id": "m22",
+        "parent": "item03_pot",
+        "transform": {
+          "pos": [
+            0,
+            0.0812,
+            -0.0361
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.11889999999999998,
+            "height": 0.014759999999999999,
+            "depth": 0.1107
+          },
+          "color": 10386005
+        }
+      },
+      {
+        "id": "m23",
+        "parent": "item03_pot",
+        "transform": {
+          "pos": [
+            0,
+            0.0158,
+            0.0361
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.09019999999999999,
+            "height": 0.0205,
+            "depth": 0.00984
+          },
+          "color": 15325885
+        }
+      },
+      {
+        "id": "m24",
+        "parent": "item03_plant",
+        "transform": {
+          "pos": [
+            -0.03,
+            -0.025,
+            0
+          ],
+          "quat": [
+            0.33,
+            0.71,
+            0.5,
+            0.5
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.26,
+            "height": 0.022,
+            "depth": 0.09
+          },
+          "color": 11448175
+        }
+      },
+      {
+        "id": "m25",
+        "parent": "item03_plant",
+        "transform": {
+          "pos": [
+            0.005,
+            0.085,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.085,
+            "height": 0.025,
+            "depth": 0.05
+          },
+          "color": 15325885
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m26",
+        "parent": "item03_plant",
+        "transform": {
+          "pos": [
+            0.005,
+            -0.015,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.075,
+            "height": 0.025,
+            "depth": 0.05
+          },
+          "color": 15325885
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m27",
+        "parent": "item03_plant",
+        "transform": {
+          "pos": [
+            0.03,
+            -0.085,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.035,
+            "height": 0.06,
+            "depth": 0.035
+          },
+          "color": 7770188
+        },
+        "tags": [
+          {
+            "tag": "emissive",
+            "value": 0.25
+          }
+        ]
+      },
+      {
+        "id": "m28",
+        "parent": "item04_pot",
+        "transform": {
+          "pos": [
+            0,
+            -0.0812,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.1558,
+            "height": 0.045099999999999994,
+            "depth": 0.1394
+          },
+          "color": 11104005
+        }
+      },
+      {
+        "id": "m29",
+        "parent": "item04_pot",
+        "transform": {
+          "pos": [
+            0,
+            0.0291,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.12299999999999998,
+            "height": 0.1066,
+            "depth": 0.1394
+          },
+          "color": 15325885
+        }
+      },
+      {
+        "id": "m30",
+        "parent": "item04_pot",
+        "transform": {
+          "pos": [
+            0,
+            0.0648,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.1599,
+            "height": 0.0287,
+            "depth": 0.1517
+          },
+          "color": 11104005
+        }
+      },
+      {
+        "id": "m31",
+        "parent": "item04_pot",
+        "transform": {
+          "pos": [
+            0,
+            0.0812,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.11889999999999998,
+            "height": 0.014759999999999999,
+            "depth": 0.1107
+          },
+          "color": 10386005
+        }
+      },
+      {
+        "id": "m32",
+        "parent": "item04_plant",
+        "transform": {
+          "pos": [
+            -0.025,
+            -0.075,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.035,
+            "height": 0.21,
+            "depth": 0.035
+          },
+          "color": 13213806
+        }
+      },
+      {
+        "id": "m33",
+        "parent": "item04_plant",
+        "transform": {
+          "pos": [
+            0.035,
+            -0.09,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.035,
+            "height": 0.18,
+            "depth": 0.035
+          },
+          "color": 13213806
+        }
+      },
+      {
+        "id": "m34",
+        "parent": "item04_plant",
+        "transform": {
+          "pos": [
+            -0.045,
+            0.03,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.085,
+            "height": 0.045,
+            "depth": 0.07
+          },
+          "color": 15325885
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m35",
+        "parent": "item04_plant",
+        "transform": {
+          "pos": [
+            0.045,
+            0.01,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.095,
+            "height": 0.045,
+            "depth": 0.07
+          },
+          "color": 15325885
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m36",
+        "parent": "item04_plant",
+        "transform": {
+          "pos": [
+            0.005,
+            0.09,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.12,
+            "height": 0.035,
+            "depth": 0.075
+          },
+          "color": 15325885
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m37",
+        "parent": "item05_empty_pot",
+        "transform": {
+          "pos": [
+            0,
+            -0.0805,
+            -0.0351
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.171,
+            "height": 0.0495,
+            "depth": 0.15300000000000002
+          },
+          "color": 7770188
+        }
+      },
+      {
+        "id": "m38",
+        "parent": "item05_empty_pot",
+        "transform": {
+          "pos": [
+            0,
+            0.0328,
+            -0.0351
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.15300000000000002,
+            "height": 0.117,
+            "depth": 0.135
+          },
+          "color": 7770188
+        }
+      },
+      {
+        "id": "m39",
+        "parent": "item05_empty_pot",
+        "transform": {
+          "pos": [
+            0,
+            0.0646,
+            -0.0351
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.17550000000000002,
+            "height": 0.03150000000000001,
+            "depth": 0.1665
+          },
+          "color": 7770188
+        }
+      },
+      {
+        "id": "m40",
+        "parent": "item05_empty_pot",
+        "transform": {
+          "pos": [
+            0,
+            0.0804,
+            -0.0351
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.1305,
+            "height": 0.0162,
+            "depth": 0.12150000000000001
+          },
+          "color": 10386005
+        }
+      },
+      {
+        "id": "m41",
+        "parent": "item05_empty_pot",
+        "transform": {
+          "pos": [
+            0,
+            -0.0207,
+            0.0351
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.108,
+            "height": 0.0162,
+            "depth": 0.0108
+          },
+          "color": 15325885
+        }
+      },
+      {
+        "id": "m42",
+        "parent": "item05_marks",
+        "transform": {
+          "pos": [
+            -0.045,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.018,
+            "height": 0.07,
+            "depth": 0.012
+          },
+          "color": 15325885
+        }
+      },
+      {
+        "id": "m43",
+        "parent": "item05_marks",
+        "transform": {
+          "pos": [
+            0.045,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.018,
+            "height": 0.07,
+            "depth": 0.012
+          },
+          "color": 15325885
+        }
+      },
+      {
+        "id": "m44",
+        "parent": "item06_empty_pot",
+        "transform": {
+          "pos": [
+            0,
+            -0.0808,
+            -0.0353
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.1634,
+            "height": 0.0473,
+            "depth": 0.1462
+          },
+          "color": 15188883
+        }
+      },
+      {
+        "id": "m45",
+        "parent": "item06_empty_pot",
+        "transform": {
+          "pos": [
+            0,
+            0.031,
+            -0.0353
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.129,
+            "height": 0.1118,
+            "depth": 0.1462
+          },
+          "color": 15325885
+        }
+      },
+      {
+        "id": "m46",
+        "parent": "item06_empty_pot",
+        "transform": {
+          "pos": [
+            0,
+            0.0647,
+            -0.0353
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.16770000000000002,
+            "height": 0.030100000000000002,
+            "depth": 0.1591
+          },
+          "color": 15188883
+        }
+      },
+      {
+        "id": "m47",
+        "parent": "item06_empty_pot",
+        "transform": {
+          "pos": [
+            0,
+            0.0808,
+            -0.0353
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.12469999999999999,
+            "height": 0.015479999999999999,
+            "depth": 0.11610000000000001
+          },
+          "color": 10386005
+        }
+      },
+      {
+        "id": "m48",
+        "parent": "item06_empty_pot",
+        "transform": {
+          "pos": [
+            0,
+            -0.0299,
+            0.0353
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.021500000000000002,
+            "height": 0.0688,
+            "depth": 0.01032
+          },
+          "color": 15325885
+        }
+      },
+      {
+        "id": "m49",
+        "parent": "item06_feet",
+        "transform": {
+          "pos": [
+            -0.055,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.045,
+            "height": 0.055,
+            "depth": 0.045
+          },
+          "color": 11104005
+        }
+      },
+      {
+        "id": "m50",
+        "parent": "item06_feet",
+        "transform": {
+          "pos": [
+            0.055,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.045,
+            "height": 0.055,
+            "depth": 0.045
+          },
+          "color": 11104005
+        }
+      },
+      {
+        "id": "m51",
+        "parent": "item07_bundle",
+        "transform": {
+          "pos": [
+            -0.025,
+            -0.08,
+            0
+          ],
+          "quat": [
+            0.67,
+            0.28,
+            0.31,
+            0.64
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.29,
+            "height": 0.026,
+            "depth": 0.03
+          },
+          "color": 13213806
+        }
+      },
+      {
+        "id": "m52",
+        "parent": "item07_bundle",
+        "transform": {
+          "pos": [
+            -0.035,
+            -0.01,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.15,
+            "height": 0.045,
+            "depth": 0.08
+          },
+          "color": 15325885
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m53",
+        "parent": "item07_bundle",
+        "transform": {
+          "pos": [
+            0.025,
+            0.07,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.11,
+            "height": 0.04,
+            "depth": 0.07
+          },
+          "color": 15325885
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m54",
+        "parent": "item07_bundle",
+        "transform": {
+          "pos": [
+            -0.075,
+            -0.13,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.12,
+            "height": 0.04,
+            "depth": 0.07
+          },
+          "color": 15325885
+        }
+      },
+      {
+        "id": "m55",
+        "parent": "item07_bundle",
+        "transform": {
+          "pos": [
+            0.075,
+            0.11,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.045,
+            "height": 0.045,
+            "depth": 0.045
+          },
+          "color": 15756094
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m56",
+        "parent": "item07_bundle",
+        "transform": {
+          "pos": [
+            0.015,
+            0.13,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.04,
+            "height": 0.04,
+            "depth": 0.04
+          },
+          "color": 15325885
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m57",
+        "parent": "item08_large_pot",
+        "transform": {
+          "pos": [
+            0,
+            -0.079,
+            -0.0462
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.1995,
+            "height": 0.05775,
+            "depth": 0.17850000000000002
+          },
+          "color": 15188883
+        }
+      },
+      {
+        "id": "m58",
+        "parent": "item08_large_pot",
+        "transform": {
+          "pos": [
+            0,
+            0.0398,
+            -0.0462
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.17850000000000002,
+            "height": 0.1365,
+            "depth": 0.1575
+          },
+          "color": 15325885
+        }
+      },
+      {
+        "id": "m59",
+        "parent": "item08_large_pot",
+        "transform": {
+          "pos": [
+            0,
+            0.0644,
+            -0.0462
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.20475000000000002,
+            "height": 0.036750000000000005,
+            "depth": 0.19425
+          },
+          "color": 15188883
+        }
+      },
+      {
+        "id": "m60",
+        "parent": "item08_large_pot",
+        "transform": {
+          "pos": [
+            0,
+            0.079,
+            -0.0462
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.15225,
+            "height": 0.0189,
+            "depth": 0.14175000000000001
+          },
+          "color": 10386005
+        }
+      },
+      {
+        "id": "m61",
+        "parent": "item08_large_pot",
+        "transform": {
+          "pos": [
+            0,
+            0.0116,
+            0.0462
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.1155,
+            "height": 0.026250000000000002,
+            "depth": 0.0126
+          },
+          "color": 15325885
+        }
+      },
+      {
+        "id": "m62",
+        "parent": "item08_plant",
+        "transform": {
+          "pos": [
+            -0.0025,
+            -0.2,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.045,
+            "height": 0.43,
+            "depth": 0.045
+          },
+          "color": 10257680
+        }
+      },
+      {
+        "id": "m63",
+        "parent": "item08_plant",
+        "transform": {
+          "pos": [
+            -0.0775,
+            -0.12,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.13,
+            "height": 0.1,
+            "depth": 0.08
+          },
+          "color": 15325885
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m64",
+        "parent": "item08_plant",
+        "transform": {
+          "pos": [
+            0.0775,
+            -0.02,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.14,
+            "height": 0.11,
+            "depth": 0.085
+          },
+          "color": 15325885
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m65",
+        "parent": "item08_plant",
+        "transform": {
+          "pos": [
+            -0.0675,
+            0.09,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.14,
+            "height": 0.12,
+            "depth": 0.08
+          },
+          "color": 15325885
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m66",
+        "parent": "item08_plant",
+        "transform": {
+          "pos": [
+            0.0425,
+            0.2,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.13,
+            "height": 0.12,
+            "depth": 0.08
+          },
+          "color": 15325885
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m67",
+        "parent": "item09_large_pot",
+        "transform": {
+          "pos": [
+            0,
+            -0.079,
+            -0.0409
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.1995,
+            "height": 0.05775,
+            "depth": 0.17850000000000002
+          },
+          "color": 7770188
+        }
+      },
+      {
+        "id": "m68",
+        "parent": "item09_large_pot",
+        "transform": {
+          "pos": [
+            0,
+            0.0398,
+            -0.0409
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.17850000000000002,
+            "height": 0.1365,
+            "depth": 0.1575
+          },
+          "color": 7770188
+        }
+      },
+      {
+        "id": "m69",
+        "parent": "item09_large_pot",
+        "transform": {
+          "pos": [
+            0,
+            0.0644,
+            -0.0409
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.20475000000000002,
+            "height": 0.036750000000000005,
+            "depth": 0.19425
+          },
+          "color": 7770188
+        }
+      },
+      {
+        "id": "m70",
+        "parent": "item09_large_pot",
+        "transform": {
+          "pos": [
+            0,
+            0.079,
+            -0.0409
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.15225,
+            "height": 0.0189,
+            "depth": 0.14175000000000001
+          },
+          "color": 10386005
+        }
+      },
+      {
+        "id": "m71",
+        "parent": "item09_large_pot",
+        "transform": {
+          "pos": [
+            0,
+            -0.0234,
+            0.041
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.126,
+            "height": 0.0189,
+            "depth": 0.0126
+          },
+          "color": 15325885
+        }
+      },
+      {
+        "id": "m72",
+        "parent": "item09_tree",
+        "transform": {
+          "pos": [
+            0.01,
+            -0.24,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.05,
+            "height": 0.42,
+            "depth": 0.05
+          },
+          "color": 15188883
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "bark"
+          }
+        ]
+      },
+      {
+        "id": "m73",
+        "parent": "item09_tree",
+        "transform": {
+          "pos": [
+            -0.04,
+            -0.04,
+            0
+          ],
+          "quat": [
+            0.32,
+            0.63,
+            0.63,
+            0.32
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.2,
+            "height": 0.03,
+            "depth": 0.02
+          },
+          "color": 15188883
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "bark"
+          }
+        ]
+      },
+      {
+        "id": "m74",
+        "parent": "item09_tree",
+        "transform": {
+          "pos": [
+            0.07,
+            0.01,
+            0
+          ],
+          "quat": [
+            -0.64,
+            -0.31,
+            0.3,
+            0.64
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.21,
+            "height": 0.03,
+            "depth": 0.03
+          },
+          "color": 15188883
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "bark"
+          }
+        ]
+      },
+      {
+        "id": "m75",
+        "parent": "item09_tree",
+        "transform": {
+          "pos": [
+            -0.1,
+            0.1,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.18,
+            "height": 0.13,
+            "depth": 0.15
+          },
+          "color": 15001471
+        },
+        "tags": [
+          {
+            "tag": "foliage",
+            "value": "leaf"
+          }
+        ]
+      },
+      {
+        "id": "m76",
+        "parent": "item09_tree",
+        "transform": {
+          "pos": [
+            0.1,
+            0.15,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.2,
+            "height": 0.15,
+            "depth": 0.16
+          },
+          "color": 15001471
+        },
+        "tags": [
+          {
+            "tag": "foliage",
+            "value": "leaf"
+          }
+        ]
+      },
+      {
+        "id": "m77",
+        "parent": "item09_tree",
+        "transform": {
+          "pos": [
+            0,
+            0.24,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.18,
+            "height": 0.14,
+            "depth": 0.15
+          },
+          "color": 14474018
+        },
+        "tags": [
+          {
+            "tag": "foliage",
+            "value": "leaf"
+          }
+        ]
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1788026556494,
+        "provider": "gpt",
+        "data": "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",
+        "edits": ""
+      },
+      "semanticSnapshot": {
+        "v": 1,
+        "auto": true,
+        "text": "浅亮奇幻炼金植物道具·变化3 · 17组/78mesh · 世界坐标(Y上Z前), 原点=模型根\n# 阅读说明: G:=group行(可动画骨骼, 动画key用G:后的id; @p=pivot世界坐标; 倾(x,y,z)°=朝向偏离世界轴的欧拉角; 缩进=父子层级; 挂:=挂载于某组; G:id→id→…=chain折叠行, 每个id都是可独立动画的group, chain×N=waypoint数)\n# M:=mesh行(label[id 几何 @(世界坐标)], label可省略; ×N=for循环批量件(锚点=代表实例); cyl (起)→(末)或 轴上(Y)等方位词=延伸方向; 薄向=板面法向(扁板); 挂载组双代表=最大件+最远有向件(刃/嘴/管所在端); 无方向标注=均匀块(三向相近,如头),默认面向前(Z); 对称×2=镜像对)\nG:item07_bundle 第7种·采摘炼金素材束 @p(-0.3,-0.4,-0.3)\n  M:[m52 box 0.15×0.05×0.08 (-0.3,-0.4,-0.3) 轴右(X)]\n  G:item01_pot 第1种·星瓣药草盆栽 @p(-0.3,-0.5,0.4)\n    M:[m1 box 0.14×0.11×0.12 (-0.3,-0.5,0.3)]\n  G:item01_plant 星瓣药草 @p(-0.3,-0.3,0.3)\n    M:[m6 box 0.09×0.04×0.06 (-0.4,-0.3,0.3) 薄向上(Y)]\n  G:item02_pot 第2种·宽叶蜜药盆栽 @p(0,-0.5,0.4)\n    M:[m11 box 0.12×0.11×0.14 (0,-0.5,0.3)]\n  G:item02_plant 宽叶蜜药 @p(0,-0.2,0.3)\n    M:[m17 box 0.12×0.06×0.08 (0.1,-0.2,0.3) 轴右(X)]\n  G:item03_pot 第3种·垂枝露珠草盆栽 @p(0.3,-0.5,0.4)\n    M:[m20 box 0.14×0.11×0.12 (0.3,-0.5,0.3)]\n  G:item03_plant 垂枝露珠草 @p(0.4,-0.3,0.3)\n    M:[m24 box 0.26×0.02×0.09 (0.4,-0.3,0.3) 薄向前(Z)]\n  G:item04_pot 第4种·双根冠叶盆栽 @p(-0.3,-0.5,0)\n    M:[m29 box 0.12×0.11×0.14 (-0.3,-0.5,0)]\n  G:item04_plant 双根冠叶药材 @p(-0.3,-0.3,0)\n    M:[m36 box 0.12×0.04×0.08 (-0.3,-0.2,0) 薄向上(Y)]\n  G:item05_empty_pot 第5种·宽口刻纹空盆 @p(0,-0.5,0)\n    M:[m38 box 0.15×0.12×0.14 (0,-0.5,0)]\n  G:item05_marks 宽口刻纹 @p(0,-0.5,0.1)\n    M:[m42 box 0.02×0.07×0.01 (0,-0.5,0.1) 轴上(Y)]\n  G:item06_empty_pot 第6种·高足分釉空盆 @p(0.3,-0.5,0)\n    M:[m45 box 0.13×0.11×0.15 (0.3,-0.5,0)]\n  G:item06_feet 高足座 @p(0.3,-0.6,0)\n    M:[m49 box 0.05×0.06×0.05 (0.3,-0.6,0)]\n  G:item08_large_pot 第8种·入口宽叶观赏盆栽 @p(0,-0.5,-0.3)\n    M:[m58 box 0.18×0.14×0.16 (0,-0.5,-0.3)]\n  G:item08_plant 挺拔宽叶冠 @p(0,0,-0.3)\n    M:[m65 box 0.14×0.12×0.08 (-0.1,0.1,-0.3) 薄向前(Z)]\n  G:item09_large_pot 第9种·入口舒展树形观赏盆栽 @p(0.3,-0.5,-0.3)\n    M:[m68 box 0.18×0.14×0.16 (0.3,-0.5,-0.3)]\n  G:item09_tree 舒展树冠 @p(0.3,0,-0.3)\n    M:[m76 box 0.2×0.15×0.16 (0.4,0.2,-0.3)]",
+        "stats": {
+          "groups": 17,
+          "meshes": 78,
+          "labeledMeshes": 0,
+          "labelCoverage": 0,
+          "batchLabels": 0,
+          "autoChains": 0,
+          "snapshotChars": 1904
+        }
+      },
+      "colorPalette": {
+        "id": "palette-2b9c0834-be76-4477",
+        "name": "曼德鸭参考场景 · 浅亮建筑",
+        "description": "参考局内与背景样例：浅亮奶油墙面、桃沙道路、黄绿色植被、青蓝窗水、棕黄结构点缀。",
+        "version": 1,
+        "colors": [
+          {
+            "hex": "#FFFDF6"
+          },
+          {
+            "hex": "#FEF9EA"
+          },
+          {
+            "hex": "#FDF2D7"
+          },
+          {
+            "hex": "#E9DABD"
+          },
+          {
+            "hex": "#CDBA97"
+          },
+          {
+            "hex": "#F8E8CF"
+          },
+          {
+            "hex": "#F1D7B2"
+          },
+          {
+            "hex": "#E7C393"
+          },
+          {
+            "hex": "#C9A06E"
+          },
+          {
+            "hex": "#9E7A55"
+          },
+          {
+            "hex": "#FFF7A8"
+          },
+          {
+            "hex": "#FCEF72"
+          },
+          {
+            "hex": "#F6E24B"
+          },
+          {
+            "hex": "#D1B825"
+          },
+          {
+            "hex": "#9C8510"
+          },
+          {
+            "hex": "#FFF3B7"
+          },
+          {
+            "hex": "#FDE674"
+          },
+          {
+            "hex": "#FCD75F"
+          },
+          {
+            "hex": "#FECD4D"
+          },
+          {
+            "hex": "#D1900B"
+          },
+          {
+            "hex": "#FFE2A0"
+          },
+          {
+            "hex": "#FFD170"
+          },
+          {
+            "hex": "#F8BC44"
+          },
+          {
+            "hex": "#E39F1A"
+          },
+          {
+            "hex": "#A96F05"
+          },
+          {
+            "hex": "#FBE3BD"
+          },
+          {
+            "hex": "#FDD8A3"
+          },
+          {
+            "hex": "#FDCC8F"
+          },
+          {
+            "hex": "#F1AD69"
+          },
+          {
+            "hex": "#D99256"
+          },
+          {
+            "hex": "#FFD2BA"
+          },
+          {
+            "hex": "#FFB08A"
+          },
+          {
+            "hex": "#FF8A5B"
+          },
+          {
+            "hex": "#F06B3E"
+          },
+          {
+            "hex": "#B84A27"
+          },
+          {
+            "hex": "#EAF9FF"
+          },
+          {
+            "hex": "#DAF2F5"
+          },
+          {
+            "hex": "#95E5F9"
+          },
+          {
+            "hex": "#76D0F2"
+          },
+          {
+            "hex": "#45BDF6"
+          },
+          {
+            "hex": "#D9F8FB"
+          },
+          {
+            "hex": "#B2E9F2"
+          },
+          {
+            "hex": "#8ECCD6"
+          },
+          {
+            "hex": "#7BCFDF"
+          },
+          {
+            "hex": "#4BAFCA"
+          },
+          {
+            "hex": "#D8F7EF"
+          },
+          {
+            "hex": "#B8ECDD"
+          },
+          {
+            "hex": "#90DCC8"
+          },
+          {
+            "hex": "#74C4BB"
+          },
+          {
+            "hex": "#499D92"
+          },
+          {
+            "hex": "#F1F5AF"
+          },
+          {
+            "hex": "#E4E77F"
+          },
+          {
+            "hex": "#DCDB22"
+          },
+          {
+            "hex": "#BFC41A"
+          },
+          {
+            "hex": "#809712"
+          },
+          {
+            "hex": "#DEE5BC"
+          },
+          {
+            "hex": "#C6CC97"
+          },
+          {
+            "hex": "#AEAF6F"
+          },
+          {
+            "hex": "#76904C"
+          },
+          {
+            "hex": "#5F6F48"
+          },
+          {
+            "hex": "#D4C2A5"
+          },
+          {
+            "hex": "#B89269"
+          },
+          {
+            "hex": "#8E664D"
+          },
+          {
+            "hex": "#714D48"
+          },
+          {
+            "hex": "#52362E"
+          }
+        ],
+        "roles": {
+          "primary": [
+            "#F1D7B2",
+            "#FDD8A3",
+            "#FBE3BD",
+            "#E9DABD",
+            "#FDCC8F",
+            "#F8E8CF",
+            "#E7C393",
+            "#D4C2A5"
+          ],
+          "secondary": [
+            "#714D48",
+            "#52362E",
+            "#8E664D",
+            "#B84A27",
+            "#9E7A55",
+            "#F06B3E",
+            "#A96F05",
+            "#B89269",
+            "#D99256",
+            "#E7C393",
+            "#D4C2A5",
+            "#FDCC8F",
+            "#F1D7B2",
+            "#CDBA97",
+            "#FDD8A3",
+            "#F1AD69",
+            "#E9DABD",
+            "#AEAF6F",
+            "#C9A06E",
+            "#9C8510",
+            "#76904C",
+            "#809712"
+          ],
+          "accent": [
+            "#76D0F2",
+            "#7BCFDF",
+            "#95E5F9",
+            "#8ECCD6",
+            "#45BDF6",
+            "#4BAFCA",
+            "#B2E9F2",
+            "#74C4BB",
+            "#FFD170",
+            "#FECD4D",
+            "#FFE2A0",
+            "#F8BC44",
+            "#FCD75F",
+            "#E9DABD",
+            "#FDD8A3",
+            "#E7C393",
+            "#F06B3E",
+            "#FF8A5B",
+            "#B84A27",
+            "#D99256",
+            "#8E664D",
+            "#9E7A55",
+            "#FFB08A",
+            "#B89269"
+          ],
+          "plant": [
+            "#AEAF6F",
+            "#C6CC97",
+            "#BFC41A",
+            "#809712",
+            "#DCDB22",
+            "#E4E77F",
+            "#D1B825",
+            "#DEE5BC",
+            "#76904C",
+            "#5F6F48",
+            "#9C8510"
+          ],
+          "earth": [
+            "#F1D7B2",
+            "#FDD8A3",
+            "#FBE3BD",
+            "#E9DABD",
+            "#FDCC8F",
+            "#F8E8CF",
+            "#E7C393",
+            "#D4C2A5",
+            "#CDBA97",
+            "#F1AD69",
+            "#9E7A55",
+            "#B89269",
+            "#AEAF6F",
+            "#C9A06E",
+            "#9C8510",
+            "#8E664D",
+            "#76904C",
+            "#809712",
+            "#714D48",
+            "#52362E",
+            "#B84A27",
+            "#F06B3E",
+            "#A96F05",
+            "#D99256"
+          ],
+          "water": [
+            "#4BAFCA",
+            "#45BDF6",
+            "#7BCFDF",
+            "#76D0F2",
+            "#8ECCD6",
+            "#95E5F9",
+            "#499D92",
+            "#74C4BB"
+          ],
+          "atmosphere": [
+            "#76D0F2",
+            "#7BCFDF",
+            "#95E5F9",
+            "#8ECCD6",
+            "#45BDF6",
+            "#4BAFCA",
+            "#B2E9F2",
+            "#74C4BB",
+            "#EAF9FF",
+            "#DAF2F5",
+            "#D9F8FB"
+          ],
+          "effect": [
+            "#F06B3E",
+            "#FF8A5B",
+            "#B84A27",
+            "#D99256",
+            "#8E664D",
+            "#9E7A55",
+            "#FFB08A",
+            "#B89269"
+          ]
+        },
+        "lockedColors": [],
+        "excludedAssetIds": [],
+        "excludedTags": [],
+        "createdAt": 1787561837433,
+        "updatedAt": 1787561837433
+      },
+      "colorPaletteReport": {
+        "appliedMaterials": 78,
+        "appliedVertexColors": 0,
+        "skippedTextures": 0,
+        "explicitIntentColors": 0,
+        "sourceColors": 78,
+        "semanticFallbacks": 0,
+        "usedColors": [
+          "#76904C",
+          "#9C8510",
+          "#9E7A55",
+          "#A96F05",
+          "#AEAF6F",
+          "#C9A06E",
+          "#DCDB22",
+          "#E4E77F",
+          "#E7C393",
+          "#E9DABD",
+          "#F06B3E",
+          "#F1D7B2"
+        ]
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -0.485,
+          0,
+          -0.4071625000000001
+        ],
+        "max": [
+          0.485,
+          1.0025,
+          0.4071625000000001
+        ],
+        "sourceNodeId": "asset-bounds"
+      }
+    ],
+    "sourceMeshCount": 78,
+    "candidateCount": 0,
+    "fallbackUsed": true
+  },
+  "footprintRadius": 0.485,
+  "sizeClass": "small",
+  "mode": "voxel",
+  "provider": "gpt",
+  "createdAt": 1788026581027,
+  "updatedAt": 1788026581027
+}

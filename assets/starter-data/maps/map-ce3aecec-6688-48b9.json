@@ -1,11 +1,11 @@
 {
   "id": "map-ce3aecec-6688-48b9",
   "seed": 2926011603,
-  "name": "房间-1",
+  "name": "房间-1-夕阳",
   "assetGenerationMode": "voxel",
-  "version": 98,
+  "version": 102,
   "createdAt": 1786868880140,
-  "updatedAt": 1787879277635,
+  "updatedAt": 1788058317819,
   "box": {
     "size": [
       26,
@@ -9606,8 +9606,8 @@
     ]
   ],
   "spawnYaw": 0,
-  "confirmedAt": null,
-  "renderSchemeId": "render-5842a7f8-c20f-49ba",
+  "confirmedAt": 1788058315659,
+  "renderSchemeId": "render-afa7aa1e-0e86-4de0",
   "renderPromptSuggestions": [
     "温暖午后自然光与柔和暖白顶灯共同照明，保持中央通道清晰。",
     "精致圆角体素儿童房，浅木家具配雾蓝墙面和克制的红黄玩具点缀。",

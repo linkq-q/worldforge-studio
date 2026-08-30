@@ -3,9 +3,9 @@
   "seed": 2926011603,
   "name": "房间-2",
   "assetGenerationMode": "voxel",
-  "version": 9,
+  "version": 16,
   "createdAt": 1787872046861,
-  "updatedAt": 1787879220516,
+  "updatedAt": 1788059606836,
   "box": {
     "size": [
       26,
@@ -9296,8 +9296,8 @@
     ]
   ],
   "spawnYaw": 0,
-  "confirmedAt": null,
-  "renderSchemeId": "render-5842a7f8-c20f-49ba",
+  "confirmedAt": 1788059595439,
+  "renderSchemeId": "render-689ea313-fa47-4f05",
   "renderPromptSuggestions": [
     "温暖午后自然光与柔和暖白顶灯共同照明，保持中央通道清晰。",
     "精致圆角体素儿童房，浅木家具配雾蓝墙面和克制的红黄玩具点缀。",

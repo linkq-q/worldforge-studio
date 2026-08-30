@@ -9,16 +9,23 @@
 // handles neutrals correctly.
 
 import { readFileSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { join, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-const ROOT = new URL('..', import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, '$1');
-const MAP_IDS = ['map-ce3aecec-6688-48b9', 'map-c131ec2e-0354-4d1c']; // 房间-1, 房间-2
-const ASSET_DIRS = ['assets/starter-data/assets', 'data/map-editor/assets'];
-
+// fileURLToPath decodes percent-encoding — plain .pathname breaks on
+// non-ASCII path segments (this repo lives under "AAA曼德鸭").
+const ROOT = dirname(dirname(fileURLToPath(import.meta.url)));
 const args = process.argv.slice(2);
 const dryRun = args.includes('--dry-run');
 const thresholdArg = args.find((a) => a.startsWith('--threshold='));
 const THRESHOLD = thresholdArg ? Number(thresholdArg.split('=')[1]) : 400; // ΔE² = 20²
+
+// --map=<id>[,<id>...] overrides the default MAP_IDS (e.g. single-map runs).
+const mapArg = args.find((a) => a.startsWith('--map='));
+const MAP_IDS = mapArg
+  ? mapArg.split('=')[1].split(',')
+  : ['map-ce3aecec-6688-48b9', 'map-c131ec2e-0354-4d1c']; // 房间-1, 房间-2
+const ASSET_DIRS = ['assets/starter-data/assets', 'data/map-editor/assets'];
 
 function rgb(hex) {
   const v = Number.parseInt(hex.slice(1), 16);

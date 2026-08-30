@@ -3,52 +3,72 @@
   "kind": "worldforge-starter-data",
   "maps": [
     {
-      "id": "map-12bbb61b-43a5-413d",
-      "name": "新地图"
-    },
-    {
       "id": "map-36d7fdae-fd38-441d",
       "name": "公园"
     },
     {
-      "id": "map-39a2f074-ec20-4fdf",
-      "name": "清新树林"
-    },
-    {
-      "id": "map-535216ce-49a2-45b2",
-      "name": "樱花竹林"
-    },
-    {
-      "id": "map-56497975-7801-4f2e",
-      "name": "服装店样例"
-    },
-    {
-      "id": "map-7bb9ef04-6e49-4f39",
-      "name": "开阔平原"
-    },
-    {
-      "id": "map-91a320e9-aed2-4f0f",
-      "name": "魔法工坊"
-    },
-    {
-      "id": "map-ae8c8e55-bfa2-4217",
-      "name": "夕阳草原"
+      "id": "map-d3f95277-aa4b-4775",
+      "name": "厨房"
     },
     {
       "id": "map-b28f38b8-d8a5-4571",
       "name": "复古快餐店样例"
     },
     {
-      "id": "map-bc4fbf02-aed8-4b10",
-      "name": "海岛公园"
+      "id": "map-ae8c8e55-bfa2-4217",
+      "name": "夕阳草原"
+    },
+    {
+      "id": "map-7bb9ef04-6e49-4f39",
+      "name": "开阔平原"
+    },
+    {
+      "id": "map-e1e967df-2e1b-433e",
+      "name": "房间-1"
+    },
+    {
+      "id": "map-ce3aecec-6688-48b9",
+      "name": "房间-1-夕阳"
+    },
+    {
+      "id": "map-302b729a-97ed-4a57",
+      "name": "房间-1-手绘"
     },
     {
       "id": "map-c131ec2e-0354-4d1c",
       "name": "房间-2"
     },
     {
-      "id": "map-ce3aecec-6688-48b9",
-      "name": "房间-1"
+      "id": "map-06ed9e4a-68ca-4af7",
+      "name": "房间-2-夕阳"
+    },
+    {
+      "id": "map-02417891-7efd-4878",
+      "name": "房间-2-手绘"
+    },
+    {
+      "id": "map-12bbb61b-43a5-413d",
+      "name": "新地图"
+    },
+    {
+      "id": "map-56497975-7801-4f2e",
+      "name": "服装店样例"
+    },
+    {
+      "id": "map-system-forest-camp",
+      "name": "森林营地"
+    },
+    {
+      "id": "map-535216ce-49a2-45b2",
+      "name": "樱花竹林"
+    },
+    {
+      "id": "map-bc4fbf02-aed8-4b10",
+      "name": "海岛公园"
+    },
+    {
+      "id": "map-39a2f074-ec20-4fdf",
+      "name": "清新树林"
     },
     {
       "id": "map-complex-amusement-park",
@@ -59,10 +79,6 @@
       "name": "炼金工坊"
     },
     {
-      "id": "map-d3f95277-aa4b-4775",
-      "name": "厨房"
-    },
-    {
       "id": "map-dc1dd7e9-4c42-419d",
       "name": "电影院样例"
     },
@@ -71,8 +87,8 @@
       "name": "餐厅样例"
     },
     {
-      "id": "map-system-forest-camp",
-      "name": "森林营地"
+      "id": "map-91a320e9-aed2-4f0f",
+      "name": "魔法工坊"
     }
   ],
   "assets": [
@@ -124,6 +140,7 @@
     "asset-0df6036f-58cb-4488",
     "asset-0dfd1c0a-e862-4753",
     "asset-0e9cb488-13cd-4a0f",
+    "asset-0ea5f49d-f1a2-413c",
     "asset-0ec02c0e-a2db-4f7c",
     "asset-0f6008d7-951f-4205",
     "asset-0fd6a991-7a0d-4f96",
@@ -251,6 +268,7 @@
     "asset-3277d987-ae72-4b78",
     "asset-32e7f2e1-054a-45b0",
     "asset-33268a4f-3013-4a38",
+    "asset-3412c671-f161-482f",
     "asset-34c8a206-f0d1-43c8",
     "asset-3575b6cf-5e2b-46de",
     "asset-35a8f6fd-4720-48cf",
@@ -406,6 +424,7 @@
     "asset-6904f811-9bb8-4626",
     "asset-695a985b-b9bc-4d10",
     "asset-6aab9cd8-f400-4a4f",
+    "asset-6abaef0d-9043-42c7",
     "asset-6ae882d1-0b75-4282",
     "asset-6c0d123d-edf9-436a",
     "asset-6c21c524-2b2d-465f",
@@ -417,6 +436,7 @@
     "asset-6d448490-31dc-4ec8",
     "asset-6d61ee3a-1003-40ef",
     "asset-6d72c267-cec9-45d2",
+    "asset-6d7f1ae7-c490-4211",
     "asset-6dd41423-55f0-4392",
     "asset-6e716848-6eed-46c0",
     "asset-6f083b09-e963-48d0",
@@ -461,6 +481,7 @@
     "asset-7e54fa22-b75d-465e",
     "asset-7e63c668-fbf6-4911",
     "asset-7e7cd09d-c7a5-49ca",
+    "asset-7f03fc09-40a9-4174",
     "asset-7f8861fe-a453-41e5",
     "asset-7f8e43f9-fbcd-44b2",
     "asset-7fb70790-b58d-4ff7",
@@ -469,6 +490,7 @@
     "asset-80191f17-6ce7-481d",
     "asset-80632e08-1e5d-44f2",
     "asset-80aa7b40-5cb9-495b",
+    "asset-80cbf2e9-1a1f-411e",
     "asset-80fb4b45-3e95-42fb",
     "asset-812dcb66-e856-4120",
     "asset-81829e48-af46-499b",
@@ -498,6 +520,7 @@
     "asset-86d4c5c8-4fb2-469a",
     "asset-872d6601-d56d-4309",
     "asset-87a8816c-f83b-4192",
+    "asset-87c113e8-5eb7-466d",
     "asset-87dbaa39-c8df-482f",
     "asset-88168d00-31b9-4bae",
     "asset-88803f90-0581-497f",
@@ -538,6 +561,7 @@
     "asset-935ed52c-0101-4613",
     "asset-936eb251-b369-46bb",
     "asset-93a936bd-d000-4cbe",
+    "asset-93c308bb-bf6d-4bc4",
     "asset-93f05498-8641-43b2",
     "asset-9419589a-3b41-4741",
     "asset-943fe1ca-9b43-456d",
@@ -578,8 +602,10 @@
     "asset-9f823778-c487-4125",
     "asset-9f92596f-5810-49ef",
     "asset-9fa49ac3-49e0-466e",
+    "asset-a07cd656-eb46-4a76",
     "asset-a0844ffa-e0b3-45f7",
     "asset-a08ab6b4-34bb-483b",
+    "asset-a10b59c6-c96d-4d29",
     "asset-a11a56f8-12b2-41bf",
     "asset-a12b58a5-4bb1-44ab",
     "asset-a151469a-693f-429f",
@@ -721,6 +747,7 @@
     "asset-cfabd14a-3396-4c2a",
     "asset-cffcbb4a-7f77-4401",
     "asset-d00e29d4-25b6-47c4",
+    "asset-d05ee466-02d9-43ef",
     "asset-d085545f-1102-48f6",
     "asset-d0f090c9-0ac4-4d09",
     "asset-d1414d95-b8e3-451b",
@@ -734,6 +761,7 @@
     "asset-d3573543-3ae4-4ce9",
     "asset-d3c08dc7-22c5-4330",
     "asset-d3f33db3-f133-4a5a",
+    "asset-d4224ae8-2fb1-4fa4",
     "asset-d426dadd-9465-46fc",
     "asset-d4658349-486d-440b",
     "asset-d4d29475-43a1-4bcd",
@@ -742,6 +770,7 @@
     "asset-d5ba985a-a95f-4f2a",
     "asset-d5fc09f5-6c0a-4d23",
     "asset-d6d28fc5-e990-45f1",
+    "asset-d77df6a2-dfb7-4315",
     "asset-d7bbaa58-e904-408d",
     "asset-d8379a5e-d915-4fff",
     "asset-d893d0e3-12dc-43d6",
@@ -787,6 +816,7 @@
     "asset-e4223da4-d675-4a3b",
     "asset-e436d516-72a2-4ea1",
     "asset-e441d7eb-04b7-4b92",
+    "asset-e4b58173-0e7e-4e26",
     "asset-e4dda42b-f2a3-4c7d",
     "asset-e4e10e42-73ae-4f20",
     "asset-e50e30ad-8a39-4c4a",
@@ -839,6 +869,7 @@
     "asset-f6bea65c-9344-4500",
     "asset-f6e8363b-d62d-4924",
     "asset-f6fc8928-6315-4a88",
+    "asset-f7063def-3af6-4c80",
     "asset-f7c08edc-e99a-4872",
     "asset-f7e2f03f-f7d3-4f55",
     "asset-f826a454-1295-4302",
@@ -876,6 +907,7 @@
     "render-02f563f4-c0ea-4ed8",
     "render-3e7100b4-28de-4aa8",
     "render-5842a7f8-c20f-49ba",
+    "render-60c60269-52b6-4828",
     "render-689ea313-fa47-4f05",
     "render-6d04102b-0cf0-4a5c",
     "render-afa7aa1e-0e86-4de0",

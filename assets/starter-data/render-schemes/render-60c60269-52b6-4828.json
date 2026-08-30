@@ -1,0 +1,2383 @@
+{
+  "id": "render-60c60269-52b6-4828",
+  "name": "房间",
+  "description": "采用偏冷且干净的中性色调，降低 HDRI 环境亮度与整体曝光，并以较弱、柔和的室内灯光维持层次；关闭 Bloom 避免高光溢出，保留轻度 SSAO 增强空间结构。",
+  "sourcePrompt": "室内场景，比较清爽的配色，然后光线要注意，不要过曝，以及室内的光源强度稍微弱一点",
+  "styleTags": [
+    "室内",
+    "清爽配色",
+    "柔和曝光",
+    "弱光源",
+    "可读暗部"
+  ],
+  "provider": "gpt",
+  "renderPlan": {
+    "version": 2,
+    "baseSchemeId": "render-689ea313-fa47-4f05",
+    "modules": [
+      {
+        "id": "environment.hdri",
+        "params": {
+          "texture": "HDRI-0.exr",
+          "rotation": 32,
+          "exposure": 0.62,
+          "saturation": 0.82,
+          "intensity": 0.48,
+          "tint": "#E4F1F2",
+          "tintStrength": 0.16,
+          "useAsEnvironment": "on"
+        }
+      },
+      {
+        "id": "presentation.exposure",
+        "params": {
+          "value": 0.86
+        }
+      },
+      {
+        "id": "runtime.light-rig",
+        "params": {
+          "recipe": "neutral",
+          "strength": 0.62,
+          "warmth": -0.08,
+          "shadowSoftness": 0.78
+        }
+      },
+      {
+        "id": "runtime.color-grade",
+        "params": {
+          "recipe": "neutral",
+          "temperature": -0.1,
+          "contrast": 0.94,
+          "saturation": 0.9,
+          "shadowLift": 0.12,
+          "tint": "#F2FAF8"
+        }
+      },
+      {
+        "id": "runtime.post-quality",
+        "params": {
+          "bloom": "off",
+          "bloomStrength": 0,
+          "ssao": "soft"
+        }
+      },
+      {
+        "id": "environment.palette",
+        "params": {
+          "fogColor": "#a3acaf"
+        }
+      },
+      {
+        "id": "lighting.hemisphere",
+        "params": {
+          "skyColor": "#9fb0b6",
+          "groundColor": "#a3acaf"
+        }
+      },
+      {
+        "id": "lighting.sun",
+        "params": {
+          "color": "#f3e8d2"
+        }
+      }
+    ],
+    "visualDirection": {
+      "version": 1,
+      "contrastMode": "bright-cartoon",
+      "timeOfDay": "noon",
+      "temperature": "cool",
+      "palette": {
+        "sky": "#c9dce3",
+        "keyLight": "#f3e8d2",
+        "fillLight": "#b8cfd6",
+        "shadow": "#71838a",
+        "fog": "#c4d0d2",
+        "waterBias": "#4f8f95",
+        "accent": "#6fafa3"
+      },
+      "atmosphereFx": {
+        "masterStrength": 0.08,
+        "pollen": 0,
+        "vapor": 0,
+        "dust": 0,
+        "sand": 0
+      }
+    }
+  },
+  "accessPolicy": {
+    "version": 1,
+    "parameters": [
+      {
+        "moduleId": "environment.palette",
+        "parameter": "background",
+        "control": "color",
+        "ai": {
+          "enabled": true
+        },
+        "developer": {
+          "enabled": true
+        }
+      },
+      {
+        "moduleId": "environment.palette",
+        "parameter": "fogColor",
+        "control": "color",
+        "ai": {
+          "enabled": true
+        },
+        "developer": {
+          "enabled": true
+        }
+      },
+      {
+        "moduleId": "environment.hdri",
+        "parameter": "texture",
+        "control": "select",
+        "ai": {
+          "enabled": true
+        },
+        "developer": {
+          "enabled": true
+        }
+      },
+      {
+        "moduleId": "environment.hdri",
+        "parameter": "rotation",
+        "control": "range",
+        "ai": {
+          "enabled": true,
+          "min": -180,
+          "max": 180
+        },
+        "developer": {
+          "enabled": true,
+          "min": -180,
+          "max": 180
+        }
+      },
+      {
+        "moduleId": "environment.hdri",
+        "parameter": "exposure",
+        "control": "range",
+        "ai": {
+          "enabled": true,
+          "min": 0.05,
+          "max": 1.5
+        },
+        "developer": {
+          "enabled": true,
+          "min": 0.05,
+          "max": 4
+        }
+      },
+      {
+        "moduleId": "environment.hdri",
+        "parameter": "saturation",
+        "control": "range",
+        "ai": {
+          "enabled": true,
+          "min": 0,
+          "max": 2
+        },
+        "developer": {
+          "enabled": true,
+          "min": 0,
+          "max": 2
+        }
+      },
+      {
+        "moduleId": "environment.hdri",
+        "parameter": "intensity",
+        "control": "range",
+        "ai": {
+          "enabled": true,
+          "min": 0,
+          "max": 1.8
+        },
+        "developer": {
+          "enabled": true,
+          "min": 0,
+          "max": 4
+        }
+      },
+      {
+        "moduleId": "environment.hdri",
+        "parameter": "tint",
+        "control": "color",
+        "ai": {
+          "enabled": true
+        },
+        "developer": {
+          "enabled": true
+        }
+      },
+      {
+        "moduleId": "environment.hdri",
+        "parameter": "tintStrength",
+        "control": "range",
+        "ai": {
+          "enabled": true,
+          "min": 0,
+          "max": 1
+        },
+        "developer": {
+          "enabled": true,
+          "min": 0,
+          "max": 1
+        }
+      },
+      {
+        "moduleId": "environment.hdri",
+        "parameter": "useAsEnvironment",
+        "control": "select",
+        "ai": {
+          "enabled": true,
+          "values": [
+            "on",
+            "off"
+          ]
+        },
+        "developer": {
+          "enabled": true,
+          "values": [
+            "on",
+            "off"
+          ]
+        }
+      },
+      {
+        "moduleId": "atmosphere.fog",
+        "parameter": "visibilityDistance",
+        "control": "range",
+        "ai": {
+          "enabled": true,
+          "min": 40,
+          "max": 800
+        },
+        "developer": {
+          "enabled": true,
+          "min": 40,
+          "max": 800
+        }
+      },
+      {
+        "moduleId": "atmosphere.fog",
+        "parameter": "density",
+        "control": "range",
+        "ai": {
+          "enabled": true,
+          "min": 0,
+          "max": 0.045
+        },
+        "developer": {
+          "enabled": true,
+          "min": 0,
+          "max": 0.045
+        }
+      },
+      {
+        "moduleId": "lighting.hemisphere",
+        "parameter": "skyColor",
+        "control": "color",
+        "ai": {
+          "enabled": true
+        },
+        "developer": {
+          "enabled": true
+        }
+      },
+      {
+        "moduleId": "lighting.hemisphere",
+        "parameter": "groundColor",
+        "control": "color",
+        "ai": {
+          "enabled": true
+        },
+        "developer": {
+          "enabled": true
+        }
+      },
+      {
+        "moduleId": "lighting.hemisphere",
+        "parameter": "intensity",
+        "control": "range",
+        "ai": {
+          "enabled": true,
+          "min": 0,
+          "max": 2.4
+        },
+        "developer": {
+          "enabled": true,
+          "min": 0,
+          "max": 8
+        }
+      },
+      {
+        "moduleId": "lighting.sun",
+        "parameter": "color",
+        "control": "color",
+        "ai": {
+          "enabled": true
+        },
+        "developer": {
+          "enabled": true
+        }
+      },
+      {
+        "moduleId": "lighting.sun",
+        "parameter": "intensity",
+        "control": "range",
+        "ai": {
+          "enabled": true,
+          "min": 0,
+          "max": 5
+        },
+        "developer": {
+          "enabled": true,
+          "min": 0,
+          "max": 12
+        }
+      },
+      {
+        "moduleId": "presentation.exposure",
+        "parameter": "value",
+        "control": "range",
+        "ai": {
+          "enabled": true,
+          "min": 0.2,
+          "max": 1.5
+        },
+        "developer": {
+          "enabled": true,
+          "min": 0.2,
+          "max": 3
+        }
+      },
+      {
+        "moduleId": "runtime.surface-style",
+        "parameter": "mode",
+        "control": "select",
+        "ai": {
+          "enabled": true,
+          "values": [
+            "pbr",
+            "cel"
+          ]
+        },
+        "developer": {
+          "enabled": true,
+          "values": [
+            "pbr",
+            "cel"
+          ]
+        }
+      },
+      {
+        "moduleId": "runtime.surface-style",
+        "parameter": "bands",
+        "control": "range",
+        "ai": {
+          "enabled": true,
+          "min": 2,
+          "max": 8
+        },
+        "developer": {
+          "enabled": true,
+          "min": 2,
+          "max": 8
+        }
+      },
+      {
+        "moduleId": "runtime.surface-style",
+        "parameter": "shadowFloor",
+        "control": "range",
+        "ai": {
+          "enabled": true,
+          "min": 0.2,
+          "max": 0.6
+        },
+        "developer": {
+          "enabled": true,
+          "min": 0.2,
+          "max": 0.6
+        }
+      },
+      {
+        "moduleId": "runtime.surface-style",
+        "parameter": "highlightFactor",
+        "control": "range",
+        "ai": {
+          "enabled": true,
+          "min": 0.5,
+          "max": 1.5
+        },
+        "developer": {
+          "enabled": true,
+          "min": 0.5,
+          "max": 1.5
+        }
+      },
+      {
+        "moduleId": "runtime.surface-style",
+        "parameter": "rampStrength",
+        "control": "range",
+        "ai": {
+          "enabled": true,
+          "min": 0,
+          "max": 1
+        },
+        "developer": {
+          "enabled": true,
+          "min": 0,
+          "max": 1
+        }
+      },
+      {
+        "moduleId": "runtime.surface-style",
+        "parameter": "transitionSoftness",
+        "control": "range",
+        "ai": {
+          "enabled": true,
+          "min": 0,
+          "max": 1
+        },
+        "developer": {
+          "enabled": true,
+          "min": 0,
+          "max": 1
+        }
+      },
+      {
+        "moduleId": "runtime.outline-style",
+        "parameter": "mode",
+        "control": "select",
+        "ai": {
+          "enabled": true,
+          "values": [
+            "none",
+            "clean",
+            "ink",
+            "echo",
+            "curvature"
+          ]
+        },
+        "developer": {
+          "enabled": true,
+          "values": [
+            "none",
+            "clean",
+            "ink",
+            "echo",
+            "curvature"
+          ]
+        }
+      },
+      {
+        "moduleId": "runtime.outline-style",
+        "parameter": "strength",
+        "control": "range",
+        "ai": {
+          "enabled": true,
+          "min": 0.25,
+          "max": 2
+        },
+        "developer": {
+          "enabled": true,
+          "min": 0.25,
+          "max": 2
+        }
+      },
+      {
+        "moduleId": "runtime.outline-style",
+        "parameter": "threshold",
+        "control": "range",
+        "ai": {
+          "enabled": true,
+          "min": 0.02,
+          "max": 0.3
+        },
+        "developer": {
+          "enabled": true,
+          "min": 0.02,
+          "max": 0.3
+        }
+      },
+      {
+        "moduleId": "runtime.outline-style",
+        "parameter": "width",
+        "control": "range",
+        "ai": {
+          "enabled": true,
+          "min": 0.5,
+          "max": 5
+        },
+        "developer": {
+          "enabled": true,
+          "min": 0.5,
+          "max": 5
+        }
+      },
+      {
+        "moduleId": "runtime.outline-style",
+        "parameter": "color",
+        "control": "color",
+        "ai": {
+          "enabled": true
+        },
+        "developer": {
+          "enabled": true
+        }
+      },
+      {
+        "moduleId": "runtime.outline-style",
+        "parameter": "depthWeight",
+        "control": "range",
+        "ai": {
+          "enabled": true,
+          "min": 0,
+          "max": 2
+        },
+        "developer": {
+          "enabled": true,
+          "min": 0,
+          "max": 2
+        }
+      },
+      {
+        "moduleId": "runtime.outline-style",
+        "parameter": "normalWeight",
+        "control": "range",
+        "ai": {
+          "enabled": true,
+          "min": 0,
+          "max": 2
+        },
+        "developer": {
+          "enabled": true,
+          "min": 0,
+          "max": 2
+        }
+      },
+      {
+        "moduleId": "runtime.outline-style",
+        "parameter": "objectWeight",
+        "control": "range",
+        "ai": {
+          "enabled": true,
+          "min": 0,
+          "max": 2
+        },
+        "developer": {
+          "enabled": true,
+          "min": 0,
+          "max": 2
+        }
+      },
+      {
+        "moduleId": "runtime.outline-style",
+        "parameter": "materialWeight",
+        "control": "range",
+        "ai": {
+          "enabled": true,
+          "min": 0,
+          "max": 2
+        },
+        "developer": {
+          "enabled": true,
+          "min": 0,
+          "max": 2
+        }
+      },
+      {
+        "moduleId": "runtime.outline-style",
+        "parameter": "noiseStrength",
+        "control": "range",
+        "ai": {
+          "enabled": true,
+          "min": 0,
+          "max": 0.8
+        },
+        "developer": {
+          "enabled": true,
+          "min": 0,
+          "max": 0.8
+        }
+      },
+      {
+        "moduleId": "runtime.outline-style",
+        "parameter": "strokeVariation",
+        "control": "range",
+        "ai": {
+          "enabled": true,
+          "min": 0,
+          "max": 1
+        },
+        "developer": {
+          "enabled": true,
+          "min": 0,
+          "max": 1
+        }
+      },
+      {
+        "moduleId": "runtime.outline-style",
+        "parameter": "echoCount",
+        "control": "range",
+        "ai": {
+          "enabled": true,
+          "min": 0,
+          "max": 3
+        },
+        "developer": {
+          "enabled": true,
+          "min": 0,
+          "max": 3
+        }
+      },
+      {
+        "moduleId": "runtime.outline-style",
+        "parameter": "echoSpacing",
+        "control": "range",
+        "ai": {
+          "enabled": true,
+          "min": 1,
+          "max": 6
+        },
+        "developer": {
+          "enabled": true,
+          "min": 1,
+          "max": 6
+        }
+      },
+      {
+        "moduleId": "runtime.outline-style",
+        "parameter": "echoAngle",
+        "control": "range",
+        "ai": {
+          "enabled": true,
+          "min": -180,
+          "max": 180
+        },
+        "developer": {
+          "enabled": true,
+          "min": -180,
+          "max": 180
+        }
+      },
+      {
+        "moduleId": "runtime.outline-style",
+        "parameter": "echoStrength",
+        "control": "range",
+        "ai": {
+          "enabled": true,
+          "min": 0,
+          "max": 1
+        },
+        "developer": {
+          "enabled": true,
+          "min": 0,
+          "max": 1
+        }
+      },
+      {
+        "moduleId": "runtime.outline-style",
+        "parameter": "echoColor",
+        "control": "color",
+        "ai": {
+          "enabled": true
+        },
+        "developer": {
+          "enabled": true
+        }
+      },
+      {
+        "moduleId": "runtime.outline-style",
+        "parameter": "fadeStart",
+        "control": "range",
+        "ai": {
+          "enabled": false,
+          "min": 20,
+          "max": 400
+        },
+        "developer": {
+          "enabled": true,
+          "min": 20,
+          "max": 400
+        }
+      },
+      {
+        "moduleId": "runtime.outline-style",
+        "parameter": "fadeEnd",
+        "control": "range",
+        "ai": {
+          "enabled": false,
+          "min": 30,
+          "max": 600
+        },
+        "developer": {
+          "enabled": true,
+          "min": 30,
+          "max": 600
+        }
+      },
+      {
+        "moduleId": "runtime.presentation-style",
+        "parameter": "mode",
+        "control": "select",
+        "ai": {
+          "enabled": true,
+          "values": [
+            "none",
+            "sketch",
+            "comic-clean",
+            "comic-print"
+          ]
+        },
+        "developer": {
+          "enabled": true,
+          "values": [
+            "none",
+            "sketch",
+            "comic-clean",
+            "comic-print"
+          ]
+        }
+      },
+      {
+        "moduleId": "runtime.presentation-style",
+        "parameter": "coordinateSpace",
+        "control": "select",
+        "ai": {
+          "enabled": true,
+          "values": [
+            "world",
+            "screen"
+          ]
+        },
+        "developer": {
+          "enabled": true,
+          "values": [
+            "world",
+            "screen"
+          ]
+        }
+      },
+      {
+        "moduleId": "runtime.presentation-style",
+        "parameter": "worldScale",
+        "control": "range",
+        "ai": {
+          "enabled": true,
+          "min": 0.25,
+          "max": 12
+        },
+        "developer": {
+          "enabled": true,
+          "min": 0.25,
+          "max": 12
+        }
+      },
+      {
+        "moduleId": "runtime.presentation-style",
+        "parameter": "strength",
+        "control": "range",
+        "ai": {
+          "enabled": true,
+          "min": 0.25,
+          "max": 1
+        },
+        "developer": {
+          "enabled": true,
+          "min": 0.25,
+          "max": 1
+        }
+      },
+      {
+        "moduleId": "runtime.presentation-style",
+        "parameter": "hatchSpacing",
+        "control": "range",
+        "ai": {
+          "enabled": true,
+          "min": 3,
+          "max": 16
+        },
+        "developer": {
+          "enabled": true,
+          "min": 3,
+          "max": 16
+        }
+      },
+      {
+        "moduleId": "runtime.presentation-style",
+        "parameter": "hatchAngle",
+        "control": "range",
+        "ai": {
+          "enabled": true,
+          "min": 0,
+          "max": 180
+        },
+        "developer": {
+          "enabled": true,
+          "min": 0,
+          "max": 180
+        }
+      },
+      {
+        "moduleId": "runtime.presentation-style",
+        "parameter": "lineWidth",
+        "control": "range",
+        "ai": {
+          "enabled": true,
+          "min": 0.08,
+          "max": 0.5
+        },
+        "developer": {
+          "enabled": true,
+          "min": 0.08,
+          "max": 0.5
+        }
+      },
+      {
+        "moduleId": "runtime.presentation-style",
+        "parameter": "jitter",
+        "control": "range",
+        "ai": {
+          "enabled": true,
+          "min": 0,
+          "max": 0.5
+        },
+        "developer": {
+          "enabled": true,
+          "min": 0,
+          "max": 0.5
+        }
+      },
+      {
+        "moduleId": "runtime.presentation-style",
+        "parameter": "colorMode",
+        "control": "select",
+        "ai": {
+          "enabled": true,
+          "values": [
+            "color",
+            "monochrome"
+          ]
+        },
+        "developer": {
+          "enabled": true,
+          "values": [
+            "color",
+            "monochrome"
+          ]
+        }
+      },
+      {
+        "moduleId": "runtime.presentation-style",
+        "parameter": "toneStrength",
+        "control": "range",
+        "ai": {
+          "enabled": true,
+          "min": 0,
+          "max": 1
+        },
+        "developer": {
+          "enabled": true,
+          "min": 0,
+          "max": 1
+        }
+      },
+      {
+        "moduleId": "runtime.presentation-style",
+        "parameter": "toneBias",
+        "control": "range",
+        "ai": {
+          "enabled": true,
+          "min": -0.5,
+          "max": 0.5
+        },
+        "developer": {
+          "enabled": true,
+          "min": -0.5,
+          "max": 0.5
+        }
+      },
+      {
+        "moduleId": "runtime.presentation-style",
+        "parameter": "denseSpacing",
+        "control": "range",
+        "ai": {
+          "enabled": true,
+          "min": 0.15,
+          "max": 1
+        },
+        "developer": {
+          "enabled": true,
+          "min": 0.15,
+          "max": 1
+        }
+      },
+      {
+        "moduleId": "runtime.presentation-style",
+        "parameter": "darkFill",
+        "control": "range",
+        "ai": {
+          "enabled": true,
+          "min": 0,
+          "max": 1
+        },
+        "developer": {
+          "enabled": true,
+          "min": 0,
+          "max": 1
+        }
+      },
+      {
+        "moduleId": "runtime.presentation-style",
+        "parameter": "break",
+        "control": "range",
+        "ai": {
+          "enabled": true,
+          "min": 0,
+          "max": 0.6
+        },
+        "developer": {
+          "enabled": true,
+          "min": 0,
+          "max": 0.6
+        }
+      },
+      {
+        "moduleId": "runtime.presentation-style",
+        "parameter": "lineColor",
+        "control": "color",
+        "ai": {
+          "enabled": true
+        },
+        "developer": {
+          "enabled": true
+        }
+      },
+      {
+        "moduleId": "runtime.presentation-style",
+        "parameter": "paperColor",
+        "control": "color",
+        "ai": {
+          "enabled": true
+        },
+        "developer": {
+          "enabled": true
+        }
+      },
+      {
+        "moduleId": "runtime.presentation-style",
+        "parameter": "paperStrength",
+        "control": "range",
+        "ai": {
+          "enabled": true,
+          "min": 0,
+          "max": 0.5
+        },
+        "developer": {
+          "enabled": true,
+          "min": 0,
+          "max": 0.5
+        }
+      },
+      {
+        "moduleId": "runtime.presentation-style",
+        "parameter": "paperScale",
+        "control": "range",
+        "ai": {
+          "enabled": true,
+          "min": 0.5,
+          "max": 8
+        },
+        "developer": {
+          "enabled": true,
+          "min": 0.5,
+          "max": 8
+        }
+      },
+      {
+        "moduleId": "runtime.presentation-style",
+        "parameter": "paperTint",
+        "control": "color",
+        "ai": {
+          "enabled": true
+        },
+        "developer": {
+          "enabled": true
+        }
+      },
+      {
+        "moduleId": "runtime.presentation-style",
+        "parameter": "halftoneStrength",
+        "control": "range",
+        "ai": {
+          "enabled": true,
+          "min": 0,
+          "max": 0.7
+        },
+        "developer": {
+          "enabled": true,
+          "min": 0,
+          "max": 0.7
+        }
+      },
+      {
+        "moduleId": "runtime.presentation-style",
+        "parameter": "halftoneCellSize",
+        "control": "range",
+        "ai": {
+          "enabled": true,
+          "min": 3,
+          "max": 16
+        },
+        "developer": {
+          "enabled": true,
+          "min": 3,
+          "max": 16
+        }
+      },
+      {
+        "moduleId": "runtime.presentation-style",
+        "parameter": "printOffset",
+        "control": "range",
+        "ai": {
+          "enabled": true,
+          "min": 0,
+          "max": 1
+        },
+        "developer": {
+          "enabled": true,
+          "min": 0,
+          "max": 1
+        }
+      },
+      {
+        "moduleId": "runtime.presentation-style",
+        "parameter": "comicLineBoost",
+        "control": "range",
+        "ai": {
+          "enabled": true,
+          "min": 0,
+          "max": 0.6
+        },
+        "developer": {
+          "enabled": true,
+          "min": 0,
+          "max": 0.6
+        }
+      },
+      {
+        "moduleId": "runtime.presentation-style",
+        "parameter": "comicLineWidth",
+        "control": "range",
+        "ai": {
+          "enabled": true,
+          "min": 0.5,
+          "max": 4
+        },
+        "developer": {
+          "enabled": true,
+          "min": 0.5,
+          "max": 4
+        }
+      },
+      {
+        "moduleId": "runtime.presentation-style",
+        "parameter": "comicInkColor",
+        "control": "color",
+        "ai": {
+          "enabled": true
+        },
+        "developer": {
+          "enabled": true
+        }
+      },
+      {
+        "moduleId": "runtime.color-grade",
+        "parameter": "recipe",
+        "control": "select",
+        "ai": {
+          "enabled": true,
+          "values": [
+            "neutral",
+            "warm",
+            "cool",
+            "misty",
+            "cinematic",
+            "pastel"
+          ]
+        },
+        "developer": {
+          "enabled": true,
+          "values": [
+            "neutral",
+            "warm",
+            "cool",
+            "misty",
+            "cinematic",
+            "pastel"
+          ]
+        }
+      },
+      {
+        "moduleId": "runtime.color-grade",
+        "parameter": "temperature",
+        "control": "range",
+        "ai": {
+          "enabled": true,
+          "min": -1,
+          "max": 1
+        },
+        "developer": {
+          "enabled": true,
+          "min": -1,
+          "max": 1
+        }
+      },
+      {
+        "moduleId": "runtime.color-grade",
+        "parameter": "contrast",
+        "control": "range",
+        "ai": {
+          "enabled": true,
+          "min": 0.5,
+          "max": 1.6
+        },
+        "developer": {
+          "enabled": true,
+          "min": 0.5,
+          "max": 1.6
+        }
+      },
+      {
+        "moduleId": "runtime.color-grade",
+        "parameter": "saturation",
+        "control": "range",
+        "ai": {
+          "enabled": true,
+          "min": 0,
+          "max": 1.8
+        },
+        "developer": {
+          "enabled": true,
+          "min": 0,
+          "max": 1.8
+        }
+      },
+      {
+        "moduleId": "runtime.color-grade",
+        "parameter": "shadowLift",
+        "control": "range",
+        "ai": {
+          "enabled": true,
+          "min": 0,
+          "max": 0.35
+        },
+        "developer": {
+          "enabled": true,
+          "min": 0,
+          "max": 0.35
+        }
+      },
+      {
+        "moduleId": "runtime.color-grade",
+        "parameter": "tint",
+        "control": "color",
+        "ai": {
+          "enabled": true
+        },
+        "developer": {
+          "enabled": true
+        }
+      },
+      {
+        "moduleId": "runtime.water-style",
+        "parameter": "recipe",
+        "control": "select",
+        "ai": {
+          "enabled": true,
+          "values": [
+            "calm-lake",
+            "clear-river",
+            "stylized",
+            "stormy"
+          ]
+        },
+        "developer": {
+          "enabled": true,
+          "values": [
+            "calm-lake",
+            "clear-river",
+            "stylized",
+            "stormy"
+          ]
+        }
+      },
+      {
+        "moduleId": "runtime.water-style",
+        "parameter": "opacity",
+        "control": "range",
+        "ai": {
+          "enabled": true,
+          "min": 0.25,
+          "max": 0.78
+        },
+        "developer": {
+          "enabled": true,
+          "min": 0.25,
+          "max": 1
+        }
+      },
+      {
+        "moduleId": "runtime.water-style",
+        "parameter": "color",
+        "control": "color",
+        "ai": {
+          "enabled": true
+        },
+        "developer": {
+          "enabled": true
+        }
+      },
+      {
+        "moduleId": "runtime.water-style",
+        "parameter": "shallowColor",
+        "control": "color",
+        "ai": {
+          "enabled": true
+        },
+        "developer": {
+          "enabled": true
+        }
+      },
+      {
+        "moduleId": "runtime.water-style",
+        "parameter": "depthColor",
+        "control": "color",
+        "ai": {
+          "enabled": true
+        },
+        "developer": {
+          "enabled": true
+        }
+      },
+      {
+        "moduleId": "runtime.water-style",
+        "parameter": "foamColor",
+        "control": "color",
+        "ai": {
+          "enabled": true
+        },
+        "developer": {
+          "enabled": true
+        }
+      },
+      {
+        "moduleId": "runtime.water-style",
+        "parameter": "waveStrength",
+        "control": "range",
+        "ai": {
+          "enabled": true,
+          "min": 0,
+          "max": 1.5
+        },
+        "developer": {
+          "enabled": true,
+          "min": 0,
+          "max": 1.5
+        }
+      },
+      {
+        "moduleId": "runtime.water-style",
+        "parameter": "waveSpeed",
+        "control": "range",
+        "ai": {
+          "enabled": true,
+          "min": 0,
+          "max": 2
+        },
+        "developer": {
+          "enabled": true,
+          "min": 0,
+          "max": 2
+        }
+      },
+      {
+        "moduleId": "runtime.water-style",
+        "parameter": "waveScale",
+        "control": "range",
+        "ai": {
+          "enabled": true,
+          "min": 0.25,
+          "max": 4
+        },
+        "developer": {
+          "enabled": true,
+          "min": 0.25,
+          "max": 4
+        }
+      },
+      {
+        "moduleId": "runtime.water-style",
+        "parameter": "waveDirection",
+        "control": "range",
+        "ai": {
+          "enabled": true,
+          "min": -180,
+          "max": 180
+        },
+        "developer": {
+          "enabled": true,
+          "min": -180,
+          "max": 180
+        }
+      },
+      {
+        "moduleId": "runtime.water-style",
+        "parameter": "waveSharpness",
+        "control": "range",
+        "ai": {
+          "enabled": true,
+          "min": 0.5,
+          "max": 4
+        },
+        "developer": {
+          "enabled": true,
+          "min": 0.5,
+          "max": 4
+        }
+      },
+      {
+        "moduleId": "runtime.water-style",
+        "parameter": "foamStrength",
+        "control": "range",
+        "ai": {
+          "enabled": true,
+          "min": 0,
+          "max": 1.5
+        },
+        "developer": {
+          "enabled": true,
+          "min": 0,
+          "max": 1.5
+        }
+      },
+      {
+        "moduleId": "runtime.water-style",
+        "parameter": "shoreFoamWidth",
+        "control": "range",
+        "ai": {
+          "enabled": true,
+          "min": 0.02,
+          "max": 0.25
+        },
+        "developer": {
+          "enabled": true,
+          "min": 0.02,
+          "max": 0.25
+        }
+      },
+      {
+        "moduleId": "runtime.water-style",
+        "parameter": "shoreWaveRange",
+        "control": "range",
+        "ai": {
+          "enabled": true,
+          "min": 0.12,
+          "max": 1
+        },
+        "developer": {
+          "enabled": true,
+          "min": 0.12,
+          "max": 1
+        }
+      },
+      {
+        "moduleId": "runtime.water-style",
+        "parameter": "shoreWaveFrequency",
+        "control": "range",
+        "ai": {
+          "enabled": true,
+          "min": 1,
+          "max": 16
+        },
+        "developer": {
+          "enabled": true,
+          "min": 1,
+          "max": 16
+        }
+      },
+      {
+        "moduleId": "runtime.water-style",
+        "parameter": "shoreWaveWidth",
+        "control": "range",
+        "ai": {
+          "enabled": true,
+          "min": 0.1,
+          "max": 0.9
+        },
+        "developer": {
+          "enabled": true,
+          "min": 0.1,
+          "max": 0.9
+        }
+      },
+      {
+        "moduleId": "runtime.water-style",
+        "parameter": "shoreWaveBreakup",
+        "control": "range",
+        "ai": {
+          "enabled": true,
+          "min": 0,
+          "max": 0.8
+        },
+        "developer": {
+          "enabled": true,
+          "min": 0,
+          "max": 0.8
+        }
+      },
+      {
+        "moduleId": "runtime.water-style",
+        "parameter": "environmentReflectionStrength",
+        "control": "range",
+        "ai": {
+          "enabled": true,
+          "min": 0,
+          "max": 0.35
+        },
+        "developer": {
+          "enabled": true,
+          "min": 0,
+          "max": 1
+        }
+      },
+      {
+        "moduleId": "runtime.water-style",
+        "parameter": "environmentReflectionExposure",
+        "control": "range",
+        "ai": {
+          "enabled": true,
+          "min": 0.1,
+          "max": 0.7
+        },
+        "developer": {
+          "enabled": true,
+          "min": 0.1,
+          "max": 1.5
+        }
+      },
+      {
+        "moduleId": "runtime.grass-style",
+        "parameter": "rootColor",
+        "control": "color",
+        "ai": {
+          "enabled": true
+        },
+        "developer": {
+          "enabled": true
+        }
+      },
+      {
+        "moduleId": "runtime.grass-style",
+        "parameter": "tipColor",
+        "control": "color",
+        "ai": {
+          "enabled": true
+        },
+        "developer": {
+          "enabled": true
+        }
+      },
+      {
+        "moduleId": "runtime.grass-style",
+        "parameter": "paletteVariation",
+        "control": "range",
+        "ai": {
+          "enabled": true,
+          "min": 0,
+          "max": 0.5
+        },
+        "developer": {
+          "enabled": true,
+          "min": 0,
+          "max": 0.5
+        }
+      },
+      {
+        "moduleId": "runtime.grass-style",
+        "parameter": "bands",
+        "control": "select",
+        "ai": {
+          "enabled": true,
+          "values": [
+            "2",
+            "3"
+          ]
+        },
+        "developer": {
+          "enabled": true,
+          "values": [
+            "2",
+            "3"
+          ]
+        }
+      },
+      {
+        "moduleId": "runtime.grass-style",
+        "parameter": "bladeHeight",
+        "control": "range",
+        "ai": {
+          "enabled": true,
+          "min": 0.5,
+          "max": 1.4
+        },
+        "developer": {
+          "enabled": true,
+          "min": 0.5,
+          "max": 1.4
+        }
+      },
+      {
+        "moduleId": "runtime.grass-style",
+        "parameter": "bladeWidth",
+        "control": "range",
+        "ai": {
+          "enabled": true,
+          "min": 0.1,
+          "max": 0.28
+        },
+        "developer": {
+          "enabled": true,
+          "min": 0.1,
+          "max": 0.28
+        }
+      },
+      {
+        "moduleId": "runtime.grass-style",
+        "parameter": "windStrength",
+        "control": "range",
+        "ai": {
+          "enabled": true,
+          "min": 0,
+          "max": 0.65
+        },
+        "developer": {
+          "enabled": true,
+          "min": 0,
+          "max": 0.65
+        }
+      },
+      {
+        "moduleId": "runtime.grass-style",
+        "parameter": "windAngle",
+        "control": "range",
+        "ai": {
+          "enabled": true,
+          "min": -180,
+          "max": 180
+        },
+        "developer": {
+          "enabled": true,
+          "min": -180,
+          "max": 180
+        }
+      },
+      {
+        "moduleId": "runtime.grass-style",
+        "parameter": "normalFlatten",
+        "control": "range",
+        "ai": {
+          "enabled": false,
+          "min": 0,
+          "max": 1
+        },
+        "developer": {
+          "enabled": true,
+          "min": 0,
+          "max": 1
+        }
+      },
+      {
+        "moduleId": "runtime.grass-style",
+        "parameter": "rootDarken",
+        "control": "range",
+        "ai": {
+          "enabled": false,
+          "min": 0.15,
+          "max": 1
+        },
+        "developer": {
+          "enabled": true,
+          "min": 0.15,
+          "max": 1
+        }
+      },
+      {
+        "moduleId": "runtime.grass-style",
+        "parameter": "gradientBias",
+        "control": "range",
+        "ai": {
+          "enabled": false,
+          "min": 0.2,
+          "max": 2
+        },
+        "developer": {
+          "enabled": true,
+          "min": 0.2,
+          "max": 2
+        }
+      },
+      {
+        "moduleId": "runtime.grass-style",
+        "parameter": "cellSize",
+        "control": "range",
+        "ai": {
+          "enabled": false,
+          "min": 0.55,
+          "max": 1.4
+        },
+        "developer": {
+          "enabled": true,
+          "min": 0.55,
+          "max": 1.4
+        }
+      },
+      {
+        "moduleId": "runtime.grass-style",
+        "parameter": "fadeStart",
+        "control": "range",
+        "ai": {
+          "enabled": false,
+          "min": 10,
+          "max": 120
+        },
+        "developer": {
+          "enabled": true,
+          "min": 10,
+          "max": 120
+        }
+      },
+      {
+        "moduleId": "runtime.grass-style",
+        "parameter": "fadeEnd",
+        "control": "range",
+        "ai": {
+          "enabled": false,
+          "min": 15,
+          "max": 180
+        },
+        "developer": {
+          "enabled": true,
+          "min": 15,
+          "max": 180
+        }
+      },
+      {
+        "moduleId": "runtime.grass-style",
+        "parameter": "maxInstances",
+        "control": "range",
+        "ai": {
+          "enabled": false,
+          "min": 1000,
+          "max": 30000
+        },
+        "developer": {
+          "enabled": true,
+          "min": 1000,
+          "max": 30000
+        }
+      },
+      {
+        "moduleId": "runtime.grass-style",
+        "parameter": "groundTint",
+        "control": "toggle",
+        "ai": {
+          "enabled": true,
+          "values": [
+            "on",
+            "off"
+          ]
+        },
+        "developer": {
+          "enabled": true,
+          "values": [
+            "on",
+            "off"
+          ]
+        }
+      },
+      {
+        "moduleId": "runtime.grass-style",
+        "parameter": "groundColor",
+        "control": "color",
+        "ai": {
+          "enabled": true
+        },
+        "developer": {
+          "enabled": true
+        }
+      },
+      {
+        "moduleId": "runtime.grass-style",
+        "parameter": "groundTintStrength",
+        "control": "range",
+        "ai": {
+          "enabled": true,
+          "min": 0,
+          "max": 1
+        },
+        "developer": {
+          "enabled": true,
+          "min": 0,
+          "max": 1
+        }
+      },
+      {
+        "moduleId": "runtime.material-theme",
+        "parameter": "recipe",
+        "control": "select",
+        "ai": {
+          "enabled": true,
+          "values": [
+            "natural",
+            "autumn",
+            "winter",
+            "weathered",
+            "polished",
+            "pastel"
+          ]
+        },
+        "developer": {
+          "enabled": true,
+          "values": [
+            "natural",
+            "autumn",
+            "winter",
+            "weathered",
+            "polished",
+            "pastel"
+          ]
+        }
+      },
+      {
+        "moduleId": "runtime.material-theme",
+        "parameter": "strength",
+        "control": "range",
+        "ai": {
+          "enabled": true,
+          "min": 0,
+          "max": 1
+        },
+        "developer": {
+          "enabled": true,
+          "min": 0,
+          "max": 1
+        }
+      },
+      {
+        "moduleId": "runtime.material-theme",
+        "parameter": "color",
+        "control": "color",
+        "ai": {
+          "enabled": true
+        },
+        "developer": {
+          "enabled": true
+        }
+      },
+      {
+        "moduleId": "runtime.material-theme",
+        "parameter": "roughness",
+        "control": "range",
+        "ai": {
+          "enabled": true,
+          "min": 0,
+          "max": 1
+        },
+        "developer": {
+          "enabled": true,
+          "min": 0,
+          "max": 1
+        }
+      },
+      {
+        "moduleId": "runtime.material-theme",
+        "parameter": "metalness",
+        "control": "range",
+        "ai": {
+          "enabled": true,
+          "min": 0,
+          "max": 1
+        },
+        "developer": {
+          "enabled": true,
+          "min": 0,
+          "max": 1
+        }
+      },
+      {
+        "moduleId": "runtime.light-rig",
+        "parameter": "recipe",
+        "control": "select",
+        "ai": {
+          "enabled": true,
+          "values": [
+            "neutral",
+            "soft-morning",
+            "hard-day",
+            "backlit",
+            "overcast",
+            "sunset"
+          ]
+        },
+        "developer": {
+          "enabled": true,
+          "values": [
+            "neutral",
+            "soft-morning",
+            "hard-day",
+            "backlit",
+            "overcast",
+            "sunset"
+          ]
+        }
+      },
+      {
+        "moduleId": "runtime.light-rig",
+        "parameter": "strength",
+        "control": "range",
+        "ai": {
+          "enabled": true,
+          "min": 0.25,
+          "max": 2
+        },
+        "developer": {
+          "enabled": true,
+          "min": 0.25,
+          "max": 2
+        }
+      },
+      {
+        "moduleId": "runtime.light-rig",
+        "parameter": "warmth",
+        "control": "range",
+        "ai": {
+          "enabled": true,
+          "min": -1,
+          "max": 1
+        },
+        "developer": {
+          "enabled": true,
+          "min": -1,
+          "max": 1
+        }
+      },
+      {
+        "moduleId": "runtime.light-rig",
+        "parameter": "shadowSoftness",
+        "control": "range",
+        "ai": {
+          "enabled": true,
+          "min": 0,
+          "max": 1
+        },
+        "developer": {
+          "enabled": true,
+          "min": 0,
+          "max": 1
+        }
+      },
+      {
+        "moduleId": "runtime.post-quality",
+        "parameter": "bloom",
+        "control": "select",
+        "ai": {
+          "enabled": true,
+          "values": [
+            "off",
+            "soft",
+            "strong"
+          ]
+        },
+        "developer": {
+          "enabled": true,
+          "values": [
+            "off",
+            "soft",
+            "strong"
+          ]
+        }
+      },
+      {
+        "moduleId": "runtime.post-quality",
+        "parameter": "bloomStrength",
+        "control": "range",
+        "ai": {
+          "enabled": true,
+          "min": 0,
+          "max": 1.5
+        },
+        "developer": {
+          "enabled": true,
+          "min": 0,
+          "max": 1.5
+        }
+      },
+      {
+        "moduleId": "runtime.post-quality",
+        "parameter": "ssao",
+        "control": "select",
+        "ai": {
+          "enabled": true,
+          "values": [
+            "off",
+            "soft",
+            "strong"
+          ]
+        },
+        "developer": {
+          "enabled": true,
+          "values": [
+            "off",
+            "soft",
+            "strong"
+          ]
+        }
+      },
+      {
+        "moduleId": "runtime.post-quality",
+        "parameter": "depthOfField",
+        "control": "select",
+        "ai": {
+          "enabled": false,
+          "values": [
+            "off",
+            "soft",
+            "portrait"
+          ]
+        },
+        "developer": {
+          "enabled": true,
+          "values": [
+            "off",
+            "soft",
+            "portrait"
+          ]
+        }
+      },
+      {
+        "moduleId": "runtime.terrain-materials",
+        "parameter": "detailStrength",
+        "control": "range",
+        "ai": {
+          "enabled": true,
+          "min": 0,
+          "max": 1
+        },
+        "developer": {
+          "enabled": true,
+          "min": 0,
+          "max": 1
+        }
+      },
+      {
+        "moduleId": "runtime.terrain-materials",
+        "parameter": "soilRecipe",
+        "control": "select",
+        "ai": {
+          "enabled": true,
+          "values": [
+            "dry",
+            "moist"
+          ]
+        },
+        "developer": {
+          "enabled": true,
+          "values": [
+            "dry",
+            "moist"
+          ]
+        }
+      },
+      {
+        "moduleId": "runtime.terrain-materials",
+        "parameter": "sandRecipe",
+        "control": "select",
+        "ai": {
+          "enabled": true,
+          "values": [
+            "dune",
+            "beach"
+          ]
+        },
+        "developer": {
+          "enabled": true,
+          "values": [
+            "dune",
+            "beach"
+          ]
+        }
+      },
+      {
+        "moduleId": "runtime.weather",
+        "parameter": "preset",
+        "control": "select",
+        "ai": {
+          "enabled": true,
+          "values": [
+            "clear",
+            "overcast",
+            "rain",
+            "snow",
+            "storm"
+          ]
+        },
+        "developer": {
+          "enabled": true,
+          "values": [
+            "clear",
+            "overcast",
+            "rain",
+            "snow",
+            "storm"
+          ]
+        }
+      },
+      {
+        "moduleId": "runtime.weather",
+        "parameter": "intensity",
+        "control": "range",
+        "ai": {
+          "enabled": true,
+          "min": 0,
+          "max": 1
+        },
+        "developer": {
+          "enabled": true,
+          "min": 0,
+          "max": 1
+        }
+      },
+      {
+        "moduleId": "runtime.weather",
+        "parameter": "wind",
+        "control": "range",
+        "ai": {
+          "enabled": true,
+          "min": -1,
+          "max": 1
+        },
+        "developer": {
+          "enabled": true,
+          "min": -1,
+          "max": 1
+        }
+      },
+      {
+        "moduleId": "runtime.weather",
+        "parameter": "flakeSize",
+        "control": "range",
+        "ai": {
+          "enabled": true,
+          "min": 0.5,
+          "max": 2
+        },
+        "developer": {
+          "enabled": true,
+          "min": 0.5,
+          "max": 2
+        }
+      },
+      {
+        "moduleId": "runtime.weather",
+        "parameter": "snowCover",
+        "control": "range",
+        "ai": {
+          "enabled": true,
+          "min": 0,
+          "max": 1
+        },
+        "developer": {
+          "enabled": true,
+          "min": 0,
+          "max": 1
+        }
+      },
+      {
+        "moduleId": "runtime.weather",
+        "parameter": "transitionSeconds",
+        "control": "range",
+        "ai": {
+          "enabled": true,
+          "min": 0,
+          "max": 30
+        },
+        "developer": {
+          "enabled": true,
+          "min": 0,
+          "max": 30
+        }
+      },
+      {
+        "moduleId": "runtime.weather",
+        "parameter": "timeOfDay",
+        "control": "range",
+        "ai": {
+          "enabled": true,
+          "min": 0,
+          "max": 24
+        },
+        "developer": {
+          "enabled": true,
+          "min": 0,
+          "max": 24
+        }
+      },
+      {
+        "moduleId": "runtime.weather",
+        "parameter": "daySpeed",
+        "control": "range",
+        "ai": {
+          "enabled": false,
+          "min": 0,
+          "max": 1
+        },
+        "developer": {
+          "enabled": true,
+          "min": 0,
+          "max": 1
+        }
+      },
+      {
+        "moduleId": "runtime.atmosphere-fx",
+        "parameter": "masterStrength",
+        "control": "range",
+        "ai": {
+          "enabled": true,
+          "min": 0,
+          "max": 1
+        },
+        "developer": {
+          "enabled": true,
+          "min": 0,
+          "max": 1
+        }
+      },
+      {
+        "moduleId": "runtime.atmosphere-fx",
+        "parameter": "semanticStrength",
+        "control": "range",
+        "ai": {
+          "enabled": true,
+          "min": 0,
+          "max": 1
+        },
+        "developer": {
+          "enabled": true,
+          "min": 0,
+          "max": 1
+        }
+      },
+      {
+        "moduleId": "runtime.atmosphere-fx",
+        "parameter": "pollen",
+        "control": "range",
+        "ai": {
+          "enabled": true,
+          "min": 0,
+          "max": 1
+        },
+        "developer": {
+          "enabled": true,
+          "min": 0,
+          "max": 1
+        }
+      },
+      {
+        "moduleId": "runtime.atmosphere-fx",
+        "parameter": "vapor",
+        "control": "range",
+        "ai": {
+          "enabled": true,
+          "min": 0,
+          "max": 1
+        },
+        "developer": {
+          "enabled": true,
+          "min": 0,
+          "max": 1
+        }
+      },
+      {
+        "moduleId": "runtime.atmosphere-fx",
+        "parameter": "dust",
+        "control": "range",
+        "ai": {
+          "enabled": true,
+          "min": 0,
+          "max": 1
+        },
+        "developer": {
+          "enabled": true,
+          "min": 0,
+          "max": 1
+        }
+      },
+      {
+        "moduleId": "runtime.atmosphere-fx",
+        "parameter": "sand",
+        "control": "range",
+        "ai": {
+          "enabled": true,
+          "min": 0,
+          "max": 1
+        },
+        "developer": {
+          "enabled": true,
+          "min": 0,
+          "max": 1
+        }
+      },
+      {
+        "moduleId": "runtime.effect-recipe",
+        "parameter": "recipe",
+        "control": "select",
+        "ai": {
+          "enabled": true,
+          "values": [
+            "glow",
+            "fresnel",
+            "flame",
+            "magic",
+            "aura",
+            "sway"
+          ]
+        },
+        "developer": {
+          "enabled": true,
+          "values": [
+            "glow",
+            "fresnel",
+            "flame",
+            "magic",
+            "aura",
+            "sway"
+          ]
+        }
+      },
+      {
+        "moduleId": "runtime.effect-recipe",
+        "parameter": "intensity",
+        "control": "range",
+        "ai": {
+          "enabled": true,
+          "min": 0,
+          "max": 2.5
+        },
+        "developer": {
+          "enabled": true,
+          "min": 0,
+          "max": 2.5
+        }
+      },
+      {
+        "moduleId": "runtime.effect-recipe",
+        "parameter": "speed",
+        "control": "range",
+        "ai": {
+          "enabled": true,
+          "min": 0,
+          "max": 5
+        },
+        "developer": {
+          "enabled": true,
+          "min": 0,
+          "max": 5
+        }
+      },
+      {
+        "moduleId": "runtime.effect-recipe",
+        "parameter": "color",
+        "control": "color",
+        "ai": {
+          "enabled": true
+        },
+        "developer": {
+          "enabled": true
+        }
+      },
+      {
+        "moduleId": "runtime.shader-extension",
+        "parameter": "mode",
+        "control": "select",
+        "ai": {
+          "enabled": false,
+          "values": [
+            "off",
+            "whitelist-fragment",
+            "isolated-glsl"
+          ]
+        },
+        "developer": {
+          "enabled": true,
+          "values": [
+            "off",
+            "whitelist-fragment",
+            "isolated-glsl"
+          ]
+        }
+      },
+      {
+        "moduleId": "runtime.shader-extension",
+        "parameter": "fragmentId",
+        "control": "select",
+        "ai": {
+          "enabled": false,
+          "values": [
+            "rim-light",
+            "color-wash",
+            "vertex-sway"
+          ]
+        },
+        "developer": {
+          "enabled": true,
+          "values": [
+            "rim-light",
+            "color-wash",
+            "vertex-sway"
+          ]
+        }
+      },
+      {
+        "moduleId": "runtime.shader-extension",
+        "parameter": "code",
+        "control": "code",
+        "ai": {
+          "enabled": false
+        },
+        "developer": {
+          "enabled": true
+        }
+      }
+    ]
+  },
+  "schemaVersion": 1,
+  "kind": "custom",
+  "settings": {
+    "background": "#c9dce3",
+    "fogColor": "#a3acaf",
+    "fogDensity": 0.005408807445632142,
+    "hemisphereSkyColor": "#9fb0b6",
+    "hemisphereGroundColor": "#a3acaf",
+    "hemisphereIntensity": 1.45,
+    "sunColor": "#f3e8d2",
+    "sunIntensity": 2.7,
+    "exposure": 0.86
+  },
+  "createdAt": 1788058024917,
+  "updatedAt": 1788058024917
+}
