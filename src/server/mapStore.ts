@@ -978,6 +978,12 @@ export class MapStore {
   }
 
   /** Imports a portable map as a new project and remaps embedded assets. */
+  async existsMap(id: string): Promise<boolean> {
+    if (!/^map-[a-f0-9-]+$/.test(id)) return false;
+    const { access } = await import('node:fs/promises');
+    try { await access(this.mapPath(id)); return true; } catch { return false; }
+  }
+
   async importMap(input: EditableMap, renderSchemeId: string | null = null): Promise<EditableMap> {
     await this.ensureReady();
     const source = normalizeMap(input);
@@ -1002,9 +1008,17 @@ export class MapStore {
       ...object,
       assetId: object.assetId ? assetIds.get(object.assetId) ?? null : null
     }));
+    // GameHub per-game libraries import a game's own scene.json and the
+    // game hot-refreshes by map.id — preserve the incoming id when it is
+    // free so round-trips keep a stable identity. Fall back to a fresh id
+    // on collision (different content with the same id).
+    const requestedId = typeof (source as any).id === 'string' && (source as any).id.startsWith('map-')
+      ? (source as any).id
+      : createId('map');
+    const idExists = await this.existsMap(requestedId).catch(() => false);
     const imported = normalizeMap({
       ...source,
-      id: createId('map'),
+      id: idExists ? createId('map') : requestedId,
       name: `${source.name}（导入）`,
       version: 1,
       createdAt: now,
