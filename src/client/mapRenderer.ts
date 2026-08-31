@@ -60,6 +60,7 @@ import {
 import { inferPaletteRole, type ColorPalette } from '../shared/colorPalette';
 import { paletteTerrainColors } from './colorPaletteRuntime';
 import { PaletteMaterialRuntime, type PaletteCoverageReport } from './paletteMaterialRuntime';
+import { resolveMapModelZFighting } from './modelZFighting';
 
 export interface RenderedMapDebugStats extends MapPrimitiveBatchStats {
   grassLayers: number;
@@ -132,13 +133,17 @@ export interface MapMotionAdapter {
 }
 
 export async function buildEditableMapGroup(input: EditableMap, options: MapRenderOptions = {}): Promise<RenderedMap> {
-  const map = normalizeMap(input);
+  const normalizedMap = normalizeMap(input);
+  // Keep the persisted map/collider data untouched; only the render snapshot gets micro-offsets.
+  const zFighting = resolveMapModelZFighting(normalizedMap);
+  const map = zFighting.map;
   let currentMap = map;
   const root = new THREE.Group();
   root.name = `map:${map.id}`;
   const modelsRoot = new THREE.Group();
   modelsRoot.name = 'modelsRoot';
   modelsRoot.userData.isModelRoot = true;
+  modelsRoot.userData.zFightingStats = zFighting.stats;
   root.add(modelsRoot);
   const pickables: THREE.Object3D[] = [];
   const assets = new Map((map.assets ?? []).map((asset) => [asset.id, asset]));

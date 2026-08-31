@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { enforceReadableFoliageColors } from '../shared/modelColorPolicy';
 import { MODEL_API_BASE } from '../shared/protocol';
+import { resolveModelZFighting } from './modelZFighting';
 
 export interface MotionDelta {
   position?: [number, number, number];
@@ -82,7 +83,9 @@ export async function buildModelGroup(modelJson: unknown): Promise<THREE.Group> 
 
 export async function buildModelGroupWithNodes(modelJson: unknown): Promise<BuiltModelGroup> {
   const group = new THREE.Group();
-  const data = enforceReadableFoliageColors(modelJson) as ModelJson;
+  const zFighting = resolveModelZFighting(modelJson);
+  const data = enforceReadableFoliageColors(zFighting.modelJson) as ModelJson;
+  group.userData.zFightingStats = zFighting.stats;
   const nodes = Array.isArray(data?.nodes) ? data.nodes : [];
   if (nodes.length === 0) {
     group.add(makeFallbackProp());
