@@ -1,90 +1,104 @@
 import * as THREE from 'three';
 import type { Vec3 } from '../shared/protocol';
 
-interface GrassMeshIndex {
-  mesh: THREE.InstancedMesh;
-  matrices: Float32Array;
-  grid: Map<string, number[]>;
-  active: Set<number>;
+interface GrassInteractionUniforms {
+  uGrassInteractionPosition: { value: THREE.Vector2 };
+  uGrassInteractionDirection: { value: THREE.Vector2 };
+  uGrassInteractionRadius: { value: number };
+  uGrassInteractionStrength: { value: number };
 }
 
-/** Local CPU interaction for the small set of grass instances around the player. */
-export class MapGrassInteraction {
-  private readonly meshes: GrassMeshIndex[] = [];
-  private readonly matrix = new THREE.Matrix4();
-  private readonly scale = new THREE.Matrix4();
-  private lastUpdateAt = -Infinity;
+const NORMAL_DECLARATION = 'uniform float uGrassNormalFlatten;';
+const WIND_DEFORMATION = 'transformed += grassLocalWind * (grassWave * uGrassWindStrength * vGrassBladeT * vGrassBladeT);';
+const INTERACTION_DECLARATIONS = `
+uniform vec2 uGrassInteractionPosition;
+uniform vec2 uGrassInteractionDirection;
+uniform float uGrassInteractionRadius;
+uniform float uGrassInteractionStrength;`;
+const INTERACTION_DEFORMATION = `
+vec2 grassInteractionOffset = grassRootWorld.xz - uGrassInteractionPosition;
+float grassInteractionDistance = length(grassInteractionOffset);
+float grassInteractionInfluence = 1.0 - smoothstep(0.0, uGrassInteractionRadius, grassInteractionDistance);
+grassInteractionInfluence *= grassInteractionInfluence;
+vec2 grassInteractionRadial = grassInteractionDistance > 0.001
+  ? grassInteractionOffset / grassInteractionDistance
+  : uGrassInteractionDirection;
+vec2 grassInteractionPush = normalize(mix(grassInteractionRadial, uGrassInteractionDirection, 0.35));
+vec3 grassInteractionWorldPush = vec3(grassInteractionPush.x, 0.0, grassInteractionPush.y);
+vec3 grassInteractionLocalPush = normalize(vec3(
+  dot(instanceMatrix[0].xyz, grassInteractionWorldPush),
+  0.0,
+  dot(instanceMatrix[2].xyz, grassInteractionWorldPush)
+));
+transformed += grassInteractionLocalPush
+  * (uGrassInteractionStrength * grassInteractionInfluence * vGrassBladeT * vGrassBladeT);`;
 
-  constructor(root: THREE.Object3D, private readonly radius = 1.35) {
+/** Adds continuous player bending to the existing grass shader with no matrix uploads. */
+export class MapGrassInteraction {
+  private readonly uniforms: GrassInteractionUniforms = {
+    uGrassInteractionPosition: { value: new THREE.Vector2(1e6, 1e6) },
+    uGrassInteractionDirection: { value: new THREE.Vector2(1, 0) },
+    uGrassInteractionRadius: { value: 1.35 },
+    uGrassInteractionStrength: { value: 0 }
+  };
+  private readonly lastPosition = new THREE.Vector2(Number.NaN, Number.NaN);
+  private readonly targetDirection = new THREE.Vector2();
+  private lastElapsedSeconds = Number.NaN;
+
+  constructor(root: THREE.Object3D, radius = 1.35) {
+    this.uniforms.uGrassInteractionRadius.value = radius;
     root.traverse((object) => {
       const mesh = object as THREE.InstancedMesh;
       if (!mesh.isInstancedMesh || !mesh.userData.grassBladeCount) return;
-      const matrices = new Float32Array(mesh.count * 16);
-      const grid = new Map<string, number[]>();
-      for (let index = 0; index < mesh.count; index += 1) {
-        mesh.getMatrixAt(index, this.matrix);
-        matrices.set(this.matrix.elements, index * 16);
-        const key = cellKey(this.matrix.elements[12], this.matrix.elements[14], this.radius);
-        const bucket = grid.get(key) ?? [];
-        bucket.push(index);
-        grid.set(key, bucket);
-      }
-      this.meshes.push({ mesh, matrices, grid, active: new Set() });
+      const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+      for (const material of materials) patchGrassMaterial(material, this.uniforms);
     });
   }
 
   update(position: Vec3, elapsedSeconds: number): void {
-    if (elapsedSeconds - this.lastUpdateAt < 0.045) return;
-    this.lastUpdateAt = elapsedSeconds;
-    for (const entry of this.meshes) this.updateMesh(entry, position[0], position[2]);
+    const x = position[0];
+    const z = position[2];
+    const deltaTime = Number.isFinite(this.lastElapsedSeconds)
+      ? THREE.MathUtils.clamp(elapsedSeconds - this.lastElapsedSeconds, 0, 0.05)
+      : 1 / 60;
+    this.lastElapsedSeconds = elapsedSeconds;
+
+    if (Number.isFinite(this.lastPosition.x)) {
+      this.targetDirection.set(x - this.lastPosition.x, z - this.lastPosition.y);
+      if (this.targetDirection.lengthSq() > Math.max(0.000001, deltaTime * deltaTime * 0.0004)) {
+        this.targetDirection.normalize();
+        const alpha = 1 - Math.exp(-12 * deltaTime);
+        this.uniforms.uGrassInteractionDirection.value
+          .lerp(this.targetDirection, alpha)
+          .normalize();
+      }
+    }
+    this.lastPosition.set(x, z);
+    this.uniforms.uGrassInteractionPosition.value.set(x, z);
+    this.uniforms.uGrassInteractionStrength.value = 0.48;
   }
 
   restore(): void {
-    for (const entry of this.meshes) {
-      for (const index of entry.active) {
-        this.matrix.fromArray(entry.matrices, index * 16);
-        entry.mesh.setMatrixAt(index, this.matrix);
-      }
-      if (entry.active.size) entry.mesh.instanceMatrix.needsUpdate = true;
-      entry.active.clear();
-    }
-  }
-
-  private updateMesh(entry: GrassMeshIndex, x: number, z: number): void {
-    let changed = false;
-    for (const index of entry.active) {
-      this.matrix.fromArray(entry.matrices, index * 16);
-      entry.mesh.setMatrixAt(index, this.matrix);
-      changed = true;
-    }
-    entry.active.clear();
-
-    const cellX = Math.floor(x / this.radius);
-    const cellZ = Math.floor(z / this.radius);
-    for (let dz = -1; dz <= 1; dz += 1) {
-      for (let dx = -1; dx <= 1; dx += 1) {
-        for (const index of entry.grid.get(`${cellX + dx}:${cellZ + dz}`) ?? []) {
-          this.matrix.fromArray(entry.matrices, index * 16);
-          const offsetX = this.matrix.elements[12] - x;
-          const offsetZ = this.matrix.elements[14] - z;
-          const distance = Math.hypot(offsetX, offsetZ);
-          if (distance >= this.radius) continue;
-          const influence = 1 - distance / this.radius;
-          const length = Math.max(0.001, distance);
-          this.matrix.elements[12] += offsetX / length * influence * 0.32;
-          this.matrix.elements[14] += offsetZ / length * influence * 0.32;
-          this.scale.makeScale(1, 1 - influence * 0.45, 1);
-          this.matrix.multiply(this.scale);
-          entry.mesh.setMatrixAt(index, this.matrix);
-          entry.active.add(index);
-          changed = true;
-        }
-      }
-    }
-    if (changed) entry.mesh.instanceMatrix.needsUpdate = true;
+    this.uniforms.uGrassInteractionStrength.value = 0;
+    this.lastPosition.set(Number.NaN, Number.NaN);
+    this.lastElapsedSeconds = Number.NaN;
   }
 }
 
-function cellKey(x: number, z: number, size: number): string {
-  return `${Math.floor(x / size)}:${Math.floor(z / size)}`;
+function patchGrassMaterial(material: THREE.Material, uniforms: GrassInteractionUniforms): void {
+  if (!material.userData.grassUniforms || material.userData.mapGrassInteraction) return;
+  const originalCompile = material.onBeforeCompile.bind(material);
+  const originalCacheKey = material.customProgramCacheKey.bind(material);
+  material.onBeforeCompile = (shader, renderer) => {
+    originalCompile(shader, renderer);
+    if (!shader.vertexShader.includes(NORMAL_DECLARATION)
+      || !shader.vertexShader.includes(WIND_DEFORMATION)) return;
+    Object.assign(shader.uniforms, uniforms);
+    shader.vertexShader = shader.vertexShader
+      .replace(NORMAL_DECLARATION, `${NORMAL_DECLARATION}${INTERACTION_DECLARATIONS}`)
+      .replace(WIND_DEFORMATION, `${WIND_DEFORMATION}${INTERACTION_DEFORMATION}`);
+  };
+  material.customProgramCacheKey = () => `${originalCacheKey()}|worldforge-smooth-grass-v1`;
+  material.userData.mapGrassInteraction = uniforms;
+  material.needsUpdate = true;
 }

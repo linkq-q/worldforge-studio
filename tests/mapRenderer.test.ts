@@ -48,6 +48,101 @@ describe('terrain normal generation', () => {
   });
 });
 
+describe('procedural foundation rendering', () => {
+  it('builds one selectable closed mesh whose lower rim follows terrain', async () => {
+    const source = createEmptyMap('foundation render', 'foundation-render');
+    source.terrain.heights = source.terrain.heights.map((_, index) => index % 5 * 0.12);
+    const map = applyMapOperations(source, [{
+      type: 'object.add', object: {
+        id: 'foundation-a', name: '地基', heightMode: 'fixed',
+        transform: { position: [0, 1, 0] },
+        foundation: {
+          shape: 'capsule', top: 'level', width: 7, depth: 4, thickness: 0.35,
+          maxThickness: 3, cornerRadius: 2, points: [], curve: 'polyline', closed: true,
+          slope: 0, slopeDirection: 0, stepHeight: 0.2, stepCount: 3,
+          material: 'stone', linkedObjectIds: []
+        }
+      }
+    }]);
+    const rendered = await buildEditableMapGroup(map);
+    const mesh = rendered.group.getObjectByName('foundation-mesh:foundation-a') as THREE.Mesh;
+    const positions = mesh.geometry.getAttribute('position');
+    const ys = Array.from({ length: positions.count }, (_, index) => positions.getY(index));
+
+    expect(mesh.userData.mapObjectId).toBe('foundation-a');
+    expect(mesh.geometry.index?.count).toBeGreaterThan(0);
+    expect(Math.min(...ys)).toBeLessThan(-0.35);
+    expect((mesh.material as THREE.MeshStandardMaterial).color.getHex()).toBe(0x7f8179);
+    expect(rendered.pickables).toContain(mesh);
+    rendered.dispose();
+  });
+
+  it('renders stepped tops as horizontal treads with vertical risers', async () => {
+    const map = applyMapOperations(createEmptyMap('stepped foundation', 'stepped-foundation-render'), [{
+      type: 'object.add', object: {
+        id: 'foundation-steps', name: '阶梯地基', heightMode: 'fixed',
+        transform: { position: [0, 1, 0] },
+        foundation: {
+          shape: 'rounded-rectangle', top: 'steps', width: 8, depth: 6, thickness: 0.35,
+          maxThickness: 4, cornerRadius: 1, points: [], curve: 'polyline', closed: true,
+          slope: 0, slopeDirection: 0, stepHeight: 0.3, stepCount: 4,
+          material: 'concrete', linkedObjectIds: []
+        }
+      }
+    }]);
+    const rendered = await buildEditableMapGroup(map);
+    const mesh = rendered.group.getObjectByName('foundation-mesh:foundation-steps') as THREE.Mesh;
+    const positions = mesh.geometry.getAttribute('position');
+    const index = mesh.geometry.index!;
+    const upwardTriangles: number[][] = [];
+    for (let offset = 0; offset < index.count; offset += 3) {
+      const ids = [index.getX(offset), index.getX(offset + 1), index.getX(offset + 2)];
+      const a = new THREE.Vector3().fromBufferAttribute(positions, ids[0]);
+      const b = new THREE.Vector3().fromBufferAttribute(positions, ids[1]);
+      const c = new THREE.Vector3().fromBufferAttribute(positions, ids[2]);
+      const normalY = b.clone().sub(a).cross(c.clone().sub(a)).y;
+      if (normalY > 1e-6) upwardTriangles.push(ids.map((id) => positions.getY(id)));
+    }
+
+    expect(upwardTriangles.length).toBeGreaterThan(4);
+    expect(upwardTriangles.every((ys) => Math.max(...ys) - Math.min(...ys) < 1e-6)).toBe(true);
+    rendered.dispose();
+  });
+
+  it('extrudes a curved path in local segments without long cross-bend triangles', async () => {
+    const map = applyMapOperations(createEmptyMap('path foundation', 'path-foundation-render'), [{
+      type: 'object.add', object: {
+        id: 'foundation-path', name: '曲线地基', heightMode: 'fixed',
+        transform: { position: [0, 1, 0] },
+        foundation: {
+          shape: 'path', top: 'steps', width: 1.5, depth: 12, thickness: 0.35,
+          maxThickness: 4, cornerRadius: 0,
+          points: [[-8, -6], [-8, 6], [0, 6], [0, -6], [8, -6]],
+          curve: 'polyline', closed: false, slope: 0, slopeDirection: 0,
+          stepHeight: 0.25, stepCount: 4, material: 'concrete', linkedObjectIds: []
+        }
+      }
+    }]);
+    const rendered = await buildEditableMapGroup(map);
+    const mesh = rendered.group.getObjectByName('foundation-mesh:foundation-path') as THREE.Mesh;
+    const positions = mesh.geometry.getAttribute('position');
+    const index = mesh.geometry.index!;
+    let longestHorizontalTopEdge = 0;
+    for (let offset = 0; offset < index.count; offset += 3) {
+      const ids = [index.getX(offset), index.getX(offset + 1), index.getX(offset + 2)];
+      const points = ids.map((id) => new THREE.Vector3().fromBufferAttribute(positions, id));
+      const normalY = points[1].clone().sub(points[0]).cross(points[2].clone().sub(points[0])).y;
+      if (normalY <= 1e-6 || Math.max(...points.map((point) => point.y)) - Math.min(...points.map((point) => point.y)) > 1e-6) continue;
+      for (let edge = 0; edge < 3; edge += 1) {
+        longestHorizontalTopEdge = Math.max(longestHorizontalTopEdge, points[edge].distanceTo(points[(edge + 1) % 3]));
+      }
+    }
+
+    expect(longestHorizontalTopEdge).toBeLessThan(13);
+    rendered.dispose();
+  });
+});
+
 describe('structured map water rendering', () => {
   it('renders the map as an open terrain plane without enclosure faces', async () => {
     const rendered = await buildEditableMapGroup(createEmptyMap('open-map', 'map-open-plane'));

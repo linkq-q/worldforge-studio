@@ -48,6 +48,7 @@ import {
 import { lintMap } from '../shared/mapLint';
 import { compileMapNaturalClearance } from '../shared/mapDesignRelations';
 import { sampleMapGuide, simplifyMapGuidePoints, type MapGuide, type MapGuideCurve } from '../shared/mapGuide';
+import type { MapFoundation } from '../shared/mapFoundation';
 import { mapVisualReviewAction, type MapVisualReview } from '../shared/indoorVisualReview';
 import {
   DEFAULT_MAP_AI_MIN_NEW_ASSETS,
@@ -353,6 +354,7 @@ class MapEditor {
   private previewAssetId: string | null = null;
   private previewRequestId = 0;
   private selectionOutline: THREE.BoxHelper | null = null;
+  private readonly selectedObjectIds = new Set<string>();
   /** View-only ghost boxes + streamed-in models for the running code-planner generation. */
   private generationPreview: GenerationPreviewOverlay | null = null;
   private brushPreview: THREE.Mesh<THREE.RingGeometry, THREE.MeshBasicMaterial> | null = null;
@@ -962,7 +964,7 @@ class MapEditor {
     this.transform.addEventListener('mouseUp', () => {
       this.transformPointerActive = false;
       this.endHistoryGesture();
-      if (this.selectedObject()?.roomOpeningId) void this.refreshScene();
+      if (this.selectedObject()?.roomOpeningId || this.selectedObject()?.foundation) void this.refreshScene();
     });
     this.transform.addEventListener('dragging-changed', (event) => {
       this.transformDragging = Boolean(event.value);
@@ -2382,6 +2384,7 @@ class MapEditor {
             sceneAgent: map.sceneMode === 'outdoor' && this.mapAiUseSceneAgent,
             focusPrompt: this.mapAiFocusPrompt.trim() || undefined,
             paletteId: this.selectedPaletteId || undefined,
+            selectedObjectIds: [...this.selectedObjectIds],
             ...(previousSuggestion ? { baseOperations: previousSuggestion.operations } : {})
           }),
           signal: controller.signal
@@ -3047,6 +3050,12 @@ class MapEditor {
       host.innerHTML = '<p class="empty">还没有地图。</p>';
       return;
     }
+    if (!this.state.selectedObjectId) this.selectedObjectIds.clear();
+    else if (map.objects.some((object) => object.id === this.state.selectedObjectId)
+      && !this.selectedObjectIds.has(this.state.selectedObjectId)) {
+      this.selectedObjectIds.clear();
+      this.selectedObjectIds.add(this.state.selectedObjectId);
+    }
     host.innerHTML = `
       ${map.room ? `
         <div class="hierarchy-row system"><span>房间外壳</span><small>${map.room.size.map((value) => value.toFixed(1)).join(' × ')}</small></div>
@@ -3070,7 +3079,7 @@ class MapEditor {
           <small>${water.type}</small>
         </div>
       `).join('')}
-      ${renderObjectTree(map.objects, null, this.state.selectedObjectId)}
+      ${renderObjectTree(map.objects, null, this.selectedObjectIds)}
     `;
     if (this.mapAiPreviewMap) return;
     host.querySelectorAll<HTMLButtonElement>('[data-room-surface]').forEach((button) => {
@@ -3086,8 +3095,8 @@ class MapEditor {
       this.selectObject(SUN_OBJECT_ID);
     });
     host.querySelectorAll<HTMLButtonElement>('[data-object-id]').forEach((button) => {
-      button.addEventListener('click', () => {
-        this.selectObject(button.dataset.objectId ?? null);
+      button.addEventListener('click', (event) => {
+        this.selectObject(button.dataset.objectId ?? null, event.ctrlKey || event.metaKey);
       });
       button.addEventListener('dblclick', () => {
         this.selectObject(button.dataset.objectId ?? null);
@@ -3724,6 +3733,7 @@ class MapEditor {
         <label class="field compact"><span>等比例缩放</span><input data-uniform-scale type="checkbox" ${this.state.uniformScale ? 'checked' : ''} /></label>
         <div class="triple">${numberField('SX', 'scale', 0, object.transform.scale[0])}${numberField('SY', 'scale', 1, object.transform.scale[1])}${numberField('SZ', 'scale', 2, object.transform.scale[2])}</div>
         <div class="triple">${numberField('宽', 'size', 0, object.transform.size[0])}${numberField('高', 'size', 1, object.transform.size[1])}${numberField('深', 'size', 2, object.transform.size[2])}</div>
+        ${object.foundation ? renderFoundationEditor(object.foundation) : ''}
         <label class="field compact">
           <span>资产</span>
           <select data-object-asset>
@@ -3790,6 +3800,11 @@ class MapEditor {
       this.markDirty();
       void this.refreshScene();
     }, true);
+    if (object.foundation) bindFoundationEditor(host, object.foundation, () => {
+      this.markDirty();
+      void this.refreshScene();
+      this.renderObjectInspector();
+    });
     host.querySelector('#delete-object')?.addEventListener('click', () => {
       this.deleteSelectedObject();
     });
@@ -5790,9 +5805,19 @@ class MapEditor {
     this.scene.add(outline);
   }
 
-  private selectObject(objectId: string | null): void {
-    if (this.state.selectedObjectId === objectId) return;
-    this.state.selectedObjectId = objectId;
+  private selectObject(objectId: string | null, additive = false): void {
+    if (additive && objectId && this.state.map?.objects.some((object) => object.id === objectId)) {
+      if (this.selectedObjectIds.has(objectId)) this.selectedObjectIds.delete(objectId);
+      else this.selectedObjectIds.add(objectId);
+      this.state.selectedObjectId = this.selectedObjectIds.has(objectId)
+        ? objectId
+        : [...this.selectedObjectIds].at(-1) ?? null;
+    } else {
+      if (this.state.selectedObjectId === objectId && this.selectedObjectIds.size <= 1) return;
+      this.selectedObjectIds.clear();
+      if (objectId && this.state.map?.objects.some((object) => object.id === objectId)) this.selectedObjectIds.add(objectId);
+      this.state.selectedObjectId = objectId;
+    }
     if (this.isTranslateOnlySelection()) this.state.transformMode = 'translate';
     this.renderHierarchy();
     this.renderObjectInspector();
@@ -5822,6 +5847,8 @@ class MapEditor {
     const object = this.selectedObject();
     const controlObject = this.transform?.object as THREE.Object3D | undefined;
     if (!object || !controlObject) return;
+    const previousPosition = [...object.transform.position] as [number, number, number];
+    const previousYaw = object.transform.rotation[1];
     object.transform.position = [controlObject.position.x, controlObject.position.y, controlObject.position.z];
     object.transform.rotation = [controlObject.rotation.x, controlObject.rotation.y, controlObject.rotation.z];
     const nextScale: [number, number, number] = [
@@ -5839,6 +5866,24 @@ class MapEditor {
       );
     } else {
       object.transform.scale = nextScale;
+    }
+    if (object.foundation) {
+      const deltaYaw = object.transform.rotation[1] - previousYaw;
+      const cos = Math.cos(deltaYaw);
+      const sin = Math.sin(deltaYaw);
+      for (const linkedId of object.foundation.linkedObjectIds) {
+        const linked = this.state.map?.objects.find((candidate) => candidate.id === linkedId);
+        if (!linked) continue;
+        const dx = linked.transform.position[0] - previousPosition[0];
+        const dz = linked.transform.position[2] - previousPosition[2];
+        linked.transform.position = [
+          object.transform.position[0] + dx * cos + dz * sin,
+          linked.transform.position[1] + object.transform.position[1] - previousPosition[1],
+          object.transform.position[2] - dx * sin + dz * cos
+        ];
+        linked.transform.rotation[1] += deltaYaw;
+        this.renderedMap?.syncObjectTransform(linked.id);
+      }
     }
     syncRoomOpeningFromObjectInPlace(this.state.map!, object);
     this.renderedMap?.syncObjectTransform(object.id);
@@ -6859,15 +6904,15 @@ function hasRefinableMapContent(map: EditableMap): boolean {
     || map.terrain.heights.some((height) => Math.abs(height) > 0.001);
 }
 
-function renderObjectTree(objects: MapObject[], parentId: string | null, selectedId: string | null, depth = 0): string {
+function renderObjectTree(objects: MapObject[], parentId: string | null, selectedIds: ReadonlySet<string>, depth = 0): string {
   return objects
     .filter((object) => object.parentId === parentId)
     .map((object) => `
-      <button class="hierarchy-row ${selectedId === object.id ? 'active' : ''}" style="padding-left:${10 + depth * 16}px" data-object-id="${object.id}">
+      <button class="hierarchy-row ${selectedIds.has(object.id) ? 'active' : ''}" style="padding-left:${10 + depth * 16}px" data-object-id="${object.id}">
         <span>${escapeHtml(object.name)}</span>
-        <small>${object.assetId ? 'asset' : 'box'}</small>
+        <small>${object.foundation ? 'foundation' : object.assetId ? 'asset' : 'box'}</small>
       </button>
-      ${renderObjectTree(objects, object.id, selectedId, depth + 1)}
+      ${renderObjectTree(objects, object.id, selectedIds, depth + 1)}
     `).join('');
 }
 
@@ -6997,6 +7042,119 @@ function roadSmoothingOperations(
     targetHeight: (
       (heights[index - 1] ?? heights[index]) + heights[index] + (heights[index + 1] ?? heights[index])
     ) / 3
+  }));
+}
+
+function renderFoundationEditor(foundation: MapFoundation): string {
+  const pointEditor = foundation.shape === 'path' || foundation.shape === 'polygon'
+    ? `<div class="asset-library-zones">${foundation.points.map((point, index) => `
+      <div class="triple">
+        <label><span>P${index + 1} X</span><input data-foundation-point="${index}" data-axis="0" type="number" step="0.1" value="${point[0].toFixed(2)}" /></label>
+        <label><span>P${index + 1} Z</span><input data-foundation-point="${index}" data-axis="1" type="number" step="0.1" value="${point[1].toFixed(2)}" /></label>
+        <button type="button" class="secondary small" data-foundation-remove-point="${index}" ${foundation.points.length <= (foundation.shape === 'polygon' ? 3 : 2) ? 'disabled' : ''}>删除点</button>
+      </div>`).join('')}</div>
+      <button type="button" class="secondary small" data-foundation-add-point>增加控制点</button>`
+    : '';
+  return `
+    <details class="inspector-disclosure compact" open>
+      <summary><span><b>地基</b><small>程序化地形贴合底座</small></span></summary>
+      <label class="field compact"><span>轮廓</span><select data-foundation-shape>
+        <option value="capsule" ${foundation.shape === 'capsule' ? 'selected' : ''}>胶囊体</option>
+        <option value="rounded-rectangle" ${foundation.shape === 'rounded-rectangle' ? 'selected' : ''}>圆角矩形</option>
+        <option value="polygon" ${foundation.shape === 'polygon' ? 'selected' : ''}>多边形</option>
+        <option value="path" ${foundation.shape === 'path' ? 'selected' : ''}>曲线路径/海堤</option>
+      </select></label>
+      <label class="field compact"><span>顶面</span><select data-foundation-top>
+        <option value="level" ${foundation.top === 'level' ? 'selected' : ''}>水平</option>
+        <option value="slope" ${foundation.top === 'slope' ? 'selected' : ''}>坡面</option>
+        <option value="steps" ${foundation.top === 'steps' ? 'selected' : ''}>阶梯</option>
+      </select></label>
+      <div class="triple">
+        <label><span>宽</span><input data-foundation-number="width" type="number" min="0.2" step="0.1" value="${foundation.width.toFixed(2)}" /></label>
+        <label><span>深/长度</span><input data-foundation-number="depth" type="number" min="0.2" step="0.1" value="${foundation.depth.toFixed(2)}" /></label>
+        <label><span>圆角</span><input data-foundation-number="cornerRadius" type="number" min="0" step="0.1" value="${foundation.cornerRadius.toFixed(2)}" /></label>
+      </div>
+      <div class="triple">
+        <label><span>基础厚度</span><input data-foundation-number="thickness" type="number" min="0.1" max="4" step="0.1" value="${foundation.thickness.toFixed(2)}" /></label>
+        <label><span>最大厚度</span><input data-foundation-number="maxThickness" type="number" min="0.1" max="16" step="0.1" value="${foundation.maxThickness.toFixed(2)}" /></label>
+        <label><span>材质</span><input data-foundation-material value="${escapeHtml(foundation.material)}" /></label>
+      </div>
+      ${foundation.top === 'slope' ? `<div class="triple">
+        <label><span>坡度</span><input data-foundation-number="slope" type="number" min="0" max="1" step="0.01" value="${foundation.slope.toFixed(2)}" /></label>
+        <label><span>坡向°</span><input data-foundation-direction type="number" step="1" value="${radiansToDegrees(foundation.slopeDirection).toFixed(1)}" /></label>
+      </div>` : ''}
+      ${foundation.top === 'steps' ? `<div class="triple">
+        <label><span>阶高</span><input data-foundation-number="stepHeight" type="number" min="0.05" max="2" step="0.05" value="${foundation.stepHeight.toFixed(2)}" /></label>
+        <label><span>阶数</span><input data-foundation-number="stepCount" type="number" min="1" max="24" step="1" value="${foundation.stepCount}" /></label>
+        <label><span>方向°</span><input data-foundation-direction type="number" step="1" value="${radiansToDegrees(foundation.slopeDirection).toFixed(1)}" /></label>
+      </div>` : ''}
+      ${foundation.shape === 'path' ? `<label class="field compact"><span>线形</span><select data-foundation-curve>
+        <option value="catmull-rom" ${foundation.curve === 'catmull-rom' ? 'selected' : ''}>平滑曲线</option>
+        <option value="polyline" ${foundation.curve === 'polyline' ? 'selected' : ''}>折线</option>
+      </select></label>
+      <label class="field compact"><span>闭合</span><input data-foundation-closed type="checkbox" ${foundation.closed ? 'checked' : ''} /></label>` : ''}
+      ${foundation.linkedObjectIds.length ? `<p class="empty inspector-note">联动建筑：${foundation.linkedObjectIds.map((id) => `${escapeHtml(id)} <button type="button" class="secondary small" data-foundation-unlink="${escapeHtml(id)}">解除</button>`).join(' ')}</p>` : '<p class="empty inspector-note">当前没有联动建筑。</p>'}
+      ${pointEditor}
+    </details>`;
+}
+
+function bindFoundationEditor(host: HTMLElement, foundation: MapFoundation, changed: () => void): void {
+  host.querySelector<HTMLSelectElement>('[data-foundation-shape]')?.addEventListener('change', (event) => {
+    foundation.shape = (event.target as HTMLSelectElement).value as MapFoundation['shape'];
+    if ((foundation.shape === 'path' || foundation.shape === 'polygon') && foundation.points.length < 2) {
+      foundation.points = [[-foundation.width / 2, 0], [foundation.width / 2, 0], [foundation.width / 2, foundation.depth]];
+    }
+    changed();
+  });
+  host.querySelector<HTMLSelectElement>('[data-foundation-top]')?.addEventListener('change', (event) => {
+    foundation.top = (event.target as HTMLSelectElement).value as MapFoundation['top'];
+    changed();
+  });
+  host.querySelectorAll<HTMLInputElement>('[data-foundation-number]').forEach((input) => input.addEventListener('change', () => {
+    const key = input.dataset.foundationNumber as 'width' | 'depth' | 'cornerRadius' | 'thickness' | 'maxThickness' | 'slope' | 'stepHeight' | 'stepCount';
+    const value = Number(input.value);
+    if (!Number.isFinite(value)) return;
+    foundation[key] = key === 'stepCount' ? Math.max(1, Math.round(value)) : Math.max(0, value);
+    changed();
+  }));
+  host.querySelector<HTMLInputElement>('[data-foundation-direction]')?.addEventListener('change', (event) => {
+    const value = Number((event.target as HTMLInputElement).value);
+    if (!Number.isFinite(value)) return;
+    foundation.slopeDirection = degreesToRadians(value);
+    changed();
+  });
+  host.querySelector<HTMLInputElement>('[data-foundation-material]')?.addEventListener('change', (event) => {
+    foundation.material = (event.target as HTMLInputElement).value.trim() || 'concrete';
+    changed();
+  });
+  host.querySelector<HTMLSelectElement>('[data-foundation-curve]')?.addEventListener('change', (event) => {
+    foundation.curve = (event.target as HTMLSelectElement).value === 'catmull-rom' ? 'catmull-rom' : 'polyline';
+    changed();
+  });
+  host.querySelector<HTMLInputElement>('[data-foundation-closed]')?.addEventListener('change', (event) => {
+    foundation.closed = (event.target as HTMLInputElement).checked;
+    changed();
+  });
+  host.querySelectorAll<HTMLInputElement>('[data-foundation-point]').forEach((input) => input.addEventListener('change', () => {
+    const point = foundation.points[Number(input.dataset.foundationPoint)];
+    const axis = Number(input.dataset.axis) as 0 | 1;
+    const value = Number(input.value);
+    if (!point || !Number.isFinite(value)) return;
+    point[axis] = value;
+    changed();
+  }));
+  host.querySelectorAll<HTMLButtonElement>('[data-foundation-remove-point]').forEach((button) => button.addEventListener('click', () => {
+    foundation.points.splice(Number(button.dataset.foundationRemovePoint), 1);
+    changed();
+  }));
+  host.querySelector<HTMLButtonElement>('[data-foundation-add-point]')?.addEventListener('click', () => {
+    const last = foundation.points[foundation.points.length - 1] ?? [0, 0];
+    foundation.points.push([last[0] + 1, last[1]]);
+    changed();
+  });
+  host.querySelectorAll<HTMLButtonElement>('[data-foundation-unlink]').forEach((button) => button.addEventListener('click', () => {
+    foundation.linkedObjectIds = foundation.linkedObjectIds.filter((id) => id !== button.dataset.foundationUnlink);
+    changed();
   }));
 }
 

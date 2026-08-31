@@ -531,6 +531,7 @@ async function handleEditorMaps(req: Req, res: Res, store: MapStore, parts: stri
       sceneAgent?: boolean;
       focusPrompt?: string;
       paletteId?: string;
+      selectedObjectIds?: string[];
     }>(req);
     const prompt = body.prompt?.trim();
     if (!prompt) throw new HttpError(400, 'missing_prompt');
@@ -649,6 +650,9 @@ async function handleEditorMaps(req: Req, res: Res, store: MapStore, parts: stri
           sceneAgent: body.sceneAgent === true,
           focusPrompt: body.focusPrompt,
           refinableObjectIds,
+          selectedObjectIds: Array.isArray(body.selectedObjectIds)
+            ? body.selectedObjectIds.filter((id): id is string => typeof id === 'string').slice(0, 64)
+            : [],
           onProgress,
           onPreview,
           onPlanPreview,

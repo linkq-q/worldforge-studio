@@ -2,6 +2,7 @@ import vm from 'node:vm';
 import {
   createId,
   getMapBounds,
+  getMapObjectVisualAabbs,
   getMapPlayerMetrics,
   normalizeMapRoom,
   sampleTerrainHeight,
@@ -13,6 +14,7 @@ import {
   type MapWaterBodyType,
   type RoomWall
 } from '../shared/map';
+import { foundationBoundary, foundationTopHeight, normalizeMapFoundation, type MapFoundation } from '../shared/mapFoundation';
 import { assetFootprintRadius, normalizeAssetTags } from '../shared/mapAssetMetadata';
 import { planMapObjectAttachment } from '../shared/mapAttachment';
 import { indoorAssetTargetCount } from '../shared/indoorScenePlanning';
@@ -87,6 +89,7 @@ api.terrain({preset:'plain'|'hills'|'valley'|'island'|'archipelago'|'canyon'|'cl
 api.modifyTerrain({modifier:'mountain'|'ridge'|'valley'|'basin'|'cliff'|'terrace'|'dune'|'island',region:{kind:'circle',center:[x,z],radius}|{kind:'path',points:[[x,z],...],width}|{kind:'polygon',points:[[x,z],...]},amplitude?:positiveNumber,softness?:number,direction?:degrees|[x,z],variation?:number,layers?:number|stepArray,layout?:'plateau'|'coast'|'canyon'|'wall'|'terraces',access?:'walkable'|'scenic',seed?});
 api.surface({id:'short-id',surface:'grass'|'sand'|'rock'|'soil'|'paving',material?:'default'|'compacted-earth'|'garden-stone'|'asphalt',region:{kind:'circle'|'path'|'polygon',...},intensity?,clearNatural?}); Use clearNatural:true for arena floors, plazas, courtyards and other functional clearings where loose trees and rocks must be excluded. Route surfaces are clear automatically.
 api.grass({id:'short-id',name?,preset:'meadow'|'sand'|'wetland'|'farm'|'magic'|'alpine-moss',region:{kind:'circle',center:[x,z],radius}|{kind:'polygon',points:[[x,z],...]},density?,variation?,softness?,height?,mix?:{short?,tall?,flowers?},seed?});
+api.foundation({name?,shape:'capsule'|'rounded-rectangle'|'polygon'|'path',under?:[objectReferenceOrExistingId,...],position?:[x,z]|[x,y,z],width?,depth?,margin?,cornerRadius?,points?:[[localX,localZ],...],curve?:'polyline'|'catmull-rom',closed?,top?:'level'|'slope'|'steps',thickness?,maxThickness?,slope?,slopeDirection?:radians,stepHeight?,stepCount?,material?}); The top is walkable, the bottom follows terrain, and terrain is never flattened.
 Enum fields are closed choices, not descriptions. Put descriptive meaning in id/name or comments; never write phrases such as "gentle central basin" in modifier or "packed earth" in surface.`;
 const CODE_ASSET_ORIENTATION_PROMPT = 'Coordinate contract: local Y+ is up, local Z+ is the front, entrance, or forward direction, and local X+ is right. Put doors, facades, openings, windshields, noses, seats, and other recognizable front details toward local Z+. For a modular repeated element, explicitly choose the long axis: side-by-side modules span local X with depth/front on local Z; traversal modules span local Z. Keep the model centered at its origin.';
 const ENVIRONMENT_ASSET = /\b(?:tree|forest|plant|vegetation|grass|shrub|bush|flower|fern|moss|rock|stone|boulder|crystal|mushroom|cactus|reed|coral|animal|creature|wildlife|bird|fish|deer|horse|insect|nature|flora|fauna)s?\b|树|森林|植物|植被|草|灌木|花|蕨|苔藓|岩石|石头|巨石|水晶|蘑菇|仙人掌|芦苇|珊瑚|动物|生物|野生|鸟|鱼|鹿|马|昆虫|自然|生态/i;
@@ -128,6 +131,8 @@ export interface MapCodePlannerOptions {
   finalExecutionTimeoutMs?: number;
   /** Locked objects created by the current unapplied AI preview that refine may still adjust. */
   refinableObjectIds?: readonly string[];
+  /** Editor multi-selection supplied as grounding context for natural-language refinement. */
+  selectedObjectIds?: readonly string[];
   onProgress?: (event: AgentProgressEvent) => void;
   /** Streams the placement layout right after sandbox discovery, before asset generation starts. */
   onPlanPreview?: (plan: CodePlanPreviewPayload) => void;
@@ -165,6 +170,15 @@ interface PlacementInput {
   groupId?: string;
   layer?: MapCompositionLayer;
   sourceGuideId?: string;
+  foundation?: MapFoundation;
+}
+
+interface FoundationInput extends Partial<MapFoundation> {
+  name?: string;
+  position?: Point2 | Point3 | { x: number; y?: number; z: number };
+  rotationY?: number;
+  under?: string[];
+  margin?: number;
 }
 
 interface PlaceBetweenInput {
@@ -295,6 +309,7 @@ interface PlacementIntent {
   designGroupId?: string;
   compositionLayer?: MapCompositionLayer;
   sourceGuideId?: string;
+  foundation?: MapFoundation;
   attachment?: {
     parentId: string;
     kind: 'supported' | 'mounted';
@@ -704,6 +719,7 @@ function runMapCodePlan(
   const renderPromptSuggestions: string[] = [];
   const requirements = new Map<string, CodeAssetRequirement>();
   const unresolvedAssetIds = new Set<string>();
+  const foundationWarnings: string[] = [];
   const missingAssetBindings = new Set<string>();
   const usedFunctions = new Set<string>();
   const assetById = new Map(assets.map((asset) => [asset.id, asset]));
@@ -816,6 +832,7 @@ function runMapCodePlan(
       semantic: [input.name, asset?.name, asset?.prompt, ...(asset?.tags ?? [])].filter(Boolean).join(' '),
       ...(roomOpeningId ? { roomOpeningId } : {}),
       ...(input.sourceGuideId ? { sourceGuideId: cleanId(input.sourceGuideId, 'route') } : {}),
+      ...(input.foundation ? { foundation: input.foundation } : {}),
       ...placementDesignMetadata(input.groupId, input.layer)
     });
     return referenceId;
@@ -1593,6 +1610,76 @@ function runMapCodePlan(
       record('place');
       return emitPlacement(input);
     },
+    foundation(input: FoundationInput): string {
+      record('foundation');
+      if (!input || typeof input !== 'object') throw new Error('invalid_map_code_foundation');
+      const linked = Array.isArray(input.under)
+        ? [...new Set(input.under.filter((id): id is string => typeof id === 'string' && id.trim().length > 0))].slice(0, 64)
+        : [];
+      const linkedPlacements = linked.flatMap((id) => placements.filter((placement) => placement.referenceId === id));
+      const existingBounds = new Map(getMapObjectVisualAabbs(map).map((bounds) => [bounds.objectId, bounds]));
+      const linkedBounds = linked.flatMap((id) => {
+        const placement = linkedPlacements.find((candidate) => candidate.referenceId === id);
+        if (placement) return [{
+          min: [placement.position[0] - placement.size[0] * placement.scale[0] / 2, placement.position[2] - placement.size[2] * placement.scale[2] / 2] as Point2,
+          max: [placement.position[0] + placement.size[0] * placement.scale[0] / 2, placement.position[2] + placement.size[2] * placement.scale[2] / 2] as Point2
+        }];
+        const bounds = existingBounds.get(id);
+        return bounds ? [{ min: [bounds.min[0], bounds.min[2]] as Point2, max: [bounds.max[0], bounds.max[2]] as Point2 }] : [];
+      });
+      const explicit = input.position === undefined ? null : placementPosition(input.position, map, false);
+      const margin = clampFinite(input.margin ?? 0.35, 0, 8);
+      const minX = linkedBounds.length ? Math.min(...linkedBounds.map((bounds) => bounds.min[0])) : (explicit?.[0] ?? 0) - 2;
+      const maxX = linkedBounds.length ? Math.max(...linkedBounds.map((bounds) => bounds.max[0])) : (explicit?.[0] ?? 0) + 2;
+      const minZ = linkedBounds.length ? Math.min(...linkedBounds.map((bounds) => bounds.min[1])) : (explicit?.[2] ?? 0) - 2;
+      const maxZ = linkedBounds.length ? Math.max(...linkedBounds.map((bounds) => bounds.max[1])) : (explicit?.[2] ?? 0) + 2;
+      const centerX = explicit?.[0] ?? (minX + maxX) / 2;
+      const centerZ = explicit?.[2] ?? (minZ + maxZ) / 2;
+      const foundation = normalizeMapFoundation({
+        ...input,
+        shape: input.shape ?? 'rounded-rectangle',
+        top: input.top ?? 'level',
+        width: input.width ?? maxX - minX + margin * 2,
+        depth: input.depth ?? maxZ - minZ + margin * 2,
+        linkedObjectIds: linked
+      });
+      if (!foundation) throw new Error('invalid_map_code_foundation');
+      const yaw = finite(input.rotationY ?? linkedPlacements[0]?.rotationY ?? 0);
+      const cos = Math.cos(yaw);
+      const sin = Math.sin(yaw);
+      const boundary = foundationBoundary(foundation);
+      const terrainHeights = boundary.map(([x, z]) => sampleTerrainHeight(
+        map,
+        centerX + x * cos + z * sin,
+        centerZ - x * sin + z * cos
+      ));
+      const existingTopCandidates = linked.flatMap((id) => {
+        const bounds = existingBounds.get(id);
+        if (!bounds) return [];
+        const objectX = (bounds.min[0] + bounds.max[0]) / 2;
+        const objectZ = (bounds.min[2] + bounds.max[2]) / 2;
+        const dx = objectX - centerX;
+        const dz = objectZ - centerZ;
+        return [bounds.min[1] - foundationTopHeight(foundation, dx * cos - dz * sin, dx * sin + dz * cos)];
+      });
+      const explicitTopY = explicit && !placementUsesTerrain(input.position) ? explicit[1] : undefined;
+      const topY = explicitTopY
+        ?? (existingTopCandidates.length > 0 ? Math.min(...existingTopCandidates) : undefined)
+        ?? Math.max(...terrainHeights, sampleTerrainHeight(map, centerX, centerZ)) + 0.03;
+      const requiredThickness = topY - Math.min(...terrainHeights, topY);
+      if (requiredThickness > foundation.maxThickness + 0.001) {
+        foundationWarnings.push(`${input.name ?? '地基'} 需要 ${requiredThickness.toFixed(2)}m 厚度，超过 ${foundation.maxThickness.toFixed(2)}m 上限，已跳过。`);
+        return '';
+      }
+      return emitPlacement({
+        name: input.name ?? (foundation.shape === 'path' ? '地基/海堤' : '建筑地基'),
+        position: [centerX, topY, centerZ],
+        rotationY: yaw,
+        terrain: false,
+        role: 'structure',
+        foundation
+      });
+    },
     attach(input: AttachmentInput): string {
       record('attach');
       if (placements.length >= MAX_PLACEMENTS) throw new Error('map_code_plan_too_many_placements');
@@ -2000,6 +2087,37 @@ function runMapCodePlan(
     objectIdByReference.set(placement.referenceId, objectId);
     workingMap = applyMapOperations(workingMap, [operation]);
   }
+  const linkedObjectUpdates: Extract<MapOperation, { type: 'object.update' }>[] = [];
+  for (const operation of objectOperations) {
+    const foundation = operation.object.foundation;
+    if (!foundation) continue;
+    const linkedObjectIds = foundation.linkedObjectIds
+      .map((id) => objectIdByReference.get(id) ?? id)
+      .filter((id) => workingMap.objects.some((object) => object.id === id));
+    operation.object.foundation = { ...foundation, linkedObjectIds };
+    const basePosition = operation.object.transform?.position ?? [0, 0, 0];
+    const yaw = operation.object.transform?.rotation?.[1] ?? 0;
+    const cos = Math.cos(yaw);
+    const sin = Math.sin(yaw);
+    for (const linkedObjectId of linkedObjectIds) {
+      const linkedAdd = objectOperations.find((candidate) => candidate.object.id === linkedObjectId);
+      const linkedObject = linkedAdd?.object ?? workingMap.objects.find((object) => object.id === linkedObjectId);
+      if (!linkedObject) continue;
+      if (!linkedAdd && linkedObject.locked && !options.refinableObjectIds?.has(linkedObjectId)) continue;
+      const position = [...(linkedObject.transform?.position ?? [0, 0, 0])] as Point3;
+      const dx = position[0] - basePosition[0];
+      const dz = position[2] - basePosition[2];
+      const localX = dx * cos - dz * sin;
+      const localZ = dx * sin + dz * cos;
+      position[1] = basePosition[1] + foundationTopHeight(foundation, localX, localZ);
+      if (linkedAdd) {
+        linkedAdd.object.heightMode = 'fixed';
+        linkedAdd.object.transform = { ...linkedAdd.object.transform, position };
+      } else {
+        linkedObjectUpdates.push({ type: 'object.update', objectId: linkedObjectId, patch: { heightMode: 'fixed', transform: { position } } });
+      }
+    }
+  }
   const waterRepair = map.sceneMode === 'outdoor'
     ? relocateOutdoorWaterIntrusions(terrainMap, objectOperations, placements, assets)
     : { operations: objectOperations, count: 0 };
@@ -2008,7 +2126,8 @@ function runMapCodePlan(
     : { operations: waterRepair.operations, count: 0 };
   const operations: MapOperation[] = [
     ...baseOperations,
-    ...accessRepair.operations
+    ...accessRepair.operations,
+    ...linkedObjectUpdates
   ];
   if (designCallCount > 0 || map.designSemantics.groups.length > 0) {
     designSemantics = remapMapDesignObjectReferences(designSemantics, objectIdByReference);
@@ -2106,7 +2225,16 @@ function runMapCodePlan(
   ]);
   const validated = validateMapSuggestion(planningMap, {
     ...suggestion,
-    diagnostics: [...waterDiagnostics, ...accessDiagnostics, ...clearanceDiagnostics, ...attachmentDiagnostics, ...unresolvedBridgeDiagnostics, ...missingDesignDiagnostics]
+    diagnostics: [
+      ...waterDiagnostics, ...accessDiagnostics, ...clearanceDiagnostics, ...attachmentDiagnostics,
+      ...unresolvedBridgeDiagnostics, ...missingDesignDiagnostics,
+      ...foundationWarnings.map((message) => ({
+        code: 'foundation.max-thickness' as const,
+        severity: 'warning' as const,
+        message,
+        repaired: false
+      }))
+    ]
   }, { repairableObjectIds }).suggestion;
   return {
     suggestion: unresolvedAssetIds.size === 0 ? validated : {
@@ -2177,7 +2305,8 @@ const SCENE_PREVIEW_OPERATION_TYPES = new Set([
 ]);
 
 function scenePreviewOperations(operations: readonly MapOperation[]): MapOperation[] {
-  return operations.filter((operation) => SCENE_PREVIEW_OPERATION_TYPES.has(operation.type));
+  return operations.filter((operation) => SCENE_PREVIEW_OPERATION_TYPES.has(operation.type)
+    || (operation.type === 'object.add' && Boolean(operation.object.foundation)));
 }
 
 function isUnitFootprint(value: readonly number[]): boolean {
@@ -2380,7 +2509,7 @@ Curves: api.linePoint(t,a,b) -> [x,z]; api.bezierPoint(t,p0,p1,p2,p3) -> {point,
 Fields: api.noise2D(x,z,scale?,seed?) -> [-1,1]; api.fbm2D(x,z,{scale?,octaves?,lacunarity?,gain?,seed?}) -> [-1,1].
 Layouts: api.circlePoint(index,count,radius,center?) -> [x,z]; api.ellipsePoint(index,count,radiusX,radiusZ,center?,phase?) -> [x,z]; api.gridPoints({center?,columns,rows,spacing}) -> points; api.poissonDisk({bounds?,minDistance,maxPoints?,attempts?,seed?}) -> points.
 Assets: api.requireAsset({key,name,prompt,tags?,variants?,dimensions:[width,height,depth]?,role:'structure'|'environment',optional?}) -> key; api.asset(key,index?) -> generated assetId. role is required in unified scene ownership; only loose natural decoration may be optional.
-Output: api.place({assetId?,name?,position:[x,z]|[x,y,z],rotationY?,facing?,scale?,size?,terrain?,role?,groupId?,layer?:1|2|3|4}); api.placeStreetFrontage(...) for varied ordinary street-facing buildings; api.placeAlongRoute(...) for repeated street furniture. api.attach({assetId?,name?,parentId,kind:'supported'|'mounted',side?,offset?,anchorY?:'bottom'|'center'|'top',contact?,scale?,rotationY?,role?,groupId?,layer?}) attaches a child to an earlier placement or existing object. Use supported for objects resting on top; use mounted for doors, windows, banners, signs and facade ornaments that must follow a host surface. mounted side is the host-local north|south|east|west face, offset is [horizontal,vertical], anchorY selects the host's vertical baseline, and contact is embed depth. Entrances default to anchorY:'bottom', so never put an absolute world height into offset. api.bridge({waterId,assetId?,name?,crossingCenter:[x,z],direction:[dx,dz],dimensions:[width,height,depth],kind?:'straight'|'curved',curveOffset?,segmentCount?,bankInset?,deckClearance?,abutments?,groupId?,layer?}). A curved bridge uses the asset as a repeatable module. The local solver samples the full bridge width, snaps both ends beyond the real shoreline, records the route guide, and creates small bridgeheads unless abutments:false.
+Output: api.place({assetId?,name?,position:[x,z]|[x,y,z],rotationY?,facing?,scale?,size?,terrain?,role?,groupId?,layer?:1|2|3|4}); api.placeStreetFrontage(...) for varied ordinary street-facing buildings; api.placeAlongRoute(...) for repeated street furniture. api.foundation(...) creates an independent editable foundation after its target buildings are placed: pass their api.place references or existing object IDs in under. Use rounded-rectangle/capsule for buildings, polygon for irregular footprints, and path + catmull-rom for curved seawalls; closed path makes a continuous ring. Choose level, slope or steps from intent, keep maxThickness bounded, and never flatten terrain. api.attach({assetId?,name?,parentId,kind:'supported'|'mounted',side?,offset?,anchorY?:'bottom'|'center'|'top',contact?,scale?,rotationY?,role?,groupId?,layer?}) attaches a child to an earlier placement or existing object. Use supported for objects resting on top; use mounted for doors, windows, banners, signs and facade ornaments that must follow a host surface. mounted side is the host-local north|south|east|west face, offset is [horizontal,vertical], anchorY selects the host's vertical baseline, and contact is embed depth. Entrances default to anchorY:'bottom', so never put an absolute world height into offset. api.bridge({waterId,assetId?,name?,crossingCenter:[x,z],direction:[dx,dz],dimensions:[width,height,depth],kind?:'straight'|'curved',curveOffset?,segmentCount?,bankInset?,deckClearance?,abutments?,groupId?,layer?}). A curved bridge uses the asset as a repeatable module. The local solver samples the full bridge width, snaps both ends beyond the real shoreline, records the route guide, and creates small bridgeheads unless abutments:false.
 Never use standalone api.place with [x,y,z] for a door, window, banner, sign or facade ornament intended as part of another structure. Either include it in the host asset itself or create the host first and use api.attach.
 Refine existing content: api.move({objectId,position?,rotationY?,scale?}); api.removeObject(objectId); api.updateWater({waterId,level?,depth?,width?,points?}); api.removeWater(waterId). These APIs are available only during refinement.
 facing may be a direction [dx,dz], {direction:[dx,dz]}, {tangent:[dx,dz]}, {normal:[nx,nz]}, {target:[x,z]}, or any of those with offsetY; it overrides rotationY when present.
@@ -2845,6 +2974,7 @@ function placementObject(
     ...(placement.designGroupId ? { designGroupId: placement.designGroupId } : {}),
     ...(placement.compositionLayer ? { compositionLayer: placement.compositionLayer } : {}),
     ...(placement.sourceGuideId ? { sourceGuideId: placement.sourceGuideId } : {}),
+    ...(placement.foundation ? { foundation: placement.foundation } : {}),
     transform: {
       position: placement.heightMode === 'terrain'
         ? [placement.position[0], sampleTerrainHeight(terrainMap, placement.position[0], placement.position[2]), placement.position[2]]

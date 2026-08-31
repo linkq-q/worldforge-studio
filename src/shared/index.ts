@@ -15,6 +15,7 @@
 export * from './map';
 export * from './mapLayout';
 export * from './mapGuide';
+export * from './mapFoundation';
 export * from './mapStitch';
 export * from './materialTagPolicy';
 
