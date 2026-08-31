@@ -11,6 +11,58 @@ import { applyMapOperations, type CodePlanAssetReadyPayload, type CodePlanPrevie
 import { isPointInsideWaterBody } from '../src/shared/mapWater';
 
 describe('map code planner', () => {
+  it('plans a terrain-following foundation and lifts linked buildings onto its top', () => {
+    const map = createEmptyMap('Foundation', 'foundation-code', [24, 8, 24]);
+    map.terrain.heights = map.terrain.heights.map((_, index) => (index % 9) * 0.08);
+    const terrainBefore = [...map.terrain.heights];
+    const suggestion = executeMapCodePlan(`function plan(api) {
+      const house = api.place({ name: '住宅', position: [1, 2], dimensions: [6, 4, 4], role: 'structure' });
+      api.foundation({ name: '住宅地基', shape: 'rounded-rectangle', under: [house], margin: 0.4, top: 'level', maxThickness: 4, material: 'stone' });
+    }`, map);
+    const additions = suggestion.operations.filter((operation) => operation.type === 'object.add');
+    const foundation = additions.find((operation) => operation.object.foundation);
+    const house = additions.find((operation) => operation.object.name === '住宅');
+
+    expect(foundation?.object.foundation).toMatchObject({
+      shape: 'rounded-rectangle', width: 6.8, depth: 4.8, linkedObjectIds: [house?.object.id]
+    });
+    expect(house?.object.heightMode).toBe('fixed');
+    expect(house?.object.transform?.position?.[1]).toBeCloseTo(foundation?.object.transform?.position?.[1] ?? -1);
+    expect(applyMapOperations(map, suggestion.operations).terrain.heights).toEqual(terrainBefore);
+    expect(suggestion.codePlan?.functions).toContain('foundation');
+  });
+
+  it('skips foundations that exceed the bounded thickness and reports why', () => {
+    const map = createEmptyMap('Steep', 'steep-foundation', [24, 12, 24]);
+    const suggestion = executeMapCodePlan(`function plan(api) {
+      api.foundation({ name: '过厚地基', position: [0, 8, 0], width: 6, depth: 6, maxThickness: 1 });
+      api.place({ name: '标记', position: [8, 0], dimensions: [1, 1, 1], role: 'structure' });
+    }`, map);
+
+    expect(suggestion.operations.some((operation) => operation.type === 'object.add' && operation.object.foundation)).toBe(false);
+    expect(suggestion.diagnostics).toEqual(expect.arrayContaining([
+      expect.objectContaining({ code: 'foundation.max-thickness', repaired: false })
+    ]));
+  });
+
+  it('places a foundation at a locked existing building bottom without moving the building', () => {
+    const map = createEmptyMap('Existing building foundation', 'existing-foundation', [24, 8, 24]);
+    const house = createMapObject('已有住宅');
+    house.id = 'existing-house';
+    house.locked = true;
+    house.heightMode = 'fixed';
+    house.transform.position = [0, 2, 0];
+    map.objects.push(house);
+
+    const suggestion = executeMapCodePlan(`function plan(api) {
+      api.foundation({ name: '补加地基', under: ['existing-house'], width: 5, depth: 5, maxThickness: 4 });
+    }`, map);
+    const foundation = suggestion.operations.find((operation) => operation.type === 'object.add' && operation.object.foundation);
+
+    expect(foundation?.type === 'object.add' ? foundation.object.transform?.position?.[1] : undefined).toBeCloseTo(2);
+    expect(suggestion.operations.some((operation) => operation.type === 'object.update' && operation.objectId === house.id)).toBe(false);
+  });
+
   it('gives indoor maps one room-native Code Composer contract', () => {
     const map = createEmptyMap('Classroom', 'indoor-code-prompt', [12, 4, 9], 'voxel', 'indoor', [12, 4, 9]);
     const prompt = buildMapCodePlannerSystemPrompt(map, [], 3, 8, 'scene');

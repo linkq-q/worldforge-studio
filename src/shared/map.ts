@@ -35,6 +35,7 @@ import {
 } from './mapLayout';
 import { normalizeMapGuides, type MapGuide } from './mapGuide';
 import { normalizeMapDesignSemantics, type MapCompositionLayer, type MapDesignSemantics } from './mapDesign';
+import { foundationLocalColliderBoxes, normalizeMapFoundation, type MapFoundation } from './mapFoundation';
 
 export type MapSurface = 'floor' | 'ceiling' | 'north' | 'south' | 'east' | 'west' | 'terrain';
 export type TerrainBrushMode = 'raise' | 'lower' | 'flatten';
@@ -209,6 +210,8 @@ export interface MapObject {
   compositionLayer?: MapCompositionLayer;
   /** Guide used to derive this placement, for deterministic roadside validation and later regeneration. */
   sourceGuideId?: string;
+  /** Procedural terrain-following base, rendered without a generated asset. */
+  foundation?: MapFoundation;
 }
 
 export interface EditableMap {
@@ -1323,7 +1326,9 @@ export function getMapObjectAabbs(map: EditableMap): MapObjectAabb[] {
     const world = transforms.get(object.id);
     if (!world) continue;
     const asset = object.assetId ? assets.get(object.assetId) : undefined;
-    const localBoxes = asset
+    const localBoxes = object.foundation
+      ? foundationLocalColliderBoxes(object.foundation)
+      : asset
       ? (asset.colliderPlan?.boxes.length > 0
         ? asset.colliderPlan.boxes
         : buildModelColliderPlan(asset.modelJson, MAP_ASSET_COLLIDER_PROFILE).boxes)
@@ -1563,7 +1568,8 @@ function mapCollisionSourceHash(map: EditableMap): string {
       object.transform.position,
       object.transform.rotation,
       object.transform.scale,
-      object.transform.size
+      object.transform.size,
+      object.foundation
     ]),
     assets,
     room: map.room,
@@ -1738,7 +1744,8 @@ function normalizeObject(input: Partial<MapObject>): MapObject {
       : undefined,
     sourceGuideId: typeof input.sourceGuideId === 'string' && input.sourceGuideId.trim()
       ? input.sourceGuideId.trim().slice(0, 80)
-      : undefined
+      : undefined,
+    foundation: normalizeMapFoundation(input.foundation)
   };
 }
 

@@ -30,6 +30,7 @@ export interface MapLintIssue {
     | 'interior.operational-clearance' | 'object.invalid-support' | 'outdoor.access-repaired' | 'outdoor.water-intrusion-repaired'
     | 'outdoor.clearance-repaired'
     | 'bridge.unresolved-crossing' | 'scene.design-missing' | 'scene.program-incomplete'
+    | 'foundation.max-thickness'
     | 'settlement.building-coverage-low' | 'settlement.frontage-low'
     | 'settlement.unassigned-open-space' | 'settlement.building-aligned'
     | 'roadside.route-unbound' | 'roadside.route-bound';

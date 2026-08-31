@@ -28,6 +28,7 @@ import { buildMapPrimitiveBatches } from './mapPrimitiveBatching';
 import { terrainSemanticSurfaceWeight, terrainVertexColor, type TerrainPaletteColors } from './terrainAppearance';
 import { buildMapGrassField, deriveContactAwareGrassMap, grassSurfaceCoverage } from './mapGrassRenderer';
 import { combinedGrassDensity } from '../shared/mapGrass';
+import { foundationBoundary, foundationStepRange, foundationTopHeight, type MapFoundation } from '../shared/mapFoundation';
 import {
   DEFAULT_RUNTIME_TERRAIN_MATERIAL_STYLE,
   DEFAULT_RUNTIME_GRASS_STYLE,
@@ -1112,7 +1113,9 @@ async function populateObjectVisuals(
     if (!group) continue;
     const asset = object.assetId ? assets.get(object.assetId) : undefined;
     if (asset) group.userData.assetTags = deriveAssetTags(asset);
-    const visual = asset?.modelJson
+    const visual = object.foundation
+      ? buildFoundationObject(map, object)
+      : asset?.modelJson
       ? await takeAssetVisual(asset, templates)
       : buildFallbackObject();
     visual.traverse((child) => {
@@ -1170,6 +1173,343 @@ function deriveAssetTags(asset: MapAsset): string[] {
     if (pattern.test(source)) values.forEach((value) => tags.add(value));
   }
   return [...tags].slice(0, 24);
+}
+
+function buildFoundationObject(map: EditableMap, object: MapObject): THREE.Group {
+  const foundation = object.foundation!;
+  const group = new THREE.Group();
+  group.name = `foundation:${object.id}`;
+  group.userData.assetTags = ['foundation', foundation.material, foundation.shape];
+  if (foundation.shape === 'path') {
+    const geometry = buildPathFoundationGeometry(map, object, foundation);
+    if (geometry) {
+      const mesh = new THREE.Mesh(geometry, foundationMaterial(foundation));
+      mesh.name = `foundation-mesh:${object.id}`;
+      mesh.castShadow = true;
+      mesh.receiveShadow = true;
+      group.add(mesh);
+    }
+    return group;
+  }
+  const boundary = foundationBoundary(foundation);
+  if (boundary.length < 3) return group;
+  const scaleX = object.transform.scale[0] * object.transform.size[0];
+  const scaleY = object.transform.scale[1] * object.transform.size[1];
+  const scaleZ = object.transform.scale[2] * object.transform.size[2];
+  const yaw = object.transform.rotation[1];
+  const cos = Math.cos(yaw);
+  const sin = Math.sin(yaw);
+  const top = boundary.map(([x, z]): [number, number, number] => [x, foundationTopHeight(foundation, x, z), z]);
+  const bottomAt = (x: number, y: number, z: number): [number, number, number] => {
+    const scaledX = x * scaleX;
+    const scaledZ = z * scaleZ;
+    const worldX = object.transform.position[0] + scaledX * cos + scaledZ * sin;
+    const worldZ = object.transform.position[2] - scaledX * sin + scaledZ * cos;
+    const terrainY = sampleTerrainHeight(map, worldX, worldZ);
+    const localTerrainY = (terrainY - object.transform.position[1]) / Math.max(0.001, scaleY);
+    return [x, Math.max(y - foundation.maxThickness, Math.min(y - foundation.thickness, localTerrainY)), z];
+  };
+  const bottom = top.map(([x, y, z]) => bottomAt(x, y, z));
+  const vertices: number[] = [...top, ...bottom].flat();
+  const indices: number[] = [];
+  const triangles = THREE.ShapeUtils.triangulateShape(
+    boundary.map(([x, z]) => new THREE.Vector2(x, z)),
+    []
+  );
+  for (const [a, b, c] of triangles) {
+    if (foundation.top !== 'steps') indices.push(a, c, b);
+    indices.push(boundary.length + a, boundary.length + b, boundary.length + c);
+  }
+  if (foundation.top === 'steps') {
+    appendSteppedFoundationTop(vertices, indices, boundary, triangles, foundation);
+    appendSteppedFoundationWalls(vertices, indices, boundary, foundation, bottomAt);
+  } else {
+    for (let index = 0; index < boundary.length; index += 1) {
+      const next = (index + 1) % boundary.length;
+      indices.push(index, next, boundary.length + index, next, boundary.length + next, boundary.length + index);
+    }
+  }
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+  geometry.setIndex(indices);
+  geometry.computeVertexNormals();
+  geometry.computeBoundingBox();
+  geometry.computeBoundingSphere();
+  const material = foundationMaterial(foundation);
+  const mesh = new THREE.Mesh(geometry, material);
+  mesh.name = `foundation-mesh:${object.id}`;
+  mesh.castShadow = true;
+  mesh.receiveShadow = true;
+  group.add(mesh);
+  return group;
+}
+
+function buildPathFoundationGeometry(
+  map: EditableMap,
+  object: MapObject,
+  foundation: MapFoundation
+): THREE.BufferGeometry | null {
+  const boundary = foundationBoundary(foundation);
+  const count = Math.floor(boundary.length / 2);
+  if (count < 2) return null;
+  const left = boundary.slice(0, count);
+  const right = boundary.slice(count).reverse();
+  const scaleX = object.transform.scale[0] * object.transform.size[0];
+  const scaleY = object.transform.scale[1] * object.transform.size[1];
+  const scaleZ = object.transform.scale[2] * object.transform.size[2];
+  const yaw = object.transform.rotation[1];
+  const cos = Math.cos(yaw);
+  const sin = Math.sin(yaw);
+  const vertices: number[] = [];
+  const indices: number[] = [];
+  const bottomAt = (point: [number, number], y: number): [number, number, number] => {
+    const scaledX = point[0] * scaleX;
+    const scaledZ = point[1] * scaleZ;
+    const worldX = object.transform.position[0] + scaledX * cos + scaledZ * sin;
+    const worldZ = object.transform.position[2] - scaledX * sin + scaledZ * cos;
+    const terrainY = sampleTerrainHeight(map, worldX, worldZ);
+    const localTerrainY = (terrainY - object.transform.position[1]) / Math.max(0.001, scaleY);
+    return [point[0], Math.max(y - foundation.maxThickness, Math.min(y - foundation.thickness, localTerrainY)), point[1]];
+  };
+  const segmentCount = foundation.closed ? count : count - 1;
+  const [stepMin, stepMax] = foundationStepRange(foundation);
+  const stepSpan = (stepMax - stepMin) / Math.max(1, foundation.stepCount);
+  for (let index = 0; index < segmentCount; index += 1) {
+    const next = (index + 1) % count;
+    const startLeft = left[index];
+    const startRight = right[index];
+    const endLeft = left[next];
+    const endRight = right[next];
+    const cuts = [0, 1];
+    if (foundation.top === 'steps' && stepSpan > 0.001) {
+      const startCenter: [number, number] = [(startLeft[0] + startRight[0]) / 2, (startLeft[1] + startRight[1]) / 2];
+      const endCenter: [number, number] = [(endLeft[0] + endRight[0]) / 2, (endLeft[1] + endRight[1]) / 2];
+      const startProjection = startCenter[0] * Math.sin(foundation.slopeDirection) + startCenter[1] * Math.cos(foundation.slopeDirection);
+      const endProjection = endCenter[0] * Math.sin(foundation.slopeDirection) + endCenter[1] * Math.cos(foundation.slopeDirection);
+      for (let step = 1; step < foundation.stepCount; step += 1) {
+        const threshold = stepMin + stepSpan * step;
+        const t = (threshold - startProjection) / (endProjection - startProjection);
+        if (t > 0.001 && t < 0.999) cuts.push(t);
+      }
+    }
+    cuts.sort((a, b) => a - b);
+    for (let part = 0; part < cuts.length - 1; part += 1) {
+      const from = cuts[part];
+      const to = cuts[part + 1];
+      const la = lerpFoundationPoint(startLeft, endLeft, from);
+      const ra = lerpFoundationPoint(startRight, endRight, from);
+      const lb = lerpFoundationPoint(startLeft, endLeft, to);
+      const rb = lerpFoundationPoint(startRight, endRight, to);
+      const center: [number, number] = [(la[0] + ra[0] + lb[0] + rb[0]) / 4, (la[1] + ra[1] + lb[1] + rb[1]) / 4];
+      const stepY = foundation.top === 'steps' ? foundationTopHeight(foundation, center[0], center[1]) : null;
+      const topLa = [la[0], stepY ?? foundationTopHeight(foundation, la[0], la[1]), la[1]] as [number, number, number];
+      const topRa = [ra[0], stepY ?? foundationTopHeight(foundation, ra[0], ra[1]), ra[1]] as [number, number, number];
+      const topLb = [lb[0], stepY ?? foundationTopHeight(foundation, lb[0], lb[1]), lb[1]] as [number, number, number];
+      const topRb = [rb[0], stepY ?? foundationTopHeight(foundation, rb[0], rb[1]), rb[1]] as [number, number, number];
+      const bottomLa = bottomAt(la, topLa[1]);
+      const bottomRa = bottomAt(ra, topRa[1]);
+      const bottomLb = bottomAt(lb, topLb[1]);
+      const bottomRb = bottomAt(rb, topRb[1]);
+      appendFoundationFace(vertices, indices, [topLa, topRa, topRb, topLb], true);
+      appendFoundationFace(vertices, indices, [bottomLa, bottomLb, bottomRb, bottomRa], false);
+      appendFoundationFace(vertices, indices, [topLa, topLb, bottomLb, bottomLa], false);
+      appendFoundationFace(vertices, indices, [topRa, bottomRa, bottomRb, topRb], false);
+      const isOpenStart = !foundation.closed && index === 0 && part === 0;
+      const isOpenEnd = !foundation.closed && index === segmentCount - 1 && part === cuts.length - 2;
+      if (foundation.top === 'steps' || isOpenStart || isOpenEnd) {
+        appendFoundationFace(vertices, indices, [topLa, bottomLa, bottomRa, topRa], false);
+        appendFoundationFace(vertices, indices, [topLb, topRb, bottomRb, bottomLb], false);
+      }
+    }
+  }
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+  geometry.setIndex(indices);
+  geometry.computeVertexNormals();
+  geometry.computeBoundingBox();
+  geometry.computeBoundingSphere();
+  return geometry;
+}
+
+function appendFoundationFace(
+  vertices: number[],
+  indices: number[],
+  points: Array<[number, number, number]>,
+  upward: boolean
+): void {
+  const offset = vertices.length / 3;
+  vertices.push(...points.flat());
+  const a = new THREE.Vector3(...points[0]);
+  const b = new THREE.Vector3(...points[1]);
+  const c = new THREE.Vector3(...points[2]);
+  const normalY = b.clone().sub(a).cross(c.clone().sub(a)).y;
+  const forward = normalY >= 0;
+  const reverse = upward ? !forward : forward;
+  indices.push(...(reverse
+    ? [offset, offset + 2, offset + 1, offset, offset + 3, offset + 2]
+    : [offset, offset + 1, offset + 2, offset, offset + 2, offset + 3]));
+}
+
+function lerpFoundationPoint(
+  start: [number, number],
+  end: [number, number],
+  t: number
+): [number, number] {
+  return [start[0] + (end[0] - start[0]) * t, start[1] + (end[1] - start[1]) * t];
+}
+
+function appendSteppedFoundationTop(
+  vertices: number[],
+  indices: number[],
+  boundary: Array<[number, number]>,
+  triangles: number[][],
+  foundation: MapFoundation
+): void {
+  const [min, max] = foundationStepRange(foundation);
+  const sin = Math.sin(foundation.slopeDirection);
+  const cos = Math.cos(foundation.slopeDirection);
+  const bandSize = (max - min) / foundation.stepCount;
+  for (let step = 0; step < foundation.stepCount; step += 1) {
+    const bandMin = min + bandSize * step;
+    const bandMax = step === foundation.stepCount - 1 ? max + 1e-6 : bandMin + bandSize;
+    const height = step * foundation.stepHeight;
+    for (const triangle of triangles) {
+      let polygon = triangle.map((index) => boundary[index]);
+      polygon = clipFoundationPolygon(polygon, sin, cos, bandMin, true);
+      polygon = clipFoundationPolygon(polygon, sin, cos, bandMax, false);
+      if (polygon.length < 3) continue;
+      const area = polygon.reduce((sum, point, index) => {
+        const next = polygon[(index + 1) % polygon.length];
+        return sum + point[0] * next[1] - next[0] * point[1];
+      }, 0);
+      if (Math.abs(area) < 1e-8) continue;
+      const start = vertices.length / 3;
+      for (const [x, z] of polygon) vertices.push(x, height, z);
+      for (let index = 1; index < polygon.length - 1; index += 1) {
+        if (area > 0) indices.push(start, start + index + 1, start + index);
+        else indices.push(start, start + index, start + index + 1);
+      }
+    }
+  }
+}
+
+function appendSteppedFoundationWalls(
+  vertices: number[],
+  indices: number[],
+  boundary: Array<[number, number]>,
+  foundation: MapFoundation,
+  bottomAt: (x: number, y: number, z: number) => [number, number, number]
+): void {
+  const [min, max] = foundationStepRange(foundation);
+  const sin = Math.sin(foundation.slopeDirection);
+  const cos = Math.cos(foundation.slopeDirection);
+  const bandSize = (max - min) / foundation.stepCount;
+  for (let edge = 0; edge < boundary.length; edge += 1) {
+    const start = boundary[edge];
+    const end = boundary[(edge + 1) % boundary.length];
+    for (let step = 0; step < foundation.stepCount; step += 1) {
+      const clipped = clipFoundationSegment(
+        start, end, sin, cos,
+        min + bandSize * step,
+        step === foundation.stepCount - 1 ? max + 1e-6 : min + bandSize * (step + 1)
+      );
+      if (!clipped) continue;
+      const height = step * foundation.stepHeight;
+      const bottomStart = bottomAt(clipped[0][0], height, clipped[0][1]);
+      const bottomEnd = bottomAt(clipped[1][0], height, clipped[1][1]);
+      const offset = vertices.length / 3;
+      vertices.push(
+        clipped[0][0], height, clipped[0][1],
+        clipped[1][0], height, clipped[1][1],
+        ...bottomStart, ...bottomEnd
+      );
+      indices.push(offset, offset + 1, offset + 2, offset + 1, offset + 3, offset + 2);
+    }
+  }
+  for (let step = 1; step < foundation.stepCount; step += 1) {
+    const threshold = min + bandSize * step;
+    const crossings: Array<{ point: [number, number]; tangent: number }> = [];
+    for (let edge = 0; edge < boundary.length; edge += 1) {
+      const start = boundary[edge];
+      const end = boundary[(edge + 1) % boundary.length];
+      const startProjection = start[0] * sin + start[1] * cos;
+      const endProjection = end[0] * sin + end[1] * cos;
+      if (!((startProjection < threshold && endProjection >= threshold)
+        || (endProjection < threshold && startProjection >= threshold))) continue;
+      const t = (threshold - startProjection) / (endProjection - startProjection);
+      const point: [number, number] = [
+        start[0] + (end[0] - start[0]) * t,
+        start[1] + (end[1] - start[1]) * t
+      ];
+      crossings.push({ point, tangent: point[0] * cos - point[1] * sin });
+    }
+    crossings.sort((a, b) => a.tangent - b.tangent);
+    for (let index = 0; index + 1 < crossings.length; index += 2) {
+      const low = (step - 1) * foundation.stepHeight;
+      const high = step * foundation.stepHeight;
+      const a = crossings[index].point;
+      const b = crossings[index + 1].point;
+      const offset = vertices.length / 3;
+      vertices.push(a[0], low, a[1], a[0], high, a[1], b[0], high, b[1], b[0], low, b[1]);
+      indices.push(offset, offset + 1, offset + 2, offset, offset + 2, offset + 3);
+    }
+  }
+}
+
+function clipFoundationPolygon(
+  polygon: Array<[number, number]>,
+  sin: number,
+  cos: number,
+  threshold: number,
+  keepAbove: boolean
+): Array<[number, number]> {
+  const result: Array<[number, number]> = [];
+  for (let index = 0; index < polygon.length; index += 1) {
+    const start = polygon[index];
+    const end = polygon[(index + 1) % polygon.length];
+    const startDistance = start[0] * sin + start[1] * cos - threshold;
+    const endDistance = end[0] * sin + end[1] * cos - threshold;
+    const startInside = keepAbove ? startDistance >= -1e-8 : startDistance <= 1e-8;
+    const endInside = keepAbove ? endDistance >= -1e-8 : endDistance <= 1e-8;
+    if (startInside) result.push(start);
+    if (startInside === endInside) continue;
+    const t = startDistance / (startDistance - endDistance);
+    result.push([start[0] + (end[0] - start[0]) * t, start[1] + (end[1] - start[1]) * t]);
+  }
+  return result;
+}
+
+function clipFoundationSegment(
+  start: [number, number],
+  end: [number, number],
+  sin: number,
+  cos: number,
+  min: number,
+  max: number
+): [[number, number], [number, number]] | null {
+  const startProjection = start[0] * sin + start[1] * cos;
+  const endProjection = end[0] * sin + end[1] * cos;
+  const delta = endProjection - startProjection;
+  if (Math.abs(delta) < 1e-8) return startProjection >= min && startProjection <= max ? [start, end] : null;
+  const first = (min - startProjection) / delta;
+  const second = (max - startProjection) / delta;
+  const from = Math.max(0, Math.min(first, second));
+  const to = Math.min(1, Math.max(first, second));
+  if (to - from < 1e-8) return null;
+  return [
+    [start[0] + (end[0] - start[0]) * from, start[1] + (end[1] - start[1]) * from],
+    [start[0] + (end[0] - start[0]) * to, start[1] + (end[1] - start[1]) * to]
+  ];
+}
+
+function foundationMaterial(foundation: MapFoundation): THREE.MeshStandardMaterial {
+  const key = foundation.material.toLowerCase();
+  const color = /stone|rock|石/.test(key) ? 0x7f8179
+    : /brick|砖/.test(key) ? 0x9b6048
+      : /earth|soil|土/.test(key) ? 0x796247
+        : /wood|timber|木/.test(key) ? 0x8a6844
+          : 0x8c9390;
+  return new THREE.MeshStandardMaterial({ color, roughness: 0.88, metalness: 0.02, flatShading: false });
 }
 
 function createPalettePartResolver(

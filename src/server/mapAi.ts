@@ -97,6 +97,7 @@ export interface MapAiOptions {
   approvedCode?: string;
   /** Locked objects created by the current unapplied AI preview that refine may still adjust. */
   refinableObjectIds?: readonly string[];
+  selectedObjectIds?: readonly string[];
 }
 
 export interface AssetGenerationRequest {
