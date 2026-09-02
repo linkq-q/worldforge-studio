@@ -89,6 +89,14 @@
     {
       "id": "map-91a320e9-aed2-4f0f",
       "name": "魔法工坊"
+    },
+    {
+      "id": "map-ae8a3f07-ac20-422c",
+      "name": "炼金工坊-1"
+    },
+    {
+      "id": "map-76974e8c-b874-4041",
+      "name": "炼金工坊-2"
     }
   ],
   "assets": [
@@ -901,7 +909,10 @@
     "asset-ff31b9c2-7b47-4fbc",
     "asset-ff4d4bb2-dabb-4fe0",
     "asset-ffc1cff0-46cf-4cd0",
-    "asset-ffc24f81-506d-4fb4"
+    "asset-ffc24f81-506d-4fb4",
+    "asset-13393a16-9877-4e36",
+    "asset-ae37189f-a380-492a",
+    "asset-2c90b950-3744-42e7"
   ],
   "renderSchemes": [
     "render-02f563f4-c0ea-4ed8",
