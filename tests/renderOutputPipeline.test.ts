@@ -11,7 +11,8 @@ describe('render output pipeline', () => {
     const target = createComposerRenderTarget();
     expect(target.samples).toBe(COMPOSER_MSAA_SAMPLES);
     expect(target.depthBuffer).toBe(true);
-    expect(target.stencilBuffer).toBe(false);
+    // hAIde-seek 投票模式的 2D 剪影描边需要 stencil 附件
+    expect(target.stencilBuffer).toBe(true);
     target.dispose();
   });
 
