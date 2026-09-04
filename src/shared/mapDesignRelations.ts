@@ -108,6 +108,7 @@ export function compileMapDesignPruning(map: EditableMap, design: MapDesignSeman
   const removals: MapOperation[] = [];
   for (const group of design.groups) {
     const removableIds = new Set(group.removableObjectIds);
+    if (removableIds.size === 0) continue;
     for (const layer of group.layers.filter((item) => item.level >= 3)) {
       const candidates = map.objects.filter((object) => (
         object.designGroupId === group.id
@@ -120,7 +121,7 @@ export function compileMapDesignPruning(map: EditableMap, design: MapDesignSeman
       const keepCount = Math.max(1, Math.ceil(candidates.length * keepRatio));
       const ordered = [...candidates].sort((left, right) => stableObjectScore(left) - stableObjectScore(right));
       for (const object of ordered.slice(keepCount)) {
-        if (removableIds.size > 0 && !removableIds.has(object.id)) continue;
+        if (!removableIds.has(object.id)) continue;
         if (object.assetId && (assetCounts.get(object.assetId) ?? 0) <= 1) continue;
         removals.push({ type: 'object.remove', objectId: object.id });
         if (object.assetId) assetCounts.set(object.assetId, (assetCounts.get(object.assetId) ?? 1) - 1);

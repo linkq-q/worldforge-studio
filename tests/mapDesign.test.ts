@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { createEmptyMap, createMapObject, type MapAsset } from '../src/shared/map';
 import { normalizeMapDesignSemantics } from '../src/shared/mapDesign';
-import { compileMapDesignDensityFill, compileMapDesignRelations } from '../src/shared/mapDesignRelations';
+import { compileMapDesignDensityFill, compileMapDesignPruning, compileMapDesignRelations } from '../src/shared/mapDesignRelations';
 import { applyMapOperations } from '../src/shared/mapOperations';
 
 describe('map design semantics', () => {
@@ -144,6 +144,30 @@ describe('map design semantics', () => {
 
     expect(addedTrees.length).toBeGreaterThan(12);
     expect(occupiedQuadrants.size).toBeGreaterThanOrEqual(3);
+  });
+
+  it('does not prune detail layers unless the AI explicitly marks removable objects', () => {
+    const pine = asset('pine', '造型松', [1.2, 4, 1.2]);
+    const map = createEmptyMap('pruning guard', 'pruning-guard', [80, 16, 80]);
+    map.assets = [pine];
+    for (let index = 0; index < 6; index += 1) {
+      const object = createMapObject(`造型松 ${index + 1}`, pine.id);
+      object.id = `pine-${index}`;
+      object.designGroupId = 'garden';
+      object.compositionLayer = 3;
+      object.transform.position = [-15 + index * 6, 0, 0];
+      map.objects.push(object);
+    }
+    const design = normalizeMapDesignSemantics({
+      groups: [{
+        id: 'garden', name: '园林', region: {
+          kind: 'polygon', points: [[-30, -30], [30, -30], [30, 30], [-30, 30]]
+        },
+        layers: [{ level: 3, density: 'open', intent: '树木' }]
+      }]
+    }, map.box.size);
+
+    expect(compileMapDesignPruning(map, design)).toEqual([]);
   });
 
   it('never backfills natural detail into a declared functional clearing', () => {
