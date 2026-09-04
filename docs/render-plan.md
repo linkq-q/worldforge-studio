@@ -41,7 +41,7 @@ V1 方案仍可读取；一旦在开发者模式中增加新能力，方案会�
 - `runtime.color-grade`：冷暖、对比度、饱和度、暗部抬升、Tint 和命名配方
 - `runtime.water-style`：湖泊/河流配方、透明度、浅水/深水颜色、波纹、泡沫、独立的 HDRI 环境反射与场景平面倒影强度、反射曝光、扰动和 Fresnel
 - `runtime.material-theme`：按 `material-tag` 或 `asset-tag` 批量应用材质主题
-- `runtime.light-rig`：柔和晨光、硬日光、逆光、阴天和黄昏等灯光配方
+- `runtime.light-rig`：柔和晨光、硬日光、逆光、阴天、黄昏，以及室内自然光、暖光和夜景配方
 - `runtime.post-quality`：Bloom、SSAO 和景深的高层选择
 - `runtime.effect-recipe`：按标签组合发光、Fresnel、火焰和魔法特效配方
 - `runtime.shader-extension`：仅专业开发者可保存白名单片段或隔离 GLSL
@@ -72,6 +72,8 @@ AI 输出会按所选基础方案的策略再次校验。未知模块、未知�
 ## 执行与版本边界
 
 校验后的计划会编译为环境、表面、描边、presentation、色彩、灯光、后处理和标签作用域能力，并随自定义渲染方案保存。地图只保存 `renderSchemeId`，所以同一方案可被多张地图复用。
+
+渲染生成会额外接收当前地图的精简 `RenderSceneProfile`，只包含场景类型、空间尺寸、门窗、室内材质方向、实际灯光覆盖和内容类别，不复制整张地图。纯室内生成默认选择 `render-indoor-neutral`、关闭全局距离雾、使用 PBR 与柔和 SSAO，并把现有 HDRI 池中的贴图作为隐藏背景的低强度环境反射；明确要求烟雾、蒸汽或尘埃时才允许室内雾。灯光覆盖不足会保留为地图阶段诊断，不用高曝光掩盖。
 
 World Sketch 默认通过 normal/depth 重建世界位置并做三平面投影；Screen / Print 仅作为明确选择的印刷网纹模式。明确写出“素描、漫画、水墨、卡通”等风格而计划遗漏对应模块时，服务端会使用现有的一次修正机会要求模型补齐。
 

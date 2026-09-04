@@ -829,9 +829,10 @@ describe('terrain-only refresh', () => {
 describe('derived local lights', () => {
   it('dims window light and raises practical lights automatically at night indoors', async () => {
     const map = createEmptyMap('night room', 'map-night-room', [10, 3, 8], 'voxel', 'indoor', [10, 3, 8]);
-    map.room!.openings = [{
-      id: 'window-main', kind: 'window', wall: 'north', offset: 0, bottom: 1, width: 2.4, height: 1.4
-    }];
+    map.room!.openings = [
+      { id: 'window-main', kind: 'window', wall: 'north', offset: 0, bottom: 1, width: 2.4, height: 1.4 },
+      { id: 'window-side', kind: 'window', wall: 'east', offset: 0, bottom: 1, width: 1.8, height: 1.2 }
+    ];
     const now = Date.now();
     const asset: MapAsset = {
       id: 'asset-room-lamp', name: 'room lamp', prompt: 'warm room lamp',
@@ -858,11 +859,29 @@ describe('derived local lights', () => {
     const noonPractical = practical.intensity;
     const noonWindow = windowLight.intensity;
     const noonProbe = indirectProbe.intensity;
+    const noonProbeColor = indirectProbe.sh.coefficients[0].clone();
+    expect(lightRoot.getObjectByName('mapWindowLights')!.children.filter((child) => child.visible)).toHaveLength(2);
+    expect(noonPractical).toBeLessThanOrEqual(asset.light!.intensity);
+    expect(noonPractical).toBeLessThanOrEqual(5);
+    expect(noonWindow).toBeLessThanOrEqual(30);
+
+    rendered.setLightingQuality(0.42);
+    rendered.update(0.016, camera, 100);
+
+    expect(practical.visible).toBe(false);
+    expect(lightRoot.getObjectByName('mapWindowLights')!.children.filter((child) => child.visible)).toHaveLength(1);
+    expect(indirectProbe.intensity).toBeGreaterThan(noonProbe + 0.35);
+    expect(indirectProbe.sh.coefficients[0].distanceTo(noonProbeColor)).toBeGreaterThan(0.05);
+
+    rendered.setLightingQuality(1);
+    rendered.update(0.016, camera, 100);
+    expect(practical.visible).toBe(true);
     rendered.setLightingTimeOfDay('night');
     rendered.update(0.016, camera, 100);
 
     expect(practical.intensity).toBeGreaterThan(noonPractical);
     expect(practical.intensity).toBeGreaterThan(asset.light!.intensity);
+    expect(practical.intensity).toBeLessThanOrEqual(8);
     expect(windowLight.intensity).toBeLessThan(noonWindow * 0.2);
     expect(indirectProbe.intensity).toBeLessThan(noonProbe);
     expect(indirectProbe.sh.coefficients[0].length()).toBeGreaterThan(0);
@@ -901,6 +920,18 @@ describe('derived local lights', () => {
     expect(realLights).toHaveLength(MAX_VISIBLE_MAP_POINT_LIGHTS);
     expect(realLights.length).toBeLessThanOrEqual(MAX_VISIBLE_MAP_LOCAL_LIGHTS);
     expect(realLights.filter((child) => child.visible)).toHaveLength(MAX_VISIBLE_MAP_POINT_LIGHTS);
+    rendered.dispose();
+  });
+
+  it('does not fake a practical-light boost in performance mode when the room has no lamps', async () => {
+    const map = createEmptyMap('unlit room', 'map-unlit-room', [10, 3, 8], 'voxel', 'indoor', [10, 3, 8]);
+    const rendered = await buildEditableMapGroup(map);
+    const indirectProbe = rendered.group.getObjectByName('mapInteriorLightProbe') as THREE.LightProbe;
+    const normalIntensity = indirectProbe.intensity;
+
+    rendered.setLightingQuality(0.42);
+
+    expect(indirectProbe.intensity).toBe(normalIntensity);
     rendered.dispose();
   });
 
@@ -989,6 +1020,41 @@ describe('derived local lights', () => {
 
     expect(lightRoot.children.some((child) => (child as THREE.SpotLight).isSpotLight)).toBe(true);
     expect(lightRoot.getObjectByName('mapLocalLightTarget')).toBeDefined();
+    rendered.dispose();
+  });
+
+  it('gives one indoor key spotlight a bounded shadow only at high quality', async () => {
+    const map = createEmptyMap('key lights', 'map-key-lights', [10, 3, 8], 'voxel', 'indoor', [10, 3, 8]);
+    const now = Date.now();
+    const asset: MapAsset = {
+      id: 'asset-key-spot', name: 'key spotlight', prompt: 'downward spotlight', tags: ['lighting', 'spotlight'],
+      light: { kind: 'spot', color: '#ffd69a', intensity: 5, range: 12, offset: [0, -0.2, 0], direction: [0, -1, 0] },
+      modelJson: { nodes: [{ id: 'shade', mesh: { type: 'box' } }] },
+      colliderPlan: { version: 1, boxes: [], sourceMeshCount: 1, candidateCount: 1, fallbackUsed: false },
+      mode: 'voxel', createdAt: now, updatedAt: now
+    };
+    map.assets = [asset];
+    map.objects = [createTestObject('spot-a', asset.id), createTestObject('spot-b', asset.id)];
+    map.objects[0].transform.position = [-2, 2.6, 0];
+    map.objects[1].transform.position = [2, 2.6, 0];
+
+    const rendered = await buildEditableMapGroup(map);
+    const camera = new THREE.PerspectiveCamera(60, 1, 0.1, 100);
+    camera.position.set(0, 4, 8);
+    camera.lookAt(0, 1, 0);
+    camera.updateProjectionMatrix();
+    rendered.setLightingTimeOfDay('night');
+    rendered.setLightingQuality(1);
+    rendered.update(0.016, camera, 100);
+    const lights = rendered.group.getObjectByName('mapLocalLights')!.children
+      .filter((child): child is THREE.SpotLight => (child as THREE.SpotLight).isSpotLight);
+
+    expect(lights.filter((light) => light.castShadow)).toHaveLength(1);
+    expect(lights.find((light) => light.castShadow)?.shadow.mapSize.width).toBe(512);
+
+    rendered.setLightingQuality(0.7);
+    rendered.update(0.016, camera, 100);
+    expect(lights.filter((light) => light.castShadow)).toHaveLength(0);
     rendered.dispose();
   });
 

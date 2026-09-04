@@ -101,7 +101,12 @@ import { buildEditableMapGroup, type RenderedMap } from './mapRenderer';
 import { buildModelGroup } from './modelRenderer';
 import { RenderSceneRuntime } from './renderSceneRuntime';
 import { RenderStats, type RenderDebugDetails } from './renderStats';
-import { AdaptiveRenderQuality } from './adaptiveRenderQuality';
+import {
+  AdaptiveRenderQuality,
+  adaptiveQualityScale,
+  normalizeRenderQualityMode,
+  type RenderQualityMode
+} from './adaptiveRenderQuality';
 import { PlayModeController } from './playModeController';
 import {
   exportWorldForge,
@@ -187,6 +192,7 @@ import {
   type VisualZoneTag
 } from '../shared/visualDirection';
 import { inspectMapDerivedResults } from './mapDerivedInspection';
+import { createRenderSceneProfile } from '../shared/renderSceneProfile';
 import {
   createMapEdgeMask,
   findAdjacentMapRegion,
@@ -320,6 +326,7 @@ class MapEditor {
   private renderer: THREE.WebGLRenderer | null = null;
   private renderStats: RenderStats | null = null;
   private readonly adaptiveQuality = new AdaptiveRenderQuality();
+  private renderQualityMode: RenderQualityMode = 'auto';
   private playMode: PlayModeController | null = null;
   private hdriFiles: string[] = [];
   private hdriTextures: HdriTexture[] = [];
@@ -470,6 +477,7 @@ class MapEditor {
     this.developerMode = localStorage.getItem('worldforge.developerMode') === 'on';
     this.newMapAssetGenerationMode = normalizeModelGenerationMode(localStorage.getItem('worldforge.newMapAssetMode'));
     this.roomWallDisplayMode = normalizeRoomWallDisplayMode(localStorage.getItem('worldforge.roomWallDisplayMode'));
+    this.renderQualityMode = normalizeRenderQualityMode(localStorage.getItem('worldforge.renderQualityMode'));
     this.activeAssetLibraryId = localStorage.getItem('worldforge.activeAssetLibraryId') ?? '';
     this.renderShell();
     this.setupViewport();
@@ -583,6 +591,12 @@ class MapEditor {
                   <option value="cutaway" ${this.roomWallDisplayMode === 'cutaway' ? 'selected' : ''}>自动剖切</option>
                   <option value="half" ${this.roomWallDisplayMode === 'half' ? 'selected' : ''}>半墙</option>
                   <option value="hidden" ${this.roomWallDisplayMode === 'hidden' ? 'selected' : ''}>隐藏墙体</option>
+                </select></label>
+                <label><span>性能档位</span><select id="render-quality-mode" aria-label="性能档位">
+                  <option value="auto" ${this.renderQualityMode === 'auto' ? 'selected' : ''}>自动</option>
+                  <option value="high" ${this.renderQualityMode === 'high' ? 'selected' : ''}>高质量</option>
+                  <option value="balanced" ${this.renderQualityMode === 'balanced' ? 'selected' : ''}>平衡</option>
+                  <option value="performance" ${this.renderQualityMode === 'performance' ? 'selected' : ''}>低性能</option>
                 </select></label>
               </div>
             </details>
@@ -788,6 +802,13 @@ class MapEditor {
       localStorage.setItem('worldforge.roomWallDisplayMode', this.roomWallDisplayMode);
       this.applyRoomWallDisplayMode();
     });
+    this.app.querySelector<HTMLSelectElement>('#render-quality-mode')?.addEventListener('change', (event) => {
+      this.renderQualityMode = normalizeRenderQualityMode((event.target as HTMLSelectElement).value);
+      localStorage.setItem('worldforge.renderQualityMode', this.renderQualityMode);
+      this.applyRenderQualityMode();
+      this.state.message = `性能档位：${renderQualityModeLabel(this.renderQualityMode)}`;
+      this.updateToolbarState();
+    });
     this.app.querySelector('#add-object')?.addEventListener('click', () => this.addObject());
     this.app.querySelector('#save-map')?.addEventListener('click', () => void this.saveMap());
     this.app.querySelector('#confirm-map')?.addEventListener('click', () => void this.confirmMap());
@@ -901,6 +922,7 @@ class MapEditor {
       hdriUrl: (file) => `${serverHttpBase(location, import.meta.env.DEV)}/api/editor/hdri/${encodeURIComponent(file)}`
     });
     this.renderScene = renderScene;
+    this.applyRenderQualityMode();
     this.scene = renderScene.scene;
     this.camera = renderScene.camera;
     this.renderer = renderScene.renderer;
@@ -5209,6 +5231,7 @@ class MapEditor {
             prompt,
             provider: this.renderAiProvider,
             useHdriSky: true,
+            sceneProfile: createRenderSceneProfile(this.state.map),
             ...(currentPlan ? { currentPlan } : {})
           }),
           signal: controller.signal
@@ -6113,8 +6136,10 @@ class MapEditor {
     this.selectionOutline?.update();
     this.generationPreview?.update(now);
     this.renderStats?.beginFrame();
-    const quality = this.adaptiveQuality.update(frameMs, dt);
-    if (quality) this.renderScene?.setAdaptiveQuality(quality.scale);
+    if (this.renderQualityMode === 'auto') {
+      const quality = this.adaptiveQuality.update(frameMs, dt);
+      if (quality) this.renderScene?.setAdaptiveQuality(quality.scale);
+    }
     this.renderScene?.renderFrame(dt, now / 1000);
     this.renderStats?.endFrame(frameMs, now);
     this.previewOrbit?.update();
@@ -6745,6 +6770,13 @@ class MapEditor {
       this.camera
     );
   }
+
+  private applyRenderQualityMode(): void {
+    const quality = this.renderQualityMode === 'auto'
+      ? this.adaptiveQuality.current().scale
+      : adaptiveQualityScale(this.renderQualityMode);
+    this.renderScene?.setAdaptiveQuality(quality);
+  }
 }
 
 function drawCanvasCover(
@@ -6936,6 +6968,10 @@ function roomSurfaceLabel(surface: RoomSurface): string {
 
 function normalizeRoomWallDisplayMode(value: unknown): RoomWallDisplayMode {
   return value === 'full' || value === 'half' || value === 'hidden' ? value : 'cutaway';
+}
+
+function renderQualityModeLabel(value: RenderQualityMode): string {
+  return ({ auto: '自动', high: '高质量', balanced: '平衡', performance: '低性能' } as const)[value];
 }
 
 function terrainModifierLabel(value: TerrainModifier): string {

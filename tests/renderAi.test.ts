@@ -381,6 +381,87 @@ describe('render AI adapter', () => {
     expect(compileRuntimePresentation(suggestion.plan).mode).toBe('sketch');
   });
 
+  it('turns an outdoor-biased reply into a clear material-first indoor plan', async () => {
+    const fetchImpl = vi.fn().mockResolvedValue(new Response(JSON.stringify({
+      ok: true,
+      content: JSON.stringify({
+        plan: {
+          version: 2,
+          baseSchemeId: 'render-runtime-sketch-mist',
+          modules: [
+            { id: 'environment.hdri', params: { texture: 'forest-day.exr', intensity: 1.4 } },
+            { id: 'atmosphere.fog', params: { density: 0.02 } },
+            { id: 'runtime.surface-style', params: { mode: 'cel' } },
+            { id: 'runtime.grass-style', params: { windStrength: 0.4 } },
+            { id: 'runtime.light-rig', params: { recipe: 'hard-day', strength: 1.4 } },
+            { id: 'runtime.post-quality', params: { bloom: 'strong', ssao: 'strong' } },
+            { id: 'presentation.exposure', params: { value: 1.45 } }
+          ]
+        },
+        explanation: '明亮的自然光。'
+      })
+    }), { status: 200, headers: { 'Content-Type': 'application/json' } }));
+
+    const suggestion = await generateRenderSuggestion('现代办公室，干净自然光', BUILTIN_RENDER_SCHEMES, {
+      fetchImpl,
+      requireHdriSky: true,
+      hdriTextures: [{ id: 'forest-day', file: 'forest-day.exr', extension: 'exr', bytes: 1, tags: ['day'] }],
+      sceneProfile: {
+        sceneMode: 'indoor', size: [12, 3.2, 9],
+        room: { windowCount: 2, doorCount: 1, windowArea: 6.4 },
+        interior: { summary: 'modern office', palette: ['#e8e1d4', '#8b735c'], materialKeywords: ['oak'], surfaceRecipes: ['wood.plank', 'plaster.soft'] },
+        lighting: { practicalLightCount: 1, coverageRatio: 0.25 },
+        content: { hasWater: false, hasGrass: false, hasEmissive: true }
+      }
+    });
+
+    expect(suggestion.baseSchemeId).toBe('render-indoor-neutral');
+    expect(suggestion.settings.fogDensity).toBe(0);
+    expect(suggestion.plan.modules.some((module) => module.id === 'runtime.grass-style')).toBe(false);
+    expect(suggestion.plan.modules.find((module) => module.id === 'runtime.surface-style')?.params.mode).toBe('pbr');
+    expect(suggestion.plan.modules.find((module) => module.id === 'runtime.light-rig')?.params.recipe).toBe('interior-daylight');
+    expect(suggestion.plan.modules.find((module) => module.id === 'runtime.post-quality')?.params)
+      .toMatchObject({ bloom: 'off', ssao: 'soft' });
+    expect(suggestion.plan.modules.find((module) => module.id === 'environment.hdri')?.params)
+      .toMatchObject({ backgroundVisibility: 'hidden', useAsEnvironment: 'on', environmentIntensity: 0.7 });
+    expect(suggestion.plan.modules.find((module) => module.id === 'presentation.exposure')?.params.value).toBeLessThanOrEqual(1.1);
+    expect(suggestion.explanation).toContain('灯光覆盖不足');
+
+    const request = JSON.parse(String(fetchImpl.mock.calls[0][1]?.body));
+    expect(request.messages[0].content).toContain('"sceneMode":"indoor"');
+    expect(request.messages[0].content).toContain('"coverageRatio":0.25');
+  });
+
+  it('keeps explicitly requested indoor smoke instead of forcing a clear room', async () => {
+    const fetchImpl = vi.fn().mockResolvedValue(new Response(JSON.stringify({
+      ok: true,
+      content: JSON.stringify({
+        plan: {
+          version: 2,
+          baseSchemeId: 'render-indoor-neutral',
+          modules: [
+            { id: 'environment.hdri', params: { texture: 'forest-day.exr' } },
+            { id: 'atmosphere.fog', params: { density: 0.018 } }
+          ]
+        }
+      })
+    }), { status: 200, headers: { 'Content-Type': 'application/json' } }));
+
+    const suggestion = await generateRenderSuggestion('地下酒吧里有明显烟雾', BUILTIN_RENDER_SCHEMES, {
+      fetchImpl,
+      requireHdriSky: true,
+      hdriTextures: [{ id: 'forest-day', file: 'forest-day.exr', extension: 'exr', bytes: 1, tags: ['day'] }],
+      sceneProfile: {
+        sceneMode: 'indoor', size: [10, 3, 8],
+        room: { windowCount: 0, doorCount: 1, windowArea: 0 },
+        lighting: { practicalLightCount: 3, coverageRatio: 0.9 },
+        content: { hasWater: false, hasGrass: false, hasEmissive: true }
+      }
+    });
+
+    expect(suggestion.settings.fogDensity).toBe(0.018);
+  });
+
   it('treats cartoon water as a water style and drops AI-only forbidden quality fields', async () => {
     const fetchImpl = vi.fn().mockResolvedValue(new Response(JSON.stringify({
       ok: true,

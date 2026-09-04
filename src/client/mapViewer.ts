@@ -3,8 +3,10 @@ import { buildEditableMapGroup, type MapMotionAdapter } from './mapRenderer';
 import { RenderSceneRuntime } from './renderSceneRuntime';
 import type { EditableMap } from '../shared/map';
 import type { RenderScheme } from '../shared/renderScheme';
+import { adaptiveQualityScale, type AdaptiveQualityLevel } from './adaptiveRenderQuality';
 
 export type { RenderSceneRuntime } from './renderSceneRuntime';
+export type { AdaptiveQualityLevel } from './adaptiveRenderQuality';
 
 export interface MapViewerOptions {
   /** Canvas to draw into. Leave unset to let three.js create one. */
@@ -18,6 +20,8 @@ export interface MapViewerOptions {
    */
   hdriUrl?: (file: string) => string;
   pixelRatio?: number;
+  /** Selects the render budget; performance mode aggregates indoor practical lights into room-scale fill. */
+  quality?: AdaptiveQualityLevel;
   /** Drive frames from your own game loop instead of `requestAnimationFrame`. */
   autoStart?: boolean;
   /** Optional semantic-animation bridge, for example a 3d-generate adapter. */
@@ -33,6 +37,7 @@ export interface MapViewer {
   setMap(map: EditableMap): Promise<void>;
   setRenderScheme(scheme: RenderScheme | null): void;
   setSize(width: number, height: number): void;
+  setQuality(level: AdaptiveQualityLevel): void;
   /** One frame. Call this yourself when `autoStart` is false. */
   tick(deltaTime: number): void;
   start(): void;
@@ -58,6 +63,7 @@ export async function createMapViewer(options: MapViewerOptions): Promise<MapVie
     hdriUrl: options.hdriUrl ?? ((file) => `hdri/${encodeURIComponent(file)}`),
     pixelRatio: options.pixelRatio
   });
+  runtime.setAdaptiveQuality(adaptiveQualityScale(options.quality ?? 'high'));
 
   let scheme = options.scheme ?? null;
   let frame = 0;
@@ -126,6 +132,7 @@ export async function createMapViewer(options: MapViewerOptions): Promise<MapVie
       runtime.applyScheme(next);
     },
     setSize: (width, height) => runtime.setSize(width, height),
+    setQuality: (level) => runtime.setAdaptiveQuality(adaptiveQualityScale(level)),
     tick,
     start,
     stop,

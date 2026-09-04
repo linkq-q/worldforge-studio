@@ -47,6 +47,8 @@ export interface RenderSuggestion {
   plan: RenderPlan;
 }
 
+export const INDOOR_RENDER_SCHEME_ID = 'render-indoor-neutral';
+
 export const BUILTIN_RENDER_SCHEMES: readonly RenderScheme[] = [
   builtinScheme('render-runtime-sketch-mist', '淡彩素描晨雾', '程序化交叉排线与柔和晨雾，保留少量原始色彩。', {
     background: '#c9d2cf',
@@ -123,6 +125,26 @@ export const BUILTIN_RENDER_SCHEMES: readonly RenderScheme[] = [
         id: 'runtime.presentation-style',
         params: { mode: 'comic-print' }
       }
+    ]
+  }),
+  builtinScheme(INDOOR_RENDER_SCHEME_ID, '室内中性 PBR', '无全局雾，以窗光、室内灯具、环境反射和柔和接触阴影表现材质。', {
+    background: '#c8d1d6',
+    fogColor: '#c8d1d6',
+    fogDensity: 0,
+    hemisphereSkyColor: '#d9e3e8',
+    hemisphereGroundColor: '#514941',
+    hemisphereIntensity: 0.82,
+    sunColor: '#fff0d5',
+    sunIntensity: 1.15,
+    exposure: 0.98
+  }, {
+    version: 2,
+    baseSchemeId: INDOOR_RENDER_SCHEME_ID,
+    modules: [
+      { id: 'atmosphere.fog', params: { density: 0 } },
+      { id: 'runtime.surface-style', params: { mode: 'pbr' } },
+      { id: 'runtime.light-rig', params: { recipe: 'interior-daylight' } },
+      { id: 'runtime.post-quality', params: { bloom: 'off', ssao: 'soft' } }
     ]
   })
 ];

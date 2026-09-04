@@ -227,7 +227,8 @@ export interface RuntimeMaterialTheme {
 }
 
 export interface RuntimeLightRig {
-  recipe: 'neutral' | 'soft-morning' | 'hard-day' | 'backlit' | 'overcast' | 'sunset' | 'night';
+  recipe: 'neutral' | 'soft-morning' | 'hard-day' | 'backlit' | 'overcast' | 'sunset' | 'night'
+    | 'interior-daylight' | 'interior-warm' | 'interior-night';
   strength?: number;
   warmth?: number;
   shadowSoftness?: number;
@@ -256,6 +257,8 @@ export interface RuntimeHdriSky {
   exposure: number;
   saturation: number;
   intensity: number;
+  backgroundVisibility: 'visible' | 'hidden';
+  environmentIntensity: number;
   tint?: string;
   tintStrength: number;
   /** Also feed the panorama to `scene.environment` through PMREM. */
@@ -291,7 +294,7 @@ export const RENDER_CAPABILITIES: readonly RenderCapability[] = [
     label: 'HDRI 天空',
     priority: 'P1',
     availability: 'ready',
-    availabilityNote: '贴图取自 data/map-editor/hdri 目录，同时作为背景天空球与 PMREM 环境光。',
+    availabilityNote: '贴图取自 data/map-editor/hdri 目录，可分别控制背景显示与 PMREM 环境光。',
     params: {
       // ponytail: `code` type means "free string, developer only" — exactly the
       // access rule wanted here, so the AI cannot invent a filename.
@@ -300,6 +303,8 @@ export const RENDER_CAPABILITIES: readonly RenderCapability[] = [
       exposure: { type: 'number', min: 0.05, max: 4, default: 1 },
       saturation: { type: 'number', min: 0, max: 2, default: 1 },
       intensity: { type: 'number', min: 0, max: 4, default: 1 },
+      backgroundVisibility: { type: 'enum', values: ['visible', 'hidden'], default: 'visible' },
+      environmentIntensity: { type: 'number', min: 0, max: 2, default: 1 },
       tint: { type: 'color', default: '#ffffff' },
       tintStrength: { type: 'number', min: 0, max: 1, default: 0 },
       useAsEnvironment: { type: 'enum', values: ['on', 'off'], default: 'on' }
@@ -503,7 +508,10 @@ export const RENDER_CAPABILITIES: readonly RenderCapability[] = [
     params: {
       recipe: {
         type: 'enum',
-        values: ['neutral', 'soft-morning', 'hard-day', 'backlit', 'overcast', 'sunset', 'night'],
+        values: [
+          'neutral', 'soft-morning', 'hard-day', 'backlit', 'overcast', 'sunset', 'night',
+          'interior-daylight', 'interior-warm', 'interior-night'
+        ],
         default: 'neutral'
       },
       strength: { type: 'number', min: 0.25, max: 2, default: 1 },
@@ -898,7 +906,10 @@ export function compileRuntimeLightRig(plan: RenderPlan): RuntimeLightRig {
   const params = plan.modules.find((item) => item.id === 'runtime.light-rig')?.params ?? {};
   const directed = plan.visualDirection ? compileVisualDirection(plan.visualDirection).lightRig : undefined;
   return {
-    recipe: enumValue(params.recipe, ['neutral', 'soft-morning', 'hard-day', 'backlit', 'overcast', 'sunset', 'night'], directed?.recipe ?? 'neutral'),
+    recipe: enumValue(params.recipe, [
+      'neutral', 'soft-morning', 'hard-day', 'backlit', 'overcast', 'sunset', 'night',
+      'interior-daylight', 'interior-warm', 'interior-night'
+    ], directed?.recipe ?? 'neutral'),
     strength: numericValue(params.strength) ?? directed?.strength,
     warmth: numericValue(params.warmth) ?? directed?.warmth,
     shadowSoftness: numericValue(params.shadowSoftness) ?? directed?.shadowSoftness
@@ -936,6 +947,8 @@ export function compileRuntimeHdriSky(plan: RenderPlan): RuntimeHdriSky {
     exposure: numericValue(params.exposure) ?? 1,
     saturation: numericValue(params.saturation) ?? 1,
     intensity: numericValue(params.intensity) ?? 1,
+    backgroundVisibility: params.backgroundVisibility === 'hidden' ? 'hidden' : 'visible',
+    environmentIntensity: numericValue(params.environmentIntensity) ?? 1,
     tint: stringValue(params.tint),
     tintStrength: numericValue(params.tintStrength) ?? 0,
     useAsEnvironment: params.useAsEnvironment !== 'off'
@@ -992,7 +1005,7 @@ export function createDefaultRenderAccessPolicy(): RenderAccessPolicy {
 
 function aiSafetyMaximum(moduleId: RenderModuleId, parameter: string): number | undefined {
   const limits: Partial<Record<RenderModuleId, Record<string, number>>> = {
-    'environment.hdri': { exposure: 1.5, intensity: 1.8 },
+    'environment.hdri': { exposure: 1.5, intensity: 1.8, environmentIntensity: 1.2 },
     'lighting.hemisphere': { intensity: 2.4 },
     'lighting.sun': { intensity: 5 },
     'presentation.exposure': { value: 1.5 },

@@ -117,6 +117,15 @@ describe('applyRenderScheme', () => {
     expect(targets.renderer.toneMappingExposure).toBeGreaterThan(scheme.settings.exposure);
   });
 
+  it('keeps readable room-scale fill in indoor daylight', () => {
+    const { targets } = createTargets();
+    targets.map = createEmptyMap('day room', 'day-room', [10, 3, 8], 'voxel', 'indoor', [10, 3, 8]);
+
+    applyRenderScheme(targets, PLAIN_SCHEME);
+
+    expect(targets.hemisphereLight.intensity).toBeGreaterThan(PLAIN_SCHEME.settings.hemisphereIntensity * 0.6);
+  });
+
   it('treats an explicit night recipe as night even when an older visual direction says noon', () => {
     const { targets, rendered } = createTargets();
     targets.map = createEmptyMap('night override', 'night-override', [10, 3, 8], 'voxel', 'indoor', [10, 3, 8]);
@@ -265,6 +274,7 @@ describe('RenderSceneRuntime sizing', () => {
       renderer,
       adapter,
       atmosphereFx: { setQuality: vi.fn() },
+      rendered: { setLightingQuality: vi.fn(), setSandFlowStrength: vi.fn() },
       camera: { aspect: 1, updateProjectionMatrix: vi.fn() },
       basePixelRatio: 2,
       adaptiveQuality: 1,
@@ -278,6 +288,7 @@ describe('RenderSceneRuntime sizing', () => {
 
     expect(renderer.setPixelRatio).toHaveBeenCalledOnce();
     expect(adapter.setSize).toHaveBeenCalledWith(800, 600);
+    expect(runtime.rendered!.setLightingQuality).toHaveBeenCalledWith(0.68);
   });
 
   it('keeps the composer pixel ratio in sync with its render targets', () => {

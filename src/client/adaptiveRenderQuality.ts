@@ -1,4 +1,5 @@
 export type AdaptiveQualityLevel = 'high' | 'balanced' | 'performance';
+export type RenderQualityMode = AdaptiveQualityLevel | 'auto';
 
 export interface AdaptiveQualityState {
   level: AdaptiveQualityLevel;
@@ -10,6 +11,14 @@ const STATES: Record<AdaptiveQualityLevel, AdaptiveQualityState> = {
   balanced: { level: 'balanced', scale: 0.68 },
   performance: { level: 'performance', scale: 0.42 }
 };
+
+export function adaptiveQualityScale(level: AdaptiveQualityLevel): number {
+  return STATES[level].scale;
+}
+
+export function normalizeRenderQualityMode(value: unknown): RenderQualityMode {
+  return value === 'high' || value === 'balanced' || value === 'performance' ? value : 'auto';
+}
 
 /** Slow hysteresis prevents one hitch from visibly changing quality. */
 export class AdaptiveRenderQuality {

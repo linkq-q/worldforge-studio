@@ -4,7 +4,9 @@ import path from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 import { MapStore } from '../src/server/mapStore';
 import {
+  compileRuntimeLightRig,
   compileRuntimeOutline,
+  compileRuntimePostQuality,
   compileRuntimePresentation,
   compileRuntimeStyle
 } from '../src/shared/renderPlan';
@@ -17,11 +19,21 @@ afterEach(async () => {
 });
 
 describe('render schemes', () => {
-  it('ships only the two accepted built-in presets', () => {
+  it('ships the two accepted stylized presets plus a neutral indoor base', () => {
     expect(BUILTIN_RENDER_SCHEMES.map((scheme) => scheme.id)).toEqual([
       'render-runtime-sketch-mist',
-      'render-runtime-comic-print'
+      'render-runtime-comic-print',
+      'render-indoor-neutral'
     ]);
+  });
+
+  it('keeps the indoor base clear, PBR and contact-shadowed', () => {
+    const indoor = BUILTIN_RENDER_SCHEMES.find((item) => item.id === 'render-indoor-neutral')!;
+
+    expect(indoor.settings.fogDensity).toBe(0);
+    expect(compileRuntimeStyle(indoor.renderPlan!)).toMatchObject({ mode: 'pbr' });
+    expect(compileRuntimeLightRig(indoor.renderPlan!)).toMatchObject({ recipe: 'interior-daylight' });
+    expect(compileRuntimePostQuality(indoor.renderPlan!)).toMatchObject({ bloom: 'off', ssao: 'soft' });
   });
 
   it('ships a deterministic runtime-backed sketch preset', () => {
