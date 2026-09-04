@@ -6,6 +6,7 @@ import {
   generateModel,
   llmChat,
   parseSseModel,
+  replayModel,
   refineModel
 } from '../src/server/modelApi';
 
@@ -63,6 +64,60 @@ describe('model API adapter', () => {
     expect(onStage).toHaveBeenCalledWith({ status: 'stage', stage: 'blockout' });
     expect(onStage).toHaveBeenCalledWith({ status: 'stage', stage: 'thinking_start' });
     expect(onStage).toHaveBeenCalledWith({ status: 'stage', stage: 'result' });
+  });
+
+  it('requests a deterministic seeded model', async () => {
+    const fetchImpl = vi.fn().mockResolvedValue(new Response(
+      'data: {"stage":"result","done":true,"modelJson":{"_meta":{"seed":{"v":1,"seed":42}}}}\n\n',
+      { status: 200 }
+    ));
+
+    await generateModel('pine tree', {
+      apiBase: 'https://example.test',
+      providers: ['gpt'],
+      fetchImpl,
+      materialTags,
+      seeded: true,
+      seed: 42
+    });
+
+    expect(JSON.parse(String(fetchImpl.mock.calls[0][1]?.body))).toMatchObject({
+      description: 'pine tree',
+      provider: 'gpt',
+      seeded: true,
+      seed: 42
+    });
+  });
+
+  it('replays a complete seeded model with a new seed', async () => {
+    const source = { format: 2, nodes: [], _meta: { seed: { v: 1, seed: 42 } } };
+    const replayed = { format: 2, nodes: [{ id: 'trunk' }], _meta: { seed: { v: 1, seed: 77 } } };
+    const fetchImpl = vi.fn().mockResolvedValue(new Response(JSON.stringify({
+      ok: true,
+      seed: 77,
+      modelJson: replayed
+    }), { status: 200, headers: { 'Content-Type': 'application/json' } }));
+
+    await expect(replayModel(source, 77, {
+      apiBase: 'https://example.test',
+      fetchImpl
+    })).resolves.toEqual(replayed);
+    expect(fetchImpl).toHaveBeenCalledWith('https://example.test/api/generate/replay', expect.objectContaining({
+      method: 'POST',
+      body: JSON.stringify({ modelJson: source, seed: 77 })
+    }));
+  });
+
+  it('surfaces replay metadata errors', async () => {
+    const fetchImpl = vi.fn().mockResolvedValue(new Response(JSON.stringify({
+      ok: false,
+      error: 'no_metadata'
+    }), { status: 400 }));
+
+    await expect(replayModel({ nodes: [] }, 77, {
+      apiBase: 'https://example.test',
+      fetchImpl
+    })).rejects.toThrow('no_metadata');
   });
 
   it('honors an already-cancelled generation signal before making a request', async () => {
@@ -223,6 +278,25 @@ describe('model API adapter', () => {
     });
   });
 
+  it('allows mechanical repair chats to disable thinking and use a smaller output budget', async () => {
+    const fetchImpl = vi.fn().mockResolvedValue(new Response(JSON.stringify({ ok: true, content: 'fixed code' }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' }
+    }));
+
+    await expect(llmChat([{ role: 'user', content: 'repair this code' }], {
+      apiBase: 'https://example.test',
+      fetchImpl,
+      maxTokens: 8_000,
+      thinking: false
+    })).resolves.toBe('fixed code');
+
+    expect(JSON.parse(String(fetchImpl.mock.calls[0][1]?.body))).toMatchObject({
+      maxTokens: 8_000,
+      thinking: false
+    });
+  });
+
   it('accepts type-only text deltas from the chat stream', async () => {
     const fetchImpl = vi.fn().mockResolvedValue(new Response([
       'data: {"type":"text","text":"{\\"plan\\":"}',
@@ -354,7 +428,7 @@ describe('model API adapter', () => {
     expect(JSON.parse(String(init.body))).toMatchObject({ materialTags });
   });
 
-  it('uses the bundled runtime vocabulary by default', async () => {
+  it('uses a compact generation-only view of the bundled runtime vocabulary by default', async () => {
     const fetchImpl = vi.fn().mockResolvedValue(new Response(
       'data: {"stage":"result","done":true,"modelJson":{"name":"tagged"}}\n\n',
       { status: 200 }
@@ -367,10 +441,15 @@ describe('model API adapter', () => {
     });
 
     const init = fetchImpl.mock.calls[0]?.[1] as RequestInit;
-    const vocabulary = JSON.parse(String(init.body)).materialTags;
+    const body = String(init.body);
+    const vocabulary = JSON.parse(body).materialTags;
     expect(vocabulary.version).toBe('material-tags-v1');
     expect(vocabulary.tags.base.values).toContain('fabric');
     expect(vocabulary.tags.base.variantEnum).toContain('red-white-vertical');
+    expect(vocabulary.tags.base.runtime).toBeUndefined();
+    expect(vocabulary.tags.base.sim).toBeUndefined();
+    expect(vocabulary.tags.poison).toBeUndefined();
+    expect(body.length).toBeLessThan(10_000);
   });
 
   it('lifts dark inherited foliage colors without changing bark colors', async () => {

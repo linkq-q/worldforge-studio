@@ -1,6 +1,6 @@
 import type { EditableMap, MapAsset } from './map';
 import type { MapAssetLight } from './mapAssetMetadata';
-import type { SceneAssetFamily, SceneCompositionPlan } from './sceneComposition';
+import { sceneAssetCategory, type SceneAssetFamily, type SceneCompositionPlan } from './sceneComposition';
 
 export interface ResolvedSceneFamily {
   family: SceneAssetFamily;
@@ -14,6 +14,9 @@ export interface SceneAssetGap {
   prompt: string;
   tags: string[];
   light?: MapAssetLight;
+  seedFamilyKey?: string;
+  variantIndex?: number;
+  variantCount?: number;
 }
 
 export function fitSceneAssetVariantBudget(
@@ -87,10 +90,13 @@ export function resolveSceneFamilies(
         .sort((left, right) => scoreAsset(right, family) - scoreAsset(left, family) || left.id.localeCompare(right.id));
       const selected = candidates.slice(0, family.desiredVariants);
       selected.forEach((asset) => claimed.add(asset.id));
+      const effectiveFamily = selected.length > 0 && sceneAssetCategory(family) === 'nature'
+        ? { ...family, desiredVariants: selected.length }
+        : family;
       return {
-        family,
+        family: effectiveFamily,
         assets: selected,
-        missingCount: Math.max(0, family.desiredVariants - selected.length)
+        missingCount: Math.max(0, effectiveFamily.desiredVariants - selected.length)
       };
     });
 
@@ -106,14 +112,27 @@ export function resolveSceneFamilies(
   const gaps: SceneAssetGap[] = [];
   for (const resolved of families) {
     for (let index = 0; index < resolved.missingCount && gaps.length < generationBudget; index += 1) {
+      const variantIndex = resolved.assets.length + index;
+      const seededFamily = resolved.assets.length === 0
+        && resolved.family.desiredVariants > 1
+        && sceneAssetCategory(resolved.family) === 'nature';
       gaps.push({
         familyId: resolved.family.id,
         name: resolved.family.desiredVariants > 1
-          ? `${resolved.family.label} ${resolved.assets.length + index + 1}`
+          ? `${resolved.family.label} ${variantIndex + 1}`
           : resolved.family.label,
-        prompt: buildFamilyPrompt(resolved.family, plan.globalBrief.assetArtDirection, index),
+        prompt: buildFamilyPrompt(
+          resolved.family,
+          plan.globalBrief.assetArtDirection,
+          seededFamily ? undefined : variantIndex
+        ),
         tags: resolved.family.tags,
-        light: resolved.family.light
+        light: resolved.family.light,
+        ...(seededFamily ? {
+          seedFamilyKey: resolved.family.id,
+          variantIndex,
+          variantCount: resolved.family.desiredVariants
+        } : {})
       });
     }
   }
@@ -178,7 +197,7 @@ function familyZoneTags(plan: SceneCompositionPlan, familyId: string): Set<strin
   return result;
 }
 
-function buildFamilyPrompt(family: SceneAssetFamily, artDirection: string, variantIndex: number): string {
+function buildFamilyPrompt(family: SceneAssetFamily, artDirection: string, variantIndex?: number): string {
   const foliage = /tree|forest|woodland|grove|foliage|leaf|树|林|叶/i.test(
     `${family.label} ${family.role} ${family.tags.join(' ')}`
   );
@@ -186,7 +205,9 @@ function buildFamilyPrompt(family: SceneAssetFamily, artDirection: string, varia
     family.generationBrief,
     artDirection ? `全局资产美术方向：${artDirection}` : '',
     `资产角色：${family.role}；目标尺度：${family.sizeClass}。`,
-    family.desiredVariants > 1 ? `这是同一家族的第 ${variantIndex + 1} 个可辨识变体，轮廓应有变化但风格一致。` : '',
+    family.desiredVariants > 1 && variantIndex !== undefined
+      ? `这是同一家族的第 ${variantIndex + 1} 个可辨识变体，轮廓应有变化但风格一致。`
+      : '',
     foliage
       ? 'Keep foliage base colors clearly chromatic rather than gray, with enough brightness to remain readable after normal self-shadowing; do not use near-black leaf colors.'
       : '',

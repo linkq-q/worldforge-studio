@@ -122,6 +122,7 @@ export function buildSceneDirectorPrompt(
     `Map: ${map.box.size[0]} x ${map.box.size[1]} x ${map.box.size[2]}, scene mode ${map.sceneMode}, seed ${map.seed}, default new-asset mode ${map.assetGenerationMode}, character height ${player.height.toFixed(2)}m, world scale ${map.worldScaleProfile}.`,
     `Execution budgets: about ${limits.objectCount} objects and ${options.minNewAssets ?? 0}-${options.maxNewAssets ?? limits.assetRequestCount} newly generated assets. Define enough useful families or variants to satisfy the minimum; never exceed the maximum.`,
     'Use several semantically useful asset families. Do not create near-duplicate recolors or unnecessary variants of one landmark.',
+    'A loose natural family expected to appear at least four times should use three to six seeded shape variants: three for a small repeated set, four by default, and up to six for dense forest vegetation when the asset budget permits. Keep architecture, landmarks, connected modules, creatures, furniture and functional objects at one variant unless the user explicitly requests otherwise.',
     options.reuseExistingAssets
       ? `Existing assets may be reused only when their specific identity and size fit: ${JSON.stringify(catalogAssets)}.`
       : 'Existing asset reuse is disabled for this request. Define the asset families the scene actually needs; the server will generate them as new assets.',

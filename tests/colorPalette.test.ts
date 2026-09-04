@@ -65,16 +65,17 @@ describe('color palettes', () => {
     expect(environment.hemisphereSkyColor).toBe('#FFFDF6');
   });
 
-  it('builds a bounded asset-generation brief with palette-role tags', () => {
+  it('builds a bounded asset-specific generation brief with only relevant palette roles', () => {
     const palette = createColorPalette({
       name: 'Small',
       colors: ['#E7C393', '#52362E', '#76D0F2', '#DCDB22']
     });
-    const brief = paletteGenerationBrief(palette);
+    const brief = paletteGenerationBrief(palette, '一棵有清晰树干的松树 pine tree');
     expect(brief).toContain('palette');
-    expect(brief).toContain('primary=');
-    expect(brief).toContain('#E7C393');
-    expect(brief.length).toBeLessThan(4000);
+    expect(brief).toContain('plant=');
+    expect(brief).toContain('earth=');
+    expect(brief).not.toContain('water=');
+    expect(brief.length).toBeLessThan(400);
   });
 
   it('accepts legacy role names but normalizes generation to the abstract protocol', () => {

@@ -2484,16 +2484,7 @@ class MapEditor {
       this.state.message = automatic ? '第二轮规划提升已完成，尚未应用' : 'AI 地图预览已生成，尚未应用';
       await this.refreshScene();
       this.clearCodePlanPreview();
-      const quality = mode === 'generate' && combinedSuggestion.composition
-        ? mapCompositionPlacementQuality(
-            combinedSuggestion.composition.metrics.initialObjectCount ?? combinedSuggestion.composition.metrics.objectCount,
-            combinedSuggestion.composition.metrics.objectCount
-          )
-        : null;
-      if (quality && quality.tone !== 'good' && !combinedSuggestion.codePlan) {
-        const repairPrompt = `${this.mapAiPrompt}\n\n在第一轮可见结果基础上自动进行一次规划提升：补足未正常落位的资产，修复尺度、动线、操作净空、贴墙贴顶、窗户覆盖和支撑关系；保留已经合理的内容。`;
-        window.setTimeout(() => void this.generateMapAiPreview('refine', undefined, repairPrompt, true), 0);
-      } else if (!visualRepair) {
+      if (!visualRepair) {
         window.setTimeout(() => void this.runMapVisualFinalReview(), 0);
       }
     } catch (error) {

@@ -967,7 +967,7 @@ function normalizeFamily(value: unknown): SceneAssetFamily {
     tags: [...new Set([...tags, ...requiredIdentityTags])],
     identityTags: requiredIdentityTags,
     sizeClass,
-    desiredVariants: Math.round(clamp(finiteNumber(input.desiredVariants, 1), 1, 3)),
+    desiredVariants: Math.round(clamp(finiteNumber(input.desiredVariants, 1), 1, 6)),
     priority: clamp(finiteNumber(input.priority, 0.5), 0, 1),
     generationBrief,
     ...(light ? { light } : {}),

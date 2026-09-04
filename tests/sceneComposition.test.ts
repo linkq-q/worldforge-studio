@@ -352,6 +352,44 @@ describe('scene composition contract', () => {
     expect(resolved.gaps).toHaveLength(1);
   });
 
+  it('does not auto-expand an existing natural asset into seeded variants', () => {
+    const map = createEmptyMap('Forest', 'map-existing-natural', [96, 16, 96], 'voxel-pro');
+    const input = structuredClone(planInput()) as {
+      assetFamilies: Array<{ id: string; desiredVariants: number }>;
+    };
+    input.assetFamilies.find((family) => family.id === 'trees')!.desiredVariants = 4;
+    const plan = normalizeSceneCompositionPlan(input, map);
+    const resolved = resolveSceneFamilies(plan, map, [
+      asset('tree-a', 'Pine', ['tree'], 'large', 'voxel-pro')
+    ], 4);
+
+    expect(resolved.families.find((item) => item.family.id === 'trees')?.assets.map((item) => item.id))
+      .toEqual(['tree-a']);
+    expect(resolved.gaps.some((gap) => gap.familyId === 'trees')).toBe(false);
+  });
+
+  it('marks every missing natural-family variant for one seeded replay family', () => {
+    const map = createEmptyMap('Forest', 'map-seeded-natural', [96, 16, 96], 'voxel-pro');
+    const input = structuredClone(planInput()) as {
+      assetFamilies: Array<{ id: string; desiredVariants: number }>;
+    };
+    input.assetFamilies.find((family) => family.id === 'trees')!.desiredVariants = 4;
+    const plan = normalizeSceneCompositionPlan(input, map);
+    const resolved = resolveSceneFamilies(plan, map, [], 4);
+    const treeGaps = resolved.gaps.filter((gap) => gap.familyId === 'trees');
+
+    expect(treeGaps.map((gap) => ({
+      seedFamilyKey: gap.seedFamilyKey,
+      variantIndex: gap.variantIndex,
+      variantCount: gap.variantCount
+    }))).toEqual([
+      { seedFamilyKey: 'trees', variantIndex: 0, variantCount: 4 },
+      { seedFamilyKey: 'trees', variantIndex: 1, variantCount: 4 },
+      { seedFamilyKey: 'trees', variantIndex: 2, variantCount: 4 },
+      { seedFamilyKey: 'trees', variantIndex: 3, variantCount: 4 }
+    ]);
+  });
+
   it('does not let generic category assets impersonate a named family identity', () => {
     const map = createEmptyMap('Named families', 'map-named-assets', [96, 16, 96], 'voxel-pro');
     const input = structuredClone(planInput()) as {

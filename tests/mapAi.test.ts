@@ -31,6 +31,7 @@ describe('map AI adapter', () => {
     expect(buildSceneDirectorPrompt(map, [], { maxNewAssets: 32 })).toContain('Use at most 32 asset families');
     expect(buildSceneDirectorPrompt(map, [], { maxNewAssets: 100 })).toContain('Use at most 64 asset families');
     expect(buildSceneDirectorPrompt(map, [], { maxNewAssets: 4 })).toContain('one short 2-8-character Chinese noun phrase');
+    expect(buildSceneDirectorPrompt(map, [], { maxNewAssets: 4 })).toContain('three to six seeded shape variants');
   });
 
   it('can return a director plan before generating any assets', async () => {
@@ -51,6 +52,51 @@ describe('map AI adapter', () => {
     expect(approved.zones[0].id).toBe('seating');
     expect(fetchImpl).toHaveBeenCalledOnce();
     expect(createAsset).not.toHaveBeenCalled();
+  });
+
+  it('defaults repeated outdoor nature families to four variants within the asset budget', async () => {
+    const plan = compositionPlan({
+      assetFamilies: [family('trees', ['tree', 'pine'], 'large')],
+      zones: [zone('grove', [{ familyId: 'trees', distribution: 'clustered' }])],
+      intentRequirements: [{
+        kind: 'asset-family', description: 'a grove of pines', familyId: 'trees', minCount: 8
+      }]
+    });
+    const fetchImpl = vi.fn().mockResolvedValueOnce(chatResponse(plan));
+
+    const approved = await planMapComposition(
+      '生成一片松树林',
+      createEmptyMap('forest', 'seeded-forest', [96, 16, 96]),
+      [],
+      { apiBase: 'https://example.test', provider: 'gpt', fetchImpl, minNewAssets: 0, maxNewAssets: 4 }
+    );
+
+    expect(approved.assetFamilies).toEqual([
+      expect.objectContaining({ id: 'trees', desiredVariants: 4 })
+    ]);
+  });
+
+  it.each([
+    { label: 'small grove', mapSize: [16, 8, 16] as [number, number, number], minCount: 4, maxAssets: 3, variants: 3 },
+    { label: 'dense forest', mapSize: [96, 16, 96] as [number, number, number], minCount: 30, maxAssets: 6, variants: 6 }
+  ])('scales seeded nature variants for a $label', async ({ mapSize, minCount, maxAssets, variants }) => {
+    const plan = compositionPlan({
+      assetFamilies: [family('trees', ['tree', 'pine'], 'large')],
+      zones: [zone('grove', [{ familyId: 'trees', distribution: 'clustered' }])],
+      intentRequirements: [{
+        kind: 'asset-family', description: 'a grove of pines', familyId: 'trees', minCount
+      }]
+    });
+    const fetchImpl = vi.fn().mockResolvedValueOnce(chatResponse(plan));
+
+    const approved = await planMapComposition(
+      '生成一片松树林',
+      createEmptyMap('forest', `seeded-forest-${variants}`, mapSize),
+      [],
+      { apiBase: 'https://example.test', provider: 'gpt', fetchImpl, minNewAssets: 0, maxNewAssets: maxAssets }
+    );
+
+    expect(approved.assetFamilies[0]).toMatchObject({ id: 'trees', desiredVariants: variants });
   });
 
   it('asks one unified scene program to judge authored intent and compose the full outdoor map', async () => {
@@ -1107,9 +1153,9 @@ describe('map AI adapter', () => {
         zones: [zone('grove', [{ familyId: 'trees', distribution: 'clustered' }])]
       })))
       .mockResolvedValueOnce(chatResponse(reviewPass()));
-    const createAsset = vi.fn().mockResolvedValue(
-      testAsset('asset-fresh-tree', 'Fresh tree', ['tree', 'vegetation'], 'large', 'curve')
-    );
+    const createAsset = vi.fn(async (request: { seedFamilyKey?: string; variantIndex?: number }) => (
+      testAsset(`asset-fresh-tree-${request.variantIndex}`, 'Fresh tree', ['tree', 'vegetation'], 'large', 'curve')
+    ));
 
     const suggestion = await runMapAgent(
       'A quiet pastoral grove',
@@ -1118,7 +1164,8 @@ describe('map AI adapter', () => {
       { apiBase: 'https://example.test', provider: 'gpt', fetchImpl, createAsset }
     );
 
-    expect(createAsset).toHaveBeenCalledOnce();
+    expect(createAsset).toHaveBeenCalledTimes(6);
+    expect(createAsset.mock.calls.every(([request]) => request.seedFamilyKey === 'trees')).toBe(true);
     expect(JSON.stringify(suggestion.operations)).toContain('asset-fresh-tree');
     expect(JSON.stringify(suggestion.operations)).not.toContain('asset-old-tree');
   });

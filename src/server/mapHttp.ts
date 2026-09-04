@@ -28,13 +28,14 @@ import {
 } from '../shared/mapOperations';
 import type { RenderScheme } from '../shared/renderScheme';
 import type { RenderPlan } from '../shared/renderPlan';
+import { normalizeRenderSceneProfile } from '../shared/renderSceneProfile';
 import { runMapAgent } from './mapAi';
 import { replayGeneratedMapCode } from './mapCodePlanner';
 import { reviewMapVisual } from './indoorVisualReview';
 import { planMapComposition } from './mapCompositionWorkflow';
 import { generateMapLayoutSuggestion } from './mapLayoutAi';
 import { generateMapAssetWithRetry } from './mapAssetGenerationRetry';
-import { generateModel } from './modelApi';
+import { generateModel, replayModel } from './modelApi';
 import {
   normalizeModelGenerationMode,
   type ModelGenerationMode
@@ -569,7 +570,7 @@ async function handleEditorMaps(req: Req, res: Res, store: MapStore, parts: stri
         body.paletteId ? store.loadColorPalette(body.paletteId) : Promise.resolve(null)
       ]);
       const directedPrompt = colorPalette
-        ? `${prompt}\n\n${paletteGenerationBrief(colorPalette)}`
+        ? `${prompt}\n\n${paletteGenerationBrief(colorPalette, prompt)}`
         : prompt;
       if (parts[4] === 'generate' && !isCompositionEmptyMap(map)) {
         throw new HttpError(409, 'map_composition_requires_empty_map');
@@ -634,6 +635,7 @@ async function handleEditorMaps(req: Req, res: Res, store: MapStore, parts: stri
         }
         return;
       }
+      const seededModelSources = new Map<string, Promise<unknown>>();
       const suggestion = await runMapAgent(directedPrompt, planningMap, planningAssets, {
           provider,
           signal: controller.signal,
@@ -658,19 +660,52 @@ async function handleEditorMaps(req: Req, res: Res, store: MapStore, parts: stri
           onPlanPreview,
           onAssetReady,
           createAsset: async (request, report) => {
-            const generatedModelJson = await generateMapAssetWithRetry(request.name, () => generateModel(request.prompt, {
+            const generationPrompt = colorPalette
+              ? `${request.prompt}\n${paletteGenerationBrief(colorPalette, `${request.name} ${request.prompt} ${request.tags.join(' ')}`)}`
+              : request.prompt;
+            const retryOptions = {
+              attempts: 3,
+              signal: controller.signal,
+              onProgress: (event: AgentProgressEvent) => report({
+                status: event.phase === 'asset-retrying' ? 'retrying' as const : 'running' as const,
+                detail: event.detail ?? event.label
+              })
+            };
+            const variantIndex = request.variantIndex ?? 0;
+            const seededFamily = request.seedFamilyKey && (request.variantCount ?? 0) > 1;
+            let generatedModelJson: unknown;
+            if (seededFamily) {
+              let source = seededModelSources.get(request.seedFamilyKey!);
+              if (!source) {
+                source = generateMapAssetWithRetry(request.name, () => generateModel(generationPrompt, {
+                  mode: request.mode,
+                  providers: [modelProvider],
+                  seeded: true,
+                  seed: mapAssetVariantSeed(planningMap.seed, request.seedFamilyKey!, 0),
+                  signal: controller.signal,
+                  onStage: (stage) => report({ status: 'running', detail: stage.stage })
+                }), retryOptions);
+                seededModelSources.set(request.seedFamilyKey!, source);
+              }
+              generatedModelJson = variantIndex === 0
+                ? await source
+                : await generateMapAssetWithRetry(
+                    request.name,
+                    async () => replayModel(
+                      await source,
+                      mapAssetVariantSeed(planningMap.seed, request.seedFamilyKey!, variantIndex),
+                      { signal: controller.signal }
+                    ),
+                    retryOptions
+                  );
+            } else {
+              generatedModelJson = await generateMapAssetWithRetry(request.name, () => generateModel(generationPrompt, {
                 mode: request.mode,
                 providers: [modelProvider],
                 signal: controller.signal,
                 onStage: (stage) => report({ status: 'running', detail: stage.stage })
-              }), {
-              attempts: 3,
-              signal: controller.signal,
-              onProgress: (event) => report({
-                status: event.phase === 'asset-retrying' ? 'retrying' : 'running',
-                detail: event.detail ?? event.label
-              })
-            });
+              }), retryOptions);
+            }
             const modelJson = colorPalette
               ? applyPaletteToModelJson(generatedModelJson, colorPalette)
               : generatedModelJson;
@@ -824,7 +859,7 @@ async function handleEditorAssets(req: Req, res: Res, store: MapStore, parts: st
     if (!prompt) throw new HttpError(400, 'missing_prompt');
     const mode = normalizeModelGenerationMode(body.mode);
     const colorPalette = body.paletteId ? await store.loadColorPalette(body.paletteId) : null;
-    const directedPrompt = colorPalette ? `${prompt}\n\n${paletteGenerationBrief(colorPalette)}` : prompt;
+    const directedPrompt = colorPalette ? `${prompt}\n\n${paletteGenerationBrief(colorPalette, prompt)}` : prompt;
     const generatedModelJson = await generateModel(directedPrompt, { mode });
     const modelJson = colorPalette
       ? applyPaletteToModelJson(generatedModelJson, colorPalette)
@@ -1058,12 +1093,15 @@ async function handleEditorRenderSchemes(req: Req, res: Res, store: MapStore, pa
       provider?: ChatProvider;
       currentPlan?: RenderPlan;
       useHdriSky?: boolean;
+      sceneProfile?: unknown;
     }>(req);
     const prompt = body.prompt?.trim();
     if (!prompt) throw new HttpError(400, 'missing_prompt');
     const provider = body.provider ?? 'gpt';
     const option = CHAT_PROVIDER_OPTIONS.find((item) => item.key === provider);
     if (!option || option.disabled) throw new HttpError(400, 'provider_unavailable');
+    const sceneProfile = normalizeRenderSceneProfile(body.sceneProfile);
+    if (body.sceneProfile !== undefined && !sceneProfile) throw new HttpError(400, 'invalid_render_scene_profile');
     const controller = new AbortController();
     const stream = acceptsEventStream(req);
     if (stream) beginSse(res);
@@ -1085,14 +1123,15 @@ async function handleEditorRenderSchemes(req: Req, res: Res, store: MapStore, pa
             prompt,
             requireRenderPlan(body.currentPlan),
             schemes,
-            { provider, signal: controller.signal, onProgress, hdriTextures, requireHdriSky }
+            { provider, signal: controller.signal, onProgress, hdriTextures, requireHdriSky, sceneProfile }
           )
         : await generateRenderSuggestion(prompt, schemes, {
             provider,
             signal: controller.signal,
             onProgress,
             hdriTextures,
-            requireHdriSky
+            requireHdriSky,
+            sceneProfile
           });
       if (stream) {
         sendSse(res, 'result', { suggestion });
@@ -1172,6 +1211,14 @@ async function readJson<T>(req: Req, maxBytes = 16 * 1024 * 1024): Promise<T> {
 
 function dedupeAssets(assets: readonly MapAsset[]): MapAsset[] {
   return [...new Map(assets.map((asset) => [asset.id, asset])).values()];
+}
+
+function mapAssetVariantSeed(mapSeed: number, familyKey: string, variantIndex: number): number {
+  let hash = Math.trunc(mapSeed) >>> 0;
+  for (const character of `${familyKey}:${variantIndex}`) {
+    hash = Math.imul(hash ^ character.charCodeAt(0), 16777619) >>> 0;
+  }
+  return hash;
 }
 
 async function readBody(req: Req, maxBytes: number): Promise<Buffer> {
