@@ -330,6 +330,36 @@ describe('map code planner', () => {
     expect(body.messages.find((message) => message.role === 'user')?.content).toContain('图书馆主楼');
   });
 
+  it('bounds the refine asset catalog while keeping map-referenced assets', async () => {
+    const map = createEmptyMap('Refine catalog', 'refine-catalog');
+    const used = testAsset('used-asset', '已用资产');
+    const placed = createMapObject('已用资产', used.id);
+    placed.id = 'existing-object';
+    map.objects.push(placed);
+    const unrelated = Array.from({ length: 100 }, (_, index) => (
+      testAsset(`unrelated-${index}`, `无关资产${index}`)
+    ));
+    const code = `function plan(api) {
+      api.move({ objectId: 'existing-object', position: [1, 0] });
+    }`;
+    const fetchImpl = vi.fn().mockResolvedValue(new Response(JSON.stringify({ ok: true, content: code }), {
+      status: 200, headers: { 'Content-Type': 'application/json' }
+    }));
+
+    await generateMapCodeSuggestion('调整已用资产位置', map, [used, ...unrelated], {
+      apiBase: 'https://example.test', provider: 'gpt', fetchImpl,
+      mode: 'refine', scope: 'scene', minNewAssets: 0, maxNewAssets: 0
+    });
+
+    const body = JSON.parse(String(fetchImpl.mock.calls[0][1]?.body)) as {
+      messages: Array<{ role: string; content: string }>;
+    };
+    const system = body.messages.find((message) => message.role === 'system')?.content ?? '';
+    expect(system).toContain('used-asset');
+    expect(system).not.toContain('unrelated-99');
+    expect((system.match(/- [^\n]+; tags=/g) ?? []).length).toBeLessThanOrEqual(64);
+  });
+
   it('accepts structured terrain forms and normalizes common semantic enum labels', () => {
     const suggestion = executeMapCodePlan(`function plan(api) {
       api.terrain('plain');
@@ -363,6 +393,12 @@ describe('map code planner', () => {
       expect.objectContaining({ type: 'terrain.modify', modifier: 'basin' }),
       expect.objectContaining({ type: 'terrain.surface', surface: 'soil' })
     ]));
+  });
+
+  it('reports which terrain region field is missing instead of exposing undefined', () => {
+    expect(() => executeMapCodePlan(`function plan(api) {
+      api.modifyTerrain({ modifier: 'basin', region: { kind: 'circle', radius: 4 } });
+    }`, createEmptyMap())).toThrow('invalid_map_code_terrain_region:center');
   });
 
   it('compiles semantic terrain option shapes into strict map operations', () => {
@@ -1550,7 +1586,7 @@ describe('map code planner', () => {
       function plan(api) {
         const pine = api.requireAsset({
           key: 'pine', name: 'Pine', prompt: 'Standalone pine tree', tags: ['tree'], variants: 3,
-          dimensions: [2, 4, 2]
+          dimensions: [2, 4, 2], role: 'environment'
         });
         for (let index = 0; index < 6; index += 1) {
           api.place({ assetId: api.asset(pine, index), position: [index * 2, 0] });
@@ -1582,6 +1618,15 @@ describe('map code planner', () => {
     expect(createAsset).toHaveBeenCalledTimes(3);
     expect(createAsset.mock.calls[0][0].prompt).toContain('local Z+ is the front');
     expect(createAsset.mock.calls[0][0].prompt).toContain('width=2, height=4, depth=2 world units');
+    expect(createAsset.mock.calls.map(([request]) => ({
+      seedFamilyKey: request.seedFamilyKey,
+      variantIndex: request.variantIndex,
+      variantCount: request.variantCount
+    }))).toEqual([
+      { seedFamilyKey: 'pine', variantIndex: 0, variantCount: 3 },
+      { seedFamilyKey: 'pine', variantIndex: 1, variantCount: 3 },
+      { seedFamilyKey: 'pine', variantIndex: 2, variantCount: 3 }
+    ]);
     expect(peak).toBe(3);
     expect(suggestion.generatedAssets).toHaveLength(3);
     const assetIds = suggestion.operations
@@ -1590,6 +1635,39 @@ describe('map code planner', () => {
     expect(new Set(assetIds).size).toBe(3);
     expect(assetIds.slice(0, 3)).toEqual(assetIds.slice(3, 6));
     expect(() => applyMapOperations(createEmptyMap(), suggestion.operations)).not.toThrow();
+  });
+
+  it('reuses successful seeded variants when one replay fails', async () => {
+    const code = `function plan(api) {
+      const pine = api.requireAsset({
+        key: 'pine', name: 'Pine', prompt: 'Standalone pine tree', tags: ['tree'],
+        variants: 3, role: 'environment'
+      });
+      for (let index = 0; index < 6; index += 1) {
+        api.place({ assetId: api.asset(pine, index), position: [index * 2, 0], role: 'environment' });
+      }
+    }`;
+    const fetchImpl = vi.fn().mockResolvedValue(new Response(JSON.stringify({ ok: true, content: code }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' }
+    }));
+    const createAsset = vi.fn(async (request: { name: string; variantIndex?: number }) => {
+      if (request.variantIndex === 1) throw new Error(`map_asset_generation_failed:${request.name}:replay_exec_failed`);
+      return testAsset(`asset-${request.variantIndex}`, request.name);
+    });
+
+    const suggestion = await generateMapCodeSuggestion('make a pine grove', createEmptyMap(), [], {
+      apiBase: 'https://example.test', provider: 'gpt', fetchImpl, maxNewAssets: 3, createAsset
+    });
+    const assetIds = suggestion.operations.flatMap((operation) => (
+      operation.type === 'object.add' && operation.object.assetId ? [operation.object.assetId] : []
+    ));
+
+    expect(assetIds).toHaveLength(6);
+    expect(new Set(assetIds)).toEqual(new Set(['asset-0', 'asset-2']));
+    expect(suggestion.diagnostics).toEqual(expect.arrayContaining([
+      expect.objectContaining({ code: 'asset.generation-degraded', severity: 'warning' })
+    ]));
   });
 
   it('streams the discovered layout and each finished asset for live viewport preview', async () => {
@@ -1831,6 +1909,7 @@ describe('map code planner', () => {
 
     const repairRequest = JSON.parse(String(fetchImpl.mock.calls[1][1]?.body));
     expect(repairRequest.messages.at(-1).content).toContain('Do not scale loop counts from map width, map area, or fine coordinate steps');
+    expect(repairRequest).toMatchObject({ maxTokens: 8_000, thinking: false });
     expect(suggestion.operations.filter((operation) => operation.type === 'object.add')).toHaveLength(16);
   });
 

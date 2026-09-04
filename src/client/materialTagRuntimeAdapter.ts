@@ -20,6 +20,7 @@ import {
   type MaterialTagFireVocabulary
 } from './materialTagFireRuntime';
 import { MaterialTagWaterRuntime } from './materialTagWaterRuntime';
+import { applyMaterialMatcapBinding } from './materialTagMatcapRuntime';
 
 interface TaggedNode {
   id: string;
@@ -88,6 +89,10 @@ export class WorldForgeMaterialTagRuntime {
     object: THREE.Object3D;
     binding: Record<string, unknown>;
   }> = [];
+  private readonly matcapBindings: Array<{
+    object: THREE.Object3D;
+    binding: Record<string, unknown>;
+  }> = [];
   private readonly objectWorldMatrices = new Map<string, THREE.Matrix4>();
   private readonly particleEffects = new Set<NonNullable<ReturnType<typeof createParticleEffect>>>();
   private readonly hiddenEffectMeshes = new Set<THREE.Object3D>();
@@ -117,6 +122,7 @@ export class WorldForgeMaterialTagRuntime {
     this.clearRoutedEffects();
     this.effectTargets.clear();
     this.surfaceBindings.length = 0;
+    this.matcapBindings.length = 0;
     const result = emptyResult();
     const modelRoots: THREE.Object3D[] = [];
     modelsRoot.traverse((object) => {
@@ -166,7 +172,13 @@ export class WorldForgeMaterialTagRuntime {
           applied = applySurfaceBinding(object, binding, this.options.scene.environment) > 0 || applied;
           markSurfaceBinding(object, binding);
         }
-        if (entry.materialBindings?.matcap) result.skippedMatcaps += 1;
+        if (entry.materialBindings?.matcap) {
+          const binding = entry.materialBindings.matcap;
+          this.matcapBindings.push({ object, binding });
+          const appliedMatcaps = applyMaterialMatcapBinding(object, binding);
+          if (appliedMatcaps > 0) applied = true;
+          else result.skippedMatcaps += 1;
+        }
         if (applied) result.appliedParts += 1;
       }
     }
@@ -199,6 +211,10 @@ export class WorldForgeMaterialTagRuntime {
   /** Restore tag-owned shader patches after a temporary render-scheme effect was removed. */
   restoreShaderEffects(): number {
     let restored = 0;
+    for (const entry of this.matcapBindings) {
+      if (!entry.object.parent) continue;
+      restored += applyMaterialMatcapBinding(entry.object, entry.binding);
+    }
     for (const target of this.activeEffectTargets()) {
       const layers = Array.isArray(target.userData.effectSlots)
         ? target.userData.effectSlots.filter((layer: { route?: string }) => layer?.route === 'shaderPatch')
@@ -295,6 +311,7 @@ export class WorldForgeMaterialTagRuntime {
     this.waterRuntime?.dispose();
     this.effectTargets.clear();
     this.surfaceBindings.length = 0;
+    this.matcapBindings.length = 0;
     this.objectWorldMatrices.clear();
   }
 

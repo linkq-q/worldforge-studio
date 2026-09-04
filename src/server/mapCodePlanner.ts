@@ -84,6 +84,8 @@ const MAX_POINT_RESULTS = 512;
 const DISCOVERY_EXECUTION_TIMEOUT_MS = 250;
 const FINAL_EXECUTION_TIMEOUT_MS = 1_000;
 const REPLAY_EXECUTION_TIMEOUT_MS = 3_000;
+const REFINE_ASSET_CATALOG_LIMIT = 64;
+const EXECUTION_REPAIR_MAX_TOKENS = 8_000;
 const MAP_CODE_ENVIRONMENT_FORM_CONTRACT = `Use these structured environment forms:
 api.terrain({preset:'plain'|'hills'|'valley'|'island'|'archipelago'|'canyon'|'cliff-plateau'|'dune-desert',amplitude?,roughness?,seed?,direction?:degrees|[x,z]});
 api.modifyTerrain({modifier:'mountain'|'ridge'|'valley'|'basin'|'cliff'|'terrace'|'dune'|'island',region:{kind:'circle',center:[x,z],radius}|{kind:'path',points:[[x,z],...],width}|{kind:'polygon',points:[[x,z],...]},amplitude?:positiveNumber,softness?:number,direction?:degrees|[x,z],variation?:number,layers?:number|stepArray,layout?:'plateau'|'coast'|'canyon'|'wall'|'terraces',access?:'walkable'|'scenic',seed?});
@@ -428,6 +430,56 @@ interface MapCodeReplayContext {
 const MAP_CODE_REPLAY_TTL_MS = 30 * 60 * 1_000;
 const mapCodeReplayContexts = new Map<string, MapCodeReplayContext>();
 
+function selectRefinePromptAssets(
+  map: EditableMap,
+  assets: readonly MapAsset[],
+  prompt: string,
+  options: MapCodePlannerOptions
+): MapAsset[] {
+  const referencedIds = new Set([
+    ...(map.assets ?? []).map((asset) => asset.id),
+    ...map.objects.flatMap((object) => object.assetId ? [object.assetId] : []),
+    ...(options.selectedObjectIds ?? []).flatMap((objectId) => {
+      const object = map.objects.find((candidate) => candidate.id === objectId);
+      return object?.assetId ? [object.assetId] : [];
+    }),
+    ...(options.refinableObjectIds ?? []).flatMap((objectId) => {
+      const object = map.objects.find((candidate) => candidate.id === objectId);
+      return object?.assetId ? [object.assetId] : [];
+    })
+  ]);
+  const reusableIds = new Set(options.reusableAssetIds ?? []);
+  const terms = `${prompt} ${options.focusPrompt ?? ''}`
+    .toLocaleLowerCase()
+    .split(/[\s,，。；、：:!?！？/\\|]+/)
+    .filter((term) => term.length >= 2);
+  const selected: MapAsset[] = [];
+  const selectedIds = new Set<string>();
+  const add = (asset: MapAsset): void => {
+    if (selected.length >= REFINE_ASSET_CATALOG_LIMIT || selectedIds.has(asset.id)) return;
+    selected.push(asset);
+    selectedIds.add(asset.id);
+  };
+  for (const asset of assets) {
+    if (referencedIds.has(asset.id)) add(asset);
+  }
+  const ranked = assets.map((asset, index) => {
+    const semantic = `${asset.name} ${asset.prompt} ${(asset.tags ?? []).join(' ')}`.toLocaleLowerCase();
+    const score = terms.reduce((total, term) => total + (semantic.includes(term) ? 1 : 0), 0);
+    return { asset, index, score };
+  }).sort((left, right) => right.score - left.score || left.index - right.index);
+  for (const entry of ranked) {
+    if (entry.score > 0 && reusableIds.has(entry.asset.id)) add(entry.asset);
+  }
+  for (const entry of ranked) {
+    if (entry.score > 0) add(entry.asset);
+  }
+  for (const asset of assets) {
+    if (reusableIds.has(asset.id)) add(asset);
+  }
+  return selected;
+}
+
 export async function generateMapCodeSuggestion(
   prompt: string,
   map: EditableMap,
@@ -447,7 +499,7 @@ export async function generateMapCodeSuggestion(
   const maxNewAssets = assetRange.max;
   const reusableIds = options.reusableAssetIds ? new Set(options.reusableAssetIds) : null;
   const reusableAssets = requestMode === 'refine'
-    ? assets
+    ? selectRefinePromptAssets(map, assets, prompt, options)
     : options.reuseExistingAssets === true
     ? assets.filter((asset) => (
         (!reusableIds || reusableIds.has(asset.id))
@@ -468,6 +520,9 @@ export async function generateMapCodeSuggestion(
   const focalPreference = options.focusPrompt?.trim().slice(0, 300);
   const userPrompt = [
     prompt.trim().slice(0, 1_200),
+    options.selectedObjectIds?.length
+      ? `Currently selected map object IDs: ${options.selectedObjectIds.slice(0, 64).join(', ')}. Treat these as the default targets when the request says selected objects/buildings/foundations.`
+      : '',
     focalPreference ? `User focal preference (optional, interpret rather than blindly obey): ${focalPreference}` : ''
   ].filter(Boolean).join('\n\n');
   let code = options.approvedCode
@@ -484,7 +539,8 @@ export async function generateMapCodeSuggestion(
         signal: options.signal,
         onProgress: options.onProgress
       }));
-  const execution = await discoverMapCodeWithRepairs(code, userPrompt, systemPrompt, map, reusableAssets, maxNewAssets, options);
+  const executionAssets = requestMode === 'refine' ? assets : reusableAssets;
+  const execution = await discoverMapCodeWithRepairs(code, userPrompt, systemPrompt, map, executionAssets, maxNewAssets, options);
   code = execution.code;
   const discovery = execution.discovery;
   options.onPlanPreview?.(distillCodePlanPreview(discovery.suggestion, discovery.requirements));
@@ -498,8 +554,9 @@ export async function generateMapCodeSuggestion(
   }
   if (!options.createAsset) throw new Error('map_code_asset_generation_unavailable');
 
-  const tasks = discovery.requirements.flatMap((requirement) => (
-    Array.from({ length: requirement.variants }, (_, variantIndex) => ({
+  const tasks = discovery.requirements.flatMap((requirement) => {
+    const seededFamily = supportsSeededEnvironmentVariants(requirement);
+    return Array.from({ length: requirement.variants }, (_, variantIndex) => ({
       key: requirement.key,
       variantIndex,
       name: requirement.variants > 1 ? `${requirement.name} ${variantIndex + 1}` : requirement.name,
@@ -507,15 +564,20 @@ export async function generateMapCodeSuggestion(
         name: requirement.variants > 1 ? `${requirement.name} ${variantIndex + 1}` : requirement.name,
         prompt: [
           codeAssetOrientationPrompt(requirement.prompt, requirement.dimensions),
-          requirement.variants > 1
+          requirement.variants > 1 && !seededFamily
             ? `Create variation ${variantIndex + 1} of ${requirement.variants}; preserve the same reusable asset family while varying silhouette and details.`
             : ''
         ].filter(Boolean).join('\n'),
         tags: requirement.tags,
-        mode: map.assetGenerationMode
+        mode: map.assetGenerationMode,
+        ...(seededFamily ? {
+          seedFamilyKey: requirement.key,
+          variantIndex,
+          variantCount: requirement.variants
+        } : {})
       } satisfies AssetGenerationRequest
-    }))
-  ));
+    }));
+  });
   options.onProgress?.({
     phase: 'checking-assets',
     label: `${map.sceneMode === 'indoor' ? '室内规划' : 'Code 规划'}请求生成 ${tasks.length} 个新资产`,
@@ -1596,7 +1658,8 @@ function runMapCodePlan(
         return placeholder;
       }
       const family = options.assetBindings?.get(normalizedKey);
-      const asset = family?.[variantIndex];
+      const available = family?.filter((candidate): candidate is MapAsset => Boolean(candidate)) ?? [];
+      const asset = family?.[variantIndex] ?? available[positiveModulo(variantIndex, available.length || 1)];
       if (!asset) {
         const missingAssetId = codeMissingAsset(normalizedKey, variantIndex);
         roleByAssetId.set(missingAssetId, role);
@@ -2540,6 +2603,8 @@ Each requireAsset.name is user-facing UI text: use one short Simplified Chinese 
 When the minimum is greater than zero, declare and place that many prompt-specific generated assets even if reusable assets exist.
 Use api.asset(key,index) for generated assets; do not invent asset IDs and do not modify catalog IDs.
 Each asset prompt must describe a standalone reusable object with no ground, scene, text, or background unless the object itself requires it.
+The server attaches the selected palette intent to each asset request. Never copy palette instructions or raw HEX lists into requireAsset.prompt; keep the subject, structure, orientation and user-requested color semantics first.
+For a loose natural environment family such as trees, shrubs, rocks, plants, flowers or mushrooms that will be placed at least 4 times, use 3 seeded variants for a small repeated set, 4 by default, or up to 6 for dense forest vegetation when the asset budget permits; distribute api.asset(key,index) across placements. Keep connected modules, architecture, landmarks, creatures and functional objects at variants:1 unless the user explicitly asks otherwise.
 In unified scene ownership, label every generated family role:'structure' or role:'environment'. ${requestMode === 'refine' ? 'New assets must directly serve the requested delta.' : 'Structural anchors are mandatory; only replaceable natural accents may use optional:true.'}
 For any modular asset repeated along a line or curve, explicitly state its span axis, connection axis, and canonical dimensions: side-by-side modules should span local X with depth/front on local Z; traversal modules should span local Z. Never leave the long axis or dimensions implicit.
 Append this orientation instruction to every generated asset prompt: "Coordinate contract: Y+ is up, Z+ is the front/entrance/forward direction, X+ is right; place doors, facades, openings, windshields, or noses toward local Z+ and keep the model centered at its origin."
@@ -2756,7 +2821,8 @@ async function discoverMapCodeWithRepairs(
         apiBase: options.apiBase,
         provider: options.provider ?? 'gpt',
         temperature: 0.1,
-        maxTokens: 16_000,
+        maxTokens: EXECUTION_REPAIR_MAX_TOKENS,
+        thinking: false,
         fetchImpl: options.fetchImpl,
         signal: options.signal,
         onProgress: options.onProgress
@@ -2914,6 +2980,13 @@ function codeAssetOrientationPrompt(prompt: string, dimensions?: Point3): string
     ? `Canonical dimensions contract: width=${dimensions[0]}, height=${dimensions[1]}, depth=${dimensions[2]} world units. Keep the generated mesh within this centered bounding size.`
     : '';
   return `${prompt}\n${CODE_ASSET_ORIENTATION_PROMPT}${dimensionContract ? `\n${dimensionContract}` : ''}`;
+}
+
+function supportsSeededEnvironmentVariants(requirement: CodeAssetRequirement): boolean {
+  if (requirement.variants < 2 || (requirement.role !== undefined && requirement.role !== 'environment')) return false;
+  const semantic = `${requirement.name} ${requirement.prompt} ${requirement.tags.join(' ')}`;
+  return /tree|shrub|bush|rock|stone|plant|flower|mushroom|cactus|树|灌木|岩|石|植物|花|蘑菇|仙人掌/i.test(semantic)
+    && !/animal|creature|bird|fish|deer|sheep|动物|生物|鸟|鱼|鹿|羊/i.test(semantic);
 }
 
 function normalizeCodeAssetKey(value: string): string {
@@ -3261,16 +3334,23 @@ function cross2(left: Point2, right: Point2): number {
 function codeTerrainRegion(value: unknown): TerrainRegion {
   const region = codeObject(value, 'invalid_map_code_terrain_region');
   if (region.kind === 'circle') {
-    const center = region.center === undefined ? [region.x, region.z] : region.center;
+    const center = region.center === undefined
+      ? region.x === undefined || region.z === undefined ? undefined : [region.x, region.z]
+      : region.center;
+    if (center === undefined) throw new Error('invalid_map_code_terrain_region:center');
+    const radius = region.radius ?? region.r;
+    if (radius === undefined) throw new Error('invalid_map_code_terrain_region:radius');
     const [x, z] = point2(center);
     return {
       kind: 'circle',
       x,
       z,
-      radius: Math.max(0.1, finite(region.radius ?? region.r))
+      radius: Math.max(0.1, finite(radius))
     };
   }
   if (region.kind === 'path') {
+    if (region.points === undefined) throw new Error('invalid_map_code_terrain_region:points');
+    if (region.width === undefined) throw new Error('invalid_map_code_terrain_region:width');
     return {
       kind: 'path',
       points: codePointArray(region.points, 'invalid_map_code_terrain_region').slice(0, 64),

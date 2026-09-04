@@ -159,6 +159,8 @@ describe('RenderPlan V2 capabilities', () => {
       exposure: 1.3,
       saturation: 0.9,
       intensity: 1.1,
+      backgroundVisibility: 'hidden',
+      environmentIntensity: 0.62,
       tint: '#ffe9d0',
       tintStrength: 0.25,
       useAsEnvironment: 'on'
@@ -175,6 +177,8 @@ describe('RenderPlan V2 capabilities', () => {
       exposure: 1.3,
       saturation: 0.9,
       intensity: 1.1,
+      backgroundVisibility: 'hidden',
+      environmentIntensity: 0.62,
       tint: '#ffe9d0',
       tintStrength: 0.25,
       useAsEnvironment: true
@@ -195,8 +199,21 @@ describe('RenderPlan V2 capabilities', () => {
       texture: '',
       rotation: 0,
       exposure: 1,
+      backgroundVisibility: 'visible',
+      environmentIntensity: 1,
       useAsEnvironment: true
     });
+  });
+
+  it('compiles the three indoor light recipes', () => {
+    for (const recipe of ['interior-daylight', 'interior-warm', 'interior-night'] as const) {
+      const plan = normalizeRenderPlan({
+        version: 2,
+        baseSchemeId: 'render-indoor-neutral',
+        modules: [{ id: 'runtime.light-rig', params: { recipe } }]
+      });
+      expect(compileRuntimeLightRig(plan).recipe).toBe(recipe);
+    }
   });
 
   it('compiles semantic fog visibility before the legacy density control', () => {

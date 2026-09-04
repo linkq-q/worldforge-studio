@@ -3,9 +3,10 @@ import {
   type AgentProgressEvent,
   type ChatProvider
 } from '../shared/protocol';
-import type { RenderScheme, RenderSuggestion } from '../shared/renderScheme';
+import { INDOOR_RENDER_SCHEME_ID, type RenderScheme, type RenderSuggestion } from '../shared/renderScheme';
 import type { HdriTexture } from '../shared/hdri';
 import { harmonizeHdriAtmosphere } from '../shared/hdriAtmosphere';
+import { normalizeRenderSceneProfile, type RenderSceneProfile } from '../shared/renderSceneProfile';
 import {
   RENDER_CAPABILITIES,
   compileRuntimeOutline,
@@ -32,6 +33,7 @@ export interface RenderAiOptions {
   hdriTextures?: readonly HdriTexture[];
   /** User asked this round to dress the sky with a panorama from the library. */
   requireHdriSky?: boolean;
+  sceneProfile?: RenderSceneProfile;
   onProgress?: (event: AgentProgressEvent) => void;
 }
 
@@ -46,6 +48,7 @@ export async function generateRenderSuggestion(
   const providerOption = CHAT_PROVIDER_OPTIONS.find((item) => item.key === provider);
   if (!providerOption || providerOption.disabled) throw new Error('provider_unavailable');
 
+  const sceneProfile = normalizeRenderSceneProfile(options.sceneProfile);
   options.onProgress?.({
     phase: 'planning',
     label: options.currentPlan ? '理解渲染调整要求' : '选择并编排渲染能力'
@@ -53,7 +56,13 @@ export async function generateRenderSuggestion(
   const messages = [
     {
       role: 'system',
-      content: buildSystemPrompt(schemes, options.currentPlan, options.hdriTextures, options.requireHdriSky)
+      content: buildSystemPrompt(
+        schemes,
+        options.currentPlan,
+        options.hdriTextures,
+        options.requireHdriSky,
+        sceneProfile
+      )
     },
     { role: 'user', content: cleanPrompt }
   ] as const;
@@ -71,12 +80,12 @@ export async function generateRenderSuggestion(
   const content = await llmChat(messages, requestOptions);
   try {
     options.onProgress?.({ phase: 'validating', label: '校验渲染白名单与参数范围' });
-    const suggestion = stabilizeRenderSemantics(
+    const suggestion = stabilizeRenderForScene(cleanPrompt, stabilizeRenderSemantics(
       cleanPrompt,
       normalizeRenderSuggestion(content, schemes, options.hdriTextures),
       schemes,
       options.currentPlan
-    );
+    ), schemes, sceneProfile, options.currentPlan);
     assertRefineBase(options.currentPlan, suggestion);
     assertRequestedStyle(cleanPrompt, suggestion);
     assertHdriSky(options.requireHdriSky, suggestion);
@@ -97,12 +106,12 @@ export async function generateRenderSuggestion(
       { role: 'assistant', content },
       { role: 'user', content: `上一份 RenderPlan 校验失败：${reason}。只使用能力清单中的模块修正后，重新返回完整 JSON。` }
     ], { ...requestOptions, temperature: 0 });
-    const suggestion = stabilizeRenderSemantics(
+    const suggestion = stabilizeRenderForScene(cleanPrompt, stabilizeRenderSemantics(
       cleanPrompt,
       normalizeRenderSuggestion(repaired, schemes, options.hdriTextures),
       schemes,
       options.currentPlan
-    );
+    ), schemes, sceneProfile, options.currentPlan);
     assertRefineBase(options.currentPlan, suggestion);
     assertRequestedStyle(cleanPrompt, suggestion);
     assertHdriSky(options.requireHdriSky, suggestion);
@@ -197,7 +206,8 @@ function buildSystemPrompt(
   schemes: readonly RenderScheme[],
   currentPlan?: RenderPlan,
   hdriTextures: readonly HdriTexture[] = [],
-  requireHdriSky = false
+  requireHdriSky = false,
+  sceneProfile?: RenderSceneProfile
 ): string {
   const library = schemes.map((scheme) => ({
     id: scheme.id,
@@ -220,10 +230,22 @@ function buildSystemPrompt(
     }
   ];
   return [
-    ...(requireHdriSky ? [
+    ...(requireHdriSky && sceneProfile?.sceneMode === 'indoor' ? [
+      '当前是室内场景，但仍从现有 HDRI 池选择环境贴图。必须输出 environment.hdri，texture 只能使用 environment.hdri-library 中的文件名。',
+      '室内 HDRI 必须设置 backgroundVisibility=hidden、useAsEnvironment=on，environmentIntensity 保持在 0.35-0.7；它只提供克制的材质反射和间接环境，不显示室外天空。'
+    ] : requireHdriSky ? [
       '本轮用户勾选了「HDRI 天空」：必须输出 environment.hdri 模块，texture 从能力清单的 environment.hdri-library 中挑一个最贴合提示词的文件名，不得留空或自造文件名。',
       '可以按氛围调整 HDRI 的 exposure、saturation、rotation、tint、tintStrength 和 intensity，把日间天空重塑为清晨或黄昏，但不要自造 texture。',
       '不要自己写 environment.palette.fogColor、lighting.hemisphere 或 lighting.sun 的颜色，系统会用经过 tint 后的天空/地面平均色统一设定距离雾、环境光和太阳光。'
+    ] : []),
+    ...(sceneProfile ? [
+      `当前场景摘要：${JSON.stringify(sceneProfile)}`
+    ] : []),
+    ...(sceneProfile?.sceneMode === 'indoor' ? [
+      '这是室内渲染。默认使用 render-indoor-neutral 基底、PBR 表面、soft SSAO 和室内灯光配方；不要用室外太阳、草地、地形、天气或全局空气粒子填充房间。',
+      '室内默认完全关闭全局距离雾。只有用户明确要求烟雾、蒸汽、尘埃、薄雾或朦胧空气时才允许 atmosphere.fog。',
+      '灯光优先依赖窗光、实际灯具和间接补光；灯光覆盖不足时不要用高曝光或强环境光掩盖，应在 explanation 中提示补充灯具。',
+      '白天自然光使用 interior-daylight，温馨暖光或傍晚使用 interior-warm，夜间使用 interior-night。Bloom 默认关闭，明确要求霓虹、辉光、发光或火焰时才开启。'
     ] : []),
     ...(currentPlan ? [
       '这是一次 Refine。只修改用户明确要求变化的渲染语义，保留其余模块和参数。',
@@ -314,6 +336,98 @@ function assertRequestedStyle(prompt: string, suggestion: RenderSuggestion): voi
   if (requestsGlobalCel(prompt, cartoonWater) && surface !== 'cel') {
     throw new Error('missing_requested_style:cel');
   }
+}
+
+const INDOOR_AIR = /雾|烟|蒸汽|尘埃|粉尘|haze|mist|smoke|steam|dust/i;
+const INDOOR_STYLIZATION = /素描|铅笔|手绘排线|漫画|水墨|赛璐璐|全(?:局|场景)[^，。！？,;\n]{0,10}卡通|sketch|pencil|comic|\bink\b|cel[- ]?shad|\btoon\b/i;
+const INDOOR_BLOOM = /辉光|光晕|霓虹|发光|火焰|魔法|bloom|glow|neon|flame|magic/i;
+const INDOOR_NIGHT = /夜间|夜晚|深夜|夜景|night|midnight/i;
+const INDOOR_WARM = /暖光|温馨|黄昏|傍晚|夕阳|餐厅|酒吧|warm|sunset|evening/i;
+
+function stabilizeRenderForScene(
+  prompt: string,
+  suggestion: RenderSuggestion,
+  schemes: readonly RenderScheme[],
+  sceneProfile?: RenderSceneProfile,
+  currentPlan?: RenderPlan
+): RenderSuggestion {
+  if (sceneProfile?.sceneMode !== 'indoor') return suggestion;
+  const plan: RenderPlan = {
+    ...suggestion.plan,
+    modules: suggestion.plan.modules.map((module) => ({ ...module, params: { ...module.params } }))
+  };
+
+  const hdri = plan.modules.find((module) => module.id === 'environment.hdri');
+  if (hdri) {
+    hdri.params.backgroundVisibility = 'hidden';
+    hdri.params.useAsEnvironment = 'on';
+    hdri.params.environmentIntensity = Math.min(0.7, positiveNumber(hdri.params.environmentIntensity, 0.7));
+  }
+
+  if (currentPlan) return { ...suggestion, plan, settings: compileRenderPlan(plan) };
+  if (schemes.some((scheme) => scheme.id === INDOOR_RENDER_SCHEME_ID)) plan.baseSchemeId = INDOOR_RENDER_SCHEME_ID;
+
+  plan.modules = plan.modules.filter((module) => {
+    if (module.id === 'runtime.grass-style') return sceneProfile.content.hasGrass;
+    if (module.id === 'runtime.water-style') return sceneProfile.content.hasWater;
+    if (module.id === 'runtime.terrain-materials' || module.id === 'runtime.weather') return false;
+    if (module.id === 'runtime.atmosphere-fx') return INDOOR_AIR.test(prompt);
+    if (!INDOOR_STYLIZATION.test(prompt)
+      && (module.id === 'runtime.outline-style' || module.id === 'runtime.presentation-style')) return false;
+    return true;
+  });
+
+  if (!INDOOR_AIR.test(prompt)) {
+    const fog = ensureModule(plan, 'atmosphere.fog');
+    delete fog.params.visibilityDistance;
+    fog.params.density = 0;
+  }
+  if (!INDOOR_STYLIZATION.test(prompt)) ensureModule(plan, 'runtime.surface-style').params.mode = 'pbr';
+
+  const rig = ensureModule(plan, 'runtime.light-rig');
+  rig.params.recipe = INDOOR_NIGHT.test(prompt)
+    ? 'interior-night'
+    : INDOOR_WARM.test(prompt) ? 'interior-warm' : 'interior-daylight';
+  rig.params.strength = clampNumber(rig.params.strength, 0.75, 1.15, 1);
+  rig.params.shadowSoftness = clampNumber(rig.params.shadowSoftness, 0.65, 0.98, 0.88);
+
+  const post = ensureModule(plan, 'runtime.post-quality');
+  post.params.ssao = 'soft';
+  if (!INDOOR_BLOOM.test(prompt)) {
+    post.params.bloom = 'off';
+    delete post.params.bloomStrength;
+  }
+
+  let explanation = suggestion.explanation;
+  if (sceneProfile.lighting.coverageRatio < 0.5) {
+    const exposure = plan.modules.find((module) => module.id === 'presentation.exposure');
+    if (exposure && typeof exposure.params.value === 'number') exposure.params.value = Math.min(1.1, exposure.params.value);
+    const warning = '当前室内实际灯光覆盖不足，已避免用高曝光掩盖；建议在地图阶段补充灯具。';
+    explanation = explanation ? `${explanation} ${warning}` : warning;
+  }
+
+  return {
+    ...suggestion,
+    baseSchemeId: plan.baseSchemeId,
+    explanation,
+    plan,
+    settings: compileRenderPlan(plan)
+  };
+}
+
+function ensureModule(plan: RenderPlan, id: RenderPlan['modules'][number]['id']): RenderPlan['modules'][number] {
+  let module = plan.modules.find((candidate) => candidate.id === id);
+  if (!module) {
+    module = { id, params: {} };
+    plan.modules.push(module);
+  }
+  return module;
+}
+
+function clampNumber(value: unknown, min: number, max: number, fallback: number): number {
+  return typeof value === 'number' && Number.isFinite(value)
+    ? Math.min(max, Math.max(min, value))
+    : fallback;
 }
 
 function requestsCartoonWater(prompt: string): boolean {

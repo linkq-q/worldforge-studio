@@ -106,6 +106,10 @@ export interface AssetGenerationRequest {
   tags: string[];
   light?: MapAssetLight;
   mode: ModelGenerationMode;
+  /** Present only for newly generated natural families that share one seeded source model. */
+  seedFamilyKey?: string;
+  variantIndex?: number;
+  variantCount?: number;
 }
 
 export interface MapAgentOptions extends MapAiOptions {

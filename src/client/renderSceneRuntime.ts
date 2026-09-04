@@ -185,6 +185,7 @@ export class RenderSceneRuntime {
     this.rendered = rendered;
     this.syncAtmosphereFx();
     if (!rendered) return;
+    rendered.setLightingQuality(this.adaptiveQuality);
     rendered.modelsRoot.traverse((object) => {
       const mesh = object as THREE.Mesh;
       if (mesh.isMesh && object.userData.editorHelper !== true) this.meshRegistry.set(mesh.uuid, mesh);
@@ -255,6 +256,7 @@ export class RenderSceneRuntime {
     this.adaptiveQuality = THREE.MathUtils.clamp(quality, 0.4, 1);
     this.setAtmosphereFxQuality(this.adaptiveQuality);
     this.weather?.setQuality(this.adaptiveQuality);
+    this.rendered?.setLightingQuality(this.adaptiveQuality);
     const ratioScale = 0.74 + this.adaptiveQuality * 0.26;
     this.renderer.setPixelRatio(Math.max(0.85, this.basePixelRatio * ratioScale));
     if (this.width > 0 && this.height > 0) this.setSize(this.width, this.height);
@@ -568,7 +570,10 @@ function applyLightRig(
     backlit: { key: 1.18, fill: 0.76, sun: '#ffd5a1', sky: '#dbe9f1', ground: '#3d4347', softness: 0.42 },
     overcast: { key: 0.36, fill: 1.28, sun: '#e8eef0', sky: '#d9e2e4', ground: '#59605d', softness: 1 },
     sunset: { key: 1.08, fill: 0.72, sun: '#ff9c5a', sky: '#c99691', ground: '#40373d', softness: 0.72 },
-    night: { key: 0.035, fill: 0.1, sun: '#9bb8e8', sky: '#52678f', ground: '#161b29', softness: 0.88 }
+    night: { key: 0.035, fill: 0.1, sun: '#9bb8e8', sky: '#52678f', ground: '#161b29', softness: 0.88 },
+    'interior-daylight': { key: 0.58, fill: 0.72, sun: '#fff0d5', sky: '#d9e3e8', ground: '#514941', softness: 0.88 },
+    'interior-warm': { key: 0.22, fill: 0.58, sun: '#ffc789', sky: '#ead0b3', ground: '#46372f', softness: 0.92 },
+    'interior-night': { key: 0.025, fill: 0.18, sun: '#9bb8e8', sky: '#4a5872', ground: '#17171d', softness: 0.95 }
   };
   const recipe = recipes[rig.recipe];
   const strength = rig.strength ?? 1;
@@ -586,7 +591,10 @@ function applyLightRig(
 }
 
 function renderTimeOfDay(plan: RenderScheme['renderPlan']): VisualTimeOfDay {
-  if (plan && compileRuntimeLightRig(plan).recipe === 'night') return 'night';
+  const recipe = plan ? compileRuntimeLightRig(plan).recipe : null;
+  if (recipe === 'night' || recipe === 'interior-night') return 'night';
+  if (recipe === 'interior-warm') return 'evening';
+  if (recipe === 'interior-daylight') return 'noon';
   if (plan?.visualDirection) return plan.visualDirection.timeOfDay;
   return 'noon';
 }
@@ -598,7 +606,7 @@ function applySceneLightingContext(
 ): number {
   targets.rendered?.setLightingTimeOfDay(timeOfDay);
   if (targets.map?.sceneMode !== 'indoor') return exposure;
-  targets.hemisphereLight.intensity *= timeOfDay === 'night' ? 0.28 : timeOfDay === 'evening' ? 0.34 : 0.42;
+  targets.hemisphereLight.intensity *= timeOfDay === 'night' ? 0.36 : timeOfDay === 'evening' ? 0.52 : 0.68;
   const exposureScale = timeOfDay === 'night' ? 1.35 : timeOfDay === 'evening' ? 1.18 : 1.08;
   return THREE.MathUtils.clamp(exposure * exposureScale, 0.05, 3);
 }

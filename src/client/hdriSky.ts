@@ -15,12 +15,18 @@ const HDRI_ENVIRONMENT_RADIUS = 10;
 
 export function createRotatedHdriEnvironmentScene(
   texture: THREE.Texture,
-  rotationDegrees: number
+  rotationDegrees: number,
+  style: Partial<Pick<RuntimeHdriSky,
+    'exposure' | 'saturation' | 'environmentIntensity' | 'tint' | 'tintStrength'>> = {}
 ): { scene: THREE.Scene; dispose(): void } {
   const scene = new THREE.Scene();
   const dome = new HDRISkyDome(HDRI_ENVIRONMENT_RADIUS);
   dome.setTexture(texture);
   dome.setRotationY(THREE.MathUtils.degToRad(rotationDegrees));
+  dome.setExposure(style.exposure ?? 1);
+  dome.setSaturation(style.saturation ?? 1);
+  dome.setIntensity(style.environmentIntensity ?? 1);
+  dome.setTint((style.tintStrength ?? 0) > 0, style.tint ?? '#ffffff', style.tintStrength ?? 0);
   dome.addTo(scene);
   return { scene, dispose: () => dome.dispose() };
 }
@@ -58,6 +64,7 @@ export class HdriSkyController {
       this.clear();
       return;
     }
+    if (style.backgroundVisibility === 'hidden') this.dome.setVisible(false);
 
     const texture = await this.loadTexture(style.texture).catch((error) => {
       console.warn('[HdriSky] failed to load panorama', style.texture, error);
@@ -75,9 +82,9 @@ export class HdriSkyController {
     this.dome.setSaturation(style.saturation);
     this.dome.setIntensity(style.intensity);
     this.dome.setTint(style.tintStrength > 0, style.tint ?? '#ffffff', style.tintStrength);
-    this.dome.setVisible(true);
+    this.dome.setVisible(style.backgroundVisibility === 'visible');
 
-    if (style.useAsEnvironment) this.applyEnvironment(texture, style.texture, style.rotation);
+    if (style.useAsEnvironment) this.applyEnvironment(texture, style);
     else this.clearEnvironment();
   }
 
@@ -117,13 +124,21 @@ export class HdriSkyController {
     this.pmrem = null;
   }
 
-  private applyEnvironment(texture: THREE.Texture, file: string, rotationDegrees: number): void {
-    const rotation = THREE.MathUtils.euclideanModulo(rotationDegrees, 360);
-    const key = `${file}:${rotation.toFixed(4)}`;
+  private applyEnvironment(texture: THREE.Texture, style: RuntimeHdriSky): void {
+    const rotation = THREE.MathUtils.euclideanModulo(style.rotation, 360);
+    const key = [
+      style.texture,
+      rotation.toFixed(4),
+      style.exposure,
+      style.saturation,
+      style.environmentIntensity,
+      style.tint ?? '',
+      style.tintStrength
+    ].join(':');
     if (this.environmentTarget && this.environmentKey === key
       && this.scene.environment === this.environmentTarget.texture) return;
     this.pmrem ??= new THREE.PMREMGenerator(this.renderer);
-    const prepared = createRotatedHdriEnvironmentScene(texture, rotation);
+    const prepared = createRotatedHdriEnvironmentScene(texture, rotation, style);
     let generated: THREE.WebGLRenderTarget;
     try {
       generated = this.pmrem.fromScene(prepared.scene, 0, 0.1, HDRI_ENVIRONMENT_RADIUS * 2);

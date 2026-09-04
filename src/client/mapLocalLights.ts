@@ -9,6 +9,8 @@ export const MAX_VISIBLE_MAP_SPOT_LIGHTS = 2;
 export const MAX_VISIBLE_MAP_LOCAL_LIGHTS = MAX_VISIBLE_MAP_POINT_LIGHTS + MAX_VISIBLE_MAP_SPOT_LIGHTS;
 const MAP_LOCAL_LIGHT_DISTANCE = 12;
 const MAX_VISIBLE_MAP_WINDOW_LIGHTS = 2;
+const AGGREGATE_LIGHTING_QUALITY_THRESHOLD = 0.5;
+const KEY_SHADOW_QUALITY_THRESHOLD = 0.85;
 
 export interface MapLocalLightCandidateInfo {
   objectId: string;
@@ -27,6 +29,7 @@ export interface MapLocalLights {
   group: THREE.Group;
   update(camera: THREE.Camera): void;
   setTimeOfDay(timeOfDay: VisualTimeOfDay): void;
+  setQuality(quality: number): void;
 }
 
 /** Derives a bounded Three.js light rig from lamp semantics and material tags. */
@@ -39,6 +42,7 @@ export function buildMapLocalLights(
   const candidates = analyzeMapLocalLightCandidates(map).flatMap((info) => {
     const objectGroup = objectGroups.get(info.objectId);
     return objectGroup ? [{
+      objectId: info.objectId,
       group: objectGroup,
       color: info.color,
       intensity: info.intensity,
@@ -74,9 +78,11 @@ export function buildMapLocalLights(
   });
   const windowLights = buildWindowLights(map);
   group.add(windowLights.group);
-  const indirectProbe = buildInteriorIndirectProbe(map, candidates.length > 0);
-  if (indirectProbe) group.add(indirectProbe);
-  let practicalScale = map.sceneMode === 'outdoor' ? 1 : indoorPracticalScale('noon');
+  const indirectProbe = buildInteriorIndirectProbe(map, candidates);
+  if (indirectProbe) group.add(indirectProbe.light);
+  let timeOfDay: VisualTimeOfDay = 'noon';
+  let aggregateLighting = false;
+  let quality = 1;
   const position = new THREE.Vector3();
   const rotation = new THREE.Quaternion();
   const projection = new THREE.Matrix4();
@@ -102,6 +108,11 @@ export function buildMapLocalLights(
         .sort((left, right) => right.candidate.priority - left.candidate.priority || left.distance - right.distance);
       const selectedPoints = visibleCandidates.filter((entry) => entry.candidate.kind === 'point').slice(0, pointLights.length);
       const selectedSpots = visibleCandidates.filter((entry) => entry.candidate.kind === 'spot').slice(0, spotLights.length);
+      const windowOwnsKeyShadow = map.sceneMode === 'indoor'
+        && quality >= KEY_SHADOW_QUALITY_THRESHOLD
+        && (timeOfDay === 'morning' || timeOfDay === 'noon')
+        && windowLights.count > 0;
+      windowLights.setKeyShadow(windowOwnsKeyShadow);
       group.visible = selectedPoints.length + selectedSpots.length + windowLights.count > 0 || Boolean(indirectProbe);
       pointLights.forEach((light, index) => {
         const entry = selectedPoints[index];
@@ -111,59 +122,108 @@ export function buildMapLocalLights(
         }
         light.position.copy(entry.world);
         light.color.set(entry.candidate.color);
-        light.intensity = entry.candidate.intensity * practicalScale;
+        light.intensity = map.sceneMode === 'outdoor'
+          ? entry.candidate.intensity
+          : indoorPracticalIntensity(entry.candidate.intensity, timeOfDay);
         light.distance = entry.candidate.range;
       });
       spotLights.forEach((light, index) => {
         const entry = selectedSpots[index];
+        configureIndoorKeyShadow(
+          light,
+          map.sceneMode === 'indoor'
+            && quality >= KEY_SHADOW_QUALITY_THRESHOLD
+            && !windowOwnsKeyShadow
+            && index === 0
+            && Boolean(entry)
+        );
         if (!entry) {
           light.intensity = 0;
           return;
         }
         light.position.copy(entry.world);
         light.color.set(entry.candidate.color);
-        light.intensity = entry.candidate.intensity * practicalScale;
+        light.intensity = map.sceneMode === 'outdoor'
+          ? entry.candidate.intensity
+          : indoorPracticalIntensity(entry.candidate.intensity, timeOfDay);
         light.distance = entry.candidate.range;
         light.angle = THREE.MathUtils.degToRad(entry.candidate.coneAngleDegrees);
         light.penumbra = entry.candidate.penumbra;
         light.target.position.copy(entry.direction).multiplyScalar(Math.max(2, entry.candidate.range * 0.4));
       });
     },
-    setTimeOfDay: (timeOfDay) => {
-      practicalScale = map.sceneMode === 'outdoor' ? 1 : indoorPracticalScale(timeOfDay);
+    setTimeOfDay: (nextTimeOfDay) => {
+      timeOfDay = nextTimeOfDay;
       windowLights.setTimeOfDay(timeOfDay);
-      if (indirectProbe) indirectProbe.intensity = indirectProbeIntensity(timeOfDay, candidates.length > 0, windowLights.count > 0);
+      indirectProbe?.update(timeOfDay, aggregateLighting);
+    },
+    setQuality: (nextQuality) => {
+      quality = THREE.MathUtils.clamp(nextQuality, 0, 1);
+      aggregateLighting = map.sceneMode === 'indoor' && quality <= AGGREGATE_LIGHTING_QUALITY_THRESHOLD;
+      pointLights.forEach((light) => { light.visible = !aggregateLighting; });
+      spotLights.forEach((light) => { light.visible = !aggregateLighting; });
+      windowLights.setAggregateLighting(aggregateLighting);
+      indirectProbe?.update(timeOfDay, aggregateLighting);
     }
   };
 }
 
 /** One low-frequency SH probe supplies cheap room-scale bounce on desktop. */
-function buildInteriorIndirectProbe(map: EditableMap, hasPracticalLights: boolean): THREE.LightProbe | null {
+function buildInteriorIndirectProbe(
+  map: EditableMap,
+  candidates: readonly MapLocalLightCandidateInfo[]
+): { light: THREE.LightProbe; update(timeOfDay: VisualTimeOfDay, aggregateLighting: boolean): void } | null {
   if (map.sceneMode !== 'indoor' || !map.room) return null;
-  const probe = new THREE.LightProbe(undefined, indirectProbeIntensity('noon', hasPracticalLights, map.room.openings.some((opening) => opening.kind === 'window')));
+  const hasWindows = map.room.openings.some((opening) => opening.kind === 'window');
+  const probe = new THREE.LightProbe();
   probe.name = 'mapInteriorLightProbe';
   const colors = map.interiorArtDirection?.palette ?? [map.box.colors.floor, map.box.colors.north, '#ffd8a0'];
-  const bounce = colors.reduce((result, color) => result.add(new THREE.Color(color)), new THREE.Color()).multiplyScalar(1 / Math.max(1, colors.length));
-  probe.sh.coefficients[0].set(bounce.r, bounce.g, bounce.b).multiplyScalar(2 * Math.sqrt(Math.PI));
-  return probe;
+  const roomBounce = colors.reduce((result, color) => result.add(new THREE.Color(color)), new THREE.Color())
+    .multiplyScalar(1 / Math.max(1, colors.length));
+  const practicalBounce = candidates.reduce((result, candidate) => result.add(new THREE.Color(candidate.color)), new THREE.Color())
+    .multiplyScalar(1 / Math.max(1, candidates.length));
+  const update = (timeOfDay: VisualTimeOfDay, aggregateLighting: boolean): void => {
+    probe.intensity = indirectProbeIntensity(timeOfDay, candidates.length > 0, hasWindows, aggregateLighting);
+    const bounce = roomBounce.clone();
+    if (aggregateLighting && candidates.length > 0) {
+      bounce.lerp(practicalBounce, timeOfDay === 'night' ? 0.65 : timeOfDay === 'evening' ? 0.55 : 0.4);
+    }
+    probe.sh.coefficients[0].set(bounce.r, bounce.g, bounce.b).multiplyScalar(2 * Math.sqrt(Math.PI));
+  };
+  update('noon', false);
+  return { light: probe, update };
 }
 
-function indirectProbeIntensity(timeOfDay: VisualTimeOfDay, hasPracticalLights: boolean, hasWindows: boolean): number {
-  if (timeOfDay === 'night') return hasPracticalLights ? 0.34 : 0.06;
-  if (timeOfDay === 'evening') return (hasPracticalLights ? 0.28 : 0.08) + (hasWindows ? 0.08 : 0);
-  if (timeOfDay === 'morning') return hasWindows ? 0.34 : 0.16;
-  return hasWindows ? 0.38 : 0.18;
+function indirectProbeIntensity(
+  timeOfDay: VisualTimeOfDay,
+  hasPracticalLights: boolean,
+  hasWindows: boolean,
+  aggregateLighting = false
+): number {
+  const base = timeOfDay === 'night'
+    ? (hasPracticalLights ? 0.34 : 0.06)
+    : timeOfDay === 'evening'
+      ? (hasPracticalLights ? 0.28 : 0.08) + (hasWindows ? 0.08 : 0)
+      : timeOfDay === 'morning'
+        ? (hasWindows ? 0.34 : 0.16)
+        : (hasWindows ? 0.38 : 0.18);
+  if (!aggregateLighting || !hasPracticalLights) return base;
+  return Math.min(0.82, base + (timeOfDay === 'night' ? 0.34 : 0.44));
 }
 
 function buildWindowLights(map: EditableMap): {
   group: THREE.Group;
   count: number;
   setTimeOfDay(timeOfDay: VisualTimeOfDay): void;
+  setAggregateLighting(enabled: boolean): void;
+  setKeyShadow(enabled: boolean): void;
 } {
   const group = new THREE.Group();
   group.name = 'mapWindowLights';
   const room = map.room;
-  if (!room || map.sceneMode === 'outdoor') return { group, count: 0, setTimeOfDay: () => {} };
+  if (!room || map.sceneMode === 'outdoor') {
+    return { group, count: 0, setTimeOfDay: () => {}, setAggregateLighting: () => {}, setKeyShadow: () => {} };
+  }
   const range = Math.hypot(...room.size);
   const lights = room.openings
     .filter((opening) => opening.kind === 'window')
@@ -194,7 +254,7 @@ function buildWindowLights(map: EditableMap): {
       light.target.position.copy(inward.normalize()).multiplyScalar(range * 0.65);
       light.add(light.target);
       group.add(light);
-      return { light, baseIntensity: THREE.MathUtils.clamp(opening.width * opening.height * 65, 70, 220) };
+      return { light, baseIntensity: THREE.MathUtils.clamp(opening.width * opening.height * 8, 10, 30) };
     });
   const setTimeOfDay = (timeOfDay: VisualTimeOfDay): void => {
     const profile = windowLightProfile(timeOfDay);
@@ -203,12 +263,31 @@ function buildWindowLights(map: EditableMap): {
       entry.light.intensity = entry.baseIntensity * profile.strength;
     }
   };
+  const setAggregateLighting = (enabled: boolean): void => {
+    lights.forEach((entry, index) => { entry.light.visible = !enabled || index === 0; });
+  };
+  const setKeyShadow = (enabled: boolean): void => {
+    lights.forEach((entry, index) => configureIndoorKeyShadow(entry.light, enabled && index === 0));
+  };
   setTimeOfDay('noon');
-  return { group, count: lights.length, setTimeOfDay };
+  return { group, count: lights.length, setTimeOfDay, setAggregateLighting, setKeyShadow };
 }
 
-function indoorPracticalScale(timeOfDay: VisualTimeOfDay): number {
-  return timeOfDay === 'night' ? 24 : timeOfDay === 'evening' ? 18 : timeOfDay === 'morning' ? 11 : 8;
+function configureIndoorKeyShadow(light: THREE.SpotLight, enabled: boolean): void {
+  if (light.castShadow === enabled) return;
+  light.castShadow = enabled;
+  if (!enabled) return;
+  light.shadow.mapSize.set(512, 512);
+  light.shadow.bias = -0.0002;
+  light.shadow.normalBias = 0.025;
+  light.shadow.radius = 2;
+  light.shadow.needsUpdate = true;
+}
+
+function indoorPracticalIntensity(baseIntensity: number, timeOfDay: VisualTimeOfDay): number {
+  const scale = timeOfDay === 'night' ? 1.5 : timeOfDay === 'evening' ? 1.2 : timeOfDay === 'morning' ? 1 : 0.8;
+  const peak = timeOfDay === 'night' ? 8 : timeOfDay === 'evening' ? 7 : timeOfDay === 'morning' ? 6 : 5;
+  return Math.min(baseIntensity * scale, peak);
 }
 
 function windowLightProfile(timeOfDay: VisualTimeOfDay): { color: string; strength: number } {

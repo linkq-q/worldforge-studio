@@ -305,19 +305,37 @@ export function applyPaletteToModelJson(modelJson: unknown, paletteInput: ColorP
   return output;
 }
 
-export function paletteGenerationBrief(palette: ColorPalette): string {
-  const colors = palette.colors.map((entry) => entry.hex).join(', ');
-  const roles = COLOR_PALETTE_ROLES.map((role) => `${role}=${palette.roles[role].join('|')}`).join('; ');
+export function paletteGenerationBrief(palette: ColorPalette, semanticText = ''): string {
+  const roles = generationPaletteRoles(semanticText);
+  const pools = roles.map((role) => `${role}=${sampleRoleColors(palette.roles[role], 3).join('|')}`).join('; ');
   return [
-    `[目标色卡：${palette.name}]`,
-    `所有普通材质的 base/vertex color 必须从这些 HEX 中选择：${colors}。`,
-    '颜色优先级：用户明确指定的颜色最高；其次保留你为部件选择的原始颜色；仅在没有颜色意图时使用语义默认色。',
-    `抽象语义色池：${roles}。`,
-    '兼容旧资产语义别名：building.wall/building.roof/building.trim/building.window、terrain.*、vegetation.*、environment.*、lighting。',
-    '每个可见组或部件添加一个 {"tag":"palette","value":"primary|secondary|accent|plant|earth|water|atmosphere|effect"}；草、树叶、藤、苔藓统一使用 plant。',
-    '如果用户明确指定某部件颜色，再添加 {"tag":"palette-color","value":"#RRGGBB"} 保存原始颜色意图；子部件可继承组标签，也可覆盖。',
-    '保留玻璃、金属、水、透明、粗糙度、金属度、发光等材质物理属性；色卡只控制颜色。外部 PNG/JPG 贴图不做颜色重映射。'
-  ].join('\n').slice(0, 3900);
+    `Palette intent for this asset only (${palette.name}): ${pools}.`,
+    `Tag visible parts with the matching palette role (${roles.join('|')}); preserve glass, metal, water, transparency and emission properties.`
+  ].join('\n').slice(0, 390);
+}
+
+function generationPaletteRoles(semanticText: string): ColorPaletteRole[] {
+  const text = semanticText.toLowerCase();
+  const roles = COLOR_PALETTE_ROLES.filter((role) => ROLE_HINTS[role].pattern.test(text) || text.includes(role));
+  const add = (role: ColorPaletteRole) => {
+    if (!roles.includes(role)) roles.push(role);
+  };
+  if (/(?:tree|pine|fir|树|松|杉)/i.test(text)) {
+    add('plant');
+    add('earth');
+  }
+  if (/(?:building|house|cabin|hut|shop|tower|gate|wall|屋|房|建筑|塔|门|墙)/i.test(text)) {
+    add('primary');
+    add('secondary');
+    add('accent');
+  }
+  if (roles.length === 0) return ['primary', 'secondary', 'accent'];
+  return roles.slice(0, 3);
+}
+
+function sampleRoleColors(colors: readonly string[], limit: number): string[] {
+  if (colors.length <= limit) return [...colors];
+  return [...new Set([colors[0], colors[Math.floor(colors.length / 2)], colors[colors.length - 1]])].slice(0, limit);
 }
 
 export function inferPaletteRole(text: string, building = false): ColorPaletteRole {

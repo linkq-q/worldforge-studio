@@ -12,11 +12,18 @@ import materialTagVocabulary from '@voxel-studio/render-runtime/model/material-t
 import type { ModelGenerationMode } from '../shared/modelGenerationMode';
 import { enforceReadableFoliageColors } from '../shared/modelColorPolicy';
 
+const GENERATION_MATERIAL_TAG_FIELDS = [
+  'mode', 'status', 'values', 'variantEnum', 'description', 'inherits', 'exclusiveRenderSlot'
+] as const;
+const generationMaterialTagVocabulary = compactMaterialTagVocabulary(materialTagVocabulary);
+
 export interface ModelApiOptions {
   apiBase?: string;
   providers?: readonly string[];
   mode?: ModelGenerationMode;
   materialTags?: unknown | false;
+  seeded?: boolean;
+  seed?: number;
   fetchImpl?: typeof fetch;
   onStage?: (stage: Partial<ModelJobState>) => void;
   signal?: AbortSignal;
@@ -42,6 +49,7 @@ export interface ChatApiOptions {
   provider?: ChatProvider;
   temperature?: number;
   maxTokens?: number;
+  thinking?: boolean;
   fetchImpl?: typeof fetch;
   signal?: AbortSignal;
   onProgress?: (event: AgentProgressEvent) => void;
@@ -146,6 +154,10 @@ export async function generateModel(description: string, options: ModelApiOption
           description,
           provider,
           mode,
+          ...(options.seeded ? {
+            seeded: true,
+            ...(Number.isFinite(options.seed) ? { seed: Math.trunc(options.seed!) } : {})
+          } : {}),
           ...(materialTags ? { materialTags } : {})
         }),
         signal: options.signal
@@ -168,6 +180,26 @@ export async function generateModel(description: string, options: ModelApiOption
   }
 
   throw new Error(errors.join(' | ') || '所有模型 provider 均失败');
+}
+
+export async function replayModel(
+  modelJson: unknown,
+  seed: number,
+  options: Pick<ModelApiOptions, 'apiBase' | 'fetchImpl' | 'signal'> = {}
+): Promise<unknown> {
+  options.signal?.throwIfAborted();
+  const response = await (options.fetchImpl ?? fetch)(
+    `${options.apiBase ?? MODEL_API_BASE}/api/generate/replay`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ modelJson, seed: Math.trunc(seed) }),
+      signal: options.signal
+    }
+  );
+  const json = await response.json() as { ok?: boolean; modelJson?: unknown; error?: string };
+  if (response.ok && json.ok && json.modelJson) return enforceReadableFoliageColors(json.modelJson);
+  throw new Error(json.error ?? `HTTP ${response.status}`);
 }
 
 export async function refineModel(modelJson: unknown, description: string, options: ModelApiOptions = {}): Promise<unknown> {
@@ -221,7 +253,7 @@ export async function llmChat(messages: readonly ChatMessage[], options: ChatApi
       maxTokens: options.maxTokens ?? 1000,
       provider: options.provider ?? 'gpt',
       stream: true,
-      thinking: true
+      thinking: options.thinking ?? true
     }),
     signal: options.signal
   };
@@ -464,6 +496,26 @@ function isAbortError(error: unknown): boolean {
 function resolveMaterialTags(value: unknown | false | undefined): unknown | null {
   if (value === false) return null;
   if (value && typeof value === 'object') return value;
-  return materialTagVocabulary;
+  return generationMaterialTagVocabulary;
+}
+
+function compactMaterialTagVocabulary(value: unknown): unknown {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return value;
+  const vocabulary = value as Record<string, unknown>;
+  const sourceTags = vocabulary.tags;
+  if (!sourceTags || typeof sourceTags !== 'object' || Array.isArray(sourceTags)) return value;
+  const tags = Object.fromEntries(Object.entries(sourceTags as Record<string, unknown>)
+    .filter(([, definition]) => (
+      definition && typeof definition === 'object' && !Array.isArray(definition)
+      && (definition as Record<string, unknown>).status !== 'notImplemented'
+    ))
+    .map(([name, definition]) => {
+      const source = definition as Record<string, unknown>;
+      const compact = Object.fromEntries(GENERATION_MATERIAL_TAG_FIELDS
+        .filter((field) => source[field] !== undefined)
+        .map((field) => [field, source[field]]));
+      return [name, compact];
+    }));
+  return { version: vocabulary.version, tags };
 }
 

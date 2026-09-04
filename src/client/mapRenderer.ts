@@ -92,6 +92,7 @@ export interface RenderedMap {
   setSandFlowStrength: (strength: number) => void;
   setRoomWallDisplayMode: (mode: RoomWallDisplayMode, camera: THREE.Camera) => void;
   setLightingTimeOfDay: (timeOfDay: VisualTimeOfDay) => void;
+  setLightingQuality: (quality: number) => void;
   interactGrass: (position: Vec3, elapsedSeconds: number) => void;
   clearGrassInteraction: () => void;
   getDebugStats: () => RenderedMapDebugStats;
@@ -304,6 +305,7 @@ export async function buildEditableMapGroup(input: EditableMap, options: MapRend
     },
     setRoomWallDisplayMode: (mode, camera) => roomShell?.setDisplayMode(mode, camera),
     setLightingTimeOfDay: localLights.setTimeOfDay,
+    setLightingQuality: localLights.setQuality,
     interactGrass: (position, elapsedSeconds) => grass?.interact(position, elapsedSeconds),
     clearGrassInteraction: () => grass?.clearInteraction(),
     getDebugStats: () => {

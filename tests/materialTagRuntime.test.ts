@@ -4,7 +4,9 @@ import materialTagVocabulary from '@voxel-studio/render-runtime/model/material-t
 import { RuntimeIndex } from '@voxel-studio/render-runtime';
 import { compileModelMaterialTags } from '@voxel-studio/render-runtime/effects';
 import { WorldForgeMaterialTagRuntime } from '../src/client/materialTagRuntimeAdapter';
+import { buildMapPrimitiveBatches } from '../src/client/mapPrimitiveBatching';
 import { normalizeMaterialTagPolicy, type MapMaterialTagPolicy } from '../src/shared/materialTagPolicy';
+import type { MapAsset } from '../src/shared/map';
 
 describe('WorldForge material tag runtime', () => {
   it('compiles striped and checked plastic fabric into fixed batchable recipes', () => {
@@ -155,6 +157,88 @@ describe('WorldForge material tag runtime', () => {
     runtime.dispose();
     mesh.geometry.dispose();
     (mesh.material as THREE.Material).dispose();
+  });
+
+  it.each([
+    ['gold', 'lerp'],
+    ['silver', 'lerp'],
+    ['metal', 'tint']
+  ])('applies the %s MatCap binding to standalone meshes', (tagValue, mode) => {
+    const scene = new THREE.Scene();
+    const modelsRoot = new THREE.Group();
+    const modelRoot = new THREE.Group();
+    modelRoot.userData.mapObjectId = `${tagValue}-object`;
+    modelRoot.userData.materialTagSource = {
+      name: `${tagValue}-asset`,
+      nodes: [{ id: 'part', mesh: { type: 'box' }, tags: [{ tag: 'base', value: tagValue }] }]
+    };
+    const material = new THREE.MeshStandardMaterial();
+    const mesh = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), material);
+    mesh.userData.nodeId = 'part';
+    modelRoot.add(mesh);
+    modelsRoot.add(modelRoot);
+    scene.add(modelsRoot);
+
+    const runtime = createRuntime(scene, modelsRoot, new Map([[`${tagValue}-object`, modelRoot]]));
+    const result = runtime.apply(modelsRoot);
+
+    expect(result.skippedMatcaps).toBe(0);
+    expect(result.appliedParts).toBe(1);
+    expect(material.userData.worldforgeMaterialMatcapBinding).toMatchObject({
+      enabled: true,
+      textureName: tagValue,
+      mode
+    });
+    expect(material.userData.shaderPatchChain).toEqual(expect.arrayContaining([
+      expect.objectContaining({ key: 'material-tag:matcap' })
+    ]));
+
+    runtime.dispose();
+    mesh.geometry.dispose();
+    material.dispose();
+  });
+
+  it('applies MatCap bindings to instanced batch materials', async () => {
+    const scene = new THREE.Scene();
+    const modelsRoot = new THREE.Group();
+    const objectGroup = new THREE.Group();
+    modelsRoot.add(objectGroup);
+    scene.add(modelsRoot);
+    const now = Date.now();
+    const asset: MapAsset = {
+      id: 'gold-asset',
+      name: 'gold asset',
+      prompt: 'gold cube',
+      tags: [],
+      modelJson: {
+        nodes: [{ id: 'part', tags: [{ tag: 'base', value: 'gold' }], mesh: { type: 'box' } }]
+      },
+      colliderPlan: { version: 1, boxes: [], sourceMeshCount: 1, candidateCount: 1, fallbackUsed: false },
+      mode: 'voxel',
+      createdAt: now,
+      updatedAt: now
+    };
+
+    const result = await buildMapPrimitiveBatches(
+      [{ objectId: 'gold-object', objectGroup, asset, assetTags: [] }],
+      { scene, modelsRoot, materialTagPolicy: { disabled: [] } }
+    );
+    const batch = result.getBatchMeshes().find((object): object is THREE.InstancedMesh => (
+      (object as THREE.InstancedMesh).isInstancedMesh
+    ));
+    const material = Array.isArray(batch?.material) ? batch.material[0] : batch?.material;
+
+    expect(batch).toBeDefined();
+    expect(material?.userData.worldforgeMaterialMatcapBinding).toMatchObject({
+      enabled: true,
+      textureName: 'gold',
+      mode: 'lerp'
+    });
+    expect(material?.userData.shaderPatchChain).toEqual(expect.arrayContaining([
+      expect.objectContaining({ key: 'material-tag:matcap' })
+    ]));
+
+    result.dispose();
   });
 });
 

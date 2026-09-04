@@ -37,11 +37,8 @@ describe('map layout AI progress', () => {
     expect(source).toContain('id="new-map-super-size-hint"');
   });
 
-  it('keeps the first indoor round savable while one automatic refinement runs', () => {
-    expect(source).toContain('this.mapAiAutoRefineRunning = true');
-    expect(source).toMatch(/quality\.tone !== 'good'[\s\S]*?generateMapAiPreview\('refine',[\s\S]*?true\)/);
-    expect(source).toContain("this.mapAiAutoRefineRunning ? '保存当前轮' : '应用到地图'");
-    expect(source).toContain('if (automatic && this.mapAiRoundSavePromise) await this.mapAiRoundSavePromise');
-    expect(source).toContain('const baseWasSaved = automatic && this.mapAiAutoRefineBaseSaved');
+  it('keeps quality warnings manual instead of triggering an automatic refinement', () => {
+    expect(source).not.toContain("window.setTimeout(() => void this.generateMapAiPreview('refine', undefined, repairPrompt, true), 0);");
+    expect(source).toContain('window.setTimeout(() => void this.runMapVisualFinalReview(), 0);');
   });
 });

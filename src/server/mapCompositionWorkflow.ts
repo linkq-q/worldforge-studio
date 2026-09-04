@@ -8,6 +8,8 @@ import {
   enforcePromptSceneIntent,
   isCompositionEmptyMap,
   normalizeSceneCompositionPlan,
+  sceneAssetCategory,
+  sceneZoneWorldRegion,
   SCENE_COMPOSITION_LIMITS,
   type SceneCompositionPlan
 } from '../shared/sceneComposition';
@@ -54,6 +56,9 @@ export interface MapCompositionWorkflowOptions {
     tags: string[];
     light?: MapAssetLight;
     mode: ModelGenerationMode;
+    seedFamilyKey?: string;
+    variantIndex?: number;
+    variantCount?: number;
   }, report: AssetTaskReporter) => Promise<MapAsset>;
 }
 export type MapCompositionPlanningOptions = Omit<MapCompositionWorkflowOptions, 'createAsset' | 'approvedCompositionPlan'>;
@@ -198,7 +203,10 @@ export async function runMapCompositionWorkflow(
         prompt: gap.prompt,
         tags: gap.tags,
         light: gap.light,
-        mode: map.assetGenerationMode
+        mode: map.assetGenerationMode,
+        seedFamilyKey: gap.seedFamilyKey,
+        variantIndex: gap.variantIndex,
+        variantCount: gap.variantCount
       }, report);
       if (asset.mode !== map.assetGenerationMode) throw new Error('generated_asset_mode_mismatch');
       return { familyId: gap.familyId, asset };
@@ -316,8 +324,39 @@ function normalizeCompositionPlan(
   }, map);
   const contracted = enforcePromptSceneIntent(covered, prompt, map);
   const completed = completeIndoorScenePlan(contracted, map, prompt, minimumAssets, maximumAssets);
-  const budgeted = fitSceneAssetVariantBudget(completed, minimumAssets, maximumAssets);
+  const budgeted = fitSceneAssetVariantBudget(
+    promoteRepeatedNaturalVariants(completed, map),
+    minimumAssets,
+    maximumAssets
+  );
   return enforcePromptSceneIntent(budgeted, prompt, map);
+}
+
+function promoteRepeatedNaturalVariants(plan: SceneCompositionPlan, map: EditableMap): SceneCompositionPlan {
+  if (map.sceneMode !== 'outdoor') return plan;
+  return {
+    ...plan,
+    assetFamilies: plan.assetFamilies.map((family) => {
+      if (sceneAssetCategory(family) !== 'nature') return family;
+      const requiredCount = plan.intentRequirements
+        .filter((requirement) => requirement.kind === 'asset-family' && requirement.familyId === family.id)
+        .reduce((maximum, requirement) => Math.max(maximum, requirement.minCount), 0);
+      const estimatedCount = plan.zones.reduce((total, zone) => {
+        if (zone.role === 'negative-space') return total;
+        const region = sceneZoneWorldRegion(zone, map);
+        return total + zone.layers
+          .filter((layer) => layer.familyId === family.id && layer.distribution !== 'accent')
+          .reduce((sum, layer) => sum + Math.PI * region.r * region.r * layer.density, 0);
+      }, 0);
+      const placementCount = Math.max(requiredCount, estimatedCount);
+      if (placementCount < 4) return family;
+      const semantic = `${family.label} ${family.role} ${family.tags.join(' ')}`;
+      const targetVariants = placementCount >= 24 && /tree|forest|wood|shrub|plant|树|林|灌木|植物/i.test(semantic)
+        ? 6
+        : placementCount >= 8 ? 4 : 3;
+      return { ...family, desiredVariants: Math.max(targetVariants, family.desiredVariants) };
+    })
+  };
 }
 
 async function requestStructured<T>(
