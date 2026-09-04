@@ -327,6 +327,15 @@ export function makeMaterialKey(material) {
   return `mat:c=${color},r=${roughness},m=${metalness},fs=${flatShading}`;
 }
 
+/** InstancedMesh stores authored color per instance, so color is not batch state. */
+export function makeInstanceMaterialKey(material) {
+  const m = material || {};
+  const roughness = Number(m.roughness ?? DEFAULT_PBR_ROUGHNESS).toFixed(3);
+  const metalness = Number(m.metalness ?? DEFAULT_PBR_METALNESS).toFixed(3);
+  const flatShading = m.flatShading !== false ? 'flat' : 'smooth';
+  return `mat:r=${roughness},m=${metalness},fs=${flatShading}`;
+}
+
 /**
  * Build a full batch key for a VoxelPart: family + topology + mode + material.
  * Two parts batch together iff this key matches.
@@ -337,7 +346,7 @@ export function makeMaterialKey(material) {
  */
 export function makeBatchKey(part, family) {
   const topo = family.makeTopologyKey(part);
-  const matKey = makeMaterialKey(part.mesh?.material);
+  const matKey = makeInstanceMaterialKey(part.mesh?.material);
   const baseKey = part.materialTagBaseRecipe?.key || 'default';
   const mode = family.shapeMappingMode;
   return `${family.name}:${topo}:${mode}:${matKey}:base=${baseKey}`;
