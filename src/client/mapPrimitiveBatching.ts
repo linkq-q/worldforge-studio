@@ -16,6 +16,7 @@ import { buildModelGroup } from './modelRenderer';
 import { MapObjectCulling, type MapObjectCullingStats } from './mapObjectCulling';
 import { requiresRuntimeStandaloneMaterialTag } from './mapMaterialTagBatchPolicy';
 import { WorldForgeMaterialTagRuntime } from './materialTagRuntimeAdapter';
+import { applyMaterialMatcapBinding } from './materialTagMatcapRuntime';
 
 export interface MapPrimitiveBatchInput {
   objectId: string;
@@ -397,13 +398,17 @@ function applyBaseRecipe(
       layerParams: Object.fromEntries(layers.map((layer) => [layer.type, layer.params ?? {}]))
     });
   }
-  const bindings = recipe.materialBindings as { surface?: Record<string, unknown> } | undefined;
+  const bindings = recipe.materialBindings as {
+    surface?: Record<string, unknown>;
+    matcap?: Record<string, unknown>;
+  } | undefined;
   if (bindings?.surface) {
     applyMaterialSurfaceBinding(material, bindings.surface, null);
     material.userData.worldforgeMaterialSurfaceBinding = bindings.surface;
     if (mesh) mesh.userData.materialTags = mesh.userData.materialTags ?? [];
     surfaceBindings?.push({ material, binding: bindings.surface });
   }
+  if (bindings?.matcap) applyMaterialMatcapBinding(material, bindings.matcap);
 }
 
 function hasAuthoredWater(modelJson: unknown): boolean {
