@@ -42,7 +42,7 @@ import {
 import type { RuntimeIndex } from '@voxel-studio/render-runtime';
 import type { MapPrimitiveBatchStats } from './mapPrimitiveBatching';
 import type { Vec3 } from '../shared/protocol';
-import { buildMapLocalLights } from './mapLocalLights';
+import { buildMapLocalLights, resolvedMapObjectLight } from './mapLocalLights';
 import { isPointInsidePlayableArea } from '../shared/mapLayout';
 import { isPointInsideWaterBody, riverPathSamples, waterBoundaryPoints } from '../shared/mapWater';
 import { mapGuidePolyline } from '../shared/mapGuide';
@@ -93,6 +93,8 @@ export interface RenderedMap {
   setRoomWallDisplayMode: (mode: RoomWallDisplayMode, camera: THREE.Camera) => void;
   setLightingTimeOfDay: (timeOfDay: VisualTimeOfDay) => void;
   setLightingQuality: (quality: number) => void;
+  setLightingSoloObjectId: (objectId: string | null) => void;
+  setLightingHelpersVisible: (visible: boolean) => void;
   interactGrass: (position: Vec3, elapsedSeconds: number) => void;
   clearGrassInteraction: () => void;
   getDebugStats: () => RenderedMapDebugStats;
@@ -238,14 +240,19 @@ export async function buildEditableMapGroup(input: EditableMap, options: MapRend
       if (controller) motionControllers.push(controller);
     }
   }
-  const localLights = buildMapLocalLights(map, objectGroups);
+  const localLights = buildMapLocalLights(map, objectGroups, { preserveLocalLights: options.editorHelpers });
   root.add(localLights.group);
+  const lightHelpers = options.editorHelpers
+    ? buildMapLightEditorHelpers(map, assets, objectGroups)
+    : { group: new THREE.Group(), pickables: [] as THREE.Object3D[] };
+  if (options.editorHelpers) root.add(lightHelpers.group);
   for (const group of objectGroups.values()) {
     group.traverse((child) => {
       if ((child as THREE.Mesh).isMesh && child.userData.editorHelper !== true) pickables.push(child);
     });
   }
   pickables.push(...instancing.pickables);
+  pickables.push(...lightHelpers.pickables);
 
   return {
     group: root,
@@ -306,6 +313,8 @@ export async function buildEditableMapGroup(input: EditableMap, options: MapRend
     setRoomWallDisplayMode: (mode, camera) => roomShell?.setDisplayMode(mode, camera),
     setLightingTimeOfDay: localLights.setTimeOfDay,
     setLightingQuality: localLights.setQuality,
+    setLightingSoloObjectId: localLights.setSoloObjectId,
+    setLightingHelpersVisible: (visible) => { lightHelpers.group.visible = visible; },
     interactGrass: (position, elapsedSeconds) => grass?.interact(position, elapsedSeconds),
     clearGrassInteraction: () => grass?.clearInteraction(),
     getDebugStats: () => {
@@ -369,7 +378,10 @@ function buildRoomShell(map: EditableMap): RoomShellRender | null {
     const glass = finish?.recipe === 'glass.panel';
     const parameters = {
       color: map.box.colors[segment.surface], map: createSurfaceTexture(map, segment.surface, segment),
-      roughness: finish?.roughness ?? 0.82, metalness: 0, side: THREE.DoubleSide
+      roughness: finish?.roughness ?? 0.82, metalness: 0, side: THREE.DoubleSide,
+      // Keep dark indoor shells readable without flattening the authored light pools.
+      emissive: segment.surface === 'floor' ? '#2b211d' : '#101519',
+      emissiveIntensity: segment.surface === 'floor' ? 0.16 : 0.08
     };
     const material = glass
       ? new THREE.MeshPhysicalMaterial({
@@ -1119,12 +1131,28 @@ async function populateObjectVisuals(
       ? buildFoundationObject(map, object)
       : asset?.modelJson
       ? await takeAssetVisual(asset, templates)
+      : object.light
+      ? null
       : buildFallbackObject();
+    if (!visual) continue;
     visual.traverse((child) => {
       child.userData.mapObjectId = object.id;
       if ((child as THREE.Mesh).isMesh) {
         child.castShadow = true;
         child.receiveShadow = true;
+        if (map.sceneMode === 'indoor') {
+          const mesh = child as THREE.Mesh;
+          const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+          for (const source of materials) {
+            const material = source as THREE.MeshStandardMaterial;
+            if (!material.color || !('emissive' in material)) continue;
+            const luminance = material.color.r * 0.2126 + material.color.g * 0.7152 + material.color.b * 0.0722;
+            const minimumReadableEmission = luminance < 0.42 ? 0.12 : 0.035;
+            material.emissive.copy(material.color).multiplyScalar(minimumReadableEmission);
+            material.emissiveIntensity = Math.max(material.emissiveIntensity, luminance < 0.42 ? 0.45 : 0.35);
+            material.needsUpdate = true;
+          }
+        }
       }
     });
     group.add(visual);
@@ -1175,6 +1203,67 @@ function deriveAssetTags(asset: MapAsset): string[] {
     if (pattern.test(source)) values.forEach((value) => tags.add(value));
   }
   return [...tags].slice(0, 24);
+}
+
+function buildMapLightEditorHelpers(
+  map: EditableMap,
+  assets: ReadonlyMap<string, MapAsset>,
+  objectGroups: ReadonlyMap<string, THREE.Group>
+): { group: THREE.Group; pickables: THREE.Object3D[] } {
+  const helpers = new THREE.Group();
+  helpers.name = 'mapLightEditorHelpers';
+  const pickables: THREE.Object3D[] = [];
+  const worldPosition = new THREE.Vector3();
+  const worldRotation = new THREE.Quaternion();
+  for (const object of map.objects) {
+    const light = resolvedMapObjectLight(object, object.assetId ? assets.get(object.assetId) : undefined);
+    const objectGroup = objectGroups.get(object.id);
+    if (!light?.enabled || !objectGroup) continue;
+    objectGroup.updateWorldMatrix(true, false);
+    objectGroup.getWorldPosition(worldPosition);
+    objectGroup.getWorldQuaternion(worldRotation);
+    const lightPosition = new THREE.Vector3(...light.offset).applyQuaternion(worldRotation).add(worldPosition);
+    const worldDirection = light.target
+      ? new THREE.Vector3(...light.target).sub(lightPosition).normalize()
+      : new THREE.Vector3(...(light.direction ?? [0, -1, 0])).applyQuaternion(worldRotation).normalize();
+    const helperRoot = new THREE.Group();
+    helperRoot.name = `mapLightHelper:${object.id}`;
+    helperRoot.position.copy(lightPosition);
+    helperRoot.userData.editorHelper = true;
+    const icon = new THREE.Mesh(
+      new THREE.SphereGeometry(0.16, 12, 8),
+      new THREE.MeshBasicMaterial({ color: light.color, depthTest: false })
+    );
+    icon.name = 'mapLightPickHandle';
+    icon.renderOrder = 45;
+    icon.userData.mapObjectId = object.id;
+    icon.userData.editorHelper = true;
+    helperRoot.add(icon);
+    pickables.push(icon);
+
+    const influenceMaterial = new THREE.MeshBasicMaterial({
+      color: light.color,
+      transparent: true,
+      opacity: light.kind === 'spot' ? 0.12 : 0.07,
+      wireframe: true,
+      depthWrite: false
+    });
+    if (light.kind === 'point') {
+      const influence = new THREE.Mesh(new THREE.SphereGeometry(light.range, 16, 10), influenceMaterial);
+      influence.userData.editorHelper = true;
+      helperRoot.add(influence);
+    } else {
+      const angle = THREE.MathUtils.degToRad(light.coneAngleDegrees ?? 40);
+      const radius = Math.tan(angle) * light.range;
+      const influence = new THREE.Mesh(new THREE.ConeGeometry(radius, light.range, 20, 1, true), influenceMaterial);
+      influence.position.copy(worldDirection).multiplyScalar(light.range / 2);
+      influence.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), worldDirection);
+      influence.userData.editorHelper = true;
+      helperRoot.add(influence);
+    }
+    helpers.add(helperRoot);
+  }
+  return { group: helpers, pickables };
 }
 
 function buildFoundationObject(map: EditableMap, object: MapObject): THREE.Group {

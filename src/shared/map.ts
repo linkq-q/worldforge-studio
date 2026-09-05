@@ -145,6 +145,22 @@ export interface MapLighting {
   sunPosition: Vec3;
 }
 
+export const MAP_LIGHT_ROLES = ['key', 'fill', 'practical', 'accent'] as const;
+export type MapLightRole = typeof MAP_LIGHT_ROLES[number];
+
+/** Per-instance light authoring. Undefined inherits the asset light; null disables it. */
+export interface MapObjectLight extends MapAssetLight {
+  enabled: boolean;
+  role: MapLightRole;
+  castShadow: boolean;
+  shadowMapSize: 512 | 1024;
+  shadowBias: number;
+  shadowNormalBias: number;
+  shadowRadius: number;
+  /** Optional world-space aim point for artist-authored spot lights. */
+  target?: Vec3;
+}
+
 export interface MapPaintStroke {
   id: string;
   surface: MapSurface;
@@ -201,6 +217,8 @@ export interface MapObject {
   heightMode?: 'terrain' | 'fixed';
   visible: boolean;
   locked: boolean;
+  /** Instance light override, or a standalone light when assetId is null. */
+  light?: MapObjectLight | null;
   /** Optional parameterized room opening that owns this door/window object. */
   roomOpeningId?: string;
   behavior?: MapObjectBehavior;
@@ -1731,6 +1749,7 @@ function normalizeObject(input: Partial<MapObject>): MapObject {
       : input.assetId ? 'terrain' : 'fixed',
     visible: input.visible !== false,
     locked: input.locked === true,
+    light: input.light === null ? null : normalizeMapObjectLight(input.light),
     roomOpeningId: typeof input.roomOpeningId === 'string' && input.roomOpeningId.trim()
       ? input.roomOpeningId.trim().slice(0, 80)
       : undefined,
@@ -1746,6 +1765,51 @@ function normalizeObject(input: Partial<MapObject>): MapObject {
       ? input.sourceGuideId.trim().slice(0, 80)
       : undefined,
     foundation: normalizeMapFoundation(input.foundation)
+  };
+}
+
+export function createMapObjectLight(kind: 'point' | 'spot', target?: Vec3): MapObjectLight {
+  return {
+    kind,
+    color: kind === 'spot' ? '#ffd0a0' : '#ffbf78',
+    intensity: kind === 'spot' ? 6 : 4,
+    range: kind === 'spot' ? 12 : 8,
+    offset: [0, 0, 0],
+    ...(kind === 'spot' ? {
+      direction: [0, -1, 0] as Vec3,
+      coneAngleDegrees: 58,
+      penumbra: 0.82,
+      ...(target ? { target: [...target] as Vec3 } : {})
+    } : {}),
+    enabled: true,
+    role: kind === 'spot' ? 'key' : 'practical',
+    castShadow: false,
+    shadowMapSize: 1024,
+    shadowBias: -0.0002,
+    shadowNormalBias: 0.025,
+    shadowRadius: 2
+  };
+}
+
+export function normalizeMapObjectLight(value: unknown): MapObjectLight | undefined {
+  const light = normalizeMapAssetLight(value);
+  if (!light || !value || typeof value !== 'object') return undefined;
+  const input = value as Partial<MapObjectLight>;
+  const role = MAP_LIGHT_ROLES.includes(input.role as MapLightRole)
+    ? input.role as MapLightRole
+    : 'practical';
+  return {
+    ...light,
+    enabled: input.enabled !== false,
+    role,
+    castShadow: light.kind === 'spot' && input.castShadow === true,
+    shadowMapSize: Number(input.shadowMapSize) === 512 ? 512 : 1024,
+    shadowBias: clamp(finiteNumber(input.shadowBias, -0.0002), -0.01, 0.01),
+    shadowNormalBias: clamp(finiteNumber(input.shadowNormalBias, 0.025), 0, 0.2),
+    shadowRadius: clamp(finiteNumber(input.shadowRadius, 2), 0, 8),
+    ...(light.kind === 'spot' && Array.isArray(input.target)
+      ? { target: validVec3(input.target, [0, 0, 0]) }
+      : {})
   };
 }
 

@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import type { EditableMap, MapAsset, MapObject } from '../shared/map';
+import type { EditableMap, MapAsset, MapLightRole, MapObject, MapObjectLight } from '../shared/map';
 import type { MapAssetLight } from '../shared/mapAssetMetadata';
 import { isMaterialTagEnabled } from '../shared/materialTagPolicy';
 import type { VisualTimeOfDay } from '../shared/visualDirection';
@@ -9,6 +9,9 @@ export const MAX_VISIBLE_MAP_SPOT_LIGHTS = 2;
 export const MAX_VISIBLE_MAP_LOCAL_LIGHTS = MAX_VISIBLE_MAP_POINT_LIGHTS + MAX_VISIBLE_MAP_SPOT_LIGHTS;
 const MAP_LOCAL_LIGHT_DISTANCE = 12;
 const MAX_VISIBLE_MAP_WINDOW_LIGHTS = 2;
+// Slightly softer than strict inverse-square so a hand-authored light reads as a
+// usable cartoon light pool across a room-sized interior.
+const LOCAL_LIGHT_DECAY = 1.2;
 const AGGREGATE_LIGHTING_QUALITY_THRESHOLD = 0.5;
 const KEY_SHADOW_QUALITY_THRESHOLD = 0.85;
 
@@ -23,6 +26,14 @@ export interface MapLocalLightCandidateInfo {
   penumbra: number;
   priority: number;
   kind: 'point' | 'spot';
+  role: MapLightRole;
+  authored?: boolean;
+  castShadow: boolean;
+  target?: [number, number, number];
+  shadowMapSize: 512 | 1024;
+  shadowBias: number;
+  shadowNormalBias: number;
+  shadowRadius: number;
 }
 
 export interface MapLocalLights {
@@ -30,12 +41,14 @@ export interface MapLocalLights {
   update(camera: THREE.Camera): void;
   setTimeOfDay(timeOfDay: VisualTimeOfDay): void;
   setQuality(quality: number): void;
+  setSoloObjectId(objectId: string | null): void;
 }
 
 /** Derives a bounded Three.js light rig from lamp semantics and material tags. */
 export function buildMapLocalLights(
   map: EditableMap,
-  objectGroups: ReadonlyMap<string, THREE.Group>
+  objectGroups: ReadonlyMap<string, THREE.Group>,
+  options: { preserveLocalLights?: boolean } = {}
 ): MapLocalLights {
   const group = new THREE.Group();
   group.name = 'mapLocalLights';
@@ -52,13 +65,22 @@ export function buildMapLocalLights(
       coneAngleDegrees: info.coneAngleDegrees,
       penumbra: info.penumbra,
       priority: info.priority,
-      kind: info.kind
+      kind: info.kind,
+      role: info.role,
+      authored: info.authored,
+      castShadow: info.castShadow,
+      target: info.target,
+      shadowMapSize: info.shadowMapSize,
+      shadowBias: info.shadowBias,
+      shadowNormalBias: info.shadowNormalBias,
+      shadowRadius: info.shadowRadius
     }] : [];
   });
   const pointCandidates = candidates.filter((candidate) => candidate.kind === 'point');
   const spotCandidates = candidates.filter((candidate) => candidate.kind === 'spot');
   const pointLights = Array.from({ length: Math.min(MAX_VISIBLE_MAP_POINT_LIGHTS, pointCandidates.length) }, () => {
     const light = new THREE.PointLight(0xffc46b, 0, MAP_LOCAL_LIGHT_DISTANCE, 2);
+    light.decay = LOCAL_LIGHT_DECAY;
     light.castShadow = false;
     // Keep the light count stable so camera movement does not compile a new
     // material shader variant whenever an emitter crosses the viewport edge.
@@ -68,6 +90,7 @@ export function buildMapLocalLights(
   });
   const spotLights = Array.from({ length: Math.min(MAX_VISIBLE_MAP_SPOT_LIGHTS, spotCandidates.length) }, () => {
     const light = new THREE.SpotLight(0xffd69a, 0, MAP_LOCAL_LIGHT_DISTANCE, Math.PI / 5, 0.45, 2);
+    light.decay = LOCAL_LIGHT_DECAY;
     light.castShadow = false;
     light.visible = true;
     light.target.name = 'mapLocalLightTarget';
@@ -83,6 +106,8 @@ export function buildMapLocalLights(
   let timeOfDay: VisualTimeOfDay = 'noon';
   let aggregateLighting = false;
   let quality = 1;
+  let soloObjectId: string | null = null;
+  const preserveLocalLights = options.preserveLocalLights === true;
   const position = new THREE.Vector3();
   const rotation = new THREE.Quaternion();
   const projection = new THREE.Matrix4();
@@ -95,11 +120,14 @@ export function buildMapLocalLights(
       projection.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse);
       frustum.setFromProjectionMatrix(projection);
       const visibleCandidates = candidates
+        .filter((candidate) => !soloObjectId || candidate.objectId === soloObjectId)
         .map((candidate) => {
           candidate.group.getWorldPosition(position);
           candidate.group.getWorldQuaternion(rotation);
           const world = new THREE.Vector3(...candidate.offset).applyQuaternion(rotation).add(position);
-          const direction = new THREE.Vector3(...candidate.direction).applyQuaternion(rotation).normalize();
+          const direction = candidate.target
+            ? new THREE.Vector3(...candidate.target).sub(world).normalize()
+            : new THREE.Vector3(...candidate.direction).applyQuaternion(rotation).normalize();
           return { candidate, world, direction, distance: world.distanceToSquared(camera.position) };
         })
         // The emitter may be outside the picture while its light still reaches
@@ -108,12 +136,16 @@ export function buildMapLocalLights(
         .sort((left, right) => right.candidate.priority - left.candidate.priority || left.distance - right.distance);
       const selectedPoints = visibleCandidates.filter((entry) => entry.candidate.kind === 'point').slice(0, pointLights.length);
       const selectedSpots = visibleCandidates.filter((entry) => entry.candidate.kind === 'spot').slice(0, spotLights.length);
+      const shadowSpotIndex = selectedSpots.findIndex((entry) => entry.candidate.castShadow);
       const windowOwnsKeyShadow = map.sceneMode === 'indoor'
         && quality >= KEY_SHADOW_QUALITY_THRESHOLD
         && (timeOfDay === 'morning' || timeOfDay === 'noon')
+        && shadowSpotIndex < 0
+        && !soloObjectId
         && windowLights.count > 0;
       windowLights.setKeyShadow(windowOwnsKeyShadow);
-      group.visible = selectedPoints.length + selectedSpots.length + windowLights.count > 0 || Boolean(indirectProbe);
+      // Keep the parent active so camera movement never changes Three's compiled light count.
+      group.visible = true;
       pointLights.forEach((light, index) => {
         const entry = selectedPoints[index];
         if (!entry) {
@@ -123,8 +155,8 @@ export function buildMapLocalLights(
         light.position.copy(entry.world);
         light.color.set(entry.candidate.color);
         light.intensity = map.sceneMode === 'outdoor'
-          ? entry.candidate.intensity
-          : indoorPracticalIntensity(entry.candidate.intensity, timeOfDay);
+          ? entry.candidate.intensity * (entry.candidate.authored ? 1.35 : 1)
+          : indoorLocalIntensity(entry.candidate.intensity, timeOfDay, entry.candidate.role, entry.candidate.authored === true);
         light.distance = entry.candidate.range;
       });
       spotLights.forEach((light, index) => {
@@ -134,8 +166,9 @@ export function buildMapLocalLights(
           map.sceneMode === 'indoor'
             && quality >= KEY_SHADOW_QUALITY_THRESHOLD
             && !windowOwnsKeyShadow
-            && index === 0
-            && Boolean(entry)
+            && index === shadowSpotIndex
+            && Boolean(entry),
+          entry?.candidate
         );
         if (!entry) {
           light.intensity = 0;
@@ -144,8 +177,8 @@ export function buildMapLocalLights(
         light.position.copy(entry.world);
         light.color.set(entry.candidate.color);
         light.intensity = map.sceneMode === 'outdoor'
-          ? entry.candidate.intensity
-          : indoorPracticalIntensity(entry.candidate.intensity, timeOfDay);
+          ? entry.candidate.intensity * (entry.candidate.authored ? 1.35 : 1)
+          : indoorLocalIntensity(entry.candidate.intensity, timeOfDay, entry.candidate.role, entry.candidate.authored === true);
         light.distance = entry.candidate.range;
         light.angle = THREE.MathUtils.degToRad(entry.candidate.coneAngleDegrees);
         light.penumbra = entry.candidate.penumbra;
@@ -159,11 +192,18 @@ export function buildMapLocalLights(
     },
     setQuality: (nextQuality) => {
       quality = THREE.MathUtils.clamp(nextQuality, 0, 1);
-      aggregateLighting = map.sceneMode === 'indoor' && quality <= AGGREGATE_LIGHTING_QUALITY_THRESHOLD;
+      aggregateLighting = !preserveLocalLights
+        && map.sceneMode === 'indoor'
+        && quality <= AGGREGATE_LIGHTING_QUALITY_THRESHOLD;
       pointLights.forEach((light) => { light.visible = !aggregateLighting; });
       spotLights.forEach((light) => { light.visible = !aggregateLighting; });
       windowLights.setAggregateLighting(aggregateLighting);
       indirectProbe?.update(timeOfDay, aggregateLighting);
+    },
+    setSoloObjectId: (objectId) => {
+      soloObjectId = objectId;
+      windowLights.setSolo(Boolean(objectId));
+      if (indirectProbe) indirectProbe.light.visible = !objectId;
     }
   };
 }
@@ -201,12 +241,12 @@ function indirectProbeIntensity(
   aggregateLighting = false
 ): number {
   const base = timeOfDay === 'night'
-    ? (hasPracticalLights ? 0.34 : 0.06)
+    ? (hasPracticalLights ? 0.28 : 0.05)
     : timeOfDay === 'evening'
-      ? (hasPracticalLights ? 0.28 : 0.08) + (hasWindows ? 0.08 : 0)
+      ? (hasPracticalLights ? 0.2 : 0.07) + (hasWindows ? 0.06 : 0)
       : timeOfDay === 'morning'
-        ? (hasWindows ? 0.34 : 0.16)
-        : (hasWindows ? 0.38 : 0.18);
+        ? (hasWindows ? 0.27 : 0.11)
+        : (hasWindows ? 0.3 : 0.12);
   if (!aggregateLighting || !hasPracticalLights) return base;
   return Math.min(0.82, base + (timeOfDay === 'night' ? 0.34 : 0.44));
 }
@@ -217,12 +257,20 @@ function buildWindowLights(map: EditableMap): {
   setTimeOfDay(timeOfDay: VisualTimeOfDay): void;
   setAggregateLighting(enabled: boolean): void;
   setKeyShadow(enabled: boolean): void;
+  setSolo(enabled: boolean): void;
 } {
   const group = new THREE.Group();
   group.name = 'mapWindowLights';
   const room = map.room;
   if (!room || map.sceneMode === 'outdoor') {
-    return { group, count: 0, setTimeOfDay: () => {}, setAggregateLighting: () => {}, setKeyShadow: () => {} };
+    return {
+      group,
+      count: 0,
+      setTimeOfDay: () => {},
+      setAggregateLighting: () => {},
+      setKeyShadow: () => {},
+      setSolo: () => {}
+    };
   }
   const range = Math.hypot(...room.size);
   const lights = room.openings
@@ -246,7 +294,7 @@ function buildWindowLights(map: EditableMap): {
           : opening.wall === 'east'
             ? [room.position[0] + room.size[0] / 2 - inset, centerY, room.position[2] + opening.offset]
             : [room.position[0] - room.size[0] / 2 + inset, centerY, room.position[2] + opening.offset];
-      const light = new THREE.SpotLight('#d9efff', 0, range, Math.PI / 3, 0.8, 2);
+      const light = new THREE.SpotLight('#d9efff', 0, range, Math.PI / 3, 0.8, LOCAL_LIGHT_DECAY);
       light.name = 'mapWindowLight';
       light.position.set(position[0], position[1], position[2]);
       light.castShadow = false;
@@ -263,31 +311,57 @@ function buildWindowLights(map: EditableMap): {
       entry.light.intensity = entry.baseIntensity * profile.strength;
     }
   };
+  let aggregateLighting = false;
+  let keyShadow = false;
+  let solo = false;
+  const syncState = (): void => {
+    lights.forEach((entry, index) => {
+      entry.light.visible = !solo && (!aggregateLighting || index === 0);
+      configureIndoorKeyShadow(entry.light, !solo && keyShadow && index === 0);
+    });
+  };
   const setAggregateLighting = (enabled: boolean): void => {
-    lights.forEach((entry, index) => { entry.light.visible = !enabled || index === 0; });
+    aggregateLighting = enabled;
+    syncState();
   };
   const setKeyShadow = (enabled: boolean): void => {
-    lights.forEach((entry, index) => configureIndoorKeyShadow(entry.light, enabled && index === 0));
+    keyShadow = enabled;
+    syncState();
+  };
+  const setSolo = (enabled: boolean): void => {
+    solo = enabled;
+    syncState();
   };
   setTimeOfDay('noon');
-  return { group, count: lights.length, setTimeOfDay, setAggregateLighting, setKeyShadow };
+  syncState();
+  return { group, count: lights.length, setTimeOfDay, setAggregateLighting, setKeyShadow, setSolo };
 }
 
-function configureIndoorKeyShadow(light: THREE.SpotLight, enabled: boolean): void {
-  if (light.castShadow === enabled) return;
+function configureIndoorKeyShadow(
+  light: THREE.SpotLight,
+  enabled: boolean,
+  profile?: Pick<MapLocalLightCandidateInfo, 'shadowMapSize' | 'shadowBias' | 'shadowNormalBias' | 'shadowRadius'>
+): void {
+  const changed = light.castShadow !== enabled;
   light.castShadow = enabled;
   if (!enabled) return;
-  light.shadow.mapSize.set(512, 512);
-  light.shadow.bias = -0.0002;
-  light.shadow.normalBias = 0.025;
-  light.shadow.radius = 2;
-  light.shadow.needsUpdate = true;
+  const mapSize = profile?.shadowMapSize ?? 512;
+  const mapSizeChanged = light.shadow.mapSize.width !== mapSize;
+  light.shadow.mapSize.set(mapSize, mapSize);
+  light.shadow.bias = profile?.shadowBias ?? -0.0002;
+  light.shadow.normalBias = profile?.shadowNormalBias ?? 0.025;
+  light.shadow.radius = profile?.shadowRadius ?? 2;
+  if (changed || mapSizeChanged) light.shadow.needsUpdate = true;
 }
 
-function indoorPracticalIntensity(baseIntensity: number, timeOfDay: VisualTimeOfDay): number {
+function indoorLocalIntensity(baseIntensity: number, timeOfDay: VisualTimeOfDay, role: MapLightRole, authored: boolean): number {
   const scale = timeOfDay === 'night' ? 1.5 : timeOfDay === 'evening' ? 1.2 : timeOfDay === 'morning' ? 1 : 0.8;
-  const peak = timeOfDay === 'night' ? 8 : timeOfDay === 'evening' ? 7 : timeOfDay === 'morning' ? 6 : 5;
-  return Math.min(baseIntensity * scale, peak);
+  const practicalPeak = timeOfDay === 'night' ? 8 : timeOfDay === 'evening' ? 7 : timeOfDay === 'morning' ? 6 : 5;
+  const rolePeak = role === 'key' ? 8 : role === 'fill' ? 4 : role === 'accent' ? 4.5 : practicalPeak;
+  const peak = role === 'practical' ? practicalPeak : rolePeak;
+  if (!authored) return Math.min(baseIntensity * scale, peak);
+  const roleScale = role === 'key' ? 3.2 : role === 'fill' ? 2.2 : role === 'accent' ? 2.4 : 2.6;
+  return Math.min(baseIntensity * scale * roleScale, peak * roleScale);
 }
 
 function windowLightProfile(timeOfDay: VisualTimeOfDay): { color: string; strength: number } {
@@ -305,8 +379,9 @@ export function analyzeMapLocalLightCandidates(map: EditableMap): MapLocalLightC
   const assets = new Map((map.assets ?? []).map((asset) => [asset.id, asset]));
   return map.objects.flatMap((object) => {
     const asset = object.assetId ? assets.get(object.assetId) : undefined;
-    if (!object.visible || !asset) return [];
-    const glow = modelLightProfile(asset, map);
+    const authored = object.light && object.light.enabled ? object.light : undefined;
+    if (!object.visible || object.light === null || (object.light && !object.light.enabled)) return [];
+    const glow = authored ? lightContractProfile(authored) : asset ? modelLightProfile(asset, map) : null;
     return glow ? [{
       objectId: object.id,
       color: glow.color,
@@ -316,10 +391,39 @@ export function analyzeMapLocalLightCandidates(map: EditableMap): MapLocalLightC
       direction: glow.direction ?? [0, -1, 0],
       coneAngleDegrees: glow.coneAngleDegrees ?? 40,
       penumbra: glow.penumbra ?? 0.4,
-      priority: glow.priority,
-      kind: glow.kind
+      priority: authored ? lightRolePriority(authored.role) : glow.priority,
+      kind: glow.kind,
+      role: authored?.role ?? 'practical',
+      authored: Boolean(authored),
+      castShadow: authored?.castShadow ?? glow.kind === 'spot',
+      target: authored?.target,
+      shadowMapSize: authored?.shadowMapSize ?? 512,
+      shadowBias: authored?.shadowBias ?? -0.0002,
+      shadowNormalBias: authored?.shadowNormalBias ?? 0.025,
+      shadowRadius: authored?.shadowRadius ?? 2
     }] : [];
   });
+}
+
+export function resolvedMapObjectLight(object: MapObject, asset?: MapAsset): MapObjectLight | null {
+  if (object.light === null) return null;
+  if (object.light) return object.light;
+  const inherited = asset?.light;
+  if (!inherited) return null;
+  return {
+    ...inherited,
+    enabled: true,
+    role: 'practical',
+    castShadow: inherited.kind === 'spot',
+    shadowMapSize: 512,
+    shadowBias: -0.0002,
+    shadowNormalBias: 0.025,
+    shadowRadius: 2
+  };
+}
+
+function lightRolePriority(role: MapLightRole): number {
+  return role === 'key' ? 5 : role === 'accent' ? 4 : role === 'fill' ? 2 : 3;
 }
 
 function modelLightProfile(asset: MapAsset, map: EditableMap): {
@@ -403,10 +507,10 @@ function legacyTaggedLight(asset: MapAsset): NonNullable<ReturnType<typeof model
   };
 }
 
-function localLightHeight(object: MapObject, asset: MapAsset): number {
-  const boxHeight = asset.colliderPlan.boxes.reduce(
+function localLightHeight(object: MapObject, asset?: MapAsset): number {
+  const boxHeight = asset?.colliderPlan.boxes.reduce(
     (height, box) => Math.max(height, box.max[1] - box.min[1]),
     object.transform.size[1]
-  );
+  ) ?? object.transform.size[1];
   return Math.max(0.4, boxHeight * object.transform.scale[1] * 0.55);
 }

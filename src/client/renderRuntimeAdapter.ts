@@ -103,6 +103,7 @@ export class RenderRuntimeAdapter {
   private width = 1;
   private height = 1;
   private pixelRatio = 0;
+  private postProcessingBypassed = false;
 
   constructor(
     private readonly renderer: THREE.WebGLRenderer,
@@ -241,6 +242,11 @@ export class RenderRuntimeAdapter {
 
   setDebugPassEnabled(id: string, enabled: boolean): void {
     this.frameCoordinator.setPassEnabled(id, enabled);
+  }
+
+  /** Draws the lit scene directly so artists can separate lighting from post effects. */
+  setPostProcessingBypassed(bypassed: boolean): void {
+    this.postProcessingBypassed = bypassed;
   }
 
   applyDistanceFog(color: string, density: number): void {
@@ -683,7 +689,8 @@ export class RenderRuntimeAdapter {
   }
 
   render(): void {
-    this.frameCoordinator.renderFrame(this.pendingDeltaTime, this.pendingElapsedSeconds);
+    if (this.postProcessingBypassed) this.renderer.render(this.scene, this.camera);
+    else this.frameCoordinator.renderFrame(this.pendingDeltaTime, this.pendingElapsedSeconds);
   }
 
   private needsPrePass(): boolean {

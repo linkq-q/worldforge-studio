@@ -12,9 +12,11 @@ import {
   ROOM_OBJECT_ID,
   ROOM_SURFACES,
   SUN_OBJECT_ID,
+  MAP_LIGHT_ROLES,
   addPaintStroke,
   applyTerrainBrush,
   createMapObject,
+  createMapObjectLight,
   createPaintStroke,
   getMapBounds,
   getMapPlayerMetrics,
@@ -36,6 +38,7 @@ import {
   type DeletedMapSummary,
   type MapAsset,
   type MapObject,
+  type MapObjectLight,
   type MapSceneMode,
   type MapSummary,
   type MapSurface,
@@ -98,6 +101,12 @@ import {
   updateAgentProgress
 } from './agentProgressPanel';
 import { buildEditableMapGroup, type RenderedMap } from './mapRenderer';
+import {
+  MAX_VISIBLE_MAP_POINT_LIGHTS,
+  MAX_VISIBLE_MAP_SPOT_LIGHTS,
+  analyzeMapLocalLightCandidates,
+  resolvedMapObjectLight
+} from './mapLocalLights';
 import { buildModelGroup } from './modelRenderer';
 import { RenderSceneRuntime } from './renderSceneRuntime';
 import { RenderStats, type RenderDebugDetails } from './renderStats';
@@ -221,6 +230,7 @@ import {
 type EditorTool = 'select' | 'paint' | 'terrain' | 'grass';
 type TransformMode = 'translate' | 'rotate' | 'scale';
 type EditorStage = 'map' | 'render';
+type LightingReviewMode = 'final' | 'grayscale' | 'neutral-material' | 'no-post';
 type TerrainEditorAction = 'brush' | 'modifier' | 'surface' | 'road';
 
 const CAMERA_MOVE_KEYS = new Set(['KeyW', 'KeyA', 'KeyS', 'KeyD', 'ArrowUp', 'ArrowDown']);
@@ -362,6 +372,15 @@ class MapEditor {
   private previewRequestId = 0;
   private selectionOutline: THREE.BoxHelper | null = null;
   private readonly selectedObjectIds = new Set<string>();
+  private lightingSoloObjectId: string | null = null;
+  private lightingHelpersVisible = false;
+  private aimingLightTargetId: string | null = null;
+  private lightingReviewMode: LightingReviewMode = 'final';
+  private readonly neutralLightingReviewMaterial = new THREE.MeshStandardMaterial({
+    color: 0x8a8a86,
+    roughness: 0.72,
+    metalness: 0
+  });
   /** View-only ghost boxes + streamed-in models for the running code-planner generation. */
   private generationPreview: GenerationPreviewOverlay | null = null;
   private brushPreview: THREE.Mesh<THREE.RingGeometry, THREE.MeshBasicMaterial> | null = null;
@@ -586,6 +605,12 @@ class MapEditor {
                 <button type="button" data-view="top">顶视图</button>
                 <button type="button" data-view="front">前视图</button>
                 <button type="button" data-view="right">右视图</button>
+                <label><span>灯光检查</span><select id="lighting-review-mode" aria-label="灯光检查模式">
+                  <option value="final" ${this.lightingReviewMode === 'final' ? 'selected' : ''}>最终效果</option>
+                  <option value="grayscale" ${this.lightingReviewMode === 'grayscale' ? 'selected' : ''}>灰度明暗</option>
+                  <option value="neutral-material" ${this.lightingReviewMode === 'neutral-material' ? 'selected' : ''}>中性材质</option>
+                  <option value="no-post" ${this.lightingReviewMode === 'no-post' ? 'selected' : ''}>关闭后期</option>
+                </select></label>
                 <label id="room-wall-display-field" hidden><span>房间显示</span><select id="room-wall-display-mode">
                   <option value="full" ${this.roomWallDisplayMode === 'full' ? 'selected' : ''}>完整墙体</option>
                   <option value="cutaway" ${this.roomWallDisplayMode === 'cutaway' ? 'selected' : ''}>自动剖切</option>
@@ -877,6 +902,9 @@ class MapEditor {
       });
     });
     this.app.querySelector<HTMLButtonElement>('[data-play-mode]')?.addEventListener('click', () => this.enterPlayMode());
+    this.app.querySelector<HTMLSelectElement>('#lighting-review-mode')?.addEventListener('change', (event) => {
+      this.setLightingReviewMode((event.currentTarget as HTMLSelectElement).value as LightingReviewMode);
+    });
     this.app.querySelector<HTMLButtonElement>('#toggle-developer-mode')?.addEventListener('click', () => {
       this.developerMode = !this.developerMode;
       localStorage.setItem('worldforge.developerMode', this.developerMode ? 'on' : 'off');
@@ -986,7 +1014,7 @@ class MapEditor {
     this.transform.addEventListener('mouseUp', () => {
       this.transformPointerActive = false;
       this.endHistoryGesture();
-      if (this.selectedObject()?.roomOpeningId || this.selectedObject()?.foundation) void this.refreshScene();
+      if (this.selectedObject()?.roomOpeningId || this.selectedObject()?.foundation || this.isSelectedLightObject()) void this.refreshScene();
     });
     this.transform.addEventListener('dragging-changed', (event) => {
       this.transformDragging = Boolean(event.value);
@@ -1366,6 +1394,8 @@ class MapEditor {
     if (!subtree) return;
     const deletedIds = new Set(subtree.objects.map((item) => item.id));
     map.objects = map.objects.filter((item) => !deletedIds.has(item.id));
+    if (this.lightingSoloObjectId && deletedIds.has(this.lightingSoloObjectId)) this.lightingSoloObjectId = null;
+    if (this.aimingLightTargetId && deletedIds.has(this.aimingLightTargetId)) this.aimingLightTargetId = null;
     this.state.selectedObjectId = null;
     this.markDirty();
     void this.refreshScene();
@@ -3134,6 +3164,7 @@ class MapEditor {
     const mapSettingsOpen = host.querySelector<HTMLDetailsElement>('[data-inspector-section="map-settings"]')?.open ?? false;
     const roomSettingsOpen = host.querySelector<HTMLDetailsElement>('[data-inspector-section="room-settings"]')?.open ?? Boolean(map.room);
     const interiorFinishesOpen = host.querySelector<HTMLDetailsElement>('[data-inspector-section="interior-finishes"]')?.open ?? Boolean(map.room);
+    const lightingOpen = host.querySelector<HTMLDetailsElement>('[data-inspector-section="scene-lighting"]')?.open ?? Boolean(map.room);
     const materialTagsOpen = host.querySelector<HTMLDetailsElement>('[data-inspector-section="material-tags"]')?.open ?? false;
     const visualSemanticsOpen = host.querySelector<HTMLDetailsElement>('[data-inspector-section="visual-semantics"]')?.open ?? false;
     if (!map.visualSemantics.zones.some((zone) => zone.id === this.selectedVisualZoneId)) {
@@ -3221,6 +3252,7 @@ class MapEditor {
         </details>
       ` : ''}
       ${renderInteriorFinishPanel(map, interiorFinishesOpen)}
+      ${this.renderSceneLightingPanel(map, lightingOpen)}
       <details class="inspector-disclosure" data-inspector-section="visual-semantics" ${visualSemanticsOpen ? 'open' : ''}>
         <summary><span><b>区域语义</b><small>${map.visualSemantics.zones.length} 个区域 · 手调字段自动保留</small></span></summary>
         <section class="editor-section inspector-body">
@@ -3325,6 +3357,7 @@ class MapEditor {
       </section>` : ''}
       ${this.state.tool === 'grass' ? renderGrassEditorPanel(map, this.grassEditorState) : ''}
     `;
+    this.bindSceneLightingPanel(host);
     host.querySelector<HTMLInputElement>('[data-map-name]')?.addEventListener('input', (event) => {
       map.name = (event.target as HTMLInputElement).value;
       this.markDirty(false);
@@ -3630,6 +3663,85 @@ class MapEditor {
     }
   }
 
+  private renderSceneLightingPanel(map: EditableMap, open: boolean): string {
+    const editorMap = this.mapWithEditorAssets(map);
+    const assets = new Map((editorMap.assets ?? []).map((asset) => [asset.id, asset]));
+    const candidates = analyzeMapLocalLightCandidates(editorMap);
+    const candidateById = new Map(candidates.map((candidate) => [candidate.objectId, candidate]));
+    const lightObjects = map.objects.filter((object) => (
+      object.light !== undefined
+      || Boolean(object.assetId && assets.get(object.assetId)?.light)
+      || candidateById.has(object.id)
+    ));
+    if (this.lightingSoloObjectId && !map.objects.some((object) => object.id === this.lightingSoloObjectId)) {
+      this.lightingSoloObjectId = null;
+    }
+    const pointCount = candidates.filter((candidate) => candidate.kind === 'point').length;
+    const spotCount = candidates.filter((candidate) => candidate.kind === 'spot').length;
+    return `
+      <details class="inspector-disclosure" data-inspector-section="scene-lighting" ${open ? 'open' : ''}>
+        <summary><span><b>场景灯光</b><small>${candidates.length} 盏生效 · 点光 ${pointCount}/${MAX_VISIBLE_MAP_POINT_LIGHTS} · 聚光 ${spotCount}/${MAX_VISIBLE_MAP_SPOT_LIGHTS}</small></span></summary>
+        <section class="editor-section inspector-body">
+          <div class="map-ai-controls">
+            <button type="button" class="secondary small" data-add-scene-light="point">新增点光</button>
+            <button type="button" class="secondary small" data-add-scene-light="spot">新增聚光</button>
+          </div>
+          <label class="toggle-row"><input type="checkbox" data-light-helpers ${this.lightingHelpersVisible ? 'checked' : ''} /><span>显示灯光范围与方向</span></label>
+          ${this.lightingSoloObjectId ? '<button type="button" class="secondary small" data-clear-light-solo>退出单灯预览</button>' : ''}
+          <div class="render-scheme-list">
+            ${lightObjects.map((object) => {
+              const asset = object.assetId ? assets.get(object.assetId) : undefined;
+              const light = resolvedMapObjectLight(object, asset);
+              const candidate = candidateById.get(object.id);
+              const source = object.light === null ? '已关闭' : object.light ? '手调' : asset?.light ? '资产' : '标签';
+              const status = candidate
+                ? `${candidate.kind === 'spot' ? '聚光' : '点光'} · ${candidate.role} · ${source}`
+                : `未生效 · ${source}`;
+              return `<button type="button" class="render-scheme-card ${object.id === this.state.selectedObjectId ? 'active' : ''}" data-select-light-object="${escapeHtml(object.id)}"><strong>${escapeHtml(object.name)}</strong><small>${escapeHtml(status)}</small></button>`;
+            }).join('') || '<p class="empty">当前场景还没有灯光；可新增补光，或选中带灯资产后按实例接管。</p>'}
+          </div>
+          <p class="empty">灯光对象支持移动、旋转、复制和撤销。运行时仍使用固定灯槽；列表数量超过上限时按用途和镜头影响范围选择。</p>
+        </section>
+      </details>
+    `;
+  }
+
+  private bindSceneLightingPanel(host: HTMLElement): void {
+    host.querySelectorAll<HTMLButtonElement>('[data-add-scene-light]').forEach((button) => {
+      button.addEventListener('click', () => this.addSceneLight(button.dataset.addSceneLight === 'spot' ? 'spot' : 'point'));
+    });
+    host.querySelectorAll<HTMLButtonElement>('[data-select-light-object]').forEach((button) => {
+      button.addEventListener('click', () => this.selectObject(button.dataset.selectLightObject ?? null));
+    });
+    host.querySelector<HTMLInputElement>('[data-light-helpers]')?.addEventListener('change', (event) => {
+      this.lightingHelpersVisible = (event.target as HTMLInputElement).checked;
+      this.renderedMap?.setLightingHelpersVisible(this.lightingHelpersVisible);
+    });
+    host.querySelector<HTMLButtonElement>('[data-clear-light-solo]')?.addEventListener('click', () => {
+      this.lightingSoloObjectId = null;
+      this.renderedMap?.setLightingSoloObjectId(null);
+      this.renderMapInspector();
+      this.renderObjectInspector();
+    });
+  }
+
+  private addSceneLight(kind: 'point' | 'spot'): void {
+    const map = this.state.map;
+    if (!map) return;
+    const target = this.orbit?.target ?? new THREE.Vector3(0, 1, 0);
+    const object = createMapObject(kind === 'spot' ? '场景聚光' : '场景点光');
+    object.transform.position = [target.x, target.y + (kind === 'spot' ? 3.5 : 2.2), target.z + (kind === 'spot' ? 2.5 : 0)];
+    object.light = createMapObjectLight(kind, [target.x, target.y, target.z]);
+    map.objects.push(object);
+    this.state.tool = 'select';
+    this.markDirty();
+    this.state.selectedObjectId = object.id;
+    this.selectedObjectIds.clear();
+    this.selectedObjectIds.add(object.id);
+    void this.refreshScene();
+    this.renderPanels();
+  }
+
   private renderObjectInspector(): void {
     const host = this.app.querySelector<HTMLElement>('#object-inspector');
     if (!host) return;
@@ -3718,6 +3830,9 @@ class MapEditor {
       return;
     }
     const availableAssets = this.state.assets;
+    const selectedAsset = object.assetId ? availableAssets.find((asset) => asset.id === object.assetId) : undefined;
+    const resolvedLight = resolvedMapObjectLight(object, selectedAsset);
+    const inheritedLight = object.light === undefined && Boolean(selectedAsset?.light);
     const selectionOpen = host.querySelector<HTMLDetailsElement>(`[data-selection-id="${CSS.escape(object.id)}"]`)?.open ?? true;
     host.innerHTML = `
       <details class="inspector-disclosure" data-inspector-section="selection" data-selection-id="${escapeHtml(object.id)}" ${selectionOpen ? 'open' : ''}>
@@ -3754,6 +3869,7 @@ class MapEditor {
             ${availableAssets.map((asset) => `<option value="${asset.id}" ${object.assetId === asset.id ? 'selected' : ''}>${escapeHtml(asset.name)} · ${escapeHtml(asset.mode.toUpperCase())}</option>`).join('')}
           </select>
         </label>
+        ${this.renderObjectLightEditor(object, resolvedLight, inheritedLight)}
         <button id="delete-object" class="secondary small">删除物体</button>
         </section>
       </details>
@@ -3818,8 +3934,177 @@ class MapEditor {
       void this.refreshScene();
       this.renderObjectInspector();
     });
+    this.bindObjectLightEditor(host, object, resolvedLight);
     host.querySelector('#delete-object')?.addEventListener('click', () => {
       this.deleteSelectedObject();
+    });
+  }
+
+  private renderObjectLightEditor(
+    object: MapObject,
+    light: MapObjectLight | null,
+    inherited: boolean
+  ): string {
+    if (!light) {
+      return `
+        <details class="inspector-disclosure compact" data-object-light-editor>
+          <summary><span><b>局部灯光</b><small>${object.light === null ? '已按实例关闭' : '未设置'}</small></span></summary>
+          <p class="empty">${object.light === null ? '这个实例不会继承资产灯光。' : '可把当前物体作为灯具，或创建无模型的补光灯。'}</p>
+          <button type="button" class="secondary small" data-enable-object-light>${object.light === null ? '恢复并接管灯光' : '添加点光'}</button>
+        </details>
+      `;
+    }
+    const editable = !inherited;
+    return `
+      <details class="inspector-disclosure compact" data-object-light-editor open>
+        <summary><span><b>局部灯光</b><small>${inherited ? '继承资产' : '实例手调'} · ${light.kind === 'spot' ? '聚光' : '点光'}</small></span></summary>
+        ${inherited ? '<p class="empty">当前使用资产默认值。接管后只修改这一盏灯。</p><button type="button" class="secondary small" data-takeover-object-light>按实例接管</button>' : `
+          <label class="toggle-row"><input type="checkbox" data-object-light-enabled ${light.enabled ? 'checked' : ''} /><span>启用这盏灯</span></label>
+          <label class="field compact"><span>类型</span><select data-object-light-kind>
+            <option value="point" ${light.kind === 'point' ? 'selected' : ''}>点光</option>
+            <option value="spot" ${light.kind === 'spot' ? 'selected' : ''}>聚光</option>
+          </select></label>
+          <label class="field compact"><span>用途</span><select data-object-light-role>
+            ${MAP_LIGHT_ROLES.map((role) => `<option value="${role}" ${light.role === role ? 'selected' : ''}>${mapLightRoleLabel(role)}</option>`).join('')}
+          </select></label>
+          <label class="field compact"><span>颜色</span><input type="color" data-object-light-color value="${light.color}" /></label>
+          <div class="triple">
+            <label><span>作者强度</span><input type="number" data-object-light-number="intensity" min="0.5" max="12" step="0.1" value="${light.intensity}" /></label>
+            <label><span>范围</span><input type="number" data-object-light-number="range" min="1" max="20" step="0.2" value="${light.range}" /></label>
+            <label><span>灯高偏移</span><input type="number" data-object-light-offset-y min="-10" max="10" step="0.1" value="${light.offset[1]}" /></label>
+          </div>
+          ${light.kind === 'spot' ? `
+            <div class="triple">
+              <label><span>锥角</span><input type="number" data-object-light-number="coneAngleDegrees" min="10" max="90" step="1" value="${light.coneAngleDegrees ?? 40}" /></label>
+              <label><span>光斑柔边</span><input type="number" data-object-light-number="penumbra" min="0" max="1" step="0.05" value="${light.penumbra ?? 0.4}" /></label>
+              <label><span>阴影柔度</span><input type="number" data-object-light-number="shadowRadius" min="0" max="8" step="0.25" value="${light.shadowRadius}" /></label>
+            </div>
+            <div class="triple">${numberField('目标 X', 'light-target', 0, light.target?.[0] ?? object.transform.position[0])}${numberField('目标 Y', 'light-target', 1, light.target?.[1] ?? object.transform.position[1] - 2)}${numberField('目标 Z', 'light-target', 2, light.target?.[2] ?? object.transform.position[2])}</div>
+            <button type="button" class="secondary small ${this.aimingLightTargetId === object.id ? 'active' : ''}" data-pick-light-target>${this.aimingLightTargetId === object.id ? '请在场景中点击目标' : '在场景中拾取照射目标'}</button>
+            <label class="toggle-row"><input type="checkbox" data-object-light-shadow ${light.castShadow ? 'checked' : ''} /><span>作为关键阴影灯</span></label>
+            ${light.castShadow ? `
+              <label class="field compact"><span>阴影贴图</span><select data-object-light-shadow-size><option value="512" ${light.shadowMapSize === 512 ? 'selected' : ''}>512</option><option value="1024" ${light.shadowMapSize === 1024 ? 'selected' : ''}>1024</option></select></label>
+              <div class="triple">
+                <label><span>Bias</span><input type="number" data-object-light-number="shadowBias" min="-0.01" max="0.01" step="0.0001" value="${light.shadowBias}" /></label>
+                <label><span>Normal Bias</span><input type="number" data-object-light-number="shadowNormalBias" min="0" max="0.2" step="0.005" value="${light.shadowNormalBias}" /></label>
+              </div>
+            ` : ''}
+          ` : ''}
+          <div class="map-ai-controls">
+            <button type="button" class="secondary small" data-solo-object-light>${this.lightingSoloObjectId === object.id ? '退出单灯预览' : '只看这盏灯'}</button>
+            ${object.assetId ? '<button type="button" class="secondary small" data-disable-object-light>关闭本实例灯光</button>' : ''}
+          </div>
+          <p class="empty">室内实际亮度会继续应用当前时段的峰值限制；画面预览显示的是最终结果。</p>
+        `}
+      </details>
+    `;
+  }
+
+  private bindObjectLightEditor(host: HTMLElement, object: MapObject, resolved: MapObjectLight | null): void {
+    const apply = (change: (light: MapObjectLight) => void, rerender = true): void => {
+      const asset = object.assetId ? this.state.assets.find((item) => item.id === object.assetId) : undefined;
+      const current = object.light && object.light !== null ? object.light : resolvedMapObjectLight(object, asset);
+      if (!current) return;
+      object.light = { ...current, offset: [...current.offset], ...(current.target ? { target: [...current.target] } : {}) };
+      change(object.light);
+      this.markDirty();
+      void this.refreshScene();
+      if (rerender) this.renderPanels();
+    };
+    host.querySelector<HTMLButtonElement>('[data-enable-object-light]')?.addEventListener('click', () => {
+      const inherited = object.assetId
+        ? this.state.assets.find((item) => item.id === object.assetId)?.light
+        : undefined;
+      object.light = inherited
+        ? {
+            ...inherited,
+            offset: [...inherited.offset],
+            enabled: true,
+            role: 'practical',
+            castShadow: inherited.kind === 'spot',
+            shadowMapSize: 512,
+            shadowBias: -0.0002,
+            shadowNormalBias: 0.025,
+            shadowRadius: 2
+          }
+        : createMapObjectLight('point');
+      this.markDirty();
+      void this.refreshScene();
+      this.renderPanels();
+    });
+    host.querySelector<HTMLButtonElement>('[data-takeover-object-light]')?.addEventListener('click', () => {
+      if (!resolved) return;
+      object.light = { ...resolved, offset: [...resolved.offset], ...(resolved.target ? { target: [...resolved.target] } : {}) };
+      this.markDirty();
+      void this.refreshScene();
+      this.renderPanels();
+    });
+    host.querySelector<HTMLInputElement>('[data-object-light-enabled]')?.addEventListener('change', (event) => {
+      apply((light) => { light.enabled = (event.target as HTMLInputElement).checked; });
+    });
+    host.querySelector<HTMLSelectElement>('[data-object-light-kind]')?.addEventListener('change', (event) => {
+      apply((light) => {
+        light.kind = (event.target as HTMLSelectElement).value === 'spot' ? 'spot' : 'point';
+        if (light.kind === 'spot') {
+          light.direction ??= [0, -1, 0];
+          light.coneAngleDegrees ??= 58;
+          light.penumbra ??= 0.82;
+        } else {
+          light.castShadow = false;
+          delete light.target;
+        }
+      });
+    });
+    this.app.querySelector<HTMLSelectElement>('#lighting-review-mode')?.addEventListener('change', (event) => {
+      this.setLightingReviewMode((event.currentTarget as HTMLSelectElement).value as LightingReviewMode);
+    });
+    host.querySelector<HTMLSelectElement>('[data-object-light-role]')?.addEventListener('change', (event) => {
+      apply((light) => { light.role = (event.target as HTMLSelectElement).value as MapObjectLight['role']; });
+    });
+    host.querySelector<HTMLInputElement>('[data-object-light-color]')?.addEventListener('change', (event) => {
+      apply((light) => { light.color = (event.target as HTMLInputElement).value; });
+    });
+    host.querySelectorAll<HTMLInputElement>('[data-object-light-number]').forEach((input) => {
+      input.addEventListener('change', () => {
+        const value = Number(input.value);
+        if (!Number.isFinite(value)) return;
+        apply((light) => { (light as unknown as Record<string, number>)[input.dataset.objectLightNumber!] = value; });
+      });
+    });
+    host.querySelector<HTMLInputElement>('[data-object-light-offset-y]')?.addEventListener('change', (event) => {
+      const value = Number((event.target as HTMLInputElement).value);
+      if (Number.isFinite(value)) apply((light) => { light.offset[1] = value; });
+    });
+    if (resolved?.kind === 'spot') {
+      const target = [...(resolved.target ?? [object.transform.position[0], object.transform.position[1] - 2, object.transform.position[2]])] as [number, number, number];
+      bindVectorInputs(host, 'light-target', target, () => {
+        apply((light) => { light.target = [...target]; });
+      });
+    }
+    host.querySelector<HTMLInputElement>('[data-object-light-shadow]')?.addEventListener('change', (event) => {
+      apply((light) => { light.castShadow = (event.target as HTMLInputElement).checked; });
+    });
+    host.querySelector<HTMLSelectElement>('[data-object-light-shadow-size]')?.addEventListener('change', (event) => {
+      apply((light) => { light.shadowMapSize = Number((event.target as HTMLSelectElement).value) === 512 ? 512 : 1024; });
+    });
+    host.querySelector<HTMLButtonElement>('[data-pick-light-target]')?.addEventListener('click', () => {
+      this.aimingLightTargetId = this.aimingLightTargetId === object.id ? null : object.id;
+      this.state.message = this.aimingLightTargetId ? '请在场景中点击聚光灯要照射的位置' : '';
+      this.renderObjectInspector();
+      this.updateToolbarState();
+    });
+    host.querySelector<HTMLButtonElement>('[data-solo-object-light]')?.addEventListener('click', () => {
+      this.lightingSoloObjectId = this.lightingSoloObjectId === object.id ? null : object.id;
+      this.renderedMap?.setLightingSoloObjectId(this.lightingSoloObjectId);
+      this.renderMapInspector();
+      this.renderObjectInspector();
+    });
+    host.querySelector<HTMLButtonElement>('[data-disable-object-light]')?.addEventListener('click', () => {
+      object.light = null;
+      if (this.lightingSoloObjectId === object.id) this.lightingSoloObjectId = null;
+      this.markDirty();
+      void this.refreshScene();
+      this.renderPanels();
     });
   }
 
@@ -5596,6 +5881,12 @@ class MapEditor {
       this.transform?.detach();
       return;
     }
+    if (this.lightingSoloObjectId && !this.state.map.objects.some((object) => object.id === this.lightingSoloObjectId)) {
+      this.lightingSoloObjectId = null;
+    }
+    if (this.aimingLightTargetId && !this.state.map.objects.some((object) => object.id === this.aimingLightTargetId)) {
+      this.aimingLightTargetId = null;
+    }
     this.updateSceneLighting();
     const rebuildStartedAt = performance.now();
     const next = await buildEditableMapGroup(this.mapWithEditorAssets(), {
@@ -5614,6 +5905,8 @@ class MapEditor {
     }
     this.renderedMap = next;
     this.scene.add(next.group);
+    next.setLightingSoloObjectId(this.lightingSoloObjectId);
+    next.setLightingHelpersVisible(this.lightingHelpersVisible);
     this.updateRoadGuideHelperVisibility();
     this.renderScene?.attach(next);
     this.applyRoomWallDisplayMode();
@@ -5658,6 +5951,11 @@ class MapEditor {
     const hoverOnly = !first && event.buttons === 0;
     if (hoverOnly) {
       const hits = this.raycast(event);
+      if (this.aimingLightTargetId) {
+        const hit = hits.find((candidate) => candidate.object.userData.editorHelper !== true);
+        this.renderer.domElement.style.cursor = hit ? 'crosshair' : 'not-allowed';
+        return;
+      }
       if (this.placingAssetId) {
         const hit = groundSurfaceHit(hits);
         this.updatePlacementPreview(hit);
@@ -5700,6 +5998,25 @@ class MapEditor {
     const hits = this.raycast(event);
     if (this.state.tool === 'select') {
       if (!first) return;
+      if (this.aimingLightTargetId) {
+        const targetObject = this.state.map.objects.find((object) => object.id === this.aimingLightTargetId);
+        const hit = hits.find((candidate) => candidate.object.userData.editorHelper !== true);
+        const asset = targetObject?.assetId ? this.state.assets.find((item) => item.id === targetObject.assetId) : undefined;
+        const light = targetObject ? resolvedMapObjectLight(targetObject, asset) : null;
+        if (targetObject && light?.kind === 'spot' && hit) {
+          targetObject.light = {
+            ...light,
+            offset: [...light.offset],
+            target: [hit.point.x, hit.point.y, hit.point.z]
+          };
+          this.aimingLightTargetId = null;
+          this.markDirty();
+          void this.refreshScene();
+          this.renderPanels();
+        }
+        event.preventDefault();
+        return;
+      }
       const hit = selectableObjectHit(hits);
       this.selectObject(hit ? findMapObjectIdFromHit(hit) : null);
       return;
@@ -6518,6 +6835,21 @@ class MapEditor {
     this.setViewName(view === 'top' ? '顶视图' : view === 'front' ? '前视图' : view === 'right' ? '右视图' : '透视视图');
   }
 
+  private setLightingReviewMode(mode: LightingReviewMode): void {
+    this.lightingReviewMode = mode;
+    if (this.scene) this.scene.overrideMaterial = mode === 'neutral-material' ? this.neutralLightingReviewMaterial : null;
+    if (this.renderer) this.renderer.domElement.style.filter = mode === 'grayscale' ? 'grayscale(1)' : '';
+    this.renderScene?.adapter.setPostProcessingBypassed(mode === 'no-post');
+    this.state.message = mode === 'final'
+      ? '已恢复最终渲染效果'
+      : mode === 'grayscale'
+        ? '灰度检查：观察明暗层级与视觉焦点'
+        : mode === 'neutral-material'
+          ? '中性材质检查：观察灯光覆盖、形体和遮蔽'
+          : '已关闭后期：检查原始灯光贡献';
+    this.updateToolbarState();
+  }
+
   private frameBox(box: THREE.Box3, direction?: THREE.Vector3): void {
     if (!this.camera || !this.orbit || box.isEmpty()) return;
     const center = box.getCenter(new THREE.Vector3());
@@ -6760,6 +7092,13 @@ class MapEditor {
       this.playMode?.isActive ? 'full' : this.roomWallDisplayMode,
       this.camera
     );
+  }
+
+  private isSelectedLightObject(): boolean {
+    const object = this.selectedObject();
+    if (!object) return false;
+    const asset = object.assetId ? this.state.assets.find((item) => item.id === object.assetId) : undefined;
+    return Boolean(resolvedMapObjectLight(object, asset));
   }
 
   private applyRenderQualityMode(): void {
@@ -7412,6 +7751,10 @@ function paletteRoleLabel(role: ColorPaletteRole): string {
     atmosphere: '天空与雾',
     effect: '特效'
   } satisfies Record<ColorPaletteRole, string>)[role];
+}
+
+function mapLightRoleLabel(role: MapObjectLight['role']): string {
+  return role === 'key' ? '主光' : role === 'fill' ? '填充光' : role === 'accent' ? '轮廓/强调光' : '灯具光';
 }
 
 function splitPaletteTokens(value?: string): string[] {
