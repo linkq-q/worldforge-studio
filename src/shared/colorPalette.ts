@@ -136,6 +136,8 @@ export function autoAssignPaletteRoles(
   colors: readonly ColorPaletteColor[]
 ): Record<ColorPaletteRole, string[]> {
   const roles = Object.fromEntries(COLOR_PALETTE_ROLES.map((role) => {
+    const count = Math.min(8, Math.max(2, Math.ceil(colors.length / 8)));
+    if (role === 'primary') return [role, balancedPaletteColors(colors.map((entry) => entry.hex), count)];
     const hint = ROLE_HINTS[role];
     const eligible = colors.filter((entry) => roleColorAllowed(role, entry.hex));
     const candidates = eligible.length >= Math.min(2, colors.length) ? eligible : colors;
@@ -155,12 +157,12 @@ export function autoAssignPaletteRoles(
 
 export function pickPaletteColor(
   palette: ColorPalette,
-  role: ColorPaletteRole | string,
+  role: ColorPaletteRole | string | null,
   key: string,
   salt = 0
 ): string {
   const normalizedRole = normalizePaletteRole(role);
-  const pool = palette.roles[normalizedRole]?.length > 0
+  const pool = normalizedRole && palette.roles[normalizedRole]?.length > 0
     ? palette.roles[normalizedRole]
     : palette.colors.map((entry) => entry.hex);
   return pool[(stableHash(`${key}:${normalizedRole}:${salt}`) % pool.length + pool.length) % pool.length];
@@ -168,16 +170,12 @@ export function pickPaletteColor(
 
 export function pickPaletteColorForSource(
   palette: ColorPalette,
-  role: ColorPaletteRole | string,
+  _role: ColorPaletteRole | string | null,
   source: string,
-  variantKey: string
+  _variantKey: string
 ): string {
-  const normalizedRole = normalizePaletteRole(role);
-  const pool = palette.roles[normalizedRole]?.length > 0
-    ? palette.roles[normalizedRole]
-    : palette.colors.map((entry) => entry.hex);
-  const ranked = [...pool].sort((a, b) => colorDistance(a, source) - colorDistance(b, source));
-  return ranked[stableHash(variantKey) % Math.min(2, ranked.length)];
+  // Authored colors outrank semantic pools; repeated application must not drift.
+  return nearestPaletteColor(palette, source);
 }
 
 export function nearestPaletteColor(
@@ -209,6 +207,7 @@ export function applyPaletteToModelJson(modelJson: unknown, paletteInput: ColorP
     explicitIntentColors: 0,
     sourceColors: 0,
     semanticFallbacks: 0,
+    roleCounts: {} as Record<string, number>,
     usedColors: [] as string[]
   };
   const roots = [output.nodes, output.meshes, output.parts].flatMap((value) => Array.isArray(value) ? value : []);
@@ -248,7 +247,7 @@ export function applyPaletteToModelJson(modelJson: unknown, paletteInput: ColorP
     }
     return hex;
   };
-  const applyNode = (value: unknown, index: number, inheritedRole?: ColorPaletteRole, inheritedIntent?: string): void => {
+  const applyNode = (value: unknown, index: number, inheritedRole?: ColorPaletteRole | null): void => {
     if (!isRecord(value) || visited.has(value)) return;
     visited.add(value);
     const semantic = [value.id, value.name, value.label, value.description, value.tags]
@@ -258,15 +257,16 @@ export function applyPaletteToModelJson(modelJson: unknown, paletteInput: ColorP
     const role = typeof roleValue === 'string'
       ? normalizePaletteRole(roleValue)
       : inheritedRole ?? inferPaletteRole(semantic);
-    const intentValue = inheritedTag(value, 'palette-color');
+    const intentValue = tagValue(value, 'palette-color');
     const intent = (typeof intentValue === 'string' ? normalizeHex(intentValue) : null)
-      ?? inferPaletteColorIntent(semantic)
-      ?? inheritedIntent;
+      ?? inferPaletteColorIntent(semantic);
     const targetFor = (source: unknown, key: string): string => {
+      const bucket = role ?? 'unclassified';
+      report.roleCounts[bucket] = (report.roleCounts[bucket] ?? 0) + 1;
       const explicit = intent ?? null;
       if (explicit) { report.explicitIntentColors += 1; return nearestPaletteColor(palette, explicit); }
       const sourceValue = sourceHex(source);
-      if (sourceValue) { report.sourceColors += 1; return nearestPaletteColor(palette, sourceValue, role); }
+      if (sourceValue) { report.sourceColors += 1; return nearestPaletteColor(palette, sourceValue); }
       report.semanticFallbacks += 1;
       return pickPaletteColor(palette, role, `${String(value.id ?? value.name ?? 'part')}:${index}:${key}`);
     };
@@ -293,7 +293,7 @@ export function applyPaletteToModelJson(modelJson: unknown, paletteInput: ColorP
     for (const collection of [value.shapes, value.voxels, value.boxes]) {
       if (Array.isArray(collection)) collection.filter(isRecord).forEach((item, itemIndex) => setColor(item, 'color', `item:${itemIndex}`));
     }
-    if (Array.isArray(value.children)) value.children.forEach((child, childIndex) => applyNode(child, childIndex, role, intent ?? undefined));
+    if (Array.isArray(value.children)) value.children.forEach((child, childIndex) => applyNode(child, childIndex, role));
   };
   roots.forEach((node, index) => applyNode(node, index));
   report.usedColors = [...used].sort();
@@ -309,8 +309,8 @@ export function paletteGenerationBrief(palette: ColorPalette, semanticText = '')
   const roles = generationPaletteRoles(semanticText);
   const pools = roles.map((role) => `${role}=${sampleRoleColors(palette.roles[role], 3).join('|')}`).join('; ');
   return [
-    `Palette intent for this asset only (${palette.name}): ${pools}.`,
-    `Tag visible parts with the matching palette role (${roles.join('|')}); preserve glass, metal, water, transparency and emission properties.`
+    'palette: explicit part color > authored color > role fallback. Snap to nearest swatch. palette-color is local only, never inherited. Unknown parts have no role. Preserve material physics.',
+    `Fallback pools: ${pools}.`
   ].join('\n').slice(0, 390);
 }
 
@@ -338,13 +338,13 @@ function sampleRoleColors(colors: readonly string[], limit: number): string[] {
   return [...new Set([colors[0], colors[Math.floor(colors.length / 2)], colors[colors.length - 1]])].slice(0, limit);
 }
 
-export function inferPaletteRole(text: string, building = false): ColorPaletteRole {
+export function inferPaletteRole(text: string): ColorPaletteRole | null {
   const normalized = text.toLowerCase();
   const ordered: ColorPaletteRole[] = ['plant', 'earth', 'water', 'atmosphere', 'effect', 'accent', 'secondary', 'primary'];
   for (const role of ordered) {
     if (ROLE_HINTS[role].pattern.test(normalized) || normalized.includes(role)) return role;
   }
-  return building ? 'primary' : 'secondary';
+  return null;
 }
 
 function normalizeColors(value: unknown): ColorPaletteColor[] {
@@ -409,14 +409,28 @@ function colorDistance(a: string, b: string): number {
 }
 
 function roleColorAllowed(role: ColorPaletteRole, hex: string): boolean {
-  if (role !== 'primary' && role !== 'earth') return true;
+  if (role !== 'earth') return true;
   return hsl(rgb(hex))[2] >= 0.6;
 }
 
-export function normalizePaletteRole(value: string): ColorPaletteRole {
+export function normalizePaletteRole(value: string | null): ColorPaletteRole | null {
+  if (!value) return null;
   return COLOR_PALETTE_ROLES.includes(value as ColorPaletteRole)
     ? value as ColorPaletteRole
-    : LEGACY_ROLE_MAP[value] ?? 'primary';
+    : LEGACY_ROLE_MAP[value] ?? null;
+}
+
+function balancedPaletteColors(colors: string[], count: number): string[] {
+  if (colors.length <= count) return [...colors];
+  const ordered = [...colors].sort((a, b) => hsl(rgb(a))[2] - hsl(rgb(b))[2] || a.localeCompare(b));
+  const selected = [...new Set([ordered[0], ordered[ordered.length - 1]])];
+  while (selected.length < Math.min(count, colors.length)) {
+    const remaining = ordered.filter((hex) => !selected.includes(hex));
+    remaining.sort((a, b) => Math.min(...selected.map((hex) => colorDistance(b, hex)))
+      - Math.min(...selected.map((hex) => colorDistance(a, hex))));
+    selected.push(remaining[0]);
+  }
+  return selected;
 }
 
 function rgb(hex: string): [number, number, number] {

@@ -4,6 +4,7 @@ import {
   autoAssignPaletteRoles,
   createColorPalette,
   inferPaletteLevel,
+  inferPaletteRole,
   normalizeColorPalette,
   paletteGenerationBrief,
   parseHexPalette,
@@ -13,6 +14,34 @@ import { paletteEnvironment } from '../src/client/colorPaletteRuntime';
 import { BUILTIN_RENDER_SCHEMES } from '../src/shared/renderScheme';
 
 describe('color palettes', () => {
+  it('does not spread a parent color intent or restrict authored colors to the primary pool', () => {
+    const palette = createColorPalette({
+      colors: ['#FFFFFF', '#164A8A', '#F06B3E'],
+      roles: { primary: ['#FFFFFF'] }
+    });
+    const source = { nodes: [
+      { id: 'group', tags: [{ tag: 'palette-color', value: '#FFFFFF' }, { tag: 'palette', value: 'primary' }],
+        children: [{ id: 'm0', color: '#164A8A' }] },
+      { id: 'm1', parent: 'group', color: '#F06B3E' },
+      { id: 'm2', color: '#164A8A' }
+    ] };
+    const result = applyPaletteToModelJson(source, palette) as any;
+    expect(result.nodes[0].children[0].color).toBe('#164A8A');
+    expect(result.nodes[1].color).toBe('#F06B3E');
+    expect(result.nodes[2].color).toBe('#164A8A');
+    expect(result._meta.colorPaletteReport.roleCounts).toMatchObject({ primary: 2, unclassified: 1 });
+    expect(result._meta.colorPaletteReport.explicitIntentColors).toBe(0);
+    expect(inferPaletteRole('m2')).toBeNull();
+    expect(applyPaletteToModelJson(result, palette)).toEqual(result);
+  });
+
+  it('balances automatic primary colors across dark, light and chromatic swatches', () => {
+    const colors = parseHexPalette('#FFFFFF #FFFDF6 #FEF9EA #FDF2D7 #E9DABD #F8E8CF #F1D7B2 #E7C393 #164A8A #F06B3E #49A050 #111111 #808080 #22B8CF #7C3AED #EC4899 #F6E24B');
+    const roles = autoAssignPaletteRoles(colors);
+    expect(roles.primary.some((hex) => hslLightness(hex) < 0.6)).toBe(true);
+    expect(roles.primary.some((hex) => hslLightness(hex) > 0.8)).toBe(true);
+    expect(roles.primary).toEqual(autoAssignPaletteRoles(colors).primary);
+  });
   it('preserves structured swatches and assigns semantic roles', () => {
     const palette = createColorPalette({
       name: '曼德鸭 65 色',
@@ -128,10 +157,8 @@ describe('color palettes', () => {
       #D4C2A5 #B89269 #8E664D #714D48 #52362E
     `);
     const roles = autoAssignPaletteRoles(colors);
-    expect(roles.primary).not.toContain('#AEAF6F');
     expect(roles.secondary).not.toContain('#76904C');
     expect(roles.secondary).not.toContain('#5F6F48');
-    expect(roles.primary.every((hex) => hslLightness(hex) >= 0.6)).toBe(true);
     expect(roles.earth.every((hex) => hslLightness(hex) >= 0.6)).toBe(true);
   });
 });

@@ -60,7 +60,7 @@ import {
   type ProjectExportPlan
 } from './projectExport';
 import type { ProjectExportProfile } from '../shared/projectExport';
-import { applyPaletteToModelJson, paletteGenerationBrief, type ColorPalette } from '../shared/colorPalette';
+import { applyPaletteToModelJson, type ColorPalette } from '../shared/colorPalette';
 import { worldCapabilitySummary } from '../shared/worldCapabilities';
 import { WorldAgentRunManager } from './worldAgentRuns';
 
@@ -569,9 +569,7 @@ async function handleEditorMaps(req: Req, res: Res, store: MapStore, parts: stri
           : Promise.resolve([]),
         body.paletteId ? store.loadColorPalette(body.paletteId) : Promise.resolve(null)
       ]);
-      const directedPrompt = colorPalette
-        ? `${prompt}\n\n${paletteGenerationBrief(colorPalette, prompt)}`
-        : prompt;
+      const directedPrompt = prompt;
       if (parts[4] === 'generate' && !isCompositionEmptyMap(map)) {
         throw new HttpError(409, 'map_composition_requires_empty_map');
       }
@@ -660,9 +658,7 @@ async function handleEditorMaps(req: Req, res: Res, store: MapStore, parts: stri
           onPlanPreview,
           onAssetReady,
           createAsset: async (request, report) => {
-            const generationPrompt = colorPalette
-              ? `${request.prompt}\n${paletteGenerationBrief(colorPalette, `${request.name} ${request.prompt} ${request.tags.join(' ')}`)}`
-              : request.prompt;
+            const generationPrompt = request.prompt;
             const retryOptions = {
               attempts: 3,
               signal: controller.signal,
@@ -859,8 +855,7 @@ async function handleEditorAssets(req: Req, res: Res, store: MapStore, parts: st
     if (!prompt) throw new HttpError(400, 'missing_prompt');
     const mode = normalizeModelGenerationMode(body.mode);
     const colorPalette = body.paletteId ? await store.loadColorPalette(body.paletteId) : null;
-    const directedPrompt = colorPalette ? `${prompt}\n\n${paletteGenerationBrief(colorPalette, prompt)}` : prompt;
-    const generatedModelJson = await generateModel(directedPrompt, { mode });
+    const generatedModelJson = await generateModel(prompt, { mode });
     const modelJson = colorPalette
       ? applyPaletteToModelJson(generatedModelJson, colorPalette)
       : generatedModelJson;

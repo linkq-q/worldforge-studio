@@ -2,12 +2,13 @@ import * as THREE from 'three';
 import {
   pickPaletteColor,
   pickPaletteColorForSource,
+  normalizePaletteRole,
   type ColorPalette,
   type ColorPaletteRole
 } from '../shared/colorPalette';
 
 export interface PalettePartResolution {
-  role: ColorPaletteRole | string;
+  role: ColorPaletteRole | string | null;
   variantKey: string;
   assetId?: string;
   assetTags?: string[];
@@ -21,6 +22,7 @@ export interface PaletteCoverageReport {
   technicalMaterials: number;
   unmatchedMaterials: number;
   usedColors: string[];
+  roleCounts: Record<string, number>;
 }
 
 interface RuntimeIndexLike {
@@ -37,7 +39,8 @@ const EMPTY_REPORT: PaletteCoverageReport = {
   approximateMaterials: 0,
   technicalMaterials: 0,
   unmatchedMaterials: 0,
-  usedColors: []
+  usedColors: [],
+  roleCounts: {}
 };
 
 export class PaletteMaterialRuntime {
@@ -51,7 +54,7 @@ export class PaletteMaterialRuntime {
 
   apply(palette: ColorPalette): PaletteCoverageReport {
     this.clear();
-    const report: PaletteCoverageReport = { ...EMPTY_REPORT, usedColors: [] };
+    const report: PaletteCoverageReport = { ...EMPTY_REPORT, usedColors: [], roleCounts: {} };
     const usedColors = new Set<string>();
     const handledMaterials = new Set<THREE.Material>();
     for (const partId of this.runtimeIndex.partToRender.keys()) {
@@ -70,6 +73,7 @@ export class PaletteMaterialRuntime {
         continue;
       }
       const ref = this.runtimeIndex.getRenderRef(partId);
+      const role = normalizePaletteRole(resolution.role) ?? 'unclassified';
       const target = resolution.sourceColor
         ? pickPaletteColorForSource(palette, resolution.role, resolution.sourceColor, resolution.variantKey)
         : pickPaletteColor(palette, resolution.role, resolution.variantKey);
@@ -89,6 +93,7 @@ export class PaletteMaterialRuntime {
           if (instanced.instanceColor) instanced.instanceColor.needsUpdate = true;
         });
         report.strictMaterials += 1;
+        report.roleCounts[role] = (report.roleCounts[role] ?? 0) + 1;
         usedColors.add(target);
         continue;
       }
@@ -108,21 +113,22 @@ export class PaletteMaterialRuntime {
         this.restores.push(() => material.color.copy(previous));
         if (material.map) report.approximateMaterials += 1;
         else report.strictMaterials += 1;
+        report.roleCounts[role] = (report.roleCounts[role] ?? 0) + 1;
         usedColors.add(target);
       }
     }
     report.usedColors = [...usedColors].sort();
     this.currentReport = report;
-    return { ...report, usedColors: [...report.usedColors] };
+    return this.report();
   }
 
   clear(): void {
     for (let index = this.restores.length - 1; index >= 0; index -= 1) this.restores[index]();
     this.restores = [];
-    this.currentReport = { ...EMPTY_REPORT, usedColors: [] };
+    this.currentReport = { ...EMPTY_REPORT, usedColors: [], roleCounts: {} };
   }
 
   report(): PaletteCoverageReport {
-    return { ...this.currentReport, usedColors: [...this.currentReport.usedColors] };
+    return { ...this.currentReport, usedColors: [...this.currentReport.usedColors], roleCounts: { ...this.currentReport.roleCounts } };
   }
 }

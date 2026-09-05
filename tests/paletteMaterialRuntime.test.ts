@@ -5,6 +5,29 @@ import { createColorPalette } from '../src/shared/colorPalette';
 import { PaletteMaterialRuntime } from '../src/client/paletteMaterialRuntime';
 
 describe('PaletteMaterialRuntime', () => {
+  it('keeps blue and orange source colors despite a white-only primary role and reports unclassified parts', () => {
+    const mesh = new THREE.InstancedMesh(new THREE.BoxGeometry(), new THREE.MeshStandardMaterial(), 2);
+    const index = new RuntimeIndex();
+    index.registerInstancedBatch('parts', mesh, ['house:m0', 'house:m1']);
+    const palette = createColorPalette({ colors: ['#FFFFFF', '#164A8A', '#F06B3E'], roles: { primary: ['#FFFFFF'] } });
+    const runtime = new PaletteMaterialRuntime(index, (id) => ({
+      role: id.endsWith('m0') ? 'primary' : null,
+      sourceColor: id.endsWith('m0') ? '#164A8A' : '#F06B3E',
+      variantKey: id
+    }));
+    const report = runtime.apply(palette);
+    const color = new THREE.Color();
+    mesh.getColorAt(0, color);
+    expect(color.getHexString()).toBe('164a8a');
+    mesh.getColorAt(1, color);
+    expect(color.getHexString()).toBe('f06b3e');
+    expect(report.roleCounts).toMatchObject({ primary: 1, unclassified: 1 });
+    report.roleCounts.primary = 99;
+    expect(runtime.report().roleCounts.primary).toBe(1);
+    runtime.clear();
+    expect(runtime.report().roleCounts).toEqual({});
+  });
+
   it('recolors repeated instanced parts deterministically and restores authored colors', () => {
     const mesh = new THREE.InstancedMesh(
       new THREE.BoxGeometry(1, 1, 1),

@@ -6,6 +6,7 @@ import {
   terrainNormalPixelsFromHeight
 } from '../src/client/mapRenderer';
 import { createEmptyMap } from '../src/shared/map';
+import { createColorPalette } from '../src/shared/colorPalette';
 import { applyMapOperations } from '../src/shared/mapOperations';
 import type { MapAsset } from '../src/shared/map';
 import { createGrassLayer, fillGrassLayerInPlace } from '../src/shared/mapGrass';
@@ -27,6 +28,30 @@ afterEach(() => {
 });
 
 describe('terrain normal generation', () => {
+  it('classifies building parts locally and preserves their palette colors through the renderer', async () => {
+    const map = createEmptyMap('palette regression');
+    const asset: MapAsset = {
+      id: 'asset-house', name: 'white building with grass roof', prompt: '白色主体建筑，绿色草屋顶',
+      modelJson: { nodes: [
+        { id: 'm0', mesh: { type: 'box', params: { width: 1, height: 1, depth: 1 }, color: '#164A8A' } },
+        { id: 'm1', name: '橙色遮阳棚', position: [2, 0, 0], mesh: { type: 'box', params: { width: 1, height: 1, depth: 1 }, color: '#FFFFFF' } }
+      ] },
+      colliderPlan: { version: 1, boxes: [], sourceMeshCount: 2, candidateCount: 0, fallbackUsed: false },
+      mode: 'test', createdAt: 1, updatedAt: 1
+    };
+    map.assets = [asset];
+    map.objects = [createTestObject('house-a', asset.id)];
+    const rendered = await buildEditableMapGroup(map);
+    try {
+      const palette = createColorPalette({ colors: ['#FFFFFF', '#164A8A', '#F06B3E'], roles: { primary: ['#FFFFFF'], plant: ['#FFFFFF'] } });
+      const report = rendered.setColorPalette(palette);
+      expect(report.roleCounts).toEqual({ unclassified: 2 });
+      expect(report.usedColors).toEqual(['#164A8A', '#F06B3E']);
+    } finally {
+      rendered.dispose();
+    }
+  });
+
   it('converts height changes into a non-flat tangent-space normal', () => {
     const heightPixels = new Uint8ClampedArray(3 * 3 * 4);
     for (let y = 0; y < 3; y += 1) {

@@ -107,7 +107,7 @@ export async function buildModelGroupWithNodes(modelJson: unknown): Promise<Buil
     object.position.set(pos[0], pos[1], pos[2]);
     if (transform.quat) object.quaternion.set(transform.quat[0], transform.quat[1], transform.quat[2], transform.quat[3]);
     if (transform.scale && transform.scale.every((value) => value > 0)) {
-      object.scale.set(transform.scale[0], transform.scale[1], transform.scale[2]);
+      object.scale.fromArray(safeModelScale(transform.scale));
     }
     objects.set(node.id, object);
   }
@@ -150,6 +150,12 @@ export async function buildModelGroupWithNodes(modelJson: unknown): Promise<Buil
   group.userData.materialTagSource = data;
   enableObjectShadows(group);
   return { group, objects, runtime, motionLookups };
+}
+
+export function safeModelScale(scale: [number, number, number]): [number, number, number] {
+  const [sx, sy, sz] = scale;
+  // Generated creatures frequently contain an accidental near-zero Y scale.
+  return [sx, sy < Math.min(sx, sz) * 0.5 ? Math.min(sx, sz) : sy, sz];
 }
 
 function safeBuildGeometry(runtime: ModelRuntime, type: string, params: Record<string, unknown>): THREE.BufferGeometry {

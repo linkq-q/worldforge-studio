@@ -3,6 +3,15 @@ import { describe, expect, it } from 'vitest';
 import { buildModelGroup, setRevealHighlight } from '../src/client/modelRenderer';
 
 describe('reveal model highlight', () => {
+  it('repairs destructive generated Y scales without changing ordinary proportions', async () => {
+    const group = await buildModelGroup({ nodes: [
+      { id: 'cow', transform: { scale: [1, 0.2, 1] }, mesh: { type: 'box' } },
+      { id: 'awning', transform: { pos: [2, 0, 0], scale: [1, 0.7, 1] }, mesh: { type: 'box' } }
+    ] });
+    expect(group.getObjectByName('cow')?.scale.toArray()).toEqual([1, 1, 1]);
+    expect(group.getObjectByName('awning')?.scale.toArray()).toEqual([1, 0.7, 1]);
+  });
+
   it('keeps legacy dark foliage readable while preserving non-foliage source colors', async () => {
     const group = await buildModelGroup({ nodes: [
       { id: 'crown', tags: [{ tag: 'foliage', value: 'leaf' }] },

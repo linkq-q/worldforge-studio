@@ -58,7 +58,7 @@ import {
   type ProceduralRug,
   type SurfaceFinishRecipe
 } from '../shared/interiorArtDirection';
-import { inferPaletteRole, type ColorPalette } from '../shared/colorPalette';
+import { inferPaletteColorIntent, inferPaletteRole, nearestPaletteColor, normalizePaletteRole, type ColorPalette } from '../shared/colorPalette';
 import { paletteTerrainColors } from './colorPaletteRuntime';
 import { PaletteMaterialRuntime, type PaletteCoverageReport } from './paletteMaterialRuntime';
 import { resolveMapModelZFighting } from './modelZFighting';
@@ -295,6 +295,7 @@ export async function buildEditableMapGroup(input: EditableMap, options: MapRend
       const report = palette ? paletteMaterials.apply(palette) : (paletteMaterials.clear(), paletteMaterials.report());
       const material = terrain.material as THREE.MeshStandardMaterial;
       replaceTerrainTextures(material, currentMap, terrainMaterialStyle, palette ?? undefined);
+      if (roomShell) applyRoomShellPalette(roomShell, currentMap, palette);
       applyTerrainGrassTint(terrain, grassMap, grassStyle, terrainPalette);
       return report;
     },
@@ -1205,6 +1206,23 @@ function deriveAssetTags(asset: MapAsset): string[] {
   return [...tags].slice(0, 24);
 }
 
+function applyRoomShellPalette(roomShell: RoomShellRender, map: EditableMap, palette: ColorPalette | null): void {
+  for (const [surface, group] of roomShell.surfaceGroups) {
+    group.traverse((child) => {
+      const mesh = child as THREE.Mesh;
+      if (!mesh.isMesh) return;
+      const material = mesh.material as THREE.MeshStandardMaterial | THREE.MeshPhysicalMaterial;
+      if (!material) return;
+      if (material.map) material.map.dispose();
+      material.map = palette ? createSurfaceTexture(map, surface, undefined, DEFAULT_RUNTIME_TERRAIN_MATERIAL_STYLE, palette) : null;
+      if ('color' in material) material.color.set(palette
+        ? nearestPaletteColor(palette, map.box.colors[surface], surface === 'floor' ? 'earth' : 'primary')
+        : map.box.colors[surface]);
+      material.needsUpdate = true;
+    });
+  }
+}
+
 function buildMapLightEditorHelpers(
   map: EditableMap,
   assets: ReadonlyMap<string, MapAsset>,
@@ -1616,7 +1634,6 @@ function createPalettePartResolver(
   const objectContexts = new Map<string, {
     asset: MapAsset;
     assetTags: string[];
-    building: boolean;
     variantKey: string;
     nodeText: Map<string, { text: string; sourceColor?: string }>;
   }>();
@@ -1631,13 +1648,11 @@ function createPalettePartResolver(
     const asset = assets.get(assetId);
     if (!asset) continue;
     const assetTags = deriveAssetTags(asset);
-    const building = assetTags.includes('building');
     const nodeText = paletteNodeText(asset.modelJson);
     const variantCount = Math.min(4, Math.max(2, objects.length));
     objects.forEach((object, index) => objectContexts.set(object.id, {
       asset,
       assetTags,
-      building,
       variantKey: `${asset.id}:v${index % variantCount}`,
       nodeText
     }));
@@ -1651,13 +1666,10 @@ function createPalettePartResolver(
     const node = context.nodeText.get(nodeId);
     const text = [
       nodeId,
-      node?.text,
-      context.asset.name,
-      context.asset.prompt,
-      context.assetTags.join(' ')
+      node?.text
     ].filter(Boolean).join(' ');
     return {
-      role: inferPaletteRole(text, context.building),
+      role: inferPaletteRole(text),
       variantKey: context.variantKey,
       sourceColor: node?.sourceColor,
       assetId: context.asset.id,
@@ -1672,7 +1684,7 @@ function paletteNodeText(modelJson: unknown): Map<string, { text: string; source
   if (!Array.isArray(nodes)) return new Map();
   return new Map(nodes.flatMap((entry) => {
     if (!entry || typeof entry !== 'object') return [];
-    const node = entry as { id?: unknown; tags?: unknown; color?: unknown; mesh?: { color?: unknown; material?: { color?: unknown } } };
+    const node = entry as { id?: unknown; name?: unknown; label?: unknown; description?: unknown; tags?: unknown; color?: unknown; mesh?: { color?: unknown; material?: { color?: unknown } } };
     if (typeof node.id !== 'string') return [];
     const tags = Array.isArray(node.tags) ? node.tags.map((tag) => {
       if (typeof tag === 'string') return tag;
@@ -1680,9 +1692,12 @@ function paletteNodeText(modelJson: unknown): Map<string, { text: string; source
       const item = tag as { tag?: unknown; value?: unknown };
       return `${String(item.tag ?? '')} ${String(item.value ?? '')}`;
     }).join(' ') : '';
+    const semantic = [node.id, node.name, node.label, node.description, tags].filter(Boolean).join(' ');
+    const roleTag = Array.isArray(node.tags) ? node.tags.find((tag) => tag?.tag === 'palette') : null;
     return [[node.id, {
-      text: `${node.id} ${tags}`,
+      text: normalizePaletteRole(typeof roleTag?.value === 'string' ? roleTag.value : null) ?? semantic,
       sourceColor: paletteTagColor(node.tags)
+        ?? inferPaletteColorIntent(semantic)
         ?? paletteSourceHex(node.mesh?.material?.color)
         ?? paletteSourceHex(node.mesh?.color)
         ?? paletteSourceHex(node.color)

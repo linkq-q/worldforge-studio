@@ -12,7 +12,7 @@ import materialTagVocabulary from '@voxel-studio/render-runtime/model/material-t
 import type { MapAsset } from '../shared/map';
 import { enforceReadableFoliageColors } from '../shared/modelColorPolicy';
 import { filterMaterialTags, type MapMaterialTagPolicy } from '../shared/materialTagPolicy';
-import { buildModelGroup } from './modelRenderer';
+import { buildModelGroup, safeModelScale } from './modelRenderer';
 import { MapObjectCulling, type MapObjectCullingStats } from './mapObjectCulling';
 import { requiresRuntimeStandaloneMaterialTag } from './mapMaterialTagBatchPolicy';
 import { WorldForgeMaterialTagRuntime } from './materialTagRuntimeAdapter';
@@ -309,7 +309,7 @@ function readNodes(modelJson: unknown): ModelNode[] {
 function toBatchPart(node: ModelNode, materialTagPolicy: MapMaterialTagPolicy): BatchPart {
   const position = node.transform?.pos ?? [0, 0, 0];
   const quaternion = node.transform?.quat ?? [0, 0, 0, 1];
-  const scale = node.transform?.scale ?? [1, 1, 1];
+  const scale = safeModelScale(node.transform?.scale ?? [1, 1, 1]);
   const material = { ...(node.mesh?.material ?? {}) };
   if (material.color === undefined && node.mesh?.color !== undefined) material.color = node.mesh.color;
   return {

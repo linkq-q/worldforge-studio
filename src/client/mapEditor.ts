@@ -1515,9 +1515,9 @@ class MapEditor {
         </label>
         <div class="map-ai-options">
           <label class="field compact">
-            <span>生成色卡（可选）</span>
+            <span>生成后吸附色卡（可选）</span>
             <select id="map-ai-color-palette" ${this.state.busy ? 'disabled' : ''}>
-              <option value="">不限制生成颜色</option>
+              <option value="">不套用色卡</option>
               ${this.state.colorPalettes.map((palette) => `<option value="${escapeHtml(palette.id)}" ${palette.id === this.selectedPaletteId ? 'selected' : ''}>${escapeHtml(palette.name)} · ${palette.colors.length} 色</option>`).join('')}
             </select>
           </label>
@@ -4121,9 +4121,9 @@ class MapEditor {
         <summary><span><b>资产</b><small>${selectedAsset ? escapeHtml(`${selectedAsset.name} · ${selectedAsset.mode.toUpperCase()}`) : `${availableAssets.length} 个可用`}</small></span></summary>
         <section class="editor-section inspector-body asset-tools">
         <textarea id="asset-prompt" placeholder="例如：一座低多边形林间小木屋"></textarea>
-        <label class="field compact"><span>生成色卡（可选）</span>
+        <label class="field compact"><span>生成后吸附色卡（可选）</span>
           <select id="asset-color-palette">
-            <option value="">不限制生成颜色</option>
+            <option value="">不套用色卡</option>
             ${this.state.colorPalettes.map((palette) => `<option value="${escapeHtml(palette.id)}" ${palette.id === this.selectedPaletteId ? 'selected' : ''}>${escapeHtml(palette.name)} · ${palette.colors.length} 色</option>`).join('')}
           </select>
         </label>
@@ -4648,6 +4648,7 @@ class MapEditor {
             </details>
             <div class="map-ai-controls"><button id="apply-color-palette" ${this.paletteDraftChanged ? 'disabled title="请先另存色卡版本"' : ''}>套用到当前渲染方案</button><button id="clear-color-palette" class="secondary">移除当前方案色卡</button></div>
             ${coverage ? `<p class="empty">覆盖报告：严格 ${coverage.strictMaterials} · 近似贴图 ${coverage.approximateMaterials} · 技术材质 ${coverage.technicalMaterials} · 未匹配 ${coverage.unmatchedMaterials} · 使用 ${coverage.usedColors.length} 色</p>` : ''}
+            ${coverage ? `<p class="empty">部件分类：${COLOR_PALETTE_ROLES.map((role) => `${paletteRoleLabel(role)} ${coverage.roleCounts[role] ?? 0}`).join(' · ')} · 未分类 ${coverage.roleCounts.unclassified ?? 0}</p>` : ''}
           ` : '<p class="empty">暂无可复用色卡。可从 HEX 文本或图片创建。</p>'}
           <details class="inspector-disclosure compact">
             <summary><span><b>导入新色卡</b><small>2–256 色</small></span></summary>
