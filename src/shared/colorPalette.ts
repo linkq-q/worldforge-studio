@@ -187,7 +187,31 @@ export function nearestPaletteColor(
   const pool = normalizedRole && palette.roles[normalizedRole]?.length > 0
     ? palette.roles[normalizedRole]
     : palette.colors.map((entry) => entry.hex);
-  return [...pool].sort((a, b) => colorDistance(a, source) - colorDistance(b, source))[0];
+  return createPaletteColorMatcher(pool)(source);
+}
+
+/** Shared by model materials and procedural surface pixels. No semantic overrides. */
+export function createPaletteColorMatcher(colors: readonly string[]): (source: string) => string {
+  const candidates = colors.map((hex) => ({ hex, point: paletteColorPoint(hex) }));
+  return (source) => {
+    const point = paletteColorPoint(source);
+    let best = candidates[0];
+    let bestDistance = Infinity;
+    for (const candidate of candidates) {
+      const distance = candidate.point.reduce((sum, value, index) => sum + (value - point[index]) ** 2, 0);
+      if (distance < bestDistance) { best = candidate; bestDistance = distance; }
+    }
+    return best.hex;
+  };
+}
+
+function paletteColorPoint(hex: string): [number, number, number] {
+  const [hue, saturation, lightness] = hsl(rgb(hex));
+  const chroma = (1 - Math.abs(2 * lightness - 1)) * saturation;
+  const angle = hue * Math.PI / 180;
+  // Normalized cylindrical HSL: 4*dL² + dC² + 2*C1*C2*(1-cos(dH)).
+  // Hue vanishes near black/white/gray instead of overpowering lightness.
+  return [2 * lightness, chroma * Math.cos(angle), chroma * Math.sin(angle)];
 }
 
 /** Resolve an explicit color word from user/model semantic text before role fallback. */
@@ -257,14 +281,9 @@ export function applyPaletteToModelJson(modelJson: unknown, paletteInput: ColorP
     const role = typeof roleValue === 'string'
       ? normalizePaletteRole(roleValue)
       : inheritedRole ?? inferPaletteRole(semantic);
-    const intentValue = tagValue(value, 'palette-color');
-    const intent = (typeof intentValue === 'string' ? normalizeHex(intentValue) : null)
-      ?? inferPaletteColorIntent(semantic);
     const targetFor = (source: unknown, key: string): string => {
       const bucket = role ?? 'unclassified';
       report.roleCounts[bucket] = (report.roleCounts[bucket] ?? 0) + 1;
-      const explicit = intent ?? null;
-      if (explicit) { report.explicitIntentColors += 1; return nearestPaletteColor(palette, explicit); }
       const sourceValue = sourceHex(source);
       if (sourceValue) { report.sourceColors += 1; return nearestPaletteColor(palette, sourceValue); }
       report.semanticFallbacks += 1;

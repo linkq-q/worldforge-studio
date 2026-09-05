@@ -6,6 +6,7 @@ import {
   inferPaletteLevel,
   inferPaletteRole,
   normalizeColorPalette,
+  nearestPaletteColor,
   paletteGenerationBrief,
   parseHexPalette,
   pickPaletteColor
@@ -14,6 +15,16 @@ import { paletteEnvironment } from '../src/client/colorPaletteRuntime';
 import { BUILTIN_RENDER_SCHEMES } from '../src/shared/renderScheme';
 
 describe('color palettes', () => {
+  it('balances darkness and chroma instead of promoting dark cool colors to bright cyan', () => {
+    const palette = createColorPalette({ colors: ['#52362E', '#4BAFCA', '#499D92', '#FFFDF6'] });
+    for (const source of ['#101820', '#102030', '#25202D', '#001010']) {
+      expect(nearestPaletteColor(palette, source)).toBe('#52362E');
+    }
+    for (const { hex } of palette.colors) expect(nearestPaletteColor(palette, hex)).toBe(hex);
+    const choices = createColorPalette({ colors: ['#302020', '#203030', '#E08020', '#2080E0'] });
+    expect(nearestPaletteColor(choices, '#182828')).toBe('#203030');
+    expect(nearestPaletteColor(choices, '#D07828')).toBe('#E08020');
+  });
   it('does not spread a parent color intent or restrict authored colors to the primary pool', () => {
     const palette = createColorPalette({
       colors: ['#FFFFFF', '#164A8A', '#F06B3E'],
@@ -122,7 +133,7 @@ describe('color palettes', () => {
     expect(palette.roles.atmosphere).toEqual(['#274C77']);
   });
 
-  it('snaps explicit color intent before source color and semantic fallback', () => {
+  it('snaps actual material colors without stale color tags or names overriding them', () => {
     const palette = createColorPalette({
       colors: ['#183B66', '#F7F7F2', '#C56A22', '#6B4A2E'],
       roles: {
@@ -140,10 +151,10 @@ describe('color palettes', () => {
     }, palette);
     const nodes = result.nodes as Array<Record<string, any>>;
 
-    expect(nodes[0].mesh.material.color).toBe('#183B66');
-    expect(nodes[1].color).toBe('#F7F7F2');
-    expect(nodes[2].color).toBe('#C56A22');
-    expect((result._meta as any).colorPaletteReport.explicitIntentColors).toBe(3);
+    expect(nodes[0].mesh.material.color).toBe('#6B4A2E');
+    expect(nodes[1].color).toBe('#6B4A2E');
+    expect(nodes[2].color).toBe('#6B4A2E');
+    expect((result._meta as any).colorPaletteReport.explicitIntentColors).toBe(0);
   });
 
   it('keeps warm architectural roles out of nearby green families', () => {

@@ -58,7 +58,7 @@ import {
   type ProceduralRug,
   type SurfaceFinishRecipe
 } from '../shared/interiorArtDirection';
-import { inferPaletteColorIntent, inferPaletteRole, nearestPaletteColor, normalizePaletteRole, type ColorPalette } from '../shared/colorPalette';
+import { createPaletteColorMatcher, inferPaletteRole, normalizePaletteRole, type ColorPalette } from '../shared/colorPalette';
 import { paletteTerrainColors } from './colorPaletteRuntime';
 import { PaletteMaterialRuntime, type PaletteCoverageReport } from './paletteMaterialRuntime';
 import { resolveMapModelZFighting } from './modelZFighting';
@@ -1213,11 +1213,15 @@ function applyRoomShellPalette(roomShell: RoomShellRender, map: EditableMap, pal
       if (!mesh.isMesh) return;
       const material = mesh.material as THREE.MeshStandardMaterial | THREE.MeshPhysicalMaterial;
       if (!material) return;
-      if (material.map) material.map.dispose();
-      material.map = palette ? createSurfaceTexture(map, surface, undefined, DEFAULT_RUNTIME_TERRAIN_MATERIAL_STYLE, palette) : null;
-      if ('color' in material) material.color.set(palette
-        ? nearestPaletteColor(palette, map.box.colors[surface], surface === 'floor' ? 'earth' : 'primary')
-        : map.box.colors[surface]);
+      const previous = material.map;
+      material.map = createSurfaceTexture(map, surface, undefined, DEFAULT_RUNTIME_TERRAIN_MATERIAL_STYLE, palette ?? undefined);
+      if (previous) {
+        material.map.repeat.copy(previous.repeat);
+        material.map.offset.copy(previous.offset);
+        previous.dispose();
+      }
+      // The texture already contains palette colors; tinting it again changes them.
+      material.color.set(palette ? '#FFFFFF' : map.box.colors[surface]);
       material.needsUpdate = true;
     });
   }
@@ -1696,9 +1700,7 @@ function paletteNodeText(modelJson: unknown): Map<string, { text: string; source
     const roleTag = Array.isArray(node.tags) ? node.tags.find((tag) => tag?.tag === 'palette') : null;
     return [[node.id, {
       text: normalizePaletteRole(typeof roleTag?.value === 'string' ? roleTag.value : null) ?? semantic,
-      sourceColor: paletteTagColor(node.tags)
-        ?? inferPaletteColorIntent(semantic)
-        ?? paletteSourceHex(node.mesh?.material?.color)
+      sourceColor: paletteSourceHex(node.mesh?.material?.color)
         ?? paletteSourceHex(node.mesh?.color)
         ?? paletteSourceHex(node.color)
     }] as [string, { text: string; sourceColor?: string }]];
@@ -1712,12 +1714,6 @@ function paletteSourceHex(value: unknown): string | undefined {
   return typeof value === 'string' && /^#[0-9a-f]{6}$/i.test(value.trim())
     ? value.trim().toUpperCase()
     : undefined;
-}
-
-function paletteTagColor(tags: unknown): string | undefined {
-  if (!Array.isArray(tags)) return undefined;
-  const tag = tags.find((entry) => entry && typeof entry === 'object' && (entry as { tag?: unknown }).tag === 'palette-color');
-  return paletteSourceHex(tag && typeof tag === 'object' ? (tag as { value?: unknown }).value : undefined);
 }
 
 function applyObjectTransform(group: THREE.Group, object: MapObject): void {
@@ -2060,50 +2056,33 @@ function createSurfaceTexture(
   return texture;
 }
 
-function quantizeCanvasToPalette(
+export function quantizeCanvasToPalette(
   ctx: CanvasRenderingContext2D,
   width: number,
   height: number,
   palette: ColorPalette
 ): void {
   const image = ctx.getImageData(0, 0, width, height);
-  const colors = palette.colors.map((entry) => {
-    const value = Number.parseInt(entry.hex.slice(1), 16);
-    return [value >> 16 & 0xff, value >> 8 & 0xff, value & 0xff] as const;
-  });
+  const match = createPaletteColorMatcher(palette.colors.map((entry) => entry.hex));
   const cache = new Map<number, readonly [number, number, number]>();
   for (let index = 0; index < image.data.length; index += 4) {
     if (image.data[index + 3] === 0) continue;
     const red = image.data[index];
     const green = image.data[index + 1];
     const blue = image.data[index + 2];
-    const key = (red >> 3) << 10 | (green >> 3) << 5 | blue >> 3;
+    const key = red << 16 | green << 8 | blue;
     let nearest = cache.get(key);
     if (!nearest) {
-      nearest = colors.reduce((best, candidate) => (
-        colorDistanceSq(red, green, blue, candidate) < colorDistanceSq(red, green, blue, best)
-          ? candidate
-          : best
-      ), colors[0]);
+      const hex = match(`#${key.toString(16).padStart(6, '0')}`);
+      const value = Number.parseInt(hex.slice(1), 16);
+      nearest = [value >> 16 & 255, value >> 8 & 255, value & 255];
       cache.set(key, nearest);
     }
     image.data[index] = nearest[0];
     image.data[index + 1] = nearest[1];
     image.data[index + 2] = nearest[2];
-    image.data[index + 3] = 255;
   }
   ctx.putImageData(image, 0, 0);
-}
-
-function colorDistanceSq(
-  red: number,
-  green: number,
-  blue: number,
-  candidate: readonly [number, number, number]
-): number {
-  return (red - candidate[0]) ** 2 * 0.3
-    + (green - candidate[1]) ** 2 * 0.59
-    + (blue - candidate[2]) ** 2 * 0.11;
 }
 
 function surfaceDimensions(map: EditableMap, surface: RoomSurface): [number, number] {

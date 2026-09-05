@@ -3,10 +3,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   buildEditableMapGroup,
   buildStructuredWaterGroup,
-  terrainNormalPixelsFromHeight
+  terrainNormalPixelsFromHeight,
+  quantizeCanvasToPalette
 } from '../src/client/mapRenderer';
 import { createEmptyMap } from '../src/shared/map';
-import { createColorPalette } from '../src/shared/colorPalette';
+import { createColorPalette, nearestPaletteColor } from '../src/shared/colorPalette';
 import { applyMapOperations } from '../src/shared/mapOperations';
 import type { MapAsset } from '../src/shared/map';
 import { createGrassLayer, fillGrassLayerInPlace } from '../src/shared/mapGrass';
@@ -46,7 +47,7 @@ describe('terrain normal generation', () => {
       const palette = createColorPalette({ colors: ['#FFFFFF', '#164A8A', '#F06B3E'], roles: { primary: ['#FFFFFF'], plant: ['#FFFFFF'] } });
       const report = rendered.setColorPalette(palette);
       expect(report.roleCounts).toEqual({ unclassified: 2 });
-      expect(report.usedColors).toEqual(['#164A8A', '#F06B3E']);
+      expect(report.usedColors).toEqual(['#164A8A', '#FFFFFF']);
     } finally {
       rendered.dispose();
     }
@@ -1114,6 +1115,15 @@ describe('derived local lights', () => {
 });
 
 describe('procedural indoor finishes', () => {
+  it('uses the same nearest-color rule for wallpaper/floor/road pixels and preserves alpha', () => {
+    const palette = createColorPalette({ colors: ['#52362E', '#4BAFCA', '#499D92', '#FFFDF6'] });
+    const data = new Uint8ClampedArray([16, 24, 32, 127, 37, 32, 45, 255, 9, 8, 7, 0]);
+    const context = { getImageData: () => ({ data }), putImageData: vi.fn() } as unknown as CanvasRenderingContext2D;
+    quantizeCanvasToPalette(context, 3, 1, palette);
+    expect([...data]).toEqual([82, 54, 46, 127, 82, 54, 46, 255, 9, 8, 7, 0]);
+    expect(nearestPaletteColor(palette, '#101820')).toBe('#52362E');
+  });
+
   it('renders persisted rugs and maps split wall segments through one continuous surface texture', async () => {
     const map = applyMapOperations(
       createEmptyMap('finished room', 'finished-room', [10, 3, 8], 'voxel', 'indoor', [10, 3, 8]),
@@ -1149,6 +1159,14 @@ describe('procedural indoor finishes', () => {
     expect(wallMaterials).toHaveLength(4);
     expect(wallMaterials.every((material) => material.roughness === 0.91)).toBe(true);
     expect(new Set(wallMaterials.map((material) => `${material.map?.offset.x}:${material.map?.repeat.x}`)).size).toBeGreaterThan(1);
+    const uv = wallMaterials.map((material) => [material.map!.offset.toArray(), material.map!.repeat.toArray()]);
+    const colors = wallMaterials.map((material) => material.color.getHex());
+    rendered.setColorPalette(createColorPalette({ colors: ['#52362E', '#4BAFCA'] }));
+    expect(wallMaterials.every((material) => material.color.getHex() === 0xffffff)).toBe(true);
+    expect(wallMaterials.map((material) => [material.map!.offset.toArray(), material.map!.repeat.toArray()])).toEqual(uv);
+    rendered.setColorPalette(null);
+    expect(wallMaterials.every((material) => material.map && material.roughness === 0.91)).toBe(true);
+    expect(wallMaterials.map((material) => material.color.getHex())).toEqual(colors);
     rendered.dispose();
   });
 
