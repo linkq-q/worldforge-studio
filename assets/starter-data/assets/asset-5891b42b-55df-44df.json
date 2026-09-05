@@ -1,0 +1,1314 @@
+{
+ "id": "asset-5891b42b-55df-44df",
+ "name": "红甜菜 3",
+ "prompt": "Standalone mature beetroot crop plant with broad deep green leaves, vivid crimson veins and a dark red-purple root crown visible above the roots, realistic rich agricultural colors with strong tonal depth; avoid pastel, chalky, whitewashed, or uniformly pale colors. No ground patch, planter, scene, text, or background. Coordinate contract: Y+ is up, Z+ is the front/entrance/forward direction, X+ is right; place doors, facades, openings, windshields, or noses toward local Z+ and keep the model ce\nCoordinate contract: local Y+ is up, local Z+ is the front, entrance, or forward direction, and local X+ is right. Put doors, facades, openings, windshields, noses, seats, and other recognizable front details toward local Z+. For a modular repeated element, explicitly choose the long axis: side-by-side modules span local X with depth/front on local Z; traversal modules span local Z. Keep the model centered at its origin.\nCanonical dimensions contract: width=0.8, height=0.75, depth=0.8 world units. Keep the generated mesh within this centered bounding size.",
+ "tags": [
+  "farm",
+  "crop",
+  "beet",
+  "plant"
+ ],
+ "modelJson": {
+  "name": "成熟甜菜植株",
+  "type": "lowpoly",
+  "format": 2,
+  "nodes": [
+   {
+    "id": "root",
+    "name": "甜菜根冠",
+    "transform": {
+     "pos": [
+      0,
+      0,
+      0
+     ]
+    },
+    "_obb": {
+     "size": [
+      0.732,
+      0.736,
+      0.689
+     ],
+     "center": [
+      0.003,
+      0.354,
+      0.02
+     ],
+     "axes": [
+      [
+       0.8146,
+       0.0467,
+       -0.5781
+      ],
+      [
+       -0.0498,
+       0.9987,
+       0.0104
+      ],
+      [
+       0.5779,
+       0.0203,
+       0.8159
+      ]
+     ],
+     "_mainAxis": 1
+    }
+   },
+   {
+    "id": "leaf0",
+    "name": "宽叶1",
+    "parent": "root",
+    "transform": {
+     "pos": [
+      0.0466,
+      0.3929,
+      -0.0134
+     ]
+    },
+    "tags": [
+     {
+      "tag": "vegetation",
+      "value": "sway"
+     }
+    ],
+    "_obb": {
+     "size": [
+      0.018,
+      0.421,
+      0.16
+     ],
+     "center": [
+      0.133,
+      0.157,
+      -0.037
+     ],
+     "axes": [
+      [
+       0.7097,
+       -0.6711,
+       -0.2143
+      ],
+      [
+       0.6442,
+       0.7413,
+       -0.1881
+      ],
+      [
+       0.2851,
+       -0.0046,
+       0.9585
+      ]
+     ],
+     "_mainAxis": 1
+    }
+   },
+   {
+    "id": "leaf1",
+    "name": "宽叶2",
+    "parent": "root",
+    "transform": {
+     "pos": [
+      0.0352,
+      0.3944,
+      0.0157
+     ]
+    },
+    "tags": [
+     {
+      "tag": "vegetation",
+      "value": "sway"
+     }
+    ],
+    "_obb": {
+     "size": [
+      0.018,
+      0.411,
+      0.13
+     ],
+     "center": [
+      0.135,
+      0.146,
+      0.064
+     ],
+     "axes": [
+      [
+       0.6405,
+       -0.7122,
+       0.2874
+      ],
+      [
+       0.6523,
+       0.702,
+       0.2859
+      ],
+      [
+       -0.4054,
+       0.0044,
+       0.9141
+      ]
+     ],
+     "_mainAxis": 1
+    }
+   },
+   {
+    "id": "leaf2",
+    "name": "宽叶3",
+    "parent": "root",
+    "transform": {
+     "pos": [
+      0.0046,
+      0.3719,
+      0.0332
+     ]
+    },
+    "tags": [
+     {
+      "tag": "vegetation",
+      "value": "sway"
+     }
+    ],
+    "_obb": {
+     "size": [
+      0.169,
+      0.018,
+      0.428
+     ],
+     "center": [
+      0.025,
+      0.148,
+      0.157
+     ],
+     "axes": [
+      [
+       0.9897,
+       -0.008,
+       -0.1431
+      ],
+      [
+       -0.0908,
+       0.7375,
+       -0.6692
+      ],
+      [
+       0.1109,
+       0.6753,
+       0.7292
+      ]
+     ],
+     "_mainAxis": 2
+    }
+   },
+   {
+    "id": "leaf3",
+    "name": "宽叶4",
+    "parent": "root",
+    "transform": {
+     "pos": [
+      -0.0242,
+      0.3679,
+      0.0312
+     ]
+    },
+    "tags": [
+     {
+      "tag": "vegetation",
+      "value": "sway"
+     }
+    ],
+    "_obb": {
+     "size": [
+      0.142,
+      0.462,
+      0.021
+     ],
+     "center": [
+      -0.107,
+      0.155,
+      0.13
+     ],
+     "axes": [
+      [
+       0.7831,
+       -0.0006,
+       0.6218
+      ],
+      [
+       -0.4569,
+       0.6777,
+       0.5762
+      ],
+      [
+       -0.4218,
+       -0.7353,
+       0.5304
+      ]
+     ],
+     "_mainAxis": 1
+    }
+   },
+   {
+    "id": "leaf4",
+    "name": "宽叶5",
+    "parent": "root",
+    "transform": {
+     "pos": [
+      -0.0379,
+      0.3893,
+      0.0181
+     ]
+    },
+    "tags": [
+     {
+      "tag": "vegetation",
+      "value": "sway"
+     }
+    ],
+    "_obb": {
+     "size": [
+      0.381,
+      0.018,
+      0.16
+     ],
+     "center": [
+      -0.132,
+      0.131,
+      0.062
+     ],
+     "axes": [
+      [
+       0.6678,
+       -0.6694,
+       -0.3256
+      ],
+      [
+       0.6024,
+       0.7429,
+       -0.2918
+      ],
+      [
+       0.4372,
+       -0.0013,
+       0.8994
+      ]
+     ],
+     "_mainAxis": 0
+    }
+   },
+   {
+    "id": "leaf5",
+    "name": "宽叶6",
+    "parent": "root",
+    "transform": {
+     "pos": [
+      -0.0396,
+      0.3673,
+      -0.0189
+     ]
+    },
+    "tags": [
+     {
+      "tag": "vegetation",
+      "value": "sway"
+     }
+    ],
+    "_obb": {
+     "size": [
+      0.02,
+      0.448,
+      0.13
+     ],
+     "center": [
+      -0.132,
+      0.166,
+      -0.062
+     ],
+     "axes": [
+      [
+       0.676,
+       0.6638,
+       0.3201
+      ],
+      [
+       -0.6,
+       0.7479,
+       -0.2838
+      ],
+      [
+       -0.4278,
+       -0.0002,
+       0.9039
+      ]
+     ],
+     "_mainAxis": 1
+    }
+   },
+   {
+    "id": "leaf6",
+    "name": "宽叶7",
+    "parent": "root",
+    "transform": {
+     "pos": [
+      -0.0239,
+      0.3926,
+      -0.0458
+     ]
+    },
+    "tags": [
+     {
+      "tag": "vegetation",
+      "value": "sway"
+     }
+    ],
+    "_obb": {
+     "size": [
+      0.121,
+      0.379,
+      0.021
+     ],
+     "center": [
+      -0.057,
+      0.131,
+      -0.116
+     ],
+     "axes": [
+      [
+       0.8857,
+       -0.0002,
+       -0.4643
+      ],
+      [
+       -0.3267,
+       0.7105,
+       -0.6233
+      ],
+      [
+       0.33,
+       0.7037,
+       0.6292
+      ]
+     ],
+     "_mainAxis": 1
+    }
+   },
+   {
+    "id": "leaf7",
+    "name": "宽叶8",
+    "parent": "root",
+    "transform": {
+     "pos": [
+      0.0114,
+      0.3764,
+      -0.0359
+     ]
+    },
+    "tags": [
+     {
+      "tag": "vegetation",
+      "value": "sway"
+     }
+    ],
+    "_obb": {
+     "size": [
+      0.141,
+      0.43,
+      0.02
+     ],
+     "center": [
+      0.039,
+      0.157,
+      -0.136
+     ],
+     "axes": [
+      [
+       0.9542,
+       0.0026,
+       0.2992
+      ],
+      [
+       0.1979,
+       0.7444,
+       -0.6377
+      ],
+      [
+       -0.2243,
+       0.6677,
+       0.7098
+      ]
+     ],
+     "_mainAxis": 1
+    }
+   },
+   {
+    "id": "m0",
+    "parent": "root",
+    "transform": {
+     "pos": [
+      0,
+      0.1382,
+      0
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 0.19411875577643514,
+      "height": 0.20152094163000583,
+      "depth": 0.15150289432145655
+     },
+     "color": 12077607
+    }
+   },
+   {
+    "id": "m1",
+    "parent": "root",
+    "transform": {
+     "pos": [
+      0,
+      0.2914,
+      0
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 0.3194659435981885,
+      "height": 0.16133353165350856,
+      "depth": 0.25023670142516496
+     },
+     "color": 12077607
+    }
+   },
+   {
+    "id": "m2",
+    "parent": "root",
+    "transform": {
+     "pos": [
+      0,
+      0.3805,
+      0
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 0.21667605341412127,
+      "height": 0.09847010261146352,
+      "depth": 0.23828942811815068
+     },
+     "color": 12077607
+    }
+   },
+   {
+    "id": "m3",
+    "parent": "leaf0",
+    "transform": {
+     "pos": [
+      0.1334,
+      0.1571,
+      -0.0366
+     ],
+     "quat": [
+      0.06,
+      0.13,
+      0.4,
+      0.91
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 0.42,
+      "height": 0.018,
+      "depth": 0.16
+     },
+     "color": 7770188
+    }
+   },
+   {
+    "id": "m4",
+    "parent": "leaf0",
+    "transform": {
+     "pos": [
+      0.1334,
+      0.1571,
+      -0.0366
+     ],
+     "quat": [
+      0.06,
+      0.13,
+      0.4,
+      0.91
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 0.42,
+      "height": 0.009,
+      "depth": 0.02
+     },
+     "color": 7425352
+    }
+   },
+   {
+    "id": "m5",
+    "parent": "leaf1",
+    "transform": {
+     "pos": [
+      0.1348,
+      0.1456,
+      0.0643
+     ],
+     "quat": [
+      -0.08,
+      -0.19,
+      0.37,
+      0.91
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 0.41,
+      "height": 0.018,
+      "depth": 0.13
+     },
+     "color": 8427282
+    }
+   },
+   {
+    "id": "m6",
+    "parent": "leaf1",
+    "transform": {
+     "pos": [
+      0.1348,
+      0.1456,
+      0.0643
+     ],
+     "quat": [
+      -0.08,
+      -0.19,
+      0.37,
+      0.91
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 0.41,
+      "height": 0.009,
+      "depth": 0.02
+     },
+     "color": 7425352
+    }
+   },
+   {
+    "id": "m7",
+    "parent": "leaf2",
+    "transform": {
+     "pos": [
+      0.0254,
+      0.1481,
+      0.1568
+     ],
+     "quat": [
+      -0.24,
+      -0.61,
+      0.27,
+      0.7
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 0.43,
+      "height": 0.018,
+      "depth": 0.17
+     },
+     "color": 6254408
+    }
+   },
+   {
+    "id": "m8",
+    "parent": "leaf2",
+    "transform": {
+     "pos": [
+      0.0254,
+      0.1481,
+      0.1568
+     ],
+     "quat": [
+      -0.24,
+      -0.61,
+      0.27,
+      0.7
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 0.43,
+      "height": 0.009,
+      "depth": 0.01
+     },
+     "color": 7425352
+    }
+   },
+   {
+    "id": "m9",
+    "parent": "leaf3",
+    "transform": {
+     "pos": [
+      -0.1058,
+      0.1521,
+      0.1288
+     ],
+     "quat": [
+      0.33,
+      0.84,
+      -0.16,
+      -0.41
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 0.45,
+      "height": 0.018,
+      "depth": 0.14
+     },
+     "color": 8427282
+    }
+   },
+   {
+    "id": "m10",
+    "parent": "leaf3",
+    "transform": {
+     "pos": [
+      -0.1058,
+      0.1621,
+      0.1288
+     ],
+     "quat": [
+      0.33,
+      0.84,
+      -0.16,
+      -0.41
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 0.45,
+      "height": 0.009,
+      "depth": 0.02
+     },
+     "color": 7425352
+    }
+   },
+   {
+    "id": "m11",
+    "parent": "leaf4",
+    "transform": {
+     "pos": [
+      -0.1321,
+      0.1307,
+      0.0619
+     ],
+     "quat": [
+      0.35,
+      0.91,
+      -0.08,
+      -0.21
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 0.38,
+      "height": 0.018,
+      "depth": 0.16
+     },
+     "color": 6254408
+    }
+   },
+   {
+    "id": "m12",
+    "parent": "leaf4",
+    "transform": {
+     "pos": [
+      -0.1321,
+      0.1307,
+      0.0619
+     ],
+     "quat": [
+      0.35,
+      0.91,
+      -0.08,
+      -0.21
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 0.38,
+      "height": 0.009,
+      "depth": 0.02
+     },
+     "color": 7425352
+    }
+   },
+   {
+    "id": "m13",
+    "parent": "leaf5",
+    "transform": {
+     "pos": [
+      -0.1304,
+      0.1627,
+      -0.0611
+     ],
+     "quat": [
+      0.4,
+      0.89,
+      0.09,
+      0.2
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 0.44,
+      "height": 0.018,
+      "depth": 0.13
+     },
+     "color": 8427282
+    }
+   },
+   {
+    "id": "m14",
+    "parent": "leaf5",
+    "transform": {
+     "pos": [
+      -0.1304,
+      0.1727,
+      -0.0611
+     ],
+     "quat": [
+      0.4,
+      0.89,
+      0.09,
+      0.2
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 0.44,
+      "height": 0.009,
+      "depth": 0.02
+     },
+     "color": 7425352
+    }
+   },
+   {
+    "id": "m15",
+    "parent": "leaf6",
+    "transform": {
+     "pos": [
+      -0.0561,
+      0.1274,
+      -0.1142
+     ],
+     "quat": [
+      0.33,
+      0.79,
+      0.2,
+      0.48
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 0.37,
+      "height": 0.018,
+      "depth": 0.12
+     },
+     "color": 8427282
+    }
+   },
+   {
+    "id": "m16",
+    "parent": "leaf6",
+    "transform": {
+     "pos": [
+      -0.0561,
+      0.1374,
+      -0.1142
+     ],
+     "quat": [
+      0.33,
+      0.79,
+      0.2,
+      0.48
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 0.37,
+      "height": 0.009,
+      "depth": 0.02
+     },
+     "color": 7425352
+    }
+   },
+   {
+    "id": "m17",
+    "parent": "leaf7",
+    "transform": {
+     "pos": [
+      0.0386,
+      0.1536,
+      -0.1341
+     ],
+     "quat": [
+      0.24,
+      0.54,
+      0.33,
+      0.74
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 0.42,
+      "height": 0.018,
+      "depth": 0.14
+     },
+     "color": 7770188
+    }
+   },
+   {
+    "id": "m18",
+    "parent": "leaf7",
+    "transform": {
+     "pos": [
+      0.0386,
+      0.1636,
+      -0.1341
+     ],
+     "quat": [
+      0.24,
+      0.54,
+      0.33,
+      0.74
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 0.42,
+      "height": 0.009,
+      "depth": 0.01
+     },
+     "color": 7425352
+    }
+   }
+  ],
+  "_meta": {
+   "skipAutoCenter": true,
+   "seed": {
+    "v": 1,
+    "seed": 13129398
+   },
+   "ai": {
+    "v": 1,
+    "ts": 1788550209944,
+    "provider": "gpt",
+    "data": "12xQQnKzHGvcCrvTuHUybXNdPIaeV3UL2tOpQqiET/cx5C8NRgOMGRQorwBTeZcE88iMWbOiP0Ye4NmtfEZQqYOfRQyFptuoTdozJx7cGP7opUWPn4wHwHe1jIUcNCqjK8WHztHeCTdn29XzWADSyc9uRNYbXFpciTjDhKnmkM40/KN8BQvcDSJv9nND+7DXOTtYInkEdOFYjD0sHUbYhiDuIC4EKJShh6m5AIzIYcDAVDUgihQjW6J/pVRLPJEAS4gXj5sYY19YuMK6XgrOzQbc3E2Aha+DzPLFk8xgz1Dbw6hQ5JqnMGi/Q3lx7dGaDQHmQKaKhv0iut5m4xduAexnMdsxLm3G/DAmg/v9o1gF7Ywnkswv94Ro6zlnx4+kjulTqmTZcyLvixlIx/uRawxeHtSEb7KSu4uS3Aab3Y8FG1V99+S2DkRFiKbf7Gn0wtnF2xRd/yG2/ZHTXae2vUgQcQNTZnIh3IdA+McGd3fW3KmM9h0vqkURMQQqA+G0UIGzG2Bt/y5fXM6E67SJ9ZFldgcOXgxqYxAuxMZlxLwgpPGMcifP++g0zB7mJKslgfMr+HN5l6bFVQY2Yt9+PCjnwe0A5R1KHrbmBkuVhp8zKYEXBjw8hb/asgz5ks5n48IwcAiPhfm5akwkgrUspAbr0nNhV4ZLPvyYKWQob/heoWB4W5tkWj2cR5TPItktW48xocNmtWu+MLLKDfTDYvxyxL5cW76IrKVTcmZITiuyhnFAZwALn1Di4GLTc+XUZml9t0cmbIpGnkw1lsSIJewrvNTrfVP2DW5/fSC4OlinzggIr60fhqKO0Qgf4QSl1Ipr2rSoK1Y5utsU2EZMIjddG/cYPDikndmRWT4Jf5ZGP+K2RkOGxuqi8StFySeYCmkEDF1mHfXHF32FI/GDy/tlXMhhTFI6vgBf6y/knhhLYaTNrA5bGZIxw4LKST7FvQyluzLnuV5uo7AlzDGzO70yPirvoDVRm9yw6EEt9xc3+8+0XzXcs+lhD2sQOkY2GxfABkSO3jsBOLtvViQTsKgLJHr1YSga0cptkSfl5mGbwDt49k401Swx0+AG0qgPoP0tD0Anc85HoR/TkxdIlKkPfw/aRgXFqeejv1U6dfMGImJF8hHk5G/3x/jMJKKy7W7fq9Tt6nMqEgfe3Bwx5y2FqoSV9rSNxL7rx+WpxDTzoaiXZ2YcTu+5B1Bb5h6BoZaKABXmgXUCKZc0O+mnntarPWPF1PgB3QKxb26KZvgwA1zMF99dTpy41UinwEWDmpiftXZI0Sk14JgVbsYsDS5Vl9FKC+/O5wBlIaP4L4r9mfJLyxYZyCOva7IMh6rg0L3pxaTx0IbIUcdcBxV2jBgm0NAbWjZmF/nlm4JIgmK8zLvKWa5s5b0JQ9hglSjJ1mQTJJ0+dK5svTrKbXPQKnvFZ2BhwyRV+qlFwguLnJzWrg9ykooPLYecrwwyC3x2K8WRGE4L3Tz3hB2U8MjR0xCAHovtMWo2",
+    "edits": ""
+   },
+   "colorPalette": {
+    "id": "palette-2b9c0834-be76-4477",
+    "name": "曼德鸭参考场景 · 浅亮建筑",
+    "description": "参考局内与背景样例：浅亮奶油墙面、桃沙道路、黄绿色植被、青蓝窗水、棕黄结构点缀。",
+    "version": 1,
+    "colors": [
+     {
+      "hex": "#FFFDF6"
+     },
+     {
+      "hex": "#FEF9EA"
+     },
+     {
+      "hex": "#FDF2D7"
+     },
+     {
+      "hex": "#E9DABD"
+     },
+     {
+      "hex": "#CDBA97"
+     },
+     {
+      "hex": "#F8E8CF"
+     },
+     {
+      "hex": "#F1D7B2"
+     },
+     {
+      "hex": "#E7C393"
+     },
+     {
+      "hex": "#C9A06E"
+     },
+     {
+      "hex": "#9E7A55"
+     },
+     {
+      "hex": "#FFF7A8"
+     },
+     {
+      "hex": "#FCEF72"
+     },
+     {
+      "hex": "#F6E24B"
+     },
+     {
+      "hex": "#D1B825"
+     },
+     {
+      "hex": "#9C8510"
+     },
+     {
+      "hex": "#FFF3B7"
+     },
+     {
+      "hex": "#FDE674"
+     },
+     {
+      "hex": "#FCD75F"
+     },
+     {
+      "hex": "#FECD4D"
+     },
+     {
+      "hex": "#D1900B"
+     },
+     {
+      "hex": "#FFE2A0"
+     },
+     {
+      "hex": "#FFD170"
+     },
+     {
+      "hex": "#F8BC44"
+     },
+     {
+      "hex": "#E39F1A"
+     },
+     {
+      "hex": "#A96F05"
+     },
+     {
+      "hex": "#FBE3BD"
+     },
+     {
+      "hex": "#FDD8A3"
+     },
+     {
+      "hex": "#FDCC8F"
+     },
+     {
+      "hex": "#F1AD69"
+     },
+     {
+      "hex": "#D99256"
+     },
+     {
+      "hex": "#FFD2BA"
+     },
+     {
+      "hex": "#FFB08A"
+     },
+     {
+      "hex": "#FF8A5B"
+     },
+     {
+      "hex": "#F06B3E"
+     },
+     {
+      "hex": "#B84A27"
+     },
+     {
+      "hex": "#EAF9FF"
+     },
+     {
+      "hex": "#DAF2F5"
+     },
+     {
+      "hex": "#95E5F9"
+     },
+     {
+      "hex": "#76D0F2"
+     },
+     {
+      "hex": "#45BDF6"
+     },
+     {
+      "hex": "#D9F8FB"
+     },
+     {
+      "hex": "#B2E9F2"
+     },
+     {
+      "hex": "#8ECCD6"
+     },
+     {
+      "hex": "#7BCFDF"
+     },
+     {
+      "hex": "#4BAFCA"
+     },
+     {
+      "hex": "#D8F7EF"
+     },
+     {
+      "hex": "#B8ECDD"
+     },
+     {
+      "hex": "#90DCC8"
+     },
+     {
+      "hex": "#74C4BB"
+     },
+     {
+      "hex": "#499D92"
+     },
+     {
+      "hex": "#F1F5AF"
+     },
+     {
+      "hex": "#E4E77F"
+     },
+     {
+      "hex": "#DCDB22"
+     },
+     {
+      "hex": "#BFC41A"
+     },
+     {
+      "hex": "#809712"
+     },
+     {
+      "hex": "#DEE5BC"
+     },
+     {
+      "hex": "#C6CC97"
+     },
+     {
+      "hex": "#AEAF6F"
+     },
+     {
+      "hex": "#76904C"
+     },
+     {
+      "hex": "#5F6F48"
+     },
+     {
+      "hex": "#D4C2A5"
+     },
+     {
+      "hex": "#B89269"
+     },
+     {
+      "hex": "#8E664D"
+     },
+     {
+      "hex": "#714D48"
+     },
+     {
+      "hex": "#52362E"
+     }
+    ],
+    "roles": {
+     "primary": [
+      "#F1D7B2",
+      "#FDD8A3",
+      "#FBE3BD",
+      "#E9DABD",
+      "#FDCC8F",
+      "#F8E8CF",
+      "#E7C393",
+      "#D4C2A5"
+     ],
+     "secondary": [
+      "#714D48",
+      "#52362E",
+      "#8E664D",
+      "#B84A27",
+      "#9E7A55",
+      "#F06B3E",
+      "#A96F05",
+      "#B89269",
+      "#D99256",
+      "#E7C393",
+      "#D4C2A5",
+      "#FDCC8F",
+      "#F1D7B2",
+      "#CDBA97",
+      "#FDD8A3",
+      "#F1AD69",
+      "#E9DABD",
+      "#AEAF6F",
+      "#C9A06E",
+      "#9C8510",
+      "#76904C",
+      "#809712"
+     ],
+     "accent": [
+      "#76D0F2",
+      "#7BCFDF",
+      "#95E5F9",
+      "#8ECCD6",
+      "#45BDF6",
+      "#4BAFCA",
+      "#B2E9F2",
+      "#74C4BB",
+      "#FFD170",
+      "#FECD4D",
+      "#FFE2A0",
+      "#F8BC44",
+      "#FCD75F",
+      "#E9DABD",
+      "#FDD8A3",
+      "#E7C393",
+      "#F06B3E",
+      "#FF8A5B",
+      "#B84A27",
+      "#D99256",
+      "#8E664D",
+      "#9E7A55",
+      "#FFB08A",
+      "#B89269"
+     ],
+     "plant": [
+      "#AEAF6F",
+      "#C6CC97",
+      "#BFC41A",
+      "#809712",
+      "#DCDB22",
+      "#E4E77F",
+      "#D1B825",
+      "#DEE5BC",
+      "#76904C",
+      "#5F6F48",
+      "#9C8510"
+     ],
+     "earth": [
+      "#F1D7B2",
+      "#FDD8A3",
+      "#FBE3BD",
+      "#E9DABD",
+      "#FDCC8F",
+      "#F8E8CF",
+      "#E7C393",
+      "#D4C2A5",
+      "#CDBA97",
+      "#F1AD69",
+      "#9E7A55",
+      "#B89269",
+      "#AEAF6F",
+      "#C9A06E",
+      "#9C8510",
+      "#8E664D",
+      "#76904C",
+      "#809712",
+      "#714D48",
+      "#52362E",
+      "#B84A27",
+      "#F06B3E",
+      "#A96F05",
+      "#D99256"
+     ],
+     "water": [
+      "#4BAFCA",
+      "#45BDF6",
+      "#7BCFDF",
+      "#76D0F2",
+      "#8ECCD6",
+      "#95E5F9",
+      "#499D92",
+      "#74C4BB"
+     ],
+     "atmosphere": [
+      "#76D0F2",
+      "#7BCFDF",
+      "#95E5F9",
+      "#8ECCD6",
+      "#45BDF6",
+      "#4BAFCA",
+      "#B2E9F2",
+      "#74C4BB",
+      "#EAF9FF",
+      "#DAF2F5",
+      "#D9F8FB"
+     ],
+     "effect": [
+      "#F06B3E",
+      "#FF8A5B",
+      "#B84A27",
+      "#D99256",
+      "#8E664D",
+      "#9E7A55",
+      "#FFB08A",
+      "#B89269"
+     ]
+    },
+    "lockedColors": [],
+    "excludedAssetIds": [],
+    "excludedTags": [],
+    "createdAt": 1787561837433,
+    "updatedAt": 1787561837433
+   },
+   "colorPaletteReport": {
+    "appliedMaterials": 19,
+    "appliedVertexColors": 0,
+    "skippedTextures": 0,
+    "explicitIntentColors": 0,
+    "sourceColors": 19,
+    "semanticFallbacks": 0,
+    "usedColors": [
+     "#714D48",
+     "#76904C"
+    ]
+   }
+  }
+ },
+ "colliderPlan": {
+  "version": 1,
+  "boxes": [
+   {
+    "min": [
+     -0.34123499284635794,
+     0,
+     -0.3479546299271665
+    ],
+    "max": [
+     0.34123499284635794,
+     0.6738777422804005,
+     0.3479546299271665
+    ],
+    "sourceNodeId": "asset-bounds"
+   }
+  ],
+  "sourceMeshCount": 19,
+  "candidateCount": 0,
+  "fallbackUsed": true
+ },
+ "footprintRadius": 0.3479546299271665,
+ "sizeClass": "small",
+ "mode": "voxel",
+ "provider": "gpt",
+ "createdAt": 1788550208731,
+ "updatedAt": 1788550208731
+}

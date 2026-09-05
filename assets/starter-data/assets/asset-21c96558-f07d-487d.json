@@ -1,0 +1,2450 @@
+{
+  "id": "asset-21c96558-f07d-487d",
+  "name": "草莓植株 1",
+  "prompt": "Standalone fruiting strawberry plant with bright natural green serrated leaves, multiple vivid ripe red strawberries, a few pale green unripe berries, white flowers with yellow centers and a dark soil root clump. Cheerful realistic farm colors, not pastel or monochrome. Tag foliage as secondary and berries, flowers and soil as primary. No ground or background. Coordinate contract: Y+ is up, Z+ is the front/entrance/forward direction, X+ is right; place doors, facades, openings, windshields, or n\nCoordinate contract: local Y+ is up, local Z+ is the front, entrance, or forward direction, and local X+ is right. Put doors, facades, openings, windshields, noses, seats, and other recognizable front details toward local Z+. For a modular repeated element, explicitly choose the long axis: side-by-side modules span local X with depth/front on local Z; traversal modules span local Z. Keep the model centered at its origin.\nCanonical dimensions contract: width=0.9, height=0.55, depth=0.9 world units. Keep the generated mesh within this centered bounding size.",
+  "tags": [
+    "farm",
+    "fruit",
+    "strawberry"
+  ],
+  "modelJson": {
+    "name": "结果草莓植株",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "plant",
+        "name": "草莓植株",
+        "transform": {
+          "pos": [
+            0,
+            -0.275,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.747,
+            0.803,
+            0.708
+          ],
+          "center": [
+            0.004,
+            0.173,
+            -0.009
+          ],
+          "axes": [
+            [
+              0.7577,
+              -0.016,
+              -0.6524
+            ],
+            [
+              -0.0141,
+              0.9991,
+              -0.0409
+            ],
+            [
+              0.6524,
+              0.0402,
+              0.7568
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "roots",
+        "name": "深色土壤根团",
+        "parent": "plant",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.437,
+            0.107,
+            0.398
+          ],
+          "center": [
+            -0.008,
+            0.053,
+            0.006
+          ],
+          "axes": [
+            [
+              0.8157,
+              0.0125,
+              -0.5783
+            ],
+            [
+              -0.0084,
+              0.9999,
+              0.0098
+            ],
+            [
+              0.5784,
+              -0.0031,
+              0.8157
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "crownStem",
+        "name": "中央叶柄",
+        "parent": "plant",
+        "transform": {
+          "pos": [
+            0,
+            0.105,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.045,
+            0.304,
+            0.045
+          ],
+          "center": [
+            0,
+            0.125,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "leaf0",
+        "name": "锯齿叶片1",
+        "parent": "plant",
+        "transform": {
+          "pos": [
+            -0.0024,
+            0.265,
+            0.0549
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.145,
+            0.157,
+            0.314
+          ],
+          "center": [
+            -0.006,
+            0.055,
+            0.122
+          ],
+          "axes": [
+            [
+              0.9989,
+              0.0175,
+              0.0438
+            ],
+            [
+              -0.0065,
+              0.9709,
+              -0.2394
+            ],
+            [
+              -0.0468,
+              0.2389,
+              0.9699
+            ]
+          ],
+          "_mainAxis": 2
+        }
+      },
+      {
+        "id": "leaf1",
+        "name": "锯齿叶片2",
+        "parent": "plant",
+        "transform": {
+          "pos": [
+            0.0515,
+            0.265,
+            0.0193
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.329,
+            0.167,
+            0.14
+          ],
+          "center": [
+            0.113,
+            0.06,
+            0.041
+          ],
+          "axes": [
+            [
+              0.9,
+              0.281,
+              0.3332
+            ],
+            [
+              -0.2667,
+              0.9597,
+              -0.089
+            ],
+            [
+              -0.3447,
+              -0.0088,
+              0.9387
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "leaf2",
+        "name": "锯齿叶片3",
+        "parent": "plant",
+        "transform": {
+          "pos": [
+            0.0343,
+            0.265,
+            -0.043
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.138,
+            0.158,
+            0.355
+          ],
+          "center": [
+            0.08,
+            0.067,
+            -0.104
+          ],
+          "axes": [
+            [
+              0.7735,
+              0.0463,
+              0.6321
+            ],
+            [
+              -0.2267,
+              0.9515,
+              0.2078
+            ],
+            [
+              -0.5918,
+              -0.304,
+              0.7465
+            ]
+          ],
+          "_mainAxis": 2
+        }
+      },
+      {
+        "id": "leaf3",
+        "name": "锯齿叶片4",
+        "parent": "plant",
+        "transform": {
+          "pos": [
+            -0.0303,
+            0.265,
+            -0.0459
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.12,
+            0.137,
+            0.338
+          ],
+          "center": [
+            -0.064,
+            0.07,
+            -0.103
+          ],
+          "axes": [
+            [
+              0.8524,
+              0.1807,
+              -0.4907
+            ],
+            [
+              0.0265,
+              0.9223,
+              0.3856
+            ],
+            [
+              0.5222,
+              -0.3417,
+              0.7814
+            ]
+          ],
+          "_mainAxis": 2
+        }
+      },
+      {
+        "id": "leaf4",
+        "name": "锯齿叶片5",
+        "parent": "plant",
+        "transform": {
+          "pos": [
+            -0.053,
+            0.265,
+            0.0147
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.336,
+            0.163,
+            0.142
+          ],
+          "center": [
+            -0.124,
+            0.058,
+            0.036
+          ],
+          "axes": [
+            [
+              0.9352,
+              -0.2486,
+              -0.2521
+            ],
+            [
+              0.2372,
+              0.9686,
+              -0.0752
+            ],
+            [
+              0.2628,
+              0.0105,
+              0.9648
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "berry0",
+        "name": "成熟草莓1",
+        "parent": "plant",
+        "transform": {
+          "pos": [
+            0.0071,
+            0.3913,
+            0.1096
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.092,
+            0.195,
+            0.099
+          ],
+          "center": [
+            0.007,
+            -0.088,
+            0.081
+          ],
+          "axes": [
+            [
+              0.9987,
+              0.0312,
+              0.0392
+            ],
+            [
+              -0.0208,
+              0.9701,
+              -0.242
+            ],
+            [
+              -0.0455,
+              0.2409,
+              0.9695
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "berry1",
+        "name": "成熟草莓2",
+        "parent": "plant",
+        "transform": {
+          "pos": [
+            0.1019,
+            0.386,
+            -0.0066
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.108,
+            0.23,
+            0.083
+          ],
+          "center": [
+            0.076,
+            -0.108,
+            -0.005
+          ],
+          "axes": [
+            [
+              0.9719,
+              0.235,
+              -0.0133
+            ],
+            [
+              -0.2348,
+              0.972,
+              0.0121
+            ],
+            [
+              0.0157,
+              -0.0087,
+              0.9998
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "berry2",
+        "name": "成熟草莓3",
+        "parent": "plant",
+        "transform": {
+          "pos": [
+            -0.0063,
+            0.4002,
+            -0.0972
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.091,
+            0.24,
+            0.093
+          ],
+          "center": [
+            -0.005,
+            -0.115,
+            -0.069
+          ],
+          "axes": [
+            [
+              0.9994,
+              -0.0188,
+              0.03
+            ],
+            [
+              0.0134,
+              0.9851,
+              0.1714
+            ],
+            [
+              -0.0328,
+              -0.1709,
+              0.9847
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "berry3",
+        "name": "成熟草莓4",
+        "parent": "plant",
+        "transform": {
+          "pos": [
+            -0.0853,
+            0.3882,
+            0.0055
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.104,
+            0.189,
+            0.087
+          ],
+          "center": [
+            -0.069,
+            -0.086,
+            0.004
+          ],
+          "axes": [
+            [
+              0.9674,
+              -0.2529,
+              -0.0133
+            ],
+            [
+              0.2527,
+              0.9675,
+              -0.0125
+            ],
+            [
+              0.016,
+              0.0088,
+              0.9998
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "unripe0",
+        "name": "未成熟浅绿草莓1",
+        "parent": "plant",
+        "transform": {
+          "pos": [
+            0.089,
+            0.415,
+            0.0331
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.104,
+            0.161,
+            0.079
+          ],
+          "center": [
+            0.075,
+            -0.065,
+            0.029
+          ],
+          "axes": [
+            [
+              0.9171,
+              0.3587,
+              0.1741
+            ],
+            [
+              -0.3459,
+              0.9329,
+              -0.1005
+            ],
+            [
+              -0.1985,
+              0.032,
+              0.9796
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "unripe1",
+        "name": "未成熟浅绿草莓2",
+        "parent": "plant",
+        "transform": {
+          "pos": [
+            -0.0664,
+            0.415,
+            -0.068
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.098,
+            0.114,
+            0.077
+          ],
+          "center": [
+            -0.06,
+            -0.05,
+            -0.065
+          ],
+          "axes": [
+            [
+              0.9033,
+              -0.0325,
+              0.4277
+            ],
+            [
+              0.0268,
+              0.9995,
+              0.0193
+            ],
+            [
+              -0.4281,
+              -0.006,
+              0.9037
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "flower0",
+        "name": "白色草莓花1",
+        "parent": "plant",
+        "transform": {
+          "pos": [
+            0.0425,
+            0.375,
+            0.0742
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.14,
+            0.188,
+            0.122
+          ],
+          "center": [
+            0.038,
+            0.069,
+            0.067
+          ],
+          "axes": [
+            [
+              0.8685,
+              0,
+              -0.4957
+            ],
+            [
+              0.2907,
+              0.81,
+              0.5093
+            ],
+            [
+              0.4015,
+              -0.5864,
+              0.7035
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "flower1",
+        "name": "白色草莓花2",
+        "parent": "plant",
+        "transform": {
+          "pos": [
+            -0.034,
+            0.375,
+            -0.0785
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.142,
+            0.201,
+            0.132
+          ],
+          "center": [
+            -0.03,
+            0.074,
+            -0.07
+          ],
+          "axes": [
+            [
+              0.9177,
+              0,
+              -0.3974
+            ],
+            [
+              -0.1942,
+              0.8725,
+              -0.4484
+            ],
+            [
+              0.3467,
+              0.4887,
+              0.8006
+            ]
+          ],
+          "_mainAxis": 1
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "roots",
+        "transform": {
+          "pos": [
+            0,
+            0.057,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.2823016293905676,
+            "height": 0.09429950688499956,
+            "depth": 0.28704995206557216
+          },
+          "color": 5387822
+        }
+      },
+      {
+        "id": "m1",
+        "parent": "roots",
+        "transform": {
+          "pos": [
+            0.0998,
+            0.04,
+            -0.055
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.13439365369966255,
+            "height": 0.075,
+            "depth": 0.14
+          },
+          "color": 5387822
+        }
+      },
+      {
+        "id": "m2",
+        "parent": "roots",
+        "transform": {
+          "pos": [
+            -0.1,
+            0.035,
+            0.075
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.14,
+            "height": 0.065,
+            "depth": 0.1571131447609514
+          },
+          "color": 5387822
+        }
+      },
+      {
+        "id": "m3",
+        "parent": "crownStem",
+        "transform": {
+          "pos": [
+            0,
+            0.125,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.045,
+            "height": 0.3039821518305689,
+            "depth": 0.045
+          },
+          "color": 7770188
+        }
+      },
+      {
+        "id": "m4",
+        "parent": "leaf0",
+        "transform": {
+          "pos": [
+            0,
+            0.025,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.025,
+            "height": 0.15497395486338064,
+            "depth": 0.025
+          },
+          "color": 7770188
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m5",
+        "parent": "leaf0",
+        "transform": {
+          "pos": [
+            -0.0076,
+            0.07,
+            0.1451
+          ],
+          "quat": [
+            0.69,
+            0.06,
+            0.72,
+            0.06
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.26,
+            "height": 0.018,
+            "depth": 0.12
+          },
+          "color": 8427282
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m6",
+        "parent": "leaf0",
+        "transform": {
+          "pos": [
+            0.0024,
+            0.07,
+            0.1651
+          ],
+          "quat": [
+            0.8,
+            0.07,
+            0.59,
+            0.05
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.17,
+            "height": 0.018,
+            "depth": 0.07
+          },
+          "color": 8427282
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m7",
+        "parent": "leaf0",
+        "transform": {
+          "pos": [
+            -0.0176,
+            0.07,
+            0.1651
+          ],
+          "quat": [
+            0.56,
+            0.05,
+            0.83,
+            0.07
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.17,
+            "height": 0.018,
+            "depth": 0.07
+          },
+          "color": 8427282
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m8",
+        "parent": "leaf1",
+        "transform": {
+          "pos": [
+            0,
+            0.025,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.025,
+            "height": 0.1652367009362206,
+            "depth": 0.025
+          },
+          "color": 7770188
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m9",
+        "parent": "leaf1",
+        "transform": {
+          "pos": [
+            0.1385,
+            0.09,
+            0.0507
+          ],
+          "quat": [
+            0.98,
+            0.08,
+            0.18,
+            0.02
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.26,
+            "height": 0.018,
+            "depth": 0.12
+          },
+          "color": 8427282
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m10",
+        "parent": "leaf1",
+        "transform": {
+          "pos": [
+            0.1585,
+            0.09,
+            0.0507
+          ],
+          "quat": [
+            1,
+            0.08,
+            0.01,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.18,
+            "height": 0.018,
+            "depth": 0.07
+          },
+          "color": 8427282
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m11",
+        "parent": "leaf1",
+        "transform": {
+          "pos": [
+            0.1485,
+            0.08,
+            0.0607
+          ],
+          "quat": [
+            0.94,
+            0.08,
+            0.34,
+            0.03
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.18,
+            "height": 0.018,
+            "depth": 0.07
+          },
+          "color": 8427282
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m12",
+        "parent": "leaf2",
+        "transform": {
+          "pos": [
+            0,
+            0.025,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.025,
+            "height": 0.15512853069696575,
+            "depth": 0.025
+          },
+          "color": 7770188
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m13",
+        "parent": "leaf2",
+        "transform": {
+          "pos": [
+            0.0957,
+            0.11,
+            -0.117
+          ],
+          "quat": [
+            0.9,
+            0.07,
+            -0.43,
+            -0.03
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.29,
+            "height": 0.018,
+            "depth": 0.11
+          },
+          "color": 8427282
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m14",
+        "parent": "leaf2",
+        "transform": {
+          "pos": [
+            0.0957,
+            0.11,
+            -0.137
+          ],
+          "quat": [
+            0.81,
+            0.06,
+            -0.58,
+            -0.04
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.2,
+            "height": 0.018,
+            "depth": 0.06
+          },
+          "color": 8427282
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m15",
+        "parent": "leaf2",
+        "transform": {
+          "pos": [
+            0.1057,
+            0.11,
+            -0.127
+          ],
+          "quat": [
+            0.96,
+            0.07,
+            -0.27,
+            -0.02
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.2,
+            "height": 0.018,
+            "depth": 0.06
+          },
+          "color": 8427282
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m16",
+        "parent": "leaf3",
+        "transform": {
+          "pos": [
+            0,
+            0.025,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.025,
+            "height": 0.13683232729556039,
+            "depth": 0.025
+          },
+          "color": 7770188
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m17",
+        "parent": "leaf3",
+        "transform": {
+          "pos": [
+            -0.0797,
+            0.11,
+            -0.1241
+          ],
+          "quat": [
+            -0.47,
+            -0.04,
+            0.88,
+            0.08
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.26,
+            "height": 0.018,
+            "depth": 0.1
+          },
+          "color": 8427282
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m18",
+        "parent": "leaf3",
+        "transform": {
+          "pos": [
+            -0.0997,
+            0.12,
+            -0.1341
+          ],
+          "quat": [
+            -0.32,
+            -0.03,
+            0.94,
+            0.08
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.18,
+            "height": 0.018,
+            "depth": 0.05
+          },
+          "color": 8427282
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m19",
+        "parent": "leaf3",
+        "transform": {
+          "pos": [
+            -0.0897,
+            0.11,
+            -0.1441
+          ],
+          "quat": [
+            -0.61,
+            -0.05,
+            0.79,
+            0.07
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.18,
+            "height": 0.018,
+            "depth": 0.05
+          },
+          "color": 8427282
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m20",
+        "parent": "leaf4",
+        "transform": {
+          "pos": [
+            0,
+            0.025,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.025,
+            "height": 0.1604552953550592,
+            "depth": 0.025
+          },
+          "color": 7770188
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m21",
+        "parent": "leaf4",
+        "transform": {
+          "pos": [
+            -0.147,
+            0.08,
+            0.0353
+          ],
+          "quat": [
+            0.13,
+            0.01,
+            0.99,
+            0.08
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.28,
+            "height": 0.018,
+            "depth": 0.12
+          },
+          "color": 8427282
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m22",
+        "parent": "leaf4",
+        "transform": {
+          "pos": [
+            -0.157,
+            0.08,
+            0.0553
+          ],
+          "quat": [
+            0.3,
+            0.02,
+            0.95,
+            0.08
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.19,
+            "height": 0.018,
+            "depth": 0.06
+          },
+          "color": 8427282
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m23",
+        "parent": "leaf4",
+        "transform": {
+          "pos": [
+            -0.167,
+            0.08,
+            0.0353
+          ],
+          "quat": [
+            -0.03,
+            0,
+            1,
+            0.08
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.19,
+            "height": 0.018,
+            "depth": 0.06
+          },
+          "color": 8427282
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m24",
+        "parent": "berry0",
+        "transform": {
+          "pos": [
+            0.003,
+            -0.0528,
+            0.0458
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.022,
+            "height": 0.10557795732514932,
+            "depth": 0.022
+          },
+          "color": 7770188
+        }
+      },
+      {
+        "id": "m25",
+        "parent": "berry0",
+        "transform": {
+          "pos": [
+            0.0058,
+            -0.1056,
+            0.0897
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.08108304747845978,
+            "height": 0.05883450398826971,
+            "depth": 0.07471266636159271
+          },
+          "color": 12077607
+        }
+      },
+      {
+        "id": "m26",
+        "parent": "berry0",
+        "transform": {
+          "pos": [
+            0.0058,
+            -0.1576,
+            0.0897
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.06004527597222477,
+            "height": 0.045,
+            "depth": 0.04759224538132548
+          },
+          "color": 12077607
+        }
+      },
+      {
+        "id": "m27",
+        "parent": "berry0",
+        "transform": {
+          "pos": [
+            0.0058,
+            -0.0656,
+            0.0897
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.09,
+            "height": 0.012,
+            "depth": 0.035
+          },
+          "color": 7770188
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m28",
+        "parent": "berry1",
+        "transform": {
+          "pos": [
+            0.0426,
+            -0.0712,
+            -0.0028
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.022,
+            "height": 0.14236612325534223,
+            "depth": 0.022
+          },
+          "color": 7770188
+        }
+      },
+      {
+        "id": "m29",
+        "parent": "berry1",
+        "transform": {
+          "pos": [
+            0.0834,
+            -0.1424,
+            -0.0054
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.0915004257671535,
+            "height": 0.06997434705449268,
+            "depth": 0.0810853455029428
+          },
+          "color": 12077607
+        }
+      },
+      {
+        "id": "m30",
+        "parent": "berry1",
+        "transform": {
+          "pos": [
+            0.0834,
+            -0.1944,
+            -0.0054
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.05904326117807068,
+            "height": 0.045,
+            "depth": 0.04465851704403758
+          },
+          "color": 12077607
+        }
+      },
+      {
+        "id": "m31",
+        "parent": "berry1",
+        "transform": {
+          "pos": [
+            0.0834,
+            -0.1024,
+            -0.0054
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.09,
+            "height": 0.012,
+            "depth": 0.035
+          },
+          "color": 7770188
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m32",
+        "parent": "berry2",
+        "transform": {
+          "pos": [
+            -0.0026,
+            -0.078,
+            -0.0407
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.022,
+            "height": 0.1559386175428517,
+            "depth": 0.022
+          },
+          "color": 7770188
+        }
+      },
+      {
+        "id": "m33",
+        "parent": "berry2",
+        "transform": {
+          "pos": [
+            -0.0052,
+            -0.1559,
+            -0.0795
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.078079146547243,
+            "height": 0.057496337389806286,
+            "depth": 0.07557915446814151
+          },
+          "color": 12077607
+        }
+      },
+      {
+        "id": "m34",
+        "parent": "berry2",
+        "transform": {
+          "pos": [
+            -0.0052,
+            -0.2079,
+            -0.0795
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.05631781495944597,
+            "height": 0.045,
+            "depth": 0.04293726496398449
+          },
+          "color": 12077607
+        }
+      },
+      {
+        "id": "m35",
+        "parent": "berry2",
+        "transform": {
+          "pos": [
+            -0.0052,
+            -0.1159,
+            -0.0795
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.09,
+            "height": 0.012,
+            "depth": 0.035
+          },
+          "color": 7770188
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m36",
+        "parent": "berry3",
+        "transform": {
+          "pos": [
+            -0.0357,
+            -0.0511,
+            0.0023
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.022,
+            "height": 0.10210116454865784,
+            "depth": 0.022
+          },
+          "color": 7770188
+        }
+      },
+      {
+        "id": "m37",
+        "parent": "berry3",
+        "transform": {
+          "pos": [
+            -0.0698,
+            -0.1021,
+            0.0045
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.08455853356979787,
+            "height": 0.05930264417617582,
+            "depth": 0.08471263444516808
+          },
+          "color": 12077607
+        }
+      },
+      {
+        "id": "m38",
+        "parent": "berry3",
+        "transform": {
+          "pos": [
+            -0.0698,
+            -0.1541,
+            0.0045
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.053942921467591075,
+            "height": 0.045,
+            "depth": 0.047571904187090695
+          },
+          "color": 12077607
+        }
+      },
+      {
+        "id": "m39",
+        "parent": "berry3",
+        "transform": {
+          "pos": [
+            -0.0698,
+            -0.0621,
+            0.0045
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.09,
+            "height": 0.012,
+            "depth": 0.035
+          },
+          "color": 7770188
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m40",
+        "parent": "unripe0",
+        "transform": {
+          "pos": [
+            0.0463,
+            -0.05,
+            0.0172
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.018,
+            "height": 0.11,
+            "depth": 0.018
+          },
+          "color": 7770188
+        }
+      },
+      {
+        "id": "m41",
+        "parent": "unripe0",
+        "transform": {
+          "pos": [
+            0.089,
+            -0.095,
+            0.0331
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.06763269172096624,
+            "height": 0.06931840369012207,
+            "depth": 0.06455252538993955
+          },
+          "color": 7770188
+        }
+      },
+      {
+        "id": "m42",
+        "parent": "unripe0",
+        "transform": {
+          "pos": [
+            0.089,
+            -0.059,
+            0.0331
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.065,
+            "height": 0.01,
+            "depth": 0.028
+          },
+          "color": 7770188
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m43",
+        "parent": "unripe1",
+        "transform": {
+          "pos": [
+            -0.0345,
+            -0.05,
+            -0.0353
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.018,
+            "height": 0.11,
+            "depth": 0.018
+          },
+          "color": 7770188
+        }
+      },
+      {
+        "id": "m44",
+        "parent": "unripe1",
+        "transform": {
+          "pos": [
+            -0.0664,
+            -0.07,
+            -0.068
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.06487920629628934,
+            "height": 0.0707535931514576,
+            "depth": 0.05441810907423496
+          },
+          "color": 7770188
+        }
+      },
+      {
+        "id": "m45",
+        "parent": "unripe1",
+        "transform": {
+          "pos": [
+            -0.0664,
+            -0.034,
+            -0.068
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.065,
+            "height": 0.01,
+            "depth": 0.028
+          },
+          "color": 7770188
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m46",
+        "parent": "flower0",
+        "transform": {
+          "pos": [
+            0.0293,
+            0.045,
+            0.0511
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.018,
+            "height": 0.14,
+            "depth": 0.018
+          },
+          "color": 7770188
+        }
+      },
+      {
+        "id": "m47",
+        "parent": "flower0",
+        "transform": {
+          "pos": [
+            0.0519,
+            0.105,
+            0.0907
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.135,
+            "height": 0.014,
+            "depth": 0.045
+          },
+          "color": 15325885
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m48",
+        "parent": "flower0",
+        "transform": {
+          "pos": [
+            0.0519,
+            0.107,
+            0.0907
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.045,
+            "height": 0.016,
+            "depth": 0.135
+          },
+          "color": 15325885
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m49",
+        "parent": "flower0",
+        "transform": {
+          "pos": [
+            0.0519,
+            0.123,
+            0.0907
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.044,
+            "height": 0.024,
+            "depth": 0.044
+          },
+          "color": 15325885
+        }
+      },
+      {
+        "id": "m50",
+        "parent": "flower1",
+        "transform": {
+          "pos": [
+            -0.0234,
+            0.045,
+            -0.0541
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.018,
+            "height": 0.14,
+            "depth": 0.018
+          },
+          "color": 7770188
+        }
+      },
+      {
+        "id": "m51",
+        "parent": "flower1",
+        "transform": {
+          "pos": [
+            -0.0415,
+            0.123,
+            -0.0959
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.135,
+            "height": 0.014,
+            "depth": 0.045
+          },
+          "color": 15325885
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m52",
+        "parent": "flower1",
+        "transform": {
+          "pos": [
+            -0.0415,
+            0.125,
+            -0.0959
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.045,
+            "height": 0.016,
+            "depth": 0.135
+          },
+          "color": 15325885
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m53",
+        "parent": "flower1",
+        "transform": {
+          "pos": [
+            -0.0415,
+            0.141,
+            -0.0959
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.044,
+            "height": 0.024,
+            "depth": 0.044
+          },
+          "color": 15325885
+        }
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "seed": {
+        "v": 1,
+        "seed": 659910949
+      },
+      "ai": {
+        "v": 1,
+        "ts": 1788543651167,
+        "provider": "gpt",
+        "data": "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",
+        "edits": ""
+      },
+      "semanticSnapshot": {
+        "v": 1,
+        "auto": true,
+        "text": "结果草莓植株 · 16组/54mesh · 世界坐标(Y上Z前), 原点=模型根\n# 阅读说明: G:=group行(可动画骨骼, 动画key用G:后的id; @p=pivot世界坐标; 倾(x,y,z)°=朝向偏离世界轴的欧拉角; 缩进=父子层级; 挂:=挂载于某组; G:id→id→…=chain折叠行, 每个id都是可独立动画的group, chain×N=waypoint数)\n# M:=mesh行(label[id 几何 @(世界坐标)], label可省略; ×N=for循环批量件(锚点=代表实例); cyl (起)→(末)或 轴上(Y)等方位词=延伸方向; 薄向=板面法向(扁板); 挂载组双代表=最大件+最远有向件(刃/嘴/管所在端); 无方向标注=均匀块(三向相近,如头),默认面向前(Z); 对称×2=镜像对)\nG:plant 草莓植株 @p(0,-0.3,0)\n  G:roots 深色土壤根团 @p(0,-0.3,0)\n    M:[m0 box 0.28×0.09×0.29 (0,-0.2,0) 薄向上(Y)]\n  G:crownStem 中央叶柄 @p(0,-0.2,0)\n    M:[m3 box 0.05×0.3×0.05 (0,0,0) 轴上(Y)]\n  G:leaf0 锯齿叶片1 @p(0,0,0.1)\n    M:[m5 box 0.26×0.02×0.12 (0,0.1,0.2) 薄向下(Y)]\n  G:leaf1 锯齿叶片2 @p(0.1,0,0)\n    M:[m9 box 0.26×0.02×0.12 (0.2,0.1,0.1) 轴(0.3,0.1,0.1)→(0.1,0.1,0)]\n  G:leaf2 锯齿叶片3 @p(0,0,0)\n    M:[m13 box 0.29×0.02×0.11 (0.1,0.1,-0.2) 轴(0.2,0.1,-0.3)→(0,0.1,0)]\n  G:leaf3 锯齿叶片4 @p(0,0,0)\n    M:[m17 box 0.26×0.02×0.1 (-0.1,0.1,-0.2) 轴(-0.2,0.1,-0.3)→(0,0.1,-0.1)]\n  G:leaf4 锯齿叶片5 @p(-0.1,0,0)\n    M:[m21 box 0.28×0.02×0.12 (-0.2,0.1,0) 薄向下(Y)]\n  G:berry0 成熟草莓1 @p(0,0.1,0.1)\n    M:[m25 box 0.08×0.06×0.07 (0,0,0.2)]\n  G:berry1 成熟草莓2 @p(0.1,0.1,0)\n    M:[m29 box 0.09×0.07×0.08 (0.2,0,0)]\n  G:berry2 成熟草莓3 @p(0,0.1,-0.1)\n    M:[m33 box 0.08×0.06×0.08 (0,0,-0.2)]\n  G:berry3 成熟草莓4 @p(-0.1,0.1,0)\n    M:[m37 box 0.08×0.06×0.08 (-0.2,0,0)]\n  G:unripe0 未成熟浅绿草莓1 @p(0.1,0.1,0)\n    M:[m41 box 0.07×0.07×0.06 (0.2,0,0.1)]\n  G:unripe1 未成熟浅绿草莓2 @p(-0.1,0.1,-0.1)\n    M:[m44 box 0.06×0.07×0.05 (-0.1,0.1,-0.1)]\n  G:flower0 白色草莓花1 @p(0,0.1,0.1)\n    M:[m48 box 0.05×0.02×0.14 (0.1,0.2,0.2) 轴前(Z)]\n  G:flower1 白色草莓花2 @p(0,0.1,-0.1)\n    M:[m52 box 0.05×0.02×0.14 (-0.1,0.2,-0.2) 轴前(Z)]",
+        "stats": {
+          "groups": 16,
+          "meshes": 54,
+          "labeledMeshes": 0,
+          "labelCoverage": 0,
+          "batchLabels": 0,
+          "autoChains": 0,
+          "snapshotChars": 1629
+        }
+      },
+      "colorPalette": {
+        "id": "palette-2b9c0834-be76-4477",
+        "name": "曼德鸭参考场景 · 浅亮建筑",
+        "description": "参考局内与背景样例：浅亮奶油墙面、桃沙道路、黄绿色植被、青蓝窗水、棕黄结构点缀。",
+        "version": 1,
+        "colors": [
+          {
+            "hex": "#FFFDF6"
+          },
+          {
+            "hex": "#FEF9EA"
+          },
+          {
+            "hex": "#FDF2D7"
+          },
+          {
+            "hex": "#E9DABD"
+          },
+          {
+            "hex": "#CDBA97"
+          },
+          {
+            "hex": "#F8E8CF"
+          },
+          {
+            "hex": "#F1D7B2"
+          },
+          {
+            "hex": "#E7C393"
+          },
+          {
+            "hex": "#C9A06E"
+          },
+          {
+            "hex": "#9E7A55"
+          },
+          {
+            "hex": "#FFF7A8"
+          },
+          {
+            "hex": "#FCEF72"
+          },
+          {
+            "hex": "#F6E24B"
+          },
+          {
+            "hex": "#D1B825"
+          },
+          {
+            "hex": "#9C8510"
+          },
+          {
+            "hex": "#FFF3B7"
+          },
+          {
+            "hex": "#FDE674"
+          },
+          {
+            "hex": "#FCD75F"
+          },
+          {
+            "hex": "#FECD4D"
+          },
+          {
+            "hex": "#D1900B"
+          },
+          {
+            "hex": "#FFE2A0"
+          },
+          {
+            "hex": "#FFD170"
+          },
+          {
+            "hex": "#F8BC44"
+          },
+          {
+            "hex": "#E39F1A"
+          },
+          {
+            "hex": "#A96F05"
+          },
+          {
+            "hex": "#FBE3BD"
+          },
+          {
+            "hex": "#FDD8A3"
+          },
+          {
+            "hex": "#FDCC8F"
+          },
+          {
+            "hex": "#F1AD69"
+          },
+          {
+            "hex": "#D99256"
+          },
+          {
+            "hex": "#FFD2BA"
+          },
+          {
+            "hex": "#FFB08A"
+          },
+          {
+            "hex": "#FF8A5B"
+          },
+          {
+            "hex": "#F06B3E"
+          },
+          {
+            "hex": "#B84A27"
+          },
+          {
+            "hex": "#EAF9FF"
+          },
+          {
+            "hex": "#DAF2F5"
+          },
+          {
+            "hex": "#95E5F9"
+          },
+          {
+            "hex": "#76D0F2"
+          },
+          {
+            "hex": "#45BDF6"
+          },
+          {
+            "hex": "#D9F8FB"
+          },
+          {
+            "hex": "#B2E9F2"
+          },
+          {
+            "hex": "#8ECCD6"
+          },
+          {
+            "hex": "#7BCFDF"
+          },
+          {
+            "hex": "#4BAFCA"
+          },
+          {
+            "hex": "#D8F7EF"
+          },
+          {
+            "hex": "#B8ECDD"
+          },
+          {
+            "hex": "#90DCC8"
+          },
+          {
+            "hex": "#74C4BB"
+          },
+          {
+            "hex": "#499D92"
+          },
+          {
+            "hex": "#F1F5AF"
+          },
+          {
+            "hex": "#E4E77F"
+          },
+          {
+            "hex": "#DCDB22"
+          },
+          {
+            "hex": "#BFC41A"
+          },
+          {
+            "hex": "#809712"
+          },
+          {
+            "hex": "#DEE5BC"
+          },
+          {
+            "hex": "#C6CC97"
+          },
+          {
+            "hex": "#AEAF6F"
+          },
+          {
+            "hex": "#76904C"
+          },
+          {
+            "hex": "#5F6F48"
+          },
+          {
+            "hex": "#D4C2A5"
+          },
+          {
+            "hex": "#B89269"
+          },
+          {
+            "hex": "#8E664D"
+          },
+          {
+            "hex": "#714D48"
+          },
+          {
+            "hex": "#52362E"
+          }
+        ],
+        "roles": {
+          "primary": [
+            "#F1D7B2",
+            "#FDD8A3",
+            "#FBE3BD",
+            "#E9DABD",
+            "#FDCC8F",
+            "#F8E8CF",
+            "#E7C393",
+            "#D4C2A5"
+          ],
+          "secondary": [
+            "#714D48",
+            "#52362E",
+            "#8E664D",
+            "#B84A27",
+            "#9E7A55",
+            "#F06B3E",
+            "#A96F05",
+            "#B89269",
+            "#D99256",
+            "#E7C393",
+            "#D4C2A5",
+            "#FDCC8F",
+            "#F1D7B2",
+            "#CDBA97",
+            "#FDD8A3",
+            "#F1AD69",
+            "#E9DABD",
+            "#AEAF6F",
+            "#C9A06E",
+            "#9C8510",
+            "#76904C",
+            "#809712"
+          ],
+          "accent": [
+            "#76D0F2",
+            "#7BCFDF",
+            "#95E5F9",
+            "#8ECCD6",
+            "#45BDF6",
+            "#4BAFCA",
+            "#B2E9F2",
+            "#74C4BB",
+            "#FFD170",
+            "#FECD4D",
+            "#FFE2A0",
+            "#F8BC44",
+            "#FCD75F",
+            "#E9DABD",
+            "#FDD8A3",
+            "#E7C393",
+            "#F06B3E",
+            "#FF8A5B",
+            "#B84A27",
+            "#D99256",
+            "#8E664D",
+            "#9E7A55",
+            "#FFB08A",
+            "#B89269"
+          ],
+          "plant": [
+            "#AEAF6F",
+            "#C6CC97",
+            "#BFC41A",
+            "#809712",
+            "#DCDB22",
+            "#E4E77F",
+            "#D1B825",
+            "#DEE5BC",
+            "#76904C",
+            "#5F6F48",
+            "#9C8510"
+          ],
+          "earth": [
+            "#F1D7B2",
+            "#FDD8A3",
+            "#FBE3BD",
+            "#E9DABD",
+            "#FDCC8F",
+            "#F8E8CF",
+            "#E7C393",
+            "#D4C2A5",
+            "#CDBA97",
+            "#F1AD69",
+            "#9E7A55",
+            "#B89269",
+            "#AEAF6F",
+            "#C9A06E",
+            "#9C8510",
+            "#8E664D",
+            "#76904C",
+            "#809712",
+            "#714D48",
+            "#52362E",
+            "#B84A27",
+            "#F06B3E",
+            "#A96F05",
+            "#D99256"
+          ],
+          "water": [
+            "#4BAFCA",
+            "#45BDF6",
+            "#7BCFDF",
+            "#76D0F2",
+            "#8ECCD6",
+            "#95E5F9",
+            "#499D92",
+            "#74C4BB"
+          ],
+          "atmosphere": [
+            "#76D0F2",
+            "#7BCFDF",
+            "#95E5F9",
+            "#8ECCD6",
+            "#45BDF6",
+            "#4BAFCA",
+            "#B2E9F2",
+            "#74C4BB",
+            "#EAF9FF",
+            "#DAF2F5",
+            "#D9F8FB"
+          ],
+          "effect": [
+            "#F06B3E",
+            "#FF8A5B",
+            "#B84A27",
+            "#D99256",
+            "#8E664D",
+            "#9E7A55",
+            "#FFB08A",
+            "#B89269"
+          ]
+        },
+        "lockedColors": [],
+        "excludedAssetIds": [],
+        "excludedTags": [],
+        "createdAt": 1787561837433,
+        "updatedAt": 1787561837433
+      },
+      "colorPaletteReport": {
+        "appliedMaterials": 54,
+        "appliedVertexColors": 0,
+        "skippedTextures": 0,
+        "explicitIntentColors": 0,
+        "sourceColors": 54,
+        "semanticFallbacks": 0,
+        "usedColors": [
+          "#52362E",
+          "#76904C",
+          "#809712",
+          "#B84A27",
+          "#E9DABD"
+        ]
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -0.34150265642878974,
+          0,
+          -0.3196072907545132
+        ],
+        "max": [
+          0.34150265642878974,
+          0.5255,
+          0.3196072907545132
+        ],
+        "sourceNodeId": "asset-bounds"
+      }
+    ],
+    "sourceMeshCount": 54,
+    "candidateCount": 0,
+    "fallbackUsed": true
+  },
+  "footprintRadius": 0.34150265642878974,
+  "sizeClass": "small",
+  "mode": "voxel",
+  "provider": "gpt",
+  "createdAt": 1788543653494,
+  "updatedAt": 1788543653494
+}

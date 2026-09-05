@@ -1,0 +1,1324 @@
+{
+ "id": "asset-7115a486-ce52-4013",
+ "name": "农宅",
+ "prompt": "Standalone large rural farmhouse with a shallow bright plaster facade, tiled pitched roof, shuttered windows and permanently closed exterior doors. It is a solid non-enterable building with no modeled interior, no removable roof, no surrounding ground, props, fences or people. Coordinate contract: Y+ is up, Z+ is the front/entrance/forward direction, X+ is right; place doors, facades, openings, windshields, or noses toward local Z+ and keep the model centered at its origin.\nCoordinate contract: local Y+ is up, local Z+ is the front, entrance, or forward direction, and local X+ is right. Put doors, facades, openings, windshields, noses, seats, and other recognizable front details toward local Z+. For a modular repeated element, explicitly choose the long axis: side-by-side modules span local X with depth/front on local Z; traversal modules span local Z. Keep the model centered at its origin.\nCanonical dimensions contract: width=11, height=6.5, depth=8 world units. Keep the generated mesh within this centered bounding size.",
+ "modelJson": {
+  "name": "浅亮乡村农舍",
+  "type": "lowpoly",
+  "format": 2,
+  "nodes": [
+   {
+    "id": "farmhouse",
+    "name": "农舍主体",
+    "transform": {
+     "pos": [
+      0,
+      0,
+      0
+     ]
+    },
+    "_obb": {
+     "size": [
+      11.203,
+      7.567,
+      9.416
+     ],
+     "center": [
+      0.045,
+      2.301,
+      -0.073
+     ],
+     "axes": [
+      [
+       0.9979,
+       0.0406,
+       -0.0496
+      ],
+      [
+       -0.0128,
+       0.8841,
+       0.4672
+      ],
+      [
+       0.0628,
+       -0.4656,
+       0.8828
+      ]
+     ],
+     "_mainAxis": 0
+    }
+   },
+   {
+    "id": "m0",
+    "parent": "farmhouse",
+    "transform": {
+     "pos": [
+      0,
+      2.2,
+      0
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 10.4,
+      "height": 4.4,
+      "depth": 7.2
+     },
+     "color": 15849394
+    }
+   },
+   {
+    "id": "m1",
+    "parent": "farmhouse",
+    "transform": {
+     "pos": [
+      0,
+      0.14,
+      0
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 10.55,
+      "height": 0.28,
+      "depth": 7.35
+     },
+     "color": 13213806
+    },
+    "tags": [
+     {
+      "tag": "base",
+      "value": "stone"
+     }
+    ]
+   },
+   {
+    "id": "m2",
+    "parent": "farmhouse",
+    "transform": {
+     "pos": [
+      0,
+      4.12,
+      3.67
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 10.5,
+      "height": 0.22,
+      "depth": 0.16
+     },
+     "color": 16632975
+    }
+   },
+   {
+    "id": "m3",
+    "parent": "farmhouse",
+    "transform": {
+     "pos": [
+      0,
+      5.29,
+      1.96
+     ],
+     "quat": [
+      0.23,
+      0,
+      0,
+      0.97
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 10.9,
+      "height": 0.14,
+      "depth": 4.39
+     },
+     "color": 14258774
+    }
+   },
+   {
+    "id": "m4",
+    "parent": "farmhouse",
+    "transform": {
+     "pos": [
+      0,
+      5.29,
+      -1.96
+     ],
+     "quat": [
+      0,
+      0.97,
+      -0.23,
+      0
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 10.9,
+      "height": 0.14,
+      "depth": 4.39
+     },
+     "color": 14258774
+    }
+   },
+   {
+    "id": "m5",
+    "parent": "farmhouse",
+    "transform": {
+     "pos": [
+      0,
+      6.27,
+      0
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 10.95,
+      "height": 0.22,
+      "depth": 0.28
+     },
+     "color": 12096105
+    }
+   },
+   {
+    "id": "m6",
+    "parent": "farmhouse",
+    "transform": {
+     "pos": [
+      0,
+      5.8,
+      -0.95
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 10.65,
+      "height": 0.09,
+      "depth": 0.15
+     },
+     "color": 12096105
+    }
+   },
+   {
+    "id": "m7",
+    "parent": "farmhouse",
+    "transform": {
+     "pos": [
+      0,
+      5.25,
+      -2.05
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 10.65,
+      "height": 0.09,
+      "depth": 0.15
+     },
+     "color": 12096105
+    }
+   },
+   {
+    "id": "m8",
+    "parent": "farmhouse",
+    "transform": {
+     "pos": [
+      0,
+      4.69,
+      -3.15
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 10.65,
+      "height": 0.09,
+      "depth": 0.15
+     },
+     "color": 12096105
+    }
+   },
+   {
+    "id": "m9",
+    "parent": "farmhouse",
+    "transform": {
+     "pos": [
+      0,
+      5.8,
+      0.95
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 10.65,
+      "height": 0.09,
+      "depth": 0.15
+     },
+     "color": 12096105
+    }
+   },
+   {
+    "id": "m10",
+    "parent": "farmhouse",
+    "transform": {
+     "pos": [
+      0,
+      5.25,
+      2.05
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 10.65,
+      "height": 0.09,
+      "depth": 0.15
+     },
+     "color": 12096105
+    }
+   },
+   {
+    "id": "m11",
+    "parent": "farmhouse",
+    "transform": {
+     "pos": [
+      0,
+      4.69,
+      3.15
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 10.65,
+      "height": 0.09,
+      "depth": 0.15
+     },
+     "color": 12096105
+    }
+   },
+   {
+    "id": "m12",
+    "parent": "farmhouse",
+    "transform": {
+     "pos": [
+      0,
+      1.54,
+      3.68
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 1.9,
+      "height": 2.75,
+      "depth": 0.16
+     },
+     "color": 12096105
+    },
+    "tags": [
+     {
+      "tag": "base",
+      "value": "wood",
+      "variant": "oak"
+     }
+    ]
+   },
+   {
+    "id": "m13",
+    "parent": "farmhouse",
+    "transform": {
+     "pos": [
+      0,
+      1.54,
+      3.79
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 0.12,
+      "height": 2.55,
+      "depth": 0.08
+     },
+     "color": 12096105
+    },
+    "tags": [
+     {
+      "tag": "base",
+      "value": "wood",
+      "variant": "oak"
+     }
+    ]
+   },
+   {
+    "id": "m14",
+    "parent": "farmhouse",
+    "transform": {
+     "pos": [
+      0,
+      2.98,
+      3.7
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 2.25,
+      "height": 0.22,
+      "depth": 0.24
+     },
+     "color": 16632975
+    }
+   },
+   {
+    "id": "m15",
+    "parent": "farmhouse",
+    "transform": {
+     "pos": [
+      -3.25,
+      2.35,
+      3.68
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 2.05,
+      "height": 1.85,
+      "depth": 0.14
+     },
+     "color": 13943461
+    }
+   },
+   {
+    "id": "m16",
+    "parent": "farmhouse",
+    "transform": {
+     "pos": [
+      -3.73,
+      2.35,
+      3.78
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 0.92,
+      "height": 1.62,
+      "depth": 0.13
+     },
+     "color": 12096105
+    },
+    "tags": [
+     {
+      "tag": "base",
+      "value": "wood",
+      "variant": "pine"
+     }
+    ]
+   },
+   {
+    "id": "m17",
+    "parent": "farmhouse",
+    "transform": {
+     "pos": [
+      -2.77,
+      2.35,
+      3.78
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 0.92,
+      "height": 1.62,
+      "depth": 0.13
+     },
+     "color": 12096105
+    },
+    "tags": [
+     {
+      "tag": "base",
+      "value": "wood",
+      "variant": "pine"
+     }
+    ]
+   },
+   {
+    "id": "m18",
+    "parent": "farmhouse",
+    "transform": {
+     "pos": [
+      -3.25,
+      2.35,
+      3.87
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 0.1,
+      "height": 1.64,
+      "depth": 0.08
+     },
+     "color": 12096105
+    }
+   },
+   {
+    "id": "m19",
+    "parent": "farmhouse",
+    "transform": {
+     "pos": [
+      3.25,
+      2.35,
+      3.68
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 2.05,
+      "height": 1.85,
+      "depth": 0.14
+     },
+     "color": 13943461
+    }
+   },
+   {
+    "id": "m20",
+    "parent": "farmhouse",
+    "transform": {
+     "pos": [
+      2.77,
+      2.35,
+      3.78
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 0.92,
+      "height": 1.62,
+      "depth": 0.13
+     },
+     "color": 12096105
+    },
+    "tags": [
+     {
+      "tag": "base",
+      "value": "wood",
+      "variant": "pine"
+     }
+    ]
+   },
+   {
+    "id": "m21",
+    "parent": "farmhouse",
+    "transform": {
+     "pos": [
+      3.73,
+      2.35,
+      3.78
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 0.92,
+      "height": 1.62,
+      "depth": 0.13
+     },
+     "color": 12096105
+    },
+    "tags": [
+     {
+      "tag": "base",
+      "value": "wood",
+      "variant": "pine"
+     }
+    ]
+   },
+   {
+    "id": "m22",
+    "parent": "farmhouse",
+    "transform": {
+     "pos": [
+      3.25,
+      2.35,
+      3.87
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 0.1,
+      "height": 1.64,
+      "depth": 0.08
+     },
+     "color": 12096105
+    }
+   },
+   {
+    "id": "m23",
+    "parent": "farmhouse",
+    "transform": {
+     "pos": [
+      -5.28,
+      2.25,
+      0.65
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 0.14,
+      "height": 1.75,
+      "depth": 1.85
+     },
+     "color": 13943461
+    }
+   },
+   {
+    "id": "m24",
+    "parent": "farmhouse",
+    "transform": {
+     "pos": [
+      -5.36,
+      2.25,
+      0.2
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 0.12,
+      "height": 1.5,
+      "depth": 0.82
+     },
+     "color": 12096105
+    },
+    "tags": [
+     {
+      "tag": "base",
+      "value": "wood",
+      "variant": "pine"
+     }
+    ]
+   },
+   {
+    "id": "m25",
+    "parent": "farmhouse",
+    "transform": {
+     "pos": [
+      -5.36,
+      2.25,
+      1.1
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 0.12,
+      "height": 1.5,
+      "depth": 0.82
+     },
+     "color": 12096105
+    },
+    "tags": [
+     {
+      "tag": "base",
+      "value": "wood",
+      "variant": "pine"
+     }
+    ]
+   },
+   {
+    "id": "m26",
+    "parent": "farmhouse",
+    "transform": {
+     "pos": [
+      5.28,
+      2.25,
+      0.65
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 0.14,
+      "height": 1.75,
+      "depth": 1.85
+     },
+     "color": 13943461
+    }
+   },
+   {
+    "id": "m27",
+    "parent": "farmhouse",
+    "transform": {
+     "pos": [
+      5.36,
+      2.25,
+      0.2
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 0.12,
+      "height": 1.5,
+      "depth": 0.82
+     },
+     "color": 12096105
+    },
+    "tags": [
+     {
+      "tag": "base",
+      "value": "wood",
+      "variant": "pine"
+     }
+    ]
+   },
+   {
+    "id": "m28",
+    "parent": "farmhouse",
+    "transform": {
+     "pos": [
+      5.36,
+      2.25,
+      1.1
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 0.12,
+      "height": 1.5,
+      "depth": 0.82
+     },
+     "color": 12096105
+    },
+    "tags": [
+     {
+      "tag": "base",
+      "value": "wood",
+      "variant": "pine"
+     }
+    ]
+   },
+   {
+    "id": "m29",
+    "parent": "farmhouse",
+    "transform": {
+     "pos": [
+      3.65,
+      5.55,
+      -1.25
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 0.85,
+      "height": 1.45,
+      "depth": 0.85
+     },
+     "color": 13213806
+    },
+    "tags": [
+     {
+      "tag": "base",
+      "value": "stone"
+     }
+    ]
+   },
+   {
+    "id": "m30",
+    "parent": "farmhouse",
+    "transform": {
+     "pos": [
+      3.65,
+      6.31,
+      -1.25
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 1.05,
+      "height": 0.18,
+      "depth": 1.05
+     },
+     "color": 12096105
+    },
+    "tags": [
+     {
+      "tag": "base",
+      "value": "stone"
+     }
+    ]
+   }
+  ],
+  "_meta": {
+   "skipAutoCenter": true,
+   "ai": {
+    "v": 1,
+    "ts": 1788542099650,
+    "provider": "gpt",
+    "data": "Q02Ps4T61tqFzQM67TGB/4h5K25q9XPQbgxaVGM+OE+VN/c0yI5rSxi4/QiEqWfI7HeT0MaBLEvy38BpYIoHTZ2cOJahKvncIQ82TBqM3jvQTCTYVg2wsYVIuO9Et3cpfWmhLQ3uMyYzydWn6EdxeQ/MYt6TSAeZYlLV6ysEUUo/tNTrU4zg8ha7D3v7IApYV3zrpZ6Gtb/tBsvKdOOuC3QsHz2qToP7n+c+f6NNdsovRBB98EhdUoHcDLVk4GQGDTuSc2yiM3+bBVazZ5Rrj+JWqbZLrUodkfDU+GUei+OBDaKpgDox5YvagcFM0NFwAKMPMQUhECCgoCfeEBs9efmf8Fp3BLpH9MnK90Uky6RpEdOa4aRsO7a4M5vq5RSw09fQE2+oeERltrYTUorG9hOx2tC9oac99Bxz9fOh5OG5WQC4IJ1ZGuctKFSpPMzyWpTedHa+iIukbvHewoXt53Z/lXz/oXn6nDOjutBb4jxoW2m100SUoRLSHz6sayHp42S6Q41D4XVOOjM0VFB+rNp+Wq6ihCxPhWvDUndZRksz31yq4P0cKuqkxoERzb9hBBFrfXJ9abOHsayvdRI3xxTRxxOXMvf+PrkJdbyQ3HAGpFWgFp4vV8ciBLbk0qeDFRVQQfyT+YLQie06cDF2cx77BmTq8RveCqeKs2mrhecS+Q3Tu7Lt/D12cMh5EGipbJ7v5f6BMZnolGrs3+AH2vR8eY4psWTHhCaw7qC7AxJcxKCPVKjyVmKXetA0bF337iDev1Cpu5PoVewqYpZV04j4s0mRUdczgbBMl/a1D7NWzDA4YUTi24nUSc6rHtTxSv0xat1XdG3UL5mSyZ95sSToFoWyKDpktFpFj97wu3xj/tmvgyCXGQhJ8saKE6YFsAk1PUqLT/XKMKqo+m0M9tYar2nDKZdjUmvgfijeNAWpmGRKdwbufQJE2Ch8p9F35J5j1mJig93qZj9GJ5aAcxUEsdT0/7DmXfhODO/npxVO/+ojwn9s89IJCskLVNglH/eptOOOwKoCYA8V/aBkOxZJoT23XdkF38+OdccQClq2OY0Dr+zFneHP979TLkzVBZvdhwv0iJyeqs2//t2lKsSeoM5jTSeh9PimxDkhgOIPcfBR+JCYnQKTGhScXpb9XSpzrxOOsKbv+YalWjtca4NWv8eK21+sUpQz",
+    "edits": ""
+   },
+   "semanticSnapshot": {
+    "v": 1,
+    "auto": true,
+    "text": "浅亮乡村农舍 · 1组/31mesh · 世界坐标(Y上Z前), 原点=模型根\n# 阅读说明: G:=group行(可动画骨骼, 动画key用G:后的id; @p=pivot世界坐标; 倾(x,y,z)°=朝向偏离世界轴的欧拉角; 缩进=父子层级; 挂:=挂载于某组; G:id→id→…=chain折叠行, 每个id都是可独立动画的group, chain×N=waypoint数)\n# M:=mesh行(label[id 几何 @(世界坐标)], label可省略; ×N=for循环批量件(锚点=代表实例); cyl (起)→(末)或 轴上(Y)等方位词=延伸方向; 薄向=板面法向(扁板); 挂载组双代表=最大件+最远有向件(刃/嘴/管所在端); 无方向标注=均匀块(三向相近,如头),默认面向前(Z); 对称×2=镜像对)\nG:farmhouse 农舍主体 @p(0,0,0)\n  M:[m0 box 10.4×4.4×7.2 (0,2.2,0) 薄向上(Y)]",
+    "stats": {
+     "groups": 1,
+     "meshes": 31,
+     "labeledMeshes": 0,
+     "labelCoverage": 0,
+     "batchLabels": 0,
+     "autoChains": 0,
+     "snapshotChars": 436
+    }
+   },
+   "colorPalette": {
+    "id": "palette-2b9c0834-be76-4477",
+    "name": "曼德鸭参考场景 · 浅亮建筑",
+    "description": "参考局内与背景样例：浅亮奶油墙面、桃沙道路、黄绿色植被、青蓝窗水、棕黄结构点缀。",
+    "version": 1,
+    "colors": [
+     {
+      "hex": "#FFFDF6"
+     },
+     {
+      "hex": "#FEF9EA"
+     },
+     {
+      "hex": "#FDF2D7"
+     },
+     {
+      "hex": "#E9DABD"
+     },
+     {
+      "hex": "#CDBA97"
+     },
+     {
+      "hex": "#F8E8CF"
+     },
+     {
+      "hex": "#F1D7B2"
+     },
+     {
+      "hex": "#E7C393"
+     },
+     {
+      "hex": "#C9A06E"
+     },
+     {
+      "hex": "#9E7A55"
+     },
+     {
+      "hex": "#FFF7A8"
+     },
+     {
+      "hex": "#FCEF72"
+     },
+     {
+      "hex": "#F6E24B"
+     },
+     {
+      "hex": "#D1B825"
+     },
+     {
+      "hex": "#9C8510"
+     },
+     {
+      "hex": "#FFF3B7"
+     },
+     {
+      "hex": "#FDE674"
+     },
+     {
+      "hex": "#FCD75F"
+     },
+     {
+      "hex": "#FECD4D"
+     },
+     {
+      "hex": "#D1900B"
+     },
+     {
+      "hex": "#FFE2A0"
+     },
+     {
+      "hex": "#FFD170"
+     },
+     {
+      "hex": "#F8BC44"
+     },
+     {
+      "hex": "#E39F1A"
+     },
+     {
+      "hex": "#A96F05"
+     },
+     {
+      "hex": "#FBE3BD"
+     },
+     {
+      "hex": "#FDD8A3"
+     },
+     {
+      "hex": "#FDCC8F"
+     },
+     {
+      "hex": "#F1AD69"
+     },
+     {
+      "hex": "#D99256"
+     },
+     {
+      "hex": "#FFD2BA"
+     },
+     {
+      "hex": "#FFB08A"
+     },
+     {
+      "hex": "#FF8A5B"
+     },
+     {
+      "hex": "#F06B3E"
+     },
+     {
+      "hex": "#B84A27"
+     },
+     {
+      "hex": "#EAF9FF"
+     },
+     {
+      "hex": "#DAF2F5"
+     },
+     {
+      "hex": "#95E5F9"
+     },
+     {
+      "hex": "#76D0F2"
+     },
+     {
+      "hex": "#45BDF6"
+     },
+     {
+      "hex": "#D9F8FB"
+     },
+     {
+      "hex": "#B2E9F2"
+     },
+     {
+      "hex": "#8ECCD6"
+     },
+     {
+      "hex": "#7BCFDF"
+     },
+     {
+      "hex": "#4BAFCA"
+     },
+     {
+      "hex": "#D8F7EF"
+     },
+     {
+      "hex": "#B8ECDD"
+     },
+     {
+      "hex": "#90DCC8"
+     },
+     {
+      "hex": "#74C4BB"
+     },
+     {
+      "hex": "#499D92"
+     },
+     {
+      "hex": "#F1F5AF"
+     },
+     {
+      "hex": "#E4E77F"
+     },
+     {
+      "hex": "#DCDB22"
+     },
+     {
+      "hex": "#BFC41A"
+     },
+     {
+      "hex": "#809712"
+     },
+     {
+      "hex": "#DEE5BC"
+     },
+     {
+      "hex": "#C6CC97"
+     },
+     {
+      "hex": "#AEAF6F"
+     },
+     {
+      "hex": "#76904C"
+     },
+     {
+      "hex": "#5F6F48"
+     },
+     {
+      "hex": "#D4C2A5"
+     },
+     {
+      "hex": "#B89269"
+     },
+     {
+      "hex": "#8E664D"
+     },
+     {
+      "hex": "#714D48"
+     },
+     {
+      "hex": "#52362E"
+     }
+    ],
+    "roles": {
+     "primary": [
+      "#F1D7B2",
+      "#FDD8A3",
+      "#FBE3BD",
+      "#E9DABD",
+      "#FDCC8F",
+      "#F8E8CF",
+      "#E7C393",
+      "#D4C2A5"
+     ],
+     "secondary": [
+      "#714D48",
+      "#52362E",
+      "#8E664D",
+      "#B84A27",
+      "#9E7A55",
+      "#F06B3E",
+      "#A96F05",
+      "#B89269",
+      "#D99256",
+      "#E7C393",
+      "#D4C2A5",
+      "#FDCC8F",
+      "#F1D7B2",
+      "#CDBA97",
+      "#FDD8A3",
+      "#F1AD69",
+      "#E9DABD",
+      "#AEAF6F",
+      "#C9A06E",
+      "#9C8510",
+      "#76904C",
+      "#809712"
+     ],
+     "accent": [
+      "#76D0F2",
+      "#7BCFDF",
+      "#95E5F9",
+      "#8ECCD6",
+      "#45BDF6",
+      "#4BAFCA",
+      "#B2E9F2",
+      "#74C4BB",
+      "#FFD170",
+      "#FECD4D",
+      "#FFE2A0",
+      "#F8BC44",
+      "#FCD75F",
+      "#E9DABD",
+      "#FDD8A3",
+      "#E7C393",
+      "#F06B3E",
+      "#FF8A5B",
+      "#B84A27",
+      "#D99256",
+      "#8E664D",
+      "#9E7A55",
+      "#FFB08A",
+      "#B89269"
+     ],
+     "plant": [
+      "#AEAF6F",
+      "#C6CC97",
+      "#BFC41A",
+      "#809712",
+      "#DCDB22",
+      "#E4E77F",
+      "#D1B825",
+      "#DEE5BC",
+      "#76904C",
+      "#5F6F48",
+      "#9C8510"
+     ],
+     "earth": [
+      "#F1D7B2",
+      "#FDD8A3",
+      "#FBE3BD",
+      "#E9DABD",
+      "#FDCC8F",
+      "#F8E8CF",
+      "#E7C393",
+      "#D4C2A5",
+      "#CDBA97",
+      "#F1AD69",
+      "#9E7A55",
+      "#B89269",
+      "#AEAF6F",
+      "#C9A06E",
+      "#9C8510",
+      "#8E664D",
+      "#76904C",
+      "#809712",
+      "#714D48",
+      "#52362E",
+      "#B84A27",
+      "#F06B3E",
+      "#A96F05",
+      "#D99256"
+     ],
+     "water": [
+      "#4BAFCA",
+      "#45BDF6",
+      "#7BCFDF",
+      "#76D0F2",
+      "#8ECCD6",
+      "#95E5F9",
+      "#499D92",
+      "#74C4BB"
+     ],
+     "atmosphere": [
+      "#76D0F2",
+      "#7BCFDF",
+      "#95E5F9",
+      "#8ECCD6",
+      "#45BDF6",
+      "#4BAFCA",
+      "#B2E9F2",
+      "#74C4BB",
+      "#EAF9FF",
+      "#DAF2F5",
+      "#D9F8FB"
+     ],
+     "effect": [
+      "#F06B3E",
+      "#FF8A5B",
+      "#B84A27",
+      "#D99256",
+      "#8E664D",
+      "#9E7A55",
+      "#FFB08A",
+      "#B89269"
+     ]
+    },
+    "lockedColors": [],
+    "excludedAssetIds": [],
+    "excludedTags": [],
+    "createdAt": 1787561837433,
+    "updatedAt": 1787561837433
+   },
+   "colorPaletteReport": {
+    "appliedMaterials": 31,
+    "appliedVertexColors": 0,
+    "skippedTextures": 0,
+    "explicitIntentColors": 0,
+    "sourceColors": 31,
+    "semanticFallbacks": 0,
+    "usedColors": [
+     "#B89269",
+     "#D4C2A5",
+     "#D99256",
+     "#F1D7B2",
+     "#FDCC8F"
+    ]
+   }
+  }
+ },
+ "colliderPlan": {
+  "version": 1,
+  "boxes": [
+   {
+    "min": [
+     -5.2,
+     0,
+     -3.5999999999999996
+    ],
+    "max": [
+     5.2,
+     4.4,
+     3.6000000000000005
+    ],
+    "sourceNodeId": "m0"
+   },
+   {
+    "min": [
+     -5.45,
+     4.241932984503924,
+     -3.9527490440732542
+    ],
+    "max": [
+     5.45,
+     6.338067015496076,
+     0.03274904407325496
+    ],
+    "sourceNodeId": "m4"
+   },
+   {
+    "min": [
+     -5.45,
+     4.241932984503924,
+     -0.03274904407325385
+    ],
+    "max": [
+     5.45,
+     6.338067015496076,
+     3.9527490440732542
+    ],
+    "sourceNodeId": "m3"
+   },
+   {
+    "min": [
+     -5.275,
+     0,
+     -3.675
+    ],
+    "max": [
+     5.275,
+     0.28,
+     3.675
+    ],
+    "sourceNodeId": "m1"
+   },
+   {
+    "min": [
+     3.225,
+     4.825,
+     -1.6749999999999998
+    ],
+    "max": [
+     4.075,
+     6.2749999999999995,
+     -0.8249999999999997
+    ],
+    "sourceNodeId": "m29"
+   },
+   {
+    "min": [
+     -0.95,
+     0.16500000000000004,
+     3.6000000000000005
+    ],
+    "max": [
+     0.95,
+     2.915,
+     3.7600000000000007
+    ],
+    "sourceNodeId": "m12"
+   },
+   {
+    "min": [
+     -5.475,
+     6.159999999999999,
+     -0.1399999999999998
+    ],
+    "max": [
+     5.475,
+     6.38,
+     0.14000000000000024
+    ],
+    "sourceNodeId": "m5"
+   },
+   {
+    "min": [
+     -4.275,
+     1.425,
+     3.6100000000000003
+    ],
+    "max": [
+     -2.225,
+     3.2750000000000004,
+     3.75
+    ],
+    "sourceNodeId": "m15"
+   },
+   {
+    "min": [
+     2.225,
+     1.425,
+     3.6100000000000003
+    ],
+    "max": [
+     4.275,
+     3.2750000000000004,
+     3.75
+    ],
+    "sourceNodeId": "m19"
+   },
+   {
+    "min": [
+     -5.3500000000000005,
+     1.375,
+     -0.2749999999999998
+    ],
+    "max": [
+     -5.21,
+     3.125,
+     1.5750000000000004
+    ],
+    "sourceNodeId": "m23"
+   },
+   {
+    "min": [
+     5.21,
+     1.375,
+     -0.2749999999999998
+    ],
+    "max": [
+     5.3500000000000005,
+     3.125,
+     1.5750000000000004
+    ],
+    "sourceNodeId": "m26"
+   },
+   {
+    "min": [
+     -5.25,
+     4.01,
+     3.59
+    ],
+    "max": [
+     5.25,
+     4.23,
+     3.75
+    ],
+    "sourceNodeId": "m2"
+   }
+  ],
+  "sourceMeshCount": 31,
+  "candidateCount": 22,
+  "fallbackUsed": false
+ },
+ "footprintRadius": 5.475,
+ "sizeClass": "large",
+ "mode": "voxel",
+ "provider": "gpt",
+ "createdAt": 1788542099327,
+ "updatedAt": 1788542099327
+}

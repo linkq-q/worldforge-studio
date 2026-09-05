@@ -1,0 +1,1223 @@
+{
+ "id": "asset-cd8eb9e7-1714-4937",
+ "name": "干草堆",
+ "prompt": "Standalone loose rural hay pile with bundled and scattered dry stalks, one independent feed-storage object, no pitchfork, animal, shelter, cart or ground. Coordinate contract: Y+ is up, Z+ is the front/entrance/forward direction, X+ is right; place doors, facades, openings, windshields, or noses toward local Z+ and keep the model centered at its origin.\nCoordinate contract: local Y+ is up, local Z+ is the front, entrance, or forward direction, and local X+ is right. Put doors, facades, openings, windshields, noses, seats, and other recognizable front details toward local Z+. For a modular repeated element, explicitly choose the long axis: side-by-side modules span local X with depth/front on local Z; traversal modules span local Z. Keep the model centered at its origin.\nCanonical dimensions contract: width=2.7, height=1.7, depth=2.2 world units. Keep the generated mesh within this centered bounding size.",
+ "modelJson": {
+  "name": "乡村干草堆与饲料箱",
+  "type": "lowpoly",
+  "format": 2,
+  "nodes": [
+   {
+    "id": "hayPile",
+    "name": "松散干草堆",
+    "transform": {
+     "pos": [
+      -0.39,
+      0.73,
+      0.055
+     ]
+    },
+    "_obb": {
+     "size": [
+      2.942,
+      2.392,
+      2.869
+     ],
+     "center": [
+      0.448,
+      -0.206,
+      -0.035
+     ],
+     "axes": [
+      [
+       0.9333,
+       -0.1789,
+       0.3115
+      ],
+      [
+       0.022,
+       0.894,
+       0.4475
+      ],
+      [
+       -0.3585,
+       -0.4108,
+       0.8383
+      ]
+     ],
+     "_mainAxis": 0
+    }
+   },
+   {
+    "id": "bundleFront",
+    "name": "前侧草束",
+    "parent": "hayPile",
+    "transform": {
+     "pos": [
+      -0.37,
+      -0.22,
+      0.695
+     ]
+    },
+    "_obb": {
+     "size": [
+      0.56,
+      0.72,
+      0.37
+     ],
+     "center": [
+      0,
+      0,
+      0.01
+     ],
+     "axes": [
+      [
+       1,
+       0,
+       0
+      ],
+      [
+       0,
+       1,
+       -0.0015
+      ],
+      [
+       0,
+       0.0015,
+       1
+      ]
+     ],
+     "_mainAxis": 1
+    }
+   },
+   {
+    "id": "bundleSide",
+    "name": "侧面草束",
+    "parent": "hayPile",
+    "transform": {
+     "pos": [
+      0.75,
+      -0.31,
+      0.415
+     ]
+    },
+    "_obb": {
+     "size": [
+      1.354,
+      1.363,
+      1.891
+     ],
+     "center": [
+      0.309,
+      -0.132,
+      -0.554
+     ],
+     "axes": [
+      [
+       0.824,
+       -0.2044,
+       0.5284
+      ],
+      [
+       0.1124,
+       0.9731,
+       0.2011
+      ],
+      [
+       -0.5553,
+       -0.1064,
+       0.8248
+      ]
+     ],
+     "_mainAxis": 2
+    }
+   },
+   {
+    "id": "feedStore",
+    "name": "独立饲料储存箱",
+    "parent": "bundleSide",
+    "transform": {
+     "pos": [
+      0.66,
+      0.31,
+      -0.425
+     ]
+    },
+    "_obb": {
+     "size": [
+      0.64,
+      0.917,
+      0.775
+     ],
+     "center": [
+      0,
+      -0.289,
+      -0.381
+     ],
+     "axes": [
+      [
+       1,
+       0,
+       0
+      ],
+      [
+       0,
+       0.9985,
+       0.0554
+      ],
+      [
+       0,
+       -0.0554,
+       0.9985
+      ]
+     ],
+     "_mainAxis": 1
+    }
+   },
+   {
+    "id": "m0",
+    "parent": "hayPile",
+    "transform": {
+     "pos": [
+      0.01,
+      -0.49,
+      -0.075
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 1.75,
+      "height": 0.48,
+      "depth": 1.55
+     },
+     "color": 13028503
+    },
+    "tags": [
+     {
+      "tag": "vegetation",
+      "value": "sway"
+     }
+    ]
+   },
+   {
+    "id": "m1",
+    "parent": "hayPile",
+    "transform": {
+     "pos": [
+      -0.04,
+      -0.05,
+      -0.095
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 1.48,
+      "height": 0.44,
+      "depth": 1.28
+     },
+     "color": 15001471
+    },
+    "tags": [
+     {
+      "tag": "vegetation",
+      "value": "sway"
+     }
+    ]
+   },
+   {
+    "id": "m2",
+    "parent": "hayPile",
+    "transform": {
+     "pos": [
+      -0.06,
+      0.36,
+      -0.135
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 1.12,
+      "height": 0.38,
+      "depth": 0.98
+     },
+     "color": 15001471
+    },
+    "tags": [
+     {
+      "tag": "vegetation",
+      "value": "sway"
+     }
+    ]
+   },
+   {
+    "id": "m3",
+    "parent": "hayPile",
+    "transform": {
+     "pos": [
+      -0.09,
+      0.7,
+      -0.175
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 0.62,
+      "height": 0.3,
+      "depth": 0.66
+     },
+     "color": 14607804
+    },
+    "tags": [
+     {
+      "tag": "vegetation",
+      "value": "sway"
+     }
+    ]
+   },
+   {
+    "id": "m4",
+    "parent": "bundleFront",
+    "transform": {
+     "pos": [
+      0,
+      0,
+      0
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 0.52,
+      "height": 0.72,
+      "depth": 0.34
+     },
+     "color": 14607804
+    },
+    "tags": [
+     {
+      "tag": "vegetation",
+      "value": "sway"
+     }
+    ]
+   },
+   {
+    "id": "m5",
+    "parent": "bundleFront",
+    "transform": {
+     "pos": [
+      0,
+      -0.02,
+      0.01
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 0.56,
+      "height": 0.08,
+      "depth": 0.37
+     },
+     "color": 13744165
+    }
+   },
+   {
+    "id": "m6",
+    "parent": "bundleSide",
+    "transform": {
+     "pos": [
+      0,
+      0,
+      0
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 0.36,
+      "height": 0.62,
+      "depth": 0.48
+     },
+     "color": 13028503
+    },
+    "tags": [
+     {
+      "tag": "vegetation",
+      "value": "sway"
+     }
+    ]
+   },
+   {
+    "id": "m7",
+    "parent": "bundleSide",
+    "transform": {
+     "pos": [
+      0,
+      -0.01,
+      0
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 0.39,
+      "height": 0.07,
+      "depth": 0.51
+     },
+     "color": 13028503
+    }
+   },
+   {
+    "id": "m8",
+    "parent": "hayPile",
+    "transform": {
+     "pos": [
+      -0.47,
+      -0.43,
+      0.765
+     ],
+     "quat": [
+      0.39,
+      0.59,
+      0.59,
+      0.39
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 0.06,
+      "height": 0.045,
+      "depth": 0.9
+     },
+     "color": 15001471
+    },
+    "tags": [
+     {
+      "tag": "vegetation",
+      "value": "sway"
+     }
+    ]
+   },
+   {
+    "id": "m9",
+    "parent": "hayPile",
+    "transform": {
+     "pos": [
+      -0.34,
+      -0.57,
+      0.905
+     ],
+     "quat": [
+      0.45,
+      0.54,
+      0.54,
+      0.45
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 0.05,
+      "height": 0.04,
+      "depth": 0.92
+     },
+     "color": 14607804
+    },
+    "tags": [
+     {
+      "tag": "vegetation",
+      "value": "sway"
+     }
+    ]
+   },
+   {
+    "id": "m10",
+    "parent": "hayPile",
+    "transform": {
+     "pos": [
+      -0.12,
+      0.73,
+      0.285
+     ],
+     "quat": [
+      0.35,
+      0.61,
+      0.61,
+      0.35
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 0.05,
+      "height": 0.045,
+      "depth": 0.85
+     },
+     "color": 13028503
+    },
+    "tags": [
+     {
+      "tag": "vegetation",
+      "value": "sway"
+     }
+    ]
+   },
+   {
+    "id": "m11",
+    "parent": "hayPile",
+    "transform": {
+     "pos": [
+      0.53,
+      0.71,
+      -0.515
+     ],
+     "quat": [
+      0.42,
+      0.57,
+      0.57,
+      0.42
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 0.05,
+      "height": 0.045,
+      "depth": 0.71
+     },
+     "color": 15001471
+    },
+    "tags": [
+     {
+      "tag": "vegetation",
+      "value": "sway"
+     }
+    ]
+   },
+   {
+    "id": "m12",
+    "parent": "hayPile",
+    "transform": {
+     "pos": [
+      -0.49,
+      0.47,
+      -0.695
+     ],
+     "quat": [
+      0.26,
+      0.66,
+      0.66,
+      0.26
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 0.05,
+      "height": 0.04,
+      "depth": 0.77
+     },
+     "color": 14607804
+    },
+    "tags": [
+     {
+      "tag": "vegetation",
+      "value": "sway"
+     }
+    ]
+   },
+   {
+    "id": "m13",
+    "parent": "hayPile",
+    "transform": {
+     "pos": [
+      -0.53,
+      -0.685,
+      -0.965
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 0.72,
+      "height": 0.045,
+      "depth": 0.055
+     },
+     "color": 13028503
+    },
+    "tags": [
+     {
+      "tag": "vegetation",
+      "value": "sway"
+     }
+    ]
+   },
+   {
+    "id": "m14",
+    "parent": "hayPile",
+    "transform": {
+     "pos": [
+      0.47,
+      -0.68,
+      0.675
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 0.055,
+      "height": 0.045,
+      "depth": 0.68
+     },
+     "color": 14607804
+    },
+    "tags": [
+     {
+      "tag": "vegetation",
+      "value": "sway"
+     }
+    ]
+   },
+   {
+    "id": "m15",
+    "parent": "hayPile",
+    "transform": {
+     "pos": [
+      -0.27,
+      -0.675,
+      0.965
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 0.58,
+      "height": 0.04,
+      "depth": 0.05
+     },
+     "color": 15001471
+    },
+    "tags": [
+     {
+      "tag": "vegetation",
+      "value": "sway"
+     }
+    ]
+   },
+   {
+    "id": "m16",
+    "parent": "feedStore",
+    "transform": {
+     "pos": [
+      0,
+      -0.35,
+      -0.385
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 0.58,
+      "height": 0.76,
+      "depth": 0.66
+     },
+     "color": 9332301
+    },
+    "tags": [
+     {
+      "tag": "base",
+      "value": "wood",
+      "variant": "oak"
+     }
+    ]
+   },
+   {
+    "id": "m17",
+    "parent": "feedStore",
+    "transform": {
+     "pos": [
+      0,
+      0.09,
+      -0.385
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 0.64,
+      "height": 0.12,
+      "depth": 0.72
+     },
+     "color": 12096105
+    },
+    "tags": [
+     {
+      "tag": "base",
+      "value": "wood",
+      "variant": "oak"
+     }
+    ]
+   },
+   {
+    "id": "m18",
+    "parent": "feedStore",
+    "transform": {
+     "pos": [
+      0,
+      -0.28,
+      -0.037
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 0.42,
+      "height": 0.3,
+      "depth": 0.035
+     },
+     "color": 9332301
+    }
+   },
+   {
+    "id": "m19",
+    "parent": "feedStore",
+    "transform": {
+     "pos": [
+      0,
+      -0.26,
+      -0.014
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 0.22,
+      "height": 0.08,
+      "depth": 0.04
+     },
+     "color": 11104005
+    }
+   },
+   {
+    "id": "m20",
+    "parent": "feedStore",
+    "transform": {
+     "pos": [
+      0,
+      0.09,
+      0
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 0.08,
+      "height": 0.1,
+      "depth": 0.05
+     },
+     "color": 4824466,
+     "material": {
+      "metalness": 0.78,
+      "roughness": 0.35
+     }
+    },
+    "tags": [
+     {
+      "tag": "base",
+      "value": "metal"
+     }
+    ]
+   }
+  ],
+  "_meta": {
+   "skipAutoCenter": true,
+   "ai": {
+    "v": 1,
+    "ts": 1788542236490,
+    "provider": "gpt",
+    "data": "01Rym1hplS00UYb7aJZQ+j6IBSHc26itlX+FUTdQphgk6zsrsxt/+HBFgMMSW+q55jPUuwWuSiXPyYBUE97d63CzirOcxv2+rzt3O1PDZIvqXRTWEg9wjTarOBulIcIcrKNqsUA9Vnm8mkaqO702ZbpQgM5DwE2d30/Ag6dzGtl2O0ISUOHGzQItsRzojkwhD8ZtOfvuwAZXxAy2ykAOWGNCkYXGN5e3Sg2l/yo6twZaHjgu0pI+VCe/ZbRDD5uUYxKptbxJuwW7B9a9W6FOYROKMlSYh6C4A6ruZFKD3A9kgRvuqf+iEA9N8MAwwpWqdPgq6nf33WRxR4MHrQkDmDpNT8re/QAV246CVp011L1QfXUpiEwnL4glIC2fTqD0UM9XO9lXR0e0UL2bVoPxeXv9kLGWAklkVaIL6thaJ57/31wdze+Z6d1ryA+FgQbMYuFwLjbVo8q6IBKrBBXy4suju+n8LArth4FWnELgj6g30hR4ENc/e+BlNm9XUG+GbnP0QstE0daQUG3RMF0+YREvy2nfwnLOQpI8cUiVn7fEPYEmD42s69HUirR6l8uhV49v/JPrijHIpUUNDdxyfSYoLxpop51XpzEVWy9RoHBrfHfMO2IhVnJ3Qof0Azh0tw6nUtmNPFT3Qo0XPqoQ6YyYWludQxXxOPekN6t2X5OIyJurU1Seafjt6P3LNuO8LoPig9q6/SZw/3a4RWFEjtNxulbJebF04XdFeKel6YD6fwuE8XrS33EJhcEMx9InXFqbsdpDEC/pWY0W4NUtcqd8Krz7jjH1wSMIwAexgneGYvNIxFo5QBJDZCORwp4JjC3syZ38mbNao/FifECTkGXDtbyMAC63LaoxeVeRGKN9LhgZAzcbwq+dQZ1keOAnKuAIm6+lFDN7HUG9A0TMUNerodY5T+rkYA4A/0Pzoj/B5KOkJw1IdkmPpaFSS5S3zs9JC+vHmiEyOQgS0dCBbDOpynz8EyTW+7nLNjbg7A6GESOvRVXvPCWFcemm3Bd0kx3tUqTDxvB3lQ5JCJA0kH8BThbYyfTcn7w/NOHTjkzmz6A8TEdA3wsWkfo/ceZcUrhu8vrh4TB+UO+H/U2fq88D2uaNCavQhdFHnW1TpecXDMR6oZ782KoKFC3jwaIv2/7xZbm9katbF7clzKvBCRKsTPieWi3RK6pTRO6WAMK5vy9EnxC8mZ0HOt8QaB3kqsIrJTockkLvCzZuvER0uRhh8xE6WepOoehLLUuRay1v7RXfsoEZhsIM7cqUaGXhWk0huCWDNQmEe9uIpJj+7kzx+bqpeIPmZgVdO00BnAADAjlrwjEWk+ygmwKtm+6BTmnEli9fC1nlFpTAc/SHI+xteeaOvVr3PEjeHAHGvFj3iT27/S0NXnySZ/l7tl85zadS4dNmbC8O39yHHdPDoHQugx0WdOayfkCDTlA5LPka",
+    "edits": ""
+   },
+   "semanticSnapshot": {
+    "v": 1,
+    "auto": true,
+    "text": "乡村干草堆与饲料箱 · 4组/21mesh · 世界坐标(Y上Z前), 原点=模型根\n# 阅读说明: G:=group行(可动画骨骼, 动画key用G:后的id; @p=pivot世界坐标; 倾(x,y,z)°=朝向偏离世界轴的欧拉角; 缩进=父子层级; 挂:=挂载于某组; G:id→id→…=chain折叠行, 每个id都是可独立动画的group, chain×N=waypoint数)\n# M:=mesh行(label[id 几何 @(世界坐标)], label可省略; ×N=for循环批量件(锚点=代表实例); cyl (起)→(末)或 轴上(Y)等方位词=延伸方向; 薄向=板面法向(扁板); 挂载组双代表=最大件+最远有向件(刃/嘴/管所在端); 无方向标注=均匀块(三向相近,如头),默认面向前(Z); 对称×2=镜像对)\nG:hayPile 松散干草堆 @p(-0.4,0.7,0.1)\n  M:[m0 box 1.8×0.48×1.6 (-0.4,0.2,0) 薄向上(Y)]\n  G:bundleFront 前侧草束 @p(-0.8,0.5,0.8)\n    M:[m4 box 0.52×0.72×0.34 (-0.8,0.5,0.8) 薄向前(Z)]\n  G:bundleSide 侧面草束 @p(0.4,0.4,0.5)\n    M:[m6 box 0.36×0.62×0.48 (0.4,0.4,0.5)]\n    G:feedStore 独立饲料储存箱 @p(1,0.7,0)\n      M:[m16 box 0.58×0.76×0.66 (1,0.4,-0.3)]",
+    "stats": {
+     "groups": 4,
+     "meshes": 21,
+     "labeledMeshes": 0,
+     "labelCoverage": 0,
+     "batchLabels": 0,
+     "autoChains": 0,
+     "snapshotChars": 700
+    }
+   },
+   "colorPalette": {
+    "id": "palette-2b9c0834-be76-4477",
+    "name": "曼德鸭参考场景 · 浅亮建筑",
+    "description": "参考局内与背景样例：浅亮奶油墙面、桃沙道路、黄绿色植被、青蓝窗水、棕黄结构点缀。",
+    "version": 1,
+    "colors": [
+     {
+      "hex": "#FFFDF6"
+     },
+     {
+      "hex": "#FEF9EA"
+     },
+     {
+      "hex": "#FDF2D7"
+     },
+     {
+      "hex": "#E9DABD"
+     },
+     {
+      "hex": "#CDBA97"
+     },
+     {
+      "hex": "#F8E8CF"
+     },
+     {
+      "hex": "#F1D7B2"
+     },
+     {
+      "hex": "#E7C393"
+     },
+     {
+      "hex": "#C9A06E"
+     },
+     {
+      "hex": "#9E7A55"
+     },
+     {
+      "hex": "#FFF7A8"
+     },
+     {
+      "hex": "#FCEF72"
+     },
+     {
+      "hex": "#F6E24B"
+     },
+     {
+      "hex": "#D1B825"
+     },
+     {
+      "hex": "#9C8510"
+     },
+     {
+      "hex": "#FFF3B7"
+     },
+     {
+      "hex": "#FDE674"
+     },
+     {
+      "hex": "#FCD75F"
+     },
+     {
+      "hex": "#FECD4D"
+     },
+     {
+      "hex": "#D1900B"
+     },
+     {
+      "hex": "#FFE2A0"
+     },
+     {
+      "hex": "#FFD170"
+     },
+     {
+      "hex": "#F8BC44"
+     },
+     {
+      "hex": "#E39F1A"
+     },
+     {
+      "hex": "#A96F05"
+     },
+     {
+      "hex": "#FBE3BD"
+     },
+     {
+      "hex": "#FDD8A3"
+     },
+     {
+      "hex": "#FDCC8F"
+     },
+     {
+      "hex": "#F1AD69"
+     },
+     {
+      "hex": "#D99256"
+     },
+     {
+      "hex": "#FFD2BA"
+     },
+     {
+      "hex": "#FFB08A"
+     },
+     {
+      "hex": "#FF8A5B"
+     },
+     {
+      "hex": "#F06B3E"
+     },
+     {
+      "hex": "#B84A27"
+     },
+     {
+      "hex": "#EAF9FF"
+     },
+     {
+      "hex": "#DAF2F5"
+     },
+     {
+      "hex": "#95E5F9"
+     },
+     {
+      "hex": "#76D0F2"
+     },
+     {
+      "hex": "#45BDF6"
+     },
+     {
+      "hex": "#D9F8FB"
+     },
+     {
+      "hex": "#B2E9F2"
+     },
+     {
+      "hex": "#8ECCD6"
+     },
+     {
+      "hex": "#7BCFDF"
+     },
+     {
+      "hex": "#4BAFCA"
+     },
+     {
+      "hex": "#D8F7EF"
+     },
+     {
+      "hex": "#B8ECDD"
+     },
+     {
+      "hex": "#90DCC8"
+     },
+     {
+      "hex": "#74C4BB"
+     },
+     {
+      "hex": "#499D92"
+     },
+     {
+      "hex": "#F1F5AF"
+     },
+     {
+      "hex": "#E4E77F"
+     },
+     {
+      "hex": "#DCDB22"
+     },
+     {
+      "hex": "#BFC41A"
+     },
+     {
+      "hex": "#809712"
+     },
+     {
+      "hex": "#DEE5BC"
+     },
+     {
+      "hex": "#C6CC97"
+     },
+     {
+      "hex": "#AEAF6F"
+     },
+     {
+      "hex": "#76904C"
+     },
+     {
+      "hex": "#5F6F48"
+     },
+     {
+      "hex": "#D4C2A5"
+     },
+     {
+      "hex": "#B89269"
+     },
+     {
+      "hex": "#8E664D"
+     },
+     {
+      "hex": "#714D48"
+     },
+     {
+      "hex": "#52362E"
+     }
+    ],
+    "roles": {
+     "primary": [
+      "#F1D7B2",
+      "#FDD8A3",
+      "#FBE3BD",
+      "#E9DABD",
+      "#FDCC8F",
+      "#F8E8CF",
+      "#E7C393",
+      "#D4C2A5"
+     ],
+     "secondary": [
+      "#714D48",
+      "#52362E",
+      "#8E664D",
+      "#B84A27",
+      "#9E7A55",
+      "#F06B3E",
+      "#A96F05",
+      "#B89269",
+      "#D99256",
+      "#E7C393",
+      "#D4C2A5",
+      "#FDCC8F",
+      "#F1D7B2",
+      "#CDBA97",
+      "#FDD8A3",
+      "#F1AD69",
+      "#E9DABD",
+      "#AEAF6F",
+      "#C9A06E",
+      "#9C8510",
+      "#76904C",
+      "#809712"
+     ],
+     "accent": [
+      "#76D0F2",
+      "#7BCFDF",
+      "#95E5F9",
+      "#8ECCD6",
+      "#45BDF6",
+      "#4BAFCA",
+      "#B2E9F2",
+      "#74C4BB",
+      "#FFD170",
+      "#FECD4D",
+      "#FFE2A0",
+      "#F8BC44",
+      "#FCD75F",
+      "#E9DABD",
+      "#FDD8A3",
+      "#E7C393",
+      "#F06B3E",
+      "#FF8A5B",
+      "#B84A27",
+      "#D99256",
+      "#8E664D",
+      "#9E7A55",
+      "#FFB08A",
+      "#B89269"
+     ],
+     "plant": [
+      "#AEAF6F",
+      "#C6CC97",
+      "#BFC41A",
+      "#809712",
+      "#DCDB22",
+      "#E4E77F",
+      "#D1B825",
+      "#DEE5BC",
+      "#76904C",
+      "#5F6F48",
+      "#9C8510"
+     ],
+     "earth": [
+      "#F1D7B2",
+      "#FDD8A3",
+      "#FBE3BD",
+      "#E9DABD",
+      "#FDCC8F",
+      "#F8E8CF",
+      "#E7C393",
+      "#D4C2A5",
+      "#CDBA97",
+      "#F1AD69",
+      "#9E7A55",
+      "#B89269",
+      "#AEAF6F",
+      "#C9A06E",
+      "#9C8510",
+      "#8E664D",
+      "#76904C",
+      "#809712",
+      "#714D48",
+      "#52362E",
+      "#B84A27",
+      "#F06B3E",
+      "#A96F05",
+      "#D99256"
+     ],
+     "water": [
+      "#4BAFCA",
+      "#45BDF6",
+      "#7BCFDF",
+      "#76D0F2",
+      "#8ECCD6",
+      "#95E5F9",
+      "#499D92",
+      "#74C4BB"
+     ],
+     "atmosphere": [
+      "#76D0F2",
+      "#7BCFDF",
+      "#95E5F9",
+      "#8ECCD6",
+      "#45BDF6",
+      "#4BAFCA",
+      "#B2E9F2",
+      "#74C4BB",
+      "#EAF9FF",
+      "#DAF2F5",
+      "#D9F8FB"
+     ],
+     "effect": [
+      "#F06B3E",
+      "#FF8A5B",
+      "#B84A27",
+      "#D99256",
+      "#8E664D",
+      "#9E7A55",
+      "#FFB08A",
+      "#B89269"
+     ]
+    },
+    "lockedColors": [],
+    "excludedAssetIds": [],
+    "excludedTags": [],
+    "createdAt": 1787561837433,
+    "updatedAt": 1787561837433
+   },
+   "colorPaletteReport": {
+    "appliedMaterials": 21,
+    "appliedVertexColors": 0,
+    "skippedTextures": 0,
+    "explicitIntentColors": 0,
+    "sourceColors": 21,
+    "semanticFallbacks": 0,
+    "usedColors": [
+     "#9C8510",
+     "#AEAF6F",
+     "#D4C2A5",
+     "#E9DABD",
+     "#F1D7B2"
+    ]
+   }
+  }
+ },
+ "colliderPlan": {
+  "version": 1,
+  "boxes": [
+   {
+    "min": [
+     -1.2821151539384243,
+     0,
+     -0.8612500000000001
+    ],
+    "max": [
+     0.46788484606157543,
+     0.48,
+     0.68875
+    ],
+    "sourceNodeId": "m0"
+   },
+   {
+    "min": [
+     -1.1971151539384244,
+     0.45999999999999996,
+     -0.7462500000000001
+    ],
+    "max": [
+     0.28288484606157543,
+     0.8999999999999999,
+     0.53375
+    ],
+    "sourceNodeId": "m1"
+   },
+   {
+    "min": [
+     -1.0371151539384247,
+     0.8999999999999999,
+     -0.6362500000000002
+    ],
+    "max": [
+     0.08288484606157548,
+     1.2799999999999998,
+     0.3437499999999999
+    ],
+    "sourceNodeId": "m2"
+   },
+   {
+    "min": [
+     0.7028848460615754,
+     0,
+     -0.7362500000000001
+    ],
+    "max": [
+     1.2828848460615756,
+     0.76,
+     -0.0762500000000001
+    ],
+    "sourceNodeId": "m16"
+   },
+   {
+    "min": [
+     -1.0471151539384245,
+     0.15000000000000002,
+     0.5137499999999999
+    ],
+    "max": [
+     -0.5271151539384246,
+     0.87,
+     0.85375
+    ],
+    "sourceNodeId": "m4"
+   },
+   {
+    "min": [
+     -0.8171151539384246,
+     1.28,
+     -0.5162500000000001
+    ],
+    "max": [
+     -0.19711515393842455,
+     1.5799999999999998,
+     0.14374999999999993
+    ],
+    "sourceNodeId": "m3"
+   },
+   {
+    "min": [
+     0.15288484606157543,
+     0.10999999999999999,
+     0.1637499999999999
+    ],
+    "max": [
+     0.5128848460615755,
+     0.73,
+     0.6437499999999998
+    ],
+    "sourceNodeId": "m6"
+   }
+  ],
+  "sourceMeshCount": 21,
+  "candidateCount": 7,
+  "fallbackUsed": false
+ },
+ "footprintRadius": 1.2828848460615756,
+ "sizeClass": "medium",
+ "mode": "voxel",
+ "provider": "gpt",
+ "createdAt": 1788542237464,
+ "updatedAt": 1788542237464
+}

@@ -1,0 +1,1183 @@
+{
+  "id": "asset-86268ce6-256a-4d12",
+  "name": "六角盆",
+  "prompt": "深色橡木六角形种植盆，六面斜拼木板和加厚上沿，简洁低多边形浅亮建筑场景风格；橡木仅使用#52362E、#714D48和#8E664D；盆内填有明显可见的深色泥土，泥土仅使用#714D48和#8E664D，表面不完全平整但不溢出；只有盆和土，绝对没有任何植物、花草、枝叶、种子、苔藓、石子、标牌或工具；底面平整\nCoordinate contract: local Y+ is up, local Z+ is the front, entrance, or forward direction, and local X+ is right. Put doors, facades, openings, windshields, noses, seats, and other recognizable front details toward local Z+. For a modular repeated element, explicitly choose the long axis: side-by-side modules span local X with depth/front on local Z; traversal modules span local Z. Keep the model centered at its origin.\nCanonical dimensions contract: width=2.8, height=1.55, depth=2.8 world units. Keep the generated mesh within this centered bounding size.",
+  "modelJson": {
+    "name": "深色橡木六角种植盆",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "pot",
+        "name": "六角橡木盆",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            2.77,
+            2.142,
+            2.451
+          ],
+          "center": [
+            0.001,
+            0.485,
+            0.001
+          ],
+          "axes": [
+            [
+              0.9994,
+              0.0014,
+              -0.0342
+            ],
+            [
+              -0.0015,
+              1,
+              -0.0035
+            ],
+            [
+              0.0342,
+              0.0036,
+              0.9994
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "base",
+        "name": "平整底面",
+        "parent": "pot",
+        "transform": {
+          "pos": [
+            0,
+            0.09,
+            0
+          ]
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "oak"
+          }
+        ],
+        "_obb": {
+          "size": [
+            2.18,
+            0.18,
+            1.82
+          ],
+          "center": [
+            0,
+            0,
+            0
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "walls",
+        "name": "六面斜拼木板",
+        "parent": "pot",
+        "transform": {
+          "pos": [
+            0.015,
+            0.74,
+            0.005
+          ]
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "oak"
+          }
+        ],
+        "_obb": {
+          "size": [
+            2.659,
+            1.173,
+            2.392
+          ],
+          "center": [
+            -0.012,
+            0,
+            -0.005
+          ],
+          "axes": [
+            [
+              0.9984,
+              -0.0007,
+              -0.0558
+            ],
+            [
+              0.0004,
+              1,
+              -0.0054
+            ],
+            [
+              0.0558,
+              0.0054,
+              0.9984
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "soil",
+        "name": "深色泥土",
+        "parent": "walls",
+        "transform": {
+          "pos": [
+            0,
+            0.4625,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            1.998,
+            0.178,
+            1.743
+          ],
+          "center": [
+            -0.014,
+            0.011,
+            0.005
+          ],
+          "axes": [
+            [
+              0.9981,
+              -0.0006,
+              -0.0614
+            ],
+            [
+              0.0002,
+              1,
+              -0.0064
+            ],
+            [
+              0.0614,
+              0.0063,
+              0.9981
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "rim",
+        "name": "加厚六角上沿",
+        "parent": "pot",
+        "transform": {
+          "pos": [
+            0.015,
+            1.43,
+            0.005
+          ]
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "oak"
+          }
+        ],
+        "_obb": {
+          "size": [
+            2.692,
+            0.24,
+            2.328
+          ],
+          "center": [
+            -0.015,
+            0,
+            -0.004
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "base",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 2.18,
+            "height": 0.18,
+            "depth": 1.82
+          },
+          "color": 5387822
+        }
+      },
+      {
+        "id": "m1",
+        "parent": "walls",
+        "transform": {
+          "pos": [
+            0.935,
+            0,
+            0.545
+          ],
+          "quat": [
+            0.35,
+            0.61,
+            0.61,
+            -0.35
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.26,
+            "height": 0.14,
+            "depth": 1.15
+          },
+          "color": 5387822
+        }
+      },
+      {
+        "id": "m2",
+        "parent": "walls",
+        "transform": {
+          "pos": [
+            -0.015,
+            0,
+            1.085
+          ],
+          "quat": [
+            0,
+            0.71,
+            0.71,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.26,
+            "height": 0.14,
+            "depth": 1.15
+          },
+          "color": 7425352
+        }
+      },
+      {
+        "id": "m3",
+        "parent": "walls",
+        "transform": {
+          "pos": [
+            -0.955,
+            0,
+            0.545
+          ],
+          "quat": [
+            -0.35,
+            0.61,
+            0.61,
+            0.35
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.26,
+            "height": 0.14,
+            "depth": 1.15
+          },
+          "color": 9332301
+        }
+      },
+      {
+        "id": "m4",
+        "parent": "walls",
+        "transform": {
+          "pos": [
+            -0.965,
+            0,
+            -0.555
+          ],
+          "quat": [
+            -0.61,
+            0.35,
+            0.35,
+            0.61
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.26,
+            "height": 0.14,
+            "depth": 1.15
+          },
+          "color": 5387822
+        }
+      },
+      {
+        "id": "m5",
+        "parent": "walls",
+        "transform": {
+          "pos": [
+            -0.015,
+            0,
+            -1.095
+          ],
+          "quat": [
+            -0.71,
+            0,
+            0,
+            0.71
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.26,
+            "height": 0.14,
+            "depth": 1.15
+          },
+          "color": 7425352
+        }
+      },
+      {
+        "id": "m6",
+        "parent": "walls",
+        "transform": {
+          "pos": [
+            0.935,
+            0,
+            -0.555
+          ],
+          "quat": [
+            -0.61,
+            -0.35,
+            -0.35,
+            0.61
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.26,
+            "height": 0.14,
+            "depth": 1.15
+          },
+          "color": 9332301
+        }
+      },
+      {
+        "id": "m7",
+        "parent": "rim",
+        "transform": {
+          "pos": [
+            0.865,
+            0,
+            0.505
+          ],
+          "quat": [
+            0,
+            -0.87,
+            0,
+            0.5
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.34,
+            "height": 0.24,
+            "depth": 0.28
+          },
+          "color": 5387822
+        }
+      },
+      {
+        "id": "m8",
+        "parent": "rim",
+        "transform": {
+          "pos": [
+            -0.015,
+            0,
+            1.015
+          ],
+          "quat": [
+            0,
+            1,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.34,
+            "height": 0.24,
+            "depth": 0.28
+          },
+          "color": 7425352
+        }
+      },
+      {
+        "id": "m9",
+        "parent": "rim",
+        "transform": {
+          "pos": [
+            -0.895,
+            0,
+            0.505
+          ],
+          "quat": [
+            0,
+            0.87,
+            0,
+            0.5
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.34,
+            "height": 0.24,
+            "depth": 0.28
+          },
+          "color": 5387822
+        }
+      },
+      {
+        "id": "m10",
+        "parent": "rim",
+        "transform": {
+          "pos": [
+            -0.895,
+            0,
+            -0.515
+          ],
+          "quat": [
+            0,
+            0.5,
+            0,
+            0.87
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.34,
+            "height": 0.24,
+            "depth": 0.28
+          },
+          "color": 7425352
+        }
+      },
+      {
+        "id": "m11",
+        "parent": "rim",
+        "transform": {
+          "pos": [
+            -0.015,
+            0,
+            -1.025
+          ],
+          "quat": [
+            0,
+            0,
+            0,
+            1
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.34,
+            "height": 0.24,
+            "depth": 0.28
+          },
+          "color": 5387822
+        }
+      },
+      {
+        "id": "m12",
+        "parent": "rim",
+        "transform": {
+          "pos": [
+            0.865,
+            0,
+            -0.515
+          ],
+          "quat": [
+            0,
+            -0.5,
+            0,
+            0.87
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.34,
+            "height": 0.24,
+            "depth": 0.28
+          },
+          "color": 7425352
+        }
+      },
+      {
+        "id": "m13",
+        "parent": "soil",
+        "transform": {
+          "pos": [
+            -0.015,
+            0.0125,
+            -0.005
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.96,
+            "height": 0.17,
+            "depth": 0.68
+          },
+          "color": 7425352
+        }
+      },
+      {
+        "id": "m14",
+        "parent": "soil",
+        "transform": {
+          "pos": [
+            -0.065,
+            -0.0025,
+            0.575
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.48,
+            "height": 0.14,
+            "depth": 0.52
+          },
+          "color": 9332301
+        }
+      },
+      {
+        "id": "m15",
+        "parent": "soil",
+        "transform": {
+          "pos": [
+            0.065,
+            -0.0125,
+            -0.575
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.55,
+            "height": 0.12,
+            "depth": 0.5
+          },
+          "color": 7425352
+        }
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1788265975108,
+        "provider": "gpt",
+        "data": "63Vp+7HVVsu+xSIgwBmGX4U/E5iT2Q4U6NPEoxEsqK4E+bVyhdp3Gt+EC/oxI4xMgFaz8FccFLE3GAsutDz4IrCxzMVRdqA2j9fCniLLr6mvMIG76/iHrz2rJm6AUCUOkLm1DMynHHScJnhYJBvN254B3WLXA/lEjqW7LmufG6lmIQ24iumNIu0yTa2OCnPRrT84hDQTgq64dylue0UocplQAO9SWE02jXS1a6duyYjCqN09d6U+KfhbvotRX/pvi6NkYa8zCbwpiKsabF/YgJr979snymy+Vl/yAnieibi0hU+A8B6GNKX28K//RLaE4E+HlhyVvTsOYEoeu9S4zQzivorj1NOj5QNxpLKlwW3VzWCMQDuFozVjqdiXRF0WZQZrLAUzw2Exb4ttKO0yyEjgzJT5yxeJ0AF2225gNDsicQOMEFzenmBt5F9BI083B1QjNPHWarMRsH9fYDfv87BqtLQY3KucimemGZm8x9kb5JRSXwlB9bNHjo+05kfTHikghTxp7LtuFe+GPP3I+O6mjPCXyYm7HUKhusNZ0keGW/EgehjfBJ7macaik/g0v64+Spce1pgb1HR3Eey2uQ2WSk/HeCqNATRB5CxtCWORXDmEYY0QBY2QQ9XqnZL4sftNmAU03Fv8RDObf/cbuwhwsk9dkZeh/9AQ9RhHxXfrF0YAmrnvB2vwTjtarcA7g3FFgm1Xc2MLiREDIcTS5DY6wAKON3Q8j1uwshuZWkgmCfGvBVU7B8A2QIIapJTTDGVMhtCarBpLkXWXe5CkiL1nHrTZgGze6w+4rkPFhNIUG4rd2ISevBse/b6NPLBcaBj/naDvdfsmkSO9xFeo402Mdt+4tp8eL0lWdjl1PCThl8ptrcV8eNyUVnR/iHgTo0HNGnzNElcIcwLuqTj2dZGjRwCsKysBmAGUm8XD2K3ZyQIgSn5yiCuWj6sfDv7EI575NCefbuYNP5U48GfxUBc4ZQ5eBy2ecJ5Pn4BQyDOO7Ox4oEjc42SCGlQ+aYYj37hzevd5qcpXvpxzoi4ZPFyddw7PyCeIxUoB7z9smym0AOGYrs7Q5jNNHg+3e9CQ92edrpqPz7BwQPsm0qB46EGQXJz6B+K48ciUpVH5Hh7Cqj77tf1hVgihK/SEUbm4h3ybwTxKUL2+ABtgIryah3pGFb/FzSzWH3WcY6h9RHa+",
+        "edits": ""
+      },
+      "semanticSnapshot": {
+        "v": 1,
+        "auto": true,
+        "text": "深色橡木六角种植盆 · 5组/16mesh · 世界坐标(Y上Z前), 原点=模型根\n# 阅读说明: G:=group行(可动画骨骼, 动画key用G:后的id; @p=pivot世界坐标; 倾(x,y,z)°=朝向偏离世界轴的欧拉角; 缩进=父子层级; 挂:=挂载于某组; G:id→id→…=chain折叠行, 每个id都是可独立动画的group, chain×N=waypoint数)\n# M:=mesh行(label[id 几何 @(世界坐标)], label可省略; ×N=for循环批量件(锚点=代表实例); cyl (起)→(末)或 轴上(Y)等方位词=延伸方向; 薄向=板面法向(扁板); 挂载组双代表=最大件+最远有向件(刃/嘴/管所在端); 无方向标注=均匀块(三向相近,如头),默认面向前(Z); 对称×2=镜像对)\nG:pot 六角橡木盆 @p(0,0,0)\n  G:base 平整底面 @p(0,0.1,0)\n    M:[m0 box 2.2×0.18×1.8 (0,0.1,0) 薄向上(Y)]\n  G:walls 六面斜拼木板 @p(0,0.7,0)\n    M:[m1 box 1.3×0.14×1.2 (1,0.7,0.6) 轴(0.6,0.7,1.1)→(1.3,0.7,0)]\n    G:soil 深色泥土 @p(0,1.2,0)\n      M:[m13 box 2×0.17×0.68 (0,1.2,0) 薄向上(Y)]\n  G:rim 加厚六角上沿 @p(0,1.4,0)\n    M:[m7 box 1.3×0.24×0.28 (0.9,1.4,0.5) 轴(0.5,1.4,1.1)→(1.2,1.4,-0.1)]",
+        "stats": {
+          "groups": 5,
+          "meshes": 16,
+          "labeledMeshes": 0,
+          "labelCoverage": 0,
+          "batchLabels": 0,
+          "autoChains": 0,
+          "snapshotChars": 733
+        }
+      },
+      "colorPalette": {
+        "id": "palette-2b9c0834-be76-4477",
+        "name": "曼德鸭参考场景 · 浅亮建筑",
+        "description": "参考局内与背景样例：浅亮奶油墙面、桃沙道路、黄绿色植被、青蓝窗水、棕黄结构点缀。",
+        "version": 1,
+        "colors": [
+          {
+            "hex": "#FFFDF6"
+          },
+          {
+            "hex": "#FEF9EA"
+          },
+          {
+            "hex": "#FDF2D7"
+          },
+          {
+            "hex": "#E9DABD"
+          },
+          {
+            "hex": "#CDBA97"
+          },
+          {
+            "hex": "#F8E8CF"
+          },
+          {
+            "hex": "#F1D7B2"
+          },
+          {
+            "hex": "#E7C393"
+          },
+          {
+            "hex": "#C9A06E"
+          },
+          {
+            "hex": "#9E7A55"
+          },
+          {
+            "hex": "#FFF7A8"
+          },
+          {
+            "hex": "#FCEF72"
+          },
+          {
+            "hex": "#F6E24B"
+          },
+          {
+            "hex": "#D1B825"
+          },
+          {
+            "hex": "#9C8510"
+          },
+          {
+            "hex": "#FFF3B7"
+          },
+          {
+            "hex": "#FDE674"
+          },
+          {
+            "hex": "#FCD75F"
+          },
+          {
+            "hex": "#FECD4D"
+          },
+          {
+            "hex": "#D1900B"
+          },
+          {
+            "hex": "#FFE2A0"
+          },
+          {
+            "hex": "#FFD170"
+          },
+          {
+            "hex": "#F8BC44"
+          },
+          {
+            "hex": "#E39F1A"
+          },
+          {
+            "hex": "#A96F05"
+          },
+          {
+            "hex": "#FBE3BD"
+          },
+          {
+            "hex": "#FDD8A3"
+          },
+          {
+            "hex": "#FDCC8F"
+          },
+          {
+            "hex": "#F1AD69"
+          },
+          {
+            "hex": "#D99256"
+          },
+          {
+            "hex": "#FFD2BA"
+          },
+          {
+            "hex": "#FFB08A"
+          },
+          {
+            "hex": "#FF8A5B"
+          },
+          {
+            "hex": "#F06B3E"
+          },
+          {
+            "hex": "#B84A27"
+          },
+          {
+            "hex": "#EAF9FF"
+          },
+          {
+            "hex": "#DAF2F5"
+          },
+          {
+            "hex": "#95E5F9"
+          },
+          {
+            "hex": "#76D0F2"
+          },
+          {
+            "hex": "#45BDF6"
+          },
+          {
+            "hex": "#D9F8FB"
+          },
+          {
+            "hex": "#B2E9F2"
+          },
+          {
+            "hex": "#8ECCD6"
+          },
+          {
+            "hex": "#7BCFDF"
+          },
+          {
+            "hex": "#4BAFCA"
+          },
+          {
+            "hex": "#D8F7EF"
+          },
+          {
+            "hex": "#B8ECDD"
+          },
+          {
+            "hex": "#90DCC8"
+          },
+          {
+            "hex": "#74C4BB"
+          },
+          {
+            "hex": "#499D92"
+          },
+          {
+            "hex": "#F1F5AF"
+          },
+          {
+            "hex": "#E4E77F"
+          },
+          {
+            "hex": "#DCDB22"
+          },
+          {
+            "hex": "#BFC41A"
+          },
+          {
+            "hex": "#809712"
+          },
+          {
+            "hex": "#DEE5BC"
+          },
+          {
+            "hex": "#C6CC97"
+          },
+          {
+            "hex": "#AEAF6F"
+          },
+          {
+            "hex": "#76904C"
+          },
+          {
+            "hex": "#5F6F48"
+          },
+          {
+            "hex": "#D4C2A5"
+          },
+          {
+            "hex": "#B89269"
+          },
+          {
+            "hex": "#8E664D"
+          },
+          {
+            "hex": "#714D48"
+          },
+          {
+            "hex": "#52362E"
+          }
+        ],
+        "roles": {
+          "primary": [
+            "#F1D7B2",
+            "#FDD8A3",
+            "#FBE3BD",
+            "#E9DABD",
+            "#FDCC8F",
+            "#F8E8CF",
+            "#E7C393",
+            "#D4C2A5"
+          ],
+          "secondary": [
+            "#714D48",
+            "#52362E",
+            "#8E664D",
+            "#B84A27",
+            "#9E7A55",
+            "#F06B3E",
+            "#A96F05",
+            "#B89269",
+            "#D99256",
+            "#E7C393",
+            "#D4C2A5",
+            "#FDCC8F",
+            "#F1D7B2",
+            "#CDBA97",
+            "#FDD8A3",
+            "#F1AD69",
+            "#E9DABD",
+            "#AEAF6F",
+            "#C9A06E",
+            "#9C8510",
+            "#76904C",
+            "#809712"
+          ],
+          "accent": [
+            "#76D0F2",
+            "#7BCFDF",
+            "#95E5F9",
+            "#8ECCD6",
+            "#45BDF6",
+            "#4BAFCA",
+            "#B2E9F2",
+            "#74C4BB",
+            "#FFD170",
+            "#FECD4D",
+            "#FFE2A0",
+            "#F8BC44",
+            "#FCD75F",
+            "#E9DABD",
+            "#FDD8A3",
+            "#E7C393",
+            "#F06B3E",
+            "#FF8A5B",
+            "#B84A27",
+            "#D99256",
+            "#8E664D",
+            "#9E7A55",
+            "#FFB08A",
+            "#B89269"
+          ],
+          "plant": [
+            "#AEAF6F",
+            "#C6CC97",
+            "#BFC41A",
+            "#809712",
+            "#DCDB22",
+            "#E4E77F",
+            "#D1B825",
+            "#DEE5BC",
+            "#76904C",
+            "#5F6F48",
+            "#9C8510"
+          ],
+          "earth": [
+            "#F1D7B2",
+            "#FDD8A3",
+            "#FBE3BD",
+            "#E9DABD",
+            "#FDCC8F",
+            "#F8E8CF",
+            "#E7C393",
+            "#D4C2A5",
+            "#CDBA97",
+            "#F1AD69",
+            "#9E7A55",
+            "#B89269",
+            "#AEAF6F",
+            "#C9A06E",
+            "#9C8510",
+            "#8E664D",
+            "#76904C",
+            "#809712",
+            "#714D48",
+            "#52362E",
+            "#B84A27",
+            "#F06B3E",
+            "#A96F05",
+            "#D99256"
+          ],
+          "water": [
+            "#4BAFCA",
+            "#45BDF6",
+            "#7BCFDF",
+            "#76D0F2",
+            "#8ECCD6",
+            "#95E5F9",
+            "#499D92",
+            "#74C4BB"
+          ],
+          "atmosphere": [
+            "#76D0F2",
+            "#7BCFDF",
+            "#95E5F9",
+            "#8ECCD6",
+            "#45BDF6",
+            "#4BAFCA",
+            "#B2E9F2",
+            "#74C4BB",
+            "#EAF9FF",
+            "#DAF2F5",
+            "#D9F8FB"
+          ],
+          "effect": [
+            "#F06B3E",
+            "#FF8A5B",
+            "#B84A27",
+            "#D99256",
+            "#8E664D",
+            "#9E7A55",
+            "#FFB08A",
+            "#B89269"
+          ]
+        },
+        "lockedColors": [],
+        "excludedAssetIds": [],
+        "excludedTags": [],
+        "createdAt": 1787561837433,
+        "updatedAt": 1787561837433
+      },
+      "colorPaletteReport": {
+        "appliedMaterials": 16,
+        "appliedVertexColors": 0,
+        "skippedTextures": 0,
+        "explicitIntentColors": 0,
+        "sourceColors": 16,
+        "semanticFallbacks": 0,
+        "usedColors": [
+          "#52362E",
+          "#714D48",
+          "#8E664D"
+        ]
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          0.5716376870198138,
+          0.16499999999999992,
+          -0.029219571370804664
+        ],
+        "max": [
+          1.3283623129801865,
+          1.315,
+          1.1292195713708049
+        ],
+        "sourceNodeId": "m1"
+      },
+      {
+        "min": [
+          -1.3183623129801862,
+          0.16499999999999992,
+          -0.029219571370804664
+        ],
+        "max": [
+          -0.5616376870198136,
+          1.315,
+          1.1292195713708049
+        ],
+        "sourceNodeId": "m3"
+      },
+      {
+        "min": [
+          -1.328362312980186,
+          0.16499999999999992,
+          -1.1292195713708049
+        ],
+        "max": [
+          -0.571637687019814,
+          1.315,
+          0.029219571370804887
+        ],
+        "sourceNodeId": "m4"
+      },
+      {
+        "min": [
+          0.5716376870198141,
+          0.16499999999999992,
+          -1.1292195713708049
+        ],
+        "max": [
+          1.328362312980186,
+          1.315,
+          0.029219571370804887
+        ],
+        "sourceNodeId": "m6"
+      },
+      {
+        "min": [
+          -1.09,
+          0,
+          -0.9099999999999999
+        ],
+        "max": [
+          1.09,
+          0.18,
+          0.9100000000000001
+        ],
+        "sourceNodeId": "m0"
+      },
+      {
+        "min": [
+          -1.3382609991061676,
+          1.31,
+          -1.1593852418313637
+        ],
+        "max": [
+          -0.4217390008938325,
+          1.5499999999999998,
+          0.1393852418313637
+        ],
+        "sourceNodeId": "m10"
+      },
+      {
+        "min": [
+          0.4217390008938325,
+          1.31,
+          -1.1593852418313637
+        ],
+        "max": [
+          1.3382609991061676,
+          1.5499999999999998,
+          0.1393852418313637
+        ],
+        "sourceNodeId": "m12"
+      },
+      {
+        "min": [
+          0.42173900089383276,
+          1.31,
+          -0.13938524183136347
+        ],
+        "max": [
+          1.3382609991061671,
+          1.5499999999999998,
+          1.1593852418313637
+        ],
+        "sourceNodeId": "m7"
+      },
+      {
+        "min": [
+          -1.3382609991061671,
+          1.31,
+          -0.13938524183136347
+        ],
+        "max": [
+          -0.42173900089383276,
+          1.5499999999999998,
+          1.1593852418313637
+        ],
+        "sourceNodeId": "m9"
+      },
+      {
+        "min": [
+          -0.98,
+          1.1300000000000001,
+          -0.3399999999999999
+        ],
+        "max": [
+          0.98,
+          1.3,
+          0.34000000000000014
+        ],
+        "sourceNodeId": "m13"
+      },
+      {
+        "min": [
+          -0.63,
+          0.16500000000000015,
+          -1.1600000000000001
+        ],
+        "max": [
+          0.63,
+          1.315,
+          -1.02
+        ],
+        "sourceNodeId": "m5"
+      },
+      {
+        "min": [
+          -0.6299999999999998,
+          0.16500000000000004,
+          1.02
+        ],
+        "max": [
+          0.6299999999999998,
+          1.315,
+          1.1600000000000001
+        ],
+        "sourceNodeId": "m2"
+      }
+    ],
+    "sourceMeshCount": 16,
+    "candidateCount": 16,
+    "fallbackUsed": false
+  },
+  "footprintRadius": 1.3382609991061676,
+  "sizeClass": "medium",
+  "mode": "voxel",
+  "provider": "gpt",
+  "createdAt": 1788265975452,
+  "updatedAt": 1788265975452
+}

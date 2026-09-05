@@ -1,0 +1,1786 @@
+{
+ "id": "asset-46bb27b6-30ac-422b",
+ "name": "深木禽棚",
+ "prompt": "Standalone open Chinese rural poultry rain shelter with dark timber posts, beams, braces, plank nesting shelves, perches, and internal wooden racks. Use opaque natural Chinese rural timber colors throughout: deep walnut brown, dark chestnut brown, weathered brown-black, and muted reddish-brown. Every visible wooden beam, post, plank, frame, rack, door, railing, roof support, and wooden furnishing must be dark natural wood. Explicitly prohibit white, ivory, cream, pale beige, bleached, painted-wh\nCoordinate contract: local Y+ is up, local Z+ is the front, entrance, or forward direction, and local X+ is right. Put doors, facades, openings, windshields, noses, seats, and other recognizable front details toward local Z+. For a modular repeated element, explicitly choose the long axis: side-by-side modules span local X with depth/front on local Z; traversal modules span local Z. Keep the model centered at its origin.\nCanonical dimensions contract: width=7, height=3.8, depth=5 world units. Keep the generated mesh within this centered bounding size.",
+ "tags": [
+  "farm",
+  "poultry",
+  "shed",
+  "perch",
+  "dark-wood"
+ ],
+ "modelJson": {
+  "name": "中式乡村家禽雨棚",
+  "type": "lowpoly",
+  "format": 2,
+  "nodes": [
+   {
+    "id": "shelter",
+    "name": "雨棚主体",
+    "transform": {
+     "pos": [
+      0,
+      0,
+      0
+     ]
+    },
+    "_obb": {
+     "size": [
+      7.03,
+      4.908,
+      5.277
+     ],
+     "center": [
+      0,
+      1.515,
+      -0.027
+     ],
+     "axes": [
+      [
+       1,
+       0.0001,
+       0
+      ],
+      [
+       -0.0001,
+       0.9971,
+       0.0761
+      ],
+      [
+       0,
+       -0.0761,
+       0.9971
+      ]
+     ],
+     "_mainAxis": 0
+    }
+   },
+   {
+    "id": "frame",
+    "name": "深色木构架",
+    "parent": "shelter",
+    "transform": {
+     "pos": [
+      0,
+      0,
+      0
+     ]
+    },
+    "_obb": {
+     "size": [
+      6.7,
+      3.68,
+      4.8
+     ],
+     "center": [
+      0,
+      1.84,
+      0
+     ],
+     "axes": [
+      [
+       1,
+       0,
+       0
+      ],
+      [
+       0,
+       1,
+       0
+      ],
+      [
+       0,
+       0,
+       1
+      ]
+     ],
+     "_mainAxis": 0
+    }
+   },
+   {
+    "id": "roof",
+    "name": "双坡木板顶",
+    "parent": "shelter",
+    "transform": {
+     "pos": [
+      0,
+      3.1,
+      0
+     ]
+    },
+    "_obb": {
+     "size": [
+      7.03,
+      0.726,
+      5
+     ],
+     "center": [
+      0,
+      0.32,
+      0
+     ],
+     "axes": [
+      [
+       1,
+       0,
+       0
+      ],
+      [
+       0,
+       1,
+       0
+      ],
+      [
+       0,
+       0,
+       1
+      ]
+     ],
+     "_mainAxis": 0
+    }
+   },
+   {
+    "id": "rear_nests",
+    "name": "后部产蛋木架",
+    "parent": "shelter",
+    "transform": {
+     "pos": [
+      0,
+      0,
+      -2
+     ]
+    },
+    "_obb": {
+     "size": [
+      5.74,
+      1.699,
+      0.916
+     ],
+     "center": [
+      0,
+      1.235,
+      0.229
+     ],
+     "axes": [
+      [
+       1,
+       0,
+       0
+      ],
+      [
+       0,
+       0.9989,
+       -0.0472
+      ],
+      [
+       0,
+       0.0472,
+       0.9989
+      ]
+     ],
+     "_mainAxis": 0
+    }
+   },
+   {
+    "id": "perches",
+    "name": "栖木",
+    "parent": "shelter",
+    "transform": {
+     "pos": [
+      0,
+      0.9,
+      0
+     ]
+    },
+    "_obb": {
+     "size": [
+      5,
+      0.975,
+      2.452
+     ],
+     "center": [
+      0,
+      -0.385,
+      0.2
+     ],
+     "axes": [
+      [
+       1,
+       0,
+       0
+      ],
+      [
+       0,
+       1,
+       -0.0021
+      ],
+      [
+       0,
+       0.0021,
+       1
+      ]
+     ],
+     "_mainAxis": 0
+    }
+   },
+   {
+    "id": "side_rails",
+    "name": "侧面低木栏",
+    "parent": "shelter",
+    "transform": {
+     "pos": [
+      0,
+      0,
+      0
+     ]
+    },
+    "_obb": {
+     "size": [
+      6.58,
+      0.78,
+      4
+     ],
+     "center": [
+      0,
+      0.82,
+      0
+     ],
+     "axes": [
+      [
+       1,
+       0,
+       0
+      ],
+      [
+       0,
+       1,
+       0
+      ],
+      [
+       0,
+       0,
+       1
+      ]
+     ],
+     "_mainAxis": 0
+    }
+   },
+   {
+    "id": "front_threshold",
+    "name": "入口木槛",
+    "parent": "shelter",
+    "transform": {
+     "pos": [
+      0,
+      0,
+      2.2
+     ]
+    },
+    "_obb": {
+     "size": [
+      6.25,
+      0.16,
+      0.28
+     ],
+     "center": [
+      0,
+      0.08,
+      -0.02
+     ],
+     "axes": [
+      [
+       1,
+       0,
+       0
+      ],
+      [
+       0,
+       1,
+       0
+      ],
+      [
+       0,
+       0,
+       1
+      ]
+     ],
+     "_mainAxis": 0
+    }
+   },
+   {
+    "id": "m0",
+    "parent": "frame",
+    "transform": {
+     "pos": [
+      -3.2,
+      1.55,
+      -2.15
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 0.28,
+      "height": 3.1,
+      "depth": 0.28
+     },
+     "color": 12096105
+    },
+    "tags": [
+     {
+      "tag": "base",
+      "value": "wood",
+      "variant": "bark"
+     }
+    ]
+   },
+   {
+    "id": "m1",
+    "parent": "frame",
+    "transform": {
+     "pos": [
+      -3.2,
+      1.55,
+      2.15
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 0.28,
+      "height": 3.1,
+      "depth": 0.28
+     },
+     "color": 10386005
+    },
+    "tags": [
+     {
+      "tag": "base",
+      "value": "wood",
+      "variant": "bark"
+     }
+    ]
+   },
+   {
+    "id": "m2",
+    "parent": "frame",
+    "transform": {
+     "pos": [
+      3.2,
+      1.55,
+      -2.15
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 0.28,
+      "height": 3.1,
+      "depth": 0.28
+     },
+     "color": 9332301
+    },
+    "tags": [
+     {
+      "tag": "base",
+      "value": "wood",
+      "variant": "bark"
+     }
+    ]
+   },
+   {
+    "id": "m3",
+    "parent": "frame",
+    "transform": {
+     "pos": [
+      3.2,
+      1.55,
+      2.15
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 0.28,
+      "height": 3.1,
+      "depth": 0.28
+     },
+     "color": 12096105
+    },
+    "tags": [
+     {
+      "tag": "base",
+      "value": "wood",
+      "variant": "bark"
+     }
+    ]
+   },
+   {
+    "id": "m4",
+    "parent": "frame",
+    "transform": {
+     "pos": [
+      0,
+      3.03,
+      2.15
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 6.7,
+      "height": 0.28,
+      "depth": 0.3
+     },
+     "color": 9332301
+    },
+    "tags": [
+     {
+      "tag": "base",
+      "value": "wood",
+      "variant": "walnut"
+     }
+    ]
+   },
+   {
+    "id": "m5",
+    "parent": "frame",
+    "transform": {
+     "pos": [
+      0,
+      3.03,
+      -2.15
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 6.7,
+      "height": 0.28,
+      "depth": 0.3
+     },
+     "color": 12096105
+    },
+    "tags": [
+     {
+      "tag": "base",
+      "value": "wood",
+      "variant": "walnut"
+     }
+    ]
+   },
+   {
+    "id": "m6",
+    "parent": "frame",
+    "transform": {
+     "pos": [
+      -3.2,
+      3.03,
+      0
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 0.3,
+      "height": 0.28,
+      "depth": 4.6
+     },
+     "color": 10386005
+    },
+    "tags": [
+     {
+      "tag": "base",
+      "value": "wood",
+      "variant": "walnut"
+     }
+    ]
+   },
+   {
+    "id": "m7",
+    "parent": "frame",
+    "transform": {
+     "pos": [
+      3.2,
+      3.03,
+      0
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 0.3,
+      "height": 0.28,
+      "depth": 4.6
+     },
+     "color": 9332301
+    },
+    "tags": [
+     {
+      "tag": "base",
+      "value": "wood",
+      "variant": "walnut"
+     }
+    ]
+   },
+   {
+    "id": "m8",
+    "parent": "frame",
+    "transform": {
+     "pos": [
+      0,
+      3.53,
+      0
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 0.26,
+      "height": 0.3,
+      "depth": 4.8
+     },
+     "color": 10386005
+    },
+    "tags": [
+     {
+      "tag": "base",
+      "value": "wood",
+      "variant": "walnut"
+     }
+    ]
+   },
+   {
+    "id": "m9",
+    "parent": "frame",
+    "transform": {
+     "pos": [
+      -2.66,
+      2.4,
+      2.22
+     ],
+     "quat": [
+      0,
+      0,
+      -0.31,
+      0.95
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 1.28,
+      "height": 0.16,
+      "depth": 0.2
+     },
+     "color": 9332301
+    },
+    "tags": [
+     {
+      "tag": "base",
+      "value": "wood",
+      "variant": "walnut"
+     }
+    ]
+   },
+   {
+    "id": "m10",
+    "parent": "frame",
+    "transform": {
+     "pos": [
+      2.67,
+      2.4,
+      2.22
+     ],
+     "quat": [
+      0,
+      0,
+      0.95,
+      -0.31
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 1.28,
+      "height": 0.16,
+      "depth": 0.2
+     },
+     "color": 9332301
+    },
+    "tags": [
+     {
+      "tag": "base",
+      "value": "wood",
+      "variant": "walnut"
+     }
+    ]
+   },
+   {
+    "id": "m11",
+    "parent": "frame",
+    "transform": {
+     "pos": [
+      -2.66,
+      2.4,
+      -2.22
+     ],
+     "quat": [
+      0,
+      0,
+      -0.31,
+      0.95
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 1.28,
+      "height": 0.16,
+      "depth": 0.2
+     },
+     "color": 10386005
+    },
+    "tags": [
+     {
+      "tag": "base",
+      "value": "wood",
+      "variant": "walnut"
+     }
+    ]
+   },
+   {
+    "id": "m12",
+    "parent": "frame",
+    "transform": {
+     "pos": [
+      2.67,
+      2.4,
+      -2.22
+     ],
+     "quat": [
+      0,
+      0,
+      0.95,
+      -0.31
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 1.28,
+      "height": 0.16,
+      "depth": 0.2
+     },
+     "color": 10386005
+    },
+    "tags": [
+     {
+      "tag": "base",
+      "value": "wood",
+      "variant": "walnut"
+     }
+    ]
+   },
+   {
+    "id": "m13",
+    "parent": "roof",
+    "transform": {
+     "pos": [
+      -1.75,
+      0.32,
+      0
+     ],
+     "quat": [
+      0,
+      0,
+      0.08,
+      1
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 3.55,
+      "height": 0.16,
+      "depth": 5
+     },
+     "color": 12077607
+    },
+    "tags": [
+     {
+      "tag": "base",
+      "value": "wood",
+      "variant": "bark"
+     }
+    ]
+   },
+   {
+    "id": "m14",
+    "parent": "roof",
+    "transform": {
+     "pos": [
+      1.75,
+      0.32,
+      0
+     ],
+     "quat": [
+      0,
+      0,
+      -0.08,
+      1
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 3.55,
+      "height": 0.16,
+      "depth": 5
+     },
+     "color": 12077607
+    },
+    "tags": [
+     {
+      "tag": "base",
+      "value": "wood",
+      "variant": "bark"
+     }
+    ]
+   },
+   {
+    "id": "m15",
+    "parent": "rear_nests",
+    "transform": {
+     "pos": [
+      0,
+      0.72,
+      0.25
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 5.6,
+      "height": 0.18,
+      "depth": 0.85
+     },
+     "color": 9332301
+    },
+    "tags": [
+     {
+      "tag": "base",
+      "value": "wood",
+      "variant": "walnut"
+     }
+    ]
+   },
+   {
+    "id": "m16",
+    "parent": "rear_nests",
+    "transform": {
+     "pos": [
+      0,
+      1.42,
+      0.25
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 5.6,
+      "height": 0.18,
+      "depth": 0.85
+     },
+     "color": 9332301
+    },
+    "tags": [
+     {
+      "tag": "base",
+      "value": "wood",
+      "variant": "walnut"
+     }
+    ]
+   },
+   {
+    "id": "m17",
+    "parent": "rear_nests",
+    "transform": {
+     "pos": [
+      0,
+      1.34,
+      -0.12
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 5.6,
+      "height": 1.45,
+      "depth": 0.16
+     },
+     "color": 10386005
+    },
+    "tags": [
+     {
+      "tag": "base",
+      "value": "wood",
+      "variant": "walnut"
+     }
+    ]
+   },
+   {
+    "id": "m18",
+    "parent": "rear_nests",
+    "transform": {
+     "pos": [
+      -2.8,
+      1.08,
+      0.25
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 0.14,
+      "height": 1.35,
+      "depth": 0.82
+     },
+     "color": 12096105
+    },
+    "tags": [
+     {
+      "tag": "base",
+      "value": "wood",
+      "variant": "bark"
+     }
+    ]
+   },
+   {
+    "id": "m19",
+    "parent": "rear_nests",
+    "transform": {
+     "pos": [
+      -1.4,
+      1.08,
+      0.25
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 0.14,
+      "height": 1.35,
+      "depth": 0.82
+     },
+     "color": 9332301
+    },
+    "tags": [
+     {
+      "tag": "base",
+      "value": "wood",
+      "variant": "bark"
+     }
+    ]
+   },
+   {
+    "id": "m20",
+    "parent": "rear_nests",
+    "transform": {
+     "pos": [
+      0,
+      1.08,
+      0.25
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 0.14,
+      "height": 1.35,
+      "depth": 0.82
+     },
+     "color": 12096105
+    },
+    "tags": [
+     {
+      "tag": "base",
+      "value": "wood",
+      "variant": "bark"
+     }
+    ]
+   },
+   {
+    "id": "m21",
+    "parent": "rear_nests",
+    "transform": {
+     "pos": [
+      1.4,
+      1.08,
+      0.25
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 0.14,
+      "height": 1.35,
+      "depth": 0.82
+     },
+     "color": 10386005
+    },
+    "tags": [
+     {
+      "tag": "base",
+      "value": "wood",
+      "variant": "bark"
+     }
+    ]
+   },
+   {
+    "id": "m22",
+    "parent": "rear_nests",
+    "transform": {
+     "pos": [
+      2.8,
+      1.08,
+      0.25
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 0.14,
+      "height": 1.35,
+      "depth": 0.82
+     },
+     "color": 9332301
+    },
+    "tags": [
+     {
+      "tag": "base",
+      "value": "wood",
+      "variant": "bark"
+     }
+    ]
+   },
+   {
+    "id": "m23",
+    "parent": "perches",
+    "transform": {
+     "pos": [
+      0,
+      0.02,
+      -0.75
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 5,
+      "height": 0.16,
+      "depth": 0.2
+     },
+     "color": 12096105
+    },
+    "tags": [
+     {
+      "tag": "base",
+      "value": "wood",
+      "variant": "bark"
+     }
+    ]
+   },
+   {
+    "id": "m24",
+    "parent": "perches",
+    "transform": {
+     "pos": [
+      0,
+      0.02,
+      0.25
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 5,
+      "height": 0.16,
+      "depth": 0.2
+     },
+     "color": 9332301
+    },
+    "tags": [
+     {
+      "tag": "base",
+      "value": "wood",
+      "variant": "bark"
+     }
+    ]
+   },
+   {
+    "id": "m25",
+    "parent": "perches",
+    "transform": {
+     "pos": [
+      0,
+      0.02,
+      1.15
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 5,
+      "height": 0.16,
+      "depth": 0.2
+     },
+     "color": 12096105
+    },
+    "tags": [
+     {
+      "tag": "base",
+      "value": "wood",
+      "variant": "bark"
+     }
+    ]
+   },
+   {
+    "id": "m26",
+    "parent": "perches",
+    "transform": {
+     "pos": [
+      -2.25,
+      -0.42,
+      0.2
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 0.2,
+      "height": 0.9,
+      "depth": 2.45
+     },
+     "color": 10386005
+    },
+    "tags": [
+     {
+      "tag": "base",
+      "value": "wood",
+      "variant": "walnut"
+     }
+    ]
+   },
+   {
+    "id": "m27",
+    "parent": "perches",
+    "transform": {
+     "pos": [
+      2.25,
+      -0.42,
+      0.2
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 0.2,
+      "height": 0.9,
+      "depth": 2.45
+     },
+     "color": 9332301
+    },
+    "tags": [
+     {
+      "tag": "base",
+      "value": "wood",
+      "variant": "walnut"
+     }
+    ]
+   },
+   {
+    "id": "m28",
+    "parent": "side_rails",
+    "transform": {
+     "pos": [
+      -3.2,
+      0.52,
+      0
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 0.18,
+      "height": 0.18,
+      "depth": 4
+     },
+     "color": 10386005
+    },
+    "tags": [
+     {
+      "tag": "base",
+      "value": "wood",
+      "variant": "walnut"
+     }
+    ]
+   },
+   {
+    "id": "m29",
+    "parent": "side_rails",
+    "transform": {
+     "pos": [
+      -3.2,
+      1.12,
+      0
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 0.18,
+      "height": 0.18,
+      "depth": 4
+     },
+     "color": 9332301
+    },
+    "tags": [
+     {
+      "tag": "base",
+      "value": "wood",
+      "variant": "walnut"
+     }
+    ]
+   },
+   {
+    "id": "m30",
+    "parent": "side_rails",
+    "transform": {
+     "pos": [
+      3.2,
+      0.52,
+      0
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 0.18,
+      "height": 0.18,
+      "depth": 4
+     },
+     "color": 10386005
+    },
+    "tags": [
+     {
+      "tag": "base",
+      "value": "wood",
+      "variant": "walnut"
+     }
+    ]
+   },
+   {
+    "id": "m31",
+    "parent": "side_rails",
+    "transform": {
+     "pos": [
+      3.2,
+      1.12,
+      0
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 0.18,
+      "height": 0.18,
+      "depth": 4
+     },
+     "color": 12096105
+    },
+    "tags": [
+     {
+      "tag": "base",
+      "value": "wood",
+      "variant": "walnut"
+     }
+    ]
+   },
+   {
+    "id": "m32",
+    "parent": "front_threshold",
+    "transform": {
+     "pos": [
+      0,
+      0.08,
+      -0.02
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 6.25,
+      "height": 0.16,
+      "depth": 0.28
+     },
+     "color": 9332301
+    },
+    "tags": [
+     {
+      "tag": "base",
+      "value": "wood",
+      "variant": "bark"
+     }
+    ]
+   }
+  ],
+  "_meta": {
+   "skipAutoCenter": true,
+   "ai": {
+    "v": 1,
+    "ts": 1788551594540,
+    "provider": "gpt",
+    "data": "NH67FXhX7sF+NRoY1CK4cC+gxFO61Tk6NeoQ/y05fylJOsaO75EV7eLF97sgJPjWFghlf1DH2Ea2CltBTVJyVDULYFuY5w6rKQORvNVQmUXvwgFlFwDqgKMkxUk0JGfHhCXTfAUrOQRfYEd0FzOYX3vtSDaz6SEbQu4MIBqnr5kJ3YPhm3GT4Xof6LPqJ9FKx4posNpqhlmgX4ksqQZ752+TccEjC+alt3olHvMlQldLPbzx6tnIMGoUmazfmMmyynKwyhKHtyZzeoh4UwnjxUMYNET/9vgeQ45hSmZfJnhVS6VuhXsiG4e4P6GGTtHHsiu9H8gB42X8QG75nRYdV5qUR+Y6Cy0DULJW4Valr2HIELV2hoUBkB6y/cYAk/EagS0QBEJEywQCB/Z5h/K3Py2GfcV4mtTZ5w/fOlmzBlpzkmJFOq0AvCMoeWiYRe/JpYm2gmqDHNYgIB0dU3L6wz88pDv7L796mhJOuPWVCSTg7XF9aCq7YFDhJQx5/iqnV670a7VghR0ITto4JUjsz8Mi+s8VscYcEjXArwQ+aAijcVRQqBGJ8+PKkuKEDK40YHU6doy6JZo4uzOzZ/oirHghTpgM/qEuM6r3gkpegqIoldPuFZpgCgv0ihqCEp96s2Kquo1Xis3sRhwP5HQzV3x2cEPt17Aq0M24xCFwznTOfOw3sAxwdoTiKjFJjVe9OSnaFcZGv70uBH21bLgfNclh+AxMJ3DXJreMtXaMWoz71hzTwodRd6fMvINlqI0TBN95Ty/aLTI1I6dvNBIcFQ+na6Q1F26DI3nIdZP/gxaJcpA9T0K3Vd/R3fwffRyGDTVVfC/NDYaXfRptAZFKZVikYzQBH30YQrwazjoXg4pNUmCVn3rpZvN8JSj1OOEmpP3EukHo8SMIMZBufSIHtxiKYbIUxhPQV5LNFZQL9Zr6TAZr9mRF02LfQum4xeNlXI21gUNtGSuaQaFhb5djGyXb/n0DxKdqsHnTqY/fGb1BFzDQQJaPS1sGqVa1DdC/RPJzFoaV1R7rudf8LrGNgS0zJm3SsIXUShYJjFIQ1mrAzssYY+Bw4FQdZXnsqoOGyzV2P/bdb7SH0bimp9ujSnJajAhX2ksUK0iY/RvurxYPB6VA7Xx/G6EW5/ZdAaG36A9Sz6jUecVYClaKQBsFf2N/HbStdJOh0NL1+cIsHnPJAt696Pe+hQYf5KJL/fguVh+/u9JnZ3zX4mvhmf34bVC/S2iHY/Zz/Fkc92TFQSVPKatufw2ACVoywh9XGPnpvapc0dZXeIfc+WIVAnfoF434j5ktwubFl204MnGAoAUFC7yQqQXa+Sgt8NncEHLvlS+zeLwvuXKzO1cR3RGdkdEY8scgYCvRPMH0OQ5fdjFtxccNtDGOFS91laY2L321sLkyIn+yfb26TywnsSEnUkRxdoD74JBxd3lM9ZQWQEjJhWCXNNyVXKoxRIp76ywzNnFdn32QwPr1DqN1Iqe12IdqouCzN9o0aObEFggOXJ0a",
+    "edits": ""
+   },
+   "semanticSnapshot": {
+    "v": 1,
+    "auto": true,
+    "text": "中式乡村家禽雨棚 · 7组/33mesh · 世界坐标(Y上Z前), 原点=模型根\n# 阅读说明: G:=group行(可动画骨骼, 动画key用G:后的id; @p=pivot世界坐标; 倾(x,y,z)°=朝向偏离世界轴的欧拉角; 缩进=父子层级; 挂:=挂载于某组; G:id→id→…=chain折叠行, 每个id都是可独立动画的group, chain×N=waypoint数)\n# M:=mesh行(label[id 几何 @(世界坐标)], label可省略; ×N=for循环批量件(锚点=代表实例); cyl (起)→(末)或 轴上(Y)等方位词=延伸方向; 薄向=板面法向(扁板); 挂载组双代表=最大件+最远有向件(刃/嘴/管所在端); 无方向标注=均匀块(三向相近,如头),默认面向前(Z); 对称×2=镜像对)\nG:shelter 雨棚主体 @p(0,0,0)\n  G:frame 深色木构架 @p(0,0,0)\n    M:[m4 box 6.7×0.28×0.3 (0,3,2.2) 轴右(X)]\n  G:roof 双坡木板顶 @p(0,3.1,0)\n    M:[m13 box 3.6×0.16×5 (-1.7,3.4,0) 薄向上(Y)]\n  G:rear_nests 后部产蛋木架 @p(0,0,-2)\n    M:[m17 box 5.6×1.5×0.16 (0,1.3,-2.1) 薄向前(Z)]\n  G:perches 栖木 @p(0,0.9,0)\n    M:[m26 box 0.2×0.9×2.5 (-2.2,0.5,0.2) 薄向右(X)]\n  G:side_rails 侧面低木栏 @p(0,0,0)\n    M:[m28 box 0.18×0.18×4 (-3.2,0.5,0) 轴前(Z)]\n  G:front_threshold 入口木槛 @p(0,0,2.2)\n    M:[m32 box 6.3×0.16×0.28 (0,0.1,2.2) 轴右(X)]",
+    "stats": {
+     "groups": 7,
+     "meshes": 33,
+     "labeledMeshes": 0,
+     "labelCoverage": 0,
+     "batchLabels": 0,
+     "autoChains": 0,
+     "snapshotChars": 859
+    }
+   },
+   "colorPalette": {
+    "id": "palette-2b9c0834-be76-4477",
+    "name": "曼德鸭参考场景 · 浅亮建筑",
+    "description": "参考局内与背景样例：浅亮奶油墙面、桃沙道路、黄绿色植被、青蓝窗水、棕黄结构点缀。",
+    "version": 1,
+    "colors": [
+     {
+      "hex": "#FFFDF6"
+     },
+     {
+      "hex": "#FEF9EA"
+     },
+     {
+      "hex": "#FDF2D7"
+     },
+     {
+      "hex": "#E9DABD"
+     },
+     {
+      "hex": "#CDBA97"
+     },
+     {
+      "hex": "#F8E8CF"
+     },
+     {
+      "hex": "#F1D7B2"
+     },
+     {
+      "hex": "#E7C393"
+     },
+     {
+      "hex": "#C9A06E"
+     },
+     {
+      "hex": "#9E7A55"
+     },
+     {
+      "hex": "#FFF7A8"
+     },
+     {
+      "hex": "#FCEF72"
+     },
+     {
+      "hex": "#F6E24B"
+     },
+     {
+      "hex": "#D1B825"
+     },
+     {
+      "hex": "#9C8510"
+     },
+     {
+      "hex": "#FFF3B7"
+     },
+     {
+      "hex": "#FDE674"
+     },
+     {
+      "hex": "#FCD75F"
+     },
+     {
+      "hex": "#FECD4D"
+     },
+     {
+      "hex": "#D1900B"
+     },
+     {
+      "hex": "#FFE2A0"
+     },
+     {
+      "hex": "#FFD170"
+     },
+     {
+      "hex": "#F8BC44"
+     },
+     {
+      "hex": "#E39F1A"
+     },
+     {
+      "hex": "#A96F05"
+     },
+     {
+      "hex": "#FBE3BD"
+     },
+     {
+      "hex": "#FDD8A3"
+     },
+     {
+      "hex": "#FDCC8F"
+     },
+     {
+      "hex": "#F1AD69"
+     },
+     {
+      "hex": "#D99256"
+     },
+     {
+      "hex": "#FFD2BA"
+     },
+     {
+      "hex": "#FFB08A"
+     },
+     {
+      "hex": "#FF8A5B"
+     },
+     {
+      "hex": "#F06B3E"
+     },
+     {
+      "hex": "#B84A27"
+     },
+     {
+      "hex": "#EAF9FF"
+     },
+     {
+      "hex": "#DAF2F5"
+     },
+     {
+      "hex": "#95E5F9"
+     },
+     {
+      "hex": "#76D0F2"
+     },
+     {
+      "hex": "#45BDF6"
+     },
+     {
+      "hex": "#D9F8FB"
+     },
+     {
+      "hex": "#B2E9F2"
+     },
+     {
+      "hex": "#8ECCD6"
+     },
+     {
+      "hex": "#7BCFDF"
+     },
+     {
+      "hex": "#4BAFCA"
+     },
+     {
+      "hex": "#D8F7EF"
+     },
+     {
+      "hex": "#B8ECDD"
+     },
+     {
+      "hex": "#90DCC8"
+     },
+     {
+      "hex": "#74C4BB"
+     },
+     {
+      "hex": "#499D92"
+     },
+     {
+      "hex": "#F1F5AF"
+     },
+     {
+      "hex": "#E4E77F"
+     },
+     {
+      "hex": "#DCDB22"
+     },
+     {
+      "hex": "#BFC41A"
+     },
+     {
+      "hex": "#809712"
+     },
+     {
+      "hex": "#DEE5BC"
+     },
+     {
+      "hex": "#C6CC97"
+     },
+     {
+      "hex": "#AEAF6F"
+     },
+     {
+      "hex": "#76904C"
+     },
+     {
+      "hex": "#5F6F48"
+     },
+     {
+      "hex": "#D4C2A5"
+     },
+     {
+      "hex": "#B89269"
+     },
+     {
+      "hex": "#8E664D"
+     },
+     {
+      "hex": "#714D48"
+     },
+     {
+      "hex": "#52362E"
+     }
+    ],
+    "roles": {
+     "primary": [
+      "#F1D7B2",
+      "#FDD8A3",
+      "#FBE3BD",
+      "#E9DABD",
+      "#FDCC8F",
+      "#F8E8CF",
+      "#E7C393",
+      "#D4C2A5"
+     ],
+     "secondary": [
+      "#714D48",
+      "#52362E",
+      "#8E664D",
+      "#B84A27",
+      "#9E7A55",
+      "#F06B3E",
+      "#A96F05",
+      "#B89269",
+      "#D99256",
+      "#E7C393",
+      "#D4C2A5",
+      "#FDCC8F",
+      "#F1D7B2",
+      "#CDBA97",
+      "#FDD8A3",
+      "#F1AD69",
+      "#E9DABD",
+      "#AEAF6F",
+      "#C9A06E",
+      "#9C8510",
+      "#76904C",
+      "#809712"
+     ],
+     "accent": [
+      "#76D0F2",
+      "#7BCFDF",
+      "#95E5F9",
+      "#8ECCD6",
+      "#45BDF6",
+      "#4BAFCA",
+      "#B2E9F2",
+      "#74C4BB",
+      "#FFD170",
+      "#FECD4D",
+      "#FFE2A0",
+      "#F8BC44",
+      "#FCD75F",
+      "#E9DABD",
+      "#FDD8A3",
+      "#E7C393",
+      "#F06B3E",
+      "#FF8A5B",
+      "#B84A27",
+      "#D99256",
+      "#8E664D",
+      "#9E7A55",
+      "#FFB08A",
+      "#B89269"
+     ],
+     "plant": [
+      "#AEAF6F",
+      "#C6CC97",
+      "#BFC41A",
+      "#809712",
+      "#DCDB22",
+      "#E4E77F",
+      "#D1B825",
+      "#DEE5BC",
+      "#76904C",
+      "#5F6F48",
+      "#9C8510"
+     ],
+     "earth": [
+      "#F1D7B2",
+      "#FDD8A3",
+      "#FBE3BD",
+      "#E9DABD",
+      "#FDCC8F",
+      "#F8E8CF",
+      "#E7C393",
+      "#D4C2A5",
+      "#CDBA97",
+      "#F1AD69",
+      "#9E7A55",
+      "#B89269",
+      "#AEAF6F",
+      "#C9A06E",
+      "#9C8510",
+      "#8E664D",
+      "#76904C",
+      "#809712",
+      "#714D48",
+      "#52362E",
+      "#B84A27",
+      "#F06B3E",
+      "#A96F05",
+      "#D99256"
+     ],
+     "water": [
+      "#4BAFCA",
+      "#45BDF6",
+      "#7BCFDF",
+      "#76D0F2",
+      "#8ECCD6",
+      "#95E5F9",
+      "#499D92",
+      "#74C4BB"
+     ],
+     "atmosphere": [
+      "#76D0F2",
+      "#7BCFDF",
+      "#95E5F9",
+      "#8ECCD6",
+      "#45BDF6",
+      "#4BAFCA",
+      "#B2E9F2",
+      "#74C4BB",
+      "#EAF9FF",
+      "#DAF2F5",
+      "#D9F8FB"
+     ],
+     "effect": [
+      "#F06B3E",
+      "#FF8A5B",
+      "#B84A27",
+      "#D99256",
+      "#8E664D",
+      "#9E7A55",
+      "#FFB08A",
+      "#B89269"
+     ]
+    },
+    "lockedColors": [],
+    "excludedAssetIds": [],
+    "excludedTags": [],
+    "createdAt": 1787561837433,
+    "updatedAt": 1787561837433
+   },
+   "colorPaletteReport": {
+    "appliedMaterials": 33,
+    "appliedVertexColors": 0,
+    "skippedTextures": 0,
+    "explicitIntentColors": 0,
+    "sourceColors": 33,
+    "semanticFallbacks": 0,
+    "usedColors": [
+     "#D4C2A5"
+    ]
+   }
+  }
+ },
+ "colliderPlan": {
+  "version": 1,
+  "boxes": [
+   {
+    "min": [
+     -3.515143084260731,
+     3.0588235294117645,
+     -2.5
+    ],
+    "max": [
+     0.015143084260731188,
+     3.7811764705882354,
+     2.5
+    ],
+    "sourceNodeId": "m13"
+   },
+   {
+    "min": [
+     -0.015143084260731188,
+     3.0588235294117645,
+     -2.5
+    ],
+    "max": [
+     3.515143084260731,
+     3.7811764705882354,
+     2.5
+    ],
+    "sourceNodeId": "m14"
+   },
+   {
+    "min": [
+     -2.8,
+     0.6150000000000001,
+     -2.2
+    ],
+    "max": [
+     2.8,
+     2.065,
+     -2.04
+    ],
+    "sourceNodeId": "m17"
+   },
+   {
+    "min": [
+     -2.8,
+     1.3299999999999998,
+     -2.175
+    ],
+    "max": [
+     2.8,
+     1.51,
+     -1.325
+    ],
+    "sourceNodeId": "m16"
+   },
+   {
+    "min": [
+     -2.8,
+     0.63,
+     -2.175
+    ],
+    "max": [
+     2.8,
+     0.8099999999999999,
+     -1.325
+    ],
+    "sourceNodeId": "m15"
+   },
+   {
+    "min": [
+     -3.35,
+     2.8899999999999997,
+     2
+    ],
+    "max": [
+     3.35,
+     3.17,
+     2.3
+    ],
+    "sourceNodeId": "m4"
+   },
+   {
+    "min": [
+     -3.35,
+     2.8899999999999997,
+     -2.3
+    ],
+    "max": [
+     3.35,
+     3.17,
+     -2
+    ],
+    "sourceNodeId": "m5"
+   },
+   {
+    "min": [
+     -2.35,
+     0.030000000000000027,
+     -1.0250000000000001
+    ],
+    "max": [
+     -2.15,
+     0.93,
+     1.425
+    ],
+    "sourceNodeId": "m26"
+   },
+   {
+    "min": [
+     2.15,
+     0.030000000000000027,
+     -1.0250000000000001
+    ],
+    "max": [
+     2.35,
+     0.93,
+     1.425
+    ],
+    "sourceNodeId": "m27"
+   },
+   {
+    "min": [
+     -3.35,
+     2.8899999999999997,
+     -2.3
+    ],
+    "max": [
+     -3.0500000000000003,
+     3.17,
+     2.3
+    ],
+    "sourceNodeId": "m6"
+   },
+   {
+    "min": [
+     3.0500000000000003,
+     2.8899999999999997,
+     -2.3
+    ],
+    "max": [
+     3.35,
+     3.17,
+     2.3
+    ],
+    "sourceNodeId": "m7"
+   },
+   {
+    "min": [
+     -0.13,
+     3.38,
+     -2.4
+    ],
+    "max": [
+     0.13,
+     3.6799999999999997,
+     2.4
+    ],
+    "sourceNodeId": "m8"
+   }
+  ],
+  "sourceMeshCount": 33,
+  "candidateCount": 33,
+  "fallbackUsed": false
+ },
+ "footprintRadius": 3.515143084260731,
+ "sizeClass": "large",
+ "mode": "voxel",
+ "provider": "gpt",
+ "createdAt": 1788551592344,
+ "updatedAt": 1788551592344
+}

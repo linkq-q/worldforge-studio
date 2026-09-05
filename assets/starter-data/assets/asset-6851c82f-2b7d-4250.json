@@ -1,0 +1,1099 @@
+{
+ "id": "asset-6851c82f-2b7d-4250",
+ "name": "打气筒",
+ "prompt": "One standalone manual metal floor air pump only, complete cylinder, handle, base and coiled hose belonging to the pump, no tire, no tools, no person, no ground, no scene, no background. Coordinate contract: Y+ is up, Z+ is the front/entrance/forward direction, X+ is right; place doors, facades, openings, windshields, or noses toward local Z+ and keep the model centered at its origin.\nCoordinate contract: local Y+ is up, local Z+ is the front, entrance, or forward direction, and local X+ is right. Put doors, facades, openings, windshields, noses, seats, and other recognizable front details toward local Z+. For a modular repeated element, explicitly choose the long axis: side-by-side modules span local X with depth/front on local Z; traversal modules span local Z. Keep the model centered at its origin.\nCanonical dimensions contract: width=0.32, height=0.8, depth=0.3 world units. Keep the generated mesh within this centered bounding size.",
+ "tags": [
+  "farm",
+  "metal",
+  "air-pump",
+  "independent"
+ ],
+ "modelJson": {
+  "name": "手动金属落地打气筒",
+  "type": "lowpoly",
+  "format": 2,
+  "nodes": [
+   {
+    "id": "pump_root",
+    "name": "打气筒主体",
+    "transform": {
+     "pos": [
+      0,
+      0,
+      0
+     ]
+    },
+    "_obb": {
+     "size": [
+      0.373,
+      1.163,
+      0.323
+     ],
+     "center": [
+      -0.007,
+      0.172,
+      0.028
+     ],
+     "axes": [
+      [
+       0.9941,
+       -0.0229,
+       -0.1062
+      ],
+      [
+       0.0265,
+       0.9991,
+       0.0331
+      ],
+      [
+       0.1053,
+       -0.0357,
+       0.9938
+      ]
+     ],
+     "_mainAxis": 1
+    }
+   },
+   {
+    "id": "base",
+    "name": "踏脚底座",
+    "parent": "pump_root",
+    "transform": {
+     "pos": [
+      0,
+      -0.37,
+      0
+     ]
+    },
+    "tags": [
+     {
+      "tag": "base",
+      "value": "metal"
+     }
+    ],
+    "_obb": {
+     "size": [
+      0.3,
+      0.061,
+      0.28
+     ],
+     "center": [
+      0,
+      0,
+      0.005
+     ],
+     "axes": [
+      [
+       1,
+       0,
+       0
+      ],
+      [
+       0,
+       1,
+       -0.0022
+      ],
+      [
+       0,
+       0.0022,
+       1
+      ]
+     ],
+     "_mainAxis": 0
+    }
+   },
+   {
+    "id": "cylinder",
+    "name": "金属气筒",
+    "parent": "pump_root",
+    "transform": {
+     "pos": [
+      0,
+      -0.35,
+      0
+     ]
+    },
+    "tags": [
+     {
+      "tag": "base",
+      "value": "metal"
+     }
+    ],
+    "_obb": {
+     "size": [
+      0.28,
+      0.755,
+      0.115
+     ],
+     "center": [
+      0,
+      0.372,
+      0
+     ],
+     "axes": [
+      [
+       1,
+       0,
+       0
+      ],
+      [
+       0,
+       1,
+       0
+      ],
+      [
+       0,
+       0,
+       1
+      ]
+     ],
+     "_mainAxis": 1
+    }
+   },
+   {
+    "id": "pump_handle",
+    "name": "压杆与手柄",
+    "parent": "cylinder",
+    "transform": {
+     "pos": [
+      0,
+      0.525,
+      0
+     ]
+    },
+    "tags": [
+     {
+      "tag": "base",
+      "value": "metal"
+     }
+    ],
+    "_obb": {
+     "size": [
+      0.28,
+      0.23,
+      0.07
+     ],
+     "center": [
+      0,
+      0.11,
+      0
+     ],
+     "axes": [
+      [
+       1,
+       0,
+       0
+      ],
+      [
+       0,
+       1,
+       0
+      ],
+      [
+       0,
+       0,
+       1
+      ]
+     ],
+     "_mainAxis": 0
+    }
+   },
+   {
+    "id": "mount01_hose",
+    "name": "盘绕软管",
+    "parent": "pump_root",
+    "transform": {
+     "pos": [
+      0.052,
+      -0.3,
+      0.055
+     ]
+    },
+    "mounted": true,
+    "_obb": {
+     "size": [
+      0.266,
+      0.568,
+      0.097
+     ],
+     "center": [
+      -0.047,
+      0.263,
+      0.063
+     ],
+     "axes": [
+      [
+       0.9852,
+       -0.1581,
+       -0.0656
+      ],
+      [
+       0.1615,
+       0.9856,
+       0.0508
+      ],
+      [
+       0.0566,
+       -0.0607,
+       0.9966
+      ]
+     ],
+     "_mainAxis": 1
+    }
+   },
+   {
+    "id": "m0",
+    "parent": "base",
+    "transform": {
+     "pos": [
+      0,
+      -0.0125,
+      0
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 0.3,
+      "height": 0.035,
+      "depth": 0.25
+     },
+     "color": 13943461
+    }
+   },
+   {
+    "id": "m1",
+    "parent": "base",
+    "transform": {
+     "pos": [
+      0,
+      0.0175,
+      0.005
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 0.1,
+      "height": 0.025,
+      "depth": 0.28
+     },
+     "color": 12096105
+    }
+   },
+   {
+    "id": "m2",
+    "parent": "cylinder",
+    "transform": {
+     "pos": [
+      0,
+      0.255,
+      0
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 0.095,
+      "height": 0.51,
+      "depth": 0.095
+     },
+     "color": 7652539,
+     "material": {
+      "metalness": 0.78,
+      "roughness": 0.35
+     }
+    }
+   },
+   {
+    "id": "m3",
+    "parent": "cylinder",
+    "transform": {
+     "pos": [
+      0,
+      0.52,
+      0
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 0.115,
+      "height": 0.045,
+      "depth": 0.115
+     },
+     "color": 4824466,
+     "material": {
+      "metalness": 0.78,
+      "roughness": 0.35
+     }
+    }
+   },
+   {
+    "id": "m4",
+    "parent": "cylinder",
+    "transform": {
+     "pos": [
+      0,
+      0.015,
+      0
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 0.115,
+      "height": 0.04,
+      "depth": 0.115
+     },
+     "color": 4824466,
+     "material": {
+      "metalness": 0.78,
+      "roughness": 0.35
+     }
+    }
+   },
+   {
+    "id": "m5",
+    "parent": "pump_handle",
+    "transform": {
+     "pos": [
+      0,
+      0.08,
+      0
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 0.028,
+      "height": 0.17,
+      "depth": 0.028
+     },
+     "color": 12096105
+    }
+   },
+   {
+    "id": "m6",
+    "parent": "pump_handle",
+    "transform": {
+     "pos": [
+      0,
+      0.1975,
+      0
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 0.28,
+      "height": 0.055,
+      "depth": 0.07
+     },
+     "color": 14258774
+    }
+   },
+   {
+    "id": "m7",
+    "parent": "mount01_hose",
+    "transform": {
+     "pos": [
+      0,
+      0,
+      0.01
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 0.025,
+      "height": 0.055,
+      "depth": 0.025
+     },
+     "color": 13213806
+    }
+   },
+   {
+    "id": "m8",
+    "parent": "mount01_hose",
+    "transform": {
+     "pos": [
+      -0.002,
+      0.05,
+      0.085
+     ],
+     "quat": [
+      0.69,
+      0.18,
+      0.18,
+      0.68
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 0.09,
+      "height": 0.018,
+      "depth": 0.02
+     },
+     "color": 11448175
+    }
+   },
+   {
+    "id": "m9",
+    "parent": "mount01_hose",
+    "transform": {
+     "pos": [
+      0.058,
+      0.15,
+      0.085
+     ],
+     "quat": [
+      0.55,
+      0.45,
+      0.45,
+      0.55
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 0.14,
+      "height": 0.018,
+      "depth": 0.02
+     },
+     "color": 7770188
+    }
+   },
+   {
+    "id": "m10",
+    "parent": "mount01_hose",
+    "transform": {
+     "pos": [
+      0.058,
+      0.29,
+      0.085
+     ],
+     "quat": [
+      0.45,
+      0.55,
+      0.55,
+      0.45
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 0.14,
+      "height": 0.018,
+      "depth": 0.02
+     },
+     "color": 11448175
+    }
+   },
+   {
+    "id": "m11",
+    "parent": "mount01_hose",
+    "transform": {
+     "pos": [
+      -0.002,
+      0.39,
+      0.085
+     ],
+     "quat": [
+      0.18,
+      0.69,
+      0.68,
+      0.18
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 0.09,
+      "height": 0.018,
+      "depth": 0.02
+     },
+     "color": 8427282
+    }
+   },
+   {
+    "id": "m12",
+    "parent": "mount01_hose",
+    "transform": {
+     "pos": [
+      -0.092,
+      0.39,
+      0.085
+     ],
+     "quat": [
+      -0.18,
+      0.69,
+      0.68,
+      -0.18
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 0.09,
+      "height": 0.018,
+      "depth": 0.02
+     },
+     "color": 7770188
+    }
+   },
+   {
+    "id": "m13",
+    "parent": "mount01_hose",
+    "transform": {
+     "pos": [
+      -0.162,
+      0.29,
+      0.085
+     ],
+     "quat": [
+      -0.45,
+      0.55,
+      0.55,
+      -0.45
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 0.14,
+      "height": 0.018,
+      "depth": 0.02
+     },
+     "color": 11448175
+    }
+   },
+   {
+    "id": "m14",
+    "parent": "mount01_hose",
+    "transform": {
+     "pos": [
+      -0.162,
+      0.15,
+      0.085
+     ],
+     "quat": [
+      0.55,
+      -0.45,
+      -0.45,
+      0.55
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 0.14,
+      "height": 0.018,
+      "depth": 0.02
+     },
+     "color": 7770188
+    }
+   },
+   {
+    "id": "m15",
+    "parent": "mount01_hose",
+    "transform": {
+     "pos": [
+      -0.092,
+      0.05,
+      0.085
+     ],
+     "quat": [
+      0.69,
+      -0.18,
+      -0.18,
+      0.68
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 0.09,
+      "height": 0.018,
+      "depth": 0.02
+     },
+     "color": 11448175
+    }
+   },
+   {
+    "id": "m16",
+    "parent": "mount01_hose",
+    "transform": {
+     "pos": [
+      0.068,
+      0.445,
+      0.083
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 0.035,
+      "height": 0.1,
+      "depth": 0.035
+     },
+     "color": 8427282
+    }
+   },
+   {
+    "id": "m17",
+    "parent": "mount01_hose",
+    "transform": {
+     "pos": [
+      0.068,
+      0.505,
+      0.083
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 0.055,
+      "height": 0.04,
+      "depth": 0.055
+     },
+     "color": 7652539,
+     "material": {
+      "metalness": 0.78,
+      "roughness": 0.35
+     }
+    },
+    "tags": [
+     {
+      "tag": "base",
+      "value": "metal"
+     }
+    ]
+   }
+  ],
+  "_meta": {
+   "skipAutoCenter": true,
+   "ai": {
+    "v": 1,
+    "ts": 1788563002672,
+    "provider": "gpt",
+    "data": "Eew3LO/NFcGgmHjWM6o7bhS0G49qtb+hzayIFiddhfC3I1DWP3ZWCCLR6Gwf5FRVR+5ww0cd136wYAwFfT5Wj3m5nBv6p92cBWbCHwM1htSSLMwK0hTyEmYEhqTgWdN+90532eUOFLyORy59npdvhK8SFc+PYSD4vnvl8v/nylLl3sRlB0FDtMyo4P85q/XXmY8SCiLIcOVXqLG+vv1t2VvM1XWrHjhf8d4VdOofc2a6aB3uZSal9K9VYd1YdmOeUy8uktjtRun5aO5HTuQIZct4CJnrY0WxlUco95UIi2Zsbmi39Bc8pUrYMVdxROw2Ko4ukHrHij5+U79hJdf13whx1JjmPE4fpRsBQix+PotREgcNpO1KkJ7/jxclb2Uxb23EFsFqAgxpBSkhrWA5HIj9ranGP/E3Iyh366GlisckQZkatHhS8sqzwM8NIrWSlhFkay3VxFlxHL/jOGzLat5bLyTxrSOBe14cuxWEJ1Mgg0shYp6MEkYO9BxUvN+zb0gQm2b8XZt1nWgK17AnnhNCwQukGhK+DiVNQt2TNPHCSuPcDI10QNN0A0Hk5ZErtTBlY3v2SmXCrVYdtzDJRGRH+I/YSZuZX8FcFgsQf6XRTOqARTArzNe+X/0j8kLTh6IhzoX7JHW+uyw6Ibid3am2LcsweCQFykCh0ES6qjMuLw6tlmEeQ6N0tUcwy1Cnuzo2nk14XE0+lfP04eGNlDP0WstZNVKe2xTqRRIEA2R6jZohaSQACHmLBsaWa7WFqwfpY/t+vC4yF08B010XeOLRoplYZc0ywGRhokZU++BIokbLByCtl0LzMAXl/w8y2EcW8Nqx0ZiO9B2H9gbFwotIRoKUwxE2bpxhROM8PncEFBvpkBI0nhrl7k15728StivEHjJQ85SPDSIn/eFkaLwpoxz9d+9QlI3PJsc784xyvx0dOa6Q5Rxini6oJS3IbUu6plZb+aPxnIf1DcjtnHtMQAl2zTVKEivwjsdHPexm6PStMHXZEN3bDU1KpvMMPwPdnNUiDhy5OEj1D2xAn3peLH4vkY3k9bSyC8oijTMiOQpgueKsJBT5mAyohzx84quxCLrxT1BBKJ/kZvNCnzJKBa5eVWHNG656jtOwOKJwuVOblHeDlgwJbp7MI6IBPfWdRzvDyKs=",
+    "edits": ""
+   },
+   "mounts": [
+    {
+     "id": "mount01_hose",
+     "mountedGroupId": "mount01_hose",
+     "name": "盘绕软管",
+     "source": {
+      "type": "codegen"
+     },
+     "description": "",
+     "visible": true,
+     "ts": 1788563002672
+    }
+   ],
+   "semanticSnapshot": {
+    "v": 1,
+    "auto": true,
+    "text": "手动金属落地打气筒 · 5组/18mesh · 世界坐标(Y上Z前), 原点=模型根\n# 阅读说明: G:=group行(可动画骨骼, 动画key用G:后的id; @p=pivot世界坐标; 倾(x,y,z)°=朝向偏离世界轴的欧拉角; 缩进=父子层级; 挂:=挂载于某组; G:id→id→…=chain折叠行, 每个id都是可独立动画的group, chain×N=waypoint数)\n# M:=mesh行(label[id 几何 @(世界坐标)], label可省略; ×N=for循环批量件(锚点=代表实例); cyl (起)→(末)或 轴上(Y)等方位词=延伸方向; 薄向=板面法向(扁板); 挂载组双代表=最大件+最远有向件(刃/嘴/管所在端); 无方向标注=均匀块(三向相近,如头),默认面向前(Z); 对称×2=镜像对)\nG:pump_root 打气筒主体 @p(0,0,0)\n  G:base 踏脚底座 @p(0,-0.4,0)\n    M:[m0 box 0.3×0.04×0.25 (0,-0.4,0) 薄向上(Y)]\n  G:cylinder 金属气筒 @p(0,-0.3,0)\n    M:[m2 box 0.1×0.51×0.1 (0,-0.1,0) 轴上(Y)]\n    G:pump_handle 压杆与手柄 @p(0,0.2,0)\n      M:[m6 box 0.28×0.06×0.07 (0,0.4,0) 轴右(X)]\n  G:mount01_hose 盘绕软管 @p(0.1,-0.3,0.1) 挂:pump_root\n    M:[m16 box 0.04×0.1×0.04 (0.1,0.1,0.1) 轴上(Y)] | M:[m12 box 0.09×0.02×0.02 (0,0.1,0.1) 轴(-0.1,0.1,0.1)→(0,0.1,0.1)]",
+    "stats": {
+     "groups": 5,
+     "meshes": 18,
+     "labeledMeshes": 0,
+     "labelCoverage": 0,
+     "batchLabels": 0,
+     "autoChains": 0,
+     "snapshotChars": 801
+    }
+   },
+   "colorPalette": {
+    "id": "palette-2b9c0834-be76-4477",
+    "name": "曼德鸭参考场景 · 浅亮建筑",
+    "description": "参考局内与背景样例：浅亮奶油墙面、桃沙道路、黄绿色植被、青蓝窗水、棕黄结构点缀。",
+    "version": 1,
+    "colors": [
+     {
+      "hex": "#FFFDF6"
+     },
+     {
+      "hex": "#FEF9EA"
+     },
+     {
+      "hex": "#FDF2D7"
+     },
+     {
+      "hex": "#E9DABD"
+     },
+     {
+      "hex": "#CDBA97"
+     },
+     {
+      "hex": "#F8E8CF"
+     },
+     {
+      "hex": "#F1D7B2"
+     },
+     {
+      "hex": "#E7C393"
+     },
+     {
+      "hex": "#C9A06E"
+     },
+     {
+      "hex": "#9E7A55"
+     },
+     {
+      "hex": "#FFF7A8"
+     },
+     {
+      "hex": "#FCEF72"
+     },
+     {
+      "hex": "#F6E24B"
+     },
+     {
+      "hex": "#D1B825"
+     },
+     {
+      "hex": "#9C8510"
+     },
+     {
+      "hex": "#FFF3B7"
+     },
+     {
+      "hex": "#FDE674"
+     },
+     {
+      "hex": "#FCD75F"
+     },
+     {
+      "hex": "#FECD4D"
+     },
+     {
+      "hex": "#D1900B"
+     },
+     {
+      "hex": "#FFE2A0"
+     },
+     {
+      "hex": "#FFD170"
+     },
+     {
+      "hex": "#F8BC44"
+     },
+     {
+      "hex": "#E39F1A"
+     },
+     {
+      "hex": "#A96F05"
+     },
+     {
+      "hex": "#FBE3BD"
+     },
+     {
+      "hex": "#FDD8A3"
+     },
+     {
+      "hex": "#FDCC8F"
+     },
+     {
+      "hex": "#F1AD69"
+     },
+     {
+      "hex": "#D99256"
+     },
+     {
+      "hex": "#FFD2BA"
+     },
+     {
+      "hex": "#FFB08A"
+     },
+     {
+      "hex": "#FF8A5B"
+     },
+     {
+      "hex": "#F06B3E"
+     },
+     {
+      "hex": "#B84A27"
+     },
+     {
+      "hex": "#EAF9FF"
+     },
+     {
+      "hex": "#DAF2F5"
+     },
+     {
+      "hex": "#95E5F9"
+     },
+     {
+      "hex": "#76D0F2"
+     },
+     {
+      "hex": "#45BDF6"
+     },
+     {
+      "hex": "#D9F8FB"
+     },
+     {
+      "hex": "#B2E9F2"
+     },
+     {
+      "hex": "#8ECCD6"
+     },
+     {
+      "hex": "#7BCFDF"
+     },
+     {
+      "hex": "#4BAFCA"
+     },
+     {
+      "hex": "#D8F7EF"
+     },
+     {
+      "hex": "#B8ECDD"
+     },
+     {
+      "hex": "#90DCC8"
+     },
+     {
+      "hex": "#74C4BB"
+     },
+     {
+      "hex": "#499D92"
+     },
+     {
+      "hex": "#F1F5AF"
+     },
+     {
+      "hex": "#E4E77F"
+     },
+     {
+      "hex": "#DCDB22"
+     },
+     {
+      "hex": "#BFC41A"
+     },
+     {
+      "hex": "#809712"
+     },
+     {
+      "hex": "#DEE5BC"
+     },
+     {
+      "hex": "#C6CC97"
+     },
+     {
+      "hex": "#AEAF6F"
+     },
+     {
+      "hex": "#76904C"
+     },
+     {
+      "hex": "#5F6F48"
+     },
+     {
+      "hex": "#D4C2A5"
+     },
+     {
+      "hex": "#B89269"
+     },
+     {
+      "hex": "#8E664D"
+     },
+     {
+      "hex": "#714D48"
+     },
+     {
+      "hex": "#52362E"
+     }
+    ],
+    "roles": {
+     "primary": [
+      "#F1D7B2",
+      "#FDD8A3",
+      "#FBE3BD",
+      "#E9DABD",
+      "#FDCC8F",
+      "#F8E8CF",
+      "#E7C393",
+      "#D4C2A5"
+     ],
+     "secondary": [
+      "#714D48",
+      "#52362E",
+      "#8E664D",
+      "#B84A27",
+      "#9E7A55",
+      "#F06B3E",
+      "#A96F05",
+      "#B89269",
+      "#D99256",
+      "#E7C393",
+      "#D4C2A5",
+      "#FDCC8F",
+      "#F1D7B2",
+      "#CDBA97",
+      "#FDD8A3",
+      "#F1AD69",
+      "#E9DABD",
+      "#AEAF6F",
+      "#C9A06E",
+      "#9C8510",
+      "#76904C",
+      "#809712"
+     ],
+     "accent": [
+      "#76D0F2",
+      "#7BCFDF",
+      "#95E5F9",
+      "#8ECCD6",
+      "#45BDF6",
+      "#4BAFCA",
+      "#B2E9F2",
+      "#74C4BB",
+      "#FFD170",
+      "#FECD4D",
+      "#FFE2A0",
+      "#F8BC44",
+      "#FCD75F",
+      "#E9DABD",
+      "#FDD8A3",
+      "#E7C393",
+      "#F06B3E",
+      "#FF8A5B",
+      "#B84A27",
+      "#D99256",
+      "#8E664D",
+      "#9E7A55",
+      "#FFB08A",
+      "#B89269"
+     ],
+     "plant": [
+      "#AEAF6F",
+      "#C6CC97",
+      "#BFC41A",
+      "#809712",
+      "#DCDB22",
+      "#E4E77F",
+      "#D1B825",
+      "#DEE5BC",
+      "#76904C",
+      "#5F6F48",
+      "#9C8510"
+     ],
+     "earth": [
+      "#F1D7B2",
+      "#FDD8A3",
+      "#FBE3BD",
+      "#E9DABD",
+      "#FDCC8F",
+      "#F8E8CF",
+      "#E7C393",
+      "#D4C2A5",
+      "#CDBA97",
+      "#F1AD69",
+      "#9E7A55",
+      "#B89269",
+      "#AEAF6F",
+      "#C9A06E",
+      "#9C8510",
+      "#8E664D",
+      "#76904C",
+      "#809712",
+      "#714D48",
+      "#52362E",
+      "#B84A27",
+      "#F06B3E",
+      "#A96F05",
+      "#D99256"
+     ],
+     "water": [
+      "#4BAFCA",
+      "#45BDF6",
+      "#7BCFDF",
+      "#76D0F2",
+      "#8ECCD6",
+      "#95E5F9",
+      "#499D92",
+      "#74C4BB"
+     ],
+     "atmosphere": [
+      "#76D0F2",
+      "#7BCFDF",
+      "#95E5F9",
+      "#8ECCD6",
+      "#45BDF6",
+      "#4BAFCA",
+      "#B2E9F2",
+      "#74C4BB",
+      "#EAF9FF",
+      "#DAF2F5",
+      "#D9F8FB"
+     ],
+     "effect": [
+      "#F06B3E",
+      "#FF8A5B",
+      "#B84A27",
+      "#D99256",
+      "#8E664D",
+      "#9E7A55",
+      "#FFB08A",
+      "#B89269"
+     ]
+    },
+    "lockedColors": [],
+    "excludedAssetIds": [],
+    "excludedTags": [],
+    "createdAt": 1787561837433,
+    "updatedAt": 1787561837433
+   },
+   "colorPaletteReport": {
+    "appliedMaterials": 18,
+    "appliedVertexColors": 0,
+    "skippedTextures": 0,
+    "explicitIntentColors": 0,
+    "sourceColors": 18,
+    "semanticFallbacks": 0,
+    "usedColors": [
+     "#76904C",
+     "#AEAF6F",
+     "#B89269",
+     "#D4C2A5",
+     "#E9DABD",
+     "#F1D7B2",
+     "#FDCC8F"
+    ]
+   }
+  }
+ },
+ "colliderPlan": {
+  "version": 1,
+  "boxes": [
+   {
+    "min": [
+     -0.15,
+     0,
+     -0.15025
+    ],
+    "max": [
+     0.15,
+     0.8,
+     0.15025
+    ],
+    "sourceNodeId": "asset-bounds"
+   }
+  ],
+  "sourceMeshCount": 18,
+  "candidateCount": 0,
+  "fallbackUsed": true
+ },
+ "footprintRadius": 0.15025,
+ "sizeClass": "small",
+ "mode": "voxel",
+ "provider": "gpt",
+ "createdAt": 1788563000244,
+ "updatedAt": 1788563000244
+}

@@ -1,0 +1,925 @@
+{
+ "id": "asset-318f69e4-7995-4a1c",
+ "name": "备用轮胎",
+ "prompt": "Standalone used farm vehicle spare tire with rubber tread and metal wheel hub, one independent complete wheel, upright and centered, no vehicle rack or ground. Coordinate contract: Y+ is up, Z+ is the front/entrance/forward direction, X+ is right; place doors, facades, openings, windshields, or noses toward local Z+ and keep the model centered at its origin.\nCoordinate contract: local Y+ is up, local Z+ is the front, entrance, or forward direction, and local X+ is right. Put doors, facades, openings, windshields, noses, seats, and other recognizable front details toward local Z+. For a modular repeated element, explicitly choose the long axis: side-by-side modules span local X with depth/front on local Z; traversal modules span local Z. Keep the model centered at its origin.\nCanonical dimensions contract: width=1, height=1, depth=0.35 world units. Keep the generated mesh within this centered bounding size.",
+ "modelJson": {
+  "name": "独立农用车备用轮胎",
+  "type": "lowpoly",
+  "format": 2,
+  "nodes": [
+   {
+    "id": "wheel",
+    "name": "完整车轮",
+    "transform": {
+     "pos": [
+      0,
+      0,
+      0
+     ]
+    },
+    "_obb": {
+     "size": [
+      0.96,
+      0.964,
+      0.356
+     ],
+     "center": [
+      0,
+      0,
+      0
+     ],
+     "axes": [
+      [
+       1,
+       0,
+       0
+      ],
+      [
+       0,
+       1,
+       0.0006
+      ],
+      [
+       0,
+       -0.0006,
+       1
+      ]
+     ],
+     "_mainAxis": 1
+    }
+   },
+   {
+    "id": "tire",
+    "name": "旧橡胶轮胎",
+    "parent": "wheel",
+    "transform": {
+     "pos": [
+      0,
+      0,
+      0
+     ]
+    },
+    "_obb": {
+     "size": [
+      0.96,
+      0.964,
+      0.355
+     ],
+     "center": [
+      0,
+      0,
+      0
+     ],
+     "axes": [
+      [
+       1,
+       0,
+       0
+      ],
+      [
+       0,
+       1,
+       0.0012
+      ],
+      [
+       0,
+       -0.0012,
+       1
+      ]
+     ],
+     "_mainAxis": 1
+    }
+   },
+   {
+    "id": "hub",
+    "name": "金属轮毂",
+    "parent": "wheel",
+    "transform": {
+     "pos": [
+      0,
+      0,
+      0
+     ]
+    },
+    "tags": [
+     {
+      "tag": "base",
+      "value": "metal"
+     }
+    ],
+    "_obb": {
+     "size": [
+      0.49,
+      0.492,
+      0.296
+     ],
+     "center": [
+      0.001,
+      0,
+      0.027
+     ],
+     "axes": [
+      [
+       1,
+       0,
+       0
+      ],
+      [
+       0,
+       1,
+       -0.0035
+      ],
+      [
+       0,
+       0.0035,
+       1
+      ]
+     ],
+     "_mainAxis": 1
+    }
+   },
+   {
+    "id": "m0",
+    "parent": "tire",
+    "transform": {
+     "pos": [
+      0.39,
+      0,
+      0
+     ],
+     "quat": [
+      0.5,
+      0.5,
+      0.5,
+      0.5
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 0.31,
+      "height": 0.35,
+      "depth": 0.18
+     },
+     "color": 5387822
+    }
+   },
+   {
+    "id": "m1",
+    "parent": "tire",
+    "transform": {
+     "pos": [
+      0.28,
+      0.28,
+      0
+     ],
+     "quat": [
+      0.27,
+      0.65,
+      0.65,
+      0.27
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 0.31,
+      "height": 0.35,
+      "depth": 0.18
+     },
+     "color": 7425352
+    }
+   },
+   {
+    "id": "m2",
+    "parent": "tire",
+    "transform": {
+     "pos": [
+      0,
+      0.39,
+      0
+     ],
+     "quat": [
+      0,
+      0.71,
+      0.71,
+      0
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 0.31,
+      "height": 0.35,
+      "depth": 0.18
+     },
+     "color": 5387822
+    }
+   },
+   {
+    "id": "m3",
+    "parent": "tire",
+    "transform": {
+     "pos": [
+      -0.28,
+      0.28,
+      0
+     ],
+     "quat": [
+      -0.27,
+      0.65,
+      0.65,
+      -0.27
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 0.31,
+      "height": 0.35,
+      "depth": 0.18
+     },
+     "color": 7425352
+    }
+   },
+   {
+    "id": "m4",
+    "parent": "tire",
+    "transform": {
+     "pos": [
+      -0.39,
+      0,
+      0
+     ],
+     "quat": [
+      -0.5,
+      0.5,
+      0.5,
+      -0.5
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 0.31,
+      "height": 0.35,
+      "depth": 0.18
+     },
+     "color": 5387822
+    }
+   },
+   {
+    "id": "m5",
+    "parent": "tire",
+    "transform": {
+     "pos": [
+      -0.28,
+      -0.28,
+      0
+     ],
+     "quat": [
+      0.65,
+      -0.27,
+      -0.27,
+      0.65
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 0.31,
+      "height": 0.35,
+      "depth": 0.18
+     },
+     "color": 7425352
+    }
+   },
+   {
+    "id": "m6",
+    "parent": "tire",
+    "transform": {
+     "pos": [
+      0,
+      -0.39,
+      0
+     ],
+     "quat": [
+      0.71,
+      0,
+      0,
+      0.71
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 0.31,
+      "height": 0.35,
+      "depth": 0.18
+     },
+     "color": 5387822
+    }
+   },
+   {
+    "id": "m7",
+    "parent": "tire",
+    "transform": {
+     "pos": [
+      0.28,
+      -0.28,
+      0
+     ],
+     "quat": [
+      0.65,
+      0.27,
+      0.27,
+      0.65
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 0.31,
+      "height": 0.35,
+      "depth": 0.18
+     },
+     "color": 7425352
+    }
+   },
+   {
+    "id": "m8",
+    "parent": "hub",
+    "transform": {
+     "pos": [
+      0.14,
+      0.14,
+      0
+     ],
+     "quat": [
+      -0.65,
+      -0.27,
+      0.27,
+      0.65
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 0.23,
+      "height": 0.16,
+      "depth": 0.07
+     },
+     "color": 4824466,
+     "material": {
+      "metalness": 0.78,
+      "roughness": 0.35
+     }
+    }
+   },
+   {
+    "id": "m9",
+    "parent": "hub",
+    "transform": {
+     "pos": [
+      -0.14,
+      0.14,
+      0
+     ],
+     "quat": [
+      -0.27,
+      -0.65,
+      0.65,
+      0.27
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 0.23,
+      "height": 0.16,
+      "depth": 0.07
+     },
+     "color": 7652539,
+     "material": {
+      "metalness": 0.78,
+      "roughness": 0.35
+     }
+    }
+   },
+   {
+    "id": "m10",
+    "parent": "hub",
+    "transform": {
+     "pos": [
+      -0.14,
+      -0.14,
+      0
+     ],
+     "quat": [
+      0.27,
+      -0.65,
+      0.65,
+      -0.27
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 0.23,
+      "height": 0.16,
+      "depth": 0.07
+     },
+     "color": 7652539,
+     "material": {
+      "metalness": 0.78,
+      "roughness": 0.35
+     }
+    }
+   },
+   {
+    "id": "m11",
+    "parent": "hub",
+    "transform": {
+     "pos": [
+      0.14,
+      -0.14,
+      0
+     ],
+     "quat": [
+      -0.65,
+      0.27,
+      -0.27,
+      0.65
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 0.23,
+      "height": 0.16,
+      "depth": 0.07
+     },
+     "color": 4824466,
+     "material": {
+      "metalness": 0.78,
+      "roughness": 0.35
+     }
+    }
+   },
+   {
+    "id": "m12",
+    "parent": "hub",
+    "transform": {
+     "pos": [
+      0,
+      0,
+      0
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 0.24,
+      "height": 0.24,
+      "depth": 0.24
+     },
+     "color": 7652539,
+     "material": {
+      "metalness": 0.78,
+      "roughness": 0.35
+     }
+    }
+   },
+   {
+    "id": "m13",
+    "parent": "hub",
+    "transform": {
+     "pos": [
+      0,
+      0,
+      0.14
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 0.11,
+      "height": 0.11,
+      "depth": 0.07
+     },
+     "color": 4824466,
+     "material": {
+      "metalness": 0.78,
+      "roughness": 0.35
+     }
+    }
+   }
+  ],
+  "_meta": {
+   "skipAutoCenter": true,
+   "ai": {
+    "v": 1,
+    "ts": 1788542121728,
+    "provider": "gpt",
+    "data": "/8NLfOw7vFcTCKfExTr4EpnJUiIk8go58b9/3K8nb5k+tpCntl5qRxMuhrJc6PMYsT3wP81ZZslUJ7WIHuVC4nu4vgqS36qtinK17ZPqKUIsKLOfjBnxRWRPV5dktJwUGasXCFScDkcPUvVXT7Yrd52TV36gH53+ICNHe95NCihZhsnWf2VFWNEvleUg1EOkdhRPeFLbvWMifxjOqsf/SWq7eXw025fROK4hjK02UQgyvHdcUA63teytZmzLH5k3U7Sbx/Cm/FfSCZct/MNCE2fkKe+ntrXW8m9WSBvTPF9NY/Bxa+t9QNbRwZVFqfk5lj6B7GjEUbhTzq90QvxoETeqMNGQKdaBvXeg7kJlpQIZK+biX8AHBQlrQGtkkncujpkwooGNZIHJxlrb+lmO2o1fnTuYkX2ZrycSUUDRM8Dg2NcOIwoeexld3GHqn6A1161ElfoogWBIge9uIT5/qFWmYAI7ypzeVJ2jb5Tsyr3ZGJJC+dsEf3q13Umas5I57SpqHskJfK9LVa4WwxF/Rkz2+OlJfS8vf2feQTlOF0zk89oAq5gZ8X/lGqJe/NkKUdIao5V7HgY+GOs1Dxra8ko1piyI/SZxaEUo9oU4AJ7g5U+rKcRRC4WdHs7Q683K7w983/YbnSRemWNXlb7OY8XAdROlQddEoWTChb+rWAgMgouj7Kmj6A3Kb1YBurmTnrJ5UIsT20YodB1R3Hk3EsJzmKPxtfKLkS2b0O1tUDTaKwtHciMRDvKGut2iPUvf494/8DtvDLe1Eq/gbu/jqt/WGZwizwineYzKMiGP9m2YvXJ+T8Ic4NKDpIHj2ApqY+vdQWplNJPAhc/+R9BVdcgEytbVH+m7a5wQosTj6V3qgO/u318VzJ5FQAwYW6ISfCE+spcm0RCyQwx3nK/9TfCAdjUYzrtHxwiukEq5J4CvN6oq6Gz1fAN1SCoSXxCn9DEeABbpL6SpPfz+YnKK2IWujYNAHEWGIKIYlKrbO/G70MAjwTqfjxppwkzyK4Yabkwr+CJ3FBSuBYE/QwTgr/4oKqU=",
+    "edits": ""
+   },
+   "semanticSnapshot": {
+    "v": 1,
+    "auto": true,
+    "text": "独立农用车备用轮胎 · 3组/14mesh · 世界坐标(Y上Z前), 原点=模型根\n# 阅读说明: G:=group行(可动画骨骼, 动画key用G:后的id; @p=pivot世界坐标; 倾(x,y,z)°=朝向偏离世界轴的欧拉角; 缩进=父子层级; 挂:=挂载于某组; G:id→id→…=chain折叠行, 每个id都是可独立动画的group, chain×N=waypoint数)\n# M:=mesh行(label[id 几何 @(世界坐标)], label可省略; ×N=for循环批量件(锚点=代表实例); cyl (起)→(末)或 轴上(Y)等方位词=延伸方向; 薄向=板面法向(扁板); 挂载组双代表=最大件+最远有向件(刃/嘴/管所在端); 无方向标注=均匀块(三向相近,如头),默认面向前(Z); 对称×2=镜像对)\nG:wheel 完整车轮 @p(0,0,0)\n  G:tire 旧橡胶轮胎 @p(0,0,0)\n    M:[m0 box 0.31×0.35×0.18 (0.4,0,0) 薄向右(X)]\n  G:hub 金属轮毂 @p(0,0,0)\n    M:[m12 box 0.24×0.24×0.24 (0,0,0)]",
+    "stats": {
+     "groups": 3,
+     "meshes": 14,
+     "labeledMeshes": 0,
+     "labelCoverage": 0,
+     "batchLabels": 0,
+     "autoChains": 0,
+     "snapshotChars": 526
+    }
+   },
+   "colorPalette": {
+    "id": "palette-2b9c0834-be76-4477",
+    "name": "曼德鸭参考场景 · 浅亮建筑",
+    "description": "参考局内与背景样例：浅亮奶油墙面、桃沙道路、黄绿色植被、青蓝窗水、棕黄结构点缀。",
+    "version": 1,
+    "colors": [
+     {
+      "hex": "#FFFDF6"
+     },
+     {
+      "hex": "#FEF9EA"
+     },
+     {
+      "hex": "#FDF2D7"
+     },
+     {
+      "hex": "#E9DABD"
+     },
+     {
+      "hex": "#CDBA97"
+     },
+     {
+      "hex": "#F8E8CF"
+     },
+     {
+      "hex": "#F1D7B2"
+     },
+     {
+      "hex": "#E7C393"
+     },
+     {
+      "hex": "#C9A06E"
+     },
+     {
+      "hex": "#9E7A55"
+     },
+     {
+      "hex": "#FFF7A8"
+     },
+     {
+      "hex": "#FCEF72"
+     },
+     {
+      "hex": "#F6E24B"
+     },
+     {
+      "hex": "#D1B825"
+     },
+     {
+      "hex": "#9C8510"
+     },
+     {
+      "hex": "#FFF3B7"
+     },
+     {
+      "hex": "#FDE674"
+     },
+     {
+      "hex": "#FCD75F"
+     },
+     {
+      "hex": "#FECD4D"
+     },
+     {
+      "hex": "#D1900B"
+     },
+     {
+      "hex": "#FFE2A0"
+     },
+     {
+      "hex": "#FFD170"
+     },
+     {
+      "hex": "#F8BC44"
+     },
+     {
+      "hex": "#E39F1A"
+     },
+     {
+      "hex": "#A96F05"
+     },
+     {
+      "hex": "#FBE3BD"
+     },
+     {
+      "hex": "#FDD8A3"
+     },
+     {
+      "hex": "#FDCC8F"
+     },
+     {
+      "hex": "#F1AD69"
+     },
+     {
+      "hex": "#D99256"
+     },
+     {
+      "hex": "#FFD2BA"
+     },
+     {
+      "hex": "#FFB08A"
+     },
+     {
+      "hex": "#FF8A5B"
+     },
+     {
+      "hex": "#F06B3E"
+     },
+     {
+      "hex": "#B84A27"
+     },
+     {
+      "hex": "#EAF9FF"
+     },
+     {
+      "hex": "#DAF2F5"
+     },
+     {
+      "hex": "#95E5F9"
+     },
+     {
+      "hex": "#76D0F2"
+     },
+     {
+      "hex": "#45BDF6"
+     },
+     {
+      "hex": "#D9F8FB"
+     },
+     {
+      "hex": "#B2E9F2"
+     },
+     {
+      "hex": "#8ECCD6"
+     },
+     {
+      "hex": "#7BCFDF"
+     },
+     {
+      "hex": "#4BAFCA"
+     },
+     {
+      "hex": "#D8F7EF"
+     },
+     {
+      "hex": "#B8ECDD"
+     },
+     {
+      "hex": "#90DCC8"
+     },
+     {
+      "hex": "#74C4BB"
+     },
+     {
+      "hex": "#499D92"
+     },
+     {
+      "hex": "#F1F5AF"
+     },
+     {
+      "hex": "#E4E77F"
+     },
+     {
+      "hex": "#DCDB22"
+     },
+     {
+      "hex": "#BFC41A"
+     },
+     {
+      "hex": "#809712"
+     },
+     {
+      "hex": "#DEE5BC"
+     },
+     {
+      "hex": "#C6CC97"
+     },
+     {
+      "hex": "#AEAF6F"
+     },
+     {
+      "hex": "#76904C"
+     },
+     {
+      "hex": "#5F6F48"
+     },
+     {
+      "hex": "#D4C2A5"
+     },
+     {
+      "hex": "#B89269"
+     },
+     {
+      "hex": "#8E664D"
+     },
+     {
+      "hex": "#714D48"
+     },
+     {
+      "hex": "#52362E"
+     }
+    ],
+    "roles": {
+     "primary": [
+      "#F1D7B2",
+      "#FDD8A3",
+      "#FBE3BD",
+      "#E9DABD",
+      "#FDCC8F",
+      "#F8E8CF",
+      "#E7C393",
+      "#D4C2A5"
+     ],
+     "secondary": [
+      "#714D48",
+      "#52362E",
+      "#8E664D",
+      "#B84A27",
+      "#9E7A55",
+      "#F06B3E",
+      "#A96F05",
+      "#B89269",
+      "#D99256",
+      "#E7C393",
+      "#D4C2A5",
+      "#FDCC8F",
+      "#F1D7B2",
+      "#CDBA97",
+      "#FDD8A3",
+      "#F1AD69",
+      "#E9DABD",
+      "#AEAF6F",
+      "#C9A06E",
+      "#9C8510",
+      "#76904C",
+      "#809712"
+     ],
+     "accent": [
+      "#76D0F2",
+      "#7BCFDF",
+      "#95E5F9",
+      "#8ECCD6",
+      "#45BDF6",
+      "#4BAFCA",
+      "#B2E9F2",
+      "#74C4BB",
+      "#FFD170",
+      "#FECD4D",
+      "#FFE2A0",
+      "#F8BC44",
+      "#FCD75F",
+      "#E9DABD",
+      "#FDD8A3",
+      "#E7C393",
+      "#F06B3E",
+      "#FF8A5B",
+      "#B84A27",
+      "#D99256",
+      "#8E664D",
+      "#9E7A55",
+      "#FFB08A",
+      "#B89269"
+     ],
+     "plant": [
+      "#AEAF6F",
+      "#C6CC97",
+      "#BFC41A",
+      "#809712",
+      "#DCDB22",
+      "#E4E77F",
+      "#D1B825",
+      "#DEE5BC",
+      "#76904C",
+      "#5F6F48",
+      "#9C8510"
+     ],
+     "earth": [
+      "#F1D7B2",
+      "#FDD8A3",
+      "#FBE3BD",
+      "#E9DABD",
+      "#FDCC8F",
+      "#F8E8CF",
+      "#E7C393",
+      "#D4C2A5",
+      "#CDBA97",
+      "#F1AD69",
+      "#9E7A55",
+      "#B89269",
+      "#AEAF6F",
+      "#C9A06E",
+      "#9C8510",
+      "#8E664D",
+      "#76904C",
+      "#809712",
+      "#714D48",
+      "#52362E",
+      "#B84A27",
+      "#F06B3E",
+      "#A96F05",
+      "#D99256"
+     ],
+     "water": [
+      "#4BAFCA",
+      "#45BDF6",
+      "#7BCFDF",
+      "#76D0F2",
+      "#8ECCD6",
+      "#95E5F9",
+      "#499D92",
+      "#74C4BB"
+     ],
+     "atmosphere": [
+      "#76D0F2",
+      "#7BCFDF",
+      "#95E5F9",
+      "#8ECCD6",
+      "#45BDF6",
+      "#4BAFCA",
+      "#B2E9F2",
+      "#74C4BB",
+      "#EAF9FF",
+      "#DAF2F5",
+      "#D9F8FB"
+     ],
+     "effect": [
+      "#F06B3E",
+      "#FF8A5B",
+      "#B84A27",
+      "#D99256",
+      "#8E664D",
+      "#9E7A55",
+      "#FFB08A",
+      "#B89269"
+     ]
+    },
+    "lockedColors": [],
+    "excludedAssetIds": [],
+    "excludedTags": [],
+    "createdAt": 1787561837433,
+    "updatedAt": 1787561837433
+   },
+   "colorPaletteReport": {
+    "appliedMaterials": 14,
+    "appliedVertexColors": 0,
+    "skippedTextures": 0,
+    "explicitIntentColors": 0,
+    "sourceColors": 14,
+    "semanticFallbacks": 0,
+    "usedColors": [
+     "#52362E",
+     "#76904C",
+     "#E9DABD"
+    ]
+   }
+  }
+ },
+ "colliderPlan": {
+  "version": 1,
+  "boxes": [
+   {
+    "min": [
+     -0.48000000000000004,
+     0,
+     -0.175
+    ],
+    "max": [
+     0.48000000000000004,
+     0.96,
+     0.175
+    ],
+    "sourceNodeId": "asset-bounds"
+   }
+  ],
+  "sourceMeshCount": 14,
+  "candidateCount": 0,
+  "fallbackUsed": true
+ },
+ "footprintRadius": 0.48000000000000004,
+ "sizeClass": "small",
+ "mode": "voxel",
+ "provider": "gpt",
+ "createdAt": 1788542120815,
+ "updatedAt": 1788542120815
+}

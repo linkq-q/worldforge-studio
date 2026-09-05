@@ -1,0 +1,1674 @@
+{
+  "id": "asset-f1d8f97b-7985-4f36",
+  "name": "农产竹筐",
+  "prompt": "Standalone handwoven rural bamboo harvest basket containing separately recognizable vivid red tomatoes, orange carrots, dark purple eggplants and leafy deep greens; basket uses medium and dark honey-brown bamboo with visible age and dirt, colorful realistic produce, strong natural contrast, no pale whitewashed finish. No ground, person, scene, text, or background. Coordinate contract: Y+ is up, Z+ is the front/entrance/forward direction, X+ is right; place doors, facades, openings, windshields, \nCoordinate contract: local Y+ is up, local Z+ is the front, entrance, or forward direction, and local X+ is right. Put doors, facades, openings, windshields, noses, seats, and other recognizable front details toward local Z+. For a modular repeated element, explicitly choose the long axis: side-by-side modules span local X with depth/front on local Z; traversal modules span local Z. Keep the model centered at its origin.\nCanonical dimensions contract: width=1, height=0.75, depth=0.8 world units. Keep the generated mesh within this centered bounding size.",
+  "tags": [
+    "farm",
+    "basket",
+    "produce"
+  ],
+  "modelJson": {
+    "name": "乡村竹编丰收篮",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "basket",
+        "name": "手工竹篮",
+        "transform": {
+          "pos": [
+            0,
+            -0.0125,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.949,
+            0.854,
+            0.746
+          ],
+          "center": [
+            -0.003,
+            0.041,
+            -0.007
+          ],
+          "axes": [
+            [
+              0.9998,
+              -0.0203,
+              0.0057
+            ],
+            [
+              0.0206,
+              0.9984,
+              -0.0531
+            ],
+            [
+              -0.0046,
+              0.0532,
+              0.9986
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "tomatoes",
+        "name": "红番茄",
+        "parent": "basket",
+        "transform": {
+          "pos": [
+            0,
+            0.0825,
+            0.08
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.709,
+            0.256,
+            0.36
+          ],
+          "center": [
+            0.002,
+            0.022,
+            0.062
+          ],
+          "axes": [
+            [
+              0.9994,
+              -0.0181,
+              -0.0302
+            ],
+            [
+              0.0072,
+              0.9447,
+              -0.3278
+            ],
+            [
+              0.0345,
+              0.3273,
+              0.9443
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "carrots",
+        "name": "橙色胡萝卜",
+        "parent": "basket",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            -0.1
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.71,
+            0.686,
+            0.111
+          ],
+          "center": [
+            -0.053,
+            0.046,
+            -0.014
+          ],
+          "axes": [
+            [
+              0.969,
+              -0.2464,
+              0.0176
+            ],
+            [
+              0.2464,
+              0.9692,
+              0.0063
+            ],
+            [
+              -0.0186,
+              -0.0018,
+              0.9998
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "eggplants",
+        "name": "紫茄子",
+        "parent": "basket",
+        "transform": {
+          "pos": [
+            0,
+            0.0925,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.592,
+            0.223,
+            0.371
+          ],
+          "center": [
+            0.067,
+            0.009,
+            -0.088
+          ],
+          "axes": [
+            [
+              0.993,
+              0.03,
+              -0.1139
+            ],
+            [
+              -0.0554,
+              0.9722,
+              -0.2273
+            ],
+            [
+              0.1039,
+              0.2321,
+              0.9671
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "greens",
+        "name": "深绿叶菜",
+        "parent": "basket",
+        "transform": {
+          "pos": [
+            0,
+            0.1925,
+            -0.02
+          ]
+        },
+        "_obb": {
+          "size": [
+            0.816,
+            0.317,
+            0.304
+          ],
+          "center": [
+            0.005,
+            0.028,
+            -0.087
+          ],
+          "axes": [
+            [
+              0.9974,
+              0.0173,
+              0.0705
+            ],
+            [
+              0.0067,
+              0.9451,
+              -0.3268
+            ],
+            [
+              -0.0723,
+              0.3264,
+              0.9425
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "basket",
+        "transform": {
+          "pos": [
+            0,
+            -0.3225,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.8,
+            "height": 0.08,
+            "depth": 0.6
+          },
+          "color": 13943461
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ]
+      },
+      {
+        "id": "m1",
+        "parent": "basket",
+        "transform": {
+          "pos": [
+            -0.27,
+            -0.1375,
+            0.325
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.105,
+            "height": 0.34,
+            "depth": 0.055
+          },
+          "color": 15188883
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ]
+      },
+      {
+        "id": "m2",
+        "parent": "basket",
+        "transform": {
+          "pos": [
+            -0.27,
+            -0.1375,
+            -0.325
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.105,
+            "height": 0.34,
+            "depth": 0.055
+          },
+          "color": 13943461
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ]
+      },
+      {
+        "id": "m3",
+        "parent": "basket",
+        "transform": {
+          "pos": [
+            -0.09,
+            -0.1375,
+            0.325
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.105,
+            "height": 0.34,
+            "depth": 0.055
+          },
+          "color": 13943461
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ]
+      },
+      {
+        "id": "m4",
+        "parent": "basket",
+        "transform": {
+          "pos": [
+            -0.09,
+            -0.1375,
+            -0.325
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.105,
+            "height": 0.34,
+            "depth": 0.055
+          },
+          "color": 15188883
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ]
+      },
+      {
+        "id": "m5",
+        "parent": "basket",
+        "transform": {
+          "pos": [
+            0.09,
+            -0.1375,
+            0.325
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.105,
+            "height": 0.34,
+            "depth": 0.055
+          },
+          "color": 15188883
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ]
+      },
+      {
+        "id": "m6",
+        "parent": "basket",
+        "transform": {
+          "pos": [
+            0.09,
+            -0.1375,
+            -0.325
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.105,
+            "height": 0.34,
+            "depth": 0.055
+          },
+          "color": 13943461
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ]
+      },
+      {
+        "id": "m7",
+        "parent": "basket",
+        "transform": {
+          "pos": [
+            0.27,
+            -0.1375,
+            0.325
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.105,
+            "height": 0.34,
+            "depth": 0.055
+          },
+          "color": 13943461
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ]
+      },
+      {
+        "id": "m8",
+        "parent": "basket",
+        "transform": {
+          "pos": [
+            0.27,
+            -0.1375,
+            -0.325
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.105,
+            "height": 0.34,
+            "depth": 0.055
+          },
+          "color": 15188883
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ]
+      },
+      {
+        "id": "m9",
+        "parent": "basket",
+        "transform": {
+          "pos": [
+            0,
+            -0.2275,
+            0.325
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.9,
+            "height": 0.055,
+            "depth": 0.075
+          },
+          "color": 15188883
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ]
+      },
+      {
+        "id": "m10",
+        "parent": "basket",
+        "transform": {
+          "pos": [
+            0,
+            -0.2275,
+            -0.325
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.9,
+            "height": 0.055,
+            "depth": 0.075
+          },
+          "color": 15188883
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ]
+      },
+      {
+        "id": "m11",
+        "parent": "basket",
+        "transform": {
+          "pos": [
+            0,
+            -0.0675,
+            0.325
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.9,
+            "height": 0.055,
+            "depth": 0.075
+          },
+          "color": 13943461
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ]
+      },
+      {
+        "id": "m12",
+        "parent": "basket",
+        "transform": {
+          "pos": [
+            0,
+            -0.0675,
+            -0.325
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.9,
+            "height": 0.055,
+            "depth": 0.075
+          },
+          "color": 13943461
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ]
+      },
+      {
+        "id": "m13",
+        "parent": "basket",
+        "transform": {
+          "pos": [
+            -0.425,
+            -0.1375,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.075,
+            "height": 0.34,
+            "depth": 0.62
+          },
+          "color": 13943461
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ]
+      },
+      {
+        "id": "m14",
+        "parent": "basket",
+        "transform": {
+          "pos": [
+            -0.425,
+            0.0725,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.065,
+            "height": 0.5,
+            "depth": 0.065
+          },
+          "color": 13943461
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ]
+      },
+      {
+        "id": "m15",
+        "parent": "basket",
+        "transform": {
+          "pos": [
+            0.425,
+            -0.1375,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.075,
+            "height": 0.34,
+            "depth": 0.62
+          },
+          "color": 13943461
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ]
+      },
+      {
+        "id": "m16",
+        "parent": "basket",
+        "transform": {
+          "pos": [
+            0.425,
+            0.0725,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.065,
+            "height": 0.5,
+            "depth": 0.065
+          },
+          "color": 13943461
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ]
+      },
+      {
+        "id": "m17",
+        "parent": "basket",
+        "transform": {
+          "pos": [
+            0,
+            0.3225,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.85,
+            "height": 0.065,
+            "depth": 0.075
+          },
+          "color": 13943461
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood"
+          }
+        ]
+      },
+      {
+        "id": "m18",
+        "parent": "tomatoes",
+        "transform": {
+          "pos": [
+            -0.25,
+            0.01,
+            0.02
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.2,
+            "height": 0.18,
+            "depth": 0.19
+          },
+          "color": 12077607
+        }
+      },
+      {
+        "id": "m19",
+        "parent": "tomatoes",
+        "transform": {
+          "pos": [
+            -0.25,
+            0.112,
+            0.02
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.11,
+            "height": 0.025,
+            "depth": 0.035
+          },
+          "color": 7770188
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m20",
+        "parent": "tomatoes",
+        "transform": {
+          "pos": [
+            -0.25,
+            0.112,
+            0.02
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.035,
+            "height": 0.025,
+            "depth": 0.11
+          },
+          "color": 7770188
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m21",
+        "parent": "tomatoes",
+        "transform": {
+          "pos": [
+            0.02,
+            0.03,
+            0.12
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.2,
+            "height": 0.18,
+            "depth": 0.19
+          },
+          "color": 12077607
+        }
+      },
+      {
+        "id": "m22",
+        "parent": "tomatoes",
+        "transform": {
+          "pos": [
+            0.02,
+            0.132,
+            0.12
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.11,
+            "height": 0.025,
+            "depth": 0.035
+          },
+          "color": 7770188
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m23",
+        "parent": "tomatoes",
+        "transform": {
+          "pos": [
+            0.02,
+            0.132,
+            0.12
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.035,
+            "height": 0.025,
+            "depth": 0.11
+          },
+          "color": 7770188
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m24",
+        "parent": "tomatoes",
+        "transform": {
+          "pos": [
+            0.25,
+            0,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.2,
+            "height": 0.18,
+            "depth": 0.19
+          },
+          "color": 12077607
+        }
+      },
+      {
+        "id": "m25",
+        "parent": "tomatoes",
+        "transform": {
+          "pos": [
+            0.25,
+            0.102,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.11,
+            "height": 0.025,
+            "depth": 0.035
+          },
+          "color": 7770188
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m26",
+        "parent": "tomatoes",
+        "transform": {
+          "pos": [
+            0.25,
+            0.102,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.035,
+            "height": 0.025,
+            "depth": 0.11
+          },
+          "color": 7770188
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m27",
+        "parent": "carrots",
+        "transform": {
+          "pos": [
+            -0.25,
+            -0.0275,
+            -0.02
+          ],
+          "quat": [
+            0.66,
+            0.26,
+            -0.13,
+            0.7
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.08,
+            "height": 0.07,
+            "depth": 0.44
+          },
+          "color": 14258774
+        }
+      },
+      {
+        "id": "m28",
+        "parent": "carrots",
+        "transform": {
+          "pos": [
+            0.18,
+            -0.0275,
+            0
+          ],
+          "quat": [
+            0.7,
+            -0.1,
+            0.14,
+            0.68
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.08,
+            "height": 0.07,
+            "depth": 0.43
+          },
+          "color": 14258774
+        }
+      },
+      {
+        "id": "m29",
+        "parent": "carrots",
+        "transform": {
+          "pos": [
+            -0.32,
+            0.2675,
+            -0.02
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.045,
+            "height": 0.16,
+            "depth": 0.035
+          },
+          "color": 8427282
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m30",
+        "parent": "carrots",
+        "transform": {
+          "pos": [
+            -0.25,
+            0.2525,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.04,
+            "height": 0.15,
+            "depth": 0.04
+          },
+          "color": 11448175
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m31",
+        "parent": "carrots",
+        "transform": {
+          "pos": [
+            0.13,
+            0.2675,
+            -0.02
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.045,
+            "height": 0.16,
+            "depth": 0.035
+          },
+          "color": 10257680
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m32",
+        "parent": "carrots",
+        "transform": {
+          "pos": [
+            0.2,
+            0.2525,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.04,
+            "height": 0.14,
+            "depth": 0.04
+          },
+          "color": 11448175
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m33",
+        "parent": "eggplants",
+        "transform": {
+          "pos": [
+            -0.13,
+            0,
+            -0.08
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.16,
+            "height": 0.15,
+            "depth": 0.3
+          },
+          "color": 7425352
+        }
+      },
+      {
+        "id": "m34",
+        "parent": "eggplants",
+        "transform": {
+          "pos": [
+            0.27,
+            0.02,
+            -0.11
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.15,
+            "height": 0.14,
+            "depth": 0.27
+          },
+          "color": 7425352
+        }
+      },
+      {
+        "id": "m35",
+        "parent": "eggplants",
+        "transform": {
+          "pos": [
+            -0.13,
+            0.09,
+            0.045
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.12,
+            "height": 0.035,
+            "depth": 0.1
+          },
+          "color": 8427282
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m36",
+        "parent": "eggplants",
+        "transform": {
+          "pos": [
+            0.27,
+            0.1,
+            0.005
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.11,
+            "height": 0.035,
+            "depth": 0.09
+          },
+          "color": 7770188
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m37",
+        "parent": "greens",
+        "transform": {
+          "pos": [
+            -0.34,
+            0,
+            -0.01
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.13,
+            "height": 0.2,
+            "depth": 0.055
+          },
+          "color": 7770188
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m38",
+        "parent": "greens",
+        "transform": {
+          "pos": [
+            -0.18,
+            0.04,
+            -0.18
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.15,
+            "height": 0.23,
+            "depth": 0.055
+          },
+          "color": 7770188
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m39",
+        "parent": "greens",
+        "transform": {
+          "pos": [
+            0.02,
+            0.04,
+            -0.18
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.15,
+            "height": 0.22,
+            "depth": 0.055
+          },
+          "color": 7770188
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m40",
+        "parent": "greens",
+        "transform": {
+          "pos": [
+            0.34,
+            0.02,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.13,
+            "height": 0.2,
+            "depth": 0.055
+          },
+          "color": 7770188
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1788550236151,
+        "provider": "gpt",
+        "data": "aps3+iGiy6e3zzKG23AmlDApvm9gmTBZvTMmXqm1opv72YJDlbaGpyrmRi2jGy2YmyefqK2igCD+X3WVKZmMGOTgMDS6BP6T50ogxebulXU0SWIRyDoqUNRlrDsNbseh+xMmw+SdlFs/FZ4JWTuhF6nz50q+0KT9ejLWT0XQ1TnW3wr/ViDPm65vF+nIwapIimFsbZfoQi3UkLAIOysofmIlxDchDiEoYH2QRpI7bd5dKaynHJQmZLRK+cafpURPkAMmp/z8gH+tH7ktQdGzDVdy5iYdwWWw07YZBr5DTJUkPqci+CUPMsRNilePoLqhVA7VcPEE+13KusouNpufG/NXA/9Ss4LNdWK8oVVrfUCxa+1lSZ9blM+2f8Ar7OWu2fzDUWvAz0Yme/do7AFfIaH0JZfiYCrx+LmtWEp6pHvdT9QiIxKk3/XqxvYF7u1JleKhLErdKN/c8FaFvG95Y5ckDlbMKoYSFPltkIzQ2TGGt0IWy7ZFnlG6SmWj6B0Z7gat3VD+U5KsfieiZsxfDq8KFp0OvLACTWZUJ1pGbV1XcIkxr6T84284DZGNJadvthOj6RBsAuK8Y58xjAMK1Koq2UP4RQeuvFWkXc8VMK1TIwr7STSxTMrUHr+SgbgBMLRUuEypEY0ozg4NZ0qOI/iqTOuJme7UtcUg9z9GcIjkrk5T01mHKPq0Aek84uQW00Qlcp/KQZnHJK9ZlnGcVPxpA1sKafkrXW8rINpZLqMTvBvg4dD4m6ny0IsdPDw6L0BTf0gyoEu2MvXfvF8SEUgYhxkxCRzwdtBV2jGrOhpnVc3Bnjv0WGkm5XTWi4Ua+vPcfAz7zyWnCDoThqOYsJ0/xiDgj4qTR1u9Q7gtT0OKYOkt1dTnwbiGFd4xTLiV/PakaDn5H4sXdwWBqgZPUVDsMNleoBzjCOBu/s37vnwA5qqloZ3UFaCTUOn+P1MGBe8gdLEURVOwCjYGaCPgsKlSCAL7fk/5zMIhGP8K+gdDd7lUP+vf/qV/5AVZUxIQo8Z+RYyf1HJHhdmFz0s1ccWyIwZuln2iUkUASu1UUml8V2TarPLnFeIKIxO+nGBpvkpgX5s8D+IM/IOwsD4tFyhi7BCDYq3Zw9Gr+o1slvfwd0sKNwRwP1qWIa2UkPrC1Vr6Z00JOmmgAcJHLgKcdsgN+ocEaTFAJBYsGP96fd2b+ui9yIDiX33NNyhrXOQePSJhUAuzoWqMzUsS9CmY/pT8BdKOpElFl8l7qzVJb6Llt57rZa35gSbz0vDMQ8KFEBwMJ/0rZ6qYuDkO5J/AAq2H5dSDEUbi+usidyFJAij5btIgG2QFnSONxxfhwUJ7nUK/l+Gmr0OeyzGz/ZQNMNQsJrrzjVLPdxFNHsi8d+C+z9Q/TTuszn3GVzKfgiyvgQwY8H8O25PV3kYqrRgGcaW1WJ5rTEGO10s4vtunr4I9ZG5t1rx1s80CZTqxm+5itWyUKf49Id8BBZfDHP8ltaEwUAjFtehmZbjBSQzK2Cws8LcUTVoTJBuC",
+        "edits": ""
+      },
+      "semanticSnapshot": {
+        "v": 1,
+        "auto": true,
+        "text": "乡村竹编丰收篮 · 5组/41mesh · 世界坐标(Y上Z前), 原点=模型根\n# 阅读说明: G:=group行(可动画骨骼, 动画key用G:后的id; @p=pivot世界坐标; 倾(x,y,z)°=朝向偏离世界轴的欧拉角; 缩进=父子层级; 挂:=挂载于某组; G:id→id→…=chain折叠行, 每个id都是可独立动画的group, chain×N=waypoint数)\n# M:=mesh行(label[id 几何 @(世界坐标)], label可省略; ×N=for循环批量件(锚点=代表实例); cyl (起)→(末)或 轴上(Y)等方位词=延伸方向; 薄向=板面法向(扁板); 挂载组双代表=最大件+最远有向件(刃/嘴/管所在端); 无方向标注=均匀块(三向相近,如头),默认面向前(Z); 对称×2=镜像对)\nG:basket 手工竹篮 @p(0,0,0)\n  M:[m0 box 0.8×0.08×0.6 (0,-0.3,0) 薄向上(Y)]\n  G:tomatoes 红番茄 @p(0,0.1,0.1)\n    M:[m18 box 0.2×0.18×0.19 (-0.2,0.1,0.1)]\n  G:carrots 橙色胡萝卜 @p(0,0,-0.1)\n    M:[m27 box 0.08×0.07×0.44 (-0.2,0,-0.1) 轴下(Y)]\n  G:eggplants 紫茄子 @p(0,0.1,0)\n    M:[m33 box 0.16×0.15×0.3 (-0.1,0.1,-0.1) 轴前(Z)]\n  G:greens 深绿叶菜 @p(0,0.2,0)\n    M:[m38 box 0.15×0.23×0.06 (-0.2,0.2,-0.2) 薄向前(Z)]",
+        "stats": {
+          "groups": 5,
+          "meshes": 41,
+          "labeledMeshes": 0,
+          "labelCoverage": 0,
+          "batchLabels": 0,
+          "autoChains": 0,
+          "snapshotChars": 757
+        }
+      },
+      "colorPalette": {
+        "id": "palette-2b9c0834-be76-4477",
+        "name": "曼德鸭参考场景 · 浅亮建筑",
+        "description": "参考局内与背景样例：浅亮奶油墙面、桃沙道路、黄绿色植被、青蓝窗水、棕黄结构点缀。",
+        "version": 1,
+        "colors": [
+          {
+            "hex": "#FFFDF6"
+          },
+          {
+            "hex": "#FEF9EA"
+          },
+          {
+            "hex": "#FDF2D7"
+          },
+          {
+            "hex": "#E9DABD"
+          },
+          {
+            "hex": "#CDBA97"
+          },
+          {
+            "hex": "#F8E8CF"
+          },
+          {
+            "hex": "#F1D7B2"
+          },
+          {
+            "hex": "#E7C393"
+          },
+          {
+            "hex": "#C9A06E"
+          },
+          {
+            "hex": "#9E7A55"
+          },
+          {
+            "hex": "#FFF7A8"
+          },
+          {
+            "hex": "#FCEF72"
+          },
+          {
+            "hex": "#F6E24B"
+          },
+          {
+            "hex": "#D1B825"
+          },
+          {
+            "hex": "#9C8510"
+          },
+          {
+            "hex": "#FFF3B7"
+          },
+          {
+            "hex": "#FDE674"
+          },
+          {
+            "hex": "#FCD75F"
+          },
+          {
+            "hex": "#FECD4D"
+          },
+          {
+            "hex": "#D1900B"
+          },
+          {
+            "hex": "#FFE2A0"
+          },
+          {
+            "hex": "#FFD170"
+          },
+          {
+            "hex": "#F8BC44"
+          },
+          {
+            "hex": "#E39F1A"
+          },
+          {
+            "hex": "#A96F05"
+          },
+          {
+            "hex": "#FBE3BD"
+          },
+          {
+            "hex": "#FDD8A3"
+          },
+          {
+            "hex": "#FDCC8F"
+          },
+          {
+            "hex": "#F1AD69"
+          },
+          {
+            "hex": "#D99256"
+          },
+          {
+            "hex": "#FFD2BA"
+          },
+          {
+            "hex": "#FFB08A"
+          },
+          {
+            "hex": "#FF8A5B"
+          },
+          {
+            "hex": "#F06B3E"
+          },
+          {
+            "hex": "#B84A27"
+          },
+          {
+            "hex": "#EAF9FF"
+          },
+          {
+            "hex": "#DAF2F5"
+          },
+          {
+            "hex": "#95E5F9"
+          },
+          {
+            "hex": "#76D0F2"
+          },
+          {
+            "hex": "#45BDF6"
+          },
+          {
+            "hex": "#D9F8FB"
+          },
+          {
+            "hex": "#B2E9F2"
+          },
+          {
+            "hex": "#8ECCD6"
+          },
+          {
+            "hex": "#7BCFDF"
+          },
+          {
+            "hex": "#4BAFCA"
+          },
+          {
+            "hex": "#D8F7EF"
+          },
+          {
+            "hex": "#B8ECDD"
+          },
+          {
+            "hex": "#90DCC8"
+          },
+          {
+            "hex": "#74C4BB"
+          },
+          {
+            "hex": "#499D92"
+          },
+          {
+            "hex": "#F1F5AF"
+          },
+          {
+            "hex": "#E4E77F"
+          },
+          {
+            "hex": "#DCDB22"
+          },
+          {
+            "hex": "#BFC41A"
+          },
+          {
+            "hex": "#809712"
+          },
+          {
+            "hex": "#DEE5BC"
+          },
+          {
+            "hex": "#C6CC97"
+          },
+          {
+            "hex": "#AEAF6F"
+          },
+          {
+            "hex": "#76904C"
+          },
+          {
+            "hex": "#5F6F48"
+          },
+          {
+            "hex": "#D4C2A5"
+          },
+          {
+            "hex": "#B89269"
+          },
+          {
+            "hex": "#8E664D"
+          },
+          {
+            "hex": "#714D48"
+          },
+          {
+            "hex": "#52362E"
+          }
+        ],
+        "roles": {
+          "primary": [
+            "#F1D7B2",
+            "#FDD8A3",
+            "#FBE3BD",
+            "#E9DABD",
+            "#FDCC8F",
+            "#F8E8CF",
+            "#E7C393",
+            "#D4C2A5"
+          ],
+          "secondary": [
+            "#714D48",
+            "#52362E",
+            "#8E664D",
+            "#B84A27",
+            "#9E7A55",
+            "#F06B3E",
+            "#A96F05",
+            "#B89269",
+            "#D99256",
+            "#E7C393",
+            "#D4C2A5",
+            "#FDCC8F",
+            "#F1D7B2",
+            "#CDBA97",
+            "#FDD8A3",
+            "#F1AD69",
+            "#E9DABD",
+            "#AEAF6F",
+            "#C9A06E",
+            "#9C8510",
+            "#76904C",
+            "#809712"
+          ],
+          "accent": [
+            "#76D0F2",
+            "#7BCFDF",
+            "#95E5F9",
+            "#8ECCD6",
+            "#45BDF6",
+            "#4BAFCA",
+            "#B2E9F2",
+            "#74C4BB",
+            "#FFD170",
+            "#FECD4D",
+            "#FFE2A0",
+            "#F8BC44",
+            "#FCD75F",
+            "#E9DABD",
+            "#FDD8A3",
+            "#E7C393",
+            "#F06B3E",
+            "#FF8A5B",
+            "#B84A27",
+            "#D99256",
+            "#8E664D",
+            "#9E7A55",
+            "#FFB08A",
+            "#B89269"
+          ],
+          "plant": [
+            "#AEAF6F",
+            "#C6CC97",
+            "#BFC41A",
+            "#809712",
+            "#DCDB22",
+            "#E4E77F",
+            "#D1B825",
+            "#DEE5BC",
+            "#76904C",
+            "#5F6F48",
+            "#9C8510"
+          ],
+          "earth": [
+            "#F1D7B2",
+            "#FDD8A3",
+            "#FBE3BD",
+            "#E9DABD",
+            "#FDCC8F",
+            "#F8E8CF",
+            "#E7C393",
+            "#D4C2A5",
+            "#CDBA97",
+            "#F1AD69",
+            "#9E7A55",
+            "#B89269",
+            "#AEAF6F",
+            "#C9A06E",
+            "#9C8510",
+            "#8E664D",
+            "#76904C",
+            "#809712",
+            "#714D48",
+            "#52362E",
+            "#B84A27",
+            "#F06B3E",
+            "#A96F05",
+            "#D99256"
+          ],
+          "water": [
+            "#4BAFCA",
+            "#45BDF6",
+            "#7BCFDF",
+            "#76D0F2",
+            "#8ECCD6",
+            "#95E5F9",
+            "#499D92",
+            "#74C4BB"
+          ],
+          "atmosphere": [
+            "#76D0F2",
+            "#7BCFDF",
+            "#95E5F9",
+            "#8ECCD6",
+            "#45BDF6",
+            "#4BAFCA",
+            "#B2E9F2",
+            "#74C4BB",
+            "#EAF9FF",
+            "#DAF2F5",
+            "#D9F8FB"
+          ],
+          "effect": [
+            "#F06B3E",
+            "#FF8A5B",
+            "#B84A27",
+            "#D99256",
+            "#8E664D",
+            "#9E7A55",
+            "#FFB08A",
+            "#B89269"
+          ]
+        },
+        "lockedColors": [],
+        "excludedAssetIds": [],
+        "excludedTags": [],
+        "createdAt": 1787561837433,
+        "updatedAt": 1787561837433
+      },
+      "colorPaletteReport": {
+        "appliedMaterials": 41,
+        "appliedVertexColors": 0,
+        "skippedTextures": 0,
+        "explicitIntentColors": 0,
+        "sourceColors": 41,
+        "semanticFallbacks": 0,
+        "usedColors": [
+          "#714D48",
+          "#76904C",
+          "#809712",
+          "#9C8510",
+          "#AEAF6F",
+          "#B84A27",
+          "#D4C2A5",
+          "#D99256",
+          "#E7C393"
+        ]
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -0.46249999999999997,
+          0,
+          -0.3625
+        ],
+        "max": [
+          0.46249999999999997,
+          0.7175,
+          0.3625
+        ],
+        "sourceNodeId": "asset-bounds"
+      }
+    ],
+    "sourceMeshCount": 41,
+    "candidateCount": 0,
+    "fallbackUsed": true
+  },
+  "footprintRadius": 0.46249999999999997,
+  "sizeClass": "small",
+  "mode": "voxel",
+  "provider": "gpt",
+  "createdAt": 1788550234616,
+  "updatedAt": 1788550234616
+}

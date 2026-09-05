@@ -1,0 +1,1276 @@
+{
+ "id": "asset-3341cb1f-121e-4df2",
+ "name": "鹅 1",
+ "prompt": "Standalone stylized farm goose only, long upright neck, broad webbed feet, distinct goose bill and body silhouette, no nest, no water, no ground, no fence. Coordinate contract: Y+ is up, Z+ is the front/entrance/forward direction, X+ is right; place doors, facades, openings, windshields, or noses toward local Z+ and keep the model centered at its origin.\nCoordinate contract: local Y+ is up, local Z+ is the front, entrance, or forward direction, and local X+ is right. Put doors, facades, openings, windshields, noses, seats, and other recognizable front details toward local Z+. For a modular repeated element, explicitly choose the long axis: side-by-side modules span local X with depth/front on local Z; traversal modules span local Z. Keep the model centered at its origin.\nCreate variation 1 of 2; preserve the same reusable asset family while varying silhouette and details.",
+ "tags": [
+  "farm",
+  "goose",
+  "webbed-feet",
+  "long-neck",
+  "independent"
+ ],
+ "modelJson": {
+  "name": "浅亮农场鹅·变化1",
+  "type": "lowpoly",
+  "format": 2,
+  "nodes": [
+   {
+    "id": "root",
+    "name": "农场鹅",
+    "transform": {
+     "pos": [
+      0,
+      0,
+      0
+     ]
+    },
+    "_obb": {
+     "size": [
+      1.929,
+      5.195,
+      3.313
+     ],
+     "center": [
+      0,
+      1.159,
+      0.241
+     ],
+     "axes": [
+      [
+       1,
+       0,
+       0
+      ],
+      [
+       0,
+       0.9983,
+       0.0585
+      ],
+      [
+       0,
+       -0.0585,
+       0.9983
+      ]
+     ],
+     "_mainAxis": 1
+    }
+   },
+   {
+    "id": "body",
+    "name": "躯干",
+    "parent": "root",
+    "transform": {
+     "pos": [
+      0,
+      1.15,
+      0
+     ]
+    },
+    "_obb": {
+     "size": [
+      1.929,
+      4.017,
+      3.207
+     ],
+     "center": [
+      0,
+      0.565,
+      0.262
+     ],
+     "axes": [
+      [
+       1,
+       0,
+       0
+      ],
+      [
+       0,
+       0.9969,
+       0.0791
+      ],
+      [
+       0,
+       -0.0791,
+       0.9969
+      ]
+     ],
+     "_mainAxis": 1
+    }
+   },
+   {
+    "id": "wing_l",
+    "name": "左翼",
+    "parent": "body",
+    "transform": {
+     "pos": [
+      -0.66,
+      0.27,
+      -0.15
+     ]
+    },
+    "_obb": {
+     "size": [
+      0.15,
+      0.543,
+      1.055
+     ],
+     "center": [
+      -0.03,
+      -0.11,
+      0.05
+     ],
+     "axes": [
+      [
+       0.9376,
+       0.2333,
+       0.258
+      ],
+      [
+       -0.2017,
+       0.9689,
+       -0.1431
+      ],
+      [
+       -0.2834,
+       0.0821,
+       0.9555
+      ]
+     ],
+     "_mainAxis": 2
+    }
+   },
+   {
+    "id": "wing_r",
+    "name": "右翼",
+    "parent": "body",
+    "transform": {
+     "pos": [
+      0.66,
+      0.27,
+      -0.15
+     ]
+    },
+    "_obb": {
+     "size": [
+      0.15,
+      0.543,
+      1.055
+     ],
+     "center": [
+      0.03,
+      -0.11,
+      0.05
+     ],
+     "axes": [
+      [
+       0.9376,
+       -0.2333,
+       -0.258
+      ],
+      [
+       0.2017,
+       0.9689,
+       -0.1431
+      ],
+      [
+       0.2834,
+       0.0821,
+       0.9555
+      ]
+     ],
+     "_mainAxis": 2
+    }
+   },
+   {
+    "id": "neck",
+    "name": "长颈",
+    "parent": "body",
+    "transform": {
+     "pos": [
+      0,
+      0.4,
+      0.42
+     ]
+    },
+    "_obb": {
+     "size": [
+      0.72,
+      2.154,
+      1.754
+     ],
+     "center": [
+      0,
+      0.868,
+      0.38
+     ],
+     "axes": [
+      [
+       1,
+       0,
+       0
+      ],
+      [
+       0,
+       0.9841,
+       -0.1777
+      ],
+      [
+       0,
+       0.1777,
+       0.9841
+      ]
+     ],
+     "_mainAxis": 1
+    }
+   },
+   {
+    "id": "head",
+    "name": "头",
+    "parent": "neck",
+    "transform": {
+     "pos": [
+      0,
+      1.35,
+      0
+     ]
+    },
+    "_obb": {
+     "size": [
+      0.72,
+      0.675,
+      1.436
+     ],
+     "center": [
+      0,
+      0.096,
+      0.375
+     ],
+     "axes": [
+      [
+       1,
+       0,
+       0
+      ],
+      [
+       0,
+       0.9972,
+       0.0751
+      ],
+      [
+       0,
+       -0.0751,
+       0.9972
+      ]
+     ],
+     "_mainAxis": 2
+    }
+   },
+   {
+    "id": "leg_l",
+    "name": "左腿",
+    "parent": "body",
+    "transform": {
+     "pos": [
+      -0.38,
+      -0.33,
+      -0.04
+     ]
+    },
+    "_obb": {
+     "size": [
+      0.82,
+      1.102,
+      1.097
+     ],
+     "center": [
+      0,
+      -0.379,
+      0.334
+     ],
+     "axes": [
+      [
+       1,
+       0,
+       0
+      ],
+      [
+       0,
+       0.9221,
+       -0.3869
+      ],
+      [
+       0,
+       0.3869,
+       0.9221
+      ]
+     ],
+     "_mainAxis": 1
+    }
+   },
+   {
+    "id": "foot_l",
+    "name": "左蹼",
+    "parent": "leg_l",
+    "transform": {
+     "pos": [
+      0,
+      -0.66,
+      0
+     ]
+    },
+    "_obb": {
+     "size": [
+      0.82,
+      0.172,
+      0.862
+     ],
+     "center": [
+      0,
+      -0.041,
+      0.34
+     ],
+     "axes": [
+      [
+       1,
+       0,
+       0
+      ],
+      [
+       0,
+       0.9999,
+       0.0163
+      ],
+      [
+       0,
+       -0.0163,
+       0.9999
+      ]
+     ],
+     "_mainAxis": 2
+    }
+   },
+   {
+    "id": "leg_r",
+    "name": "右腿",
+    "parent": "body",
+    "transform": {
+     "pos": [
+      0.38,
+      -0.33,
+      -0.04
+     ]
+    },
+    "_obb": {
+     "size": [
+      0.82,
+      1.102,
+      1.097
+     ],
+     "center": [
+      0,
+      -0.379,
+      0.334
+     ],
+     "axes": [
+      [
+       1,
+       0,
+       0
+      ],
+      [
+       0,
+       0.9221,
+       -0.3869
+      ],
+      [
+       0,
+       0.3869,
+       0.9221
+      ]
+     ],
+     "_mainAxis": 1
+    }
+   },
+   {
+    "id": "foot_r",
+    "name": "右蹼",
+    "parent": "leg_r",
+    "transform": {
+     "pos": [
+      0,
+      -0.66,
+      0
+     ]
+    },
+    "_obb": {
+     "size": [
+      0.82,
+      0.172,
+      0.862
+     ],
+     "center": [
+      0,
+      -0.041,
+      0.34
+     ],
+     "axes": [
+      [
+       1,
+       0,
+       0
+      ],
+      [
+       0,
+       0.9999,
+       0.0163
+      ],
+      [
+       0,
+       -0.0163,
+       0.9999
+      ]
+     ],
+     "_mainAxis": 2
+    }
+   },
+   {
+    "id": "m0",
+    "parent": "body",
+    "transform": {
+     "pos": [
+      0,
+      0,
+      -0.2
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 1.35,
+      "height": 0.9,
+      "depth": 1.55
+     },
+     "color": 16312527
+    }
+   },
+   {
+    "id": "m1",
+    "parent": "body",
+    "transform": {
+     "pos": [
+      0,
+      0.2,
+      0.55
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 1.05,
+      "height": 0.65,
+      "depth": 0.65
+     },
+     "color": 16312527
+    }
+   },
+   {
+    "id": "m2",
+    "parent": "body",
+    "transform": {
+     "pos": [
+      0,
+      0.39,
+      -1.06
+     ],
+     "quat": [
+      0.97,
+      0,
+      0,
+      -0.24
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 0.96,
+      "height": 0.38,
+      "depth": 0.49
+     },
+     "color": 16636067
+    }
+   },
+   {
+    "id": "m3",
+    "parent": "wing_l",
+    "transform": {
+     "pos": [
+      -0.03,
+      -0.11,
+      0.05
+     ],
+     "quat": [
+      0.42,
+      0.44,
+      -0.42,
+      0.57
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 1.07,
+      "height": 0.16,
+      "depth": 0.55
+     },
+     "color": 16710122
+    }
+   },
+   {
+    "id": "m4",
+    "parent": "wing_r",
+    "transform": {
+     "pos": [
+      0.03,
+      -0.11,
+      0.05
+     ],
+     "quat": [
+      0.42,
+      -0.44,
+      0.42,
+      0.57
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 1.07,
+      "height": 0.16,
+      "depth": 0.55
+     },
+     "color": 16636067
+    }
+   },
+   {
+    "id": "m5",
+    "parent": "neck",
+    "transform": {
+     "pos": [
+      0,
+      0.67,
+      0
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 0.55,
+      "height": 1.55,
+      "depth": 0.58
+     },
+     "color": 16710122
+    }
+   },
+   {
+    "id": "m6",
+    "parent": "head",
+    "transform": {
+     "pos": [
+      0,
+      0.12,
+      0.06
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 0.72,
+      "height": 0.62,
+      "depth": 0.76
+     },
+     "color": 16710122
+    }
+   },
+   {
+    "id": "m7",
+    "parent": "head",
+    "transform": {
+     "pos": [
+      0,
+      0.01,
+      0.72
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 0.58,
+      "height": 0.22,
+      "depth": 0.72
+     },
+     "color": 16312527
+    }
+   },
+   {
+    "id": "m8",
+    "parent": "head",
+    "transform": {
+     "pos": [
+      -0.25,
+      0.23,
+      0.45
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 0.12,
+      "height": 0.12,
+      "depth": 0.06
+     },
+     "color": 16312527
+    }
+   },
+   {
+    "id": "m9",
+    "parent": "head",
+    "transform": {
+     "pos": [
+      0.25,
+      0.23,
+      0.45
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 0.12,
+      "height": 0.12,
+      "depth": 0.06
+     },
+     "color": 16710122
+    }
+   },
+   {
+    "id": "m10",
+    "parent": "leg_l",
+    "transform": {
+     "pos": [
+      0,
+      -0.34,
+      0
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 0.2,
+      "height": 0.7,
+      "depth": 0.22
+     },
+     "color": 15838569
+    }
+   },
+   {
+    "id": "m11",
+    "parent": "foot_l",
+    "transform": {
+     "pos": [
+      0,
+      -0.04,
+      0.27
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 0.62,
+      "height": 0.16,
+      "depth": 0.72
+     },
+     "color": 16301124
+    }
+   },
+   {
+    "id": "m12",
+    "parent": "foot_l",
+    "transform": {
+     "pos": [
+      0,
+      -0.06,
+      0.6
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 0.82,
+      "height": 0.12,
+      "depth": 0.34
+     },
+     "color": 15838569
+    }
+   },
+   {
+    "id": "m13",
+    "parent": "leg_r",
+    "transform": {
+     "pos": [
+      0,
+      -0.34,
+      0
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 0.2,
+      "height": 0.7,
+      "depth": 0.22
+     },
+     "color": 16301124
+    }
+   },
+   {
+    "id": "m14",
+    "parent": "foot_r",
+    "transform": {
+     "pos": [
+      0,
+      -0.04,
+      0.27
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 0.62,
+      "height": 0.16,
+      "depth": 0.72
+     },
+     "color": 15838569
+    }
+   },
+   {
+    "id": "m15",
+    "parent": "foot_r",
+    "transform": {
+     "pos": [
+      0,
+      -0.06,
+      0.6
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 0.82,
+      "height": 0.12,
+      "depth": 0.34
+     },
+     "color": 16301124
+    }
+   }
+  ],
+  "_meta": {
+   "skipAutoCenter": true,
+   "ai": {
+    "v": 1,
+    "ts": 1788562275202,
+    "provider": "gpt",
+    "data": "nG9exg5fdeygMJgA0hK5QVRy3ybIEjobm5gbbQldxzV5vJKDoM7IeEZRc3n53o54qBXPn2z/572AdVcparNLpeGE/v1WXhEdXijn58r+nmBU2j3CQ79WT07zCkvMpAWPCSNfyDlFCIyQR+Hpu9sCx27vNHrR9pP4gUvCqosTwe+IHxXkdWjZfSgkHhzoOx9vT7QTb5JnSXd096CqtMPvyfI1r+h2pjadKTaPV+BpIt18qLE72zbkS9z60mK5DtgEw6UeNdNdeh4esm6X89nnl2TGsMpTzJ8ILAI9c7bKrzGRqJ56EPPg84uMbndlfQLZ/sao6WEgzu9GXVvMT+vbCyJMvU9CTU52tflu9w8ZScOAayOhuVPXiGBVjVgLVAJ4XbuS+SIMyFpFOfItgyGNdJwVVRB/1SV8QaTSqrwCp7hMgG2mAgFt58KRBCS+eFX/h2RnKMBapmWE5fL1uOjG0hLLgWqIW4N4YjgY7UJQVAGdt+Va19ZgXlYWkOJDevQmvmDs+u9ZWQ/jCAWmO6FRRW+V1dB6PmzF810kodIvXkQDW5lyRPRvxd0z8QGVwgDPrdP0as2PMTk1sofCu57PMq4XDjkDewucM9Us7V8KSpuDm0A+vzC7ljblMd6ZeacKfkmVgSrG6noDFUpzQq+B2Hz8ox/CX2gnnVZW7XHJedeQm9T2vs5hEDwJrmYIpB5yHfmV4dD/5/VrFfYn0yOgyT44mzY8wRK3zzaEFLt3N+lGirpyMlntqNI7UAf3lG1SDF6n80lg89nUN5d/O+Vhd8yRZBSSggtIH6ypXD/byo8k0Rmt1/SFm19LhwtNzYrJTrIDVBi7tOLrmkC1HF38juYaCDJe7uMuHqfA/h4oqMZZqZy6GiHo0IBO0VdtnPE6NA63NAmLOAWQusReEweT/UjeNJiNd+5TwJR8Y9Ay5AWwivMDoDEpHAJmHP0MC0nG3nHSbsghdvF4EDuSPkPw0ay5+oLNhrlGvFY7/F+6mMcOLPilj90BzT8NoXknNQC++XK3P3MtAp6cztNHVwVYaT1aw+ufwWXwPmk3J8IZ5b8S5QXQHkvYhaNJbc0KED5DYgsKng==",
+    "edits": ""
+   },
+   "semanticSnapshot": {
+    "v": 1,
+    "auto": true,
+    "text": "浅亮农场鹅·变化1 · 10组/16mesh · 世界坐标(Y上Z前), 原点=模型根\n# 阅读说明: G:=group行(可动画骨骼, 动画key用G:后的id; @p=pivot世界坐标; 倾(x,y,z)°=朝向偏离世界轴的欧拉角; 缩进=父子层级; 挂:=挂载于某组; G:id→id→…=chain折叠行, 每个id都是可独立动画的group, chain×N=waypoint数)\n# M:=mesh行(label[id 几何 @(世界坐标)], label可省略; ×N=for循环批量件(锚点=代表实例); cyl (起)→(末)或 轴上(Y)等方位词=延伸方向; 薄向=板面法向(扁板); 挂载组双代表=最大件+最远有向件(刃/嘴/管所在端); 无方向标注=均匀块(三向相近,如头),默认面向前(Z); 对称×2=镜像对)\nG:root 农场鹅 @p(0,0,0)\n  G:body 躯干 @p(0,1.2,0)\n    M:[m0 box 1.4×0.9×1.6 (0,1.2,-0.2) 薄向上(Y)]\n    G:wing_l 左翼 @p(-0.7,1.4,-0.1)\n      M:[m3 box 1.1×0.16×0.55 (-0.7,1.3,-0.1) 轴(-0.6,1.3,-0.6)→(-0.8,1.4,0.4)]\n    G:wing_r 右翼 @p(0.7,1.4,-0.1)\n      M:[m4 box 1.1×0.16×0.55 (0.7,1.3,-0.1) 轴(0.8,1.4,0.4)→(0.6,1.3,-0.6)]\n    G:neck 长颈 @p(0,1.5,0.4)\n      M:[m5 box 0.55×1.6×0.58 (0,2.2,0.4) 轴上(Y)]\n      G:head 头 @p(0,2.9,0.4)\n        M:[m6 box 0.72×0.62×0.76 (0,3,0.5)]\n    G:leg_l 左腿 @p(-0.4,0.8,0)\n      M:[m10 box 0.2×0.7×0.22 (-0.4,0.5,0) 轴上(Y)]\n      G:foot_l 左蹼 @p(-0.4,0.2,0)\n        M:[m11 box 0.62×0.16×0.72 (-0.4,0.1,0.2) 薄向上(Y)]\n    G:leg_r 右腿 @p(0.4,0.8,0)\n      M:[m13 box 0.2×0.7×0.22 (0.4,0.5,0) 轴上(Y)]\n      G:foot_r 右蹼 @p(0.4,0.2,0)\n        M:[m14 box 0.62×0.16×0.72 (0.4,0.1,0.2) 薄向上(Y)]",
+    "stats": {
+     "groups": 10,
+     "meshes": 16,
+     "labeledMeshes": 0,
+     "labelCoverage": 0,
+     "batchLabels": 0,
+     "autoChains": 0,
+     "snapshotChars": 1170
+    }
+   },
+   "colorPalette": {
+    "id": "palette-2b9c0834-be76-4477",
+    "name": "曼德鸭参考场景 · 浅亮建筑",
+    "description": "参考局内与背景样例：浅亮奶油墙面、桃沙道路、黄绿色植被、青蓝窗水、棕黄结构点缀。",
+    "version": 1,
+    "colors": [
+     {
+      "hex": "#FFFDF6"
+     },
+     {
+      "hex": "#FEF9EA"
+     },
+     {
+      "hex": "#FDF2D7"
+     },
+     {
+      "hex": "#E9DABD"
+     },
+     {
+      "hex": "#CDBA97"
+     },
+     {
+      "hex": "#F8E8CF"
+     },
+     {
+      "hex": "#F1D7B2"
+     },
+     {
+      "hex": "#E7C393"
+     },
+     {
+      "hex": "#C9A06E"
+     },
+     {
+      "hex": "#9E7A55"
+     },
+     {
+      "hex": "#FFF7A8"
+     },
+     {
+      "hex": "#FCEF72"
+     },
+     {
+      "hex": "#F6E24B"
+     },
+     {
+      "hex": "#D1B825"
+     },
+     {
+      "hex": "#9C8510"
+     },
+     {
+      "hex": "#FFF3B7"
+     },
+     {
+      "hex": "#FDE674"
+     },
+     {
+      "hex": "#FCD75F"
+     },
+     {
+      "hex": "#FECD4D"
+     },
+     {
+      "hex": "#D1900B"
+     },
+     {
+      "hex": "#FFE2A0"
+     },
+     {
+      "hex": "#FFD170"
+     },
+     {
+      "hex": "#F8BC44"
+     },
+     {
+      "hex": "#E39F1A"
+     },
+     {
+      "hex": "#A96F05"
+     },
+     {
+      "hex": "#FBE3BD"
+     },
+     {
+      "hex": "#FDD8A3"
+     },
+     {
+      "hex": "#FDCC8F"
+     },
+     {
+      "hex": "#F1AD69"
+     },
+     {
+      "hex": "#D99256"
+     },
+     {
+      "hex": "#FFD2BA"
+     },
+     {
+      "hex": "#FFB08A"
+     },
+     {
+      "hex": "#FF8A5B"
+     },
+     {
+      "hex": "#F06B3E"
+     },
+     {
+      "hex": "#B84A27"
+     },
+     {
+      "hex": "#EAF9FF"
+     },
+     {
+      "hex": "#DAF2F5"
+     },
+     {
+      "hex": "#95E5F9"
+     },
+     {
+      "hex": "#76D0F2"
+     },
+     {
+      "hex": "#45BDF6"
+     },
+     {
+      "hex": "#D9F8FB"
+     },
+     {
+      "hex": "#B2E9F2"
+     },
+     {
+      "hex": "#8ECCD6"
+     },
+     {
+      "hex": "#7BCFDF"
+     },
+     {
+      "hex": "#4BAFCA"
+     },
+     {
+      "hex": "#D8F7EF"
+     },
+     {
+      "hex": "#B8ECDD"
+     },
+     {
+      "hex": "#90DCC8"
+     },
+     {
+      "hex": "#74C4BB"
+     },
+     {
+      "hex": "#499D92"
+     },
+     {
+      "hex": "#F1F5AF"
+     },
+     {
+      "hex": "#E4E77F"
+     },
+     {
+      "hex": "#DCDB22"
+     },
+     {
+      "hex": "#BFC41A"
+     },
+     {
+      "hex": "#809712"
+     },
+     {
+      "hex": "#DEE5BC"
+     },
+     {
+      "hex": "#C6CC97"
+     },
+     {
+      "hex": "#AEAF6F"
+     },
+     {
+      "hex": "#76904C"
+     },
+     {
+      "hex": "#5F6F48"
+     },
+     {
+      "hex": "#D4C2A5"
+     },
+     {
+      "hex": "#B89269"
+     },
+     {
+      "hex": "#8E664D"
+     },
+     {
+      "hex": "#714D48"
+     },
+     {
+      "hex": "#52362E"
+     }
+    ],
+    "roles": {
+     "primary": [
+      "#F1D7B2",
+      "#FDD8A3",
+      "#FBE3BD",
+      "#E9DABD",
+      "#FDCC8F",
+      "#F8E8CF",
+      "#E7C393",
+      "#D4C2A5"
+     ],
+     "secondary": [
+      "#714D48",
+      "#52362E",
+      "#8E664D",
+      "#B84A27",
+      "#9E7A55",
+      "#F06B3E",
+      "#A96F05",
+      "#B89269",
+      "#D99256",
+      "#E7C393",
+      "#D4C2A5",
+      "#FDCC8F",
+      "#F1D7B2",
+      "#CDBA97",
+      "#FDD8A3",
+      "#F1AD69",
+      "#E9DABD",
+      "#AEAF6F",
+      "#C9A06E",
+      "#9C8510",
+      "#76904C",
+      "#809712"
+     ],
+     "accent": [
+      "#76D0F2",
+      "#7BCFDF",
+      "#95E5F9",
+      "#8ECCD6",
+      "#45BDF6",
+      "#4BAFCA",
+      "#B2E9F2",
+      "#74C4BB",
+      "#FFD170",
+      "#FECD4D",
+      "#FFE2A0",
+      "#F8BC44",
+      "#FCD75F",
+      "#E9DABD",
+      "#FDD8A3",
+      "#E7C393",
+      "#F06B3E",
+      "#FF8A5B",
+      "#B84A27",
+      "#D99256",
+      "#8E664D",
+      "#9E7A55",
+      "#FFB08A",
+      "#B89269"
+     ],
+     "plant": [
+      "#AEAF6F",
+      "#C6CC97",
+      "#BFC41A",
+      "#809712",
+      "#DCDB22",
+      "#E4E77F",
+      "#D1B825",
+      "#DEE5BC",
+      "#76904C",
+      "#5F6F48",
+      "#9C8510"
+     ],
+     "earth": [
+      "#F1D7B2",
+      "#FDD8A3",
+      "#FBE3BD",
+      "#E9DABD",
+      "#FDCC8F",
+      "#F8E8CF",
+      "#E7C393",
+      "#D4C2A5",
+      "#CDBA97",
+      "#F1AD69",
+      "#9E7A55",
+      "#B89269",
+      "#AEAF6F",
+      "#C9A06E",
+      "#9C8510",
+      "#8E664D",
+      "#76904C",
+      "#809712",
+      "#714D48",
+      "#52362E",
+      "#B84A27",
+      "#F06B3E",
+      "#A96F05",
+      "#D99256"
+     ],
+     "water": [
+      "#4BAFCA",
+      "#45BDF6",
+      "#7BCFDF",
+      "#76D0F2",
+      "#8ECCD6",
+      "#95E5F9",
+      "#499D92",
+      "#74C4BB"
+     ],
+     "atmosphere": [
+      "#76D0F2",
+      "#7BCFDF",
+      "#95E5F9",
+      "#8ECCD6",
+      "#45BDF6",
+      "#4BAFCA",
+      "#B2E9F2",
+      "#74C4BB",
+      "#EAF9FF",
+      "#DAF2F5",
+      "#D9F8FB"
+     ],
+     "effect": [
+      "#F06B3E",
+      "#FF8A5B",
+      "#B84A27",
+      "#D99256",
+      "#8E664D",
+      "#9E7A55",
+      "#FFB08A",
+      "#B89269"
+     ]
+    },
+    "lockedColors": [],
+    "excludedAssetIds": [],
+    "excludedTags": [],
+    "createdAt": 1787561837433,
+    "updatedAt": 1787561837433
+   },
+   "colorPaletteReport": {
+    "appliedMaterials": 16,
+    "appliedVertexColors": 0,
+    "skippedTextures": 0,
+    "explicitIntentColors": 0,
+    "sourceColors": 16,
+    "semanticFallbacks": 0,
+    "usedColors": [
+     "#B89269",
+     "#D4C2A5",
+     "#D99256",
+     "#E9DABD",
+     "#F1D7B2",
+     "#FDCC8F"
+    ]
+   }
+  }
+ },
+ "colliderPlan": {
+  "version": 1,
+  "boxes": [
+   {
+    "min": [
+     -0.675,
+     0.6600000000000001,
+     -1.0423347521281925
+    ],
+    "max": [
+     0.675,
+     1.56,
+     0.5076652478718077
+    ],
+    "sourceNodeId": "m0"
+   },
+   {
+    "min": [
+     -0.275,
+     1.405,
+     0.06266524787180772
+    ],
+    "max": [
+     0.275,
+     2.955,
+     0.6426652478718077
+    ],
+    "sourceNodeId": "m5"
+   },
+   {
+    "min": [
+     -0.525,
+     0.9850000000000001,
+     0.15766524787180775
+    ],
+    "max": [
+     0.525,
+     1.635,
+     0.8076652478718077
+    ],
+    "sourceNodeId": "m1"
+   },
+   {
+    "min": [
+     -0.36,
+     2.6700000000000004,
+     0.03266524787180769
+    ],
+    "max": [
+     0.36,
+     3.2900000000000005,
+     0.7926652478718077
+    ],
+    "sourceNodeId": "m6"
+   },
+   {
+    "min": [
+     -0.8954831860438426,
+     0.9199621255595087,
+     -0.7434250769302121
+    ],
+    "max": [
+     -0.48451681395615753,
+     1.6200378744404913,
+     0.40875557267382756
+    ],
+    "sourceNodeId": "m3"
+   },
+   {
+    "min": [
+     0.48451681395615753,
+     0.9199621255595087,
+     -0.7434250769302121
+    ],
+    "max": [
+     0.8954831860438426,
+     1.6200378744404913,
+     0.40875557267382756
+    ],
+    "sourceNodeId": "m4"
+   },
+   {
+    "min": [
+     -0.48,
+     1.217677516274412,
+     -1.4326652478718076
+    ],
+    "max": [
+     0.48,
+     1.7823224837255884,
+     -0.822004256384577
+    ],
+    "sourceNodeId": "m2"
+   },
+   {
+    "min": [
+     -0.29,
+     2.7600000000000002,
+     0.7126652478718076
+    ],
+    "max": [
+     0.29,
+     2.98,
+     1.4326652478718076
+    ],
+    "sourceNodeId": "m7"
+   }
+  ],
+  "sourceMeshCount": 16,
+  "candidateCount": 8,
+  "fallbackUsed": false
+ },
+ "footprintRadius": 1.4326652478718076,
+ "sizeClass": "medium",
+ "mode": "voxel",
+ "provider": "gpt",
+ "createdAt": 1788562272798,
+ "updatedAt": 1788562272798
+}

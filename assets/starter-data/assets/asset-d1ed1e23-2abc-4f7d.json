@@ -1,0 +1,1042 @@
+{
+  "id": "asset-d1ed1e23-2abc-4f7d",
+  "name": "深色大缸",
+  "prompt": "Standalone large dark earthenware farm vat, empty interior, no liquid, no ground, no attached tools or plants. Coordinate contract: Y+ is up, Z+ is the front/entrance/forward direction, X+ is right; place doors, facades, openings, windshields, or noses toward local Z+ and keep the model centered at its origin.\nCoordinate contract: local Y+ is up, local Z+ is the front, entrance, or forward direction, and local X+ is right. Put doors, facades, openings, windshields, noses, seats, and other recognizable front details toward local Z+. For a modular repeated element, explicitly choose the long axis: side-by-side modules span local X with depth/front on local Z; traversal modules span local Z. Keep the model centered at its origin.",
+  "tags": [
+    "farm",
+    "vat",
+    "dark",
+    "independent"
+  ],
+  "modelJson": {
+    "name": "大型深色陶土农用缸",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "vat",
+        "name": "陶土缸主体",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            0
+          ]
+        },
+        "_obb": {
+          "size": [
+            3.517,
+            1.816,
+            3.532
+          ],
+          "center": [
+            0,
+            0.036,
+            0.002
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              -0.0021
+            ],
+            [
+              0,
+              0.0021,
+              1
+            ]
+          ],
+          "_mainAxis": 2
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "vat",
+        "transform": {
+          "pos": [
+            0.5,
+            -0.02,
+            1.21
+          ],
+          "quat": [
+            -0.69,
+            0.14,
+            0.14,
+            0.69
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.09,
+            "height": 0.18,
+            "depth": 1.6
+          },
+          "color": 5387822
+        }
+      },
+      {
+        "id": "m1",
+        "parent": "vat",
+        "transform": {
+          "pos": [
+            1.21,
+            -0.02,
+            0.5
+          ],
+          "quat": [
+            -0.59,
+            0.39,
+            0.39,
+            0.59
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.09,
+            "height": 0.18,
+            "depth": 1.6
+          },
+          "color": 5387822
+        }
+      },
+      {
+        "id": "m2",
+        "parent": "vat",
+        "transform": {
+          "pos": [
+            1.21,
+            -0.02,
+            -0.5
+          ],
+          "quat": [
+            -0.39,
+            0.59,
+            0.59,
+            0.39
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.09,
+            "height": 0.18,
+            "depth": 1.6
+          },
+          "color": 5387822
+        }
+      },
+      {
+        "id": "m3",
+        "parent": "vat",
+        "transform": {
+          "pos": [
+            0.5,
+            -0.02,
+            -1.21
+          ],
+          "quat": [
+            -0.14,
+            0.69,
+            0.69,
+            0.14
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.09,
+            "height": 0.18,
+            "depth": 1.6
+          },
+          "color": 5387822
+        }
+      },
+      {
+        "id": "m4",
+        "parent": "vat",
+        "transform": {
+          "pos": [
+            -0.5,
+            -0.02,
+            -1.21
+          ],
+          "quat": [
+            0.14,
+            0.69,
+            0.69,
+            -0.14
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.09,
+            "height": 0.18,
+            "depth": 1.6
+          },
+          "color": 5387822
+        }
+      },
+      {
+        "id": "m5",
+        "parent": "vat",
+        "transform": {
+          "pos": [
+            -1.21,
+            -0.02,
+            -0.5
+          ],
+          "quat": [
+            0.39,
+            0.59,
+            0.59,
+            -0.39
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.09,
+            "height": 0.18,
+            "depth": 1.6
+          },
+          "color": 5387822
+        }
+      },
+      {
+        "id": "m6",
+        "parent": "vat",
+        "transform": {
+          "pos": [
+            -1.21,
+            -0.02,
+            0.5
+          ],
+          "quat": [
+            -0.59,
+            -0.39,
+            -0.39,
+            0.59
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.09,
+            "height": 0.18,
+            "depth": 1.6
+          },
+          "color": 5387822
+        }
+      },
+      {
+        "id": "m7",
+        "parent": "vat",
+        "transform": {
+          "pos": [
+            -0.5,
+            -0.02,
+            1.21
+          ],
+          "quat": [
+            -0.69,
+            -0.14,
+            -0.14,
+            0.69
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.09,
+            "height": 0.18,
+            "depth": 1.6
+          },
+          "color": 5387822
+        }
+      },
+      {
+        "id": "m8",
+        "parent": "vat",
+        "transform": {
+          "pos": [
+            0,
+            -0.78,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.95,
+            "height": 0.18,
+            "depth": 1.95
+          },
+          "color": 5387822
+        }
+      },
+      {
+        "id": "m9",
+        "parent": "vat",
+        "transform": {
+          "pos": [
+            0.57,
+            0.84,
+            1.37
+          ],
+          "quat": [
+            0,
+            0.2,
+            0,
+            0.98
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.22,
+            "height": 0.2,
+            "depth": 0.34
+          },
+          "color": 5387822
+        }
+      },
+      {
+        "id": "m10",
+        "parent": "vat",
+        "transform": {
+          "pos": [
+            1.37,
+            0.84,
+            0.57
+          ],
+          "quat": [
+            0,
+            0.56,
+            0,
+            0.83
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.22,
+            "height": 0.2,
+            "depth": 0.34
+          },
+          "color": 5387822
+        }
+      },
+      {
+        "id": "m11",
+        "parent": "vat",
+        "transform": {
+          "pos": [
+            1.37,
+            0.84,
+            -0.57
+          ],
+          "quat": [
+            0,
+            0.83,
+            0,
+            0.56
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.22,
+            "height": 0.2,
+            "depth": 0.34
+          },
+          "color": 5387822
+        }
+      },
+      {
+        "id": "m12",
+        "parent": "vat",
+        "transform": {
+          "pos": [
+            0.57,
+            0.84,
+            -1.37
+          ],
+          "quat": [
+            0,
+            0.98,
+            0,
+            0.2
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.22,
+            "height": 0.2,
+            "depth": 0.34
+          },
+          "color": 5387822
+        }
+      },
+      {
+        "id": "m13",
+        "parent": "vat",
+        "transform": {
+          "pos": [
+            -0.57,
+            0.84,
+            -1.37
+          ],
+          "quat": [
+            0,
+            0.98,
+            0,
+            -0.2
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.22,
+            "height": 0.2,
+            "depth": 0.34
+          },
+          "color": 5387822
+        }
+      },
+      {
+        "id": "m14",
+        "parent": "vat",
+        "transform": {
+          "pos": [
+            -1.37,
+            0.84,
+            -0.57
+          ],
+          "quat": [
+            0,
+            -0.83,
+            0,
+            0.56
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.22,
+            "height": 0.2,
+            "depth": 0.34
+          },
+          "color": 5387822
+        }
+      },
+      {
+        "id": "m15",
+        "parent": "vat",
+        "transform": {
+          "pos": [
+            -1.37,
+            0.84,
+            0.57
+          ],
+          "quat": [
+            0,
+            -0.56,
+            0,
+            0.83
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.22,
+            "height": 0.2,
+            "depth": 0.34
+          },
+          "color": 5387822
+        }
+      },
+      {
+        "id": "m16",
+        "parent": "vat",
+        "transform": {
+          "pos": [
+            -0.57,
+            0.84,
+            1.37
+          ],
+          "quat": [
+            0,
+            -0.2,
+            0,
+            0.98
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.22,
+            "height": 0.2,
+            "depth": 0.34
+          },
+          "color": 5387822
+        }
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1788562359735,
+        "provider": "gpt",
+        "data": "bIGvUb8UWpf1ptlsA0aW6ZIg3Yh7rkqNH09Ix8T4VKk+cfjxZusYGXfgc6gA+wivFf2nqdsMTD685ZENYPYQN/FI/UJf4OTD9+x9MHqDi6LfTNnC5bJqIlttgL/lWMqR5URi7+2AlFRuavxDnsj3RbezPjPxX8SeZ+FGRxGTMaPWTWkmcvEp1Gun7w97cEfvecTi3zot5ifFf+YS+Lo0geAvXVkxztAsqTWu2w5TgTp7+opbYNDo6oOHRR9mHm1pThpaFonHpmMKM0sBxpUjX96cWEw7PpUyFY0JFXKBX1143nXtVtVdQ8HhOoHKc0DjIb3mujhnubzTeW5JuwpmjxJZPOCbcW/Eu4+cRXsCO6RWqb6XGmLna9bKZ3cU9WsIquaEj0+Q2FGIUf9HNPJzo1Ne0J3hxQNrc/yxeGZj/EBPEQ3XQqtAxno1b6DN9zTwDzUXSfFwp6iC6AtiCzS6izutx/vwV7sNhaw4yOc6Td72awkNCOXMASXfxAfKl8nZSK3adkaNAfWZVYQ424hlZWqUFYXSyqUGmcsu9uYjJm/FvxJa7mdlKHobw8fDZAFnRNwvmkbr+0YHXVHm6yC3sSCRAoZUPGxajEiahsK/0dIdE1nDznWV7NTyZ9nbB0gnZ1SAiWCgJxIdW17SkjI+6ZucvIG61KIpbzhSN9rE4hsNWm+LQla0q7XhsMTK2o6qpeWYT0j+Q8nLW6VBh1e8hIVdhnU+f6atj0qzHOvADpcjmz32XsmXuPwR8y1YFiLB6uSFBjGo/NzaQ8/L/hq73pahWj0/SI9KLa1vDdZJ8qAHuXMjhx6a/0GDkc2uo0oiU+TmRbWl2kd3/j3XCuQiQAZsraGzVNef1mfCj6KHGYPW7xI/xglxwTFP6oY/Rx6t4PVgBr/DpYrjIgc73fXZSxn/QkrGhEjI2V5+Ilt2BIkFtrOWrr4yWBIrgzzFepBUepo5AMyuUr2Xf/GMZmF9Hg==",
+        "edits": ""
+      },
+      "semanticSnapshot": {
+        "v": 1,
+        "auto": true,
+        "text": "大型深色陶土农用缸 · 1组/17mesh · 世界坐标(Y上Z前), 原点=模型根\n# 阅读说明: G:=group行(可动画骨骼, 动画key用G:后的id; @p=pivot世界坐标; 倾(x,y,z)°=朝向偏离世界轴的欧拉角; 缩进=父子层级; 挂:=挂载于某组; G:id→id→…=chain折叠行, 每个id都是可独立动画的group, chain×N=waypoint数)\n# M:=mesh行(label[id 几何 @(世界坐标)], label可省略; ×N=for循环批量件(锚点=代表实例); cyl (起)→(末)或 轴上(Y)等方位词=延伸方向; 薄向=板面法向(扁板); 挂载组双代表=最大件+最远有向件(刃/嘴/管所在端); 无方向标注=均匀块(三向相近,如头),默认面向前(Z); 对称×2=镜像对)\nG:vat 陶土缸主体 @p(0,0,0)\n  M:[m8 box 2×0.18×2 (0,-0.8,0) 薄向上(Y)]",
+        "stats": {
+          "groups": 1,
+          "meshes": 17,
+          "labeledMeshes": 0,
+          "labelCoverage": 0,
+          "batchLabels": 0,
+          "autoChains": 0,
+          "snapshotChars": 431
+        }
+      },
+      "colorPalette": {
+        "id": "palette-2b9c0834-be76-4477",
+        "name": "曼德鸭参考场景 · 浅亮建筑",
+        "description": "参考局内与背景样例：浅亮奶油墙面、桃沙道路、黄绿色植被、青蓝窗水、棕黄结构点缀。",
+        "version": 1,
+        "colors": [
+          {
+            "hex": "#FFFDF6"
+          },
+          {
+            "hex": "#FEF9EA"
+          },
+          {
+            "hex": "#FDF2D7"
+          },
+          {
+            "hex": "#E9DABD"
+          },
+          {
+            "hex": "#CDBA97"
+          },
+          {
+            "hex": "#F8E8CF"
+          },
+          {
+            "hex": "#F1D7B2"
+          },
+          {
+            "hex": "#E7C393"
+          },
+          {
+            "hex": "#C9A06E"
+          },
+          {
+            "hex": "#9E7A55"
+          },
+          {
+            "hex": "#FFF7A8"
+          },
+          {
+            "hex": "#FCEF72"
+          },
+          {
+            "hex": "#F6E24B"
+          },
+          {
+            "hex": "#D1B825"
+          },
+          {
+            "hex": "#9C8510"
+          },
+          {
+            "hex": "#FFF3B7"
+          },
+          {
+            "hex": "#FDE674"
+          },
+          {
+            "hex": "#FCD75F"
+          },
+          {
+            "hex": "#FECD4D"
+          },
+          {
+            "hex": "#D1900B"
+          },
+          {
+            "hex": "#FFE2A0"
+          },
+          {
+            "hex": "#FFD170"
+          },
+          {
+            "hex": "#F8BC44"
+          },
+          {
+            "hex": "#E39F1A"
+          },
+          {
+            "hex": "#A96F05"
+          },
+          {
+            "hex": "#FBE3BD"
+          },
+          {
+            "hex": "#FDD8A3"
+          },
+          {
+            "hex": "#FDCC8F"
+          },
+          {
+            "hex": "#F1AD69"
+          },
+          {
+            "hex": "#D99256"
+          },
+          {
+            "hex": "#FFD2BA"
+          },
+          {
+            "hex": "#FFB08A"
+          },
+          {
+            "hex": "#FF8A5B"
+          },
+          {
+            "hex": "#F06B3E"
+          },
+          {
+            "hex": "#B84A27"
+          },
+          {
+            "hex": "#EAF9FF"
+          },
+          {
+            "hex": "#DAF2F5"
+          },
+          {
+            "hex": "#95E5F9"
+          },
+          {
+            "hex": "#76D0F2"
+          },
+          {
+            "hex": "#45BDF6"
+          },
+          {
+            "hex": "#D9F8FB"
+          },
+          {
+            "hex": "#B2E9F2"
+          },
+          {
+            "hex": "#8ECCD6"
+          },
+          {
+            "hex": "#7BCFDF"
+          },
+          {
+            "hex": "#4BAFCA"
+          },
+          {
+            "hex": "#D8F7EF"
+          },
+          {
+            "hex": "#B8ECDD"
+          },
+          {
+            "hex": "#90DCC8"
+          },
+          {
+            "hex": "#74C4BB"
+          },
+          {
+            "hex": "#499D92"
+          },
+          {
+            "hex": "#F1F5AF"
+          },
+          {
+            "hex": "#E4E77F"
+          },
+          {
+            "hex": "#DCDB22"
+          },
+          {
+            "hex": "#BFC41A"
+          },
+          {
+            "hex": "#809712"
+          },
+          {
+            "hex": "#DEE5BC"
+          },
+          {
+            "hex": "#C6CC97"
+          },
+          {
+            "hex": "#AEAF6F"
+          },
+          {
+            "hex": "#76904C"
+          },
+          {
+            "hex": "#5F6F48"
+          },
+          {
+            "hex": "#D4C2A5"
+          },
+          {
+            "hex": "#B89269"
+          },
+          {
+            "hex": "#8E664D"
+          },
+          {
+            "hex": "#714D48"
+          },
+          {
+            "hex": "#52362E"
+          }
+        ],
+        "roles": {
+          "primary": [
+            "#F1D7B2",
+            "#FDD8A3",
+            "#FBE3BD",
+            "#E9DABD",
+            "#FDCC8F",
+            "#F8E8CF",
+            "#E7C393",
+            "#D4C2A5"
+          ],
+          "secondary": [
+            "#714D48",
+            "#52362E",
+            "#8E664D",
+            "#B84A27",
+            "#9E7A55",
+            "#F06B3E",
+            "#A96F05",
+            "#B89269",
+            "#D99256",
+            "#E7C393",
+            "#D4C2A5",
+            "#FDCC8F",
+            "#F1D7B2",
+            "#CDBA97",
+            "#FDD8A3",
+            "#F1AD69",
+            "#E9DABD",
+            "#AEAF6F",
+            "#C9A06E",
+            "#9C8510",
+            "#76904C",
+            "#809712"
+          ],
+          "accent": [
+            "#76D0F2",
+            "#7BCFDF",
+            "#95E5F9",
+            "#8ECCD6",
+            "#45BDF6",
+            "#4BAFCA",
+            "#B2E9F2",
+            "#74C4BB",
+            "#FFD170",
+            "#FECD4D",
+            "#FFE2A0",
+            "#F8BC44",
+            "#FCD75F",
+            "#E9DABD",
+            "#FDD8A3",
+            "#E7C393",
+            "#F06B3E",
+            "#FF8A5B",
+            "#B84A27",
+            "#D99256",
+            "#8E664D",
+            "#9E7A55",
+            "#FFB08A",
+            "#B89269"
+          ],
+          "plant": [
+            "#AEAF6F",
+            "#C6CC97",
+            "#BFC41A",
+            "#809712",
+            "#DCDB22",
+            "#E4E77F",
+            "#D1B825",
+            "#DEE5BC",
+            "#76904C",
+            "#5F6F48",
+            "#9C8510"
+          ],
+          "earth": [
+            "#F1D7B2",
+            "#FDD8A3",
+            "#FBE3BD",
+            "#E9DABD",
+            "#FDCC8F",
+            "#F8E8CF",
+            "#E7C393",
+            "#D4C2A5",
+            "#CDBA97",
+            "#F1AD69",
+            "#9E7A55",
+            "#B89269",
+            "#AEAF6F",
+            "#C9A06E",
+            "#9C8510",
+            "#8E664D",
+            "#76904C",
+            "#809712",
+            "#714D48",
+            "#52362E",
+            "#B84A27",
+            "#F06B3E",
+            "#A96F05",
+            "#D99256"
+          ],
+          "water": [
+            "#4BAFCA",
+            "#45BDF6",
+            "#7BCFDF",
+            "#76D0F2",
+            "#8ECCD6",
+            "#95E5F9",
+            "#499D92",
+            "#74C4BB"
+          ],
+          "atmosphere": [
+            "#76D0F2",
+            "#7BCFDF",
+            "#95E5F9",
+            "#8ECCD6",
+            "#45BDF6",
+            "#4BAFCA",
+            "#B2E9F2",
+            "#74C4BB",
+            "#EAF9FF",
+            "#DAF2F5",
+            "#D9F8FB"
+          ],
+          "effect": [
+            "#F06B3E",
+            "#FF8A5B",
+            "#B84A27",
+            "#D99256",
+            "#8E664D",
+            "#9E7A55",
+            "#FFB08A",
+            "#B89269"
+          ]
+        },
+        "lockedColors": [],
+        "excludedAssetIds": [],
+        "excludedTags": [],
+        "createdAt": 1787561837433,
+        "updatedAt": 1787561837433
+      },
+      "colorPaletteReport": {
+        "appliedMaterials": 17,
+        "appliedVertexColors": 0,
+        "skippedTextures": 0,
+        "explicitIntentColors": 0,
+        "sourceColors": 17,
+        "semanticFallbacks": 0,
+        "usedColors": [
+          "#52362E"
+        ]
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          0.9136425429828067,
+          0.04999999999999971,
+          -1.0366833266693325
+        ],
+        "max": [
+          1.5063574570171934,
+          1.6500000000000004,
+          0.036683326669332494
+        ],
+        "sourceNodeId": "m2"
+      },
+      {
+        "min": [
+          -1.5063574570171934,
+          0.04999999999999971,
+          -1.0366833266693325
+        ],
+        "max": [
+          -0.9136425429828067,
+          1.6500000000000004,
+          0.036683326669332494
+        ],
+        "sourceNodeId": "m5"
+      },
+      {
+        "min": [
+          0.9136425429828068,
+          0.04999999999999971,
+          -0.036683326669332494
+        ],
+        "max": [
+          1.5063574570171931,
+          1.6500000000000004,
+          1.0366833266693325
+        ],
+        "sourceNodeId": "m1"
+      },
+      {
+        "min": [
+          -1.5063574570171931,
+          0.04999999999999971,
+          -0.036683326669332494
+        ],
+        "max": [
+          -0.9136425429828068,
+          1.6500000000000004,
+          1.0366833266693325
+        ],
+        "sourceNodeId": "m6"
+      },
+      {
+        "min": [
+          -0.03697901956828731,
+          0.04999999999999971,
+          0.9147024409925355
+        ],
+        "max": [
+          1.0369790195682873,
+          1.6500000000000004,
+          1.5052975590074644
+        ],
+        "sourceNodeId": "m0"
+      },
+      {
+        "min": [
+          -0.03697901956828753,
+          0.04999999999999982,
+          -1.5052975590074644
+        ],
+        "max": [
+          1.0369790195682875,
+          1.6500000000000001,
+          -0.9147024409925356
+        ],
+        "sourceNodeId": "m3"
+      },
+      {
+        "min": [
+          -1.0369790195682875,
+          0.04999999999999982,
+          -1.5052975590074644
+        ],
+        "max": [
+          0.03697901956828753,
+          1.6500000000000001,
+          -0.9147024409925356
+        ],
+        "sourceNodeId": "m4"
+      },
+      {
+        "min": [
+          -1.0369790195682873,
+          0.04999999999999971,
+          0.9147024409925355
+        ],
+        "max": [
+          0.03697901956828731,
+          1.6500000000000004,
+          1.5052975590074644
+        ],
+        "sourceNodeId": "m7"
+      },
+      {
+        "min": [
+          -0.975,
+          0,
+          -0.975
+        ],
+        "max": [
+          0.975,
+          0.17999999999999994,
+          0.975
+        ],
+        "sourceNodeId": "m8"
+      },
+      {
+        "min": [
+          -1.1978328668532585,
+          1.6099999999999999,
+          0.9745701719312276
+        ],
+        "max": [
+          0.057832866853258724,
+          1.81,
+          1.7654298280687726
+        ],
+        "sourceNodeId": "m16"
+      },
+      {
+        "min": [
+          -0.057832866853258724,
+          1.6099999999999999,
+          0.9745701719312276
+        ],
+        "max": [
+          1.1978328668532585,
+          1.81,
+          1.7654298280687726
+        ],
+        "sourceNodeId": "m9"
+      },
+      {
+        "min": [
+          -0.0578328668532585,
+          1.6099999999999999,
+          -1.7654298280687726
+        ],
+        "max": [
+          1.1978328668532585,
+          1.81,
+          -0.9745701719312276
+        ],
+        "sourceNodeId": "m12"
+      }
+    ],
+    "sourceMeshCount": 17,
+    "candidateCount": 17,
+    "fallbackUsed": false
+  },
+  "footprintRadius": 1.7654298280687726,
+  "sizeClass": "medium",
+  "mode": "voxel",
+  "provider": "gpt",
+  "createdAt": 1788562357318,
+  "updatedAt": 1788562357318
+}

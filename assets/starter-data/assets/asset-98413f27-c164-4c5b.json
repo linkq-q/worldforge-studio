@@ -1,0 +1,641 @@
+{
+ "id": "asset-98413f27-c164-4c5b",
+ "name": "镰刀",
+ "prompt": "One standalone hand sickle only, one curved metal blade fixed to one short wooden handle, no harvested plants, no bundle, no other tools, no ground, no scene, no background. Coordinate contract: Y+ is up, Z+ is the front/entrance/forward direction, X+ is right; place doors, facades, openings, windshields, or noses toward local Z+ and keep the model centered at its origin.\nCoordinate contract: local Y+ is up, local Z+ is the front, entrance, or forward direction, and local X+ is right. Put doors, facades, openings, windshields, noses, seats, and other recognizable front details toward local Z+. For a modular repeated element, explicitly choose the long axis: side-by-side modules span local X with depth/front on local Z; traversal modules span local Z. Keep the model centered at its origin.\nCanonical dimensions contract: width=0.52, height=0.08, depth=0.32 world units. Keep the generated mesh within this centered bounding size.",
+ "tags": [
+  "farm",
+  "tool",
+  "sickle",
+  "independent"
+ ],
+ "modelJson": {
+  "name": "Voxel Hand Sickle",
+  "type": "lowpoly",
+  "format": 2,
+  "nodes": [
+   {
+    "id": "blade",
+    "name": "Curved metal blade",
+    "transform": {
+     "pos": [
+      0.14,
+      0,
+      0.07
+     ]
+    },
+    "_obb": {
+     "size": [
+      0.151,
+      0.07,
+      0.404
+     ],
+     "center": [
+      -0.053,
+      0,
+      -0.057
+     ],
+     "axes": [
+      [
+       0.7191,
+       0,
+       -0.6949
+      ],
+      [
+       0,
+       1,
+       0
+      ],
+      [
+       0.6949,
+       0,
+       0.7191
+      ]
+     ],
+     "_mainAxis": 2
+    }
+   },
+   {
+    "id": "handle",
+    "name": "Short wooden handle",
+    "parent": "blade",
+    "transform": {
+     "pos": [
+      -0.14,
+      0,
+      -0.15
+     ]
+    },
+    "_obb": {
+     "size": [
+      0.07,
+      0.07,
+      0.14
+     ],
+     "center": [
+      0,
+      0,
+      0
+     ],
+     "axes": [
+      [
+       1,
+       0,
+       0
+      ],
+      [
+       0,
+       1,
+       0
+      ],
+      [
+       0,
+       0,
+       1
+      ]
+     ],
+     "_mainAxis": 2
+    }
+   },
+   {
+    "id": "m0",
+    "parent": "handle",
+    "transform": {
+     "pos": [
+      0,
+      0,
+      0
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 0.07,
+      "height": 0.07,
+      "depth": 0.14
+     },
+     "color": 12096105
+    },
+    "tags": [
+     {
+      "tag": "base",
+      "value": "wood",
+      "variant": "walnut"
+     }
+    ]
+   },
+   {
+    "id": "m1",
+    "parent": "blade",
+    "transform": {
+     "pos": [
+      -0.07,
+      0,
+      -0.05
+     ],
+     "quat": [
+      0,
+      -0.13,
+      0,
+      0.99
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 0.11,
+      "height": 0.035,
+      "depth": 0.04
+     },
+     "color": 7652539,
+     "material": {
+      "metalness": 0.78,
+      "roughness": 0.35
+     }
+    },
+    "tags": [
+     {
+      "tag": "base",
+      "value": "metal"
+     }
+    ]
+   },
+   {
+    "id": "m2",
+    "parent": "blade",
+    "transform": {
+     "pos": [
+      0.01,
+      0,
+      -0.01
+     ],
+     "quat": [
+      0,
+      -0.37,
+      0,
+      0.93
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 0.11,
+      "height": 0.035,
+      "depth": 0.04
+     },
+     "color": 4824466,
+     "material": {
+      "metalness": 0.78,
+      "roughness": 0.35
+     }
+    },
+    "tags": [
+     {
+      "tag": "base",
+      "value": "metal"
+     }
+    ]
+   },
+   {
+    "id": "m3",
+    "parent": "blade",
+    "transform": {
+     "pos": [
+      0.07,
+      0,
+      0.05
+     ],
+     "quat": [
+      0,
+      -0.53,
+      0,
+      0.84
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 0.07,
+      "height": 0.035,
+      "depth": 0.04
+     },
+     "color": 7652539,
+     "material": {
+      "metalness": 0.78,
+      "roughness": 0.35
+     }
+    },
+    "tags": [
+     {
+      "tag": "base",
+      "value": "metal"
+     }
+    ]
+   }
+  ],
+  "_meta": {
+   "skipAutoCenter": true,
+   "ai": {
+    "v": 1,
+    "ts": 1788563011055,
+    "provider": "gpt",
+    "data": "m+9fSDvfUQGprI05ddzZgm2xCIvjxi7PFlTW5RlrIHWZ3wgaUZRaantlzJgPZU6CW8d/s1sHFGdLNdZfpm6iR3pF7AedkaiMLMUGvST2u+6ZLjkyGz+PhgYxjLiVAAYh5TI7LoPN9/L5d8KLcx+FU3cj7E3q11CEKWdQ+M7v3f5BAUQq4yfLfan6JkDIU4kLOSOeqkPySlHvD/TP9VFH7HXiJKc1VNxDg0GmTLbEnjt06nHbDOkCv7kL2nDaZ4e1ODX+ho4LQfFLIQuTys2E7BtscgCAP8fKdOFHYcPX43FQTMwQX7ycAWcBwuDGNvYu1/t2P+iGSsG7vQuTycnXb/yx2ISXWVB0tE7fosIPnVThp3KAdDjrNFMgZWq5J84zOW+qidcF4QFccst6wHVLTlbAq1X5gldhSxostTeq4uVFeRc/oZByNCHlkYeJkrzzoakumQTp39xLCGfrOXICreggC2XknN66P1wkAsqKUltKI5DRmWItjvFGPPDKcjxMlA3QrStfElK7SlUmjG+m6pXIpgUyyDMu4j2GOi3HmIVEm40mzHNcmrV3OFU6UU8+jybfkmDs9ASupJdxfnMvnkvyChRh+7+g1RiyGQ8=",
+    "edits": ""
+   },
+   "semanticSnapshot": {
+    "v": 1,
+    "auto": true,
+    "text": "Voxel Hand Sickle · 2组/4mesh · 世界坐标(Y上Z前), 原点=模型根\n# 阅读说明: G:=group行(可动画骨骼, 动画key用G:后的id; @p=pivot世界坐标; 倾(x,y,z)°=朝向偏离世界轴的欧拉角; 缩进=父子层级; 挂:=挂载于某组; G:id→id→…=chain折叠行, 每个id都是可独立动画的group, chain×N=waypoint数)\n# M:=mesh行(label[id 几何 @(世界坐标)], label可省略; ×N=for循环批量件(锚点=代表实例); cyl (起)→(末)或 轴上(Y)等方位词=延伸方向; 薄向=板面法向(扁板); 挂载组双代表=最大件+最远有向件(刃/嘴/管所在端); 无方向标注=均匀块(三向相近,如头),默认面向前(Z); 对称×2=镜像对)\nG:blade Curved metal blade @p(0.1,0,0.1)\n  M:[m1 box 0.11×0.04×0.04 (0.1,0,0) 轴右(X)]\n  G:handle Short wooden handle @p(0,0,-0.1)\n    M:[m0 box 0.07×0.07×0.14 (0,0,-0.1) 轴前(Z)]",
+    "stats": {
+     "groups": 2,
+     "meshes": 4,
+     "labeledMeshes": 0,
+     "labelCoverage": 0,
+     "batchLabels": 0,
+     "autoChains": 0,
+     "snapshotChars": 552
+    }
+   },
+   "colorPalette": {
+    "id": "palette-2b9c0834-be76-4477",
+    "name": "曼德鸭参考场景 · 浅亮建筑",
+    "description": "参考局内与背景样例：浅亮奶油墙面、桃沙道路、黄绿色植被、青蓝窗水、棕黄结构点缀。",
+    "version": 1,
+    "colors": [
+     {
+      "hex": "#FFFDF6"
+     },
+     {
+      "hex": "#FEF9EA"
+     },
+     {
+      "hex": "#FDF2D7"
+     },
+     {
+      "hex": "#E9DABD"
+     },
+     {
+      "hex": "#CDBA97"
+     },
+     {
+      "hex": "#F8E8CF"
+     },
+     {
+      "hex": "#F1D7B2"
+     },
+     {
+      "hex": "#E7C393"
+     },
+     {
+      "hex": "#C9A06E"
+     },
+     {
+      "hex": "#9E7A55"
+     },
+     {
+      "hex": "#FFF7A8"
+     },
+     {
+      "hex": "#FCEF72"
+     },
+     {
+      "hex": "#F6E24B"
+     },
+     {
+      "hex": "#D1B825"
+     },
+     {
+      "hex": "#9C8510"
+     },
+     {
+      "hex": "#FFF3B7"
+     },
+     {
+      "hex": "#FDE674"
+     },
+     {
+      "hex": "#FCD75F"
+     },
+     {
+      "hex": "#FECD4D"
+     },
+     {
+      "hex": "#D1900B"
+     },
+     {
+      "hex": "#FFE2A0"
+     },
+     {
+      "hex": "#FFD170"
+     },
+     {
+      "hex": "#F8BC44"
+     },
+     {
+      "hex": "#E39F1A"
+     },
+     {
+      "hex": "#A96F05"
+     },
+     {
+      "hex": "#FBE3BD"
+     },
+     {
+      "hex": "#FDD8A3"
+     },
+     {
+      "hex": "#FDCC8F"
+     },
+     {
+      "hex": "#F1AD69"
+     },
+     {
+      "hex": "#D99256"
+     },
+     {
+      "hex": "#FFD2BA"
+     },
+     {
+      "hex": "#FFB08A"
+     },
+     {
+      "hex": "#FF8A5B"
+     },
+     {
+      "hex": "#F06B3E"
+     },
+     {
+      "hex": "#B84A27"
+     },
+     {
+      "hex": "#EAF9FF"
+     },
+     {
+      "hex": "#DAF2F5"
+     },
+     {
+      "hex": "#95E5F9"
+     },
+     {
+      "hex": "#76D0F2"
+     },
+     {
+      "hex": "#45BDF6"
+     },
+     {
+      "hex": "#D9F8FB"
+     },
+     {
+      "hex": "#B2E9F2"
+     },
+     {
+      "hex": "#8ECCD6"
+     },
+     {
+      "hex": "#7BCFDF"
+     },
+     {
+      "hex": "#4BAFCA"
+     },
+     {
+      "hex": "#D8F7EF"
+     },
+     {
+      "hex": "#B8ECDD"
+     },
+     {
+      "hex": "#90DCC8"
+     },
+     {
+      "hex": "#74C4BB"
+     },
+     {
+      "hex": "#499D92"
+     },
+     {
+      "hex": "#F1F5AF"
+     },
+     {
+      "hex": "#E4E77F"
+     },
+     {
+      "hex": "#DCDB22"
+     },
+     {
+      "hex": "#BFC41A"
+     },
+     {
+      "hex": "#809712"
+     },
+     {
+      "hex": "#DEE5BC"
+     },
+     {
+      "hex": "#C6CC97"
+     },
+     {
+      "hex": "#AEAF6F"
+     },
+     {
+      "hex": "#76904C"
+     },
+     {
+      "hex": "#5F6F48"
+     },
+     {
+      "hex": "#D4C2A5"
+     },
+     {
+      "hex": "#B89269"
+     },
+     {
+      "hex": "#8E664D"
+     },
+     {
+      "hex": "#714D48"
+     },
+     {
+      "hex": "#52362E"
+     }
+    ],
+    "roles": {
+     "primary": [
+      "#F1D7B2",
+      "#FDD8A3",
+      "#FBE3BD",
+      "#E9DABD",
+      "#FDCC8F",
+      "#F8E8CF",
+      "#E7C393",
+      "#D4C2A5"
+     ],
+     "secondary": [
+      "#714D48",
+      "#52362E",
+      "#8E664D",
+      "#B84A27",
+      "#9E7A55",
+      "#F06B3E",
+      "#A96F05",
+      "#B89269",
+      "#D99256",
+      "#E7C393",
+      "#D4C2A5",
+      "#FDCC8F",
+      "#F1D7B2",
+      "#CDBA97",
+      "#FDD8A3",
+      "#F1AD69",
+      "#E9DABD",
+      "#AEAF6F",
+      "#C9A06E",
+      "#9C8510",
+      "#76904C",
+      "#809712"
+     ],
+     "accent": [
+      "#76D0F2",
+      "#7BCFDF",
+      "#95E5F9",
+      "#8ECCD6",
+      "#45BDF6",
+      "#4BAFCA",
+      "#B2E9F2",
+      "#74C4BB",
+      "#FFD170",
+      "#FECD4D",
+      "#FFE2A0",
+      "#F8BC44",
+      "#FCD75F",
+      "#E9DABD",
+      "#FDD8A3",
+      "#E7C393",
+      "#F06B3E",
+      "#FF8A5B",
+      "#B84A27",
+      "#D99256",
+      "#8E664D",
+      "#9E7A55",
+      "#FFB08A",
+      "#B89269"
+     ],
+     "plant": [
+      "#AEAF6F",
+      "#C6CC97",
+      "#BFC41A",
+      "#809712",
+      "#DCDB22",
+      "#E4E77F",
+      "#D1B825",
+      "#DEE5BC",
+      "#76904C",
+      "#5F6F48",
+      "#9C8510"
+     ],
+     "earth": [
+      "#F1D7B2",
+      "#FDD8A3",
+      "#FBE3BD",
+      "#E9DABD",
+      "#FDCC8F",
+      "#F8E8CF",
+      "#E7C393",
+      "#D4C2A5",
+      "#CDBA97",
+      "#F1AD69",
+      "#9E7A55",
+      "#B89269",
+      "#AEAF6F",
+      "#C9A06E",
+      "#9C8510",
+      "#8E664D",
+      "#76904C",
+      "#809712",
+      "#714D48",
+      "#52362E",
+      "#B84A27",
+      "#F06B3E",
+      "#A96F05",
+      "#D99256"
+     ],
+     "water": [
+      "#4BAFCA",
+      "#45BDF6",
+      "#7BCFDF",
+      "#76D0F2",
+      "#8ECCD6",
+      "#95E5F9",
+      "#499D92",
+      "#74C4BB"
+     ],
+     "atmosphere": [
+      "#76D0F2",
+      "#7BCFDF",
+      "#95E5F9",
+      "#8ECCD6",
+      "#45BDF6",
+      "#4BAFCA",
+      "#B2E9F2",
+      "#74C4BB",
+      "#EAF9FF",
+      "#DAF2F5",
+      "#D9F8FB"
+     ],
+     "effect": [
+      "#F06B3E",
+      "#FF8A5B",
+      "#B84A27",
+      "#D99256",
+      "#8E664D",
+      "#9E7A55",
+      "#FFB08A",
+      "#B89269"
+     ]
+    },
+    "lockedColors": [],
+    "excludedAssetIds": [],
+    "excludedTags": [],
+    "createdAt": 1787561837433,
+    "updatedAt": 1787561837433
+   },
+   "colorPaletteReport": {
+    "appliedMaterials": 4,
+    "appliedVertexColors": 0,
+    "skippedTextures": 0,
+    "explicitIntentColors": 0,
+    "sourceColors": 4,
+    "semanticFallbacks": 0,
+    "usedColors": [
+     "#D4C2A5",
+     "#E9DABD"
+    ]
+   }
+  }
+ },
+ "colliderPlan": {
+  "version": 1,
+  "boxes": [
+   {
+    "min": [
+     -0.13905980739989865,
+     0,
+     -0.15510035478966042
+    ],
+    "max": [
+     0.13905980739989865,
+     0.07,
+     0.15510035478966042
+    ],
+    "sourceNodeId": "asset-bounds"
+   }
+  ],
+  "sourceMeshCount": 4,
+  "candidateCount": 0,
+  "fallbackUsed": true
+ },
+ "footprintRadius": 0.15510035478966042,
+ "sizeClass": "small",
+ "mode": "voxel",
+ "provider": "gpt",
+ "createdAt": 1788563008342,
+ "updatedAt": 1788563008342
+}

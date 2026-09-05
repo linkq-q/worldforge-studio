@@ -1,0 +1,1039 @@
+{
+  "id": "asset-9f5d6ccf-0b9d-4d9c",
+  "name": "桶盆 2",
+  "prompt": "单个独立的深色橡木桶形盆栽，矮胖桶形盆身，由深色竖向橡木板组成，箍带也使用深棕色 #52362E，不使用金属亮色；盆体颜色仅限 #52362E、#714D48、#8E664D，土壤必须为很深的棕色 #52362E。生成3个明确不同的形态：形态0为空盆，只有土壤，绝对没有植物；形态1种植一株紧密簇生的深色心形叶植物，叶片仅使用 #5F6F48 和 #76904C；形态2种植一株小型深色灌木，枝干使用 #52362E，细小叶片仅使用 #5F6F48 和 #809712。每个资产中必须恰好只有一个盆，不能出现第二个盆、托盘、支架、标签或场景底座。禁止浅色、白色、亮绿色、鲜艳颜色和发光材质。\nCoordinate contract: local Y+ is up, local Z+ is the front, entrance, or forward direction, and local X+ is right. Put doors, facades, openings, windshields, noses, seats, and other recognizable front details toward local Z+. For a modular repeated element, explicitly choose the long axis: side-by-side modules span local X with depth/front on local Z; traversal modules span local Z. Keep the model centered at its origin.\nCanonical dimensions contract: width=1.55, height=1.6, depth=1.55 world units. Keep the generated mesh within this centered bounding size.\nCreate variation 2 of 3; preserve the same reusable asset family while varying silhouette and details.",
+  "modelJson": {
+    "name": "深色橡木桶盆栽·小型灌木",
+    "type": "lowpoly",
+    "format": 2,
+    "nodes": [
+      {
+        "id": "shrub",
+        "name": "紧凑深色灌木",
+        "transform": {
+          "pos": [
+            0,
+            0.34,
+            0.27
+          ]
+        },
+        "_obb": {
+          "size": [
+            2.135,
+            1.649,
+            2.131
+          ],
+          "center": [
+            -0.001,
+            -0.356,
+            -0.303
+          ],
+          "axes": [
+            [
+              0.7346,
+              0.0459,
+              -0.6769
+            ],
+            [
+              -0.0069,
+              0.9982,
+              0.0601
+            ],
+            [
+              0.6785,
+              -0.0395,
+              0.7336
+            ]
+          ],
+          "_mainAxis": 0
+        }
+      },
+      {
+        "id": "pot",
+        "name": "矮胖橡木桶盆",
+        "parent": "shrub",
+        "transform": {
+          "pos": [
+            0,
+            -0.655,
+            0.08
+          ]
+        },
+        "_obb": {
+          "size": [
+            1.43,
+            0.959,
+            1.452
+          ],
+          "center": [
+            0,
+            -0.026,
+            -0.346
+          ],
+          "axes": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              0.9994,
+              0.0346
+            ],
+            [
+              0,
+              -0.0346,
+              0.9994
+            ]
+          ],
+          "_mainAxis": 2
+        }
+      },
+      {
+        "id": "m0",
+        "parent": "pot",
+        "transform": {
+          "pos": [
+            0,
+            -0.395,
+            -0.35
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.18,
+            "height": 0.18,
+            "depth": 1.18
+          },
+          "color": 13943461
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "oak"
+          }
+        ]
+      },
+      {
+        "id": "m1",
+        "parent": "pot",
+        "transform": {
+          "pos": [
+            0,
+            -0.045,
+            -0.35
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.36,
+            "height": 0.56,
+            "depth": 1.36
+          },
+          "color": 13943461
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "oak"
+          }
+        ]
+      },
+      {
+        "id": "m2",
+        "parent": "pot",
+        "transform": {
+          "pos": [
+            0,
+            0.275,
+            -0.35
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.24,
+            "height": 0.16,
+            "depth": 1.24
+          },
+          "color": 13943461
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "oak"
+          }
+        ]
+      },
+      {
+        "id": "m3",
+        "parent": "pot",
+        "transform": {
+          "pos": [
+            -0.43,
+            -0.045,
+            0.35
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.08,
+            "height": 0.56,
+            "depth": 0.04
+          },
+          "color": 13943461
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "oak"
+          }
+        ]
+      },
+      {
+        "id": "m4",
+        "parent": "pot",
+        "transform": {
+          "pos": [
+            0,
+            -0.045,
+            0.35
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.08,
+            "height": 0.56,
+            "depth": 0.04
+          },
+          "color": 13943461
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "oak"
+          }
+        ]
+      },
+      {
+        "id": "m5",
+        "parent": "pot",
+        "transform": {
+          "pos": [
+            0.43,
+            -0.045,
+            0.35
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.08,
+            "height": 0.56,
+            "depth": 0.04
+          },
+          "color": 13943461
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "oak"
+          }
+        ]
+      },
+      {
+        "id": "m6",
+        "parent": "pot",
+        "transform": {
+          "pos": [
+            0,
+            -0.255,
+            -0.35
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.43,
+            "height": 0.09,
+            "depth": 1.43
+          },
+          "color": 13943461
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "oak"
+          }
+        ]
+      },
+      {
+        "id": "m7",
+        "parent": "pot",
+        "transform": {
+          "pos": [
+            0,
+            0.155,
+            -0.35
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.43,
+            "height": 0.09,
+            "depth": 1.43
+          },
+          "color": 13943461
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "oak"
+          }
+        ]
+      },
+      {
+        "id": "m8",
+        "parent": "pot",
+        "transform": {
+          "pos": [
+            0,
+            0.395,
+            -0.35
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 1.12,
+            "height": 0.08,
+            "depth": 1.12
+          },
+          "color": 5387822
+        }
+      },
+      {
+        "id": "m9",
+        "parent": "shrub",
+        "transform": {
+          "pos": [
+            0,
+            0,
+            -0.27
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.1,
+            "height": 0.55,
+            "depth": 0.1
+          },
+          "color": 13943461
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "bark"
+          }
+        ]
+      },
+      {
+        "id": "m10",
+        "parent": "shrub",
+        "transform": {
+          "pos": [
+            -0.16,
+            0.11,
+            -0.25
+          ],
+          "quat": [
+            0.27,
+            0.65,
+            0.68,
+            0.2
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.47,
+            "height": 0.08,
+            "depth": 0.08
+          },
+          "color": 13943461
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "bark"
+          }
+        ]
+      },
+      {
+        "id": "m11",
+        "parent": "shrub",
+        "transform": {
+          "pos": [
+            0.14,
+            0.19,
+            -0.29
+          ],
+          "quat": [
+            -0.67,
+            -0.21,
+            0.26,
+            0.66
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.43,
+            "height": 0.08,
+            "depth": 0.08
+          },
+          "color": 13943461
+        },
+        "tags": [
+          {
+            "tag": "base",
+            "value": "wood",
+            "variant": "bark"
+          }
+        ]
+      },
+      {
+        "id": "m12",
+        "parent": "shrub",
+        "transform": {
+          "pos": [
+            -0.43,
+            0.26,
+            -0.22
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.34,
+            "height": 0.14,
+            "depth": 0.22
+          },
+          "color": 7770188
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m13",
+        "parent": "shrub",
+        "transform": {
+          "pos": [
+            -0.24,
+            0.38,
+            -0.25
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.3,
+            "height": 0.14,
+            "depth": 0.22
+          },
+          "color": 8427282
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m14",
+        "parent": "shrub",
+        "transform": {
+          "pos": [
+            0.02,
+            0.35,
+            -0.19
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.34,
+            "height": 0.14,
+            "depth": 0.22
+          },
+          "color": 7770188
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m15",
+        "parent": "shrub",
+        "transform": {
+          "pos": [
+            0.3,
+            0.36,
+            -0.3
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.31,
+            "height": 0.14,
+            "depth": 0.22
+          },
+          "color": 8427282
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m16",
+        "parent": "shrub",
+        "transform": {
+          "pos": [
+            0.47,
+            0.23,
+            -0.32
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.28,
+            "height": 0.14,
+            "depth": 0.22
+          },
+          "color": 7770188
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m17",
+        "parent": "shrub",
+        "transform": {
+          "pos": [
+            -0.18,
+            0.22,
+            0
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.29,
+            "height": 0.14,
+            "depth": 0.22
+          },
+          "color": 8427282
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      },
+      {
+        "id": "m18",
+        "parent": "shrub",
+        "transform": {
+          "pos": [
+            0.2,
+            0.22,
+            -0.02
+          ]
+        },
+        "mesh": {
+          "type": "box",
+          "params": {
+            "width": 0.28,
+            "height": 0.14,
+            "depth": 0.22
+          },
+          "color": 7770188
+        },
+        "tags": [
+          {
+            "tag": "vegetation",
+            "value": "sway"
+          }
+        ]
+      }
+    ],
+    "_meta": {
+      "skipAutoCenter": true,
+      "ai": {
+        "v": 1,
+        "ts": 1788265169941,
+        "provider": "gpt",
+        "data": "p2mOeRETZntAfIWa0P9NET8safJHCcyB90k1ibtoxw8jaDV6/QW3YrPXRjsF8yDnN8lbPK7m9wvKrFtJvKEcCmz3SoMAt0gnjByAddZbiiYzr7LTCHR0Ayf7KWLeV63mqHT/wjn6ylpVeIOA5Oo1B+di47h4QQmZrYDC+LSdKreL5Hd0oExDqml3Mu29VVZqWsIeVXQJUMmgFqb+Ylh7s4ArjYL2Nc+3rK5pDmI7jG5wTu4yOwo21XKw+hqaZDEcI+9Sj+xZx5vhsOGdeu5QRYx7REL0aBgijVGlBbq5y0xLQs5P9oePHCzuSXEV96CC34ez8pJZ1j0rI2RO69bGGv5IgHyqPZElrZw5fuIL8L3W3zYGi2UQgXygNt9oKAkN03Czhr9M17NP96a9fTKTNqOKfnSuiQstg7m+SGIqM914Gi10c5jUtPsHaLJj+XLuHSsFpafVP+KfOwKBQB9EeGA9UihEvoy3lDNLOZCTDeM5ZFuLKHdG/jqpl2+zg0qvfK+WG6YpJ6Zu5oXKajRClaQfz9W5Uvgrrd9Wh1XOR6SrgAvDfhfR/hD17NIEi+5dy0m3m3sBjNahpWdXqVqL0FZjOLTXr6xImzi/XWuF8YmVgdE5kxAo83dSwB5kY+5/s/8WpDlqHHJ5gFlj0JiDg+VYg4hGDaEK5JNRnGvbOQfGXZ3EFh9hXp4+rHbCu/13H1ekXnBKmW9XDLZCQnY00v7wXqysDdpJILXuIqC9aoplbFe8ScjpduSX5+bFQgxsquakommiSyxR/O52fqRyjm6ampY6N83Ic32kBFC68YH1Mk4kbF0h6sSCYd+9hv+7UyoVj8BmyiYbfBIkis5KD58bT7Hy+Tg67dV+ATovYywmrbxui+W4rnpfF/9ozjz20RMYuul2iwiMvc10mfuxqZsdWUT7ytj3hG2pqplpYoFVaQMLRRqDZyzSC4P5mIN+3/ZzGaWk8Fq1BTFW2NUNN/xfUqs6BNkpXGrNqo2mcqkLdyHwITzrEhBH31ic5dwYKxGqRzROebfvuvimEljsVaqgtsFyCnP2Vbx9ZUyiSi+GSA==",
+        "edits": ""
+      },
+      "semanticSnapshot": {
+        "v": 1,
+        "auto": true,
+        "text": "深色橡木桶盆栽·小型灌木 · 2组/19mesh · 世界坐标(Y上Z前), 原点=模型根\n# 阅读说明: G:=group行(可动画骨骼, 动画key用G:后的id; @p=pivot世界坐标; 倾(x,y,z)°=朝向偏离世界轴的欧拉角; 缩进=父子层级; 挂:=挂载于某组; G:id→id→…=chain折叠行, 每个id都是可独立动画的group, chain×N=waypoint数)\n# M:=mesh行(label[id 几何 @(世界坐标)], label可省略; ×N=for循环批量件(锚点=代表实例); cyl (起)→(末)或 轴上(Y)等方位词=延伸方向; 薄向=板面法向(扁板); 挂载组双代表=最大件+最远有向件(刃/嘴/管所在端); 无方向标注=均匀块(三向相近,如头),默认面向前(Z); 对称×2=镜像对)\nG:shrub 紧凑深色灌木 @p(0,0.3,0.3)\n  M:[m12 box 0.34×0.14×0.22 (-0.4,0.6,0.1) 薄向上(Y)]\n  G:pot 矮胖橡木桶盆 @p(0,-0.3,0.4)\n    M:[m1 box 1.4×0.56×1.4 (0,-0.4,0) 薄向上(Y)]",
+        "stats": {
+          "groups": 2,
+          "meshes": 19,
+          "labeledMeshes": 0,
+          "labelCoverage": 0,
+          "batchLabels": 0,
+          "autoChains": 0,
+          "snapshotChars": 528
+        }
+      },
+      "colorPalette": {
+        "id": "palette-2b9c0834-be76-4477",
+        "name": "曼德鸭参考场景 · 浅亮建筑",
+        "description": "参考局内与背景样例：浅亮奶油墙面、桃沙道路、黄绿色植被、青蓝窗水、棕黄结构点缀。",
+        "version": 1,
+        "colors": [
+          {
+            "hex": "#FFFDF6"
+          },
+          {
+            "hex": "#FEF9EA"
+          },
+          {
+            "hex": "#FDF2D7"
+          },
+          {
+            "hex": "#E9DABD"
+          },
+          {
+            "hex": "#CDBA97"
+          },
+          {
+            "hex": "#F8E8CF"
+          },
+          {
+            "hex": "#F1D7B2"
+          },
+          {
+            "hex": "#E7C393"
+          },
+          {
+            "hex": "#C9A06E"
+          },
+          {
+            "hex": "#9E7A55"
+          },
+          {
+            "hex": "#FFF7A8"
+          },
+          {
+            "hex": "#FCEF72"
+          },
+          {
+            "hex": "#F6E24B"
+          },
+          {
+            "hex": "#D1B825"
+          },
+          {
+            "hex": "#9C8510"
+          },
+          {
+            "hex": "#FFF3B7"
+          },
+          {
+            "hex": "#FDE674"
+          },
+          {
+            "hex": "#FCD75F"
+          },
+          {
+            "hex": "#FECD4D"
+          },
+          {
+            "hex": "#D1900B"
+          },
+          {
+            "hex": "#FFE2A0"
+          },
+          {
+            "hex": "#FFD170"
+          },
+          {
+            "hex": "#F8BC44"
+          },
+          {
+            "hex": "#E39F1A"
+          },
+          {
+            "hex": "#A96F05"
+          },
+          {
+            "hex": "#FBE3BD"
+          },
+          {
+            "hex": "#FDD8A3"
+          },
+          {
+            "hex": "#FDCC8F"
+          },
+          {
+            "hex": "#F1AD69"
+          },
+          {
+            "hex": "#D99256"
+          },
+          {
+            "hex": "#FFD2BA"
+          },
+          {
+            "hex": "#FFB08A"
+          },
+          {
+            "hex": "#FF8A5B"
+          },
+          {
+            "hex": "#F06B3E"
+          },
+          {
+            "hex": "#B84A27"
+          },
+          {
+            "hex": "#EAF9FF"
+          },
+          {
+            "hex": "#DAF2F5"
+          },
+          {
+            "hex": "#95E5F9"
+          },
+          {
+            "hex": "#76D0F2"
+          },
+          {
+            "hex": "#45BDF6"
+          },
+          {
+            "hex": "#D9F8FB"
+          },
+          {
+            "hex": "#B2E9F2"
+          },
+          {
+            "hex": "#8ECCD6"
+          },
+          {
+            "hex": "#7BCFDF"
+          },
+          {
+            "hex": "#4BAFCA"
+          },
+          {
+            "hex": "#D8F7EF"
+          },
+          {
+            "hex": "#B8ECDD"
+          },
+          {
+            "hex": "#90DCC8"
+          },
+          {
+            "hex": "#74C4BB"
+          },
+          {
+            "hex": "#499D92"
+          },
+          {
+            "hex": "#F1F5AF"
+          },
+          {
+            "hex": "#E4E77F"
+          },
+          {
+            "hex": "#DCDB22"
+          },
+          {
+            "hex": "#BFC41A"
+          },
+          {
+            "hex": "#809712"
+          },
+          {
+            "hex": "#DEE5BC"
+          },
+          {
+            "hex": "#C6CC97"
+          },
+          {
+            "hex": "#AEAF6F"
+          },
+          {
+            "hex": "#76904C"
+          },
+          {
+            "hex": "#5F6F48"
+          },
+          {
+            "hex": "#D4C2A5"
+          },
+          {
+            "hex": "#B89269"
+          },
+          {
+            "hex": "#8E664D"
+          },
+          {
+            "hex": "#714D48"
+          },
+          {
+            "hex": "#52362E"
+          }
+        ],
+        "roles": {
+          "primary": [
+            "#F1D7B2",
+            "#FDD8A3",
+            "#FBE3BD",
+            "#E9DABD",
+            "#FDCC8F",
+            "#F8E8CF",
+            "#E7C393",
+            "#D4C2A5"
+          ],
+          "secondary": [
+            "#714D48",
+            "#52362E",
+            "#8E664D",
+            "#B84A27",
+            "#9E7A55",
+            "#F06B3E",
+            "#A96F05",
+            "#B89269",
+            "#D99256",
+            "#E7C393",
+            "#D4C2A5",
+            "#FDCC8F",
+            "#F1D7B2",
+            "#CDBA97",
+            "#FDD8A3",
+            "#F1AD69",
+            "#E9DABD",
+            "#AEAF6F",
+            "#C9A06E",
+            "#9C8510",
+            "#76904C",
+            "#809712"
+          ],
+          "accent": [
+            "#76D0F2",
+            "#7BCFDF",
+            "#95E5F9",
+            "#8ECCD6",
+            "#45BDF6",
+            "#4BAFCA",
+            "#B2E9F2",
+            "#74C4BB",
+            "#FFD170",
+            "#FECD4D",
+            "#FFE2A0",
+            "#F8BC44",
+            "#FCD75F",
+            "#E9DABD",
+            "#FDD8A3",
+            "#E7C393",
+            "#F06B3E",
+            "#FF8A5B",
+            "#B84A27",
+            "#D99256",
+            "#8E664D",
+            "#9E7A55",
+            "#FFB08A",
+            "#B89269"
+          ],
+          "plant": [
+            "#AEAF6F",
+            "#C6CC97",
+            "#BFC41A",
+            "#809712",
+            "#DCDB22",
+            "#E4E77F",
+            "#D1B825",
+            "#DEE5BC",
+            "#76904C",
+            "#5F6F48",
+            "#9C8510"
+          ],
+          "earth": [
+            "#F1D7B2",
+            "#FDD8A3",
+            "#FBE3BD",
+            "#E9DABD",
+            "#FDCC8F",
+            "#F8E8CF",
+            "#E7C393",
+            "#D4C2A5",
+            "#CDBA97",
+            "#F1AD69",
+            "#9E7A55",
+            "#B89269",
+            "#AEAF6F",
+            "#C9A06E",
+            "#9C8510",
+            "#8E664D",
+            "#76904C",
+            "#809712",
+            "#714D48",
+            "#52362E",
+            "#B84A27",
+            "#F06B3E",
+            "#A96F05",
+            "#D99256"
+          ],
+          "water": [
+            "#4BAFCA",
+            "#45BDF6",
+            "#7BCFDF",
+            "#76D0F2",
+            "#8ECCD6",
+            "#95E5F9",
+            "#499D92",
+            "#74C4BB"
+          ],
+          "atmosphere": [
+            "#76D0F2",
+            "#7BCFDF",
+            "#95E5F9",
+            "#8ECCD6",
+            "#45BDF6",
+            "#4BAFCA",
+            "#B2E9F2",
+            "#74C4BB",
+            "#EAF9FF",
+            "#DAF2F5",
+            "#D9F8FB"
+          ],
+          "effect": [
+            "#F06B3E",
+            "#FF8A5B",
+            "#B84A27",
+            "#D99256",
+            "#8E664D",
+            "#9E7A55",
+            "#FFB08A",
+            "#B89269"
+          ]
+        },
+        "lockedColors": [],
+        "excludedAssetIds": [],
+        "excludedTags": [],
+        "createdAt": 1787561837433,
+        "updatedAt": 1787561837433
+      },
+      "colorPaletteReport": {
+        "appliedMaterials": 19,
+        "appliedVertexColors": 0,
+        "skippedTextures": 0,
+        "explicitIntentColors": 0,
+        "sourceColors": 19,
+        "semanticFallbacks": 0,
+        "usedColors": [
+          "#52362E",
+          "#76904C",
+          "#809712",
+          "#D4C2A5"
+        ]
+      }
+    }
+  },
+  "colliderPlan": {
+    "version": 1,
+    "boxes": [
+      {
+        "min": [
+          -0.68,
+          0.15999999999999992,
+          -0.6825
+        ],
+        "max": [
+          0.68,
+          0.72,
+          0.6775000000000001
+        ],
+        "sourceNodeId": "m1"
+      },
+      {
+        "min": [
+          -0.59,
+          0,
+          -0.5924999999999999
+        ],
+        "max": [
+          0.59,
+          0.17999999999999994,
+          0.5875
+        ],
+        "sourceNodeId": "m0"
+      },
+      {
+        "min": [
+          -0.62,
+          0.6799999999999999,
+          -0.6224999999999999
+        ],
+        "max": [
+          0.62,
+          0.84,
+          0.6175
+        ],
+        "sourceNodeId": "m2"
+      }
+    ],
+    "sourceMeshCount": 19,
+    "candidateCount": 3,
+    "fallbackUsed": false
+  },
+  "footprintRadius": 0.6825,
+  "sizeClass": "small",
+  "mode": "voxel",
+  "provider": "gpt",
+  "createdAt": 1788265170850,
+  "updatedAt": 1788265170850
+}

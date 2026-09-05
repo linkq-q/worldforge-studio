@@ -1,0 +1,1202 @@
+{
+ "id": "asset-9377e9c5-0536-4529",
+ "name": "工具箱",
+ "prompt": "Standalone portable metal farm mechanic toolbox with lid, handles and a few visible hand tools contained inside; one complete movable object, no workbench, vehicle, person or ground. Coordinate contract: Y+ is up, Z+ is the front/entrance/forward direction, X+ is right; place doors, facades, openings, windshields, or noses toward local Z+ and keep the model centered at its origin.\nCoordinate contract: local Y+ is up, local Z+ is the front, entrance, or forward direction, and local X+ is right. Put doors, facades, openings, windshields, noses, seats, and other recognizable front details toward local Z+. For a modular repeated element, explicitly choose the long axis: side-by-side modules span local X with depth/front on local Z; traversal modules span local Z. Keep the model centered at its origin.\nCanonical dimensions contract: width=1.1, height=0.55, depth=0.5 world units. Keep the generated mesh within this centered bounding size.",
+ "modelJson": {
+  "name": "便携式金属农机工具箱",
+  "type": "lowpoly",
+  "format": 2,
+  "nodes": [
+   {
+    "id": "toolbox",
+    "name": "完整工具箱",
+    "transform": {
+     "pos": [
+      0,
+      0,
+      0
+     ]
+    },
+    "_obb": {
+     "size": [
+      1.068,
+      0.756,
+      0.559
+     ],
+     "center": [
+      -0.002,
+      0.032,
+      0.01
+     ],
+     "axes": [
+      [
+       0.9999,
+       0.0122,
+       0.0065
+      ],
+      [
+       -0.0125,
+       0.9992,
+       0.0383
+      ],
+      [
+       -0.006,
+       -0.0384,
+       0.9992
+      ]
+     ],
+     "_mainAxis": 0
+    }
+   },
+   {
+    "id": "case",
+    "name": "箱体",
+    "parent": "toolbox",
+    "transform": {
+     "pos": [
+      0,
+      -0.05,
+      0
+     ]
+    },
+    "_obb": {
+     "size": [
+      1.06,
+      0.358,
+      0.502
+     ],
+     "center": [
+      0,
+      -0.072,
+      0.004
+     ],
+     "axes": [
+      [
+       1,
+       0,
+       0
+      ],
+      [
+       0,
+       0.9925,
+       -0.1224
+      ],
+      [
+       0,
+       0.1224,
+       0.9925
+      ]
+     ],
+     "_mainAxis": 0
+    }
+   },
+   {
+    "id": "lid",
+    "name": "开启的箱盖",
+    "parent": "toolbox",
+    "transform": {
+     "pos": [
+      0,
+      0.02,
+      -0.22
+     ]
+    },
+    "_obb": {
+     "size": [
+      1.04,
+      0.261,
+      0.102
+     ],
+     "center": [
+      0,
+      0.111,
+      0.066
+     ],
+     "axes": [
+      [
+       1,
+       0,
+       0
+      ],
+      [
+       0,
+       0.9452,
+       0.3265
+      ],
+      [
+       0,
+       -0.3265,
+       0.9452
+      ]
+     ],
+     "_mainAxis": 0
+    }
+   },
+   {
+    "id": "mount01_wrench",
+    "name": "扳手",
+    "parent": "toolbox",
+    "transform": {
+     "pos": [
+      -0.28,
+      -0.205,
+      0
+     ]
+    },
+    "mounted": true,
+    "_obb": {
+     "size": [
+      0.155,
+      0.389,
+      0.078
+     ],
+     "center": [
+      0.036,
+      0.189,
+      -0.131
+     ],
+     "axes": [
+      [
+       0.921,
+       -0.3586,
+       -0.1522
+      ],
+      [
+       0.3769,
+       0.919,
+       0.1157
+      ],
+      [
+       0.0983,
+       -0.1639,
+       0.9816
+      ]
+     ],
+     "_mainAxis": 1
+    }
+   },
+   {
+    "id": "mount02_screwdriver",
+    "name": "螺丝刀",
+    "parent": "toolbox",
+    "transform": {
+     "pos": [
+      0.08,
+      -0.21,
+      0.02
+     ]
+    },
+    "mounted": true,
+    "_obb": {
+     "size": [
+      0.095,
+      0.39,
+      0.095
+     ],
+     "center": [
+      0,
+      0.215,
+      0
+     ],
+     "axes": [
+      [
+       1,
+       0,
+       0
+      ],
+      [
+       0,
+       1,
+       0
+      ],
+      [
+       0,
+       0,
+       1
+      ]
+     ],
+     "_mainAxis": 1
+    }
+   },
+   {
+    "id": "mount03_pliers",
+    "name": "钳子",
+    "parent": "toolbox",
+    "transform": {
+     "pos": [
+      0.31,
+      -0.205,
+      -0.03
+     ]
+    },
+    "mounted": true,
+    "_obb": {
+     "size": [
+      0.153,
+      0.279,
+      0.051
+     ],
+     "center": [
+      0.005,
+      0.164,
+      -0.009
+     ],
+     "axes": [
+      [
+       0.9989,
+       -0.0429,
+       0.0185
+      ],
+      [
+       0.0422,
+       0.9984,
+       0.0365
+      ],
+      [
+       -0.0201,
+       -0.0357,
+       0.9992
+      ]
+     ],
+     "_mainAxis": 1
+    }
+   },
+   {
+    "id": "m0",
+    "parent": "case",
+    "transform": {
+     "pos": [
+      0,
+      -0.195,
+      0
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 1.06,
+      "height": 0.06,
+      "depth": 0.46
+     },
+     "color": 7652539,
+     "material": {
+      "metalness": 0.78,
+      "roughness": 0.35
+     }
+    },
+    "tags": [
+     {
+      "tag": "base",
+      "value": "metal"
+     }
+    ]
+   },
+   {
+    "id": "m1",
+    "parent": "case",
+    "transform": {
+     "pos": [
+      0,
+      -0.04,
+      0.2075
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 1.06,
+      "height": 0.25,
+      "depth": 0.045
+     },
+     "color": 4824466,
+     "material": {
+      "metalness": 0.78,
+      "roughness": 0.35
+     }
+    },
+    "tags": [
+     {
+      "tag": "base",
+      "value": "metal"
+     }
+    ]
+   },
+   {
+    "id": "m2",
+    "parent": "case",
+    "transform": {
+     "pos": [
+      0,
+      -0.095,
+      -0.2075
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 1.06,
+      "height": 0.14,
+      "depth": 0.045
+     },
+     "color": 7652539,
+     "material": {
+      "metalness": 0.78,
+      "roughness": 0.35
+     }
+    },
+    "tags": [
+     {
+      "tag": "base",
+      "value": "metal"
+     }
+    ]
+   },
+   {
+    "id": "m3",
+    "parent": "case",
+    "transform": {
+     "pos": [
+      -0.5075,
+      -0.04,
+      0
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 0.045,
+      "height": 0.25,
+      "depth": 0.37
+     },
+     "color": 4824466,
+     "material": {
+      "metalness": 0.78,
+      "roughness": 0.35
+     }
+    },
+    "tags": [
+     {
+      "tag": "base",
+      "value": "metal"
+     }
+    ]
+   },
+   {
+    "id": "m4",
+    "parent": "case",
+    "transform": {
+     "pos": [
+      0.5075,
+      -0.04,
+      0
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 0.045,
+      "height": 0.25,
+      "depth": 0.37
+     },
+     "color": 7652539,
+     "material": {
+      "metalness": 0.78,
+      "roughness": 0.35
+     }
+    },
+    "tags": [
+     {
+      "tag": "base",
+      "value": "metal"
+     }
+    ]
+   },
+   {
+    "id": "m5",
+    "parent": "case",
+    "transform": {
+     "pos": [
+      0,
+      -0.025,
+      0.235
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 0.24,
+      "height": 0.055,
+      "depth": 0.025
+     },
+     "color": 4824466,
+     "material": {
+      "metalness": 0.78,
+      "roughness": 0.35
+     }
+    },
+    "tags": [
+     {
+      "tag": "base",
+      "value": "metal"
+     }
+    ]
+   },
+   {
+    "id": "m6",
+    "parent": "lid",
+    "transform": {
+     "pos": [
+      0,
+      0.12,
+      0.04
+     ],
+     "quat": [
+      -0.6,
+      0,
+      0,
+      0.8
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 1.04,
+      "height": 0.035,
+      "depth": 0.26
+     },
+     "color": 7652539,
+     "material": {
+      "metalness": 0.78,
+      "roughness": 0.35
+     }
+    },
+    "tags": [
+     {
+      "tag": "base",
+      "value": "metal"
+     }
+    ]
+   },
+   {
+    "id": "m7",
+    "parent": "lid",
+    "transform": {
+     "pos": [
+      0,
+      0.205,
+      0.115
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 0.34,
+      "height": 0.035,
+      "depth": 0.035
+     },
+     "color": 4824466,
+     "material": {
+      "metalness": 0.78,
+      "roughness": 0.35
+     }
+    },
+    "tags": [
+     {
+      "tag": "base",
+      "value": "metal"
+     }
+    ]
+   },
+   {
+    "id": "m8",
+    "parent": "lid",
+    "transform": {
+     "pos": [
+      -0.1525,
+      0.1575,
+      0.1
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 0.035,
+      "height": 0.105,
+      "depth": 0.035
+     },
+     "color": 7652539,
+     "material": {
+      "metalness": 0.78,
+      "roughness": 0.35
+     }
+    },
+    "tags": [
+     {
+      "tag": "base",
+      "value": "metal"
+     }
+    ]
+   },
+   {
+    "id": "m9",
+    "parent": "lid",
+    "transform": {
+     "pos": [
+      0.1525,
+      0.1575,
+      0.1
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 0.035,
+      "height": 0.105,
+      "depth": 0.035
+     },
+     "color": 4824466,
+     "material": {
+      "metalness": 0.78,
+      "roughness": 0.35
+     }
+    },
+    "tags": [
+     {
+      "tag": "base",
+      "value": "metal"
+     }
+    ]
+   },
+   {
+    "id": "m10",
+    "parent": "mount01_wrench",
+    "transform": {
+     "pos": [
+      0,
+      0.165,
+      -0.12
+     ],
+     "quat": [
+      -0.62,
+      0.17,
+      0,
+      0.71
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 0.05,
+      "height": 0.035,
+      "depth": 0.34
+     },
+     "color": 4824466,
+     "material": {
+      "metalness": 0.78,
+      "roughness": 0.35
+     }
+    },
+    "tags": [
+     {
+      "tag": "base",
+      "value": "metal"
+     }
+    ]
+   },
+   {
+    "id": "m11",
+    "parent": "mount01_wrench",
+    "transform": {
+     "pos": [
+      0.085,
+      0.31,
+      -0.12
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 0.13,
+      "height": 0.08,
+      "depth": 0.045
+     },
+     "color": 7652539,
+     "material": {
+      "metalness": 0.78,
+      "roughness": 0.35
+     }
+    },
+    "tags": [
+     {
+      "tag": "base",
+      "value": "metal"
+     }
+    ]
+   },
+   {
+    "id": "m12",
+    "parent": "mount02_screwdriver",
+    "transform": {
+     "pos": [
+      0,
+      0.13,
+      0
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 0.095,
+      "height": 0.22,
+      "depth": 0.095
+     },
+     "color": 14258774
+    }
+   },
+   {
+    "id": "m13",
+    "parent": "mount02_screwdriver",
+    "transform": {
+     "pos": [
+      0,
+      0.325,
+      0
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 0.035,
+      "height": 0.17,
+      "depth": 0.035
+     },
+     "color": 7652539,
+     "material": {
+      "metalness": 0.78,
+      "roughness": 0.35
+     }
+    },
+    "tags": [
+     {
+      "tag": "base",
+      "value": "metal"
+     }
+    ]
+   },
+   {
+    "id": "m14",
+    "parent": "mount03_pliers",
+    "transform": {
+     "pos": [
+      -0.03,
+      0.165,
+      -0.01
+     ],
+     "quat": [
+      -0.68,
+      0.1,
+      0,
+      0.71
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 0.05,
+      "height": 0.04,
+      "depth": 0.28
+     },
+     "color": 4824466,
+     "material": {
+      "metalness": 0.78,
+      "roughness": 0.35
+     }
+    },
+    "tags": [
+     {
+      "tag": "base",
+      "value": "metal"
+     }
+    ]
+   },
+   {
+    "id": "m15",
+    "parent": "mount03_pliers",
+    "transform": {
+     "pos": [
+      0.04,
+      0.165,
+      -0.01
+     ],
+     "quat": [
+      -0.7,
+      -0.05,
+      0,
+      0.71
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 0.05,
+      "height": 0.04,
+      "depth": 0.27
+     },
+     "color": 7652539,
+     "material": {
+      "metalness": 0.78,
+      "roughness": 0.35
+     }
+    },
+    "tags": [
+     {
+      "tag": "base",
+      "value": "metal"
+     }
+    ]
+   }
+  ],
+  "_meta": {
+   "skipAutoCenter": true,
+   "ai": {
+    "v": 1,
+    "ts": 1788542119196,
+    "provider": "gpt",
+    "data": "vCpGdxrczUTKIJXdT2DJ444xaZDD+niP9I+UyR2d+ab3U7pn/OR4C8bAkrmpJKnNMqAKv4Fifk1H86jNgryuN/UWEaF7W6IZWonPulEPgCLbLKbBgsKQcNDStrnDJD7eopvOdfeoQikUIw/IP09q9yrOaLpe50EjszmyvaiVkmAav/urYzqLfjfdxdQ3Oyp6KywI4HhRLTnRLNJUXr5iSihuoquLnXzzQ8O4p6cYVTxP81t1hhm+lCt0gw+kJ++1V3Ho08WJ9fJgkEGzBUs6/v8KsizOB+XxOv538UKJ7FSTQt/DCodK69kyTRvNi4XVB8NjCWbxEl4pav3tBRnUs+xY214PgzjhhRHqOaCFQ/uva4/x8LP+YCsd+4vtV5FC56ha8s4OHrrTe/rjEWwLLpExUIww/NNhd61nYBbdntBY361EDmPcpV+/xNUnViZBaoZt35irmU7UFLNndEy8UbdJwRMPQGKa8wgDCLa0tRGNVZSbI/bnDMn1aBkFYedhnCFi7JLbuZTwoL2Yrx928i1VMp4hDn92hL147Y7Ev9BItg4ruTYCAvH2gtxVUkyHBexOFc3wVwLnfrG66PuX7FK3PAIpLgaofv08vo+F58Tto2geRKyT4CwBHRuyn2UmphaCFqM0ExUDZTRTPGV9HCQqXAwhAWDTJVi3mrb4zv/LXPQB7wLITS6atW8ADvpo//ixNpHdIkDNqTVLnWCtIh1HRo9JSitrgiyeiZqO4grCqFiukLRW38FEeTWFB4AMCDREHtoUjnBm/6kGlhkMMrI+U/K5b1PKELj7k+Pk4YAUQESabE/ZyqvlgbUixoLLnmhDSJ+v3TX4Ms1QLqYhN1fMTjDL3R4cJfhBYdfixLFkfCAIVzE3+4xcDFLVJpIML5yFKVzB/Cql6RJyhAR0TzsAbOq3Hf3D9C1ewgMqrISdcDczpu4dUS8bArcrZV3oJLLuXVgxTyudyDEp0WZJXmQtvQ3cGcFIAhagSW+xa2PS7+BgC8J9DDtS1BQUmf7UEm+jxoRe+wEsuGz7pBO/9NnT/3T5/j/R2eWKolaqxu8OnT0Clluc2TIdxvhIqQGX/KdVNTceNoIqEjkCdw4QU3WrbWvLqEW6X2+1yvKJg/A=",
+    "edits": ""
+   },
+   "mounts": [
+    {
+     "id": "mount01_wrench",
+     "mountedGroupId": "mount01_wrench",
+     "name": "扳手",
+     "source": {
+      "type": "codegen"
+     },
+     "description": "",
+     "visible": true,
+     "ts": 1788542119196
+    },
+    {
+     "id": "mount02_screwdriver",
+     "mountedGroupId": "mount02_screwdriver",
+     "name": "螺丝刀",
+     "source": {
+      "type": "codegen"
+     },
+     "description": "",
+     "visible": true,
+     "ts": 1788542119196
+    },
+    {
+     "id": "mount03_pliers",
+     "mountedGroupId": "mount03_pliers",
+     "name": "钳子",
+     "source": {
+      "type": "codegen"
+     },
+     "description": "",
+     "visible": true,
+     "ts": 1788542119196
+    }
+   ],
+   "semanticSnapshot": {
+    "v": 1,
+    "auto": true,
+    "text": "便携式金属农机工具箱 · 6组/16mesh · 世界坐标(Y上Z前), 原点=模型根\n# 阅读说明: G:=group行(可动画骨骼, 动画key用G:后的id; @p=pivot世界坐标; 倾(x,y,z)°=朝向偏离世界轴的欧拉角; 缩进=父子层级; 挂:=挂载于某组; G:id→id→…=chain折叠行, 每个id都是可独立动画的group, chain×N=waypoint数)\n# M:=mesh行(label[id 几何 @(世界坐标)], label可省略; ×N=for循环批量件(锚点=代表实例); cyl (起)→(末)或 轴上(Y)等方位词=延伸方向; 薄向=板面法向(扁板); 挂载组双代表=最大件+最远有向件(刃/嘴/管所在端); 无方向标注=均匀块(三向相近,如头),默认面向前(Z); 对称×2=镜像对)\nG:toolbox 完整工具箱 @p(0,0,0)\n  G:case 箱体 @p(0,0,0)\n    M:[m0 box 1.1×0.06×0.46 (0,-0.2,0) 薄向上(Y)]\n  G:lid 开启的箱盖 @p(0,0,-0.2)\n    M:[m6 box 1×0.04×0.26 (0,0.1,-0.2) 薄向后(Z)]\n  G:mount01_wrench 扳手 @p(-0.3,-0.2,0) 挂:toolbox\n    M:[m10 box 0.05×0.04×0.34 (-0.3,0,-0.1) 轴(-0.2,0.1,-0.1)→(-0.3,-0.2,-0.1)] | M:[m11 box 0.13×0.08×0.05 (-0.2,0.1,-0.1) 薄向前(Z)]\n  G:mount02_screwdriver 螺丝刀 @p(0.1,-0.2,0) 挂:toolbox\n    M:[m12 box 0.1×0.22×0.1 (0.1,-0.1,0) 轴上(Y)] | M:[m13 box 0.04×0.17×0.04 (0.1,0.1,0) 轴上(Y)]\n  G:mount03_pliers 钳子 @p(0.3,-0.2,0) 挂:toolbox\n    M:[m14 box 0.05×0.04×0.28 (0.3,0,0) 轴上(Y)] | M:[m15 box 0.05×0.04×0.27 (0.4,0,0) 轴上(Y)]",
+    "stats": {
+     "groups": 6,
+     "meshes": 16,
+     "labeledMeshes": 0,
+     "labelCoverage": 0,
+     "batchLabels": 0,
+     "autoChains": 0,
+     "snapshotChars": 1005
+    }
+   },
+   "colorPalette": {
+    "id": "palette-2b9c0834-be76-4477",
+    "name": "曼德鸭参考场景 · 浅亮建筑",
+    "description": "参考局内与背景样例：浅亮奶油墙面、桃沙道路、黄绿色植被、青蓝窗水、棕黄结构点缀。",
+    "version": 1,
+    "colors": [
+     {
+      "hex": "#FFFDF6"
+     },
+     {
+      "hex": "#FEF9EA"
+     },
+     {
+      "hex": "#FDF2D7"
+     },
+     {
+      "hex": "#E9DABD"
+     },
+     {
+      "hex": "#CDBA97"
+     },
+     {
+      "hex": "#F8E8CF"
+     },
+     {
+      "hex": "#F1D7B2"
+     },
+     {
+      "hex": "#E7C393"
+     },
+     {
+      "hex": "#C9A06E"
+     },
+     {
+      "hex": "#9E7A55"
+     },
+     {
+      "hex": "#FFF7A8"
+     },
+     {
+      "hex": "#FCEF72"
+     },
+     {
+      "hex": "#F6E24B"
+     },
+     {
+      "hex": "#D1B825"
+     },
+     {
+      "hex": "#9C8510"
+     },
+     {
+      "hex": "#FFF3B7"
+     },
+     {
+      "hex": "#FDE674"
+     },
+     {
+      "hex": "#FCD75F"
+     },
+     {
+      "hex": "#FECD4D"
+     },
+     {
+      "hex": "#D1900B"
+     },
+     {
+      "hex": "#FFE2A0"
+     },
+     {
+      "hex": "#FFD170"
+     },
+     {
+      "hex": "#F8BC44"
+     },
+     {
+      "hex": "#E39F1A"
+     },
+     {
+      "hex": "#A96F05"
+     },
+     {
+      "hex": "#FBE3BD"
+     },
+     {
+      "hex": "#FDD8A3"
+     },
+     {
+      "hex": "#FDCC8F"
+     },
+     {
+      "hex": "#F1AD69"
+     },
+     {
+      "hex": "#D99256"
+     },
+     {
+      "hex": "#FFD2BA"
+     },
+     {
+      "hex": "#FFB08A"
+     },
+     {
+      "hex": "#FF8A5B"
+     },
+     {
+      "hex": "#F06B3E"
+     },
+     {
+      "hex": "#B84A27"
+     },
+     {
+      "hex": "#EAF9FF"
+     },
+     {
+      "hex": "#DAF2F5"
+     },
+     {
+      "hex": "#95E5F9"
+     },
+     {
+      "hex": "#76D0F2"
+     },
+     {
+      "hex": "#45BDF6"
+     },
+     {
+      "hex": "#D9F8FB"
+     },
+     {
+      "hex": "#B2E9F2"
+     },
+     {
+      "hex": "#8ECCD6"
+     },
+     {
+      "hex": "#7BCFDF"
+     },
+     {
+      "hex": "#4BAFCA"
+     },
+     {
+      "hex": "#D8F7EF"
+     },
+     {
+      "hex": "#B8ECDD"
+     },
+     {
+      "hex": "#90DCC8"
+     },
+     {
+      "hex": "#74C4BB"
+     },
+     {
+      "hex": "#499D92"
+     },
+     {
+      "hex": "#F1F5AF"
+     },
+     {
+      "hex": "#E4E77F"
+     },
+     {
+      "hex": "#DCDB22"
+     },
+     {
+      "hex": "#BFC41A"
+     },
+     {
+      "hex": "#809712"
+     },
+     {
+      "hex": "#DEE5BC"
+     },
+     {
+      "hex": "#C6CC97"
+     },
+     {
+      "hex": "#AEAF6F"
+     },
+     {
+      "hex": "#76904C"
+     },
+     {
+      "hex": "#5F6F48"
+     },
+     {
+      "hex": "#D4C2A5"
+     },
+     {
+      "hex": "#B89269"
+     },
+     {
+      "hex": "#8E664D"
+     },
+     {
+      "hex": "#714D48"
+     },
+     {
+      "hex": "#52362E"
+     }
+    ],
+    "roles": {
+     "primary": [
+      "#F1D7B2",
+      "#FDD8A3",
+      "#FBE3BD",
+      "#E9DABD",
+      "#FDCC8F",
+      "#F8E8CF",
+      "#E7C393",
+      "#D4C2A5"
+     ],
+     "secondary": [
+      "#714D48",
+      "#52362E",
+      "#8E664D",
+      "#B84A27",
+      "#9E7A55",
+      "#F06B3E",
+      "#A96F05",
+      "#B89269",
+      "#D99256",
+      "#E7C393",
+      "#D4C2A5",
+      "#FDCC8F",
+      "#F1D7B2",
+      "#CDBA97",
+      "#FDD8A3",
+      "#F1AD69",
+      "#E9DABD",
+      "#AEAF6F",
+      "#C9A06E",
+      "#9C8510",
+      "#76904C",
+      "#809712"
+     ],
+     "accent": [
+      "#76D0F2",
+      "#7BCFDF",
+      "#95E5F9",
+      "#8ECCD6",
+      "#45BDF6",
+      "#4BAFCA",
+      "#B2E9F2",
+      "#74C4BB",
+      "#FFD170",
+      "#FECD4D",
+      "#FFE2A0",
+      "#F8BC44",
+      "#FCD75F",
+      "#E9DABD",
+      "#FDD8A3",
+      "#E7C393",
+      "#F06B3E",
+      "#FF8A5B",
+      "#B84A27",
+      "#D99256",
+      "#8E664D",
+      "#9E7A55",
+      "#FFB08A",
+      "#B89269"
+     ],
+     "plant": [
+      "#AEAF6F",
+      "#C6CC97",
+      "#BFC41A",
+      "#809712",
+      "#DCDB22",
+      "#E4E77F",
+      "#D1B825",
+      "#DEE5BC",
+      "#76904C",
+      "#5F6F48",
+      "#9C8510"
+     ],
+     "earth": [
+      "#F1D7B2",
+      "#FDD8A3",
+      "#FBE3BD",
+      "#E9DABD",
+      "#FDCC8F",
+      "#F8E8CF",
+      "#E7C393",
+      "#D4C2A5",
+      "#CDBA97",
+      "#F1AD69",
+      "#9E7A55",
+      "#B89269",
+      "#AEAF6F",
+      "#C9A06E",
+      "#9C8510",
+      "#8E664D",
+      "#76904C",
+      "#809712",
+      "#714D48",
+      "#52362E",
+      "#B84A27",
+      "#F06B3E",
+      "#A96F05",
+      "#D99256"
+     ],
+     "water": [
+      "#4BAFCA",
+      "#45BDF6",
+      "#7BCFDF",
+      "#76D0F2",
+      "#8ECCD6",
+      "#95E5F9",
+      "#499D92",
+      "#74C4BB"
+     ],
+     "atmosphere": [
+      "#76D0F2",
+      "#7BCFDF",
+      "#95E5F9",
+      "#8ECCD6",
+      "#45BDF6",
+      "#4BAFCA",
+      "#B2E9F2",
+      "#74C4BB",
+      "#EAF9FF",
+      "#DAF2F5",
+      "#D9F8FB"
+     ],
+     "effect": [
+      "#F06B3E",
+      "#FF8A5B",
+      "#B84A27",
+      "#D99256",
+      "#8E664D",
+      "#9E7A55",
+      "#FFB08A",
+      "#B89269"
+     ]
+    },
+    "lockedColors": [],
+    "excludedAssetIds": [],
+    "excludedTags": [],
+    "createdAt": 1787561837433,
+    "updatedAt": 1787561837433
+   },
+   "colorPaletteReport": {
+    "appliedMaterials": 16,
+    "appliedVertexColors": 0,
+    "skippedTextures": 0,
+    "explicitIntentColors": 0,
+    "sourceColors": 16,
+    "semanticFallbacks": 0,
+    "usedColors": [
+     "#D4C2A5",
+     "#D99256",
+     "#E7C393",
+     "#E9DABD"
+    ]
+   }
+  }
+ },
+ "colliderPlan": {
+  "version": 1,
+  "boxes": [
+   {
+    "min": [
+     -0.53,
+     0,
+     -0.24035
+    ],
+    "max": [
+     0.53,
+     0.5447,
+     0.24035
+    ],
+    "sourceNodeId": "asset-bounds"
+   }
+  ],
+  "sourceMeshCount": 16,
+  "candidateCount": 0,
+  "fallbackUsed": true
+ },
+ "footprintRadius": 0.53,
+ "sizeClass": "small",
+ "mode": "voxel",
+ "provider": "gpt",
+ "createdAt": 1788542117650,
+ "updatedAt": 1788542117650
+}
