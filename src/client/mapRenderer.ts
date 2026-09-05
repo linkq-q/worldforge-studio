@@ -9,6 +9,7 @@ import {
   getPlayerSpawnYaw,
   getSpawnPoints,
   getSunPosition,
+  mapRoadGuides,
   normalizeMap,
   sampleTerrainHeight,
   terrainIndex,
@@ -1736,7 +1737,7 @@ function buildRoadGuideHelpers(map: EditableMap): { group: THREE.Group; pickable
   const group = new THREE.Group();
   group.name = 'road-guide-helpers';
   const pickables: THREE.Object3D[] = [];
-  for (const guide of map.guides.filter((item) => item.tags.includes('route') || item.tags.includes('street'))) {
+  for (const guide of mapRoadGuides(map)) {
     const path = mapGuidePolyline(guide).map(([x, z]) => new THREE.Vector3(
       x, sampleTerrainHeight(map, x, z) + 0.08, z
     ));

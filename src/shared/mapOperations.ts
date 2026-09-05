@@ -179,6 +179,7 @@ export type MapOperation =
   | ({ type: 'terrain.modify' } & Partial<TerrainModifierParams> & Pick<TerrainModifierParams, 'modifier' | 'region'>)
   | ({ type: 'terrain.refine' } & Partial<TerrainRefinementParams>)
   | ({ type: 'terrain.surface' } & Partial<TerrainSurfaceParams> & Pick<TerrainSurfaceParams, 'surface' | 'region'>)
+  | { type: 'terrain.surface.remove'; zoneId: string }
   | { type: 'terrain.brush'; mode: TerrainBrushMode; point: Vec3; size?: number; strength?: number; targetHeight?: number }
   | { type: 'paint.add'; stroke: Partial<MapPaintStroke> & Pick<MapPaintStroke, 'surface' | 'point'> }
   | { type: 'grass.layer.add'; layer: GrassLayerInput }
@@ -323,6 +324,17 @@ export function applyMapOperations(map: EditableMap, operations: readonly MapOpe
       case 'terrain.surface':
         applyTerrainSurfaceInPlace(next, operation);
         break;
+      case 'terrain.surface.remove': {
+        const zoneId = typeof operation.zoneId === 'string' ? operation.zoneId.trim() : '';
+        if (!zoneId || !next.visualSemantics.zones.some((zone) => zone.id === zoneId)) {
+          throw new Error('surface_zone_not_found');
+        }
+        next.visualSemantics = {
+          ...next.visualSemantics,
+          zones: next.visualSemantics.zones.filter((zone) => zone.id !== zoneId)
+        };
+        break;
+      }
       case 'terrain.brush':
         requireVec3(operation.point, 'invalid_terrain_point');
         if (!TERRAIN_MODES.has(operation.mode)) throw new Error('invalid_terrain_mode');
@@ -402,12 +414,35 @@ export function applyMapOperations(map: EditableMap, operations: readonly MapOpe
         else next.guides.push(guide);
         break;
       }
-      case 'guide.remove':
-        if (!operation.guideId || !next.guides.some((item) => item.id === operation.guideId)) {
+      case 'guide.remove': {
+        const removedGuide = next.guides.find((item) => item.id === operation.guideId);
+        if (!operation.guideId || !removedGuide) {
           throw new Error('map_guide_not_found');
         }
         next.guides = next.guides.filter((item) => item.id !== operation.guideId);
+        // A guide alone is invisible; the road users see is the path-shaped
+        // surface zone derived from it. Drop that zone too, otherwise deleted
+        // roads stay baked into the terrain.
+        const zoneIds = new Set([
+          `manual:route:${removedGuide.id}`,
+          `code:route:${removedGuide.id}`,
+          `scene-program:${removedGuide.id}`
+        ]);
+        const zones = next.visualSemantics.zones.filter((zone) => {
+          if (zoneIds.has(zone.id)) return false;
+          const region = zone.region;
+          return !(region?.kind === 'path'
+            && Math.abs(region.width - removedGuide.width) < 0.001
+            && region.points.length === removedGuide.points.length
+            && region.points.every((point, index) => (
+              Math.hypot(point[0] - removedGuide.points[index][0], point[1] - removedGuide.points[index][1]) < 0.001
+            )));
+        });
+        if (zones.length !== next.visualSemantics.zones.length) {
+          next.visualSemantics = { ...next.visualSemantics, zones };
+        }
         break;
+      }
       case 'object.add': {
         if (!operation.object || typeof operation.object !== 'object') throw new Error('invalid_object');
         const base = createMapObject(operation.object.name, operation.object.assetId ?? null);

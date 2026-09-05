@@ -645,6 +645,27 @@ describe('map AI adapter', () => {
     expect(suggestion.operations).toEqual([expect.objectContaining({ type: 'object.update', objectId: 'tree-live' })]);
   });
 
+  it('deletes unwanted road surface zones through visualZoneRemovals', () => {
+    const map = applyMapOperations(createEmptyMap('refine', 'map-refine-roads'), [{
+      type: 'terrain.surface',
+      surface: 'paving',
+      region: { kind: 'path', points: [[-10, -4], [0, 0], [12, 5]], width: 3 },
+      intensity: 1,
+      zoneId: 'code:route:farm-road'
+    }]);
+
+    const suggestion = normalizeMapSuggestion(JSON.stringify({
+      summary: '把那条歪路删掉',
+      visualZoneRemovals: ['code:route:farm-road', 'code:route:does-not-exist']
+    }), map, assets, 'refine');
+    const refined = applyMapOperations(map, suggestion.operations);
+
+    expect(suggestion.operations).toEqual([
+      { type: 'terrain.surface.remove', zoneId: 'code:route:farm-road' }
+    ]);
+    expect(refined.visualSemantics.zones).toHaveLength(0);
+  });
+
   it('does not let a generic refine move or remove locked architecture objects', () => {
     const map = createEmptyMap('locked architecture', 'map-locked-architecture');
     const gate = { ...createMapObject('Locked gate', 'asset-tree'), id: 'locked-gate', locked: true };

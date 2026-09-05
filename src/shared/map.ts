@@ -1022,6 +1022,48 @@ export function addPaintStroke(map: EditableMap, stroke: Partial<MapPaintStroke>
   return next;
 }
 
+/** Tags that mark a guide as a road/trail, no matter which generator wrote it. */
+export const ROAD_GUIDE_TAGS = ['route', 'street', 'road', 'path', 'circulation'] as const;
+
+export function isRoadMapGuide(guide: MapGuide): boolean {
+  return guide.tags.some((tag) => (ROAD_GUIDE_TAGS as readonly string[]).includes(tag));
+}
+
+/**
+ * Finds the path-shaped surface zone that bakes a guide's road surface into
+ * the terrain, matching both the known zone-id conventions and exact geometry
+ * (AI generators do not always follow the id conventions).
+ */
+export function mapRoadZoneForGuide(map: EditableMap, guideId: string): EditableMap['visualSemantics']['zones'][number] | null {
+  const exactIds = new Set([`manual:route:${guideId}`, `code:route:${guideId}`, `scene-program:${guideId}`]);
+  const exact = map.visualSemantics.zones.find((zone) => exactIds.has(zone.id));
+  if (exact) return exact;
+  const guide = map.guides.find((item) => item.id === guideId);
+  if (!guide) return null;
+  return map.visualSemantics.zones.find((zone) => {
+    const region = zone.region;
+    return region?.kind === 'path'
+      && Math.abs(region.width - guide.width) < 0.001
+      && region.points.length === guide.points.length
+      && region.points.every((point, index) => (
+        Math.hypot(point[0] - guide.points[index][0], point[1] - guide.points[index][1]) < 0.001
+      ));
+  }) ?? null;
+}
+
+/** Every guide a human would call a road: tagged, or surfaced onto the terrain. */
+export function mapRoadGuides(map: EditableMap): MapGuide[] {
+  return map.guides.filter((guide) => isRoadMapGuide(guide) || Boolean(mapRoadZoneForGuide(map, guide.id)));
+}
+
+/** Path-shaped surface zones with no matching guide; visible roads nobody can edit. */
+export function mapOrphanRoadZones(map: EditableMap): EditableMap['visualSemantics']['zones'] {
+  return map.visualSemantics.zones.filter((zone) => (
+    zone.region?.kind === 'path'
+    && !map.guides.some((guide) => mapRoadZoneForGuide(map, guide.id)?.id === zone.id)
+  ));
+}
+
 export function surfaceUvFromPoint(map: EditableMap, surface: MapSurface, point: Vec3): [number, number] {
   const bounds = getMapBounds(map);
   const xU = (point[0] - bounds.minX) / (bounds.maxX - bounds.minX);

@@ -456,6 +456,7 @@ export function normalizeMapSuggestion(
     : [];
   operations.push(...normalizeRoomOperations(input.room, map));
   operations.push(...normalizeVisualZoneUpdateOperations(input.visualZoneUpdates, map, targetVisualZoneId));
+  operations.push(...normalizeVisualZoneRemovalOperations(input.visualZoneRemovals, map, targetVisualZoneId));
   if (map.sceneMode !== 'indoor' && input.terrainGeneration !== undefined && input.terrainGeneration !== null) {
     operations.push({
       type: 'terrain.generate',
@@ -610,6 +611,26 @@ function normalizeVisualZoneUpdateOperations(
     : [{ type: 'map.update', visualSemantics: semantics }];
 }
 
+function normalizeVisualZoneRemovalOperations(
+  value: unknown,
+  map: EditableMap,
+  targetVisualZoneId?: string
+): MapOperation[] {
+  if (!Array.isArray(value)) return [];
+  const zoneIds = new Set(map.visualSemantics.zones.map((zone) => zone.id));
+  const operations: MapOperation[] = [];
+  const seen = new Set<string>();
+  for (const item of value.slice(0, 16)) {
+    if (typeof item !== 'string') continue;
+    const zoneId = item.trim();
+    if (!zoneId || seen.has(zoneId) || !zoneIds.has(zoneId)) continue;
+    if (targetVisualZoneId && zoneId !== targetVisualZoneId) continue;
+    seen.add(zoneId);
+    operations.push({ type: 'terrain.surface.remove', zoneId });
+  }
+  return operations;
+}
+
 function scopeMapOperationsToVisualZone(
   operations: readonly MapOperation[],
   map: EditableMap,
@@ -662,6 +683,7 @@ function scopeMapOperationsToVisualZone(
         : contains(operation.point[0], operation.point[2]);
       case 'terrain.modify': return regionInside(operation.region, allowTerrainOverlap);
       case 'terrain.surface': return regionInside(operation.region);
+      case 'terrain.surface.remove': return operation.zoneId === zoneId;
       case 'paint.add': return contains(operation.stroke.point[0], operation.stroke.point[2]);
       case 'object.add': return contains(operation.object.transform?.position?.[0] ?? 0, operation.object.transform?.position?.[2] ?? 0);
       case 'object.update': return objectInside(operation.objectId, operation.patch.transform?.position);
@@ -1280,6 +1302,7 @@ function buildSystemPrompt(
         'To reduce repeated objects, use objectRemovals: [{"assetId":"existing asset id","count":3,"seed":1}]. You may instead provide exact objectIds.',
         'To move, rotate, or scale an existing object, use objectUpdates: [{"objectId":"existing object id","x":0,"z":0,"rotationYDeg":0,"scale":1}].',
         'To adjust water, use waterUpdates: [{"waterId":"existing water id","level":0.2,"depth":1.5,"width":2,"shorelineSmoothness":0.85,"shorelineIrregularity":0.16,"seed":7}]. River updates may also include levels matching the existing centerline point count. To delete water, use waterRemovals: ["existing water id"].',
+        'Roads, trails and painted ground strips are path-shaped visual zones. To delete an unwanted road or surface strip, use visualZoneRemovals: ["existing zone id"] with ids from the current visual zones list. To delete every road, list all path-shaped zone ids.',
         `Current object groups: ${JSON.stringify(currentObjects)}`,
         `Current waters: ${JSON.stringify(map.waterBodies)}`,
         `Current visual zones: ${JSON.stringify(map.visualSemantics.zones)}`,
@@ -1301,7 +1324,7 @@ function buildSystemPrompt(
         ] : [])
       ]
     : [
-        'This is a new-content planning pass. objectUpdates, objectRemovals, waterUpdates, and waterRemovals must be empty.'
+        'This is a new-content planning pass. objectUpdates, objectRemovals, waterUpdates, waterRemovals, and visualZoneRemovals must be empty.'
       ];
   const baseTerrainInstructions = options.baseTerrainOnly
     ? [
@@ -1357,7 +1380,7 @@ function buildSystemPrompt(
     '大量植被、岩石等重复物体必须优先使用 scatters，让代码生成坐标。scatters 每项格式：{"assetIds":["已有ID"],"region":{"kind":"circle","x":0,"z":0,"r":20},"density":0.04,"avoidWater":1,"maxSlope":30,"minSpacing":2,"scaleRange":[0.8,1.2],"seed":7,"patchSeed":99,"clusterStrength":0.6,"edgeFalloff":0.25,"spacingByAssetId":{"另一已有ID":3},"habitat":{"height":[-2,0,6,10],"slope":[0,0,20,35],"waterDistance":[0,1,5,9]}}。同一植物群落的多个 scatter 使用相同 patchSeed，让物种共享群落而不是各自形成圆团。',
     '若用户写了雾、光照、素描等氛围词，只放入 renderPromptSuggestions，不要用它改变地图。',
     '只返回一个 JSON 对象，不要 Markdown：',
-    '{"summary":"简短摘要","assetRequests":[{"name":"资产名","prompt":"独立低多边形物体描述，无地面和背景","tags":["prop"],"light":null}],"room":null,"terrainGeneration":{"preset":"hills","amplitude":5,"roughness":0.55},"terrain":[],"terrainModifiers":[],"terrainRefinement":{"erosion":0.22,"drainage":0.08,"iterations":3,"talus":46},"terrainSurfaces":[],"waters":[],"waterUpdates":[],"waterRemovals":[],"objects":[],"objectUpdates":[],"objectRemovals":[],"scatters":[],"spawn":null,"renderPromptSuggestions":[]}',
+    '{"summary":"简短摘要","assetRequests":[{"name":"资产名","prompt":"独立低多边形物体描述，无地面和背景","tags":["prop"],"light":null}],"room":null,"terrainGeneration":{"preset":"hills","amplitude":5,"roughness":0.55},"terrain":[],"terrainModifiers":[],"terrainRefinement":{"erosion":0.22,"drainage":0.08,"iterations":3,"talus":46},"terrainSurfaces":[],"waters":[],"waterUpdates":[],"waterRemovals":[],"visualZoneRemovals":[],"objects":[],"objectUpdates":[],"objectRemovals":[],"scatters":[],"spawn":null,"renderPromptSuggestions":[]}',
     `已有资产：${JSON.stringify(assetLibrary)}`
   ].join('\n');
 }
@@ -1406,6 +1429,7 @@ function hasSpatialOperations(suggestion: MapAiSuggestion): boolean {
     || operation.type === 'terrain.modify'
     || operation.type === 'terrain.refine'
     || operation.type === 'terrain.surface'
+    || operation.type === 'terrain.surface.remove'
     || operation.type === 'terrain.generate'
     || operation.type === 'terrain.set'
     || operation.type === 'water.add'

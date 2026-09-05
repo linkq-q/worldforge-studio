@@ -21,6 +21,9 @@ import {
   getPlayerSpawnYaw,
   getSpawnPoints,
   getSunPosition,
+  mapOrphanRoadZones,
+  mapRoadGuides,
+  mapRoadZoneForGuide,
   normalizeMap,
   normalizeMapRoom,
   normalizeMapSceneMode,
@@ -2915,6 +2918,29 @@ class MapEditor {
     this.renderPanels();
   }
 
+  /** Turns a guide-less path surface zone into a normal editable road guide. */
+  private adoptRoadZoneGuide(zoneId: string): void {
+    const map = this.state.map;
+    const zone = map?.visualSemantics.zones.find((item) => item.id === zoneId);
+    if (!map || !zone || zone.region?.kind !== 'path' || zone.region.points.length < 2) return;
+    const guideId = `adopted-road-${crypto.randomUUID().slice(0, 8)}`;
+    const guide: MapGuide = {
+      id: guideId,
+      name: `路面 ${zone.id}`,
+      points: zone.region.points.map((point) => [...point] as [number, number]),
+      curve: 'polyline',
+      closed: false,
+      width: zone.region.width,
+      tags: ['route', 'circulation', 'manual']
+    };
+    this.state.map = applyMapOperations(map, [{ type: 'guide.upsert', guide }]);
+    this.selectedRoadGuideId = guideId;
+    this.markDirty();
+    this.state.message = '已把这段 AI 路面转成可编辑道路，可拖点、改宽度或直接删除';
+    void this.refreshScene();
+    this.renderPanels();
+  }
+
   private async previewSceneNormalization(): Promise<void> {
     const map = this.state.map;
     if (!map || this.state.busy || this.mapAiPreviewMap) return;
@@ -3140,7 +3166,8 @@ class MapEditor {
       this.selectedVisualZoneId = map.visualSemantics.zones[0]?.id ?? '';
     }
     const selectedZone = map.visualSemantics.zones.find((zone) => zone.id === this.selectedVisualZoneId) ?? null;
-    const roadGuides = map.guides.filter((guide) => guide.tags.includes('route') || guide.tags.includes('street'));
+    const roadGuides = mapRoadGuides(map);
+    const orphanRoadZones = mapOrphanRoadZones(map);
     if (!roadGuides.some((guide) => guide.id === this.selectedRoadGuideId)) {
       this.selectedRoadGuideId = roadGuides[0]?.id ?? '';
     }
@@ -3321,7 +3348,7 @@ class MapEditor {
         ${this.state.terrainAction === 'road'
           ? '<p class="empty">按住拖动自由绘制；按住 Shift 直接连接起点和当前位置。松开后自动简化为可编辑控制点，并先生成预览。</p>'
           : this.state.terrainAction !== 'brush' ? '<p class="empty">在地形上单击盖章，或按住拖动绘制路径；松开后先预览，再统一应用。</p>' : ''}
-        ${this.state.terrainAction === 'road' ? renderRoadGuideEditor(roadGuides, selectedRoadGuide, selectedRoadZone?.material) : ''}
+        ${this.state.terrainAction === 'road' ? renderRoadGuideEditor(roadGuides, selectedRoadGuide, selectedRoadZone?.material, orphanRoadZones) : ''}
       </section>` : ''}
       ${this.state.tool === 'grass' ? renderGrassEditorPanel(map, this.grassEditorState) : ''}
     `;
@@ -3558,7 +3585,12 @@ class MapEditor {
       this.state.terrainRoadSmooth = (event.target as HTMLInputElement).checked;
     });
     host.querySelector<HTMLSelectElement>('[data-road-guide-select]')?.addEventListener('change', (event) => {
-      this.selectedRoadGuideId = (event.target as HTMLSelectElement).value;
+      const value = (event.target as HTMLSelectElement).value;
+      if (value.startsWith('zone:')) {
+        this.adoptRoadZoneGuide(value.slice('zone:'.length));
+        return;
+      }
+      this.selectedRoadGuideId = value;
       this.renderMapInspector();
     });
     host.querySelector<HTMLInputElement>('[data-road-guide-width]')?.addEventListener('change', (event) => {
@@ -6995,33 +7027,36 @@ function roadZoneId(guideId: string): string {
 }
 
 function roadZoneForGuide(map: EditableMap, guideId: string): EditableMap['visualSemantics']['zones'][number] | null {
-  const exactIds = new Set([roadZoneId(guideId), `code:route:${guideId}`, `scene-program:${guideId}`]);
-  const exact = map.visualSemantics.zones.find((zone) => exactIds.has(zone.id));
-  if (exact) return exact;
-  const guide = map.guides.find((item) => item.id === guideId);
-  if (!guide) return null;
-  return map.visualSemantics.zones.find((zone) => {
-    const region = zone.region;
-    return region?.kind === 'path'
-      && Math.abs(region.width - guide.width) < 0.001
-      && region.points.length === guide.points.length
-      && region.points.every((point, index) => (
-        Math.hypot(point[0] - guide.points[index][0], point[1] - guide.points[index][1]) < 0.001
-      ));
-  }) ?? null;
+  return mapRoadZoneForGuide(map, guideId);
 }
 
 function renderRoadGuideEditor(
   guides: readonly MapGuide[],
   selected: MapGuide | null,
-  material: TerrainSurfaceRecipe = 'default'
+  material: TerrainSurfaceRecipe = 'default',
+  orphanZones: EditableMap['visualSemantics']['zones'] = []
 ): string {
-  if (guides.length === 0 || !selected) return '<p class="empty">当前地图还没有道路；绘制并应用后可在这里编辑控制点。</p>';
+  if (guides.length === 0 && orphanZones.length === 0) return '<p class="empty">当前地图还没有道路；绘制并应用后可在这里编辑控制点。</p>';
+  const orphanOptions = orphanZones.map((zone) => (
+    `<option value="zone:${escapeHtml(zone.id)}">未关联路面：${escapeHtml(zone.id)}(选中后可编辑/删除)</option>`
+  )).join('');
+  if (!selected) {
+    return `
+      <details class="inspector-disclosure compact" open>
+        <summary><span><b>已应用道路</b><small>0 条引导线 · ${orphanZones.length} 段未关联路面</small></span></summary>
+        <label class="field compact"><span>道路</span><select data-road-guide-select>
+          ${orphanOptions}
+        </select></label>
+        <p class="empty">这些路面是 AI 直接刷到地形上的,没有引导线;选中一条即可转成可编辑道路。</p>
+      </details>
+    `;
+  }
   return `
     <details class="inspector-disclosure compact" open>
-      <summary><span><b>已应用道路</b><small>${guides.length} 条</small></span></summary>
+      <summary><span><b>已应用道路</b><small>${guides.length} 条${orphanZones.length > 0 ? ` · ${orphanZones.length} 段未关联路面` : ''}</small></span></summary>
       <label class="field compact"><span>道路</span><select data-road-guide-select>
         ${guides.map((guide) => `<option value="${escapeHtml(guide.id)}" ${guide.id === selected.id ? 'selected' : ''}>${escapeHtml(guide.name)}</option>`).join('')}
+        ${orphanOptions}
       </select></label>
       <label class="field compact"><span>材质</span><select data-road-guide-material>
         ${TERRAIN_SURFACE_RECIPES.map((recipe) => `<option value="${recipe}" ${material === recipe ? 'selected' : ''}>${terrainSurfaceRecipeLabel(recipe)}</option>`).join('')}

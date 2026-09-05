@@ -2351,6 +2351,7 @@ const SCENE_PREVIEW_OPERATION_TYPES = new Set([
   'terrain.modify',
   'terrain.refine',
   'terrain.surface',
+  'terrain.surface.remove',
   'water.add',
   'water.update',
   'water.remove',
