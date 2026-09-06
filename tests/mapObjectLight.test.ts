@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { analyzeMapLocalLightCandidates } from '../src/client/mapLocalLights';
 import { buildEditableMapGroup } from '../src/client/mapRenderer';
 import { createEmptyMap, createMapObject, createMapObjectLight, normalizeMap } from '../src/shared/map';
+import { applyMapOperations } from '../src/shared/mapOperations';
 
 beforeEach(() => {
   vi.stubGlobal('document', {
@@ -13,6 +14,68 @@ beforeEach(() => {
 afterEach(() => vi.unstubAllGlobals());
 
 describe('map object lighting', () => {
+  it('persists an opt-in bounded point-light budget without changing legacy maps or the sun', () => {
+    const map = createEmptyMap('灯光预算', 'budget-map');
+    const originalLighting = structuredClone(map.lighting);
+    expect(normalizeMap(map).lighting).toEqual(originalLighting);
+    const next = applyMapOperations(map, [{ type: 'map.update', lighting: { pointLightBudget: 16 } }]);
+    expect(next.lighting).toEqual({ ...originalLighting, pointLightBudget: 16 });
+    expect(normalizeMap(JSON.parse(JSON.stringify(next))).lighting).toEqual(next.lighting);
+    expect(normalizeMap({ ...map, lighting: { ...map.lighting, pointLightBudget: 99 } }).lighting.pointLightBudget).toBe(16);
+    expect(normalizeMap({ ...map, lighting: { ...map.lighting, pointLightBudget: -1 } }).lighting.pointLightBudget).toBe(1);
+    expect(normalizeMap({ ...map, lighting: { ...map.lighting, pointLightBudget: NaN } }).lighting).toEqual(originalLighting);
+    expect(() => applyMapOperations(map, [{ type: 'map.update', lighting: { pointLightBudget: NaN } }])).toThrow('invalid_point_light_budget');
+  });
+
+  it('keeps configured point and spot lights stable through orbit, looking away, solo and low quality', async () => {
+    const map = createEmptyMap('稳定灯光', 'stable-light-map', [36, 10, 24], 'voxel', 'indoor', [36, 10, 24]);
+    Object.assign(map.lighting, { pointLightBudget: 16 });
+    map.objects = Array.from({ length: 13 }, (_, index) => {
+      const object = createMapObject(`light-${index}`);
+      object.transform.position = [(index % 4) * 7 - 10, 3 + (index % 2) * 5, Math.floor(index / 4) * 6 - 9];
+      object.light = { ...createMapObjectLight('point'), intensity: 10, range: 20, role: index === 12 ? 'fill' : 'practical' };
+      return object;
+    });
+    map.objects.push(...Array.from({ length: 2 }, (_, index) => {
+      const object = createMapObject(`spot-${index}`);
+      object.transform.position = [index === 0 ? -8 : 8, 7, 0];
+      object.light = { ...createMapObjectLight('spot', [0, 1, 0]), intensity: 8, range: 20, role: index === 0 ? 'key' : 'accent' };
+      return object;
+    }));
+    const rendered = await buildEditableMapGroup(map);
+    const root = rendered.group.getObjectByName('mapLocalLights')!;
+    const points = root.children.filter((child): child is THREE.PointLight => (child as THREE.PointLight).isPointLight);
+    const spots = root.children.filter((child): child is THREE.SpotLight => (child as THREE.SpotLight).isSpotLight);
+    expect(points).toHaveLength(13);
+    expect(spots).toHaveLength(2);
+    const camera = new THREE.PerspectiveCamera(60, 1, 0.1, 200);
+    const capture = () => [...points, ...spots].map(light => ({ id: light.uuid, position: light.position.toArray(), intensity: light.intensity, visible: light.visible }));
+    camera.position.set(0, 14, 35);
+    camera.lookAt(0, 3, 0);
+    rendered.update(0.016, camera, 100);
+    const baseline = capture();
+    expect(baseline.every(light => light.intensity > 0 && light.visible)).toBe(true);
+    expect(points.every(light => !light.castShadow)).toBe(true);
+    for (let step = 0; step < 24; step++) {
+      const angle = step * Math.PI / 12;
+      camera.position.set(Math.sin(angle) * 35, 14, Math.cos(angle) * 35);
+      camera.lookAt(0, 3, 0);
+      rendered.update(0.016, camera, 100);
+      expect(capture()).toEqual(baseline);
+    }
+    camera.lookAt(0, 14, 1000);
+    rendered.setLightingQuality(0.42);
+    rendered.update(0.016, camera, 100);
+    expect(capture()).toEqual(baseline);
+    rendered.setLightingSoloObjectId(map.objects[12].id);
+    rendered.update(0.016, camera, 100);
+    expect([...points, ...spots].filter(light => light.intensity > 0)).toHaveLength(1);
+    rendered.setLightingSoloObjectId(null);
+    rendered.update(0.016, camera, 100);
+    expect(capture()).toEqual(baseline);
+    rendered.dispose();
+  });
+
   it('normalizes and persists an assetless authored spotlight', () => {
     const object = createMapObject('工作台主光');
     object.light = {

@@ -102,7 +102,7 @@ import {
 } from './agentProgressPanel';
 import { buildEditableMapGroup, type RenderedMap } from './mapRenderer';
 import {
-  MAX_VISIBLE_MAP_POINT_LIGHTS,
+  mapPointLightBudget,
   MAX_VISIBLE_MAP_SPOT_LIGHTS,
   analyzeMapLocalLightCandidates,
   resolvedMapObjectLight
@@ -3680,7 +3680,7 @@ class MapEditor {
     const spotCount = candidates.filter((candidate) => candidate.kind === 'spot').length;
     return `
       <details class="inspector-disclosure" data-inspector-section="scene-lighting" ${open ? 'open' : ''}>
-        <summary><span><b>场景灯光</b><small>${candidates.length} 盏生效 · 点光 ${pointCount}/${MAX_VISIBLE_MAP_POINT_LIGHTS} · 聚光 ${spotCount}/${MAX_VISIBLE_MAP_SPOT_LIGHTS}</small></span></summary>
+        <summary><span><b>场景灯光</b><small>${candidates.length} 盏已启用 · 点光 ${pointCount}/${mapPointLightBudget(map)} · 聚光 ${spotCount}/${MAX_VISIBLE_MAP_SPOT_LIGHTS}</small></span></summary>
         <section class="editor-section inspector-body">
           <div class="map-ai-controls">
             <button type="button" class="secondary small" data-add-scene-light="point">新增点光</button>
@@ -3700,7 +3700,7 @@ class MapEditor {
               return `<button type="button" class="render-scheme-card ${object.id === this.state.selectedObjectId ? 'active' : ''}" data-select-light-object="${escapeHtml(object.id)}"><strong>${escapeHtml(object.name)}</strong><small>${escapeHtml(status)}</small></button>`;
             }).join('') || '<p class="empty">当前场景还没有灯光；可新增补光，或选中带灯资产后按实例接管。</p>'}
           </div>
-          <p class="empty">灯光对象支持移动、旋转、复制和撤销。运行时仍使用固定灯槽；列表数量超过上限时按用途和镜头影响范围选择。</p>
+          <p class="empty">灯光对象支持移动、旋转、复制和撤销。${map.lighting.pointLightBudget !== undefined ? '点光使用场景固定预算，不随镜头切换；超出预算时按用途和对象 ID 固定选择。聚光槽位仍为 2，并与点光一样保持稳定。' : '运行时仍使用固定灯槽；列表数量超过上限时按用途和镜头影响范围选择。'}</p>
         </section>
       </details>
     `;

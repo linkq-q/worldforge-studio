@@ -102,7 +102,7 @@ npm run map -- redo-transaction --map <mapId>
 
 ## 操作类型
 
-- `map.update`：名称、尺寸、六面颜色
+- `map.update`：名称、尺寸、六面颜色；可选 `lighting.pointLightBudget`（1-16）为该地图启用稳定点光预算，不随镜头换灯。省略时保留原来的 6 灯动态筛选；聚光槽位仍为 2，显式预算下同样不随镜头换灯，阴影预算不变。
 - `terrain.set`：设置完整高度场
 - `terrain.brush`：抬高、降低或平整局部地形
 - `paint.add`：增加表面笔刷

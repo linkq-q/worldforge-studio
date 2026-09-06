@@ -141,8 +141,12 @@ export interface MapWaterBody {
   generation?: MapGenerationOwner;
 }
 
+export const MAX_MAP_POINT_LIGHT_BUDGET = 16;
+
 export interface MapLighting {
   sunPosition: Vec3;
+  /** Opt-in stable point-light slots; absent retains legacy camera-selected lighting. */
+  pointLightBudget?: number;
 }
 
 export const MAP_LIGHT_ROLES = ['key', 'fill', 'practical', 'accent'] as const;
@@ -1924,7 +1928,10 @@ function createFlatTerrain(resolutionX: number, resolutionZ: number): MapTerrain
 
 function normalizeLighting(input: Partial<MapLighting> | undefined): MapLighting {
   return {
-    sunPosition: validVec3(input?.sunPosition, DEFAULT_SUN_POSITION)
+    sunPosition: validVec3(input?.sunPosition, DEFAULT_SUN_POSITION),
+    ...(typeof input?.pointLightBudget === 'number' && Number.isFinite(input.pointLightBudget)
+      ? { pointLightBudget: clamp(Math.round(input.pointLightBudget), 1, MAX_MAP_POINT_LIGHT_BUDGET) }
+      : {})
   };
 }
 

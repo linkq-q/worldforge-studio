@@ -10,6 +10,7 @@ import {
   snapTerrainObjectsInPlace,
   type EditableMap,
   type MapAsset,
+  type MapLighting,
   type MapBoxColors,
   type MapObject,
   type MapPaintStroke,
@@ -171,7 +172,7 @@ export type MapWaterBodyInput = Omit<Partial<MapWaterBody>, 'points'> & {
 export type MapWaterBodyPatch = Omit<Partial<MapWaterBody>, 'id'>;
 
 export type MapOperation =
-  | { type: 'map.update'; name?: string; size?: Vec3; colors?: Partial<MapBoxColors>; playerHeight?: number; playerRadius?: number; worldScaleProfile?: WorldScaleProfile; renderPromptSuggestions?: string[]; visualSemantics?: MapVisualSemantics; designSemantics?: MapDesignSemantics; layout?: MapLayout }
+  | { type: 'map.update'; name?: string; size?: Vec3; colors?: Partial<MapBoxColors>; lighting?: Pick<MapLighting, 'pointLightBudget'>; playerHeight?: number; playerRadius?: number; worldScaleProfile?: WorldScaleProfile; renderPromptSuggestions?: string[]; visualSemantics?: MapVisualSemantics; designSemantics?: MapDesignSemantics; layout?: MapLayout }
   | { type: 'room.set'; room: Partial<MapRoom> }
   | { type: 'interior.art-direction.set'; artDirection: InteriorArtDirectionInput }
   | { type: 'terrain.set'; terrain: MapTerrain }
@@ -258,6 +259,11 @@ export function applyMapOperations(map: EditableMap, operations: readonly MapOpe
         if (operation.name !== undefined && typeof operation.name !== 'string') throw new Error('invalid_map_name');
         if (operation.size !== undefined) requireVec3(operation.size, 'invalid_map_size');
         if (operation.name !== undefined) next.name = operation.name;
+        if (operation.lighting !== undefined) {
+          const budget = operation.lighting?.pointLightBudget;
+          if (typeof budget !== 'number' || !Number.isFinite(budget)) throw new Error('invalid_point_light_budget');
+          next.lighting.pointLightBudget = budget;
+        }
         if (operation.playerHeight !== undefined) {
           next.playerHeight = operation.playerHeight;
           if (operation.playerRadius === undefined) {

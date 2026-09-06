@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import type { EditableMap, MapAsset, MapLightRole, MapObject, MapObjectLight } from '../shared/map';
+import { MAX_MAP_POINT_LIGHT_BUDGET } from '../shared/map';
 import type { MapAssetLight } from '../shared/mapAssetMetadata';
 import { isMaterialTagEnabled } from '../shared/materialTagPolicy';
 import type { VisualTimeOfDay } from '../shared/visualDirection';
@@ -14,6 +15,13 @@ const MAX_VISIBLE_MAP_WINDOW_LIGHTS = 2;
 const LOCAL_LIGHT_DECAY = 1.2;
 const AGGREGATE_LIGHTING_QUALITY_THRESHOLD = 0.5;
 const KEY_SHADOW_QUALITY_THRESHOLD = 0.85;
+
+export function mapPointLightBudget(map: EditableMap): number {
+  const budget = map.lighting.pointLightBudget;
+  return typeof budget === 'number' && Number.isFinite(budget)
+    ? THREE.MathUtils.clamp(Math.round(budget), 1, MAX_MAP_POINT_LIGHT_BUDGET)
+    : MAX_VISIBLE_MAP_POINT_LIGHTS;
+}
 
 export interface MapLocalLightCandidateInfo {
   objectId: string;
@@ -78,7 +86,8 @@ export function buildMapLocalLights(
   });
   const pointCandidates = candidates.filter((candidate) => candidate.kind === 'point');
   const spotCandidates = candidates.filter((candidate) => candidate.kind === 'spot');
-  const pointLights = Array.from({ length: Math.min(MAX_VISIBLE_MAP_POINT_LIGHTS, pointCandidates.length) }, () => {
+  const stablePointLights = Number.isFinite(map.lighting.pointLightBudget);
+  const pointLights = Array.from({ length: Math.min(mapPointLightBudget(map), pointCandidates.length) }, () => {
     const light = new THREE.PointLight(0xffc46b, 0, MAP_LOCAL_LIGHT_DISTANCE, 2);
     light.decay = LOCAL_LIGHT_DECAY;
     light.castShadow = false;
@@ -107,7 +116,7 @@ export function buildMapLocalLights(
   let aggregateLighting = false;
   let quality = 1;
   let soloObjectId: string | null = null;
-  const preserveLocalLights = options.preserveLocalLights === true;
+  const preserveLocalLights = options.preserveLocalLights === true || stablePointLights;
   const position = new THREE.Vector3();
   const rotation = new THREE.Quaternion();
   const projection = new THREE.Matrix4();
@@ -119,7 +128,7 @@ export function buildMapLocalLights(
       camera.updateMatrixWorld();
       projection.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse);
       frustum.setFromProjectionMatrix(projection);
-      const visibleCandidates = candidates
+      const worldCandidates = candidates
         .filter((candidate) => !soloObjectId || candidate.objectId === soloObjectId)
         .map((candidate) => {
           candidate.group.getWorldPosition(position);
@@ -129,13 +138,21 @@ export function buildMapLocalLights(
             ? new THREE.Vector3(...candidate.target).sub(world).normalize()
             : new THREE.Vector3(...candidate.direction).applyQuaternion(rotation).normalize();
           return { candidate, world, direction, distance: world.distanceToSquared(camera.position) };
-        })
+        });
+      const visibleCandidates = worldCandidates
         // The emitter may be outside the picture while its light still reaches
         // visible surfaces. Cull the influence volume, not the bulb position.
         .filter((entry) => frustum.intersectsSphere(influence.set(entry.world, entry.candidate.range)))
         .sort((left, right) => right.candidate.priority - left.candidate.priority || left.distance - right.distance);
-      const selectedPoints = visibleCandidates.filter((entry) => entry.candidate.kind === 'point').slice(0, pointLights.length);
-      const selectedSpots = visibleCandidates.filter((entry) => entry.candidate.kind === 'spot').slice(0, spotLights.length);
+      // Explicit scene budgets preserve authored light pools independently of the camera.
+      // Overflow is stable by priority/id, not a camera-driven replacement.
+      const selectedCandidates = stablePointLights
+        ? [...worldCandidates].sort((left, right) => (
+          right.candidate.priority - left.candidate.priority || left.candidate.objectId.localeCompare(right.candidate.objectId)
+        ))
+        : visibleCandidates;
+      const selectedPoints = selectedCandidates.filter((entry) => entry.candidate.kind === 'point');
+      const selectedSpots = selectedCandidates.filter((entry) => entry.candidate.kind === 'spot').slice(0, spotLights.length);
       const shadowSpotIndex = selectedSpots.findIndex((entry) => entry.candidate.castShadow);
       const windowOwnsKeyShadow = map.sceneMode === 'indoor'
         && quality >= KEY_SHADOW_QUALITY_THRESHOLD
