@@ -477,7 +477,16 @@ export class MaterialOverrideSystem {
     // P1: Transmission-based glass defaults
     const roughness = params.roughness ?? 0.055;
     const metalness = params.metalness ?? 0.0;
-    const transmission = params.transmission ?? 0.95;
+    const requestedTransmission = params.transmission ?? 0.95;
+    const renderMode = params.renderMode === 'physical' || params.renderMode === 'hybrid' ? params.renderMode : 'auto';
+    const dimensions = getBoxDimensions(target?.geometry);
+    const isSmallVoxelGlass = Boolean(dimensions && Math.max(dimensions.width, dimensions.height, dimensions.depth) <= 0.45);
+    // Small voxel glass parts are usually bottle walls, rims, or tubes. A
+    // transmission pass cannot include transparent contents, so use the
+    // hybrid alpha+Fresnel path for these parts while retaining physical
+    // transmission for large panes and clearly volumetric pieces.
+    const useHybrid = renderMode === 'hybrid' || (renderMode === 'auto' && isSmallVoxelGlass);
+    const transmission = useHybrid ? 0 : requestedTransmission;
     const ior = params.ior ?? 1.48;
     const envMapIntensity = params.envMapIntensity ?? 1.0;
     const clearcoat = params.clearcoat ?? 0.12;
@@ -492,7 +501,7 @@ export class MaterialOverrideSystem {
 
     // When transmission > 0, opacity stays at 1.0 (transparency comes from transmission, not opacity)
     const hasTransmission = transmission > 0;
-    const opacity = hasTransmission ? 1.0 : (params.opacity ?? 0.62);
+    const opacity = hasTransmission ? 1.0 : (params.opacity ?? (useHybrid ? 0.68 : 0.62));
     // Keep container glass in the transparent list and out of the depth buffer so
     // transparent contents such as model water can render through its front face.
     const transparent = hasTransmission || opacity < 1;
@@ -543,6 +552,8 @@ export class MaterialOverrideSystem {
         edgeTintStrength: params.edgeTintStrength ?? 0.18,
         fresnelColor: params.fresnelColor || params.color || [0.985, 0.995, 1.0],
         transmission,
+        requestedTransmission,
+        renderMode: useHybrid ? 'hybrid' : 'physical',
         ior,
         thickness,
         autoThickness,
@@ -551,7 +562,7 @@ export class MaterialOverrideSystem {
       },
       effectNotes: [
         'stylized-physical-glass',
-        'transmission-driven',
+        useHybrid ? 'hybrid-alpha-fresnel' : 'transmission-driven',
         autoThickness ? 'auto-thickness' : 'fixed-thickness',
         envMap ? 'env-map-applied' : 'env-map-fallback-none',
         hasTransmission ? 'transmission-active' : 'opacity-fallback',

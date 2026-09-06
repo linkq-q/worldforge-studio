@@ -98,6 +98,7 @@ export const Glass = {
     surfaceScale: { type: 'float', default: 6.0, min: 0.1, max: 32, hardRange: [0.1, 64], designerRange: [1, 24], aiRange: [3, 12] },
     edgeTintStrength: { type: 'float', default: 0.18, min: 0, max: 1, hardRange: [0, 1], designerRange: [0, 0.6], aiRange: [0.08, 0.3] },
     transmission: { type: 'float', default: 0.95, min: 0, max: 1, hardRange: [0, 1], designerRange: [0, 1], aiRange: [0.82, 1] },
+    renderMode: { type: 'string', default: 'auto' },
     ior: { type: 'float', default: 1.48, min: 1, max: 3, hardRange: [1, 3], designerRange: [1.3, 2.5], aiRange: [1.42, 1.8] },
     renderOrder: { type: 'float', default: 8, min: 0, max: 32 },
     thickness: { type: 'float', default: 0.25, min: 0, max: 5, hardRange: [0, 5], designerRange: [0, 2], aiRange: [0.1, 0.6] },

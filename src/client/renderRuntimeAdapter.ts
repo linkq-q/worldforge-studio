@@ -225,9 +225,10 @@ export class RenderRuntimeAdapter {
   applyPostQuality(quality: RuntimePostQuality): void {
     this.frameCoordinator.setPassEnabled('ssao', quality.ssao !== 'off');
     if (this.ssaoPass.enabled) {
-      this.ssaoPass.kernelRadius = quality.ssao === 'strong' ? 7 : 4;
-      this.ssaoPass.minDistance = 0.004;
-      this.ssaoPass.maxDistance = quality.ssao === 'strong' ? 0.085 : 0.045;
+      this.ssaoPass.kernelRadius = quality.ssao === 'strong' ? 1.25 : 0.75;
+      this.ssaoPass.minDistance = 0.02;
+      this.ssaoPass.maxDistance = this.ssaoPass.kernelRadius;
+      this.ssaoPass.strength = quality.ssao === 'strong' ? 0.6 : 0.35;
     }
     this.frameCoordinator.setPassEnabled('bloom', quality.bloom !== 'off');
     this.bloomPass.strength = quality.bloomStrength

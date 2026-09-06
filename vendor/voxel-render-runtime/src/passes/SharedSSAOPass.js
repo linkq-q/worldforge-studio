@@ -31,7 +31,6 @@ import {
   ZeroFactor,
 } from 'three';
 import { Pass, FullScreenQuad } from 'three/addons/postprocessing/Pass.js';
-import { SimplexNoise } from 'three/addons/math/SimplexNoise.js';
 import { SSAOShader, SSAODepthShader } from 'three/addons/shaders/SSAOShader.js';
 import { CopyShader } from 'three/addons/shaders/CopyShader.js';
 import { TraceGate } from '../debug/TraceGate.js';
@@ -44,6 +43,7 @@ const DepthAwareSSAOBlurShader = {
     resolution: { value: new Vector2() },
     cameraNear: { value: 0.1 },
     cameraFar: { value: 1000 },
+    strength: { value: 1 },
   },
   vertexShader: /* glsl */`
     varying vec2 vUv;
@@ -55,11 +55,12 @@ const DepthAwareSSAOBlurShader = {
   `,
   fragmentShader: /* glsl */`
     uniform sampler2D tDiffuse;
-    uniform sampler2D tDepth;
-    uniform sampler2D tNormal;
+    uniform highp sampler2D tDepth;
+    uniform highp sampler2D tNormal;
     uniform vec2 resolution;
     uniform float cameraNear;
     uniform float cameraFar;
+    uniform float strength;
     varying vec2 vUv;
 
     #include <packing>
@@ -103,7 +104,7 @@ const DepthAwareSSAOBlurShader = {
       }
 
       float occlusion = weightSum > 0.0 ? result / weightSum : texture2D(tDiffuse, vUv).r;
-      gl_FragColor = vec4(vec3(occlusion), 1.0);
+      gl_FragColor = vec4(vec3(mix(1.0, occlusion, strength)), 1.0);
     }
   `,
 };
@@ -127,13 +128,15 @@ export class SharedSSAOPass extends Pass {
     this.camera = camera;
     this.scene = scene;
 
-    this.kernelRadius = 5;
+    this.kernelRadius = 0.75;
     this.kernel = [];
     this.noiseTexture = null;
     this.output = 0;
 
-    this.minDistance = 0.005;
-    this.maxDistance = 0.05;
+    // Public distances are scene units; Three's shader uses normalized depth.
+    this.minDistance = 0.02;
+    this.maxDistance = 0.75;
+    this.strength = 0.35;
 
     // ── Shared prePass textures (set via setSharedNormalDepth) ──
     /** @type {THREE.Texture|null} */
@@ -161,7 +164,22 @@ export class SharedSSAOPass extends Pass {
       defines: Object.assign({}, SSAOShader.defines),
       uniforms: UniformsUtils.clone(SSAOShader.uniforms),
       vertexShader: SSAOShader.vertexShader,
-      fragmentShader: SSAOShader.fragmentShader,
+      fragmentShader: SSAOShader.fragmentShader
+        .replace(/vec3 random = vec3\([\s\S]*?mat3 kernelMatrix = mat3\( tangent, bitangent, viewNormal \);/, /* glsl */`
+          // Rotate a stable normal-aligned basis through a full turn.
+          float angle = texture2D(tNoise, vUv * noiseScale).r * 6.28318530718;
+          vec3 axis = abs(viewNormal.z) < 0.999 ? vec3(0.0, 0.0, 1.0) : vec3(0.0, 1.0, 0.0);
+          vec3 baseTangent = normalize(cross(axis, viewNormal));
+          vec3 baseBitangent = cross(viewNormal, baseTangent);
+          vec3 tangent = cos(angle) * baseTangent + sin(angle) * baseBitangent;
+          vec3 bitangent = cross(viewNormal, tangent);
+          mat3 kernelMatrix = mat3(tangent, bitangent, viewNormal);
+        `)
+        .replace('vec4 samplePointNDC =', 'if (samplePoint.z >= -cameraNear) continue;\nvec4 samplePointNDC =')
+        .replace('float realDepth =', `
+          if (any(lessThan(samplePointUv, vec2(0.0))) || any(greaterThan(samplePointUv, vec2(1.0)))) continue;
+          float realDepth =
+        `),
       blending: NoBlending,
     });
 
@@ -295,13 +313,15 @@ export class SharedSSAOPass extends Pass {
     // Render SSAO
     const tSsaoStart = performance.now();
     this.ssaoMaterial.uniforms['kernelRadius'].value = this.kernelRadius;
-    this.ssaoMaterial.uniforms['minDistance'].value = this.minDistance;
-    this.ssaoMaterial.uniforms['maxDistance'].value = this.maxDistance;
+    const depthRange = this.camera.far - this.camera.near;
+    this.ssaoMaterial.uniforms['minDistance'].value = this.minDistance / depthRange;
+    this.ssaoMaterial.uniforms['maxDistance'].value = this.maxDistance / depthRange;
     this._renderPass(renderer, this.ssaoMaterial, this.ssaoRenderTarget);
     tSsao = performance.now() - tSsaoStart;
 
     // Render blur
     const tBlurStart = performance.now();
+    this.blurMaterial.uniforms['strength'].value = Math.max(0, Math.min(1, this.strength));
     this._renderPass(renderer, this.blurMaterial, this.blurRenderTarget);
     tBlur = performance.now() - tBlurStart;
 
@@ -443,20 +463,17 @@ export class SharedSSAOPass extends Pass {
     const width = 4;
     const height = 4;
 
-    const simplex = new SimplexNoise();
-
     const size = width * height;
     const data = new Float32Array(size);
 
     for (let i = 0; i < size; i++) {
-      const x = Math.random() * 2 - 1;
-      const y = Math.random() * 2 - 1;
-      const z = 0;
-
-      data[i] = simplex.noise3d(x, y, z);
+      // Fixed, permuted angular strata: all 16 orientations on every load.
+      data[i] = ((i * 7) % size + 0.5) / size;
     }
 
     this.noiseTexture = new DataTexture(data, width, height, RedFormat, FloatType);
+    this.noiseTexture.minFilter = NearestFilter;
+    this.noiseTexture.magFilter = NearestFilter;
     this.noiseTexture.wrapS = RepeatWrapping;
     this.noiseTexture.wrapT = RepeatWrapping;
     this.noiseTexture.needsUpdate = true;

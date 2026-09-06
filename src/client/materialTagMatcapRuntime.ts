@@ -148,7 +148,9 @@ ${shader.fragmentShader}`;
     if (uTextureMatcapMode == 0) {
       mcLit = gl_FragColor.rgb * mcColor;
     } else if (uTextureMatcapMode == 2) {
-      mcLit = gl_FragColor.rgb * (mcColor / max(uTextureMatcapAvgLuma, 0.05));
+      // Keep the physically lit response; the previous full tint could
+      // flatten local lights into a camera-only MatCap look.
+      mcLit = gl_FragColor.rgb * mix(vec3(1.0), mcColor / max(uTextureMatcapAvgLuma, 0.05), 0.62);
     }
     gl_FragColor.rgb = mix(gl_FragColor.rgb, mcLit, clamp(uTextureMatcapBlend, 0.0, 1.0));
   }

@@ -265,8 +265,10 @@ declare module '@voxel-studio/render-runtime/postprocess' {
   }
   export class SharedSSAOPass extends Pass {
     kernelRadius: number;
+    /** View-depth distance thresholds in scene units, not normalized depth. */
     minDistance: number;
     maxDistance: number;
+    strength: number;
     constructor(
       scene: import('three').Scene,
       camera: import('three').Camera,

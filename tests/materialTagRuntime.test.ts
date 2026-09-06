@@ -9,6 +9,45 @@ import { normalizeMaterialTagPolicy, type MapMaterialTagPolicy } from '../src/sh
 import type { MapAsset } from '../src/shared/map';
 
 describe('WorldForge material tag runtime', () => {
+  it('uses hybrid glass for small voxel containers and physical transmission for large panes', () => {
+    const scene = new THREE.Scene();
+    const modelsRoot = new THREE.Group();
+    const modelRoot = new THREE.Group();
+    modelRoot.userData.mapObjectId = 'glass-object';
+    modelRoot.userData.materialTagSource = {
+      name: 'glass-asset',
+      nodes: [{ id: 'glass', mesh: { type: 'box' }, tags: [{ tag: 'base', value: 'glass' }] }]
+    };
+    const small = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.2, 0.2), new THREE.MeshStandardMaterial());
+    small.userData.nodeId = 'glass';
+    modelRoot.add(small);
+    modelsRoot.add(modelRoot);
+    scene.add(modelsRoot);
+    const runtime = createRuntime(scene, modelsRoot, new Map([['glass-object', modelRoot]]));
+    runtime.apply(modelsRoot);
+    const smallMaterial = small.material as THREE.Material & { userData: { glassParams?: Record<string, unknown> } };
+    expect(smallMaterial.userData.glassParams).toMatchObject({ renderMode: 'hybrid', transmission: 0 });
+
+    runtime.dispose();
+    small.geometry.dispose();
+    smallMaterial.dispose();
+
+    const pane = new THREE.Mesh(new THREE.BoxGeometry(4, 2, 0.08), new THREE.MeshStandardMaterial());
+    const paneRoot = new THREE.Group();
+    paneRoot.userData.mapObjectId = 'pane-object';
+    paneRoot.userData.materialTagSource = modelRoot.userData.materialTagSource;
+    pane.userData.nodeId = 'glass';
+    paneRoot.add(pane);
+    modelsRoot.add(paneRoot);
+    const paneRuntime = createRuntime(scene, modelsRoot, new Map([['pane-object', paneRoot]]));
+    paneRuntime.apply(modelsRoot);
+    const paneMaterial = pane.material as THREE.Material & { userData: { glassParams?: Record<string, unknown> } };
+    expect(paneMaterial.userData.glassParams).toMatchObject({ renderMode: 'physical', transmission: 0.95 });
+    paneRuntime.dispose();
+    pane.geometry.dispose();
+    paneMaterial.dispose();
+  });
+
   it('compiles striped and checked plastic fabric into fixed batchable recipes', () => {
     const model = {
       name: 'market-awning',
