@@ -224,6 +224,8 @@ describe('render AI adapter', () => {
       'runtime.terrain-materials',
       'runtime.weather',
       'runtime.atmosphere-fx',
+      'runtime.volumetric-light',
+      'runtime.glass-style',
       'runtime.effect-recipe',
       'runtime.shader-extension'
     ]);

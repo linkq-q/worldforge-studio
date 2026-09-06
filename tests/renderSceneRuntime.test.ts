@@ -44,6 +44,15 @@ function createTargets() {
 }
 
 describe('applyRenderScheme', () => {
+  it('removes local scattering when clearing the scheme', () => {
+    const { targets } = createTargets();
+    const volumetricLight = { apply: vi.fn(), clear: vi.fn() };
+    targets.volumetricLight = volumetricLight;
+    applyRenderScheme(targets, STYLED_SCHEME);
+    applyRenderScheme(targets, null);
+    expect(volumetricLight.clear).toHaveBeenCalledOnce();
+  });
+
   it('pushes a scheme onto lights, exposure, fog and the runtime adapter', () => {
     const { targets, adapter, styleManager, rendered } = createTargets();
     const scheme = STYLED_SCHEME;

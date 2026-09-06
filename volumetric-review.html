@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="zh"><meta charset="utf-8"><title>炼金工坊 · 局部体积雾验证</title>
+<style>body{margin:0;background:#171819;color:#eee;font:14px sans-serif;overflow:hidden}canvas{width:100vw;height:calc(100vh - 84px);display:block}button{padding:8px;margin:4px}pre{margin:4px;font-size:12px;white-space:pre-wrap}#comparison{position:fixed;bottom:84px;left:0;max-width:100%;max-height:110px;overflow:auto;background:#111c}</style>
+<canvas id="scene"></canvas><button id="fog">关闭局部雾</button><button id="main">整体</button><button id="upper">吊灯</button><button id="cold">冷光</button><button id="inside">雾内</button><button id="measure">测量开关差异</button><pre id="status">加载中</pre>
+<script type="module">
+const gameRuntime = new URLSearchParams(location.search).get('runtime') === 'game';
+const runtimeUrl = gameRuntime ? 'http://127.0.0.2:5180/node_modules/worldforge-studio/src/client/mapViewer.ts' : './src/client/mapViewer.ts';
+const { createMapViewer } = await import(/* @vite-ignore */ runtimeUrl);
+const api = 'http://127.0.0.1:8787';
+const status = document.querySelector('#status');
+try {
+  const { map } = await (await fetch(api + '/api/maps/map-ff627f67-c402-40b2')).json();
+  const viewer = await createMapViewer({canvas:document.querySelector('canvas'),map,scheme:map.renderScheme,autoStart:false,pixelRatio:1,hdriUrl:file=>api+'/api/maps/hdri/'+encodeURIComponent(file)});
+  const volume = viewer.runtime.volumetricLight.group;
+  const localLights = viewer.scene.getObjectByName('mapLocalLights').children.filter(light=>light.isPointLight||light.isSpotLight);
+  const views = {main:[[4,5,8],[0,3,0]],upper:[[0,6.4,10],[0,7,-3]],cold:[[-7,7,0],[-12,6,-8]],inside:[[-2.9,6.2,-4.7],[-2,5,0]]};
+  function setView(id){const [position,target]=views[id];viewer.camera.position.set(...position);viewer.camera.lookAt(...target);document.querySelector('#comparison')?.remove();}
+  function resize(){viewer.setSize(innerWidth,innerHeight-84);}
+  resize();setView('main');addEventListener('resize',resize);
+  for(const id of Object.keys(views)) document.getElementById(id).onclick=()=>setView(id);
+  document.querySelector('#fog').onclick=()=>{volume.visible=!volume.visible;document.querySelector('#fog').textContent=volume.visible?'关闭局部雾':'打开局部雾';};
+  const lightState=()=>JSON.stringify(localLights.map(light=>[light.uuid,light.intensity,light.visible,...light.position.toArray()]));
+  viewer.tick(0);const baselineLights=lightState();let orbitStable=true;
+  for(let step=0;step<24;step++){const angle=step*Math.PI/12;viewer.camera.position.set(Math.sin(angle)*35,14,Math.cos(angle)*35);viewer.camera.lookAt(0,3,0);viewer.tick(0);orbitStable&&=lightState()===baselineLights;}
+  setView('main');viewer.tick(0);
+  let frames=0,seconds=0,last=performance.now();
+  const detail=()=>volume.children.map(mesh=>{const d=mesh.material.uniforms.uLightDepth.value.image.data;const red=Array.from(d).filter((_,i)=>i%4===0);return {id:mesh.userData.sourceId,density:mesh.material.uniforms.uDensity.value,depth:mesh.material.uniforms.uHasDepth.value,shadowMin:Math.min(...red),shadowMax:Math.max(...red),blocked:red.filter(v=>v<20).length};});
+  function draw(){const now=performance.now();const delta=Math.min(.05,(now-last)/1000);last=now;viewer.tick(delta);seconds+=delta;frames++;if(frames%30===0)status.textContent=JSON.stringify({runtime:gameRuntime?'hAIde-seek':'WorldForge',scheme:map.renderScheme.name,pointLights:localLights.filter(light=>light.isPointLight).length,spotLights:localLights.filter(light=>light.isSpotLight).length,orbitStable,volumes:volume.children.length,enabled:volume.visible,depthReady:detail().every(x=>x.depth===1),fps:Math.round(frames/seconds),errors:viewer.renderer.info.programs?.filter(p=>p.diagnostics?.runnable===false).length});requestAnimationFrame(draw);}
+  requestAnimationFrame(draw);
+  document.querySelector('#measure').onclick=()=>{
+    const gl=viewer.renderer.getContext(),n=gl.drawingBufferWidth*gl.drawingBufferHeight;
+    const sample=enabled=>{volume.visible=enabled;viewer.tick(0);const p=new Uint8Array(n*4);gl.readPixels(0,0,gl.drawingBufferWidth,gl.drawingBufferHeight,gl.RGBA,gl.UNSIGNED_BYTE,p);return p;};
+    const off=sample(false),on=sample(true);let before=0,after=0,changed=0,max=0;
+    for(let i=0;i<n;i++){const a=off[i*4]*.2126+off[i*4+1]*.7152+off[i*4+2]*.0722,b=on[i*4]*.2126+on[i*4+1]*.7152+on[i*4+2]*.0722;before+=a;after+=b;if(Math.abs(a-b)>1)changed++;max=Math.max(max,Math.abs(a-b));}
+    const report=document.createElement('pre');report.id='comparison';report.textContent=JSON.stringify({before:before/n,after:after/n,changedPercent:100*changed/n,maxDelta:max,volumes:detail()});document.querySelector('#comparison')?.remove();document.body.append(report);
+  };
+}catch(error){status.textContent=String(error);console.error(error);}
+</script></html>

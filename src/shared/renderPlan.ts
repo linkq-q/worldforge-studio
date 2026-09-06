@@ -26,6 +26,8 @@ export type RenderModuleId =
   | 'runtime.weather'
   | 'runtime.effect-recipe'
   | 'runtime.atmosphere-fx'
+  | 'runtime.volumetric-light'
+  | 'runtime.glass-style'
   | 'runtime.shader-extension';
 
 export type RenderScopeTarget = 'scene' | 'water' | 'material-tag' | 'asset-tag';
@@ -577,6 +579,36 @@ export const RENDER_CAPABILITIES: readonly RenderCapability[] = [
     }
   },
   {
+    id: 'runtime.volumetric-light',
+    label: '体积光束',
+    priority: 'P2',
+    availability: 'limited',
+    availabilityNote: '使用受限透明光锥与动态尘埃近似丁达尔散射；只作用于当前渲染方案。',
+    params: {
+      mode: { type: 'enum', values: ['off', 'soft', 'shafts'], default: 'soft' },
+      strength: { type: 'number', min: 0, max: 1, default: 0.45 },
+      fixtureStrength: { type: 'number', min: 0, max: 1, default: 0.42 },
+      windowStrength: { type: 'number', min: 0, max: 1, default: 0.6 },
+      dust: { type: 'number', min: 0, max: 1, default: 0.28 },
+      length: { type: 'number', min: 1, max: 8, default: 4.5 },
+      occlusion: { type: 'enum', values: ['none', 'large-geometry'], default: 'large-geometry' }
+    }
+  },
+  {
+    id: 'runtime.glass-style',
+    label: '玻璃质感',
+    priority: 'P2',
+    availability: 'ready',
+    availabilityNote: '仅覆盖当前场景的 base:glass 材质，保留原色并增强透射、厚度与边缘反射。',
+    params: {
+      transmission: { type: 'number', min: 0, max: 1, default: 0.72 },
+      roughness: { type: 'number', min: 0, max: 1, default: 0.2 },
+      ior: { type: 'number', min: 1, max: 2.5, default: 1.45 },
+      thickness: { type: 'number', min: 0, max: 0.5, default: 0.08 },
+      envIntensity: { type: 'number', min: 0, max: 2, default: 0.85 }
+    }
+  },
+  {
     id: 'runtime.effect-recipe',
     label: '标签特效配方',
     priority: 'P3',
@@ -914,6 +946,53 @@ export function compileRuntimeLightRig(plan: RenderPlan): RuntimeLightRig {
     warmth: numericValue(params.warmth) ?? directed?.warmth,
     shadowSoftness: numericValue(params.shadowSoftness) ?? directed?.shadowSoftness
   };
+}
+
+export interface RuntimeVolumetricLight {
+  mode: 'off' | 'soft' | 'shafts';
+  strength: number;
+  fixtureStrength: number;
+  windowStrength: number;
+  dust: number;
+  length: number;
+  occlusion: 'none' | 'large-geometry';
+}
+
+export function compileRuntimeVolumetricLight(plan: RenderPlan): RuntimeVolumetricLight {
+  const params = plan.modules.find((item) => item.id === 'runtime.volumetric-light')?.params ?? {};
+  return {
+    mode: enumValue(params.mode, ['off', 'soft', 'shafts'], 'off'),
+    strength: clampNumber(numericValue(params.strength) ?? 0.45, 0, 1),
+    fixtureStrength: clampNumber(numericValue(params.fixtureStrength) ?? 0.42, 0, 1),
+    windowStrength: clampNumber(numericValue(params.windowStrength) ?? 0.6, 0, 1),
+    dust: clampNumber(numericValue(params.dust) ?? 0.28, 0, 1),
+    length: clampNumber(numericValue(params.length) ?? 4.5, 1, 8),
+    occlusion: params.occlusion === 'none' ? 'none' : 'large-geometry'
+  };
+}
+
+export interface RuntimeGlassStyle {
+  transmission: number;
+  roughness: number;
+  ior: number;
+  thickness: number;
+  envIntensity: number;
+}
+
+export function compileRuntimeGlassStyle(plan: RenderPlan): RuntimeGlassStyle | null {
+  const params = plan.modules.find((item) => item.id === 'runtime.glass-style')?.params;
+  if (!params) return null;
+  return {
+    transmission: clampNumber(numericValue(params.transmission) ?? 0.72, 0, 1),
+    roughness: clampNumber(numericValue(params.roughness) ?? 0.2, 0, 1),
+    ior: clampNumber(numericValue(params.ior) ?? 1.45, 1, 2.5),
+    thickness: clampNumber(numericValue(params.thickness) ?? 0.08, 0, 0.5),
+    envIntensity: clampNumber(numericValue(params.envIntensity) ?? 0.85, 0, 2)
+  };
+}
+
+function clampNumber(value: number, min: number, max: number): number {
+  return Math.min(max, Math.max(min, value));
 }
 
 export function compileRuntimePostQuality(plan: RenderPlan): RuntimePostQuality {

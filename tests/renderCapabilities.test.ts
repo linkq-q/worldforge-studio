@@ -4,9 +4,11 @@ import {
   compileRuntimeEffectRecipes,
   compileRuntimeHdriSky,
   compileRuntimeGrassStyle,
+  compileRuntimeGlassStyle,
   compileRuntimeLightRig,
   compileRuntimeMaterialThemes,
   compileRuntimePostQuality,
+  compileRuntimeVolumetricLight,
   compileRuntimeWaterStyles,
   compileRenderPlan,
   createDefaultRenderAccessPolicy,
@@ -214,6 +216,34 @@ describe('RenderPlan V2 capabilities', () => {
       });
       expect(compileRuntimeLightRig(plan).recipe).toBe(recipe);
     }
+  });
+
+  it('compiles alchemy glass and volumetric light settings', () => {
+    const plan = normalizeRenderPlan({
+      version: 2,
+      baseSchemeId: 'render-golden-hour',
+      modules: [
+        {
+          id: 'runtime.glass-style',
+          params: { transmission: 0.72, roughness: 0.2, ior: 1.45, thickness: 0.08, envIntensity: 0.85 }
+        },
+        {
+          id: 'runtime.volumetric-light',
+          params: {
+            mode: 'soft', strength: 0.45, fixtureStrength: 0.42,
+            windowStrength: 0.6, dust: 0.28, length: 4.5, occlusion: 'large-geometry'
+          }
+        }
+      ]
+    });
+
+    expect(compileRuntimeGlassStyle(plan)).toEqual({
+      transmission: 0.72, roughness: 0.2, ior: 1.45, thickness: 0.08, envIntensity: 0.85
+    });
+    expect(compileRuntimeVolumetricLight(plan)).toEqual({
+      mode: 'soft', strength: 0.45, fixtureStrength: 0.42,
+      windowStrength: 0.6, dust: 0.28, length: 4.5, occlusion: 'large-geometry'
+    });
   });
 
   it('compiles semantic fog visibility before the legacy density control', () => {

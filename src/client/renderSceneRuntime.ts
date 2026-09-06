@@ -3,6 +3,7 @@ import { RenderStyleManager } from '@voxel-studio/render-runtime';
 import { configureSunLight } from './lighting';
 import { HDRI_DOME_RADIUS, HdriSkyController } from './hdriSky';
 import { AtmosphereFxRuntime } from './atmosphereFxRuntime';
+import { VolumetricLightRuntime } from './volumetricLightRuntime';
 import { WeatherRuntime, type WeatherFrame } from './weatherRuntime';
 import { RenderRuntimeAdapter } from './renderRuntimeAdapter';
 import { configureRendererOutput } from './renderOutputPipeline';
@@ -34,6 +35,8 @@ import {
   compileRuntimeMaterialThemes,
   compileRuntimeOutline,
   compileRuntimePostQuality,
+  compileRuntimeVolumetricLight,
+  compileRuntimeGlassStyle,
   compileRuntimePresentation,
   compileRuntimeStyle,
   compileRuntimeTerrainMaterialStyle,
@@ -65,8 +68,9 @@ export interface RenderSchemeTargets {
     | 'applyScopedCapabilities'
   >;
   hdriSky: Pick<HdriSkyController, 'apply' | 'clear'>;
+  volumetricLight?: Pick<VolumetricLightRuntime, 'apply' | 'clear'>;
   rendered: (Pick<RenderedMap, 'setGrassStyle' | 'setLightingTimeOfDay'>
-    & Partial<Pick<RenderedMap, 'setColorPalette'>>) | null;
+    & Partial<Pick<RenderedMap, 'group' | 'objectGroups' | 'modelsRoot' | 'setColorPalette'>>) | null;
   map?: EditableMap | null;
   updateLighting(): void;
 }
@@ -102,6 +106,7 @@ export class RenderSceneRuntime {
   readonly adapter: RenderRuntimeAdapter;
   readonly hdriSky: HdriSkyController;
   readonly atmosphereFx: AtmosphereFxRuntime;
+  readonly volumetricLight: VolumetricLightRuntime;
   readonly weather: WeatherRuntime;
 
   /** Source of truth for sun placement and shadow fit. */
@@ -159,6 +164,8 @@ export class RenderSceneRuntime {
       (environmentMap, waterEnvironmentMap) => this.adapter.syncEnvironment(environmentMap, waterEnvironmentMap)
     );
     this.atmosphereFx = new AtmosphereFxRuntime(this.scene);
+    this.volumetricLight = new VolumetricLightRuntime(this.scene);
+    this.adapter.setVolumetricLight(this.volumetricLight);
     this.weather = new WeatherRuntime(this.scene, this.camera, this.renderer);
   }
 
@@ -173,6 +180,7 @@ export class RenderSceneRuntime {
    * needs to control that around undo.
    */
   attach(rendered: RenderedMap | null): void {
+    this.volumetricLight?.clear();
     this.meshRegistry.clear();
     this.adapter.setSceneRoots(
       rendered?.group ?? null,
@@ -217,6 +225,7 @@ export class RenderSceneRuntime {
     this.updateRainRipples(weatherFrame, deltaTime, elapsedSeconds);
     this.rendered?.update(deltaTime, this.camera, this.adapter.getContentVisibilityDistance());
     this.atmosphereFx.update(deltaTime, elapsedSeconds);
+    this.volumetricLight?.update(elapsedSeconds);
     this.adapter.tick(deltaTime, elapsedSeconds);
     this.adapter.render();
   }
@@ -273,6 +282,7 @@ export class RenderSceneRuntime {
   dispose(): void {
     this.weather.dispose();
     this.atmosphereFx.dispose();
+    this.volumetricLight?.dispose();
     this.hdriSky.dispose();
     this.renderer.dispose();
   }
@@ -412,6 +422,7 @@ export function applyRenderScheme(targets: RenderSchemeTargets, scheme: RenderSc
   adapter.resetScopedCapabilities();
 
   if (!scheme) {
+    targets.volumetricLight?.clear();
     styleManager.applyStyle({ renderMode: 'pbr' });
     adapter.applyOutline({ mode: 'none', params: {} });
     adapter.applyPresentation({ mode: 'none', sketch: {}, paper: {}, comic: {} });
@@ -483,6 +494,14 @@ export function applyRenderScheme(targets: RenderSchemeTargets, scheme: RenderSc
     palette ? paletteWaterStyles(palette, waterStyles) : waterStyles,
     palette ? paletteEffectRecipes(palette, effects) : effects
   );
+  targets.volumetricLight?.apply(
+    targets.map ?? null,
+    targets.rendered,
+    plan
+      ? compileRuntimeVolumetricLight(plan)
+      : { mode: 'off', strength: 0, fixtureStrength: 0, windowStrength: 0, dust: 0, length: 4.5, occlusion: 'large-geometry' }
+  );
+  applyGlassStyle(targets.rendered, plan ? compileRuntimeGlassStyle(plan) : null);
   targets.rendered?.setColorPalette?.(palette ?? null);
   if (plan) {
     const hdri = compileRuntimeHdriSky(plan);
@@ -530,6 +549,63 @@ function deriveEnvironmentGrassColors(
     0.18 + exposureMix
   );
   return { rootColor, tipColor, groundColor };
+}
+
+function applyGlassStyle(
+  rendered: (Partial<Pick<RenderedMap, 'modelsRoot'>> & { modelsRoot?: THREE.Group }) | null,
+  style: ReturnType<typeof compileRuntimeGlassStyle>
+): void {
+  const root = rendered?.modelsRoot;
+  if (!root) return;
+  root.traverse((object) => {
+    const mesh = object as THREE.Mesh;
+    if (!mesh.isMesh || !hasGlassTag(object)) return;
+    const existingMaterial = mesh.material;
+    const hasMaterialArray = Array.isArray(existingMaterial);
+    const materials: THREE.Material[] = hasMaterialArray ? existingMaterial : [existingMaterial];
+    const nextMaterials = materials.map((material) => {
+      const current = material as THREE.MeshStandardMaterial & { transmission?: number; ior?: number; thickness?: number; envMapIntensity?: number };
+      if (!style) return current;
+      if (!(current instanceof THREE.MeshPhysicalMaterial)) {
+        const replacement = new THREE.MeshPhysicalMaterial({
+          color: current.color,
+          map: current.map,
+          normalMap: current.normalMap,
+          roughness: style.roughness,
+          metalness: current.metalness,
+          transparent: true,
+          opacity: Math.min(0.96, Math.max(0.35, current.opacity)),
+          transmission: style.transmission,
+          ior: style.ior,
+          thickness: style.thickness,
+          envMapIntensity: style.envIntensity,
+          flatShading: current.flatShading
+        });
+        replacement.name = current.name;
+        replacement.needsUpdate = true;
+        return replacement;
+      }
+      current.transmission = style.transmission;
+      current.roughness = style.roughness;
+      current.ior = style.ior;
+      current.thickness = style.thickness;
+      current.envMapIntensity = style.envIntensity;
+      current.transparent = true;
+      current.needsUpdate = true;
+      return current;
+    });
+    mesh.material = hasMaterialArray ? nextMaterials : nextMaterials[0];
+  });
+}
+
+function hasGlassTag(object: THREE.Object3D): boolean {
+  let current: THREE.Object3D | null = object;
+  while (current) {
+    const tags = Array.isArray(current.userData.materialTags) ? current.userData.materialTags : [];
+    if (tags.some((tag: unknown) => tag === 'base:glass' || (tag && typeof tag === 'object' && `${(tag as any).tag}:${(tag as any).value}` === 'base:glass'))) return true;
+    current = current.parent;
+  }
+  return false;
 }
 
 function waterStylesWithSharedWind(

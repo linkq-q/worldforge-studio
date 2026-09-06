@@ -36,6 +36,7 @@ import {
 import { createComposerRenderTarget } from './renderOutputPipeline';
 import { RenderFrameCoordinator, type RenderPrePassResources } from './renderFrameCoordinator';
 import { isNormalDepthPrePassMesh } from './renderPrePassPolicy';
+import type { VolumetricLightRuntime } from './volumetricLightRuntime';
 import type {
   RuntimeColorGrade,
   RuntimeEffectRecipe,
@@ -104,6 +105,11 @@ export class RenderRuntimeAdapter {
   private height = 1;
   private pixelRatio = 0;
   private postProcessingBypassed = false;
+  private volumetricLight: VolumetricLightRuntime | null = null;
+
+  setVolumetricLight(runtime: VolumetricLightRuntime): void {
+    this.volumetricLight = runtime;
+  }
 
   constructor(
     private readonly renderer: THREE.WebGLRenderer,
@@ -690,7 +696,10 @@ export class RenderRuntimeAdapter {
   }
 
   render(): void {
-    if (this.postProcessingBypassed) this.renderer.render(this.scene, this.camera);
+    if (this.postProcessingBypassed) {
+      if (this.volumetricLight?.group.visible) this.producePrePass();
+      this.renderer.render(this.scene, this.camera);
+    }
     else this.frameCoordinator.renderFrame(this.pendingDeltaTime, this.pendingElapsedSeconds);
   }
 
@@ -699,7 +708,8 @@ export class RenderRuntimeAdapter {
       && Number(this.sketchPass.uniforms.uHatchSpaceMode?.value ?? 1) > 0.5;
     const needsComicEdge = this.comicPass.enabled
       && Number(this.comicPass.uniforms.uLineBoost?.value ?? 0) > 0;
-    return this.waterBindings.some((binding) => binding.usesSceneDepth)
+    return this.volumetricLight?.group.visible === true
+      || this.waterBindings.some((binding) => binding.usesSceneDepth)
       || this.inkPass.enabled
       || needsComicEdge
       || this.curvaturePass.enabled
@@ -714,6 +724,9 @@ export class RenderRuntimeAdapter {
     this.renderNormalDepth(this.contentRoot);
     const normalTexture = this.normalTarget.texture;
     const depthTexture = this.normalTarget.depthTexture;
+    if (depthTexture && this.volumetricLight?.group.visible) {
+      this.volumetricLight.bindDepth(depthTexture, this.camera, this.normalTarget.width, this.normalTarget.height);
+    }
     const needsSketchWorld = this.sketchPass.enabled
       && Number(this.sketchPass.uniforms.uHatchSpaceMode?.value ?? 1) > 0.5;
 
