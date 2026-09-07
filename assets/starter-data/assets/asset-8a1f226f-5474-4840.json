@@ -1,53 +1,48 @@
 {
- "id": "asset-4868a376-be44-4761",
- "name": "一串葡萄",
- "prompt": "One standalone naturally connected bunch of grapes only, one complete fruit bunch attached to a single short stem, plant-colored visible skin tagged plant, no bowl, no basket, no vine, no leaves, no soil, no plate, no other fruit, no scene, no background. Coordinate contract: Y+ is up, Z+ is the front/entrance/forward direction, X+ is right; place doors, facades, openings, windshields, or noses toward local Z+ and keep the model centered at its origin.\nCoordinate contract: local Y+ is up, local Z+ is the front, entrance, or forward direction, and local X+ is right. Put doors, facades, openings, windshields, noses, seats, and other recognizable front details toward local Z+. For a modular repeated element, explicitly choose the long axis: side-by-side modules span local X with depth/front on local Z; traversal modules span local Z. Keep the model centered at its origin.\nCanonical dimensions contract: width=0.24, height=0.32, depth=0.2 world units. Keep the generated mesh within this centered bounding size.",
- "tags": [
-  "fruit",
-  "grape",
-  "independent"
- ],
+ "id": "asset-8a1f226f-5474-4840",
+ "name": "大白菜",
+ "prompt": "Standalone individual harvested produce asset. Exactly one harvested napa cabbage head, upright elongated pale ribs and green leaves, no additional vegetables. No container, ground, scene, text or background. Tag visible plant tissue with palette role plant while retaining recognizable produce colors. Coordinate contract: Y+ is up, Z+ is the front/entrance/forward direction, X+ is right; place doors, facades, openings, windshields, or noses toward local Z+ and keep the model centered at its orig\nCoordinate contract: local Y+ is up, local Z+ is the front, entrance, or forward direction, and local X+ is right. Put doors, facades, openings, windshields, noses, seats, and other recognizable front details toward local Z+. For a modular repeated element, explicitly choose the long axis: side-by-side modules span local X with depth/front on local Z; traversal modules span local Z. Keep the model centered at its origin.\nCanonical dimensions contract: width=0.32, height=0.6, depth=0.32 world units. Keep the generated mesh within this centered bounding size.",
  "modelJson": {
-  "name": "自然连接的葡萄串",
+  "name": "大白菜",
   "type": "lowpoly",
   "format": 2,
   "nodes": [
    {
-    "id": "grape_bunch",
-    "name": "完整葡萄串",
+    "id": "cabbage",
+    "name": "单颗收获大白菜",
     "transform": {
      "pos": [
       0,
-      0.16,
+      0,
       0
      ]
     },
     "_obb": {
      "size": [
-      0.217,
-      0.333,
-      0.128
+      0.323,
+      0.603,
+      0.327
      ],
      "center": [
       0,
-      -0.16,
+      0,
       0
      ],
      "axes": [
       [
-       0.9965,
-       0.0104,
-       -0.0825
+       1,
+       0,
+       0
       ],
       [
-       -0.0136,
-       0.9992,
-       -0.0378
+       0,
+       0.9999,
+       -0.0168
       ],
       [
-       0.082,
-       0.0388,
-       0.9959
+       0,
+       0.0168,
+       0.9999
       ]
      ],
      "_mainAxis": 1
@@ -55,406 +50,386 @@
    },
    {
     "id": "m0",
-    "parent": "grape_bunch",
+    "parent": "cabbage",
     "transform": {
      "pos": [
-      -0.07,
-      -0.09,
+      0,
+      -0.265,
       0
      ]
     },
     "mesh": {
      "type": "box",
      "params": {
-      "width": 0.068,
-      "height": 0.068,
-      "depth": 0.068
+      "width": 0.17,
+      "height": 0.07,
+      "depth": 0.17
      },
-     "color": 5913978,
-     "material": {
-      "roughness": 0.4
-     }
-    },
-    "tags": [
-     {
-      "tag": "vegetation",
-      "value": "sway"
-     }
-    ]
+     "color": 15857071
+    }
    },
    {
     "id": "m1",
-    "parent": "grape_bunch",
+    "parent": "cabbage",
     "transform": {
      "pos": [
       0,
-      -0.085,
-      0.02
+      -0.04,
+      0
      ]
     },
     "mesh": {
      "type": "box",
      "params": {
-      "width": 0.068,
-      "height": 0.068,
-      "depth": 0.068
+      "width": 0.22,
+      "height": 0.39,
+      "depth": 0.22
      },
-     "color": 8281264,
-     "material": {
-      "roughness": 0.4
-     }
-    },
-    "tags": [
-     {
-      "tag": "vegetation",
-      "value": "sway"
-     }
-    ]
+     "color": 11448175
+    }
    },
    {
     "id": "m2",
-    "parent": "grape_bunch",
+    "parent": "cabbage",
     "transform": {
      "pos": [
-      0.07,
-      -0.09,
+      0,
+      0.155,
+      0
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 0.18,
+      "height": 0.25,
+      "depth": 0.18
+     },
+     "color": 7770188
+    }
+   },
+   {
+    "id": "m3",
+    "parent": "cabbage",
+    "transform": {
+     "pos": [
+      0,
+      0.26,
+      0
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 0.13,
+      "height": 0.08,
+      "depth": 0.14
+     },
+     "color": 8427282
+    }
+   },
+   {
+    "id": "m4",
+    "parent": "cabbage",
+    "transform": {
+     "pos": [
+      -0.1275,
+      -0.025,
+      0
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 0.065,
+      "height": 0.35,
+      "depth": 0.23
+     },
+     "color": 11448175
+    }
+   },
+   {
+    "id": "m5",
+    "parent": "cabbage",
+    "transform": {
+     "pos": [
+      -0.1125,
+      0.19,
       -0.005
      ]
     },
     "mesh": {
      "type": "box",
      "params": {
-      "width": 0.068,
-      "height": 0.068,
-      "depth": 0.068
+      "width": 0.075,
+      "height": 0.14,
+      "depth": 0.2
      },
-     "color": 5913978,
-     "material": {
-      "roughness": 0.4
-     }
-    },
-    "tags": [
-     {
-      "tag": "vegetation",
-      "value": "sway"
-     }
-    ]
-   },
-   {
-    "id": "m3",
-    "parent": "grape_bunch",
-    "transform": {
-     "pos": [
-      -0.07,
-      -0.15,
-      0.025
-     ]
-    },
-    "mesh": {
-     "type": "box",
-     "params": {
-      "width": 0.068,
-      "height": 0.068,
-      "depth": 0.068
-     },
-     "color": 8281264,
-     "material": {
-      "roughness": 0.4
-     }
-    },
-    "tags": [
-     {
-      "tag": "vegetation",
-      "value": "sway"
-     }
-    ]
-   },
-   {
-    "id": "m4",
-    "parent": "grape_bunch",
-    "transform": {
-     "pos": [
-      0,
-      -0.145,
-      -0.025
-     ]
-    },
-    "mesh": {
-     "type": "box",
-     "params": {
-      "width": 0.068,
-      "height": 0.068,
-      "depth": 0.068
-     },
-     "color": 5913978,
-     "material": {
-      "roughness": 0.4
-     }
-    },
-    "tags": [
-     {
-      "tag": "vegetation",
-      "value": "sway"
-     }
-    ]
-   },
-   {
-    "id": "m5",
-    "parent": "grape_bunch",
-    "transform": {
-     "pos": [
-      0.07,
-      -0.15,
-      0.02
-     ]
-    },
-    "mesh": {
-     "type": "box",
-     "params": {
-      "width": 0.068,
-      "height": 0.068,
-      "depth": 0.068
-     },
-     "color": 8281264,
-     "material": {
-      "roughness": 0.4
-     }
-    },
-    "tags": [
-     {
-      "tag": "vegetation",
-      "value": "sway"
-     }
-    ]
+     "color": 7770188
+    }
    },
    {
     "id": "m6",
-    "parent": "grape_bunch",
+    "parent": "cabbage",
     "transform": {
      "pos": [
-      -0.045,
-      -0.21,
-      -0.02
+      -0.149,
+      -0.075,
+      0.025
      ]
     },
     "mesh": {
      "type": "box",
      "params": {
-      "width": 0.068,
-      "height": 0.068,
-      "depth": 0.068
+      "width": 0.025,
+      "height": 0.32,
+      "depth": 0.065
      },
-     "color": 5913978,
-     "material": {
-      "roughness": 0.4
-     }
-    },
-    "tags": [
-     {
-      "tag": "vegetation",
-      "value": "sway"
-     }
-    ]
+     "color": 8427282
+    }
    },
    {
     "id": "m7",
-    "parent": "grape_bunch",
+    "parent": "cabbage",
     "transform": {
      "pos": [
-      0.025,
-      -0.21,
-      0.025
+      0.1275,
+      -0.025,
+      0
      ]
     },
     "mesh": {
      "type": "box",
      "params": {
-      "width": 0.068,
-      "height": 0.068,
-      "depth": 0.068
+      "width": 0.065,
+      "height": 0.35,
+      "depth": 0.23
      },
-     "color": 8281264,
-     "material": {
-      "roughness": 0.4
-     }
-    },
-    "tags": [
-     {
-      "tag": "vegetation",
-      "value": "sway"
-     }
-    ]
+     "color": 11448175
+    }
    },
    {
     "id": "m8",
-    "parent": "grape_bunch",
+    "parent": "cabbage",
     "transform": {
      "pos": [
-      0.07,
-      -0.205,
-      -0.02
+      0.1125,
+      0.19,
+      -0.005
      ]
     },
     "mesh": {
      "type": "box",
      "params": {
-      "width": 0.068,
-      "height": 0.068,
-      "depth": 0.068
+      "width": 0.075,
+      "height": 0.14,
+      "depth": 0.2
      },
-     "color": 5913978,
-     "material": {
-      "roughness": 0.4
-     }
-    },
-    "tags": [
-     {
-      "tag": "vegetation",
-      "value": "sway"
-     }
-    ]
+     "color": 11448175
+    }
    },
    {
     "id": "m9",
-    "parent": "grape_bunch",
+    "parent": "cabbage",
     "transform": {
      "pos": [
-      -0.03,
-      -0.265,
-      0.02
-     ]
-    },
-    "mesh": {
-     "type": "box",
-     "params": {
-      "width": 0.068,
-      "height": 0.068,
-      "depth": 0.068
-     },
-     "color": 8281264,
-     "material": {
-      "roughness": 0.4
-     }
-    },
-    "tags": [
-     {
-      "tag": "vegetation",
-      "value": "sway"
-     }
-    ]
-   },
-   {
-    "id": "m10",
-    "parent": "grape_bunch",
-    "transform": {
-     "pos": [
-      0.035,
-      -0.265,
-      -0.015
-     ]
-    },
-    "mesh": {
-     "type": "box",
-     "params": {
-      "width": 0.068,
-      "height": 0.068,
-      "depth": 0.068
-     },
-     "color": 8281264,
-     "material": {
-      "roughness": 0.4
-     }
-    },
-    "tags": [
-     {
-      "tag": "vegetation",
-      "value": "sway"
-     }
-    ]
-   },
-   {
-    "id": "m11",
-    "parent": "grape_bunch",
-    "transform": {
-     "pos": [
-      0,
-      -0.29,
+      0.149,
+      -0.075,
       0.025
      ]
     },
     "mesh": {
      "type": "box",
      "params": {
-      "width": 0.068,
-      "height": 0.068,
-      "depth": 0.068
+      "width": 0.025,
+      "height": 0.32,
+      "depth": 0.065
      },
-     "color": 5913978,
-     "material": {
-      "roughness": 0.4
-     }
-    },
-    "tags": [
-     {
-      "tag": "vegetation",
-      "value": "sway"
-     }
-    ]
+     "color": 7770188
+    }
    },
    {
-    "id": "m12",
-    "parent": "grape_bunch",
+    "id": "m10",
+    "parent": "cabbage",
     "transform": {
      "pos": [
-      0.01,
-      -0.03,
-      -0.01
-     ],
-     "quat": [
-      -0.69,
-      0.07,
       0,
-      0.71
+      -0.045,
+      -0.13
      ]
     },
     "mesh": {
      "type": "box",
      "params": {
-      "width": 0.03,
-      "height": 0.024,
-      "depth": 0.07
+      "width": 0.23,
+      "height": 0.34,
+      "depth": 0.06
      },
-     "color": 9332301
+     "color": 11448175
+    }
+   },
+   {
+    "id": "m11",
+    "parent": "cabbage",
+    "transform": {
+     "pos": [
+      0,
+      0.17,
+      -0.1175
+     ]
     },
-    "tags": [
-     {
-      "tag": "vegetation",
-      "value": "sway"
-     }
-    ]
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 0.205,
+      "height": 0.15,
+      "depth": 0.065
+     },
+     "color": 8427282
+    }
+   },
+   {
+    "id": "m12",
+    "parent": "cabbage",
+    "transform": {
+     "pos": [
+      0,
+      -0.09,
+      -0.149
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 0.065,
+      "height": 0.34,
+      "depth": 0.021
+     },
+     "color": 15857071
+    }
+   },
+   {
+    "id": "m13",
+    "parent": "cabbage",
+    "transform": {
+     "pos": [
+      0,
+      0.145,
+      -0.15
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 0.035,
+      "height": 0.14,
+      "depth": 0.019
+     },
+     "color": 7770188
+    }
+   },
+   {
+    "id": "m14",
+    "parent": "cabbage",
+    "transform": {
+     "pos": [
+      0,
+      -0.045,
+      0.13
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 0.23,
+      "height": 0.34,
+      "depth": 0.06
+     },
+     "color": 8427282
+    }
+   },
+   {
+    "id": "m15",
+    "parent": "cabbage",
+    "transform": {
+     "pos": [
+      0,
+      0.17,
+      0.1175
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 0.205,
+      "height": 0.15,
+      "depth": 0.065
+     },
+     "color": 7770188
+    }
+   },
+   {
+    "id": "m16",
+    "parent": "cabbage",
+    "transform": {
+     "pos": [
+      0,
+      -0.09,
+      0.149
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 0.065,
+      "height": 0.34,
+      "depth": 0.021
+     },
+     "color": 15857071
+    }
+   },
+   {
+    "id": "m17",
+    "parent": "cabbage",
+    "transform": {
+     "pos": [
+      0,
+      0.145,
+      0.15
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 0.035,
+      "height": 0.14,
+      "depth": 0.019
+     },
+     "color": 11448175
+    }
    }
   ],
   "_meta": {
    "skipAutoCenter": true,
    "ai": {
     "v": 1,
-    "ts": 1788563021495,
+    "ts": 1788709017924,
     "provider": "gpt",
-    "data": "vMdNgXD/gdqGcVC5ylZDOzFbavW+tI8sm8qQDclXZVEWh69oJT9O6UMszIA8Xw8Af0P61aD+wNbfD0u5aMQDhhXKZ8H09xAvwhfbqISBbq7ohPihGWtx51Oh29MA1F5Hl5ZF5iAa4FFcsWQK783fYlIDRBPz76KKWnRAQbvqBNXlqznnthAiQv82FQD/9CZ26lLt8pkoF7bR1cvSe7UN0MK95wWiPJpGv7z2/bZip1UL4CJRiL0q7299FbQZ5fG0hKJq06Bgxud4ZGkX7+/dqgc76akxIG3WWP3bc36m5vgcQleLu11hLlbOnLli930BJWfkO3zlejeMU1XEC+mb4PFSbZNxIs4g5WBPBhdjc1DhpRfS2/kFl15iNQsbqrTF0FsgaTeoYV8LvU5gC7vvSmfsx6CJ3TPSHEICM6HlJuUfngV8hLrMWfOxWwxzViflvn96/EAaKHazwPs+qAZkXReDPjRi5SsYKYrhipT3rfeC5nlwKKRuVqi4aCqxJ/oLRBVK6RBBeQLJG8nY8NcbGp1xINstd9Z0qi+wQckF3je12fxnVk0PSsttSPTKUc3TdEUmMUMjBcc3LwqigbE+Irx82uEjHTLsT4S6mE9AaLaLoP8or21F6LMyGoWlFPldOpFd1nOatwiPNywI3CfKnxQPqUH0PFJixYuKVRrI1hFX7TZSAWCq3ADvng67zfUTmdRB1FfEG423NJc0CEI/zdd/L90lvpOxUrutdys6bEztKRiQDVA6xbIJP09CnWap3AY9o2qV/FztzuurLX1npTS7w+xEmA==",
+    "data": "pJNnpkDUeOP8Z1URT/ruKm3HD6+WcMc7IKsmPgoOmaIMKooSGsE24l+/WghnMJV1v8N6AoPRhIIFKRvOmeE0G9t4OHgN3940gXM97NF8aDz/OWBJN2sKiilJx5Z39TuTpSZOO1nqp4vUEE4FCODxmT/MhlQnjlaayiat3sU1Hk52Syf4FbIK+1zRvQbY0sKTQoYIHuVVAY+lLWXUT2QkS3vsC9m81uyKlIIl5sm5eP6LaBspVwuYgMLQvZebO10th4wXXSJI06OSm8fVWKK5YC4TTGKTbh6FPA8rL9gv7TGYFDALH8/AJQgZ1KFDab1+0cC8RTo4cI4BMrx/N5i3GSV7R+NuKV35Zsee4NWdVGAqpSxu0+N33OV9RZ+PNvu1KktkrFYFe18guuwjQBHZWeAMAAizAMBoNTIGE7KjngAdYf33riVDJigL1eCN24tgFny8pY059v28dyfH2prDL6/0Cc7lP7vS1UlpMOKi7R5JkIHjvt9hFM0ykUAVTtBU5PrCHZohVUmS6Jm+LbrgmFG26+wnb547UOL6Ix6S/glx8RFm1ZD/3JFeP+IK2XtqRaH6fGZ3llZrZ2qEbf7Q6lyhGlhJTkZFrifHbig4GwcXqow+WL5p7Kg3ovXM+fLIwHFZHxQZOOKTcUzNxMpPHQ6wK2JiWOb0kKQ2odc8FcVFD0XrTNXcms4wCxXf/xPa4BcF98tb3BoC0RbMo+3iXB2lxLGAgQl4JYnNE2ZpLnL+mfUy513CY1OD6mmIe1OBZERg8a5ENf53",
     "edits": ""
    },
    "semanticSnapshot": {
     "v": 1,
     "auto": true,
-    "text": "自然连接的葡萄串 · 1组/13mesh · 世界坐标(Y上Z前), 原点=模型根\n# 阅读说明: G:=group行(可动画骨骼, 动画key用G:后的id; @p=pivot世界坐标; 倾(x,y,z)°=朝向偏离世界轴的欧拉角; 缩进=父子层级; 挂:=挂载于某组; G:id→id→…=chain折叠行, 每个id都是可独立动画的group, chain×N=waypoint数)\n# M:=mesh行(label[id 几何 @(世界坐标)], label可省略; ×N=for循环批量件(锚点=代表实例); cyl (起)→(末)或 轴上(Y)等方位词=延伸方向; 薄向=板面法向(扁板); 挂载组双代表=最大件+最远有向件(刃/嘴/管所在端); 无方向标注=均匀块(三向相近,如头),默认面向前(Z); 对称×2=镜像对)\nG:grape_bunch 完整葡萄串 @p(0,0.2,0)\n  M:[m0 box 0.07×0.07×0.07 (-0.1,0.1,0)]",
+    "text": "大白菜 · 1组/18mesh · 世界坐标(Y上Z前), 原点=模型根\n# 阅读说明: G:=group行(可动画骨骼, 动画key用G:后的id; @p=pivot世界坐标; 倾(x,y,z)°=朝向偏离世界轴的欧拉角; 缩进=父子层级; 挂:=挂载于某组; G:id→id→…=chain折叠行, 每个id都是可独立动画的group, chain×N=waypoint数)\n# M:=mesh行(label[id 几何 @(世界坐标)], label可省略; ×N=for循环批量件(锚点=代表实例); cyl (起)→(末)或 轴上(Y)等方位词=延伸方向; 薄向=板面法向(扁板); 挂载组双代表=最大件+最远有向件(刃/嘴/管所在端); 无方向标注=均匀块(三向相近,如头),默认面向前(Z); 对称×2=镜像对)\nG:cabbage 单颗收获大白菜 @p(0,0,0)\n  M:[m1 box 0.22×0.39×0.22 (0,0,0) 轴上(Y)]",
     "stats": {
      "groups": 1,
-     "meshes": 13,
+     "meshes": 18,
      "labeledMeshes": 0,
      "labelCoverage": 0,
      "batchLabels": 0,
      "autoChains": 0,
-     "snapshotChars": 441
+     "snapshotChars": 433
     }
    },
    "colorPalette": {
@@ -800,15 +775,15 @@
     "updatedAt": 1787561837433
    },
    "colorPaletteReport": {
-    "appliedMaterials": 13,
+    "appliedMaterials": 18,
     "appliedVertexColors": 0,
     "skippedTextures": 0,
     "explicitIntentColors": 0,
-    "sourceColors": 13,
+    "sourceColors": 18,
     "semanticFallbacks": 0,
     "usedColors": [
-     "#9C8510",
-     "#AEAF6F"
+     "#AEAF6F",
+     "#E9DABD"
     ]
    }
   }
@@ -818,26 +793,26 @@
   "boxes": [
    {
     "min": [
-     -0.10400000000000001,
+     -0.1615,
      0,
-     -0.059000000000000004
+     -0.16
     ],
     "max": [
-     0.10400000000000001,
-     0.3306833823977261,
-     0.059000000000000004
+     0.1615,
+     0.6000000000000001,
+     0.16
     ],
     "sourceNodeId": "asset-bounds"
    }
   ],
-  "sourceMeshCount": 13,
+  "sourceMeshCount": 18,
   "candidateCount": 0,
   "fallbackUsed": true
  },
- "footprintRadius": 0.10400000000000001,
+ "footprintRadius": 0.1615,
  "sizeClass": "small",
  "mode": "voxel",
  "provider": "gpt",
- "createdAt": 1788563018787,
- "updatedAt": 1788563018787
+ "createdAt": 1788709026570,
+ "updatedAt": 1788709026570
 }

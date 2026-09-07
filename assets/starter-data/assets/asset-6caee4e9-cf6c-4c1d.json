@@ -1,53 +1,48 @@
 {
- "id": "asset-4868a376-be44-4761",
- "name": "一串葡萄",
- "prompt": "One standalone naturally connected bunch of grapes only, one complete fruit bunch attached to a single short stem, plant-colored visible skin tagged plant, no bowl, no basket, no vine, no leaves, no soil, no plate, no other fruit, no scene, no background. Coordinate contract: Y+ is up, Z+ is the front/entrance/forward direction, X+ is right; place doors, facades, openings, windshields, or noses toward local Z+ and keep the model centered at its origin.\nCoordinate contract: local Y+ is up, local Z+ is the front, entrance, or forward direction, and local X+ is right. Put doors, facades, openings, windshields, noses, seats, and other recognizable front details toward local Z+. For a modular repeated element, explicitly choose the long axis: side-by-side modules span local X with depth/front on local Z; traversal modules span local Z. Keep the model centered at its origin.\nCanonical dimensions contract: width=0.24, height=0.32, depth=0.2 world units. Keep the generated mesh within this centered bounding size.",
- "tags": [
-  "fruit",
-  "grape",
-  "independent"
- ],
+ "id": "asset-6caee4e9-cf6c-4c1d",
+ "name": "松树",
+ "prompt": "Exactly one pine tree with a slightly bent trunk and asymmetrical tiered needle branches. One independently reusable tree only, no grove, additional trees, ground, pot, text or background. Tag foliage with palette role plant and bark with palette role earth. Coordinate contract: Y+ is up, Z+ is the front/entrance/forward direction, X+ is right; place doors, facades, openings, windshields, or noses toward local Z+ and keep the model centered at its origin.\nCoordinate contract: local Y+ is up, local Z+ is the front, entrance, or forward direction, and local X+ is right. Put doors, facades, openings, windshields, noses, seats, and other recognizable front details toward local Z+. For a modular repeated element, explicitly choose the long axis: side-by-side modules span local X with depth/front on local Z; traversal modules span local Z. Keep the model centered at its origin.\nCanonical dimensions contract: width=3.5, height=5.8, depth=3.4 world units. Keep the generated mesh within this centered bounding size.",
  "modelJson": {
-  "name": "自然连接的葡萄串",
+  "name": "浅金针叶松",
   "type": "lowpoly",
   "format": 2,
   "nodes": [
    {
-    "id": "grape_bunch",
-    "name": "完整葡萄串",
+    "id": "pine",
+    "name": "独立松树",
     "transform": {
      "pos": [
       0,
-      0.16,
+      0,
       0
      ]
     },
     "_obb": {
      "size": [
-      0.217,
-      0.333,
-      0.128
+      4.663,
+      5.854,
+      3.689
      ],
      "center": [
-      0,
-      -0.16,
-      0
+      -0.104,
+      2.902,
+      -0.07
      ],
      "axes": [
       [
-       0.9965,
-       0.0104,
-       -0.0825
+       0.8279,
+       0.157,
+       -0.5384
       ],
       [
-       -0.0136,
-       0.9992,
-       -0.0378
+       -0.197,
+       0.9803,
+       -0.0171
       ],
       [
-       0.082,
-       0.0388,
-       0.9959
+       0.5251,
+       0.1202,
+       0.8425
       ]
      ],
      "_mainAxis": 1
@@ -55,381 +50,348 @@
    },
    {
     "id": "m0",
-    "parent": "grape_bunch",
+    "parent": "pine",
     "transform": {
      "pos": [
-      -0.07,
-      -0.09,
+      0.08,
+      0.925,
       0
      ]
     },
     "mesh": {
      "type": "box",
      "params": {
-      "width": 0.068,
-      "height": 0.068,
-      "depth": 0.068
+      "width": 0.42,
+      "height": 1.85,
+      "depth": 0.44
      },
-     "color": 5913978,
-     "material": {
-      "roughness": 0.4
-     }
+     "color": 7425352
     },
     "tags": [
      {
-      "tag": "vegetation",
-      "value": "sway"
+      "tag": "base",
+      "value": "wood",
+      "variant": "bark"
      }
     ]
    },
    {
     "id": "m1",
-    "parent": "grape_bunch",
+    "parent": "pine",
     "transform": {
      "pos": [
-      0,
-      -0.085,
-      0.02
-     ]
-    },
-    "mesh": {
-     "type": "box",
-     "params": {
-      "width": 0.068,
-      "height": 0.068,
-      "depth": 0.068
-     },
-     "color": 8281264,
-     "material": {
-      "roughness": 0.4
-     }
-    },
-    "tags": [
-     {
-      "tag": "vegetation",
-      "value": "sway"
-     }
-    ]
-   },
-   {
-    "id": "m2",
-    "parent": "grape_bunch",
-    "transform": {
-     "pos": [
-      0.07,
-      -0.09,
-      -0.005
-     ]
-    },
-    "mesh": {
-     "type": "box",
-     "params": {
-      "width": 0.068,
-      "height": 0.068,
-      "depth": 0.068
-     },
-     "color": 5913978,
-     "material": {
-      "roughness": 0.4
-     }
-    },
-    "tags": [
-     {
-      "tag": "vegetation",
-      "value": "sway"
-     }
-    ]
-   },
-   {
-    "id": "m3",
-    "parent": "grape_bunch",
-    "transform": {
-     "pos": [
-      -0.07,
-      -0.15,
-      0.025
-     ]
-    },
-    "mesh": {
-     "type": "box",
-     "params": {
-      "width": 0.068,
-      "height": 0.068,
-      "depth": 0.068
-     },
-     "color": 8281264,
-     "material": {
-      "roughness": 0.4
-     }
-    },
-    "tags": [
-     {
-      "tag": "vegetation",
-      "value": "sway"
-     }
-    ]
-   },
-   {
-    "id": "m4",
-    "parent": "grape_bunch",
-    "transform": {
-     "pos": [
-      0,
-      -0.145,
-      -0.025
-     ]
-    },
-    "mesh": {
-     "type": "box",
-     "params": {
-      "width": 0.068,
-      "height": 0.068,
-      "depth": 0.068
-     },
-     "color": 5913978,
-     "material": {
-      "roughness": 0.4
-     }
-    },
-    "tags": [
-     {
-      "tag": "vegetation",
-      "value": "sway"
-     }
-    ]
-   },
-   {
-    "id": "m5",
-    "parent": "grape_bunch",
-    "transform": {
-     "pos": [
-      0.07,
-      -0.15,
-      0.02
-     ]
-    },
-    "mesh": {
-     "type": "box",
-     "params": {
-      "width": 0.068,
-      "height": 0.068,
-      "depth": 0.068
-     },
-     "color": 8281264,
-     "material": {
-      "roughness": 0.4
-     }
-    },
-    "tags": [
-     {
-      "tag": "vegetation",
-      "value": "sway"
-     }
-    ]
-   },
-   {
-    "id": "m6",
-    "parent": "grape_bunch",
-    "transform": {
-     "pos": [
-      -0.045,
-      -0.21,
-      -0.02
-     ]
-    },
-    "mesh": {
-     "type": "box",
-     "params": {
-      "width": 0.068,
-      "height": 0.068,
-      "depth": 0.068
-     },
-     "color": 5913978,
-     "material": {
-      "roughness": 0.4
-     }
-    },
-    "tags": [
-     {
-      "tag": "vegetation",
-      "value": "sway"
-     }
-    ]
-   },
-   {
-    "id": "m7",
-    "parent": "grape_bunch",
-    "transform": {
-     "pos": [
-      0.025,
-      -0.21,
-      0.025
-     ]
-    },
-    "mesh": {
-     "type": "box",
-     "params": {
-      "width": 0.068,
-      "height": 0.068,
-      "depth": 0.068
-     },
-     "color": 8281264,
-     "material": {
-      "roughness": 0.4
-     }
-    },
-    "tags": [
-     {
-      "tag": "vegetation",
-      "value": "sway"
-     }
-    ]
-   },
-   {
-    "id": "m8",
-    "parent": "grape_bunch",
-    "transform": {
-     "pos": [
-      0.07,
-      -0.205,
-      -0.02
-     ]
-    },
-    "mesh": {
-     "type": "box",
-     "params": {
-      "width": 0.068,
-      "height": 0.068,
-      "depth": 0.068
-     },
-     "color": 5913978,
-     "material": {
-      "roughness": 0.4
-     }
-    },
-    "tags": [
-     {
-      "tag": "vegetation",
-      "value": "sway"
-     }
-    ]
-   },
-   {
-    "id": "m9",
-    "parent": "grape_bunch",
-    "transform": {
-     "pos": [
-      -0.03,
-      -0.265,
-      0.02
-     ]
-    },
-    "mesh": {
-     "type": "box",
-     "params": {
-      "width": 0.068,
-      "height": 0.068,
-      "depth": 0.068
-     },
-     "color": 8281264,
-     "material": {
-      "roughness": 0.4
-     }
-    },
-    "tags": [
-     {
-      "tag": "vegetation",
-      "value": "sway"
-     }
-    ]
-   },
-   {
-    "id": "m10",
-    "parent": "grape_bunch",
-    "transform": {
-     "pos": [
-      0.035,
-      -0.265,
-      -0.015
-     ]
-    },
-    "mesh": {
-     "type": "box",
-     "params": {
-      "width": 0.068,
-      "height": 0.068,
-      "depth": 0.068
-     },
-     "color": 8281264,
-     "material": {
-      "roughness": 0.4
-     }
-    },
-    "tags": [
-     {
-      "tag": "vegetation",
-      "value": "sway"
-     }
-    ]
-   },
-   {
-    "id": "m11",
-    "parent": "grape_bunch",
-    "transform": {
-     "pos": [
-      0,
-      -0.29,
-      0.025
-     ]
-    },
-    "mesh": {
-     "type": "box",
-     "params": {
-      "width": 0.068,
-      "height": 0.068,
-      "depth": 0.068
-     },
-     "color": 5913978,
-     "material": {
-      "roughness": 0.4
-     }
-    },
-    "tags": [
-     {
-      "tag": "vegetation",
-      "value": "sway"
-     }
-    ]
-   },
-   {
-    "id": "m12",
-    "parent": "grape_bunch",
-    "transform": {
-     "pos": [
-      0.01,
-      -0.03,
-      -0.01
+      -0.17,
+      3.03,
+      0
      ],
      "quat": [
-      -0.69,
-      0.07,
-      0,
-      0.71
+      -0.7,
+      -0.06,
+      0.06,
+      0.7
      ]
     },
     "mesh": {
      "type": "box",
      "params": {
-      "width": 0.03,
-      "height": 0.024,
-      "depth": 0.07
+      "width": 0.36,
+      "height": 0.35,
+      "depth": 2.74
      },
      "color": 9332301
     },
     "tags": [
      {
-      "tag": "vegetation",
-      "value": "sway"
+      "tag": "base",
+      "value": "wood",
+      "variant": "bark"
+     }
+    ]
+   },
+   {
+    "id": "m2",
+    "parent": "pine",
+    "transform": {
+     "pos": [
+      -0.37,
+      4.78,
+      0
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 0.22,
+      "height": 1.12,
+      "depth": 0.23
+     },
+     "color": 9332301
+    },
+    "tags": [
+     {
+      "tag": "base",
+      "value": "wood",
+      "variant": "bark"
+     }
+    ]
+   },
+   {
+    "id": "m3",
+    "parent": "pine",
+    "transform": {
+     "pos": [
+      -0.275,
+      1.96,
+      0.16
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 2.95,
+      "height": 0.48,
+      "depth": 2.45
+     },
+     "color": 8427282
+    },
+    "tags": [
+     {
+      "tag": "foliage",
+      "value": "leaf"
+     }
+    ]
+   },
+   {
+    "id": "m4",
+    "parent": "pine",
+    "transform": {
+     "pos": [
+      1.01,
+      2.17,
+      -0.575
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 1.48,
+      "height": 0.43,
+      "depth": 2.25
+     },
+     "color": 8427282
+    },
+    "tags": [
+     {
+      "tag": "foliage",
+      "value": "leaf"
+     }
+    ]
+   },
+   {
+    "id": "m5",
+    "parent": "pine",
+    "transform": {
+     "pos": [
+      -0.41,
+      2.38,
+      0.925
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 1.8,
+      "height": 0.38,
+      "depth": 1.55
+     },
+     "color": 6254408
+    },
+    "tags": [
+     {
+      "tag": "foliage",
+      "value": "leaf"
+     }
+    ]
+   },
+   {
+    "id": "m6",
+    "parent": "pine",
+    "transform": {
+     "pos": [
+      0.07,
+      3.01,
+      -0.09
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 2.72,
+      "height": 0.52,
+      "depth": 2.4
+     },
+     "color": 6254408
+    },
+    "tags": [
+     {
+      "tag": "foliage",
+      "value": "leaf"
+     }
+    ]
+   },
+   {
+    "id": "m7",
+    "parent": "pine",
+    "transform": {
+     "pos": [
+      -0.53,
+      3.38,
+      0.2
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 1.92,
+      "height": 0.43,
+      "depth": 1.72
+     },
+     "color": 7770188
+    },
+    "tags": [
+     {
+      "tag": "foliage",
+      "value": "leaf"
+     }
+    ]
+   },
+   {
+    "id": "m8",
+    "parent": "pine",
+    "transform": {
+     "pos": [
+      -0.35,
+      3.97,
+      -0.18
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 2.08,
+      "height": 0.48,
+      "depth": 1.91
+     },
+     "color": 7770188
+    },
+    "tags": [
+     {
+      "tag": "foliage",
+      "value": "leaf"
+     }
+    ]
+   },
+   {
+    "id": "m9",
+    "parent": "pine",
+    "transform": {
+     "pos": [
+      -0.14,
+      4.31,
+      0.11
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 1.44,
+      "height": 0.43,
+      "depth": 1.37
+     },
+     "color": 8427282
+    },
+    "tags": [
+     {
+      "tag": "foliage",
+      "value": "leaf"
+     }
+    ]
+   },
+   {
+    "id": "m10",
+    "parent": "pine",
+    "transform": {
+     "pos": [
+      -0.36,
+      4.84,
+      -0.06
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 1.17,
+      "height": 0.49,
+      "depth": 1.1
+     },
+     "color": 8427282
+    },
+    "tags": [
+     {
+      "tag": "foliage",
+      "value": "leaf"
+     }
+    ]
+   },
+   {
+    "id": "m11",
+    "parent": "pine",
+    "transform": {
+     "pos": [
+      -0.43,
+      5.24,
+      0.01
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 0.71,
+      "height": 0.46,
+      "depth": 0.72
+     },
+     "color": 7770188
+    },
+    "tags": [
+     {
+      "tag": "foliage",
+      "value": "leaf"
+     }
+    ]
+   },
+   {
+    "id": "m12",
+    "parent": "pine",
+    "transform": {
+     "pos": [
+      -0.37,
+      5.55,
+      0
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 0.32,
+      "height": 0.5,
+      "depth": 0.34
+     },
+     "color": 6254408
+    },
+    "tags": [
+     {
+      "tag": "foliage",
+      "value": "leaf"
      }
     ]
    }
@@ -438,15 +400,15 @@
    "skipAutoCenter": true,
    "ai": {
     "v": 1,
-    "ts": 1788563021495,
+    "ts": 1788709051273,
     "provider": "gpt",
-    "data": "vMdNgXD/gdqGcVC5ylZDOzFbavW+tI8sm8qQDclXZVEWh69oJT9O6UMszIA8Xw8Af0P61aD+wNbfD0u5aMQDhhXKZ8H09xAvwhfbqISBbq7ohPihGWtx51Oh29MA1F5Hl5ZF5iAa4FFcsWQK783fYlIDRBPz76KKWnRAQbvqBNXlqznnthAiQv82FQD/9CZ26lLt8pkoF7bR1cvSe7UN0MK95wWiPJpGv7z2/bZip1UL4CJRiL0q7299FbQZ5fG0hKJq06Bgxud4ZGkX7+/dqgc76akxIG3WWP3bc36m5vgcQleLu11hLlbOnLli930BJWfkO3zlejeMU1XEC+mb4PFSbZNxIs4g5WBPBhdjc1DhpRfS2/kFl15iNQsbqrTF0FsgaTeoYV8LvU5gC7vvSmfsx6CJ3TPSHEICM6HlJuUfngV8hLrMWfOxWwxzViflvn96/EAaKHazwPs+qAZkXReDPjRi5SsYKYrhipT3rfeC5nlwKKRuVqi4aCqxJ/oLRBVK6RBBeQLJG8nY8NcbGp1xINstd9Z0qi+wQckF3je12fxnVk0PSsttSPTKUc3TdEUmMUMjBcc3LwqigbE+Irx82uEjHTLsT4S6mE9AaLaLoP8or21F6LMyGoWlFPldOpFd1nOatwiPNywI3CfKnxQPqUH0PFJixYuKVRrI1hFX7TZSAWCq3ADvng67zfUTmdRB1FfEG423NJc0CEI/zdd/L90lvpOxUrutdys6bEztKRiQDVA6xbIJP09CnWap3AY9o2qV/FztzuurLX1npTS7w+xEmA==",
+    "data": "x1HB/EWP92Wx8iX1ba/naGVTX35e4ULJ/bJfaaRbmfZKI0FdMcCJJqkeDeElWJELDRCpuDvqUqJSae8jE9AuW3aAn8blSLqPMCziAu3kmyy1e7yUxcQguOtKs9z/HDr4p9eDlbn1G5prlLlrBrAmyT1J8QBUqb+11vGlH9sRctMx+9moC8cq8VY7llCOE+nP7JS7Ws2wAO/gXpPCTyF8DFVaTg3eCjNoj+kIWnkXQg3kzyaOxnfN9RxgiyGD670FHLsM4/tAlfS9dOC4kW9Gk5pZ4e/8tPF4YYXmrk26Zts1A6jNo2lGdNvM8QnhWKzP5wgWSfQF/OWhhC/77aWrpP6RAT8376ynEpjNy/NwoOxLCk13mpzs4LL2NJJ+IuilCieJxoxRuuwFTzUR6+x14Cp8EBSHIK0Wy3ft6mqN780Rh735714ta1+OCAtNi9hFONFVG6dVIr1WXSH61m85fnmIv+QYH42SfRfdoVyvOneOYy08jVFNNXh7bQWM+BHducbPhJU7zTRV7yILbBMsurx+Pq2xMkFJ7QzL3ZKtPm22tDVauoAc/ISC/nBtXbmahyHyW0M389xJVsSg7S4zBwD9Gtc7aNmtjPiVkVorG1300LORPew6wWd8BeLsywY4V8Fxs3WSsdyOUjbTMuMrBpZ9DxjdMlbuxWAhoSB30hvPXk4OMGna8yRVhw47YvQBvGYv6YYzH8aFKJv8gmTD01JNmhmkfhbknvVIRdnI9tAUrnpkbLGtWz0hyehq6osCsHbdIGfQgZaHd4e7PGuxeV5VlWvEXDWekTUnkBao3aY3smGS0pc8QExhQf+QNklcwe5ToXPYYSbNMgytc4aHppFAJhRpn95JRpwjOn5gEmx6qbfvijPUbNTQT5FylRF07ktBGNvXV91VK4Cq0mp/DJ+ZHNRC2Z6cY3FWNfqJnKgvOY+mBN0v815xCejpcolF24v7FLQ2RisQ3jsaTBwaumS5wRlh/Jw=",
     "edits": ""
    },
    "semanticSnapshot": {
     "v": 1,
     "auto": true,
-    "text": "自然连接的葡萄串 · 1组/13mesh · 世界坐标(Y上Z前), 原点=模型根\n# 阅读说明: G:=group行(可动画骨骼, 动画key用G:后的id; @p=pivot世界坐标; 倾(x,y,z)°=朝向偏离世界轴的欧拉角; 缩进=父子层级; 挂:=挂载于某组; G:id→id→…=chain折叠行, 每个id都是可独立动画的group, chain×N=waypoint数)\n# M:=mesh行(label[id 几何 @(世界坐标)], label可省略; ×N=for循环批量件(锚点=代表实例); cyl (起)→(末)或 轴上(Y)等方位词=延伸方向; 薄向=板面法向(扁板); 挂载组双代表=最大件+最远有向件(刃/嘴/管所在端); 无方向标注=均匀块(三向相近,如头),默认面向前(Z); 对称×2=镜像对)\nG:grape_bunch 完整葡萄串 @p(0,0.2,0)\n  M:[m0 box 0.07×0.07×0.07 (-0.1,0.1,0)]",
+    "text": "浅金针叶松 · 1组/13mesh · 世界坐标(Y上Z前), 原点=模型根\n# 阅读说明: G:=group行(可动画骨骼, 动画key用G:后的id; @p=pivot世界坐标; 倾(x,y,z)°=朝向偏离世界轴的欧拉角; 缩进=父子层级; 挂:=挂载于某组; G:id→id→…=chain折叠行, 每个id都是可独立动画的group, chain×N=waypoint数)\n# M:=mesh行(label[id 几何 @(世界坐标)], label可省略; ×N=for循环批量件(锚点=代表实例); cyl (起)→(末)或 轴上(Y)等方位词=延伸方向; 薄向=板面法向(扁板); 挂载组双代表=最大件+最远有向件(刃/嘴/管所在端); 无方向标注=均匀块(三向相近,如头),默认面向前(Z); 对称×2=镜像对)\nG:pine 独立松树 @p(0,0,0)\n  M:[m3 box 3×0.48×2.5 (-0.3,2,0.2) 薄向上(Y)]",
     "stats": {
      "groups": 1,
      "meshes": 13,
@@ -454,7 +416,7 @@
      "labelCoverage": 0,
      "batchLabels": 0,
      "autoChains": 0,
-     "snapshotChars": 441
+     "snapshotChars": 431
     }
    },
    "colorPalette": {
@@ -808,7 +770,10 @@
     "semanticFallbacks": 0,
     "usedColors": [
      "#9C8510",
-     "#AEAF6F"
+     "#AEAF6F",
+     "#E4E77F",
+     "#E7C393",
+     "#F1D7B2"
     ]
    }
   }
@@ -818,26 +783,156 @@
   "boxes": [
    {
     "min": [
-     -0.10400000000000001,
-     0,
-     -0.059000000000000004
+     -1.75,
+     1.72,
+     -1.0650000000000004
     ],
     "max": [
-     0.10400000000000001,
-     0.3306833823977261,
-     0.059000000000000004
+     1.2000000000000002,
+     2.2,
+     1.3849999999999998
     ],
-    "sourceNodeId": "asset-bounds"
+    "sourceNodeId": "m3"
+   },
+   {
+    "min": [
+     -1.29,
+     2.75,
+     -1.29
+    ],
+    "max": [
+     1.4300000000000002,
+     3.2699999999999996,
+     1.1099999999999999
+    ],
+    "sourceNodeId": "m6"
+   },
+   {
+    "min": [
+     -1.3900000000000001,
+     3.7300000000000004,
+     -1.1350000000000002
+    ],
+    "max": [
+     0.6900000000000001,
+     4.21,
+     0.7749999999999998
+    ],
+    "sourceNodeId": "m8"
+   },
+   {
+    "min": [
+     0.27,
+     1.9549999999999998,
+     -1.7000000000000002
+    ],
+    "max": [
+     1.75,
+     2.385,
+     0.5499999999999999
+    ],
+    "sourceNodeId": "m4"
+   },
+   {
+    "min": [
+     -1.49,
+     3.165,
+     -0.66
+    ],
+    "max": [
+     0.42999999999999994,
+     3.5949999999999998,
+     1.06
+    ],
+    "sourceNodeId": "m7"
+   },
+   {
+    "min": [
+     -1.31,
+     2.19,
+     0.1499999999999999
+    ],
+    "max": [
+     0.49000000000000005,
+     2.57,
+     1.7000000000000002
+    ],
+    "sourceNodeId": "m5"
+   },
+   {
+    "min": [
+     -0.86,
+     4.095,
+     -0.5750000000000002
+    ],
+    "max": [
+     0.58,
+     4.5249999999999995,
+     0.7949999999999999
+    ],
+    "sourceNodeId": "m9"
+   },
+   {
+    "min": [
+     -0.580518638573744,
+     1.6493517017828199,
+     -0.17500000000000016
+    ],
+    "max": [
+     0.24051863857374392,
+     4.41064829821718,
+     0.17499999999999993
+    ],
+    "sourceNodeId": "m1"
+   },
+   {
+    "min": [
+     -0.945,
+     4.595,
+     -0.6100000000000002
+    ],
+    "max": [
+     0.22499999999999998,
+     5.085,
+     0.48999999999999994
+    ],
+    "sourceNodeId": "m10"
+   },
+   {
+    "min": [
+     -0.13,
+     0,
+     -0.2200000000000001
+    ],
+    "max": [
+     0.29,
+     1.85,
+     0.2199999999999999
+    ],
+    "sourceNodeId": "m0"
+   },
+   {
+    "min": [
+     -0.7849999999999999,
+     5.01,
+     -0.3500000000000001
+    ],
+    "max": [
+     -0.07500000000000001,
+     5.470000000000001,
+     0.3699999999999999
+    ],
+    "sourceNodeId": "m11"
    }
   ],
   "sourceMeshCount": 13,
-  "candidateCount": 0,
-  "fallbackUsed": true
+  "candidateCount": 11,
+  "fallbackUsed": false
  },
- "footprintRadius": 0.10400000000000001,
- "sizeClass": "small",
+ "footprintRadius": 1.75,
+ "sizeClass": "medium",
  "mode": "voxel",
  "provider": "gpt",
- "createdAt": 1788563018787,
- "updatedAt": 1788563018787
+ "createdAt": 1788709052984,
+ "updatedAt": 1788709052984
 }

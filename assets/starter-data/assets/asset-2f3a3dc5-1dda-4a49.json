@@ -1,0 +1,938 @@
+{
+ "id": "asset-2f3a3dc5-1dda-4a49",
+ "name": "榆树",
+ "prompt": "Exactly one elm tree with a broad rounded crown, branching trunk and fine serrated leaves. One independently reusable tree only, no grove, additional trees, ground, pot, text or background. Tag foliage with palette role plant and bark with palette role earth. Coordinate contract: Y+ is up, Z+ is the front/entrance/forward direction, X+ is right; place doors, facades, openings, windshields, or noses toward local Z+ and keep the model centered at its origin.\nCoordinate contract: local Y+ is up, local Z+ is the front, entrance, or forward direction, and local X+ is right. Put doors, facades, openings, windshields, noses, seats, and other recognizable front details toward local Z+. For a modular repeated element, explicitly choose the long axis: side-by-side modules span local X with depth/front on local Z; traversal modules span local Z. Keep the model centered at its origin.\nCanonical dimensions contract: width=3.8, height=6, depth=3.6 world units. Keep the generated mesh within this centered bounding size.",
+ "modelJson": {
+  "name": "榆树",
+  "type": "lowpoly",
+  "format": 2,
+  "nodes": [
+   {
+    "id": "elm",
+    "name": "独立榆树",
+    "transform": {
+     "pos": [
+      0,
+      0,
+      0
+     ]
+    },
+    "_obb": {
+     "size": [
+      3.863,
+      6.009,
+      3.658
+     ],
+     "center": [
+      -0.008,
+      3.002,
+      0
+     ],
+     "axes": [
+      [
+       0.9997,
+       -0.0058,
+       -0.0218
+      ],
+      [
+       0.0058,
+       1,
+       0.0001
+      ],
+      [
+       0.0218,
+       -0.0002,
+       0.9998
+      ]
+     ],
+     "_mainAxis": 1
+    }
+   },
+   {
+    "id": "m0",
+    "parent": "elm",
+    "transform": {
+     "pos": [
+      0,
+      1.825,
+      0
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 0.46,
+      "height": 3.65,
+      "depth": 0.48
+     },
+     "color": 12096105
+    },
+    "tags": [
+     {
+      "tag": "base",
+      "value": "wood",
+      "variant": "bark"
+     }
+    ]
+   },
+   {
+    "id": "m1",
+    "parent": "elm",
+    "transform": {
+     "pos": [
+      0,
+      0.2,
+      0
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 0.68,
+      "height": 0.4,
+      "depth": 0.64
+     },
+     "color": 10386005
+    },
+    "tags": [
+     {
+      "tag": "base",
+      "value": "wood",
+      "variant": "bark"
+     }
+    ]
+   },
+   {
+    "id": "m2",
+    "parent": "elm",
+    "transform": {
+     "pos": [
+      -0.63,
+      3.13,
+      0
+     ],
+     "quat": [
+      -0.68,
+      -0.18,
+      0.18,
+      0.68
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 0.25,
+      "height": 0.25,
+      "depth": 2.03
+     },
+     "color": 9332301
+    },
+    "tags": [
+     {
+      "tag": "base",
+      "value": "wood",
+      "variant": "bark"
+     }
+    ]
+   },
+   {
+    "id": "m3",
+    "parent": "elm",
+    "transform": {
+     "pos": [
+      0.62,
+      3.47,
+      0.08
+     ],
+     "quat": [
+      -0.68,
+      0.2,
+      -0.2,
+      0.68
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 0.23,
+      "height": 0.23,
+      "depth": 1.95
+     },
+     "color": 12096105
+    },
+    "tags": [
+     {
+      "tag": "base",
+      "value": "wood",
+      "variant": "bark"
+     }
+    ]
+   },
+   {
+    "id": "m4",
+    "parent": "elm",
+    "transform": {
+     "pos": [
+      -0.17,
+      3.88,
+      -0.24
+     ],
+     "quat": [
+      -0.7,
+      -0.08,
+      0.08,
+      0.7
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 0.19,
+      "height": 0.19,
+      "depth": 1.59
+     },
+     "color": 10386005
+    },
+    "tags": [
+     {
+      "tag": "base",
+      "value": "wood",
+      "variant": "bark"
+     }
+    ]
+   },
+   {
+    "id": "m5",
+    "parent": "elm",
+    "transform": {
+     "pos": [
+      0,
+      4.425,
+      0
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 2.45,
+      "height": 1.65,
+      "depth": 2.55
+     },
+     "color": 13028503
+    },
+    "tags": [
+     {
+      "tag": "foliage",
+      "value": "leaf"
+     }
+    ]
+   },
+   {
+    "id": "m6",
+    "parent": "elm",
+    "transform": {
+     "pos": [
+      -1.375,
+      4.475,
+      0.05
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 1.05,
+      "height": 1.45,
+      "depth": 2.4
+     },
+     "color": 6254408
+    },
+    "tags": [
+     {
+      "tag": "foliage",
+      "value": "leaf"
+     }
+    ]
+   },
+   {
+    "id": "m7",
+    "parent": "elm",
+    "transform": {
+     "pos": [
+      1.375,
+      4.5,
+      -0.05
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 1.05,
+      "height": 1.5,
+      "depth": 2.45
+     },
+     "color": 8427282
+    },
+    "tags": [
+     {
+      "tag": "foliage",
+      "value": "leaf"
+     }
+    ]
+   },
+   {
+    "id": "m8",
+    "parent": "elm",
+    "transform": {
+     "pos": [
+      0,
+      4.525,
+      1.375
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 2.7,
+      "height": 1.35,
+      "depth": 0.85
+     },
+     "color": 7770188
+    },
+    "tags": [
+     {
+      "tag": "foliage",
+      "value": "leaf"
+     }
+    ]
+   },
+   {
+    "id": "m9",
+    "parent": "elm",
+    "transform": {
+     "pos": [
+      0,
+      4.5,
+      -1.375
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 2.65,
+      "height": 1.4,
+      "depth": 0.85
+     },
+     "color": 13028503
+    },
+    "tags": [
+     {
+      "tag": "foliage",
+      "value": "leaf"
+     }
+    ]
+   },
+   {
+    "id": "m10",
+    "parent": "elm",
+    "transform": {
+     "pos": [
+      0,
+      5.3,
+      0
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 3.15,
+      "height": 0.8,
+      "depth": 2.85
+     },
+     "color": 8427282
+    },
+    "tags": [
+     {
+      "tag": "foliage",
+      "value": "leaf"
+     }
+    ]
+   },
+   {
+    "id": "m11",
+    "parent": "elm",
+    "transform": {
+     "pos": [
+      0,
+      5.75,
+      0
+     ]
+    },
+    "mesh": {
+     "type": "box",
+     "params": {
+      "width": 2.25,
+      "height": 0.5,
+      "depth": 2.05
+     },
+     "color": 6254408
+    },
+    "tags": [
+     {
+      "tag": "foliage",
+      "value": "leaf"
+     }
+    ]
+   }
+  ],
+  "_meta": {
+   "skipAutoCenter": true,
+   "ai": {
+    "v": 1,
+    "ts": 1788709044454,
+    "provider": "gpt",
+    "data": "Fc8/wxHulsI9l7jamPFjrd4Y2O0+jpfAbe5XL+jnKq+huli7x056VYqtzMHwfFxdkK36fiOIXmTWWiM2w1fZ9j3yUsPmpfafsLEmUKm89sQnEoM3/3fJmjUsTgoC3tWcz5N8sdu+Twt0YOwOYVVzxBH9P3lPo2QVKJjnB3ilBBKWKJYH7Q1QAlt2kif+LS0bMzp8hKvYbMcphupx7IZR2a/EEN3jYB3HpPk4UL1LHqRrs7PKRqZQfwMYNRShI3J/ZgsuKjta9fih9SFZwu0rAlLZ6nJm83zAT7/6leGQSP0n/PMSiFKlriXnQOe+H68Vkz8m67y6mzCOyUa5Ac6K6H6mdctIHVgXqibOxybHf/1zekR4rQrXa+8tqLFmMzcincCIzm+11MyexDZ69gik84cSndqCniFEFP59Bky23rLL7XEMWqRAwYY6x8Owzx1dJU85GqqjFQngT5s6g4tKZRvApQtlCa0LketyjeKZN07lH+1oPZY6sBFFzIQO7sxABrBFgk69c8mnDoBoJJAP+H2kYKLBJM2cpkIRnOptZTNiTKQCSC+7swxIg2zAx/LXnxnedSto/lrpY9eEOY79HYk+Q+nCPeessQCUf2ROsH0mWhFFceGQ2SOGd6dDihPfdL2dN2Jxg+ssDOku9JnjguybV0x1Yw0S8EpKSltNU0V0qmi7aMVzTCnruKfkbWgLYSAPBQ4Fj5w8IjM3WXZF1qFgfR1jp8Y/4aHvd8Zyb1O/eAqhafOTxMcJSMebRJem7dXzrvGuPfD9JIVKl7PtWGW4Nj8x2mb70EbWKpLKVvb9d5Ss+TM0w3cGnoMRkQXZJKKWGBlk0szckJ82QW4RL22i2FJ8LND5FsIeKHKZ0R92IxHD5eA3NQmnZupkjcmyARqCg2/mW0ZwBn5CcZ2Zz+DfGucqcGxuwCtLwGADQjVu1pbO1uQl8Vs4A2zQ3wKaMqUsaeABDKUPArDf6yuCcoaV9eHXUfeGah0uZlsrb+PDaCsuZjxpgLkSguI1sTcaf9Eu5kiUxMHIV5DOk8wZ58EPcH8Ryyj9wLb3e7A4Bs4Kueb4uZGcdw/JMhL98Q==",
+    "edits": ""
+   },
+   "semanticSnapshot": {
+    "v": 1,
+    "auto": true,
+    "text": "榆树 · 1组/12mesh · 世界坐标(Y上Z前), 原点=模型根\n# 阅读说明: G:=group行(可动画骨骼, 动画key用G:后的id; @p=pivot世界坐标; 倾(x,y,z)°=朝向偏离世界轴的欧拉角; 缩进=父子层级; 挂:=挂载于某组; G:id→id→…=chain折叠行, 每个id都是可独立动画的group, chain×N=waypoint数)\n# M:=mesh行(label[id 几何 @(世界坐标)], label可省略; ×N=for循环批量件(锚点=代表实例); cyl (起)→(末)或 轴上(Y)等方位词=延伸方向; 薄向=板面法向(扁板); 挂载组双代表=最大件+最远有向件(刃/嘴/管所在端); 无方向标注=均匀块(三向相近,如头),默认面向前(Z); 对称×2=镜像对)\nG:elm 独立榆树 @p(0,0,0)\n  M:[m5 box 2.5×1.7×2.6 (0,4.4,0)]",
+    "stats": {
+     "groups": 1,
+     "meshes": 12,
+     "labeledMeshes": 0,
+     "labelCoverage": 0,
+     "batchLabels": 0,
+     "autoChains": 0,
+     "snapshotChars": 418
+    }
+   },
+   "colorPalette": {
+    "id": "palette-2b9c0834-be76-4477",
+    "name": "曼德鸭参考场景 · 浅亮建筑",
+    "description": "参考局内与背景样例：浅亮奶油墙面、桃沙道路、黄绿色植被、青蓝窗水、棕黄结构点缀。",
+    "version": 1,
+    "colors": [
+     {
+      "hex": "#FFFDF6"
+     },
+     {
+      "hex": "#FEF9EA"
+     },
+     {
+      "hex": "#FDF2D7"
+     },
+     {
+      "hex": "#E9DABD"
+     },
+     {
+      "hex": "#CDBA97"
+     },
+     {
+      "hex": "#F8E8CF"
+     },
+     {
+      "hex": "#F1D7B2"
+     },
+     {
+      "hex": "#E7C393"
+     },
+     {
+      "hex": "#C9A06E"
+     },
+     {
+      "hex": "#9E7A55"
+     },
+     {
+      "hex": "#FFF7A8"
+     },
+     {
+      "hex": "#FCEF72"
+     },
+     {
+      "hex": "#F6E24B"
+     },
+     {
+      "hex": "#D1B825"
+     },
+     {
+      "hex": "#9C8510"
+     },
+     {
+      "hex": "#FFF3B7"
+     },
+     {
+      "hex": "#FDE674"
+     },
+     {
+      "hex": "#FCD75F"
+     },
+     {
+      "hex": "#FECD4D"
+     },
+     {
+      "hex": "#D1900B"
+     },
+     {
+      "hex": "#FFE2A0"
+     },
+     {
+      "hex": "#FFD170"
+     },
+     {
+      "hex": "#F8BC44"
+     },
+     {
+      "hex": "#E39F1A"
+     },
+     {
+      "hex": "#A96F05"
+     },
+     {
+      "hex": "#FBE3BD"
+     },
+     {
+      "hex": "#FDD8A3"
+     },
+     {
+      "hex": "#FDCC8F"
+     },
+     {
+      "hex": "#F1AD69"
+     },
+     {
+      "hex": "#D99256"
+     },
+     {
+      "hex": "#FFD2BA"
+     },
+     {
+      "hex": "#FFB08A"
+     },
+     {
+      "hex": "#FF8A5B"
+     },
+     {
+      "hex": "#F06B3E"
+     },
+     {
+      "hex": "#B84A27"
+     },
+     {
+      "hex": "#EAF9FF"
+     },
+     {
+      "hex": "#DAF2F5"
+     },
+     {
+      "hex": "#95E5F9"
+     },
+     {
+      "hex": "#76D0F2"
+     },
+     {
+      "hex": "#45BDF6"
+     },
+     {
+      "hex": "#D9F8FB"
+     },
+     {
+      "hex": "#B2E9F2"
+     },
+     {
+      "hex": "#8ECCD6"
+     },
+     {
+      "hex": "#7BCFDF"
+     },
+     {
+      "hex": "#4BAFCA"
+     },
+     {
+      "hex": "#D8F7EF"
+     },
+     {
+      "hex": "#B8ECDD"
+     },
+     {
+      "hex": "#90DCC8"
+     },
+     {
+      "hex": "#74C4BB"
+     },
+     {
+      "hex": "#499D92"
+     },
+     {
+      "hex": "#F1F5AF"
+     },
+     {
+      "hex": "#E4E77F"
+     },
+     {
+      "hex": "#DCDB22"
+     },
+     {
+      "hex": "#BFC41A"
+     },
+     {
+      "hex": "#809712"
+     },
+     {
+      "hex": "#DEE5BC"
+     },
+     {
+      "hex": "#C6CC97"
+     },
+     {
+      "hex": "#AEAF6F"
+     },
+     {
+      "hex": "#76904C"
+     },
+     {
+      "hex": "#5F6F48"
+     },
+     {
+      "hex": "#D4C2A5"
+     },
+     {
+      "hex": "#B89269"
+     },
+     {
+      "hex": "#8E664D"
+     },
+     {
+      "hex": "#714D48"
+     },
+     {
+      "hex": "#52362E"
+     }
+    ],
+    "roles": {
+     "primary": [
+      "#F1D7B2",
+      "#FDD8A3",
+      "#FBE3BD",
+      "#E9DABD",
+      "#FDCC8F",
+      "#F8E8CF",
+      "#E7C393",
+      "#D4C2A5"
+     ],
+     "secondary": [
+      "#714D48",
+      "#52362E",
+      "#8E664D",
+      "#B84A27",
+      "#9E7A55",
+      "#F06B3E",
+      "#A96F05",
+      "#B89269",
+      "#D99256",
+      "#E7C393",
+      "#D4C2A5",
+      "#FDCC8F",
+      "#F1D7B2",
+      "#CDBA97",
+      "#FDD8A3",
+      "#F1AD69",
+      "#E9DABD",
+      "#AEAF6F",
+      "#C9A06E",
+      "#9C8510",
+      "#76904C",
+      "#809712"
+     ],
+     "accent": [
+      "#76D0F2",
+      "#7BCFDF",
+      "#95E5F9",
+      "#8ECCD6",
+      "#45BDF6",
+      "#4BAFCA",
+      "#B2E9F2",
+      "#74C4BB",
+      "#FFD170",
+      "#FECD4D",
+      "#FFE2A0",
+      "#F8BC44",
+      "#FCD75F",
+      "#E9DABD",
+      "#FDD8A3",
+      "#E7C393",
+      "#F06B3E",
+      "#FF8A5B",
+      "#B84A27",
+      "#D99256",
+      "#8E664D",
+      "#9E7A55",
+      "#FFB08A",
+      "#B89269"
+     ],
+     "plant": [
+      "#AEAF6F",
+      "#C6CC97",
+      "#BFC41A",
+      "#809712",
+      "#DCDB22",
+      "#E4E77F",
+      "#D1B825",
+      "#DEE5BC",
+      "#76904C",
+      "#5F6F48",
+      "#9C8510"
+     ],
+     "earth": [
+      "#F1D7B2",
+      "#FDD8A3",
+      "#FBE3BD",
+      "#E9DABD",
+      "#FDCC8F",
+      "#F8E8CF",
+      "#E7C393",
+      "#D4C2A5",
+      "#CDBA97",
+      "#F1AD69",
+      "#9E7A55",
+      "#B89269",
+      "#AEAF6F",
+      "#C9A06E",
+      "#9C8510",
+      "#8E664D",
+      "#76904C",
+      "#809712",
+      "#714D48",
+      "#52362E",
+      "#B84A27",
+      "#F06B3E",
+      "#A96F05",
+      "#D99256"
+     ],
+     "water": [
+      "#4BAFCA",
+      "#45BDF6",
+      "#7BCFDF",
+      "#76D0F2",
+      "#8ECCD6",
+      "#95E5F9",
+      "#499D92",
+      "#74C4BB"
+     ],
+     "atmosphere": [
+      "#76D0F2",
+      "#7BCFDF",
+      "#95E5F9",
+      "#8ECCD6",
+      "#45BDF6",
+      "#4BAFCA",
+      "#B2E9F2",
+      "#74C4BB",
+      "#EAF9FF",
+      "#DAF2F5",
+      "#D9F8FB"
+     ],
+     "effect": [
+      "#F06B3E",
+      "#FF8A5B",
+      "#B84A27",
+      "#D99256",
+      "#8E664D",
+      "#9E7A55",
+      "#FFB08A",
+      "#B89269"
+     ]
+    },
+    "lockedColors": [],
+    "excludedAssetIds": [],
+    "excludedTags": [],
+    "createdAt": 1787561837433,
+    "updatedAt": 1787561837433
+   },
+   "colorPaletteReport": {
+    "appliedMaterials": 12,
+    "appliedVertexColors": 0,
+    "skippedTextures": 0,
+    "explicitIntentColors": 0,
+    "sourceColors": 12,
+    "semanticFallbacks": 0,
+    "usedColors": [
+     "#9C8510",
+     "#AEAF6F",
+     "#D4C2A5",
+     "#E4E77F"
+    ]
+   }
+  }
+ },
+ "colliderPlan": {
+  "version": 1,
+  "boxes": [
+   {
+    "min": [
+     -1.225,
+     3.5999999999999996,
+     -1.275
+    ],
+    "max": [
+     1.225,
+     5.25,
+     1.275
+    ],
+    "sourceNodeId": "m5"
+   },
+   {
+    "min": [
+     -1.575,
+     4.8999999999999995,
+     -1.425
+    ],
+    "max": [
+     1.575,
+     5.7,
+     1.425
+    ],
+    "sourceNodeId": "m10"
+   },
+   {
+    "min": [
+     0.85,
+     3.75,
+     -1.2750000000000001
+    ],
+    "max": [
+     1.9,
+     5.25,
+     1.175
+    ],
+    "sourceNodeId": "m7"
+   },
+   {
+    "min": [
+     -1.9,
+     3.7499999999999996,
+     -1.15
+    ],
+    "max": [
+     -0.85,
+     5.199999999999999,
+     1.25
+    ],
+    "sourceNodeId": "m6"
+   },
+   {
+    "min": [
+     -1.325,
+     3.8,
+     -1.8
+    ],
+    "max": [
+     1.325,
+     5.2,
+     -0.95
+    ],
+    "sourceNodeId": "m9"
+   },
+   {
+    "min": [
+     -1.35,
+     3.8500000000000005,
+     0.95
+    ],
+    "max": [
+     1.35,
+     5.2,
+     1.8
+    ],
+    "sourceNodeId": "m8"
+   },
+   {
+    "min": [
+     -1.125,
+     5.5,
+     -1.025
+    ],
+    "max": [
+     1.125,
+     6,
+     1.025
+    ],
+    "sourceNodeId": "m11"
+   },
+   {
+    "min": [
+     -0.23,
+     0,
+     -0.24
+    ],
+    "max": [
+     0.23,
+     3.65,
+     0.24
+    ],
+    "sourceNodeId": "m0"
+   },
+   {
+    "min": [
+     -1.240796281325788,
+     2.1860832659660465,
+     -0.12500000000000022
+    ],
+    "max": [
+     -0.01920371867421189,
+     4.073916734033953,
+     0.12500000000000022
+    ],
+    "sourceNodeId": "m2"
+   },
+   {
+    "min": [
+     -0.0045541401273886395,
+     2.5879936305732483,
+     -0.03500000000000021
+    ],
+    "max": [
+     1.2445541401273887,
+     4.352006369426752,
+     0.19500000000000023
+    ],
+    "sourceNodeId": "m3"
+   },
+   {
+    "min": [
+     -0.34,
+     0,
+     -0.32
+    ],
+    "max": [
+     0.34,
+     0.4,
+     0.32
+    ],
+    "sourceNodeId": "m1"
+   },
+   {
+    "min": [
+     -0.441921837228042,
+     3.0840652699435935,
+     -0.3350000000000003
+    ],
+    "max": [
+     0.10192183722804196,
+     4.675934730056406,
+     -0.14499999999999968
+    ],
+    "sourceNodeId": "m4"
+   }
+  ],
+  "sourceMeshCount": 12,
+  "candidateCount": 12,
+  "fallbackUsed": false
+ },
+ "footprintRadius": 1.9,
+ "sizeClass": "medium",
+ "mode": "voxel",
+ "provider": "gpt",
+ "createdAt": 1788709050906,
+ "updatedAt": 1788709050906
+}
