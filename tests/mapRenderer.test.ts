@@ -664,6 +664,12 @@ describe('structured map water rendering', () => {
     expect(fillRects.some(({ style }) => style === '#c96948' || style === '#aa472f')).toBe(true);
     expect(translations[0][0]).not.toBeCloseTo(translations[1][0]);
     expect(strokeRects.some(({ style }) => style === '#4f4f4f')).toBe(false);
+    const brickSurface = rendered.group.getObjectByName('brick-road-surface:code:route:market-pavers') as THREE.Mesh;
+    const brickPositions = brickSurface.geometry.getAttribute('position');
+    const brickXs = Array.from({ length: brickPositions.count }, (_, index) => brickPositions.getX(index));
+    expect(Math.min(...brickXs)).toBeLessThan(-20);
+    expect(Math.max(...brickXs)).toBeGreaterThan(20);
+    expect((brickSurface.material as THREE.MeshStandardMaterial).normalMap).toBeInstanceOf(THREE.CanvasTexture);
     rendered.dispose();
   });
 

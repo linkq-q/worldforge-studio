@@ -570,20 +570,53 @@ function buildRoadMaterialBodies(map: EditableMap): THREE.Group {
 function buildRoadSurfaceOverlays(map: EditableMap): THREE.Group {
   const group = new THREE.Group();
   group.name = 'road-surface-overlays';
-  const textures = createBrickRoadOverlayTextures();
+  let textures: ReturnType<typeof createBrickRoadOverlayTextures> | undefined;
   for (const zone of map.visualSemantics.zones) {
     if (zone.material !== 'brick-paver' || zone.region?.kind !== 'path' || zone.region.points.length < 2) continue;
+    textures ??= createBrickRoadOverlayTextures();
     const points = zone.region.points;
     const samples = pathSamplesWithDistance(points, Math.max(0.85, zone.region.width * 0.24));
     if (samples.length < 2) continue;
+    const connected = roadConnectedEnds(map, zone as SceneVisualZone & { region: Extract<VisualZoneRegion, { kind: 'path' }> });
+    const capRadius = zone.region.width * 0.5;
+    const capSegments = 4;
+    const overlaySamples: Array<RoadPathSample & { widthScale: number }> = [];
+    const start = samples[0];
+    const end = samples[samples.length - 1];
+    if (!connected[0]) {
+      for (let step = capSegments; step >= 1; step -= 1) {
+        const offset = -capRadius * step / capSegments;
+        overlaySamples.push({
+          ...start,
+          x: start.x + start.tangentX * offset,
+          z: start.z + start.tangentZ * offset,
+          distance: offset,
+          widthScale: Math.sqrt(Math.max(0, 1 - (offset / capRadius) ** 2))
+        });
+      }
+    }
+    overlaySamples.push(...samples.map((sample) => ({ ...sample, widthScale: 1 })));
+    if (!connected[1]) {
+      for (let step = 1; step <= capSegments; step += 1) {
+        const offset = capRadius * step / capSegments;
+        overlaySamples.push({
+          ...end,
+          x: end.x + end.tangentX * offset,
+          z: end.z + end.tangentZ * offset,
+          distance: end.total + offset,
+          widthScale: Math.sqrt(Math.max(0, 1 - (offset / capRadius) ** 2))
+        });
+      }
+    }
     const vertices: number[] = [];
     const uvs: number[] = [];
     const indices: number[] = [];
     const crossSegments = 4;
-    for (let index = 0; index < samples.length; index += 1) {
-      const sample = samples[index];
+    for (let index = 0; index < overlaySamples.length; index += 1) {
+      const sample = overlaySamples[index];
       for (let acrossIndex = 0; acrossIndex <= crossSegments; acrossIndex += 1) {
-        const across = (acrossIndex / crossSegments - 0.5) * zone.region.width * 0.96;
+        const acrossRatio = acrossIndex / crossSegments - 0.5;
+        const across = acrossRatio * zone.region.width * sample.widthScale;
         const x = sample.x - sample.tangentZ * across;
         const z = sample.z + sample.tangentX * across;
         // Sample every cross-section vertex so the overlay follows sloped terrain
@@ -591,7 +624,7 @@ function buildRoadSurfaceOverlays(map: EditableMap): THREE.Group {
         vertices.push(x, sampleTerrainHeight(map, x, z) + 0.025, z);
         // One texture repeat spans several metres so each paver reads as a
         // deliberate block rather than dense insect-like noise.
-        uvs.push(sample.distance / 5.0, (across / (zone.region.width * 0.48)) * 0.8);
+        uvs.push(sample.distance / 5.0, acrossRatio * 1.6);
       }
       if (index > 0) {
         const previousRow = (index - 1) * (crossSegments + 1);
@@ -614,6 +647,9 @@ function buildRoadSurfaceOverlays(map: EditableMap): THREE.Group {
       map: textures.map,
       bumpMap: textures.bumpMap,
       bumpScale: 0.045,
+      normalMap: textures.normalMap,
+      normalMapType: THREE.TangentSpaceNormalMap,
+      normalScale: new THREE.Vector2(0.75, 0.75),
       color: 0xffffff,
       roughness: 0.9,
       metalness: 0,
@@ -630,7 +666,7 @@ function buildRoadSurfaceOverlays(map: EditableMap): THREE.Group {
   return group;
 }
 
-function createBrickRoadOverlayTextures(): { map: THREE.CanvasTexture; bumpMap: THREE.CanvasTexture } {
+function createBrickRoadOverlayTextures(): { map: THREE.CanvasTexture; bumpMap: THREE.CanvasTexture; normalMap: THREE.CanvasTexture } {
   const createCanvas = (bump: boolean): HTMLCanvasElement => {
     const canvas = document.createElement('canvas');
     canvas.width = 512;
@@ -659,7 +695,8 @@ function createBrickRoadOverlayTextures(): { map: THREE.CanvasTexture; bumpMap: 
   mapTexture.colorSpace = THREE.SRGBColorSpace;
   const bumpTexture = new THREE.CanvasTexture(createCanvas(true));
   bumpTexture.colorSpace = THREE.NoColorSpace;
-  for (const texture of [mapTexture, bumpTexture]) {
+  const normalTexture = createTerrainNormalTexture(bumpTexture, DEFAULT_RUNTIME_TERRAIN_MATERIAL_STYLE);
+  for (const texture of [mapTexture, bumpTexture, normalTexture]) {
     texture.wrapS = THREE.RepeatWrapping;
     texture.wrapT = THREE.RepeatWrapping;
     texture.magFilter = THREE.LinearFilter;
@@ -667,7 +704,7 @@ function createBrickRoadOverlayTextures(): { map: THREE.CanvasTexture; bumpMap: 
     texture.anisotropy = 16;
     texture.needsUpdate = true;
   }
-  return { map: mapTexture, bumpMap: bumpTexture };
+  return { map: mapTexture, bumpMap: bumpTexture, normalMap: normalTexture };
 }
 
 function buildTerrain(map: EditableMap): THREE.Mesh {
@@ -2618,7 +2655,7 @@ function drawTerrainRecipeDetails(
       ctx.save();
       const pathZone = zone as SceneVisualZone & { region: Extract<VisualZoneRegion, { kind: 'path' }> };
       const samples = pathSamplesWithDistance(region.points, Math.max(0.28, region.width * 0.14));
-      const connected = mudRoadConnectedEnds(map, pathZone);
+      const connected = roadConnectedEnds(map, pathZone);
       const junctions = mudRoadJunctionDistances(map, pathZone);
       drawMudDetailStrip(ctx, map, samples, region.width, 0, 0.7, connected, junctions, width, height, channel, false, random, 'compacted-earth');
       forEachPathSample(region.points, Math.max(1.4, region.width * 0.9), (sample) => {
@@ -2700,7 +2737,7 @@ function drawTerrainRecipeDetails(
     if (zone.material === 'mud') {
       ctx.save();
       const samples = pathSamplesWithDistance(region.points, Math.max(0.28, region.width * 0.14));
-      const connected = mudRoadConnectedEnds(map, zone as SceneVisualZone & { region: Extract<VisualZoneRegion, { kind: 'path' }> });
+      const connected = roadConnectedEnds(map, zone as SceneVisualZone & { region: Extract<VisualZoneRegion, { kind: 'path' }> });
       const junctions = mudRoadJunctionDistances(map, zone as SceneVisualZone & { region: Extract<VisualZoneRegion, { kind: 'path' }> });
       drawMudDetailStrip(ctx, map, samples, region.width, 0, 0.42, connected, junctions, width, height, channel, false, random, 'mud');
       drawMudDetailStrip(ctx, map, samples, region.width, -0.24, 0.09, connected, junctions, width, height, channel, true, random, 'mud');
@@ -3175,7 +3212,7 @@ function drawTaperedMudPath(
   const samples = pathSamplesWithDistance(region.points, Math.max(0.22, region.width * 0.12));
   if (samples.length < 2) return;
   const pixelsPerMetre = (width / map.box.size[0] + height / map.box.size[2]) * 0.5;
-  const connected = mudRoadConnectedEnds(map, zone);
+  const connected = roadConnectedEnds(map, zone);
   const fadeLength = Math.max(0.8, region.width * 1.25);
   ctx.save();
   ctx.lineCap = 'round';
@@ -3210,7 +3247,7 @@ function smoothRoadFade(value: number): number {
   return t * t * (3 - 2 * t);
 }
 
-function mudRoadConnectedEnds(
+function roadConnectedEnds(
   map: EditableMap,
   zone: SceneVisualZone & { region: Extract<VisualZoneRegion, { kind: 'path' }> }
 ): [boolean, boolean] {
