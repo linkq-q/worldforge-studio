@@ -163,6 +163,10 @@ export async function buildEditableMapGroup(input: EditableMap, options: MapRend
   applyTerrainGrassTint(terrain, grassMap, DEFAULT_RUNTIME_GRASS_STYLE);
   root.add(terrain);
   pickables.push(terrain);
+  let roadBodies = buildRoadMaterialBodies(map);
+  modelsRoot.add(roadBodies);
+  let roadSurfaceOverlays = buildRoadSurfaceOverlays(map);
+  modelsRoot.add(roadSurfaceOverlays);
 
   // Grass is rebuilt on its own, so it keeps its own map snapshot and style.
   let grassStyle = DEFAULT_RUNTIME_GRASS_STYLE;
@@ -337,6 +341,14 @@ export async function buildEditableMapGroup(input: EditableMap, options: MapRend
       const material = terrain.material as THREE.MeshStandardMaterial;
       replaceTerrainTextures(material, next, terrainMaterialStyle, colorPalette ?? undefined);
       updateTerrainSandZones(sandFlow, next);
+      roadBodies.removeFromParent();
+      disposeObject(roadBodies);
+      roadBodies = buildRoadMaterialBodies(next);
+      modelsRoot.add(roadBodies);
+      roadSurfaceOverlays.removeFromParent();
+      disposeObject(roadSurfaceOverlays);
+      roadSurfaceOverlays = buildRoadSurfaceOverlays(next);
+      modelsRoot.add(roadSurfaceOverlays);
       // Blades sample terrain height, so they have to follow the new surface.
       rebuildGrass(next);
     },
@@ -484,6 +496,178 @@ function applyTerrainGrassTint(
     colors.setXYZ(index, color.r, color.g, color.b);
   }
   colors.needsUpdate = true;
+}
+
+function buildRoadMaterialBodies(map: EditableMap): THREE.Group {
+  const group = new THREE.Group();
+  group.name = 'road-material-bodies';
+  const palette: Record<string, number> = {
+    default: 0xb8b2a6, 'compacted-earth': 0x8f6949, 'garden-stone': 0xaaa69a,
+    asphalt: 0x555b5e, concrete: 0x9d9a91, 'brick-paver': 0xb45738,
+    cobblestone: 0x85847f, gravel: 0x847867, mud: 0x654832
+  };
+  const detail: Record<string, { spacing: number; width: number; height: number; kind: string }> = {
+    'garden-stone': { spacing: 1.0, width: 0.82, height: 0.12, kind: 'slab' },
+    cobblestone: { spacing: 0.52, width: 0.34, height: 0.12, kind: 'cobble' },
+    gravel: { spacing: 0.72, width: 0.16, height: 0.08, kind: 'gravel' }
+  };
+  let placed = 0;
+  for (const zone of map.visualSemantics.zones) {
+    if (zone.region?.kind !== 'path' || !zone.material || placed > 4500) continue;
+    const recipe = detail[zone.material];
+    if (!recipe) continue;
+    const material = new THREE.MeshStandardMaterial({
+      color: palette[zone.material] ?? palette.default,
+      roughness: zone.material === 'asphalt' ? 0.9 : 0.82,
+      flatShading: zone.material === 'cobblestone'
+    });
+    const random = seededRandom(map.seed ^ stringSeed(`${zone.id}:bodies`));
+    const points = zone.region.points;
+    for (let i = 0; i < points.length - 1 && placed <= 4500; i += 1) {
+      const [ax, az] = points[i]; const [bx, bz] = points[i + 1];
+      const dx = bx - ax; const dz = bz - az; const length = Math.hypot(dx, dz); if (length < 0.01) continue;
+      const tangent = Math.atan2(dz, dx); const count = Math.max(1, Math.floor(length / recipe.spacing));
+      for (let j = 0; j < count && placed <= 4500; j += 1) {
+        const t = (j + 0.5) / count; const across = (random() - 0.5) * zone.region.width * (recipe.kind === 'dirt' || recipe.kind === 'mud' ? 0.72 : 0.82);
+        const x = ax + dx * t - Math.sin(tangent) * across; const z = az + dz * t + Math.cos(tangent) * across;
+        const terrainY = sampleTerrainHeight(map, x, z); const scale = 0.78 + random() * 0.42;
+        let mesh: THREE.Mesh;
+        if (recipe.kind === 'cobble' || recipe.kind === 'gravel') {
+          mesh = new THREE.Mesh(new THREE.DodecahedronGeometry(recipe.width * scale, 0), material);
+        } else {
+          const length = recipe.spacing * 0.72 * scale;
+          const width = recipe.width * scale;
+          const cut = Math.min(length, width) * 0.2;
+          const shape = new THREE.Shape();
+          shape.moveTo(-length / 2 + cut, -width / 2);
+          shape.lineTo(length / 2 - cut, -width / 2);
+          shape.lineTo(length / 2, -width / 2 + cut);
+          shape.lineTo(length / 2, width / 2 - cut);
+          shape.lineTo(length / 2 - cut, width / 2);
+          shape.lineTo(-length / 2 + cut, width / 2);
+          shape.lineTo(-length / 2, width / 2 - cut);
+          shape.lineTo(-length / 2, -width / 2 + cut);
+          shape.closePath();
+          mesh = new THREE.Mesh(new THREE.ExtrudeGeometry(shape, {
+            depth: recipe.height * scale,
+            bevelEnabled: true,
+            bevelSegments: 1,
+            bevelSize: recipe.height * scale * 0.18,
+            bevelThickness: recipe.height * scale * 0.12
+          }), material);
+          mesh.rotation.x = -Math.PI / 2;
+        }
+        mesh.position.set(x, terrainY + recipe.height * scale * 0.18, z);
+        mesh.rotation.y = tangent + (random() - 0.5) * (recipe.kind === 'brick' ? 0.12 : 0.45);
+        if (recipe.kind === 'cobble' || recipe.kind === 'gravel') { mesh.rotation.x = random() * 0.45; mesh.rotation.z = random() * 0.45; }
+        mesh.castShadow = true; mesh.receiveShadow = true; group.add(mesh); placed += 1;
+      }
+    }
+  }
+  return group;
+}
+
+function buildRoadSurfaceOverlays(map: EditableMap): THREE.Group {
+  const group = new THREE.Group();
+  group.name = 'road-surface-overlays';
+  const textures = createBrickRoadOverlayTextures();
+  for (const zone of map.visualSemantics.zones) {
+    if (zone.material !== 'brick-paver' || zone.region?.kind !== 'path' || zone.region.points.length < 2) continue;
+    const points = zone.region.points;
+    const samples = pathSamplesWithDistance(points, Math.max(0.85, zone.region.width * 0.24));
+    if (samples.length < 2) continue;
+    const vertices: number[] = [];
+    const uvs: number[] = [];
+    const indices: number[] = [];
+    const crossSegments = 4;
+    for (let index = 0; index < samples.length; index += 1) {
+      const sample = samples[index];
+      for (let acrossIndex = 0; acrossIndex <= crossSegments; acrossIndex += 1) {
+        const across = (acrossIndex / crossSegments - 0.5) * zone.region.width * 0.96;
+        const x = sample.x - sample.tangentZ * across;
+        const z = sample.z + sample.tangentX * across;
+        // Sample every cross-section vertex so the overlay follows sloped terrain
+        // instead of floating from a single center-line height.
+        vertices.push(x, sampleTerrainHeight(map, x, z) + 0.025, z);
+        // One texture repeat spans several metres so each paver reads as a
+        // deliberate block rather than dense insect-like noise.
+        uvs.push(sample.distance / 5.0, (across / (zone.region.width * 0.48)) * 0.8);
+      }
+      if (index > 0) {
+        const previousRow = (index - 1) * (crossSegments + 1);
+        const currentRow = index * (crossSegments + 1);
+        for (let acrossIndex = 0; acrossIndex < crossSegments; acrossIndex += 1) {
+          const a = previousRow + acrossIndex;
+          const b = previousRow + acrossIndex + 1;
+          const c = currentRow + acrossIndex;
+          const d = currentRow + acrossIndex + 1;
+          indices.push(a, b, c, b, d, c);
+        }
+      }
+    }
+    const geometry = new THREE.BufferGeometry();
+    geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+    geometry.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
+    geometry.setIndex(indices);
+    geometry.computeVertexNormals();
+    const material = new THREE.MeshStandardMaterial({
+      map: textures.map,
+      bumpMap: textures.bumpMap,
+      bumpScale: 0.045,
+      color: 0xffffff,
+      roughness: 0.9,
+      metalness: 0,
+      side: THREE.DoubleSide,
+      polygonOffset: true,
+      polygonOffsetFactor: -1,
+      polygonOffsetUnits: -1
+    });
+    const mesh = new THREE.Mesh(geometry, material);
+    mesh.name = `brick-road-surface:${zone.id}`;
+    mesh.receiveShadow = true;
+    group.add(mesh);
+  }
+  return group;
+}
+
+function createBrickRoadOverlayTextures(): { map: THREE.CanvasTexture; bumpMap: THREE.CanvasTexture } {
+  const createCanvas = (bump: boolean): HTMLCanvasElement => {
+    const canvas = document.createElement('canvas');
+    canvas.width = 512;
+    canvas.height = 256;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return canvas;
+    ctx.fillStyle = bump ? '#565656' : '#6d382c';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    const rows = 3;
+    const rowHeight = canvas.height / rows;
+    const brickWidth = 128;
+    for (let row = 0; row < rows; row += 1) {
+      const offset = row % 2 === 0 ? 0 : brickWidth * 0.5;
+      for (let x = -brickWidth; x < canvas.width + brickWidth; x += brickWidth) {
+        const left = x + offset + 5;
+        const top = row * rowHeight + 5;
+        ctx.fillStyle = bump ? '#a8a8a8' : row % 3 === 0 ? '#bd5d40' : row % 3 === 1 ? '#d1704e' : '#b34d38';
+        ctx.fillRect(left, top, brickWidth - 10, rowHeight - 10);
+        ctx.fillStyle = bump ? '#b8b8b8' : 'rgba(232, 133, 90, 0.2)';
+        ctx.fillRect(left + 5, top + 4, brickWidth - 20, 3);
+      }
+    }
+    return canvas;
+  };
+  const mapTexture = new THREE.CanvasTexture(createCanvas(false));
+  mapTexture.colorSpace = THREE.SRGBColorSpace;
+  const bumpTexture = new THREE.CanvasTexture(createCanvas(true));
+  bumpTexture.colorSpace = THREE.NoColorSpace;
+  for (const texture of [mapTexture, bumpTexture]) {
+    texture.wrapS = THREE.RepeatWrapping;
+    texture.wrapT = THREE.RepeatWrapping;
+    texture.magFilter = THREE.LinearFilter;
+    texture.minFilter = THREE.LinearMipmapLinearFilter;
+    texture.anisotropy = 16;
+    texture.needsUpdate = true;
+  }
+  return { map: mapTexture, bumpMap: bumpTexture };
 }
 
 function buildTerrain(map: EditableMap): THREE.Mesh {
@@ -2430,6 +2614,24 @@ function drawTerrainRecipeDetails(
     const region = zone.region;
     const pixelsPerMetre = (width / map.box.size[0] + height / map.box.size[2]) * 0.5;
     const random = seededRandom(map.seed ^ stringSeed(zone.id));
+    if (zone.material === 'compacted-earth') {
+      ctx.save();
+      const pathZone = zone as SceneVisualZone & { region: Extract<VisualZoneRegion, { kind: 'path' }> };
+      const samples = pathSamplesWithDistance(region.points, Math.max(0.28, region.width * 0.14));
+      const connected = mudRoadConnectedEnds(map, pathZone);
+      const junctions = mudRoadJunctionDistances(map, pathZone);
+      drawMudDetailStrip(ctx, map, samples, region.width, 0, 0.7, connected, junctions, width, height, channel, false, random, 'compacted-earth');
+      forEachPathSample(region.points, Math.max(1.4, region.width * 0.9), (sample) => {
+        if (random() < 0.34) return;
+        const across = (random() - 0.5) * region.width * 0.55;
+        const point = surfaceCanvasPoint(map, [sample.x - sample.tangentZ * across, sample.z + sample.tangentX * across], width, height);
+        const mark = pixelsPerMetre * (0.12 + random() * 0.28);
+        ctx.fillStyle = terrainRecipeDetailInk(channel, 'rgba(69, 45, 27, 0.16)', '#989898', '#6f6f6f');
+        ctx.fillRect(point[0], point[1], mark * (1.2 + random()), Math.max(1, mark * 0.22));
+      });
+      ctx.restore();
+      continue;
+    }
     if (zone.material === 'garden-stone') {
       forEachPathSample(region.points, Math.max(0.75, region.width * 0.62), (sample) => {
         const center = surfaceCanvasPoint(map, [sample.x, sample.z], width, height);
@@ -2462,7 +2664,10 @@ function drawTerrainRecipeDetails(
       continue;
     }
     if (zone.material === 'brick-paver') {
-      drawBrickPaverDetails(ctx, map, region, width, height, channel, random);
+      // Brick color is supplied by the larger terrain-conforming overlay. Keep
+      // the legacy pass transparent in the color channel so its roughness and
+      // bump channels remain available without reintroducing tiny color bricks.
+      drawBrickPaverDetails(ctx, map, region, width, height, channel, random, channel === 'color' ? 0 : 1);
       continue;
     }
     if (zone.material === 'cobblestone' || zone.material === 'gravel') {
@@ -2494,20 +2699,22 @@ function drawTerrainRecipeDetails(
     }
     if (zone.material === 'mud') {
       ctx.save();
-      for (const offset of [-0.23, 0.23]) {
-        const track = region.points.map((point, index) => {
-          const previous = region.points[Math.max(0, index - 1)];
-          const next = region.points[Math.min(region.points.length - 1, index + 1)];
-          const dx = next[0] - previous[0];
-          const dz = next[1] - previous[1];
-          const length = Math.max(0.0001, Math.hypot(dx, dz));
-          return [point[0] - dz / length * region.width * offset, point[1] + dx / length * region.width * offset] as [number, number];
-        });
-        drawCanvasPath(ctx, map, track, width, height);
-        ctx.strokeStyle = terrainRecipeDetailInk(channel, 'rgba(42, 25, 16, 0.48)', '#858585', '#505050');
-        ctx.lineWidth = Math.max(1, region.width * pixelsPerMetre * 0.13);
-        ctx.stroke();
-      }
+      const samples = pathSamplesWithDistance(region.points, Math.max(0.28, region.width * 0.14));
+      const connected = mudRoadConnectedEnds(map, zone as SceneVisualZone & { region: Extract<VisualZoneRegion, { kind: 'path' }> });
+      const junctions = mudRoadJunctionDistances(map, zone as SceneVisualZone & { region: Extract<VisualZoneRegion, { kind: 'path' }> });
+      drawMudDetailStrip(ctx, map, samples, region.width, 0, 0.42, connected, junctions, width, height, channel, false, random, 'mud');
+      drawMudDetailStrip(ctx, map, samples, region.width, -0.24, 0.09, connected, junctions, width, height, channel, true, random, 'mud');
+      drawMudDetailStrip(ctx, map, samples, region.width, 0.24, 0.09, connected, junctions, width, height, channel, true, random, 'mud');
+      forEachPathSample(region.points, Math.max(1.1, region.width * 0.8), (sample) => {
+        if (random() < 0.52) return;
+        const across = (random() - 0.5) * region.width * 0.76;
+        const point = surfaceCanvasPoint(map, [sample.x - sample.tangentZ * across, sample.z + sample.tangentX * across], width, height);
+        const rx = pixelsPerMetre * (0.06 + random() * 0.12);
+        ctx.beginPath();
+        ctx.ellipse(point[0], point[1], rx * 1.8, rx * 0.65, Math.atan2(-sample.tangentZ, sample.tangentX), 0, Math.PI * 2);
+        ctx.fillStyle = terrainRecipeDetailInk(channel, 'rgba(145, 104, 64, 0.2)', '#bcbcbc', '#989898');
+        ctx.fill();
+      });
       ctx.restore();
       continue;
     }
@@ -2534,6 +2741,143 @@ function drawTerrainRecipeDetails(
   }
 }
 
+type RoadPathSample = {
+  x: number;
+  z: number;
+  tangentX: number;
+  tangentZ: number;
+  distance: number;
+  total: number;
+};
+
+function drawMudDetailStrip(
+  ctx: CanvasRenderingContext2D,
+  map: EditableMap,
+  samples: readonly RoadPathSample[],
+  roadWidth: number,
+  offset: number,
+  widthRatio: number,
+  connected: readonly [boolean, boolean],
+  junctions: readonly number[],
+  width: number,
+  height: number,
+  channel: TerrainRecipeDetailChannel,
+  broken: boolean,
+  random: () => number,
+  recipe: 'mud' | 'compacted-earth'
+): void {
+  const pixelsPerMetre = (width / map.box.size[0] + height / map.box.size[2]) * 0.5;
+  const fadeLength = Math.max(0.85, roadWidth * 1.2);
+  ctx.lineCap = 'butt';
+  for (let index = 1; index < samples.length; index += 1) {
+    if (broken && random() < 0.08) continue;
+    const previous = samples[index - 1];
+    const current = samples[index];
+    const distance = (previous.distance + current.distance) * 0.5;
+    let visibility = Math.min(
+      connected[0] ? 1 : smoothRoadFade(distance / fadeLength),
+      connected[1] ? 1 : smoothRoadFade((current.total - distance) / fadeLength)
+    );
+    for (const junction of junctions) {
+      visibility = Math.min(visibility, smoothRoadFade(Math.abs(distance - junction) / Math.max(0.55, roadWidth * 0.55)));
+    }
+    if (visibility < 0.03) continue;
+    const start = surfaceCanvasPoint(map, [
+      previous.x - previous.tangentZ * roadWidth * offset,
+      previous.z + previous.tangentX * roadWidth * offset
+    ], width, height);
+    const end = surfaceCanvasPoint(map, [
+      current.x - current.tangentZ * roadWidth * offset,
+      current.z + current.tangentX * roadWidth * offset
+    ], width, height);
+    ctx.beginPath();
+    ctx.moveTo(start[0], start[1]);
+    ctx.lineTo(end[0], end[1]);
+    ctx.globalAlpha = visibility * (broken ? 0.82 : 0.58);
+    ctx.strokeStyle = recipe === 'compacted-earth'
+      ? terrainRecipeDetailInk(channel, 'rgba(107, 75, 47, 0.2)', '#a9a9a9', '#777777')
+      : broken
+        ? terrainRecipeDetailInk(channel, 'rgba(42, 25, 16, 0.5)', '#858585', '#484848')
+        : terrainRecipeDetailInk(channel, 'rgba(66, 42, 25, 0.3)', '#989898', '#676767');
+    ctx.lineWidth = Math.max(1, roadWidth * pixelsPerMetre * widthRatio);
+    ctx.stroke();
+  }
+  ctx.globalAlpha = 1;
+}
+
+function mudRoadJunctionDistances(
+  map: EditableMap,
+  zone: SceneVisualZone & { region: Extract<VisualZoneRegion, { kind: 'path' }> }
+): number[] {
+  const distances: number[] = [];
+  for (const other of map.visualSemantics.zones) {
+    if (other === zone || !other.material || other.region?.kind !== 'path') continue;
+    const threshold = Math.max(zone.region.width, other.region.width) * 0.58;
+    for (const endpoint of [other.region.points[0], other.region.points[other.region.points.length - 1]]) {
+      const closest = closestPointOnPolyline(endpoint[0], endpoint[1], zone.region.points);
+      if (closest.distance <= threshold) distances.push(closest.distanceAlong);
+    }
+    for (let ownIndex = 1; ownIndex < zone.region.points.length; ownIndex += 1) {
+      for (let otherIndex = 1; otherIndex < other.region.points.length; otherIndex += 1) {
+        const intersection = segmentIntersectionRatio(
+          zone.region.points[ownIndex - 1], zone.region.points[ownIndex],
+          other.region.points[otherIndex - 1], other.region.points[otherIndex]
+        );
+        if (intersection === undefined) continue;
+        const before = zone.region.points.slice(1, ownIndex).reduce((sum, point, index) => (
+          sum + Math.hypot(point[0] - zone.region.points[index][0], point[1] - zone.region.points[index][1])
+        ), 0);
+        distances.push(before + Math.hypot(
+          zone.region.points[ownIndex][0] - zone.region.points[ownIndex - 1][0],
+          zone.region.points[ownIndex][1] - zone.region.points[ownIndex - 1][1]
+        ) * intersection);
+      }
+    }
+  }
+  return distances.filter((distance, index) => distances.findIndex((candidate) => Math.abs(candidate - distance) < 0.2) === index);
+}
+
+function closestPointOnPolyline(
+  x: number,
+  z: number,
+  points: readonly [number, number][]
+): { distance: number; distanceAlong: number } {
+  let nearest = Infinity;
+  let nearestAlong = 0;
+  let traversed = 0;
+  for (let index = 1; index < points.length; index += 1) {
+    const [ax, az] = points[index - 1];
+    const [bx, bz] = points[index];
+    const dx = bx - ax;
+    const dz = bz - az;
+    const length = Math.hypot(dx, dz);
+    const t = length > 1e-8 ? Math.max(0, Math.min(1, ((x - ax) * dx + (z - az) * dz) / (length * length))) : 0;
+    const distance = Math.hypot(x - (ax + dx * t), z - (az + dz * t));
+    if (distance < nearest) { nearest = distance; nearestAlong = traversed + length * t; }
+    traversed += length;
+  }
+  return { distance: nearest, distanceAlong: nearestAlong };
+}
+
+function segmentIntersectionRatio(
+  a: readonly [number, number],
+  b: readonly [number, number],
+  c: readonly [number, number],
+  d: readonly [number, number]
+): number | undefined {
+  const abX = b[0] - a[0];
+  const abZ = b[1] - a[1];
+  const cdX = d[0] - c[0];
+  const cdZ = d[1] - c[1];
+  const denominator = abX * cdZ - abZ * cdX;
+  if (Math.abs(denominator) < 1e-8) return undefined;
+  const acX = c[0] - a[0];
+  const acZ = c[1] - a[1];
+  const ownRatio = (acX * cdZ - acZ * cdX) / denominator;
+  const otherRatio = (acX * abZ - acZ * abX) / denominator;
+  return ownRatio >= 0 && ownRatio <= 1 && otherRatio >= 0 && otherRatio <= 1 ? ownRatio : undefined;
+}
+
 function drawBrickPaverDetails(
   ctx: CanvasRenderingContext2D,
   map: EditableMap,
@@ -2541,25 +2885,13 @@ function drawBrickPaverDetails(
   width: number,
   height: number,
   channel: TerrainRecipeDetailChannel,
-  random: () => number
+  random: () => number,
+  opacityScale = 1
 ): void {
   const pixelsPerMetre = (width / map.box.size[0] + height / map.box.size[2]) * 0.5;
   const brickLength = 0.9;
   const lanes = Math.max(2, Math.round(region.width / 0.42));
   const rowWidth = region.width / lanes;
-
-  ctx.save();
-  drawCanvasPath(ctx, map, region.points, width, height);
-  ctx.lineCap = 'round';
-  ctx.lineJoin = 'round';
-  ctx.strokeStyle = terrainRecipeDetailInk(channel, 'rgba(182, 175, 159, 0.72)', '#d7d7d7', '#8d8d8d');
-  ctx.lineWidth = Math.max(1, region.width * pixelsPerMetre * 0.98);
-  ctx.stroke();
-  drawCanvasPath(ctx, map, region.points, width, height);
-  ctx.strokeStyle = terrainRecipeDetailInk(channel, '#b45738', '#d0d0d0', '#909090');
-  ctx.lineWidth = Math.max(1, region.width * pixelsPerMetre * 0.86);
-  ctx.stroke();
-  ctx.restore();
 
   forEachPathSample(region.points, brickLength, (sample) => {
     const center = surfaceCanvasPoint(map, [sample.x, sample.z], width, height);
@@ -2567,9 +2899,10 @@ function drawBrickPaverDetails(
     for (let lane = 0; lane < lanes; lane += 1) {
       const across = (lane + 0.5) / lanes - 0.5;
       const stagger = lane % 2 === 0 ? 0 : brickLength * 0.5;
-      const brickWidth = brickLength * pixelsPerMetre * (0.9 + random() * 0.04);
-      const brickHeight = Math.min(rowWidth * 0.78, brickLength * 0.45) * pixelsPerMetre;
+      const brickWidth = brickLength * pixelsPerMetre * (0.82 + random() * 0.05);
+      const brickHeight = Math.min(rowWidth * 0.7, brickLength * 0.4) * pixelsPerMetre;
       ctx.save();
+      ctx.globalAlpha = (channel === 'color' ? 0.94 : 0.9) * opacityScale;
       ctx.translate(
         center[0] + sample.tangentX * stagger * pixelsPerMetre
           - sample.tangentZ * across * region.width * pixelsPerMetre,
@@ -2580,9 +2913,9 @@ function drawBrickPaverDetails(
       ctx.fillStyle = random() > 0.5
         ? terrainRecipeDetailInk(channel, '#aa472f', '#cccccc', '#969696')
         : terrainRecipeDetailInk(channel, '#c96948', '#d5d5d5', '#999999');
-      ctx.fillRect(-brickWidth / 2, -brickHeight / 2, brickWidth, brickHeight);
-      ctx.strokeStyle = terrainRecipeDetailInk(channel, '#773323', '#c0c0c0', '#858585');
-      ctx.lineWidth = Math.max(0.55, pixelsPerMetre * 0.025);
+      ctx.fillRect(-brickWidth / 2 + 1, -brickHeight / 2 + 1, brickWidth - 2, brickHeight - 2);
+      ctx.strokeStyle = terrainRecipeDetailInk(channel, 'rgba(119, 51, 35, 0.72)', '#b0b0b0', '#858585');
+      ctx.lineWidth = Math.max(0.45, pixelsPerMetre * 0.018);
       ctx.strokeRect(-brickWidth / 2, -brickHeight / 2, brickWidth, brickHeight);
       ctx.restore();
     }
@@ -2734,6 +3067,44 @@ function forEachPathSample(
   }
 }
 
+function pathSamplesWithDistance(points: readonly [number, number][], spacing: number): RoadPathSample[] {
+  const total = points.slice(1).reduce((sum, point, index) => (
+    sum + Math.hypot(point[0] - points[index][0], point[1] - points[index][1])
+  ), 0);
+  if (points.length < 2 || total < 0.0001) return [];
+  const samples: RoadPathSample[] = [];
+  let traversed = 0;
+  for (let index = 1; index < points.length; index += 1) {
+    const start = points[index - 1];
+    const end = points[index];
+    const dx = end[0] - start[0];
+    const dz = end[1] - start[1];
+    const length = Math.hypot(dx, dz);
+    if (length < 0.0001) continue;
+    const tangentX = dx / length;
+    const tangentZ = dz / length;
+    const first = index === 1 ? 0 : Math.max(spacing, Math.ceil(traversed / spacing) * spacing - traversed);
+    for (let local = first; local < length; local += spacing) {
+      samples.push({
+        x: start[0] + tangentX * local,
+        z: start[1] + tangentZ * local,
+        tangentX,
+        tangentZ,
+        distance: traversed + local,
+        total
+      });
+    }
+    traversed += length;
+  }
+  const last = points[points.length - 1];
+  const beforeLast = points[points.length - 2];
+  const dx = last[0] - beforeLast[0];
+  const dz = last[1] - beforeLast[1];
+  const length = Math.max(0.0001, Math.hypot(dx, dz));
+  samples.push({ x: last[0], z: last[1], tangentX: dx / length, tangentZ: dz / length, distance: total, total });
+  return samples;
+}
+
 function stringSeed(value: string): number {
   let seed = 0x811c9dc5;
   for (let index = 0; index < value.length; index += 1) {
@@ -2752,6 +3123,18 @@ function drawSemanticZoneShape(
   height: number
 ): void {
   if (zone.region?.kind === 'path') {
+    if (zone.material === 'mud' || zone.material === 'compacted-earth') {
+      drawTaperedMudPath(
+        ctx,
+        map,
+        zone as SceneVisualZone & { region: Extract<VisualZoneRegion, { kind: 'path' }> },
+        color,
+        opacity,
+        width,
+        height
+      );
+      return;
+    }
     drawSemanticPath(ctx, map, zone.region, color, opacity, width, height);
     return;
   }
@@ -2779,6 +3162,67 @@ function drawSemanticZoneShape(
   ctx.restore();
 }
 
+function drawTaperedMudPath(
+  ctx: CanvasRenderingContext2D,
+  map: EditableMap,
+  zone: SceneVisualZone & { region: Extract<VisualZoneRegion, { kind: 'path' }> },
+  color: string,
+  opacity: number,
+  width: number,
+  height: number
+): void {
+  const region = zone.region;
+  const samples = pathSamplesWithDistance(region.points, Math.max(0.22, region.width * 0.12));
+  if (samples.length < 2) return;
+  const pixelsPerMetre = (width / map.box.size[0] + height / map.box.size[2]) * 0.5;
+  const connected = mudRoadConnectedEnds(map, zone);
+  const fadeLength = Math.max(0.8, region.width * 1.25);
+  ctx.save();
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  for (let index = 1; index < samples.length; index += 1) {
+    const previous = samples[index - 1];
+    const current = samples[index];
+    const distanceFromStart = (previous.distance + current.distance) * 0.5;
+    const distanceFromEnd = current.total - distanceFromStart;
+    const startFade = connected[0] ? 1 : smoothRoadFade(distanceFromStart / fadeLength);
+    const endFade = connected[1] ? 1 : smoothRoadFade(distanceFromEnd / fadeLength);
+    const fade = Math.min(startFade, endFade);
+    if (fade <= 0.01) continue;
+    const start = surfaceCanvasPoint(map, [previous.x, previous.z], width, height);
+    const end = surfaceCanvasPoint(map, [current.x, current.z], width, height);
+    const taper = 0.34 + fade * 0.66;
+    ctx.beginPath();
+    ctx.moveTo(start[0], start[1]);
+    ctx.lineTo(end[0], end[1]);
+    ctx.strokeStyle = withOpacity(color, opacity * 0.26 * fade);
+    ctx.lineWidth = Math.max(1, region.width * pixelsPerMetre * taper);
+    ctx.stroke();
+    ctx.strokeStyle = withOpacity(color, opacity * fade);
+    ctx.lineWidth *= 0.72;
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
+function smoothRoadFade(value: number): number {
+  const t = Math.max(0, Math.min(1, value));
+  return t * t * (3 - 2 * t);
+}
+
+function mudRoadConnectedEnds(
+  map: EditableMap,
+  zone: SceneVisualZone & { region: Extract<VisualZoneRegion, { kind: 'path' }> }
+): [boolean, boolean] {
+  const endpoints = [zone.region.points[0], zone.region.points[zone.region.points.length - 1]];
+  return endpoints.map((endpoint) => map.visualSemantics.zones.some((other) => (
+    other !== zone
+    && Boolean(other.material)
+    && other.region?.kind === 'path'
+    && distanceToPolyline(endpoint[0], endpoint[1], other.region.points) <= Math.max(zone.region.width, other.region.width) * 0.56
+  ))) as [boolean, boolean];
+}
+
 function drawProceduralTerrainDetail(
   ctx: CanvasRenderingContext2D,
   map: EditableMap,
@@ -2802,6 +3246,7 @@ function drawProceduralTerrainDetail(
     const x = (random() - 0.5) * map.box.size[0];
     const z = (random() - 0.5) * map.box.size[2];
     const { surface: selected, weight: selectedWeight } = terrainDetailSurfaceAt(map, x, z);
+    if (roadMaterialAt(map, x, z)) continue;
     if (selected === 'grass' && selectedWeight <= 0.001) continue;
     const point = surfaceCanvasPoint(map, [x, z], width, height);
     const palette = palettes[selected];
@@ -2858,6 +3303,7 @@ function drawProceduralTerrainPropertyDetail(
     const x = (random() - 0.5) * map.box.size[0];
     const z = (random() - 0.5) * map.box.size[2];
     const { surface, weight } = terrainDetailSurfaceAt(map, x, z);
+    if (roadMaterialAt(map, x, z)) continue;
     if (surface === 'grass' && weight <= 0.001) continue;
     const point = surfaceCanvasPoint(map, [x, z], width, height);
     const palette = palettes[surface];
@@ -2898,6 +3344,36 @@ function terrainDetailSurfaceAt(
     }
   }
   return { surface, weight };
+}
+
+function roadMaterialAt(map: EditableMap, x: number, z: number): TerrainSurfaceRecipe | undefined {
+  let nearest = Infinity;
+  let material: TerrainSurfaceRecipe | undefined;
+  for (const zone of map.visualSemantics.zones) {
+    if (zone.region?.kind !== 'path' || !zone.material) continue;
+    const distance = distanceToPolyline(x, z, zone.region.points);
+    if (distance <= zone.region.width * 0.5 && distance < nearest) {
+      nearest = distance;
+      material = zone.material;
+    }
+  }
+  return material;
+}
+
+function distanceToPolyline(x: number, z: number, points: readonly [number, number][]): number {
+  let nearest = Infinity;
+  for (let index = 1; index < points.length; index += 1) {
+    const [ax, az] = points[index - 1];
+    const [bx, bz] = points[index];
+    const dx = bx - ax;
+    const dz = bz - az;
+    const lengthSquared = dx * dx + dz * dz;
+    const t = lengthSquared > 1e-8
+      ? Math.max(0, Math.min(1, ((x - ax) * dx + (z - az) * dz) / lengthSquared))
+      : 0;
+    nearest = Math.min(nearest, Math.hypot(x - (ax + dx * t), z - (az + dz * t)));
+  }
+  return nearest;
 }
 
 function drawSemanticPath(
