@@ -820,9 +820,21 @@ export class RenderRuntimeAdapter {
     const previousClearAlpha = this.renderer.getClearAlpha();
     const previousShadowAutoUpdate = this.renderer.shadowMap.autoUpdate;
     const layerMasks = meshes.map((mesh) => mesh.layers.mask);
+    const lightLayers: Array<{ light: THREE.Light; mask: number }> = [];
+    this.scene.traverse((object) => {
+      const light = object as THREE.Light;
+      if (light.isLight) lightLayers.push({ light, mask: light.layers.mask });
+    });
 
     try {
       meshes.forEach((mesh) => mesh.layers.enable(NORMAL_PREPASS_LAYER));
+      // This pass shares the main scene's WebGLLights state. Hiding its lights
+      // invalidates every lit material's program cache again on the main pass.
+      // Keep exactly the main camera's light selection, including custom layers.
+      for (const { light, mask } of lightLayers) {
+        if ((mask & previousCameraMask) !== 0) light.layers.enable(NORMAL_PREPASS_LAYER);
+        else light.layers.disable(NORMAL_PREPASS_LAYER);
+      }
       this.camera.layers.set(NORMAL_PREPASS_LAYER);
       this.renderer.shadowMap.autoUpdate = false;
       this.scene.overrideMaterial = this.normalMaterial;
@@ -833,6 +845,7 @@ export class RenderRuntimeAdapter {
       this.renderer.render(this.scene, this.camera);
     } finally {
       meshes.forEach((mesh, index) => { mesh.layers.mask = layerMasks[index]; });
+      lightLayers.forEach(({ light, mask }) => { light.layers.mask = mask; });
       this.renderer.shadowMap.autoUpdate = previousShadowAutoUpdate;
       this.renderer.setRenderTarget(previousTarget);
       this.renderer.setClearColor(previousClearColor, previousClearAlpha);
