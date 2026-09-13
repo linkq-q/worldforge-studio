@@ -86,4 +86,24 @@ describe('WaterSurface shader', () => {
 
     surface.dispose();
   });
+
+  it('gives transient ripple points a birth time while keeping pinned points looping', () => {
+    const surface = new WaterSurface(
+      new THREE.Scene(),
+      {} as THREE.WebGLRenderer,
+      new THREE.Group(),
+      { size: 1, segments: 1 }
+    );
+    const uniforms = surface.material.uniforms;
+    expect(uniforms.uRippleDecalBirthTimes.value[0]).toBe(-2);
+    uniforms.uTime.value = 4.5;
+    (surface as WaterSurface & { addRippleDecalPoint(x: number, z: number): number }).addRippleDecalPoint(1, 2);
+    expect(uniforms.uRippleDecalBirthTimes.value[0]).toBe(4.5);
+    expect(surface.material.fragmentShader).toContain('uTime - birthTime');
+    expect(surface.material.fragmentShader).toContain('birthTime < 0.0');
+    expect(surface.material.fragmentShader).toContain('rippleTime >= lifetime');
+    (surface as WaterSurface & { clearRippleDecalPoints(): void }).clearRippleDecalPoints();
+    expect(uniforms.uRippleDecalBirthTimes.value.every((time: number) => time < 0)).toBe(true);
+    surface.dispose();
+  });
 });

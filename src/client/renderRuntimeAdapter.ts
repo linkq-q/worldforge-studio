@@ -335,6 +335,7 @@ export class RenderRuntimeAdapter {
       enabled: true,
       ...params
     });
+    // elapsedSeconds only throttles the emitter; the water owns event age.
     surface.addRippleDecalPoint(x, z);
     this.waterInteractionAt.set(waterBodyId, elapsedSeconds);
   }
