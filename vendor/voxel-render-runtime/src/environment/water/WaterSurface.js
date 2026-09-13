@@ -308,7 +308,7 @@ const WATER_VERTEX_SHADER = /* glsl */ `
 // Fragment Shader
 // ============================================================
 // 雨天 / 默认涟漪贴花：同屏最大点数。shader 数组声明与循环上限用 ${MAX_RIPPLE_DECALS} 注入，
-// JS 侧 uRippleDecalPoints 初始化、addRippleDecalPoint 环形覆盖、setRippleDecalParams /
+// JS 侧 uRippleDecalPoints/出生时间初始化、addRippleDecalPoint 环形覆盖、setRippleDecalParams /
 // getRippleDecalParams 的 slice / min 同步引用。原 8 槽满了会整体清空（雨天涟漪因此被「截断」），
 // 抬到 24 后可同屏更多、单个涟漪能活满 uRippleDecalLifetime 而不被打断。改这里需同步下列引用点。
 const MAX_RIPPLE_DECALS = 24;
@@ -422,6 +422,8 @@ const WATER_FRAGMENT_SHADER = /* glsl */ `
   uniform bool uRippleDecalEnabled;
   uniform float uRippleDecalCount;
   uniform vec2 uRippleDecalPoints[${MAX_RIPPLE_DECALS}];
+  uniform float uRippleDecalBirthTimes[${MAX_RIPPLE_DECALS}];
+  uniform float uRippleDecalLifetimes[${MAX_RIPPLE_DECALS}];
   uniform float uRippleDecalRadius;
   uniform float uRippleDecalFrequency;
   uniform float uRippleDecalSpeed;
@@ -813,18 +815,27 @@ const WATER_FRAGMENT_SHADER = /* glsl */ `
     // 不依赖 depthTexture / shoreDistance，模型水与全局水面都能用。
     float rippleDecal = 0.0;
     vec2 rippleSlope = vec2(0.0);   // 6c+：累加各点的径向斜率 → 下方注入 finalWaterNormal
-    if (uRippleDecalEnabled) {
+    if (uRippleDecalEnabled && uRippleDecalCount > 0.0) {
       // 噪声扰动：把 fbm 掺进半径破掉完美圆环（0 强度 = 纯圆）。
       // perf：噪声只依赖世界坐标，与涟漪点无关，提到循环外算一次（原先逐点 8× fbm）。
       float radiusNoise = (fbmNoise(vWorldPosition.xz * uRippleDecalNoiseScale, uTime * 0.15) - 0.5) * uRippleDecalNoiseStrength;
       for (int i = 0; i < ${MAX_RIPPLE_DECALS}; i++) {
         if (float(i) >= uRippleDecalCount) break;
+        // -2 is retired, -1 is an authored/pinned loop; other values are
+        // birth times on this surface's clock. Reject before spatial work.
+        float birthTime = uRippleDecalBirthTimes[i];
+        if (birthTime < -1.0) continue;
+        float rippleAge = birthTime < 0.0 ? uTime : uTime - birthTime;
+        float lifetime = birthTime < 0.0 ? uRippleDecalLifetime : uRippleDecalLifetimes[i];
+        if (birthTime >= 0.0 && (rippleAge < 0.0 || rippleAge >= lifetime)) continue;
         vec2 center = uRippleDecalPoints[i];
         float dRaw = length(vWorldPosition.xz - center);
         float rangeMask = 1.0 - smoothstep(uRippleDecalRadius * 0.5, uRippleDecalRadius, dRaw);
         float d = dRaw + radiusNoise;
         // item 1：每点独立的 grow→decay 生消包络，相位按位置 hash 错开，避免同步脉动
-        float phase = fract(uTime / uRippleDecalLifetime + hash2D(center));
+        float phase = birthTime < 0.0
+          ? fract(uTime / uRippleDecalLifetime + hash2D(center))
+          : rippleAge / max(lifetime, 0.001);
         float env = smoothstep(0.0, 0.15, phase) * (1.0 - smoothstep(uRippleDecalFadeStart, 1.0, phase));
         // 扩散波前：环只存在于向外扩张的前沿带内，波前过去后内部自动平复
         // （Lagarde clamp 思路的连续版；phase 复用生消包络 → lifetime 同时控制扩散速度）
@@ -1464,6 +1475,8 @@ export class WaterSurface {
         uRippleDecalEnabled: { value: false },
         uRippleDecalCount: { value: 0 },
         uRippleDecalPoints: { value: Array.from({ length: MAX_RIPPLE_DECALS }, () => new THREE.Vector2(0, 0)) },
+        uRippleDecalBirthTimes: { value: new Float32Array(MAX_RIPPLE_DECALS).fill(-2) },
+        uRippleDecalLifetimes: { value: new Float32Array(MAX_RIPPLE_DECALS) },
         uRippleDecalRadius: { value: 1.2 },
         uRippleDecalFrequency: { value: 8.0 },
         uRippleDecalSpeed: { value: 1.0 },
@@ -1714,6 +1727,7 @@ export class WaterSurface {
     const uniforms = this.material.uniforms;
 
     uniforms.uTime.value += deltaTime;
+    this._expireRippleDecals();
     uniforms.uCameraNear.value = camera.near;
     uniforms.uCameraFar.value = camera.far;
 
@@ -2018,12 +2032,14 @@ export class WaterSurface {
     if (partial.fadeStart !== undefined) setClamped('uRippleDecalFadeStart', partial.fadeStart, 0.1, 0.95);
 
     if (Array.isArray(partial.points)) {
+      this.clearRippleDecalPoints();
       // 导入的点写在 pinned 前段之后，不得覆盖瀑布脚等常驻 pinned 槽位（A.6 所有权协议）。
       const pinnedN = Math.min(this._pinnedRipples?.size || 0, MAX_RIPPLE_DECALS);
       const points = partial.points.slice(0, MAX_RIPPLE_DECALS - pinnedN);
       points.forEach(([x, z], i) => {
         if (Number.isFinite(Number(x)) && Number.isFinite(Number(z))) {
           u.uRippleDecalPoints.value[pinnedN + i].set(Number(x), Number(z));
+          u.uRippleDecalBirthTimes.value[pinnedN + i] = -1;
         }
       });
       u.uRippleDecalCount.value = pinnedN + points.length;
@@ -2049,7 +2065,10 @@ export class WaterSurface {
       frontWidth: u.uRippleDecalFrontWidth.value,
       attenuation: u.uRippleDecalAttenuation.value,
       fadeStart: u.uRippleDecalFadeStart.value,
-      points: u.uRippleDecalPoints.value.slice(pinnedN, count).map((v) => [v.x, v.y]),
+      // Events are runtime-only: re-importing them must not create permanent sources.
+      points: u.uRippleDecalPoints.value.slice(pinnedN, count)
+        .filter((_, i) => u.uRippleDecalBirthTimes.value[pinnedN + i] === -1)
+        .map((v) => [v.x, v.y]),
     };
   }
 
@@ -2065,18 +2084,41 @@ export class WaterSurface {
     const pinned = Math.min(this._pinnedRipples?.size || 0, pts.length);
     const cap = pts.length - pinned;
     if (cap <= 0) return u.uRippleDecalCount.value; // 全部被 pinned 占用，丢弃 transient
-    if (this._rippleWriteIdx === undefined) this._rippleWriteIdx = 0;
-    const idx = pinned + (this._rippleWriteIdx % cap);
-    pts[idx].set(Number(x) || 0, Number(z) || 0);
-    this._rippleWriteIdx = (this._rippleWriteIdx + 1) % cap;
-    u.uRippleDecalCount.value = Math.min(pts.length, Math.max(u.uRippleDecalCount.value, idx + 1));
+    this._expireRippleDecals();
+    const start = this._rippleWriteIdx || 0;
+    for (let offset = 0; offset < cap; offset++) {
+      const idx = pinned + ((start + offset) % cap);
+      if (u.uRippleDecalBirthTimes.value[idx] >= -1) continue;
+      pts[idx].set(Number(x) || 0, Number(z) || 0);
+      u.uRippleDecalBirthTimes.value[idx] = u.uTime.value;
+      u.uRippleDecalLifetimes.value[idx] = u.uRippleDecalLifetime.value;
+      this._rippleWriteIdx = (idx - pinned + 1) % cap;
+      u.uRippleDecalCount.value = Math.max(u.uRippleDecalCount.value, idx + 1);
+      break;
+    }
+    // Full pool: omit the new event, preserving existing lifetimes and loops.
     return u.uRippleDecalCount.value;
+  }
+
+  _expireRippleDecals() {
+    const u = this.material.uniforms;
+    let count = u.uRippleDecalCount.value;
+    if (count === 0) return;
+    const births = u.uRippleDecalBirthTimes.value;
+    for (let i = 0; i < count; i++) {
+      if (births[i] >= 0 && u.uTime.value - births[i] >= u.uRippleDecalLifetimes.value[i]) births[i] = -2;
+    }
+    while (count > 0 && births[count - 1] < -1) count--;
+    u.uRippleDecalCount.value = count;
+    if (count === 0) this._rippleWriteIdx = 0;
   }
 
   /** 清空 transient 涟漪点；pinned 点（瀑布脚）保留——它们由各自 owner 负责 unpin。 */
   clearRippleDecalPoints() {
     const pts = this.material.uniforms.uRippleDecalPoints.value;
     this.material.uniforms.uRippleDecalCount.value = Math.min(this._pinnedRipples?.size || 0, pts.length);
+    this.material.uniforms.uRippleDecalBirthTimes.value.fill(-2)
+      .fill(-1, 0, this.material.uniforms.uRippleDecalCount.value);
     this._rippleWriteIdx = 0;
   }
 
@@ -2121,6 +2163,7 @@ export class WaterSurface {
     const pts = u.uRippleDecalPoints.value;
     const pinned = [...(this._pinnedRipples?.values() || [])].slice(0, pts.length);
     pinned.forEach(([x, z], i) => pts[i].set(x, z));
+    u.uRippleDecalBirthTimes.value.fill(-2).fill(-1, 0, pinned.length);
     u.uRippleDecalCount.value = pinned.length;
     this._rippleWriteIdx = 0;
   }
