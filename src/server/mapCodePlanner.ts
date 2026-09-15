@@ -86,6 +86,9 @@ const FINAL_EXECUTION_TIMEOUT_MS = 1_000;
 const REPLAY_EXECUTION_TIMEOUT_MS = 3_000;
 const REFINE_ASSET_CATALOG_LIMIT = 64;
 const EXECUTION_REPAIR_MAX_TOKENS = 8_000;
+const ASSET_SEMANTIC_SNAPSHOT_MAX_CHARS = 900;
+const ASSET_CATALOG_SNAPSHOT_CONTEXT_MAX_CHARS = 12_000;
+const GENERATED_ASSET_CONTEXT_MAX_CHARS = 12_000;
 const MAP_CODE_ENVIRONMENT_FORM_CONTRACT = `Use these structured environment forms:
 api.terrain({preset:'plain'|'hills'|'valley'|'island'|'archipelago'|'canyon'|'cliff-plateau'|'dune-desert',amplitude?,roughness?,seed?,direction?:degrees|[x,z]});
 api.modifyTerrain({modifier:'mountain'|'ridge'|'valley'|'basin'|'cliff'|'terrace'|'dune'|'island',region:{kind:'circle',center:[x,z],radius}|{kind:'path',points:[[x,z],...],width}|{kind:'polygon',points:[[x,z],...]},amplitude?:positiveNumber,softness?:number,direction?:degrees|[x,z],variation?:number,layers?:number|stepArray,layout?:'plateau'|'coast'|'canyon'|'wall'|'terraces',access?:'walkable'|'scenic',seed?});
@@ -542,7 +545,7 @@ export async function generateMapCodeSuggestion(
   const executionAssets = requestMode === 'refine' ? assets : reusableAssets;
   const execution = await discoverMapCodeWithRepairs(code, userPrompt, systemPrompt, map, executionAssets, maxNewAssets, options);
   code = execution.code;
-  const discovery = execution.discovery;
+  let discovery = execution.discovery;
   options.onPlanPreview?.(distillCodePlanPreview(discovery.suggestion, discovery.requirements));
   if (options.discoveryOnly) {
     options.onProgress?.({ phase: 'complete', label: '室内功能规划与资产清单已生成，等待确认' });
@@ -610,6 +613,19 @@ export async function generateMapCodeSuggestion(
     family[task.variantIndex] = asset;
     bindings.set(task.key, family);
   });
+  const adapted = await adaptMapCodeToGeneratedAssets(
+    code,
+    userPrompt,
+    systemPrompt,
+    map,
+    [...executionAssets, ...generatedAssets],
+    bindings,
+    discovery,
+    maxNewAssets,
+    options
+  );
+  code = adapted.code;
+  discovery = adapted.discovery;
   options.onProgress?.({
     phase: 'replanning',
     label: map.sceneMode === 'indoor' ? '使用新资产重放室内布局' : '使用新资产重放程序化环境规划'
@@ -659,6 +675,122 @@ export async function generateMapCodeSuggestion(
     label: `${map.sceneMode === 'indoor' ? '室内规划' : '整体 Code'}与 ${generatedAssets.length} 个新资产已完成`
   });
   return completeGeneratedMapCodeSuggestion(map, final, replayContext);
+}
+
+async function adaptMapCodeToGeneratedAssets(
+  code: string,
+  userPrompt: string,
+  systemPrompt: string,
+  map: EditableMap,
+  assets: readonly MapAsset[],
+  bindings: ReadonlyMap<string, readonly MapAsset[]>,
+  discovery: CodeExecutionResult,
+  maxNewAssets: number,
+  options: MapCodePlannerOptions
+): Promise<{ code: string; discovery: CodeExecutionResult }> {
+  const assetContext = generatedAssetResultContext(discovery.requirements, bindings);
+  if (!assetContext.hasSemanticSnapshot) return { code, discovery };
+  options.onProgress?.({
+    phase: 'replanning',
+    label: 'AI 正在根据新资产的实际结构调整布局'
+  });
+  try {
+    const candidateCode = extractCode(await llmChat([
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: userPrompt },
+      { role: 'assistant', content: code },
+      {
+        role: 'user',
+        content: [
+          'The requested assets have now been generated. Read their actual model-local bounds and semantic snapshots, then return the complete corrected JavaScript function only.',
+          'Preserve every requireAsset declaration exactly: same key, name, prompt, tags, variants, dimensions, role and optional flag. Do not add, remove or rename asset requirements, and keep using api.asset(key,index) rather than real asset IDs.',
+          'Preserve the scene concept, terrain, water, routes, design groups and intended content. Only adjust spatial use of the generated results when needed: placement position, dimensions, scale, facing, attachments, connections, repetition spacing and nearby clearance. Avoid duplicating a structural or decorative part that the snapshot says is already included.',
+          'semanticSnapshot coordinates are model-local. Convert their meaning through each placement instead of treating them as map-space coordinates. localBounds is authoritative for the generated model extent; representative snapshot meshes are not the full bounds.',
+          'If the original layout already fits the generated results, return it unchanged.',
+          `Generated asset results:\n${assetContext.text}`
+        ].join('\n\n')
+      }
+    ], {
+      apiBase: options.apiBase,
+      provider: options.provider ?? 'gpt',
+      temperature: 0.1,
+      maxTokens: 16_000,
+      fetchImpl: options.fetchImpl,
+      signal: options.signal,
+      onProgress: options.onProgress
+    }));
+    const candidateDiscovery = runMapCodePlan(candidateCode, map, assets, {
+      mode: 'discovery',
+      requestMode: options.mode ?? 'generate',
+      minNewAssets: options.minNewAssets,
+      maxNewAssets,
+      scope: options.scope,
+      refinableObjectIds: new Set(options.refinableObjectIds ?? [])
+    });
+    if (!sameCodeAssetRequirements(discovery.requirements, candidateDiscovery.requirements)) {
+      throw new Error('generated_asset_adaptation_changed_requirements');
+    }
+    if (findAuthoredSceneProgramIssues(map, candidateDiscovery.suggestion).length > 0) {
+      throw new Error('generated_asset_adaptation_incomplete_scene');
+    }
+    options.onPlanPreview?.(distillCodePlanPreview(candidateDiscovery.suggestion, candidateDiscovery.requirements));
+    return { code: candidateCode, discovery: candidateDiscovery };
+  } catch (error) {
+    if (error instanceof Error && error.name === 'AbortError') throw error;
+    options.onProgress?.({
+      phase: 'replanning',
+      label: '新资产布局调整未通过校验，继续使用原布局',
+      detail: error instanceof Error ? error.message : String(error)
+    });
+    return { code, discovery };
+  }
+}
+
+function generatedAssetResultContext(
+  requirements: readonly CodeAssetRequirement[],
+  bindings: ReadonlyMap<string, readonly MapAsset[]>
+): { text: string; hasSemanticSnapshot: boolean } {
+  const lines: string[] = [];
+  let chars = 0;
+  let hasSemanticSnapshot = false;
+  for (const requirement of requirements) {
+    const family = bindings.get(requirement.key) ?? [];
+    for (let variantIndex = 0; variantIndex < family.length; variantIndex += 1) {
+      const asset = family[variantIndex];
+      if (!asset) continue;
+      const semanticSnapshot = compactAssetSemanticSnapshot(asset);
+      hasSemanticSnapshot ||= Boolean(semanticSnapshot);
+      const line = JSON.stringify({
+        key: requirement.key,
+        variantIndex,
+        declaredDimensions: requirement.dimensions,
+        role: requirement.role,
+        assetId: asset.id,
+        name: asset.name,
+        localBounds: assetLocalGeometry(asset),
+        ...(semanticSnapshot ? { semanticSnapshot } : {})
+      });
+      if (chars + line.length > GENERATED_ASSET_CONTEXT_MAX_CHARS) return {
+        text: [...lines, '{"truncated":true}'].join('\n'),
+        hasSemanticSnapshot
+      };
+      lines.push(line);
+      chars += line.length + 1;
+    }
+  }
+  return { text: lines.join('\n'), hasSemanticSnapshot };
+}
+
+function sameCodeAssetRequirements(
+  left: readonly CodeAssetRequirement[],
+  right: readonly CodeAssetRequirement[]
+): boolean {
+  if (left.length !== right.length) return false;
+  const rightByKey = new Map(right.map((requirement) => [requirement.key, requirement]));
+  return left.every((requirement) => {
+    const candidate = rightByKey.get(requirement.key);
+    return Boolean(candidate && sameCodeAssetRequirement(requirement, candidate));
+  });
 }
 
 export function replayGeneratedMapCode(token: string, map: EditableMap): MapAiSuggestion {
@@ -783,6 +915,17 @@ function runMapCodePlan(
   const unresolvedAssetIds = new Set<string>();
   const foundationWarnings: string[] = [];
   const missingAssetBindings = new Set<string>();
+  let cachedEnvironmentOperationCount = -1;
+  let cachedEnvironmentMap: EditableMap | null = null;
+  const currentEnvironmentMap = (): EditableMap => {
+    if (cachedEnvironmentOperationCount !== sceneOperations.length) {
+      cachedEnvironmentOperationCount = sceneOperations.length;
+      cachedEnvironmentMap = sceneOperations.length > 0
+        ? applyMapOperations({ ...map, assets: [...assets] }, sceneOperations)
+        : map;
+    }
+    return cachedEnvironmentMap ?? map;
+  };
   const usedFunctions = new Set<string>();
   const assetById = new Map(assets.map((asset) => [asset.id, asset]));
   // Asset geometry is immutable during one run; keep model traversal outside the sandbox time budget.
@@ -1548,18 +1691,13 @@ function runMapCodePlan(
     keepDry(pointValue: Point2, clearance = 0.8): Point2 {
       record('keepDry');
       const point = point2(pointValue);
-      const environmentMap = sceneOperations.length > 0
-        ? applyMapOperations({ ...map, assets: [...assets] }, sceneOperations)
-        : map;
-      return nearestDryPoint(environmentMap, point, clampFinite(clearance, 0, 12));
+      return nearestDryPoint(currentEnvironmentMap(), point, clampFinite(clearance, 0, 12));
     },
     waterPoint(waterIdValue: string, pointValue: Point2, draft = 0): Point3 {
       record('waterPoint');
       const waterId = cleanText(waterIdValue, 80);
       const point = point2(pointValue);
-      const environmentMap = sceneOperations.length > 0
-        ? applyMapOperations({ ...map, assets: [...assets] }, sceneOperations)
-        : map;
+      const environmentMap = currentEnvironmentMap();
       const water = environmentMap.waterBodies.find((candidate) => candidate.id === waterId);
       if (!water) throw new Error(`unknown_map_code_water:${waterId}`);
       if (!isPointInsideWaterBody(water, point[0], point[1], environmentMap)) {
@@ -2491,6 +2629,58 @@ Treat these as scale-aware composition targets inside the settlement envelope, n
 - complete routes, thresholds and street edges before decorative vegetation. Preserve only purposeful, bounded negative space.`;
 }
 
+function compactAssetSemanticSnapshot(asset: MapAsset, maxChars = ASSET_SEMANTIC_SNAPSHOT_MAX_CHARS): string {
+  const model = asset.modelJson && typeof asset.modelJson === 'object'
+    ? asset.modelJson as { _meta?: { semanticSnapshot?: { text?: unknown } } }
+    : null;
+  const text = model?._meta?.semanticSnapshot?.text;
+  if (typeof text !== 'string') return '';
+  return text
+    .split(/\r?\n/)
+    .map((line) => line.trimEnd())
+    .filter((line) => line.trim() && !line.trimStart().startsWith('#'))
+    .join('\n')
+    .slice(0, maxChars);
+}
+
+function assetLocalGeometry(asset: MapAsset): { min: Point3; max: Point3; size: Point3 } {
+  const bounds = calculateModelVisualBounds(asset.modelJson);
+  const min = bounds.min.map(contextNumber) as Point3;
+  const max = bounds.max.map(contextNumber) as Point3;
+  return {
+    min,
+    max,
+    size: max.map((value, axis) => contextNumber(value - min[axis])) as Point3
+  };
+}
+
+function contextNumber(value: number): number {
+  return Math.round(value * 1000) / 1000;
+}
+
+function assetCatalogLine(asset: MapAsset, snapshot: string): string {
+  const geometry = assetLocalGeometry(asset);
+  return `- ${asset.id}: ${asset.name}; tags=${asset.tags?.join(',') || 'none'}; localBounds=min${JSON.stringify(geometry.min)},max${JSON.stringify(geometry.max)},size${JSON.stringify(geometry.size)}${snapshot ? `; semanticSnapshot=${JSON.stringify(snapshot)}` : ''}`;
+}
+
+function assetCatalogContext(assets: readonly MapAsset[]): string {
+  if (assets.length === 0) return '- No reusable assets are available. Declare the assets you need with api.requireAsset.';
+  let remainingSnapshotChars = ASSET_CATALOG_SNAPSHOT_CONTEXT_MAX_CHARS;
+  let truncated = false;
+  const lines = assets.map((asset) => {
+    const fullSnapshot = compactAssetSemanticSnapshot(asset);
+    const snapshot = fullSnapshot.slice(0, remainingSnapshotChars);
+    remainingSnapshotChars -= snapshot.length;
+    if (snapshot.length < fullSnapshot.length) truncated = true;
+    return assetCatalogLine(asset, snapshot);
+  });
+  return [
+    'Asset context: localBounds and size are model-local coordinates before each map instance transform. semanticSnapshot describes generated groups and representative geometry; use it as structural evidence, not as scene-space coordinates.',
+    ...lines,
+    ...(truncated ? ['Asset semanticSnapshot context was truncated to the bounded prompt budget; IDs, tags and localBounds remain complete.'] : [])
+  ].join('\n');
+}
+
 export function buildMapCodePlannerSystemPrompt(
   map: EditableMap,
   assets: readonly MapAsset[],
@@ -2505,12 +2695,10 @@ export function buildMapCodePlannerSystemPrompt(
     return buildIndoorMapCodePlannerSystemPrompt(map, assets, minNewAssets, maxNewAssets, requestMode, refinableIds);
   }
   const bounds = getMapBounds(map);
-  const assetCatalog = assets.length > 0
-    ? assets.map((asset) => `- ${asset.id}: ${asset.name}; tags=${asset.tags?.join(',') || 'none'}`).join('\n')
-    : '- No reusable assets are available. Declare the assets you need with api.requireAsset.';
+  const assetCatalog = assetCatalogContext(assets);
   const refinableObjectIds = new Set(refinableIds);
   const refineContext = requestMode === 'refine'
-    ? `\n## Outdoor Scene Code refinement\nReturn a delta over the current map, not a rebuilt scene. Preserve everything the user did not ask to change. Do not call sceneIntent and do not regenerate base terrain unless explicitly requested. Use api.move, api.removeObject, api.updateWater and api.removeWater for existing content. Never move or remove an object with locked:true unless it also has refinable:true; those refinable objects belong to the current unapplied AI preview. To replace a misplaced bridge, call api.bridge with replaceObjectId and the existing or newly generated bridge asset. Existing objects: ${JSON.stringify(map.objects.slice(0, 240).map((object) => ({ id: object.id, name: object.name, assetId: object.assetId, position: object.transform.position, rotationY: object.transform.rotation[1], locked: object.locked, refinable: refinableObjectIds.has(object.id) })))}. Existing waters: ${JSON.stringify(map.waterBodies)}.\n`
+    ? `\n## Outdoor Scene Code refinement\nReturn a delta over the current map, not a rebuilt scene. Preserve everything the user did not ask to change. Do not call sceneIntent and do not regenerate base terrain unless explicitly requested. Use api.move, api.removeObject, api.updateWater and api.removeWater for existing content. Never move or remove an object with locked:true unless it also has refinable:true; those refinable objects belong to the current unapplied AI preview. To replace a misplaced bridge, call api.bridge with replaceObjectId and the existing or newly generated bridge asset. Existing objects: ${JSON.stringify(map.objects.slice(0, 240).map((object) => ({ id: object.id, name: object.name, assetId: object.assetId, position: object.transform.position, rotationY: object.transform.rotation[1], scale: object.transform.scale, size: object.transform.size, parentId: object.parentId, groupId: object.designGroupId, locked: object.locked, refinable: refinableObjectIds.has(object.id) })))}. Existing waters: ${JSON.stringify(map.waterBodies)}.\n`
     : '';
   const scopeContract = requestMode === 'refine'
     ? refineContext
@@ -2656,12 +2844,10 @@ function buildIndoorMapCodePlannerSystemPrompt(
 ): string {
   const room = requireIndoorRoom(map.room);
   const suggestedAssetCount = indoorAssetTargetCount(map, minNewAssets, maxNewAssets);
-  const assetCatalog = assets.length > 0
-    ? assets.map((asset) => `- ${asset.id}: ${asset.name}; tags=${asset.tags?.join(',') || 'none'}`).join('\n')
-    : '- No reusable assets are available. Declare the assets you need with api.requireAsset.';
+  const assetCatalog = assetCatalogContext(assets);
   const refinableObjectIds = new Set(refinableIds);
   const refineContext = requestMode === 'refine'
-    ? `\n## Indoor Code refinement\nReturn only a delta over the current room. Preserve every object, opening and finish the user did not ask to change. Never move or remove an object with locked:true unless it also has refinable:true. Use api.move and api.removeObject for existing content; add new openings only when the user explicitly requests one. Existing objects: ${JSON.stringify(map.objects.slice(0, 240).map((object) => ({ id: object.id, name: object.name, assetId: object.assetId, position: object.transform.position, rotationY: object.transform.rotation[1], parentId: object.parentId, roomOpeningId: object.roomOpeningId, locked: object.locked, refinable: refinableObjectIds.has(object.id) })))}.\n`
+    ? `\n## Indoor Code refinement\nReturn only a delta over the current room. Preserve every object, opening and finish the user did not ask to change. Never move or remove an object with locked:true unless it also has refinable:true. Use api.move and api.removeObject for existing content; add new openings only when the user explicitly requests one. Existing objects: ${JSON.stringify(map.objects.slice(0, 240).map((object) => ({ id: object.id, name: object.name, assetId: object.assetId, position: object.transform.position, rotationY: object.transform.rotation[1], scale: object.transform.scale, size: object.transform.size, parentId: object.parentId, groupId: object.designGroupId, roomOpeningId: object.roomOpeningId, locked: object.locked, refinable: refinableObjectIds.has(object.id) })))}.\n`
     : `\n## Unified indoor ownership\nYou are the single author of the complete indoor layout. No second director, specialist agent, or silent local backfill will redesign it. Local code only enforces room bounds, opening semantics, collision safety, attachment validity and door circulation. If a functional requirement is missing, this same Code Composer will receive a targeted repair request.\n`;
   return `You are WorldForge Studio's procedural indoor-scene planner.${refineContext}
 

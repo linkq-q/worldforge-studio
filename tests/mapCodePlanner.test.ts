@@ -332,9 +332,26 @@ describe('map code planner', () => {
 
   it('bounds the refine asset catalog while keeping map-referenced assets', async () => {
     const map = createEmptyMap('Refine catalog', 'refine-catalog');
-    const used = testAsset('used-asset', '已用资产');
+    const used: MapAsset = {
+      ...testAsset('used-asset', '已用资产'),
+      modelJson: {
+        format: 2,
+        nodes: [{ id: 'gate', transform: { pos: [0, 2, 0] }, mesh: { type: 'box', params: { width: 6, height: 4, depth: 1 } } }],
+        _meta: {
+          semanticSnapshot: {
+            v: 1,
+            auto: true,
+            text: '三开间园门 · 世界坐标(Y上Z前)\n# 阅读说明: 重复说明不应进入场景提示词\nG:gate 主入口 @p(0,0,0)'
+          }
+        }
+      }
+    };
     const placed = createMapObject('已用资产', used.id);
     placed.id = 'existing-object';
+    placed.transform.position = [3, 0, -4];
+    placed.transform.rotation = [0, Math.PI / 2, 0];
+    placed.transform.scale = [1.2, 1, 0.8];
+    placed.transform.size = [6, 4, 1];
     map.objects.push(placed);
     const unrelated = Array.from({ length: 100 }, (_, index) => (
       testAsset(`unrelated-${index}`, `无关资产${index}`)
@@ -356,8 +373,71 @@ describe('map code planner', () => {
     };
     const system = body.messages.find((message) => message.role === 'system')?.content ?? '';
     expect(system).toContain('used-asset');
+    expect(system).toContain('三开间园门');
+    expect(system).toContain('G:gate 主入口');
+    expect(system).toContain('localBounds=min[-3,0,-0.5],max[3,4,0.5],size[6,4,1]');
+    expect(system).toContain('"scale":[1.2,1,0.8]');
+    expect(system).toContain('"size":[6,4,1]');
+    expect(system).not.toContain('重复说明不应进入场景提示词');
     expect(system).not.toContain('unrelated-99');
     expect((system.match(/- [^\n]+; tags=/g) ?? []).length).toBeLessThanOrEqual(64);
+  });
+
+  it('lets the model adapt layout once after reading generated asset snapshots and real bounds', async () => {
+    const initial = `function plan(api) {
+      const gate = api.requireAsset({
+        key:'gate', name:'园门', prompt:'中式园门', tags:['gate'], variants:1,
+        dimensions:[6,4,1], role:'structure'
+      });
+      api.place({ assetId:api.asset(gate), name:'园门', position:[0,0], dimensions:[6,4,1], role:'structure' });
+    }`;
+    const adapted = initial.replace('position:[0,0]', 'position:[5,0]');
+    const response = (content: string) => new Response(JSON.stringify({ ok: true, content }), {
+      status: 200, headers: { 'Content-Type': 'application/json' }
+    });
+    const fetchImpl = vi.fn()
+      .mockResolvedValueOnce(response(initial))
+      .mockResolvedValueOnce(response(adapted));
+    const createAsset = vi.fn(async (): Promise<MapAsset> => ({
+      ...testAsset('asset-gate', '园门'),
+      tags: ['gate'],
+      modelJson: {
+        format: 2,
+        nodes: [{ id: 'gate', transform: { pos: [0, 2.5, 0] }, mesh: { type: 'box', params: { width: 8, height: 5, depth: 2 } } }],
+        _meta: {
+          semanticSnapshot: {
+            v: 1,
+            auto: true,
+            text: '八米宽重檐园门\n# 阅读说明: omit me\nG:gate 主入口，正面朝Z+'
+          }
+        }
+      }
+    }));
+
+    const suggestion = await generateMapCodeSuggestion('生成园林入口', createEmptyMap(), [], {
+      apiBase: 'https://example.test', provider: 'gpt', fetchImpl,
+      minNewAssets: 1, maxNewAssets: 1, createAsset
+    });
+
+    expect(fetchImpl).toHaveBeenCalledTimes(2);
+    const adaptationRequest = JSON.parse(String(fetchImpl.mock.calls[1][1]?.body)) as {
+      messages: Array<{ content: string }>;
+    };
+    const adaptationPrompt = adaptationRequest.messages.at(-1)?.content ?? '';
+    expect(adaptationPrompt).toContain('八米宽重檐园门');
+    expect(adaptationPrompt).toContain('G:gate 主入口，正面朝Z+');
+    expect(adaptationPrompt).toContain('localBounds');
+    expect(adaptationPrompt).toContain('"size":[8,5,2]');
+    expect(adaptationPrompt).not.toContain('omit me');
+    expect(suggestion.operations).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        type: 'object.add',
+        object: expect.objectContaining({
+          assetId: 'asset-gate',
+          transform: expect.objectContaining({ position: [5, 0, 0] })
+        })
+      })
+    ]));
   });
 
   it('accepts structured terrain forms and normalizes common semantic enum labels', () => {
@@ -1635,6 +1715,28 @@ describe('map code planner', () => {
     expect(new Set(assetIds).size).toBe(3);
     expect(assetIds.slice(0, 3)).toEqual(assetIds.slice(3, 6));
     expect(() => applyMapOperations(createEmptyMap(), suggestion.operations)).not.toThrow();
+  });
+
+  it('reuses the environment state across bounded keepDry placement loops', () => {
+    const routes = Array.from({ length: 17 }, (_, index) => `
+      api.route({
+        id:'route-${index}', points:[[-40,${index - 8}],[40,${index - 8}]],
+        width:2, surface:'paving'
+      });
+    `).join('');
+    expect(() => discoverMapCodeAssets(`function plan(api) {
+      api.terrain({ preset:'plain', amplitude:0.2 });
+      api.water('pond', {
+        type:'lake', points:[[-10,-10],[10,-10],[10,10],[-10,10]], level:0, depth:1
+      });
+      ${routes}
+      for (let index = 0; index < 160; index += 1) {
+        api.place({
+          name:'岸边石', role:'environment',
+          position:api.keepDry([25, index * 0.05])
+        });
+      }
+    }`, createEmptyMap('Dry cache', 'dry-cache', [96, 16, 96]), [], 0)).not.toThrow();
   });
 
   it('reuses successful seeded variants when one replay fails', async () => {
