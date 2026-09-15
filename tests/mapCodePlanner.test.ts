@@ -805,7 +805,10 @@ describe('map code planner', () => {
         groups:[{
           id:'entry', name:'入口院', intent:'门内转折',
           region:{kind:'polygon',points:[[-12,-12],[12,-12],[12,12],[-12,12]]},
-          layers:[{level:1,intent:'园门与厢房',density:'tight',minCount:2}]
+          layers:[
+            {level:1,intent:'园门与厢房',density:'tight',minCount:2},
+            {level:3,intent:'门侧竹石',density:'normal'}
+          ]
         }], focuses:[], viewpoints:[], relations:[]
       });
       api.place({ name:'园门', position:[0,-10], role:'structure', groupId:'entry', layer:1 });
@@ -817,11 +820,14 @@ describe('map code planner', () => {
         groups:[{
           id:'entry', name:'入口院', intent:'门内转折',
           region:{kind:'polygon',points:[[-12,-12],[12,-12],[12,12],[-12,12]]},
-          layers:[{level:1,intent:'园门与厢房',density:'tight',minCount:2}]
+          layers:[
+            {level:1,intent:'园门与厢房',density:'tight',minCount:2},
+            {level:3,intent:'门侧竹石',density:'normal'}
+          ]
         }], focuses:[], viewpoints:[], relations:[]
       });
       api.place({ name:'园门', position:[0,-10], role:'structure', groupId:'entry', layer:1 });
-      api.place({ name:'入口厢房', position:[-6,-6], role:'structure', groupId:'entry', layer:1 });
+      api.place({ name:'门侧竹石', position:[-6,-6], role:'environment', groupId:'entry', layer:3 });
     }`;
     const response = (content: string) => new Response(JSON.stringify({ ok: true, content }), {
       status: 200,
