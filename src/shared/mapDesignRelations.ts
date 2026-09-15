@@ -1,5 +1,4 @@
 import { createMapObject, sampleTerrainHeight, type EditableMap, type MapAsset, type MapObject } from './map';
-import { planMapObjectAttachment } from './mapAttachment';
 import type { MapDesignRelation, MapDesignSemantics } from './mapDesign';
 import type { MapOperation } from './mapOperations';
 import { expandMapScatter, mapAssetFootprintRadius } from './mapScatter';
@@ -9,17 +8,15 @@ const VEGETATION_DETAIL = /\b(?:tree|pine|bamboo|plant|shrub|bush|flower)\b|树�
 const ROCK_DETAIL = /\b(?:rock|stone|boulder)\b|太湖石|假山|山石|景石|石块|岩石|巨石/i;
 const MAX_DESIGN_FILL_OBJECTS = 96;
 
-/** Deterministic semantic layout pass; hard support remains owned by placeOn/mountOn. */
+/** Semantic support never reparents objects; physical support requires an explicit attachment. */
 export function compileMapDesignRelations(map: EditableMap, design: MapDesignSemantics): MapOperation[] {
   const updates = new Map<string, [number, number, number]>();
-  const supportUpdates = new Map<string, Extract<MapOperation, { type: 'object.update' }>['patch']>();
   const assets = new Map((map.assets ?? []).map((asset) => [asset.id, asset]));
   for (const relation of design.relations) {
+    if (relation.kind === 'support') continue;
     const sources = selectObjects(map, relation.sourceSelector, relation.sourceGroupId, assets);
     if (sources.length === 0) continue;
-    if (relation.kind === 'support') {
-      compileSupportRelation(map, sources, relation, assets, supportUpdates);
-    } else if (relation.kind === 'attract') {
+    if (relation.kind === 'attract') {
       const target = selectObjects(map, relation.targetSelector ?? '', relation.targetGroupId, assets)[0];
       if (!target) continue;
       arrangeAround(map, sources.filter((source) => source.id !== target.id), target, relation, assets, updates);
@@ -27,55 +24,11 @@ export function compileMapDesignRelations(map: EditableMap, design: MapDesignSem
       spreadApart(map, sources, relation, assets, updates);
     }
   }
-  return [
-    ...[...updates].filter(([objectId]) => !supportUpdates.has(objectId)).map(([objectId, position]) => ({
+  return [...updates].map(([objectId, position]) => ({
     type: 'object.update' as const,
     objectId,
     patch: { transform: { position } }
-    })),
-    ...[...supportUpdates].map(([objectId, patch]) => ({ type: 'object.update' as const, objectId, patch }))
-  ];
-}
-
-function compileSupportRelation(
-  map: EditableMap,
-  sources: MapObject[],
-  relation: MapDesignRelation,
-  assets: Map<string, MapAsset>,
-  updates: Map<string, Extract<MapOperation, { type: 'object.update' }>['patch']>
-): void {
-  const target = selectObjects(map, relation.targetSelector ?? '', relation.targetGroupId, assets)[0];
-  if (!target) return;
-  const candidates = sources.filter((source) => source.id !== target.id && source.assetId && assets.has(source.assetId));
-  const spacing = relation.strength === 'tight' ? 0.35 : relation.strength === 'open' ? 0.9 : 0.6;
-  candidates.forEach((source, index) => {
-    const asset = assets.get(source.assetId!);
-    if (!asset) return;
-    const column = index - (candidates.length - 1) / 2;
-    try {
-      const planned = planMapObjectAttachment({
-        ...map,
-        objects: map.objects.filter((object) => object.id !== source.id)
-      }, {
-        id: source.id,
-        name: source.name,
-        parentId: target.id,
-        asset,
-        kind: 'supported',
-        scale: Math.max(source.transform.scale[0], source.transform.scale[2]),
-        yaw: source.transform.rotation[1],
-        offset: [column * spacing, 0],
-        contact: 0.02
-      });
-      updates.set(source.id, {
-        parentId: planned.parentId,
-        heightMode: planned.heightMode,
-        transform: planned.transform
-      });
-    } catch {
-      // Invalid support remains editable in its original position.
-    }
-  });
+  }));
 }
 
 /** Bind semantic focus selectors after placement IDs are known. */

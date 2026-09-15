@@ -57,7 +57,7 @@ describe('map design semantics', () => {
     ]);
   });
 
-  it('compiles a generic support relation into physical parent placement', () => {
+  it('keeps semantic support separate from physical parent placement', () => {
     const table = asset('table', '桌子', [2, 1, 1]);
     const computer = asset('computer', '电脑', [0.5, 0.4, 0.4]);
     const map = createEmptyMap('support');
@@ -70,11 +70,40 @@ describe('map design semantics', () => {
       relations: [{ id: 'computer-on-table', kind: 'support', sourceSelector: '电脑', targetSelector: '桌子', strength: 'tight' }]
     }, map.box.size);
 
-    const next = applyMapOperations(map, compileMapDesignRelations(map, design));
-    const placedComputer = next.objects.find((object) => object.id === computerObject.id);
-    expect(placedComputer?.parentId).toBe(tableObject.id);
-    expect(placedComputer?.heightMode).toBe('fixed');
-    expect(placedComputer?.transform.position[1]).toBeGreaterThan(0.9);
+    const before = structuredClone(computerObject);
+    expect(compileMapDesignRelations(map, design)).toEqual([]);
+    expect(computerObject.parentId).toBeNull();
+    expect(computerObject).toEqual(before);
+  });
+
+  it('does not stack a supported street group on the first service building', () => {
+    const shop = asset('shop', '商铺', [8, 8, 7]);
+    const store = asset('store', '便利店', [14, 6, 10]);
+    const map = createEmptyMap('日式街道', 'street-support', [96, 16, 96]);
+    map.assets = [shop, store];
+    const target = createMapObject('便利店', store.id);
+    target.designGroupId = 'service';
+    const left = createMapObject('街左商铺', shop.id);
+    const right = createMapObject('街右商铺', shop.id);
+    left.transform.position = [-30, 0, 20];
+    right.transform.position = [30, 0, -20];
+    for (const object of [left, right]) {
+      object.designGroupId = 'main';
+      object.locked = true;
+    }
+    map.objects = [target, left, right];
+    const design = normalizeMapDesignSemantics({
+      groups: [{ id: 'main' }, { id: 'service' }],
+      relations: [{
+        id: 'service-support', kind: 'support', sourceGroupId: 'main',
+        targetGroupId: 'service', strength: 'tight', minDistance: 3, maxDistance: 28
+      }]
+    }, map.box.size);
+
+    expect(compileMapDesignRelations(map, design)).toEqual([]);
+    expect(map.objects.map((object) => object.parentId)).toEqual([null, null, null]);
+    expect(left.transform.position).toEqual([-30, 0, 20]);
+    expect(right.transform.position).toEqual([30, 0, -20]);
   });
 
   it('fills a sparse declared natural-detail layer with collision-safe scenery', () => {
