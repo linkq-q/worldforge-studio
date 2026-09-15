@@ -1711,6 +1711,26 @@ describe('map code planner', () => {
     ]);
   });
 
+  it('accepts an explicit no-change result during refinement without repair retries', async () => {
+    const code = `function plan(api) {
+      api.noChange('当前构图已经满足调整要求');
+    }`;
+    const fetchImpl = vi.fn().mockResolvedValueOnce(new Response(JSON.stringify({ ok: true, content: code }), {
+      status: 200, headers: { 'Content-Type': 'application/json' }
+    }));
+
+    const suggestion = await generateMapCodeSuggestion('检查当前构图是否需要调整', createEmptyMap(), [], {
+      apiBase: 'https://example.test', provider: 'gpt', fetchImpl,
+      mode: 'refine', minNewAssets: 0, maxNewAssets: 0
+    });
+
+    expect(fetchImpl).toHaveBeenCalledTimes(1);
+    expect(suggestion.operations).toEqual([]);
+    expect(suggestion.summary).toBe('无需调整：当前构图已经满足调整要求');
+    expect(suggestion.codePlan?.functions).toContain('noChange');
+    expect(suggestion.codePlan?.repairAttempts).toBe(0);
+  });
+
   it('generates only the contiguous asset variants used by the plan', async () => {
     const code = `function plan(api) {
       const tree = api.requireAsset({

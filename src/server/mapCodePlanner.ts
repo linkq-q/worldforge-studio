@@ -947,6 +947,7 @@ function runMapCodePlan(
   let sceneIntentCallCount = 0;
   let designSemantics = map.designSemantics;
   let designCallCount = 0;
+  let noChangeReason = '';
   let spawnRequest: { point: Point2; yaw: number } | undefined;
   const emitSceneOperation = (operation: MapOperation) => {
     if (sceneOperations.length >= MAX_SCENE_OPERATIONS) throw new Error('map_code_scene_operation_limit');
@@ -1121,6 +1122,11 @@ function runMapCodePlan(
       if (designCallCount > 1) throw new Error('duplicate_map_code_design');
       designSemantics = normalizeMapDesignSemantics(input, map.box.size);
       return designSemantics;
+    },
+    noChange(reason = '当前地图已满足调整要求'): void {
+      record('noChange');
+      if (requestMode !== 'refine') throw new Error('map_code_no_change_outside_refine');
+      noChangeReason = cleanText(reason, 160);
     },
     move(input: MoveObjectInput): string {
       record('move');
@@ -2205,6 +2211,27 @@ function runMapCodePlan(
   if (indoorRoom && placements.some((placement) => INDOOR_FORBIDDEN_CONTENT.test(placement.semantic))) {
     throw new Error('indoor_map_code_forbidden_content');
   }
+  if (noChangeReason) {
+    if (placements.length > 0 || sceneOperations.length > 0 || requirements.size > 0
+      || missingAssetBindings.size > 0 || renderPromptSuggestions.length > 0
+      || (options.minNewAssets ?? 0) > 0) {
+      throw new Error('conflicting_map_code_no_change');
+    }
+    return {
+      suggestion: {
+        summary: `无需调整：${noChangeReason}`,
+        operations: [],
+        renderPromptSuggestions: [],
+        generatedAssets: [],
+        codePlan: {
+          code: cleanCode,
+          placementCount: 0,
+          functions: [...usedFunctions].sort()
+        }
+      },
+      requirements: []
+    };
+  }
   if (map.sceneMode === 'outdoor' && requestMode === 'generate' && scope === 'scene' && !sceneIntent) {
     throw new Error('missing_map_code_scene_intent');
   }
@@ -2712,7 +2739,7 @@ export function buildMapCodePlannerSystemPrompt(
   const assetCatalog = assetCatalogContext(assets);
   const refinableObjectIds = new Set(refinableIds);
   const refineContext = requestMode === 'refine'
-    ? `\n## Outdoor Scene Code refinement\nReturn a delta over the current map, not a rebuilt scene. Preserve everything the user did not ask to change. Do not call sceneIntent and do not regenerate base terrain unless explicitly requested. Use api.move, api.removeObject, api.updateWater and api.removeWater for existing content. Never move or remove an object with locked:true unless it also has refinable:true; those refinable objects belong to the current unapplied AI preview. To replace a misplaced bridge, call api.bridge with replaceObjectId and the existing or newly generated bridge asset. Existing objects: ${JSON.stringify(map.objects.slice(0, 240).map((object) => ({ id: object.id, name: object.name, assetId: object.assetId, position: object.transform.position, rotationY: object.transform.rotation[1], scale: object.transform.scale, size: object.transform.size, parentId: object.parentId, groupId: object.designGroupId, locked: object.locked, refinable: refinableObjectIds.has(object.id) })))}. Existing waters: ${JSON.stringify(map.waterBodies)}.\n`
+    ? `\n## Outdoor Scene Code refinement\nReturn a delta over the current map, not a rebuilt scene. Preserve everything the user did not ask to change. Do not call sceneIntent and do not regenerate base terrain unless explicitly requested. Use api.move, api.removeObject, api.updateWater and api.removeWater for existing content. If the current map already satisfies the request, call api.noChange('short reason') and emit nothing else. Never move or remove an object with locked:true unless it also has refinable:true; those refinable objects belong to the current unapplied AI preview. To replace a misplaced bridge, call api.bridge with replaceObjectId and the existing or newly generated bridge asset. Existing objects: ${JSON.stringify(map.objects.slice(0, 240).map((object) => ({ id: object.id, name: object.name, assetId: object.assetId, position: object.transform.position, rotationY: object.transform.rotation[1], scale: object.transform.scale, size: object.transform.size, parentId: object.parentId, groupId: object.designGroupId, locked: object.locked, refinable: refinableObjectIds.has(object.id) })))}. Existing waters: ${JSON.stringify(map.waterBodies)}.\n`
     : '';
   const scopeContract = requestMode === 'refine'
     ? refineContext
@@ -2776,7 +2803,7 @@ Layouts: api.circlePoint(index,count,radius,center?) -> [x,z]; api.ellipsePoint(
 Assets: api.requireAsset({key,name,prompt,tags?,variants?,dimensions:[width,height,depth]?,role:'structure'|'environment',optional?}) -> key; api.asset(key,index?) -> generated assetId. role is required in unified scene ownership; only loose natural decoration may be optional.
 Output: api.place({assetId?,name?,position:[x,z]|[x,y,z],rotationY?,facing?,scale?,size?,terrain?,role?,groupId?,layer?:1|2|3|4}); api.placeStreetFrontage(...) for varied ordinary street-facing buildings; api.placeAlongRoute(...) for repeated street furniture. api.foundation(...) creates an independent editable foundation after its target buildings are placed: pass their api.place references or existing object IDs in under. Use rounded-rectangle/capsule for buildings, polygon for irregular footprints, and path + catmull-rom for curved seawalls; closed path makes a continuous ring. Choose level, slope or steps from intent, keep maxThickness bounded, and never flatten terrain. api.attach({assetId?,name?,parentId,kind:'supported'|'mounted',side?,offset?,anchorY?:'bottom'|'center'|'top',contact?,scale?,rotationY?,role?,groupId?,layer?}) attaches a child to an earlier placement or existing object. Use supported for objects resting on top; use mounted for doors, windows, banners, signs and facade ornaments that must follow a host surface. mounted side is the host-local north|south|east|west face, offset is [horizontal,vertical], anchorY selects the host's vertical baseline, and contact is embed depth. Entrances default to anchorY:'bottom', so never put an absolute world height into offset. api.bridge({waterId,assetId?,name?,crossingCenter:[x,z],direction:[dx,dz],dimensions:[width,height,depth],kind?:'straight'|'curved',curveOffset?,segmentCount?,bankInset?,deckClearance?,abutments?,groupId?,layer?}). A curved bridge uses the asset as a repeatable module. The local solver samples the full bridge width, snaps both ends beyond the real shoreline, records the route guide, and creates small bridgeheads unless abutments:false.
 Never use standalone api.place with [x,y,z] for a door, window, banner, sign or facade ornament intended as part of another structure. Either include it in the host asset itself or create the host first and use api.attach.
-Refine existing content: api.move({objectId,position?,rotationY?,scale?}); api.removeObject(objectId); api.updateWater({waterId,level?,depth?,width?,points?}); api.removeWater(waterId). These APIs are available only during refinement.
+Refine existing content: api.move({objectId,position?,rotationY?,scale?}); api.removeObject(objectId); api.updateWater({waterId,level?,depth?,width?,points?}); api.removeWater(waterId); api.noChange(reason). These APIs are available only during refinement. noChange is exclusive: use it only when no operation is needed.
 facing may be a direction [dx,dz], {direction:[dx,dz]}, {tangent:[dx,dz]}, {normal:[nx,nz]}, {target:[x,z]}, or any of those with offsetY; it overrides rotationY when present.
 For long connected dry-land scenery, prefer api.placeBetween({assetId?,name?,start:[x,z],end:[x,z],dimensions:[width,height,depth],spanAxis:'x'|'z',gapRatio?,frontTarget?:[x,z],facing?,scale?,terrain?,groupId?,layer?}). It places the model at the midpoint, aligns its declared connection axis to the line from start to end, and fits only that axis to the endpoint distance. Use spanAxis:'x' for side-by-side walls, railings, facades, seating rows and stands; use spanAxis:'z' for traversal modules. frontTarget chooses which side local Z+ faces without breaking the endpoint connection. Bridges must use api.bridge so the server solves the real shoreline, dry bank endpoints and water clearance.
 
@@ -2834,7 +2861,7 @@ for (let i = 0; i < frames.length - 1; i += 1) api.placeBetween({assetId:api.ass
 
 ## Final self-check before returning
 1. Exactly one function named plan and no markdown.
-2. ${requestMode === 'refine' ? 'Refine code does not call sceneIntent, preserves unrelated content, and emits at least one delta operation.' : 'Unified scene code calls sceneIntent once, emits terrain/surface/water/grass when relevant, and places the recognizable content; all loops have bounded counts.'}
+2. ${requestMode === 'refine' ? 'Refine code does not call sceneIntent, preserves unrelated content, and either emits at least one delta operation or calls noChange exactly once.' : 'Unified scene code calls sceneIntent once, emits terrain/surface/water/grass when relevant, and places the recognizable content; all loops have bounded counts.'}
 3. All positions are inside the stated bounds or intentionally clamped.
 4. No undefined point, invalid array index, direct array arithmetic, division by zero, invented asset ID, or unbounded placement loop.
 5. Generated assets are declared with requireAsset and bound only through api.asset.
@@ -2861,7 +2888,7 @@ function buildIndoorMapCodePlannerSystemPrompt(
   const assetCatalog = assetCatalogContext(assets);
   const refinableObjectIds = new Set(refinableIds);
   const refineContext = requestMode === 'refine'
-    ? `\n## Indoor Code refinement\nReturn only a delta over the current room. Preserve every object, opening and finish the user did not ask to change. Never move or remove an object with locked:true unless it also has refinable:true. Use api.move and api.removeObject for existing content; add new openings only when the user explicitly requests one. Existing objects: ${JSON.stringify(map.objects.slice(0, 240).map((object) => ({ id: object.id, name: object.name, assetId: object.assetId, position: object.transform.position, rotationY: object.transform.rotation[1], scale: object.transform.scale, size: object.transform.size, parentId: object.parentId, groupId: object.designGroupId, roomOpeningId: object.roomOpeningId, locked: object.locked, refinable: refinableObjectIds.has(object.id) })))}.\n`
+    ? `\n## Indoor Code refinement\nReturn only a delta over the current room. Preserve every object, opening and finish the user did not ask to change. If the room already satisfies the request, call api.noChange('short reason') and emit nothing else. Never move or remove an object with locked:true unless it also has refinable:true. Use api.move and api.removeObject for existing content; add new openings only when the user explicitly requests one. Existing objects: ${JSON.stringify(map.objects.slice(0, 240).map((object) => ({ id: object.id, name: object.name, assetId: object.assetId, position: object.transform.position, rotationY: object.transform.rotation[1], scale: object.transform.scale, size: object.transform.size, parentId: object.parentId, groupId: object.designGroupId, roomOpeningId: object.roomOpeningId, locked: object.locked, refinable: refinableObjectIds.has(object.id) })))}.\n`
     : `\n## Unified indoor ownership\nYou are the single author of the complete indoor layout. No second director, specialist agent, or silent local backfill will redesign it. Local code only enforces room bounds, opening semantics, collision safety, attachment validity and door circulation. If a functional requirement is missing, this same Code Composer will receive a targeted repair request.\n`;
   return `You are WorldForge Studio's procedural indoor-scene planner.${refineContext}
 
@@ -2907,7 +2934,7 @@ Wall-mounted objects must use wallFrame, ceiling objects must use ceilingPoint, 
 ## Shared helpers
 Constants: api.TAU, api.PHI, api.seed, api.bounds, api.room.
 Math/layout: api.clamp, api.lerp, api.remap, api.smoothstep, api.random, api.rotate2D, api.distance2D, api.faceYaw, api.tangentYaw, api.gridPoints, api.circlePoint, api.linePoint.
-Refine: api.move({objectId,position?,rotationY?,scale?}); api.removeObject(objectId). These are available only during refinement and reject locked objects.
+Refine: api.move({objectId,position?,rotationY?,scale?}); api.removeObject(objectId); api.noChange(reason). These are available only during refinement and reject locked objects. noChange is exclusive: use it only when no operation is needed.
 
 ## Final self-check
 1. Exactly one function named plan and no Markdown.
