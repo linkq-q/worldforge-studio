@@ -1132,7 +1132,7 @@ function runMapCodePlan(
       record('move');
       if (requestMode !== 'refine') throw new Error('map_code_refine_api_outside_refine');
       const objectId = String(input?.objectId ?? '').trim();
-      const workingMap = sceneOperations.length > 0 ? applyMapOperations(map, sceneOperations) : map;
+      const workingMap = currentEnvironmentMap();
       const object = workingMap.objects.find((item) => item.id === objectId);
       if (!object) throw new Error(`unknown_map_code_object:${objectId}`);
       if (object.locked && !options.refinableObjectIds?.has(objectId)) throw new Error(`locked_map_code_object:${objectId}`);
@@ -1153,7 +1153,7 @@ function runMapCodePlan(
       record('removeObject');
       if (requestMode !== 'refine') throw new Error('map_code_refine_api_outside_refine');
       const objectId = String(objectIdValue ?? '').trim();
-      const workingMap = sceneOperations.length > 0 ? applyMapOperations(map, sceneOperations) : map;
+      const workingMap = currentEnvironmentMap();
       const object = workingMap.objects.find((item) => item.id === objectId);
       if (!object) throw new Error(`unknown_map_code_object:${objectId}`);
       if (object.locked && !options.refinableObjectIds?.has(objectId)) throw new Error(`locked_map_code_object:${objectId}`);
@@ -1165,7 +1165,7 @@ function runMapCodePlan(
       if (requestMode !== 'refine') throw new Error('map_code_refine_api_outside_refine');
       const form = codeObject(input, 'invalid_map_code_water_update');
       const waterId = String(form.waterId ?? form.id ?? '').trim();
-      const workingMap = sceneOperations.length > 0 ? applyMapOperations(map, sceneOperations) : map;
+      const workingMap = currentEnvironmentMap();
       if (!workingMap.waterBodies.some((item) => item.id === waterId)) throw new Error(`unknown_map_code_water:${waterId}`);
       emitSceneOperation({
         type: 'water.update',
@@ -1186,7 +1186,7 @@ function runMapCodePlan(
       record('removeWater');
       if (requestMode !== 'refine') throw new Error('map_code_refine_api_outside_refine');
       const waterId = String(waterIdValue ?? '').trim();
-      const workingMap = sceneOperations.length > 0 ? applyMapOperations(map, sceneOperations) : map;
+      const workingMap = currentEnvironmentMap();
       if (!workingMap.waterBodies.some((item) => item.id === waterId)) throw new Error(`unknown_map_code_water:${waterId}`);
       emitSceneOperation({ type: 'water.remove', waterId });
       return waterId;
@@ -1369,9 +1369,7 @@ function runMapCodePlan(
       record('placeAlongRoute');
       if (!input || typeof input !== 'object') throw new Error('invalid_map_code_place_along_route');
       const routeId = cleanId(input.routeId, 'route');
-      const workingMap = sceneOperations.length > 0
-        ? applyMapOperations({ ...map, assets: [...assets] }, sceneOperations)
-        : map;
+      const workingMap = currentEnvironmentMap();
       const guide = workingMap.guides.find((candidate) => candidate.id === routeId);
       if (!guide) throw new Error(`unknown_map_code_route:${routeId}`);
       const spacing = clampFinite(input.spacing, 1, 80);
@@ -1425,9 +1423,7 @@ function runMapCodePlan(
       }
       if (input.side !== 'left' && input.side !== 'right') throw new Error('invalid_map_code_street_frontage_side');
       const routeId = cleanId(input.routeId, 'route');
-      const workingMap = sceneOperations.length > 0
-        ? applyMapOperations({ ...map, assets: [...assets] }, sceneOperations)
-        : map;
+      const workingMap = currentEnvironmentMap();
       const guide = workingMap.guides.find((candidate) => candidate.id === routeId);
       if (!guide) throw new Error(`unknown_map_code_route:${routeId}`);
       const points = mapGuidePolyline(guide);
@@ -1947,7 +1943,7 @@ function runMapCodePlan(
       if (input.replaceObjectId !== undefined) {
         if (requestMode !== 'refine') throw new Error('map_code_bridge_replace_outside_refine');
         const objectId = String(input.replaceObjectId).trim();
-        const workingMap = sceneOperations.length > 0 ? applyMapOperations(map, sceneOperations) : map;
+        const workingMap = currentEnvironmentMap();
         const object = workingMap.objects.find((item) => item.id === objectId);
         if (!object) throw new Error(`unknown_map_code_object:${objectId}`);
         const objectAsset = object.assetId ? assetById.get(object.assetId) : undefined;
@@ -1959,9 +1955,7 @@ function runMapCodePlan(
         emitSceneOperation({ type: 'object.remove', objectId });
       }
       const waterId = cleanId(input.waterId, 'water');
-      const environmentMap = sceneOperations.length > 0
-        ? applyMapOperations({ ...map, assets: [...assets] }, sceneOperations)
-        : map;
+      const environmentMap = currentEnvironmentMap();
       const water = environmentMap.waterBodies.find((item) => item.id === waterId);
       if (!water) throw new Error(`unknown_map_code_bridge_water:${waterId}`);
       const center = point2(input.crossingCenter);
