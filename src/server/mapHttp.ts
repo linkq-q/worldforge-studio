@@ -63,6 +63,7 @@ import type { ProjectExportProfile } from '../shared/projectExport';
 import { applyPaletteToModelJson, type ColorPalette } from '../shared/colorPalette';
 import { worldCapabilitySummary } from '../shared/worldCapabilities';
 import { WorldAgentRunManager } from './worldAgentRuns';
+import { generationTraceId, recordGenerationTrace, withGenerationTrace } from './generationTrace';
 
 type Req = http.IncomingMessage;
 type Res = http.ServerResponse;
@@ -70,6 +71,20 @@ type Res = http.ServerResponse;
 const worldAgentManagers = new WeakMap<MapStore, WorldAgentRunManager>();
 
 export async function handleMapHttp(req: Req, res: Res, store: MapStore): Promise<boolean> {
+  const pathname = new URL(req.url ?? '/', 'http://localhost').pathname;
+  const run = /^\/api\/editor\/maps\/([^/]+)\/(generate|refine|visual-review|code-replay|transactions)$/.exec(pathname);
+  if (req.method === 'POST' && run && isLoopbackRequest(req)) {
+    return withGenerationTrace(store.rootDir, { mapId: run[1], operation: run[2] }, async () => {
+      res.setHeader('X-WorldForge-Trace-Id', generationTraceId()!);
+      const handled = await handleMapHttpRequest(req, res, store);
+      recordGenerationTrace('request.complete', { status: res.statusCode, aborted: req.aborted });
+      return handled;
+    });
+  }
+  return handleMapHttpRequest(req, res, store);
+}
+
+async function handleMapHttpRequest(req: Req, res: Res, store: MapStore): Promise<boolean> {
   setCorsHeaders(res);
   if (req.method === 'OPTIONS') {
     res.writeHead(204);
@@ -109,10 +124,12 @@ export async function handleMapHttp(req: Req, res: Res, store: MapStore): Promis
     }
   } catch (error) {
     if (res.headersSent) {
+      recordGenerationTrace('request.error', { error });
       sendSse(res, 'error', { error: error instanceof Error ? error.message : String(error) });
       res.end();
       return true;
     }
+    recordGenerationTrace('request.error', { error });
     sendJson(res, error instanceof HttpError ? error.status : 500, {
       error: error instanceof Error ? error.message : String(error)
     });
@@ -370,10 +387,14 @@ async function handleEditorMaps(req: Req, res: Res, store: MapStore, parts: stri
 
   if (parts[4] === 'code-replay' && req.method === 'POST' && parts.length === 5) {
     const body = await readJson<{ token?: string }>(req);
+    recordGenerationTrace('request.input', body);
     const token = body.token?.trim();
     if (!token) throw new HttpError(400, 'missing_map_code_replay_token');
     try {
-      sendJson(res, 200, { suggestion: replayGeneratedMapCode(token, await store.loadMap(mapId)) });
+      const suggestion = replayGeneratedMapCode(token, await store.loadMap(mapId));
+      suggestion.generationTraceId = generationTraceId();
+      recordGenerationTrace('generation.result', { suggestion });
+      sendJson(res, 200, { suggestion });
     } catch (error) {
       const message = error instanceof Error ? error.message : 'map_code_replay_failed';
       if (message === 'map_code_replay_expired') throw new HttpError(410, message);
@@ -484,13 +505,18 @@ async function handleEditorMaps(req: Req, res: Res, store: MapStore, parts: stri
       imageDataUrl?: string;
       provider?: ChatProvider;
       baseOperations?: MapOperation[];
+      parentTraceId?: string;
     }>(req);
+    recordGenerationTrace('request.input', body);
     const provider = body.provider ?? 'gpt';
     const option = CHAT_PROVIDER_OPTIONS.find((item) => item.key === provider);
     if (!option || option.disabled) throw new HttpError(400, 'provider_unavailable');
     if (!body.imageDataUrl) throw new HttpError(400, 'missing_map_review_image');
     const controller = new AbortController();
-    const abort = () => controller.abort();
+    const abort = () => {
+      recordGenerationTrace('request.cancelled', { reason: 'client disconnected' });
+      controller.abort();
+    };
     const abortIfOpen = () => {
       if (!res.writableEnded) abort();
     };
@@ -502,11 +528,13 @@ async function handleEditorMaps(req: Req, res: Res, store: MapStore, parts: stri
       const planningMap = Array.isArray(body.baseOperations) && body.baseOperations.length > 0
         ? applyMapOperations(mapWithAssets, body.baseOperations)
         : mapWithAssets;
+      recordGenerationTrace('review.input', { map: { ...planningMap, assets: undefined } });
       const review = await reviewMapVisual(planningMap, body.imageDataUrl, {
         provider,
         signal: controller.signal
       });
-      sendJson(res, 200, { review });
+      recordGenerationTrace('review.result', { review });
+      sendJson(res, 200, { review, generationTraceId: generationTraceId() });
     } finally {
       req.off('aborted', abort);
       res.off('close', abortIfOpen);
@@ -533,7 +561,9 @@ async function handleEditorMaps(req: Req, res: Res, store: MapStore, parts: stri
       focusPrompt?: string;
       paletteId?: string;
       selectedObjectIds?: string[];
+      parentTraceId?: string;
     }>(req);
+    recordGenerationTrace('request.input', body);
     const prompt = body.prompt?.trim();
     if (!prompt) throw new HttpError(400, 'missing_prompt');
     const provider = body.provider ?? 'gpt';
@@ -542,19 +572,27 @@ async function handleEditorMaps(req: Req, res: Res, store: MapStore, parts: stri
     const controller = new AbortController();
     const stream = acceptsEventStream(req);
     if (stream) beginSse(res);
-    const onProgress = stream
-      ? (event: AgentProgressEvent) => sendSse(res, 'progress', event)
-      : undefined;
-    const onPreview = stream
-      ? (suggestion: MapAiSuggestion) => sendSse(res, 'preview', { suggestion })
-      : undefined;
-    const onPlanPreview = stream
-      ? (plan: CodePlanPreviewPayload) => sendSse(res, 'plan', plan)
-      : undefined;
-    const onAssetReady = stream
-      ? (event: CodePlanAssetReadyPayload) => sendSse(res, 'asset-ready', event)
-      : undefined;
-    const abort = () => controller.abort();
+    const onProgress = (event: AgentProgressEvent) => {
+      recordGenerationTrace('progress', event);
+      if (stream) sendSse(res, 'progress', event);
+    };
+    const onPreview = (suggestion: MapAiSuggestion) => {
+      suggestion.generationTraceId = generationTraceId();
+      recordGenerationTrace('generation.preview', { suggestion });
+      if (stream) sendSse(res, 'preview', { suggestion });
+    };
+    const onPlanPreview = (plan: CodePlanPreviewPayload) => {
+      recordGenerationTrace('code.preview', plan);
+      if (stream) sendSse(res, 'plan', plan);
+    };
+    const onAssetReady = (event: CodePlanAssetReadyPayload) => {
+      recordGenerationTrace('asset.ready', event);
+      if (stream) sendSse(res, 'asset-ready', event);
+    };
+    const abort = () => {
+      recordGenerationTrace('request.cancelled', { reason: 'client disconnected' });
+      controller.abort();
+    };
     const abortIfOpen = () => {
       if (!res.writableEnded) abort();
     };
@@ -588,6 +626,11 @@ async function handleEditorMaps(req: Req, res: Res, store: MapStore, parts: stri
         ...(planningMap.assets ?? []),
         ...libraryAssets
       ]);
+      recordGenerationTrace('generation.input', {
+        map: { ...planningMap, assets: undefined },
+        assets: planningAssets.map((asset) => ({ id: asset.id, name: asset.name, updatedAt: asset.updatedAt })),
+        palette: colorPalette
+      });
       if (body.planOnly === true) {
         if (parts[4] !== 'generate' || planningMap.sceneMode === 'mixed') {
           throw new HttpError(400, 'composition_plan_preview_unavailable');
@@ -608,6 +651,8 @@ async function handleEditorMaps(req: Req, res: Res, store: MapStore, parts: stri
             onAssetReady,
             createAsset: async () => { throw new Error('discovery_only_asset_generation'); }
           });
+          suggestion.generationTraceId = generationTraceId();
+          recordGenerationTrace('generation.result', { suggestion });
           if (stream) {
             sendSse(res, 'result', { suggestion });
             res.end();
@@ -625,6 +670,7 @@ async function handleEditorMaps(req: Req, res: Res, store: MapStore, parts: stri
           maxNewAssets: body.maxNewAssets,
           onProgress
         });
+        recordGenerationTrace('composition.result', { plan });
         if (stream) {
           sendSse(res, 'result', { plan });
           res.end();
@@ -658,6 +704,7 @@ async function handleEditorMaps(req: Req, res: Res, store: MapStore, parts: stri
           onPlanPreview,
           onAssetReady,
           createAsset: async (request, report) => {
+            recordGenerationTrace('asset.request', request);
             const generationPrompt = request.prompt;
             const retryOptions = {
               attempts: 3,
@@ -716,6 +763,8 @@ async function handleEditorMaps(req: Req, res: Res, store: MapStore, parts: stri
             });
           }
         });
+      suggestion.generationTraceId = generationTraceId();
+      recordGenerationTrace('generation.result', { suggestion });
       if (stream) {
         sendSse(res, 'result', { suggestion });
         res.end();
@@ -740,6 +789,7 @@ async function handleEditorMaps(req: Req, res: Res, store: MapStore, parts: stri
     }
     if (req.method === 'POST' && parts.length === 5) {
       const body = await readJson<Partial<MapTransactionRequest>>(req);
+      recordGenerationTrace('transaction.input', body);
       if (!isTransactionSource(body.source)) throw new HttpError(400, 'invalid_transaction_source');
       if (!Array.isArray(body.operations)) throw new HttpError(400, 'invalid_operations');
       try {

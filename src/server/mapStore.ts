@@ -1177,6 +1177,7 @@ function normalizeMapAiTransactionMetadata(value: unknown): MapAiTransactionMeta
   if (!program && !code) return undefined;
   return {
     prompt: cleanText(input.prompt, 1_200),
+    ...(cleanText(input.generationTraceId, 80) ? { generationTraceId: cleanText(input.generationTraceId, 80) } : {}),
     ...(program && agent ? { agent: {
       program,
       iterations: boundedInteger(agent.iterations, 0, 100),

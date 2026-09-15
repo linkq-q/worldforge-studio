@@ -96,6 +96,7 @@ export interface MapAiCodePlan {
 
 export interface MapAiTransactionMetadata {
   prompt: string;
+  generationTraceId?: string;
   agent?: MapAiAgentTrace;
   codePlan?: MapAiCodePlan;
   generatedAssets?: Array<{ id: string; name: string }>;
@@ -217,6 +218,7 @@ export interface MapTransactionSummary {
 
 export interface MapAiSuggestion {
   summary: string;
+  generationTraceId?: string;
   operations: MapOperation[];
   renderPromptSuggestions: string[];
   generatedAssets: Array<{ id: string; name: string }>;
