@@ -745,6 +745,42 @@ describe('map code planner', () => {
     expect(suggestion.codePlan?.repairAttempts).toBe(1);
   });
 
+  it('keeps a usable plan when the optional scene-completion request fails', async () => {
+    const incomplete = `function plan(api) {
+      api.sceneIntent({ kind:'authored', reason:'人工园林' });
+      api.design({
+        experienceMode:'sequential', intent:'入口院',
+        groups:[{
+          id:'entry', name:'入口院', intent:'门内转折',
+          region:{kind:'polygon',points:[[-12,-12],[12,-12],[12,12],[-12,12]]},
+          layers:[{level:1,intent:'园门与厢房',density:'tight',minCount:2}]
+        }], focuses:[], viewpoints:[], relations:[]
+      });
+      api.place({ name:'园门', position:[0,-10], role:'structure', groupId:'entry', layer:1 });
+    }`;
+    const response = (body: object, status = 200) => new Response(JSON.stringify(body), {
+      status, headers: { 'Content-Type': 'application/json' }
+    });
+    const fetchImpl = vi.fn()
+      .mockResolvedValueOnce(response({ ok: true, content: incomplete }))
+      .mockResolvedValueOnce(response({ ok: false, error: 'provider_unavailable' }, 503));
+    const progress: string[] = [];
+
+    const suggestion = await generateMapCodeSuggestion('生成中式园林', createEmptyMap(), [], {
+      apiBase: 'https://example.test', provider: 'gpt', fetchImpl,
+      minNewAssets: 0, maxNewAssets: 0, scope: 'scene',
+      onProgress: (event) => progress.push(event.label)
+    });
+
+    expect(fetchImpl).toHaveBeenCalledTimes(2);
+    expect(suggestion.operations.some((operation) => operation.type === 'object.add')).toBe(true);
+    expect(suggestion.codePlan?.repairAttempts).toBe(1);
+    expect(suggestion.diagnostics).toEqual(expect.arrayContaining([
+      expect.objectContaining({ code: 'scene.program-incomplete', repaired: false })
+    ]));
+    expect(progress).toContain('场景自动补全暂不可用，已保留当前可用规划');
+  });
+
   it('keeps execution retries available after a scene-program completion repair times out', async () => {
     const timedOut = `function plan(api) {
       let total = 0;

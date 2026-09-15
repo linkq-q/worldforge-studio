@@ -2946,24 +2946,44 @@ async function discoverMapCodeWithRepairs(
           label: '场景片区内容不足，AI 正在自动补全 1/1',
           detail: programIssues.join('\n')
         });
-        code = extractCode(await llmChat([
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: userPrompt },
-          { role: 'assistant', content: code },
-          {
-            role: 'user',
-            content: `The program executed, but its authored scene program is incomplete:\n${programIssues.join('\n')}\n\nReturn corrected JavaScript only. Preserve the overall concept, terrain and playable circulation, but complete every promised leaf-group layer with actual placements using the same groupId and layer. Do not merely rewrite the design descriptions. If a clear paved or grass area consumes most of a scene group while containing almost no authored content, shrink or reshape it and compose its edges with purposeful architecture, stopping places and near/mid/small details. Routes must connect distinct programmed destinations, and route nodes such as thresholds, bridgeheads, turns and waterside pauses should receive context-appropriate details beside the walkable surface. Keep deliberate negative space only when it has a specific use, a shaped boundary and enough surrounding content to read as intentional. Do not scale loop counts from map width, map area, or fine coordinate steps. Use bounded api.gridPoints, api.poissonDisk, or curve-sampling results and iterate each result once; avoid while loops and nested placement loops.`
-          }
-        ], {
-          apiBase: options.apiBase,
-          provider: options.provider ?? 'gpt',
-          temperature: 0.15,
-          maxTokens: 16_000,
-          fetchImpl: options.fetchImpl,
-          signal: options.signal,
-          onProgress: options.onProgress
-        }));
-        continue;
+        try {
+          code = extractCode(await llmChat([
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: userPrompt },
+            { role: 'assistant', content: code },
+            {
+              role: 'user',
+              content: `The program executed, but its authored scene program is incomplete:\n${programIssues.join('\n')}\n\nReturn corrected JavaScript only. Preserve the overall concept, terrain and playable circulation, but complete every promised leaf-group layer with actual placements using the same groupId and layer. Do not merely rewrite the design descriptions. If a clear paved or grass area consumes most of a scene group while containing almost no authored content, shrink or reshape it and compose its edges with purposeful architecture, stopping places and near/mid/small details. Routes must connect distinct programmed destinations, and route nodes such as thresholds, bridgeheads, turns and waterside pauses should receive context-appropriate details beside the walkable surface. Keep deliberate negative space only when it has a specific use, a shaped boundary and enough surrounding content to read as intentional. Do not scale loop counts from map width, map area, or fine coordinate steps. Use bounded api.gridPoints, api.poissonDisk, or curve-sampling results and iterate each result once; avoid while loops and nested placement loops.`
+            }
+          ], {
+            apiBase: options.apiBase,
+            provider: options.provider ?? 'gpt',
+            temperature: 0.15,
+            maxTokens: 16_000,
+            fetchImpl: options.fetchImpl,
+            signal: options.signal,
+            onProgress: options.onProgress
+          }));
+          continue;
+        } catch (error) {
+          if (error instanceof Error && error.name === 'AbortError') throw error;
+          options.onProgress?.({
+            phase: 'replanning',
+            label: '场景自动补全暂不可用，已保留当前可用规划',
+            detail: error instanceof Error ? error.message : String(error)
+          });
+          return {
+            code,
+            repairAttempts,
+            discovery: {
+              ...discovery,
+              suggestion: {
+                ...discovery.suggestion,
+                diagnostics: [...(discovery.suggestion.diagnostics ?? []), ...sceneProgramDiagnostics(programIssues)]
+              }
+            }
+          };
+        }
       }
       return {
         code,
