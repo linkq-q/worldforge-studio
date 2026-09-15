@@ -75,6 +75,7 @@ import { runAssetGenerationPool, type AssetTaskReporter } from './assetGeneratio
 import type { AssetGenerationRequest } from './mapAi';
 import { validateMapSuggestion } from './mapSuggestionValidation';
 import { llmChat } from './modelApi';
+import { recordGenerationTrace } from './generationTrace';
 
 const MAX_CODE_LENGTH = 40_000;
 const MAX_PLACEMENTS = 2_000;
@@ -538,6 +539,7 @@ export async function generateMapCodeSuggestion(
         provider: options.provider ?? 'gpt',
         temperature: 0.25,
         maxTokens: 16_000,
+        traceStage: 'map.initial-plan',
         fetchImpl: options.fetchImpl,
         signal: options.signal,
         onProgress: options.onProgress
@@ -716,6 +718,7 @@ async function adaptMapCodeToGeneratedAssets(
       provider: options.provider ?? 'gpt',
       temperature: 0.1,
       maxTokens: 16_000,
+      traceStage: 'map.asset-adaptation',
       fetchImpl: options.fetchImpl,
       signal: options.signal,
       onProgress: options.onProgress
@@ -750,8 +753,10 @@ async function adaptMapCodeToGeneratedAssets(
     if (findAuthoredSceneProgramIssues(map, candidateFinal).some((issue) => issue.startsWith('scene_group_missing_layer:'))) {
       throw new Error('generated_asset_adaptation_incomplete_scene');
     }
+    recordGenerationTrace('code.adaptation.accepted', { code: candidateCode, suggestion: candidateFinal });
     return { code: candidateCode, discovery: candidateDiscovery, final: candidateFinal };
   } catch (error) {
+    recordGenerationTrace('code.adaptation.rejected', { error, retainedCode: code });
     if (error instanceof Error && error.name === 'AbortError') throw error;
     options.onProgress?.({
       phase: 'replanning',
@@ -920,6 +925,28 @@ function runMapCodePlan(
   map: EditableMap,
   assets: readonly MapAsset[] = [],
   options: CodeExecutionOptions = {}
+): CodeExecutionResult {
+  const started = Date.now();
+  recordGenerationTrace('code.execution.start', {
+    code, mapId: map.id, mapVersion: map.version, mode: options.mode ?? 'final', requestMode: options.requestMode ?? 'generate',
+    assetIds: assets.map((asset) => asset.id),
+    bindings: options.assetBindings ? Object.fromEntries([...options.assetBindings].map(([key, family]) => [key, family.map((asset) => asset?.id ?? null)])) : undefined
+  });
+  try {
+    const result = executeMapCodePlanInternal(code, map, assets, options);
+    recordGenerationTrace('code.execution.result', { elapsedMs: Date.now() - started, ...result });
+    return result;
+  } catch (error) {
+    recordGenerationTrace('code.execution.error', { code, detail: mapCodeExecutionErrorDetail(error, code), error, elapsedMs: Date.now() - started });
+    throw error;
+  }
+}
+
+function executeMapCodePlanInternal(
+  code: string,
+  map: EditableMap,
+  assets: readonly MapAsset[],
+  options: CodeExecutionOptions
 ): CodeExecutionResult {
   const cleanCode = extractCode(code);
   if (!cleanCode || cleanCode.length > MAX_CODE_LENGTH) throw new Error('invalid_map_code_plan');
@@ -2379,16 +2406,19 @@ function runMapCodePlan(
     ...accessRepair.operations,
     ...linkedObjectUpdates
   ];
+  recordGenerationTrace('layout.before-relations', { mode, operations });
   if (designCallCount > 0 || map.designSemantics.groups.length > 0) {
     designSemantics = remapMapDesignObjectReferences(designSemantics, objectIdByReference);
     const placedMap = applyMapOperations(planningMap, operations);
     designSemantics = resolveMapDesignFocusObjects(placedMap, designSemantics);
     const relationOperations = compileMapDesignRelations(placedMap, designSemantics);
+    recordGenerationTrace('layout.relations', { designSemantics, operations: relationOperations });
     operations.push(...relationOperations);
     const relatedMap = relationOperations.length > 0
       ? applyMapOperations(placedMap, relationOperations)
       : placedMap;
     const pruningOperations = compileMapDesignPruning(relatedMap, designSemantics);
+    recordGenerationTrace('layout.pruning', { operations: pruningOperations });
     operations.push(...pruningOperations);
     const prunedMap = pruningOperations.length > 0
       ? applyMapOperations(relatedMap, pruningOperations)
@@ -2400,6 +2430,7 @@ function runMapCodePlan(
     ? compileMapNaturalClearance(applyMapOperations(planningMap, operations))
     : [];
   operations.push(...clearanceOperations);
+  recordGenerationTrace('layout.clearance', { operations: clearanceOperations });
   if (map.sceneMode === 'outdoor' && ((requestMode === 'generate' && scope === 'scene') || spawnRequest)) {
     const candidate = applyMapOperations(planningMap, operations);
     const requestedSpawn = spawnRequest?.point
@@ -3024,6 +3055,7 @@ async function discoverMapCodeWithRepairs(
             provider: options.provider ?? 'gpt',
             temperature: 0.15,
             maxTokens: 16_000,
+            traceStage: 'map.program-completion',
             fetchImpl: options.fetchImpl,
             signal: options.signal,
             onProgress: options.onProgress
@@ -3063,6 +3095,7 @@ async function discoverMapCodeWithRepairs(
     } catch (error) {
       if (error instanceof Error && error.name === 'AbortError') throw error;
       const executionError = mapCodeExecutionErrorDetail(error, code);
+      recordGenerationTrace('code.repair.required', { error: executionError, code, executionRepairAttempts, repairAttempts });
       if (executionRepairAttempts === 2) throw new Error(`map_code_execution_failed:${executionError}`);
       executionRepairAttempts += 1;
       repairAttempts += 1;
@@ -3093,6 +3126,7 @@ async function discoverMapCodeWithRepairs(
         temperature: 0.1,
         maxTokens: EXECUTION_REPAIR_MAX_TOKENS,
         thinking: false,
+        traceStage: 'map.execution-repair',
         fetchImpl: options.fetchImpl,
         signal: options.signal,
         onProgress: options.onProgress

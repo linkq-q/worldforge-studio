@@ -63,7 +63,8 @@ export async function reviewMapVisual(
     signal: options.signal,
     fetchImpl: options.fetchImpl,
     temperature: 0.1,
-    maxTokens: 900
+    maxTokens: 900,
+    traceStage: 'map.visual-review'
   } satisfies ChatApiOptions);
   return normalizeMapVisualReview(parseLlmJsonObject(content, 'invalid_map_visual_review'), validObjectIds, map.sceneMode);
 }

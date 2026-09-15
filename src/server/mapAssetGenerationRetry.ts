@@ -1,4 +1,5 @@
 import type { AgentProgressEvent } from '../shared/protocol';
+import { recordGenerationTrace } from './generationTrace';
 
 export interface AssetGenerationRetryOptions {
   attempts?: number;
@@ -18,14 +19,19 @@ export async function generateMapAssetWithRetry<T>(
 
   for (let attempt = 1; attempt <= attempts; attempt += 1) {
     options.signal?.throwIfAborted();
+    const started = Date.now();
+    recordGenerationTrace('asset.attempt.start', { name, attempt, attempts });
     options.onProgress?.({
       phase: 'generating-asset',
       label: `生成资产：${name}（尝试 ${attempt}/${attempts}）`,
       detail: `attempt:${attempt}/${attempts}`
     });
     try {
-      return await generate();
+      const result = await generate();
+      recordGenerationTrace('asset.attempt.complete', { name, attempt, elapsedMs: Date.now() - started });
+      return result;
     } catch (error) {
+      recordGenerationTrace('asset.attempt.error', { name, attempt, elapsedMs: Date.now() - started, error });
       if (options.signal?.aborted || isAbortError(error)) throw error;
       lastError = error;
       if (attempt >= attempts) break;

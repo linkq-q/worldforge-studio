@@ -11,6 +11,7 @@ import {
 import materialTagVocabulary from '@voxel-studio/render-runtime/model/material-tags-v1.json';
 import type { ModelGenerationMode } from '../shared/modelGenerationMode';
 import { enforceReadableFoliageColors } from '../shared/modelColorPolicy';
+import { generationTraceId, recordGenerationTrace } from './generationTrace';
 
 const GENERATION_MATERIAL_TAG_FIELDS = [
   'mode', 'status', 'values', 'variantEnum', 'description', 'inherits', 'exclusiveRenderSlot'
@@ -54,6 +55,7 @@ export interface ChatApiOptions {
   signal?: AbortSignal;
   onProgress?: (event: AgentProgressEvent) => void;
   reasoningLogPath?: string | false;
+  traceStage?: string;
 }
 
 interface ChatApiResponse {
@@ -97,10 +99,13 @@ export function parseSseModel(text: string): ParsedSseResult {
 
 async function readSseModelResponse(
   response: Response,
-  onStage?: ModelApiOptions['onStage']
+  onStage?: ModelApiOptions['onStage'],
+  observe?: (type: string, value: unknown) => void
 ): Promise<ParsedSseResult> {
   if (!response.body) {
-    const parsed = parseSseModel(await response.text());
+    const raw = await response.text();
+    observe?.('sse', { raw });
+    const parsed = parseSseModel(raw);
     for (const stage of parsed.stages) onStage?.({ status: 'stage', stage });
     return parsed;
   }
@@ -113,6 +118,7 @@ async function readSseModelResponse(
   const stages: string[] = [];
   const consume = (block: string) => {
     if (!block.trim()) return;
+    observe?.('sse', { raw: block });
     const parsed = parseSseModel(block);
     if (parsed.modelJson !== null) modelJson = parsed.modelJson;
     if (parsed.error) error = parsed.error;
@@ -122,15 +128,21 @@ async function readSseModelResponse(
     }
   };
 
-  while (true) {
-    const { done, value } = await reader.read();
-    buffer += decoder.decode(value, { stream: !done });
-    const blocks = buffer.split(/\r?\n\r?\n/);
-    buffer = blocks.pop() ?? '';
-    for (const block of blocks) consume(block);
-    if (done) break;
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      observe?.('chunk', { bytes: value?.byteLength ?? 0, done });
+      buffer += decoder.decode(value, { stream: !done });
+      const blocks = buffer.split(/\r?\n\r?\n/);
+      buffer = blocks.pop() ?? '';
+      for (const block of blocks) consume(block);
+      if (done) break;
+    }
+    consume(buffer);
+  } catch (error) {
+    observe?.('stream.error', { error, unparsedTail: buffer });
+    throw error;
   }
-  consume(buffer);
   return { modelJson, error, stages };
 }
 
@@ -146,27 +158,29 @@ export async function generateModel(description: string, options: ModelApiOption
   for (const provider of providers) {
     options.signal?.throwIfAborted();
     options.onStage?.({ status: 'running', stage: `provider:${provider}` });
+    const requestId = randomUUID();
+    const started = Date.now();
+    const body = {
+      description, provider, mode,
+      ...(options.seeded ? { seeded: true, ...(Number.isFinite(options.seed) ? { seed: Math.trunc(options.seed!) } : {}) } : {}),
+      ...(materialTags ? { materialTags } : {})
+    };
+    recordGenerationTrace('model.request', { requestId, operation: 'generate', body });
     try {
       const resp = await fetcher(`${apiBase}/api/generate/model`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          description,
-          provider,
-          mode,
-          ...(options.seeded ? {
-            seeded: true,
-            ...(Number.isFinite(options.seed) ? { seed: Math.trunc(options.seed!) } : {})
-          } : {}),
-          ...(materialTags ? { materialTags } : {})
-        }),
+        body: JSON.stringify(body),
         signal: options.signal
       });
+      recordGenerationTrace('model.headers', { requestId, status: resp.status, elapsedMs: Date.now() - started });
       if (!resp.ok) {
+        recordGenerationTrace('model.response', { requestId, status: resp.status, raw: await resp.text() });
         errors.push(`${provider}: HTTP ${resp.status}`);
         continue;
       }
-      const parsed = await readSseModelResponse(resp, options.onStage);
+      const parsed = await readSseModelResponse(resp, options.onStage, (type, value) => recordGenerationTrace(`model.${type}`, { requestId, value }));
+      recordGenerationTrace('model.response', { requestId, elapsedMs: Date.now() - started, response: parsed });
       if (parsed.error) {
         errors.push(`${provider}: ${parsed.error}`);
         continue;
@@ -174,6 +188,7 @@ export async function generateModel(description: string, options: ModelApiOption
       if (parsed.modelJson) return enforceReadableFoliageColors(parsed.modelJson);
       errors.push(`${provider}: 未返回模型数据`);
     } catch (error) {
+      recordGenerationTrace('model.error', { requestId, elapsedMs: Date.now() - started, error });
       if (options.signal?.aborted || isAbortError(error)) throw error;
       errors.push(`${provider}: ${error instanceof Error ? error.message : String(error)}`);
     }
@@ -188,18 +203,24 @@ export async function replayModel(
   options: Pick<ModelApiOptions, 'apiBase' | 'fetchImpl' | 'signal'> = {}
 ): Promise<unknown> {
   options.signal?.throwIfAborted();
-  const response = await (options.fetchImpl ?? fetch)(
-    `${options.apiBase ?? MODEL_API_BASE}/api/generate/replay`,
-    {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ modelJson, seed: Math.trunc(seed) }),
-      signal: options.signal
-    }
-  );
-  const json = await response.json() as { ok?: boolean; modelJson?: unknown; error?: string };
-  if (response.ok && json.ok && json.modelJson) return enforceReadableFoliageColors(json.modelJson);
-  throw new Error(json.error ?? `HTTP ${response.status}`);
+  const requestId = randomUUID();
+  const started = Date.now();
+  const body = { modelJson, seed: Math.trunc(seed) };
+  recordGenerationTrace('model.request', { requestId, operation: 'replay', body });
+  try {
+    const response = await (options.fetchImpl ?? fetch)(
+      `${options.apiBase ?? MODEL_API_BASE}/api/generate/replay`,
+      { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body), signal: options.signal }
+    );
+    const raw = await response.text();
+    recordGenerationTrace('model.response', { requestId, status: response.status, elapsedMs: Date.now() - started, raw });
+    const json = JSON.parse(raw) as { ok?: boolean; modelJson?: unknown; error?: string };
+    if (response.ok && json.ok && json.modelJson) return enforceReadableFoliageColors(json.modelJson);
+    throw new Error(json.error ?? `HTTP ${response.status}`);
+  } catch (error) {
+    recordGenerationTrace('model.error', { requestId, elapsedMs: Date.now() - started, error });
+    throw error;
+  }
 }
 
 export async function refineModel(modelJson: unknown, description: string, options: ModelApiOptions = {}): Promise<unknown> {
@@ -213,22 +234,24 @@ export async function refineModel(modelJson: unknown, description: string, optio
   for (const provider of providers) {
     options.signal?.throwIfAborted();
     options.onStage?.({ status: 'running', stage: `provider:${provider}` });
+    const requestId = randomUUID();
+    const started = Date.now();
+    const body = { modelJson, description, provider, ...(materialTags ? { materialTags } : {}) };
+    recordGenerationTrace('model.request', { requestId, operation: 'refine', body });
     try {
       const resp = await fetcher(`${apiBase}/api/refine/model`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          modelJson,
-          description,
-          provider,
-          ...(materialTags ? { materialTags } : {})
-        }),
+        body: JSON.stringify(body),
         signal: options.signal
       });
-      const json = await resp.json() as { ok?: boolean; modelJson?: unknown; error?: string };
+      const raw = await resp.text();
+      recordGenerationTrace('model.response', { requestId, status: resp.status, elapsedMs: Date.now() - started, raw });
+      const json = JSON.parse(raw) as { ok?: boolean; modelJson?: unknown; error?: string };
       if (resp.ok && json.ok && json.modelJson) return enforceReadableFoliageColors(json.modelJson);
       errors.push(`${provider}: ${json.error ?? `HTTP ${resp.status}`}`);
     } catch (error) {
+      recordGenerationTrace('model.error', { requestId, elapsedMs: Date.now() - started, error });
       if (options.signal?.aborted || isAbortError(error)) throw error;
       errors.push(`${provider}: ${error instanceof Error ? error.message : String(error)}`);
     }
@@ -260,9 +283,15 @@ export async function llmChat(messages: readonly ChatMessage[], options: ChatApi
   const requestId = randomUUID();
   const startedAt = new Date().toISOString();
   const reasoningLogPath = resolveReasoningLogPath(options);
+  const trace = (type: string, data: Record<string, unknown>) => recordGenerationTrace(type, {
+    requestId, stage: options.traceStage ?? 'chat', ...data
+  });
+  trace('chat.request', { startedAt, body: JSON.parse(String(init.body)) });
   let lastError: unknown;
   for (let attempt = 1; attempt <= 3; attempt += 1) {
     options.signal?.throwIfAborted();
+    const attemptStartedAt = Date.now();
+    trace('chat.attempt.start', { attempt });
     options.onProgress?.({
       phase: 'consulting',
       label: '正在连接上游模型流',
@@ -273,16 +302,19 @@ export async function llmChat(messages: readonly ChatMessage[], options: ChatApi
     try {
       response = await fetcher(url, init);
       const streaming = String(response.headers.get('content-type')).includes('text/event-stream');
+      trace('chat.headers', { attempt, status: response.status, contentType: response.headers.get('content-type'), elapsedMs: Date.now() - attemptStartedAt });
       options.onProgress?.({
         phase: 'consulting',
         label: streaming ? '上游模型流已连接' : '上游未返回流式日志',
         detail: streaming ? '等待推理摘要' : '本次使用兼容 JSON 响应'
       });
-      data = await readChatApiResponse(response, options.onProgress);
+      data = await readChatApiResponse(response, options.onProgress, (type, value) => trace(`chat.${type}`, { attempt, value }));
+      trace('chat.response', { attempt, status: response.status, elapsedMs: Date.now() - attemptStartedAt, response: data });
       if (reasoningLogPath) {
         try {
           await appendReasoningLog(reasoningLogPath, {
             requestId,
+            ...(generationTraceId() ? { generationTraceId: generationTraceId() } : {}),
             startedAt,
             completedAt: new Date().toISOString(),
             provider: options.provider ?? 'gpt',
@@ -301,6 +333,7 @@ export async function llmChat(messages: readonly ChatMessage[], options: ChatApi
         }
       }
     } catch (error) {
+      trace('chat.attempt.error', { attempt, elapsedMs: Date.now() - attemptStartedAt, error, cancelled: options.signal?.aborted || isAbortError(error) });
       if (options.signal?.aborted || isAbortError(error)) throw error;
       if (attempt === 3) throw new Error('chat_service_unreachable');
       lastError = error;
@@ -312,6 +345,7 @@ export async function llmChat(messages: readonly ChatMessage[], options: ChatApi
       return data.content;
     }
     const error = new Error(data.error || (typeof data.content === 'string' ? 'Empty AI response' : `chat_http_${response.status}`));
+    trace('chat.attempt.rejected', { attempt, error });
     if (!isRetryableEmptyChatResponse(data) || attempt === 3) throw error;
     lastError = error;
     await abortableDelay(300, options.signal);
@@ -321,10 +355,13 @@ export async function llmChat(messages: readonly ChatMessage[], options: ChatApi
 
 async function readChatApiResponse(
   response: Response,
-  onProgress?: ChatApiOptions['onProgress']
+  onProgress?: ChatApiOptions['onProgress'],
+  observe?: (type: string, value: unknown) => void
 ): Promise<ChatApiResponse> {
   if (!String(response.headers.get('content-type')).includes('text/event-stream')) {
-    const data = await response.json() as ChatApiResponse;
+    const raw = await response.text();
+    observe?.('raw-json', { raw });
+    const data = JSON.parse(raw) as ChatApiResponse;
     const reasoning = data.reasoning?.trim();
     if (reasoning) onProgress?.({
       phase: 'consulting',
@@ -364,6 +401,7 @@ async function readChatApiResponse(
   };
   const consume = (block: string) => {
     if (!block.trim()) return;
+    observe?.('sse', { raw: block });
     let event = 'message';
     const dataLines: string[] = [];
     for (const line of block.split(/\r?\n/)) {
@@ -397,6 +435,11 @@ async function readChatApiResponse(
       return;
     }
     if (stage === 'thinking_done') {
+      const returnedReasoning = payload.reasoning ?? payload.summary ?? payload.text;
+      if (typeof returnedReasoning === 'string' && returnedReasoning.trim()) {
+        reasoning = returnedReasoning;
+        reportReasoning('模型返回思考过程', true);
+      }
       onProgress?.({ phase: 'consulting', label: '模型思考完成', detail: '正在接收正式回复' });
       return;
     }
@@ -444,15 +487,21 @@ async function readChatApiResponse(
     }
   };
 
-  while (true) {
-    const { done, value } = await reader.read();
-    buffer += decoder.decode(value, { stream: !done });
-    const blocks = buffer.split(/\r?\n\r?\n/);
-    buffer = blocks.pop() ?? '';
-    for (const block of blocks) consume(block);
-    if (done) break;
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      observe?.('chunk', { bytes: value?.byteLength ?? 0, done });
+      buffer += decoder.decode(value, { stream: !done });
+      const blocks = buffer.split(/\r?\n\r?\n/);
+      buffer = blocks.pop() ?? '';
+      for (const block of blocks) consume(block);
+      if (done) break;
+    }
+    consume(buffer);
+  } catch (error) {
+    observe?.('stream.error', { error, partialContent: content, partialReasoning: reasoning, unparsedTail: buffer });
+    throw error;
   }
-  consume(buffer);
   if (pendingReasoningReport) reportReasoning('模型正在推理并返回摘要', true);
   return content.trim()
     ? { ok: !error, content, reasoning, streamEvents: [...streamEvents], ...(error ? { error } : {}) }
