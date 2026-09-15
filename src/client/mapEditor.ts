@@ -2437,6 +2437,8 @@ class MapEditor {
             focusPrompt: this.mapAiFocusPrompt.trim() || undefined,
             paletteId: this.selectedPaletteId || undefined,
             selectedObjectIds: [...this.selectedObjectIds],
+            parentTraceId: previousSuggestion?.generationTraceId ?? this.pendingCodeSuggestion?.generationTraceId
+              ?? (mode === 'refine' ? this.state.undoTransaction?.ai?.generationTraceId : undefined),
             ...(previousSuggestion ? { baseOperations: previousSuggestion.operations } : {})
           }),
           signal: controller.signal
@@ -2642,7 +2644,8 @@ class MapEditor {
           body: JSON.stringify({
             imageDataUrl,
             provider: this.mapAiProvider,
-            baseOperations: suggestion.operations
+            baseOperations: suggestion.operations,
+            parentTraceId: suggestion.generationTraceId
           })
         }
       );
@@ -2985,6 +2988,7 @@ class MapEditor {
             operations: suggestion.operations,
             ai: !isTerrainPreview && (suggestion.agent || suggestion.codePlan) ? {
               prompt: this.mapAiPrompt,
+              generationTraceId: suggestion.generationTraceId,
               agent: suggestion.agent,
               codePlan: suggestion.codePlan,
               generatedAssets: suggestion.generatedAssets
