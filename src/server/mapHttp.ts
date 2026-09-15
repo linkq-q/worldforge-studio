@@ -746,7 +746,8 @@ async function handleEditorMaps(req: Req, res: Res, store: MapStore, parts: stri
         sendJson(res, 200, await store.commitTransaction(mapId, {
           label: body.label,
           source: body.source,
-          operations: body.operations
+          operations: body.operations,
+          ai: body.ai
         }));
       } catch (error) {
         throw new HttpError(400, error instanceof Error ? error.message : 'invalid_transaction');

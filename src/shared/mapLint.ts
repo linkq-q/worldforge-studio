@@ -786,6 +786,9 @@ function lintSettlementRelations(
     if (!nearest) continue;
 
     if (isOrdinaryStreetBuilding(semantic)) {
+      // Route-derived placements already own their authored side, setback and facing.
+      // Collision repair below may separate them, but generic snapping must not recompose them.
+      if (preferredGuide) continue;
       const frontageDepth = Math.max(0.5, Math.min(object.transform.size[0], object.transform.size[2]) / 2);
       if (!preferredGuide && nearest.distance > nearest.guide.width / 2 + frontageDepth + 4) continue;
       const offset = nearest.guide.width / 2 + frontageDepth + 0.8;

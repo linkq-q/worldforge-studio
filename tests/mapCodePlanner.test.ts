@@ -276,6 +276,16 @@ describe('map code planner', () => {
     expect(prompt).toContain('roadside.decorate-route');
   });
 
+  it.each(['日式街道', '日本城市街景', 'Japanese urban street'])(
+    'gives %s street-frontage guidance without forcing a town grid', (task) => {
+      const prompt = buildMapCodePlannerSystemPrompt(createEmptyMap(), [], 0, 24, 'scene', 'generate', task);
+      expect(prompt).toContain('## Active scene profile: street.frontage');
+      expect(prompt).toContain("tags:['street']");
+      expect(prompt).toContain('both sides');
+      expect(prompt).not.toContain('call api.streetGrid before placing ordinary buildings');
+    }
+  );
+
   it('does not inject a settlement density profile into a wilderness prompt', () => {
     const prompt = buildMapCodePlannerSystemPrompt(
       createEmptyMap(), [], 0, 4, 'scene', 'generate', '生成一片无人居住的原始森林'
@@ -1415,6 +1425,27 @@ describe('map code planner', () => {
     expect(boxes[0].max[0]).toBeLessThan(boxes[1].min[0]);
     expect(boxes[1].max[0]).toBeLessThan(boxes[2].min[0]);
     expect(suggestion.codePlan?.functions).toEqual(expect.arrayContaining(['placeStreetFrontage', 'route']));
+  });
+
+  it('marks frontage routes as streets and preserves authored setbacks on both sides', () => {
+    const map = createEmptyMap('street frontage', 'street-frontage', [96, 16, 96]);
+    const suggestion = executeMapCodePlan(`function plan(api) {
+      api.route({id:'street',points:[[-30,0],[30,0]],width:6});
+      for (const side of ['left','right']) api.placeStreetFrontage({
+        routeId:'street',side,startInset:4,gap:2,setback:3,
+        items:[
+          {name:'商铺 A',dimensions:[8,6,6],role:'structure'},
+          {name:'商铺 B',dimensions:[8,6,6],role:'structure'}
+        ]
+      });
+    }`, map);
+    const applied = applyMapOperations(map, suggestion.operations);
+    expect(applied.guides[0].tags).toContain('street');
+    expect(applied.objects).toHaveLength(4);
+    expect(applied.objects.every((object) => object.sourceGuideId === 'street')).toBe(true);
+    expect(applied.objects.map((object) => object.transform.position)).toEqual([
+      [-22, 0, 9], [-12, 0, 9], [-22, 0, -9], [-12, 0, -9]
+    ]);
   });
 
   it('removes natural decoration from routes and AI-declared functional clearings without blocking', () => {

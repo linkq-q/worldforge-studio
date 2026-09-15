@@ -1441,6 +1441,9 @@ function runMapCodePlan(
       const workingMap = currentEnvironmentMap();
       const guide = workingMap.guides.find((candidate) => candidate.id === routeId);
       if (!guide) throw new Error(`unknown_map_code_route:${routeId}`);
+      if (!guide.tags.includes('street')) {
+        emitSceneOperation({ type: 'guide.upsert', guide: { ...guide, tags: [...guide.tags, 'street'] } });
+      }
       const points = mapGuidePolyline(guide);
       const routeLength = points.slice(1).reduce((sum, point, index) => (
         sum + Math.hypot(point[0] - points[index][0], point[1] - points[index][1])
@@ -2661,7 +2664,16 @@ function distillCodePlanPreview(
 }
 
 function buildMapCodeSceneProfile(taskPrompt: string): string {
-  if (!/\b(?:compact town|small town|town|village|settlement)\b|小镇|城镇|村庄|村落|聚落/i.test(taskPrompt)) return '';
+  if (!/\b(?:compact town|small town|town|village|settlement)\b|小镇|城镇|村庄|村落|聚落/i.test(taskPrompt)) {
+    if (!/\b(?:street|streets|streetscape|city|urban|avenue)\b|街道|街景|商店街|商业街|步行街|城市/i.test(taskPrompt)) return '';
+    return `
+## Active scene profile: street.frontage
+- Create the requested street geometry with api.route or api.routeNetwork and tags:['street']; curves, branches and junctions are allowed. Do not force a rectangular town grid.
+- Place ordinary shops and houses on both sides with api.placeStreetFrontage. Use real frontage width, depth, gap and setback; split frontage runs around junctions and service access. Do not scatter ordinary shops with unrelated coordinates or face every shop toward one scene-center point.
+- Keep sourceGuideId bindings from the frontage tool so later checks preserve the street side, spacing and facing. Use free api.place only for deliberately composed landmarks and service sites, with their entrances facing the adjacent street.
+- Use api.placeAlongRoute for public street furniture; keep private shop decorations with their own shop, and use explicit api.attach only for real mounting.
+- Group support relations express visual or functional support, never physical stacking. Preserve purposeful pedestrian and vehicle clearances.`;
+  }
   return `
 ## Active scene profile: settlement.compact-town
 Treat these as scale-aware composition targets inside the settlement envelope, not across the whole map:
