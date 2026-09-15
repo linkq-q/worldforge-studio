@@ -650,7 +650,7 @@ export async function generateMapCodeSuggestion(
   };
   let final: MapAiSuggestion;
   try {
-    final = executeFinalMapCodeReplay(
+    final = adapted.final ?? executeFinalMapCodeReplay(
       replayContext,
       clampInteger(options.finalExecutionTimeoutMs ?? FINAL_EXECUTION_TIMEOUT_MS, 1, FINAL_EXECUTION_TIMEOUT_MS)
     );
@@ -688,7 +688,7 @@ async function adaptMapCodeToGeneratedAssets(
   discovery: CodeExecutionResult,
   maxNewAssets: number,
   options: MapCodePlannerOptions
-): Promise<{ code: string; discovery: CodeExecutionResult }> {
+): Promise<{ code: string; discovery: CodeExecutionResult; final?: MapAiSuggestion }> {
   const assetContext = generatedAssetResultContext(discovery.requirements, bindings);
   if (!assetContext.hasSemanticSnapshot) return { code, discovery };
   options.onProgress?.({
@@ -731,11 +731,26 @@ async function adaptMapCodeToGeneratedAssets(
     if (!sameCodeAssetRequirements(discovery.requirements, candidateDiscovery.requirements)) {
       throw new Error('generated_asset_adaptation_changed_requirements');
     }
-    if (findAuthoredSceneProgramIssues(map, candidateDiscovery.suggestion).length > 0) {
+    const candidateFinal = runMapCodePlan(candidateCode, map, assets, {
+      mode: 'final',
+      requestMode: options.mode ?? 'generate',
+      assetBindings: bindings,
+      maxNewAssets,
+      scope: options.scope,
+      executionTimeoutMs: clampInteger(options.finalExecutionTimeoutMs ?? FINAL_EXECUTION_TIMEOUT_MS, 1, FINAL_EXECUTION_TIMEOUT_MS),
+      refinableObjectIds: new Set(options.refinableObjectIds ?? [])
+    }).suggestion;
+    const unsafe = (candidateFinal.diagnostics ?? []).filter((issue) => (
+      issue.code === 'object.invalid-support'
+      || (!issue.repaired && (issue.severity === 'error' || issue.code === 'object.overlap'))
+    ));
+    if (unsafe.length > 0) {
+      throw new Error(`generated_asset_adaptation_unsafe:${[...new Set(unsafe.map((issue) => issue.code))].join(',')}`);
+    }
+    if (findAuthoredSceneProgramIssues(map, candidateFinal).some((issue) => issue.startsWith('scene_group_missing_layer:'))) {
       throw new Error('generated_asset_adaptation_incomplete_scene');
     }
-    options.onPlanPreview?.(distillCodePlanPreview(candidateDiscovery.suggestion, candidateDiscovery.requirements));
-    return { code: candidateCode, discovery: candidateDiscovery };
+    return { code: candidateCode, discovery: candidateDiscovery, final: candidateFinal };
   } catch (error) {
     if (error instanceof Error && error.name === 'AbortError') throw error;
     options.onProgress?.({

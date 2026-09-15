@@ -892,16 +892,26 @@ function lintOverlaps(
   const room = map.room;
   if (!room && map.sceneMode !== 'outdoor') return;
   const assets = new Map((map.assets ?? []).map((asset) => [asset.id, asset]));
+  const parents = new Map(map.objects.map((object) => [object.id, object.parentId]));
+  const isAncestor = (ancestorId: string, objectId: string): boolean => {
+    const visited = new Set<string>();
+    let parentId = parents.get(objectId);
+    while (parentId && !visited.has(parentId)) {
+      if (parentId === ancestorId) return true;
+      visited.add(parentId);
+      parentId = parents.get(parentId);
+    }
+    return false;
+  };
   const objectsWithChildren = new Set(map.objects.flatMap((object) => object.parentId ? [object.parentId] : []));
   const ignoredIds = new Set(map.objects.flatMap((object) => {
     const asset = object.assetId ? assets.get(object.assetId) : undefined;
     const semantic = [object.name, asset?.name, asset?.prompt, ...(asset?.tags ?? [])].filter(Boolean).join(' ');
-    return object.parentId
-      || object.roomOpeningId
+    return object.roomOpeningId
       || isElevatedWallSemantic(semantic)
       || isCeilingMountedSemantic(semantic)
       || /rug|carpet|doormat|floor[-_ ]?textile|地毯|地垫/i.test(semantic)
-      || (!room && !isSettlementBuildingSemantic(semantic))
+      || (!room && !object.parentId && !isSettlementBuildingSemantic(semantic))
       ? [object.id]
       : [];
   }));
@@ -916,6 +926,8 @@ function lintOverlaps(
     for (let left = 0; left < solidBounds.length && !overlap; left += 1) {
       for (let right = left + 1; right < solidBounds.length; right += 1) {
         const pairKey = [solidBounds[left].objectId, solidBounds[right].objectId].sort().join(':');
+        if (isAncestor(solidBounds[left].objectId, solidBounds[right].objectId)
+          || isAncestor(solidBounds[right].objectId, solidBounds[left].objectId)) continue;
         if (reportedPairs.has(pairKey) || !isMeaningfulSolidOverlap(solidBounds[left], solidBounds[right], Boolean(room))) continue;
         overlap = [solidBounds[left], solidBounds[right]];
         break;

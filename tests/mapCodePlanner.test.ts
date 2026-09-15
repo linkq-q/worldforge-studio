@@ -440,6 +440,39 @@ describe('map code planner', () => {
     ]));
   });
 
+  it('rejects an adaptation whose attachment only fails after real asset binding', async () => {
+    const initial = `function plan(api) {
+      const host = api.requireAsset({key:'host',name:'展台',prompt:'展台',variants:1,role:'structure'});
+      const prop = api.requireAsset({key:'prop',name:'摆件',prompt:'摆件',variants:1,role:'environment'});
+      const hostRef = api.place({assetId:api.asset(host),name:'展台',position:[-10,0],role:'structure'});
+      api.place({assetId:api.asset(prop),name:'摆件',position:[20,0],role:'environment'});
+    }`;
+    const invalid = initial.replace(
+      "api.place({assetId:api.asset(prop),name:'摆件',position:[20,0],role:'environment'});",
+      "api.attach({assetId:api.asset(prop),name:'摆件',parentId:hostRef,kind:'supported',offset:[100,0],role:'environment'});"
+    );
+    const response = (content: string) => new Response(JSON.stringify({ ok: true, content }), {
+      status: 200, headers: { 'Content-Type': 'application/json' }
+    });
+    const fetchImpl = vi.fn().mockResolvedValueOnce(response(initial)).mockResolvedValueOnce(response(invalid));
+    const progress: string[] = [];
+    const suggestion = await generateMapCodeSuggestion('展台与独立摆件', createEmptyMap(), [], {
+      fetchImpl, minNewAssets: 0, maxNewAssets: 2,
+      createAsset: async (request) => ({
+        ...testAsset(`asset-${request.name}`, request.name), tags: [],
+        modelJson: { _meta: { semanticSnapshot: { text: '模型结构已生成' } } }
+      }),
+      onProgress: (event) => progress.push(event.label)
+    });
+
+    expect(fetchImpl).toHaveBeenCalledTimes(2);
+    expect(suggestion.codePlan?.code).toBe(initial);
+    const result = applyMapOperations(createEmptyMap(), suggestion.operations);
+    expect(result.objects.find((object) => object.name === '摆件')?.transform.position).toEqual([20, 0, 0]);
+    expect(result.objects.every((object) => !object.parentId)).toBe(true);
+    expect(progress).toContain('新资产布局调整未通过校验，继续使用原布局');
+  });
+
   it('accepts structured terrain forms and normalizes common semantic enum labels', () => {
     const suggestion = executeMapCodePlan(`function plan(api) {
       api.terrain('plain');

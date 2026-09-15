@@ -20,6 +20,35 @@ const asset = {
 } satisfies MapAsset;
 
 describe('map lint and deterministic repair', () => {
+  it('reports overlapping siblings without treating host contact as a collision', () => {
+    const map = createEmptyMap('attachment siblings', 'attachment-siblings');
+    const host = createMapObject('便利店', null);
+    host.id = 'host';
+    host.transform.position = [10, 0, 10];
+    host.transform.size = [4, 2, 4];
+    const first = createMapObject('招牌 A', null);
+    first.id = 'sign-a';
+    first.parentId = host.id;
+    first.transform.size = [0.5, 0.5, 0.5];
+    const second = createMapObject('招牌 B', null);
+    second.id = 'sign-b';
+    second.parentId = host.id;
+    second.transform.size = [0.5, 0.5, 0.5];
+    second.transform.position = [0.05, 0, 0];
+    map.objects = [host, first, second];
+
+    const lint = lintMap(map, { repairableObjectIds: new Set(map.objects.map((object) => object.id)) });
+    const overlaps = lint.issues.filter((issue) => issue.code === 'object.overlap');
+    expect(overlaps).toEqual([
+      expect.objectContaining({ objectIds: [first.id, second.id], repaired: false })
+    ]);
+    expect(lint.repairOperations.some((operation) => 'objectId' in operation
+      && [first.id, second.id].includes(operation.objectId))).toBe(false);
+
+    second.transform.position = [2, 0, 0];
+    expect(lintMap(map).issues.filter((issue) => issue.code === 'object.overlap')).toEqual([]);
+  });
+
   it('repairs off-ground/out-of-bounds objects and removes exact duplicates', () => {
     const map = createEmptyMap('lint', 'map-lint');
     map.assets = [asset];
