@@ -1699,13 +1699,40 @@ describe('map code planner', () => {
       .toThrow('map_code_asset_requirement_limit');
   });
 
-  it('rejects declared variants that the program never places', () => {
-    expect(() => discoverMapCodeAssets(`
+  it('prunes unused trailing variants instead of requesting a full code rewrite', () => {
+    expect(discoverMapCodeAssets(`
       function plan(api) {
-        const wall = api.requireAsset({ key: 'wall', name: 'Wall', prompt: 'Wall', variants: 2 });
+        const wall = api.requireAsset({ key: 'wall', name: 'Wall', prompt: 'Wall', variants: 3 });
         api.place({ assetId: api.asset(wall, 0), position: [0, 0] });
+        api.place({ assetId: api.asset(wall, 1), position: [4, 0] });
       }
-    `, createEmptyMap(), [], 2)).toThrow('unused_map_code_asset_variants');
+    `, createEmptyMap(), [], 3)).toEqual([
+      expect.objectContaining({ key: 'wall', variants: 3, generatedVariants: 2 })
+    ]);
+  });
+
+  it('generates only the contiguous asset variants used by the plan', async () => {
+    const code = `function plan(api) {
+      const tree = api.requireAsset({
+        key:'tree', name:'树', prompt:'树', variants:3, role:'environment', optional:true
+      });
+      api.place({ assetId:api.asset(tree,0), position:[-4,0], role:'environment' });
+      api.place({ assetId:api.asset(tree,1), position:[4,0], role:'environment' });
+    }`;
+    const fetchImpl = vi.fn().mockResolvedValueOnce(new Response(JSON.stringify({ ok: true, content: code }), {
+      status: 200, headers: { 'Content-Type': 'application/json' }
+    }));
+    const createAsset = vi.fn(async (request) => testAsset(`asset-${request.name}`, request.name));
+
+    const suggestion = await generateMapCodeSuggestion('生成两棵树', createEmptyMap(), [], {
+      apiBase: 'https://example.test', provider: 'gpt', fetchImpl,
+      minNewAssets: 0, maxNewAssets: 3, createAsset
+    });
+
+    expect(createAsset).toHaveBeenCalledTimes(2);
+    expect(suggestion.codePlan?.assetRequirements).toEqual([
+      expect.objectContaining({ key: 'tree', variants: 2 })
+    ]);
   });
 
   it('generates variants concurrently and replays code with real asset ids', async () => {

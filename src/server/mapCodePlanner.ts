@@ -377,6 +377,7 @@ export interface CodeAssetRequirement {
   prompt: string;
   tags: string[];
   variants: number;
+  generatedVariants?: number;
   dimensions?: Point3;
   role?: CodeAssetRole;
   optional?: boolean;
@@ -558,16 +559,17 @@ export async function generateMapCodeSuggestion(
 
   const tasks = discovery.requirements.flatMap((requirement) => {
     const seededFamily = supportsSeededEnvironmentVariants(requirement);
-    return Array.from({ length: requirement.variants }, (_, variantIndex) => ({
+    const variantCount = generatedVariantCount(requirement);
+    return Array.from({ length: variantCount }, (_, variantIndex) => ({
       key: requirement.key,
       variantIndex,
-      name: requirement.variants > 1 ? `${requirement.name} ${variantIndex + 1}` : requirement.name,
+      name: variantCount > 1 ? `${requirement.name} ${variantIndex + 1}` : requirement.name,
       request: {
-        name: requirement.variants > 1 ? `${requirement.name} ${variantIndex + 1}` : requirement.name,
+        name: variantCount > 1 ? `${requirement.name} ${variantIndex + 1}` : requirement.name,
         prompt: [
           codeAssetOrientationPrompt(requirement.prompt, requirement.dimensions),
-          requirement.variants > 1 && !seededFamily
-            ? `Create variation ${variantIndex + 1} of ${requirement.variants}; preserve the same reusable asset family while varying silhouette and details.`
+          variantCount > 1 && !seededFamily
+            ? `Create variation ${variantIndex + 1} of ${variantCount}; preserve the same reusable asset family while varying silhouette and details.`
             : ''
         ].filter(Boolean).join('\n'),
         tags: requirement.tags,
@@ -575,7 +577,7 @@ export async function generateMapCodeSuggestion(
         ...(seededFamily ? {
           seedFamilyKey: requirement.key,
           variantIndex,
-          variantCount: requirement.variants
+          variantCount
         } : {})
       } satisfies AssetGenerationRequest
     }));
@@ -2214,14 +2216,23 @@ function runMapCodePlan(
     throw new Error('empty_map_code_plan');
   }
   if (mode === 'discovery') {
-    const requestedAssetCount = [...requirements.values()].reduce((total, requirement) => total + requirement.variants, 0);
-    if (requestedAssetCount < (options.minNewAssets ?? 0)) throw new Error('map_code_asset_minimum_not_met');
     const placedAssetIds = new Set(placements.flatMap((placement) => placement.assetId ? [placement.assetId] : []));
-    const unusedVariants = [...requirements.values()].flatMap((requirement) => (
-      Array.from({ length: requirement.variants }, (_, index) => codeAssetPlaceholder(requirement.key, index))
-        .filter((assetId) => !placedAssetIds.has(assetId))
-    ));
-    if (unusedVariants.length > 0) throw new Error(`unused_map_code_asset_variants:${unusedVariants.join(',')}`);
+    for (const [key, requirement] of requirements) {
+      const usedIndices = Array.from({ length: requirement.variants }, (_, index) => index)
+        .filter((index) => placedAssetIds.has(codeAssetPlaceholder(key, index)));
+      if (usedIndices.length === 0) {
+        requirements.delete(key);
+        continue;
+      }
+      if (usedIndices.every((index, position) => index === position) && usedIndices.length < requirement.variants) {
+        requirement.generatedVariants = usedIndices.length;
+      }
+    }
+    const requestedAssetCount = [...requirements.values()].reduce(
+      (total, requirement) => total + generatedVariantCount(requirement),
+      0
+    );
+    if (requestedAssetCount < (options.minNewAssets ?? 0)) throw new Error('map_code_asset_minimum_not_met');
   }
 
   const planningMap: EditableMap = {
@@ -2464,7 +2475,7 @@ function withCodePlanDetails(
       assetRequirements: requirements.map((requirement) => ({
         key: requirement.key,
         name: requirement.name,
-        variants: requirement.variants,
+        variants: generatedVariantCount(requirement),
         ...(requirement.dimensions ? { dimensions: requirement.dimensions } : {}),
         ...(requirement.role ? { role: requirement.role } : {}),
         ...(requirement.optional ? { optional: true } : {})
@@ -2527,7 +2538,7 @@ function requirementPreviews(requirements: readonly CodeAssetRequirement[]): Cod
   return requirements.map((requirement) => ({
     key: requirement.key,
     name: requirement.name,
-    variants: requirement.variants,
+    variants: generatedVariantCount(requirement),
     ...(requirement.role ? { role: requirement.role } : {}),
     ...(requirement.optional ? { optional: true } : {})
   }));
@@ -2626,6 +2637,10 @@ Treat these as scale-aware composition targets inside the settlement envelope, n
 - reserve free api.place for landmarks, courtyard buildings and rural outliers whose relationship is explicitly composed.
 - Public street furniture such as lamps, public benches, bins, signs and barriers must use api.placeAlongRoute. Furniture belonging to a shop terrace or courtyard is not generic roadside scatter: compose that shop terrace furniture as a small functional group facing its shop or table, with entrance and walking clearance.
 - complete routes, thresholds and street edges before decorative vegetation. Preserve only purposeful, bounded negative space.`;
+}
+
+function generatedVariantCount(requirement: CodeAssetRequirement): number {
+  return requirement.generatedVariants ?? requirement.variants;
 }
 
 function compactAssetSemanticSnapshot(asset: MapAsset, maxChars = ASSET_SEMANTIC_SNAPSHOT_MAX_CHARS): string {
