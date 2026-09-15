@@ -631,7 +631,7 @@ describe('map code planner', () => {
     ]));
   });
 
-  it('asks AI once to complete promised scene layers and an oversized empty arrival court', async () => {
+  it('repairs missing promised layers without enforcing self-authored counts or clearing ratios', async () => {
     const incomplete = `function plan(api) {
       api.sceneIntent({ kind:'authored', reason:'人工园林' });
       api.design({
@@ -692,9 +692,9 @@ describe('map code planner', () => {
     const applied = applyMapOperations(createEmptyMap(), suggestion.operations);
 
     expect(fetchImpl).toHaveBeenCalledTimes(2);
-    expect(repairRequest.messages.at(-1)?.content).toContain('scene_group_underfilled_layer:entry:1:1/2');
     expect(repairRequest.messages.at(-1)?.content).toContain('scene_group_missing_layer:entry:3');
-    expect(repairRequest.messages.at(-1)?.content).toContain('scene_group_oversized_clear_space:entry');
+    expect(repairRequest.messages.at(-1)?.content).not.toContain('scene_group_underfilled_layer');
+    expect(repairRequest.messages.at(-1)?.content).not.toContain('scene_group_oversized_clear_space');
     expect(applied.objects.filter((object) => object.designGroupId === 'entry')).toEqual(expect.arrayContaining([
       expect.objectContaining({ name: '园门', compositionLayer: 1 }),
       expect.objectContaining({ name: '入口厢房', compositionLayer: 1 }),
@@ -703,7 +703,7 @@ describe('map code planner', () => {
     ]));
   });
 
-  it('feeds sparse settlement metrics into the single bounded program repair', async () => {
+  it('reports sparse settlement metrics without requesting a full code rewrite', async () => {
     const incomplete = `function plan(api) {
       api.sceneIntent({ kind:'authored', reason:'紧凑小镇' });
       api.streetGrid({
@@ -712,37 +712,45 @@ describe('map code planner', () => {
       });
       api.place({ name:'镇门', position:[0,-22], size:[8,5,3], role:'structure' });
     }`;
-    const repaired = `function plan(api) {
-      api.sceneIntent({ kind:'authored', reason:'紧凑小镇' });
-      const town = api.streetGrid({
-        id:'town', region:[[-24,-24],[24,-24],[24,24],[-24,24]],
-        blockWidth:12, blockDepth:12, roadWidth:3, surface:'paving'
-      });
-      api.place({ name:'镇门', position:[0,-22], size:[8,5,3], role:'structure' });
-      const homes = [[-18,-18],[-6,-18],[6,-18],[18,-18],[-18,-6],[-6,-6],[6,-6],[18,-6],[-18,6],[-6,6],[6,6],[18,6],[-18,18],[-6,18],[6,18],[18,18]];
-      for (const point of homes) api.place({ name:'民居', position:point, size:[8,5,8], role:'structure' });
-      api.placeAlongRoute({ routeId:town.routeIds[0], name:'路灯', spacing:8, offset:2, side:'both' });
-    }`;
     const response = (content: string) => new Response(JSON.stringify({ ok: true, content }), {
       status: 200,
       headers: { 'Content-Type': 'application/json' }
     });
-    const fetchImpl = vi.fn()
-      .mockResolvedValueOnce(response(incomplete))
-      .mockResolvedValueOnce(response(repaired));
+    const fetchImpl = vi.fn().mockResolvedValueOnce(response(incomplete));
 
     const suggestion = await generateMapCodeSuggestion('生成紧凑且有生活感的小镇', createEmptyMap('Town', 'town', [72, 12, 72]), [], {
       apiBase: 'https://example.test', provider: 'gpt', fetchImpl,
       minNewAssets: 0, maxNewAssets: 0, scope: 'scene'
     });
-    const repairRequest = JSON.parse(String((fetchImpl.mock.calls[1]?.[1] as RequestInit | undefined)?.body)) as {
-      messages: Array<{ content: string }>;
-    };
+    expect(fetchImpl).toHaveBeenCalledTimes(1);
+    expect(suggestion.diagnostics).toEqual(expect.arrayContaining([
+      expect.objectContaining({ code: 'settlement.building-coverage-low', repaired: false }),
+      expect.objectContaining({ code: 'settlement.frontage-low', repaired: false })
+    ]));
+    expect(suggestion.codePlan?.repairAttempts).toBe(0);
+  });
 
-    expect(fetchImpl).toHaveBeenCalledTimes(2);
-    expect(repairRequest.messages.at(-1)?.content).toContain('settlement.building-coverage-low');
-    expect(repairRequest.messages.at(-1)?.content).toContain('settlement.frontage-low');
-    expect(suggestion.codePlan?.repairAttempts).toBe(1);
+  it('reports an unbound garden lantern without rewriting otherwise valid code', async () => {
+    const code = `function plan(api) {
+      api.sceneIntent({ kind:'authored', reason:'庭院' });
+      api.route({ id:'garden-path', points:[[-10,0],[10,0]], width:3 });
+      api.place({ name:'亭子', position:[0,8], role:'structure' });
+      api.place({ name:'灯笼', position:[0,2], role:'environment' });
+    }`;
+    const fetchImpl = vi.fn().mockResolvedValueOnce(new Response(JSON.stringify({ ok: true, content: code }), {
+      status: 200, headers: { 'Content-Type': 'application/json' }
+    }));
+
+    const suggestion = await generateMapCodeSuggestion('生成庭院', createEmptyMap(), [], {
+      apiBase: 'https://example.test', provider: 'gpt', fetchImpl,
+      minNewAssets: 0, maxNewAssets: 0, scope: 'scene'
+    });
+
+    expect(fetchImpl).toHaveBeenCalledTimes(1);
+    expect(suggestion.codePlan?.repairAttempts).toBe(0);
+    expect(suggestion.diagnostics).toEqual(expect.arrayContaining([
+      expect.objectContaining({ code: 'roadside.route-unbound', repaired: false })
+    ]));
   });
 
   it('keeps a usable plan when the optional scene-completion request fails', async () => {
@@ -753,7 +761,10 @@ describe('map code planner', () => {
         groups:[{
           id:'entry', name:'入口院', intent:'门内转折',
           region:{kind:'polygon',points:[[-12,-12],[12,-12],[12,12],[-12,12]]},
-          layers:[{level:1,intent:'园门与厢房',density:'tight',minCount:2}]
+          layers:[
+            {level:1,intent:'园门与厢房',density:'tight',minCount:2},
+            {level:3,intent:'门侧竹石',density:'normal'}
+          ]
         }], focuses:[], viewpoints:[], relations:[]
       });
       api.place({ name:'园门', position:[0,-10], role:'structure', groupId:'entry', layer:1 });

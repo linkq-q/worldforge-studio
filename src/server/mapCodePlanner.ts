@@ -51,7 +51,6 @@ import { findSafeSpawnPosition } from '../shared/mapSpawnSafety';
 import { distanceToWater, isPointInsideWaterBody, waterBoundaryPoints, waterSurfaceLevelAt } from '../shared/mapWater';
 import { createMapStreetGrid, mapGuidePolyline, sampleMapGuide, type MapPlannedBlock } from '../shared/mapGuide';
 import { worldCapabilitySummary } from '../shared/worldCapabilities';
-import { evaluateSettlementQuality } from '../shared/settlementQuality';
 import {
   TERRAIN_ACCESS_MODES,
   TERRAIN_CLIFF_LAYOUTS,
@@ -2938,13 +2937,14 @@ async function discoverMapCodeWithRepairs(
         onPlanPreview: options.onPlanPreview
       });
       const programIssues = findAuthoredSceneProgramIssues(map, discovery.suggestion);
-      if (programIssues.length > 0 && !programRepairAttempted) {
+      const missingLayerIssues = programIssues.filter((issue) => issue.startsWith('scene_group_missing_layer:'));
+      if (missingLayerIssues.length > 0 && !programRepairAttempted) {
         programRepairAttempted = true;
         repairAttempts += 1;
         options.onProgress?.({
           phase: 'replanning',
           label: '场景片区内容不足，AI 正在自动补全 1/1',
-          detail: programIssues.join('\n')
+            detail: missingLayerIssues.join('\n')
         });
         try {
           code = extractCode(await llmChat([
@@ -2953,7 +2953,7 @@ async function discoverMapCodeWithRepairs(
             { role: 'assistant', content: code },
             {
               role: 'user',
-              content: `The program executed, but its authored scene program is incomplete:\n${programIssues.join('\n')}\n\nReturn corrected JavaScript only. Preserve the overall concept, terrain and playable circulation, but complete every promised leaf-group layer with actual placements using the same groupId and layer. Do not merely rewrite the design descriptions. If a clear paved or grass area consumes most of a scene group while containing almost no authored content, shrink or reshape it and compose its edges with purposeful architecture, stopping places and near/mid/small details. Routes must connect distinct programmed destinations, and route nodes such as thresholds, bridgeheads, turns and waterside pauses should receive context-appropriate details beside the walkable surface. Keep deliberate negative space only when it has a specific use, a shaped boundary and enough surrounding content to read as intentional. Do not scale loop counts from map width, map area, or fine coordinate steps. Use bounded api.gridPoints, api.poissonDisk, or curve-sampling results and iterate each result once; avoid while loops and nested placement loops.`
+              content: `The program executed, but its authored scene program is incomplete:\n${missingLayerIssues.join('\n')}\n\nReturn corrected JavaScript only. Preserve the overall concept, terrain and playable circulation, but complete every promised leaf-group layer with actual placements using the same groupId and layer. Do not merely rewrite the design descriptions. If a clear paved or grass area consumes most of a scene group while containing almost no authored content, shrink or reshape it and compose its edges with purposeful architecture, stopping places and near/mid/small details. Routes must connect distinct programmed destinations, and route nodes such as thresholds, bridgeheads, turns and waterside pauses should receive context-appropriate details beside the walkable surface. Keep deliberate negative space only when it has a specific use, a shaped boundary and enough surrounding content to read as intentional. Do not scale loop counts from map width, map area, or fine coordinate steps. Use bounded api.gridPoints, api.poissonDisk, or curve-sampling results and iterate each result once; avoid while loops and nested placement loops.`
             }
           ], {
             apiBase: options.apiBase,
@@ -3072,14 +3072,7 @@ function findAuthoredSceneProgramIssues(map: EditableMap, suggestion: MapAiSugge
     ));
     if (oversizedClearing) issues.push(`scene_group_oversized_clear_space:${group.id}`);
   }
-  for (const issue of evaluateSettlementQuality(candidate).issues) {
-    issues.push(`${issue.code}:${formatQualityValue(issue.actual)}/${formatQualityValue(issue.expected)}`);
-  }
   return [...new Set(issues)].slice(0, 12);
-}
-
-function formatQualityValue(value: number): string {
-  return Number.isInteger(value) ? String(value) : value.toFixed(2);
 }
 
 function sceneProgramDiagnostics(issues: readonly string[]): NonNullable<MapAiSuggestion['diagnostics']> {
