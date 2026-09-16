@@ -227,6 +227,10 @@ describe('render AI adapter', () => {
       'runtime.volumetric-light',
       'runtime.glass-style',
       'runtime.effect-recipe',
+      'runtime.color-field',
+      'runtime.local-light',
+      'runtime.surface-detail',
+      'runtime.wet-surface',
       'runtime.shader-extension'
     ]);
   });

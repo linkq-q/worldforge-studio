@@ -23,6 +23,7 @@ import {
 import { llmChat } from './modelApi';
 import { parseLlmJsonObject } from './llmJson';
 import { stabilizeRenderSemantics } from './renderSemantics';
+import { compileSceneArt } from '../shared/sceneArt';
 
 export interface RenderAiOptions {
   apiBase?: string;
@@ -87,6 +88,7 @@ export async function generateRenderSuggestion(
       options.currentPlan
     ), schemes, sceneProfile, options.currentPlan);
     assertRefineBase(options.currentPlan, suggestion);
+    assertSceneArtReferences(suggestion.plan, sceneProfile);
     assertRequestedStyle(cleanPrompt, suggestion);
     assertHdriSky(options.requireHdriSky, suggestion);
     options.onProgress?.({ phase: 'complete', label: '渲染方案已完成' });
@@ -113,6 +115,7 @@ export async function generateRenderSuggestion(
       options.currentPlan
     ), schemes, sceneProfile, options.currentPlan);
     assertRefineBase(options.currentPlan, suggestion);
+    assertSceneArtReferences(suggestion.plan, sceneProfile);
     assertRequestedStyle(cleanPrompt, suggestion);
     assertHdriSky(options.requireHdriSky, suggestion);
     options.onProgress?.({ phase: 'complete', label: '渲染方案已完成' });
@@ -257,6 +260,13 @@ function buildSystemPrompt(
     '模块可以只覆盖需要改变的参数；其余参数继承基础方案。颜色必须是 #RRGGBB。',
     '输出 RenderPlan V2。runtime.material-theme、runtime.water-style、runtime.effect-recipe 可以重复；每项必须提供唯一 key 和 scope。scope.target 只能是 water、material-tag 或 asset-tag，标签使用 foliage、bark、wood、stone、metal、water、emissive、fire、tree、rock、building 等已存在语义。',
     '色彩语义使用 runtime.color-grade；水体语义使用 runtime.water-style；草叶颜色、胖瘦、高度、风和地表染色使用 runtime.grass-style；树叶/树皮/石头/金属批量改材质使用 runtime.material-theme；柔光/硬光/逆光/阴天/黄昏使用 runtime.light-rig；Bloom/SSAO 使用 runtime.post-quality；发光/Fresnel/火焰/魔法光环/植被摇摆使用 runtime.effect-recipe。',
+    '局部美术能力是可重复模块，每个提供唯一 key，省略 scope，params.config 是下述 JSON 对象序列化后的字符串。只使用当前场景 targets 中的真实 objectId、partId、zoneId；只改用户要求的对象和区域，不为填满预算而添加模块。',
+    'runtime.color-field 最多4条：{zoneId?:区域ID,target:"ground-and-grass"|"terrain"|"grass",axis:"x"|"z"|"radial",center:[x,z],start:起点,end:终点,feather:边缘过渡米数,strength:0到1,stops:[[0,"#RRGGBB"],[0.4,"#RRGGBB"],[1,"#RRGGBB"]]}。2–4个递增色标，首尾0和1；end必须大于start。草与地面默认共享区域配色，避免无意义彩虹。颜色是受光前基色，不代替照明。',
+    'runtime.grass-style 的 rootColor/tipColor 为显式颜色，覆盖预设。colorStops 是2–4个草叶高度色标数组的JSON字符串，首尾0和1；gradientBias和rootDarken可调。启用用户色卡时在该色卡允许的颜色内选色。',
+    'runtime.local-light 最多8条，覆盖真实灯具对象而不改地图：{objectId,kind:"point"|"spot",color:"#RRGGBB",intensity:0.5到12,range:1到20,offset:[局部x,y,z],targetId?:照向的对象ID,enabled:true}。共享原有点光与聚光预算；发光材质不会自动照亮地面。',
+    'runtime.surface-detail 最多8条：{objectId,partId?:具体材质部件ID,color?:"#RRGGBB",roughness?:0到1,metalness?:0到1,transmission?:0到1,colorExpression?:表达式,emissionExpression?:表达式}。transmission只用于已有物理玻璃部件；表达式只用于普通受支持表面，不用于water或特殊ShaderMaterial。',
+    '简单Shader只允许vec3结果表达式：变量color/position/normal/uv/time，运算+ - *，函数vec2 vec3 sin cos abs fract min max clamp mix smoothstep。smoothstep的前两个参数必须是递增的数字常量。例：color * (0.85 + 0.15 * sin(position.x * 2.0 + time))。最长1024字符，禁止语句、循环、除法、采样纹理、宏、自定义函数和完整GLSL；保留原来的光照与阴影模板，禁止用颜色表达式假装实现几何或投影。',
+    'runtime.wet-surface 最多1条：{zoneId:平坦铺装区域ID,strength:0到0.65,distortion:0到0.01}。仅平坦区域可用，额外进行一次512像素倒影捕获，不要用于斜坡、全地图或室内非地形地板。',
     '水面需要有明显变化时，不要只改颜色：按描述组合 waveStrength、waveSpeed、waveScale、waveDirection、waveSharpness、foamStrength、shoreFoamWidth、shoreWaveRange、shoreWaveFrequency、shoreWaveWidth、shoreWaveBreakup 与反射参数。卡通水面使用 runtime.water-style=stylized，不代表全场景使用 Cel。',
     '水色必须随场景氛围主动变化，不要总用白色或浅蓝色：可以选择青绿、松石、翡翠、深蓝、灰蓝、茶绿或夕照影响下的暖灰蓝。color、shallowColor、depthColor 要有清楚的明度层次，只有 foamColor 可以接近白色；水体 opacity 默认保持在 0.45-0.72，确保能看见水下地形。',
     '同时输出 plan.visualDirection，作为全局视觉导演：contrastMode 只能是 bright-cartoon、colored-shadow、dramatic；timeOfDay 只能是 morning、noon、evening、night；明确夜晚、夜景、深夜时必须使用 night；temperature 只能是 cool、warm；palette 必须提供 sky、keyLight、fillLight、shadow、fog、waterBias、accent 七个 #RRGGBB 色。艳阳/高对比但没有戏剧化要求时默认 bright-cartoon，避免暗部压黑。',
@@ -336,6 +346,18 @@ function assertRequestedStyle(prompt: string, suggestion: RenderSuggestion): voi
   if (requestsGlobalCel(prompt, cartoonWater) && surface !== 'cel') {
     throw new Error('missing_requested_style:cel');
   }
+}
+
+function assertSceneArtReferences(plan: RenderPlan, profile?: RenderSceneProfile): void {
+  const art = compileSceneArt(plan);
+  if (!art.colors.length && !art.lights.length && !art.surfaces.length && !art.wet.length) return;
+  if (!profile?.targets) throw new Error('scene_art_requires_target_context');
+  const objects = new Map(profile.targets.objects.map(object => [object.id, object]));
+  const zones = new Set(profile.targets.zones.map(zone => zone.id));
+  for (const rule of [...art.lights, ...art.surfaces]) if (!objects.has(rule.objectId)) throw new Error(`unknown_scene_art_object:${rule.objectId}`);
+  for (const rule of art.lights) if (rule.targetId && !objects.has(rule.targetId)) throw new Error(`unknown_scene_art_target:${rule.targetId}`);
+  for (const rule of art.surfaces) if (rule.partId && !objects.get(rule.objectId)?.parts.some(part => part.id === rule.partId)) throw new Error(`unknown_scene_art_part:${rule.partId}`);
+  for (const rule of [...art.colors, ...art.wet]) if (rule.zoneId && !zones.has(rule.zoneId)) throw new Error(`unknown_scene_art_zone:${rule.zoneId}`);
 }
 
 const INDOOR_AIR = /雾|烟|蒸汽|尘埃|粉尘|haze|mist|smoke|steam|dust/i;
