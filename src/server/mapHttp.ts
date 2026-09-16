@@ -635,7 +635,7 @@ async function handleEditorMaps(req: Req, res: Res, store: MapStore, parts: stri
         if (parts[4] !== 'generate' || planningMap.sceneMode === 'mixed') {
           throw new HttpError(400, 'composition_plan_preview_unavailable');
         }
-        if (planningMap.sceneMode === 'indoor') {
+        if (planningMap.sceneMode === 'indoor' || body.sceneAgent === true) {
           const suggestion = await runMapAgent(directedPrompt, planningMap, planningAssets, {
             provider,
             signal: controller.signal,
@@ -645,6 +645,7 @@ async function handleEditorMaps(req: Req, res: Res, store: MapStore, parts: stri
             minNewAssets: body.minNewAssets,
             maxNewAssets: body.maxNewAssets,
             focusPrompt: body.focusPrompt,
+            sceneAgent: body.sceneAgent === true,
             discoveryOnly: true,
             onProgress,
             onPlanPreview,

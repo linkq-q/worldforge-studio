@@ -232,6 +232,17 @@ describe('map composition preview panel', () => {
     expect(html).not.toContain('disabled');
   });
 
+  it('asks for outdoor graybox composition approval before asset generation', () => {
+    const html = renderMapCodePlanApproval({
+      summary: '园林构图', operations: [], renderPromptSuggestions: [], generatedAssets: [],
+      codePlan: { code: 'function plan(api) {}', functions: [], placementCount: 8, assetRequirements: [] }
+    }, 'outdoor');
+
+    expect(html).toContain('待确认的室外灰盒构图');
+    expect(html).toContain('请检查视觉重心、疏密和动线');
+    expect(html).toContain('确认规划并开始生成');
+  });
+
   it('offers layout-only replay after generated assets were preserved', () => {
     const html = renderMapGenerationFailure({
       detail: '资产已保存',

@@ -1523,7 +1523,7 @@ class MapEditor {
           </label>
           ${map.sceneMode === 'outdoor' ? `<label class="field compact map-ai-toggle">
             <span>整体 Code（统一地形、建筑与环境）</span>
-            <input id="map-ai-scene-agent" type="checkbox" ${this.mapAiUseSceneAgent ? 'checked' : ''} ${this.state.busy ? 'disabled' : ''} />
+            <input id="map-ai-scene-agent" type="checkbox" ${this.mapAiUseSceneAgent ? 'checked' : ''} ${this.state.busy || this.pendingCodeSuggestion ? 'disabled' : ''} />
           </label>` : ''}
           ${map.sceneMode === 'indoor' ? `<label class="field compact map-ai-toggle">
             <span>生成资产前先确认功能规划</span>
@@ -1558,7 +1558,7 @@ class MapEditor {
           </label>` : ''}
         </div>
         <div class="map-ai-controls">
-          <button id="generate-map-ai" ${generationBlocked ? 'disabled' : ''}>${map.sceneMode === 'indoor' && this.mapAiConfirmCompositionPlan ? '先生成室内规划' : '生成新规划'}</button>
+          <button id="generate-map-ai" ${generationBlocked ? 'disabled' : ''}>${map.sceneMode === 'outdoor' && this.mapAiUseSceneAgent ? '先生成灰盒构图' : map.sceneMode === 'indoor' && this.mapAiConfirmCompositionPlan ? '先生成室内规划' : '生成新规划'}</button>
           <button id="refine-map-ai" class="secondary" ${refinementBlocked ? 'disabled' : ''}>调整当前地图</button>
           ${this.mapAiAbortController ? '<button id="cancel-map-ai" class="secondary">取消</button>' : ''}
         </div>
@@ -1576,7 +1576,7 @@ class MapEditor {
             : `${map.sceneMode === 'outdoor' && this.mapAiUseSceneAgent ? '整体 Code 编排场景' : '场景规划'} · 生成 ${this.mapAiMinNewAssets}-${this.mapAiMaxNewAssets} 个新资产`}</p>
         </section>
       </details>
-      ${this.pendingCodeSuggestion ? renderMapCodePlanApproval(this.pendingCodeSuggestion) : ''}
+      ${this.pendingCodeSuggestion ? renderMapCodePlanApproval(this.pendingCodeSuggestion, map.sceneMode) : ''}
       ${this.pendingCompositionPlan ? renderMapCompositionPlanApproval(this.pendingCompositionPlan) : ''}
       ${renderMapGenerationFailure(this.mapAiLastFailure, this.state.busy)}
       ${suggestion && this.mapAiPreviewMap ? `
@@ -1707,7 +1707,8 @@ class MapEditor {
     host.querySelector('#generate-map-ai')?.addEventListener('click', () => {
       this.mapAiBaseTerrainOnly = false;
       this.mapAiTargetRegionId = '';
-      if (map.sceneMode === 'indoor' && this.mapAiConfirmCompositionPlan) void this.generateCompositionPlanPreview();
+      if ((map.sceneMode === 'indoor' && this.mapAiConfirmCompositionPlan)
+        || (map.sceneMode === 'outdoor' && this.mapAiUseSceneAgent)) void this.generateCompositionPlanPreview();
       else void this.generateMapAiPreview('generate');
     });
     host.querySelector('#refine-map-ai')?.addEventListener('click', () => {
@@ -1753,7 +1754,7 @@ class MapEditor {
     host.querySelector('#discard-code-plan')?.addEventListener('click', () => {
       this.pendingCodeSuggestion = null;
       this.clearCodePlanPreview();
-      this.state.message = '已放弃室内功能规划，可以修改提示词后重试';
+      this.state.message = '已放弃灰盒规划，可以修改提示词后重试';
       this.renderPanels();
     });
     host.querySelector('#regenerate-code-plan')?.addEventListener('click', () => {
@@ -2321,13 +2322,14 @@ class MapEditor {
   private async generateCompositionPlanPreview(): Promise<void> {
     const map = this.state.map;
     const prompt = this.mapAiPrompt.trim();
-    if (!map || !prompt || map.sceneMode !== 'indoor' || this.state.busy) return;
+    if (!map || !prompt || (map.sceneMode !== 'indoor' && !(map.sceneMode === 'outdoor' && this.mapAiUseSceneAgent)) || this.state.busy) return;
     const controller = new AbortController();
     this.mapAiAbortController = controller;
     this.mapAgentProgress = [];
     this.clearCodePlanPreview();
     this.startMapAgentProgressTimer();
-    this.setBusy(true, 'AI 正在规划室内功能关系与资产清单...');
+    const stageName = map.sceneMode === 'indoor' ? '室内功能规划' : '室外灰盒构图';
+    this.setBusy(true, `AI 正在生成${stageName}与资产清单...`);
     this.renderMapAiPanel();
     try {
       const { suggestion } = await editorAgentFetch<{ suggestion: MapAiSuggestion }>(
@@ -2342,6 +2344,8 @@ class MapEditor {
             minNewAssets: this.mapAiMinNewAssets,
             maxNewAssets: this.mapAiMaxNewAssets,
             paletteId: this.selectedPaletteId || undefined,
+            sceneAgent: map.sceneMode === 'outdoor' && this.mapAiUseSceneAgent,
+            focusPrompt: this.mapAiFocusPrompt.trim() || undefined,
             planOnly: true
           }),
           signal: controller.signal
@@ -2354,18 +2358,19 @@ class MapEditor {
         undefined,
         (plan) => this.showCodePlanPreview(plan)
       );
+      if (!suggestion.codePlan?.code) throw new Error('灰盒规划未返回可确认的场景 Code');
       this.pendingCodeSuggestion = suggestion;
-      updateAgentProgress(this.mapAgentProgress, { phase: 'complete', label: '室内功能规划与资产清单已生成，等待确认' });
-      this.state.message = '室内功能规划已生成；确认前不会生成任何 3D 资产';
+      updateAgentProgress(this.mapAgentProgress, { phase: 'complete', label: `${stageName}与资产清单已生成，等待确认` });
+      this.state.message = `${stageName}已生成；确认前不会生成任何 3D 资产`;
     } catch (error) {
       const cancelled = error instanceof Error && error.name === 'AbortError';
       const detail = humanizeAgentError(error);
       updateAgentProgress(this.mapAgentProgress, {
         phase: 'failed',
-        label: cancelled ? '室内功能规划已取消' : '室内功能规划失败',
+        label: cancelled ? `${stageName}已取消` : `${stageName}失败`,
         detail
       });
-      this.state.message = cancelled ? '已取消室内功能规划' : `室内功能规划失败：${detail}`;
+      this.state.message = cancelled ? `已取消${stageName}` : `${stageName}失败：${detail}`;
     } finally {
       if (this.mapAiAbortController === controller) this.mapAiAbortController = null;
       this.stopMapAgentProgressTimer();

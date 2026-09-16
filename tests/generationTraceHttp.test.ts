@@ -35,7 +35,15 @@ it('links a generated suggestion, its visual review and saved transaction to loc
     const post = (route: string, body: unknown) => fetch(`${base}/${route}`, {
       method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body)
     });
-    const generated = await post('generate', { prompt: '简单草地', sceneAgent: true, maxNewAssets: 0 });
+    const draft = await post('generate', { prompt: '简单草地', sceneAgent: true, planOnly: true, maxNewAssets: 0 });
+    expect(draft.status).toBe(200);
+    const planned = await draft.json();
+    expect(planned.plan).toBeUndefined();
+    expect(planned.suggestion.codePlan.code).toBe(code);
+    expect(planned.suggestion.generatedAssets).toEqual([]);
+    const generated = await post('generate', {
+      prompt: '简单草地', sceneAgent: true, approvedCode: planned.suggestion.codePlan.code, maxNewAssets: 0
+    });
     expect(generated.status).toBe(200);
     const { suggestion } = await generated.json();
     const generationId = suggestion.generationTraceId;
@@ -60,7 +68,9 @@ it('links a generated suggestion, its visual review and saved transaction to loc
       .trim().split('\n').map((line) => JSON.parse(line));
     const generation = await read(generationId);
     expect(generation[0].data).toMatchObject({ mapId: map.id, operation: 'generate' });
-    expect(generation.find((r) => r.type === 'chat.request').data.stage).toBe('map.initial-plan');
+    const discovery = await read(planned.suggestion.generationTraceId);
+    expect(discovery.find((r) => r.type === 'chat.request').data.stage).toBe('map.initial-plan');
+    expect(generation.some((r) => r.type === 'chat.request')).toBe(false);
     expect(generation.find((r) => r.type === 'generation.result').data.suggestion.codePlan.code).toBe(code);
     expect(generation.at(-1).data.status).toBe('completed');
     const inspection = await read(review.generationTraceId);

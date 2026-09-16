@@ -55,16 +55,17 @@ export function renderMapCompositionPlanApproval(plan: SceneCompositionPlan): st
   `;
 }
 
-export function renderMapCodePlanApproval(suggestion: MapAiSuggestion): string {
+export function renderMapCodePlanApproval(suggestion: MapAiSuggestion, sceneMode: 'indoor' | 'outdoor' | 'mixed' = 'indoor'): string {
   const plan = suggestion.codePlan;
   if (!plan) return '';
+  const outdoor = sceneMode === 'outdoor';
   const requirements = plan.assetRequirements ?? [];
   const total = requirements.reduce((sum, item) => sum + item.variants, 0);
   return `
-    <section class="editor-section map-composition-approval" aria-label="待确认的室内功能规划">
+    <section class="editor-section map-composition-approval" aria-label="待确认的${outdoor ? '室外灰盒构图' : '室内功能规划'}">
       <span class="stage-kicker">生成前规划</span>
       <h2>${escapeHtml(suggestion.summary)}</h2>
-      <p class="empty">AI 已统一确定门窗、功能关系与摆放逻辑；此时尚未生成任何 3D 资产。</p>
+      <p class="empty">${outdoor ? '地形、路径与建筑占位已在场景中预览；请检查视觉重心、疏密和动线。' : 'AI 已统一确定门窗、功能关系与摆放逻辑；'}此时尚未生成任何 3D 资产。</p>
       <div class="map-ai-stats">
         <span>摆放意图 <b>${plan.placementCount}</b></span>
         <span>资产变体 <b>${total}</b></span>
