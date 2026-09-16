@@ -62,6 +62,9 @@ import { createPaletteColorMatcher, inferPaletteRole, normalizePaletteRole, type
 import { paletteTerrainColors } from './colorPaletteRuntime';
 import { PaletteMaterialRuntime, type PaletteCoverageReport } from './paletteMaterialRuntime';
 import { resolveMapModelZFighting } from './modelZFighting';
+import { SceneArtRuntime, validateSceneArtTargets } from './sceneArtRuntime';
+import type { SceneArtPlan } from '../shared/sceneArt';
+import { createMapObjectLight } from '../shared/map';
 
 export interface RenderedMapDebugStats extends MapPrimitiveBatchStats {
   grassLayers: number;
@@ -85,6 +88,7 @@ export interface RenderedMap {
   ) => void;
   getRuntimeBatchMeshes: () => THREE.Object3D[];
   setGrassStyle: (style: RuntimeGrassStyle) => void;
+  setSceneArt: (plan: SceneArtPlan | null, palette?: ColorPalette) => void;
   setTerrainMaterialStyle: (style: RuntimeTerrainMaterialStyle) => void;
   setColorPalette: (palette: ColorPalette | null) => PaletteCoverageReport;
   getColorPaletteCoverage: () => PaletteCoverageReport;
@@ -177,14 +181,21 @@ export async function buildEditableMapGroup(input: EditableMap, options: MapRend
   let materialElapsedSeconds = 0;
   const motionControllers: MapMotionController[] = [];
   let grass = map.sceneMode === 'indoor' ? null : buildMapGrassField(grassMap);
+  const sceneArt = new SceneArtRuntime();
+  let artPlan: SceneArtPlan | null = null;
+  let artPalette: ColorPalette | undefined;
+  let artTimeOfDay: VisualTimeOfDay = 'noon';
+  let artQuality = 1;
   if (grass) root.add(grass.group);
 
   const rebuildGrass = (next: EditableMap): void => {
+    sceneArt.clear();
     grassMap = deriveContactAwareGrassMap(next);
     grass?.dispose();
     grass = buildMapGrassField(grassMap, grassStyle);
     if (grass) root.add(grass.group);
     applyTerrainGrassTint(terrain, grassMap, grassStyle, terrainPalette);
+    applySceneArt();
   };
 
   const waterRoot = buildStructuredWaterGroup(map);
@@ -244,7 +255,7 @@ export async function buildEditableMapGroup(input: EditableMap, options: MapRend
       if (controller) motionControllers.push(controller);
     }
   }
-  const localLights = buildMapLocalLights(map, objectGroups, { preserveLocalLights: options.editorHelpers });
+  let localLights = buildMapLocalLights(map, objectGroups, { preserveLocalLights: options.editorHelpers });
   root.add(localLights.group);
   const lightHelpers = options.editorHelpers
     ? buildMapLightEditorHelpers(map, assets, objectGroups)
@@ -258,15 +269,37 @@ export async function buildEditableMapGroup(input: EditableMap, options: MapRend
   pickables.push(...instancing.pickables);
   pickables.push(...lightHelpers.pickables);
 
+  const applySceneArt = (): void => {
+    if (artPlan) sceneArt.apply(artPlan, { map: currentMap, modelsRoot, terrain, grassRoot: grass?.group ?? null, runtimeIndex: instancing.runtimeIndex, renderer: options.renderer }, artPalette);
+  };
+  const setArtLights = (): void => {
+    const previous = localLights.group;
+    previous.removeFromParent();
+    previous.traverse(object => { const light = object as THREE.Light; if (light.isLight) light.dispose(); });
+    const overrides = new Map((artPlan?.lights ?? []).map(light => [light.objectId, light]));
+    const litMap = { ...currentMap, objects: currentMap.objects.map(object => {
+      const override = overrides.get(object.id);
+      if (!override) return object;
+      const targetGroup = override.targetId ? objectGroups.get(override.targetId) : undefined;
+      const target = targetGroup?.getWorldPosition(new THREE.Vector3()).toArray() as Vec3 | undefined;
+      return { ...object, light: { ...createMapObjectLight(override.kind, target), ...override, direction: [0, -1, 0] as Vec3 } };
+    }) };
+    localLights = buildMapLocalLights(litMap, objectGroups, { preserveLocalLights: options.editorHelpers });
+    localLights.setTimeOfDay(artTimeOfDay);
+    localLights.setQuality(artQuality);
+    root.add(localLights.group);
+  };
+
   return {
     group: root,
     modelsRoot,
     runtimeIndex: instancing.runtimeIndex,
     objectGroups,
     pickables,
-    syncObjectTransform: instancing.syncObjectTransform,
+    syncObjectTransform: (id) => { instancing.syncObjectTransform(id); if (artPlan?.lights.length) setArtLights(); },
     update: (deltaTime, camera, maxDistance) => {
       materialElapsedSeconds += deltaTime;
+      sceneArt.update(materialElapsedSeconds);
       sandFlow.time += deltaTime;
       syncTerrainSandShader(sandFlow);
       grass?.update(deltaTime);
@@ -279,11 +312,23 @@ export async function buildEditableMapGroup(input: EditableMap, options: MapRend
     syncMaterialEnvironment: instancing.syncEnvironment,
     getRuntimeBatchMeshes: instancing.getBatchMeshes,
     setGrassStyle: (style) => {
+      sceneArt.clear();
       grassStyle = style;
       grass?.setStyle(style);
       applyTerrainGrassTint(terrain, grassMap, style, terrainPalette);
+      applySceneArt();
+    },
+    setSceneArt: (plan, palette) => {
+      if (plan) validateSceneArtTargets(plan, currentMap);
+      sceneArt.clear();
+      const lightsChanged = JSON.stringify(artPlan?.lights ?? []) !== JSON.stringify(plan?.lights ?? []);
+      artPlan = plan;
+      artPalette = palette;
+      try { applySceneArt(); } catch (error) { sceneArt.clear(); artPlan = null; setArtLights(); throw error; }
+      if (lightsChanged) setArtLights();
     },
     setTerrainMaterialStyle: (style) => {
+      sceneArt.clear();
       terrainMaterialStyle = style;
       sandFlow.detailStrength = style.detailStrength;
       sandFlow.soilMoist = style.soilRecipe === 'moist' ? 1 : 0;
@@ -292,8 +337,10 @@ export async function buildEditableMapGroup(input: EditableMap, options: MapRend
       replaceTerrainTextures(material, currentMap, style, colorPalette ?? undefined);
       terrain.userData.terrainMaterialStyle = { ...style };
       syncTerrainSandShader(sandFlow);
+      applySceneArt();
     },
     setColorPalette: (palette) => {
+      sceneArt.clear();
       colorPalette = palette;
       terrainPalette = paletteTerrainColors(palette ?? undefined);
       const report = palette ? paletteMaterials.apply(palette) : (paletteMaterials.clear(), paletteMaterials.report());
@@ -301,6 +348,7 @@ export async function buildEditableMapGroup(input: EditableMap, options: MapRend
       replaceTerrainTextures(material, currentMap, terrainMaterialStyle, palette ?? undefined);
       if (roomShell) applyRoomShellPalette(roomShell, currentMap, palette);
       applyTerrainGrassTint(terrain, grassMap, grassStyle, terrainPalette);
+      applySceneArt();
       return report;
     },
     getColorPaletteCoverage: () => paletteMaterials.report(),
@@ -316,9 +364,9 @@ export async function buildEditableMapGroup(input: EditableMap, options: MapRend
       syncTerrainSandShader(sandFlow);
     },
     setRoomWallDisplayMode: (mode, camera) => roomShell?.setDisplayMode(mode, camera),
-    setLightingTimeOfDay: localLights.setTimeOfDay,
-    setLightingQuality: localLights.setQuality,
-    setLightingSoloObjectId: localLights.setSoloObjectId,
+    setLightingTimeOfDay: (value) => { artTimeOfDay = value; localLights.setTimeOfDay(value); },
+    setLightingQuality: (value) => { artQuality = value; localLights.setQuality(value); },
+    setLightingSoloObjectId: (value) => localLights.setSoloObjectId(value),
     setLightingHelpersVisible: (visible) => { lightHelpers.group.visible = visible; },
     interactGrass: (position, elapsedSeconds) => grass?.interact(position, elapsedSeconds),
     clearGrassInteraction: () => grass?.clearInteraction(),
@@ -334,6 +382,7 @@ export async function buildEditableMapGroup(input: EditableMap, options: MapRend
     },
     refreshGrass: rebuildGrass,
     refreshTerrain: (next) => {
+      sceneArt.clear();
       currentMap = next;
       terrain.geometry.dispose();
       terrain.geometry = buildTerrainGeometry(next);
@@ -353,6 +402,7 @@ export async function buildEditableMapGroup(input: EditableMap, options: MapRend
       rebuildGrass(next);
     },
     dispose: () => {
+      sceneArt.clear();
       motionControllers.forEach((controller) => controller.dispose());
       paletteMaterials.clear();
       grass?.dispose();

@@ -15,7 +15,7 @@ import {
   type RoomWall
 } from '../shared/map';
 import { foundationBoundary, foundationTopHeight, normalizeMapFoundation, type MapFoundation } from '../shared/mapFoundation';
-import { assetFootprintRadius, normalizeAssetTags } from '../shared/mapAssetMetadata';
+import { assetFootprintRadius, normalizeAssetTags, normalizeMapAssetLight, type MapAssetLight } from '../shared/mapAssetMetadata';
 import { planMapObjectAttachment } from '../shared/mapAttachment';
 import { indoorAssetTargetCount } from '../shared/indoorScenePlanning';
 import { normalizeMapAiMaxNewAssets, normalizeMapAiNewAssetRange } from '../shared/mapPlanning';
@@ -372,7 +372,10 @@ interface BezierFrame {
   normal: Point2;
 }
 
+const CODE_ASSET_LIGHT_CONTRACT = 'For functional lamps, lanterns, ceiling fixtures or neon emitters, requireAsset also accepts light:{kind:"point"|"spot",color:"#RRGGBB",intensity:0.5..12,range:1..20,offset:[localX,localY,localZ],direction?:[x,y,z],coneAngleDegrees?:10..90,penumbra?:0..1}. Declare this physical emitter metadata explicitly; bright geometry or emissive tags alone do not illuminate neighbors. Preserve it through asset adaptation. Do not light unrelated decorative objects. Final mood/exposure still belongs to the separately confirmed render stage.';
+
 export interface CodeAssetRequirement {
+  light?: MapAssetLight;
   key: string;
   name: string;
   prompt: string;
@@ -385,6 +388,7 @@ export interface CodeAssetRequirement {
 }
 
 interface CodeAssetRequirementInput {
+  light?: MapAssetLight;
   key: string;
   name: string;
   prompt: string;
@@ -575,6 +579,7 @@ export async function generateMapCodeSuggestion(
             : ''
         ].filter(Boolean).join('\n'),
         tags: requirement.tags,
+        ...(requirement.light ? { light: requirement.light } : {}),
         mode: map.assetGenerationMode,
         ...(seededFamily ? {
           seedFamilyKey: requirement.key,
@@ -2806,6 +2811,7 @@ export function buildMapCodePlannerSystemPrompt(
     inputSchema: capability.inputSchema
   }));
   return `You are WorldForge Studio's procedural environment planner.${scopeContract}
+${CODE_ASSET_LIGHT_CONTRACT}
 
 ## Output contract
 Return only one synchronous JavaScript function: function plan(api) { ... }.
@@ -2944,6 +2950,7 @@ function buildIndoorMapCodePlannerSystemPrompt(
     ? `\n## Indoor Code refinement\nReturn only a delta over the current room. Preserve every object, opening and finish the user did not ask to change. If the room already satisfies the request, call api.noChange('short reason') and emit nothing else. Never move or remove an object with locked:true unless it also has refinable:true. Use api.move and api.removeObject for existing content; add new openings only when the user explicitly requests one. Existing objects: ${JSON.stringify(map.objects.slice(0, 240).map((object) => ({ id: object.id, name: object.name, assetId: object.assetId, position: object.transform.position, rotationY: object.transform.rotation[1], scale: object.transform.scale, size: object.transform.size, parentId: object.parentId, groupId: object.designGroupId, roomOpeningId: object.roomOpeningId, locked: object.locked, refinable: refinableObjectIds.has(object.id) })))}.\n`
     : `\n## Unified indoor ownership\nYou are the single author of the complete indoor layout. No second director, specialist agent, or silent local backfill will redesign it. Local code only enforces room bounds, opening semantics, collision safety, attachment validity and door circulation. If a functional requirement is missing, this same Code Composer will receive a targeted repair request.\n`;
   return `You are WorldForge Studio's procedural indoor-scene planner.${refineContext}
+${CODE_ASSET_LIGHT_CONTRACT}
 
 ## Output contract
 Return only one synchronous JavaScript function: function plan(api) { ... }.
@@ -3260,11 +3267,14 @@ function normalizeCodeAssetRequirement(
     throw new Error('invalid_map_code_asset_role');
   }
   if (requireRole && input.role === undefined) throw new Error('missing_map_code_asset_role');
+  const light = input.light === undefined ? undefined : normalizeMapAssetLight(input.light);
+  if (input.light !== undefined && !light) throw new Error('invalid_map_code_asset_light');
   return {
     key,
     name,
     prompt,
     tags: normalizeAssetTags(input.tags) ?? [],
+    ...(light ? { light } : {}),
     variants: boundedCount(input.variants ?? 1, 1, 8),
     ...(input.dimensions === undefined ? {} : { dimensions: point3(input.dimensions) }),
     ...(input.role === undefined ? {} : { role: input.role }),
@@ -3304,6 +3314,7 @@ function sameCodeAssetRequirement(left: CodeAssetRequirement, right: CodeAssetRe
     && left.variants === right.variants
     && left.tags.join('\n') === right.tags.join('\n')
     && JSON.stringify(left.dimensions) === JSON.stringify(right.dimensions)
+    && JSON.stringify(left.light) === JSON.stringify(right.light)
     && left.role === right.role
     && Boolean(left.optional) === Boolean(right.optional);
 }

@@ -7,6 +7,7 @@ import { VolumetricLightRuntime } from './volumetricLightRuntime';
 import { WeatherRuntime, type WeatherFrame } from './weatherRuntime';
 import { RenderRuntimeAdapter } from './renderRuntimeAdapter';
 import { configureRendererOutput } from './renderOutputPipeline';
+import { compileSceneArt } from '../shared/sceneArt';
 import type { RenderedMap } from './mapRenderer';
 import type { Vec3 } from '../shared/protocol';
 import { DEFAULT_SUN_POSITION, type EditableMap } from '../shared/map';
@@ -70,7 +71,7 @@ export interface RenderSchemeTargets {
   hdriSky: Pick<HdriSkyController, 'apply' | 'clear'>;
   volumetricLight?: Pick<VolumetricLightRuntime, 'apply' | 'clear'>;
   rendered: (Pick<RenderedMap, 'setGrassStyle' | 'setLightingTimeOfDay'>
-    & Partial<Pick<RenderedMap, 'group' | 'objectGroups' | 'modelsRoot' | 'setColorPalette'>>) | null;
+    & Partial<Pick<RenderedMap, 'group' | 'objectGroups' | 'modelsRoot' | 'setColorPalette' | 'setSceneArt'>>) | null;
   map?: EditableMap | null;
   updateLighting(): void;
 }
@@ -418,6 +419,7 @@ function rainUnit(sequence: number, salt: number): number {
  */
 export function applyRenderScheme(targets: RenderSchemeTargets, scheme: RenderScheme | null): void {
   const { scene, renderer, sunLight, hemisphereLight, styleManager, adapter, hdriSky } = targets;
+  targets.rendered?.setSceneArt?.(null);
   targets.rendered?.setColorPalette?.(null);
   adapter.resetScopedCapabilities();
 
@@ -503,6 +505,7 @@ export function applyRenderScheme(targets: RenderSchemeTargets, scheme: RenderSc
   );
   applyGlassStyle(targets.rendered, plan ? compileRuntimeGlassStyle(plan) : null);
   targets.rendered?.setColorPalette?.(palette ?? null);
+  targets.rendered?.setSceneArt?.(compileSceneArt(plan), palette);
   if (plan) {
     const hdri = compileRuntimeHdriSky(plan);
     void hdriSky.apply(palette ? paletteHdriStyle(palette, hdri) : hdri);

@@ -83,6 +83,8 @@ export class CartoonGrassField {
       || next.bladeWidth !== this._style.bladeWidth
       || next.rootColor !== this._style.rootColor
       || next.tipColor !== this._style.tipColor
+      || next.colorMode !== this._style.colorMode
+      || JSON.stringify(next.colorStops) !== JSON.stringify(this._style.colorStops)
       || next.rootDarken !== this._style.rootDarken
       || next.gradientBias !== this._style.gradientBias
       || next.bands !== this._style.bands
@@ -252,7 +254,7 @@ export function createGrassMaterial(style = {}) {
   const uniforms = createGrassUniforms(normalized);
   material.userData.skipShaderApply = true;
   material.userData.grassUniforms = uniforms;
-  material.customProgramCacheKey = () => 'cartoon-grass-v2';
+  material.customProgramCacheKey = () => `cartoon-grass-v3:${JSON.stringify(normalized.colorStops)}`;
   material.onBeforeCompile = (shader) => {
     Object.assign(shader.uniforms, uniforms);
     shader.vertexShader = shader.vertexShader
@@ -269,7 +271,7 @@ uniform float uGrassFadeStart;
 uniform float uGrassFadeEnd;
 uniform float uGrassNormalFlatten;`)
       .replace('#include <begin_vertex>', `#include <begin_vertex>
-vGrassBladeT = clamp(position.y, 0.0, 1.0);
+vGrassBladeT = clamp(uv.y, 0.0, 1.0);
 vec3 grassRootWorld = (modelMatrix * instanceMatrix * vec4(0.0, 0.0, 0.0, 1.0)).xyz;
 float grassWave = sin(dot(grassRootWorld.xz, normalize(uGrassWindDirection)) * uGrassWaveFrequency - uGrassTime * uGrassWindSpeed);
 grassWave = sign(grassWave) * pow(abs(grassWave), 0.6);
@@ -286,11 +288,13 @@ vec3 grassGroundViewNormal = normalize(normalMatrix * instanceGroundNormal);
 transformedNormal = normalize(mix(transformedNormal, grassGroundViewNormal, uGrassNormalFlatten));`);
     shader.fragmentShader = shader.fragmentShader
       .replace('#include <common>', `#include <common>
-varying float vGrassFade;`)
+varying float vGrassFade;
+varying float vGrassBladeT;`)
       .replace('#include <color_fragment>', `#include <color_fragment>
 // At the very end of the height fade, discard the collapsed blade instead of
 // leaving a degenerate ground-plane fragment behind.
-if (vGrassFade < 0.015) discard;`);
+if (vGrassFade < 0.015) discard;
+${grassRampFragment(normalized)}`);
   };
   return material;
 }
@@ -322,6 +326,7 @@ function createBladeGeometry(style, preset, seed = 1) {
       gradient = Math.round(gradient * (style.bands - 1)) / Math.max(1, style.bands - 1);
       const shade = new THREE.Color().copy(root).lerp(tip, gradient)
         .multiplyScalar(mix(style.rootDarken, 1, smoothstep(0, 0.35, level.t ?? level.y)));
+      if (style.colorStops) shade.setRGB(1, 1, 1);
       colors.push(shade.r, shade.g, shade.b, shade.r, shade.g, shade.b);
     }
     for (let index = 0; index < levels.length - 1; index += 1) {
@@ -409,7 +414,7 @@ function createGrassUniforms(style) {
     uGrassFadeStart: { value: style.fadeStart },
     uGrassFadeEnd: { value: style.fadeEnd },
     uGrassNormalFlatten: { value: style.normalFlatten },
-    uGrassRootColor: { value: new THREE.Color(style.rootColor) },
+    uGrassRootColor: { value: new THREE.Color(style.colorStops?.[0]?.[1] ?? style.rootColor) },
     uGrassTipColor: { value: new THREE.Color(style.tipColor) },
     uGrassRootDarken: { value: style.rootDarken },
     uGrassGradientBias: { value: style.gradientBias },
@@ -438,7 +443,7 @@ function resolveLayerStyle(style, preset, seed = 1) {
   const magicHueShift = preset === 'magic' ? (seededUnit(seed, 41) - 0.5) * 0.18 : 0;
   const rootColor = new THREE.Color(profile.rootColor).offsetHSL(magicHueShift, 0, 0);
   const tipColor = new THREE.Color(profile.tipColor).offsetHSL(-magicHueShift * 0.65, 0, 0);
-  const hostMix = preset === 'magic' ? 0.12 : 0.28;
+  const hostMix = style.colorMode === 'explicit' ? 1 : preset === 'magic' ? 0.12 : 0.28;
   return {
     ...style,
     bladeWidth: style.bladeWidth * profile.width,
@@ -481,6 +486,8 @@ function normalizeStyle(value = {}) {
   const start = nonNegative(value.fadeStart, DEFAULT_STYLE.fadeStart);
   const end = Math.max(start + 1, nonNegative(value.fadeEnd, DEFAULT_STYLE.fadeEnd));
   return {
+    colorMode: value.colorMode === 'explicit' ? 'explicit' : 'preset',
+    colorStops: normalizeGrassStops(value.colorStops),
     cellSize: clamp(positive(value.cellSize, DEFAULT_STYLE.cellSize), 0.35, 2),
     bladeWidth: clamp(positive(value.bladeWidth, DEFAULT_STYLE.bladeWidth), 0.05, 0.5),
     bladeHeight: clamp(positive(value.bladeHeight, DEFAULT_STYLE.bladeHeight), 0.25, 2.5),
@@ -502,6 +509,24 @@ function normalizeStyle(value = {}) {
   };
 }
 
+function normalizeGrassStops(value) {
+  if (!Array.isArray(value) || value.length < 2 || value.length > 4) return undefined;
+  if (value.some((stop, i) => !Array.isArray(stop) || !Number.isFinite(stop[0]) || stop[0] < 0 || stop[0] > 1 || !/^#[0-9a-f]{6}$/i.test(stop[1]) || (i > 0 && stop[0] <= value[i - 1][0]))) return undefined;
+  if (value[0][0] !== 0 || value.at(-1)[0] !== 1) return undefined;
+  return value.map(stop => [...stop]);
+}
+
+function grassRampFragment(style) {
+  if (!style.colorStops) return '';
+  const glColor = hex => `vec3(${new THREE.Color(hex).toArray().map(v => v.toFixed(6)).join(',')})`;
+  let body = `vec3 wfGrassRamp = ${glColor(style.colorStops[0][1])};`;
+  for (let i = 1; i < style.colorStops.length; i++) {
+    const [at, hex] = style.colorStops[i], start = style.colorStops[i - 1][0];
+    body += `wfGrassRamp = mix(wfGrassRamp, ${glColor(hex)}, clamp((vGrassBladeT-${start.toFixed(6)})/${(at-start).toFixed(6)},0.0,1.0));`;
+  }
+  return body + `diffuseColor.rgb *= wfGrassRamp * mix(${style.rootDarken.toFixed(6)},1.0,smoothstep(0.0,0.35,vGrassBladeT));`;
+}
+
 function normalizeDirection(value) {
   const x = finite(value[0], 1);
   const y = finite(value[1], 0);
@@ -516,7 +541,7 @@ function normalizeColors(value) {
 }
 
 function cloneStyle(style) {
-  return { ...style, windDirection: [...style.windDirection], flowerColors: [...style.flowerColors] };
+  return { ...style, colorStops: style.colorStops?.map(stop => [...stop]), windDirection: [...style.windDirection], flowerColors: [...style.flowerColors] };
 }
 
 function colorString(value, fallback) {

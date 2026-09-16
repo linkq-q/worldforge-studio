@@ -117,7 +117,6 @@ export function buildMapLocalLights(
   let quality = 1;
   let soloObjectId: string | null = null;
   const preserveLocalLights = options.preserveLocalLights === true || stablePointLights;
-  const position = new THREE.Vector3();
   const rotation = new THREE.Quaternion();
   const projection = new THREE.Matrix4();
   const frustum = new THREE.Frustum();
@@ -131,9 +130,8 @@ export function buildMapLocalLights(
       const worldCandidates = candidates
         .filter((candidate) => !soloObjectId || candidate.objectId === soloObjectId)
         .map((candidate) => {
-          candidate.group.getWorldPosition(position);
           candidate.group.getWorldQuaternion(rotation);
-          const world = new THREE.Vector3(...candidate.offset).applyQuaternion(rotation).add(position);
+          const world = candidate.group.localToWorld(new THREE.Vector3(...candidate.offset));
           const direction = candidate.target
             ? new THREE.Vector3(...candidate.target).sub(world).normalize()
             : new THREE.Vector3(...candidate.direction).applyQuaternion(rotation).normalize();

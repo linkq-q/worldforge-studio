@@ -1,6 +1,7 @@
 import {
   inferPaletteLevel,
   pickPaletteColor,
+  nearestPaletteColor,
   type ColorPalette,
   type ColorPaletteRole,
   type ColorPaletteLevel
@@ -31,9 +32,11 @@ export function paletteEnvironment(
 export function paletteGrassStyle(palette: ColorPalette, style: RuntimeGrassStyle): RuntimeGrassStyle {
   return {
     ...style,
-    rootColor: levelColor(palette, 'plant', ['L4', 'L5'], 'grass-root'),
-    tipColor: levelColor(palette, 'plant', ['L1', 'L2', 'L3'], 'grass-tip'),
-    groundColor: levelColor(palette, 'earth', ['L2', 'L3'], 'grass-ground')
+    colorMode: 'explicit',
+    colorStops: style.colorStops?.map(([at, hex]) => [at, nearestPaletteColor(palette, hex, 'plant')]),
+    rootColor: style.colorMode === 'explicit' ? nearestPaletteColor(palette, style.rootColor, 'plant') : levelColor(palette, 'plant', ['L4', 'L5'], 'grass-root'),
+    tipColor: style.colorMode === 'explicit' ? nearestPaletteColor(palette, style.tipColor, 'plant') : levelColor(palette, 'plant', ['L1', 'L2', 'L3'], 'grass-tip'),
+    groundColor: style.colorMode === 'explicit' ? nearestPaletteColor(palette, style.groundColor, 'earth') : levelColor(palette, 'earth', ['L2', 'L3'], 'grass-ground')
   };
 }
 

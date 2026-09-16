@@ -563,7 +563,7 @@ declare module '@voxel-studio/render-runtime/utils/MaterialShaderPatchChain.js' 
   export function addMaterialShaderPatch(
     material: import('three').Material,
     key: string,
-    patch: (shader: import('three').WebGLProgramParametersWithUniforms) => void,
+    patch: (shader: import('three').WebGLProgramParametersWithUniforms, renderer: import('three').WebGLRenderer, material: import('three').Material) => void,
     options?: { order?: number; cacheKey?: () => string }
   ): void;
   export function hasMaterialShaderPatch(material: import('three').Material, key: string): boolean;

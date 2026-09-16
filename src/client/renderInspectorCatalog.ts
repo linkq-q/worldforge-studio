@@ -25,7 +25,7 @@ export const RENDER_INSPECTOR_CATEGORIES: readonly RenderInspectorCategory[] = [
     id: 'lighting',
     label: '光照',
     description: '环境光、太阳光和命名灯光配方',
-    moduleIds: ['lighting.hemisphere', 'lighting.sun', 'runtime.light-rig']
+    moduleIds: ['lighting.hemisphere', 'lighting.sun', 'runtime.light-rig', 'runtime.local-light']
   },
   {
     id: 'style',
@@ -48,7 +48,7 @@ export const RENDER_INSPECTOR_CATEGORIES: readonly RenderInspectorCategory[] = [
     id: 'environment',
     label: '环境',
     description: '天空、天气、环境色、距离雾和草地表现',
-    moduleIds: ['environment.palette', 'environment.hdri', 'atmosphere.fog', 'runtime.weather', 'runtime.atmosphere-fx', 'runtime.grass-style']
+    moduleIds: ['environment.palette', 'environment.hdri', 'atmosphere.fog', 'runtime.weather', 'runtime.atmosphere-fx', 'runtime.grass-style', 'runtime.color-field']
   },
   {
     id: 'water',
@@ -60,7 +60,7 @@ export const RENDER_INSPECTOR_CATEGORIES: readonly RenderInspectorCategory[] = [
     id: 'materials',
     label: '材质',
     description: '地表细节与按标签应用的材质、特效和隔离 Shader 扩展',
-    moduleIds: ['runtime.terrain-materials', 'runtime.material-theme', 'runtime.effect-recipe', 'runtime.shader-extension']
+    moduleIds: ['runtime.terrain-materials', 'runtime.material-theme', 'runtime.effect-recipe', 'runtime.glass-style', 'runtime.surface-detail', 'runtime.wet-surface', 'runtime.shader-extension']
   }
 ] as const;
 

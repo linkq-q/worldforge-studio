@@ -1,4 +1,5 @@
 import type { RenderScheme } from '../shared/renderScheme';
+import { SCENE_ART_MODULES, type SceneArtModuleId } from '../shared/sceneArt';
 import {
   createDefaultRenderAccessPolicy,
   RENDER_CAPABILITIES,
@@ -15,6 +16,8 @@ import {
 export type DeveloperRenderView = 'tuning' | 'access';
 
 const PARAMETER_LABELS: Record<string, string> = {
+  config: '局部效果配置（有界 JSON）',
+  colorStops: '草叶色标 [[高度0到1,"#颜色"],…]（2–4 色）',
   recipe: '风格配方',
   mode: '模式',
   background: '背景颜色',
@@ -297,7 +300,7 @@ export function defaultRenderModule(
   return {
     ...(capability.repeatable ? { key: `${capability.id.replaceAll('.', '-')}-${Math.max(0, index)}` } : {}),
     id: capability.id,
-    ...(capability.repeatable ? { scope } : {}),
+    ...(capability.repeatable && !SCENE_ART_MODULES.includes(capability.id as SceneArtModuleId) ? { scope } : {}),
     params
   };
 }
@@ -308,11 +311,12 @@ function renderTuningSection(
   hdriFiles: string[],
   directWaterControl: boolean
 ): string {
-  const addLabel = capability.id === 'runtime.material-theme' ? '添加材质规则' : '添加特效规则';
+  const artRule = SCENE_ART_MODULES.includes(capability.id as SceneArtModuleId);
+  const addLabel = capability.id === 'runtime.material-theme' ? '添加材质规则' : capability.id === 'runtime.local-light' ? '添加灯光规则' : capability.id === 'runtime.color-field' ? '添加配色规则' : '添加特效规则';
   if (capability.repeatable && !directWaterControl && modules.length === 0) {
     return `
       <div class="developer-empty-rule">
-        <p class="empty">当前方案还没有这类规则。只有需要按标签批量处理资产时才添加。</p>
+        <p class="empty">${artRule ? '当前方案还没有这类规则。使用场景中的 objectId 或 zoneId 填写配置；留空不生效。' : '当前方案还没有这类规则。只有需要按标签批量处理资产时才添加。'}</p>
         <button type="button" class="secondary small" data-dev-add-module="${capability.id}">${addLabel}</button>
       </div>
     `;
@@ -407,7 +411,7 @@ function renderDeveloperModuleInstance(
           ${!directWaterControl && !virtual ? `<button type="button" class="danger small" data-dev-remove-module="${index}">删除规则</button>` : ''}
         </div>
       ` : ''}
-      ${capability.repeatable && !directWaterControl ? renderRuleTarget(capability, module, index) : ''}
+      ${capability.repeatable && !directWaterControl && !SCENE_ART_MODULES.includes(capability.id as SceneArtModuleId) ? renderRuleTarget(capability, module, index) : ''}
       <div class="developer-preset-grid">
         ${Object.entries(capability.params).map(([parameter, rule]) => (
           renderDeveloperPresetInput(parameter, rule, module.params[parameter], index, capability.id, hdriFiles)
@@ -455,7 +459,8 @@ function renderDeveloperPresetInput(
     return `<label><span>${parameterLabel(parameter)}</span><input type="color" ${identity} value="${escapeHtml(String(value || '#ffffff'))}" /></label>`;
   }
   if (rule.type === 'code') {
-    return `<label class="developer-code"><span>${parameterLabel(parameter)}</span><textarea rows="7" maxlength="${rule.maxLength}" ${identity} placeholder="隔离 GLSL 扩展">${escapeHtml(String(value))}</textarea></label>`;
+    const placeholder = parameter === 'config' ? '局部效果 JSON 配置，目标 ID 来自当前场景' : parameter === 'colorStops' ? '[[0,"#344d40"],[0.35,"#65856b"],[1,"#c0cc87"]]' : '隔离 GLSL 扩展';
+    return `<label class="developer-code"><span>${parameterLabel(parameter)}</span><textarea rows="7" maxlength="${rule.maxLength}" ${identity} placeholder="${escapeHtml(placeholder)}">${escapeHtml(String(value))}</textarea></label>`;
   }
   const step = numericStep(rule.min, rule.max);
   return `
