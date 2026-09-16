@@ -1480,6 +1480,46 @@ describe('map code planner', () => {
     ]);
   });
 
+  it('reports unclear group links and a secondary anchor overpowering the primary from entry', async () => {
+    const code = `function plan(api) {
+      api.sceneIntent({kind:'authored'});
+      api.design({
+        experienceMode:'sequential', intent:'两处建筑沿路展开',
+        groups:[
+          {id:'main',name:'主院',intent:'主场景',layers:[]},
+          {id:'side',name:'侧院',intent:'次场景',layers:[]}
+        ],
+        focuses:[
+          {id:'main-focus',groupId:'main',name:'主殿',kind:'primary',rank:1,selector:'主殿',reveal:'visible'},
+          {id:'side-focus',groupId:'side',name:'侧殿',kind:'secondary',rank:2,selector:'侧殿',reveal:'visible'}
+        ],
+        viewpoints:[{id:'entry',point:[-12,0],targetFocusId:'main-focus',role:'entry'}],
+        relations:[]
+      });
+      api.place({name:'主殿',position:[8,0],groupId:'main',size:[2,2,2],role:'structure'});
+      api.place({name:'侧殿',position:[0,0],groupId:'side',size:[5,5,5],role:'structure'});
+    }`;
+    const fetchImpl = vi.fn().mockResolvedValue(new Response(JSON.stringify({ ok: true, content: code }), {
+      headers: { 'Content-Type': 'application/json' }
+    }));
+    const suggestion = await generateMapCodeSuggestion('两处建筑沿路展开', createEmptyMap(), [], {
+      apiBase: 'https://example.test', provider: 'gpt', fetchImpl, scope: 'scene', discoveryOnly: true
+    });
+
+    expect(suggestion.diagnostics).toEqual(expect.arrayContaining([
+      expect.objectContaining({ code: 'scene.group-relations-unclear', repaired: false }),
+      expect.objectContaining({ code: 'scene.focus-underdominant', repaired: false })
+    ]));
+    const connectedCode = code
+      .replace('relations:[]', "relations:[{id:'main-side',kind:'support',sourceSelector:'主殿',sourceGroupId:'main',targetGroupId:'side',strength:'normal'}]")
+      .replace("size:[2,2,2]", "size:[12,8,8]");
+    const connected = await generateMapCodeSuggestion('两处建筑沿路展开', createEmptyMap(), [], {
+      approvedCode: connectedCode, scope: 'scene', discoveryOnly: true
+    });
+    expect(connected.diagnostics?.some((issue) => issue.code === 'scene.group-relations-unclear'
+      || issue.code === 'scene.focus-underdominant')).toBe(false);
+  });
+
   it('removes natural decoration from routes and AI-declared functional clearings without blocking', () => {
     const tree = { ...testAsset('asset-clear-tree', '古树'), tags: ['tree'] };
     const rock = { ...testAsset('asset-clear-rock', '景石'), tags: ['rock'] };

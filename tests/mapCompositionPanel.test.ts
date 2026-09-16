@@ -235,11 +235,15 @@ describe('map composition preview panel', () => {
   it('asks for outdoor graybox composition approval before asset generation', () => {
     const html = renderMapCodePlanApproval({
       summary: '园林构图', operations: [], renderPromptSuggestions: [], generatedAssets: [],
-      codePlan: { code: 'function plan(api) {}', functions: [], placementCount: 8, assetRequirements: [] }
+      codePlan: {
+        code: 'function plan(api) {}', functions: [], placementCount: 8, assetRequirements: [],
+        diagnostics: [{ code: 'scene.focus-underdominant', severity: 'warning', repaired: false, message: '次焦点压过主焦点' }]
+      }
     }, 'outdoor');
 
     expect(html).toContain('待确认的室外灰盒构图');
     expect(html).toContain('请检查视觉重心、疏密和动线');
+    expect(html).toContain('次焦点压过主焦点');
     expect(html).toContain('确认规划并开始生成');
   });
 

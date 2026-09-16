@@ -76,6 +76,7 @@ import type { AssetGenerationRequest } from './mapAi';
 import { validateMapSuggestion } from './mapSuggestionValidation';
 import { llmChat } from './modelApi';
 import { recordGenerationTrace } from './generationTrace';
+import type { MapLintIssue } from '../shared/mapLint';
 
 const MAX_CODE_LENGTH = 40_000;
 const MAX_PLACEMENTS = 2_000;
@@ -2507,6 +2508,9 @@ function executeMapCodePlanInternal(
       message: '本轮 Code 未填写设计组与焦点表，场景仍可应用；可点击“调整当前地图”补充构图语义。',
       repaired: false
     }] : [];
+  const compositionDiagnostics = map.sceneMode === 'outdoor' && scope === 'scene'
+    && requestMode === 'generate' && sceneIntent === 'authored'
+    ? reviewCodeDesignComposition(applyMapOperations(planningMap, operations)) : [];
   const repairableObjectIds = new Set([
     ...objectOperations.map((operation) => operation.object.id!),
     ...(options.refinableObjectIds ?? [])
@@ -2515,7 +2519,7 @@ function executeMapCodePlanInternal(
     ...suggestion,
     diagnostics: [
       ...waterDiagnostics, ...accessDiagnostics, ...clearanceDiagnostics, ...attachmentDiagnostics,
-      ...unresolvedBridgeDiagnostics, ...missingDesignDiagnostics,
+      ...unresolvedBridgeDiagnostics, ...missingDesignDiagnostics, ...compositionDiagnostics,
       ...foundationWarnings.map((message) => ({
         code: 'foundation.max-thickness' as const,
         severity: 'warning' as const,
@@ -2836,6 +2840,7 @@ Do not use random rotation for directional assets. For a ring or arena, use api.
 
 ## Design philosophy
 Build a readable composition, not a random pile. Let the requested place determine whether focus is singular, multiple, sequential, or mixed.
+For an authored multi-group scene, name one primary focus, choose an entry viewpoint aimed at it, and explicitly connect each leaf group with a cross-group relation or shared route guide. Keep the primary readable from the intended entry, not accidentally dwarfed by nearby secondary anchors.
 Use big-medium-small hierarchy: a few large anchors, a moderate number of supporting pieces, and enough controlled small details to make authored space feel intentionally finished.
 Keep key routes clear, respect the map bounds, avoid filling every cell, and keep repeated elements deterministic from api.seed.
 Treat declared building dimensions as real footprints: keep standalone building footprints disjoint, with a small street or courtyard gap between their edges. Do not stack several houses at nearly the same center.
@@ -3146,6 +3151,82 @@ async function discoverMapCodeWithRepairs(
     }
   }
   throw new Error('map_code_execution_failed:missing_discovery_result');
+}
+
+/** Aesthetic signals are review-only: never move authored anchors based on proxy geometry. */
+function reviewCodeDesignComposition(map: EditableMap): MapLintIssue[] {
+  const design = map.designSemantics;
+  const issues: MapLintIssue[] = [];
+  const parentIds = new Set(design.groups.flatMap((group) => group.parentId ? [group.parentId] : []));
+  const leafGroups = design.groups.filter((group) => !parentIds.has(group.id)
+    && map.objects.some((object) => object.designGroupId === group.id));
+  if (leafGroups.length >= 2) {
+    const edges = new Map(leafGroups.map((group) => [group.id, new Set<string>()]));
+    const connect = (a: string, b: string): void => {
+      if (a === b || !edges.has(a) || !edges.has(b)) return;
+      edges.get(a)!.add(b);
+      edges.get(b)!.add(a);
+    };
+    for (const relation of design.relations) {
+      if (relation.sourceGroupId && relation.targetGroupId && relation.sourceGroupId !== relation.targetGroupId) {
+        connect(relation.sourceGroupId, relation.targetGroupId);
+      }
+    }
+    const guideOwners = new Map<string, string[]>();
+    for (const group of leafGroups) {
+      for (const id of new Set([...group.guideIds, ...group.entryGuideIds, ...group.exitGuideIds, ...group.axisGuideIds])) {
+        if (!map.guides.some((guide) => guide.id === id)) continue;
+        guideOwners.set(id, [...(guideOwners.get(id) ?? []), group.id]);
+      }
+    }
+    for (const owners of guideOwners.values()) {
+      for (const id of owners.slice(1)) connect(owners[0], id);
+    }
+    const connected = new Set([leafGroups[0].id]);
+    for (const id of connected) for (const neighbor of edges.get(id) ?? []) connected.add(neighbor);
+    const unlinked = leafGroups.filter((group) => !connected.has(group.id));
+    if (unlinked.length > 0) issues.push({
+      code: 'scene.group-relations-unclear', severity: 'warning', repaired: false,
+      message: `设计组「${unlinked.map((group) => group.name).join('、')}」缺少显式跨组关系或共享导览引用；请在灰盒中检查片区过渡和游览动线。`
+    });
+  }
+  if (leafGroups.length === 0) return issues;
+  const primaries = design.focuses.filter((focus) => focus.kind === 'primary');
+  const primary = primaries.length === 1 ? primaries[0] : undefined;
+  const primaryObject = map.objects.find((object) => object.id === primary?.objectId);
+  if (!primary || !primaryObject) {
+    issues.push({
+      code: 'scene.primary-focus-missing', severity: 'warning', repaired: false,
+      message: '缺少可定位的唯一主焦点；请在灰盒中确认哪处场景应先吸引视线。'
+    });
+    return issues;
+  }
+  if (primary.reveal !== 'visible' && primary.reveal !== 'framed') return issues;
+  const viewpoint = design.viewpoints.find((view) => view.role === 'entry' && view.targetFocusId === primary.id);
+  if (!viewpoint) return issues;
+  const [px, , pz] = primaryObject.transform.position;
+  const [vx, vz] = viewpoint.point;
+  const primaryDistance = Math.max(2, Math.hypot(px - vx, pz - vz));
+  const prominence = (object: typeof primaryObject, distance: number): number => {
+    const size = object.transform.size.map((axis, index) => axis * object.transform.scale[index]);
+    return size[1] * Math.max(size[0], size[2]) / (distance * distance);
+  };
+  const primaryScore = prominence(primaryObject, primaryDistance);
+  const rival = design.focuses.filter((focus) => focus.kind === 'secondary' && focus.reveal === 'visible')
+    .map((focus) => ({ focus, object: map.objects.find((object) => object.id === focus.objectId) }))
+    .find(({ object }) => {
+      if (!object) return false;
+      const [sx, , sz] = object.transform.position;
+      const distance = Math.max(2, Math.hypot(sx - vx, sz - vz));
+      const alignment = ((px - vx) * (sx - vx) + (pz - vz) * (sz - vz)) / (primaryDistance * distance);
+      return alignment > 0.7 && prominence(object, distance) > primaryScore * 1.25;
+    });
+  if (rival) issues.push({
+    code: 'scene.focus-underdominant', severity: 'warning', repaired: false,
+    objectIds: [primaryObject.id, rival.object!.id],
+    message: `入口视角的灰盒尺度估算中，次焦点「${rival.focus.name}」比主焦点「${primary.name}」更显眼；请检查体量、距离和遮挡。`
+  });
+  return issues;
 }
 
 function findAuthoredSceneProgramIssues(map: EditableMap, suggestion: MapAiSuggestion): string[] {

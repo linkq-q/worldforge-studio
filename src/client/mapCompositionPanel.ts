@@ -61,6 +61,11 @@ export function renderMapCodePlanApproval(suggestion: MapAiSuggestion, sceneMode
   const outdoor = sceneMode === 'outdoor';
   const requirements = plan.assetRequirements ?? [];
   const total = requirements.reduce((sum, item) => sum + item.variants, 0);
+  const compositionWarnings = (plan.diagnostics ?? []).filter((issue) => (
+    issue.code === 'scene.group-relations-unclear'
+    || issue.code === 'scene.primary-focus-missing'
+    || issue.code === 'scene.focus-underdominant'
+  ));
   return `
     <section class="editor-section map-composition-approval" aria-label="待确认的${outdoor ? '室外灰盒构图' : '室内功能规划'}">
       <span class="stage-kicker">生成前规划</span>
@@ -74,6 +79,7 @@ export function renderMapCodePlanApproval(suggestion: MapAiSuggestion, sceneMode
       <div class="style-tags">${requirements.map((item) => `
         <span>${escapeHtml(item.name)} · ${item.role === 'decor' ? '装饰' : '功能'} · ${item.variants} 个${item.optional ? ' · 可选' : ''}</span>
       `).join('')}</div>
+      ${compositionWarnings.length ? `<div class="map-ai-diagnostics"><p>构图待核对（不会自动改动摆放）：</p>${compositionWarnings.map((issue) => `<p>${escapeHtml(issue.message)}</p>`).join('')}</div>` : ''}
       ${renderMapCodePlanSummary(suggestion)}
       <div class="map-ai-actions">
         <button id="discard-code-plan" class="secondary">放弃并修改提示词</button>
