@@ -281,24 +281,24 @@ function normalizeVisualZoneRegion(value: unknown): VisualZoneRegion | null {
     : { kind: 'polygon', points };
 }
 
-export function visualZoneWeight(zone: SceneVisualZone, x: number, z: number): number {
+export function visualZoneWeight(zone: SceneVisualZone, x: number, z: number, edgeFeather?: number): number {
   const region = zone.region;
   if (!region) {
     const normalizedDistance = Math.hypot(x - zone.center[0], z - zone.center[1]) / Math.max(0.001, zone.radius);
-    return (1 - smoothstep(0.72, 1, normalizedDistance)) * zone.intensity;
+    return (1 - smoothstep(edgeFeather === undefined ? 0.72 : Math.max(0, 1 - edgeFeather / zone.radius), 1, normalizedDistance)) * zone.intensity;
   }
   if (region.kind === 'circle') {
     const normalizedDistance = Math.hypot(x - region.x, z - region.z) / Math.max(0.001, region.radius);
-    return (1 - smoothstep(0.72, 1, normalizedDistance)) * zone.intensity;
+    return (1 - smoothstep(edgeFeather === undefined ? 0.72 : Math.max(0, 1 - edgeFeather / region.radius), 1, normalizedDistance)) * zone.intensity;
   }
   if (region.kind === 'path') {
     const normalizedDistance = distanceToPath(x, z, region.points) / Math.max(0.001, region.width / 2);
-    return (1 - smoothstep(0.72, 1, normalizedDistance)) * zone.intensity;
+    return (1 - smoothstep(edgeFeather === undefined ? 0.72 : Math.max(0, 1 - edgeFeather / (region.width / 2)), 1, normalizedDistance)) * zone.intensity;
   }
   if (!pointInPolygon(x, z, region.points)) return 0;
   const xs = region.points.map((point) => point[0]);
   const zs = region.points.map((point) => point[1]);
-  const feather = Math.max(0.2, Math.min(Math.max(...xs) - Math.min(...xs), Math.max(...zs) - Math.min(...zs)) * 0.08);
+  const feather = edgeFeather ?? Math.max(0.2, Math.min(Math.max(...xs) - Math.min(...xs), Math.max(...zs) - Math.min(...zs)) * 0.08);
   return smoothstep(0, feather, polygonEdgeDistance(x, z, region.points)) * zone.intensity;
 }
 

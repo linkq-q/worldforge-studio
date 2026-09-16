@@ -1,4 +1,5 @@
 import type { RenderEnvironmentSettings } from './renderScheme';
+import { compileSceneArt, normalizeColorStops, normalizeSceneArtConfig, SCENE_ART_MODULES, type SceneArtModuleId, type ColorStop } from './sceneArt';
 import {
   compileVisualEnvironment,
   compileVisualWaterPalette,
@@ -28,7 +29,8 @@ export type RenderModuleId =
   | 'runtime.atmosphere-fx'
   | 'runtime.volumetric-light'
   | 'runtime.glass-style'
-  | 'runtime.shader-extension';
+  | 'runtime.shader-extension'
+  | SceneArtModuleId;
 
 export type RenderScopeTarget = 'scene' | 'water' | 'material-tag' | 'asset-tag';
 
@@ -190,6 +192,8 @@ export interface RuntimeWaterStyle {
 }
 
 export interface RuntimeGrassStyle {
+  colorMode?: 'preset' | 'explicit';
+  colorStops?: ColorStop[];
   rootColor: string;
   tipColor: string;
   paletteVariation: number;
@@ -211,6 +215,7 @@ export interface RuntimeGrassStyle {
 }
 
 export const DEFAULT_RUNTIME_GRASS_STYLE: RuntimeGrassStyle = {
+  colorMode: 'preset', colorStops: undefined,
   rootColor: '#466638', tipColor: '#729052', paletteVariation: 0.14, bands: 3,
   bladeHeight: 0.95, bladeWidth: 0.18, windStrength: 0.22, windDirection: [1, 0.25],
   normalFlatten: 0.8, rootDarken: 0.8, gradientBias: 0.7, cellSize: 0.8,
@@ -466,6 +471,7 @@ export const RENDER_CAPABILITIES: readonly RenderCapability[] = [
     params: {
       rootColor: { type: 'color', default: DEFAULT_RUNTIME_GRASS_STYLE.rootColor },
       tipColor: { type: 'color', default: DEFAULT_RUNTIME_GRASS_STYLE.tipColor },
+      colorStops: { type: 'code', maxLength: 256, default: '', control: 'code' },
       paletteVariation: { type: 'number', min: 0, max: 0.5, default: DEFAULT_RUNTIME_GRASS_STYLE.paletteVariation },
       bands: { type: 'enum', values: ['2', '3'], default: '3' },
       bladeHeight: { type: 'number', min: 0.5, max: 1.4, default: DEFAULT_RUNTIME_GRASS_STYLE.bladeHeight },
@@ -625,6 +631,13 @@ export const RENDER_CAPABILITIES: readonly RenderCapability[] = [
       color: { type: 'color', default: '#88bbff' }
     }
   },
+  ...SCENE_ART_MODULES.map((id): RenderCapability => ({
+    id,
+    label: ({ 'runtime.color-field': '区域配色渐变', 'runtime.local-light': '局部灯光覆盖', 'runtime.surface-detail': '局部材质与简单 Shader', 'runtime.wet-surface': '局部湿路面倒影' })[id],
+    priority: 'P2', repeatable: true, availability: 'ready',
+    availabilityNote: '有界 JSON 配置；仅作用于指定区域或对象，切换方案时恢复。',
+    params: { config: { type: 'code', maxLength: 3072, default: '', control: 'code' } }
+  })),
   {
     id: 'runtime.shader-extension',
     label: 'Shader 扩展',
@@ -687,12 +700,14 @@ export function normalizeRenderPlan(
       params: normalizeParams(moduleInput.params, capability, accessPolicy, actor)
     });
   }
-  return {
+  const plan: RenderPlan = {
     version: raw.version,
     baseSchemeId,
     modules,
     ...(raw.visualDirection === undefined ? {} : { visualDirection: normalizeVisualDirection(raw.visualDirection) })
   };
+  compileSceneArt(plan);
+  return plan;
 }
 
 export function compileRenderPlan(plan: RenderPlan): Partial<RenderEnvironmentSettings> {
@@ -886,6 +901,8 @@ export function compileRuntimeGrassStyle(plan: RenderPlan): RuntimeGrassStyle {
   const angle = (numericValue(params.windAngle) ?? 14) * Math.PI / 180;
   return {
     ...DEFAULT_RUNTIME_GRASS_STYLE,
+    colorMode: params.rootColor || params.tipColor || params.colorStops ? 'explicit' : 'preset',
+    colorStops: params.colorStops ? normalizeColorStops(JSON.parse(String(params.colorStops))) : undefined,
     rootColor: stringValue(params.rootColor) ?? DEFAULT_RUNTIME_GRASS_STYLE.rootColor,
     tipColor: stringValue(params.tipColor) ?? DEFAULT_RUNTIME_GRASS_STYLE.tipColor,
     paletteVariation: numericValue(params.paletteVariation) ?? DEFAULT_RUNTIME_GRASS_STYLE.paletteVariation,
@@ -1058,7 +1075,7 @@ export function createDefaultRenderAccessPolicy(): RenderAccessPolicy {
           && !(capability.id === 'runtime.post-quality' && parameter === 'depthOfField')
           && !(capability.id === 'runtime.outline-style' && ['fadeStart', 'fadeEnd'].includes(parameter))
           && !(capability.id === 'runtime.grass-style' && [
-            'normalFlatten', 'rootDarken', 'gradientBias', 'cellSize', 'fadeStart', 'fadeEnd', 'maxInstances'
+            'normalFlatten', 'cellSize', 'fadeStart', 'fadeEnd', 'maxInstances'
           ].includes(parameter))
           && !(capability.id === 'runtime.weather' && parameter === 'daySpeed'),
         ...(rule.type === 'number' ? { min: rule.min, max: rule.max } : {}),
@@ -1186,6 +1203,17 @@ function normalizeParams(
     }
     if (rule.type === 'code') {
       const candidate = input[key];
+      if (SCENE_ART_MODULES.includes(capability.id as SceneArtModuleId) && key === 'config') {
+        if (typeof candidate !== 'string' || candidate.length > rule.maxLength) throw new Error('invalid_scene_art_config');
+        if (actor === 'developer' && !candidate.trim()) { output[key] = ''; continue; }
+        output[key] = JSON.stringify(normalizeSceneArtConfig(capability.id as SceneArtModuleId, candidate));
+        continue;
+      }
+      if (capability.id === 'runtime.grass-style' && key === 'colorStops') {
+        if (typeof candidate !== 'string' || candidate.length > rule.maxLength) throw new Error('invalid_color_stops');
+        output[key] = candidate.trim() ? JSON.stringify(normalizeColorStops(JSON.parse(candidate))) : '';
+        continue;
+      }
       const isApprovedAiLibraryValue = actor === 'ai'
         && typeof candidate === 'string'
         && (access?.values ?? []).includes(candidate);
@@ -1211,6 +1239,10 @@ function isRetiredRenderParameter(moduleId: RenderModuleId, parameter: string): 
 }
 
 function normalizeScope(value: unknown, capability: RenderCapability): RenderModuleScope {
+  if (SCENE_ART_MODULES.includes(capability.id as SceneArtModuleId)) {
+    if (value && (value as RenderModuleScope).target !== 'scene') throw new Error('scene_art_uses_config_target');
+    return { target: 'scene' };
+  }
   const fallback: RenderModuleScope = capability.id === 'runtime.water-style'
     ? { target: 'water', tag: 'water' }
     : capability.repeatable

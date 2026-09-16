@@ -2,6 +2,11 @@ import { evaluateIndoorLightCoverage } from './indoorLighting';
 import type { EditableMap, MapAsset, MapSceneMode } from './map';
 
 export interface RenderSceneProfile {
+  targets?: {
+    objects: Array<{ id: string; name: string; position: [number, number, number]; parentId?: string; parts: Array<{ id: string; tags: string[] }> }>;
+    zones: Array<{ id: string; tags: string[]; center: [number, number]; radius: number }>;
+    grassLayers: Array<{ id: string; preset: string }>;
+  };
   sceneMode: MapSceneMode;
   size: [number, number, number];
   room?: {
@@ -38,6 +43,15 @@ export function createRenderSceneProfile(map: EditableMap): RenderSceneProfile {
   const direction = map.interiorArtDirection;
   return {
     sceneMode: map.sceneMode,
+    targets: {
+      objects: map.objects.filter(object => object.visible).slice(0, 128).map(object => {
+        const asset = assets.find(asset => asset.id === object.assetId);
+        const nodes = (asset?.modelJson as { nodes?: Array<{ id?: string; tags?: Array<{ tag?: string; value?: unknown }> }> })?.nodes;
+        return { id: object.id, name: object.name, position: [...object.transform.position], ...(object.parentId ? { parentId: object.parentId } : {}), parts: (Array.isArray(nodes) ? nodes : []).filter(node => node?.id && Array.isArray(node.tags) && node.tags.length).slice(0, 16).map(node => ({ id: node.id!, tags: node.tags!.slice(0, 8).filter(Boolean).map(tag => typeof tag === 'object' ? `${tag.tag}:${tag.value ?? ''}` : String(tag)) })) };
+      }),
+      zones: map.visualSemantics.zones.slice(0, 64).map(zone => ({ id: zone.id, tags: [...zone.tags], center: [...zone.center], radius: zone.radius })),
+      grassLayers: map.grassLayers.slice(0, 8).map(layer => ({ id: layer.id, preset: layer.preset }))
+    },
     size: [...(room?.size ?? map.box.size)],
     ...(room ? {
       room: {
@@ -78,6 +92,7 @@ export function normalizeRenderSceneProfile(value: unknown): RenderSceneProfile 
   const content = input.content && typeof input.content === 'object' ? input.content : undefined;
   return {
     sceneMode: input.sceneMode,
+    ...(input.targets ? { targets: normalizeRenderTargets(input.targets) } : {}),
     size: vec3(input.size, [10, 3, 8]),
     ...(room ? {
       room: {
@@ -103,6 +118,16 @@ export function normalizeRenderSceneProfile(value: unknown): RenderSceneProfile 
       hasGrass: content?.hasGrass === true,
       hasEmissive: content?.hasEmissive === true
     }
+  };
+}
+
+function normalizeRenderTargets(input: NonNullable<RenderSceneProfile['targets']>): NonNullable<RenderSceneProfile['targets']> {
+  const list = (value: unknown, limit: number): Array<Record<string, unknown>> => Array.isArray(value) ? value.filter(v => v && typeof v === 'object').slice(0, limit) : [];
+  const coordinate = (value: unknown, axis: number) => number(Array.isArray(value) ? value[axis] : 0, -10000, 10000);
+  return {
+    objects: list(input.objects, 128).map(object => ({ id: text(object.id, 120), name: text(object.name, 80), position: [coordinate(object.position, 0), coordinate(object.position, 1), coordinate(object.position, 2)], ...(object.parentId ? { parentId: text(object.parentId, 120) } : {}), parts: list(object.parts, 16).map(part => ({ id: text(part.id, 120), tags: texts(part.tags, 8, 80) })) })),
+    zones: list(input.zones, 64).map(zone => ({ id: text(zone.id, 120), tags: texts(zone.tags, 8, 40), center: [coordinate(zone.center, 0), coordinate(zone.center, 1)], radius: number(zone.radius, 0, 10000) })),
+    grassLayers: list(input.grassLayers, 8).map(layer => ({ id: text(layer.id, 120), preset: text(layer.preset, 40) }))
   };
 }
 

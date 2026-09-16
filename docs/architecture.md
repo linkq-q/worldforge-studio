@@ -112,6 +112,8 @@ Directional shadows use one map-fitted shadow camera configured by `lighting.ts`
 
 ## Shader 权限阶梯
 
+局部美术能力与简单 Shader 表达式已接入第二级权限，详见 [Scene art controls](./scene-art.md)。表达式只能改固定表面模板中的颜色/发光，经过类型与复杂度校验；地图几何、任意纹理访问和完整 GLSL 仍不向基础 AI 开放。
+
 1. 组合已有 Shader 模块
 2. 修改模板中的白名单片段
 3. 生成完整 GLSL，仅在专业模式的实验权限中显式开启
