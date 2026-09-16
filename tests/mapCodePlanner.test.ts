@@ -1720,6 +1720,25 @@ describe('map code planner', () => {
     }
   });
 
+  it('accepts common object and corner-pair bounds for Poisson scattering', () => {
+    for (const bounds of [
+      `{ xMin:-12, xMax:12, zMin:-8, zMax:8 }`,
+      `[[-12,-8],[12,8]]`
+    ]) {
+      const suggestion = executeMapCodePlan(`function plan(api) {
+        const points = api.poissonDisk({ bounds:${bounds}, minDistance:4, maxPoints:12, seed:api.seed });
+        for (const point of points) api.place({ name:'tree-proxy', position:point });
+      }`, createEmptyMap());
+      const positions = suggestion.operations.flatMap((operation) => {
+        const position = operation.type === 'object.add' ? operation.object.transform?.position : undefined;
+        return position ? [position] : [];
+      });
+
+      expect(positions.length).toBeGreaterThan(1);
+      expect(positions.every(([x, _y, z]) => x >= -12 && x <= 12 && z >= -8 && z <= 8)).toBe(true);
+    }
+  });
+
   it('exposes generated points through array and named coordinates', () => {
     const suggestion = executeMapCodePlan(`
       function plan(api) {

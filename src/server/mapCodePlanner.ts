@@ -1795,14 +1795,16 @@ function executeMapCodePlanInternal(
       return weight > 0 ? total / weight : 0;
     },
     poissonDisk(options: {
-      bounds?: { minX: number; maxX: number; minZ: number; maxZ: number };
+      bounds?: { minX: number; maxX: number; minZ: number; maxZ: number }
+        | { xMin: number; xMax: number; zMin: number; zMax: number }
+        | [Point2, Point2];
       minDistance: number;
       maxPoints?: number;
       attempts?: number;
       seed?: number;
     }): Point2[] {
       record('poissonDisk');
-      const bounds = options.bounds ?? getMapBounds(map);
+      const bounds = normalizePoissonBounds(options.bounds, getMapBounds(map));
       return poissonDiskPoints(bounds, options.minDistance, options.maxPoints, options.attempts, options.seed ?? map.seed);
     },
     tangentYaw(tangent: Point2 | { tangent: Point2 }): number {
@@ -2858,7 +2860,7 @@ Scalar math: api.clamp(value,min,max), api.lerp(a,b,t), api.remap(value,inMin,in
 Transforms: api.rotate2D(point,angle,center?), api.mirrorPoint(point,'x'|'z',coordinate?), api.distance2D(a,b), api.tangentYaw(tangent), api.faceYaw(from,to). mirrorPoint with 'x' mirrors left/right around x=coordinate; 'z' mirrors front/back around z=coordinate.
 Curves: api.linePoint(t,a,b) -> [x,z]; api.bezierPoint(t,p0,p1,p2,p3) -> {point,tangent,normal}; api.sampleBezier(...) -> point arrays; api.sampleBezierFrames(...) -> frame objects with point,tangent,normal; api.sampleBezierFramesBySpacing(...,spacing,gapRatio?) -> approximately even arc-length frames. frame.normal is the normalized left-side normal [-tangentZ,tangentX] as t increases.
 Fields: api.noise2D(x,z,scale?,seed?) -> [-1,1]; api.fbm2D(x,z,{scale?,octaves?,lacunarity?,gain?,seed?}) -> [-1,1].
-Layouts: api.circlePoint(index,count,radius,center?) -> [x,z]; api.ellipsePoint(index,count,radiusX,radiusZ,center?,phase?) -> [x,z]; api.gridPoints({center?,columns,rows,spacing}) -> points; api.poissonDisk({bounds?,minDistance,maxPoints?,attempts?,seed?}) -> points.
+Layouts: api.circlePoint(index,count,radius,center?) -> [x,z]; api.ellipsePoint(index,count,radiusX,radiusZ,center?,phase?) -> [x,z]; api.gridPoints({center?,columns,rows,spacing}) -> points; api.poissonDisk({bounds?:{minX,maxX,minZ,maxZ},minDistance,maxPoints?,attempts?,seed?}) -> points.
 Assets: api.requireAsset({key,name,prompt,tags?,variants?,dimensions:[width,height,depth]?,role:'structure'|'environment',optional?}) -> key; api.asset(key,index?) -> generated assetId. role is required in unified scene ownership; only loose natural decoration may be optional.
 Output: api.place({assetId?,name?,position:[x,z]|[x,y,z],rotationY?,facing?,scale?,size?,terrain?,role?,groupId?,layer?:1|2|3|4}); api.placeStreetFrontage(...) for varied ordinary street-facing buildings; api.placeAlongRoute(...) for repeated street furniture. api.foundation(...) creates an independent editable foundation after its target buildings are placed: pass their api.place references or existing object IDs in under. Use rounded-rectangle/capsule for buildings, polygon for irregular footprints, and path + catmull-rom for curved seawalls; closed path makes a continuous ring. Choose level, slope or steps from intent, keep maxThickness bounded, and never flatten terrain. api.attach({assetId?,name?,parentId,kind:'supported'|'mounted',side?,offset?,anchorY?:'bottom'|'center'|'top',contact?,scale?,rotationY?,role?,groupId?,layer?}) attaches a child to an earlier placement or existing object. Use supported for objects resting on top; use mounted for doors, windows, banners, signs and facade ornaments that must follow a host surface. mounted side is the host-local north|south|east|west face, offset is [horizontal,vertical], anchorY selects the host's vertical baseline, and contact is embed depth. Entrances default to anchorY:'bottom', so never put an absolute world height into offset. api.bridge({waterId,assetId?,name?,crossingCenter:[x,z],direction:[dx,dz],dimensions:[width,height,depth],kind?:'straight'|'curved',curveOffset?,segmentCount?,bankInset?,deckClearance?,abutments?,groupId?,layer?}). A curved bridge uses the asset as a repeatable module. The local solver samples the full bridge width, snaps both ends beyond the real shoreline, records the route guide, and creates small bridgeheads unless abutments:false.
 Never use standalone api.place with [x,y,z] for a door, window, banner, sign or facade ornament intended as part of another structure. Either include it in the host asset itself or create the host first and use api.attach.
@@ -4455,6 +4457,27 @@ function poissonDiskPoints(
     }
   }
   return points;
+}
+
+function normalizePoissonBounds(
+  value: unknown,
+  fallback: { minX: number; maxX: number; minZ: number; maxZ: number }
+): { minX: number; maxX: number; minZ: number; maxZ: number } {
+  if (Array.isArray(value) && value.length >= 2) {
+    const min = point2(value[0]);
+    const max = point2(value[1]);
+    return { minX: min[0], maxX: max[0], minZ: min[1], maxZ: max[1] };
+  }
+  if (value && typeof value === 'object') {
+    const bounds = value as Record<string, unknown>;
+    return {
+      minX: finite(bounds.minX ?? bounds.xMin),
+      maxX: finite(bounds.maxX ?? bounds.xMax),
+      minZ: finite(bounds.minZ ?? bounds.zMin),
+      maxZ: finite(bounds.maxZ ?? bounds.zMax)
+    };
+  }
+  return fallback;
 }
 
 function valueNoise2D(x: number, z: number, seed: number): number {
