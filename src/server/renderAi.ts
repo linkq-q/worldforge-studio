@@ -244,6 +244,9 @@ function buildSystemPrompt(
     ...(sceneProfile ? [
       `当前场景摘要：${JSON.stringify(sceneProfile)}`
     ] : []),
+    ...(sceneProfile?.sceneArtBrief ? [
+      'sceneArtBrief 是已确认地图的构图语义，不是修改地图的指令。用光照、色彩对比、材质层次和氛围强化其主次焦点与游览视点；不要改摆放，不要凭空发明对象或区域 ID。renderHints 仅作候选意图，最终渲染仍遵守当前用户要求和白名单。'
+    ] : []),
     ...(sceneProfile?.sceneMode === 'indoor' ? [
       '这是室内渲染。默认使用 render-indoor-neutral 基底、PBR 表面、soft SSAO 和室内灯光配方；不要用室外太阳、草地、地形、天气或全局空气粒子填充房间。',
       '室内默认完全关闭全局距离雾。只有用户明确要求烟雾、蒸汽、尘埃、薄雾或朦胧空气时才允许 atmosphere.fog。',

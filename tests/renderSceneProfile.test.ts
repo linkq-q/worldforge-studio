@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { createEmptyMap, createMapObject, type MapAsset } from '../src/shared/map';
 import { normalizeInteriorArtDirection } from '../src/shared/interiorArtDirection';
+import { normalizeMapDesignSemantics } from '../src/shared/mapDesign';
 import { createRenderSceneProfile, normalizeRenderSceneProfile } from '../src/shared/renderSceneProfile';
 
 describe('render scene profile', () => {
@@ -43,5 +44,29 @@ describe('render scene profile', () => {
 
   it('rejects an invalid scene mode at the HTTP boundary', () => {
     expect(normalizeRenderSceneProfile({ sceneMode: 'space' })).toBeUndefined();
+  });
+
+  it('carries bounded map composition meaning into the render context without authoring style', () => {
+    const map = createEmptyMap('garden');
+    const pavilion = createMapObject('主亭');
+    pavilion.id = 'pavilion';
+    map.objects = [pavilion];
+    map.designSemantics = normalizeMapDesignSemantics({
+      experienceMode: 'sequential', intent: '先穿过林径，再看主亭',
+      groups: [{ id: 'garden', name: '园林', intent: '框景主亭', focusIds: ['main'], guideIds: ['path'] }],
+      focuses: [{ id: 'main', groupId: 'garden', name: '主亭', kind: 'primary', objectId: 'pavilion', reveal: 'framed' }],
+      viewpoints: [{ id: 'entry', role: 'entry', point: [-8, 0], targetFocusId: 'main' }]
+    }, map.box.size);
+    map.renderPromptSuggestions = ['雨后石路可见暖色倒影'];
+
+    const profile = normalizeRenderSceneProfile(createRenderSceneProfile(map));
+    expect(profile?.sceneArtBrief).toMatchObject({
+      intent: '先穿过林径，再看主亭', experienceMode: 'sequential',
+      groups: [{ id: 'garden', focusIds: ['main'], guideIds: ['path'] }],
+      focuses: [{ id: 'main', objectId: 'pavilion', kind: 'primary', reveal: 'framed' }],
+      viewpoints: [{ role: 'entry', targetFocusId: 'main', point: [-8, 0] }],
+      renderHints: ['雨后石路可见暖色倒影']
+    });
+    expect(profile?.sceneArtBrief).not.toHaveProperty('lighting');
   });
 });

@@ -1,7 +1,20 @@
 import { evaluateIndoorLightCoverage } from './indoorLighting';
 import type { EditableMap, MapAsset, MapSceneMode } from './map';
+import type { MapExperienceMode, MapFocusKind, MapRevealMode, MapRelationKind } from './mapDesign';
+
+/** Map-authored composition cues, not a RenderPlan or a second styling authority. */
+export interface SceneArtBrief {
+  intent: string;
+  experienceMode: MapExperienceMode;
+  groups: Array<{ id: string; name: string; intent: string; focusIds: string[]; guideIds: string[] }>;
+  focuses: Array<{ id: string; groupId: string; name: string; kind: MapFocusKind; reveal: MapRevealMode; objectId?: string }>;
+  viewpoints: Array<{ role: 'entry' | 'route' | 'node' | 'overview'; point: [number, number]; targetFocusId?: string }>;
+  relations: Array<{ kind: MapRelationKind; sourceGroupId: string; targetGroupId: string }>;
+  renderHints: string[];
+}
 
 export interface RenderSceneProfile {
+  sceneArtBrief?: SceneArtBrief;
   targets?: {
     objects: Array<{ id: string; name: string; position: [number, number, number]; parentId?: string; parts: Array<{ id: string; tags: string[] }> }>;
     zones: Array<{ id: string; tags: string[]; center: [number, number]; radius: number }>;
@@ -41,8 +54,29 @@ export function createRenderSceneProfile(map: EditableMap): RenderSceneProfile {
   const assets = (map.assets ?? []).filter((asset) => referencedIds.has(asset.id));
   const tags = new Set(assets.flatMap((asset) => asset.tags ?? []).map((tag) => tag.toLowerCase()));
   const direction = map.interiorArtDirection;
+  const design = map.designSemantics;
+  const sceneArtBrief: SceneArtBrief | undefined = design.groups.length || map.renderPromptSuggestions.length ? {
+    intent: design.intent,
+    experienceMode: design.experienceMode,
+    groups: design.groups.slice(0, 16).map((group) => ({
+      id: group.id, name: group.name, intent: group.intent,
+      focusIds: group.focusIds.slice(0, 8),
+      guideIds: [...new Set([...group.guideIds, ...group.entryGuideIds, ...group.exitGuideIds, ...group.axisGuideIds])].slice(0, 16)
+    })),
+    focuses: design.focuses.slice(0, 24).map((focus) => ({
+      id: focus.id, groupId: focus.groupId, name: focus.name, kind: focus.kind, reveal: focus.reveal,
+      ...(focus.objectId ? { objectId: focus.objectId } : {})
+    })),
+    viewpoints: design.viewpoints.slice(0, 16).map((view) => ({
+      role: view.role, point: [...view.point], ...(view.targetFocusId ? { targetFocusId: view.targetFocusId } : {})
+    })),
+    relations: design.relations.filter((relation) => relation.sourceGroupId && relation.targetGroupId).slice(0, 24)
+      .map((relation) => ({ kind: relation.kind, sourceGroupId: relation.sourceGroupId!, targetGroupId: relation.targetGroupId! })),
+    renderHints: map.renderPromptSuggestions.slice(0, 8)
+  } : undefined;
   return {
     sceneMode: map.sceneMode,
+    ...(sceneArtBrief ? { sceneArtBrief } : {}),
     targets: {
       objects: map.objects.filter(object => object.visible).slice(0, 128).map(object => {
         const asset = assets.find(asset => asset.id === object.assetId);
@@ -90,8 +124,10 @@ export function normalizeRenderSceneProfile(value: unknown): RenderSceneProfile 
   const interior = input.interior && typeof input.interior === 'object' ? input.interior : undefined;
   const lighting = input.lighting && typeof input.lighting === 'object' ? input.lighting : undefined;
   const content = input.content && typeof input.content === 'object' ? input.content : undefined;
+  const brief = input.sceneArtBrief && typeof input.sceneArtBrief === 'object' ? input.sceneArtBrief : undefined;
   return {
     sceneMode: input.sceneMode,
+    ...(brief ? { sceneArtBrief: normalizeSceneArtBrief(brief) } : {}),
     ...(input.targets ? { targets: normalizeRenderTargets(input.targets) } : {}),
     size: vec3(input.size, [10, 3, 8]),
     ...(room ? {
@@ -118,6 +154,38 @@ export function normalizeRenderSceneProfile(value: unknown): RenderSceneProfile 
       hasGrass: content?.hasGrass === true,
       hasEmissive: content?.hasEmissive === true
     }
+  };
+}
+
+function normalizeSceneArtBrief(input: SceneArtBrief): SceneArtBrief {
+  const list = (value: unknown, limit: number): Array<Record<string, unknown>> => Array.isArray(value)
+    ? value.filter((item) => item && typeof item === 'object' && !Array.isArray(item)).slice(0, limit) : [];
+  const choice = <T extends string>(value: unknown, values: readonly T[], fallback: T): T =>
+    values.includes(value as T) ? value as T : fallback;
+  return {
+    intent: text(input.intent, 500),
+    experienceMode: choice(input.experienceMode, ['immediate', 'sequential', 'mixed'], 'mixed'),
+    groups: list(input.groups, 16).map((group) => ({
+      id: text(group.id, 80), name: text(group.name, 80), intent: text(group.intent, 240),
+      focusIds: texts(group.focusIds, 8, 80), guideIds: texts(group.guideIds, 16, 80)
+    })),
+    focuses: list(input.focuses, 24).map((focus) => ({
+      id: text(focus.id, 80), groupId: text(focus.groupId, 80), name: text(focus.name, 80),
+      kind: choice(focus.kind, ['primary', 'secondary', 'node'], 'secondary'),
+      reveal: choice(focus.reveal, ['visible', 'screened', 'framed', 'sequence'], 'visible'),
+      ...(focus.objectId ? { objectId: text(focus.objectId, 80) } : {})
+    })),
+    viewpoints: list(input.viewpoints, 16).map((view) => ({
+      role: choice(view.role, ['entry', 'route', 'node', 'overview'], 'route'),
+      point: [number(Array.isArray(view.point) ? view.point[0] : 0, -10000, 10000),
+        number(Array.isArray(view.point) ? view.point[1] : 0, -10000, 10000)] as [number, number],
+      ...(view.targetFocusId ? { targetFocusId: text(view.targetFocusId, 80) } : {})
+    })),
+    relations: list(input.relations, 24).map((relation) => ({
+      kind: choice(relation.kind, ['attract', 'repel', 'support'], 'support'),
+      sourceGroupId: text(relation.sourceGroupId, 80), targetGroupId: text(relation.targetGroupId, 80)
+    })),
+    renderHints: texts(input.renderHints, 8, 80)
   };
 }
 
