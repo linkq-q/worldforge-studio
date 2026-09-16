@@ -14,7 +14,7 @@ it('links a generated suggestion, its visual review and saved transaction to loc
   const server = http.createServer((req, res) => { pending.push(handleMapHttp(req, res, store)); });
   const nativeFetch = globalThis.fetch;
   const code = "function plan(api) { api.sceneIntent({kind:'natural'}); api.terrain({preset:'plain',amplitude:0}); }";
-  const responses = [code, JSON.stringify({ summary: '检查完成', findings: [] })];
+  const responses = [code, JSON.stringify({ imageVerified: true, summary: '检查完成', findings: [] })];
   const upstream = vi.fn(() => Promise.resolve(new Response(JSON.stringify({ ok: true, content: responses.shift() }), {
     headers: { 'Content-Type': 'application/json' }
   })));

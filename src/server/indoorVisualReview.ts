@@ -43,7 +43,8 @@ export async function reviewMapVisual(
         'Only mark severity major when it materially harms presentation or playability: disconnected architecture, severe accidental sparsity, missing focal hierarchy, an unreadable main route or entrance, obvious floating/embedding, or destructive interpenetration.'
       ]).concat([
         'Do not request new assets and do not critique style preferences or minor polish.',
-        'Return JSON only: {"summary":"...","findings":[{"code":"overlap|occlusion|floating|embedded|dark-corner|composition|sparse|hierarchy|route","severity":"minor|major","message":"...","objectIds":["exact id"]}]}.'
+        'Set imageVerified=true only after actually inspecting the contact sheet. If the image is unavailable or unreadable, set it to false and explain why in summary.',
+        'Return JSON only: {"imageVerified":true,"summary":"...","findings":[{"code":"overlap|occlusion|floating|embedded|dark-corner|composition|sparse|hierarchy|route","severity":"minor|major","message":"...","objectIds":["exact id"]}]}.'
       ]).join('\n')
     },
     {
@@ -66,7 +67,9 @@ export async function reviewMapVisual(
     maxTokens: 900,
     traceStage: 'map.visual-review'
   } satisfies ChatApiOptions);
-  return normalizeMapVisualReview(parseLlmJsonObject(content, 'invalid_map_visual_review'), validObjectIds, map.sceneMode);
+  const parsed = parseLlmJsonObject(content, 'invalid_map_visual_review');
+  if (parsed.imageVerified !== true) throw new Error('map_visual_review_image_unavailable');
+  return normalizeMapVisualReview(parsed, validObjectIds, map.sceneMode);
 }
 
 export async function reviewIndoorMapVisual(

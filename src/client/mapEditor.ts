@@ -2665,11 +2665,11 @@ class MapEditor {
       this.state.message = `${indoor ? '室内' : '室外'}轻量终检通过：${review.summary}`;
     } catch (error) {
       updateAgentProgress(this.mapAgentProgress, {
-        phase: 'complete',
-        label: `${indoor ? '室内' : '室外'}轻量终检已跳过`,
+        phase: 'failed',
+        label: `${indoor ? '室内' : '室外'}轻量终检不可用，未通过视觉验收`,
         detail: error instanceof Error ? error.message : String(error)
       });
-      this.state.message = `${indoor ? '室内' : '室外'}轻量终检暂不可用，已保留通过确定性检查的当前结果。`;
+      this.state.message = `${indoor ? '室内' : '室外'}轻量终检不可用，当前预览仅通过确定性检查，尚未通过视觉验收。`;
     } finally {
       this.mapAiVisualReviewRunning = false;
       this.setBusy(false);

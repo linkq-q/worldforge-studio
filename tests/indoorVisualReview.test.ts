@@ -21,6 +21,7 @@ describe('indoor lightweight visual review', () => {
       return new Response(JSON.stringify({
         ok: true,
         content: JSON.stringify({
+          imageVerified: true,
           summary: 'Beds overlap.',
           findings: [{ code: 'overlap', severity: 'major', message: 'Two beds intersect.', objectIds: ['bed-1', 'invented-id'] }]
         })
@@ -57,6 +58,7 @@ describe('indoor lightweight visual review', () => {
       return new Response(JSON.stringify({
         ok: true,
         content: JSON.stringify({
+          imageVerified: true,
           summary: 'The arena modules are too disconnected.',
           findings: [{ code: 'sparse', severity: 'major', message: 'Reconnect the outer wall rhythm.', objectIds: ['wall-1'] }]
         })
@@ -70,5 +72,20 @@ describe('indoor lightweight visual review', () => {
     expect(review.repairPrompt).toContain('不生成新资产');
     expect(review.repairPrompt).toContain('保留连贯建筑组');
     expect(normalizeMapVisualReview({ findings: [] }, new Set(), 'outdoor').status).toBe('pass');
+  });
+
+  it('fails closed when the model did not inspect the contact sheet', async () => {
+    const map = createEmptyMap('Unreadable review', 'unreadable-review');
+    const fetchImpl = vi.fn(async () => new Response(JSON.stringify({
+      ok: true,
+      content: JSON.stringify({
+        imageVerified: false,
+        summary: 'Unable to inspect: no visible contact sheet.',
+        findings: []
+      })
+    }), { status: 200, headers: { 'Content-Type': 'application/json' } }));
+
+    await expect(reviewMapVisual(map, 'data:image/jpeg;base64,AA==', { fetchImpl }))
+      .rejects.toThrow('map_visual_review_image_unavailable');
   });
 });
