@@ -3112,6 +3112,9 @@ async function discoverMapCodeWithRepairs(
       const lockedObjectRepairGuidance = /locked_map_code_object:([^\s]+)/i.exec(executionError)
         ? `\n\nThe referenced object is locked and not refinable. Leave it unchanged. Do not replace api.move with api.removeObject for the same ID; instead adjust only objects whose catalog entry has refinable:true, or add unlocked supporting content elsewhere.`
         : '';
+      const bridgeRepairGuidance = /\binvalid_map_code_bridge\b/i.test(executionError)
+        ? `\n\napi.bridge accepts one object argument only: api.bridge({ waterId:'canal', assetId:api.asset(bridgeKey,0), name:'Bridge', crossingCenter:[x,z], direction:[dx,dz], dimensions:[width,height,depth] }). Do not use api.bridge(waterId, ...) or any other positional arguments.`
+        : '';
       options.onProgress?.({
         phase: 'replanning',
         label: `检测到规划参数或边界错误，AI 正在自动修复 ${executionRepairAttempts}/2`,
@@ -3125,7 +3128,7 @@ async function discoverMapCodeWithRepairs(
           role: 'user',
           content: map.sceneMode === 'indoor'
             ? `The indoor program failed during its sandboxed discovery run with this error:\n${executionError}\n\nReturn corrected JavaScript only. Preserve the requested room design. Check every array index, loop endpoint, division, room wall, opening ID, locked object and optional argument. Use roomPoint for floor furniture, wallFrame for wall objects, ceilingPoint for ceiling objects, and opening plus roomOpeningId for doors/windows. Never use terrain, water, grass or outdoor APIs. Ensure every numeric value is finite.${timeoutRepairGuidance}${lockedObjectRepairGuidance}`
-            : `The program failed during its sandboxed discovery run with this error:\n${executionError}\n\nReturn corrected JavaScript only. Preserve the requested design. Check every array index, loop endpoint, division, vector component, enum field, and optional argument. JavaScript arrays cannot be added or subtracted directly; calculate x/z components separately. bezierPoint returns {point,tangent,normal}, sampleBezier returns point arrays, and sampleBezierFrames returns frame objects. Use facing:{tangent:frame.tangent} for along-curve objects and facing:{normal:frame.normal} for curve-side facades or walls. Ensure every numeric value passed to the API is finite.${timeoutRepairGuidance}${lockedObjectRepairGuidance}\n\n${MAP_CODE_ENVIRONMENT_FORM_CONTRACT}`
+            : `The program failed during its sandboxed discovery run with this error:\n${executionError}\n\nReturn corrected JavaScript only. Preserve the requested design. Check every array index, loop endpoint, division, vector component, enum field, and optional argument. JavaScript arrays cannot be added or subtracted directly; calculate x/z components separately. bezierPoint returns {point,tangent,normal}, sampleBezier returns point arrays, and sampleBezierFrames returns frame objects. Use facing:{tangent:frame.tangent} for along-curve objects and facing:{normal:frame.normal} for curve-side facades or walls. Ensure every numeric value passed to the API is finite.${timeoutRepairGuidance}${lockedObjectRepairGuidance}${bridgeRepairGuidance}\n\n${MAP_CODE_ENVIRONMENT_FORM_CONTRACT}`
         }
       ], {
         apiBase: options.apiBase,
