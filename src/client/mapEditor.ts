@@ -236,6 +236,8 @@ type TerrainEditorAction = 'brush' | 'modifier' | 'surface' | 'road';
 const CAMERA_MOVE_KEYS = new Set(['KeyW', 'KeyA', 'KeyS', 'KeyD', 'ArrowUp', 'ArrowDown']);
 const CAMERA_BASE_SPEED = 8;
 const MAX_HISTORY_STEPS = 50;
+// Re-enable only when the configured model backend can inspect image inputs.
+const MAP_VISUAL_REVIEW_ENABLED = false;
 const VIEW_DIRECTIONS = {
   perspective: new THREE.Vector3(1, 0.72, 1),
   top: new THREE.Vector3(0, 1, 0),
@@ -2628,7 +2630,7 @@ class MapEditor {
     const map = this.state.map;
     const preview = this.mapAiPreviewMap;
     const suggestion = this.mapAiSuggestion;
-    if (!map || !preview || !suggestion || preview.sceneMode === 'mixed' || this.mapAiVisualReviewRunning
+    if (!MAP_VISUAL_REVIEW_ENABLED || !map || !preview || !suggestion || preview.sceneMode === 'mixed' || this.mapAiVisualReviewRunning
       || this.mapAiVisualReviewCompleted || this.state.busy) return;
     const indoor = preview.sceneMode === 'indoor';
     this.mapAiVisualReviewRunning = true;

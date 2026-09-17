@@ -37,8 +37,9 @@ describe('map layout AI progress', () => {
     expect(source).toContain('id="new-map-super-size-hint"');
   });
 
-  it('keeps quality warnings manual instead of triggering an automatic refinement', () => {
+  it('keeps quality warnings manual and disables screenshot review until the backend supports images', () => {
     expect(source).not.toContain("window.setTimeout(() => void this.generateMapAiPreview('refine', undefined, repairPrompt, true), 0);");
-    expect(source).toContain('window.setTimeout(() => void this.runMapVisualFinalReview(), 0);');
+    expect(source).toContain('const MAP_VISUAL_REVIEW_ENABLED = false;');
+    expect(source).toMatch(/runMapVisualFinalReview\(\): Promise<void>[\s\S]*?if \(!MAP_VISUAL_REVIEW_ENABLED/);
   });
 });
