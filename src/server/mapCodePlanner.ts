@@ -77,6 +77,7 @@ import { validateMapSuggestion } from './mapSuggestionValidation';
 import { llmChat } from './modelApi';
 import { recordGenerationTrace } from './generationTrace';
 import type { MapLintIssue } from '../shared/mapLint';
+import { describeMapRefineScope, scopeMapRefinement, type MapRefineScope } from '../shared/mapRefineScope';
 
 const MAX_CODE_LENGTH = 40_000;
 const MAX_PLACEMENTS = 2_000;
@@ -118,7 +119,7 @@ type MapCodeRequestMode = 'generate' | 'refine';
 type CodeAssetRole = 'structure' | 'environment' | 'functional' | 'decor';
 type CodeSceneIntent = 'natural' | 'authored';
 
-export interface MapCodePlannerOptions {
+export interface MapCodePlannerOptions extends MapRefineScope {
   apiBase?: string;
   provider?: ChatProvider;
   fetchImpl?: typeof fetch;
@@ -422,6 +423,7 @@ interface CodeAssetRequirementInput {
 }
 
 interface CodeExecutionOptions {
+  refineScope?: MapRefineScope;
   mode?: 'discovery' | 'final';
   requestMode?: MapCodeRequestMode;
   assetBindings?: ReadonlyMap<string, readonly MapAsset[]>;
@@ -449,6 +451,7 @@ interface CodeExecutionIssue {
 }
 
 interface MapCodeReplayContext {
+  refineScope?: MapRefineScope;
   mapId: string;
   mapVersion: number;
   planningMap: EditableMap;
@@ -526,6 +529,9 @@ export async function generateMapCodeSuggestion(
   options: MapCodePlannerOptions = {}
 ): Promise<MapAiSuggestion> {
   const requestMode = options.mode ?? 'generate';
+  const refineScope: MapRefineScope | undefined = requestMode === 'refine'
+    ? { targetVisualZoneId: options.targetVisualZoneId, targetRegionId: options.targetRegionId } : undefined;
+  const scopePrompt = refineScope ? describeMapRefineScope(map, refineScope) : '';
   options.onProgress?.({
     phase: 'planning',
     label: requestMode === 'refine'
@@ -559,6 +565,7 @@ export async function generateMapCodeSuggestion(
   const focalPreference = options.focusPrompt?.trim().slice(0, 300);
   const userPrompt = [
     prompt.trim().slice(0, 1_200),
+    scopePrompt,
     options.selectedObjectIds?.length
       ? `Currently selected map object IDs: ${options.selectedObjectIds.slice(0, 64).join(', ')}. Treat these as the default targets when the request says selected objects/buildings/foundations.`
       : '',
@@ -684,6 +691,7 @@ export async function generateMapCodeSuggestion(
     repairAttempts: execution.repairAttempts,
     requestMode,
     scope: options.scope,
+    refineScope,
     maxNewAssets,
     refinableObjectIds: [...new Set(options.refinableObjectIds ?? [])]
   };
@@ -761,6 +769,7 @@ async function adaptMapCodeToGeneratedAssets(
       onProgress: options.onProgress
     }));
     const candidateDiscovery = runMapCodePlan(candidateCode, map, assets, {
+      refineScope: options.mode === 'refine' ? options : undefined,
       mode: 'discovery',
       requestMode: options.mode ?? 'generate',
       minNewAssets: options.minNewAssets,
@@ -783,6 +792,7 @@ async function adaptMapCodeToGeneratedAssets(
       )].join(',')}`);
     }
     const candidateFinal = runMapCodePlan(candidateCode, map, assets, {
+      refineScope: options.mode === 'refine' ? options : undefined,
       mode: 'final',
       requestMode: options.mode ?? 'generate',
       assetBindings: bindings,
@@ -889,6 +899,7 @@ function executeFinalMapCodeReplay(
   executionTimeoutMs: number
 ): MapAiSuggestion {
   return runMapCodePlan(context.code, context.planningMap, context.assets, {
+    refineScope: context.refineScope,
     mode: 'final',
     requestMode: context.requestMode,
     assetBindings: context.bindings,
@@ -2480,6 +2491,8 @@ function executeMapCodePlanInternal(
   });
   const emitDiscoveryDraft = (interrupted: boolean): void => {
     if (mode !== 'discovery' || !options.onPlanPreview) return;
+    // Scoped previews wait for resolved parent transforms and boundary checks below.
+    if (options.refineScope?.targetRegionId || options.refineScope?.targetVisualZoneId) return;
     if (placements.length === 0 && sceneOperations.length === 0) return;
     const draftRoomOperation = indoorRoom
       ? [{ type: 'room.set', room: { ...indoorRoom, openings: roomOpenings } } satisfies MapOperation]
@@ -2834,8 +2847,10 @@ function executeMapCodePlanInternal(
     ...objectOperations.map((operation) => operation.object.id!),
     ...(options.refinableObjectIds ?? [])
   ]);
-  const validated = validateMapSuggestion(planningMap, {
+  const scopedOperations = scopeMapRefinement(planningMap, suggestion.operations, options.refineScope ?? {});
+  const candidate = {
     ...suggestion,
+    operations: scopedOperations,
     diagnostics: [
       ...executionDiagnostics,
       ...waterDiagnostics, ...accessDiagnostics, ...clearanceDiagnostics, ...attachmentDiagnostics,
@@ -2847,7 +2862,17 @@ function executeMapCodePlanInternal(
         repaired: false
       }))
     ]
-  }, { repairableObjectIds }).suggestion;
+  };
+  const validated = scopedOperations.length
+    ? validateMapSuggestion(planningMap, candidate, { repairableObjectIds }).suggestion : candidate;
+  const boundedOperations = scopeMapRefinement(planningMap, validated.operations, options.refineScope ?? {});
+  if (scopedOperations.length !== suggestion.operations.length || boundedOperations.length !== validated.operations.length) {
+    validated.diagnostics = [...(validated.diagnostics ?? []), {
+      code: 'scene.refine-scope', severity: 'warning', repaired: true,
+      message: '已跳过超出选定区域或影响全图的操作，保留区域内的有效修改。'
+    }];
+  }
+  validated.operations = boundedOperations;
   return {
     suggestion: unresolvedAssetIds.size === 0 ? validated : {
       ...validated,
@@ -3343,6 +3368,7 @@ async function discoverMapCodeWithRepairs(
   while (true) {
     try {
       const discovery = runMapCodePlan(code, map, assets, {
+        refineScope: options.mode === 'refine' ? options : undefined,
         mode: 'discovery',
         requestMode: options.mode ?? 'generate',
         minNewAssets: options.minNewAssets,

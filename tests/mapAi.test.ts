@@ -724,7 +724,7 @@ describe('map AI adapter', () => {
 
     const suggestion = await runMapAgent('a shared valley base', createEmptyMap(), [], {
       apiBase: 'https://example.test', provider: 'gpt', fetchImpl, createAsset: vi.fn(),
-      mode: 'refine', baseTerrainOnly: true, minNewAssets: 0, maxNewAssets: 0
+      mode: 'refine', sceneAgent: true, baseTerrainOnly: true, minNewAssets: 0, maxNewAssets: 0
     });
 
     expect(fetchImpl).toHaveBeenCalledTimes(2);

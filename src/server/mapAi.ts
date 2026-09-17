@@ -139,7 +139,7 @@ export async function runMapAgent(
   if (mode === 'generate' && map.sceneMode === 'outdoor' && requestsIndoorScene(prompt)) {
     throw new Error('indoor_prompt_requires_indoor_map');
   }
-  if (map.sceneMode === 'indoor' || (map.sceneMode === 'outdoor' && options.sceneAgent)) {
+  if (!options.baseTerrainOnly && (map.sceneMode === 'indoor' || (map.sceneMode === 'outdoor' && options.sceneAgent))) {
     return generateMapCodeSuggestion(prompt, map, assets, {
       ...options,
       mode,

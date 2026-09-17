@@ -34,7 +34,7 @@ export interface MapLintIssue {
     | 'code.route-unresolved' | 'code.geometry-unresolved' | 'code.declaration-normalized'
     | 'terrain.surface-material-repaired'
     | 'scene.group-relations-unclear' | 'scene.primary-focus-missing' | 'scene.focus-underdominant'
-    | 'foundation.max-thickness'
+    | 'foundation.max-thickness' | 'scene.refine-scope'
     | 'settlement.building-coverage-low' | 'settlement.frontage-low'
     | 'settlement.unassigned-open-space' | 'settlement.building-aligned'
     | 'roadside.route-unbound' | 'roadside.route-bound';
