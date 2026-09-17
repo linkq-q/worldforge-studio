@@ -10,6 +10,7 @@ import {
   planMapObjectAttachment,
   reparentMapObjectInPlace
 } from '../src/shared/mapAttachment';
+import { inspectModelSpace } from '../src/shared/modelBounds';
 
 const asset = (id: string, radius: number, height: number): MapAsset => ({
   id,
@@ -50,6 +51,26 @@ const boxedAsset = (id: string, width: number, height: number, depth: number): M
 });
 
 describe('map object attachments', () => {
+  it('supports an independent prop on an internal floor using measured geometry, not the whole building top', () => {
+    const hostAsset = boxedAsset('room', 6, 5, 6);
+    hostAsset.modelJson = {nodes:[
+      {id:'floor',transform:{pos:[10,2.1,0]},mesh:{type:'box',params:{width:6,height:0.2,depth:6}}},
+      {id:'back',transform:{pos:[10,4.5,-2.9]},mesh:{type:'box',params:{width:6,height:5,depth:0.2}}}
+    ]};
+    const prop = boxedAsset('desk', 1, 1, 1);
+    const map = createEmptyMap();
+    const host = createMapObject('room', hostAsset.id);
+    map.assets = [hostAsset,prop];
+    map.objects = [host];
+    const space = inspectModelSpace(hostAsset.modelJson);
+    expect(space.interior).toBe('unknown');
+    expect(space.supportSurfaces.find(surface => surface.nodeId === 'floor')!.max[1]).toBeCloseTo(0.2);
+    const child = planMapObjectAttachment(map,{id:'desk',name:'desk',parentId:host.id,asset:prop,kind:'local',localPosition:[0,99,0],supportNodeId:'floor'});
+    expect(child.transform.position[1]).toBeCloseTo(0.22);
+    expect(() => planMapObjectAttachment(map,{id:'outside',name:'outside',parentId:host.id,asset:prop,kind:'local',localPosition:[3,0,0],supportNodeId:'floor'})).toThrow('map_attachment_support_too_small');
+    expect(inspectModelSpace({}).evidence).toBe('unavailable');
+  });
+
   it('keeps local props separate and follows the rotated host while rejecting host penetration', () => {
     const hostAsset = boxedAsset('host', 4, 3, 4);
     const prop = boxedAsset('prop', 0.5, 0.5, 0.5);

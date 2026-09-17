@@ -74,6 +74,7 @@ interface ModelJson {
 interface ModelMeshBounds {
   bounds: Aabb;
   sourceNodeId?: string;
+  flatBoxTop?: boolean;
 }
 
 type Quat = [number, number, number, number];
@@ -106,6 +107,26 @@ export function calculateModelHitBounds(modelJson: unknown): Aabb {
 export function calculateModelVisualBounds(modelJson: unknown): Aabb {
   const { rawBounds } = collectModelMeshBounds(modelJson);
   return cloneBounds(normalizeLikeClient(rawBounds ?? FALLBACK_BOUNDS));
+}
+
+/** Measured in the renderer's centered/floor-aligned asset frame, not raw node coordinates. */
+export function inspectModelSpace(modelJson: unknown) {
+  const collected = collectModelMeshBounds(modelJson);
+  const raw = collected.rawBounds;
+  const parts = raw ? collected.meshes.map(mesh => ({
+    ...normalizeChildLikeClient(mesh.bounds, raw),
+    ...(mesh.sourceNodeId ? { nodeId: mesh.sourceNodeId } : {}),
+    flatBoxTop: mesh.flatBoxTop === true
+  })) : [];
+  return {
+    evidence: raw ? 'geometry' as const : 'unavailable' as const,
+    interior: 'unknown' as const,
+    localBounds: raw ? normalizeLikeClient(raw) : null,
+    parts,
+    // A top is a candidate, not a promise of free space; placement checks all surrounding geometry.
+    supportSurfaces: parts.filter(part => part.flatBoxTop && part.nodeId && part.max[0] - part.min[0] >= 0.15 && part.max[2] - part.min[2] >= 0.15)
+      .map(part => ({ nodeId: part.nodeId!, min: [part.min[0], part.max[1], part.min[2]] as Vec3, max: [...part.max] as Vec3 }))
+  };
 }
 
 export function buildModelColliderPlan(
@@ -319,7 +340,9 @@ function collectModelMeshBounds(modelJson: unknown): { meshes: ModelMeshBounds[]
       meshBounds = includePoint(meshBounds, point);
       rawBounds = includePoint(rawBounds, point);
     }
-    if (meshBounds) meshes.push({ bounds: meshBounds, sourceNodeId: node.id });
+    const axes = ([[1, 0, 0], [0, 1, 0], [0, 0, 1]] as Vec3[]).map(axis => rotateByQuat(axis, transform.quat));
+    const axisAligned = axes.every(axis => axis.every(value => Math.abs(value) < 0.00001 || Math.abs(Math.abs(value) - 1) < 0.00001));
+    if (meshBounds) meshes.push({ bounds: meshBounds, sourceNodeId: node.id, flatBoxTop: node.mesh.type === 'box' && axisAligned });
   }
   return { meshes, rawBounds };
 }

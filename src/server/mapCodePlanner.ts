@@ -19,7 +19,7 @@ import { assetFootprintRadius, normalizeAssetTags, normalizeMapAssetLight, type 
 import { planMapObjectAttachment } from '../shared/mapAttachment';
 import { indoorAssetTargetCount } from '../shared/indoorScenePlanning';
 import { normalizeMapAiMaxNewAssets, normalizeMapAiNewAssetRange } from '../shared/mapPlanning';
-import { calculateModelVisualBounds, type Aabb } from '../shared/modelBounds';
+import { calculateModelVisualBounds, inspectModelSpace, type Aabb } from '../shared/modelBounds';
 import { normalizeMapDesignSemantics, type MapCompositionLayer, type MapDesignSemantics } from '../shared/mapDesign';
 import {
   compileMapDesignDensityFill,
@@ -324,6 +324,7 @@ interface PlacementIntent {
     parentId: string;
     kind: 'supported' | 'mounted' | 'local';
     localPosition?: Point3;
+    supportNodeId?: string;
     side?: RoomWall;
     offset?: Point2;
     contact?: number;
@@ -345,6 +346,7 @@ interface AttachmentInput {
   parentId: string;
   kind: 'supported' | 'mounted' | 'local';
   localPosition?: Point3;
+  supportNodeId?: string;
   side?: RoomWall;
   offset?: Point2;
   contact?: number;
@@ -382,6 +384,7 @@ interface BezierFrame {
 const CODE_ASSET_LIGHT_CONTRACT = 'For functional lamps, lanterns, ceiling fixtures or neon emitters, requireAsset also accepts light:{kind:"point"|"spot",color:"#RRGGBB",intensity:0.5..12,range:1..20,offset:[localX,localY,localZ],direction?:[x,y,z],coneAngleDegrees?:10..90,penumbra?:0..1}. Declare this physical emitter metadata explicitly; bright geometry or emissive tags alone do not illuminate neighbors. Preserve it through asset adaptation. Do not light unrelated decorative objects. Final mood/exposure still belongs to the separately confirmed render stage.';
 
 const CODE_ACTIVITY_CONTRACT = `## Activity-led near-field composition
+api.assetSpace(assetId) returns geometry-derived localBounds, bounded parts and supportSurfaces:{nodeId,min,max} in renderer-normalized host space. It explicitly reports evidence:'unavailable' for missing geometry and interior:'unknown'; a box is NOT evidence of an empty room. During discovery generated assets have no measured surfaces yet; use declared dimensions for the preview, then resolve actual surfaces during final replay. For exact support, pass supportNodeId along with localPosition to api.placeRelative; Y snaps onto the measured surface, the complete footprint must fit, and other host geometry must stay clear. Candidate surfaces can be occupied; no node-name keyword assumptions establish support. Do not silently omit the entire functional group merely because discovery has no geometry.
 Existing asset decoration: requireAsset accepts mountOnAssetId:anExistingCatalogAssetId. Its prompt then describes ONLY the fixed accessory and mounting instruction. This calls the existing Studio Mount API once per variant and saves a NEW combined asset, never mutating the source. Each result consumes one slot of the existing asset budget. Use only for non-interactive fixed accessories, never to swallow an independently usable prop. On failure preserve the original host; do not remove the old object before a successful replacement exists. Do not use mountOnAssetId for not-yet-generated placeholders.
 Independent composition: api.placeRelative({parentId,assetId,name?,localPosition:[x,y,z],rotationY?,scale?,role?,groupId?,layer?}) keeps a separate child object. Coordinates are in the rendered host's centered-XZ, floor-aligned model frame, before its world transform; child scale is world scale. The local position is the child model origin, not its center or a world position. Host and nearby collisions are checked; unsafe local items are skipped with diagnostics, not dropped at the host origin. Prefer api.attach supported/mounted for known whole-host top or facade contact. Use local placement only with known floor/surface geometry, never inferred empty space inside an overall bounding box.
 Derive activities from the requested place, then choose useful objects, approach space, and supporting architecture. Do not use a fixed building-name checklist or invent human activity in untouched wilderness.
@@ -837,6 +840,7 @@ function generatedAssetResultContext(
         assetId: asset.id,
         name: asset.name,
         localBounds: assetLocalGeometry(asset),
+        spatialSummary: assetSpaceSummary(asset),
         ...(semanticSnapshot ? { semanticSnapshot } : {})
       });
       if (chars + line.length > GENERATED_ASSET_CONTEXT_MAX_CHARS) return {
@@ -2122,6 +2126,11 @@ function executeMapCodePlanInternal(
         foundation
       });
     },
+    assetSpace(assetId: string) {
+      record('assetSpace');
+      const asset = assetById.get(assetId);
+      return asset ? assetSpaceSummary(asset) : { evidence: 'unavailable', interior: 'unknown', supportSurfaces: [], parts: [] };
+    },
     placeRelative(input: Omit<AttachmentInput, 'kind'> & { localPosition: Point3 }): string {
       record('placeRelative');
       return api.attach({ ...input, kind: 'local' });
@@ -2170,6 +2179,7 @@ function executeMapCodePlanInternal(
           parentId,
           kind: input.kind === 'local' ? 'local' : input.kind === 'mounted' ? 'mounted' : 'supported',
           ...(input.kind === 'local' ? { localPosition: point3(input.localPosition ?? []) } : {}),
+          ...(input.supportNodeId ? { supportNodeId: cleanText(input.supportNodeId, 120) } : {}),
           ...(input.side ? { side: normalizeRoomWall(input.side) } : {}),
           ...(attachmentOffset ? { offset: attachmentOffset } : {}),
           ...(input.contact === undefined ? {} : { contact: finite(input.contact) }),
@@ -2632,6 +2642,7 @@ function executeMapCodePlanInternal(
             asset,
             kind: placement.attachment.kind,
             localPosition: placement.attachment.localPosition,
+            supportNodeId: placement.attachment.supportNodeId,
             side: placement.attachment.side,
             scale: placement.scale[0],
             yaw: placement.rotationY,
@@ -3017,6 +3028,11 @@ function distillCodePlanPreview(
 
 function generatedVariantCount(requirement: CodeAssetRequirement): number {
   return requirement.generatedVariants ?? requirement.variants;
+}
+
+function assetSpaceSummary(asset: MapAsset) {
+  const space = inspectModelSpace(asset.modelJson);
+  return { ...space, parts: space.parts.slice(0, 12), supportSurfaces: space.supportSurfaces.slice(0, 12), truncated: space.parts.length > 12 || space.supportSurfaces.length > 12 };
 }
 
 function compactAssetSemanticSnapshot(asset: MapAsset, maxChars = ASSET_SEMANTIC_SNAPSHOT_MAX_CHARS): string {

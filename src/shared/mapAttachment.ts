@@ -11,6 +11,7 @@ import {
   type WorldTransform
 } from './map';
 import type { Vec3 } from './protocol';
+import { inspectModelSpace } from './modelBounds';
 
 export const MAX_MAP_OBJECT_HIERARCHY_DEPTH = 4;
 
@@ -22,6 +23,7 @@ export interface MapObjectAttachmentInput {
   kind: 'supported' | 'mounted' | 'local';
   /** Model-local object origin; unlike supported/mounted, checked against the host itself. */
   localPosition?: Vec3;
+  supportNodeId?: string;
   side?: RoomWall;
   scale?: number;
   yaw?: number;
@@ -63,6 +65,18 @@ export function planMapObjectAttachment(map: EditableMap, input: MapObjectAttach
     : input.kind === 'supported'
     ? supportedPosition(parentBounds, childBounds, localScale, parentWorld, offset, contact)
     : mountedPosition(parentBounds, childBounds, localScale, parentWorld, input.side, offset, contact, input.anchorY);
+
+  if (input.kind === 'local' && input.supportNodeId) {
+    const support = inspectModelSpace(parentAsset.modelJson).supportSurfaces.find(surface => surface.nodeId === input.supportNodeId);
+    if (!support) throw new Error('map_attachment_support_unavailable');
+    const angle = object.transform.rotation[1];
+    const corners = [childBounds.min[0], childBounds.max[0]].flatMap(x => [childBounds.min[2], childBounds.max[2]].map(z => [
+      object.transform.position[0] + x * localScale[0] * Math.cos(angle) + z * localScale[2] * Math.sin(angle),
+      object.transform.position[2] - x * localScale[0] * Math.sin(angle) + z * localScale[2] * Math.cos(angle)
+    ]));
+    if (corners.some(([x, z]) => x < support.min[0] || x > support.max[0] || z < support.min[2] || z > support.max[2])) throw new Error('map_attachment_support_too_small');
+    object.transform.position[1] = support.max[1] - childBounds.min[1] * localScale[1] + contact / safeScaleMagnitude(parentWorld.scale[1]);
+  }
 
   assertAttachmentFitsMap(map, object, input.asset);
   assertNoUnrelatedOverlap(map, object, input.asset, input.kind === 'local');
@@ -194,6 +208,14 @@ function assertAttachmentFitsMap(map: EditableMap, object: MapObject, asset: Map
 
 function assertNoUnrelatedOverlap(map: EditableMap, object: MapObject, asset: MapAsset, includeHost = false): void {
   const preview = attachmentPreviewMap(map, object, asset);
+  if (includeHost) {
+    preview.assets = preview.assets?.map(candidate => {
+      if (candidate.id !== asset.id && !map.objects.some(parent => parent.id === object.parentId && parent.assetId === candidate.id)) return candidate;
+      const space = inspectModelSpace(candidate.modelJson);
+      if (!space.parts.length) return candidate;
+      return { ...candidate, colliderPlan: { version: 1, boxes: space.parts.map(part => ({min:part.min,max:part.max})), sourceMeshCount:space.parts.length, candidateCount:space.parts.length, fallbackUsed:false } };
+    });
+  }
   const boxes = getMapObjectAabbs(preview);
   const candidate = boxes.filter((box) => box.objectId === object.id);
   const relatedIds = mapObjectAncestorIds(preview, object.parentId!);
