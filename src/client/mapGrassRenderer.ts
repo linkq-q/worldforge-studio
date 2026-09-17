@@ -8,6 +8,7 @@ import { normalizeGrassPreset, type GrassPresetId } from '../shared/mapGrass';
 import { MapGrassInteraction } from './mapGrassInteraction';
 import { terrainSemanticSurfaceWeight } from './terrainAppearance';
 import { isPointInsidePlayableArea } from '../shared/mapLayout';
+import { visualZoneWeight } from '../shared/visualDirection';
 
 export interface RenderedGrassField {
   group: import('three').Group;
@@ -67,6 +68,7 @@ export function deriveContactAwareGrassMap(map: EditableMap): EditableMap {
   );
   if (map.waterBodies.length === 0 && map.objects.length === 0 && !hasNonGrassSurface && map.layout.edgeMask.kind === 'none') return map;
   const assets = new Map((map.assets ?? []).map((asset) => [asset.id, asset]));
+  const roads = map.visualSemantics.zones.filter((zone) => zone.tags.includes('paving'));
   const obstacles = map.objects
     .filter((object) => object.visible)
     .map((object) => {
@@ -79,6 +81,11 @@ export function deriveContactAwareGrassMap(map: EditableMap): EditableMap {
       };
     });
   const grassLayers = map.grassLayers.map((layer) => {
+    const margin = Math.hypot(
+      map.box.size[0] / Math.max(1, layer.resolutionX - 1),
+      map.box.size[2] / Math.max(1, layer.resolutionZ - 1)
+    ) * 0.55;
+    const roadSampleOffsets = [[0, 0], [margin, 0], [-margin, 0], [0, margin], [0, -margin]] as const;
     const densities = [...layer.densities];
     for (let zIndex = 0; zIndex < layer.resolutionZ; zIndex += 1) {
       const z = indexToWorld(zIndex, map.box.size[2], layer.resolutionZ);
@@ -87,6 +94,10 @@ export function deriveContactAwareGrassMap(map: EditableMap): EditableMap {
         if ((densities[index] ?? 0) <= 0.001) continue;
         const x = indexToWorld(xIndex, map.box.size[0], layer.resolutionX);
         if (!isPointInsidePlayableArea(map.layout, map.box.size, x, z)) {
+          densities[index] = 0;
+          continue;
+        }
+        if (roads.some((road) => roadSampleOffsets.some(([dx, dz]) => visualZoneWeight(road, x + dx, z + dz) > 0.01))) {
           densities[index] = 0;
           continue;
         }

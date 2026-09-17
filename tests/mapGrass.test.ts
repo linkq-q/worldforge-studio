@@ -87,6 +87,26 @@ describe('map grass layers', () => {
     expect(combinedGrassDensity(paved, 0, 0)).toBe(1);
   });
 
+  it('clears grass grid cells whose placement jitter can reach a paved road edge', () => {
+    const map = createEmptyMap('road edge grass mask', 'map-road-edge-grass-mask');
+    const resolution = 5;
+    const margin = Math.hypot(map.box.size[0] / (resolution - 1), map.box.size[2] / (resolution - 1)) * 0.55;
+    map.grassLayers = [{
+      id: 'meadow', name: 'Meadow', visible: true, seed: 1,
+      preset: 'meadow', height: 1, resolutionX: resolution, resolutionZ: resolution,
+      densities: Array(resolution * resolution).fill(1),
+      mix: { short: 0.8, tall: 0.18, flowers: 0.02 }
+    }];
+    map.visualSemantics.zones.push({
+      id: 'offset-road', tags: ['paving'], center: [margin, 0], radius: 5, intensity: 0.6,
+      region: { kind: 'path', points: [[margin, -5], [margin, 5]], width: 0.5 }
+    });
+
+    const derived = deriveContactAwareGrassMap(map);
+    expect(derived.grassLayers[0].densities[12]).toBe(0);
+    expect(map.grassLayers[0].densities[12]).toBe(1);
+  });
+
   it('clears grass from cleared dirt paths and only thins it on ordinary soil', () => {
     const map = createEmptyMap('dirt path grass mask', 'map-dirt-path-grass-mask');
     const layer = {
