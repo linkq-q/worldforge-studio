@@ -1,6 +1,7 @@
 import { evaluateIndoorLightCoverage } from './indoorLighting';
 import { getObjectWorldTransforms, type EditableMap, type MapAsset, type MapSceneMode } from './map';
 import { normalizeMapDesignSemantics, type MapDesignGroup, type MapExperienceMode, type MapFocusKind, type MapRevealMode, type MapRelationKind } from './mapDesign';
+import { normalizeAssetTags, normalizeMapAssetLight, type MapAssetLight } from './mapAssetMetadata';
 
 /** Map-authored composition cues, not a RenderPlan or a second styling authority. */
 export interface SceneArtBrief {
@@ -16,7 +17,7 @@ export interface SceneArtBrief {
 export interface RenderSceneProfile {
   sceneArtBrief?: SceneArtBrief;
   targets?: {
-    objects: Array<{ id: string; name: string; position: [number, number, number]; rotation?: [number, number, number]; scale?: [number, number, number]; parentId?: string; parts: Array<{ id: string; tags: string[] }> }>;
+    objects: Array<{ id: string; name: string; position: [number, number, number]; rotation?: [number, number, number]; scale?: [number, number, number]; parentId?: string; groupId?: string; tags?: string[]; light?: MapAssetLight; parts: Array<{ id: string; tags: string[] }> }>;
     zones: Array<{ id: string; tags: string[]; center: [number, number]; radius: number }>;
     grassLayers: Array<{ id: string; preset: string }>;
   };
@@ -56,6 +57,19 @@ export function createRenderSceneProfile(map: EditableMap): RenderSceneProfile {
   const direction = map.interiorArtDirection;
   const design = map.designSemantics;
   const worldTransforms = getObjectWorldTransforms(map);
+  const assetById = new Map(assets.map(asset => [asset.id, asset]));
+  const focusIds = new Set(design.focuses.flatMap(focus => focus.objectId ? [focus.objectId] : []));
+  const walkViews = design.viewpoints.filter(view => view.role !== 'overview');
+  // Keep the same context budget, but do not let early vegetation hide later focal objects and lights.
+  const renderObjects = map.objects.filter(object => object.visible).map(object => {
+    const asset = object.assetId ? assetById.get(object.assetId) : undefined;
+    const sourceLight = object.light === undefined ? asset?.light : object.light;
+    const light = object.light?.enabled !== false ? normalizeMapAssetLight(sourceLight) : undefined;
+    const world = worldTransforms.get(object.id)!;
+    const distance = Math.min(...walkViews.map(view => Math.hypot(world.position[0] - view.point[0], world.position[2] - view.point[1])));
+    const priority = focusIds.has(object.id) ? 0 : light ? 1 : object.parentId && focusIds.has(object.parentId) ? 2 : 3;
+    return { object, asset, light, world, priority, distance };
+  }).sort((a, b) => a.priority - b.priority || a.distance - b.distance).slice(0, 128);
   const sceneArtBrief: SceneArtBrief | undefined = design.groups.length || map.renderPromptSuggestions.length ? {
     intent: design.intent,
     experienceMode: design.experienceMode,
@@ -81,11 +95,9 @@ export function createRenderSceneProfile(map: EditableMap): RenderSceneProfile {
     sceneMode: map.sceneMode,
     ...(sceneArtBrief ? { sceneArtBrief } : {}),
     targets: {
-      objects: map.objects.filter(object => object.visible).slice(0, 128).map(object => {
-        const asset = assets.find(asset => asset.id === object.assetId);
-        const world = worldTransforms.get(object.id)!;
+      objects: renderObjects.map(({ object, asset, light, world }) => {
         const nodes = (asset?.modelJson as { nodes?: Array<{ id?: string; tags?: Array<{ tag?: string; value?: unknown }> }> })?.nodes;
-        return { id: object.id, name: object.name, position: [...world.position], rotation: [...world.rotation], scale: [...world.scale], ...(object.parentId ? { parentId: object.parentId } : {}), parts: (Array.isArray(nodes) ? nodes : []).filter(node => node?.id && Array.isArray(node.tags) && node.tags.length).slice(0, 16).map(node => ({ id: node.id!, tags: node.tags!.slice(0, 8).filter(Boolean).map(tag => typeof tag === 'object' ? `${tag.tag}:${tag.value ?? ''}` : String(tag)) })) };
+        return { id: object.id, name: object.name, position: [...world.position], rotation: [...world.rotation], scale: [...world.scale], ...(object.parentId ? { parentId: object.parentId } : {}), ...(object.designGroupId ? { groupId: object.designGroupId } : {}), tags: asset?.tags?.slice(0, 16) ?? [], ...(light ? { light } : {}), parts: (Array.isArray(nodes) ? nodes : []).filter(node => node?.id && Array.isArray(node.tags) && node.tags.length).slice(0, 16).map(node => ({ id: node.id!, tags: node.tags!.slice(0, 8).filter(Boolean).map(tag => typeof tag === 'object' ? `${tag.tag}:${tag.value ?? ''}` : String(tag)) })) };
       }),
       zones: map.visualSemantics.zones.slice(0, 64).map(zone => ({ id: zone.id, tags: [...zone.tags], center: [...zone.center], radius: zone.radius })),
       grassLayers: map.grassLayers.slice(0, 8).map(layer => ({ id: layer.id, preset: layer.preset }))
@@ -199,7 +211,7 @@ function normalizeRenderTargets(input: NonNullable<RenderSceneProfile['targets']
   const list = (value: unknown, limit: number): Array<Record<string, unknown>> => Array.isArray(value) ? value.filter(v => v && typeof v === 'object').slice(0, limit) : [];
   const coordinate = (value: unknown, axis: number) => number(Array.isArray(value) ? value[axis] : 0, -10000, 10000);
   return {
-    objects: list(input.objects, 128).map(object => ({ id: text(object.id, 120), name: text(object.name, 80), position: [coordinate(object.position, 0), coordinate(object.position, 1), coordinate(object.position, 2)], ...(Array.isArray(object.rotation) ? { rotation: [coordinate(object.rotation, 0), coordinate(object.rotation, 1), coordinate(object.rotation, 2)] as [number, number, number] } : {}), ...(Array.isArray(object.scale) ? { scale: [coordinate(object.scale, 0), coordinate(object.scale, 1), coordinate(object.scale, 2)] as [number, number, number] } : {}), ...(object.parentId ? { parentId: text(object.parentId, 120) } : {}), parts: list(object.parts, 16).map(part => ({ id: text(part.id, 120), tags: texts(part.tags, 8, 80) })) })),
+    objects: list(input.objects, 128).map(object => ({ id: text(object.id, 120), name: text(object.name, 80), position: [coordinate(object.position, 0), coordinate(object.position, 1), coordinate(object.position, 2)], ...(Array.isArray(object.rotation) ? { rotation: [coordinate(object.rotation, 0), coordinate(object.rotation, 1), coordinate(object.rotation, 2)] as [number, number, number] } : {}), ...(Array.isArray(object.scale) ? { scale: [coordinate(object.scale, 0), coordinate(object.scale, 1), coordinate(object.scale, 2)] as [number, number, number] } : {}), ...(object.parentId ? { parentId: text(object.parentId, 120) } : {}), ...(object.groupId ? { groupId: text(object.groupId, 80) } : {}), tags: normalizeAssetTags(object.tags) ?? [], ...(normalizeMapAssetLight(object.light) ? { light: normalizeMapAssetLight(object.light) } : {}), parts: list(object.parts, 16).map(part => ({ id: text(part.id, 120), tags: texts(part.tags, 8, 80) })) })),
     zones: list(input.zones, 64).map(zone => ({ id: text(zone.id, 120), tags: texts(zone.tags, 8, 40), center: [coordinate(zone.center, 0), coordinate(zone.center, 1)], radius: number(zone.radius, 0, 10000) })),
     grassLayers: list(input.grassLayers, 8).map(layer => ({ id: text(layer.id, 120), preset: text(layer.preset, 40) }))
   };

@@ -599,7 +599,13 @@ describe('render AI adapter', () => {
       '雾再浓一点，其他不变',
       currentPlan,
       BUILTIN_RENDER_SCHEMES,
-      { fetchImpl, onProgress: (event) => progress.push(event.phase) }
+      { fetchImpl, onProgress: (event) => progress.push(event.phase), sceneProfile: {
+        sceneMode: 'outdoor', size: [48, 24, 48],
+        lighting: { practicalLightCount: 0, coverageRatio: 0 },
+        content: { hasGrass: true, hasWater: false, hasEmissive: false },
+        sceneArtBrief: { intent: 'walkable workshop', experienceMode: 'sequential', groups: [], focuses: [],
+          viewpoints: [{ role: 'entry', point: [0, 0] }], relations: [], renderHints: ['warm work surface'] }
+      } }
     );
 
     expect(suggestion.baseSchemeId).toBe(currentPlan.baseSchemeId);
@@ -607,5 +613,8 @@ describe('render AI adapter', () => {
     expect(progress).toEqual(['planning', 'consulting', 'consulting', 'validating', 'complete']);
     const request = JSON.parse(String(fetchImpl.mock.calls[0][1]?.body));
     expect(request.messages[0].content).toContain('当前 RenderPlan');
+    expect(request.messages[0].content).toContain('从 entry 看懂入口与主焦点');
+    expect(request.messages[0].content).toContain('warm work surface');
+    expect(request.messages[0].content).toContain('不得声称已通过视觉审查');
   });
 });

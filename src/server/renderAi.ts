@@ -245,7 +245,10 @@ function buildSystemPrompt(
       `当前场景摘要：${JSON.stringify(sceneProfile)}`
     ] : []),
     ...(sceneProfile?.sceneArtBrief ? [
-      'sceneArtBrief 是已确认地图的构图语义，不是修改地图的指令。用光照、色彩对比、材质层次和氛围强化其主次焦点与游览视点；不要改摆放，不要凭空发明对象或区域 ID。renderHints 仅作候选意图，最终渲染仍遵守当前用户要求和白名单。'
+      'sceneArtBrief 是已确认地图的构图语义，不是修改地图的指令。用光照、色彩对比、材质层次和氛围强化其主次焦点与游览视点；不要改摆放，不要凭空发明对象或区域 ID。renderHints 仅作候选意图，最终渲染仍遵守当前用户要求和白名单。',
+      '先确定观看目的：从 entry 看懂入口与主焦点，从 route 连续看清去向，从 node 看清活动区的工作面和道具；overview 保持整体层次。按这些视点分配局部对比，不要只优化俯视全景。',
+      '以可见结果推导调整：需要看清店内时，依次考虑现有玻璃的透射与反射、室内工作面的局部照明、室外亮度对比，以及地面是否接住实际灯光。若货架遮挡或缺少灯具属于几何问题，在 explanation 指出需要地图细化；不得声称渲染已改变几何或凭空制造灯具。',
+      'targets.objects 的 position/rotation/scale 是世界坐标，light.offset 是灯具局部坐标；light 描述真实照明能力，材质 emissive 只说明发光外观。优先增强已有灯具，保留工作面暗部细节，控制玻璃与金属高光，谨慎添加 Bloom。缺少截图时只根据结构证据说明方案，不得声称已通过视觉审查。'
     ] : []),
     ...(sceneProfile?.sceneMode === 'indoor' ? [
       '这是室内渲染。默认使用 render-indoor-neutral 基底、PBR 表面、soft SSAO 和室内灯光配方；不要用室外太阳、草地、地形、天气或全局空气粒子填充房间。',
@@ -266,6 +269,7 @@ function buildSystemPrompt(
     '局部美术能力是可重复模块，每个提供唯一 key，省略 scope，params.config 是下述 JSON 对象序列化后的字符串。只使用当前场景 targets 中的真实 objectId、partId、zoneId；只改用户要求的对象和区域，不为填满预算而添加模块。',
     'runtime.color-field 最多4条：{zoneId?:区域ID,target:"ground-and-grass"|"terrain"|"grass",axis:"x"|"z"|"radial",center:[x,z],start:起点,end:终点,feather:边缘过渡米数,strength:0到1,stops:[[0,"#RRGGBB"],[0.4,"#RRGGBB"],[1,"#RRGGBB"]]}。2–4个递增色标，首尾0和1；end必须大于start。草与地面默认共享区域配色，避免无意义彩虹。颜色是受光前基色，不代替照明。',
     'runtime.grass-style 的 rootColor/tipColor 为显式颜色，覆盖预设。colorStops 是2–4个草叶高度色标数组的JSON字符串，首尾0和1；gradientBias和rootDarken可调。启用用户色卡时在该色卡允许的颜色内选色。',
+    '新生成渲染方案时，按用户场景与 renderHints 主动协调草、地面、建筑和天空的色相及明度；草的 preset 是形态语义，不要求保留绿色。区域渐变用 runtime.color-field，草叶高度渐变用 runtime.grass-style，避免两层着色互相冲突。Refine 时只有用户要求涉及这些色彩才调整，保留已选方案的其他参数。',
     'runtime.local-light 最多8条，覆盖真实灯具对象而不改地图：{objectId,kind:"point"|"spot",color:"#RRGGBB",intensity:0.5到12,range:1到20,offset:[局部x,y,z],targetId?:照向的对象ID,enabled:true}。共享原有点光与聚光预算；发光材质不会自动照亮地面。',
     'runtime.surface-detail 最多8条：{objectId,partId?:具体材质部件ID,color?:"#RRGGBB",roughness?:0到1,metalness?:0到1,transmission?:0到1,colorExpression?:表达式,emissionExpression?:表达式}。transmission只用于已有物理玻璃部件；表达式只用于普通受支持表面，不用于water或特殊ShaderMaterial。',
     '简单Shader只允许vec3结果表达式：变量color/position/normal/uv/time，运算+ - *，函数vec2 vec3 sin cos abs fract min max clamp mix smoothstep。smoothstep的前两个参数必须是递增的数字常量。例：color * (0.85 + 0.15 * sin(position.x * 2.0 + time))。最长1024字符，禁止语句、循环、除法、采样纹理、宏、自定义函数和完整GLSL；保留原来的光照与阴影模板，禁止用颜色表达式假装实现几何或投影。',
