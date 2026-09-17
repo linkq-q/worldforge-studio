@@ -253,7 +253,7 @@ describe('map code planner', () => {
     expect(prompt).toContain('No undefined point, invalid array index, direct array arithmetic');
   });
 
-  it('injects the compact-settlement profile and callable capability bindings for town prompts', () => {
+  it('offers district, frontage and massing tools without choosing them by prompt keywords', () => {
     const prompt = buildMapCodePlannerSystemPrompt(
       createEmptyMap('Town', 'town-capability-prompt', [96, 16, 96]),
       [],
@@ -264,34 +264,35 @@ describe('map code planner', () => {
       '生成一座紧凑、可游玩的中世纪小镇'
     );
 
-    expect(prompt).toContain('## Active scene profile: settlement.compact-town');
-    expect(prompt).toContain('building footprint inside the settlement envelope: 25%-40%');
+    expect(prompt).toContain("spatialRole:'landmark-ensemble'|'urban-fabric'|'open-space'|'landscape'");
+    expect(prompt).toContain('ordinary building fabric');
     expect(prompt).toContain('api.streetGrid({id,region');
     expect(prompt).toContain('api.placeAlongRoute({routeId');
     expect(prompt).toContain('api.placeStreetFrontage({routeId');
-    expect(prompt).toContain('Public street furniture');
-    expect(prompt).toContain('shop terrace furniture');
+    expect(prompt).toContain('returns the route ID string, not an object');
+    expect(prompt).toContain('api.routeNetwork returns a string[] of route IDs in edge order');
+    expect(prompt).toContain('Put public roadside furniture on the route after architectural massing');
     expect(prompt).toContain('topology.create-route-network');
     expect(prompt).toContain('settlement.create-street-grid');
     expect(prompt).toContain('roadside.decorate-route');
   });
 
   it.each(['日式街道', '日本城市街景', 'Japanese urban street'])(
-    'gives %s street-frontage guidance without forcing a town grid', (task) => {
+    'gives %s street-frontage guidance without keyword routing or a forced town grid', (task) => {
       const prompt = buildMapCodePlannerSystemPrompt(createEmptyMap(), [], 0, 24, 'scene', 'generate', task);
-      expect(prompt).toContain('## Active scene profile: street.frontage');
-      expect(prompt).toContain("tags:['street']");
-      expect(prompt).toContain('both sides');
-      expect(prompt).not.toContain('call api.streetGrid before placing ordinary buildings');
+      expect(prompt).toContain('api.placeStreetFrontage');
+      expect(prompt).not.toContain('## Active scene profile:');
+      expect(prompt).toContain('Do not force a town grid');
     }
   );
 
-  it('does not inject a settlement density profile into a wilderness prompt', () => {
+  it('does not force urban building districts into a wilderness prompt', () => {
     const prompt = buildMapCodePlannerSystemPrompt(
       createEmptyMap(), [], 0, 4, 'scene', 'generate', '生成一片无人居住的原始森林'
     );
 
-    expect(prompt).not.toContain('## Active scene profile: settlement.compact-town');
+    expect(prompt).not.toContain('## Active scene profile:');
+    expect(prompt).toContain('For natural scenes, omit unnecessary architecture');
   });
 
   it('gives unified outdoor Code semantic intent and complete scene ownership', () => {
@@ -338,6 +339,17 @@ describe('map code planner', () => {
 
     const body = JSON.parse(String(fetchImpl.mock.calls[0][1]?.body)) as { messages: Array<{ role: string; content: string }> };
     expect(body.messages.find((message) => message.role === 'user')?.content).toContain('图书馆主楼');
+  });
+
+  it('treats Atlantis as a city needing connected building districts, not only a landmark and props', () => {
+    const prompt = buildMapCodePlannerSystemPrompt(
+      createEmptyMap('亚特兰蒂斯', 'atlantis-profile', [96, 16, 96]),
+      [], 0, 16, 'scene', 'generate', '亚特兰蒂斯'
+    );
+
+    expect(prompt).not.toContain('## Active scene profile:');
+    expect(prompt).toContain('each authored leaf design group a bounded region');
+    expect(prompt).toContain('ordinary building fabric');
   });
 
   it('bounds the refine asset catalog while keeping map-referenced assets', async () => {
@@ -483,6 +495,45 @@ describe('map code planner', () => {
     expect(progress).toContain('新资产布局调整未通过校验，继续使用原布局');
   });
 
+  it('accepts an asset adaptation that preserves an existing recoverable issue without adding a new one', async () => {
+    const initial = `function plan(api) {
+      const gate=api.requireAsset({key:'gate',name:'园门',prompt:'Standalone garden gate',role:'structure'});
+      api.place({assetId:api.asset(gate),name:'园门',position:[0,0],role:'structure'});
+      api.placeAlongRoute({routeId:'missing-route',name:'路灯',spacing:4});
+    }`;
+    const adapted = initial.replace('position:[0,0]', 'position:[6,0]');
+    const response = (content: string) => new Response(JSON.stringify({ ok: true, content }), {
+      status: 200, headers: { 'Content-Type': 'application/json' }
+    });
+    const fetchImpl = vi.fn()
+      .mockResolvedValueOnce(response(initial))
+      .mockResolvedValueOnce(response(initial))
+      .mockResolvedValueOnce(response(adapted));
+    const progress: string[] = [];
+
+    const suggestion = await generateMapCodeSuggestion('生成园门和沿路灯具', createEmptyMap(), [], {
+      fetchImpl, minNewAssets: 0, maxNewAssets: 1,
+      createAsset: async (request) => ({
+        ...testAsset('asset-gate', request.name),
+        modelJson: { _meta: { semanticSnapshot: { text: '完整园门模型' } } }
+      }),
+      onProgress: (event) => progress.push(event.label)
+    });
+
+    expect(fetchImpl).toHaveBeenCalledTimes(3);
+    expect(suggestion.codePlan?.code).toBe(adapted);
+    expect(suggestion.operations).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        type: 'object.add',
+        object: expect.objectContaining({ transform: expect.objectContaining({ position: [6, 0, 0] }) })
+      })
+    ]));
+    expect(suggestion.diagnostics).toEqual(expect.arrayContaining([
+      expect.objectContaining({ code: 'code.route-unresolved', repaired: false })
+    ]));
+    expect(progress).not.toContain('新资产布局调整未通过校验，继续使用原布局');
+  });
+
   it('accepts structured terrain forms and normalizes common semantic enum labels', () => {
     const suggestion = executeMapCodePlan(`function plan(api) {
       api.terrain('plain');
@@ -515,6 +566,61 @@ describe('map code planner', () => {
     expect(legacySuggestion.operations).toEqual(expect.arrayContaining([
       expect.objectContaining({ type: 'terrain.modify', modifier: 'basin' }),
       expect.objectContaining({ type: 'terrain.surface', surface: 'soil' })
+    ]));
+  });
+
+  it('coerces an incompatible surface material locally instead of failing the scene', () => {
+    const suggestion = executeMapCodePlan(`function plan(api) {
+      api.surface({
+        id:'plaza', surface:'rock', material:'garden-stone',
+        region:{kind:'polygon',points:[[-8,-4],[8,-4],[8,4],[-8,4]]}
+      });
+    }`, createEmptyMap());
+
+    expect(suggestion.operations).toEqual(expect.arrayContaining([
+      expect.objectContaining({ type: 'terrain.surface', surface: 'paving', material: 'garden-stone' })
+    ]));
+    expect(suggestion.diagnostics).toEqual(expect.arrayContaining([
+      expect.objectContaining({ code: 'terrain.surface-material-repaired', repaired: true })
+    ]));
+  });
+
+  it('normalizes duplicate singleton declarations instead of failing the whole scene', () => {
+    const suggestion = executeMapCodePlan(`function plan(api) {
+      api.sceneIntent({kind:'natural',reason:'first'});
+      api.sceneIntent({kind:'authored',reason:'last'});
+      api.design({experienceMode:'free',intent:'first',groups:[],focuses:[],viewpoints:[],relations:[]});
+      api.design({experienceMode:'sequential',intent:'last',groups:[],focuses:[],viewpoints:[],relations:[]});
+      api.terrain('plain');
+      api.terrain('hills');
+      api.place({name:'主建筑',position:[0,0],role:'structure'});
+    }`, createEmptyMap());
+
+    expect(suggestion.codePlan?.sceneIntent).toBe('authored');
+    expect(suggestion.operations.filter((operation) => operation.type === 'terrain.generate')).toHaveLength(1);
+    expect(suggestion.diagnostics).toEqual(expect.arrayContaining([
+      expect.objectContaining({ code: 'code.declaration-normalized' })
+    ]));
+  });
+
+  it('infers missing scene intent and invalid asset role metadata without an execution retry', async () => {
+    const code = `function plan(api) {
+      const tree=api.requireAsset({key:'tree',name:'松树',prompt:'Standalone pine tree',role:'prop'});
+      api.place({assetId:api.asset(tree),name:'松树',position:[0,0],role:'prop'});
+    }`;
+    const fetchImpl = vi.fn().mockResolvedValue(new Response(JSON.stringify({ ok: true, content: code }), {
+      status: 200, headers: { 'Content-Type': 'application/json' }
+    }));
+
+    const suggestion = await generateMapCodeSuggestion('生成一棵松树', createEmptyMap(), [], {
+      fetchImpl, scope: 'scene', discoveryOnly: true, minNewAssets: 0, maxNewAssets: 1
+    });
+
+    expect(fetchImpl).toHaveBeenCalledTimes(1);
+    expect(suggestion.codePlan?.sceneIntent).toBe('natural');
+    expect(suggestion.diagnostics).toEqual(expect.arrayContaining([
+      expect.objectContaining({ code: 'asset.role-inferred', repaired: true }),
+      expect.objectContaining({ code: 'code.declaration-normalized', repaired: true })
     ]));
   });
 
@@ -773,6 +879,39 @@ describe('map code planner', () => {
     expect(suggestion.codePlan?.repairAttempts).toBe(0);
   });
 
+  it('repairs a city plan whose named districts have no regions and whose props mask missing architecture', async () => {
+    const sparse = `function plan(api) {
+      api.sceneIntent({kind:'authored',reason:'失落海洋城市'});
+      api.design({experienceMode:'sequential',intent:'神殿和港口',groups:[
+        {id:'citadel',name:'圣城',intent:'神殿与大街',layers:[{level:1,intent:'神殿',density:'tight'}]},
+        {id:'harbor',name:'港口',intent:'港亭',layers:[{level:1,intent:'港亭',density:'tight'}]}
+      ],focuses:[],viewpoints:[],relations:[]});
+      api.route({id:'avenue',points:[[0,-25],[0,25]],width:5});
+      api.place({name:'海神殿',position:[0,20],size:[10,10,8],role:'structure',groupId:'citadel',layer:1});
+      api.place({name:'港亭',position:[25,0],size:[6,7,6],role:'structure',groupId:'harbor',layer:1});
+      for (let i=0;i<12;i++) api.place({name:'水晶灯',position:[-9+i*1.5,-12],role:'environment',groupId:'citadel',layer:3});
+    }`;
+    const fetchImpl = vi.fn().mockImplementation(async () => new Response(
+      JSON.stringify({ ok: true, content: sparse }),
+      { status: 200, headers: { 'Content-Type': 'application/json' } }
+    ));
+
+    const suggestion = await generateMapCodeSuggestion('亚特兰蒂斯', createEmptyMap('亚特兰蒂斯'), [], {
+      apiBase: 'https://example.test', provider: 'gpt', fetchImpl,
+      minNewAssets: 0, maxNewAssets: 0, scope: 'scene', discoveryOnly: true
+    });
+    const repairRequest = JSON.parse(String((fetchImpl.mock.calls[1]?.[1] as RequestInit | undefined)?.body)) as {
+      messages: Array<{ content: string }>;
+    };
+
+    expect(fetchImpl).toHaveBeenCalledTimes(2);
+    expect(repairRequest.messages.at(-1)?.content).toContain('scene_group_region_missing:citadel');
+    expect(repairRequest.messages.at(-1)?.content).toContain('ordinary building fabric');
+    expect(suggestion.diagnostics).toEqual(expect.arrayContaining([
+      expect.objectContaining({ code: 'scene.program-incomplete', repaired: false })
+    ]));
+  });
+
   it('reports an unbound garden lantern without rewriting otherwise valid code', async () => {
     const code = `function plan(api) {
       api.sceneIntent({ kind:'authored', reason:'庭院' });
@@ -924,6 +1063,120 @@ describe('map code planner', () => {
     expect(suggestion.codePlan?.repairAttempts).toBe(1);
     expect(suggestion.operations).toEqual(expect.arrayContaining([
       expect.objectContaining({ type: 'object.add' })
+    ]));
+  });
+
+  it('explains valid bridge crossing geometry when repairing an off-water bridge', async () => {
+    const invalid = `function plan(api) {
+      api.water('canal', { type:'lake', points:[[-8,-4],[8,-4],[8,4],[-8,4]], level:0.2 });
+      api.bridge({ waterId:'canal', name:'水晶桥', crossingCenter:[20,20], direction:[1,0], dimensions:[3,1,4] });
+    }`;
+    const repaired = `function plan(api) {
+      api.sceneIntent({ kind:'natural', reason:'测试修复流程' });
+      api.place({ name:'修复完成标记', position:[0,0], role:'environment' });
+    }`;
+    const response = (content: string) => new Response(JSON.stringify({ ok: true, content }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' }
+    });
+    const fetchImpl = vi.fn()
+      .mockResolvedValueOnce(response(invalid))
+      .mockResolvedValue(response(repaired));
+
+    await generateMapCodeSuggestion('生成一条运河和跨河桥', createEmptyMap(), [], {
+      apiBase: 'https://example.test', provider: 'gpt', fetchImpl,
+      minNewAssets: 0, maxNewAssets: 0, scope: 'scene'
+    });
+
+    const repairRequest = JSON.parse(String(fetchImpl.mock.calls[1][1]?.body));
+    expect(repairRequest.messages.at(-1).content).toContain('crossingCenter must lie inside the named water body');
+    expect(repairRequest.messages.at(-1).content).toContain('direction perpendicular to the local river path');
+    expect(repairRequest.messages.at(-1).content).toContain('Do not distribute bridges with circlePoint');
+  });
+
+  it('keeps valid scene content when a local bridge crossing remains unresolved', () => {
+    const suggestion = executeMapCodePlan(`function plan(api) {
+      api.water('canal', {type:'lake',points:[[-8,-4],[8,-4],[8,4],[-8,4]],level:0.2});
+      api.bridge({waterId:'canal',name:'偏离水面的桥',crossingCenter:[20,20],direction:[1,0],dimensions:[3,1,4]});
+      api.place({name:'神殿',position:[0,10],role:'structure'});
+    }`, createEmptyMap());
+
+    expect(suggestion.operations).toEqual(expect.arrayContaining([
+      expect.objectContaining({ type: 'water.add' }),
+      expect.objectContaining({ type: 'object.add', object: expect.objectContaining({ name: '神殿' }) })
+    ]));
+    expect(suggestion.diagnostics).toEqual(expect.arrayContaining([
+      expect.objectContaining({ code: 'bridge.unresolved-crossing', repaired: false })
+    ]));
+  });
+
+  it('keeps valid scene content when bridge and connection geometry degenerates locally', () => {
+    const suggestion = executeMapCodePlan(`function plan(api) {
+      api.water('canal', {type:'lake',points:[[-8,-4],[8,-4],[8,4],[-8,4]],level:0.2});
+      api.bridge({waterId:'canal',name:'零方向桥',crossingCenter:[0,0],direction:[0,0],dimensions:[3,1,4]});
+      api.placeBetween({name:'零长度连廊',start:[4,4],end:[4,4],dimensions:[3,2,1]});
+      api.place({name:'神殿',position:[0,10],role:'structure'});
+    }`, createEmptyMap());
+
+    expect(suggestion.operations).toEqual(expect.arrayContaining([
+      expect.objectContaining({ type: 'water.add' }),
+      expect.objectContaining({ type: 'object.add', object: expect.objectContaining({ name: '神殿' }) })
+    ]));
+    expect(suggestion.diagnostics).toEqual(expect.arrayContaining([
+      expect.objectContaining({ code: 'code.geometry-unresolved', repaired: false })
+    ]));
+  });
+
+  it('explains the route return contract when repairing an object-style route reference', async () => {
+    const invalid = `function plan(api) {
+      api.sceneIntent({kind:'authored',reason:'测试路线引用修复'});
+      api.place({name:'城门',position:[0,-4],role:'structure'});
+      const mainRoute = api.route({ id:'main', points:[[-8,0],[8,0]], width:3 });
+      api.placeAlongRoute({ routeId:mainRoute.id, name:'路灯', spacing:4 });
+    }`;
+    const repaired = `function plan(api) {
+      api.sceneIntent({ kind:'natural', reason:'测试修复流程' });
+      api.place({ name:'修复完成标记', position:[0,0], role:'environment' });
+    }`;
+    const response = (content: string) => new Response(JSON.stringify({ ok: true, content }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' }
+    });
+    const fetchImpl = vi.fn()
+      .mockResolvedValueOnce(response(invalid))
+      .mockResolvedValue(response(repaired));
+
+    await generateMapCodeSuggestion('生成一条道路和路灯', createEmptyMap(), [], {
+      apiBase: 'https://example.test', provider: 'gpt', fetchImpl,
+      minNewAssets: 0, maxNewAssets: 0, scope: 'scene'
+    });
+
+    const repairRequest = JSON.parse(String(fetchImpl.mock.calls[1][1]?.body));
+    expect(repairRequest.messages.at(-1).content).toContain('api.route(...) returns the route ID string, not an object');
+    expect(repairRequest.messages.at(-1).content).toContain('Never use mainRoute.id');
+    expect(repairRequest.messages.at(-1).content).toContain('api.routeNetwork returns a string[]');
+  });
+
+  it('keeps a usable scene when the model still misses the requested asset minimum after one repair', async () => {
+    const underMinimum = `function plan(api) {
+      api.sceneIntent({kind:'authored',reason:'测试资产数量降级'});
+      const gate=api.requireAsset({key:'gate',name:'城门',prompt:'Standalone gate',variants:1,role:'structure'});
+      api.place({assetId:api.asset(gate,0),position:[0,0],role:'structure'});
+    }`;
+    const fetchImpl = vi.fn().mockImplementation(async () => new Response(
+      JSON.stringify({ ok: true, content: underMinimum }),
+      { status: 200, headers: { 'Content-Type': 'application/json' } }
+    ));
+
+    const suggestion = await generateMapCodeSuggestion('生成一座城门', createEmptyMap(), [], {
+      apiBase: 'https://example.test', provider: 'gpt', fetchImpl,
+      minNewAssets: 2, maxNewAssets: 2, scope: 'scene', discoveryOnly: true
+    });
+
+    expect(fetchImpl).toHaveBeenCalledTimes(2);
+    expect(suggestion.operations.some((operation) => operation.type === 'object.add')).toBe(true);
+    expect(suggestion.diagnostics).toEqual(expect.arrayContaining([
+      expect.objectContaining({ code: 'asset.minimum-degraded', severity: 'warning', repaired: false })
     ]));
   });
 
@@ -1869,6 +2122,17 @@ describe('map code planner', () => {
       }
     `, createEmptyMap(), [], 3)).toEqual([
       expect.objectContaining({ key: 'wall', variants: 3, generatedVariants: 2 })
+    ]);
+  });
+
+  it('normalizes non-ASCII internal asset keys without rewriting user-facing names', () => {
+    const requirements = discoverMapCodeAssets(`function plan(api) {
+      const wing=api.requireAsset({key:'翼楼',name:'神殿翼楼',prompt:'Standalone temple wing',role:'structure'});
+      api.place({assetId:api.asset(wing,0),position:[0,0],role:'structure'});
+    }`, createEmptyMap(), [], 2);
+
+    expect(requirements).toEqual([
+      expect.objectContaining({ key: expect.stringMatching(/^asset-[a-z0-9]+$/), name: '神殿翼楼' })
     ]);
   });
 

@@ -7,12 +7,14 @@ export const MAP_DENSITY_TONES = ['tight', 'normal', 'open'] as const;
 export const MAP_FOCUS_KINDS = ['primary', 'secondary', 'node'] as const;
 export const MAP_REVEAL_MODES = ['visible', 'screened', 'framed', 'sequence'] as const;
 export const MAP_RELATION_KINDS = ['attract', 'repel', 'support'] as const;
+export const MAP_SPATIAL_ROLES = ['landmark-ensemble', 'urban-fabric', 'open-space', 'landscape'] as const;
 
 export type MapExperienceMode = typeof MAP_EXPERIENCE_MODES[number];
 export type MapDensityTone = typeof MAP_DENSITY_TONES[number];
 export type MapFocusKind = typeof MAP_FOCUS_KINDS[number];
 export type MapRevealMode = typeof MAP_REVEAL_MODES[number];
 export type MapRelationKind = typeof MAP_RELATION_KINDS[number];
+export type MapSpatialRole = typeof MAP_SPATIAL_ROLES[number];
 export type MapCompositionLayer = 1 | 2 | 3 | 4;
 
 export interface MapDesignLayerPolicy {
@@ -27,6 +29,8 @@ export interface MapDesignGroup {
   name: string;
   parentId?: string;
   intent: string;
+  /** The group's spatial responsibility, independent of its individual object count. */
+  spatialRole?: MapSpatialRole;
   region?: VisualZoneRegion;
   focusIds: string[];
   guideIds: string[];
@@ -103,6 +107,8 @@ export function normalizeMapDesignSemantics(value: unknown, boxSize: Vec3): MapD
       id,
       name: text(item.name, id, 80),
       intent: text(item.intent, '', 240),
+      ...(MAP_SPATIAL_ROLES.includes(item.spatialRole as MapSpatialRole)
+        ? { spatialRole: item.spatialRole as MapSpatialRole } : {}),
       region: normalizeRegion(item.region, boxSize),
       focusIds: ids(item.focusIds, 16),
       guideIds: ids(item.guideIds, 32),
