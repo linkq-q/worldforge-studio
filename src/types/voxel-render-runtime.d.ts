@@ -369,6 +369,21 @@ declare module '@voxel-studio/render-runtime/environment' {
     setPlanarReflectionMatrix(matrix: import('three').Matrix4): void;
     setShoreDistanceTexture(texture: import('three').Texture | null): void;
     setShoreWorldRegion(centerXZ: { x: number; y: number } | null, size?: number): void;
+    setOceanTerrainTexture(
+      texture: import('three').Texture | null,
+      config?: {
+        terrainSize?: number[];
+        mapSize?: number[];
+        center?: number[];
+        level?: number;
+        apronWidth?: number;
+        sinkTarget?: number;
+      }
+    ): boolean;
+    setOceanShoreSplashPoints(
+      points: Array<number[] | import('three').Vector2>
+    ): import('three').Points | null;
+    clearOceanShoreSplash(): void;
     pinRippleDecalPoint(x: number, z: number): number;
     updatePinnedRipplePoint(id: number, x: number, z: number): void;
     unpinRippleDecalPoint(id: number): void;

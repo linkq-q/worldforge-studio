@@ -65,6 +65,49 @@ describe('WaterSurface shader', () => {
     surface.dispose();
   });
 
+  it('supports terrain-driven ocean swash, foam edge, and splash droplets', () => {
+    const scene = new THREE.Scene();
+    const surface = new WaterSurface(
+      scene,
+      {} as THREE.WebGLRenderer,
+      new THREE.Group(),
+      { size: 1, segments: 1 }
+    );
+    const terrain = new THREE.DataTexture(
+      new Float32Array([0, 0, 0, 0]),
+      2,
+      2,
+      THREE.RedFormat,
+      THREE.FloatType
+    );
+
+    expect(surface.setOceanTerrainTexture(terrain, {
+      terrainSize: [2, 2],
+      mapSize: [96, 96],
+      center: [0, 0],
+      level: 0,
+      apronWidth: 18,
+      sinkTarget: -3
+    })).toBe(true);
+    expect(surface.material.uniforms.uUseOceanTerrain.value).toBe(true);
+    expect(surface.material.uniforms.uOceanTerrainApronWidth.value).toBe(18);
+    expect(surface.material.vertexShader).toContain('return computeOceanSwashHeight(worldBase.xz, waveH);');
+    expect(surface.material.fragmentShader).toContain('if (oceanWaterDepth <= 0.025) discard;');
+    expect(surface.material.fragmentShader).toContain('shoreFoam = (1.0 - smoothstep(0.025, oceanFoamWidth, oceanWaterDepth))');
+    expect(surface.material.fragmentShader).toContain('foamCoverage = mix(shoreFoam, foamCoverage, oceanShoreIsolation);');
+
+    const splash = surface.setOceanShoreSplashPoints([[1, 2], new THREE.Vector2(3, 4)]);
+    expect(splash?.name).toBe('OceanShoreSplash');
+    expect(splash?.geometry.getAttribute('position').count).toBe(2);
+    expect((splash?.material as THREE.ShaderMaterial).uniforms.uTime).toBe(surface.material.uniforms.uTime);
+
+    expect(surface.setOceanTerrainTexture(null)).toBe(false);
+    expect(surface.material.uniforms.uUseOceanTerrain.value).toBe(false);
+    expect(splash?.parent).toBeNull();
+    terrain.dispose();
+    surface.dispose();
+  });
+
   it('keeps reflections stable on a still camera while preserving local ripple distortion', () => {
     const surface = new WaterSurface(
       new THREE.Scene(),

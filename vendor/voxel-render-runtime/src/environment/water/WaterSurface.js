@@ -20,11 +20,91 @@ import {
   RING_STRIPE_GLSL as WATER_RING_STRIPE_GLSL,
 } from './chunks.js';
 
+const OCEAN_TERRAIN_GLSL = /* glsl */ `
+  uniform sampler2D tOceanTerrain;
+  uniform bool uUseOceanTerrain;
+  uniform vec2 uOceanTerrainSize;
+  uniform vec2 uOceanMapSize;
+  uniform vec2 uOceanMapCenter;
+  uniform float uOceanLevel;
+  uniform float uOceanTerrainApronWidth;
+  uniform float uOceanTerrainSinkTarget;
+
+  float sampleOceanTerrainHeight(vec2 worldXZ) {
+    vec2 safeMapSize = max(uOceanMapSize, vec2(0.0001));
+    vec2 terrainSpan = max(uOceanTerrainSize - 1.0, vec2(1.0));
+    vec2 uv = (worldXZ - uOceanMapCenter) / safeMapSize + 0.5;
+    vec2 grid = uv * terrainSpan;
+    vec2 clampedGrid = clamp(grid, vec2(0.0), terrainSpan);
+    vec2 cell = min(floor(clampedGrid), uOceanTerrainSize - 2.0);
+    vec2 f = clampedGrid - cell;
+    vec2 texel = 1.0 / uOceanTerrainSize;
+    vec2 a = (cell + 0.5) * texel;
+    float h00 = texture2D(tOceanTerrain, a).r;
+    float h10 = texture2D(tOceanTerrain, a + vec2(texel.x, 0.0)).r;
+    float h01 = texture2D(tOceanTerrain, a + vec2(0.0, texel.y)).r;
+    float h11 = texture2D(tOceanTerrain, a + texel).r;
+    if (any(notEqual(grid, clampedGrid))) {
+      float edgeHeight = mix(mix(h00, h10, f.x), mix(h01, h11, f.x), f.y);
+      float distanceOutside = length((grid - clampedGrid) * safeMapSize / terrainSpan);
+      float t = smoothstep(0.0, max(uOceanTerrainApronWidth, 0.001), distanceOutside);
+      return mix(edgeHeight, uOceanTerrainSinkTarget, t);
+    }
+    if (mod(cell.x + cell.y, 2.0) < 0.5) {
+      if (f.x + f.y <= 1.0) return h00 + (h10 - h00) * f.x + (h01 - h00) * f.y;
+      return h11 + (h01 - h11) * (1.0 - f.x) + (h10 - h11) * (1.0 - f.y);
+    }
+    if (f.x <= f.y) return h00 + (h11 - h01) * f.x + (h01 - h00) * f.y;
+    return h00 + (h10 - h00) * f.x + (h11 - h10) * f.y;
+  }
+`;
+
+const OCEAN_SWASH_GLSL = /* glsl */ `
+  float oceanSwashNoise(vec2 p) {
+    vec2 cell = floor(p), f = fract(p);
+    f = f * f * (3.0 - 2.0 * f);
+    vec4 h = fract(sin(vec4(
+      dot(cell, vec2(127.1, 311.7)),
+      dot(cell + vec2(1.0, 0.0), vec2(127.1, 311.7)),
+      dot(cell + vec2(0.0, 1.0), vec2(127.1, 311.7)),
+      dot(cell + 1.0, vec2(127.1, 311.7))
+    )) * 43758.5453);
+    return mix(mix(h.x, h.y, f.x), mix(h.z, h.w, f.x), f.y);
+  }
+
+  float oceanSwashPhase(vec2 p, float ground) {
+    return fract(uTime * uShoreWaveSpeed * 0.1 + 0.10 * sin(uTime * 0.29) - ground * 0.18
+      + oceanSwashNoise(p * 0.19) * 0.28 + oceanSwashNoise(p * 0.43) * 0.10);
+  }
+
+  float oceanSwashCrest(vec2 p) {
+    vec2 warp = p + vec2(oceanSwashNoise(p * 0.23), oceanSwashNoise(p * 0.23 + 7.0)) * 3.0;
+    float strength = clamp(uShoreWaveStrength, 0.0, 2.5);
+    return (0.12 + 0.06 * oceanSwashNoise(warp * 0.38 + vec2(uTime * 0.035, -uTime * 0.021))) * strength;
+  }
+
+  float oceanSwashTrough(vec2 p) {
+    return -0.025 - 0.035 * oceanSwashNoise(p * 0.31 + vec2(-uTime * 0.018, uTime * 0.025));
+  }
+
+  float computeOceanSwashHeight(vec2 p, float openWave) {
+    if (uShoreWaveStrength <= 0.0) return openWave;
+    float ground = sampleOceanTerrainHeight(p) - uOceanLevel;
+    float phase = oceanSwashPhase(p, ground);
+    float push = smoothstep(0.0, 0.30, phase) * (1.0 - smoothstep(0.30, 1.0, phase));
+    float swash = mix(oceanSwashTrough(p), oceanSwashCrest(p), push);
+    float shoreDepth = max(0.45, uShoreWaveRange * 3.1);
+    float shore = smoothstep(-shoreDepth, -0.20, ground);
+    return mix(openWave * 1.3, swash, shore);
+  }
+`;
+
 // ============================================================
 // Vertex Shader
 // ============================================================
 const WATER_VERTEX_SHADER = /* glsl */ `
   ${WATER_NOISE_UTILS_GLSL}
+  ${OCEAN_TERRAIN_GLSL}
 
   varying vec3 vWorldPosition;
   varying vec3 vReflectionWorldPosition;
@@ -225,6 +305,8 @@ const WATER_VERTEX_SHADER = /* glsl */ `
     return h * uWaveHeight;
   }
 
+  ${OCEAN_SWASH_GLSL}
+
   float sampleShoreDistanceForVertex(vec3 localPosition) {
     if (!uUseShoreDistance) return 1.0;
     vec2 shoreUv;
@@ -271,6 +353,10 @@ const WATER_VERTEX_SHADER = /* glsl */ `
 
   float computeDisplacedWaveHeight(vec2 localXZ, vec3 localPosition) {
     float waveH = computeVertexWaveHeight(localXZ);
+    if (uUseOceanTerrain && uShoreWaveEnabled) {
+      vec3 worldBase = (modelMatrix * vec4(localPosition, 1.0)).xyz;
+      return computeOceanSwashHeight(worldBase.xz, waveH);
+    }
     float damp = computeShoreDamp(localPosition);
     return waveH * damp + uSurfaceLift * damp + computeShoreWaveCrestHeight(localPosition);
   }
@@ -318,6 +404,7 @@ const WATER_FRAGMENT_SHADER = /* glsl */ `
   ${WATER_NOISE_UTILS_GLSL}
   ${WATER_EQUIRECT_UTILS_GLSL}
   ${WATER_RING_STRIPE_GLSL}
+  ${OCEAN_TERRAIN_GLSL}
 
   varying vec3 vWorldPosition;
   varying vec3 vReflectionWorldPosition;
@@ -695,6 +782,13 @@ const WATER_FRAGMENT_SHADER = /* glsl */ `
     float depthDiff = max(sceneLinearDepth - waterDepth, 0.0);
 
     float hasDepth = uHasDepthTexture ? 1.0 : 0.0;
+    float oceanWaterDepth = 1000000.0;
+    if (uUseOceanTerrain) {
+      oceanWaterDepth = vWorldPosition.y - sampleOceanTerrainHeight(vWorldPosition.xz);
+      if (oceanWaterDepth <= 0.025) discard;
+      depthDiff = 0.0;
+      hasDepth = 0.0;
+    }
 
     // === ShoreDistance 采样（v2 局部水域稳定岸线，camera-independent） ===
     float shoreDist = 1.0;
@@ -709,13 +803,24 @@ const WATER_FRAGMENT_SHADER = /* glsl */ `
         // 区域外淡出到开阔水面（shoreDist=1）：ClampToEdge 会把边缘 texel 无限延展成
         // 直线条带（水平/垂直交叉 = 十字/直角伪影），出区域必须归 1 而不是采边缘值。
         float edge = max(abs(rel.x), abs(rel.y));
-        shoreRegionFade = 1.0 - smoothstep(0.46, 0.5, edge);
+        shoreRegionFade = uUseOceanTerrain
+          ? 1.0 - smoothstep(0.42, 0.56, edge)
+          : 1.0 - smoothstep(0.46, 0.5, edge);
       }
       shoreDist = texture2D(tShoreDistance, shoreUv).r;
       if (uInvertShoreDistance) {
         shoreDist = 1.0 - shoreDist;
       }
-      shoreDist = mix(1.0, shoreDist, shoreRegionFade);
+      if (uUseOceanTerrain) {
+        float terrainShoreDist = clamp(
+          oceanWaterDepth / max(uOceanLevel - uOceanTerrainSinkTarget, 0.001),
+          0.0,
+          1.0
+        );
+        shoreDist = mix(terrainShoreDist, shoreDist, shoreRegionFade);
+      } else {
+        shoreDist = mix(1.0, shoreDist, shoreRegionFade);
+      }
       shoreDist = clamp(shoreDist * uShoreDistanceScale, 0.0, 1.0);
       // Corner clip: pixels outside the water footprint (shoreDist≈0) are cut.
       // Default 1×1 white placeholder (shoreDist=1) is never affected.
@@ -784,12 +889,19 @@ const WATER_FRAGMENT_SHADER = /* glsl */ `
       float foamDist = shoreDist + (shoreFroth - 0.5) * uShoreFoamWidth * 1.8;
       float shoreMask = 1.0 - smoothstep(0.0, max(uShoreFoamWidth, 0.0001), foamDist);
       shoreFoam = shoreMask * shoreBreakup * uShoreFoamStrength;
+      if (uUseOceanTerrain) {
+        float oceanFoamWidth = 0.09 + 0.025
+          * sin(vWorldPosition.x * 3.1 + uTime * 1.6)
+          * sin(vWorldPosition.z * 2.7 - uTime * 1.1);
+        shoreFoam = (1.0 - smoothstep(0.025, oceanFoamWidth, oceanWaterDepth))
+          * uShoreFoamStrength;
+      }
     }
 
     // === 1f. Shore Wave（沿 shoreDistance 等值线滚动的层叠浪线条纹） ===
     float shoreWaveShadow = 0.0;
     float shoreWave = 0.0;
-    if (uUseShoreDistance && uShoreWaveEnabled) {
+    if (uUseShoreDistance && uShoreWaveEnabled && !uUseOceanTerrain) {
       float shoreRangeMask = 1.0 - smoothstep(uShoreWaveRange * 0.5, uShoreWaveRange, shoreDist);
       float distortedDist = shoreDist + (shoreNoise - 0.5) * uShoreWaveNoiseStrength;
       float waveCoord = distortedDist * uShoreWaveFrequency - uTime * uShoreWaveSpeed;
@@ -891,10 +1003,23 @@ const WATER_FRAGMENT_SHADER = /* glsl */ `
     float baseFoam = clamp(foam1 + foam2, 0.0, 1.0) * uFoamOpacity * uFoamStrength * hasDepth;
     float foamCoverage = clamp(baseFoam + contactFoam + shoreFoam + shoreWave + rippleDecal + waveWhitecap, 0.0, 1.0);
     float foamShadow = clamp(waveWhitecapShadow + shoreWaveShadow, 0.0, 1.0) * uFoamShadowStrength;
+    if (uUseOceanTerrain) {
+      float oceanShoreIsolation = smoothstep(
+        max(uShoreFoamWidth * 1.55, 0.155),
+        max(uShoreFoamWidth * 2.50, 0.250),
+        shoreDist
+      );
+      foamCoverage = mix(shoreFoam, foamCoverage, oceanShoreIsolation);
+    }
     float foam = foamCoverage;
     // v4 Phase 2.3: cartoon foam 硬切（噪声/岸线已提供不规则轮廓，step 出手绘白边）
     if (uWaterMode < 0.5 && uToonFoamHardCut) {
-      foam = smoothstep(0.34, 0.46, foam);
+      if (uUseOceanTerrain) {
+        float oceanFoamAa = max(fwidth(foam) * 1.25, 0.06);
+        foam = smoothstep(0.40 - oceanFoamAa, 0.40 + oceanFoamAa, foam);
+      } else {
+        foam = smoothstep(0.34, 0.46, foam);
+      }
     }
 
     // === 2. 颜色深度渐变（含卡通色阶 + 深水颜色 + ShoreDistance 驱动） ===
@@ -1321,6 +1446,11 @@ const WATER_FRAGMENT_SHADER = /* glsl */ `
     // (shoreDist→1) stays at base opacity. uShoreTransparency=0 → unchanged.
     float shoreOpacity = mix(baseOpacity, baseOpacity * uShoreEdgeAlpha, clamp((1.0 - shoreDist) * uShoreTransparency, 0.0, 1.0));
     float alpha = shoreOpacity + foam * 0.08;
+    if (uUseOceanTerrain) {
+      float edgeOpacity = uWaterMode < 0.5 ? 0.58 : 0.42;
+      alpha = mix(baseOpacity * edgeOpacity, baseOpacity, smoothstep(0.02, 0.65, oceanWaterDepth));
+      alpha = mix(alpha, 1.0, foam * 0.65);
+    }
     gl_FragColor = vec4(finalColor, alpha);
   }
 `;
@@ -1515,6 +1645,16 @@ export class WaterSurface {
         uShoreWorldSpace: { value: false },
         uShoreWorldCenter: { value: new THREE.Vector2(0, 0) },
         uShoreWorldSize: { value: 1.0 },
+        // Ocean-only terrain binding. The host supplies the render height field;
+        // without it all water bodies keep the legacy fixed shore-distance waves.
+        tOceanTerrain: { value: null },
+        uUseOceanTerrain: { value: false },
+        uOceanTerrainSize: { value: new THREE.Vector2(2, 2) },
+        uOceanMapSize: { value: new THREE.Vector2(1, 1) },
+        uOceanMapCenter: { value: new THREE.Vector2(0, 0) },
+        uOceanLevel: { value: 0 },
+        uOceanTerrainApronWidth: { value: 1 },
+        uOceanTerrainSinkTarget: { value: -3 },
 
         // === v3: Water Mode (0=cartoon, 1=realistic, 2=hybrid) ===
         uWaterMode: { value: Math.max(0, WATER_MODE_NAMES.indexOf(opts.waterMode)) },
@@ -1669,6 +1809,7 @@ export class WaterSurface {
     this._defaultShoreDistanceTex.generateMipmaps = false;
     this._defaultShoreDistanceTex.needsUpdate = true;
     this.material.uniforms.tShoreDistance.value = this._defaultShoreDistanceTex;
+    this.material.uniforms.tOceanTerrain.value = this._defaultShoreDistanceTex;
 
     // v3 Step 3: 创建1×1默认法线纹理（RGB=128,128,255 → unpackNormalMap 后为 (0,0,1)，即"朝上"中性法线）
     // 用 RepeatWrapping（而非 ClampToEdge），保证用户上传贴图前 scale/speed 变化时 sampler 行为一致、不报错
@@ -2233,6 +2374,134 @@ export class WaterSurface {
   }
 
   /**
+   * Bind a map terrain height field for ocean swash. Invalid or missing input
+   * disables the feature and leaves the legacy shore-distance path intact.
+   * @param {THREE.Texture|null} texture
+   * @param {{terrainSize?:number[],mapSize?:number[],center?:number[],level?:number,apronWidth?:number,sinkTarget?:number}} [config]
+   * @returns {boolean}
+   */
+  setOceanTerrainTexture(texture, config = {}) {
+    const u = this.material.uniforms;
+    const terrainSize = Array.isArray(config.terrainSize) ? config.terrainSize.map(Number) : [];
+    const mapSize = Array.isArray(config.mapSize) ? config.mapSize.map(Number) : [];
+    const valid = !!texture
+      && terrainSize.length === 2 && terrainSize.every((value) => Number.isFinite(value) && value >= 2)
+      && mapSize.length === 2 && mapSize.every((value) => Number.isFinite(value) && value > 0);
+    if (!valid) {
+      u.tOceanTerrain.value = this._defaultShoreDistanceTex;
+      u.uUseOceanTerrain.value = false;
+      this.clearOceanShoreSplash();
+      return false;
+    }
+    const center = Array.isArray(config.center) ? config.center.map(Number) : [0, 0];
+    const level = Number(config.level);
+    const apronWidth = Number(config.apronWidth);
+    const sinkTarget = Number(config.sinkTarget);
+    texture.wrapS = texture.wrapT = THREE.ClampToEdgeWrapping;
+    texture.minFilter = texture.magFilter = THREE.NearestFilter;
+    texture.generateMipmaps = false;
+    texture.colorSpace = THREE.NoColorSpace;
+    texture.needsUpdate = true;
+    u.tOceanTerrain.value = texture;
+    u.uOceanTerrainSize.value.set(terrainSize[0], terrainSize[1]);
+    u.uOceanMapSize.value.set(mapSize[0], mapSize[1]);
+    u.uOceanMapCenter.value.set(
+      Number.isFinite(center[0]) ? center[0] : 0,
+      Number.isFinite(center[1]) ? center[1] : 0
+    );
+    u.uOceanLevel.value = Number.isFinite(level) ? level : 0;
+    u.uOceanTerrainApronWidth.value = Number.isFinite(apronWidth) && apronWidth > 0 ? apronWidth : 1;
+    u.uOceanTerrainSinkTarget.value = Number.isFinite(sinkTarget)
+      ? sinkTarget
+      : u.uOceanLevel.value - 3;
+    u.uUseOceanTerrain.value = true;
+    return true;
+  }
+
+  /**
+   * Build the ocean-front droplets as a companion Points object. The host owns
+   * placement; this surface owns cleanup and the shared animation uniforms.
+   * @param {Array<number[]|THREE.Vector2>} points local XZ positions
+   * @returns {THREE.Points|null}
+   */
+  setOceanShoreSplashPoints(points) {
+    this.clearOceanShoreSplash();
+    if (!this.material?.uniforms?.uUseOceanTerrain?.value || !Array.isArray(points) || points.length === 0) {
+      return null;
+    }
+    const positions = [];
+    for (const point of points) {
+      const x = Number(point?.x ?? point?.[0]);
+      const z = Number(point?.y ?? point?.[1]);
+      if (Number.isFinite(x) && Number.isFinite(z)) positions.push(x, 0, z);
+    }
+    if (positions.length === 0) return null;
+    const geometry = new THREE.BufferGeometry();
+    geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+    const material = new THREE.ShaderMaterial({
+      uniforms: this.material.uniforms,
+      vertexShader: `
+        uniform float uTime;
+        uniform float uShoreWaveSpeed;
+        uniform float uShoreWaveStrength;
+        uniform float uShoreWaveRange;
+        ${OCEAN_TERRAIN_GLSL}
+        ${OCEAN_SWASH_GLSL}
+        varying float vSplashAlpha;
+        void main() {
+          vec3 world = (modelMatrix * vec4(position, 1.0)).xyz;
+          float ground = sampleOceanTerrainHeight(world.xz) - uOceanLevel;
+          float crest = oceanSwashCrest(world.xz);
+          float trough = oceanSwashTrough(world.xz);
+          float rise = clamp((ground + 0.025 - trough) / max(crest - trough, 0.001), 0.0, 1.0);
+          float launch = 0.30 * (0.5 - sin(asin(1.0 - 2.0 * rise) / 3.0));
+          float cycleDuration = 1.0 / max(abs(uShoreWaveSpeed) * 0.1, 0.001);
+          float age = fract(oceanSwashPhase(world.xz, ground) - launch) * cycleDuration;
+          float seed = fract(sin(dot(world.xz, vec2(127.1, 311.7))) * 43758.5453);
+          float life = 0.55 + seed * 0.18;
+          vSplashAlpha = (uUseOceanTerrain ? 1.0 : 0.0) * (1.0 - smoothstep(0.15, life, age))
+            * step(-0.12, ground) * step(ground + 0.025, crest);
+          vec2 slope = vec2(
+            sampleOceanTerrainHeight(world.xz + vec2(0.2, 0.0)) - sampleOceanTerrainHeight(world.xz - vec2(0.2, 0.0)),
+            sampleOceanTerrainHeight(world.xz + vec2(0.0, 0.2)) - sampleOceanTerrainHeight(world.xz - vec2(0.0, 0.2))
+          );
+          vec2 drift = slope / max(length(slope), 0.001) * 0.5
+            + vec2(sin(seed * 40.0), cos(seed * 40.0)) * 0.25;
+          world.xz += drift * age;
+          world.y = ground + uOceanLevel + 0.04 + (1.7 + seed * 0.4) * age - 3.0 * age * age;
+          vec4 view = viewMatrix * vec4(world, 1.0);
+          gl_Position = projectionMatrix * view;
+          gl_PointSize = clamp((28.0 + seed * 20.0) / max(-view.z, 0.1), 1.0, 10.0);
+          if (vSplashAlpha <= 0.0) gl_Position = vec4(2.0, 2.0, 2.0, 1.0);
+        }
+      `,
+      fragmentShader: `
+        varying float vSplashAlpha;
+        void main() {
+          float circle = 1.0 - smoothstep(0.28, 0.5, length(gl_PointCoord - 0.5));
+          if (circle <= 0.0) discard;
+          gl_FragColor = vec4(0.88, 0.98, 1.0, circle * vSplashAlpha * 0.85);
+        }
+      `,
+      transparent: true,
+      depthTest: true,
+      depthWrite: false
+    });
+    this._oceanShoreSplash = new THREE.Points(geometry, material);
+    this._oceanShoreSplash.name = 'OceanShoreSplash';
+    this._oceanShoreSplash.frustumCulled = false;
+    return this._oceanShoreSplash;
+  }
+
+  clearOceanShoreSplash() {
+    if (!this._oceanShoreSplash) return;
+    this._oceanShoreSplash.removeFromParent();
+    this._oceanShoreSplash.geometry.dispose();
+    this._oceanShoreSplash.material.dispose();
+    this._oceanShoreSplash = null;
+  }
+
+  /**
    * v3 Step 3: 设置/清除水面法线贴图（Normal A/B，用于 Realistic/Hybrid 表面细节扰动法线）
    * @param {'A'|'B'} slot - 槽位
    * @param {THREE.Texture|null} texture - 法线贴图，传 null 或非法 slot 时回退到中性法线，不抛错
@@ -2710,6 +2979,7 @@ export class WaterSurface {
   }
 
   dispose() {
+    this.clearOceanShoreSplash();
     if (this.mesh) {
       this.scene.remove(this.mesh);
       this.mesh.geometry.dispose();
