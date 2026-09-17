@@ -11,6 +11,17 @@ import { applyMapOperations, type CodePlanAssetReadyPayload, type CodePlanPrevie
 import { isPointInsideWaterBody } from '../src/shared/mapWater';
 
 describe('map code planner', () => {
+  it.each(['indoor', 'outdoor'] as const)('uses activity-led detail and interaction-based decomposition for %s without expanding the budget', (sceneMode) => {
+    const map = createEmptyMap('scene', 'activity', [24, 8, 24], 'voxel', sceneMode);
+    const prompt = buildMapCodePlannerSystemPrompt(map, [], 0, 12, 'scene');
+    expect(prompt).toContain('Activity-led near-field composition');
+    expect(prompt).toContain('EXISTING asset budget');
+    expect(prompt).toContain('must retain its own identity');
+    expect(prompt).toContain('Do not use a fixed building-name checklist');
+    expect(prompt).toContain('Repeated standalone buildings may use 2-3 coherent variants');
+    expect(prompt).not.toContain('architecture, landmarks, creatures and functional objects at variants:1');
+  });
+
   it('persists render hints in the map transaction without clearing existing intent or the selected scheme', () => {
     const map = createEmptyMap();
     map.renderSchemeId = 'user-selected';

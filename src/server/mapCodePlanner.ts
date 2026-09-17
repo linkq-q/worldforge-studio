@@ -379,6 +379,14 @@ interface BezierFrame {
 
 const CODE_ASSET_LIGHT_CONTRACT = 'For functional lamps, lanterns, ceiling fixtures or neon emitters, requireAsset also accepts light:{kind:"point"|"spot",color:"#RRGGBB",intensity:0.5..12,range:1..20,offset:[localX,localY,localZ],direction?:[x,y,z],coneAngleDegrees?:10..90,penumbra?:0..1}. Declare this physical emitter metadata explicitly; bright geometry or emissive tags alone do not illuminate neighbors. Preserve it through asset adaptation. Do not light unrelated decorative objects. Final mood/exposure still belongs to the separately confirmed render stage.';
 
+const CODE_ACTIVITY_CONTRACT = `## Activity-led near-field composition
+Derive activities from the requested place, then choose useful objects, approach space, and supporting architecture. Do not use a fixed building-name checklist or invent human activity in untouched wilderness.
+Describe each authored group's activities and visible focal work area in its design intent. Keep independently usable objects as separate placements: an object that may be picked up, operated, opened, stored in, or replaced must retain its own identity. Fixed construction and tiny non-interactive decoration may remain inside a host asset.
+Prioritize activity anchors and their usable surrounding space within the EXISTING asset budget; trade redundant vegetation/decor variants for functional props and building diversity, never increase the budget or add filler. Reuse suitable props across groups. A visually empty working area is not made complete by unrelated rocks or flowers.
+Repeated standalone buildings may use 2-3 coherent variants when useful and affordable. Preserve architectural language, human scale and material identity while varying facades, roof silhouettes and frontage arrangements. Keep continuous connected modules at one variant for compatible joints. Never stretch a building arbitrarily to fake diversity.
+For important walk-up buildings request an open front or shallow visible interior with actual floor, openings and fixed structure, and reserve space for independently generated functional props. Do not duplicate a counter or workbench already present in the asset snapshot. Do not claim an interior exists merely because the host has a bounding box.
+Compose approach -> activity anchor -> supporting tools/storage -> restrained small accents, with readable silhouettes at human height as well as from overview. This is scene content and interaction intent, not executable gameplay logic.`;
+
 export interface CodeAssetRequirement {
   light?: MapAssetLight;
   key: string;
@@ -3064,6 +3072,7 @@ export function buildMapCodePlannerSystemPrompt(
   }));
   return `You are WorldForge Studio's procedural environment planner.${scopeContract}
 ${CODE_ASSET_LIGHT_CONTRACT}
+${CODE_ACTIVITY_CONTRACT}
 
 ## Output contract
 Return only one synchronous JavaScript function: function plan(api) { ... }.
@@ -3148,7 +3157,7 @@ When the minimum is greater than zero, declare and place that many prompt-specif
 Use api.asset(key,index) for generated assets; do not invent asset IDs and do not modify catalog IDs.
 Each asset prompt must describe a standalone reusable object with no ground, scene, text, or background unless the object itself requires it.
 The server attaches the selected palette intent to each asset request. Never copy palette instructions or raw HEX lists into requireAsset.prompt; keep the subject, structure, orientation and user-requested color semantics first.
-For a loose natural environment family such as trees, shrubs, rocks, plants, flowers or mushrooms that will be placed at least 4 times, use 3 seeded variants for a small repeated set, 4 by default, or up to 6 for dense forest vegetation when the asset budget permits; distribute api.asset(key,index) across placements. Keep connected modules, architecture, landmarks, creatures and functional objects at variants:1 unless the user explicitly asks otherwise.
+For a loose natural environment family such as trees, shrubs, rocks, plants, flowers or mushrooms that will be placed at least 4 times, use a few seeded variants only after reserving budget for activity anchors and useful building diversity; distribute api.asset(key,index) across placements. Keep continuous connected modules and unique landmarks at variants:1; repeated standalone buildings may use 2-3 coherent variants within the same budget.
 In unified scene ownership, label every generated family role:'structure' or role:'environment'. ${requestMode === 'refine' ? 'New assets must directly serve the requested delta.' : 'Structural anchors are mandatory; only replaceable natural accents may use optional:true.'}
 For any modular asset repeated along a line or curve, explicitly state its span axis, connection axis, and canonical dimensions: side-by-side modules should span local X with depth/front on local Z; traversal modules should span local Z. Never leave the long axis or dimensions implicit.
 Append this orientation instruction to every generated asset prompt: "Coordinate contract: Y+ is up, Z+ is the front/entrance/forward direction, X+ is right; place doors, facades, openings, windshields, or noses toward local Z+ and keep the model centered at its origin."
@@ -3207,6 +3216,7 @@ function buildIndoorMapCodePlannerSystemPrompt(
     : `\n## Unified indoor ownership\nYou are the single author of the complete indoor layout. No second director, specialist agent, or silent local backfill will redesign it. Local code only enforces room bounds, opening semantics, collision safety, attachment validity and door circulation. If a functional requirement is missing, this same Code Composer will receive a targeted repair request.\n`;
   return `You are WorldForge Studio's procedural indoor-scene planner.${refineContext}
 ${CODE_ASSET_LIGHT_CONTRACT}
+${CODE_ACTIVITY_CONTRACT}
 
 ## Output contract
 Return only one synchronous JavaScript function: function plan(api) { ... }.
