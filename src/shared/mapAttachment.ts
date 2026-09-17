@@ -19,7 +19,9 @@ export interface MapObjectAttachmentInput {
   name: string;
   parentId: string;
   asset: MapAsset;
-  kind: 'supported' | 'mounted';
+  kind: 'supported' | 'mounted' | 'local';
+  /** Model-local object origin; unlike supported/mounted, checked against the host itself. */
+  localPosition?: Vec3;
   side?: RoomWall;
   scale?: number;
   yaw?: number;
@@ -54,12 +56,16 @@ export function planMapObjectAttachment(map: EditableMap, input: MapObjectAttach
   object.heightMode = 'fixed';
   object.transform.scale = localScale;
   object.transform.rotation[1] = boundedNumber(input.yaw, 0, -Math.PI * 8, Math.PI * 8);
-  object.transform.position = input.kind === 'supported'
+  if (input.kind === 'local' && (!Array.isArray(input.localPosition) || input.localPosition.length !== 3 || !input.localPosition.every(Number.isFinite))) {
+    throw new Error('map_attachment_invalid_local_position');
+  }
+  object.transform.position = input.kind === 'local' ? [...input.localPosition!]
+    : input.kind === 'supported'
     ? supportedPosition(parentBounds, childBounds, localScale, parentWorld, offset, contact)
     : mountedPosition(parentBounds, childBounds, localScale, parentWorld, input.side, offset, contact, input.anchorY);
 
   assertAttachmentFitsMap(map, object, input.asset);
-  assertNoUnrelatedOverlap(map, object, input.asset);
+  assertNoUnrelatedOverlap(map, object, input.asset, input.kind === 'local');
   return object;
 }
 
@@ -186,11 +192,12 @@ function assertAttachmentFitsMap(map: EditableMap, object: MapObject, asset: Map
   }
 }
 
-function assertNoUnrelatedOverlap(map: EditableMap, object: MapObject, asset: MapAsset): void {
+function assertNoUnrelatedOverlap(map: EditableMap, object: MapObject, asset: MapAsset, includeHost = false): void {
   const preview = attachmentPreviewMap(map, object, asset);
   const boxes = getMapObjectAabbs(preview);
   const candidate = boxes.filter((box) => box.objectId === object.id);
   const relatedIds = mapObjectAncestorIds(preview, object.parentId!);
+  if (includeHost) relatedIds.clear();
   relatedIds.add(object.id);
   const unrelated = boxes.filter((box) => !relatedIds.has(box.objectId));
   if (candidate.some((left) => unrelated.some((right) => aabbIntersects(left, right)))) {

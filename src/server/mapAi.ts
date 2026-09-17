@@ -101,6 +101,8 @@ export interface MapAiOptions {
 }
 
 export interface AssetGenerationRequest {
+  /** Existing asset to decorate through Studio's existing /api/mount endpoint. */
+  mountOnAssetId?: string;
   name: string;
   prompt: string;
   tags: string[];

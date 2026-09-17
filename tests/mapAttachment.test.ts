@@ -50,6 +50,22 @@ const boxedAsset = (id: string, width: number, height: number, depth: number): M
 });
 
 describe('map object attachments', () => {
+  it('keeps local props separate and follows the rotated host while rejecting host penetration', () => {
+    const hostAsset = boxedAsset('host', 4, 3, 4);
+    const prop = boxedAsset('prop', 0.5, 0.5, 0.5);
+    const map = createEmptyMap();
+    const host = createMapObject('host', hostAsset.id);
+    host.transform.rotation[1] = Math.PI / 2;
+    host.transform.position = [4, 0, 1];
+    map.assets = [hostAsset, prop];
+    map.objects = [host];
+    const child = planMapObjectAttachment(map, {id:'prop',name:'prop',parentId:host.id,asset:prop,kind:'local',localPosition:[0,0,3]});
+    map.objects.push(child);
+    expect(getObjectWorldTransforms(map).get(child.id)!.position[0]).toBeCloseTo(7);
+    expect(child.assetId).toBe(prop.id);
+    expect(() => planMapObjectAttachment(map, {id:'inside',name:'inside',parentId:host.id,asset:prop,kind:'local',localPosition:[0,0,0]})).toThrow('map_attachment_unrelated_overlap');
+  });
+
   it('places supported and mounted children in a movable parent hierarchy', () => {
     const baseAsset = asset('base', 2, 3);
     const tierAsset = asset('tier', 1.2, 1.5);

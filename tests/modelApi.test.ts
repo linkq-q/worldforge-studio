@@ -4,6 +4,7 @@ import os from 'node:os';
 import path from 'node:path';
 import {
   generateModel,
+  mountModel,
   llmChat,
   parseSseModel,
   replayModel,
@@ -11,6 +12,19 @@ import {
 } from '../src/server/modelApi';
 
 describe('model API adapter', () => {
+  it('uses the existing mount contract without mutating the source or retrying unsupported backends', async () => {
+    const primary = { nodes: [{ id: 'host' }] };
+    const combined = { nodes: [{ id: 'host' }, { id: 'accessory', mounted: true }] };
+    const fetchImpl = vi.fn().mockResolvedValueOnce(new Response(JSON.stringify({ok:true,modelJson:combined})))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ok:false,error:'no_metadata'}), {status:400}));
+    expect(await mountModel(primary, 'awning', 'above entrance', {fetchImpl,apiBase:'https://example.test',providers:['gpt']})).toEqual(combined);
+    expect(fetchImpl.mock.calls[0][0]).toBe('https://example.test/api/mount');
+    expect(JSON.parse(fetchImpl.mock.calls[0][1].body)).toEqual({primary,secondary:'awning',description:'above entrance',provider:'gpt'});
+    expect(primary.nodes).toHaveLength(1);
+    await expect(mountModel(primary, 'awning', '', {fetchImpl})).rejects.toThrow('map_asset_generation_failed:mount:no_metadata');
+    expect(fetchImpl).toHaveBeenCalledTimes(2);
+  });
+
   const materialTags = { version: 'material-tags-test', tags: {} };
   it('parses SSE model result and errors', () => {
     const parsed = parseSseModel([

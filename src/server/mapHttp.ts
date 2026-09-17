@@ -35,7 +35,7 @@ import { reviewMapVisual } from './indoorVisualReview';
 import { planMapComposition } from './mapCompositionWorkflow';
 import { generateMapLayoutSuggestion } from './mapLayoutAi';
 import { generateMapAssetWithRetry } from './mapAssetGenerationRetry';
-import { generateModel, replayModel } from './modelApi';
+import { generateModel, mountModel, replayModel } from './modelApi';
 import {
   normalizeModelGenerationMode,
   type ModelGenerationMode
@@ -718,7 +718,15 @@ async function handleEditorMaps(req: Req, res: Res, store: MapStore, parts: stri
             const variantIndex = request.variantIndex ?? 0;
             const seededFamily = request.seedFamilyKey && (request.variantCount ?? 0) > 1;
             let generatedModelJson: unknown;
-            if (seededFamily) {
+            if (request.mountOnAssetId) {
+              const primary = assets.find((asset) => asset.id === request.mountOnAssetId);
+              if (!primary) throw new Error('map_asset_generation_failed:mount_source_missing');
+              report({ status: 'running', detail: '通过现有 Mount 接口添加固定配件（一次装配请求）' });
+              recordGenerationTrace('asset.mount.request', { sourceAssetId: primary.id, name: request.name });
+              generatedModelJson = await mountModel(primary.modelJson, request.prompt, request.prompt, {
+                providers: [modelProvider], signal: controller.signal
+              });
+            } else if (seededFamily) {
               let source = seededModelSources.get(request.seedFamilyKey!);
               if (!source) {
                 source = generateMapAssetWithRetry(request.name, () => generateModel(generationPrompt, {

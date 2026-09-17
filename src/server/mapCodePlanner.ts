@@ -322,7 +322,8 @@ interface PlacementIntent {
   foundation?: MapFoundation;
   attachment?: {
     parentId: string;
-    kind: 'supported' | 'mounted';
+    kind: 'supported' | 'mounted' | 'local';
+    localPosition?: Point3;
     side?: RoomWall;
     offset?: Point2;
     contact?: number;
@@ -342,7 +343,8 @@ interface AttachmentInput {
   assetId?: string | null;
   name?: string;
   parentId: string;
-  kind: 'supported' | 'mounted';
+  kind: 'supported' | 'mounted' | 'local';
+  localPosition?: Point3;
   side?: RoomWall;
   offset?: Point2;
   contact?: number;
@@ -380,6 +382,8 @@ interface BezierFrame {
 const CODE_ASSET_LIGHT_CONTRACT = 'For functional lamps, lanterns, ceiling fixtures or neon emitters, requireAsset also accepts light:{kind:"point"|"spot",color:"#RRGGBB",intensity:0.5..12,range:1..20,offset:[localX,localY,localZ],direction?:[x,y,z],coneAngleDegrees?:10..90,penumbra?:0..1}. Declare this physical emitter metadata explicitly; bright geometry or emissive tags alone do not illuminate neighbors. Preserve it through asset adaptation. Do not light unrelated decorative objects. Final mood/exposure still belongs to the separately confirmed render stage.';
 
 const CODE_ACTIVITY_CONTRACT = `## Activity-led near-field composition
+Existing asset decoration: requireAsset accepts mountOnAssetId:anExistingCatalogAssetId. Its prompt then describes ONLY the fixed accessory and mounting instruction. This calls the existing Studio Mount API once per variant and saves a NEW combined asset, never mutating the source. Each result consumes one slot of the existing asset budget. Use only for non-interactive fixed accessories, never to swallow an independently usable prop. On failure preserve the original host; do not remove the old object before a successful replacement exists. Do not use mountOnAssetId for not-yet-generated placeholders.
+Independent composition: api.placeRelative({parentId,assetId,name?,localPosition:[x,y,z],rotationY?,scale?,role?,groupId?,layer?}) keeps a separate child object. Coordinates are in the rendered host's centered-XZ, floor-aligned model frame, before its world transform; child scale is world scale. The local position is the child model origin, not its center or a world position. Host and nearby collisions are checked; unsafe local items are skipped with diagnostics, not dropped at the host origin. Prefer api.attach supported/mounted for known whole-host top or facade contact. Use local placement only with known floor/surface geometry, never inferred empty space inside an overall bounding box.
 Derive activities from the requested place, then choose useful objects, approach space, and supporting architecture. Do not use a fixed building-name checklist or invent human activity in untouched wilderness.
 Describe each authored group's activities and visible focal work area in its design intent. Keep independently usable objects as separate placements: an object that may be picked up, operated, opened, stored in, or replaced must retain its own identity. Fixed construction and tiny non-interactive decoration may remain inside a host asset.
 Prioritize activity anchors and their usable surrounding space within the EXISTING asset budget; trade redundant vegetation/decor variants for functional props and building diversity, never increase the budget or add filler. Reuse suitable props across groups. A visually empty working area is not made complete by unrelated rocks or flowers.
@@ -388,6 +392,7 @@ For important walk-up buildings request an open front or shallow visible interio
 Compose approach -> activity anchor -> supporting tools/storage -> restrained small accents, with readable silhouettes at human height as well as from overview. This is scene content and interaction intent, not executable gameplay logic.`;
 
 export interface CodeAssetRequirement {
+  mountOnAssetId?: string;
   light?: MapAssetLight;
   key: string;
   name: string;
@@ -401,6 +406,7 @@ export interface CodeAssetRequirement {
 }
 
 interface CodeAssetRequirementInput {
+  mountOnAssetId?: string;
   light?: MapAssetLight;
   key: string;
   name: string;
@@ -601,6 +607,7 @@ export async function generateMapCodeSuggestion(
             : ''
         ].filter(Boolean).join('\n'),
         tags: requirement.tags,
+        ...(requirement.mountOnAssetId ? { mountOnAssetId: requirement.mountOnAssetId } : {}),
         ...(requirement.light ? { light: requirement.light } : {}),
         mode: map.assetGenerationMode,
         ...(seededFamily ? {
@@ -893,6 +900,15 @@ function completeGeneratedMapCodeSuggestion(
   final: MapAiSuggestion,
   context: Omit<MapCodeReplayContext, 'expiresAt'>
 ): MapAiSuggestion {
+  const failedMountSources = new Set(context.failedTasks.flatMap(task => {
+    const source = context.requirements.find(requirement => requirement.key === task.key)?.mountOnAssetId;
+    return source ? [source] : [];
+  }));
+  if (failedMountSources.size) {
+    const retained = new Set(map.objects.filter(object => object.assetId && failedMountSources.has(object.assetId)).map(object => object.id));
+    final = { ...final, operations: final.operations.filter(operation =>
+      !((operation.type === 'object.remove' || operation.type === 'object.update') && retained.has(operation.objectId))) };
+  }
   const placedAssetIds = new Set(final.operations.flatMap((operation) => (
     operation.type === 'object.add' && operation.object.assetId ? [operation.object.assetId] : []
   )));
@@ -1995,6 +2011,7 @@ function executeMapCodePlanInternal(
         });
       }
       const existing = requirements.get(requirement.key);
+      if (requirement.mountOnAssetId && !assetById.has(requirement.mountOnAssetId)) throw new Error('map_mount_source_not_available');
       if (existing && !sameCodeAssetRequirement(existing, requirement)) {
         throw new Error(`conflicting_map_code_asset_requirement:${requirement.key}`);
       }
@@ -2105,6 +2122,10 @@ function executeMapCodePlanInternal(
         foundation
       });
     },
+    placeRelative(input: Omit<AttachmentInput, 'kind'> & { localPosition: Point3 }): string {
+      record('placeRelative');
+      return api.attach({ ...input, kind: 'local' });
+    },
     attach(input: AttachmentInput): string {
       record('attach');
       if (placements.length >= MAX_PLACEMENTS) throw new Error('map_code_plan_too_many_placements');
@@ -2147,7 +2168,8 @@ function executeMapCodePlanInternal(
         ...placementDesignMetadata(input.groupId, input.layer),
         attachment: {
           parentId,
-          kind: input.kind === 'mounted' ? 'mounted' : 'supported',
+          kind: input.kind === 'local' ? 'local' : input.kind === 'mounted' ? 'mounted' : 'supported',
+          ...(input.kind === 'local' ? { localPosition: point3(input.localPosition ?? []) } : {}),
           ...(input.side ? { side: normalizeRoomWall(input.side) } : {}),
           ...(attachmentOffset ? { offset: attachmentOffset } : {}),
           ...(input.contact === undefined ? {} : { contact: finite(input.contact) }),
@@ -2609,6 +2631,7 @@ function executeMapCodePlanInternal(
             parentId,
             asset,
             kind: placement.attachment.kind,
+            localPosition: placement.attachment.localPosition,
             side: placement.attachment.side,
             scale: placement.scale[0],
             yaw: placement.rotationY,
@@ -2621,11 +2644,19 @@ function executeMapCodePlanInternal(
             ...(placement.designGroupId ? { designGroupId: placement.designGroupId } : {}),
             ...(placement.compositionLayer ? { compositionLayer: placement.compositionLayer } : {})
           });
-        } catch {
+        } catch (error) {
+          if (placement.attachment.kind === 'local') {
+            reportIssue({ key: `local:${placement.referenceId}`, code: 'code.geometry-unresolved', message: `已跳过无法安全放置的局部物件 ${placement.name}：${error instanceof Error ? error.message : 'invalid_placement'}`, repaired: false });
+            continue;
+          }
           attachmentFallbackCount += mode === 'final' ? 1 : 0;
           object = placementObject(placement, objectId, terrainMap, map.sceneMode);
         }
       } else {
+        if (placement.attachment.kind === 'local' && mode === 'final') {
+          reportIssue({ key: `local:${placement.referenceId}`, code: 'code.geometry-unresolved', message: `局部物件 ${placement.name} 缺少可用宿主或资产，已跳过。`, repaired: false });
+          continue;
+        }
         attachmentFallbackCount += mode === 'final' ? 1 : 0;
         object = placementObject(placement, objectId, terrainMap, map.sceneMode);
       }
@@ -3631,6 +3662,7 @@ function normalizeCodeAssetRequirement(
     key,
     name,
     prompt,
+    ...(typeof input.mountOnAssetId === 'string' && input.mountOnAssetId.trim() ? { mountOnAssetId: input.mountOnAssetId.trim() } : {}),
     tags: normalizeAssetTags(input.tags) ?? [],
     ...(light ? { light } : {}),
     variants: boundedCount(input.variants ?? 1, 1, 8),
@@ -3648,6 +3680,7 @@ function codeAssetOrientationPrompt(prompt: string, dimensions?: Point3): string
 }
 
 function supportsSeededEnvironmentVariants(requirement: CodeAssetRequirement): boolean {
+  if (requirement.mountOnAssetId) return false;
   if (requirement.variants < 2 || (requirement.role !== undefined && requirement.role !== 'environment')) return false;
   const semantic = `${requirement.name} ${requirement.prompt} ${requirement.tags.join(' ')}`;
   return /tree|shrub|bush|rock|stone|plant|flower|mushroom|cactus|树|灌木|岩|石|植物|花|蘑菇|仙人掌/i.test(semantic)
@@ -3672,6 +3705,7 @@ function normalizeCodeAssetKey(value: string): string {
 
 function sameCodeAssetRequirement(left: CodeAssetRequirement, right: CodeAssetRequirement): boolean {
   return left.name === right.name
+    && left.mountOnAssetId === right.mountOnAssetId
     && left.prompt === right.prompt
     && left.variants === right.variants
     && left.tags.join('\n') === right.tags.join('\n')

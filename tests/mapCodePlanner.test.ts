@@ -11,6 +11,37 @@ import { applyMapOperations, type CodePlanAssetReadyPayload, type CodePlanPrevie
 import { isPointInsideWaterBody } from '../src/shared/mapWater';
 
 describe('map code planner', () => {
+  it('routes existing-host decoration through mount without changing the selected source', async () => {
+    const host = testAsset('existing-host', 'Host');
+    const mounted = testAsset('decorated-host', 'Decorated host');
+    const createAsset = vi.fn().mockResolvedValue(mounted);
+    const code = `function plan(api) {
+      const decorated=api.requireAsset({key:'decorated',name:'装饰建筑',prompt:'Add a small awning over the entrance',mountOnAssetId:'existing-host',role:'structure'});
+      api.place({assetId:api.asset(decorated),position:[10,0],role:'structure'});
+    }`;
+    const result = await generateMapCodeSuggestion('decorate', createEmptyMap(), [host], {
+      approvedCode:code, reuseExistingAssets:true, reusableAssetIds:[host.id], minNewAssets:0,maxNewAssets:1, createAsset,
+      fetchImpl:vi.fn().mockResolvedValue(new Response(JSON.stringify({ok:true,content:code})))
+    });
+    expect(createAsset.mock.calls[0][0]).toMatchObject({mountOnAssetId:host.id});
+    expect(result.generatedAssets).toHaveLength(1);
+    expect(host.id).toBe('existing-host');
+  });
+
+  it('executes local object composition and reports blocked children without dropping them at the origin', () => {
+    const host = testAsset('host', 'host');
+    const prop = testAsset('prop', 'prop');
+    const suggestion = executeMapCodePlan(`function plan(api) {
+      const host=api.place({assetId:'host',position:[0,0]});
+      api.placeRelative({parentId:host,assetId:'prop',name:'safe',localPosition:[0,0,5]});
+      api.placeRelative({parentId:host,assetId:'prop',name:'blocked',localPosition:[0,0,0]});
+    }`, createEmptyMap(), [host,prop]);
+    const saved = applyMapOperations({...createEmptyMap(),assets:[host,prop]}, suggestion.operations);
+    expect(saved.objects.find(object => object.name === 'safe')?.parentId).toBeTruthy();
+    expect(saved.objects.some(object => object.name === 'blocked')).toBe(false);
+    expect(suggestion.diagnostics).toEqual(expect.arrayContaining([expect.objectContaining({code:'code.geometry-unresolved'})]));
+  });
+
   it.each(['indoor', 'outdoor'] as const)('uses activity-led detail and interaction-based decomposition for %s without expanding the budget', (sceneMode) => {
     const map = createEmptyMap('scene', 'activity', [24, 8, 24], 'voxel', sceneMode);
     const prompt = buildMapCodePlannerSystemPrompt(map, [], 0, 12, 'scene');

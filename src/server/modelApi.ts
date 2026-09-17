@@ -146,6 +146,21 @@ async function readSseModelResponse(
   return { modelJson, error, stages };
 }
 
+/** Existing Studio API: preserve the source asset; callers save the result as a new asset. */
+export async function mountModel(primary: unknown, secondary: unknown, description: string, options: ModelApiOptions = {}): Promise<unknown> {
+  options.signal?.throwIfAborted();
+  const response = await (options.fetchImpl ?? fetch)(`${options.apiBase ?? MODEL_API_BASE}/api/mount`, {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ primary, secondary, description, provider: options.providers?.[0] ?? MODEL_PROVIDERS[0] }),
+    signal: options.signal ? AbortSignal.any([options.signal, AbortSignal.timeout(300_000)]) : AbortSignal.timeout(300_000)
+  });
+  const data = await response.json() as { ok?: boolean; modelJson?: { nodes?: unknown[] }; error?: string };
+  if (!response.ok || !data.ok || !Array.isArray(data.modelJson?.nodes) || !data.modelJson.nodes.length) {
+    throw new Error(`map_asset_generation_failed:mount:${data.error ?? response.status}`);
+  }
+  return data.modelJson;
+}
+
 export async function generateModel(description: string, options: ModelApiOptions = {}): Promise<unknown> {
   options.signal?.throwIfAborted();
   const fetcher = options.fetchImpl ?? fetch;
