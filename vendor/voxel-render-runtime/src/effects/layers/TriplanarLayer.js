@@ -349,7 +349,7 @@ export class TriplanarLayer extends EffectLayer {
       '    float f1k; vec2 cellIdK;',
       '    triplanarVoronoi(knotUv, f1k, cellIdK);',
       '    float hasKnot = step(0.78, triplanarHash(cellIdK + 41.7));',
-      '    knotMask = smoothstep(0.5, 0.0, f1k) * hasKnot;',
+      '    knotMask = smoothstep(0.3, 0.0, f1k) * hasKnot;',
       '    float knotPhase = f1k * 18.0;',
       '    grainPhase = mix(grainPhase, knotPhase, knotMask * uTriplanarKnotStrength);',
       '    knotDarken = knotMask * uTriplanarKnotStrength * 0.35;',

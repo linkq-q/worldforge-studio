@@ -48,4 +48,24 @@ describe('Triplanar projection shader', () => {
     expect(shader.fragmentShader).toContain('triPatternIsAbsolute');
     material.dispose();
   });
+
+  it('keeps wood knots compact without changing their world-space frequency', () => {
+    const material = new THREE.MeshStandardMaterial();
+    createEffectRuntime().runtime.applyToMaterial(material, {
+      schemaVersion: '1.0',
+      materialLayers: ['Triplanar'],
+      layerParams: { Triplanar: { pattern: 0, scale: 2, knotStrength: 0.2 } }
+    });
+    const shader = {
+      uniforms: {},
+      vertexShader: THREE.ShaderLib.standard.vertexShader,
+      fragmentShader: THREE.ShaderLib.standard.fragmentShader
+    };
+
+    material.onBeforeCompile(shader as THREE.WebGLProgramParametersWithUniforms, {} as THREE.WebGLRenderer);
+
+    expect(shader.fragmentShader).toContain('vec2 knotUv = triUv * uTriplanarScale * 0.4;');
+    expect(shader.fragmentShader).toContain('knotMask = smoothstep(0.3, 0.0, f1k) * hasKnot;');
+    material.dispose();
+  });
 });
