@@ -5,6 +5,23 @@ import { normalizeMapDesignSemantics } from '../src/shared/mapDesign';
 import { createRenderSceneProfile, normalizeRenderSceneProfile } from '../src/shared/renderSceneProfile';
 
 describe('render scene profile', () => {
+  it('sends world-space child transforms and normalized district geometry', () => {
+    const map = createEmptyMap();
+    const host = createMapObject('host');
+    host.transform.position = [10, 0, 0];
+    host.transform.rotation[1] = Math.PI / 2;
+    const child = createMapObject('child');
+    child.parentId = host.id;
+    child.transform.position = [0, 0, 2];
+    map.objects = [host, child];
+    map.designSemantics = normalizeMapDesignSemantics({groups:[{id:'work',spatialRole:'urban-fabric',region:{kind:'circle',x:4,z:2,radius:5}}]}, map.box.size);
+    const profile = normalizeRenderSceneProfile(createRenderSceneProfile(map))!;
+    expect(profile.targets!.objects[1].position[0]).toBeCloseTo(12);
+    expect(profile.targets!.objects[1].position[2]).toBeCloseTo(0);
+    expect(profile.targets!.objects[1].rotation![1]).toBeCloseTo(Math.PI / 2);
+    expect(profile.sceneArtBrief!.groups[0]).toMatchObject({spatialRole:'urban-fabric',region:{kind:'circle',x:4,z:2,radius:5}});
+  });
+
   it('summarizes the current indoor room without sending the whole map', () => {
     const map = createEmptyMap('office', 'office', [12, 3.2, 9], 'voxel', 'indoor', [12, 3.2, 9]);
     map.room!.openings = [

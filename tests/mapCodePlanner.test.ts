@@ -11,6 +11,21 @@ import { applyMapOperations, type CodePlanAssetReadyPayload, type CodePlanPrevie
 import { isPointInsideWaterBody } from '../src/shared/mapWater';
 
 describe('map code planner', () => {
+  it('persists render hints in the map transaction without clearing existing intent or the selected scheme', () => {
+    const map = createEmptyMap();
+    map.renderSchemeId = 'user-selected';
+    map.renderPromptSuggestions = ['Keep the calm atmosphere'];
+    const suggestion = executeMapCodePlan(`function plan(api) {
+      api.renderSuggestion('Make the activity area readable from the entrance');
+      api.renderSuggestion('Make the activity area readable from the entrance');
+    }`, map);
+    const saved = applyMapOperations(map, suggestion.operations);
+    expect(saved.renderPromptSuggestions).toEqual(['Keep the calm atmosphere', 'Make the activity area readable from the entrance']);
+    expect(saved.renderSchemeId).toBe('user-selected');
+    const unchanged = executeMapCodePlan(`function plan(api) { api.place({name:'marker',position:[0,0]}); }`, saved);
+    expect(applyMapOperations(saved, unchanged.operations).renderPromptSuggestions).toEqual(saved.renderPromptSuggestions);
+  });
+
   it('plans a terrain-following foundation and lifts linked buildings onto its top', () => {
     const map = createEmptyMap('Foundation', 'foundation-code', [24, 8, 24]);
     map.terrain.heights = map.terrain.heights.map((_, index) => (index % 9) * 0.08);

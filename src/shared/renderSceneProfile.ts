@@ -1,12 +1,12 @@
 import { evaluateIndoorLightCoverage } from './indoorLighting';
-import type { EditableMap, MapAsset, MapSceneMode } from './map';
-import type { MapExperienceMode, MapFocusKind, MapRevealMode, MapRelationKind } from './mapDesign';
+import { getObjectWorldTransforms, type EditableMap, type MapAsset, type MapSceneMode } from './map';
+import { normalizeMapDesignSemantics, type MapDesignGroup, type MapExperienceMode, type MapFocusKind, type MapRevealMode, type MapRelationKind } from './mapDesign';
 
 /** Map-authored composition cues, not a RenderPlan or a second styling authority. */
 export interface SceneArtBrief {
   intent: string;
   experienceMode: MapExperienceMode;
-  groups: Array<{ id: string; name: string; intent: string; focusIds: string[]; guideIds: string[] }>;
+  groups: Array<Pick<MapDesignGroup, 'id' | 'name' | 'intent' | 'focusIds' | 'guideIds' | 'region' | 'spatialRole'>>;
   focuses: Array<{ id: string; groupId: string; name: string; kind: MapFocusKind; reveal: MapRevealMode; objectId?: string }>;
   viewpoints: Array<{ role: 'entry' | 'route' | 'node' | 'overview'; point: [number, number]; targetFocusId?: string }>;
   relations: Array<{ kind: MapRelationKind; sourceGroupId: string; targetGroupId: string }>;
@@ -16,7 +16,7 @@ export interface SceneArtBrief {
 export interface RenderSceneProfile {
   sceneArtBrief?: SceneArtBrief;
   targets?: {
-    objects: Array<{ id: string; name: string; position: [number, number, number]; parentId?: string; parts: Array<{ id: string; tags: string[] }> }>;
+    objects: Array<{ id: string; name: string; position: [number, number, number]; rotation?: [number, number, number]; scale?: [number, number, number]; parentId?: string; parts: Array<{ id: string; tags: string[] }> }>;
     zones: Array<{ id: string; tags: string[]; center: [number, number]; radius: number }>;
     grassLayers: Array<{ id: string; preset: string }>;
   };
@@ -55,11 +55,14 @@ export function createRenderSceneProfile(map: EditableMap): RenderSceneProfile {
   const tags = new Set(assets.flatMap((asset) => asset.tags ?? []).map((tag) => tag.toLowerCase()));
   const direction = map.interiorArtDirection;
   const design = map.designSemantics;
+  const worldTransforms = getObjectWorldTransforms(map);
   const sceneArtBrief: SceneArtBrief | undefined = design.groups.length || map.renderPromptSuggestions.length ? {
     intent: design.intent,
     experienceMode: design.experienceMode,
     groups: design.groups.slice(0, 16).map((group) => ({
       id: group.id, name: group.name, intent: group.intent,
+      ...(group.spatialRole ? { spatialRole: group.spatialRole } : {}),
+      ...(group.region ? { region: group.region } : {}),
       focusIds: group.focusIds.slice(0, 8),
       guideIds: [...new Set([...group.guideIds, ...group.entryGuideIds, ...group.exitGuideIds, ...group.axisGuideIds])].slice(0, 16)
     })),
@@ -80,8 +83,9 @@ export function createRenderSceneProfile(map: EditableMap): RenderSceneProfile {
     targets: {
       objects: map.objects.filter(object => object.visible).slice(0, 128).map(object => {
         const asset = assets.find(asset => asset.id === object.assetId);
+        const world = worldTransforms.get(object.id)!;
         const nodes = (asset?.modelJson as { nodes?: Array<{ id?: string; tags?: Array<{ tag?: string; value?: unknown }> }> })?.nodes;
-        return { id: object.id, name: object.name, position: [...object.transform.position], ...(object.parentId ? { parentId: object.parentId } : {}), parts: (Array.isArray(nodes) ? nodes : []).filter(node => node?.id && Array.isArray(node.tags) && node.tags.length).slice(0, 16).map(node => ({ id: node.id!, tags: node.tags!.slice(0, 8).filter(Boolean).map(tag => typeof tag === 'object' ? `${tag.tag}:${tag.value ?? ''}` : String(tag)) })) };
+        return { id: object.id, name: object.name, position: [...world.position], rotation: [...world.rotation], scale: [...world.scale], ...(object.parentId ? { parentId: object.parentId } : {}), parts: (Array.isArray(nodes) ? nodes : []).filter(node => node?.id && Array.isArray(node.tags) && node.tags.length).slice(0, 16).map(node => ({ id: node.id!, tags: node.tags!.slice(0, 8).filter(Boolean).map(tag => typeof tag === 'object' ? `${tag.tag}:${tag.value ?? ''}` : String(tag)) })) };
       }),
       zones: map.visualSemantics.zones.slice(0, 64).map(zone => ({ id: zone.id, tags: [...zone.tags], center: [...zone.center], radius: zone.radius })),
       grassLayers: map.grassLayers.slice(0, 8).map(layer => ({ id: layer.id, preset: layer.preset }))
@@ -165,8 +169,10 @@ function normalizeSceneArtBrief(input: SceneArtBrief): SceneArtBrief {
   return {
     intent: text(input.intent, 500),
     experienceMode: choice(input.experienceMode, ['immediate', 'sequential', 'mixed'], 'mixed'),
-    groups: list(input.groups, 16).map((group) => ({
+    groups: normalizeMapDesignSemantics({ groups: list(input.groups, 16), focuses: input.focuses }, [20000, 10000, 20000]).groups.map((group) => ({
       id: text(group.id, 80), name: text(group.name, 80), intent: text(group.intent, 240),
+      ...(group.spatialRole ? { spatialRole: group.spatialRole } : {}),
+      ...(group.region ? { region: group.region } : {}),
       focusIds: texts(group.focusIds, 8, 80), guideIds: texts(group.guideIds, 16, 80)
     })),
     focuses: list(input.focuses, 24).map((focus) => ({
@@ -185,7 +191,7 @@ function normalizeSceneArtBrief(input: SceneArtBrief): SceneArtBrief {
       kind: choice(relation.kind, ['attract', 'repel', 'support'], 'support'),
       sourceGroupId: text(relation.sourceGroupId, 80), targetGroupId: text(relation.targetGroupId, 80)
     })),
-    renderHints: texts(input.renderHints, 8, 80)
+    renderHints: texts(input.renderHints, 8, 160)
   };
 }
 
@@ -193,7 +199,7 @@ function normalizeRenderTargets(input: NonNullable<RenderSceneProfile['targets']
   const list = (value: unknown, limit: number): Array<Record<string, unknown>> => Array.isArray(value) ? value.filter(v => v && typeof v === 'object').slice(0, limit) : [];
   const coordinate = (value: unknown, axis: number) => number(Array.isArray(value) ? value[axis] : 0, -10000, 10000);
   return {
-    objects: list(input.objects, 128).map(object => ({ id: text(object.id, 120), name: text(object.name, 80), position: [coordinate(object.position, 0), coordinate(object.position, 1), coordinate(object.position, 2)], ...(object.parentId ? { parentId: text(object.parentId, 120) } : {}), parts: list(object.parts, 16).map(part => ({ id: text(part.id, 120), tags: texts(part.tags, 8, 80) })) })),
+    objects: list(input.objects, 128).map(object => ({ id: text(object.id, 120), name: text(object.name, 80), position: [coordinate(object.position, 0), coordinate(object.position, 1), coordinate(object.position, 2)], ...(Array.isArray(object.rotation) ? { rotation: [coordinate(object.rotation, 0), coordinate(object.rotation, 1), coordinate(object.rotation, 2)] as [number, number, number] } : {}), ...(Array.isArray(object.scale) ? { scale: [coordinate(object.scale, 0), coordinate(object.scale, 1), coordinate(object.scale, 2)] as [number, number, number] } : {}), ...(object.parentId ? { parentId: text(object.parentId, 120) } : {}), parts: list(object.parts, 16).map(part => ({ id: text(part.id, 120), tags: texts(part.tags, 8, 80) })) })),
     zones: list(input.zones, 64).map(zone => ({ id: text(zone.id, 120), tags: texts(zone.tags, 8, 40), center: [coordinate(zone.center, 0), coordinate(zone.center, 1)], radius: number(zone.radius, 0, 10000) })),
     grassLayers: list(input.grassLayers, 8).map(layer => ({ id: text(layer.id, 120), preset: text(layer.preset, 40) }))
   };

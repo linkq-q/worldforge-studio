@@ -2534,7 +2534,7 @@ function executeMapCodePlanInternal(
       repairHint: 'Add at least one recognizable structural anchor that serves the requested place, then compose its supporting spatial edges before decoration.'
     });
   }
-  if (placements.length === 0 && sceneOperations.length === 0 && missingAssetBindings.size === 0) {
+  if (placements.length === 0 && sceneOperations.length === 0 && missingAssetBindings.size === 0 && renderPromptSuggestions.length === 0) {
     throw new Error('empty_map_code_plan');
   }
   if (mode === 'discovery') {
@@ -2671,6 +2671,12 @@ function executeMapCodePlanInternal(
     ...accessRepair.operations,
     ...linkedObjectUpdates
   ];
+  if (renderPromptSuggestions.length > 0) {
+    operations.push({
+      type: 'map.update',
+      renderPromptSuggestions: [...new Set([...map.renderPromptSuggestions, ...renderPromptSuggestions])].slice(-8)
+    });
+  }
   recordGenerationTrace('layout.before-relations', { mode, operations });
   if (designCallCount > 0 || map.designSemantics.groups.length > 0) {
     designSemantics = remapMapDesignObjectReferences(designSemantics, objectIdByReference);
