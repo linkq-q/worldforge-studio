@@ -19,11 +19,27 @@ interface WaterShoreSurface {
   setShoreWorldRegion(centerXZ: { x: number; y: number } | null, size?: number): void;
 }
 
+interface WaterOceanSurface {
+  setOceanTerrainTexture(texture: THREE.Texture | null, config?: object): boolean;
+  setOceanShoreSplashPoints(points: Array<[number, number]>): THREE.Points | null;
+}
+
 export interface WaterShoreBinding {
   texture: THREE.Texture;
   center: [number, number];
   size: number;
   worldSpace?: boolean;
+}
+
+export interface WaterOceanTerrainBinding {
+  texture: THREE.Texture;
+  terrainSize: [number, number];
+  mapSize: [number, number];
+  center: [number, number];
+  level: number;
+  apronWidth: number;
+  sinkTarget: number;
+  splashPoints: Array<[number, number]>;
 }
 
 export function shouldUseSceneDepthForWater(binding: WaterShoreBinding | undefined): boolean {
@@ -85,6 +101,14 @@ export function syncWaterSurfaceShore(
   surface.setShoreDistanceTexture(binding.texture);
   if (binding.worldSpace === false) surface.setShoreWorldRegion(null);
   else surface.setShoreWorldRegion({ x: binding.center[0], y: binding.center[1] }, binding.size);
+}
+
+export function syncWaterSurfaceOcean(
+  surface: WaterOceanSurface,
+  binding: WaterOceanTerrainBinding
+): THREE.Points | null {
+  const enabled = surface.setOceanTerrainTexture(binding.texture, binding);
+  return enabled ? surface.setOceanShoreSplashPoints(binding.splashPoints) : null;
 }
 
 export function configureWaterReflection(

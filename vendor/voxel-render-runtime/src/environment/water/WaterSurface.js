@@ -156,6 +156,7 @@ const WATER_VERTEX_SHADER = /* glsl */ `
   uniform vec2 uShoreWorldCenter;
   uniform float uShoreWorldSize;
   uniform bool uShoreWaveEnabled;
+  uniform float uShoreWaveStrength;
   uniform float uShoreWaveRange;
   uniform float uShoreWaveFrequency;
   uniform float uShoreWaveSpeed;
@@ -763,6 +764,8 @@ const WATER_FRAGMENT_SHADER = /* glsl */ `
     return clamp(factor, absorptionMin, absorptionMax);
   }
 
+  ${OCEAN_SWASH_GLSL}
+
   void main() {
     // ============================================
     // Step 0: 计算屏幕 UV（用于深度纹理采样）
@@ -784,7 +787,8 @@ const WATER_FRAGMENT_SHADER = /* glsl */ `
     float hasDepth = uHasDepthTexture ? 1.0 : 0.0;
     float oceanWaterDepth = 1000000.0;
     if (uUseOceanTerrain) {
-      oceanWaterDepth = vWorldPosition.y - sampleOceanTerrainHeight(vWorldPosition.xz);
+      float oceanSurfaceHeight = uOceanLevel + computeOceanSwashHeight(vWorldPosition.xz, 0.0);
+      oceanWaterDepth = oceanSurfaceHeight - sampleOceanTerrainHeight(vWorldPosition.xz);
       if (oceanWaterDepth <= 0.025) discard;
       depthDiff = 0.0;
       hasDepth = 0.0;

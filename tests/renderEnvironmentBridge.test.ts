@@ -8,6 +8,7 @@ import {
   distanceAtFogOpacity,
   shouldUseSceneDepthForWater,
   syncWaterSurfaceEnvironment,
+  syncWaterSurfaceOcean,
   syncWaterSurfaceShore
 } from '../src/client/renderEnvironmentBridge';
 
@@ -113,6 +114,30 @@ describe('render environment bridge', () => {
 
     expect(surface.setShoreDistanceTexture).toHaveBeenCalledWith(texture);
     expect(surface.setShoreWorldRegion).toHaveBeenCalledWith(null);
+    texture.dispose();
+  });
+
+  it('binds ocean terrain and creates the matching shore splash points', () => {
+    const splash = new THREE.Points();
+    const surface = {
+      setOceanTerrainTexture: vi.fn(() => true),
+      setOceanShoreSplashPoints: vi.fn(() => splash)
+    };
+    const texture = new THREE.DataTexture(new Float32Array([0, 0, 0, 0]), 2, 2, THREE.RedFormat, THREE.FloatType);
+    const binding = {
+      texture,
+      terrainSize: [2, 2] as [number, number],
+      mapSize: [96, 96] as [number, number],
+      center: [0, 0] as [number, number],
+      level: 0,
+      apronWidth: 18,
+      sinkTarget: -3,
+      splashPoints: [[1, 2], [3, 4]] as Array<[number, number]>
+    };
+
+    expect(syncWaterSurfaceOcean(surface, binding)).toBe(splash);
+    expect(surface.setOceanTerrainTexture).toHaveBeenCalledWith(texture, binding);
+    expect(surface.setOceanShoreSplashPoints).toHaveBeenCalledWith(binding.splashPoints);
     texture.dispose();
   });
 

@@ -30,7 +30,9 @@ import {
   distanceAtFogOpacity,
   shouldUseSceneDepthForWater,
   syncWaterSurfaceEnvironment,
+  syncWaterSurfaceOcean,
   syncWaterSurfaceShore,
+  type WaterOceanTerrainBinding,
   type WaterShoreBinding
 } from './renderEnvironmentBridge';
 import { createComposerRenderTarget } from './renderOutputPipeline';
@@ -632,6 +634,18 @@ export class RenderRuntimeAdapter {
         const shore = mesh.userData.waterShore as WaterShoreBinding | undefined;
         if (shore?.texture?.isTexture && Array.isArray(shore.center) && shore.size > 0) {
           syncWaterSurfaceShore(surface, shore);
+        }
+        const ocean = mesh.userData.waterOceanTerrain as WaterOceanTerrainBinding | undefined;
+        if (mesh.userData.waterBodyType === 'ocean' && ocean?.texture?.isTexture) {
+          const splash = syncWaterSurfaceOcean(surface, ocean);
+          if (splash) mesh.add(splash);
+          surface.material.transparent = true;
+          surface.material.forceSinglePass = true;
+          surface.material.depthTest = true;
+          surface.material.depthWrite = true;
+          surface.material.polygonOffset = true;
+          surface.material.polygonOffsetFactor = 1;
+          surface.material.polygonOffsetUnits = 1;
         }
       }
       const uniforms = surface.material.uniforms;

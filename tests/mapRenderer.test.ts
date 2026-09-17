@@ -280,13 +280,27 @@ describe('structured map water rendering', () => {
       height: number;
     };
     const center = Math.floor(image.height / 2) * image.width + Math.floor(image.width / 2);
+    const oceanTerrain = ocean.userData.waterOceanTerrain as {
+      texture: THREE.DataTexture;
+      apronWidth: number;
+      sinkTarget: number;
+      splashPoints: Array<[number, number]>;
+    };
 
     expect(image.data[center]).toBe(0);
     expect(Math.max(...image.data)).toBe(255);
+    ocean.geometry.computeBoundingBox();
+    expect(ocean.geometry.boundingBox!.max.x - ocean.geometry.boundingBox!.min.x).toBeGreaterThan(map.box.size[0]);
+    expect(oceanTerrain.texture.isDataTexture).toBe(true);
+    expect(oceanTerrain.apronWidth).toBeGreaterThan(0);
+    expect(oceanTerrain.sinkTarget).toBeLessThan(0);
+    expect(oceanTerrain.splashPoints.length).toBeGreaterThan(0);
+    expect(oceanTerrain.splashPoints.length).toBeLessThanOrEqual(8200);
 
     ocean.geometry.dispose();
     (ocean.material as THREE.Material).dispose();
     (ocean.userData.waterShore.texture as THREE.Texture).dispose();
+    oceanTerrain.texture.dispose();
   });
 
   it('adds an adaptive render-only terrain apron around ocean maps', async () => {
@@ -317,6 +331,13 @@ describe('structured map water rendering', () => {
       expect(outside.length).toBeGreaterThan(0);
       expect(Math.min(...outside.map((point) => point.y))).toBeLessThanOrEqual(-3);
       expect(map.terrain.heights).toEqual(originalHeights);
+      const ocean = rendered.group.getObjectByName(`water:ocean-${size}`) as THREE.Mesh;
+      const terrainBinding = ocean.userData.waterOceanTerrain as { texture: THREE.DataTexture };
+      const boundTexture = terrainBinding.texture;
+      map.terrain.heights[0] = 5;
+      rendered.refreshTerrain(map);
+      expect(terrainBinding.texture).toBe(boundTexture);
+      expect((boundTexture.image as unknown as { data: Float32Array }).data[0]).toBe(5);
       const reach = Math.max(...outside.flatMap((point) => [Math.abs(point.x), Math.abs(point.z)])) - size / 2;
       rendered.dispose();
       return reach;

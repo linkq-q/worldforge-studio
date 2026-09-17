@@ -91,6 +91,7 @@ describe('WaterSurface shader', () => {
     })).toBe(true);
     expect(surface.material.uniforms.uUseOceanTerrain.value).toBe(true);
     expect(surface.material.uniforms.uOceanTerrainApronWidth.value).toBe(18);
+    expect(surface.material.vertexShader).toContain('uniform float uShoreWaveStrength;');
     expect(surface.material.vertexShader).toContain('return computeOceanSwashHeight(worldBase.xz, waveH);');
     expect(surface.material.fragmentShader).toContain('if (oceanWaterDepth <= 0.025) discard;');
     expect(surface.material.fragmentShader).toContain('shoreFoam = (1.0 - smoothstep(0.025, oceanFoamWidth, oceanWaterDepth))');
