@@ -1301,7 +1301,10 @@ function buildTerrainGeometry(map: EditableMap): THREE.BufferGeometry {
     }
   }
 
-  if (map.layout.edgeMask.kind === 'none') addBorderSides(vertices, uvs, indices, map);
+  const oceanApron = oceanTerrainApronProfile(map);
+  if (oceanApron && map.layout.edgeMask.kind === 'none') {
+    addOceanTerrainApron(vertices, uvs, indices, map, oceanApron);
+  } else if (map.layout.edgeMask.kind === 'none') addBorderSides(vertices, uvs, indices, map);
   else addMaskBorderSides(vertices, uvs, indices, map);
   const colors: number[] = [];
   for (let index = 0; index < vertices.length; index += 3) {
@@ -1314,6 +1317,76 @@ function buildTerrainGeometry(map: EditableMap): THREE.BufferGeometry {
   geometry.setIndex(indices);
   geometry.computeVertexNormals();
   return geometry;
+}
+
+interface OceanTerrainApronProfile {
+  width: number;
+  segments: number;
+  sinkTarget: number;
+}
+
+function oceanTerrainApronProfile(map: EditableMap): OceanTerrainApronProfile | null {
+  const oceans = map.waterBodies.filter((water) => water.type === 'ocean');
+  if (oceans.length === 0) return null;
+  const cellSize = Math.max(
+    map.box.size[0] / Math.max(1, map.terrain.resolutionX - 1),
+    map.box.size[2] / Math.max(1, map.terrain.resolutionZ - 1)
+  );
+  const shortestSide = Math.min(map.box.size[0], map.box.size[2]);
+  const width = THREE.MathUtils.clamp(cellSize * 12, shortestSide * 0.15, shortestSide * 0.25);
+  const segments = THREE.MathUtils.clamp(Math.ceil(width / Math.max(cellSize, 0.001)), 6, 24);
+  const oceanLevel = Math.max(...oceans.map((water) => water.level));
+  const sinkDepth = Math.max(3, cellSize * 2, ...oceans.map((water) => water.depth));
+  return { width, segments, sinkTarget: oceanLevel - sinkDepth };
+}
+
+function addOceanTerrainApron(
+  vertices: number[],
+  uvs: number[],
+  indices: number[],
+  map: EditableMap,
+  profile: OceanTerrainApronProfile
+): void {
+  const width = map.terrain.resolutionX;
+  const depth = map.terrain.resolutionZ;
+  if (width < 2 || depth < 2) return;
+  const step = profile.width / profile.segments;
+  const expandedWidth = width + profile.segments * 2;
+  const expandedDepth = depth + profile.segments * 2;
+  const baseVertex = vertices.length / 3;
+
+  for (let z = 0; z < expandedDepth; z += 1) {
+    const gridZ = z - profile.segments;
+    const sourceZ = THREE.MathUtils.clamp(gridZ, 0, depth - 1);
+    const offsetZ = (gridZ - sourceZ) * step;
+    for (let x = 0; x < expandedWidth; x += 1) {
+      const gridX = x - profile.segments;
+      const sourceX = THREE.MathUtils.clamp(gridX, 0, width - 1);
+      const offsetX = (gridX - sourceX) * step;
+      const source = terrainPointAt(map, sourceX, sourceZ);
+      const distance = Math.hypot(offsetX, offsetZ);
+      const t = THREE.MathUtils.smoothstep(distance, 0, profile.width);
+      vertices.push(
+        source[0] + offsetX,
+        THREE.MathUtils.lerp(source[1], profile.sinkTarget, t),
+        source[2] + offsetZ
+      );
+      uvs.push(sourceX / (width - 1), sourceZ / (depth - 1));
+    }
+  }
+
+  for (let z = 0; z < expandedDepth - 1; z += 1) {
+    const gridZ = z - profile.segments;
+    for (let x = 0; x < expandedWidth - 1; x += 1) {
+      const gridX = x - profile.segments;
+      if (gridX >= 0 && gridX < width - 1 && gridZ >= 0 && gridZ < depth - 1) continue;
+      const a = baseVertex + z * expandedWidth + x;
+      const b = a + 1;
+      const c = a + expandedWidth;
+      const d = c + 1;
+      indices.push(a, c, b, b, c, d);
+    }
+  }
 }
 
 function addBorderSides(vertices: number[], uvs: number[], indices: number[], map: EditableMap): void {

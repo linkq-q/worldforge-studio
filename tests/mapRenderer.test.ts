@@ -289,6 +289,46 @@ describe('structured map water rendering', () => {
     (ocean.userData.waterShore.texture as THREE.Texture).dispose();
   });
 
+  it('adds an adaptive render-only terrain apron around ocean maps', async () => {
+    const buildOceanMap = (size: number) => {
+      const map = createEmptyMap(`ocean-${size}`, `ocean-${size}`, [size, 16, size]);
+      map.terrain.heights.fill(1);
+      map.waterBodies = [{
+        id: `ocean-${size}`,
+        name: 'Ocean',
+        type: 'ocean',
+        level: 0,
+        depth: 0.1,
+        width: 1,
+        points: [[-size / 2, -size / 2], [-size / 2 + 4, -size / 2], [-size / 2 + 4, size / 2], [-size / 2, size / 2]]
+      }];
+      return map;
+    };
+    const apronReach = async (size: number) => {
+      const map = buildOceanMap(size);
+      const originalHeights = [...map.terrain.heights];
+      const rendered = await buildEditableMapGroup(map);
+      const positions = (rendered.group.getObjectByName('terrain') as THREE.Mesh).geometry.getAttribute('position');
+      const outside: THREE.Vector3[] = [];
+      for (let index = 0; index < positions.count; index += 1) {
+        const point = new THREE.Vector3().fromBufferAttribute(positions, index);
+        if (Math.abs(point.x) > size / 2 || Math.abs(point.z) > size / 2) outside.push(point);
+      }
+      expect(outside.length).toBeGreaterThan(0);
+      expect(Math.min(...outside.map((point) => point.y))).toBeLessThanOrEqual(-3);
+      expect(map.terrain.heights).toEqual(originalHeights);
+      const reach = Math.max(...outside.flatMap((point) => [Math.abs(point.x), Math.abs(point.z)])) - size / 2;
+      rendered.dispose();
+      return reach;
+    };
+
+    const smallReach = await apronReach(48);
+    const titleScaleReach = await apronReach(96);
+
+    expect(smallReach).toBeCloseTo(12, 4);
+    expect(titleScaleReach).toBeCloseTo(18, 4);
+  });
+
   it('renders overlapping same-level water blocks as one clipped surface', () => {
     const map = createEmptyMap('joined-water', 'map-joined-water');
     map.waterBodies = [
