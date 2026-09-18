@@ -44,6 +44,7 @@ import {
   GRASS_PRESET_IDS,
   inferGrassPreset,
   normalizeGrassMix,
+  normalizeGrassHabitat,
   type GrassPresetId,
   type GrassRegion
 } from '../shared/mapGrass';
@@ -95,7 +96,7 @@ const MAP_CODE_ENVIRONMENT_FORM_CONTRACT = `Use these structured environment for
 api.terrain({preset:'plain'|'hills'|'valley'|'island'|'archipelago'|'canyon'|'cliff-plateau'|'dune-desert',amplitude?,roughness?,seed?,direction?:degrees|[x,z]});
 api.modifyTerrain({modifier:'mountain'|'ridge'|'valley'|'basin'|'cliff'|'terrace'|'dune'|'island',region:{kind:'circle',center:[x,z],radius}|{kind:'path',points:[[x,z],...],width}|{kind:'polygon',points:[[x,z],...]},amplitude?:positiveNumber,softness?:number,direction?:degrees|[x,z],variation?:number,layers?:number|stepArray,layout?:'plateau'|'coast'|'canyon'|'wall'|'terraces',access?:'walkable'|'scenic',seed?});
 api.surface({id:'short-id',surface:'grass'|'sand'|'rock'|'soil'|'paving',material?:'default'|'compacted-earth'|'garden-stone'|'asphalt',region:{kind:'circle'|'path'|'polygon',...},intensity?,clearNatural?}); Use clearNatural:true for arena floors, plazas, courtyards and other functional clearings where loose trees and rocks must be excluded. Route surfaces are clear automatically.
-api.grass({id:'short-id',name?,preset:'meadow'|'sand'|'wetland'|'farm'|'magic'|'alpine-moss',region:{kind:'circle',center:[x,z],radius}|{kind:'polygon',points:[[x,z],...]},density?,variation?,softness?,height?,mix?:{short?,tall?,flowers?},seed?});
+api.grass({id:'short-id',name?,preset:'meadow'|'sand'|'wetland'|'farm'|'magic'|'alpine-moss',region:{kind:'circle',center:[x,z],radius}|{kind:'polygon',points:[[x,z],...]},density?,variation?,softness?,height?,mix?:{short?,tall?,flowers?},habitat?:{waterDistance?:[outerMin,preferredMin,preferredMax,outerMax],height?:[outerMin,preferredMin,preferredMax,outerMax]},seed?}); Habitat bands fade density smoothly at their outer limits. waterDistance is world units from the actual water edge, height is terrain Y; choose each layer's band from the intended ecology, not from a scene-name keyword.
 api.foundation({name?,shape:'capsule'|'rounded-rectangle'|'polygon'|'path',under?:[objectReferenceOrExistingId,...],position?:[x,z]|[x,y,z],width?,depth?,margin?,cornerRadius?,points?:[[localX,localZ],...],curve?:'polyline'|'catmull-rom',closed?,top?:'level'|'slope'|'steps',thickness?,maxThickness?,slope?,slopeDirection?:radians,stepHeight?,stepCount?,material?}); The top is walkable, the bottom follows terrain, and terrain is never flattened.
 Enum fields are closed choices, not descriptions. Put descriptive meaning in id/name or comments; never write phrases such as "gentle central basin" in modifier or "packed earth" in surface.`;
 const MAP_CODE_TOPOLOGY_CONTRACT = `Use these topology return and geometry contracts:
@@ -1760,11 +1761,7 @@ function executeMapCodePlanInternal(
         ? presetValue as GrassPresetId
         : inferGrassPreset(`${presetValue ?? ''} ${name ?? ''}`);
       const presetDefinition = GRASS_PRESET_DEFINITIONS.find((item) => item.id === preset) ?? GRASS_PRESET_DEFINITIONS[0];
-      const authored = sceneIntent === 'authored';
       const requestedHeight = optionalFinite(options.height) ?? presetDefinition.defaultHeight;
-      const height = authored
-        ? Math.max(preset === 'wetland' ? 0.85 : 0.65, requestedHeight)
-        : requestedHeight;
       const requestedMix = options.mix && typeof options.mix === 'object' && !Array.isArray(options.mix)
         ? options.mix as Record<string, unknown>
         : undefined;
@@ -1775,7 +1772,7 @@ function executeMapCodePlanInternal(
         short: optionalFinite(requestedMix.short),
         tall: optionalFinite(requestedMix.tall),
         flowers: optionalFinite(requestedMix.flowers)
-      } : undefined, authored ? authoredMix : presetDefinition.defaultMix);
+      } : undefined, sceneIntent === 'authored' ? authoredMix : presetDefinition.defaultMix);
       const region = codeGrassRegion(form?.region ?? regionForm?.region ?? form ?? regionValue);
       const alreadyExists = map.grassLayers.some((layer) => layer.id === id)
         || sceneOperations.some((operation) => operation.type === 'grass.layer.add' && operation.layer.id === id);
@@ -1786,7 +1783,7 @@ function executeMapCodePlanInternal(
             id,
             name,
             preset,
-            height,
+            height: requestedHeight,
             mix,
             seed: optionalFinite(options.seed) ?? map.seed + sceneOperations.length
           }
@@ -1796,14 +1793,11 @@ function executeMapCodePlanInternal(
         type: 'grass.generate',
         layerId: id,
         region,
-        density: authored
-          ? Math.max(0.72, optionalFinite(options.density) ?? 0.78)
-          : optionalFinite(options.density) ?? 0.65,
-        variation: authored
-          ? clampFinite(optionalFinite(options.variation) ?? 0.2, 0.12, 0.28)
-          : optionalFinite(options.variation) ?? 0.25,
+        density: optionalFinite(options.density) ?? (sceneIntent === 'authored' ? 0.78 : 0.65),
+        variation: optionalFinite(options.variation) ?? (sceneIntent === 'authored' ? 0.2 : 0.25),
         softness: optionalFinite(options.softness) ?? 0.2,
-        seed: optionalFinite(options.seed) ?? map.seed + sceneOperations.length
+        seed: optionalFinite(options.seed) ?? map.seed + sceneOperations.length,
+        habitat: normalizeGrassHabitat(options.habitat)
       });
       return id;
     },
@@ -3194,7 +3188,7 @@ ${JSON.stringify(capabilityCatalog)}
 Constants: api.TAU, api.PHI, api.seed, api.bounds.
 Scene intent: api.sceneIntent({kind:'natural'|'authored',reason?}). ${requestMode === 'refine' ? 'Do not call it during refinement.' : 'Required exactly once for unified scene ownership.'}
 Design semantics: api.design({experienceMode:'immediate'|'sequential'|'mixed',intent,groups:[{id,name,parentId?,intent,region?,spatialRole?:'landmark-ensemble'|'urban-fabric'|'open-space'|'landscape',focusIds?,guideIds?,entryGuideIds?,exitGuideIds?,axisGuideIds?,protectedObjectIds?,removableObjectIds?,layers:[{level:1|2|3|4,intent,density:'tight'|'normal'|'open',minCount?:1..64}]}],focuses:[{id,groupId,name,kind:'primary'|'secondary'|'node',rank,selector?,objectId?,reveal:'visible'|'screened'|'framed'|'sequence'}],viewpoints:[{id,groupId?,point:[x,z],targetFocusId?,role:'entry'|'route'|'node'|'overview'}],relations:[{id,kind:'attract'|'repel'|'support',sourceSelector,targetSelector?,sourceGroupId?,targetGroupId?,strength:'tight'|'normal'|'open',minDistance?,maxDistance?}]}). ${requestMode === 'refine' ? 'Optional: call once only when the user changes composition semantics.' : 'Call once in unified scene ownership, after sceneIntent and before placement.'} Make the declared focus and each group's intended arrival, axis and spatial boundary concrete in the water, terrain, routes and placements; prose alone does not shape the scene. Bind a route to its design group with groupId and guideRole when it serves as entry, exit or axis. Keep shared routes connected across neighboring groups; do not force a straight central avenue when the requested experience calls for bends, enclosure or a reveal.
-Environment: api.terrain(preset,{amplitude?,roughness?,seed?,direction?}); api.refineTerrain({...}); api.water(id,{type:'lake'|'river'|'ocean',points,...}); api.grass(id,region,{preset:'meadow'|'sand'|'wetland'|'farm'|'magic'|'alpine-moss',density?,variation?,softness?,height?,mix?:{short?,tall?,flowers?}}); api.keepDry([x,z],clearance?) returns the nearest dry point after water operations; api.waterPoint(waterId,[x,z],draft?) returns [x,y,z] on that water surface after water operations; use it for boats and other floating assets, normally with role:'environment'; api.spawn([x,z],yawDegrees?); api.renderSuggestion(text).
+Environment: api.terrain(preset,{amplitude?,roughness?,seed?,direction?}); api.refineTerrain({...}); api.water(id,{type:'lake'|'river'|'ocean',points,...}); api.grass(id,region,{preset:'meadow'|'sand'|'wetland'|'farm'|'magic'|'alpine-moss',density?,variation?,softness?,height?,mix?:{short?,tall?,flowers?},habitat?:{waterDistance?:[outerMin,preferredMin,preferredMax,outerMax],height?:[outerMin,preferredMin,preferredMax,outerMax]}}); api.keepDry([x,z],clearance?) returns the nearest dry point after water operations; api.waterPoint(waterId,[x,z],draft?) returns [x,y,z] on that water surface after water operations; use it for boats and other floating assets, normally with role:'environment'; api.spawn([x,z],yawDegrees?); api.renderSuggestion(text).
 Circulation: api.route({id,name?,points:[[x,z],...],groupId?,guideRole?:'entry'|'exit'|'axis',curve?:'polyline'|'catmull-rom',closed?,width?,surface?:'paving'|'soil'|'grass'|'sand'|'rock'|'none',material?:'default'|'compacted-earth'|'garden-stone'|'asphalt'|'concrete'|'brick-paver'|'cobblestone'|'gravel'|'mud',intensity?,tags?}) records the editable guide and lays real terrain paving by default. groupId links the real guide to that design group; guideRole also records its entry, exit or axis role. api.routeNetwork({id,nodes:[{id,point:[x,z],role?}],edges:[{id,from,to,via?,groupId?,guideRole?,curve?,width?,surface?,material?,tags?}]}) expresses a free-form connected graph with shared junctions; you choose its topology. Choose asphalt for modern vehicle streets, concrete for sidewalks, brick-paver for plazas and old streets, garden-stone or cobblestone for gardens, compacted-earth or gravel for informal paths, and mud only for visibly wet rustic ground. api.streetGrid({id,region:[[x,z],...],direction?:degrees,blockWidth,blockDepth,roadWidth,inset?,surface?,material?,tags?}) returns {routeIds,blocks}; use blocks for building groups and routeIds for roadside facilities. api.placeStreetFrontage({routeId,side:'left'|'right',items:[{assetId?,name,dimensions:[frontageWidth,height,depth],role?,groupId?,layer?},...],startInset?,endInset?,gap?,setback?}) sequentially fits varied ordinary buildings along one street side, keeps their real footprints separated and turns local Z+ facades toward the road. api.placeAlongRoute({routeId,assetId?,name?,spacing,offset?,side?:'left'|'right'|'both'|'alternate',startInset?,endInset?,facing?:'forward'|'toward-route'|'away-from-route',role?,groupId?,layer?}) derives repeated facilities from an existing route. A large authored garden needs an experience network rather than one ring: combine an entrance sequence, asymmetric branches or shortcuts to local scenes, waterside or quiet routes, and intentional shared junctions according to the design. Do not force one fixed topology. Use bridge for water crossings; place generated stair/step modules where a route must change level.
 ${MAP_CODE_ENVIRONMENT_FORM_CONTRACT}
 ${MAP_CODE_TOPOLOGY_CONTRACT}
@@ -3221,7 +3215,7 @@ For long connected dry-land scenery, prefer api.placeBetween({assetId?,name?,sta
 - Organic scatter: poissonDisk plus noise2D/fbm2D density filtering; enforce minDistance. When vegetation is part of the composition, use several bounded groves or edge buffers sized from the available area instead of one tiny global sample.
 - Dry structures and land vegetation must not be placed in water. Call api.keepDry after defining water for walls, gates, buildings, lamps and trees near a shoreline. Place boats with api.waterPoint after defining their water body and use role:'environment'. Bridges alone use api.bridge. The local compiler performs one final non-blocking dry-land repair if a placement still intrudes.
 - Grass in an authored green landscape should read as a continuous ground layer rather than isolated tufts: normally use density 0.72-0.9, moderate variation, and a short/tall mix such as {short:0.62,tall:0.34,flowers:0.04}. Use meadow for the general garden floor and reserve wetland for a narrow shore band; do not color the whole garden as wetland merely because it contains a pond.
-- For a scene genuinely dominated by marsh or reeds, use multiple spatially distinct api.grass layers when the habitat changes: a tall wetland reed-dominant band by the water and lower mixed grasses or sedges on drier ground. Give layers different heights, density fields, and mixes so vegetation does not become one uniform carpet; do not add extra layers to a uniform scene just to meet a count. The wetland tall variant draws a reed stalk; choose a readable height (often 1.2-1.8) unless the prompt explicitly calls for short vegetation.
+- When a scene contains several vegetation habitats, use separate api.grass layers with overlapping waterDistance or height suitability bands: tall water-edge plants, a mixed transition, and lower/drier cover where appropriate. Choose layer heights, density, variation and short/tall/flower mixes deliberately; one blanket circle of uniform grass is not a habitat plan. Do not add extra layers to a genuinely uniform scene just to meet a count. A wetland preset's tall variant draws a reed stalk; choose a readable height (often 1.2-1.8) only when tall reeds fit the requested scene.
 - Paired or axial decoration uses mirrorPoint and density:'tight' so flags, lamps, statues, planters and gate ornaments remain complete pairs. Use normal/open only for scenery that may be asymmetrically thinned.
 - Before finishing an authored scene, complete a dedicated detail-fill pass: inspect each group for empty thresholds, unsupported route edges, unframed focuses, missing near/mid/far vegetation masses and absent small-scale accents. Keep intentional clearings, but do not confuse unplanned emptiness with negative space.
 - Treat route-network nodes as authored detail anchors. Enrich bridgeheads, junctions, thresholds, waterside pauses and focus approaches with context-appropriate paired or asymmetric clusters such as lanterns, stone seats, Taihu rocks, planting and low props, placed beside rather than on the walkable surface.

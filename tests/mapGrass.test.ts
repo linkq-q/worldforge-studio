@@ -286,6 +286,45 @@ describe('map grass layers', () => {
     expect(steepLayer.grassLayers[0].densities[centerIndex]).toBe(0);
   });
 
+  it('lets separate grass layers follow water-edge, transition and dry habitat bands', () => {
+    const map = createEmptyMap('habitat', 'grass-habitat', [64, 12, 64]);
+    const region = { kind: 'circle' as const, center: [0, 0] as [number, number], radius: 31 };
+    const withWater = applyMapOperations(map, [
+      { type: 'water.add', water: { id: 'pond', type: 'lake', points: [[-6,-6],[6,-6],[6,6],[-6,6]], level: -0.2 } },
+      { type: 'grass.layer.add', layer: { id: 'edge', preset: 'wetland', height: 1.5 } },
+      { type: 'grass.layer.add', layer: { id: 'transition', preset: 'meadow', height: 0.8 } },
+      { type: 'grass.layer.add', layer: { id: 'dry', preset: 'meadow', height: 0.35 } },
+      { type: 'grass.generate', layerId: 'edge', region, density: 1, variation: 0, habitat: { waterDistance: [0, 1, 3, 6] } },
+      { type: 'grass.generate', layerId: 'transition', region, density: 1, variation: 0, habitat: { waterDistance: [4, 6, 10, 13] } },
+      { type: 'grass.generate', layerId: 'dry', region, density: 1, variation: 0, habitat: { waterDistance: [11, 14, 24, 27] } }
+    ]);
+    const [edge, transition, dry] = withWater.grassLayers;
+
+    expect(sampleGrassDensity(edge, withWater, 8, 0)).toBeGreaterThan(0.5);
+    expect(sampleGrassDensity(edge, withWater, 18, 0)).toBe(0);
+    expect(sampleGrassDensity(transition, withWater, 14, 0)).toBeGreaterThan(0.5);
+    expect(sampleGrassDensity(transition, withWater, 23, 0)).toBe(0);
+    expect(sampleGrassDensity(dry, withWater, 23, 0)).toBeGreaterThan(0.5);
+    expect(sampleGrassDensity(dry, withWater, 8, 0)).toBe(0);
+  });
+
+  it('can limit a grass population to a terrain-height habitat', () => {
+    const map = createEmptyMap('height habitat', 'height-habitat', [48, 12, 48]);
+    for (let z = 0; z < map.terrain.resolutionZ; z += 1) {
+      for (let x = Math.ceil(map.terrain.resolutionX / 2); x < map.terrain.resolutionX; x += 1) {
+        map.terrain.heights[z * map.terrain.resolutionX + x] = 2;
+      }
+    }
+    const generated = applyMapOperations(map, [
+      { type: 'grass.layer.add', layer: { id: 'upland' } },
+      { type: 'grass.generate', layerId: 'upland', region: { kind: 'circle', center: [0, 0], radius: 22 },
+        density: 1, variation: 0, habitat: { height: [1, 1.5, 2.5, 3] } }
+    ]);
+
+    expect(sampleGrassDensity(generated.grassLayers[0], generated, -10, 0)).toBe(0);
+    expect(sampleGrassDensity(generated.grassLayers[0], generated, 10, 0)).toBeGreaterThan(0.5);
+  });
+
   it('smooths a hard density boundary without changing unrelated cells', () => {
     const map = applyMapOperations(createEmptyMap(), [
       { type: 'grass.layer.add', layer: { id: 'smooth' } },

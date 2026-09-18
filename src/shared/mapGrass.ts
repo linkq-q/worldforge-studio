@@ -1,4 +1,6 @@
-import type { EditableMap } from './map';
+import { sampleTerrainHeight, type EditableMap } from './map';
+import { habitatBandSuitability, normalizeHabitatBand, type HabitatBand } from './mapHabitat';
+import { distanceToWater } from './mapWater';
 
 export type GrassBrushMode = 'add' | 'erase' | 'density' | 'smooth';
 
@@ -27,6 +29,19 @@ export interface MapGrassLayer {
 export type GrassRegion =
   | { kind: 'circle'; center: [number, number]; radius: number }
   | { kind: 'polygon'; points: Array<[number, number]> };
+
+export interface GrassHabitat {
+  height?: HabitatBand;
+  waterDistance?: HabitatBand;
+}
+
+export function normalizeGrassHabitat(value: unknown): GrassHabitat | undefined {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return undefined;
+  const input = value as Record<string, unknown>;
+  const height = normalizeHabitatBand(input.height);
+  const waterDistance = normalizeHabitatBand(input.waterDistance);
+  return height || waterDistance ? { height, waterDistance } : undefined;
+}
 
 export interface GrassLayerInput {
   id?: string;
@@ -168,7 +183,8 @@ export function generateGrassRegionInPlace(
   density = 0.7,
   variation = 0.25,
   softness = 0.2,
-  seed?: number
+  seed?: number,
+  habitat?: GrassHabitat
 ): void {
   const layer = requireLayer(map, layerId);
   const [width, , depth] = map.box.size;
@@ -176,15 +192,22 @@ export function generateGrassRegionInPlace(
   const densityVariation = clamp01(variation);
   const edgeSoftness = clamp01(softness);
   const effectiveSeed = finiteSeed(seed, layer.seed);
+  const safeHabitat = normalizeGrassHabitat(habitat);
   for (let z = 0; z < layer.resolutionZ; z += 1) {
     for (let x = 0; x < layer.resolutionX; x += 1) {
       const worldX = indexToWorld(x, width, layer.resolutionX);
       const worldZ = indexToWorld(z, depth, layer.resolutionZ);
       const regionWeight = grassRegionWeight(region, worldX, worldZ, edgeSoftness);
       if (regionWeight <= 0) continue;
+      const habitatWeight = (safeHabitat?.height
+        ? habitatBandSuitability(sampleTerrainHeight(map, worldX, worldZ), safeHabitat.height)
+        : 1) * (safeHabitat?.waterDistance
+        ? habitatBandSuitability(distanceToWater(map, worldX, worldZ), safeHabitat.waterDistance)
+        : 1);
+      if (habitatWeight <= 0) continue;
       const slopeWeight = grassSlopeWeight(map, x, z, layer.preset);
       const noise = hash01(x, z, effectiveSeed) * 2 - 1;
-      const generated = clamp01(baseDensity * (1 + noise * densityVariation) * regionWeight * slopeWeight);
+      const generated = clamp01(baseDensity * (1 + noise * densityVariation) * regionWeight * slopeWeight * habitatWeight);
       const index = z * layer.resolutionX + x;
       layer.densities[index] = Math.max(layer.densities[index] ?? 0, generated);
     }

@@ -752,13 +752,14 @@ describe('map code planner', () => {
     ]));
   });
 
-  it('normalizes authored garden grass into a dense mixed-height layer', () => {
+  it('respects authored grass height, density and variation instead of forcing a blanket carpet', () => {
     const suggestion = executeMapCodePlan(`function plan(api) {
       api.sceneIntent({ kind:'authored', reason:'精修园林' });
       api.grass({
         id:'garden-grass', preset:'meadow',
         region:{kind:'circle',center:[0,0],radius:18},
         density:0.3, variation:0.8, height:0.25,
+        habitat:{waterDistance:[0,1,3,6]},
         mix:{short:0.55,tall:0.4,flowers:0.05}
       });
     }`, createEmptyMap());
@@ -768,11 +769,14 @@ describe('map code planner', () => {
     expect(layer).toEqual(expect.objectContaining({
       type: 'grass.layer.add',
       layer: expect.objectContaining({
-        height: 0.65,
+        height: 0.25,
         mix: { short: 0.55, tall: 0.4, flowers: 0.05 }
       })
     }));
-    expect(generated).toEqual(expect.objectContaining({ density: 0.72, variation: 0.28 }));
+    expect(generated).toEqual(expect.objectContaining({
+      density: 0.3, variation: 0.8,
+      habitat: { waterDistance: [0, 1, 3, 6] }
+    }));
   });
 
   it('allows AI-declared natural scenes to compose terrain without inventing architecture', async () => {

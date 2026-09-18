@@ -9,6 +9,7 @@ import {
   type MapObject
 } from './map';
 import { distanceToWater, isNearWater } from './mapWater';
+import { habitatBandSuitability, type HabitatBand } from './mapHabitat';
 import { terrainFootprintSlopeDegrees } from './mapTerrainAnalysis';
 
 export interface MapScatterPlan {
@@ -33,9 +34,9 @@ export interface MapScatterPlan {
   spacingByAssetId?: Record<string, number>;
   habitat?: {
     /** Outer minimum, preferred minimum, preferred maximum, outer maximum. */
-    height?: [number, number, number, number];
-    slope?: [number, number, number, number];
-    waterDistance?: [number, number, number, number];
+    height?: HabitatBand;
+    slope?: HabitatBand;
+    waterDistance?: HabitatBand;
   };
   grouping?: {
     groupCount: number;
@@ -147,10 +148,10 @@ export function expandMapScatter(
     const slope = terrainFootprintSlopeDegrees(map, x, z, footprintRadius);
     if (slope > maxSlope) continue;
     const waterSuitability = plan.habitat?.waterDistance
-      ? bandSuitability(distanceToWater(map, x, z), plan.habitat.waterDistance)
+      ? habitatBandSuitability(distanceToWater(map, x, z), plan.habitat.waterDistance)
       : 1;
-    const habitatProbability = bandSuitability(y, plan.habitat?.height)
-      * bandSuitability(slope, plan.habitat?.slope)
+    const habitatProbability = habitatBandSuitability(y, plan.habitat?.height)
+      * habitatBandSuitability(slope, plan.habitat?.slope)
       * waterSuitability
       * slopeSuitability(slope, maxSlope);
     if (random() > edgeProbability * clusterProbability * habitatProbability) continue;
@@ -385,15 +386,6 @@ function existingOccupiedCircles(map: EditableMap): OccupiedCircle[] {
     radius: Math.hypot(box.max[0] - box.min[0], box.max[2] - box.min[2]) / 2,
     assetId: assetByObjectId.get(box.objectId)
   }));
-}
-
-function bandSuitability(value: number, band: [number, number, number, number] | undefined): number {
-  if (!band) return 1;
-  const [outerMin, preferredMin, preferredMax, outerMax] = band;
-  if (value <= outerMin || value >= outerMax) return 0;
-  if (value >= preferredMin && value <= preferredMax) return 1;
-  if (value < preferredMin) return smooth((value - outerMin) / Math.max(0.0001, preferredMin - outerMin));
-  return smooth((outerMax - value) / Math.max(0.0001, outerMax - preferredMax));
 }
 
 function slopeSuitability(slope: number, maxSlope: number): number {

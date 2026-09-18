@@ -53,6 +53,7 @@ import {
   generateGrassRegionInPlace,
   updateGrassLayer,
   type GrassBrushMode,
+  type GrassHabitat,
   type GrassLayerInput,
   type GrassLayerPatch,
   type GrassRegion
@@ -188,7 +189,7 @@ export type MapOperation =
   | { type: 'grass.layer.remove'; layerId: string }
   | { type: 'grass.fill'; layerId: string; density: number }
   | { type: 'grass.brush'; layerId: string; mode: GrassBrushMode; point: [number, number]; size?: number; strength?: number; targetDensity?: number }
-  | { type: 'grass.generate'; layerId: string; region: GrassRegion; density?: number; variation?: number; softness?: number; seed?: number }
+  | { type: 'grass.generate'; layerId: string; region: GrassRegion; density?: number; variation?: number; softness?: number; seed?: number; habitat?: GrassHabitat }
   | { type: 'guide.upsert'; guide: MapGuide }
   | { type: 'guide.remove'; guideId: string }
   | { type: 'object.add'; object: MapObjectInput }
@@ -399,7 +400,8 @@ export function applyMapOperations(map: EditableMap, operations: readonly MapOpe
           operation.density,
           operation.variation,
           operation.softness,
-          operation.seed
+          operation.seed,
+          operation.habitat
         );
         break;
       case 'guide.upsert': {
