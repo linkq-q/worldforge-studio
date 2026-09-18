@@ -1662,6 +1662,30 @@ describe('map code planner', () => {
     expect(suggestion.codePlan?.functions).toContain('route');
   });
 
+  it('binds authored routes and network edges to their design groups in the saved map', () => {
+    const map = createEmptyMap();
+    const suggestion = executeMapCodePlan(`function plan(api) {
+      api.sceneIntent({kind:'authored',reason:'connected garden rooms'});
+      api.design({experienceMode:'sequential',intent:'entry to pavilion',groups:[
+        {id:'entry',name:'入口',intent:'arrival',layers:[]},
+        {id:'pavilion',name:'亭院',intent:'destination',layers:[]}
+      ],focuses:[],viewpoints:[],relations:[]});
+      api.route({id:'arrival',points:[[0,-20],[0,-5]],groupId:'entry',guideRole:'entry'});
+      api.routeNetwork({id:'garden',nodes:[{id:'a',point:[0,-5]},{id:'b',point:[8,8]}],edges:[
+        {id:'pavilion-walk',from:'a',to:'b',groupId:'pavilion',guideRole:'axis'}
+      ]});
+    }`, map);
+    const saved = applyMapOperations(map, suggestion.operations);
+
+    expect(saved.designSemantics.groups[0]).toMatchObject({
+      guideIds: ['arrival'], entryGuideIds: ['arrival']
+    });
+    expect(saved.designSemantics.groups[1]).toMatchObject({
+      guideIds: ['pavilion-walk'], axisGuideIds: ['pavilion-walk']
+    });
+    expect(saved.guides.map((guide) => guide.id)).toEqual(['arrival', 'pavilion-walk']);
+  });
+
   it('lets AI select distinct road material recipes for paths and town streets', () => {
     const map = createEmptyMap('material routes');
     const suggestion = executeMapCodePlan(`function plan(api) {
