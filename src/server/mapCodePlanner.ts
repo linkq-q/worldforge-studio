@@ -747,18 +747,18 @@ async function adaptMapCodeToGeneratedAssets(
     label: 'AI 正在根据新资产的实际结构调整布局'
   });
   try {
-    const candidateCode = extractCode(await llmChat([
+    const candidateCode = applyLocalCodeRepair(code, await llmChat([
       { role: 'system', content: systemPrompt },
       { role: 'user', content: userPrompt },
       { role: 'assistant', content: code },
       {
         role: 'user',
         content: [
-          'The requested assets have now been generated. Read their actual model-local bounds and semantic snapshots, then return the complete corrected JavaScript function only.',
+          'The requested assets have now been generated. Read their actual model-local bounds and semantic snapshots. Return only JSON {"edits":[{"old":"exact unique substring from the current code","new":"replacement substring"}]}. Make at most four small, exact replacements at placements that need adjustment; never return the full function. If no adjustment is needed, return {"edits":[]}.',
           'Preserve every requireAsset declaration exactly: same key, name, prompt, tags, variants, dimensions, role and optional flag. Do not add, remove or rename asset requirements, and keep using api.asset(key,index) rather than real asset IDs.',
-          'Preserve the scene concept, terrain, water, routes, design groups and intended content. Only adjust spatial use of the generated results when needed: placement position, dimensions, scale, facing, attachments, connections, repetition spacing and nearby clearance. Avoid duplicating a structural or decorative part that the snapshot says is already included.',
+          'Preserve the scene concept, terrain, water, routes, design groups and intended content. Only adjust spatial use of the generated results when needed: placement position, dimensions, scale, facing, attachments, connections, repetition spacing and nearby clearance. Do not add another copy of a structural or decorative part that the snapshot says is already included.',
           'semanticSnapshot coordinates are model-local. Convert their meaning through each placement instead of treating them as map-space coordinates. localBounds is authoritative for the generated model extent; representative snapshot meshes are not the full bounds.',
-          'If the original layout already fits the generated results, return it unchanged.',
+          'Keep all existing placements and their roles. If the original layout already fits the generated results, return an empty edits array.',
           `Generated asset results:\n${assetContext.text}`
         ].join('\n\n')
       }
@@ -766,12 +766,13 @@ async function adaptMapCodeToGeneratedAssets(
       apiBase: options.apiBase,
       provider: options.provider ?? 'gpt',
       temperature: 0.1,
-      maxTokens: 16_000,
+      maxTokens: 3_000,
       traceStage: 'map.asset-adaptation',
       fetchImpl: options.fetchImpl,
       signal: options.signal,
       onProgress: options.onProgress
-    }));
+    }), true);
+    if (candidateCode === code) return { code, discovery };
     const candidateDiscovery = runMapCodePlan(candidateCode, map, assets, {
       refineScope: options.mode === 'refine' ? options : undefined,
       mode: 'discovery',
@@ -781,8 +782,9 @@ async function adaptMapCodeToGeneratedAssets(
       scope: options.scope,
       refinableObjectIds: new Set(options.refinableObjectIds ?? [])
     });
-    if (!sameCodeAssetRequirements(discovery.requirements, candidateDiscovery.requirements)) {
-      throw new Error('generated_asset_adaptation_changed_requirements');
+    if (!sameCodeAssetRequirements(discovery.requirements, candidateDiscovery.requirements)
+      || !preservesCodePlanContent(discovery, candidateDiscovery)) {
+      throw new Error('generated_asset_adaptation_changed_scene_content');
     }
     const baselineIssueKeys = new Set(discovery.issues
       .filter((issue) => !issue.repaired)
@@ -3365,6 +3367,104 @@ function extractCode(raw: string): string {
   return (fenced?.[1] ?? answer).trim();
 }
 
+function applyLocalCodeRepair(code: string, response: string, allowUnchanged = false): string {
+  const answer = response.replace(/^\s*<think>[\s\S]*?<\/think>\s*/i, '').trim();
+  const payload = answer.match(/^```(?:json)?\s*([\s\S]*?)```$/i)?.[1] ?? answer;
+  let edits: unknown;
+  try {
+    edits = (JSON.parse(payload) as { edits?: unknown }).edits;
+  } catch {
+    throw new Error('map_code_repair_requires_exact_edits');
+  }
+  if (!Array.isArray(edits) || edits.length > 4 || (edits.length === 0 && !allowUnchanged)) {
+    throw new Error(allowUnchanged ? 'map_code_repair_requires_0_to_4_edits' : 'map_code_repair_requires_1_to_4_edits');
+  }
+  let next = code;
+  let changedCharacters = 0;
+  for (const edit of edits) {
+    const oldText = edit?.old;
+    const newText = edit?.new;
+    if (typeof oldText !== 'string' || typeof newText !== 'string' || !oldText.trim()
+      || oldText === newText || oldText.length > 1_200 || newText.length > 1_800
+      || oldText.includes('function plan(')) {
+      throw new Error('map_code_repair_edit_not_local');
+    }
+    const index = next.indexOf(oldText);
+    if (index < 0 || next.indexOf(oldText, index + oldText.length) >= 0) {
+      throw new Error('map_code_repair_anchor_not_unique');
+    }
+    changedCharacters += oldText.length + newText.length;
+    if (changedCharacters > 4_000) throw new Error('map_code_repair_too_large');
+    next = next.slice(0, index) + newText + next.slice(index + oldText.length);
+  }
+  return next;
+}
+
+function preservesCodePlanContent(before: CodeExecutionResult, after: CodeExecutionResult): boolean {
+  const required = new Map(after.requirements.map((item) => [item.key, item.variants]));
+  if (before.requirements.some((item) => (required.get(item.key) ?? 0) < item.variants)) return false;
+  const significantTypes = ['terrain.generate', 'water.add', 'guide.upsert', 'grass.layer.add'] as const;
+  for (const type of significantTypes) {
+    if (after.suggestion.operations.filter((operation) => operation.type === type).length
+      < before.suggestion.operations.filter((operation) => operation.type === type).length) return false;
+  }
+  const signature = (operation: Extract<MapOperation, { type: 'object.add' }>) => JSON.stringify([
+    operation.object.name, operation.object.assetId,
+    operation.object.designGroupId, operation.object.compositionLayer
+  ]);
+  const remaining = new Map<string, number>();
+  for (const operation of after.suggestion.operations) {
+    if (operation.type !== 'object.add') continue;
+    const key = signature(operation);
+    remaining.set(key, (remaining.get(key) ?? 0) + 1);
+  }
+  for (const operation of before.suggestion.operations) {
+    if (operation.type !== 'object.add') continue;
+    const key = signature(operation);
+    const count = remaining.get(key) ?? 0;
+    if (count > 0) remaining.set(key, count - 1);
+    else return false;
+  }
+  return true;
+}
+
+const LOCAL_VISUAL_REPAIR_CODES = new Set([
+  'scene.group-route-unbound', 'scene.group-route-disconnected',
+  'scene.vegetation-uniform', 'scene.group-massing-flat'
+]);
+
+function localRepairSignals(programIssues: string[], discovery: CodeExecutionResult): string[] {
+  return [
+    ...programIssues,
+    ...discovery.issues.filter((issue) => issue.repairHint).map((issue) => issue.code),
+    ...(discovery.suggestion.diagnostics ?? [])
+      .filter((issue) => LOCAL_VISUAL_REPAIR_CODES.has(issue.code))
+      .map((issue) => issue.code)
+  ];
+}
+
+const LOCAL_REPAIR_INSTRUCTION = 'Return only JSON {"edits":[{"old":"exact unique substring from the current code","new":"replacement substring"}]}. Make 1-4 small, exact replacements at the reported calls. Never return the full function or alter unrelated calls, placement loops, asset declarations, terrain, or circulation. If the listed issue cannot be fixed locally, return {"edits":[]}.';
+
+function retainCodePlan(
+  fallback: { code: string; discovery: CodeExecutionResult; programIssues: string[] },
+  repairAttempts: number
+): { code: string; discovery: CodeExecutionResult; repairAttempts: number } {
+  return {
+    code: fallback.code,
+    repairAttempts,
+    discovery: {
+      ...fallback.discovery,
+      suggestion: {
+        ...fallback.discovery.suggestion,
+        diagnostics: [
+          ...(fallback.discovery.suggestion.diagnostics ?? []),
+          ...sceneProgramDiagnostics(fallback.programIssues)
+        ]
+      }
+    }
+  };
+}
+
 async function discoverMapCodeWithRepairs(
   initialCode: string,
   userPrompt: string,
@@ -3378,7 +3478,12 @@ async function discoverMapCodeWithRepairs(
   let programRepairAttempted = false;
   let executionRepairAttempts = 0;
   let repairAttempts = 0;
-  let visualFallback: { code: string; discovery: CodeExecutionResult } | undefined;
+  let optionalFallback: {
+    code: string;
+    discovery: CodeExecutionResult;
+    programIssues: string[];
+    repairTargets: string[];
+  } | undefined;
   while (true) {
     try {
       const discovery = runMapCodePlan(code, map, assets, {
@@ -3391,6 +3496,30 @@ async function discoverMapCodeWithRepairs(
         refinableObjectIds: new Set(options.refinableObjectIds ?? []),
         onPlanPreview: options.onPlanPreview
       });
+      if (optionalFallback) {
+        const fallback = optionalFallback;
+        const currentIssues = findAuthoredSceneProgramIssues(map, discovery.suggestion);
+        const newSignals = localRepairSignals(currentIssues, discovery);
+        const improved = fallback.repairTargets.some((signal) => (
+          newSignals.filter((item) => item === signal).length
+          < fallback.repairTargets.filter((item) => item === signal).length
+        ));
+        const introducedError = (discovery.suggestion.diagnostics ?? []).some((issue) => (
+          issue.severity === 'error' && !issue.repaired
+          && !(fallback.discovery.suggestion.diagnostics ?? []).some((previous) => (
+            previous.code === issue.code && previous.severity === 'error' && !previous.repaired
+          ))
+        ));
+        if (!preservesCodePlanContent(fallback.discovery, discovery)
+          || !improved
+          || currentIssues.some((issue) => !fallback.programIssues.includes(issue))
+          || introducedError) {
+          recordGenerationTrace('code.repair.rejected', { reason: 'unrelated_scene_content_changed', retainedCode: fallback.code });
+          options.onProgress?.({ phase: 'replanning', label: '局部修复改变了原有场景，已保留原规划' });
+          return retainCodePlan(fallback, repairAttempts);
+        }
+        optionalFallback = undefined;
+      }
       const programIssues = findAuthoredSceneProgramIssues(map, discovery.suggestion);
       const completionIssues = programIssues.filter((issue) => (
         issue.startsWith('scene_group_missing_layer:')
@@ -3401,10 +3530,7 @@ async function discoverMapCodeWithRepairs(
       ));
       const recoverableExecutionIssues = discovery.issues.filter((issue) => issue.repairHint);
       const visualIssues = !options.approvedCode && options.mode !== 'refine' && options.scope === 'scene'
-        ? (discovery.suggestion.diagnostics ?? []).filter((issue) => [
-          'scene.group-route-unbound', 'scene.group-route-disconnected', 'scene.vegetation-uniform',
-          'scene.group-massing-flat'
-        ].includes(issue.code)).slice(0, 2)
+        ? (discovery.suggestion.diagnostics ?? []).filter((issue) => LOCAL_VISUAL_REPAIR_CODES.has(issue.code)).slice(0, 2)
         : [];
       const repairDetails = [
         ...recoverableExecutionIssues.map((issue) => `${issue.key}: ${issue.message}\nFix: ${issue.repairHint}`),
@@ -3414,37 +3540,43 @@ async function discoverMapCodeWithRepairs(
       if (repairDetails.length > 0 && !programRepairAttempted) {
         programRepairAttempted = true;
         repairAttempts += 1;
-        if (visualIssues.length > 0 && completionIssues.length === 0 && recoverableExecutionIssues.length === 0) {
-          visualFallback = { code, discovery };
-        }
+        optionalFallback = {
+          code, discovery, programIssues,
+          repairTargets: [
+            ...completionIssues,
+            ...recoverableExecutionIssues.map((issue) => issue.code),
+            ...visualIssues.map((issue) => issue.code)
+          ]
+        };
         options.onProgress?.({
           phase: 'replanning',
           label: completionIssues.length > 0
-            ? '场景片区或局部调用不完整，AI 正在统一修复 1/1'
+            ? '场景片区或局部调用不完整，AI 正在局部修复 1/1'
             : visualIssues.length > 0
               ? '空间与植被层次正在定向修正 1/1'
-              : '局部调用未能安全落位，AI 正在统一修复 1/1',
+              : '局部调用未能安全落位，AI 正在定点修复 1/1',
           detail: repairDetails.join('\n')
         });
         try {
-          code = extractCode(await llmChat([
+          const repairResponse = await llmChat([
             { role: 'system', content: systemPrompt },
             { role: 'user', content: userPrompt },
             { role: 'assistant', content: code },
             {
               role: 'user',
-              content: `The program executed and produced a usable partial scene, but these recoverable issues remain:\n${repairDetails.join('\n')}\n\nReturn corrected JavaScript only. Preserve all valid code, the overall concept, terrain and playable circulation; repair the listed local calls without redesigning unrelated content.${completionIssues.length > 0 ? ` Give each named district its actual bounded region and semantic spatialRole. If the requested place has urban life or ruins, distinguish the landmark ensemble from ordinary building fabric: form street-facing groups of reusable buildings and their edges before adding props. Do not merely rename groups or increase lamps, statues, trees and benches to satisfy the count; they do not provide building coverage or frontage. Complete every promised leaf-group layer with actual placements using the same groupId and layer. If a clear paved or grass area consumes most of a scene group while containing almost no authored content, shrink or reshape it and compose its edges with purposeful architecture, stopping places and near/mid/small details.` : ''}${visualIssues.length > 0 ? ` These are aesthetic signals, not hard validation failures. Bind the actual routes to their design groups, connect intended sequences in geometry, and replace any near-to-far blanket grass with habitat-shaped layers only where the scene calls for it. Keep the original scene subject and all valid content.` : ''} Routes must connect distinct programmed destinations, and route nodes such as thresholds, bridgeheads, turns and waterside pauses should receive context-appropriate details beside the walkable surface. Keep deliberate negative space only when it has a specific use, a shaped boundary and enough surrounding content to read as intentional. Do not scale loop counts from map width, map area, or fine coordinate steps. Use bounded api.gridPoints, api.poissonDisk, or curve-sampling results and iterate each result once; avoid while loops and nested placement loops.\n\n${MAP_CODE_ENVIRONMENT_FORM_CONTRACT}\n\n${MAP_CODE_TOPOLOGY_CONTRACT}`
+              content: `The current program already produced a usable scene. Repair only these reported issues:\n${repairDetails.join('\n')}\n\n${LOCAL_REPAIR_INSTRUCTION} Keep the existing composition, placements, asset requirements, terrain and routes. Do not add content merely to satisfy an aesthetic warning.${recoverableExecutionIssues.length ? `\n\n${MAP_CODE_TOPOLOGY_CONTRACT}` : ''}`
             }
           ], {
             apiBase: options.apiBase,
             provider: options.provider ?? 'gpt',
             temperature: 0.15,
-            maxTokens: 16_000,
+            maxTokens: 3_000,
             traceStage: 'map.program-completion',
             fetchImpl: options.fetchImpl,
             signal: options.signal,
             onProgress: options.onProgress
-          }));
+          });
+          code = applyLocalCodeRepair(code, repairResponse);
           continue;
         } catch (error) {
           if (error instanceof Error && error.name === 'AbortError') throw error;
@@ -3453,17 +3585,7 @@ async function discoverMapCodeWithRepairs(
             label: '场景自动补全暂不可用，已保留当前可用规划',
             detail: error instanceof Error ? error.message : String(error)
           });
-          return {
-            code,
-            repairAttempts,
-            discovery: {
-              ...discovery,
-              suggestion: {
-                ...discovery.suggestion,
-                diagnostics: [...(discovery.suggestion.diagnostics ?? []), ...sceneProgramDiagnostics(programIssues)]
-              }
-            }
-          };
+          return retainCodePlan(optionalFallback, repairAttempts);
         }
       }
       return {
@@ -3479,9 +3601,9 @@ async function discoverMapCodeWithRepairs(
       };
     } catch (error) {
       if (error instanceof Error && error.name === 'AbortError') throw error;
-      if (visualFallback) {
-        options.onProgress?.({ phase: 'replanning', label: '视觉修正未能执行，已保留原有可用场景' });
-        return { ...visualFallback, repairAttempts };
+      if (optionalFallback) {
+        options.onProgress?.({ phase: 'replanning', label: '局部修复未能执行，已保留原有可用场景' });
+        return retainCodePlan(optionalFallback, repairAttempts);
       }
       const executionError = mapCodeExecutionErrorDetail(error, code);
       recordGenerationTrace('code.repair.required', { error: executionError, code, executionRepairAttempts, repairAttempts });
@@ -3499,15 +3621,15 @@ async function discoverMapCodeWithRepairs(
         label: `检测到规划参数或边界错误，AI 正在自动修复 ${executionRepairAttempts}/2`,
         detail: executionError
       });
-      code = extractCode(await llmChat([
+      const repairResponse = await llmChat([
         { role: 'system', content: systemPrompt },
         { role: 'user', content: userPrompt },
         { role: 'assistant', content: code },
         {
           role: 'user',
           content: map.sceneMode === 'indoor'
-            ? `The indoor program failed during its sandboxed discovery run with this error:\n${executionError}\n\nReturn corrected JavaScript only. Preserve the requested room design. Check every array index, loop endpoint, division, room wall, opening ID, locked object and optional argument. Use roomPoint for floor furniture, wallFrame for wall objects, ceilingPoint for ceiling objects, and opening plus roomOpeningId for doors/windows. Never use terrain, water, grass or outdoor APIs. Ensure every numeric value is finite.${timeoutRepairGuidance}${lockedObjectRepairGuidance}`
-            : `The program failed during its sandboxed discovery run with this error:\n${executionError}\n\nReturn corrected JavaScript only. Preserve the requested design. Check every array index, loop endpoint, division, vector component, enum field, and optional argument. JavaScript arrays cannot be added or subtracted directly; calculate x/z components separately. bezierPoint returns {point,tangent,normal}, sampleBezier returns point arrays, and sampleBezierFrames returns frame objects. Use facing:{tangent:frame.tangent} for along-curve objects and facing:{normal:frame.normal} for curve-side facades or walls. Ensure every numeric value passed to the API is finite.${timeoutRepairGuidance}${lockedObjectRepairGuidance}\n\n${MAP_CODE_ENVIRONMENT_FORM_CONTRACT}\n\n${MAP_CODE_TOPOLOGY_CONTRACT}`
+            ? `The indoor program failed during its sandboxed discovery run with this error:\n${executionError}\n\n${LOCAL_REPAIR_INSTRUCTION} Correct only the failing room call or expression; use roomPoint, wallFrame, ceilingPoint or opening as appropriate. Keep every other call unchanged. Ensure every numeric value is finite.${timeoutRepairGuidance}${lockedObjectRepairGuidance}`
+            : `The outdoor program failed during its sandboxed discovery run with this error:\n${executionError}\n\n${LOCAL_REPAIR_INSTRUCTION} Correct only the failing call or expression. Check array indices, point components and API argument shapes; keep every other placement and declaration unchanged. Ensure every numeric value is finite.${timeoutRepairGuidance}${lockedObjectRepairGuidance}\n\n${MAP_CODE_ENVIRONMENT_FORM_CONTRACT}\n\n${MAP_CODE_TOPOLOGY_CONTRACT}`
         }
       ], {
         apiBase: options.apiBase,
@@ -3519,7 +3641,13 @@ async function discoverMapCodeWithRepairs(
         fetchImpl: options.fetchImpl,
         signal: options.signal,
         onProgress: options.onProgress
-      }));
+      });
+      try {
+        code = applyLocalCodeRepair(code, repairResponse);
+      } catch (repairError) {
+        recordGenerationTrace('code.repair.rejected', { reason: repairError, retainedCode: code });
+        if (executionRepairAttempts === 2) throw new Error(`map_code_execution_failed:${executionError}`);
+      }
     }
   }
   throw new Error('map_code_execution_failed:missing_discovery_result');

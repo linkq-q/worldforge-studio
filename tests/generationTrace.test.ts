@@ -109,9 +109,12 @@ it('does not break generation when the log directory cannot be written', async (
 it('keeps failed and repaired code versions plus asset retries and final operations', async () => {
   const root = await tempDirectory();
   const bad = "function plan(api) { api.place({name:'marker',position:[NaN,0]}); }";
-  const good = "function plan(api) { const tree=api.requireAsset({key:'tree',name:'树',prompt:'tree',variants:1,role:'environment'}); api.place({assetId:api.asset(tree),position:[5,0],role:'environment'}); }";
+  const oldCall = "api.place({name:'marker',position:[NaN,0]});";
+  const newCall = "const tree=api.requireAsset({key:'tree',name:'树',prompt:'tree',variants:1,role:'environment'}); api.place({assetId:api.asset(tree),position:[5,0],role:'environment'});";
+  const good = bad.replace(oldCall, newCall);
   const reply = (content: string) => new Response(JSON.stringify({ ok: true, content }), { headers: { 'Content-Type': 'application/json' } });
-  const fetchChat = vi.fn().mockResolvedValueOnce(reply(bad)).mockResolvedValueOnce(reply(good));
+  const fetchChat = vi.fn().mockResolvedValueOnce(reply(bad))
+    .mockResolvedValueOnce(reply(JSON.stringify({ edits: [{ old: oldCall, new: newCall }] })));
   const fetchModel = vi.fn()
     .mockRejectedValueOnce(new Error('temporary model failure'))
     .mockResolvedValueOnce(new Response('data: {"stage":"result","modelJson":{"format":2,"nodes":[]}}\n\n'));

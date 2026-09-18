@@ -511,7 +511,7 @@ describe('map code planner', () => {
     });
     const fetchImpl = vi.fn()
       .mockResolvedValueOnce(response(initial))
-      .mockResolvedValueOnce(response(adapted));
+      .mockResolvedValueOnce(response(JSON.stringify({ edits: [{ old: 'position:[0,0]', new: 'position:[5,0]' }] })));
     const createAsset = vi.fn(async (): Promise<MapAsset> => ({
       ...testAsset('asset-gate', '园门'),
       tags: ['gate'],
@@ -542,6 +542,7 @@ describe('map code planner', () => {
     expect(adaptationPrompt).toContain('G:gate 主入口，正面朝Z+');
     expect(adaptationPrompt).toContain('localBounds');
     expect(adaptationPrompt).toContain('"size":[8,5,2]');
+    expect(adaptationPrompt).toContain('never return the full function');
     expect(adaptationPrompt).not.toContain('omit me');
     expect(suggestion.operations).toEqual(expect.arrayContaining([
       expect.objectContaining({
@@ -561,10 +562,10 @@ describe('map code planner', () => {
       const hostRef = api.place({assetId:api.asset(host),name:'展台',position:[-10,0],role:'structure'});
       api.place({assetId:api.asset(prop),name:'摆件',position:[20,0],role:'environment'});
     }`;
-    const invalid = initial.replace(
-      "api.place({assetId:api.asset(prop),name:'摆件',position:[20,0],role:'environment'});",
-      "api.attach({assetId:api.asset(prop),name:'摆件',parentId:hostRef,kind:'supported',offset:[100,0],role:'environment'});"
-    );
+    const invalid = JSON.stringify({ edits: [{
+      old: "api.place({assetId:api.asset(prop),name:'摆件',position:[20,0],role:'environment'});",
+      new: "api.attach({assetId:api.asset(prop),name:'摆件',parentId:hostRef,kind:'supported',offset:[100,0],role:'environment'});"
+    }] });
     const response = (content: string) => new Response(JSON.stringify({ ok: true, content }), {
       status: 200, headers: { 'Content-Type': 'application/json' }
     });
@@ -587,6 +588,58 @@ describe('map code planner', () => {
     expect(progress).toContain('新资产布局调整未通过校验，继续使用原布局');
   });
 
+  it('rejects a local asset adaptation that removes an existing placement', async () => {
+    const original = `function plan(api) {
+      const tree = api.requireAsset({key:'tree',name:'树',prompt:'树',variants:1,role:'environment'});
+      api.place({assetId:api.asset(tree),name:'入口树',position:[-8,0],role:'environment'});
+      api.place({assetId:api.asset(tree),name:'远景树',position:[8,0],role:'environment'});
+    }`;
+    const removal = JSON.stringify({ edits: [{
+      old: "api.place({assetId:api.asset(tree),name:'远景树',position:[8,0],role:'environment'});",
+      new: ''
+    }] });
+    const response = (content: string) => new Response(JSON.stringify({ ok: true, content }), {
+      status: 200, headers: { 'Content-Type': 'application/json' }
+    });
+    const fetchImpl = vi.fn().mockResolvedValueOnce(response(original)).mockResolvedValueOnce(response(removal));
+    const suggestion = await generateMapCodeSuggestion('有两棵树的入口', createEmptyMap(), [], {
+      fetchImpl, minNewAssets: 0, maxNewAssets: 1,
+      createAsset: async () => ({
+        ...testAsset('asset-tree', '树'),
+        modelJson: { _meta: { semanticSnapshot: { text: '树冠和树干' } } }
+      })
+    });
+
+    expect(suggestion.codePlan?.code).toBe(original);
+    const result = applyMapOperations(createEmptyMap(), suggestion.operations);
+    expect(result.objects.map((object) => object.name)).toEqual(expect.arrayContaining(['入口树', '远景树']));
+  });
+
+  it('keeps the original layout when asset adaptation returns no edits', async () => {
+    const original = `function plan(api) {
+      const tree = api.requireAsset({key:'tree',name:'树',prompt:'树',variants:1,role:'environment'});
+      api.place({assetId:api.asset(tree),name:'入口树',position:[-8,0],role:'environment'});
+    }`;
+    const response = (content: string) => new Response(JSON.stringify({ ok: true, content }), {
+      status: 200, headers: { 'Content-Type': 'application/json' }
+    });
+    const fetchImpl = vi.fn()
+      .mockResolvedValueOnce(response(original))
+      .mockResolvedValueOnce(response(JSON.stringify({ edits: [] })));
+    const progress: string[] = [];
+    const suggestion = await generateMapCodeSuggestion('一棵树的入口', createEmptyMap(), [], {
+      fetchImpl, minNewAssets: 0, maxNewAssets: 1,
+      createAsset: async () => ({
+        ...testAsset('asset-tree', '树'),
+        modelJson: { _meta: { semanticSnapshot: { text: '树冠和树干' } } }
+      }),
+      onProgress: (event) => progress.push(event.label)
+    });
+
+    expect(suggestion.codePlan?.code).toBe(original);
+    expect(progress).not.toContain('新资产布局调整未通过校验，继续使用原布局');
+  });
+
   it('accepts an asset adaptation that preserves an existing recoverable issue without adding a new one', async () => {
     const initial = `function plan(api) {
       const gate=api.requireAsset({key:'gate',name:'园门',prompt:'Standalone garden gate',role:'structure'});
@@ -600,7 +653,7 @@ describe('map code planner', () => {
     const fetchImpl = vi.fn()
       .mockResolvedValueOnce(response(initial))
       .mockResolvedValueOnce(response(initial))
-      .mockResolvedValueOnce(response(adapted));
+      .mockResolvedValueOnce(response(JSON.stringify({ edits: [{ old: 'position:[0,0]', new: 'position:[6,0]' }] })));
     const progress: string[] = [];
 
     const suggestion = await generateMapCodeSuggestion('生成园门和沿路灯具', createEmptyMap(), [], {
@@ -846,11 +899,10 @@ describe('map code planner', () => {
       api.sceneIntent({ kind: 'authored', reason: '中式园林是人工营造的文化空间' });
       api.terrain('plain');
     }`;
-    const repaired = `function plan(api) {
-      api.sceneIntent({ kind: 'authored', reason: '中式园林是人工营造的文化空间' });
-      api.terrain('plain');
-      api.place({ assetId: 'moon-gate', name: '月洞门', role: 'structure', position: [0,0], facing: { direction: [0,1] } });
-    }`;
+    const repaired = JSON.stringify({ edits: [{
+      old: "api.terrain('plain');",
+      new: "api.terrain('plain');\n      api.place({ assetId: 'moon-gate', name: '月洞门', role: 'structure', position: [0,0], facing: { direction: [0,1] } });"
+    }] });
     const response = (content: string) => new Response(JSON.stringify({ ok: true, content }), {
       status: 200,
       headers: { 'Content-Type': 'application/json' }
@@ -896,29 +948,17 @@ describe('map code planner', () => {
       });
       api.place({ name:'园门', position:[0,-38], role:'structure', groupId:'entry', layer:1 });
     }`;
-    const repaired = `function plan(api) {
-      api.sceneIntent({ kind:'authored', reason:'人工园林' });
-      api.design({
-        experienceMode:'sequential', intent:'入口后展开水院',
-        groups:[{
-          id:'entry', name:'入口院', intent:'小前院由门、坐凳和竹石共同构成',
-          region:{kind:'polygon',points:[[-12,-40],[12,-40],[12,-14],[-12,-14]]},
-          layers:[
-            {level:1,intent:'园门和两侧建筑共同围合前院',density:'tight',minCount:2},
-            {level:2,intent:'两侧坐凳形成停留点',density:'normal'},
-            {level:3,intent:'门侧竹石围合',density:'tight'}
-          ]
-        }], focuses:[], viewpoints:[], relations:[]
-      });
-      api.surface({
-        id:'entry-court', surface:'paving', clearNatural:true,
-        region:{kind:'polygon',points:[[-5,-40],[5,-40],[5,-27],[-5,-27]]}
-      });
-      api.place({ name:'园门', position:[0,-38], role:'structure', groupId:'entry', layer:1 });
-      api.place({ name:'入口厢房', position:[-8,-26], role:'structure', groupId:'entry', layer:1 });
-      api.place({ name:'石桌凳', position:[-7,-27], role:'environment', groupId:'entry', layer:2 });
-      api.place({ name:'竹石组景', position:[7,-25], role:'environment', groupId:'entry', layer:3 });
-    }`;
+    const existingGate = "api.place({ name:'园门', position:[0,-38], role:'structure', groupId:'entry', layer:1 });";
+    const repaired = JSON.stringify({ edits: [
+      {
+        old: "{level:3,intent:'门侧竹石和坐凳',density:'tight'}",
+        new: "{level:2,intent:'两侧坐凳形成停留点',density:'normal'},\n            {level:3,intent:'门侧竹石和坐凳',density:'tight'}"
+      },
+      {
+        old: existingGate,
+        new: `${existingGate}\n      api.place({ name:'入口厢房', position:[-8,-26], role:'structure', groupId:'entry', layer:1 });\n      api.place({ name:'石桌凳', position:[-7,-27], role:'environment', groupId:'entry', layer:2 });\n      api.place({ name:'竹石组景', position:[7,-25], role:'environment', groupId:'entry', layer:3 });`
+      }
+    ] });
     const response = (content: string) => new Response(JSON.stringify({ ok: true, content }), {
       status: 200,
       headers: { 'Content-Type': 'application/json' }
@@ -940,6 +980,7 @@ describe('map code planner', () => {
     expect(repairRequest.messages.at(-1)?.content).toContain('scene_group_missing_layer:entry:3');
     expect(repairRequest.messages.at(-1)?.content).not.toContain('scene_group_underfilled_layer');
     expect(repairRequest.messages.at(-1)?.content).not.toContain('scene_group_oversized_clear_space');
+    expect(suggestion.codePlan?.code).toContain("region:{kind:'polygon',points:[[-9,-40],[9,-40],[9,-18],[-9,-18]]}");
     expect(applied.objects.filter((object) => object.designGroupId === 'entry')).toEqual(expect.arrayContaining([
       expect.objectContaining({ name: '园门', compositionLayer: 1 }),
       expect.objectContaining({ name: '入口厢房', compositionLayer: 1 }),
@@ -1002,7 +1043,8 @@ describe('map code planner', () => {
 
     expect(fetchImpl).toHaveBeenCalledTimes(2);
     expect(repairRequest.messages.at(-1)?.content).toContain('scene_group_region_missing:citadel');
-    expect(repairRequest.messages.at(-1)?.content).toContain('ordinary building fabric');
+    expect(repairRequest.messages.at(-1)?.content).toContain('exact unique substring');
+    expect(repairRequest.messages.at(-1)?.content).toContain('Never return the full function');
     expect(suggestion.diagnostics).toEqual(expect.arrayContaining([
       expect.objectContaining({ code: 'scene.program-incomplete', repaired: false })
     ]));
@@ -1070,12 +1112,66 @@ describe('map code planner', () => {
     expect(progress).toContain('场景自动补全暂不可用，已保留当前可用规划');
   });
 
-  it('keeps execution retries available after a scene-program completion repair times out', async () => {
-    const timedOut = `function plan(api) {
-      let total = 0;
-      for (let index = 0; index < 1_000_000_000; index += 1) total += index % 2;
-      api.place({ name:'marker', position:[total,0] });
+  it('keeps all existing placements when an optional repair rewrites the whole program', async () => {
+    const original = `function plan(api) {
+      api.sceneIntent({kind:'authored',reason:'花园'});
+      api.design({experienceMode:'sequential',intent:'花园',groups:[{
+        id:'garden',name:'花园',intent:'休憩',region:{kind:'circle',center:[0,0],radius:12},
+        layers:[{level:1,intent:'树木',density:'normal'},{level:3,intent:'座椅',density:'normal'}]
+      }],focuses:[],viewpoints:[],relations:[]});
+      for (let i=0;i<12;i++) api.place({name:'树',position:[i-6,4],role:'environment',groupId:'garden',layer:1});
     }`;
+    const rewritten = `function plan(api) {
+      api.sceneIntent({kind:'authored',reason:'花园'});
+      api.place({name:'座椅',position:[0,0],role:'functional'});
+    }`;
+    const response = (content: string) => new Response(JSON.stringify({ ok: true, content }), {
+      status: 200, headers: { 'Content-Type': 'application/json' }
+    });
+    const fetchImpl = vi.fn()
+      .mockResolvedValueOnce(response(original))
+      .mockResolvedValueOnce(response(rewritten));
+
+    const suggestion = await generateMapCodeSuggestion('花园', createEmptyMap(), [], {
+      apiBase: 'https://example.test', provider: 'gpt', fetchImpl,
+      minNewAssets: 0, maxNewAssets: 0, scope: 'scene', discoveryOnly: true
+    });
+
+    expect(suggestion.operations.filter((operation) => operation.type === 'object.add')).toHaveLength(12);
+    expect(suggestion.codePlan?.code).toBe(original);
+    expect(suggestion.diagnostics).toEqual(expect.arrayContaining([
+      expect.objectContaining({ code: 'scene.program-incomplete', repaired: false })
+    ]));
+  });
+
+  it('rejects a small targeted edit when it silently thins unrelated placements', async () => {
+    const original = `function plan(api) {
+      api.sceneIntent({kind:'authored',reason:'花园'});
+      api.design({experienceMode:'sequential',intent:'花园',groups:[{
+        id:'garden',name:'花园',intent:'休憩',region:{kind:'circle',center:[0,0],radius:12},
+        layers:[{level:1,intent:'树木',density:'normal'},{level:3,intent:'座椅',density:'normal'}]
+      }],focuses:[],viewpoints:[],relations:[]});
+      for (let i=0;i<12;i++) api.place({name:'树',position:[i-6,4],role:'environment',groupId:'garden',layer:1});
+    }`;
+    const repair = JSON.stringify({ edits: [{
+      old: "for (let i=0;i<12;i++) api.place({name:'树',position:[i-6,4],role:'environment',groupId:'garden',layer:1});",
+      new: "for (let i=0;i<1;i++) api.place({name:'树',position:[i-6,4],role:'environment',groupId:'garden',layer:1});\n      api.place({name:'座椅',position:[2,2],role:'functional',groupId:'garden',layer:3});"
+    }] });
+    const response = (content: string) => new Response(JSON.stringify({ ok: true, content }), {
+      status: 200, headers: { 'Content-Type': 'application/json' }
+    });
+    const fetchImpl = vi.fn().mockResolvedValueOnce(response(original)).mockResolvedValueOnce(response(repair));
+
+    const suggestion = await generateMapCodeSuggestion('花园', createEmptyMap(), [], {
+      apiBase: 'https://example.test', provider: 'gpt', fetchImpl,
+      minNewAssets: 0, maxNewAssets: 0, scope: 'scene', discoveryOnly: true
+    });
+
+    expect(suggestion.operations.filter((operation) => operation.type === 'object.add')).toHaveLength(12);
+    expect(suggestion.codePlan?.code).toBe(original);
+  });
+
+  it('retains a usable scene when its optional local completion edit times out', async () => {
     const underfilled = `function plan(api) {
       api.sceneIntent({ kind:'authored', reason:'人工园林' });
       api.design({
@@ -1091,43 +1187,30 @@ describe('map code planner', () => {
       });
       api.place({ name:'园门', position:[0,-10], role:'structure', groupId:'entry', layer:1 });
     }`;
-    const completed = `function plan(api) {
-      api.sceneIntent({ kind:'authored', reason:'人工园林' });
-      api.design({
-        experienceMode:'sequential', intent:'入口院',
-        groups:[{
-          id:'entry', name:'入口院', intent:'门内转折',
-          region:{kind:'polygon',points:[[-12,-12],[12,-12],[12,12],[-12,12]]},
-          layers:[
-            {level:1,intent:'园门与厢房',density:'tight',minCount:2},
-            {level:3,intent:'门侧竹石',density:'normal'}
-          ]
-        }], focuses:[], viewpoints:[], relations:[]
-      });
-      api.place({ name:'园门', position:[0,-10], role:'structure', groupId:'entry', layer:1 });
-      api.place({ name:'门侧竹石', position:[-6,-6], role:'environment', groupId:'entry', layer:3 });
-    }`;
+    const gate = "api.place({ name:'园门', position:[0,-10], role:'structure', groupId:'entry', layer:1 });";
+    const timedOutEdit = JSON.stringify({ edits: [{
+      old: gate,
+      new: `${gate}\n      for (let index = 0; index < 1_000_000_000; index += 1) api.random();`
+    }] });
     const response = (content: string) => new Response(JSON.stringify({ ok: true, content }), {
       status: 200,
       headers: { 'Content-Type': 'application/json' }
     });
     const fetchImpl = vi.fn()
-      .mockResolvedValueOnce(response(timedOut))
       .mockResolvedValueOnce(response(underfilled))
-      .mockResolvedValueOnce(response(timedOut))
-      .mockResolvedValueOnce(response(completed));
+      .mockResolvedValueOnce(response(timedOutEdit));
 
     const suggestion = await generateMapCodeSuggestion('生成中式园林', createEmptyMap(), [], {
       apiBase: 'https://example.test', provider: 'gpt', fetchImpl,
       minNewAssets: 0, maxNewAssets: 0, scope: 'scene'
     });
 
-    expect(fetchImpl).toHaveBeenCalledTimes(4);
-    expect(suggestion.operations.filter((operation) => operation.type === 'object.add')).toHaveLength(2);
-    expect(suggestion.codePlan?.repairAttempts).toBe(3);
-    const completionRepairRequest = JSON.parse(String(fetchImpl.mock.calls[2][1]?.body));
-    expect(completionRepairRequest.messages.at(-1).content)
-      .toContain('Do not scale loop counts from map width, map area, or fine coordinate steps');
+    expect(fetchImpl).toHaveBeenCalledTimes(2);
+    expect(suggestion.operations.filter((operation) => operation.type === 'object.add')).toHaveLength(1);
+    expect(suggestion.codePlan?.code).toBe(underfilled);
+    expect(suggestion.diagnostics).toEqual(expect.arrayContaining([
+      expect.objectContaining({ code: 'scene.program-incomplete', repaired: false })
+    ]));
   });
 
   it('explains the one-object bridge signature when repairing positional arguments', async () => {
@@ -1135,10 +1218,10 @@ describe('map code planner', () => {
       api.water('canal', { type:'lake', points:[[-8,-4],[8,-4],[8,4],[-8,4]], level:0.2 });
       api.bridge('canal', { name:'水晶桥', crossingCenter:[0,0], direction:[1,0], dimensions:[3,1,4] });
     }`;
-    const repaired = `function plan(api) {
-      api.sceneIntent({ kind:'natural', reason:'测试修复流程' });
-      api.place({ name:'修复完成标记', position:[0,0], role:'environment' });
-    }`;
+    const repaired = JSON.stringify({ edits: [{
+      old: "api.bridge('canal', { name:'水晶桥', crossingCenter:[0,0], direction:[1,0], dimensions:[3,1,4] });",
+      new: "api.bridge({ waterId:'canal', name:'水晶桥', crossingCenter:[0,0], direction:[1,0], dimensions:[3,1,4] });"
+    }] });
     const response = (content: string) => new Response(JSON.stringify({ ok: true, content }), {
       status: 200,
       headers: { 'Content-Type': 'application/json' }
@@ -1747,25 +1830,23 @@ describe('map code planner', () => {
   });
 
   it('uses uniform near-to-far grass feedback for one optional targeted scene correction', async () => {
+    const map = createEmptyMap('草层修正', 'map-grass-correction');
     const broad = `function plan(api) {
       api.sceneIntent({kind:'natural',reason:'pond meadow'});
       api.water('pond',{type:'lake',points:[[-6,-6],[6,-6],[6,6],[-6,6]],level:-0.2});
       api.grass({id:'blanket',preset:'meadow',region:{kind:'circle',center:[0,0],radius:30},density:0.8,variation:0});
     }`;
-    const layered = `function plan(api) {
-      api.sceneIntent({kind:'natural',reason:'pond meadow'});
-      api.water('pond',{type:'lake',points:[[-6,-6],[6,-6],[6,6],[-6,6]],level:-0.2});
-      api.grass({id:'shore',preset:'wetland',region:{kind:'circle',center:[0,0],radius:30},density:0.8,habitat:{waterDistance:[0,1,3,6]}});
-      api.grass({id:'upland',preset:'meadow',region:{kind:'circle',center:[0,0],radius:30},density:0.6,habitat:{waterDistance:[6,10,30,34]}});
-    }`;
     const response = (content: string) => new Response(JSON.stringify({ok:true,content}), {
       status:200,headers:{'Content-Type':'application/json'}
     });
-    const fetchImpl = vi.fn().mockResolvedValueOnce(response(broad)).mockResolvedValueOnce(response(layered));
-    expect(executeMapCodePlan(broad, createEmptyMap(), [], { scope:'scene' }).diagnostics).toEqual(
+    const fetchImpl = vi.fn().mockResolvedValueOnce(response(broad)).mockResolvedValueOnce(response(JSON.stringify({ edits: [{
+      old: "api.grass({id:'blanket',preset:'meadow',region:{kind:'circle',center:[0,0],radius:30},density:0.8,variation:0});",
+      new: "api.grass({id:'shore',preset:'wetland',region:{kind:'circle',center:[0,0],radius:30},density:0.8,habitat:{waterDistance:[0,1,3,6]}});\n      api.grass({id:'upland',preset:'meadow',region:{kind:'circle',center:[0,0],radius:30},density:0.6,habitat:{waterDistance:[6,10,30,34]}});"
+    }] })));
+    expect(executeMapCodePlan(broad, map, [], { scope:'scene' }).diagnostics).toEqual(
       expect.arrayContaining([expect.objectContaining({ code:'scene.vegetation-uniform' })])
     );
-    const suggestion = await generateMapCodeSuggestion('池边草地', createEmptyMap(), [], {
+    const suggestion = await generateMapCodeSuggestion('池边草地', map, [], {
       apiBase:'https://example.test',provider:'gpt',fetchImpl,
       minNewAssets:0,maxNewAssets:0,scope:'scene'
     });
@@ -2602,8 +2683,8 @@ describe('map code planner', () => {
       onPlanPreview: (plan) => plans.push(plan)
     })).rejects.toThrow('map_code_execution_failed');
 
-    // The initial attempt plus two execution repairs, each crashing after the hut was placed.
-    expect(plans).toHaveLength(3);
+    // Invalid whole-program repair responses are rejected; the original partial layout survives.
+    expect(plans).toHaveLength(2);
     for (const plan of plans) {
       expect(plan.summary).toContain('执行中断');
       expect(plan.placements).toHaveLength(1);
@@ -2672,14 +2753,10 @@ describe('map code planner', () => {
         }
       }
     `;
-    const repairedCode = `
-      function plan(api) {
-        const points = api.sampleBezier([-5, 0], [-2, 3], [2, -3], [5, 0], 4);
-        for (let index = 0; index < points.length; index += 1) {
-          api.place({ position: points[index] });
-        }
-      }
-    `;
+    const repairedCode = JSON.stringify({ edits: [{
+      old: 'api.place({ position: [points[index][0], points[index + 1][1]] });',
+      new: 'api.place({ position: points[index] });'
+    }] });
     const response = (content: string) => new Response(JSON.stringify({ ok: true, content }), {
       status: 200,
       headers: { 'Content-Type': 'application/json' }
@@ -2707,13 +2784,10 @@ describe('map code planner', () => {
         api.place({ name: 'marker', position: [total, 0] });
       }
     `;
-    const repairedCode = `
-      function plan(api) {
-        for (const point of api.gridPoints({ columns: 4, rows: 4, spacing: 6 })) {
-          api.place({ name: 'marker', position: point });
-        }
-      }
-    `;
+    const repairedCode = JSON.stringify({ edits: [{
+      old: 'let total = 0;\n        for (let index = 0; index < 1_000_000_000; index += 1) total += index % 2;\n        api.place({ name: \'marker\', position: [total, 0] });',
+      new: 'for (const point of api.gridPoints({ columns: 4, rows: 4, spacing: 6 })) {\n          api.place({ name: \'marker\', position: point });\n        }'
+    }] });
     const response = (content: string) => new Response(JSON.stringify({ ok: true, content }), {
       status: 200,
       headers: { 'Content-Type': 'application/json' }
@@ -2816,15 +2890,10 @@ describe('map code planner', () => {
         api.place({ name: 'proxy', position: [0, 0] });
       }
     `;
-    const generatedAssetCode = `
-      function plan(api) {
-        const signs = api.requireAsset({
-          key: 'neon-sign', name: 'Neon sign', prompt: 'Standalone cyberpunk neon sign', variants: 2
-        });
-        api.place({ assetId: api.asset(signs, 0), position: [-2, 0] });
-        api.place({ assetId: api.asset(signs, 1), position: [2, 0] });
-      }
-    `;
+    const generatedAssetCode = JSON.stringify({ edits: [{
+      old: "api.place({ name: 'proxy', position: [0, 0] });",
+      new: "api.place({ name: 'proxy', position: [0, 0] });\n        const signs = api.requireAsset({ key: 'neon-sign', name: 'Neon sign', prompt: 'Standalone cyberpunk neon sign', variants: 1 });\n        const lamps = api.requireAsset({ key: 'street-lamp', name: 'Street lamp', prompt: 'Standalone cyberpunk street lamp', variants: 1 });\n        api.place({ assetId: api.asset(signs, 0), position: [-2, 0] });\n        api.place({ assetId: api.asset(lamps, 0), position: [2, 0] });"
+    }] });
     const response = (content: string) => new Response(JSON.stringify({ ok: true, content }), {
       status: 200,
       headers: { 'Content-Type': 'application/json' }
