@@ -53,6 +53,32 @@ describe('map code planner', () => {
     expect(prompt).not.toContain('architecture, landmarks, creatures and functional objects at variants:1');
   });
 
+  it('plans for route-level and oblique views without forcing one primary focus', () => {
+    const prompt = buildMapCodePlannerSystemPrompt(createEmptyMap(), [], 0, 12, 'scene');
+    expect(prompt).toContain('45-degree oblique overview');
+    expect(prompt).toContain('eye-level route viewpoints');
+    expect(prompt).toContain('street-and-block fabric');
+    expect(prompt).not.toContain('For an authored multi-group scene, name one primary focus');
+  });
+
+  it('reports a flat authored building skyline without rejecting or reshaping the scene', () => {
+    const plan = (lastHeight: number) => executeMapCodePlan(`function plan(api) {
+      api.sceneIntent({kind:'authored',reason:'compact settlement'});
+      api.design({experienceMode:'mixed',intent:'small settlement',groups:[
+        {id:'houses',name:'住宅片区',intent:'street-facing cluster',spatialRole:'urban-fabric',
+         region:{kind:'circle',x:0,z:0,radius:24},layers:[]}
+      ],focuses:[],viewpoints:[],relations:[]});
+      for (let i=0;i<4;i++) api.place({name:'住宅',position:[-12+i*8,0],size:[4,i===3?${lastHeight}:5,4],groupId:'houses',layer:1,role:'structure'});
+    }`, createEmptyMap(), [], { scope:'scene' });
+    const flat = plan(5);
+    expect(flat.diagnostics).toEqual(expect.arrayContaining([
+      expect.objectContaining({ code:'scene.group-massing-flat', repaired:false })
+    ]));
+    expect(flat.diagnostics?.some((issue) => issue.code === 'scene.primary-focus-missing')).toBe(false);
+    expect(flat.operations.filter((operation) => operation.type === 'object.add')).toHaveLength(4);
+    expect(plan(8).diagnostics?.some((issue) => issue.code === 'scene.group-massing-flat')).toBe(false);
+  });
+
   it('persists render hints in the map transaction without clearing existing intent or the selected scheme', () => {
     const map = createEmptyMap();
     map.renderSchemeId = 'user-selected';
@@ -361,8 +387,8 @@ describe('map code planner', () => {
     expect(prompt).toContain('api.design({experienceMode');
     expect(prompt).toContain('one focus, multiple peer focuses, a primary-secondary hierarchy');
     expect(prompt).toContain('framed/borrowed/opposed views');
-    expect(prompt).toContain('A library may reveal one dominant mass immediately');
-    expect(prompt).toContain('a Chinese garden may use several sequential scenes');
+    expect(prompt).toContain('Classify the requested place by spatial organization');
+    expect(prompt).toContain('their edges, density and sequence need not match');
     expect(prompt).toContain('Every leaf design group is a complete scene room');
     expect(prompt).toContain('Every declared layer intent must be fulfilled by actual placements');
     expect(prompt).toContain('minCount?:1..64');

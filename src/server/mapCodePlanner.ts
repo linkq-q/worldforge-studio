@@ -3141,7 +3141,7 @@ export function buildMapCodePlannerSystemPrompt(
   const scopeContract = requestMode === 'refine'
     ? refineContext
     : scope === 'scene'
-    ? `\n## Unified scene ownership\nYou are the single author of the complete outdoor scene. No separate director or later ecology planner will repair your composition. You own terrain, water, surfaces, grass, constructed forms, circulation, vegetation, rocks, creatures and their spatial relationships in one coordinate system.\nFirst call api.sceneIntent({kind:'natural'|'authored',reason:'short explanation'}). Decide semantically from the requested place, not from a keyword list. A culturally designed or purpose-built place such as a garden, courtyard, campus, park, village, arena or temple ground is normally authored even when plants and water dominate it. A wilderness without built intent is natural.\nThen call api.design({...}) once to describe the composition you are about to build. Choose one focus, multiple peer focuses, a primary-secondary hierarchy, a sequential experience, or a mixture according to the scene. Different groups may be peers while each group has its own hierarchy; groups may nest. Do not force every scene into a centered landmark or one fixed route pattern. Every leaf design group is a complete scene room: give it a purpose, at least one arrival or through-route, an anchor or spatial edge, supporting content and human-scale detail. Every declared layer intent must be fulfilled by actual placements carrying that exact groupId and layer; do not write aspirational layers that the code never builds.\nUse transferable spatial-design methods: hierarchy, axes or counter-axes, arrival and circulation, framed/borrowed/opposed views, thresholds, reveal timing, compression and release, rhythm, clustering, and intentional negative space. A library may reveal one dominant mass immediately; an arena may use a strong center and radial tiers; a Chinese garden may use several sequential scenes with enclosure, moon gates, pavilions, corridors, bridges, paving, pond, frame views and counter-views. Create recognizable architecture for authored scenes before natural decoration. For natural scenes, omit unnecessary architecture but still compose landform, paths, water and populations coherently. A large empty surface is not automatically meaningful negative space: it needs a specific use, proportionate dimensions, shaped boundaries and composed edges. In a large garden, do not spend the whole foreground on one broad empty arrival road; divide it into connected courts, planted pockets, side rooms or secondary destinations according to the design.\nPlace layer 1 anchors first, layer 2 supporting forms next, then intentionally over-place removable layer 3/4 scenery where richness is wanted; the local compiler may thin only those decorative layers. After structure and circulation, complete a dedicated detail-fill pass for thresholds, route rhythm, focal framing, vegetation masses and small accents. Preserve playable routes and deliberate empty space. Buildings that normally form an ensemble should be composed as related wings, halls, pavilions or corridors rather than represented by one token object. Compose water from multiple banks and arrival points: place waterside architecture, rocks, seating, lanterns and planting where routes reach, turn beside or cross the shore.\n`
+    ? `\n## Unified scene ownership\nYou are the single author of the complete outdoor scene. No separate director or later ecology planner will repair your composition. You own terrain, water, surfaces, grass, constructed forms, circulation, vegetation, rocks, creatures and their spatial relationships in one coordinate system.\nFirst call api.sceneIntent({kind:'natural'|'authored',reason:'short explanation'}). Decide semantically from the requested place, not from a keyword list. A culturally designed or purpose-built place such as a garden, courtyard, campus, park, village, arena or temple ground is normally authored even when plants and water dominate it. A wilderness without built intent is natural.\nThen call api.design({...}) once to describe the composition you are about to build. Choose one focus, multiple peer focuses, a primary-secondary hierarchy, a sequential experience, or a mixture according to the scene. Different groups may be peers while each group has its own hierarchy; groups may nest. Do not force every scene into a centered landmark or one fixed route pattern. Every leaf design group is a complete scene room: give it a purpose, at least one arrival or through-route, an anchor or spatial edge, supporting content and human-scale detail. Every declared layer intent must be fulfilled by actual placements carrying that exact groupId and layer; do not write aspirational layers that the code never builds.\nClassify the requested place by spatial organization, not by a scene-name keyword: street-and-block fabric, connected outdoor rooms, a landscape path network, an object-centered precinct, or a justified hybrid. Use that choice to decide route topology, enclosure, open-space purpose and massing. A village, garden and park can all have circulation, but their edges, density and sequence need not match. Treat the user's specified subjects and relationships as constraints; do not replace them merely to improve a proxy score.\nUse transferable spatial-design methods: hierarchy, axes or counter-axes, arrival and circulation, framed/borrowed/opposed views, thresholds, reveal timing, compression and release, rhythm, clustering, and intentional negative space. Create recognizable architecture for authored scenes before natural decoration. For natural scenes, omit unnecessary architecture but still compose landform, paths, water and populations coherently. A large empty surface is not automatically meaningful negative space: it needs a specific use, proportionate dimensions, shaped boundaries and composed edges. Every sizable dry area inside a designed region should have a named spatial role or be reshaped; distant blank ground is not a finished background.\nPlace layer 1 anchors first, layer 2 supporting forms next, then intentionally over-place removable layer 3/4 scenery where richness is wanted; the local compiler may thin only those decorative layers. After structure and circulation, complete a dedicated detail-fill pass for thresholds, route rhythm, focal framing, vegetation masses and small accents. Preserve playable routes and deliberate empty space. Buildings that normally form an ensemble should be composed as related wings, halls, pavilions or corridors rather than represented by one token object. Compose water from multiple banks and arrival points: place waterside architecture, rocks, seating, lanterns and planting where routes reach, turn beside or cross the shore.\n`
     : '';
   const capabilityCatalog = worldCapabilitySummary('map-code').map((capability) => ({
     id: capability.id,
@@ -3174,7 +3174,8 @@ Do not use random rotation for directional assets. For a ring or arena, use api.
 
 ## Design philosophy
 Build a readable composition, not a random pile. Let the requested place determine whether focus is singular, multiple, sequential, or mixed.
-For an authored multi-group scene, name one primary focus, choose an entry viewpoint aimed at it, and explicitly connect each leaf group with a cross-group relation or shared route guide. Keep the primary readable from the intended entry, not accidentally dwarfed by nearby secondary anchors.
+For an authored multi-group scene, explicitly connect each leaf group with a cross-group relation or shared route guide. Choose a primary focus only if the place calls for one; otherwise use peer or sequential focuses. If a primary is declared visible from an entry viewpoint, keep it readable rather than accidentally dwarfed by a secondary anchor.
+Judge composition from several eye-level route viewpoints and one 45-degree oblique overview, not only from the map plane. Along the route, arrange meaningful foreground edges, middle-distance activity or architecture, and a distant landform or silhouette where the requested scene supports them. In oblique view, vary rooflines, terrain levels, canopy heights or other large masses when appropriate; repeating equal-height boxes is not a height hierarchy. Do not add arbitrary towers or clutter just to vary a metric.
 Use big-medium-small hierarchy: a few large anchors, a moderate number of supporting pieces, and enough controlled small details to make authored space feel intentionally finished.
 Keep key routes clear, respect the map bounds, avoid filling every cell, and keep repeated elements deterministic from api.seed.
 Treat declared building dimensions as real footprints: keep standalone building footprints disjoint, with a small street or courtyard gap between their edges. Do not stack several houses at nearly the same center.
@@ -3397,7 +3398,8 @@ async function discoverMapCodeWithRepairs(
       const recoverableExecutionIssues = discovery.issues.filter((issue) => issue.repairHint);
       const visualIssues = !options.approvedCode && options.mode !== 'refine' && options.scope === 'scene'
         ? (discovery.suggestion.diagnostics ?? []).filter((issue) => [
-          'scene.group-route-unbound', 'scene.group-route-disconnected', 'scene.vegetation-uniform'
+          'scene.group-route-unbound', 'scene.group-route-disconnected', 'scene.vegetation-uniform',
+          'scene.group-massing-flat'
         ].includes(issue.code)).slice(0, 2)
         : [];
       const repairDetails = [
@@ -3586,16 +3588,25 @@ function reviewCodeDesignComposition(map: EditableMap): MapLintIssue[] {
     });
   }
   if (leafGroups.length === 0) return issues;
+  for (const group of leafGroups) {
+    if (group.spatialRole !== 'urban-fabric' && group.spatialRole !== 'landmark-ensemble') continue;
+    const roofs = map.objects.filter((object) => object.designGroupId === group.id
+      && (object.compositionLayer === 1 || object.compositionLayer === 2)
+      && object.transform.size[0] * object.transform.scale[0] >= 2.5
+      && object.transform.size[2] * object.transform.scale[2] >= 2.5
+      && object.transform.size[1] * object.transform.scale[1] >= 2.5)
+      .map((object) => object.transform.position[1] + object.transform.size[1] * object.transform.scale[1]);
+    if (roofs.length < 4) continue;
+    const range = Math.max(...roofs) - Math.min(...roofs);
+    if (range < Math.max(1, Math.max(...roofs) * 0.2)) issues.push({
+      code: 'scene.group-massing-flat', severity: 'warning', repaired: false,
+      message: `片区「${group.name}」的 ${roofs.length} 个主要体块顶部高度几乎一致；请从沿途和 45° 俯视检查屋顶、地形或树冠是否缺少高低层次。`
+    });
+  }
   const primaries = design.focuses.filter((focus) => focus.kind === 'primary');
   const primary = primaries.length === 1 ? primaries[0] : undefined;
   const primaryObject = map.objects.find((object) => object.id === primary?.objectId);
-  if (!primary || !primaryObject) {
-    issues.push({
-      code: 'scene.primary-focus-missing', severity: 'warning', repaired: false,
-      message: '缺少可定位的唯一主焦点；请在灰盒中确认哪处场景应先吸引视线。'
-    });
-    return issues;
-  }
+  if (!primary || !primaryObject) return issues;
   if (primary.reveal !== 'visible' && primary.reveal !== 'framed') return issues;
   const viewpoint = design.viewpoints.find((view) => view.role === 'entry' && view.targetFocusId === primary.id);
   if (!viewpoint) return issues;
