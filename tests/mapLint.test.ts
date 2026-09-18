@@ -214,7 +214,7 @@ describe('map lint and deterministic repair', () => {
     ))).toBe(false);
   });
 
-  it('aligns a current-preview town building to the nearest settlement street', () => {
+  it('does not reorient a manually placed town building just because a street is nearby', () => {
     const map = createEmptyMap('street town', 'street-town', [64, 12, 64]);
     map.guides = [{
       id: 'main-street', name: '主街', points: [[-24, 0], [24, 0]], curve: 'polyline',
@@ -229,18 +229,12 @@ describe('map lint and deterministic repair', () => {
     map.objects = [house];
 
     const lint = lintMap(map, { repairableObjectIds: new Set([house.id]) });
-    const repaired = applyMapOperations(map, lint.repairOperations).objects[0];
-
-    expect(repaired.sourceGuideId).toBe('main-street');
-    expect(repaired.transform.position[2]).toBeGreaterThan(4);
-    expect(repaired.transform.position[2]).toBeLessThan(6.5);
-    expect(Math.abs(Math.abs(repaired.transform.rotation[1]) - Math.PI)).toBeLessThan(0.001);
-    expect(lint.issues).toEqual(expect.arrayContaining([
-      expect.objectContaining({ code: 'settlement.building-aligned', repaired: true })
-    ]));
+    expect(lint.repairOperations).toEqual([]);
+    expect(house.sourceGuideId).toBeUndefined();
+    expect(lint.issues.some((issue) => issue.code === 'settlement.building-aligned')).toBe(false);
   });
 
-  it('binds a loose public bench to the nearest street edge without treating every chair as roadside furniture', () => {
+  it('only fine-tunes route-owned furniture and leaves unbound furniture in place', () => {
     const map = createEmptyMap('bench town', 'bench-town', [64, 12, 64]);
     map.guides = [{
       id: 'main-street', name: '主街', points: [[-24, 0], [24, 0]], curve: 'polyline',
@@ -248,13 +242,17 @@ describe('map lint and deterministic repair', () => {
     }];
     const bench = createMapObject('公共长椅', null);
     bench.id = 'preview-bench';
-    bench.transform.position = [5, 0, 9];
+    bench.sourceGuideId = 'main-street';
+    bench.transform.position = [5, 0, 3.4];
     const cafeChair = createMapObject('咖啡店椅子', null);
     cafeChair.id = 'cafe-chair';
     cafeChair.transform.position = [10, 0, 9];
-    map.objects = [bench, cafeChair];
+    const freeBench = createMapObject('公共长椅', null);
+    freeBench.id = 'free-bench';
+    freeBench.transform.position = [-10, 0, 9];
+    map.objects = [bench, cafeChair, freeBench];
 
-    const lint = lintMap(map, { repairableObjectIds: new Set([bench.id, cafeChair.id]) });
+    const lint = lintMap(map, { repairableObjectIds: new Set([bench.id, cafeChair.id, freeBench.id]) });
     const repaired = applyMapOperations(map, lint.repairOperations);
     const repairedBench = repaired.objects.find((object) => object.id === bench.id)!;
     const repairedChair = repaired.objects.find((object) => object.id === cafeChair.id)!;
@@ -263,9 +261,33 @@ describe('map lint and deterministic repair', () => {
     expect(repairedBench.transform.position[2]).toBeCloseTo(3, 1);
     expect(repairedChair.sourceGuideId).toBeUndefined();
     expect(repairedChair.transform.position).toEqual(cafeChair.transform.position);
+    expect(repaired.objects.find((object) => object.id === freeBench.id)?.transform.position).toEqual(freeBench.transform.position);
     expect(lint.issues).toEqual(expect.arrayContaining([
       expect.objectContaining({ code: 'roadside.route-bound', repaired: true, objectIds: [bench.id] })
     ]));
+  });
+
+  it('does not reassign a distant or stale route-owned prop to another road', () => {
+    const map = createEmptyMap('route ownership', 'route-ownership', [96, 12, 96]);
+    map.guides = [
+      { id: 'street-a', name: '主街', points: [[-40, 0], [40, 0]], curve: 'polyline', closed: false, width: 4, tags: ['street'] },
+      { id: 'street-b', name: '支路', points: [[-40, 25], [40, 25]], curve: 'polyline', closed: false, width: 4, tags: ['street'] }
+    ];
+    const distant = createMapObject('路灯', null);
+    distant.id = 'distant';
+    distant.sourceGuideId = 'street-a';
+    distant.transform.position = [0, 0, 25];
+    const stale = createMapObject('路灯', null);
+    stale.id = 'stale';
+    stale.sourceGuideId = 'deleted-street';
+    stale.transform.position = [8, 0, 3];
+    map.objects = [distant, stale];
+
+    const lint = lintMap(map, { repairableObjectIds: new Set([distant.id, stale.id]) });
+    expect(lint.repairOperations).toEqual([]);
+    expect(map.objects.map((object) => object.transform.position)).toEqual([[0, 0, 25], [8, 0, 3]]);
+    expect(map.objects.map((object) => object.sourceGuideId)).toEqual(['street-a', 'deleted-street']);
+    expect(lint.issues.some((issue) => issue.code === 'roadside.route-bound')).toBe(false);
   });
 
   it('repairs even shallow outdoor building intersections', () => {

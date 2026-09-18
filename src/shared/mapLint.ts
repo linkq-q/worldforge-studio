@@ -16,7 +16,7 @@ import { applyMapOperations, type MapOperation } from './mapOperations';
 import { sampleMapGuide, type MapGuide, type MapGuideSample } from './mapGuide';
 import { findSafeSpawnPosition, isSpawnPositionSafe } from './mapSpawnSafety';
 import { isPointInsideWaterBody, waterSurfaceLevelAt } from './mapWater';
-import { evaluateSettlementQuality, isRoadsideSemantic, isSettlementBuildingSemantic } from './settlementQuality';
+import { evaluateSettlementQuality, isSettlementBuildingSemantic } from './settlementQuality';
 
 export type MapLintSeverity = 'info' | 'warning' | 'error';
 
@@ -779,47 +779,16 @@ function lintSettlementRelations(
   const assets = new Map((map.assets ?? []).map((asset) => [asset.id, asset]));
   for (const object of map.objects) {
     if (removedIds.has(object.id) || !repairableObjectIds.has(object.id) || object.parentId) continue;
+    const preferredGuide = guides.find((guide) => guide.id === object.sourceGuideId);
+    if (!preferredGuide) continue;
+    const nearest = nearestGuideSample([preferredGuide], object.transform.position[0], object.transform.position[2]);
+    if (!nearest) continue;
     const asset = object.assetId ? assets.get(object.assetId) : undefined;
     const semantic = [object.name, asset?.name, asset?.prompt, ...(asset?.tags ?? [])].filter(Boolean).join(' ');
-    const preferredGuide = object.sourceGuideId
-      ? guides.find((guide) => guide.id === object.sourceGuideId)
-      : undefined;
-    const nearest = nearestGuideSample(
-      preferredGuide ? [preferredGuide] : guides,
-      object.transform.position[0],
-      object.transform.position[2]
-    );
-    if (!nearest) continue;
-
-    if (isOrdinaryStreetBuilding(semantic)) {
-      // Route-derived placements already own their authored side, setback and facing.
-      // Collision repair below may separate them, but generic snapping must not recompose them.
-      if (preferredGuide) continue;
-      const frontageDepth = Math.max(0.5, Math.min(object.transform.size[0], object.transform.size[2]) / 2);
-      if (!preferredGuide && nearest.distance > nearest.guide.width / 2 + frontageDepth + 4) continue;
-      const offset = nearest.guide.width / 2 + frontageDepth + 0.8;
-      const relation = streetEdgeTransform(map, object, nearest, offset);
-      if (!relationChanged(object, relation.position, relation.rotationY, nearest.guide.id)) continue;
-      repairs.push({
-        type: 'object.update',
-        objectId: object.id,
-        patch: {
-          sourceGuideId: nearest.guide.id,
-          transform: { position: relation.position, rotation: [0, relation.rotationY, 0] }
-        }
-      });
-      issues.push({
-        code: 'settlement.building-aligned',
-        severity: 'warning',
-        message: '普通商铺或民居已按最近街道重新设置退距与正面朝向。',
-        objectIds: [object.id],
-        repaired: true
-      });
-      continue;
-    }
-
-    if (!isRoadsideSemantic(semantic)) continue;
+    // Frontage buildings already own their setback and facing; only fine-tune route-owned props.
+    if (isSettlementBuildingSemantic(semantic)) continue;
     const relation = streetEdgeTransform(map, object, nearest, nearest.guide.width / 2 + 1);
+    if (Math.hypot(object.transform.position[0] - relation.position[0], object.transform.position[2] - relation.position[2]) > 1.5) continue;
     if (!relationChanged(object, relation.position, relation.rotationY, nearest.guide.id)) continue;
     repairs.push({
       type: 'object.update',
@@ -832,16 +801,11 @@ function lintSettlementRelations(
     issues.push({
       code: 'roadside.route-bound',
       severity: 'warning',
-      message: '散落的公共路灯、长椅或标牌已绑定到最近街道边缘。',
+      message: '沿路物体已在来源街道边缘做局部校正。',
       objectIds: [object.id],
       repaired: true
     });
   }
-}
-
-function isOrdinaryStreetBuilding(semantic: string): boolean {
-  return isSettlementBuildingSemantic(semantic)
-    && !/\b(?:landmark|tower|church|temple|hall|gate|pavilion|palace|castle)\b|地标|塔楼|教堂|寺庙|会馆|大厅|城门|牌坊|亭|宫殿|城堡/i.test(semantic);
 }
 
 function nearestGuideSample(
