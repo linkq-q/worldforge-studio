@@ -58,14 +58,18 @@ describe('world capability executor', () => {
     }, map)).toThrow('world_capability_unknown_input:arbitraryCode');
   });
 
-  it('reports sparse settlement coverage and a freely scattered roadside lamp', () => {
+  it('reports sparse settlement coverage without treating a free lamp as a lost route placement', () => {
     const base = createEmptyMap('Sparse town', 'sparse-town', [72, 12, 72]);
     const streets = executeWorldCapability('settlement.create-street-grid', townInput, base);
     const map = applyMapOperations(base, streets.suggestion.operations);
     const lamp = createMapObject('路灯');
     lamp.id = 'free-lamp';
     lamp.transform.position = [28, 0, 28];
-    map.objects.push(lamp);
+    const stale = createMapObject('路灯');
+    stale.id = 'stale-lamp';
+    stale.sourceGuideId = 'deleted-route';
+    stale.transform.position = [25, 0, 25];
+    map.objects.push(lamp, stale);
 
     const report = evaluateSettlementQuality(map);
 
@@ -73,7 +77,8 @@ describe('world capability executor', () => {
       expect.objectContaining({ code: 'settlement.building-coverage-low' }),
       expect.objectContaining({ code: 'settlement.frontage-low' }),
       expect.objectContaining({ code: 'settlement.unassigned-open-space' }),
-      expect.objectContaining({ code: 'roadside.route-unbound', objectIds: ['free-lamp'] })
+      expect.objectContaining({ code: 'roadside.route-unbound', objectIds: ['stale-lamp'] })
     ]));
+    expect(report.metrics.unboundRoadsideCount).toBe(1);
   });
 });

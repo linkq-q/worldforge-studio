@@ -38,7 +38,7 @@ export interface MapLintIssue {
     | 'scene.group-route-unbound' | 'scene.group-route-disconnected' | 'scene.vegetation-uniform'
     | 'foundation.max-thickness' | 'scene.refine-scope'
     | 'settlement.building-coverage-low' | 'settlement.frontage-low'
-    | 'settlement.unassigned-open-space' | 'settlement.building-aligned'
+    | 'settlement.unassigned-open-space'
     | 'roadside.route-unbound' | 'roadside.route-bound';
   severity: MapLintSeverity;
   message: string;

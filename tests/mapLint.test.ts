@@ -231,7 +231,6 @@ describe('map lint and deterministic repair', () => {
     const lint = lintMap(map, { repairableObjectIds: new Set([house.id]) });
     expect(lint.repairOperations).toEqual([]);
     expect(house.sourceGuideId).toBeUndefined();
-    expect(lint.issues.some((issue) => issue.code === 'settlement.building-aligned')).toBe(false);
   });
 
   it('only fine-tunes route-owned furniture and leaves unbound furniture in place', () => {

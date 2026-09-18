@@ -57,6 +57,7 @@ describe('map code planner', () => {
     expect(prompt).toContain('EXISTING asset budget');
     expect(prompt).toContain('must retain its own identity');
     expect(prompt).toContain('Anchor a local activity cluster once, then place its related props in host-local coordinates');
+    expect(prompt).toContain('Leave sourceGuideId unset for freely scattered scenery');
     expect(prompt).toContain('Do not use a fixed building-name checklist');
     expect(prompt).toContain('Repeated standalone buildings may use 2-3 coherent variants');
     expect(prompt).not.toContain('architecture, landmarks, creatures and functional objects at variants:1');
@@ -1116,7 +1117,7 @@ describe('map code planner', () => {
     ]));
   });
 
-  it('reports an unbound garden lantern without rewriting otherwise valid code', async () => {
+  it('accepts a freestanding garden lantern without rewriting otherwise valid code', async () => {
     const code = `function plan(api) {
       api.sceneIntent({ kind:'authored', reason:'庭院' });
       api.route({ id:'garden-path', points:[[-10,0],[10,0]], width:3 });
@@ -1134,9 +1135,7 @@ describe('map code planner', () => {
 
     expect(fetchImpl).toHaveBeenCalledTimes(1);
     expect(suggestion.codePlan?.repairAttempts).toBe(0);
-    expect(suggestion.diagnostics).toEqual(expect.arrayContaining([
-      expect.objectContaining({ code: 'roadside.route-unbound', repaired: false })
-    ]));
+    expect(suggestion.diagnostics?.some((issue) => issue.code === 'roadside.route-unbound')).toBe(false);
   });
 
   it('keeps a usable plan when the optional scene-completion request fails', async () => {

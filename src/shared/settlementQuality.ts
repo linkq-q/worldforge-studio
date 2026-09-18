@@ -32,15 +32,10 @@ export interface SettlementQualityReport {
 }
 
 const BUILDING_SEMANTIC = /\b(?:building|house|home|shop|store|hall|tower|inn|hut|barn|cottage|school|church|temple|warehouse|workshop)\b|建筑|房屋|民居|住宅|商店|店铺|大厅|会馆|塔楼|旅店|客栈|小屋|谷仓|学校|教堂|寺庙|仓库|工坊|厢房|园门/i;
-const ROADSIDE_SEMANTIC = /\b(?:streetlight|lamp\s*post|lamp|lantern|bench|sign|signpost|bollard|barrier|guardrail)\b|路灯|灯柱|灯笼|长椅|座椅|路牌|标牌|护栏|路桩/i;
 const GRID_SIZE = 28;
 
 export function isSettlementBuildingSemantic(value: string): boolean {
   return BUILDING_SEMANTIC.test(value);
-}
-
-export function isRoadsideSemantic(value: string): boolean {
-  return ROADSIDE_SEMANTIC.test(value);
 }
 
 /** Deterministic, render-independent quality signals for authored settlements. */
@@ -53,7 +48,8 @@ export function evaluateSettlementQuality(map: EditableMap): SettlementQualityRe
     return [object.name, asset?.name, asset?.prompt, ...(asset?.tags ?? [])].filter(Boolean).join(' ');
   };
   const buildingObjects = map.objects.filter((object) => isSettlementBuildingSemantic(semantic(object)) && objectBounds.has(object.id));
-  const roadsideObjects = map.objects.filter((object) => isRoadsideSemantic(semantic(object)));
+  const roadsideObjects = map.objects.filter((object) => object.sourceGuideId && !object.parentId
+    && !isSettlementBuildingSemantic(semantic(object)));
   const unboundRoadside = roadsideObjects.filter((object) => !isBoundToGuide(object, map.guides));
 
   if (settlementGuides.length === 0) {
@@ -137,7 +133,7 @@ export function evaluateSettlementQuality(map: EditableMap): SettlementQualityRe
 function unboundRoadsideIssue(objects: EditableMap['objects']): SettlementQualityIssue[] {
   return objects.length === 0 ? [] : [{
     code: 'roadside.route-unbound',
-    message: `有 ${objects.length} 个路灯或沿路设施未绑定有效路线，或距离来源路线过远。`,
+    message: `有 ${objects.length} 个声明了来源路线的物体找不到该路线，或距离来源路线过远。`,
     actual: objects.length,
     expected: 0,
     objectIds: objects.map((object) => object.id)
