@@ -129,10 +129,24 @@ export class CartoonGrassField {
     });
     if (placements.length === 0) return;
 
-    const bladeGeometry = createBladeGeometry(layerStyle, preset, layer?.seed);
+    if (preset === 'wetland') {
+      const short = placements.filter((placement) => placement.variant !== 'tall');
+      const tall = placements.filter((placement) => placement.variant === 'tall');
+      if (short.length) this._buildBladeBatch(layer, short, layerStyle, preset, layerHeight, 'short');
+      if (tall.length) this._buildBladeBatch(layer, tall, layerStyle, preset, layerHeight, 'reed');
+    } else {
+      this._buildBladeBatch(layer, placements, layerStyle, preset, layerHeight);
+    }
+
+    const flowers = placements.filter((placement) => placement.variant === 'flowers');
+    if (flowers.length > 0) this._buildFlowers(layer, flowers, layerStyle, preset, layerHeight);
+  }
+
+  _buildBladeBatch(layer, placements, layerStyle, preset, layerHeight, form = 'short') {
+    const bladeGeometry = createBladeGeometry(layerStyle, preset, layer?.seed, form);
     const bladeMaterial = createGrassMaterial(layerStyle);
     const blades = new THREE.InstancedMesh(bladeGeometry, bladeMaterial, placements.length);
-    blades.name = `grass:${layer.id || 'layer'}`;
+    blades.name = `${form === 'reed' ? 'grass-reeds' : 'grass'}:${layer.id || 'layer'}`;
     blades.castShadow = false;
     blades.receiveShadow = true;
     blades.frustumCulled = false;
@@ -141,6 +155,7 @@ export class CartoonGrassField {
     blades.userData.materialTags = ['vegetation', 'grass'];
     blades.userData.grassBladeCount = placements.length;
     blades.userData.grassPreset = preset;
+    blades.userData.grassForm = form;
     blades.userData.grassHeight = layerHeight;
     blades.instanceMatrix.setUsage(THREE.StaticDrawUsage);
     const groundNormals = new Float32Array(placements.length * 3);
@@ -169,8 +184,6 @@ export class CartoonGrassField {
     this.group.add(blades);
     this._track(blades, bladeGeometry, bladeMaterial);
 
-    const flowers = placements.filter((placement) => placement.variant === 'flowers');
-    if (flowers.length > 0) this._buildFlowers(layer, flowers, layerStyle, preset, layerHeight);
   }
 
   _buildFlowers(layer, placements, layerStyle, preset, layerHeight) {
@@ -299,7 +312,7 @@ ${grassRampFragment(normalized)}`);
   return material;
 }
 
-function createBladeGeometry(style, preset, seed = 1) {
+function createBladeGeometry(style, preset, seed = 1, form = 'short') {
   const geometry = new THREE.BufferGeometry();
   const positions = [];
   const normals = [];
@@ -345,6 +358,26 @@ function createBladeGeometry(style, preset, seed = 1) {
     appendStrip([
       { y: 0, width: 0.28 }, { y: 0.58, width: 0.22 }, { y: 0.88, width: 0.13, x: 0.03 }, { y: 1, width: 0, x: 0.08 }
     ]);
+  } else if (preset === 'wetland' && form === 'reed') {
+    // A narrow upright culm with a seed spike and two arched side leaves.
+    appendStrip([
+      { y: 0, width: 0.085 }, { y: 0.52, width: 0.065 },
+      { y: 0.76, width: 0.05 }, { y: 1, width: 0.035 }
+    ]);
+    appendStrip([
+      { y: 0.16, width: 0.06, x: 0, t: 0.16 },
+      { y: 0.46, width: 0.18, x: 0.12, t: 0.46 },
+      { y: 0.75, width: 0, x: 0.35, t: 0.75 }
+    ], -0.25);
+    appendStrip([
+      { y: 0.1, width: 0.05, x: 0, t: 0.1 },
+      { y: 0.4, width: 0.16, x: -0.1, t: 0.4 },
+      { y: 0.68, width: 0, x: -0.32, t: 0.68 }
+    ], 0.4);
+    appendStrip([
+      { y: 0.78, width: 0.075 }, { y: 0.84, width: 0.11 },
+      { y: 0.97, width: 0.1 }, { y: 1.04, width: 0 }
+    ], 0.45);
   } else if (preset === 'wetland') {
     appendStrip([
       { y: 0, width: 0.34 }, { y: 0.58, width: 0.31, x: 0.03 }, { y: 0.9, width: 0.16, x: 0.1 }, { y: 1, width: 0, x: 0.16 }

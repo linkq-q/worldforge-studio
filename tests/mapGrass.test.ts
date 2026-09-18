@@ -7,6 +7,23 @@ import { buildMapGrassField, deriveContactAwareGrassMap } from '../src/client/ma
 import { isNormalDepthPrePassMesh } from '../src/client/renderPrePassPolicy';
 
 describe('map grass layers', () => {
+  it('renders wetland short grasses and reed stalks as distinct mixed forms', () => {
+    const map = applyMapOperations(createEmptyMap('reeds', 'wetland-reeds'), [
+      { type: 'grass.layer.add', layer: { id: 'marsh', preset: 'wetland', height: 1.4, mix: { short: 0.45, tall: 0.5, flowers: 0.05 } } },
+      { type: 'grass.fill', layerId: 'marsh', density: 1 }
+    ]);
+    const field = buildMapGrassField(map)!;
+    const low = field.group.getObjectByName('grass:marsh') as import('three').InstancedMesh;
+    const reeds = field.group.getObjectByName('grass-reeds:marsh') as import('three').InstancedMesh;
+
+    expect(low.count).toBeGreaterThan(0);
+    expect(reeds.count).toBeGreaterThan(0);
+    expect(reeds.userData).toMatchObject({ grassPreset: 'wetland', grassForm: 'reed' });
+    expect(reeds.geometry.getAttribute('position').count).toBeGreaterThan(low.geometry.getAttribute('position').count);
+    expect(field.getStats().bladeCount).toBe(low.count + reeds.count);
+    field.dispose();
+  });
+
   it('keeps grass cards in the normal/depth pre-pass', () => {
     const map = applyMapOperations(createEmptyMap('pre-pass grass', 'pre-pass-grass'), [
       { type: 'grass.layer.add', layer: { id: 'meadow' } },

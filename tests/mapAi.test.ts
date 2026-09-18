@@ -54,7 +54,7 @@ describe('map AI adapter', () => {
     expect(createAsset).not.toHaveBeenCalled();
   });
 
-  it('defaults repeated outdoor nature families to four variants within the asset budget', async () => {
+  it('does not count nature variants against the asset-family budget', async () => {
     const plan = compositionPlan({
       assetFamilies: [family('trees', ['tree', 'pine'], 'large')],
       zones: [zone('grove', [{ familyId: 'trees', distribution: 'clustered' }])],
@@ -72,7 +72,7 @@ describe('map AI adapter', () => {
     );
 
     expect(approved.assetFamilies).toEqual([
-      expect.objectContaining({ id: 'trees', desiredVariants: 4 })
+      expect.objectContaining({ id: 'trees', desiredVariants: 6 })
     ]);
   });
 
