@@ -98,6 +98,15 @@ describe('map design semantics', () => {
     ]);
   });
 
+  it('normalizes the planned story count of a reusable-part building', () => {
+    const design = normalizeMapDesignSemantics({ groups:[{id:'city'}], assemblies:[
+      {id:'hall',groupId:'city',intent:'tiered public hall',topology:'loop',stories:3,moduleKeys:['wall-bay','column','wall-bay']},
+      {id:'wall',groupId:'city',intent:'perimeter',topology:'path',stories:20}
+    ] }, [96,16,96]);
+    expect(design.assemblies.map((assembly) => assembly.stories)).toEqual([3, 8]);
+    expect(design.assemblies[0].moduleKeys).toEqual(['wall-bay','column']);
+  });
+
   it('does not turn a broad group attraction into relocation of an authored building', () => {
     const map = createEmptyMap();
     const gate = createMapObject('入口', null);

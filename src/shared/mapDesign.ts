@@ -82,6 +82,8 @@ export interface MapDesignAssembly {
   intent: string;
   topology: MapAssemblyTopology;
   openings?: number;
+  stories?: number;
+  moduleKeys?: string[];
 }
 
 export interface MapDesignSemantics {
@@ -151,7 +153,9 @@ export function normalizeMapDesignSemantics(value: unknown, boxSize: Vec3): MapD
       groupId,
       intent: text(item.intent, '', 240),
       topology: enumValue(item.topology, MAP_ASSEMBLY_TOPOLOGIES, 'group'),
-      ...(item.openings !== undefined ? { openings: integer(item.openings, 0, 32, 0) } : {})
+      ...(item.openings !== undefined ? { openings: integer(item.openings, 0, 32, 0) } : {}),
+      ...(item.stories !== undefined ? { stories: integer(item.stories, 1, 8, 1) } : {}),
+      ...(item.moduleKeys !== undefined ? { moduleKeys: ids(item.moduleKeys, 16) } : {})
     });
   }
 

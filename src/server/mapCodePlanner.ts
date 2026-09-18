@@ -209,6 +209,7 @@ interface PlaceBetweenInput {
   frontTarget?: Point2;
   scale?: number | Point3;
   terrain?: boolean;
+  elevation?: number;
   role?: CodeAssetRole;
   groupId?: string;
   assemblyId?: string;
@@ -324,6 +325,7 @@ interface PlacementIntent {
   size: Point3;
   fitToDimensions?: boolean;
   heightMode: 'terrain' | 'fixed';
+  terrainOffset?: number;
   role: CodeAssetRole;
   semantic: string;
   bridgeWaterId?: string;
@@ -351,6 +353,7 @@ interface PlacementIntent {
     spanAxis: 'x' | 'z';
     gapRatio: number;
     nominalSpan?: number;
+    elevation?: number;
     frontTarget?: Point2;
   };
 }
@@ -2434,6 +2437,8 @@ function executeMapCodePlanInternal(
       );
       const terrain = map.sceneMode !== 'indoor' && input.terrain !== false;
       const position = placementPosition(center, map, terrain);
+      const elevation = clampFinite(input.elevation ?? 0, -64, 128);
+      position[1] += elevation;
       const requestedAssetId = typeof input.assetId === 'string' && input.assetId.trim() ? input.assetId.trim() : null;
       if (requestedAssetId && isCodeMissingAsset(requestedAssetId)) return;
       let assetId = requestedAssetId;
@@ -2499,11 +2504,12 @@ function executeMapCodePlanInternal(
         scale,
         size: targetSize,
         fitToDimensions: true,
-        heightMode: terrain ? 'terrain' : 'fixed',
+        heightMode: terrain && elevation === 0 ? 'terrain' : 'fixed',
+        ...(terrain && elevation !== 0 ? { terrainOffset: elevation } : {}),
         role,
         semantic,
         connectionMode: 'explicit',
-        connection: { start, end, spanAxis, gapRatio, ...((input.dimensions || input.size) ? { nominalSpan: dimensions[spanIndex] } : {}), ...(frontTarget ? { frontTarget } : {}) },
+        connection: { start, end, spanAxis, gapRatio, elevation, ...((input.dimensions || input.size) ? { nominalSpan: dimensions[spanIndex] } : {}), ...(frontTarget ? { frontTarget } : {}) },
         ...placementDesignMetadata(input.groupId, input.layer, input.assemblyId, input.assemblyRole)
       });
     }
@@ -2652,7 +2658,33 @@ function executeMapCodePlanInternal(
     assets: [...new Map([...(map.assets ?? []), ...assets].map((asset) => [asset.id, asset])).values()]
   };
   if (mode === 'final' && map.sceneMode === 'outdoor') fitConnectedPlacementRuns(placements, planningMap.assets ?? []);
-  if (designCallCount > 0) reportAssemblyIssues(designSemantics, placements, reportIssue);
+  if (designCallCount > 0) {
+    reportAssemblyIssues(designSemantics, placements, reportIssue, (assetId, key) =>
+      mode === 'discovery'
+        ? assetId.startsWith(`code-asset://${key}/`)
+        : options.assetBindings?.get(key)?.some((asset) => asset.id === assetId) ?? false);
+    if (sceneIntent === 'authored' && scope === 'scene' && requestMode === 'generate') {
+      const parentIds = new Set(designSemantics.groups.flatMap((group) => group.parentId ? [group.parentId] : []));
+      for (const group of designSemantics.groups) {
+        if (parentIds.has(group.id)) continue;
+        const minimum = group.spatialRole === 'landmark-ensemble' ? 3
+          : group.spatialRole === 'urban-fabric' ? 6 : Infinity;
+        const primaryForms = placements.filter((placement) => placement.designGroupId === group.id
+          && placement.compositionLayer === 1 && placement.role === 'structure');
+        if (primaryForms.length < minimum) continue;
+        const connected = designSemantics.assemblies.some((assembly) => assembly.groupId === group.id
+          && assembly.topology !== 'group'
+          && placements.filter((placement) => placement.assemblyId === assembly.id && placement.connection).length >= 3
+          && ![...executionIssues.keys()].some((key) => key.startsWith(`assembly:${assembly.id}:`)));
+        if (!connected) reportIssue({
+          key: `scene_group_missing_assembly:${group.id}`,
+          code: 'scene.program-incomplete',
+          message: `建筑组「${group.name}」只有独立结构，尚无连续拼接的主体；场景仍可保留。`,
+          repaired: false
+        });
+      }
+    }
+  }
   const roomOperation = indoorRoom
     ? { type: 'room.set', room: { ...indoorRoom, openings: roomOpenings } } satisfies MapOperation
     : null;
@@ -3228,7 +3260,7 @@ ${JSON.stringify(capabilityCatalog)}
 Constants: api.TAU, api.PHI, api.seed, api.bounds.
 Scene intent: api.sceneIntent({kind:'natural'|'authored',reason?}). ${requestMode === 'refine' ? 'Do not call it during refinement.' : 'Required exactly once for unified scene ownership.'}
 Design semantics: api.design({experienceMode:'immediate'|'sequential'|'mixed',intent,groups:[{id,name,parentId?,intent,region?,spatialRole?:'landmark-ensemble'|'urban-fabric'|'open-space'|'landscape',focusIds?,guideIds?,entryGuideIds?,exitGuideIds?,axisGuideIds?,protectedObjectIds?,removableObjectIds?,layers:[{level:1|2|3|4,intent,density:'tight'|'normal'|'open',minCount?:1..64}]}],focuses:[{id,groupId,name,kind:'primary'|'secondary'|'node',rank,selector?,objectId?,reveal:'visible'|'screened'|'framed'|'sequence'}],viewpoints:[{id,groupId?,point:[x,z],targetFocusId?,role:'entry'|'route'|'node'|'overview'}],relations:[{id,kind:'attract'|'repel'|'support',sourceSelector,targetSelector?,sourceGroupId?,targetGroupId?,strength:'tight'|'normal'|'open',minDistance?,maxDistance?}]}). ${requestMode === 'refine' ? 'Optional: call once only when the user changes composition semantics.' : 'Call once in unified scene ownership, after sceneIntent and before placement.'} Make the declared focus and each group's intended arrival, axis and spatial boundary concrete in the water, terrain, routes and placements; prose alone does not shape the scene. Bind a route to its design group with groupId and guideRole when it serves as entry, exit or axis. Keep shared routes connected across neighboring groups; do not force a straight central avenue when the requested experience calls for bends, enclosure or a reveal.
-Compound architecture: api.design may also declare assemblies:[{id,groupId,intent,topology:'group'|'path'|'loop',openings?}]. An assembly is one architectural whole built from multiple placed assets, not a request to generate one giant model. You choose its footprint, entrances, reusable modules, dimensions and bounded JavaScript loops. Give every member the same assemblyId and its groupId; mark an actual gateway or doorway member with assemblyRole:'opening' if you declare openings. For a continuous wall or arcade use placeBetween with shared endpoints and gapRatio:0; derive module count from perimeter length and the module's canonical span instead of stretching one short module across a long edge. Use topology:'path' for an intentional gap, or topology:'loop' when entrance modules complete the ring. Disconnected or stretched assemblies produce advisory diagnostics, not automatic movement or rejection.
+Compound architecture: api.design may also declare assemblies:[{id,groupId,intent,topology:'group'|'path'|'loop',openings?,stories?,moduleKeys?:string[]}]. Decide which major built form is an assembly before requireAsset: commit its footprint or outline, entrance, intended requireAsset keys in moduleKeys and story count in the single design call. Request and actually place every declared module family as a member of that building. For an authored scene containing several buildings, decompose prominent buildings into reusable structural modules, not just the scene perimeter; select the major buildings that benefit from part-based construction, while small/background buildings may remain complete reusable assets. A second building does not make the first one simpler: plan each chosen building at architectural scale, including foundation, load-bearing walls or columns, entrances, floor/arcade bays and roof or cornice as appropriate. Reuse the same module families across compatible buildings by changing assemblyId, coordinates and counts, not by requesting a new entire model per building. Do not generate the complete main shell as one model when that building was selected for part-based construction. Choose a believable footprint, bay spacing, entrance and roofline; if a building has multiple stories, declare stories and use nested bounded floor/bay loops with explicit elevation. A single ground-level wall ring does not satisfy a multi-story architectural mass. In a landmark-ensemble with several structural anchors, do not default to one complete gate or pavilion plus isolated pillars; form a connected entry, court edge or architectural mass when the design calls for one. A genuinely freestanding pavilion or a natural landscape needs no invented assembly. An assembly is one architectural whole built from multiple placed assets, not a request to generate one giant model. Give every member the same assemblyId and its groupId; mark an actual gateway or doorway member with assemblyRole:'opening' if you declare openings. For a continuous wall or arcade use placeBetween with shared endpoints and gapRatio:0; derive module count from perimeter length and the module's canonical span instead of stretching one short module across a long edge. Use topology:'path' for an intentional gap, or topology:'loop' when entrance modules complete the ring. Disconnected or stretched assemblies produce advisory diagnostics, not automatic movement or rejection.
 Environment: api.terrain(preset,{amplitude?,roughness?,seed?,direction?}); api.refineTerrain({...}); api.water(id,{type:'lake'|'river'|'ocean',points,...}); api.grass(id,region,{preset:'meadow'|'sand'|'wetland'|'farm'|'magic'|'alpine-moss',density?,variation?,softness?,height?,mix?:{short?,tall?,flowers?},habitat?:{waterDistance?:[outerMin,preferredMin,preferredMax,outerMax],height?:[outerMin,preferredMin,preferredMax,outerMax]}}); api.keepDry([x,z],clearance?) returns the nearest dry point after water operations; api.waterPoint(waterId,[x,z],draft?) returns [x,y,z] on that water surface after water operations; use it for boats and other floating assets, normally with role:'environment'; api.spawn([x,z],yawDegrees?); api.renderSuggestion(text).
 Circulation: api.route({id,name?,points:[[x,z],...],groupId?,guideRole?:'entry'|'exit'|'axis',curve?:'polyline'|'catmull-rom',closed?,width?,surface?:'paving'|'soil'|'grass'|'sand'|'rock'|'none',material?:'default'|'compacted-earth'|'garden-stone'|'asphalt'|'concrete'|'brick-paver'|'cobblestone'|'gravel'|'mud',intensity?,tags?}) records the editable guide and lays real terrain paving by default. groupId links the real guide to that design group; guideRole also records its entry, exit or axis role. api.routeNetwork({id,nodes:[{id,point:[x,z],role?}],edges:[{id,from,to,via?,groupId?,guideRole?,curve?,width?,surface?,material?,tags?}]}) expresses a free-form connected graph with shared junctions; you choose its topology. Choose asphalt for modern vehicle streets, concrete for sidewalks, brick-paver for plazas and old streets, garden-stone or cobblestone for gardens, compacted-earth or gravel for informal paths, and mud only for visibly wet rustic ground. api.streetGrid({id,region:[[x,z],...],direction?:degrees,blockWidth,blockDepth,roadWidth,inset?,surface?,material?,tags?}) returns {routeIds,blocks}; use blocks for building groups and routeIds for roadside facilities. api.placeStreetFrontage({routeId,side:'left'|'right',items:[{assetId?,name,dimensions:[frontageWidth,height,depth],role?,groupId?,layer?},...],startInset?,endInset?,gap?,setback?}) sequentially fits varied ordinary buildings along one street side, keeps their real footprints separated and turns local Z+ facades toward the road. api.placeAlongRoute({routeId,assetId?,name?,spacing,offset?,side?:'left'|'right'|'both'|'alternate',startInset?,endInset?,facing?:'forward'|'toward-route'|'away-from-route',role?,groupId?,layer?}) derives repeated facilities from an existing route. A large authored garden needs an experience network rather than one ring: combine an entrance sequence, asymmetric branches or shortcuts to local scenes, waterside or quiet routes, and intentional shared junctions according to the design. Do not force one fixed topology. Use bridge for water crossings; place generated stair/step modules where a route must change level.
 ${MAP_CODE_ENVIRONMENT_FORM_CONTRACT}
@@ -3246,11 +3278,11 @@ api.place and api.placeBetween also accept assemblyId?:string and assemblyRole?:
 Never use standalone api.place with [x,y,z] for a door, window, banner, sign or facade ornament intended as part of another structure. Either include it in the host asset itself or create the host first and use api.attach.
 Refine existing content: api.move({objectId,position?,rotationY?,scale?}); api.removeObject(objectId); api.updateWater({waterId,level?,depth?,width?,points?}); api.removeWater(waterId); api.noChange(reason). These APIs are available only during refinement. noChange is exclusive: use it only when no operation is needed.
 facing may be a direction [dx,dz], {direction:[dx,dz]}, {tangent:[dx,dz]}, {normal:[nx,nz]}, {target:[x,z]}, or any of those with offsetY; it overrides rotationY when present.
-For long connected dry-land scenery, prefer api.placeBetween({assetId?,name?,start:[x,z],end:[x,z],dimensions:[width,height,depth],spanAxis:'x'|'z',gapRatio?,frontTarget?:[x,z],facing?,scale?,terrain?,groupId?,layer?}). It places the model at the midpoint, aligns its declared connection axis to the line from start to end, and fits only that axis to the endpoint distance. Use spanAxis:'x' for side-by-side walls, railings, facades, seating rows and stands; use spanAxis:'z' for traversal modules. frontTarget chooses which side local Z+ faces without breaking the endpoint connection. Bridges must use api.bridge so the server solves the real shoreline, dry bank endpoints and water clearance.
+For long connected dry-land scenery, prefer api.placeBetween({assetId?,name?,start:[x,z],end:[x,z],dimensions:[width,height,depth],spanAxis:'x'|'z',gapRatio?,frontTarget?:[x,z],facing?,scale?,terrain?,elevation?:number,groupId?,layer?}). It places the model at the midpoint, aligns its declared connection axis to the line from start to end, and fits only that axis to the endpoint distance. elevation lifts a module above the FINAL terrain height in meters and fixes its height; use floorIndex * canonicalModuleHeight to stack structural tiers rather than repeating a ground-level ring. Use spanAxis:'x' for side-by-side walls, railings, facades, seating rows and stands; use spanAxis:'z' for traversal modules. frontTarget chooses which side local Z+ faces without breaking the endpoint connection. Bridges must use api.bridge so the server solves the real shoreline, dry bank endpoints and water clearance.
 
 ## Scene pattern guide
 - Spaced props along a curve may use sampleBezierFramesBySpacing with a visible gap ratio; this uses arc length instead of parameter t and avoids bunching.
-- Connected modular elements between computed points use placeBetween rather than manually calculating midpoint and rotation. Continuous structures use gapRatio:0 and consecutive shared endpoints; never place a continuous wall, arcade, corridor, railing or stand as isolated samples. For a closed loop, connect the last point back to the first.
+- Connected modular elements between computed points use placeBetween rather than manually calculating midpoint and rotation. Continuous structures use gapRatio:0 and consecutive shared endpoints; never place a continuous wall, arcade, corridor, railing or stand as isolated samples. For a closed loop, connect the last point back to the first. For multi-story structures, repeat compatible bays at increasing elevation, then cap the volume with deliberate roof or cornice modules; a roof floating over an empty ring is not an upper story.
 - Arena seating is not a radial traversal strip: its long row edge connects tangent-to-tangent on local X, while local Z+ faces the arena floor. Use spanAxis:'x' and frontTarget:center. The compiler preserves this contract even if a seating call accidentally asks for spanAxis:'z'.
 - For a continuous connected run, use one asset family and normally variants:1. Do not alternate visibly different variants along the same uninterrupted line. The ordered start->end direction determines which side local Z+ faces when spanAxis:'x'.
 - Elements whose long axis follows travel: use facing:{tangent:frame.tangent}; elements whose front faces across the curve: use facing:{normal:frame.normal}; add offsetY:api.TAU / 2 for the opposite side. If an interior anchor is known, facing:{target:interiorPoint} is the safest inward-facing choice.
@@ -3291,10 +3323,12 @@ const tree = api.requireAsset({key:'tree',name:'发光树',prompt:'Standalone st
 const points = api.poissonDisk({minDistance:4.5,maxPoints:48,attempts:24,seed:api.seed});
 for (let i = 0; i < points.length; i += 1) { const p = points[i]; if (api.fbm2D(p.x,p.z,{scale:0.08}) > -0.35) api.place({assetId:api.asset(tree,i),position:[p.x,p.z]}); }
 
-Inward arena ring:
+Two-tier arena shell with a ground gateway (declare {id:'arena-shell',groupId:'arena',topology:'loop',openings:1,stories:2,moduleKeys:['arena-wall','arena-gate']} in the single earlier api.design call):
 const center = [0,0];
-const gate = api.requireAsset({key:'gate',name:'竞技场入口',prompt:'Standalone arena gate with facade and entrance, no ground or background',tags:['arena','gate'],variants:1,role:'structure'});
-for (let i = 0; i < 8; i += 1) { const point = api.circlePoint(i,8,28,center); api.place({assetId:api.asset(gate,0),position:point,facing:{target:center}}); }
+const wall = api.requireAsset({key:'arena-wall',name:'竞技场墙段',prompt:'Reusable 8m arena wall module, seamless ends along local X, front on local Z+, not a complete arena; no ground or background',dimensions:[8,5,1],variants:1,role:'structure'});
+const gate = api.requireAsset({key:'arena-gate',name:'竞技场门段',prompt:'Reusable 8m arena entrance module with a traversable central opening and matching seamless wall ends along local X, front on local Z+; no ground or background',dimensions:[8,5,1],variants:1,role:'structure'});
+const ring = Array.from({length:12},(_,i)=>api.circlePoint(i,12,15,center));
+for (let floor = 0; floor < 2; floor += 1) for (let i = 0; i < ring.length; i += 1) api.placeBetween({assetId:api.asset(floor===0&&i===0?gate:wall,0),start:ring[i],end:ring[(i+1)%ring.length],dimensions:[8,5,1],spanAxis:'x',frontTarget:center,gapRatio:0,elevation:floor*5,groupId:'arena',assemblyId:'arena-shell',assemblyRole:floor===0&&i===0?'opening':undefined,layer:1});
 
 Curved wall with a consistent facade:
 const wall = api.requireAsset({key:'wall',name:'花园围墙',prompt:'Standalone modular garden wall segment with decorative facade toward local Z+, seamless ends, no ground or background; span axis local X; canonical dimensions 6 wide x 3 high x 0.5 deep',dimensions:[6,3,0.5],tags:['wall','garden'],variants:1,role:'structure'});
@@ -3312,6 +3346,7 @@ for (let i = 0; i < frames.length - 1; i += 1) api.placeBetween({assetId:api.ass
 8. Structural accessories are part of their host asset or use api.attach; none float at an unrelated fixed world height.
 9. Routes and functional clearings exclude loose trees and rocks; use routeNetwork for a multi-choice garden circulation graph and clearNatural:true for non-route open space.
 10. Every leaf design group realizes each declared layer with placements in that group; no oversized clear surface or broad arrival road is left as grass or paving without a specific use and composed edges.
+11. In a multi-building authored scene, the major building assemblies have their own reusable module families and bounded construction loops; declared multi-story masses place structural members at distinct heights. Keep minor buildings whole when that serves the composition.
 
 Reusable asset catalog:
 ${assetCatalog}`;
@@ -3468,6 +3503,7 @@ const LOCAL_VISUAL_REPAIR_CODES = new Set([
 function localRepairSignals(programIssues: string[], discovery: CodeExecutionResult): string[] {
   return [
     ...programIssues,
+    ...discovery.issues.filter((issue) => issue.key.startsWith('scene_group_missing_assembly:')).map((issue) => issue.key),
     ...discovery.issues.filter((issue) => issue.repairHint).map((issue) => issue.code),
     ...(discovery.suggestion.diagnostics ?? [])
       .filter((issue) => LOCAL_VISUAL_REPAIR_CODES.has(issue.code))
@@ -3476,6 +3512,7 @@ function localRepairSignals(programIssues: string[], discovery: CodeExecutionRes
 }
 
 const LOCAL_REPAIR_INSTRUCTION = 'Return only JSON {"edits":[{"old":"exact unique substring from the current code","new":"replacement substring"}]}. Make 1-4 small, exact replacements at the reported calls. Never return the full function or alter unrelated calls, placement loops, asset declarations, terrain, or circulation. If the listed issue cannot be fixed locally, return {"edits":[]}.';
+const LOCAL_ASSEMBLY_REPAIR_INSTRUCTION = 'Return only JSON {"edits":[{"old":"exact unique substring from the current code","new":"replacement substring"}]}. Make 1-4 small, exact replacements; never return the full function. For scene_group_missing_assembly:<groupId>, edit the one api.design declaration and only placement loops and asset declarations within that group. Preserve existing placements, terrain, routes and other groups. You may add modular asset families and connected placeBetween placements inside that group; labels alone do not build a compound form. If the group is intentionally made of separate freestanding buildings, return {"edits":[]}. Do not change unrelated scene content.';
 
 function retainCodePlan(
   fallback: { code: string; discovery: CodeExecutionResult; programIssues: string[] },
@@ -3560,6 +3597,7 @@ async function discoverMapCodeWithRepairs(
         || issue.startsWith('scene_group_building_coverage_low:')
         || issue.startsWith('scene_group_frontage_low:')
       ));
+      completionIssues.push(...discovery.issues.filter((issue) => issue.key.startsWith('scene_group_missing_assembly:')).map((issue) => issue.key));
       const recoverableExecutionIssues = discovery.issues.filter((issue) => issue.repairHint);
       const visualIssues = !options.approvedCode && options.mode !== 'refine' && options.scope === 'scene'
         ? (discovery.suggestion.diagnostics ?? []).filter((issue) => LOCAL_VISUAL_REPAIR_CODES.has(issue.code)).slice(0, 2)
@@ -3596,7 +3634,7 @@ async function discoverMapCodeWithRepairs(
             { role: 'assistant', content: code },
             {
               role: 'user',
-              content: `The current program already produced a usable scene. Repair only these reported issues:\n${repairDetails.join('\n')}\n\n${LOCAL_REPAIR_INSTRUCTION} Keep the existing composition, placements, asset requirements, terrain and routes. Do not add content merely to satisfy an aesthetic warning.${recoverableExecutionIssues.length ? `\n\n${MAP_CODE_TOPOLOGY_CONTRACT}` : ''}`
+              content: `The current program already produced a usable scene. Repair only these reported issues:\n${repairDetails.join('\n')}\n\n${completionIssues.some((issue) => issue.startsWith('scene_group_missing_assembly:')) ? LOCAL_ASSEMBLY_REPAIR_INSTRUCTION : LOCAL_REPAIR_INSTRUCTION} Keep the existing composition, placements, asset requirements, terrain and routes except for the reported group's missing architectural assembly. Do not add content merely to satisfy an aesthetic warning.${recoverableExecutionIssues.length ? `\n\n${MAP_CODE_TOPOLOGY_CONTRACT}` : ''}`
             }
           ], {
             apiBase: options.apiBase,
@@ -4066,8 +4104,8 @@ function placementObject(
     ...(placement.sourceGuideId ? { sourceGuideId: placement.sourceGuideId } : {}),
     ...(placement.foundation ? { foundation: placement.foundation } : {}),
     transform: {
-      position: placement.heightMode === 'terrain'
-        ? [placement.position[0], sampleTerrainHeight(terrainMap, placement.position[0], placement.position[2]), placement.position[2]]
+      position: placement.heightMode === 'terrain' || placement.terrainOffset !== undefined
+        ? [placement.position[0], sampleTerrainHeight(terrainMap, placement.position[0], placement.position[2]) + (placement.terrainOffset ?? 0), placement.position[2]]
         : placement.position,
       rotation: [0, placement.rotationY, 0],
       scale: placement.scale,
@@ -4138,7 +4176,8 @@ function normalizeCodePlacementRole(
 function reportAssemblyIssues(
   design: MapDesignSemantics,
   placements: readonly PlacementIntent[],
-  reportIssue: (issue: CodeExecutionIssue) => void
+  reportIssue: (issue: CodeExecutionIssue) => void,
+  matchesModule: (assetId: string, key: string) => boolean
 ): void {
   const declared = new Set(design.assemblies.map((assembly) => assembly.id));
   for (const placement of placements) {
@@ -4163,8 +4202,20 @@ function reportAssemblyIssues(
       continue;
     }
     if (members.some((member) => member.designGroupId !== assembly.groupId)) warn('构件与声明的设计组不一致');
+    for (const declaredKey of assembly.moduleKeys ?? []) {
+      const key = normalizeCodeAssetKey(declaredKey);
+      if (!members.some((member) => member.assetId && matchesModule(member.assetId, key))) {
+        warn(`声明的构件族 ${declaredKey} 未在建筑内摆放`);
+      }
+    }
     if (assembly.openings !== undefined && members.filter((member) => member.assemblyRole === 'opening').length !== assembly.openings) {
       warn(`声明 ${assembly.openings} 处开口，但对应构件数量不符`);
+    }
+    if (assembly.stories && assembly.stories > 1) {
+      const tiers = new Set(members.map((member) => Math.round(
+        (member.connection?.elevation ?? (member.heightMode === 'terrain' ? 0 : member.position[1])) * 100
+      )));
+      if (tiers.size < assembly.stories) warn(`声明 ${assembly.stories} 个楼层，但仅摆放 ${tiers.size} 个高度层的构件`);
     }
     if (assembly.topology === 'group') continue;
     const edges = members.flatMap((member) => member.connection ? [member.connection] : []);
@@ -4173,33 +4224,42 @@ function reportAssemblyIssues(
       continue;
     }
     const pointKey = (point: Point2) => `${Math.round(point[0] * 100)},${Math.round(point[1] * 100)}`;
-    const degree = new Map<string, number>();
-    const adjacency = new Map<string, Set<string>>();
+    const byElevation = new Map<number, typeof edges>();
     for (const edge of edges) {
-      const start = pointKey(edge.start);
-      const end = pointKey(edge.end);
-      degree.set(start, (degree.get(start) ?? 0) + 1);
-      degree.set(end, (degree.get(end) ?? 0) + 1);
-      if (!adjacency.has(start)) adjacency.set(start, new Set());
-      if (!adjacency.has(end)) adjacency.set(end, new Set());
-      adjacency.get(start)!.add(end);
-      adjacency.get(end)!.add(start);
-      if (edge.gapRatio > 0.01) warn('相邻构件的连接处仍有间隙');
-      const span = Math.hypot(edge.end[0] - edge.start[0], edge.end[1] - edge.start[1]) * (1 - edge.gapRatio);
-      if (edge.nominalSpan !== undefined && span > edge.nominalSpan * 1.5) warn('连接构件拉伸超过其基准跨度的 1.5 倍');
+      const level = Math.round((edge.elevation ?? 0) * 100);
+      const tier = byElevation.get(level) ?? [];
+      tier.push(edge);
+      byElevation.set(level, tier);
     }
-    const visited = new Set<string>();
-    const stack = [adjacency.keys().next().value as string];
-    while (stack.length > 0) {
-      const point = stack.pop()!;
-      if (visited.has(point)) continue;
-      visited.add(point);
-      for (const neighbor of adjacency.get(point) ?? []) stack.push(neighbor);
+    for (const tier of byElevation.values()) {
+      const degree = new Map<string, number>();
+      const adjacency = new Map<string, Set<string>>();
+      for (const edge of tier) {
+        const start = pointKey(edge.start);
+        const end = pointKey(edge.end);
+        degree.set(start, (degree.get(start) ?? 0) + 1);
+        degree.set(end, (degree.get(end) ?? 0) + 1);
+        if (!adjacency.has(start)) adjacency.set(start, new Set());
+        if (!adjacency.has(end)) adjacency.set(end, new Set());
+        adjacency.get(start)!.add(end);
+        adjacency.get(end)!.add(start);
+        if (edge.gapRatio > 0.01) warn('相邻构件的连接处仍有间隙');
+        const span = Math.hypot(edge.end[0] - edge.start[0], edge.end[1] - edge.start[1]) * (1 - edge.gapRatio);
+        if (edge.nominalSpan !== undefined && span > edge.nominalSpan * 1.5) warn('连接构件拉伸超过其基准跨度的 1.5 倍');
+      }
+      const visited = new Set<string>();
+      const stack = [adjacency.keys().next().value as string];
+      while (stack.length > 0) {
+        const point = stack.pop()!;
+        if (visited.has(point)) continue;
+        visited.add(point);
+        for (const neighbor of adjacency.get(point) ?? []) stack.push(neighbor);
+      }
+      const ends = [...degree.values()].filter((count) => count === 1).length;
+      const valid = visited.size === degree.size && [...degree.values()].every((count) => count <= 2)
+        && (assembly.topology === 'loop' ? tier.length >= 3 && ends === 0 : ends === 2);
+      if (!valid) warn(assembly.topology === 'loop' ? '构件尚未形成连续闭环' : '构件尚未形成连续路径');
     }
-    const ends = [...degree.values()].filter((count) => count === 1).length;
-    const valid = visited.size === degree.size && [...degree.values()].every((count) => count <= 2)
-      && (assembly.topology === 'loop' ? edges.length >= 3 && ends === 0 : ends === 2);
-    if (!valid) warn(assembly.topology === 'loop' ? '构件尚未形成连续闭环' : '构件尚未形成连续路径');
   }
 }
 
@@ -4861,7 +4921,7 @@ function fitExplicitConnectedPlacementRuns(
   const groups = new Map<string, PlacementIntent[]>();
   for (const placement of placements) {
     if (!placement.assetId || !placement.connection || !assetById.has(placement.assetId)) continue;
-    const key = [placement.assetId, placement.designGroupId ?? '', placement.assemblyId ?? '', placement.compositionLayer ?? 0].join('|');
+    const key = [placement.assetId, placement.designGroupId ?? '', placement.assemblyId ?? '', placement.compositionLayer ?? 0, placement.connection.elevation ?? 0].join('|');
     const group = groups.get(key) ?? [];
     group.push(placement);
     groups.set(key, group);

@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { createEmptyMap, createMapObject, getMapObjectAabbs, getMapObjectVisualAabbs, type MapAsset } from '../src/shared/map';
+import { createEmptyMap, createMapObject, getMapObjectAabbs, getMapObjectVisualAabbs, sampleTerrainHeight, type MapAsset } from '../src/shared/map';
 import {
   buildMapCodePlannerSystemPrompt,
   discoverMapCodeAssets,
@@ -337,7 +337,7 @@ describe('map code planner', () => {
     expect(prompt).toContain('gridPoints with an explicit center and spacing');
     expect(prompt).toContain('circlePoint with deterministic index/count');
     expect(prompt).toContain('facing may be a direction [dx,dz]');
-    expect(prompt).toContain('Inward arena ring:');
+    expect(prompt).toContain('Two-tier arena shell with a ground gateway');
     expect(prompt).toContain('Declare between 2 and 4 distinct requireAsset families; variants within one family count as one asset');
     expect(prompt).toContain('Give each new asset plausible canonical dimensions so the greybox has its intended size');
     expect(prompt).toContain('one short Simplified Chinese noun');
@@ -394,9 +394,15 @@ describe('map code planner', () => {
     expect(prompt).toContain("api.sceneIntent({kind:'natural'|'authored'");
     expect(prompt).toContain('Decide semantically from the requested place');
     expect(prompt).toContain('api.design({experienceMode');
-    expect(prompt).toContain("assemblies:[{id,groupId,intent,topology:'group'|'path'|'loop',openings?}]");
+    expect(prompt).toContain("assemblies:[{id,groupId,intent,topology:'group'|'path'|'loop',openings?,stories?,moduleKeys?:string[]}]");
     expect(prompt).toContain("assemblyId?:string and assemblyRole?:'opening'");
     expect(prompt).toContain('derive module count from perimeter length');
+    expect(prompt).toContain('Decide which major built form is an assembly before requireAsset');
+    expect(prompt).toContain('decompose prominent buildings into reusable structural modules');
+    expect(prompt).toContain('moduleKeys');
+    expect(prompt).toContain('elevation?:number');
+    expect(prompt).toContain('for (let floor = 0; floor < 2; floor += 1)');
+    expect(prompt).not.toContain("for (let i = 0; i < 8; i += 1) { const point = api.circlePoint(i,8,28,center); api.place({assetId:api.asset(gate,0)");
     expect(prompt).toContain('one focus, multiple peer focuses, a primary-secondary hierarchy');
     expect(prompt).toContain('framed/borrowed/opposed views');
     expect(prompt).toContain('Classify the requested place by spatial organization');
@@ -1018,6 +1024,61 @@ describe('map code planner', () => {
       expect.objectContaining({ code: 'settlement.frontage-low', repaired: false })
     ]));
     expect(suggestion.codePlan?.repairAttempts).toBe(0);
+  });
+
+  it('locally completes an authored landmark made only of isolated structures', async () => {
+    const incomplete = `function plan(api) {
+      api.sceneIntent({kind:'authored',reason:'仪式入口'});
+      api.design({groups:[{id:'entry',name:'入口',spatialRole:'landmark-ensemble',
+        region:{kind:'polygon',points:[[-20,-20],[20,-20],[20,20],[-20,20]]},layers:[]}],
+        focuses:[],viewpoints:[],relations:[]});
+      api.place({name:'主门',position:[0,-8],role:'structure',groupId:'entry',layer:1});
+      api.place({name:'左柱',position:[-8,-8],role:'structure',groupId:'entry',layer:1});
+      api.place({name:'右柱',position:[8,-8],role:'structure',groupId:'entry',layer:1});
+    }`;
+    const repaired = JSON.stringify({ edits: [
+      { old: 'focuses:[],viewpoints:[],relations:[]', new: "assemblies:[{id:'entry-shell',groupId:'entry',intent:'连续门廊',topology:'path'}],focuses:[],viewpoints:[],relations:[]" },
+      { old: "api.place({name:'右柱',position:[8,-8],role:'structure',groupId:'entry',layer:1});",
+        new: `api.place({name:'右柱',position:[8,-8],role:'structure',groupId:'entry',layer:1});
+      for(let i=0;i<3;i++) api.placeBetween({name:'门廊墙段',start:[-6+i*4,-12],end:[-2+i*4,-12],
+        dimensions:[4,3,1],spanAxis:'x',groupId:'entry',assemblyId:'entry-shell',layer:1});` }
+    ] });
+    const response = (content: string) => new Response(JSON.stringify({ ok: true, content }), {
+      status: 200, headers: { 'Content-Type': 'application/json' }
+    });
+    const fetchImpl = vi.fn().mockResolvedValueOnce(response(incomplete)).mockResolvedValueOnce(response(repaired));
+    const map = createEmptyMap('Entry');
+    const suggestion = await generateMapCodeSuggestion('生成有连续门廊的仪式入口', map, [], {
+      apiBase: 'https://example.test', provider: 'gpt', fetchImpl,
+      minNewAssets: 0, maxNewAssets: 0, scope: 'scene', discoveryOnly: true
+    });
+    const repairRequest = JSON.parse(String((fetchImpl.mock.calls[1]?.[1] as RequestInit | undefined)?.body)) as {
+      messages: Array<{ content: string }>;
+    };
+    const applied = applyMapOperations(map, suggestion.operations);
+
+    expect(fetchImpl).toHaveBeenCalledTimes(2);
+    expect(repairRequest.messages.at(-1)?.content).toContain('scene_group_missing_assembly:entry');
+    expect(repairRequest.messages.at(-1)?.content).toContain('placement loops and asset declarations within that group');
+    expect(applied.designSemantics.assemblies).toEqual([expect.objectContaining({ id: 'entry-shell', topology: 'path' })]);
+    expect(applied.objects.filter((object) => object.assemblyId === 'entry-shell')).toHaveLength(3);
+    expect(applied.objects).toHaveLength(6);
+    expect(suggestion.diagnostics?.some((issue) => issue.code === 'scene.program-incomplete')).toBe(false);
+  });
+
+  it('does not treat assembly labels on three isolated objects as a connected building', () => {
+    const suggestion = executeMapCodePlan(`function plan(api) {
+      api.sceneIntent({kind:'authored',reason:'built entrance'});
+      api.design({groups:[{id:'entry',name:'入口',spatialRole:'landmark-ensemble',layers:[]}],
+        assemblies:[{id:'shell',groupId:'entry',topology:'path'}]});
+      for(let i=0;i<3;i++) api.place({name:'独立塔',position:[i*12,0],
+        role:'structure',groupId:'entry',assemblyId:'shell',layer:1});
+    }`, createEmptyMap('Entry'), [], { scope: 'scene' });
+
+    expect(suggestion.blocked).not.toBe(true);
+    expect(suggestion.diagnostics).toEqual(expect.arrayContaining([
+      expect.objectContaining({ code: 'scene.program-incomplete', message: expect.stringContaining('连续拼接') })
+    ]));
   });
 
   it('repairs a city plan whose named districts have no regions and whose props mask missing architecture', async () => {
@@ -1809,6 +1870,97 @@ describe('map code planner', () => {
     expect(saved.objects.filter((object) => object.assemblyId === 'perimeter')).toHaveLength(4);
     expect(suggestion.diagnostics?.some((issue) => issue.code === 'code.geometry-unresolved'
       && issue.message.includes('围墙'))).toBe(false);
+  });
+
+  it('stacks reusable building modules in two distinct levels without terrain snapping the upper tier', () => {
+    const map = createEmptyMap('Layered arena');
+    const code = `function plan(api) {
+      api.sceneIntent({kind:'authored',reason:'layered courtyard'});
+      api.design({groups:[{id:'court',name:'庭院',layers:[]}],assemblies:[
+        {id:'arena',groupId:'court',intent:'two-story colonnade',topology:'loop',stories:2}
+      ]});
+      const corners=[[-8,-8],[8,-8],[8,8],[-8,8]];
+      for(let floor=0;floor<2;floor+=1) for(let i=0;i<4;i+=1) {
+        api.placeBetween({name:'拱廊模块',start:corners[i],end:corners[(i+1)%4],
+          dimensions:[16,4,1],spanAxis:'x',elevation:floor*4,groupId:'court',assemblyId:'arena',layer:1});
+      }
+    }`;
+    const suggestion = executeMapCodePlan(code, map, [], { scope: 'scene' });
+    const saved = applyMapOperations(map, suggestion.operations);
+    expect(saved.designSemantics.assemblies[0]).toMatchObject({ id: 'arena', stories: 2 });
+    const members = saved.objects.filter((object) => object.assemblyId === 'arena');
+    expect(members).toHaveLength(8);
+    expect(members.filter((member) => member.heightMode === 'fixed')).toHaveLength(4);
+    expect(members.slice(4).map((member, index) => member.transform.position[1] - members[index].transform.position[1]))
+      .toEqual([4, 4, 4, 4]);
+    expect(suggestion.diagnostics?.some((issue) => issue.code === 'code.geometry-unresolved'
+      && issue.message.includes('arena'))).toBe(false);
+  });
+
+  it('anchors elevated modules to terrain generated later in the same scene transaction', () => {
+    const map = createEmptyMap('Terraced structure');
+    const suggestion = executeMapCodePlan(`function plan(api) {
+      api.terrain('hills',{amplitude:3});
+      api.placeBetween({name:'底层墙',start:[3,4],end:[7,4],dimensions:[4,3,1]});
+      api.placeBetween({name:'二层墙',start:[3,4],end:[7,4],dimensions:[4,3,1],elevation:3});
+    }`, map);
+    const saved = applyMapOperations(map, suggestion.operations);
+    const ground = saved.objects.find((object) => object.name === '底层墙')!;
+    const upper = saved.objects.find((object) => object.name === '二层墙')!;
+    expect(ground.transform.position[1]).toBeCloseTo(sampleTerrainHeight(saved, 5, 4));
+    expect(upper.transform.position[1]).toBeCloseTo(ground.transform.position[1] + 3);
+    expect(upper.heightMode).toBe('fixed');
+  });
+
+  it('advises when declared multi-story architecture only builds the ground tier', () => {
+    const suggestion = executeMapCodePlan(`function plan(api) {
+      api.design({groups:[{id:'court',layers:[]}],assemblies:[
+        {id:'arena',groupId:'court',intent:'two story building',topology:'loop',stories:2}
+      ]});
+      const p=[[-5,-5],[5,-5],[5,5],[-5,5]];
+      for(let i=0;i<4;i+=1) api.placeBetween({name:'墙段',start:p[i],end:p[(i+1)%4],
+        dimensions:[10,3,1],groupId:'court',assemblyId:'arena'});
+    }`, createEmptyMap());
+    expect(suggestion.blocked).not.toBe(true);
+    expect(suggestion.diagnostics).toEqual(expect.arrayContaining([
+      expect.objectContaining({ code:'code.geometry-unresolved', message:expect.stringContaining('楼层') })
+    ]));
+  });
+
+  it('reports a declared structural module family that the building never places', () => {
+    const suggestion = executeMapCodePlan(`function plan(api) {
+      api.design({groups:[{id:'court',layers:[]}],assemblies:[
+        {id:'hall',groupId:'court',intent:'modular hall',topology:'group',moduleKeys:['wall','column']}
+      ]});
+      const wall=api.requireAsset({key:'wall',name:'墙段',prompt:'A reusable wall bay',role:'structure',dimensions:[3,3,1]});
+      api.place({name:'墙段',assetId:api.asset(wall),position:[0,0],groupId:'court',assemblyId:'hall'});
+    }`, createEmptyMap(), [], {mode:'discovery'});
+    expect(suggestion.blocked).not.toBe(true);
+    expect(suggestion.diagnostics).toEqual(expect.arrayContaining([
+      expect.objectContaining({code:'code.geometry-unresolved',message:expect.stringContaining('column')})
+    ]));
+  });
+
+  it('reuses one set of bound structural modules across two distinct building assemblies', () => {
+    const bay = testAsset('bay-asset','拱廊段');
+    const pillar = testAsset('pillar-asset','柱');
+    const suggestion = executeMapCodePlan(`function plan(api) {
+      api.design({groups:[{id:'district',layers:[]}],assemblies:[
+        {id:'hall-a',groupId:'district',intent:'first hall',topology:'group',moduleKeys:['bay','pillar']},
+        {id:'hall-b',groupId:'district',intent:'second hall',topology:'group',moduleKeys:['bay','pillar']}
+      ]});
+      const bay=api.requireAsset({key:'bay',name:'拱廊段',prompt:'reusable arcade bay',role:'structure',dimensions:[4,3,1]});
+      const pillar=api.requireAsset({key:'pillar',name:'柱',prompt:'reusable column',role:'structure',dimensions:[1,3,1]});
+      for(let i=0;i<2;i+=1) {
+        const x=i*16-8; const id=i===0?'hall-a':'hall-b';
+        api.placeBetween({assetId:api.asset(bay),start:[x,0],end:[x+4,0],dimensions:[4,3,1],groupId:'district',assemblyId:id});
+        api.place({assetId:api.asset(pillar),position:[x,3],groupId:'district',assemblyId:id});
+      }
+    }`, createEmptyMap(), [bay,pillar], {scope:'scene',assetBindings:new Map([
+      ['bay',[bay]],['pillar',[pillar]]
+    ])});
+    expect(suggestion.operations.filter((operation) => operation.type === 'object.add')).toHaveLength(4);
+    expect(suggestion.diagnostics?.some((issue) => issue.message.includes('构件族'))).toBe(false);
   });
 
   it('reports disconnected or over-stretched assemblies without rejecting the scene', () => {
