@@ -3149,7 +3149,10 @@ export function buildMapCodePlannerSystemPrompt(
     method: capability.bindings[0]?.method,
     inputSchema: capability.inputSchema
   }));
-  return `You are WorldForge Studio's procedural environment planner.${scopeContract}
+  const repeatedUseContract = requestMode !== 'refine' && scope === 'scene'
+    ? `\nFor each recurring human-use activity, plan a believable number of complete small groups, not one token instance: seating needs companion seats, work areas need their tools, and repeated destinations need repeated amenity groups. Derive the number from usable zone area, distinct route destinations and expected activity, then distribute groups along those destinations with varied spacing and orientation. State each group count in the design intent and realize it in placements; do not treat one example as sufficient for an entire district. This is a visual planning guideline, not a hard quota.\n`
+    : '';
+  return `You are WorldForge Studio's procedural environment planner.${scopeContract}${repeatedUseContract}
 ${CODE_ASSET_LIGHT_CONTRACT}
 ${CODE_ACTIVITY_CONTRACT}
 

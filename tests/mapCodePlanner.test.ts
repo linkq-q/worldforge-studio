@@ -398,6 +398,7 @@ describe('map code planner', () => {
     expect(prompt).toContain('Classify the requested place by spatial organization');
     expect(prompt).toContain('their edges, density and sequence need not match');
     expect(prompt).toContain('Every leaf design group is a complete scene room');
+    expect(prompt).toContain('plan a believable number of complete small groups, not one token instance');
     expect(prompt).toContain('Every declared layer intent must be fulfilled by actual placements');
     expect(prompt).toContain('minCount?:1..64');
     expect(prompt).toContain('A large empty surface is not automatically meaningful negative space');
