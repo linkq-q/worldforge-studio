@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createEmptyMap, createMapObject, getMapObjectAabbs, getMapObjectVisualAabbs, type MapAsset } from '../src/shared/map';
+import { createEmptyMap, createMapObject, getMapObjectAabbs, getMapObjectVisualAabbs, getObjectWorldTransforms, type MapAsset } from '../src/shared/map';
 import { applyMapOperations } from '../src/shared/mapOperations';
 import { lintMap } from '../src/shared/mapLint';
 import { validateMapSuggestion } from '../src/server/mapSuggestionValidation';
@@ -288,6 +288,29 @@ describe('map lint and deterministic repair', () => {
     expect(map.objects.map((object) => object.transform.position)).toEqual([[0, 0, 25], [8, 0, 3]]);
     expect(map.objects.map((object) => object.sourceGuideId)).toEqual(['street-a', 'deleted-street']);
     expect(lint.issues.some((issue) => issue.code === 'roadside.route-bound')).toBe(false);
+  });
+
+  it('moves one route-owned activity anchor without detaching its local companion', () => {
+    const map = createEmptyMap('activity cluster', 'activity-cluster', [64, 12, 64]);
+    map.guides = [{ id: 'path', name: '步道', points: [[-24, 0], [24, 0]], curve: 'polyline',
+      closed: false, width: 4, tags: ['street'] }];
+    const table = createMapObject('街边小桌', null);
+    table.id = 'table';
+    table.sourceGuideId = 'path';
+    table.transform.position = [5, 0, 3.4];
+    const chair = createMapObject('椅子', null);
+    chair.id = 'chair';
+    chair.parentId = table.id;
+    chair.transform.position = [0, 0, 2];
+    map.objects = [table, chair];
+
+    const lint = lintMap(map, { repairableObjectIds: new Set([table.id, chair.id]) });
+    expect(lint.repairOperations.filter((operation) => operation.type === 'object.update')
+      .map((operation) => operation.objectId)).toEqual([table.id]);
+    const repaired = applyMapOperations(map, lint.repairOperations);
+    const transforms = getObjectWorldTransforms(repaired);
+    expect(repaired.objects.find((object) => object.id === chair.id)?.parentId).toBe(table.id);
+    expect(transforms.get(chair.id)!.position[2] - transforms.get(table.id)!.position[2]).toBeCloseTo(2);
   });
 
   it('repairs even shallow outdoor building intersections', () => {

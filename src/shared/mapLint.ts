@@ -789,13 +789,15 @@ function lintSettlementRelations(
     if (isSettlementBuildingSemantic(semantic)) continue;
     const relation = streetEdgeTransform(map, object, nearest, nearest.guide.width / 2 + 1);
     if (Math.hypot(object.transform.position[0] - relation.position[0], object.transform.position[2] - relation.position[2]) > 1.5) continue;
-    if (!relationChanged(object, relation.position, relation.rotationY, nearest.guide.id)) continue;
+    const hasChildren = map.objects.some((candidate) => candidate.parentId === object.id);
+    const rotationY = hasChildren ? object.transform.rotation[1] : relation.rotationY;
+    if (!relationChanged(object, relation.position, rotationY, nearest.guide.id)) continue;
     repairs.push({
       type: 'object.update',
       objectId: object.id,
       patch: {
         sourceGuideId: nearest.guide.id,
-        transform: { position: relation.position, rotation: [0, relation.rotationY, 0] }
+        transform: { position: relation.position, rotation: hasChildren ? object.transform.rotation : [0, rotationY, 0] }
       }
     });
     issues.push({

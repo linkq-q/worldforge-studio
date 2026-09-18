@@ -56,6 +56,7 @@ describe('map code planner', () => {
     expect(prompt).toContain('Activity-led near-field composition');
     expect(prompt).toContain('EXISTING asset budget');
     expect(prompt).toContain('must retain its own identity');
+    expect(prompt).toContain('Anchor a local activity cluster once, then place its related props in host-local coordinates');
     expect(prompt).toContain('Do not use a fixed building-name checklist');
     expect(prompt).toContain('Repeated standalone buildings may use 2-3 coherent variants');
     expect(prompt).not.toContain('architecture, landmarks, creatures and functional objects at variants:1');
