@@ -84,6 +84,38 @@ describe('map design semantics', () => {
     expect(computerObject).toEqual(before);
   });
 
+  it('keeps declared building assemblies in the saved design', () => {
+    const design = normalizeMapDesignSemantics({
+      groups: [{ id: 'city' }],
+      assemblies: [
+        { id: 'wall', groupId: 'city', intent: 'wall and gate form one enclosure', topology: 'loop', openings: 1 },
+        { id: 'orphan', groupId: 'missing', topology: 'path' }
+      ]
+    }, [96, 16, 96]);
+    const saved = applyMapOperations(createEmptyMap(), [{ type: 'map.update', designSemantics: design }]);
+    expect(saved.designSemantics.assemblies).toEqual([
+      { id: 'wall', groupId: 'city', intent: 'wall and gate form one enclosure', topology: 'loop', openings: 1 }
+    ]);
+  });
+
+  it('does not turn a broad group attraction into relocation of an authored building', () => {
+    const map = createEmptyMap();
+    const gate = createMapObject('入口', null);
+    gate.designGroupId = 'entry';
+    const wall = createMapObject('城墙', null);
+    wall.designGroupId = 'city';
+    wall.assemblyId = 'city-wall';
+    wall.transform.position = [20, 0, 20];
+    map.objects = [gate, wall];
+    const design = normalizeMapDesignSemantics({
+      groups: [{ id: 'entry' }, { id: 'city' }],
+      assemblies: [{ id: 'city-wall', groupId: 'city', topology: 'loop' }],
+      relations: [{ id: 'city-to-entry', kind: 'attract', sourceGroupId: 'city', targetGroupId: 'entry' }]
+    }, map.box.size);
+    expect(compileMapDesignRelations(map, design)).toEqual([]);
+    expect(wall.transform.position).toEqual([20, 0, 20]);
+  });
+
   it('does not stack a supported street group on the first service building', () => {
     const shop = asset('shop', '商铺', [8, 8, 7]);
     const store = asset('store', '便利店', [14, 6, 10]);

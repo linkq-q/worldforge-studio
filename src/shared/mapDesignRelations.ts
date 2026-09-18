@@ -14,7 +14,10 @@ export function compileMapDesignRelations(map: EditableMap, design: MapDesignSem
   const assets = new Map((map.assets ?? []).map((asset) => [asset.id, asset]));
   for (const relation of design.relations) {
     if (relation.kind === 'support') continue;
-    const sources = selectObjects(map, relation.sourceSelector, relation.sourceGroupId, assets);
+    // A group-to-group relation describes composition; only explicit loose objects may be rearranged.
+    if (!relation.sourceSelector.trim() || (relation.kind === 'attract' && !relation.targetSelector?.trim())) continue;
+    const sources = selectObjects(map, relation.sourceSelector, relation.sourceGroupId, assets)
+      .filter((object) => !object.locked && !object.assemblyId);
     if (sources.length === 0) continue;
     if (relation.kind === 'attract') {
       const target = selectObjects(map, relation.targetSelector ?? '', relation.targetGroupId, assets)[0];
@@ -67,6 +70,7 @@ export function compileMapDesignPruning(map: EditableMap, design: MapDesignSeman
         object.designGroupId === group.id
         && object.compositionLayer === layer.level
         && !object.locked
+        && !object.assemblyId
         && !protectedIds.has(object.id)
       ));
       if (candidates.length < 5 && !candidates.some((object) => removableIds.has(object.id))) continue;
@@ -90,7 +94,7 @@ export function compileMapNaturalClearance(map: EditableMap): MapOperation[] {
   if (clearZones.length === 0) return [];
   const assets = new Map((map.assets ?? []).map((asset) => [asset.id, asset]));
   return map.objects.flatMap((object): MapOperation[] => {
-    if (object.locked || ![3, 4].includes(object.compositionLayer ?? 0) || !objectMatchesNaturalDetail(object, map.assets ?? [])) return [];
+    if (object.locked || object.assemblyId || ![3, 4].includes(object.compositionLayer ?? 0) || !objectMatchesNaturalDetail(object, map.assets ?? [])) return [];
     const asset = object.assetId ? assets.get(object.assetId) : undefined;
     const radius = Math.max(0.2, (asset ? mapAssetFootprintRadius(asset) : 0.4)
       * Math.max(object.transform.scale[0], object.transform.scale[2]));

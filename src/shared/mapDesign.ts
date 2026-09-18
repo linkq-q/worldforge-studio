@@ -8,6 +8,7 @@ export const MAP_FOCUS_KINDS = ['primary', 'secondary', 'node'] as const;
 export const MAP_REVEAL_MODES = ['visible', 'screened', 'framed', 'sequence'] as const;
 export const MAP_RELATION_KINDS = ['attract', 'repel', 'support'] as const;
 export const MAP_SPATIAL_ROLES = ['landmark-ensemble', 'urban-fabric', 'open-space', 'landscape'] as const;
+export const MAP_ASSEMBLY_TOPOLOGIES = ['group', 'path', 'loop'] as const;
 
 export type MapExperienceMode = typeof MAP_EXPERIENCE_MODES[number];
 export type MapDensityTone = typeof MAP_DENSITY_TONES[number];
@@ -15,6 +16,7 @@ export type MapFocusKind = typeof MAP_FOCUS_KINDS[number];
 export type MapRevealMode = typeof MAP_REVEAL_MODES[number];
 export type MapRelationKind = typeof MAP_RELATION_KINDS[number];
 export type MapSpatialRole = typeof MAP_SPATIAL_ROLES[number];
+export type MapAssemblyTopology = typeof MAP_ASSEMBLY_TOPOLOGIES[number];
 export type MapCompositionLayer = 1 | 2 | 3 | 4;
 
 export interface MapDesignLayerPolicy {
@@ -73,11 +75,21 @@ export interface MapDesignRelation {
   maxDistance?: number;
 }
 
+/** One architectural whole whose topology can be checked against connected placements. */
+export interface MapDesignAssembly {
+  id: string;
+  groupId: string;
+  intent: string;
+  topology: MapAssemblyTopology;
+  openings?: number;
+}
+
 export interface MapDesignSemantics {
   version: 1;
   experienceMode: MapExperienceMode;
   intent: string;
   groups: MapDesignGroup[];
+  assemblies: MapDesignAssembly[];
   focuses: MapDesignFocus[];
   viewpoints: MapDesignViewpoint[];
   relations: MapDesignRelation[];
@@ -88,6 +100,7 @@ export const DEFAULT_MAP_DESIGN_SEMANTICS: MapDesignSemantics = Object.freeze({
   experienceMode: 'mixed',
   intent: '',
   groups: [],
+  assemblies: [],
   focuses: [],
   viewpoints: [],
   relations: []
@@ -125,6 +138,21 @@ export function normalizeMapDesignSemantics(value: unknown, boxSize: Vec3): MapD
     const parentId = cleanId(record(raw).parentId);
     if (group && parentId && parentId !== group.id && groupIds.has(parentId)) group.parentId = parentId;
     if (index >= groups.length) break;
+  }
+
+  const assemblies: MapDesignAssembly[] = [];
+  for (const raw of (Array.isArray(input.assemblies) ? input.assemblies.slice(0, 64) : [])) {
+    const item = record(raw);
+    const id = text(item.id, '', 80);
+    const groupId = cleanId(item.groupId);
+    if (!id || !groupIds.has(groupId) || assemblies.some((assembly) => assembly.id === id)) continue;
+    assemblies.push({
+      id,
+      groupId,
+      intent: text(item.intent, '', 240),
+      topology: enumValue(item.topology, MAP_ASSEMBLY_TOPOLOGIES, 'group'),
+      ...(item.openings !== undefined ? { openings: integer(item.openings, 0, 32, 0) } : {})
+    });
   }
 
   const focuses: MapDesignFocus[] = [];
@@ -191,6 +219,7 @@ export function normalizeMapDesignSemantics(value: unknown, boxSize: Vec3): MapD
     experienceMode: enumValue(input.experienceMode, MAP_EXPERIENCE_MODES, 'mixed'),
     intent: text(input.intent, '', 500),
     groups,
+    assemblies,
     focuses,
     viewpoints,
     relations

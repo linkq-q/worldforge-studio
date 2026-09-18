@@ -394,6 +394,9 @@ describe('map code planner', () => {
     expect(prompt).toContain("api.sceneIntent({kind:'natural'|'authored'");
     expect(prompt).toContain('Decide semantically from the requested place');
     expect(prompt).toContain('api.design({experienceMode');
+    expect(prompt).toContain("assemblies:[{id,groupId,intent,topology:'group'|'path'|'loop',openings?}]");
+    expect(prompt).toContain("assemblyId?:string and assemblyRole?:'opening'");
+    expect(prompt).toContain('derive module count from perimeter length');
     expect(prompt).toContain('one focus, multiple peer focuses, a primary-secondary hierarchy');
     expect(prompt).toContain('framed/borrowed/opposed views');
     expect(prompt).toContain('Classify the requested place by spatial organization');
@@ -1783,6 +1786,61 @@ describe('map code planner', () => {
       expect.objectContaining({ type: 'terrain.surface', surface: 'paving' })
     ]));
     expect(suggestion.codePlan?.functions).toContain('route');
+  });
+
+  it('keeps an AI-looped building assembly connected and editable after replay', () => {
+    const map = createEmptyMap('Connected court');
+    const code = `function plan(api) {
+      api.sceneIntent({kind:'authored',reason:'one composed court'});
+      api.design({groups:[{id:'court',name:'庭院',layers:[]}],assemblies:[
+        {id:'perimeter',groupId:'court',intent:'四边连续围合',topology:'loop'}
+      ],focuses:[],viewpoints:[],relations:[]});
+      const points=[[-6,-6],[6,-6],[6,6],[-6,6]];
+      for(let i=0;i<points.length;i++) api.placeBetween({
+        name:'围墙',start:points[i],end:points[(i+1)%points.length],
+        dimensions:[12,3,1],spanAxis:'x',gapRatio:0,groupId:'court',assemblyId:'perimeter',layer:1
+      });
+    }`;
+    const suggestion = executeMapCodePlan(code, map, [], { scope: 'scene' });
+    const saved = applyMapOperations(map, suggestion.operations);
+    expect(saved.designSemantics.assemblies).toEqual([
+      expect.objectContaining({ id: 'perimeter', groupId: 'court', topology: 'loop' })
+    ]);
+    expect(saved.objects.filter((object) => object.assemblyId === 'perimeter')).toHaveLength(4);
+    expect(suggestion.diagnostics?.some((issue) => issue.code === 'code.geometry-unresolved'
+      && issue.message.includes('围墙'))).toBe(false);
+  });
+
+  it('reports disconnected or over-stretched assemblies without rejecting the scene', () => {
+    const map = createEmptyMap('Incomplete court');
+    const suggestion = executeMapCodePlan(`function plan(api) {
+      api.sceneIntent({kind:'authored',reason:'court'});
+      api.design({groups:[{id:'court',layers:[]}],assemblies:[
+        {id:'wall',groupId:'court',topology:'loop',openings:1}
+      ],focuses:[],viewpoints:[],relations:[]});
+      api.placeBetween({name:'围墙',start:[-10,0],end:[10,0],dimensions:[4,3,1],
+        spanAxis:'x',groupId:'court',assemblyId:'wall',layer:1});
+      api.place({name:'围墙',position:[0,10],groupId:'court',assemblyId:'wall',layer:1});
+    }`, map, [], { scope: 'scene' });
+    expect(suggestion.blocked).not.toBe(true);
+    expect(suggestion.operations.filter((operation) => operation.type === 'object.add')).toHaveLength(2);
+    expect(suggestion.diagnostics).toEqual(expect.arrayContaining([
+      expect.objectContaining({ code: 'code.geometry-unresolved', message: expect.stringContaining('wall') })
+    ]));
+  });
+
+  it('allows a connected path assembly to include separately placed architectural detail', () => {
+    const map = createEmptyMap('Gateway court');
+    const suggestion = executeMapCodePlan(`function plan(api) {
+      api.design({groups:[{id:'court',layers:[]}],assemblies:[
+        {id:'side-wall',groupId:'court',topology:'path'}
+      ]});
+      for (let i=0;i<2;i++) api.placeBetween({name:'墙段',start:[i*4,0],end:[(i+1)*4,0],
+        dimensions:[4,3,1],groupId:'court',assemblyId:'side-wall'});
+      api.place({name:'檐柱',position:[4,0],groupId:'court',assemblyId:'side-wall'});
+    }`, map);
+    expect(suggestion.diagnostics?.some((issue) => issue.code === 'code.geometry-unresolved'
+      && issue.message.includes('side-wall'))).toBe(false);
   });
 
   it('binds authored routes and network edges to their design groups in the saved map', () => {

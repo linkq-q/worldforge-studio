@@ -229,6 +229,9 @@ export interface MapObject {
   generation?: MapGenerationOwner;
   /** Semantic composition membership; independent from physical parentId. */
   designGroupId?: string;
+  /** Parts sharing one authored architectural whole. */
+  assemblyId?: string;
+  assemblyRole?: 'opening';
   compositionLayer?: MapCompositionLayer;
   /** Guide used to derive this placement, for deterministic roadside validation and later regeneration. */
   sourceGuideId?: string;
@@ -1762,6 +1765,10 @@ function normalizeObject(input: Partial<MapObject>): MapObject {
     designGroupId: typeof input.designGroupId === 'string' && input.designGroupId.trim()
       ? input.designGroupId.trim().slice(0, 80)
       : undefined,
+    assemblyId: typeof input.assemblyId === 'string' && input.assemblyId.trim()
+      ? input.assemblyId.trim().slice(0, 80)
+      : undefined,
+    assemblyRole: input.assemblyRole === 'opening' ? 'opening' : undefined,
     compositionLayer: [1, 2, 3, 4].includes(Number(input.compositionLayer))
       ? Number(input.compositionLayer) as MapCompositionLayer
       : undefined,

@@ -217,7 +217,7 @@ describe('map composition preview panel', () => {
   it('renders selectable Chinese design groups, focus roles and layer density', () => {
     const map = createEmptyMap();
     map.designSemantics = {
-      version: 1, experienceMode: 'mixed', intent: '主次平衡', viewpoints: [], relations: [],
+      version: 1, experienceMode: 'mixed', intent: '主次平衡', viewpoints: [], relations: [], assemblies: [],
       groups: [{
         id: 'library', name: '图书馆组', intent: '突出主楼', focusIds: ['main'], guideIds: [],
         entryGuideIds: [], exitGuideIds: [], axisGuideIds: [], protectedObjectIds: [], removableObjectIds: [],
