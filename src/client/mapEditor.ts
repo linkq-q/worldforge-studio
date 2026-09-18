@@ -131,9 +131,13 @@ import {
   writeBrowserProjectExport
 } from './projectDirectoryExport';
 import {
+  deleteBrowserMapPlan,
   deleteBrowserMapDraft,
+  isBrowserMapPlanCurrent,
+  loadBrowserMapPlan,
   loadBrowserMapDraft,
   recoverBrowserMapDraft,
+  saveBrowserMapPlan,
   saveBrowserMapDraft,
   type BrowserMapDraft
 } from './mapDraftStore';
@@ -445,6 +449,8 @@ class MapEditor {
   private mapAiConfirmCompositionPlan = false;
   private pendingCompositionPlan: SceneCompositionPlan | null = null;
   private pendingCodeSuggestion: MapAiSuggestion | null = null;
+  private codePlanPreviewPayload: CodePlanPreviewPayload | null = null;
+  private codePlanSaved = false;
   private activeAssetLibraryId = '';
   private selectedLibraryAssetId = '';
   private projectExportProfiles: ProjectExportProfile[] = [];
@@ -1154,6 +1160,26 @@ class MapEditor {
       this.mapAiPreviewVisible = true;
     }
     await this.refreshScene();
+    if (!draftRecovery) {
+      try {
+        const plan = await loadBrowserMapPlan(savedMap.id);
+        if (plan && isBrowserMapPlanCurrent(savedMap, plan)) {
+          this.mapAiPrompt = plan.prompt;
+          this.mapAiFocusPrompt = plan.options.focusPrompt;
+          this.mapAiMinNewAssets = plan.options.minNewAssets;
+          this.mapAiMaxNewAssets = plan.options.maxNewAssets;
+          this.mapAiReuseExistingAssets = plan.options.reuseExistingAssets;
+          this.activeAssetLibraryId = plan.options.assetLibraryId;
+          this.selectedPaletteId = plan.options.paletteId;
+          this.pendingCodeSuggestion = plan.suggestion;
+          this.codePlanSaved = true;
+          if (plan.preview) this.showCodePlanPreview(plan.preview);
+          this.state.message = '已恢复本地保存的规划，可直接继续生成或重新规划';
+        }
+      } catch (error) {
+        console.warn('无法恢复本地规划', error);
+      }
+    }
     this.renderPanels();
     if (draftRecovery) this.showMapDraftRecoveryDialog();
     return true;
@@ -1578,7 +1604,11 @@ class MapEditor {
             : `${map.sceneMode === 'outdoor' && this.mapAiUseSceneAgent ? '整体 Code 编排场景' : '场景规划'} · 生成 ${this.mapAiMinNewAssets}-${this.mapAiMaxNewAssets} 类新资产；每个变体仍需单独生成`}</p>
         </section>
       </details>
-      ${this.pendingCodeSuggestion ? renderMapCodePlanApproval(this.pendingCodeSuggestion, map.sceneMode) : ''}
+      ${this.pendingCodeSuggestion && !this.mapAiPreviewMap ? renderMapCodePlanApproval(
+        this.pendingCodeSuggestion,
+        map.sceneMode,
+        this.state.busy ? 'generating' : this.codePlanSaved ? 'saved' : 'ready'
+      ) : ''}
       ${this.pendingCompositionPlan ? renderMapCompositionPlanApproval(this.pendingCompositionPlan) : ''}
       ${renderMapGenerationFailure(this.mapAiLastFailure, this.state.busy)}
       ${suggestion && this.mapAiPreviewMap ? `
@@ -1754,16 +1784,26 @@ class MapEditor {
       if (this.pendingCompositionPlan) void this.generateMapAiPreview('generate', this.pendingCompositionPlan);
     });
     host.querySelector('#discard-code-plan')?.addEventListener('click', () => {
+      if (this.state.busy) return;
+      const mapId = this.state.map?.id;
       this.pendingCodeSuggestion = null;
+      this.codePlanSaved = false;
       this.clearCodePlanPreview();
       this.state.message = '已放弃灰盒规划，可以修改提示词后重试';
       this.renderPanels();
+      if (mapId) void deleteBrowserMapPlan(mapId).catch((error) => console.warn('无法删除本地规划', error));
     });
     host.querySelector('#regenerate-code-plan')?.addEventListener('click', () => {
+      if (this.state.busy) return;
+      const mapId = this.state.map?.id;
       this.pendingCodeSuggestion = null;
+      this.codePlanSaved = false;
+      if (mapId) void deleteBrowserMapPlan(mapId).catch((error) => console.warn('无法删除本地规划', error));
       void this.generateCompositionPlanPreview();
     });
+    host.querySelector('#save-code-plan')?.addEventListener('click', () => void this.saveCodePlan());
     host.querySelector('#approve-code-plan')?.addEventListener('click', () => {
+      if (this.state.busy) return;
       const code = this.pendingCodeSuggestion?.codePlan?.code;
       if (code) void this.generateMapAiPreview('generate', undefined, undefined, false, false, code);
     });
@@ -2244,6 +2284,7 @@ class MapEditor {
 
   /** Streams the discovered code-plan layout into the viewport as ghost boxes while assets generate. */
   private showCodePlanPreview(plan: CodePlanPreviewPayload): void {
+    this.codePlanPreviewPayload = plan;
     if (!this.generationPreview) return;
     const planSignature = JSON.stringify({ p: plan.placements, s: plan.sceneOperations ?? [] });
     if (planSignature !== this.lastCodePlanPreviewJson) {
@@ -2297,6 +2338,7 @@ class MapEditor {
 
   private clearCodePlanPreview(): void {
     this.generationPreview?.clear();
+    this.codePlanPreviewPayload = null;
     this.lastCodePlanPreviewJson = '';
     if (this.codePlanSceneMap) {
       this.codePlanSceneMap = null;
@@ -2305,6 +2347,35 @@ class MapEditor {
   }
 
   private lastCodePlanPreviewJson = '';
+
+  private async saveCodePlan(): Promise<void> {
+    const map = this.state.map;
+    const suggestion = this.pendingCodeSuggestion;
+    if (!map || !suggestion?.codePlan?.code || this.state.busy) return;
+    try {
+      await saveBrowserMapPlan({
+        mapId: map.id,
+        baseUpdatedAt: map.updatedAt,
+        updatedAt: Date.now(),
+        prompt: this.mapAiPrompt,
+        suggestion,
+        preview: this.codePlanPreviewPayload,
+        options: {
+          focusPrompt: this.mapAiFocusPrompt,
+          minNewAssets: this.mapAiMinNewAssets,
+          maxNewAssets: this.mapAiMaxNewAssets,
+          reuseExistingAssets: this.mapAiReuseExistingAssets,
+          assetLibraryId: this.activeAssetLibraryId,
+          paletteId: this.selectedPaletteId
+        }
+      });
+      this.codePlanSaved = true;
+      this.state.message = '规划已保存在此浏览器；下次打开这张地图可继续生成';
+    } catch (error) {
+      this.state.message = `保存规划失败：${error instanceof Error ? error.message : '未知错误'}`;
+    }
+    this.renderMapAiPanel();
+  }
   /** The base map with the streaming plan's environment operations applied. */
   private codePlanSceneMap: EditableMap | null = null;
 
@@ -2362,6 +2433,7 @@ class MapEditor {
       );
       if (!suggestion.codePlan?.code) throw new Error('灰盒规划未返回可确认的场景 Code');
       this.pendingCodeSuggestion = suggestion;
+      this.codePlanSaved = false;
       updateAgentProgress(this.mapAgentProgress, { phase: 'complete', label: `${stageName}与资产清单已生成，等待确认` });
       this.state.message = `${stageName}已生成；确认前不会生成任何 3D 资产`;
     } catch (error) {
@@ -2515,6 +2587,7 @@ class MapEditor {
       this.mapAiReplayToken = null;
       this.pendingCompositionPlan = null;
       this.pendingCodeSuggestion = null;
+      this.codePlanSaved = false;
       const previewBase = baseWasSaved ? this.state.map ?? map : map;
       this.mapAiPreviewMap = applyMapOperations(this.mapWithEditorAssets(previewBase), combinedSuggestion.operations);
       this.mapAiComparisonMap = baseWasSaved ? previewBase : comparisonMap;
@@ -2983,6 +3056,7 @@ class MapEditor {
       || this.state.busy && !this.mapAiAutoRefineRunning) return;
     const isTerrainPreview = this.mapPreviewKind === 'terrain';
     const savingDuringAutoRefine = this.mapAiAutoRefineRunning;
+    let transactionSaved = false;
     if (!savingDuringAutoRefine) this.setBusy(true, isTerrainPreview ? '正在应用地形编辑...' : '正在应用 AI 地图...');
     const save = (async () => {
       const result = await editorFetch<{ map: EditableMap; transaction: MapTransactionSummary }>(
@@ -3003,6 +3077,8 @@ class MapEditor {
           })
         }
       );
+      transactionSaved = true;
+      void deleteBrowserMapPlan(map.id).catch((error) => console.warn('无法清理已使用的本地规划', error));
       this.state.map = normalizeMap(result.map);
       this.state.undoTransaction = result.transaction;
       this.state.redoTransaction = null;
@@ -3027,7 +3103,11 @@ class MapEditor {
     try {
       await save;
     } catch (error) {
-      this.state.message = `应用${isTerrainPreview ? '地形编辑' : ' AI 地图'}失败：${error instanceof Error ? error.message : '未知错误'}`;
+      const detail = error instanceof Error ? error.message : '未知错误';
+      console.error(transactionSaved ? '地图已保存，但前端刷新失败' : '地图事务保存失败', error);
+      this.state.message = transactionSaved
+        ? `地图已保存，但前端刷新失败：${detail}；可重新打开地图恢复显示`
+        : `应用${isTerrainPreview ? '地形编辑' : ' AI 地图'}失败：${detail}`;
     } finally {
       if (this.mapAiRoundSavePromise === save) this.mapAiRoundSavePromise = null;
       if (!savingDuringAutoRefine) this.setBusy(false);
@@ -3041,6 +3121,7 @@ class MapEditor {
     this.mapAiReplayToken = null;
     this.pendingCompositionPlan = null;
     this.pendingCodeSuggestion = null;
+    this.codePlanSaved = false;
     this.clearCodePlanPreview();
     this.mapAiPreviewMap = null;
     this.mapAiPreviewVisible = true;

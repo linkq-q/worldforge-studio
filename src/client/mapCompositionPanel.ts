@@ -55,7 +55,11 @@ export function renderMapCompositionPlanApproval(plan: SceneCompositionPlan): st
   `;
 }
 
-export function renderMapCodePlanApproval(suggestion: MapAiSuggestion, sceneMode: 'indoor' | 'outdoor' | 'mixed' = 'indoor'): string {
+export function renderMapCodePlanApproval(
+  suggestion: MapAiSuggestion,
+  sceneMode: 'indoor' | 'outdoor' | 'mixed' = 'indoor',
+  status: 'ready' | 'saved' | 'generating' = 'ready'
+): string {
   const plan = suggestion.codePlan;
   if (!plan) return '';
   const outdoor = sceneMode === 'outdoor';
@@ -81,11 +85,14 @@ export function renderMapCodePlanApproval(suggestion: MapAiSuggestion, sceneMode
       `).join('')}</div>
       ${compositionWarnings.length ? `<div class="map-ai-diagnostics"><p>构图待核对（不会自动改动摆放）：</p>${compositionWarnings.map((issue) => `<p>${escapeHtml(issue.message)}</p>`).join('')}</div>` : ''}
       ${renderMapCodePlanSummary(suggestion)}
-      <div class="map-ai-actions">
-        <button id="discard-code-plan" class="secondary">放弃并修改提示词</button>
-        <button id="regenerate-code-plan" class="secondary">重新规划</button>
-        <button id="approve-code-plan">确认规划并开始生成</button>
-      </div>
+      ${status === 'generating'
+        ? '<p class="empty inspector-note" role="status">规划已确认，正在生成资产与场景；完成后将显示地图预览。</p>'
+        : `<div class="map-ai-actions">
+          <button id="discard-code-plan" class="secondary">放弃并修改提示词</button>
+          <button id="regenerate-code-plan" class="secondary">重新规划</button>
+          <button id="save-code-plan" class="secondary">${status === 'saved' ? '规划已保存' : '保存规划'}</button>
+          <button id="approve-code-plan">确认规划并开始生成</button>
+        </div>`}
     </section>
   `;
 }

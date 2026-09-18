@@ -30,7 +30,19 @@ describe('map composition preview panel', () => {
     expect(html).toContain('课桌 · 功能 · 2 个');
     expect(html).toContain('盆栽 · 装饰 · 1 个 · 可选');
     expect(html).toContain('id="approve-code-plan"');
+    expect(html).toContain('id="save-code-plan"');
     expect(html).not.toContain('房间俯视分区图');
+  });
+
+  it('replaces planning actions with generation progress after approval', () => {
+    const suggestion: MapAiSuggestion = {
+      summary: 'park', operations: [], renderPromptSuggestions: [], generatedAssets: [],
+      codePlan: { code: 'api.asset({ key: "tree" });', placementCount: 1, functions: ['asset'] }
+    };
+    const html = renderMapCodePlanApproval(suggestion, 'outdoor', 'generating');
+    expect(html).toContain('规划已确认，正在生成资产与场景');
+    expect(html).not.toContain('id="approve-code-plan"');
+    expect(html).not.toContain('id="regenerate-code-plan"');
   });
 
   it('renders a top-down approval plan with explicit whitespace meaning before generation', () => {

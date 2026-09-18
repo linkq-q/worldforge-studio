@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { createEmptyMap } from '../src/shared/map';
-import { createBrowserMapDraft, recoverBrowserMapDraft } from '../src/client/mapDraftStore';
+import { createBrowserMapDraft, isBrowserMapPlanCurrent, recoverBrowserMapDraft, type BrowserMapPlan } from '../src/client/mapDraftStore';
 
 describe('browser map draft', () => {
   it('stores map edits without duplicating hydrated asset payloads', () => {
@@ -36,5 +36,22 @@ describe('browser map draft', () => {
 
     expect(recovered.name).toBe('recovered');
     expect(recovered.assets?.[0].id).toBe('asset-a');
+  });
+
+  it('restores a saved plan only against its unchanged source map', () => {
+    const map = createEmptyMap('park', 'park-map');
+    const plan: BrowserMapPlan = {
+      mapId: map.id, baseUpdatedAt: map.updatedAt, updatedAt: 1, prompt: 'a park',
+      suggestion: {
+        summary: 'park plan', operations: [], renderPromptSuggestions: [], generatedAssets: [],
+        codePlan: { code: 'api.asset({ key: "tree" });', placementCount: 1, functions: ['asset'] }
+      },
+      preview: null,
+      options: { focusPrompt: '', minNewAssets: 1, maxNewAssets: 20, reuseExistingAssets: false, assetLibraryId: '', paletteId: '' }
+    };
+
+    expect(isBrowserMapPlanCurrent(map, plan)).toBe(true);
+    expect(isBrowserMapPlanCurrent({ ...map, updatedAt: map.updatedAt + 1 }, plan)).toBe(false);
+    expect(isBrowserMapPlanCurrent({ ...map, id: 'other' }, plan)).toBe(false);
   });
 });
