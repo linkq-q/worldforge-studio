@@ -3357,8 +3357,9 @@ ${assetCatalog}`;
 }
 
 function extractCode(raw: string): string {
-  const fenced = raw.match(/```(?:js|javascript|ts|typescript)?\s*([\s\S]*?)```/i);
-  return (fenced?.[1] ?? raw).trim();
+  const answer = raw.replace(/^\s*<think>[\s\S]*?<\/think>\s*/i, '');
+  const fenced = answer.match(/```(?:js|javascript|ts|typescript)?\s*([\s\S]*?)```/i);
+  return (fenced?.[1] ?? answer).trim();
 }
 
 async function discoverMapCodeWithRepairs(

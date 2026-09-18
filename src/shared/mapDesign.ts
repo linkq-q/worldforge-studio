@@ -215,6 +215,7 @@ function normalizeLayers(value: unknown): MapDesignLayerPolicy[] {
 }
 
 function normalizeRegion(value: unknown, boxSize: Vec3): VisualZoneRegion | undefined {
+  if (Array.isArray(value)) return normalizeRegion({ kind: 'polygon', points: value }, boxSize);
   const item = record(value);
   const halfX = boxSize[0] / 2;
   const halfZ = boxSize[2] / 2;

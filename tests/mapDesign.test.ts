@@ -5,6 +5,14 @@ import { compileMapDesignDensityFill, compileMapDesignPruning, compileMapDesignR
 import { applyMapOperations } from '../src/shared/mapOperations';
 
 describe('map design semantics', () => {
+  it('accepts a polygon point list as a group region', () => {
+    const design = normalizeMapDesignSemantics({groups:[{
+      id:'park',region:[[-20,-10],[20,-10],[20,10],[-20,10]]
+    }]}, [96,16,96]);
+    expect(design.groups[0].region).toEqual({
+      kind:'polygon',points:[[-20,-10],[20,-10],[20,10],[-20,10]]
+    });
+  });
   it('persists a two-level multi-focus design graph without using physical parent hierarchy', () => {
     const design = normalizeMapDesignSemantics({
       experienceMode: 'mixed',

@@ -11,6 +11,14 @@ import { applyMapOperations, type CodePlanAssetReadyPayload, type CodePlanPrevie
 import { isPointInsideWaterBody } from '../src/shared/mapWater';
 
 describe('map code planner', () => {
+  it('removes a leading model thinking block without rewriting the authored plan', () => {
+    const code = `function plan(api) { api.place({name:'桌椅组',position:[0,0]}); }`;
+    const suggestion = executeMapCodePlan(`<think>Planning a park...</think>\n${code}`, createEmptyMap());
+    expect(suggestion.codePlan?.code).toBe(code);
+    expect(suggestion.operations).toEqual(expect.arrayContaining([
+      expect.objectContaining({ type:'object.add', object:expect.objectContaining({name:'桌椅组'}) })
+    ]));
+  });
   it('routes existing-host decoration through mount without changing the selected source', async () => {
     const host = testAsset('existing-host', 'Host');
     const mounted = testAsset('decorated-host', 'Decorated host');
