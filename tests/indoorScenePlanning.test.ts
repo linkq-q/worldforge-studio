@@ -155,6 +155,9 @@ describe('indoor scene planning', () => {
     expect(fitted.assetFamilies).toHaveLength(4);
     expect(fitted.assetFamilies.reduce((sum, family) => sum + family.desiredVariants, 0)).toBe(4);
     expect(fitted.zones[0].layers.every((layer) => fitted.assetFamilies.some((family) => family.id === layer.familyId))).toBe(true);
+    const varied = structuredClone(plan);
+    varied.assetFamilies[7].desiredVariants = 3;
+    expect(fitSceneAssetVariantBudget(varied, 4, 4).assetFamilies.find((family) => family.id === 'family-7')?.desiredVariants).toBe(3);
   });
 
   it('keeps arbitrary indoor uses coherent across room sizes and seeds', () => {

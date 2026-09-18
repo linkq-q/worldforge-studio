@@ -1544,11 +1544,11 @@ class MapEditor {
             </select>
           </label>
           <label class="field compact">
-            <span>本次最少生成新资产</span>
+            <span>本次最少生成新资产类别（变体不计）</span>
             <input id="map-ai-min-new-assets" type="number" min="0" max="${this.mapAiMaxNewAssets}" step="1" value="${this.mapAiMinNewAssets}" ${this.state.busy ? 'disabled' : ''} />
           </label>
           <label class="field compact">
-            <span>本次最多生成新资产</span>
+            <span>本次最多生成新资产类别（变体不计）</span>
             <input id="map-ai-max-new-assets" type="number" min="0" max="${MAP_AI_MAX_NEW_ASSETS}" step="1" value="${this.mapAiMaxNewAssets}" ${this.state.busy ? 'disabled' : ''} />
           </label>
           ${visualZones.length > 0 ? `<label class="field compact">
@@ -1575,7 +1575,7 @@ class MapEditor {
           ? '请先保存当前手工修改，再生成 AI 地图预览。'
           : !compositionAvailable
             ? '当前地图已有内容，请使用“调整当前地图”继续 Refine。'
-            : `${map.sceneMode === 'outdoor' && this.mapAiUseSceneAgent ? '整体 Code 编排场景' : '场景规划'} · 生成 ${this.mapAiMinNewAssets}-${this.mapAiMaxNewAssets} 个新资产`}</p>
+            : `${map.sceneMode === 'outdoor' && this.mapAiUseSceneAgent ? '整体 Code 编排场景' : '场景规划'} · 生成 ${this.mapAiMinNewAssets}-${this.mapAiMaxNewAssets} 类新资产；每个变体仍需单独生成`}</p>
         </section>
       </details>
       ${this.pendingCodeSuggestion ? renderMapCodePlanApproval(this.pendingCodeSuggestion, map.sceneMode) : ''}

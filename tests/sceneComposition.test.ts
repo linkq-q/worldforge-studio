@@ -375,7 +375,7 @@ describe('scene composition contract', () => {
     };
     input.assetFamilies.find((family) => family.id === 'trees')!.desiredVariants = 4;
     const plan = normalizeSceneCompositionPlan(input, map);
-    const resolved = resolveSceneFamilies(plan, map, [], 4);
+    const resolved = resolveSceneFamilies(plan, map, [], 1);
     const treeGaps = resolved.gaps.filter((gap) => gap.familyId === 'trees');
 
     expect(treeGaps.map((gap) => ({

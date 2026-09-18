@@ -304,7 +304,7 @@ describe('map code planner', () => {
     expect(prompt).toContain('circlePoint with deterministic index/count');
     expect(prompt).toContain('facing may be a direction [dx,dz]');
     expect(prompt).toContain('Inward arena ring:');
-    expect(prompt).toContain('The sum of all requireAsset variants must be between 2 and 4.');
+    expect(prompt).toContain('Declare between 2 and 4 distinct requireAsset families; variants within one family count as one asset');
     expect(prompt).toContain('one short Simplified Chinese noun');
     expect(prompt).toContain("const tree = api.requireAsset({key:'tree'");
     expect(prompt).toContain('No undefined point, invalid array index, direct array arithmetic');
@@ -2166,7 +2166,8 @@ describe('map code planner', () => {
       tags: ['tree', 'pine'],
       variants: 3
     }]);
-    expect(() => discoverMapCodeAssets(code, createEmptyMap(), [], 2))
+    expect(discoverMapCodeAssets(code, createEmptyMap(), [], 1)).toHaveLength(1);
+    expect(() => discoverMapCodeAssets(code.replace('const pine =', "api.requireAsset({ key: 'rock', name: 'Rock', prompt: 'Rock' }); const pine ="), createEmptyMap(), [], 1))
       .toThrow('map_code_asset_requirement_limit');
   });
 

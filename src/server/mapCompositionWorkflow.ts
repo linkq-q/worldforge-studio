@@ -224,12 +224,13 @@ export async function runMapCompositionWorkflow(
   const generated = generatedResults.filter((entry): entry is { familyId: string; asset: MapAsset } => entry !== null);
   const resolvedFamilies = attachGeneratedSceneAssets(initialResolution.families, generated);
   const expandedAssets = [...assets, ...generated.map((entry) => entry.asset)];
-  const assetMinimumShortfall = Math.max(0, assetRange.min - generated.length);
+  const generatedFamilyCount = new Set(generated.map((entry) => entry.familyId)).size;
+  const assetMinimumShortfall = Math.max(0, assetRange.min - generatedFamilyCount);
   if (assetMinimumShortfall > 0) {
     options.onProgress?.({
       phase: 'repairing',
       label: `新资产少于下限 ${assetMinimumShortfall} 个，已保留可执行场景并继续`,
-      detail: `目标至少 ${assetRange.min} 个，实际生成 ${generated.length} 个`
+      detail: `目标至少 ${assetRange.min} 类，实际生成 ${generatedFamilyCount} 类（${generated.length} 个变体）`
     });
   }
 

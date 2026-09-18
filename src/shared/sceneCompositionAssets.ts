@@ -21,11 +21,10 @@ export interface SceneAssetGap {
 
 export function fitSceneAssetVariantBudget(
   plan: SceneCompositionPlan,
-  minimum: number,
+  _minimum: number,
   maximum: number
 ): SceneCompositionPlan {
   const safeMaximum = Math.max(0, Math.round(maximum));
-  const safeMinimum = Math.min(safeMaximum, Math.max(0, Math.round(minimum)));
   const requiredFamilyIds = new Set(plan.intentRequirements.flatMap((requirement) => (
     requirement.kind === 'asset-family' && requirement.familyId ? [requirement.familyId] : []
   )));
@@ -50,28 +49,7 @@ export function fitSceneAssetVariantBudget(
       requirement.kind !== 'asset-family' || Boolean(requirement.familyId && selectedIds.has(requirement.familyId))
     ))
   };
-  if (families.length === 0) return trimmedPlan;
-  let total = families.reduce((sum, family) => sum + family.desiredVariants, 0);
-  const byPriority = [...families].sort((left, right) => right.priority - left.priority);
-
-  while (total < safeMinimum) {
-    for (const family of byPriority) {
-      if (total >= safeMinimum) break;
-      family.desiredVariants += 1;
-      total += 1;
-    }
-  }
-
-  while (total > safeMaximum) {
-    const family = [...families]
-      .sort((left, right) => left.priority - right.priority)
-      .find((item) => item.desiredVariants > 1);
-    if (!family) break;
-    family.desiredVariants -= 1;
-    total -= 1;
-  }
-
-  return { ...trimmedPlan, assetFamilies: families };
+  return trimmedPlan;
 }
 
 export function resolveSceneFamilies(
@@ -100,18 +78,19 @@ export function resolveSceneFamilies(
       };
     });
 
-  let missingTotal = families.reduce((sum, family) => sum + family.missingCount, 0);
+  let missingFamilies = families.filter((family) => family.missingCount > 0).length;
   for (const resolved of [...families].sort((left, right) => left.family.priority - right.family.priority)) {
-    while (missingTotal < minimumGeneration && resolved.assets.length > 0) {
+    if (missingFamilies < minimumGeneration && resolved.missingCount === 0 && resolved.assets.length > 0) {
       resolved.assets.pop();
       resolved.missingCount += 1;
-      missingTotal += 1;
+      missingFamilies += 1;
     }
   }
 
   const gaps: SceneAssetGap[] = [];
   for (const resolved of families) {
-    for (let index = 0; index < resolved.missingCount && gaps.length < generationBudget; index += 1) {
+    if (resolved.missingCount === 0 || new Set(gaps.map((gap) => gap.familyId)).size >= generationBudget) continue;
+    for (let index = 0; index < resolved.missingCount; index += 1) {
       const variantIndex = resolved.assets.length + index;
       const seededFamily = resolved.assets.length === 0
         && resolved.family.desiredVariants > 1

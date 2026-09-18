@@ -2031,9 +2031,7 @@ function executeMapCodePlanInternal(
         throw new Error(`conflicting_map_code_asset_requirement:${requirement.key}`);
       }
       if (!existing) {
-        const requestedCount = [...requirements.values()]
-          .reduce((total, item) => total + item.variants, 0) + requirement.variants;
-        if (requestedCount > maxNewAssets) throw new Error('map_code_asset_requirement_limit');
+        if (requirements.size >= maxNewAssets) throw new Error('map_code_asset_requirement_limit');
         requirements.set(requirement.key, requirement);
       }
       return requirement.key;
@@ -2603,10 +2601,7 @@ function executeMapCodePlanInternal(
         requirement.generatedVariants = usedIndices.length;
       }
     }
-    const requestedAssetCount = [...requirements.values()].reduce(
-      (total, requirement) => total + generatedVariantCount(requirement),
-      0
-    );
+    const requestedAssetCount = requirements.size;
     const minimumAssetCount = options.minNewAssets ?? 0;
     if (requestedAssetCount < minimumAssetCount) {
       reportIssue({
@@ -2614,7 +2609,7 @@ function executeMapCodePlanInternal(
         code: 'asset.minimum-degraded',
         message: `用户要求至少 ${minimumAssetCount} 个新资产，当前可执行规划包含 ${requestedAssetCount} 个；已保留其余场景内容。`,
         repaired: false,
-        repairHint: `Declare and place ${minimumAssetCount - requestedAssetCount} more genuinely useful reusable asset variants without adding filler or removing existing scene content.`
+        repairHint: `Declare and place ${minimumAssetCount - requestedAssetCount} more genuinely useful reusable asset families without adding filler or removing existing scene content.`
       });
     }
   }
@@ -3223,7 +3218,7 @@ For long connected dry-land scenery, prefer api.placeBetween({assetId?,name?,sta
 - Variation: api.random(min,max), never Math.random and never an unseeded random source.
 
 ## Asset rules
-The sum of all requireAsset variants must be between ${minNewAssets} and ${maxNewAssets}.
+Declare between ${minNewAssets} and ${maxNewAssets} distinct requireAsset families; variants within one family count as one asset toward this range. Variants still require separate model generation calls, so request only useful visual diversity.
 Each requireAsset.name is user-facing UI text: use one short Simplified Chinese noun with 2-8 Chinese characters, such as "城门", "看台", or "塔柱"; never use an English marketing phrase. Keep the detailed asset prompt in whichever language best serves model generation.
 When the minimum is greater than zero, declare and place that many prompt-specific generated assets even if reusable assets exist.
 Use api.asset(key,index) for generated assets; do not invent asset IDs and do not modify catalog IDs.
@@ -3317,7 +3312,7 @@ api.place({assetId?,name?,position?,rotationY?,facing?,scale?,size?,dimensions?,
 api.attach({assetId?,name?,parentId,kind:'supported'|'mounted',side?,offset?,anchorY?:'bottom'|'center'|'top',contact?,scale?,rotationY?,role:'functional'|'decor'}) attaches a child to an earlier api.place/api.attach return value or an existing object ID. supported uses local [x,z] offset on a surface; mounted requires side north|south|east|west and uses local [horizontal,vertical] offset relative to anchorY.
 api.placeBetween remains available for connected counters, shelves, railings, partitions or bench rows.
 api.requireAsset({key,name,prompt,tags?,variants?,dimensions,role:'functional'|'decor',optional?}) declares assets; api.asset(key,index?) binds them. Functional families are core room content; only restrained decor may be optional.
-The hard user-selected range for all requireAsset variants is ${minNewAssets}-${maxNewAssets}. For this room size, aim for about ${suggestedAssetCount} reusable variants only when they serve distinct functional or visual roles; this is guidance, not permission to add filler. Each name is one short 2-8 character Simplified Chinese noun. Every declared variant must be placed.
+The hard user-selected range is ${minNewAssets}-${maxNewAssets} distinct requireAsset families, regardless of variants per family. For this room size, aim for about ${suggestedAssetCount} useful reusable families; variants still cost separate model generation calls, so add them only for visible diversity. Each name is one short 2-8 character Simplified Chinese noun. Every declared variant must be placed.
 Use existing reusable IDs exactly as listed; never invent an asset ID. Do not generate assets already available and suitable for reuse.
 
 ## Indoor composition philosophy
