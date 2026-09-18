@@ -1690,6 +1690,85 @@ describe('map code planner', () => {
     expect(saved.guides.map((guide) => guide.id)).toEqual(['arrival', 'pavilion-walk']);
   });
 
+  it('reports unbound or physically disconnected design-group routes without rejecting the scene', () => {
+    const plan = (secondRoute: string) => executeMapCodePlan(`function plan(api) {
+      api.sceneIntent({kind:'authored',reason:'two garden rooms'});
+      api.design({experienceMode:'sequential',intent:'entry to pavilion',groups:[
+        {id:'entry',name:'入口',intent:'arrival',layers:[]},
+        {id:'pavilion',name:'亭院',intent:'destination',layers:[]}
+      ],focuses:[],viewpoints:[],relations:[]});
+      api.place({name:'门',position:[0,-18],groupId:'entry',layer:1,role:'structure'});
+      api.place({name:'亭',position:[15,15],groupId:'pavilion',layer:1,role:'structure'});
+      api.route({id:'arrival',points:[[0,-22],[0,-8]],${secondRoute}});
+      api.route({id:'destination',points:[[15,8],[15,20]]${secondRoute ? ",groupId:'pavilion'" : ''}});
+    }`, createEmptyMap(), [], { scope: 'scene' });
+
+    expect(plan('').diagnostics).toEqual(expect.arrayContaining([
+      expect.objectContaining({ code: 'scene.group-route-unbound', repaired: false })
+    ]));
+    expect(plan("groupId:'entry'").diagnostics).toEqual(expect.arrayContaining([
+      expect.objectContaining({ code: 'scene.group-route-disconnected', repaired: false })
+    ]));
+  });
+
+  it('uses uniform near-to-far grass feedback for one optional targeted scene correction', async () => {
+    const broad = `function plan(api) {
+      api.sceneIntent({kind:'natural',reason:'pond meadow'});
+      api.water('pond',{type:'lake',points:[[-6,-6],[6,-6],[6,6],[-6,6]],level:-0.2});
+      api.grass({id:'blanket',preset:'meadow',region:{kind:'circle',center:[0,0],radius:30},density:0.8,variation:0});
+    }`;
+    const layered = `function plan(api) {
+      api.sceneIntent({kind:'natural',reason:'pond meadow'});
+      api.water('pond',{type:'lake',points:[[-6,-6],[6,-6],[6,6],[-6,6]],level:-0.2});
+      api.grass({id:'shore',preset:'wetland',region:{kind:'circle',center:[0,0],radius:30},density:0.8,habitat:{waterDistance:[0,1,3,6]}});
+      api.grass({id:'upland',preset:'meadow',region:{kind:'circle',center:[0,0],radius:30},density:0.6,habitat:{waterDistance:[6,10,30,34]}});
+    }`;
+    const response = (content: string) => new Response(JSON.stringify({ok:true,content}), {
+      status:200,headers:{'Content-Type':'application/json'}
+    });
+    const fetchImpl = vi.fn().mockResolvedValueOnce(response(broad)).mockResolvedValueOnce(response(layered));
+    expect(executeMapCodePlan(broad, createEmptyMap(), [], { scope:'scene' }).diagnostics).toEqual(
+      expect.arrayContaining([expect.objectContaining({ code:'scene.vegetation-uniform' })])
+    );
+    const suggestion = await generateMapCodeSuggestion('池边草地', createEmptyMap(), [], {
+      apiBase:'https://example.test',provider:'gpt',fetchImpl,
+      minNewAssets:0,maxNewAssets:0,scope:'scene'
+    });
+    const repairRequest = JSON.parse(String((fetchImpl.mock.calls[1]?.[1] as RequestInit | undefined)?.body)) as {
+      messages:Array<{content:string}>
+    };
+
+    expect(fetchImpl).toHaveBeenCalledTimes(2);
+    expect(repairRequest.messages.at(-1)?.content).toContain('scene.vegetation-uniform');
+    expect(suggestion.codePlan?.repairAttempts).toBe(1);
+    expect(suggestion.operations.filter((operation) => operation.type === 'grass.generate')).toHaveLength(2);
+    expect(suggestion.diagnostics).not.toEqual(expect.arrayContaining([
+      expect.objectContaining({ code: 'scene.vegetation-uniform' })
+    ]));
+  });
+
+  it('keeps the original usable scene when optional visual correction returns invalid code', async () => {
+    const broad = `function plan(api) {
+      api.sceneIntent({kind:'natural',reason:'pond meadow'});
+      api.water('pond',{type:'lake',points:[[-6,-6],[6,-6],[6,6],[-6,6]],level:-0.2});
+      api.grass({id:'blanket',preset:'meadow',region:{kind:'circle',center:[0,0],radius:30},density:0.8});
+    }`;
+    const response = (content: string) => new Response(JSON.stringify({ok:true,content}), {
+      status:200,headers:{'Content-Type':'application/json'}
+    });
+    const fetchImpl = vi.fn().mockResolvedValueOnce(response(broad)).mockResolvedValueOnce(response('function plan(api) { throw new Error("broken"); }'));
+    const suggestion = await generateMapCodeSuggestion('池边草地', createEmptyMap(), [], {
+      apiBase:'https://example.test',provider:'gpt',fetchImpl,
+      minNewAssets:0,maxNewAssets:0,scope:'scene'
+    });
+
+    expect(fetchImpl).toHaveBeenCalledTimes(2);
+    expect(suggestion.operations).toEqual(expect.arrayContaining([
+      expect.objectContaining({type:'water.add'}),
+      expect.objectContaining({type:'grass.generate',layerId:'blanket'})
+    ]));
+  });
+
   it('lets AI select distinct road material recipes for paths and town streets', () => {
     const map = createEmptyMap('material routes');
     const suggestion = executeMapCodePlan(`function plan(api) {

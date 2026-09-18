@@ -45,6 +45,7 @@ import {
   inferGrassPreset,
   normalizeGrassMix,
   normalizeGrassHabitat,
+  sampleGrassDensity,
   type GrassPresetId,
   type GrassRegion
 } from '../shared/mapGrass';
@@ -978,9 +979,10 @@ function isScriptExecutionTimeout(error: unknown): boolean {
 export function executeMapCodePlan(
   code: string,
   map: EditableMap,
-  assets: readonly MapAsset[] = []
+  assets: readonly MapAsset[] = [],
+  options: CodeExecutionOptions = {}
 ): MapAiSuggestion {
-  return runMapCodePlan(code, map, assets).suggestion;
+  return runMapCodePlan(code, map, assets, options).suggestion;
 }
 
 export function discoverMapCodeAssets(
@@ -2843,9 +2845,11 @@ function executeMapCodePlanInternal(
     message,
     repaired
   }));
-  const compositionDiagnostics = map.sceneMode === 'outdoor' && scope === 'scene'
-    && requestMode === 'generate' && sceneIntent === 'authored'
-    ? reviewCodeDesignComposition(applyMapOperations(planningMap, operations)) : [];
+  const visualReviewMap = map.sceneMode === 'outdoor' && scope === 'scene' && requestMode === 'generate'
+    ? applyMapOperations(planningMap, operations) : undefined;
+  const compositionDiagnostics = visualReviewMap && sceneIntent === 'authored'
+    ? reviewCodeDesignComposition(visualReviewMap) : [];
+  const vegetationDiagnostics = visualReviewMap ? reviewCodeVegetation(visualReviewMap) : [];
   const repairableObjectIds = new Set([
     ...objectOperations.map((operation) => operation.object.id!),
     ...(options.refinableObjectIds ?? [])
@@ -2857,7 +2861,7 @@ function executeMapCodePlanInternal(
     diagnostics: [
       ...executionDiagnostics,
       ...waterDiagnostics, ...accessDiagnostics, ...clearanceDiagnostics, ...attachmentDiagnostics,
-      ...unresolvedBridgeDiagnostics, ...missingDesignDiagnostics, ...compositionDiagnostics,
+      ...unresolvedBridgeDiagnostics, ...missingDesignDiagnostics, ...compositionDiagnostics, ...vegetationDiagnostics,
       ...foundationWarnings.map((message) => ({
         code: 'foundation.max-thickness' as const,
         severity: 'warning' as const,
@@ -3369,6 +3373,7 @@ async function discoverMapCodeWithRepairs(
   let programRepairAttempted = false;
   let executionRepairAttempts = 0;
   let repairAttempts = 0;
+  let visualFallback: { code: string; discovery: CodeExecutionResult } | undefined;
   while (true) {
     try {
       const discovery = runMapCodePlan(code, map, assets, {
@@ -3390,18 +3395,29 @@ async function discoverMapCodeWithRepairs(
         || issue.startsWith('scene_group_frontage_low:')
       ));
       const recoverableExecutionIssues = discovery.issues.filter((issue) => issue.repairHint);
+      const visualIssues = !options.approvedCode && options.mode !== 'refine' && options.scope === 'scene'
+        ? (discovery.suggestion.diagnostics ?? []).filter((issue) => [
+          'scene.group-route-unbound', 'scene.group-route-disconnected', 'scene.vegetation-uniform'
+        ].includes(issue.code)).slice(0, 2)
+        : [];
       const repairDetails = [
         ...recoverableExecutionIssues.map((issue) => `${issue.key}: ${issue.message}\nFix: ${issue.repairHint}`),
-        ...completionIssues
+        ...completionIssues,
+        ...visualIssues.map((issue) => `${issue.code}: ${issue.message}`)
       ];
       if (repairDetails.length > 0 && !programRepairAttempted) {
         programRepairAttempted = true;
         repairAttempts += 1;
+        if (visualIssues.length > 0 && completionIssues.length === 0 && recoverableExecutionIssues.length === 0) {
+          visualFallback = { code, discovery };
+        }
         options.onProgress?.({
           phase: 'replanning',
           label: completionIssues.length > 0
             ? '场景片区或局部调用不完整，AI 正在统一修复 1/1'
-            : '局部调用未能安全落位，AI 正在统一修复 1/1',
+            : visualIssues.length > 0
+              ? '空间与植被层次正在定向修正 1/1'
+              : '局部调用未能安全落位，AI 正在统一修复 1/1',
           detail: repairDetails.join('\n')
         });
         try {
@@ -3411,7 +3427,7 @@ async function discoverMapCodeWithRepairs(
             { role: 'assistant', content: code },
             {
               role: 'user',
-              content: `The program executed and produced a usable partial scene, but these recoverable issues remain:\n${repairDetails.join('\n')}\n\nReturn corrected JavaScript only. Preserve all valid code, the overall concept, terrain and playable circulation; repair the listed local calls without redesigning unrelated content.${completionIssues.length > 0 ? ` Give each named district its actual bounded region and semantic spatialRole. If the requested place has urban life or ruins, distinguish the landmark ensemble from ordinary building fabric: form street-facing groups of reusable buildings and their edges before adding props. Do not merely rename groups or increase lamps, statues, trees and benches to satisfy the count; they do not provide building coverage or frontage. Complete every promised leaf-group layer with actual placements using the same groupId and layer. If a clear paved or grass area consumes most of a scene group while containing almost no authored content, shrink or reshape it and compose its edges with purposeful architecture, stopping places and near/mid/small details.` : ''} Routes must connect distinct programmed destinations, and route nodes such as thresholds, bridgeheads, turns and waterside pauses should receive context-appropriate details beside the walkable surface. Keep deliberate negative space only when it has a specific use, a shaped boundary and enough surrounding content to read as intentional. Do not scale loop counts from map width, map area, or fine coordinate steps. Use bounded api.gridPoints, api.poissonDisk, or curve-sampling results and iterate each result once; avoid while loops and nested placement loops.\n\n${MAP_CODE_ENVIRONMENT_FORM_CONTRACT}\n\n${MAP_CODE_TOPOLOGY_CONTRACT}`
+              content: `The program executed and produced a usable partial scene, but these recoverable issues remain:\n${repairDetails.join('\n')}\n\nReturn corrected JavaScript only. Preserve all valid code, the overall concept, terrain and playable circulation; repair the listed local calls without redesigning unrelated content.${completionIssues.length > 0 ? ` Give each named district its actual bounded region and semantic spatialRole. If the requested place has urban life or ruins, distinguish the landmark ensemble from ordinary building fabric: form street-facing groups of reusable buildings and their edges before adding props. Do not merely rename groups or increase lamps, statues, trees and benches to satisfy the count; they do not provide building coverage or frontage. Complete every promised leaf-group layer with actual placements using the same groupId and layer. If a clear paved or grass area consumes most of a scene group while containing almost no authored content, shrink or reshape it and compose its edges with purposeful architecture, stopping places and near/mid/small details.` : ''}${visualIssues.length > 0 ? ` These are aesthetic signals, not hard validation failures. Bind the actual routes to their design groups, connect intended sequences in geometry, and replace any near-to-far blanket grass with habitat-shaped layers only where the scene calls for it. Keep the original scene subject and all valid content.` : ''} Routes must connect distinct programmed destinations, and route nodes such as thresholds, bridgeheads, turns and waterside pauses should receive context-appropriate details beside the walkable surface. Keep deliberate negative space only when it has a specific use, a shaped boundary and enough surrounding content to read as intentional. Do not scale loop counts from map width, map area, or fine coordinate steps. Use bounded api.gridPoints, api.poissonDisk, or curve-sampling results and iterate each result once; avoid while loops and nested placement loops.\n\n${MAP_CODE_ENVIRONMENT_FORM_CONTRACT}\n\n${MAP_CODE_TOPOLOGY_CONTRACT}`
             }
           ], {
             apiBase: options.apiBase,
@@ -3457,6 +3473,10 @@ async function discoverMapCodeWithRepairs(
       };
     } catch (error) {
       if (error instanceof Error && error.name === 'AbortError') throw error;
+      if (visualFallback) {
+        options.onProgress?.({ phase: 'replanning', label: '视觉修正未能执行，已保留原有可用场景' });
+        return { ...visualFallback, repairAttempts };
+      }
       const executionError = mapCodeExecutionErrorDetail(error, code);
       recordGenerationTrace('code.repair.required', { error: executionError, code, executionRepairAttempts, repairAttempts });
       if (executionRepairAttempts === 2) throw new Error(`map_code_execution_failed:${executionError}`);
@@ -3506,6 +3526,35 @@ function reviewCodeDesignComposition(map: EditableMap): MapLintIssue[] {
   const parentIds = new Set(design.groups.flatMap((group) => group.parentId ? [group.parentId] : []));
   const leafGroups = design.groups.filter((group) => !parentIds.has(group.id)
     && map.objects.some((object) => object.designGroupId === group.id));
+  const guideById = new Map(map.guides.map((guide) => [guide.id, guide]));
+  const groupGuides = leafGroups.map((group) => ({
+    group,
+    guides: group.guideIds.map((id) => guideById.get(id)).filter((guide) => guide !== undefined)
+  }));
+  if (leafGroups.length >= 2 && map.guides.length >= 2 && groupGuides.every(({ guides }) => guides.length === 0)) {
+    issues.push({
+      code: 'scene.group-route-unbound', severity: 'warning', repaired: false,
+      message: '多个设计片区和实际路线都已生成，但没有路线归属到设计组；入口、转场与焦点的空间承诺尚未落到导览几何。'
+    });
+  }
+  const routedGroups = groupGuides.filter(({ guides }) => guides.length > 0);
+  if (design.experienceMode !== 'immediate' && routedGroups.length >= 2) {
+    const points = new Map(map.guides.map((guide) => [guide.id, mapGuidePolyline(guide)]));
+    const connected = new Set(routedGroups[0].guides.map((guide) => guide.id));
+    for (const id of connected) {
+      const guide = guideById.get(id)!;
+      for (const other of map.guides) {
+        if (!connected.has(other.id) && mapGuidesMeet(points.get(id)!, points.get(other.id)!, guide.width, other.width)) {
+          connected.add(other.id);
+        }
+      }
+    }
+    const disconnected = routedGroups.filter(({ guides }) => !guides.some((guide) => connected.has(guide.id)));
+    if (disconnected.length > 0) issues.push({
+      code: 'scene.group-route-disconnected', severity: 'warning', repaired: false,
+      message: `片区「${disconnected.map(({ group }) => group.name).join('、')}」的实际路线与前序片区未接通；请检查道路端点、桥头或有意留出的无路过渡。`
+    });
+  }
   if (leafGroups.length >= 2) {
     const edges = new Map(leafGroups.map((group) => [group.id, new Set<string>()]));
     const connect = (a: string, b: string): void => {
@@ -3573,6 +3622,47 @@ function reviewCodeDesignComposition(map: EditableMap): MapLintIssue[] {
     message: `入口视角的灰盒尺度估算中，次焦点「${rival.focus.name}」比主焦点「${primary.name}」更显眼；请检查体量、距离和遮挡。`
   });
   return issues;
+}
+
+function mapGuidesMeet(
+  first: readonly Point2[], second: readonly Point2[], firstWidth: number, secondWidth: number
+): boolean {
+  const threshold = (firstWidth + secondWidth) / 2 + 0.5;
+  const nearPath = (endpoint: Point2, path: readonly Point2[]) => path.slice(1).some((point, index) => (
+    pointSegmentDistance2(endpoint[0], endpoint[1], path[index], point) <= threshold
+  ));
+  return nearPath(first[0], second) || nearPath(first[first.length - 1], second)
+    || nearPath(second[0], first) || nearPath(second[second.length - 1], first);
+}
+
+function reviewCodeVegetation(map: EditableMap): MapLintIssue[] {
+  if (map.grassLayers.length === 0 || !map.waterBodies.some((water) => water.type !== 'ocean')) return [];
+  const [width, , depth] = map.box.size;
+  const extent = Math.min(width, depth);
+  const nearLimit = Math.max(2, extent * 0.06);
+  const farLimit = Math.max(nearLimit * 2.5, extent * 0.18);
+  const near: Array<[number, number]> = [];
+  const far: Array<[number, number]> = [];
+  for (let zIndex = 1; zIndex <= 9; zIndex += 1) {
+    for (let xIndex = 1; xIndex <= 9; xIndex += 1) {
+      const x = (xIndex / 10 - 0.5) * width;
+      const z = (zIndex / 10 - 0.5) * depth;
+      if (map.waterBodies.some((water) => isPointInsideWaterBody(water, x, z, map))) continue;
+      const distance = distanceToWater(map, x, z);
+      if (distance <= nearLimit) near.push([x, z]);
+      else if (distance >= farLimit) far.push([x, z]);
+    }
+  }
+  if (near.length < 3 || far.length < 3) return [];
+  const meanDensity = (layer: EditableMap['grassLayers'][number], points: readonly [number, number][]) => (
+    points.reduce((sum, [x, z]) => sum + sampleGrassDensity(layer, map, x, z), 0) / points.length
+  );
+  const blanket = map.grassLayers.find((layer) => layer.visible
+    && meanDensity(layer, near) > 0.5 && meanDensity(layer, far) > 0.5);
+  return blanket ? [{
+    code: 'scene.vegetation-uniform', severity: 'warning', repaired: false,
+    message: `草层「${blanket.name}」从水边到远地都保持高密度，近水与干地缺少可读的生境过渡；可用水岸距离/地形高度适生带分层。`
+  }] : [];
 }
 
 function findAuthoredSceneProgramIssues(map: EditableMap, suggestion: MapAiSuggestion): string[] {
