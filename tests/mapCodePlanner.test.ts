@@ -339,6 +339,7 @@ describe('map code planner', () => {
     expect(prompt).toContain('facing may be a direction [dx,dz]');
     expect(prompt).toContain('Inward arena ring:');
     expect(prompt).toContain('Declare between 2 and 4 distinct requireAsset families; variants within one family count as one asset');
+    expect(prompt).toContain('Give each new asset plausible canonical dimensions so the greybox has its intended size');
     expect(prompt).toContain('one short Simplified Chinese noun');
     expect(prompt).toContain("const tree = api.requireAsset({key:'tree'");
     expect(prompt).toContain('No undefined point, invalid array index, direct array arithmetic');
@@ -2579,7 +2580,7 @@ describe('map code planner', () => {
         key: 'desk', name: '书桌', prompt: 'wooden desk', tags: ['furniture'],
         variants: 2, dimensions: [1.6, 0.75, 0.8]
       });
-      api.place({ assetId: api.asset(desk, 0), position: [1.5, 0] });
+      api.place({ assetId: api.asset(desk, 0), position: [1.5, 0], dimensions: [1.6, 0.75, 0.8] });
       api.place({ assetId: api.asset(desk, 1), position: [-1.5, 0] });
     }`;
     const fetchImpl = vi.fn().mockResolvedValue(new Response(JSON.stringify({ ok: true, content: code }), {
@@ -2606,14 +2607,18 @@ describe('map code planner', () => {
     expect(draft.summary).toContain('代码已执行');
     expect(draft.placements).toHaveLength(2);
     expect(draft.placements.every((placement) => placement.pending && placement.assetId?.startsWith('code-asset://desk/'))).toBe(true);
-    expect(draft.placements.map((placement) => placement.size)).toEqual([[1.6, 0.75, 0.8], [1.6, 0.75, 0.8]]);
+    expect(draft.placements.map((placement) => placement.size)).toEqual([[1.6, 0.75, 0.8], [1, 1, 1]]);
+    expect(draft.placements.map((placement) => placement.placeholderSize)).toEqual([undefined, [1.6, 0.75, 0.8]]);
+    expect(draft.placements.map((placement) => placement.fitToDimensions)).toEqual([true, undefined]);
     expect(draft.sceneOperations).toEqual(expect.arrayContaining([
       expect.objectContaining({ type: 'terrain.generate' })
     ]));
     expect(validated.placements).toHaveLength(2);
     expect(validated.placements.every((placement) => placement.pending && placement.assetId?.startsWith('code-asset://desk/'))).toBe(true);
     expect(validated.placements.every((placement) => placement.heightMode === 'terrain')).toBe(true);
-    expect(validated.placements.map((placement) => placement.size)).toEqual([[1.6, 0.75, 0.8], [1.6, 0.75, 0.8]]);
+    expect(validated.placements.map((placement) => placement.size)).toEqual([[1.6, 0.75, 0.8], [1, 1, 1]]);
+    expect(validated.placements.map((placement) => placement.placeholderSize)).toEqual([undefined, [1.6, 0.75, 0.8]]);
+    expect(validated.placements.map((placement) => placement.fitToDimensions)).toEqual([true, undefined]);
     expect(validated.sceneOperations).toEqual(expect.arrayContaining([
       expect.objectContaining({ type: 'terrain.generate' })
     ]));
@@ -2653,7 +2658,8 @@ describe('map code planner', () => {
       expect(plan.placements[0]).toEqual(expect.objectContaining({
         pending: true,
         assetId: 'code-asset://shelf/0',
-        size: [1.2, 2.2, 0.4],
+        size: [1, 1, 1],
+        placeholderSize: [1.2, 2.2, 0.4],
         role: 'functional'
       }));
       expect(plan.requirements[0]).toEqual(expect.objectContaining({ key: 'shelf', role: 'functional' }));
@@ -2691,7 +2697,8 @@ describe('map code planner', () => {
       expect(plan.placements[0]).toEqual(expect.objectContaining({
         pending: true,
         assetId: 'code-asset://hut/0',
-        size: [4, 3, 4],
+        size: [1, 1, 1],
+        placeholderSize: [4, 3, 4],
         role: 'structure'
       }));
       expect(plan.sceneOperations).toEqual(expect.arrayContaining([

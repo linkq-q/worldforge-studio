@@ -119,9 +119,13 @@ export interface CodePlanPlacementPreview {
   pending: boolean;
   position: Vec3;
   rotationY: number;
-  /** Intended world footprint [width, height, depth]; [1, 1, 1] when the code declared none. */
+  /** Object transform size multiplier, matching the final map renderer. */
   size: Vec3;
   scale: Vec3;
+  /** Estimated ghost size from requireAsset dimensions; never scales the finished model. */
+  placeholderSize?: Vec3;
+  /** api.place(dimensions), bridge and connected placements fit real model bounds to size. */
+  fitToDimensions?: boolean;
   /** 'terrain' placements re-sample their ground height against the applied plan terrain. */
   heightMode?: 'terrain' | 'fixed';
   role?: CodePlanAssetRole;

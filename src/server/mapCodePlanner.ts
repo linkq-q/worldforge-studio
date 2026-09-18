@@ -316,6 +316,7 @@ interface PlacementIntent {
   rotationY: number;
   scale: Point3;
   size: Point3;
+  fitToDimensions?: boolean;
   heightMode: 'terrain' | 'fixed';
   role: CodeAssetRole;
   semantic: string;
@@ -444,6 +445,7 @@ interface CodeExecutionResult {
   suggestion: MapAiSuggestion;
   requirements: CodeAssetRequirement[];
   issues: CodeExecutionIssue[];
+  fitToDimensionsObjectIds: ReadonlySet<string>;
 }
 
 interface CodeExecutionIssue {
@@ -594,7 +596,9 @@ export async function generateMapCodeSuggestion(
   const execution = await discoverMapCodeWithRepairs(code, userPrompt, systemPrompt, map, executionAssets, maxNewAssets, options);
   code = execution.code;
   let discovery = execution.discovery;
-  options.onPlanPreview?.(distillCodePlanPreview(discovery.suggestion, discovery.requirements));
+  options.onPlanPreview?.(distillCodePlanPreview(
+    discovery.suggestion, discovery.requirements, discovery.fitToDimensionsObjectIds
+  ));
   if (options.discoveryOnly) {
     options.onProgress?.({ phase: 'complete', label: '室内功能规划与资产清单已生成，等待确认' });
     return withCodePlanDetails(discovery.suggestion, discovery.requirements, execution.repairAttempts);
@@ -1193,6 +1197,7 @@ function executeMapCodePlanInternal(
       rotationY: placementRotation(input.facing, position, input.rotationY),
       scale: fitted.scale,
       size: dimensions ?? point3(input.size ?? [1, 1, 1]),
+      ...(dimensions ? { fitToDimensions: true } : {}),
       heightMode: terrain ? 'terrain' : 'fixed',
       role,
       semantic: [input.name, asset?.name, asset?.prompt, ...(asset?.tags ?? [])].filter(Boolean).join(' '),
@@ -2359,6 +2364,7 @@ function executeMapCodePlanInternal(
           rotationY: yawFromDirection(segmentDirection),
           scale: [...scale],
           size: targetSize,
+          fitToDimensions: true,
           heightMode: 'fixed',
           role,
           semantic,
@@ -2479,6 +2485,7 @@ function executeMapCodePlanInternal(
           : placementRotation(input.facing, position, lineRotation),
         scale,
         size: targetSize,
+        fitToDimensions: true,
         heightMode: terrain ? 'terrain' : 'fixed',
         role,
         semantic,
@@ -2572,7 +2579,8 @@ function executeMapCodePlanInternal(
         }
       },
       requirements: [],
-      issues: [...executionIssues.values()]
+      issues: [...executionIssues.values()],
+      fitToDimensionsObjectIds: new Set<string>()
     };
   }
   if (map.sceneMode === 'outdoor' && requestMode === 'generate' && scope === 'scene' && !sceneIntent) {
@@ -2640,6 +2648,7 @@ function executeMapCodePlanInternal(
     : planningMap;
   const objectOperations: Extract<MapOperation, { type: 'object.add' }>[] = [];
   const objectIdByReference = new Map<string, string>();
+  const fitToDimensionsObjectIds = new Set<string>();
   let workingMap = terrainMap;
   let attachmentFallbackCount = 0;
   for (const placement of placements) {
@@ -2697,6 +2706,7 @@ function executeMapCodePlanInternal(
     const operation = { type: 'object.add', object } satisfies Extract<MapOperation, { type: 'object.add' }>;
     objectOperations.push(operation);
     objectIdByReference.set(placement.referenceId, objectId);
+    if (placement.fitToDimensions && placement.assetId) fitToDimensionsObjectIds.add(objectId);
     workingMap = applyMapOperations(workingMap, [operation]);
   }
   const linkedObjectUpdates: Extract<MapOperation, { type: 'object.update' }>[] = [];
@@ -2893,7 +2903,8 @@ function executeMapCodePlanInternal(
       }]
     },
     requirements: [...requirements.values()],
-    issues: [...executionIssues.values()]
+    issues: [...executionIssues.values()],
+    fitToDimensionsObjectIds
   };
 }
 
@@ -2996,9 +3007,9 @@ function distillDraftCodePlanPreview(
     summary: `代码已执行：${placements.length} 个摆放意图，等待校验与资产生成`,
     placements: placements.map((placement): CodePlanPlacementPreview => {
       const placeholderKey = placeholderKeyOf(placement.assetId);
-      const resolvedSize = placeholderKey && isUnitFootprint(placement.size)
-        ? dimensionsByKey.get(placeholderKey) ?? placement.size
-        : placement.size;
+      const placeholderSize = placeholderKey && isUnitFootprint(placement.size)
+        ? dimensionsByKey.get(placeholderKey)
+        : undefined;
       return {
         objectId: placement.referenceId,
         name: placement.name,
@@ -3006,8 +3017,10 @@ function distillDraftCodePlanPreview(
         pending: placeholderKey !== null,
         position: placement.position,
         rotationY: placement.rotationY,
-        size: resolvedSize,
+        size: placement.size,
         scale: placement.scale,
+        ...(placeholderSize ? { placeholderSize } : {}),
+        ...(placement.fitToDimensions ? { fitToDimensions: true } : {}),
         heightMode: placement.heightMode,
         ...(placement.role ? { role: placement.role } : {})
       };
@@ -3019,11 +3032,10 @@ function distillDraftCodePlanPreview(
 
 function distillCodePlanPreview(
   suggestion: MapAiSuggestion,
-  requirements: readonly CodeAssetRequirement[]
+  requirements: readonly CodeAssetRequirement[],
+  fitToDimensionsObjectIds: ReadonlySet<string>
 ): CodePlanPreviewPayload {
-  // requireAsset dimensions live in the generation contract, not in each place()
-  // call, so backfill them onto placeholder placements whose transform carried
-  // no explicit footprint.
+  // requireAsset dimensions estimate the ghost, not the final object transform.
   const dimensionsByKey = requirementDimensionsByKey(requirements);
   const placements = suggestion.operations.flatMap((operation): CodePlanPlacementPreview[] => {
     if (operation.type !== 'object.add') return [];
@@ -3033,9 +3045,9 @@ function distillCodePlanPreview(
     const assetId = object.assetId ?? null;
     const placeholderKey = placeholderKeyOf(assetId);
     const declaredSize = transform.size ?? [1, 1, 1];
-    const resolvedSize = placeholderKey && isUnitFootprint(declaredSize)
-      ? dimensionsByKey.get(placeholderKey) ?? declaredSize
-      : declaredSize;
+    const placeholderSize = placeholderKey && isUnitFootprint(declaredSize)
+      ? dimensionsByKey.get(placeholderKey)
+      : undefined;
     const role = placeholderKey
       ? requirements.find((requirement) => requirement.key === placeholderKey)?.role
       : undefined;
@@ -3046,8 +3058,10 @@ function distillCodePlanPreview(
       pending: placeholderKey !== null,
       position: transform.position,
       rotationY: transform.rotation?.[1] ?? 0,
-      size: resolvedSize,
+      size: declaredSize,
       scale: transform.scale ?? [1, 1, 1],
+      ...(placeholderSize ? { placeholderSize } : {}),
+      ...(fitToDimensionsObjectIds.has(object.id ?? '') ? { fitToDimensions: true } : {}),
       heightMode: object.heightMode,
       ...(role ? { role } : {})
     }];
@@ -3209,7 +3223,7 @@ Transforms: api.rotate2D(point,angle,center?), api.mirrorPoint(point,'x'|'z',coo
 Curves: api.linePoint(t,a,b) -> [x,z]; api.bezierPoint(t,p0,p1,p2,p3) -> {point,tangent,normal}; api.sampleBezier(...) -> point arrays; api.sampleBezierFrames(...) -> frame objects with point,tangent,normal; api.sampleBezierFramesBySpacing(...,spacing,gapRatio?) -> approximately even arc-length frames. frame.normal is the normalized left-side normal [-tangentZ,tangentX] as t increases.
 Fields: api.noise2D(x,z,scale?,seed?) -> [-1,1]; api.fbm2D(x,z,{scale?,octaves?,lacunarity?,gain?,seed?}) -> [-1,1].
 Layouts: api.circlePoint(index,count,radius,center?) -> [x,z]; api.ellipsePoint(index,count,radiusX,radiusZ,center?,phase?) -> [x,z]; api.gridPoints({center?,columns,rows,spacing}) -> points; api.poissonDisk({bounds?:{minX,maxX,minZ,maxZ},minDistance,maxPoints?,attempts?,seed?}) -> points.
-Assets: api.requireAsset({key,name,prompt,tags?,variants?,dimensions:[width,height,depth]?,role:'structure'|'environment',optional?}) -> key; api.asset(key,index?) -> generated assetId. role is required in unified scene ownership; only loose natural decoration may be optional.
+Assets: api.requireAsset({key,name,prompt,tags?,variants?,dimensions:[width,height,depth]?,role:'structure'|'environment',optional?}) -> key; api.asset(key,index?) -> generated assetId. role is required in unified scene ownership; only loose natural decoration may be optional. Give each new asset plausible canonical dimensions so the greybox has its intended size before the model exists; otherwise its pending placeholder is only 1x1x1. Choose dimensions from the scene plan, not to compensate for unknown model output.
 Output: api.place({assetId?,name?,position:[x,z]|[x,y,z],rotationY?,facing?,scale?,size?,terrain?,role?,groupId?,layer?:1|2|3|4}); api.placeStreetFrontage(...) for varied ordinary street-facing buildings; api.placeAlongRoute(...) for repeated street furniture. api.foundation(...) creates an independent editable foundation after its target buildings are placed: pass their api.place references or existing object IDs in under. Use rounded-rectangle/capsule for buildings, polygon for irregular footprints, and path + catmull-rom for curved seawalls; closed path makes a continuous ring. Choose level, slope or steps from intent, keep maxThickness bounded, and never flatten terrain. api.attach({assetId?,name?,parentId,kind:'supported'|'mounted',side?,offset?,anchorY?:'bottom'|'center'|'top',contact?,scale?,rotationY?,role?,groupId?,layer?}) attaches a child to an earlier placement or existing object. Use supported for objects resting on top; use mounted for doors, windows, banners, signs and facade ornaments that must follow a host surface. mounted side is the host-local north|south|east|west face, offset is [horizontal,vertical], anchorY selects the host's vertical baseline, and contact is embed depth. Entrances default to anchorY:'bottom', so never put an absolute world height into offset. api.bridge({waterId,assetId?,name?,crossingCenter:[x,z],direction:[dx,dz],dimensions:[width,height,depth],kind?:'straight'|'curved',curveOffset?,segmentCount?,bankInset?,deckClearance?,abutments?,groupId?,layer?}). A curved bridge uses the asset as a repeatable module. The local solver samples the full bridge width, snaps both ends beyond the real shoreline, records the route guide, and creates small bridgeheads unless abutments:false.
 Never use standalone api.place with [x,y,z] for a door, window, banner, sign or facade ornament intended as part of another structure. Either include it in the host asset itself or create the host first and use api.attach.
 Refine existing content: api.move({objectId,position?,rotationY?,scale?}); api.removeObject(objectId); api.updateWater({waterId,level?,depth?,width?,points?}); api.removeWater(waterId); api.noChange(reason). These APIs are available only during refinement. noChange is exclusive: use it only when no operation is needed.

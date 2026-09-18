@@ -39,7 +39,6 @@ interface PlacementEntry {
 interface ModelBuildJob {
   entry: PlacementEntry;
   asset: MapAsset;
-  fitToFootprint: boolean;
 }
 
 export interface GenerationPreviewOverlay {
@@ -87,15 +86,16 @@ export function createGenerationPreviewOverlay(scene: THREE.Scene): GenerationPr
     return ROLE_COLORS[entry.placement.role ?? ''] ?? DEFAULT_COLOR;
   };
 
-  /** Declared dimensions win; a meaningful scale is the next best world-size estimate. */
-  const footprintOf = (placement: CodePlanPlacementPreview): [number, number, number] => {
-    if (placement.size.some((value) => Math.abs(value - 1) > 0.05)) {
-      return [placement.size[0], placement.size[1], placement.size[2]];
-    }
-    if (placement.scale.some((value) => Math.abs(value - 1) > 0.05)) {
-      return [placement.scale[0], placement.scale[1], placement.scale[2]];
-    }
-    return [placement.size[0], placement.size[1], placement.size[2]];
+  /** Match the map renderer's object transform; pending asset bounds remain an estimate. */
+  const footprintOf = (
+    placement: CodePlanPlacementPreview,
+    size = placement.size
+  ): [number, number, number] => {
+    return [
+      size[0] * placement.scale[0],
+      size[1] * placement.scale[1],
+      size[2] * placement.scale[2]
+    ];
   };
 
   const writeEdgeVertex = (entry: PlacementEntry, vertexIndex: number, x: number, y: number, z: number): void => {
@@ -152,11 +152,7 @@ export function createGenerationPreviewOverlay(scene: THREE.Scene): GenerationPr
     group.add(root);
   };
 
-  /**
-   * Fits the finished model's real bounds onto the ghost footprint so the swap
-   * is visually seamless; existing-asset placements instead use the transform
-   * scale exactly as the sandbox fitted it during discovery.
-   */
+  /** Streamed assets use the same transform as the final map renderer. */
   const pumpBuild = (): void => {
     if (building || buildQueue.length === 0) return;
     const job = buildQueue.shift()!;
@@ -169,25 +165,17 @@ export function createGenerationPreviewOverlay(scene: THREE.Scene): GenerationPr
         if (buildMs > 16) console.info(`[perf] generation preview built "${job.asset.name}" in ${buildMs.toFixed(0)}ms`);
         // A new plan may have cleared the layer while this build was in flight.
         if (entries.get(job.entry.key) !== job.entry) return;
-        // buildModelGroup already rests the visual bottom at y=0, centered in
-        // x/z (centerGroup), matching the final renderer's transform contract
-        // (position + scale * size). Scaling preserves that alignment, so no
-        // extra offset is applied here.
-        if (job.fitToFootprint) {
-          const footprint = footprintOf(job.entry.placement);
+        // buildModelGroup already rests its visual bottom at y=0 and centers X/Z.
+        const [scaleX, scaleY, scaleZ] = footprintOf(job.entry.placement);
+        if (job.entry.placement.pending && job.entry.placement.fitToDimensions) {
           const bounds = calculateModelVisualBounds(job.asset.modelJson);
-          const boundsSize: [number, number, number] = [
-            Math.max(0.000001, bounds.max[0] - bounds.min[0]),
-            Math.max(0.000001, bounds.max[1] - bounds.min[1]),
-            Math.max(0.000001, bounds.max[2] - bounds.min[2])
-          ];
-          model.scale.set(footprint[0] / boundsSize[0], footprint[1] / boundsSize[1], footprint[2] / boundsSize[2]);
-        } else {
           model.scale.set(
-            job.entry.placement.scale[0] * job.entry.placement.size[0],
-            job.entry.placement.scale[1] * job.entry.placement.size[1],
-            job.entry.placement.scale[2] * job.entry.placement.size[2]
+            scaleX / Math.max(0.000001, bounds.max[0] - bounds.min[0]),
+            scaleY / Math.max(0.000001, bounds.max[1] - bounds.min[1]),
+            scaleZ / Math.max(0.000001, bounds.max[2] - bounds.min[2])
           );
+        } else {
+          model.scale.set(scaleX, scaleY, scaleZ);
         }
         job.entry.status = 'success';
         attachModelRoot(job.entry, model);
@@ -249,7 +237,7 @@ export function createGenerationPreviewOverlay(scene: THREE.Scene): GenerationPr
         const key = placement.objectId || `${placement.name}@${placement.position.join(',')}`;
         const entry: PlacementEntry = { key, instanceIndex: index, placement, status: 'queued', modelRoot: null };
         entries.set(key, entry);
-        const footprint = footprintOf(placement);
+        const footprint = footprintOf(placement, placement.placeholderSize);
         position.set(placement.position[0], placement.position[1], placement.position[2]);
         quaternion.setFromAxisAngle(UP, placement.rotationY);
         scale.set(Math.max(0.05, footprint[0]), Math.max(0.05, footprint[1]), Math.max(0.05, footprint[2]));
@@ -288,7 +276,7 @@ export function createGenerationPreviewOverlay(scene: THREE.Scene): GenerationPr
       for (const entry of entries.values()) {
         if (!entry.placement.pending && entry.placement.assetId) {
           const asset = resolveAsset(entry.placement.assetId);
-          if (asset) buildQueue.push({ entry, asset, fitToFootprint: false });
+          if (asset) buildQueue.push({ entry, asset });
         }
       }
       group.visible = true;
@@ -299,7 +287,7 @@ export function createGenerationPreviewOverlay(scene: THREE.Scene): GenerationPr
       const placeholderId = codePlanPlaceholderAssetId(payload.key, payload.variantIndex);
       for (const entry of entries.values()) {
         if (entry.placement.assetId === placeholderId && !entry.modelRoot && entry.status !== 'failed') {
-          buildQueue.push({ entry, asset: payload.asset, fitToFootprint: true });
+          buildQueue.push({ entry, asset: payload.asset });
         }
       }
     },
