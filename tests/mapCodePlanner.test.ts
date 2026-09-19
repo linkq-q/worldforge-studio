@@ -548,6 +548,53 @@ describe('map code planner', () => {
     expect((system.match(/- [^\n]+; tags=/g) ?? []).length).toBeLessThanOrEqual(64);
   });
 
+  it('samples refinement objects across the whole map and includes the persisted spatial contract', () => {
+    const map = createEmptyMap('Large scene', 'large-refine-context', [96,16,96]);
+    for (let index=0; index<315; index+=1) {
+      const object=createMapObject(`对象-${index}`);
+      object.id=`object-${index}`;
+      object.designGroupId=index<200?'old-district':'new-district';
+      object.compositionLayer=index%4+1 as 1|2|3|4;
+      map.objects.push(object);
+    }
+    map.designSemantics = {
+      ...map.designSemantics,
+      groups:[{
+        id:'new-district',name:'新街区',intent:'沿路线补齐建筑界面',spatialRole:'urban-fabric',
+        region:{kind:'polygon',points:[[-20,-20],[20,-20],[20,20],[-20,20]]},
+        focusIds:[],guideIds:[],entryGuideIds:[],exitGuideIds:[],axisGuideIds:[],protectedObjectIds:[],removableObjectIds:[],layers:[]
+      }]
+    };
+
+    const prompt=buildMapCodePlannerSystemPrompt(map,[],0,8,'scene','refine');
+    expect(prompt).toContain('api.design is a semantic patch during refinement');
+    expect(prompt).toContain('"totalObjects":315');
+    expect(prompt).toContain('"id":"new-district"');
+    expect(prompt).toContain('object-314');
+    expect(prompt).toContain('Representative existing objects sampled across the whole map');
+  });
+
+  it('merges refinement design declarations instead of replacing prior groups and assemblies', () => {
+    const base = createEmptyMap('Design merge','design-merge');
+    const initial = executeMapCodePlan(`function plan(api) {
+      api.sceneIntent({kind:'authored',reason:'two districts'});
+      api.design({groups:[{id:'old',name:'旧城区',intent:'保留',spatialRole:'urban-fabric',layers:[]}],
+        assemblies:[{id:'old-hall',groupId:'old',intent:'旧厅堂',topology:'group'}],focuses:[],viewpoints:[],relations:[]});
+      api.place({name:'旧建筑',position:[-10,0],groupId:'old',layer:1,role:'structure'});
+    }`, base, [], {scope:'scene'});
+    const map = applyMapOperations(base, initial.operations);
+    const refinement = executeMapCodePlan(`function plan(api) {
+      api.design({groups:[{id:'new',name:'新城区',intent:'新增',spatialRole:'urban-fabric',layers:[]}],
+        assemblies:[{id:'new-hall',groupId:'new',intent:'新厅堂',topology:'group'}]});
+      api.place({name:'新建筑',position:[10,0],groupId:'new',layer:1,role:'structure'});
+    }`, map, [], {scope:'scene',requestMode:'refine'});
+    const saved = applyMapOperations(map, refinement.operations);
+
+    expect(saved.designSemantics.groups.map((group) => group.id)).toEqual(['old','new']);
+    expect(saved.designSemantics.assemblies.map((assembly) => assembly.id)).toEqual(['old-hall','new-hall']);
+    expect(saved.objects.map((object) => object.name)).toEqual(expect.arrayContaining(['旧建筑','新建筑']));
+  });
+
   it('lets the model adapt layout once after reading generated asset snapshots and real bounds', async () => {
     const initial = `function plan(api) {
       const gate = api.requireAsset({
@@ -979,7 +1026,7 @@ describe('map code planner', () => {
     ]));
   });
 
-  it('repairs missing promised layers without enforcing self-authored counts or clearing ratios', async () => {
+  it('repairs missing and underfilled promised layers without filling intentional clear space', async () => {
     const incomplete = `function plan(api) {
       api.sceneIntent({ kind:'authored', reason:'人工园林' });
       api.design({
@@ -1029,7 +1076,8 @@ describe('map code planner', () => {
 
     expect(fetchImpl).toHaveBeenCalledTimes(2);
     expect(repairRequest.messages.at(-1)?.content).toContain('scene_group_missing_layer:entry:3');
-    expect(repairRequest.messages.at(-1)?.content).not.toContain('scene_group_underfilled_layer');
+    expect(repairRequest.messages.at(-1)?.content).toContain('scene_group_underfilled_layer:entry:1:target=2');
+    expect(repairRequest.messages.at(-1)?.content).toContain('Do not lower or delete minCount');
     expect(repairRequest.messages.at(-1)?.content).not.toContain('scene_group_oversized_clear_space');
     expect(suggestion.codePlan?.code).toContain("region:{kind:'polygon',points:[[-9,-40],[9,-40],[9,-18],[-9,-18]]}");
     expect(applied.objects.filter((object) => object.designGroupId === 'entry')).toEqual(expect.arrayContaining([
@@ -1103,8 +1151,10 @@ describe('map code planner', () => {
     const incomplete = `function plan(api) {
       api.sceneIntent({kind:'authored',reason:'仪式入口'});
       api.design({groups:[{id:'entry',name:'入口',spatialRole:'landmark-ensemble',
-        region:{kind:'polygon',points:[[-20,-20],[20,-20],[20,20],[-20,20]]},layers:[]}],
+        region:{kind:'polygon',points:[[-10,-16],[10,-16],[10,-6],[-10,-6]]},layers:[]}],
         focuses:[],viewpoints:[],relations:[]});
+      api.surface({id:'entry-court',surface:'paving',clearNatural:true,
+        region:{kind:'polygon',points:[[-10,-16],[10,-16],[10,-6],[-10,-6]]}});
       api.place({name:'主门',position:[0,-8],role:'structure',groupId:'entry',layer:1});
       api.place({name:'左柱',position:[-8,-8],role:'structure',groupId:'entry',layer:1});
       api.place({name:'右柱',position:[8,-8],role:'structure',groupId:'entry',layer:1});

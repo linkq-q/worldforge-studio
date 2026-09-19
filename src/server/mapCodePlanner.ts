@@ -1338,7 +1338,10 @@ function executeMapCodePlanInternal(
           repairHint: 'Combine all design groups, focuses, viewpoints and relations into one api.design call.'
         });
       }
-      designSemantics = normalizeMapDesignSemantics(input, map.box.size);
+      const nextDesign = normalizeMapDesignSemantics(input, map.box.size);
+      designSemantics = requestMode === 'refine'
+        ? mergeRefinedDesignSemantics(designSemantics, nextDesign, input)
+        : nextDesign;
       return designSemantics;
     },
     noChange(reason = '当前地图已满足调整要求'): void {
@@ -3270,6 +3273,124 @@ function assetCatalogContext(assets: readonly MapAsset[]): string {
   ].join('\n');
 }
 
+function mergeRefinedDesignSemantics(
+  current: MapDesignSemantics,
+  update: MapDesignSemantics,
+  rawUpdate: unknown
+): MapDesignSemantics {
+  const mergeById = <T extends { id: string }>(
+    existing: readonly T[],
+    additions: readonly T[],
+    merge: (before: T, after: T) => T = (_before, after) => after
+  ): T[] => {
+    const next = existing.map((item) => ({ ...item }));
+    for (const item of additions) {
+      const index = next.findIndex((candidate) => candidate.id === item.id);
+      if (index < 0) next.push(item);
+      else next[index] = merge(next[index], item);
+    }
+    return next;
+  };
+  const groups = mergeById(current.groups, update.groups, (before, after) => ({
+    ...before,
+    ...after,
+    name: after.name === after.id && before.name !== before.id ? before.name : after.name,
+    intent: after.intent || before.intent,
+    region: after.region ?? before.region,
+    spatialRole: after.spatialRole ?? before.spatialRole,
+    substrate: after.substrate ?? before.substrate,
+    focusIds: [...new Set([...before.focusIds, ...after.focusIds])],
+    guideIds: [...new Set([...before.guideIds, ...after.guideIds])],
+    entryGuideIds: [...new Set([...before.entryGuideIds, ...after.entryGuideIds])],
+    exitGuideIds: [...new Set([...before.exitGuideIds, ...after.exitGuideIds])],
+    axisGuideIds: [...new Set([...before.axisGuideIds, ...after.axisGuideIds])],
+    protectedObjectIds: [...new Set([...before.protectedObjectIds, ...after.protectedObjectIds])],
+    removableObjectIds: [...new Set([...before.removableObjectIds, ...after.removableObjectIds])],
+    layers: after.layers.length > 0
+      ? mergeById(
+        before.layers.map((layer) => ({ ...layer, id: String(layer.level) })),
+        after.layers.map((layer) => ({ ...layer, id: String(layer.level) }))
+      ).map(({ id: _id, ...layer }) => layer)
+      : before.layers
+  }));
+  const raw = rawUpdate && typeof rawUpdate === 'object' && !Array.isArray(rawUpdate)
+    ? rawUpdate as Record<string, unknown> : {};
+  return {
+    version: 1,
+    experienceMode: raw.experienceMode === undefined ? current.experienceMode : update.experienceMode,
+    intent: raw.intent === undefined ? current.intent : update.intent,
+    groups,
+    assemblies: mergeById(current.assemblies, update.assemblies, (before, after) => ({
+      ...before,
+      ...after,
+      intent: after.intent || before.intent,
+      moduleKeys: after.moduleKeys ?? before.moduleKeys,
+      functionalSequence: after.functionalSequence ?? before.functionalSequence
+    })),
+    focuses: mergeById(current.focuses, update.focuses),
+    viewpoints: mergeById(current.viewpoints, update.viewpoints),
+    relations: mergeById(current.relations, update.relations)
+  };
+}
+
+function compactRefineObjectContext(map: EditableMap, refinableIds: ReadonlySet<string>) {
+  const limit = 200;
+  const prioritized = map.objects.filter((object) => refinableIds.has(object.id));
+  const remaining = map.objects.filter((object) => !refinableIds.has(object.id));
+  const sampleCount = Math.max(0, limit - prioritized.length);
+  const sampled = sampleCount >= remaining.length
+    ? remaining
+    : Array.from({ length: sampleCount }, (_, index) => (
+      remaining[Math.round(index * (remaining.length - 1) / Math.max(1, sampleCount - 1))]
+    ));
+  return [...prioritized, ...sampled].slice(0, limit).map((object) => ({
+    id: object.id,
+    name: object.name,
+    assetId: object.assetId,
+    position: object.transform.position,
+    rotationY: object.transform.rotation[1],
+    scale: object.transform.scale,
+    size: object.transform.size,
+    parentId: object.parentId,
+    groupId: object.designGroupId,
+    assemblyId: object.assemblyId,
+    layer: object.compositionLayer,
+    sourceGuideId: object.sourceGuideId,
+    locked: object.locked,
+    refinable: refinableIds.has(object.id)
+  }));
+}
+
+function mapRefineSpatialSummary(map: EditableMap) {
+  const groupIds = new Set(map.designSemantics.groups.map((group) => group.id));
+  const groups = map.designSemantics.groups.map((group) => {
+    const objects = map.objects.filter((object) => object.designGroupId === group.id && !object.parentId);
+    const xs = objects.map((object) => object.transform.position[0]);
+    const zs = objects.map((object) => object.transform.position[2]);
+    return {
+      id: group.id,
+      name: group.name,
+      spatialRole: group.spatialRole,
+      substrate: group.substrate,
+      region: group.region,
+      objectCount: objects.length,
+      layerCounts: Object.fromEntries([1, 2, 3, 4].map((level) => [
+        level,
+        objects.filter((object) => object.compositionLayer === level).length
+      ])),
+      assemblyCounts: Object.fromEntries([...new Set(objects.flatMap((object) => object.assemblyId ? [object.assemblyId] : []))]
+        .map((assemblyId) => [assemblyId, objects.filter((object) => object.assemblyId === assemblyId).length])),
+      guideIds: [...new Set([...group.guideIds, ...group.entryGuideIds, ...group.exitGuideIds, ...group.axisGuideIds])],
+      ...(objects.length > 0 ? { occupiedBounds: [Math.min(...xs), Math.min(...zs), Math.max(...xs), Math.max(...zs)] } : {})
+    };
+  });
+  return {
+    totalObjects: map.objects.length,
+    ungroupedObjects: map.objects.filter((object) => !object.designGroupId || !groupIds.has(object.designGroupId)).length,
+    groups
+  };
+}
+
 export function buildMapCodePlannerSystemPrompt(
   map: EditableMap,
   assets: readonly MapAsset[],
@@ -3286,8 +3407,10 @@ export function buildMapCodePlannerSystemPrompt(
   const bounds = getMapBounds(map);
   const assetCatalog = assetCatalogContext(assets);
   const refinableObjectIds = new Set(refinableIds);
+  const refineObjects = compactRefineObjectContext(map, refinableObjectIds);
+  const refineSpatialSummary = mapRefineSpatialSummary(map);
   const refineContext = requestMode === 'refine'
-    ? `\n## Outdoor Scene Code refinement\nReturn a delta over the current map, not a rebuilt scene. Preserve everything the user did not ask to change. Do not call sceneIntent and do not regenerate base terrain unless explicitly requested. Use api.move, api.removeObject, api.updateWater and api.removeWater for existing content. If the current map already satisfies the request, call api.noChange('short reason') and emit nothing else. Never move or remove an object with locked:true unless it also has refinable:true; those refinable objects belong to the current unapplied AI preview. To replace a misplaced bridge, call api.bridge with replaceObjectId and the existing or newly generated bridge asset. Existing objects: ${JSON.stringify(map.objects.slice(0, 240).map((object) => ({ id: object.id, name: object.name, assetId: object.assetId, position: object.transform.position, rotationY: object.transform.rotation[1], scale: object.transform.scale, size: object.transform.size, parentId: object.parentId, groupId: object.designGroupId, locked: object.locked, refinable: refinableObjectIds.has(object.id) })))}. Existing waters: ${JSON.stringify(map.waterBodies)}.\n`
+    ? `\n## Outdoor Scene Code refinement\nReturn a delta over the current map, not a rebuilt scene. Preserve everything the user did not ask to change. Do not call sceneIntent and do not regenerate base terrain unless explicitly requested. Use api.move, api.removeObject, api.updateWater and api.removeWater for existing content. If the current map already satisfies the request, call api.noChange('short reason') and emit nothing else. Never move or remove an object with locked:true unless it also has refinable:true; those refinable objects belong to the current unapplied AI preview. To replace a misplaced bridge, call api.bridge with replaceObjectId and the existing or newly generated bridge asset. api.design is a semantic patch during refinement: declare only groups, assemblies, focuses, viewpoints or relations that are new or intentionally changed; omitted existing entries are preserved. Audit the full spatial summary before adding a single isolated cluster: complete under-served route spans and declared layer commitments across the requested region. Existing design semantics: ${JSON.stringify(map.designSemantics)}. Existing guides: ${JSON.stringify(map.guides)}. Full-map spatial summary: ${JSON.stringify(refineSpatialSummary)}. Representative existing objects sampled across the whole map (all refinable objects are retained): ${JSON.stringify(refineObjects)}. Existing waters: ${JSON.stringify(map.waterBodies)}.\n`
     : '';
   const scopeContract = requestMode === 'refine'
     ? refineContext
@@ -3604,6 +3727,7 @@ const LOCAL_REPAIR_INSTRUCTION = 'Return only JSON {"edits":[{"old":"exact uniqu
 const LOCAL_ASSEMBLY_REPAIR_INSTRUCTION = 'Return only JSON {"edits":[{"old":"exact unique substring from the current code","new":"replacement substring"}]}. Make 1-4 small, exact replacements; never return the full function. For scene_group_missing_assembly:<groupId>, edit the one api.design declaration and only placement loops and asset declarations within that group. Preserve existing placements, terrain, routes and other groups. You may add modular asset families and connected placeBetween placements inside that group; labels alone do not build a compound form. If the group is intentionally made of separate freestanding buildings, return {"edits":[]}. Do not change unrelated scene content.';
 const LOCAL_SUBSTRATE_REPAIR_INSTRUCTION = 'Return only JSON {"edits":[{"old":"exact unique substring from the current code","new":"replacement substring"}]}. Make 1-4 small, exact replacements; never return the full function. For scene_group_substrate_conflict:<groupId>, edit only that group in api.design and the directly responsible local shoreline, terrain or placement calls. Preserve its focus, route topology, assembly topology, other groups and all unrelated placements. Declare dry, water, amphibious or underwater from the intended experience; do not translate the whole group to a distant valid point. If intent is ambiguous, keep the current composition and return {"edits":[]}.';
 const LOCAL_COVERAGE_REPAIR_INSTRUCTION = 'Return only JSON {"edits":[{"old":"exact unique substring from the current code","new":"replacement substring"}]}. Make 1-4 small, exact replacements; never return the full function. For scene_group_building_coverage_low, scene_group_frontage_low or scene_group_unassigned_space, edit only the reported design group. Add or extend medium/large built forms at genuinely unused parcels or under-served route spans; use bounded loops and connected modules where appropriate. Do not satisfy spatial coverage with lamps, plants or tiny props. Preserve named courtyards, plazas, water, circulation, entrances, focuses, other groups and all existing content. If the open area is intentional, express its actual boundary and use with an existing clear surface or open-space group instead of filling it.';
+const LOCAL_LAYER_REPAIR_INSTRUCTION = 'Return only JSON {"edits":[{"old":"exact unique substring from the current code","new":"replacement substring"}]}. Make 1-4 small, exact replacements; never return the full function. For scene_group_missing_layer or scene_group_underfilled_layer, edit only placement code for the reported group and layer. Add the smallest bounded set of spatially useful instances needed to meet the declared target, distributed according to that layer intent; preserve existing placements, routes, clear areas, other layers and other groups. Do not lower or delete minCount merely to silence the check, and do not replace structural or functional content with tiny decor.';
 
 function retainCodePlan(
   fallback: { code: string; discovery: CodeExecutionResult; programIssues: string[] },
@@ -3683,6 +3807,7 @@ async function discoverMapCodeWithRepairs(
       const programIssues = findAuthoredSceneProgramIssues(map, discovery.suggestion);
       const completionIssues = programIssues.filter((issue) => (
         issue.startsWith('scene_group_missing_layer:')
+        || issue.startsWith('scene_group_underfilled_layer:')
         || issue.startsWith('scene_group_region_missing:')
         || issue.startsWith('scene_group_spatial_role_missing:')
         || issue.startsWith('scene_group_building_coverage_low:')
@@ -3726,17 +3851,24 @@ async function discoverMapCodeWithRepairs(
           || issue.startsWith('scene_group_frontage_low:')
           || issue.startsWith('scene_group_unassigned_space:')
         ));
+        const repairsLayers = completionIssues.some((issue) => (
+          issue.startsWith('scene_group_missing_layer:') || issue.startsWith('scene_group_underfilled_layer:')
+        ));
         const localInstruction = repairsAssembly
           ? LOCAL_ASSEMBLY_REPAIR_INSTRUCTION
           : repairsSubstrate
             ? LOCAL_SUBSTRATE_REPAIR_INSTRUCTION
-            : repairsCoverage ? LOCAL_COVERAGE_REPAIR_INSTRUCTION : LOCAL_REPAIR_INSTRUCTION;
+            : repairsCoverage
+              ? LOCAL_COVERAGE_REPAIR_INSTRUCTION
+              : repairsLayers ? LOCAL_LAYER_REPAIR_INSTRUCTION : LOCAL_REPAIR_INSTRUCTION;
         const preservationInstruction = repairsAssembly
           ? 'Keep the existing composition, placements, asset requirements, terrain and routes except for the reported group\'s missing architectural assembly.'
           : repairsSubstrate
             ? 'Keep the existing composition and edit only the reported group\'s substrate mismatch.'
             : repairsCoverage
               ? 'Keep the existing composition and fill only the reported group\'s unexplained spatial gap or under-served frontage.'
+              : repairsLayers
+                ? 'Keep the existing composition and complete only the reported group and composition layer.'
             : 'Keep the existing composition, placements, asset requirements, terrain and routes.';
         try {
           const repairResponse = await llmChat([
@@ -4014,7 +4146,7 @@ function findAuthoredSceneProgramIssues(map: EditableMap, suggestion: MapAiSugge
       if (layer.intent.trim() && actualCount === 0) {
         issues.push(`scene_group_missing_layer:${group.id}:${layer.level}`);
       } else if (layer.intent.trim() && actualCount < requiredCount) {
-        issues.push(`scene_group_underfilled_layer:${group.id}:${layer.level}:${actualCount}/${requiredCount}`);
+        issues.push(`scene_group_underfilled_layer:${group.id}:${layer.level}:target=${requiredCount}`);
       }
     }
     issues.push(...designGroupCoverageIssues(candidate, group.id));
@@ -4049,7 +4181,7 @@ function designGroupCoverageIssues(map: EditableMap, groupId: string): string[] 
   );
   const buildingCoverage = cells.filter((point) => boxes.some((box) => insideBox(point, box))).length / cells.length;
   const layerDensity = group.layers.find((layer) => layer.level === 1)?.density ?? 'normal';
-  const baseBuildingTarget = group.spatialRole === 'urban-fabric' ? 0.14 : 0.07;
+  const baseBuildingTarget = group.spatialRole === 'urban-fabric' ? 0.14 : 0.05;
   const buildingTarget = baseBuildingTarget * (layerDensity === 'tight' ? 1.2 : layerDensity === 'open' ? 0.75 : 1);
   const issues: string[] = [];
   if (buildingCoverage < buildingTarget) issues.push(`scene_group_building_coverage_low:${group.id}`);
