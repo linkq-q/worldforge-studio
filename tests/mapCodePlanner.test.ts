@@ -337,6 +337,11 @@ describe('map code planner', () => {
     expect(prompt).toContain('facing:{normal:frame.normal}');
     expect(prompt).toContain('poissonDisk plus noise2D/fbm2D');
     expect(prompt).toContain('gridPoints with an explicit center and spacing');
+    expect(prompt).toContain('api.subdividePathBySpan');
+    expect(prompt).toContain('api.offsetPolygon');
+    expect(prompt).toContain('api.insetPolygon');
+    expect(prompt).toContain('api.gridInsideRegion');
+    expect(prompt).toContain('footprint -> offset/inset depth layers -> massing tiers/stories');
     expect(prompt).toContain('circlePoint with deterministic index/count');
     expect(prompt).toContain('facing may be a direction [dx,dz]');
     expect(prompt).toContain('Five orthogonal form decisions');
@@ -352,6 +357,24 @@ describe('map code planner', () => {
     expect(prompt).toContain('one short Simplified Chinese noun');
     expect(prompt).toContain("const tree = api.requireAsset({key:'tree'");
     expect(prompt).toContain('No undefined point, invalid array index, direct array arithmetic');
+  });
+
+  it('derives bounded architectural bays, depth outlines and an interior grid from simple geometry', () => {
+    const suggestion = executeMapCodePlan(`function plan(api) {
+      const footprint=[[-4,-4],[4,-4],[4,4],[-4,4]];
+      const perimeter=api.offsetPolygon({points:footprint,distance:2});
+      const courtyard=api.insetPolygon({points:footprint,distance:1});
+      const bays=api.subdividePathBySpan({points:perimeter,span:4,closed:true,fit:'stretch'});
+      const columns=api.gridInsideRegion({region:{kind:'polygon',points:courtyard},spacing:2,inset:0.4});
+      for (const bay of bays) api.placeBetween({name:'墙段',start:bay.start,end:bay.end,dimensions:[4,3,0.5],spanAxis:'x',groupId:'hall',assemblyId:'hall-shell',layer:1});
+      for (const point of columns) api.place({name:'柱',position:point,dimensions:[0.4,3,0.4],groupId:'hall',assemblyId:'hall-shell',layer:1});
+    }`, createEmptyMap());
+    const additions = suggestion.operations.filter((operation) => operation.type === 'object.add');
+    expect(additions.filter((operation) => operation.object.name === '墙段')).toHaveLength(12);
+    expect(additions.filter((operation) => operation.object.name === '柱').length).toBeGreaterThan(0);
+    expect(suggestion.codePlan?.functions).toEqual(expect.arrayContaining([
+      'gridInsideRegion', 'insetPolygon', 'offsetPolygon', 'subdividePathBySpan'
+    ]));
   });
 
   it('offers district, frontage and massing tools without choosing them by prompt keywords', () => {

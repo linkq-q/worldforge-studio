@@ -308,6 +308,24 @@ interface PlaceStreetFrontageInput {
   setback?: number;
 }
 
+interface SubdividePathInput {
+  points: Point2[];
+  span: number;
+  closed?: boolean;
+  startInset?: number;
+  endInset?: number;
+  fit?: 'stretch' | 'center';
+}
+
+interface GridInsideRegionInput {
+  region:
+    | { kind: 'circle'; center: Point2; radius: number }
+    | { kind: 'polygon'; points: Point2[] };
+  spacing: number | Point2;
+  angle?: number;
+  inset?: number;
+}
+
 interface MoveObjectInput {
   objectId: string;
   position?: PlacementInput['position'];
@@ -1991,6 +2009,59 @@ function executeMapCodePlanInternal(
         );
       });
     },
+    subdividePathBySpan(input: SubdividePathInput) {
+      record('subdividePathBySpan');
+      if (!input || typeof input !== 'object') throw new Error('invalid_map_code_path_subdivision');
+      return subdividePathBySpan(
+        codePointArray(input.points, 'invalid_map_code_path_subdivision_points'),
+        clampFinite(input.span, 0.2, Math.max(map.box.size[0], map.box.size[2])),
+        input.closed === true,
+        clampFinite(input.startInset ?? 0, 0, Math.max(map.box.size[0], map.box.size[2])),
+        clampFinite(input.endInset ?? 0, 0, Math.max(map.box.size[0], map.box.size[2])),
+        input.fit === 'center' ? 'center' : 'stretch'
+      );
+    },
+    offsetPolygon(input: { points: Point2[]; distance: number }): Point2[] {
+      record('offsetPolygon');
+      if (!input || typeof input !== 'object') throw new Error('invalid_map_code_polygon_offset');
+      return offsetPolygon(
+        codePointArray(input.points, 'invalid_map_code_polygon_offset_points'),
+        clampFinite(input.distance, 0, Math.max(map.box.size[0], map.box.size[2]) / 2)
+      );
+    },
+    insetPolygon(input: { points: Point2[]; distance: number }): Point2[] {
+      record('insetPolygon');
+      if (!input || typeof input !== 'object') throw new Error('invalid_map_code_polygon_inset');
+      return offsetPolygon(
+        codePointArray(input.points, 'invalid_map_code_polygon_inset_points'),
+        -clampFinite(input.distance, 0, Math.max(map.box.size[0], map.box.size[2]) / 2)
+      );
+    },
+    gridInsideRegion(input: GridInsideRegionInput): Point2[] {
+      record('gridInsideRegion');
+      if (!input || typeof input !== 'object' || !input.region || typeof input.region !== 'object') {
+        throw new Error('invalid_map_code_region_grid');
+      }
+      const spacing = Array.isArray(input.spacing)
+        ? point2(input.spacing)
+        : codePoint(Math.max(0.2, finite(input.spacing)), Math.max(0.2, finite(input.spacing)));
+      const region = input.region.kind === 'circle'
+        ? {
+          kind: 'circle' as const,
+          center: point2(input.region.center),
+          radius: clampFinite(input.region.radius, 0.2, Math.max(map.box.size[0], map.box.size[2]) / 2)
+        }
+        : {
+          kind: 'polygon' as const,
+          points: codePointArray(input.region.points, 'invalid_map_code_region_grid_points')
+        };
+      return gridInsideRegion(
+        region,
+        codePoint(Math.max(0.2, Math.abs(spacing[0])), Math.max(0.2, Math.abs(spacing[1]))),
+        finite(input.angle ?? 0),
+        clampFinite(input.inset ?? 0, 0, Math.max(map.box.size[0], map.box.size[2]) / 2)
+      );
+    },
     noise2D(x: number, z: number, scale = 1, seed = map.seed) {
       record('noise2D');
       return valueNoise2D(finite(x) * finite(scale), finite(z) * finite(scale), Math.trunc(finite(seed)));
@@ -3288,6 +3359,7 @@ Transforms: api.rotate2D(point,angle,center?), api.mirrorPoint(point,'x'|'z',coo
 Curves: api.linePoint(t,a,b) -> [x,z]; api.bezierPoint(t,p0,p1,p2,p3) -> {point,tangent,normal}; api.sampleBezier(...) -> point arrays; api.sampleBezierFrames(...) -> frame objects with point,tangent,normal; api.sampleBezierFramesBySpacing(...,spacing,gapRatio?) -> approximately even arc-length frames. frame.normal is the normalized left-side normal [-tangentZ,tangentX] as t increases.
 Fields: api.noise2D(x,z,scale?,seed?) -> [-1,1]; api.fbm2D(x,z,{scale?,octaves?,lacunarity?,gain?,seed?}) -> [-1,1].
 Layouts: api.circlePoint(index,count,radius,center?) -> [x,z]; api.ellipsePoint(index,count,radiusX,radiusZ,center?,phase?) -> [x,z]; api.gridPoints({center?,columns,rows,spacing}) -> points; api.poissonDisk({bounds?:{minX,maxX,minZ,maxZ},minDistance,maxPoints?,attempts?,seed?}) -> points.
+Architectural geometry: api.subdividePathBySpan({points,span,closed?,startInset?,endInset?,fit?:'stretch'|'center'}) returns bounded {start,end,center,tangent,length,index} bays; use each start/end with placeBetween instead of stretching one module. api.offsetPolygon({points,distance}) creates an outer arcade, wing or perimeter from a footprint. api.insetPolygon({points,distance}) creates a courtyard, setback tier or roof outline. api.gridInsideRegion({region:{kind:'circle',center,radius}|{kind:'polygon',points},spacing,angle?,inset?}) returns bounded column, room or parcel centers. Build major architecture hierarchically: footprint -> offset/inset depth layers -> massing tiers/stories -> boundary runs -> bays -> corner/entrance/ordinary modules. These helpers return geometry only; you still own entrances, structural roles and connected placements.
 Assets: api.requireAsset({key,name,prompt,tags?,variants?,dimensions:[width,height,depth]?,role:'structure'|'environment',optional?}) -> key; api.asset(key,index?) -> generated assetId. role is required in unified scene ownership; only loose natural decoration may be optional. Give each new asset plausible canonical dimensions so the greybox has its intended size before the model exists; otherwise its pending placeholder is only 1x1x1. Choose dimensions from the scene plan, not to compensate for unknown model output.
 Output: api.place({assetId?,name?,position:[x,z]|[x,y,z],rotationY?,facing?,scale?,size?,terrain?,role?,groupId?,layer?:1|2|3|4}); api.placeStreetFrontage(...) for varied ordinary street-facing buildings; api.placeAlongRoute(...) for repeated street furniture. api.foundation(...) creates an independent editable foundation after its target buildings are placed: pass their api.place references or existing object IDs in under. Use rounded-rectangle/capsule for buildings, polygon for irregular footprints, and path + catmull-rom for curved seawalls; closed path makes a continuous ring. Choose level, slope or steps from intent, keep maxThickness bounded, and never flatten terrain. api.attach({assetId?,name?,parentId,kind:'supported'|'mounted',side?,offset?,anchorY?:'bottom'|'center'|'top',contact?,scale?,rotationY?,role?,groupId?,layer?}) attaches a child to an earlier placement or existing object. Use supported for objects resting on top; use mounted for doors, windows, banners, signs and facade ornaments that must follow a host surface. mounted side is the host-local north|south|east|west face, offset is [horizontal,vertical], anchorY selects the host's vertical baseline, and contact is embed depth. Entrances default to anchorY:'bottom', so never put an absolute world height into offset. api.bridge({waterId,assetId?,name?,crossingCenter:[x,z],direction:[dx,dz],dimensions:[width,height,depth],kind?:'straight'|'curved',curveOffset?,segmentCount?,bankInset?,deckClearance?,abutments?,groupId?,layer?}). A curved bridge uses the asset as a repeatable module. The local solver samples the full bridge width, snaps both ends beyond the real shoreline, records the route guide, and creates small bridgeheads unless abutments:false.
 api.place and api.placeBetween also accept assemblyId?:string and assemblyRole?:'opening'. These labels persist on objects; they do not generate geometry or change coordinates by themselves.
@@ -5242,6 +5314,153 @@ function codePoint(x: number, z: number): Point2 {
     z: { value: point[1], enumerable: false }
   });
   return point;
+}
+
+function subdividePathBySpan(
+  pointValues: readonly Point2[],
+  span: number,
+  closed: boolean,
+  startInset: number,
+  endInset: number,
+  fit: 'stretch' | 'center'
+): Array<{ start: Point2; end: Point2; center: Point2; tangent: Point2; length: number; index: number }> {
+  const points = pointValues.map((point) => point2(point));
+  if (closed && points.length > 2 && pointDistance2(points[0], points[points.length - 1]) < 0.000001) points.pop();
+  if (points.length < 2 || (closed && points.length < 3)) throw new Error('invalid_map_code_path_subdivision_points');
+  const runs = Array.from({ length: closed ? points.length : points.length - 1 }, (_, index) => {
+    const start = points[index];
+    const end = points[(index + 1) % points.length];
+    return { start, end, length: pointDistance2(start, end) };
+  }).filter((run) => run.length > 0.000001);
+  const totalLength = runs.reduce((sum, run) => sum + run.length, 0);
+  const available = totalLength - startInset - endInset;
+  if (available <= 0.000001) return [];
+  const count = Math.min(MAX_POINT_RESULTS, Math.max(1, Math.floor(available / span)));
+  const bayLength = fit === 'stretch' ? available / count : Math.min(span, available);
+  const usedLength = bayLength * count;
+  const firstDistance = startInset + (fit === 'center' ? (available - usedLength) / 2 : 0);
+  const sample = (distanceValue: number): Point2 => {
+    let distance = clampFinite(distanceValue, 0, totalLength);
+    for (const run of runs) {
+      if (distance <= run.length || run === runs[runs.length - 1]) {
+        const amount = clampFinite(distance / run.length, 0, 1);
+        return codePoint(
+          run.start[0] + (run.end[0] - run.start[0]) * amount,
+          run.start[1] + (run.end[1] - run.start[1]) * amount
+        );
+      }
+      distance -= run.length;
+    }
+    return codePoint(points[points.length - 1][0], points[points.length - 1][1]);
+  };
+  return Array.from({ length: count }, (_, index) => {
+    const start = sample(firstDistance + index * bayLength);
+    const end = sample(firstDistance + (index + 1) * bayLength);
+    const length = pointDistance2(start, end);
+    const tangent = length > 0.000001
+      ? codePoint((end[0] - start[0]) / length, (end[1] - start[1]) / length)
+      : codePoint(0, 1);
+    return { start, end, center: midpoint2(start, end), tangent, length, index };
+  });
+}
+
+function offsetPolygon(pointValues: readonly Point2[], distance: number): Point2[] {
+  const points = pointValues.map((point) => point2(point));
+  if (points.length > 3 && pointDistance2(points[0], points[points.length - 1]) < 0.000001) points.pop();
+  if (points.length < 3) throw new Error('invalid_map_code_polygon_points');
+  const twiceArea = points.reduce((sum, point, index) => {
+    const next = points[(index + 1) % points.length];
+    return sum + point[0] * next[1] - next[0] * point[1];
+  }, 0);
+  if (Math.abs(twiceArea) < 0.000001) throw new Error('invalid_map_code_polygon_area');
+  const winding = Math.sign(twiceArea);
+  const normal = (start: Point2, end: Point2): Point2 => {
+    const dx = end[0] - start[0];
+    const dz = end[1] - start[1];
+    const length = Math.max(0.000001, Math.hypot(dx, dz));
+    return codePoint(winding * dz / length, -winding * dx / length);
+  };
+  return points.map((point, index) => {
+    const previous = points[(index - 1 + points.length) % points.length];
+    const next = points[(index + 1) % points.length];
+    const before = normal(previous, point);
+    const after = normal(point, next);
+    const sumX = before[0] + after[0];
+    const sumZ = before[1] + after[1];
+    const sumLength = Math.hypot(sumX, sumZ);
+    if (sumLength < 0.000001) return codePoint(point[0] + after[0] * distance, point[1] + after[1] * distance);
+    const bisector = codePoint(sumX / sumLength, sumZ / sumLength);
+    const denominator = Math.max(0.25, Math.abs(bisector[0] * after[0] + bisector[1] * after[1]));
+    const extension = Math.sign(distance) * Math.min(Math.abs(distance) / denominator, Math.abs(distance) * 4);
+    return codePoint(point[0] + bisector[0] * extension, point[1] + bisector[1] * extension);
+  });
+}
+
+function gridInsideRegion(
+  region: { kind: 'circle'; center: Point2; radius: number } | { kind: 'polygon'; points: Point2[] },
+  spacing: Point2,
+  angle: number,
+  inset: number
+): Point2[] {
+  const center = region.kind === 'circle'
+    ? point2(region.center)
+    : codePoint(
+      region.points.reduce((sum, point) => sum + point[0], 0) / region.points.length,
+      region.points.reduce((sum, point) => sum + point[1], 0) / region.points.length
+    );
+  const boundary = region.kind === 'circle'
+    ? Array.from({ length: 24 }, (_, index) => codePoint(
+      center[0] + Math.cos(index * Math.PI * 2 / 24) * region.radius,
+      center[1] + Math.sin(index * Math.PI * 2 / 24) * region.radius
+    ))
+    : region.points.map((point) => point2(point));
+  if (boundary.length < 3) throw new Error('invalid_map_code_region_grid_points');
+  const local = boundary.map((point) => rotatePoint2(point, -angle, center));
+  const minX = Math.min(...local.map((point) => point[0]));
+  const maxX = Math.max(...local.map((point) => point[0]));
+  const minZ = Math.min(...local.map((point) => point[1]));
+  const maxZ = Math.max(...local.map((point) => point[1]));
+  const columns = Math.min(MAX_POINT_RESULTS, Math.max(1, Math.floor((maxX - minX) / spacing[0]) + 1));
+  const rows = Math.min(Math.max(1, Math.floor(MAX_POINT_RESULTS / columns)), Math.max(1, Math.floor((maxZ - minZ) / spacing[1]) + 1));
+  const startX = center[0] - (columns - 1) * spacing[0] / 2;
+  const startZ = center[1] - (rows - 1) * spacing[1] / 2;
+  const inside = (point: Point2): boolean => region.kind === 'circle'
+    ? pointDistance2(point, center) <= Math.max(0, region.radius - inset)
+    : pointInsidePolygon2(point, region.points) && polygonEdgeDistance2(point, region.points) >= inset;
+  const result: Point2[] = [];
+  for (let row = 0; row < rows && result.length < MAX_POINT_RESULTS; row += 1) {
+    for (let column = 0; column < columns && result.length < MAX_POINT_RESULTS; column += 1) {
+      const point = rotatePoint2(codePoint(startX + column * spacing[0], startZ + row * spacing[1]), angle, center);
+      if (inside(point)) result.push(point);
+    }
+  }
+  return result;
+}
+
+function rotatePoint2(point: Point2, angle: number, center: Point2): Point2 {
+  const cosine = Math.cos(angle);
+  const sine = Math.sin(angle);
+  const x = point[0] - center[0];
+  const z = point[1] - center[1];
+  return codePoint(center[0] + x * cosine - z * sine, center[1] + x * sine + z * cosine);
+}
+
+function pointInsidePolygon2(point: Point2, points: readonly Point2[]): boolean {
+  let inside = false;
+  for (let index = 0, previous = points.length - 1; index < points.length; previous = index++) {
+    const left = points[index];
+    const right = points[previous];
+    if (((left[1] > point[1]) !== (right[1] > point[1]))
+      && point[0] < (right[0] - left[0]) * (point[1] - left[1]) / (right[1] - left[1]) + left[0]) inside = !inside;
+  }
+  return inside;
+}
+
+function polygonEdgeDistance2(point: Point2, points: readonly Point2[]): number {
+  return points.reduce((closest, start, index) => Math.min(
+    closest,
+    pointSegmentDistance2(point[0], point[1], start, points[(index + 1) % points.length])
+  ), Infinity);
 }
 
 function point3(value: readonly number[]): Point3 {
