@@ -48,6 +48,17 @@ describe('map design semantics', () => {
     expect(design.relations).toEqual([expect.objectContaining({ kind: 'attract', strength: 'tight' })]);
   });
 
+  it('keeps an explicit group substrate without inventing one for old maps', () => {
+    const design = normalizeMapDesignSemantics({ groups: [
+      { id: 'island', substrate: 'dry' },
+      { id: 'lagoon', substrate: 'amphibious' },
+      { id: 'legacy' },
+      { id: 'invalid', substrate: 'muddy' }
+    ] }, [96, 16, 96]);
+
+    expect(design.groups.map((group) => group.substrate)).toEqual(['dry', 'amphibious', undefined, undefined]);
+  });
+
   it('preserves an AI-authored minimum placement commitment for each composition layer', () => {
     const design = normalizeMapDesignSemantics({
       groups: [{

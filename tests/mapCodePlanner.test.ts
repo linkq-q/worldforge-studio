@@ -403,6 +403,7 @@ describe('map code planner', () => {
     expect(prompt).toContain("api.sceneIntent({kind:'natural'|'authored'");
     expect(prompt).toContain('Decide semantically from the requested place');
     expect(prompt).toContain('api.design({experienceMode');
+    expect(prompt).toContain("substrate?:'dry'|'water'|'amphibious'|'underwater'");
     expect(prompt).toContain("spatialOrganization?:'centralized'|'linear'|'radial'|'grid'|'clustered'|'courtyard-network'");
     expect(prompt).toContain("footprintFamily?:'bar'|'l-shape'|'u-shape'|'closed-court'|'cross'|'ring'|'tower-podium'|'multi-wing'|'free-polygon'");
     expect(prompt).toContain("massingProfile?:'monolith'|'base-body-crown'|'setback'|'stepped'|'tower-cluster'|'domed-hall-wings'");
@@ -1686,6 +1687,102 @@ describe('map code planner', () => {
       expect.objectContaining({ code: 'outdoor.water-intrusion-repaired', repaired: true })
     ]));
     expect(suggestion.codePlan?.functions).toContain('keepDry');
+  });
+
+  it('reports a dry-group substrate conflict instead of moving the architecture far away', () => {
+    const wall = { ...testAsset('asset-dry-wall', '园林围墙'), tags: ['wall', 'garden'] };
+    const map = createEmptyMap('substrate preflight', 'substrate-preflight', [64, 12, 64]);
+    const suggestion = executeMapCodePlan(`function plan(api) {
+      api.design({groups:[{id:'island',name:'岛上建筑',substrate:'dry',layers:[]} ]});
+      api.water('lagoon',{type:'lake',points:[[-10,-10],[10,-10],[10,10],[-10,10]],level:0.2,depth:1.5});
+      api.place({assetId:'asset-dry-wall',name:'园林围墙',position:[0,0],role:'structure',groupId:'island',layer:1});
+    }`, map, [wall], { scope: 'scene' });
+    const applied = applyMapOperations({ ...map, assets: [wall] }, suggestion.operations);
+
+    expect(applied.objects[0].transform.position[0]).toBeCloseTo(0);
+    expect(applied.objects[0].transform.position[2]).toBeCloseTo(0);
+    expect(suggestion.diagnostics).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        code: 'scene.program-incomplete', repaired: false,
+        message: expect.stringContaining('island')
+      })
+    ]));
+  });
+
+  it('still performs a surgical dry-land correction near the shoreline', () => {
+    const tree = { ...testAsset('asset-shore-tree', '岸边松树'), tags: ['tree', 'pine'] };
+    const map = createEmptyMap('local substrate repair', 'local-substrate-repair', [64, 12, 64]);
+    const suggestion = executeMapCodePlan(`function plan(api) {
+      api.design({groups:[{id:'shore',name:'岸边林',substrate:'dry',layers:[]} ]});
+      api.water('lagoon',{type:'lake',points:[[-10,-10],[10,-10],[10,10],[-10,10]],level:0.2,depth:1.5});
+      api.place({assetId:'asset-shore-tree',name:'岸边松树',position:[9.5,0],role:'environment',groupId:'shore',layer:3});
+    }`, map, [tree], { scope: 'scene' });
+    const applied = applyMapOperations({ ...map, assets: [tree] }, suggestion.operations);
+    const position = applied.objects[0].transform.position;
+
+    expect(Math.hypot(position[0] - 9.5, position[2])).toBeLessThanOrEqual(4);
+    expect(isPointInsideWaterBody(applied.waterBodies[0], position[0], position[2], applied)).toBe(false);
+    expect(suggestion.diagnostics).toEqual(expect.arrayContaining([
+      expect.objectContaining({ code: 'outdoor.water-intrusion-repaired', repaired: true })
+    ]));
+  });
+
+  it('keeps explicitly underwater architecture in its authored water position', () => {
+    const hall = { ...testAsset('asset-underwater-hall', '海底建筑'), tags: ['building', 'hall'] };
+    const map = createEmptyMap('underwater substrate', 'underwater-substrate', [64, 12, 64]);
+    const suggestion = executeMapCodePlan(`function plan(api) {
+      api.design({groups:[{id:'ruins',name:'水下遗迹',substrate:'underwater',layers:[]} ]});
+      api.water('lagoon',{type:'lake',points:[[-10,-10],[10,-10],[10,10],[-10,10]],level:0.2,depth:3});
+      api.place({assetId:'asset-underwater-hall',name:'海底建筑',position:[0,0],role:'structure',groupId:'ruins',layer:1});
+    }`, map, [hall], { scope: 'scene' });
+    const applied = applyMapOperations({ ...map, assets: [hall] }, suggestion.operations);
+
+    expect(applied.objects[0].transform.position[0]).toBeCloseTo(0);
+    expect(applied.objects[0].transform.position[2]).toBeCloseTo(0);
+    expect(suggestion.diagnostics?.some((issue) => issue.code === 'outdoor.water-intrusion-repaired')).toBe(false);
+  });
+
+  it('reports a clear water-group mismatch without enforcing a single shoreline point', () => {
+    const hall = { ...testAsset('asset-water-hall', '水上厅堂'), tags: ['building', 'hall'] };
+    const map = createEmptyMap('water substrate mismatch', 'water-substrate-mismatch', [64, 12, 64]);
+    const suggestion = executeMapCodePlan(`function plan(api) {
+      api.design({groups:[{id:'harbor',name:'水上街区',substrate:'water',layers:[]} ]});
+      api.water('lagoon',{type:'lake',points:[[-6,-6],[6,-6],[6,6],[-6,6]],level:0.2,depth:3});
+      api.place({assetId:'asset-water-hall',name:'水上厅堂一',position:[18,12],role:'structure',groupId:'harbor',layer:1});
+      api.place({assetId:'asset-water-hall',name:'水上厅堂二',position:[22,12],role:'structure',groupId:'harbor',layer:1});
+    }`, map, [hall], { scope: 'scene' });
+
+    expect(suggestion.diagnostics).toEqual(expect.arrayContaining([
+      expect.objectContaining({ code: 'scene.program-incomplete', message: expect.stringContaining('harbor') })
+    ]));
+  });
+
+  it('repairs a substrate contract before asset generation without translating the group', async () => {
+    const original = `function plan(api) {
+      api.sceneIntent({kind:'authored',reason:'水下遗迹'});
+      api.design({groups:[{id:'ruins',name:'水下遗迹',substrate:'dry',layers:[]} ]});
+      api.water('lagoon',{type:'lake',points:[[-10,-10],[10,-10],[10,10],[-10,10]],level:0.2,depth:3});
+      api.place({name:'海底建筑',position:[0,0],role:'structure',groupId:'ruins',layer:1});
+    }`;
+    const repair = JSON.stringify({ edits: [{ old: "substrate:'dry'", new: "substrate:'underwater'" }] });
+    const response = (content: string) => new Response(JSON.stringify({ ok: true, content }), {
+      status: 200, headers: { 'Content-Type': 'application/json' }
+    });
+    const fetchImpl = vi.fn().mockResolvedValueOnce(response(original)).mockResolvedValueOnce(response(repair));
+
+    const suggestion = await generateMapCodeSuggestion('生成水下遗迹', createEmptyMap(), [], {
+      apiBase: 'https://example.test', provider: 'gpt', fetchImpl,
+      minNewAssets: 0, maxNewAssets: 0, scope: 'scene', discoveryOnly: true
+    });
+    const repairRequest = JSON.parse(String(fetchImpl.mock.calls[1][1]?.body));
+    const applied = applyMapOperations(createEmptyMap(), suggestion.operations);
+
+    expect(fetchImpl).toHaveBeenCalledTimes(2);
+    expect(repairRequest.messages.at(-1).content).toContain('scene_group_substrate_conflict:ruins');
+    expect(repairRequest.messages.at(-1).content).toContain('do not translate the whole group');
+    expect(applied.designSemantics.groups[0].substrate).toBe('underwater');
+    expect(applied.objects[0].transform.position[0]).toBeCloseTo(0);
+    expect(applied.objects[0].transform.position[2]).toBeCloseTo(0);
   });
 
   it('places boats at the authored water surface and keeps them movable', () => {

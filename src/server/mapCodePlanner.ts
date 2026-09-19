@@ -2791,8 +2791,22 @@ function executeMapCodePlanInternal(
     }
   }
   const waterRepair = map.sceneMode === 'outdoor'
-    ? relocateOutdoorWaterIntrusions(terrainMap, objectOperations, placements, assets)
-    : { operations: objectOperations, count: 0 };
+    ? relocateOutdoorWaterIntrusions(terrainMap, objectOperations, placements, assets, designSemantics)
+    : { operations: objectOperations, count: 0, conflicts: [] };
+  const substrateConflicts = mergeSubstrateConflicts([
+    ...waterRepair.conflicts,
+    ...findDeclaredSubstrateConflicts(terrainMap, waterRepair.operations, placements, designSemantics)
+  ]);
+  for (const conflict of substrateConflicts) {
+    const declared = conflict.substrate ? `声明为 ${conflict.substrate}` : '尚未声明 substrate';
+    reportIssue({
+      key: `scene_group_substrate_conflict:${conflict.groupId}`,
+      code: 'scene.program-incomplete',
+      message: `设计组 ${conflict.groupId} ${declared}，但有 ${conflict.count} 个主要物体与水陆基底冲突；已在资产生成前报告，自动兜底不会搬运超过 ${MAX_LOCAL_WATER_RELOCATION} 米。`,
+      repaired: false,
+      repairHint: `Edit only group ${conflict.groupId}: declare the intended dry/water/amphibious/underwater substrate, then resolve its local shoreline, terrain or placement calls without translating the whole composition.`
+    });
+  }
   const accessRepair = map.sceneMode === 'outdoor' && scope === 'scene'
     ? relocateOutdoorAccessBlockers(terrainMap, waterRepair.operations, assets)
     : { operations: waterRepair.operations, count: 0 };
@@ -3261,7 +3275,7 @@ ${JSON.stringify(capabilityCatalog)}
 ## API quick reference
 Constants: api.TAU, api.PHI, api.seed, api.bounds.
 Scene intent: api.sceneIntent({kind:'natural'|'authored',reason?}). ${requestMode === 'refine' ? 'Do not call it during refinement.' : 'Required exactly once for unified scene ownership.'}
-Design semantics: api.design({experienceMode:'immediate'|'sequential'|'mixed',intent,groups:[{id,name,parentId?,intent,region?,spatialRole?:'landmark-ensemble'|'urban-fabric'|'open-space'|'landscape',focusIds?,guideIds?,entryGuideIds?,exitGuideIds?,axisGuideIds?,protectedObjectIds?,removableObjectIds?,layers:[{level:1|2|3|4,intent,density:'tight'|'normal'|'open',minCount?:1..64}]}],focuses:[{id,groupId,name,kind:'primary'|'secondary'|'node',rank,selector?,objectId?,reveal:'visible'|'screened'|'framed'|'sequence'}],viewpoints:[{id,groupId?,point:[x,z],targetFocusId?,role:'entry'|'route'|'node'|'overview'}],relations:[{id,kind:'attract'|'repel'|'support',sourceSelector,targetSelector?,sourceGroupId?,targetGroupId?,strength:'tight'|'normal'|'open',minDistance?,maxDistance?}]}). ${requestMode === 'refine' ? 'Optional: call once only when the user changes composition semantics.' : 'Call once in unified scene ownership, after sceneIntent and before placement.'} Make the declared focus and each group's intended arrival, axis and spatial boundary concrete in the water, terrain, routes and placements; prose alone does not shape the scene. Bind a route to its design group with groupId and guideRole when it serves as entry, exit or axis. Keep shared routes connected across neighboring groups; do not force a straight central avenue when the requested experience calls for bends, enclosure or a reveal.
+Design semantics: api.design({experienceMode:'immediate'|'sequential'|'mixed',intent,groups:[{id,name,parentId?,intent,region?,spatialRole?:'landmark-ensemble'|'urban-fabric'|'open-space'|'landscape',substrate?:'dry'|'water'|'amphibious'|'underwater',focusIds?,guideIds?,entryGuideIds?,exitGuideIds?,axisGuideIds?,protectedObjectIds?,removableObjectIds?,layers:[{level:1|2|3|4,intent,density:'tight'|'normal'|'open',minCount?:1..64}]}],focuses:[{id,groupId,name,kind:'primary'|'secondary'|'node',rank,selector?,objectId?,reveal:'visible'|'screened'|'framed'|'sequence'}],viewpoints:[{id,groupId?,point:[x,z],targetFocusId?,role:'entry'|'route'|'node'|'overview'}],relations:[{id,kind:'attract'|'repel'|'support',sourceSelector,targetSelector?,sourceGroupId?,targetGroupId?,strength:'tight'|'normal'|'open',minDistance?,maxDistance?}]}). ${requestMode === 'refine' ? 'Optional: call once only when the user changes composition semantics.' : 'Call once in unified scene ownership, after sceneIntent and before placement.'} Make the declared focus and each group's intended arrival, axis and spatial boundary concrete in the water, terrain, routes and placements; prose alone does not shape the scene. Declare substrate for every group affected by water: dry means its primary forms need dry ground, water means surface/floating composition, amphibious deliberately spans shore and water, and underwater remains below the water surface. Bind a route to its design group with groupId and guideRole when it serves as entry, exit or axis. Keep shared routes connected across neighboring groups; do not force a straight central avenue when the requested experience calls for bends, enclosure or a reveal.
 Compound architecture: api.design may also declare assemblies:[{id,groupId,intent,topology:'group'|'path'|'loop',openings?,stories?,moduleKeys?:string[],spatialOrganization?:'centralized'|'linear'|'radial'|'grid'|'clustered'|'courtyard-network',footprintFamily?:'bar'|'l-shape'|'u-shape'|'closed-court'|'cross'|'ring'|'tower-podium'|'multi-wing'|'free-polygon',massingProfile?:'monolith'|'base-body-crown'|'setback'|'stepped'|'tower-cluster'|'domed-hall-wings',structuralRhythm?:'wall-bays'|'colonnade'|'arcade'|'frame-bays'|'buttresses'|'continuous-truss'|'wall-opening-alternation',functionalSequence?:string[]}]. Decide which major built form is an assembly before requireAsset: commit its footprint or outline, entrance, intended requireAsset keys in moduleKeys and story count in the single design call. Request and actually place every declared module family as a member of that building. For each major assembly make Five orthogonal form decisions instead of copying a familiar named building, and record them in spatialOrganization, footprintFamily, massingProfile, structuralRhythm and functionalSequence. Choose these dimensions independently from the requested use, terrain and experience; their labels describe the contract but do not generate geometry. For an authored scene containing several buildings, decompose prominent buildings into reusable structural modules, not just the scene perimeter; select the major buildings that benefit from part-based construction, while small/background buildings may remain complete reusable assets. A second building does not make the first one simpler: plan each chosen building at architectural scale, including foundation, load-bearing walls or columns, entrances, floor/arcade bays and roof or cornice as appropriate. Reuse the same module families across compatible buildings by changing assemblyId, coordinates and counts, not by requesting a new entire model per building. Do not generate the complete main shell as one model when that building was selected for part-based construction. Choose a believable footprint, bay spacing, entrance and roofline; if a building has multiple stories, declare stories and use nested bounded floor/bay loops with explicit elevation. A single ground-level wall ring does not satisfy a multi-story architectural mass. In a landmark-ensemble with several structural anchors, do not default to one complete gate or pavilion plus isolated pillars; form a connected entry, court edge or architectural mass when the design calls for one. A genuinely freestanding pavilion or a natural landscape needs no invented assembly. An assembly is one architectural whole built from multiple placed assets, not a request to generate one giant model. Give every member the same assemblyId and its groupId; mark an actual gateway or doorway member with assemblyRole:'opening' if you declare openings. For a continuous wall or arcade use placeBetween with shared endpoints and gapRatio:0; derive module count from perimeter length and the module's canonical span instead of stretching one short module across a long edge. Use topology:'path' for an intentional gap, or topology:'loop' when entrance modules complete the ring. Disconnected or stretched assemblies produce advisory diagnostics, not automatic movement or rejection.
 Environment: api.terrain(preset,{amplitude?,roughness?,seed?,direction?}); api.refineTerrain({...}); api.water(id,{type:'lake'|'river'|'ocean',points,...}); api.grass(id,region,{preset:'meadow'|'sand'|'wetland'|'farm'|'magic'|'alpine-moss',density?,variation?,softness?,height?,mix?:{short?,tall?,flowers?},habitat?:{waterDistance?:[outerMin,preferredMin,preferredMax,outerMax],height?:[outerMin,preferredMin,preferredMax,outerMax]}}); api.keepDry([x,z],clearance?) returns the nearest dry point after water operations; api.waterPoint(waterId,[x,z],draft?) returns [x,y,z] on that water surface after water operations; use it for boats and other floating assets, normally with role:'environment'; api.spawn([x,z],yawDegrees?); api.renderSuggestion(text).
 Circulation: api.route({id,name?,points:[[x,z],...],groupId?,guideRole?:'entry'|'exit'|'axis',curve?:'polyline'|'catmull-rom',closed?,width?,surface?:'paving'|'soil'|'grass'|'sand'|'rock'|'none',material?:'default'|'compacted-earth'|'garden-stone'|'asphalt'|'concrete'|'brick-paver'|'cobblestone'|'gravel'|'mud',intensity?,tags?}) records the editable guide and lays real terrain paving by default. groupId links the real guide to that design group; guideRole also records its entry, exit or axis role. api.routeNetwork({id,nodes:[{id,point:[x,z],role?}],edges:[{id,from,to,via?,groupId?,guideRole?,curve?,width?,surface?,material?,tags?}]}) expresses a free-form connected graph with shared junctions; you choose its topology. Choose asphalt for modern vehicle streets, concrete for sidewalks, brick-paver for plazas and old streets, garden-stone or cobblestone for gardens, compacted-earth or gravel for informal paths, and mud only for visibly wet rustic ground. api.streetGrid({id,region:[[x,z],...],direction?:degrees,blockWidth,blockDepth,roadWidth,inset?,surface?,material?,tags?}) returns {routeIds,blocks}; use blocks for building groups and routeIds for roadside facilities. api.placeStreetFrontage({routeId,side:'left'|'right',items:[{assetId?,name,dimensions:[frontageWidth,height,depth],role?,groupId?,layer?},...],startInset?,endInset?,gap?,setback?}) sequentially fits varied ordinary buildings along one street side, keeps their real footprints separated and turns local Z+ facades toward the road. api.placeAlongRoute({routeId,assetId?,name?,spacing,offset?,side?:'left'|'right'|'both'|'alternate',startInset?,endInset?,facing?:'forward'|'toward-route'|'away-from-route',role?,groupId?,layer?}) derives repeated facilities from an existing route. A large authored garden needs an experience network rather than one ring: combine an entrance sequence, asymmetric branches or shortcuts to local scenes, waterside or quiet routes, and intentional shared junctions according to the design. Do not force one fixed topology. Use bridge for water crossings; place generated stair/step modules where a route must change level.
@@ -3289,7 +3303,7 @@ For long connected dry-land scenery, prefer api.placeBetween({assetId?,name?,sta
 - For a continuous connected run, use one asset family and normally variants:1. Do not alternate visibly different variants along the same uninterrupted line. The ordered start->end direction determines which side local Z+ faces when spanAxis:'x'.
 - Elements whose long axis follows travel: use facing:{tangent:frame.tangent}; elements whose front faces across the curve: use facing:{normal:frame.normal}; add offsetY:api.TAU / 2 for the opposite side. If an interior anchor is known, facing:{target:interiorPoint} is the safest inward-facing choice.
 - Organic scatter: poissonDisk plus noise2D/fbm2D density filtering; enforce minDistance. When vegetation is part of the composition, use several bounded groves or edge buffers sized from the available area instead of one tiny global sample.
-- Dry structures and land vegetation must not be placed in water. Call api.keepDry after defining water for walls, gates, buildings, lamps and trees near a shoreline. Place boats with api.waterPoint after defining their water body and use role:'environment'. Bridges alone use api.bridge. The local compiler performs one final non-blocking dry-land repair if a placement still intrudes.
+- Dry structures and land vegetation must not be placed in water. Call api.keepDry after defining water for walls, gates, buildings, lamps and trees near a shoreline. Place boats with api.waterPoint after defining their water body and use role:'environment'. Bridges alone use api.bridge. The local compiler may repair only a small shoreline miss; it will report a substrate conflict instead of moving a declared group far enough to destroy the composition.
 - Grass in an authored green landscape should read as a continuous ground layer rather than isolated tufts: normally use density 0.72-0.9, moderate variation, and a short/tall mix such as {short:0.62,tall:0.34,flowers:0.04}. Use meadow for the general garden floor and reserve wetland for a narrow shore band; do not color the whole garden as wetland merely because it contains a pond.
 - When a scene contains several vegetation habitats, use separate api.grass layers with overlapping waterDistance or height suitability bands: tall water-edge plants, a mixed transition, and lower/drier cover where appropriate. Choose layer heights, density, variation and short/tall/flower mixes deliberately; one blanket circle of uniform grass is not a habitat plan. Do not add extra layers to a genuinely uniform scene just to meet a count. A wetland preset's tall variant draws a reed stalk; choose a readable height (often 1.2-1.8) only when tall reeds fit the requested scene.
 - Paired or axial decoration uses mirrorPoint and density:'tight' so flags, lamps, statues, planters and gate ornaments remain complete pairs. Use normal/open only for scenery that may be asymmetrically thinned.
@@ -3516,6 +3530,7 @@ function localRepairSignals(programIssues: string[], discovery: CodeExecutionRes
 
 const LOCAL_REPAIR_INSTRUCTION = 'Return only JSON {"edits":[{"old":"exact unique substring from the current code","new":"replacement substring"}]}. Make 1-4 small, exact replacements at the reported calls. Never return the full function or alter unrelated calls, placement loops, asset declarations, terrain, or circulation. If the listed issue cannot be fixed locally, return {"edits":[]}.';
 const LOCAL_ASSEMBLY_REPAIR_INSTRUCTION = 'Return only JSON {"edits":[{"old":"exact unique substring from the current code","new":"replacement substring"}]}. Make 1-4 small, exact replacements; never return the full function. For scene_group_missing_assembly:<groupId>, edit the one api.design declaration and only placement loops and asset declarations within that group. Preserve existing placements, terrain, routes and other groups. You may add modular asset families and connected placeBetween placements inside that group; labels alone do not build a compound form. If the group is intentionally made of separate freestanding buildings, return {"edits":[]}. Do not change unrelated scene content.';
+const LOCAL_SUBSTRATE_REPAIR_INSTRUCTION = 'Return only JSON {"edits":[{"old":"exact unique substring from the current code","new":"replacement substring"}]}. Make 1-4 small, exact replacements; never return the full function. For scene_group_substrate_conflict:<groupId>, edit only that group in api.design and the directly responsible local shoreline, terrain or placement calls. Preserve its focus, route topology, assembly topology, other groups and all unrelated placements. Declare dry, water, amphibious or underwater from the intended experience; do not translate the whole group to a distant valid point. If intent is ambiguous, keep the current composition and return {"edits":[]}.';
 
 function retainCodePlan(
   fallback: { code: string; discovery: CodeExecutionResult; programIssues: string[] },
@@ -3630,6 +3645,16 @@ async function discoverMapCodeWithRepairs(
               : '局部调用未能安全落位，AI 正在定点修复 1/1',
           detail: repairDetails.join('\n')
         });
+        const repairsAssembly = completionIssues.some((issue) => issue.startsWith('scene_group_missing_assembly:'));
+        const repairsSubstrate = recoverableExecutionIssues.some((issue) => issue.key.startsWith('scene_group_substrate_conflict:'));
+        const localInstruction = repairsAssembly
+          ? LOCAL_ASSEMBLY_REPAIR_INSTRUCTION
+          : repairsSubstrate ? LOCAL_SUBSTRATE_REPAIR_INSTRUCTION : LOCAL_REPAIR_INSTRUCTION;
+        const preservationInstruction = repairsAssembly
+          ? 'Keep the existing composition, placements, asset requirements, terrain and routes except for the reported group\'s missing architectural assembly.'
+          : repairsSubstrate
+            ? 'Keep the existing composition and edit only the reported group\'s substrate mismatch.'
+            : 'Keep the existing composition, placements, asset requirements, terrain and routes.';
         try {
           const repairResponse = await llmChat([
             { role: 'system', content: systemPrompt },
@@ -3637,7 +3662,7 @@ async function discoverMapCodeWithRepairs(
             { role: 'assistant', content: code },
             {
               role: 'user',
-              content: `The current program already produced a usable scene. Repair only these reported issues:\n${repairDetails.join('\n')}\n\n${completionIssues.some((issue) => issue.startsWith('scene_group_missing_assembly:')) ? LOCAL_ASSEMBLY_REPAIR_INSTRUCTION : LOCAL_REPAIR_INSTRUCTION} Keep the existing composition, placements, asset requirements, terrain and routes except for the reported group's missing architectural assembly. Do not add content merely to satisfy an aesthetic warning.${recoverableExecutionIssues.length ? `\n\n${MAP_CODE_TOPOLOGY_CONTRACT}` : ''}`
+              content: `The current program already produced a usable scene. Repair only these reported issues:\n${repairDetails.join('\n')}\n\n${localInstruction} ${preservationInstruction} Do not add content merely to satisfy an aesthetic warning.${recoverableExecutionIssues.length ? `\n\n${MAP_CODE_TOPOLOGY_CONTRACT}` : ''}`
             }
           ], {
             apiBase: options.apiBase,
@@ -4550,28 +4575,45 @@ interface CodeAccessCorridor {
   halfWidth: number;
 }
 
+const MAX_LOCAL_WATER_RELOCATION = 4;
+
+interface CodeSubstrateConflict {
+  groupId: string;
+  substrate?: MapDesignSemantics['groups'][number]['substrate'];
+  count: number;
+}
+
 function relocateOutdoorWaterIntrusions(
   terrainMap: EditableMap,
   operations: readonly Extract<MapOperation, { type: 'object.add' }>[],
   placements: readonly PlacementIntent[],
-  assets: readonly MapAsset[]
-): { operations: Array<Extract<MapOperation, { type: 'object.add' }>>; count: number } {
-  if (terrainMap.waterBodies.length === 0) return { operations: [...operations], count: 0 };
+  assets: readonly MapAsset[],
+  design: MapDesignSemantics
+): { operations: Array<Extract<MapOperation, { type: 'object.add' }>>; count: number; conflicts: CodeSubstrateConflict[] } {
+  if (terrainMap.waterBodies.length === 0) return { operations: [...operations], count: 0, conflicts: [] };
   const assetById = new Map([...(terrainMap.assets ?? []), ...assets].map((asset) => [asset.id, asset]));
+  const designGroupById = new Map(design.groups.map((group) => [group.id, group]));
   const repaired = [...operations];
   const eligible = operations.flatMap((operation, index) => {
     const placement = placements[index];
+    const substrate = placement?.designGroupId
+      ? designGroupById.get(placement.designGroupId)?.substrate
+      : undefined;
     const asset = operation.object.assetId ? assetById.get(operation.object.assetId) : undefined;
     const semantic = [placement?.semantic, operation.object.name, asset?.name, asset?.prompt, ...(asset?.tags ?? [])]
       .filter(Boolean)
       .join(' ');
     return operation.object.heightMode === 'terrain'
       && !placement?.bridgeWaterId
+      && substrate !== 'water'
+      && substrate !== 'underwater'
+      && substrate !== 'amphibious'
       && DRY_LAND_ASSET.test(semantic)
       && !WATER_COMPATIBLE_ASSET.test(semantic)
       ? [{ index, placement, semantic }]
       : [];
   });
+  const conflictCounts = new Map<string, CodeSubstrateConflict>();
   const grouped = new Set<number>();
   const batches: number[][] = [];
   for (const candidate of eligible) {
@@ -4609,6 +4651,17 @@ function relocateOutdoorWaterIntrusions(
     if (points.every((point) => pointIsDry(terrainMap, point, 0.45))) continue;
     const translation = findDryTranslation(terrainMap, points, 0.45);
     if (!translation) continue;
+    const groupId = placements[batch[0]]?.designGroupId;
+    const group = groupId ? designGroupById.get(groupId) : undefined;
+    if (group && Math.hypot(translation[0], translation[1]) > MAX_LOCAL_WATER_RELOCATION) {
+      const existing = conflictCounts.get(group.id);
+      conflictCounts.set(group.id, {
+        groupId: group.id,
+        ...(group.substrate ? { substrate: group.substrate } : {}),
+        count: (existing?.count ?? 0) + batch.length
+      });
+      continue;
+    }
     for (const index of batch) {
       const operation = repaired[index];
       const transform = operation.object.transform!;
@@ -4627,7 +4680,51 @@ function relocateOutdoorWaterIntrusions(
       count += 1;
     }
   }
-  return { operations: repaired, count };
+  return { operations: repaired, count, conflicts: [...conflictCounts.values()] };
+}
+
+function findDeclaredSubstrateConflicts(
+  terrainMap: EditableMap,
+  operations: readonly Extract<MapOperation, { type: 'object.add' }>[],
+  placements: readonly PlacementIntent[],
+  design: MapDesignSemantics
+): CodeSubstrateConflict[] {
+  const conflicts: CodeSubstrateConflict[] = [];
+  for (const group of design.groups) {
+    if (!group.substrate || group.substrate === 'dry') continue;
+    const candidates = operations.flatMap((operation, index) => {
+      const placement = placements[index];
+      if (placement?.designGroupId !== group.id || placement.bridgeWaterId
+        || (placement.role !== 'structure' && (placement.compositionLayer ?? 4) > 2)) return [];
+      const position = operation.object.transform?.position;
+      return position ? [[position[0], position[2]] satisfies Point2] : [];
+    });
+    if (candidates.length < 2) continue;
+    const wetCount = candidates.filter((point) => terrainMap.waterBodies.some((water) => (
+      isPointInsideWaterBody(water, point[0], point[1], terrainMap)
+    ))).length;
+    const clearlyOffWater = (group.substrate === 'water' || group.substrate === 'underwater') && wetCount === 0;
+    const oneSidedAmphibious = group.substrate === 'amphibious'
+      && candidates.length >= 4
+      && (wetCount === 0 || wetCount === candidates.length);
+    if (clearlyOffWater || oneSidedAmphibious) {
+      conflicts.push({ groupId: group.id, substrate: group.substrate, count: candidates.length });
+    }
+  }
+  return conflicts;
+}
+
+function mergeSubstrateConflicts(conflicts: readonly CodeSubstrateConflict[]): CodeSubstrateConflict[] {
+  const merged = new Map<string, CodeSubstrateConflict>();
+  for (const conflict of conflicts) {
+    const previous = merged.get(conflict.groupId);
+    merged.set(conflict.groupId, {
+      groupId: conflict.groupId,
+      substrate: conflict.substrate ?? previous?.substrate,
+      count: Math.max(conflict.count, previous?.count ?? 0)
+    });
+  }
+  return [...merged.values()];
 }
 
 function nearestDryPoint(map: EditableMap, point: Point2, clearance: number): Point2 {

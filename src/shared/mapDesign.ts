@@ -8,6 +8,7 @@ export const MAP_FOCUS_KINDS = ['primary', 'secondary', 'node'] as const;
 export const MAP_REVEAL_MODES = ['visible', 'screened', 'framed', 'sequence'] as const;
 export const MAP_RELATION_KINDS = ['attract', 'repel', 'support'] as const;
 export const MAP_SPATIAL_ROLES = ['landmark-ensemble', 'urban-fabric', 'open-space', 'landscape'] as const;
+export const MAP_DESIGN_SUBSTRATES = ['dry', 'water', 'amphibious', 'underwater'] as const;
 export const MAP_ASSEMBLY_TOPOLOGIES = ['group', 'path', 'loop'] as const;
 export const MAP_ASSEMBLY_SPATIAL_ORGANIZATIONS = ['centralized', 'linear', 'radial', 'grid', 'clustered', 'courtyard-network'] as const;
 export const MAP_ASSEMBLY_FOOTPRINT_FAMILIES = ['bar', 'l-shape', 'u-shape', 'closed-court', 'cross', 'ring', 'tower-podium', 'multi-wing', 'free-polygon'] as const;
@@ -20,6 +21,7 @@ export type MapFocusKind = typeof MAP_FOCUS_KINDS[number];
 export type MapRevealMode = typeof MAP_REVEAL_MODES[number];
 export type MapRelationKind = typeof MAP_RELATION_KINDS[number];
 export type MapSpatialRole = typeof MAP_SPATIAL_ROLES[number];
+export type MapDesignSubstrate = typeof MAP_DESIGN_SUBSTRATES[number];
 export type MapAssemblyTopology = typeof MAP_ASSEMBLY_TOPOLOGIES[number];
 export type MapAssemblySpatialOrganization = typeof MAP_ASSEMBLY_SPATIAL_ORGANIZATIONS[number];
 export type MapAssemblyFootprintFamily = typeof MAP_ASSEMBLY_FOOTPRINT_FAMILIES[number];
@@ -41,6 +43,8 @@ export interface MapDesignGroup {
   intent: string;
   /** The group's spatial responsibility, independent of its individual object count. */
   spatialRole?: MapSpatialRole;
+  /** Where this group's primary composition is expected to meet the terrain/water system. */
+  substrate?: MapDesignSubstrate;
   region?: VisualZoneRegion;
   focusIds: string[];
   guideIds: string[];
@@ -137,6 +141,8 @@ export function normalizeMapDesignSemantics(value: unknown, boxSize: Vec3): MapD
       intent: text(item.intent, '', 240),
       ...(MAP_SPATIAL_ROLES.includes(item.spatialRole as MapSpatialRole)
         ? { spatialRole: item.spatialRole as MapSpatialRole } : {}),
+      ...(MAP_DESIGN_SUBSTRATES.includes(item.substrate as MapDesignSubstrate)
+        ? { substrate: item.substrate as MapDesignSubstrate } : {}),
       region: normalizeRegion(item.region, boxSize),
       focusIds: ids(item.focusIds, 16),
       guideIds: ids(item.guideIds, 32),
