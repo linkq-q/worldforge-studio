@@ -22,9 +22,7 @@ import { normalizeMapAiMaxNewAssets, normalizeMapAiNewAssetRange } from '../shar
 import { calculateModelVisualBounds, inspectModelSpace, type Aabb } from '../shared/modelBounds';
 import { normalizeMapDesignSemantics, type MapCompositionLayer, type MapDesignSemantics } from '../shared/mapDesign';
 import {
-  compileMapDesignDensityFill,
   compileMapNaturalClearance,
-  compileMapDesignPruning,
   compileMapDesignRelations,
   resolveMapDesignFocusObjects
 } from '../shared/mapDesignRelations';
@@ -3047,16 +3045,6 @@ function executeMapCodePlanInternal(
     const relationOperations = compileMapDesignRelations(placedMap, designSemantics);
     recordGenerationTrace('layout.relations', { designSemantics, operations: relationOperations });
     operations.push(...relationOperations);
-    const relatedMap = relationOperations.length > 0
-      ? applyMapOperations(placedMap, relationOperations)
-      : placedMap;
-    const pruningOperations = compileMapDesignPruning(relatedMap, designSemantics);
-    recordGenerationTrace('layout.pruning', { operations: pruningOperations });
-    operations.push(...pruningOperations);
-    const prunedMap = pruningOperations.length > 0
-      ? applyMapOperations(relatedMap, pruningOperations)
-      : relatedMap;
-    operations.push(...compileMapDesignDensityFill(prunedMap, designSemantics));
     operations.push({ type: 'map.update', designSemantics });
   }
   const clearanceOperations = map.sceneMode === 'outdoor' && operations.length > 0
@@ -3126,13 +3114,6 @@ function executeMapCodePlanInternal(
     message: '桥梁未使用跨水求解器，无法确认水面高度和两岸连接；可通过“调整当前地图”让 AI 定向修复。',
     repaired: false
   }] : [];
-  const missingDesignDiagnostics = map.sceneMode === 'outdoor' && scope === 'scene'
-    && requestMode === 'generate' && designCallCount === 0 ? [{
-      code: 'scene.design-missing' as const,
-      severity: 'warning' as const,
-      message: '本轮 Code 未填写设计组与焦点表，场景仍可应用；可点击“调整当前地图”补充构图语义。',
-    repaired: false
-  }] : [];
   const executionDiagnostics = [...executionIssues.values()].map(({ code, message, repaired }) => ({
     code,
     severity: 'warning' as const,
@@ -3155,7 +3136,7 @@ function executeMapCodePlanInternal(
     diagnostics: [
       ...executionDiagnostics,
       ...waterDiagnostics, ...accessDiagnostics, ...clearanceDiagnostics, ...attachmentDiagnostics,
-      ...unresolvedBridgeDiagnostics, ...missingDesignDiagnostics, ...compositionDiagnostics, ...vegetationDiagnostics,
+      ...unresolvedBridgeDiagnostics, ...compositionDiagnostics, ...vegetationDiagnostics,
       ...foundationWarnings.map((message) => ({
         code: 'foundation.max-thickness' as const,
         severity: 'warning' as const,
@@ -3560,7 +3541,7 @@ export function buildMapCodePlannerSystemPrompt(
   const scopeContract = requestMode === 'refine'
     ? refineContext
     : scope === 'scene'
-    ? `\n## Unified scene ownership\nYou author the complete outdoor scene in one coordinate system: terrain, water, surfaces, vegetation, constructed forms, circulation and their relationships.\nCall api.sceneIntent({kind:'natural'|'authored',reason?}) once, then call api.design({...}) once as a lightweight spatial contract. Declare only the regions, routes, focuses, viewpoints, relations or assemblies that help this scene; unused fields and layers may be omitted.\nLet the user's request determine landform, ecology, architectural language, density, hierarchy, rhythm and negative space. Use the spatial APIs to keep entrances, routes, footprints, adjacency and compound structures coherent, not to force a template or optimize a diagnostic score. Intentional open space is valid; unexplained leftover space should be shaped, assigned a purpose, or removed.\n`
+    ? `\n## Unified scene ownership\nYou author the complete outdoor scene in one coordinate system: terrain, water, surfaces, vegetation, constructed forms, circulation and their relationships.\napi.sceneIntent and api.design are optional compression tools, not mandatory planning stages. Use them only when their persistent labels clarify the executable scene; otherwise express the composition directly with bounded math, fields, routes and placements.\nLet the user's request determine landform, ecology, architectural language, density, hierarchy, rhythm and negative space. Use the spatial APIs to keep entrances, routes, footprints, adjacency and compound structures coherent, not to force a template or optimize a diagnostic score. Intentional open space is valid and is never auto-filled merely to satisfy metadata.\n`
     : '';
   return `You are WorldForge Studio's procedural environment planner.${scopeContract}
 ${CODE_ASSET_LIGHT_CONTRACT}
@@ -3592,8 +3573,8 @@ Keep generated coordinates inside bounds, important circulation usable, and repe
 
 ## API quick reference
 Constants: api.TAU, api.PHI, api.seed, api.bounds.
-Scene intent: api.sceneIntent({kind:'natural'|'authored',reason?}). ${requestMode === 'refine' ? 'Do not call it during refinement.' : 'Required exactly once for unified scene ownership.'}
-Design semantics: api.design({experienceMode:'immediate'|'sequential'|'mixed',intent,groups:[{id,name,parentId?,intent,region?,spatialRole?:'landmark-ensemble'|'urban-fabric'|'open-space'|'landscape',substrate?:'dry'|'water'|'amphibious'|'underwater',focusIds?,guideIds?,entryGuideIds?,exitGuideIds?,axisGuideIds?,protectedObjectIds?,removableObjectIds?,layers:[{level:1|2|3|4,intent,density:'tight'|'normal'|'open',minCount?:1..64}]}],focuses:[{id,groupId,name,kind:'primary'|'secondary'|'node',rank,selector?,objectId?,reveal:'visible'|'screened'|'framed'|'sequence'}],viewpoints:[{id,groupId?,point:[x,z],targetFocusId?,role:'entry'|'route'|'node'|'overview'}],relations:[{id,kind:'attract'|'repel'|'support',sourceSelector,targetSelector?,sourceGroupId?,targetGroupId?,strength:'tight'|'normal'|'open',minDistance?,maxDistance?}]}). ${requestMode === 'refine' ? 'Optional: call once only when the user changes composition semantics.' : 'Call once in unified scene ownership, after sceneIntent and before placement.'} Make the declared focus and each group's intended arrival, axis and spatial boundary concrete in the water, terrain, routes and placements; prose alone does not shape the scene. Declare substrate for every group affected by water: dry means its primary forms need dry ground, water means surface/floating composition, amphibious deliberately spans shore and water, and underwater remains below the water surface. Bind a route to its design group with groupId and guideRole when it serves as entry, exit or axis. Keep shared routes connected across neighboring groups; do not force a straight central avenue when the requested experience calls for bends, enclosure or a reveal.
+Scene intent: api.sceneIntent({kind:'natural'|'authored',reason?}). ${requestMode === 'refine' ? 'Do not call it during refinement.' : 'Optional: use it when the natural/authored distinction materially clarifies the plan; otherwise it is inferred from executable content.'}
+Design semantics: api.design({experienceMode:'immediate'|'sequential'|'mixed',intent,groups:[{id,name,parentId?,intent,region?,spatialRole?:'landmark-ensemble'|'urban-fabric'|'open-space'|'landscape',substrate?:'dry'|'water'|'amphibious'|'underwater',focusIds?,guideIds?,entryGuideIds?,exitGuideIds?,axisGuideIds?,protectedObjectIds?,removableObjectIds?,layers:[{level:1|2|3|4,intent,density:'tight'|'normal'|'open',minCount?:1..64}]}],focuses:[{id,groupId,name,kind:'primary'|'secondary'|'node',rank,selector?,objectId?,reveal:'visible'|'screened'|'framed'|'sequence'}],viewpoints:[{id,groupId?,point:[x,z],targetFocusId?,role:'entry'|'route'|'node'|'overview'}],relations:[{id,kind:'attract'|'repel'|'support',sourceSelector,targetSelector?,sourceGroupId?,targetGroupId?,strength:'tight'|'normal'|'open',minDistance?,maxDistance?}]}). Optional: call once only when these persistent labels clarify real spatial responsibilities. The runtime preserves declared semantics and explicit relations but does not add objects, prune objects, or fill density merely to satisfy group metadata. Make any declared focus, arrival, axis and boundary concrete in the water, terrain, routes and placements; prose alone does not shape the scene. Declare substrate for every group affected by water: dry means its primary forms need dry ground, water means surface/floating composition, amphibious deliberately spans shore and water, and underwater remains below the water surface. Bind a route to its design group with groupId and guideRole when it serves as entry, exit or axis. Keep shared routes connected across neighboring groups; do not force a straight central avenue when the requested experience calls for bends, enclosure or a reveal.
 Compound architecture: api.design may declare assemblies:[{id,groupId,intent,topology:'group'|'path'|'loop',openings?,stories?,moduleKeys?:string[],spatialOrganization?:'centralized'|'linear'|'radial'|'grid'|'clustered'|'courtyard-network',footprintFamily?:'bar'|'l-shape'|'u-shape'|'closed-court'|'cross'|'ring'|'tower-podium'|'multi-wing'|'free-polygon',massingProfile?:'monolith'|'base-body-crown'|'setback'|'stepped'|'tower-cluster'|'domed-hall-wings',structuralRhythm?:'wall-bays'|'colonnade'|'arcade'|'frame-bays'|'buttresses'|'continuous-truss'|'wall-opening-alternation',functionalSequence?:string[]}]. Use an assembly only when a building benefits from reusable placed modules. Members share assemblyId and groupId; an actual entrance member may use assemblyRole:'opening'. Use bounded loops, canonical module spans and explicit story elevations for connected multi-part construction. Whole reusable assets remain valid for buildings that do not benefit from decomposition.
 Environment: api.terrain(preset,{amplitude?,roughness?,seed?,direction?}); api.refineTerrain({...}); api.water(id,{type:'lake'|'river'|'ocean',points,...}); api.grass(id,region,{preset:'meadow'|'sand'|'wetland'|'farm'|'magic'|'alpine-moss',density?,variation?,softness?,height?,mix?:{short?,tall?,flowers?},habitat?:{waterDistance?:[outerMin,preferredMin,preferredMax,outerMax],height?:[outerMin,preferredMin,preferredMax,outerMax]}}); api.keepDry([x,z],clearance?) returns the nearest dry point after water operations; api.waterPoint(waterId,[x,z],draft?) returns [x,y,z] on that water surface after water operations; use it for boats and other floating assets, normally with role:'environment'; api.spawn([x,z],yawDegrees?); api.renderSuggestion(text).
 Circulation: api.route({id,name?,points:[[x,z],...],groupId?,guideRole?:'entry'|'exit'|'axis',curve?:'polyline'|'catmull-rom',closed?,width?,surface?:'paving'|'soil'|'grass'|'sand'|'rock'|'none',material?:'default'|'compacted-earth'|'garden-stone'|'asphalt'|'concrete'|'brick-paver'|'cobblestone'|'gravel'|'mud',intensity?,tags?}) records an editable guide and lays terrain paving unless surface:'none'. api.routeNetwork({id,nodes:[{id,point:[x,z],role?}],edges:[{id,from,to,via?,groupId?,guideRole?,curve?,width?,surface?,material?,tags?}]}) creates a free-form connected graph. api.streetGrid({id,region,direction?,blockWidth,blockDepth,roadWidth,inset?,surface?,material?,tags?}) returns {routeIds,blocks}; use it only when the chosen design needs blocks. api.placeStreetFrontage({routeId,side,items,startInset?,endInset?,gap?,setback?}) fits building footprints along a route. api.placeAlongRoute({routeId,assetId?,name?,spacing,offset?,side?,startInset?,endInset?,facing?,role?,groupId?,layer?}) distributes route-owned objects. Use bridge for water crossings.
@@ -3631,7 +3612,7 @@ Append this orientation instruction to every generated asset prompt: "Coordinate
 
 ## Final self-check before returning
 1. Exactly one function named plan and no markdown.
-2. ${requestMode === 'refine' ? 'Refine code does not call sceneIntent, preserves unrelated content, and either emits at least one delta operation or calls noChange exactly once.' : 'Unified scene code calls sceneIntent once, emits terrain/surface/water/grass when relevant, and places the recognizable content; all loops have bounded counts.'}
+2. ${requestMode === 'refine' ? 'Refine code does not call sceneIntent, preserves unrelated content, and either emits at least one delta operation or calls noChange exactly once.' : 'Unified scene code emits the relevant environment and recognizable content with bounded calculations; sceneIntent/design appear only when their labels are useful.'}
 3. All positions are inside the stated bounds or intentionally clamped.
 4. No undefined point, invalid array index, direct array arithmetic, division by zero, invented asset ID, or unbounded placement loop.
 5. Generated assets are declared with requireAsset and bound only through api.asset.
@@ -3785,27 +3766,16 @@ function preservesCodePlanContent(before: CodeExecutionResult, after: CodeExecut
   return true;
 }
 
-const LOCAL_VISUAL_REPAIR_CODES = new Set([
-  'scene.group-route-unbound', 'scene.group-route-disconnected',
-  'scene.vegetation-uniform', 'scene.group-massing-flat'
-]);
+function localRepairSignals(discovery: CodeExecutionResult): string[] {
+  return discovery.issues.filter(shouldAutoRepairCodeIssue).map((issue) => issue.code);
+}
 
-function localRepairSignals(programIssues: string[], discovery: CodeExecutionResult): string[] {
-  return [
-    ...programIssues,
-    ...discovery.issues.filter((issue) => issue.key.startsWith('scene_group_missing_assembly:')).map((issue) => issue.key),
-    ...discovery.issues.filter((issue) => issue.repairHint).map((issue) => issue.code),
-    ...(discovery.suggestion.diagnostics ?? [])
-      .filter((issue) => LOCAL_VISUAL_REPAIR_CODES.has(issue.code))
-      .map((issue) => issue.code)
-  ];
+function shouldAutoRepairCodeIssue(issue: CodeExecutionIssue): boolean {
+  return Boolean(issue.repairHint) && issue.key !== 'authored_scene_missing_structure';
 }
 
 const LOCAL_REPAIR_INSTRUCTION = 'Return only JSON {"edits":[{"old":"exact unique substring from the current code","new":"replacement substring"}]}. Make 1-4 small, exact replacements at the reported calls. Never return the full function or alter unrelated calls, placement loops, asset declarations, terrain, or circulation. If the listed issue cannot be fixed locally, return {"edits":[]}.';
-const LOCAL_ASSEMBLY_REPAIR_INSTRUCTION = 'Return only JSON {"edits":[{"old":"exact unique substring from the current code","new":"replacement substring"}]}. Make 1-4 small, exact replacements; never return the full function. For scene_group_missing_assembly:<groupId>, edit the one api.design declaration and only placement loops and asset declarations within that group. Preserve existing placements, terrain, routes and other groups. You may add modular asset families and connected placeBetween placements inside that group; labels alone do not build a compound form. If the group is intentionally made of separate freestanding buildings, return {"edits":[]}. Do not change unrelated scene content.';
 const LOCAL_SUBSTRATE_REPAIR_INSTRUCTION = 'Return only JSON {"edits":[{"old":"exact unique substring from the current code","new":"replacement substring"}]}. Make 1-4 small, exact replacements; never return the full function. For scene_group_substrate_conflict:<groupId>, edit only that group in api.design and the directly responsible local shoreline, terrain or placement calls. Preserve its focus, route topology, assembly topology, other groups and all unrelated placements. Declare dry, water, amphibious or underwater from the intended experience; do not translate the whole group to a distant valid point. If intent is ambiguous, keep the current composition and return {"edits":[]}.';
-const LOCAL_COVERAGE_REPAIR_INSTRUCTION = 'Return only JSON {"edits":[{"old":"exact unique substring from the current code","new":"replacement substring"}]}. Make 1-4 small, exact replacements; never return the full function. For scene_group_building_coverage_low, scene_group_frontage_low or scene_group_unassigned_space, edit only the reported design group. Add or extend medium/large built forms at genuinely unused parcels or under-served route spans; use bounded loops and connected modules where appropriate. Do not satisfy spatial coverage with lamps, plants or tiny props. Preserve named courtyards, plazas, water, circulation, entrances, focuses, other groups and all existing content. If the open area is intentional, express its actual boundary and use with an existing clear surface or open-space group instead of filling it.';
-const LOCAL_LAYER_REPAIR_INSTRUCTION = 'Return only JSON {"edits":[{"old":"exact unique substring from the current code","new":"replacement substring"}]}. Make 1-4 small, exact replacements; never return the full function. For scene_group_missing_layer or scene_group_underfilled_layer, edit only placement code for the reported group and layer. Add the smallest bounded set of spatially useful instances needed to meet the declared target, distributed according to that layer intent; preserve existing placements, routes, clear areas, other layers and other groups. Do not lower or delete minCount merely to silence the check, and do not replace structural or functional content with tiny decor.';
 
 function retainCodePlan(
   fallback: { code: string; discovery: CodeExecutionResult; programIssues: string[] },
@@ -3861,7 +3831,7 @@ async function discoverMapCodeWithRepairs(
       if (optionalFallback) {
         const fallback = optionalFallback;
         const currentIssues = findAuthoredSceneProgramIssues(map, discovery.suggestion);
-        const newSignals = localRepairSignals(currentIssues, discovery);
+        const newSignals = localRepairSignals(discovery);
         const improved = fallback.repairTargets.some((signal) => (
           newSignals.filter((item) => item === signal).length
           < fallback.repairTargets.filter((item) => item === signal).length
@@ -3883,71 +3853,27 @@ async function discoverMapCodeWithRepairs(
         optionalFallback = undefined;
       }
       const programIssues = findAuthoredSceneProgramIssues(map, discovery.suggestion);
-      const completionIssues = programIssues.filter((issue) => (
-        issue.startsWith('scene_group_missing_layer:')
-        || issue.startsWith('scene_group_underfilled_layer:')
-        || issue.startsWith('scene_group_region_missing:')
-        || issue.startsWith('scene_group_spatial_role_missing:')
-        || issue.startsWith('scene_group_building_coverage_low:')
-        || issue.startsWith('scene_group_frontage_low:')
-        || issue.startsWith('scene_group_unassigned_space:')
+      const recoverableExecutionIssues = discovery.issues.filter(shouldAutoRepairCodeIssue);
+      const repairDetails = recoverableExecutionIssues.map((issue) => (
+        `${issue.key}: ${issue.message}\nFix: ${issue.repairHint}`
       ));
-      completionIssues.push(...discovery.issues.filter((issue) => issue.key.startsWith('scene_group_missing_assembly:')).map((issue) => issue.key));
-      const recoverableExecutionIssues = discovery.issues.filter((issue) => issue.repairHint);
-      const visualIssues = !options.approvedCode && options.mode !== 'refine' && options.scope === 'scene'
-        ? (discovery.suggestion.diagnostics ?? []).filter((issue) => LOCAL_VISUAL_REPAIR_CODES.has(issue.code)).slice(0, 2)
-        : [];
-      const repairDetails = [
-        ...recoverableExecutionIssues.map((issue) => `${issue.key}: ${issue.message}\nFix: ${issue.repairHint}`),
-        ...completionIssues,
-        ...visualIssues.map((issue) => `${issue.code}: ${issue.message}`)
-      ];
       if (repairDetails.length > 0 && !programRepairAttempted) {
         programRepairAttempted = true;
         repairAttempts += 1;
         optionalFallback = {
           code, discovery, programIssues,
-          repairTargets: [
-            ...completionIssues,
-            ...recoverableExecutionIssues.map((issue) => issue.code),
-            ...visualIssues.map((issue) => issue.code)
-          ]
+          repairTargets: recoverableExecutionIssues.map((issue) => issue.code)
         };
         options.onProgress?.({
           phase: 'replanning',
-          label: completionIssues.length > 0
-            ? '场景片区或局部调用不完整，AI 正在局部修复 1/1'
-            : visualIssues.length > 0
-              ? '空间与植被层次正在定向修正 1/1'
-              : '局部调用未能安全落位，AI 正在定点修复 1/1',
+          label: '局部调用未能安全落位，AI 正在定点修复 1/1',
           detail: repairDetails.join('\n')
         });
-        const repairsAssembly = completionIssues.some((issue) => issue.startsWith('scene_group_missing_assembly:'));
         const repairsSubstrate = recoverableExecutionIssues.some((issue) => issue.key.startsWith('scene_group_substrate_conflict:'));
-        const repairsCoverage = completionIssues.some((issue) => (
-          issue.startsWith('scene_group_building_coverage_low:')
-          || issue.startsWith('scene_group_frontage_low:')
-          || issue.startsWith('scene_group_unassigned_space:')
-        ));
-        const repairsLayers = completionIssues.some((issue) => (
-          issue.startsWith('scene_group_missing_layer:') || issue.startsWith('scene_group_underfilled_layer:')
-        ));
-        const localInstruction = repairsAssembly
-          ? LOCAL_ASSEMBLY_REPAIR_INSTRUCTION
-          : repairsSubstrate
-            ? LOCAL_SUBSTRATE_REPAIR_INSTRUCTION
-            : repairsCoverage
-              ? LOCAL_COVERAGE_REPAIR_INSTRUCTION
-              : repairsLayers ? LOCAL_LAYER_REPAIR_INSTRUCTION : LOCAL_REPAIR_INSTRUCTION;
-        const preservationInstruction = repairsAssembly
-          ? 'Keep the existing composition, placements, asset requirements, terrain and routes except for the reported group\'s missing architectural assembly.'
-          : repairsSubstrate
-            ? 'Keep the existing composition and edit only the reported group\'s substrate mismatch.'
-            : repairsCoverage
-              ? 'Keep the existing composition and fill only the reported group\'s unexplained spatial gap or under-served frontage.'
-              : repairsLayers
-                ? 'Keep the existing composition and complete only the reported group and composition layer.'
-            : 'Keep the existing composition, placements, asset requirements, terrain and routes.';
+        const localInstruction = repairsSubstrate ? LOCAL_SUBSTRATE_REPAIR_INSTRUCTION : LOCAL_REPAIR_INSTRUCTION;
+        const preservationInstruction = repairsSubstrate
+          ? 'Keep the existing composition and edit only the reported group\'s substrate mismatch.'
+          : 'Keep the existing composition, placements, asset requirements, terrain and routes.';
         try {
           const repairResponse = await llmChat([
             { role: 'system', content: systemPrompt },
@@ -4002,7 +3928,7 @@ async function discoverMapCodeWithRepairs(
       executionRepairAttempts += 1;
       repairAttempts += 1;
       const timeoutRepairGuidance = /script execution timed out/i.test(executionError)
-        ? `\n\nThis was an execution timeout. Do not scale loop counts from map width, map area, or fine coordinate steps. Replace manual area scans with bounded api.gridPoints, api.poissonDisk, or curve-sampling results and iterate each result once. Avoid while loops and nested placement loops; keep each explicit loop below ${MAX_POINT_RESULTS} iterations and total placements below ${MAX_PLACEMENTS}.`
+        ? `\n\nThis was an execution timeout. Do not scale loop counts from map width, map area, or fine coordinate steps. Replace manual area scans with bounded api.gridPoints, api.poissonDisk, api.sampleProbabilityField, api.grassField, api.optimizeLayout, or curve-sampling results and iterate each result once. Avoid while loops and nested placement loops; keep each explicit loop below ${MAX_POINT_RESULTS} iterations and total placements below ${MAX_PLACEMENTS}.`
         : '';
       const lockedObjectRepairGuidance = /locked_map_code_object:([^\s]+)/i.exec(executionError)
         ? `\n\nThe referenced object is locked and not refinable. Leave it unchanged. Do not replace api.move with api.removeObject for the same ID; instead adjust only objects whose catalog entry has refinable:true, or add unlocked supporting content elsewhere.`

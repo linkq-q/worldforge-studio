@@ -438,8 +438,12 @@ describe('map code planner', () => {
 
     expect(prompt).toContain('Unified scene ownership');
     expect(prompt).toContain("api.sceneIntent({kind:'natural'|'authored'");
-    expect(prompt).toContain('lightweight spatial contract');
+    expect(prompt).toContain('optional compression tools, not mandatory planning stages');
     expect(prompt).toContain('api.design({experienceMode');
+    expect(prompt).toContain('does not add objects, prune objects, or fill density');
+    expect(prompt).toContain('api.sampleProbabilityField');
+    expect(prompt).toContain('api.grassField');
+    expect(prompt).toContain('api.optimizeLayout');
     expect(prompt).toContain("substrate?:'dry'|'water'|'amphibious'|'underwater'");
     expect(prompt).toContain("spatialOrganization?:'centralized'|'linear'|'radial'|'grid'|'clustered'|'courtyard-network'");
     expect(prompt).toContain("footprintFamily?:'bar'|'l-shape'|'u-shape'|'closed-court'|'cross'|'ring'|'tower-podium'|'multi-wing'|'free-polygon'");
@@ -999,7 +1003,7 @@ describe('map code planner', () => {
     ]));
   });
 
-  it('asks AI to repair an authored garden that omitted every structural anchor', async () => {
+  it('reports an authored garden with no structural anchor without inventing one', async () => {
     const gate = { ...testAsset('moon-gate', '月洞门'), tags: ['garden', 'gate'] };
     const incomplete = `function plan(api) {
       api.sceneIntent({ kind: 'authored', reason: '中式园林是人工营造的文化空间' });
@@ -1022,19 +1026,16 @@ describe('map code planner', () => {
       reuseExistingAssets: true, reusableAssetIds: [gate.id],
       minNewAssets: 0, maxNewAssets: 0, scope: 'scene'
     });
-    const repairRequest = JSON.parse(String((fetchImpl.mock.calls[1]?.[1] as RequestInit | undefined)?.body)) as {
-      messages: Array<{ content: string }>;
-    };
-
-    expect(fetchImpl).toHaveBeenCalledTimes(2);
-    expect(repairRequest.messages.at(-1)?.content).toContain('authored_scene_missing_structure');
+    expect(fetchImpl).toHaveBeenCalledTimes(1);
     expect(suggestion.codePlan?.sceneIntent).toBe('authored');
-    expect(suggestion.operations).toEqual(expect.arrayContaining([
-      expect.objectContaining({ type: 'object.add', object: expect.objectContaining({ assetId: gate.id, locked: true }) })
+    expect(suggestion.operations.some((operation) => operation.type === 'object.add')).toBe(false);
+    expect(suggestion.codePlan?.repairAttempts).toBe(0);
+    expect(suggestion.diagnostics).toEqual(expect.arrayContaining([
+      expect.objectContaining({ code: 'scene.program-incomplete', repaired: false })
     ]));
   });
 
-  it('repairs missing and underfilled promised layers without filling intentional clear space', async () => {
+  it('reports promised layer gaps without auto-filling intentional clear space', async () => {
     const incomplete = `function plan(api) {
       api.sceneIntent({ kind:'authored', reason:'人工园林' });
       api.design({
@@ -1077,22 +1078,16 @@ describe('map code planner', () => {
       apiBase: 'https://example.test', provider: 'gpt', fetchImpl,
       minNewAssets: 0, maxNewAssets: 0, scope: 'scene'
     });
-    const repairRequest = JSON.parse(String((fetchImpl.mock.calls[1]?.[1] as RequestInit | undefined)?.body)) as {
-      messages: Array<{ content: string }>;
-    };
     const applied = applyMapOperations(createEmptyMap(), suggestion.operations);
 
-    expect(fetchImpl).toHaveBeenCalledTimes(2);
-    expect(repairRequest.messages.at(-1)?.content).toContain('scene_group_missing_layer:entry:3');
-    expect(repairRequest.messages.at(-1)?.content).toContain('scene_group_underfilled_layer:entry:1:target=2');
-    expect(repairRequest.messages.at(-1)?.content).toContain('Do not lower or delete minCount');
-    expect(repairRequest.messages.at(-1)?.content).not.toContain('scene_group_oversized_clear_space');
+    expect(fetchImpl).toHaveBeenCalledTimes(1);
+    expect(suggestion.codePlan?.repairAttempts).toBe(0);
     expect(suggestion.codePlan?.code).toContain("region:{kind:'polygon',points:[[-9,-40],[9,-40],[9,-18],[-9,-18]]}");
-    expect(applied.objects.filter((object) => object.designGroupId === 'entry')).toEqual(expect.arrayContaining([
-      expect.objectContaining({ name: '园门', compositionLayer: 1 }),
-      expect.objectContaining({ name: '入口厢房', compositionLayer: 1 }),
-      expect.objectContaining({ name: '石桌凳', compositionLayer: 2 }),
-      expect.objectContaining({ name: '竹石组景', compositionLayer: 3 })
+    expect(applied.objects.filter((object) => object.designGroupId === 'entry')).toEqual([
+      expect.objectContaining({ name: '园门', compositionLayer: 1 })
+    ]);
+    expect(suggestion.diagnostics).toEqual(expect.arrayContaining([
+      expect.objectContaining({ code: 'scene.program-incomplete', repaired: false })
     ]));
   });
 
@@ -1123,7 +1118,7 @@ describe('map code planner', () => {
     expect(suggestion.codePlan?.repairAttempts).toBe(0);
   });
 
-  it('targets only an underused built group when footprint, frontage and land-use coverage are low', async () => {
+  it('reports an underused built group without injecting footprint or frontage content', async () => {
     const sparse = `function plan(api) {
       api.sceneIntent({kind:'authored',reason:'roadside district'});
       api.design({groups:[{id:'district',name:'街区',spatialRole:'urban-fabric',
@@ -1141,21 +1136,18 @@ describe('map code planner', () => {
     });
     const fetchImpl = vi.fn().mockResolvedValueOnce(response(sparse)).mockResolvedValueOnce(response(repaired));
 
-    await generateMapCodeSuggestion('生成道路两侧紧凑的建筑街区', createEmptyMap('District','district',[64,12,64]), [], {
+    const suggestion = await generateMapCodeSuggestion('生成道路两侧紧凑的建筑街区', createEmptyMap('District','district',[64,12,64]), [], {
       apiBase:'https://example.test',provider:'gpt',fetchImpl,minNewAssets:0,maxNewAssets:0,scope:'scene'
     });
-    const repairRequest = JSON.parse(String((fetchImpl.mock.calls[1]?.[1] as RequestInit | undefined)?.body)) as {
-      messages:Array<{content:string}>;
-    };
-    const instruction = repairRequest.messages.at(-1)?.content ?? '';
-    expect(instruction).toContain('scene_group_building_coverage_low:district');
-    expect(instruction).toContain('scene_group_frontage_low:district');
-    expect(instruction).toContain('scene_group_unassigned_space:district');
-    expect(instruction).toContain('Do not satisfy spatial coverage with lamps, plants or tiny props');
-    expect(instruction).toContain('edit only the reported design group');
+    expect(fetchImpl).toHaveBeenCalledTimes(1);
+    expect(suggestion.operations.filter((operation) => operation.type === 'object.add')).toHaveLength(1);
+    expect(suggestion.codePlan?.repairAttempts).toBe(0);
+    expect(suggestion.diagnostics).toEqual(expect.arrayContaining([
+      expect.objectContaining({ code: 'scene.program-incomplete', repaired: false })
+    ]));
   });
 
-  it('locally completes an authored landmark made only of isolated structures', async () => {
+  it('reports an isolated authored landmark without inventing an assembly', async () => {
     const incomplete = `function plan(api) {
       api.sceneIntent({kind:'authored',reason:'仪式入口'});
       api.design({groups:[{id:'entry',name:'入口',spatialRole:'landmark-ensemble',
@@ -1183,18 +1175,15 @@ describe('map code planner', () => {
       apiBase: 'https://example.test', provider: 'gpt', fetchImpl,
       minNewAssets: 0, maxNewAssets: 0, scope: 'scene', discoveryOnly: true
     });
-    const repairRequest = JSON.parse(String((fetchImpl.mock.calls[1]?.[1] as RequestInit | undefined)?.body)) as {
-      messages: Array<{ content: string }>;
-    };
     const applied = applyMapOperations(map, suggestion.operations);
 
-    expect(fetchImpl).toHaveBeenCalledTimes(2);
-    expect(repairRequest.messages.at(-1)?.content).toContain('scene_group_missing_assembly:entry');
-    expect(repairRequest.messages.at(-1)?.content).toContain('placement loops and asset declarations within that group');
-    expect(applied.designSemantics.assemblies).toEqual([expect.objectContaining({ id: 'entry-shell', topology: 'path' })]);
-    expect(applied.objects.filter((object) => object.assemblyId === 'entry-shell')).toHaveLength(3);
-    expect(applied.objects).toHaveLength(6);
-    expect(suggestion.diagnostics?.some((issue) => issue.code === 'scene.program-incomplete')).toBe(false);
+    expect(fetchImpl).toHaveBeenCalledTimes(1);
+    expect(applied.designSemantics.assemblies).toEqual([]);
+    expect(applied.objects).toHaveLength(3);
+    expect(suggestion.codePlan?.repairAttempts).toBe(0);
+    expect(suggestion.diagnostics).toEqual(expect.arrayContaining([
+      expect.objectContaining({ code: 'scene.program-incomplete', repaired: false })
+    ]));
   });
 
   it('does not treat assembly labels on three isolated objects as a connected building', () => {
@@ -1212,7 +1201,7 @@ describe('map code planner', () => {
     ]));
   });
 
-  it('repairs a city plan whose named districts have no regions and whose props mask missing architecture', async () => {
+  it('reports named districts with missing regions without redesigning the city', async () => {
     const sparse = `function plan(api) {
       api.sceneIntent({kind:'authored',reason:'失落海洋城市'});
       api.design({experienceMode:'sequential',intent:'神殿和港口',groups:[
@@ -1233,14 +1222,9 @@ describe('map code planner', () => {
       apiBase: 'https://example.test', provider: 'gpt', fetchImpl,
       minNewAssets: 0, maxNewAssets: 0, scope: 'scene', discoveryOnly: true
     });
-    const repairRequest = JSON.parse(String((fetchImpl.mock.calls[1]?.[1] as RequestInit | undefined)?.body)) as {
-      messages: Array<{ content: string }>;
-    };
-
-    expect(fetchImpl).toHaveBeenCalledTimes(2);
-    expect(repairRequest.messages.at(-1)?.content).toContain('scene_group_region_missing:citadel');
-    expect(repairRequest.messages.at(-1)?.content).toContain('exact unique substring');
-    expect(repairRequest.messages.at(-1)?.content).toContain('Never return the full function');
+    expect(fetchImpl).toHaveBeenCalledTimes(1);
+    expect(suggestion.operations.filter((operation) => operation.type === 'object.add')).toHaveLength(14);
+    expect(suggestion.codePlan?.repairAttempts).toBe(0);
     expect(suggestion.diagnostics).toEqual(expect.arrayContaining([
       expect.objectContaining({ code: 'scene.program-incomplete', repaired: false })
     ]));
@@ -1267,7 +1251,7 @@ describe('map code planner', () => {
     expect(suggestion.diagnostics?.some((issue) => issue.code === 'roadside.route-unbound')).toBe(false);
   });
 
-  it('keeps a usable plan when the optional scene-completion request fails', async () => {
+  it('keeps a usable plan without requesting aesthetic scene completion', async () => {
     const incomplete = `function plan(api) {
       api.sceneIntent({ kind:'authored', reason:'人工园林' });
       api.design({
@@ -1297,22 +1281,23 @@ describe('map code planner', () => {
       onProgress: (event) => progress.push(event.label)
     });
 
-    expect(fetchImpl).toHaveBeenCalledTimes(2);
+    expect(fetchImpl).toHaveBeenCalledTimes(1);
     expect(suggestion.operations.some((operation) => operation.type === 'object.add')).toBe(true);
-    expect(suggestion.codePlan?.repairAttempts).toBe(1);
+    expect(suggestion.codePlan?.repairAttempts).toBe(0);
     expect(suggestion.diagnostics).toEqual(expect.arrayContaining([
       expect.objectContaining({ code: 'scene.program-incomplete', repaired: false })
     ]));
-    expect(progress).toContain('场景自动补全暂不可用，已保留当前可用规划');
+    expect(progress).not.toContain('场景自动补全暂不可用，已保留当前可用规划');
   });
 
-  it('keeps all existing placements when an optional repair rewrites the whole program', async () => {
+  it('does not request an aesthetic rewrite for declared layer metadata', async () => {
     const original = `function plan(api) {
       api.sceneIntent({kind:'authored',reason:'花园'});
       api.design({experienceMode:'sequential',intent:'花园',groups:[{
         id:'garden',name:'花园',intent:'休憩',region:{kind:'circle',center:[0,0],radius:12},
         layers:[{level:1,intent:'树木',density:'normal'},{level:3,intent:'座椅',density:'normal'}]
       }],focuses:[],viewpoints:[],relations:[]});
+      api.place({name:'园亭',position:[0,-5],role:'structure',groupId:'garden',layer:1});
       for (let i=0;i<12;i++) api.place({name:'树',position:[i-6,4],role:'environment',groupId:'garden',layer:1});
     }`;
     const rewritten = `function plan(api) {
@@ -1331,20 +1316,22 @@ describe('map code planner', () => {
       minNewAssets: 0, maxNewAssets: 0, scope: 'scene', discoveryOnly: true
     });
 
-    expect(suggestion.operations.filter((operation) => operation.type === 'object.add')).toHaveLength(12);
+    expect(fetchImpl).toHaveBeenCalledTimes(1);
+    expect(suggestion.operations.filter((operation) => operation.type === 'object.add')).toHaveLength(13);
     expect(suggestion.codePlan?.code).toBe(original);
     expect(suggestion.diagnostics).toEqual(expect.arrayContaining([
       expect.objectContaining({ code: 'scene.program-incomplete', repaired: false })
     ]));
   });
 
-  it('rejects a small targeted edit when it silently thins unrelated placements', async () => {
+  it('does not request a density edit that could thin unrelated placements', async () => {
     const original = `function plan(api) {
       api.sceneIntent({kind:'authored',reason:'花园'});
       api.design({experienceMode:'sequential',intent:'花园',groups:[{
         id:'garden',name:'花园',intent:'休憩',region:{kind:'circle',center:[0,0],radius:12},
         layers:[{level:1,intent:'树木',density:'normal'},{level:3,intent:'座椅',density:'normal'}]
       }],focuses:[],viewpoints:[],relations:[]});
+      api.place({name:'园亭',position:[0,-5],role:'structure',groupId:'garden',layer:1});
       for (let i=0;i<12;i++) api.place({name:'树',position:[i-6,4],role:'environment',groupId:'garden',layer:1});
     }`;
     const repair = JSON.stringify({ edits: [{
@@ -1361,11 +1348,12 @@ describe('map code planner', () => {
       minNewAssets: 0, maxNewAssets: 0, scope: 'scene', discoveryOnly: true
     });
 
-    expect(suggestion.operations.filter((operation) => operation.type === 'object.add')).toHaveLength(12);
+    expect(fetchImpl).toHaveBeenCalledTimes(1);
+    expect(suggestion.operations.filter((operation) => operation.type === 'object.add')).toHaveLength(13);
     expect(suggestion.codePlan?.code).toBe(original);
   });
 
-  it('retains a usable scene when its optional local completion edit times out', async () => {
+  it('does not run risky completion code for an underfilled semantic layer', async () => {
     const underfilled = `function plan(api) {
       api.sceneIntent({ kind:'authored', reason:'人工园林' });
       api.design({
@@ -1399,9 +1387,10 @@ describe('map code planner', () => {
       minNewAssets: 0, maxNewAssets: 0, scope: 'scene'
     });
 
-    expect(fetchImpl).toHaveBeenCalledTimes(2);
+    expect(fetchImpl).toHaveBeenCalledTimes(1);
     expect(suggestion.operations.filter((operation) => operation.type === 'object.add')).toHaveLength(1);
     expect(suggestion.codePlan?.code).toBe(underfilled);
+    expect(suggestion.codePlan?.repairAttempts).toBe(0);
     expect(suggestion.diagnostics).toEqual(expect.arrayContaining([
       expect.objectContaining({ code: 'scene.program-incomplete', repaired: false })
     ]));
@@ -2265,7 +2254,7 @@ describe('map code planner', () => {
     ]));
   });
 
-  it('uses uniform near-to-far grass feedback for one optional targeted scene correction', async () => {
+  it('reports uniform near-to-far grass without rewriting the authored ecology', async () => {
     const map = createEmptyMap('草层修正', 'map-grass-correction');
     const broad = `function plan(api) {
       api.sceneIntent({kind:'natural',reason:'pond meadow'});
@@ -2286,20 +2275,15 @@ describe('map code planner', () => {
       apiBase:'https://example.test',provider:'gpt',fetchImpl,
       minNewAssets:0,maxNewAssets:0,scope:'scene'
     });
-    const repairRequest = JSON.parse(String((fetchImpl.mock.calls[1]?.[1] as RequestInit | undefined)?.body)) as {
-      messages:Array<{content:string}>
-    };
-
-    expect(fetchImpl).toHaveBeenCalledTimes(2);
-    expect(repairRequest.messages.at(-1)?.content).toContain('scene.vegetation-uniform');
-    expect(suggestion.codePlan?.repairAttempts).toBe(1);
-    expect(suggestion.operations.filter((operation) => operation.type === 'grass.generate')).toHaveLength(2);
-    expect(suggestion.diagnostics).not.toEqual(expect.arrayContaining([
+    expect(fetchImpl).toHaveBeenCalledTimes(1);
+    expect(suggestion.codePlan?.repairAttempts).toBe(0);
+    expect(suggestion.operations.filter((operation) => operation.type === 'grass.generate')).toHaveLength(1);
+    expect(suggestion.diagnostics).toEqual(expect.arrayContaining([
       expect.objectContaining({ code: 'scene.vegetation-uniform' })
     ]));
   });
 
-  it('keeps the original usable scene when optional visual correction returns invalid code', async () => {
+  it('keeps the original usable scene without requesting visual correction', async () => {
     const broad = `function plan(api) {
       api.sceneIntent({kind:'natural',reason:'pond meadow'});
       api.water('pond',{type:'lake',points:[[-6,-6],[6,-6],[6,6],[-6,6]],level:-0.2});
@@ -2314,7 +2298,7 @@ describe('map code planner', () => {
       minNewAssets:0,maxNewAssets:0,scope:'scene'
     });
 
-    expect(fetchImpl).toHaveBeenCalledTimes(2);
+    expect(fetchImpl).toHaveBeenCalledTimes(1);
     expect(suggestion.operations).toEqual(expect.arrayContaining([
       expect.objectContaining({type:'water.add'}),
       expect.objectContaining({type:'grass.generate',layerId:'blanket'})

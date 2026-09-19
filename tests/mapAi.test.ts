@@ -128,7 +128,7 @@ describe('map AI adapter', () => {
 
     expect(fetchImpl).toHaveBeenCalledOnce();
     expect(composerRequest.messages[0].content).toContain('Unified scene ownership');
-    expect(composerRequest.messages[0].content).toContain('lightweight spatial contract');
+    expect(composerRequest.messages[0].content).toContain('optional compression tools, not mandatory planning stages');
     expect(composerRequest.messages[0].content).toContain('api.design({experienceMode');
     expect(composerRequest.messages[1].content).toBe('Create a compact ceremonial arena');
     expect(suggestion.codePlan?.sceneIntent).toBe('authored');
