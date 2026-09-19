@@ -251,6 +251,42 @@ describe('map grass layers', () => {
     expect(removed.grassLayers).toEqual([]);
   });
 
+  it('persists and resamples a bounded custom density field', () => {
+    const map = createEmptyMap('custom grass field', 'custom-grass-field');
+    const generated = applyMapOperations(map, [
+      { type: 'grass.layer.add', layer: { id: 'gradient' } },
+      {
+        type: 'grass.density.set',
+        layerId: 'gradient',
+        resolutionX: 2,
+        resolutionZ: 2,
+        densities: [0, 1, 0.25, 0.75]
+      }
+    ]);
+    const layer = generated.grassLayers[0];
+
+    expect(sampleGrassDensity(layer, generated, -generated.box.size[0] / 2, -generated.box.size[2] / 2)).toBe(0);
+    expect(sampleGrassDensity(layer, generated, generated.box.size[0] / 2, -generated.box.size[2] / 2)).toBe(1);
+    expect(sampleGrassDensity(layer, generated, -generated.box.size[0] / 2, generated.box.size[2] / 2)).toBe(0.25);
+    expect(sampleGrassDensity(layer, generated, generated.box.size[0] / 2, generated.box.size[2] / 2)).toBe(0.75);
+    expect(map.grassLayers).toEqual([]);
+  });
+
+  it('rejects malformed custom density fields atomically', () => {
+    const map = applyMapOperations(createEmptyMap(), [
+      { type: 'grass.layer.add', layer: { id: 'gradient' } }
+    ]);
+
+    expect(() => applyMapOperations(map, [{
+      type: 'grass.density.set',
+      layerId: 'gradient',
+      resolutionX: 2,
+      resolutionZ: 2,
+      densities: [0, 1, 0.5]
+    }])).toThrow('invalid_grass_density_field');
+    expect(map.grassLayers[0].densities.every((density) => density === 0)).toBe(true);
+  });
+
   it('generates deterministic soft regions, fades on slopes, and does not exclude underwater terrain', () => {
     const base = createEmptyMap('grass generation', 'grass-generation');
     base.terrain.heights.fill(-1.5);

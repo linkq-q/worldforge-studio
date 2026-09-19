@@ -51,6 +51,7 @@ import {
   createGrassLayer,
   fillGrassLayerInPlace,
   generateGrassRegionInPlace,
+  setGrassLayerDensitiesInPlace,
   updateGrassLayer,
   type GrassBrushMode,
   type GrassHabitat,
@@ -192,6 +193,7 @@ export type MapOperation =
   | { type: 'grass.layer.update'; layerId: string; patch: GrassLayerPatch }
   | { type: 'grass.layer.remove'; layerId: string }
   | { type: 'grass.fill'; layerId: string; density: number }
+  | { type: 'grass.density.set'; layerId: string; resolutionX: number; resolutionZ: number; densities: number[] }
   | { type: 'grass.brush'; layerId: string; mode: GrassBrushMode; point: [number, number]; size?: number; strength?: number; targetDensity?: number }
   | { type: 'grass.generate'; layerId: string; region: GrassRegion; density?: number; variation?: number; softness?: number; seed?: number; habitat?: GrassHabitat }
   | { type: 'guide.upsert'; guide: MapGuide }
@@ -381,6 +383,16 @@ export function applyMapOperations(map: EditableMap, operations: readonly MapOpe
       case 'grass.fill':
         requireFinite(operation.density, 'invalid_grass_density');
         fillGrassLayerInPlace(next, operation.layerId, operation.density);
+        break;
+      case 'grass.density.set':
+        if (!Array.isArray(operation.densities)) throw new Error('invalid_grass_density_field');
+        setGrassLayerDensitiesInPlace(
+          next,
+          operation.layerId,
+          operation.densities,
+          operation.resolutionX,
+          operation.resolutionZ
+        );
         break;
       case 'grass.brush':
         requirePoint2(operation.point, 'invalid_grass_point');

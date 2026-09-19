@@ -141,6 +141,25 @@ export function fillGrassLayerInPlace(map: EditableMap, layerId: string, density
   layer.densities.fill(clamp01(density));
 }
 
+export function setGrassLayerDensitiesInPlace(
+  map: EditableMap,
+  layerId: string,
+  densities: readonly number[],
+  resolutionX: number,
+  resolutionZ: number
+): void {
+  const layer = requireLayer(map, layerId);
+  const sourceX = positiveInt(resolutionX, 0);
+  const sourceZ = positiveInt(resolutionZ, 0);
+  if (sourceX < 2 || sourceZ < 2 || densities.length !== sourceX * sourceZ) {
+    throw new Error('invalid_grass_density_field');
+  }
+  const source = normalizeDensityArray(densities, sourceX * sourceZ);
+  layer.densities = sourceX === layer.resolutionX && sourceZ === layer.resolutionZ
+    ? source
+    : resampleDensity(source, sourceX, sourceZ, layer.resolutionX, layer.resolutionZ);
+}
+
 export function applyGrassBrushInPlace(
   map: EditableMap,
   layerId: string,

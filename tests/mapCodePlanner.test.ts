@@ -61,7 +61,7 @@ describe('map code planner', () => {
     }`, createEmptyMap());
     const positions = suggestion.operations
       .filter((operation) => operation.type === 'object.add')
-      .map((operation) => operation.object.transform.position);
+      .map((operation) => operation.object.transform?.position);
     expect(positions).toEqual([[13, 0, 6], [13, 2, 5], [13, 4, 4]]);
     expect(suggestion.codePlan?.functions).toContain('localToWorld3D');
   });
@@ -2727,6 +2727,62 @@ describe('map code planner', () => {
         expect(Math.hypot(points[left][0] - points[right][0], points[left][1] - points[right][1])).toBeGreaterThanOrEqual(5);
       }
     }
+  });
+
+  it('samples deterministic points from an arbitrary bounded probability field', () => {
+    const code = `function plan(api) {
+      const points = api.sampleProbabilityField(
+        { bounds:{minX:-20,maxX:20,minZ:-20,maxZ:20}, maxPoints:40, candidates:400, minDistance:2, seed:91 },
+        point => {
+          const radius = Math.hypot(point.x, point.z);
+          return (1 - api.smoothstep(4, 18, radius)) * (0.55 + 0.45 * api.noise2D(point.x, point.z, 0.15, 7));
+        }
+      );
+      for (const point of points) api.place({name:'tree-proxy',position:point});
+    }`;
+    const first = executeMapCodePlan(code, createEmptyMap());
+    const second = executeMapCodePlan(code, createEmptyMap());
+    const positions = first.operations.flatMap((operation) => operation.type === 'object.add'
+      ? [operation.object.transform?.position]
+      : []).filter(Boolean);
+
+    expect(positions.length).toBeGreaterThan(5);
+    const secondPositions = second.operations.flatMap((operation) => operation.type === 'object.add'
+      ? [operation.object.transform?.position]
+      : []).filter(Boolean);
+    expect(positions).toEqual(secondPositions);
+    expect(positions.every((position) => Math.hypot(position?.[0] ?? 99, position?.[2] ?? 99) < 18)).toBe(true);
+    for (let left = 0; left < positions.length; left += 1) {
+      for (let right = left + 1; right < positions.length; right += 1) {
+        expect(Math.hypot(
+          (positions[left]?.[0] ?? 0) - (positions[right]?.[0] ?? 0),
+          (positions[left]?.[2] ?? 0) - (positions[right]?.[2] ?? 0)
+        )).toBeGreaterThanOrEqual(2);
+      }
+    }
+    expect(first.codePlan?.functions).toEqual(expect.arrayContaining(['noise2D', 'place', 'sampleProbabilityField']));
+  });
+
+  it('serializes custom grass callbacks into a bounded density operation', () => {
+    const suggestion = executeMapCodePlan(`function plan(api) {
+      api.terrain('hills', {amplitude:4, roughness:0.3, seed:17});
+      api.grassField({id:'wild-growth',preset:'meadow',resolution:[5,4]}, sample => {
+        const centerFalloff = 1 - Math.min(1, Math.hypot(sample.x, sample.z) / 30);
+        return centerFalloff * (sample.slope < 35 ? 1 : 0);
+      });
+    }`, createEmptyMap());
+    const density = suggestion.operations.find((operation) => operation.type === 'grass.density.set');
+
+    expect(density).toEqual(expect.objectContaining({
+      type: 'grass.density.set',
+      layerId: 'wild-growth',
+      resolutionX: 5,
+      resolutionZ: 4
+    }));
+    if (density?.type !== 'grass.density.set') throw new Error('missing density field');
+    expect(density.densities).toHaveLength(20);
+    expect(density.densities.every((value) => value >= 0 && value <= 1)).toBe(true);
+    expect(suggestion.codePlan?.functions).toEqual(['grassField', 'terrain']);
   });
 
   it('accepts common object and corner-pair bounds for Poisson scattering', () => {

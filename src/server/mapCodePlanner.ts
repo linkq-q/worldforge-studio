@@ -84,6 +84,8 @@ const MAX_CODE_LENGTH = 40_000;
 const MAX_PLACEMENTS = 2_000;
 const MAX_SCENE_OPERATIONS = 256;
 const MAX_POINT_RESULTS = 512;
+const MAX_PROBABILITY_CANDIDATES = 4_096;
+const MAX_GRASS_FIELD_RESOLUTION = 64;
 const DISCOVERY_EXECUTION_TIMEOUT_MS = 500;
 const FINAL_EXECUTION_TIMEOUT_MS = 1_000;
 const REPLAY_EXECUTION_TIMEOUT_MS = 3_000;
@@ -97,6 +99,7 @@ api.terrain({preset:'plain'|'hills'|'valley'|'island'|'archipelago'|'canyon'|'cl
 api.modifyTerrain({modifier:'mountain'|'ridge'|'valley'|'basin'|'cliff'|'terrace'|'dune'|'island',region:{kind:'circle',center:[x,z],radius}|{kind:'path',points:[[x,z],...],width}|{kind:'polygon',points:[[x,z],...]},amplitude?:positiveNumber,softness?:number,direction?:degrees|[x,z],variation?:number,layers?:number|stepArray,layout?:'plateau'|'coast'|'canyon'|'wall'|'terraces',access?:'walkable'|'scenic',seed?});
 api.surface({id:'short-id',surface:'grass'|'sand'|'rock'|'soil'|'paving',material?:'default'|'compacted-earth'|'garden-stone'|'asphalt',region:{kind:'circle'|'path'|'polygon',...},intensity?,clearNatural?}); Use clearNatural:true only when the authored area must exclude loose natural objects. Route surfaces are clear automatically.
 api.grass({id:'short-id',name?,preset:'meadow'|'sand'|'wetland'|'farm'|'magic'|'alpine-moss',region:{kind:'circle',center:[x,z],radius}|{kind:'polygon',points:[[x,z],...]},density?,variation?,softness?,height?,mix?:{short?,tall?,flowers?},habitat?:{waterDistance?:[outerMin,preferredMin,preferredMax,outerMax],height?:[outerMin,preferredMin,preferredMax,outerMax]},seed?}); Habitat bands fade density smoothly at their outer limits. waterDistance is world units from the actual water edge, height is terrain Y; choose each layer's band from the intended ecology, not from a scene-name keyword.
+api.grassField({id:'short-id',name?,preset?,resolution?:number|[x,z],height?,mix?,seed?}, sample => density) writes a serializable bounded density field. sample provides x,z,u,v,height,slope,waterDistance,index; return a finite value from 0 to 1.
 api.foundation({name?,shape:'capsule'|'rounded-rectangle'|'polygon'|'path',under?:[objectReferenceOrExistingId,...],position?:[x,z]|[x,y,z],width?,depth?,margin?,cornerRadius?,points?:[[localX,localZ],...],curve?:'polyline'|'catmull-rom',closed?,top?:'level'|'slope'|'steps',thickness?,maxThickness?,slope?,slopeDirection?:radians,stepHeight?,stepCount?,material?}); The top is walkable, the bottom follows terrain, and terrain is never flattened.
 Mechanical ownership: preset:'plain' always writes a zero-height field; amplitude and roughness do not change it. api.terrain and api.modifyTerrain create landform elevation. api.surface only paints existing terrain and cannot create land, water or a shoreline. Water points define the actual water coverage. When the scene depends on a landform boundary, express that boundary with non-flat terrain or a terrain modifier and coordinate the surface and water regions with it; use a rectangular boundary only when the intended landform is rectangular.
 Enum fields are closed choices, not descriptions. Put descriptive meaning in id/name or comments; never write phrases such as "gentle central basin" in modifier or "packed earth" in surface.`;
@@ -1842,6 +1845,94 @@ function executeMapCodePlanInternal(
       });
       return id;
     },
+    grassField(
+      optionsValue: Record<string, unknown>,
+      densityFunction: (sample: {
+        x: number;
+        z: number;
+        u: number;
+        v: number;
+        height: number;
+        slope: number;
+        waterDistance: number;
+        index: number;
+      }) => number
+    ): string {
+      record('grassField');
+      const options = codeObject(optionsValue, 'invalid_map_code_grass_field_options');
+      if (typeof densityFunction !== 'function') throw new Error('invalid_map_code_grass_field_function');
+      const id = cleanId(options.id ?? options.name, 'grass');
+      const name = optionalString(options.name) ?? optionalString(options.id);
+      const presetValue = optionalString(options.preset);
+      const preset = GRASS_PRESET_IDS.includes(presetValue as GrassPresetId)
+        ? presetValue as GrassPresetId
+        : inferGrassPreset(`${presetValue ?? ''} ${name ?? ''}`);
+      const presetDefinition = GRASS_PRESET_DEFINITIONS.find((item) => item.id === preset) ?? GRASS_PRESET_DEFINITIONS[0];
+      const resolutionValue = options.resolution;
+      const resolution = Array.isArray(resolutionValue)
+        ? [
+          boundedCount(finite(resolutionValue[0]), 2, MAX_GRASS_FIELD_RESOLUTION),
+          boundedCount(finite(resolutionValue[1]), 2, MAX_GRASS_FIELD_RESOLUTION)
+        ] as const
+        : [
+          boundedCount(finite(resolutionValue ?? 32), 2, MAX_GRASS_FIELD_RESOLUTION),
+          boundedCount(finite(resolutionValue ?? 32), 2, MAX_GRASS_FIELD_RESOLUTION)
+        ] as const;
+      const requestedMix = options.mix && typeof options.mix === 'object' && !Array.isArray(options.mix)
+        ? options.mix as Record<string, unknown>
+        : undefined;
+      const mix = normalizeGrassMix(requestedMix ? {
+        short: optionalFinite(requestedMix.short),
+        tall: optionalFinite(requestedMix.tall),
+        flowers: optionalFinite(requestedMix.flowers)
+      } : undefined, presetDefinition.defaultMix);
+      const alreadyExists = map.grassLayers.some((layer) => layer.id === id)
+        || sceneOperations.some((operation) => operation.type === 'grass.layer.add' && operation.layer.id === id);
+      if (!alreadyExists) {
+        emitSceneOperation({
+          type: 'grass.layer.add',
+          layer: {
+            id,
+            name,
+            preset,
+            height: optionalFinite(options.height) ?? presetDefinition.defaultHeight,
+            mix,
+            seed: optionalFinite(options.seed) ?? map.seed + sceneOperations.length
+          }
+        });
+      }
+      const environmentMap = currentEnvironmentMap();
+      const bounds = getMapBounds(environmentMap);
+      const densities: number[] = [];
+      for (let zIndex = 0; zIndex < resolution[1]; zIndex += 1) {
+        const v = zIndex / (resolution[1] - 1);
+        const z = bounds.minZ + v * (bounds.maxZ - bounds.minZ);
+        for (let xIndex = 0; xIndex < resolution[0]; xIndex += 1) {
+          const u = xIndex / (resolution[0] - 1);
+          const x = bounds.minX + u * (bounds.maxX - bounds.minX);
+          const index = zIndex * resolution[0] + xIndex;
+          const density = densityFunction(Object.freeze({
+            x,
+            z,
+            u,
+            v,
+            height: sampleTerrainHeight(environmentMap, x, z),
+            slope: terrainSlopeDegrees(environmentMap, x, z),
+            waterDistance: distanceToWater(environmentMap, x, z),
+            index
+          }));
+          densities.push(clampFinite(density, 0, 1));
+        }
+      }
+      emitSceneOperation({
+        type: 'grass.density.set',
+        layerId: id,
+        resolutionX: resolution[0],
+        resolutionZ: resolution[1],
+        densities
+      });
+      return id;
+    },
     spawn(pointValue: Point2, yawDegrees = 0): void {
       record('spawn');
       spawnRequest = { point: point2(pointValue), yaw: finite(yawDegrees) * Math.PI / 180 };
@@ -2098,6 +2189,24 @@ function executeMapCodePlanInternal(
       record('poissonDisk');
       const bounds = normalizePoissonBounds(options.bounds, getMapBounds(map));
       return poissonDiskPoints(bounds, options.minDistance, options.maxPoints, options.attempts, options.seed ?? map.seed);
+    },
+    sampleProbabilityField(
+      options: {
+        bounds?: { minX: number; maxX: number; minZ: number; maxZ: number }
+          | { xMin: number; xMax: number; zMin: number; zMax: number }
+          | [Point2, Point2];
+        maxPoints?: number;
+        candidates?: number;
+        minDistance?: number;
+        seed?: number;
+      },
+      weightFunction: (point: Point2 & { x: number; z: number }, index: number) => number
+    ): Point2[] {
+      record('sampleProbabilityField');
+      if (!options || typeof options !== 'object') throw new Error('invalid_probability_field_options');
+      if (typeof weightFunction !== 'function') throw new Error('invalid_probability_field_function');
+      const bounds = normalizePoissonBounds(options.bounds, getMapBounds(map));
+      return sampleProbabilityFieldPoints(bounds, options, weightFunction);
     },
     tangentYaw(tangent: Point2 | { tangent: Point2 }): number {
       record('tangentYaw');
@@ -3093,6 +3202,7 @@ const SCENE_PREVIEW_OPERATION_TYPES = new Set([
   'grass.layer.update',
   'grass.layer.remove',
   'grass.fill',
+  'grass.density.set',
   'grass.brush',
   'grass.generate',
   'guide.upsert',
@@ -3462,8 +3572,8 @@ Scalar math: api.clamp(value,min,max), api.lerp(a,b,t), api.remap(value,inMin,in
 Transforms: api.rotate2D(point,angle,center?), api.mirrorPoint(point,'x'|'z',coordinate?), api.distance2D(a,b), api.tangentYaw(tangent), api.faceYaw(from,to). mirrorPoint with 'x' mirrors left/right around x=coordinate; 'z' mirrors front/back around z=coordinate.
 3D local frames: api.localToWorld3D(local:[right,up,forward],origin:[x,y,z],forward:[x,y,z],up?:[x,y,z]) -> [x,y,z]. It builds an orthonormal frame and rejects zero or parallel axes. Use it when one compact local rule should drive elevated, tilted or repeated positions; it does not rotate asset geometry beyond the existing rotationY/facing contract.
 Curves: api.linePoint(t,a,b) -> [x,z]; api.bezierPoint(t,p0,p1,p2,p3) -> {point,tangent,normal}; api.sampleBezier(...) -> point arrays; api.sampleBezierFrames(...) -> frame objects with point,tangent,normal; api.sampleBezierFramesBySpacing(...,spacing,gapRatio?) -> approximately even arc-length frames. frame.normal is the normalized left-side normal [-tangentZ,tangentX] as t increases.
-Fields: api.noise2D(x,z,scale?,seed?) -> [-1,1]; api.fbm2D(x,z,{scale?,octaves?,lacunarity?,gain?,seed?}) -> [-1,1].
-Layouts: api.circlePoint(index,count,radius,center?) -> [x,z]; api.ellipsePoint(index,count,radiusX,radiusZ,center?,phase?) -> [x,z]; api.gridPoints({center?,columns,rows,spacing}) -> points; api.poissonDisk({bounds?:{minX,maxX,minZ,maxZ},minDistance,maxPoints?,attempts?,seed?}) -> points.
+Fields: api.noise2D(x,z,scale?,seed?) -> [-1,1]; api.fbm2D(x,z,{scale?,octaves?,lacunarity?,gain?,seed?}) -> [-1,1]; api.grassField({id,name?,preset?,resolution?,...}, sample => density) persists a bounded custom density grid instead of executable code.
+Layouts: api.circlePoint(index,count,radius,center?) -> [x,z]; api.ellipsePoint(index,count,radiusX,radiusZ,center?,phase?) -> [x,z]; api.gridPoints({center?,columns,rows,spacing}) -> points; api.poissonDisk({bounds?:{minX,maxX,minZ,maxZ},minDistance,maxPoints?,attempts?,seed?}) -> points; api.sampleProbabilityField({bounds?,maxPoints?,candidates?,minDistance?,seed?}, (point,index) => weight) -> points. Weight is clamped to [0,1], candidates to 4096 and results to 512, so use any bounded mathematical field that serves the scene rather than choosing from a closed formula list.
 Architectural geometry: api.subdividePathBySpan({points,span,closed?,startInset?,endInset?,fit?:'stretch'|'center'}) returns bounded {start,end,center,tangent,length,index} bays; use each start/end with placeBetween instead of stretching one module. api.offsetPolygon({points,distance}) creates an outer arcade, wing or perimeter from a footprint. api.insetPolygon({points,distance}) creates a courtyard, setback tier or roof outline. api.gridInsideRegion({region:{kind:'circle',center,radius}|{kind:'polygon',points},spacing,angle?,inset?}) returns bounded column, room or parcel centers. Build major architecture hierarchically: footprint -> offset/inset depth layers -> massing tiers/stories -> boundary runs -> bays -> corner/entrance/ordinary modules. These helpers return geometry only; you still own entrances, structural roles and connected placements.
 Assets: api.requireAsset({key,name,prompt,tags?,variants?,dimensions:[width,height,depth]?,role:'structure'|'environment',optional?}) -> key; api.asset(key,index?) -> generated assetId. role is required in unified scene ownership; only loose natural decoration may be optional. Give each new asset plausible canonical dimensions so the greybox has its intended size before the model exists; otherwise its pending placeholder is only 1x1x1. Choose dimensions from the scene plan, not to compensate for unknown model output.
 Output: api.place({assetId?,name?,position:[x,z]|[x,y,z],rotationY?,facing?,scale?,size?,terrain?,role?,groupId?,layer?:1|2|3|4}); api.placeStreetFrontage(...) and api.placeAlongRoute(...) use existing routes. api.foundation(...) creates an independent editable foundation after its target objects are placed; pass their placement references or existing object IDs in under. Its bottom follows terrain and its top is level, sloped or stepped; keep maxThickness bounded. api.attach({assetId?,name?,parentId,kind:'supported'|'mounted',side?,offset?,anchorY?:'bottom'|'center'|'top',contact?,scale?,rotationY?,role?,groupId?,layer?}) attaches a child to an earlier placement or existing object. mounted side is the host-local north|south|east|west face, offset is [horizontal,vertical], anchorY selects the host's vertical baseline, and contact is embed depth. Entrances default to anchorY:'bottom'; offset remains host-relative. api.bridge({waterId,assetId?,name?,crossingCenter:[x,z],direction:[dx,dz],dimensions:[width,height,depth],kind?:'straight'|'curved',curveOffset?,segmentCount?,bankInset?,deckClearance?,abutments?,groupId?,layer?}) solves shoreline endpoints and water clearance.
@@ -5828,6 +5938,46 @@ function poissonDiskPoints(
     }
   }
   return points;
+}
+
+function sampleProbabilityFieldPoints(
+  rawBounds: { minX: number; maxX: number; minZ: number; maxZ: number },
+  options: { maxPoints?: number; candidates?: number; minDistance?: number; seed?: number },
+  weightFunction: (point: Point2 & { x: number; z: number }, index: number) => number
+): Point2[] {
+  const bounds = {
+    minX: finite(rawBounds.minX),
+    maxX: finite(rawBounds.maxX),
+    minZ: finite(rawBounds.minZ),
+    maxZ: finite(rawBounds.maxZ)
+  };
+  if (bounds.maxX <= bounds.minX || bounds.maxZ <= bounds.minZ) throw new Error('invalid_probability_field_bounds');
+  const maxPoints = boundedCount(options.maxPoints ?? 128, 1, MAX_POINT_RESULTS);
+  const candidates = boundedCount(options.candidates ?? maxPoints * 8, 1, MAX_PROBABILITY_CANDIDATES);
+  const minDistance = Math.max(0, finite(options.minDistance ?? 0));
+  const random = mulberry32(Math.trunc(finite(options.seed ?? 1)));
+  const points: Point2[] = [];
+  for (let index = 0; index < candidates && points.length < maxPoints; index += 1) {
+    const point = codePoint(
+      bounds.minX + random() * (bounds.maxX - bounds.minX),
+      bounds.minZ + random() * (bounds.maxZ - bounds.minZ)
+    ) as Point2 & { x: number; z: number };
+    const weight = clampFinite(weightFunction(Object.freeze(point), index), 0, 1);
+    if (random() > weight) continue;
+    if (minDistance > 0 && points.some((existing) => Math.hypot(existing[0] - point[0], existing[1] - point[1]) < minDistance)) {
+      continue;
+    }
+    points.push(point);
+  }
+  return points;
+}
+
+function terrainSlopeDegrees(map: EditableMap, x: number, z: number): number {
+  const stepX = Math.max(0.05, map.box.size[0] / Math.max(1, map.terrain.resolutionX - 1));
+  const stepZ = Math.max(0.05, map.box.size[2] / Math.max(1, map.terrain.resolutionZ - 1));
+  const dx = (sampleTerrainHeight(map, x + stepX, z) - sampleTerrainHeight(map, x - stepX, z)) / (stepX * 2);
+  const dz = (sampleTerrainHeight(map, x, z + stepZ) - sampleTerrainHeight(map, x, z - stepZ)) / (stepZ * 2);
+  return Math.atan(Math.hypot(dx, dz)) * 180 / Math.PI;
 }
 
 function normalizePoissonBounds(
