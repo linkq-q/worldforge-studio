@@ -86,6 +86,8 @@ const MAX_SCENE_OPERATIONS = 256;
 const MAX_POINT_RESULTS = 512;
 const MAX_PROBABILITY_CANDIDATES = 4_096;
 const MAX_GRASS_FIELD_RESOLUTION = 64;
+const MAX_LAYOUT_ITEMS = 64;
+const MAX_LAYOUT_ITERATIONS = 512;
 const DISCOVERY_EXECUTION_TIMEOUT_MS = 500;
 const FINAL_EXECUTION_TIMEOUT_MS = 1_000;
 const REPLAY_EXECUTION_TIMEOUT_MS = 3_000;
@@ -2208,6 +2210,37 @@ function executeMapCodePlanInternal(
       const bounds = normalizePoissonBounds(options.bounds, getMapBounds(map));
       return sampleProbabilityFieldPoints(bounds, options, weightFunction);
     },
+    optimizeLayout(
+      options: {
+        items: Array<{ id: string; position: Point2; rotationY?: number; fixed?: boolean }>;
+        bounds?: { minX: number; maxX: number; minZ: number; maxZ: number }
+          | { xMin: number; xMax: number; zMin: number; zMax: number }
+          | [Point2, Point2];
+        iterations?: number;
+        translationStep?: number;
+        rotationStep?: number;
+        temperature?: number;
+        seed?: number;
+      },
+      costFunction: (items: ReadonlyArray<{
+        id: string;
+        position: Point2 & { x: number; z: number };
+        rotationY: number;
+        fixed: boolean;
+      }>) => number
+    ) {
+      record('optimizeLayout');
+      if (!options || typeof options !== 'object' || !Array.isArray(options.items)) {
+        throw new Error('invalid_layout_optimizer_options');
+      }
+      if (typeof costFunction !== 'function') throw new Error('invalid_layout_optimizer_cost');
+      return optimizeLayoutItems(
+        options.items,
+        normalizePoissonBounds(options.bounds, getMapBounds(map)),
+        { ...options, seed: options.seed ?? map.seed },
+        costFunction
+      );
+    },
     tangentYaw(tangent: Point2 | { tangent: Point2 }): number {
       record('tangentYaw');
       const direction = point2(
@@ -3574,6 +3607,7 @@ Transforms: api.rotate2D(point,angle,center?), api.mirrorPoint(point,'x'|'z',coo
 Curves: api.linePoint(t,a,b) -> [x,z]; api.bezierPoint(t,p0,p1,p2,p3) -> {point,tangent,normal}; api.sampleBezier(...) -> point arrays; api.sampleBezierFrames(...) -> frame objects with point,tangent,normal; api.sampleBezierFramesBySpacing(...,spacing,gapRatio?) -> approximately even arc-length frames. frame.normal is the normalized left-side normal [-tangentZ,tangentX] as t increases.
 Fields: api.noise2D(x,z,scale?,seed?) -> [-1,1]; api.fbm2D(x,z,{scale?,octaves?,lacunarity?,gain?,seed?}) -> [-1,1]; api.grassField({id,name?,preset?,resolution?,...}, sample => density) persists a bounded custom density grid instead of executable code.
 Layouts: api.circlePoint(index,count,radius,center?) -> [x,z]; api.ellipsePoint(index,count,radiusX,radiusZ,center?,phase?) -> [x,z]; api.gridPoints({center?,columns,rows,spacing}) -> points; api.poissonDisk({bounds?:{minX,maxX,minZ,maxZ},minDistance,maxPoints?,attempts?,seed?}) -> points; api.sampleProbabilityField({bounds?,maxPoints?,candidates?,minDistance?,seed?}, (point,index) => weight) -> points. Weight is clamped to [0,1], candidates to 4096 and results to 512, so use any bounded mathematical field that serves the scene rather than choosing from a closed formula list.
+Relationships: api.optimizeLayout({items:[{id,position:[x,z],rotationY?,fixed?}],bounds?,iterations?,translationStep?,rotationStep?,temperature?,seed?}, items => cost) returns optimized items. The model owns the finite cost function: combine attraction, repulsion, target distance, alignment, access or other scene-specific terms. The solver only performs a bounded search over at most 64 items and 512 iterations; it does not place objects or impose a composition. Mark anchors fixed, then place the returned positions yourself.
 Architectural geometry: api.subdividePathBySpan({points,span,closed?,startInset?,endInset?,fit?:'stretch'|'center'}) returns bounded {start,end,center,tangent,length,index} bays; use each start/end with placeBetween instead of stretching one module. api.offsetPolygon({points,distance}) creates an outer arcade, wing or perimeter from a footprint. api.insetPolygon({points,distance}) creates a courtyard, setback tier or roof outline. api.gridInsideRegion({region:{kind:'circle',center,radius}|{kind:'polygon',points},spacing,angle?,inset?}) returns bounded column, room or parcel centers. Build major architecture hierarchically: footprint -> offset/inset depth layers -> massing tiers/stories -> boundary runs -> bays -> corner/entrance/ordinary modules. These helpers return geometry only; you still own entrances, structural roles and connected placements.
 Assets: api.requireAsset({key,name,prompt,tags?,variants?,dimensions:[width,height,depth]?,role:'structure'|'environment',optional?}) -> key; api.asset(key,index?) -> generated assetId. role is required in unified scene ownership; only loose natural decoration may be optional. Give each new asset plausible canonical dimensions so the greybox has its intended size before the model exists; otherwise its pending placeholder is only 1x1x1. Choose dimensions from the scene plan, not to compensate for unknown model output.
 Output: api.place({assetId?,name?,position:[x,z]|[x,y,z],rotationY?,facing?,scale?,size?,terrain?,role?,groupId?,layer?:1|2|3|4}); api.placeStreetFrontage(...) and api.placeAlongRoute(...) use existing routes. api.foundation(...) creates an independent editable foundation after its target objects are placed; pass their placement references or existing object IDs in under. Its bottom follows terrain and its top is level, sloped or stepped; keep maxThickness bounded. api.attach({assetId?,name?,parentId,kind:'supported'|'mounted',side?,offset?,anchorY?:'bottom'|'center'|'top',contact?,scale?,rotationY?,role?,groupId?,layer?}) attaches a child to an earlier placement or existing object. mounted side is the host-local north|south|east|west face, offset is [horizontal,vertical], anchorY selects the host's vertical baseline, and contact is embed depth. Entrances default to anchorY:'bottom'; offset remains host-relative. api.bridge({waterId,assetId?,name?,crossingCenter:[x,z],direction:[dx,dz],dimensions:[width,height,depth],kind?:'straight'|'curved',curveOffset?,segmentCount?,bankInset?,deckClearance?,abutments?,groupId?,layer?}) solves shoreline endpoints and water clearance.
@@ -5978,6 +6012,109 @@ function terrainSlopeDegrees(map: EditableMap, x: number, z: number): number {
   const dx = (sampleTerrainHeight(map, x + stepX, z) - sampleTerrainHeight(map, x - stepX, z)) / (stepX * 2);
   const dz = (sampleTerrainHeight(map, x, z + stepZ) - sampleTerrainHeight(map, x, z - stepZ)) / (stepZ * 2);
   return Math.atan(Math.hypot(dx, dz)) * 180 / Math.PI;
+}
+
+function optimizeLayoutItems(
+  rawItems: Array<{ id: string; position: Point2; rotationY?: number; fixed?: boolean }>,
+  rawBounds: { minX: number; maxX: number; minZ: number; maxZ: number },
+  options: {
+    iterations?: number;
+    translationStep?: number;
+    rotationStep?: number;
+    temperature?: number;
+    seed?: number;
+  },
+  costFunction: (items: ReadonlyArray<{
+    id: string;
+    position: Point2 & { x: number; z: number };
+    rotationY: number;
+    fixed: boolean;
+  }>) => number
+): Array<{
+  id: string;
+  position: Point2 & { x: number; z: number };
+  rotationY: number;
+  fixed: boolean;
+}> {
+  if (rawItems.length === 0 || rawItems.length > MAX_LAYOUT_ITEMS) throw new Error('invalid_layout_optimizer_items');
+  const bounds = {
+    minX: finite(rawBounds.minX),
+    maxX: finite(rawBounds.maxX),
+    minZ: finite(rawBounds.minZ),
+    maxZ: finite(rawBounds.maxZ)
+  };
+  if (bounds.maxX <= bounds.minX || bounds.maxZ <= bounds.minZ) throw new Error('invalid_layout_optimizer_bounds');
+  const ids = new Set<string>();
+  type MutableLayoutItem = { id: string; position: Point2; rotationY: number; fixed: boolean };
+  const initial: MutableLayoutItem[] = rawItems.map((raw) => {
+    if (!raw || typeof raw !== 'object') throw new Error('invalid_layout_optimizer_item');
+    const id = cleanText(String(raw.id ?? ''), 80);
+    if (!id || ids.has(id)) throw new Error('invalid_layout_optimizer_item_id');
+    ids.add(id);
+    const position = point2(raw.position);
+    return {
+      id,
+      position: codePoint(
+        clampFinite(position[0], bounds.minX, bounds.maxX),
+        clampFinite(position[1], bounds.minZ, bounds.maxZ)
+      ),
+      rotationY: finite(raw.rotationY ?? 0),
+      fixed: raw.fixed === true
+    };
+  });
+  const movableIndices = initial.flatMap((item, index) => item.fixed ? [] : [index]);
+  const iterations = boundedCount(options.iterations ?? 192, 1, MAX_LAYOUT_ITERATIONS);
+  const extent = Math.max(bounds.maxX - bounds.minX, bounds.maxZ - bounds.minZ);
+  const translationStep = clampFinite(options.translationStep ?? extent * 0.08, 0, extent);
+  const rotationStep = clampFinite(options.rotationStep ?? Math.PI / 6, 0, Math.PI * 2);
+  const temperature = Math.max(0, finite(options.temperature ?? 0));
+  const random = mulberry32(Math.trunc(finite(options.seed ?? 1)));
+  const cloneItems = (items: readonly MutableLayoutItem[]): MutableLayoutItem[] => items.map((item) => ({
+    ...item,
+    position: codePoint(item.position[0], item.position[1])
+  }));
+  const evaluate = (items: readonly MutableLayoutItem[]): number => {
+    const view = Object.freeze(items.map((item) => Object.freeze({
+      id: item.id,
+      position: Object.freeze(codePoint(item.position[0], item.position[1])) as Point2 & { x: number; z: number },
+      rotationY: item.rotationY,
+      fixed: item.fixed
+    })));
+    const value = costFunction(view);
+    if (typeof value !== 'number' || !Number.isFinite(value)) throw new Error('invalid_layout_optimizer_cost');
+    return value;
+  };
+  let current = cloneItems(initial);
+  let currentCost = evaluate(current);
+  let best = cloneItems(current);
+  let bestCost = currentCost;
+  for (let iteration = 0; iteration < iterations && movableIndices.length > 0; iteration += 1) {
+    const progress = iteration / iterations;
+    const stepScale = 1 - progress * 0.85;
+    const targetIndex = movableIndices[Math.floor(random() * movableIndices.length)];
+    const candidate = cloneItems(current);
+    const target = candidate[targetIndex];
+    target.position = codePoint(
+      clampFinite(target.position[0] + (random() * 2 - 1) * translationStep * stepScale, bounds.minX, bounds.maxX),
+      clampFinite(target.position[1] + (random() * 2 - 1) * translationStep * stepScale, bounds.minZ, bounds.maxZ)
+    );
+    target.rotationY += (random() * 2 - 1) * rotationStep * stepScale;
+    const candidateCost = evaluate(candidate);
+    const currentTemperature = temperature * (1 - progress);
+    const accept = candidateCost <= currentCost
+      || (currentTemperature > 0 && random() < Math.exp((currentCost - candidateCost) / currentTemperature));
+    if (!accept) continue;
+    current = candidate;
+    currentCost = candidateCost;
+    if (candidateCost < bestCost) {
+      best = cloneItems(candidate);
+      bestCost = candidateCost;
+    }
+  }
+  return best.map((item) => ({
+    ...item,
+    position: codePoint(item.position[0], item.position[1]) as Point2 & { x: number; z: number }
+  }));
 }
 
 function normalizePoissonBounds(

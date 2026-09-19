@@ -2785,6 +2785,52 @@ describe('map code planner', () => {
     expect(suggestion.codePlan?.functions).toEqual(['grassField', 'terrain']);
   });
 
+  it('lets a model-authored cost function solve attraction and repulsion without moving fixed anchors', () => {
+    const suggestion = executeMapCodePlan(`function plan(api) {
+      const initial = [
+        {id:'table',position:[8,2],fixed:true},
+        {id:'chair-a',position:[-12,-9]},
+        {id:'chair-b',position:[-10,-8]}
+      ];
+      const solved = api.optimizeLayout({
+        items:initial,bounds:{minX:-20,maxX:20,minZ:-20,maxZ:20},
+        iterations:512,translationStep:5,rotationStep:0,seed:33
+      }, items => {
+        const table = items[0];
+        const a = items[1];
+        const b = items[2];
+        const targetA = (a.position.x - (table.position.x - 4)) ** 2 + (a.position.z - table.position.z) ** 2;
+        const targetB = (b.position.x - (table.position.x + 4)) ** 2 + (b.position.z - table.position.z) ** 2;
+        const separation = Math.hypot(a.position.x - b.position.x, a.position.z - b.position.z);
+        const repel = Math.max(0, 6 - separation) ** 2 * 8;
+        return targetA + targetB + repel;
+      });
+      for (const item of solved) api.place({name:item.id,position:item.position});
+    }`, createEmptyMap());
+    const placements = suggestion.operations.flatMap((operation) => operation.type === 'object.add'
+      ? [{ name: operation.object.name, position: operation.object.transform?.position }]
+      : []);
+    const byName = new Map(placements.map((item) => [item.name, item.position]));
+    const table = byName.get('table');
+    const chairA = byName.get('chair-a');
+    const chairB = byName.get('chair-b');
+
+    expect(table).toEqual([8, 0, 2]);
+    expect(Math.hypot((chairA?.[0] ?? 99) - 4, (chairA?.[2] ?? 99) - 2)).toBeLessThan(1.5);
+    expect(Math.hypot((chairB?.[0] ?? 99) - 12, (chairB?.[2] ?? 99) - 2)).toBeLessThan(1.5);
+    expect(Math.hypot(
+      (chairA?.[0] ?? 0) - (chairB?.[0] ?? 0),
+      (chairA?.[2] ?? 0) - (chairB?.[2] ?? 0)
+    )).toBeGreaterThan(6);
+    expect(suggestion.codePlan?.functions).toEqual(['optimizeLayout', 'place']);
+  });
+
+  it('rejects non-finite model-authored layout costs', () => {
+    expect(() => executeMapCodePlan(`function plan(api) {
+      api.optimizeLayout({items:[{id:'a',position:[0,0]}]}, () => Infinity);
+    }`, createEmptyMap())).toThrow('invalid_layout_optimizer_cost');
+  });
+
   it('accepts common object and corner-pair bounds for Poisson scattering', () => {
     for (const bounds of [
       `{ xMin:-12, xMax:12, zMin:-8, zMax:8 }`,
