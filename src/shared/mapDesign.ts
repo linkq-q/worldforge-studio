@@ -9,6 +9,10 @@ export const MAP_REVEAL_MODES = ['visible', 'screened', 'framed', 'sequence'] as
 export const MAP_RELATION_KINDS = ['attract', 'repel', 'support'] as const;
 export const MAP_SPATIAL_ROLES = ['landmark-ensemble', 'urban-fabric', 'open-space', 'landscape'] as const;
 export const MAP_ASSEMBLY_TOPOLOGIES = ['group', 'path', 'loop'] as const;
+export const MAP_ASSEMBLY_SPATIAL_ORGANIZATIONS = ['centralized', 'linear', 'radial', 'grid', 'clustered', 'courtyard-network'] as const;
+export const MAP_ASSEMBLY_FOOTPRINT_FAMILIES = ['bar', 'l-shape', 'u-shape', 'closed-court', 'cross', 'ring', 'tower-podium', 'multi-wing', 'free-polygon'] as const;
+export const MAP_ASSEMBLY_MASSING_PROFILES = ['monolith', 'base-body-crown', 'setback', 'stepped', 'tower-cluster', 'domed-hall-wings'] as const;
+export const MAP_ASSEMBLY_STRUCTURAL_RHYTHMS = ['wall-bays', 'colonnade', 'arcade', 'frame-bays', 'buttresses', 'continuous-truss', 'wall-opening-alternation'] as const;
 
 export type MapExperienceMode = typeof MAP_EXPERIENCE_MODES[number];
 export type MapDensityTone = typeof MAP_DENSITY_TONES[number];
@@ -17,6 +21,10 @@ export type MapRevealMode = typeof MAP_REVEAL_MODES[number];
 export type MapRelationKind = typeof MAP_RELATION_KINDS[number];
 export type MapSpatialRole = typeof MAP_SPATIAL_ROLES[number];
 export type MapAssemblyTopology = typeof MAP_ASSEMBLY_TOPOLOGIES[number];
+export type MapAssemblySpatialOrganization = typeof MAP_ASSEMBLY_SPATIAL_ORGANIZATIONS[number];
+export type MapAssemblyFootprintFamily = typeof MAP_ASSEMBLY_FOOTPRINT_FAMILIES[number];
+export type MapAssemblyMassingProfile = typeof MAP_ASSEMBLY_MASSING_PROFILES[number];
+export type MapAssemblyStructuralRhythm = typeof MAP_ASSEMBLY_STRUCTURAL_RHYTHMS[number];
 export type MapCompositionLayer = 1 | 2 | 3 | 4;
 
 export interface MapDesignLayerPolicy {
@@ -84,6 +92,11 @@ export interface MapDesignAssembly {
   openings?: number;
   stories?: number;
   moduleKeys?: string[];
+  spatialOrganization?: MapAssemblySpatialOrganization;
+  footprintFamily?: MapAssemblyFootprintFamily;
+  massingProfile?: MapAssemblyMassingProfile;
+  structuralRhythm?: MapAssemblyStructuralRhythm;
+  functionalSequence?: string[];
 }
 
 export interface MapDesignSemantics {
@@ -155,7 +168,12 @@ export function normalizeMapDesignSemantics(value: unknown, boxSize: Vec3): MapD
       topology: enumValue(item.topology, MAP_ASSEMBLY_TOPOLOGIES, 'group'),
       ...(item.openings !== undefined ? { openings: integer(item.openings, 0, 32, 0) } : {}),
       ...(item.stories !== undefined ? { stories: integer(item.stories, 1, 8, 1) } : {}),
-      ...(item.moduleKeys !== undefined ? { moduleKeys: ids(item.moduleKeys, 16) } : {})
+      ...(item.moduleKeys !== undefined ? { moduleKeys: ids(item.moduleKeys, 16) } : {}),
+      ...optionalEnumProperty('spatialOrganization', item.spatialOrganization, MAP_ASSEMBLY_SPATIAL_ORGANIZATIONS),
+      ...optionalEnumProperty('footprintFamily', item.footprintFamily, MAP_ASSEMBLY_FOOTPRINT_FAMILIES),
+      ...optionalEnumProperty('massingProfile', item.massingProfile, MAP_ASSEMBLY_MASSING_PROFILES),
+      ...optionalEnumProperty('structuralRhythm', item.structuralRhythm, MAP_ASSEMBLY_STRUCTURAL_RHYTHMS),
+      ...(item.functionalSequence !== undefined ? { functionalSequence: texts(item.functionalSequence, 12, 80) } : {})
     });
   }
 
@@ -280,6 +298,12 @@ function ids(value: unknown, limit: number): string[] {
   return Array.isArray(value) ? [...new Set(value.map(cleanId).filter(Boolean))].slice(0, limit) : [];
 }
 
+function texts(value: unknown, limit: number, textLimit: number): string[] {
+  return Array.isArray(value)
+    ? [...new Set(value.map((item) => text(item, '', textLimit)).filter(Boolean))].slice(0, limit)
+    : [];
+}
+
 function record(value: unknown): Record<string, unknown> {
   return value && typeof value === 'object' && !Array.isArray(value) ? value as Record<string, unknown> : {};
 }
@@ -304,6 +328,14 @@ function integer(value: unknown, min: number, max: number, fallback: number): nu
 
 function enumValue<const T extends readonly string[]>(value: unknown, values: T, fallback: T[number]): T[number] {
   return values.includes(value as T[number]) ? value as T[number] : fallback;
+}
+
+function optionalEnumProperty<const K extends string, const T extends readonly string[]>(
+  key: K,
+  value: unknown,
+  values: T
+): Partial<Record<K, T[number]>> {
+  return values.includes(value as T[number]) ? { [key]: value as T[number] } as Record<K, T[number]> : {};
 }
 
 function clamp(value: number, min: number, max: number): number {

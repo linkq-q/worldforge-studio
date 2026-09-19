@@ -107,6 +107,31 @@ describe('map design semantics', () => {
     expect(design.assemblies[0].moduleKeys).toEqual(['wall-bay','column']);
   });
 
+  it('preserves independent form decisions for a compound building', () => {
+    const design = normalizeMapDesignSemantics({ groups:[{id:'city'}], assemblies:[
+      {
+        id:'civic-hall',groupId:'city',intent:'layered civic complex',topology:'group',
+        spatialOrganization:'courtyard-network',footprintFamily:'multi-wing',
+        massingProfile:'base-body-crown',structuralRhythm:'arcade',
+        functionalSequence:['前庭','门厅','中庭','侧翼','后勤院']
+      },
+      {
+        id:'invalid-form',groupId:'city',topology:'group',
+        spatialOrganization:'maze',footprintFamily:'blob',massingProfile:'flat',structuralRhythm:'random'
+      }
+    ] }, [96,16,96]);
+
+    expect(design.assemblies[0]).toMatchObject({
+      spatialOrganization:'courtyard-network',footprintFamily:'multi-wing',
+      massingProfile:'base-body-crown',structuralRhythm:'arcade',
+      functionalSequence:['前庭','门厅','中庭','侧翼','后勤院']
+    });
+    expect(design.assemblies[1]).not.toHaveProperty('spatialOrganization');
+    expect(design.assemblies[1]).not.toHaveProperty('footprintFamily');
+    expect(design.assemblies[1]).not.toHaveProperty('massingProfile');
+    expect(design.assemblies[1]).not.toHaveProperty('structuralRhythm');
+  });
+
   it('does not turn a broad group attraction into relocation of an authored building', () => {
     const map = createEmptyMap();
     const gate = createMapObject('入口', null);

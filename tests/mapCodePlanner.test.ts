@@ -403,7 +403,11 @@ describe('map code planner', () => {
     expect(prompt).toContain("api.sceneIntent({kind:'natural'|'authored'");
     expect(prompt).toContain('Decide semantically from the requested place');
     expect(prompt).toContain('api.design({experienceMode');
-    expect(prompt).toContain("assemblies:[{id,groupId,intent,topology:'group'|'path'|'loop',openings?,stories?,moduleKeys?:string[]}]");
+    expect(prompt).toContain("spatialOrganization?:'centralized'|'linear'|'radial'|'grid'|'clustered'|'courtyard-network'");
+    expect(prompt).toContain("footprintFamily?:'bar'|'l-shape'|'u-shape'|'closed-court'|'cross'|'ring'|'tower-podium'|'multi-wing'|'free-polygon'");
+    expect(prompt).toContain("massingProfile?:'monolith'|'base-body-crown'|'setback'|'stepped'|'tower-cluster'|'domed-hall-wings'");
+    expect(prompt).toContain("structuralRhythm?:'wall-bays'|'colonnade'|'arcade'|'frame-bays'|'buttresses'|'continuous-truss'|'wall-opening-alternation'");
+    expect(prompt).toContain('functionalSequence?:string[]');
     expect(prompt).toContain("assemblyId?:string and assemblyRole?:'opening'");
     expect(prompt).toContain('derive module count from perimeter length');
     expect(prompt).toContain('Decide which major built form is an assembly before requireAsset');
