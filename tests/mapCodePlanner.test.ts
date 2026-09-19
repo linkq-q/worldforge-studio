@@ -50,24 +50,23 @@ describe('map code planner', () => {
     expect(suggestion.diagnostics).toEqual(expect.arrayContaining([expect.objectContaining({code:'code.geometry-unresolved'})]));
   });
 
-  it.each(['indoor', 'outdoor'] as const)('uses activity-led detail and interaction-based decomposition for %s without expanding the budget', (sceneMode) => {
+  it.each(['indoor', 'outdoor'] as const)('documents local object composition mechanics for %s without prescribing content', (sceneMode) => {
     const map = createEmptyMap('scene', 'activity', [24, 8, 24], 'voxel', sceneMode);
     const prompt = buildMapCodePlannerSystemPrompt(map, [], 0, 12, 'scene');
-    expect(prompt).toContain('Activity-led near-field composition');
-    expect(prompt).toContain('EXISTING asset budget');
-    expect(prompt).toContain('must retain its own identity');
-    expect(prompt).toContain('Anchor a local activity cluster once, then place its related props in host-local coordinates');
-    expect(prompt).toContain('Leave sourceGuideId unset for freely scattered scenery');
-    expect(prompt).toContain('Do not use a fixed building-name checklist');
-    expect(prompt).toContain('Repeated standalone buildings may use 2-3 coherent variants');
+    expect(prompt).toContain('Object composition mechanics');
+    expect(prompt).toContain("evidence:'unavailable'");
+    expect(prompt).toContain('keeps a separate child');
+    expect(prompt).toContain('Only route-derived objects should set sourceGuideId');
+    expect(prompt).toContain("Choose activity props, building variants, visible interiors and detail density from the user's request");
     expect(prompt).not.toContain('architecture, landmarks, creatures and functional objects at variants:1');
   });
 
-  it('plans for route-level and oblique views without forcing one primary focus', () => {
+  it('exposes viewpoints without prescribing one camera or spatial archetype', () => {
     const prompt = buildMapCodePlannerSystemPrompt(createEmptyMap(), [], 0, 12, 'scene');
-    expect(prompt).toContain('45-degree oblique overview');
-    expect(prompt).toContain('eye-level route viewpoints');
-    expect(prompt).toContain('street-and-block fabric');
+    expect(prompt).toContain("role:'entry'|'route'|'node'|'overview'");
+    expect(prompt).toContain('Inspect the scene from the viewpoints that matter to the request');
+    expect(prompt).not.toContain('45-degree oblique overview');
+    expect(prompt).not.toContain('street-and-block fabric');
     expect(prompt).not.toContain('For an authored multi-group scene, name one primary focus');
   });
 
@@ -309,7 +308,7 @@ describe('map code planner', () => {
     }`, map)).toThrow('indoor_map_code_outdoor_operation');
   });
 
-  it('gives the model a complete Lite-style code and environment design contract', () => {
+  it('gives the model a complete mechanical contract without scene recipes', () => {
     const prompt = buildMapCodePlannerSystemPrompt(createEmptyMap(), [], 2, 4);
 
     expect(prompt).toContain('Return only one synchronous JavaScript function: function plan(api) { ... }.');
@@ -322,40 +321,32 @@ describe('map code planner', () => {
     expect(prompt).toContain("Entrances default to anchorY:'bottom'");
     expect(prompt).toContain('Never use standalone api.place with [x,y,z] for a door, window, banner, sign or facade ornament');
     expect(prompt).toContain("api.mirrorPoint(point,'x'|'z',coordinate?)");
-    expect(prompt).toContain('For a continuous connected run, use one asset family and normally variants:1.');
-    expect(prompt).toContain('Continuous structures use gapRatio:0');
-    expect(prompt).toContain('connect the last point back to the first');
-    expect(prompt).toContain("Paired or axial decoration uses mirrorPoint and density:'tight'");
-    expect(prompt).toContain('complete a dedicated detail-fill pass');
     expect(prompt).toContain('api.keepDry([x,z],clearance?)');
     expect(prompt).toContain('api.waterPoint(waterId,[x,z],draft?)');
-    expect(prompt).toContain('rather than one ring');
     expect(prompt).toContain('api.routeNetwork({id,nodes:[{id,point:[x,z],role?}],edges:');
     expect(prompt).toContain('clearNatural:true');
     expect(prompt).toContain('api.ellipsePoint(index,count,radiusX,radiusZ');
     expect(prompt).toContain('mix?:{short?,tall?,flowers?}');
-    expect(prompt).toContain('facing:{normal:frame.normal}');
-    expect(prompt).toContain('poissonDisk plus noise2D/fbm2D');
-    expect(prompt).toContain('gridPoints with an explicit center and spacing');
+    expect(prompt).toContain('api.poissonDisk({bounds?');
+    expect(prompt).toContain('api.gridPoints({center?');
     expect(prompt).toContain('api.subdividePathBySpan');
     expect(prompt).toContain('api.offsetPolygon');
     expect(prompt).toContain('api.insetPolygon');
     expect(prompt).toContain('api.gridInsideRegion');
     expect(prompt).toContain('footprint -> offset/inset depth layers -> massing tiers/stories');
-    expect(prompt).toContain('circlePoint with deterministic index/count');
+    expect(prompt).toContain('api.circlePoint(index,count,radius,center?)');
     expect(prompt).toContain('facing may be a direction [dx,dz]');
-    expect(prompt).toContain('Five orthogonal form decisions');
-    expect(prompt).toContain('spatial organization');
-    expect(prompt).toContain('footprint family');
-    expect(prompt).toContain('massing profile');
-    expect(prompt).toContain('structural rhythm');
-    expect(prompt).toContain('functional sequence');
-    expect(prompt).toContain('Generic assembly derivation');
+    expect(prompt).toContain("spatialOrganization?:'centralized'");
+    expect(prompt).toContain("footprintFamily?:'bar'");
+    expect(prompt).toContain("massingProfile?:'monolith'");
+    expect(prompt).toContain("structuralRhythm?:'wall-bays'");
+    expect(prompt).toContain('functionalSequence?:string[]');
     expect(prompt).not.toContain('Two-tier arena shell with a ground gateway');
     expect(prompt).toContain('Declare between 2 and 4 distinct requireAsset families; variants within one family count as one asset');
     expect(prompt).toContain('Give each new asset plausible canonical dimensions so the greybox has its intended size');
-    expect(prompt).toContain('one short Simplified Chinese noun');
-    expect(prompt).toContain("const tree = api.requireAsset({key:'tree'");
+    expect(prompt).toContain('short Simplified Chinese UI text');
+    expect(prompt).not.toContain("const tree = api.requireAsset({key:'tree'");
+    expect(prompt).not.toContain('## Correct patterns');
     expect(prompt).toContain('No undefined point, invalid array index, direct array arithmetic');
   });
 
@@ -377,7 +368,7 @@ describe('map code planner', () => {
     ]));
   });
 
-  it('offers district, frontage and massing tools without choosing them by prompt keywords', () => {
+  it('offers spatial tools without prescribing a district pattern', () => {
     const prompt = buildMapCodePlannerSystemPrompt(
       createEmptyMap('Town', 'town-capability-prompt', [96, 16, 96]),
       [],
@@ -388,17 +379,15 @@ describe('map code planner', () => {
       '生成一座紧凑、可游玩的中世纪小镇'
     );
 
-    expect(prompt).toContain("spatialRole:'landmark-ensemble'|'urban-fabric'|'open-space'|'landscape'");
-    expect(prompt).toContain('ordinary building fabric');
+    expect(prompt).toContain("spatialRole?:'landmark-ensemble'|'urban-fabric'|'open-space'|'landscape'");
     expect(prompt).toContain('api.streetGrid({id,region');
     expect(prompt).toContain('api.placeAlongRoute({routeId');
     expect(prompt).toContain('api.placeStreetFrontage({routeId');
     expect(prompt).toContain('returns the route ID string, not an object');
     expect(prompt).toContain('api.routeNetwork returns a string[] of route IDs in edge order');
-    expect(prompt).toContain('Put public roadside furniture on the route after architectural massing');
-    expect(prompt).toContain('topology.create-route-network');
-    expect(prompt).toContain('settlement.create-street-grid');
-    expect(prompt).toContain('roadside.decorate-route');
+    expect(prompt).not.toContain('ordinary building fabric');
+    expect(prompt).not.toContain('## Callable capability manifest');
+    expect(prompt).not.toContain('## Scene pattern guide');
   });
 
   it.each(['日式街道', '日本城市街景', 'Japanese urban street'])(
@@ -406,7 +395,7 @@ describe('map code planner', () => {
       const prompt = buildMapCodePlannerSystemPrompt(createEmptyMap(), [], 0, 24, 'scene', 'generate', task);
       expect(prompt).toContain('api.placeStreetFrontage');
       expect(prompt).not.toContain('## Active scene profile:');
-      expect(prompt).toContain('Do not force a town grid');
+      expect(prompt).toContain('use it only when the chosen design needs blocks');
     }
   );
 
@@ -416,7 +405,8 @@ describe('map code planner', () => {
     );
 
     expect(prompt).not.toContain('## Active scene profile:');
-    expect(prompt).toContain('For natural scenes, omit unnecessary architecture');
+    expect(prompt).toContain("Let the user's request determine landform, ecology, architectural language");
+    expect(prompt).not.toContain('Structural anchors are mandatory');
   });
 
   it('gives unified outdoor Code semantic intent and complete scene ownership', () => {
@@ -424,7 +414,7 @@ describe('map code planner', () => {
 
     expect(prompt).toContain('Unified scene ownership');
     expect(prompt).toContain("api.sceneIntent({kind:'natural'|'authored'");
-    expect(prompt).toContain('Decide semantically from the requested place');
+    expect(prompt).toContain('lightweight spatial contract');
     expect(prompt).toContain('api.design({experienceMode');
     expect(prompt).toContain("substrate?:'dry'|'water'|'amphibious'|'underwater'");
     expect(prompt).toContain("spatialOrganization?:'centralized'|'linear'|'radial'|'grid'|'clustered'|'courtyard-network'");
@@ -433,29 +423,17 @@ describe('map code planner', () => {
     expect(prompt).toContain("structuralRhythm?:'wall-bays'|'colonnade'|'arcade'|'frame-bays'|'buttresses'|'continuous-truss'|'wall-opening-alternation'");
     expect(prompt).toContain('functionalSequence?:string[]');
     expect(prompt).toContain("assemblyId?:string and assemblyRole?:'opening'");
-    expect(prompt).toContain('derive module count from perimeter length');
-    expect(prompt).toContain('Decide which major built form is an assembly before requireAsset');
-    expect(prompt).toContain('decompose prominent buildings into reusable structural modules');
+    expect(prompt).toContain('canonical module spans');
+    expect(prompt).toContain('Use an assembly only when a building benefits from reusable placed modules');
     expect(prompt).toContain('moduleKeys');
     expect(prompt).toContain('elevation?:number');
-    expect(prompt).toContain('for each massing tier -> for each story -> for each boundary run -> for each bay');
-    expect(prompt).not.toContain("const ring = Array.from({length:12},(_,i)=>api.circlePoint(i,12,15,center));");
-    expect(prompt).not.toContain("for (let i = 0; i < 8; i += 1) { const point = api.circlePoint(i,8,28,center); api.place({assetId:api.asset(gate,0)");
-    expect(prompt).toContain('one focus, multiple peer focuses, a primary-secondary hierarchy');
-    expect(prompt).toContain('framed/borrowed/opposed views');
-    expect(prompt).toContain('Classify the requested place by spatial organization');
-    expect(prompt).toContain('their edges, density and sequence need not match');
-    expect(prompt).toContain('Every leaf design group is a complete scene room');
-    expect(prompt).toContain('plan a believable number of complete small groups, not one token instance');
-    expect(prompt).toContain('Every declared layer intent must be fulfilled by actual placements');
     expect(prompt).toContain('minCount?:1..64');
-    expect(prompt).toContain('A large empty surface is not automatically meaningful negative space');
-    expect(prompt).toContain('make a lightweight land-use pass before small props');
-    expect(prompt).toContain('building footprint coverage and continuous route frontage');
-    expect(prompt).toContain('tiny prop does not claim an otherwise unused parcel');
     expect(prompt).toContain('api.bridge({waterId');
     expect(prompt).toContain('api.terrain');
     expect(prompt).toContain('api.modifyTerrain');
+    expect(prompt).toContain("preset:'plain' always writes a zero-height field");
+    expect(prompt).toContain('api.surface only paints existing terrain and cannot create land, water or a shoreline');
+    expect(prompt).toContain('use a rectangular boundary only when the intended landform is rectangular');
     expect(prompt).toContain('api.water');
     expect(prompt).toContain('api.grass');
     expect(prompt).toContain("api.modifyTerrain({modifier:'mountain'|'ridge'|'valley'|'basin'");
@@ -463,6 +441,10 @@ describe('map code planner', () => {
     expect(prompt).toContain("api.grass({id:'short-id',name?,preset:'meadow'|'sand'|'wetland'");
     expect(prompt).toContain('Enum fields are closed choices, not descriptions.');
     expect(prompt).toContain("role:'structure'|'environment'");
+    expect(prompt).not.toContain('## Correct patterns');
+    expect(prompt).not.toContain('## Scene pattern guide');
+    expect(prompt).not.toContain('Activity-led near-field composition');
+    expect(prompt.length).toBeLessThan(30_000);
   });
 
   it('passes the optional user focal preference in the same Code request', async () => {
@@ -484,15 +466,16 @@ describe('map code planner', () => {
     expect(body.messages.find((message) => message.role === 'user')?.content).toContain('图书馆主楼');
   });
 
-  it('treats Atlantis as a city needing connected building districts, not only a landmark and props', () => {
+  it('does not inject an Atlantis-specific city recipe', () => {
     const prompt = buildMapCodePlannerSystemPrompt(
       createEmptyMap('亚特兰蒂斯', 'atlantis-profile', [96, 16, 96]),
       [], 0, 16, 'scene', 'generate', '亚特兰蒂斯'
     );
 
     expect(prompt).not.toContain('## Active scene profile:');
-    expect(prompt).toContain('each authored leaf design group a bounded region');
-    expect(prompt).toContain('ordinary building fabric');
+    expect(prompt).not.toContain('ordinary building fabric');
+    expect(prompt).not.toContain('Atlantis');
+    expect(prompt).toContain('Use spatial contracts where calculation helps');
   });
 
   it('bounds the refine asset catalog while keeping map-referenced assets', async () => {
@@ -567,7 +550,8 @@ describe('map code planner', () => {
     };
 
     const prompt=buildMapCodePlannerSystemPrompt(map,[],0,8,'scene','refine');
-    expect(prompt).toContain('api.design is a semantic patch during refinement');
+    expect(prompt).toContain('api.design is an optional semantic patch');
+    expect(prompt).toContain('do not repair unrelated density, layer or composition findings');
     expect(prompt).toContain('"totalObjects":315');
     expect(prompt).toContain('"id":"new-district"');
     expect(prompt).toContain('object-314');
