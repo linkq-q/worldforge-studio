@@ -339,7 +339,14 @@ describe('map code planner', () => {
     expect(prompt).toContain('gridPoints with an explicit center and spacing');
     expect(prompt).toContain('circlePoint with deterministic index/count');
     expect(prompt).toContain('facing may be a direction [dx,dz]');
-    expect(prompt).toContain('Two-tier arena shell with a ground gateway');
+    expect(prompt).toContain('Five orthogonal form decisions');
+    expect(prompt).toContain('spatial organization');
+    expect(prompt).toContain('footprint family');
+    expect(prompt).toContain('massing profile');
+    expect(prompt).toContain('structural rhythm');
+    expect(prompt).toContain('functional sequence');
+    expect(prompt).toContain('Generic assembly derivation');
+    expect(prompt).not.toContain('Two-tier arena shell with a ground gateway');
     expect(prompt).toContain('Declare between 2 and 4 distinct requireAsset families; variants within one family count as one asset');
     expect(prompt).toContain('Give each new asset plausible canonical dimensions so the greybox has its intended size');
     expect(prompt).toContain('one short Simplified Chinese noun');
@@ -403,7 +410,8 @@ describe('map code planner', () => {
     expect(prompt).toContain('decompose prominent buildings into reusable structural modules');
     expect(prompt).toContain('moduleKeys');
     expect(prompt).toContain('elevation?:number');
-    expect(prompt).toContain('for (let floor = 0; floor < 2; floor += 1)');
+    expect(prompt).toContain('for each massing tier -> for each story -> for each boundary run -> for each bay');
+    expect(prompt).not.toContain("const ring = Array.from({length:12},(_,i)=>api.circlePoint(i,12,15,center));");
     expect(prompt).not.toContain("for (let i = 0; i < 8; i += 1) { const point = api.circlePoint(i,8,28,center); api.place({assetId:api.asset(gate,0)");
     expect(prompt).toContain('one focus, multiple peer focuses, a primary-secondary hierarchy');
     expect(prompt).toContain('framed/borrowed/opposed views');
