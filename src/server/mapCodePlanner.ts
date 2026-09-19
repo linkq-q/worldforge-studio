@@ -3292,7 +3292,7 @@ export function buildMapCodePlannerSystemPrompt(
   const scopeContract = requestMode === 'refine'
     ? refineContext
     : scope === 'scene'
-    ? `\n## Unified scene ownership\nYou are the single author of the complete outdoor scene. No separate director or later ecology planner will repair your composition. You own terrain, water, surfaces, grass, constructed forms, circulation, vegetation, rocks, creatures and their spatial relationships in one coordinate system.\nFirst call api.sceneIntent({kind:'natural'|'authored',reason:'short explanation'}). Decide semantically from the requested place, not from a keyword list. A culturally designed or purpose-built place such as a garden, courtyard, campus, park, village, arena or temple ground is normally authored even when plants and water dominate it. A wilderness without built intent is natural.\nThen call api.design({...}) once to describe the composition you are about to build. Choose one focus, multiple peer focuses, a primary-secondary hierarchy, a sequential experience, or a mixture according to the scene. Different groups may be peers while each group has its own hierarchy; groups may nest. Do not force every scene into a centered landmark or one fixed route pattern. Every leaf design group is a complete scene room: give it a purpose, at least one arrival or through-route, an anchor or spatial edge, supporting content and human-scale detail. Every declared layer intent must be fulfilled by actual placements carrying that exact groupId and layer; do not write aspirational layers that the code never builds.\nClassify the requested place by spatial organization, not by a scene-name keyword: street-and-block fabric, connected outdoor rooms, a landscape path network, an object-centered precinct, or a justified hybrid. Use that choice to decide route topology, enclosure, open-space purpose and massing. A village, garden and park can all have circulation, but their edges, density and sequence need not match. Treat the user's specified subjects and relationships as constraints; do not replace them merely to improve a proxy score.\nUse transferable spatial-design methods: hierarchy, axes or counter-axes, arrival and circulation, framed/borrowed/opposed views, thresholds, reveal timing, compression and release, rhythm, clustering, and intentional negative space. Create recognizable architecture for authored scenes before natural decoration. For natural scenes, omit unnecessary architecture but still compose landform, paths, water and populations coherently. A large empty surface is not automatically meaningful negative space: it needs a specific use, proportionate dimensions, shaped boundaries and composed edges. Every sizable dry area inside a designed region should have a named spatial role or be reshaped; distant blank ground is not a finished background.\nPlace layer 1 anchors first, layer 2 supporting forms next, then intentionally over-place removable layer 3/4 scenery where richness is wanted; the local compiler may thin only those decorative layers. After structure and circulation, complete a dedicated detail-fill pass for thresholds, route rhythm, focal framing, vegetation masses and small accents. Preserve playable routes and deliberate empty space. Buildings that normally form an ensemble should be composed as related wings, halls, pavilions or corridors rather than represented by one token object. Compose water from multiple banks and arrival points: place waterside architecture, rocks, seating, lanterns and planting where routes reach, turn beside or cross the shore.\n`
+    ? `\n## Unified scene ownership\nYou are the single author of the complete outdoor scene. No separate director or later ecology planner will repair your composition. You own terrain, water, surfaces, grass, constructed forms, circulation, vegetation, rocks, creatures and their spatial relationships in one coordinate system.\nFirst call api.sceneIntent({kind:'natural'|'authored',reason:'short explanation'}). Decide semantically from the requested place, not from a keyword list. A culturally designed or purpose-built place such as a garden, courtyard, campus, park, village, arena or temple ground is normally authored even when plants and water dominate it. A wilderness without built intent is natural.\nThen call api.design({...}) once to describe the composition you are about to build. Choose one focus, multiple peer focuses, a primary-secondary hierarchy, a sequential experience, or a mixture according to the scene. Different groups may be peers while each group has its own hierarchy; groups may nest. Do not force every scene into a centered landmark or one fixed route pattern. Every leaf design group is a complete scene room: give it a purpose, at least one arrival or through-route, an anchor or spatial edge, supporting content and human-scale detail. Every declared layer intent must be fulfilled by actual placements carrying that exact groupId and layer; do not write aspirational layers that the code never builds.\nClassify the requested place by spatial organization, not by a scene-name keyword: street-and-block fabric, connected outdoor rooms, a landscape path network, an object-centered precinct, or a justified hybrid. Use that choice to decide route topology, enclosure, open-space purpose and massing. A village, garden and park can all have circulation, but their edges, density and sequence need not match. Treat the user's specified subjects and relationships as constraints; do not replace them merely to improve a proxy score.\nUse transferable spatial-design methods: hierarchy, axes or counter-axes, arrival and circulation, framed/borrowed/opposed views, thresholds, reveal timing, compression and release, rhythm, clustering, and intentional negative space. Create recognizable architecture for authored scenes before natural decoration. For natural scenes, omit unnecessary architecture but still compose landform, paths, water and populations coherently. A large empty surface is not automatically meaningful negative space: it needs a specific use, proportionate dimensions, shaped boundaries and composed edges. Every sizable dry area inside a designed region should have a named spatial role or be reshaped; distant blank ground is not a finished background.\nFor every broad authored region, make a lightweight land-use pass before small props: partition it spatially into built footprint, courtyard/plaza, circulation, water/ecology, landscape node or intentional void. Represent that plan with child design-group regions, route geometry, water, clear surfaces and actual medium/large placements rather than a second prose-only plan. Check building footprint coverage and continuous route frontage inside each built group. A lamp, coral, tree or tiny prop does not claim an otherwise unused parcel. If a large open parcel is intentional, give it a bounded use and composed edge instead of leaving unexplained terrain.\nPlace layer 1 anchors first, layer 2 supporting forms next, then intentionally over-place removable layer 3/4 scenery where richness is wanted; the local compiler may thin only those decorative layers. After structure and circulation, complete a dedicated detail-fill pass for thresholds, route rhythm, focal framing, vegetation masses and small accents. Preserve playable routes and deliberate empty space. Buildings that normally form an ensemble should be composed as related wings, halls, pavilions or corridors rather than represented by one token object. Compose water from multiple banks and arrival points: place waterside architecture, rocks, seating, lanterns and planting where routes reach, turn beside or cross the shore.\n`
     : '';
   const capabilityCatalog = worldCapabilitySummary('map-code').map((capability) => ({
     id: capability.id,
@@ -3603,6 +3603,7 @@ function localRepairSignals(programIssues: string[], discovery: CodeExecutionRes
 const LOCAL_REPAIR_INSTRUCTION = 'Return only JSON {"edits":[{"old":"exact unique substring from the current code","new":"replacement substring"}]}. Make 1-4 small, exact replacements at the reported calls. Never return the full function or alter unrelated calls, placement loops, asset declarations, terrain, or circulation. If the listed issue cannot be fixed locally, return {"edits":[]}.';
 const LOCAL_ASSEMBLY_REPAIR_INSTRUCTION = 'Return only JSON {"edits":[{"old":"exact unique substring from the current code","new":"replacement substring"}]}. Make 1-4 small, exact replacements; never return the full function. For scene_group_missing_assembly:<groupId>, edit the one api.design declaration and only placement loops and asset declarations within that group. Preserve existing placements, terrain, routes and other groups. You may add modular asset families and connected placeBetween placements inside that group; labels alone do not build a compound form. If the group is intentionally made of separate freestanding buildings, return {"edits":[]}. Do not change unrelated scene content.';
 const LOCAL_SUBSTRATE_REPAIR_INSTRUCTION = 'Return only JSON {"edits":[{"old":"exact unique substring from the current code","new":"replacement substring"}]}. Make 1-4 small, exact replacements; never return the full function. For scene_group_substrate_conflict:<groupId>, edit only that group in api.design and the directly responsible local shoreline, terrain or placement calls. Preserve its focus, route topology, assembly topology, other groups and all unrelated placements. Declare dry, water, amphibious or underwater from the intended experience; do not translate the whole group to a distant valid point. If intent is ambiguous, keep the current composition and return {"edits":[]}.';
+const LOCAL_COVERAGE_REPAIR_INSTRUCTION = 'Return only JSON {"edits":[{"old":"exact unique substring from the current code","new":"replacement substring"}]}. Make 1-4 small, exact replacements; never return the full function. For scene_group_building_coverage_low, scene_group_frontage_low or scene_group_unassigned_space, edit only the reported design group. Add or extend medium/large built forms at genuinely unused parcels or under-served route spans; use bounded loops and connected modules where appropriate. Do not satisfy spatial coverage with lamps, plants or tiny props. Preserve named courtyards, plazas, water, circulation, entrances, focuses, other groups and all existing content. If the open area is intentional, express its actual boundary and use with an existing clear surface or open-space group instead of filling it.';
 
 function retainCodePlan(
   fallback: { code: string; discovery: CodeExecutionResult; programIssues: string[] },
@@ -3686,6 +3687,7 @@ async function discoverMapCodeWithRepairs(
         || issue.startsWith('scene_group_spatial_role_missing:')
         || issue.startsWith('scene_group_building_coverage_low:')
         || issue.startsWith('scene_group_frontage_low:')
+        || issue.startsWith('scene_group_unassigned_space:')
       ));
       completionIssues.push(...discovery.issues.filter((issue) => issue.key.startsWith('scene_group_missing_assembly:')).map((issue) => issue.key));
       const recoverableExecutionIssues = discovery.issues.filter((issue) => issue.repairHint);
@@ -3719,13 +3721,22 @@ async function discoverMapCodeWithRepairs(
         });
         const repairsAssembly = completionIssues.some((issue) => issue.startsWith('scene_group_missing_assembly:'));
         const repairsSubstrate = recoverableExecutionIssues.some((issue) => issue.key.startsWith('scene_group_substrate_conflict:'));
+        const repairsCoverage = completionIssues.some((issue) => (
+          issue.startsWith('scene_group_building_coverage_low:')
+          || issue.startsWith('scene_group_frontage_low:')
+          || issue.startsWith('scene_group_unassigned_space:')
+        ));
         const localInstruction = repairsAssembly
           ? LOCAL_ASSEMBLY_REPAIR_INSTRUCTION
-          : repairsSubstrate ? LOCAL_SUBSTRATE_REPAIR_INSTRUCTION : LOCAL_REPAIR_INSTRUCTION;
+          : repairsSubstrate
+            ? LOCAL_SUBSTRATE_REPAIR_INSTRUCTION
+            : repairsCoverage ? LOCAL_COVERAGE_REPAIR_INSTRUCTION : LOCAL_REPAIR_INSTRUCTION;
         const preservationInstruction = repairsAssembly
           ? 'Keep the existing composition, placements, asset requirements, terrain and routes except for the reported group\'s missing architectural assembly.'
           : repairsSubstrate
             ? 'Keep the existing composition and edit only the reported group\'s substrate mismatch.'
+            : repairsCoverage
+              ? 'Keep the existing composition and fill only the reported group\'s unexplained spatial gap or under-served frontage.'
             : 'Keep the existing composition, placements, asset requirements, terrain and routes.';
         try {
           const repairResponse = await llmChat([
@@ -3979,13 +3990,13 @@ function reviewCodeVegetation(map: EditableMap): MapLintIssue[] {
 }
 
 function findAuthoredSceneProgramIssues(map: EditableMap, suggestion: MapAiSuggestion): string[] {
-  if (suggestion.codePlan?.sceneIntent !== 'authored') return [];
   let candidate: EditableMap;
   try {
     candidate = applyMapOperations(map, suggestion.operations);
   } catch {
     return [];
   }
+  if (suggestion.codePlan?.sceneIntent !== 'authored' && candidate.designSemantics.groups.length === 0) return [];
   const groups = candidate.designSemantics.groups;
   const parentIds = new Set(groups.flatMap((group) => group.parentId ? [group.parentId] : []));
   const issues: string[] = [];
@@ -4006,6 +4017,7 @@ function findAuthoredSceneProgramIssues(map: EditableMap, suggestion: MapAiSugge
         issues.push(`scene_group_underfilled_layer:${group.id}:${layer.level}:${actualCount}/${requiredCount}`);
       }
     }
+    issues.push(...designGroupCoverageIssues(candidate, group.id));
     const groupArea = designRegionArea(group.region);
     if (groupArea < 180 || objects.length >= 3) continue;
     const oversizedClearing = candidate.visualSemantics.zones.some((zone) => (
@@ -4018,6 +4030,107 @@ function findAuthoredSceneProgramIssues(map: EditableMap, suggestion: MapAiSugge
     if (oversizedClearing) issues.push(`scene_group_oversized_clear_space:${group.id}`);
   }
   return [...new Set(issues)].slice(0, 12);
+}
+
+function designGroupCoverageIssues(map: EditableMap, groupId: string): string[] {
+  const group = map.designSemantics.groups.find((candidate) => candidate.id === groupId);
+  if (!group?.region || (group.spatialRole !== 'urban-fabric' && group.spatialRole !== 'landmark-ensemble')) return [];
+  if (designRegionArea(group.region) < 180) return [];
+  const objects = map.objects.filter((object) => object.designGroupId === group.id && !object.parentId);
+  const structures = objects.filter((object) => object.compositionLayer === 1);
+  if (structures.length === 0) return [];
+  const boxes = structures.map(designObjectFootprint);
+  const supportBoxes = objects.filter((object) => object.compositionLayer === 2).map(designObjectFootprint);
+  const cells = sampleDesignRegion(group.region, 14);
+  if (cells.length < 16) return [];
+  const insideBox = (point: Point2, box: ReturnType<typeof designObjectFootprint>, padding = 0): boolean => (
+    point[0] >= box.minX - padding && point[0] <= box.maxX + padding
+    && point[1] >= box.minZ - padding && point[1] <= box.maxZ + padding
+  );
+  const buildingCoverage = cells.filter((point) => boxes.some((box) => insideBox(point, box))).length / cells.length;
+  const layerDensity = group.layers.find((layer) => layer.level === 1)?.density ?? 'normal';
+  const baseBuildingTarget = group.spatialRole === 'urban-fabric' ? 0.14 : 0.07;
+  const buildingTarget = baseBuildingTarget * (layerDensity === 'tight' ? 1.2 : layerDensity === 'open' ? 0.75 : 1);
+  const issues: string[] = [];
+  if (buildingCoverage < buildingTarget) issues.push(`scene_group_building_coverage_low:${group.id}`);
+
+  const guideIds = new Set([...group.guideIds, ...group.entryGuideIds, ...group.exitGuideIds, ...group.axisGuideIds]);
+  const guides = map.guides.filter((guide) => guideIds.has(guide.id));
+  const frontageSamples = guides.flatMap((guide) => sampleMapGuide(guide, { spacing: 2 }));
+  if (frontageSamples.length >= 4) {
+    const frontageCoverage = frontageSamples.filter((sample) => boxes.some((box) => (
+      pointBoxDistance2(sample.x, sample.z, box) <= 6
+    ))).length / frontageSamples.length;
+    const frontageTarget = group.spatialRole === 'urban-fabric' ? 0.45 : 0.3;
+    if (frontageCoverage < frontageTarget) issues.push(`scene_group_frontage_low:${group.id}`);
+  }
+
+  const intentionalZones = map.visualSemantics.zones.filter((zone) => zone.tags.includes('clear'));
+  const assignedCount = cells.filter((point) => (
+    boxes.some((box) => insideBox(point, box, 2.5))
+    || supportBoxes.some((box) => insideBox(point, box, 1.5))
+    || guides.some((guide) => mapGuidePolyline(guide).slice(1).some((end, index) => (
+      pointSegmentDistance2(point[0], point[1], mapGuidePolyline(guide)[index], end) <= guide.width / 2 + 1.5
+    )))
+    || map.waterBodies.some((water) => isPointInsideWaterBody(water, point[0], point[1], map))
+    || intentionalZones.some((zone) => visualZoneContainsPoint(zone, point))
+  )).length;
+  const unassignedRatio = 1 - assignedCount / cells.length;
+  const unassignedLimit = group.spatialRole === 'urban-fabric' ? 0.45 : 0.55;
+  if (unassignedRatio > unassignedLimit) issues.push(`scene_group_unassigned_space:${group.id}`);
+  return issues;
+}
+
+function designObjectFootprint(object: EditableMap['objects'][number]): { minX: number; maxX: number; minZ: number; maxZ: number } {
+  const width = Math.max(0.1, object.transform.size[0] * object.transform.scale[0]);
+  const depth = Math.max(0.1, object.transform.size[2] * object.transform.scale[2]);
+  const yaw = object.transform.rotation[1];
+  const halfX = (Math.abs(Math.cos(yaw)) * width + Math.abs(Math.sin(yaw)) * depth) / 2;
+  const halfZ = (Math.abs(Math.sin(yaw)) * width + Math.abs(Math.cos(yaw)) * depth) / 2;
+  return {
+    minX: object.transform.position[0] - halfX,
+    maxX: object.transform.position[0] + halfX,
+    minZ: object.transform.position[2] - halfZ,
+    maxZ: object.transform.position[2] + halfZ
+  };
+}
+
+function sampleDesignRegion(
+  region: NonNullable<MapDesignSemantics['groups'][number]['region']>,
+  resolution: number
+): Point2[] {
+  const boundary = region.kind === 'circle'
+    ? { minX: region.x - region.radius, maxX: region.x + region.radius, minZ: region.z - region.radius, maxZ: region.z + region.radius }
+    : {
+      minX: Math.min(...region.points.map((point) => point[0])) - (region.kind === 'path' ? region.width / 2 : 0),
+      maxX: Math.max(...region.points.map((point) => point[0])) + (region.kind === 'path' ? region.width / 2 : 0),
+      minZ: Math.min(...region.points.map((point) => point[1])) - (region.kind === 'path' ? region.width / 2 : 0),
+      maxZ: Math.max(...region.points.map((point) => point[1])) + (region.kind === 'path' ? region.width / 2 : 0)
+    };
+  const points: Point2[] = [];
+  for (let row = 0; row < resolution; row += 1) {
+    for (let column = 0; column < resolution; column += 1) {
+      const point = codePoint(
+        boundary.minX + (column + 0.5) * (boundary.maxX - boundary.minX) / resolution,
+        boundary.minZ + (row + 0.5) * (boundary.maxZ - boundary.minZ) / resolution
+      );
+      if (designRegionContains(region, point[0], point[1])) points.push(point);
+    }
+  }
+  return points;
+}
+
+function pointBoxDistance2(
+  x: number,
+  z: number,
+  box: ReturnType<typeof designObjectFootprint>
+): number {
+  return Math.hypot(Math.max(box.minX - x, 0, x - box.maxX), Math.max(box.minZ - z, 0, z - box.maxZ));
+}
+
+function visualZoneContainsPoint(zone: EditableMap['visualSemantics']['zones'][number], point: Point2): boolean {
+  if (zone.region) return designRegionContains(zone.region, point[0], point[1]);
+  return Math.hypot(point[0] - zone.center[0], point[1] - zone.center[1]) <= zone.radius;
 }
 
 function sceneProgramDiagnostics(issues: readonly string[]): NonNullable<MapAiSuggestion['diagnostics']> {

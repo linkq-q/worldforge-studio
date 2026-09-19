@@ -450,6 +450,9 @@ describe('map code planner', () => {
     expect(prompt).toContain('Every declared layer intent must be fulfilled by actual placements');
     expect(prompt).toContain('minCount?:1..64');
     expect(prompt).toContain('A large empty surface is not automatically meaningful negative space');
+    expect(prompt).toContain('make a lightweight land-use pass before small props');
+    expect(prompt).toContain('building footprint coverage and continuous route frontage');
+    expect(prompt).toContain('tiny prop does not claim an otherwise unused parcel');
     expect(prompt).toContain('api.bridge({waterId');
     expect(prompt).toContain('api.terrain');
     expect(prompt).toContain('api.modifyTerrain');
@@ -1062,6 +1065,38 @@ describe('map code planner', () => {
       expect.objectContaining({ code: 'settlement.frontage-low', repaired: false })
     ]));
     expect(suggestion.codePlan?.repairAttempts).toBe(0);
+  });
+
+  it('targets only an underused built group when footprint, frontage and land-use coverage are low', async () => {
+    const sparse = `function plan(api) {
+      api.sceneIntent({kind:'authored',reason:'roadside district'});
+      api.design({groups:[{id:'district',name:'街区',spatialRole:'urban-fabric',
+        region:{kind:'polygon',points:[[-20,-20],[20,-20],[20,20],[-20,20]]},
+        layers:[{level:1,intent:'沿街建筑',density:'tight'}]}],focuses:[],viewpoints:[],relations:[]});
+      api.route({id:'main-road',points:[[-18,0],[18,0]],groupId:'district',guideRole:'axis',width:3});
+      api.place({name:'孤立店屋',position:[0,8],size:[4,5,4],role:'structure',groupId:'district',layer:1});
+    }`;
+    const repaired = JSON.stringify({edits:[{
+      old:"api.place({name:'孤立店屋',position:[0,8],size:[4,5,4],role:'structure',groupId:'district',layer:1});",
+      new:"for(let i=0;i<10;i++) api.place({name:'沿街店屋',position:[-18+i*4,i%2?7:-7],size:[3.5,5+(i%3),5],role:'structure',groupId:'district',layer:1});"
+    }]});
+    const response = (content: string) => new Response(JSON.stringify({ok:true,content}), {
+      status:200,headers:{'Content-Type':'application/json'}
+    });
+    const fetchImpl = vi.fn().mockResolvedValueOnce(response(sparse)).mockResolvedValueOnce(response(repaired));
+
+    await generateMapCodeSuggestion('生成道路两侧紧凑的建筑街区', createEmptyMap('District','district',[64,12,64]), [], {
+      apiBase:'https://example.test',provider:'gpt',fetchImpl,minNewAssets:0,maxNewAssets:0,scope:'scene'
+    });
+    const repairRequest = JSON.parse(String((fetchImpl.mock.calls[1]?.[1] as RequestInit | undefined)?.body)) as {
+      messages:Array<{content:string}>;
+    };
+    const instruction = repairRequest.messages.at(-1)?.content ?? '';
+    expect(instruction).toContain('scene_group_building_coverage_low:district');
+    expect(instruction).toContain('scene_group_frontage_low:district');
+    expect(instruction).toContain('scene_group_unassigned_space:district');
+    expect(instruction).toContain('Do not satisfy spatial coverage with lamps, plants or tiny props');
+    expect(instruction).toContain('edit only the reported design group');
   });
 
   it('locally completes an authored landmark made only of isolated structures', async () => {
