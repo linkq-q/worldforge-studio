@@ -2058,6 +2058,15 @@ function executeMapCodePlanInternal(
         clampFinite(input.inset ?? 0, 0, Math.max(map.box.size[0], map.box.size[2]) / 2)
       );
     },
+    localToWorld3D(
+      local: Point3,
+      origin: Point3,
+      forward: Point3,
+      up: Point3 = [0, 1, 0]
+    ): Point3 {
+      record('localToWorld3D');
+      return localToWorld3D(local, origin, forward, up);
+    },
     noise2D(x: number, z: number, scale = 1, seed = map.seed) {
       record('noise2D');
       return valueNoise2D(finite(x) * finite(scale), finite(z) * finite(scale), Math.trunc(finite(seed)));
@@ -3418,7 +3427,7 @@ ${CODE_ACTIVITY_CONTRACT}
 Return only one synchronous JavaScript function: function plan(api) { ... }.
 Do not return markdown, explanations, JSON, imports, async code, promises, eval, Function, network, files, timers, or global state.
 Use api. on every WorldForge call. The code must emit at least one map operation. ${requestMode === 'refine' ? 'Refine code must emit only the requested delta.' : 'Full-scene code should normally combine environment operations with api.place/api.placeBetween.'}
-Allowed JavaScript: const/let, numbers, strings, arrays, plain objects, local helper functions, for, for...of, while, if/else, and Math scalar functions.
+Allowed JavaScript: const/let, numbers, strings, arrays, plain objects, local helper functions, for, for...of, while, if/else, and Math scalar functions. You may author bounded helper functions that express the requested geometry, variation or spatial field; the named APIs are conveniences, not a closed vocabulary of scene forms.
 
 ## World and coordinate contract
 This is a 2D environment layout API: horizontal coordinates are x/z, terrain height is y.
@@ -3451,6 +3460,7 @@ Design relations of kind 'support' describe compositional support only; they nev
 Regions: {kind:'circle',x,z,radius}, {kind:'path',points:[[x,z],...],width}, or {kind:'polygon',points:[[x,z],...]}.
 Scalar math: api.clamp(value,min,max), api.lerp(a,b,t), api.remap(value,inMin,inMax,outMin,outMax), api.smoothstep(min,max,value), api.random(min?,max?).
 Transforms: api.rotate2D(point,angle,center?), api.mirrorPoint(point,'x'|'z',coordinate?), api.distance2D(a,b), api.tangentYaw(tangent), api.faceYaw(from,to). mirrorPoint with 'x' mirrors left/right around x=coordinate; 'z' mirrors front/back around z=coordinate.
+3D local frames: api.localToWorld3D(local:[right,up,forward],origin:[x,y,z],forward:[x,y,z],up?:[x,y,z]) -> [x,y,z]. It builds an orthonormal frame and rejects zero or parallel axes. Use it when one compact local rule should drive elevated, tilted or repeated positions; it does not rotate asset geometry beyond the existing rotationY/facing contract.
 Curves: api.linePoint(t,a,b) -> [x,z]; api.bezierPoint(t,p0,p1,p2,p3) -> {point,tangent,normal}; api.sampleBezier(...) -> point arrays; api.sampleBezierFrames(...) -> frame objects with point,tangent,normal; api.sampleBezierFramesBySpacing(...,spacing,gapRatio?) -> approximately even arc-length frames. frame.normal is the normalized left-side normal [-tangentZ,tangentX] as t increases.
 Fields: api.noise2D(x,z,scale?,seed?) -> [-1,1]; api.fbm2D(x,z,{scale?,octaves?,lacunarity?,gain?,seed?}) -> [-1,1].
 Layouts: api.circlePoint(index,count,radius,center?) -> [x,z]; api.ellipsePoint(index,count,radiusX,radiusZ,center?,phase?) -> [x,z]; api.gridPoints({center?,columns,rows,spacing}) -> points; api.poissonDisk({bounds?:{minX,maxX,minZ,maxZ},minDistance,maxPoints?,attempts?,seed?}) -> points.
@@ -5635,6 +5645,39 @@ function polygonEdgeDistance2(point: Point2, points: readonly Point2[]): number 
 function point3(value: readonly number[]): Point3 {
   if (!Array.isArray(value) || value.length < 3) throw new Error('invalid_map_code_point');
   return [finite(value[0]), finite(value[1]), finite(value[2])];
+}
+
+function localToWorld3D(
+  localValue: readonly number[],
+  originValue: readonly number[],
+  forwardValue: readonly number[],
+  upValue: readonly number[]
+): Point3 {
+  const local = point3(localValue);
+  const origin = point3(originValue);
+  const forward = normalizeVector3(point3(forwardValue));
+  const requestedUp = normalizeVector3(point3(upValue));
+  const right = normalizeVector3(crossVector3(requestedUp, forward));
+  const up = crossVector3(forward, right);
+  return [
+    origin[0] + right[0] * local[0] + up[0] * local[1] + forward[0] * local[2],
+    origin[1] + right[1] * local[0] + up[1] * local[1] + forward[1] * local[2],
+    origin[2] + right[2] * local[0] + up[2] * local[1] + forward[2] * local[2]
+  ].map(finite) as Point3;
+}
+
+function normalizeVector3(value: Point3): Point3 {
+  const length = Math.hypot(value[0], value[1], value[2]);
+  if (length <= 0.000001) throw new Error('invalid_map_code_frame');
+  return [value[0] / length, value[1] / length, value[2] / length];
+}
+
+function crossVector3(left: Point3, right: Point3): Point3 {
+  return [
+    left[1] * right[2] - left[2] * right[1],
+    left[2] * right[0] - left[0] * right[2],
+    left[0] * right[1] - left[1] * right[0]
+  ];
 }
 
 function scale3(value: number | Point3): Point3 {

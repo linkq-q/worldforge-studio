@@ -50,6 +50,28 @@ describe('map code planner', () => {
     expect(suggestion.diagnostics).toEqual(expect.arrayContaining([expect.objectContaining({code:'code.geometry-unresolved'})]));
   });
 
+  it('lets authored bounded helpers reuse one 3D local-frame rule across placements', () => {
+    const suggestion = executeMapCodePlan(`function plan(api) {
+      function tierPoint(index) {
+        return api.localToWorld3D([index - 1, index * 2, 3], [10, 0, 5], [1, 0, 0]);
+      }
+      for (let index = 0; index < 3; index += 1) {
+        api.place({name:'构件-' + index,position:tierPoint(index),dimensions:[1,1,1],role:'structure'});
+      }
+    }`, createEmptyMap());
+    const positions = suggestion.operations
+      .filter((operation) => operation.type === 'object.add')
+      .map((operation) => operation.object.transform.position);
+    expect(positions).toEqual([[13, 0, 6], [13, 2, 5], [13, 4, 4]]);
+    expect(suggestion.codePlan?.functions).toContain('localToWorld3D');
+  });
+
+  it('rejects degenerate custom 3D frames', () => {
+    expect(() => executeMapCodePlan(`function plan(api) {
+      api.place({name:'无效构件',position:api.localToWorld3D([0,0,0],[0,0,0],[0,1,0],[0,2,0])});
+    }`, createEmptyMap())).toThrow('invalid_map_code_frame');
+  });
+
   it.each(['indoor', 'outdoor'] as const)('documents local object composition mechanics for %s without prescribing content', (sceneMode) => {
     const map = createEmptyMap('scene', 'activity', [24, 8, 24], 'voxel', sceneMode);
     const prompt = buildMapCodePlannerSystemPrompt(map, [], 0, 12, 'scene');
@@ -321,6 +343,8 @@ describe('map code planner', () => {
     expect(prompt).toContain("Entrances default to anchorY:'bottom'");
     expect(prompt).toContain('Never use standalone api.place with [x,y,z] for a door, window, banner, sign or facade ornament');
     expect(prompt).toContain("api.mirrorPoint(point,'x'|'z',coordinate?)");
+    expect(prompt).toContain('api.localToWorld3D(local:[right,up,forward]');
+    expect(prompt).toContain('named APIs are conveniences, not a closed vocabulary');
     expect(prompt).toContain('api.keepDry([x,z],clearance?)');
     expect(prompt).toContain('api.waterPoint(waterId,[x,z],draft?)');
     expect(prompt).toContain('api.routeNetwork({id,nodes:[{id,point:[x,z],role?}],edges:');
