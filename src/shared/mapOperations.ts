@@ -250,7 +250,17 @@ export interface MapAiSuggestion {
 const MAP_SURFACES = new Set<MapSurface>(['floor', 'ceiling', 'north', 'south', 'east', 'west', 'terrain']);
 const TERRAIN_MODES = new Set<TerrainBrushMode>(['raise', 'lower', 'flatten']);
 const GRASS_BRUSH_MODES = new Set<GrassBrushMode>(['add', 'erase', 'density', 'smooth']);
-const MAX_OPERATIONS = 2_000;
+/**
+ * Raw-codeplan experiment lifts the per-transaction cap via
+ * WORLDFORGE_MAX_OPERATIONS (server env, mirrored into the client bundle by a
+ * vite define) so unedited AI output can be applied verbatim.
+ */
+const MAX_OPERATIONS = (() => {
+  const lifted = typeof process !== 'undefined' && process.env
+    ? Number(process.env.WORLDFORGE_MAX_OPERATIONS ?? '')
+    : Number.NaN;
+  return Number.isFinite(lifted) && lifted > 0 ? Math.floor(lifted) : 2_000;
+})();
 
 export function applyMapOperations(map: EditableMap, operations: readonly MapOperation[]): EditableMap {
   if (!Array.isArray(operations) || operations.length === 0) throw new Error('empty_operations');

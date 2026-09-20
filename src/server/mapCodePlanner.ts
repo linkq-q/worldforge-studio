@@ -79,15 +79,13 @@ import { recordGenerationTrace } from './generationTrace';
 import type { MapLintIssue } from '../shared/mapLint';
 import { describeMapRefineScope, scopeMapRefinement, type MapRefineScope } from '../shared/mapRefineScope';
 
-const MAX_CODE_LENGTH = 40_000;
-const MAX_PLACEMENTS = 2_000;
-const MAX_SCENE_OPERATIONS = 256;
-
 /**
  * Raw codeplan experiment (branch feat/raw-codeplan-minimal-prompt):
  * enabled only when the server starts with WORLDFORGE_RAW_CODEPLAN=1.
  * The first generated program is the final result — no LLM repair loops, no
  * second-pass asset adaptation, no local relocation/pruning/lint repairs.
+ * Engine caps (placements, scene operations, code length, route points,
+ * sandbox timeouts) are lifted so the AI's output lands verbatim.
  * The sandbox exposes only RAW_CODEPLAN_API_KEYS; everything else is left to
  * plain JavaScript written by the model.
  */
@@ -96,14 +94,18 @@ const RAW_CODEPLAN_API_KEYS = [
   'terrain', 'modifyTerrain', 'surface', 'water', 'route',
   'grass', 'requireAsset', 'asset', 'place', 'random'
 ] as const;
+
+const MAX_CODE_LENGTH = RAW_CODEPLAN_MODE ? 400_000 : 40_000;
+const MAX_PLACEMENTS = RAW_CODEPLAN_MODE ? 100_000 : 2_000;
+const MAX_SCENE_OPERATIONS = RAW_CODEPLAN_MODE ? 20_000 : 256;
 const MAX_POINT_RESULTS = 512;
 const MAX_PROBABILITY_CANDIDATES = 4_096;
 const MAX_GRASS_FIELD_RESOLUTION = 64;
 const MAX_LAYOUT_ITEMS = 64;
 const MAX_LAYOUT_ITERATIONS = 512;
-const DISCOVERY_EXECUTION_TIMEOUT_MS = 500;
-const FINAL_EXECUTION_TIMEOUT_MS = 1_000;
-const REPLAY_EXECUTION_TIMEOUT_MS = 3_000;
+const DISCOVERY_EXECUTION_TIMEOUT_MS = RAW_CODEPLAN_MODE ? 15_000 : 500;
+const FINAL_EXECUTION_TIMEOUT_MS = RAW_CODEPLAN_MODE ? 30_000 : 1_000;
+const REPLAY_EXECUTION_TIMEOUT_MS = RAW_CODEPLAN_MODE ? 45_000 : 3_000;
 const REFINE_ASSET_CATALOG_LIMIT = 64;
 const EXECUTION_REPAIR_MAX_TOKENS = 8_000;
 const ASSET_SEMANTIC_SNAPSHOT_MAX_CHARS = 900;
@@ -1169,7 +1171,7 @@ function executeMapCodePlanInternal(
   const emitRoute = (input: RouteInput): string => {
     if (!input || typeof input !== 'object') throw new Error('invalid_map_code_route');
     const id = cleanId(input.id, 'route');
-    const points = codePointArray(input.points, 'invalid_map_code_route_points').slice(0, 64);
+    const points = codePointArray(input.points, 'invalid_map_code_route_points').slice(0, RAW_CODEPLAN_MODE ? 16_384 : 64);
     if (points.length < 2) throw new Error('invalid_map_code_route_points');
     const width = clampFinite(input.width ?? 1.5, 0.2, Math.min(map.box.size[0], map.box.size[2]));
     emitSceneOperation({
@@ -3591,7 +3593,7 @@ The 10 APIs:
 3. api.surface({id, surface:'grass'|'sand'|'rock'|'soil'|'paving', material?, region, intensity?}) — paints existing terrain; cannot create height.
 4. api.water(id, {type:'lake'|'river'|'ocean', points:[[x,z],...], level, depth}).
 5. api.route({id, name?, points:[[x,z],...], width?, curve?:'polyline'|'catmull-rom', closed?, surface?:'paving'|'soil'|'grass'|'sand'|'rock'|'none'}) — returns the route id; paints the path unless surface:'none'.
-6. api.grass(id, region, {preset:'meadow'|'sand'|'wetland'|'farm'|'magic'|'alpine-moss', density?, height?, mix?:{short?,tall?,flowers?}}) — hard engine cap: at most 8 grass layers per map.
+6. api.grass(id, region, {preset:'meadow'|'sand'|'wetland'|'farm'|'magic'|'alpine-moss', density?, height?, mix?:{short?,tall?,flowers?}}).
 7. api.requireAsset({key, name /* short Simplified Chinese */, prompt /* English, ONE standalone object, append exactly: " Coordinate contract: Y+ is up, Z+ is the front/entrance direction, X+ is right." */, dimensions:[width,height,depth], role:'structure'|'environment', variants?, optional?}).
 8. api.asset(key, index?) — returns the assetId to place; never invent asset IDs.
 9. api.place({assetId, name?, position:[x,z], rotationY?, scale?, role?}) — terrain height auto-sampled; rotationY is radians around Y, and Math.atan2(dx, dz) turns the model's local Z+ front toward direction (dx,dz).
@@ -3600,7 +3602,7 @@ The 10 APIs:
 Rules:
 - Declare ${minNewAssets}..${maxNewAssets} requireAsset families; place every declared variant at least once.
 - Return only the function body: no markdown, imports, async, eval, timers, network, or global state. Synchronous code, finite numbers only.
-- Loops must be bounded: at most ${MAX_PLACEMENTS} placements and ${MAX_SCENE_OPERATIONS} scene operations, comfortably under one second of work.
+- There are no hard caps in this mode — your output is applied verbatim — so keep loops sane on your own: seconds of computation, not minutes.
 - Keep every coordinate inside the bounds; guard array indices and divisions.`;
 }
 

@@ -56,7 +56,17 @@ export interface GrassLayerInput {
 
 export type GrassLayerPatch = Pick<GrassLayerInput, 'name' | 'visible' | 'seed' | 'preset' | 'height' | 'mix'>;
 
-export const MAX_GRASS_LAYERS = 8;
+/**
+ * Hard engine cap for grass layers. The raw-codeplan experiment lifts it via
+ * WORLDFORGE_MAX_GRASS_LAYERS (server env, baked into the client bundle by a
+ * vite define) so AI-authored scenes are stored and shown verbatim.
+ */
+export const MAX_GRASS_LAYERS = (() => {
+  const lifted = typeof process !== 'undefined' && process.env
+    ? Number(process.env.WORLDFORGE_MAX_GRASS_LAYERS ?? '')
+    : Number.NaN;
+  return Number.isFinite(lifted) && lifted >= 8 ? Math.floor(lifted) : 8;
+})();
 export const DEFAULT_GRASS_MIX: GrassVariantMix = { short: 0.76, tall: 0.2, flowers: 0.04 };
 export const GRASS_PRESET_DEFINITIONS: ReadonlyArray<{
   id: GrassPresetId;
