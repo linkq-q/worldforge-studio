@@ -97,18 +97,21 @@ import { recordGenerationTrace } from './generationTrace';
 import type { MapLintIssue } from '../shared/mapLint';
 import { describeMapRefineScope, scopeMapRefinement, type MapRefineScope } from '../shared/mapRefineScope';
 import type { VisualZoneRegion } from '../shared/visualDirection';
+import {
+  MAP_CODE_DISCOVERY_TIMEOUT_MS,
+  MAP_CODE_FINAL_TIMEOUT_MS,
+  MAP_CODE_REPLAY_TIMEOUT_MS,
+  MAX_MAP_CODE_LENGTH,
+  MAX_MAP_CODE_PLACEMENTS,
+  MAX_MAP_CODE_SCENE_OPERATIONS,
+  MAX_MAP_GUIDE_POINTS
+} from '../shared/mapLimits';
 
-const MAX_CODE_LENGTH = 40_000;
-const MAX_PLACEMENTS = 2_000;
-const MAX_SCENE_OPERATIONS = 256;
 const MAX_POINT_RESULTS = 512;
 const MAX_GRASS_FIELD_RESOLUTION = 64;
 const MAX_LAYOUT_ITEMS = 64;
 const MAX_LAYOUT_ITERATIONS = 512;
 const MAX_SPATIAL_QUERIES = 128;
-const DISCOVERY_EXECUTION_TIMEOUT_MS = 500;
-const FINAL_EXECUTION_TIMEOUT_MS = 1_000;
-const REPLAY_EXECUTION_TIMEOUT_MS = 3_000;
 const REFINE_ASSET_CATALOG_LIMIT = 64;
 const EXECUTION_REPAIR_MAX_TOKENS = 8_000;
 const ASSET_SEMANTIC_SNAPSHOT_MAX_CHARS = 900;
@@ -176,7 +179,9 @@ export interface MapCodePlannerOptions extends MapRefineScope {
   promptMode?: MapCodePromptMode;
   revisionMode?: MapCodeRevisionMode;
   spatialPolicy?: MapCodeSpatialPolicy;
-  /** Optional bounded override used by local diagnostics; HTTP callers do not control it. */
+  /** Optional bounded discovery override used by local diagnostics; HTTP callers do not control it. */
+  discoveryExecutionTimeoutMs?: number;
+  /** Optional bounded final-replay override used by local diagnostics; HTTP callers do not control it. */
   finalExecutionTimeoutMs?: number;
   /** Locked objects created by the current unapplied AI preview that refine may still adjust. */
   refinableObjectIds?: readonly string[];
@@ -832,7 +837,7 @@ export async function generateMapCodeSuggestion(
   try {
     final = adapted.final ?? executeFinalMapCodeReplay(
       replayContext,
-      clampInteger(options.finalExecutionTimeoutMs ?? FINAL_EXECUTION_TIMEOUT_MS, 1, FINAL_EXECUTION_TIMEOUT_MS)
+      clampInteger(options.finalExecutionTimeoutMs ?? MAP_CODE_FINAL_TIMEOUT_MS, 1, MAP_CODE_FINAL_TIMEOUT_MS)
     );
   } catch (error) {
     if (!isScriptExecutionTimeout(error)) throw error;
@@ -911,6 +916,11 @@ async function adaptMapCodeToGeneratedAssets(
       scope: options.scope,
       promptMode: options.promptMode,
       spatialPolicy: options.spatialPolicy,
+      executionTimeoutMs: clampInteger(
+        options.discoveryExecutionTimeoutMs ?? MAP_CODE_DISCOVERY_TIMEOUT_MS,
+        1,
+        MAP_CODE_DISCOVERY_TIMEOUT_MS
+      ),
       refinableObjectIds: new Set(options.refinableObjectIds ?? [])
     });
     if (!sameCodeAssetRequirements(discovery.requirements, candidateDiscovery.requirements)
@@ -937,7 +947,7 @@ async function adaptMapCodeToGeneratedAssets(
       scope: options.scope,
       promptMode: options.promptMode,
       spatialPolicy: options.spatialPolicy,
-      executionTimeoutMs: clampInteger(options.finalExecutionTimeoutMs ?? FINAL_EXECUTION_TIMEOUT_MS, 1, FINAL_EXECUTION_TIMEOUT_MS),
+      executionTimeoutMs: clampInteger(options.finalExecutionTimeoutMs ?? MAP_CODE_FINAL_TIMEOUT_MS, 1, MAP_CODE_FINAL_TIMEOUT_MS),
       refinableObjectIds: new Set(options.refinableObjectIds ?? [])
     }).suggestion;
     const unsafe = (candidateFinal.diagnostics ?? []).filter((issue) => (
@@ -1024,7 +1034,7 @@ export function replayGeneratedMapCode(token: string, map: EditableMap): MapAiSu
     throw new Error('map_code_replay_stale');
   }
   try {
-    const final = executeFinalMapCodeReplay(context, REPLAY_EXECUTION_TIMEOUT_MS);
+    const final = executeFinalMapCodeReplay(context, MAP_CODE_REPLAY_TIMEOUT_MS);
     mapCodeReplayContexts.delete(token);
     return completeGeneratedMapCodeSuggestion(context.planningMap, final, context);
   } catch (error) {
@@ -1163,7 +1173,7 @@ function executeMapCodePlanInternal(
   options: CodeExecutionOptions
 ): CodeExecutionResult {
   const cleanCode = normalizeMapCodePlan(code);
-  if (!cleanCode || cleanCode.length > MAX_CODE_LENGTH) throw new Error('invalid_map_code_plan');
+  if (!cleanCode || cleanCode.length > MAX_MAP_CODE_LENGTH) throw new Error('invalid_map_code_plan');
   const minimalMode = options.promptMode === 'minimal'
     && map.sceneMode === 'outdoor'
     && (options.requestMode ?? 'generate') === 'generate'
@@ -1240,13 +1250,13 @@ function executeMapCodePlanInternal(
   let noChangeReason = '';
   let spawnRequest: { point: Point2; yaw: number } | undefined;
   const emitSceneOperation = (operation: MapOperation) => {
-    if (sceneOperations.length >= MAX_SCENE_OPERATIONS) throw new Error('map_code_scene_operation_limit');
+    if (sceneOperations.length >= MAX_MAP_CODE_SCENE_OPERATIONS) throw new Error('map_code_scene_operation_limit');
     sceneOperations.push(operation);
   };
   const emitRoute = (input: RouteInput): string => {
     if (!input || typeof input !== 'object') throw new Error('invalid_map_code_route');
     const id = cleanId(input.id, 'route');
-    const points = codePointArray(input.points, 'invalid_map_code_route_points').slice(0, 64);
+    const points = codePointArray(input.points, 'invalid_map_code_route_points').slice(0, MAX_MAP_GUIDE_POINTS);
     if (points.length < 2) throw new Error('invalid_map_code_route_points');
     const width = clampFinite(input.width ?? 1.5, 0.2, Math.min(map.box.size[0], map.box.size[2]));
     emitSceneOperation({
@@ -1295,7 +1305,7 @@ function executeMapCodePlanInternal(
     return id;
   };
   const emitPlacement = (input: PlacementInput): string => {
-    if (placements.length >= MAX_PLACEMENTS) throw new Error('map_code_plan_too_many_placements');
+    if (placements.length >= MAX_MAP_CODE_PLACEMENTS) throw new Error('map_code_plan_too_many_placements');
     if (!input || typeof input !== 'object') throw new Error('invalid_map_code_placement');
     const referenceId = codePlacementReference(placements.length);
     const requestedAssetId = typeof input.assetId === 'string' && input.assetId.trim() ? input.assetId.trim() : null;
@@ -1817,7 +1827,7 @@ function executeMapCodePlanInternal(
       const leftSamples = sampleMapGuide(guide, { spacing, offset, startOffset, endOffset });
       const rightSamples = sampleMapGuide(guide, { spacing, offset: -offset, startOffset, endOffset });
       const references: string[] = [];
-      const maxCount = Math.min(MAX_POINT_RESULTS, MAX_PLACEMENTS - placements.length);
+      const maxCount = Math.min(MAX_POINT_RESULTS, MAX_MAP_CODE_PLACEMENTS - placements.length);
       for (let index = 0; index < centerSamples.length && references.length < maxCount; index += 1) {
         const sides = side === 'both'
           ? [leftSamples[index], rightSamples[index]]
@@ -2696,7 +2706,7 @@ function executeMapCodePlanInternal(
     },
     attach(input: AttachmentInput): string {
       record('attach');
-      if (placements.length >= MAX_PLACEMENTS) throw new Error('map_code_plan_too_many_placements');
+      if (placements.length >= MAX_MAP_CODE_PLACEMENTS) throw new Error('map_code_plan_too_many_placements');
       if (!input || typeof input !== 'object') throw new Error('invalid_map_code_attachment');
       const parentId = cleanText(input.parentId, 120);
       if (!parentId) throw new Error('invalid_map_code_attachment_parent');
@@ -2749,7 +2759,7 @@ function executeMapCodePlanInternal(
     },
     bridge(input: BridgeInput): void {
       record('bridge');
-      if (placements.length >= MAX_PLACEMENTS) throw new Error('map_code_plan_too_many_placements');
+      if (placements.length >= MAX_MAP_CODE_PLACEMENTS) throw new Error('map_code_plan_too_many_placements');
       if (!input || typeof input !== 'object') throw new Error('invalid_map_code_bridge');
       let replacementAssetId: string | undefined;
       let replacementObjectId: string | undefined;
@@ -2927,7 +2937,7 @@ function executeMapCodePlanInternal(
     },
     placeBetween(input: PlaceBetweenInput): void {
       record('placeBetween');
-      if (placements.length >= MAX_PLACEMENTS) throw new Error('map_code_plan_too_many_placements');
+      if (placements.length >= MAX_MAP_CODE_PLACEMENTS) throw new Error('map_code_plan_too_many_placements');
       if (!input || typeof input !== 'object') throw new Error('invalid_map_code_placement');
       const start = point2(input.start);
       const end = point2(input.end);
@@ -3065,7 +3075,7 @@ function executeMapCodePlanInternal(
   const returned = (() => {
     try {
       return script.runInContext(context, {
-        timeout: options.executionTimeoutMs ?? DISCOVERY_EXECUTION_TIMEOUT_MS
+        timeout: options.executionTimeoutMs ?? MAP_CODE_DISCOVERY_TIMEOUT_MS
       });
     } catch (error) {
       // A crashed attempt still placed real content before dying; show it so
@@ -4162,6 +4172,11 @@ function runFirstPassMapCodeDiscovery(
       scope: options.scope,
       promptMode: options.promptMode,
       spatialPolicy: options.spatialPolicy,
+      executionTimeoutMs: clampInteger(
+        options.discoveryExecutionTimeoutMs ?? MAP_CODE_DISCOVERY_TIMEOUT_MS,
+        1,
+        MAP_CODE_DISCOVERY_TIMEOUT_MS
+      ),
       refinableObjectIds: new Set(options.refinableObjectIds ?? []),
       onPlanPreview: options.onPlanPreview
     });
@@ -4202,6 +4217,11 @@ async function discoverMapCodeWithRepairs(
         scope: options.scope,
         promptMode: options.promptMode,
         spatialPolicy: options.spatialPolicy,
+        executionTimeoutMs: clampInteger(
+          options.discoveryExecutionTimeoutMs ?? MAP_CODE_DISCOVERY_TIMEOUT_MS,
+          1,
+          MAP_CODE_DISCOVERY_TIMEOUT_MS
+        ),
         refinableObjectIds: new Set(options.refinableObjectIds ?? []),
         onPlanPreview: options.onPlanPreview
       });
@@ -4305,7 +4325,7 @@ async function discoverMapCodeWithRepairs(
       executionRepairAttempts += 1;
       repairAttempts += 1;
       const timeoutRepairGuidance = /script execution timed out/i.test(executionError)
-        ? `\n\nThis was an execution timeout. Do not scale loop counts from map width, map area, or fine coordinate steps. Replace manual area scans with bounded api.gridPoints, api.poissonDisk, api.sampleProbabilityField, api.grassField, api.optimizeLayout, or curve-sampling results and iterate each result once. Avoid while loops and nested placement loops; keep each explicit loop below ${MAX_POINT_RESULTS} iterations and total placements below ${MAX_PLACEMENTS}.`
+        ? `\n\nThis was an execution timeout. Do not scale loop counts from map width, map area, or fine coordinate steps. Replace manual area scans with bounded api.gridPoints, api.poissonDisk, api.sampleProbabilityField, api.grassField, api.optimizeLayout, or curve-sampling results and iterate each result once. Avoid while loops and nested placement loops; keep each explicit loop below ${MAX_POINT_RESULTS} iterations and total placements below ${MAX_MAP_CODE_PLACEMENTS}.`
         : '';
       const lockedObjectRepairGuidance = /locked_map_code_object:([^\s]+)/i.exec(executionError)
         ? `\n\nThe referenced object is locked and not refinable. Leave it unchanged. Do not replace api.move with api.removeObject for the same ID; instead adjust only objects whose catalog entry has refinable:true, or add unlocked supporting content elsewhere.`

@@ -26,6 +26,7 @@ import {
 } from '../shared/map';
 import type { Vec3 } from '../shared/protocol';
 import { normalizeModelGenerationMode, type ModelGenerationMode } from '../shared/modelGenerationMode';
+import { MAX_MAP_CODE_LENGTH, MAX_MAP_CODE_PLACEMENTS } from '../shared/mapLimits';
 import {
   applyMapOperations,
   type MapAiTransactionMetadata,
@@ -1173,7 +1174,7 @@ function normalizeMapAiTransactionMetadata(value: unknown): MapAiTransactionMeta
   const agent = input.agent && typeof input.agent === 'object' ? input.agent : undefined;
   const program = cleanText(agent?.program, 50_000);
   const codePlan = input.codePlan && typeof input.codePlan === 'object' ? input.codePlan : undefined;
-  const code = cleanText(codePlan?.code, 50_000);
+  const code = cleanText(codePlan?.code, MAX_MAP_CODE_LENGTH);
   if (!program && !code) return undefined;
   return {
     prompt: cleanText(input.prompt, 1_200),
@@ -1196,7 +1197,7 @@ function normalizeMapAiTransactionMetadata(value: unknown): MapAiTransactionMeta
     } } : {}),
     ...(code && codePlan ? { codePlan: {
       code,
-      placementCount: boundedInteger(codePlan.placementCount, 0, 10_000),
+      placementCount: boundedInteger(codePlan.placementCount, 0, MAX_MAP_CODE_PLACEMENTS),
       functions: Array.isArray(codePlan.functions)
         ? codePlan.functions.slice(0, 100).map((item) => cleanText(item, 80)).filter(Boolean)
         : [],

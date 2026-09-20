@@ -1,4 +1,5 @@
 import type { MapGenerationOwner } from './mapLayout';
+import { MAX_MAP_GUIDE_POINTS } from './mapLimits';
 import type { Vec3 } from './protocol';
 
 export const MAP_GUIDE_CURVES = ['polyline', 'catmull-rom'] as const;
@@ -67,7 +68,6 @@ export interface MapStreetGrid {
 }
 
 const MAX_GUIDES = 96;
-const MAX_GUIDE_POINTS = 96;
 const CURVE_STEPS_PER_SEGMENT = 12;
 
 export function normalizeMapGuides(value: unknown, boxSize: Vec3): MapGuide[] {
@@ -82,7 +82,7 @@ export function normalizeMapGuides(value: unknown, boxSize: Vec3): MapGuide[] {
     const input = raw as Partial<MapGuide>;
     const id = cleanId(input.id);
     if (!id || seen.has(id) || !Array.isArray(input.points)) continue;
-    const points = input.points.slice(0, MAX_GUIDE_POINTS)
+    const points = input.points.slice(0, MAX_MAP_GUIDE_POINTS)
       .filter((point): point is [number, number] => (
         Array.isArray(point) && point.length >= 2
         && Number.isFinite(Number(point[0])) && Number.isFinite(Number(point[1]))
@@ -130,7 +130,7 @@ export function sampleMapGuide(guide: MapGuide, options: SampleMapGuideOptions):
 }
 
 /** Deterministic approximation used by terrain paths and the existing placement solver. */
-export function mapGuidePolyline(guide: MapGuide, maxPoints = 64): Array<[number, number]> {
+export function mapGuidePolyline(guide: MapGuide, maxPoints = MAX_MAP_GUIDE_POINTS): Array<[number, number]> {
   const dense = denseGuidePoints(guide);
   const limit = Math.max(2, Math.floor(maxPoints));
   if (dense.length <= limit) return dense.map(clonePoint);

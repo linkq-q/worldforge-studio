@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Material, Mesh } from 'three';
 import { createEmptyMap, normalizeMap } from '../src/shared/map';
-import { combinedGrassDensity, inferGrassPreset, normalizeGrassLayers, sampleGrassDensity } from '../src/shared/mapGrass';
+import { MAX_GRASS_LAYERS, combinedGrassDensity, inferGrassPreset, normalizeGrassLayers, sampleGrassDensity } from '../src/shared/mapGrass';
 import { applyMapOperations } from '../src/shared/mapOperations';
 import { buildMapGrassField, deriveContactAwareGrassMap } from '../src/client/mapGrassRenderer';
 import { isNormalDepthPrePassMesh } from '../src/client/renderPrePassPolicy';
@@ -249,6 +249,16 @@ describe('map grass layers', () => {
 
     const removed = applyMapOperations(filled, [{ type: 'grass.layer.remove', layerId: 'meadow' }]);
     expect(removed.grassLayers).toEqual([]);
+  });
+
+  it('keeps more than eight grass layers under the shared engine cap', () => {
+    const operations = Array.from({ length: 9 }, (_, index) => ({
+      type: 'grass.layer.add' as const,
+      layer: { id: `layer-${index}` }
+    }));
+
+    expect(MAX_GRASS_LAYERS).toBe(512);
+    expect(applyMapOperations(createEmptyMap('layered grass'), operations).grassLayers).toHaveLength(9);
   });
 
   it('persists and resamples a bounded custom density field', () => {

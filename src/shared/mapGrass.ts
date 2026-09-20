@@ -1,5 +1,6 @@
 import { sampleTerrainHeight, type EditableMap } from './map';
 import { habitatBandSuitability, normalizeHabitatBand, type HabitatBand } from './mapHabitat';
+import { MAX_MAP_GRASS_LAYERS } from './mapLimits';
 import { distanceToWater } from './mapWater';
 
 export type GrassBrushMode = 'add' | 'erase' | 'density' | 'smooth';
@@ -56,7 +57,7 @@ export interface GrassLayerInput {
 
 export type GrassLayerPatch = Pick<GrassLayerInput, 'name' | 'visible' | 'seed' | 'preset' | 'height' | 'mix'>;
 
-export const MAX_GRASS_LAYERS = 8;
+export const MAX_GRASS_LAYERS = MAX_MAP_GRASS_LAYERS;
 export const DEFAULT_GRASS_MIX: GrassVariantMix = { short: 0.76, tall: 0.2, flowers: 0.04 };
 export const GRASS_PRESET_DEFINITIONS: ReadonlyArray<{
   id: GrassPresetId;

@@ -376,7 +376,7 @@ function createSceneApi(context: SceneProgramContext): Record<string, SceneMetho
         surface,
         intensity: clamp(finiteNumber(intensityValue, 1), 0.05, 1),
         zoneId: `scene-program:${guide.id}`,
-        region: { kind: 'path', points: mapGuidePolyline(guide), width: guide.width }
+        region: { kind: 'path', points: mapGuidePolyline(guide, 64), width: guide.width }
       });
     },
     surfaceRegion: (idValue, surfaceValue, regionValue, intensityValue) => {

@@ -4,6 +4,7 @@ import path from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 import { createEmptyMap, sampleTerrainHeight } from '../src/shared/map';
 import { applyMapOperations } from '../src/shared/mapOperations';
+import { MAX_MAP_CODE_LENGTH, MAX_MAP_CODE_PLACEMENTS, MAX_MAP_OPERATIONS } from '../src/shared/mapLimits';
 import { MapStore } from '../src/server/mapStore';
 
 const tempDirs: string[] = [];
@@ -66,6 +67,49 @@ describe('map operation transactions', () => {
       { type: 'unknown' } as never
     ])).toThrow('unsupported_operation');
     expect(map.name).toBe('unchanged');
+  });
+
+  it('accepts transactions above the legacy cap and rejects operations above the engine cap', () => {
+    const map = createEmptyMap('expanded transaction', 'map-expanded-transaction');
+    const expanded = Array.from({ length: 2_001 }, () => ({ type: 'map.update' as const, name: 'expanded' }));
+    const excessive = Array.from({ length: MAX_MAP_OPERATIONS + 1 }, () => ({
+      type: 'map.update' as const,
+      name: 'too many'
+    }));
+
+    expect(applyMapOperations(map, expanded).name).toBe('expanded');
+    expect(() => applyMapOperations(map, excessive)).toThrow('too_many_operations');
+  });
+
+  it('persists long routes and near-limit Scene Code metadata without truncation', async () => {
+    const store = await createStore();
+    const original = await store.createMap({ name: 'large planner payload' });
+    const points = Array.from({ length: 128 }, (_, index): [number, number] => [
+      -18 + index * 36 / 127,
+      Math.sin(index / 8) * 5
+    ]);
+    const withRoute = applyMapOperations(original, [{
+      type: 'guide.upsert',
+      guide: { id: 'long-route', name: 'Long route', points, curve: 'polyline', closed: false, width: 2, tags: [] }
+    }]);
+    await store.replaceMap(original.id, withRoute);
+    const code = `function plan(api) { /*${'x'.repeat(MAX_MAP_CODE_LENGTH - 100)}*/ api.random(); }`;
+    const committed = await store.commitTransaction(original.id, {
+      source: 'agent',
+      operations: [{ type: 'map.update', name: 'generated' }],
+      ai: {
+        prompt: 'large planner payload',
+        codePlan: { code, placementCount: MAX_MAP_CODE_PLACEMENTS, functions: ['random'] }
+      }
+    });
+    const restarted = new MapStore({ rootDir: store.rootDir });
+
+    expect(code.length).toBeGreaterThan(50_000);
+    expect(code.length).toBeLessThanOrEqual(MAX_MAP_CODE_LENGTH);
+    expect((await restarted.loadMap(original.id)).guides[0].points).toHaveLength(128);
+    expect(committed.transaction.ai?.codePlan?.code).toBe(code);
+    expect(committed.transaction.ai?.codePlan?.placementCount).toBe(MAX_MAP_CODE_PLACEMENTS);
+    expect((await restarted.getUndoTransaction(original.id))?.ai?.codePlan?.code).toBe(code);
   });
 
   it('applies a large scatter transaction without mutating the source map', () => {

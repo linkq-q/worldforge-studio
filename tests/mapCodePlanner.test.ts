@@ -9,8 +9,59 @@ import {
 } from '../src/server/mapCodePlanner';
 import { applyMapOperations, type CodePlanAssetReadyPayload, type CodePlanPreviewPayload } from '../src/shared/mapOperations';
 import { isPointInsideWaterBody } from '../src/shared/mapWater';
+import {
+  MAX_MAP_CODE_LENGTH,
+  MAX_MAP_CODE_SCENE_OPERATIONS,
+  MAX_MAP_GUIDE_POINTS,
+  MAX_MAP_OPERATIONS
+} from '../src/shared/mapLimits';
 
 describe('map code planner', () => {
+  it('uses the shared expanded engine limits', () => {
+    expect(MAX_MAP_CODE_LENGTH).toBe(400_000);
+    expect(MAX_MAP_CODE_SCENE_OPERATIONS).toBe(50_000);
+    expect(MAX_MAP_CODE_SCENE_OPERATIONS).toBe(MAX_MAP_OPERATIONS);
+    expect(MAX_MAP_GUIDE_POINTS).toBe(16_384);
+  });
+
+  it('accepts Scene Code near the expanded length limit', () => {
+    const code = `function plan(api) { /*${'x'.repeat(MAX_MAP_CODE_LENGTH - 100)}*/ api.place({ position:[0,0] }); }`;
+    const excessive = `function plan(api) { /*${'x'.repeat(MAX_MAP_CODE_LENGTH)}*/ api.place({ position:[0,0] }); }`;
+
+    expect(executeMapCodePlan(code, createEmptyMap()).codePlan?.code).toBe(code);
+    expect(() => executeMapCodePlan(excessive, createEmptyMap())).toThrow('invalid_map_code_plan');
+  });
+
+  it('accepts more than the legacy placement and scene-operation caps', () => {
+    const map = createEmptyMap('expanded code plan', 'expanded-code-plan', [256, 20, 256]);
+    const placements = executeMapCodePlan(`function plan(api) {
+      for (let index = 0; index < 2001; index += 1) {
+        api.place({ name:'marker', position:[(index % 50) * 2 - 50, Math.floor(index / 50) * 2 - 40] });
+      }
+    }`, map, [], { spatialPolicy: 'diagnose' });
+    const sceneOperations = executeMapCodePlan(`function plan(api) {
+      for (let index = 0; index < 300; index += 1) {
+        api.route({ id:'route-' + index, points:[[-10,index % 20 - 10],[10,index % 20 - 10]], surface:'none' });
+      }
+    }`, map, [], { spatialPolicy: 'diagnose' });
+
+    expect(placements.operations.filter((operation) => operation.type === 'object.add')).toHaveLength(2_001);
+    expect(sceneOperations.operations.filter((operation) => operation.type === 'guide.upsert')).toHaveLength(300);
+  });
+
+  it('preserves route control points above the legacy planner limit', () => {
+    const points = Array.from({ length: 128 }, (_, index): [number, number] => [
+      -18 + index * 36 / 127,
+      Math.sin(index / 8) * 5
+    ]);
+    const suggestion = executeMapCodePlan(`function plan(api) {
+      api.route({ id:'long-route', points:${JSON.stringify(points)}, surface:'none' });
+    }`, createEmptyMap());
+    const route = suggestion.operations.find((operation) => operation.type === 'guide.upsert');
+
+    expect(route?.type === 'guide.upsert' ? route.guide.points : []).toHaveLength(128);
+  });
+
   it('removes a leading model thinking block without rewriting the authored plan', () => {
     const code = `function plan(api) { api.place({name:'桌椅组',position:[0,0]}); }`;
     const suggestion = executeMapCodePlan(`<think>Planning a park...</think>\n${code}`, createEmptyMap());
@@ -3303,7 +3354,7 @@ describe('map code planner', () => {
   it('blocks host globals and runaway code', () => {
     expect(() => executeMapCodePlan('function plan(api) { process.cwd(); api.place({ position:[0,0] }); }', createEmptyMap()))
       .toThrow();
-    expect(() => executeMapCodePlan('function plan() { while (true) {} }', createEmptyMap()))
+    expect(() => executeMapCodePlan('function plan() { while (true) {} }', createEmptyMap(), [], { executionTimeoutMs: 10 }))
       .toThrow();
   });
 
@@ -3764,7 +3815,8 @@ describe('map code planner', () => {
     const suggestion = await generateMapCodeSuggestion('make a large plaza', createEmptyMap(), [], {
       apiBase: 'https://example.test',
       provider: 'gpt',
-      fetchImpl
+      fetchImpl,
+      discoveryExecutionTimeoutMs: 10
     });
 
     const repairRequest = JSON.parse(String(fetchImpl.mock.calls[1][1]?.body));

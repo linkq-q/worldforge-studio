@@ -38,8 +38,25 @@ describe('map guide layout kernel', () => {
     expect(center.some((sample) => Math.abs(sample.tangentX) > 0.2 && Math.abs(sample.tangentZ) > 0.2)).toBe(true);
     expect(outside.some((sample, index) => Math.hypot(sample.x - center[index].x, sample.z - center[index].z) > 1.9)).toBe(true);
     expect(mapGuidePolyline(parkLoop).length).toBeGreaterThan(parkLoop.points.length * 5);
-    expect(mapGuidePolyline(parkLoop)).toHaveLength(64);
+    expect(mapGuidePolyline(parkLoop, 64)).toHaveLength(64);
     expect(mapGuidePolyline(parkLoop).at(-1)).toEqual(mapGuidePolyline(parkLoop)[0]);
+  });
+
+  it('preserves routes above the legacy control-point limit', () => {
+    const points = Array.from({ length: 128 }, (_, index): [number, number] => [
+      -18 + index * 36 / 127,
+      Math.sin(index / 8) * 5
+    ]);
+    const [normalized] = normalizeMapGuides([{
+      id: 'long-route', name: 'Long route', points, curve: 'polyline', closed: false, width: 2, tags: []
+    }], [40, 20, 30]);
+    const applied = applyMapOperations(createEmptyMap('long route', 'long-route-map'), [{
+      type: 'guide.upsert', guide: normalized
+    }]);
+
+    expect(normalized.points).toHaveLength(128);
+    expect(mapGuidePolyline(normalized)).toHaveLength(128);
+    expect(applied.guides[0].points).toHaveLength(128);
   });
 
   it('creates deterministic parallel farm rows clipped to a non-square field', () => {

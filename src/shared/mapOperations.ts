@@ -60,6 +60,7 @@ import {
   type GrassRegion
 } from './mapGrass';
 import { normalizeMapGuides, type MapGuide } from './mapGuide';
+import { MAX_MAP_OPERATIONS } from './mapLimits';
 import type { MapDesignSemantics } from './mapDesign';
 
 export type MapTransactionSource = 'basic-ai' | 'agent' | 'manual';
@@ -250,11 +251,9 @@ export interface MapAiSuggestion {
 const MAP_SURFACES = new Set<MapSurface>(['floor', 'ceiling', 'north', 'south', 'east', 'west', 'terrain']);
 const TERRAIN_MODES = new Set<TerrainBrushMode>(['raise', 'lower', 'flatten']);
 const GRASS_BRUSH_MODES = new Set<GrassBrushMode>(['add', 'erase', 'density', 'smooth']);
-const MAX_OPERATIONS = 2_000;
-
 export function applyMapOperations(map: EditableMap, operations: readonly MapOperation[]): EditableMap {
   if (!Array.isArray(operations) || operations.length === 0) throw new Error('empty_operations');
-  if (operations.length > MAX_OPERATIONS) throw new Error('too_many_operations');
+  if (operations.length > MAX_MAP_OPERATIONS) throw new Error('too_many_operations');
 
   let next = normalizeMap(map);
   const transactionDefinesOcean = operations.some((operation) => (
