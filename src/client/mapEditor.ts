@@ -172,7 +172,10 @@ import {
 } from '../shared/terrainGeneration';
 import {
   type AgentProgressEvent,
-  type ChatProvider
+  type ChatProvider,
+  type MapCodePromptMode,
+  type MapCodeRevisionMode,
+  type MapCodeSpatialPolicy
 } from '../shared/protocol';
 import type { HdriTexture } from '../shared/hdri';
 import type { RenderScheme, RenderSuggestion } from '../shared/renderScheme';
@@ -445,6 +448,9 @@ class MapEditor {
   private mapAiBaseTerrainOnly = false;
   private mapAiProvider: ChatProvider = 'gpt';
   private mapAiPaletteId = '';
+  private mapAiCodePromptMode: MapCodePromptMode = 'standard';
+  private mapAiCodeRevisionMode: MapCodeRevisionMode = 'repair';
+  private mapAiCodeSpatialPolicy: MapCodeSpatialPolicy = 'repair';
   private mapAiUseSceneAgent = true;
   private mapAiReuseExistingAssets = false;
   private mapAiConfirmCompositionPlan = false;
@@ -1172,6 +1178,9 @@ class MapEditor {
           this.mapAiReuseExistingAssets = plan.options.reuseExistingAssets;
           this.activeAssetLibraryId = plan.options.assetLibraryId;
           this.mapAiPaletteId = plan.options.paletteId;
+          this.mapAiCodePromptMode = plan.options.codePromptMode ?? 'standard';
+          this.mapAiCodeRevisionMode = plan.options.codeRevisionMode ?? 'repair';
+          this.mapAiCodeSpatialPolicy = plan.options.codeSpatialPolicy ?? 'repair';
           this.pendingCodeSuggestion = plan.suggestion;
           this.codePlanSaved = true;
           if (plan.preview) this.showCodePlanPreview(plan.preview);
@@ -1554,6 +1563,27 @@ class MapEditor {
             <span>整体 Code（统一地形、建筑与环境）</span>
             <input id="map-ai-scene-agent" type="checkbox" ${this.mapAiUseSceneAgent ? 'checked' : ''} ${this.state.busy || this.pendingCodeSuggestion ? 'disabled' : ''} />
           </label>` : ''}
+          <label class="field compact">
+            <span>Scene Code 规划提示</span>
+            <select id="map-ai-code-prompt-mode" ${this.state.busy ? 'disabled' : ''}>
+              <option value="standard" ${this.mapAiCodePromptMode === 'standard' ? 'selected' : ''}>标准完整能力</option>
+              <option value="minimal" ${this.mapAiCodePromptMode === 'minimal' ? 'selected' : ''}>极简 10 API（仅室外首轮）</option>
+            </select>
+          </label>
+          <label class="field compact">
+            <span>Scene Code 代码处理</span>
+            <select id="map-ai-code-revision-mode" ${this.state.busy ? 'disabled' : ''}>
+              <option value="repair" ${this.mapAiCodeRevisionMode === 'repair' ? 'selected' : ''}>自动修错并按真实资产调整</option>
+              <option value="first-pass" ${this.mapAiCodeRevisionMode === 'first-pass' ? 'selected' : ''}>保留首版代码</option>
+            </select>
+          </label>
+          <label class="field compact">
+            <span>Scene Code 空间处理</span>
+            <select id="map-ai-code-spatial-policy" ${this.state.busy ? 'disabled' : ''}>
+              <option value="repair" ${this.mapAiCodeSpatialPolicy === 'repair' ? 'selected' : ''}>自动修复并报告</option>
+              <option value="diagnose" ${this.mapAiCodeSpatialPolicy === 'diagnose' ? 'selected' : ''}>只报告，不改位置</option>
+            </select>
+          </label>
           ${map.sceneMode === 'indoor' ? `<label class="field compact map-ai-toggle">
             <span>生成资产前先确认功能规划</span>
             <input id="map-ai-confirm-plan" type="checkbox" ${this.mapAiConfirmCompositionPlan ? 'checked' : ''} ${this.state.busy || this.pendingCompositionPlan || this.pendingCodeSuggestion ? 'disabled' : ''} />
@@ -1701,6 +1731,15 @@ class MapEditor {
     host.querySelector<HTMLInputElement>('#map-ai-scene-agent')?.addEventListener('change', (event) => {
       this.mapAiUseSceneAgent = (event.target as HTMLInputElement).checked;
       this.renderMapAiPanel();
+    });
+    host.querySelector<HTMLSelectElement>('#map-ai-code-prompt-mode')?.addEventListener('change', (event) => {
+      this.mapAiCodePromptMode = (event.target as HTMLSelectElement).value === 'minimal' ? 'minimal' : 'standard';
+    });
+    host.querySelector<HTMLSelectElement>('#map-ai-code-revision-mode')?.addEventListener('change', (event) => {
+      this.mapAiCodeRevisionMode = (event.target as HTMLSelectElement).value === 'first-pass' ? 'first-pass' : 'repair';
+    });
+    host.querySelector<HTMLSelectElement>('#map-ai-code-spatial-policy')?.addEventListener('change', (event) => {
+      this.mapAiCodeSpatialPolicy = (event.target as HTMLSelectElement).value === 'diagnose' ? 'diagnose' : 'repair';
     });
     host.querySelector<HTMLInputElement>('#map-ai-confirm-plan')?.addEventListener('change', (event) => {
       this.mapAiConfirmCompositionPlan = (event.target as HTMLInputElement).checked;
@@ -2367,7 +2406,10 @@ class MapEditor {
           maxNewAssets: this.mapAiMaxNewAssets,
           reuseExistingAssets: this.mapAiReuseExistingAssets,
           assetLibraryId: this.activeAssetLibraryId,
-          paletteId: this.mapAiPaletteId
+          paletteId: this.mapAiPaletteId,
+          codePromptMode: this.mapAiCodePromptMode,
+          codeRevisionMode: this.mapAiCodeRevisionMode,
+          codeSpatialPolicy: this.mapAiCodeSpatialPolicy
         }
       });
       this.codePlanSaved = true;
@@ -2420,6 +2462,9 @@ class MapEditor {
             paletteId: this.mapAiPaletteId || undefined,
             sceneAgent: map.sceneMode === 'outdoor' && this.mapAiUseSceneAgent,
             focusPrompt: this.mapAiFocusPrompt.trim() || undefined,
+            codePromptMode: this.mapAiCodePromptMode,
+            codeRevisionMode: this.mapAiCodeRevisionMode,
+            codeSpatialPolicy: this.mapAiCodeSpatialPolicy,
             planOnly: true
           }),
           signal: controller.signal
@@ -2515,6 +2560,9 @@ class MapEditor {
             approvedCode,
             sceneAgent: map.sceneMode === 'outdoor' && this.mapAiUseSceneAgent,
             focusPrompt: this.mapAiFocusPrompt.trim() || undefined,
+            codePromptMode: this.mapAiCodePromptMode,
+            codeRevisionMode: this.mapAiCodeRevisionMode,
+            codeSpatialPolicy: this.mapAiCodeSpatialPolicy,
             paletteId: this.mapAiPaletteId || undefined,
             selectedObjectIds: [...this.selectedObjectIds],
             parentTraceId: previousSuggestion?.generationTraceId ?? this.pendingCodeSuggestion?.generationTraceId

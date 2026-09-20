@@ -1,5 +1,6 @@
 import { normalizeMap, type EditableMap } from '../shared/map';
 import type { CodePlanPreviewPayload, MapAiSuggestion } from '../shared/mapOperations';
+import type { MapCodePromptMode, MapCodeRevisionMode, MapCodeSpatialPolicy } from '../shared/protocol';
 
 export interface BrowserMapDraft {
   mapId: string;
@@ -22,6 +23,9 @@ export interface BrowserMapPlan {
     reuseExistingAssets: boolean;
     assetLibraryId: string;
     paletteId: string;
+    codePromptMode?: MapCodePromptMode;
+    codeRevisionMode?: MapCodeRevisionMode;
+    codeSpatialPolicy?: MapCodeSpatialPolicy;
   };
 }
 

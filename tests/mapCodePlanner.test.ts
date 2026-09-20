@@ -19,6 +19,127 @@ describe('map code planner', () => {
       expect.objectContaining({ type:'object.add', object:expect.objectContaining({name:'桌椅组'}) })
     ]));
   });
+
+  it('wraps a bare top-level script and stores the normalized complete plan function', () => {
+    const suggestion = executeMapCodePlan("api.place({name:'树',position:[0,0],role:'environment'});", createEmptyMap());
+
+    expect(suggestion.codePlan?.code).toBe("function plan(api) {\napi.place({name:'树',position:[0,0],role:'environment'});\n}");
+    expect(suggestion.operations).toEqual(expect.arrayContaining([
+      expect.objectContaining({ type: 'object.add', object: expect.objectContaining({ name: '树' }) })
+    ]));
+  });
+
+  it('offers the outdoor first-pass planner exactly the supported minimal 10-API contract', () => {
+    const prompt = buildMapCodePlannerSystemPrompt(
+      createEmptyMap(), [], 1, 4, 'scene', 'generate', '', [], 'minimal'
+    );
+
+    expect(prompt).toContain('exactly these 10 WorldForge APIs');
+    for (const name of ['terrain', 'modifyTerrain', 'surface', 'water', 'route', 'grass', 'requireAsset', 'asset', 'place', 'random']) {
+      expect(prompt).toContain(`api.${name}`);
+    }
+    expect(prompt).toContain("'plain'|'hills'|'valley'|'island'|'archipelago'|'canyon'|'cliff-plateau'|'dune-desert'");
+    expect(prompt).toContain('Return only one complete synchronous JavaScript function: function plan(api) { ... }.');
+    expect(prompt).not.toContain("'mountainous'");
+    expect(prompt).not.toContain("'dunes'");
+    expect(prompt).not.toContain("'islands'");
+    expect(prompt).not.toContain('api.design');
+    expect(prompt).not.toContain('api.bridge');
+  });
+
+  it('keeps standard prompts for indoor and refinement requests even when minimal is selected', () => {
+    const indoor = createEmptyMap('room', 'room', [10, 3, 8], 'voxel', 'indoor');
+    const indoorPrompt = buildMapCodePlannerSystemPrompt(indoor, [], 0, 2, 'scene', 'generate', '', [], 'minimal');
+    const refinePrompt = buildMapCodePlannerSystemPrompt(createEmptyMap(), [], 0, 2, 'scene', 'refine', '', [], 'minimal');
+
+    expect(indoorPrompt).toContain('procedural indoor-scene planner');
+    expect(refinePrompt).toContain('Outdoor Scene Code refinement');
+    expect(indoorPrompt).not.toContain('exactly these 10 WorldForge APIs');
+    expect(refinePrompt).not.toContain('exactly these 10 WorldForge APIs');
+  });
+
+  it('restricts minimal execution to the documented 10 APIs', () => {
+    const allowed = executeMapCodePlan(
+      "function plan(api) { api.place({name:'树',position:[api.random(-1,1),0],role:'environment'}); }",
+      createEmptyMap(),
+      [],
+      { scope: 'scene', promptMode: 'minimal' }
+    );
+    expect(allowed.operations.some((operation) => operation.type === 'object.add')).toBe(true);
+    expect(() => executeMapCodePlan(
+      "function plan(api) { api.renderSuggestion('not available'); }",
+      createEmptyMap(),
+      [],
+      { scope: 'scene', promptMode: 'minimal' }
+    )).toThrow('api.renderSuggestion is not a function');
+  });
+
+  it('reports lint findings without applying spatial repairs in diagnose mode', () => {
+    const map = createEmptyMap('lake diagnostics', 'lake-diagnostics');
+    map.waterBodies = [{
+      id: 'lake-1', name: 'Lake', type: 'lake', level: 0.2, depth: 1.5, width: 1.2,
+      points: [[-4, -4], [4, -4], [4, 4], [-4, 4]]
+    }];
+    map.terrain.heights.fill(1);
+    const code = "function plan(api) { api.place({name:'树',position:[8,8],role:'environment'}); }";
+
+    const repaired = executeMapCodePlan(code, map, [], { scope: 'scene' });
+    const diagnosed = executeMapCodePlan(code, map, [], { scope: 'scene', spatialPolicy: 'diagnose' });
+
+    expect(repaired.operations).toEqual(expect.arrayContaining([
+      expect.objectContaining({ type: 'water.update', waterId: 'lake-1' })
+    ]));
+    expect(diagnosed.operations.some((operation) => operation.type === 'water.update')).toBe(false);
+    expect(diagnosed.diagnostics).toEqual(expect.arrayContaining([
+      expect.objectContaining({ code: 'water.exposed-terrain', repaired: false })
+    ]));
+  });
+
+  it('fails first-pass code without invoking the LLM repair loop', async () => {
+    const fetchImpl = vi.fn();
+
+    await expect(generateMapCodeSuggestion('broken plan', createEmptyMap(), [], {
+      approvedCode: 'throw new Error("broken");',
+      revisionMode: 'first-pass',
+      fetchImpl,
+      scope: 'scene',
+      minNewAssets: 0,
+      maxNewAssets: 0
+    })).rejects.toThrow('map_code_execution_failed:Error: broken');
+    expect(fetchImpl).not.toHaveBeenCalled();
+  });
+
+  it('skips asset-aware LLM code adjustment while retaining final local replay in first-pass mode', async () => {
+    const generated = {
+      ...testAsset('generated-tree', 'Generated tree'),
+      modelJson: {
+        nodes: [],
+        _meta: { semanticSnapshot: { v: 1, auto: true, text: 'G:tree trunk and canopy' } }
+      }
+    } satisfies MapAsset;
+    const code = `function plan(api) {
+      const tree=api.requireAsset({key:'tree',name:'树',prompt:'A tree',dimensions:[2,5,2],role:'environment'});
+      api.place({assetId:api.asset(tree),name:'树',position:[0,0],role:'environment'});
+    }`;
+    const fetchImpl = vi.fn();
+
+    const suggestion = await generateMapCodeSuggestion('one tree', createEmptyMap(), [], {
+      approvedCode: code,
+      revisionMode: 'first-pass',
+      fetchImpl,
+      scope: 'scene',
+      minNewAssets: 0,
+      maxNewAssets: 1,
+      createAsset: vi.fn().mockResolvedValue(generated)
+    });
+
+    expect(fetchImpl).not.toHaveBeenCalled();
+    expect(suggestion.codePlan?.code).toBe(code);
+    expect(suggestion.generatedAssets).toEqual([{ id: generated.id, name: generated.name }]);
+    expect(suggestion.operations).toEqual(expect.arrayContaining([
+      expect.objectContaining({ type: 'object.add', object: expect.objectContaining({ assetId: generated.id }) })
+    ]));
+  });
   it('routes existing-host decoration through mount without changing the selected source', async () => {
     const host = testAsset('existing-host', 'Host');
     const mounted = testAsset('decorated-host', 'Decorated host');

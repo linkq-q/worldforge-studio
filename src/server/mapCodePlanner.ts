@@ -39,7 +39,13 @@ import {
   compileMapNaturalClearance,
   resolveMapDesignFocusObjects
 } from '../shared/mapDesignRelations';
-import type { AgentProgressEvent, ChatProvider } from '../shared/protocol';
+import type {
+  AgentProgressEvent,
+  ChatProvider,
+  MapCodePromptMode,
+  MapCodeRevisionMode,
+  MapCodeSpatialPolicy
+} from '../shared/protocol';
 import {
   applyMapOperations,
   isCodePlanPlaceholderAssetId,
@@ -108,6 +114,10 @@ const EXECUTION_REPAIR_MAX_TOKENS = 8_000;
 const ASSET_SEMANTIC_SNAPSHOT_MAX_CHARS = 900;
 const ASSET_CATALOG_SNAPSHOT_CONTEXT_MAX_CHARS = 12_000;
 const GENERATED_ASSET_CONTEXT_MAX_CHARS = 12_000;
+const MINIMAL_MAP_CODE_API_KEYS = [
+  'terrain', 'modifyTerrain', 'surface', 'water', 'route',
+  'grass', 'requireAsset', 'asset', 'place', 'random'
+] as const;
 const MAP_CODE_ENVIRONMENT_FORM_CONTRACT = `Use these structured environment forms:
 api.terrain({preset:'plain'|'hills'|'valley'|'island'|'archipelago'|'canyon'|'cliff-plateau'|'dune-desert',amplitude?,roughness?,seed?,direction?:degrees|[x,z]});
 api.modifyTerrain({modifier:'mountain'|'ridge'|'valley'|'basin'|'cliff'|'terrace'|'dune'|'island',region:{kind:'circle',center:[x,z],radius}|{kind:'path',points:[[x,z],...],width}|{kind:'polygon',points:[[x,z],...]},amplitude?:positiveNumber,softness?:number,direction?:degrees|[x,z],variation?:number,layers?:number|stepArray,layout?:'plateau'|'coast'|'canyon'|'wall'|'terraces',access?:'walkable'|'scenic',seed?});
@@ -163,6 +173,9 @@ export interface MapCodePlannerOptions extends MapRefineScope {
   approvedCode?: string;
   /** Optional user-authored preference for focal assets; the model still owns the composition. */
   focusPrompt?: string;
+  promptMode?: MapCodePromptMode;
+  revisionMode?: MapCodeRevisionMode;
+  spatialPolicy?: MapCodeSpatialPolicy;
   /** Optional bounded override used by local diagnostics; HTTP callers do not control it. */
   finalExecutionTimeoutMs?: number;
   /** Locked objects created by the current unapplied AI preview that refine may still adjust. */
@@ -536,6 +549,8 @@ interface CodeExecutionOptions {
   minNewAssets?: number;
   maxNewAssets?: number;
   scope?: MapCodeScope;
+  promptMode?: MapCodePromptMode;
+  spatialPolicy?: MapCodeSpatialPolicy;
   executionTimeoutMs?: number;
   refinableObjectIds?: ReadonlySet<string>;
   /** Emits the executed layout after every discovery run, including attempts later repaired away. */
@@ -572,6 +587,8 @@ interface MapCodeReplayContext {
   repairAttempts: number;
   requestMode: MapCodeRequestMode;
   scope: MapCodeScope | undefined;
+  promptMode: MapCodePromptMode | undefined;
+  spatialPolicy: MapCodeSpatialPolicy | undefined;
   maxNewAssets: number;
   refinableObjectIds: string[];
 }
@@ -667,7 +684,8 @@ export async function generateMapCodeSuggestion(
     options.scope,
     requestMode,
     prompt,
-    options.refinableObjectIds
+    options.refinableObjectIds,
+    options.promptMode
   );
   const focalPreference = options.focusPrompt?.trim().slice(0, 300);
   const userPrompt = [
@@ -679,8 +697,8 @@ export async function generateMapCodeSuggestion(
     focalPreference ? `User focal preference (optional, interpret rather than blindly obey): ${focalPreference}` : ''
   ].filter(Boolean).join('\n\n');
   let code = options.approvedCode
-    ? extractCode(options.approvedCode)
-    : extractCode(await llmChat([
+    ? normalizeMapCodePlan(options.approvedCode)
+    : normalizeMapCodePlan(await llmChat([
         { role: 'system', content: systemPrompt },
         { role: 'user', content: userPrompt }
       ], {
@@ -694,7 +712,9 @@ export async function generateMapCodeSuggestion(
         onProgress: options.onProgress
       }));
   const executionAssets = requestMode === 'refine' ? assets : reusableAssets;
-  const execution = await discoverMapCodeWithRepairs(code, userPrompt, systemPrompt, map, executionAssets, maxNewAssets, options);
+  const execution = options.revisionMode === 'first-pass'
+    ? runFirstPassMapCodeDiscovery(code, map, executionAssets, maxNewAssets, options)
+    : await discoverMapCodeWithRepairs(code, userPrompt, systemPrompt, map, executionAssets, maxNewAssets, options);
   code = execution.code;
   let discovery = execution.discovery;
   options.onPlanPreview?.(distillCodePlanPreview(
@@ -769,17 +789,19 @@ export async function generateMapCodeSuggestion(
     family[task.variantIndex] = asset;
     bindings.set(task.key, family);
   });
-  const adapted = await adaptMapCodeToGeneratedAssets(
-    code,
-    userPrompt,
-    systemPrompt,
-    map,
-    [...executionAssets, ...generatedAssets],
-    bindings,
-    discovery,
-    maxNewAssets,
-    options
-  );
+  const adapted = options.revisionMode === 'first-pass'
+    ? { code, discovery }
+    : await adaptMapCodeToGeneratedAssets(
+        code,
+        userPrompt,
+        systemPrompt,
+        map,
+        [...executionAssets, ...generatedAssets],
+        bindings,
+        discovery,
+        maxNewAssets,
+        options
+      );
   code = adapted.code;
   discovery = adapted.discovery;
   options.onProgress?.({
@@ -800,6 +822,8 @@ export async function generateMapCodeSuggestion(
     repairAttempts: execution.repairAttempts,
     requestMode,
     scope: options.scope,
+    promptMode: options.promptMode,
+    spatialPolicy: options.spatialPolicy,
     refineScope,
     maxNewAssets,
     refinableObjectIds: [...new Set(options.refinableObjectIds ?? [])]
@@ -885,6 +909,8 @@ async function adaptMapCodeToGeneratedAssets(
       minNewAssets: options.minNewAssets,
       maxNewAssets,
       scope: options.scope,
+      promptMode: options.promptMode,
+      spatialPolicy: options.spatialPolicy,
       refinableObjectIds: new Set(options.refinableObjectIds ?? [])
     });
     if (!sameCodeAssetRequirements(discovery.requirements, candidateDiscovery.requirements)
@@ -909,6 +935,8 @@ async function adaptMapCodeToGeneratedAssets(
       assetBindings: bindings,
       maxNewAssets,
       scope: options.scope,
+      promptMode: options.promptMode,
+      spatialPolicy: options.spatialPolicy,
       executionTimeoutMs: clampInteger(options.finalExecutionTimeoutMs ?? FINAL_EXECUTION_TIMEOUT_MS, 1, FINAL_EXECUTION_TIMEOUT_MS),
       refinableObjectIds: new Set(options.refinableObjectIds ?? [])
     }).suggestion;
@@ -1016,6 +1044,8 @@ function executeFinalMapCodeReplay(
     assetBindings: context.bindings,
     maxNewAssets: context.maxNewAssets,
     scope: context.scope,
+    promptMode: context.promptMode,
+    spatialPolicy: context.spatialPolicy,
     executionTimeoutMs,
     refinableObjectIds: new Set(context.refinableObjectIds)
   }).suggestion;
@@ -1132,8 +1162,12 @@ function executeMapCodePlanInternal(
   assets: readonly MapAsset[],
   options: CodeExecutionOptions
 ): CodeExecutionResult {
-  const cleanCode = extractCode(code);
+  const cleanCode = normalizeMapCodePlan(code);
   if (!cleanCode || cleanCode.length > MAX_CODE_LENGTH) throw new Error('invalid_map_code_plan');
+  const minimalMode = options.promptMode === 'minimal'
+    && map.sceneMode === 'outdoor'
+    && (options.requestMode ?? 'generate') === 'generate'
+    && options.scope === 'scene';
 
   const placements: PlacementIntent[] = [];
   const sceneOperations: MapOperation[] = [];
@@ -2998,11 +3032,14 @@ function executeMapCodePlanInternal(
     }
   });
 
+  const sandboxApi = minimalMode
+    ? Object.freeze(Object.fromEntries(MINIMAL_MAP_CODE_API_KEYS.map((key) => [key, (api as Record<string, unknown>)[key]])))
+    : api;
   const script = new vm.Script(`${cleanCode}\n;if (typeof plan !== 'function') throw new Error('missing_plan_function');\nplan(api);`, {
     filename: 'worldforge-map-plan.js'
   });
   const context = vm.createContext({
-    api,
+    api: sandboxApi,
     Math: safeMath(random),
     console: Object.freeze({ log() {}, warn() {}, error() {} })
   }, {
@@ -3140,7 +3177,10 @@ function executeMapCodePlanInternal(
     ...map,
     assets: [...new Map([...(map.assets ?? []), ...assets].map((asset) => [asset.id, asset])).values()]
   };
-  if (mode === 'final' && map.sceneMode === 'outdoor') fitConnectedPlacementRuns(placements, planningMap.assets ?? []);
+  const repairSpatialIssues = options.spatialPolicy !== 'diagnose';
+  if (repairSpatialIssues && mode === 'final' && map.sceneMode === 'outdoor') {
+    fitConnectedPlacementRuns(placements, planningMap.assets ?? []);
+  }
   if (designCallCount > 0) {
     reportAssemblyIssues(designSemantics, placements, reportIssue, (assetId, key) =>
       mode === 'discovery'
@@ -3271,7 +3311,7 @@ function executeMapCodePlanInternal(
       }
     }
   }
-  const waterRepair = map.sceneMode === 'outdoor'
+  const waterRepair = repairSpatialIssues && map.sceneMode === 'outdoor'
     ? relocateOutdoorWaterIntrusions(terrainMap, objectOperations, placements, assets, designSemantics)
     : { operations: objectOperations, count: 0, conflicts: [] };
   const substrateConflicts = mergeSubstrateConflicts([
@@ -3288,7 +3328,7 @@ function executeMapCodePlanInternal(
       repairHint: `Edit only group ${conflict.groupId}: declare the intended dry/water/amphibious/underwater substrate, then resolve its local shoreline, terrain or placement calls without translating the whole composition.`
     });
   }
-  const accessRepair = map.sceneMode === 'outdoor' && scope === 'scene'
+  const accessRepair = repairSpatialIssues && map.sceneMode === 'outdoor' && scope === 'scene'
     ? relocateOutdoorAccessBlockers(terrainMap, waterRepair.operations, assets)
     : { operations: waterRepair.operations, count: 0 };
   const operations: MapOperation[] = [
@@ -3309,7 +3349,7 @@ function executeMapCodePlanInternal(
     designSemantics = resolveMapDesignFocusObjects(placedMap, designSemantics);
     operations.push({ type: 'map.update', designSemantics });
   }
-  const clearanceOperations = map.sceneMode === 'outdoor' && operations.length > 0
+  const clearanceOperations = repairSpatialIssues && map.sceneMode === 'outdoor' && operations.length > 0
     ? compileMapNaturalClearance(applyMapOperations(planningMap, operations))
     : [];
   operations.push(...clearanceOperations);
@@ -3408,7 +3448,10 @@ function executeMapCodePlanInternal(
     ]
   };
   const validated = scopedOperations.length
-    ? validateMapSuggestion(planningMap, candidate, { repairableObjectIds }).suggestion : candidate;
+    ? validateMapSuggestion(planningMap, candidate, {
+        repairableObjectIds,
+        repair: repairSpatialIssues
+      }).suggestion : candidate;
   const boundedOperations = scopeMapRefinement(planningMap, validated.operations, options.refineScope ?? {});
   if (scopedOperations.length !== suggestion.operations.length || boundedOperations.length !== validated.operations.length) {
     validated.diagnostics = [...(validated.diagnostics ?? []), {
@@ -3779,6 +3822,35 @@ function mapRefineSpatialSummary(map: EditableMap) {
   };
 }
 
+function buildMinimalMapCodePlannerSystemPrompt(
+  map: EditableMap,
+  minNewAssets: number,
+  maxNewAssets: number
+): string {
+  const bounds = getMapBounds(map);
+  return `You are WorldForge Studio's minimal outdoor scene composer.
+
+## Output contract
+Return only one complete synchronous JavaScript function: function plan(api) { ... }.
+Do not return a function body by itself, Markdown, explanations, JSON, imports, async code, eval, timers, network access or global state.
+Use finite numbers and bounded loops. Map bounds are x=${bounds.minX}..${bounds.maxX}, z=${bounds.minZ}..${bounds.maxZ}, seed=${map.seed}.
+Compose the requested terrain, circulation, focal forms, repeated structure and natural detail directly. Preserve intentional open space and vary density, height and rhythm instead of filling a uniform grid.
+
+The sandbox exposes exactly these 10 WorldForge APIs; build any other synchronous geometry helpers with plain JavaScript and Math inside plan:
+1. api.terrain(preset, {amplitude?,roughness?,seed?,direction?}) where preset is 'plain'|'hills'|'valley'|'island'|'archipelago'|'canyon'|'cliff-plateau'|'dune-desert'.
+2. api.modifyTerrain({modifier:'mountain'|'ridge'|'valley'|'basin'|'cliff'|'terrace'|'dune'|'island',region,amplitude?,softness?,direction?,variation?,layers?,layout?,access?,seed?}).
+3. api.surface({id,surface:'grass'|'sand'|'rock'|'soil'|'paving',material?,region,intensity?,clearNatural?}).
+4. api.water(id,{type:'lake'|'river'|'ocean',points,level?,depth?,width?}).
+5. api.route({id,name?,points,curve?,closed?,width?,surface?,material?,intensity?,tags?}) returns the route ID string.
+6. api.grass(id,region,{preset:'meadow'|'sand'|'wetland'|'farm'|'magic'|'alpine-moss',density?,variation?,softness?,height?,mix?,habitat?,seed?}).
+7. api.requireAsset({key,name,prompt,tags?,variants?,dimensions:[width,height,depth],role:'structure'|'environment',optional?}) returns key.
+8. api.asset(key,index?) returns the generated asset ID; never invent asset IDs.
+9. api.place({assetId?,name?,position:[x,z]|[x,y,z],rotationY?,facing?,scale?,size?,dimensions?,terrain?,role?}) returns a placement reference.
+10. api.random(min?,max?) is deterministic for this map seed.
+
+Declare ${minNewAssets}..${maxNewAssets} requireAsset families and place every declared variant at least once. Each asset prompt describes one standalone reusable object and follows this orientation contract: Y+ up, Z+ front/entrance, X+ right. Keep all coordinates inside the map bounds and return the complete function plan(api).`;
+}
+
 export function buildMapCodePlannerSystemPrompt(
   map: EditableMap,
   assets: readonly MapAsset[],
@@ -3787,10 +3859,14 @@ export function buildMapCodePlannerSystemPrompt(
   scope: MapCodeScope = 'general',
   requestMode: MapCodeRequestMode = 'generate',
   _taskPrompt = '',
-  refinableIds: readonly string[] = []
+  refinableIds: readonly string[] = [],
+  promptMode: MapCodePromptMode = 'standard'
 ): string {
   if (map.sceneMode === 'indoor') {
     return buildIndoorMapCodePlannerSystemPrompt(map, assets, minNewAssets, maxNewAssets, requestMode, refinableIds);
+  }
+  if (promptMode === 'minimal' && requestMode === 'generate' && scope === 'scene') {
+    return buildMinimalMapCodePlannerSystemPrompt(map, minNewAssets, maxNewAssets);
   }
   const bounds = getMapBounds(map);
   const assetCatalog = assetCatalogContext(assets);
@@ -3970,6 +4046,13 @@ function extractCode(raw: string): string {
   return (fenced?.[1] ?? answer).trim();
 }
 
+function normalizeMapCodePlan(raw: string): string {
+  const code = extractCode(raw);
+  return code && !/\bfunction\s+plan\s*\(/.test(code)
+    ? `function plan(api) {\n${code}\n}`
+    : code;
+}
+
 function applyLocalCodeRepair(code: string, response: string, allowUnchanged = false): string {
   const answer = response.replace(/^\s*<think>[\s\S]*?<\/think>\s*/i, '').trim();
   const payload = answer.match(/^```(?:json)?\s*([\s\S]*?)```$/i)?.[1] ?? answer;
@@ -4062,6 +4145,33 @@ function retainCodePlan(
   };
 }
 
+function runFirstPassMapCodeDiscovery(
+  code: string,
+  map: EditableMap,
+  assets: readonly MapAsset[],
+  maxNewAssets: number,
+  options: MapCodePlannerOptions
+): { code: string; discovery: CodeExecutionResult; repairAttempts: number } {
+  try {
+    const discovery = runMapCodePlan(code, map, assets, {
+      refineScope: options.mode === 'refine' ? options : undefined,
+      mode: 'discovery',
+      requestMode: options.mode ?? 'generate',
+      minNewAssets: options.minNewAssets,
+      maxNewAssets,
+      scope: options.scope,
+      promptMode: options.promptMode,
+      spatialPolicy: options.spatialPolicy,
+      refinableObjectIds: new Set(options.refinableObjectIds ?? []),
+      onPlanPreview: options.onPlanPreview
+    });
+    return { code, discovery, repairAttempts: 0 };
+  } catch (error) {
+    if (error instanceof Error && error.name === 'AbortError') throw error;
+    throw new Error(`map_code_execution_failed:${mapCodeExecutionErrorDetail(error, code)}`);
+  }
+}
+
 async function discoverMapCodeWithRepairs(
   initialCode: string,
   userPrompt: string,
@@ -4090,6 +4200,8 @@ async function discoverMapCodeWithRepairs(
         minNewAssets: options.minNewAssets,
         maxNewAssets,
         scope: options.scope,
+        promptMode: options.promptMode,
+        spatialPolicy: options.spatialPolicy,
         refinableObjectIds: new Set(options.refinableObjectIds ?? []),
         onPlanPreview: options.onPlanPreview
       });

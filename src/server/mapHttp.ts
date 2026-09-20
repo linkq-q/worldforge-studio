@@ -15,6 +15,9 @@ import {
   CHAT_PROVIDER_OPTIONS,
   type AgentProgressEvent,
   type ChatProvider,
+  type MapCodePromptMode,
+  type MapCodeRevisionMode,
+  type MapCodeSpatialPolicy,
   type Vec3
 } from '../shared/protocol';
 import {
@@ -560,6 +563,9 @@ async function handleEditorMaps(req: Req, res: Res, store: MapStore, parts: stri
       sceneAgent?: boolean;
       focusPrompt?: string;
       paletteId?: string;
+      codePromptMode?: MapCodePromptMode;
+      codeRevisionMode?: MapCodeRevisionMode;
+      codeSpatialPolicy?: MapCodeSpatialPolicy;
       selectedObjectIds?: string[];
       parentTraceId?: string;
     }>(req);
@@ -645,6 +651,9 @@ async function handleEditorMaps(req: Req, res: Res, store: MapStore, parts: stri
             minNewAssets: body.minNewAssets,
             maxNewAssets: body.maxNewAssets,
             focusPrompt: body.focusPrompt,
+            codePromptMode: body.codePromptMode === 'minimal' ? 'minimal' : 'standard',
+            codeRevisionMode: body.codeRevisionMode === 'first-pass' ? 'first-pass' : 'repair',
+            codeSpatialPolicy: body.codeSpatialPolicy === 'diagnose' ? 'diagnose' : 'repair',
             sceneAgent: body.sceneAgent === true,
             discoveryOnly: true,
             onProgress,
@@ -696,6 +705,9 @@ async function handleEditorMaps(req: Req, res: Res, store: MapStore, parts: stri
           approvedCode: body.approvedCode,
           sceneAgent: body.sceneAgent === true,
           focusPrompt: body.focusPrompt,
+          codePromptMode: body.codePromptMode === 'minimal' ? 'minimal' : 'standard',
+          codeRevisionMode: body.codeRevisionMode === 'first-pass' ? 'first-pass' : 'repair',
+          codeSpatialPolicy: body.codeSpatialPolicy === 'diagnose' ? 'diagnose' : 'repair',
           refinableObjectIds,
           selectedObjectIds: Array.isArray(body.selectedObjectIds)
             ? body.selectedObjectIds.filter((id): id is string => typeof id === 'string').slice(0, 64)

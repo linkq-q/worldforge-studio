@@ -97,6 +97,28 @@ describe('map lint and deterministic repair', () => {
     ]));
   });
 
+  it('can report deterministic lint findings without appending their repairs', () => {
+    const map = createEmptyMap('lake diagnostics', 'map-lake-diagnostics');
+    map.waterBodies = [{
+      id: 'lake-1', name: 'Lake', type: 'lake', level: 0.2, depth: 1.5, width: 1.2,
+      points: [[-4, -4], [4, -4], [4, 4], [-4, 4]]
+    }];
+    map.terrain.heights.fill(1);
+
+    const validated = validateMapSuggestion(map, {
+      summary: 'diagnose only',
+      operations: [{ type: 'sun.set', point: [3, 8, 4] }],
+      renderPromptSuggestions: [],
+      generatedAssets: []
+    }, { repair: false });
+
+    expect(validated.repairCount).toBe(0);
+    expect(validated.suggestion.operations).toEqual([{ type: 'sun.set', point: [3, 8, 4] }]);
+    expect(validated.issues).toEqual(expect.arrayContaining([
+      expect.objectContaining({ code: 'water.exposed-terrain', repaired: false })
+    ]));
+  });
+
   it('scales tall visible furniture below the ceiling and keeps its visible bottom grounded', () => {
     const roomAsset = {
       ...asset,

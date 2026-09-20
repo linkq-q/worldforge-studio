@@ -24,6 +24,9 @@ import {
   CHAT_PROVIDER_OPTIONS,
   type AgentProgressEvent,
   type ChatProvider,
+  type MapCodePromptMode,
+  type MapCodeRevisionMode,
+  type MapCodeSpatialPolicy,
   type Vec3
 } from '../shared/protocol';
 import {
@@ -91,6 +94,12 @@ export interface MapAiOptions {
   sceneAgent?: boolean;
   /** Optional user-authored preference for focal assets. */
   focusPrompt?: string;
+  /** Select the standard planner contract or the outdoor 10-API minimal contract. */
+  codePromptMode?: MapCodePromptMode;
+  /** Keep the first executable program or allow LLM repair and asset-aware adjustment. */
+  codeRevisionMode?: MapCodeRevisionMode;
+  /** Apply deterministic spatial repairs or report their lint findings only. */
+  codeSpatialPolicy?: MapCodeSpatialPolicy;
   /** Return an indoor Code candidate and asset declaration list without generating assets. */
   discoveryOnly?: boolean;
   /** Continue from a user-approved indoor Code candidate. */
@@ -143,7 +152,10 @@ export async function runMapAgent(
     return generateMapCodeSuggestion(prompt, map, assets, {
       ...options,
       mode,
-      scope: 'scene'
+      scope: 'scene',
+      promptMode: options.codePromptMode,
+      revisionMode: options.codeRevisionMode,
+      spatialPolicy: options.codeSpatialPolicy
     });
   }
   if (mode === 'generate' && map.sceneMode !== 'mixed') {
