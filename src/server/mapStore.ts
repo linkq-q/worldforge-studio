@@ -1003,18 +1003,23 @@ export class MapStore {
       ...object,
       assetId: object.assetId ? assetIds.get(object.assetId) ?? null : null
     }));
-    const imported = normalizeMap({
-      ...source,
-      id: createId('map'),
-      name: `${source.name}（导入）`,
-      version: 1,
-      createdAt: now,
-      updatedAt: now,
-      renderSchemeId,
-      objects,
-      assets: undefined
+    const imported = await this.withTransactionLock(async () => {
+      let id = canonicalMapId(source.id);
+      while (!id || await stat(this.mapPath(id)).catch(() => null)) id = createId('map');
+      const map = normalizeMap({
+        ...source,
+        id,
+        name: `${source.name}（导入）`,
+        version: 1,
+        createdAt: now,
+        updatedAt: now,
+        renderSchemeId,
+        objects,
+        assets: undefined
+      });
+      await atomicWriteJson(this.mapPath(map.id), map);
+      return map;
     });
-    await atomicWriteJson(this.mapPath(imported.id), imported);
     return this.hydrateMap(imported);
   }
 
@@ -1040,7 +1045,9 @@ export class MapStore {
   }
 
   private mapPath(id: string): string {
-    return path.join(this.mapsDir, `${safeId(id)}.json`);
+    const canonical = canonicalMapId(id);
+    if (!canonical) throw new Error('bad_id');
+    return path.join(this.mapsDir, `${canonical}.json`);
   }
 
   private assetPath(id: string): string {
@@ -1118,6 +1125,10 @@ function safeId(id: string): string {
   const cleaned = id.replace(/[^a-zA-Z0-9_-]/g, '');
   if (!cleaned) throw new Error('bad_id');
   return cleaned;
+}
+
+function canonicalMapId(value: unknown): string | null {
+  return typeof value === 'string' && /^map-[a-z0-9_-]{1,76}$/.test(value) ? value : null;
 }
 
 function sanitizeVec3(value: unknown, fallback: Vec3): Vec3 {

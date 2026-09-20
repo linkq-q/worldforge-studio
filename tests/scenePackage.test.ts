@@ -82,7 +82,7 @@ describe('portable WorldForge scene packages', () => {
     source.assets = [asset];
 
     const imported = await store.importMap(source, 'render-imported');
-    expect(imported.id).not.toBe(source.id);
+    expect(imported.id).toBe(source.id);
     expect(imported.name).toBe('森林（导入）');
     expect(imported.renderSchemeId).toBe('render-imported');
     expect(imported.objects[0].assetId).not.toBe(asset.id);
@@ -95,6 +95,34 @@ describe('portable WorldForge scene packages', () => {
     expect(renamed).toMatch(/^sky-import-\d+\.exr$/);
     expect([...await readFile(path.join(store.rootDir, 'hdri', renamed))]).toEqual([3, 4]);
     expect(await store.importHdri('dusk.hdr', new Uint8Array([5, 6]))).toBe('dusk.hdr');
+  });
+
+  it('allocates a new ID when an imported map ID already exists', async () => {
+    const store = await createStore();
+    const first = await store.importMap(createEmptyMap('First', 'map-demo'));
+    const second = await store.importMap(createEmptyMap('Second', 'map-demo'));
+
+    expect(first.id).toBe('map-demo');
+    expect(second.id).not.toBe('map-demo');
+    expect((await store.loadMap('map-demo')).name).toBe('First（导入）');
+  });
+
+  it('does not let sanitization collisions overwrite an existing map', async () => {
+    const store = await createStore();
+    await store.importMap(createEmptyMap('First', 'map-demo'));
+    const imported = await store.importMap(createEmptyMap('Second', 'map-demo?'));
+
+    expect(imported.id).toMatch(/^map-[a-z0-9-]+$/);
+    expect(imported.id).not.toBe('map-demo');
+    expect((await store.loadMap('map-demo')).name).toBe('First（导入）');
+  });
+
+  it('replaces an invalid imported map ID with a canonical one', async () => {
+    const store = await createStore();
+    const imported = await store.importMap(createEmptyMap('Invalid ID', '../../map-demo'));
+
+    expect(imported.id).toMatch(/^map-[a-z0-9-]+$/);
+    expect(imported.id).not.toBe('../../map-demo');
   });
 
   it('reads a shared HDRI library and keeps imported overrides local', async () => {
