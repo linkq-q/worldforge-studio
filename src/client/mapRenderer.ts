@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { buildOceanCoastField } from '../shared/oceanCoast';
+import { buildOceanCoastField, sampleCoastGrid, type OceanCoastField } from '../shared/oceanCoast';
 import {
   getMapPlayerMetrics,
   PLAYER_SPAWN_OBJECT_ID,
@@ -162,7 +162,8 @@ export async function buildEditableMapGroup(input: EditableMap, options: MapRend
   if (proceduralRugs) modelsRoot.add(proceduralRugs);
 
   let grassMap = deriveContactAwareGrassMap(map);
-  const terrain = buildTerrain(map);
+  const coast = mapOceanCoast(map);
+  const terrain = buildTerrain(map, coast);
   terrain.visible = map.sceneMode !== 'indoor';
   const sandFlow = terrain.userData.sandFlow as TerrainSandFlowState;
   applyTerrainGrassTint(terrain, grassMap, DEFAULT_RUNTIME_GRASS_STYLE);
@@ -199,7 +200,7 @@ export async function buildEditableMapGroup(input: EditableMap, options: MapRend
     applySceneArt();
   };
 
-  const waterRoot = buildStructuredWaterGroup(map);
+  const waterRoot = buildStructuredWaterGroup(map, coast);
   waterRoot.visible = map.sceneMode !== 'indoor';
   modelsRoot.add(waterRoot);
   const objectGroups = createObjectGroups(map);
@@ -386,8 +387,9 @@ export async function buildEditableMapGroup(input: EditableMap, options: MapRend
       sceneArt.clear();
       currentMap = next;
       terrain.geometry.dispose();
-      terrain.geometry = buildTerrainGeometry(next);
-      refreshStructuredWaterTerrain(waterRoot, next);
+      const nextCoast = mapOceanCoast(next);
+      terrain.geometry = buildTerrainGeometry(next, nextCoast);
+      refreshStructuredWaterTerrain(waterRoot, next, nextCoast);
       // Keep the live material so an applied render scheme survives the swap.
       const material = terrain.material as THREE.MeshStandardMaterial;
       replaceTerrainTextures(material, next, terrainMaterialStyle, colorPalette ?? undefined);
@@ -759,8 +761,8 @@ function createBrickRoadOverlayTextures(): { map: THREE.CanvasTexture; bumpMap: 
   return { map: mapTexture, bumpMap: bumpTexture, normalMap: normalTexture };
 }
 
-function buildTerrain(map: EditableMap): THREE.Mesh {
-  const geometry = buildTerrainGeometry(map);
+function buildTerrain(map: EditableMap, coast: OceanCoastField | null): THREE.Mesh {
+  const geometry = buildTerrainGeometry(map, coast);
   const textures = createTerrainTextureSet(map, DEFAULT_RUNTIME_TERRAIN_MATERIAL_STYLE);
   const material = new THREE.MeshStandardMaterial({
     map: textures.map,
@@ -794,6 +796,7 @@ interface TerrainSandFlowState {
   sandBeach: number;
   wetness: number;
   snowCover: number;
+  oceanLevel: number;
   shader: THREE.WebGLProgramParametersWithUniforms | null;
 }
 
@@ -807,6 +810,7 @@ function installTerrainSandShader(material: THREE.MeshStandardMaterial, map: Edi
     sandBeach: 0,
     wetness: 0,
     snowCover: 0,
+    oceanLevel: -100000,
     shader: null
   };
   updateTerrainSandZones(state, map);
@@ -821,6 +825,7 @@ function installTerrainSandShader(material: THREE.MeshStandardMaterial, map: Edi
     shader.uniforms.uTerrainSandBeach = { value: state.sandBeach };
     shader.uniforms.uTerrainWetness = { value: state.wetness };
     shader.uniforms.uTerrainSnowCover = { value: state.snowCover };
+    shader.uniforms.uTerrainOceanLevel = { value: state.oceanLevel };
     shader.vertexShader = shader.vertexShader
       .replace('#include <common>', '#include <common>\nvarying vec3 vTerrainSandPosition;\nvarying vec3 vTerrainWorldNormal;')
       .replace('#include <begin_vertex>', '#include <begin_vertex>\nvTerrainSandPosition = position;')
@@ -837,6 +842,7 @@ function installTerrainSandShader(material: THREE.MeshStandardMaterial, map: Edi
         uniform float uTerrainSandBeach;
         uniform float uTerrainWetness;
         uniform float uTerrainSnowCover;
+        uniform float uTerrainOceanLevel;
         varying vec3 vTerrainWorldNormal;
       `)
       .replace('#include <map_fragment>', `#include <map_fragment>
@@ -854,7 +860,9 @@ function installTerrainSandShader(material: THREE.MeshStandardMaterial, map: Edi
         diffuseColor.rgb *= 1.0 - smoothstep(0.52, 0.92, terrainSandRipple) * terrainSandMask * uTerrainSandStrength * 0.12;
         float terrainDetail = sin(vTerrainSandPosition.x * 9.1) * sin(vTerrainSandPosition.z * 7.7);
         diffuseColor.rgb *= 1.0 + terrainDetail * uTerrainDetailStrength * 0.018;
-        float terrainWetMask = uTerrainWetness * (0.45 + terrainSandMask * 0.35);
+        // The vertex height is the same derived surface consumed by ocean water.
+        float terrainCoastWet = (1.0 - smoothstep(-0.1, 0.35, vTerrainSandPosition.y - uTerrainOceanLevel)) * terrainSandMask;
+        float terrainWetMask = max(terrainCoastWet * 0.7, uTerrainWetness * (0.45 + terrainSandMask * 0.35));
         diffuseColor.rgb *= 1.0 - terrainWetMask * 0.24;
         diffuseColor.rgb = mix(diffuseColor.rgb, diffuseColor.rgb * vec3(0.88, 0.91, 0.94), uTerrainSoilMoist * uTerrainWetness * 0.12);
         diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.94, 0.86, 0.68), terrainSandMask * uTerrainSandBeach * 0.08);
@@ -867,11 +875,12 @@ function installTerrainSandShader(material: THREE.MeshStandardMaterial, map: Edi
       `);
     syncTerrainSandShader(state);
   };
-  material.customProgramCacheKey = () => 'worldforge-terrain-sand-v2';
+  material.customProgramCacheKey = () => 'worldforge-terrain-sand-v3';
   return state;
 }
 
 function updateTerrainSandZones(state: TerrainSandFlowState, map: EditableMap): void {
+  state.oceanLevel = Math.max(-100000, ...map.waterBodies.filter(water => water.type === 'ocean').map(water => water.level));
   state.zones = map.visualSemantics.zones
     .filter((zone) => zone.tags.includes('sand'))
     .slice(0, 8)
@@ -891,6 +900,7 @@ function syncTerrainSandShader(state: TerrainSandFlowState): void {
   uniforms.uTerrainSandBeach.value = state.sandBeach;
   uniforms.uTerrainWetness.value = state.wetness;
   uniforms.uTerrainSnowCover.value = state.snowCover;
+  uniforms.uTerrainOceanLevel.value = state.oceanLevel;
 }
 
 const MODEL_SNOW_PATCH = 'worldforge-weather-snow';
@@ -947,7 +957,7 @@ function paddedSandZones(zones: readonly THREE.Vector4[]): THREE.Vector4[] {
   return Array.from({ length: 8 }, (_, index) => zones[index]?.clone() ?? new THREE.Vector4());
 }
 
-export function buildStructuredWaterGroup(map: EditableMap): THREE.Group {
+export function buildStructuredWaterGroup(map: EditableMap, coast = mapOceanCoast(map)): THREE.Group {
   const group = new THREE.Group();
   group.name = 'waterBodies';
   group.userData.isStructuredWaterRoot = true;
@@ -966,7 +976,7 @@ export function buildStructuredWaterGroup(map: EditableMap): THREE.Group {
   });
   for (const waters of groupConnectedWaterBodies(visibleWaters)) {
     const water = waters[0];
-    const shore = createCompositeWaterShoreBinding(map, waters);
+    const shore = createCompositeWaterShoreBinding(map, waters, water.type === 'ocean' ? coast : null);
     const isComposite = waters.length > 1;
     const geometry = water.type === 'ocean'
       ? buildOceanGeometry(map)
@@ -1006,8 +1016,7 @@ export function buildStructuredWaterGroup(map: EditableMap): THREE.Group {
     ];
     mesh.userData.assetTags = ['water', ...new Set(waters.map((candidate) => candidate.type))];
     mesh.userData.waterShore = { ...shore, worldSpace: !isComposite };
-    const apron = water.type === 'ocean' ? oceanTerrainApronProfile(map) : null;
-    if (apron) mesh.userData.waterOceanTerrain = createOceanTerrainBinding(map, water, apron);
+    if (water.type === 'ocean' && coast) mesh.userData.waterOceanTerrain = createOceanTerrainBinding(map, water, coast);
     group.add(mesh);
   }
   return group;
@@ -1049,7 +1058,7 @@ function groupConnectedWaterBodies(waters: readonly MapWaterBody[]): MapWaterBod
   return [...groups.values()];
 }
 
-function createCompositeWaterShoreBinding(map: EditableMap, waters: readonly MapWaterBody[]): WaterShoreBinding {
+function createCompositeWaterShoreBinding(map: EditableMap, waters: readonly MapWaterBody[], coast: OceanCoastField | null = null): WaterShoreBinding {
   const boundaries = waters.map(waterBoundaryPoints);
   const points = boundaries.flat();
   const minX = Math.min(...points.map((point) => point[0]));
@@ -1068,6 +1077,11 @@ function createCompositeWaterShoreBinding(map: EditableMap, waters: readonly Map
       const u = (column + 0.5) / resolution;
       const x = center[0] + (u - 0.5) * size;
       // Outside the ocean plane is still water, so only raised terrain becomes a shoreline.
+      if (coast) {
+        const distance = sampleCoastGrid({ ...coast, heights: coast.distances }, x, z);
+        data[row * resolution + column] = Math.round(255 * THREE.MathUtils.clamp(distance / coast.shoreWidth, 0, 1));
+        continue;
+      }
       if (waters.some((water, index) => water.type === 'ocean'
         ? !pointInPolygon(x, z, boundaries[index]) || isPointInsideWaterBody(water, x, z, map)
         : pointInPolygon(x, z, boundaries[index]))) {
@@ -1082,10 +1096,11 @@ function createCompositeWaterShoreBinding(map: EditableMap, waters: readonly Map
   }
   const distanceScale = maxDistance > 0 ? 255 / maxDistance : 0;
   for (let index = 0; index < data.length; index += 1) {
-    if (inside[index]) data[index] = Math.round(Math.min(255, distances[index] * distanceScale));
+    if (!coast && inside[index]) data[index] = Math.round(Math.min(255, distances[index] * distanceScale));
   }
   const texture = new THREE.DataTexture(data, resolution, resolution, THREE.RedFormat, THREE.UnsignedByteType);
   texture.name = `water-shore:${waters[0]?.id ?? 'empty'}+${waters.length}`;
+  texture.minFilter = texture.magFilter = THREE.LinearFilter;
   texture.colorSpace = THREE.NoColorSpace;
   texture.flipY = false;
   texture.needsUpdate = true;
@@ -1106,20 +1121,15 @@ function buildOceanGeometry(map: EditableMap): THREE.BufferGeometry {
   return geometry;
 }
 
-function createOceanTerrainBinding(
-  map: EditableMap,
-  water: MapWaterBody,
-  apron: OceanTerrainApronProfile
-): OceanTerrainBinding {
-  const sinkTarget = Math.min(apron.sinkTarget, water.level - 0.001);
-  const texture = new THREE.DataTexture(
-    oceanTerrainHeights(map, water.level, sinkTarget, apron.width),
-    map.terrain.resolutionX,
-    map.terrain.resolutionZ,
-    THREE.RedFormat,
-    THREE.FloatType
-  );
+function mapOceanCoast(map: EditableMap): OceanCoastField | null {
+  const oceans = map.waterBodies.filter(water => water.type === 'ocean');
+  return oceans.length ? buildOceanCoastField(map, Math.max(...oceans.map(water => water.level))) : null;
+}
+
+function createOceanTerrainBinding(map: EditableMap, water: MapWaterBody, field: OceanCoastField): OceanTerrainBinding {
+  const texture = new THREE.DataTexture(field.heights, field.width, field.depth, THREE.RedFormat, THREE.FloatType);
   texture.name = `ocean-terrain:${water.id}`;
+  // Shader manually interpolates the same fine-grid triangles used by the mesh.
   texture.minFilter = texture.magFilter = THREE.NearestFilter;
   texture.generateMipmaps = false;
   texture.needsUpdate = true;
@@ -1133,48 +1143,17 @@ function createOceanTerrainBinding(
   }
   return {
     texture,
-    terrainSize: [map.terrain.resolutionX, map.terrain.resolutionZ],
-    mapSize: [map.box.size[0], map.box.size[2]],
-    center: [0, 0],
+    terrainSize: [field.width, field.depth],
+    mapSize: [(field.width - 1) * field.stepX, (field.depth - 1) * field.stepZ],
+    center: [field.minX + (field.width - 1) * field.stepX / 2, field.minZ + (field.depth - 1) * field.stepZ / 2],
     level: water.level,
-    apronWidth: apron.width,
-    sinkTarget,
+    apronWidth: field.shoreWidth,
+    sinkTarget: field.sinkTarget,
     splashPoints
   };
 }
 
-function oceanTerrainHeights(
-  map: EditableMap,
-  oceanLevel: number,
-  sinkTarget: number,
-  apronWidth: number
-): Float32Array {
-  const heights = new Float32Array(map.terrain.heights);
-  const submerged = new Uint8Array(heights.length);
-  for (let index = 0; index < heights.length; index += 1) {
-    if (heights[index] <= oceanLevel + 0.02) submerged[index] = 1;
-  }
-
-  const distances = distanceFromOutside(submerged, map.terrain.resolutionX, map.terrain.resolutionZ);
-  const cellSize = Math.min(
-    map.box.size[0] / Math.max(1, map.terrain.resolutionX - 1),
-    map.box.size[2] / Math.max(1, map.terrain.resolutionZ - 1)
-  );
-  const maxDepth = Math.max(0.08, oceanLevel - sinkTarget);
-  const shoreHeight = oceanLevel - Math.min(0.08, maxDepth * 0.1);
-  const slopeWidth = Math.max(cellSize * 2, apronWidth);
-  for (let index = 0; index < heights.length; index += 1) {
-    if (!submerged[index]) continue;
-    const distance = Number.isFinite(distances[index])
-      ? Math.max(0, distances[index] - 1) * cellSize
-      : slopeWidth;
-    const t = THREE.MathUtils.smoothstep(distance, 0, slopeWidth);
-    heights[index] = Math.min(heights[index], THREE.MathUtils.lerp(shoreHeight, sinkTarget, t));
-  }
-  return heights;
-}
-
-function refreshStructuredWaterTerrain(root: THREE.Object3D, map: EditableMap): void {
+function refreshStructuredWaterTerrain(root: THREE.Object3D, map: EditableMap, coast: OceanCoastField | null): void {
   root.traverse((object) => {
     const mesh = object as THREE.Mesh;
     if (!mesh.isMesh) return;
@@ -1185,7 +1164,7 @@ function refreshStructuredWaterTerrain(root: THREE.Object3D, map: EditableMap): 
       .map((id) => map.waterBodies.find((water) => water.id === id))
       .filter(Boolean) as MapWaterBody[];
     if (waters.length === 0) return;
-    const nextShore = createCompositeWaterShoreBinding(map, waters);
+    const nextShore = createCompositeWaterShoreBinding(map, waters, waters[0].type === 'ocean' ? coast : null);
     const shore = mesh.userData.waterShore as WaterShoreBinding | undefined;
     if (shore?.texture?.isDataTexture) {
       const source = nextShore.texture.image as { data: Uint8Array; width: number; height: number };
@@ -1194,14 +1173,20 @@ function refreshStructuredWaterTerrain(root: THREE.Object3D, map: EditableMap): 
       nextShore.texture.dispose();
     }
     const ocean = mesh.userData.waterOceanTerrain as OceanTerrainBinding | undefined;
-    if (ocean?.texture?.isDataTexture) {
-      (ocean.texture.image as { data: Float32Array; width: number; height: number }).data = oceanTerrainHeights(
-        map,
-        ocean.level,
-        ocean.sinkTarget,
-        ocean.apronWidth
-      );
+    if (ocean?.texture?.isDataTexture && coast) {
+      const previous = ocean.texture.image as { width: number; height: number };
+      if (previous.width !== coast.width || previous.height !== coast.depth) ocean.texture.dispose();
+      ocean.texture.image = { data: coast.heights, width: coast.width, height: coast.depth };
+      ocean.terrainSize = [coast.width, coast.depth];
+      ocean.mapSize = [(coast.width - 1) * coast.stepX, (coast.depth - 1) * coast.stepZ];
+      ocean.apronWidth = coast.shoreWidth;
+      ocean.sinkTarget = coast.sinkTarget;
       ocean.texture.needsUpdate = true;
+      const uniforms = (mesh.material as THREE.ShaderMaterial).uniforms;
+      uniforms?.uOceanTerrainSize?.value.set(...ocean.terrainSize);
+      uniforms?.uOceanMapSize?.value.set(...ocean.mapSize);
+      if (uniforms?.uOceanTerrainApronWidth) uniforms.uOceanTerrainApronWidth.value = ocean.apronWidth;
+      if (uniforms?.uOceanTerrainSinkTarget) uniforms.uOceanTerrainSinkTarget.value = ocean.sinkTarget;
     }
   });
 }
@@ -1439,11 +1424,9 @@ function pushTerrainTriangleAbove(
   }
 }
 
-function buildTerrainGeometry(map: EditableMap): THREE.BufferGeometry {
+function buildTerrainGeometry(map: EditableMap, coast: OceanCoastField | null): THREE.BufferGeometry {
   const terrain = map.terrain;
   const vertices: number[] = [], uvs: number[] = [], indices: number[] = [];
-  const oceans = map.waterBodies.filter(water => water.type === 'ocean');
-  const coast = oceans.length ? buildOceanCoastField(map, Math.max(...oceans.map(water => water.level))) : null;
   const width = coast?.width ?? terrain.resolutionX;
   const depth = coast?.depth ?? terrain.resolutionZ;
   const clipIntersections = new Map<string, number>();
@@ -1484,6 +1467,7 @@ function buildTerrainGeometry(map: EditableMap): THREE.BufferGeometry {
   geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
   geometry.setIndex(indices);
   geometry.computeVertexNormals();
+  geometry.userData.oceanCoast = coast;
   return geometry;
 }
 
@@ -1498,25 +1482,6 @@ interface OceanTerrainBinding {
   splashPoints: Array<[number, number]>;
 }
 
-interface OceanTerrainApronProfile {
-  width: number;
-  level: number;
-  sinkTarget: number;
-}
-
-function oceanTerrainApronProfile(map: EditableMap): OceanTerrainApronProfile | null {
-  const oceans = map.waterBodies.filter((water) => water.type === 'ocean');
-  if (oceans.length === 0) return null;
-  const cellSize = Math.max(
-    map.box.size[0] / Math.max(1, map.terrain.resolutionX - 1),
-    map.box.size[2] / Math.max(1, map.terrain.resolutionZ - 1)
-  );
-  const shortestSide = Math.min(map.box.size[0], map.box.size[2]);
-  const width = THREE.MathUtils.clamp(cellSize * 12, shortestSide * 0.15, shortestSide * 0.25);
-  const oceanLevel = Math.max(...oceans.map((water) => water.level));
-  const sinkDepth = Math.max(3, cellSize * 2, ...oceans.map((water) => water.depth));
-  return { width, level: oceanLevel, sinkTarget: oceanLevel - sinkDepth };
-}
 
 
 

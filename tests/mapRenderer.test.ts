@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { sampleCoastGrid, type OceanCoastField } from '../src/shared/oceanCoast';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   buildEditableMapGroup,
@@ -365,7 +366,15 @@ describe('structured map water rendering', () => {
     expect(terrainPoints.some((point) => point.y < -0.5 && point.y > oceanTerrain.sinkTarget + 0.5)).toBe(true);
     expect(terrainPoints.find((point) => Math.abs(point.x) < 1e-4 && Math.abs(point.z) < 1e-4)?.y).toBeCloseTo(4);
     expect(boundHeights[0]).toBeCloseTo(oceanTerrain.sinkTarget);
-    expect(boundHeights[centerZ * map.terrain.resolutionX + centerX]).toBeCloseTo(4);
+    const field = terrain.geometry.userData.oceanCoast as OceanCoastField;
+    expect(boundHeights).toBe(field.heights);
+    expect(sampleCoastGrid({ ...field, heights: boundHeights }, 0, 0)).toBeCloseTo(4);
+    const positions = terrain.geometry.getAttribute('position');
+    for (let index = 0; index < field.heights.length; index += 71) {
+      expect(positions.getY(index)).toBe(boundHeights[index]);
+      expect(positions.getX(index)).toBeCloseTo(field.minX + index % field.width * field.stepX, 4);
+      expect(positions.getZ(index)).toBeCloseTo(field.minZ + Math.floor(index / field.width) * field.stepZ, 4);
+    }
     expect(map.terrain.heights).toEqual(originalHeights);
     rendered.dispose();
   });
@@ -421,7 +430,10 @@ describe('structured map water rendering', () => {
       map.terrain.heights[0] = 5;
       rendered.refreshTerrain(map);
       expect(terrainBinding.texture).toBe(boundTexture);
-      expect((boundTexture.image as unknown as { data: Float32Array }).data[0]).toBe(5);
+      const updated = (rendered.group.getObjectByName('terrain') as THREE.Mesh).geometry.userData.oceanCoast as OceanCoastField;
+      const updatedHeights = (boundTexture.image as unknown as { data: Float32Array }).data;
+      expect(updatedHeights).toBe(updated.heights);
+      expect(sampleCoastGrid({ ...updated, heights: updatedHeights }, -size / 2, -size / 2)).toBeCloseTo(5);
       const reach = Math.max(...outside.flatMap((point) => [Math.abs(point.x), Math.abs(point.z)])) - size / 2;
       rendered.dispose();
       return reach;
