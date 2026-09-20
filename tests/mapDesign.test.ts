@@ -13,6 +13,11 @@ describe('map design semantics', () => {
       kind:'polygon',points:[[-20,-10],[20,-10],[20,10],[-20,10]]
     });
   });
+  it('accepts the shared terrain circle shape as a group region', () => {
+    const landRegion = { kind: 'circle', center: [12, -8], radius: 18 };
+    const design = normalizeMapDesignSemantics({ groups: [{ id: 'island', region: landRegion }] }, [96, 16, 96]);
+    expect(design.groups[0].region).toEqual({ kind: 'circle', x: 12, z: -8, radius: 18 });
+  });
   it('persists a two-level multi-focus design graph without using physical parent hierarchy', () => {
     const design = normalizeMapDesignSemantics({
       experienceMode: 'mixed',

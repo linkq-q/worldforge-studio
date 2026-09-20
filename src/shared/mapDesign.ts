@@ -277,10 +277,11 @@ function normalizeRegion(value: unknown, boxSize: Vec3): VisualZoneRegion | unde
   const halfX = boxSize[0] / 2;
   const halfZ = boxSize[2] / 2;
   if (item.kind === 'circle') {
+    const center = point2(item.center, boxSize);
     return {
       kind: 'circle',
-      x: clamp(Number(item.x) || 0, -halfX, halfX),
-      z: clamp(Number(item.z) || 0, -halfZ, halfZ),
+      x: center?.[0] ?? clamp(Number(item.x) || 0, -halfX, halfX),
+      z: center?.[1] ?? clamp(Number(item.z) || 0, -halfZ, halfZ),
       radius: clamp(Number(item.radius) || 1, 0.1, Math.max(boxSize[0], boxSize[2]))
     };
   }
