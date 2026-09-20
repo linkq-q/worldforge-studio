@@ -361,6 +361,11 @@ describe('map code planner', () => {
     expect(prompt).toContain('api.insetPolygon');
     expect(prompt).toContain('api.gridInsideRegion');
     expect(prompt).toContain('footprint -> offset/inset depth layers -> massing tiers/stories');
+    expect(prompt).toContain('## Generative architecture compression');
+    expect(prompt).toContain('function placeTier(outline, elevation, spec)');
+    expect(prompt).toContain('function transformFootprint(localPoints, origin, yaw, scale)');
+    expect(prompt).toContain('dependency graph, not a required order of reasoning');
+    expect(prompt).toContain('not a scene recipe, minimum layer count or requirement to decompose every building');
     expect(prompt).toContain('api.circlePoint(index,count,radius,center?)');
     expect(prompt).toContain('facing may be a direction [dx,dz]');
     expect(prompt).toContain("spatialOrganization?:'centralized'");
@@ -369,6 +374,7 @@ describe('map code planner', () => {
     expect(prompt).toContain("structuralRhythm?:'wall-bays'");
     expect(prompt).toContain('functionalSequence?:string[]');
     expect(prompt).not.toContain('Two-tier arena shell with a ground gateway');
+    expect(prompt).not.toContain('generateChineseArena');
     expect(prompt).toContain('Declare between 2 and 4 distinct requireAsset families; variants within one family count as one asset');
     expect(prompt).toContain('Give each new asset plausible canonical dimensions so the greybox has its intended size');
     expect(prompt).toContain('short Simplified Chinese UI text');
@@ -392,6 +398,46 @@ describe('map code planner', () => {
     expect(additions.filter((operation) => operation.object.name === '柱').length).toBeGreaterThan(0);
     expect(suggestion.codePlan?.functions).toEqual(expect.arrayContaining([
       'gridInsideRegion', 'insetPolygon', 'offsetPolygon', 'subdividePathBySpan'
+    ]));
+  });
+
+  it('reuses one authored tier rule across changing architectural outlines', () => {
+    const map = createEmptyMap();
+    const suggestion = executeMapCodePlan(`function plan(api) {
+      const base=[[-9,-6],[9,-6],[9,6],[-9,6]];
+      const tiers=[
+        {inset:0,elevation:0,height:3},
+        {inset:1.5,elevation:3,height:2.5}
+      ];
+      function placeTier(outline,tier,tierIndex) {
+        const bays=api.subdividePathBySpan({points:outline,span:3,closed:true,fit:'stretch'});
+        for (const bay of bays) {
+          const entranceVoid=tierIndex===0 && bay.center[1] < -5 && Math.abs(bay.center[0]) < 2;
+          if (entranceVoid) continue;
+          api.placeBetween({name:'通用开间',start:bay.start,end:bay.end,
+            dimensions:[3,tier.height,0.8],spanAxis:'x',elevation:tier.elevation,
+            groupId:'hall',assemblyId:'hall-shell',layer:1});
+        }
+      }
+      let outline=base;
+      for (let index=0;index<tiers.length;index+=1) {
+        if (tiers[index].inset > 0) outline=api.insetPolygon({points:outline,distance:tiers[index].inset});
+        placeTier(outline,tiers[index],index);
+      }
+    }`, map);
+    const objects = applyMapOperations(map, suggestion.operations).objects
+      .filter((object) => object.assemblyId === 'hall-shell');
+    const lower = objects.filter((object) => object.transform.position[1] < 1);
+    const upper = objects.filter((object) => object.transform.position[1] > 2);
+    const horizontalExtent = (items: typeof objects) => Math.max(...items.map((object) => Math.max(
+      Math.abs(object.transform.position[0]), Math.abs(object.transform.position[2])
+    )));
+
+    expect(lower.length).toBeGreaterThan(4);
+    expect(upper.length).toBeGreaterThan(4);
+    expect(horizontalExtent(upper)).toBeLessThan(horizontalExtent(lower));
+    expect(suggestion.codePlan?.functions).toEqual(expect.arrayContaining([
+      'insetPolygon', 'placeBetween', 'subdividePathBySpan'
     ]));
   });
 

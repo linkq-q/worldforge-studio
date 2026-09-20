@@ -429,6 +429,33 @@ api.placeRelative({parentId,assetId,name?,localPosition:[x,y,z],supportNodeId?,r
 requireAsset may use mountOnAssetId only for a fixed non-interactive accessory on an existing catalog asset. It creates a new combined asset, consumes the normal asset budget, and never mutates the source.
 Only route-derived objects should set sourceGuideId. Freely composed scenery keeps its authored position. Choose activity props, building variants, visible interiors and detail density from the user's request and the available asset budget rather than a fixed checklist.`;
 
+const MAP_CODE_GENERATIVE_ARCHITECTURE_CONTRACT = `## Generative architecture compression
+When focal architecture benefits from procedural composition, compress many placements into a few authored parameters: parent frames, footprints, tier profiles, canonical module spans and exception predicates. These form a dependency graph, not a required order of reasoning or a fixed style.
+A transferable boundary rule can classify ordinary bays, openings and deliberate voids while reusing one connected module family:
+function placeTier(outline, elevation, spec) {
+  const bays = api.subdividePathBySpan({points:outline, span:spec.span, closed:true, fit:'stretch'});
+  for (const bay of bays) {
+    const kind = spec.classify ? spec.classify(bay, bays) : 'ordinary';
+    if (kind === 'void') continue;
+    const assetId = kind === 'opening' ? spec.openingAssetId : spec.moduleAssetId;
+    if (!assetId) continue;
+    const placement = {assetId, start:bay.start, end:bay.end, dimensions:spec.dimensions, spanAxis:'x', elevation, groupId:spec.groupId, assemblyId:spec.assemblyId};
+    if (kind === 'opening') placement.assemblyRole = 'opening';
+    api.placeBetween(placement);
+  }
+}
+An authored tier list can repeatedly call that rule while changing the outline, elevation, module family or exception predicate. Derive a new outline with api.insetPolygon or api.offsetPolygon only when the requested form calls for setback, expansion, courtyard depth or a crown; tiers need not be uniform or concentric.
+The same local building rule can serve several parent masses without copying world coordinates:
+function transformFootprint(localPoints, origin, yaw, scale) {
+  const world = [];
+  for (const point of localPoints) {
+    const unrotated = [origin[0] + point[0] * scale, origin[1] + point[1] * scale];
+    world.push(api.rotate2D(unrotated, yaw, origin));
+  }
+  return world;
+}
+Let the user's requested form define baseFootprint, tierSpecs, parentFrames and classifiers. Reuse a rule across whole, wing and bay scales only where it creates coordinated change; use exceptions for entrances, corners, transitions, silhouette events and intentional negative space. A unique high-coupling roof, gate, sculpture or complete small building may remain one asset. These code shapes are transferable examples, not a scene recipe, minimum layer count or requirement to decompose every building.`;
+
 export interface CodeAssetRequirement {
   mountOnAssetId?: string;
   light?: MapAssetLight;
@@ -3586,6 +3613,7 @@ Fields: api.noise2D(x,z,scale?,seed?) -> [-1,1]; api.fbm2D(x,z,{scale?,octaves?,
 Layouts: api.circlePoint(index,count,radius,center?) -> [x,z]; api.ellipsePoint(index,count,radiusX,radiusZ,center?,phase?) -> [x,z]; api.gridPoints({center?,columns,rows,spacing}) -> points; api.poissonDisk({bounds?:{minX,maxX,minZ,maxZ},minDistance,maxPoints?,attempts?,seed?}) -> points; api.sampleProbabilityField({bounds?,maxPoints?,candidates?,minDistance?,seed?}, (point,index) => weight) -> points. Omitted seeds default to api.seed. Weight is clamped to [0,1], candidates to 4096 and results to 512, so use any bounded mathematical field that serves the scene rather than choosing from a closed formula list.
 Relationships: api.optimizeLayout({items:[{id,position:[x,z],rotationY?,fixed?}],bounds?,iterations?,translationStep?,rotationStep?,temperature?,seed?}, items => cost) returns optimized items. The model owns the finite cost function: combine attraction, repulsion, target distance, alignment, access or other scene-specific terms. The solver only performs a bounded search over at most 64 items and 512 iterations; it does not place objects or impose a composition. Mark anchors fixed, then place the returned positions yourself.
 Architectural geometry: api.subdividePathBySpan({points,span,closed?,startInset?,endInset?,fit?:'stretch'|'center'}) returns bounded {start,end,center,tangent,length,index} bays; use each start/end with placeBetween instead of stretching one module. api.offsetPolygon({points,distance}) creates an outer arcade, wing or perimeter from a footprint. api.insetPolygon({points,distance}) creates a courtyard, setback tier or roof outline. api.gridInsideRegion({region:{kind:'circle',center,radius}|{kind:'polygon',points},spacing,angle?,inset?}) returns bounded column, room or parcel centers. Build major architecture hierarchically: footprint -> offset/inset depth layers -> massing tiers/stories -> boundary runs -> bays -> corner/entrance/ordinary modules. These helpers return geometry only; you still own entrances, structural roles and connected placements.
+${MAP_CODE_GENERATIVE_ARCHITECTURE_CONTRACT}
 Assets: api.requireAsset({key,name,prompt,tags?,variants?,dimensions:[width,height,depth]?,role:'structure'|'environment',optional?}) -> key; api.asset(key,index?) -> generated assetId. role is required in unified scene ownership; only loose natural decoration may be optional. Give each new asset plausible canonical dimensions so the greybox has its intended size before the model exists; otherwise its pending placeholder is only 1x1x1. Choose dimensions from the scene plan, not to compensate for unknown model output.
 Output: api.place({assetId?,name?,position:[x,z]|[x,y,z],rotationY?,facing?,scale?,size?,terrain?,role?,groupId?,layer?:1|2|3|4}); api.placeStreetFrontage(...) and api.placeAlongRoute(...) use existing routes. api.foundation(...) creates an independent editable foundation after its target objects are placed; pass their placement references or existing object IDs in under. Its bottom follows terrain and its top is level, sloped or stepped; keep maxThickness bounded. api.attach({assetId?,name?,parentId,kind:'supported'|'mounted',side?,offset?,anchorY?:'bottom'|'center'|'top',contact?,scale?,rotationY?,role?,groupId?,layer?}) attaches a child to an earlier placement or existing object. mounted side is the host-local north|south|east|west face, offset is [horizontal,vertical], anchorY selects the host's vertical baseline, and contact is embed depth. Entrances default to anchorY:'bottom'; offset remains host-relative. api.bridge({waterId,assetId?,name?,crossingCenter:[x,z],direction:[dx,dz],dimensions:[width,height,depth],kind?:'straight'|'curved',curveOffset?,segmentCount?,bankInset?,deckClearance?,abutments?,groupId?,layer?}) solves shoreline endpoints and water clearance.
 api.place and api.placeBetween also accept assemblyId?:string and assemblyRole?:'opening'. These labels persist on objects; they do not generate geometry or change coordinates by themselves.
