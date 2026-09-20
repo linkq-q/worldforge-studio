@@ -1,4 +1,5 @@
 import type { EditableMap } from './map';
+import { pointInPolygon } from './mapLayout';
 import { visualZoneWeight } from './visualDirection';
 
 /** Render-derived coast data; never written back to the authored height field. */
@@ -27,6 +28,10 @@ const smooth = (value: number) => { const t = Math.max(0, Math.min(1, value)); r
 
 export function buildOceanCoastField(map: EditableMap, level: number): OceanCoastField {
   const terrain = map.terrain;
+  const flatAtOceanLevel = terrain.heights.every((height) => Math.abs(height - level) <= 0.02);
+  const explicitOceans = flatAtOceanLevel
+    ? map.waterBodies.filter((water) => water.type === 'ocean' && water.id !== 'terrain-ocean' && water.points.length >= 3)
+    : [];
   const stepX = map.box.size[0] / (terrain.resolutionX - 1);
   const stepZ = map.box.size[2] / (terrain.resolutionZ - 1);
   const cell = Math.min(stepX, stepZ);
@@ -40,6 +45,7 @@ export function buildOceanCoastField(map: EditableMap, level: number): OceanCoas
     stepX, stepZ, heights: []
   };
   const sourceHeights = new Float32Array(source.width * source.depth);
+  const coastHeights = explicitOceans.length ? new Float32Array(source.width * source.depth) : sourceHeights;
   source.heights = sourceHeights;
   for (let z = 0; z < source.depth; z++) {
     for (let x = 0; x < source.width; x++) {
@@ -47,12 +53,25 @@ export function buildOceanCoastField(map: EditableMap, level: number): OceanCoas
       const sz = Math.max(0, Math.min(terrain.resolutionZ - 1, z - paddingZ));
       const height = terrain.heights[sz * terrain.resolutionX + sx];
       const distance = Math.hypot((x - paddingX - sx) * stepX, (z - paddingZ - sz) * stepZ);
-      // Legacy ocean maps use sea-level zero for unshaped ocean, not a land shelf.
-      const base = Math.abs(height - level) <= 0.02 ? level - 0.02 : height;
+      // An explicit ocean polygon owns the land/sea classification. Keep the
+      // authored land height separate so flat sea-level sites do not sink.
+      const base = explicitOceans.length
+        ? height
+        : Math.abs(height - level) <= 0.02 ? level - 0.02 : height;
       sourceHeights[z * source.width + x] = base + (Math.min(base, sinkTarget) - base) * smooth(distance / shoreWidth);
+      if (explicitOceans.length) {
+        const wx = source.minX + x * stepX;
+        const wz = source.minZ + z * stepZ;
+        const outsideTerrain = x < paddingX || x >= paddingX + terrain.resolutionX
+          || z < paddingZ || z >= paddingZ + terrain.resolutionZ;
+        coastHeights[z * source.width + x] = outsideTerrain
+          || explicitOceans.some((water) => pointInPolygon(wx, wz, water.points))
+          ? level - 0.02
+          : level + 0.02;
+      }
     }
   }
-  const loops = smoothCoastLoops(extractCoastLoops(source, level), cell);
+  const loops = smoothCoastLoops(extractCoastLoops({ ...source, heights: coastHeights }, level), cell);
   const width = (source.width - 1) * 3 + 1, depth = (source.depth - 1) * 3 + 1;
   const field: OceanCoastField = { ...source, width, depth, stepX: stepX / 3, stepZ: stepZ / 3,
     heights: new Float32Array(width * depth), distances: new Float32Array(width * depth), level, sinkTarget, shoreWidth, loops };

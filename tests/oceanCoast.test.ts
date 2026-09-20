@@ -21,6 +21,28 @@ describe('continuous ocean coast', () => {
     expect(Array.from(field.heights).every(Number.isFinite)).toBe(true);
   });
 
+  it('uses an explicit ocean polygon without sinking flat authored land', () => {
+    const map = createEmptyMap('flat coast');
+    map.terrain.heights.fill(0);
+    map.waterBodies = [{
+      id: 'gulf',
+      name: 'Gulf',
+      type: 'ocean',
+      level: 0,
+      depth: 8,
+      width: 1,
+      points: [[20, -32], [32, -32], [32, 32], [20, 32]]
+    }];
+    const before = [...map.terrain.heights];
+
+    const field = buildOceanCoastField(map, 0);
+
+    expect(field.loops).toHaveLength(1);
+    expect(sampleCoastGrid(field, -16, 0)).toBeCloseTo(0);
+    expect(sampleCoastGrid(field, 28, 0)).toBeLessThan(-1);
+    expect(map.terrain.heights).toEqual(before);
+  });
+
   it('extends boundary land continuously and leaves distant corners submerged', () => {
     const map = createEmptyMap('edge coast');
     const cell = map.box.size[0] / (map.terrain.resolutionX - 1);
